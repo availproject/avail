@@ -1,4 +1,5 @@
-use sp_runtime::traits::Member;
+use sp_runtime::traits::{Member, MaybeSerializeDeserialize};
+use codec::{Decode, Encode};
 
 pub trait ExtrinsicsRoot:
 	Member + MaybeSerializeDeserialize + Default + Debug + Codec + MaybeMallocSizeOf

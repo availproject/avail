@@ -1,13 +1,19 @@
-use codec::{Decode, Encode, HasCompact};
+use codec::{Decode, Encode, HasCompact, EncodeAsRef, Input, Output, Error, Codec };
+use sp_runtime::{traits::{Hash as HashT, Header, Member, MaybeDisplay, MaybeSerializeDeserialize, MaybeSerialize, AtLeast32BitUnsigned, MaybeMallocSizeOf, SimpleBitOps}, Digest, };
+use sp_core::U256;
+use sp_std::fmt::Debug;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+
+use crate::{kate_extrinsics_root::KateExtrinsicsRoot, traits::ExtrinsicsRoot};
+
 
 /// Abstraction over a block header for a substrate chain.
 #[derive(PartialEq, Eq, Clone, sp_core::RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
 #[cfg_attr(feature = "std", serde(deny_unknown_fields))]
-pub struct Header<Number: Copy + Into<U256> + TryFrom<U256>, Hash: HashT> {
+pub struct KateHeader<Number: Copy + Into<U256> + TryFrom<U256>, Hash: HashT> {
 	/// The parent hash.
 	pub parent_hash: Hash::Output,
 	/// The block number.
@@ -22,13 +28,13 @@ pub struct Header<Number: Copy + Into<U256> + TryFrom<U256>, Hash: HashT> {
 	/// The state trie merkle root
 	pub state_root: Hash::Output,
 	/// Hash and Kate Commitment
-	pub extrinsics_root: ExtrinsicsRoot<Hash::Output>,
+	pub extrinsics_root: KateExtrinsicsRoot<Hash::Output>,
 	/// A chain-specific digest of data useful for light clients or referencing auxiliary data.
 	pub digest: Digest<Hash::Output>,
 }
 
 #[cfg(feature = "std")]
-impl<Number, Hash> parity_util_mem::MallocSizeOf for Header<Number, Hash>
+impl<Number, Hash> parity_util_mem::MallocSizeOf for KateHeader<Number, Hash>
 where
 	Number: Copy + Into<U256> + TryFrom<U256> + parity_util_mem::MallocSizeOf,
 	Hash: HashT,
@@ -64,14 +70,14 @@ where
 	TryFrom::try_from(u256).map_err(|_| serde::de::Error::custom("Try from failed"))
 }
 
-impl<Number, Hash> Decode for Header<Number, Hash>
+impl<Number, Hash> Decode for KateHeader<Number, Hash>
 where
 	Number: HasCompact + Copy + Into<U256> + TryFrom<U256>,
 	Hash: HashT,
 	Hash::Output: Decode,
 {
 	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
-		Ok(Header {
+		Ok(KateHeader {
 			parent_hash: Decode::decode(input)?,
 			number: <<Number as HasCompact>::Type>::decode(input)?.into(),
 			state_root: Decode::decode(input)?,
@@ -81,7 +87,7 @@ where
 	}
 }
 
-impl<Number, Hash> Encode for Header<Number, Hash>
+impl<Number, Hash> Encode for KateHeader<Number, Hash>
 where
 	Number: HasCompact + Copy + Into<U256> + TryFrom<U256>,
 	Hash: HashT,
@@ -97,7 +103,7 @@ where
 	}
 }
 
-impl<Number, Hash> codec::EncodeLike for Header<Number, Hash>
+impl<Number, Hash> codec::EncodeLike for KateHeader<Number, Hash>
 where
 	Number: HasCompact + Copy + Into<U256> + TryFrom<U256>,
 	Hash: HashT,
@@ -105,7 +111,7 @@ where
 {
 }
 
-impl<Number, Hash> traits::Header for Header<Number, Hash>
+impl<Number, Hash> Header for KateHeader<Number, Hash>
 where
 	Number: Member
 		+ MaybeSerializeDeserialize
@@ -168,7 +174,7 @@ where
 		parent_hash: Self::Hash,
 		digest: Digest<Self::Hash>,
 	) -> Self {
-		Header {
+		Self {
 			number,
 			extrinsics_root,
 			state_root,
@@ -178,7 +184,7 @@ where
 	}
 }
 
-impl<Number, Hash> Header<Number, Hash>
+impl<Number, Hash> KateHeader<Number, Hash>
 where
 	Number: Member
 		+ sp_std::hash::Hash

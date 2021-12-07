@@ -3,12 +3,14 @@ use codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Serialize, Deserialize};
 
+use crate::traits::ExtrinsicsRoot;
+
 /// Customized extrinsics root to save the commitment.
 #[derive(PartialEq, Eq, Clone, sp_core::RuntimeDebug, Default, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
 #[cfg_attr(feature = "std", serde(deny_unknown_fields))]
-pub struct ExtrinsicsRoot<HashOutput> {
+pub struct KateExtrinsicsRoot<HashOutput> {
 	/// The merkle root of the extrinsics.
 	pub hash: HashOutput,
 	/// Plonk commitment.
@@ -19,7 +21,7 @@ pub struct ExtrinsicsRoot<HashOutput> {
 	pub cols: u16,
 }
 
-impl<HashOutput: ExtrinsicRootHash> traits::ExtrinsicsRoot for ExtrinsicsRoot<HashOutput> {
+impl<HashOutput: ExtrinsicRootHash> traits::ExtrinsicsRoot for KateExtrinsicsRoot<HashOutput> {
 	type HashOutput = HashOutput;
 
 	fn hash(&self) -> &Self::HashOutput { &self.hash }
@@ -38,7 +40,7 @@ impl<HashOutput: ExtrinsicRootHash> traits::ExtrinsicsRoot for ExtrinsicsRoot<Ha
 	}
 }
 
-impl<Hash: ExtrinsicRootHash> From<Hash> for ExtrinsicsRoot<Hash> {
+impl<Hash: ExtrinsicRootHash> From<Hash> for KateExtrinsicsRoot<Hash> {
 	fn from(hash: Hash) -> Self {
 		Self {
 			hash,
@@ -50,7 +52,7 @@ impl<Hash: ExtrinsicRootHash> From<Hash> for ExtrinsicsRoot<Hash> {
 }
 
 #[cfg(feature = "std")]
-impl<HashOutput> parity_util_mem::MallocSizeOf for ExtrinsicsRoot<HashOutput>
+impl<HashOutput> parity_util_mem::MallocSizeOf for KateExtrinsicsRoot<HashOutput>
 where
 	HashOutput: parity_util_mem::MallocSizeOf,
 {
