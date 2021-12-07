@@ -1,0 +1,108 @@
+cargo-features = ["edition2021"]
+
+[package]
+name = "data-avail"
+version = "2.0.0"
+authors = ["Anonymous"]
+description = "Polygon Data Avilability Node."
+edition = "2021"
+license = "GNU GPLv3"
+build = "build.rs"
+homepage = "https://polygon.technology/"
+repository = ""
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[[bin]]
+name = "data-avail"
+
+[dependencies]
+# Internal deps.
+da-runtime = { version = "1.0.0", path = "../runtime" }
+
+# third-party dependencies
+#structopt = "0.3.8"
+#rand = "0.8.4"
+#hex-literal = "0.3.1"
+
+# Substrate 
+sc-keystore = "3.0.0"
+sc-client-api = "3.0.0"
+sc-consensus-babe = "0.9.0"
+sc-consensus = "0.9.0"
+sc-consensus-epochs = "0.9.0"
+sp-api = "3.0.0"
+#futures = { version = "0.3.9", features = ["compat"] }
+#sc-cli = { version = "0.9.0", path = "../../../client/cli", features = ["wasmtime"] }
+#sp-core = { version = "3.0.0", path = "../../../primitives/core" }
+#sc-executor = { version = "0.9.0", path = "../../../client/executor", features = ["wasmtime"] }
+#sc-service = { version = "0.9.0", path = "../../../client/service", features = ["wasmtime"] }
+#sc-telemetry = { version = "3.0.0", path = "../../../client/telemetry" }
+#sc-authority-discovery = { version = "0.9.0",  path = "../../../client/authority-discovery" }
+#sp-inherents = { version = "3.0.0", path = "../../../primitives/inherents" }
+#sc-chain-spec = { version = "3.0.0", path = "../../../client/chain-spec" }
+#sc-transaction-pool = { version = "3.0.0", path = "../../../client/transaction-pool" }
+#sp-transaction-pool = { version = "3.0.0", path = "../../../primitives/transaction-pool" }
+#sc-consensus-babe-rpc = { version = "0.9.0", path = "../../../client/consensus/babe/rpc" }
+#sp-consensus-babe = { version = "0.9.0", path = "../../../primitives/consensus/babe" }
+#sp-consensus = { version = "0.9.0", path = "../../../primitives/consensus/common" }
+#sp-consensus-slots = { version = "0.9.0", path = "../../../primitives/consensus/slots" }
+#sc-consensus-slots = { version = "0.9.0", path = "../../../client/consensus/slots" }
+#sc-finality-grandpa = { version = "0.9.0", path = "../../../client/finality-grandpa" }
+#sc-finality-grandpa-rpc = { version = "0.9.0", path = "../../../client/finality-grandpa/rpc" }
+#sp-finality-grandpa = { version = "3.0.0", path = "../../../primitives/finality-grandpa" }
+#sp-runtime = { version = "3.0.0", path = "../../../primitives/runtime" }
+#sp-std = { version = "3.0.0", default-features = false, path = "../../../primitives/std" }
+#sp-rpc = { version = "3.0.0", path = "../../../primitives/rpc" }
+#sp-authority-discovery = { version = "3.0.0", default-features = false, path = "../../../primitives/authority-discovery" }
+#sc-network = { version = "0.9.0", path = "../../../client/network" }
+#sc-sync-state-rpc = { version = "0.9.0", path = "../../../client/sync-state-rpc" }
+#sp-keystore = { version = "0.9.0", path = "../../../primitives/keystore" }
+#
+## dusk-plonk = { path = "../../../client/plonk" }
+#dusk-plonk = { version = "0.8.2", default-features = false }
+#kate = { path = "../../../client/kate", default-features = false }
+#log = "0.4.8"
+#lru = { version = "0.6.4"}
+#codec = { package = "parity-scale-codec", version = "2.0.0" }
+#serde = { version = "1.0.121", features = ["derive"] }
+#frame-system = { package = "frame-system", path = "../../../frame/system"}
+#frame-support = { package = "frame-support", path = "../../../frame/support"}
+
+# These dependencies are used for the node template's RPCs
+#jsonrpc-core = "15.1.0"
+#jsonrpc-core-client = "15.1.0"
+#jsonrpc-derive = "15.1.0"
+#sc-rpc = { version = "3.0.0", path = "../../../client/rpc" }
+#sc-rpc-api = { version = "0.9.0", path = "../../../client/rpc-api" }
+#sp-blockchain = { version = "3.0.0", path = "../../../primitives/blockchain" }
+#sp-block-builder = { version = "3.0.0", path = "../../../primitives/block-builder" }
+#sc-basic-authorship = { version = "0.9.0", path = "../../../client/basic-authorship" }
+#substrate-frame-rpc-system = { version = "3.0.0", path = "../../../utils/frame/rpc/system" }
+#pallet-transaction-payment-rpc = { version = "3.0.0", path = "../../../frame/transaction-payment/rpc/" }
+#pallet-im-online = { version = "3.0.0", default-features = false, path = "../../../frame/im-online" }
+#pallet-grandpa = { version = "3.0.0", path = "../../../frame/grandpa" }
+#pallet-balances = { version = "3.0.0", path = "../../../frame/balances" }
+#pallet-authority-discovery = { version = "3.0.0", default-features = false, path = "../../../frame/authority-discovery" }
+#pallet-indices = { version = "3.0.0", path = "../../../frame/indices" }
+#pallet-staking = { version = "3.0.0", default-features = false, path = "../../../frame/staking" }
+#pallet-session = { version = "3.0.0", default-features = false, path = "../../../frame/session" }
+#
+## These dependencies are used for runtime benchmarking
+#frame-benchmarking = { version = "3.0.0", path = "../../../frame/benchmarking" }
+#frame-benchmarking-cli = { version = "3.0.0", path = "../../../utils/frame/benchmarking-cli" }
+#
+#node-template-runtime = { version = "2.0.0", path = "../runtime" }
+#kate-rpc-runtime-api = { path = "../pallets/kate-rpc-runtime-api" }
+
+[dev-dependencies]
+futures = "0.3.9"
+
+[build-dependencies]
+#substrate-build-script-utils = { git = 'https://github.com/paritytech/substrate.git', optional = true }
+substrate-build-script-utils = "3.0.0"
+
+[features]
+default = []
+runtime-benchmarks = []
