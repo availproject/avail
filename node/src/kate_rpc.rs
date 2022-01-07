@@ -1,18 +1,20 @@
-use std::sync::Arc;
-use jsonrpc_core::{Result, Error as RpcError, ErrorCode};
-use jsonrpc_derive::rpc;
-use lru::LruCache;
-use sp_blockchain::HeaderBackend;
-use sc_client_api::BlockBackend;
-use sp_api::ProvideRuntimeApi;
-use sp_runtime::{generic::BlockId, traits::{Block as BlockT}};
-use sp_runtime::traits::{NumberFor, Header};
-use sp_rpc::number::NumberOrHex;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
+
 use codec::Encode;
 use frame_system::limits::BlockLength;
-use kate_rpc_runtime_api::KateParamsGetter;
+use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
+use jsonrpc_derive::rpc;
 use kate::com::BlockDimensions;
+use kate_rpc_runtime_api::KateParamsGetter;
+use lru::LruCache;
+use sc_client_api::BlockBackend;
+use sp_api::ProvideRuntimeApi;
+use sp_blockchain::HeaderBackend;
+use sp_rpc::number::NumberOrHex;
+use sp_runtime::{
+	generic::BlockId,
+	traits::{Block as BlockT, Header, NumberFor},
+};
 
 #[rpc]
 pub trait KateApi {
@@ -24,21 +26,23 @@ pub trait KateApi {
 	) -> Result<Vec<u8>>;
 
 	#[rpc(name = "kate_blockLength")]
-	fn query_block_length(
-		&self,
-	) -> Result<BlockLength>;
+	fn query_block_length(&self) -> Result<BlockLength>;
 }
 
 pub struct Kate<Client, Block: BlockT> {
 	client: Arc<Client>,
-	block_ext_cache: RwLock<LruCache<Block::Hash, (Vec<dusk_plonk::prelude::BlsScalar>, BlockDimensions)>>,
+	block_ext_cache:
+		RwLock<LruCache<Block::Hash, (Vec<dusk_plonk::prelude::BlsScalar>, BlockDimensions)>>,
 }
 
-impl<Client, Block> Kate<Client, Block> where Block: BlockT {
+impl<Client, Block> Kate<Client, Block>
+where
+	Block: BlockT,
+{
 	pub fn new(client: Arc<Client>) -> Self {
 		Self {
 			client,
-			block_ext_cache: RwLock::new(LruCache::new(2048)) // 524288 bytes per block, ~1Gb max size
+			block_ext_cache: RwLock::new(LruCache::new(2048)), // 524288 bytes per block, ~1Gb max size
 		}
 	}
 }
@@ -60,7 +64,8 @@ impl From<Error> for i64 {
 	}
 }
 
-impl<Client, Block> KateApi for Kate<Client, Block> where
+impl<Client, Block> KateApi for Kate<Client, Block>
+where
 	Block: BlockT,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
@@ -72,13 +77,13 @@ impl<Client, Block> KateApi for Kate<Client, Block> where
 		block_number: NumberOrHex,
 		cells: Vec<kate::com::Cell>,
 	) -> Result<Vec<u8>> {
-		use std::convert::TryInto;
 		let block_num: u32 = block_number.try_into().map_err(|_| RpcError {
 			code: ErrorCode::ServerError(Error::DecodeError.into()),
 			message: format!(
 				"`{:?}` > u32::max_value(), the max block number is u32.",
 				block_number
-			).into(),
+			)
+			.into(),
 			data: None,
 		})?;
 
@@ -88,48 +93,53 @@ impl<Client, Block> KateApi for Kate<Client, Block> where
 
 		if !block.is_none() {
 			let best_hash = BlockId::hash(self.client.info().best_hash);
-			let block_length: BlockLength = self.client.runtime_api().get_block_length(&best_hash).map_err(|e| RpcError {
-				code: ErrorCode::ServerError(9876),
-				message: "Something wrong".into(),
-				data: Some(format!("{:?}", e).into()),
-			}).unwrap();
+			let block_length: BlockLength = self
+				.client
+				.runtime_api()
+				.get_block_length(&best_hash)
+				.map_err(|e| RpcError {
+					code: ErrorCode::ServerError(9876),
+					message: "Something wrong".into(),
+					data: Some(format!("{:?}", e).into()),
+				})
+				.unwrap();
 
 			let block = block.unwrap();
 			let block_hash = block.block.header().hash();
 			if !block_ext_cache.contains(&block_hash) {
 				// build block data extension and cache it
-				let data: Vec<Vec<u8>> = block.block.extrinsics().into_iter().map(|e|{
-					e.encode()
-				}).collect();
+				let data: Vec<Vec<u8>> = block
+					.block
+					.extrinsics()
+					.into_iter()
+					.map(|e| e.encode())
+					.collect();
 
 				let (block, block_dims) = kate::com::flatten_and_pad_block(
 					block_length.rows as usize,
 					block_length.cols as usize,
 					block_length.chunk_size as usize,
 					&data,
-					block.block.header().parent_hash().as_ref()
+					block.block.header().parent_hash().as_ref(),
 				);
 
-				let data = kate::com::extend_data_matrix(
-					block_dims,
-					&block
-				);
+				let data = kate::com::extend_data_matrix(block_dims, &block);
 				block_ext_cache.put(block_hash, (data, block_dims));
 			}
 
 			let (ext_data, block_dims) = block_ext_cache.get(&block_hash).unwrap();
-			let kc_public_params = self.client.runtime_api().get_public_params(&best_hash).map_err(|e| RpcError {
-				code: ErrorCode::ServerError(9876),
-				message: "Something wrong".into(),
-				data: Some(format!("{:?}", e).into()),
-			}).unwrap();
+			let kc_public_params = self
+				.client
+				.runtime_api()
+				.get_public_params(&best_hash)
+				.map_err(|e| RpcError {
+					code: ErrorCode::ServerError(9876),
+					message: "Something wrong".into(),
+					data: Some(format!("{:?}", e).into()),
+				})
+				.unwrap();
 
-			let proof = kate::com::build_proof(
-				&kc_public_params,
-				*block_dims,
-				&ext_data,
-				cells
-			);
+			let proof = kate::com::build_proof(&kc_public_params, *block_dims, &ext_data, cells);
 
 			return Ok(proof.unwrap());
 		}
@@ -137,15 +147,20 @@ impl<Client, Block> KateApi for Kate<Client, Block> where
 		Err(RpcError {
 			code: ErrorCode::ServerError(Error::RuntimeError.into()),
 			message: "".into(),
-			data: None
+			data: None,
 		})
 	}
 
 	fn query_block_length(&self) -> Result<BlockLength> {
-		Ok(self.client.runtime_api().get_block_length(&BlockId::hash(self.client.info().best_hash)).map_err(|e| RpcError {
-			code: ErrorCode::ServerError(9877),
-			message: "Something wrong".into(),
-			data: Some(format!("{:?}", e).into()),
-		}).unwrap())
+		Ok(self
+			.client
+			.runtime_api()
+			.get_block_length(&BlockId::hash(self.client.info().best_hash))
+			.map_err(|e| RpcError {
+				code: ErrorCode::ServerError(9877),
+				message: "Something wrong".into(),
+				data: Some(format!("{:?}", e).into()),
+			})
+			.unwrap())
 	}
 }

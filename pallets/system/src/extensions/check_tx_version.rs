@@ -15,15 +15,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{Config, Module};
-use codec::{Encode, Decode};
-use sp_runtime::{
-	traits::SignedExtension,
-	transaction_validity::TransactionValidityError,
-};
+use codec::{Decode, Encode};
+use scale_info::TypeInfo;
+use sp_runtime::{traits::SignedExtension, transaction_validity::TransactionValidityError};
+
+use crate::{Config, Pallet};
 
 /// Ensure the transaction version registered in the transaction is the same as at present.
-#[derive(Encode, Decode, Clone, Eq, PartialEq)]
+///
+/// # Transaction Validity
+///
+/// The transaction with incorrect `transaction_version` are considered invalid. The validity
+/// is not affected in any other way.
+#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[scale_info(skip_type_params(T))]
 pub struct CheckTxVersion<T: Config + Send + Sync>(sp_std::marker::PhantomData<T>);
 
 impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckTxVersion<T> {
@@ -33,26 +38,23 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckTxVersion<T> {
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		Ok(())
-	}
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result { Ok(()) }
 }
 
 impl<T: Config + Send + Sync> CheckTxVersion<T> {
 	/// Create new `SignedExtension` to check transaction version.
-	pub fn new() -> Self {
-		Self(sp_std::marker::PhantomData)
-	}
+	pub fn new() -> Self { Self(sp_std::marker::PhantomData) }
 }
 
 impl<T: Config + Send + Sync> SignedExtension for CheckTxVersion<T> {
 	type AccountId = T::AccountId;
-	type Call = <T as Config>::Call;
 	type AdditionalSigned = u32;
+	type Call = <T as Config>::Call;
 	type Pre = ();
+
 	const IDENTIFIER: &'static str = "CheckTxVersion";
 
 	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
-		Ok(<Module<T>>::runtime_version().transaction_version)
+		Ok(<Pallet<T>>::runtime_version().transaction_version)
 	}
 }

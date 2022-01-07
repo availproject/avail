@@ -15,14 +15,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{self as frame_system, *, limits::BlockLength};
-use sp_std::cell::RefCell;
+use frame_support::parameter_types;
 use sp_core::H256;
 use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
 	testing::Header,
+	traits::{BlakeTwo256, IdentityLookup},
+	BuildStorage,
 };
-use frame_support::parameter_types;
+use sp_std::cell::RefCell;
+
+use crate::{self as frame_system, *};
 
 type UncheckedExtrinsic = mocking::MockUncheckedExtrinsic<Test>;
 type Block = mocking::MockBlock<Test>;
@@ -33,7 +35,7 @@ frame_support::construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Module, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 	}
 );
 
@@ -71,9 +73,11 @@ parameter_types! {
 		})
 		.avg_block_initialization(Perbill::from_percent(0))
 		.build_or_panic();
+	pub RuntimeBlockLength: limits::BlockLength =
+		limits::BlockLength::max_with_normal_ratio(1024, NORMAL_DISPATCH_RATIO);
 }
 
-thread_local!{
+thread_local! {
 	pub static KILLED: RefCell<Vec<u64>> = RefCell::new(vec![]);
 }
 
@@ -83,46 +87,47 @@ impl OnKilledAccount<u64> for RecordKilled {
 }
 
 impl Config for Test {
-	type BaseCallFilter = ();
-	type BlockWeights = RuntimeBlockWeights;
-	type Origin = Origin;
-	type Call = Call;
-	type Index = u64;
+	type AccountData = u32;
+	type AccountId = u64;
+	type BaseCallFilter = frame_support::traits::Everything;
+	type BlockHashCount = BlockHashCount;
+	type BlockLength = RuntimeBlockLength;
 	type BlockNumber = u64;
+	type BlockWeights = RuntimeBlockWeights;
+	type Call = Call;
+	type DbWeight = DbWeight;
+	type Event = Event;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type AccountId = u64;
-	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type Event = Event;
-	type BlockHashCount = BlockHashCount;
-	type DbWeight = DbWeight;
-	type Version = Version;
-	type PalletInfo = PalletInfo;
-	type AccountData = u32;
-	type OnNewAccount = ();
+	type Index = u64;
+	type Lookup = IdentityLookup<Self::AccountId>;
 	type OnKilledAccount = RecordKilled;
-	type SystemWeightInfo = ();
+	type OnNewAccount = ();
+	type OnSetCode = ();
+	type Origin = Origin;
+	type PalletInfo = PalletInfo;
 	type SS58Prefix = ();
+	type SystemWeightInfo = ();
+	type Version = Version;
 }
 
 pub type SysEvent = frame_system::Event<Test>;
 
 /// A simple call, which one doesn't matter.
-pub const CALL: &<Test as Config>::Call = &Call::System(frame_system::Call::set_heap_pages(0u64));
+pub const CALL: &<Test as Config>::Call =
+	&Call::System(frame_system::Call::set_heap_pages { pages: 0u64 });
 
 /// Create new externalities for `System` module tests.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut ext: sp_io::TestExternalities = frame_system::GenesisConfig {
-		kc_public_params: kate::testnet::KC_PUB_PARAMS.to_vec(),
-		block_length: BlockLength::with_normal_ratio(128, 256, 64, Perbill::from_percent(90)),
-		..Default::default()
-	}.build_storage::<Test>().unwrap().into();
-
+	let mut ext: sp_io::TestExternalities =
+		GenesisConfig::default().build_storage().unwrap().into();
 	// Add to each test the initial weight of a block
-	ext.execute_with(|| System::register_extra_weight_unchecked(
-		<Test as crate::Config>::BlockWeights::get().base_block,
-		DispatchClass::Mandatory
-	));
+	ext.execute_with(|| {
+		System::register_extra_weight_unchecked(
+			<Test as crate::Config>::BlockWeights::get().base_block,
+			DispatchClass::Mandatory,
+		)
+	});
 	ext
 }

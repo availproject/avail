@@ -1,14 +1,18 @@
-use codec::{Decode, Encode};
-
+use codec::{Codec, Decode, Encode};
+use scale_info::TypeInfo;
 #[cfg(feature = "std")]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use sp_runtime::traits::Member;
+use sp_std::vec::Vec;
+
+use crate::traits::ExtrinsicsRoot;
 
 /// Customized extrinsics root to save the commitment.
-#[derive(PartialEq, Eq, Clone, sp_core::RuntimeDebug, Default, Encode, Decode)]
+#[derive(PartialEq, Eq, Clone, sp_core::RuntimeDebug, Default, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
 #[cfg_attr(feature = "std", serde(deny_unknown_fields))]
-pub struct ExtrinsicsRoot<HashOutput> {
+pub struct KateExtrinsicsRoot<HashOutput> {
 	/// The merkle root of the extrinsics.
 	pub hash: HashOutput,
 	/// Plonk commitment.
@@ -19,7 +23,24 @@ pub struct ExtrinsicsRoot<HashOutput> {
 	pub cols: u16,
 }
 
-impl<HashOutput: ExtrinsicRootHash> traits::ExtrinsicsRoot for ExtrinsicsRoot<HashOutput> {
+/// Marker trait for types `T` that can be use as `Hash` in `ExtrinsicsRoot`.
+pub trait ExtrinsicRootHash: Member + Codec
+/*MaybeMallocSizeOf + Default + MaybeSerializeDeserialize*/
+/*
+	+ StdHash
+	+ Ord
+	+ Copy
+	+ MaybeDisplay
+	+ SimpleBitOps
+	+ AsRef<[u8]>
+	+ AsMut<[u8]>
+	*/
+{
+}
+
+impl<T: Member + Codec> ExtrinsicRootHash for T {}
+
+impl<HashOutput: ExtrinsicRootHash> ExtrinsicsRoot for KateExtrinsicsRoot<HashOutput> {
 	type HashOutput = HashOutput;
 
 	fn hash(&self) -> &Self::HashOutput { &self.hash }
@@ -38,7 +59,7 @@ impl<HashOutput: ExtrinsicRootHash> traits::ExtrinsicsRoot for ExtrinsicsRoot<Ha
 	}
 }
 
-impl<Hash: ExtrinsicRootHash> From<Hash> for ExtrinsicsRoot<Hash> {
+impl<Hash: ExtrinsicRootHash> From<Hash> for KateExtrinsicsRoot<Hash> {
 	fn from(hash: Hash) -> Self {
 		Self {
 			hash,
@@ -50,7 +71,7 @@ impl<Hash: ExtrinsicRootHash> From<Hash> for ExtrinsicsRoot<Hash> {
 }
 
 #[cfg(feature = "std")]
-impl<HashOutput> parity_util_mem::MallocSizeOf for ExtrinsicsRoot<HashOutput>
+impl<HashOutput> parity_util_mem::MallocSizeOf for KateExtrinsicsRoot<HashOutput>
 where
 	HashOutput: parity_util_mem::MallocSizeOf,
 {

@@ -15,15 +15,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use codec::{Encode, Decode};
-use crate::{Config, Module};
+use codec::{Decode, Encode};
+use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{SignedExtension, Zero},
 	transaction_validity::TransactionValidityError,
 };
 
+use crate::{Config, Pallet};
+
 /// Genesis hash check to provide replay protection between different networks.
-#[derive(Encode, Decode, Clone, Eq, PartialEq)]
+///
+/// # Transaction Validity
+///
+/// Note that while a transaction with invalid `genesis_hash` will fail to be decoded,
+/// the extension does not affect any other fields of `TransactionValidity` directly.
+#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[scale_info(skip_type_params(T))]
 pub struct CheckGenesis<T: Config + Send + Sync>(sp_std::marker::PhantomData<T>);
 
 impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckGenesis<T> {
@@ -33,26 +41,23 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckGenesis<T> {
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		Ok(())
-	}
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result { Ok(()) }
 }
 
 impl<T: Config + Send + Sync> CheckGenesis<T> {
 	/// Creates new `SignedExtension` to check genesis hash.
-	pub fn new() -> Self {
-		Self(sp_std::marker::PhantomData)
-	}
+	pub fn new() -> Self { Self(sp_std::marker::PhantomData) }
 }
 
 impl<T: Config + Send + Sync> SignedExtension for CheckGenesis<T> {
 	type AccountId = T::AccountId;
-	type Call = <T as Config>::Call;
 	type AdditionalSigned = T::Hash;
+	type Call = <T as Config>::Call;
 	type Pre = ();
+
 	const IDENTIFIER: &'static str = "CheckGenesis";
 
 	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
-		Ok(<Module<T>>::block_hash(T::BlockNumber::zero()))
+		Ok(<Pallet<T>>::block_hash(T::BlockNumber::zero()))
 	}
 }

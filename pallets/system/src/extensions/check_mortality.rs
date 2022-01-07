@@ -15,25 +15,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use codec::{Encode, Decode};
-use crate::{Config, Module, BlockHash};
+use codec::{Decode, Encode};
+use scale_info::TypeInfo;
 use sp_runtime::{
 	generic::Era,
-	traits::{SignedExtension, DispatchInfoOf, SaturatedConversion},
+	traits::{DispatchInfoOf, SaturatedConversion, SignedExtension},
 	transaction_validity::{
-		ValidTransaction, TransactionValidityError, InvalidTransaction, TransactionValidity,
+		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransaction,
 	},
 };
 
+use crate::{BlockHash, Config, Pallet};
+
 /// Check for transaction mortality.
-#[derive(Encode, Decode, Clone, Eq, PartialEq)]
+///
+/// # Transaction Validity
+///
+/// The extension affects `longevity` of the transaction according to the [`Era`] definition.
+#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[scale_info(skip_type_params(T))]
 pub struct CheckMortality<T: Config + Send + Sync>(Era, sp_std::marker::PhantomData<T>);
 
 impl<T: Config + Send + Sync> CheckMortality<T> {
 	/// utility constructor. Used only in client/factory code.
-	pub fn from(era: Era) -> Self {
-		Self(era, sp_std::marker::PhantomData)
-	}
+	pub fn from(era: Era) -> Self { Self(era, sp_std::marker::PhantomData) }
 }
 
 impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckMortality<T> {
@@ -43,16 +48,15 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckMortality<T> {
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		Ok(())
-	}
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result { Ok(()) }
 }
 
 impl<T: Config + Send + Sync> SignedExtension for CheckMortality<T> {
 	type AccountId = T::AccountId;
-	type Call = T::Call;
 	type AdditionalSigned = T::Hash;
+	type Call = T::Call;
 	type Pre = ();
+
 	const IDENTIFIER: &'static str = "CheckMortality";
 
 	fn validate(
@@ -62,7 +66,7 @@ impl<T: Config + Send + Sync> SignedExtension for CheckMortality<T> {
 		_info: &DispatchInfoOf<Self::Call>,
 		_len: usize,
 	) -> TransactionValidity {
-		let current_u64 = <Module<T>>::block_number().saturated_into::<u64>();
+		let current_u64 = <Pallet<T>>::block_number().saturated_into::<u64>();
 		let valid_till = self.0.death(current_u64);
 		Ok(ValidTransaction {
 			longevity: valid_till.saturating_sub(current_u64),
@@ -71,43 +75,53 @@ impl<T: Config + Send + Sync> SignedExtension for CheckMortality<T> {
 	}
 
 	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
-		let current_u64 = <Module<T>>::block_number().saturated_into::<u64>();
+		let current_u64 = <Pallet<T>>::block_number().saturated_into::<u64>();
 		let n = self.0.birth(current_u64).saturated_into::<T::BlockNumber>();
 		if !<BlockHash<T>>::contains_key(n) {
 			Err(InvalidTransaction::AncientBirthBlock.into())
 		} else {
-			Ok(<Module<T>>::block_hash(n))
+			Ok(<Pallet<T>>::block_hash(n))
 		}
 	}
 }
 
 #[cfg(test)]
 mod tests {
-	use super::*;
-	use crate::mock::{Test, new_test_ext, System, CALL};
 	use frame_support::weights::{DispatchClass, DispatchInfo, Pays};
 	use sp_core::H256;
+
+	use super::*;
+	use crate::mock::{new_test_ext, System, Test, CALL};
 
 	#[test]
 	fn signed_ext_check_era_should_work() {
 		new_test_ext().execute_with(|| {
 			// future
 			assert_eq!(
-				CheckMortality::<Test>::from(Era::mortal(4, 2)).additional_signed().err().unwrap(),
+				CheckMortality::<Test>::from(Era::mortal(4, 2))
+					.additional_signed()
+					.err()
+					.unwrap(),
 				InvalidTransaction::AncientBirthBlock.into(),
 			);
 
 			// correct
 			System::set_block_number(13);
 			<BlockHash<Test>>::insert(12, H256::repeat_byte(1));
-			assert!(CheckMortality::<Test>::from(Era::mortal(4, 12)).additional_signed().is_ok());
+			assert!(CheckMortality::<Test>::from(Era::mortal(4, 12))
+				.additional_signed()
+				.is_ok());
 		})
 	}
 
 	#[test]
 	fn signed_ext_check_era_should_change_longevity() {
 		new_test_ext().execute_with(|| {
-			let normal = DispatchInfo { weight: 100, class: DispatchClass::Normal, pays_fee: Pays::Yes };
+			let normal = DispatchInfo {
+				weight: 100,
+				class: DispatchClass::Normal,
+				pays_fee: Pays::Yes,
+			};
 			let len = 0_usize;
 			let ext = (
 				crate::CheckWeight::<Test>::new(),

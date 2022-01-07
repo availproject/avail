@@ -34,37 +34,40 @@ frame_support::construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Module, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 	}
 );
 
 impl frame_system::Config for Test {
-	type BaseCallFilter = ();
-	type BlockWeights = ();
-	type DbWeight = ();
-	type Origin = Origin;
-	type Index = AccountIndex;
+	type AccountData = ();
+	type AccountId = AccountId;
+	type BaseCallFilter = frame_support::traits::Everything;
+	type BlockHashCount = ();
 	type BlockNumber = BlockNumber;
+	type BlockWeights = ();
 	type Call = Call;
+	type DbWeight = ();
+	type Event = Event;
 	type Hash = sp_core::H256;
 	type Hashing = ::sp_runtime::traits::BlakeTwo256;
-	type AccountId = AccountId;
-	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = sp_runtime::testing::Header;
-	type Event = Event;
-	type BlockHashCount = ();
-	type Version = ();
-	type PalletInfo = PalletInfo;
-	type AccountData = ();
-	type OnNewAccount = ();
+	type Index = AccountIndex;
+	type Lookup = IdentityLookup<Self::AccountId>;
 	type OnKilledAccount = ();
-	type SystemWeightInfo = ();
+	type OnNewAccount = ();
+	type OnSetCode = ();
+	type Origin = Origin;
+	type PalletInfo = PalletInfo;
 	type SS58Prefix = ();
+	type SystemWeightInfo = ();
+	type Version = ();
 }
 
 impl crate::Config for Test {}
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let t = frame_system::GenesisConfig::default()
+		.build_storage::<Test>()
+		.unwrap();
 	sp_io::TestExternalities::new(t)
 }

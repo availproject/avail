@@ -1,38 +1,117 @@
-use codec::{Decode, Encode, HasCompact};
+use codec::{Codec, Decode, Encode, EncodeAsRef, Error, HasCompact, Input, Output};
+use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_core::U256;
+use sp_runtime::{
+	traits::{
+		AtLeast32BitUnsigned, Hash as HashT, Header, MaybeDisplay, MaybeFromStr, MaybeMallocSizeOf,
+		MaybeSerialize, MaybeSerializeDeserialize, Member, SimpleBitOps,
+	},
+	Digest,
+};
+use sp_std::{convert::TryFrom, fmt::Debug, hash::Hash as StdHash};
+
+use crate::{
+	traits::{ExtrinsicsRoot, Rooted},
+	KateExtrinsicsRoot,
+};
+
+pub trait KateNumberTrait:
+	Member
+	+ AtLeast32BitUnsigned
+	+ Codec
+	+ MaybeSerializeDeserialize
+	+ MaybeDisplay
+	+ MaybeFromStr
+	+ MaybeFromStr
+	+ MaybeMallocSizeOf
+	+ StdHash
+	+ Copy
+	+ Into<U256>
+	+ TryFrom<U256>
+	+ Debug
+	+ Eq
+{
+}
+impl<
+		T: Member
+			+ AtLeast32BitUnsigned
+			+ Codec
+			+ MaybeSerializeDeserialize
+			+ MaybeDisplay
+			+ MaybeFromStr
+			+ MaybeMallocSizeOf
+			+ StdHash
+			+ Copy
+			+ Into<U256>
+			+ TryFrom<U256>
+			+ Debug
+			+ Eq,
+	> KateNumberTrait for T
+{
+}
+
+pub trait KateHashTrait: HashT {}
+impl<T: HashT> KateHashTrait for T {}
+
+pub trait KateHashOutputTrait:
+	MaybeDisplay + Decode + MaybeMallocSizeOf + SimpleBitOps + Ord
+{
+}
+impl<T: MaybeDisplay + Decode + MaybeMallocSizeOf + SimpleBitOps + Ord> KateHashOutputTrait for T {}
 
 /// Abstraction over a block header for a substrate chain.
-#[derive(PartialEq, Eq, Clone, sp_core::RuntimeDebug)]
+#[derive(PartialEq, Eq, Clone, sp_core::RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
 #[cfg_attr(feature = "std", serde(deny_unknown_fields))]
-pub struct Header<Number: Copy + Into<U256> + TryFrom<U256>, Hash: HashT> {
+pub struct KateHeader<Number: KateNumberTrait, Hash: KateHashTrait> {
 	/// The parent hash.
 	pub parent_hash: Hash::Output,
 	/// The block number.
-	#[cfg_attr(
-		feature = "std",
-		serde(
-			serialize_with = "serialize_number",
-			deserialize_with = "deserialize_number"
-		)
-	)]
+	#[cfg_attr(feature = "std", serde(with = "number_serde"))]
 	pub number: Number,
 	/// The state trie merkle root
 	pub state_root: Hash::Output,
 	/// Hash and Kate Commitment
-	pub extrinsics_root: ExtrinsicsRoot<Hash::Output>,
+	pub extrinsics_root: KateExtrinsicsRoot<Hash::Output>,
 	/// A chain-specific digest of data useful for light clients or referencing auxiliary data.
-	pub digest: Digest<Hash::Output>,
+	pub digest: Digest,
+}
+
+/// This module adds serialization support to `KateHeader::number` field.
+#[cfg(feature = "std")]
+mod number_serde {
+	use serde::{Deserializer, Serializer};
+
+	use super::*;
+
+	pub fn serialize<N, S>(n: &N, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		N: KateNumberTrait,
+		S: Serializer,
+	{
+		let u256: U256 = (*n).into();
+		serde::Serialize::serialize(&u256, serializer)
+	}
+
+	pub fn deserialize<'de, D, T>(d: D) -> Result<T, D::Error>
+	where
+		T: KateNumberTrait,
+		D: Deserializer<'de>,
+	{
+		let u256: U256 = serde::Deserialize::deserialize(d)?;
+		TryFrom::try_from(u256).map_err(|_| serde::de::Error::custom("Try from failed"))
+	}
 }
 
 #[cfg(feature = "std")]
-impl<Number, Hash> parity_util_mem::MallocSizeOf for Header<Number, Hash>
+impl<Number, Hash> parity_util_mem::MallocSizeOf for KateHeader<Number, Hash>
 where
-	Number: Copy + Into<U256> + TryFrom<U256> + parity_util_mem::MallocSizeOf,
-	Hash: HashT,
-	Hash::Output: parity_util_mem::MallocSizeOf,
+	Number: KateNumberTrait,
+	Hash: KateHashTrait,
+	Hash::Output: KateHashOutputTrait,
 {
 	fn size_of(&self, ops: &mut parity_util_mem::MallocSizeOfOps) -> usize {
 		self.parent_hash.size_of(ops)
@@ -43,35 +122,14 @@ where
 	}
 }
 
-#[cfg(feature = "std")]
-pub fn serialize_number<S, T: Copy + Into<U256> + TryFrom<U256>>(
-	val: &T,
-	s: S,
-) -> Result<S::Ok, S::Error>
+impl<Number, Hash> Decode for KateHeader<Number, Hash>
 where
-	S: serde::Serializer,
-{
-	let u256: U256 = (*val).into();
-	serde::Serialize::serialize(&u256, s)
-}
-
-#[cfg(feature = "std")]
-pub fn deserialize_number<'a, D, T: Copy + Into<U256> + TryFrom<U256>>(d: D) -> Result<T, D::Error>
-where
-	D: serde::Deserializer<'a>,
-{
-	let u256: U256 = serde::Deserialize::deserialize(d)?;
-	TryFrom::try_from(u256).map_err(|_| serde::de::Error::custom("Try from failed"))
-}
-
-impl<Number, Hash> Decode for Header<Number, Hash>
-where
-	Number: HasCompact + Copy + Into<U256> + TryFrom<U256>,
-	Hash: HashT,
+	Number: KateNumberTrait,
+	Hash: KateHashTrait,
 	Hash::Output: Decode,
 {
 	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
-		Ok(Header {
+		Ok(Self {
 			parent_hash: Decode::decode(input)?,
 			number: <<Number as HasCompact>::Type>::decode(input)?.into(),
 			state_root: Decode::decode(input)?,
@@ -81,10 +139,10 @@ where
 	}
 }
 
-impl<Number, Hash> Encode for Header<Number, Hash>
+impl<Number, Hash> Encode for KateHeader<Number, Hash>
 where
-	Number: HasCompact + Copy + Into<U256> + TryFrom<U256>,
-	Hash: HashT,
+	Number: KateNumberTrait,
+	Hash: KateHashTrait,
 	Hash::Output: Encode,
 {
 	fn encode_to<T: Output + ?Sized>(&self, dest: &mut T) {
@@ -97,15 +155,15 @@ where
 	}
 }
 
-impl<Number, Hash> codec::EncodeLike for Header<Number, Hash>
+impl<Number, Hash> codec::EncodeLike for KateHeader<Number, Hash>
 where
-	Number: HasCompact + Copy + Into<U256> + TryFrom<U256>,
-	Hash: HashT,
+	Number: KateNumberTrait,
+	Hash: KateHashTrait,
 	Hash::Output: Encode,
 {
 }
 
-impl<Number, Hash> traits::Header for Header<Number, Hash>
+impl<Number, Hash> Header for KateHeader<Number, Hash>
 where
 	Number: Member
 		+ MaybeSerializeDeserialize
@@ -135,15 +193,14 @@ where
 	type Hash = <Hash as HashT>::Output;
 	type Hashing = Hash;
 	type Number = Number;
-	type Root = ExtrinsicsRoot<Self::Hash>;
 
 	fn number(&self) -> &Self::Number { &self.number }
 
 	fn set_number(&mut self, num: Self::Number) { self.number = num }
 
-	fn extrinsics_root(&self) -> &Self::Root { &self.extrinsics_root }
+	fn extrinsics_root(&self) -> &Self::Hash { self.extrinsics_root.hash() }
 
-	fn set_extrinsics_root(&mut self, root: Self::Root) { self.extrinsics_root = root }
+	fn set_extrinsics_root(&mut self, _root: Self::Hash) { todo!() }
 
 	fn state_root(&self) -> &Self::Hash { &self.state_root }
 
@@ -153,9 +210,9 @@ where
 
 	fn set_parent_hash(&mut self, hash: Self::Hash) { self.parent_hash = hash }
 
-	fn digest(&self) -> &Digest<Self::Hash> { &self.digest }
+	fn digest(&self) -> &Digest { &self.digest }
 
-	fn digest_mut(&mut self) -> &mut Digest<Self::Hash> {
+	fn digest_mut(&mut self) -> &mut Digest {
 		#[cfg(feature = "std")]
 		log::debug!(target: "header", "Retrieving mutable reference to digest");
 		&mut self.digest
@@ -163,12 +220,44 @@ where
 
 	fn new(
 		number: Self::Number,
+		extrinsics_root_hash: Self::Hash,
+		state_root: Self::Hash,
+		parent_hash: Self::Hash,
+		digest: Digest,
+	) -> Self {
+		let extrinsics_root = extrinsics_root_hash.into();
+		Self {
+			number,
+			parent_hash,
+			state_root,
+			digest,
+			extrinsics_root,
+		}
+	}
+}
+
+impl<N, H> Rooted for KateHeader<N, H>
+where
+	N: KateNumberTrait,
+	H: KateHashTrait,
+{
+	type Hash = <H as HashT>::Output;
+	type Number = N;
+	type Root = KateExtrinsicsRoot<Self::Hash>;
+
+	fn extrinsics_root(&self) -> &Self::Root { &self.extrinsics_root }
+
+	fn set_extrinsics_root(&mut self, root: Self::Root) { self.extrinsics_root = root; }
+
+	/// Creates new header.
+	fn new(
+		number: Self::Number,
 		extrinsics_root: Self::Root,
 		state_root: Self::Hash,
 		parent_hash: Self::Hash,
-		digest: Digest<Self::Hash>,
+		digest: Digest,
 	) -> Self {
-		Header {
+		Self {
 			number,
 			extrinsics_root,
 			state_root,
@@ -178,19 +267,12 @@ where
 	}
 }
 
-impl<Number, Hash> Header<Number, Hash>
+impl<Number, Hash> KateHeader<Number, Hash>
 where
-	Number: Member
-		+ sp_std::hash::Hash
-		+ Copy
-		+ MaybeDisplay
-		+ AtLeast32BitUnsigned
-		+ Codec
-		+ Into<U256>
-		+ TryFrom<U256>,
-	Hash: HashT,
-	Hash::Output:
-		Default + sp_std::hash::Hash + Copy + Member + MaybeDisplay + SimpleBitOps + Codec,
+	Number: KateNumberTrait,
+	Hash: KateHashTrait,
+	/*Hash::Output:
+	Default + sp_std::hash::Hash + Copy + Member + MaybeDisplay + SimpleBitOps + Codec,*/
 {
 	/// Convenience helper for computing the hash of the header without having
 	/// to import the trait.

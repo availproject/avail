@@ -21,8 +21,8 @@ num_cpus = { version = "1.13.0", optional = true }
 serde = { version = "1.0.121", optional = true, features = ["derive"] }
 
 # Substrate
-sp-std = { version = "3.0.0", default-features = false }
-frame-support = { version = "3.0.0", default-features = false }
+sp-std = { version = "4.0.0-dev", default-features = false }
+frame-support = { version = "4.0.0-dev", default-features = false }
 
 [features]
 default = ["std"]

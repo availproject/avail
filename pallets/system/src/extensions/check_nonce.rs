@@ -15,30 +15,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use codec::{Encode, Decode};
-use crate::Config;
+use codec::{Decode, Encode};
 use frame_support::weights::DispatchInfo;
+use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{SignedExtension, DispatchInfoOf, Dispatchable, One},
+	traits::{DispatchInfoOf, Dispatchable, One, SignedExtension},
 	transaction_validity::{
-		ValidTransaction, TransactionValidityError, InvalidTransaction, TransactionValidity,
-		TransactionLongevity,
+		InvalidTransaction, TransactionLongevity, TransactionValidity, TransactionValidityError,
+		ValidTransaction,
 	},
 };
 use sp_std::vec;
 
+use crate::Config;
+
 /// Nonce check and increment to give replay protection for transactions.
 ///
-/// Note that this does not set any priority by default. Make sure that AT LEAST one of the signed
-/// extension sets some kind of priority upon validating transactions.
-#[derive(Encode, Decode, Clone, Eq, PartialEq)]
-pub struct CheckNonce<T: Config>(#[codec(compact)] T::Index);
+/// # Transaction Validity
+///
+/// This extension affects `requires` and `provides` tags of validity, but DOES NOT
+/// set the `priority` field. Make sure that AT LEAST one of the signed extension sets
+/// some kind of priority upon validating transactions.
+#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct CheckNonce<T: Config>(#[codec(compact)] pub T::Index);
 
 impl<T: Config> CheckNonce<T> {
 	/// utility constructor. Used only in client/factory code.
-	pub fn from(nonce: T::Index) -> Self {
-		Self(nonce)
-	}
+	pub fn from(nonce: T::Index) -> Self { Self(nonce) }
 }
 
 impl<T: Config> sp_std::fmt::Debug for CheckNonce<T> {
@@ -48,18 +52,18 @@ impl<T: Config> sp_std::fmt::Debug for CheckNonce<T> {
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		Ok(())
-	}
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result { Ok(()) }
 }
 
-impl<T: Config> SignedExtension for CheckNonce<T> where
-	T::Call: Dispatchable<Info=DispatchInfo>
+impl<T: Config> SignedExtension for CheckNonce<T>
+where
+	T::Call: Dispatchable<Info = DispatchInfo>,
 {
 	type AccountId = T::AccountId;
-	type Call = T::Call;
 	type AdditionalSigned = ();
+	type Call = T::Call;
 	type Pre = ();
+
 	const IDENTIFIER: &'static str = "CheckNonce";
 
 	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> { Ok(()) }
@@ -73,13 +77,12 @@ impl<T: Config> SignedExtension for CheckNonce<T> where
 	) -> Result<(), TransactionValidityError> {
 		let mut account = crate::Account::<T>::get(who);
 		if self.0 != account.nonce {
-			return Err(
-				if self.0 < account.nonce {
-					InvalidTransaction::Stale
-				} else {
-					InvalidTransaction::Future
-				}.into()
-			)
+			return Err(if self.0 < account.nonce {
+				InvalidTransaction::Stale
+			} else {
+				InvalidTransaction::Future
+			}
+			.into());
 		}
 		account.nonce += T::Index::one();
 		crate::Account::<T>::insert(who, account);
@@ -96,7 +99,7 @@ impl<T: Config> SignedExtension for CheckNonce<T> where
 		// check index
 		let account = crate::Account::<T>::get(who);
 		if self.0 < account.nonce {
-			return InvalidTransaction::Stale.into()
+			return InvalidTransaction::Stale.into();
 		}
 
 		let provides = vec![Encode::encode(&(who, self.0))];
@@ -118,8 +121,10 @@ impl<T: Config> SignedExtension for CheckNonce<T> where
 
 #[cfg(test)]
 mod tests {
+	use frame_support::{assert_noop, assert_ok};
+
 	use super::*;
-	use crate::mock::{Test, new_test_ext, CALL};
+	use crate::mock::{new_test_ext, Test, CALL};
 
 	#[test]
 	fn signed_ext_check_nonce_works() {
@@ -128,19 +133,29 @@ mod tests {
 				nonce: 1,
 				consumers: 0,
 				providers: 0,
+				sufficients: 0,
 				data: 0,
 			});
 			let info = DispatchInfo::default();
 			let len = 0_usize;
 			// stale
-			assert!(CheckNonce::<Test>(0).validate(&1, CALL, &info, len).is_err());
-			assert!(CheckNonce::<Test>(0).pre_dispatch(&1, CALL, &info, len).is_err());
+			assert_noop!(
+				CheckNonce::<Test>(0).validate(&1, CALL, &info, len),
+				InvalidTransaction::Stale
+			);
+			assert_noop!(
+				CheckNonce::<Test>(0).pre_dispatch(&1, CALL, &info, len),
+				InvalidTransaction::Stale
+			);
 			// correct
-			assert!(CheckNonce::<Test>(1).validate(&1, CALL, &info, len).is_ok());
-			assert!(CheckNonce::<Test>(1).pre_dispatch(&1, CALL, &info, len).is_ok());
+			assert_ok!(CheckNonce::<Test>(1).validate(&1, CALL, &info, len));
+			assert_ok!(CheckNonce::<Test>(1).pre_dispatch(&1, CALL, &info, len));
 			// future
-			assert!(CheckNonce::<Test>(5).validate(&1, CALL, &info, len).is_ok());
-			assert!(CheckNonce::<Test>(5).pre_dispatch(&1, CALL, &info, len).is_err());
+			assert_ok!(CheckNonce::<Test>(5).validate(&1, CALL, &info, len));
+			assert_noop!(
+				CheckNonce::<Test>(5).pre_dispatch(&1, CALL, &info, len),
+				InvalidTransaction::Future
+			);
 		})
 	}
 }
