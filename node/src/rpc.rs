@@ -36,9 +36,7 @@
 
 use std::sync::Arc;
 
-use da_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Hash, Index};
-use kate_rpc_runtime_api::KateParamsGetter;
-use sc_client_api::{AuxStore, BlockBackend};
+use da_runtime::{Block, BlockNumber, Hash};
 use sc_consensus_babe::{Config, Epoch};
 use sc_consensus_babe_rpc::BabeRpcHandler;
 use sc_consensus_epochs::SharedEpochChanges;
@@ -48,15 +46,15 @@ use sc_finality_grandpa::{
 use sc_finality_grandpa_rpc::GrandpaRpcHandler;
 use sc_rpc::SubscriptionTaskExecutor;
 pub use sc_rpc_api::DenyUnsafe;
-use sc_transaction_pool_api::TransactionPool;
-use sp_api::ProvideRuntimeApi;
-use sp_block_builder::BlockBuilder;
-use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
-use sp_consensus::SelectChain;
-use sp_consensus_babe::BabeApi;
 use sp_keystore::SyncCryptoStorePtr;
 
-use crate::kate_rpc;
+use crate::{
+	kate_rpc,
+	service::{FullBackend, FullClient, TransactionPool},
+};
+
+/// A IO handler that uses all Full RPC extensions.
+pub type IoHandler = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
 
 /// Extra dependencies for BABE.
 pub struct BabeDeps {
@@ -69,7 +67,7 @@ pub struct BabeDeps {
 }
 
 /// Extra dependencies for GRANDPA
-pub struct GrandpaDeps<B> {
+pub struct GrandpaDeps {
 	/// Voting round info.
 	pub shared_voter_state: SharedVoterState,
 	/// Authority set info.
@@ -79,17 +77,17 @@ pub struct GrandpaDeps<B> {
 	/// Executor to drive the subscription manager in the Grandpa RPC handler.
 	pub subscription_executor: SubscriptionTaskExecutor,
 	/// Finality proof provider.
-	pub finality_provider: Arc<FinalityProofProvider<B, Block>>,
+	pub finality_provider: Arc<FinalityProofProvider<FullBackend, Block>>,
 }
 
 /// Full client dependencies.
-pub struct FullDeps<C, P, SC, B> {
+pub struct FullDeps {
 	/// The client instance to use.
-	pub client: Arc<C>,
+	pub client: Arc<FullClient>,
 	/// Transaction pool instance.
-	pub pool: Arc<P>,
+	pub pool: Arc<TransactionPool>,
 	/// The SelectChain Strategy
-	pub select_chain: SC,
+	pub select_chain: sc_consensus::LongestChain<FullBackend, Block>,
 	/// A copy of the chain spec.
 	pub chain_spec: Box<dyn sc_chain_spec::ChainSpec>,
 	/// Whether to deny unsafe calls
@@ -97,35 +95,13 @@ pub struct FullDeps<C, P, SC, B> {
 	/// BABE specific dependencies.
 	pub babe: BabeDeps,
 	/// GRANDPA specific dependencies.
-	pub grandpa: GrandpaDeps<B>,
+	pub grandpa: GrandpaDeps,
 }
 
-/// A IO handler that uses all Full RPC extensions.
-pub type IoHandler = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
-
 /// Instantiate all Full RPC extensions.
-pub fn create_full<C, P, SC, B>(
-	deps: FullDeps<C, P, SC, B>,
+pub fn create_full(
+	deps: FullDeps,
 ) -> Result<jsonrpc_core::IoHandler<sc_rpc_api::Metadata>, Box<dyn std::error::Error + Send + Sync>>
-where
-	C: ProvideRuntimeApi<Block>
-		+ BlockBackend<Block>
-		+ HeaderBackend<Block>
-		+ AuxStore
-		+ HeaderMetadata<Block, Error = BlockChainError>
-		+ Sync
-		+ Send
-		+ 'static,
-	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
-	C::Api: pallet_mmr_rpc::MmrRuntimeApi<Block, <Block as sp_runtime::traits::Block>::Hash>,
-	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-	C::Api: BabeApi<Block>,
-	C::Api: BlockBuilder<Block>,
-	C::Api: KateParamsGetter<Block>,
-	P: TransactionPool + 'static,
-	SC: SelectChain<Block> + 'static,
-	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
-	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashFor<Block>>,
 {
 	use pallet_mmr_rpc::{Mmr, MmrApi};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};

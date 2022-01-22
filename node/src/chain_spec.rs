@@ -1,6 +1,8 @@
+use da_control::AppKeyInfo;
+use da_primitives::currency::AVL;
 use da_runtime::{
-	currency::*, wasm_binary_unwrap, AccountId, AuthorityDiscoveryConfig, BabeConfig, Balance,
-	BalancesConfig, Block, CouncilConfig, DemocracyConfig, DesiredMembers, ElectionsConfig,
+	wasm_binary_unwrap, AccountId, AuthorityDiscoveryConfig, BabeConfig, Balance, BalancesConfig,
+	Block, CouncilConfig, DataAvailabilityConfig, DemocracyConfig, DesiredMembers, ElectionsConfig,
 	GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig, SessionConfig, SessionKeys,
 	Signature, StakerStatus, StakingConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
 	MAX_NOMINATIONS,
@@ -161,7 +163,7 @@ pub fn testnet_genesis(
 
 	let num_endowed_accounts = endowed_accounts.len();
 
-	const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
+	const ENDOWMENT: Balance = 10_000_000 * AVL;
 	const STASH: Balance = ENDOWMENT / 1000;
 
 	GenesisConfig {
@@ -217,7 +219,9 @@ pub fn testnet_genesis(
 				.collect(),
 			phantom: Default::default(),
 		},
-		sudo: SudoConfig { key: root_key },
+		sudo: SudoConfig {
+			key: root_key.clone(),
+		},
 		babe: BabeConfig {
 			authorities: vec![],
 			epoch_config: Some(da_runtime::BABE_GENESIS_EPOCH_CONFIG),
@@ -231,6 +235,22 @@ pub fn testnet_genesis(
 		treasury: Default::default(),
 		scheduler: Default::default(),
 		transaction_payment: Default::default(),
+		data_availability: DataAvailabilityConfig {
+			app_keys: vec![
+				(b"Data Avail".to_vec(), AppKeyInfo {
+					owner: root_key.clone(),
+					id: 0,
+				}),
+				(b"Ethereum".to_vec(), AppKeyInfo {
+					owner: root_key.clone(),
+					id: 1,
+				}),
+				(b"Polygon".to_vec(), AppKeyInfo {
+					owner: root_key,
+					id: 2,
+				}),
+			],
+		},
 	}
 }
 
@@ -286,79 +306,78 @@ pub fn local_testnet_config() -> ChainSpec {
 
 #[cfg(test)]
 pub(crate) mod tests {
-	use sc_service_test;
 	use sp_runtime::BuildStorage;
 
 	use super::*;
-	use crate::service::{new_full_base, NewFullBase};
+	// use crate::service::{new_full_base, NewFullBase};
 
-	fn local_testnet_genesis_instant_single() -> GenesisConfig {
-		testnet_genesis(
-			vec![authority_keys_from_seed("Alice")],
-			vec![],
-			get_account_id_from_seed::<sr25519::Public>("Alice"),
-			None,
-		)
-	}
+	/*
+	   fn local_testnet_genesis_instant_single() -> GenesisConfig {
+		   testnet_genesis(
+			   vec![authority_keys_from_seed("Alice")],
+			   vec![],
+			   get_account_id_from_seed::<sr25519::Public>("Alice"),
+			   None,
+		   )
+	   }
 
-	/// Local testnet config (single validator - Alice)
-	pub fn integration_test_config_with_single_authority() -> ChainSpec {
-		ChainSpec::from_genesis(
-			"Integration Test",
-			"test",
-			ChainType::Development,
-			local_testnet_genesis_instant_single,
-			vec![],
-			None,
-			None,
-			None,
-			Default::default(),
-		)
-	}
+	   /// Local testnet config (single validator - Alice)
+	   pub fn integration_test_config_with_single_authority() -> ChainSpec {
+		   ChainSpec::from_genesis(
+			   "Integration Test",
+			   "test",
+			   ChainType::Development,
+			   local_testnet_genesis_instant_single,
+			   vec![],
+			   None,
+			   None,
+			   None,
+			   Default::default(),
+		   )
+	   }
 
-	/// Local testnet config (multivalidator Alice + Bob)
-	pub fn integration_test_config_with_two_authorities() -> ChainSpec {
-		ChainSpec::from_genesis(
-			"Integration Test",
-			"test",
-			ChainType::Development,
-			local_testnet_genesis,
-			vec![],
-			None,
-			None,
-			None,
-			Default::default(),
-		)
-	}
+	   /// Local testnet config (multivalidator Alice + Bob)
+	   pub fn integration_test_config_with_two_authorities() -> ChainSpec {
+		   ChainSpec::from_genesis(
+			   "Integration Test",
+			   "test",
+			   ChainType::Development,
+			   local_testnet_genesis,
+			   vec![],
+			   None,
+			   None,
+			   None,
+			   Default::default(),
+		   )
+	   }
 
+	   // TODO `sc_service_test` is not a public crate.
 	#[test]
-	#[ignore]
-	fn test_connectivity() {
-		sp_tracing::try_init_simple();
+	   #[ignore]
+	   fn test_connectivity() {
+		   sp_tracing::try_init_simple();
 
-		sc_service_test::connectivity(integration_test_config_with_two_authorities(), |config| {
-			let NewFullBase {
-				task_manager,
-				client,
-				network,
-				transaction_pool,
-				..
-			} = new_full_base(config, |_, _| ())?;
-			Ok(sc_service_test::TestNetComponents::new(
-				task_manager,
-				client,
-				network,
-				transaction_pool,
-			))
-		});
-	}
+		   sc_service_test::connectivity(integration_test_config_with_two_authorities(), |config| {
+			   let NewFullBase {
+				   task_manager,
+				   client,
+				   network,
+				   transaction_pool,
+				   ..
+			   } = new_full_base(config, |_, _| ())?;
+			   Ok(sc_service_test::TestNetComponents::new(
+				   task_manager,
+				   client,
+				   network,
+				   transaction_pool,
+			   ))
+		   });
+	   }
+	   */
 
 	#[test]
 	fn test_create_development_chain_spec() { development_config().build_storage().unwrap(); }
 
 	#[test]
 	fn test_create_local_testnet_chain_spec() { local_testnet_config().build_storage().unwrap(); }
-
-	#[test]
-	fn test_staging_test_net_chain_spec() { staging_testnet_config().build_storage().unwrap(); }
 }

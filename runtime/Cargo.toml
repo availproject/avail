@@ -13,7 +13,8 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 # Internal
-da-primitives = { version = "0.1.0", path = "../primitives", default-features = false }
+da-primitives = { path = "../primitives", default-features = false }
+da-control = { path = "../pallets/dactr", default-features = false }
 kate-rpc-runtime-api = { path = "../rpc/kate-rpc-runtime-api", default-features = false }
 
 # External 
@@ -22,6 +23,8 @@ serde = { version = "1.0.121", optional = true, features = ["derive"] }
 
 # Substrate
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+parity-util-mem = { version = "0.10.2", default-features = false, features = ["primitive-types"] }
+
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
 sp-io = { version = "4.0.0-dev", default-features = false }
 sp-core = { version = "4.0.0-dev", default-features = false }
@@ -89,7 +92,7 @@ frame-system-rpc-runtime-api = { version = "4.0.0-dev", default-features = false
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 frame-system-benchmarking = { path = "../pallets/system/benchmarking", default-features = false, optional = true }
 # pallet-session-benchmarking = { version = "4.0.0-dev", default-features = false, path = "../../../frame/session/benchmarking", optional = true }
-# hex-literal = { version = "0.3.1", optional = true }
+hex-literal = { version = "0.3.4", optional = true }
 # 
 # da = { version = "2.0.0", default-features = false, path = "../pallets/template", package = "polygon-data-availability" }
 
@@ -100,6 +103,7 @@ substrate-wasm-builder = "4.0.0"
 default = ["std"]
 std = [
 	"serde",
+	"parity-util-mem/std",
 	"da-primitives/std",
 	"sp-io/std", 
 	"sp-core/std", 
@@ -117,7 +121,7 @@ std = [
 	"sp-inherents/std",
 	"sp-npos-elections/std",
 	"frame-executive/std",
-	# "kate-rpc-runtime-api/std",
+	"kate-rpc-runtime-api/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-session/std",
@@ -147,13 +151,16 @@ std = [
 	"pallet-asset-tx-payment/std",
 	"pallet-mmr/std",
 	"frame-system-rpc-runtime-api/std",
+	"da-control/std",
 ]
-
-#	 "sp-io/std", "codec/std",  "da/std",
 
 runtime-benchmarks = [
+	"frame-benchmarking",
 	"frame-system/runtime-benchmarks",
+	"da-control/runtime-benchmarks",
+	"pallet-collective/runtime-benchmarks",
 	"frame-system-benchmarking",
+	"hex-literal",
 ]
-#	"sp-runtime/runtime-benchmarks", "frame-benchmarking", , "pallet-session-benchmarking", "hex-literal", , "pallet-balances/runtime-benchmarks", "pallet-timestamp/runtime-benchmarks", "pallet-collective/runtime-benchmarks", "pallet-babe/runtime-benchmarks", "pallet-elections-phragmen/runtime-benchmarks", "pallet-grandpa/runtime-benchmarks", "pallet-im-online/runtime-benchmarks", "pallet-treasury/runtime-benchmarks",
+#	"sp-runtime/runtime-benchmarks",  ,  "hex-literal", , "pallet-balances/runtime-benchmarks", "pallet-timestamp/runtime-benchmarks",  "pallet-babe/runtime-benchmarks", "pallet-elections-phragmen/runtime-benchmarks", "pallet-grandpa/runtime-benchmarks", "pallet-im-online/runtime-benchmarks", "pallet-treasury/runtime-benchmarks",
 

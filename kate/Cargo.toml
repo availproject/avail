@@ -7,6 +7,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+da-primitives = { path = "../primitives", default-features = false }
+
 # Others
 dusk-plonk = { version = "0.8.2", default-features = false, optional = true }
 dusk-bytes = { version = "0.1.5", default-features = false, optional = true }
@@ -21,6 +23,7 @@ num_cpus = { version = "1.13.0", optional = true }
 serde = { version = "1.0.121", optional = true, features = ["derive"] }
 
 # Substrate
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
 sp-std = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 
@@ -29,6 +32,7 @@ default = ["std"]
 alloc = ["dusk-plonk/alloc"]
 
 std = [
+	"codec/std",
 	"alloc",
 	"serde",
 	"num_cpus",
@@ -43,5 +47,6 @@ std = [
 	"sp-std/std",
 	"getrandom/std",
 	"rand_core/std",
-	"frame-support/std"
+	"frame-support/std",
+	"da-primitives/std",
 ]

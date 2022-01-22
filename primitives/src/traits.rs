@@ -1,9 +1,9 @@
 use sp_runtime::Digest;
 use sp_std::vec::Vec;
 
-pub trait ExtrinsicsRoot
-/*:Member + MaybeSerializeDeserialize + Default + Debug + Codec + MaybeMallocSizeOf*/
-{
+use crate::asdr::DataLookup;
+
+pub trait ExtrinsicsWithCommitment {
 	type HashOutput;
 
 	fn hash(&self) -> &Self::HashOutput;
@@ -19,9 +19,12 @@ pub trait ExtrinsicsRoot
 	) -> Self;
 }
 
-pub trait Rooted {
+/// Extended header with :
+///     - Extrinsics with commitments.
+///     - Application data lookup.
+pub trait ExtendedHeader {
 	/// Root Data.
-	type Root: ExtrinsicsRoot<HashOutput = Self::Hash>;
+	type Root: ExtrinsicsWithCommitment<HashOutput = Self::Hash>;
 
 	/// Header number.
 	type Number;
@@ -31,6 +34,8 @@ pub trait Rooted {
 	fn extrinsics_root(&self) -> &Self::Root;
 	fn set_extrinsics_root(&mut self, root: Self::Root);
 
+	fn data_lookup(&self) -> &DataLookup;
+
 	/// Creates new header.
 	fn new(
 		number: Self::Number,
@@ -38,5 +43,6 @@ pub trait Rooted {
 		state_root: Self::Hash,
 		parent_hash: Self::Hash,
 		digest: Digest,
+		app_data_lookup: DataLookup,
 	) -> Self;
 }

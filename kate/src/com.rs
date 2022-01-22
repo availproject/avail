@@ -3,6 +3,7 @@ use std::{
 	time::Instant,
 };
 
+use da_primitives::asdr::AppExtrinsic;
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	commitment_scheme::kzg10,
@@ -29,35 +30,45 @@ pub struct BlockDimensions {
 	pub chunk_size: usize,
 }
 
+pub type XtsLayout = Vec<(u32, u32)>;
+type FlatData = Vec<u8>;
+
 pub fn flatten_and_pad_block(
 	rows_num: usize,
 	cols_num: usize,
 	chunk_size: usize,
-	extrinsics: &Vec<Vec<u8>>,
+	extrinsics: &[AppExtrinsic],
 	header_hash: &[u8],
-) -> (Vec<u8>, BlockDimensions) {
-	let block_len = extrinsics.iter().map(|ext| ext.len()).sum();
-	let mut block: Vec<u8> = Vec::with_capacity(block_len);
-	extrinsics
-		.iter()
-		.for_each(|ext| block.extend_from_slice(ext));
+) -> (XtsLayout, FlatData, BlockDimensions) {
+	let mut tx_layout = Vec::with_capacity(extrinsics.len());
+	let mut block: Vec<u8> =
+		Vec::with_capacity((config::SCALAR_SIZE_WIDE + 100) * extrinsics.len());
+
+	for xt in extrinsics {
+		// get aligned xt length
+		let aligned_len =
+			xt.data.len() + (config::SCALAR_SIZE_WIDE - (xt.data.len() % config::SCALAR_SIZE_WIDE));
+		// insert into flat buffer
+		block.extend(&xt.data);
+
+		// add extra 0's if required
+		block.resize(aligned_len, 0);
+
+		// save tx by app id and size in chunks
+		tx_layout.push((xt.app_id, (aligned_len / config::SCALAR_SIZE_WIDE) as u32));
+	}
 
 	let block_dims = get_block_dimensions(block.len(), rows_num, cols_num, chunk_size);
 
 	if block.len() < block_dims.size {
-		let more_elems = block_dims.size - block.len();
-		block.reserve_exact(more_elems);
 		let mut rng: StdRng =
 			rand::SeedableRng::from_seed(<[u8; 32]>::try_from(header_hash).unwrap());
-		for _ in 0..more_elems {
-			// pseudo random values
-			block.push(rng.gen::<u8>());
-		}
+		block.resize_with(block_dims.size, || rng.gen::<u8>());
 	} else if block.len() > block_dims.size {
 		panic!("block is too big, must not happen!");
 	}
 
-	(block, block_dims)
+	(tx_layout, block, block_dims)
 }
 
 pub fn get_block_dimensions(
@@ -258,14 +269,19 @@ pub fn build_commitments(
 	rows_num: usize,
 	cols_num: usize,
 	chunk_size: usize,
-	extrinsics: &Vec<Vec<u8>>,
+	extrinsics_by_key: &[AppExtrinsic],
 	header_hash: &[u8],
-) -> (Vec<u8>, BlockDimensions) {
+) -> (XtsLayout, Vec<u8>, BlockDimensions, Vec<BlsScalar>) {
 	let start = Instant::now();
 
 	// generate data matrix first
-	let (block, block_dims) =
-		flatten_and_pad_block(rows_num, cols_num, chunk_size, extrinsics, header_hash);
+	let (tx_layout, block, block_dims) = flatten_and_pad_block(
+		rows_num,
+		cols_num,
+		chunk_size,
+		extrinsics_by_key,
+		header_hash,
+	);
 
 	info!(
 		target: "system",
@@ -327,5 +343,5 @@ pub fn build_commitments(
 		start.elapsed()
 	);
 
-	(result_bytes, block_dims)
+	(tx_layout, result_bytes, block_dims, ext_data_matrix)
 }
