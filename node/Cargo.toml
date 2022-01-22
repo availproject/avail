@@ -18,7 +18,9 @@ name = "data-avail"
 
 [dependencies]
 # Internals
+da-primitives= { path = "../primitives" }
 da-runtime = { path = "../runtime" }
+da-control = { path = "../pallets/dactr" }
 kate = { path = "../kate" }
 kate-rpc-runtime-api = { path = "../rpc/kate-rpc-runtime-api" }
 dusk-plonk = "0.8.2"
@@ -67,7 +69,7 @@ sc-consensus-uncles = { version = "0.10.0-dev" }
 sc-network = { version = "0.10.0-dev" }
 sp-authorship = "4.0.0-dev" 
 pallet-im-online = { version = "4.0.0-dev" }
-frame-system = { version = "4.0.0-dev" }
+frame-system = "4.0.0-dev"
 sp-authority-discovery = "4.0.0-dev"
 sc-authority-discovery = "0.10.0-dev"
 sc-chain-spec = { version = "4.0.0-dev" }
@@ -75,6 +77,7 @@ pallet-asset-tx-payment = "4.0.0-dev"
 pallet-transaction-payment = "4.0.0-dev"
 frame-system-rpc-runtime-api = "4.0.0-dev"
 pallet-mmr-rpc = "3.0.0"
+sc-client-db = "0.10.0-dev"
 
 # These dependencies are used for the node template's RPCs
 sc-rpc = { version = "4.0.0-dev" }
@@ -96,9 +99,13 @@ frame-benchmarking-cli = { version = "4.0.0-dev" }
 substrate-build-script-utils = { version = "3.0.0" }
 
 [dev-dependencies]
+sp-keyring = "4.0.0-dev"
+sp-tracing = "4.0.0-dev"
+tempfile = "3.1.0"
 
 [features]
 default = []
 runtime-benchmarks = [
 	"da-runtime/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
 ]

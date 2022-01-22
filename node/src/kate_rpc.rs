@@ -1,6 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use codec::Encode;
+use da_primitives::asdr::{AppExtrinsic, AppId, GetAppId};
 use frame_system::limits::BlockLength;
 use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
 use jsonrpc_derive::rpc;
@@ -67,6 +68,7 @@ impl From<Error> for i64 {
 impl<Client, Block> KateApi for Kate<Client, Block>
 where
 	Block: BlockT,
+	Block::Extrinsic: GetAppId<AppId>,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: KateParamsGetter<Block>,
@@ -108,18 +110,21 @@ where
 			let block_hash = block.block.header().hash();
 			if !block_ext_cache.contains(&block_hash) {
 				// build block data extension and cache it
-				let data: Vec<Vec<u8>> = block
+				let xts_by_id: Vec<AppExtrinsic> = block
 					.block
 					.extrinsics()
 					.into_iter()
-					.map(|e| e.encode())
+					.map(|e| AppExtrinsic {
+						app_id: e.app_id(),
+						data: e.encode(),
+					})
 					.collect();
 
-				let (block, block_dims) = kate::com::flatten_and_pad_block(
+				let (_, block, block_dims) = kate::com::flatten_and_pad_block(
 					block_length.rows as usize,
 					block_length.cols as usize,
 					block_length.chunk_size as usize,
-					&data,
+					&xts_by_id,
 					block.block.header().parent_hash().as_ref(),
 				);
 

@@ -66,8 +66,9 @@
 
 use codec::{Decode, Encode, EncodeLike, FullCodec};
 use da_primitives::{
-	traits::Rooted,
-	well_known_keys::{BLOCK_LENGTH, KATE_PUBLIC_PARAMS},
+	asdr::{AppExtrinsic, DataLookup},
+	traits::{ExtendedHeader, ExtrinsicsWithCommitment},
+	well_known_keys::BLOCK_LENGTH,
 };
 #[cfg(feature = "std")]
 use frame_support::traits::GenesisBuild;
@@ -253,7 +254,7 @@ pub mod pallet {
 		/// The block header.
 		type Header: Parameter
 			+ traits::Header<Number = Self::BlockNumber, Hash = Self::Hash>
-			+ Rooted<Number = Self::BlockNumber, Hash = Self::Hash>;
+			+ ExtendedHeader<Number = Self::BlockNumber, Hash = Self::Hash>;
 
 		/// The aggregated event type of the runtime.
 		type Event: Parameter
@@ -551,7 +552,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn extrinsic_data)]
 	pub(super) type ExtrinsicData<T: Config> =
-		StorageMap<_, Twox64Concat, u32, Vec<u8>, ValueQuery>;
+		StorageMap<_, Twox64Concat, u32, AppExtrinsic, ValueQuery>;
 
 	/// The current block number being processed. Set by `execute_block`.
 	#[pallet::storage]
@@ -641,6 +642,8 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
+			use da_primitives::well_known_keys::KATE_PUBLIC_PARAMS;
+
 			<BlockHash<T>>::insert::<_, T::Hash>(T::BlockNumber::zero(), hash69());
 			<ParentHash<T>>::put::<T::Hash>(hash69());
 			<LastRuntimeUpgrade<T>>::put(LastRuntimeUpgradeInfo::from(T::Version::get()));
@@ -1350,12 +1353,33 @@ impl<T: Config> Pallet<T> {
 		// stay to be inspected by the client and will be cleared by `Self::initialize`.
 		let number = <Number<T>>::get();
 		let parent_hash = <ParentHash<T>>::get();
-		let digest = <Digest<T>>::get();
+		let mut digest = <Digest<T>>::get();
 
-		let extrinsics = (0..ExtrinsicCount::<T>::take().unwrap_or_default())
-			.map(ExtrinsicData::<T>::take)
-			.collect();
-		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
+		let app_extrinsics = Self::sort_app_extrinsics();
+
+		#[cfg(feature = "std")]
+		let (kate_commitment, block_dims, data_index) = {
+			let block_length = Self::block_length();
+
+			let (xts_layout, kate_commitment, block_dims, _data_matrix) =
+				kate::com::build_commitments(
+					&vec![],
+					block_length.rows as usize,
+					block_length.cols as usize,
+					block_length.chunk_size as usize,
+					app_extrinsics.as_slice(),
+					parent_hash.as_ref(),
+				);
+			let data_index = DataLookup::try_from(xts_layout.as_slice())
+				.expect("Extrinsic size cannot overflow .qed");
+
+			(kate_commitment, block_dims, data_index)
+		};
+		#[cfg(not(feature = "std"))]
+		let data_index = DataLookup::default();
+
+		let extrinsics = Self::to_raw_extrinsics(app_extrinsics);
+		let root_hash = extrinsics_data_root::<T::Hashing>(extrinsics);
 
 		// move block hash pruning window by one block
 		let block_hash_count = T::BlockHashCount::get();
@@ -1370,13 +1394,36 @@ impl<T: Config> Pallet<T> {
 
 		let storage_root = T::Hash::decode(&mut &sp_io::storage::root()[..])
 			.expect("Node is configured to use the same hash; qed");
+		let storage_changes_root = sp_io::storage::changes_root(&parent_hash.encode());
 
-		<T::Header as traits::Header>::new(
+		// we can't compute changes trie root earlier && put it to the Digest
+		// because it will include all currently existing temporaries.
+		if let Some(storage_changes_root) = storage_changes_root {
+			let hash_changes_root = T::Hash::decode(&mut &storage_changes_root[..])
+				.expect("Node is configured to use the same hash; qed");
+			let item = generic::DigestItem::Other(hash_changes_root.as_ref().to_vec());
+			digest.push(item);
+		}
+
+		// TODO Remove once WASM works again
+		#[cfg(not(feature = "std"))]
+		let extrinsics_root = <T::Header as ExtendedHeader>::Root::new(root_hash);
+
+		#[cfg(feature = "std")]
+		let extrinsics_root = <T::Header as ExtendedHeader>::Root::new_with_commitment(
+			root_hash,
+			kate_commitment,
+			block_dims.rows as u16,
+			block_dims.cols as u16,
+		);
+
+		<T::Header as ExtendedHeader>::new(
 			number,
 			extrinsics_root,
 			storage_root,
 			parent_hash,
 			digest,
+			data_index,
 		)
 	}
 
@@ -1478,8 +1525,12 @@ impl<T: Config> Pallet<T> {
 	///
 	/// This is required to be called before applying an extrinsic. The data will used
 	/// in [`Self::finalize`] to calculate the correct extrinsics root.
-	pub fn note_extrinsic(encoded_xt: Vec<u8>) {
-		ExtrinsicData::<T>::insert(Self::extrinsic_index().unwrap_or_default(), encoded_xt);
+	pub fn note_extrinsic(app_id: u32, encoded_xt: Vec<u8>) {
+		let idx = Self::extrinsic_index().unwrap_or_default();
+		ExtrinsicData::<T>::insert(idx, AppExtrinsic {
+			app_id,
+			data: encoded_xt,
+		});
 	}
 
 	/// To be called immediately after an extrinsic has been applied.
@@ -1561,6 +1612,20 @@ impl<T: Config> Pallet<T> {
 	pub fn set_block_length(len: &limits::BlockLength) {
 		let raw = len.encode();
 		sp_io::storage::set(BLOCK_LENGTH, &raw);
+	}
+
+	/// Returns the extrinsics sorted by its application Id.
+	pub fn sort_app_extrinsics() -> Vec<AppExtrinsic> {
+		let mut extrinsics = (0..ExtrinsicCount::<T>::take().unwrap_or_default())
+			.map(ExtrinsicData::<T>::take)
+			.collect::<Vec<_>>();
+		// sort extrinsics by key
+		extrinsics.sort_by(|a: &AppExtrinsic, b: &AppExtrinsic| a.app_id.cmp(&b.app_id));
+		extrinsics
+	}
+
+	pub fn to_raw_extrinsics(extrinsics: Vec<AppExtrinsic>) -> Vec<Vec<u8>> {
+		extrinsics.into_iter().map(|e| e.data).collect::<Vec<_>>()
 	}
 }
 

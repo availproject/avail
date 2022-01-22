@@ -1,23 +1,26 @@
 use codec::{Codec, Decode, Encode, EncodeAsRef, Error, HasCompact, Input, Output};
+#[cfg(feature = "std")]
+use parity_util_mem::{MallocSizeOf, MallocSizeOfOps};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::U256;
+use sp_core::{RuntimeDebug, U256};
 use sp_runtime::{
 	traits::{
-		AtLeast32BitUnsigned, Hash as HashT, Header, MaybeDisplay, MaybeFromStr, MaybeMallocSizeOf,
-		MaybeSerialize, MaybeSerializeDeserialize, Member, SimpleBitOps,
+		AtLeast32BitUnsigned, Hash as HashT, Header as HeaderT, MaybeDisplay, MaybeFromStr,
+		MaybeMallocSizeOf, MaybeSerialize, MaybeSerializeDeserialize, Member, SimpleBitOps,
 	},
 	Digest,
 };
 use sp_std::{convert::TryFrom, fmt::Debug, hash::Hash as StdHash};
 
 use crate::{
-	traits::{ExtrinsicsRoot, Rooted},
-	KateExtrinsicsRoot,
+	asdr::DataLookup,
+	traits::{ExtendedHeader, ExtrinsicsWithCommitment as _},
+	KateCommitment,
 };
 
-pub trait KateNumberTrait:
+pub trait HeaderNumberTrait:
 	Member
 	+ AtLeast32BitUnsigned
 	+ Codec
@@ -34,6 +37,7 @@ pub trait KateNumberTrait:
 	+ Eq
 {
 }
+
 impl<
 		T: Member
 			+ AtLeast32BitUnsigned
@@ -48,7 +52,7 @@ impl<
 			+ TryFrom<U256>
 			+ Debug
 			+ Eq,
-	> KateNumberTrait for T
+	> HeaderNumberTrait for T
 {
 }
 
@@ -59,14 +63,14 @@ pub trait KateHashOutputTrait:
 	MaybeDisplay + Decode + MaybeMallocSizeOf + SimpleBitOps + Ord
 {
 }
+
 impl<T: MaybeDisplay + Decode + MaybeMallocSizeOf + SimpleBitOps + Ord> KateHashOutputTrait for T {}
 
 /// Abstraction over a block header for a substrate chain.
-#[derive(PartialEq, Eq, Clone, sp_core::RuntimeDebug, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
-#[cfg_attr(feature = "std", serde(deny_unknown_fields))]
-pub struct KateHeader<Number: KateNumberTrait, Hash: KateHashTrait> {
+#[cfg_attr(feature = "std", serde(deny_unknown_fields, rename_all = "camelCase"))]
+pub struct Header<Number: HeaderNumberTrait, Hash: KateHashTrait> {
 	/// The parent hash.
 	pub parent_hash: Hash::Output,
 	/// The block number.
@@ -75,12 +79,14 @@ pub struct KateHeader<Number: KateNumberTrait, Hash: KateHashTrait> {
 	/// The state trie merkle root
 	pub state_root: Hash::Output,
 	/// Hash and Kate Commitment
-	pub extrinsics_root: KateExtrinsicsRoot<Hash::Output>,
+	pub extrinsics_root: KateCommitment<Hash::Output>,
 	/// A chain-specific digest of data useful for light clients or referencing auxiliary data.
 	pub digest: Digest,
+	/// Application specific data index.
+	pub app_data_lookup: DataLookup,
 }
 
-/// This module adds serialization support to `KateHeader::number` field.
+/// This module adds serialization support to `Header::number` field.
 #[cfg(feature = "std")]
 mod number_serde {
 	use serde::{Deserializer, Serializer};
@@ -89,7 +95,7 @@ mod number_serde {
 
 	pub fn serialize<N, S>(n: &N, serializer: S) -> Result<S::Ok, S::Error>
 	where
-		N: KateNumberTrait,
+		N: HeaderNumberTrait,
 		S: Serializer,
 	{
 		let u256: U256 = (*n).into();
@@ -98,7 +104,7 @@ mod number_serde {
 
 	pub fn deserialize<'de, D, T>(d: D) -> Result<T, D::Error>
 	where
-		T: KateNumberTrait,
+		T: HeaderNumberTrait,
 		D: Deserializer<'de>,
 	{
 		let u256: U256 = serde::Deserialize::deserialize(d)?;
@@ -107,13 +113,13 @@ mod number_serde {
 }
 
 #[cfg(feature = "std")]
-impl<Number, Hash> parity_util_mem::MallocSizeOf for KateHeader<Number, Hash>
+impl<Number, Hash> MallocSizeOf for Header<Number, Hash>
 where
-	Number: KateNumberTrait,
+	Number: HeaderNumberTrait,
 	Hash: KateHashTrait,
 	Hash::Output: KateHashOutputTrait,
 {
-	fn size_of(&self, ops: &mut parity_util_mem::MallocSizeOfOps) -> usize {
+	fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
 		self.parent_hash.size_of(ops)
 			+ self.number.size_of(ops)
 			+ self.state_root.size_of(ops)
@@ -122,9 +128,9 @@ where
 	}
 }
 
-impl<Number, Hash> Decode for KateHeader<Number, Hash>
+impl<Number, Hash> Decode for Header<Number, Hash>
 where
-	Number: KateNumberTrait,
+	Number: HeaderNumberTrait,
 	Hash: KateHashTrait,
 	Hash::Output: Decode,
 {
@@ -135,13 +141,14 @@ where
 			state_root: Decode::decode(input)?,
 			extrinsics_root: Decode::decode(input)?,
 			digest: Decode::decode(input)?,
+			app_data_lookup: Decode::decode(input)?,
 		})
 	}
 }
 
-impl<Number, Hash> Encode for KateHeader<Number, Hash>
+impl<Number, Hash> Encode for Header<Number, Hash>
 where
-	Number: KateNumberTrait,
+	Number: HeaderNumberTrait,
 	Hash: KateHashTrait,
 	Hash::Output: Encode,
 {
@@ -152,18 +159,19 @@ where
 		self.state_root.encode_to(dest);
 		self.extrinsics_root.encode_to(dest);
 		self.digest.encode_to(dest);
+		self.app_data_lookup.encode_to(dest);
 	}
 }
 
-impl<Number, Hash> codec::EncodeLike for KateHeader<Number, Hash>
+impl<Number, Hash> codec::EncodeLike for Header<Number, Hash>
 where
-	Number: KateNumberTrait,
+	Number: HeaderNumberTrait,
 	Hash: KateHashTrait,
 	Hash::Output: Encode,
 {
 }
 
-impl<Number, Hash> Header for KateHeader<Number, Hash>
+impl<Number, Hash> HeaderT for Header<Number, Hash>
 where
 	Number: Member
 		+ MaybeSerializeDeserialize
@@ -232,22 +240,25 @@ where
 			state_root,
 			digest,
 			extrinsics_root,
+			app_data_lookup: Default::default(),
 		}
 	}
 }
 
-impl<N, H> Rooted for KateHeader<N, H>
+impl<N, H> ExtendedHeader for Header<N, H>
 where
-	N: KateNumberTrait,
+	N: HeaderNumberTrait,
 	H: KateHashTrait,
 {
 	type Hash = <H as HashT>::Output;
 	type Number = N;
-	type Root = KateExtrinsicsRoot<Self::Hash>;
+	type Root = KateCommitment<Self::Hash>;
 
 	fn extrinsics_root(&self) -> &Self::Root { &self.extrinsics_root }
 
 	fn set_extrinsics_root(&mut self, root: Self::Root) { self.extrinsics_root = root; }
+
+	fn data_lookup(&self) -> &DataLookup { &self.app_data_lookup }
 
 	/// Creates new header.
 	fn new(
@@ -256,23 +267,24 @@ where
 		state_root: Self::Hash,
 		parent_hash: Self::Hash,
 		digest: Digest,
+		app_data_lookup: DataLookup,
 	) -> Self {
+		// TODO @miguel: Default app_data_lookup?
 		Self {
 			number,
 			extrinsics_root,
 			state_root,
 			parent_hash,
 			digest,
+			app_data_lookup,
 		}
 	}
 }
 
-impl<Number, Hash> KateHeader<Number, Hash>
+impl<Number, Hash> Header<Number, Hash>
 where
-	Number: KateNumberTrait,
+	Number: HeaderNumberTrait,
 	Hash: KateHashTrait,
-	/*Hash::Output:
-	Default + sp_std::hash::Hash + Copy + Member + MaybeDisplay + SimpleBitOps + Codec,*/
 {
 	/// Convenience helper for computing the hash of the header without having
 	/// to import the trait.
@@ -289,7 +301,7 @@ mod tests {
 			let mut v = vec![];
 			{
 				let mut ser = serde_json::Serializer::new(std::io::Cursor::new(&mut v));
-				serialize_number(&num, &mut ser).unwrap();
+				number_serde::serialize(&num, &mut ser).unwrap();
 			}
 			String::from_utf8(v).unwrap()
 		}
@@ -310,7 +322,7 @@ mod tests {
 	fn should_deserialize_number() {
 		fn deserialize(num: &str) -> u128 {
 			let mut der = serde_json::Deserializer::new(serde_json::de::StrRead::new(num));
-			deserialize_number(&mut der).unwrap()
+			number_serde::deserialize(&mut der).unwrap()
 		}
 
 		assert_eq!(deserialize("\"0x0\""), 0);

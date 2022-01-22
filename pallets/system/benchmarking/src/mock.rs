@@ -19,7 +19,8 @@
 
 #![cfg(test)]
 
-use sp_runtime::traits::IdentityLookup;
+use da_primitives::Header;
+use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
 type AccountId = u64;
 type AccountIndex = u32;
@@ -43,6 +44,7 @@ impl frame_system::Config for Test {
 	type AccountId = AccountId;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = ();
+	type BlockLength = ();
 	type BlockNumber = BlockNumber;
 	type BlockWeights = ();
 	type Call = Call;
@@ -50,7 +52,7 @@ impl frame_system::Config for Test {
 	type Event = Event;
 	type Hash = sp_core::H256;
 	type Hashing = ::sp_runtime::traits::BlakeTwo256;
-	type Header = sp_runtime::testing::Header;
+	type Header = Header<BlockNumber, BlakeTwo256>;
 	type Index = AccountIndex;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type OnKilledAccount = ();

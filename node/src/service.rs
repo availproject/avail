@@ -21,7 +21,7 @@
 
 use std::sync::Arc;
 
-use da_runtime::{opaque::Block, RuntimeApi};
+use da_runtime::{Block, RuntimeApi};
 use futures::prelude::*;
 use sc_client_api::ExecutorProvider;
 use sc_consensus_babe::{self, SlotProportion};
@@ -50,7 +50,7 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 /// The full client type definition.
 pub type FullClient =
 	sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<ExecutorDispatch>>;
-type FullBackend = sc_service::TFullBackend<Block>;
+pub type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 type FullGrandpaBlockImport =
 	sc_finality_grandpa::GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>;
@@ -61,10 +61,15 @@ pub type TransactionPool = sc_transaction_pool::FullPool<Block, FullClient>;
 #[cfg(test)]
 pub mod tests {
 	use codec::Encode;
+	use da_primitives::asdr::AppId;
+	use da_runtime::AppSignedExtra;
 	use frame_system_rpc_runtime_api::AccountNonceApi;
+	use sc_client_api::BlockBackend;
 	use sp_api::ProvideRuntimeApi;
 	use sp_core::crypto::Pair;
-	use sp_runtime::{generic, SaturatedConversion};
+	use sp_runtime::SaturatedConversion;
+
+	use super::*;
 
 	/// Fetch the nonce of the given `account` from the chain state.
 	///
@@ -92,6 +97,7 @@ pub mod tests {
 		sender: sp_core::sr25519::Pair,
 		function: impl Into<da_runtime::Call>,
 		nonce: Option<u32>,
+		app_id: AppId,
 	) -> da_runtime::UncheckedExtrinsic {
 		let function = function.into();
 		let genesis_hash = client
@@ -108,18 +114,7 @@ pub mod tests {
 			.map(|c| c / 2)
 			.unwrap_or(2) as u64;
 		let tip = 0;
-		let extra: da_runtime::SignedExtra = (
-			frame_system::CheckSpecVersion::<da_runtime::Runtime>::new(),
-			frame_system::CheckTxVersion::<da_runtime::Runtime>::new(),
-			frame_system::CheckGenesis::<da_runtime::Runtime>::new(),
-			frame_system::CheckEra::<da_runtime::Runtime>::from(generic::Era::mortal(
-				period,
-				best_block.saturated_into(),
-			)),
-			frame_system::CheckNonce::<da_runtime::Runtime>::from(nonce),
-			frame_system::CheckWeight::<da_runtime::Runtime>::new(),
-			pallet_transaction_payment::ChargeTransactionPayment::<da_runtime::Runtime>::from(tip),
-		);
+		let extra = AppSignedExtra::new(period, best_block.saturated_into(), nonce, tip, app_id);
 
 		let raw_payload = da_runtime::SignedPayload::from_raw(
 			function.clone(),
@@ -131,6 +126,7 @@ pub mod tests {
 				best_hash,
 				(),
 				(),
+				app_id,
 				(),
 			),
 		);
@@ -189,7 +185,7 @@ pub fn new_partial(
 	);
 
 	let (client, backend, keystore_container, task_manager) =
-		sc_service::new_full_parts::<Block, RuntimeApi, _>(
+		sc_service::new_full_parts::<da_runtime::Block, RuntimeApi, _>(
 			config,
 			telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
 			executor,
@@ -566,126 +562,20 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
 }
 
 /*
-pub fn new_light_base(mut config: Configuration) -> Result<(
-	TaskManager, RpcHandlers, Option<TelemetryConnectionNotifier>, Arc<LightClient>,
-	Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
-	Arc<sc_transaction_pool::LightPool<Block, LightClient, sc_network::config::OnDemand<Block>>>
-), ServiceError> {
-	let (client, backend, keystore_container, mut task_manager, on_demand) =
-		sc_service::new_light_parts::<Block, RuntimeApi, Executor>(&config)?;
-
-	config.network.extra_sets.push(sc_finality_grandpa::grandpa_peers_set_config());
-
-	let select_chain = sc_consensus::LongestChain::new(backend.clone());
-
-	let transaction_pool = Arc::new(sc_transaction_pool::BasicPool::new_light(
-		config.transaction_pool.clone(),
-		config.prometheus_registry(),
-		task_manager.spawn_handle(),
-		client.clone(),
-		on_demand.clone(),
-	));
-
-	let (grandpa_block_import, _) = sc_finality_grandpa::block_import(
-		client.clone(),
-		&(client.clone() as Arc<_>),
-		select_chain.clone(),
-	)?;
-	let justification_import = grandpa_block_import.clone();
-
-	let (babe_block_import, babe_link) = sc_consensus_babe::block_import(
-		sc_consensus_babe::Config::get_or_compute(&*client)?,
-		grandpa_block_import,
-		client.clone(),
-	)?;
-
-	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
-
-	let import_queue = sc_consensus_babe::import_queue(
-		babe_link,
-		babe_block_import,
-		Some(Box::new(justification_import)),
-		client.clone(),
-		select_chain.clone(),
-		inherent_data_providers.clone(),
-		&task_manager.spawn_handle(),
-		config.prometheus_registry(),
-		sp_consensus::NeverCanAuthor,
-	)?;
-
-	let (network, network_status_sinks, system_rpc_tx, network_starter) =
-		sc_service::build_network(sc_service::BuildNetworkParams {
-			config: &config,
-			client: client.clone(),
-			transaction_pool: transaction_pool.clone(),
-			spawn_handle: task_manager.spawn_handle(),
-			import_queue,
-			on_demand: Some(on_demand.clone()),
-			block_announce_validator_builder: None,
-		})?;
-	network_starter.start_network();
-
-	if config.offchain_worker.enabled {
-		sc_service::build_offchain_workers(
-			&config, backend.clone(), task_manager.spawn_handle(), client.clone(), network.clone(),
-		);
-	}
-
-	let light_deps = node_rpc::LightDeps {
-		remote_blockchain: backend.remote_blockchain(),
-		fetcher: on_demand.clone(),
-		client: client.clone(),
-		pool: transaction_pool.clone(),
-	};
-
-	let rpc_extensions = node_rpc::create_light(light_deps);
-
-	let (rpc_handlers, telemetry_connection_notifier) =
-		sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-			on_demand: Some(on_demand),
-			remote_blockchain: Some(backend.remote_blockchain()),
-			rpc_extensions_builder: Box::new(sc_service::NoopRpcExtensionBuilder(rpc_extensions)),
-			client: client.clone(),
-			transaction_pool: transaction_pool.clone(),
-			keystore: keystore_container.sync_keystore(),
-			config, backend, network_status_sinks, system_rpc_tx,
-			network: network.clone(),
-			task_manager: &mut task_manager,
-		})?;
-
-	Ok((
-		task_manager,
-		rpc_handlers,
-		telemetry_connection_notifier,
-		client,
-		network,
-		transaction_pool,
-	))
-}
-
-/// Builds a new service for a light client.
-pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
-	new_light_base(config).map(|(task_manager, _, _, _, _, _)| {
-		task_manager
-	})
-}*/
-
 #[cfg(test)]
-mod tests {
+mod unit_tests {
 	use std::{borrow::Cow, convert::TryInto, sync::Arc};
 
 	use codec::Encode;
 	use da_runtime::{
-		constants::{currency::CENTS, time::SLOT_DURATION},
-		Address, BalancesCall, Call, UncheckedExtrinsic,
+		currency::CENTS, Address, BalancesCall, Block, Call, DigestItem, Signature,
+		UncheckedExtrinsic, SLOT_DURATION,
 	};
-	use node_primitives::{Block, DigestItem, Signature};
 	use sc_client_api::BlockBackend;
 	use sc_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy};
 	use sc_consensus_babe::{BabeIntermediate, CompatibleDigestItem, INTERMEDIATE_KEY};
 	use sc_consensus_epochs::descendent_query;
 	use sc_keystore::LocalKeystore;
-	use sc_service_test::TestNetNode;
 	use sc_transaction_pool_api::{ChainEvent, MaintainedTransactionPool};
 	use sp_consensus::{BlockOrigin, Environment, Proposer};
 	use sp_core::{crypto::Pair as CryptoPair, Public};
@@ -950,3 +840,4 @@ mod tests {
 		)
 	}
 }
+*/
