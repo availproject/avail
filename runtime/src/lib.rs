@@ -17,7 +17,8 @@ pub use frame_support::{
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights as SystemBlockWeights},
-	EnsureOneOf, EnsureRoot,
+	CheckEra, CheckGenesis, CheckNonce, CheckSpecVersion, CheckTxVersion, CheckWeight, EnsureOneOf,
+	EnsureRoot,
 };
 use pallet_session::historical as pallet_session_historical;
 use sp_api::impl_runtime_apis;
@@ -51,7 +52,7 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 use currency::*;
 /// Import the DA pallet.
 pub use da_primitives::{
-	asdr::{AppId, AppUncheckedExtrinsic},
+	asdr::{AppId, AppUncheckedExtrinsic, GetAppId},
 	currency::{Balance, AVL, CENTS, MILLICENTS},
 	well_known_keys::KATE_PUBLIC_PARAMS,
 	Header as DaHeader, NORMAL_DISPATCH_RATIO,
@@ -100,9 +101,6 @@ pub type Hash = sp_core::H256;
 pub type DigestItem = generic::DigestItem;
 
 pub type Moment = u64;
-
-mod app_signed_extra;
-pub use app_signed_extra::AppSignedExtra;
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -1023,7 +1021,17 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
-pub type SignedExtra = AppSignedExtra<Runtime>;
+pub type SignedExtra = (
+	CheckSpecVersion<Runtime>,
+	CheckTxVersion<Runtime>,
+	CheckGenesis<Runtime>,
+	CheckEra<Runtime>,
+	CheckNonce<Runtime>,
+	CheckWeight<Runtime>,
+	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+	da_control::CheckAppId<Runtime>,
+);
+
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = AppUncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// The payload being signed in transactions.
