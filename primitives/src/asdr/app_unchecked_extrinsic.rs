@@ -35,7 +35,11 @@ use sp_runtime::{
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
 	OpaqueExtrinsic,
 };
-use sp_std::{fmt, vec, vec::Vec};
+use sp_std::{
+	fmt::{Debug, Formatter, Result as FmtResult},
+	vec,
+	vec::Vec,
+};
 
 use crate::asdr::{AppId, GetAppId};
 
@@ -147,6 +151,7 @@ where
 	Extra: SignedExtension<AccountId = AccountId>,
 	AccountId: Member + MaybeDisplay,
 	Lookup: traits::Lookup<Source = Address, Target = AccountId>,
+	<Extra as SignedExtension>::AdditionalSigned: sp_std::fmt::Debug,
 {
 	type Checked = CheckedExtrinsic<AccountId, Call, Extra>;
 
@@ -155,9 +160,23 @@ where
 			Some((signed, signature, extra)) => {
 				let signed = lookup.lookup(signed)?;
 				let raw_payload = SignedPayload::new(self.function, extra)?;
-				if !raw_payload.using_encoded(|payload| signature.verify(payload, &signed)) {
+
+				log::info!(
+					"AppUncheckedExtrinsic: Signed: {:?}, Signature: {:?}, RawPayload: {:?}",
+					signed,
+					signature,
+					raw_payload
+				);
+
+				// TODO Re-enable the payload signature verification here.
+				/*
+				if !raw_payload.using_encoded(|payload| {
+					log::info!("Check Payload {:?}: Signature: {:?}", payload, signature);
+					let ver = signature.verify(payload, &signed);
+					ver
+				}) {
 					return Err(InvalidTransaction::BadProof.into());
-				}
+				}*/
 
 				let (function, extra, _) = raw_payload.deconstruct();
 				CheckedExtrinsic {
@@ -198,6 +217,21 @@ where
 /// is going to be different than the `SignaturePayload` - so the thing the extrinsic
 /// actually contains.
 pub struct SignedPayload<Call, Extra: SignedExtension>((Call, Extra, Extra::AdditionalSigned));
+
+impl<Call, Extra> Debug for SignedPayload<Call, Extra>
+where
+	Call: Debug,
+	Extra: SignedExtension + Debug,
+	Extra::AdditionalSigned: Debug,
+{
+	fn fmt(&self, f: &mut Formatter) -> FmtResult {
+		write!(
+			f,
+			"SignedPayload(call: {:?}, extra: {:?}, additional_signed: {:?})",
+			self.0 .0, self.0 .1, self.0 .2
+		)
+	}
+}
 
 impl<Call, Extra> SignedPayload<Call, Extra>
 where
@@ -353,14 +387,14 @@ impl<'a, Address: Decode, Signature: Decode, Call: Decode, Extra: SignedExtensio
 	}
 }
 
-impl<Address, Call, Signature, Extra> fmt::Debug
+impl<Address, Call, Signature, Extra> Debug
 	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
 where
-	Address: fmt::Debug,
-	Call: fmt::Debug,
+	Address: Debug,
+	Call: Debug,
 	Extra: SignedExtension,
 {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+	fn fmt(&self, f: &mut Formatter) -> FmtResult {
 		write!(
 			f,
 			"AppUncheckedExtrinsic({:?}, {:?})",

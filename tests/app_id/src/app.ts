@@ -36,15 +36,20 @@ async function createApi() {
           app_data_lookup: 'DataLookup'
         },
         Header: 'KateHeader',
-        AppId: 'u32'
+        AppId: 'u32',
+        CheckAppId: {
+            extra: {
+                appId: 'u32', 
+            },
+            types: {}
+        }
     },
     signedExtensions: {
       CheckAppId: {
         extrinsic: {
-          app_id: 'AppId'
+          appId: 'u32'
         },
-        payload: {
-        }
+        payload: {}
       },
     },
   });
@@ -65,6 +70,10 @@ async function main () {
 
   // Add Alice to our keyring with a hard-deived path (empty phrase, so uses dev)
   const alice = keyring.addFromUri('//Alice');
+  const bob = keyring.addFromUri('//Bob');
+
+  const metadata = await api.rpc.state.getMetadata();
+
   // Get the nonce for the admin key
   const { nonce: alice_nonce, data: alice_balance } = await api.query.system.account(ALICE);
   console.log(`Pre-balance of Alice(nonce=${alice_nonce}): ${alice_balance.free}`);
@@ -72,11 +81,20 @@ async function main () {
   console.log(`Pre-balance of Bob(nonce=${bob_nonce}): ${bob_balance.free}`);
 
   // Create a transfer to BOB using AppId = 0.
-  let unsub = await api.tx.balances
-    .transfer(BOB, 1000)
+  let transfer = api.tx.balances.transfer(ALICE, 1000000);
+  // const check_app_id = api.createType("CheckAppId", {})
+
+  const lastHeader = await api.rpc.chain.getHeader();
+  const finalied_head = await api.rpc.chain.getFinalizedHead();
+  console.log(`Last block #${lastHeader.number} has hash ${lastHeader.hash}`);
+  console.log(`Finalized head #${finalied_head}`);
+
+
+
+  const unsub = await transfer
     .signAndSend(
-      alice, 
-      { nonce: alice_nonce, app_id: 1}, 
+      bob, 
+      { app_id: 1}, 
       ( result: ISubmittableResult ) => {
           console.log(`Tx status: ${result.status}`);
 
@@ -93,10 +111,12 @@ async function main () {
           }
       });
 
+  /*
   const { nonce: alice_post_nonce, data: alice_post_balance } = await api.query.system.account(ALICE);
   console.log(`Post-balance of Alice: ${alice_post_balance.free}`);
   const { nonce: bob_post_nonce, data: bob_post_balance } = await api.query.system.account(BOB);
   console.log(`Post-balance of Bob: ${bob_post_balance.free}`);
+  */
 }
 
-main().catch(console.error).finally(() => process.exit());
+main().catch(console.error)

@@ -64,6 +64,9 @@ where
 	HashOutput: parity_util_mem::MallocSizeOf,
 {
 	fn size_of(&self, ops: &mut parity_util_mem::MallocSizeOfOps) -> usize {
-		self.hash.size_of(ops) + self.commitment.size_of(ops)
+		self.hash.size_of(ops)
+			+ self.commitment.size_of(ops)
+			+ self.rows.size_of(ops)
+			+ self.cols.size_of(ops)
 	}
 }

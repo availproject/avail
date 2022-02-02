@@ -29,11 +29,10 @@ impl<T: Config + Send + Sync> CheckAppId<T> {
 	pub fn from(app_id: AppId) -> Self { Self(app_id, sp_std::marker::PhantomData) }
 
 	fn do_validate(&self) -> TransactionValidity {
-		/*
 		let last_app_id = <Pallet<T>>::last_application_id();
 		if last_app_id < self.0 {
 			fail!(InvalidTransaction::Custom(InvalidAppId as u8));
-		}*/
+		}
 
 		Ok(ValidTransaction::default())
 	}

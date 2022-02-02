@@ -30,3 +30,7 @@ impl From<Vec<u8>> for AppExtrinsic {
 		}
 	}
 }
+
+impl GetAppId<AppId> for AppExtrinsic {
+	fn app_id(&self) -> AppId { self.app_id }
+}

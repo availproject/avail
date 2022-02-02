@@ -5,19 +5,22 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "test": "tsc && node dist/app.js"
+    "test": "tsc && node dist/app.js",
+    "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package app_id/interfaces --input ./src/interfaces --endpoint ./data-avail.json",
+    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package app_id/interfaces --endpoint ./edgeware.json --output ./src/interfaces"
   },
   "author": "miguel@polygon.technology",
   "license": "ISC",
   "dependencies": {
-    "@polkadot/api": "^7.5.1",
-    "ts-node": "^10.4.0"
+    "@polkadot/api": "^7.5.1"
   },
   "devDependencies": {
+    "@polkadot/typegen": "^7.5.1",
     "@typescript-eslint/eslint-plugin": "^5.10.1",
     "@typescript-eslint/parser": "^5.10.1",
     "eslint": "^8.7.0",
     "eslint-plugin-react": "^7.28.0",
+    "ts-node": "^10.4.0",
     "typescript": "^4.5.5"
   }
 }
