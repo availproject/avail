@@ -1369,7 +1369,8 @@ impl<T: Config> Pallet<T> {
 					block_length.chunk_size as usize,
 					app_extrinsics.as_slice(),
 					parent_hash.as_ref(),
-				);
+				)
+				.expect("Build commitments cannot fail .qed");
 			let data_index = DataLookup::try_from(xts_layout.as_slice())
 				.expect("Extrinsic size cannot overflow .qed");
 

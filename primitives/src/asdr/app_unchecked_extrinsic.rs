@@ -32,7 +32,7 @@ use sp_runtime::{
 		self, Checkable, Extrinsic, ExtrinsicMetadata, IdentifyAccount, MaybeDisplay, Member,
 		SignedExtension,
 	},
-	transaction_validity::{InvalidTransaction, TransactionValidityError},
+	transaction_validity::TransactionValidityError,
 	OpaqueExtrinsic,
 };
 use sp_std::{

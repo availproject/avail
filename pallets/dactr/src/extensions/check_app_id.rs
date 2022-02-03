@@ -30,7 +30,7 @@ impl<T: Config + Send + Sync> CheckAppId<T> {
 
 	fn do_validate(&self) -> TransactionValidity {
 		let last_app_id = <Pallet<T>>::last_application_id();
-		if last_app_id < self.0 {
+		if self.0 < last_app_id {
 			fail!(InvalidTransaction::Custom(InvalidAppId as u8));
 		}
 
