@@ -2,6 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use codec::Encode;
 use da_primitives::asdr::{AppExtrinsic, AppId, GetAppId};
+use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
 use frame_system::limits::BlockLength;
 use jsonrpc_core::{Error as RpcError, Result};
 use jsonrpc_derive::rpc;
@@ -141,7 +142,7 @@ where
 		let (ext_data, block_dims) = block_ext_cache
 			.get(&block_hash)
 			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
-		let kc_public_params = self
+		let kc_public_params_raw = self
 			.client
 			.runtime_api()
 			.get_public_params(&best_hash)
@@ -152,6 +153,8 @@ where
 					e
 				)
 			})?;
+		let kc_public_params =
+			unsafe { PublicParameters::from_slice_unchecked(&kc_public_params_raw) };
 
 		let proof = kate::com::build_proof(&kc_public_params, *block_dims, &ext_data, &cells)
 			.map_err(|e| internal_err!("Proof cannot be generated: {:?}", e))?;

@@ -184,9 +184,9 @@ pub fn extend_data_matrix(
 //TODO cache extended data matrix
 //TODO explore faster Variable Base Multi Scalar Multiplication
 pub fn build_proof(
-	public_params_data: &[u8],
+	public_params: &kzg10::PublicParameters,
 	block_dims: BlockDimensions,
-	ext_data_matrix: &Vec<BlsScalar>,
+	ext_data_matrix: &[BlsScalar],
 	cells: &[Cell],
 ) -> Result<Vec<u8>, Error> {
 	let rows_num = block_dims.rows;
@@ -197,9 +197,6 @@ pub fn build_proof(
 		cells.len() <= config::MAX_PROOFS_REQUEST,
 		Error::CellLenghtExceeded
 	);
-
-	let public_params =
-		kzg10::PublicParameters::from_slice(public_params_data).map_err(Error::from)?;
 
 	let (prover_key, _) = public_params.trim(cols_num).map_err(Error::from)?;
 
@@ -216,7 +213,6 @@ pub fn build_proof(
 	}
 
 	let prover_key = &prover_key;
-	let ext_data_matrix = &ext_data_matrix;
 	let row_dom_x_pts = &row_dom_x_pts;
 	let mut cell_index = 0;
 
@@ -287,7 +283,6 @@ pub fn build_proof(
 // TODO @miguel Remove that param?
 #[cfg(feature = "alloc")]
 pub fn build_commitments(
-	_public_params_data: &Vec<u8>,
 	rows_num: usize,
 	cols_num: usize,
 	chunk_size: usize,

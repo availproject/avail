@@ -626,15 +626,15 @@ pub mod pallet {
 	#[cfg(feature = "std")]
 	impl Default for GenesisConfig {
 		fn default() -> Self {
+			let cols = 256;
+			let normal = Perbill::from_percent(90);
+			let block_length = limits::BlockLength::with_normal_ratio(128, cols, 64, normal);
+			let kc_public_params = kate::testnet::public_params(cols as usize).to_raw_var_bytes();
+
 			Self {
 				code: Default::default(),
-				kc_public_params: kate::testnet::KC_PUB_PARAMS.to_vec(),
-				block_length: limits::BlockLength::with_normal_ratio(
-					128,
-					256,
-					64,
-					Perbill::from_percent(90),
-				),
+				kc_public_params,
+				block_length,
 			}
 		}
 	}
@@ -1363,7 +1363,6 @@ impl<T: Config> Pallet<T> {
 
 			let (xts_layout, kate_commitment, block_dims, _data_matrix) =
 				kate::com::build_commitments(
-					&vec![],
 					block_length.rows as usize,
 					block_length.cols as usize,
 					block_length.chunk_size as usize,
