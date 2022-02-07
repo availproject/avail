@@ -3,7 +3,7 @@ use da_primitives::{
 	asdr::{AppId, GetAppId},
 	InvalidTransactionCustomId::InvalidAppId,
 };
-use frame_support::fail;
+use frame_support::ensure;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, SignedExtension},
@@ -30,9 +30,10 @@ impl<T: Config + Send + Sync> CheckAppId<T> {
 
 	fn do_validate(&self) -> TransactionValidity {
 		let last_app_id = <Pallet<T>>::last_application_id();
-		if self.0 < last_app_id {
-			fail!(InvalidTransaction::Custom(InvalidAppId as u8));
-		}
+		ensure!(
+			self.0 < last_app_id,
+			InvalidTransaction::Custom(InvalidAppId as u8)
+		);
 
 		Ok(ValidTransaction::default())
 	}
