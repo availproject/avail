@@ -626,10 +626,10 @@ pub mod pallet {
 	#[cfg(feature = "std")]
 	impl Default for GenesisConfig {
 		fn default() -> Self {
-			let cols = 256;
+			const COLS: u32 = 256;
 			let normal = Perbill::from_percent(90);
-			let block_length = limits::BlockLength::with_normal_ratio(128, cols, 64, normal);
-			let kc_public_params = kate::testnet::public_params(cols as usize).to_raw_var_bytes();
+			let block_length = limits::BlockLength::with_normal_ratio(128, COLS, 64, normal);
+			let kc_public_params = kate::testnet::public_params(COLS as usize).to_raw_var_bytes();
 
 			Self {
 				code: Default::default(),

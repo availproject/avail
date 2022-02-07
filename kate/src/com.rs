@@ -318,7 +318,17 @@ pub fn build_commitments(
 	);
 
 	// construct commitments in parallel
-	let public_params = testnet::public_params(block_dims.cols);
+	let public_params = testnet::public_params(256);
+	if log::log_enabled!(target: "system", log::Level::Debug) {
+		let raw_pp = public_params.to_raw_var_bytes();
+		let hash_pp = hex::encode(sp_core::blake2_128(&raw_pp));
+		let hex_pp = hex::encode(raw_pp);
+		log::debug!(
+			target: "system",
+			"Public params (len={}): hash: {}", hex_pp.len(), hash_pp, 
+		);
+	}
+
 	let (prover_key, _) = public_params.trim(block_dims.cols).map_err(Error::from)?;
 	let row_eval_domain = EvaluationDomain::new(block_dims.cols).map_err(Error::from)?;
 
