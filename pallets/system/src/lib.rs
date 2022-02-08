@@ -1373,6 +1373,11 @@ impl<T: Config> Pallet<T> {
 			let data_index = DataLookup::try_from(xts_layout.as_slice())
 				.expect("Extrinsic size cannot overflow .qed");
 
+			log::info!(
+				target: "runtime::system",
+				"App DataLookup: {:?}",
+				data_index);
+
 			(kate_commitment, block_dims, data_index)
 		};
 		#[cfg(not(feature = "std"))]

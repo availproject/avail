@@ -325,7 +325,7 @@ pub fn build_commitments(
 		let hex_pp = hex::encode(raw_pp);
 		log::debug!(
 			target: "system",
-			"Public params (len={}): hash: {}", hex_pp.len(), hash_pp, 
+			"Public params (len={}): hash: {}", hex_pp.len(), hash_pp,
 		);
 	}
 
