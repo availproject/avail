@@ -8,7 +8,7 @@ use da_runtime::{
 	MAX_NOMINATIONS,
 };
 use frame_system::limits::BlockLength;
-use kate::config::MAX_BLOCK_COLUMNS;
+use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::{ChainType, Properties};
@@ -199,9 +199,9 @@ pub fn testnet_genesis(
 			kc_public_params: kate::testnet::public_params(MAX_BLOCK_COLUMNS as usize)
 				.to_raw_var_bytes(),
 			block_length: BlockLength::with_normal_ratio(
-				128,
+				MAX_BLOCK_ROWS,
 				MAX_BLOCK_COLUMNS,
-				64,
+				32,
 				Perbill::from_percent(90),
 			),
 		},

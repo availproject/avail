@@ -27,7 +27,7 @@ pub mod well_known_keys {
 /// by  Operational  extrinsics.
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(90);
 
-pub const BLOCK_CHUNK_SIZE: u32 = 64;
+pub const BLOCK_CHUNK_SIZE: u32 = 32;
 
 /// Money matters.
 pub mod currency {
