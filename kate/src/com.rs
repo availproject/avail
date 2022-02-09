@@ -127,21 +127,17 @@ pub fn get_block_dimensions(
 	}
 }
 
-fn pad_to_cell_size(size: usize) -> impl Fn(&[u8]) -> Vec<u8> {
-	move |chunk: &[u8]| -> Vec<u8> {
-		let mut bytes: Vec<u8> = vec![];
-		bytes.extend(chunk);
-		bytes.extend(vec![0].repeat(size - config::CHUNK_SIZE));
-		bytes
-	}
+fn pad_to_cell_size(chunk: &[u8], size: usize) -> Vec<u8> {
+	let mut bytes: Vec<u8> = vec![];
+	bytes.extend(chunk);
+	bytes.extend(vec![0].repeat(size - config::CHUNK_SIZE));
+	bytes
 }
 
-fn extend_row_with_zeros(extension_size: usize) -> impl Fn(&[BlsScalar]) -> Vec<BlsScalar> {
-	move |row: &[BlsScalar]| -> Vec<BlsScalar> {
-		let mut result = row.to_vec();
-		result.resize(extension_size, BlsScalar::zero());
-		result
-	}
+fn extend_column_with_zeros(column: &[BlsScalar], extended_rows_num: usize) -> Vec<BlsScalar> {
+	let mut result = column.to_vec();
+	result.resize(extended_rows_num, BlsScalar::zero());
+	result
 }
 
 #[cfg(feature = "alloc")]
@@ -160,27 +156,29 @@ pub fn extend_data_matrix(
 
 	// TODO: Better error type for BlsScalar case?
 	let mut chunk_elements = chunks
-		.map(pad_to_cell_size(block_dims.chunk_size))
+		.map(|chunk| pad_to_cell_size(chunk, block_dims.chunk_size))
 		.map(|chunk| <[u8; config::SCALAR_SIZE]>::try_from(&chunk[..]))
 		.map(|result| result.map_err(|_| Error::InvalidChunkLength))
 		.map(|chunk| BlsScalar::from_bytes(&chunk?).map_err(|_| Error::InvalidChunkLength))
 		.collect::<Result<Vec<BlsScalar>, Error>>()?
 		.chunks_exact(rows_num)
-		.map(extend_row_with_zeros(extended_rows_num))
+		.map(|column| extend_column_with_zeros(column, extended_rows_num))
 		.flatten()
-		.collect::<Vec<_>>();
+		.collect::<Vec<BlsScalar>>();
 
 	// extend data matrix, column by column
 	let extended_column_eval_domain = EvaluationDomain::new(extended_rows_num)?;
 	let column_eval_domain = EvaluationDomain::new(rows_num)?;
 
 	for i in 0..cols_num {
-		let original_column =
-			&mut chunk_elements[i * extended_rows_num..(i + 1) * extended_rows_num - rows_num];
+		let column_start = i * extended_rows_num;
+		let extended_column_end = (i + 1) * extended_rows_num;
+		let column_end = extended_column_end - rows_num;
+
+		let original_column = &mut chunk_elements[column_start..column_end];
 		column_eval_domain.ifft_slice(original_column);
 
-		let extended_column =
-			&mut chunk_elements[i * extended_rows_num..(i + 1) * extended_rows_num];
+		let extended_column = &mut chunk_elements[column_start..extended_column_end];
 		extended_column_eval_domain.fft_slice(extended_column);
 	}
 
@@ -415,29 +413,34 @@ mod tests {
 		assert_eq!(res.size, 1024);
 		assert_eq!(res.cols, 32);
 		assert_eq!(res.rows, 1);
+
+		let res = get_block_dimensions(8192, 256, 256, 32);
+		assert_eq!(res.size, 16384);
+		assert_eq!(res.cols, 256);
+		assert_eq!(res.rows, 2);
 	}
 
 	#[test]
 	fn test_extend_data_matrix() {
-		let block = (0..=255).collect::<Vec<u8>>();
+		let block = (0..=247).collect::<Vec<u8>>();
 
 		let expected_result = vec![
-			b"1f21232527292b2d2f31333537393b3d3f41434547494b4d4f51535557595b00",
-			b"c29bb585daec9259aa83760d5fefdf1cd88867f486efad8e486e9d7695f03711",
+			b"000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e00",
+			b"ef471ce5550437df64279fba7f3d31b50d6ddd1d80eebf4f0ea22d18e6efab17",
 			b"1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d00",
-			b"01250a39e2cf28610e913fa9596991e9deffe9c32e95374fa9b7a759635b5962",
-			b"9b9d9fa1a3a5a7a9abadafb1b3b5b7b9bbbdbfc1c3c5c7c9cbcdcfd1d3d5d700",
-			b"e50d81c135ee30a9efa24aae7a325724e2a872e8b6149450a4d913a654f20956",
+			b"31d90640d024f44dc965927aba9fc7db36ac0731cf32c530892cc366c4109d5c",
+			b"3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c00",
+			b"2d865a239442751da365ddf8bd7b6ff34bab1b5cbe2cfe8d4ce06b56242eea17",
 			b"5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b00",
-			b"a07400bf48904cd38a332dcaffe7dba396a1a091c031134f0f0ef3eb651b491d",
-			b"171a1c1e20222426282a2c2e30323436383a3c3e40424446484a4c4e50525401",
-			b"07804cfd91efcef83566204f93d110d8e6f0dbd2de6140dfb7c7ecabc04cee26",
+			b"6f17457e0e63328c07a4d0b8f8dd051a75ea456f0d71036fc76a01a5024fdb5c",
+			b"7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a00",
+			b"6bc49861d280b35be1a31b37fcb9ad318ae9599afc6a3ccc8a1eaa94626c2818",
 			b"9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b900",
-			b"40c4f644ae507045063219eba80ae4b1531bf9685aa62882bde1dba7bb82264c",
-			b"9396989a9c9ea0a2a4a6a8aaacaeb0b2b4b6b8babcbec0c2c4c6c8caccced001",
-			b"2af21739edf06c487b85f4efae1488dff010e7c60e8726a1133363db7f4ec06b",
+			b"ad5583bc4ca170ca45e20ef7361c4458b32884ad4baf41ad05a93fe3408d195d",
+			b"babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d800",
+			b"a902d79f10bff1991fe259753af8eb6fc82798d83aa97a0ac95ce8d2a0aa6618",
 			b"d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f700",
-			b"df13edca141194b782d4060c4f892e6c0bbdaf36ec4204822338273abe421607",
+			b"eb93c1fa8adfae0884204d35755a8296f166c2eb89ed7feb43e77d217fcb575d",
 		]
 		.into_iter()
 		.map(|e| {
