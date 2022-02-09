@@ -106,8 +106,8 @@ pub fn get_block_dimensions(
 		}
 
 		let total_cells = (nearest_power_2_size as f32 / chunk_size as f32).ceil() as usize;
-		// we must minimize number of rows, to minimize header size (performance wise it doesn't
-		// matter)
+		// we must minimize number of rows, to minimize header size
+		// (performance wise it doesn't matter)
 		if total_cells > max_cols_num {
 			rows = total_cells / max_cols_num;
 		} else {
@@ -127,6 +127,23 @@ pub fn get_block_dimensions(
 	}
 }
 
+fn pad_to_cell_size(size: usize) -> impl Fn(&[u8]) -> Vec<u8> {
+	move |chunk: &[u8]| -> Vec<u8> {
+		let mut bytes: Vec<u8> = vec![];
+		bytes.extend(chunk);
+		bytes.extend(vec![0].repeat(size - config::CHUNK_SIZE));
+		bytes
+	}
+}
+
+fn extend_row_with_zeros(extension_size: usize) -> impl Fn(&[BlsScalar]) -> Vec<BlsScalar> {
+	move |row: &[BlsScalar]| -> Vec<BlsScalar> {
+		let mut result = row.to_vec();
+		result.resize(extension_size, BlsScalar::zero());
+		result
+	}
+}
+
 #[cfg(feature = "alloc")]
 /// build extended data matrix, by columns
 pub fn extend_data_matrix(
@@ -138,34 +155,24 @@ pub fn extend_data_matrix(
 	let cols_num = block_dims.cols;
 	let extended_rows_num = rows_num * config::EXTENSION_FACTOR;
 
-	// Chunk by CHUNK_SIZE and calculate BLS scalars
-	let elems = block
-		.chunks_exact(rows_num * config::CHUNK_SIZE)
-		.map(|e| {
-			e.chunks_exact(config::CHUNK_SIZE)
-				.map(|c| {
-					let mut bytes: Vec<u8> = vec![];
-					bytes.extend(c);
-					bytes.extend(vec![0].repeat(block_dims.chunk_size - config::CHUNK_SIZE));
-					let chunk = <&[u8; 32]>::try_from(bytes.as_slice())
-						.map_err(|_| Error::InvalidChunkLength)?;
-					BlsScalar::from_bytes(&chunk).map_err(|_| Error::InvalidChunkLength)
-				})
-				.collect::<Result<Vec<_>, _>>()
-		})
-		.collect::<Result<Vec<Vec<BlsScalar>>, _>>()?
-		.into_iter()
-		.flatten();
+	let chunks = block.chunks_exact(config::CHUNK_SIZE);
+	assert!(chunks.remainder().len() == 0);
 
-	// Extend the matrix by interleaving with zeros
-	let mut chunk_elements = elems
-		.into_iter()
-		.flat_map(|e| vec![e, BlsScalar::zero()])
+	// TODO: Better error type for BlsScalar case?
+	let mut chunk_elements = chunks
+		.map(pad_to_cell_size(block_dims.chunk_size))
+		.map(|chunk| <[u8; config::SCALAR_SIZE]>::try_from(&chunk[..]))
+		.map(|result| result.map_err(|_| Error::InvalidChunkLength))
+		.map(|chunk| BlsScalar::from_bytes(&chunk?).map_err(|_| Error::InvalidChunkLength))
+		.collect::<Result<Vec<BlsScalar>, Error>>()?
+		.chunks_exact(rows_num)
+		.map(extend_row_with_zeros(extended_rows_num))
+		.flatten()
 		.collect::<Vec<_>>();
 
 	// extend data matrix, column by column
-	let extended_column_eval_domain = EvaluationDomain::new(extended_rows_num).unwrap();
-	let column_eval_domain = EvaluationDomain::new(rows_num).unwrap();
+	let extended_column_eval_domain = EvaluationDomain::new(extended_rows_num)?;
+	let column_eval_domain = EvaluationDomain::new(rows_num)?;
 
 	for i in 0..cols_num {
 		let original_column =
