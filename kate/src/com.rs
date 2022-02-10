@@ -45,6 +45,13 @@ impl From<PlonkError> for Error {
 pub type XtsLayout = Vec<(u32, u32)>;
 type FlatData = Vec<u8>;
 
+fn extend_by(len: usize, size: usize) -> usize {
+	if len % size == 0 {
+		return 0;
+	}
+	size - (len % size)
+}
+
 pub fn flatten_and_pad_block(
 	rows_num: usize,
 	cols_num: usize,
@@ -53,21 +60,25 @@ pub fn flatten_and_pad_block(
 	header_hash: &[u8],
 ) -> Result<(XtsLayout, FlatData, BlockDimensions), Error> {
 	let mut tx_layout = Vec::with_capacity(extrinsics.len());
-	let mut block: Vec<u8> =
-		Vec::with_capacity((config::SCALAR_SIZE_WIDE + 100) * extrinsics.len());
+	let mut block: Vec<u8> = Vec::with_capacity(config::CHUNK_SIZE * extrinsics.len());
 
 	for xt in extrinsics {
-		// get aligned xt length
-		let aligned_len =
-			xt.data.len() + (config::SCALAR_SIZE_WIDE - (xt.data.len() % config::SCALAR_SIZE_WIDE));
+		let extend_by = extend_by(xt.data.len(), config::CHUNK_SIZE);
+
 		// insert into flat buffer
 		block.extend(&xt.data);
 
 		// add extra 0's if required
-		block.resize(aligned_len, 0);
+		block.resize(block.len() + extend_by, 0);
+
+		// add extra 0's if required
+		// block.extend_from_slice(&[0].repeat(extend_by));
 
 		// save tx by app id and size in chunks
-		tx_layout.push((xt.app_id, (aligned_len / config::SCALAR_SIZE_WIDE) as u32));
+		tx_layout.push((
+			xt.app_id,
+			((xt.data.len() + extend_by) / config::CHUNK_SIZE) as u32,
+		));
 	}
 
 	let block_dims = get_block_dimensions(block.len(), rows_num, cols_num, chunk_size);
@@ -81,9 +92,11 @@ pub fn flatten_and_pad_block(
 	}
 	ensure!(block.len() <= block_dims.size, Error::BlockTooBig);
 
+	let block_size_chunked = block_dims.rows * block_dims.cols * config::CHUNK_SIZE;
+
 	let seed = <[u8; 32]>::try_from(header_hash).map_err(|_| Error::BadHeaderHash)?;
 	let mut rng: StdRng = rand::SeedableRng::from_seed(seed);
-	block.resize_with(block_dims.size, || rng.gen::<u8>());
+	block.resize_with(block_size_chunked, || rng.gen::<u8>());
 
 	Ok((tx_layout, block, block_dims))
 }
@@ -116,7 +129,7 @@ pub fn get_block_dimensions(
 		}
 		size = rows * cols * chunk_size;
 	} else if size > max_block_size {
-		panic!("block is too big, must not happen!");
+		panic!("Error::BlockTooBig");
 	}
 
 	BlockDimensions {
@@ -386,16 +399,24 @@ pub fn build_commitments(
 	Ok((tx_layout, result_bytes, block_dims, ext_data_matrix))
 }
 
+#[cfg(test)]
 mod tests {
 	use std::{convert::TryInto, str::from_utf8};
 
-	use bls12_381::Scalar;
 	use da_primitives::asdr::AppExtrinsic;
 	use dusk_bytes::Serializable;
 	use dusk_plonk::bls12_381::BlsScalar;
 
 	use super::flatten_and_pad_block;
-	use crate::com::{extend_data_matrix, get_block_dimensions, BlockDimensions};
+	use crate::com::{extend_by, extend_data_matrix, get_block_dimensions, BlockDimensions};
+
+	#[test]
+	fn test_align_to() {
+		assert_eq!(extend_by(0, 31), 0);
+		assert_eq!(extend_by(31, 31), 0);
+		assert_eq!(extend_by(20, 31), 11);
+		assert_eq!(extend_by(32, 31), 30);
+	}
 
 	#[test]
 	fn test_get_block_dimensions() {
