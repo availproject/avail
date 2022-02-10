@@ -81,7 +81,7 @@ pub fn flatten_and_pad_block(
 		));
 	}
 
-	let block_dims = get_block_dimensions(block.len(), rows_num, cols_num, chunk_size);
+	let block_dims = get_block_dimensions(block.len(), rows_num, cols_num, chunk_size)?;
 
 	if block.len() > block_dims.size {
 		log::info!(
@@ -106,11 +106,15 @@ pub fn get_block_dimensions(
 	max_rows_num: usize,
 	max_cols_num: usize,
 	chunk_size: usize,
-) -> BlockDimensions {
+) -> Result<BlockDimensions, Error> {
 	let max_block_size = max_rows_num * max_cols_num * chunk_size;
 	let mut rows = max_rows_num;
 	let mut cols = max_cols_num;
 	let mut size = block_size + (block_size as f32 / config::CHUNK_SIZE as f32).ceil() as usize;
+
+	if size > max_block_size {
+		return Err(Error::BlockTooBig);
+	}
 
 	if size < max_block_size {
 		let mut nearest_power_2_size = (2 as usize).pow((size as f32).log2().ceil() as u32);
@@ -128,16 +132,14 @@ pub fn get_block_dimensions(
 			cols = total_cells;
 		}
 		size = rows * cols * chunk_size;
-	} else if size > max_block_size {
-		panic!("Error::BlockTooBig");
 	}
 
-	BlockDimensions {
+	Ok(BlockDimensions {
 		cols,
 		rows,
 		size,
 		chunk_size,
-	}
+	})
 }
 
 fn pad_to_cell_size(chunk: &[u8], size: usize) -> Vec<u8> {
@@ -420,22 +422,22 @@ mod tests {
 
 	#[test]
 	fn test_get_block_dimensions() {
-		let res = get_block_dimensions(11, 256, 256, 32);
+		let res = get_block_dimensions(11, 256, 256, 32).unwrap();
 		assert_eq!(res.size, 256);
 		assert_eq!(res.cols, 8);
 		assert_eq!(res.rows, 1);
 
-		let res = get_block_dimensions(300, 256, 256, 32);
+		let res = get_block_dimensions(300, 256, 256, 32).unwrap();
 		assert_eq!(res.size, 512);
 		assert_eq!(res.cols, 16);
 		assert_eq!(res.rows, 1);
 
-		let res = get_block_dimensions(513, 256, 256, 32);
+		let res = get_block_dimensions(513, 256, 256, 32).unwrap();
 		assert_eq!(res.size, 1024);
 		assert_eq!(res.cols, 32);
 		assert_eq!(res.rows, 1);
 
-		let res = get_block_dimensions(8192, 256, 256, 32);
+		let res = get_block_dimensions(8192, 256, 256, 32).unwrap();
 		assert_eq!(res.size, 16384);
 		assert_eq!(res.cols, 256);
 		assert_eq!(res.rows, 2);
