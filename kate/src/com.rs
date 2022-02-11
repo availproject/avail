@@ -45,43 +45,30 @@ impl From<PlonkError> for Error {
 pub type XtsLayout = Vec<(u32, u32)>;
 type FlatData = Vec<u8>;
 
-fn extend_by(len: usize, size: usize) -> usize {
-	if len % size == 0 {
-		return 0;
-	}
-	size - (len % size)
-}
-
 pub fn flatten_and_pad_block(
-	rows_num: usize,
-	cols_num: usize,
+	max_rows_num: usize,
+	max_cols_num: usize,
 	chunk_size: usize,
 	extrinsics: &[AppExtrinsic],
 	header_hash: &[u8],
 ) -> Result<(XtsLayout, FlatData, BlockDimensions), Error> {
 	let mut tx_layout = Vec::with_capacity(extrinsics.len());
-	let mut block: Vec<u8> = Vec::with_capacity(config::CHUNK_SIZE * extrinsics.len());
+	let mut block: Vec<u8> = Vec::with_capacity(chunk_size * extrinsics.len());
 
+	// insert empty bytes to pad 31 byte chunks to 32 bytes
 	for xt in extrinsics {
-		let extend_by = extend_by(xt.data.len(), config::CHUNK_SIZE);
-
-		// insert into flat buffer
-		block.extend(&xt.data);
-
-		// add extra 0's if required
-		block.resize(block.len() + extend_by, 0);
-
-		// add extra 0's if required
-		// block.extend_from_slice(&[0].repeat(extend_by));
+		let xt_chunks = xt.data.chunks(config::CHUNK_SIZE);
 
 		// save tx by app id and size in chunks
-		tx_layout.push((
-			xt.app_id,
-			((xt.data.len() + extend_by) / config::CHUNK_SIZE) as u32,
-		));
+		tx_layout.push((xt.app_id, xt_chunks.len() as u32));
+
+		// extend block with padded chunks
+		for chunk in xt_chunks {
+			block.extend(&pad_with_zeroes(chunk, chunk_size));
+		}
 	}
 
-	let block_dims = get_block_dimensions(block.len(), rows_num, cols_num, chunk_size)?;
+	let block_dims = get_block_dimensions(block.len(), max_rows_num, max_cols_num, chunk_size)?;
 
 	if block.len() > block_dims.size {
 		log::info!(
@@ -92,11 +79,15 @@ pub fn flatten_and_pad_block(
 	}
 	ensure!(block.len() <= block_dims.size, Error::BlockTooBig);
 
-	let block_size_chunked = block_dims.rows * block_dims.cols * config::CHUNK_SIZE;
-
 	let seed = <[u8; 32]>::try_from(header_hash).map_err(|_| Error::BadHeaderHash)?;
 	let mut rng: StdRng = rand::SeedableRng::from_seed(seed);
-	block.resize_with(block_size_chunked, || rng.gen::<u8>());
+
+	assert!((block_dims.size - block.len()) % block_dims.chunk_size == 0);
+
+	for _ in 0..((block_dims.size - block.len()) / block_dims.chunk_size) {
+		let rnd_values: [u8; config::CHUNK_SIZE] = rng.gen();
+		block.append(&mut pad_with_zeroes(&rnd_values, chunk_size));
+	}
 
 	Ok((tx_layout, block, block_dims))
 }
@@ -108,31 +99,39 @@ pub fn get_block_dimensions(
 	chunk_size: usize,
 ) -> Result<BlockDimensions, Error> {
 	let max_block_size = max_rows_num * max_cols_num * chunk_size;
-	let mut rows = max_rows_num;
-	let mut cols = max_cols_num;
-	let mut size = block_size + (block_size as f32 / config::CHUNK_SIZE as f32).ceil() as usize;
 
-	if size > max_block_size {
-		return Err(Error::BlockTooBig);
+	ensure!(block_size <= max_block_size, Error::BlockTooBig);
+
+	if block_size == max_block_size {
+		return Ok(BlockDimensions {
+			cols: max_cols_num,
+			rows: max_rows_num,
+			size: max_block_size,
+			chunk_size,
+		});
 	}
 
-	if size < max_block_size {
-		let mut nearest_power_2_size = (2 as usize).pow((size as f32).log2().ceil() as u32);
-		if nearest_power_2_size < config::MINIMUM_BLOCK_SIZE {
-			nearest_power_2_size = config::MINIMUM_BLOCK_SIZE;
-		}
-
-		let total_cells = (nearest_power_2_size as f32 / chunk_size as f32).ceil() as usize;
-		// we must minimize number of rows, to minimize header size
-		// (performance wise it doesn't matter)
-		if total_cells > max_cols_num {
-			rows = total_cells / max_cols_num;
-		} else {
-			rows = 1;
-			cols = total_cells;
-		}
-		size = rows * cols * chunk_size;
+	let mut nearest_power_2_size = (2 as usize).pow((block_size as f32).log2().ceil() as u32);
+	if nearest_power_2_size < config::MINIMUM_BLOCK_SIZE {
+		nearest_power_2_size = config::MINIMUM_BLOCK_SIZE;
 	}
+
+	let total_cells = (nearest_power_2_size as f32 / chunk_size as f32).ceil() as usize;
+
+	let cols;
+	let rows;
+
+	// we must minimize number of rows, to minimize header size
+	// (performance wise it doesn't matter)
+	if total_cells > max_cols_num {
+		cols = max_cols_num;
+		rows = total_cells / max_cols_num;
+	} else {
+		cols = total_cells;
+		rows = 1;
+	}
+
+	let size = rows * cols * chunk_size;
 
 	Ok(BlockDimensions {
 		cols,
@@ -142,10 +141,10 @@ pub fn get_block_dimensions(
 	})
 }
 
-fn pad_to_cell_size(chunk: &[u8], size: usize) -> Vec<u8> {
+fn pad_with_zeroes(chunk: &[u8], length: usize) -> Vec<u8> {
 	let mut bytes: Vec<u8> = vec![];
 	bytes.extend(chunk);
-	bytes.extend(vec![0].repeat(size - config::CHUNK_SIZE));
+	bytes.extend(vec![0].repeat(length - chunk.len()));
 	bytes
 }
 
@@ -166,15 +165,14 @@ pub fn extend_data_matrix(
 	let cols_num = block_dims.cols;
 	let extended_rows_num = rows_num * config::EXTENSION_FACTOR;
 
-	let chunks = block.chunks_exact(config::CHUNK_SIZE);
+	let chunks = block.chunks_exact(block_dims.chunk_size);
 	assert!(chunks.remainder().len() == 0);
 
 	// TODO: Better error type for BlsScalar case?
 	let mut chunk_elements = chunks
-		.map(|chunk| pad_to_cell_size(chunk, block_dims.chunk_size))
 		.map(|chunk| <[u8; config::SCALAR_SIZE]>::try_from(&chunk[..]))
 		.map(|result| result.map_err(|_| Error::InvalidChunkLength))
-		.map(|chunk| BlsScalar::from_bytes(&chunk?).map_err(|_| Error::InvalidChunkLength))
+		.map(|chunk| BlsScalar::from_bytes(&chunk?).map_err(|_| Error::CellLenghtExceeded))
 		.collect::<Result<Vec<BlsScalar>, Error>>()?
 		.chunks_exact(rows_num)
 		.map(|column| extend_column_with_zeros(column, extended_rows_num))
@@ -409,16 +407,11 @@ mod tests {
 	use dusk_bytes::Serializable;
 	use dusk_plonk::bls12_381::BlsScalar;
 
-	use super::flatten_and_pad_block;
-	use crate::com::{extend_by, extend_data_matrix, get_block_dimensions, BlockDimensions};
-
-	#[test]
-	fn test_align_to() {
-		assert_eq!(extend_by(0, 31), 0);
-		assert_eq!(extend_by(31, 31), 0);
-		assert_eq!(extend_by(20, 31), 11);
-		assert_eq!(extend_by(32, 31), 30);
-	}
+	use super::{flatten_and_pad_block, pad_with_zeroes};
+	use crate::{
+		com::{extend_data_matrix, get_block_dimensions, BlockDimensions},
+		config,
+	};
 
 	#[test]
 	fn test_get_block_dimensions() {
@@ -438,15 +431,13 @@ mod tests {
 		assert_eq!(res.rows, 1);
 
 		let res = get_block_dimensions(8192, 256, 256, 32).unwrap();
-		assert_eq!(res.size, 16384);
+		assert_eq!(res.size, 8192);
 		assert_eq!(res.cols, 256);
-		assert_eq!(res.rows, 2);
+		assert_eq!(res.rows, 1);
 	}
 
 	#[test]
 	fn test_extend_data_matrix() {
-		let block = (0..=247).collect::<Vec<u8>>();
-
 		let expected_result = vec![
 			b"000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e00",
 			b"ef471ce5550437df64279fba7f3d31b50d6ddd1d80eebf4f0ea22d18e6efab17",
@@ -482,6 +473,12 @@ mod tests {
 			size: 256,
 			chunk_size: 32,
 		};
+		let block = (0..=247)
+			.collect::<Vec<u8>>()
+			.chunks_exact(config::CHUNK_SIZE)
+			.map(|chunk| pad_with_zeroes(chunk, block_dims.chunk_size))
+			.flatten()
+			.collect::<Vec<u8>>();
 		let res = extend_data_matrix(block_dims, &block);
 		eprintln!("result={:?}", res);
 		eprintln!("expect={:?}", expected_result);
