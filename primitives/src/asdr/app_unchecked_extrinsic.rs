@@ -161,19 +161,14 @@ where
 				let signed = lookup.lookup(signed)?;
 				let raw_payload = SignedPayload::new(self.function, extra)?;
 
-				log::info!(
+				log::debug!(
 					"AppUncheckedExtrinsic: Signed: {:?}, Signature: {:?}, RawPayload: {:?}",
 					signed,
 					signature,
 					raw_payload
 				);
 
-				// TODO Re-enable the payload signature verification here.
-				if !raw_payload.using_encoded(|payload| {
-					log::info!("Check Payload {:?}: Signature: {:?}", payload, signature);
-					let ver = signature.verify(payload, &signed);
-					ver
-				}) {
+				if !raw_payload.using_encoded(|payload| signature.verify(payload, &signed)) {
 					return Err(InvalidTransaction::BadProof.into());
 				}
 
