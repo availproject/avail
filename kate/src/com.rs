@@ -154,6 +154,13 @@ fn extend_column_with_zeros(column: &[BlsScalar], extended_rows_num: usize) -> V
 	result
 }
 
+fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
+	// TODO: Better error type for BlsScalar case?
+	let scalar_size_chunk =
+		<[u8; config::SCALAR_SIZE]>::try_from(&chunk[..]).map_err(|_| Error::InvalidChunkLength)?;
+	BlsScalar::from_bytes(&scalar_size_chunk).map_err(|_| Error::CellLenghtExceeded)
+}
+
 #[cfg(feature = "alloc")]
 /// build extended data matrix, by columns
 pub fn extend_data_matrix(
@@ -162,38 +169,29 @@ pub fn extend_data_matrix(
 ) -> Result<Vec<BlsScalar>, Error> {
 	let start = Instant::now();
 	let rows_num = block_dims.rows;
-	let cols_num = block_dims.cols;
 	let extended_rows_num = rows_num * config::EXTENSION_FACTOR;
 
 	let chunks = block.chunks_exact(block_dims.chunk_size);
 	assert!(chunks.remainder().len() == 0);
 
-	// TODO: Better error type for BlsScalar case?
 	let mut chunk_elements = chunks
-		.map(|chunk| <[u8; config::SCALAR_SIZE]>::try_from(&chunk[..]))
-		.map(|result| result.map_err(|_| Error::InvalidChunkLength))
-		.map(|chunk| BlsScalar::from_bytes(&chunk?).map_err(|_| Error::CellLenghtExceeded))
+		.map(to_bls_scalar)
 		.collect::<Result<Vec<BlsScalar>, Error>>()?
 		.chunks_exact(rows_num)
-		.map(|column| extend_column_with_zeros(column, extended_rows_num))
-		.flatten()
+		.flat_map(|column| extend_column_with_zeros(column, extended_rows_num))
 		.collect::<Vec<BlsScalar>>();
 
 	// extend data matrix, column by column
 	let extended_column_eval_domain = EvaluationDomain::new(extended_rows_num)?;
 	let column_eval_domain = EvaluationDomain::new(rows_num)?;
 
-	for i in 0..cols_num {
-		let column_start = i * extended_rows_num;
-		let extended_column_end = (i + 1) * extended_rows_num;
-		let column_end = extended_column_end - rows_num;
-
-		let original_column = &mut chunk_elements[column_start..column_end];
-		column_eval_domain.ifft_slice(original_column);
-
-		let extended_column = &mut chunk_elements[column_start..extended_column_end];
-		extended_column_eval_domain.fft_slice(extended_column);
-	}
+	chunk_elements
+		.chunks_exact_mut(extended_rows_num)
+		.for_each(|col| {
+			let half_len = col.len() / 2;
+			column_eval_domain.ifft_slice(&mut col[0..half_len]);
+			extended_column_eval_domain.fft_slice(col);
+		});
 
 	info!(
 		target: "system",
