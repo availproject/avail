@@ -28,7 +28,7 @@ impl<T: Config + Send + Sync> CheckAppId<T> {
 	/// utility constructor. Used only in client/factory code.
 	pub fn from(app_id: AppId) -> Self { Self(app_id, sp_std::marker::PhantomData) }
 
-	fn do_validate(&self) -> TransactionValidity {
+	pub fn do_validate(&self) -> TransactionValidity {
 		let last_app_id = <Pallet<T>>::last_application_id();
 		ensure!(
 			self.0 < last_app_id,
@@ -90,15 +90,12 @@ mod tests {
 		new_test_ext().execute_with(|| {
 			// invalid App Id
 			assert_eq!(
-				CheckAppId::<Test>::from(100)
-					.additional_signed()
-					.err()
-					.unwrap(),
+				CheckAppId::<Test>::from(100).do_validate().err().unwrap(),
 				InvalidTransaction::Custom(InvalidAppId as u8).into(),
 			);
 
 			// correct
-			assert!(CheckAppId::<Test>::from(2).additional_signed().is_ok());
+			assert!(CheckAppId::<Test>::from(2).do_validate().is_ok());
 		})
 	}
 }

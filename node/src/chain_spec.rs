@@ -8,6 +8,7 @@ use da_runtime::{
 	MAX_NOMINATIONS,
 };
 use frame_system::limits::BlockLength;
+use kate::config::MAX_BLOCK_COLUMNS;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::{ChainType, Properties};
@@ -165,14 +166,19 @@ pub fn testnet_genesis(
 
 	const ENDOWMENT: Balance = 10_000_000 * AVL;
 	const STASH: Balance = ENDOWMENT / 1000;
-	const COLS: u32 = 256;
 
 	GenesisConfig {
 		system: SystemConfig {
 			// Add Wasm runtime to storage.
 			code: wasm_binary_unwrap().to_vec(),
-			kc_public_params: kate::testnet::public_params(COLS as usize).to_raw_var_bytes(),
-			block_length: BlockLength::with_normal_ratio(128, COLS, 64, Perbill::from_percent(90)),
+			kc_public_params: kate::testnet::public_params(MAX_BLOCK_COLUMNS as usize)
+				.to_raw_var_bytes(),
+			block_length: BlockLength::with_normal_ratio(
+				128,
+				MAX_BLOCK_COLUMNS,
+				64,
+				Perbill::from_percent(90),
+			),
 		},
 		balances: BalancesConfig {
 			balances: endowed_accounts

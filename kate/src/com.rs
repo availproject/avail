@@ -318,7 +318,7 @@ pub fn build_commitments(
 	);
 
 	// construct commitments in parallel
-	let public_params = testnet::public_params(256);
+	let public_params = testnet::public_params(config::MAX_BLOCK_COLUMNS as usize);
 	if log::log_enabled!(target: "system", log::Level::Debug) {
 		let raw_pp = public_params.to_raw_var_bytes();
 		let hash_pp = hex::encode(sp_core::blake2_128(&raw_pp));

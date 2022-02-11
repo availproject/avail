@@ -32,7 +32,7 @@ use sp_runtime::{
 		self, Checkable, Extrinsic, ExtrinsicMetadata, IdentifyAccount, MaybeDisplay, Member,
 		SignedExtension,
 	},
-	transaction_validity::TransactionValidityError,
+	transaction_validity::{InvalidTransaction, TransactionValidityError},
 	OpaqueExtrinsic,
 };
 use sp_std::{
@@ -169,14 +169,13 @@ where
 				);
 
 				// TODO Re-enable the payload signature verification here.
-				/*
 				if !raw_payload.using_encoded(|payload| {
 					log::info!("Check Payload {:?}: Signature: {:?}", payload, signature);
 					let ver = signature.verify(payload, &signed);
 					ver
 				}) {
 					return Err(InvalidTransaction::BadProof.into());
-				}*/
+				}
 
 				let (function, extra, _) = raw_payload.deconstruct();
 				CheckedExtrinsic {
