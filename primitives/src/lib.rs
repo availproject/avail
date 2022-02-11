@@ -47,5 +47,8 @@ pub mod currency {
 
 #[repr(u8)]
 pub enum InvalidTransactionCustomId {
-	InvalidAppId = 0,
+	/// The AppId is not registered.
+	InvalidAppId = 137,
+	/// Extrinsic is not allowed for the given `AppId`.
+	ForbiddenAppId,
 }

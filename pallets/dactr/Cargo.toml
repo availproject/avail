@@ -33,6 +33,7 @@ frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional
 [dev-dependencies]
 pallet-transaction-payment = "4.0.0-dev"
 pallet-balances = "4.0.0-dev"
+test-case = "1.2.3"
 
 [features]
 default = ["std"]
