@@ -39,7 +39,6 @@ where
 	pub fn do_validate(&self, call: &T::Call) -> TransactionValidity {
 		match call.is_sub_type() {
 			// Only `dactrl::submit_data` can use `AppId != 0`.
-			// T::Call::DataAvailability(DACall::submit_data(..)) => {
 			Some(DACall::<T>::submit_data { .. }) => {
 				let last_app_id = <Pallet<T>>::last_application_id();
 				ensure!(
