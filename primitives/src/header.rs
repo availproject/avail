@@ -125,6 +125,7 @@ where
 			+ self.state_root.size_of(ops)
 			+ self.extrinsics_root.size_of(ops)
 			+ self.digest.size_of(ops)
+			+ self.app_data_lookup.size_of(ops)
 	}
 }
 

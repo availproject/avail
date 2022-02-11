@@ -3,7 +3,7 @@ use da_primitives::{
 	asdr::{AppId, GetAppId},
 	InvalidTransactionCustomId::InvalidAppId,
 };
-use frame_support::fail;
+use frame_support::ensure;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, SignedExtension},
@@ -22,17 +22,18 @@ use crate::{Config, Pallet};
 ///
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct CheckAppId<T: Config + Send + Sync>(AppId, sp_std::marker::PhantomData<T>);
+pub struct CheckAppId<T: Config + Send + Sync>(pub AppId, sp_std::marker::PhantomData<T>);
 
 impl<T: Config + Send + Sync> CheckAppId<T> {
 	/// utility constructor. Used only in client/factory code.
-	pub fn from(id: AppId) -> Self { Self(id, sp_std::marker::PhantomData) }
+	pub fn from(app_id: AppId) -> Self { Self(app_id, sp_std::marker::PhantomData) }
 
-	fn do_validate(&self) -> TransactionValidity {
+	pub fn do_validate(&self) -> TransactionValidity {
 		let last_app_id = <Pallet<T>>::last_application_id();
-		if last_app_id < self.0 {
-			fail!(InvalidTransaction::Custom(InvalidAppId as u8));
-		}
+		ensure!(
+			self.0 < last_app_id,
+			InvalidTransaction::Custom(InvalidAppId as u8)
+		);
 
 		Ok(ValidTransaction::default())
 	}
@@ -40,7 +41,9 @@ impl<T: Config + Send + Sync> CheckAppId<T> {
 
 impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckAppId<T> {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result { write!(f, "CheckAppId") }
+	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		write!(f, "CheckAppId: {}", self.0)
+	}
 
 	#[cfg(not(feature = "std"))]
 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result { Ok(()) }
@@ -48,7 +51,7 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckAppId<T> {
 
 impl<T: Config + Send + Sync> SignedExtension for CheckAppId<T> {
 	type AccountId = T::AccountId;
-	type AdditionalSigned = AppId;
+	type AdditionalSigned = ();
 	type Call = T::Call;
 	type Pre = ();
 
@@ -65,7 +68,7 @@ impl<T: Config + Send + Sync> SignedExtension for CheckAppId<T> {
 	}
 
 	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
-		self.do_validate().map(|_| self.0)
+		Ok(())
 	}
 }
 
@@ -87,15 +90,12 @@ mod tests {
 		new_test_ext().execute_with(|| {
 			// invalid App Id
 			assert_eq!(
-				CheckAppId::<Test>::from(100)
-					.additional_signed()
-					.err()
-					.unwrap(),
+				CheckAppId::<Test>::from(100).do_validate().err().unwrap(),
 				InvalidTransaction::Custom(InvalidAppId as u8).into(),
 			);
 
 			// correct
-			assert!(CheckAppId::<Test>::from(2).additional_signed().is_ok());
+			assert!(CheckAppId::<Test>::from(2).do_validate().is_ok());
 		})
 	}
 }

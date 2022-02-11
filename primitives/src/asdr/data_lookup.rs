@@ -1,5 +1,7 @@
 use codec::{Decode, Encode};
 use frame_support::ensure;
+#[cfg(feature = "std")]
+use parity_util_mem::{MallocSizeOf, MallocSizeOfOps};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -49,6 +51,13 @@ impl TryFrom<&[(AppId, u32)]> for DataLookup {
 		}
 
 		Ok(DataLookup { size, index })
+	}
+}
+
+#[cfg(feature = "std")]
+impl MallocSizeOf for DataLookup {
+	fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
+		self.size.size_of(ops) + self.index.size_of(ops)
 	}
 }
 

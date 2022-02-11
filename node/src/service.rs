@@ -61,13 +61,18 @@ pub type TransactionPool = sc_transaction_pool::FullPool<Block, FullClient>;
 #[cfg(test)]
 pub mod tests {
 	use codec::Encode;
+	use da_control::CheckAppId;
 	use da_primitives::asdr::AppId;
-	use da_runtime::AppSignedExtra;
+	use da_runtime::Runtime;
+	use frame_system::{
+		CheckEra, CheckGenesis, CheckNonce, CheckSpecVersion, CheckTxVersion, CheckWeight,
+	};
 	use frame_system_rpc_runtime_api::AccountNonceApi;
+	use pallet_transaction_payment::ChargeTransactionPayment;
 	use sc_client_api::BlockBackend;
 	use sp_api::ProvideRuntimeApi;
 	use sp_core::crypto::Pair;
-	use sp_runtime::SaturatedConversion;
+	use sp_runtime::{generic::Era, SaturatedConversion};
 
 	use super::*;
 
@@ -114,7 +119,16 @@ pub mod tests {
 			.map(|c| c / 2)
 			.unwrap_or(2) as u64;
 		let tip = 0;
-		let extra = AppSignedExtra::new(period, best_block.saturated_into(), nonce, tip, app_id);
+		let extra = (
+			CheckSpecVersion::<Runtime>::new(),
+			CheckTxVersion::<Runtime>::new(),
+			CheckGenesis::<Runtime>::new(),
+			CheckEra::<Runtime>::from(Era::mortal(period, best_block.saturated_into())),
+			CheckNonce::<Runtime>::from(nonce),
+			CheckWeight::<Runtime>::new(),
+			ChargeTransactionPayment::<Runtime>::from(tip),
+			CheckAppId::<Runtime>::from(app_id),
+		);
 
 		let raw_payload = da_runtime::SignedPayload::from_raw(
 			function.clone(),
@@ -126,7 +140,7 @@ pub mod tests {
 				best_hash,
 				(),
 				(),
-				app_id,
+				(),
 				(),
 			),
 		);

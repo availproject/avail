@@ -1,15 +1,10 @@
-use impl_trait_for_tuples::impl_for_tuples;
-use sp_std::ops::Add;
-
 /// Get application Id trait
 pub trait GetAppId<T: Default> {
 	fn app_id(&self) -> T { T::default() }
 }
 
-/// Tuple implementation for `GetAppId`.
-#[impl_for_tuples(1, 9)]
-impl<T: Default + Add<Output = T>> GetAppId<T> for Tuple {
-	fn app_id(&self) -> T { for_tuples!( #( Tuple.app_id())+* ) }
+impl<A, B, C, D, E, F, G, H: GetAppId<u32>> GetAppId<u32> for (A, B, C, D, E, F, G, H) {
+	fn app_id(&self) -> u32 { self.7.app_id() }
 }
 
 #[cfg(test)]
@@ -28,18 +23,10 @@ mod tests {
 
 	#[test]
 	fn app_id_trait_on_tuples() {
-		assert_eq!(CustomAppId {}.app_id(), 7);
-		assert_eq!(GetAppId::<AppId>::app_id(&DefaultGetAppId {}), 0);
+		let custom_app_id = (0, 1, 2, 3, 4, 5, 6, CustomAppId {});
+		let default_app_id = (0, 1, 2, 3, 4, 5, 6, DefaultGetAppId {});
 
-		assert_eq!((CustomAppId {}).app_id(), 7);
-		assert_eq!((CustomAppId {}, DefaultGetAppId {}).app_id(), 7);
-		assert_eq!(
-			GetAppId::<AppId>::app_id(&(
-				DefaultGetAppId {},
-				DefaultGetAppId {},
-				DefaultGetAppId {}
-			)),
-			0
-		);
+		assert_eq!(custom_app_id.app_id(), 7);
+		assert_eq!(default_app_id.app_id(), u32::default());
 	}
 }

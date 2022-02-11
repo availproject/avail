@@ -1176,6 +1176,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "kate",
  "pallet-balances",
  "pallet-transaction-payment",
  "parity-scale-codec",
@@ -1193,7 +1194,6 @@ name = "da-primitives"
 version = "0.1.0"
 dependencies = [
  "frame-support",
- "impl-trait-for-tuples",
  "log",
  "parity-scale-codec",
  "parity-util-mem",
@@ -1220,6 +1220,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "hex-literal",
+ "kate",
  "kate-rpc-runtime-api",
  "pallet-asset-tx-payment",
  "pallet-authority-discovery",
@@ -1519,7 +1520,7 @@ dependencies = [
 [[package]]
 name = "dusk-plonk"
 version = "0.8.2"
-source = "git+https://github.com/maticnetwork/plonk.git?tag=v0.8.2-polygon-1#010e74fac697f6f7e81e5a7662e687155398921d"
+source = "git+https://github.com/maticnetwork/plonk.git?tag=v0.8.2-polygon-2#25df0c903b802c2b6df897a308ab6bbc50dfb1bd"
 dependencies = [
  "cfg-if 1.0.0",
  "dusk-bls12_381",
@@ -2868,14 +2869,17 @@ dependencies = [
  "dusk-plonk",
  "frame-support",
  "getrandom 0.2.3",
+ "hex",
  "log",
  "num_cpus",
+ "once_cell",
  "parity-scale-codec",
  "rand 0.8.4",
  "rand_chacha 0.3.1",
  "rand_core 0.5.1",
  "rayon",
  "serde",
+ "sp-core",
  "sp-std",
 ]
 
