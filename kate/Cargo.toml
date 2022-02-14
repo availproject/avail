@@ -30,6 +30,9 @@ sp-std = { version = "4.0.0-dev", default-features = false }
 sp-core = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 
+[dev-dependencies]
+test-case = "1.2.3"
+
 [features]
 default = ["std"]
 alloc = ["dusk-plonk/alloc"]

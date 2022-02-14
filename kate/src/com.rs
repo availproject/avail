@@ -404,6 +404,7 @@ mod tests {
 	use da_primitives::asdr::AppExtrinsic;
 	use dusk_bytes::Serializable;
 	use dusk_plonk::bls12_381::BlsScalar;
+	use test_case::test_case;
 
 	use super::{flatten_and_pad_block, pad_with_zeroes};
 	use crate::{
@@ -411,27 +412,13 @@ mod tests {
 		config,
 	};
 
-	#[test]
-	fn test_get_block_dimensions() {
-		let res = get_block_dimensions(11, 256, 256, 32).unwrap();
-		assert_eq!(res.size, 256);
-		assert_eq!(res.cols, 8);
-		assert_eq!(res.rows, 1);
-
-		let res = get_block_dimensions(300, 256, 256, 32).unwrap();
-		assert_eq!(res.size, 512);
-		assert_eq!(res.cols, 16);
-		assert_eq!(res.rows, 1);
-
-		let res = get_block_dimensions(513, 256, 256, 32).unwrap();
-		assert_eq!(res.size, 1024);
-		assert_eq!(res.cols, 32);
-		assert_eq!(res.rows, 1);
-
-		let res = get_block_dimensions(8192, 256, 256, 32).unwrap();
-		assert_eq!(res.size, 8192);
-		assert_eq!(res.cols, 256);
-		assert_eq!(res.rows, 1);
+	#[test_case(11,   256, 256 => BlockDimensions { size: 256  , rows: 1, cols: 8  , chunk_size: 32} ; "below minimum block size")]
+	#[test_case(300,  256, 256 => BlockDimensions { size: 512  , rows: 1, cols: 16 , chunk_size: 32} ; "regular case")]
+	#[test_case(513,  256, 256 => BlockDimensions { size: 1024 , rows: 1, cols: 32 , chunk_size: 32} ; "minimum overhead after 512")]
+	#[test_case(8192, 256, 256 => BlockDimensions { size: 8192 , rows: 1, cols: 256, chunk_size: 32} ; "maximum cols")]
+	#[test_case(8224, 256, 256 => BlockDimensions { size: 16384, rows: 2, cols: 256, chunk_size: 32} ; "two rows")]
+	fn test_get_block_dimensions(size: usize, rows: usize, cols: usize) -> BlockDimensions {
+		get_block_dimensions(size, rows, cols, 32).unwrap()
 	}
 
 	#[test]
