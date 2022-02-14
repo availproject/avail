@@ -84,8 +84,8 @@ pub mod pallet {
 
 	/// Last application ID
 	#[pallet::storage]
-	#[pallet::getter(fn last_application_id)]
-	pub type LastAppId<T: Config> = StorageValue<_, AppId, ValueQuery>;
+	#[pallet::getter(fn peek_next_application_id)]
+	pub type NextAppId<T: Config> = StorageValue<_, AppId, ValueQuery>;
 
 	/// Last block length proposal.
 	/// # TODO
@@ -242,7 +242,7 @@ pub mod pallet {
 				.unwrap_or(0)
 				.checked_add(1)
 				.expect("DA Control Genesis overflows the last application id");
-			LastAppId::<T>::put(last_id);
+			NextAppId::<T>::put(last_id);
 		}
 	}
 
@@ -267,7 +267,7 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
 	/// Returns the latest available application ID and increases it.
 	pub fn next_application_id() -> Result<AppId, Error<T>> {
-		LastAppId::<T>::try_mutate(|id| {
+		NextAppId::<T>::try_mutate(|id| {
 			let new_id = id.checked_add(1).ok_or(Error::<T>::LastAppIdOverflowed)?;
 			Ok(replace(id, new_id))
 		})

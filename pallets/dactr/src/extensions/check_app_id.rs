@@ -40,9 +40,9 @@ where
 		match call.is_sub_type() {
 			// Only `dactrl::submit_data` can use `AppId != 0`.
 			Some(DACall::<T>::submit_data { .. }) => {
-				let last_app_id = <Pallet<T>>::last_application_id();
+				let next_app_id = <Pallet<T>>::peek_next_application_id();
 				ensure!(
-					self.app_id() < last_app_id,
+					self.app_id() < next_app_id,
 					InvalidTransaction::Custom(InvalidTransactionCustomId::InvalidAppId as u8)
 				);
 			},
@@ -136,8 +136,8 @@ mod tests {
 
 	#[test_case(100, submit_data_call() => to_invalid_tx(InvalidAppId); "100 AppId is invalid" )]
 	#[test_case(0, remark_call() => Ok(ValidTransaction::default()); "System::remark can be called if AppId == 0" )]
-	#[test_case(1, remark_call() => to_invalid_tx(ForbiddenAppId); "System::remark cannot be callet if AppId != 0" )]
-	#[test_case(1, submit_data_call() => Ok(ValidTransaction::default()); "submit_data can be callet with any valid AppId" )]
+	#[test_case(1, remark_call() => to_invalid_tx(ForbiddenAppId); "System::remark cannot be called if AppId != 0" )]
+	#[test_case(1, submit_data_call() => Ok(ValidTransaction::default()); "submit_data can be called with any valid AppId" )]
 	fn do_validate_test(app_id: AppId, call: Call) -> TransactionValidity {
 		new_test_ext().execute_with(|| CheckAppId::<Test>::from(app_id).do_validate(&call))
 	}
