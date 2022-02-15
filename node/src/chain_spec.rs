@@ -15,12 +15,37 @@ use sc_service::{ChainType, Properties};
 use serde::{Deserialize, Serialize};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
-use sp_core::{sr25519, Pair, Public};
+use sp_core::{crypto::Ss58Codec as _, sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::{
 	traits::{IdentifyAccount, Verify},
 	Perbill, SaturatedConversion,
 };
+
+mod testnet {
+	pub const VALIDATORS: &[&str] = &[
+		"5G7DPfMuai9jUokYhxhiPMZ1RTtSAbY8bpHns4LUxB2Jw92p", // Validator 1
+		"5CRmQzLgjknmzRHvgBFZw9mt4q1YgiS5nAcnqM7kRohTi4EG", // Validator 2
+		"5H9CGZS3WJdew9dSLCxHk8ffqgkjdJVecozH6GHwQ7edtWZX", // Validator 3
+	];
+	pub const TECHNICAL_COMMITTEE: &[&str] = &[
+		"5GqLfdcNekxmyDnM1jg7fs2HLXDkDXdvy6UP9pJNSFvaWefm", // TC 1
+		"5Fh71D2b95sro2ZwXZULJMYy7FMst6PAgbYQd8MBifKkrbLx", // TC 2
+		"5GeYbpM2uU35z8kR6bH3fXpRg6Q182WAuBBh843LZVv86ciN", // TC 3
+	];
+	pub const SUDO: &str = "5Hgw5p7Z2MtDiPPsBwJMghngdmmKeqLjWsNiSHqn8YHrehG7";
+	pub const ACCOUNTS: &[&str] = &[
+		"5HdWFbYTMdWQNeQGhHiKNJQiYrfjxdaJ24fg7K4KYbzzPHXD", // Controller validator 1.
+		"5G6EzSquYhJe6pLw7CLtXFciovVvzF6cHDiHL1A74knHdACt", // Controller validator 2.
+		"5GRT695LWMxf9ra37s7L4akM7i4imvFhnNFn9G4fTehUvHXT", // Controller validator 3.
+		"5Ca7t9GrLun6PihvjzeMo2awnaNm7J9udfEBxy7QDTX8q54W",
+	];
+	pub const STAKERS: &[(&str, &str)] = &[
+		(VALIDATORS[0], ACCOUNTS[0]),
+		(VALIDATORS[1], ACCOUNTS[1]),
+		(VALIDATORS[2], ACCOUNTS[2]),
+	];
+}
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -284,16 +309,140 @@ pub fn development_config() -> ChainSpec {
 	)
 }
 
-fn local_testnet_genesis() -> GenesisConfig {
-	testnet_genesis(
-		vec![
-			authority_keys_from_seed("Alice"),
-			authority_keys_from_seed("Bob"),
-		],
-		vec![],
-		get_account_id_from_seed::<sr25519::Public>("Alice"),
-		None,
-	)
+fn to_session_keys(acc: &AccountId) -> SessionKeys {
+	let ss58 = acc.to_ss58check();
+	// let raw :&[u8;32]= acc.as_ref();
+
+	SessionKeys {
+		babe: BabeId::from_ss58check(&ss58).expect("Invalid Babe SS58 .qed"),
+		grandpa: GrandpaId::from_ss58check(&ss58).expect("Invalid Grandpa SS58 .qed"),
+		im_online: ImOnlineId::from_ss58check(&ss58).expect("Invalid ImOnline SS58 .qed"),
+		authority_discovery: AuthorityDiscoveryId::from_ss58check(&ss58)
+			.expect("Invalid Auth Discovery SS58 .qed"),
+	}
+}
+
+fn genesis_builder(
+	sudo: &str,
+	validators: &[&str],
+	stakers: &[(&str, &str)],
+	technical_committee: &[&str],
+	accounts: &[&str],
+	initial_amount: Balance,
+) -> GenesisConfig {
+	let sudo = AccountId::from_ss58check(sudo).expect("Invalid sudo key .qed");
+	let validators = validators
+		.to_vec()
+		.into_iter()
+		.map(AccountId::from_ss58check)
+		.collect::<Result<Vec<_>, _>>()
+		.expect("Validator SS58 addresses are invalid .qed");
+	let stakers = stakers
+		.to_vec()
+		.into_iter()
+		.map(|(stash, controller)| {
+			(
+				AccountId::from_ss58check(stash).expect("Invalid stash address"),
+				AccountId::from_ss58check(controller).expect("Invalid controller address"),
+				10_000 * AVL,
+				StakerStatus::Validator,
+			)
+		})
+		.collect::<Vec<_>>();
+	let technical_committee = technical_committee
+		.to_vec()
+		.into_iter()
+		.map(AccountId::from_ss58check)
+		.collect::<Result<Vec<_>, _>>()
+		.expect("Technical Committee addresses are invalid .qed");
+	let accounts = accounts
+		.to_vec()
+		.into_iter()
+		.map(AccountId::from_ss58check)
+		.collect::<Result<Vec<_>, _>>()
+		.expect("Account addresses are invalid .qed");
+	let endowed_accs = validators
+		.clone()
+		.into_iter()
+		.chain(accounts.into_iter())
+		.chain(Some(sudo.clone()).into_iter())
+		.map(|acc| (acc, initial_amount))
+		.collect::<Vec<_>>();
+	let session_keys = validators
+		.clone()
+		.into_iter()
+		.map(|acc| {
+			let keys = to_session_keys(&acc);
+			(acc.clone(), acc, keys)
+		})
+		.collect::<Vec<_>>();
+
+	GenesisConfig {
+		system: SystemConfig {
+			// Add Wasm runtime to storage.
+			code: wasm_binary_unwrap().to_vec(),
+			kc_public_params: kate::testnet::public_params(MAX_BLOCK_COLUMNS as usize)
+				.to_raw_var_bytes(),
+			block_length: BlockLength::with_normal_ratio(
+				128,
+				MAX_BLOCK_COLUMNS,
+				64,
+				Perbill::from_percent(90),
+			),
+		},
+		balances: BalancesConfig {
+			balances: endowed_accs,
+		},
+		indices: IndicesConfig { indices: vec![] },
+		session: SessionConfig { keys: session_keys },
+		staking: StakingConfig {
+			validator_count: validators
+				.len()
+				.try_into()
+				.expect("Validator set is huge .qed"),
+			minimum_validator_count: 2,
+			invulnerables: validators.clone(),
+			slash_reward_fraction: Perbill::from_percent(10),
+			stakers,
+			min_nominator_bond: 1_000 * AVL,
+			min_validator_bond: 10_000 * AVL,
+			..Default::default()
+		},
+		democracy: DemocracyConfig::default(),
+		elections: ElectionsConfig { members: vec![] },
+		council: CouncilConfig::default(),
+		technical_committee: TechnicalCommitteeConfig {
+			members: technical_committee,
+			phantom: Default::default(),
+		},
+		sudo: SudoConfig { key: sudo.clone() },
+		babe: BabeConfig {
+			authorities: vec![],
+			epoch_config: Some(da_runtime::BABE_GENESIS_EPOCH_CONFIG),
+		},
+		im_online: ImOnlineConfig { keys: vec![] },
+		authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
+		grandpa: GrandpaConfig {
+			authorities: vec![],
+		},
+		technical_membership: Default::default(),
+		treasury: Default::default(),
+		scheduler: Default::default(),
+		transaction_payment: Default::default(),
+		data_availability: DataAvailabilityConfig {
+			app_keys: vec![
+				(b"Data Avail".to_vec(), AppKeyInfo {
+					owner: sudo.clone(),
+					id: 0,
+				}),
+				(b"Ethereum".to_vec(), AppKeyInfo {
+					owner: sudo.clone(),
+					id: 1,
+				}),
+				(b"Polygon".to_vec(), AppKeyInfo { owner: sudo, id: 2 }),
+			],
+		},
+	}
 }
 
 /// Local testnet config (multivalidator Alice + Bob)
@@ -302,7 +451,16 @@ pub fn local_testnet_config() -> ChainSpec {
 		"Avail-Testnet",
 		"local_testnet",
 		ChainType::Local,
-		local_testnet_genesis,
+		|| {
+			genesis_builder(
+				testnet::SUDO,
+				testnet::VALIDATORS,
+				testnet::STAKERS,
+				testnet::TECHNICAL_COMMITTEE,
+				testnet::ACCOUNTS,
+				1_000_000 * AVL,
+			)
+		},
 		vec![],
 		None,
 		None,
