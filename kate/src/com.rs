@@ -1,4 +1,8 @@
-use std::{convert::TryFrom, time::Instant};
+use std::{
+	convert::{TryFrom, TryInto},
+	ops::Range,
+	time::Instant,
+};
 
 use da_primitives::asdr::AppExtrinsic;
 use dusk_bytes::Serializable;
@@ -44,6 +48,8 @@ impl From<PlonkError> for Error {
 
 pub type XtsLayout = Vec<(u32, u32)>;
 type FlatData = Vec<u8>;
+type DataChunk = [u8; config::DATA_CHUNK_SIZE];
+const PADDING_TAIL_VALUE: u8 = 0x80;
 
 pub fn flatten_and_pad_block(
 	max_rows_num: usize,
@@ -52,44 +58,91 @@ pub fn flatten_and_pad_block(
 	extrinsics: &[AppExtrinsic],
 	header_hash: &[u8],
 ) -> Result<(XtsLayout, FlatData, BlockDimensions), Error> {
-	let mut tx_layout = Vec::with_capacity(extrinsics.len());
-	let mut block: Vec<u8> = Vec::with_capacity(chunk_size * extrinsics.len());
+	let (tx_layout, padded_chunks): (Vec<_>, Vec<_>) = extrinsics
+		.iter()
+		.map(|e| {
+			let chunks = pad_iec_9797_1(e.data.as_slice(), config::DATA_CHUNK_SIZE);
+			((e.app_id, chunks.len() as u32), chunks)
+		})
+		.unzip();
 
-	// insert empty bytes to pad 31 byte chunks to 32 bytes
-	for xt in extrinsics {
-		let xt_chunks = xt.data.chunks(config::DATA_CHUNK_SIZE);
+	let mut padded_block = padded_chunks
+		.into_iter()
+		.flat_map(|e| {
+			e.into_iter()
+				.map(|e| pad_to_chunk(e, chunk_size))
+				.flatten()
+				.collect::<Vec<_>>()
+		})
+		.collect::<Vec<_>>();
 
-		// save tx by app id and size in chunks
-		tx_layout.push((xt.app_id, xt_chunks.len() as u32));
+	let block_dims =
+		get_block_dimensions(padded_block.len(), max_rows_num, max_cols_num, chunk_size)?;
 
-		// extend block with padded chunks
-		for chunk in xt_chunks {
-			block.extend(&pad_with_zeroes(chunk, chunk_size));
-		}
-	}
-
-	let block_dims = get_block_dimensions(block.len(), max_rows_num, max_cols_num, chunk_size)?;
-
-	if block.len() > block_dims.size {
-		log::info!(
-			target: "system",
-			"BlockTooBig: block.len()={} block_dims:{:?}",
-			block.len(),
-			block_dims);
-	}
-	ensure!(block.len() <= block_dims.size, Error::BlockTooBig);
+	ensure!(padded_block.len() <= block_dims.size, Error::BlockTooBig);
 
 	let seed = <[u8; 32]>::try_from(header_hash).map_err(|_| Error::BadHeaderHash)?;
 	let mut rng: StdRng = rand::SeedableRng::from_seed(seed);
 
-	assert!((block_dims.size - block.len()) % block_dims.chunk_size == 0);
+	assert!((block_dims.size - padded_block.len()) % block_dims.chunk_size == 0);
 
-	for _ in 0..((block_dims.size - block.len()) / block_dims.chunk_size) {
-		let rnd_values: [u8; config::DATA_CHUNK_SIZE] = rng.gen();
-		block.append(&mut pad_with_zeroes(&rnd_values, chunk_size));
+	for _ in 0..((block_dims.size - padded_block.len()) / block_dims.chunk_size) {
+		let rnd_values: DataChunk = rng.gen();
+		padded_block.append(&mut pad_with_zeroes(&rnd_values, chunk_size));
 	}
 
-	Ok((tx_layout, block, block_dims))
+	Ok((tx_layout, padded_block, block_dims))
+}
+
+pub fn unflatten_padded_data(
+	layout: XtsLayout,
+	data: FlatData,
+	chunk_size: usize,
+) -> Result<Vec<AppExtrinsic>, Error> {
+	assert!(data.len() % chunk_size == 0);
+	let data = data
+		.chunks(chunk_size)
+		.flat_map(|e| trim_to_chunk_data(e).to_vec())
+		.collect::<Vec<_>>();
+	let xs = layout
+		.iter()
+		.fold(vec![], |acc: Vec<(u32, Range<usize>)>, (i, len)| {
+			let mut v = acc;
+			let (_, prev_range) = v
+				.last()
+				.unwrap_or(&(0u32, Range { start: 0, end: 0 }))
+				.clone();
+			v.push((*i, Range {
+				start: prev_range.end as usize,
+				end: prev_range.end as usize + *len as usize * config::DATA_CHUNK_SIZE,
+			}));
+			v
+		})
+		.iter()
+		.map(|(app_id, range)| {
+			let orig = data[range.clone()].to_vec();
+
+			let trimmed = orig
+				.iter()
+				.cloned()
+				.rev()
+				.skip_while(|e| *e == 0)
+				.collect::<Vec<_>>();
+
+			let data = if trimmed.first() == Some(&PADDING_TAIL_VALUE) {
+				trimmed.into_iter().skip(1).rev().collect::<Vec<_>>()
+			} else {
+				orig
+			};
+
+			AppExtrinsic {
+				app_id: *app_id,
+				data,
+			}
+		})
+		.collect::<Vec<_>>();
+
+	Ok(xs)
 }
 
 pub fn get_block_dimensions(
@@ -111,7 +164,7 @@ pub fn get_block_dimensions(
 		});
 	}
 
-	let mut nearest_power_2_size = (2 as usize).pow((block_size as f32).log2().ceil() as u32);
+	let mut nearest_power_2_size = 2_usize.pow((block_size as f32).log2().ceil() as u32);
 	if nearest_power_2_size < config::MINIMUM_BLOCK_SIZE {
 		nearest_power_2_size = config::MINIMUM_BLOCK_SIZE;
 	}
@@ -142,6 +195,32 @@ fn pad_with_zeroes(chunk: &[u8], length: usize) -> Vec<u8> {
 	bytes
 }
 
+fn pad_to_chunk(chunk: DataChunk, chunk_size: usize) -> Vec<u8> {
+	let len = chunk.len();
+	let mut padded = chunk.to_vec();
+	padded.extend(vec![0].repeat(chunk_size - len));
+	padded
+}
+
+fn trim_to_chunk_data(chunk: &[u8]) -> DataChunk {
+	assert!(
+		config::DATA_CHUNK_SIZE < chunk.len(),
+		"Cannot trim to bigger size!"
+	);
+	chunk[0..config::DATA_CHUNK_SIZE].try_into().unwrap()
+}
+
+fn pad_iec_9797_1(data: &[u8], chunk_size: usize) -> Vec<DataChunk> {
+	let mut padded = data.to_vec();
+	padded.push(PADDING_TAIL_VALUE);
+	padded.extend(vec![0].repeat(chunk_size - (data.len() % chunk_size) - 1));
+
+	padded
+		.chunks(chunk_size)
+		.map(|e| e.try_into().unwrap())
+		.collect::<Vec<DataChunk>>()
+}
+
 fn extend_column_with_zeros(column: &[BlsScalar], extended_rows_num: usize) -> Vec<BlsScalar> {
 	let mut result = column.to_vec();
 	result.resize(extended_rows_num, BlsScalar::zero());
@@ -151,7 +230,7 @@ fn extend_column_with_zeros(column: &[BlsScalar], extended_rows_num: usize) -> V
 fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 	// TODO: Better error type for BlsScalar case?
 	let scalar_size_chunk =
-		<[u8; config::SCALAR_SIZE]>::try_from(&chunk[..]).map_err(|_| Error::InvalidChunkLength)?;
+		<[u8; config::SCALAR_SIZE]>::try_from(chunk).map_err(|_| Error::InvalidChunkLength)?;
 	BlsScalar::from_bytes(&scalar_size_chunk).map_err(|_| Error::CellLenghtExceeded)
 }
 
@@ -166,7 +245,7 @@ pub fn extend_data_matrix(
 	let extended_rows_num = rows_num * config::EXTENSION_FACTOR;
 
 	let chunks = block.chunks_exact(block_dims.chunk_size);
-	assert!(chunks.remainder().len() == 0);
+	assert!(chunks.remainder().is_empty());
 
 	let mut chunk_elements = chunks
 		.map(to_bls_scalar)
@@ -398,11 +477,15 @@ mod tests {
 	use da_primitives::asdr::AppExtrinsic;
 	use dusk_bytes::Serializable;
 	use dusk_plonk::bls12_381::BlsScalar;
+	use frame_support::assert_ok;
 	use test_case::test_case;
 
 	use super::{flatten_and_pad_block, pad_with_zeroes};
 	use crate::{
-		com::{extend_data_matrix, get_block_dimensions, BlockDimensions},
+		com::{
+			extend_data_matrix, get_block_dimensions, pad_iec_9797_1, unflatten_padded_data,
+			BlockDimensions,
+		},
 		config,
 	};
 
@@ -465,23 +548,116 @@ mod tests {
 	}
 
 	#[test]
+	fn test_padding() {
+		let block: Vec<u8> = (1..=29).collect();
+		let expected: Vec<u8> = vec![
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+			25, 26, 27, 28, 29, 128, 0,
+		];
+
+		let res: Vec<u8> = pad_iec_9797_1(block.as_slice(), config::DATA_CHUNK_SIZE)
+			.iter()
+			.flat_map(|e| e.to_vec())
+			.collect();
+		assert_eq!(
+			res, expected,
+			"Padding the chunk more than 3 values shorter failed."
+		);
+
+		let block: Vec<u8> = (1..=30).collect();
+		let expected: Vec<u8> = vec![
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+			25, 26, 27, 28, 29, 30, 128,
+		];
+		let res: Vec<u8> = pad_iec_9797_1(block.as_slice(), config::DATA_CHUNK_SIZE)
+			.iter()
+			.flat_map(|e| e.to_vec())
+			.collect();
+		assert_eq!(res, expected, "Padding the chunk 2 values shorter failed.");
+
+		let block: Vec<u8> = (1..=31).collect();
+		let expected: Vec<u8> = vec![
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+			25, 26, 27, 28, 29, 30, 31, 128, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		];
+		let res: Vec<u8> = pad_iec_9797_1(block.as_slice(), config::DATA_CHUNK_SIZE)
+			.iter()
+			.flat_map(|e| e.to_vec())
+			.collect();
+		assert_eq!(res, expected, "Padding the chunk 1 value shorter failed.");
+	}
+
+	#[test]
 	fn test_flatten_block() {
-		// Values acquired from extrinsics in the first test block
-		let block: Vec<u8> = vec![40, 4, 3, 0, 11, 230, 228, 0, 196, 126, 1];
-		let block_data: [u8; 11] = [40, 4, 3, 0, 11, 230, 228, 0, 196, 126, 1];
-		let block_len = block.len().clone();
+		let chunk_size = 32;
+		let extrinsics: Vec<AppExtrinsic> = vec![
+			AppExtrinsic {
+				app_id: 0,
+				data: (1..=29).collect(),
+			},
+			AppExtrinsic {
+				app_id: 1,
+				data: (1..=30).collect(),
+			},
+			AppExtrinsic {
+				app_id: 2,
+				data: (1..=31).collect(),
+			},
+			AppExtrinsic {
+				app_id: 3,
+				data: (1..=60).collect(),
+			},
+		];
+
 		// The hash is used for seed for padding the block to next power of two value
 		let hash: Vec<u8> = vec![0].repeat(32);
 		let expected_dims = BlockDimensions {
 			rows: 1,
-			cols: 4,
-			size: 128,
-			chunk_size: 32,
+			cols: 8,
+			size: 256,
+			chunk_size,
 		};
-		let (_, data, dims) =
-			flatten_and_pad_block(128, 256, 32, &[AppExtrinsic::from(block)], &hash).unwrap();
+		let (layout, data, dims) =
+			flatten_and_pad_block(128, 256, chunk_size, extrinsics.as_slice(), &hash).unwrap();
 
-		assert_eq!(block_data, data[0..block_len]);
-		assert_eq!(dims, expected_dims);
+		let expected_layout = vec![(0, 1), (1, 1), (2, 2), (3, 2)];
+		assert_eq!(layout, expected_layout, "The layouts don't match");
+
+		let expected_data: Vec<u8> = vec![
+			// First extrinsic
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+			25, 26, 27, 28, 29, 128, 0, 0, // Second extrinsic
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+			25, 26, 27, 28, 29, 30, 128, 0, // Third extrinsic
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+			25, 26, 27, 28, 29, 30, 31, 0, 128, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // Fourth extrinsic
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+			25, 26, 27, 28, 29, 30, 31, 0, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
+			46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 128, 0, 0,
+			// Random seeded data
+			155, 7, 129, 95, 4, 73, 126, 46, 5, 210, 44, 172, 58, 160, 97, 65, 11, 32, 134, 140,
+			198, 25, 21, 76, 66, 161, 198, 27, 233, 144, 39, 0, 23, 178, 75, 142, 193, 104, 254,
+			72, 150, 245, 183, 12, 203, 16, 241, 167, 5, 224, 97, 208, 253, 250, 24, 150, 24, 210,
+			139, 13, 68, 239, 239, 0,
+		];
+
+		assert_eq!(dims, expected_dims, "Dimensions don't match the expected");
+		assert_eq!(data, expected_data, "Data doesn't match the expected data");
+
+		let res = unflatten_padded_data(layout, data, chunk_size);
+		assert_ok!(res.as_deref());
+		let res = res.unwrap();
+		assert_eq!(
+			res.len(),
+			extrinsics.len(),
+			"Number of extrinsics is not as expected."
+		);
+
+		for (res, exp) in res.iter().zip(extrinsics.iter()) {
+			assert_eq!(res.app_id, exp.app_id);
+			assert_eq!(res.data, exp.data);
+		}
 	}
 }
