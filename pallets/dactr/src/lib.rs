@@ -142,7 +142,7 @@ pub mod pallet {
 			rows: u32,
 			cols: u32,
 		) -> DispatchResultWithPostInfo {
-			let who = ensure_signed(origin)?;
+			ensure_root(origin)?;
 
 			ensure!(
 				rows <= T::MaxBlockRows::get() || cols <= T::MaxBlockCols::get(),
@@ -158,7 +158,7 @@ pub mod pallet {
 				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO);
 			frame_system::Pallet::<T>::set_block_length(&block_length);
 
-			Self::deposit_event(Event::BlockLengthProposalSubmitted { who, rows, cols });
+			Self::deposit_event(Event::BlockLengthProposalSubmitted { rows, cols });
 
 			Ok(().into())
 		}
@@ -179,7 +179,6 @@ pub mod pallet {
 			data: AppDataFor<T>,
 		},
 		BlockLengthProposalSubmitted {
-			who: T::AccountId,
 			rows: u32,
 			cols: u32,
 		},

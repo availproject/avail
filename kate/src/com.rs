@@ -21,7 +21,7 @@ pub struct Cell {
 	pub col: u32,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct BlockDimensions {
 	pub rows: usize,
 	pub cols: usize,
@@ -72,7 +72,14 @@ pub fn flatten_and_pad_block(
 
 	let block_dims = get_block_dimensions(block.len(), rows_num, cols_num, chunk_size);
 
-	ensure!(block.len() < block_dims.size, Error::BlockTooBig);
+	if block.len() > block_dims.size {
+		log::info!(
+			target: "system",
+			"BlockTooBig: block.len()={} block_dims:{:?}",
+			block.len(),
+			block_dims);
+	}
+	ensure!(block.len() <= block_dims.size, Error::BlockTooBig);
 
 	let seed = <[u8; 32]>::try_from(header_hash).map_err(|_| Error::BadHeaderHash)?;
 	let mut rng: StdRng = rand::SeedableRng::from_seed(seed);
