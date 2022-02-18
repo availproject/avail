@@ -412,7 +412,7 @@ mod tests {
 		config,
 	};
 
-	#[test_case(11,   256, 256 => BlockDimensions { size: 256  , rows: 1, cols: 8  , chunk_size: 32} ; "below minimum block size")]
+	#[test_case(11,   256, 256 => BlockDimensions { size: 128  , rows: 1, cols: 4  , chunk_size: 32} ; "below minimum block size")]
 	#[test_case(300,  256, 256 => BlockDimensions { size: 512  , rows: 1, cols: 16 , chunk_size: 32} ; "regular case")]
 	#[test_case(513,  256, 256 => BlockDimensions { size: 1024 , rows: 1, cols: 32 , chunk_size: 32} ; "minimum overhead after 512")]
 	#[test_case(8192, 256, 256 => BlockDimensions { size: 8192 , rows: 1, cols: 256, chunk_size: 32} ; "maximum cols")]
@@ -480,8 +480,8 @@ mod tests {
 		let hash: Vec<u8> = vec![0].repeat(32);
 		let expected_dims = BlockDimensions {
 			rows: 1,
-			cols: 8,
-			size: 256,
+			cols: 4,
+			size: 128,
 			chunk_size: 32,
 		};
 		let (_, data, dims) =
