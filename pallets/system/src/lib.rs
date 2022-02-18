@@ -63,7 +63,7 @@
 //! extensions included in a chain.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-
+use kate::config::{MAX_BLOCK_ROWS, MAX_BLOCK_COLUMNS};
 use codec::{Decode, Encode, EncodeLike, FullCodec};
 use da_primitives::{
 	asdr::{AppExtrinsic, DataLookup},
@@ -626,10 +626,9 @@ pub mod pallet {
 	#[cfg(feature = "std")]
 	impl Default for GenesisConfig {
 		fn default() -> Self {
-			const COLS: u32 = 256;
 			let normal = Perbill::from_percent(90);
-			let block_length = limits::BlockLength::with_normal_ratio(128, COLS, 64, normal);
-			let kc_public_params = kate::testnet::public_params(COLS as usize).to_raw_var_bytes();
+			let block_length = limits::BlockLength::with_normal_ratio(MAX_BLOCK_ROWS, MAX_BLOCK_COLUMNS, 32, normal);
+			let kc_public_params = kate::testnet::public_params(MAX_BLOCK_COLUMNS as usize).to_raw_var_bytes();
 
 			Self {
 				code: Default::default(),
