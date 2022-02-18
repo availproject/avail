@@ -384,9 +384,9 @@ fn genesis_builder(
 			kc_public_params: kate::testnet::public_params(MAX_BLOCK_COLUMNS as usize)
 				.to_raw_var_bytes(),
 			block_length: BlockLength::with_normal_ratio(
-				128,
+				MAX_BLOCK_ROWS,
 				MAX_BLOCK_COLUMNS,
-				64,
+				32,
 				Perbill::from_percent(90),
 			),
 		},
