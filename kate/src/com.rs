@@ -118,18 +118,13 @@ pub fn get_block_dimensions(
 
 	let total_cells = (nearest_power_2_size as f32 / chunk_size as f32).ceil() as usize;
 
-	let cols;
-	let rows;
-
 	// we must minimize number of rows, to minimize header size
 	// (performance wise it doesn't matter)
-	if total_cells > max_cols_num {
-		cols = max_cols_num;
-		rows = total_cells / max_cols_num;
+	let (cols, rows) = if total_cells > max_cols_num {
+		(max_cols_num, total_cells / max_cols_num)
 	} else {
-		cols = total_cells;
-		rows = 1;
-	}
+		(total_cells, 1)
+	};
 
 	let size = rows * cols * chunk_size;
 
@@ -142,9 +137,8 @@ pub fn get_block_dimensions(
 }
 
 fn pad_with_zeroes(chunk: &[u8], length: usize) -> Vec<u8> {
-	let mut bytes: Vec<u8> = vec![];
-	bytes.extend(chunk);
-	bytes.extend(vec![0].repeat(length - chunk.len()));
+	let mut bytes = chunk.to_vec();
+	bytes.resize(length, 0);
 	bytes
 }
 
