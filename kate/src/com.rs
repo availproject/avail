@@ -21,7 +21,7 @@ pub struct Cell {
 	pub col: u32,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct BlockDimensions {
 	pub rows: usize,
 	pub cols: usize,
@@ -57,7 +57,7 @@ pub fn flatten_and_pad_block(
 
 	// insert empty bytes to pad 31 byte chunks to 32 bytes
 	for xt in extrinsics {
-		let xt_chunks = xt.data.chunks(config::CHUNK_SIZE);
+		let xt_chunks = xt.data.chunks(config::DATA_CHUNK_SIZE);
 
 		// save tx by app id and size in chunks
 		tx_layout.push((xt.app_id, xt_chunks.len() as u32));
@@ -85,7 +85,7 @@ pub fn flatten_and_pad_block(
 	assert!((block_dims.size - block.len()) % block_dims.chunk_size == 0);
 
 	for _ in 0..((block_dims.size - block.len()) / block_dims.chunk_size) {
-		let rnd_values: [u8; config::CHUNK_SIZE] = rng.gen();
+		let rnd_values: [u8; config::DATA_CHUNK_SIZE] = rng.gen();
 		block.append(&mut pad_with_zeroes(&rnd_values, chunk_size));
 	}
 
@@ -460,7 +460,7 @@ mod tests {
 		};
 		let block = (0..=247)
 			.collect::<Vec<u8>>()
-			.chunks_exact(config::CHUNK_SIZE)
+			.chunks_exact(config::DATA_CHUNK_SIZE)
 			.map(|chunk| pad_with_zeroes(chunk, block_dims.chunk_size))
 			.flatten()
 			.collect::<Vec<u8>>();
