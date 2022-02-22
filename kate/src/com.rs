@@ -478,7 +478,9 @@ mod tests {
 	use dusk_bytes::Serializable;
 	use dusk_plonk::{bls12_381::BlsScalar, fft::EvaluationDomain};
 	use frame_support::assert_ok;
-	use test_case::test_case;
+	use kate_recovery::com::{Cell, reconstruct_column};
+use rand::Rng;
+use test_case::test_case;
 
 	use super::{flatten_and_pad_block, pad_with_zeroes};
 	use crate::{
@@ -659,5 +661,105 @@ mod tests {
 			assert_eq!(res.app_id, exp.app_id);
 			assert_eq!(res.data, exp.data);
 		}
+	}
+
+	fn truncate_flatten_matrix_2(cols: Vec<Vec<BlsScalar>>) -> Vec<BlsScalar> {
+		let res = cols
+			.to_vec()
+			.into_iter()
+			.map(|col| {
+				col.into_iter()
+					.enumerate()
+					.filter(|(i, e)| i % 2 == 0)
+					.map(|(_, e)| e)
+					.collect::<Vec<_>>()
+			})
+			.flatten()
+			.collect::<Vec<_>>();
+		res
+	}
+
+	fn decode_scalars(scalars: &[BlsScalar]) -> Vec<u8> {
+		let data = scalars
+			.iter()
+			.flat_map(|e| {
+				let b: [u8; 32] = <[u8; 32]>::try_into(e.to_bytes()).unwrap();
+				b[0..31].to_vec()
+			})
+			.collect::<Vec<_>>();
+
+		data
+	}
+
+	#[test]
+	fn test_extend_mock_data() {
+		let orig_data = br#"This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
+get erasure coded to ensure redundancy.
+Let's see how this gets encoded and then reconstructed by sampling only some data."#;
+		// let dims = get_block_dimensions(data.len(), 256, 2, 32);
+		// The hash is used for seed for padding the block to next power of two value
+		let hash: Vec<u8> = vec![0].repeat(32);
+		let (_, data, dims) =
+			flatten_and_pad_block(128, 2, 32, &[AppExtrinsic::from(orig_data.to_vec())], &hash)
+				.unwrap();
+		dbg!(dims);
+		let coded: Vec<BlsScalar> = extend_data_matrix(dims, &data[..]).unwrap();
+		// dbg!(coded.clone());
+
+		let mut extended_dims = dims;
+		extended_dims.rows *= 2;
+
+		let cols = coded.chunks_exact(extended_dims.rows).collect::<Vec<_>>();
+
+		let eval_domain = EvaluationDomain::new(extended_dims.rows).unwrap();
+		let res = cols
+			.iter()
+			.map(|e| {
+				// choose random len/2 (unique) indexes
+				let len = e.len();
+				let mut idx = (0..len).collect::<Vec<_>>();
+				let mut chosen_idx = Vec::<usize>::new();
+				let mut rng = rand::thread_rng();
+				for _ in 0..len / 2 {
+					let i = rng.gen_range(0..idx.len());
+					let v = idx.remove(i);
+					chosen_idx.push(v);
+				}
+
+				let samples = chosen_idx
+					.into_iter()
+					.map(|i| {
+						let cell = Cell {
+							row: i as u16,
+							proof: e[i].clone().to_bytes().to_vec(),
+							..Default::default()
+						};
+						cell
+					})
+					.collect::<Vec<_>>();
+
+				let reconstructed = reconstruct_column(extended_dims.rows, &samples[..]).unwrap();
+				// dbg!(reconstructed.clone());
+				// assert_eq!(&reconstructed, e);
+				// reconstructed
+				// eval_domain.ifft(&reconstructed)
+				reconstructed
+			})
+			.collect::<Vec<_>>();
+
+		// dbg!(res.clone());
+		// assert_eq!(res, cols);
+		assert!(res.len() % 2 == 0);
+		let newlen = res.len() / 2;
+		let res = truncate_flatten_matrix_2(res);
+		let orig = truncate_flatten_matrix_2(cols.into_iter().map(|e| e.to_vec()).collect());
+		// dbg!(res.clone());
+		assert_eq!(res, orig);
+		let decoded = decode_scalars(&res.as_slice());
+		let s = String::from_utf8_lossy(decoded.as_slice());
+
+		assert_eq!(&decoded[0..(orig_data.len())], orig_data);
+
+		eprintln!("Decoded: {}", s);
 	}
 }

@@ -1,3 +1,6 @@
+use std::convert::TryInto;
+
+use dusk_bytes::Serializable;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
 
 // This module is taken from https://gist.github.com/itzmeanjan/4acf9338d9233e79cfbee5d311e7a0b4
@@ -118,6 +121,70 @@ fn unshift_poly(poly: &mut [BlsScalar]) {
 		poly[i] *= factor_power;
 		factor_power *= shift_factor;
 	}
+}
+
+
+#[derive(Default, Debug, Clone)]
+pub struct Cell {
+    pub block: u64,
+    pub row: u16,
+    pub col: u16,
+    pub proof: Vec<u8>,
+}
+
+// use this function for reconstructing back all cells of certain column
+// when at least 50% of them are available
+//
+// if everything goes fine, returned vector in case of success should have
+// `row_count`-many cells of some specific column, in coded form
+//
+// performing one round of ifft should reveal original data which were
+// coded together
+pub fn reconstruct_column(row_count: usize, cells: &[Cell]) -> Result<Vec<BlsScalar>, String> {
+    // just ensures all rows are from same column !
+    // it's required as that's how it's erasure coded during
+    // construction in validator node
+    fn check_cells(cells: &[Cell]) {
+        assert!(cells.len() > 0);
+        let col = cells[0].col;
+        for cell in cells {
+            assert_eq!(col, cell.col);
+        }
+    }
+
+    // given row index in column of interest, finds it if present
+    // and returns back wrapped in `Some`, otherwise returns `None`
+    fn find_row_by_index(idx: usize, cells: &[Cell]) -> Option<BlsScalar> {
+        for cell in cells {
+            if cell.row == idx as u16 {
+                return Some(
+                    BlsScalar::from_bytes(
+                        &cell.proof[..]
+                            .try_into()
+                            .expect("didn't find u8 array of length 32"),
+                    )
+                    .unwrap(),
+                );
+            }
+        }
+        None
+    }
+
+    // row count of data matrix must be power of two !
+    assert!(row_count & (row_count - 1) == 0);
+    assert!(cells.len() >= row_count / 2 && cells.len() <= row_count);
+    check_cells(cells);
+
+    let eval_domain = EvaluationDomain::new(row_count).unwrap();
+    let mut subset: Vec<Option<BlsScalar>> = Vec::with_capacity(row_count);
+
+    // fill up vector in ordered fashion
+    // @note the way it's done should be improved
+    for i in 0..row_count {
+        subset.push(find_row_by_index(i, cells));
+    }
+
+    reconstruct_poly(eval_domain, subset)
 }
 
 #[cfg(test)]
