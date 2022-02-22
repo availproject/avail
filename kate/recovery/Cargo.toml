@@ -5,4 +5,4 @@ authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
 edition = "2018"
 
 [dependencies]
-dusk-plonk = { version = "0.8.2", default-features = false, optional = true }
+dusk-plonk = { version = "0.8.2" }
