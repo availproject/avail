@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 da-primitives = { path = "../primitives", default-features = false }
+kate-recovery = { path = "recovery", default-features = true }
 
 # Others
 dusk-plonk = { version = "0.8.2", default-features = false, optional = true }

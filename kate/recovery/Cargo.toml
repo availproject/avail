@@ -5,4 +5,19 @@ authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
 edition = "2018"
 
 [dependencies]
-dusk-plonk = { version = "0.8.2" }
+dusk-plonk = { version = "0.8.2", default-features = false, optional = true }
+getrandom = { version = "0.2", features = ["js"], optional = true }
+
+[dev-dependencies]
+dusk-bytes = { version = "0.1.5" }
+rand = { version = "0.8.4" }
+
+[features]
+default = ["std"]
+alloc = ["dusk-plonk/alloc"]
+
+std = [
+	"dusk-plonk/std",
+    "getrandom/std",
+    "getrandom",
+]

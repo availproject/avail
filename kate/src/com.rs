@@ -476,7 +476,7 @@ mod tests {
 
 	use da_primitives::asdr::AppExtrinsic;
 	use dusk_bytes::Serializable;
-	use dusk_plonk::bls12_381::BlsScalar;
+	use dusk_plonk::{bls12_381::BlsScalar, fft::EvaluationDomain};
 	use frame_support::assert_ok;
 	use test_case::test_case;
 

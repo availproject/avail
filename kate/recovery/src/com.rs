@@ -122,7 +122,7 @@ fn unshift_poly(poly: &mut [BlsScalar]) {
 
 #[cfg(test)]
 mod tests {
-	use std::time::{SystemTime, UNIX_EPOCH};
+	use std::{time::{SystemTime, UNIX_EPOCH}, convert::TryInto};
 
 	use dusk_bytes::Serializable;
 	use rand::{rngs::StdRng, Rng, SeedableRng};
