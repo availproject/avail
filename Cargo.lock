@@ -2882,6 +2882,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "kate-recovery"
+version = "0.1.0"
+dependencies = [
+ "dusk-plonk",
+]
+
+[[package]]
 name = "kate-rpc-runtime-api"
 version = "0.1.0"
 dependencies = [
