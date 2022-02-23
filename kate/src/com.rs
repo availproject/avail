@@ -673,7 +673,7 @@ mod tests {
 			.map(|col| {
 				col.into_iter()
 					.enumerate()
-					.filter(|(i, e)| i % 2 == 0)
+					.filter(|(i, _)| i % 2 == 0)
 					.map(|(_, e)| e)
 					.collect::<Vec<_>>()
 			})
@@ -721,7 +721,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 		let cols = coded.chunks_exact(extended_dims.rows).collect::<Vec<_>>();
 
-		let eval_domain = EvaluationDomain::new(extended_dims.rows).unwrap();
+		EvaluationDomain::new(extended_dims.rows).unwrap();
 		let res = cols
 			.iter()
 			.map(|e| {
@@ -739,16 +739,15 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 				let samples = chosen_idx
 					.into_iter()
 					.map(|i| {
-						let cell = Cell {
+						Cell {
 							row: i as u16,
 							proof: e[i].clone().to_bytes().to_vec(),
 							..Default::default()
-						};
-						cell
+						}
 					})
 					.collect::<Vec<_>>();
 
-				let reconstructed = reconstruct_column(extended_dims.rows, &samples[..]).unwrap();
+				let reconstructed = reconstruct_column(extended_dims.rows, samples.as_slice()).unwrap();
 				// dbg!(reconstructed.clone());
 				// assert_eq!(&reconstructed, e);
 				// reconstructed
@@ -760,7 +759,6 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		// dbg!(res.clone());
 		// assert_eq!(res, cols);
 		assert!(res.len() % 2 == 0);
-		let newlen = res.len() / 2;
 		let scalars = truncate_flatten_matrix(res)
 			.iter()
 			.flat_map(|e| e.to_bytes())
