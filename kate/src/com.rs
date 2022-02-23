@@ -479,10 +479,14 @@ mod tests {
 	use dusk_plonk::{bls12_381::BlsScalar, fft::EvaluationDomain};
 	use frame_support::assert_ok;
 	use kate_recovery::com::{reconstruct_column, Cell};
+	use proptest::{
+		arbitrary::{arbitrary, StrategyFor},
+		prelude::*,
+	};
 	use rand::Rng;
 	use test_case::test_case;
 
-	use super::{flatten_and_pad_block, pad_with_zeroes, DataChunk, FlatData};
+	use super::{build_commitments, flatten_and_pad_block, pad_with_zeroes, DataChunk, FlatData};
 	use crate::{
 		com::{
 			extend_data_matrix, get_block_dimensions, pad_iec_9797_1, unflatten_padded_data,
@@ -675,6 +679,20 @@ mod tests {
 			})
 			.flatten()
 			.collect::<Vec<_>>()
+	}
+
+	fn gen_app_extrinsics() -> StrategyFor<Vec<(u32, Vec<u8>)>> { arbitrary() }
+
+	proptest! {
+		#[test]
+		fn test_codec(ref vec in gen_app_extrinsics()) {
+			let hash: Vec<u8> = (0..=31).collect::<Vec<u8>>();
+			let result: &Vec<AppExtrinsic> = &vec
+			.iter()
+			.map(|a| AppExtrinsic{app_id: a.0 , data: a.1.clone() } )
+			.collect::<Vec<AppExtrinsic>>();
+			let (_layout, _, _dimensions, _matrix) = build_commitments(64, 64, 32, result, &hash.as_slice()).unwrap();
+		}
 	}
 
 	#[test]

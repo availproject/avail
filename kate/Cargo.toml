@@ -33,6 +33,7 @@ frame-support = { version = "4.0.0-dev", default-features = false }
 
 [dev-dependencies]
 test-case = "1.2.3"
+proptest = "1.0.0"
 
 [features]
 default = ["std"]
