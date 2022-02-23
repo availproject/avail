@@ -478,11 +478,11 @@ mod tests {
 	use dusk_bytes::Serializable;
 	use dusk_plonk::{bls12_381::BlsScalar, fft::EvaluationDomain};
 	use frame_support::assert_ok;
-	use kate_recovery::com::{Cell, reconstruct_column};
-use rand::Rng;
-use test_case::test_case;
+	use kate_recovery::com::{reconstruct_column, Cell};
+	use rand::Rng;
+	use test_case::test_case;
 
-	use super::{flatten_and_pad_block, pad_with_zeroes};
+	use super::{flatten_and_pad_block, pad_with_zeroes, DataChunk, FlatData};
 	use crate::{
 		com::{
 			extend_data_matrix, get_block_dimensions, pad_iec_9797_1, unflatten_padded_data,
@@ -663,9 +663,8 @@ use test_case::test_case;
 		}
 	}
 
-	fn truncate_flatten_matrix_2(cols: Vec<Vec<BlsScalar>>) -> Vec<BlsScalar> {
-		let res = cols
-			.to_vec()
+	fn truncate_flatten_matrix(cols: Vec<Vec<BlsScalar>>) -> Vec<BlsScalar> {
+		cols.to_vec()
 			.into_iter()
 			.map(|col| {
 				col.into_iter()
@@ -675,20 +674,7 @@ use test_case::test_case;
 					.collect::<Vec<_>>()
 			})
 			.flatten()
-			.collect::<Vec<_>>();
-		res
-	}
-
-	fn decode_scalars(scalars: &[BlsScalar]) -> Vec<u8> {
-		let data = scalars
-			.iter()
-			.flat_map(|e| {
-				let b: [u8; 32] = <[u8; 32]>::try_into(e.to_bytes()).unwrap();
-				b[0..31].to_vec()
-			})
-			.collect::<Vec<_>>();
-
-		data
+			.collect::<Vec<_>>()
 	}
 
 	#[test]
@@ -699,9 +685,15 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		// let dims = get_block_dimensions(data.len(), 256, 2, 32);
 		// The hash is used for seed for padding the block to next power of two value
 		let hash: Vec<u8> = vec![0].repeat(32);
-		let (_, data, dims) =
-			flatten_and_pad_block(128, 2, 32, &[AppExtrinsic::from(orig_data.to_vec())], &hash)
-				.unwrap();
+		let chunk_size = 32;
+		let (layout, data, dims) = flatten_and_pad_block(
+			128,
+			2,
+			chunk_size,
+			&[AppExtrinsic::from(orig_data.to_vec())],
+			&hash,
+		)
+		.unwrap();
 		dbg!(dims);
 		let coded: Vec<BlsScalar> = extend_data_matrix(dims, &data[..]).unwrap();
 		// dbg!(coded.clone());
@@ -751,14 +743,16 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		// assert_eq!(res, cols);
 		assert!(res.len() % 2 == 0);
 		let newlen = res.len() / 2;
-		let res = truncate_flatten_matrix_2(res);
-		let orig = truncate_flatten_matrix_2(cols.into_iter().map(|e| e.to_vec()).collect());
-		// dbg!(res.clone());
-		assert_eq!(res, orig);
-		let decoded = decode_scalars(&res.as_slice());
-		let s = String::from_utf8_lossy(decoded.as_slice());
+		let scalars = truncate_flatten_matrix(res)
+			.iter()
+			.flat_map(|e| e.to_bytes())
+			.collect::<Vec<_>>();
+		let res = unflatten_padded_data(layout, scalars, chunk_size).unwrap();
 
-		assert_eq!(&decoded[0..(orig_data.len())], orig_data);
+		// let decoded = decode_scalars(&res.as_slice());
+		let s = String::from_utf8_lossy(res[0].data.as_slice());
+
+		assert_eq!(res[0].data.as_slice(), orig_data);
 
 		eprintln!("Decoded: {}", s);
 	}
