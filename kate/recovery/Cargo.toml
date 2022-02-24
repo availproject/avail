@@ -5,20 +5,9 @@ authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
 edition = "2018"
 
 [dependencies]
-dusk-plonk = { version = "0.8.2", default-features = false, features = ["std", "alloc"] }
-dusk-bytes = { version = "0.1.5", default-features = false, optional = true }
-getrandom = { version = "0.2", features = ["js"], optional = true }
+dusk-plonk =  {git = "https://github.com/maticnetwork/plonk.git", tag = "v0.8.2-polygon-2"}
+dusk-bytes = { version = "0.1.5"}
+getrandom = { version = "0.2", features = ["js"]}
 
 [dev-dependencies]
 rand = { version = "0.8.4" }
-
-[features]
-default = ["std"]
-alloc = ["dusk-plonk/alloc"]
-
-std = [
-	"dusk-plonk/std",
-    "dusk-bytes",
-    "getrandom/std",
-    "getrandom",
-]
