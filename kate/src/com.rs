@@ -472,7 +472,7 @@ pub fn build_commitments(
 
 #[cfg(test)]
 mod tests {
-	use std::{convert::TryInto, str::from_utf8};
+	use std::{collections::HashSet, convert::TryInto, str::from_utf8};
 
 	use bls12_381::Scalar;
 	use da_primitives::asdr::AppExtrinsic;
@@ -480,10 +480,7 @@ mod tests {
 	use dusk_plonk::{bls12_381::BlsScalar, fft::EvaluationDomain};
 	use frame_support::{assert_ok, inherent::BlockT};
 	use kate_recovery::com::{reconstruct_column, Cell};
-	use proptest::{
-		arbitrary::{arbitrary, StrategyFor},
-		prelude::*,
-	};
+	use proptest::{collection::size_range, prelude::*};
 	use rand::Rng;
 	use test_case::test_case;
 
@@ -676,19 +673,9 @@ mod tests {
 					.enumerate()
 					.filter(|(i, _)| i % 2 == 0)
 					.map(|(_, e)| e)
-					.collect::<Vec<_>>()
 			})
 			.flatten()
-			.collect::<Vec<_>>()
-	}
-
-	fn app_extrinsics_from_vec(vec: &Vec<(u32, Vec<u8>)>) -> Vec<AppExtrinsic> {
-		vec.iter()
-			.map(|a| AppExtrinsic {
-				app_id: a.0,
-				data: a.1.clone(),
-			})
-			.collect::<Vec<AppExtrinsic>>()
+			.collect::<Vec<BlsScalar>>()
 	}
 
 	fn sample_cells_from_matrix(
@@ -744,24 +731,33 @@ mod tests {
 		unflatten_padded_data(layout, scalars, dimensions.chunk_size).unwrap()
 	}
 
-	fn gen_app_extrinsics() -> StrategyFor<Vec<(u32, Vec<u8>)>> { arbitrary() }
+	fn app_extrinsics_strategy() -> impl Strategy<Value = Vec<AppExtrinsic>> {
+		any_with::<Vec<(u32, Vec<u8>)>>(size_range(1..32).lift())
+			.prop_filter("no app_id duplicates", |xts| {
+				let mut uniq = HashSet::new();
+				xts.into_iter().all(move |x| uniq.insert(x.0))
+			})
+			.prop_map(|xts| {
+				xts.into_iter()
+					.map(|(app_id, data)| AppExtrinsic { app_id, data })
+					.collect::<Vec<_>>()
+			})
+	}
 
 	proptest! {
 		#![proptest_config(ProptestConfig::with_cases(50))]
 		#[test]
-		fn test_build_and_reconstruct(ref xts_vec in gen_app_extrinsics()) {
+		fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy()) {
 			let hash: Vec<u8> = (0..=31).collect::<Vec<u8>>();
-			let xts: &Vec<AppExtrinsic> = &app_extrinsics_from_vec(&xts_vec);
 
 			let (layout, _, dimensions, matrix) = build_commitments(64, 64, 32, xts, &hash.as_slice()).unwrap();
 
 			let columns = sample_cells_from_matrix(matrix, &dimensions);
-
 			let reconstructed = reconstruct_matrix(layout, columns, dimensions);
 
-			for (result, xt) in reconstructed.iter().zip(xts.iter()) {
-				assert_eq!(result.app_id, xt.app_id);
-				assert_eq!(result.data, xt.data);
+			for (result, xt) in reconstructed.iter().zip(xts) {
+				prop_assert_eq!(result.app_id, xt.app_id);
+				prop_assert_eq!(&result.data, &xt.data);
 			}
 		}
 	}
@@ -829,11 +825,11 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		// dbg!(res.clone());
 		// assert_eq!(res, cols);
 		assert!(res.len() % 2 == 0);
-		let scalars = truncate_flatten_matrix(res)
+		let bytes = truncate_flatten_matrix(res)
 			.iter()
 			.flat_map(|e| e.to_bytes())
 			.collect::<Vec<_>>();
-		let res = unflatten_padded_data(layout, scalars, chunk_size).unwrap();
+		let res = unflatten_padded_data(layout, bytes, chunk_size).unwrap();
 
 		// let decoded = decode_scalars(&res.as_slice());
 		let s = String::from_utf8_lossy(res[0].data.as_slice());
