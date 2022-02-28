@@ -480,8 +480,12 @@ mod tests {
 	use dusk_plonk::{bls12_381::BlsScalar, fft::EvaluationDomain};
 	use frame_support::{assert_ok, inherent::BlockT};
 	use kate_recovery::com::{reconstruct_column, Cell};
-	use proptest::{collection::size_range, prelude::*};
+	use proptest::{
+		collection::{self, size_range},
+		prelude::*,
+	};
 	use rand::Rng;
+	use serde::__private::size_hint;
 	use test_case::test_case;
 
 	use super::{build_commitments, flatten_and_pad_block, pad_with_zeroes, DataChunk, FlatData};
@@ -731,17 +735,22 @@ mod tests {
 		unflatten_padded_data(layout, scalars, dimensions.chunk_size).unwrap()
 	}
 
+	fn app_extrinsic_strategy() -> impl Strategy<Value = AppExtrinsic> {
+		(
+			any::<u32>(),
+			any_with::<Vec<u8>>(size_range(1..2048).lift()),
+		)
+			.prop_map(|(app_id, data)| AppExtrinsic { app_id, data })
+	}
+
 	fn app_extrinsics_strategy() -> impl Strategy<Value = Vec<AppExtrinsic>> {
-		any_with::<Vec<(u32, Vec<u8>)>>(size_range(1..32).lift())
-			.prop_filter("no app_id duplicates", |xts| {
+		collection::vec(app_extrinsic_strategy(), size_range(1..16)).prop_filter(
+			"no app_id duplicates",
+			|xts| {
 				let mut uniq = HashSet::new();
-				xts.into_iter().all(move |x| uniq.insert(x.0))
-			})
-			.prop_map(|xts| {
-				xts.into_iter()
-					.map(|(app_id, data)| AppExtrinsic { app_id, data })
-					.collect::<Vec<_>>()
-			})
+				xts.iter().all(|xt| uniq.insert(xt.app_id))
+			},
+		)
 	}
 
 	proptest! {
@@ -750,7 +759,7 @@ mod tests {
 		fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy()) {
 			let hash: Vec<u8> = (0..=31).collect::<Vec<u8>>();
 
-			let (layout, _, dimensions, matrix) = build_commitments(64, 64, 32, xts, &hash.as_slice()).unwrap();
+			let (layout, _, dimensions, matrix) = build_commitments(64, 16, 32, xts, &hash.as_slice()).unwrap();
 
 			let columns = sample_cells_from_matrix(matrix, &dimensions);
 			let reconstructed = reconstruct_matrix(layout, columns, dimensions);
