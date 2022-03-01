@@ -78,7 +78,6 @@ async function main () {
 
 	const blockNumber = argv.b;
 	const extrinsicIndex = argv.i;
-	console.log(`Indxe: ${JSON.stringify(extrinsicIndex)}`);
 
 	const blockHash = await api.rpc.chain.getBlockHash(blockNumber);
 	const signedBlock = await api.rpc.chain.getBlock(blockHash);
@@ -88,7 +87,6 @@ async function main () {
 		extrinsics = extrinsics.filter( function(val:any, idx:number, array:any) {
 			return idx == extrinsicIndex
 		});
-		console.log(`XX: ${JSON.stringify(extrinsics)}`);
 	}
 
 
