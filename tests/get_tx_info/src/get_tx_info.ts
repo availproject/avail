@@ -67,7 +67,6 @@ async function cli_arguments() {
 			description: 'Extrinsic Index',
 			alias: 'extrinsic_index',
 			type: 'number',
-			demandOption: true,
 		}
 	}).argv
 }
@@ -79,17 +78,31 @@ async function main () {
 
 	const blockNumber = argv.b;
 	const extrinsicIndex = argv.i;
+	console.log(`Indxe: ${JSON.stringify(extrinsicIndex)}`);
 
 	const blockHash = await api.rpc.chain.getBlockHash(blockNumber);
 	const signedBlock = await api.rpc.chain.getBlock(blockHash);
 
-	console.log(`Block Hash: ${blockHash}`);
-
-	const encodedExtrinsic = signedBlock.block.extrinsics[extrinsicIndex];
-	if (encodedExtrinsic) {
-		const extrinsic = encodedExtrinsic.toHuman();
-		console.log(`Extrinsic: ${JSON.stringify(extrinsic, null, 2)}`);
+	let extrinsics = signedBlock.block.extrinsics;
+	if (extrinsicIndex !== undefined) {
+		extrinsics = extrinsics.filter( function(val:any, idx:number, array:any) {
+			return idx == extrinsicIndex
+		});
+		console.log(`XX: ${JSON.stringify(extrinsics)}`);
 	}
+
+
+	console.log(`Block Hash: ${blockHash}`);
+	console.log(`Extrinsic:`);
+	extrinsics.forEach((ex: any,index: number, array: any) => {
+		let ex_str = JSON.stringify(ex.toHuman(), null, 2);
+		if (extrinsicIndex) {
+			console.log(`${ex_str}`);
+		}
+		else {
+			console.log(`${index}: ${ex_str}`);
+		}
+	});
 
 	process.exit(0);
 }
