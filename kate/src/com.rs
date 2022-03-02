@@ -669,6 +669,15 @@ mod tests {
 		}
 	}
 
+	fn app_extrinsics_from_vec(vec: &Vec<(u32, Vec<u8>)>) -> Vec<AppExtrinsic> {
+		vec.iter()
+			.map(|a| AppExtrinsic {
+				app_id: a.0,
+				data: a.1.clone(),
+			})
+			.collect::<Vec<AppExtrinsic>>()
+	}
+
 	fn sample_cells_from_matrix(
 		matrix: Vec<BlsScalar>,
 		dimensions: &BlockDimensions,
@@ -729,9 +738,9 @@ mod tests {
 			.iter()
 			.map(|cells| reconstruct_column(dimensions.rows * 2, &cells).unwrap())
 			.collect::<Vec<_>>();
-		let scalars = truncate_flatten_matrix(reconstructed)
+		let scalars = reconstructed
 			.iter()
-			.flat_map(|e| e.to_bytes())
+			.flat_map(|e| e.iter().flat_map(|e| e.to_bytes()).collect::<Vec<_>>())
 			.collect::<Vec<_>>();
 
 		unflatten_padded_data(layout, scalars, dimensions.chunk_size).unwrap()
@@ -836,11 +845,12 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		// dbg!(res.clone());
 		// assert_eq!(res, cols);
 		assert!(res.len() % 2 == 0);
-		let bytes = truncate_flatten_matrix(res)
+		let scalars = res
 			.iter()
-			.flat_map(|e| e.to_bytes())
+			.flat_map(|e| e.iter().flat_map(|e| e.to_bytes()).collect::<Vec<_>>())
 			.collect::<Vec<_>>();
-		let res = unflatten_padded_data(layout, bytes, chunk_size).unwrap();
+
+		let res = unflatten_padded_data(layout, scalars, chunk_size).unwrap();
 
 		// let decoded = decode_scalars(&res.as_slice());
 		let s = String::from_utf8_lossy(res[0].data.as_slice());

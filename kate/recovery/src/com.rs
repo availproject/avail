@@ -48,7 +48,9 @@ pub fn reconstruct_poly(
 	let mut shifted_reconstructed_poly = eval_domain.ifft(&eval_shifted_poly_with_zero[..]);
 	unshift_poly(&mut shifted_reconstructed_poly[..]);
 
-	let reconstructed_data = eval_domain.fft(&shifted_reconstructed_poly[..]);
+	let short_domain = EvaluationDomain::new(eval_domain.size()/2).unwrap();
+
+	let reconstructed_data = short_domain.fft(&shifted_reconstructed_poly[..]);
 	Ok(reconstructed_data)
 }
 
