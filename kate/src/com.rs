@@ -669,19 +669,6 @@ mod tests {
 		}
 	}
 
-	fn truncate_flatten_matrix(cols: Vec<Vec<BlsScalar>>) -> Vec<BlsScalar> {
-		cols.to_vec()
-			.into_iter()
-			.map(|col| {
-				col.into_iter()
-					.enumerate()
-					.filter(|(i, _)| i % 2 == 0)
-					.map(|(_, e)| e)
-			})
-			.flatten()
-			.collect::<Vec<BlsScalar>>()
-	}
-
 	fn sample_cells_from_matrix(
 		matrix: Vec<BlsScalar>,
 		dimensions: &BlockDimensions,
@@ -718,7 +705,22 @@ mod tests {
 			.collect::<Vec<_>>()
 	}
 
-	fn reconstruct_matrix(
+	fn truncate_flatten_matrix(cols: Vec<Vec<BlsScalar>>) -> Vec<BlsScalar> {
+		cols.to_vec()
+			.into_iter()
+			.map(|col| {
+				col.into_iter()
+					.enumerate()
+					.filter(|(i, _)| i % 2 == 0)
+					.map(|(_, e)| e)
+			})
+			.flatten()
+			.collect::<Vec<BlsScalar>>()
+	}
+
+	// TODO: This code depends on structures which are not shared between kate and kate_recovery crates,
+	// which disables moving it into kate_recovery crate. This should be solved once we want to expose publicly this method.
+	fn reconstruct_app_extrinsics(
 		layout: Vec<(u32, u32)>,
 		columns: Vec<Vec<Cell>>,
 		dimensions: BlockDimensions,
@@ -762,7 +764,7 @@ mod tests {
 			let (layout, _, dimensions, matrix) = build_commitments(64, 16, 32, xts, &hash.as_slice()).unwrap();
 
 			let columns = sample_cells_from_matrix(matrix, &dimensions);
-			let reconstructed = reconstruct_matrix(layout, columns, dimensions);
+			let reconstructed = reconstruct_app_extrinsics(layout, columns, dimensions);
 
 			for (result, xt) in reconstructed.iter().zip(xts) {
 				prop_assert_eq!(result.app_id, xt.app_id);
