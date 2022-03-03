@@ -48,7 +48,7 @@ pub fn reconstruct_poly(
 	let mut shifted_reconstructed_poly = eval_domain.ifft(&eval_shifted_poly_with_zero[..]);
 	unshift_poly(&mut shifted_reconstructed_poly[..]);
 
-	let short_domain = EvaluationDomain::new(eval_domain.size()/2).unwrap();
+	let short_domain = EvaluationDomain::new(eval_domain.size() / 2).unwrap();
 
 	let reconstructed_data = short_domain.fft(&shifted_reconstructed_poly[..]);
 	Ok(reconstructed_data)
@@ -125,13 +125,12 @@ fn unshift_poly(poly: &mut [BlsScalar]) {
 	}
 }
 
-
 #[derive(Default, Debug, Clone)]
 pub struct Cell {
-    pub block: u64,
-    pub row: u16,
-    pub col: u16,
-    pub proof: Vec<u8>,
+	pub block: u64,
+	pub row: u16,
+	pub col: u16,
+	pub proof: Vec<u8>,
 }
 
 // use this function for reconstructing back all cells of certain column
@@ -143,55 +142,58 @@ pub struct Cell {
 // performing one round of ifft should reveal original data which were
 // coded together
 pub fn reconstruct_column(row_count: usize, cells: &[Cell]) -> Result<Vec<BlsScalar>, String> {
-    // just ensures all rows are from same column !
-    // it's required as that's how it's erasure coded during
-    // construction in validator node
-    fn check_cells(cells: &[Cell]) {
-        assert!(cells.len() > 0);
-        let col = cells[0].col;
-        for cell in cells {
-            assert_eq!(col, cell.col);
-        }
-    }
+	// just ensures all rows are from same column !
+	// it's required as that's how it's erasure coded during
+	// construction in validator node
+	fn check_cells(cells: &[Cell]) {
+		assert!(cells.len() > 0);
+		let col = cells[0].col;
+		for cell in cells {
+			assert_eq!(col, cell.col);
+		}
+	}
 
-    // given row index in column of interest, finds it if present
-    // and returns back wrapped in `Some`, otherwise returns `None`
-    fn find_row_by_index(idx: usize, cells: &[Cell]) -> Option<BlsScalar> {
-        for cell in cells {
-            if cell.row == idx as u16 {
-                return Some(
-                    BlsScalar::from_bytes(
-                        &cell.proof[..]
-                            .try_into()
-                            .expect("didn't find u8 array of length 32"),
-                    )
-                    .unwrap(),
-                );
-            }
-        }
-        None
-    }
+	// given row index in column of interest, finds it if present
+	// and returns back wrapped in `Some`, otherwise returns `None`
+	fn find_row_by_index(idx: usize, cells: &[Cell]) -> Option<BlsScalar> {
+		for cell in cells {
+			if cell.row == idx as u16 {
+				return Some(
+					BlsScalar::from_bytes(
+						&cell.proof[..]
+							.try_into()
+							.expect("didn't find u8 array of length 32"),
+					)
+					.unwrap(),
+				);
+			}
+		}
+		None
+	}
 
-    // row count of data matrix must be power of two !
-    assert!(row_count & (row_count - 1) == 0);
-    assert!(cells.len() >= row_count / 2 && cells.len() <= row_count);
-    check_cells(cells);
+	// row count of data matrix must be power of two !
+	assert!(row_count & (row_count - 1) == 0);
+	assert!(cells.len() >= row_count / 2 && cells.len() <= row_count);
+	check_cells(cells);
 
-    let eval_domain = EvaluationDomain::new(row_count).unwrap();
-    let mut subset: Vec<Option<BlsScalar>> = Vec::with_capacity(row_count);
+	let eval_domain = EvaluationDomain::new(row_count).unwrap();
+	let mut subset: Vec<Option<BlsScalar>> = Vec::with_capacity(row_count);
 
-    // fill up vector in ordered fashion
-    // @note the way it's done should be improved
-    for i in 0..row_count {
-        subset.push(find_row_by_index(i, cells));
-    }
+	// fill up vector in ordered fashion
+	// @note the way it's done should be improved
+	for i in 0..row_count {
+		subset.push(find_row_by_index(i, cells));
+	}
 
-    reconstruct_poly(eval_domain, subset)
+	reconstruct_poly(eval_domain, subset)
 }
 
 #[cfg(test)]
 mod tests {
-	use std::{time::{SystemTime, UNIX_EPOCH}, convert::TryInto};
+	use std::{
+		convert::TryInto,
+		time::{SystemTime, UNIX_EPOCH},
+	};
 
 	use dusk_bytes::Serializable;
 	use rand::{rngs::StdRng, Rng, SeedableRng};
