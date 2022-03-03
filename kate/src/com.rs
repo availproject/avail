@@ -473,22 +473,19 @@ pub fn build_commitments(
 #[cfg(test)]
 mod tests {
 	use std::{collections::HashSet, convert::TryInto, str::from_utf8};
-
-	use bls12_381::Scalar;
 	use da_primitives::asdr::AppExtrinsic;
 	use dusk_bytes::Serializable;
 	use dusk_plonk::{bls12_381::BlsScalar, fft::EvaluationDomain};
-	use frame_support::{assert_ok, inherent::BlockT};
+	use frame_support::assert_ok;
 	use kate_recovery::com::{reconstruct_column, Cell};
 	use proptest::{
 		collection::{self, size_range},
 		prelude::*,
 	};
 	use rand::Rng;
-	use serde::__private::size_hint;
 	use test_case::test_case;
 
-	use super::{build_commitments, flatten_and_pad_block, pad_with_zeroes, DataChunk, FlatData};
+	use super::{build_commitments, flatten_and_pad_block, pad_with_zeroes};
 	use crate::{
 		com::{
 			extend_data_matrix, get_block_dimensions, pad_iec_9797_1, unflatten_padded_data,
@@ -669,15 +666,6 @@ mod tests {
 		}
 	}
 
-	fn app_extrinsics_from_vec(vec: &Vec<(u32, Vec<u8>)>) -> Vec<AppExtrinsic> {
-		vec.iter()
-			.map(|a| AppExtrinsic {
-				app_id: a.0,
-				data: a.1.clone(),
-			})
-			.collect::<Vec<AppExtrinsic>>()
-	}
-
 	fn sample_cells_from_matrix(
 		matrix: Vec<BlsScalar>,
 		dimensions: &BlockDimensions,
@@ -714,19 +702,6 @@ mod tests {
 			.collect::<Vec<_>>()
 	}
 
-	fn truncate_flatten_matrix(cols: Vec<Vec<BlsScalar>>) -> Vec<BlsScalar> {
-		cols.to_vec()
-			.into_iter()
-			.map(|col| {
-				col.into_iter()
-					.enumerate()
-					.filter(|(i, _)| i % 2 == 0)
-					.map(|(_, e)| e)
-			})
-			.flatten()
-			.collect::<Vec<BlsScalar>>()
-	}
-
 	// TODO: This code depends on structures which are not shared between kate and kate_recovery crates,
 	// which disables moving it into kate_recovery crate. This should be solved once we want to expose publicly this method.
 	fn reconstruct_app_extrinsics(
@@ -736,7 +711,7 @@ mod tests {
 	) -> Vec<AppExtrinsic> {
 		let reconstructed = columns
 			.iter()
-			.map(|cells| reconstruct_column(dimensions.rows * 2, &cells).unwrap())
+			.map(|cells| reconstruct_column(dimensions.rows * 2, cells).unwrap())
 			.collect::<Vec<_>>();
 		let scalars = reconstructed
 			.iter()
@@ -770,7 +745,7 @@ mod tests {
 		fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy()) {
 			let hash: Vec<u8> = (0..=31).collect::<Vec<u8>>();
 
-			let (layout, _, dimensions, matrix) = build_commitments(64, 16, 32, xts, &hash.as_slice()).unwrap();
+			let (layout, _, dimensions, matrix) = build_commitments(64, 16, 32, xts, hash.as_slice()).unwrap();
 
 			let columns = sample_cells_from_matrix(matrix, &dimensions);
 			let reconstructed = reconstruct_app_extrinsics(layout, columns, dimensions);

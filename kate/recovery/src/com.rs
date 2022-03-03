@@ -13,19 +13,17 @@ pub fn reconstruct_poly(
 	// subset of available data
 	subset: Vec<Option<BlsScalar>>,
 ) -> Result<Vec<BlsScalar>, String> {
-	let mut missing_indices = Vec::new();
-	for i in 0..subset.len() {
-		if let None = subset[i] {
-			missing_indices.push(i as u64);
-		}
-	}
+	let missing_indices = subset
+		.iter()
+		.enumerate()
+		.filter(|e| e.1.is_none())
+		.map(|(i, _)| i as u64)
+		.collect::<Vec<_>>();
 	let (mut zero_poly, zero_eval) =
-		zero_poly_fn(eval_domain, &missing_indices[..], subset.len() as u64);
+		zero_poly_fn(eval_domain, missing_indices.as_slice(), subset.len() as u64);
 	for i in 0..subset.len() {
-		if let None = subset[i] {
-			if !(zero_eval[i] == BlsScalar::zero()) {
-				return Err("bad zero poly evaluation !".to_owned());
-			}
+		if subset[i].is_none() && zero_eval[i] != BlsScalar::zero() {
+			return Err("bad zero poly evaluation !".to_owned());
 		}
 	}
 	let mut poly_evals_with_zero: Vec<BlsScalar> = Vec::new();
@@ -56,15 +54,13 @@ pub fn reconstruct_poly(
 
 fn expand_root_of_unity(eval_domain: EvaluationDomain) -> Vec<BlsScalar> {
 	let root_of_unity = eval_domain.group_gen;
-	let mut roots: Vec<BlsScalar> = Vec::new();
-	roots.push(BlsScalar::one());
-	roots.push(root_of_unity);
+	let mut roots: Vec<BlsScalar> = vec![BlsScalar::one(), root_of_unity];
 	let mut i = 1;
 	while roots[i] != BlsScalar::one() {
 		roots.push(roots[i] * root_of_unity);
 		i += 1;
 	}
-	return roots;
+	roots
 }
 
 fn zero_poly_fn(
@@ -107,8 +103,8 @@ fn shift_poly(poly: &mut [BlsScalar]) {
 	// this is actually 1/ shift_factor --- multiplicative inverse
 	let inv_factor = shift_factor.invert().unwrap();
 
-	for i in 0..poly.len() {
-		poly[i] *= factor_power;
+	for coef in poly {
+		*coef *= factor_power;
 		factor_power *= inv_factor;
 	}
 }
@@ -119,8 +115,8 @@ fn unshift_poly(poly: &mut [BlsScalar]) {
 	let shift_factor = BlsScalar::from(5);
 	let mut factor_power = BlsScalar::one();
 
-	for i in 0..poly.len() {
-		poly[i] *= factor_power;
+	for coef in poly {
+		*coef *= factor_power;
 		factor_power *= shift_factor;
 	}
 }
@@ -146,7 +142,7 @@ pub fn reconstruct_column(row_count: usize, cells: &[Cell]) -> Result<Vec<BlsSca
 	// it's required as that's how it's erasure coded during
 	// construction in validator node
 	fn check_cells(cells: &[Cell]) {
-		assert!(cells.len() > 0);
+		assert!(!cells.is_empty());
 		let col = cells[0].col;
 		for cell in cells {
 			assert_eq!(col, cell.col);
@@ -333,12 +329,9 @@ mod tests {
 
 		for chunk in input.chunks(GROUP_TOGETHER) {
 			let widened: [u8; 32] = {
-				let mut v = vec![];
-				v.extend_from_slice(&chunk.to_vec()[..]);
+				let mut v = chunk.to_vec();
 				// pad last chunk with required -many zeros
-				for _ in 0..(GROUP_TOGETHER - chunk.len()) {
-					v.push(0u8);
-				} // v is 31 -bytes
+				v.resize(GROUP_TOGETHER, 0u8);
 				v.push(0u8); // v is now 32 -bytes
 				v.try_into().unwrap()
 			};
@@ -346,13 +339,11 @@ mod tests {
 			input_wide.push(widened);
 		}
 
-		let mut src: Vec<BlsScalar> = Vec::with_capacity(domain_size * 2);
-		for i in 0..domain_size {
-			src.push(BlsScalar::from_bytes(&input_wide[i]).unwrap());
-		}
-		for _ in 0..domain_size {
-			src.push(BlsScalar::zero());
-		}
+		let src = input_wide
+			.iter()
+			.map(|e| BlsScalar::from_bytes(e).unwrap())
+			.chain(vec![BlsScalar::zero(); domain_size].into_iter())
+			.collect::<Vec<_>>();
 
 		// erasure code it
 		let temp = half_eval_domain.ifft(&src[0..domain_size]);
@@ -375,7 +366,7 @@ mod tests {
 			};
 			let chunk_1 = &recovered[i].to_bytes()[..chunk_0.len()];
 
-			assert_eq!(chunk_0, chunk_1, "{}", format!("at i = {}", i));
+			assert_eq!(chunk_0, chunk_1, "at i = {}", i);
 		}
 	}
 
@@ -384,7 +375,7 @@ mod tests {
 
 		let mut idx = 0;
 		while available >= data.len() / 2 {
-			if let Some(_) = data[idx] {
+			if data[idx].is_some() {
 				data[idx] = None;
 				available -= 1;
 			}
@@ -405,9 +396,9 @@ mod tests {
 		);
 		let mut subset: Vec<Option<BlsScalar>> = Vec::with_capacity(data.len());
 		let mut available = 0;
-		for i in 0..data.len() {
+		for item in data {
 			if rng.gen::<u8>() % 2 == 0 {
-				subset.push(Some(data[i]));
+				subset.push(Some(*item));
 				available += 1;
 			} else {
 				subset.push(None);
@@ -420,7 +411,7 @@ mod tests {
 			(subset, available)
 		} else {
 			for i in 0..data.len() {
-				if let None = subset[i] {
+				if subset[i].is_none() {
 					// enough data added, >=50% needs
 					// to be present
 					if available >= data.len() / 2 {
