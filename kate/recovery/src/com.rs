@@ -203,6 +203,7 @@ mod tests {
 	#[test]
 	fn data_reconstruction_success() {
 		let domain_size = 1usize << 4;
+		let half_eval_domain = EvaluationDomain::new(domain_size).unwrap();
 		let eval_domain = EvaluationDomain::new(domain_size * 2).unwrap();
 
 		// some dummy source data I care about
@@ -216,26 +217,22 @@ mod tests {
 		}
 
 		// erasure code it
-		let coded_src = eval_domain.fft(&src);
+		let temp = half_eval_domain.ifft(&src[0..domain_size]);
+		let coded_src = eval_domain.fft(&temp);
 		// choose random subset of it ( >= 50% )
 		let (coded_src_subset, _) = random_subset(&coded_src);
-		// reconstruct 100% erasure coded values from random coded subset
+		// reconstruct 100% values from random coded subset
 		let coded_recovered = reconstruct_poly(eval_domain, coded_src_subset).unwrap();
 
-		for i in 0..(2 * domain_size) {
-			assert_eq!(coded_src[i], coded_recovered[i]);
-		}
-
-		let dst = eval_domain.ifft(&coded_recovered);
-
-		for i in 0..(2 * domain_size) {
-			assert_eq!(src[i].to_bytes(), dst[i].to_bytes());
+		for i in 0..domain_size {
+			assert_eq!(src[i], coded_recovered[i]);
 		}
 	}
 
 	#[test]
 	fn data_reconstruction_failure_0() {
 		let domain_size = 1usize << 4;
+		let half_eval_domain = EvaluationDomain::new(domain_size).unwrap();
 		let eval_domain = EvaluationDomain::new(domain_size * 2).unwrap();
 
 		let mut src: Vec<BlsScalar> = Vec::with_capacity(domain_size * 2);
@@ -246,18 +243,21 @@ mod tests {
 			src.push(BlsScalar::zero());
 		}
 
-		let coded_src = eval_domain.fft(&src);
+		let temp = half_eval_domain.ifft(&src[0..domain_size]);
+		let coded_src = eval_domain.fft(&temp);
+
 		let (mut coded_src_subset, available) = random_subset(&coded_src);
 		// intentionally drop a few coded elements such that
 		// < 50% is available
 		drop_few(&mut coded_src_subset, available);
-		// attempt to reconstruct 100% coded data from <50 % coded data
+
+		// attempt to reconstruct 100% data from <50 % coded data
 		// I've available
-		let coded_recovered = reconstruct_poly(eval_domain, coded_src_subset).unwrap();
+		let recovered = reconstruct_poly(eval_domain, coded_src_subset).unwrap();
 
 		let mut mismatch_count = 0;
-		for i in 0..(2 * domain_size) {
-			if coded_src[i] != coded_recovered[i] {
+		for i in 0..domain_size {
+			if coded_src[i] != recovered[i] {
 				mismatch_count += 1;
 			}
 		}
@@ -305,70 +305,18 @@ mod tests {
 	// While `data_reconstruction_failure_2` shows how chunking 31 bytes together
 	// makes it work smoothly without any data loss encountered !
 	#[test]
-	#[should_panic]
 	fn data_reconstruction_failure_1() {
-		const GROUP_TOGETHER: usize = 32; // bytes
+		// Test code is removed but test case remains,
+		// along with test description, for historical purposes.
 
-		let input = [0xffu8; (32 << 4) + 1];
+		let mut data = [0xffu8; 32];
+		assert_eq!(
+			BlsScalar::from_bytes(&data),
+			Err(dusk_bytes::Error::InvalidData)
+		);
 
-		let domain_size = ((input.len() as f64) / GROUP_TOGETHER as f64).ceil() as usize;
-		let eval_domain = EvaluationDomain::new(domain_size * 2).unwrap();
-
-		let mut input_wide: Vec<[u8; 32]> = Vec::with_capacity(domain_size);
-
-		for chunk in input.chunks(GROUP_TOGETHER) {
-			let widened: [u8; 32] = {
-				let mut v = vec![];
-				v.extend_from_slice(&chunk.to_vec()[..]);
-				// pad last chunk with required -many zeros
-				for _ in 0..(GROUP_TOGETHER - chunk.len()) {
-					v.push(0u8);
-				} // v is 32 -bytes
-				v.try_into().unwrap()
-			};
-
-			input_wide.push(widened);
-		}
-
-		let mut src: Vec<BlsScalar> = Vec::with_capacity(domain_size * 2);
-		for i in 0..domain_size {
-			src.push(BlsScalar::from_bytes(&input_wide[i]).unwrap());
-		}
-		for _ in 0..domain_size {
-			src.push(BlsScalar::zero());
-		}
-
-		// erasure code it
-		let coded_src = eval_domain.fft(&src);
-		// choose random subset of it ( >= 50% )
-		let (coded_src_subset, _) = random_subset(&coded_src);
-		// reconstruct 100% erasure coded values from random coded subset
-		let coded_recovered = reconstruct_poly(eval_domain, coded_src_subset).unwrap();
-
-		for i in 0..(2 * domain_size) {
-			assert_eq!(coded_src[i], coded_recovered[i]);
-		}
-
-		let dst = eval_domain.ifft(&coded_recovered);
-
-		for i in 0..domain_size {
-			let chunk_0 = if (i + 1) * GROUP_TOGETHER >= input.len() {
-				&input[i * GROUP_TOGETHER..]
-			} else {
-				&input[i * GROUP_TOGETHER..(i + 1) * GROUP_TOGETHER]
-			};
-			let chunk_1 = &dst[i].to_bytes()[..chunk_0.len()];
-
-			assert_eq!(chunk_0, chunk_1, "{}", format!("at i = {}", i));
-		}
-		for i in domain_size..(2 * domain_size) {
-			assert_eq!(
-				[0u8; GROUP_TOGETHER],
-				dst[i].to_bytes(),
-				"{}",
-				format!("at i = {}", i)
-			);
-		}
+		data[31] = 0x3f;
+		assert!(BlsScalar::from_bytes(&data).is_ok());
 	}
 
 	#[test]
@@ -378,6 +326,7 @@ mod tests {
 		let input = [0xffu8; 32 << 4];
 
 		let domain_size = ((input.len() as f64) / GROUP_TOGETHER as f64).ceil() as usize;
+		let half_eval_domain = EvaluationDomain::new(domain_size).unwrap();
 		let eval_domain = EvaluationDomain::new(domain_size * 2).unwrap();
 
 		let mut input_wide: Vec<[u8; 32]> = Vec::with_capacity(domain_size);
@@ -406,17 +355,17 @@ mod tests {
 		}
 
 		// erasure code it
-		let coded_src = eval_domain.fft(&src);
+		let temp = half_eval_domain.ifft(&src[0..domain_size]);
+		let coded_src = eval_domain.fft(&temp);
+
 		// choose random subset of it ( >= 50% )
 		let (coded_src_subset, _) = random_subset(&coded_src);
-		// reconstruct 100% erasure coded values from random coded subset
-		let coded_recovered = reconstruct_poly(eval_domain, coded_src_subset).unwrap();
+		// reconstruct 100% values from random coded subset
+		let recovered = reconstruct_poly(eval_domain, coded_src_subset).unwrap();
 
-		for i in 0..(2 * domain_size) {
-			assert_eq!(coded_src[i], coded_recovered[i]);
+		for i in 0..(domain_size) {
+			assert_eq!(src[i], recovered[i]);
 		}
-
-		let dst = eval_domain.ifft(&coded_recovered);
 
 		for i in 0..domain_size {
 			let chunk_0 = if (i + 1) * GROUP_TOGETHER >= input.len() {
@@ -424,17 +373,9 @@ mod tests {
 			} else {
 				&input[i * GROUP_TOGETHER..(i + 1) * GROUP_TOGETHER]
 			};
-			let chunk_1 = &dst[i].to_bytes()[..chunk_0.len()];
+			let chunk_1 = &recovered[i].to_bytes()[..chunk_0.len()];
 
 			assert_eq!(chunk_0, chunk_1, "{}", format!("at i = {}", i));
-		}
-		for i in domain_size..(2 * domain_size) {
-			assert_eq!(
-				[0u8; GROUP_TOGETHER + 1],
-				dst[i].to_bytes(),
-				"{}",
-				format!("at i = {}", i)
-			);
 		}
 	}
 
