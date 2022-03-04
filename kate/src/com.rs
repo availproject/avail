@@ -472,15 +472,20 @@ pub fn build_commitments(
 
 #[cfg(test)]
 mod tests {
-	use std::{convert::TryInto, str::from_utf8};
-
+	use std::{collections::HashSet, convert::TryInto, str::from_utf8};
 	use da_primitives::asdr::AppExtrinsic;
 	use dusk_bytes::Serializable;
-	use dusk_plonk::bls12_381::BlsScalar;
+	use dusk_plonk::{bls12_381::BlsScalar, fft::EvaluationDomain};
 	use frame_support::assert_ok;
+	use kate_recovery::com::{reconstruct_column, Cell};
+	use proptest::{
+		collection::{self, size_range},
+		prelude::*,
+	};
+	use rand::Rng;
 	use test_case::test_case;
 
-	use super::{flatten_and_pad_block, pad_with_zeroes};
+	use super::{build_commitments, flatten_and_pad_block, pad_with_zeroes};
 	use crate::{
 		com::{
 			extend_data_matrix, get_block_dimensions, pad_iec_9797_1, unflatten_padded_data,
@@ -659,5 +664,174 @@ mod tests {
 			assert_eq!(res.app_id, exp.app_id);
 			assert_eq!(res.data, exp.data);
 		}
+	}
+
+	fn sample_cells_from_matrix(
+		matrix: Vec<BlsScalar>,
+		dimensions: &BlockDimensions,
+	) -> Vec<Vec<Cell>> {
+		fn cell_from_scalar(row_idx: u16, scalar: &BlsScalar) -> Cell {
+			Cell {
+				row: row_idx,
+				proof: scalar.clone().to_bytes().to_vec(),
+				..Default::default()
+			}
+		}
+
+		fn random_indexes(length: usize) -> Vec<usize> {
+			// choose random len/2 (unique) indexes
+			let mut idx = (0..length).collect::<Vec<_>>();
+			let mut chosen_idx = Vec::<usize>::new();
+			let mut rng = rand::thread_rng();
+			for _ in 0..length / 2 {
+				let i = rng.gen_range(0..idx.len());
+				let v = idx.remove(i);
+				chosen_idx.push(v);
+			}
+			chosen_idx
+		}
+
+		matrix
+			.chunks_exact(dimensions.rows * 2)
+			.map(|e| {
+				random_indexes(e.len())
+					.into_iter()
+					.map(|i| cell_from_scalar(i as u16, &e[i]))
+					.collect::<Vec<_>>()
+			})
+			.collect::<Vec<_>>()
+	}
+
+	// TODO: This code depends on structures which are not shared between kate and kate_recovery crates,
+	// which disables moving it into kate_recovery crate. This should be solved once we want to expose publicly this method.
+	fn reconstruct_app_extrinsics(
+		layout: Vec<(u32, u32)>,
+		columns: Vec<Vec<Cell>>,
+		dimensions: BlockDimensions,
+	) -> Vec<AppExtrinsic> {
+		let reconstructed = columns
+			.iter()
+			.map(|cells| reconstruct_column(dimensions.rows * 2, cells).unwrap())
+			.collect::<Vec<_>>();
+		let scalars = reconstructed
+			.iter()
+			.flat_map(|e| e.iter().flat_map(|e| e.to_bytes()).collect::<Vec<_>>())
+			.collect::<Vec<_>>();
+
+		unflatten_padded_data(layout, scalars, dimensions.chunk_size).unwrap()
+	}
+
+	fn app_extrinsic_strategy() -> impl Strategy<Value = AppExtrinsic> {
+		(
+			any::<u32>(),
+			any_with::<Vec<u8>>(size_range(1..2048).lift()),
+		)
+			.prop_map(|(app_id, data)| AppExtrinsic { app_id, data })
+	}
+
+	fn app_extrinsics_strategy() -> impl Strategy<Value = Vec<AppExtrinsic>> {
+		collection::vec(app_extrinsic_strategy(), size_range(1..16)).prop_filter(
+			"no app_id duplicates",
+			|xts| {
+				let mut uniq = HashSet::new();
+				xts.iter().all(|xt| uniq.insert(xt.app_id))
+			},
+		)
+	}
+
+	proptest! {
+		#![proptest_config(ProptestConfig::with_cases(50))]
+		#[test]
+		fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy()) {
+			let hash: Vec<u8> = (0..=31).collect::<Vec<u8>>();
+
+			let (layout, _, dimensions, matrix) = build_commitments(64, 16, 32, xts, hash.as_slice()).unwrap();
+
+			let columns = sample_cells_from_matrix(matrix, &dimensions);
+			let reconstructed = reconstruct_app_extrinsics(layout, columns, dimensions);
+
+			for (result, xt) in reconstructed.iter().zip(xts) {
+				prop_assert_eq!(result.app_id, xt.app_id);
+				prop_assert_eq!(&result.data, &xt.data);
+			}
+		}
+	}
+
+	#[test]
+	fn test_extend_mock_data() {
+		let orig_data = br#"This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
+get erasure coded to ensure redundancy.
+Let's see how this gets encoded and then reconstructed by sampling only some data."#;
+		// let dims = get_block_dimensions(data.len(), 256, 2, 32);
+		// The hash is used for seed for padding the block to next power of two value
+		let hash: Vec<u8> = vec![0].repeat(32);
+		let chunk_size = 32;
+		let (layout, data, dims) = flatten_and_pad_block(
+			128,
+			2,
+			chunk_size,
+			&[AppExtrinsic::from(orig_data.to_vec())],
+			&hash,
+		)
+		.unwrap();
+		dbg!(dims);
+		let coded: Vec<BlsScalar> = extend_data_matrix(dims, &data[..]).unwrap();
+		// dbg!(coded.clone());
+
+		let mut extended_dims = dims;
+		extended_dims.rows *= 2;
+
+		let cols = coded.chunks_exact(extended_dims.rows).collect::<Vec<_>>();
+
+		EvaluationDomain::new(extended_dims.rows).unwrap();
+		let res = cols
+			.iter()
+			.map(|e| {
+				// choose random len/2 (unique) indexes
+				let len = e.len();
+				let mut idx = (0..len).collect::<Vec<_>>();
+				let mut chosen_idx = Vec::<usize>::new();
+				let mut rng = rand::thread_rng();
+				for _ in 0..len / 2 {
+					let i = rng.gen_range(0..idx.len());
+					let v = idx.remove(i);
+					chosen_idx.push(v);
+				}
+
+				let samples = chosen_idx
+					.into_iter()
+					.map(|i| Cell {
+						row: i as u16,
+						proof: e[i].clone().to_bytes().to_vec(),
+						..Default::default()
+					})
+					.collect::<Vec<_>>();
+
+				let reconstructed =
+					reconstruct_column(extended_dims.rows, samples.as_slice()).unwrap();
+				// dbg!(reconstructed.clone());
+				// assert_eq!(&reconstructed, e);
+				// reconstructed
+				// eval_domain.ifft(&reconstructed)
+				reconstructed
+			})
+			.collect::<Vec<_>>();
+
+		// dbg!(res.clone());
+		// assert_eq!(res, cols);
+		assert!(res.len() % 2 == 0);
+		let scalars = res
+			.iter()
+			.flat_map(|e| e.iter().flat_map(|e| e.to_bytes()).collect::<Vec<_>>())
+			.collect::<Vec<_>>();
+
+		let res = unflatten_padded_data(layout, scalars, chunk_size).unwrap();
+
+		// let decoded = decode_scalars(&res.as_slice());
+		let s = String::from_utf8_lossy(res[0].data.as_slice());
+
+		assert_eq!(res[0].data.as_slice(), orig_data);
+
+		eprintln!("Decoded: {}", s);
 	}
 }

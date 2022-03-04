@@ -1,6 +1,7 @@
 [workspace]
 members = [
 	"kate",
+	"kate/recovery",
 	"primitives",
 	"pallets/executive",
 	"pallets/system",
