@@ -1,6 +1,5 @@
 use std::{
 	convert::{TryFrom, TryInto},
-	ops::Range,
 	time::Instant,
 };
 
@@ -97,57 +96,6 @@ pub fn flatten_and_pad_block(
 	Ok((tx_layout, padded_block, block_dims))
 }
 
-pub fn unflatten_padded_data(
-	layout: XtsLayout,
-	data: FlatData,
-	chunk_size: usize,
-) -> Result<Vec<AppExtrinsic>, Error> {
-	assert!(data.len() % chunk_size == 0);
-	let data = data
-		.chunks(chunk_size)
-		.flat_map(|e| trim_to_chunk_data(e).to_vec())
-		.collect::<Vec<_>>();
-	let xs = layout
-		.iter()
-		.fold(vec![], |acc: Vec<(u32, Range<usize>)>, (i, len)| {
-			let mut v = acc;
-			let (_, prev_range) = v
-				.last()
-				.unwrap_or(&(0u32, Range { start: 0, end: 0 }))
-				.clone();
-			v.push((*i, Range {
-				start: prev_range.end as usize,
-				end: prev_range.end as usize + *len as usize * config::DATA_CHUNK_SIZE,
-			}));
-			v
-		})
-		.iter()
-		.map(|(app_id, range)| {
-			let orig = data[range.clone()].to_vec();
-
-			let trimmed = orig
-				.iter()
-				.cloned()
-				.rev()
-				.skip_while(|e| *e == 0)
-				.collect::<Vec<_>>();
-
-			let data = if trimmed.first() == Some(&PADDING_TAIL_VALUE) {
-				trimmed.into_iter().skip(1).rev().collect::<Vec<_>>()
-			} else {
-				orig
-			};
-
-			AppExtrinsic {
-				app_id: *app_id,
-				data,
-			}
-		})
-		.collect::<Vec<_>>();
-
-	Ok(xs)
-}
-
 pub fn get_block_dimensions(
 	block_size: usize,
 	max_rows_num: usize,
@@ -168,7 +116,7 @@ pub fn get_block_dimensions(
 	}
 
 	// Both row number and column number have to be a power of 2, because of the Plonk FFT constraints
-	// Implicitly, if both of the assumptions above are correct, the total_cells number will also be a power of 2 
+	// Implicitly, if both of the assumptions above are correct, the total_cells number will also be a power of 2
 	let mut nearest_power_2_size = 2_usize.pow((block_size as f32).log2().ceil() as u32);
 	if nearest_power_2_size < config::MINIMUM_BLOCK_SIZE {
 		nearest_power_2_size = config::MINIMUM_BLOCK_SIZE;
@@ -205,14 +153,6 @@ fn pad_to_chunk(chunk: DataChunk, chunk_size: usize) -> Vec<u8> {
 	let mut padded = chunk.to_vec();
 	padded.extend(vec![0].repeat(chunk_size - len));
 	padded
-}
-
-fn trim_to_chunk_data(chunk: &[u8]) -> DataChunk {
-	assert!(
-		config::DATA_CHUNK_SIZE < chunk.len(),
-		"Cannot trim to bigger size!"
-	);
-	chunk[0..config::DATA_CHUNK_SIZE].try_into().unwrap()
 }
 
 fn pad_iec_9797_1(data: &[u8], chunk_size: usize) -> Vec<DataChunk> {
@@ -411,7 +351,7 @@ pub fn build_commitments(
 		"Rows: {:?} Cols: {:?} Size: {:?}",
 		block_dims.rows,
 		block_dims.cols,
-		block.len()
+		block.len(),
 	);
 
 	let ext_data_matrix = extend_data_matrix(block_dims, &block)?;
@@ -488,9 +428,8 @@ mod tests {
 
 	use da_primitives::asdr::AppExtrinsic;
 	use dusk_bytes::Serializable;
-	use dusk_plonk::{bls12_381::BlsScalar, fft::EvaluationDomain};
-	use frame_support::assert_ok;
-	use kate_recovery::com::{reconstruct_column, Cell};
+	use dusk_plonk::bls12_381::BlsScalar;
+	use kate_recovery::com::{reconstruct_app_extrinsics, unflatten_padded_data};
 	use proptest::{
 		collection::{self, size_range},
 		prelude::*,
@@ -500,10 +439,7 @@ mod tests {
 
 	use super::{build_commitments, flatten_and_pad_block, pad_with_zeroes};
 	use crate::{
-		com::{
-			extend_data_matrix, get_block_dimensions, pad_iec_9797_1, unflatten_padded_data,
-			BlockDimensions,
-		},
+		com::{extend_data_matrix, get_block_dimensions, pad_iec_9797_1, BlockDimensions},
 		config,
 	};
 
@@ -666,8 +602,6 @@ mod tests {
 		assert_eq!(data, expected_data, "Data doesn't match the expected data");
 
 		let res = unflatten_padded_data(layout, data, chunk_size);
-		assert_ok!(res.as_deref());
-		let res = res.unwrap();
 		assert_eq!(
 			res.len(),
 			extrinsics.len(),
@@ -675,19 +609,19 @@ mod tests {
 		);
 
 		for (res, exp) in res.iter().zip(extrinsics.iter()) {
-			assert_eq!(res.app_id, exp.app_id);
-			assert_eq!(res.data, exp.data);
+			assert_eq!(res.0, exp.app_id);
+			assert_eq!(res.1, exp.data);
 		}
 	}
 
 	fn sample_cells_from_matrix(
 		matrix: Vec<BlsScalar>,
 		dimensions: &BlockDimensions,
-	) -> Vec<Vec<Cell>> {
-		fn cell_from_scalar(row_idx: u16, scalar: &BlsScalar) -> Cell {
-			Cell {
+	) -> Vec<Vec<kate_recovery::com::Cell>> {
+		fn cell_from_scalar(row_idx: u16, scalar: &BlsScalar) -> kate_recovery::com::Cell {
+			kate_recovery::com::Cell {
 				row: row_idx,
-				proof: scalar.clone().to_bytes().to_vec(),
+				data: scalar.clone().to_bytes().to_vec(),
 				..Default::default()
 			}
 		}
@@ -716,25 +650,6 @@ mod tests {
 			.collect::<Vec<_>>()
 	}
 
-	// TODO: This code depends on structures which are not shared between kate and kate_recovery crates,
-	// which disables moving it into kate_recovery crate. This should be solved once we want to expose publicly this method.
-	fn reconstruct_app_extrinsics(
-		layout: Vec<(u32, u32)>,
-		columns: Vec<Vec<Cell>>,
-		dimensions: BlockDimensions,
-	) -> Vec<AppExtrinsic> {
-		let reconstructed = columns
-			.iter()
-			.map(|cells| reconstruct_column(dimensions.rows * 2, cells).unwrap())
-			.collect::<Vec<_>>();
-		let scalars = reconstructed
-			.iter()
-			.flat_map(|e| e.iter().flat_map(|e| e.to_bytes()).collect::<Vec<_>>())
-			.collect::<Vec<_>>();
-
-		unflatten_padded_data(layout, scalars, dimensions.chunk_size).unwrap()
-	}
-
 	fn app_extrinsic_strategy() -> impl Strategy<Value = AppExtrinsic> {
 		(
 			any::<u32>(),
@@ -759,14 +674,14 @@ mod tests {
 		fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy()) {
 			let hash: Vec<u8> = (0..=31).collect::<Vec<u8>>();
 
-			let (layout, _, dimensions, matrix) = build_commitments(64, 16, 32, xts, hash.as_slice()).unwrap();
+			let (layout, _, dims, matrix) = build_commitments(64, 16, 32, xts, hash.as_slice()).unwrap();
 
-			let columns = sample_cells_from_matrix(matrix, &dimensions);
-			let reconstructed = reconstruct_app_extrinsics(layout, columns, dimensions);
+			let columns = sample_cells_from_matrix(matrix, &dims);
+			let reconstructed = reconstruct_app_extrinsics(layout, columns, dims.rows, dims.chunk_size);
 
 			for (result, xt) in reconstructed.iter().zip(xts) {
-				prop_assert_eq!(result.app_id, xt.app_id);
-				prop_assert_eq!(&result.data, &xt.data);
+				prop_assert_eq!(result.0, xt.app_id);
+				prop_assert_eq!(&result.1, &xt.data);
 			}
 		}
 	}
@@ -819,7 +734,7 @@ mod tests {
 		let orig_data = br#"This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
 get erasure coded to ensure redundancy.
 Let's see how this gets encoded and then reconstructed by sampling only some data."#;
-		// let dims = get_block_dimensions(data.len(), 256, 2, 32);
+
 		// The hash is used for seed for padding the block to next power of two value
 		let hash: Vec<u8> = vec![0].repeat(32);
 		let chunk_size = 32;
@@ -831,63 +746,17 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			&hash,
 		)
 		.unwrap();
-		dbg!(dims);
+
 		let coded: Vec<BlsScalar> = extend_data_matrix(dims, &data[..]).unwrap();
-		// dbg!(coded.clone());
 
-		let mut extended_dims = dims;
-		extended_dims.rows *= 2;
+		let cols = sample_cells_from_matrix(coded, &dims);
 
-		let cols = coded.chunks_exact(extended_dims.rows).collect::<Vec<_>>();
-
-		EvaluationDomain::new(extended_dims.rows).unwrap();
-		let res = cols
-			.iter()
-			.map(|e| {
-				// choose random len/2 (unique) indexes
-				let len = e.len();
-				let mut idx = (0..len).collect::<Vec<_>>();
-				let mut chosen_idx = Vec::<usize>::new();
-				let mut rng = rand::thread_rng();
-				for _ in 0..len / 2 {
-					let i = rng.gen_range(0..idx.len());
-					let v = idx.remove(i);
-					chosen_idx.push(v);
-				}
-
-				let samples = chosen_idx
-					.into_iter()
-					.map(|i| Cell {
-						row: i as u16,
-						proof: e[i].clone().to_bytes().to_vec(),
-						..Default::default()
-					})
-					.collect::<Vec<_>>();
-
-				let reconstructed =
-					reconstruct_column(extended_dims.rows, samples.as_slice()).unwrap();
-				// dbg!(reconstructed.clone());
-				// assert_eq!(&reconstructed, e);
-				// reconstructed
-				// eval_domain.ifft(&reconstructed)
-				reconstructed
-			})
-			.collect::<Vec<_>>();
-
-		// dbg!(res.clone());
-		// assert_eq!(res, cols);
-		assert!(res.len() % 2 == 0);
-		let scalars = res
-			.iter()
-			.flat_map(|e| e.iter().flat_map(|e| e.to_bytes()).collect::<Vec<_>>())
-			.collect::<Vec<_>>();
-
-		let res = unflatten_padded_data(layout, scalars, chunk_size).unwrap();
+		let res = reconstruct_app_extrinsics(layout, cols, dims.rows, dims.chunk_size);
 
 		// let decoded = decode_scalars(&res.as_slice());
-		let s = String::from_utf8_lossy(res[0].data.as_slice());
+		let s = String::from_utf8_lossy(res[0].1.as_slice());
 
-		assert_eq!(res[0].data.as_slice(), orig_data);
+		assert_eq!(res[0].1.as_slice(), orig_data);
 
 		eprintln!("Decoded: {}", s);
 	}
