@@ -1,12 +1,87 @@
-use std::convert::TryInto;
+use std::{convert::TryInto, ops::Range};
 
 use dusk_bytes::Serializable;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
 
+// TODO: Constants are copy from kate crate, we should move them to common place
+pub const DATA_CHUNK_SIZE: usize = 31;
+const PADDING_TAIL_VALUE: u8 = 0x80;
+
+// Reconstructs app extrinsics from extrinsics layout and data
+pub fn reconstruct_app_extrinsics(
+	xt_layout: Vec<(u32, u32)>,
+	columns: Vec<Vec<Cell>>,
+	column_length: usize,
+	chunk_size: usize,
+) -> Vec<(u32, Vec<u8>)> {
+	let reconstructed = columns
+		.iter()
+		.map(|cells| reconstruct_column(column_length * 2, cells).unwrap())
+		.collect::<Vec<_>>();
+	let scalars = reconstructed
+		.iter()
+		.flat_map(|e| e.iter().flat_map(|e| e.to_bytes()).collect::<Vec<_>>())
+		.collect::<Vec<_>>();
+
+	unflatten_padded_data(xt_layout, scalars, chunk_size)
+}
+
+fn trim_to_chunk_data(chunk: &[u8]) -> [u8; DATA_CHUNK_SIZE] {
+	assert!(DATA_CHUNK_SIZE < chunk.len(), "Cannot trim to bigger size!");
+	chunk[0..DATA_CHUNK_SIZE].try_into().unwrap()
+}
+
+// Removes both extrinsics and block padding (iec_9797 and seeded random data)
+pub fn unflatten_padded_data(
+	layout: Vec<(u32, u32)>,
+	data: Vec<u8>,
+	chunk_size: usize,
+) -> Vec<(u32, Vec<u8>)> {
+	assert!(data.len() % chunk_size == 0);
+	let data = data
+		.chunks(chunk_size)
+		.flat_map(|e| trim_to_chunk_data(e).to_vec())
+		.collect::<Vec<_>>();
+	layout
+		.iter()
+		.fold(vec![], |acc: Vec<(u32, Range<usize>)>, (i, len)| {
+			let mut v = acc;
+			let (_, prev_range) = v
+				.last()
+				.unwrap_or(&(0u32, Range { start: 0, end: 0 }))
+				.clone();
+			v.push((*i, Range {
+				start: prev_range.end as usize,
+				end: prev_range.end as usize + *len as usize * DATA_CHUNK_SIZE,
+			}));
+			v
+		})
+		.iter()
+		.map(|(app_id, range)| {
+			let orig = data[range.clone()].to_vec();
+
+			let trimmed = orig
+				.iter()
+				.cloned()
+				.rev()
+				.skip_while(|e| *e == 0)
+				.collect::<Vec<_>>();
+
+			let data = if trimmed.first() == Some(&PADDING_TAIL_VALUE) {
+				trimmed.into_iter().skip(1).rev().collect::<Vec<_>>()
+			} else {
+				orig
+			};
+
+			(*app_id, data)
+		})
+		.collect::<Vec<_>>()
+}
+
 // This module is taken from https://gist.github.com/itzmeanjan/4acf9338d9233e79cfbee5d311e7a0b4
 // which I wrote few months back when exploring polynomial based erasure coding technique !
 
-pub fn reconstruct_poly(
+fn reconstruct_poly(
 	// domain I'm working with
 	// all (i)ffts to be performed on it
 	eval_domain: EvaluationDomain,
@@ -123,10 +198,9 @@ fn unshift_poly(poly: &mut [BlsScalar]) {
 
 #[derive(Default, Debug, Clone)]
 pub struct Cell {
-	pub block: u64,
 	pub row: u16,
 	pub col: u16,
-	pub proof: Vec<u8>,
+	pub data: Vec<u8>,
 }
 
 // use this function for reconstructing back all cells of certain column
@@ -156,7 +230,7 @@ pub fn reconstruct_column(row_count: usize, cells: &[Cell]) -> Result<Vec<BlsSca
 			if cell.row == idx as u16 {
 				return Some(
 					BlsScalar::from_bytes(
-						&cell.proof[..]
+						&cell.data[..]
 							.try_into()
 							.expect("didn't find u8 array of length 32"),
 					)
