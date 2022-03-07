@@ -473,6 +473,7 @@ pub fn build_commitments(
 #[cfg(test)]
 mod tests {
 	use std::{collections::HashSet, convert::TryInto, str::from_utf8};
+
 	use da_primitives::asdr::AppExtrinsic;
 	use dusk_bytes::Serializable;
 	use dusk_plonk::{bls12_381::BlsScalar, fft::EvaluationDomain};
@@ -494,7 +495,7 @@ mod tests {
 		config,
 	};
 
-	#[test_case(11,   256, 256 => BlockDimensions { size: 128  , rows: 1, cols: 4  , chunk_size: 32} ; "below minimum block size")]
+	#[test_case(11,   256, 256 => BlockDimensions { size: 96  , rows: 1, cols: 3  , chunk_size: 32} ; "below minimum block size")]
 	#[test_case(300,  256, 256 => BlockDimensions { size: 512  , rows: 1, cols: 16 , chunk_size: 32} ; "regular case")]
 	#[test_case(513,  256, 256 => BlockDimensions { size: 1024 , rows: 1, cols: 32 , chunk_size: 32} ; "minimum overhead after 512")]
 	#[test_case(8192, 256, 256 => BlockDimensions { size: 8192 , rows: 1, cols: 256, chunk_size: 32} ; "maximum cols")]
@@ -755,6 +756,49 @@ mod tests {
 				prop_assert_eq!(&result.data, &xt.data);
 			}
 		}
+	}
+
+	#[test]
+	// Test build_commitments() function with predefined inputs taken from the running full node
+	fn test_build_commitments() {
+		let block_rows = 256;
+		let block_cols = 256;
+		let chunk_size = 32;
+		let original_data = br#"test"#;
+		let hash: Vec<u8> = vec![
+			76, 41, 174, 145, 187, 12, 97, 32, 75, 111, 149, 209, 243, 195, 165, 10, 166, 172, 47,
+			41, 218, 24, 212, 66, 62, 5, 187, 191, 129, 5, 105, 3,
+		];
+
+		let (_, commitments, dimensions, _) = build_commitments(
+			block_rows,
+			block_cols,
+			chunk_size,
+			&[AppExtrinsic::from(original_data.to_vec())],
+			&hash,
+		)
+		.unwrap();
+
+		assert!(
+			dimensions
+				== BlockDimensions {
+					rows: 1,
+					cols: 3,
+					size: 96,
+					chunk_size: 32
+				}
+		);
+		assert!(
+			commitments
+				== vec![
+					141, 123, 24, 105, 101, 145, 70, 235, 33, 252, 7, 38, 120, 222, 69, 198, 217,
+					194, 1, 4, 118, 68, 181, 103, 241, 197, 34, 97, 3, 209, 148, 109, 66, 188, 7,
+					90, 34, 179, 157, 190, 16, 56, 32, 164, 204, 114, 36, 176, 141, 123, 24, 105,
+					101, 145, 70, 235, 33, 252, 7, 38, 120, 222, 69, 198, 217, 194, 1, 4, 118, 68,
+					181, 103, 241, 197, 34, 97, 3, 209, 148, 109, 66, 188, 7, 90, 34, 179, 157,
+					190, 16, 56, 32, 164, 204, 114, 36, 176
+				]
+		);
 	}
 
 	#[test]
