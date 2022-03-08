@@ -58,6 +58,8 @@ pub fn flatten_and_pad_block(
 	extrinsics: &[AppExtrinsic],
 	header_hash: &[u8],
 ) -> Result<(XtsLayout, FlatData, BlockDimensions), Error> {
+	// Pad data before determining exact block size
+	// Padding occurs both inside a single chunk and with additional chunk (if needed)
 	let (tx_layout, padded_chunks): (Vec<_>, Vec<_>) = extrinsics
 		.iter()
 		.map(|e| {
@@ -76,6 +78,7 @@ pub fn flatten_and_pad_block(
 		})
 		.collect::<Vec<_>>();
 
+	// Determine the block size after padding
 	let block_dims =
 		get_block_dimensions(padded_block.len(), max_rows_num, max_cols_num, chunk_size)?;
 
@@ -164,6 +167,8 @@ pub fn get_block_dimensions(
 		});
 	}
 
+	// Both row number and column number have to be a power of 2, because of the Plonk FFT constraints
+	// Implicitly, if both of the assumptions above are correct, the total_cells number will also be a power of 2 
 	let mut nearest_power_2_size = 2_usize.pow((block_size as f32).log2().ceil() as u32);
 	if nearest_power_2_size < config::MINIMUM_BLOCK_SIZE {
 		nearest_power_2_size = config::MINIMUM_BLOCK_SIZE;
@@ -256,12 +261,13 @@ pub fn extend_data_matrix(
 
 	// extend data matrix, column by column
 	let extended_column_eval_domain = EvaluationDomain::new(extended_rows_num)?;
-	let column_eval_domain = EvaluationDomain::new(rows_num)?;
+	let column_eval_domain = EvaluationDomain::new(rows_num)?; // rows_num = column_length
 
 	chunk_elements
 		.chunks_exact_mut(extended_rows_num)
 		.for_each(|col| {
 			let half_len = col.len() / 2;
+			// (i)fft functions input parameter slice size has to be a power of 2, otherwise it panics
 			column_eval_domain.ifft_slice(&mut col[0..half_len]);
 			extended_column_eval_domain.fft_slice(col);
 		});
@@ -330,6 +336,7 @@ pub fn build_proof(
 				for j in 0..cols_num {
 					row.push(ext_data_matrix[row_index + j * extended_rows_num]);
 				}
+				// row has to be a power of 2, otherwise interpolate() function panics
 				let polynomial =
 					Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
 				let witness =
@@ -495,11 +502,12 @@ mod tests {
 		config,
 	};
 
-	#[test_case(11,   256, 256 => BlockDimensions { size: 96  , rows: 1, cols: 3  , chunk_size: 32} ; "below minimum block size")]
+	#[test_case(11,   256, 256 => BlockDimensions { size: 128  , rows: 1, cols: 4  , chunk_size: 32} ; "below minimum block size")]
 	#[test_case(300,  256, 256 => BlockDimensions { size: 512  , rows: 1, cols: 16 , chunk_size: 32} ; "regular case")]
 	#[test_case(513,  256, 256 => BlockDimensions { size: 1024 , rows: 1, cols: 32 , chunk_size: 32} ; "minimum overhead after 512")]
 	#[test_case(8192, 256, 256 => BlockDimensions { size: 8192 , rows: 1, cols: 256, chunk_size: 32} ; "maximum cols")]
 	#[test_case(8224, 256, 256 => BlockDimensions { size: 16384, rows: 2, cols: 256, chunk_size: 32} ; "two rows")]
+
 	fn test_get_block_dimensions(size: usize, rows: usize, cols: usize) -> BlockDimensions {
 		get_block_dimensions(size, rows, cols, 32).unwrap()
 	}
@@ -759,8 +767,8 @@ mod tests {
 	}
 
 	#[test]
-	// Test build_commitments() function with predefined inputs taken from the running full node
-	fn test_build_commitments() {
+	// Test build_commitments() function with a predefined input
+	fn test_build_commitments_simple_commitment_check() {
 		let block_rows = 256;
 		let block_cols = 256;
 		let chunk_size = 32;
@@ -783,20 +791,20 @@ mod tests {
 			dimensions
 				== BlockDimensions {
 					rows: 1,
-					cols: 3,
-					size: 96,
+					cols: 4,
+					size: 128,
 					chunk_size: 32
 				}
 		);
 		assert!(
 			commitments
 				== vec![
-					141, 123, 24, 105, 101, 145, 70, 235, 33, 252, 7, 38, 120, 222, 69, 198, 217,
-					194, 1, 4, 118, 68, 181, 103, 241, 197, 34, 97, 3, 209, 148, 109, 66, 188, 7,
-					90, 34, 179, 157, 190, 16, 56, 32, 164, 204, 114, 36, 176, 141, 123, 24, 105,
-					101, 145, 70, 235, 33, 252, 7, 38, 120, 222, 69, 198, 217, 194, 1, 4, 118, 68,
-					181, 103, 241, 197, 34, 97, 3, 209, 148, 109, 66, 188, 7, 90, 34, 179, 157,
-					190, 16, 56, 32, 164, 204, 114, 36, 176
+					179, 146, 111, 178, 52, 189, 223, 114, 103, 194, 180, 22, 184, 118, 15, 103,
+					140, 42, 181, 96, 218, 184, 195, 8, 1, 191, 222, 69, 86, 117, 238, 244, 176,
+					238, 88, 46, 194, 158, 112, 16, 111, 28, 161, 155, 214, 174, 118, 212, 179,
+					146, 111, 178, 52, 189, 223, 114, 103, 194, 180, 22, 184, 118, 15, 103, 140,
+					42, 181, 96, 218, 184, 195, 8, 1, 191, 222, 69, 86, 117, 238, 244, 176, 238,
+					88, 46, 194, 158, 112, 16, 111, 28, 161, 155, 214, 174, 118, 212
 				]
 		);
 	}
