@@ -2,10 +2,9 @@ const { ApiPromise, WsProvider } = require('@polkadot/api');
 const yargs = require('yargs');
 
 
-async function createApi() {
+async function createApi(endpoint: string) {
 	// Initialise the provider to connect to the local node
-	// const provider = new WsProvider('ws://127.0.0.1:9944');
-	const provider = new WsProvider('wss://polygon-da-explorer.matic.today/ws');
+	const provider = new WsProvider(endpoint);
 
 	// Create the API and wait until ready
 	return ApiPromise.create({ 
@@ -74,7 +73,7 @@ async function cli_arguments() {
 async function main () {
 	const argv = await cli_arguments();
 
-	const api = await createApi(); 
+	const api = await createApi(argv.e); 
 
 	const blockNumber = argv.b;
 	const extrinsicIndex = argv.i;
