@@ -515,7 +515,8 @@ impl pallet_staking::Config for Runtime {
 	type ElectionProvider = ElectionProviderMultiPhase;
 	type EraPayout = pallet_staking::ConvertCurve<RewardCurve>;
 	type Event = Event;
-	type GenesisElectionProvider = Self::ElectionProvider;
+	type GenesisElectionProvider =
+		frame_election_provider_support::onchain::OnChainSequentialPhragmen<Self>;
 	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
 	type NextNewSession = Session;
 	type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
@@ -623,6 +624,11 @@ impl frame_support::pallet_prelude::Get<Option<(usize, sp_npos_elections::Extend
 	}
 }
 
+impl frame_election_provider_support::onchain::Config for Runtime {
+	type Accuracy = sp_runtime::Perbill;
+	type DataProvider = Staking;
+}
+
 impl pallet_election_provider_multi_phase::Config for Runtime {
 	type BenchmarkingConfig = BenchmarkConfig;
 	type Currency = Balances;
@@ -630,7 +636,7 @@ impl pallet_election_provider_multi_phase::Config for Runtime {
 	type DataProvider = Staking;
 	type EstimateCallFee = TransactionPayment;
 	type Event = Event;
-	type Fallback = pallet_election_provider_multi_phase::NoFallback<Self>;
+	type Fallback = frame_election_provider_support::onchain::OnChainSequentialPhragmen<Self>;
 	type ForceOrigin = EnsureRootOrHalfCouncil;
 	type MinerMaxLength = MinerMaxLength;
 	type MinerMaxWeight = MinerMaxWeight;
