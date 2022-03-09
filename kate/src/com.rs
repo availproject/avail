@@ -235,7 +235,12 @@ fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 }
 
 #[cfg(feature = "alloc")]
-/// build extended data matrix, by columns
+/// Build extended data matrix, by columns.
+/// We are using dusk plonk for erasure coding,
+/// which is using roots of unity as evaluation domain for fft and ifft.
+/// This means that extension factor has to be multiple of 2,
+/// and that original data will be interleaved with erasure codes,
+/// instead of being in first k chunks of a column.
 pub fn extend_data_matrix(
 	block_dims: BlockDimensions,
 	block: &[u8],
