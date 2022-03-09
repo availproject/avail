@@ -3,11 +3,12 @@
 pub mod config {
 	pub const SCALAR_SIZE_WIDE: usize = 64;
 	pub const SCALAR_SIZE: usize = 32;
-	pub const DATA_CHUNK_SIZE: usize = 31;
+	pub const DATA_CHUNK_SIZE: usize = 31; // Actual chunk size is 32 after 0 padding is done
 	pub const EXTENSION_FACTOR: usize = 2;
 	pub const PROVER_KEY_SIZE: usize = 48;
 	pub const PROOF_SIZE: usize = 48;
 	pub const MAX_PROOFS_REQUEST: usize = 30;
+	// MINIMUM_BLOCK_SIZE, MAX_BLOCK_ROWS and MAX_BLOCK_COLUMNS have to be a power of 2 because of the FFT functions requirements
 	pub const MINIMUM_BLOCK_SIZE: usize = 128;
 	pub const MAX_BLOCK_ROWS: u32 = if cfg!(feature = "extended-columns") {
 		128
