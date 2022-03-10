@@ -62,9 +62,6 @@ async function main () {
   const api = await createApi(); 
 
   const keyring = new Keyring({ type: 'sr25519'});
-  const mnemonic = `inject fiscal misery fiscal success weasel black tube satisfy rural sauce reveal`;
-
-  const acc = keyring.addFromMnemonic(mnemonic, { name: 'test_pair' },'sr25519');
   const alice = keyring.addFromUri('//Alice');
 
   // Retrieve the chain & node information information via rpc calls
