@@ -30,4 +30,6 @@ jobs:
         with:
           toolchain: stable
 
+      - run: rustup component add rustfmt
+      - run: cargo fmt --check
       - run: cargo test
