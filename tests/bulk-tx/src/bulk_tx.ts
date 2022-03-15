@@ -4,11 +4,9 @@ import type { EventRecord, ExtrinsicStatus, H256, SignedBlock } from '@polkadot/
 import type { ISubmittableResult ,SignatureOptions } from '@polkadot/types/types';
 
 const ALICE = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
-const HERMEZ = '5CAezZ6kHGHY2ZUVvpqpJ9v7xSPm5Xhdj2F7H7k2iKyRzRDH';
-const herMnemonic = 'very noise grant jealous elegant update famous own pulp tongue soccer true';
-
 const keyring = new Keyring({ type: 'sr25519' });
 
+//batch and size of the transanction that needs to be done
 const batch = 3;
 const size = 100;
 
@@ -116,16 +114,8 @@ const sendTxs = async (api:any, sender:any, nonce:any) => {
     results.push(result);
     non = non + 1
   }
-
   return results ;
 }
-
-
-
-// async function sub(tx:any){
-//   return await Promise.all(tx);
-// }
-
 
 async function main() {
 
@@ -133,6 +123,9 @@ async function main() {
     const alice = keyring.addFromUri('//Alice');
     const bob = keyring.addFromUri('//Bob');
     const metadata = await api.rpc.state.getMetadata();
+    /* @note: added ALICE account for now, you can add your own account here using following code
+    const mnemonic = 'your mnemonic';
+    const hermez = keyring.addFromUri(mnemonic, 'sr25519'); */
     let nonce = await getNonce(api, ALICE);
     let tx = await sendTxs(api, alice, nonce); 
 
