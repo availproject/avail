@@ -7,9 +7,9 @@ import type { ISubmittableResult, SignatureOptions } from '@polkadot/types/types
 const ALICE = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 const keyring = new Keyring({ type: 'sr25519' });
 
-//batch size and payload size are set here
+//batch size and payload size in bytes are set here
 const batch:number = 3;
-const size:number = 100;
+const size:number = 100; //payload
 
 async function createApi(): Promise<ApiPromise> {
   // Initialise the provider to connect to the local node
