@@ -8,6 +8,7 @@ members = [
 	"pallets/dactr",
 	"runtime",
 	"node",
+	"fuzzing",
 ]
 
 [patch."https://github.com/paritytech/substrate.git"]
