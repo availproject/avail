@@ -3,3 +3,9 @@ target
 tests/app_id/dist
 tests/app_id/node_modules
 tests/app_id/.vscode
+.DS_Store
+tests/.DS_Store
+tests/bulk-tx/.DS_Store
+tests/bulk-tx/src/.DS_Store
+tests/bulk-tx/node_modules
+tests/bulk-tx/dist
