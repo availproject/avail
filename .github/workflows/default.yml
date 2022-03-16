@@ -28,8 +28,12 @@ jobs:
 
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+            # NOTE: Until https://github.com/actions-rs/toolchain/pull/209 is merged,
+            # this should be synced with rust-toolchain.toml file.
+            # After merge, this section should be removed.
+            toolchain: nightly-2021-12-05
+            components: rustfmt, clippy
+            profile: minimal
 
-      - run: rustup component add rustfmt
       - run: cargo fmt --check
       - run: cargo test
