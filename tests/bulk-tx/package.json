@@ -8,6 +8,7 @@
     "start": "tsc && node dist/data_full.js",
     "data": "tsc && node dist/app.js",
     "full": "tsc && node dist/tx_data.js",
+    "bulk": "tsc && node dist/bulk_tx.js",
     "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package app_id/interfaces --input ./src/interfaces --endpoint ./data-avail.json",
     "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package app_id/interfaces --endpoint ./edgeware.json --output ./src/interfaces",
     "test": "echo \"Error: no test specified\" && exit 1"
