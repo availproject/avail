@@ -1,5 +1,6 @@
 import { ApiPromise, WsProvider, Keyring } from '@polkadot/api';
 import { SignerResult } from '@polkadot/api/types';
+import { KeyringPair } from '@polkadot/keyring/types';
 import type { EventRecord, ExtrinsicStatus, H256, SignedBlock } from '@polkadot/types/interfaces';
 import type { ISubmittableResult, SignatureOptions } from '@polkadot/types/types';
 
@@ -7,8 +8,8 @@ const ALICE = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 const keyring = new Keyring({ type: 'sr25519' });
 
 //batch size and payload size are set here
-const batch = 3;
-const size = 100;
+const batch:number = 3;
+const size:number = 100;
 
 async function createApi(): Promise<ApiPromise> {
   // Initialise the provider to connect to the local node
@@ -58,16 +59,20 @@ async function createApi(): Promise<ApiPromise> {
 }
 
 //generating random data as per payload specified
-function generateData(size: number): string {
-  let randomChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < size; i++) {
-    result += randomChars.charAt(Math.floor(Math.random() * randomChars.length));
-  }
-  return result
+function randomDigit() {
+  return Math.floor(Math.random() * Math.floor(2));
 }
 
-async function getNonce(api: ApiPromise, address: any) {
+function generateRandomBinary(size:number) {
+  let binary = "0x";
+  for(let i = 0; i < size; ++i) {
+    binary += randomDigit();
+  }
+  console.log(binary);
+  return binary;
+}
+
+async function getNonce(api: ApiPromise, address: any): Promise<number> {
   const nonce = (await api.rpc.system.accountNextIndex(address)).toNumber();
   return nonce;
 }
@@ -76,12 +81,13 @@ interface SignatureOptionsNew extends SignatureOptions {
   app_id: number
 }
 
-async function sendTx(api: ApiPromise, sender: any, nonce: any): Promise<any> {
+async function sendTx(api: ApiPromise, sender: KeyringPair, nonce: number): Promise<any> {
   try {
-    let data = generateData(size);
-    const nonc = await api.rpc.system.accountNextIndex(sender.address);
+    let data = generateRandomBinary(size);
     let submit = await api.tx.dataAvailability.submitData(data);
-    const options: Partial<any> = { app_id: 1, nonce: -1 }
+    /* @note here app_id is 1,
+    but if you want to have one your own then create one first before initialising here */
+    const options: Partial<any> = { app_id: 1, nonce: nonce }
     const res = await submit
       .signAndSend(
         sender,  // sender
@@ -106,7 +112,7 @@ async function sendTx(api: ApiPromise, sender: any, nonce: any): Promise<any> {
   }
 }
 
-const sendTxs = async (api: any, sender: any, nonce: any) => {
+const sendTxs = async (api: ApiPromise, sender: KeyringPair, nonce: number) => {
 
   let non = await getNonce(api, sender.address);
   const results = [];
@@ -118,13 +124,6 @@ const sendTxs = async (api: any, sender: any, nonce: any) => {
 
   return results;
 }
-
-
-
-// async function sub(tx:any){
-//   return await Promise.all(tx);
-// }
-
 
 async function main() {
 
