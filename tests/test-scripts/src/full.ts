@@ -35,15 +35,21 @@ async function cli_arguments() {
             alias: 'function',
             type: 'string',
             default: 'app'
+        },
+
+        id: {
+            description: 'app id to be given',
+            alias: 'app_id',
+            type: 'number',
+            default: 0
         }
+        
 
     }).argv;
 }
 
-async function createApi(): Promise<ApiPromise> {
-    // Initialise the provider to connect to the local node
-    // const provider = new WsProvider('wss://polygon-da-explorer.matic.today/ws');
-    const provider = new WsProvider('ws://127.0.0.1:9944');
+async function createApi(argv:any): Promise<ApiPromise> {
+    const provider = new WsProvider(argv.e);
 
     // Create the API and wait until ready
     return ApiPromise.create({
@@ -69,12 +75,6 @@ async function createApi(): Promise<ApiPromise> {
             },
             Header: 'KateHeader',
             AppId: 'u32',
-            // CheckAppId: {
-            //     extra: {
-            //         appId: 'u32', 
-            //     },
-            //     types: {}
-            // }
         },
         signedExtensions: {
             CheckAppId: {
@@ -117,7 +117,7 @@ async function sendTx(api: ApiPromise, sender: KeyringPair, nonce: number, argv:
         let submit = await api.tx.dataAvailability.submitData(data);
         /* @note here app_id is 1,
         but if you want to have one your own then create one first before initialising here */
-        const options: Partial<any> = { app_id: 1, nonce: nonce }
+        const options: Partial<any> = { app_id: argv.id, nonce: nonce }
         const res = await submit
             .signAndSend(
                 sender,  // sender
@@ -142,7 +142,7 @@ async function sendTx(api: ApiPromise, sender: KeyringPair, nonce: number, argv:
                 });
     } catch (e) {
         console.log(e);
-        process.exit(0);
+        process.exit(1);
     }
 }
 
@@ -198,7 +198,7 @@ let block = async (hash: H256, api: ApiPromise) => {
 
 async function main() {
     const argv = await cli_arguments();
-    const api = await createApi();
+    const api = await createApi(argv);
     const alice = keyring.addFromUri('//Alice');
     const metadata = await api.rpc.state.getMetadata();
     let nonce = await getNonce(api, alice.address);
@@ -222,4 +222,7 @@ async function main() {
     }
 }
 
-main().catch(console.error)
+main().catch((err) => {
+	console.error(err);
+	process.exit(1);
+});
