@@ -8,8 +8,8 @@ members = [
 	"pallets/dactr",
 	"runtime",
 	"node",
-	"fuzzing",
 ]
+exclude = ["fuzzing"]
 
 [patch."https://github.com/paritytech/substrate.git"]
 frame-system = { path = "pallets/system" }
@@ -189,3 +189,6 @@ zeroize = { opt-level = 3 }
 [profile.release]
 # Substrate runtime requires unwinding.
 panic = "unwind"
+
+# [feature]
+# fuzz-afl = ["fuzz-afl"]
