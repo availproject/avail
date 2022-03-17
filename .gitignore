@@ -1,5 +1,7 @@
 target
 .gdb_history
-tests/app_id/dist
-tests/app_id/node_modules
-tests/app_id/.vscode
+.DS_Store
+tests/.DS_Store
+tests/test-scripts/.DS_Store
+tests/test-scripts/node_modules
+tests/test-scripts/dist
