@@ -189,6 +189,3 @@ zeroize = { opt-level = 3 }
 [profile.release]
 # Substrate runtime requires unwinding.
 panic = "unwind"
-
-# [feature]
-# fuzz-afl = ["fuzz-afl"]
