@@ -34,7 +34,7 @@ async function cli_arguments() {
             description: 'function name',
             alias: 'function',
             type: 'string',
-            default: 'app'
+            default: 'submit_data'
         },
 
         id: {
@@ -133,7 +133,7 @@ async function sendTx(api: ApiPromise, sender: KeyringPair, nonce: number, argv:
                         let extrinsic_hash = result.txHash;
                         console.log(`\nExtrinsic hash: ${result.txHash} with nonce ${nonce} is in block`);
                         // block(block_hash, api);
-                        if (argv.n == 'get_data') {
+                        if (argv.n == 'submit_data') {
                             setTimeout(() => {
                                 get(api, block_hash, extrinsic_hash);
                             }, 5000);
@@ -211,10 +211,7 @@ async function main() {
     if (argv.n == 'bulk_tx') {
         let tx = await sendTxs(api, alice, nonce, argv);
     }
-    else if (argv.n == 'get_data') {
-        let tx = await sendTx(api, alice, nonce, argv)
-    }
-    else if (argv.n == 'app') {
+    else if (argv.n == 'submit_data') {
         let tx = await sendTx(api, alice, nonce, argv)
     }
     else {
