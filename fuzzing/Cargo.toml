@@ -1,0 +1,16 @@
+[package]
+name = "fuzzing"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+afl = "*"
+kate-recovery = {path = "../kate/recovery"}
+kate = {path = "../kate"}
+da-primitives = { path = "../primitives", default-features = false }
+
+[[bin]]
+name = "build_commitment_fuzz"
+path = "src/build_commitment_fuzz.rs"
