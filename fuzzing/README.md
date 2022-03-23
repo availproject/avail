@@ -18,10 +18,17 @@ Run `cargo afl build` inside the fuzzing crate. This command builds an instrumen
 
 3. Run `cargo afl fuzz -i in/ -o out/ ../../target/debug/target_name`, with target name being the name of the binary containing the target function. Note that a single AFL instance runs on a single core, without parallel execution capabilities. In order to achieve far greater fuzzing speeds, a [distributed system](https://aflplus.plus/docs/parallel_fuzzing/) is needed.
 
+## Notes
+
+- Lower stability in the item geometry is to be expected when encountering code with some built-in randomness
+- Harness function needs to be crafted in a way to optimize the AFLs chances of finding bugs (i.e. delivering reasonable extrinsic format)
+- AFL whatsup too (`cargo afl whatsup path/to/output/dir`) can be used to check the status of the fuzzers running in background
+
 ## TODO
 
 - analyze most interesting target functions and implement needed harnesses
 - implement a deployment strategy for scaling fuzzer capacity per function, related to the available hardware resources (i.e. CPU cores)
+- implement a CICD fuzzing strategy
 
 ## Further reading
 
