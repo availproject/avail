@@ -23,6 +23,7 @@ Run `cargo afl build` inside the fuzzing crate. This command builds an instrumen
 - Lower stability in the item geometry is to be expected when encountering code with some built-in randomness
 - Harness function needs to be crafted in a way to optimize the AFLs chances of finding bugs (i.e. delivering reasonable extrinsic format)
 - AFL whatsup too (`cargo afl whatsup path/to/output/dir`) can be used to check the status of the fuzzers running in background
+- For better results in parallel fuzzing, a single master (-M) instance is required to perform deterministic mutations
 
 ## TODO
 
