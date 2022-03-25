@@ -36,7 +36,11 @@ jobs:
             profile: minimal
 
       - run: cargo fmt --check
-      - run: cargo test
+      - name: Test
+        env:
+          LLVM_PROFILE_FILE: grcov-%p-%m.profraw
+          RUSTFLAGS: -Zinstrument-coverage
+        run: cargo test
       - name: Generate coverage
         run: |
           ./target/debug/grcov $(find . -name "grcov-*.profraw" -print) \
