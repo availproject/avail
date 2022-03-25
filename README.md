@@ -92,3 +92,33 @@ Here is the table of custom IDs for invalid transaction errors:
 | --------- | ------------------- | ----------- |
 | 137       | InvalidAppId        | The given `AppId` is not yet registered |
 | 138       | ForbiddenAppId      | The extrinsic is not available for the given `AppId` |
+
+## Generate test code coverage report
+
+We are using [grcov](https://github.com/mozilla/grcov) to aggregate code coverage information and generate reports.
+
+To install grcov run
+
+	`$> cargo install grcov`
+
+Source code coverage data is generated when running tests with
+
+	$> env RUSTFLAGS="-Zinstrument-coverage" \
+		SKIP_WASM_BUILD=true \
+		LLVM_PROFILE_FILE="tests-coverage-%p-%m.profraw" \
+		cargo test
+
+To generate report, run
+
+	$> grcov . -s . \
+		--binary-path ./target/debug/ \
+		-t html \
+		--branch \
+		--ignore-not-existing -o \
+		./target/debug/coverage/
+
+To clean up generate coverage information files, run
+
+	$> rm **/*.profraw
+
+Open `index.html` from `./target/debug/coverage/` folder to review coverage data. Since WASM build is not possible yet, SKIP_WASM_BUILD is required when running tests.
