@@ -1,6 +1,6 @@
 # Data Availability Node
 
-![Build status](https://github.com/maticnetwork/avail/actions/workflows/default.yml/badge.svg)
+![Build status](https://github.com/maticnetwork/avail/actions/workflows/default.yml/badge.svg) ![codecov](https://codecov.io/gh/maticnetwork/avail/branch/main/graph/badge.svg?token=OBX2NEE31T)
 
 ## Compile
 
