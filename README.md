@@ -1,6 +1,6 @@
 # Data Availability Node
 
-![Build status](https://github.com/maticnetwork/avail/actions/workflows/default.yml/badge.svg) ![codecov](https://codecov.io/gh/maticnetwork/avail/branch/main/graph/badge.svg?token=OBX2NEE31T)
+[![Build status](https://github.com/maticnetwork/avail/actions/workflows/default.yml/badge.svg)](https://github.com/maticnetwork/avail/actions/workflows/default.yml) [![Code coverage](https://codecov.io/gh/maticnetwork/avail/branch/main/graph/badge.svg?token=OBX2NEE31T)](https://codecov.io/gh/maticnetwork/avail)
 
 ## Compile
 
