@@ -55,4 +55,10 @@ jobs:
           cargo install grcov
           grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o lcov.info
 
-      - run: rm **/*.profraw
+      - name: Upload test code coverage report to codecov.io
+        uses: codecov/codecov-action@v1
+        with:
+          files: lcov.info
+
+      - name: Cleanup
+        run: rm **/*.profraw
