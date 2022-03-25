@@ -37,3 +37,13 @@ jobs:
 
       - run: cargo fmt --check
       - run: cargo test
+      - name: Generate test result and coverage report
+        run: |
+          cargo install cargo2junit grcov;
+          cargo test $CARGO_OPTIONS -- -Z unstable-options --format json | cargo2junit > results.xml;
+          zip -0 ccov.zip `find . \( -name "$PROJECT_NAME_UNDERSCORE*.gc*" \) -print`;
+          grcov ccov.zip -s . -t lcov --llvm --ignore-not-existing --ignore "/*" --ignore "tests/*" -o lcov.info;
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          files: ./lcov.info
