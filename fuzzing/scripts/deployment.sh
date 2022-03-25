@@ -18,10 +18,18 @@ fi
 # Execute fuzzers in parallel 
 # Create a single obligatory master instance
 cd ..
-cargo afl fuzz -i testing/in -o testing/out -M fuzzer01 ../target/debug/$target_binary & > /dev/null 2>&1
+cargo afl fuzz -i testing/in -o testing/out -M fuzzer01 ../target/debug/$target_binary > /dev/null 2>&1 & 
 
 # Start slave instances in background
 for (( i=2; i<=$num_of_instances ; i++ ))
 do
-cargo afl fuzz -i testing/in -o testing/out -S fuzzer0${i} ../target/debug/$target_binary & > /dev/null 2>&1
+cargo afl fuzz -i testing/in -o testing/out -S fuzzer0${i} ../target/debug/$target_binary > /dev/null 2>&1 &
 done
+
+# Wait for the last instance to start
+# TODO: replace sleep with more elegant way of detecting fuzzers starting (ie. parse fuzzer_stats file for time started)
+echo "Waiting for fuzzers to start..."
+sleep 5
+
+# Print out fuzzer summary
+cargo afl whatsup -s testing/out/
