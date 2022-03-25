@@ -32,7 +32,7 @@ jobs:
             # this should be synced with rust-toolchain.toml file.
             # After merge, this section should be removed.
             toolchain: nightly-2021-12-05
-            components: rustfmt, clippy
+            components: rustfmt, clippy, llvm-tools-preview
             profile: minimal
 
       - run: cargo fmt --check
