@@ -35,5 +35,11 @@ jobs:
             components: rustfmt, clippy
             profile: minimal
 
-      - run: cargo fmt --check
-      - run: cargo test
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --check
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
