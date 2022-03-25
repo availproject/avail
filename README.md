@@ -1,5 +1,7 @@
 # Data Availability Node
 
+![Build status](https://github.com/maticnetwork/avail/actions/workflows/default.yml/badge.svg)
+
 ## Compile
 
     $> cargo build --release
