@@ -35,11 +35,24 @@ jobs:
             components: rustfmt, clippy, llvm-tools-preview
             profile: minimal
 
-      - uses: actions-rs/cargo@v1
+      - name: Check code formatting
+        uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --check
 
-      - uses: actions-rs/cargo@v1
+      - name: Run tests
+        uses: actions-rs/cargo@v1
         with:
           command: test
+        env:
+          RUSTFLAGS: "-Zinstrument-coverage"
+          LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
+          SKIP_WASM_BUILD: true
+
+      - name: Generate test code coverage report
+        run: |
+          cargo install grcov
+          grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o lcov.info
+
+      - run: rm **/*.profraw
