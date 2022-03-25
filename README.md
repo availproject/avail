@@ -99,7 +99,7 @@ We are using [grcov](https://github.com/mozilla/grcov) to aggregate code coverag
 
 To install grcov run
 
-	`$> cargo install grcov`
+	$> cargo install grcov
 
 Source code coverage data is generated when running tests with
 
