@@ -61,4 +61,4 @@ jobs:
           files: lcov.info
 
       - name: Cleanup
-        run: rm **/*.profraw
+        run: find . -name \*.profraw -type f -exec rm -f {} +
