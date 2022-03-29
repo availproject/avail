@@ -53,7 +53,7 @@ jobs:
 
       - name: Generate test code coverage report
         run: |
-          cargo install grcov
+          cargo install --force grcov
           grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o lcov.info
 
       - name: Upload test code coverage report to codecov.io
