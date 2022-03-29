@@ -10,7 +10,6 @@ members = [
 	"runtime",
 	"node",
 ]
-exclude = ["fuzzing"]
 
 [patch."https://github.com/paritytech/substrate.git"]
 frame-system = { path = "pallets/system" }

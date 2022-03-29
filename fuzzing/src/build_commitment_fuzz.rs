@@ -1,6 +1,5 @@
 use afl;
 use da_primitives::asdr::AppExtrinsic;
-use kate::com;
 
 fn main() {
 	println!("Starting Avail fuzzer...");
