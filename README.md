@@ -4,7 +4,7 @@
 
 ## Compile
 
-    $> cargo build --release
+    $> cargo build --release -p data-avail
 
 ## Run Node for Development
 
@@ -12,7 +12,7 @@ In **development mode** the node will run as a collator on a network which requi
 collator to finalize blocks.
 We also add `--tmp`, therefore the state will be deleted at the end of the process.
 
-    $> cargo run --release -- --dev --tmp
+    $> cargo run --release -p data-avail -- --dev --tmp
     Finished release [optimized] target(s) in 0.41s
      Running `target/release/data-avail --dev --tmp`
     2022-02-14 11:13:35 Running in --dev mode, RPC CORS has been disabled.    
@@ -69,7 +69,7 @@ We also add `--tmp`, therefore the state will be deleted at the end of the proce
 You can run any benchmark and generate the proper `weight.rs` file. In the following command, we are
 running the benchmarks from `da-control` pallet, and the generated file is 
 
-    $> cargo run --release --features runtime-benchmarks -- \
+    $> cargo run --release -p data-avail --features runtime-benchmarks -- \
         benchmark \
         --chain=dev \
         --steps=20 \

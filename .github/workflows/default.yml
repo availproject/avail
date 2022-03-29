@@ -45,6 +45,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
+          args: --workspace --exclude fuzzing
         env:
           RUSTFLAGS: "-Zinstrument-coverage"
           LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
@@ -52,7 +53,7 @@ jobs:
 
       - name: Generate test code coverage report
         run: |
-          cargo install grcov
+          cargo install --force grcov
           grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o lcov.info
 
       - name: Upload test code coverage report to codecov.io
