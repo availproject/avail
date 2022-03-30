@@ -2,9 +2,9 @@
 
 This crate contains the harness code required for AFL to run fuzz tests on individual functions in Avail repo.
 
-## AFL.rs setup
+## Setup
 
-Run `cargo install afl` on target machine
+Run the setup.sh script on target machine, that will install Rust dependencies and AFL.rs. 
 
 ## Target binary build
 
@@ -20,7 +20,7 @@ Run `cargo afl build` inside the fuzzing crate. This command builds an instrumen
 
 ## Parallel Execution
 
-Run the deployment.sh script inside the fuzzing directory with `./deployment.sh target_binary num_of_instances` command. The script will instantiate a single master node with multiple slave nodes, with no oversight needed. 
+Run the run_afl.sh script inside the fuzzing directory with `./run_afl.sh target_binary num_of_instances` command. The script will instantiate a single master node with multiple slave nodes, with no oversight needed. 
 
 Use the AFL whatsup tool to monitor the execution. Use SIGKILL with individual fuzzer PIDs (provided by the `whatsup` tool) to kill the fuzzers when needed.
 

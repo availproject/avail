@@ -5,4 +5,4 @@ tests/.DS_Store
 tests/test-scripts/.DS_Store
 tests/test-scripts/node_modules
 tests/test-scripts/dist
-fuzzing/testing
+fuzzing/testing/out
