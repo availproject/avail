@@ -28,8 +28,11 @@ pub struct Cell {
 pub struct BlockDimensions {
 	pub rows: usize,
 	pub cols: usize,
-	pub size: usize,
 	pub chunk_size: usize,
+}
+
+impl BlockDimensions {
+	fn size(&self) -> usize { self.rows * self.cols * self.chunk_size }
 }
 
 #[derive(Debug)]
@@ -81,14 +84,14 @@ pub fn flatten_and_pad_block(
 	let block_dims =
 		get_block_dimensions(padded_block.len(), max_rows_num, max_cols_num, chunk_size)?;
 
-	ensure!(padded_block.len() <= block_dims.size, Error::BlockTooBig);
+	ensure!(padded_block.len() <= block_dims.size(), Error::BlockTooBig);
 
 	let seed = <[u8; 32]>::try_from(header_hash).map_err(|_| Error::BadHeaderHash)?;
 	let mut rng: StdRng = rand::SeedableRng::from_seed(seed);
 
-	assert!((block_dims.size - padded_block.len()) % block_dims.chunk_size == 0);
+	assert!((block_dims.size() - padded_block.len()) % block_dims.chunk_size == 0);
 
-	for _ in 0..((block_dims.size - padded_block.len()) / block_dims.chunk_size) {
+	for _ in 0..((block_dims.size() - padded_block.len()) / block_dims.chunk_size) {
 		let rnd_values: DataChunk = rng.gen();
 		padded_block.append(&mut pad_with_zeroes(&rnd_values, chunk_size));
 	}
@@ -102,17 +105,19 @@ pub fn get_block_dimensions(
 	max_cols_num: usize,
 	chunk_size: usize,
 ) -> Result<BlockDimensions, Error> {
-	let max_block_size = max_rows_num * max_cols_num * chunk_size;
+	let max_block_dimensions = BlockDimensions {
+		rows: max_rows_num,
+		cols: max_cols_num,
+		chunk_size,
+	};
 
-	ensure!(block_size <= max_block_size, Error::BlockTooBig);
+	ensure!(
+		block_size <= max_block_dimensions.size(),
+		Error::BlockTooBig
+	);
 
-	if block_size == max_block_size {
-		return Ok(BlockDimensions {
-			cols: max_cols_num,
-			rows: max_rows_num,
-			size: max_block_size,
-			chunk_size,
-		});
+	if block_size == max_block_dimensions.size() {
+		return Ok(max_block_dimensions);
 	}
 
 	// Both row number and column number have to be a power of 2, because of the Plonk FFT constraints
@@ -132,12 +137,9 @@ pub fn get_block_dimensions(
 		(total_cells, 1)
 	};
 
-	let size = rows * cols * chunk_size;
-
 	Ok(BlockDimensions {
 		cols,
 		rows,
-		size,
 		chunk_size,
 	})
 }
@@ -443,11 +445,11 @@ mod tests {
 		config,
 	};
 
-	#[test_case(11,   256, 256 => BlockDimensions { size: 128  , rows: 1, cols: 4  , chunk_size: 32} ; "below minimum block size")]
-	#[test_case(300,  256, 256 => BlockDimensions { size: 512  , rows: 1, cols: 16 , chunk_size: 32} ; "regular case")]
-	#[test_case(513,  256, 256 => BlockDimensions { size: 1024 , rows: 1, cols: 32 , chunk_size: 32} ; "minimum overhead after 512")]
-	#[test_case(8192, 256, 256 => BlockDimensions { size: 8192 , rows: 1, cols: 256, chunk_size: 32} ; "maximum cols")]
-	#[test_case(8224, 256, 256 => BlockDimensions { size: 16384, rows: 2, cols: 256, chunk_size: 32} ; "two rows")]
+	#[test_case(11,   256, 256 => BlockDimensions { rows: 1, cols: 4  , chunk_size: 32} ; "below minimum block size")]
+	#[test_case(300,  256, 256 => BlockDimensions { rows: 1, cols: 16 , chunk_size: 32} ; "regular case")]
+	#[test_case(513,  256, 256 => BlockDimensions { rows: 1, cols: 32 , chunk_size: 32} ; "minimum overhead after 512")]
+	#[test_case(8192, 256, 256 => BlockDimensions { rows: 1, cols: 256, chunk_size: 32} ; "maximum cols")]
+	#[test_case(8224, 256, 256 => BlockDimensions { rows: 2, cols: 256, chunk_size: 32} ; "two rows")]
 
 	fn test_get_block_dimensions(size: usize, rows: usize, cols: usize) -> BlockDimensions {
 		get_block_dimensions(size, rows, cols, 32).unwrap()
@@ -487,7 +489,6 @@ mod tests {
 		let block_dims = BlockDimensions {
 			rows: 2,
 			cols: 4,
-			size: 256,
 			chunk_size: 32,
 		};
 		let block = (0..=247)
@@ -570,7 +571,6 @@ mod tests {
 		let expected_dims = BlockDimensions {
 			rows: 1,
 			cols: 8,
-			size: 256,
 			chunk_size,
 		};
 		let (layout, data, dims) =
@@ -712,7 +712,6 @@ mod tests {
 				== BlockDimensions {
 					rows: 1,
 					cols: 4,
-					size: 128,
 					chunk_size: 32
 				}
 		);
