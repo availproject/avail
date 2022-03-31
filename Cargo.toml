@@ -2,6 +2,7 @@
 members = [
 	"kate",
 	"kate/recovery",
+	"kate/proof",
 	"fuzzing",
 	"primitives",
 	"pallets/executive",
