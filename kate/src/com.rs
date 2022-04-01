@@ -436,10 +436,10 @@ mod tests {
 		collection::{self, size_range},
 		prelude::*,
 	};
-	use rand::Rng;
+	use rand::{prelude::IteratorRandom, Rng};
 	use test_case::test_case;
 
-	use super::{build_commitments, flatten_and_pad_block, pad_with_zeroes};
+	use super::{build_commitments, build_proof, flatten_and_pad_block, pad_with_zeroes, Cell};
 	use crate::{
 		com::{extend_data_matrix, get_block_dimensions, pad_iec_9797_1, BlockDimensions},
 		config,
@@ -615,7 +615,7 @@ mod tests {
 	}
 
 	fn sample_cells_from_matrix(
-		matrix: Vec<BlsScalar>,
+		matrix: &[BlsScalar],
 		dimensions: &BlockDimensions,
 	) -> Vec<Vec<kate_recovery::com::Cell>> {
 		fn cell_from_scalar(row_idx: u16, scalar: &BlsScalar) -> kate_recovery::com::Cell {
@@ -668,22 +668,46 @@ mod tests {
 		)
 	}
 
+	fn random_cells(cols: usize, rows: usize, percents: usize) -> Vec<Cell> {
+		assert!(percents > 0 && percents <= 100);
+
+		let rng = &mut rand::thread_rng();
+		let amount = (cols as f32 * rows as f32 * (percents as f32 / 100.0)).ceil() as usize;
+		(0..cols)
+			.zip(0..rows)
+			.map(|(col, row)| Cell {
+				col: col as u32,
+				row: row as u32,
+			})
+			.choose_multiple(rng, amount)
+	}
+
 	proptest! {
-		#![proptest_config(ProptestConfig::with_cases(50))]
-		#[test]
-		fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy()) {
-			let hash: Vec<u8> = (0..=31).collect::<Vec<u8>>();
+	#![proptest_config(ProptestConfig::with_cases(20))]
+	#[test]
+	fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy())  {
+		let hash: Vec<u8> = (0..=31).collect::<Vec<u8>>();
 
-			let (layout, _, dims, matrix) = build_commitments(64, 16, 32, xts, hash.as_slice()).unwrap();
+		let (layout, commitments, dims, matrix) = build_commitments(64, 16, 32, xts, hash.as_slice()).unwrap();
 
-			let columns = sample_cells_from_matrix(matrix, &dims);
-			let reconstructed = reconstruct_app_extrinsics(layout, columns, dims.rows, dims.chunk_size);
-
-			for (result, xt) in reconstructed.iter().zip(xts) {
-				prop_assert_eq!(result.0, xt.app_id);
-				prop_assert_eq!(&result.1, &xt.data);
-			}
+		let columns = sample_cells_from_matrix(&matrix, &dims);
+		let reconstructed = reconstruct_app_extrinsics(layout, columns, dims.rows, dims.chunk_size);
+		for (result, xt) in reconstructed.iter().zip(xts) {
+		prop_assert_eq!(result.0, xt.app_id);
+		prop_assert_eq!(&result.1, &xt.data);
 		}
+
+		let public_params = crate::testnet::public_params(config::MAX_BLOCK_COLUMNS as usize);
+
+		for cell in random_cells(dims.cols, dims.rows, 1) {
+		let col = cell.col as u16;
+		let row = cell.row as usize;
+		let commitment = &commitments[row * 48..(row + 1) * 48];
+		let proof = build_proof(&public_params, dims, &matrix, &[cell]).unwrap();
+		let verification =  kate_proof::kc_verify_proof(col, &proof, commitment, dims.rows as usize, dims.cols as usize);
+		prop_assert!(verification.unwrap().status.is_ok());
+		}
+	}
 	}
 
 	#[test]
@@ -748,7 +772,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 		let coded: Vec<BlsScalar> = extend_data_matrix(dims, &data[..]).unwrap();
 
-		let cols = sample_cells_from_matrix(coded, &dims);
+		let cols = sample_cells_from_matrix(&coded, &dims);
 
 		let res = reconstruct_app_extrinsics(layout, cols, dims.rows, dims.chunk_size);
 
