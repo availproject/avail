@@ -445,12 +445,14 @@ mod tests {
 		config,
 	};
 
+	#[test_case(0,   256, 256 => BlockDimensions { rows: 1, cols: 4  , chunk_size: 32} ; "block size zero")]
 	#[test_case(11,   256, 256 => BlockDimensions { rows: 1, cols: 4  , chunk_size: 32} ; "below minimum block size")]
 	#[test_case(300,  256, 256 => BlockDimensions { rows: 1, cols: 16 , chunk_size: 32} ; "regular case")]
 	#[test_case(513,  256, 256 => BlockDimensions { rows: 1, cols: 32 , chunk_size: 32} ; "minimum overhead after 512")]
 	#[test_case(8192, 256, 256 => BlockDimensions { rows: 1, cols: 256, chunk_size: 32} ; "maximum cols")]
 	#[test_case(8224, 256, 256 => BlockDimensions { rows: 2, cols: 256, chunk_size: 32} ; "two rows")]
-
+	#[test_case(2097152, 256, 256 => BlockDimensions { rows: 256, cols: 256, chunk_size: 32} ; "max block size")]
+	#[test_case(2097155, 256, 256 => panics "BlockTooBig" ; "too much data")]
 	fn test_get_block_dimensions(size: usize, rows: usize, cols: usize) -> BlockDimensions {
 		get_block_dimensions(size, rows, cols, 32).unwrap()
 	}
