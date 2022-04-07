@@ -1335,7 +1335,7 @@ dependencies = [
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "kate",
- "kate-rpc-runtime-api",
+ "kate-rpc",
  "lru 0.7.2",
  "pallet-asset-tx-payment",
  "pallet-im-online",
@@ -2967,6 +2967,29 @@ dependencies = [
  "dusk-plonk",
  "getrandom 0.2.4",
  "rand 0.8.5",
+]
+
+[[package]]
+name = "kate-rpc"
+version = "0.1.0"
+dependencies = [
+ "da-primitives",
+ "dusk-plonk",
+ "frame-system",
+ "frame-system-rpc-runtime-api",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "kate",
+ "kate-rpc-runtime-api",
+ "lru 0.7.2",
+ "parity-scale-codec",
+ "sc-client-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-rpc",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
