@@ -49,9 +49,7 @@ use sc_rpc::SubscriptionTaskExecutor;
 pub use sc_rpc_api::DenyUnsafe;
 use sp_keystore::SyncCryptoStorePtr;
 
-use crate::{
-	service::{FullBackend, FullClient, TransactionPool},
-};
+use crate::service::{FullBackend, FullClient, TransactionPool};
 
 /// A IO handler that uses all Full RPC extensions.
 pub type IoHandler = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
