@@ -36,6 +36,7 @@ serde = { version = "1.0.126", features = ["derive"] }
 serde_json = "1.0"
 lru = "0.7.2"
 rand = "0.7.2"
+hex-literal = "0.3.4"
 
 # Substrate
 sc-cli = { version = "0.10.0-dev", features = ["wasmtime"] }

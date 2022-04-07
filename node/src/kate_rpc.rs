@@ -118,7 +118,7 @@ where
 			let xts_by_id: Vec<AppExtrinsic> = signed_block
 				.block
 				.extrinsics()
-				.into_iter()
+				.iter()
 				.map(|e| AppExtrinsic {
 					app_id: e.app_id(),
 					data: e.encode(),
@@ -156,7 +156,7 @@ where
 		let kc_public_params =
 			unsafe { PublicParameters::from_slice_unchecked(&kc_public_params_raw) };
 
-		let proof = kate::com::build_proof(&kc_public_params, *block_dims, &ext_data, &cells)
+		let proof = kate::com::build_proof(&kc_public_params, *block_dims, ext_data, &cells)
 			.map_err(|e| internal_err!("Proof cannot be generated: {:?}", e))?;
 
 		Ok(proof)

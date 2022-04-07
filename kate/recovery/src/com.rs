@@ -154,10 +154,10 @@ fn zero_poly_fn(
 		if i > 0 {
 			zero_poly[i] = zero_poly[i] + zero_poly[i - 1];
 			for j in (1..i).rev() {
-				zero_poly[j] = zero_poly[j] * sub;
+				zero_poly[j] *= sub;
 				zero_poly[j] = zero_poly[j] + zero_poly[j - 1];
 			}
-			zero_poly[0] = zero_poly[0] * sub
+			zero_poly[0] *= sub
 		}
 	}
 	zero_poly.push(BlsScalar::one());
