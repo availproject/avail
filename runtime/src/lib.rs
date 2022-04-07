@@ -286,6 +286,8 @@ impl frame_system::Config for Runtime {
 	type Hashing = BlakeTwo256;
 	/// The header type.
 	type Header = DaHeader<BlockNumber, BlakeTwo256>;
+	/// The header builder type.
+	type HeaderBuilder = frame_system::header_builder::da::HeaderBuilder;
 	/// The index type for storing how many extrinsics an account has signed.
 	type Index = Index;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.

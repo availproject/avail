@@ -38,7 +38,10 @@ use crate::rpc as node_rpc;
 pub struct ExecutorDispatch;
 
 impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
-	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+	type ExtendHostFunctions = (
+		frame_benchmarking::benchmarking::HostFunctions,
+		frame_system::header_builder::hosted_header_builder::HostFunctions,
+	);
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
 		da_runtime::api::dispatch(method, data)

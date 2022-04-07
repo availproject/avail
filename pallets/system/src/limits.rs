@@ -30,10 +30,11 @@ use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{Perbill, RuntimeDebug};
+use sp_runtime_interface::pass_by::PassByCodec;
 
 /// Block length limit configuration.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(RuntimeDebug, PartialEq, Clone, codec::Encode, codec::Decode, TypeInfo)]
+#[derive(RuntimeDebug, PartialEq, Clone, codec::Encode, codec::Decode, TypeInfo, PassByCodec)]
 pub struct BlockLength {
 	/// Maximal total length in bytes for each extrinsic class.
 	///

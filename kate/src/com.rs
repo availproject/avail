@@ -326,8 +326,7 @@ pub fn build_proof(
 	Ok(result_bytes)
 }
 
-// TODO @miguel Remove that param?
-#[cfg(feature = "alloc")]
+#[cfg(feature = "std")]
 pub fn build_commitments(
 	rows_num: usize,
 	cols_num: usize,
