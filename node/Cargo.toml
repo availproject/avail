@@ -22,7 +22,7 @@ da-primitives= { path = "../primitives" }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate = { path = "../kate" }
-kate-rpc-runtime-api = { path = "../rpc/kate-rpc-runtime-api" }
+kate-rpc = { path = "../rpc/kate-rpc" }
 dusk-plonk = "0.8.2"
 
 # 3rd-party
