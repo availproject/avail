@@ -289,8 +289,10 @@ mod tests {
 		// erasure code it
 		let temp = half_eval_domain.ifft(&src[0..domain_size]);
 		let coded_src = eval_domain.fft(&temp);
+
 		// choose random subset of it ( >= 50% )
-		let (coded_src_subset, _) = random_subset(&coded_src);
+		let seed = [42u8; 32];
+		let (coded_src_subset, _) = random_subset(&coded_src, seed);
 		// reconstruct 100% values from random coded subset
 		let coded_recovered = reconstruct_poly(eval_domain, coded_src_subset).unwrap();
 
@@ -461,13 +463,8 @@ mod tests {
 	// reconstruction purpose
 	//
 	// @note this is just a helper function for writing test case
-	fn random_subset(data: &[BlsScalar]) -> (Vec<Option<BlsScalar>>, usize) {
-		let mut rng = StdRng::seed_from_u64(
-			SystemTime::now()
-				.duration_since(UNIX_EPOCH)
-				.unwrap()
-				.as_secs(),
-		);
+	fn random_subset(data: &[BlsScalar], seed: Seed) -> (Vec<Option<BlsScalar>>, usize) {
+		let mut rng = ChaChaRng::from_seed(seed);
 		let mut subset: Vec<Option<BlsScalar>> = Vec::with_capacity(data.len());
 		let mut available = 0;
 		for item in data {

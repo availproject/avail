@@ -80,6 +80,7 @@ use frame_support::{
 	},
 	Parameter,
 };
+use kate::Seed;
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::Serialize;
@@ -212,6 +213,7 @@ pub mod pallet {
 			+ sp_std::hash::Hash
 			+ AsRef<[u8]>
 			+ AsMut<[u8]>
+			+ Into<Seed>
 			+ MaybeMallocSizeOf
 			+ MaxEncodedLen;
 
@@ -243,6 +245,9 @@ pub mod pallet {
 
 		/// Header builder
 		type HeaderBuilder: header_builder::HeaderBuilder<Header = Self::Header>;
+
+		/// Source of random seeds.
+		type Randomness: frame_support::traits::Randomness<Self::Hash, Self::BlockNumber>;
 
 		/// The aggregated event type of the runtime.
 		type Event: Parameter

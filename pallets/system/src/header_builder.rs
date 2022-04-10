@@ -1,16 +1,21 @@
 use codec::{Decode, Encode};
 use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader};
+use frame_support::traits::Randomness;
+pub use kate::Seed;
 use scale_info::TypeInfo;
+use sp_runtime::traits::Hash;
 use sp_runtime_interface::{pass_by::PassByCodec, runtime_interface};
 use sp_std::vec::Vec;
 
-use crate::{generic::Digest, limits::BlockLength};
+use crate::{generic::Digest, limits::BlockLength, Config};
 
 pub mod da {
+	use core::marker::PhantomData;
+
 	use da_primitives::Header as DaHeader;
 	use sp_runtime::traits::BlakeTwo256;
 
-	use super::{AppExtrinsic, BlockLength, DigestWrapper, Vec};
+	use super::{AppExtrinsic, BlockLength, Config, DigestWrapper, Vec};
 
 	pub type BlockNumber = u32;
 	pub type Hash = sp_core::H256;
@@ -18,11 +23,12 @@ pub mod da {
 	pub type Header = DaHeader<BlockNumber, Hasher>;
 
 	/// Data-Avail Header builder.
-	pub struct HeaderBuilder {}
+	pub struct HeaderBuilder<T: Config>(PhantomData<T>);
 
-	impl super::HeaderBuilder for HeaderBuilder {
+	impl<T: Config> super::HeaderBuilder for HeaderBuilder<T> {
 		type Header = Header;
 
+		#[inline]
 		fn build(
 			app_extrinsics: Vec<AppExtrinsic>,
 			parent_hash: Hash,
@@ -30,18 +36,21 @@ pub mod da {
 			block_length: BlockLength,
 			block_number: BlockNumber,
 		) -> Header {
+			let seed = Self::random_seed::<T>();
+
 			super::hosted_header_builder::build(
 				app_extrinsics,
 				parent_hash,
 				digest,
 				block_length,
 				block_number,
+				seed,
 			)
 		}
 	}
 }
 
-/// It is a wapper to support `PassBy` on `Digest` type.
+/// It is just a wapper to support `PassBy` on `Digest` type.
 #[derive(Clone, TypeInfo, Encode, Decode, PassByCodec)]
 pub struct DigestWrapper(pub Digest);
 
@@ -53,6 +62,7 @@ impl From<Digest> for DigestWrapper {
 pub trait HeaderBuilder {
 	type Header: sp_runtime::traits::Header + ExtendedHeader;
 
+	/// Creates the header using the given parameters.
 	fn build(
 		app_extrinsics: Vec<AppExtrinsic>,
 		parent_hash: <Self::Header as sp_runtime::traits::Header>::Hash,
@@ -60,6 +70,19 @@ pub trait HeaderBuilder {
 		block_length: BlockLength,
 		block_number: <Self::Header as sp_runtime::traits::Header>::Number,
 	) -> Self::Header;
+
+	/// Generates a random seed using the _epoch seed_ and the _current block_ returned by
+	/// `T::Randomness` type.
+	fn random_seed<T: Config>() -> Seed {
+		let (epoch_seed, block_number) = <T as Config>::Randomness::random_seed();
+		let seed = <T as Config>::Hashing::hash_of(&(&epoch_seed, &block_number));
+
+		log::trace!(
+			target: "runtime::system",
+			"Header builder seed {:?} from epoch seed {:?} and block {:?}", seed, epoch_seed, block_number);
+
+		seed.into()
+	}
 }
 
 /// Hosted function to build the header using `kate` commitments.
@@ -72,6 +95,7 @@ pub trait HostedHeaderBuilder {
 		digest: DigestWrapper,
 		block_length: BlockLength,
 		block_number: da::BlockNumber,
+		seed: Seed,
 	) -> da::Header {
 		use da_primitives::{asdr::DataLookup, traits::ExtrinsicsWithCommitment as _};
 		use sp_runtime::traits::Hash;
@@ -85,7 +109,7 @@ pub trait HostedHeaderBuilder {
 					block_length.cols as usize,
 					block_length.chunk_size as usize,
 					app_extrinsics.as_slice(),
-					parent_hash.as_ref(),
+					seed,
 				)
 				.expect("Build commitments cannot fail .qed");
 			let data_index = DataLookup::try_from(xts_layout.as_slice())

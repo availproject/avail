@@ -3,13 +3,14 @@ use std::sync::{Arc, RwLock};
 use codec::Encode;
 use da_primitives::asdr::{AppExtrinsic, AppId, GetAppId};
 use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
+use frame_support::storage::storage_prefix;
 use frame_system::limits::BlockLength;
 use jsonrpc_core::{Error as RpcError, Result};
 use jsonrpc_derive::rpc;
 use kate::com::BlockDimensions;
 use kate_rpc_runtime_api::KateParamsGetter;
 use lru::LruCache;
-use sc_client_api::BlockBackend;
+use sc_client_api::{BlockBackend, StorageKey, StorageProvider};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_rpc::number::NumberOrHex;
@@ -79,7 +80,10 @@ where
 	Block: BlockT,
 	Block::Extrinsic: GetAppId<AppId>,
 	Client: Send + Sync + 'static,
-	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
+	Client: HeaderBackend<Block>
+		+ ProvideRuntimeApi<Block>
+		+ BlockBackend<Block>
+		+ StorageProvider<Block, sc_client_db::Backend<Block>>,
 	Client::Api: KateParamsGetter<Block>,
 {
 	//TODO allocate static thread pool, just for RPC related work, to free up resources, for the block producing processes.
@@ -102,7 +106,7 @@ where
 		let mut block_ext_cache = self
 			.block_ext_cache
 			.write()
-			.map_err(|_| internal_err!("Block cache lock is poisoned"))?;
+			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
 
 		// if !block.is_none() {
 		let best_hash = BlockId::hash(self.client.info().best_hash);
@@ -125,12 +129,25 @@ where
 				})
 				.collect();
 
+			// TODO @miguel : Fetch the RandomnessFromOneEpochAgo for seed.
+			let randomness_key = StorageKey(storage_prefix(b"Babe", b"Randomness").to_vec());
+			let raw_seed = self
+				.client
+				.storage(&BlockId::number(block_num), &randomness_key)
+				.map_err(|_| internal_err!("Babe::Randomness key is invalid"))?
+				.ok_or_else(|| internal_err!("Missing Babe::Randomness at block {:?}", block_hash))?
+				.0;
+			let seed = raw_seed
+				.clone()
+				.try_into()
+				.map_err(|_| internal_err!("Raw seed ({:?}) is invalid .qed", raw_seed))?;
+
 			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
 				block_length.rows as usize,
 				block_length.cols as usize,
 				block_length.chunk_size as usize,
 				&xts_by_id,
-				signed_block.block.header().parent_hash().as_ref(),
+				seed,
 			)
 			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
 

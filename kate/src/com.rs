@@ -13,7 +13,8 @@ use dusk_plonk::{
 };
 use frame_support::ensure;
 use log::info;
-use rand::{rngs::StdRng, Rng};
+use rand::{Rng, SeedableRng};
+use rand_chacha::ChaChaRng;
 use serde::{Deserialize, Serialize};
 
 use super::*;
@@ -55,7 +56,7 @@ pub fn flatten_and_pad_block(
 	max_cols_num: usize,
 	chunk_size: usize,
 	extrinsics: &[AppExtrinsic],
-	header_hash: &[u8],
+	rng_seed: Seed,
 ) -> Result<(XtsLayout, FlatData, BlockDimensions), Error> {
 	// Pad data before determining exact block size
 	// Padding occurs both inside a single chunk and with additional chunk (if needed)
@@ -83,8 +84,7 @@ pub fn flatten_and_pad_block(
 
 	ensure!(padded_block.len() <= block_dims.size, Error::BlockTooBig);
 
-	let seed = <[u8; 32]>::try_from(header_hash).map_err(|_| Error::BadHeaderHash)?;
-	let mut rng: StdRng = rand::SeedableRng::from_seed(seed);
+	let mut rng = ChaChaRng::from_seed(rng_seed);
 
 	assert!((block_dims.size - padded_block.len()) % block_dims.chunk_size == 0);
 
@@ -332,18 +332,13 @@ pub fn build_commitments(
 	cols_num: usize,
 	chunk_size: usize,
 	extrinsics_by_key: &[AppExtrinsic],
-	header_hash: &[u8],
+	rng_seed: Seed,
 ) -> Result<(XtsLayout, Vec<u8>, BlockDimensions, Vec<BlsScalar>), Error> {
 	let start = Instant::now();
 
 	// generate data matrix first
-	let (tx_layout, block, block_dims) = flatten_and_pad_block(
-		rows_num,
-		cols_num,
-		chunk_size,
-		extrinsics_by_key,
-		header_hash,
-	)?;
+	let (tx_layout, block, block_dims) =
+		flatten_and_pad_block(rows_num, cols_num, chunk_size, extrinsics_by_key, rng_seed)?;
 
 	info!(
 		target: "system",
@@ -433,10 +428,9 @@ mod tests {
 		collection::{self, size_range},
 		prelude::*,
 	};
-	use rand::Rng;
 	use test_case::test_case;
 
-	use super::{build_commitments, flatten_and_pad_block, pad_with_zeroes};
+	use super::{build_commitments, flatten_and_pad_block, pad_with_zeroes, ChaChaRng};
 	use crate::{
 		com::{extend_data_matrix, get_block_dimensions, pad_iec_9797_1, BlockDimensions},
 		config,
@@ -625,11 +619,12 @@ mod tests {
 			}
 		}
 
-		fn random_indexes(length: usize) -> Vec<usize> {
+		fn random_indexes(length: usize, rng_seed: Seed) -> Vec<usize> {
 			// choose random len/2 (unique) indexes
 			let mut idx = (0..length).collect::<Vec<_>>();
 			let mut chosen_idx = Vec::<usize>::new();
-			let mut rng = rand::thread_rng();
+			let mut rng = ChaChaRng::from_seed(rng_seed);
+
 			for _ in 0..length / 2 {
 				let i = rng.gen_range(0..idx.len());
 				let v = idx.remove(i);
@@ -638,10 +633,12 @@ mod tests {
 			chosen_idx
 		}
 
+		const rng_seed: Seed = [42u8; 32];
+
 		matrix
 			.chunks_exact(dimensions.rows * 2)
 			.map(|e| {
-				random_indexes(e.len())
+				random_indexes(e.len(), rng_seed)
 					.into_iter()
 					.map(|i| cell_from_scalar(i as u16, &e[i]))
 					.collect::<Vec<_>>()
