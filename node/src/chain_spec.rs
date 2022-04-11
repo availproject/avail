@@ -411,8 +411,8 @@ fn genesis_builder(
 				.collect(),
 		},
 		staking: StakingConfig {
-			validator_count: 1,
-			minimum_validator_count: 1,
+			validator_count: 3,
+			minimum_validator_count: 3,
 			invulnerables: vec![],
 			slash_reward_fraction: Perbill::from_percent(10),
 			stakers: initial_authorities
