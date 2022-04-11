@@ -31,21 +31,21 @@ mod testnet {
 		vec![
 			// Validator 1.
 			InitialAuthority::new(
-				hex!("3695bde23d835ad9ec7244c2c7e10ecab531af10b8c4ad1e7ee71848b9179719").into(),
+				hex!("b2dad89ebcbf90f48021d8f18ad72339da8eb3de16fcefac84402c7615dce932").into(),
 				hex!("b2dad89ebcbf90f48021d8f18ad72339da8eb3de16fcefac84402c7615dce932").into(),
 				hex!("9fa3481874ee8d02456438fff97273f320a9e11ad45f52cbc8391b9165d7aa70")
 					.unchecked_into(),
 			),
 			// Validator 2.
 			InitialAuthority::new(
-				hex!("ee630908690a6d251e780b95149002d0f7d11c695cf3700773b55bd16967a22d").into(),
+				hex!("101020d67afe1df8b2811d30e8a6d57dc74bc2c1b76d4f8c4b20da21b581f710").into(),
 				hex!("101020d67afe1df8b2811d30e8a6d57dc74bc2c1b76d4f8c4b20da21b581f710").into(),
 				hex!("3f190c60714a0f233bcc6a8941e3802b3a1eeca6dbef157727c859a13c6bca1e")
 					.unchecked_into(),
 			),
 			// Validator 3.
 			InitialAuthority::new(
-				hex!("e6798ae763232500af665816090377ede8e16a006392afc12e558ed905271064").into(),
+				hex!("e099cabb7e96b3e5033fcc9eac120f15877b03881aafe811c98fe48e67047e06").into(),
 				hex!("e099cabb7e96b3e5033fcc9eac120f15877b03881aafe811c98fe48e67047e06").into(),
 				hex!("2d12c83a0bd991a8888620a215c1e214d954790cb4c42a7adaf7e49d877f099f")
 					.unchecked_into(),
@@ -374,6 +374,12 @@ fn genesis_builder(
 		.chain(
 			initial_authorities
 				.iter()
+				.filter(|auth| {
+					initial_authorities
+						.iter()
+						.find(|inner_auth| inner_auth.stash == auth.controller)
+						.is_none()
+				})
 				.cloned()
 				.map(|auth| (auth.controller, auth.controller_balance)),
 		)
@@ -405,12 +411,9 @@ fn genesis_builder(
 				.collect(),
 		},
 		staking: StakingConfig {
-			validator_count: initial_authorities.len() as u32,
-			minimum_validator_count: initial_authorities.len() as u32,
-			invulnerables: initial_authorities
-				.iter()
-				.map(|auth| auth.stash.clone())
-				.collect(),
+			validator_count: 1,
+			minimum_validator_count: 1,
+			invulnerables: vec![],
 			slash_reward_fraction: Perbill::from_percent(10),
 			stakers: initial_authorities
 				.into_iter()
