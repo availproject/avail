@@ -433,7 +433,9 @@ mod tests {
 	use rand::{prelude::IteratorRandom, Rng};
 	use test_case::test_case;
 
-	use super::{build_commitments, build_proof, flatten_and_pad_block, pad_with_zeroes, Cell, ChaChaRng};
+	use super::{
+		build_commitments, build_proof, flatten_and_pad_block, pad_with_zeroes, Cell, ChaChaRng,
+	};
 	use crate::{
 		com::{extend_data_matrix, get_block_dimensions, pad_iec_9797_1, BlockDimensions},
 		config,
@@ -670,7 +672,7 @@ mod tests {
 	fn random_cells(cols: usize, rows: usize, percents: usize) -> Vec<Cell> {
 		assert!(percents > 0 && percents <= 100);
 
-		let rng = &mut ChachaRng::from_seed([0u8;32]);
+		let rng = &mut ChachaRng::from_seed([0u8; 32]);
 		let amount = (cols as f32 * rows as f32 * (percents as f32 / 100.0)).ceil() as usize;
 		(0..cols)
 			.zip(0..rows)
