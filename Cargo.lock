@@ -72,6 +72,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "afl"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4342d9cdad5c4d706c083cd6b741763cc3404cbb84010b9723384c00099c0d5d"
+dependencies = [
+ "clap 3.1.6",
+ "libc",
+ "rustc_version 0.4.0",
+ "xdg",
+]
+
+[[package]]
 name = "ahash"
 version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -821,10 +833,26 @@ dependencies = [
  "ansi_term",
  "atty",
  "bitflags",
- "strsim",
- "textwrap",
+ "strsim 0.8.0",
+ "textwrap 0.11.0",
  "unicode-width",
  "vec_map",
+]
+
+[[package]]
+name = "clap"
+version = "3.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8c93436c21e4698bacadf42917db28b23017027a4deccb35dbe47a7e7840123"
+dependencies = [
+ "atty",
+ "bitflags",
+ "indexmap",
+ "lazy_static",
+ "os_str_bytes",
+ "strsim 0.10.0",
+ "termcolor",
+ "textwrap 0.15.0",
 ]
 
 [[package]]
@@ -998,7 +1026,7 @@ checksum = "1604dafd25fba2fe2d5895a9da139f8dc9b319a5fe5354ca137cbbce4e178d10"
 dependencies = [
  "atty",
  "cast",
- "clap",
+ "clap 2.34.0",
  "criterion-plot",
  "csv",
  "itertools 0.10.3",
@@ -1310,7 +1338,7 @@ dependencies = [
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "kate",
- "kate-rpc-runtime-api",
+ "kate-rpc",
  "lru 0.7.2",
  "pallet-asset-tx-payment",
  "pallet-im-online",
@@ -1456,6 +1484,15 @@ checksum = "339ee130d97a610ea5a5872d2bbb130fdf68884ff09d3028b81bec8a1ac23bbc"
 dependencies = [
  "cfg-if 1.0.0",
  "dirs-sys-next",
+]
+
+[[package]]
+name = "dirs"
+version = "4.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca3aa72a6f96ea37bbc5aa912f6788242832f75369bdfdadcb0e38423f100059"
+dependencies = [
+ "dirs-sys",
 ]
 
 [[package]]
@@ -2180,6 +2217,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "fuzzing"
+version = "0.1.0"
+dependencies = [
+ "afl",
+ "da-primitives",
+ "kate",
+ "kate-recovery",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2886,6 +2933,7 @@ dependencies = [
  "frame-support",
  "getrandom 0.2.4",
  "hex",
+ "kate-proof",
  "kate-recovery",
  "log",
  "num_cpus",
@@ -2903,6 +2951,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "kate-proof"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dusk-bytes",
+ "dusk-plonk",
+ "hex",
+ "merlin 3.0.0",
+ "rand 0.8.5",
+ "rand_chacha 0.3.1",
+ "sp-core",
+]
+
+[[package]]
 name = "kate-recovery"
 version = "0.1.0"
 dependencies = [
@@ -2910,6 +2972,31 @@ dependencies = [
  "dusk-plonk",
  "getrandom 0.2.4",
  "rand 0.8.5",
+]
+
+[[package]]
+name = "kate-rpc"
+version = "0.1.0"
+dependencies = [
+ "da-primitives",
+ "dusk-plonk",
+ "frame-support",
+ "frame-system",
+ "frame-system-rpc-runtime-api",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "kate",
+ "kate-rpc-runtime-api",
+ "lru 0.7.2",
+ "parity-scale-codec",
+ "sc-client-api",
+ "sc-client-db",
+ "sp-api",
+ "sp-blockchain",
+ "sp-rpc",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -4186,6 +4273,15 @@ name = "openssl-probe"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ff011a302c396a5197692431fc1948019154afc178baf7d8e37367442a4601cf"
+
+[[package]]
+name = "os_str_bytes"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e22443d1643a904602595ba1cd8f7d896afe56d26712531c5ff73a15b2fbf64"
+dependencies = [
+ "memchr",
+]
 
 [[package]]
 name = "owning_ref"
@@ -7843,12 +7939,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
 
 [[package]]
+name = "strsim"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
+
+[[package]]
 name = "structopt"
 version = "0.3.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c6b5c64445ba8094a6ab0c3cd2ad323e07171012d9c98b0b15651daf1787a10"
 dependencies = [
- "clap",
+ "clap 2.34.0",
  "lazy_static",
  "structopt-derive",
 ]
@@ -8046,6 +8148,12 @@ checksum = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
 dependencies = [
  "unicode-width",
 ]
+
+[[package]]
+name = "textwrap"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1141d4d61095b28419e22cb0bbf02755f5e54e0526f97f1e3d1d160e60885fb"
 
 [[package]]
 name = "thiserror"
@@ -9026,6 +9134,15 @@ dependencies = [
  "curve25519-dalek 3.2.0",
  "rand_core 0.5.1",
  "zeroize",
+]
+
+[[package]]
+name = "xdg"
+version = "2.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c4583db5cbd4c4c0303df2d15af80f0539db703fa1c68802d4cbbd2dd0f88f6"
+dependencies = [
+ "dirs",
 ]
 
 [[package]]

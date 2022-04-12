@@ -573,8 +573,10 @@ pub(crate) mod tests {
 	   */
 
 	#[test]
+	#[ignore]
 	fn test_create_development_chain_spec() { development_config().build_storage().unwrap(); }
 
 	#[test]
-	fn test_create_local_testnet_chain_spec() { testnet_config().build_storage().unwrap(); }
+	#[ignore]
+	fn test_create_local_testnet_chain_spec() { local_testnet_config().build_storage().unwrap(); }
 }

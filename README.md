@@ -1,8 +1,10 @@
 # Data Availability Node
 
+[![Build status](https://github.com/maticnetwork/avail/actions/workflows/default.yml/badge.svg)](https://github.com/maticnetwork/avail/actions/workflows/default.yml) [![Code coverage](https://codecov.io/gh/maticnetwork/avail/branch/main/graph/badge.svg?token=OBX2NEE31T)](https://codecov.io/gh/maticnetwork/avail)
+
 ## Compile
 
-    $> cargo build --release
+    $> cargo build --release -p data-avail
 
 ## Run Node for Development
 
@@ -10,7 +12,7 @@ In **development mode** the node will run as a collator on a network which requi
 collator to finalize blocks.
 We also add `--tmp`, therefore the state will be deleted at the end of the process.
 
-    $> cargo run --release -- --dev --tmp
+    $> cargo run --release -p data-avail -- --dev --tmp
     Finished release [optimized] target(s) in 0.41s
      Running `target/release/data-avail --dev --tmp`
     2022-02-14 11:13:35 Running in --dev mode, RPC CORS has been disabled.    
@@ -67,7 +69,7 @@ We also add `--tmp`, therefore the state will be deleted at the end of the proce
 You can run any benchmark and generate the proper `weight.rs` file. In the following command, we are
 running the benchmarks from `da-control` pallet, and the generated file is 
 
-    $> cargo run --release --features runtime-benchmarks -- \
+    $> cargo run --release -p data-avail --features runtime-benchmarks -- \
         benchmark \
         --chain=dev \
         --steps=20 \
@@ -90,3 +92,33 @@ Here is the table of custom IDs for invalid transaction errors:
 | --------- | ------------------- | ----------- |
 | 137       | InvalidAppId        | The given `AppId` is not yet registered |
 | 138       | ForbiddenAppId      | The extrinsic is not available for the given `AppId` |
+
+## Generate test code coverage report
+
+We are using [grcov](https://github.com/mozilla/grcov) to aggregate code coverage information and generate reports.
+
+To install grcov run
+
+	$> cargo install grcov
+
+Source code coverage data is generated when running tests with
+
+	$> env RUSTFLAGS="-Zinstrument-coverage" \
+		SKIP_WASM_BUILD=true \
+		LLVM_PROFILE_FILE="tests-coverage-%p-%m.profraw" \
+		cargo test
+
+To generate report, run
+
+	$> grcov . -s . \
+		--binary-path ./target/debug/ \
+		-t html \
+		--branch \
+		--ignore-not-existing -o \
+		./target/debug/coverage/
+
+To clean up generate coverage information files, run
+
+	$> find . -name \*.profraw -type f -exec rm -f {} +
+
+Open `index.html` from `./target/debug/coverage/` folder to review coverage data. Since WASM build is not possible yet, SKIP_WASM_BUILD is required when running tests.

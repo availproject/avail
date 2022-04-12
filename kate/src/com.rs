@@ -29,8 +29,11 @@ pub struct Cell {
 pub struct BlockDimensions {
 	pub rows: usize,
 	pub cols: usize,
-	pub size: usize,
 	pub chunk_size: usize,
+}
+
+impl BlockDimensions {
+	fn size(&self) -> usize { self.rows * self.cols * self.chunk_size }
 }
 
 #[derive(Debug)]
@@ -82,13 +85,13 @@ pub fn flatten_and_pad_block(
 	let block_dims =
 		get_block_dimensions(padded_block.len(), max_rows_num, max_cols_num, chunk_size)?;
 
-	ensure!(padded_block.len() <= block_dims.size, Error::BlockTooBig);
+	ensure!(padded_block.len() <= block_dims.size(), Error::BlockTooBig);
 
 	let mut rng = ChaChaRng::from_seed(rng_seed);
 
-	assert!((block_dims.size - padded_block.len()) % block_dims.chunk_size == 0);
+	assert!((block_dims.size() - padded_block.len()) % block_dims.chunk_size == 0);
 
-	for _ in 0..((block_dims.size - padded_block.len()) / block_dims.chunk_size) {
+	for _ in 0..((block_dims.size() - padded_block.len()) / block_dims.chunk_size) {
 		let rnd_values: DataChunk = rng.gen();
 		padded_block.append(&mut pad_with_zeroes(&rnd_values, chunk_size));
 	}
@@ -102,17 +105,19 @@ pub fn get_block_dimensions(
 	max_cols_num: usize,
 	chunk_size: usize,
 ) -> Result<BlockDimensions, Error> {
-	let max_block_size = max_rows_num * max_cols_num * chunk_size;
+	let max_block_dimensions = BlockDimensions {
+		rows: max_rows_num,
+		cols: max_cols_num,
+		chunk_size,
+	};
 
-	ensure!(block_size <= max_block_size, Error::BlockTooBig);
+	ensure!(
+		block_size <= max_block_dimensions.size(),
+		Error::BlockTooBig
+	);
 
-	if block_size == max_block_size {
-		return Ok(BlockDimensions {
-			cols: max_cols_num,
-			rows: max_rows_num,
-			size: max_block_size,
-			chunk_size,
-		});
+	if block_size == max_block_dimensions.size() {
+		return Ok(max_block_dimensions);
 	}
 
 	// Both row number and column number have to be a power of 2, because of the Plonk FFT constraints
@@ -132,12 +137,9 @@ pub fn get_block_dimensions(
 		(total_cells, 1)
 	};
 
-	let size = rows * cols * chunk_size;
-
 	Ok(BlockDimensions {
 		cols,
 		rows,
-		size,
 		chunk_size,
 	})
 }
@@ -428,20 +430,23 @@ mod tests {
 		collection::{self, size_range},
 		prelude::*,
 	};
+	use rand::{prelude::IteratorRandom, Rng};
 	use test_case::test_case;
 
-	use super::{build_commitments, flatten_and_pad_block, pad_with_zeroes, ChaChaRng};
+	use super::{build_commitments, build_proof, flatten_and_pad_block, pad_with_zeroes, Cell, ChaChaRng};
 	use crate::{
 		com::{extend_data_matrix, get_block_dimensions, pad_iec_9797_1, BlockDimensions},
 		config,
 	};
 
-	#[test_case(11,   256, 256 => BlockDimensions { size: 128  , rows: 1, cols: 4  , chunk_size: 32} ; "below minimum block size")]
-	#[test_case(300,  256, 256 => BlockDimensions { size: 512  , rows: 1, cols: 16 , chunk_size: 32} ; "regular case")]
-	#[test_case(513,  256, 256 => BlockDimensions { size: 1024 , rows: 1, cols: 32 , chunk_size: 32} ; "minimum overhead after 512")]
-	#[test_case(8192, 256, 256 => BlockDimensions { size: 8192 , rows: 1, cols: 256, chunk_size: 32} ; "maximum cols")]
-	#[test_case(8224, 256, 256 => BlockDimensions { size: 16384, rows: 2, cols: 256, chunk_size: 32} ; "two rows")]
-
+	#[test_case(0,   256, 256 => BlockDimensions { rows: 1, cols: 4  , chunk_size: 32} ; "block size zero")]
+	#[test_case(11,   256, 256 => BlockDimensions { rows: 1, cols: 4  , chunk_size: 32} ; "below minimum block size")]
+	#[test_case(300,  256, 256 => BlockDimensions { rows: 1, cols: 16 , chunk_size: 32} ; "regular case")]
+	#[test_case(513,  256, 256 => BlockDimensions { rows: 1, cols: 32 , chunk_size: 32} ; "minimum overhead after 512")]
+	#[test_case(8192, 256, 256 => BlockDimensions { rows: 1, cols: 256, chunk_size: 32} ; "maximum cols")]
+	#[test_case(8224, 256, 256 => BlockDimensions { rows: 2, cols: 256, chunk_size: 32} ; "two rows")]
+	#[test_case(2097152, 256, 256 => BlockDimensions { rows: 256, cols: 256, chunk_size: 32} ; "max block size")]
+	#[test_case(2097155, 256, 256 => panics "BlockTooBig" ; "too much data")]
 	fn test_get_block_dimensions(size: usize, rows: usize, cols: usize) -> BlockDimensions {
 		get_block_dimensions(size, rows, cols, 32).unwrap()
 	}
@@ -480,7 +485,6 @@ mod tests {
 		let block_dims = BlockDimensions {
 			rows: 2,
 			cols: 4,
-			size: 256,
 			chunk_size: 32,
 		};
 		let block = (0..=247)
@@ -563,7 +567,6 @@ mod tests {
 		let expected_dims = BlockDimensions {
 			rows: 1,
 			cols: 8,
-			size: 256,
 			chunk_size,
 		};
 		let (layout, data, dims) =
@@ -608,7 +611,7 @@ mod tests {
 	}
 
 	fn sample_cells_from_matrix(
-		matrix: Vec<BlsScalar>,
+		matrix: &[BlsScalar],
 		dimensions: &BlockDimensions,
 	) -> Vec<Vec<kate_recovery::com::Cell>> {
 		fn cell_from_scalar(row_idx: u16, scalar: &BlsScalar) -> kate_recovery::com::Cell {
@@ -664,22 +667,46 @@ mod tests {
 		)
 	}
 
+	fn random_cells(cols: usize, rows: usize, percents: usize) -> Vec<Cell> {
+		assert!(percents > 0 && percents <= 100);
+
+		let rng = &mut ChachaRng::from_seed([0u8;32]);
+		let amount = (cols as f32 * rows as f32 * (percents as f32 / 100.0)).ceil() as usize;
+		(0..cols)
+			.zip(0..rows)
+			.map(|(col, row)| Cell {
+				col: col as u32,
+				row: row as u32,
+			})
+			.choose_multiple(rng, amount)
+	}
+
 	proptest! {
-		#![proptest_config(ProptestConfig::with_cases(50))]
-		#[test]
-		fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy()) {
-			let hash: Vec<u8> = (0..=31).collect::<Vec<u8>>();
+	#![proptest_config(ProptestConfig::with_cases(20))]
+	#[test]
+	fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy())  {
+		let hash: Vec<u8> = (0..=31).collect::<Vec<u8>>();
 
-			let (layout, _, dims, matrix) = build_commitments(64, 16, 32, xts, hash.as_slice()).unwrap();
+		let (layout, commitments, dims, matrix) = build_commitments(64, 16, 32, xts, hash.as_slice()).unwrap();
 
-			let columns = sample_cells_from_matrix(matrix, &dims);
-			let reconstructed = reconstruct_app_extrinsics(layout, columns, dims.rows, dims.chunk_size);
-
-			for (result, xt) in reconstructed.iter().zip(xts) {
-				prop_assert_eq!(result.0, xt.app_id);
-				prop_assert_eq!(&result.1, &xt.data);
-			}
+		let columns = sample_cells_from_matrix(&matrix, &dims);
+		let reconstructed = reconstruct_app_extrinsics(layout, columns, dims.rows, dims.chunk_size);
+		for (result, xt) in reconstructed.iter().zip(xts) {
+		prop_assert_eq!(result.0, xt.app_id);
+		prop_assert_eq!(&result.1, &xt.data);
 		}
+
+		let public_params = crate::testnet::public_params(config::MAX_BLOCK_COLUMNS as usize);
+
+		for cell in random_cells(dims.cols, dims.rows, 1) {
+		let col = cell.col as u16;
+		let row = cell.row as usize;
+		let commitment = &commitments[row * 48..(row + 1) * 48];
+		let proof = build_proof(&public_params, dims, &matrix, &[cell]).unwrap();
+		let verification =  kate_proof::kc_verify_proof(col, &proof, commitment, dims.rows as usize, dims.cols as usize);
+		prop_assert!(verification.unwrap().status.is_ok());
+		}
+	}
 	}
 
 	#[test]
@@ -708,7 +735,6 @@ mod tests {
 				== BlockDimensions {
 					rows: 1,
 					cols: 4,
-					size: 128,
 					chunk_size: 32
 				}
 		);
@@ -745,7 +771,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 		let coded: Vec<BlsScalar> = extend_data_matrix(dims, &data[..]).unwrap();
 
-		let cols = sample_cells_from_matrix(coded, &dims);
+		let cols = sample_cells_from_matrix(&coded, &dims);
 
 		let res = reconstruct_app_extrinsics(layout, cols, dims.rows, dims.chunk_size);
 

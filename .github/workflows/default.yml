@@ -32,8 +32,34 @@ jobs:
             # this should be synced with rust-toolchain.toml file.
             # After merge, this section should be removed.
             toolchain: nightly-2021-12-05
-            components: rustfmt, clippy
+            components: rustfmt, clippy, llvm-tools-preview
             profile: minimal
 
-      - run: cargo fmt --check
-      - run: cargo test
+      - name: Check code formatting
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --check
+
+      - name: Run tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --workspace --exclude fuzzing
+        env:
+          RUSTFLAGS: "-Zinstrument-coverage"
+          LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
+          SKIP_WASM_BUILD: true
+
+      - name: Generate test code coverage report
+        run: |
+          cargo install --force grcov
+          grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o lcov.info
+
+      - name: Upload test code coverage report to codecov.io
+        uses: codecov/codecov-action@v2
+        with:
+          files: lcov.info
+
+      - name: Cleanup
+        run: find . -name \*.profraw -type f -exec rm -f {} +

@@ -8,7 +8,6 @@ edition = "2018"
 
 [dependencies]
 da-primitives = { path = "../primitives", default-features = false }
-kate-recovery = { path = "recovery", default-features = true }
 
 # Others
 dusk-plonk = { version = "0.8.2", default-features = false, optional = true }
@@ -34,6 +33,8 @@ frame-support = { version = "4.0.0-dev", default-features = false }
 [dev-dependencies]
 test-case = "1.2.3"
 proptest = "1.0.0"
+kate-recovery = { path = "recovery", default-features = false }
+kate-proof = { path = "proof", default-features = false }
 
 [features]
 default = ["std"]
