@@ -14,3 +14,7 @@ da-primitives = { path = "../primitives", default-features = false }
 [[bin]]
 name = "build_commitment_fuzz"
 path = "src/build_commitment_fuzz.rs"
+
+[[bin]]
+name = "build_proof_fuzz"
+path = "src/build_proof_fuzz.rs"
