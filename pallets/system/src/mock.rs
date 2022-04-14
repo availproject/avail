@@ -15,7 +15,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use da_primitives::Header;
 use frame_support::parameter_types;
 use sp_core::H256;
 use sp_runtime::{
@@ -24,10 +23,11 @@ use sp_runtime::{
 };
 use sp_std::cell::RefCell;
 
-use crate::{self as frame_system, *};
+use crate::{self as frame_system, tests::TestRandomness, *};
 
 type UncheckedExtrinsic = mocking::MockUncheckedExtrinsic<Test>;
 type Block = mocking::MockBlock<Test>;
+type BlockNumber = u32;
 
 frame_support::construct_runtime!(
 	pub enum Test where
@@ -43,7 +43,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 const MAX_BLOCK_WEIGHT: Weight = 1024;
 
 parameter_types! {
-	pub const BlockHashCount: u64 = 10;
+	pub const BlockHashCount: BlockNumber = 10;
 	pub Version: RuntimeVersion = RuntimeVersion {
 		spec_name: sp_version::create_runtime_str!("test"),
 		impl_name: sp_version::create_runtime_str!("system-test"),
@@ -92,14 +92,15 @@ impl Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = RuntimeBlockLength;
-	type BlockNumber = u64;
+	type BlockNumber = BlockNumber;
 	type BlockWeights = RuntimeBlockWeights;
 	type Call = Call;
 	type DbWeight = DbWeight;
 	type Event = Event;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type Header = Header<Self::BlockNumber, BlakeTwo256>;
+	type Header = da_primitives::Header<BlockNumber, BlakeTwo256>;
+	type HeaderBuilder = frame_system::header_builder::da::HeaderBuilder<Test>;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type OnKilledAccount = RecordKilled;
@@ -107,6 +108,7 @@ impl Config for Test {
 	type OnSetCode = ();
 	type Origin = Origin;
 	type PalletInfo = PalletInfo;
+	type Randomness = TestRandomness<Test>;
 	type SS58Prefix = ();
 	type SystemWeightInfo = ();
 	type Version = Version;

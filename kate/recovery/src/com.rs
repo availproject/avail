@@ -260,13 +260,11 @@ pub fn reconstruct_column(row_count: usize, cells: &[Cell]) -> Result<Vec<BlsSca
 
 #[cfg(test)]
 mod tests {
-	use std::{
-		convert::TryInto,
-		time::{SystemTime, UNIX_EPOCH},
-	};
+	use std::convert::TryInto;
 
 	use dusk_bytes::Serializable;
-	use rand::{rngs::StdRng, Rng, SeedableRng};
+	use rand::{Rng, SeedableRng};
+	use rand_chacha::ChaChaRng;
 
 	use super::*;
 
@@ -291,8 +289,7 @@ mod tests {
 		let coded_src = eval_domain.fft(&temp);
 
 		// choose random subset of it ( >= 50% )
-		let seed = [42u8; 32];
-		let (coded_src_subset, _) = random_subset(&coded_src, seed);
+		let (coded_src_subset, _) = random_subset(&coded_src, [42u8; 32]);
 		// reconstruct 100% values from random coded subset
 		let coded_recovered = reconstruct_poly(eval_domain, coded_src_subset).unwrap();
 
@@ -318,7 +315,7 @@ mod tests {
 		let temp = half_eval_domain.ifft(&src[0..domain_size]);
 		let coded_src = eval_domain.fft(&temp);
 
-		let (mut coded_src_subset, available) = random_subset(&coded_src);
+		let (mut coded_src_subset, available) = random_subset(&coded_src, [42u8; 32]);
 		// intentionally drop a few coded elements such that
 		// < 50% is available
 		drop_few(&mut coded_src_subset, available);
@@ -426,7 +423,7 @@ mod tests {
 		let coded_src = eval_domain.fft(&temp);
 
 		// choose random subset of it ( >= 50% )
-		let (coded_src_subset, _) = random_subset(&coded_src);
+		let (coded_src_subset, _) = random_subset(&coded_src, [42u8; 32]);
 		// reconstruct 100% values from random coded subset
 		let recovered = reconstruct_poly(eval_domain, coded_src_subset).unwrap();
 
@@ -463,7 +460,7 @@ mod tests {
 	// reconstruction purpose
 	//
 	// @note this is just a helper function for writing test case
-	fn random_subset(data: &[BlsScalar], seed: Seed) -> (Vec<Option<BlsScalar>>, usize) {
+	fn random_subset(data: &[BlsScalar], seed: [u8; 32]) -> (Vec<Option<BlsScalar>>, usize) {
 		let mut rng = ChaChaRng::from_seed(seed);
 		let mut subset: Vec<Option<BlsScalar>> = Vec::with_capacity(data.len());
 		let mut available = 0;

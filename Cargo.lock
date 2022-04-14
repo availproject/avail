@@ -2933,6 +2933,7 @@ dependencies = [
  "frame-support",
  "getrandom 0.2.4",
  "hex",
+ "hex-literal",
  "kate-proof",
  "kate-recovery",
  "log",
@@ -2972,6 +2973,7 @@ dependencies = [
  "dusk-plonk",
  "getrandom 0.2.4",
  "rand 0.8.5",
+ "rand_chacha 0.3.1",
 ]
 
 [[package]]

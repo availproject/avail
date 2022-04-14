@@ -421,7 +421,7 @@ fn genesis_builder(
 					(
 						auth.stash,
 						auth.controller,
-						stake_amount,
+						stake_amount + AVL,
 						StakerStatus::Validator,
 					)
 				})
@@ -578,5 +578,5 @@ pub(crate) mod tests {
 
 	#[test]
 	#[ignore]
-	fn test_create_local_testnet_chain_spec() { local_testnet_config().build_storage().unwrap(); }
+	fn test_create_local_testnet_chain_spec() { testnet_config().build_storage().unwrap(); }
 }

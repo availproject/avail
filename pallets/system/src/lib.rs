@@ -112,8 +112,7 @@ use header_builder::HeaderBuilder;
 
 #[cfg(feature = "std")]
 pub mod mocking;
-#[cfg(test)]
-mod tests;
+pub mod tests;
 pub mod weights;
 // Backward compatible re-export.
 pub use extensions::{

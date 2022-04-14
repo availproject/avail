@@ -10,4 +10,5 @@ dusk-bytes = { version = "0.1.5" }
 getrandom = { version = "0.2", features = ["js"] }
 
 [dev-dependencies]
-rand = { version = "0.8.4" }
+rand = "0.8.4" 
+rand_chacha = "0.3"

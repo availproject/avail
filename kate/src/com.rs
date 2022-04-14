@@ -18,6 +18,7 @@ use rand_chacha::ChaChaRng;
 use serde::{Deserialize, Serialize};
 
 use super::*;
+use crate::Seed;
 
 #[derive(Serialize, Deserialize)]
 pub struct Cell {
@@ -425,16 +426,18 @@ mod tests {
 	use da_primitives::asdr::AppExtrinsic;
 	use dusk_bytes::Serializable;
 	use dusk_plonk::bls12_381::BlsScalar;
+	use hex_literal::hex;
 	use kate_recovery::com::{reconstruct_app_extrinsics, unflatten_padded_data};
 	use proptest::{
 		collection::{self, size_range},
 		prelude::*,
 	};
-	use rand::{prelude::IteratorRandom, Rng};
+	use rand::{prelude::IteratorRandom, Rng, SeedableRng};
 	use test_case::test_case;
 
 	use super::{
 		build_commitments, build_proof, flatten_and_pad_block, pad_with_zeroes, Cell, ChaChaRng,
+		Seed,
 	};
 	use crate::{
 		com::{extend_data_matrix, get_block_dimensions, pad_iec_9797_1, BlockDimensions},
@@ -565,36 +568,19 @@ mod tests {
 		];
 
 		// The hash is used for seed for padding the block to next power of two value
-		let hash: Vec<u8> = vec![0].repeat(32);
 		let expected_dims = BlockDimensions {
 			rows: 1,
 			cols: 8,
 			chunk_size,
 		};
 		let (layout, data, dims) =
-			flatten_and_pad_block(128, 256, chunk_size, extrinsics.as_slice(), &hash).unwrap();
+			flatten_and_pad_block(128, 256, chunk_size, extrinsics.as_slice(), Seed::default())
+				.unwrap();
 
 		let expected_layout = vec![(0, 1), (1, 1), (2, 2), (3, 2)];
 		assert_eq!(layout, expected_layout, "The layouts don't match");
 
-		let expected_data: Vec<u8> = vec![
-			// First extrinsic
-			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-			25, 26, 27, 28, 29, 128, 0, 0, // Second extrinsic
-			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-			25, 26, 27, 28, 29, 30, 128, 0, // Third extrinsic
-			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-			25, 26, 27, 28, 29, 30, 31, 0, 128, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // Fourth extrinsic
-			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-			25, 26, 27, 28, 29, 30, 31, 0, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
-			46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 128, 0, 0,
-			// Random seeded data
-			155, 7, 129, 95, 4, 73, 126, 46, 5, 210, 44, 172, 58, 160, 97, 65, 11, 32, 134, 140,
-			198, 25, 21, 76, 66, 161, 198, 27, 233, 144, 39, 0, 23, 178, 75, 142, 193, 104, 254,
-			72, 150, 245, 183, 12, 203, 16, 241, 167, 5, 224, 97, 208, 253, 250, 24, 150, 24, 210,
-			139, 13, 68, 239, 239, 0,
-		];
+		let expected_data = hex!("0102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D8000000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E80000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F0080000000000000000000000000000000000000000000000000000000000000000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F00202122232425262728292A2B2C2D2E2F303132333435363738393A3B3C80000076A04053BDA0A88BDA5177B86A15C3B29F559873CB481232299CD5743151AC004B2D63AE198E7BB0A9011F28E473C95F4013D7D53EC5FBC3B42DF8ED101F6D00");
 
 		assert_eq!(dims, expected_dims, "Dimensions don't match the expected");
 		assert_eq!(data, expected_data, "Data doesn't match the expected data");
@@ -624,11 +610,11 @@ mod tests {
 			}
 		}
 
-		fn random_indexes(length: usize, rng_seed: Seed) -> Vec<usize> {
+		fn random_indexes(length: usize, seed: Seed) -> Vec<usize> {
 			// choose random len/2 (unique) indexes
 			let mut idx = (0..length).collect::<Vec<_>>();
 			let mut chosen_idx = Vec::<usize>::new();
-			let mut rng = ChaChaRng::from_seed(rng_seed);
+			let mut rng = ChaChaRng::from_seed(seed);
 
 			for _ in 0..length / 2 {
 				let i = rng.gen_range(0..idx.len());
@@ -638,12 +624,11 @@ mod tests {
 			chosen_idx
 		}
 
-		const rng_seed: Seed = [42u8; 32];
-
+		const RNG_SEED: Seed = [42u8; 32];
 		matrix
 			.chunks_exact(dimensions.rows * 2)
 			.map(|e| {
-				random_indexes(e.len(), rng_seed)
+				random_indexes(e.len(), RNG_SEED)
 					.into_iter()
 					.map(|i| cell_from_scalar(i as u16, &e[i]))
 					.collect::<Vec<_>>()
@@ -672,7 +657,7 @@ mod tests {
 	fn random_cells(cols: usize, rows: usize, percents: usize) -> Vec<Cell> {
 		assert!(percents > 0 && percents <= 100);
 
-		let rng = &mut ChachaRng::from_seed([0u8; 32]);
+		let rng = &mut ChaChaRng::from_seed([0u8; 32]);
 		let amount = (cols as f32 * rows as f32 * (percents as f32 / 100.0)).ceil() as usize;
 		(0..cols)
 			.zip(0..rows)
@@ -687,9 +672,7 @@ mod tests {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
 	fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy())  {
-		let hash: Vec<u8> = (0..=31).collect::<Vec<u8>>();
-
-		let (layout, commitments, dims, matrix) = build_commitments(64, 16, 32, xts, hash.as_slice()).unwrap();
+		let (layout, commitments, dims, matrix) = build_commitments(64, 16, 32, xts, Seed::default()).unwrap();
 
 		let columns = sample_cells_from_matrix(&matrix, &dims);
 		let reconstructed = reconstruct_app_extrinsics(layout, columns, dims.rows, dims.chunk_size);
@@ -718,7 +701,7 @@ mod tests {
 		let block_cols = 256;
 		let chunk_size = 32;
 		let original_data = br#"test"#;
-		let hash: Vec<u8> = vec![
+		let hash: Seed = [
 			76, 41, 174, 145, 187, 12, 97, 32, 75, 111, 149, 209, 243, 195, 165, 10, 166, 172, 47,
 			41, 218, 24, 212, 66, 62, 5, 187, 191, 129, 5, 105, 3,
 		];
@@ -728,29 +711,17 @@ mod tests {
 			block_cols,
 			chunk_size,
 			&[AppExtrinsic::from(original_data.to_vec())],
-			&hash,
+			hash,
 		)
 		.unwrap();
 
-		assert!(
-			dimensions
-				== BlockDimensions {
-					rows: 1,
-					cols: 4,
-					chunk_size: 32
-				}
-		);
-		assert!(
-			commitments
-				== vec![
-					179, 146, 111, 178, 52, 189, 223, 114, 103, 194, 180, 22, 184, 118, 15, 103,
-					140, 42, 181, 96, 218, 184, 195, 8, 1, 191, 222, 69, 86, 117, 238, 244, 176,
-					238, 88, 46, 194, 158, 112, 16, 111, 28, 161, 155, 214, 174, 118, 212, 179,
-					146, 111, 178, 52, 189, 223, 114, 103, 194, 180, 22, 184, 118, 15, 103, 140,
-					42, 181, 96, 218, 184, 195, 8, 1, 191, 222, 69, 86, 117, 238, 244, 176, 238,
-					88, 46, 194, 158, 112, 16, 111, 28, 161, 155, 214, 174, 118, 212
-				]
-		);
+		assert_eq!(dimensions, BlockDimensions {
+			rows: 1,
+			cols: 4,
+			chunk_size: 32
+		});
+		let expected_commitments = hex!("87250850BAE5ED2ADE2DF7178CC5802D1105D75341D2D1D4A28A2319D0F2A7B237319C60F44419478F898688795D4B8987250850BAE5ED2ADE2DF7178CC5802D1105D75341D2D1D4A28A2319D0F2A7B237319C60F44419478F898688795D4B89");
+		assert_eq!(commitments, expected_commitments);
 	}
 
 	#[test]
@@ -760,14 +731,14 @@ get erasure coded to ensure redundancy.
 Let's see how this gets encoded and then reconstructed by sampling only some data."#;
 
 		// The hash is used for seed for padding the block to next power of two value
-		let hash: Vec<u8> = vec![0].repeat(32);
+		let hash = Seed::default();
 		let chunk_size = 32;
 		let (layout, data, dims) = flatten_and_pad_block(
 			128,
 			2,
 			chunk_size,
 			&[AppExtrinsic::from(orig_data.to_vec())],
-			&hash,
+			hash,
 		)
 		.unwrap();
 
