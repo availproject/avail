@@ -675,9 +675,10 @@ mod tests {
 
 		let rng = &mut rand::thread_rng();
 		let amount = (cols as f32 * rows as f32 * (percents as f32 / 100.0)).ceil() as usize;
+
 		(0..cols)
-			.zip(0..rows)
-			.map(|(col, row)| Cell {
+			.flat_map(move |col| (0..rows).map(move |row| (row, col)))
+			.map(|(row, col)| Cell {
 				col: col as u32,
 				row: row as u32,
 			})
@@ -702,12 +703,15 @@ mod tests {
 		let public_params = crate::testnet::public_params(config::MAX_BLOCK_COLUMNS as usize);
 
 		for cell in random_cells(dims.cols, dims.rows, 1) {
-		let col = cell.col as u16;
-		let row = cell.row as usize;
-		let commitment = &commitments[row * 48..(row + 1) * 48];
-		let proof = build_proof(&public_params, dims, &matrix, &[cell]).unwrap();
-		let verification =  kate_proof::kc_verify_proof(col, &proof, commitment, dims.rows as usize, dims.cols as usize);
-		prop_assert!(verification.unwrap().status.is_ok());
+			let col = cell.col as u16;
+			let row = cell.row as usize;
+
+			let proof = build_proof(&public_params, dims, &matrix, &[cell]).unwrap();
+			prop_assert!(proof.len() == 80);
+
+			let commitment = &commitments[row * 48..(row + 1) * 48];
+			let verification =  kate_proof::kc_verify_proof(col, &proof, commitment, dims.rows as usize, dims.cols as usize);
+			prop_assert!(verification.unwrap().status.is_ok());
 		}
 	}
 	}
