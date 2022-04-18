@@ -2,7 +2,7 @@ use afl;
 use da_primitives::asdr::AppExtrinsic;
 
 fn main() {
-	println!("Starting Avail fuzzer...");
+	println!("Starting build_commitment() fuzzer...");
 
 	afl::fuzz!(|data: &[u8]| {
 		let block_rows = 256;

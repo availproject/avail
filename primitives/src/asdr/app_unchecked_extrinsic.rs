@@ -363,7 +363,7 @@ impl<Address: Encode, Signature: Encode, Call: Encode, Extra: SignedExtension> s
 	where
 		S: ::serde::Serializer,
 	{
-		self.using_encoded(|bytes| seq.serialize_bytes(bytes))
+		self.using_encoded(|bytes| sp_core::bytes::serialize(bytes, seq))
 	}
 }
 
