@@ -1,5 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub type Seed = [u8; 32];
+
 pub mod config {
 	pub const SCALAR_SIZE_WIDE: usize = 64;
 	pub const SCALAR_SIZE: usize = 32;
@@ -25,7 +27,7 @@ pub mod config {
 #[cfg(feature = "std")]
 pub mod com;
 
-#[cfg(feature = "alloc")]
+#[cfg(all(feature = "std", feature = "testnet"))]
 pub mod testnet {
 	use std::{collections::HashMap, sync::Mutex};
 

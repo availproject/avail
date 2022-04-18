@@ -36,6 +36,7 @@ serde = { version = "1.0.126", features = ["derive"] }
 serde_json = "1.0"
 lru = "0.7.2"
 rand = "0.7.2"
+hex-literal = "0.3.4"
 
 # Substrate
 sc-cli = { version = "0.10.0-dev", features = ["wasmtime"] }
@@ -76,6 +77,7 @@ sc-chain-spec = { version = "4.0.0-dev" }
 pallet-asset-tx-payment = "4.0.0-dev"
 pallet-transaction-payment = "4.0.0-dev"
 frame-system-rpc-runtime-api = "4.0.0-dev"
+frame-support = "4.0.0-dev"
 pallet-mmr-rpc = "3.0.0"
 sc-client-db = "0.10.0-dev"
 

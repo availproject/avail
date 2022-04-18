@@ -30,6 +30,7 @@ sp-io = { version = "4.0.0-dev", default-features = false }
 sp-runtime = { version = "4.0.0-dev", default-features = false }
 sp-version = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
+sp-runtime-interface = { version = "4.0.0-dev", default-features = false }
 
 [dev-dependencies]
 criterion = "0.3.3"
@@ -48,6 +49,7 @@ std = [
 	"sp-std/std",
 	"sp-io/std",
 	"frame-support/std",
+	"sp-runtime-interface/std",
 	"sp-runtime/std",
 	"sp-version/std",
 	"log/std",

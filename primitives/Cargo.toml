@@ -17,6 +17,7 @@ sp-std = { version = "4.0.0-dev", default-features = false }
 sp-core = { version = "4.0.0-dev", default-features = false }
 sp-io = { version = "4.0.0-dev", default-features = false }
 sp-runtime = { version = "4.0.0-dev", default-features = false }
+sp-runtime-interface = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 parity-util-mem = { version = "0.10.2", default-features = false, features = ["primitive-types"] }
 
@@ -32,6 +33,7 @@ std = [
 	"sp-std/std",
 	"sp-io/std",
 	"sp-runtime/std",
+	"sp-runtime-interface/std",
 	"frame-support/std",
 	"parity-util-mem/std",
 ]

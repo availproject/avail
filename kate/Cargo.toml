@@ -35,10 +35,12 @@ test-case = "1.2.3"
 proptest = "1.0.0"
 kate-recovery = { path = "recovery", default-features = false }
 kate-proof = { path = "proof", default-features = false }
+hex-literal = "0.3.4"
 
 [features]
-default = ["std"]
+default = ["std","testnet"]
 alloc = ["dusk-plonk/alloc"]
+testnet = []
 
 std = [
 	"hex/std",

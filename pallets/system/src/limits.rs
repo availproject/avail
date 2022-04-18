@@ -30,10 +30,11 @@ use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{Perbill, RuntimeDebug};
+use sp_runtime_interface::pass_by::PassByCodec;
 
 /// Block length limit configuration.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(RuntimeDebug, PartialEq, Clone, codec::Encode, codec::Decode, TypeInfo)]
+#[derive(RuntimeDebug, PartialEq, Clone, codec::Encode, codec::Decode, TypeInfo, PassByCodec)]
 pub struct BlockLength {
 	/// Maximal total length in bytes for each extrinsic class.
 	///
@@ -272,7 +273,7 @@ pub struct BlockWeights {
 
 impl Default for BlockWeights {
 	fn default() -> Self {
-		Self::with_sensible_defaults(1 * constants::WEIGHT_PER_SECOND, DEFAULT_NORMAL_RATIO)
+		Self::with_sensible_defaults(constants::WEIGHT_PER_SECOND, DEFAULT_NORMAL_RATIO)
 	}
 }
 
@@ -282,7 +283,7 @@ impl BlockWeights {
 
 	/// Verifies correctness of this `BlockWeights` object.
 	pub fn validate(self) -> ValidationResult {
-		fn or_max(w: Option<Weight>) -> Weight { w.unwrap_or_else(|| Weight::max_value()) }
+		fn or_max(w: Option<Weight>) -> Weight { w.unwrap_or_else(Weight::max_value) }
 		let mut error = ValidationErrors::default();
 
 		for class in DispatchClass::all() {
@@ -310,7 +311,7 @@ impl BlockWeights {
 			);
 			// Max extrinsic should not be 0
 			error_assert!(
-				weights.max_extrinsic.unwrap_or_else(|| Weight::max_value()) > 0,
+				weights.max_extrinsic.unwrap_or_else(Weight::max_value) > 0,
 				&mut error,
 				"[{:?}] {:?} (max_extrinsic) must not be 0. Check base cost and average initialization cost.",
 				class, weights.max_extrinsic,

@@ -20,11 +20,12 @@
 #![cfg(test)]
 
 use da_primitives::Header;
+use frame_system::tests::TestRandomness;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
 type AccountId = u64;
 type AccountIndex = u32;
-type BlockNumber = u64;
+type BlockNumber = u32;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -53,6 +54,7 @@ impl frame_system::Config for Test {
 	type Hash = sp_core::H256;
 	type Hashing = ::sp_runtime::traits::BlakeTwo256;
 	type Header = Header<BlockNumber, BlakeTwo256>;
+	type HeaderBuilder = frame_system::header_builder::da::HeaderBuilder<Test>;
 	type Index = AccountIndex;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type OnKilledAccount = ();
@@ -60,6 +62,7 @@ impl frame_system::Config for Test {
 	type OnSetCode = ();
 	type Origin = Origin;
 	type PalletInfo = PalletInfo;
+	type Randomness = TestRandomness<Test>;
 	type SS58Prefix = ();
 	type SystemWeightInfo = ();
 	type Version = ();

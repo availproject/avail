@@ -12,6 +12,7 @@ use sp_runtime::{
 	},
 	Digest,
 };
+use sp_runtime_interface::pass_by::{Codec as PassByCodecImpl, PassBy};
 use sp_std::{convert::TryFrom, fmt::Debug, hash::Hash as StdHash};
 
 use crate::{
@@ -84,6 +85,14 @@ pub struct Header<Number: HeaderNumberTrait, Hash: KateHashTrait> {
 	pub digest: Digest,
 	/// Application specific data index.
 	pub app_data_lookup: DataLookup,
+}
+
+impl<Number, Hash> PassBy for Header<Number, Hash>
+where
+	Number: HeaderNumberTrait,
+	Hash: KateHashTrait,
+{
+	type PassBy = PassByCodecImpl<Header<Number, Hash>>;
 }
 
 /// This module adds serialization support to `Header::number` field.

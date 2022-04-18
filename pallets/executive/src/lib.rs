@@ -291,7 +291,7 @@ where
 	pub fn initialize_block(header: &System::Header) {
 		sp_io::init_tracing();
 		sp_tracing::enter_span!(sp_tracing::Level::TRACE, "init_block");
-		let digests = Self::extract_pre_digest(&header);
+		let digests = Self::extract_pre_digest(header);
 		Self::initialize_block_impl(header.number(), header.parent_hash(), &digests);
 	}
 
@@ -512,7 +512,7 @@ where
 			.iter()
 			.zip(new_header.digest().logs().iter());
 		for (header_item, computed_item) in items_zip {
-			header_item.check_equal(&computed_item);
+			header_item.check_equal(computed_item);
 			assert!(
 				header_item == computed_item,
 				"Digest item must match that calculated."
@@ -521,7 +521,7 @@ where
 
 		// check storage root.
 		let storage_root = new_header.state_root();
-		header.state_root().check_equal(&storage_root);
+		header.state_root().check_equal(storage_root);
 		assert!(
 			header.state_root() == storage_root,
 			"Storage root must match that calculated."

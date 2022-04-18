@@ -1247,6 +1247,7 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "sp-runtime-interface",
  "sp-std",
 ]
 
@@ -1328,9 +1329,11 @@ dependencies = [
  "dusk-plonk",
  "frame-benchmarking",
  "frame-benchmarking-cli",
+ "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",
  "futures 0.3.21",
+ "hex-literal",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
@@ -2005,6 +2008,7 @@ dependencies = [
  "sp-externalities",
  "sp-io",
  "sp-runtime",
+ "sp-runtime-interface",
  "sp-std",
  "sp-version",
 ]
@@ -2929,6 +2933,7 @@ dependencies = [
  "frame-support",
  "getrandom 0.2.4",
  "hex",
+ "hex-literal",
  "kate-proof",
  "kate-recovery",
  "log",
@@ -2968,6 +2973,7 @@ dependencies = [
  "dusk-plonk",
  "getrandom 0.2.4",
  "rand 0.8.5",
+ "rand_chacha 0.3.1",
 ]
 
 [[package]]
@@ -2976,6 +2982,7 @@ version = "0.1.0"
 dependencies = [
  "da-primitives",
  "dusk-plonk",
+ "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",
  "jsonrpc-core",
@@ -2986,6 +2993,7 @@ dependencies = [
  "lru 0.7.2",
  "parity-scale-codec",
  "sc-client-api",
+ "sc-client-db",
  "sp-api",
  "sp-blockchain",
  "sp-rpc",

@@ -28,6 +28,8 @@ pub type Block<T> = generic::Block<
 	UncheckedExtrinsic<T>,
 >;
 
+type BlockNumber = u32;
+
 frame_support::construct_runtime!(
 	pub enum Test where
 		Block = Block<Test>,
@@ -42,7 +44,7 @@ frame_support::construct_runtime!(
 );
 
 parameter_types! {
-	pub const BlockHashCount: u64 = 250;
+	pub const BlockHashCount: BlockNumber = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::simple_max(1024);
 	pub static ExistentialDeposit: u64 = 0;
@@ -54,7 +56,7 @@ impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
-	type BlockNumber = u64;
+	type BlockNumber = BlockNumber;
 	type BlockWeights = BlockWeights;
 	type Call = Call;
 	type DbWeight = ();
@@ -62,6 +64,7 @@ impl frame_system::Config for Test {
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header<Self::BlockNumber, BlakeTwo256>;
+	type HeaderBuilder = frame_system::header_builder::da::HeaderBuilder<Test>;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type OnKilledAccount = ();
@@ -69,6 +72,7 @@ impl frame_system::Config for Test {
 	type OnSetCode = ();
 	type Origin = Origin;
 	type PalletInfo = PalletInfo;
+	type Randomness = frame_system::tests::TestRandomness<Test>;
 	type SS58Prefix = ();
 	type SystemWeightInfo = ();
 	type Version = ();

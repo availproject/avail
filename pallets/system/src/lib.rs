@@ -64,11 +64,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 use codec::{Decode, Encode, EncodeLike, FullCodec};
-use da_primitives::{
-	asdr::{AppExtrinsic, DataLookup},
-	traits::{ExtendedHeader, ExtrinsicsWithCommitment},
-	well_known_keys::BLOCK_LENGTH,
-};
+use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, well_known_keys::BLOCK_LENGTH};
 #[cfg(feature = "std")]
 use frame_support::traits::GenesisBuild;
 use frame_support::{
@@ -84,7 +80,7 @@ use frame_support::{
 	},
 	Parameter,
 };
-use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
+use kate::Seed;
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::Serialize;
@@ -111,12 +107,13 @@ pub(crate) mod mock;
 pub mod offchain;
 
 mod extensions;
+pub mod header_builder;
+use header_builder::HeaderBuilder;
+
 #[cfg(feature = "std")]
 pub mod mocking;
-#[cfg(test)]
-mod tests;
+pub mod tests;
 pub mod weights;
-
 // Backward compatible re-export.
 pub use extensions::{
 	check_genesis::CheckGenesis, check_mortality::CheckMortality as CheckEra,
@@ -124,18 +121,6 @@ pub use extensions::{
 	check_tx_version::CheckTxVersion, check_weight::CheckWeight,
 };
 pub use weights::WeightInfo;
-
-/// Compute the trie root of a list of extrinsics.
-pub fn extrinsics_root<H: Hash, E: codec::Encode>(extrinsics: &[E]) -> H::Output {
-	let encoded_extrinsics = extrinsics
-		.iter()
-		.map(codec::Encode::encode)
-		.collect::<Vec<_>>();
-	extrinsics_data_root::<H>(encoded_extrinsics)
-}
-
-/// Compute the trie root of a list of extrinsics.
-pub fn extrinsics_data_root<H: Hash>(xts: Vec<Vec<u8>>) -> H::Output { H::ordered_trie_root(xts) }
 
 /// An object to track the currently used extrinsic weight in a block.
 pub type ConsumedWeight = PerDispatchClass<Weight>;
@@ -227,6 +212,7 @@ pub mod pallet {
 			+ sp_std::hash::Hash
 			+ AsRef<[u8]>
 			+ AsMut<[u8]>
+			+ Into<Seed>
 			+ MaybeMallocSizeOf
 			+ MaxEncodedLen;
 
@@ -255,6 +241,12 @@ pub mod pallet {
 		type Header: Parameter
 			+ traits::Header<Number = Self::BlockNumber, Hash = Self::Hash>
 			+ ExtendedHeader<Number = Self::BlockNumber, Hash = Self::Hash>;
+
+		/// Header builder
+		type HeaderBuilder: header_builder::HeaderBuilder<Header = Self::Header>;
+
+		/// Source of random seeds.
+		type Randomness: frame_support::traits::Randomness<Self::Hash, Self::BlockNumber>;
 
 		/// The aggregated event type of the runtime.
 		type Event: Parameter
@@ -626,6 +618,8 @@ pub mod pallet {
 	#[cfg(feature = "std")]
 	impl Default for GenesisConfig {
 		fn default() -> Self {
+			use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
+
 			let normal = Perbill::from_percent(90);
 			let block_length = limits::BlockLength::with_normal_ratio(
 				MAX_BLOCK_ROWS,
@@ -1358,38 +1352,7 @@ impl<T: Config> Pallet<T> {
 		// stay to be inspected by the client and will be cleared by `Self::initialize`.
 		let number = <Number<T>>::get();
 		let parent_hash = <ParentHash<T>>::get();
-		let mut digest = <Digest<T>>::get();
-
-		let app_extrinsics = Self::sort_app_extrinsics();
-
-		#[cfg(feature = "std")]
-		let (kate_commitment, block_dims, data_index) = {
-			let block_length = Self::block_length();
-
-			let (xts_layout, kate_commitment, block_dims, _data_matrix) =
-				kate::com::build_commitments(
-					block_length.rows as usize,
-					block_length.cols as usize,
-					block_length.chunk_size as usize,
-					app_extrinsics.as_slice(),
-					parent_hash.as_ref(),
-				)
-				.expect("Build commitments cannot fail .qed");
-			let data_index = DataLookup::try_from(xts_layout.as_slice())
-				.expect("Extrinsic size cannot overflow .qed");
-
-			log::debug!(
-				target: "runtime::system",
-				"App DataLookup: {:?}",
-				data_index);
-
-			(kate_commitment, block_dims, data_index)
-		};
-		#[cfg(not(feature = "std"))]
-		let data_index = DataLookup::default();
-
-		let extrinsics = Self::to_raw_extrinsics(app_extrinsics);
-		let root_hash = extrinsics_data_root::<T::Hashing>(extrinsics);
+		let digest = <Digest<T>>::get().into();
 
 		// move block hash pruning window by one block
 		let block_hash_count = T::BlockHashCount::get();
@@ -1402,39 +1365,10 @@ impl<T: Config> Pallet<T> {
 			<BlockHash<T>>::remove(to_remove);
 		}
 
-		let storage_root = T::Hash::decode(&mut &sp_io::storage::root()[..])
-			.expect("Node is configured to use the same hash; qed");
-		let storage_changes_root = sp_io::storage::changes_root(&parent_hash.encode());
+		let app_extrinsics = Self::sort_app_extrinsics();
+		let block_length = Self::block_length();
 
-		// we can't compute changes trie root earlier && put it to the Digest
-		// because it will include all currently existing temporaries.
-		if let Some(storage_changes_root) = storage_changes_root {
-			let hash_changes_root = T::Hash::decode(&mut &storage_changes_root[..])
-				.expect("Node is configured to use the same hash; qed");
-			let item = generic::DigestItem::Other(hash_changes_root.as_ref().to_vec());
-			digest.push(item);
-		}
-
-		// TODO Remove once WASM works again
-		#[cfg(not(feature = "std"))]
-		let extrinsics_root = <T::Header as ExtendedHeader>::Root::new(root_hash);
-
-		#[cfg(feature = "std")]
-		let extrinsics_root = <T::Header as ExtendedHeader>::Root::new_with_commitment(
-			root_hash,
-			kate_commitment,
-			block_dims.rows as u16,
-			block_dims.cols as u16,
-		);
-
-		<T::Header as ExtendedHeader>::new(
-			number,
-			extrinsics_root,
-			storage_root,
-			parent_hash,
-			digest,
-			data_index,
-		)
+		T::HeaderBuilder::build(app_extrinsics, parent_hash, digest, block_length, number)
 	}
 
 	/// Deposits a log and ensures it matches the block's log data.
@@ -1632,10 +1566,6 @@ impl<T: Config> Pallet<T> {
 		// sort extrinsics by key
 		extrinsics.sort_by(|a: &AppExtrinsic, b: &AppExtrinsic| a.app_id.cmp(&b.app_id));
 		extrinsics
-	}
-
-	pub fn to_raw_extrinsics(extrinsics: Vec<AppExtrinsic>) -> Vec<Vec<u8>> {
-		extrinsics.into_iter().map(|e| e.data).collect::<Vec<_>>()
 	}
 }
 
