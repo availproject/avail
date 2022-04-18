@@ -329,7 +329,7 @@ pub fn build_proof(
 	Ok(result_bytes)
 }
 
-#[cfg(feature = "std")]
+#[cfg(all(feature = "std", feature = "testnet"))]
 pub fn build_commitments(
 	rows_num: usize,
 	cols_num: usize,
