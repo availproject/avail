@@ -628,11 +628,8 @@ pub mod pallet {
 				normal,
 			);
 
-			let kc_public_params = if cfg!(testnet) {
-				kate::testnet::public_params(MAX_BLOCK_COLUMNS as usize).to_raw_var_bytes()
-			} else {
-				vec![]
-			};
+			let kc_public_params =
+				kate::testnet::public_params(MAX_BLOCK_COLUMNS as usize).to_raw_var_bytes();
 
 			Self {
 				code: Default::default(),
