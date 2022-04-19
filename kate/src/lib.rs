@@ -27,7 +27,7 @@ pub mod config {
 #[cfg(feature = "std")]
 pub mod com;
 
-#[cfg(all(feature = "std", feature = "testnet"))]
+#[cfg(feature = "std")]
 pub mod testnet {
 	use std::{collections::HashMap, sync::Mutex};
 

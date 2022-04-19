@@ -627,6 +627,7 @@ pub mod pallet {
 				32,
 				normal,
 			);
+
 			let kc_public_params =
 				kate::testnet::public_params(MAX_BLOCK_COLUMNS as usize).to_raw_var_bytes();
 
