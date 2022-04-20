@@ -107,7 +107,7 @@ pub trait HostedHeaderBuilder {
 				kate::com::build_commitments(
 					block_length.rows as usize,
 					block_length.cols as usize,
-					block_length.chunk_size as usize,
+					block_length.chunk_size() as usize,
 					app_extrinsics.as_slice(),
 					seed,
 				)

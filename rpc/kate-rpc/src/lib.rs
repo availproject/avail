@@ -145,7 +145,7 @@ where
 			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
 				block_length.rows as usize,
 				block_length.cols as usize,
-				block_length.chunk_size as usize,
+				block_length.chunk_size() as usize,
 				&xts_by_id,
 				seed,
 			)

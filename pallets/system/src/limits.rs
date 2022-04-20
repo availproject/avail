@@ -25,7 +25,12 @@
 //! `DispatchClass`. This module contains configuration object for both resources,
 //! which should be passed to `frame_system` configuration when runtime is being set up.
 
-use frame_support::weights::{constants, DispatchClass, OneOrMany, PerDispatchClass, Weight};
+use codec::{Decode, Encode, Error, Input};
+use frame_support::{
+	ensure,
+	weights::{constants, DispatchClass, OneOrMany, PerDispatchClass, Weight},
+};
+use kate::config::DATA_CHUNK_SIZE;
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -34,7 +39,7 @@ use sp_runtime_interface::pass_by::PassByCodec;
 
 /// Block length limit configuration.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(RuntimeDebug, PartialEq, Clone, codec::Encode, codec::Decode, TypeInfo, PassByCodec)]
+#[derive(RuntimeDebug, PartialEq, Clone, Encode, TypeInfo, PassByCodec)]
 pub struct BlockLength {
 	/// Maximal total length in bytes for each extrinsic class.
 	///
@@ -44,7 +49,54 @@ pub struct BlockLength {
 	pub max: PerDispatchClass<u32>,
 	pub cols: u32,
 	pub rows: u32,
-	pub chunk_size: u32,
+	chunk_size: u32,
+}
+
+#[derive(RuntimeDebug, Clone, Copy)]
+pub enum BlockLengthError {
+	InvalidChunkSize,
+}
+
+impl BlockLength {
+	#[inline]
+	pub fn chunk_size(&self) -> u32 { self.chunk_size }
+
+	pub fn set_chunk_size(&mut self, new_size: u32) -> Result<(), BlockLengthError> {
+		ensure!(
+			Self::is_chunk_size_valid(new_size),
+			BlockLengthError::InvalidChunkSize
+		);
+
+		self.chunk_size = new_size;
+		Ok(())
+	}
+
+	#[inline]
+	fn is_chunk_size_valid(new_size: u32) -> bool { new_size >= DATA_CHUNK_SIZE as u32 }
+}
+
+impl Decode for BlockLength {
+	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
+		let max = <PerDispatchClass<u32>>::decode(input)
+			.map_err(|e| e.chain("Could not decode `BlockLength::max`"))?;
+		let cols =
+			<u32>::decode(input).map_err(|e| e.chain("Could not decode `BlockLength::cols`"))?;
+		let rows =
+			<u32>::decode(input).map_err(|e| e.chain("Could not decode `BlockLength::rows`"))?;
+		let chunk_size = <u32>::decode(input)
+			.map_err(|e| e.chain("Could not decode `BlockLength::chunk_size`"))?;
+		ensure!(
+			Self::is_chunk_size_valid(chunk_size),
+			Error::from("Invalid `BlockLength::chunk_size`")
+		);
+
+		Ok(BlockLength {
+			max,
+			cols,
+			rows,
+			chunk_size,
+		})
+	}
 }
 
 /// This module adds serialization support to `BlockLength::max` field.

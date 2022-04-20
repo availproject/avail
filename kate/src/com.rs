@@ -1,5 +1,6 @@
 use std::{
 	convert::{TryFrom, TryInto},
+	mem::size_of,
 	time::Instant,
 };
 
@@ -11,14 +12,20 @@ use dusk_plonk::{
 	fft::{EvaluationDomain, Evaluations},
 	prelude::BlsScalar,
 };
-use frame_support::ensure;
+use frame_support::{ensure, fail};
 use log::info;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 use serde::{Deserialize, Serialize};
+use static_assertions::const_assert_eq;
 
-use super::*;
-use crate::Seed;
+use crate::{
+	config::{
+		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAX_BLOCK_COLUMNS, MAX_PROOFS_REQUEST,
+		MINIMUM_BLOCK_SIZE, PROOF_SIZE, PROVER_KEY_SIZE, SCALAR_SIZE,
+	},
+	testnet, Seed,
+};
 
 #[derive(Serialize, Deserialize)]
 pub struct Cell {
@@ -52,7 +59,7 @@ impl From<PlonkError> for Error {
 
 pub type XtsLayout = Vec<(u32, u32)>;
 type FlatData = Vec<u8>;
-type DataChunk = [u8; config::DATA_CHUNK_SIZE];
+type DataChunk = [u8; DATA_CHUNK_SIZE];
 const PADDING_TAIL_VALUE: u8 = 0x80;
 
 pub fn flatten_and_pad_block(
@@ -67,7 +74,7 @@ pub fn flatten_and_pad_block(
 	let (tx_layout, padded_chunks): (Vec<_>, Vec<_>) = extrinsics
 		.iter()
 		.map(|e| {
-			let chunks = pad_iec_9797_1(e.data.as_slice(), config::DATA_CHUNK_SIZE);
+			let chunks = pad_iec_9797_1(e.data.clone());
 			((e.app_id, chunks.len() as u32), chunks)
 		})
 		.unzip();
@@ -86,7 +93,9 @@ pub fn flatten_and_pad_block(
 	let block_dims =
 		get_block_dimensions(padded_block.len(), max_rows_num, max_cols_num, chunk_size)?;
 
-	ensure!(padded_block.len() <= block_dims.size(), Error::BlockTooBig);
+	if padded_block.len() > block_dims.size() {
+		fail!(Error::BlockTooBig);
+	}
 
 	let mut rng = ChaChaRng::from_seed(rng_seed);
 
@@ -94,7 +103,7 @@ pub fn flatten_and_pad_block(
 
 	for _ in 0..((block_dims.size() - padded_block.len()) / block_dims.chunk_size) {
 		let rnd_values: DataChunk = rng.gen();
-		padded_block.append(&mut pad_with_zeroes(&rnd_values, chunk_size));
+		padded_block.append(&mut pad_with_zeroes(rnd_values.to_vec(), chunk_size));
 	}
 
 	Ok((tx_layout, padded_block, block_dims))
@@ -112,10 +121,9 @@ pub fn get_block_dimensions(
 		chunk_size,
 	};
 
-	ensure!(
-		block_size <= max_block_dimensions.size(),
-		Error::BlockTooBig
-	);
+	if block_size > max_block_dimensions.size() {
+		fail!(Error::BlockTooBig);
+	}
 
 	if block_size == max_block_dimensions.size() {
 		return Ok(max_block_dimensions);
@@ -124,8 +132,8 @@ pub fn get_block_dimensions(
 	// Both row number and column number have to be a power of 2, because of the Plonk FFT constraints
 	// Implicitly, if both of the assumptions above are correct, the total_cells number will also be a power of 2
 	let mut nearest_power_2_size = 2_usize.pow((block_size as f32).log2().ceil() as u32);
-	if nearest_power_2_size < config::MINIMUM_BLOCK_SIZE {
-		nearest_power_2_size = config::MINIMUM_BLOCK_SIZE;
+	if nearest_power_2_size < MINIMUM_BLOCK_SIZE {
+		nearest_power_2_size = MINIMUM_BLOCK_SIZE;
 	}
 
 	let total_cells = (nearest_power_2_size as f32 / chunk_size as f32).ceil() as usize;
@@ -145,28 +153,38 @@ pub fn get_block_dimensions(
 	})
 }
 
-fn pad_with_zeroes(chunk: &[u8], length: usize) -> Vec<u8> {
-	let mut bytes = chunk.to_vec();
-	bytes.resize(length, 0);
-	bytes
+#[inline]
+fn pad_with_zeroes(mut chunk: Vec<u8>, length: usize) -> Vec<u8> {
+	chunk.resize(length, 0);
+	chunk
 }
 
 fn pad_to_chunk(chunk: DataChunk, chunk_size: usize) -> Vec<u8> {
-	let len = chunk.len();
+	const_assert_eq!(DATA_CHUNK_SIZE, size_of::<DataChunk>());
+	debug_assert!(
+		chunk_size >= DATA_CHUNK_SIZE,
+		"`BlockLength.chunk_size` is valid by design .qed"
+	);
+
 	let mut padded = chunk.to_vec();
-	padded.extend(vec![0].repeat(chunk_size - len));
+	let ext_size = DATA_CHUNK_SIZE + (chunk_size - DATA_CHUNK_SIZE);
+	padded.resize(ext_size, 0);
 	padded
 }
 
-fn pad_iec_9797_1(data: &[u8], chunk_size: usize) -> Vec<DataChunk> {
-	let mut padded = data.to_vec();
-	padded.push(PADDING_TAIL_VALUE);
-	padded.extend(vec![0].repeat(chunk_size - (data.len() % chunk_size) - 1));
+fn pad_iec_9797_1(mut data: Vec<u8>) -> Vec<DataChunk> {
+	// Add `PADDING_TAIL_VALUE` and fill with zeros.
+	data.push(PADDING_TAIL_VALUE);
+	let padded_size =
+		data.len() + (DATA_CHUNK_SIZE - (data.len() % DATA_CHUNK_SIZE)) % DATA_CHUNK_SIZE;
+	data.resize(padded_size, 0u8);
 
-	padded
-		.chunks(chunk_size)
-		.map(|e| e.try_into().unwrap())
-		.collect::<Vec<DataChunk>>()
+	// Transform into `DataChunk`.
+	const_assert_eq!(DATA_CHUNK_SIZE, size_of::<DataChunk>());
+	data.chunks(DATA_CHUNK_SIZE)
+		.map(|e| e.try_into())
+		.collect::<Result<Vec<DataChunk>, _>>()
+		.expect("Const assertion ensures this transformation to `DataChunk`. qed")
 }
 
 fn extend_column_with_zeros(column: &[BlsScalar], extended_rows_num: usize) -> Vec<BlsScalar> {
@@ -178,7 +196,7 @@ fn extend_column_with_zeros(column: &[BlsScalar], extended_rows_num: usize) -> V
 fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 	// TODO: Better error type for BlsScalar case?
 	let scalar_size_chunk =
-		<[u8; config::SCALAR_SIZE]>::try_from(chunk).map_err(|_| Error::InvalidChunkLength)?;
+		<[u8; SCALAR_SIZE]>::try_from(chunk).map_err(|_| Error::InvalidChunkLength)?;
 	BlsScalar::from_bytes(&scalar_size_chunk).map_err(|_| Error::CellLenghtExceeded)
 }
 
@@ -195,7 +213,7 @@ pub fn extend_data_matrix(
 ) -> Result<Vec<BlsScalar>, Error> {
 	let start = Instant::now();
 	let rows_num = block_dims.rows;
-	let extended_rows_num = rows_num * config::EXTENSION_FACTOR;
+	let extended_rows_num = rows_num * EXTENSION_FACTOR;
 
 	let chunks = block.chunks_exact(block_dims.chunk_size);
 	assert!(chunks.remainder().is_empty());
@@ -239,12 +257,9 @@ pub fn build_proof(
 ) -> Result<Vec<u8>, Error> {
 	let rows_num = block_dims.rows;
 	let cols_num = block_dims.cols;
-	let extended_rows_num = rows_num * config::EXTENSION_FACTOR;
+	let extended_rows_num = rows_num * EXTENSION_FACTOR;
 
-	ensure!(
-		cells.len() <= config::MAX_PROOFS_REQUEST,
-		Error::CellLenghtExceeded
-	);
+	ensure!(cells.len() <= MAX_PROOFS_REQUEST, Error::CellLenghtExceeded);
 
 	let (prover_key, _) = public_params.trim(cols_num).map_err(Error::from)?;
 
@@ -254,7 +269,7 @@ pub fn build_proof(
 	row_dom_x_pts.extend(row_eval_domain.elements());
 
 	let mut result_bytes: Vec<u8> = Vec::new();
-	let serialized_proof_size = config::SCALAR_SIZE + config::PROOF_SIZE;
+	let serialized_proof_size = SCALAR_SIZE + PROOF_SIZE;
 	result_bytes.reserve_exact(serialized_proof_size * cells.len());
 	unsafe {
 		result_bytes.set_len(serialized_proof_size * cells.len());
@@ -298,15 +313,15 @@ pub fn build_proof(
 						result_bytes
 							.as_mut_ptr()
 							.add(cell_index * serialized_proof_size),
-						config::PROOF_SIZE,
+						PROOF_SIZE,
 					);
 
 					std::ptr::copy(
 						evaluated_point.to_bytes().as_ptr(),
 						result_bytes
 							.as_mut_ptr()
-							.add(cell_index * serialized_proof_size + config::PROOF_SIZE),
-						config::SCALAR_SIZE,
+							.add(cell_index * serialized_proof_size + PROOF_SIZE),
+						SCALAR_SIZE,
 					);
 				}
 
@@ -352,7 +367,7 @@ pub fn build_commitments(
 	);
 
 	let ext_data_matrix = extend_data_matrix(block_dims, &block)?;
-	let extended_rows_num = block_dims.rows * config::EXTENSION_FACTOR;
+	let extended_rows_num = block_dims.rows * EXTENSION_FACTOR;
 
 	info!(
 		target: "system",
@@ -361,7 +376,7 @@ pub fn build_commitments(
 	);
 
 	// construct commitments in parallel
-	let public_params = testnet::public_params(config::MAX_BLOCK_COLUMNS as usize);
+	let public_params = testnet::public_params(MAX_BLOCK_COLUMNS as usize);
 	if log::log_enabled!(target: "system", log::Level::Debug) {
 		let raw_pp = public_params.to_raw_var_bytes();
 		let hash_pp = hex::encode(sp_core::blake2_128(&raw_pp));
@@ -376,9 +391,9 @@ pub fn build_commitments(
 	let row_eval_domain = EvaluationDomain::new(block_dims.cols).map_err(Error::from)?;
 
 	let mut result_bytes: Vec<u8> = Vec::new();
-	result_bytes.reserve_exact(config::PROVER_KEY_SIZE * extended_rows_num);
+	result_bytes.reserve_exact(PROVER_KEY_SIZE * extended_rows_num);
 	unsafe {
-		result_bytes.set_len(config::PROVER_KEY_SIZE * extended_rows_num);
+		result_bytes.set_len(PROVER_KEY_SIZE * extended_rows_num);
 	}
 
 	info!(
@@ -404,8 +419,8 @@ pub fn build_commitments(
 		unsafe {
 			std::ptr::copy(
 				key_bytes.as_ptr(),
-				result_bytes.as_mut_ptr().add(i * config::PROVER_KEY_SIZE),
-				config::PROVER_KEY_SIZE,
+				result_bytes.as_mut_ptr().add(i * PROVER_KEY_SIZE),
+				PROVER_KEY_SIZE,
 			);
 		}
 	}
@@ -435,14 +450,8 @@ mod tests {
 	use rand::{prelude::IteratorRandom, Rng, SeedableRng};
 	use test_case::test_case;
 
-	use super::{
-		build_commitments, build_proof, flatten_and_pad_block, pad_with_zeroes, Cell, ChaChaRng,
-		Seed,
-	};
-	use crate::{
-		com::{extend_data_matrix, get_block_dimensions, pad_iec_9797_1, BlockDimensions},
-		config,
-	};
+	use super::*;
+	use crate::com::{extend_data_matrix, get_block_dimensions, pad_iec_9797_1, BlockDimensions};
 
 	#[test_case(0,   256, 256 => BlockDimensions { rows: 1, cols: 4  , chunk_size: 32} ; "block size zero")]
 	#[test_case(11,   256, 256 => BlockDimensions { rows: 1, cols: 4  , chunk_size: 32} ; "below minimum block size")]
@@ -494,8 +503,8 @@ mod tests {
 		};
 		let block = (0..=247)
 			.collect::<Vec<u8>>()
-			.chunks_exact(config::DATA_CHUNK_SIZE)
-			.map(|chunk| pad_with_zeroes(chunk, block_dims.chunk_size))
+			.chunks_exact(DATA_CHUNK_SIZE)
+			.map(|chunk| pad_with_zeroes(chunk.to_vec(), block_dims.chunk_size))
 			.flatten()
 			.collect::<Vec<u8>>();
 		let res = extend_data_matrix(block_dims, &block);
@@ -504,45 +513,19 @@ mod tests {
 		assert_eq!(res.unwrap(), expected_result);
 	}
 
-	#[test]
-	fn test_padding() {
-		let block: Vec<u8> = (1..=29).collect();
-		let expected: Vec<u8> = vec![
-			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-			25, 26, 27, 28, 29, 128, 0,
-		];
-
-		let res: Vec<u8> = pad_iec_9797_1(block.as_slice(), config::DATA_CHUNK_SIZE)
+	#[test_case( 1..=29 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d8000" ; "chunk more than 3 values shorter")]
+	#[test_case( 1..=30 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e80" ; "Chunk 2 values shorter")]
+	#[test_case( 1..=31 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f80000000000000000000000000000000000000000000000000000000000000" ; "Chunk 1 value shorter")]
+	#[test_case( 1..=32 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20800000000000000000000000000000000000000000000000000000000000" ; "Chunk same size")]
+	#[test_case( 1..=33 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20218000000000000000000000000000000000000000000000000000000000" ; "Chunk 1 value longer")]
+	#[test_case( 1..=34 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20212280000000000000000000000000000000000000000000000000000000" ; "Chunk 2 value longer")]
+	fn test_padding<I: Iterator<Item = u8>>(block: I) -> String {
+		let padded = pad_iec_9797_1(block.collect())
 			.iter()
 			.flat_map(|e| e.to_vec())
-			.collect();
-		assert_eq!(
-			res, expected,
-			"Padding the chunk more than 3 values shorter failed."
-		);
+			.collect::<Vec<_>>();
 
-		let block: Vec<u8> = (1..=30).collect();
-		let expected: Vec<u8> = vec![
-			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-			25, 26, 27, 28, 29, 30, 128,
-		];
-		let res: Vec<u8> = pad_iec_9797_1(block.as_slice(), config::DATA_CHUNK_SIZE)
-			.iter()
-			.flat_map(|e| e.to_vec())
-			.collect();
-		assert_eq!(res, expected, "Padding the chunk 2 values shorter failed.");
-
-		let block: Vec<u8> = (1..=31).collect();
-		let expected: Vec<u8> = vec![
-			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-			25, 26, 27, 28, 29, 30, 31, 128, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		];
-		let res: Vec<u8> = pad_iec_9797_1(block.as_slice(), config::DATA_CHUNK_SIZE)
-			.iter()
-			.flat_map(|e| e.to_vec())
-			.collect();
-		assert_eq!(res, expected, "Padding the chunk 1 value shorter failed.");
+		hex::encode(padded)
 	}
 
 	#[test]
@@ -682,7 +665,7 @@ mod tests {
 		prop_assert_eq!(&result.1, &xt.data);
 		}
 
-		let public_params = crate::testnet::public_params(config::MAX_BLOCK_COLUMNS as usize);
+		let public_params = crate::testnet::public_params(MAX_BLOCK_COLUMNS as usize);
 
 		for cell in random_cells(dims.cols, dims.rows, 1) {
 			let col = cell.col as u16;
