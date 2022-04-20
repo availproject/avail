@@ -17,14 +17,16 @@ use log::info;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 use serde::{Deserialize, Serialize};
-use static_assertions::{const_assert_eq, const_assert_ne};
+use static_assertions::const_assert_eq;
 
+#[cfg(feature = "std")]
+use crate::testnet;
 use crate::{
 	config::{
 		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAX_BLOCK_COLUMNS, MAX_PROOFS_REQUEST,
 		MINIMUM_BLOCK_SIZE, PROOF_SIZE, PROVER_KEY_SIZE, SCALAR_SIZE,
 	},
-	testnet, Seed,
+	padded_len_of_pad_iec_9797_1, Seed,
 };
 
 #[derive(Serialize, Deserialize)]
@@ -171,12 +173,6 @@ fn pad_to_chunk(chunk: DataChunk, chunk_size: usize) -> Vec<u8> {
 	padded
 }
 
-#[inline]
-fn padded_len_of_pad_iec_9797_1(len: u32) -> u32 {
-	(len + 1)
-		+ (DATA_CHUNK_SIZE as u32 - ((len + 1) % DATA_CHUNK_SIZE as u32)) % DATA_CHUNK_SIZE as u32
-}
-
 fn pad_iec_9797_1(mut data: Vec<u8>) -> Vec<DataChunk> {
 	let padded_size = padded_len_of_pad_iec_9797_1(data.len() as u32);
 	// Add `PADDING_TAIL_VALUE` and fill with zeros.
@@ -195,26 +191,6 @@ fn extend_column_with_zeros(column: &[BlsScalar], extended_rows_num: usize) -> V
 	let mut result = column.to_vec();
 	result.resize(extended_rows_num, BlsScalar::zero());
 	result
-}
-
-/// Calculates the padded len based of initial `len`.
-pub fn padded_len(len: u32, chunk_size: u32) -> u32 {
-	let iec_9797_1_len = padded_len_of_pad_iec_9797_1(len);
-
-	const_assert_ne!(DATA_CHUNK_SIZE, 0);
-	debug_assert!(
-		chunk_size >= DATA_CHUNK_SIZE as u32,
-		"`BlockLength.chunk_size` is valid by design .qed"
-	);
-	let diff_per_chunk = chunk_size - DATA_CHUNK_SIZE as u32;
-	let pad_to_chunk_extra = if diff_per_chunk != 0 {
-		let chunks_count = iec_9797_1_len / DATA_CHUNK_SIZE as u32;
-		chunks_count * diff_per_chunk
-	} else {
-		0
-	};
-
-	iec_9797_1_len + pad_to_chunk_extra
 }
 
 fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
@@ -475,7 +451,10 @@ mod tests {
 	use test_case::test_case;
 
 	use super::*;
-	use crate::com::{extend_data_matrix, get_block_dimensions, pad_iec_9797_1, BlockDimensions};
+	use crate::{
+		com::{extend_data_matrix, get_block_dimensions, pad_iec_9797_1, BlockDimensions},
+		padded_len,
+	};
 
 	#[test_case(0,   256, 256 => BlockDimensions { rows: 1, cols: 4  , chunk_size: 32} ; "block size zero")]
 	#[test_case(11,   256, 256 => BlockDimensions { rows: 1, cols: 4  , chunk_size: 32} ; "below minimum block size")]

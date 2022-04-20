@@ -26,6 +26,7 @@
 //! which should be passed to `frame_system` configuration when runtime is being set up.
 
 use codec::{Decode, Encode, Error, Input};
+use da_primitives::BLOCK_CHUNK_SIZE;
 use frame_support::{
 	ensure,
 	weights::{constants, DispatchClass, OneOrMany, PerDispatchClass, Weight},
@@ -36,6 +37,7 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{Perbill, RuntimeDebug};
 use sp_runtime_interface::pass_by::PassByCodec;
+use static_assertions::const_assert;
 
 /// Block length limit configuration.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -57,22 +59,22 @@ pub enum BlockLengthError {
 	InvalidChunkSize,
 }
 
+#[inline]
+const fn is_chunk_size_valid(new_size: u32) -> bool { new_size >= DATA_CHUNK_SIZE as u32 }
+
 impl BlockLength {
 	#[inline]
 	pub fn chunk_size(&self) -> u32 { self.chunk_size }
 
 	pub fn set_chunk_size(&mut self, new_size: u32) -> Result<(), BlockLengthError> {
 		ensure!(
-			Self::is_chunk_size_valid(new_size),
+			is_chunk_size_valid(new_size),
 			BlockLengthError::InvalidChunkSize
 		);
 
 		self.chunk_size = new_size;
 		Ok(())
 	}
-
-	#[inline]
-	fn is_chunk_size_valid(new_size: u32) -> bool { new_size >= DATA_CHUNK_SIZE as u32 }
 }
 
 impl Decode for BlockLength {
@@ -86,7 +88,7 @@ impl Decode for BlockLength {
 		let chunk_size = <u32>::decode(input)
 			.map_err(|e| e.chain("Could not decode `BlockLength::chunk_size`"))?;
 		ensure!(
-			Self::is_chunk_size_valid(chunk_size),
+			is_chunk_size_valid(chunk_size),
 			Error::from("Invalid `BlockLength::chunk_size`")
 		);
 
@@ -143,17 +145,20 @@ impl Default for BlockLength {
 impl BlockLength {
 	/// Create new `BlockLength` with `max` for every class.
 	pub fn max(max: u32) -> Self {
+		const_assert!(is_chunk_size_valid(BLOCK_CHUNK_SIZE));
 		Self {
 			max: PerDispatchClass::new(|_| max),
 			cols: 0,
 			rows: 0,
-			chunk_size: 0,
+			chunk_size: BLOCK_CHUNK_SIZE,
 		}
 	}
 
 	/// Create enw `BlockLength` with `rows*cols*chunk_size` for `Operational` & `Mandatory`
 	/// and `normal * rows*cols*chunk_siz` for `Normal`.
 	pub fn with_normal_ratio(rows: u32, cols: u32, chunk_size: u32, normal: Perbill) -> Self {
+		debug_assert!(is_chunk_size_valid(chunk_size));
+
 		let max = cols * rows * chunk_size;
 		Self {
 			cols,
@@ -172,10 +177,11 @@ impl BlockLength {
 	/// Create new `BlockLength` with `max` for `Operational` & `Mandatory`
 	/// and `normal * max` for `Normal`.
 	pub fn max_with_normal_ratio(max: u32, normal: Perbill) -> Self {
+		const_assert!(is_chunk_size_valid(BLOCK_CHUNK_SIZE));
 		Self {
 			cols: 0,
 			rows: 0,
-			chunk_size: 0,
+			chunk_size: BLOCK_CHUNK_SIZE,
 			max: PerDispatchClass::new(|class| {
 				if class == DispatchClass::Normal {
 					normal * max

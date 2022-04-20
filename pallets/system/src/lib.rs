@@ -64,7 +64,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 use codec::{Decode, Encode, EncodeLike, FullCodec};
-use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, well_known_keys::BLOCK_LENGTH};
+use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, BLOCK_CHUNK_SIZE};
 #[cfg(feature = "std")]
 use frame_support::traits::GenesisBuild;
 use frame_support::{
@@ -138,6 +138,12 @@ impl<T: Config> SetCode<T> for () {
 		<Pallet<T>>::update_code_in_storage(&code)?;
 		Ok(())
 	}
+}
+
+#[derive(Clone, Default, Encode, Decode, TypeInfo)]
+pub struct ExtrinsicLen {
+	pub raw: u32,
+	pub padded: u32,
 }
 
 #[frame_support::pallet]
@@ -532,7 +538,7 @@ pub mod pallet {
 
 	/// Total length (in bytes) for all extrinsics put together, for the current block.
 	#[pallet::storage]
-	pub(super) type AllExtrinsicsLen<T: Config> = StorageValue<_, u32>;
+	pub(super) type AllExtrinsicsLen<T: Config> = StorageValue<_, ExtrinsicLen>;
 
 	/// Map of block numbers to block hashes.
 	#[pallet::storage]
@@ -606,6 +612,11 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type ExecutionPhase<T: Config> = StorageValue<_, Phase>;
 
+	/// The dynamic block length
+	#[pallet::storage]
+	#[pallet::getter(fn block_length)]
+	pub type DynamicBlockLength<T: Config> = StorageValue<_, limits::BlockLength, ValueQuery>;
+
 	#[pallet::genesis_config]
 	pub struct GenesisConfig {
 		#[serde(with = "sp_core::bytes")]
@@ -624,7 +635,7 @@ pub mod pallet {
 			let block_length = limits::BlockLength::with_normal_ratio(
 				MAX_BLOCK_ROWS,
 				MAX_BLOCK_COLUMNS,
-				32,
+				BLOCK_CHUNK_SIZE,
 				normal,
 			);
 			let kc_public_params =
@@ -652,7 +663,7 @@ pub mod pallet {
 			sp_io::storage::set(well_known_keys::CODE, &self.code);
 			sp_io::storage::set(well_known_keys::EXTRINSIC_INDEX, &0u32.encode());
 			sp_io::storage::set(KATE_PUBLIC_PARAMS, &self.kc_public_params);
-			Pallet::<T>::set_block_length(&self.block_length);
+			<DynamicBlockLength<T>>::put(&self.block_length);
 		}
 	}
 }
@@ -1285,7 +1296,13 @@ impl<T: Config> Pallet<T> {
 	/// Gets extrinsics count.
 	pub fn extrinsic_count() -> u32 { ExtrinsicCount::<T>::get().unwrap_or_default() }
 
-	pub fn all_extrinsics_len() -> u32 { AllExtrinsicsLen::<T>::get().unwrap_or_default() }
+	/// Returns all extrinsics len in raw.
+	pub fn all_extrinsics_len() -> u32 { AllExtrinsicsLen::<T>::get().unwrap_or_default().raw }
+
+	/// Returns all extrinsics len with padding.
+	pub fn all_padded_extrinsics_len() -> u32 {
+		AllExtrinsicsLen::<T>::get().unwrap_or_default().padded
+	}
 
 	/// Inform the system pallet of some additional weight that should be accounted for, in the
 	/// current block.
@@ -1428,7 +1445,12 @@ impl<T: Config> Pallet<T> {
 		BlockWeight::<T>::mutate(|current_weight| {
 			current_weight.set(weight, DispatchClass::Normal)
 		});
-		AllExtrinsicsLen::<T>::put(len as u32);
+		let block_length = Self::block_length();
+		let padded = kate::padded_len(len as u32, block_length.chunk_size());
+		AllExtrinsicsLen::<T>::put(ExtrinsicLen {
+			raw: len as u32,
+			padded,
+		});
 	}
 
 	/// Reset events. Can be used as an alternative to
@@ -1544,18 +1566,6 @@ impl<T: Config> Pallet<T> {
 		}
 
 		Ok(())
-	}
-
-	/// Returns the current block lenght.
-	pub fn block_length() -> limits::BlockLength {
-		let raw = sp_io::storage::get(BLOCK_LENGTH).unwrap_or_default();
-		limits::BlockLength::decode(&mut &raw[..]).unwrap_or_default()
-	}
-
-	/// Update the block length.
-	pub fn set_block_length(len: &limits::BlockLength) {
-		let raw = len.encode();
-		sp_io::storage::set(BLOCK_LENGTH, &raw);
 	}
 
 	/// Returns the extrinsics sorted by its application Id.

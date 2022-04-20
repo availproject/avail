@@ -27,7 +27,7 @@ use sp_runtime::{
 	DispatchResult,
 };
 
-use crate::{limits::BlockWeights, Config, Pallet};
+use crate::{limits::BlockWeights, Config, ExtrinsicLen, Pallet};
 
 /// Block resource (weight) limit check.
 ///
@@ -98,7 +98,14 @@ where
 		let next_weight = Self::check_block_weight(info)?;
 		Self::check_extrinsic_weight(info)?;
 
-		crate::AllExtrinsicsLen::<T>::put(next_len);
+		let chunk_size = crate::DynamicBlockLength::<T>::get().chunk_size();
+		let padded = kate::padded_len(next_len, chunk_size);
+		let ext_len = ExtrinsicLen {
+			raw: next_len,
+			padded,
+		};
+
+		crate::AllExtrinsicsLen::<T>::put(ext_len);
 		crate::BlockWeight::<T>::put(next_weight);
 		Ok(())
 	}
@@ -260,6 +267,7 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckWeight<T> {
 
 #[cfg(test)]
 mod tests {
+	use da_primitives::BLOCK_CHUNK_SIZE;
 	use frame_support::{
 		assert_err, assert_ok,
 		weights::{Pays, Weight},
@@ -505,7 +513,9 @@ mod tests {
 
 			// likewise for length limit.
 			let len = 100_usize;
-			AllExtrinsicsLen::<Test>::put(normal_length_limit());
+			let raw = normal_length_limit();
+			let padded = kate::padded_len(raw, BLOCK_CHUNK_SIZE);
+			AllExtrinsicsLen::<Test>::put(ExtrinsicLen { raw, padded });
 			assert_err!(
 				CheckWeight::<Test>(PhantomData).pre_dispatch(&1, CALL, &normal, len),
 				InvalidTransaction::ExhaustsResources
@@ -520,7 +530,7 @@ mod tests {
 			let normal = DispatchInfo::default();
 			let normal_limit = normal_weight_limit() as usize;
 			let reset_check_weight = |tx, s, f| {
-				AllExtrinsicsLen::<Test>::put(0);
+				AllExtrinsicsLen::<Test>::put(ExtrinsicLen::default());
 				let r = CheckWeight::<Test>(PhantomData).pre_dispatch(&1, CALL, tx, s);
 				if f {
 					assert!(r.is_err())

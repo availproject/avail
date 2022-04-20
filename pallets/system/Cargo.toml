@@ -18,6 +18,7 @@ da-primitives = { path = "../../primitives", default-features = false }
 
 # Other
 impl-trait-for-tuples = "0.2.1"
+static_assertions = "1.1.0"
 log = { version = "0.4.14", default-features = false }
 
 # Substrate

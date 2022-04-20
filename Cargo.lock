@@ -2021,6 +2021,7 @@ dependencies = [
  "sp-runtime-interface",
  "sp-std",
  "sp-version",
+ "static_assertions",
 ]
 
 [[package]]
