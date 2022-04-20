@@ -17,7 +17,7 @@ use log::info;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 use serde::{Deserialize, Serialize};
-use static_assertions::const_assert_eq;
+use static_assertions::{const_assert_eq, const_assert_ne};
 
 use crate::{
 	config::{
@@ -167,17 +167,21 @@ fn pad_to_chunk(chunk: DataChunk, chunk_size: usize) -> Vec<u8> {
 	);
 
 	let mut padded = chunk.to_vec();
-	let ext_size = DATA_CHUNK_SIZE + (chunk_size - DATA_CHUNK_SIZE);
-	padded.resize(ext_size, 0);
+	padded.resize(chunk_size, 0);
 	padded
 }
 
+#[inline]
+fn padded_len_of_pad_iec_9797_1(len: u32) -> u32 {
+	(len + 1)
+		+ (DATA_CHUNK_SIZE as u32 - ((len + 1) % DATA_CHUNK_SIZE as u32)) % DATA_CHUNK_SIZE as u32
+}
+
 fn pad_iec_9797_1(mut data: Vec<u8>) -> Vec<DataChunk> {
+	let padded_size = padded_len_of_pad_iec_9797_1(data.len() as u32);
 	// Add `PADDING_TAIL_VALUE` and fill with zeros.
 	data.push(PADDING_TAIL_VALUE);
-	let padded_size =
-		data.len() + (DATA_CHUNK_SIZE - (data.len() % DATA_CHUNK_SIZE)) % DATA_CHUNK_SIZE;
-	data.resize(padded_size, 0u8);
+	data.resize(padded_size as usize, 0u8);
 
 	// Transform into `DataChunk`.
 	const_assert_eq!(DATA_CHUNK_SIZE, size_of::<DataChunk>());
@@ -191,6 +195,26 @@ fn extend_column_with_zeros(column: &[BlsScalar], extended_rows_num: usize) -> V
 	let mut result = column.to_vec();
 	result.resize(extended_rows_num, BlsScalar::zero());
 	result
+}
+
+/// Calculates the padded len based of initial `len`.
+pub fn padded_len(len: u32, chunk_size: u32) -> u32 {
+	let iec_9797_1_len = padded_len_of_pad_iec_9797_1(len);
+
+	const_assert_ne!(DATA_CHUNK_SIZE, 0);
+	debug_assert!(
+		chunk_size >= DATA_CHUNK_SIZE as u32,
+		"`BlockLength.chunk_size` is valid by design .qed"
+	);
+	let diff_per_chunk = chunk_size - DATA_CHUNK_SIZE as u32;
+	let pad_to_chunk_extra = if diff_per_chunk != 0 {
+		let chunks_count = iec_9797_1_len / DATA_CHUNK_SIZE as u32;
+		chunks_count * diff_per_chunk
+	} else {
+		0
+	};
+
+	iec_9797_1_len + pad_to_chunk_extra
 }
 
 fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
@@ -436,7 +460,7 @@ pub fn build_commitments(
 
 #[cfg(test)]
 mod tests {
-	use std::{collections::HashSet, convert::TryInto, str::from_utf8};
+	use std::{collections::HashSet, convert::TryInto, iter::repeat, str::from_utf8};
 
 	use da_primitives::asdr::AppExtrinsic;
 	use dusk_bytes::Serializable;
@@ -741,5 +765,37 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		assert_eq!(res[0].1.as_slice(), orig_data);
 
 		eprintln!("Decoded: {}", s);
+	}
+
+	fn build_extrinsics(lens: &[usize]) -> Vec<Vec<u8>> {
+		lens.into_iter()
+			.map(|len| repeat(b'a').take(*len).collect::<Vec<_>>())
+			.collect()
+	}
+
+	fn padded_len_group(lens: &[u32], chunk_size: u32) -> u32 {
+		lens.into_iter()
+			.map(|len| padded_len(*len, chunk_size))
+			.sum()
+	}
+
+	#[test_case( build_extrinsics(&[5,30,31]), 32 => padded_len_group(&[5,30,31], 32) ; "Single chunk per ext")]
+	#[test_case( build_extrinsics(&[5,30,32]), 32 => padded_len_group(&[5,30,32], 32) ; "Extra chunk per ext")]
+	#[test_case( build_extrinsics(&[5,64,120]), 32 => padded_len_group(&[5,64,120], 32) ; "Extra chunk 2 per ext")]
+	#[test_case( build_extrinsics(&[]), 32 => padded_len_group(&[], 32) ; "Empty chunk list")]
+	#[test_case( build_extrinsics(&[4096]), 32 => padded_len_group(&[4096], 32) ; "4K chunk")]
+	fn test_padding_len(extrinsics: Vec<Vec<u8>>, chunk_size: usize) -> u32 {
+		let padded_chunks = extrinsics
+			.into_iter()
+			.map(pad_iec_9797_1)
+			.collect::<Vec<Vec<DataChunk>>>();
+
+		let padded_block_len = padded_chunks
+			.into_iter()
+			.flatten()
+			.map(|chunk| pad_to_chunk(chunk, chunk_size).len() as u32)
+			.sum();
+
+		padded_block_len
 	}
 }
