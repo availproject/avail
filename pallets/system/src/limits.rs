@@ -31,7 +31,7 @@ use frame_support::{
 	ensure,
 	weights::{constants, DispatchClass, OneOrMany, PerDispatchClass, Weight},
 };
-use kate::config::DATA_CHUNK_SIZE;
+use kate::config::{DATA_CHUNK_SIZE, MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -148,8 +148,8 @@ impl BlockLength {
 		const_assert!(is_chunk_size_valid(BLOCK_CHUNK_SIZE));
 		Self {
 			max: PerDispatchClass::new(|_| max),
-			cols: 0,
-			rows: 0,
+			cols: MAX_BLOCK_COLUMNS,
+			rows: MAX_BLOCK_COLUMNS,
 			chunk_size: BLOCK_CHUNK_SIZE,
 		}
 	}
@@ -179,8 +179,8 @@ impl BlockLength {
 	pub fn max_with_normal_ratio(max: u32, normal: Perbill) -> Self {
 		const_assert!(is_chunk_size_valid(BLOCK_CHUNK_SIZE));
 		Self {
-			cols: 0,
-			rows: 0,
+			cols: MAX_BLOCK_COLUMNS,
+			rows: MAX_BLOCK_ROWS,
 			chunk_size: BLOCK_CHUNK_SIZE,
 			max: PerDispatchClass::new(|class| {
 				if class == DispatchClass::Normal {

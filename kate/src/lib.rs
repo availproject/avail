@@ -61,6 +61,21 @@ pub fn padded_len(len: u32, chunk_size: u32) -> u32 {
 	iec_9797_1_len + pad_to_chunk_extra
 }
 
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct BlockDimensions {
+	pub rows: usize,
+	pub cols: usize,
+	pub chunk_size: usize,
+}
+
+impl BlockDimensions {
+	pub fn size(&self) -> usize {
+		self.rows
+			.saturating_mul(self.cols)
+			.saturating_mul(self.chunk_size)
+	}
+}
+
 #[cfg(feature = "std")]
 pub mod testnet {
 	use std::{collections::HashMap, sync::Mutex};

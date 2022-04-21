@@ -17,9 +17,11 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
+	fail,
 	traits::Get,
 	weights::{DispatchClass, DispatchInfo, PostDispatchInfo},
 };
+use kate::BlockDimensions;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension},
@@ -27,7 +29,7 @@ use sp_runtime::{
 	DispatchResult,
 };
 
-use crate::{limits::BlockWeights, Config, ExtrinsicLen, Pallet};
+use crate::{limits::BlockWeights, AllExtrinsicsLen, Config, ExtrinsicLen, Pallet, LOG_TARGET};
 
 /// Block resource (weight) limit check.
 ///
@@ -74,14 +76,32 @@ where
 		len: usize,
 	) -> Result<u32, TransactionValidityError> {
 		let length_limit = T::BlockLength::get();
-		let current_len = Pallet::<T>::all_extrinsics_len();
+		let all_extrinsics_len = AllExtrinsicsLen::<T>::get().unwrap_or_default();
+
+		// Check valid raw len
 		let added_len = len as u32;
-		let next_len = current_len.saturating_add(added_len);
-		if next_len > *length_limit.max.get(info.class) {
-			Err(InvalidTransaction::ExhaustsResources.into())
-		} else {
-			Ok(next_len)
+		let raw_next_len = all_extrinsics_len.raw.saturating_add(added_len);
+		if raw_next_len > *length_limit.max.get(info.class) {
+			log::debug!(target: LOG_TARGET, "Block length is exhausted");
+			fail!(InvalidTransaction::ExhaustsResources)
 		}
+
+		// Check padded len.
+		let padded_added_len = kate::padded_len(len as u32, length_limit.chunk_size());
+		let padded_next_len = all_extrinsics_len.padded.saturating_add(padded_added_len);
+
+		let max_padded_len = BlockDimensions {
+			rows: length_limit.rows as usize,
+			cols: length_limit.cols as usize,
+			chunk_size: length_limit.chunk_size() as usize,
+		}
+		.size() as u32;
+		if padded_next_len > max_padded_len {
+			log::debug!(target: LOG_TARGET, "Padded block length is exhausted");
+			fail!(InvalidTransaction::ExhaustsResources)
+		}
+
+		Ok(raw_next_len)
 	}
 
 	/// Creates new `SignedExtension` to check weight of the extrinsic.
@@ -240,7 +260,7 @@ where
 		// to them actually being useful. Block producers are thus not allowed to include mandatory
 		// extrinsics that result in error.
 		if let (DispatchClass::Mandatory, Err(e)) = (info.class, result) {
-			log::error!(target: "runtime::system", "Bad mandatory: {:?}", e);
+			log::error!(target: LOG_TARGET, "Bad mandatory: {:?}", e);
 			Err(InvalidTransaction::BadMandatory)?
 		}
 

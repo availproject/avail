@@ -69,7 +69,7 @@ use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, BLOCK_CHUNK_SIZE
 use frame_support::traits::GenesisBuild;
 use frame_support::{
 	dispatch::{DispatchResult, DispatchResultWithPostInfo},
-	storage,
+	ensure, storage,
 	traits::{
 		Contains, EnsureOrigin, Get, HandleLifetime, OnKilledAccount, OnNewAccount, OriginTrait,
 		PalletInfo, SortedMembers, StoredMap,
@@ -122,6 +122,8 @@ pub use extensions::{
 };
 pub use weights::WeightInfo;
 
+pub const LOG_TARGET: &str = "runtime::system";
+
 /// An object to track the currently used extrinsic weight in a block.
 pub type ConsumedWeight = PerDispatchClass<Weight>;
 
@@ -140,10 +142,19 @@ impl<T: Config> SetCode<T> for () {
 	}
 }
 
-#[derive(Clone, Default, Encode, Decode, TypeInfo)]
+#[derive(Clone, Encode, Decode, TypeInfo)]
 pub struct ExtrinsicLen {
 	pub raw: u32,
 	pub padded: u32,
+}
+
+impl Default for ExtrinsicLen {
+	fn default() -> Self {
+		Self {
+			raw: <_>::default(),
+			padded: BLOCK_CHUNK_SIZE,
+		}
+	}
 }
 
 #[frame_support::pallet]
@@ -429,7 +440,7 @@ pub mod pallet {
 		pub fn kill_storage(origin: OriginFor<T>, keys: Vec<Key>) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			for key in &keys {
-				storage::unhashed::kill(&key);
+				storage::unhashed::kill(key);
 			}
 			Ok(().into())
 		}
@@ -960,7 +971,7 @@ impl<
 
 	fn try_origin(o: O) -> Result<Self::Success, O> {
 		L::try_origin(o).map_or_else(
-			|o| R::try_origin(o).map(|o| Either::Right(o)),
+			|o| R::try_origin(o).map(Either::Right),
 			|o| Ok(Either::Left(o)),
 		)
 	}
@@ -1103,7 +1114,7 @@ impl<T: Config> Pallet<T> {
 				if account.providers == 0 {
 					// Logic error - cannot decrement beyond zero.
 					log::error!(
-						target: "runtime::system",
+						target: LOG_TARGET,
 						"Logic error: Unexpected underflow in reducing provider",
 					);
 					account.providers = 1;
@@ -1129,7 +1140,7 @@ impl<T: Config> Pallet<T> {
 				}
 			} else {
 				log::error!(
-					target: "runtime::system",
+					target: LOG_TARGET,
 					"Logic error: Account already dead when reducing provider",
 				);
 				Ok(DecRefStatus::Reaped)
@@ -1161,7 +1172,7 @@ impl<T: Config> Pallet<T> {
 				if account.sufficients == 0 {
 					// Logic error - cannot decrement beyond zero.
 					log::error!(
-						target: "runtime::system",
+						target: LOG_TARGET,
 						"Logic error: Unexpected underflow in reducing sufficients",
 					);
 				}
@@ -1178,7 +1189,7 @@ impl<T: Config> Pallet<T> {
 				}
 			} else {
 				log::error!(
-					target: "runtime::system",
+					target: LOG_TARGET,
 					"Logic error: Account already dead when reducing provider",
 				);
 				DecRefStatus::Reaped
@@ -1220,7 +1231,7 @@ impl<T: Config> Pallet<T> {
 				a.consumers -= 1;
 			} else {
 				log::error!(
-					target: "runtime::system",
+					target: LOG_TARGET,
 					"Logic error: Unexpected underflow in reducing consumer",
 				);
 			}
@@ -1265,7 +1276,7 @@ impl<T: Config> Pallet<T> {
 		let event = EventRecord {
 			phase,
 			event,
-			topics: topics.iter().cloned().collect::<Vec<_>>(),
+			topics: topics.to_vec(),
 		};
 
 		// Index of the to be added event.
@@ -1506,7 +1517,7 @@ impl<T: Config> Pallet<T> {
 			Ok(_) => Event::ExtrinsicSuccess(info),
 			Err(err) => {
 				log::trace!(
-					target: "runtime::system",
+					target: LOG_TARGET,
 					"Extrinsic failed at block({:?}): {:?}",
 					Self::block_number(),
 					err,
@@ -1555,16 +1566,16 @@ impl<T: Config> Pallet<T> {
 		let current_version = T::Version::get();
 		let new_version = sp_io::misc::runtime_version(&code)
 			.and_then(|v| RuntimeVersion::decode(&mut &v[..]).ok())
-			.ok_or_else(|| Error::<T>::FailedToExtractRuntimeVersion)?;
+			.ok_or(Error::<T>::FailedToExtractRuntimeVersion)?;
 
-		if new_version.spec_name != current_version.spec_name {
-			Err(Error::<T>::InvalidSpecName)?
-		}
-
-		if new_version.spec_version <= current_version.spec_version {
-			Err(Error::<T>::SpecVersionNeedsToIncrease)?
-		}
-
+		ensure!(
+			new_version.spec_name == current_version.spec_name,
+			Error::<T>::InvalidSpecName
+		);
+		ensure!(
+			new_version.spec_version > current_version.spec_version,
+			Error::<T>::SpecVersionNeedsToIncrease
+		);
 		Ok(())
 	}
 

@@ -26,24 +26,13 @@ use crate::{
 		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAX_BLOCK_COLUMNS, MAX_PROOFS_REQUEST,
 		MINIMUM_BLOCK_SIZE, PROOF_SIZE, PROVER_KEY_SIZE, SCALAR_SIZE,
 	},
-	padded_len_of_pad_iec_9797_1, Seed,
+	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed,
 };
 
 #[derive(Serialize, Deserialize)]
 pub struct Cell {
 	pub row: u32,
 	pub col: u32,
-}
-
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct BlockDimensions {
-	pub rows: usize,
-	pub cols: usize,
-	pub chunk_size: usize,
-}
-
-impl BlockDimensions {
-	fn size(&self) -> usize { self.rows * self.cols * self.chunk_size }
 }
 
 #[derive(Debug)]

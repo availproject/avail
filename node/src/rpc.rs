@@ -37,7 +37,6 @@
 use std::sync::Arc;
 
 use da_runtime::{Block, BlockNumber, Hash};
-use kate_rpc;
 use sc_consensus_babe::{Config, Epoch};
 use sc_consensus_babe_rpc::BabeRpcHandler;
 use sc_consensus_epochs::SharedEpochChanges;

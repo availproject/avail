@@ -7,7 +7,7 @@ use frame_support::storage::storage_prefix;
 use frame_system::limits::BlockLength;
 use jsonrpc_core::{Error as RpcError, Result};
 use jsonrpc_derive::rpc;
-use kate::com::BlockDimensions;
+use kate::BlockDimensions;
 use kate_rpc_runtime_api::KateParamsGetter;
 use lru::LruCache;
 use sc_client_api::{BlockBackend, StorageKey, StorageProvider};

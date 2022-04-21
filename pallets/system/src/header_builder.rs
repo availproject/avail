@@ -7,7 +7,7 @@ use sp_runtime::traits::Hash;
 use sp_runtime_interface::{pass_by::PassByCodec, runtime_interface};
 use sp_std::vec::Vec;
 
-use crate::{generic::Digest, limits::BlockLength, Config};
+use crate::{generic::Digest, limits::BlockLength, Config, LOG_TARGET};
 
 pub mod da {
 	use core::marker::PhantomData;
@@ -78,8 +78,12 @@ pub trait HeaderBuilder {
 		let seed = <T as Config>::Hashing::hash_of(&(&epoch_seed, &block_number));
 
 		log::trace!(
-			target: "runtime::system",
-			"Header builder seed {:?} from epoch seed {:?} and block {:?}", seed, epoch_seed, block_number);
+			target: LOG_TARGET,
+			"Header builder seed {:?} from epoch seed {:?} and block {:?}",
+			seed,
+			epoch_seed,
+			block_number
+		);
 
 		seed.into()
 	}
@@ -115,10 +119,7 @@ pub trait HostedHeaderBuilder {
 			let data_index = DataLookup::try_from(xts_layout.as_slice())
 				.expect("Extrinsic size cannot overflow .qed");
 
-			log::debug!(
-				target: "runtime::system",
-				"App DataLookup: {:?}",
-				data_index);
+			log::debug!(target: LOG_TARGET, "App DataLookup: {:?}", data_index);
 
 			(kate_commitment, block_dims, data_index)
 		};
