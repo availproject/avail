@@ -4,6 +4,7 @@ use static_assertions::const_assert_ne;
 
 use crate::config::DATA_CHUNK_SIZE;
 
+pub const LOG_TARGET: &str = "kate";
 pub type Seed = [u8; 32];
 
 pub mod config {

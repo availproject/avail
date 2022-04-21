@@ -145,11 +145,11 @@ pub mod pallet {
 			ensure_root(origin)?;
 
 			ensure!(
-				rows <= T::MaxBlockRows::get() || cols <= T::MaxBlockCols::get(),
+				rows <= T::MaxBlockRows::get() && cols <= T::MaxBlockCols::get(),
 				Error::<T>::BlockDimensionsOutOfBounds
 			);
 			ensure!(
-				rows >= T::MinBlockRows::get() || cols >= T::MinBlockCols::get(),
+				rows >= T::MinBlockRows::get() && cols >= T::MinBlockCols::get(),
 				Error::<T>::BlockDimensionsTooSmall
 			);
 

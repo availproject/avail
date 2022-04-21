@@ -29,7 +29,10 @@ use sp_runtime::{
 	DispatchResult,
 };
 
-use crate::{limits::BlockWeights, AllExtrinsicsLen, Config, ExtrinsicLen, Pallet, LOG_TARGET};
+use crate::{
+	limits::BlockWeights, AllExtrinsicsLen, Config, DynamicBlockLength, ExtrinsicLen, Pallet,
+	LOG_TARGET,
+};
 
 /// Block resource (weight) limit check.
 ///
@@ -81,23 +84,36 @@ where
 		// Check valid raw len
 		let added_len = len as u32;
 		let raw_next_len = all_extrinsics_len.raw.saturating_add(added_len);
-		if raw_next_len > *length_limit.max.get(info.class) {
-			log::debug!(target: LOG_TARGET, "Block length is exhausted");
+		let max_raw_len = *length_limit.max.get(info.class);
+		if raw_next_len > max_raw_len {
+			log::debug!(
+				target: LOG_TARGET,
+				"Block length (max {}) is exhausted, requested {}",
+				max_raw_len,
+				raw_next_len
+			);
 			fail!(InvalidTransaction::ExhaustsResources)
 		}
 
 		// Check padded len.
-		let padded_added_len = kate::padded_len(len as u32, length_limit.chunk_size());
+		let dynamic_block_len = DynamicBlockLength::<T>::get();
+		let padded_added_len = kate::padded_len(len as u32, dynamic_block_len.chunk_size());
 		let padded_next_len = all_extrinsics_len.padded.saturating_add(padded_added_len);
 
 		let max_padded_len = BlockDimensions {
-			rows: length_limit.rows as usize,
-			cols: length_limit.cols as usize,
-			chunk_size: length_limit.chunk_size() as usize,
+			rows: dynamic_block_len.rows as usize,
+			cols: dynamic_block_len.cols as usize,
+			chunk_size: dynamic_block_len.chunk_size() as usize,
 		}
 		.size() as u32;
+
 		if padded_next_len > max_padded_len {
-			log::debug!(target: LOG_TARGET, "Padded block length is exhausted");
+			log::warn!(
+				target: LOG_TARGET,
+				"Padded block length (max {}) is exhausted, requested {}",
+				max_padded_len,
+				padded_next_len
+			);
 			fail!(InvalidTransaction::ExhaustsResources)
 		}
 

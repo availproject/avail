@@ -12,7 +12,7 @@ use dusk_plonk::{
 	fft::{EvaluationDomain, Evaluations},
 	prelude::BlsScalar,
 };
-use frame_support::{ensure, fail};
+use frame_support::ensure;
 use log::info;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
@@ -26,7 +26,7 @@ use crate::{
 		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAX_BLOCK_COLUMNS, MAX_PROOFS_REQUEST,
 		MINIMUM_BLOCK_SIZE, PROOF_SIZE, PROVER_KEY_SIZE, SCALAR_SIZE,
 	},
-	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed,
+	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed, LOG_TARGET,
 };
 
 #[derive(Serialize, Deserialize)]
@@ -84,9 +84,7 @@ pub fn flatten_and_pad_block(
 	let block_dims =
 		get_block_dimensions(padded_block.len(), max_rows_num, max_cols_num, chunk_size)?;
 
-	if padded_block.len() > block_dims.size() {
-		fail!(Error::BlockTooBig);
-	}
+	ensure!(padded_block.len() <= block_dims.size(), Error::BlockTooBig);
 
 	let mut rng = ChaChaRng::from_seed(rng_seed);
 
@@ -112,9 +110,10 @@ pub fn get_block_dimensions(
 		chunk_size,
 	};
 
-	if block_size > max_block_dimensions.size() {
-		fail!(Error::BlockTooBig);
-	}
+	ensure!(
+		block_size <= max_block_dimensions.size(),
+		Error::BlockTooBig
+	);
 
 	if block_size == max_block_dimensions.size() {
 		return Ok(max_block_dimensions);
@@ -228,7 +227,7 @@ pub fn extend_data_matrix(
 		});
 
 	info!(
-		target: "system",
+		target: LOG_TARGET,
 		"Time to extend block {:?}",
 		start.elapsed()
 	);
@@ -269,7 +268,7 @@ pub fn build_proof(
 	let mut cell_index = 0;
 
 	info!(
-		target: "system",
+		target: LOG_TARGET,
 		"Number of CPU cores: {:#?}",
 		num_cpus::get()
 	);
@@ -325,7 +324,7 @@ pub fn build_proof(
 	}
 
 	info!(
-		target: "system",
+		target: LOG_TARGET,
 		"Time to build 1 row of proofs {:?}",
 		total_start.elapsed()
 	);
@@ -348,8 +347,8 @@ pub fn build_commitments(
 		flatten_and_pad_block(rows_num, cols_num, chunk_size, extrinsics_by_key, rng_seed)?;
 
 	info!(
-		target: "system",
-		"Rows: {:?} Cols: {:?} Size: {:?}",
+		target: LOG_TARGET,
+		"Rows: {} Cols: {} Size: {}",
 		block_dims.rows,
 		block_dims.cols,
 		block.len(),
@@ -358,21 +357,26 @@ pub fn build_commitments(
 	let ext_data_matrix = extend_data_matrix(block_dims, &block)?;
 	let extended_rows_num = block_dims.rows * EXTENSION_FACTOR;
 
-	info!(
-		target: "system",
-		"Time to prepare {:?}",
-		start.elapsed()
-	);
+	info!(target: LOG_TARGET, "Time to prepare {:?}", start.elapsed());
 
 	// construct commitments in parallel
+	if block_dims.cols > MAX_BLOCK_COLUMNS as usize {
+		log::error!(
+			target: LOG_TARGET,
+			"Error on Block dimension {:?}",
+			block_dims
+		);
+	}
 	let public_params = testnet::public_params(MAX_BLOCK_COLUMNS as usize);
-	if log::log_enabled!(target: "system", log::Level::Debug) {
+	if log::log_enabled!(target: LOG_TARGET, log::Level::Debug) {
 		let raw_pp = public_params.to_raw_var_bytes();
 		let hash_pp = hex::encode(sp_core::blake2_128(&raw_pp));
 		let hex_pp = hex::encode(raw_pp);
 		log::debug!(
-			target: "system",
-			"Public params (len={}): hash: {}", hex_pp.len(), hash_pp,
+			target: LOG_TARGET,
+			"Public params (len={}): hash: {}",
+			hex_pp.len(),
+			hash_pp,
 		);
 	}
 
