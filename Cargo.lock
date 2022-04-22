@@ -2233,6 +2233,7 @@ version = "0.1.0"
 dependencies = [
  "afl",
  "da-primitives",
+ "hex-literal",
  "kate",
  "kate-recovery",
 ]

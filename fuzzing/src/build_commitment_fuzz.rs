@@ -1,5 +1,6 @@
 use afl;
 use da_primitives::asdr::AppExtrinsic;
+use hex_literal::hex;
 
 fn main() {
 	println!("Starting build_commitment() fuzzer...");
@@ -8,10 +9,7 @@ fn main() {
 		let block_rows = 256;
 		let block_cols = 256;
 		let chunk_size = 32;
-		let hash: Vec<u8> = vec![
-			76, 41, 174, 145, 187, 12, 97, 32, 75, 111, 149, 209, 243, 195, 165, 10, 166, 172, 47,
-			41, 218, 24, 212, 66, 62, 5, 187, 191, 129, 5, 105, 3,
-		];
+		let hash = hex!("4c29ae91bbc61204b6f95d1f3c3a5aa6ac2f29da18d4423e5bbbf815693").into();
 
 		let (_, _, _, _) = kate::com::build_commitments(
 			block_rows,
