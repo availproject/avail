@@ -77,20 +77,20 @@ where
 	fn check_block_length(
 		info: &DispatchInfoOf<T::Call>,
 		len: usize,
-	) -> Result<u32, TransactionValidityError> {
+	) -> Result<ExtrinsicLen, TransactionValidityError> {
 		let length_limit = T::BlockLength::get();
-		let all_extrinsics_len = AllExtrinsicsLen::<T>::get().unwrap_or_default();
+		let mut all_extrinsics_len = AllExtrinsicsLen::<T>::get().unwrap_or_default();
 
 		// Check valid raw len
 		let added_len = len as u32;
-		let raw_next_len = all_extrinsics_len.raw.saturating_add(added_len);
+		all_extrinsics_len.raw = all_extrinsics_len.raw.saturating_add(added_len);
 		let max_raw_len = *length_limit.max.get(info.class);
-		if raw_next_len > max_raw_len {
+		if all_extrinsics_len.raw > max_raw_len {
 			log::debug!(
 				target: LOG_TARGET,
 				"Block length (max {}) is exhausted, requested {}",
 				max_raw_len,
-				raw_next_len
+				all_extrinsics_len.raw
 			);
 			fail!(InvalidTransaction::ExhaustsResources)
 		}
@@ -98,7 +98,7 @@ where
 		// Check padded len.
 		let dynamic_block_len = DynamicBlockLength::<T>::get();
 		let padded_added_len = kate::padded_len(len as u32, dynamic_block_len.chunk_size());
-		let padded_next_len = all_extrinsics_len.padded.saturating_add(padded_added_len);
+		all_extrinsics_len.padded = all_extrinsics_len.padded.saturating_add(padded_added_len);
 
 		let max_padded_len = BlockDimensions {
 			rows: dynamic_block_len.rows as usize,
@@ -107,17 +107,17 @@ where
 		}
 		.size() as u32;
 
-		if padded_next_len > max_padded_len {
+		if all_extrinsics_len.padded > max_padded_len {
 			log::warn!(
 				target: LOG_TARGET,
 				"Padded block length (max {}) is exhausted, requested {}",
 				max_padded_len,
-				padded_next_len
+				all_extrinsics_len.padded
 			);
 			fail!(InvalidTransaction::ExhaustsResources)
 		}
 
-		Ok(raw_next_len)
+		Ok(all_extrinsics_len)
 	}
 
 	/// Creates new `SignedExtension` to check weight of the extrinsic.
@@ -130,18 +130,11 @@ where
 		info: &DispatchInfoOf<T::Call>,
 		len: usize,
 	) -> Result<(), TransactionValidityError> {
-		let next_len = Self::check_block_length(info, len)?;
+		let next_all_ext_len = Self::check_block_length(info, len)?;
 		let next_weight = Self::check_block_weight(info)?;
 		Self::check_extrinsic_weight(info)?;
 
-		let chunk_size = crate::DynamicBlockLength::<T>::get().chunk_size();
-		let padded = kate::padded_len(next_len, chunk_size);
-		let ext_len = ExtrinsicLen {
-			raw: next_len,
-			padded,
-		};
-
-		crate::AllExtrinsicsLen::<T>::put(ext_len);
+		crate::AllExtrinsicsLen::<T>::put(next_all_ext_len);
 		crate::BlockWeight::<T>::put(next_weight);
 		Ok(())
 	}

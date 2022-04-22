@@ -108,6 +108,7 @@ pub mod offchain;
 
 mod extensions;
 pub mod header_builder;
+pub mod migrations;
 use header_builder::HeaderBuilder;
 
 #[cfg(feature = "std")]
@@ -330,14 +331,7 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_runtime_upgrade() -> frame_support::weights::Weight {
-			if !UpgradedToTripleRefCount::<T>::get() {
-				UpgradedToTripleRefCount::<T>::put(true);
-				migrations::migrate_to_triple_ref_count::<T>()
-			} else {
-				0
-			}
-		}
+		fn on_runtime_upgrade() -> frame_support::weights::Weight { migrations::migrate::<T>() }
 
 		fn integrity_test() {
 			T::BlockWeights::get()
@@ -664,6 +658,7 @@ pub mod pallet {
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
 			use da_primitives::well_known_keys::KATE_PUBLIC_PARAMS;
+			use frame_support::traits::StorageVersion;
 
 			<BlockHash<T>>::insert::<_, T::Hash>(T::BlockNumber::zero(), hash69());
 			<ParentHash<T>>::put::<T::Hash>(hash69());
@@ -675,59 +670,9 @@ pub mod pallet {
 			sp_io::storage::set(well_known_keys::EXTRINSIC_INDEX, &0u32.encode());
 			sp_io::storage::set(KATE_PUBLIC_PARAMS, &self.kc_public_params);
 			<DynamicBlockLength<T>>::put(&self.block_length);
+
+			StorageVersion::new(1).put::<Pallet<T>>();
 		}
-	}
-}
-
-pub mod migrations {
-	use super::*;
-
-	#[allow(dead_code)]
-	/// Migrate from unique `u8` reference counting to triple `u32` reference counting.
-	pub fn migrate_all<T: Config>() -> frame_support::weights::Weight {
-		Account::<T>::translate::<(T::Index, u8, T::AccountData), _>(|_key, (nonce, rc, data)| {
-			Some(AccountInfo {
-				nonce,
-				consumers: rc as RefCount,
-				providers: 1,
-				sufficients: 0,
-				data,
-			})
-		});
-		T::BlockWeights::get().max_block
-	}
-
-	#[allow(dead_code)]
-	/// Migrate from unique `u32` reference counting to triple `u32` reference counting.
-	pub fn migrate_to_dual_ref_count<T: Config>() -> frame_support::weights::Weight {
-		Account::<T>::translate::<(T::Index, RefCount, T::AccountData), _>(
-			|_key, (nonce, consumers, data)| {
-				Some(AccountInfo {
-					nonce,
-					consumers,
-					providers: 1,
-					sufficients: 0,
-					data,
-				})
-			},
-		);
-		T::BlockWeights::get().max_block
-	}
-
-	/// Migrate from dual `u32` reference counting to triple `u32` reference counting.
-	pub fn migrate_to_triple_ref_count<T: Config>() -> frame_support::weights::Weight {
-		Account::<T>::translate::<(T::Index, RefCount, RefCount, T::AccountData), _>(
-			|_key, (nonce, consumers, providers, data)| {
-				Some(AccountInfo {
-					nonce,
-					consumers,
-					providers,
-					sufficients: 0,
-					data,
-				})
-			},
-		);
-		T::BlockWeights::get().max_block
 	}
 }
 
@@ -1456,12 +1401,11 @@ impl<T: Config> Pallet<T> {
 		BlockWeight::<T>::mutate(|current_weight| {
 			current_weight.set(weight, DispatchClass::Normal)
 		});
-		let block_length = Self::block_length();
-		let padded = kate::padded_len(len as u32, block_length.chunk_size());
-		AllExtrinsicsLen::<T>::put(ExtrinsicLen {
+		let all_ext_len = ExtrinsicLen {
 			raw: len as u32,
-			padded,
-		});
+			padded: Self::padded_extrinsic_len(len as u32),
+		};
+		AllExtrinsicsLen::<T>::put(all_ext_len);
 	}
 
 	/// Reset events. Can be used as an alternative to
@@ -1587,6 +1531,13 @@ impl<T: Config> Pallet<T> {
 		// sort extrinsics by key
 		extrinsics.sort_by(|a: &AppExtrinsic, b: &AppExtrinsic| a.app_id.cmp(&b.app_id));
 		extrinsics
+	}
+
+	/// Creates a `ExtrinsicLen` based on `len` as raw length.
+	/// It uses the current `chunk_size` to calculate the padded len.
+	pub fn padded_extrinsic_len(len: u32) -> u32 {
+		let chunk_size = Self::block_length().chunk_size();
+		kate::padded_len(len, chunk_size)
 	}
 }
 
