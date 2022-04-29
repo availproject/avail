@@ -375,10 +375,9 @@ fn genesis_builder(
 			initial_authorities
 				.iter()
 				.filter(|auth| {
-					initial_authorities
+					!initial_authorities
 						.iter()
-						.find(|inner_auth| inner_auth.stash == auth.controller)
-						.is_none()
+						.any(|inner_auth| inner_auth.stash == auth.controller)
 				})
 				.cloned()
 				.map(|auth| (auth.controller, auth.controller_balance)),

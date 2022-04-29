@@ -3,7 +3,7 @@
 #![recursion_limit = "256"]
 
 use da_primitives::{asdr::AppId, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO};
-use frame_system::limits::BlockLength;
+use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_arithmetic::traits::{CheckedAdd, One};
@@ -145,18 +145,18 @@ pub mod pallet {
 			ensure_root(origin)?;
 
 			ensure!(
-				rows <= T::MaxBlockRows::get() || cols <= T::MaxBlockCols::get(),
+				rows <= T::MaxBlockRows::get() && cols <= T::MaxBlockCols::get(),
 				Error::<T>::BlockDimensionsOutOfBounds
 			);
 			ensure!(
-				rows >= T::MinBlockRows::get() || cols >= T::MinBlockCols::get(),
+				rows >= T::MinBlockRows::get() && cols >= T::MinBlockCols::get(),
 				Error::<T>::BlockDimensionsTooSmall
 			);
 
 			let _id = Self::next_block_len_proposal_id()?;
 			let block_length =
 				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO);
-			frame_system::Pallet::<T>::set_block_length(&block_length);
+			DynamicBlockLength::<T>::put(&block_length);
 
 			Self::deposit_event(Event::BlockLengthProposalSubmitted { rows, cols });
 

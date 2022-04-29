@@ -18,9 +18,6 @@ pub mod traits;
 pub mod well_known_keys {
 	/// Public params used to generate Kate commitment
 	pub const KATE_PUBLIC_PARAMS: &[u8] = b":kate_public_params:";
-
-	/// Max block length
-	pub const BLOCK_LENGTH: &[u8] = b":block_length:";
 }
 
 /// We allow `Normal` extrinsics to fill up the block up to 90%, the rest can be used

@@ -64,12 +64,12 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 use codec::{Decode, Encode, EncodeLike, FullCodec};
-use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, well_known_keys::BLOCK_LENGTH};
+use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, BLOCK_CHUNK_SIZE};
 #[cfg(feature = "std")]
 use frame_support::traits::GenesisBuild;
 use frame_support::{
 	dispatch::{DispatchResult, DispatchResultWithPostInfo},
-	storage,
+	ensure, storage,
 	traits::{
 		Contains, EnsureOrigin, Get, HandleLifetime, OnKilledAccount, OnNewAccount, OriginTrait,
 		PalletInfo, SortedMembers, StoredMap,
@@ -108,6 +108,7 @@ pub mod offchain;
 
 mod extensions;
 pub mod header_builder;
+pub mod migrations;
 use header_builder::HeaderBuilder;
 
 #[cfg(feature = "std")]
@@ -121,6 +122,8 @@ pub use extensions::{
 	check_tx_version::CheckTxVersion, check_weight::CheckWeight,
 };
 pub use weights::WeightInfo;
+
+pub const LOG_TARGET: &str = "runtime::system";
 
 /// An object to track the currently used extrinsic weight in a block.
 pub type ConsumedWeight = PerDispatchClass<Weight>;
@@ -137,6 +140,21 @@ impl<T: Config> SetCode<T> for () {
 	fn set_code(code: Vec<u8>) -> DispatchResult {
 		<Pallet<T>>::update_code_in_storage(&code)?;
 		Ok(())
+	}
+}
+
+#[derive(Clone, Encode, Decode, TypeInfo)]
+pub struct ExtrinsicLen {
+	pub raw: u32,
+	pub padded: u32,
+}
+
+impl Default for ExtrinsicLen {
+	fn default() -> Self {
+		Self {
+			raw: <_>::default(),
+			padded: BLOCK_CHUNK_SIZE,
+		}
 	}
 }
 
@@ -313,14 +331,7 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_runtime_upgrade() -> frame_support::weights::Weight {
-			if !UpgradedToTripleRefCount::<T>::get() {
-				UpgradedToTripleRefCount::<T>::put(true);
-				migrations::migrate_to_triple_ref_count::<T>()
-			} else {
-				0
-			}
-		}
+		fn on_runtime_upgrade() -> frame_support::weights::Weight { migrations::migrate::<T>() }
 
 		fn integrity_test() {
 			T::BlockWeights::get()
@@ -423,7 +434,7 @@ pub mod pallet {
 		pub fn kill_storage(origin: OriginFor<T>, keys: Vec<Key>) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			for key in &keys {
-				storage::unhashed::kill(&key);
+				storage::unhashed::kill(key);
 			}
 			Ok(().into())
 		}
@@ -532,7 +543,7 @@ pub mod pallet {
 
 	/// Total length (in bytes) for all extrinsics put together, for the current block.
 	#[pallet::storage]
-	pub(super) type AllExtrinsicsLen<T: Config> = StorageValue<_, u32>;
+	pub(super) type AllExtrinsicsLen<T: Config> = StorageValue<_, ExtrinsicLen>;
 
 	/// Map of block numbers to block hashes.
 	#[pallet::storage]
@@ -606,6 +617,11 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type ExecutionPhase<T: Config> = StorageValue<_, Phase>;
 
+	/// The dynamic block length
+	#[pallet::storage]
+	#[pallet::getter(fn block_length)]
+	pub type DynamicBlockLength<T: Config> = StorageValue<_, limits::BlockLength, ValueQuery>;
+
 	#[pallet::genesis_config]
 	pub struct GenesisConfig {
 		#[serde(with = "sp_core::bytes")]
@@ -624,7 +640,7 @@ pub mod pallet {
 			let block_length = limits::BlockLength::with_normal_ratio(
 				MAX_BLOCK_ROWS,
 				MAX_BLOCK_COLUMNS,
-				32,
+				BLOCK_CHUNK_SIZE,
 				normal,
 			);
 
@@ -643,6 +659,7 @@ pub mod pallet {
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
 			use da_primitives::well_known_keys::KATE_PUBLIC_PARAMS;
+			use frame_support::traits::StorageVersion;
 
 			<BlockHash<T>>::insert::<_, T::Hash>(T::BlockNumber::zero(), hash69());
 			<ParentHash<T>>::put::<T::Hash>(hash69());
@@ -653,60 +670,10 @@ pub mod pallet {
 			sp_io::storage::set(well_known_keys::CODE, &self.code);
 			sp_io::storage::set(well_known_keys::EXTRINSIC_INDEX, &0u32.encode());
 			sp_io::storage::set(KATE_PUBLIC_PARAMS, &self.kc_public_params);
-			Pallet::<T>::set_block_length(&self.block_length);
+			<DynamicBlockLength<T>>::put(&self.block_length);
+
+			StorageVersion::new(1).put::<Pallet<T>>();
 		}
-	}
-}
-
-pub mod migrations {
-	use super::*;
-
-	#[allow(dead_code)]
-	/// Migrate from unique `u8` reference counting to triple `u32` reference counting.
-	pub fn migrate_all<T: Config>() -> frame_support::weights::Weight {
-		Account::<T>::translate::<(T::Index, u8, T::AccountData), _>(|_key, (nonce, rc, data)| {
-			Some(AccountInfo {
-				nonce,
-				consumers: rc as RefCount,
-				providers: 1,
-				sufficients: 0,
-				data,
-			})
-		});
-		T::BlockWeights::get().max_block
-	}
-
-	#[allow(dead_code)]
-	/// Migrate from unique `u32` reference counting to triple `u32` reference counting.
-	pub fn migrate_to_dual_ref_count<T: Config>() -> frame_support::weights::Weight {
-		Account::<T>::translate::<(T::Index, RefCount, T::AccountData), _>(
-			|_key, (nonce, consumers, data)| {
-				Some(AccountInfo {
-					nonce,
-					consumers,
-					providers: 1,
-					sufficients: 0,
-					data,
-				})
-			},
-		);
-		T::BlockWeights::get().max_block
-	}
-
-	/// Migrate from dual `u32` reference counting to triple `u32` reference counting.
-	pub fn migrate_to_triple_ref_count<T: Config>() -> frame_support::weights::Weight {
-		Account::<T>::translate::<(T::Index, RefCount, RefCount, T::AccountData), _>(
-			|_key, (nonce, consumers, providers, data)| {
-				Some(AccountInfo {
-					nonce,
-					consumers,
-					providers,
-					sufficients: 0,
-					data,
-				})
-			},
-		);
-		T::BlockWeights::get().max_block
 	}
 }
 
@@ -950,7 +917,7 @@ impl<
 
 	fn try_origin(o: O) -> Result<Self::Success, O> {
 		L::try_origin(o).map_or_else(
-			|o| R::try_origin(o).map(|o| Either::Right(o)),
+			|o| R::try_origin(o).map(Either::Right),
 			|o| Ok(Either::Left(o)),
 		)
 	}
@@ -1093,7 +1060,7 @@ impl<T: Config> Pallet<T> {
 				if account.providers == 0 {
 					// Logic error - cannot decrement beyond zero.
 					log::error!(
-						target: "runtime::system",
+						target: LOG_TARGET,
 						"Logic error: Unexpected underflow in reducing provider",
 					);
 					account.providers = 1;
@@ -1119,7 +1086,7 @@ impl<T: Config> Pallet<T> {
 				}
 			} else {
 				log::error!(
-					target: "runtime::system",
+					target: LOG_TARGET,
 					"Logic error: Account already dead when reducing provider",
 				);
 				Ok(DecRefStatus::Reaped)
@@ -1151,7 +1118,7 @@ impl<T: Config> Pallet<T> {
 				if account.sufficients == 0 {
 					// Logic error - cannot decrement beyond zero.
 					log::error!(
-						target: "runtime::system",
+						target: LOG_TARGET,
 						"Logic error: Unexpected underflow in reducing sufficients",
 					);
 				}
@@ -1168,7 +1135,7 @@ impl<T: Config> Pallet<T> {
 				}
 			} else {
 				log::error!(
-					target: "runtime::system",
+					target: LOG_TARGET,
 					"Logic error: Account already dead when reducing provider",
 				);
 				DecRefStatus::Reaped
@@ -1210,7 +1177,7 @@ impl<T: Config> Pallet<T> {
 				a.consumers -= 1;
 			} else {
 				log::error!(
-					target: "runtime::system",
+					target: LOG_TARGET,
 					"Logic error: Unexpected underflow in reducing consumer",
 				);
 			}
@@ -1255,7 +1222,7 @@ impl<T: Config> Pallet<T> {
 		let event = EventRecord {
 			phase,
 			event,
-			topics: topics.iter().cloned().collect::<Vec<_>>(),
+			topics: topics.to_vec(),
 		};
 
 		// Index of the to be added event.
@@ -1286,7 +1253,13 @@ impl<T: Config> Pallet<T> {
 	/// Gets extrinsics count.
 	pub fn extrinsic_count() -> u32 { ExtrinsicCount::<T>::get().unwrap_or_default() }
 
-	pub fn all_extrinsics_len() -> u32 { AllExtrinsicsLen::<T>::get().unwrap_or_default() }
+	/// Returns all extrinsics len in raw.
+	pub fn all_extrinsics_len() -> u32 { AllExtrinsicsLen::<T>::get().unwrap_or_default().raw }
+
+	/// Returns all extrinsics len with padding.
+	pub fn all_padded_extrinsics_len() -> u32 {
+		AllExtrinsicsLen::<T>::get().unwrap_or_default().padded
+	}
 
 	/// Inform the system pallet of some additional weight that should be accounted for, in the
 	/// current block.
@@ -1429,7 +1402,11 @@ impl<T: Config> Pallet<T> {
 		BlockWeight::<T>::mutate(|current_weight| {
 			current_weight.set(weight, DispatchClass::Normal)
 		});
-		AllExtrinsicsLen::<T>::put(len as u32);
+		let all_ext_len = ExtrinsicLen {
+			raw: len as u32,
+			padded: Self::padded_extrinsic_len(len as u32),
+		};
+		AllExtrinsicsLen::<T>::put(all_ext_len);
 	}
 
 	/// Reset events. Can be used as an alternative to
@@ -1485,7 +1462,7 @@ impl<T: Config> Pallet<T> {
 			Ok(_) => Event::ExtrinsicSuccess(info),
 			Err(err) => {
 				log::trace!(
-					target: "runtime::system",
+					target: LOG_TARGET,
 					"Extrinsic failed at block({:?}): {:?}",
 					Self::block_number(),
 					err,
@@ -1534,29 +1511,17 @@ impl<T: Config> Pallet<T> {
 		let current_version = T::Version::get();
 		let new_version = sp_io::misc::runtime_version(&code)
 			.and_then(|v| RuntimeVersion::decode(&mut &v[..]).ok())
-			.ok_or_else(|| Error::<T>::FailedToExtractRuntimeVersion)?;
+			.ok_or(Error::<T>::FailedToExtractRuntimeVersion)?;
 
-		if new_version.spec_name != current_version.spec_name {
-			Err(Error::<T>::InvalidSpecName)?
-		}
-
-		if new_version.spec_version <= current_version.spec_version {
-			Err(Error::<T>::SpecVersionNeedsToIncrease)?
-		}
-
+		ensure!(
+			new_version.spec_name == current_version.spec_name,
+			Error::<T>::InvalidSpecName
+		);
+		ensure!(
+			new_version.spec_version > current_version.spec_version,
+			Error::<T>::SpecVersionNeedsToIncrease
+		);
 		Ok(())
-	}
-
-	/// Returns the current block lenght.
-	pub fn block_length() -> limits::BlockLength {
-		let raw = sp_io::storage::get(BLOCK_LENGTH).unwrap_or_default();
-		limits::BlockLength::decode(&mut &raw[..]).unwrap_or_default()
-	}
-
-	/// Update the block length.
-	pub fn set_block_length(len: &limits::BlockLength) {
-		let raw = len.encode();
-		sp_io::storage::set(BLOCK_LENGTH, &raw);
 	}
 
 	/// Returns the extrinsics sorted by its application Id.
@@ -1567,6 +1532,13 @@ impl<T: Config> Pallet<T> {
 		// sort extrinsics by key
 		extrinsics.sort_by(|a: &AppExtrinsic, b: &AppExtrinsic| a.app_id.cmp(&b.app_id));
 		extrinsics
+	}
+
+	/// Creates a `ExtrinsicLen` based on `len` as raw length.
+	/// It uses the current `chunk_size` to calculate the padded len.
+	pub fn padded_extrinsic_len(len: u32) -> u32 {
+		let chunk_size = Self::block_length().chunk_size();
+		kate::padded_len(len, chunk_size)
 	}
 }
 

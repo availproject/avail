@@ -25,16 +25,23 @@
 //! `DispatchClass`. This module contains configuration object for both resources,
 //! which should be passed to `frame_system` configuration when runtime is being set up.
 
-use frame_support::weights::{constants, DispatchClass, OneOrMany, PerDispatchClass, Weight};
+use codec::{Decode, Encode, Error, Input};
+use da_primitives::BLOCK_CHUNK_SIZE;
+use frame_support::{
+	ensure,
+	weights::{constants, DispatchClass, OneOrMany, PerDispatchClass, Weight},
+};
+use kate::config::{DATA_CHUNK_SIZE, MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{Perbill, RuntimeDebug};
 use sp_runtime_interface::pass_by::PassByCodec;
+use static_assertions::const_assert;
 
 /// Block length limit configuration.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(RuntimeDebug, PartialEq, Clone, codec::Encode, codec::Decode, TypeInfo, PassByCodec)]
+#[derive(RuntimeDebug, PartialEq, Clone, Encode, TypeInfo, PassByCodec)]
 pub struct BlockLength {
 	/// Maximal total length in bytes for each extrinsic class.
 	///
@@ -44,7 +51,54 @@ pub struct BlockLength {
 	pub max: PerDispatchClass<u32>,
 	pub cols: u32,
 	pub rows: u32,
-	pub chunk_size: u32,
+	chunk_size: u32,
+}
+
+#[derive(RuntimeDebug, Clone, Copy)]
+pub enum BlockLengthError {
+	InvalidChunkSize,
+}
+
+#[inline]
+const fn is_chunk_size_valid(new_size: u32) -> bool { new_size >= DATA_CHUNK_SIZE as u32 }
+
+impl BlockLength {
+	#[inline]
+	pub fn chunk_size(&self) -> u32 { self.chunk_size }
+
+	pub fn set_chunk_size(&mut self, new_size: u32) -> Result<(), BlockLengthError> {
+		ensure!(
+			is_chunk_size_valid(new_size),
+			BlockLengthError::InvalidChunkSize
+		);
+
+		self.chunk_size = new_size;
+		Ok(())
+	}
+}
+
+impl Decode for BlockLength {
+	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
+		let max = <PerDispatchClass<u32>>::decode(input)
+			.map_err(|e| e.chain("Could not decode `BlockLength::max`"))?;
+		let cols =
+			<u32>::decode(input).map_err(|e| e.chain("Could not decode `BlockLength::cols`"))?;
+		let rows =
+			<u32>::decode(input).map_err(|e| e.chain("Could not decode `BlockLength::rows`"))?;
+		let chunk_size = <u32>::decode(input)
+			.map_err(|e| e.chain("Could not decode `BlockLength::chunk_size`"))?;
+		ensure!(
+			is_chunk_size_valid(chunk_size),
+			Error::from("Invalid `BlockLength::chunk_size`")
+		);
+
+		Ok(BlockLength {
+			max,
+			cols,
+			rows,
+			chunk_size,
+		})
+	}
 }
 
 /// This module adds serialization support to `BlockLength::max` field.
@@ -91,17 +145,20 @@ impl Default for BlockLength {
 impl BlockLength {
 	/// Create new `BlockLength` with `max` for every class.
 	pub fn max(max: u32) -> Self {
+		const_assert!(is_chunk_size_valid(BLOCK_CHUNK_SIZE));
 		Self {
 			max: PerDispatchClass::new(|_| max),
-			cols: 0,
-			rows: 0,
-			chunk_size: 0,
+			cols: MAX_BLOCK_COLUMNS,
+			rows: MAX_BLOCK_COLUMNS,
+			chunk_size: BLOCK_CHUNK_SIZE,
 		}
 	}
 
 	/// Create enw `BlockLength` with `rows*cols*chunk_size` for `Operational` & `Mandatory`
 	/// and `normal * rows*cols*chunk_siz` for `Normal`.
 	pub fn with_normal_ratio(rows: u32, cols: u32, chunk_size: u32, normal: Perbill) -> Self {
+		debug_assert!(is_chunk_size_valid(chunk_size));
+
 		let max = cols * rows * chunk_size;
 		Self {
 			cols,
@@ -120,10 +177,11 @@ impl BlockLength {
 	/// Create new `BlockLength` with `max` for `Operational` & `Mandatory`
 	/// and `normal * max` for `Normal`.
 	pub fn max_with_normal_ratio(max: u32, normal: Perbill) -> Self {
+		const_assert!(is_chunk_size_valid(BLOCK_CHUNK_SIZE));
 		Self {
-			cols: 0,
-			rows: 0,
-			chunk_size: 0,
+			cols: MAX_BLOCK_COLUMNS,
+			rows: MAX_BLOCK_ROWS,
+			chunk_size: BLOCK_CHUNK_SIZE,
 			max: PerDispatchClass::new(|class| {
 				if class == DispatchClass::Normal {
 					normal * max

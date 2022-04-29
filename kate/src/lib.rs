@@ -1,5 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use static_assertions::const_assert_ne;
+
+use crate::config::DATA_CHUNK_SIZE;
+
+pub const LOG_TARGET: &str = "kate";
 pub type Seed = [u8; 32];
 
 pub mod config {
@@ -26,6 +31,51 @@ pub mod config {
 
 #[cfg(feature = "std")]
 pub mod com;
+/// Precalculate the length of padding IEC 9797 1.
+///
+/// # NOTE
+/// There is a unit test to ensure this formula match with the current
+/// IEC 9797 1 algorithm we implemented. See `fn pad_iec_9797_1`
+#[inline]
+fn padded_len_of_pad_iec_9797_1(len: u32) -> u32 {
+	(len + 1)
+		+ (DATA_CHUNK_SIZE as u32 - ((len + 1) % DATA_CHUNK_SIZE as u32)) % DATA_CHUNK_SIZE as u32
+}
+
+/// Calculates the padded len based of initial `len`.
+pub fn padded_len(len: u32, chunk_size: u32) -> u32 {
+	let iec_9797_1_len = padded_len_of_pad_iec_9797_1(len);
+
+	const_assert_ne!(DATA_CHUNK_SIZE, 0);
+	debug_assert!(
+		chunk_size >= DATA_CHUNK_SIZE as u32,
+		"`BlockLength.chunk_size` is valid by design .qed"
+	);
+	let diff_per_chunk = chunk_size - DATA_CHUNK_SIZE as u32;
+	let pad_to_chunk_extra = if diff_per_chunk != 0 {
+		let chunks_count = iec_9797_1_len / DATA_CHUNK_SIZE as u32;
+		chunks_count * diff_per_chunk
+	} else {
+		0
+	};
+
+	iec_9797_1_len + pad_to_chunk_extra
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct BlockDimensions {
+	pub rows: usize,
+	pub cols: usize,
+	pub chunk_size: usize,
+}
+
+impl BlockDimensions {
+	pub fn size(&self) -> usize {
+		self.rows
+			.saturating_mul(self.cols)
+			.saturating_mul(self.chunk_size)
+	}
+}
 
 #[cfg(feature = "std")]
 pub mod testnet {

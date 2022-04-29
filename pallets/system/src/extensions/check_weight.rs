@@ -17,9 +17,11 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
+	fail,
 	traits::Get,
 	weights::{DispatchClass, DispatchInfo, PostDispatchInfo},
 };
+use kate::BlockDimensions;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension},
@@ -27,7 +29,10 @@ use sp_runtime::{
 	DispatchResult,
 };
 
-use crate::{limits::BlockWeights, Config, Pallet};
+use crate::{
+	limits::BlockWeights, AllExtrinsicsLen, Config, DynamicBlockLength, ExtrinsicLen, Pallet,
+	LOG_TARGET,
+};
 
 /// Block resource (weight) limit check.
 ///
@@ -72,16 +77,47 @@ where
 	fn check_block_length(
 		info: &DispatchInfoOf<T::Call>,
 		len: usize,
-	) -> Result<u32, TransactionValidityError> {
+	) -> Result<ExtrinsicLen, TransactionValidityError> {
 		let length_limit = T::BlockLength::get();
-		let current_len = Pallet::<T>::all_extrinsics_len();
+		let mut all_extrinsics_len = AllExtrinsicsLen::<T>::get().unwrap_or_default();
+
+		// Check valid raw len
 		let added_len = len as u32;
-		let next_len = current_len.saturating_add(added_len);
-		if next_len > *length_limit.max.get(info.class) {
-			Err(InvalidTransaction::ExhaustsResources.into())
-		} else {
-			Ok(next_len)
+		all_extrinsics_len.raw = all_extrinsics_len.raw.saturating_add(added_len);
+		let max_raw_len = *length_limit.max.get(info.class);
+		if all_extrinsics_len.raw > max_raw_len {
+			log::debug!(
+				target: LOG_TARGET,
+				"Block length (max {}) is exhausted, requested {}",
+				max_raw_len,
+				all_extrinsics_len.raw
+			);
+			fail!(InvalidTransaction::ExhaustsResources)
 		}
+
+		// Check padded len.
+		let dynamic_block_len = DynamicBlockLength::<T>::get();
+		let padded_added_len = kate::padded_len(len as u32, dynamic_block_len.chunk_size());
+		all_extrinsics_len.padded = all_extrinsics_len.padded.saturating_add(padded_added_len);
+
+		let max_padded_len = BlockDimensions {
+			rows: dynamic_block_len.rows as usize,
+			cols: dynamic_block_len.cols as usize,
+			chunk_size: dynamic_block_len.chunk_size() as usize,
+		}
+		.size() as u32;
+
+		if all_extrinsics_len.padded > max_padded_len {
+			log::warn!(
+				target: LOG_TARGET,
+				"Padded block length (max {}) is exhausted, requested {}",
+				max_padded_len,
+				all_extrinsics_len.padded
+			);
+			fail!(InvalidTransaction::ExhaustsResources)
+		}
+
+		Ok(all_extrinsics_len)
 	}
 
 	/// Creates new `SignedExtension` to check weight of the extrinsic.
@@ -94,11 +130,11 @@ where
 		info: &DispatchInfoOf<T::Call>,
 		len: usize,
 	) -> Result<(), TransactionValidityError> {
-		let next_len = Self::check_block_length(info, len)?;
+		let next_all_ext_len = Self::check_block_length(info, len)?;
 		let next_weight = Self::check_block_weight(info)?;
 		Self::check_extrinsic_weight(info)?;
 
-		crate::AllExtrinsicsLen::<T>::put(next_len);
+		crate::AllExtrinsicsLen::<T>::put(next_all_ext_len);
 		crate::BlockWeight::<T>::put(next_weight);
 		Ok(())
 	}
@@ -233,7 +269,7 @@ where
 		// to them actually being useful. Block producers are thus not allowed to include mandatory
 		// extrinsics that result in error.
 		if let (DispatchClass::Mandatory, Err(e)) = (info.class, result) {
-			log::error!(target: "runtime::system", "Bad mandatory: {:?}", e);
+			log::error!(target: LOG_TARGET, "Bad mandatory: {:?}", e);
 			Err(InvalidTransaction::BadMandatory)?
 		}
 
@@ -260,6 +296,7 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckWeight<T> {
 
 #[cfg(test)]
 mod tests {
+	use da_primitives::BLOCK_CHUNK_SIZE;
 	use frame_support::{
 		assert_err, assert_ok,
 		weights::{Pays, Weight},
@@ -505,7 +542,9 @@ mod tests {
 
 			// likewise for length limit.
 			let len = 100_usize;
-			AllExtrinsicsLen::<Test>::put(normal_length_limit());
+			let raw = normal_length_limit();
+			let padded = kate::padded_len(raw, BLOCK_CHUNK_SIZE);
+			AllExtrinsicsLen::<Test>::put(ExtrinsicLen { raw, padded });
 			assert_err!(
 				CheckWeight::<Test>(PhantomData).pre_dispatch(&1, CALL, &normal, len),
 				InvalidTransaction::ExhaustsResources
@@ -520,7 +559,7 @@ mod tests {
 			let normal = DispatchInfo::default();
 			let normal_limit = normal_weight_limit() as usize;
 			let reset_check_weight = |tx, s, f| {
-				AllExtrinsicsLen::<Test>::put(0);
+				AllExtrinsicsLen::<Test>::put(ExtrinsicLen::default());
 				let r = CheckWeight::<Test>(PhantomData).pre_dispatch(&1, CALL, tx, s);
 				if f {
 					assert!(r.is_err())
