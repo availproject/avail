@@ -3,14 +3,13 @@ use std::sync::{Arc, RwLock};
 use codec::Encode;
 use da_primitives::asdr::{AppExtrinsic, AppId, GetAppId};
 use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
-use frame_support::storage::storage_prefix;
 use frame_system::limits::BlockLength;
 use jsonrpc_core::{Error as RpcError, Result};
 use jsonrpc_derive::rpc;
 use kate::BlockDimensions;
 use kate_rpc_runtime_api::KateParamsGetter;
 use lru::LruCache;
-use sc_client_api::{BlockBackend, StorageKey, StorageProvider};
+use sc_client_api::{BlockBackend, StorageProvider};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_rpc::number::NumberOrHex;
@@ -102,21 +101,20 @@ where
 			.block(&BlockId::number(block_num))
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
 			.ok_or_else(|| internal_err!("Missing block number {}", block_num))?;
+		let block_hash = signed_block.block.header().hash();
+		let block_id = BlockId::hash(block_hash.clone());
 
 		let mut block_ext_cache = self
 			.block_ext_cache
 			.write()
 			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
 
-		// if !block.is_none() {
-		let best_hash = BlockId::hash(self.client.info().best_hash);
 		let block_length: BlockLength = self
 			.client
 			.runtime_api()
-			.get_block_length(&best_hash)
+			.get_block_length(&block_id)
 			.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
-		let block_hash = signed_block.block.header().hash();
 		if !block_ext_cache.contains(&block_hash) {
 			// build block data extension and cache it
 			let xts_by_id: Vec<AppExtrinsic> = signed_block
@@ -129,18 +127,14 @@ where
 				})
 				.collect();
 
-			// TODO @miguel : Fetch the RandomnessFromOneEpochAgo for seed.
-			let randomness_key = StorageKey(storage_prefix(b"Babe", b"Randomness").to_vec());
-			let raw_seed = self
-				.client
-				.storage(&BlockId::number(block_num), &randomness_key)
-				.map_err(|_| internal_err!("Babe::Randomness key is invalid"))?
-				.ok_or_else(|| internal_err!("Missing Babe::Randomness at block {:?}", block_hash))?
-				.0;
-			let seed = raw_seed
-				.clone()
-				.try_into()
-				.map_err(|_| internal_err!("Raw seed ({:?}) is invalid .qed", raw_seed))?;
+			// Use Babe's VRF
+			let seed: [u8; 32] =
+				self.client
+					.runtime_api()
+					.get_babe_vrf(&block_id)
+					.map_err(|e| {
+						internal_err!("Babe VRF not found for block {}: {:?}", block_num, e)
+					})?;
 
 			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
 				block_length.rows as usize,
@@ -162,11 +156,11 @@ where
 		let kc_public_params_raw = self
 			.client
 			.runtime_api()
-			.get_public_params(&best_hash)
+			.get_public_params(&block_id)
 			.map_err(|e| {
 				internal_err!(
 					"Public params cannot be fetched on block {}: {:?}",
-					best_hash,
+					block_hash,
 					e
 				)
 			})?;

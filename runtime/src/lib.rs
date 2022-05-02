@@ -140,7 +140,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	// and set impl_version to 0. If only runtime
 	// implementation changes and behavior does not, then leave spec_version as
 	// is and increment impl_version.
-	spec_version: 3,
+	spec_version: 4,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1280,6 +1280,17 @@ impl_runtime_apis! {
 		fn get_block_length() -> frame_system::limits::BlockLength {
 			frame_system::Pallet::<Runtime>::block_length()
 		}
+
+		fn get_babe_vrf() -> [u8;32] {
+			use frame_system::Config;
+			use sp_runtime::traits::Hash;
+
+			let epoc_and_block = <Runtime as Config>::Randomness::random_seed();
+			let seed = <Runtime as Config>::Hashing::hash_of(&epoc_and_block);
+
+			seed.into()
+		}
+
 	}
 
 	impl sp_session::SessionKeys<Block> for Runtime {
