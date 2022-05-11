@@ -1263,7 +1263,7 @@ dependencies = [
 
 [[package]]
 name = "da-runtime"
-version = "1.0.0"
+version = "4.0.0"
 dependencies = [
  "da-control",
  "da-primitives",
@@ -1334,7 +1334,7 @@ dependencies = [
 
 [[package]]
 name = "data-avail"
-version = "3.0.0"
+version = "1.0.0"
 dependencies = [
  "da-control",
  "da-primitives",
