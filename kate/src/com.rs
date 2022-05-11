@@ -428,7 +428,9 @@ mod tests {
 	use dusk_bytes::Serializable;
 	use dusk_plonk::bls12_381::BlsScalar;
 	use hex_literal::hex;
-	use kate_recovery::com::{reconstruct_app_extrinsics, unflatten_padded_data};
+	use kate_recovery::com::{
+		data_ranges, reconstruct_app_extrinsics, unflatten_padded_data, MatrixDimensions,
+	};
 	use proptest::{
 		collection::{self, size_range},
 		prelude::*,
@@ -557,7 +559,7 @@ mod tests {
 		assert_eq!(dims, expected_dims, "Dimensions don't match the expected");
 		assert_eq!(data, expected_data, "Data doesn't match the expected data");
 
-		let res = unflatten_padded_data(layout, data, chunk_size);
+		let res = unflatten_padded_data(data_ranges(&layout), data, chunk_size);
 		assert_eq!(
 			res.len(),
 			extrinsics.len(),
@@ -573,10 +575,16 @@ mod tests {
 	fn sample_cells_from_matrix(
 		matrix: &[BlsScalar],
 		dimensions: &BlockDimensions,
-	) -> Vec<Vec<kate_recovery::com::Cell>> {
-		fn cell_from_scalar(row_idx: u16, scalar: &BlsScalar) -> kate_recovery::com::Cell {
+		columns: Option<&[u16]>,
+	) -> Vec<kate_recovery::com::Cell> {
+		fn cell_from_scalar(
+			col_idx: u16,
+			row_idx: u16,
+			scalar: &BlsScalar,
+		) -> kate_recovery::com::Cell {
 			kate_recovery::com::Cell {
 				row: row_idx,
+				col: col_idx,
 				data: scalar.clone().to_bytes().to_vec(),
 				..Default::default()
 			}
@@ -599,10 +607,12 @@ mod tests {
 		const RNG_SEED: Seed = [42u8; 32];
 		matrix
 			.chunks_exact(dimensions.rows * 2)
-			.map(|e| {
+			.enumerate()
+			.flat_map(|(col_idx, e)| {
 				random_indexes(e.len(), RNG_SEED)
 					.into_iter()
-					.map(|i| cell_from_scalar(i as u16, &e[i]))
+					.map(|i| cell_from_scalar(col_idx as u16, i as u16, &e[i]))
+					.filter(|cell| columns.is_none() || columns.unwrap_or(&[]).contains(&cell.col))
 					.collect::<Vec<_>>()
 			})
 			.collect::<Vec<_>>()
@@ -647,8 +657,9 @@ mod tests {
 	fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy())  {
 		let (layout, commitments, dims, matrix) = build_commitments(64, 16, 32, xts, Seed::default()).unwrap();
 
-		let columns = sample_cells_from_matrix(&matrix, &dims);
-		let reconstructed = reconstruct_app_extrinsics(layout, columns, dims.rows, dims.chunk_size);
+		let columns = sample_cells_from_matrix(&matrix, &dims, None);
+		let mdims = MatrixDimensions{cols: dims.cols, rows: dims.rows, chunk_size:dims.chunk_size};
+		let reconstructed = reconstruct_app_extrinsics(&layout, &mdims, columns, None).unwrap();
 		for (result, xt) in reconstructed.iter().zip(xts) {
 		prop_assert_eq!(result.0, xt.app_id);
 		prop_assert_eq!(&result.1, &xt.data);
@@ -701,6 +712,51 @@ mod tests {
 	}
 
 	#[test]
+	fn test_reconstruct_app_extrinsics_with_app_id() {
+		let app_id_1_data = br#""This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
+get erasure coded to ensure redundancy."#;
+
+		let app_id_2_data = br#""Let's see how this gets encoded and then reconstructed by sampling only some data."#;
+
+		let hash = Seed::default();
+		let xts = vec![
+			AppExtrinsic {
+				app_id: 0,
+				data: vec![0],
+			},
+			AppExtrinsic {
+				app_id: 1,
+				data: app_id_1_data.to_vec(),
+			},
+			AppExtrinsic {
+				app_id: 2,
+				data: app_id_2_data.to_vec(),
+			},
+		];
+
+		let chunk_size = 32;
+
+		let (layout, data, dims) = flatten_and_pad_block(32, 4, chunk_size, &xts, hash).unwrap();
+		let coded: Vec<BlsScalar> = extend_data_matrix(dims, &data[..]).unwrap();
+
+		let cols_1 = sample_cells_from_matrix(&coded, &dims, Some(&[0, 1]));
+
+		let mdims = MatrixDimensions {
+			cols: dims.cols,
+			rows: dims.rows,
+			chunk_size: dims.chunk_size,
+		};
+
+		let res_1 = reconstruct_app_extrinsics(&layout, &mdims, cols_1, Some(1)).unwrap();
+		assert_eq!(res_1[0].1.as_slice(), app_id_1_data);
+
+		let cols_2 = sample_cells_from_matrix(&coded, &dims, Some(&[1, 2]));
+
+		let res_2 = reconstruct_app_extrinsics(&layout, &mdims, cols_2, Some(2)).unwrap();
+		assert_eq!(res_2[0].1.as_slice(), app_id_2_data);
+	}
+
+	#[test]
 	fn test_extend_mock_data() {
 		let orig_data = br#"This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
 get erasure coded to ensure redundancy.
@@ -720,9 +776,14 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 		let coded: Vec<BlsScalar> = extend_data_matrix(dims, &data[..]).unwrap();
 
-		let cols = sample_cells_from_matrix(&coded, &dims);
+		let cols = sample_cells_from_matrix(&coded, &dims, None);
 
-		let res = reconstruct_app_extrinsics(layout, cols, dims.rows, dims.chunk_size);
+		let mdims = MatrixDimensions {
+			cols: dims.cols,
+			rows: dims.rows,
+			chunk_size: dims.chunk_size,
+		};
+		let res = reconstruct_app_extrinsics(&layout, &mdims, cols, None).unwrap();
 
 		// let decoded = decode_scalars(&res.as_slice());
 		let s = String::from_utf8_lossy(res[0].1.as_slice());

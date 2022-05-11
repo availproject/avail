@@ -1,5 +1,6 @@
-use std::{convert::TryInto, ops::Range};
+use std::{collections::HashMap, convert::TryInto, ops::Range};
 
+use anyhow::{anyhow, Result};
 use dusk_bytes::Serializable;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
 
@@ -7,23 +8,86 @@ use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
 pub const DATA_CHUNK_SIZE: usize = 31;
 const PADDING_TAIL_VALUE: u8 = 0x80;
 
-// Reconstructs app extrinsics from extrinsics layout and data
-pub fn reconstruct_app_extrinsics(
-	xt_layout: Vec<(u32, u32)>,
-	columns: Vec<Vec<Cell>>,
-	column_length: usize,
-	chunk_size: usize,
-) -> Vec<(u32, Vec<u8>)> {
-	let reconstructed = columns
-		.iter()
-		.map(|cells| reconstruct_column(column_length * 2, cells).unwrap())
-		.collect::<Vec<_>>();
-	let scalars = reconstructed
-		.iter()
-		.flat_map(|e| e.iter().flat_map(|e| e.to_bytes()).collect::<Vec<_>>())
-		.collect::<Vec<_>>();
+pub struct MatrixDimensions {
+	pub rows: usize,
+	pub cols: usize,
+	pub chunk_size: usize,
+}
 
-	unflatten_padded_data(xt_layout, scalars, chunk_size)
+fn map_cells(
+	dimensions: &MatrixDimensions,
+	cells: Vec<Cell>,
+) -> Result<HashMap<u16, HashMap<u16, Cell>>> {
+	let mut result: HashMap<u16, HashMap<u16, Cell>> = HashMap::new();
+	for cell in cells {
+		let row = cell.row;
+		let col = cell.col;
+		if row as usize > dimensions.rows * 2 || col as usize > dimensions.cols {
+			return Err(anyhow!("Invalid cell (col {}, row {})", col, row));
+		}
+		match result.get_mut(&col) {
+			None => {
+				let mut cells = HashMap::new();
+				cells.insert(row, cell);
+				result.insert(col, cells);
+			},
+			Some(cells) => {
+				if cells.contains_key(&cell.row) {
+					return Err(anyhow!("Duplicate cell found"));
+				}
+				cells.insert(cell.row, cell);
+			},
+		}
+	}
+	Ok(result)
+}
+
+/// Reconstructs app extrinsics from extrinsics layout and data.
+/// If app_id is `None`, all extrinsics are reconstructed.
+/// If app_id is provided, only related extrinsics are reconstructed.
+/// Only related data cells needs to be in matrix (unrelated columns can be empty).
+///
+///
+/// # Arguments
+///
+/// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
+/// * `dimensions` -
+/// * `cells` -
+/// * `app_id` - Optional application id
+pub fn reconstruct_app_extrinsics(
+	layout: &[(u32, u32)],
+	dimensions: &MatrixDimensions,
+	cells: Vec<Cell>,
+	app_id: Option<u32>,
+) -> Result<Vec<(u32, Vec<u8>)>> {
+	let mut column_numbers: Vec<u16> = vec![];
+	let mut data: Vec<u8> = vec![];
+	let cells_map = map_cells(dimensions, cells)?;
+	for column_number in 0..dimensions.cols as u16 {
+		match cells_map.get(&column_number) {
+			None => data.extend(vec![0; dimensions.rows * dimensions.chunk_size]),
+			Some(column_cells) => {
+				if column_cells.len() < dimensions.rows {
+					return Err(anyhow!(
+						"Column {} contains less than half rows",
+						column_number
+					));
+				}
+				let cells = column_cells.values().cloned().collect::<Vec<_>>();
+				let scalars =
+					reconstruct_column(dimensions.rows * 2, &cells).map_err(|err| anyhow!(err))?;
+				let column_data = scalars.iter().flat_map(|e| e.to_bytes());
+				column_numbers.push(column_number);
+				data.extend(column_data);
+			},
+		}
+	}
+
+	let ranges = data_ranges(layout)
+		.into_iter()
+		.filter(|(id, _)| app_id.is_none() || Some(*id) == app_id)
+		.collect::<Vec<_>>();
+	Ok(unflatten_padded_data(ranges, data, dimensions.chunk_size))
 }
 
 fn trim_to_chunk_data(chunk: &[u8]) -> [u8; DATA_CHUNK_SIZE] {
@@ -31,9 +95,21 @@ fn trim_to_chunk_data(chunk: &[u8]) -> [u8; DATA_CHUNK_SIZE] {
 	chunk[0..DATA_CHUNK_SIZE].try_into().unwrap()
 }
 
+pub fn data_ranges(layout: &[(u32, u32)]) -> Vec<(u32, Range<usize>)> {
+	let (_, ranges) = layout
+		.iter()
+		.cloned()
+		.fold((0, vec![]), |(start, mut v), (app_id, size)| {
+			let end = start + (size as usize) * DATA_CHUNK_SIZE;
+			v.push((app_id, Range { start, end }));
+			(end, v)
+		});
+	ranges
+}
+
 // Removes both extrinsics and block padding (iec_9797 and seeded random data)
 pub fn unflatten_padded_data(
-	layout: Vec<(u32, u32)>,
+	layout: Vec<(u32, Range<usize>)>,
 	data: Vec<u8>,
 	chunk_size: usize,
 ) -> Vec<(u32, Vec<u8>)> {
@@ -42,20 +118,8 @@ pub fn unflatten_padded_data(
 		.chunks(chunk_size)
 		.flat_map(|e| trim_to_chunk_data(e).to_vec())
 		.collect::<Vec<_>>();
+
 	layout
-		.iter()
-		.fold(vec![], |acc: Vec<(u32, Range<usize>)>, (i, len)| {
-			let mut v = acc;
-			let (_, prev_range) = v
-				.last()
-				.unwrap_or(&(0u32, Range { start: 0, end: 0 }))
-				.clone();
-			v.push((*i, Range {
-				start: prev_range.end as usize,
-				end: prev_range.end as usize + *len as usize * DATA_CHUNK_SIZE,
-			}));
-			v
-		})
 		.iter()
 		.map(|(app_id, range)| {
 			let orig = data[range.clone()].to_vec();
