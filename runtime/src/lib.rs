@@ -1373,3 +1373,64 @@ impl_runtime_apis! {
 		}
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use codec::Decode;
+	use da_primitives::{asdr::DataLookup, Header, KateCommitment};
+	use hex_literal::hex;
+	use sp_runtime::{ConsensusEngineId, Digest};
+	use test_case::test_case;
+
+	use super::*;
+
+	const SET_UNCLES_RAW :[u8; 302]= hex!("b10404040004d2c017bfb8043c4f7e7e109718b1819866761ba6d0a55f0f4b4d5b42ce2446dc6dd896fce16a49e6cb667130e315caba7362e8fe86b577b92f64be279dfb40f98218a40d37269f77968bcf5501eb99346fe7b392268d9e176b8b6af1ef32f031c1888101ab9904cb17fc173504a6bfc4bc1d2212c1178e13fff38f44c17aed7f6f0e035a98ff3104f9487eabe47ee728f4d12047ab9904cb17fc173504a6bfc4bc1d2212c1178e13fff38f44c17aed7f6f0e035a98ff3104f9487eabe47ee728f4d12047010004000806424142453402010000004576ec040000000005424142450101c2398bbd540e525ce6e006d89e902bf36bd6e85471901f1b74877dcc59f5f6068f1bbd9f45aece015ea7617164d6ea5e729e09eb859df6f34dfc9c1c9398de850100000000");
+	const SET_TIMESTAMP_RAW: [u8; 11] = hex!("280403000bc11c98a98001");
+	const CONSENSUS_ENGINE_ID: ConsensusEngineId = hex!("42414245");
+
+	// `set_uncles` extrinsic from block 13852 on DevNet.
+	fn set_uncles_expected() -> Call {
+		let extrinsics_root = KateCommitment {
+			hash: hex!("a40d37269f77968bcf5501eb99346fe7b392268d9e176b8b6af1ef32f031c188").into(),
+			commitment: hex!("ab9904cb17fc173504a6bfc4bc1d2212c1178e13fff38f44c17aed7f6f0e035a98ff3104f9487eabe47ee728f4d12047ab9904cb17fc173504a6bfc4bc1d2212c1178e13fff38f44c17aed7f6f0e035a98ff3104f9487eabe47ee728f4d12047").to_vec(),
+			rows: 1,
+			cols: 4,
+		};
+		let logs = vec![
+			DigestItem::PreRuntime(CONSENSUS_ENGINE_ID, hex!("02010000004576ec0400000000").to_vec()),
+			DigestItem::Seal(CONSENSUS_ENGINE_ID, hex!("c2398bbd540e525ce6e006d89e902bf36bd6e85471901f1b74877dcc59f5f6068f1bbd9f45aece015ea7617164d6ea5e729e09eb859df6f34dfc9c1c9398de85").to_vec())
+		];
+		let digest = Digest { logs };
+		let app_data_lookup = DataLookup {
+			size: 1,
+			index: vec![],
+		};
+		let header = Header {
+			parent_hash: hex!("d2c017bfb8043c4f7e7e109718b1819866761ba6d0a55f0f4b4d5b42ce2446dc")
+				.into(),
+			number: 13851,
+			state_root: hex!("96fce16a49e6cb667130e315caba7362e8fe86b577b92f64be279dfb40f98218")
+				.into(),
+			extrinsics_root,
+			digest,
+			app_data_lookup,
+		};
+
+		Call::Authorship(pallet_authorship::Call::set_uncles {
+			new_uncles: vec![header],
+		})
+	}
+
+	// `set_timestamp` extrinsic from block 13852 on DevNet.
+	fn set_timestamp_expected() -> Call {
+		Call::Timestamp(pallet_timestamp::Call::set { now: 1652112760001 })
+	}
+
+	#[test_case( &SET_UNCLES_RAW => set_uncles_expected(); "set_uncles_block_13852")]
+	#[test_case( &SET_TIMESTAMP_RAW => set_timestamp_expected(); "set_timestamp_block_13852")]
+	fn decode_app_unchecked_extrinsics(mut raw_ext: &[u8]) -> Call {
+		let app_ext = UncheckedExtrinsic::decode(&mut raw_ext).expect("Valid raw extrinsic .qed");
+
+		app_ext.function
+	}
+}

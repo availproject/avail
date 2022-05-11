@@ -1274,6 +1274,7 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
+ "hex",
  "hex-literal",
  "kate",
  "kate-rpc-runtime-api",
@@ -1310,6 +1311,7 @@ dependencies = [
  "parity-util-mem",
  "scale-info",
  "serde",
+ "serde_json",
  "sp-api",
  "sp-authority-discovery",
  "sp-block-builder",
@@ -1327,6 +1329,7 @@ dependencies = [
  "sp-version",
  "static_assertions",
  "substrate-wasm-builder",
+ "test-case",
 ]
 
 [[package]]

@@ -7,6 +7,7 @@ use std::{
 use da_primitives::asdr::AppExtrinsic;
 use dusk_bytes::Serializable;
 use dusk_plonk::{
+	bls12_381::G1Affine,
 	commitment_scheme::kzg10,
 	error::Error as PlonkError,
 	fft::{EvaluationDomain, Evaluations},
@@ -383,11 +384,9 @@ pub fn build_commitments(
 	let (prover_key, _) = public_params.trim(block_dims.cols).map_err(Error::from)?;
 	let row_eval_domain = EvaluationDomain::new(block_dims.cols).map_err(Error::from)?;
 
-	let mut result_bytes: Vec<u8> = Vec::new();
-	result_bytes.reserve_exact(PROVER_KEY_SIZE * extended_rows_num);
-	unsafe {
-		result_bytes.set_len(PROVER_KEY_SIZE * extended_rows_num);
-	}
+	// @internal: `PROVER_KEY_SIZE` must match with the output size of `Commitment::to_bytes`.
+	const_assert_eq!(G1Affine::SIZE, PROVER_KEY_SIZE);
+	let mut plonk_commitments = Vec::with_capacity(PROVER_KEY_SIZE * extended_rows_num);
 
 	info!(
 		target: "system",
@@ -404,18 +403,12 @@ pub fn build_commitments(
 		}
 
 		let polynomial = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
-		let key_bytes = &prover_key
+		let commitment = &prover_key
 			.commit(&polynomial)
 			.map_err(Error::from)?
 			.to_bytes();
 
-		unsafe {
-			std::ptr::copy(
-				key_bytes.as_ptr(),
-				result_bytes.as_mut_ptr().add(i * PROVER_KEY_SIZE),
-				PROVER_KEY_SIZE,
-			);
-		}
+		plonk_commitments.extend_from_slice(&commitment[..]);
 	}
 
 	info!(
@@ -424,7 +417,7 @@ pub fn build_commitments(
 		start.elapsed()
 	);
 
-	Ok((tx_layout, result_bytes, block_dims, ext_data_matrix))
+	Ok((tx_layout, plonk_commitments, block_dims, ext_data_matrix))
 }
 
 #[cfg(test)]
