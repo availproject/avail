@@ -25,18 +25,9 @@ fn map_cells(
 		if row as usize > dimensions.rows * 2 || col as usize > dimensions.cols {
 			return Err(anyhow!("Invalid cell (col {}, row {})", col, row));
 		}
-		match result.get_mut(&col) {
-			None => {
-				let mut cells = HashMap::new();
-				cells.insert(row, cell);
-				result.insert(col, cells);
-			},
-			Some(cells) => {
-				if cells.contains_key(&cell.row) {
-					return Err(anyhow!("Duplicate cell found"));
-				}
-				cells.insert(cell.row, cell);
-			},
+		let cells = result.entry(col).or_insert_with(HashMap::new);
+		if cells.insert(cell.row, cell).is_some() {
+			return Err(anyhow!("Duplicate cell found"));
 		}
 	}
 	Ok(result)
@@ -51,8 +42,8 @@ fn map_cells(
 /// # Arguments
 ///
 /// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
-/// * `dimensions` -
-/// * `cells` -
+/// * `dimensions` - Matrix dimensions
+/// * `cells` - Cells from required columns, at least 50% cells per column
 /// * `app_id` - Optional application id
 pub fn reconstruct_app_extrinsics(
 	layout: &[(u32, u32)],
