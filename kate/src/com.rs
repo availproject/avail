@@ -18,6 +18,7 @@ use frame_support::ensure;
 use log::info;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use static_assertions::const_assert_eq;
 
@@ -264,6 +265,48 @@ pub fn extend_data_matrix(
 	Ok(chunk_elements)
 }
 
+#[cfg(feature = "alloc")]
+pub fn par_extend_data_matrix(
+	block_dims: BlockDimensions,
+	block: &[u8],
+) -> Result<Vec<BlsScalar>, Error> {
+	let start = Instant::now();
+	let rows_num = block_dims.rows;
+	let extended_rows_num = rows_num * EXTENSION_FACTOR;
+
+	let chunks = block.par_chunks_exact(block_dims.chunk_size);
+	assert!(chunks.remainder().is_empty());
+
+	let mut chunk_elements = chunks
+		.into_par_iter()
+		.map(to_bls_scalar)
+		.collect::<Result<Vec<BlsScalar>, Error>>()?
+		.par_chunks_exact(rows_num)
+		.flat_map(|column| extend_column_with_zeros(column, extended_rows_num))
+		.collect::<Vec<BlsScalar>>();
+
+	// extend data matrix, column by column
+	let extended_column_eval_domain = EvaluationDomain::new(extended_rows_num)?;
+	let column_eval_domain = EvaluationDomain::new(rows_num)?; // rows_num = column_length
+
+	chunk_elements
+		.par_chunks_exact_mut(extended_rows_num)
+		.for_each(|col| {
+			let half_len = col.len() / 2;
+			// (i)fft functions input parameter slice size has to be a power of 2, otherwise it panics
+			column_eval_domain.ifft_slice(&mut col[0..half_len]);
+			extended_column_eval_domain.fft_slice(col);
+		});
+
+	info!(
+		target: LOG_TARGET,
+		"Time to extend block {:?}",
+		start.elapsed()
+	);
+
+	Ok(chunk_elements)
+}
+
 //TODO cache extended data matrix
 //TODO explore faster Variable Base Multi Scalar Multiplication
 pub fn build_proof(
@@ -446,6 +489,102 @@ pub fn build_commitments(
 	);
 
 	Ok((tx_layout, plonk_commitments, block_dims, ext_data_matrix))
+}
+
+#[cfg(feature = "std")]
+pub fn par_build_commitments(
+	rows_num: usize,
+	cols_num: usize,
+	chunk_size: usize,
+	extrinsics_by_key: &[AppExtrinsic],
+	rng_seed: Seed,
+) -> Result<(XtsLayout, Vec<u8>, BlockDimensions, Vec<BlsScalar>), Error> {
+	let start = Instant::now();
+
+	// generate data matrix first
+	let (tx_layout, block, block_dims) =
+		flatten_and_pad_block(rows_num, cols_num, chunk_size, extrinsics_by_key, rng_seed)?;
+
+	info!(
+		target: LOG_TARGET,
+		"Rows: {} Cols: {} Size: {}",
+		block_dims.rows,
+		block_dims.cols,
+		block.len(),
+	);
+
+	let ext_data_matrix = par_extend_data_matrix(block_dims, &block)?;
+	let extended_rows_num = block_dims.rows * EXTENSION_FACTOR;
+
+	info!(target: LOG_TARGET, "Time to prepare {:?}", start.elapsed());
+
+	// construct commitments in parallel
+	if block_dims.cols > MAX_BLOCK_COLUMNS as usize {
+		log::error!(
+			target: LOG_TARGET,
+			"Error on Block dimension {:?}",
+			block_dims
+		);
+	}
+	let public_params = testnet::public_params(MAX_BLOCK_COLUMNS as usize);
+	if log::log_enabled!(target: LOG_TARGET, log::Level::Debug) {
+		let raw_pp = public_params.to_raw_var_bytes();
+		let hash_pp = hex::encode(sp_core::blake2_128(&raw_pp));
+		let hex_pp = hex::encode(raw_pp);
+		log::debug!(
+			target: LOG_TARGET,
+			"Public params (len={}): hash: {}",
+			hex_pp.len(),
+			hash_pp,
+		);
+	}
+
+	let (prover_key, _) = public_params.trim(block_dims.cols).map_err(Error::from)?;
+	let row_eval_domain = EvaluationDomain::new(block_dims.cols).map_err(Error::from)?;
+
+	let mut result_bytes: Vec<u8> = Vec::new();
+	result_bytes.reserve_exact(PROVER_KEY_SIZE * extended_rows_num);
+	unsafe {
+		result_bytes.set_len(PROVER_KEY_SIZE * extended_rows_num);
+	}
+
+	info!(
+		target: "system",
+		"Number of CPU cores: {:#?}",
+		num_cpus::get()
+	);
+
+	let start = Instant::now();
+
+	(0..extended_rows_num)
+		.into_par_iter()
+		.map(|i| {
+			let mut row = Vec::with_capacity(block_dims.cols);
+
+			for j in 0..block_dims.cols {
+				row.push(ext_data_matrix[i + j * extended_rows_num]);
+			}
+
+			Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate()
+		})
+		.zip(result_bytes.par_chunks_exact_mut(PROVER_KEY_SIZE))
+		.for_each(|(poly, res)| {
+			let key_bytes = &prover_key
+				.commit(&poly)
+				.map_err(Error::from)
+				.unwrap()
+				.to_bytes();
+
+			res.copy_from_slice(&key_bytes[..PROVER_KEY_SIZE]);
+		});
+
+	info!(
+		target: "system",
+		"Time to build a commitment {:?}",
+		start.elapsed()
+	);
+
+	Ok((tx_layout, result_bytes, block_dims, ext_data_matrix))
 }
 
 #[cfg(test)]

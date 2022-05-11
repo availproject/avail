@@ -2966,6 +2966,7 @@ name = "kate"
 version = "0.1.0"
 dependencies = [
  "bls12_381",
+ "criterion",
  "da-primitives",
  "dusk-bytes",
  "dusk-plonk",
