@@ -588,6 +588,111 @@ pub fn par_build_commitments(
 	Ok((tx_layout, result_bytes, block_dims, ext_data_matrix))
 }
 
+#[cfg(feature = "std")]
+pub fn opt_par_build_commitments(
+	rows: usize,
+	cols: usize,
+	chunks: usize,
+	extrinsics: &[AppExtrinsic],
+	rng_seed: Seed,
+) -> Result<(XtsLayout, Vec<u8>, BlockDimensions, Vec<BlsScalar>), Error> {
+	let start = Instant::now();
+
+	let (txns, blk, dims) = flatten_and_pad_block(rows, cols, chunks, extrinsics, rng_seed)?;
+
+	info!(
+		target: LOG_TARGET,
+		"Rows: {} Cols: {} Size: {}",
+		dims.rows,
+		dims.cols,
+		blk.len(),
+	);
+
+	let ext_data_matrix = extend_data_matrix(dims, &blk)?;
+	let ext_rows = dims.rows * EXTENSION_FACTOR;
+
+	info!(target: LOG_TARGET, "Time to prepare {:?}", start.elapsed());
+
+	if dims.cols > MAX_BLOCK_COLUMNS as usize {
+		log::error!(target: LOG_TARGET, "Error on Block dimension {:?}", dims);
+	}
+
+	let public_params = testnet::public_params(MAX_BLOCK_COLUMNS as usize);
+	if log::log_enabled!(target: LOG_TARGET, log::Level::Debug) {
+		let raw_pp = public_params.to_raw_var_bytes();
+		let hash_pp = hex::encode(sp_core::blake2_128(&raw_pp));
+		let hex_pp = hex::encode(raw_pp);
+		log::debug!(
+			target: LOG_TARGET,
+			"Public params (len={}): hash: {}",
+			hex_pp.len(),
+			hash_pp,
+		);
+	}
+
+	let (prover_key, _) = public_params.trim(dims.cols).map_err(Error::from)?;
+	let row_eval_domain = EvaluationDomain::new(dims.cols).map_err(Error::from)?;
+	let col_eval_domain_ext = EvaluationDomain::new(ext_rows).map_err(Error::from)?;
+	let col_eval_domain_red = EvaluationDomain::new(dims.rows).map_err(Error::from)?;
+
+	let mut result_bytes: Vec<u8> = Vec::new();
+	result_bytes.reserve_exact(PROVER_KEY_SIZE * ext_rows);
+	unsafe {
+		result_bytes.set_len(PROVER_KEY_SIZE * ext_rows);
+	}
+
+	info!(
+		target: "system",
+		"Number of CPU cores: {:#?}",
+		num_cpus::get()
+	);
+
+	let start = Instant::now();
+
+	let chunks = blk.par_chunks_exact(dims.chunk_size);
+	assert!(chunks.remainder().is_empty());
+
+	let chunk_elements = chunks
+		.into_par_iter()
+		.map(to_bls_scalar)
+		.collect::<Result<Vec<BlsScalar>, Error>>()?;
+
+	let mut commits = Vec::with_capacity(dims.rows);
+	for i in 0..dims.rows {
+		let mut row = Vec::with_capacity(dims.cols);
+
+		for j in 0..dims.cols {
+			row.push(chunk_elements[i + j * dims.rows]);
+		}
+
+		let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
+		let commit = prover_key.commit(&poly)?;
+
+		commits.push(commit);
+	}
+
+	let ext_commits = fft_on_commitments(
+		fft_on_commitments(commits, col_eval_domain_red, true),
+		col_eval_domain_ext,
+		false,
+	);
+
+	(0..ext_rows)
+		.into_par_iter()
+		.zip(result_bytes.par_chunks_exact_mut(PROVER_KEY_SIZE))
+		.for_each(|(i, res)| {
+			res.copy_from_slice(&ext_commits[i].to_bytes()[..PROVER_KEY_SIZE]);
+		});
+
+	info!(
+		target: "system",
+		"Time to build a commitment {:?}",
+		start.elapsed()
+	);
+
+	Ok((txns, result_bytes, dims, ext_data_matrix))
+}
+
 // Perform FFT/IFFT on commitments of the given evaluation domain
 //
 // @todo This can be optimized !
