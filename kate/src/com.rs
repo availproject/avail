@@ -212,7 +212,7 @@ fn extend_column_with_zeros(column: &[BlsScalar], extended_rows_num: usize) -> V
 	result
 }
 
-fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
+pub fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 	// TODO: Better error type for BlsScalar case?
 	let scalar_size_chunk =
 		<[u8; SCALAR_SIZE]>::try_from(chunk).map_err(|_| Error::InvalidChunkLength)?;
@@ -671,11 +671,8 @@ pub fn opt_par_build_commitments(
 		commits.push(commit);
 	}
 
-	let ext_commits = fft_on_commitments(
-		fft_on_commitments(commits, col_eval_domain_red, true),
-		col_eval_domain_ext,
-		false,
-	);
+	let ifft_commits = fft_on_commitments(commits, col_eval_domain_red, true);
+	let ext_commits = fft_on_commitments(ifft_commits, col_eval_domain_ext, false);
 
 	(0..ext_rows)
 		.into_par_iter()
