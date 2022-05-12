@@ -1351,7 +1351,7 @@ dependencies = [
  "da-control",
  "da-primitives",
  "da-runtime",
- "dusk-plonk",
+ "dusk-plonk 0.8.2 (git+https://github.com/maticnetwork/plonk.git?branch=v0.8.2-polygon-3)",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "frame-support",
@@ -1602,6 +1602,22 @@ dependencies = [
 name = "dusk-plonk"
 version = "0.8.2"
 source = "git+https://github.com/maticnetwork/plonk.git?tag=v0.8.2-polygon-2#25df0c903b802c2b6df897a308ab6bbc50dfb1bd"
+dependencies = [
+ "cfg-if 1.0.0",
+ "dusk-bls12_381",
+ "dusk-bytes",
+ "dusk-jubjub",
+ "hashbrown 0.9.1",
+ "itertools 0.9.0",
+ "merlin 3.0.0",
+ "rand_core 0.6.3",
+ "rayon",
+]
+
+[[package]]
+name = "dusk-plonk"
+version = "0.8.2"
+source = "git+https://github.com/maticnetwork/plonk.git?branch=v0.8.2-polygon-3#c81ae9398c32f99ed1fe37093d560a31119a148c"
 dependencies = [
  "cfg-if 1.0.0",
  "dusk-bls12_381",
@@ -2969,7 +2985,7 @@ dependencies = [
  "criterion",
  "da-primitives",
  "dusk-bytes",
- "dusk-plonk",
+ "dusk-plonk 0.8.2 (git+https://github.com/maticnetwork/plonk.git?branch=v0.8.2-polygon-3)",
  "frame-support",
  "getrandom 0.2.6",
  "hex",
@@ -2998,7 +3014,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "dusk-bytes",
- "dusk-plonk",
+ "dusk-plonk 0.8.2 (git+https://github.com/maticnetwork/plonk.git?tag=v0.8.2-polygon-2)",
  "merlin 3.0.0",
  "rand 0.8.5",
  "rand_chacha 0.3.1",
@@ -3009,7 +3025,7 @@ name = "kate-recovery"
 version = "0.1.0"
 dependencies = [
  "dusk-bytes",
- "dusk-plonk",
+ "dusk-plonk 0.8.2 (git+https://github.com/maticnetwork/plonk.git?tag=v0.8.2-polygon-2)",
  "getrandom 0.2.6",
  "parity-scale-codec 3.1.2",
  "rand 0.8.5",
@@ -3023,7 +3039,7 @@ name = "kate-rpc"
 version = "0.1.0"
 dependencies = [
  "da-primitives",
- "dusk-plonk",
+ "dusk-plonk 0.8.2 (git+https://github.com/maticnetwork/plonk.git?branch=v0.8.2-polygon-3)",
  "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",

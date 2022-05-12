@@ -18,7 +18,7 @@ frame-executive = { path = "pallets/executive" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 
 [patch.crates-io]
-dusk-plonk = { git = "https://github.com/maticnetwork/plonk.git", tag = "v0.8.2-polygon-2" }
+dusk-plonk = { git = "https://github.com/maticnetwork/plonk.git", branch = "v0.8.2-polygon-3" }
 frame-system = { path = "pallets/system" }
 frame-executive = { path = "pallets/executive" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
