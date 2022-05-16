@@ -33,11 +33,36 @@ fn map_cells(
 	Ok(result)
 }
 
+/// Generates empty cells of columns related to specified application ID.
+/// Function return `None` if there are no cells for given application ID.
+///
+/// # Arguments
+///
+/// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
+/// * `dimensions` - Matrix dimensions
+/// * `app_id` - Application id
+pub fn app_specific_column_cells(
+	layout: &[(u32, u32)],
+	dimensions: &MatrixDimensions,
+	app_id: u32,
+) -> Option<Vec<Cell>> {
+	let ranges = data_ranges(layout);
+	let (_, range) = ranges.iter().find(|&&(id, _)| app_id == id)?;
+
+	let column_start = (range.start / (dimensions.rows * dimensions.chunk_size)) as u16;
+	let column_end = (range.end / (dimensions.rows * dimensions.chunk_size)) as u16;
+
+	Some(
+		(column_start..column_end + 1)
+			.flat_map(|col| (0..dimensions.rows as u16).map(move |row| Cell::new_empty(col, row)))
+			.collect::<Vec<_>>(),
+	)
+}
+
 /// Reconstructs app extrinsics from extrinsics layout and data.
 /// If app_id is `None`, all extrinsics are reconstructed.
 /// If app_id is provided, only related extrinsics are reconstructed.
 /// Only related data cells needs to be in matrix (unrelated columns can be empty).
-///
 ///
 /// # Arguments
 ///
@@ -258,6 +283,16 @@ pub struct Cell {
 	pub data: Vec<u8>,
 }
 
+impl Cell {
+	pub fn new_empty(col: u16, row: u16) -> Self {
+		Cell {
+			row,
+			col,
+			data: vec![],
+		}
+	}
+}
+
 // use this function for reconstructing back all cells of certain column
 // when at least 50% of them are available
 //
@@ -322,6 +357,48 @@ mod tests {
 	use rand_chacha::ChaChaRng;
 
 	use super::*;
+
+	#[test]
+	fn test_app_specific_column_cells() {
+		let layout = vec![(0, 5), (1, 3)];
+		let dimensions = MatrixDimensions {
+			rows: 4,
+			cols: 2,
+			chunk_size: 32,
+		};
+		let result_0: Vec<(u16, u16)> = vec![
+			(0, 0),
+			(0, 1),
+			(0, 2),
+			(0, 3),
+			(1, 0),
+			(1, 1),
+			(1, 2),
+			(1, 3),
+		];
+
+		let cells_0 = app_specific_column_cells(&layout, &dimensions, 0).unwrap();
+		cells_0
+			.iter()
+			.zip(result_0.iter())
+			.for_each(|(a, &(col, row))| {
+				assert_eq!(a.col, col);
+				assert_eq!(a.row, row);
+			});
+
+		let result_1: Vec<(u16, u16)> = vec![(1, 0), (1, 1), (1, 2), (1, 3)];
+
+		let cells_1 = app_specific_column_cells(&layout, &dimensions, 1).unwrap();
+		cells_1
+			.iter()
+			.zip(result_1.iter())
+			.for_each(|(a, &(col, row))| {
+				assert_eq!(a.col, col);
+				assert_eq!(a.row, row);
+			});
+
+		assert!(app_specific_column_cells(&layout, &dimensions, 2).is_none());
+	}
 
 	#[test]
 	fn data_reconstruction_success() {
