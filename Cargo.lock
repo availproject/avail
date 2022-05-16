@@ -1617,7 +1617,7 @@ dependencies = [
 [[package]]
 name = "dusk-plonk"
 version = "0.8.2"
-source = "git+https://github.com/maticnetwork/plonk.git?branch=v0.8.2-polygon-3#c81ae9398c32f99ed1fe37093d560a31119a148c"
+source = "git+https://github.com/maticnetwork/plonk.git?branch=v0.8.2-polygon-3#074268d45d0cea80989a6af934d99a26ed3fa162"
 dependencies = [
  "cfg-if 1.0.0",
  "dusk-bls12_381",

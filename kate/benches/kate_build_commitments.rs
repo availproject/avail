@@ -262,5 +262,5 @@ fn bench_ifft_on_commitments(c: &mut Criterion) {
 	});
 }
 
-criterion_group! {name = kate_build_commitments; config = Criterion::default().sample_size(10); targets =  bench_opt_par_build_commitments, bench_ifft_on_commitments}
+criterion_group! {name = kate_build_commitments; config = Criterion::default().sample_size(10); targets =  bench_build_commitments, bench_par_build_commitments, bench_opt_par_build_commitments, bench_extend_data_matrix, bench_par_extend_data_matrix, bench_ifft_on_commitments}
 criterion_main!(kate_build_commitments);
