@@ -694,52 +694,53 @@ pub fn opt_par_build_commitments(
 //
 // @todo This can be optimized !
 pub fn fft_on_commitments(
-	a: Vec<kzg10::commitment::Commitment>,
+	a: Vec<kzg10::Commitment>,
 	eval_dom: EvaluationDomain,
 	inverse: bool,
-) -> Vec<kzg10::commitment::Commitment> {
-	// Convert Commitments to G1Affine elements
-	let mut commits = Vec::new();
-	for i in 0..a.len() {
-		commits.push(G1Projective::from(
-			G1Affine::from_compressed(&a[i].0.to_bytes()).unwrap(),
-		));
-	}
-	commits.resize(eval_dom.size(), G1Projective::identity());
+) -> Vec<kzg10::Commitment> {
+	let a_len = a.len();
+	let d_len = eval_dom.size();
+
+	let mut commits = (0..d_len)
+		.into_par_iter()
+		.map(|i| {
+			if i < a_len {
+				G1Projective::from(G1Affine::from_compressed(&a[i].0.to_bytes()).unwrap())
+			} else {
+				G1Projective::identity()
+			}
+		})
+		.collect::<Vec<G1Projective>>();
+
 	if inverse {
 		// Perform IFFT
-		serial_fft(
+		par_fft(
 			&mut commits,
 			Scalar::from_bytes(&eval_dom.group_gen_inv.to_bytes()).unwrap(),
-			eval_dom.log_size_of_group,
+			eval_dom.log_size_of_group as usize,
 		);
-		commits
-			.iter_mut()
-			.for_each(|val| *val *= Scalar::from_bytes(&eval_dom.size_inv.to_bytes()).unwrap());
+
+		let inv_dom_size = Scalar::from_bytes(&eval_dom.size_inv.to_bytes()).unwrap();
+		commits.par_iter_mut().for_each(|v| *v *= inv_dom_size);
 	} else {
 		// Perform FFT
-		serial_fft(
+		par_fft(
 			&mut commits,
 			Scalar::from_bytes(&eval_dom.group_gen.to_bytes()).unwrap(),
-			eval_dom.log_size_of_group,
+			eval_dom.log_size_of_group as usize,
 		);
 	}
 
-	let mut affine_from_projective = vec![G1Affine::identity(); eval_dom.size()];
-	G1Projective::batch_normalize(&commits, &mut affine_from_projective);
-
-	let mut modified_commits = Vec::new();
-	for i in 0..commits.len() {
-		modified_commits.push(
-			kzg10::commitment::Commitment::from_bytes(&affine_from_projective[i].to_compressed())
-				.unwrap(),
-		);
-	}
-	modified_commits
+	(0..d_len)
+		.into_par_iter()
+		.map(|i| {
+			kzg10::Commitment::from_bytes(&G1Affine::from(&commits[i]).to_compressed()).unwrap()
+		})
+		.collect::<Vec<kzg10::Commitment>>()
 }
 
 #[inline]
-fn bitreverse(mut n: u32, l: u32) -> u32 {
+fn bitreverse(mut n: usize, l: usize) -> usize {
 	let mut r = 0;
 	for _ in 0..l {
 		r = (r << 1) | (n & 1);
@@ -748,42 +749,69 @@ fn bitreverse(mut n: u32, l: u32) -> u32 {
 	r
 }
 
-// Computes FFT on G1 elements ( in projective representation )
+// Taken from https://github.com/itzmeanjan/ff-gpu/blob/89c9719e5897e57e92a3989d7d8c4e120b3aa311/ntt.cpp#L241-L250
+#[inline]
+fn permute_index(idx: usize, dim: usize) -> usize {
+	if dim == 1 {
+		0
+	} else {
+		idx.reverse_bits() >> (64 - dim.trailing_zeros())
+	}
+}
+
+// Computes (inv)FFT on G1 elements ( in projective representation )
 //
-// @todo This can be optimized !
-fn serial_fft(a: &mut [G1Projective], omega: Scalar, log_n: u32) {
-	let n = a.len() as u32;
+// Collects motivation from SYCL kernels {kernelCooleyTukeyGMFFT, kernelCooleyTukeyFFTFinalReorder}
+// https://github.com/itzmeanjan/ff-gpu/blob/89c9719/ntt.cpp#L252-L374
+fn par_fft(a: &mut [G1Projective], omega: Scalar, log_n: usize) {
+	let n = a.len();
 	assert_eq!(n, 1 << log_n);
 
-	for k in 0..n {
-		let rk = bitreverse(k, log_n);
-		if k < rk {
-			a.swap(rk as usize, k as usize);
-		}
-	}
+	let pool = rayon::ThreadPoolBuilder::new()
+		.num_threads(num_cpus::get())
+		.build()
+		.unwrap();
 
-	let mut m = 1;
-	for _ in 0..log_n {
-		let w_m = omega.pow(&[(n / (2 * m)) as u64, 0, 0, 0]);
+	for i in (0..log_n).rev() {
+		let a_ = unsafe { &mut *(&mut a[..] as *mut [G1Projective]) };
 
-		let mut k = 0;
-		while k < n {
-			let mut w = Scalar::one();
-			for j in 0..m {
-				let mut t = a[(k + j + m) as usize];
-				t = t * &w;
-				let mut tmp = a[(k + j) as usize];
-				tmp = tmp - &t;
-				a[(k + j + m) as usize] = tmp;
-				a[(k + j) as usize] += &t;
-				w *= &w_m;
+		pool.scope(|s| {
+			for k in 0..n {
+				// collects motivation from https://github.com/novifinancial/winterfell/blob/46dce1a/math/src/fft/concurrent.rs#L101-L103
+				let a__ = unsafe { &mut *(&mut a_[..] as *mut [G1Projective]) };
+
+				s.spawn(move |_| {
+					let p = (1 << i) as usize;
+					let k_rev = bitreverse(k, log_n);
+
+					let w_pow = omega.pow(&[p as u64 * k_rev as u64, 0, 0, 0]);
+
+					if k < (k ^ p) {
+						let t0 = a__[k];
+						let t1 = a__[k ^ p];
+
+						let t1xw_pow = t1 * w_pow;
+						a__[k] = t0 + t1xw_pow;
+						a__[k ^ p] = t0 - t1xw_pow;
+					}
+				});
 			}
-
-			k += 2 * m;
-		}
-
-		m *= 2;
+		});
 	}
+
+	pool.scope(|s| {
+		for k in 0..n {
+			let a_ = unsafe { &mut *(&mut a[..] as *mut [G1Projective]) };
+
+			s.spawn(move |_| {
+				let k_perm = permute_index(k, n);
+
+				if k < k_perm {
+					a_.swap(k, k_perm);
+				}
+			});
+		}
+	});
 }
 
 #[cfg(test)]
