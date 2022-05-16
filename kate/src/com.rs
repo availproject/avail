@@ -635,10 +635,11 @@ pub fn opt_par_build_commitments(
 	let col_eval_domain_ext = EvaluationDomain::new(ext_rows).map_err(Error::from)?;
 	let col_eval_domain_red = EvaluationDomain::new(dims.rows).map_err(Error::from)?;
 
-	let mut result_bytes: Vec<u8> = Vec::new();
-	result_bytes.reserve_exact(PROVER_KEY_SIZE * ext_rows);
+	let r_len = PROVER_KEY_SIZE * ext_rows;
+	let mut result_bytes: Vec<u8> = Vec::with_capacity(r_len);
+
 	unsafe {
-		result_bytes.set_len(PROVER_KEY_SIZE * ext_rows);
+		result_bytes.set_len(r_len);
 	}
 
 	info!(
@@ -659,11 +660,10 @@ pub fn opt_par_build_commitments(
 
 	let mut commits = Vec::with_capacity(dims.rows);
 	for i in 0..dims.rows {
-		let mut row = Vec::with_capacity(dims.cols);
-
-		for j in 0..dims.cols {
-			row.push(chunk_elements[i + j * dims.rows]);
-		}
+		let row = (0..dims.cols)
+			.into_par_iter()
+			.map(|j| chunk_elements[i + j * dims.rows])
+			.collect::<Vec<BlsScalar>>();
 
 		let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
 		let commit = prover_key.commit(&poly)?;
@@ -705,37 +705,35 @@ pub fn fft_on_commitments(
 		.into_par_iter()
 		.map(|i| {
 			if i < a_len {
-				G1Projective::from(G1Affine::from_compressed(&a[i].0.to_bytes()).unwrap())
+				kzg10::G1Projective::from(&a[i].0)
 			} else {
-				G1Projective::identity()
+				kzg10::G1Projective::identity()
 			}
 		})
-		.collect::<Vec<G1Projective>>();
+		.collect::<Vec<kzg10::G1Projective>>();
 
 	if inverse {
 		// Perform IFFT
 		par_fft(
 			&mut commits,
-			Scalar::from_bytes(&eval_dom.group_gen_inv.to_bytes()).unwrap(),
+			BlsScalar::from_bytes(&eval_dom.group_gen_inv.to_bytes()).unwrap(),
 			eval_dom.log_size_of_group as usize,
 		);
 
-		let inv_dom_size = Scalar::from_bytes(&eval_dom.size_inv.to_bytes()).unwrap();
+		let inv_dom_size = BlsScalar::from_bytes(&eval_dom.size_inv.to_bytes()).unwrap();
 		commits.par_iter_mut().for_each(|v| *v *= inv_dom_size);
 	} else {
 		// Perform FFT
 		par_fft(
 			&mut commits,
-			Scalar::from_bytes(&eval_dom.group_gen.to_bytes()).unwrap(),
+			BlsScalar::from_bytes(&eval_dom.group_gen.to_bytes()).unwrap(),
 			eval_dom.log_size_of_group as usize,
 		);
 	}
 
 	(0..d_len)
 		.into_par_iter()
-		.map(|i| {
-			kzg10::Commitment::from_bytes(&G1Affine::from(&commits[i]).to_compressed()).unwrap()
-		})
+		.map(|i| kzg10::Commitment::from(commits[i]))
 		.collect::<Vec<kzg10::Commitment>>()
 }
 
@@ -763,7 +761,7 @@ fn permute_index(idx: usize, dim: usize) -> usize {
 //
 // Collects motivation from SYCL kernels {kernelCooleyTukeyGMFFT, kernelCooleyTukeyFFTFinalReorder}
 // https://github.com/itzmeanjan/ff-gpu/blob/89c9719/ntt.cpp#L252-L374
-fn par_fft(a: &mut [G1Projective], omega: Scalar, log_n: usize) {
+fn par_fft(a: &mut [kzg10::G1Projective], omega: BlsScalar, log_n: usize) {
 	let n = a.len();
 	assert_eq!(n, 1 << log_n);
 
@@ -773,12 +771,12 @@ fn par_fft(a: &mut [G1Projective], omega: Scalar, log_n: usize) {
 		.unwrap();
 
 	for i in (0..log_n).rev() {
-		let a_ = unsafe { &mut *(&mut a[..] as *mut [G1Projective]) };
+		let a_ = unsafe { &mut *(&mut a[..] as *mut [kzg10::G1Projective]) };
 
 		pool.scope(|s| {
 			for k in 0..n {
 				// collects motivation from https://github.com/novifinancial/winterfell/blob/46dce1a/math/src/fft/concurrent.rs#L101-L103
-				let a__ = unsafe { &mut *(&mut a_[..] as *mut [G1Projective]) };
+				let a__ = unsafe { &mut *(&mut a_[..] as *mut [kzg10::G1Projective]) };
 
 				s.spawn(move |_| {
 					let p = (1 << i) as usize;
@@ -801,7 +799,7 @@ fn par_fft(a: &mut [G1Projective], omega: Scalar, log_n: usize) {
 
 	pool.scope(|s| {
 		for k in 0..n {
-			let a_ = unsafe { &mut *(&mut a[..] as *mut [G1Projective]) };
+			let a_ = unsafe { &mut *(&mut a[..] as *mut [kzg10::G1Projective]) };
 
 			s.spawn(move |_| {
 				let k_perm = permute_index(k, n);
