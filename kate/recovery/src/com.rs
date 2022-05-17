@@ -26,6 +26,8 @@ pub enum ReconstructionError {
 	ColumnReconstructionError(String),
 }
 
+/// Creates hash map of columns, each being hash map of cells, from vector of cells.
+/// Intention is to be able to find duplicates and to group cells by column.
 fn map_cells(
 	dimensions: &MatrixDimensions,
 	cells: Vec<Cell>,
@@ -120,6 +122,12 @@ fn trim_to_chunk_data(chunk: &[u8]) -> [u8; DATA_CHUNK_SIZE] {
 	chunk[0..DATA_CHUNK_SIZE].try_into().unwrap()
 }
 
+/// Calculates range per application from extrinsics layout.
+/// Range is from start index to end index in matrix flattened as byte array.
+///
+/// # Arguments
+///
+/// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
 pub fn data_ranges(layout: &[(u32, u32)]) -> Vec<(u32, Range<usize>)> {
 	let (_, ranges) = layout
 		.iter()
