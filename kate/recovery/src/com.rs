@@ -1,8 +1,8 @@
 use std::{collections::HashMap, convert::TryInto, ops::Range};
 
-use anyhow::{anyhow, Result};
 use dusk_bytes::Serializable;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
+use thiserror::Error;
 
 // TODO: Constants are copy from kate crate, we should move them to common place
 pub const CHUNK_SIZE: usize = 32;
@@ -14,20 +14,32 @@ pub struct MatrixDimensions {
 	pub cols: usize,
 }
 
+#[derive(Error, Debug)]
+pub enum ReconstructionError {
+	#[error("Invalid cell (col {col}, row {row})")]
+	InvalidCell { col: u16, row: u16 },
+	#[error("Duplicate cell found")]
+	DuplicateCellFound,
+	#[error("Column {0} contains less than half rows")]
+	InvalidColumn(u16),
+	#[error("Cannot reconstruct column: {0}")]
+	ColumnReconstructionError(String),
+}
+
 fn map_cells(
 	dimensions: &MatrixDimensions,
 	cells: Vec<Cell>,
-) -> Result<HashMap<u16, HashMap<u16, Cell>>> {
+) -> Result<HashMap<u16, HashMap<u16, Cell>>, ReconstructionError> {
 	let mut result: HashMap<u16, HashMap<u16, Cell>> = HashMap::new();
 	for cell in cells {
 		let row = cell.row;
 		let col = cell.col;
 		if row as usize > dimensions.rows * 2 || col as usize > dimensions.cols {
-			return Err(anyhow!("Invalid cell (col {}, row {})", col, row));
+			return Err(ReconstructionError::InvalidCell { col, row });
 		}
 		let cells = result.entry(col).or_insert_with(HashMap::new);
 		if cells.insert(cell.row, cell).is_some() {
-			return Err(anyhow!("Duplicate cell found"));
+			return Err(ReconstructionError::DuplicateCellFound);
 		}
 	}
 	Ok(result)
@@ -75,7 +87,7 @@ pub fn reconstruct_app_extrinsics(
 	dimensions: &MatrixDimensions,
 	cells: Vec<Cell>,
 	app_id: Option<u32>,
-) -> Result<Vec<(u32, Vec<u8>)>> {
+) -> Result<Vec<(u32, Vec<u8>)>, ReconstructionError> {
 	let mut column_numbers: Vec<u16> = vec![];
 	let mut data: Vec<u8> = vec![];
 	let cells_map = map_cells(dimensions, cells)?;
@@ -84,14 +96,11 @@ pub fn reconstruct_app_extrinsics(
 			None => data.extend(vec![0; dimensions.rows * CHUNK_SIZE]),
 			Some(column_cells) => {
 				if column_cells.len() < dimensions.rows {
-					return Err(anyhow!(
-						"Column {} contains less than half rows",
-						column_number
-					));
+					return Err(ReconstructionError::InvalidColumn(column_number));
 				}
 				let cells = column_cells.values().cloned().collect::<Vec<_>>();
-				let scalars =
-					reconstruct_column(dimensions.rows * 2, &cells).map_err(|err| anyhow!(err))?;
+				let scalars = reconstruct_column(dimensions.rows * 2, &cells)
+					.map_err(ReconstructionError::ColumnReconstructionError)?;
 				let column_data = scalars.iter().flat_map(|e| e.to_bytes());
 				column_numbers.push(column_number);
 				data.extend(column_data);
