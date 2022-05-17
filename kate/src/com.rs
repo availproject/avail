@@ -4,6 +4,7 @@ use std::{
 	time::Instant,
 };
 
+use codec::Encode;
 use da_primitives::asdr::AppExtrinsic;
 use dusk_bytes::Serializable;
 use dusk_plonk::{
@@ -54,6 +55,24 @@ type FlatData = Vec<u8>;
 type DataChunk = [u8; DATA_CHUNK_SIZE];
 const PADDING_TAIL_VALUE: u8 = 0x80;
 
+/// Helper which groups extrinsics data that share the same app_id.
+/// We assume the input extrinsics are already sorted by app_id, i.e. extrinsics with the same app_id are consecutive.
+/// This function does the same thing as group_by (unstable), just less general.
+fn app_extrinsics_group_by_app_id(extrinsics: &[AppExtrinsic]) -> Vec<(u32, Vec<Vec<u8>>)> {
+	extrinsics.into_iter().fold(vec![], |mut acc, e| {
+		if acc.is_empty() {
+			acc.push((e.app_id, vec![e.data.clone()]));
+		} else {
+			let curr = acc.last_mut().unwrap();
+			if curr.0 == e.app_id {
+				curr.1.push(e.data.clone());
+			} else {
+				acc.push((e.app_id, vec![e.data.clone()]));
+			}
+		}
+		acc
+	})
+}
 pub fn flatten_and_pad_block(
 	max_rows_num: usize,
 	max_cols_num: usize,
@@ -61,13 +80,18 @@ pub fn flatten_and_pad_block(
 	extrinsics: &[AppExtrinsic],
 	rng_seed: Seed,
 ) -> Result<(XtsLayout, FlatData, BlockDimensions), Error> {
+	let extrinsics = app_extrinsics_group_by_app_id(extrinsics)
+		.iter()
+		.map(|e| (e.0, e.1.encode()))
+		.collect::<Vec<_>>();
+
 	// Pad data before determining exact block size
 	// Padding occurs both inside a single chunk and with additional chunk (if needed)
 	let (tx_layout, padded_chunks): (Vec<_>, Vec<_>) = extrinsics
 		.iter()
-		.map(|e| {
-			let chunks = pad_iec_9797_1(e.data.clone());
-			((e.app_id, chunks.len() as u32), chunks)
+		.map(|(app_id, data)| {
+			let chunks = pad_iec_9797_1(data.clone());
+			((*app_id, chunks.len() as u32), chunks)
 		})
 		.unzip();
 
@@ -422,7 +446,7 @@ pub fn build_commitments(
 
 #[cfg(test)]
 mod tests {
-	use std::{collections::HashSet, convert::TryInto, iter::repeat, str::from_utf8};
+	use std::{convert::TryInto, iter::repeat, str::from_utf8};
 
 	use da_primitives::asdr::AppExtrinsic;
 	use dusk_bytes::Serializable;
@@ -541,20 +565,19 @@ mod tests {
 			},
 		];
 
-		// The hash is used for seed for padding the block to next power of two value
 		let expected_dims = BlockDimensions {
 			rows: 1,
-			cols: 8,
+			cols: 16,
 			chunk_size,
 		};
 		let (layout, data, dims) =
 			flatten_and_pad_block(128, 256, chunk_size, extrinsics.as_slice(), Seed::default())
 				.unwrap();
 
-		let expected_layout = vec![(0, 1), (1, 1), (2, 2), (3, 2)];
+		let expected_layout = vec![(0, 2), (1, 2), (2, 2), (3, 3)];
 		assert_eq!(layout, expected_layout, "The layouts don't match");
 
-		let expected_data = hex!("0102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D8000000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E80000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F0080000000000000000000000000000000000000000000000000000000000000000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F00202122232425262728292A2B2C2D2E2F303132333435363738393A3B3C80000076A04053BDA0A88BDA5177B86A15C3B29F559873CB481232299CD5743151AC004B2D63AE198E7BB0A9011F28E473C95F4013D7D53EC5FBC3B42DF8ED101F6D00");
+		let expected_data = hex!("04740102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d00800000000000000000000000000000000000000000000000000000000000000004780102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e80000000000000000000000000000000000000000000000000000000000000047c0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f80000000000000000000000000000000000000000000000000000000000004f00102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c00800000000000000000000000000000000000000000000000000000000000000076a04053bda0a88bda5177b86a15c3b29f559873cb481232299cd5743151ac004b2d63ae198e7bb0a9011f28e473c95f4013d7d53ec5fbc3b42df8ed101f6d00e831e52bfb76e51cca8b4e9016838657edfae09cb9a71eb219025c4c87a67c004aaa86f20ac0aa792bc121ee42e2c326127061eda15599cb5db3db870bea5a00ecf353161c3cb528b0c5d98050c4570bfc942d8b19ed7b0cbba5725e03e5f000b7e30db36b6df82ac151f668f5f80a5e2a9cac7c64991dd6a6ce21c060175800edb9260d2a86c836efc05f17e5c59525e404c6a93d051651fe2e4eefae281300");
 
 		assert_eq!(dims, expected_dims, "Dimensions don't match the expected");
 		assert_eq!(data, expected_data, "Data doesn't match the expected data");
@@ -568,7 +591,7 @@ mod tests {
 
 		for (res, exp) in res.iter().zip(extrinsics.iter()) {
 			assert_eq!(res.0, exp.app_id);
-			assert_eq!(res.1, exp.data);
+			assert_eq!(res.1[0], exp.data);
 		}
 	}
 
@@ -627,13 +650,11 @@ mod tests {
 	}
 
 	fn app_extrinsics_strategy() -> impl Strategy<Value = Vec<AppExtrinsic>> {
-		collection::vec(app_extrinsic_strategy(), size_range(1..16)).prop_filter(
-			"no app_id duplicates",
-			|xts| {
-				let mut uniq = HashSet::new();
-				xts.iter().all(|xt| uniq.insert(xt.app_id))
-			},
-		)
+		collection::vec(app_extrinsic_strategy(), size_range(1..16)).prop_map(|xts| {
+			let mut new_xts = xts.clone();
+			new_xts.sort_by(|a1, a2| a2.app_id.cmp(&a1.app_id));
+			new_xts
+		})
 	}
 
 	fn random_cells(cols: usize, rows: usize, percents: usize) -> Vec<Cell> {
@@ -662,7 +683,7 @@ mod tests {
 		let reconstructed = reconstruct_app_extrinsics(&layout, &extended_dims, columns, None).unwrap();
 		for (result, xt) in reconstructed.iter().zip(xts) {
 		prop_assert_eq!(result.0, xt.app_id);
-		prop_assert_eq!(&result.1, &xt.data);
+		prop_assert_eq!(result.1[0].as_slice(), &xt.data);
 		}
 
 		let public_params = crate::testnet::public_params(MAX_BLOCK_COLUMNS as usize);
@@ -707,7 +728,7 @@ mod tests {
 			cols: 4,
 			chunk_size: 32
 		});
-		let expected_commitments = hex!("87250850BAE5ED2ADE2DF7178CC5802D1105D75341D2D1D4A28A2319D0F2A7B237319C60F44419478F898688795D4B8987250850BAE5ED2ADE2DF7178CC5802D1105D75341D2D1D4A28A2319D0F2A7B237319C60F44419478F898688795D4B89");
+		let expected_commitments = hex!("960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D");
 		assert_eq!(commitments, expected_commitments);
 	}
 
@@ -747,12 +768,12 @@ get erasure coded to ensure redundancy."#;
 		};
 
 		let res_1 = reconstruct_app_extrinsics(&layout, &extended_dims, cols_1, Some(1)).unwrap();
-		assert_eq!(res_1[0].1.as_slice(), app_id_1_data);
+		assert_eq!(res_1[0].1[0], app_id_1_data);
 
 		let cols_2 = sample_cells_from_matrix(&coded, &dims, Some(&[1, 2]));
 
 		let res_2 = reconstruct_app_extrinsics(&layout, &extended_dims, cols_2, Some(2)).unwrap();
-		assert_eq!(res_2[0].1.as_slice(), app_id_2_data);
+		assert_eq!(res_2[0].1[0], app_id_2_data);
 	}
 
 	#[test]
@@ -782,13 +803,76 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			rows: dims.rows * 2,
 		};
 		let res = reconstruct_app_extrinsics(&layout, &extended_dims, cols, None).unwrap();
+		let s = String::from_utf8_lossy(res[0].1[0].as_slice());
 
-		// let decoded = decode_scalars(&res.as_slice());
-		let s = String::from_utf8_lossy(res[0].1.as_slice());
-
-		assert_eq!(res[0].1.as_slice(), orig_data);
+		assert_eq!(res[0].1[0], orig_data);
 
 		eprintln!("Decoded: {}", s);
+	}
+
+	#[test]
+	fn test_multiple_extrinsics_for_same_app_id() {
+		let xt1 = vec![5, 5];
+		let xt2 = vec![6, 6];
+		let xts = [
+			AppExtrinsic {
+				app_id: 1,
+				data: xt1.clone(),
+			},
+			AppExtrinsic {
+				app_id: 1,
+				data: xt2.clone(),
+			},
+		];
+		// The hash is used for seed for padding the block to next power of two value
+		let hash = Seed::default();
+		let chunk_size = 32;
+		let (layout, data, dims) = flatten_and_pad_block(128, 2, chunk_size, &xts, hash).unwrap();
+
+		let coded: Vec<BlsScalar> = extend_data_matrix(dims, &data[..]).unwrap();
+
+		let cols = sample_cells_from_matrix(&coded, &dims, None);
+		let extended_dims = ExtendedMatrixDimensions {
+			cols: dims.cols,
+			rows: dims.rows * 2,
+		};
+
+		let res = reconstruct_app_extrinsics(&layout, &extended_dims, cols, None).unwrap();
+
+		assert_eq!(res[0].1[0], xt1);
+		assert_eq!(res[0].1[1], xt2);
+	}
+
+	#[test]
+	fn test_extrinsics_grouping() {
+		let xt1 = vec![5, 5];
+		let xt2 = vec![6, 6];
+		let xt3 = vec![7];
+		let xt4 = vec![];
+		let xts = [
+			AppExtrinsic {
+				app_id: 1,
+				data: xt1.clone(),
+			},
+			AppExtrinsic {
+				app_id: 1,
+				data: xt2.clone(),
+			},
+			AppExtrinsic {
+				app_id: 2,
+				data: xt3.clone(),
+			},
+			AppExtrinsic {
+				app_id: 3,
+				data: xt4.clone(),
+			},
+		];
+
+		let expected = vec![(1u32, vec![xt1, xt2]), (2, vec![xt3]), (3, vec![xt4])];
+		let rez = app_extrinsics_group_by_app_id(&xts);
+		println!("{:?}", rez);
+
+		assert_eq!(rez, expected);
 	}
 
 	fn build_extrinsics(lens: &[usize]) -> Vec<Vec<u8>> {
