@@ -2991,12 +2991,12 @@ dependencies = [
 name = "kate-recovery"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "dusk-bytes",
  "dusk-plonk",
  "getrandom 0.2.6",
  "rand 0.8.5",
  "rand_chacha 0.3.1",
+ "thiserror",
 ]
 
 [[package]]
