@@ -9,6 +9,7 @@ thiserror = "1.0"
 dusk-plonk = { git = "https://github.com/maticnetwork/plonk.git", tag = "v0.8.2-polygon-2" }
 dusk-bytes = { version = "0.1.5" }
 getrandom = { version = "0.2", features = ["js"] }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 
 [dev-dependencies]
 rand = "0.8.4" 

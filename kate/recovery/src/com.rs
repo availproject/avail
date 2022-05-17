@@ -1,5 +1,6 @@
 use std::{collections::HashMap, convert::TryInto, ops::Range};
 
+use codec::Decode;
 use dusk_bytes::Serializable;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
 use thiserror::Error;
@@ -95,7 +96,7 @@ pub fn reconstruct_app_extrinsics(
 	dimensions: &ExtendedMatrixDimensions,
 	cells: Vec<Cell>,
 	app_id: Option<u32>,
-) -> Result<Vec<(u32, Vec<u8>)>, ReconstructionError> {
+) -> Result<Vec<(u32, Vec<Vec<u8>>)>, ReconstructionError> {
 	let mut column_numbers: Vec<u16> = vec![];
 	let mut data: Vec<u8> = vec![];
 	let cells_map = map_cells(dimensions, cells)?;
@@ -151,7 +152,7 @@ pub fn unflatten_padded_data(
 	layout: Vec<(u32, Range<usize>)>,
 	data: Vec<u8>,
 	chunk_size: usize,
-) -> Vec<(u32, Vec<u8>)> {
+) -> Vec<(u32, Vec<Vec<u8>>)> {
 	assert!(data.len() % chunk_size == 0);
 
 	layout
@@ -175,7 +176,10 @@ pub fn unflatten_padded_data(
 				orig
 			};
 
-			(*app_id, data)
+			let mut encoded_data = data.as_slice();
+			let decoded_data = <Vec<Vec<u8>>>::decode(&mut encoded_data).unwrap();
+
+			(*app_id, decoded_data)
 		})
 		.collect::<Vec<_>>()
 }

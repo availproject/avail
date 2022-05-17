@@ -26,7 +26,7 @@ once_cell = { version = "1.9.0", default-features = false }
 static_assertions = "1.1.0"
 
 # Substrate
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 sp-std = { version = "4.0.0-dev", default-features = false }
 sp-core = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
