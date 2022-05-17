@@ -5,13 +5,13 @@ use dusk_bytes::Serializable;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
 
 // TODO: Constants are copy from kate crate, we should move them to common place
+pub const CHUNK_SIZE: usize = 32;
 pub const DATA_CHUNK_SIZE: usize = 31;
 const PADDING_TAIL_VALUE: u8 = 0x80;
 
 pub struct MatrixDimensions {
 	pub rows: usize,
 	pub cols: usize,
-	pub chunk_size: usize,
 }
 
 fn map_cells(
@@ -49,8 +49,8 @@ pub fn app_specific_column_cells(
 	let ranges = data_ranges(layout);
 	let (_, range) = ranges.iter().find(|&&(id, _)| app_id == id)?;
 
-	let column_start = (range.start / (dimensions.rows * dimensions.chunk_size)) as u16;
-	let column_end = (range.end / (dimensions.rows * dimensions.chunk_size)) as u16;
+	let column_start = (range.start / (dimensions.rows * CHUNK_SIZE)) as u16;
+	let column_end = (range.end / (dimensions.rows * CHUNK_SIZE)) as u16;
 
 	Some(
 		(column_start..column_end + 1)
@@ -81,7 +81,7 @@ pub fn reconstruct_app_extrinsics(
 	let cells_map = map_cells(dimensions, cells)?;
 	for column_number in 0..dimensions.cols as u16 {
 		match cells_map.get(&column_number) {
-			None => data.extend(vec![0; dimensions.rows * dimensions.chunk_size]),
+			None => data.extend(vec![0; dimensions.rows * CHUNK_SIZE]),
 			Some(column_cells) => {
 				if column_cells.len() < dimensions.rows {
 					return Err(anyhow!(
@@ -103,7 +103,7 @@ pub fn reconstruct_app_extrinsics(
 		.into_iter()
 		.filter(|(id, _)| app_id.is_none() || Some(*id) == app_id)
 		.collect::<Vec<_>>();
-	Ok(unflatten_padded_data(ranges, data, dimensions.chunk_size))
+	Ok(unflatten_padded_data(ranges, data, CHUNK_SIZE))
 }
 
 fn trim_to_chunk_data(chunk: &[u8]) -> [u8; DATA_CHUNK_SIZE] {
@@ -361,11 +361,7 @@ mod tests {
 	#[test]
 	fn test_app_specific_column_cells() {
 		let layout = vec![(0, 5), (1, 3)];
-		let dimensions = MatrixDimensions {
-			rows: 4,
-			cols: 2,
-			chunk_size: 32,
-		};
+		let dimensions = MatrixDimensions { rows: 4, cols: 2 };
 		let result_0: Vec<(u16, u16)> = vec![
 			(0, 0),
 			(0, 1),
