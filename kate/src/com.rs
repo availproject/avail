@@ -658,7 +658,7 @@ mod tests {
 		let (layout, commitments, dims, matrix) = build_commitments(64, 16, 32, xts, Seed::default()).unwrap();
 
 		let columns = sample_cells_from_matrix(&matrix, &dims, None);
-		let mdims = MatrixDimensions{cols: dims.cols, rows: dims.rows, chunk_size:dims.chunk_size};
+		let mdims = MatrixDimensions{cols: dims.cols, rows: dims.rows};
 		let reconstructed = reconstruct_app_extrinsics(&layout, &mdims, columns, None).unwrap();
 		for (result, xt) in reconstructed.iter().zip(xts) {
 		prop_assert_eq!(result.0, xt.app_id);
@@ -744,7 +744,6 @@ get erasure coded to ensure redundancy."#;
 		let mdims = MatrixDimensions {
 			cols: dims.cols,
 			rows: dims.rows,
-			chunk_size: dims.chunk_size,
 		};
 
 		let res_1 = reconstruct_app_extrinsics(&layout, &mdims, cols_1, Some(1)).unwrap();
@@ -781,7 +780,6 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let mdims = MatrixDimensions {
 			cols: dims.cols,
 			rows: dims.rows,
-			chunk_size: dims.chunk_size,
 		};
 		let res = reconstruct_app_extrinsics(&layout, &mdims, cols, None).unwrap();
 
