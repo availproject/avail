@@ -63,8 +63,8 @@ pub fn app_specific_column_cells(
 	let ranges = data_ranges(layout);
 	let (_, range) = ranges.iter().find(|&&(id, _)| app_id == id)?;
 
-	let column_start = (range.start / (dimensions.rows * CHUNK_SIZE)) as u16;
-	let column_end = (range.end / (dimensions.rows * CHUNK_SIZE)) as u16;
+	let column_start = (range.start / (dimensions.rows / 2 * CHUNK_SIZE)) as u16;
+	let column_end = (range.end / (dimensions.rows / 2 * CHUNK_SIZE)) as u16;
 
 	Some(
 		(column_start..column_end + 1)
