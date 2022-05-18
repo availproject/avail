@@ -9,7 +9,7 @@ pub const CHUNK_SIZE: usize = 32;
 pub const DATA_CHUNK_SIZE: usize = 31;
 const PADDING_TAIL_VALUE: u8 = 0x80;
 
-pub struct MatrixDimensions {
+pub struct ExtendedMatrixDimensions {
 	pub rows: usize,
 	pub cols: usize,
 }
@@ -29,14 +29,14 @@ pub enum ReconstructionError {
 /// Creates hash map of columns, each being hash map of cells, from vector of cells.
 /// Intention is to be able to find duplicates and to group cells by column.
 fn map_cells(
-	dimensions: &MatrixDimensions,
+	dimensions: &ExtendedMatrixDimensions,
 	cells: Vec<Cell>,
 ) -> Result<HashMap<u16, HashMap<u16, Cell>>, ReconstructionError> {
 	let mut result: HashMap<u16, HashMap<u16, Cell>> = HashMap::new();
 	for cell in cells {
 		let row = cell.row;
 		let col = cell.col;
-		if row as usize > dimensions.rows * 2 || col as usize > dimensions.cols {
+		if row as usize > dimensions.rows || col as usize > dimensions.cols {
 			return Err(ReconstructionError::InvalidCell { col, row });
 		}
 		let cells = result.entry(col).or_insert_with(HashMap::new);
@@ -57,7 +57,7 @@ fn map_cells(
 /// * `app_id` - Application id
 pub fn app_specific_column_cells(
 	layout: &[(u32, u32)],
-	dimensions: &MatrixDimensions,
+	dimensions: &ExtendedMatrixDimensions,
 	app_id: u32,
 ) -> Option<Vec<Cell>> {
 	let ranges = data_ranges(layout);
@@ -86,7 +86,7 @@ pub fn app_specific_column_cells(
 /// * `app_id` - Optional application id
 pub fn reconstruct_app_extrinsics(
 	layout: &[(u32, u32)],
-	dimensions: &MatrixDimensions,
+	dimensions: &ExtendedMatrixDimensions,
 	cells: Vec<Cell>,
 	app_id: Option<u32>,
 ) -> Result<Vec<(u32, Vec<u8>)>, ReconstructionError> {
@@ -95,13 +95,13 @@ pub fn reconstruct_app_extrinsics(
 	let cells_map = map_cells(dimensions, cells)?;
 	for column_number in 0..dimensions.cols as u16 {
 		match cells_map.get(&column_number) {
-			None => data.extend(vec![0; dimensions.rows * CHUNK_SIZE]),
+			None => data.extend(vec![0; dimensions.rows / 2 * CHUNK_SIZE]),
 			Some(column_cells) => {
-				if column_cells.len() < dimensions.rows {
+				if column_cells.len() < dimensions.rows / 2 {
 					return Err(ReconstructionError::InvalidColumn(column_number));
 				}
 				let cells = column_cells.values().cloned().collect::<Vec<_>>();
-				let scalars = reconstruct_column(dimensions.rows * 2, &cells)
+				let scalars = reconstruct_column(dimensions.rows, &cells)
 					.map_err(ReconstructionError::ColumnReconstructionError)?;
 				let column_data = scalars.iter().flat_map(|e| e.to_bytes());
 				column_numbers.push(column_number);
@@ -378,7 +378,7 @@ mod tests {
 	#[test]
 	fn test_app_specific_column_cells() {
 		let layout = vec![(0, 5), (1, 3)];
-		let dimensions = MatrixDimensions { rows: 4, cols: 2 };
+		let dimensions = ExtendedMatrixDimensions { rows: 4, cols: 2 };
 		let result_0: Vec<(u16, u16)> = vec![
 			(0, 0),
 			(0, 1),
