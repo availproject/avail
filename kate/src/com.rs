@@ -658,18 +658,18 @@ pub fn opt_par_build_commitments(
 		.map(to_bls_scalar)
 		.collect::<Result<Vec<BlsScalar>, Error>>()?;
 
-	let mut commits = Vec::with_capacity(dims.rows);
-	for i in 0..dims.rows {
-		let row = (0..dims.cols)
-			.into_par_iter()
-			.map(|j| chunk_elements[i + j * dims.rows])
-			.collect::<Vec<BlsScalar>>();
+	let commits = (0..dims.rows)
+		.into_par_iter()
+		.map(|i| {
+			let row = (0..dims.cols)
+				.into_par_iter()
+				.map(|j| chunk_elements[i + j * dims.rows])
+				.collect::<Vec<BlsScalar>>();
 
-		let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
-		let commit = prover_key.commit(&poly)?;
-
-		commits.push(commit);
-	}
+			let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
+			prover_key.commit(&poly).unwrap()
+		})
+		.collect::<Vec<kzg10::Commitment>>();
 
 	let ifft_commits = fft_on_commitments(commits, col_eval_domain_red, true);
 	let ext_commits = fft_on_commitments(ifft_commits, col_eval_domain_ext, false);
