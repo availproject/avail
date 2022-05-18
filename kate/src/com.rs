@@ -429,7 +429,7 @@ mod tests {
 	use dusk_plonk::bls12_381::BlsScalar;
 	use hex_literal::hex;
 	use kate_recovery::com::{
-		data_ranges, reconstruct_app_extrinsics, unflatten_padded_data, MatrixDimensions,
+		data_ranges, reconstruct_app_extrinsics, unflatten_padded_data, ExtendedMatrixDimensions,
 	};
 	use proptest::{
 		collection::{self, size_range},
@@ -658,8 +658,8 @@ mod tests {
 		let (layout, commitments, dims, matrix) = build_commitments(64, 16, 32, xts, Seed::default()).unwrap();
 
 		let columns = sample_cells_from_matrix(&matrix, &dims, None);
-		let mdims = MatrixDimensions{cols: dims.cols, rows: dims.rows};
-		let reconstructed = reconstruct_app_extrinsics(&layout, &mdims, columns, None).unwrap();
+		let extended_dims = ExtendedMatrixDimensions{cols: dims.cols, rows: dims.rows * 2};
+		let reconstructed = reconstruct_app_extrinsics(&layout, &extended_dims, columns, None).unwrap();
 		for (result, xt) in reconstructed.iter().zip(xts) {
 		prop_assert_eq!(result.0, xt.app_id);
 		prop_assert_eq!(&result.1, &xt.data);
@@ -741,17 +741,17 @@ get erasure coded to ensure redundancy."#;
 
 		let cols_1 = sample_cells_from_matrix(&coded, &dims, Some(&[0, 1]));
 
-		let mdims = MatrixDimensions {
+		let extended_dims = ExtendedMatrixDimensions {
 			cols: dims.cols,
-			rows: dims.rows,
+			rows: dims.rows * 2,
 		};
 
-		let res_1 = reconstruct_app_extrinsics(&layout, &mdims, cols_1, Some(1)).unwrap();
+		let res_1 = reconstruct_app_extrinsics(&layout, &extended_dims, cols_1, Some(1)).unwrap();
 		assert_eq!(res_1[0].1.as_slice(), app_id_1_data);
 
 		let cols_2 = sample_cells_from_matrix(&coded, &dims, Some(&[1, 2]));
 
-		let res_2 = reconstruct_app_extrinsics(&layout, &mdims, cols_2, Some(2)).unwrap();
+		let res_2 = reconstruct_app_extrinsics(&layout, &extended_dims, cols_2, Some(2)).unwrap();
 		assert_eq!(res_2[0].1.as_slice(), app_id_2_data);
 	}
 
@@ -777,11 +777,11 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 		let cols = sample_cells_from_matrix(&coded, &dims, None);
 
-		let mdims = MatrixDimensions {
+		let extended_dims = ExtendedMatrixDimensions {
 			cols: dims.cols,
-			rows: dims.rows,
+			rows: dims.rows * 2,
 		};
-		let res = reconstruct_app_extrinsics(&layout, &mdims, cols, None).unwrap();
+		let res = reconstruct_app_extrinsics(&layout, &extended_dims, cols, None).unwrap();
 
 		// let decoded = decode_scalars(&res.as_slice());
 		let s = String::from_utf8_lossy(res[0].1.as_slice());
