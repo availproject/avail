@@ -61,13 +61,19 @@ pub fn app_specific_column_cells(
 	app_id: u32,
 ) -> Option<Vec<Cell>> {
 	let ranges = data_ranges(layout);
+
 	let (_, range) = ranges.iter().find(|&&(id, _)| app_id == id)?;
 
-	let column_start = (range.start / (dimensions.rows / 2 * CHUNK_SIZE)) as u16;
-	let column_end = (range.end / (dimensions.rows / 2 * CHUNK_SIZE)) as u16;
+	let row_size = dimensions.rows * CHUNK_SIZE;
+
+	let column_start = (range.start * 2 / row_size) as u16;
+	let mut column_end = (range.end * 2 / row_size) as u16;
+	if range.end * 2 % row_size > 0 {
+		column_end += 1;
+	}
 
 	Some(
-		(column_start..column_end + 1)
+		(column_start..column_end)
 			.flat_map(|col| (0..dimensions.rows as u16).map(move |row| Cell::new_empty(col, row)))
 			.collect::<Vec<_>>(),
 	)
@@ -133,7 +139,7 @@ pub fn data_ranges(layout: &[(u32, u32)]) -> Vec<(u32, Range<usize>)> {
 		.iter()
 		.cloned()
 		.fold((0, vec![]), |(start, mut v), (app_id, size)| {
-			let end = start + (size as usize) * DATA_CHUNK_SIZE;
+			let end = start + (size as usize) * CHUNK_SIZE;
 			v.push((app_id, Range { start, end }));
 			(end, v)
 		});
@@ -147,15 +153,14 @@ pub fn unflatten_padded_data(
 	chunk_size: usize,
 ) -> Vec<(u32, Vec<u8>)> {
 	assert!(data.len() % chunk_size == 0);
-	let data = data
-		.chunks(chunk_size)
-		.flat_map(|e| trim_to_chunk_data(e).to_vec())
-		.collect::<Vec<_>>();
 
 	layout
 		.iter()
 		.map(|(app_id, range)| {
-			let orig = data[range.clone()].to_vec();
+			let orig = data[range.clone()]
+				.chunks_exact(chunk_size)
+				.flat_map(trim_to_chunk_data)
+				.collect::<Vec<u8>>();
 
 			let trimmed = orig
 				.iter()
@@ -378,39 +383,42 @@ mod tests {
 	#[test]
 	fn test_app_specific_column_cells() {
 		let layout = vec![(0, 5), (1, 3)];
-		let dimensions = ExtendedMatrixDimensions { rows: 4, cols: 2 };
-		let result_0: Vec<(u16, u16)> = vec![
-			(0, 0),
-			(0, 1),
-			(0, 2),
-			(0, 3),
-			(1, 0),
-			(1, 1),
-			(1, 2),
-			(1, 3),
-		];
+		let dimensions = ExtendedMatrixDimensions { rows: 4, cols: 4 };
 
-		let cells_0 = app_specific_column_cells(&layout, &dimensions, 0).unwrap();
-		cells_0
-			.iter()
-			.zip(result_0.iter())
-			.for_each(|(a, &(col, row))| {
-				assert_eq!(a.col, col);
-				assert_eq!(a.row, row);
-			});
+		let expected_0 = (0..=2).flat_map(|c| (0..=3).map(move |r| (c, r)));
+		let result_0 = app_specific_column_cells(&layout, &dimensions, 0).unwrap();
 
-		let result_1: Vec<(u16, u16)> = vec![(1, 0), (1, 1), (1, 2), (1, 3)];
+		assert_eq!(expected_0.clone().count(), result_0.len());
+		result_0.iter().zip(expected_0).for_each(|(a, (col, row))| {
+			assert_eq!(a.col, col);
+			assert_eq!(a.row, row);
+		});
 
-		let cells_1 = app_specific_column_cells(&layout, &dimensions, 1).unwrap();
-		cells_1
-			.iter()
-			.zip(result_1.iter())
-			.for_each(|(a, &(col, row))| {
-				assert_eq!(a.col, col);
-				assert_eq!(a.row, row);
-			});
+		let expected_1 = (2..=3).flat_map(|c| (0..=3).map(move |r| (c, r)));
+		let result_1 = app_specific_column_cells(&layout, &dimensions, 1).unwrap();
+
+		assert_eq!(expected_1.clone().count(), result_1.len());
+		result_1.iter().zip(expected_1).for_each(|(a, (col, row))| {
+			assert_eq!(a.col, col);
+			assert_eq!(a.row, row);
+		});
 
 		assert!(app_specific_column_cells(&layout, &dimensions, 2).is_none());
+	}
+
+	#[test]
+	fn test_app_specific_column_cells_gt_chunk_size() {
+		let layout = vec![(0, 1), (1, 89)];
+		let dimensions = ExtendedMatrixDimensions { rows: 2, cols: 128 };
+		let expected = (1..=89).flat_map(|col| (0..=1).map(move |row| (col, row)));
+
+		let result = app_specific_column_cells(&layout, &dimensions, 1).unwrap();
+
+		assert_eq!(expected.clone().count(), result.len());
+		result.iter().zip(expected).for_each(|(a, (col, row))| {
+			assert_eq!(a.col, col);
+			assert_eq!(a.row, row);
+		});
 	}
 
 	#[test]
