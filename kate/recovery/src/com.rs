@@ -48,14 +48,44 @@ fn map_cells(
 	Ok(result)
 }
 
-/// Generates empty cells of columns related to specified application ID.
-/// Function return `None` if there are no cells for given application ID.
+/// Generates empty cells in extended data matrix,
+/// for data related to specified application ID.
+/// Function returns `None` if there are no cells for given application ID.
+/// When fetched, cells can be used to decode application related data.
 ///
 /// # Arguments
 ///
 /// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
-/// * `dimensions` - Matrix dimensions
-/// * `app_id` - Application id
+/// * `dimensions` - Extended matrix dimensions
+/// * `app_id` - Application ID
+pub fn app_specific_cells(
+	layout: &[(u32, u32)],
+	dimensions: &ExtendedMatrixDimensions,
+	app_id: u32,
+) -> Option<Vec<Cell>> {
+	let ranges = cell_ranges(layout);
+
+	let (_, range) = ranges.into_iter().find(|&(id, _)| app_id == id)?;
+
+	let result = range
+		.map(|cell_number| Cell {
+			col: (cell_number * 2 / dimensions.rows) as u16,
+			row: (cell_number * 2 % dimensions.rows) as u16,
+			data: vec![],
+		})
+		.collect::<Vec<Cell>>();
+
+	Some(result)
+}
+
+/// Generates empty cells of columns related to specified application ID.
+/// Function returns `None` if there are no cells for given application ID.
+///
+/// # Arguments
+///
+/// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
+/// * `dimensions` - Extended matrix dimensions
+/// * `app_id` - Application ID
 pub fn app_specific_column_cells(
 	layout: &[(u32, u32)],
 	dimensions: &ExtendedMatrixDimensions,
@@ -127,6 +157,24 @@ pub fn reconstruct_app_extrinsics(
 fn trim_to_chunk_data(chunk: &[u8]) -> [u8; DATA_CHUNK_SIZE] {
 	assert!(DATA_CHUNK_SIZE < chunk.len(), "Cannot trim to bigger size!");
 	chunk[0..DATA_CHUNK_SIZE].try_into().unwrap()
+}
+
+/// Calculates range per application from extrinsics layout.
+/// Range is from start index to end index in matrix.
+///
+/// # Arguments
+///
+/// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
+fn cell_ranges(layout: &[(u32, u32)]) -> Vec<(u32, Range<usize>)> {
+	let (_, ranges) = layout
+		.iter()
+		.cloned()
+		.fold((0, vec![]), |(start, mut v), (app_id, size)| {
+			let end = start + (size as usize);
+			v.push((app_id, Range { start, end }));
+			(end, v)
+		});
+	ranges
 }
 
 /// Calculates range per application from extrinsics layout.
@@ -303,9 +351,14 @@ fn unshift_poly(poly: &mut [BlsScalar]) {
 }
 
 #[derive(Default, Debug, Clone)]
+
+/// Location and data of a cell in extended matrix
 pub struct Cell {
+	/// Cell's row
 	pub row: u16,
+	/// Cell's column
 	pub col: u16,
+	/// Cell's data
 	pub data: Vec<u8>,
 }
 
@@ -383,6 +436,32 @@ mod tests {
 	use rand_chacha::ChaChaRng;
 
 	use super::*;
+
+	#[test]
+	fn test_app_specific_cells() {
+		let layout = vec![(0, 5), (1, 3)];
+		let dimensions = ExtendedMatrixDimensions { rows: 4, cols: 4 };
+
+		let expected_0 = vec![(0, 0), (0, 2), (1, 0), (1, 2), (2, 0)];
+		let result_0 = app_specific_cells(&layout, &dimensions, 0).unwrap();
+
+		assert_eq!(expected_0.len(), result_0.len());
+		result_0.iter().zip(expected_0).for_each(|(a, (col, row))| {
+			assert_eq!(a.col, col);
+			assert_eq!(a.row, row);
+		});
+
+		let expected_1 = vec![(2, 2), (3, 0), (3, 2)];
+		let result_1 = app_specific_cells(&layout, &dimensions, 1).unwrap();
+
+		assert_eq!(expected_1.len(), result_1.len());
+		result_1.iter().zip(expected_1).for_each(|(a, (col, row))| {
+			assert_eq!(a.col, col);
+			assert_eq!(a.row, row);
+		});
+
+		assert!(app_specific_cells(&layout, &dimensions, 2).is_none());
+	}
 
 	#[test]
 	fn test_app_specific_column_cells() {
