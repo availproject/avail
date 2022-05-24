@@ -87,71 +87,75 @@ fn bench_par_build_commitments(c: &mut Criterion) {
 }
 
 fn bench_opt_par_build_commitments(c: &mut Criterion) {
-	const ROWS: usize = MAX_BLOCK_ROWS as usize;
-	const COLS: usize = MAX_BLOCK_COLUMNS as usize;
-	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
-	const DLEN: usize = ROWS * COLS * (CHUNK - 2);
-
 	let mut rng = ChaCha20Rng::from_entropy();
 
-	let mut seed = [0u8; 32];
-	let mut data = [0u8; DLEN];
+	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
+	const DIMS: [(usize, usize); 5] = [(1024, 64), (512, 128), (256, 256), (128, 512), (64, 1024)];
 
-	rng.fill_bytes(&mut seed);
-	rng.fill_bytes(&mut data);
+	for dim in DIMS {
+		let dlen = dim.0 * dim.1 * (CHUNK - 2);
 
-	let extrinsic = AppExtrinsic::from(data.to_vec());
-	let extrinsics = [extrinsic];
+		let mut seed = [0u8; 32];
+		let mut data = vec![0u8; dlen];
 
-	c.bench_function("opt_par_build_commitments", |b| {
-		b.iter(|| {
-			let (_, _, dim, _) = opt_par_build_commitments(
-				black_box(ROWS),
-				black_box(COLS),
-				black_box(CHUNK),
-				black_box(&extrinsics),
-				black_box(seed),
-			)
-			.unwrap();
+		rng.fill_bytes(&mut seed);
+		rng.fill_bytes(&mut data);
 
-			assert_eq!(dim.rows, ROWS);
-			assert_eq!(dim.cols, COLS);
-		});
-	});
+		let tx = AppExtrinsic::from(data.to_vec());
+		let txs = [tx];
+
+		c.bench_function(
+			&format!("opt_par_build_commitments/{}x{}", dim.0, dim.1),
+			|b| {
+				b.iter(|| {
+					let (_, _, _, _) = opt_par_build_commitments(
+						black_box(dim.0),
+						black_box(dim.1),
+						black_box(CHUNK),
+						black_box(&txs),
+						black_box(seed),
+					)
+					.unwrap();
+				});
+			},
+		);
+	}
 }
 
 fn bench_build_proof(c: &mut Criterion) {
-	const ROWS: usize = MAX_BLOCK_ROWS as usize;
-	const COLS: usize = MAX_BLOCK_COLUMNS as usize;
-	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
-	const DLEN: usize = ROWS * COLS * (CHUNK - 2);
-
 	let mut rng = ChaCha20Rng::from_entropy();
 
-	let mut seed = [0u8; 32];
-	let mut data = [0u8; DLEN];
+	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
+	const DIMS: [(usize, usize); 5] = [(1024, 64), (512, 128), (256, 256), (128, 512), (64, 1024)];
 
-	rng.fill_bytes(&mut seed);
-	rng.fill_bytes(&mut data);
+	for dim in DIMS {
+		let dlen = dim.0 * dim.1 * (CHUNK - 2);
 
-	let extrinsic = AppExtrinsic::from(data.to_vec());
-	let extrinsics = [extrinsic];
+		let mut seed = [0u8; 32];
+		let mut data = vec![0u8; dlen];
 
-	let public_params = crate::testnet::public_params(MAX_BLOCK_COLUMNS as usize);
+		rng.fill_bytes(&mut seed);
+		rng.fill_bytes(&mut data);
 
-	let (_, _, dim, mat) = opt_par_build_commitments(ROWS, COLS, CHUNK, &extrinsics, seed).unwrap();
+		let tx = AppExtrinsic::from(data.to_vec());
+		let txs = [tx];
 
-	c.bench_function("build_proof", |b| {
-		b.iter(|| {
-			let cell = Cell {
-				row: rng.next_u32() % dim.rows as u32,
-				col: rng.next_u32() % dim.cols as u32,
-			};
+		let public_params = crate::testnet::public_params(dim.1);
 
-			let proof = build_proof(&public_params, dim, &mat, &[cell]).unwrap();
-			assert_eq!(proof.len(), 80);
+		let (_, _, dims, mat) = opt_par_build_commitments(dim.0, dim.1, CHUNK, &txs, seed).unwrap();
+
+		c.bench_function(&format!("build_proof/{}x{}", dim.0, dim.1), |b| {
+			b.iter(|| {
+				let cell = Cell {
+					row: rng.next_u32() % dims.rows as u32,
+					col: rng.next_u32() % dims.cols as u32,
+				};
+
+				let proof = build_proof(&public_params, dims, &mat, &[cell]).unwrap();
+				assert_eq!(proof.len(), 80);
+			});
 		});
-	});
+	}
 }
 
 fn bench_extend_data_matrix(c: &mut Criterion) {
