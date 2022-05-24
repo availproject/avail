@@ -8,9 +8,9 @@ use dusk_plonk::{
 };
 use kate::{
 	com::{
-		build_commitments, extend_data_matrix, fft_on_commitments, flatten_and_pad_block,
-		opt_par_build_commitments, par_build_commitments, par_extend_data_matrix, to_bls_scalar,
-		Error,
+		build_commitments, build_proof, extend_data_matrix, fft_on_commitments,
+		flatten_and_pad_block, opt_par_build_commitments, par_build_commitments,
+		par_extend_data_matrix, to_bls_scalar, Cell, Error,
 	},
 	config::{DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS},
 	testnet,
@@ -116,6 +116,40 @@ fn bench_opt_par_build_commitments(c: &mut Criterion) {
 
 			assert_eq!(dim.rows, ROWS);
 			assert_eq!(dim.cols, COLS);
+		});
+	});
+}
+
+fn bench_build_proof(c: &mut Criterion) {
+	const ROWS: usize = MAX_BLOCK_ROWS as usize;
+	const COLS: usize = MAX_BLOCK_COLUMNS as usize;
+	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
+	const DLEN: usize = ROWS * COLS * (CHUNK - 2);
+
+	let mut rng = ChaCha20Rng::from_entropy();
+
+	let mut seed = [0u8; 32];
+	let mut data = [0u8; DLEN];
+
+	rng.fill_bytes(&mut seed);
+	rng.fill_bytes(&mut data);
+
+	let extrinsic = AppExtrinsic::from(data.to_vec());
+	let extrinsics = [extrinsic];
+
+	let public_params = crate::testnet::public_params(MAX_BLOCK_COLUMNS as usize);
+
+	let (_, _, dim, mat) = opt_par_build_commitments(ROWS, COLS, CHUNK, &extrinsics, seed).unwrap();
+
+	c.bench_function("build_proof", |b| {
+		b.iter(|| {
+			let cell = Cell {
+				row: rng.next_u32() % dim.rows as u32,
+				col: rng.next_u32() % dim.cols as u32,
+			};
+
+			let proof = build_proof(&public_params, dim, &mat, &[cell]).unwrap();
+			assert_eq!(proof.len(), 80);
 		});
 	});
 }
@@ -262,5 +296,5 @@ fn bench_ifft_on_commitments(c: &mut Criterion) {
 	});
 }
 
-criterion_group! {name = kate_build_commitments; config = Criterion::default().sample_size(10); targets =  bench_build_commitments, bench_par_build_commitments, bench_opt_par_build_commitments, bench_extend_data_matrix, bench_par_extend_data_matrix, bench_ifft_on_commitments}
+criterion_group! {name = kate_build_commitments; config = Criterion::default().sample_size(10); targets =  bench_build_commitments, bench_par_build_commitments, bench_opt_par_build_commitments, bench_build_proof, bench_extend_data_matrix, bench_par_extend_data_matrix, bench_ifft_on_commitments}
 criterion_main!(kate_build_commitments);

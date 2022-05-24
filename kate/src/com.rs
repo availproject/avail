@@ -355,16 +355,14 @@ pub fn build_proof(
 
 			if row_index < extended_rows_num && col_index < cols_num {
 				// construct polynomial per extended matrix row
-				let mut row = Vec::with_capacity(cols_num);
+				let row = (0..cols_num)
+					.into_par_iter()
+					.map(|j| ext_data_matrix[row_index + j * extended_rows_num])
+					.collect::<Vec<BlsScalar>>();
 
-				for j in 0..cols_num {
-					row.push(ext_data_matrix[row_index + j * extended_rows_num]);
-				}
 				// row has to be a power of 2, otherwise interpolate() function panics
-				let polynomial =
-					Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
-				let witness =
-					prover_key.compute_single_witness(&polynomial, &row_dom_x_pts[col_index]);
+				let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
+				let witness = prover_key.compute_single_witness(&poly, &row_dom_x_pts[col_index]);
 				let commitment_to_witness = prover_key.commit(&witness)?;
 				let evaluated_point = ext_data_matrix[row_index + col_index * extended_rows_num];
 
@@ -1318,7 +1316,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		use rand_chacha::ChaCha20Rng;
 
 		const ROWS: usize = 4;
-		const COLS: usize = 4;
+		const COLS: usize = 256;
 		const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
 		const DLEN: usize = ROWS * COLS * (CHUNK - 2);
 
