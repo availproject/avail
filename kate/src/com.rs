@@ -611,11 +611,12 @@ pub fn opt_par_build_commitments(
 
 	info!(target: LOG_TARGET, "Time to prepare {:?}", start.elapsed());
 
-	if dims.cols > MAX_BLOCK_COLUMNS as usize {
-		log::error!(target: LOG_TARGET, "Error on Block dimension {:?}", dims);
-	}
+	// if dims.cols > MAX_BLOCK_COLUMNS as usize {
+	// 	log::error!(target: LOG_TARGET, "Error on Block dimension {:?}", dims);
+	// }
 
-	let public_params = testnet::public_params(MAX_BLOCK_COLUMNS as usize);
+	let public_params = testnet::public_params(dims.cols);
+
 	if log::log_enabled!(target: LOG_TARGET, log::Level::Debug) {
 		let raw_pp = public_params.to_raw_var_bytes();
 		let hash_pp = hex::encode(sp_core::blake2_128(&raw_pp));
