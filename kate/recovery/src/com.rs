@@ -17,6 +17,8 @@ pub struct ExtendedMatrixDimensions {
 
 #[derive(Error, Debug)]
 pub enum ReconstructionError {
+	#[error("Missing cell (col {col}, row {row})")]
+	MissingCell { col: u16, row: u16 },
 	#[error("Invalid cell (col {col}, row {row})")]
 	InvalidCell { col: u16, row: u16 },
 	#[error("Duplicate cell found")]
@@ -118,9 +120,9 @@ pub fn app_specific_column_cells(
 /// # Arguments
 ///
 /// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
-/// * `dimensions` - Matrix dimensions
+/// * `dimensions` - Extended matrix dimensions
 /// * `cells` - Cells from required columns, at least 50% cells per column
-/// * `app_id` - Optional application id
+/// * `app_id` - Optional application ID
 pub fn reconstruct_app_extrinsics(
 	layout: &[(u32, u32)],
 	dimensions: &ExtendedMatrixDimensions,
@@ -152,6 +154,61 @@ pub fn reconstruct_app_extrinsics(
 		.filter(|(id, _)| app_id.is_none() || Some(*id) == app_id)
 		.collect::<Vec<_>>();
 	Ok(unflatten_padded_data(ranges, data, CHUNK_SIZE))
+}
+
+/// Decode app extrinsics from extrinsics layout and data cells.
+/// Only related data cells are needed, without erasure coded data.
+///
+/// # Arguments
+///
+/// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
+/// * `dimensions` - Extended matrix dimensions
+/// * `cells` - Application specific data cells in extended matrix, without erasure coded data.
+/// * `app_id` - Application ID
+pub fn decode_app_extrinsics(
+	layout: &[(u32, u32)],
+	dimensions: &ExtendedMatrixDimensions,
+	cells: Vec<Cell>,
+	app_id: u32,
+) -> Result<Vec<(u32, Vec<Vec<u8>>)>, ReconstructionError> {
+	let app_cells = app_specific_cells(layout, dimensions, app_id).unwrap_or_default();
+	if app_cells.is_empty() {
+		return Ok(vec![]);
+	}
+	let cells_map = map_cells(dimensions, cells)?;
+	for cell in app_cells {
+		cells_map
+			.get(&cell.col)
+			.and_then(|column| column.get(&cell.row))
+			.filter(|cell| !cell.data.is_empty())
+			.ok_or(ReconstructionError::MissingCell {
+				col: cell.col,
+				row: cell.row,
+			})?;
+	}
+
+	let mut app_data: Vec<u8> = vec![];
+	for col_number in 0..dimensions.cols as u16 {
+		for row_number in 0..dimensions.rows as u16 {
+			if row_number % 2 > 0 {
+				continue;
+			}
+			match cells_map
+				.get(&col_number)
+				.and_then(|column| column.get(&row_number))
+				.filter(|cell| !cell.data.is_empty())
+			{
+				None => app_data.extend(vec![0; CHUNK_SIZE]),
+				Some(cell) => app_data.extend(&cell.data),
+			}
+		}
+	}
+	let ranges = data_ranges(layout)
+		.into_iter()
+		.filter(|(id, _)| *id == app_id)
+		.collect::<Vec<_>>();
+
+	Ok(unflatten_padded_data(ranges, app_data, CHUNK_SIZE))
 }
 
 fn trim_to_chunk_data(chunk: &[u8]) -> [u8; DATA_CHUNK_SIZE] {
