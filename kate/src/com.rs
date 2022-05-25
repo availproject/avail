@@ -457,7 +457,8 @@ mod tests {
 	use dusk_plonk::bls12_381::BlsScalar;
 	use hex_literal::hex;
 	use kate_recovery::com::{
-		data_ranges, reconstruct_app_extrinsics, unflatten_padded_data, ExtendedMatrixDimensions,
+		app_specific_cells, data_ranges, decode_app_extrinsics, reconstruct_app_extrinsics,
+		unflatten_padded_data, ExtendedMatrixDimensions, ReconstructionError,
 	};
 	use proptest::{
 		collection::{self, size_range},
@@ -778,6 +779,53 @@ get erasure coded to ensure redundancy."#;
 
 		let res_2 = reconstruct_app_extrinsics(&layout, &extended_dims, cols_2, Some(2)).unwrap();
 		assert_eq!(res_2[0].1[0], app_id_2_data);
+	}
+
+	#[test]
+	fn test_decode_app_extrinsics() {
+		let app_id_1_data = br#""This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
+get erasure coded to ensure redundancy."#;
+
+		let app_id_2_data = br#""Let's see how this gets encoded and then reconstructed by sampling only some data."#;
+
+		let data = [vec![0], app_id_1_data.to_vec(), app_id_2_data.to_vec()];
+
+		let hash = Seed::default();
+		let xts = (0..=2)
+			.zip(data)
+			.map(|(app_id, data)| AppExtrinsic { app_id, data })
+			.collect::<Vec<_>>();
+
+		let chunk_size = 32;
+
+		let (layout, data, dims) = flatten_and_pad_block(32, 4, chunk_size, &xts, hash).unwrap();
+		let coded = extend_data_matrix(dims, &data[..]).unwrap();
+
+		let extended_dims = ExtendedMatrixDimensions {
+			cols: dims.cols,
+			rows: dims.rows * 2,
+		};
+		let extended_matrix = coded.chunks(extended_dims.rows).collect::<Vec<_>>();
+
+		for xt in xts {
+			let mut cells = app_specific_cells(&layout, &extended_dims, xt.app_id).unwrap();
+			for mut cell in cells.iter_mut() {
+				cell.data = extended_matrix[cell.col as usize][cell.row as usize]
+					.clone()
+					.to_bytes()
+					.to_vec()
+			}
+			let data =
+				&decode_app_extrinsics(&layout, &extended_dims, cells, xt.app_id).unwrap()[0].1[0];
+			assert_eq!(data, &xt.data);
+		}
+
+		assert!(
+			match decode_app_extrinsics(&layout, &extended_dims, vec![], 0) {
+				Err(ReconstructionError::MissingCell { .. }) => true,
+				_ => false,
+			}
+		);
 	}
 
 	#[test]
