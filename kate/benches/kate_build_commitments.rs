@@ -90,7 +90,13 @@ fn bench_opt_par_build_commitments(c: &mut Criterion) {
 	let mut rng = ChaCha20Rng::from_entropy();
 
 	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
-	const DIMS: [(usize, usize); 5] = [(1024, 64), (512, 128), (256, 256), (128, 512), (64, 1024)];
+	const DIMS: [(usize, usize); 5] = [
+		(1024, 64),
+		(512, 128),
+		(256, 256),
+		(MAX_BLOCK_ROWS as usize, MAX_BLOCK_COLUMNS as usize),
+		(64, 1024),
+	];
 
 	for dim in DIMS {
 		let dlen = dim.0 * dim.1 * (CHUNK - 2);
@@ -126,7 +132,13 @@ fn bench_build_proof(c: &mut Criterion) {
 	let mut rng = ChaCha20Rng::from_entropy();
 
 	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
-	const DIMS: [(usize, usize); 5] = [(1024, 64), (512, 128), (256, 256), (128, 512), (64, 1024)];
+	const DIMS: [(usize, usize); 5] = [
+		(1024, 64),
+		(512, 128),
+		(256, 256),
+		(MAX_BLOCK_ROWS as usize, MAX_BLOCK_COLUMNS as usize),
+		(64, 1024),
+	];
 
 	for dim in DIMS {
 		let dlen = dim.0 * dim.1 * (CHUNK - 2);
