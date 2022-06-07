@@ -454,7 +454,7 @@ mod tests {
 	use hex_literal::hex;
 	use kate_recovery::com::{
 		app_specific_cells, data_ranges, decode_app_extrinsics, reconstruct_app_extrinsics,
-		unflatten_padded_data, ExtendedMatrixDimensions, ReconstructionError,
+		unflatten_padded_data, ExtendedMatrixDimensions, Position, ReconstructionError,
 	};
 	use proptest::{
 		collection::{self, size_range},
@@ -607,10 +607,11 @@ mod tests {
 			scalar: &BlsScalar,
 		) -> kate_recovery::com::Cell {
 			kate_recovery::com::Cell {
-				row: row_idx,
-				col: col_idx,
+				position: Position {
+					row: row_idx,
+					col: col_idx,
+				},
 				data: scalar.clone().to_bytes().to_vec(),
-				..Default::default()
 			}
 		}
 
@@ -636,7 +637,9 @@ mod tests {
 				random_indexes(e.len(), RNG_SEED)
 					.into_iter()
 					.map(|i| cell_from_scalar(col_idx as u16, i as u16, &e[i]))
-					.filter(|cell| columns.is_none() || columns.unwrap_or(&[]).contains(&cell.col))
+					.filter(|cell| {
+						columns.is_none() || columns.unwrap_or(&[]).contains(&cell.position.col)
+					})
 					.collect::<Vec<_>>()
 			})
 			.collect::<Vec<_>>()
@@ -806,7 +809,7 @@ get erasure coded to ensure redundancy."#;
 		for xt in xts {
 			let mut cells = app_specific_cells(&layout, &extended_dims, xt.app_id).unwrap();
 			for mut cell in cells.iter_mut() {
-				cell.data = extended_matrix[cell.col as usize][cell.row as usize]
+				cell.data = extended_matrix[cell.position.col as usize][cell.position.row as usize]
 					.clone()
 					.to_bytes()
 					.to_vec()
@@ -816,12 +819,10 @@ get erasure coded to ensure redundancy."#;
 			assert_eq!(data, &xt.data);
 		}
 
-		assert!(
-			match decode_app_extrinsics(&layout, &extended_dims, vec![], 0) {
-				Err(ReconstructionError::MissingCell { .. }) => true,
-				_ => false,
-			}
-		);
+		assert!(matches!(
+			decode_app_extrinsics(&layout, &extended_dims, vec![], 0),
+			Err(ReconstructionError::MissingCell { .. })
+		));
 	}
 
 	#[test]
