@@ -811,13 +811,17 @@ get erasure coded to ensure redundancy."#;
 		let extended_matrix = coded.chunks(extended_dims.rows).collect::<Vec<_>>();
 
 		for xt in xts {
-			let mut cells = app_specific_cells(&layout, &extended_dims, xt.app_id).unwrap();
-			for mut cell in cells.iter_mut() {
-				cell.data = extended_matrix[cell.position.col as usize][cell.position.row as usize]
-					.clone()
-					.to_bytes()
-					.to_vec()
-			}
+			let positions = app_specific_cells(&layout, &extended_dims, xt.app_id).unwrap();
+			let cells = positions
+				.iter()
+				.map(|position| kate_recovery::com::Cell {
+					position: position.clone(),
+					data: extended_matrix[position.col as usize][position.row as usize]
+						.clone()
+						.to_bytes()
+						.to_vec(),
+				})
+				.collect::<Vec<_>>();
 			let data =
 				&decode_app_extrinsics(&layout, &extended_dims, cells, xt.app_id).unwrap()[0].1[0];
 			assert_eq!(data, &xt.data);

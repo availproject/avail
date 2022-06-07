@@ -69,25 +69,22 @@ pub fn app_specific_cells(
 	layout: &[(u32, u32)],
 	dimensions: &ExtendedMatrixDimensions,
 	app_id: u32,
-) -> Option<Vec<Cell>> {
+) -> Option<Vec<Position>> {
 	let ranges = cell_ranges(layout);
 
 	let (_, range) = ranges.into_iter().find(|&(id, _)| app_id == id)?;
 
 	let result = range
-		.map(|cell_number| Cell {
-			position: Position {
-				col: (cell_number * 2 / dimensions.rows) as u16,
-				row: (cell_number * 2 % dimensions.rows) as u16,
-			},
-			data: vec![],
+		.map(|cell_number| Position {
+			col: (cell_number * 2 / dimensions.rows) as u16,
+			row: (cell_number * 2 % dimensions.rows) as u16,
 		})
-		.collect::<Vec<Cell>>();
+		.collect::<Vec<_>>();
 
 	Some(result)
 }
 
-/// Generates empty cells of columns related to specified application ID.
+/// Generates cell positions of columns related to specified application ID.
 /// Function returns `None` if there are no cells for given application ID.
 ///
 /// # Arguments
@@ -99,7 +96,7 @@ pub fn app_specific_column_cells(
 	layout: &[(u32, u32)],
 	dimensions: &ExtendedMatrixDimensions,
 	app_id: u32,
-) -> Option<Vec<Cell>> {
+) -> Option<Vec<Position>> {
 	let ranges = data_ranges(layout);
 
 	let (_, range) = ranges.iter().find(|&&(id, _)| app_id == id)?;
@@ -114,7 +111,7 @@ pub fn app_specific_column_cells(
 
 	Some(
 		(column_start..column_end)
-			.flat_map(|col| (0..dimensions.rows as u16).map(move |row| Cell::new_empty(col, row)))
+			.flat_map(|col| (0..dimensions.rows as u16).map(move |row| Position { col, row }))
 			.collect::<Vec<_>>(),
 	)
 }
@@ -183,7 +180,7 @@ pub fn decode_app_extrinsics(
 		return Ok(vec![]);
 	}
 	let cells_map = map_cells(dimensions, cells)?;
-	for Cell { position, .. } in app_cells {
+	for position in app_cells {
 		cells_map
 			.get(&position.col)
 			.and_then(|column| column.get(&position.row))
@@ -412,10 +409,17 @@ fn unshift_poly(poly: &mut [BlsScalar]) {
 }
 
 /// Position in a data matrix
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Position {
 	pub row: u16,
 	pub col: u16,
+}
+
+impl Position {
+	/// Refrence in format `block_number:column_number:row_number`
+	pub fn reference(&self, block_number: u64) -> String {
+		format!("{}:{}:{}", block_number, self.col, self.row)
+	}
 }
 
 /// Position and data of a cell in extended matrix
@@ -425,15 +429,6 @@ pub struct Cell {
 	pub position: Position,
 	/// Cell's data
 	pub data: Vec<u8>,
-}
-
-impl Cell {
-	pub fn new_empty(col: u16, row: u16) -> Self {
-		Cell {
-			position: Position { row, col },
-			data: vec![],
-		}
-	}
 }
 
 // use this function for reconstructing back all cells of certain column
@@ -509,8 +504,8 @@ mod tests {
 
 		assert_eq!(expected_0.len(), result_0.len());
 		result_0.iter().zip(expected_0).for_each(|(a, (col, row))| {
-			assert_eq!(a.position.col, col);
-			assert_eq!(a.position.row, row);
+			assert_eq!(a.col, col);
+			assert_eq!(a.row, row);
 		});
 
 		let expected_1 = vec![(2, 2), (3, 0), (3, 2)];
@@ -518,8 +513,8 @@ mod tests {
 
 		assert_eq!(expected_1.len(), result_1.len());
 		result_1.iter().zip(expected_1).for_each(|(a, (col, row))| {
-			assert_eq!(a.position.col, col);
-			assert_eq!(a.position.row, row);
+			assert_eq!(a.col, col);
+			assert_eq!(a.row, row);
 		});
 
 		assert!(app_specific_cells(&layout, &dimensions, 2).is_none());
@@ -535,8 +530,8 @@ mod tests {
 
 		assert_eq!(expected_0.clone().count(), result_0.len());
 		result_0.iter().zip(expected_0).for_each(|(a, (col, row))| {
-			assert_eq!(a.position.col, col);
-			assert_eq!(a.position.row, row);
+			assert_eq!(a.col, col);
+			assert_eq!(a.row, row);
 		});
 
 		let expected_1 = (2..=3).flat_map(|c| (0..=3).map(move |r| (c, r)));
@@ -544,8 +539,8 @@ mod tests {
 
 		assert_eq!(expected_1.clone().count(), result_1.len());
 		result_1.iter().zip(expected_1).for_each(|(a, (col, row))| {
-			assert_eq!(a.position.col, col);
-			assert_eq!(a.position.row, row);
+			assert_eq!(a.col, col);
+			assert_eq!(a.row, row);
 		});
 
 		assert!(app_specific_column_cells(&layout, &dimensions, 2).is_none());
@@ -561,8 +556,8 @@ mod tests {
 
 		assert_eq!(expected.clone().count(), result.len());
 		result.iter().zip(expected).for_each(|(a, (col, row))| {
-			assert_eq!(a.position.col, col);
-			assert_eq!(a.position.row, row);
+			assert_eq!(a.col, col);
+			assert_eq!(a.row, row);
 		});
 	}
 
