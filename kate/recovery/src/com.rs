@@ -15,12 +15,18 @@ pub struct ExtendedMatrixDimensions {
 	pub cols: usize,
 }
 
+impl ExtendedMatrixDimensions {
+	fn contains(&self, position: &Position) -> bool {
+		(position.row as usize) < self.rows && (position.col as usize) < self.cols
+	}
+}
+
 #[derive(Error, Debug)]
 pub enum ReconstructionError {
-	#[error("Missing cell (col {col}, row {row})")]
-	MissingCell { col: u16, row: u16 },
-	#[error("Invalid cell (col {col}, row {row})")]
-	InvalidCell { col: u16, row: u16 },
+	#[error("Missing cell (col {}, row {})", .position.col, .position.row)]
+	MissingCell { position: Position },
+	#[error("Invalid cell (col {}, row {})", .position.col, .position.row)]
+	InvalidCell { position: Position },
 	#[error("Duplicate cell found")]
 	DuplicateCellFound,
 	#[error("Column {0} contains less than half rows")]
@@ -37,13 +43,12 @@ fn map_cells(
 ) -> Result<HashMap<u16, HashMap<u16, Cell>>, ReconstructionError> {
 	let mut result: HashMap<u16, HashMap<u16, Cell>> = HashMap::new();
 	for cell in cells {
-		let row = cell.row;
-		let col = cell.col;
-		if row as usize > dimensions.rows || col as usize > dimensions.cols {
-			return Err(ReconstructionError::InvalidCell { col, row });
+		let position = cell.position.clone();
+		if !dimensions.contains(&position) {
+			return Err(ReconstructionError::InvalidCell { position });
 		}
-		let cells = result.entry(col).or_insert_with(HashMap::new);
-		if cells.insert(cell.row, cell).is_some() {
+		let cells = result.entry(position.col).or_insert_with(HashMap::new);
+		if cells.insert(position.row, cell).is_some() {
 			return Err(ReconstructionError::DuplicateCellFound);
 		}
 	}
@@ -71,8 +76,10 @@ pub fn app_specific_cells(
 
 	let result = range
 		.map(|cell_number| Cell {
-			col: (cell_number * 2 / dimensions.rows) as u16,
-			row: (cell_number * 2 % dimensions.rows) as u16,
+			position: Position {
+				col: (cell_number * 2 / dimensions.rows) as u16,
+				row: (cell_number * 2 % dimensions.rows) as u16,
+			},
 			data: vec![],
 		})
 		.collect::<Vec<Cell>>();
@@ -176,15 +183,12 @@ pub fn decode_app_extrinsics(
 		return Ok(vec![]);
 	}
 	let cells_map = map_cells(dimensions, cells)?;
-	for cell in app_cells {
+	for Cell { position, .. } in app_cells {
 		cells_map
-			.get(&cell.col)
-			.and_then(|column| column.get(&cell.row))
+			.get(&position.col)
+			.and_then(|column| column.get(&position.row))
 			.filter(|cell| !cell.data.is_empty())
-			.ok_or(ReconstructionError::MissingCell {
-				col: cell.col,
-				row: cell.row,
-			})?;
+			.ok_or(ReconstructionError::MissingCell { position })?;
 	}
 
 	let mut app_data: Vec<u8> = vec![];
@@ -407,14 +411,18 @@ fn unshift_poly(poly: &mut [BlsScalar]) {
 	}
 }
 
+/// Position in a data matrix
 #[derive(Default, Debug, Clone)]
-
-/// Location and data of a cell in extended matrix
-pub struct Cell {
-	/// Cell's row
+pub struct Position {
 	pub row: u16,
-	/// Cell's column
 	pub col: u16,
+}
+
+/// Position and data of a cell in extended matrix
+#[derive(Default, Debug, Clone)]
+pub struct Cell {
+	/// Cell's position
+	pub position: Position,
 	/// Cell's data
 	pub data: Vec<u8>,
 }
@@ -422,8 +430,7 @@ pub struct Cell {
 impl Cell {
 	pub fn new_empty(col: u16, row: u16) -> Self {
 		Cell {
-			row,
-			col,
+			position: Position { row, col },
 			data: vec![],
 		}
 	}
@@ -443,17 +450,15 @@ pub fn reconstruct_column(row_count: usize, cells: &[Cell]) -> Result<Vec<BlsSca
 	// construction in validator node
 	fn check_cells(cells: &[Cell]) {
 		assert!(!cells.is_empty());
-		let col = cells[0].col;
-		for cell in cells {
-			assert_eq!(col, cell.col);
-		}
+		let first_col = cells[0].position.col;
+		assert!(cells.iter().all(|c| c.position.col == first_col));
 	}
 
 	// given row index in column of interest, finds it if present
 	// and returns back wrapped in `Some`, otherwise returns `None`
 	fn find_row_by_index(idx: usize, cells: &[Cell]) -> Option<BlsScalar> {
 		for cell in cells {
-			if cell.row == idx as u16 {
+			if cell.position.row == idx as u16 {
 				return Some(
 					BlsScalar::from_bytes(
 						&cell.data[..]
@@ -504,8 +509,8 @@ mod tests {
 
 		assert_eq!(expected_0.len(), result_0.len());
 		result_0.iter().zip(expected_0).for_each(|(a, (col, row))| {
-			assert_eq!(a.col, col);
-			assert_eq!(a.row, row);
+			assert_eq!(a.position.col, col);
+			assert_eq!(a.position.row, row);
 		});
 
 		let expected_1 = vec![(2, 2), (3, 0), (3, 2)];
@@ -513,8 +518,8 @@ mod tests {
 
 		assert_eq!(expected_1.len(), result_1.len());
 		result_1.iter().zip(expected_1).for_each(|(a, (col, row))| {
-			assert_eq!(a.col, col);
-			assert_eq!(a.row, row);
+			assert_eq!(a.position.col, col);
+			assert_eq!(a.position.row, row);
 		});
 
 		assert!(app_specific_cells(&layout, &dimensions, 2).is_none());
@@ -530,8 +535,8 @@ mod tests {
 
 		assert_eq!(expected_0.clone().count(), result_0.len());
 		result_0.iter().zip(expected_0).for_each(|(a, (col, row))| {
-			assert_eq!(a.col, col);
-			assert_eq!(a.row, row);
+			assert_eq!(a.position.col, col);
+			assert_eq!(a.position.row, row);
 		});
 
 		let expected_1 = (2..=3).flat_map(|c| (0..=3).map(move |r| (c, r)));
@@ -539,8 +544,8 @@ mod tests {
 
 		assert_eq!(expected_1.clone().count(), result_1.len());
 		result_1.iter().zip(expected_1).for_each(|(a, (col, row))| {
-			assert_eq!(a.col, col);
-			assert_eq!(a.row, row);
+			assert_eq!(a.position.col, col);
+			assert_eq!(a.position.row, row);
 		});
 
 		assert!(app_specific_column_cells(&layout, &dimensions, 2).is_none());
@@ -556,8 +561,8 @@ mod tests {
 
 		assert_eq!(expected.clone().count(), result.len());
 		result.iter().zip(expected).for_each(|(a, (col, row))| {
-			assert_eq!(a.col, col);
-			assert_eq!(a.row, row);
+			assert_eq!(a.position.col, col);
+			assert_eq!(a.position.row, row);
 		});
 	}
 
@@ -819,22 +824,22 @@ mod tests {
 
 		let cells = vec![
 			Cell {
-				row: 0,
+				position: Position { row: 0, col: 0 },
 				data: coded[0].to_bytes().to_vec(),
 				..Default::default()
 			},
 			Cell {
-				row: 4,
+				position: Position { row: 4, col: 0 },
 				data: coded[4].to_bytes().to_vec(),
 				..Default::default()
 			},
 			Cell {
-				row: 6,
+				position: Position { row: 6, col: 0 },
 				data: coded[6].to_bytes().to_vec(),
 				..Default::default()
 			},
 			Cell {
-				row: 2,
+				position: Position { row: 2, col: 0 },
 				data: coded[2].to_bytes().to_vec(),
 				..Default::default()
 			},
@@ -873,22 +878,22 @@ mod tests {
 
 		let cells = vec![
 			Cell {
-				row: 0,
+				position: Position { row: 0, col: 0 },
 				data: coded[0].to_bytes().to_vec(),
 				..Default::default()
 			},
 			Cell {
-				row: 0,
+				position: Position { row: 0, col: 0 },
 				data: coded[0].to_bytes().to_vec(),
 				..Default::default()
 			},
 			Cell {
-				row: 6,
+				position: Position { row: 6, col: 0 },
 				data: coded[6].to_bytes().to_vec(),
 				..Default::default()
 			},
 			Cell {
-				row: 2,
+				position: Position { row: 2, col: 0 },
 				data: coded[2].to_bytes().to_vec(),
 				..Default::default()
 			},
@@ -927,17 +932,17 @@ mod tests {
 
 		let cells = vec![
 			Cell {
-				row: 4,
+				position: Position { row: 4, col: 0 },
 				data: coded[4].to_bytes().to_vec(),
 				..Default::default()
 			},
 			Cell {
-				row: 6,
+				position: Position { row: 6, col: 0 },
 				data: coded[6].to_bytes().to_vec(),
 				..Default::default()
 			},
 			Cell {
-				row: 2,
+				position: Position { row: 2, col: 0 },
 				data: coded[2].to_bytes().to_vec(),
 				..Default::default()
 			},
@@ -976,22 +981,22 @@ mod tests {
 
 		let cells = vec![
 			Cell {
-				row: 0,
+				position: Position { row: 0, col: 0 },
 				data: coded[0].to_bytes().to_vec(),
 				..Default::default()
 			},
 			Cell {
-				row: 5,
+				position: Position { row: 5, col: 0 },
 				data: coded[4].to_bytes().to_vec(),
 				..Default::default()
 			},
 			Cell {
-				row: 6,
+				position: Position { row: 6, col: 0 },
 				data: coded[6].to_bytes().to_vec(),
 				..Default::default()
 			},
 			Cell {
-				row: 2,
+				position: Position { row: 2, col: 0 },
 				data: coded[2].to_bytes().to_vec(),
 				..Default::default()
 			},
