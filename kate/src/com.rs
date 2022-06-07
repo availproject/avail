@@ -454,7 +454,7 @@ mod tests {
 	use hex_literal::hex;
 	use kate_recovery::com::{
 		app_specific_cells, data_ranges, decode_app_extrinsics, reconstruct_app_extrinsics,
-		unflatten_padded_data, ExtendedMatrixDimensions, Position, ReconstructionError,
+		unflatten_padded_data, DataCell, ExtendedMatrixDimensions, Position, ReconstructionError,
 	};
 	use proptest::{
 		collection::{self, size_range},
@@ -600,31 +600,17 @@ mod tests {
 		matrix: &[BlsScalar],
 		dimensions: &BlockDimensions,
 		columns: Option<&[u16]>,
-	) -> Vec<kate_recovery::com::Cell> {
-		fn cell_from_scalar(
-			col_idx: u16,
-			row_idx: u16,
-			scalar: &BlsScalar,
-		) -> kate_recovery::com::Cell {
-			kate_recovery::com::Cell {
-				position: Position {
-					row: row_idx,
-					col: col_idx,
-				},
-				data: scalar.clone().to_bytes().to_vec(),
-			}
-		}
-
-		fn random_indexes(length: usize, seed: Seed) -> Vec<usize> {
+	) -> Vec<DataCell> {
+		fn random_indexes(length: usize, seed: Seed) -> Vec<u16> {
 			// choose random len/2 (unique) indexes
 			let mut idx = (0..length).collect::<Vec<_>>();
-			let mut chosen_idx = Vec::<usize>::new();
+			let mut chosen_idx = Vec::<u16>::new();
 			let mut rng = ChaChaRng::from_seed(seed);
 
 			for _ in 0..length / 2 {
 				let i = rng.gen_range(0..idx.len());
 				let v = idx.remove(i);
-				chosen_idx.push(v);
+				chosen_idx.push(v as u16);
 			}
 			chosen_idx
 		}
@@ -633,10 +619,14 @@ mod tests {
 		matrix
 			.chunks_exact(dimensions.rows * 2)
 			.enumerate()
-			.flat_map(|(col_idx, e)| {
+			.map(|(col, e)| (col as u16, e))
+			.flat_map(|(col, e)| {
 				random_indexes(e.len(), RNG_SEED)
 					.into_iter()
-					.map(|i| cell_from_scalar(col_idx as u16, i as u16, &e[i]))
+					.map(|row| DataCell {
+						position: Position { row, col },
+						data: e[row as usize].to_bytes(),
+					})
 					.filter(|cell| {
 						columns.is_none() || columns.unwrap_or(&[]).contains(&cell.position.col)
 					})
@@ -810,12 +800,9 @@ get erasure coded to ensure redundancy."#;
 			let positions = app_specific_cells(&layout, &extended_dims, xt.app_id).unwrap();
 			let cells = positions
 				.iter()
-				.map(|position| kate_recovery::com::Cell {
+				.map(|position| kate_recovery::com::DataCell {
 					position: position.clone(),
-					data: extended_matrix[position.col as usize][position.row as usize]
-						.clone()
-						.to_bytes()
-						.to_vec(),
+					data: extended_matrix[position.col as usize][position.row as usize].to_bytes(),
 				})
 				.collect::<Vec<_>>();
 			let data =
@@ -929,15 +916,13 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	}
 
 	fn build_extrinsics(lens: &[usize]) -> Vec<Vec<u8>> {
-		lens.into_iter()
+		lens.iter()
 			.map(|len| repeat(b'a').take(*len).collect::<Vec<_>>())
 			.collect()
 	}
 
 	fn padded_len_group(lens: &[u32], chunk_size: u32) -> u32 {
-		lens.into_iter()
-			.map(|len| padded_len(*len, chunk_size))
-			.sum()
+		lens.iter().map(|len| padded_len(*len, chunk_size)).sum()
 	}
 
 	#[test_case( build_extrinsics(&[5,30,31]), 32 => padded_len_group(&[5,30,31], 32) ; "Single chunk per ext")]
@@ -946,17 +931,11 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	#[test_case( build_extrinsics(&[]), 32 => padded_len_group(&[], 32) ; "Empty chunk list")]
 	#[test_case( build_extrinsics(&[4096]), 32 => padded_len_group(&[4096], 32) ; "4K chunk")]
 	fn test_padding_len(extrinsics: Vec<Vec<u8>>, chunk_size: usize) -> u32 {
-		let padded_chunks = extrinsics
+		extrinsics
 			.into_iter()
 			.map(pad_iec_9797_1)
-			.collect::<Vec<Vec<DataChunk>>>();
-
-		let padded_block_len = padded_chunks
-			.into_iter()
 			.flatten()
 			.map(|chunk| pad_to_chunk(chunk, chunk_size).len() as u32)
-			.sum();
-
-		padded_block_len
+			.sum()
 	}
 }
