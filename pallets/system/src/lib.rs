@@ -1339,7 +1339,7 @@ impl<T: Config> Pallet<T> {
 			<BlockHash<T>>::remove(to_remove);
 		}
 
-		let app_extrinsics = Self::sort_app_extrinsics();
+		let app_extrinsics = Self::get_app_extrinsics();
 		let block_length = Self::block_length();
 
 		T::HeaderBuilder::build(app_extrinsics, parent_hash, digest, block_length, number)
@@ -1524,13 +1524,11 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Returns the extrinsics sorted by its application Id.
-	pub fn sort_app_extrinsics() -> Vec<AppExtrinsic> {
-		let mut extrinsics = (0..ExtrinsicCount::<T>::take().unwrap_or_default())
+	/// Returns the extrinsics.
+	pub fn get_app_extrinsics() -> Vec<AppExtrinsic> {
+		let extrinsics = (0..ExtrinsicCount::<T>::take().unwrap_or_default())
 			.map(ExtrinsicData::<T>::take)
 			.collect::<Vec<_>>();
-		// sort extrinsics by key
-		extrinsics.sort_by(|a: &AppExtrinsic, b: &AppExtrinsic| a.app_id.cmp(&b.app_id));
 		extrinsics
 	}
 
