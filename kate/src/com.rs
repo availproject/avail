@@ -80,7 +80,11 @@ pub fn flatten_and_pad_block(
 	extrinsics: &[AppExtrinsic],
 	rng_seed: Seed,
 ) -> Result<(XtsLayout, FlatData, BlockDimensions), Error> {
-	let extrinsics = app_extrinsics_group_by_app_id(extrinsics)
+	// First, sort the extrinsics by their app_id
+	let mut extrinsics = extrinsics.to_vec();
+	extrinsics.sort_by(|a, b| a.app_id.cmp(&b.app_id));
+
+	let extrinsics = app_extrinsics_group_by_app_id(&extrinsics)
 		.iter()
 		.map(|e| (e.0, e.1.encode()))
 		.collect::<Vec<_>>();
@@ -652,7 +656,7 @@ mod tests {
 	fn app_extrinsics_strategy() -> impl Strategy<Value = Vec<AppExtrinsic>> {
 		collection::vec(app_extrinsic_strategy(), size_range(1..16)).prop_map(|xts| {
 			let mut new_xts = xts.clone();
-			new_xts.sort_by(|a1, a2| a2.app_id.cmp(&a1.app_id));
+			new_xts.sort_by(|a1, a2| a1.app_id.cmp(&a2.app_id));
 			new_xts
 		})
 	}
