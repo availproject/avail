@@ -106,15 +106,13 @@ pub trait HostedHeaderBuilder {
 
 		use crate::generic::DigestItem;
 
-		let mut sorted_app_extrinsics = app_extrinsics.clone();
-		sorted_app_extrinsics.sort_by(|a, b| a.app_id.cmp(&b.app_id));
 		let (kate_commitment, block_dims, data_index) = {
 			let (xts_layout, kate_commitment, block_dims, _data_matrix) =
 				kate::com::build_commitments(
 					block_length.rows as usize,
 					block_length.cols as usize,
 					block_length.chunk_size() as usize,
-					sorted_app_extrinsics.as_slice(),
+					app_extrinsics.as_slice(),
 					seed,
 				)
 				.expect("Build commitments cannot fail .qed");
