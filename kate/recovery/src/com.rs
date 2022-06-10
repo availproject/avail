@@ -117,8 +117,7 @@ pub fn app_specific_column_cells(
 }
 
 /// Reconstructs app extrinsics from extrinsics layout and data.
-/// If app_id is `None`, all extrinsics are reconstructed.
-/// If app_id is provided, only related extrinsics are reconstructed.
+/// Only related extrinsics are reconstructed.
 /// Only related data cells needs to be in matrix (unrelated columns can be empty).
 ///
 /// # Arguments
@@ -126,13 +125,46 @@ pub fn app_specific_column_cells(
 /// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
 /// * `dimensions` - Extended matrix dimensions
 /// * `cells` - Cells from required columns, at least 50% cells per column
-/// * `app_id` - Optional application ID
+/// * `app_id` - Application ID
 pub fn reconstruct_app_extrinsics(
 	layout: &[(u32, u32)],
 	dimensions: &ExtendedMatrixDimensions,
 	cells: Vec<DataCell>,
-	app_id: Option<u32>,
+	app_id: u32,
+) -> Result<Vec<Vec<u8>>, ReconstructionError> {
+	let data = reconstruct_available(dimensions, cells)?;
+	let ranges = data_ranges(layout)
+		.into_iter()
+		.filter(|&(id, _)| app_id == id)
+		.collect::<Vec<_>>();
+
+	Ok(unflatten_padded_data(ranges, data, CHUNK_SIZE)
+		.into_iter()
+		.flat_map(|(_, xts)| xts)
+		.collect::<Vec<_>>())
+}
+
+/// Reconstructs all extrinsics from extrinsics layout and data.
+///
+/// # Arguments
+///
+/// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
+/// * `dimensions` - Extended matrix dimensions
+/// * `cells` - Cells from required columns, at least 50% cells per column
+pub fn reconstruct_extrinsics(
+	layout: &[(u32, u32)],
+	dimensions: &ExtendedMatrixDimensions,
+	cells: Vec<DataCell>,
 ) -> Result<Vec<(u32, Vec<Vec<u8>>)>, ReconstructionError> {
+	let data = reconstruct_available(dimensions, cells)?;
+	let ranges = data_ranges(layout);
+	Ok(unflatten_padded_data(ranges, data, CHUNK_SIZE))
+}
+
+fn reconstruct_available(
+	dimensions: &ExtendedMatrixDimensions,
+	cells: Vec<DataCell>,
+) -> Result<Vec<u8>, ReconstructionError> {
 	let mut column_numbers: Vec<u16> = vec![];
 	let mut data: Vec<u8> = vec![];
 	let cells_map = map_cells(dimensions, cells)?;
@@ -152,12 +184,7 @@ pub fn reconstruct_app_extrinsics(
 			},
 		}
 	}
-
-	let ranges = data_ranges(layout)
-		.into_iter()
-		.filter(|(id, _)| app_id.is_none() || Some(*id) == app_id)
-		.collect::<Vec<_>>();
-	Ok(unflatten_padded_data(ranges, data, CHUNK_SIZE))
+	Ok(data)
 }
 
 /// Decode app extrinsics from extrinsics layout and data cells.
@@ -174,7 +201,7 @@ pub fn decode_app_extrinsics(
 	dimensions: &ExtendedMatrixDimensions,
 	cells: Vec<DataCell>,
 	app_id: u32,
-) -> Result<Vec<(u32, Vec<Vec<u8>>)>, ReconstructionError> {
+) -> Result<Vec<Vec<u8>>, ReconstructionError> {
 	let positions = app_specific_cells(layout, dimensions, app_id).unwrap_or_default();
 	if positions.is_empty() {
 		return Ok(vec![]);
@@ -210,7 +237,10 @@ pub fn decode_app_extrinsics(
 		.filter(|(id, _)| *id == app_id)
 		.collect::<Vec<_>>();
 
-	Ok(unflatten_padded_data(ranges, app_data, CHUNK_SIZE))
+	Ok(unflatten_padded_data(ranges, app_data, CHUNK_SIZE)
+		.into_iter()
+		.flat_map(|(_, data)| data)
+		.collect::<Vec<_>>())
 }
 
 fn trim_to_chunk_data(chunk: &[u8]) -> [u8; DATA_CHUNK_SIZE] {
