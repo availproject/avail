@@ -458,7 +458,8 @@ mod tests {
 	use hex_literal::hex;
 	use kate_recovery::com::{
 		app_specific_cells, data_ranges, decode_app_extrinsics, reconstruct_app_extrinsics,
-		unflatten_padded_data, DataCell, ExtendedMatrixDimensions, Position, ReconstructionError,
+		reconstruct_extrinsics, unflatten_padded_data, DataCell, ExtendedMatrixDimensions,
+		Position, ReconstructionError,
 	};
 	use proptest::{
 		collection::{self, size_range},
@@ -678,7 +679,7 @@ mod tests {
 
 		let columns = sample_cells_from_matrix(&matrix, &dims, None);
 		let extended_dims = ExtendedMatrixDimensions{cols: dims.cols, rows: dims.rows * 2};
-		let reconstructed = reconstruct_app_extrinsics(&layout, &extended_dims, columns, None).unwrap();
+		let reconstructed = reconstruct_extrinsics(&layout, &extended_dims, columns).unwrap();
 		for (result, xt) in reconstructed.iter().zip(xts) {
 		prop_assert_eq!(result.0, xt.app_id);
 		prop_assert_eq!(result.1[0].as_slice(), &xt.data);
@@ -765,13 +766,13 @@ get erasure coded to ensure redundancy."#;
 			rows: dims.rows * 2,
 		};
 
-		let res_1 = reconstruct_app_extrinsics(&layout, &extended_dims, cols_1, Some(1)).unwrap();
-		assert_eq!(res_1[0].1[0], app_id_1_data);
+		let res_1 = reconstruct_app_extrinsics(&layout, &extended_dims, cols_1, 1).unwrap();
+		assert_eq!(res_1[0], app_id_1_data);
 
 		let cols_2 = sample_cells_from_matrix(&coded, &dims, Some(&[1, 2]));
 
-		let res_2 = reconstruct_app_extrinsics(&layout, &extended_dims, cols_2, Some(2)).unwrap();
-		assert_eq!(res_2[0].1[0], app_id_2_data);
+		let res_2 = reconstruct_app_extrinsics(&layout, &extended_dims, cols_2, 2).unwrap();
+		assert_eq!(res_2[0], app_id_2_data);
 	}
 
 	#[test]
@@ -810,7 +811,7 @@ get erasure coded to ensure redundancy."#;
 				})
 				.collect::<Vec<_>>();
 			let data =
-				&decode_app_extrinsics(&layout, &extended_dims, cells, xt.app_id).unwrap()[0].1[0];
+				&decode_app_extrinsics(&layout, &extended_dims, cells, xt.app_id).unwrap()[0];
 			assert_eq!(data, &xt.data);
 		}
 
@@ -846,7 +847,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			cols: dims.cols,
 			rows: dims.rows * 2,
 		};
-		let res = reconstruct_app_extrinsics(&layout, &extended_dims, cols, None).unwrap();
+		let res = reconstruct_extrinsics(&layout, &extended_dims, cols).unwrap();
 		let s = String::from_utf8_lossy(res[0].1[0].as_slice());
 
 		assert_eq!(res[0].1[0], orig_data);
@@ -881,7 +882,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			rows: dims.rows * 2,
 		};
 
-		let res = reconstruct_app_extrinsics(&layout, &extended_dims, cols, None).unwrap();
+		let res = reconstruct_extrinsics(&layout, &extended_dims, cols).unwrap();
 
 		assert_eq!(res[0].1[0], xt1);
 		assert_eq!(res[0].1[1], xt2);
