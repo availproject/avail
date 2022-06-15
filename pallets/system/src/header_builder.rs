@@ -108,7 +108,7 @@ pub trait HostedHeaderBuilder {
 
 		let (kate_commitment, block_dims, data_index) = {
 			let (xts_layout, kate_commitment, block_dims, _data_matrix) =
-				kate::com::opt_par_build_commitments(
+				kate::com::par_build_commitments(
 					block_length.rows as usize,
 					block_length.cols as usize,
 					block_length.chunk_size() as usize,
