@@ -63,7 +63,6 @@ std = [
 	"rand_core/std",
 	"frame-support/std",
 	"da-primitives/std",
-	"extended-columns",
 ]
 extended-columns = []
 
