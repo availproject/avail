@@ -1,5 +1,7 @@
 extern crate criterion;
 
+use std::time::Duration;
+
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use da_primitives::asdr::AppExtrinsic;
 use dusk_plonk::{
@@ -8,9 +10,8 @@ use dusk_plonk::{
 };
 use kate::{
 	com::{
-		build_commitments, build_proof, extend_data_matrix, fft_on_commitments,
-		flatten_and_pad_block, opt_par_build_commitments, par_build_commitments,
-		par_extend_data_matrix, to_bls_scalar, Cell, Error,
+		build_commitments, build_proof, fft_on_commitments, flatten_and_pad_block,
+		opt_par_build_commitments, par_build_commitments, to_bls_scalar, Cell, Error,
 	},
 	config::{DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS},
 	testnet,
@@ -18,74 +19,75 @@ use kate::{
 use rand::prelude::*;
 use rand_chacha::ChaCha20Rng;
 
+// Commitment builder routine candidate 1
 fn bench_build_commitments(c: &mut Criterion) {
-	const ROWS: usize = MAX_BLOCK_ROWS as usize;
-	const COLS: usize = MAX_BLOCK_COLUMNS as usize;
-	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
-	const DLEN: usize = ROWS * COLS * (CHUNK - 2);
-
 	let mut rng = ChaCha20Rng::from_entropy();
 
-	let mut seed = [0u8; 32];
-	let mut data = [0u8; DLEN];
+	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
+	const DIMS: [(usize, usize); 5] = [(1024, 64), (512, 128), (256, 256), (128, 512), (64, 1024)];
 
-	rng.fill_bytes(&mut seed);
-	rng.fill_bytes(&mut data);
+	for dim in DIMS {
+		let dlen = dim.0 * dim.1 * (CHUNK - 2);
 
-	let extrinsic = AppExtrinsic::from(data.to_vec());
-	let extrinsics = [extrinsic];
+		let mut seed = [0u8; 32];
+		let mut data = vec![0u8; dlen];
 
-	c.bench_function("build_commitments", |b| {
-		b.iter(|| {
-			let (_, _, dim, _) = build_commitments(
-				black_box(ROWS),
-				black_box(COLS),
-				black_box(CHUNK),
-				black_box(&extrinsics),
-				black_box(seed),
-			)
-			.unwrap();
+		rng.fill_bytes(&mut seed);
+		rng.fill_bytes(&mut data);
 
-			assert_eq!(dim.rows, ROWS);
-			assert_eq!(dim.cols, COLS);
+		let tx = AppExtrinsic::from(data.to_vec());
+		let txs = [tx];
+
+		c.bench_function(&format!("build_commitments/{}x{}", dim.0, dim.1), |b| {
+			b.iter(|| {
+				let (_, _, _, _) = build_commitments(
+					black_box(dim.0),
+					black_box(dim.1),
+					black_box(CHUNK),
+					black_box(&txs),
+					black_box(seed),
+				)
+				.unwrap();
+			});
 		});
-	});
+	}
 }
 
+// Commitment builder routine candidate 2
 fn bench_par_build_commitments(c: &mut Criterion) {
-	const ROWS: usize = MAX_BLOCK_ROWS as usize;
-	const COLS: usize = MAX_BLOCK_COLUMNS as usize;
-	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
-	const DLEN: usize = ROWS * COLS * (CHUNK - 2);
-
 	let mut rng = ChaCha20Rng::from_entropy();
 
-	let mut seed = [0u8; 32];
-	let mut data = [0u8; DLEN];
+	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
+	const DIMS: [(usize, usize); 5] = [(1024, 64), (512, 128), (256, 256), (128, 512), (64, 1024)];
 
-	rng.fill_bytes(&mut seed);
-	rng.fill_bytes(&mut data);
+	for dim in DIMS {
+		let dlen = dim.0 * dim.1 * (CHUNK - 2);
 
-	let extrinsic = AppExtrinsic::from(data.to_vec());
-	let extrinsics = [extrinsic];
+		let mut seed = [0u8; 32];
+		let mut data = vec![0u8; dlen];
 
-	c.bench_function("par_build_commitments", |b| {
-		b.iter(|| {
-			let (_, _, dim, _) = par_build_commitments(
-				black_box(ROWS),
-				black_box(COLS),
-				black_box(CHUNK),
-				black_box(&extrinsics),
-				black_box(seed),
-			)
-			.unwrap();
+		rng.fill_bytes(&mut seed);
+		rng.fill_bytes(&mut data);
 
-			assert_eq!(dim.rows, ROWS);
-			assert_eq!(dim.cols, COLS);
+		let tx = AppExtrinsic::from(data.to_vec());
+		let txs = [tx];
+
+		c.bench_function(&format!("par_build_commitments/{}x{}", dim.0, dim.1), |b| {
+			b.iter(|| {
+				let (_, _, _, _) = par_build_commitments(
+					black_box(dim.0),
+					black_box(dim.1),
+					black_box(CHUNK),
+					black_box(&txs),
+					black_box(seed),
+				)
+				.unwrap();
+			});
 		});
-	});
+	}
 }
 
+// Commitment builder routine candidate 3
 fn bench_opt_par_build_commitments(c: &mut Criterion) {
 	let mut rng = ChaCha20Rng::from_entropy();
 
@@ -156,60 +158,6 @@ fn bench_build_proof(c: &mut Criterion) {
 			});
 		});
 	}
-}
-
-fn bench_extend_data_matrix(c: &mut Criterion) {
-	const ROWS: usize = MAX_BLOCK_ROWS as usize;
-	const COLS: usize = MAX_BLOCK_COLUMNS as usize;
-	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
-	const DLEN: usize = ROWS * COLS * (CHUNK - 2);
-
-	let mut rng = ChaCha20Rng::from_entropy();
-
-	let mut seed = [0u8; 32];
-	let mut data = [0u8; DLEN];
-
-	rng.fill_bytes(&mut seed);
-	rng.fill_bytes(&mut data);
-
-	let extrinsic = AppExtrinsic::from(data.to_vec());
-	let extrinsics = [extrinsic];
-
-	let (_, blk, dim) = flatten_and_pad_block(ROWS, COLS, CHUNK, &extrinsics, seed).unwrap();
-
-	c.bench_function("extend_data_matrix", |b| {
-		b.iter(|| {
-			let extended = extend_data_matrix(black_box(dim), black_box(&blk)).unwrap();
-			assert_eq!(extended.len(), ROWS * COLS * 2);
-		});
-	});
-}
-
-fn bench_par_extend_data_matrix(c: &mut Criterion) {
-	const ROWS: usize = MAX_BLOCK_ROWS as usize;
-	const COLS: usize = MAX_BLOCK_COLUMNS as usize;
-	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
-	const DLEN: usize = ROWS * COLS * (CHUNK - 2);
-
-	let mut rng = ChaCha20Rng::from_entropy();
-
-	let mut seed = [0u8; 32];
-	let mut data = [0u8; DLEN];
-
-	rng.fill_bytes(&mut seed);
-	rng.fill_bytes(&mut data);
-
-	let extrinsic = AppExtrinsic::from(data.to_vec());
-	let extrinsics = [extrinsic];
-
-	let (_, blk, dim) = flatten_and_pad_block(ROWS, COLS, CHUNK, &extrinsics, seed).unwrap();
-
-	c.bench_function("par_extend_data_matrix", |b| {
-		b.iter(|| {
-			let extended = par_extend_data_matrix(black_box(dim), black_box(&blk)).unwrap();
-			assert_eq!(extended.len(), ROWS * COLS * 2);
-		});
-	});
 }
 
 fn bench_ifft_on_commitments(c: &mut Criterion) {
@@ -300,5 +248,5 @@ fn bench_ifft_on_commitments(c: &mut Criterion) {
 	});
 }
 
-criterion_group! {name = kate_build_commitments; config = Criterion::default().sample_size(10); targets =  bench_build_commitments, bench_par_build_commitments, bench_opt_par_build_commitments, bench_build_proof, bench_extend_data_matrix, bench_par_extend_data_matrix, bench_ifft_on_commitments}
+criterion_group! {name = kate_build_commitments; config = Criterion::default().sample_size(10).warm_up_time(Duration::from_secs(100)).measurement_time(Duration::from_secs(100)); targets =  bench_build_commitments, bench_par_build_commitments, bench_opt_par_build_commitments, bench_build_proof, bench_ifft_on_commitments}
 criterion_main!(kate_build_commitments);
