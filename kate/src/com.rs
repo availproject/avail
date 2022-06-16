@@ -5,7 +5,6 @@ use std::{
 };
 
 use codec::Encode;
-use bls12_381::{G1Affine, G1Projective, Scalar};
 use da_primitives::asdr::AppExtrinsic;
 use dusk_bytes::Serializable;
 use dusk_plonk::{
@@ -27,7 +26,7 @@ use static_assertions::const_assert_eq;
 use crate::testnet;
 use crate::{
 	config::{
-		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE, MAX_BLOCK_COLUMNS,
+		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE,
 		MAX_PROOFS_REQUEST, MINIMUM_BLOCK_SIZE, PROOF_SIZE, PROVER_KEY_SIZE, SCALAR_SIZE,
 	},
 	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed, LOG_TARGET,
@@ -75,6 +74,7 @@ fn app_extrinsics_group_by_app_id(extrinsics: &[AppExtrinsic]) -> Vec<(u32, Vec<
 		acc
 	})
 }
+
 pub fn flatten_and_pad_block(
 	max_rows_num: usize,
 	max_cols_num: usize,
@@ -430,15 +430,16 @@ pub fn build_commitments(
 
 	info!(target: LOG_TARGET, "Time to prepare {:?}", start.elapsed());
 
-	// construct commitments in parallel
-	if block_dims.cols > MAX_BLOCK_COLUMNS as usize {
-		log::error!(
-			target: LOG_TARGET,
-			"Error on Block dimension {:?}",
-			block_dims
-		);
-	}
-	let public_params = testnet::public_params(MAX_BLOCK_COLUMNS as usize);
+	// if block_dims.cols > MAX_BLOCK_COLUMNS as usize {
+	// 	log::error!(
+	// 		target: LOG_TARGET,
+	// 		"Error on Block dimension {:?}",
+	// 		block_dims
+	// 	);
+	// }
+
+	let public_params = testnet::public_params(block_dims.cols);
+
 	if log::log_enabled!(target: LOG_TARGET, log::Level::Debug) {
 		let raw_pp = public_params.to_raw_var_bytes();
 		let hash_pp = hex::encode(sp_core::blake2_128(&raw_pp));
@@ -517,15 +518,16 @@ pub fn par_build_commitments(
 
 	info!(target: LOG_TARGET, "Time to prepare {:?}", start.elapsed());
 
-	// construct commitments in parallel
-	if block_dims.cols > MAX_BLOCK_COLUMNS as usize {
-		log::error!(
-			target: LOG_TARGET,
-			"Error on Block dimension {:?}",
-			block_dims
-		);
-	}
-	let public_params = testnet::public_params(MAX_BLOCK_COLUMNS as usize);
+	// if block_dims.cols > MAX_BLOCK_COLUMNS as usize {
+	// 	log::error!(
+	// 		target: LOG_TARGET,
+	// 		"Error on Block dimension {:?}",
+	// 		block_dims
+	// 	);
+	// }
+
+	let public_params = testnet::public_params(block_dims.cols);
+
 	if log::log_enabled!(target: LOG_TARGET, log::Level::Debug) {
 		let raw_pp = public_params.to_raw_var_bytes();
 		let hash_pp = hex::encode(sp_core::blake2_128(&raw_pp));
@@ -606,7 +608,7 @@ pub fn opt_par_build_commitments(
 		blk.len(),
 	);
 
-	let ext_data_matrix = extend_data_matrix(dims, &blk)?;
+	let ext_data_matrix = par_extend_data_matrix(dims, &blk)?;
 	let ext_rows = dims.rows * EXTENSION_FACTOR;
 
 	info!(target: LOG_TARGET, "Time to prepare {:?}", start.elapsed());
@@ -834,6 +836,7 @@ mod tests {
 	use super::*;
 	use crate::{
 		com::{extend_data_matrix, get_block_dimensions, pad_iec_9797_1, BlockDimensions},
+		config::{DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAX_BLOCK_COLUMNS},
 		padded_len,
 	};
 

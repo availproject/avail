@@ -2974,6 +2974,7 @@ dependencies = [
  "getrandom 0.2.6",
  "hex",
  "hex-literal",
+ "itertools 0.10.3",
  "kate-proof",
  "kate-recovery",
  "log",
