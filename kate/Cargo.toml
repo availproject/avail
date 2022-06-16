@@ -8,6 +8,7 @@ edition = "2021"
 
 [dependencies]
 da-primitives = { path = "../primitives", default-features = false }
+itertools = "0.10.3"
 
 # Others
 dusk-plonk = { version = "0.8.2", default-features = false, optional = true }
