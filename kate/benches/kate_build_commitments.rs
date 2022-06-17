@@ -192,9 +192,9 @@ fn bench_build_proof(c: &mut Criterion) {
 	let mut rng = ChaCha20Rng::from_entropy();
 
 	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
-	const DIMS: [(usize, usize); 5] = [(1024, 64), (512, 128), (256, 256), (128, 512), (64, 1024)];
+	let mdims = generate_matrix_dimensions();
 
-	for dim in DIMS {
+	for dim in mdims {
 		let dlen = dim.0 * dim.1 * (CHUNK - 2);
 
 		let mut seed = [0u8; 32];
@@ -210,17 +210,25 @@ fn bench_build_proof(c: &mut Criterion) {
 
 		let (_, _, dims, mat) = opt_par_build_commitments(dim.0, dim.1, CHUNK, &txs, seed).unwrap();
 
-		c.bench_function(&format!("build_proof/{}x{}", dim.0, dim.1), |b| {
-			b.iter(|| {
-				let cell = Cell {
-					row: rng.next_u32() % dims.rows as u32,
-					col: rng.next_u32() % dims.cols as u32,
-				};
+		c.bench_function(
+			&format!(
+				"build_proof/{}x{}/ {} MB",
+				dim.0,
+				dim.1,
+				(dim.0 * dim.1 * CHUNK) >> 20
+			),
+			|b| {
+				b.iter(|| {
+					let cell = Cell {
+						row: rng.next_u32() % dims.rows as u32,
+						col: rng.next_u32() % dims.cols as u32,
+					};
 
-				let proof = build_proof(&public_params, dims, &mat, &[cell]).unwrap();
-				assert_eq!(proof.len(), 80);
-			});
-		});
+					let proof = build_proof(&public_params, dims, &mat, &[cell]).unwrap();
+					assert_eq!(proof.len(), 80);
+				});
+			},
+		);
 	}
 }
 
