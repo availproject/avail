@@ -321,6 +321,8 @@ pub fn build_proof(
 	let cols_num = block_dims.cols;
 	let extended_rows_num = rows_num * EXTENSION_FACTOR;
 
+	const SPROOF_SIZE: usize = SCALAR_SIZE + PROOF_SIZE;
+
 	ensure!(cells.len() <= MAX_PROOFS_REQUEST, Error::CellLenghtExceeded);
 
 	let (prover_key, _) = public_params.trim(cols_num).map_err(Error::from)?;
@@ -331,15 +333,13 @@ pub fn build_proof(
 	row_dom_x_pts.extend(row_eval_domain.elements());
 
 	let mut result_bytes: Vec<u8> = Vec::new();
-	let serialized_proof_size = SCALAR_SIZE + PROOF_SIZE;
-	result_bytes.reserve_exact(serialized_proof_size * cells.len());
+	result_bytes.reserve_exact(SPROOF_SIZE * cells.len());
 	unsafe {
-		result_bytes.set_len(serialized_proof_size * cells.len());
+		result_bytes.set_len(SPROOF_SIZE * cells.len());
 	}
 
 	let prover_key = &prover_key;
 	let row_dom_x_pts = &row_dom_x_pts;
-	let mut cell_index = 0;
 
 	info!(
 		target: LOG_TARGET,
@@ -348,56 +348,39 @@ pub fn build_proof(
 	);
 	// generate proof only for requested cells
 	let total_start = Instant::now();
-	cells
-		.iter()
-		.try_for_each(|cell| -> Result<(), PlonkError> {
-			let row_index = cell.row as usize;
-			let col_index = cell.col as usize;
 
-			if row_index < extended_rows_num && col_index < cols_num {
+	// attempt to parallelly compute proof for all requested cells
+	cells
+		.into_par_iter()
+		.zip(result_bytes.par_chunks_exact_mut(SPROOF_SIZE))
+		.for_each(|(cell, res)| {
+			let r_index = cell.row as usize;
+			let c_index = cell.col as usize;
+
+			if (r_index >= extended_rows_num) || (c_index >= cols_num) {
+				res.fill(0); // for bad cell identifier, fill whole proof with zero bytes !
+			} else {
 				// construct polynomial per extended matrix row
 				let row = (0..cols_num)
 					.into_par_iter()
-					.map(|j| ext_data_matrix[row_index + j * extended_rows_num])
+					.map(|j| ext_data_matrix[r_index + j * extended_rows_num])
 					.collect::<Vec<BlsScalar>>();
 
 				// row has to be a power of 2, otherwise interpolate() function panics
 				let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
-				let witness = prover_key.compute_single_witness(&poly, &row_dom_x_pts[col_index]);
-				let commitment_to_witness = prover_key.commit(&witness)?;
-				let evaluated_point = ext_data_matrix[row_index + col_index * extended_rows_num];
+				let witness = prover_key.compute_single_witness(&poly, &row_dom_x_pts[c_index]);
+				let commitment_to_witness = prover_key.commit(&witness).unwrap();
+				let evaluated_point = ext_data_matrix[r_index + c_index * extended_rows_num];
 
-				unsafe {
-					std::ptr::copy(
-						commitment_to_witness.to_bytes().as_ptr(),
-						result_bytes
-							.as_mut_ptr()
-							.add(cell_index * serialized_proof_size),
-						PROOF_SIZE,
-					);
-
-					std::ptr::copy(
-						evaluated_point.to_bytes().as_ptr(),
-						result_bytes
-							.as_mut_ptr()
-							.add(cell_index * serialized_proof_size + PROOF_SIZE),
-						SCALAR_SIZE,
-					);
-				}
-
-				cell_index += 1;
+				res[0..PROOF_SIZE].copy_from_slice(&commitment_to_witness.to_bytes());
+				res[PROOF_SIZE..].copy_from_slice(&evaluated_point.to_bytes());
 			}
-			Ok(())
-		})
-		.map_err(Error::from)?;
-
-	unsafe {
-		result_bytes.set_len(serialized_proof_size * cell_index);
-	}
+		});
 
 	info!(
 		target: LOG_TARGET,
-		"Time to build 1 row of proofs {:?}",
+		"Time to build proofs of {} cells: {:?}",
+		cells.len(),
 		total_start.elapsed()
 	);
 
