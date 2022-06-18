@@ -42,10 +42,10 @@ fn variate_rc(rows: usize, cols: usize) -> Vec<(usize, usize)> {
 
 fn generate_matrix_dimensions() -> Vec<(usize, usize)> {
 	const MIN_ROWS: usize = 256;
-	const MAX_ROWS: usize = 1024;
+	const MAX_ROWS: usize = 2048;
 
 	const MIN_COLS: usize = 256;
-	const MAX_COLS: usize = 1024;
+	const MAX_COLS: usize = 2048;
 
 	let mut dims = Vec::new();
 
