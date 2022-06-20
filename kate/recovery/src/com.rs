@@ -1,8 +1,14 @@
-use std::{collections::HashMap, convert::TryInto, ops::Range};
+use std::{
+	collections::HashMap,
+	convert::{TryFrom, TryInto},
+	iter::once,
+	ops::Range,
+};
 
 use codec::Decode;
 use dusk_bytes::Serializable;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 // TODO: Constants are copy from kate crate, we should move them to common place
@@ -62,15 +68,15 @@ fn map_cells(
 ///
 /// # Arguments
 ///
-/// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
+/// * `index` - Application data index
 /// * `dimensions` - Extended matrix dimensions
 /// * `app_id` - Application ID
 pub fn app_specific_cells(
-	layout: &[(u32, u32)],
+	index: &AppDataIndex,
 	dimensions: &ExtendedMatrixDimensions,
 	app_id: u32,
 ) -> Option<Vec<Position>> {
-	let ranges = cell_ranges(layout);
+	let ranges = index.cell_ranges();
 
 	let (_, range) = ranges.into_iter().find(|&(id, _)| app_id == id)?;
 
@@ -89,15 +95,15 @@ pub fn app_specific_cells(
 ///
 /// # Arguments
 ///
-/// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
+/// * `index` - Application data index
 /// * `dimensions` - Extended matrix dimensions
 /// * `app_id` - Application ID
 pub fn app_specific_column_cells(
-	layout: &[(u32, u32)],
+	index: &AppDataIndex,
 	dimensions: &ExtendedMatrixDimensions,
 	app_id: u32,
 ) -> Option<Vec<Position>> {
-	let ranges = data_ranges(layout);
+	let ranges = index.data_ranges();
 
 	let (_, range) = ranges.iter().find(|&&(id, _)| app_id == id)?;
 
@@ -122,18 +128,19 @@ pub fn app_specific_column_cells(
 ///
 /// # Arguments
 ///
-/// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
+/// * `index` - Application data index
 /// * `dimensions` - Extended matrix dimensions
 /// * `cells` - Cells from required columns, at least 50% cells per column
 /// * `app_id` - Application ID
 pub fn reconstruct_app_extrinsics(
-	layout: &[(u32, u32)],
+	index: &AppDataIndex,
 	dimensions: &ExtendedMatrixDimensions,
 	cells: Vec<DataCell>,
 	app_id: u32,
 ) -> Result<Vec<Vec<u8>>, ReconstructionError> {
 	let data = reconstruct_available(dimensions, cells)?;
-	let ranges = data_ranges(layout)
+	let ranges = index
+		.data_ranges()
 		.into_iter()
 		.filter(|&(id, _)| app_id == id)
 		.collect::<Vec<_>>();
@@ -148,16 +155,16 @@ pub fn reconstruct_app_extrinsics(
 ///
 /// # Arguments
 ///
-/// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
+/// * `index` - Application data index
 /// * `dimensions` - Extended matrix dimensions
 /// * `cells` - Cells from required columns, at least 50% cells per column
 pub fn reconstruct_extrinsics(
-	layout: &[(u32, u32)],
+	index: &AppDataIndex,
 	dimensions: &ExtendedMatrixDimensions,
 	cells: Vec<DataCell>,
 ) -> Result<Vec<(u32, Vec<Vec<u8>>)>, ReconstructionError> {
 	let data = reconstruct_available(dimensions, cells)?;
-	let ranges = data_ranges(layout);
+	let ranges = index.data_ranges();
 	Ok(unflatten_padded_data(ranges, data, CHUNK_SIZE))
 }
 
@@ -192,17 +199,17 @@ fn reconstruct_available(
 ///
 /// # Arguments
 ///
-/// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
+/// * `index` - Application data index
 /// * `dimensions` - Extended matrix dimensions
 /// * `cells` - Application specific data cells in extended matrix, without erasure coded data.
 /// * `app_id` - Application ID
 pub fn decode_app_extrinsics(
-	layout: &[(u32, u32)],
+	index: &AppDataIndex,
 	dimensions: &ExtendedMatrixDimensions,
 	cells: Vec<DataCell>,
 	app_id: u32,
 ) -> Result<Vec<Vec<u8>>, ReconstructionError> {
-	let positions = app_specific_cells(layout, dimensions, app_id).unwrap_or_default();
+	let positions = app_specific_cells(index, dimensions, app_id).unwrap_or_default();
 	if positions.is_empty() {
 		return Ok(vec![]);
 	}
@@ -232,7 +239,8 @@ pub fn decode_app_extrinsics(
 			}
 		}
 	}
-	let ranges = data_ranges(layout)
+	let ranges = index
+		.data_ranges()
 		.into_iter()
 		.filter(|(id, _)| *id == app_id)
 		.collect::<Vec<_>>();
@@ -248,51 +256,15 @@ fn trim_to_chunk_data(chunk: &[u8]) -> [u8; DATA_CHUNK_SIZE] {
 	chunk[0..DATA_CHUNK_SIZE].try_into().unwrap()
 }
 
-/// Calculates range per application from extrinsics layout.
-/// Range is from start index to end index in matrix.
-///
-/// # Arguments
-///
-/// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
-fn cell_ranges(layout: &[(u32, u32)]) -> Vec<(u32, Range<usize>)> {
-	let (_, ranges) = layout
-		.iter()
-		.cloned()
-		.fold((0, vec![]), |(start, mut v), (app_id, size)| {
-			let end = start + (size as usize);
-			v.push((app_id, Range { start, end }));
-			(end, v)
-		});
-	ranges
-}
-
-/// Calculates range per application from extrinsics layout.
-/// Range is from start index to end index in matrix flattened as byte array.
-///
-/// # Arguments
-///
-/// * `layout` - Extrinsics layout, vector of app_id and size in chunks pairs
-pub fn data_ranges(layout: &[(u32, u32)]) -> Vec<(u32, Range<usize>)> {
-	let (_, ranges) = layout
-		.iter()
-		.cloned()
-		.fold((0, vec![]), |(start, mut v), (app_id, size)| {
-			let end = start + (size as usize) * CHUNK_SIZE;
-			v.push((app_id, Range { start, end }));
-			(end, v)
-		});
-	ranges
-}
-
 // Removes both extrinsics and block padding (iec_9797 and seeded random data)
 pub fn unflatten_padded_data(
-	layout: Vec<(u32, Range<usize>)>,
+	ranges: Vec<(u32, Range<usize>)>,
 	data: Vec<u8>,
 	chunk_size: usize,
 ) -> Vec<(u32, Vec<Vec<u8>>)> {
 	assert!(data.len() % chunk_size == 0);
 
-	layout
+	ranges
 		.iter()
 		.map(|(app_id, range)| {
 			let orig = data[range.clone()]
@@ -439,6 +411,91 @@ fn unshift_poly(poly: &mut [BlsScalar]) {
 	}
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AppDataIndex {
+	pub size: u32,
+	pub index: Vec<(u32, u32)>,
+}
+
+impl AppDataIndex {
+	/// Calculates cell range per application from extrinsic offsets.
+	/// Range is from start index to end index in matrix.
+	fn cell_ranges(&self) -> Vec<(u32, Range<usize>)> {
+		// Case if first app_id in index is zero is ignored
+		// since it should be asserted elsewhere
+		let prepend = self.index.get(0).map_or(vec![(0, 0)], |&(_, offset)| {
+			if offset == 0 {
+				vec![]
+			} else {
+				vec![(0, 0)]
+			}
+		});
+
+		let starts = prepend.iter().chain(self.index.iter());
+
+		let ends = self
+			.index
+			.iter()
+			.skip_while(|&&(_, offset)| offset == 0)
+			.map(|&(_, offset)| offset)
+			.chain(once(self.size));
+
+		starts
+			.zip(ends)
+			.map(|(&(app_id, start), end)| (app_id, start as usize, end as usize))
+			.map(|(app_id, start, end)| (app_id, Range { start, end }))
+			.collect::<Vec<_>>()
+	}
+
+	/// Calculates data range per application from extrinsics layout.
+	/// Range is from start index to end index in matrix flattened as byte array.
+	pub fn data_ranges(&self) -> Vec<(u32, Range<usize>)> {
+		self.cell_ranges()
+			.into_iter()
+			.map(|(app_id, range)| {
+				(app_id, Range {
+					start: range.start * CHUNK_SIZE,
+					end: range.end * CHUNK_SIZE,
+				})
+			})
+			.collect::<Vec<_>>()
+	}
+}
+
+#[derive(PartialEq, Debug)]
+pub enum AppDataIndexError {
+	SizeOverflow,
+	UnsortedLayout,
+}
+
+impl TryFrom<&Vec<(u32, u32)>> for AppDataIndex {
+	type Error = AppDataIndexError;
+
+	fn try_from(layout: &Vec<(u32, u32)>) -> Result<Self, Self::Error> {
+		let mut index = Vec::new();
+		// transactions are ordered by application id
+		// skip transactions with 0 application id - it's not a data txs
+		let mut size = 0u32;
+		let mut prev_app_id = 0u32;
+
+		for &(app_id, data_len) in layout {
+			if app_id != 0 && prev_app_id != app_id {
+				index.push((app_id, size));
+			}
+
+			size = size
+				.checked_add(data_len)
+				.ok_or(Self::Error::SizeOverflow)?;
+			if prev_app_id > app_id {
+				return Err(Self::Error::UnsortedLayout);
+			}
+			prev_app_id = app_id;
+		}
+
+		Ok(AppDataIndex { size, index })
+	}
+}
+
 /// Position in a data matrix
 #[derive(Default, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Position {
@@ -552,12 +609,100 @@ mod tests {
 	use super::*;
 
 	#[test]
+	fn app_data_index_cell_ranges() {
+		let cases = vec![
+			(
+				AppDataIndex {
+					size: 8,
+					index: vec![],
+				},
+				vec![(0, Range { start: 0, end: 8 })],
+			),
+			(
+				AppDataIndex {
+					size: 4,
+					index: vec![(1, 0), (2, 2)],
+				},
+				vec![
+					(1, Range { start: 0, end: 2 }),
+					(2, Range { start: 2, end: 4 }),
+				],
+			),
+			(
+				AppDataIndex {
+					size: 15,
+					index: vec![(1, 3), (12, 8)],
+				},
+				vec![
+					(0, Range { start: 0, end: 3 }),
+					(1, Range { start: 3, end: 8 }),
+					(12, Range { start: 8, end: 15 }),
+				],
+			),
+		];
+
+		for (index, result) in cases {
+			assert_eq!(index.cell_ranges(), result);
+		}
+	}
+
+	#[test]
+	fn app_data_index_data_ranges() {
+		let cases = vec![
+			(
+				AppDataIndex {
+					size: 8,
+					index: vec![],
+				},
+				vec![(0, Range { start: 0, end: 256 })],
+			),
+			(
+				AppDataIndex {
+					size: 4,
+					index: vec![(1, 0), (2, 2)],
+				},
+				vec![
+					(1, Range { start: 0, end: 64 }),
+					(2, Range {
+						start: 64,
+						end: 128,
+					}),
+				],
+			),
+			(
+				AppDataIndex {
+					size: 15,
+					index: vec![(1, 3), (12, 8)],
+				},
+				vec![
+					(0, Range { start: 0, end: 96 }),
+					(1, Range {
+						start: 96,
+						end: 256,
+					}),
+					(12, Range {
+						start: 256,
+						end: 480,
+					}),
+				],
+			),
+		];
+
+		for (index, result) in cases {
+			assert_eq!(index.data_ranges(), result);
+		}
+	}
+
+	#[test]
 	fn test_app_specific_cells() {
-		let layout = vec![(0, 5), (1, 3)];
+		let index = AppDataIndex {
+			size: 8,
+			index: vec![(1, 5)],
+		};
 		let dimensions = ExtendedMatrixDimensions { rows: 4, cols: 4 };
 
 		let expected_0 = vec![(0, 0), (0, 2), (1, 0), (1, 2), (2, 0)];
-		let result_0 = app_specific_cells(&layout, &dimensions, 0).unwrap();
+		let result_0 = app_specific_cells(&index, &dimensions, 0).unwrap();
 
 		assert_eq!(expected_0.len(), result_0.len());
 		result_0.iter().zip(expected_0).for_each(|(a, (col, row))| {
@@ -566,7 +711,7 @@ mod tests {
 		});
 
 		let expected_1 = vec![(2, 2), (3, 0), (3, 2)];
-		let result_1 = app_specific_cells(&layout, &dimensions, 1).unwrap();
+		let result_1 = app_specific_cells(&index, &dimensions, 1).unwrap();
 
 		assert_eq!(expected_1.len(), result_1.len());
 		result_1.iter().zip(expected_1).for_each(|(a, (col, row))| {
@@ -574,16 +719,19 @@ mod tests {
 			assert_eq!(a.row, row);
 		});
 
-		assert!(app_specific_cells(&layout, &dimensions, 2).is_none());
+		assert!(app_specific_cells(&index, &dimensions, 2).is_none());
 	}
 
 	#[test]
 	fn test_app_specific_column_cells() {
-		let layout = vec![(0, 5), (1, 3)];
+		let index = AppDataIndex {
+			size: 8,
+			index: vec![(1, 5)],
+		};
 		let dimensions = ExtendedMatrixDimensions { rows: 4, cols: 4 };
 
 		let expected_0 = (0..=2).flat_map(|c| (0..=3).map(move |r| (c, r)));
-		let result_0 = app_specific_column_cells(&layout, &dimensions, 0).unwrap();
+		let result_0 = app_specific_column_cells(&index, &dimensions, 0).unwrap();
 
 		assert_eq!(expected_0.clone().count(), result_0.len());
 		result_0.iter().zip(expected_0).for_each(|(a, (col, row))| {
@@ -592,7 +740,7 @@ mod tests {
 		});
 
 		let expected_1 = (2..=3).flat_map(|c| (0..=3).map(move |r| (c, r)));
-		let result_1 = app_specific_column_cells(&layout, &dimensions, 1).unwrap();
+		let result_1 = app_specific_column_cells(&index, &dimensions, 1).unwrap();
 
 		assert_eq!(expected_1.clone().count(), result_1.len());
 		result_1.iter().zip(expected_1).for_each(|(a, (col, row))| {
@@ -600,16 +748,19 @@ mod tests {
 			assert_eq!(a.row, row);
 		});
 
-		assert!(app_specific_column_cells(&layout, &dimensions, 2).is_none());
+		assert!(app_specific_column_cells(&index, &dimensions, 2).is_none());
 	}
 
 	#[test]
 	fn test_app_specific_column_cells_gt_chunk_size() {
-		let layout = vec![(0, 1), (1, 89)];
+		let index = AppDataIndex {
+			size: 90,
+			index: vec![(1, 1)],
+		};
 		let dimensions = ExtendedMatrixDimensions { rows: 2, cols: 128 };
 		let expected = (1..=89).flat_map(|col| (0..=1).map(move |row| (col, row)));
 
-		let result = app_specific_column_cells(&layout, &dimensions, 1).unwrap();
+		let result = app_specific_column_cells(&index, &dimensions, 1).unwrap();
 
 		assert_eq!(expected.clone().count(), result.len());
 		result.iter().zip(expected).for_each(|(a, (col, row))| {
