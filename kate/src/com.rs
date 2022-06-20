@@ -457,9 +457,9 @@ mod tests {
 	use dusk_plonk::bls12_381::BlsScalar;
 	use hex_literal::hex;
 	use kate_recovery::com::{
-		app_specific_cells, data_ranges, decode_app_extrinsics, reconstruct_app_extrinsics,
-		reconstruct_extrinsics, unflatten_padded_data, DataCell, ExtendedMatrixDimensions,
-		Position, ReconstructionError,
+		app_specific_cells, decode_app_extrinsics, reconstruct_app_extrinsics,
+		reconstruct_extrinsics, unflatten_padded_data, AppDataIndex, DataCell,
+		ExtendedMatrixDimensions, Position, ReconstructionError,
 	};
 	use proptest::{
 		collection::{self, size_range},
@@ -587,8 +587,8 @@ mod tests {
 
 		assert_eq!(dims, expected_dims, "Dimensions don't match the expected");
 		assert_eq!(data, expected_data, "Data doesn't match the expected data");
-
-		let res = unflatten_padded_data(data_ranges(&layout), data, chunk_size);
+		let index = AppDataIndex::try_from(&layout).unwrap();
+		let res = unflatten_padded_data(index.data_ranges(), data, chunk_size);
 		assert_eq!(
 			res.len(),
 			extrinsics.len(),
@@ -679,7 +679,8 @@ mod tests {
 
 		let columns = sample_cells_from_matrix(&matrix, &dims, None);
 		let extended_dims = ExtendedMatrixDimensions{cols: dims.cols, rows: dims.rows * 2};
-		let reconstructed = reconstruct_extrinsics(&layout, &extended_dims, columns).unwrap();
+		let index = AppDataIndex::try_from(&layout).unwrap();
+		let reconstructed = reconstruct_extrinsics(&index, &extended_dims, columns).unwrap();
 		for (result, xt) in reconstructed.iter().zip(xts) {
 		prop_assert_eq!(result.0, xt.app_id);
 		prop_assert_eq!(result.1[0].as_slice(), &xt.data);
@@ -766,12 +767,13 @@ get erasure coded to ensure redundancy."#;
 			rows: dims.rows * 2,
 		};
 
-		let res_1 = reconstruct_app_extrinsics(&layout, &extended_dims, cols_1, 1).unwrap();
+		let index = AppDataIndex::try_from(&layout).unwrap();
+		let res_1 = reconstruct_app_extrinsics(&index, &extended_dims, cols_1, 1).unwrap();
 		assert_eq!(res_1[0], app_id_1_data);
 
 		let cols_2 = sample_cells_from_matrix(&coded, &dims, Some(&[1, 2]));
 
-		let res_2 = reconstruct_app_extrinsics(&layout, &extended_dims, cols_2, 2).unwrap();
+		let res_2 = reconstruct_app_extrinsics(&index, &extended_dims, cols_2, 2).unwrap();
 		assert_eq!(res_2[0], app_id_2_data);
 	}
 
@@ -801,8 +803,9 @@ get erasure coded to ensure redundancy."#;
 		};
 		let extended_matrix = coded.chunks(extended_dims.rows).collect::<Vec<_>>();
 
+		let index = AppDataIndex::try_from(&layout).unwrap();
 		for xt in xts {
-			let positions = app_specific_cells(&layout, &extended_dims, xt.app_id).unwrap();
+			let positions = app_specific_cells(&index, &extended_dims, xt.app_id).unwrap();
 			let cells = positions
 				.iter()
 				.map(|position| kate_recovery::com::DataCell {
@@ -810,13 +813,12 @@ get erasure coded to ensure redundancy."#;
 					data: extended_matrix[position.col as usize][position.row as usize].to_bytes(),
 				})
 				.collect::<Vec<_>>();
-			let data =
-				&decode_app_extrinsics(&layout, &extended_dims, cells, xt.app_id).unwrap()[0];
+			let data = &decode_app_extrinsics(&index, &extended_dims, cells, xt.app_id).unwrap()[0];
 			assert_eq!(data, &xt.data);
 		}
 
 		assert!(matches!(
-			decode_app_extrinsics(&layout, &extended_dims, vec![], 0),
+			decode_app_extrinsics(&index, &extended_dims, vec![], 0),
 			Err(ReconstructionError::MissingCell { .. })
 		));
 	}
@@ -847,7 +849,8 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			cols: dims.cols,
 			rows: dims.rows * 2,
 		};
-		let res = reconstruct_extrinsics(&layout, &extended_dims, cols).unwrap();
+		let index = AppDataIndex::try_from(&layout).unwrap();
+		let res = reconstruct_extrinsics(&index, &extended_dims, cols).unwrap();
 		let s = String::from_utf8_lossy(res[0].1[0].as_slice());
 
 		assert_eq!(res[0].1[0], orig_data);
@@ -882,7 +885,8 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			rows: dims.rows * 2,
 		};
 
-		let res = reconstruct_extrinsics(&layout, &extended_dims, cols).unwrap();
+		let index = AppDataIndex::try_from(&layout).unwrap();
+		let res = reconstruct_extrinsics(&index, &extended_dims, cols).unwrap();
 
 		assert_eq!(res[0].1[0], xt1);
 		assert_eq!(res[0].1[1], xt2);
