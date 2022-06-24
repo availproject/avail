@@ -320,7 +320,7 @@ pub fn build_proof(
 	let cols_num = block_dims.cols;
 	let extended_rows_num = rows_num * EXTENSION_FACTOR;
 
-	const SPROOF_SIZE: usize = SCALAR_SIZE + PROOF_SIZE;
+	const SPROOF_SIZE: usize = PROOF_SIZE + SCALAR_SIZE;
 
 	ensure!(cells.len() <= MAX_PROOFS_REQUEST, Error::CellLenghtExceeded);
 
@@ -1038,7 +1038,7 @@ mod tests {
 		let public_params = crate::testnet::public_params(MAX_BLOCK_COLUMNS as usize);
 		let pp = testnet::public_params(dims.cols);
 		for cell in random_cells(dims.cols, dims.rows, 1) {
-			let col = cell.col ;
+			let col = cell.col;
 			let row = cell.row as usize;
 
 			let proof = build_proof(&public_params, dims, &matrix, &[cell]).unwrap();

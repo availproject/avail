@@ -70,5 +70,5 @@ maximum-block-size = []
 
 
 [[bench]]
-name = "kate_build_commitments"
+name = "kzg"
 harness = false
