@@ -16,6 +16,7 @@ use kate::{
 	config::{DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS},
 	testnet,
 };
+use kate_proof::kc_verify_proof;
 use rand::prelude::*;
 use rand_chacha::ChaCha20Rng;
 
@@ -232,6 +233,53 @@ fn bench_build_proof(c: &mut Criterion) {
 	}
 }
 
+fn bench_verify_proof(c: &mut Criterion) {
+	let mut rng = ChaCha20Rng::from_entropy();
+
+	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
+	let mdims = generate_matrix_dimensions();
+
+	for dim in mdims {
+		let dlen = dim.0 * dim.1 * (CHUNK - 2);
+
+		let mut seed = [0u8; 32];
+		let mut data = vec![0u8; dlen];
+
+		rng.fill_bytes(&mut seed);
+		rng.fill_bytes(&mut data);
+
+		let tx = AppExtrinsic::from(data.to_vec());
+		let txs = [tx];
+
+		let public_params = crate::testnet::public_params(dim.1);
+
+		let (_, comms, dims, mat) = par_build_commitments(dim.0, dim.1, CHUNK, &txs, seed).unwrap();
+
+		let row = rng.next_u32() % dims.rows as u32;
+		let col = rng.next_u32() % dims.cols as u32;
+
+		let proof = build_proof(&public_params, dims, &mat, &[Cell { row, col }]).unwrap();
+		assert_eq!(proof.len(), 80);
+
+		c.bench_function(
+			&format!(
+				"verify_proof/{}x{}/ {} MB",
+				dim.0,
+				dim.1,
+				(dim.0 * dim.1 * CHUNK) >> 20
+			),
+			|b| {
+				b.iter(|| {
+					let comm = &comms[row as usize * 48..(row as usize + 1) * 48];
+					let flg = kc_verify_proof(col, &proof, comm, dims.rows, dims.cols);
+
+					assert_eq!(flg.unwrap().status.is_ok(), true);
+				});
+			},
+		);
+	}
+}
+
 fn bench_ifft_on_commitments(c: &mut Criterion) {
 	const ROWS: usize = MAX_BLOCK_ROWS as usize;
 	const COLS: usize = MAX_BLOCK_COLUMNS as usize;
@@ -320,5 +368,5 @@ fn bench_ifft_on_commitments(c: &mut Criterion) {
 	});
 }
 
-criterion_group! {name = kate_build_commitments; config = Criterion::default().sample_size(10); targets =  bench_build_commitments, bench_par_build_commitments, bench_opt_par_build_commitments, bench_build_proof, bench_ifft_on_commitments}
-criterion_main!(kate_build_commitments);
+criterion_group! {name = kzg; config = Criterion::default().sample_size(10); targets =  bench_build_commitments, bench_par_build_commitments, bench_opt_par_build_commitments, bench_build_proof, bench_verify_proof, bench_ifft_on_commitments}
+criterion_main!(kzg);

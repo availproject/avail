@@ -68,5 +68,5 @@ std = [
 extended-columns = []
 
 [[bench]]
-name = "kate_build_commitments"
+name = "kzg"
 harness = false
