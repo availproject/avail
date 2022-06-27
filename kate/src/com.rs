@@ -1044,6 +1044,8 @@ mod tests {
 			let proof = build_proof(&public_params, dims, &matrix, &[cell]).unwrap();
 			prop_assert!(proof.len() == 80);
 
+			let pp = testnet::public_params(dims.cols);
+
 			let commitment = &commitments[row * 48..(row + 1) * 48];
 			let verification =  kate_proof::kc_verify_proof(col, &proof, commitment, dims.rows as usize, dims.cols as usize, &pp);
 			prop_assert!(verification.is_ok());
