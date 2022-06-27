@@ -82,6 +82,7 @@ pub struct Header<Number: HeaderNumberTrait, Hash: KateHashTrait> {
 	/// Hash and Kate Commitment
 	pub extrinsics_root: KateCommitment<Hash::Output>,
 	/// A chain-specific digest of data useful for light clients or referencing auxiliary data.
+	#[cfg_attr(feature = "std", serde(serialize_with = "serialize_digest"))]
 	pub digest: Digest,
 	/// Application specific data index.
 	pub app_data_lookup: DataLookup,
@@ -93,6 +94,15 @@ where
 	Hash: KateHashTrait,
 {
 	type PassBy = PassByCodecImpl<Header<Number, Hash>>;
+}
+
+#[cfg(feature = "std")]
+
+pub fn serialize_digest<S>(n: &Digest, serializer: S) -> Result<S::Ok, S::Error>
+where
+	S: serde::Serializer,
+{
+	n.using_encoded(|bytes| sp_core::bytes::serialize(bytes, serializer))
 }
 
 /// This module adds serialization support to `Header::number` field.

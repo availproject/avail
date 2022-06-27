@@ -2,8 +2,6 @@ use codec::{Codec, Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "std")]
-use sp_core::Bytes;
 use sp_runtime::traits::Member;
 use sp_std::vec::Vec;
 
