@@ -251,14 +251,14 @@ fn bench_verify_proof(c: &mut Criterion) {
 		let tx = AppExtrinsic::from(data.to_vec());
 		let txs = [tx];
 
-		let public_params = crate::testnet::public_params(dim.1);
+		let pp = crate::testnet::public_params(dim.1);
 
 		let (_, comms, dims, mat) = par_build_commitments(dim.0, dim.1, CHUNK, &txs, seed).unwrap();
 
 		let row = rng.next_u32() % dims.rows as u32;
 		let col = rng.next_u32() % dims.cols as u32;
 
-		let proof = build_proof(&public_params, dims, &mat, &[Cell { row, col }]).unwrap();
+		let proof = build_proof(&pp, dims, &mat, &[Cell { row, col }]).unwrap();
 		assert_eq!(proof.len(), 80);
 
 		c.bench_function(
@@ -271,7 +271,7 @@ fn bench_verify_proof(c: &mut Criterion) {
 			|b| {
 				b.iter(|| {
 					let comm = &comms[row as usize * 48..(row as usize + 1) * 48];
-					let flg = kc_verify_proof(col, &proof, comm, dims.rows, dims.cols);
+					let flg = kc_verify_proof(col, &proof, comm, dims.rows, dims.cols, &pp);
 
 					assert_eq!(flg.unwrap().status.is_ok(), true);
 				});
