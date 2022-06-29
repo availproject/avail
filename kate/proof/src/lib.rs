@@ -22,8 +22,7 @@ mod testnet {
 
 pub struct ProofVerification {
 	pub status: Result<(), dusk_plonk::error::Error>,
-	pub public_params_hash: String,
-	pub public_params_len: usize,
+	pub public_params: Vec<u8>,
 }
 
 // code for light client to verify incoming kate proofs
@@ -83,7 +82,6 @@ pub fn kc_verify_proof(
 
 	Ok(ProofVerification {
 		status,
-		public_params_hash: hex::encode(sp_core::blake2_128(&raw_pp)),
-		public_params_len: hex::encode(raw_pp).len(),
+		public_params: raw_pp,
 	})
 }
