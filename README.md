@@ -122,3 +122,30 @@ To clean up generate coverage information files, run
 	$> find . -name \*.profraw -type f -exec rm -f {} +
 
 Open `index.html` from `./target/debug/coverage/` folder to review coverage data. Since WASM build is not possible yet, SKIP_WASM_BUILD is required when running tests.
+
+## Runtime upgrades
+
+Substrate development framework supports forkless upgrades of the runtime. Update is triggered when `spec_version` field of `RuntimeVersion` in `runtimeime/src/lib.rs` is incremented.
+
+### Build and optimize WASM runtime
+
+Use [srtool cli](https://github.com/chevdor/srtool-cli) to compile WASM runtime:
+
+	$> srtool build -r runtime/ --package da-runtime
+
+WASM runtime is already optimized by `srtool` with `wasm-opt` from [Binaryen](https://github.com/WebAssembly/binaryen). If needed, WASM runtime can be further optimized by using:
+
+	$> wasm-opt -Oz -o ./da_runtime.compact.wasm \
+		./runtime/target/srtool/release/wbuild/da-runtime/da_runtime.compact.wasm
+
+### Upgrade process
+
+For development purposes use sudo calls to upload new runtime. Since we have block size and transaction weight limits, upgrade is a three step process:
+
+1. Use `sudo/sudoCall` to invoke `dataAvailability/submit_block_length_proposal` with increased block limits
+2. Use `sudo/sudoUncheckedWeight(call, weight)` with 0 weight to invoke `system/set_code` and upload `da_runtime.compact.wasm`
+3. Use `sudo/sudoCall` to invoke `dataAvailability/submit_block_length_proposal` and revert block limits to initial setting
+
+### Verify upgrade
+
+To check if runtime is upgraded, query `system/version:SpVersionRuntimeVersion` constant. This should return latest version values.
