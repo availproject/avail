@@ -273,7 +273,7 @@ fn bench_verify_proof(c: &mut Criterion) {
 					let comm = &comms[row as usize * 48..(row as usize + 1) * 48];
 					let flg = kc_verify_proof(col, &proof, comm, dims.rows, dims.cols, &pp);
 
-					assert_eq!(flg.unwrap().status.is_ok(), true);
+					assert_eq!(flg.unwrap().status, true);
 				});
 			},
 		);
