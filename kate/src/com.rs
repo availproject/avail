@@ -5,7 +5,7 @@ use std::{
 };
 
 use codec::Encode;
-use bls12_381::{G1Affine, G1Projective, Scalar};
+// use bls12_381::{ G1Projective, Scalar};
 use da_primitives::asdr::AppExtrinsic;
 use dusk_bytes::Serializable;
 use dusk_plonk::{
@@ -1049,7 +1049,7 @@ mod tests {
 
 			let commitment = &commitments[row * 48..(row + 1) * 48];
 			let verification =  kate_proof::kc_verify_proof(col, &proof, commitment, dims.rows as usize, dims.cols as usize, &pp);
-			prop_assert!(verification.unwrap().status.is_ok());
+			prop_assert!(verification.unwrap().status == true);
 		}
 	}
 	}

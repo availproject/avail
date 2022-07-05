@@ -8,20 +8,20 @@ use dusk_plonk::{
 	fft::EvaluationDomain,
 };
 
-mod testnet {
-	use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
-	use rand::SeedableRng;
-	use rand_chacha::ChaChaRng;
+// mod testnet {
+// 	use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
+// 	use rand::SeedableRng;
+// 	use rand_chacha::ChaChaRng;
 
-	pub fn public_params(max_degree: usize) -> PublicParameters {
-		let mut rng = ChaChaRng::seed_from_u64(42);
-		PublicParameters::setup(max_degree, &mut rng).unwrap()
-	}
-}
-
+// 	pub fn public_params(max_degree: usize) -> PublicParameters {
+// 		let mut rng = ChaChaRng::seed_from_u64(42);
+// 		PublicParameters::setup(max_degree, &mut rng).unwrap()
+// 	}
+// }
 pub struct ProofVerification {
-	pub status: Result<(), dusk_plonk::error::Error>,
-	pub public_params: Vec<u8>,
+	pub status: bool,
+	// pub public_params: Vec<u8>,
+
 }
 
 // Verify incoming KZG single-proof i.e. for single cell
@@ -33,7 +33,7 @@ pub fn kc_verify_proof(
 	total_cols: usize,     // # -of cols in data matrix against which proof/ commitment are generated
 	pp: &PublicParameters, // public parameters with max degree >= total_cols [ensure this]
 ) -> anyhow::Result<ProofVerification> {
-	let (_, verifier_key) = pp.trim(total_cols).unwrap();
+	let (_, verifier_key) = pp.trim(total_cols).context("trimming failed")?;
 
 	let row_eval_domain = EvaluationDomain::new(total_cols).unwrap();
 	let mut row_dom_x_pts = Vec::with_capacity(row_eval_domain.size());
@@ -68,15 +68,13 @@ pub fn kc_verify_proof(
 
 	let point = row_dom_x_pts[col_num as usize];
 	let status = verifier_key.check(point, proof);
-	let raw_pp = pp.to_raw_var_bytes();
+	// let raw_pp = pp.to_raw_var_bytes();
 
 	Ok(ProofVerification {
-		status: if status {
-			Ok(())
-		} else {
-			Err(dusk_plonk::error::Error::ProofVerificationError)
-		},
-		public_params_hash: hex::encode(sp_core::blake2_128(&raw_pp)),
-		public_params_len: hex::encode(raw_pp).len(),
+		status
+	// 	let public_params_hash =  hex::encode(sp_core::blake2_128(&raw_pp));
+	// 	let public_params_len =  hex::encode(raw_pp).len();
+	// 	public_params: raw_pp,
 	})
+	
 }
