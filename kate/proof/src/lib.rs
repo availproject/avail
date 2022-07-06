@@ -19,6 +19,7 @@ pub mod testnet {
 		PublicParameters::setup(max_degree, &mut rng).unwrap()
 	}
 }
+<<<<<<< HEAD
 // pub struct ProofVerification {
 	// pub status: bool,
 	// pub public_params: Vec<u8>,
@@ -27,6 +28,8 @@ pub struct ProofVerification {
 	pub status: Result<(), dusk_plonk::error::Error>,
 	pub public_params: Vec<u8>,
 }
+=======
+>>>>>>> 5db3345 (fmt)
 
 // code for light client to verify incoming kate proofs
 // args - now - column number, response (witness + evaluation_point = 48 + 32 bytes), commitment (as bytes)
@@ -75,15 +78,7 @@ pub fn kc_verify_proof(
 	};
 
 	let point = row_dom_x_pts[col_num as usize];
-	let status = verifier_key.batch_check(&[point], &[proof], &mut Transcript::new(b""));
-	let raw_pp = public_params.to_raw_var_bytes();
+	let status = verifier_key.check(point, proof);
 
-	// Ok(ProofVerification {
-	// 	status
-	// // 	let public_params_hash =  hex::encode(sp_core::blake2_128(&raw_pp));
-	// // 	let public_params_len =  hex::encode(raw_pp).len();
-	// // 	public_params: raw_pp,
-	// })
 	Ok(status)
-	
 }
