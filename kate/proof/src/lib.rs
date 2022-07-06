@@ -9,7 +9,7 @@ use dusk_plonk::{
 };
 use merlin::Transcript;
 
-mod testnet {
+pub mod testnet {
 	use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
 	use rand::SeedableRng;
 	use rand_chacha::ChaChaRng;
