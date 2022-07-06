@@ -8,16 +8,16 @@ use dusk_plonk::{
 	fft::EvaluationDomain,
 };
 
-// mod testnet {
-// 	use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
-// 	use rand::SeedableRng;
-// 	use rand_chacha::ChaChaRng;
+mod testnet {
+	use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
+	use rand::SeedableRng;
+	use rand_chacha::ChaChaRng;
 
-// 	pub fn public_params(max_degree: usize) -> PublicParameters {
-// 		let mut rng = ChaChaRng::seed_from_u64(42);
-// 		PublicParameters::setup(max_degree, &mut rng).unwrap()
-// 	}
-// }
+	pub fn public_params(max_degree: usize) -> PublicParameters {
+		let mut rng = ChaChaRng::seed_from_u64(42);
+		PublicParameters::setup(max_degree, &mut rng).unwrap()
+	}
+}
 // pub struct ProofVerification {
 	// pub status: bool,
 	// pub public_params: Vec<u8>,
