@@ -66,5 +66,16 @@ pub fn kc_verify_proof(
 	let point = row_dom_x_pts[col_num as usize];
 	let status = verifier_key.check(point, proof);
 
+<<<<<<< HEAD
 	Ok(status)
+=======
+	// Ok(ProofVerification {
+	// 	status
+	// // 	let public_params_hash =  hex::encode(sp_core::blake2_128(&raw_pp));
+	// // 	let public_params_len =  hex::encode(raw_pp).len();
+	// // 	public_params: raw_pp,
+	// })
+	Ok(status)
+	
+>>>>>>> 6906a76 (verify_proof return changes)
 }
