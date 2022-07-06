@@ -18,11 +18,6 @@ pub mod testnet {
 		PublicParameters::setup(max_degree, &mut rng).unwrap()
 	}
 }
-// pub struct ProofVerification {
-	// pub status: bool,
-	// pub public_params: Vec<u8>,
-
-// }
 
 // Verify incoming KZG single-proof i.e. for single cell
 pub fn kc_verify_proof(
@@ -68,14 +63,6 @@ pub fn kc_verify_proof(
 
 	let point = row_dom_x_pts[col_num as usize];
 	let status = verifier_key.check(point, proof);
-	// let raw_pp = pp.to_raw_var_bytes();
 
-	// Ok(ProofVerification {
-	// 	status
-	// // 	let public_params_hash =  hex::encode(sp_core::blake2_128(&raw_pp));
-	// // 	let public_params_len =  hex::encode(raw_pp).len();
-	// // 	public_params: raw_pp,
-	// })
 	Ok(status)
-	
 }
