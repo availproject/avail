@@ -8,7 +8,7 @@ use dusk_plonk::{
 	fft::EvaluationDomain,
 };
 
-mod testnet {
+pub mod testnet {
 	use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
 	use rand::SeedableRng;
 	use rand_chacha::ChaChaRng;
