@@ -19,6 +19,9 @@ pub mod testnet {
 		PublicParameters::setup(max_degree, &mut rng).unwrap()
 	}
 }
+// pub struct ProofVerification {
+	// pub status: bool,
+	// pub public_params: Vec<u8>,
 
 pub struct ProofVerification {
 	pub status: Result<(), dusk_plonk::error::Error>,
