@@ -274,19 +274,14 @@ pub fn unflatten_padded_data(
 			.ok_or_else(|| format!("Chunk data size less than {DATA_CHUNK_SIZE}"))
 	}
 
-	fn trim_padding(data: Vec<u8>) -> Result<Vec<u8>, String> {
-		let mut result = data
-			.into_iter()
-			.rev()
-			.skip_while(|&e| e == 0)
-			.collect::<Vec<_>>()
-			.into_iter()
-			.rev()
-			.collect::<Vec<_>>();
+	fn trim_padding(mut data: Vec<u8>) -> Result<Vec<u8>, String> {
+		while data.last() == Some(&0) {
+			data.pop();
+		}
 
-		match result.pop() {
+		match data.pop() {
 			None => Err("Cannot trim padding on empty data".to_string()),
-			Some(PADDING_TAIL_VALUE) => Ok(result),
+			Some(PADDING_TAIL_VALUE) => Ok(data),
 			Some(_) => Err("Invalid padding tail value".to_string()),
 		}
 	}
