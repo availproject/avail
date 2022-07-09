@@ -39,6 +39,8 @@ pub enum ReconstructionError {
 	InvalidColumn(u16),
 	#[error("Cannot reconstruct column: {0}")]
 	ColumnReconstructionError(String),
+	#[error("Cannot decode data: {0}")]
+	DataDecodingError(String),
 }
 
 /// Creates hash map of columns, each being hash map of cells, from vector of cells.
@@ -146,6 +148,7 @@ pub fn reconstruct_app_extrinsics(
 		.collect::<Vec<_>>();
 
 	Ok(unflatten_padded_data(ranges, data, CHUNK_SIZE)
+		.map_err(ReconstructionError::DataDecodingError)?
 		.into_iter()
 		.flat_map(|(_, xts)| xts)
 		.collect::<Vec<_>>())
@@ -165,7 +168,7 @@ pub fn reconstruct_extrinsics(
 ) -> Result<Vec<(u32, Vec<Vec<u8>>)>, ReconstructionError> {
 	let data = reconstruct_available(dimensions, cells)?;
 	let ranges = index.data_ranges();
-	Ok(unflatten_padded_data(ranges, data, CHUNK_SIZE))
+	unflatten_padded_data(ranges, data, CHUNK_SIZE).map_err(ReconstructionError::DataDecodingError)
 }
 
 fn reconstruct_available(
@@ -246,14 +249,10 @@ pub fn decode_app_extrinsics(
 		.collect::<Vec<_>>();
 
 	Ok(unflatten_padded_data(ranges, app_data, CHUNK_SIZE)
+		.map_err(ReconstructionError::DataDecodingError)?
 		.into_iter()
 		.flat_map(|(_, data)| data)
 		.collect::<Vec<_>>())
-}
-
-fn trim_to_chunk_data(chunk: &[u8]) -> [u8; DATA_CHUNK_SIZE] {
-	assert!(DATA_CHUNK_SIZE < chunk.len(), "Cannot trim to bigger size!");
-	chunk[0..DATA_CHUNK_SIZE].try_into().unwrap()
 }
 
 // Removes both extrinsics and block padding (iec_9797 and seeded random data)
@@ -261,36 +260,51 @@ pub fn unflatten_padded_data(
 	ranges: Vec<(u32, Range<usize>)>,
 	data: Vec<u8>,
 	chunk_size: usize,
-) -> Vec<(u32, Vec<Vec<u8>>)> {
-	assert!(data.len() % chunk_size == 0);
+) -> Result<Vec<(u32, Vec<Vec<u8>>)>, String> {
+	if data.len() % chunk_size > 0 {
+		return Err("Invalid data size".to_string());
+	}
+
+	fn trim_to_data_chunks(range_data: &[u8]) -> Result<Vec<u8>, String> {
+		range_data
+			.chunks_exact(CHUNK_SIZE)
+			.map(|chunk| chunk.get(0..DATA_CHUNK_SIZE))
+			.collect::<Option<Vec<&[u8]>>>()
+			.map(|data_chunks| data_chunks.concat())
+			.ok_or_else(|| format!("Chunk data size less than {DATA_CHUNK_SIZE}"))
+	}
+
+	fn trim_padding(data: Vec<u8>) -> Result<Vec<u8>, String> {
+		let mut result = data
+			.into_iter()
+			.rev()
+			.skip_while(|&e| e == 0)
+			.collect::<Vec<_>>()
+			.into_iter()
+			.rev()
+			.collect::<Vec<_>>();
+
+		match result.pop() {
+			None => Err("Cannot trim padding on empty data".to_string()),
+			Some(PADDING_TAIL_VALUE) => Ok(result),
+			Some(_) => Err("Invalid padding tail value".to_string()),
+		}
+	}
+
+	fn decode_extrinsics(data: Vec<u8>) -> Result<Vec<Vec<u8>>, String> {
+		<Vec<Vec<u8>>>::decode(&mut data.as_slice())
+			.map_err(|err| format!("Cannot decode data: {err}"))
+	}
 
 	ranges
-		.iter()
+		.into_iter()
 		.map(|(app_id, range)| {
-			let orig = data[range.clone()]
-				.chunks_exact(chunk_size)
-				.flat_map(trim_to_chunk_data)
-				.collect::<Vec<u8>>();
-
-			let trimmed = orig
-				.iter()
-				.cloned()
-				.rev()
-				.skip_while(|e| *e == 0)
-				.collect::<Vec<_>>();
-
-			let data = if trimmed.first() == Some(&PADDING_TAIL_VALUE) {
-				trimmed.into_iter().skip(1).rev().collect::<Vec<_>>()
-			} else {
-				orig
-			};
-
-			let mut encoded_data = data.as_slice();
-			let decoded_data = <Vec<Vec<u8>>>::decode(&mut encoded_data).unwrap();
-
-			(*app_id, decoded_data)
+			trim_to_data_chunks(&data[range])
+				.and_then(trim_padding)
+				.and_then(decode_extrinsics)
+				.map(|data| (app_id, data))
 		})
-		.collect::<Vec<_>>()
+		.collect::<Result<Vec<(u32, Vec<Vec<u8>>)>, String>>()
 }
 
 // This module is taken from https://gist.github.com/itzmeanjan/4acf9338d9233e79cfbee5d311e7a0b4
