@@ -140,9 +140,15 @@ WASM runtime is already optimized by `srtool` with `wasm-opt` from [Binaryen](ht
 
 ### Upgrade process
 
-For development purposes use sudo calls to upload new runtime. Since we have block size and transaction weight limits, upgrade is a three step process:
+Since we have block size limits, runtime upgrade is a three step process. Preferred way to upgrade runtime is through governance/democracy feature. For each step, submit preimage with changes, and use preimage hash to submit proposal. Steps are:
 
-1. Use `sudo/sudoCall` to invoke `dataAvailability/submit_block_length_proposal` with increased block limits
+1. Submit `dataAvailability/submit_block_length_proposal` proposal with increased block size limits (eg. 512 rows x 256 columns)
+2. Submit `system/set_code` proposal with uploaded `da_runtime.compact.wasm`
+3. Submit `dataAvailability/submit_block_length_proposal` proposal with block limits reverted to initial setting
+
+For development purposes, its possible to use sudo calls with unchecked weight to increase block size limits and upload new runtime. In that case, steps are:
+
+1. Use `sudo/sudoCall` to invoke `dataAvailability/submit_block_length_proposal` with increased block limits (eg. 512 rows x 256 columns)
 2. Use `sudo/sudoUncheckedWeight(call, weight)` with 0 weight to invoke `system/set_code` and upload `da_runtime.compact.wasm`
 3. Use `sudo/sudoCall` to invoke `dataAvailability/submit_block_length_proposal` and revert block limits to initial setting
 
