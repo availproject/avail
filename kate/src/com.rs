@@ -588,7 +588,7 @@ mod tests {
 		assert_eq!(dims, expected_dims, "Dimensions don't match the expected");
 		assert_eq!(data, expected_data, "Data doesn't match the expected data");
 		let index = AppDataIndex::try_from(&layout).unwrap();
-		let res = unflatten_padded_data(index.data_ranges(), data, chunk_size);
+		let res = unflatten_padded_data(index.data_ranges(), data, chunk_size).unwrap();
 		assert_eq!(
 			res.len(),
 			extrinsics.len(),
