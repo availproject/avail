@@ -4,10 +4,9 @@ use anyhow::{anyhow, Context};
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	bls12_381::G1Affine,
-	commitment_scheme::kzg10::{commitment::Commitment, proof::Proof},
+	commitment_scheme::kzg10::{commitment::Commitment, proof::Proof, PublicParameters},
 	fft::EvaluationDomain,
 };
-use merlin::Transcript;
 
 pub mod testnet {
 	use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
@@ -19,17 +18,6 @@ pub mod testnet {
 		PublicParameters::setup(max_degree, &mut rng).unwrap()
 	}
 }
-<<<<<<< HEAD
-// pub struct ProofVerification {
-	// pub status: bool,
-	// pub public_params: Vec<u8>,
-
-pub struct ProofVerification {
-	pub status: Result<(), dusk_plonk::error::Error>,
-	pub public_params: Vec<u8>,
-}
-=======
->>>>>>> 5db3345 (fmt)
 
 // code for light client to verify incoming kate proofs
 // args - now - column number, response (witness + evaluation_point = 48 + 32 bytes), commitment (as bytes)
