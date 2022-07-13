@@ -1,0 +1,33 @@
+[package]
+name = "merkle"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# Substrate
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+sp-std = { version = "4.0.0-dev", default-features = false }
+sp-core = { version = "4.0.0-dev", default-features = false }
+sp-io = { version = "4.0.0-dev", default-features = false }
+sp-runtime = { version = "4.0.0-dev", default-features = false }
+sp-runtime-interface = { version = "4.0.0-dev", default-features = false }
+frame-support = { version = "4.0.0-dev", default-features = false }
+parity-util-mem = { version = "0.10.2", default-features = false, features = ["primitive-types"] }
+
+primitive-types = { version = "0.11.1", default-features = false}
+tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
+lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
+thiserror-no-std = "2.0.2"
+
+[dev-dependencies]
+primitive-types = { version = "0.11.1", default-features = false, features = ["byteorder", "rustc-hex"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0" }
+ethers-core = "0.13.0"
+
+[features]
+default = ["std"]
+std = []
