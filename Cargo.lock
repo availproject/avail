@@ -1721,7 +1721,7 @@ dependencies = [
  "der",
  "elliptic-curve",
  "rfc6979",
- "signature",
+ "signature 1.4.0",
 ]
 
 [[package]]
@@ -1730,7 +1730,7 @@ version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d5c4b5e5959dc2c2b89918d8e2cc40fcdd623cef026ed09d2f0ee05199dc8e4"
 dependencies = [
- "signature",
+ "signature 1.4.0",
 ]
 
 [[package]]
@@ -4543,9 +4543,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.10.0"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87f3e037eac156d1775da914196f0f37741a274155e34a0b7e427c35d2a2ecb9"
+checksum = "18a6dbe30758c9f83eb00cbea4ac95966305f5a7772f3f42ebfc7fc7eddbd8e1"
 
 [[package]]
 name = "oorandom"
@@ -7569,6 +7569,34 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e51e73328dc4ac0c7ccbda3a494dfa03df1de2f46018127f60c693f2648455b0"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "signature"
+version = "0.1.0"
+dependencies = [
+ "arrayvec 0.7.2",
+ "elliptic-curve",
+ "ethabi",
+ "ethers-core",
+ "frame-support",
+ "generic-array 0.14.5",
+ "hex",
+ "k256",
+ "once_cell",
+ "parity-scale-codec 2.3.1",
+ "parity-util-mem",
+ "primitive-types 0.11.1",
+ "rlp",
+ "rlp-derive",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-runtime-interface",
+ "sp-std",
+ "thiserror-no-std",
+ "tiny-keccak",
 ]
 
 [[package]]

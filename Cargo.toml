@@ -6,6 +6,7 @@ members = [
 	"fuzzing",
 	"primitives/avail",
 	"primitives/merkle",
+	"primitives/signature",
 	"pallets/executive",
 	"pallets/system",
 	"pallets/dactr",

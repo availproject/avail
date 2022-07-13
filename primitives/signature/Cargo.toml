@@ -1,0 +1,52 @@
+[package]
+name = "signature"
+version = "0.1.0"
+edition = "2021"
+authors = ["Luke Tchang <luke@nomad.xyz>"]
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/ltchang2019/no-std-eth-signature"
+description = """
+`ethers-rs` signature implemented with as no_std.
+"""
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# Substrate
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+sp-std = { version = "4.0.0-dev", default-features = false }
+sp-core = { version = "4.0.0-dev", default-features = false }
+sp-io = { version = "4.0.0-dev", default-features = false }
+sp-runtime = { version = "4.0.0-dev", default-features = false }
+sp-runtime-interface = { version = "4.0.0-dev", default-features = false }
+frame-support = { version = "4.0.0-dev", default-features = false }
+parity-util-mem = { version = "0.10.2", default-features = false, features = ["primitive-types"] }
+
+rlp = { version = "0.5.0", default-features = false }
+ethabi = { version = "17.0.0", default-features = false, features = ["rlp"] }
+arrayvec = { version = "0.7.2", default-features = false }
+rlp-derive = { version = "0.1.0", default-features = false }
+primitive-types = { version = "0.11.1", default-features = false}
+
+# crypto
+elliptic-curve = { version = "0.11.12", default-features = false }
+generic-array = { version = "0.14.5", default-features = false }
+k256 = { version = "0.10.4", default-features = false, features = ["keccak256", "ecdsa"] }
+tiny-keccak = { version = "2.0.2", default-features = false }
+
+# misc
+thiserror-no-std = "2.0.1"
+hex = { version = "0.4.3", default-features = false }
+once_cell = { version = "1.12.0", optional = true }
+
+[dependencies.ethers-core]
+version = "0.13.0"
+default-features = false
+optional = true
+
+[features]
+default = ["std"]
+std = []
+testing = ["ethers-core"]
