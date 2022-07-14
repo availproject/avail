@@ -18,9 +18,7 @@ pub fn hash_concat(left: impl AsRef<[u8]>, right: impl AsRef<[u8]>) -> H256 {
 }
 
 /// Max number of leaves in a tree
-pub(crate) fn max_leaves(n: usize) -> U256 {
-	U256::from(2).pow(n.into()) - 1
-}
+pub(crate) fn max_leaves(n: usize) -> U256 { U256::from(2).pow(n.into()) - 1 }
 
 /// Compute a root hash from a leaf and a Merkle proof.
 pub fn merkle_root_from_branch(leaf: H256, branch: &[H256], depth: usize, index: usize) -> H256 {

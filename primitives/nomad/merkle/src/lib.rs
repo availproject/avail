@@ -32,7 +32,6 @@ pub type NomadProof = proof::Proof<TREE_DEPTH>;
 pub use error::*;
 pub use light::*;
 pub use proof::*;
-
 pub use utils::*;
 
 lazy_static::lazy_static! {

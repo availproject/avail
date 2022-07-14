@@ -1441,6 +1441,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "hex",
  "hex-literal",
+ "home",
  "kate",
  "kate-rpc-runtime-api",
  "pallet-asset-tx-payment",
@@ -1963,7 +1964,7 @@ dependencies = [
  "serde_json",
  "sha3 0.10.1",
  "thiserror",
- "uint",
+ "uint 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1973,9 +1974,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11da94e443c60508eb62cf256243a64da87304c2802ac2528847f79d750007ef"
 dependencies = [
  "crunchy",
- "fixed-hash",
- "impl-rlp",
- "impl-serde",
+ "fixed-hash 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "impl-rlp 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "impl-serde 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "tiny-keccak",
 ]
 
@@ -1986,11 +1987,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2827b94c556145446fcce834ca86b7abf0c39a805883fe20e72c5bfdb5a0dc6"
 dependencies = [
  "ethbloom",
- "fixed-hash",
- "impl-rlp",
- "impl-serde",
+ "fixed-hash 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "impl-rlp 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "impl-serde 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "primitive-types 0.11.1",
- "uint",
+ "uint 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2010,7 +2011,7 @@ dependencies = [
  "k256",
  "proc-macro2",
  "rand 0.8.5",
- "rlp",
+ "rlp 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rlp-derive",
  "rust_decimal",
  "serde",
@@ -2137,6 +2138,17 @@ name = "fixed-hash"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfcf0ed7fe52a17a03854ec54a9f76d6d84508d1c0e66bc1793301c73fc8493c"
+dependencies = [
+ "byteorder",
+ "rand 0.8.5",
+ "rustc-hex",
+ "static_assertions",
+]
+
+[[package]]
+name = "fixed-hash"
+version = "0.7.0"
+source = "git+https://github.com/paritytech/parity-common.git?tag=primitive-types-v0.11.1#bcb2e48a7f0e1594b97fdd9086973f046d6bdd5d"
 dependencies = [
  "byteorder",
  "rand 0.8.5",
@@ -2869,6 +2881,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "home"
+version = "4.0.0-dev"
+dependencies = [
+ "ethers-signers",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "merkle",
+ "nomad-base",
+ "nomad-core",
+ "once_cell",
+ "parity-scale-codec 2.3.1",
+ "scale-info",
+ "serde",
+ "signature 0.1.0",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "thiserror-no-std",
+ "updater-manager",
+]
+
+[[package]]
 name = "hostname"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3031,8 +3068,7 @@ dependencies = [
 [[package]]
 name = "impl-codec"
 version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba6a270039626615617f3f36d15fc827041df3b78c439da2cadfa47455a77f2f"
+source = "git+https://github.com/paritytech/parity-common.git?tag=primitive-types-v0.11.1#bcb2e48a7f0e1594b97fdd9086973f046d6bdd5d"
 dependencies = [
  "parity-scale-codec 3.1.5",
 ]
@@ -3043,7 +3079,15 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f28220f89297a075ddc7245cd538076ee98b01f2a9c23a53a4f1105d5a322808"
 dependencies = [
- "rlp",
+ "rlp 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "impl-rlp"
+version = "0.3.0"
+source = "git+https://github.com/paritytech/parity-common.git?tag=primitive-types-v0.11.1#bcb2e48a7f0e1594b97fdd9086973f046d6bdd5d"
+dependencies = [
+ "rlp 0.5.1 (git+https://github.com/paritytech/parity-common.git?tag=primitive-types-v0.11.1)",
 ]
 
 [[package]]
@@ -3051,6 +3095,14 @@ name = "impl-serde"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4551f042f3438e64dbd6226b20527fc84a6e1fe65688b58746a2f53623f25f5c"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "impl-serde"
+version = "0.3.2"
+source = "git+https://github.com/paritytech/parity-common.git?tag=primitive-types-v0.11.1#bcb2e48a7f0e1594b97fdd9086973f046d6bdd5d"
 dependencies = [
  "serde",
 ]
@@ -3728,7 +3780,7 @@ dependencies = [
  "rand 0.7.3",
  "sha2 0.9.9",
  "smallvec",
- "uint",
+ "uint 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "unsigned-varint 0.7.1",
  "void",
  "wasm-timer",
@@ -5847,24 +5899,23 @@ version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "05e4722c697a58a99d5d06a08c30821d7c082a4632198de1eaa5a6c22ef42373"
 dependencies = [
- "fixed-hash",
+ "fixed-hash 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "impl-codec 0.5.1",
- "impl-serde",
+ "impl-serde 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "scale-info",
- "uint",
+ "uint 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "primitive-types"
 version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e28720988bff275df1f51b171e1b2a18c30d194c4d2b61defdacecd625a5d94a"
+source = "git+https://github.com/paritytech/parity-common.git?tag=primitive-types-v0.11.1#bcb2e48a7f0e1594b97fdd9086973f046d6bdd5d"
 dependencies = [
- "fixed-hash",
+ "fixed-hash 0.7.0 (git+https://github.com/paritytech/parity-common.git?tag=primitive-types-v0.11.1)",
  "impl-codec 0.6.0",
- "impl-rlp",
- "impl-serde",
- "uint",
+ "impl-rlp 0.3.0 (git+https://github.com/paritytech/parity-common.git?tag=primitive-types-v0.11.1)",
+ "impl-serde 0.3.2 (git+https://github.com/paritytech/parity-common.git?tag=primitive-types-v0.11.1)",
+ "uint 0.9.3 (git+https://github.com/paritytech/parity-common.git?tag=primitive-types-v0.11.1)",
 ]
 
 [[package]]
@@ -6362,6 +6413,15 @@ name = "rlp"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "999508abb0ae792aabed2460c45b89106d97fe4adac593bdaef433c2605847b5"
+dependencies = [
+ "bytes 1.1.0",
+ "rustc-hex",
+]
+
+[[package]]
+name = "rlp"
+version = "0.5.1"
+source = "git+https://github.com/paritytech/parity-common.git?tag=primitive-types-v0.11.1#bcb2e48a7f0e1594b97fdd9086973f046d6bdd5d"
 dependencies = [
  "bytes 1.1.0",
  "rustc-hex",
@@ -7864,7 +7924,7 @@ dependencies = [
  "once_cell",
  "parity-scale-codec 2.3.1",
  "parity-util-mem",
- "rlp",
+ "rlp 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rlp-derive",
  "scale-info",
  "sp-core",
@@ -8182,7 +8242,7 @@ dependencies = [
  "hash-db",
  "hash256-std-hasher",
  "hex",
- "impl-serde",
+ "impl-serde 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static",
  "libsecp256k1",
  "log",
@@ -8535,7 +8595,7 @@ name = "sp-storage"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.13#afb74de23dfe2994e7ce38c0870efb9734e966f7"
 dependencies = [
- "impl-serde",
+ "impl-serde 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 2.3.1",
  "ref-cast",
  "serde",
@@ -8629,7 +8689,7 @@ name = "sp-version"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.13#afb74de23dfe2994e7ce38c0870efb9734e966f7"
 dependencies = [
- "impl-serde",
+ "impl-serde 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 2.3.1",
  "parity-wasm 0.42.2",
  "scale-info",
@@ -9358,6 +9418,17 @@ name = "uint"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "12f03af7ccf01dd611cc450a0d10dbc9b745770d096473e2faf0ca6e2d66d1e0"
+dependencies = [
+ "byteorder",
+ "crunchy",
+ "hex",
+ "static_assertions",
+]
+
+[[package]]
+name = "uint"
+version = "0.9.3"
+source = "git+https://github.com/paritytech/parity-common.git?tag=primitive-types-v0.11.1#bcb2e48a7f0e1594b97fdd9086973f046d6bdd5d"
 dependencies = [
  "byteorder",
  "crunchy",

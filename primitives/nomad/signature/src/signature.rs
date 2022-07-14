@@ -1,15 +1,10 @@
 // Code adapted from: https://github.com/tomusdrw/rust-web3/blob/master/src/api/accounts.rs
 
-use crate::utils::hash_message;
 use alloc::{borrow::ToOwned, string::String, vec::Vec};
-use frame_support::pallet_prelude::*;
-use sp_core::{H160, H256, U256};
-
 use core::{convert::TryFrom, fmt, str::FromStr};
 
-use thiserror::Error;
-
 use elliptic_curve::{consts::U32, sec1::ToEncodedPoint};
+use frame_support::pallet_prelude::*;
 use generic_array::GenericArray;
 use k256::{
 	ecdsa::{
@@ -18,6 +13,10 @@ use k256::{
 	},
 	PublicKey as K256PublicKey,
 };
+use sp_core::{H160, H256, U256};
+use thiserror::Error;
+
+use crate::utils::hash_message;
 
 type Address = H160;
 
@@ -83,7 +82,7 @@ impl Signature {
 		let address = address.into();
 		let recovered = self.recover(message)?;
 		if recovered != address {
-			return Err(SignatureError::VerificationError(address, recovered))
+			return Err(SignatureError::VerificationError(address, recovered));
 		}
 
 		Ok(())
@@ -140,9 +139,7 @@ impl Signature {
 
 	/// Copies and serializes `self` into a new `Vec` with the recovery id included
 	#[allow(clippy::wrong_self_convention)]
-	pub fn to_vec(&self) -> Vec<u8> {
-		self.into()
-	}
+	pub fn to_vec(&self) -> Vec<u8> { self.into() }
 }
 
 fn normalize_recovery_id(v: u64) -> u8 {
@@ -164,7 +161,7 @@ impl<'a> TryFrom<&'a [u8]> for Signature {
 	/// and the final byte is the `v` value in 'Electrum' notation.
 	fn try_from(bytes: &'a [u8]) -> Result<Self, Self::Error> {
 		if bytes.len() != 65 {
-			return Err(SignatureError::InvalidLength(bytes.len()))
+			return Err(SignatureError::InvalidLength(bytes.len()));
 		}
 
 		let v = bytes[64];
@@ -202,64 +199,50 @@ impl From<&Signature> for [u8; 65] {
 }
 
 impl From<Signature> for [u8; 65] {
-	fn from(src: Signature) -> [u8; 65] {
-		<[u8; 65]>::from(&src)
-	}
+	fn from(src: Signature) -> [u8; 65] { <[u8; 65]>::from(&src) }
 }
 
 impl From<&Signature> for Vec<u8> {
-	fn from(src: &Signature) -> Vec<u8> {
-		<[u8; 65]>::from(src).to_vec()
-	}
+	fn from(src: &Signature) -> Vec<u8> { <[u8; 65]>::from(src).to_vec() }
 }
 
 impl From<Signature> for Vec<u8> {
-	fn from(src: Signature) -> Vec<u8> {
-		<[u8; 65]>::from(&src).to_vec()
-	}
+	fn from(src: Signature) -> Vec<u8> { <[u8; 65]>::from(&src).to_vec() }
 }
 
 impl From<&[u8]> for RecoveryMessage {
-	fn from(s: &[u8]) -> Self {
-		s.to_owned().into()
-	}
+	fn from(s: &[u8]) -> Self { s.to_owned().into() }
 }
 
 impl From<Vec<u8>> for RecoveryMessage {
-	fn from(s: Vec<u8>) -> Self {
-		RecoveryMessage::Data(s)
-	}
+	fn from(s: Vec<u8>) -> Self { RecoveryMessage::Data(s) }
 }
 
 impl From<&str> for RecoveryMessage {
-	fn from(s: &str) -> Self {
-		s.as_bytes().to_owned().into()
-	}
+	fn from(s: &str) -> Self { s.as_bytes().to_owned().into() }
 }
 
 impl From<String> for RecoveryMessage {
-	fn from(s: String) -> Self {
-		RecoveryMessage::Data(s.into_bytes())
-	}
+	fn from(s: String) -> Self { RecoveryMessage::Data(s.into_bytes()) }
 }
 
 impl From<[u8; 32]> for RecoveryMessage {
-	fn from(hash: [u8; 32]) -> Self {
-		H256(hash).into()
-	}
+	fn from(hash: [u8; 32]) -> Self { H256(hash).into() }
 }
 
 impl From<H256> for RecoveryMessage {
-	fn from(hash: H256) -> Self {
-		RecoveryMessage::Hash(hash)
-	}
+	fn from(hash: H256) -> Self { RecoveryMessage::Hash(hash) }
 }
 
 // Want to convert ethers signature into our no-std version in tests
 #[cfg(feature = "testing")]
 impl From<ethers_core::types::Signature> for Signature {
 	fn from(sig: ethers_core::types::Signature) -> Self {
-		Self { r: sig.r, s: sig.s, v: sig.v }
+		Self {
+			r: sig.r,
+			s: sig.s,
+			v: sig.v,
+		}
 	}
 }
 

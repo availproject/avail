@@ -1,0 +1,58 @@
+[package]
+name = "home"
+version = "4.0.0-dev"
+description = "FRAME pallet template for defining custom runtime logic."
+authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
+homepage = "https://substrate.io/"
+edition = "2021"
+license = "Unlicense"
+publish = false
+repository = "https://github.com/substrate-developer-hub/substrate-node-template/"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+# Substrate
+serde = { version = "1.0.126", optional = true, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+sp-core = { version = "4.0.0-dev", default-features = false }
+sp-std = { version = "4.0.0-dev", default-features = false }
+sp-io = { version = "4.0.0-dev", default-features = false }
+sp-runtime = { version = "4.0.0-dev", default-features = false }
+sp-arithmetic = { version = "4.0.0-dev", default-features = false }
+frame-support = { version = "4.0.0-dev", default-features = false }
+frame-system = { version = "4.0.0-dev", default-features = false }
+
+# Benchmarking
+frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
+
+thiserror-no-std = "2.0.2"
+signature = { path = "../../../primitives/nomad/signature", default-features = false }
+merkle = { path = "../../../primitives/nomad/merkle", default-features = false }
+nomad-base = { path = "../../../primitives/nomad/nomad-base", default-features = false }
+nomad-core = { path = "../../../primitives/nomad/nomad-core", default-features = false }
+updater-manager = { path = "../updater-manager", default-features = false }
+
+
+[dev-dependencies]
+ethers-signers = { version = "0.13.0", default-features = false }
+once_cell = { version = "1.8.0", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"scale-info/std",
+	"frame-support/std",
+	"frame-system/std",
+	"frame-benchmarking/std",
+]
+
+runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
+try-runtime = ["frame-support/try-runtime"]
+testing = [
+	"nomad-core/testing",
+	"nomad-base/testing"
+	]

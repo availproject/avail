@@ -1,5 +1,6 @@
-use super::{merkle_root_from_branch, MerkleProof};
 use sp_core::H256;
+
+use super::{merkle_root_from_branch, MerkleProof};
 
 /// A merkle proof object. The leaf, its path to the root, and its index in the
 /// tree.
@@ -17,8 +18,9 @@ pub struct Proof<const N: usize> {
 
 #[cfg(test)]
 mod const_array_serde {
-	use super::H256;
 	use serde::{ser::SerializeSeq, Deserialize, Deserializer, Serializer};
+
+	use super::H256;
 
 	pub fn serialize<S, const N: usize>(item: &[H256; N], serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -52,7 +54,5 @@ mod const_array_serde {
 
 impl<const N: usize> MerkleProof for Proof<N> {
 	/// Calculate the merkle root produced by evaluating the proof
-	fn root(&self) -> H256 {
-		merkle_root_from_branch(self.leaf, self.path.as_ref(), N, self.index)
-	}
+	fn root(&self) -> H256 { merkle_root_from_branch(self.leaf, self.path.as_ref(), N, self.index) }
 }

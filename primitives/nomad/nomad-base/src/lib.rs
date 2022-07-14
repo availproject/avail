@@ -30,32 +30,24 @@ pub enum NomadBaseError {
 
 impl NomadBase {
 	pub fn new(local_domain: u32, updater: H160) -> Self {
-		Self { local_domain, updater, state: Default::default() }
+		Self {
+			local_domain,
+			updater,
+			state: Default::default(),
+		}
 	}
 
-	pub fn state(&self) -> NomadState {
-		self.state
-	}
+	pub fn state(&self) -> NomadState { self.state }
 
-	pub fn local_domain(&self) -> u32 {
-		self.local_domain
-	}
+	pub fn local_domain(&self) -> u32 { self.local_domain }
 
-	pub fn updater(&self) -> H160 {
-		self.updater
-	}
+	pub fn updater(&self) -> H160 { self.updater }
 
-	pub fn home_domain_hash(&self) -> H256 {
-		home_domain_hash(self.local_domain())
-	}
+	pub fn home_domain_hash(&self) -> H256 { home_domain_hash(self.local_domain()) }
 
-	pub fn set_state(&mut self, new_state: NomadState) {
-		self.state = new_state
-	}
+	pub fn set_state(&mut self, new_state: NomadState) { self.state = new_state }
 
-	pub fn set_updater(&mut self, new_updater: H160) {
-		self.updater = new_updater
-	}
+	pub fn set_updater(&mut self, new_updater: H160) { self.updater = new_updater }
 
 	pub fn is_updater_signature(&self, signed_update: &SignedUpdate) -> bool {
 		signed_update.verify(self.updater).is_ok()
@@ -64,12 +56,12 @@ impl NomadBase {
 
 #[cfg(test)]
 mod test {
-	use super::*;
-
-	#[cfg(feature = "testing")]
-	use crate::testing::{TEST_LOCAL_DOMAIN, TEST_NOMAD_BASE, TEST_UPDATER};
 	use ethers_signers::LocalWallet;
 	use nomad_core::test_utils::Updater;
+
+	use super::*;
+	#[cfg(feature = "testing")]
+	use crate::testing::{TEST_LOCAL_DOMAIN, TEST_NOMAD_BASE, TEST_UPDATER};
 
 	#[test]
 	#[cfg(feature = "testing")]

@@ -1,8 +1,9 @@
-use crate::utils::home_domain_hash;
 use frame_support::pallet_prelude::*;
-use sp_core::{H160, H256};
 use signature::{hash_message, Signature, SignatureError};
+use sp_core::{H160, H256};
 use tiny_keccak::{Hasher, Keccak};
+
+use crate::utils::home_domain_hash;
 
 /// Nomad update
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
@@ -24,9 +25,7 @@ impl Update {
 		output.into()
 	}
 
-	fn prepended_hash(&self) -> H256 {
-		hash_message(self.signing_hash())
-	}
+	fn prepended_hash(&self) -> H256 { hash_message(self.signing_hash()) }
 }
 
 /// A Signed Nomad Update
@@ -46,6 +45,8 @@ impl SignedUpdate {
 
 	/// Check whether a message was signed by a specific address
 	pub fn verify(&self, signer: H160) -> Result<(), SignatureError> {
-		Ok(self.signature.verify(self.update.prepended_hash(), signer)?)
+		Ok(self
+			.signature
+			.verify(self.update.prepended_hash(), signer)?)
 	}
 }

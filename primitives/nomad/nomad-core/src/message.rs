@@ -1,7 +1,9 @@
-use crate::utils::keccak256;
 use alloc::vec::Vec;
+
 use frame_support::pallet_prelude::*;
 use sp_core::H256;
+
+use crate::utils::keccak256;
 
 /// A full Nomad message
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
@@ -44,7 +46,5 @@ where
 	}
 
 	/// Get hash of message
-	pub fn hash(&self) -> H256 {
-		keccak256(self.to_vec()).into()
-	}
+	pub fn hash(&self) -> H256 { keccak256(self.to_vec()).into() }
 }

@@ -1,6 +1,7 @@
-use crate::mock::*;
 use frame_support::assert_ok;
 use sp_core::H160;
+
+use crate::mock::*;
 
 #[test]
 fn it_sets_updater() {
@@ -13,7 +14,10 @@ fn it_sets_updater() {
 		assert_ok!(UpdaterManager::set_updater(new_updater));
 		assert_eq!(UpdaterManager::get_updater(), new_updater);
 
-		let expected = vec![crate::Event::NewUpdater { old_updater: H160::zero(), new_updater }];
+		let expected = vec![crate::Event::NewUpdater {
+			old_updater: H160::zero(),
+			new_updater,
+		}];
 		assert_eq!(events(), expected);
 	});
 }

@@ -1,8 +1,10 @@
 #![cfg(test)]
 
-use crate::NomadProof;
-use sp_core::H256;
 use std::{fs::File, io::Read};
+
+use sp_core::H256;
+
+use crate::NomadProof;
 
 /// Struct representing a single merkle test case
 #[cfg_attr(test, derive(serde::Serialize, serde::Deserialize))]

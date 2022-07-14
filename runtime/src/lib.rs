@@ -976,7 +976,16 @@ impl da_control::Config for Runtime {
 }
 
 impl updater_manager::Config for Runtime {
-	type Event = Event;	
+	type Event = Event;
+}
+
+parameter_types! {
+	pub const MaxMessageBodyBytes: u32 = 2 * (2^10);
+}
+
+impl home::Config for Runtime {
+	type Event = Event;
+	type MaxMessageBodyBytes = MaxMessageBodyBytes;
 }
 
 // TODO @miguel Aline this with previous order and ID to keep the compatibility.
@@ -1024,6 +1033,7 @@ construct_runtime!(
 
 		// Nomad
 		UpdaterManager: updater_manager,
+		Home: home,
 	}
 );
 
