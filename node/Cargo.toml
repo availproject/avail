@@ -25,6 +25,9 @@ kate = { path = "../kate" }
 kate-rpc = { path = "../rpc/kate-rpc" }
 dusk-plonk = "0.8.2"
 
+# Nomad
+updater-manager = { path = "../pallets/nomad/updater-manager" }
+
 # 3rd-party
 codec = { package = "parity-scale-codec", version = "2.0.0" }
 structopt = "0.3.25"

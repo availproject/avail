@@ -1,5 +1,5 @@
 use codec::{Encode, Decode, MaxEncodedLen};
-use primitive_types::{H256, U256};
+use sp_core::{H256, U256};
 use sp_core::RuntimeDebug;
 
 use super::{

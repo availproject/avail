@@ -1,5 +1,5 @@
 [package]
-name = "nomad-core"
+name = "nomad-base"
 version = "0.1.0"
 edition = "2021"
 
@@ -17,34 +17,23 @@ sp-runtime-interface = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 parity-util-mem = { version = "0.10.2", default-features = false, features = ["primitive-types"] }
 
-primitive-types = { version = "0.11.1", default-features = false}
-tiny-keccak = { version = "2.0.2", default-features = false }
+tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
+signature = { path = "../signature", default-features = false }
 
-[dependencies.signature]
-path = "../signature"
-default-features = false
+nomad-core = { path = "../nomad-core", default-features = false }
 
 [dependencies.ethers-signers]
 version = "0.13.0"
 default-features = false
 optional = true
 
-[dependencies.ethers-core]
-version = "0.13.0"
-default-features = false
-optional = true
-
-[dependencies.async-trait]
-version = "0.1.42"
+[dependencies.once_cell]
+version = "1.8.0"
 default-features = false
 optional = true
 
 [features]
-default = ["std"]
-std = []
 testing = [
 	"ethers-signers",
-	"ethers-core",
-	"async-trait",
-	"signature/testing"
+	"once_cell"
 ]

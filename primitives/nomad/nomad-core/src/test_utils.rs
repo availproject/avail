@@ -1,7 +1,7 @@
 use crate::{SignedUpdate, Update};
 use ethers_core::utils::hash_message;
 use ethers_signers::{LocalWallet, Signer};
-use primitive_types::{H160, H256};
+use sp_core::{H160, H256};
 use signature::Signature;
 
 #[derive(Debug, Clone)]

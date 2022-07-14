@@ -1,4 +1,4 @@
-use primitive_types::{H256, U256};
+use sp_core::{H256, U256};
 use tiny_keccak::{Hasher, Keccak};
 
 /// Return the keccak256 digest of the preimage

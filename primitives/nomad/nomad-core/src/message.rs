@@ -1,7 +1,7 @@
 use crate::utils::keccak256;
 use alloc::vec::Vec;
 use frame_support::pallet_prelude::*;
-use primitive_types::H256;
+use sp_core::H256;
 
 /// A full Nomad message
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]

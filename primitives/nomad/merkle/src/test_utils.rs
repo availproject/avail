@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use crate::NomadProof;
-use primitive_types::H256;
+use sp_core::H256;
 use std::{fs::File, io::Read};
 
 /// Struct representing a single merkle test case

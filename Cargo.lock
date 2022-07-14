@@ -1495,6 +1495,7 @@ dependencies = [
  "static_assertions",
  "substrate-wasm-builder",
  "test-case",
+ "updater-manager",
 ]
 
 [[package]]
@@ -1575,6 +1576,7 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "tempfile",
+ "updater-manager",
 ]
 
 [[package]]
@@ -4290,7 +4292,6 @@ dependencies = [
  "lazy_static",
  "parity-scale-codec 2.3.1",
  "parity-util-mem",
- "primitive-types 0.11.1",
  "scale-info",
  "serde",
  "serde_json",
@@ -4594,7 +4595,6 @@ dependencies = [
  "once_cell",
  "parity-scale-codec 2.3.1",
  "parity-util-mem",
- "primitive-types 0.11.1",
  "scale-info",
  "signature 0.1.0",
  "sp-core",
@@ -4615,7 +4615,6 @@ dependencies = [
  "frame-support",
  "parity-scale-codec 2.3.1",
  "parity-util-mem",
- "primitive-types 0.11.1",
  "scale-info",
  "signature 0.1.0",
  "sp-core",
@@ -7865,7 +7864,6 @@ dependencies = [
  "once_cell",
  "parity-scale-codec 2.3.1",
  "parity-util-mem",
- "primitive-types 0.11.1",
  "rlp",
  "rlp-derive",
  "scale-info",
@@ -9460,6 +9458,24 @@ name = "untrusted"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
+
+[[package]]
+name = "updater-manager"
+version = "1.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "nomad-core",
+ "parity-scale-codec 2.3.1",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
 
 [[package]]
 name = "url"

@@ -1,5 +1,5 @@
 use super::{merkle_root_from_branch, MerkleProof};
-use primitive_types::H256;
+use sp_core::H256;
 
 /// A merkle proof object. The leaf, its path to the root, and its index in the
 /// tree.

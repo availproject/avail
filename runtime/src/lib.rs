@@ -975,6 +975,10 @@ impl da_control::Config for Runtime {
 	type WeightInfo = da_control::weights::SubstrateWeight<Runtime>;
 }
 
+impl updater_manager::Config for Runtime {
+	type Event = Event;	
+}
+
 // TODO @miguel Aline this with previous order and ID to keep the compatibility.
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -1017,6 +1021,9 @@ construct_runtime!(
 
 		// DA module
 		DataAvailability: da_control,
+
+		// Nomad
+		UpdaterManager: updater_manager,
 	}
 );
 

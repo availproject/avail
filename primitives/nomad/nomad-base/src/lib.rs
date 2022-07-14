@@ -2,7 +2,7 @@
 
 use frame_support::pallet_prelude::*;
 use nomad_core::{home_domain_hash, NomadState, SignedUpdate};
-use primitive_types::{H160, H256};
+use sp_core::{H160, H256};
 
 #[cfg(feature = "testing")]
 pub mod testing;

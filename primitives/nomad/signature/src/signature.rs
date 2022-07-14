@@ -3,7 +3,7 @@
 use crate::utils::hash_message;
 use alloc::{borrow::ToOwned, string::String, vec::Vec};
 use frame_support::pallet_prelude::*;
-use primitive_types::{H160, H256, U256};
+use sp_core::{H160, H256, U256};
 
 use core::{convert::TryFrom, fmt, str::FromStr};
 

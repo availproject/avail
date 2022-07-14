@@ -28,7 +28,6 @@ rlp = { version = "0.5.0", default-features = false }
 ethabi = { version = "17.0.0", default-features = false, features = ["rlp"] }
 arrayvec = { version = "0.7.2", default-features = false }
 rlp-derive = { version = "0.1.0", default-features = false }
-primitive-types = { version = "0.11.1", default-features = false}
 
 # crypto
 elliptic-curve = { version = "0.11.12", default-features = false }
