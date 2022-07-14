@@ -7,6 +7,7 @@ members = [
 	"primitives/avail",
 	"primitives/merkle",
 	"primitives/signature",
+	"primitives/nomad-core",
 	"pallets/executive",
 	"pallets/system",
 	"pallets/dactr",
@@ -24,6 +25,8 @@ dusk-plonk = { git = "https://github.com/maticnetwork/plonk.git", branch = "v0.8
 frame-system = { path = "pallets/system" }
 frame-executive = { path = "pallets/executive" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
+syn = { git = "https://github.com/dtolnay/syn.git", tag = "1.0.96" }
+tokio = { git = "https://github.com/tokio-rs/tokio", tag = "tokio-1.19.2" }
 
 # Substrate  (polkadot-v0.9.13).
 sc-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.13" }
