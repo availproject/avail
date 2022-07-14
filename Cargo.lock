@@ -4585,6 +4585,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "nomad-base"
+version = "0.1.0"
+dependencies = [
+ "ethers-signers",
+ "frame-support",
+ "nomad-core",
+ "once_cell",
+ "parity-scale-codec 2.3.1",
+ "parity-util-mem",
+ "primitive-types 0.11.1",
+ "scale-info",
+ "signature 0.1.0",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-runtime-interface",
+ "sp-std",
+ "tiny-keccak",
+]
+
+[[package]]
 name = "nomad-core"
 version = "0.1.0"
 dependencies = [
