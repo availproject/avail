@@ -687,17 +687,17 @@ mod tests {
 		}
 
 		let public_params = crate::testnet::public_params(MAX_BLOCK_COLUMNS as usize);
-
+		let pp = testnet::public_params(dims.cols);
 		for cell in random_cells(dims.cols, dims.rows, 1) {
-			let col = cell.col as u16;
+			let col = cell.col ;
 			let row = cell.row as usize;
 
 			let proof = build_proof(&public_params, dims, &matrix, &[cell]).unwrap();
 			prop_assert!(proof.len() == 80);
 
 			let commitment = &commitments[row * 48..(row + 1) * 48];
-			let verification =  kate_proof::kc_verify_proof(col, &proof, commitment, dims.rows as usize, dims.cols as usize);
-			prop_assert!(verification.unwrap().status.is_ok());
+			let verification =  kate_proof::kc_verify_proof(col, &proof, commitment, dims.rows as usize, dims.cols as usize, &pp);
+			prop_assert!(verification.is_ok());
 		}
 	}
 	}
