@@ -9,10 +9,10 @@ use da_primitives::asdr::AppExtrinsic;
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	bls12_381::G1Affine,
-	commitment_scheme::kzg10,
+	commitment_scheme::kzg10::{self, Commitment},
 	error::Error as PlonkError,
-	fft::{EvaluationDomain, Evaluations},
-	prelude::BlsScalar,
+	fft::{EvaluationDomain, Evaluations, Polynomial},
+	prelude::{BlsScalar, CommitKey},
 };
 use frame_support::ensure;
 use log::info;
@@ -64,13 +64,14 @@ fn app_extrinsics_group_by_app_id(extrinsics: &[AppExtrinsic]) -> Vec<(u32, Vec<
 		if acc.is_empty() {
 			acc.push((e.app_id, vec![e.data.clone()]));
 		} else {
-			let curr = acc.last_mut().unwrap();
-			if curr.0 == e.app_id {
-				curr.1.push(e.data.clone());
-			} else {
-				acc.push((e.app_id, vec![e.data.clone()]));
+			if let Some(curr) = acc.last_mut() {
+				if curr.0 == e.app_id {
+					curr.1.push(e.data.clone());
+				} else {
+					acc.push((e.app_id, vec![e.data.clone()]));
+				}
 			}
-		}
+		};
 		acc
 	})
 }
@@ -368,11 +369,19 @@ pub fn build_proof(
 				// row has to be a power of 2, otherwise interpolate() function panics
 				let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
 				let witness = prover_key.compute_single_witness(&poly, &row_dom_x_pts[c_index]);
-				let commitment_to_witness = prover_key.commit(&witness).unwrap();
-				let evaluated_point = ext_data_matrix[r_index + c_index * extended_rows_num];
+				match prover_key.commit(&witness) {
+					Ok(commitment_to_witness) => {
+						let evaluated_point =
+							ext_data_matrix[r_index + c_index * extended_rows_num];
 
-				res[0..PROOF_SIZE].copy_from_slice(&commitment_to_witness.to_bytes());
-				res[PROOF_SIZE..].copy_from_slice(&evaluated_point.to_bytes());
+						res[0..PROOF_SIZE].copy_from_slice(&commitment_to_witness.to_bytes());
+						res[PROOF_SIZE..].copy_from_slice(&evaluated_point.to_bytes());
+					},
+					Err(_) => {
+						res.fill(0); // for bad cell identifier, fill whole proof with zero bytes !
+						return;
+					},
+				};
 			}
 		});
 
@@ -384,94 +393,6 @@ pub fn build_proof(
 	);
 
 	Ok(result_bytes)
-}
-
-#[cfg(feature = "std")]
-pub fn build_commitments(
-	rows_num: usize,
-	cols_num: usize,
-	chunk_size: usize,
-	extrinsics_by_key: &[AppExtrinsic],
-	rng_seed: Seed,
-) -> Result<(XtsLayout, Vec<u8>, BlockDimensions, Vec<BlsScalar>), Error> {
-	let start = Instant::now();
-
-	// generate data matrix first
-	let (tx_layout, block, block_dims) =
-		flatten_and_pad_block(rows_num, cols_num, chunk_size, extrinsics_by_key, rng_seed)?;
-
-	info!(
-		target: LOG_TARGET,
-		"Rows: {} Cols: {} Size: {}",
-		block_dims.rows,
-		block_dims.cols,
-		block.len(),
-	);
-
-	let ext_data_matrix = extend_data_matrix(block_dims, &block)?;
-	let extended_rows_num = block_dims.rows * EXTENSION_FACTOR;
-
-	info!(target: LOG_TARGET, "Time to prepare {:?}", start.elapsed());
-
-	// if block_dims.cols > MAX_BLOCK_COLUMNS as usize {
-	// 	log::error!(
-	// 		target: LOG_TARGET,
-	// 		"Error on Block dimension {:?}",
-	// 		block_dims
-	// 	);
-	// }
-
-	let public_params = testnet::public_params(block_dims.cols);
-
-	if log::log_enabled!(target: LOG_TARGET, log::Level::Debug) {
-		let raw_pp = public_params.to_raw_var_bytes();
-		let hash_pp = hex::encode(sp_core::blake2_128(&raw_pp));
-		let hex_pp = hex::encode(raw_pp);
-		log::debug!(
-			target: LOG_TARGET,
-			"Public params (len={}): hash: {}",
-			hex_pp.len(),
-			hash_pp,
-		);
-	}
-
-	let (prover_key, _) = public_params.trim(block_dims.cols).map_err(Error::from)?;
-	let row_eval_domain = EvaluationDomain::new(block_dims.cols).map_err(Error::from)?;
-
-	// @internal: `PROVER_KEY_SIZE` must match with the output size of `Commitment::to_bytes`.
-	const_assert_eq!(G1Affine::SIZE, PROVER_KEY_SIZE);
-	let mut plonk_commitments = Vec::with_capacity(PROVER_KEY_SIZE * extended_rows_num);
-
-	info!(
-		target: "system",
-		"Number of CPU cores: {:#?}",
-		num_cpus::get()
-	);
-
-	let start = Instant::now();
-	for i in 0..extended_rows_num {
-		let mut row = Vec::with_capacity(block_dims.cols);
-
-		for j in 0..block_dims.cols {
-			row.push(ext_data_matrix[i + j * extended_rows_num]);
-		}
-
-		let polynomial = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
-		let commitment = &prover_key
-			.commit(&polynomial)
-			.map_err(Error::from)?
-			.to_bytes();
-
-		plonk_commitments.extend_from_slice(&commitment[..]);
-	}
-
-	info!(
-		target: "system",
-		"Time to build a commitment {:?}",
-		start.elapsed()
-	);
-
-	Ok((tx_layout, plonk_commitments, block_dims, ext_data_matrix))
 }
 
 #[cfg(feature = "std")]
@@ -552,15 +473,16 @@ pub fn par_build_commitments(
 			Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate()
 		})
 		.zip(result_bytes.par_chunks_exact_mut(PROVER_KEY_SIZE))
-		.for_each(|(poly, res)| {
-			let key_bytes = &prover_key
+		.map(|(poly, res)| {
+			prover_key
 				.commit(&poly)
+				.map(|commitment| commitment.to_bytes())
+				.map(move |key_bytes| (key_bytes, res))
 				.map_err(Error::from)
-				.unwrap()
-				.to_bytes();
-
-			res.copy_from_slice(&key_bytes[..PROVER_KEY_SIZE]);
-		});
+		})
+		.collect::<Result<Vec<(_, _)>, _>>()?
+		.into_par_iter()
+		.for_each(|(key_bytes, res)| res.copy_from_slice(&key_bytes[..PROVER_KEY_SIZE]));
 
 	info!(
 		target: "system",
@@ -569,109 +491,6 @@ pub fn par_build_commitments(
 	);
 
 	Ok((tx_layout, result_bytes, block_dims, ext_data_matrix))
-}
-
-#[cfg(feature = "std")]
-pub fn opt_par_build_commitments(
-	rows: usize,
-	cols: usize,
-	chunks: usize,
-	extrinsics: &[AppExtrinsic],
-	rng_seed: Seed,
-) -> Result<(XtsLayout, Vec<u8>, BlockDimensions, Vec<BlsScalar>), Error> {
-	let start = Instant::now();
-
-	let (txns, blk, dims) = flatten_and_pad_block(rows, cols, chunks, extrinsics, rng_seed)?;
-
-	info!(
-		target: LOG_TARGET,
-		"Rows: {} Cols: {} Size: {}",
-		dims.rows,
-		dims.cols,
-		blk.len(),
-	);
-
-	let ext_data_matrix = par_extend_data_matrix(dims, &blk)?;
-	let ext_rows = dims.rows * EXTENSION_FACTOR;
-
-	info!(target: LOG_TARGET, "Time to prepare {:?}", start.elapsed());
-
-	// if dims.cols > MAX_BLOCK_COLUMNS as usize {
-	// 	log::error!(target: LOG_TARGET, "Error on Block dimension {:?}", dims);
-	// }
-
-	let public_params = testnet::public_params(dims.cols);
-
-	if log::log_enabled!(target: LOG_TARGET, log::Level::Debug) {
-		let raw_pp = public_params.to_raw_var_bytes();
-		let hash_pp = hex::encode(sp_core::blake2_128(&raw_pp));
-		let hex_pp = hex::encode(raw_pp);
-		log::debug!(
-			target: LOG_TARGET,
-			"Public params (len={}): hash: {}",
-			hex_pp.len(),
-			hash_pp,
-		);
-	}
-
-	let (prover_key, _) = public_params.trim(dims.cols).map_err(Error::from)?;
-	let row_eval_domain = EvaluationDomain::new(dims.cols).map_err(Error::from)?;
-	let col_eval_domain_ext = EvaluationDomain::new(ext_rows).map_err(Error::from)?;
-	let col_eval_domain_red = EvaluationDomain::new(dims.rows).map_err(Error::from)?;
-
-	let r_len = PROVER_KEY_SIZE * ext_rows;
-	let mut result_bytes: Vec<u8> = Vec::with_capacity(r_len);
-
-	unsafe {
-		result_bytes.set_len(r_len);
-	}
-
-	info!(
-		target: "system",
-		"Number of CPU cores: {:#?}",
-		num_cpus::get()
-	);
-
-	let start = Instant::now();
-
-	let chunks = blk.par_chunks_exact(dims.chunk_size);
-	assert!(chunks.remainder().is_empty());
-
-	let chunk_elements = chunks
-		.into_par_iter()
-		.map(to_bls_scalar)
-		.collect::<Result<Vec<BlsScalar>, Error>>()?;
-
-	let commits = (0..dims.rows)
-		.into_par_iter()
-		.map(|i| {
-			let row = (0..dims.cols)
-				.into_par_iter()
-				.map(|j| chunk_elements[i + j * dims.rows])
-				.collect::<Vec<BlsScalar>>();
-
-			let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
-			prover_key.commit(&poly).unwrap()
-		})
-		.collect::<Vec<kzg10::Commitment>>();
-
-	let ifft_commits = fft_on_commitments(commits, col_eval_domain_red, true);
-	let ext_commits = fft_on_commitments(ifft_commits, col_eval_domain_ext, false);
-
-	(0..ext_rows)
-		.into_par_iter()
-		.zip(result_bytes.par_chunks_exact_mut(PROVER_KEY_SIZE))
-		.for_each(|(i, res)| {
-			res.copy_from_slice(&ext_commits[i].to_bytes()[..PROVER_KEY_SIZE]);
-		});
-
-	info!(
-		target: "system",
-		"Time to build a commitment {:?}",
-		start.elapsed()
-	);
-
-	Ok((txns, result_bytes, dims, ext_data_matrix))
 }
 
 // Perform FFT/IFFT on commitments of the given evaluation domain
@@ -1024,7 +843,7 @@ mod tests {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
 	fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy())  {
-		let (layout, commitments, dims, matrix) = build_commitments(64, 16, 32, xts, Seed::default()).unwrap();
+		let (layout, commitments, dims, matrix) = par_build_commitments(64, 16, 32, xts, Seed::default()).unwrap();
 
 		let columns = sample_cells_from_matrix(&matrix, &dims, None);
 		let extended_dims = ExtendedMatrixDimensions{cols: dims.cols, rows: dims.rows * 2};
@@ -1065,7 +884,7 @@ mod tests {
 			41, 218, 24, 212, 66, 62, 5, 187, 191, 129, 5, 105, 3,
 		];
 
-		let (_, commitments, dimensions, _) = build_commitments(
+		let (_, commitments, dimensions, _) = par_build_commitments(
 			block_rows,
 			block_cols,
 			chunk_size,

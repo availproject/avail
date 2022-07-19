@@ -1601,26 +1601,7 @@ dependencies = [
 [[package]]
 name = "dusk-plonk"
 version = "0.8.2"
-<<<<<<< HEAD
-=======
-source = "git+https://github.com/maticnetwork/plonk.git?tag=v0.8.2-polygon-2#25df0c903b802c2b6df897a308ab6bbc50dfb1bd"
-dependencies = [
- "cfg-if 1.0.0",
- "dusk-bls12_381",
- "dusk-bytes",
- "dusk-jubjub",
- "hashbrown 0.9.1",
- "itertools 0.9.0",
- "merlin 3.0.0",
- "rand_core 0.6.3",
- "rayon",
-]
-
-[[package]]
-name = "dusk-plonk"
-version = "0.8.2"
->>>>>>> a582a07 (opt: don't compute public parameters for each proof verification attempt)
-source = "git+https://github.com/maticnetwork/plonk.git?branch=v0.8.2-polygon-4#a148675611a44861f8aab1f8148b34fa3c9374a1"
+source = "git+https://github.com/maticnetwork/plonk.git?branch=v0.8.2-polygon-5#08d6cacb994e898645b975a4f745c0c643a121ad"
 dependencies = [
  "cfg-if 1.0.0",
  "dusk-bls12_381",
@@ -2988,11 +2969,7 @@ dependencies = [
  "criterion",
  "da-primitives",
  "dusk-bytes",
-<<<<<<< HEAD
  "dusk-plonk",
-=======
- "dusk-plonk 0.8.2 (git+https://github.com/maticnetwork/plonk.git?branch=v0.8.2-polygon-4)",
->>>>>>> a582a07 (opt: don't compute public parameters for each proof verification attempt)
  "frame-support",
  "getrandom 0.2.6",
  "hex",
@@ -3022,11 +2999,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "dusk-bytes",
-<<<<<<< HEAD
  "dusk-plonk",
-=======
- "dusk-plonk 0.8.2 (git+https://github.com/maticnetwork/plonk.git?branch=v0.8.2-polygon-4)",
->>>>>>> a582a07 (opt: don't compute public parameters for each proof verification attempt)
  "merlin 3.0.0",
  "rand 0.8.5",
  "rand_chacha 0.3.1",
@@ -3051,11 +3024,7 @@ name = "kate-rpc"
 version = "0.1.0"
 dependencies = [
  "da-primitives",
-<<<<<<< HEAD
  "dusk-plonk",
-=======
- "dusk-plonk 0.8.2 (git+https://github.com/maticnetwork/plonk.git?branch=v0.8.2-polygon-4)",
->>>>>>> a582a07 (opt: don't compute public parameters for each proof verification attempt)
  "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",
