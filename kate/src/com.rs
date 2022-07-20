@@ -8,11 +8,10 @@ use codec::Encode;
 use da_primitives::asdr::AppExtrinsic;
 use dusk_bytes::Serializable;
 use dusk_plonk::{
-	bls12_381::G1Affine,
-	commitment_scheme::kzg10::{self, Commitment},
+	commitment_scheme::kzg10,
 	error::Error as PlonkError,
-	fft::{EvaluationDomain, Evaluations, Polynomial},
-	prelude::{BlsScalar, CommitKey},
+	fft::{EvaluationDomain, Evaluations},
+	prelude::BlsScalar,
 };
 use frame_support::ensure;
 use log::info;
@@ -493,128 +492,6 @@ pub fn par_build_commitments(
 	Ok((tx_layout, result_bytes, block_dims, ext_data_matrix))
 }
 
-// Perform FFT/IFFT on commitments of the given evaluation domain
-//
-// @todo This can be optimized !
-pub fn fft_on_commitments(
-	a: Vec<kzg10::Commitment>,
-	eval_dom: EvaluationDomain,
-	inverse: bool,
-) -> Vec<kzg10::Commitment> {
-	let a_len = a.len();
-	let d_len = eval_dom.size();
-
-	let mut commits = (0..d_len)
-		.into_par_iter()
-		.map(|i| {
-			if i < a_len {
-				kzg10::G1Projective::from(&a[i].0)
-			} else {
-				kzg10::G1Projective::identity()
-			}
-		})
-		.collect::<Vec<kzg10::G1Projective>>();
-
-	if inverse {
-		// Perform IFFT
-		par_fft(
-			&mut commits,
-			BlsScalar::from_bytes(&eval_dom.group_gen_inv.to_bytes()).unwrap(),
-			eval_dom.log_size_of_group as usize,
-		);
-
-		let inv_dom_size = BlsScalar::from_bytes(&eval_dom.size_inv.to_bytes()).unwrap();
-		commits.par_iter_mut().for_each(|v| *v *= inv_dom_size);
-	} else {
-		// Perform FFT
-		par_fft(
-			&mut commits,
-			BlsScalar::from_bytes(&eval_dom.group_gen.to_bytes()).unwrap(),
-			eval_dom.log_size_of_group as usize,
-		);
-	}
-
-	(0..d_len)
-		.into_par_iter()
-		.map(|i| kzg10::Commitment::from(commits[i]))
-		.collect::<Vec<kzg10::Commitment>>()
-}
-
-#[inline]
-fn bitreverse(mut n: usize, l: usize) -> usize {
-	let mut r = 0;
-	for _ in 0..l {
-		r = (r << 1) | (n & 1);
-		n >>= 1;
-	}
-	r
-}
-
-// Taken from https://github.com/itzmeanjan/ff-gpu/blob/89c9719e5897e57e92a3989d7d8c4e120b3aa311/ntt.cpp#L241-L250
-#[inline]
-fn permute_index(idx: usize, dim: usize) -> usize {
-	if dim == 1 {
-		0
-	} else {
-		idx.reverse_bits() >> (64 - dim.trailing_zeros())
-	}
-}
-
-// Computes (inv)FFT on G1 elements ( in projective representation )
-//
-// Collects motivation from SYCL kernels {kernelCooleyTukeyGMFFT, kernelCooleyTukeyFFTFinalReorder}
-// https://github.com/itzmeanjan/ff-gpu/blob/89c9719/ntt.cpp#L252-L374
-fn par_fft(a: &mut [kzg10::G1Projective], omega: BlsScalar, log_n: usize) {
-	let n = a.len();
-	assert_eq!(n, 1 << log_n);
-
-	let pool = rayon::ThreadPoolBuilder::new()
-		.num_threads(num_cpus::get())
-		.build()
-		.unwrap();
-
-	for i in (0..log_n).rev() {
-		let a_ = unsafe { &mut *(&mut a[..] as *mut [kzg10::G1Projective]) };
-
-		pool.scope(|s| {
-			for k in 0..n {
-				// collects motivation from https://github.com/novifinancial/winterfell/blob/46dce1a/math/src/fft/concurrent.rs#L101-L103
-				let a__ = unsafe { &mut *(&mut a_[..] as *mut [kzg10::G1Projective]) };
-
-				s.spawn(move |_| {
-					let p = (1 << i) as usize;
-					let k_rev = bitreverse(k, log_n);
-
-					let w_pow = omega.pow(&[p as u64 * k_rev as u64, 0, 0, 0]);
-
-					if k < (k ^ p) {
-						let t0 = a__[k];
-						let t1 = a__[k ^ p];
-
-						let t1xw_pow = t1 * w_pow;
-						a__[k] = t0 + t1xw_pow;
-						a__[k ^ p] = t0 - t1xw_pow;
-					}
-				});
-			}
-		});
-	}
-
-	pool.scope(|s| {
-		for k in 0..n {
-			let a_ = unsafe { &mut *(&mut a[..] as *mut [kzg10::G1Projective]) };
-
-			s.spawn(move |_| {
-				let k_perm = permute_index(k, n);
-
-				if k < k_perm {
-					a_.swap(k, k_perm);
-				}
-			});
-		}
-	});
-}
-
 #[cfg(test)]
 mod tests {
 	use std::{convert::TryInto, iter::repeat, str::from_utf8};
@@ -638,7 +515,7 @@ mod tests {
 	use super::*;
 	use crate::{
 		com::{extend_data_matrix, get_block_dimensions, pad_iec_9797_1, BlockDimensions},
-		config::{DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAX_BLOCK_COLUMNS},
+		config::{DATA_CHUNK_SIZE, MAX_BLOCK_COLUMNS},
 		padded_len,
 	};
 
@@ -862,8 +739,6 @@ mod tests {
 
 			let proof = build_proof(&public_params, dims, &matrix, &[cell]).unwrap();
 			prop_assert!(proof.len() == 80);
-
-			let pp = testnet::public_params(dims.cols);
 
 			let commitment = &commitments[row * 48..(row + 1) * 48];
 			let verification =  kate_proof::kc_verify_proof(col, &proof, commitment, dims.rows as usize, dims.cols as usize, &pp);
@@ -1116,98 +991,5 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			.flatten()
 			.map(|chunk| pad_to_chunk(chunk, chunk_size).len() as u32)
 			.sum()
-	}
-
-	#[test]
-	fn test_extending_commit_to_poly() {
-		use rand::prelude::*;
-		use rand_chacha::ChaCha20Rng;
-
-		const ROWS: usize = 4;
-		const COLS: usize = 256;
-		const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
-		const DLEN: usize = ROWS * COLS * (CHUNK - 2);
-
-		let mut rng = ChaCha20Rng::from_entropy();
-
-		let mut seed = [0u8; 32];
-		let mut data = [0u8; DLEN];
-
-		rng.fill_bytes(&mut seed);
-		rng.fill_bytes(&mut data);
-
-		let extrinsic = AppExtrinsic::from(data.to_vec());
-		let extrinsics = [extrinsic];
-
-		let (_, blk, dims) = flatten_and_pad_block(ROWS, COLS, CHUNK, &extrinsics, seed).unwrap();
-		let ext_rows = dims.rows * EXTENSION_FACTOR;
-
-		let public_params = testnet::public_params(MAX_BLOCK_COLUMNS as usize);
-		let (prover_key, _) = public_params.trim(dims.cols).map_err(Error::from).unwrap();
-
-		let row_eval_domain = EvaluationDomain::new(dims.cols).unwrap();
-		let col_eval_domain_ext = EvaluationDomain::new(ext_rows).unwrap();
-		let col_eval_domain_red = EvaluationDomain::new(dims.rows).unwrap();
-
-		// Variant 1
-		//
-		// First extend ( double ) each column, then commit to each row of extended data matrix
-		let ext_commits_a = {
-			let ext_data_matrix = extend_data_matrix(dims, &blk).unwrap();
-
-			let mut commits = Vec::with_capacity(ext_rows);
-			for i in 0..ext_rows {
-				let mut row = Vec::with_capacity(dims.cols);
-
-				for j in 0..dims.cols {
-					row.push(ext_data_matrix[i + j * ext_rows]);
-				}
-
-				let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
-				let commit = prover_key.commit(&poly).unwrap();
-
-				commits.push(commit);
-			}
-
-			commits
-		};
-
-		// Variant 2
-		//
-		// First commit to each row of original data matrix, then extend commitment vector
-		let ext_commits_b = {
-			let chunks = blk.chunks_exact(dims.chunk_size);
-			assert!(chunks.remainder().is_empty());
-
-			let chunk_elements = chunks
-				.map(to_bls_scalar)
-				.collect::<Result<Vec<BlsScalar>, Error>>()
-				.unwrap();
-
-			let mut commits = Vec::with_capacity(dims.rows);
-			for i in 0..dims.rows {
-				let mut row = Vec::with_capacity(dims.cols);
-
-				for j in 0..dims.cols {
-					row.push(chunk_elements[i + j * dims.rows]);
-				}
-
-				let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
-				let commit = prover_key.commit(&poly).unwrap();
-
-				commits.push(commit);
-			}
-
-			fft_on_commitments(
-				fft_on_commitments(commits, col_eval_domain_red, true),
-				col_eval_domain_ext,
-				false,
-			)
-		};
-
-		// ensure that both variant 1 & 2 reaches same destination !
-		for i in 0..ext_rows {
-			assert_eq!(ext_commits_a[i], ext_commits_b[i]);
-		}
 	}
 }
