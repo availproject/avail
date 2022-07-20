@@ -127,6 +127,8 @@ pub trait HostedHeaderBuilder {
 		let extrinsics = app_extrinsics.into_iter().map(|e| e.data).collect();
 		let root_hash = da::Hasher::ordered_trie_root(extrinsics);
 
+		let data_root: [u8; 32] = [0; 32];
+
 		let storage_root = da::Hash::decode(&mut &sp_io::storage::root()[..])
 			.expect("Node is configured to use the same hash; qed");
 		let storage_changes_root = sp_io::storage::changes_root(&parent_hash.encode());
@@ -146,6 +148,7 @@ pub trait HostedHeaderBuilder {
 			kate_commitment,
 			block_dims.rows as u16,
 			block_dims.cols as u16,
+			data_root
 		);
 
 		<da::Header as ExtendedHeader>::new(
@@ -158,3 +161,4 @@ pub trait HostedHeaderBuilder {
 		)
 	}
 }
+

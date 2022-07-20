@@ -16,6 +16,7 @@ pub trait ExtrinsicsWithCommitment {
 		commitment: Vec<u8>,
 		rows: u16,
 		cols: u16,
+		data_root: [u8; 32]
 	) -> Self;
 }
 
