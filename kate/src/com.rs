@@ -25,8 +25,8 @@ use static_assertions::const_assert_eq;
 use crate::testnet;
 use crate::{
 	config::{
-		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAX_BLOCK_COLUMNS, MAX_PROOFS_REQUEST,
-		MINIMUM_BLOCK_SIZE, PROOF_SIZE, PROVER_KEY_SIZE, SCALAR_SIZE,
+		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE, MAX_BLOCK_COLUMNS,
+		MAX_PROOFS_REQUEST, MINIMUM_BLOCK_SIZE, PROOF_SIZE, PROVER_KEY_SIZE, SCALAR_SIZE,
 	},
 	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed, LOG_TARGET,
 };
@@ -144,7 +144,7 @@ pub fn get_block_dimensions(
 		Error::BlockTooBig
 	);
 
-	if block_size == max_block_dimensions.size() {
+	if block_size == max_block_dimensions.size() || MAXIMUM_BLOCK_SIZE {
 		return Ok(max_block_dimensions);
 	}
 

@@ -27,6 +27,7 @@ pub mod config {
 	} else {
 		256
 	};
+	pub const MAXIMUM_BLOCK_SIZE: bool = cfg!(feature = "maximum-block-size");
 }
 
 #[cfg(feature = "std")]
