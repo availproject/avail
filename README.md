@@ -155,3 +155,11 @@ For development purposes, its possible to use sudo calls with unchecked weight t
 ### Verify upgrade
 
 To check if runtime is upgraded, query `system/version:SpVersionRuntimeVersion` constant. This should return latest version values.
+
+## Testing
+
+### Generating blocks of maximum size
+
+Some load testing cases requires blocks of maximum size. To compile node which will always pad block with random data up to maximum block size, compile node with:
+
+	$> cargo build -p data-avail --features "kate/maximum-block-size"
