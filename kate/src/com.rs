@@ -459,7 +459,7 @@ mod tests {
 
 	use super::*;
 	use crate::{
-		com::{get_block_dimensions, pad_iec_9797_1, BlockDimensions},
+		com::{get_block_dimensions, pad_iec_9797_1, par_extend_data_matrix, BlockDimensions},
 		config::{DATA_CHUNK_SIZE, MAX_BLOCK_COLUMNS},
 		padded_len,
 	};
