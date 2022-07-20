@@ -60,17 +60,10 @@ const PADDING_TAIL_VALUE: u8 = 0x80;
 /// This function does the same thing as group_by (unstable), just less general.
 fn app_extrinsics_group_by_app_id(extrinsics: &[AppExtrinsic]) -> Vec<(u32, Vec<Vec<u8>>)> {
 	extrinsics.into_iter().fold(vec![], |mut acc, e| {
-		if acc.is_empty() {
-			acc.push((e.app_id, vec![e.data.clone()]));
-		} else {
-			if let Some(curr) = acc.last_mut() {
-				if curr.0 == e.app_id {
-					curr.1.push(e.data.clone());
-				} else {
-					acc.push((e.app_id, vec![e.data.clone()]));
-				}
-			}
-		};
+		match acc.last_mut() {
+			Some((app_id, data)) if e.app_id == *app_id => data.push(e.data.clone()),
+			None | Some(_) => acc.push((e.app_id, vec![e.data.clone()])),
+		}
 		acc
 	})
 }
@@ -219,52 +212,12 @@ pub fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 	BlsScalar::from_bytes(&scalar_size_chunk).map_err(|_| Error::CellLenghtExceeded)
 }
 
-#[cfg(feature = "alloc")]
 /// Build extended data matrix, by columns.
 /// We are using dusk plonk for erasure coding,
 /// which is using roots of unity as evaluation domain for fft and ifft.
 /// This means that extension factor has to be multiple of 2,
 /// and that original data will be interleaved with erasure codes,
 /// instead of being in first k chunks of a column.
-pub fn extend_data_matrix(
-	block_dims: BlockDimensions,
-	block: &[u8],
-) -> Result<Vec<BlsScalar>, Error> {
-	let start = Instant::now();
-	let rows_num = block_dims.rows;
-	let extended_rows_num = rows_num * EXTENSION_FACTOR;
-
-	let chunks = block.chunks_exact(block_dims.chunk_size);
-	assert!(chunks.remainder().is_empty());
-
-	let mut chunk_elements = chunks
-		.map(to_bls_scalar)
-		.collect::<Result<Vec<BlsScalar>, Error>>()?
-		.chunks_exact(rows_num)
-		.flat_map(|column| extend_column_with_zeros(column, extended_rows_num))
-		.collect::<Vec<BlsScalar>>();
-
-	// extend data matrix, column by column
-	let extended_column_eval_domain = EvaluationDomain::new(extended_rows_num)?;
-	let column_eval_domain = EvaluationDomain::new(rows_num)?; // rows_num = column_length
-
-	chunk_elements
-		.chunks_exact_mut(extended_rows_num)
-		.for_each(|col| {
-			let half_len = col.len() / 2;
-			// (i)fft functions input parameter slice size has to be a power of 2, otherwise it panics
-			column_eval_domain.ifft_slice(&mut col[0..half_len]);
-			extended_column_eval_domain.fft_slice(col);
-		});
-
-	info!(
-		target: LOG_TARGET,
-		"Time to extend block {:?}",
-		start.elapsed()
-	);
-
-	Ok(chunk_elements)
-}
 
 #[cfg(feature = "alloc")]
 pub fn par_extend_data_matrix(
@@ -421,14 +374,6 @@ pub fn par_build_commitments(
 
 	info!(target: LOG_TARGET, "Time to prepare {:?}", start.elapsed());
 
-	// if block_dims.cols > MAX_BLOCK_COLUMNS as usize {
-	// 	log::error!(
-	// 		target: LOG_TARGET,
-	// 		"Error on Block dimension {:?}",
-	// 		block_dims
-	// 	);
-	// }
-
 	let public_params = testnet::public_params(block_dims.cols);
 
 	if log::log_enabled!(target: LOG_TARGET, log::Level::Debug) {
@@ -514,7 +459,7 @@ mod tests {
 
 	use super::*;
 	use crate::{
-		com::{extend_data_matrix, get_block_dimensions, pad_iec_9797_1, BlockDimensions},
+		com::{get_block_dimensions, pad_iec_9797_1, BlockDimensions},
 		config::{DATA_CHUNK_SIZE, MAX_BLOCK_COLUMNS},
 		padded_len,
 	};
@@ -573,7 +518,7 @@ mod tests {
 			.map(|chunk| pad_with_zeroes(chunk.to_vec(), block_dims.chunk_size))
 			.flatten()
 			.collect::<Vec<u8>>();
-		let res = extend_data_matrix(block_dims, &block);
+		let res = par_extend_data_matrix(block_dims, &block);
 		eprintln!("result={:?}", res);
 		eprintln!("expect={:?}", expected_result);
 		assert_eq!(res.unwrap(), expected_result);
@@ -803,7 +748,7 @@ get erasure coded to ensure redundancy."#;
 		let chunk_size = 32;
 
 		let (layout, data, dims) = flatten_and_pad_block(32, 4, chunk_size, &xts, hash).unwrap();
-		let coded: Vec<BlsScalar> = extend_data_matrix(dims, &data[..]).unwrap();
+		let coded: Vec<BlsScalar> = par_extend_data_matrix(dims, &data[..]).unwrap();
 
 		let cols_1 = sample_cells_from_matrix(&coded, &dims, Some(&[0, 1]));
 
@@ -840,7 +785,7 @@ get erasure coded to ensure redundancy."#;
 		let chunk_size = 32;
 
 		let (layout, data, dims) = flatten_and_pad_block(32, 4, chunk_size, &xts, hash).unwrap();
-		let coded = extend_data_matrix(dims, &data[..]).unwrap();
+		let coded = par_extend_data_matrix(dims, &data[..]).unwrap();
 
 		let extended_dims = ExtendedMatrixDimensions {
 			cols: dims.cols,
@@ -886,7 +831,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		)
 		.unwrap();
 
-		let coded: Vec<BlsScalar> = extend_data_matrix(dims, &data[..]).unwrap();
+		let coded: Vec<BlsScalar> = par_extend_data_matrix(dims, &data[..]).unwrap();
 
 		let cols = sample_cells_from_matrix(&coded, &dims, None);
 
@@ -922,7 +867,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let chunk_size = 32;
 		let (layout, data, dims) = flatten_and_pad_block(128, 2, chunk_size, &xts, hash).unwrap();
 
-		let coded: Vec<BlsScalar> = extend_data_matrix(dims, &data[..]).unwrap();
+		let coded: Vec<BlsScalar> = par_extend_data_matrix(dims, &data[..]).unwrap();
 
 		let cols = sample_cells_from_matrix(&coded, &dims, None);
 		let extended_dims = ExtendedMatrixDimensions {

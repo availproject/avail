@@ -56,49 +56,7 @@ fn generate_matrix_dimensions() -> Vec<(usize, usize)> {
 	dims.into_iter().unique().collect::<Vec<(usize, usize)>>()
 }
 
-// // Commitment builder routine candidate 1
-// fn bench_build_commitments(c: &mut Criterion) {
-// 	let mut rng = ChaCha20Rng::from_entropy();
-
-// 	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
-// 	let dims = generate_matrix_dimensions();
-
-// 	for dim in dims {
-// 		let dlen = dim.0 * dim.1 * (CHUNK - 2);
-
-// 		let mut seed = [0u8; 32];
-// 		let mut data = vec![0u8; dlen];
-
-// 		rng.fill_bytes(&mut seed);
-// 		rng.fill_bytes(&mut data);
-
-// 		let tx = AppExtrinsic::from(data.to_vec());
-// 		let txs = [tx];
-
-// 		c.bench_function(
-// 			&format!(
-// 				"build_commitments/{}x{}/{} MB",
-// 				dim.0,
-// 				dim.1,
-// 				(dim.0 * dim.1 * CHUNK) >> 20
-// 			),
-// 			|b| {
-// 				b.iter(|| {
-// 					let (_, _, _, _) = build_commitments(
-// 						black_box(dim.0),
-// 						black_box(dim.1),
-// 						black_box(CHUNK),
-// 						black_box(&txs),
-// 						black_box(seed),
-// 					)
-// 					.unwrap();
-// 				});
-// 			},
-// 		);
-// 	}
-// }
-
-// Commitment builder routine candidate 2
+// Commitment builder routine candidate
 fn bench_par_build_commitments(c: &mut Criterion) {
 	let mut rng = ChaCha20Rng::from_entropy();
 
@@ -139,48 +97,6 @@ fn bench_par_build_commitments(c: &mut Criterion) {
 		);
 	}
 }
-
-// // Commitment builder routine candidate 3
-// fn bench_opt_par_build_commitments(c: &mut Criterion) {
-// 	let mut rng = ChaCha20Rng::from_entropy();
-
-// 	const CHUNK: usize = DATA_CHUNK_SIZE as usize + 1;
-// 	let dims = generate_matrix_dimensions();
-
-// 	for dim in dims {
-// 		let dlen = dim.0 * dim.1 * (CHUNK - 2);
-
-// 		let mut seed = [0u8; 32];
-// 		let mut data = vec![0u8; dlen];
-
-// 		rng.fill_bytes(&mut seed);
-// 		rng.fill_bytes(&mut data);
-
-// 		let tx = AppExtrinsic::from(data.to_vec());
-// 		let txs = [tx];
-
-// 		c.bench_function(
-// 			&format!(
-// 				"opt_par_build_commitments/{}x{}/{} MB",
-// 				dim.0,
-// 				dim.1,
-// 				(dim.0 * dim.1 * CHUNK) >> 20
-// 			),
-// 			|b| {
-// 				b.iter(|| {
-// 					let (_, _, _, _) = opt_par_build_commitments(
-// 						black_box(dim.0),
-// 						black_box(dim.1),
-// 						black_box(CHUNK),
-// 						black_box(&txs),
-// 						black_box(seed),
-// 					)
-// 					.unwrap();
-// 				});
-// 			},
-// 		);
-// 	}
-// }
 
 fn bench_build_proof(c: &mut Criterion) {
 	let mut rng = ChaCha20Rng::from_entropy();
