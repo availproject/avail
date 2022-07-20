@@ -64,3 +64,5 @@ std = [
 	"da-primitives/std",
 ]
 extended-columns = []
+maximum-block-size = []
+
