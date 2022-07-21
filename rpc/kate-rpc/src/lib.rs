@@ -145,7 +145,7 @@ where
 			)
 			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
 
-			let data = kate::com::extend_data_matrix(block_dims, &block)
+			let data = kate::com::par_extend_data_matrix(block_dims, &block)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
 			block_ext_cache.put(block_hash, (data, block_dims));
 		}

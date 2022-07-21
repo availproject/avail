@@ -38,8 +38,6 @@ pub fn kc_verify_proof(
 
 	let (witness, eval) = response.split_at(48);
 
-	// log::info!("{:?} {:?}", witness.len(), eval.len());
-
 	let commitment_point = G1Affine::from_bytes(
 		commitment
 			.try_into()
