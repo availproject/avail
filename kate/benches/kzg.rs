@@ -1,6 +1,3 @@
-extern crate criterion;
-extern crate itertools;
-
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use da_primitives::asdr::AppExtrinsic;
 use itertools::Itertools;

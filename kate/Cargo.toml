@@ -8,7 +8,6 @@ edition = "2021"
 
 [dependencies]
 da-primitives = { path = "../primitives", default-features = false }
-itertools = "0.10.3"
 
 # Others
 dusk-plonk = { git = "https://github.com/maticnetwork/plonk.git", branch = "v0.8.2-polygon-5", optional = true }
@@ -39,6 +38,8 @@ kate-recovery = { path = "recovery", default-features = false }
 kate-proof = { path = "proof", default-features = false }
 hex-literal = "0.3.4"
 criterion = "0.3.5"
+itertools = "0.10.3"
+
 
 [features]
 default = ["std"]
