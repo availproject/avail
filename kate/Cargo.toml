@@ -2,7 +2,7 @@
 name = "kate"
 version = "0.1.0"
 authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,7 +10,7 @@ edition = "2018"
 da-primitives = { path = "../primitives", default-features = false }
 
 # Others
-dusk-plonk = { version = "0.8.2", default-features = false, optional = true }
+dusk-plonk = { git = "https://github.com/maticnetwork/plonk.git", branch = "v0.8.2-polygon-5", optional = true }
 dusk-bytes = { version = "0.1.5", default-features = false, optional = true }
 bls12_381 = { version = "0.3.1", optional = true   }
 getrandom = { version = "0.2", features = ["js"], optional = true }
@@ -37,6 +37,9 @@ proptest = "1.0.0"
 kate-recovery = { path = "recovery", default-features = false }
 kate-proof = { path = "proof", default-features = false }
 hex-literal = "0.3.4"
+criterion = "0.3.5"
+itertools = "0.10.3"
+
 
 [features]
 default = ["std"]
@@ -66,3 +69,7 @@ std = [
 extended-columns = []
 maximum-block-size = []
 
+
+[[bench]]
+name = "kzg"
+harness = false

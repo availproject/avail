@@ -8,7 +8,6 @@ use codec::Encode;
 use da_primitives::asdr::AppExtrinsic;
 use dusk_bytes::Serializable;
 use dusk_plonk::{
-	bls12_381::G1Affine,
 	commitment_scheme::kzg10,
 	error::Error as PlonkError,
 	fft::{EvaluationDomain, Evaluations},
@@ -18,6 +17,7 @@ use frame_support::ensure;
 use log::info;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use static_assertions::const_assert_eq;
 
@@ -25,8 +25,8 @@ use static_assertions::const_assert_eq;
 use crate::testnet;
 use crate::{
 	config::{
-		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE, MAX_BLOCK_COLUMNS,
-		MAX_PROOFS_REQUEST, MINIMUM_BLOCK_SIZE, PROOF_SIZE, PROVER_KEY_SIZE, SCALAR_SIZE,
+		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE, MAX_PROOFS_REQUEST,
+		MINIMUM_BLOCK_SIZE, PROOF_SIZE, PROVER_KEY_SIZE, SCALAR_SIZE,
 	},
 	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed, LOG_TARGET,
 };
@@ -60,19 +60,14 @@ const PADDING_TAIL_VALUE: u8 = 0x80;
 /// This function does the same thing as group_by (unstable), just less general.
 fn app_extrinsics_group_by_app_id(extrinsics: &[AppExtrinsic]) -> Vec<(u32, Vec<Vec<u8>>)> {
 	extrinsics.into_iter().fold(vec![], |mut acc, e| {
-		if acc.is_empty() {
-			acc.push((e.app_id, vec![e.data.clone()]));
-		} else {
-			let curr = acc.last_mut().unwrap();
-			if curr.0 == e.app_id {
-				curr.1.push(e.data.clone());
-			} else {
-				acc.push((e.app_id, vec![e.data.clone()]));
-			}
+		match acc.last_mut() {
+			Some((app_id, data)) if e.app_id == *app_id => data.push(e.data.clone()),
+			None | Some(_) => acc.push((e.app_id, vec![e.data.clone()])),
 		}
 		acc
 	})
 }
+
 pub fn flatten_and_pad_block(
 	max_rows_num: usize,
 	max_cols_num: usize,
@@ -210,21 +205,22 @@ fn extend_column_with_zeros(column: &[BlsScalar], extended_rows_num: usize) -> V
 	result
 }
 
-fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
+pub fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 	// TODO: Better error type for BlsScalar case?
 	let scalar_size_chunk =
 		<[u8; SCALAR_SIZE]>::try_from(chunk).map_err(|_| Error::InvalidChunkLength)?;
 	BlsScalar::from_bytes(&scalar_size_chunk).map_err(|_| Error::CellLenghtExceeded)
 }
 
-#[cfg(feature = "alloc")]
 /// Build extended data matrix, by columns.
 /// We are using dusk plonk for erasure coding,
 /// which is using roots of unity as evaluation domain for fft and ifft.
 /// This means that extension factor has to be multiple of 2,
 /// and that original data will be interleaved with erasure codes,
 /// instead of being in first k chunks of a column.
-pub fn extend_data_matrix(
+
+#[cfg(feature = "alloc")]
+pub fn par_extend_data_matrix(
 	block_dims: BlockDimensions,
 	block: &[u8],
 ) -> Result<Vec<BlsScalar>, Error> {
@@ -232,13 +228,14 @@ pub fn extend_data_matrix(
 	let rows_num = block_dims.rows;
 	let extended_rows_num = rows_num * EXTENSION_FACTOR;
 
-	let chunks = block.chunks_exact(block_dims.chunk_size);
+	let chunks = block.par_chunks_exact(block_dims.chunk_size);
 	assert!(chunks.remainder().is_empty());
 
 	let mut chunk_elements = chunks
+		.into_par_iter()
 		.map(to_bls_scalar)
 		.collect::<Result<Vec<BlsScalar>, Error>>()?
-		.chunks_exact(rows_num)
+		.par_chunks_exact(rows_num)
 		.flat_map(|column| extend_column_with_zeros(column, extended_rows_num))
 		.collect::<Vec<BlsScalar>>();
 
@@ -247,7 +244,7 @@ pub fn extend_data_matrix(
 	let column_eval_domain = EvaluationDomain::new(rows_num)?; // rows_num = column_length
 
 	chunk_elements
-		.chunks_exact_mut(extended_rows_num)
+		.par_chunks_exact_mut(extended_rows_num)
 		.for_each(|col| {
 			let half_len = col.len() / 2;
 			// (i)fft functions input parameter slice size has to be a power of 2, otherwise it panics
@@ -276,6 +273,8 @@ pub fn build_proof(
 	let cols_num = block_dims.cols;
 	let extended_rows_num = rows_num * EXTENSION_FACTOR;
 
+	const SPROOF_SIZE: usize = PROOF_SIZE + SCALAR_SIZE;
+
 	ensure!(cells.len() <= MAX_PROOFS_REQUEST, Error::CellLenghtExceeded);
 
 	let (prover_key, _) = public_params.trim(cols_num).map_err(Error::from)?;
@@ -286,15 +285,13 @@ pub fn build_proof(
 	row_dom_x_pts.extend(row_eval_domain.elements());
 
 	let mut result_bytes: Vec<u8> = Vec::new();
-	let serialized_proof_size = SCALAR_SIZE + PROOF_SIZE;
-	result_bytes.reserve_exact(serialized_proof_size * cells.len());
+	result_bytes.reserve_exact(SPROOF_SIZE * cells.len());
 	unsafe {
-		result_bytes.set_len(serialized_proof_size * cells.len());
+		result_bytes.set_len(SPROOF_SIZE * cells.len());
 	}
 
 	let prover_key = &prover_key;
 	let row_dom_x_pts = &row_dom_x_pts;
-	let mut cell_index = 0;
 
 	info!(
 		target: LOG_TARGET,
@@ -303,58 +300,47 @@ pub fn build_proof(
 	);
 	// generate proof only for requested cells
 	let total_start = Instant::now();
+
+	// attempt to parallelly compute proof for all requested cells
 	cells
-		.iter()
-		.try_for_each(|cell| -> Result<(), PlonkError> {
-			let row_index = cell.row as usize;
-			let col_index = cell.col as usize;
+		.into_par_iter()
+		.zip(result_bytes.par_chunks_exact_mut(SPROOF_SIZE))
+		.for_each(|(cell, res)| {
+			let r_index = cell.row as usize;
+			let c_index = cell.col as usize;
 
-			if row_index < extended_rows_num && col_index < cols_num {
+			if (r_index >= extended_rows_num) || (c_index >= cols_num) {
+				res.fill(0); // for bad cell identifier, fill whole proof with zero bytes !
+			} else {
 				// construct polynomial per extended matrix row
-				let mut row = Vec::with_capacity(cols_num);
+				let row = (0..cols_num)
+					.into_par_iter()
+					.map(|j| ext_data_matrix[r_index + j * extended_rows_num])
+					.collect::<Vec<BlsScalar>>();
 
-				for j in 0..cols_num {
-					row.push(ext_data_matrix[row_index + j * extended_rows_num]);
-				}
 				// row has to be a power of 2, otherwise interpolate() function panics
-				let polynomial =
-					Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
-				let witness =
-					prover_key.compute_single_witness(&polynomial, &row_dom_x_pts[col_index]);
-				let commitment_to_witness = prover_key.commit(&witness)?;
-				let evaluated_point = ext_data_matrix[row_index + col_index * extended_rows_num];
+				let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
+				let witness = prover_key.compute_single_witness(&poly, &row_dom_x_pts[c_index]);
+				match prover_key.commit(&witness) {
+					Ok(commitment_to_witness) => {
+						let evaluated_point =
+							ext_data_matrix[r_index + c_index * extended_rows_num];
 
-				unsafe {
-					std::ptr::copy(
-						commitment_to_witness.to_bytes().as_ptr(),
-						result_bytes
-							.as_mut_ptr()
-							.add(cell_index * serialized_proof_size),
-						PROOF_SIZE,
-					);
-
-					std::ptr::copy(
-						evaluated_point.to_bytes().as_ptr(),
-						result_bytes
-							.as_mut_ptr()
-							.add(cell_index * serialized_proof_size + PROOF_SIZE),
-						SCALAR_SIZE,
-					);
-				}
-
-				cell_index += 1;
+						res[0..PROOF_SIZE].copy_from_slice(&commitment_to_witness.to_bytes());
+						res[PROOF_SIZE..].copy_from_slice(&evaluated_point.to_bytes());
+					},
+					Err(_) => {
+						res.fill(0); // for bad cell identifier, fill whole proof with zero bytes !
+						return;
+					},
+				};
 			}
-			Ok(())
-		})
-		.map_err(Error::from)?;
-
-	unsafe {
-		result_bytes.set_len(serialized_proof_size * cell_index);
-	}
+		});
 
 	info!(
 		target: LOG_TARGET,
-		"Time to build 1 row of proofs {:?}",
+		"Time to build proofs of {} cells: {:?}",
+		cells.len(),
 		total_start.elapsed()
 	);
 
@@ -362,7 +348,7 @@ pub fn build_proof(
 }
 
 #[cfg(feature = "std")]
-pub fn build_commitments(
+pub fn par_build_commitments(
 	rows_num: usize,
 	cols_num: usize,
 	chunk_size: usize,
@@ -383,20 +369,13 @@ pub fn build_commitments(
 		block.len(),
 	);
 
-	let ext_data_matrix = extend_data_matrix(block_dims, &block)?;
+	let ext_data_matrix = par_extend_data_matrix(block_dims, &block)?;
 	let extended_rows_num = block_dims.rows * EXTENSION_FACTOR;
 
 	info!(target: LOG_TARGET, "Time to prepare {:?}", start.elapsed());
 
-	// construct commitments in parallel
-	if block_dims.cols > MAX_BLOCK_COLUMNS as usize {
-		log::error!(
-			target: LOG_TARGET,
-			"Error on Block dimension {:?}",
-			block_dims
-		);
-	}
-	let public_params = testnet::public_params(MAX_BLOCK_COLUMNS as usize);
+	let public_params = testnet::public_params(block_dims.cols);
+
 	if log::log_enabled!(target: LOG_TARGET, log::Level::Debug) {
 		let raw_pp = public_params.to_raw_var_bytes();
 		let hash_pp = hex::encode(sp_core::blake2_128(&raw_pp));
@@ -412,9 +391,11 @@ pub fn build_commitments(
 	let (prover_key, _) = public_params.trim(block_dims.cols).map_err(Error::from)?;
 	let row_eval_domain = EvaluationDomain::new(block_dims.cols).map_err(Error::from)?;
 
-	// @internal: `PROVER_KEY_SIZE` must match with the output size of `Commitment::to_bytes`.
-	const_assert_eq!(G1Affine::SIZE, PROVER_KEY_SIZE);
-	let mut plonk_commitments = Vec::with_capacity(PROVER_KEY_SIZE * extended_rows_num);
+	let mut result_bytes: Vec<u8> = Vec::new();
+	result_bytes.reserve_exact(PROVER_KEY_SIZE * extended_rows_num);
+	unsafe {
+		result_bytes.set_len(PROVER_KEY_SIZE * extended_rows_num);
+	}
 
 	info!(
 		target: "system",
@@ -423,21 +404,29 @@ pub fn build_commitments(
 	);
 
 	let start = Instant::now();
-	for i in 0..extended_rows_num {
-		let mut row = Vec::with_capacity(block_dims.cols);
 
-		for j in 0..block_dims.cols {
-			row.push(ext_data_matrix[i + j * extended_rows_num]);
-		}
+	(0..extended_rows_num)
+		.into_par_iter()
+		.map(|i| {
+			let mut row = Vec::with_capacity(block_dims.cols);
 
-		let polynomial = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
-		let commitment = &prover_key
-			.commit(&polynomial)
-			.map_err(Error::from)?
-			.to_bytes();
+			for j in 0..block_dims.cols {
+				row.push(ext_data_matrix[i + j * extended_rows_num]);
+			}
 
-		plonk_commitments.extend_from_slice(&commitment[..]);
-	}
+			Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate()
+		})
+		.zip(result_bytes.par_chunks_exact_mut(PROVER_KEY_SIZE))
+		.map(|(poly, res)| {
+			prover_key
+				.commit(&poly)
+				.map(|commitment| commitment.to_bytes())
+				.map(move |key_bytes| (key_bytes, res))
+				.map_err(Error::from)
+		})
+		.collect::<Result<Vec<(_, _)>, _>>()?
+		.into_par_iter()
+		.for_each(|(key_bytes, res)| res.copy_from_slice(&key_bytes[..PROVER_KEY_SIZE]));
 
 	info!(
 		target: "system",
@@ -445,7 +434,7 @@ pub fn build_commitments(
 		start.elapsed()
 	);
 
-	Ok((tx_layout, plonk_commitments, block_dims, ext_data_matrix))
+	Ok((tx_layout, result_bytes, block_dims, ext_data_matrix))
 }
 
 #[cfg(test)]
@@ -470,7 +459,8 @@ mod tests {
 
 	use super::*;
 	use crate::{
-		com::{extend_data_matrix, get_block_dimensions, pad_iec_9797_1, BlockDimensions},
+		com::{get_block_dimensions, pad_iec_9797_1, par_extend_data_matrix, BlockDimensions},
+		config::{DATA_CHUNK_SIZE, MAX_BLOCK_COLUMNS},
 		padded_len,
 	};
 
@@ -528,7 +518,7 @@ mod tests {
 			.map(|chunk| pad_with_zeroes(chunk.to_vec(), block_dims.chunk_size))
 			.flatten()
 			.collect::<Vec<u8>>();
-		let res = extend_data_matrix(block_dims, &block);
+		let res = par_extend_data_matrix(block_dims, &block);
 		eprintln!("result={:?}", res);
 		eprintln!("expect={:?}", expected_result);
 		assert_eq!(res.unwrap(), expected_result);
@@ -675,7 +665,7 @@ mod tests {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
 	fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy())  {
-		let (layout, commitments, dims, matrix) = build_commitments(64, 16, 32, xts, Seed::default()).unwrap();
+		let (layout, commitments, dims, matrix) = par_build_commitments(64, 16, 32, xts, Seed::default()).unwrap();
 
 		let columns = sample_cells_from_matrix(&matrix, &dims, None);
 		let extended_dims = ExtendedMatrixDimensions{cols: dims.cols, rows: dims.rows * 2};
@@ -689,7 +679,7 @@ mod tests {
 		let public_params = crate::testnet::public_params(MAX_BLOCK_COLUMNS as usize);
 		let pp = testnet::public_params(dims.cols);
 		for cell in random_cells(dims.cols, dims.rows, 1) {
-			let col = cell.col ;
+			let col = cell.col;
 			let row = cell.row as usize;
 
 			let proof = build_proof(&public_params, dims, &matrix, &[cell]).unwrap();
@@ -714,7 +704,7 @@ mod tests {
 			41, 218, 24, 212, 66, 62, 5, 187, 191, 129, 5, 105, 3,
 		];
 
-		let (_, commitments, dimensions, _) = build_commitments(
+		let (_, commitments, dimensions, _) = par_build_commitments(
 			block_rows,
 			block_cols,
 			chunk_size,
@@ -758,7 +748,7 @@ get erasure coded to ensure redundancy."#;
 		let chunk_size = 32;
 
 		let (layout, data, dims) = flatten_and_pad_block(32, 4, chunk_size, &xts, hash).unwrap();
-		let coded: Vec<BlsScalar> = extend_data_matrix(dims, &data[..]).unwrap();
+		let coded: Vec<BlsScalar> = par_extend_data_matrix(dims, &data[..]).unwrap();
 
 		let cols_1 = sample_cells_from_matrix(&coded, &dims, Some(&[0, 1]));
 
@@ -795,7 +785,7 @@ get erasure coded to ensure redundancy."#;
 		let chunk_size = 32;
 
 		let (layout, data, dims) = flatten_and_pad_block(32, 4, chunk_size, &xts, hash).unwrap();
-		let coded = extend_data_matrix(dims, &data[..]).unwrap();
+		let coded = par_extend_data_matrix(dims, &data[..]).unwrap();
 
 		let extended_dims = ExtendedMatrixDimensions {
 			cols: dims.cols,
@@ -841,7 +831,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		)
 		.unwrap();
 
-		let coded: Vec<BlsScalar> = extend_data_matrix(dims, &data[..]).unwrap();
+		let coded: Vec<BlsScalar> = par_extend_data_matrix(dims, &data[..]).unwrap();
 
 		let cols = sample_cells_from_matrix(&coded, &dims, None);
 
@@ -877,7 +867,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let chunk_size = 32;
 		let (layout, data, dims) = flatten_and_pad_block(128, 2, chunk_size, &xts, hash).unwrap();
 
-		let coded: Vec<BlsScalar> = extend_data_matrix(dims, &data[..]).unwrap();
+		let coded: Vec<BlsScalar> = par_extend_data_matrix(dims, &data[..]).unwrap();
 
 		let cols = sample_cells_from_matrix(&coded, &dims, None);
 		let extended_dims = ExtendedMatrixDimensions {
