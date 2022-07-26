@@ -19,7 +19,6 @@ jobs:
             yum install llvm-toolset-7 -y
             yum install gcc-c++ -y
             scl enable llvm-toolset-7 bash
-            clang --version
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             source "$HOME/.cargo/env"
             cargo build --release -p data-avail
