@@ -1,5 +1,11 @@
 name: Polygon Avail Releaser
-on: push
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   release-awx:
