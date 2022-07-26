@@ -1,14 +1,8 @@
 name: Polygon Avail Releaser
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+on: push
 
 jobs:
-  release-awx:
+  release_awx:
     runs-on: ubuntu-latest
     container:
       image: amd64/centos:centos7
