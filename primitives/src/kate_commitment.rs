@@ -23,7 +23,7 @@ pub struct KateCommitment<HashOutput> {
 	/// Cols
 	pub cols: u16,
 	/// The merkle root of the data submitted
-	pub data_root: [u8; 32]
+	pub data_root: [u8; 32],
 }
 
 /// Marker trait for types `T` that can be use as `Hash` in `ExtrinsicsRoot`.
@@ -38,17 +38,23 @@ impl<HashOutput: KateExtrinsicHash> ExtrinsicsWithCommitment for KateCommitment<
 
 	fn commitment(&self) -> &Vec<u8> { &self.commitment }
 
-	// fn data_root(&self) -> &Self::HashOutput { &self.data_root }
+	fn data_root(&self) -> &[u8; 32] { &self.data_root }
 
 	fn new(hash: HashOutput) -> Self { hash.into() }
 
-	fn new_with_commitment(hash: HashOutput, commitment: Vec<u8>, rows: u16, cols: u16, data_root: [u8; 32]) -> Self {
+	fn new_with_commitment(
+		hash: HashOutput,
+		commitment: Vec<u8>,
+		rows: u16,
+		cols: u16,
+		data_root: [u8; 32],
+	) -> Self {
 		Self {
 			hash,
 			commitment,
 			rows,
 			cols,
-			data_root
+			data_root,
 		}
 	}
 }

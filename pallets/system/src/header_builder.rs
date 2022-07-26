@@ -2,6 +2,7 @@ use codec::{Decode, Encode};
 use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader};
 use frame_support::traits::Randomness;
 pub use kate::Seed;
+use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
 use scale_info::TypeInfo;
 use sp_runtime::traits::Hash;
 use sp_runtime_interface::{pass_by::PassByCodec, runtime_interface};
@@ -124,10 +125,28 @@ pub trait HostedHeaderBuilder {
 			(kate_commitment, block_dims, data_index)
 		};
 
-		let extrinsics = app_extrinsics.into_iter().map(|e| e.data).collect();
-		let root_hash = da::Hasher::ordered_trie_root(extrinsics);
+		let extrinsics: Vec<Vec<u8>> = app_extrinsics.into_iter().map(|e| e.data).collect();
+		let avail_extrinsics = extrinsics
+			.iter()
+			.filter_map(|e| <AvailExtrinsic>::decode(&mut &e[..]).ok())
+			.collect::<Vec<_>>();
 
-		let data_root: [u8; 32] = [0; 32];
+		let data_root: [u8; 32] = if avail_extrinsics.len() > 0 {
+			log::debug!("Decoded some avail extrinsics.");
+			let leaves: Vec<[u8; 32]> = avail_extrinsics
+				.iter()
+				.map(|x| Sha256::hash(&x.data))
+				.collect();
+
+			let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
+			data_tree.root().expect("Data Root computation failed")
+		} else {
+			Default::default()
+		};
+
+		log::debug!("Avail Data Root: {:?}\n", data_root);
+
+		let root_hash = da::Hasher::ordered_trie_root(extrinsics);
 
 		let storage_root = da::Hash::decode(&mut &sp_io::storage::root()[..])
 			.expect("Node is configured to use the same hash; qed");
@@ -148,7 +167,7 @@ pub trait HostedHeaderBuilder {
 			kate_commitment,
 			block_dims.rows as u16,
 			block_dims.cols as u16,
-			data_root
+			data_root,
 		);
 
 		<da::Header as ExtendedHeader>::new(
