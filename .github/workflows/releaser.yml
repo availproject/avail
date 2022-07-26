@@ -35,9 +35,10 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     steps:
          - uses: actions/checkout@v2
-         - name: install cargo deps and build avail
+         - name: check os version
+           shell: bash
            run: |
-            uname -m
+             uname -m
 
 
 # add docker buildx
