@@ -36,7 +36,7 @@ jobs:
          - uses: actions/checkout@v2
          - name: install cargo deps and build avail
            run: |
-            apt-get install curl -y
+            apk add curl
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             source "$HOME/.cargo/env"
             cargo build --release -p data-avail
@@ -52,7 +52,7 @@ jobs:
          - uses: actions/checkout@v2
          - name: install cargo deps and build avail
            run: |
-            apt-get install curl -y
+            apk add curl
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             source "$HOME/.cargo/env"
             cargo build --release -p data-avail
