@@ -2,26 +2,26 @@ name: Polygon Avail Releaser
 on: push
 
 jobs:
-  release_centos7_amd64:
-    runs-on: ubuntu-latest
-    container:
-      image: amd64/centos:centos7
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-    steps:
-         - uses: actions/checkout@v2
-         - name: install cargo deps and build avail
-           run: |
-            yum install centos-release-scl -y
-            yum install llvm-toolset-7 -y
-            yum install gcc-c++ -y
-            scl enable llvm-toolset-7 bash
-            export PATH="/opt/rh/llvm-toolset-7/root/usr/bin:$PATH"
-            export LIBCLANG_PATH="/opt/rh/llvm-toolset-7/root/usr/lib64/"
-            curl https://sh.rustup.rs -sSf | sh -s -- -y
-            source "$HOME/.cargo/env"
-            cargo build --release -p data-avail
+  # release_centos7_amd64:
+  #   runs-on: ubuntu-latest
+  #   container:
+  #     image: amd64/centos:centos7
+  #   env:
+  #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #   steps:
+  #        - uses: actions/checkout@v2
+  #        - name: install cargo deps and build avail
+  #          run: |
+  #           yum install centos-release-scl -y
+  #           yum install llvm-toolset-7 -y
+  #           yum install gcc-c++ -y
+  #           scl enable llvm-toolset-7 bash
+  #           export PATH="/opt/rh/llvm-toolset-7/root/usr/bin:$PATH"
+  #           export LIBCLANG_PATH="/opt/rh/llvm-toolset-7/root/usr/lib64/"
+  #           curl https://sh.rustup.rs -sSf | sh -s -- -y
+  #           source "$HOME/.cargo/env"
+  #           cargo build --release -p data-avail
 
   release_linux_amd64:
     runs-on: ubuntu-latest
@@ -34,7 +34,7 @@ jobs:
          - uses: actions/checkout@v2
          - name: install cargo deps and build avail
            run: |
-            apt-get install curl -y
+            sudo apt-get install curl -y
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             source "$HOME/.cargo/env"
             cargo build --release -p data-avail
@@ -50,7 +50,7 @@ jobs:
          - uses: actions/checkout@v2
          - name: install cargo deps and build avail
            run: |
-            apt-get install curl -y
+            sudo apt-get install curl -y
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             source "$HOME/.cargo/env"
             cargo build --release -p data-avail
