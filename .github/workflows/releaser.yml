@@ -19,4 +19,12 @@ jobs:
             yum install llvm-toolset-7 -y
             yum install gcc-c++ -y
             scl enable llvm-toolset-7 bash
-            yum whatprovides *libclang.so
+            export PATH="/opt/rh/llvm-toolset-7/root/usr/bin:$PATH"
+            export LIBCLANG_PATH="/opt/rh/llvm-toolset-7/root/usr/lib64/"
+            curl https://sh.rustup.rs -sSf | sh -s -- -y
+            source "$HOME/.cargo/env"
+            cargo build --release -p data-avail
+            cd target/release
+            ls -a
+            yum install awscli -y
+            aws s3 cp data-avail s3://avail-binaries/data-avail-git
