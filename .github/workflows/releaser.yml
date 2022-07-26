@@ -2,7 +2,7 @@ name: Polygon Avail Releaser
 on: push
 
 jobs:
-  release_awx:
+  release_centos7_amd64:
     runs-on: ubuntu-latest
     container:
       image: amd64/centos:centos7
@@ -28,3 +28,18 @@ jobs:
             ls -a
             yum install awscli -y
             aws s3 cp data-avail s3://avail-binaries/data-avail-git
+  release_darwin:
+    runs-on: macos-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    steps:
+         - uses: actions/checkout@v2
+         - name: install cargo deps and build avail
+           run: |
+            cat /etc/os-release
+
+
+# add docker buildx
+
+# add binary builds for all other arch
