@@ -24,6 +24,6 @@ jobs:
             source "$HOME/.cargo/env"
             cargo build --release -p data-avail
             cd target/release
-            ls
+            ls -a
             yum install awscli -y
             aws s3 cp data-avail s3://avail-binaries/data-avail-git
