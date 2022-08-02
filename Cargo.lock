@@ -3065,6 +3065,7 @@ dependencies = [
  "kate-rpc-runtime-api",
  "lru 0.7.5",
  "parity-scale-codec 2.3.1",
+ "rs_merkle",
  "sc-client-api",
  "sc-client-db",
  "sp-api",
