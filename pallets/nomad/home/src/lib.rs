@@ -5,8 +5,6 @@
 /// <https://docs.substrate.io/v3/runtime/frame>
 pub use pallet::*;
 
-// mod merkle;
-
 #[cfg(test)]
 mod mock;
 
