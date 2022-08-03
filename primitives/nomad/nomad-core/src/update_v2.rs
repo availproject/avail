@@ -8,12 +8,10 @@ use crate::utils::home_domain_hash;
 /// Nomad update
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct Update {
-    /// The home chain
-    pub home_domain: u32,
-    /// The previous root
-    pub previous_root: H256,
-    /// The new root
-    pub new_root: H256,
+	/// The home chain
+	pub home_domain: u32,
+	/// The new root
+	pub root: H256,
 }
 
 impl Update {
@@ -22,8 +20,7 @@ impl Update {
 		let mut output = [0u8; 32];
 		let mut hasher = Keccak::v256();
 		hasher.update(home_domain_hash(self.home_domain).as_ref());
-		hasher.update(self.previous_root.as_ref());
-        hasher.update(self.new_root.as_ref());
+		hasher.update(self.root.as_ref());
 		hasher.finalize(&mut output);
 		output.into()
 	}

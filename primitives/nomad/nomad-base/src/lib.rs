@@ -11,6 +11,7 @@ pub mod testing;
 pub struct NomadBase {
 	pub state: NomadState,
 	pub local_domain: u32,
+	pub committed_root: H256,
 	pub updater: H160,
 }
 
@@ -19,6 +20,7 @@ impl Default for NomadBase {
 		Self {
 			state: NomadState::Active,
 			local_domain: Default::default(),
+			committed_root: Default::default(),
 			updater: Default::default(),
 		}
 	}
@@ -29,17 +31,20 @@ pub enum NomadBaseError {
 }
 
 impl NomadBase {
-	pub fn new(local_domain: u32, updater: H160) -> Self {
+	pub fn new(local_domain: u32, committed_root: H256, updater: H160) -> Self {
 		Self {
-			local_domain,
-			updater,
 			state: Default::default(),
+			local_domain,
+			committed_root,
+			updater,
 		}
 	}
 
 	pub fn state(&self) -> NomadState { self.state }
 
 	pub fn local_domain(&self) -> u32 { self.local_domain }
+
+	pub fn committed_root(&self) -> H256 { self.committed_root }
 
 	pub fn updater(&self) -> H160 { self.updater }
 

@@ -2,6 +2,8 @@
 
 extern crate alloc;
 
+mod update_v2;
+
 mod update;
 pub use update::*;
 
