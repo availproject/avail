@@ -13,7 +13,7 @@ async function cli_arguments() {
             description: 'WSS endpoint',
             alias: 'endpoint',
             type: 'string',
-            default: 'wss://polygon-da-explorer.matic.today/ws'
+            default: 'wss://testnet.polygonavail.net/ws'
         },
 
         s: {
@@ -37,18 +37,18 @@ async function cli_arguments() {
             default: 'submit_data'
         },
 
-        id: {
+        i: {
             description: 'app id to be given',
             alias: 'app_id',
             type: 'number',
             default: 0
         }
-        
+
 
     }).argv;
 }
 
-async function createApi(argv:any): Promise<ApiPromise> {
+async function createApi(argv: any): Promise<ApiPromise> {
     const provider = new WsProvider(argv.e);
 
     // Create the API and wait until ready
@@ -103,8 +103,16 @@ function generateRandomBinary(size: number) {
     return binary;
 }
 
-//async funtion to get the nonce 
-async function getNonce(api: ApiPromise, address: any): Promise<number> {
+const generateData = (size: number) => {
+    let buffer = Buffer.alloc(size)
+    for (let i = 0; i < size; i++) {
+        buffer.writeUInt8(Math.floor(Math.random() * 256), i)
+    }
+    return buffer.toString('hex')
+}
+
+//async funtion to get the nonce    
+async function getNonce(api: ApiPromise, address: string): Promise<number> {
     const nonce = (await api.rpc.system.accountNextIndex(address)).toNumber();
     return nonce;
 }
@@ -113,11 +121,12 @@ async function sendTx(api: ApiPromise, sender: KeyringPair, nonce: number, argv:
     try {
 
         let payload = argv.s;
-        let data = generateRandomBinary(payload);
+        let data = generateData(payload);
         let submit = await api.tx.dataAvailability.submitData(data);
+        console.log("app id is ", argv.i);
         /* @note here app_id is 1,
         but if you want to have one your own then create one first before initialising here */
-        const options: Partial<any> = { app_id: argv.id, nonce: nonce }
+        const options: Partial<any> = { app_id: argv.i, nonce: nonce }
         const res = await submit
             .signAndSend(
                 sender,  // sender
@@ -164,9 +173,9 @@ async function get(api: any, block_hash: H256, extrinsic_hash: H256) {
 
     let extrinsics = block.block.extrinsics;
 
-    console.log("\nretrieving data.....\n ")
-    console.log(`Block Hash: ${block_hash} and extrinsic hash ${extrinsic_hash}\n`);
-    console.log(`Extrinsic data:`);
+    // console.log("\nretrieving data.....\n ")
+    // console.log(`Block Hash: ${block_hash} and extrinsic hash ${extrinsic_hash}\n`);
+    // console.log(`Extrinsic data:`);
 
     let data: Array<string> = [];
     extrinsics.forEach(async (ex: any, index: number) => {
@@ -174,7 +183,6 @@ async function get(api: any, block_hash: H256, extrinsic_hash: H256) {
             console.log(index, ex.toHuman());
             const { method: { args, method, section } } = ex;
             let data_hex = args.map((a: any) => a.toString()).join(', ');
-
             //data retreived from the extrinsic data
             let str = ''
             for (var n = 0; n < data_hex.length; n += 2) {
@@ -200,12 +208,14 @@ async function main() {
     const argv = await cli_arguments();
     const api = await createApi(argv);
     const alice = keyring.addFromUri('//Alice');
+    const bob = keyring.addFromUri('//Bob');
     const metadata = await api.rpc.state.getMetadata();
     let nonce = await getNonce(api, alice.address);
+    let non = await getNonce(api, bob.address);
     /*@note: here ALICE test account is used.
     You can use your own account mnemonic using the below code
-    const mnemonic = 'your mneomnic';
-    const acc = keyring.addFromUri(Mnemonic, 'sr25519'); and its address can be used by `acc.address`
+    // const mnemonic = 'your mneomnic';
+    // const acc = keyring.addFromUri(Mnemonic, 'sr25519'); and its address can be used by `acc.address`
     */
 
     if (argv.n == 'bulk_tx') {
@@ -217,9 +227,11 @@ async function main() {
     else {
         console.log("invalid input");
     }
+
+
 }
 
 main().catch((err) => {
-	console.error(err);
-	process.exit(1);
+    console.error(err);
+    process.exit(1);
 });

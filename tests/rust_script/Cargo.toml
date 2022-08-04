@@ -1,0 +1,27 @@
+[package]
+name = "rust_script"
+version = "0.19.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2021"
+publish = false
+
+license = "GPL-3.0"
+repository = "https://github.com/paritytech/subxt"
+documentation = "https://docs.rs/subxt"
+homepage = "https://www.parity.io/"
+description = "avail rust script for data submission"
+
+[dependencies]
+subxt = { git = "https://github.com/maticnetwork/subxt", branch  = "luka/avail-standalone-example" }
+async-std = { version = "1.9.0", features = ["attributes", "tokio1"] }
+env_logger = "0.9.0"
+sp-keyring = "6.0.0"
+futures = "0.3.13"
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "full", "bit-vec"] }
+anyhow = "1"
+tokio = { version = "1.10", features = ["macros", "rt-multi-thread", "time", "parking_lot"] }
+clap = { version = "3.2.16", features = ["derive"] }
+rand = "0.8.5"
+
+[workspace]
+members = []
