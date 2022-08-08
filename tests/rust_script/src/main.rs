@@ -22,14 +22,14 @@
 //! polkadot --dev --tmp
 //! ```
 use anyhow::{anyhow, Context, Result};
+use avail::runtime_types::frame_support::storage::bounded_vec::BoundedVec;
 use clap::Parser;
 use futures::future::join_all;
+use futures::StreamExt;
 use rand::{distributions::Alphanumeric, Rng};
 use sp_keyring::AccountKeyring;
 use subxt::{AvailExtra, AvailExtraParameters, ClientBuilder, DefaultConfig, PairSigner};
 use tokio::sync::Mutex;
-
-use avail::runtime_types::frame_support::storage::bounded_vec::BoundedVec;
 
 #[subxt::subxt(runtime_metadata_path = "./avail.metadata.scale")]
 pub mod avail {}
@@ -58,21 +58,40 @@ async fn submit_data(args: Args) -> Result<(), Box<dyn std::error::Error>> {
         None => 10,
     };
     let data = random_generate(size as usize);
-    let hash = api
+    let mut hash = api
         .tx()
         .data_availability()
         .submit_data(BoundedVec((data.as_bytes()).to_vec()))
-        .sign_and_submit_with_additional(&signer, AvailExtraParameters { tip: 0, app_id: 1 })
+        .sign_and_submit_with_aditional_then_watch(
+            &signer,
+            AvailExtraParameters { tip: 0, app_id: 1 },
+        )
         .await?;
 
-    println!("Data extrinsic submitted: {}", hash);
+    while let Some(ev) = hash.next().await {
+        let ev = ev?;
+        use subxt::TransactionStatus::*;
+
+        // Made it into a block, but not finalized.
+        if let InBlock(details) = ev {
+            println!(
+                "Transaction {:?} made it into block {:?}",
+                details.extrinsic_hash(),
+                details.block_hash()
+            );
+            break;
+        }
+    }
 
     Ok(())
 }
 
 static LOCK: Mutex<()> = Mutex::const_new(());
 
-async fn submit_bulk_data(num_transactions: u32, args: Args) -> Result<(), Box<dyn std::error::Error>> {
+async fn submit_bulk_data(
+    num_transactions: u32,
+    args: Args,
+) -> Result<(), Box<dyn std::error::Error>> {
     let api = ClientBuilder::new()
         .build()
         .await?
@@ -96,8 +115,8 @@ async fn submit_bulk_data(num_transactions: u32, args: Args) -> Result<(), Box<d
                 AvailExtraParameters { tip: 0, app_id: 1 },
             )
             .await
-            .context(format!("Failed on transaction number {}", i + 1))
-            .unwrap();
+            .context(format!("Failed on transaction number {}", i + 1))?;
+
         let s = h.wait_for_in_block();
         statuses.push(s);
     }
@@ -113,11 +132,11 @@ async fn submit_bulk_data(num_transactions: u32, args: Args) -> Result<(), Box<d
         .into_iter()
         .collect::<Result<Vec<_>>>()
         .unwrap();
-    println!("{:?}", hashes);
+    println!("{:?} is in block", hashes);
     Ok(())
 }
 
-fn random_generate(size: usize) -> String{
+fn random_generate(size: usize) -> String {
     let s: String = rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(size)
