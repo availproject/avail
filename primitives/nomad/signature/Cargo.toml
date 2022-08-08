@@ -7,8 +7,11 @@ license = "MIT OR Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/ltchang2019/no-std-eth-signature"
 description = """
-`ethers-rs` signature implemented with as no_std.
+`ethers-rs` signature implemented as no_std.
 """
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -19,11 +22,8 @@ scale-info = { version = "1.0", default-features = false, features = ["derive"] 
 sp-std = { version = "4.0.0-dev", default-features = false }
 sp-core = { version = "4.0.0-dev", default-features = false }
 sp-io = { version = "4.0.0-dev", default-features = false }
-sp-runtime = { version = "4.0.0-dev", default-features = false }
-sp-runtime-interface = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 parity-util-mem = { version = "0.10.2", default-features = false, features = ["primitive-types"] }
-
 rlp = { version = "0.5.0", default-features = false }
 ethabi = { version = "17.0.0", default-features = false, features = ["rlp"] }
 arrayvec = { version = "0.7.2", default-features = false }
@@ -39,13 +39,23 @@ tiny-keccak = { version = "2.0.2", default-features = false }
 thiserror-no-std = "2.0.1"
 hex = { version = "0.4.3", default-features = false }
 once_cell = { version = "1.12.0", optional = true }
+libc-print = "0.1.20"
 
 [dependencies.ethers-core]
 version = "0.13.0"
 default-features = false
 optional = true
 
+[dependencies.byte-slice-cast]
+version  = "1.2.1"
+default-features = false
+optional = true
+
 [features]
 default = ["std"]
-std = []
-testing = ["ethers-core"]
+std = [
+	"codec/std",
+	"scale-info/std",
+	"frame-support/std",
+]
+testing = ["ethers-core", "byte-slice-cast"]

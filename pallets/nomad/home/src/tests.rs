@@ -18,6 +18,7 @@ static TEST_RECIPIENT: Lazy<H256> = Lazy::new(|| H256::repeat_byte(3));
 // TODO: test governance router can set updater for base and UM
 
 #[test]
+#[cfg(feature = "testing")]
 fn it_dispatches_message() {
 	ExtBuilder::default()
 		.with_base(*TEST_NOMAD_BASE)
@@ -28,6 +29,7 @@ fn it_dispatches_message() {
 			let destination_and_nonce = destination_and_nonce(TEST_REMOTE_DOMAIN, nonce);
 			let leaf_index = Home::tree().count();
 			let body = [1u8; 8].to_vec();
+			let committed_root = Home::base().committed_root();
 
 			// Format expected message
 			let message = NomadMessage {
@@ -61,6 +63,7 @@ fn it_dispatches_message() {
 				message_hash,
 				leaf_index,
 				destination_and_nonce,
+				committed_root,
 				message: message.to_vec(),
 			}];
 			assert_eq!(events(), expected);
@@ -68,6 +71,7 @@ fn it_dispatches_message() {
 }
 
 #[test]
+#[cfg(feature = "testing")]
 fn it_rejects_big_message() {
 	ExtBuilder::default()
 		.with_base(*TEST_NOMAD_BASE)
@@ -91,12 +95,14 @@ fn it_catches_improper_update() {
 		.with_base(*TEST_NOMAD_BASE)
 		.build()
 		.execute_with(|| {
+			let committed_root = Home::base().committed_root();
+
 			// Sign improper update
 			let fake_root = H256::repeat_byte(9);
-			let improper_signed = TEST_UPDATER.sign_update(fake_root);
+			let improper_signed = TEST_UPDATER.sign_update(committed_root, fake_root);
 
 			let origin = Origin::signed(TEST_SENDER_ACCOUNT.clone());
-			assert_ok!(Home::improper_update_v2(origin, improper_signed.clone()));
+			assert_ok!(Home::improper_update(origin, improper_signed.clone()));
 			assert!(Home::state() == NomadState::Failed);
 
 			let expected = vec![
@@ -105,7 +111,8 @@ fn it_catches_improper_update() {
 					reporter: TEST_SENDER_ACCOUNT.clone(),
 				},
 				crate::Event::ImproperUpdate {
-					root: fake_root,
+					previous_root: committed_root,
+					new_root: fake_root,
 					signature: improper_signed.signature.to_vec(),
 				},
 			];
@@ -120,6 +127,8 @@ fn it_dispatches_message_and_accepts_update() {
 		.with_base(*TEST_NOMAD_BASE)
 		.build()
 		.execute_with(move || {
+			let committed_root = Home::base().committed_root();
+
 			let body = [1u8; 8].to_vec();
 			// Dispatch message
 			let origin = Origin::signed((*TEST_SENDER_ACCOUNT).clone());
@@ -139,15 +148,16 @@ fn it_dispatches_message_and_accepts_update() {
 			));
 
 			// Get updater signature
-			let root = Home::root();
-			let signed_update = TEST_UPDATER.sign_update(root);
+			let new_root = Home::root();
+			let signed_update = TEST_UPDATER.sign_update(committed_root, new_root);
 
 			// Submit signed update
-			assert_ok!(Home::update_v2(origin, signed_update.clone()));
+			assert_ok!(Home::update(origin, signed_update.clone()));
 
 			let expected_update_event = crate::Event::Update {
 				home_domain: TEST_LOCAL_DOMAIN,
-				root,
+				previous_root: committed_root,
+				new_root,
 				signature: signed_update.signature.to_vec(),
 			};
 			assert!(events().contains(&expected_update_event));

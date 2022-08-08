@@ -3,7 +3,10 @@ use ethers_signers::{LocalWallet, Signer};
 use signature::Signature;
 use sp_core::{H160, H256};
 
-use crate::{SignedUpdate, Update};
+use crate::{
+	update_v2::{SignedUpdateV2, UpdateV2},
+	SignedUpdate, Update,
+};
 
 #[derive(Debug, Clone)]
 pub struct Updater {
@@ -12,9 +15,9 @@ pub struct Updater {
 }
 
 impl Updater {
-	pub fn new(domain: u32, signer: LocalWallet) -> Self { Self { signer, domain } }
+	pub fn new(domain: u32, signer: LocalWallet) -> Self { Self { domain, signer } }
 
-	pub fn address(&self) -> H160 { self.signer.address() }
+	pub fn address(&self) -> H160 { self.signer.address().0.into() }
 
 	fn sign_message_without_eip_155<M: Send + Sync + AsRef<[u8]>>(&self, message: M) -> Signature {
 		// Had to reimplement hash and signing to remove async-ness for
@@ -27,12 +30,22 @@ impl Updater {
 		signature.into()
 	}
 
-	pub fn sign_update(&self, root: H256) -> SignedUpdate {
+	pub fn sign_update(&self, previous_root: H256, new_root: H256) -> SignedUpdate {
 		let update = Update {
+			home_domain: self.domain,
+			previous_root,
+			new_root,
+		};
+		let signature = self.sign_message_without_eip_155(update.signing_hash());
+		SignedUpdate { update, signature }
+	}
+
+	pub fn sign_update_v2(&self, root: H256) -> SignedUpdateV2 {
+		let update = UpdateV2 {
 			home_domain: self.domain,
 			root,
 		};
 		let signature = self.sign_message_without_eip_155(update.signing_hash());
-		SignedUpdate { update, signature }
+		SignedUpdateV2 { update, signature }
 	}
 }

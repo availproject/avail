@@ -39,6 +39,7 @@ updater-manager = { path = "../updater-manager", default-features = false }
 [dev-dependencies]
 ethers-signers = { version = "0.13.0", default-features = false }
 once_cell = { version = "1.8.0", default-features = false }
+da-primitives = { path = "../../../primitives/avail", default-features = false }
 
 [features]
 default = ["std"]
@@ -55,4 +56,4 @@ try-runtime = ["frame-support/try-runtime"]
 testing = [
 	"nomad-core/testing",
 	"nomad-base/testing"
-	]
+]

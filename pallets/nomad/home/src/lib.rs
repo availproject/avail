@@ -88,7 +88,13 @@ pub mod pallet {
 
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-		fn build(&self) { <Base<T>>::put(NomadBase::new(self.local_domain, self.committed_root, self.updater)); }
+		fn build(&self) {
+			<Base<T>>::put(NomadBase::new(
+				self.local_domain,
+				self.committed_root,
+				self.updater,
+			));
+		}
 	}
 
 	#[pallet::event]
@@ -172,23 +178,23 @@ pub mod pallet {
 		}
 	}
 
-		// /// Verify/submit signed update.
-		// #[pallet::weight(100)]
-		// pub fn update_v2(origin: OriginFor<T>, signed_update: SignedUpdate) -> DispatchResult {
-		// 	let sender = ensure_signed(origin)?;
-		// 	Self::do_update_v2(sender, signed_update)
-		// }
+	// /// Verify/submit signed update.
+	// #[pallet::weight(100)]
+	// pub fn update_v2(origin: OriginFor<T>, signed_update: SignedUpdate) -> DispatchResult {
+	// 	let sender = ensure_signed(origin)?;
+	// 	Self::do_update_v2(sender, signed_update)
+	// }
 
-		// /// Verify/slash updater for improper update.
-		// #[pallet::weight(100)]
-		// pub fn improper_update_v2(
-		// 	origin: OriginFor<T>,
-		// 	signed_update: SignedUpdate,
-		// ) -> DispatchResult {
-		// 	let sender = ensure_signed(origin)?;
-		// 	Self::do_improper_update_v2(sender, &signed_update)?;
-		// 	Ok(())
-		// }
+	// /// Verify/slash updater for improper update.
+	// #[pallet::weight(100)]
+	// pub fn improper_update_v2(
+	// 	origin: OriginFor<T>,
+	// 	signed_update: SignedUpdate,
+	// ) -> DispatchResult {
+	// 	let sender = ensure_signed(origin)?;
+	// 	Self::do_improper_update_v2(sender, &signed_update)?;
+	// 	Ok(())
+	// }
 
 	impl<T: Config> Pallet<T> {
 		pub fn state() -> NomadState { Self::base().state() }

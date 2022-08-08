@@ -14,5 +14,10 @@ pub static TEST_UPDATER: Lazy<Updater> = Lazy::new(|| {
 	Updater::new(TEST_LOCAL_DOMAIN, signer)
 });
 
-pub static TEST_NOMAD_BASE: Lazy<NomadBase> =
-	Lazy::new(|| NomadBase::new(TEST_LOCAL_DOMAIN, TEST_UPDATER.address()));
+pub static TEST_NOMAD_BASE: Lazy<NomadBase> = Lazy::new(|| {
+	NomadBase::new(
+		TEST_LOCAL_DOMAIN,
+		Default::default(),
+		TEST_UPDATER.address(),
+	)
+});

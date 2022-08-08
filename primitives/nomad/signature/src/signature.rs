@@ -238,9 +238,14 @@ impl From<H256> for RecoveryMessage {
 #[cfg(feature = "testing")]
 impl From<ethers_core::types::Signature> for Signature {
 	fn from(sig: ethers_core::types::Signature) -> Self {
+		// ethers-core 0.13.0 uses primitive types 0.11.1, sp-core 4.0.0-dev
+		// uses primitive types 0.10.1
+		let r_bytes: [u8; 32] = sig.r.into();
+		let s_bytes: [u8; 32] = sig.s.into();
+
 		Self {
-			r: sig.r,
-			s: sig.s,
+			r: r_bytes.into(),
+			s: s_bytes.into(),
 			v: sig.v,
 		}
 	}

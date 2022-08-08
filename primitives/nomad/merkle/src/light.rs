@@ -97,7 +97,7 @@ impl<const N: usize> LightMerkle<N> {
 
 #[cfg(test)]
 mod test {
-	use ethers_core::utils::hash_message;
+	use ethers_core::utils::{hash_message, keccak256};
 
 	use super::*;
 	use crate::{test_utils, NomadLightMerkle};
@@ -119,8 +119,8 @@ mod test {
 			let mut tree = NomadLightMerkle::default();
 			// insert the leaves
 			for leaf in test_case.leaves.iter() {
-				let hashed_leaf = hash_message(leaf);
-				tree.ingest(hashed_leaf).expect("!ingest");
+				let hashed_leaf = keccak256(leaf);
+				tree.ingest(hashed_leaf.into()).expect("!ingest");
 			}
 			// assert the tree has the proper leaf count
 			assert_eq!(tree.count() as usize, test_case.leaves.len());

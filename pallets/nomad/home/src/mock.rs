@@ -1,12 +1,9 @@
-use frame_support::{
-	parameter_types,
-	traits::{ConstU16, ConstU64, GenesisBuild},
-};
+use da_primitives::Header;
+use frame_support::{parameter_types, traits::GenesisBuild};
 use frame_system as system;
 use nomad_base::NomadBase;
 use sp_core::{H160, H256};
 use sp_runtime::{
-	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 	AccountId32,
 };
@@ -29,29 +26,37 @@ frame_support::construct_runtime!(
 	}
 );
 
+parameter_types! {
+	pub const BlockHashCount: u32 = 250;
+	pub BlockWeights: frame_system::limits::BlockWeights =
+		frame_system::limits::BlockWeights::simple_max(1024);
+	pub static ExistentialDeposit: u64 = 0;
+}
+
 impl system::Config for Test {
 	type AccountData = ();
 	type AccountId = AccountId32;
 	type BaseCallFilter = frame_support::traits::Everything;
-	type BlockHashCount = ConstU64<250>;
+	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
-	type BlockNumber = u64;
+	type BlockNumber = u32;
 	type BlockWeights = ();
 	type Call = Call;
 	type DbWeight = ();
 	type Event = Event;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type Header = Header;
+	type Header = Header<Self::BlockNumber, BlakeTwo256>;
+	type HeaderBuilder = frame_system::header_builder::da::HeaderBuilder<Test>;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
 	type Origin = Origin;
 	type PalletInfo = PalletInfo;
-	type SS58Prefix = ConstU16<42>;
+	type Randomness = frame_system::tests::TestRandomness<Test>;
+	type SS58Prefix = ();
 	type SystemWeightInfo = ();
 	type Version = ();
 }
@@ -72,6 +77,7 @@ impl updater_manager::Config for Test {
 pub(crate) struct ExtBuilder {
 	updater: H160,
 	local_domain: u32,
+	committed_root: H256,
 }
 
 impl Default for ExtBuilder {
@@ -79,6 +85,7 @@ impl Default for ExtBuilder {
 		ExtBuilder {
 			updater: Default::default(),
 			local_domain: Default::default(),
+			committed_root: Default::default(),
 		}
 	}
 }
@@ -98,6 +105,7 @@ impl ExtBuilder {
 		home::GenesisConfig::<Test> {
 			updater: self.updater,
 			local_domain: self.local_domain,
+			committed_root: self.committed_root,
 			_phantom: Default::default(),
 		}
 		.assimilate_storage(&mut t)

@@ -1,12 +1,12 @@
 use sp_core::H256;
 use tiny_keccak::{Hasher, Keccak};
 
-/// Computes hash of home domain concatenated with "NOMADv2"
+/// Computes hash of home domain concatenated with "NOMAD"
 pub fn home_domain_hash(home_domain: u32) -> H256 {
 	let mut output = [0u8; 32];
 	let mut hasher = Keccak::v256();
 	hasher.update(home_domain.to_be_bytes().as_ref());
-	hasher.update("NOMADv2".as_bytes());
+	hasher.update("NOMAD".as_bytes());
 	hasher.finalize(&mut output);
 	output.into()
 }

@@ -8,12 +8,12 @@ use crate::utils::home_domain_hash;
 /// Nomad update
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct Update {
-    /// The home chain
-    pub home_domain: u32,
-    /// The previous root
-    pub previous_root: H256,
-    /// The new root
-    pub new_root: H256,
+	/// The home chain
+	pub home_domain: u32,
+	/// The previous root
+	pub previous_root: H256,
+	/// The new root
+	pub new_root: H256,
 }
 
 impl Update {
@@ -23,7 +23,7 @@ impl Update {
 		let mut hasher = Keccak::v256();
 		hasher.update(home_domain_hash(self.home_domain).as_ref());
 		hasher.update(self.previous_root.as_ref());
-        hasher.update(self.new_root.as_ref());
+		hasher.update(self.new_root.as_ref());
 		hasher.finalize(&mut output);
 		output.into()
 	}
@@ -51,5 +51,32 @@ impl SignedUpdate {
 		Ok(self
 			.signature
 			.verify(self.update.prepended_hash(), signer)?)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	#[cfg(feature = "testing")]
+	use crate::test_utils::Updater;
+
+	pub const TEST_UPDATER_PRIVKEY: &str =
+		"1111111111111111111111111111111111111111111111111111111111111111";
+
+	#[test]
+	#[cfg(feature = "testing")]
+	fn recover_valid_update() {
+		use ethers_signers::{LocalWallet, Signer};
+
+		let wallet: LocalWallet = TEST_UPDATER_PRIVKEY.parse().unwrap();
+		println!("Wallet address: {:x}", wallet.address());
+
+		let updater = Updater::new(1000, TEST_UPDATER_PRIVKEY.parse().unwrap());
+		let signed_update = updater.sign_update(H256::repeat_byte(0), H256::repeat_byte(1));
+
+		let recovered = signed_update.recover().expect("!recover");
+		println!("Recovered address: {:x}", recovered);
+
+		signed_update.verify(updater.address()).expect("!sig");
 	}
 }

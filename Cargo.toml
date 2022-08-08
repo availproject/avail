@@ -31,7 +31,9 @@ frame-executive = { path = "pallets/executive" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 syn = { git = "https://github.com/dtolnay/syn.git", tag = "1.0.96" }
 tokio = { git = "https://github.com/tokio-rs/tokio", tag = "tokio-1.19.2" }
-primitive-types = { git = "https://github.com/paritytech/parity-common.git", tag = "primitive-types-v0.11.1" }
+primitive-types = { git = "https://github.com/paritytech/parity-common.git", tag = "parity-util-mem-v0.10.1" }
+uint = { git = "https://github.com/paritytech/parity-common.git", tag = "uint-v0.9.0" }
+parity-db = { git = "https://github.com/paritytech/parity-db.git", tag = "v0.3.12" }
 
 # Substrate  (polkadot-v0.9.13).
 sc-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.13" }

@@ -71,7 +71,7 @@ mod test {
 	#[test]
 	#[cfg(feature = "testing")]
 	fn it_accepts_valid_signature() {
-		let valid_signed = TEST_UPDATER.sign_update(H256::repeat_byte(1));
+		let valid_signed = TEST_UPDATER.sign_update(H256::repeat_byte(0), H256::repeat_byte(1));
 		assert!(TEST_NOMAD_BASE.is_updater_signature(&valid_signed));
 	}
 
@@ -83,7 +83,7 @@ mod test {
 				.parse()
 				.unwrap();
 		let random_updater = Updater::new(TEST_LOCAL_DOMAIN, random_signer);
-		let invalid_signed = random_updater.sign_update(H256::repeat_byte(1));
+		let invalid_signed = random_updater.sign_update(H256::repeat_byte(0), H256::repeat_byte(1));
 
 		assert!(!TEST_NOMAD_BASE.is_updater_signature(&invalid_signed));
 	}
