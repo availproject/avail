@@ -39,7 +39,7 @@ pub trait KateApi {
 		&self,
 		block_number: NumberOrHex,
 		index: usize
-	) -> Result<Vec<u8>>;
+	) -> Result<Vec<[u8;32]>>;
 
 
 }
@@ -201,7 +201,7 @@ where
 		&self,
 		block_number: NumberOrHex,
 		index: usize
-	) -> Result<Vec<u8>> {
+	) -> Result<Vec<[u8;32]>> {
 		let block_num: u32 = block_number
 			.try_into()
 			.map_err(|_| RpcError::invalid_params("Invalid block number"))?;
@@ -227,7 +227,7 @@ where
         		Err(_) => continue,
 			}
 			if pos == index {
-				interested_leaf_position = Some(leaves.len());
+				interested_leaf_position = Some(leaves.len() - 1);
 			} 
 		}
 
@@ -237,7 +237,7 @@ where
 				// TODO: Enable assertion
 				// assert_eq!(data_tree.root(), signed_block.block.header().extrinsics_root().data_root(), "Wrong data root!");
 				let proof = data_tree.proof(&[position]);
-				return Ok(proof.to_bytes());
+				return Ok(proof.proof_hashes().to_vec());
 			}
 		}
 		Err(internal_err!("Proof not possible!"))
