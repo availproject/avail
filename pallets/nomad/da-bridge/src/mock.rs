@@ -6,7 +6,7 @@ use sp_runtime::{
 	AccountId32,
 };
 
-use crate as updater_manager;
+use crate as da_bridge;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -20,6 +20,8 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		UpdaterManager: updater_manager::{Pallet, Call, Storage, Event<T>},
+		Home: home::{Pallet, Call, Storage, Event<T>},
+		DABridge: da_bridge::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -62,6 +64,19 @@ impl updater_manager::Config for Test {
 	type Event = Event;
 }
 
+frame_support::parameter_types! {
+	pub const MaxMessageBodyBytes: u32 = 5_000;
+}
+
+impl home::Config for Test {
+	type Event = Event;
+	type MaxMessageBodyBytes = MaxMessageBodyBytes;
+}
+
+impl da_bridge::Config for Test {
+	type Event = Event;
+}
+
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = system::GenesisConfig::default()
@@ -78,7 +93,7 @@ pub(crate) fn events() -> Vec<super::Event<Test>> {
 		.into_iter()
 		.map(|r| r.event)
 		.filter_map(|e| {
-			if let Event::UpdaterManager(inner) = e {
+			if let Event::DABridge(inner) = e {
 				Some(inner)
 			} else {
 				None
