@@ -5,6 +5,8 @@
 /// <https://docs.substrate.io/v3/runtime/frame>
 pub use pallet::*;
 
+mod message;
+
 #[cfg(test)]
 mod mock;
 
@@ -18,6 +20,10 @@ mod benchmarking;
 pub mod pallet {
 	use frame_support::{pallet_prelude::*, sp_runtime::traits::Header};
 	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
+	use home::Pallet as Home;
+	use sp_core::H256;
+
+	use crate::message::DABridgeMessage;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + home::Config {
@@ -60,9 +66,10 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		ExtRootDispatched {
+		ExtrinsicsRootDispatched {
 			sender: T::AccountId,
-			ext_root: T::Hash,
+			block_number: T::BlockNumber,
+			extrinsics_root: T::Hash,
 		},
 	}
 
@@ -76,19 +83,47 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(100)]
-		pub fn try_enqueue_ext_root(origin: OriginFor<T>, header: T::Header) -> DispatchResult {
+		pub fn try_enqueue_extrinsics_root(
+			origin: OriginFor<T>,
+			destination_domain: u32,
+			recipient_address: H256,
+			header: T::Header,
+		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
-
 			Self::ensure_valid_header(&header)?;
-			let ext_root = header.extrinsics_root();
-
-			// TODO: Dispatch ext root to home in message
-
-			Ok(())
+			Self::do_enqueue_extrinsics_root(sender, destination_domain, recipient_address, header)
 		}
 	}
 
 	impl<T: Config> Pallet<T> {
+		fn do_enqueue_extrinsics_root(
+			sender: T::AccountId,
+			destination_domain: u32,
+			recipient_address: H256,
+			header: T::Header,
+		) -> DispatchResult {
+			let block_number = header.number();
+			let ext_root = header.extrinsics_root();
+
+			let message =
+				DABridgeMessage::format_extrinsics_root_message(block_number.encode(), ext_root);
+
+			Home::<T>::do_dispatch(
+				sender.clone(),
+				destination_domain,
+				recipient_address,
+				message.as_ref().to_vec(),
+			)?;
+
+			Self::deposit_event(Event::<T>::ExtrinsicsRootDispatched {
+				sender,
+				block_number: *block_number,
+				extrinsics_root: *ext_root,
+			});
+
+			Ok(())
+		}
+
 		fn ensure_valid_header(header: &T::Header) -> Result<(), DispatchError> {
 			let block_number = header.number();
 			let hash = header.hash();

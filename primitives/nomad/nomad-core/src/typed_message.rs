@@ -1,18 +1,8 @@
 use alloc::vec::Vec;
 
-pub struct TypedView(Vec<u8>);
-
-impl TypedView {
-	pub fn new(view: Vec<u8>) -> Self { Self(view) }
-}
-
-impl AsRef<[u8]> for TypedView {
-	fn as_ref(&self) -> &[u8] { self.0.as_ref() }
-}
-
+/// This trait provides structure for encoding a Vec<u8> as a xapp message.
 /// First byte of Vec<u8> is a u8 corresponding to a message type. The remaining
-/// bytes make up the message body. This trait provides structure for encoding a
-/// Vec<u8> as a xapp message.
+/// bytes make up the message body.
 pub trait TypedMessage: AsRef<[u8]> {
 	type MessageEnum: From<u8>;
 
@@ -20,5 +10,11 @@ pub trait TypedMessage: AsRef<[u8]> {
 	fn message_type(&self) -> Self::MessageEnum {
 		let slice: &[u8] = self.as_ref();
 		slice[0].into()
+	}
+
+	/// Return the message body after the type byte
+	fn message_body(&self) -> Vec<u8> {
+		let slice: &[u8] = self.as_ref();
+		slice[1..].to_vec()
 	}
 }

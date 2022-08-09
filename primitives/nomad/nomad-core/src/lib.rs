@@ -10,8 +10,8 @@ pub use update::*;
 mod state;
 pub use state::*;
 
-mod message;
-pub use message::*;
+mod nomad_message;
+pub use nomad_message::*;
 
 mod typed_message;
 pub use typed_message::*;

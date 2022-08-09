@@ -213,7 +213,7 @@ pub mod pallet {
 
 		/// Format message, insert hash into merkle tree, and update mappings
 		/// between tree roots and message indices.
-		fn do_dispatch(
+		pub fn do_dispatch(
 			sender: T::AccountId,
 			destination_domain: u32,
 			recipient_address: H256,
