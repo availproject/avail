@@ -239,7 +239,7 @@ pub mod pallet {
 			// Format message and get message hash
 			let message = NomadMessage {
 				origin,
-				sender: sender.encode(), // TODO: enforce 32 bytes in runtime
+				sender: sender.encode(), // 32 byte length enforced when message hashed
 				nonce,
 				destination: destination_domain,
 				recipient: recipient_address,

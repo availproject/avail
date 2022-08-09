@@ -28,7 +28,11 @@ frame-system = { version = "4.0.0-dev", default-features = false }
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 
 # Nomad
+home = { path = "../home", default-features = false }
 nomad-core = { path = "../../../primitives/nomad/nomad-core", default-features = false }
+
+[dev-dependencies]
+da-primitives = { path = "../../../primitives/avail", default-features = false }
 
 [features]
 default = ["std"]

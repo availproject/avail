@@ -13,6 +13,9 @@ pub use state::*;
 mod message;
 pub use message::*;
 
+mod typed_message;
+pub use typed_message::*;
+
 mod utils;
 pub use utils::*;
 

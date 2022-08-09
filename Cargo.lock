@@ -1390,9 +1390,11 @@ dependencies = [
 name = "da-bridge"
 version = "1.0.0"
 dependencies = [
+ "da-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "home",
  "nomad-core",
  "parity-scale-codec 2.3.1",
  "scale-info",
@@ -3582,15 +3584,6 @@ name = "libc"
 version = "0.2.132"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8371e4e5341c3a96db127eb2465ac681ced4c433e01dd0e938adbef26ba93ba5"
-
-[[package]]
-name = "libc-print"
-version = "0.1.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a574491aebd99996f31b32469bbd3b50e580c35f6305663d68f6d6b28eaced09"
-dependencies = [
- "libc",
-]
 
 [[package]]
 name = "libloading"
@@ -7932,7 +7925,6 @@ dependencies = [
  "generic-array 0.14.5",
  "hex",
  "k256",
- "libc-print",
  "once_cell",
  "parity-scale-codec 2.3.1",
  "parity-util-mem",
