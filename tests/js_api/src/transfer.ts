@@ -6,6 +6,7 @@ import yargs from 'yargs/yargs';
 
 const keyring = new Keyring({ type: 'sr25519' });
 
+
 async function cli_arguments() {
     return yargs(process.argv.slice(2)).options({
         e: {
@@ -14,13 +15,14 @@ async function cli_arguments() {
             type: 'string',
             default: 'wss://testnet.polygonavail.net/ws'
         },
-        i: {
-            description: 'app id to be given',
-            alias: 'app_id',
+
+        b: {
+            description: 'amount to be transferred',
+            alias: 'amount',
             type: 'number',
-            default: 0
-        }
-        
+            default: 10000
+        },
+
     }).argv;
 }
 
@@ -68,7 +70,6 @@ interface SignatureOptionsNew extends SignatureOptions {
 }
 
 
-
 //async funtion to get the nonce    
 async function getNonce(api: ApiPromise, address: string): Promise<number> {
     const nonce = (await api.rpc.system.accountNextIndex(address)).toNumber();
@@ -77,12 +78,13 @@ async function getNonce(api: ApiPromise, address: string): Promise<number> {
 
 
 
-async function createKey(api: ApiPromise, sender: KeyringPair, nonce: number, id:number): Promise<any> {
+
+async function Transfer(api: ApiPromise, sender: KeyringPair, receiver: KeyringPair, nonce: number, argv: any) {
     try {
         /* @note here app_id is 1,
         but if you want to have one your own then create one first before initialising here */
         const options: Partial<any> = { app_id: 0, nonce: nonce }
-        const res = await api.tx.dataAvailability.createApplicationKey(id)
+        const res = await api.tx.balances.transfer(receiver.address, argv.b)
             .signAndSend(
                 sender,  // sender
                 options, // options
@@ -105,34 +107,20 @@ async function createKey(api: ApiPromise, sender: KeyringPair, nonce: number, id
     }
 }
 
-
-
-//function to retreive data
-
-
-
-let block = async (hash: H256, api: ApiPromise) => {
-    const block = await api.rpc.chain.getBlock(hash);
-    const block_num = await block.block.header.number;
-    console.log(`💡Tx included in Block Number: ${block_num} with hash ${hash}\n`);
-}
-
-
 async function main() {
     const argv = await cli_arguments();
     const api = await createApi(argv);
     const alice = keyring.addFromUri('//Alice');
     const bob = keyring.addFromUri('//Bob');
     const metadata = await api.rpc.state.getMetadata();
-    // let nonce = await getNonce(api, alice.address);
+    let nonce = await getNonce(api, alice.address);
     let non = await getNonce(api, bob.address);
-    /*@note: here BOB test account is used.
+    /*@note: here ALICE test account is used.
     You can use your own account mnemonic using the below code
     // const mnemonic = 'your mneomnic';
     // const acc = keyring.addFromUri(Mnemonic, 'sr25519'); and its address can be used by `acc.address`
     */
-    let key = await createKey(api, bob, non, argv.i);
-
+    await Transfer(api, bob, alice, non, argv);
 
 }
 

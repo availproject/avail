@@ -47,3 +47,28 @@ ts-node full.ts --help
 
 `submit_data` and `bulk_tx` are the params for `-n`
 
+
+>The following is the script for subsribing to new blocks
+```
+ts-node sub.ts [OPTIONS]
+```
+
+```
+-e, --endpoint  WSS endpoint                           [string] [default: "wss://testnet.polygonavail.net/ws"]
+-n, --count     count for subscribing                   [number] [default: -1]
+```
+
+`count` have a default of `-1` where it subscibes to new blovk endlessly 
+
+
+>If you want to transer from a account to another use: (script default uses alice and bob accounts)
+
+```
+ts-node transfer.ts [OPTIONS]
+```
+
+```
+-e, --endpoint  WSS endpoint                         [string] [default: "wss://testnet.polygonavail.net/ws"]
+-b, --amount    amount to be transferred             [number] [default: 10000]
+```
+

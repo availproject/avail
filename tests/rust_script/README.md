@@ -26,11 +26,11 @@ cargo run --[OPTIONS] --mode <MODE>
 
 ```
 OPTIONS:
-    -h, --help           Print help information
+    -a, --amount <AMOUNT> amount to be transferred   
     -m, --mode <MODE>
-    -n, --num <NUM>      number of transactions to be sent in bulk transaction mode
-    -s, --size <SIZE>    size of each transaction
+    -n, --num <NUM>       number of transactions to be sent in bulk transaction mode
+    -s, --size <SIZE>     size of each transaction
 ```
 
-`submit_data` and `submit_bulk_data` are difference mode
+`submit_data` `submit_bulk_data` `transfer` `subscribe` are difference mode
 
