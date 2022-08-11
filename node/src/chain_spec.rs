@@ -322,6 +322,7 @@ pub fn testnet_genesis(
 		},
 		updater_manager: Default::default(),
 		home: Default::default(),
+		da_bridge: Default::default(),
 	}
 }
 
@@ -478,6 +479,7 @@ fn genesis_builder(
 		},
 		updater_manager: Default::default(),
 		home: Default::default(),
+		da_bridge: Default::default(),
 	}
 }
 

@@ -1390,15 +1390,20 @@ dependencies = [
 name = "da-bridge"
 version = "1.0.0"
 dependencies = [
+ "da-control",
  "da-primitives",
  "frame-benchmarking",
+ "frame-executive",
  "frame-support",
  "frame-system",
+ "hex-literal",
  "home",
  "nomad-base",
  "nomad-core",
  "once_cell",
+ "pallet-transaction-payment",
  "parity-scale-codec 2.3.1",
+ "rand 0.8.5",
  "scale-info",
  "serde",
  "sp-arithmetic",
@@ -1453,6 +1458,7 @@ dependencies = [
 name = "da-runtime"
 version = "4.0.0"
 dependencies = [
+ "da-bridge",
  "da-control",
  "da-primitives",
  "frame-benchmarking",
@@ -1526,6 +1532,7 @@ dependencies = [
 name = "data-avail"
 version = "1.0.0"
 dependencies = [
+ "da-bridge",
  "da-control",
  "da-primitives",
  "da-runtime",
@@ -1537,6 +1544,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "futures 0.3.21",
  "hex-literal",
+ "home",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",

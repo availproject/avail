@@ -27,6 +27,8 @@ dusk-plonk = "0.8.2"
 
 # Nomad
 updater-manager = { path = "../pallets/nomad/updater-manager" }
+home = { path = "../pallets/nomad/home" }
+da-bridge = { path = "../pallets/nomad/da-bridge" }
 
 # 3rd-party
 codec = { package = "parity-scale-codec", version = "2.0.0" }

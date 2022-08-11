@@ -988,6 +988,10 @@ impl home::Config for Runtime {
 	type MaxMessageBodyBytes = MaxMessageBodyBytes;
 }
 
+impl da_bridge::Config for Runtime {
+	type Event = Event;
+}
+
 // TODO @miguel Aline this with previous order and ID to keep the compatibility.
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -1034,6 +1038,7 @@ construct_runtime!(
 		// Nomad
 		UpdaterManager: updater_manager,
 		Home: home,
+		DABridge: da_bridge,
 	}
 );
 

@@ -10,7 +10,7 @@ use super::{
 #[derive(Clone, Copy, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct LightMerkle<const N: usize> {
 	branch: [H256; N],
-	count: u32,
+	count: u32, // TODO: is this reasonable over usize due to scale limitations
 }
 
 impl<const N: usize> Default for LightMerkle<N> {
