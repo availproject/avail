@@ -1,24 +1,23 @@
 package main
 
 import (
+	"avail-gsrpc-examples/internal/config"
+	"avail-gsrpc-examples/internal/extrinsics"
 	"flag"
 	"fmt"
-	"avail-gsrpc-examples/internal/extrinsics"
-
+	"log"
+	"os"
 
 	gsrpc "github.com/centrifuge/go-substrate-rpc-client/v4"
-	"github.com/centrifuge/go-substrate-rpc-client/v4/config"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 )
 
-func submit_data( size int) {
+func submit_data(size int, ApiURL string, Seed string, AppID int) {
 
 	// This sample shows how to create a transaction to make a Avail data submission
-
 	// Instantiate the API (locally)
-	api, err := gsrpc.NewSubstrateAPI(config.Default().RPCURL)
-	// api, err := gsrpc.NewSubstrateAPI(config.Default().RPCURL)
+	api, err := gsrpc.NewSubstrateAPI(ApiURL)
 	if err != nil {
 		panic(err)
 	}
@@ -29,8 +28,13 @@ func submit_data( size int) {
 	}
 
 	// Set data and appID according to need
-	data , _:=  extrinsics.RandToken(size)
+	data, _ := extrinsics.RandToken(size)
 	appID := 0
+
+	//if app id is greater than 0 then it must be created before submitting data
+	if AppID != 0 {
+		appID = AppID
+	}
 
 	c, err := types.NewCall(meta, "DataAvailability.submit_data", types.NewBytes([]byte(data)))
 	if err != nil {
@@ -50,7 +54,12 @@ func submit_data( size int) {
 		panic(err)
 	}
 
-	key, err := types.CreateStorageKey(meta, "System", "Account", signature.TestKeyringPairAlice.PublicKey)
+	keyringPair, err := signature.KeyringPairFromSecret(Seed, 42)
+	if err != nil {
+		panic(err)
+	}
+
+	key, err := types.CreateStorageKey(meta, "System", "Account", keyringPair.PublicKey)
 	if err != nil {
 		panic(err)
 	}
@@ -74,7 +83,7 @@ func submit_data( size int) {
 	}
 
 	// Sign the transaction using Alice's default account
-	err = ext.Sign(signature.TestKeyringPairAlice, o)
+	err = ext.Sign(keyringPair, o)
 	if err != nil {
 		panic(err)
 	}
@@ -88,10 +97,25 @@ func submit_data( size int) {
 	fmt.Printf("Data submitted by Alice: %v against appID %v\n", data, appID)
 }
 
-
 func main() {
-	data_size := flag.Int("size",100, "size of data submission")
-	data:= *data_size
+
+	var configJSON string
+	var config config.Config
+	flag.StringVar(&configJSON, "config", "", "config json file")
 	flag.Parse()
-	submit_data(data)
+
+	if configJSON == "" {
+		log.Println("No config file provided. Exiting...")
+		os.Exit(0)
+	}
+
+	err := config.GetConfig(configJSON)
+	if err != nil {
+		panic(err)
+	}
+	size := 0
+	if config.Size == 0  || config.Size > -1 {
+		size = 100
+	}
+	submit_data(size, config.ApiURL, config.Seed, config.AppID)
 }

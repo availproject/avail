@@ -49,9 +49,19 @@ func main() {
 		panic(err)
 	}
 
+	keyringPair, err := signature.KeyringPairFromSecret(config.Seed, 42)
+	if err != nil {
+		panic(err)
+	}
+
 	// if testing locally with Alice account, use signature.TestKeyringPairAlice.PublicKey as last param
 	// mneumonic for local Alice account: `bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice`
-	key, err := types.CreateStorageKey(meta, "System", "Account", signature.TestKeyringPairAlice.PublicKey)
+	// key, err := types.CreateStorageKey(meta, "System", "Account", signature.TestKeyringPairAlice.PublicKey)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	key, err := types.CreateStorageKey(meta, "System", "Account", keyringPair.PublicKey)
 	if err != nil {
 		panic(err)
 	}
@@ -62,15 +72,21 @@ func main() {
 		panic(err)
 	}
 	nonce := uint32(accountInfo.Nonce)
+	appID := 0
+
+	//if app id is greater than 0 then it must be created before submitting data
+	if config.AppID != 0 {
+		appID = config.AppID
+	}
 
 	rl := ratelimit.New(10) // per second
 	for {
 		rl.Take()
 		go func() {
-			data := make([]byte, 8192)
+			data := make([]byte, config.Size)
 			rand.Read(data)
-			submittedHash, err := extrinsics.SubmitData(api, string(data), config.Seed, 0, nonce + uint32(1))
-			atomic.AddUint32(&nonce, 1)
+			submittedHash, err := extrinsics.SubmitData(api, string(data), config.Seed, appID, (atomic.AddUint32(&nonce, 1)))
+			// atomic.AddUint32(&nonce, 1)
 			if err != nil {
 				panic(err)
 			}

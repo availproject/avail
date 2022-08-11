@@ -10,11 +10,13 @@ PS: Do keep in mind that the gsprc is not that stable like polakdot-js and subxt
 {
     "seed":"bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice",
     "api_url":"ws://127.0.0.1:9944",
-    "size":1000
+    "size":1000,
+    "app_id" : 0
+
 }
 ```
 
-2. There are multiplt scripts you have in gsrpc
+2. There are multiple scripts you have in gsrpc
 
 go to the gsrpc folder in tests 
 
@@ -25,7 +27,7 @@ cd avail/tests/gsrpc
 > Using simple data submission 
 
 ``` 
-go run extrinsics/dataSubmission/dataSubmission.go -- -size 1000
+ go run extrinsics/dataSubmission/dataSubmission.go -config config.json
 ```
 here the size is amount of random amount of data to sent in bytes which is optional(default is 100). The default APP_ID is 0
 
@@ -48,6 +50,5 @@ The same procedure of data submission is done here. But checks/logs if the data 
 ```
 go run extrinsics/loadTestingTool/loadTestingTool.go -config config.json
 ```
-Load testing the network with a random blob of 8000bytes data for the 10secs 
-
+Load testing script to sent randomly generated data for 10 seconds.
 

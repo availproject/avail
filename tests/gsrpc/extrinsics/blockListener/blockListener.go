@@ -70,8 +70,8 @@ func main() {
 	}
 	nonce := uint32(accountInfo.Nonce)
 	log.Println("Nonce: ", nonce)
-	data, _:= extrinsics.RandToken(config.Size)
-	submittedHash, err := extrinsics.SubmitData(api, data , config.Seed, 0, nonce)
+	data, _ := extrinsics.RandToken(config.Size)
+	submittedHash, err := extrinsics.SubmitData(api, data, config.Seed, 0, nonce)
 	if err != nil {
 		panic(err)
 	}
