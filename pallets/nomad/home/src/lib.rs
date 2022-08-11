@@ -390,7 +390,8 @@ pub mod pallet {
 		}
 
 		/// Set new updater on self as well as updater manager.
-		/// Note: Will only be callable by the GovernanceRouter pallet
+		/// Note: Not exposed as pallet call, will only be callable by the
+		/// GovernanceRouter pallet.
 		pub fn set_updater(new_updater: H160) -> DispatchResult {
 			// Modify NomadBase updater
 			Base::<T>::mutate(|base| base.set_updater(new_updater));

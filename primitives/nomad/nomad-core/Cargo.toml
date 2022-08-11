@@ -12,11 +12,9 @@ scale-info = { version = "1.0", default-features = false, features = ["derive"] 
 sp-std = { version = "4.0.0-dev", default-features = false }
 sp-core = { version = "4.0.0-dev", default-features = false }
 sp-io = { version = "4.0.0-dev", default-features = false }
-sp-runtime = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 parity-util-mem = { version = "0.10.2", default-features = false, features = ["primitive-types"] }
 
-primitive-types = { version = "0.11.1", default-features = false, features = ["scale-info"] }
 tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
 signature = { path = "../signature", default-features = false }
 getrandom = { version = "0.2", features = ["js"] }

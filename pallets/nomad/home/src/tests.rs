@@ -163,3 +163,34 @@ fn it_dispatches_message_and_accepts_update() {
 			assert!(events().contains(&expected_update_event));
 		})
 }
+
+#[test]
+#[cfg(feature = "testing")]
+fn it_rejects_invalid_signature() {
+	ExtBuilder::default()
+		.with_base(*TEST_NOMAD_BASE)
+		.build()
+		.execute_with(move || {
+			let committed_root = Home::base().committed_root();
+
+			let body = [1u8; 8].to_vec();
+			// Dispatch message
+			let origin = Origin::signed((*TEST_SENDER_ACCOUNT).clone());
+			assert_ok!(Home::dispatch(
+				origin.clone(),
+				TEST_REMOTE_DOMAIN,
+				*TEST_RECIPIENT,
+				body.clone()
+			));
+
+			// Get fake updater signature
+			let new_root = Home::root();
+			let signed_update = FAKE_UPDATER.sign_update(committed_root, new_root);
+
+			// Assert err returned from submitting signed update
+			assert_err!(
+				Home::update(origin, signed_update.clone()),
+				Error::<Test>::InvalidUpdaterSignature
+			);
+		})
+}

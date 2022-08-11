@@ -47,7 +47,7 @@ impl DABridgeMessage {
 	) -> Self {
 		let mut buf: Vec<u8> = Vec::new();
 
-        // TODO: is asserting sizes a valid pattern?
+		// TODO: is asserting sizes a valid pattern?
 
 		// Assert block number is 4 byte u32
 		let block_number_bytes = block_number.as_ref();

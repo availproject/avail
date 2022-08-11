@@ -72,7 +72,8 @@ pub mod pallet {
 		InitializationError,
 	}
 
-	// No exposed methods, only called by Home pallet
+	// No exposed methods. The updater manager can only be called through the
+	// Home pallet.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {}
 

@@ -14,6 +14,15 @@ pub static TEST_UPDATER: Lazy<Updater> = Lazy::new(|| {
 	Updater::new(TEST_LOCAL_DOMAIN, signer)
 });
 
+pub const FAKE_UPDATER_PRIVKEY: &str =
+	"2222222222222222222222222222222222222222222222222222222222222222";
+
+pub static FAKE_UPDATER: Lazy<Updater> = Lazy::new(|| {
+	let signer: LocalWallet = FAKE_UPDATER_PRIVKEY.parse().unwrap();
+
+	Updater::new(TEST_LOCAL_DOMAIN, signer)
+});
+
 pub static TEST_NOMAD_BASE: Lazy<NomadBase> = Lazy::new(|| {
 	NomadBase::new(
 		TEST_LOCAL_DOMAIN,

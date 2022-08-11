@@ -1,6 +1,8 @@
 use da_primitives::Header;
+use frame_support::traits::GenesisBuild;
 use frame_system as system;
-use sp_core::H256;
+use nomad_base::NomadBase;
+use sp_core::{H160, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 	AccountId32,
@@ -77,15 +79,54 @@ impl da_bridge::Config for Test {
 	type Event = Event;
 }
 
-// Build genesis storage according to the mock runtime.
-pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = system::GenesisConfig::default()
-		.build_storage::<Test>()
-		.unwrap()
-		.into();
-	let mut ext = sp_io::TestExternalities::new(t);
-	ext.execute_with(|| System::set_block_number(1));
-	ext
+pub(crate) struct ExtBuilder {
+	updater: H160,
+	local_domain: u32,
+	committed_root: H256,
+}
+
+impl Default for ExtBuilder {
+	fn default() -> ExtBuilder {
+		ExtBuilder {
+			updater: Default::default(),
+			local_domain: Default::default(),
+			committed_root: Default::default(),
+		}
+	}
+}
+
+impl ExtBuilder {
+	pub(crate) fn with_base(mut self, base: NomadBase) -> Self {
+		self.updater = base.updater;
+		self.local_domain = base.local_domain;
+		self.committed_root = base.committed_root;
+		self
+	}
+
+	pub(crate) fn build(self) -> sp_io::TestExternalities {
+		let mut t = frame_system::GenesisConfig::default()
+			.build_storage::<Test>()
+			.expect("Frame system builds valid default genesis config");
+
+		home::GenesisConfig::<Test> {
+			updater: self.updater,
+			local_domain: self.local_domain,
+			committed_root: self.committed_root,
+			_phantom: Default::default(),
+		}
+		.assimilate_storage(&mut t)
+		.expect("Pallet base storage can be assimilated");
+		updater_manager::GenesisConfig::<Test> {
+			updater: self.updater,
+			_phantom: Default::default(),
+		}
+		.assimilate_storage(&mut t)
+		.expect("Updater manager storage cannot be assimilated");
+
+		let mut ext = sp_io::TestExternalities::new(t);
+		ext.execute_with(|| System::set_block_number(1));
+		ext
+	}
 }
 
 pub(crate) fn events() -> Vec<super::Event<Test>> {

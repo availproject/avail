@@ -61,30 +61,27 @@ impl NomadBase {
 
 #[cfg(test)]
 mod test {
-	use ethers_signers::LocalWallet;
-	use nomad_core::test_utils::Updater;
-
 	use super::*;
 	#[cfg(feature = "testing")]
-	use crate::testing::{TEST_LOCAL_DOMAIN, TEST_NOMAD_BASE, TEST_UPDATER};
+	use crate::testing::{FAKE_UPDATER, TEST_NOMAD_BASE, TEST_UPDATER};
 
 	#[test]
 	#[cfg(feature = "testing")]
 	fn it_accepts_valid_signature() {
 		let valid_signed = TEST_UPDATER.sign_update(H256::repeat_byte(0), H256::repeat_byte(1));
-		assert!(TEST_NOMAD_BASE.is_updater_signature(&valid_signed));
+		assert!(
+			TEST_NOMAD_BASE.is_updater_signature(&valid_signed),
+			"should have passed on valid signature"
+		);
 	}
 
 	#[test]
 	#[cfg(feature = "testing")]
 	fn it_rejects_invalid_signature() {
-		let random_signer: LocalWallet =
-			"2222222222222222222222222222222222222222222222222222222222222222"
-				.parse()
-				.unwrap();
-		let random_updater = Updater::new(TEST_LOCAL_DOMAIN, random_signer);
-		let invalid_signed = random_updater.sign_update(H256::repeat_byte(0), H256::repeat_byte(1));
-
-		assert!(!TEST_NOMAD_BASE.is_updater_signature(&invalid_signed));
+		let invalid_signed = FAKE_UPDATER.sign_update(H256::repeat_byte(0), H256::repeat_byte(1));
+		assert!(
+			!TEST_NOMAD_BASE.is_updater_signature(&invalid_signed),
+			"should have failed on invalid signature"
+		);
 	}
 }

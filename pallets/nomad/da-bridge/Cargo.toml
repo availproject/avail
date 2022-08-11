@@ -28,12 +28,15 @@ frame-system = { version = "4.0.0-dev", default-features = false }
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 
 # Nomad
-updater-manager = { path = "../updater-manager", default-features = false }
 home = { path = "../home", default-features = false }
 nomad-core = { path = "../../../primitives/nomad/nomad-core", default-features = false }
 
 [dev-dependencies]
 da-primitives = { path = "../../../primitives/avail", default-features = false }
+once_cell = { version = "1.8.0", default-features = false }
+nomad-base = { path = "../../../primitives/nomad/nomad-base", default-features = false }
+updater-manager = { path = "../updater-manager" }
+home = { path = "../home" }
 
 [features]
 default = ["std"]
@@ -57,3 +60,7 @@ runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
 ]
 try-runtime = ["frame-support/try-runtime"]
+testing = [
+	"nomad-core/testing",
+	"nomad-base/testing"
+]

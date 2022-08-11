@@ -12,7 +12,6 @@ scale-info = { version = "1.0", default-features = false, features = ["derive"] 
 sp-std = { version = "4.0.0-dev", default-features = false }
 sp-core = { version = "4.0.0-dev", default-features = false }
 sp-io = { version = "4.0.0-dev", default-features = false }
-sp-runtime = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 parity-util-mem = { version = "0.10.2", default-features = false, features = ["primitive-types"] }
 
@@ -32,6 +31,7 @@ default-features = false
 optional = true
 
 [features]
+default = ["std"]
 std = [
 	"codec/std",
 	"scale-info/std",
@@ -39,5 +39,7 @@ std = [
 ]
 testing = [
 	"ethers-signers",
-	"once_cell"
+	"once_cell",
+	"nomad-core/testing",
+	"signature/testing",
 ]

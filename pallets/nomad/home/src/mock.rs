@@ -94,6 +94,7 @@ impl ExtBuilder {
 	pub(crate) fn with_base(mut self, base: NomadBase) -> Self {
 		self.updater = base.updater;
 		self.local_domain = base.local_domain;
+		self.committed_root = base.committed_root;
 		self
 	}
 
@@ -109,7 +110,13 @@ impl ExtBuilder {
 			_phantom: Default::default(),
 		}
 		.assimilate_storage(&mut t)
-		.expect("Pallet base storage can be assimilated");
+		.expect("Nomad base storage cannot be assimilated");
+		updater_manager::GenesisConfig::<Test> {
+			updater: self.updater,
+			_phantom: Default::default(),
+		}
+		.assimilate_storage(&mut t)
+		.expect("Updater manager storage cannot be assimilated");
 
 		let mut ext = sp_io::TestExternalities::new(t);
 		ext.execute_with(|| System::set_block_number(1));
