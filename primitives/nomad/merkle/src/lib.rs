@@ -20,7 +20,7 @@ pub mod proof;
 #[cfg(test)]
 pub(crate) mod test_utils;
 
-use sp_core::{H256, U256};
+use primitive_types::{H256, U256};
 
 /// Tree depth
 pub const TREE_DEPTH: usize = 32;

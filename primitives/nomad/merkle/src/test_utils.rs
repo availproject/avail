@@ -2,7 +2,7 @@
 
 use std::{fs::File, io::Read};
 
-use sp_core::H256;
+use primitive_types::H256;
 
 use crate::NomadProof;
 

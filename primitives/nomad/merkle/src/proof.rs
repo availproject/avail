@@ -1,4 +1,4 @@
-use sp_core::H256;
+use primitive_types::H256;
 
 use super::{merkle_root_from_branch, MerkleProof};
 

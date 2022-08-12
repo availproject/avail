@@ -1,4 +1,4 @@
-use sp_core::H256;
+use primitive_types::H256;
 
 /// Tree Errors
 #[derive(Debug, thiserror_no_std::Error, Clone, Copy)]

@@ -13,7 +13,7 @@ use k256::{
 	},
 	PublicKey as K256PublicKey,
 };
-use sp_core::{H160, H256, U256};
+use primitive_types::{H160, H256, U256};
 use thiserror::Error;
 
 use crate::utils::hash_message;

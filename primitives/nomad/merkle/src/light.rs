@@ -1,6 +1,7 @@
 use codec::{Decode, Encode, MaxEncodedLen};
+use primitive_types::{H256, U256};
 use scale_info::TypeInfo;
-use sp_core::{RuntimeDebug, H256, U256};
+use sp_core::RuntimeDebug;
 
 use super::{
 	error::IngestionError, utils::hash_concat, Merkle, MerkleProof, Proof, TREE_DEPTH, ZERO_HASHES,
