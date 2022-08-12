@@ -3,7 +3,7 @@ use frame_support::{assert_err, assert_ok};
 use nomad_base::testing::*;
 use nomad_core::{destination_and_nonce, NomadMessage, NomadState};
 use once_cell::sync::Lazy;
-use sp_core::H256;
+use primitive_types::H256;
 use sp_runtime::AccountId32;
 
 use crate::{mock::*, Error};

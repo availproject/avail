@@ -1,7 +1,7 @@
 use da_primitives::Header;
 use frame_support::parameter_types;
 use frame_system as system;
-use sp_core::H256;
+use primitive_types::H256;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
 use crate as updater_manager;

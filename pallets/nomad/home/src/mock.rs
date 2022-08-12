@@ -2,7 +2,7 @@ use da_primitives::Header;
 use frame_support::{parameter_types, traits::GenesisBuild};
 use frame_system as system;
 use nomad_base::NomadBase;
-use sp_core::{H160, H256};
+use primitive_types::{H160, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 	AccountId32,

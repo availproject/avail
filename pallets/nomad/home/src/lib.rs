@@ -24,7 +24,7 @@ pub mod pallet {
 	use merkle::{Merkle, NomadLightMerkle};
 	use nomad_base::NomadBase;
 	use nomad_core::{destination_and_nonce, NomadMessage, NomadState, SignedUpdate};
-	use sp_core::{H160, H256};
+	use primitive_types::{H160, H256};
 	use sp_std::vec::Vec;
 
 	#[pallet::config]

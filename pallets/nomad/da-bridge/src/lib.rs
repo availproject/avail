@@ -21,7 +21,7 @@ pub mod pallet {
 	use frame_support::{pallet_prelude::*, sp_runtime::traits::Header};
 	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 	use home::Pallet as Home;
-	use sp_core::H256;
+	use primitive_types::H256;
 
 	use crate::message::DABridgeMessage;
 

@@ -1,5 +1,5 @@
 use nomad_core::TypedMessage;
-use sp_core::H256;
+use primitive_types::H256;
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 

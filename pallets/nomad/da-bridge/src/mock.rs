@@ -7,7 +7,7 @@ use hex_literal::hex;
 use nomad_base::testing::*;
 use nomad_base::NomadBase;
 use once_cell::sync::Lazy;
-use sp_core::{H160, H256};
+use primitive_types::{H160, H256};
 use sp_runtime::{
 	testing::Block,
 	traits::{BlakeTwo256, IdentityLookup},

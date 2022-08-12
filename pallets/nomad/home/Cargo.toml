@@ -28,6 +28,7 @@ frame-system = { version = "4.0.0-dev", default-features = false }
 # Benchmarking
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 
+primitive-types = { git = "https://github.com/paritytech/parity-common.git", tag = "parity-util-mem-v0.10.1", default-features = false }
 thiserror-no-std = "2.0.2"
 signature = { path = "../../../primitives/nomad/signature", default-features = false }
 merkle = { path = "../../../primitives/nomad/merkle", default-features = false }

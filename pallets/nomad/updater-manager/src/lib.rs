@@ -17,7 +17,7 @@ mod benchmarking;
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::pallet_prelude::{ValueQuery, *};
-	use sp_core::H160;
+	use primitive_types::H160;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
