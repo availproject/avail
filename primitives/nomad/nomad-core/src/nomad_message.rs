@@ -1,7 +1,7 @@
 use alloc::vec::Vec;
 
 use frame_support::pallet_prelude::*;
-use sp_core::H256;
+use primitive_types::H256;
 
 use crate::utils::keccak256;
 

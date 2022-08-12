@@ -1,4 +1,4 @@
-use sp_core::H256;
+use primitive_types::H256;
 use tiny_keccak::{Hasher, Keccak};
 
 /// Computes hash of home domain concatenated with "NOMAD"

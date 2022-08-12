@@ -1,6 +1,6 @@
 use frame_support::pallet_prelude::*;
 use signature::{hash_message, Signature, SignatureError};
-use sp_core::{H160, H256};
+use primitive_types::{H160, H256};
 use tiny_keccak::{Hasher, Keccak};
 
 use crate::utils::home_domain_hash;
