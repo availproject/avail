@@ -2,11 +2,14 @@ use alloc::vec::Vec;
 
 use frame_support::pallet_prelude::*;
 use primitive_types::H256;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 use crate::utils::keccak256;
 
 /// A full Nomad message
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct NomadMessage<S> {
 	/// 4   SLIP-44 ID
 	pub origin: u32,

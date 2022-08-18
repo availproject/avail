@@ -18,7 +18,13 @@ parity-util-mem = { version = "0.10.2", default-features = false, features = ["p
 primitive-types = { version = "0.10.1", default-features = false, features = ["scale-info", "codec"] }
 tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
 signature = { path = "../signature", default-features = false }
-getrandom = { version = "0.2", features = ["js"] }
+getrandom = { version = "0.2", default-features = false, features = ["js"] }
+
+[dependencies.serde]
+version = "1.0"
+default-features = false
+optional = true
+features = ["derive"]
 
 [dependencies.ethers-signers]
 version = "0.13.0"
@@ -38,6 +44,8 @@ optional = true
 [features]
 default = ["std"]
 std = [
+	"serde",
+	"primitive-types/serde",
 	"codec/std",
 	"scale-info/std",
 	"frame-support/std",

@@ -1,5 +1,7 @@
 use frame_support::pallet_prelude::*;
 use primitive_types::{H160, H256};
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 use signature::{hash_message, Signature, SignatureError};
 use tiny_keccak::{Hasher, Keccak};
 
@@ -7,6 +9,7 @@ use crate::utils::home_domain_hash;
 
 /// Nomad update
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Update {
 	/// The home chain
 	pub home_domain: u32,
