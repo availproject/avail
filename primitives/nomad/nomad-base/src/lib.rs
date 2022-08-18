@@ -3,11 +3,14 @@
 use frame_support::pallet_prelude::*;
 use nomad_core::{home_domain_hash, NomadState, SignedUpdate};
 use primitive_types::{H160, H256};
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "testing")]
 pub mod testing;
 
 #[derive(Clone, Copy, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct NomadBase {
 	pub state: NomadState,
 	pub local_domain: u32,

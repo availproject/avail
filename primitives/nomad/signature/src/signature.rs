@@ -14,6 +14,8 @@ use k256::{
 	PublicKey as K256PublicKey,
 };
 use primitive_types::{H160, H256, U256};
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::utils::hash_message;
@@ -56,6 +58,7 @@ pub enum RecoveryMessage {
 
 /// An ECDSA signature
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Signature {
 	/// R value
 	pub r: U256,

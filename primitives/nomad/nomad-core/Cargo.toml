@@ -46,6 +46,7 @@ default = ["std"]
 std = [
 	"serde",
 	"primitive-types/serde",
+	"signature/std",
 	"codec/std",
 	"scale-info/std",
 	"frame-support/std",

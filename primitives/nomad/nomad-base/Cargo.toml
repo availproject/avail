@@ -21,6 +21,12 @@ signature = { path = "../signature", default-features = false }
 
 nomad-core = { path = "../nomad-core", default-features = false }
 
+[dependencies.serde]
+version = "1.0"
+default-features = false
+optional = true
+features = ["derive"]
+
 [dependencies.ethers-signers]
 version = "0.13.0"
 default-features = false
@@ -34,6 +40,8 @@ optional = true
 [features]
 default = ["std"]
 std = [
+	"serde",
+	"primitive-types/serde",
 	"codec/std",
 	"scale-info/std",
 	"frame-support/std",

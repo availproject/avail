@@ -36,6 +36,7 @@ impl Update {
 
 /// A Signed Nomad Update
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct SignedUpdate {
 	/// The update
 	pub update: Update,
