@@ -1,4 +1,5 @@
 use frame_support::pallet_prelude::*;
+
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
