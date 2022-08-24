@@ -2,32 +2,12 @@ import { ApiPromise, WsProvider, Keyring } from '@polkadot/api';
 import { KeyringPair } from '@polkadot/keyring/types';
 import type { EventRecord, ExtrinsicStatus, H256 } from '@polkadot/types/interfaces';
 import type { ISubmittableResult, SignatureOptions } from '@polkadot/types/types';
-import yargs from 'yargs/yargs';
+import config from './config';
 
 const keyring = new Keyring({ type: 'sr25519' });
 
-
-async function cli_arguments() {
-    return yargs(process.argv.slice(2)).options({
-        e: {
-            description: 'WSS endpoint',
-            alias: 'endpoint',
-            type: 'string',
-            default: 'wss://testnet.polygonavail.net/ws'
-        },
-
-        b: {
-            description: 'amount to be transferred',
-            alias: 'amount',
-            type: 'number',
-            default: 10000
-        },
-
-    }).argv;
-}
-
-async function createApi(argv: any): Promise<ApiPromise> {
-    const provider = new WsProvider(argv.e);
+async function createApi(): Promise<ApiPromise> {
+    const provider = new WsProvider(config.ApiURL);
 
     // Create the API and wait until ready
     return ApiPromise.create({
@@ -79,25 +59,33 @@ async function getNonce(api: ApiPromise, address: string): Promise<number> {
 
 
 
-async function Transfer(api: ApiPromise, sender: KeyringPair, receiver: KeyringPair, nonce: number, argv: any) {
+async function Transfer(api: ApiPromise) {
     try {
+        const acc = keyring.addFromUri(config.mnemonic);  //and its address can be used by `acc.address`
+        let nonce1 = await getNonce(api, acc.address);
+        let amount = 0;
+        if (config.amount > 0) {
+            amount = config.amount;
+        } else {
+            amount = 12345;
+        }
         /* @note here app_id is 1,
         but if you want to have one your own then create one first before initialising here */
-        const options: Partial<any> = { app_id: 0, nonce: nonce }
-        const res = await api.tx.balances.transfer(receiver.address, argv.b)
+        const options: Partial<any> = { app_id: 0, nonce: nonce1 }
+        const res = await api.tx.balances.transfer(config.receiver, amount)
             .signAndSend(
-                sender,  // sender
+                acc,  // sender
                 options, // options
                 (result: ISubmittableResult) => {
                     //uncomment the below line👇 to see the whole status flow of the transaction
                     // console.log(`Tx status: ${result.status}`);
                     if (result.status.isReady) {
-                        console.log(`result is ready with nonce ${nonce}`)
+                        console.log(`result is ready with nonce ${nonce1}`)
                     }
                     if (result.status.isInBlock) {
                         let block_hash = result.status.asInBlock;
                         let extrinsic_hash = result.txHash;
-                        console.log(`\nExtrinsic hash: ${result.txHash} with nonce ${nonce} is in block`);
+                        console.log(`\nExtrinsic hash: ${result.txHash} with nonce ${nonce1} is in block`);
                         process.exit(0);
                     }
                 });
@@ -108,20 +96,10 @@ async function Transfer(api: ApiPromise, sender: KeyringPair, receiver: KeyringP
 }
 
 async function main() {
-    const argv = await cli_arguments();
-    const api = await createApi(argv);
-    const alice = keyring.addFromUri('//Alice');
-    const bob = keyring.addFromUri('//Bob');
+    const api = await createApi();
     const metadata = await api.rpc.state.getMetadata();
-    let nonce = await getNonce(api, alice.address);
-    let non = await getNonce(api, bob.address);
-    /*@note: here ALICE test account is used.
-    You can use your own account mnemonic using the below code
-    // const mnemonic = 'your mneomnic';
-    // const acc = keyring.addFromUri(Mnemonic, 'sr25519'); and its address can be used by `acc.address`
-    */
-    await Transfer(api, bob, alice, non, argv);
-
+    console.log(config.amount);
+    await Transfer(api);
 }
 
 main().catch((err) => {

@@ -17,6 +17,28 @@ install ts-node
 ```
 npm i ts-node
 ```
+create a config.json file
+```
+touch config.json
+```
+
+```json
+
+{
+    "mnemonic" : "bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice",
+    "size" : 10,
+    "ApiURL" : "ws://127.0.0.1:9944",
+    "app_id" : 0,
+    "batch" : 0, 
+    "count" : 10,
+    "receiver": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+    "amount" : 100000
+}
+```
+Keep in mind that the fields `batch`(default is 0 and if its specified then it switches to batch transaction mode), `count`(if not specified the subscription will continue infinitely) and `amount`(if not specified default is `12345`) are optional. If you do not want to use them, you can leave them empty.
+Do Keep in mind that the receiver address should be specified when you are using transfer calls. The data will be send from the mnemonic address to the receiver. 
+
+
 
 >Creation of app_id
 
@@ -28,47 +50,18 @@ npm i ts-node
 then run the script 
 
  ``` 
- ts-node full.ts [OPTIONS]
+ ts-node full.ts
  ```
- where otpions are :
-
- ```
-  -e, --endpoint  WSS endpoint                          [string] [default: "wss://testnet.polygonavail.net/ws"]
-  -s, --payload   payload to be given in bytes          [number] [default: 100]
-  -b, --batch     batch size of transactions            [number] [default: 3]
-  -n, --function  function name                         [string] [default: "submit_data"]
-  -i, --app_id    app id to be given                    [number] [default: 0]
-  ```
-  
-  or you can run 
-```
-ts-node full.ts --help
-```
-
-`submit_data` and `bulk_tx` are the params for `-n`
-
 
 >The following is the script for subsribing to new blocks
 ```
-ts-node sub.ts [OPTIONS]
+ts-node sub.ts 
 ```
-
-```
--e, --endpoint  WSS endpoint                           [string] [default: "wss://testnet.polygonavail.net/ws"]
--n, --count     count for subscribing                   [number] [default: -1]
-```
-
-`count` have a default of `-1` where it subscibes to new blovk endlessly 
-
 
 >If you want to transer from a account to another use: (script default uses alice and bob accounts)
 
 ```
-ts-node transfer.ts [OPTIONS]
+ts-node transfer.ts
 ```
 
-```
--e, --endpoint  WSS endpoint                         [string] [default: "wss://testnet.polygonavail.net/ws"]
--b, --amount    amount to be transferred             [number] [default: 10000]
-```
 

@@ -2,30 +2,12 @@ import { ApiPromise, WsProvider, Keyring } from '@polkadot/api';
 import { KeyringPair } from '@polkadot/keyring/types';
 import type { EventRecord, ExtrinsicStatus, H256 } from '@polkadot/types/interfaces';
 import type { ISubmittableResult, SignatureOptions } from '@polkadot/types/types';
-import yargs from 'yargs/yargs';
+import config from './config';
 
 const keyring = new Keyring({ type: 'sr25519' });
 
-async function cli_arguments() {
-    return yargs(process.argv.slice(2)).options({
-        e: {
-            description: 'WSS endpoint',
-            alias: 'endpoint',
-            type: 'string',
-            default: 'wss://testnet.polygonavail.net/ws'
-        },
-        n: {
-            description: 'count for subscribing',
-            alias: 'count',
-            type: 'number',
-            default: -1
-        }
-
-    }).argv;
-}
-
-async function createApi(argv: any): Promise<ApiPromise> {
-    const provider = new WsProvider(argv.e);
+async function createApi(): Promise<ApiPromise> {
+    const provider = new WsProvider(config.ApiURL);
 
     // Create the API and wait until ready
     return ApiPromise.create({
@@ -64,17 +46,17 @@ async function createApi(argv: any): Promise<ApiPromise> {
 }
 
 async function main() {
-    const argv = await cli_arguments();
-    const api = await createApi(argv);
+    const api = await createApi();
     const chain = await api.rpc.system.chain();
     console.log("connected to chain: " + chain.toString());
     const metadata = await api.rpc.state.getMetadata();
+    let rep = config.count;
     let count = 0;
     // Subscribe to the new headers
     const unsubHeads = await api.rpc.chain.subscribeNewHeads((lastHeader) => {
         console.log(`${chain}: last block #${lastHeader.number} has hash ${lastHeader.hash}`);
 
-        if (++count === argv.n && argv.n !== -1) {
+        if (++count === rep && rep !== undefined) {
             unsubHeads();
             process.exit(0);
         }
