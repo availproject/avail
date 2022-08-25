@@ -9,7 +9,7 @@ use avail_subxt::avail::runtime_types::frame_support::storage::bounded_vec::Boun
 /// extrinsic and matches the data.
 #[async_std::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let api = OnlineClient::<AvailConfig>::new().await?;
+    let api = OnlineClient::<AvailConfig>::from_url("ws://127.0.0.1:9944").await?;
     let signer = PairSigner::new(AccountKeyring::Alice.pair());
     let example_data = b"example".to_vec();
     let data_transfer = avail::tx()
