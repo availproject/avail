@@ -35,7 +35,7 @@ impl TypedMessage for DABridgeMessage {
 impl DABridgeMessage {
 	/* Extrinsic Root: message containing an extrinsic root and its
 	 * corresponding block number
-	 * type (1 byte) || block number (4 bytes) || ext root (32 bytes)
+	 * type (1 byte) || block number (8 bytes) || ext root (32 bytes)
 	 */
 
 	/// Format extrinsic root message with block number and root. Internally
@@ -49,9 +49,9 @@ impl DABridgeMessage {
 
 		// TODO: is asserting sizes a valid pattern?
 
-		// Assert block number is 4 byte u32
+		// Assert block number is 8 byte u64
 		let block_number_bytes = block_number.as_ref();
-		assert!(block_number_bytes.len() == 4);
+		assert!(block_number_bytes.len() == 8);
 
 		// Assert extrinsic root is 32 byte hash (H256)
 		let ext_root_bytes = ext_root.as_ref();

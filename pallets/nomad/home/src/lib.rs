@@ -118,15 +118,6 @@ pub mod pallet {
 			new_root: H256,
 			signature: Vec<u8>,
 		},
-		// UpdateV2 {
-		// 	home_domain: u32,
-		// 	root: H256,
-		// 	signature: Vec<u8>,
-		// },
-		// ImproperUpdateV2 {
-		// 	root: H256,
-		// 	signature: Vec<u8>,
-		// },
 		UpdaterSlashed {
 			updater: H160,
 			reporter: T::AccountId,
@@ -177,24 +168,6 @@ pub mod pallet {
 			Ok(())
 		}
 	}
-
-	// /// Verify/submit signed update.
-	// #[pallet::weight(100)]
-	// pub fn update_v2(origin: OriginFor<T>, signed_update: SignedUpdate) -> DispatchResult {
-	// 	let sender = ensure_signed(origin)?;
-	// 	Self::do_update_v2(sender, signed_update)
-	// }
-
-	// /// Verify/slash updater for improper update.
-	// #[pallet::weight(100)]
-	// pub fn improper_update_v2(
-	// 	origin: OriginFor<T>,
-	// 	signed_update: SignedUpdate,
-	// ) -> DispatchResult {
-	// 	let sender = ensure_signed(origin)?;
-	// 	Self::do_improper_update_v2(sender, &signed_update)?;
-	// 	Ok(())
-	// }
 
 	impl<T: Config> Pallet<T> {
 		pub fn state() -> NomadState { Self::base().state() }
@@ -328,57 +301,6 @@ pub mod pallet {
 
 			Ok(false)
 		}
-
-		// /// Check for improper update, remove all previous root/index mappings,
-		/// and emit Update event if valid.
-		// fn do_update_v2(sender: T::AccountId, signed_update: SignedUpdate) -> DispatchResult {
-		// 	Self::ensure_not_failed()?;
-
-		// 	if Self::do_improper_update_v2(sender, &signed_update)? {
-		// 		return Ok(());
-		// 	}
-
-		// 	Self::deposit_event(Event::<T>::Update {
-		// 		home_domain: Self::base().local_domain(),
-		// 		root: signed_update.update.root,
-		// 		signature: signed_update.signature.to_vec(),
-		// 	});
-
-		// 	Ok(())
-		// }
-
-		// /// Ensure signed merkle root once existed by checking mapping of roots
-		/// to indices.
-		// fn do_improper_update_v2(
-		// 	sender: T::AccountId,
-		// 	signed_update: &SignedUpdate,
-		// ) -> Result<bool, DispatchError> {
-		// 	Self::ensure_not_failed()?;
-
-		// 	let base = Self::base();
-
-		// 	// Ensure updater signature is valid
-		// 	ensure!(
-		// 		base.is_updater_signature(&signed_update),
-		// 		Error::<T>::InvalidUpdaterSignature,
-		// 	);
-
-		// 	// Ensure signed root is exists in history
-		// 	let root = signed_update.update.root;
-		// 	let get_root_res = RootToIndex::<T>::try_get(root);
-
-		// 	// If signed root invalid, slash updater and fail home
-		// 	if get_root_res.is_err() {
-		// 		Self::fail(sender);
-		// 		Self::deposit_event(Event::<T>::ImproperUpdate {
-		// 			root,
-		// 			signature: signed_update.signature.to_vec(),
-		// 		});
-		// 		return Ok(true);
-		// 	}
-
-		// 	Ok(false)
-		// }
 
 		/// Set self in failed state and slash updater.
 		fn fail(reporter: T::AccountId) {
