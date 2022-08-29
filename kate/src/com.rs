@@ -25,8 +25,8 @@ use static_assertions::const_assert_eq;
 use crate::testnet;
 use crate::{
 	config::{
-		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE, MAX_PROOFS_REQUEST,
-		MINIMUM_BLOCK_SIZE, PROOF_SIZE, PROVER_KEY_SIZE, SCALAR_SIZE,
+		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE, MINIMUM_BLOCK_SIZE, PROOF_SIZE,
+		PROVER_KEY_SIZE, SCALAR_SIZE,
 	},
 	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed, LOG_TARGET,
 };
@@ -274,8 +274,6 @@ pub fn build_proof(
 	let extended_rows_num = rows_num * EXTENSION_FACTOR;
 
 	const SPROOF_SIZE: usize = PROOF_SIZE + SCALAR_SIZE;
-
-	ensure!(cells.len() <= MAX_PROOFS_REQUEST, Error::CellLenghtExceeded);
 
 	let (prover_key, _) = public_params.trim(cols_num).map_err(Error::from)?;
 
