@@ -14,7 +14,6 @@ pub mod config {
 	pub const EXTENSION_FACTOR: usize = 2;
 	pub const PROVER_KEY_SIZE: usize = 48;
 	pub const PROOF_SIZE: usize = 48;
-	pub const MAX_PROOFS_REQUEST: usize = 30;
 	// MINIMUM_BLOCK_SIZE, MAX_BLOCK_ROWS and MAX_BLOCK_COLUMNS have to be a power of 2 because of the FFT functions requirements
 	pub const MINIMUM_BLOCK_SIZE: usize = 128;
 	pub const MAX_BLOCK_ROWS: u32 = if cfg!(feature = "extended-columns") {
