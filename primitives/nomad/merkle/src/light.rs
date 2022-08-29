@@ -162,7 +162,7 @@ mod arrays {
 
 #[cfg(test)]
 mod test {
-	use ethers_core::utils::{hash_message, keccak256};
+	use ethers_core::utils::hash_message;
 
 	use super::*;
 	use crate::{test_utils, NomadLightMerkle};
@@ -184,8 +184,10 @@ mod test {
 			let mut tree = NomadLightMerkle::default();
 			// insert the leaves
 			for leaf in test_case.leaves.iter() {
-				let hashed_leaf = keccak256(leaf);
-				tree.ingest(hashed_leaf.into()).expect("!ingest");
+				// TODO: ethers core and crate have different primitive types
+				// versions. Must get inner bytes and call into().
+				let hashed_leaf = hash_message(leaf).0.into();
+				tree.ingest(hashed_leaf).expect("!ingest");
 			}
 			// assert the tree has the proper leaf count
 			assert_eq!(tree.count() as usize, test_case.leaves.len());
