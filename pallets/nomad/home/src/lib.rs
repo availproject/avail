@@ -137,7 +137,10 @@ pub mod pallet {
 	}
 
 	#[pallet::call]
-	impl<T: Config> Pallet<T> {
+	impl<T: Config> Pallet<T>
+	where
+		T::AccountId: Into<[u8; 32]>,
+	{
 		/// Dispatch a message to the destination domain and recipient address.
 		#[pallet::weight(100)]
 		pub fn dispatch(
@@ -169,7 +172,10 @@ pub mod pallet {
 		}
 	}
 
-	impl<T: Config> Pallet<T> {
+	impl<T: Config> Pallet<T>
+	where
+		T::AccountId: Into<[u8; 32]>,
+	{
 		pub fn state() -> NomadState { Self::base().state() }
 
 		pub fn root() -> H256 { Self::tree().root() }
@@ -208,11 +214,12 @@ pub mod pallet {
 
 			// Get info for message to dispatch
 			let origin = Self::base().local_domain();
+			let sender: [u8; 32] = sender.into();
 
 			// Format message and get message hash
 			let message = NomadMessage {
 				origin,
-				sender: sender.encode(), // 32 byte length enforced when message hashed
+				sender: sender.into(),
 				nonce,
 				destination: destination_domain,
 				recipient: recipient_address,

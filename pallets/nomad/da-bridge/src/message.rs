@@ -1,9 +1,6 @@
 use nomad_core::TypedMessage;
 use primitive_types::H256;
-use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
-
-const EXTRINSIC_ROOT_MESSAGE_LEN: usize = 1 + 4 + 32;
 
 #[repr(u8)]
 #[derive(Clone, Debug, PartialEq)]
@@ -41,31 +38,21 @@ impl DABridgeMessage {
 	/// Format extrinsic root message with block number and root. Internally
 	/// checks that passed in generics for block number and extrinsic root are
 	/// expected lengths.
-	pub fn format_extrinsics_root_message<B: AsRef<[u8]>, E: AsRef<[u8]>>(
-		block_number: B,
-		ext_root: E,
+	pub fn format_extrinsics_root_message(
+		block_number: impl Into<u64>,
+		ext_root: impl Into<H256>,
 	) -> Self {
 		let mut buf: Vec<u8> = Vec::new();
 
-		// TODO: is asserting sizes a valid pattern?
+		let block_number: u64 = block_number.into();
+		let block_number_bytes = block_number.to_be_bytes();
 
-		// Assert block number is 8 byte u64
-		let block_number_bytes = block_number.as_ref();
-		assert!(block_number_bytes.len() == 8);
-
-		// Assert extrinsic root is 32 byte hash (H256)
-		let ext_root_bytes = ext_root.as_ref();
-		assert!(ext_root_bytes.len() == 32);
+		let ext_root: H256 = ext_root.into();
+		let ext_root_bytes = ext_root.as_bytes();
 
 		buf.push(DABridgeMessageTypes::ExtrinsicsRootMessage as u8);
 		buf.extend(block_number_bytes.to_vec());
 		buf.extend(ext_root_bytes.to_vec());
 		Self(buf)
-	}
-
-	/// Check type and length of extrinsic root message is valid
-	pub fn is_valid_extrinsics_root_message(&self) -> bool {
-		self.message_type() == DABridgeMessageTypes::ExtrinsicsRootMessage
-			&& self.as_ref().len() == EXTRINSIC_ROOT_MESSAGE_LEN
 	}
 }

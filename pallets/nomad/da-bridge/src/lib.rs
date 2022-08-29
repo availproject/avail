@@ -81,7 +81,12 @@ pub mod pallet {
 	}
 
 	#[pallet::call]
-	impl<T: Config> Pallet<T> {
+	impl<T: Config> Pallet<T>
+	where
+		T::AccountId: Into<[u8; 32]>,
+		T::BlockNumber: Into<u64>,
+		T::Hash: Into<H256>,
+	{
 		#[pallet::weight(100)]
 		pub fn try_enqueue_extrinsics_root(
 			origin: OriginFor<T>,
@@ -95,7 +100,12 @@ pub mod pallet {
 		}
 	}
 
-	impl<T: Config> Pallet<T> {
+	impl<T: Config> Pallet<T>
+	where
+		T::AccountId: Into<[u8; 32]>,
+		T::BlockNumber: Into<u64>,
+		T::Hash: Into<H256>,
+	{
 		fn do_enqueue_extrinsics_root(
 			sender: T::AccountId,
 			destination_domain: u32,
@@ -105,8 +115,10 @@ pub mod pallet {
 			let block_number = header.number();
 			let ext_root = header.extrinsics_root();
 
-			let message =
-				DABridgeMessage::format_extrinsics_root_message(block_number.encode(), ext_root);
+			let message = DABridgeMessage::format_extrinsics_root_message(
+				block_number.clone(),
+				ext_root.clone(),
+			);
 
 			Home::<T>::do_dispatch(
 				sender.clone(),

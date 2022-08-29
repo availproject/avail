@@ -49,7 +49,9 @@ std = [
 	"frame-system/std",
 	"nomad-core/std"
 ]
-
+testing = [
+	"nomad-core/testing",
+]
 runtime-benchmarks = [
 	"frame-benchmarking",
 	"sp-runtime/runtime-benchmarks",

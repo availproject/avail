@@ -187,7 +187,7 @@ pub(crate) fn run_to_block_while_dispatching_random_messages(n: BlockNumber) {
 			System::block_number()
 		);
 
-		Executive::execute_block(Block {});
+		// Executive::execute_block(Block {});
 
 		System::on_finalize(System::block_number());
 		System::set_block_number(System::block_number() + 1);

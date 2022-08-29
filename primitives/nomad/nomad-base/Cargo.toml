@@ -45,6 +45,7 @@ std = [
 	"codec/std",
 	"scale-info/std",
 	"frame-support/std",
+	"nomad-core/std"
 ]
 testing = [
 	"ethers-signers",

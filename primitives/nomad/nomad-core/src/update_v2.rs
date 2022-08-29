@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use frame_support::pallet_prelude::*;
 use primitive_types::{H160, H256};
 #[cfg(feature = "std")]
