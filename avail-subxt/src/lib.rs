@@ -1,14 +1,5 @@
 use std::fmt::Debug;
 
-use avail::runtime_types::{
-	da_control::extensions::check_app_id::CheckAppId,
-	frame_system::extensions::{
-		check_genesis::CheckGenesis, check_mortality::CheckMortality, check_nonce::CheckNonce,
-		check_spec_version::CheckSpecVersion, check_tx_version::CheckTxVersion,
-		check_weight::CheckWeight,
-	},
-	pallet_transaction_payment,
-};
 use codec::{Codec, Compact, Decode, Encode, EncodeLike, Error as DecodeError, Input};
 use parity_util_mem::MallocSizeOf;
 use scale_info::TypeInfo;
@@ -93,17 +84,6 @@ impl PartialEq for AvailExtrinsic {
 		}
 	}
 }
-
-pub type SignedExtra = (
-	CheckSpecVersion,
-	CheckTxVersion,
-	CheckGenesis,
-	CheckMortality,
-	CheckNonce,
-	CheckWeight,
-	pallet_transaction_payment::ChargeTransactionPayment,
-	CheckAppId,
-);
 
 const EXTRINSIC_VERSION: u8 = 4;
 impl Decode for AvailExtrinsic {
