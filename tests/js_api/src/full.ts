@@ -2,54 +2,12 @@ import { ApiPromise, WsProvider, Keyring } from '@polkadot/api';
 import { KeyringPair } from '@polkadot/keyring/types';
 import type { EventRecord, ExtrinsicStatus, H256 } from '@polkadot/types/interfaces';
 import type { ISubmittableResult, SignatureOptions } from '@polkadot/types/types';
-import yargs from 'yargs/yargs';
+import config from './config';
 
 const keyring = new Keyring({ type: 'sr25519' });
 
-
-async function cli_arguments() {
-    return yargs(process.argv.slice(2)).options({
-        e: {
-            description: 'WSS endpoint',
-            alias: 'endpoint',
-            type: 'string',
-            default: 'wss://polygon-da-explorer.matic.today/ws'
-        },
-
-        s: {
-            description: 'payload to be given in bytes',
-            alias: 'payload',
-            type: 'number',
-            default: 100
-        },
-
-        b: {
-            description: 'batch size of transactions',
-            alias: 'batch',
-            type: 'number',
-            default: 3
-        },
-
-        n: {
-            description: 'function name',
-            alias: 'function',
-            type: 'string',
-            default: 'submit_data'
-        },
-
-        id: {
-            description: 'app id to be given',
-            alias: 'app_id',
-            type: 'number',
-            default: 0
-        }
-        
-
-    }).argv;
-}
-
-async function createApi(argv:any): Promise<ApiPromise> {
-    const provider = new WsProvider(argv.e);
+async function createApi(): Promise<ApiPromise> {
+    const provider = new WsProvider(config.ApiURL);
 
     // Create the API and wait until ready
     return ApiPromise.create({
@@ -103,21 +61,28 @@ function generateRandomBinary(size: number) {
     return binary;
 }
 
-//async funtion to get the nonce 
-async function getNonce(api: ApiPromise, address: any): Promise<number> {
+const generateData = (size: number) => {
+    let buffer = Buffer.alloc(size)
+    for (let i = 0; i < size; i++) {
+        buffer.writeUInt8(Math.floor(Math.random() * 256), i)
+    }
+    return buffer.toString('hex')
+}
+
+//async funtion to get the nonce    
+async function getNonce(api: ApiPromise, address: string): Promise<number> {
     const nonce = (await api.rpc.system.accountNextIndex(address)).toNumber();
     return nonce;
 }
 
-async function sendTx(api: ApiPromise, sender: KeyringPair, nonce: number, argv: any): Promise<any> {
+async function sendTx(api: ApiPromise, sender: KeyringPair, nonce: number): Promise<any> {
     try {
 
-        let payload = argv.s;
-        let data = generateRandomBinary(payload);
+        let data = generateData(config.size);
         let submit = await api.tx.dataAvailability.submitData(data);
         /* @note here app_id is 1,
         but if you want to have one your own then create one first before initialising here */
-        const options: Partial<any> = { app_id: argv.id, nonce: nonce }
+        const options: Partial<any> = { app_id: config.app_id, nonce: nonce }
         const res = await submit
             .signAndSend(
                 sender,  // sender
@@ -133,7 +98,7 @@ async function sendTx(api: ApiPromise, sender: KeyringPair, nonce: number, argv:
                         let extrinsic_hash = result.txHash;
                         console.log(`\nExtrinsic hash: ${result.txHash} with nonce ${nonce} is in block`);
                         // block(block_hash, api);
-                        if (argv.n == 'submit_data') {
+                        if (config.batch <= 1 || config.batch == undefined) {
                             setTimeout(() => {
                                 get(api, block_hash, extrinsic_hash);
                             }, 5000);
@@ -146,11 +111,11 @@ async function sendTx(api: ApiPromise, sender: KeyringPair, nonce: number, argv:
     }
 }
 
-const sendTxs = async (api: ApiPromise, sender: KeyringPair, nonce: number, argv: any) => {
+const sendTxs = async (api: ApiPromise, sender: KeyringPair, nonce: number) => {
 
     const results = [];
-    for (let i = 0; i < argv.b; i++) {
-        const result = await sendTx(api, sender, nonce, argv)
+    for (let i = 0; i < config.batch; i++) {
+        const result = await sendTx(api, sender, nonce)
         results.push(result);
         nonce = nonce + 1
     }
@@ -164,17 +129,12 @@ async function get(api: any, block_hash: H256, extrinsic_hash: H256) {
 
     let extrinsics = block.block.extrinsics;
 
-    console.log("\nretrieving data.....\n ")
-    console.log(`Block Hash: ${block_hash} and extrinsic hash ${extrinsic_hash}\n`);
-    console.log(`Extrinsic data:`);
-
     let data: Array<string> = [];
     extrinsics.forEach(async (ex: any, index: number) => {
         if (extrinsic_hash == ex.hash.toHex()) {
             console.log(index, ex.toHuman());
             const { method: { args, method, section } } = ex;
             let data_hex = args.map((a: any) => a.toString()).join(', ');
-
             //data retreived from the extrinsic data
             let str = ''
             for (var n = 0; n < data_hex.length; n += 2) {
@@ -197,29 +157,26 @@ let block = async (hash: H256, api: ApiPromise) => {
 
 
 async function main() {
-    const argv = await cli_arguments();
-    const api = await createApi(argv);
-    const alice = keyring.addFromUri('//Alice');
+    const api = await createApi();
+    // const alice = keyring.addFromUri('//Alice');
+    // const bob = keyring.addFromUri('//Bob');
     const metadata = await api.rpc.state.getMetadata();
-    let nonce = await getNonce(api, alice.address);
-    /*@note: here ALICE test account is used.
-    You can use your own account mnemonic using the below code
-    const mnemonic = 'your mneomnic';
-    const acc = keyring.addFromUri(Mnemonic, 'sr25519'); and its address can be used by `acc.address`
-    */
-
-    if (argv.n == 'bulk_tx') {
-        let tx = await sendTxs(api, alice, nonce, argv);
+    const acc = keyring.addFromUri(config.mnemonic);  //and its address can be used by `acc.address`
+    let nonce1 = await getNonce(api, acc.address);
+    if (config.batch > 1) {
+        let tx = await sendTxs(api, acc, nonce1);
     }
-    else if (argv.n == 'submit_data') {
-        let tx = await sendTx(api, alice, nonce, argv)
+    else if (config.batch <= 1 || config.batch == undefined) {
+        let tx = await sendTx(api, acc, nonce1)
     }
     else {
         console.log("invalid input");
     }
+
+
 }
 
 main().catch((err) => {
-	console.error(err);
-	process.exit(1);
+    console.error(err);
+    process.exit(1);
 });
