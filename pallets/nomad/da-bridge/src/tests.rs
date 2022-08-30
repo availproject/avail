@@ -14,6 +14,7 @@ static TEST_SENDER_BYTES: Lazy<H256> = Lazy::new(|| H256::from(TEST_SENDER_VEC))
 static TEST_SENDER_ACCOUNT: Lazy<AccountId32> = Lazy::new(|| AccountId32::new(TEST_SENDER_VEC));
 static TEST_RECIPIENT: Lazy<H256> = Lazy::new(|| H256::repeat_byte(3));
 
+// TODO: add tests once frame executive can be mocked
 #[test]
 #[cfg(feature = "testing")]
 fn it_dispatches_valid_ext_root() {

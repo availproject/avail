@@ -45,6 +45,10 @@ pub struct SignedUpdate {
 }
 
 impl SignedUpdate {
+	pub fn previous_root(&self) -> H256 { self.update.previous_root }
+
+	pub fn new_root(&self) -> H256 { self.update.new_root }
+
 	/// Recover the Ethereum address of the signer
 	pub fn recover(&self) -> Result<H160, SignatureError> {
 		Ok(self.signature.recover(self.update.prepended_hash())?)

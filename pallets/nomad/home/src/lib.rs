@@ -227,15 +227,13 @@ pub mod pallet {
 			};
 			let message_hash = message.hash();
 
-			// Get tree count as message index before inserting message
-			let index = Self::tree().count();
-
 			// Insert message hash into tree
 			Tree::<T>::try_mutate(|tree| tree.ingest(message_hash))
 				.map_err(|_| <Error<T>>::IngestionError)?;
 
 			// Record new tree root for message
 			let root = Self::tree().root();
+			let index = Self::tree().count() - 1;
 			RootToIndex::<T>::insert(root, index);
 			IndexToRoot::<T>::insert(index, root);
 
@@ -259,10 +257,38 @@ pub mod pallet {
 				return Ok(());
 			}
 
+			let new_root = signed_update.new_root();
+			let previous_root = signed_update.previous_root();
+
+			let mut root = new_root;
+			let mut index =
+				RootToIndex::<T>::try_get(root).map_err(|_| Error::<T>::IndexForRootNotFound)?;
+
+			// Clear previous mappings starting from new_root, going back to
+			// previous_root. previous_root should have always been cleared in
+			// the last update, as the last new_root is always the next update's
+			// previous_root.
+			while root != previous_root {
+				IndexToRoot::<T>::remove(index);
+				RootToIndex::<T>::remove(root);
+
+				// If we cleared out the first ever root/index mappings, there
+				// is nothing more to clear.
+				if index == 0 {
+					break;
+				}
+
+				index = index.checked_sub(1).ok_or(ArithmeticError::Underflow)?;
+				root = IndexToRoot::<T>::try_get(index)
+					.map_err(|_| Error::<T>::RootForIndexNotFound)?;
+			}
+
+			Base::<T>::mutate(|base| base.set_committed_root(new_root));
+
 			Self::deposit_event(Event::<T>::Update {
 				home_domain: Self::base().local_domain(),
-				previous_root: signed_update.update.previous_root,
-				new_root: signed_update.update.new_root,
+				previous_root: signed_update.previous_root(),
+				new_root,
 				signature: signed_update.signature.to_vec(),
 			});
 
@@ -281,7 +307,7 @@ pub mod pallet {
 
 			// Ensure previous root matches current committed root
 			ensure!(
-				base.committed_root() == signed_update.update.previous_root,
+				base.committed_root() == signed_update.previous_root(),
 				Error::<T>::CommittedRootNotMatchUpdatePrevious,
 			);
 
@@ -292,15 +318,14 @@ pub mod pallet {
 			);
 
 			// Ensure new root is exists in history
-			let root = signed_update.update.new_root;
-			let get_root_res = RootToIndex::<T>::try_get(root);
+			let get_root_res = RootToIndex::<T>::try_get(signed_update.new_root());
 
 			// If signed root invalid, slash updater and fail home
 			if get_root_res.is_err() {
 				Self::fail(sender);
 				Self::deposit_event(Event::<T>::ImproperUpdate {
-					previous_root: signed_update.update.previous_root,
-					new_root: signed_update.update.new_root,
+					previous_root: signed_update.previous_root(),
+					new_root: signed_update.new_root(),
 					signature: signed_update.signature.to_vec(),
 				});
 				return Ok(true);
@@ -320,7 +345,7 @@ pub mod pallet {
 
 		/// Set new updater on self as well as updater manager.
 		/// Note: Not exposed as pallet call, will only be callable by the
-		/// GovernanceRouter pallet.
+		/// GovernanceRouter pallet when implemented.
 		pub fn set_updater(new_updater: H160) -> DispatchResult {
 			// Modify NomadBase updater
 			Base::<T>::mutate(|base| base.set_updater(new_updater));

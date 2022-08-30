@@ -34,10 +34,10 @@ pub mod pallet {
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
-	// Leaf index to root
+	// Block number to block hash mapping
 	#[pallet::storage]
 	#[pallet::getter(fn block_number_to_block_hash)]
-	pub type BlockNumberToBlockHash<T: Config> =
+	pub type FinalizedBlockNumberToBlockHash<T: Config> =
 		StorageMap<_, Twox64Concat, T::BlockNumber, T::Hash>;
 
 	// Genesis config
@@ -59,7 +59,7 @@ pub mod pallet {
 	impl<T: Config> Hooks<T::BlockNumber> for Pallet<T> {
 		fn on_finalize(block_number: T::BlockNumber) {
 			let hash = frame_system::Pallet::<T>::block_hash(block_number);
-			BlockNumberToBlockHash::<T>::insert(block_number, hash);
+			FinalizedBlockNumberToBlockHash::<T>::insert(block_number, hash);
 		}
 	}
 
@@ -140,10 +140,12 @@ pub mod pallet {
 			let block_number = header.number();
 			let hash = header.hash();
 
-			let mapped_hash = BlockNumberToBlockHash::<T>::try_get(block_number)
+			// Ensure header's block number is in the finalized mapping
+			let mapped_hash = FinalizedBlockNumberToBlockHash::<T>::try_get(block_number)
 				.ok()
 				.ok_or(Error::<T>::BlockNotFinal)?;
 
+			// Ensure header's hash has is valid (i.e. not falsified)
 			ensure!(
 				mapped_hash == hash,
 				Error::<T>::HashOfBlockNotMatchBlockNumber,

@@ -130,7 +130,7 @@ fn it_dispatches_message_and_accepts_update() {
 			let committed_root = Home::base().committed_root();
 
 			let body = [1u8; 8].to_vec();
-			// Dispatch message
+			// Dispatch first message
 			let origin = Origin::signed((*TEST_SENDER_ACCOUNT).clone());
 			assert_ok!(Home::dispatch(
 				origin.clone(),
@@ -139,13 +139,17 @@ fn it_dispatches_message_and_accepts_update() {
 				body.clone()
 			));
 
-			// Dispatch another message
+			let root_after_first_msg = Home::tree().root();
+
+			// Dispatch second message
 			assert_ok!(Home::dispatch(
 				origin.clone(),
 				TEST_REMOTE_DOMAIN,
 				*TEST_RECIPIENT,
 				body
 			));
+
+			let root_after_second_msg = Home::tree().root();
 
 			// Get updater signature
 			let new_root = Home::root();
@@ -161,6 +165,13 @@ fn it_dispatches_message_and_accepts_update() {
 				signature: signed_update.signature.to_vec(),
 			};
 			assert!(events().contains(&expected_update_event));
+
+			// Assert mappings are cleared out up to signed_update.new_root()
+			assert!(Home::index_to_root(0).is_none());
+			assert!(Home::root_to_index(root_after_first_msg).is_none());
+			assert!(Home::index_to_root(1).is_none());
+			assert!(Home::root_to_index(root_after_second_msg).is_none());
+			assert!(Home::base().committed_root() == root_after_second_msg);
 		})
 }
 

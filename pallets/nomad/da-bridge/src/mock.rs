@@ -37,6 +37,7 @@ pub(crate) static TEST_SENDER_ACCOUNT: Lazy<AccountId32> =
 	Lazy::new(|| AccountId32::new(TEST_SENDER_VEC));
 static TEST_RECIPIENT: Lazy<H256> = Lazy::new(|| H256::repeat_byte(3));
 
+// TODO: add proper config once frame executive mocking has been demonstrated
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
 	pub enum Test where

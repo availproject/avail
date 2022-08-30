@@ -57,6 +57,10 @@ impl NomadBase {
 
 	pub fn set_updater(&mut self, new_updater: H160) { self.updater = new_updater }
 
+	pub fn set_committed_root(&mut self, new_committed_root: H256) {
+		self.committed_root = new_committed_root;
+	}
+
 	pub fn is_updater_signature(&self, signed_update: &SignedUpdate) -> bool {
 		signed_update.verify(self.updater).is_ok()
 	}
