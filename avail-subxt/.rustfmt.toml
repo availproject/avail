@@ -1,0 +1,10 @@
+fn_single_line = true
+match_arm_blocks = true
+match_block_trailing_comma = true
+imports_granularity = "Crate"
+overflow_delimited_expr = true
+reorder_impl_items = true
+group_imports = "StdExternalCrate"
+use_field_init_shorthand = true
+edition = "2018"
+hard_tabs = true
