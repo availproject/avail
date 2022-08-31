@@ -1,10 +1,10 @@
-use codec::{Decode, Encode};
+use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
 use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader};
 use frame_support::traits::Randomness;
 pub use kate::Seed;
 use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
 use scale_info::TypeInfo;
-use sp_runtime::traits::Hash;
+use sp_runtime::{traits::Hash, AccountId32, MultiAddress, MultiSignature};
 use sp_runtime_interface::{pass_by::PassByCodec, runtime_interface};
 use sp_std::vec::Vec;
 
@@ -181,3 +181,85 @@ pub trait HostedHeaderBuilder {
 	}
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct AvailExtrinsic {
+	pub app_id: u32,
+	pub signature: Option<MultiSignature>,
+	pub data: Vec<u8>,
+}
+
+pub type AvailSignedExtra = ((), (), (), AvailMortality, Nonce, (), Balance, u32);
+
+#[derive(Decode)]
+pub struct Balance(#[codec(compact)] u128);
+
+#[derive(Decode)]
+pub struct Nonce(#[codec(compact)] u32);
+
+pub enum AvailMortality {
+	Immortal,
+	Mortal(u64, u64),
+}
+
+impl Decode for AvailMortality {
+	fn decode<I: Input>(input: &mut I) -> Result<Self, DecodeError> {
+		let first = input.read_byte()?;
+		if first == 0 {
+			Ok(Self::Immortal)
+		} else {
+			let encoded = first as u64 + ((input.read_byte()? as u64) << 8);
+			let period = 2 << (encoded % (1 << 4));
+			let quantize_factor = (period >> 12).max(1);
+			let phase = (encoded >> 4) * quantize_factor;
+			if period >= 4 && phase < period {
+				Ok(Self::Mortal(period, phase))
+			} else {
+				Err("Invalid period and phase".into())
+			}
+		}
+	}
+}
+
+const EXTRINSIC_VERSION: u8 = 4;
+impl Decode for AvailExtrinsic {
+	fn decode<I: Input>(input: &mut I) -> Result<AvailExtrinsic, DecodeError> {
+		// This is a little more complicated than usual since the binary format must be compatible
+		// with substrate's generic `Vec<u8>` type. Basically this just means accepting that there
+		// will be a prefix of vector length (we don't need
+		// to use this).
+		let _length_do_not_remove_me_see_above: Compact<u32> = Decode::decode(input)?;
+
+		let version = input.read_byte()?;
+
+		let is_signed = version & 0b1000_0000 != 0;
+		let version = version & 0b0111_1111;
+		if version != EXTRINSIC_VERSION {
+			return Err("Invalid transaction version".into());
+		}
+		let (app_id, signature) = if is_signed {
+			let _address = <MultiAddress<AccountId32, u32>>::decode(input)?;
+			let sig = MultiSignature::decode(input)?;
+			let extra = <AvailSignedExtra>::decode(input)?;
+			let app_id = extra.7;
+
+			(app_id, Some(sig))
+		} else {
+			return Err("Not signed".into());
+		};
+
+		let section: u8 = Decode::decode(input)?;
+		let method: u8 = Decode::decode(input)?;
+
+		let data: Vec<u8> = match (section, method) {
+			// TODO: Define these pairs as enums or better yet - make a dependency on substrate enums if possible
+			(29, 1) => Decode::decode(input)?,
+			_ => return Err("Not Avail Extrinsic".into()),
+		};
+
+		Ok(Self {
+			app_id,
+			signature,
+			data,
+		})
+	}
+}
