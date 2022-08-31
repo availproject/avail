@@ -123,8 +123,7 @@ impl Decode for AvailExtrinsic {
 
 		let data: Vec<u8> = match (section, method) {
 			(29, 1) => Decode::decode(input)?,
-			(a, b) => {
-				println!("section, method: ({},{})", a, b);
+			(_a, _b) => {
 				return Err("NOTE: Not Avail Data extrinsic".into());
 			},
 		};
@@ -161,11 +160,7 @@ impl Encode for AvailExtrinsic {
 				output.extend(tmp);
 				output
 			},
-			AvailExtrinsic::RawExtrinsic { encoded_data } => {
-				let mut r = Vec::with_capacity(encoded_data.len() + 4);
-				encoded_data.encode_to(&mut r);
-				r
-			},
+			AvailExtrinsic::RawExtrinsic { encoded_data } => encoded_data.clone(),
 		}
 	}
 }
@@ -178,8 +173,6 @@ impl<'a> Deserialize<'a> for AvailExtrinsic {
 		D: Deserializer<'a>,
 	{
 		let r = subxt::ext::sp_core::bytes::deserialize(deserializer)?;
-		let h = BlakeTwo256::hash_of(&r.as_slice());
-		println!("XT HASH: {:?}", h);
 		match Decode::decode(&mut &r[..]) {
 			Ok(xt) => Ok(xt),
 			Err(e) => {
