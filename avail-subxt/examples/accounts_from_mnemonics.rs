@@ -40,7 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 		)
 		.await
 		.unwrap()
-		.wait_for_in_block()
+		.wait_for_finalized_success()
 		.await
 		.unwrap();
 
