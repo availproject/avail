@@ -9,7 +9,6 @@ use nomad_base::NomadBase;
 use once_cell::sync::Lazy;
 use primitive_types::{H160, H256};
 use sp_runtime::{
-	testing::Block,
 	traits::{BlakeTwo256, IdentityLookup},
 	AccountId32,
 };
@@ -24,10 +23,8 @@ type SignedExtra = (
 	da_control::CheckAppId<Test>,
 );
 // type TestXt = sp_runtime::testing::TestXt<Call, SignedExtra>;
-type TestHeader = Header<BlockNumber, BlakeTwo256>;
-type TestBlock = Block<TestHeader>;
-type TestUncheckedExtrinsic = sp_runtime::testing::TestXt<Call, SignedExtra>;
-
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = frame_system::mocking::MockBlock<Test>;
 type BlockNumber = u32;
 
 pub(crate) const TEST_REMOTE_DOMAIN: u32 = 2222;
@@ -41,9 +38,9 @@ static TEST_RECIPIENT: Lazy<H256> = Lazy::new(|| H256::repeat_byte(3));
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
 	pub enum Test where
-		Block = TestBlock,
-		NodeBlock = TestBlock,
-		UncheckedExtrinsic = TestUncheckedExtrinsic,
+		Block = Block,
+		NodeBlock = Block,
+		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		UpdaterManager: updater_manager::{Pallet, Call, Storage, Event<T>},
@@ -168,30 +165,31 @@ pub(crate) fn events() -> Vec<super::Event<Test>> {
 		.collect::<Vec<_>>()
 }
 
-pub(crate) fn run_to_block_while_dispatching_random_messages(n: BlockNumber) {
-	while System::block_number() < n {
-		println!("Finalizing block {}.", System::block_number());
-		DABridge::on_finalize(System::block_number());
+// TODO: mock frame executive
+// pub(crate) fn run_to_block_while_dispatching_random_messages(n: BlockNumber) {
+// 	while System::block_number() < n {
+// 		println!("Finalizing block {}.", System::block_number());
+// 		DABridge::on_finalize(System::block_number());
 
-		#[cfg(feature = "testing")]
-		let msg: Vec<u8> = (0..8).map(|_| rand::random::<u8>()).collect();
-		Home::dispatch(
-			Origin::signed((*TEST_SENDER_ACCOUNT).clone()),
-			TEST_REMOTE_DOMAIN,
-			*TEST_RECIPIENT,
-			msg.clone(),
-		)
-		.expect("!dispatched message at block interval");
-		println!(
-			"Dispatched message {:?} for block {}.",
-			msg,
-			System::block_number()
-		);
+// 		#[cfg(feature = "testing")]
+// 		let msg: Vec<u8> = (0..8).map(|_| rand::random::<u8>()).collect();
+// 		Home::dispatch(
+// 			Origin::signed((*TEST_SENDER_ACCOUNT).clone()),
+// 			TEST_REMOTE_DOMAIN,
+// 			*TEST_RECIPIENT,
+// 			msg.clone(),
+// 		)
+// 		.expect("!dispatched message at block interval");
+// 		println!(
+// 			"Dispatched message {:?} for block {}.",
+// 			msg,
+// 			System::block_number()
+// 		);
 
-		// Executive::execute_block(Block {});
+// 		// Executive::execute_block(Block {});
 
-		System::on_finalize(System::block_number());
-		System::set_block_number(System::block_number() + 1);
-		System::on_initialize(System::block_number());
-	}
-}
+// 		System::on_finalize(System::block_number());
+// 		System::set_block_number(System::block_number() + 1);
+// 		System::on_initialize(System::block_number());
+// 	}
+// }

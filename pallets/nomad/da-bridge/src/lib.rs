@@ -18,7 +18,7 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{pallet_prelude::*, sp_runtime::traits::Header};
+	use frame_support::{pallet_prelude::*, sp_runtime::{ArithmeticError, traits::{Header, CheckedSub}}};
 	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 	use home::Pallet as Home;
 	use primitive_types::H256;
@@ -58,6 +58,7 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<T::BlockNumber> for Pallet<T> {
 		fn on_finalize(block_number: T::BlockNumber) {
+			// Store every block's corresponding hash
 			let hash = frame_system::Pallet::<T>::block_hash(block_number);
 			FinalizedBlockNumberToBlockHash::<T>::insert(block_number, hash);
 		}
@@ -112,8 +113,8 @@ pub mod pallet {
 			recipient_address: H256,
 			header: T::Header,
 		) -> DispatchResult {
-			let block_number = header.number();
-			let ext_root = header.extrinsics_root();
+			let mut block_number = *header.number();
+			let ext_root = *header.extrinsics_root();
 
 			let message = DABridgeMessage::format_extrinsics_root_message(
 				block_number.clone(),
@@ -127,10 +128,27 @@ pub mod pallet {
 				message.as_ref().to_vec(),
 			)?;
 
+			// Clear previous block_number to hash mappings, starting at the 
+			// current submitted block_number going backwards. Because the 
+			// runtime maps _every_ block number's hash, the sequence is always
+			// contiguous. If we are tracing backwards and find a block number 
+			// that doesn't have a hash, we know everything before it has been 
+			// cleared.
+			while FinalizedBlockNumberToBlockHash::<T>::contains_key(block_number) {
+				FinalizedBlockNumberToBlockHash::<T>::remove(block_number);
+
+				// If we have cleared the very first block_number to hash mapping, there is nothing more to clear.
+				if block_number.into() == 0 as u64 {
+					break;
+				}
+
+				block_number = block_number.checked_sub(&1u32.into()).ok_or(ArithmeticError::Underflow)?;
+			}
+
 			Self::deposit_event(Event::<T>::ExtrinsicsRootDispatched {
 				sender,
-				block_number: *block_number,
-				extrinsics_root: *ext_root,
+				block_number,
+				extrinsics_root: ext_root,
 			});
 
 			Ok(())
@@ -145,7 +163,8 @@ pub mod pallet {
 				.ok()
 				.ok_or(Error::<T>::BlockNotFinal)?;
 
-			// Ensure header's hash has is valid (i.e. not falsified)
+			// Ensure header's hash matches that in the block number to hash 
+			// mapping
 			ensure!(
 				mapped_hash == hash,
 				Error::<T>::HashOfBlockNotMatchBlockNumber,
