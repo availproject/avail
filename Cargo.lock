@@ -1409,6 +1409,7 @@ dependencies = [
  "frame-system",
  "hex-literal",
  "home",
+ "merkle",
  "nomad-base",
  "nomad-core",
  "once_cell",

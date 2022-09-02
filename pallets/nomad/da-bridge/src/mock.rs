@@ -13,7 +13,7 @@ use sp_runtime::{
 	AccountId32,
 };
 
-use crate as da_bridge;
+use crate::{self as da_bridge, FinalizedBlockNumberToBlockHash};
 
 type SignedExtra = (
 	frame_system::CheckEra<Test>,
@@ -163,6 +163,12 @@ pub(crate) fn events() -> Vec<super::Event<Test>> {
 			}
 		})
 		.collect::<Vec<_>>()
+}
+
+pub(crate) fn fill_block_hash_mapping_up_to_n(n: u8) {
+	for i in 0..=n {
+		FinalizedBlockNumberToBlockHash::<Test>::insert(i as u32, H256::repeat_byte(i))
+	}
 }
 
 // TODO: mock frame executive

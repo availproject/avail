@@ -18,7 +18,13 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{pallet_prelude::*, sp_runtime::{ArithmeticError, traits::{Header, CheckedSub}}};
+	use frame_support::{
+		pallet_prelude::*,
+		sp_runtime::{
+			traits::{CheckedSub, Header},
+			ArithmeticError,
+		},
+	};
 	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 	use home::Pallet as Home;
 	use primitive_types::H256;
@@ -36,7 +42,7 @@ pub mod pallet {
 
 	// Block number to block hash mapping
 	#[pallet::storage]
-	#[pallet::getter(fn block_number_to_block_hash)]
+	#[pallet::getter(fn finalized_block_number_to_block_hash)]
 	pub type FinalizedBlockNumberToBlockHash<T: Config> =
 		StorageMap<_, Twox64Concat, T::BlockNumber, T::Hash>;
 
@@ -128,11 +134,11 @@ pub mod pallet {
 				message.as_ref().to_vec(),
 			)?;
 
-			// Clear previous block_number to hash mappings, starting at the 
-			// current submitted block_number going backwards. Because the 
+			// Clear previous block_number to hash mappings, starting at the
+			// current submitted block_number going backwards. Because the
 			// runtime maps _every_ block number's hash, the sequence is always
-			// contiguous. If we are tracing backwards and find a block number 
-			// that doesn't have a hash, we know everything before it has been 
+			// contiguous. If we are tracing backwards and find a block number
+			// that doesn't have a hash, we know everything before it has been
 			// cleared.
 			while FinalizedBlockNumberToBlockHash::<T>::contains_key(block_number) {
 				FinalizedBlockNumberToBlockHash::<T>::remove(block_number);
@@ -142,7 +148,9 @@ pub mod pallet {
 					break;
 				}
 
-				block_number = block_number.checked_sub(&1u32.into()).ok_or(ArithmeticError::Underflow)?;
+				block_number = block_number
+					.checked_sub(&1u32.into())
+					.ok_or(ArithmeticError::Underflow)?;
 			}
 
 			Self::deposit_event(Event::<T>::ExtrinsicsRootDispatched {
@@ -163,7 +171,7 @@ pub mod pallet {
 				.ok()
 				.ok_or(Error::<T>::BlockNotFinal)?;
 
-			// Ensure header's hash matches that in the block number to hash 
+			// Ensure header's hash matches that in the block number to hash
 			// mapping
 			ensure!(
 				mapped_hash == hash,

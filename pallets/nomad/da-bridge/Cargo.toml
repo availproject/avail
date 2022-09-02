@@ -41,6 +41,7 @@ da-control = { path = "../../dactr" }
 da-primitives = { path = "../../../primitives/avail", default-features = false }
 once_cell = { version = "1.8.0", default-features = false }
 nomad-base = { path = "../../../primitives/nomad/nomad-base", default-features = false }
+merkle = { path = "../../../primitives/nomad/merkle", default-features = false }
 updater-manager = { path = "../updater-manager" }
 home = { path = "../home" }
 
