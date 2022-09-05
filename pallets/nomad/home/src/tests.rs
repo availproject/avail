@@ -122,7 +122,7 @@ fn it_catches_improper_update() {
 
 #[test]
 #[cfg(feature = "testing")]
-fn it_dispatches_message_and_accepts_update() {
+fn it_dispatches_messages_and_accepts_updates() {
 	ExtBuilder::default()
 		.with_base(*TEST_NOMAD_BASE)
 		.build()
@@ -146,22 +146,21 @@ fn it_dispatches_message_and_accepts_update() {
 				origin.clone(),
 				TEST_REMOTE_DOMAIN,
 				*TEST_RECIPIENT,
-				body
+				body.clone(),
 			));
 
 			let root_after_second_msg = Home::tree().root();
 
 			// Get updater signature
-			let new_root = Home::root();
-			let signed_update = TEST_UPDATER.sign_update(committed_root, new_root);
+			let signed_update = TEST_UPDATER.sign_update(committed_root, root_after_second_msg);
 
 			// Submit signed update
-			assert_ok!(Home::update(origin, signed_update.clone()));
+			assert_ok!(Home::update(origin.clone(), signed_update.clone()));
 
 			let expected_update_event = crate::Event::Update {
 				home_domain: TEST_LOCAL_DOMAIN,
 				previous_root: committed_root,
-				new_root,
+				new_root: root_after_second_msg,
 				signature: signed_update.signature.to_vec(),
 			};
 			assert!(events().contains(&expected_update_event));
@@ -172,6 +171,36 @@ fn it_dispatches_message_and_accepts_update() {
 			assert!(Home::index_to_root(1).is_none());
 			assert!(Home::root_to_index(root_after_second_msg).is_none());
 			assert!(Home::base().committed_root() == root_after_second_msg);
+
+			// Dispatch third message
+			assert_ok!(Home::dispatch(
+				origin.clone(),
+				TEST_REMOTE_DOMAIN,
+				*TEST_RECIPIENT,
+				body
+			));
+
+			let committed_root = Home::base().committed_root();
+			let root_after_third_msg = Home::tree().root();
+
+			// Get updater signature
+			let signed_update = TEST_UPDATER.sign_update(committed_root, root_after_third_msg);
+
+			// Submit signed update
+			assert_ok!(Home::update(origin, signed_update.clone()));
+
+			let expected_update_event = crate::Event::Update {
+				home_domain: TEST_LOCAL_DOMAIN,
+				previous_root: committed_root,
+				new_root: root_after_third_msg,
+				signature: signed_update.signature.to_vec(),
+			};
+			assert!(events().contains(&expected_update_event));
+
+			// Assert mappings are cleared out up to signed_update.new_root()
+			assert!(Home::index_to_root(2).is_none());
+			assert!(Home::root_to_index(root_after_third_msg).is_none());
+			assert!(Home::base().committed_root() == root_after_third_msg);
 		})
 }
 
