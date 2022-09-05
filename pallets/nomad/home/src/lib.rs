@@ -261,8 +261,7 @@ pub mod pallet {
 			let previous_root = signed_update.previous_root();
 
 			let mut root = new_root;
-			let mut index =
-				RootToIndex::<T>::try_get(root).map_err(|_| Error::<T>::IndexForRootNotFound)?;
+			let mut index = RootToIndex::<T>::get(root).ok_or(Error::<T>::IndexForRootNotFound)?;
 
 			// Clear previous mappings starting from new_root, going back to
 			// previous_root. previous_root should have always been cleared in
@@ -278,9 +277,15 @@ pub mod pallet {
 					break;
 				}
 
+				// Decrement index and try to get previous root. If none exists,
+				// we have cleared the last possible root in the sequence
+				// continue.
 				index = index.checked_sub(1).ok_or(ArithmeticError::Underflow)?;
-				root = IndexToRoot::<T>::try_get(index)
-					.map_err(|_| Error::<T>::RootForIndexNotFound)?;
+				if let Some(r) = IndexToRoot::<T>::get(index) {
+					root = r;
+				} else {
+					break;
+				}
 			}
 
 			Base::<T>::mutate(|base| base.set_committed_root(new_root));
@@ -318,10 +323,10 @@ pub mod pallet {
 			);
 
 			// Ensure new root is exists in history
-			let get_root_res = RootToIndex::<T>::try_get(signed_update.new_root());
+			let root_exists = RootToIndex::<T>::get(signed_update.new_root()).is_some();
 
-			// If signed root invalid, slash updater and fail home
-			if get_root_res.is_err() {
+			// If new root not in history (invalid), slash updater and fail home
+			if !root_exists {
 				Self::fail(sender);
 				Self::deposit_event(Event::<T>::ImproperUpdate {
 					previous_root: signed_update.previous_root(),

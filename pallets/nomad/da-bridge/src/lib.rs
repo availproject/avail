@@ -167,8 +167,7 @@ pub mod pallet {
 			let hash = header.hash();
 
 			// Ensure header's block number is in the finalized mapping
-			let mapped_hash = FinalizedBlockNumberToBlockHash::<T>::try_get(block_number)
-				.ok()
+			let mapped_hash = FinalizedBlockNumberToBlockHash::<T>::get(block_number)
 				.ok_or(Error::<T>::BlockNotFinal)?;
 
 			// Ensure header's hash matches that in the block number to hash
