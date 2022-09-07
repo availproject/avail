@@ -1395,7 +1395,7 @@ mod tests {
 			commitment: hex!("ab9904cb17fc173504a6bfc4bc1d2212c1178e13fff38f44c17aed7f6f0e035a98ff3104f9487eabe47ee728f4d12047ab9904cb17fc173504a6bfc4bc1d2212c1178e13fff38f44c17aed7f6f0e035a98ff3104f9487eabe47ee728f4d12047").to_vec(),
 			rows: 1,
 			cols: 4,
-			data_root: vec![],
+			data_root: hex!("f951ad83e27746b19d6b14f8861f3b2e0700243b2376ad7b4a51f3804b7c032e").into(),
 		};
 		let logs = vec![
 			DigestItem::PreRuntime(CONSENSUS_ENGINE_ID, hex!("02010000004576ec0400000000").to_vec()),
