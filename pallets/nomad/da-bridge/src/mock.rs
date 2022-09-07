@@ -97,7 +97,12 @@ impl home::Config for Test {
 	type MaxMessageBodyBytes = MaxMessageBodyBytes;
 }
 
+frame_support::parameter_types! {
+	pub const DABridgePalletId: H256 = H256::zero();
+}
+
 impl da_bridge::Config for Test {
+	type DABridgePalletId = DABridgePalletId;
 	type Event = Event;
 }
 

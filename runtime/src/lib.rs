@@ -25,7 +25,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{
 	crypto::KeyTypeId,
 	u32_trait::{_1, _2, _3, _4, _5},
-	OpaqueMetadata,
+	OpaqueMetadata, H256,
 };
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
@@ -988,7 +988,12 @@ impl home::Config for Runtime {
 	type MaxMessageBodyBytes = MaxMessageBodyBytes;
 }
 
+parameter_types! {
+	pub const DABridgePalletId: H256 = H256::zero();
+}
+
 impl da_bridge::Config for Runtime {
+	type DABridgePalletId = DABridgePalletId;
 	type Event = Event;
 }
 

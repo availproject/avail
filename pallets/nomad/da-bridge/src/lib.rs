@@ -34,6 +34,9 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + home::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+		#[pallet::constant]
+		type DABridgePalletId: Get<H256>;
 	}
 
 	#[pallet::pallet]
@@ -90,9 +93,9 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
-		T::AccountId: Into<[u8; 32]>,
-		T::BlockNumber: Into<u64>,
-		T::Hash: Into<H256>,
+		[u8; 32]: From<T::AccountId>,
+		H256: From<T::Hash>,
+		u64: From<T::BlockNumber>,
 	{
 		#[pallet::weight(100)]
 		pub fn try_enqueue_extrinsics_root(
@@ -109,9 +112,9 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T>
 	where
-		T::AccountId: Into<[u8; 32]>,
-		T::BlockNumber: Into<u64>,
-		T::Hash: Into<H256>,
+		[u8; 32]: From<T::AccountId>,
+		H256: From<T::Hash>,
+		u64: From<T::BlockNumber>,
 	{
 		fn do_enqueue_extrinsics_root(
 			sender: T::AccountId,
@@ -120,15 +123,15 @@ pub mod pallet {
 			header: T::Header,
 		) -> DispatchResult {
 			let mut block_number = *header.number();
-			let ext_root = *header.extrinsics_root();
+			let extrinsics_root = *header.extrinsics_root();
 
 			let message = DABridgeMessage::format_extrinsics_root_message(
 				block_number.clone(),
-				ext_root.clone(),
+				extrinsics_root.clone(),
 			);
 
 			Home::<T>::do_dispatch(
-				sender.clone(),
+				T::DABridgePalletId::get(),
 				destination_domain,
 				recipient_address,
 				message.as_ref().to_vec(),
@@ -143,11 +146,14 @@ pub mod pallet {
 			while FinalizedBlockNumberToBlockHash::<T>::contains_key(block_number) {
 				FinalizedBlockNumberToBlockHash::<T>::remove(block_number);
 
-				// If we have cleared the very first block_number to hash mapping, there is nothing more to clear.
-				if block_number.into() == 0 as u64 {
+				// If we have cleared the 0th first block_number to hash
+				// mapping, there is nothing more to clear.
+				let b: u64 = block_number.into();
+				if b == 0 as u64 {
 					break;
 				}
 
+				// Decrement block number
 				block_number = block_number
 					.checked_sub(&1u32.into())
 					.ok_or(ArithmeticError::Underflow)?;
@@ -156,7 +162,7 @@ pub mod pallet {
 			Self::deposit_event(Event::<T>::ExtrinsicsRootDispatched {
 				sender,
 				block_number,
-				extrinsics_root: ext_root,
+				extrinsics_root,
 			});
 
 			Ok(())

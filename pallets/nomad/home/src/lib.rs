@@ -139,7 +139,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
-		T::AccountId: Into<[u8; 32]>,
+		[u8; 32]: From<T::AccountId>,
 	{
 		/// Dispatch a message to the destination domain and recipient address.
 		#[pallet::weight(100)]
@@ -149,8 +149,13 @@ pub mod pallet {
 			recipient_address: H256,
 			message_body: Vec<u8>,
 		) -> DispatchResult {
-			let sender = ensure_signed(origin)?;
-			Self::do_dispatch(sender, destination_domain, recipient_address, message_body)
+			let sender: [u8; 32] = ensure_signed(origin)?.into();
+			Self::do_dispatch(
+				sender.into(),
+				destination_domain,
+				recipient_address,
+				message_body,
+			)
 		}
 
 		/// Verify/submit signed update.
@@ -174,7 +179,7 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T>
 	where
-		T::AccountId: Into<[u8; 32]>,
+		[u8; 32]: From<T::AccountId>,
 	{
 		pub fn state() -> NomadState { Self::base().state() }
 
@@ -193,7 +198,7 @@ pub mod pallet {
 		/// Format message, insert hash into merkle tree, and update mappings
 		/// between tree roots and message indices.
 		pub fn do_dispatch(
-			sender: T::AccountId,
+			sender: H256,
 			destination_domain: u32,
 			recipient_address: H256,
 			message_body: Vec<u8>,
@@ -214,12 +219,11 @@ pub mod pallet {
 
 			// Get info for message to dispatch
 			let origin = Self::base().local_domain();
-			let sender: [u8; 32] = sender.into();
 
 			// Format message and get message hash
 			let message = NomadMessage {
 				origin,
-				sender: sender.into(),
+				sender,
 				nonce,
 				destination: destination_domain,
 				recipient: recipient_address,
@@ -263,10 +267,10 @@ pub mod pallet {
 			let mut root = new_root;
 			let mut index = RootToIndex::<T>::get(root).ok_or(Error::<T>::IndexForRootNotFound)?;
 
-			// Clear previous mappings starting from new_root, going back to
-			// previous_root. previous_root should have always been cleared in
-			// the last update, as the last new_root is always the next update's
-			// previous_root.
+			// Clear previous mappings starting from new_root, going back and
+			// through previous_root. A new update's previous_root has always
+			// been cleared in the previous update, as the last update's
+			// new_root is always the next update's previous_root.
 			while root != previous_root {
 				IndexToRoot::<T>::remove(index);
 				RootToIndex::<T>::remove(root);
@@ -278,8 +282,8 @@ pub mod pallet {
 				}
 
 				// Decrement index and try to get previous root. If none exists,
-				// we have cleared the last possible root in the sequence
-				// continue.
+				// we have cleared the last possible root in the sequence and
+				// break.
 				index = index.checked_sub(1).ok_or(ArithmeticError::Underflow)?;
 				if let Some(r) = IndexToRoot::<T>::get(index) {
 					root = r;
