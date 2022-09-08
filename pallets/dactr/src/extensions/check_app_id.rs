@@ -11,6 +11,11 @@ use sp_runtime::{
 		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransaction,
 	},
 };
+use sp_std::{
+	default::Default,
+	fmt::{self, Debug, Formatter},
+	marker::PhantomData,
+};
 
 use crate::{Call as DACall, Config, Pallet};
 
@@ -58,18 +63,20 @@ where
 		Ok(ValidTransaction::default())
 	}
 }
+impl<T: Config + Send + Sync> Default for CheckAppId<T>
+{
+	fn default() -> Self { Self(AppId::default(), PhantomData) }
+}
 
-impl<T> sp_std::fmt::Debug for CheckAppId<T>
+impl<T> Debug for CheckAppId<T>
 where
 	T: Config + Send + Sync,
 {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		write!(f, "CheckAppId: {}", self.0)
-	}
+	fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "CheckAppId: {}", self.0) }
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result { Ok(()) }
+	fn fmt(&self, _: &mut Formatter) -> fmt::Result { Ok(()) }
 }
 
 impl<T> SignedExtension for CheckAppId<T>
