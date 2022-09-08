@@ -1,10 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::pallet_prelude::*;
-use nomad_core::{home_domain_hash, NomadState, SignedUpdate};
+use nomad_core::{home_domain_hash, to_eth_signed_message_hash, NomadState, SignedUpdate, Update};
 use primitive_types::{H160, H256};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use signature::SignatureError;
 
 #[cfg(feature = "testing")]
 pub mod testing;
@@ -61,23 +62,39 @@ impl NomadBase {
 		self.committed_root = new_committed_root;
 	}
 
-	pub fn is_updater_signature(&self, signed_update: &SignedUpdate) -> bool {
-		signed_update.verify(self.updater).is_ok()
+	pub fn is_updater_signature(
+		&self,
+		signed_update: &SignedUpdate,
+	) -> Result<bool, SignatureError> {
+		let supposed_signing_hash = Update {
+			home_domain: self.local_domain,
+			previous_root: signed_update.previous_root(),
+			new_root: signed_update.new_root(),
+		}
+		.signing_hash();
+
+		let digest = to_eth_signed_message_hash(&supposed_signing_hash);
+		signed_update
+			.signature
+			.recover(digest)
+			.map(|a| a == self.updater)
 	}
 }
 
 #[cfg(test)]
 mod test {
+	use nomad_core::test_utils::Updater;
+
 	use super::*;
 	#[cfg(feature = "testing")]
-	use crate::testing::{FAKE_UPDATER, TEST_NOMAD_BASE, TEST_UPDATER};
+	use crate::testing::{FAKE_UPDATER, TEST_NOMAD_BASE, TEST_UPDATER, TEST_UPDATER_PRIVKEY};
 
 	#[test]
 	#[cfg(feature = "testing")]
 	fn it_accepts_valid_signature() {
 		let valid_signed = TEST_UPDATER.sign_update(H256::repeat_byte(0), H256::repeat_byte(1));
 		assert!(
-			TEST_NOMAD_BASE.is_updater_signature(&valid_signed),
+			TEST_NOMAD_BASE.is_updater_signature(&valid_signed).unwrap(),
 			"should have passed on valid signature"
 		);
 	}
@@ -87,7 +104,19 @@ mod test {
 	fn it_rejects_invalid_signature() {
 		let invalid_signed = FAKE_UPDATER.sign_update(H256::repeat_byte(0), H256::repeat_byte(1));
 		assert!(
-			!TEST_NOMAD_BASE.is_updater_signature(&invalid_signed),
+			!TEST_NOMAD_BASE
+				.is_updater_signature(&invalid_signed)
+				.unwrap(),
+			"should have failed on invalid signature"
+		);
+
+		let other_updater = Updater::new(9999, TEST_UPDATER_PRIVKEY.parse().unwrap());
+		let wrong_domain_signed =
+			other_updater.sign_update(H256::repeat_byte(0), H256::repeat_byte(1));
+		assert!(
+			!TEST_NOMAD_BASE
+				.is_updater_signature(&wrong_domain_signed)
+				.unwrap(),
 			"should have failed on invalid signature"
 		);
 	}

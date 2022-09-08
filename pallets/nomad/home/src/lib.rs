@@ -128,6 +128,7 @@ pub mod pallet {
 	pub enum Error<T> {
 		InitializationError,
 		IngestionError,
+		SignatureRecoveryError,
 		MessageTooLarge,
 		InvalidUpdaterSignature,
 		CommittedRootNotMatchUpdatePrevious,
@@ -322,7 +323,8 @@ pub mod pallet {
 
 			// Ensure updater signature is valid
 			ensure!(
-				base.is_updater_signature(&signed_update),
+				base.is_updater_signature(&signed_update)
+					.map_err(|_| Error::<T>::SignatureRecoveryError)?,
 				Error::<T>::InvalidUpdaterSignature,
 			);
 

@@ -11,7 +11,7 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct Updater {
 	pub domain: u32,
-	signer: LocalWallet,
+	pub signer: LocalWallet,
 }
 
 impl Updater {
