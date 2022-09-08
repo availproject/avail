@@ -989,7 +989,7 @@ impl home::Config for Runtime {
 }
 
 parameter_types! {
-	pub const DABridgePalletId: H256 = H256::zero();
+	pub const DABridgePalletId: H256 = H256::repeat_byte(1);
 }
 
 impl da_bridge::Config for Runtime {
