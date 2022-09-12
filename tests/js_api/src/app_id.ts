@@ -3,29 +3,24 @@ import { KeyringPair } from '@polkadot/keyring/types';
 import type { EventRecord, ExtrinsicStatus, H256 } from '@polkadot/types/interfaces';
 import type { ISubmittableResult, SignatureOptions } from '@polkadot/types/types';
 import yargs from 'yargs/yargs';
+import config from './config';
 
 const keyring = new Keyring({ type: 'sr25519' });
 
 async function cli_arguments() {
     return yargs(process.argv.slice(2)).options({
-        e: {
-            description: 'WSS endpoint',
-            alias: 'endpoint',
-            type: 'string',
-            default: 'wss://testnet.polygonavail.net/ws'
-        },
         i: {
             description: 'app id to be given',
             alias: 'app_id',
-            type: 'number',
-            default: 0
+            type: 'string',
+            default: '1'
         }
         
     }).argv;
 }
 
-async function createApi(argv: any): Promise<ApiPromise> {
-    const provider = new WsProvider(argv.e);
+async function createApi(): Promise<ApiPromise> {
+    const provider = new WsProvider(config.ApiURL);
 
     // Create the API and wait until ready
     return ApiPromise.create({
@@ -39,7 +34,8 @@ async function createApi(argv: any): Promise<ApiPromise> {
                 hash: 'Hash',
                 commitment: 'Vec<u8>',
                 rows: 'u16',
-                cols: 'u16'
+                cols: 'u16',
+                dataRoot: '[u8;32]',
             },
             KateHeader: {
                 parentHash: 'Hash',
@@ -77,7 +73,7 @@ async function getNonce(api: ApiPromise, address: string): Promise<number> {
 
 
 
-async function createKey(api: ApiPromise, sender: KeyringPair, nonce: number, id:number): Promise<any> {
+async function createKey(api: ApiPromise, sender: KeyringPair, nonce: number, id:string): Promise<any> {
     try {
         /* @note here app_id is 1,
         but if you want to have one your own then create one first before initialising here */
@@ -120,7 +116,7 @@ let block = async (hash: H256, api: ApiPromise) => {
 
 async function main() {
     const argv = await cli_arguments();
-    const api = await createApi(argv);
+    const api = await createApi();
     const alice = keyring.addFromUri('//Alice');
     const bob = keyring.addFromUri('//Bob');
     const metadata = await api.rpc.state.getMetadata();

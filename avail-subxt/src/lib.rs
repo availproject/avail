@@ -225,6 +225,9 @@ pub struct KateCommitment {
 	pub rows: u16,
 	/// Cols
 	pub cols: u16,
+	/// The merkle root of the data submissions
+	#[serde(rename = "dataRoot")]
+	pub data_root: [u8; 32],
 }
 
 impl MallocSizeOf for KateCommitment {
@@ -233,6 +236,7 @@ impl MallocSizeOf for KateCommitment {
 			+ self.commitment.size_of(ops)
 			+ self.rows.size_of(ops)
 			+ self.cols.size_of(ops)
+			+ self.data_root.size_of(ops)
 	}
 }
 
@@ -301,6 +305,7 @@ impl Header for DaHeader {
 				commitment: vec![],
 				rows: 0,
 				cols: 0,
+				data_root: [0; 32],
 			},
 			digest,
 			app_data_lookup: DataLookup {

@@ -20,6 +20,7 @@ da-primitives = { path = "../../primitives", default-features = false }
 impl-trait-for-tuples = "0.2.1"
 static_assertions = "1.1.0"
 log = { version = "0.4.14", default-features = false }
+rs_merkle = { version = "1.2.0", default-features = false }
 
 # Substrate
 serde = { version = "1.0.126", optional = true, features = ["derive"] }
