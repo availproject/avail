@@ -1,5 +1,15 @@
 use std::fmt::Debug;
 
+use avail::runtime_types::{
+	da_primitives::{
+		asdr::data_lookup::DataLookup as AvailDataLookup, header::Header as AvailHeader,
+		kate_commitment::KateCommitment as AvailKateCommitment,
+	},
+	sp_runtime::{
+		generic::digest::{Digest as AvailDigest, DigestItem as AvailDigestItem},
+		traits::BlakeTwo256 as AvailBlakeTwo256,
+	},
+};
 use codec::{Codec, Compact, Decode, Encode, EncodeLike, Error as DecodeError, Input};
 use parity_util_mem::MallocSizeOf;
 use scale_info::TypeInfo;
@@ -9,14 +19,14 @@ use subxt::{
 		sp_core::H256,
 		sp_runtime::{
 			traits::{BlakeTwo256, Extrinsic, Hash, Header},
-			AccountId32, Digest, MultiAddress, MultiSignature,
+			AccountId32, Digest, DigestItem, MultiAddress, MultiSignature,
 		},
 	},
 	tx::{Era, ExtrinsicParams, PlainTip},
 	Config,
 };
 
-#[subxt::subxt(runtime_metadata_path = "avail.metadata.scale")]
+#[subxt::subxt(runtime_metadata_path = "avail.dev.metadata.scale")]
 pub mod avail {}
 
 #[derive(Clone, Debug, Default)]
@@ -260,6 +270,63 @@ pub struct DaHeader {
 	pub extrinsics_root: KateCommitment,
 	pub digest: Digest,
 	pub app_data_lookup: DataLookup,
+}
+
+// Type conversions for turning serializable Avail objects into avail
+// config-specific types.
+impl From<DaHeader> for AvailHeader<u32, AvailBlakeTwo256> {
+	fn from(da_header: DaHeader) -> Self {
+		Self {
+			number: da_header.number,
+			state_root: da_header.state_root,
+			parent_hash: da_header.parent_hash,
+			digest: da_header.digest.into(),
+			extrinsics_root: da_header.extrinsics_root.into(),
+			app_data_lookup: da_header.app_data_lookup.into(),
+			__subxt_unused_type_params: Default::default(),
+		}
+	}
+}
+
+impl From<KateCommitment> for AvailKateCommitment<H256> {
+	fn from(commitment: KateCommitment) -> Self {
+		Self {
+			hash: commitment.hash,
+			data_root: commitment.data_root,
+			commitment: commitment.commitment,
+			rows: commitment.rows,
+			cols: commitment.cols,
+		}
+	}
+}
+
+impl From<DataLookup> for AvailDataLookup {
+	fn from(lookup: DataLookup) -> Self {
+		Self {
+			size: lookup.size,
+			index: lookup.index,
+		}
+	}
+}
+
+impl From<Digest> for AvailDigest {
+	fn from(digest: Digest) -> Self {
+		Self {
+			logs: digest.logs.into_iter().map(|l| l.into()).collect(),
+		}
+	}
+}
+
+impl From<DigestItem> for AvailDigestItem {
+	fn from(item: DigestItem) -> Self {
+		match item {
+			DigestItem::PreRuntime(id, vec) => Self::PreRuntime(id, vec),
+			DigestItem::Consensus(id, vec) => Self::Consensus(id, vec),
+			DigestItem::Seal(id, vec) => Self::Seal(id, vec),
+			DigestItem::Other(vec) => Self::Other(vec),
+			DigestItem::RuntimeEnvironmentUpdated => Self::RuntimeEnvironmentUpdated,
+		}
+	}
 }
 
 fn number_from_hex<'de, D>(deserializer: D) -> Result<u32, D::Error>
