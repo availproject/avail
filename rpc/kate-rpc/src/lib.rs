@@ -1,4 +1,7 @@
-use std::sync::{Arc, RwLock};
+use std::{
+	result::Result as AvailResult,
+	sync::{Arc, RwLock},
+};
 
 use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
 use da_primitives::asdr::{AppExtrinsic, AppId, GetAppId};
@@ -9,6 +12,7 @@ use jsonrpc_derive::rpc;
 use kate::BlockDimensions;
 use kate_rpc_runtime_api::KateParamsGetter;
 use lru::LruCache;
+use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
 use sc_client_api::{BlockBackend, StorageProvider};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
@@ -16,11 +20,8 @@ use sp_rpc::number::NumberOrHex;
 use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header, NumberFor},
+	AccountId32, MultiAddress, MultiSignature,
 };
-use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
-use sp_runtime::{AccountId32, MultiAddress, MultiSignature};
-use std::result::Result as AvailResult;
-
 
 #[rpc]
 pub trait KateApi {
@@ -35,13 +36,7 @@ pub trait KateApi {
 	fn query_block_length(&self) -> Result<BlockLength>;
 
 	#[rpc(name = "kate_queryDataProof")]
-	fn query_data_proof(
-		&self,
-		block_number: NumberOrHex,
-		index: usize
-	) -> Result<Vec<[u8;32]>>;
-
-
+	fn query_data_proof(&self, block_number: NumberOrHex, index: usize) -> Result<Vec<[u8; 32]>>;
 }
 
 pub struct Kate<Client, Block: BlockT> {
@@ -197,11 +192,7 @@ where
 		Ok(block_length)
 	}
 
-	fn query_data_proof(
-		&self,
-		block_number: NumberOrHex,
-		index: usize
-	) -> Result<Vec<[u8;32]>> {
+	fn query_data_proof(&self, block_number: NumberOrHex, index: usize) -> Result<Vec<[u8; 32]>> {
 		let block_num: u32 = block_number
 			.try_into()
 			.map_err(|_| RpcError::invalid_params("Invalid block number"))?;
@@ -221,14 +212,14 @@ where
 				app_id: xt.app_id(),
 				data: xt.encode(),
 			};
-			let optional_decoded_xt = <AvailExtrinsic>::decode(&mut &avail_extrinsic.data[..]); 
+			let optional_decoded_xt = <AvailExtrinsic>::decode(&mut &avail_extrinsic.data[..]);
 			match optional_decoded_xt {
 				Ok(decoded_xt) => leaves.push(Sha256::hash(&decoded_xt.data)),
-        		Err(_) => continue,
+				Err(_) => continue,
 			}
 			if pos == index {
 				interested_leaf_position = Some(leaves.len() - 1);
-			} 
+			}
 		}
 
 		if leaves.len() > 0 {
@@ -241,10 +232,8 @@ where
 			}
 		}
 		Err(internal_err!("Proof not possible!"))
-
 	}
 }
-
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct AvailExtrinsic {
