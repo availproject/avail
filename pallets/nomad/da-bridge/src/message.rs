@@ -6,14 +6,14 @@ use sp_std::vec::Vec;
 #[derive(Clone, Debug, PartialEq)]
 pub enum DABridgeMessageTypes {
 	Invalid = 0,
-	ExtrinsicsRootMessage = 1,
+	DataRootMessage = 1,
 }
 
 impl From<u8> for DABridgeMessageTypes {
 	fn from(num: u8) -> Self {
 		match num {
 			0 => Self::Invalid,
-			1 => Self::ExtrinsicsRootMessage,
+			1 => Self::DataRootMessage,
 			_ => panic!("Invalid u8 for DABridgeMessage enum!"),
 		}
 	}
@@ -38,7 +38,7 @@ impl DABridgeMessage {
 	/// Format extrinsic root message with block number and root. Internally
 	/// checks that passed in generics for block number and extrinsic root are
 	/// expected lengths.
-	pub fn format_extrinsics_root_message(
+	pub fn format_data_root_message(
 		block_number: impl Into<u64>,
 		ext_root: impl Into<H256>,
 	) -> Self {
@@ -50,7 +50,7 @@ impl DABridgeMessage {
 		let ext_root: H256 = ext_root.into();
 		let ext_root_bytes = ext_root.as_bytes();
 
-		buf.push(DABridgeMessageTypes::ExtrinsicsRootMessage as u8);
+		buf.push(DABridgeMessageTypes::DataRootMessage as u8);
 		buf.extend(block_number_bytes.to_vec());
 		buf.extend(ext_root_bytes.to_vec());
 		Self(buf)

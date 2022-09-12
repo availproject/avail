@@ -268,6 +268,10 @@ where
 
 	fn set_extrinsics_root(&mut self, root: Self::Root) { self.extrinsics_root = root; }
 
+	fn data_root(&self) -> &[u8; 32] { &self.extrinsics_root.data_root }
+
+	fn set_data_root(&mut self, data_root: [u8; 32]) { self.extrinsics_root.data_root = data_root; }
+
 	fn data_lookup(&self) -> &DataLookup { &self.app_data_lookup }
 
 	/// Creates new header.

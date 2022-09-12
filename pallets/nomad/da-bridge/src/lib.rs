@@ -18,6 +18,7 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
+	use da_primitives::traits::ExtendedHeader;
 	use frame_support::{
 		pallet_prelude::*,
 		sp_runtime::{
@@ -84,10 +85,10 @@ pub mod pallet {
 			number: T::BlockNumber,
 			hash: T::Hash,
 		},
-		ExtrinsicsRootDispatched {
+		DataRootDispatched {
 			sender: T::AccountId,
 			block_number: T::BlockNumber,
-			extrinsics_root: T::Hash,
+			data_root: [u8; 32],
 		},
 	}
 
@@ -106,7 +107,7 @@ pub mod pallet {
 		u64: From<T::BlockNumber>,
 	{
 		#[pallet::weight(100)]
-		pub fn try_enqueue_extrinsics_root(
+		pub fn try_enqueue_data_root(
 			origin: OriginFor<T>,
 			destination_domain: u32,
 			recipient_address: H256,
@@ -114,7 +115,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 			Self::ensure_valid_header(&header)?;
-			Self::do_enqueue_extrinsics_root(sender, destination_domain, recipient_address, header)
+			Self::do_enqueue_data_root(sender, destination_domain, recipient_address, header)
 		}
 	}
 
@@ -124,19 +125,17 @@ pub mod pallet {
 		H256: From<T::Hash>,
 		u64: From<T::BlockNumber>,
 	{
-		fn do_enqueue_extrinsics_root(
+		fn do_enqueue_data_root(
 			sender: T::AccountId,
 			destination_domain: u32,
 			recipient_address: H256,
 			header: T::Header,
 		) -> DispatchResult {
 			let mut block_number = *header.number();
-			let extrinsics_root = *header.extrinsics_root();
+			let data_root = *header.data_root();
 
-			let message = DABridgeMessage::format_extrinsics_root_message(
-				block_number.clone(),
-				extrinsics_root.clone(),
-			);
+			let message =
+				DABridgeMessage::format_data_root_message(block_number.clone(), data_root.clone());
 
 			Home::<T>::do_dispatch(
 				T::DABridgePalletId::get(),
@@ -167,10 +166,10 @@ pub mod pallet {
 					.ok_or(ArithmeticError::Underflow)?;
 			}
 
-			Self::deposit_event(Event::<T>::ExtrinsicsRootDispatched {
+			Self::deposit_event(Event::<T>::DataRootDispatched {
 				sender,
 				block_number,
-				extrinsics_root,
+				data_root,
 			});
 
 			Ok(())
