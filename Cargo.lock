@@ -1387,6 +1387,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "da-bridge"
+version = "1.0.0"
+dependencies = [
+ "da-control",
+ "da-primitives",
+ "frame-benchmarking",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "home",
+ "merkle",
+ "nomad-base",
+ "nomad-core",
+ "once_cell",
+ "pallet-transaction-payment",
+ "parity-scale-codec 2.3.1",
+ "primitive-types 0.10.1",
+ "rand 0.8.5",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "updater-manager",
+]
+
+[[package]]
 name = "da-control"
 version = "1.0.0"
 dependencies = [
@@ -2907,6 +2937,33 @@ dependencies = [
  "digest 0.9.0",
  "generic-array 0.14.5",
  "hmac 0.8.1",
+]
+
+[[package]]
+name = "home"
+version = "4.0.0-dev"
+dependencies = [
+ "da-primitives",
+ "ethers-signers",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "merkle",
+ "nomad-base",
+ "nomad-core",
+ "once_cell",
+ "parity-scale-codec 2.3.1",
+ "primitive-types 0.10.1",
+ "scale-info",
+ "serde",
+ "signature 0.1.0",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "thiserror-no-std",
+ "updater-manager",
 ]
 
 [[package]]
@@ -9586,6 +9643,26 @@ name = "untrusted"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
+
+[[package]]
+name = "updater-manager"
+version = "1.0.0"
+dependencies = [
+ "da-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "nomad-core",
+ "parity-scale-codec 2.3.1",
+ "primitive-types 0.10.1",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
 
 [[package]]
 name = "url"
