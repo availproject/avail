@@ -1460,6 +1460,7 @@ dependencies = [
 name = "da-runtime"
 version = "4.0.0"
 dependencies = [
+ "da-bridge",
  "da-control",
  "da-primitives",
  "frame-benchmarking",
@@ -1471,6 +1472,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "hex",
  "hex-literal",
+ "home",
  "kate",
  "kate-rpc-runtime-api",
  "pallet-asset-tx-payment",
@@ -1526,12 +1528,14 @@ dependencies = [
  "static_assertions",
  "substrate-wasm-builder",
  "test-case",
+ "updater-manager",
 ]
 
 [[package]]
 name = "data-avail"
 version = "1.0.0"
 dependencies = [
+ "da-bridge",
  "da-control",
  "da-primitives",
  "da-runtime",
@@ -1543,6 +1547,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "futures 0.3.21",
  "hex-literal",
+ "home",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
@@ -1606,6 +1611,7 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "tempfile",
+ "updater-manager",
 ]
 
 [[package]]

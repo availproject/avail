@@ -25,7 +25,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{
 	crypto::KeyTypeId,
 	u32_trait::{_1, _2, _3, _4, _5},
-	OpaqueMetadata,
+	OpaqueMetadata, H256,
 };
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
@@ -975,6 +975,28 @@ impl da_control::Config for Runtime {
 	type WeightInfo = da_control::weights::SubstrateWeight<Runtime>;
 }
 
+impl updater_manager::Config for Runtime {
+	type Event = Event;
+}
+
+parameter_types! {
+	pub const MaxMessageBodyBytes: u32 = 2048;
+}
+
+impl home::Config for Runtime {
+	type Event = Event;
+	type MaxMessageBodyBytes = MaxMessageBodyBytes;
+}
+
+parameter_types! {
+	pub const DABridgePalletId: H256 = H256::repeat_byte(1);
+}
+
+impl da_bridge::Config for Runtime {
+	type DABridgePalletId = DABridgePalletId;
+	type Event = Event;
+}
+
 // TODO @miguel Aline this with previous order and ID to keep the compatibility.
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -1017,6 +1039,11 @@ construct_runtime!(
 
 		// DA module
 		DataAvailability: da_control,
+
+		// Nomad
+		UpdaterManager: updater_manager,
+		Home: home,
+		DABridge: da_bridge,
 	}
 );
 
