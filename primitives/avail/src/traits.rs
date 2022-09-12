@@ -36,6 +36,9 @@ pub trait ExtendedHeader {
 	fn extrinsics_root(&self) -> &Self::Root;
 	fn set_extrinsics_root(&mut self, root: Self::Root);
 
+	fn data_root(&self) -> &[u8; 32];
+	fn set_data_root(&mut self, root: [u8; 32]);
+
 	fn data_lookup(&self) -> &DataLookup;
 
 	/// Creates new header.
