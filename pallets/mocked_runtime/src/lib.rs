@@ -1,7 +1,8 @@
+use da_primitives::NORMAL_DISPATCH_RATIO;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{Get, Randomness},
-	weights::{DispatchClass, IdentityFee, RuntimeDbWeight},
+	weights::{constants::WEIGHT_PER_SECOND, IdentityFee, RuntimeDbWeight, Weight},
 };
 use frame_system::{CheckEra, CheckNonce, CheckWeight};
 use pallet_transaction_payment::CurrencyAdapter;
@@ -17,7 +18,8 @@ pub mod test_xt;
 // Common Runtime Types
 //
 
-pub type Balance = u64;
+pub type AccountId = u64;
+pub type Balance = u128;
 pub type BlockNumber = u32;
 pub type Moment = u64;
 pub type Header = da_primitives::Header<BlockNumber, BlakeTwo256>;
@@ -78,14 +80,13 @@ pub const EPOCH_DURATION_IN_SLOTS: u64 = {
 	(EPOCH_DURATION_IN_BLOCKS as f64 * SLOT_FILL_RATE) as u64
 };
 
+/// We allow for 2 seconds of compute with a 6 second average block time.
+const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
+
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
-			frame_system::limits::BlockWeights::builder()
-				.base_block(10)
-				.for_class(DispatchClass::all(), |weights| weights.base_extrinsic = 5)
-				.for_class(DispatchClass::non_mandatory(), |weights| weights.max_total = 1024.into())
-				.build_or_panic();
+			frame_system::limits::BlockWeights::with_sensible_defaults(MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO);
 	pub const DbWeight: RuntimeDbWeight = RuntimeDbWeight {
 		read: 10,
 		write: 100,
@@ -126,7 +127,7 @@ thread_local! {
 
 impl frame_system::Config for Runtime {
 	type AccountData = pallet_balances::AccountData<Balance>;
-	type AccountId = u64;
+	type AccountId = AccountId;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();

@@ -1,6 +1,10 @@
 use codec::{Codec, Decode, Encode};
+use da_primitives::asdr::{AppId, GetAppId};
 use derive_more::From;
-use frame_support::traits::ExtrinsicCall;
+use frame_support::{
+	traits::ExtrinsicCall,
+	weights::{DispatchInfo, GetDispatchInfo},
+};
 use scale_info::TypeInfo;
 use serde::Serializer;
 use sp_runtime::{
@@ -17,6 +21,13 @@ use sp_std::fmt::{self, Debug};
 /// Test transaction wrapper with AppId.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, TypeInfo, From)]
 pub struct TestXt<Call, Extra>(SPTestXt<Call, Extra>);
+
+impl<Call, Extra> TestXt<Call, Extra> {
+	/// Create a new `TextXt`.
+	pub fn new(call: Call, signature: Option<(u64, Extra)>) -> Self {
+		Self(SPTestXt::<Call, Extra>::new(call, signature))
+	}
+}
 
 // Non-opaque extrinsics always 0.
 parity_util_mem::malloc_size_of_is_0!(any: TestXt<Call, Extra>);
@@ -50,13 +61,8 @@ impl<Call: Codec + Sync + Send, Extra> Extrinsic for TestXt<Call, Extra> {
 	fn is_signed(&self) -> Option<bool> { self.0.is_signed() }
 
 	fn new(c: Call, sig: Option<Self::SignaturePayload>) -> Option<Self> {
-		Some(
-			SPTestXt {
-				signature: sig,
-				call: c,
-			}
-			.into(),
-		)
+		let sp_test = SPTestXt::<Call, Extra>::new(c, sig);
+		Some(Self(sp_test))
 	}
 }
 
@@ -105,4 +111,12 @@ where
 	Call: Codec + Sync + Send,
 {
 	fn call(&self) -> &Self::Call { self.0.call() }
+}
+
+impl<Call, Extra> GetAppId<AppId> for TestXt<Call, Extra> {
+	fn app_id(&self) -> AppId { AppId::default() }
+}
+
+impl<Call: GetDispatchInfo, Extra> GetDispatchInfo for TestXt<Call, Extra> {
+	fn get_dispatch_info(&self) -> DispatchInfo { self.0.call.get_dispatch_info() }
 }

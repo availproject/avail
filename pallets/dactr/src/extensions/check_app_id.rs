@@ -63,8 +63,7 @@ where
 		Ok(ValidTransaction::default())
 	}
 }
-impl<T: Config + Send + Sync> Default for CheckAppId<T>
-{
+impl<T: Config + Send + Sync> Default for CheckAppId<T> {
 	fn default() -> Self { Self(AppId::default(), PhantomData) }
 }
 
