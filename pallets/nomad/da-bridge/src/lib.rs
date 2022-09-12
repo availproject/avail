@@ -104,7 +104,7 @@ pub mod pallet {
 	where
 		[u8; 32]: From<T::AccountId>,
 		H256: From<T::Hash>,
-		u64: From<T::BlockNumber>,
+		u32: From<T::BlockNumber>,
 	{
 		#[pallet::weight(100)]
 		pub fn try_enqueue_data_root(
@@ -123,7 +123,7 @@ pub mod pallet {
 	where
 		[u8; 32]: From<T::AccountId>,
 		H256: From<T::Hash>,
-		u64: From<T::BlockNumber>,
+		u32: From<T::BlockNumber>,
 	{
 		fn do_enqueue_data_root(
 			sender: T::AccountId,
@@ -155,8 +155,8 @@ pub mod pallet {
 
 				// If we have cleared the 0th first block_number to hash
 				// mapping, there is nothing more to clear.
-				let b: u64 = block_number.into();
-				if b == 0 as u64 {
+				let b: u32 = block_number.into();
+				if b == 0 as u32 {
 					break;
 				}
 

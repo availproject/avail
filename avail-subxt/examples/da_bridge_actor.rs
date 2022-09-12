@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 		println!("Finalized block header: {:?}", &header);
 
 		let bridge_router_eth_addr: H160 = DA_BRIDGE_ROUTER_ADDRESS.parse().unwrap();
-		let tx = avail::tx().da_bridge().try_enqueue_extrinsics_root(
+		let tx = avail::tx().da_bridge().try_enqueue_data_root(
 			DESTINATION_DOMAIN,
 			bridge_router_eth_addr.into(),
 			header.into(),

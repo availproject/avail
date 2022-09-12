@@ -32,19 +32,19 @@ impl TypedMessage for DABridgeMessage {
 impl DABridgeMessage {
 	/* Extrinsic Root: message containing an extrinsic root and its
 	 * corresponding block number
-	 * type (1 byte) || block number (8 bytes) || ext root (32 bytes)
+	 * type (1 byte) || block number (4 bytes) || ext root (32 bytes)
 	 */
 
 	/// Format extrinsic root message with block number and root. Internally
 	/// checks that passed in generics for block number and extrinsic root are
 	/// expected lengths.
 	pub fn format_data_root_message(
-		block_number: impl Into<u64>,
+		block_number: impl Into<u32>,
 		ext_root: impl Into<H256>,
 	) -> Self {
 		let mut buf: Vec<u8> = Vec::new();
 
-		let block_number: u64 = block_number.into();
+		let block_number: u32 = block_number.into();
 		let block_number_bytes = block_number.to_be_bytes();
 
 		let ext_root: H256 = ext_root.into();
