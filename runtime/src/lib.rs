@@ -980,7 +980,7 @@ impl updater_manager::Config for Runtime {
 }
 
 parameter_types! {
-	pub const MaxMessageBodyBytes: u32 = 2 * (2^10);
+	pub const MaxMessageBodyBytes: u32 = 2048;
 }
 
 impl home::Config for Runtime {

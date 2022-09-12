@@ -67,15 +67,23 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<T::BlockNumber> for Pallet<T> {
 		fn on_finalize(block_number: T::BlockNumber) {
-			// Store every block's corresponding hash
-			let hash = frame_system::Pallet::<T>::block_hash(block_number);
-			FinalizedBlockNumberToBlockHash::<T>::insert(block_number, hash);
+			let last = block_number.checked_sub(&1u32.into()).unwrap();
+
+			// Store every finalized block's corresponding hash
+			let hash = frame_system::Pallet::<T>::block_hash(last);
+			FinalizedBlockNumberToBlockHash::<T>::insert(last, hash);
+
+			Self::deposit_event(Event::<T>::FinalizedBlockHashStored { number: last, hash });
 		}
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
+		FinalizedBlockHashStored {
+			number: T::BlockNumber,
+			hash: T::Hash,
+		},
 		ExtrinsicsRootDispatched {
 			sender: T::AccountId,
 			block_number: T::BlockNumber,

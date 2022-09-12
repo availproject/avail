@@ -62,7 +62,7 @@ impl system::Config for Test {
 }
 
 parameter_types! {
-	pub const MaxMessageBodyBytes: u32 = 5_000;
+	pub const MaxMessageBodyBytes: u32 = 2048;
 }
 
 impl home::Config for Test {

@@ -89,7 +89,7 @@ impl updater_manager::Config for Test {
 }
 
 frame_support::parameter_types! {
-	pub const MaxMessageBodyBytes: u32 = 5_000;
+	pub const MaxMessageBodyBytes: u32 = 2048;
 }
 
 impl home::Config for Test {
