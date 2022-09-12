@@ -1961,7 +1961,7 @@ dependencies = [
  "serde_json",
  "sha3 0.10.4",
  "thiserror",
- "uint",
+ "uint 0.9.3",
 ]
 
 [[package]]
@@ -1971,9 +1971,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11da94e443c60508eb62cf256243a64da87304c2802ac2528847f79d750007ef"
 dependencies = [
  "crunchy",
- "fixed-hash",
+ "fixed-hash 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "impl-rlp",
- "impl-serde",
+ "impl-serde 0.3.2",
  "tiny-keccak",
 ]
 
@@ -1984,11 +1984,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2827b94c556145446fcce834ca86b7abf0c39a805883fe20e72c5bfdb5a0dc6"
 dependencies = [
  "ethbloom",
- "fixed-hash",
+ "fixed-hash 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "impl-rlp",
- "impl-serde",
+ "impl-serde 0.3.2",
  "primitive-types 0.11.1",
- "uint",
+ "uint 0.9.3",
 ]
 
 [[package]]
@@ -2135,6 +2135,17 @@ name = "fixed-hash"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfcf0ed7fe52a17a03854ec54a9f76d6d84508d1c0e66bc1793301c73fc8493c"
+dependencies = [
+ "byteorder",
+ "rand 0.8.5",
+ "rustc-hex",
+ "static_assertions",
+]
+
+[[package]]
+name = "fixed-hash"
+version = "0.7.0"
+source = "git+https://github.com/paritytech/parity-common.git?tag=parity-util-mem-v0.10.1#3030a6dd28352a4a12169340d22f130f331e0d12"
 dependencies = [
  "byteorder",
  "rand 0.8.5",
@@ -3020,8 +3031,7 @@ dependencies = [
 [[package]]
 name = "impl-codec"
 version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "161ebdfec3c8e3b52bf61c4f3550a1eea4f9579d10dc1b936f3171ebdcd6c443"
+source = "git+https://github.com/paritytech/parity-common.git?tag=parity-util-mem-v0.10.1#3030a6dd28352a4a12169340d22f130f331e0d12"
 dependencies = [
  "parity-scale-codec 2.3.1",
 ]
@@ -3042,6 +3052,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f28220f89297a075ddc7245cd538076ee98b01f2a9c23a53a4f1105d5a322808"
 dependencies = [
  "rlp",
+]
+
+[[package]]
+name = "impl-serde"
+version = "0.3.1"
+source = "git+https://github.com/paritytech/parity-common.git?tag=parity-util-mem-v0.10.1#3030a6dd28352a4a12169340d22f130f331e0d12"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -3726,7 +3744,7 @@ dependencies = [
  "rand 0.7.3",
  "sha2 0.9.9",
  "smallvec",
- "uint",
+ "uint 0.9.3",
  "unsigned-varint 0.7.1",
  "void",
  "wasm-timer",
@@ -5356,9 +5374,8 @@ dependencies = [
 
 [[package]]
 name = "parity-db"
-version = "0.3.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3e7f385d61562f5834282b90aa50b41f38a35cf64d5209b8b05487b50553dbe"
+version = "0.3.12"
+source = "git+https://github.com/paritytech/parity-db.git?tag=v0.3.12#4e680e18a590ef7826b6d11229bb98448c5ae477"
 dependencies = [
  "blake2-rfc",
  "crc32fast",
@@ -5843,14 +5860,13 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 [[package]]
 name = "primitive-types"
 version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05e4722c697a58a99d5d06a08c30821d7c082a4632198de1eaa5a6c22ef42373"
+source = "git+https://github.com/paritytech/parity-common.git?tag=parity-util-mem-v0.10.1#3030a6dd28352a4a12169340d22f130f331e0d12"
 dependencies = [
- "fixed-hash",
+ "fixed-hash 0.7.0 (git+https://github.com/paritytech/parity-common.git?tag=parity-util-mem-v0.10.1)",
  "impl-codec 0.5.1",
- "impl-serde",
+ "impl-serde 0.3.1",
  "scale-info",
- "uint",
+ "uint 0.9.1",
 ]
 
 [[package]]
@@ -5859,11 +5875,11 @@ version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e28720988bff275df1f51b171e1b2a18c30d194c4d2b61defdacecd625a5d94a"
 dependencies = [
- "fixed-hash",
+ "fixed-hash 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "impl-codec 0.6.0",
  "impl-rlp",
- "impl-serde",
- "uint",
+ "impl-serde 0.3.2",
+ "uint 0.9.3",
 ]
 
 [[package]]
@@ -8182,7 +8198,7 @@ dependencies = [
  "hash-db",
  "hash256-std-hasher",
  "hex",
- "impl-serde",
+ "impl-serde 0.3.2",
  "lazy_static",
  "libsecp256k1",
  "log",
@@ -8535,7 +8551,7 @@ name = "sp-storage"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.13#afb74de23dfe2994e7ce38c0870efb9734e966f7"
 dependencies = [
- "impl-serde",
+ "impl-serde 0.3.2",
  "parity-scale-codec 2.3.1",
  "ref-cast",
  "serde",
@@ -8629,7 +8645,7 @@ name = "sp-version"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.13#afb74de23dfe2994e7ce38c0870efb9734e966f7"
 dependencies = [
- "impl-serde",
+ "impl-serde 0.3.2",
  "parity-scale-codec 2.3.1",
  "parity-wasm 0.42.2",
  "scale-info",
@@ -8879,9 +8895,8 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "syn"
-version = "1.0.99"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58dbef6ec655055e20b86b15a8cc6d439cca19b667537ac6a1369572d151ab13"
+version = "1.0.96"
+source = "git+https://github.com/dtolnay/syn.git?tag=1.0.96#cb8760bcdcc00e9969a7f2e04816ea9bad6b8252"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -9087,9 +9102,8 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2af73ac49756f3f7c01172e34a23e5d0216f6c32333757c2c61feb2bbff5a5ee"
+version = "1.19.2"
+source = "git+https://github.com/tokio-rs/tokio?tag=tokio-1.19.2#340c4dc3b2123d0bf5ec2795bd9c157d8a10ccf6"
 dependencies = [
  "bytes 1.1.0",
  "libc",
@@ -9338,8 +9352,8 @@ version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ee73e6e4924fe940354b8d4d98cad5231175d615cd855b758adc658c0aac6a0"
 dependencies = [
- "cfg-if 1.0.0",
- "rand 0.8.5",
+ "cfg-if 0.1.10",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
@@ -9354,6 +9368,17 @@ name = "ucd-trie"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56dee185309b50d1f11bfedef0fe6d036842e3fb77413abef29f8f8d1c5d4c1c"
+
+[[package]]
+name = "uint"
+version = "0.9.1"
+source = "git+https://github.com/paritytech/parity-common.git?tag=parity-util-mem-v0.10.1#3030a6dd28352a4a12169340d22f130f331e0d12"
+dependencies = [
+ "byteorder",
+ "crunchy",
+ "hex",
+ "static_assertions",
+]
 
 [[package]]
 name = "uint"
