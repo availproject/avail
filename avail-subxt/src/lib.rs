@@ -292,6 +292,7 @@ impl From<KateCommitment> for AvailKateCommitment<H256> {
 	fn from(commitment: KateCommitment) -> Self {
 		Self {
 			hash: commitment.hash,
+			data_root: commitment.data_root,
 			commitment: commitment.commitment,
 			rows: commitment.rows,
 			cols: commitment.cols,
