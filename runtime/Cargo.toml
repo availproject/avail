@@ -18,6 +18,11 @@ da-control = { path = "../pallets/dactr", default-features = false }
 kate = { path = "../kate", default-features = false }
 kate-rpc-runtime-api = { path = "../rpc/kate-rpc-runtime-api", default-features = false }
 
+## Nomad
+updater-manager = { path = "../pallets/nomad/updater-manager", default-features = false }
+home = { path = "../pallets/nomad/home", default-features = false }
+da-bridge = { path = "../pallets/nomad/da-bridge", default-features = false }
+
 # External 
 static_assertions = "1.1.0"
 serde = { version = "1.0.121", optional = true, features = ["derive"] }
@@ -152,6 +157,8 @@ std = [
 	"pallet-mmr/std",
 	"frame-system-rpc-runtime-api/std",
 	"da-control/std",
+	"updater-manager/std",
+	"home/std",
 ]
 
 runtime-benchmarks = [
