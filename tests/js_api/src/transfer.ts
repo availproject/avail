@@ -21,7 +21,8 @@ async function createApi(): Promise<ApiPromise> {
                 hash: 'Hash',
                 commitment: 'Vec<u8>',
                 rows: 'u16',
-                cols: 'u16'
+                cols: 'u16',
+                dataRoot: '[u8;32]',
             },
             KateHeader: {
                 parentHash: 'Hash',
