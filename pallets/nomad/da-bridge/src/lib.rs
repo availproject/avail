@@ -86,7 +86,8 @@ pub mod pallet {
 			hash: T::Hash,
 		},
 		DataRootDispatched {
-			sender: T::AccountId,
+			destination_domain: u32,
+			recipient_address: H256,
 			block_number: T::BlockNumber,
 			data_root: [u8; 32],
 		},
@@ -113,9 +114,9 @@ pub mod pallet {
 			recipient_address: H256,
 			header: T::Header,
 		) -> DispatchResult {
-			let sender = ensure_signed(origin)?;
+			ensure_signed(origin)?;
 			Self::ensure_valid_header(&header)?;
-			Self::do_enqueue_data_root(sender, destination_domain, recipient_address, header)
+			Self::do_enqueue_data_root(destination_domain, recipient_address, header)
 		}
 	}
 
@@ -126,7 +127,6 @@ pub mod pallet {
 		u32: From<T::BlockNumber>,
 	{
 		fn do_enqueue_data_root(
-			sender: T::AccountId,
 			destination_domain: u32,
 			recipient_address: H256,
 			header: T::Header,
@@ -167,7 +167,8 @@ pub mod pallet {
 			}
 
 			Self::deposit_event(Event::<T>::DataRootDispatched {
-				sender,
+				destination_domain,
+				recipient_address,
 				block_number,
 				data_root,
 			});
