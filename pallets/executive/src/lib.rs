@@ -773,6 +773,7 @@ mod tests {
 			commitment: vec![],
 			rows: 0,
 			cols: 0,
+			data_root: [0u8; 32],
 		};
 		let state_root =
 			hex!("293056F7324B44B6841297FB8076DEDFF6BD04C0F3F7DACBA3781C5CF3B5A80C").into();
@@ -804,6 +805,7 @@ mod tests {
 			commitment: vec![],
 			rows: 0,
 			cols: 0,
+			data_root: [0u8; 32],
 		};
 
 		new_test_ext(1).execute_with(|| {
@@ -831,6 +833,7 @@ mod tests {
 			commitment: vec![],
 			rows: 0,
 			cols: 0,
+			data_root: [0u8; 32],
 		};
 
 		new_test_ext(1).execute_with(|| {
