@@ -1,9 +1,11 @@
+use std::{thread, time};
+
 use avail_subxt::*;
 use sp_keyring::AccountKeyring;
 use subxt::{ext::sp_core::H160, tx::PairSigner, OnlineClient};
 
 const DESTINATION_DOMAIN: u32 = 1000;
-const DA_BRIDGE_ROUTER_ADDRESS: &str = "0x42a8ea235a8edb8c64c22d8c0d181301e9cf5051";
+const DA_BRIDGE_ROUTER_ADDRESS: &str = "0x333d43c984b8d92f6c857e0bfbb29a4fbf42dbe9";
 
 #[async_std::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -15,6 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	while let Some(finalized_block) = finalized_blocks.next().await {
 		let header = finalized_block.unwrap();
 		println!("Finalized block header: {:?}", &header);
+		println!("Header data root: {:?}", header.extrinsics_root.data_root);
 
 		let bridge_router_eth_addr: H160 = DA_BRIDGE_ROUTER_ADDRESS.parse().unwrap();
 		let tx = avail::tx().da_bridge().try_enqueue_data_root(
@@ -23,7 +26,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 			header.into(),
 		);
 
-		println!("Sending finalized block header...");
+		println!(
+			"Sending finalized block header. Domain: {}. Recipient: {}",
+			DESTINATION_DOMAIN, DA_BRIDGE_ROUTER_ADDRESS
+		);
 		let h = api
 			.tx()
 			.sign_and_submit_then_watch(&tx, &signer, Default::default())
@@ -42,6 +48,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 		let xts = submitted_block.block.extrinsics;
 		println!("Submitted block extrinsic: {xts:?}");
+
+		println!("Sleeping for 10 sec...\n");
+		thread::sleep(time::Duration::from_secs(10));
 	}
 
 	Ok(())
