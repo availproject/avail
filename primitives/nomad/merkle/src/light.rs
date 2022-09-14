@@ -1,10 +1,9 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::ensure;
-use sp_core::H256;
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::RuntimeDebug;
+use sp_core::{RuntimeDebug, H256};
 
 use super::{
 	error::TreeError, utils::hash_concat, Merkle, MerkleProof, Proof, TREE_DEPTH, ZERO_HASHES,

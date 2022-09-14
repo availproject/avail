@@ -1,23 +1,14 @@
 use frame_support::ensure;
 use sp_core::H256;
-use tiny_keccak::{Hasher, Keccak};
+use sp_runtime::traits::{Hash, Keccak256};
 
 use crate::{TreeError, TREE_DEPTH};
-
-/// Return the keccak256 digest of the preimage
-pub fn hash(preimage: impl AsRef<[u8]>) -> H256 {
-	let mut output = [0u8; 32];
-	let mut hasher = Keccak::v256();
-	hasher.update(preimage.as_ref());
-	hasher.finalize(&mut output);
-	output.into()
-}
 
 /// Return the keccak256 disgest of the concatenation of the arguments
 pub fn hash_concat(left: impl AsRef<[u8]>, right: impl AsRef<[u8]>) -> H256 {
 	let mut vec = left.as_ref().to_vec();
 	vec.extend_from_slice(right.as_ref());
-	hash(vec)
+	Keccak256::hash(vec.as_ref())
 }
 
 /// Max number of leaves in a tree. Returns `None` if overflow occurred

@@ -4,7 +4,7 @@ use parity_util_mem::{MallocSizeOf, MallocSizeOfOps};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{RuntimeDebug, U256, H256};
+use sp_core::{RuntimeDebug, H256, U256};
 use sp_runtime::{
 	traits::{
 		AtLeast32BitUnsigned, Hash as HashT, Header as HeaderT, MaybeDisplay, MaybeFromStr,
@@ -278,7 +278,9 @@ where
 
 	fn data_root(&self) -> H256 { self.extrinsics_root.data_root.into() }
 
-	fn set_data_root(&mut self, data_root: H256) { self.extrinsics_root.data_root = data_root.into(); }
+	fn set_data_root(&mut self, data_root: H256) {
+		self.extrinsics_root.data_root = data_root.into();
+	}
 
 	fn data_lookup(&self) -> &DataLookup { &self.app_data_lookup }
 
