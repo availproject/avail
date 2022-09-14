@@ -16,7 +16,7 @@ pub enum VerifyingError {
 
 /// Error type for merkle tree ops.
 #[derive(Debug, PartialEq, Clone, Copy, thiserror_no_std::Error)]
-pub enum IngestionError {
+pub enum TreeError {
 	/// Trying to push in a leaf
 	#[error("Trying to push in a leaf")]
 	LeafReached,
@@ -29,4 +29,7 @@ pub enum IngestionError {
 	/// Incorrect Depth provided
 	#[error("Incorrect Depth provided")]
 	DepthTooSmall,
+	/// Integer overflow
+	#[error("Integer overflow occured")]
+	IntegerOverflow,
 }

@@ -1,12 +1,13 @@
 use codec::{Decode, Encode, MaxEncodedLen};
-use primitive_types::{H256, U256};
+use frame_support::ensure;
+use primitive_types::H256;
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::RuntimeDebug;
 
 use super::{
-	error::IngestionError, utils::hash_concat, Merkle, MerkleProof, Proof, TREE_DEPTH, ZERO_HASHES,
+	error::TreeError, utils::hash_concat, Merkle, MerkleProof, Proof, TREE_DEPTH, ZERO_HASHES,
 };
 
 /// An incremental merkle tree, modeled on the eth2 deposit contract
@@ -33,7 +34,9 @@ impl<const N: usize> Merkle for LightMerkle<N> {
 	type Proof = Proof<N>;
 
 	/// Return the maximum number of leaves in this tree
-	fn max_elements() -> U256 { super::utils::max_leaves(N) }
+	fn max_elements() -> Result<u32, TreeError> {
+		super::utils::checked_max_leaves(N).ok_or(TreeError::IntegerOverflow)
+	}
 
 	fn count(&self) -> u32 { self.count }
 
@@ -55,12 +58,14 @@ impl<const N: usize> Merkle for LightMerkle<N> {
 
 	fn depth(&self) -> usize { N }
 
-	fn ingest(&mut self, element: H256) -> Result<H256, IngestionError> {
+	fn ingest(&mut self, element: H256) -> Result<H256, TreeError> {
+		ensure!(
+			Self::max_elements()? > self.count,
+			TreeError::MerkleTreeFull
+		);
+
 		let mut node = element;
-		if Self::max_leaves() <= self.count.into() {
-			return Err(IngestionError::MerkleTreeFull);
-		}
-		assert!(self.count < u32::MAX);
+
 		self.count += 1;
 		let mut size = self.count;
 		for i in 0..TREE_DEPTH {
@@ -71,23 +76,21 @@ impl<const N: usize> Merkle for LightMerkle<N> {
 			node = hash_concat(self.branch[i], node);
 			size /= 2;
 		}
-		unreachable!()
+
+		Err(TreeError::Invalid)
 	}
 }
 
 impl<const N: usize> LightMerkle<N> {
-	/// Return the maximum number of leaves in this tree
-	pub fn max_leaves() -> U256 { super::utils::max_leaves(N) }
-
 	/// Instantiate a new tree with a known depth and a starting leaf-set
-	pub fn from_leaves(leaves: &[H256]) -> Self {
+	pub fn from_leaves(leaves: &[H256]) -> Result<Self, TreeError> {
 		let mut tree = Self::default();
 
 		for leaf in leaves.iter() {
-			tree.ingest(*leaf).unwrap();
+			tree.ingest(*leaf).map_err(|_| TreeError::MerkleTreeFull)?;
 		}
 
-		tree
+		Ok(tree)
 	}
 
 	/// Calculate the initital root of a tree of this depth
@@ -145,10 +148,8 @@ mod arrays {
 					None => return Err(serde::de::Error::invalid_length(N, &self)),
 				}
 			}
-			match data.try_into() {
-				Ok(arr) => Ok(arr),
-				Err(_) => unreachable!(),
-			}
+			data.try_into()
+				.map_err(|_| serde::de::Error::custom("Failed to convert sized Vec<T> into [T; N]"))
 		}
 	}
 	pub fn deserialize<'de, D, T, const N: usize>(deserializer: D) -> Result<[T; N], D::Error>

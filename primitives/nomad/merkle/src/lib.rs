@@ -20,7 +20,7 @@ pub mod proof;
 #[cfg(test)]
 pub(crate) mod test_utils;
 
-use primitive_types::{H256, U256};
+use primitive_types::H256;
 
 /// Tree depth
 pub const TREE_DEPTH: usize = 32;
@@ -57,7 +57,7 @@ pub trait Merkle: core::fmt::Debug + Default {
 	type Proof: MerkleProof;
 
 	/// The maximum number of elements the tree can ingest
-	fn max_elements() -> U256;
+	fn max_elements() -> Result<u32, TreeError>;
 
 	/// The number of elements currently in the tree
 	fn count(&self) -> u32;
@@ -69,7 +69,7 @@ pub trait Merkle: core::fmt::Debug + Default {
 	fn depth(&self) -> usize;
 
 	/// Push a leaf to the tree
-	fn ingest(&mut self, element: H256) -> Result<H256, IngestionError>;
+	fn ingest(&mut self, element: H256) -> Result<H256, TreeError>;
 
 	/// Verify a proof against this tree's root.
 	fn verify(&self, proof: &Self::Proof) -> Result<(), VerifyingError> {

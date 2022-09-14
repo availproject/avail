@@ -4316,6 +4316,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "static_assertions",
  "thiserror-no-std",
  "tiny-keccak",
 ]
