@@ -53,9 +53,7 @@ fn it_accepts_valid_extrinsic_root() {
 			let extrinsics_root = KateCommitment {
 				hash: hex!("03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314")
 					.into(),
-				commitment: Default::default(),
-				rows: Default::default(),
-				cols: Default::default(),
+				..Default::default()
 			};
 
 			// Create block header for block 10
@@ -76,7 +74,7 @@ fn it_accepts_valid_extrinsic_root() {
 
 			// Enqueue extrinsic root
 			let origin = Origin::signed((*TEST_SENDER_ACCOUNT).clone());
-			assert_ok!(DABridge::try_enqueue_extrinsics_root(
+			assert_ok!(DABridge::try_dispatch_data_root(
 				origin,
 				1000,
 				H256::zero(),

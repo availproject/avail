@@ -73,18 +73,12 @@ pub mod pallet {
 			// Store every finalized block's corresponding hash
 			let hash = frame_system::Pallet::<T>::block_hash(last);
 			FinalizedBlockNumberToBlockHash::<T>::insert(last, hash);
-
-			Self::deposit_event(Event::<T>::FinalizedBlockHashStored { number: last, hash });
 		}
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		FinalizedBlockHashStored {
-			number: T::BlockNumber,
-			hash: T::Hash,
-		},
 		DataRootDispatched {
 			destination_domain: u32,
 			recipient_address: H256,
@@ -108,7 +102,7 @@ pub mod pallet {
 		u32: From<T::BlockNumber>,
 	{
 		#[pallet::weight(100)]
-		pub fn try_enqueue_data_root(
+		pub fn try_dispatch_data_root(
 			origin: OriginFor<T>,
 			destination_domain: u32,
 			recipient_address: H256,
@@ -116,7 +110,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 			Self::ensure_valid_header(&header)?;
-			Self::do_enqueue_data_root(destination_domain, recipient_address, header)
+			Self::do_dispatch_data_root(destination_domain, recipient_address, header)
 		}
 	}
 
@@ -126,7 +120,7 @@ pub mod pallet {
 		H256: From<T::Hash>,
 		u32: From<T::BlockNumber>,
 	{
-		fn do_enqueue_data_root(
+		fn do_dispatch_data_root(
 			destination_domain: u32,
 			recipient_address: H256,
 			header: T::Header,
