@@ -1,4 +1,4 @@
-use primitive_types::H256;
+use sp_core::H256;
 
 /// Tree Errors
 #[derive(Debug, thiserror_no_std::Error, Clone, Copy)]
@@ -29,7 +29,7 @@ pub enum TreeError {
 	/// Incorrect Depth provided
 	#[error("Incorrect Depth provided")]
 	DepthTooSmall,
-	/// Integer overflow
-	#[error("Integer overflow occured")]
-	IntegerOverflow,
+	/// Depth provided too large
+	#[error("Provided tree depth exceeded 32")]
+	DepthTooLarge,
 }

@@ -1,4 +1,4 @@
-use primitive_types::H256;
+use sp_core::H256;
 
 use super::{merkle_root_from_branch, MerkleProof};
 
@@ -54,5 +54,5 @@ mod const_array_serde {
 
 impl<const N: usize> MerkleProof for Proof<N> {
 	/// Calculate the merkle root produced by evaluating the proof
-	fn root(&self) -> H256 { merkle_root_from_branch(self.leaf, self.path.as_ref(), N, self.index) }
+	fn root(&self) -> H256 { merkle_root_from_branch(self.leaf, &self.path, self.index) }
 }

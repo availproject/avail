@@ -1,7 +1,8 @@
-use primitive_types::H256;
+use frame_support::ensure;
+use sp_core::H256;
 use tiny_keccak::{Hasher, Keccak};
 
-use crate::TREE_DEPTH;
+use crate::{TreeError, TREE_DEPTH};
 
 /// Return the keccak256 digest of the preimage
 pub fn hash(preimage: impl AsRef<[u8]>) -> H256 {
@@ -21,12 +22,10 @@ pub fn hash_concat(left: impl AsRef<[u8]>, right: impl AsRef<[u8]>) -> H256 {
 
 /// Max number of leaves in a tree. Returns `None` if overflow occurred
 /// (i.e. n > 32).
-pub(crate) fn checked_max_leaves(n: usize) -> Option<u32> {
-	if n > TREE_DEPTH {
-		return None;
-	}
+pub(crate) fn max_leaves(n: usize) -> Result<u32, TreeError> {
+	ensure!(n <= TREE_DEPTH, TreeError::DepthTooLarge);
 
-	Some(if n == 32 {
+	Ok(if n == 32 {
 		u32::MAX
 	} else {
 		2u32.pow(n as u32) - 1
@@ -34,12 +33,14 @@ pub(crate) fn checked_max_leaves(n: usize) -> Option<u32> {
 }
 
 /// Compute a root hash from a leaf and a Merkle proof.
-pub fn merkle_root_from_branch(leaf: H256, branch: &[H256], depth: usize, index: usize) -> H256 {
-	assert_eq!(branch.len(), depth, "proof length should equal depth");
-
+pub fn merkle_root_from_branch<const N: usize>(
+	leaf: H256,
+	branch: &[H256; N],
+	index: usize,
+) -> H256 {
 	let mut current = leaf;
 
-	for (i, next) in branch.iter().enumerate().take(depth) {
+	for (i, next) in branch.iter().enumerate().take(N) {
 		let ith_bit = (index >> i) & 0x01;
 		if ith_bit == 1 {
 			current = hash_concat(next, current);

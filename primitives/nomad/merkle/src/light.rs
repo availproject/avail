@@ -1,6 +1,6 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::ensure;
-use primitive_types::H256;
+use sp_core::H256;
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -34,9 +34,7 @@ impl<const N: usize> Merkle for LightMerkle<N> {
 	type Proof = Proof<N>;
 
 	/// Return the maximum number of leaves in this tree
-	fn max_elements() -> Result<u32, TreeError> {
-		super::utils::checked_max_leaves(N).ok_or(TreeError::IntegerOverflow)
-	}
+	fn max_elements() -> Result<u32, TreeError> { super::utils::max_leaves(N) }
 
 	fn count(&self) -> u32 { self.count }
 
