@@ -44,19 +44,7 @@ impl NomadBase {
 		}
 	}
 
-	pub fn state(&self) -> NomadState { self.state }
-
-	pub fn local_domain(&self) -> u32 { self.local_domain }
-
-	pub fn committed_root(&self) -> H256 { self.committed_root }
-
-	pub fn updater(&self) -> H160 { self.updater }
-
-	pub fn home_domain_hash(&self) -> H256 { home_domain_hash(self.local_domain()) }
-
-	pub fn set_state(&mut self, new_state: NomadState) { self.state = new_state }
-
-	pub fn set_updater(&mut self, new_updater: H160) { self.updater = new_updater }
+	pub fn home_domain_hash(&self) -> H256 { home_domain_hash(self.local_domain) }
 
 	pub fn set_committed_root(&mut self, new_committed_root: H256) {
 		self.committed_root = new_committed_root;
