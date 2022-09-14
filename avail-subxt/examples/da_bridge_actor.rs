@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 		println!("Header data root: {:?}", header.extrinsics_root.data_root);
 
 		let bridge_router_eth_addr: H160 = DA_BRIDGE_ROUTER_ADDRESS.parse().unwrap();
-		let tx = avail::tx().da_bridge().try_enqueue_data_root(
+		let tx = avail::tx().da_bridge().try_dispatch_data_root(
 			DESTINATION_DOMAIN,
 			bridge_router_eth_addr.into(),
 			header.into(),
