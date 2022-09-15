@@ -1,5 +1,5 @@
 use sp_core::H256;
-use sp_runtime::traits::{Hash, Keccak256};
+use tiny_keccak::{Hasher, Keccak};
 
 /// Return the keccak256 disgest of the concatenation of the arguments
 pub fn hash_concat(left: impl AsRef<[u8]>, right: impl AsRef<[u8]>) -> H256 {
