@@ -1,10 +1,10 @@
-// Code adapted from: https://github.com/tomusdrw/rust-web3/blob/master/src/api/accounts.rs
+// Code adapted from: https://github.com/gakonst/ethers-rs/blob/master/ethers-core/src/types/signature.rs
 
 use alloc::{borrow::ToOwned, string::String, vec::Vec};
 use core::{convert::TryFrom, fmt, str::FromStr};
 
 use elliptic_curve::{consts::U32, sec1::ToEncodedPoint};
-use frame_support::pallet_prelude::*;
+use frame_support::{pallet_prelude::*, sp_runtime::traits::Keccak256};
 use generic_array::GenericArray;
 use k256::{
 	ecdsa::{
@@ -13,9 +13,9 @@ use k256::{
 	},
 	PublicKey as K256PublicKey,
 };
-use primitive_types::{H160, H256, U256};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_core::{Hasher, H160, H256, U256};
 use thiserror::Error;
 
 use crate::utils::hash_message;
@@ -84,9 +84,10 @@ impl Signature {
 	{
 		let address = address.into();
 		let recovered = self.recover(message)?;
-		if recovered != address {
-			return Err(SignatureError::VerificationError(address, recovered));
-		}
+		ensure!(
+			recovered == address,
+			SignatureError::VerificationError(address, recovered)
+		);
 
 		Ok(())
 	}
@@ -113,7 +114,7 @@ impl Signature {
 		let public_key = public_key.to_encoded_point(/* compress = */ false);
 		let public_key = public_key.as_bytes();
 		debug_assert_eq!(public_key[0], 0x04);
-		let hash = crate::utils::keccak256(&public_key[1..]);
+		let hash = Keccak256::hash(&public_key[1..]);
 		Ok(Address::from_slice(&hash[12..]))
 	}
 
@@ -188,14 +189,15 @@ impl FromStr for Signature {
 impl From<&Signature> for [u8; 65] {
 	fn from(src: &Signature) -> [u8; 65] {
 		let mut sig = [0u8; 65];
-		let mut r_bytes = [0u8; 32];
-		let mut s_bytes = [0u8; 32];
-		src.r.to_big_endian(&mut r_bytes);
-		src.s.to_big_endian(&mut s_bytes);
-		sig[..32].copy_from_slice(&r_bytes);
-		sig[32..64].copy_from_slice(&s_bytes);
+		src.r.to_big_endian(&mut sig);
+		src.s.to_big_endian(&mut sig);
 		// TODO: What if we try to serialize a signature where
 		// the `v` is not normalized?
+
+		// The u64 to u8 cast is safe because `sig.v` can only ever be 27 or 28 
+        // here. Regarding EIP-155, the modification to `v` happens during tx 
+        // creation only _after_ the transaction is signed using 
+        // `ethers_signers::to_eip155_v`.
 		sig[64] = src.v as u8;
 		sig
 	}

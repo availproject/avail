@@ -4638,6 +4638,7 @@ dependencies = [
  "signature 0.1.0",
  "sp-core",
  "sp-io",
+ "sp-runtime",
  "sp-std",
  "tiny-keccak",
 ]

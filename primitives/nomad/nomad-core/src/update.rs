@@ -1,8 +1,8 @@
 use frame_support::pallet_prelude::*;
-use primitive_types::{H160, H256};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use signature::{hash_message, Signature, SignatureError};
+use sp_core::{H160, H256};
 use tiny_keccak::{Hasher, Keccak};
 
 use crate::utils::home_domain_hash;
@@ -51,14 +51,12 @@ impl SignedUpdate {
 
 	/// Recover the Ethereum address of the signer
 	pub fn recover(&self) -> Result<H160, SignatureError> {
-		Ok(self.signature.recover(self.update.prepended_hash())?)
+		self.signature.recover(self.update.prepended_hash())
 	}
 
 	/// Check whether a message was signed by a specific address
 	pub fn verify(&self, signer: H160) -> Result<(), SignatureError> {
-		Ok(self
-			.signature
-			.verify(self.update.prepended_hash(), signer)?)
+		self.signature.verify(self.update.prepended_hash(), signer)
 	}
 }
 

@@ -1,4 +1,4 @@
-use primitive_types::H256;
+use sp_core::H256;
 use tiny_keccak::{Hasher, Keccak};
 
 const NOMAD_PREFIX: &str = "NOMAD";
@@ -39,7 +39,5 @@ pub fn to_eth_signed_message_hash(hash: &H256) -> H256 {
 /// Destination and destination-specific nonce combined in single field (
 /// (destination << 32) & nonce)
 pub fn destination_and_nonce(destination: u32, nonce: u32) -> u64 {
-	assert!(destination < u32::MAX);
-	assert!(nonce < u32::MAX);
 	((destination as u64) << 32) | nonce as u64
 }
