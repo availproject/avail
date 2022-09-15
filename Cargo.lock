@@ -4364,6 +4364,7 @@ dependencies = [
  "sp-std",
  "static_assertions",
  "thiserror-no-std",
+ "tiny-keccak",
 ]
 
 [[package]]
