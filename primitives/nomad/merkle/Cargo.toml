@@ -15,6 +15,7 @@ sp-io = { version = "4.0.0-dev", default-features = false }
 sp-runtime = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 parity-util-mem = { version = "0.10.2", default-features = false, features = ["primitive-types"] }
+tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
 
 primitive-types = { version = "0.10.1", default-features = false, features = ["scale-info", "codec"] }
 lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
