@@ -189,8 +189,8 @@ impl FromStr for Signature {
 impl From<&Signature> for [u8; 65] {
 	fn from(src: &Signature) -> [u8; 65] {
 		let mut sig = [0u8; 65];
-		src.r.to_big_endian(&mut sig);
-		src.s.to_big_endian(&mut sig);
+		src.r.to_big_endian(&mut sig[..32]);
+		src.s.to_big_endian(&mut sig[32..64]);
 		// TODO: What if we try to serialize a signature where
 		// the `v` is not normalized?
 
