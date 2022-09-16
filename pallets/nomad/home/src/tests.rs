@@ -9,7 +9,7 @@ use once_cell::sync::Lazy;
 use primitive_types::H256;
 use sp_runtime::AccountId32;
 
-use crate::{mock::*, Error};
+use crate::{mock::*, Error, Config};
 
 const TEST_REMOTE_DOMAIN: u32 = 2222;
 const TEST_SENDER_VEC: [u8; 32] = [2u8; 32];
@@ -75,18 +75,14 @@ fn it_dispatches_message() {
 #[test]
 #[cfg(feature = "testing")]
 fn it_rejects_big_message() {
+    use core::convert::TryFrom;
+
 	ExtBuilder::default()
 		.with_base(*TEST_NOMAD_BASE)
 		.build()
 		.execute_with(|| {
-			let body = [1u8; 5_001].to_vec().try_into().unwrap();
-
-			// Dispatch message too large
-			let origin = Origin::signed((*TEST_SENDER_ACCOUNT).clone());
-			assert_err!(
-				Home::dispatch(origin, TEST_REMOTE_DOMAIN, *TEST_RECIPIENT, body),
-				Error::<Test>::MessageTooLarge
-			);
+			let bounded_res = BoundedVec::<u8, <Test as Config>::MaxMessageBodyBytes>::try_from([1u8; 5001].to_vec());
+			assert!(bounded_res.is_err());
 		})
 }
 
