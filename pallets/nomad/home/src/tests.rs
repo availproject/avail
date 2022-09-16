@@ -1,4 +1,6 @@
-use frame_support::{assert_err, assert_ok};
+use std::convert::TryInto;
+
+use frame_support::{assert_err, assert_ok, BoundedVec};
 use merkle::Merkle;
 #[cfg(feature = "testing")]
 use nomad_base::testing::*;
@@ -28,8 +30,8 @@ fn it_dispatches_message() {
 			let nonce = Home::get_nonce(TEST_REMOTE_DOMAIN);
 			let destination_and_nonce = destination_and_nonce(TEST_REMOTE_DOMAIN, nonce);
 			let leaf_index = Home::tree().count();
-			let body = [1u8; 8].to_vec();
-			let committed_root = Home::base().committed_root();
+			let body: BoundedVec<u8, _> = [1u8; 8].to_vec().try_into().unwrap();
+			let committed_root = Home::base().committed_root;
 
 			// Format expected message
 			let message = NomadMessage {
@@ -77,7 +79,7 @@ fn it_rejects_big_message() {
 		.with_base(*TEST_NOMAD_BASE)
 		.build()
 		.execute_with(|| {
-			let body = [1u8; 5_001].to_vec();
+			let body = [1u8; 5_001].to_vec().try_into().unwrap();
 
 			// Dispatch message too large
 			let origin = Origin::signed((*TEST_SENDER_ACCOUNT).clone());
@@ -95,7 +97,7 @@ fn it_catches_improper_update() {
 		.with_base(*TEST_NOMAD_BASE)
 		.build()
 		.execute_with(|| {
-			let committed_root = Home::base().committed_root();
+			let committed_root = Home::base().committed_root;
 
 			// Sign improper update
 			let fake_root = H256::repeat_byte(9);
@@ -127,9 +129,9 @@ fn it_dispatches_messages_and_accepts_updates() {
 		.with_base(*TEST_NOMAD_BASE)
 		.build()
 		.execute_with(move || {
-			let committed_root = Home::base().committed_root();
+			let committed_root = Home::base().committed_root;
 
-			let body = [1u8; 8].to_vec();
+			let body: BoundedVec<u8, _> = [1u8; 8].to_vec().try_into().unwrap();
 			// Dispatch first message
 			let origin = Origin::signed((*TEST_SENDER_ACCOUNT).clone());
 			assert_ok!(Home::dispatch(
@@ -170,7 +172,7 @@ fn it_dispatches_messages_and_accepts_updates() {
 			assert!(Home::root_to_index(root_after_first_msg).is_none());
 			assert!(Home::index_to_root(1).is_none());
 			assert!(Home::root_to_index(root_after_second_msg).is_none());
-			assert!(Home::base().committed_root() == root_after_second_msg);
+			assert!(Home::base().committed_root == root_after_second_msg);
 
 			// Dispatch third message
 			assert_ok!(Home::dispatch(
@@ -180,7 +182,7 @@ fn it_dispatches_messages_and_accepts_updates() {
 				body
 			));
 
-			let committed_root = Home::base().committed_root();
+			let committed_root = Home::base().committed_root;
 			let root_after_third_msg = Home::tree().root();
 
 			// Get updater signature
@@ -200,7 +202,7 @@ fn it_dispatches_messages_and_accepts_updates() {
 			// Assert mappings are cleared out up to signed_update.new_root()
 			assert!(Home::index_to_root(2).is_none());
 			assert!(Home::root_to_index(root_after_third_msg).is_none());
-			assert!(Home::base().committed_root() == root_after_third_msg);
+			assert!(Home::base().committed_root == root_after_third_msg);
 		})
 }
 
@@ -211,9 +213,9 @@ fn it_rejects_invalid_signature() {
 		.with_base(*TEST_NOMAD_BASE)
 		.build()
 		.execute_with(move || {
-			let committed_root = Home::base().committed_root();
+			let committed_root = Home::base().committed_root;
 
-			let body = [1u8; 8].to_vec();
+			let body: BoundedVec<u8, _> = [1u8; 8].to_vec().try_into().unwrap();
 			// Dispatch message
 			let origin = Origin::signed((*TEST_SENDER_ACCOUNT).clone());
 			assert_ok!(Home::dispatch(
