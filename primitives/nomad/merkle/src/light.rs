@@ -94,8 +94,6 @@ impl<const N: usize> Merkle for LightMerkle<N> {
 }
 
 impl<const N: usize> LightMerkle<N> {
-	pub const N_LESS_THAN_TREE_DEPTH_ASSERT: usize = TREE_DEPTH - N;
-
 	/// Instantiate a new tree with a known depth and a starting leaf-set
 	pub fn from_leaves(leaves: &[H256]) -> Result<Self, TreeError> {
 		let mut tree = Self::default();
