@@ -1,22 +1,18 @@
 use da_primitives::{Header, KateCommitment};
-use frame_support::{assert_err, assert_ok};
+use frame_support::assert_ok;
 use frame_system::Config;
 use hex_literal::hex;
 use merkle::Merkle;
 #[cfg(feature = "testing")]
 use nomad_base::testing::*;
-use nomad_core::{destination_and_nonce, NomadMessage, NomadState};
 use once_cell::sync::Lazy;
 use primitive_types::H256;
 use sp_runtime::{testing::Digest, traits::BlakeTwo256, AccountId32};
 
-use crate::{mock::*, pallet::FinalizedBlockNumberToBlockHash, Error};
+use crate::{mock::*, pallet::FinalizedBlockNumberToBlockHash};
 
-const TEST_REMOTE_DOMAIN: u32 = 2222;
 const TEST_SENDER_VEC: [u8; 32] = [2u8; 32];
-static TEST_SENDER_BYTES: Lazy<H256> = Lazy::new(|| H256::from(TEST_SENDER_VEC));
 static TEST_SENDER_ACCOUNT: Lazy<AccountId32> = Lazy::new(|| AccountId32::new(TEST_SENDER_VEC));
-static TEST_RECIPIENT: Lazy<H256> = Lazy::new(|| H256::repeat_byte(3));
 
 #[test]
 #[cfg(feature = "testing")]

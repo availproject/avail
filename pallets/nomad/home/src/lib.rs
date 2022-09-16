@@ -148,7 +148,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			destination_domain: u32,
 			recipient_address: H256,
-			message_body: Vec<u8>,
+			message_body: BoundedVec<u8, T::MaxMessageBodyBytes>,
 		) -> DispatchResult {
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			Self::do_dispatch(
@@ -182,7 +182,7 @@ pub mod pallet {
 	where
 		[u8; 32]: From<T::AccountId>,
 	{
-		pub fn state() -> NomadState { Self::base().state() }
+		pub fn state() -> NomadState { Self::base().state }
 
 		pub fn root() -> H256 { Self::tree().root() }
 
@@ -190,7 +190,7 @@ pub mod pallet {
 
 		fn ensure_not_failed() -> Result<(), Error<T>> {
 			ensure!(
-				Self::base().state() != NomadState::Failed,
+				Self::base().state != NomadState::Failed,
 				Error::<T>::FailedState
 			);
 			Ok(())
@@ -202,7 +202,7 @@ pub mod pallet {
 			sender: H256,
 			destination_domain: u32,
 			recipient_address: H256,
-			message_body: Vec<u8>,
+			message_body: BoundedVec<u8, T::MaxMessageBodyBytes>,
 		) -> DispatchResult {
 			Self::ensure_not_failed()?;
 
@@ -219,7 +219,7 @@ pub mod pallet {
 			Nonces::<T>::insert(destination_domain, new_nonce);
 
 			// Get info for message to dispatch
-			let origin = Self::base().local_domain();
+			let origin = Self::base().local_domain;
 
 			// Format message and get message hash
 			let message = NomadMessage {
@@ -246,7 +246,7 @@ pub mod pallet {
 				message_hash,
 				leaf_index: index,
 				destination_and_nonce: destination_and_nonce(destination_domain, nonce),
-				committed_root: Self::base().committed_root(),
+				committed_root: Self::base().committed_root,
 				message: message.to_vec(),
 			});
 
@@ -296,7 +296,7 @@ pub mod pallet {
 			Base::<T>::mutate(|base| base.set_committed_root(new_root));
 
 			Self::deposit_event(Event::<T>::Update {
-				home_domain: Self::base().local_domain(),
+				home_domain: Self::base().local_domain,
 				previous_root: signed_update.previous_root(),
 				new_root,
 				signature: signed_update.signature.to_vec(),
@@ -317,7 +317,7 @@ pub mod pallet {
 
 			// Ensure previous root matches current committed root
 			ensure!(
-				base.committed_root() == signed_update.previous_root(),
+				base.committed_root == signed_update.previous_root(),
 				Error::<T>::CommittedRootNotMatchUpdatePrevious,
 			);
 
@@ -347,10 +347,10 @@ pub mod pallet {
 
 		/// Set self in failed state and slash updater.
 		fn fail(reporter: T::AccountId) {
-			Base::<T>::mutate(|base| base.set_state(NomadState::Failed));
+			Base::<T>::mutate(|base| base.state = NomadState::Failed);
 			updater_manager::Pallet::<T>::slash_updater(reporter.clone());
 
-			let updater = Self::base().updater();
+			let updater = Self::base().updater;
 			Self::deposit_event(Event::<T>::UpdaterSlashed { updater, reporter });
 		}
 
@@ -359,7 +359,7 @@ pub mod pallet {
 		/// GovernanceRouter pallet when implemented.
 		pub fn set_updater(new_updater: H160) -> DispatchResult {
 			// Modify NomadBase updater
-			Base::<T>::mutate(|base| base.set_updater(new_updater));
+			Base::<T>::mutate(|base| base.updater = new_updater);
 
 			// Rotate updater on updater manager
 			updater_manager::Pallet::<T>::set_updater(new_updater)

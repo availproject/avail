@@ -83,7 +83,7 @@ pub mod pallet {
 			destination_domain: u32,
 			recipient_address: H256,
 			block_number: T::BlockNumber,
-			data_root: [u8; 32],
+			data_root: H256,
 		},
 	}
 
@@ -92,6 +92,7 @@ pub mod pallet {
 		InitializationError,
 		BlockNotFinal,
 		HashOfBlockNotMatchBlockNumber,
+		DABridgeMessageExceedsMaxMessageSize,
 	}
 
 	#[pallet::call]
@@ -126,16 +127,18 @@ pub mod pallet {
 			header: T::Header,
 		) -> DispatchResult {
 			let mut block_number = *header.number();
-			let data_root = *header.data_root();
+			let data_root = header.data_root();
 
-			let message =
-				DABridgeMessage::format_data_root_message(block_number.clone(), data_root.clone());
+			let message = DABridgeMessage::<T>::format_data_root_message(
+				block_number.clone(),
+				data_root.clone(),
+			)?;
 
 			Home::<T>::do_dispatch(
 				T::DABridgePalletId::get(),
 				destination_domain,
 				recipient_address,
-				message.as_ref().to_vec(),
+				message.0,
 			)?;
 
 			// Clear previous block_number to hash mappings, starting at the
