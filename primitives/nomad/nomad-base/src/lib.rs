@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use signature::SignatureError;
 use sp_core::{H160, H256};
 
-#[cfg(feature = "testing")]
+#[cfg(test)]
 pub mod testing;
 
 #[derive(Clone, Copy, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -74,11 +74,9 @@ mod test {
 	use nomad_core::test_utils::Updater;
 
 	use super::*;
-	#[cfg(feature = "testing")]
 	use crate::testing::{FAKE_UPDATER, TEST_NOMAD_BASE, TEST_UPDATER, TEST_UPDATER_PRIVKEY};
 
 	#[test]
-	#[cfg(feature = "testing")]
 	fn it_accepts_valid_signature() {
 		let valid_signed = TEST_UPDATER.sign_update(H256::repeat_byte(0), H256::repeat_byte(1));
 		assert!(
@@ -88,7 +86,6 @@ mod test {
 	}
 
 	#[test]
-	#[cfg(feature = "testing")]
 	fn it_rejects_invalid_signature() {
 		let invalid_signed = FAKE_UPDATER.sign_update(H256::repeat_byte(0), H256::repeat_byte(1));
 		assert!(

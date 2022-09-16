@@ -57,15 +57,13 @@ impl SignedUpdateV2 {
 
 #[cfg(test)]
 mod tests {
-	use super::*;
-	#[cfg(feature = "testing")]
+	use super::H256;
 	use crate::test_utils::Updater;
 
 	pub const TEST_UPDATER_PRIVKEY: &str =
 		"1111111111111111111111111111111111111111111111111111111111111111";
 
 	#[test]
-	#[cfg(feature = "testing")]
 	fn recover_valid_update_v2() {
 		use ethers_signers::{LocalWallet, Signer};
 

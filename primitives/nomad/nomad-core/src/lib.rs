@@ -19,5 +19,5 @@ pub use typed_message::*;
 mod utils;
 pub use utils::*;
 
-#[cfg(feature = "testing")]
+#[cfg(feature = "std")]
 pub mod test_utils;

@@ -1,8 +1,5 @@
-use frame_support::ensure;
 use sp_core::H256;
 use tiny_keccak::{Hasher, Keccak};
-
-use crate::{TreeError, TREE_DEPTH};
 
 /// Return the keccak256 disgest of the concatenation of the arguments
 pub fn hash_concat(left: impl AsRef<[u8]>, right: impl AsRef<[u8]>) -> H256 {
@@ -12,18 +9,6 @@ pub fn hash_concat(left: impl AsRef<[u8]>, right: impl AsRef<[u8]>) -> H256 {
 	hasher.update(right.as_ref());
 	hasher.finalize(&mut output);
 	output.into()
-}
-
-/// Max number of leaves in a tree. Returns `None` if overflow occurred
-/// (i.e. n > 32).
-pub(crate) fn max_leaves(n: usize) -> Result<u32, TreeError> {
-	ensure!(n <= TREE_DEPTH, TreeError::DepthTooLarge);
-
-	Ok(if n == 32 {
-		u32::MAX
-	} else {
-		2u32.pow(n as u32) - 1
-	})
 }
 
 /// Compute a root hash from a leaf and a Merkle proof.

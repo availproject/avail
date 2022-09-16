@@ -239,8 +239,8 @@ impl From<H256> for RecoveryMessage {
 	fn from(hash: H256) -> Self { RecoveryMessage::Hash(hash) }
 }
 
+#[cfg(feature = "std")]
 // Want to convert ethers signature into our no-std version in tests
-#[cfg(feature = "testing")]
 impl From<ethers_core::types::Signature> for Signature {
 	fn from(sig: ethers_core::types::Signature) -> Self {
 		// ethers-core 0.13.0 uses primitive types 0.11.1, sp-core 4.0.0-dev

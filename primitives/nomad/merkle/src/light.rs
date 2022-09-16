@@ -9,6 +9,20 @@ use super::{
 	error::TreeError, utils::hash_concat, Merkle, MerkleProof, Proof, TREE_DEPTH, ZERO_HASHES,
 };
 
+/// Const assertions at `LightMerkle` struct.
+struct AssertLightMerkleN<const N: usize>;
+impl<const N: usize> AssertLightMerkleN<N> {
+	/// `N` must be less or equal to `TREE_DEPTH`.
+	pub const N_LESS_EQ_TREE_DEPTH: usize = TREE_DEPTH - N;
+}
+
+/// Verify at compilation time that `N <= TREE_DEPTH`
+#[inline]
+#[allow(path_statements)]
+const fn const_assert_n_is_valid<const N: usize>() {
+	AssertLightMerkleN::<N>::N_LESS_EQ_TREE_DEPTH;
+}
+
 /// An incremental merkle tree, modeled on the eth2 deposit contract
 #[derive(Clone, Copy, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -20,6 +34,7 @@ pub struct LightMerkle<const N: usize> {
 
 impl<const N: usize> Default for LightMerkle<N> {
 	fn default() -> Self {
+		const_assert_n_is_valid::<N>();
 		let mut branch: [H256; N] = [Default::default(); N];
 		branch
 			.iter_mut()
@@ -33,7 +48,10 @@ impl<const N: usize> Merkle for LightMerkle<N> {
 	type Proof = Proof<N>;
 
 	/// Return the maximum number of leaves in this tree
-	fn max_elements() -> Result<u32, TreeError> { super::utils::max_leaves(N) }
+	fn max_elements() -> u32 {
+		const_assert_n_is_valid::<N>();
+		2u32.saturating_pow(N as u32)
+	}
 
 	fn count(&self) -> u32 { self.count }
 
@@ -56,10 +74,7 @@ impl<const N: usize> Merkle for LightMerkle<N> {
 	fn depth(&self) -> usize { N }
 
 	fn ingest(&mut self, element: H256) -> Result<H256, TreeError> {
-		ensure!(
-			Self::max_elements()? > self.count,
-			TreeError::MerkleTreeFull
-		);
+		ensure!(Self::max_elements() > self.count, TreeError::MerkleTreeFull);
 
 		let mut node = element;
 
@@ -79,6 +94,8 @@ impl<const N: usize> Merkle for LightMerkle<N> {
 }
 
 impl<const N: usize> LightMerkle<N> {
+	pub const N_LESS_THAN_TREE_DEPTH_ASSERT: usize = TREE_DEPTH - N;
+
 	/// Instantiate a new tree with a known depth and a starting leaf-set
 	pub fn from_leaves(leaves: &[H256]) -> Result<Self, TreeError> {
 		let mut tree = Self::default();
@@ -119,9 +136,7 @@ mod arrays {
 		}
 		s.end()
 	}
-
 	struct ArrayVisitor<T, const N: usize>(PhantomData<T>);
-
 	impl<'de, T, const N: usize> Visitor<'de> for ArrayVisitor<T, N>
 	where
 		T: Deserialize<'de>,
@@ -197,5 +212,19 @@ mod test {
 				assert!(tree.verify(&test_case.proofs[n]));
 			}
 		}
+	}
+
+	#[test]
+	fn it_n_less_than_max_tree_depth() {
+		const TREE_DEPTH_MINUS_ONE: usize = TREE_DEPTH - 1;
+
+		let _ = LightMerkle::<0>::default();
+		let _ = LightMerkle::<1>::default();
+		let _ = LightMerkle::<TREE_DEPTH_MINUS_ONE>::default();
+		let _ = LightMerkle::<TREE_DEPTH>::default();
+
+		// Following code does not compile due to static asserts.
+		// const TREE_DEPTH_PLUS_ONE :usize = TREE_DEPTH +1;
+		// let _ = LightMerkle::<TREE_DEPTH_PLUS_ONE>::default();
 	}
 }

@@ -41,21 +41,11 @@ thiserror-no-std = "2.0.1"
 hex = { version = "0.4.3", default-features = false }
 once_cell = { version = "1.12.0", optional = true }
 
-[dependencies.serde]
-version = "1.0"
-default-features = false
-optional = true
-features = ["derive"]
+serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
+ethers-core = { version = "0.13.0", optional = true }
 
-[dependencies.ethers-core]
-version = "0.13.0"
-default-features = false
-optional = true
-
-[dependencies.byte-slice-cast]
-version  = "1.2.1"
-default-features = false
-optional = true
+[dev-dependencies]
+byte-slice-cast = "1.2.1"
 
 [features]
 default = ["std"]
@@ -65,5 +55,5 @@ std = [
 	"codec/std",
 	"scale-info/std",
 	"frame-support/std",
+	"ethers-core"
 ]
-testing = ["ethers-core", "byte-slice-cast"]

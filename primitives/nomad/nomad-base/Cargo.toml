@@ -20,22 +20,12 @@ tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak
 signature = { path = "../signature", default-features = false }
 
 nomad-core = { path = "../nomad-core", default-features = false }
+serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 
-[dependencies.serde]
-version = "1.0"
-default-features = false
-optional = true
-features = ["derive"]
+[dev-dependencies]
+ethers-signers = "0.13.0"
+once_cell = "1.8.0"
 
-[dependencies.ethers-signers]
-version = "0.13.0"
-default-features = false
-optional = true
-
-[dependencies.once_cell]
-version = "1.8.0"
-default-features = false
-optional = true
 
 [features]
 default = ["std"]
@@ -47,9 +37,4 @@ std = [
 	"frame-support/std",
 	"nomad-core/std"
 ]
-testing = [
-	"ethers-signers",
-	"once_cell",
-	"nomad-core/testing",
-	"signature/testing",
-]
+

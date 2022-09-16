@@ -20,6 +20,7 @@ pub mod proof;
 #[cfg(test)]
 pub(crate) mod test_utils;
 
+use frame_support::ensure;
 use sp_core::H256;
 
 /// Tree depth
@@ -29,7 +30,7 @@ pub type NomadLightMerkle = light::LightMerkle<TREE_DEPTH>;
 /// A Nomad protocol standard-depth proof
 pub type NomadProof = proof::Proof<TREE_DEPTH>;
 
-pub use error::*;
+pub use error::{TreeError, VerifyingError, VerifyingError::VerificationFailed};
 pub use light::*;
 pub use proof::*;
 pub use utils::*;
@@ -57,7 +58,7 @@ pub trait Merkle: core::fmt::Debug + Default {
 	type Proof: MerkleProof;
 
 	/// The maximum number of elements the tree can ingest
-	fn max_elements() -> Result<u32, TreeError>;
+	fn max_elements() -> u32;
 
 	/// The number of elements currently in the tree
 	fn count(&self) -> u32;
@@ -75,10 +76,8 @@ pub trait Merkle: core::fmt::Debug + Default {
 	fn verify(&self, proof: &Self::Proof) -> Result<(), VerifyingError> {
 		let actual = proof.root();
 		let expected = self.root();
-		if expected == actual {
-			Ok(())
-		} else {
-			Err(VerifyingError::VerificationFailed { expected, actual })
-		}
+		ensure!(expected == actual, VerificationFailed { expected, actual });
+
+		Ok(())
 	}
 }
