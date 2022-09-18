@@ -1,3 +1,4 @@
+use sp_core::H256;
 use sp_runtime::Digest;
 use sp_std::vec::Vec;
 
@@ -35,6 +36,9 @@ pub trait ExtendedHeader {
 
 	fn extrinsics_root(&self) -> &Self::Root;
 	fn set_extrinsics_root(&mut self, root: Self::Root);
+
+	fn data_root(&self) -> H256;
+	fn set_data_root(&mut self, root: H256);
 
 	fn data_lookup(&self) -> &DataLookup;
 

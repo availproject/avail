@@ -13,7 +13,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 # Internal
-da-primitives = { path = "../primitives", default-features = false }
+da-primitives = { path = "../primitives/avail", default-features = false }
 da-control = { path = "../pallets/dactr", default-features = false }
 kate = { path = "../kate", default-features = false }
 kate-rpc-runtime-api = { path = "../rpc/kate-rpc-runtime-api", default-features = false }

@@ -7,7 +7,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-da-primitives = { path = "../primitives", default-features = false }
+da-primitives = { path = "../primitives/avail", default-features = false }
 
 # Others
 dusk-plonk = { git = "https://github.com/maticnetwork/plonk.git", branch = "v0.8.2-polygon-5", optional = true }
