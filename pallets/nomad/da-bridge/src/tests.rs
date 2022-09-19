@@ -3,7 +3,6 @@ use frame_support::assert_ok;
 use frame_system::Config;
 use hex_literal::hex;
 use merkle::Merkle;
-#[cfg(feature = "testing")]
 use nomad_base::testing::*;
 use once_cell::sync::Lazy;
 use primitive_types::H256;
@@ -15,7 +14,6 @@ const TEST_SENDER_VEC: [u8; 32] = [2u8; 32];
 static TEST_SENDER_ACCOUNT: Lazy<AccountId32> = Lazy::new(|| AccountId32::new(TEST_SENDER_VEC));
 
 #[test]
-#[cfg(feature = "testing")]
 fn it_fills_block_hash_mapping() {
 	ExtBuilder::default()
 		.with_base(*TEST_NOMAD_BASE)
@@ -37,7 +35,6 @@ fn it_fills_block_hash_mapping() {
 }
 
 #[test]
-#[cfg(feature = "testing")]
 fn it_accepts_valid_extrinsic_root() {
 	ExtBuilder::default()
 		.with_base(*TEST_NOMAD_BASE)

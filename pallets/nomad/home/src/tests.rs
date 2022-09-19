@@ -2,14 +2,13 @@ use std::convert::TryInto;
 
 use frame_support::{assert_err, assert_ok, BoundedVec};
 use merkle::Merkle;
-#[cfg(feature = "testing")]
 use nomad_base::testing::*;
 use nomad_core::{destination_and_nonce, NomadMessage, NomadState};
 use once_cell::sync::Lazy;
 use primitive_types::H256;
 use sp_runtime::AccountId32;
 
-use crate::{mock::*, Error, Config};
+use crate::{mock::*, Config, Error};
 
 const TEST_REMOTE_DOMAIN: u32 = 2222;
 const TEST_SENDER_VEC: [u8; 32] = [2u8; 32];
@@ -20,7 +19,6 @@ static TEST_RECIPIENT: Lazy<H256> = Lazy::new(|| H256::repeat_byte(3));
 // TODO: test governance router can set updater for base and UM
 
 #[test]
-#[cfg(feature = "testing")]
 fn it_dispatches_message() {
 	ExtBuilder::default()
 		.with_base(*TEST_NOMAD_BASE)
@@ -73,21 +71,21 @@ fn it_dispatches_message() {
 }
 
 #[test]
-#[cfg(feature = "testing")]
 fn it_rejects_big_message() {
-    use core::convert::TryFrom;
+	use core::convert::TryFrom;
 
 	ExtBuilder::default()
 		.with_base(*TEST_NOMAD_BASE)
 		.build()
 		.execute_with(|| {
-			let bounded_res = BoundedVec::<u8, <Test as Config>::MaxMessageBodyBytes>::try_from([1u8; 5001].to_vec());
+			let bounded_res = BoundedVec::<u8, <Test as Config>::MaxMessageBodyBytes>::try_from(
+				[1u8; 5001].to_vec(),
+			);
 			assert!(bounded_res.is_err());
 		})
 }
 
 #[test]
-#[cfg(feature = "testing")]
 fn it_catches_improper_update() {
 	ExtBuilder::default()
 		.with_base(*TEST_NOMAD_BASE)
@@ -119,7 +117,6 @@ fn it_catches_improper_update() {
 }
 
 #[test]
-#[cfg(feature = "testing")]
 fn it_dispatches_messages_and_accepts_updates() {
 	ExtBuilder::default()
 		.with_base(*TEST_NOMAD_BASE)
@@ -203,7 +200,6 @@ fn it_dispatches_messages_and_accepts_updates() {
 }
 
 #[test]
-#[cfg(feature = "testing")]
 fn it_rejects_invalid_signature() {
 	ExtBuilder::default()
 		.with_base(*TEST_NOMAD_BASE)

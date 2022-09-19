@@ -51,11 +51,9 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"frame-benchmarking/std",
+	"nomad-core/std",
+	"nomad-base/std"
 ]
 
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 try-runtime = ["frame-support/try-runtime"]
-testing = [
-	"nomad-core/testing",
-	"nomad-base/testing"
-]

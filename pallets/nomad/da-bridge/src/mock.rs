@@ -1,8 +1,6 @@
 use da_primitives::Header;
 use frame_support::traits::GenesisBuild;
 use frame_system as system;
-#[cfg(features = "testing")]
-use nomad_base::testing::*;
 use nomad_base::NomadBase;
 use primitive_types::{H160, H256};
 use sp_runtime::{
@@ -139,7 +137,7 @@ impl ExtBuilder {
 	}
 }
 
-pub(crate) fn events() -> Vec<super::Event<Test>> {
+pub(crate) fn _events() -> Vec<super::Event<Test>> {
 	System::events()
 		.into_iter()
 		.map(|r| r.event)
