@@ -4,10 +4,10 @@ use frame_support::traits::Randomness;
 pub use kate::Seed;
 use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
 use scale_info::TypeInfo;
+use sp_core::H256;
 use sp_runtime::{traits::Hash, AccountId32, MultiAddress, MultiSignature};
 use sp_runtime_interface::{pass_by::PassByCodec, runtime_interface};
 use sp_std::vec::Vec;
-use sp_core::H256;
 
 use crate::{generic::Digest, limits::BlockLength, Config, LOG_TARGET};
 
@@ -249,7 +249,7 @@ impl Decode for AvailExtrinsic {
 	}
 }
 
-fn build_data_root(app_ext: Vec<AppExtrinsic>) -> H256{
+fn build_data_root(app_ext: Vec<AppExtrinsic>) -> H256 {
 	let ext: Vec<Vec<u8>> = app_ext.iter().map(|x| x.data.clone()).collect();
 	let avail_ext = ext
 		.iter()
@@ -299,10 +299,14 @@ mod tests {
 		let data_root = build_data_root(avail_ext);
 		let no_app_data_root = build_data_root(no_app_data);
 		//test for data root for appdata extrinsics
-		assert_eq!(data_root, [
-			221, 243, 104, 100, 122, 144, 42, 111, 106, 185, 245, 59, 50, 36, 91, 226, 142, 220,
-			153, 233, 47, 67, 240, 0, 75, 188, 44, 179, 89, 129, 75, 42
-		].into());
+		assert_eq!(
+			data_root,
+			[
+				221, 243, 104, 100, 122, 144, 42, 111, 106, 185, 245, 59, 50, 36, 91, 226, 142,
+				220, 153, 233, 47, 67, 240, 0, 75, 188, 44, 179, 89, 129, 75, 42
+			]
+			.into()
+		);
 		//test for data root for single extrinsic without appdata
 		assert_eq!(no_app_data_root, [0u8; 32].into());
 	}
