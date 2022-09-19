@@ -96,6 +96,7 @@ test-case = "1.2.3"
 hex = "0.4"
 hex-literal = "0.3.4"
 serde_json = "1.0"
+sp-keyring = "4.0.0-dev"
 
 [features]
 default = ["std"]
