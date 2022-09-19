@@ -2,6 +2,7 @@ use codec::{Codec, Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_core::H256;
 use sp_runtime::traits::Member;
 use sp_std::vec::Vec;
 
@@ -22,7 +23,7 @@ pub struct KateCommitment<HashOutput> {
 	/// Cols
 	pub cols: u16,
 	/// The merkle root of the data submitted
-	pub data_root: [u8; 32],
+	pub data_root: H256,
 }
 
 /// Marker trait for types `T` that can be use as `Hash` in `ExtrinsicsRoot`.
@@ -37,7 +38,7 @@ impl<HashOutput: KateExtrinsicHash> ExtrinsicsWithCommitment for KateCommitment<
 
 	fn commitment(&self) -> &Vec<u8> { &self.commitment }
 
-	fn data_root(&self) -> &[u8; 32] { &self.data_root }
+	fn data_root(&self) -> &H256 { &self.data_root }
 
 	fn new(hash: HashOutput) -> Self { hash.into() }
 
@@ -46,7 +47,7 @@ impl<HashOutput: KateExtrinsicHash> ExtrinsicsWithCommitment for KateCommitment<
 		commitment: Vec<u8>,
 		rows: u16,
 		cols: u16,
-		data_root: [u8; 32],
+		data_root: H256,
 	) -> Self {
 		Self {
 			hash,

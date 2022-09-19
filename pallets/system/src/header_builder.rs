@@ -7,6 +7,7 @@ use scale_info::TypeInfo;
 use sp_runtime::{traits::Hash, AccountId32, MultiAddress, MultiSignature};
 use sp_runtime_interface::{pass_by::PassByCodec, runtime_interface};
 use sp_std::vec::Vec;
+use sp_core::H256;
 
 use crate::{generic::Digest, limits::BlockLength, Config, LOG_TARGET};
 
@@ -248,16 +249,16 @@ impl Decode for AvailExtrinsic {
 	}
 }
 
-fn build_data_root(app_ext: Vec<AppExtrinsic>) -> [u8; 32] {
+fn build_data_root(app_ext: Vec<AppExtrinsic>) -> H256{
 	let ext: Vec<Vec<u8>> = app_ext.iter().map(|x| x.data.clone()).collect();
 	let avail_ext = ext
 		.iter()
 		.filter_map(|e| AvailExtrinsic::decode(&mut &e[..]).ok())
 		.collect::<Vec<_>>();
-	let data_root: [u8; 32] = if avail_ext.len() > 0 {
+	let data_root: H256 = if avail_ext.len() > 0 {
 		let leaves: Vec<[u8; 32]> = avail_ext.iter().map(|e| Sha256::hash(&e.data)).collect();
 		let tree = MerkleTree::<Sha256>::from_leaves(&leaves);
-		tree.root().expect("Data Root computation failed")
+		tree.root().unwrap_or_default().into()
 	} else {
 		Default::default()
 	};
@@ -301,9 +302,9 @@ mod tests {
 		assert_eq!(data_root, [
 			221, 243, 104, 100, 122, 144, 42, 111, 106, 185, 245, 59, 50, 36, 91, 226, 142, 220,
 			153, 233, 47, 67, 240, 0, 75, 188, 44, 179, 89, 129, 75, 42
-		]);
+		].into());
 		//test for data root for single extrinsic without appdata
-		assert_eq!(no_app_data_root, [0u8; 32]);
+		assert_eq!(no_app_data_root, [0u8; 32].into());
 	}
 
 	#[test]
