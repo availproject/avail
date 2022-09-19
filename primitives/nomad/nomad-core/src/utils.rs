@@ -1,11 +1,11 @@
 use sp_core::H256;
 
-const NOMAD_PREFIX: &[u8] = b"NOMAD";
+const NOMAD_SUFFIX: &[u8] = b"NOMAD";
 const ETH_PREFIX: &[u8] = b"\x19Ethereum Signed Message:\n32";
 
 /// Computes hash of home domain concatenated with "NOMAD"
 pub fn home_domain_hash(home_domain: u32) -> H256 {
-	keccak256_concat!(home_domain.to_be_bytes(), NOMAD_PREFIX)
+	keccak256_concat!(home_domain.to_be_bytes(), NOMAD_SUFFIX)
 }
 
 /// Hash a message according to EIP-191 with the ethereum signed message prefix.
