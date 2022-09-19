@@ -25,7 +25,7 @@ fn it_dispatches_message() {
 		.build()
 		.execute_with(|| {
 			// Fetch expected values
-			let nonce = Home::get_nonce(TEST_REMOTE_DOMAIN);
+			let nonce = Home::nonces(TEST_REMOTE_DOMAIN).unwrap_or_default();
 			let destination_and_nonce = destination_and_nonce(TEST_REMOTE_DOMAIN, nonce);
 			let leaf_index = Home::tree().count();
 			let body: BoundedVec<u8, _> = [1u8; 8].to_vec().try_into().unwrap();
@@ -99,7 +99,7 @@ fn it_catches_improper_update() {
 
 			let origin = Origin::signed(TEST_SENDER_ACCOUNT.clone());
 			assert_ok!(Home::improper_update(origin, improper_signed.clone()));
-			assert!(Home::state() == NomadState::Failed);
+			assert!(Home::base().state == NomadState::Failed);
 
 			let expected = vec![
 				crate::Event::UpdaterSlashed {
@@ -218,7 +218,7 @@ fn it_rejects_invalid_signature() {
 			));
 
 			// Get fake updater signature
-			let new_root = Home::root();
+			let new_root = Home::tree().root();
 			let signed_update = FAKE_UPDATER.sign_update(committed_root, new_root);
 
 			// Assert err returned from submitting signed update
