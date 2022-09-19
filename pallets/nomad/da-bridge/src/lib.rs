@@ -28,9 +28,10 @@ pub mod pallet {
 	};
 	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 	use home::Pallet as Home;
+	use nomad_core::TypedMessage;
 	use primitive_types::H256;
 
-	use crate::message::DABridgeMessage;
+	use crate::message::{DABridgeMessages, DataRootMessage};
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + home::Config {
@@ -131,16 +132,22 @@ pub mod pallet {
 			let mut block_number = *header.number();
 			let data_root = header.data_root();
 
-			let message = DABridgeMessage::<T>::format_data_root_message(
-				block_number.clone(),
-				data_root.clone(),
-			)?;
+			let message: DABridgeMessages = DataRootMessage {
+				block_number: block_number.into(),
+				data_root,
+			}
+			.into();
+
+			let body: BoundedVec<u8, T::MaxMessageBodyBytes> = message
+				.encode()
+				.try_into()
+				.map_err(|_| Error::<T>::DABridgeMessageExceedsMaxMessageSize)?;
 
 			Home::<T>::do_dispatch(
 				T::DABridgePalletId::get(),
 				destination_domain,
 				recipient_address,
-				message.0,
+				body,
 			)?;
 
 			// Clear previous block_number to hash mappings, starting at the

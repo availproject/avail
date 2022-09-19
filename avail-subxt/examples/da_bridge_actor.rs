@@ -5,7 +5,7 @@ use sp_keyring::AccountKeyring;
 use subxt::{ext::sp_core::H160, tx::PairSigner, OnlineClient};
 
 const DESTINATION_DOMAIN: u32 = 1000;
-const DA_BRIDGE_ROUTER_ADDRESS: &str = "0x333d43c984b8d92f6c857e0bfbb29a4fbf42dbe9";
+const DA_BRIDGE_ROUTER_ADDRESS: &str = "0x77534486c6467fd24b1f7d60ca61d984d91f6a2a";
 
 #[async_std::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
