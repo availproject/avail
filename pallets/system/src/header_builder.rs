@@ -126,24 +126,7 @@ pub trait HostedHeaderBuilder {
 		};
 
 		let extrinsics: Vec<Vec<u8>> = app_extrinsics.clone().into_iter().map(|e| e.data).collect();
-		// let avail_extrinsics = extrinsics
-		// 	.iter()
-		// 	.filter_map(|e| <AvailExtrinsic>::decode(&mut &e[..]).ok())
-		// 	.collect::<Vec<_>>();
-
-		// let data_root: [u8; 32] = if avail_extrinsics.len() > 0 {
-		// 	log::debug!("Decoded some avail extrinsics.");
-		// 	let leaves: Vec<[u8; 32]> = avail_extrinsics
-		// 		.iter()
-		// 		.map(|x| Sha256::hash(&x.data))
-		// 		.collect();
-
-		// 	let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
-		// 	data_tree.root().expect("Data Root computation failed")
-		// } else {
-		// 	Default::default()
-		// };
-		let data_root = data_root_avail(app_extrinsics);
+		let data_root = build_data_root(app_extrinsics);
 
 		log::debug!("Avail Data Root: {:?}\n", data_root);
 
@@ -265,7 +248,7 @@ impl Decode for AvailExtrinsic {
 	}
 }
 
-fn data_root_avail(app_ext: Vec<AppExtrinsic>) -> [u8; 32] {
+fn build_data_root(app_ext: Vec<AppExtrinsic>) -> [u8; 32] {
 	let ext: Vec<Vec<u8>> = app_ext.iter().map(|x| x.data.clone()).collect();
 	let avail_ext = ext
 		.iter()
@@ -307,133 +290,24 @@ mod tests {
 				],
 			},
 		];
-		let empty_data: Vec<AppExtrinsic> = vec![];
-		let single_data: Vec<AppExtrinsic> = vec![AppExtrinsic {
+		let empty_data: Vec<AppExtrinsic> = vec![AppExtrinsic {
 			app_id: 0,
 			data: vec![40, 4, 3, 0, 11, 165, 20, 8, 55, 131, 1],
 		}];
 
-		let data_root = data_root_avail(avail_ext);
-		let empty_data_root = data_root_avail(empty_data);
-		let single_data_root = data_root_avail(single_data);
+		let data_root = build_data_root(avail_ext);
+		let empty_data_root = build_data_root(empty_data);
 		//test for data root for appdata extrinsics
 		assert_eq!(data_root, [
 			221, 243, 104, 100, 122, 144, 42, 111, 106, 185, 245, 59, 50, 36, 91, 226, 142, 220,
 			153, 233, 47, 67, 240, 0, 75, 188, 44, 179, 89, 129, 75, 42
 		]);
-		//test for data root for empty appdata extrinsics
-		assert_eq!(empty_data_root, [0u8; 32]);
 		//test for data root for single extrinsic without appdata
-		assert_eq!(single_data_root, [0u8; 32]);
+		assert_eq!(empty_data_root, [0u8; 32]);
 	}
 
 	#[test]
 	fn test_merkle_proof() {
-		let mut leaves: Vec<[u8; 32]> = Vec::new();
-		let mut interested_leaf_position: Option<usize> = None;
-
-		let avail_data: Vec<Vec<u8>> = vec![
-			[
-				48, 51, 51, 49, 102, 97, 55, 51, 101, 101, 101, 99, 99, 98, 101, 52, 101, 50, 50,
-				53,
-			]
-			.to_vec(),
-			[
-				54, 48, 100, 101, 100, 49, 102, 53, 97, 98, 54, 55, 50, 97, 55, 49, 50, 55, 98, 97,
-			]
-			.to_vec(),
-			[
-				50, 98, 49, 49, 102, 49, 100, 100, 51, 57, 53, 53, 54, 102, 98, 50, 97, 98, 52, 50,
-			]
-			.to_vec(),
-		];
-
-		for (pos, xt) in avail_data.iter().enumerate() {
-			leaves.push(Sha256::hash(&xt));
-
-			if pos == 1usize {
-				interested_leaf_position = Some(leaves.len() - 1);
-			}
-		}
-
-		if leaves.len() > 0 {
-			if let Some(position) = interested_leaf_position {
-				let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
-				let proof = data_tree.proof(&[position]);
-				let root_proof = proof.proof_hashes().to_vec();
-				assert_eq!(root_proof, vec![
-					[
-						117, 75, 148, 18, 224, 237, 121, 7, 189, 244, 183, 202, 93, 42, 34, 245,
-						225, 41, 160, 61, 235, 31, 78, 28, 31, 228, 45, 50, 47, 222, 233, 14
-					],
-					[
-						141, 110, 48, 228, 148, 209, 125, 118, 117, 169, 76, 60, 97, 68, 103, 255,
-						140, 206, 53, 32, 28, 16, 86, 117, 26, 110, 154, 16, 5, 21, 218, 249
-					]
-				]);
-			}
-		}
-	}
-
-	#[test]
-	fn test_single_merkle_proof() {
-		let mut leaves: Vec<[u8; 32]> = Vec::new();
-		let mut interested_leaf_position: Option<usize> = None;
-		let empty_vec: Vec<[u8; 32]> = vec![];
-
-		let avail_data: Vec<Vec<u8>> = vec![[
-			52, 53, 52, 102, 102, 56, 48, 99, 48, 56, 56, 97, 97, 55, 102, 97, 98, 57, 101, 49,
-		]
-		.to_vec()];
-
-		for (pos, xt) in avail_data.iter().enumerate() {
-			leaves.push(Sha256::hash(&xt));
-
-			if pos == 0usize {
-				interested_leaf_position = Some(leaves.len() - 1);
-			}
-		}
-		if leaves.len() > 0 {
-			if let Some(position) = interested_leaf_position {
-				let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
-				let proof = data_tree.proof(&[position]);
-				let root_proof = proof.proof_hashes().to_vec();
-				// here the proof is shown empty because the root itself is the proof as there is only one appdata extrinsic
-				assert_eq!(root_proof, empty_vec);
-			}
-		}
-	}
-
-	#[test]
-	fn test_no_data_merkle_proof() {
-		let mut leaves: Vec<[u8; 32]> = Vec::new();
-		let mut interested_leaf_position: Option<usize> = None;
-		let avail_data: Vec<Vec<u8>> = vec![];
-		let mut proof_gen = false;
-
-		for (pos, xt) in avail_data.iter().enumerate() {
-			leaves.push(Sha256::hash(&xt));
-
-			if pos == 0usize {
-				interested_leaf_position = Some(leaves.len() - 1);
-			}
-		}
-		if leaves.len() > 0 {
-			if let Some(position) = interested_leaf_position {
-				let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
-				let proof = data_tree.proof(&[position]);
-				let root_proof = proof.proof_hashes().to_vec();
-				assert_eq!(root_proof, vec![[0u8; 32]]);
-				proof_gen = true;
-			}
-		}
-		//no proof is generated because there is no appdata extrinsic
-		assert_eq!(proof_gen, false, "No proof generated");
-	}
-
-	///using rs-merkle proof verify function
-	#[test]
-	fn verify_merkle_proof() {
 		let avail_data: Vec<Vec<u8>> = vec![
 			[
 				48, 51, 51, 49, 102, 97, 55, 51, 101, 101, 101, 99, 99, 98, 101, 52, 101, 50, 50,
@@ -455,9 +329,74 @@ mod tests {
 			.map(|xt| Sha256::hash(&xt))
 			.collect::<Vec<[u8; 32]>>();
 
+		let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
+		let proof = data_tree.proof(&[1usize]);
+		let root_proof = proof.proof_hashes().to_vec();
+		assert_eq!(root_proof, vec![
+			[
+				117, 75, 148, 18, 224, 237, 121, 7, 189, 244, 183, 202, 93, 42, 34, 245, 225, 41,
+				160, 61, 235, 31, 78, 28, 31, 228, 45, 50, 47, 222, 233, 14
+			],
+			[
+				141, 110, 48, 228, 148, 209, 125, 118, 117, 169, 76, 60, 97, 68, 103, 255, 140,
+				206, 53, 32, 28, 16, 86, 117, 26, 110, 154, 16, 5, 21, 218, 249
+			]
+		]);
+	}
+
+	#[test]
+	fn test_single_merkle_proof() {
+		let empty_vec: Vec<[u8; 32]> = vec![];
+
+		let avail_data: Vec<Vec<u8>> = vec![[
+			52, 53, 52, 102, 102, 56, 48, 99, 48, 56, 56, 97, 97, 55, 102, 97, 98, 57, 101, 49,
+		]
+		.to_vec()];
+
+		let leaves = avail_data
+			.iter()
+			.map(|xt| Sha256::hash(&xt))
+			.collect::<Vec<[u8; 32]>>();
+
+		let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
+		let proof = data_tree.proof(&[0usize]);
+		let root_proof = proof.proof_hashes().to_vec();
+		// here the proof is shown empty because the root itself is the proof as there is only one appdata extrinsic
+		assert_eq!(root_proof, empty_vec);
+	}
+
+	///using rs-merkle proof verify function
+	#[test]
+	fn verify_merkle_proof() {
+		let avail_data: Vec<Vec<u8>> = vec![
+			[
+				48, 51, 51, 49, 102, 97, 55, 51, 101, 101, 101, 99, 99, 98, 101, 52, 101, 50, 50,
+				53,
+			]
+			.to_vec(),
+			[
+				54, 48, 100, 101, 100, 49, 102, 53, 97, 98, 54, 55, 50, 97, 55, 49, 50, 55, 98, 97,
+			]
+			.to_vec(),
+			[
+				50, 98, 49, 49, 102, 49, 100, 100, 51, 57, 53, 53, 54, 102, 98, 50, 97, 98, 52, 50,
+			]
+			.to_vec(),
+			[
+				100, 51, 50, 102, 48, 100, 55, 98, 52, 102, 52, 48, 98, 100, 52, 101, 99, 50, 54,
+				101,
+			]
+			.to_vec(),
+		];
+
+		let leaves = avail_data
+			.iter()
+			.map(|xt| Sha256::hash(&xt))
+			.collect::<Vec<[u8; 32]>>();
+
 		let merkle_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
-		let indices_to_prove = vec![0, 1];
-		let leaves_to_prove = leaves.get(0..2).ok_or("can't get leaves to prove").unwrap();
+		let indices_to_prove = vec![3];
+		let leaves_to_prove = leaves.get(3..4).ok_or("can't get leaves to prove").unwrap();
 
 		let proof = merkle_tree.proof(&indices_to_prove);
 		let root = merkle_tree
@@ -466,5 +405,20 @@ mod tests {
 			.unwrap();
 
 		assert!(proof.verify(root, &indices_to_prove, leaves_to_prove, leaves.len()));
+	}
+
+	#[test]
+	fn verify_nodata_merkle_proof() {
+		let avail_data: Vec<Vec<u8>> = vec![];
+		let leaves = avail_data
+			.iter()
+			.map(|xt| Sha256::hash(&xt))
+			.collect::<Vec<[u8; 32]>>();
+
+		let leaves_to_prove = match leaves.get(0..1).ok_or("can't get leaves to prove") {
+			Ok(leaves) => leaves,
+			Err(_) => &leaves,
+		};
+		assert_eq!(leaves_to_prove.len(), 0);
 	}
 }
