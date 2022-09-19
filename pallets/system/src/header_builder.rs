@@ -267,8 +267,10 @@ fn build_data_root(app_ext: Vec<AppExtrinsic>) -> H256 {
 
 #[cfg(test)]
 mod tests {
-	use super::{build_data_root, AppExtrinsic, MerkleTree, Sha256};
+	use da_primitives::asdr::AppExtrinsic;
+	use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
 
+	use super::build_data_root;
 	/// tests for data root is created correctly
 	#[test]
 	fn data_root_test() {
