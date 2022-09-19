@@ -94,6 +94,7 @@ pub mod pallet {
 				self.committed_root,
 				self.updater,
 			));
+			<Tree<T>>::put(NomadLightMerkle::default());
 		}
 	}
 
