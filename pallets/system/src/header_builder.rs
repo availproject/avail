@@ -290,20 +290,20 @@ mod tests {
 				],
 			},
 		];
-		let empty_data: Vec<AppExtrinsic> = vec![AppExtrinsic {
+		let no_app_data: Vec<AppExtrinsic> = vec![AppExtrinsic {
 			app_id: 0,
 			data: vec![40, 4, 3, 0, 11, 165, 20, 8, 55, 131, 1],
 		}];
 
 		let data_root = build_data_root(avail_ext);
-		let empty_data_root = build_data_root(empty_data);
+		let no_app_data_root = build_data_root(no_app_data);
 		//test for data root for appdata extrinsics
 		assert_eq!(data_root, [
 			221, 243, 104, 100, 122, 144, 42, 111, 106, 185, 245, 59, 50, 36, 91, 226, 142, 220,
 			153, 233, 47, 67, 240, 0, 75, 188, 44, 179, 89, 129, 75, 42
 		]);
 		//test for data root for single extrinsic without appdata
-		assert_eq!(empty_data_root, [0u8; 32]);
+		assert_eq!(no_app_data_root, [0u8; 32]);
 	}
 
 	#[test]
@@ -388,7 +388,6 @@ mod tests {
 			]
 			.to_vec(),
 		];
-
 		let leaves = avail_data
 			.iter()
 			.map(|xt| Sha256::hash(&xt))
@@ -410,15 +409,16 @@ mod tests {
 	#[test]
 	fn verify_nodata_merkle_proof() {
 		let avail_data: Vec<Vec<u8>> = vec![];
+
 		let leaves = avail_data
 			.iter()
 			.map(|xt| Sha256::hash(&xt))
 			.collect::<Vec<[u8; 32]>>();
-
-		let leaves_to_prove = match leaves.get(0..1).ok_or("can't get leaves to prove") {
-			Ok(leaves) => leaves,
-			Err(_) => &leaves,
+		let leaves_to_prove = if let Ok(leaves) = leaves.get(0).ok_or("can't get leaves to prove") {
+			leaves
+		} else {
+			&[0u8; 32]
 		};
-		assert_eq!(leaves_to_prove.len(), 0);
+		assert_eq!(leaves_to_prove, &[0u8; 32]);
 	}
 }
