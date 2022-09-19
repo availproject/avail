@@ -213,6 +213,7 @@ where
 				data: xt.encode(),
 			};
 			let optional_decoded_xt = <AvailExtrinsic>::decode(&mut &avail_extrinsic.data[..]);
+
 			match optional_decoded_xt {
 				Ok(decoded_xt) => leaves.push(Sha256::hash(&decoded_xt.data)),
 				Err(_) => continue,

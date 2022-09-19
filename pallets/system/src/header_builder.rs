@@ -125,24 +125,25 @@ pub trait HostedHeaderBuilder {
 			(kate_commitment, block_dims, data_index)
 		};
 
-		let extrinsics: Vec<Vec<u8>> = app_extrinsics.into_iter().map(|e| e.data).collect();
-		let avail_extrinsics = extrinsics
-			.iter()
-			.filter_map(|e| <AvailExtrinsic>::decode(&mut &e[..]).ok())
-			.collect::<Vec<_>>();
+		let extrinsics: Vec<Vec<u8>> = app_extrinsics.clone().into_iter().map(|e| e.data).collect();
+		// let avail_extrinsics = extrinsics
+		// 	.iter()
+		// 	.filter_map(|e| <AvailExtrinsic>::decode(&mut &e[..]).ok())
+		// 	.collect::<Vec<_>>();
 
-		let data_root: [u8; 32] = if avail_extrinsics.len() > 0 {
-			log::debug!("Decoded some avail extrinsics.");
-			let leaves: Vec<[u8; 32]> = avail_extrinsics
-				.iter()
-				.map(|x| Sha256::hash(&x.data))
-				.collect();
+		// let data_root: [u8; 32] = if avail_extrinsics.len() > 0 {
+		// 	log::debug!("Decoded some avail extrinsics.");
+		// 	let leaves: Vec<[u8; 32]> = avail_extrinsics
+		// 		.iter()
+		// 		.map(|x| Sha256::hash(&x.data))
+		// 		.collect();
 
-			let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
-			data_tree.root().expect("Data Root computation failed")
-		} else {
-			Default::default()
-		};
+		// 	let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
+		// 	data_tree.root().expect("Data Root computation failed")
+		// } else {
+		// 	Default::default()
+		// };
+		let data_root = data_root_avail(app_extrinsics);
 
 		log::debug!("Avail Data Root: {:?}\n", data_root);
 
@@ -261,5 +262,209 @@ impl Decode for AvailExtrinsic {
 			signature,
 			data,
 		})
+	}
+}
+
+fn data_root_avail(app_ext: Vec<AppExtrinsic>) -> [u8; 32] {
+	let ext: Vec<Vec<u8>> = app_ext.iter().map(|x| x.data.clone()).collect();
+	let avail_ext = ext
+		.iter()
+		.filter_map(|e| AvailExtrinsic::decode(&mut &e[..]).ok())
+		.collect::<Vec<_>>();
+	let data_root: [u8; 32] = if avail_ext.len() > 0 {
+		let leaves: Vec<[u8; 32]> = avail_ext.iter().map(|e| Sha256::hash(&e.data)).collect();
+		let tree = MerkleTree::<Sha256>::from_leaves(&leaves);
+		tree.root().expect("Data Root computation failed")
+	} else {
+		Default::default()
+	};
+	data_root
+}
+
+mod tests {
+	use super::*;
+
+	/// tests for data root is created correctly
+	#[test]
+	fn data_root_test() {
+		let avail_ext: Vec<AppExtrinsic> = vec![
+			AppExtrinsic {
+				app_id: 0,
+				data: vec![40, 4, 3, 0, 11, 194, 98, 8, 55, 131, 1],
+			},
+			AppExtrinsic {
+				app_id: 3,
+				data: vec![
+					93, 2, 132, 0, 28, 189, 45, 67, 83, 10, 68, 112, 90, 208, 136, 175, 49, 62, 24,
+					248, 11, 83, 239, 22, 179, 97, 119, 205, 75, 119, 184, 70, 242, 165, 240, 124,
+					1, 196, 71, 85, 121, 78, 169, 73, 233, 65, 3, 144, 203, 76, 224, 127, 226, 216,
+					6, 134, 86, 24, 91, 90, 185, 180, 62, 239, 147, 76, 54, 128, 71, 137, 104, 193,
+					248, 62, 54, 10, 93, 148, 47, 231, 94, 157, 88, 228, 145, 6, 168, 232, 178, 54,
+					1, 203, 198, 166, 51, 216, 14, 93, 8, 157, 131, 164, 0, 4, 0, 3, 0, 0, 0, 29,
+					1, 164, 104, 104, 97, 106, 107, 97, 110, 99, 107, 97, 32, 108, 97, 104, 32,
+					105, 97, 107, 106, 32, 99, 97, 105, 117, 104, 32, 97, 98, 32, 97, 105, 97, 106,
+					104, 32, 97, 32, 103, 97, 104, 97,
+				],
+			},
+		];
+		let empty_data: Vec<AppExtrinsic> = vec![];
+		let single_data: Vec<AppExtrinsic> = vec![AppExtrinsic {
+			app_id: 0,
+			data: vec![40, 4, 3, 0, 11, 165, 20, 8, 55, 131, 1],
+		}];
+
+		let data_root = data_root_avail(avail_ext);
+		let empty_data_root = data_root_avail(empty_data);
+		let single_data_root = data_root_avail(single_data);
+		//test for data root for appdata extrinsics
+		assert_eq!(data_root, [
+			221, 243, 104, 100, 122, 144, 42, 111, 106, 185, 245, 59, 50, 36, 91, 226, 142, 220,
+			153, 233, 47, 67, 240, 0, 75, 188, 44, 179, 89, 129, 75, 42
+		]);
+		//test for data root for empty appdata extrinsics
+		assert_eq!(empty_data_root, [0u8; 32]);
+		//test for data root for single extrinsic without appdata
+		assert_eq!(single_data_root, [0u8; 32]);
+	}
+
+	#[test]
+	fn test_merkle_proof() {
+		let mut leaves: Vec<[u8; 32]> = Vec::new();
+		let mut interested_leaf_position: Option<usize> = None;
+
+		let avail_data: Vec<Vec<u8>> = vec![
+			[
+				48, 51, 51, 49, 102, 97, 55, 51, 101, 101, 101, 99, 99, 98, 101, 52, 101, 50, 50,
+				53,
+			]
+			.to_vec(),
+			[
+				54, 48, 100, 101, 100, 49, 102, 53, 97, 98, 54, 55, 50, 97, 55, 49, 50, 55, 98, 97,
+			]
+			.to_vec(),
+			[
+				50, 98, 49, 49, 102, 49, 100, 100, 51, 57, 53, 53, 54, 102, 98, 50, 97, 98, 52, 50,
+			]
+			.to_vec(),
+		];
+
+		for (pos, xt) in avail_data.iter().enumerate() {
+			leaves.push(Sha256::hash(&xt));
+
+			if pos == 1usize {
+				interested_leaf_position = Some(leaves.len() - 1);
+			}
+		}
+
+		if leaves.len() > 0 {
+			if let Some(position) = interested_leaf_position {
+				let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
+				let proof = data_tree.proof(&[position]);
+				let root_proof = proof.proof_hashes().to_vec();
+				assert_eq!(root_proof, vec![
+					[
+						117, 75, 148, 18, 224, 237, 121, 7, 189, 244, 183, 202, 93, 42, 34, 245,
+						225, 41, 160, 61, 235, 31, 78, 28, 31, 228, 45, 50, 47, 222, 233, 14
+					],
+					[
+						141, 110, 48, 228, 148, 209, 125, 118, 117, 169, 76, 60, 97, 68, 103, 255,
+						140, 206, 53, 32, 28, 16, 86, 117, 26, 110, 154, 16, 5, 21, 218, 249
+					]
+				]);
+			}
+		}
+	}
+
+	#[test]
+	fn test_single_merkle_proof() {
+		let mut leaves: Vec<[u8; 32]> = Vec::new();
+		let mut interested_leaf_position: Option<usize> = None;
+		let empty_vec: Vec<[u8; 32]> = vec![];
+
+		let avail_data: Vec<Vec<u8>> = vec![[
+			52, 53, 52, 102, 102, 56, 48, 99, 48, 56, 56, 97, 97, 55, 102, 97, 98, 57, 101, 49,
+		]
+		.to_vec()];
+
+		for (pos, xt) in avail_data.iter().enumerate() {
+			leaves.push(Sha256::hash(&xt));
+
+			if pos == 0usize {
+				interested_leaf_position = Some(leaves.len() - 1);
+			}
+		}
+		if leaves.len() > 0 {
+			if let Some(position) = interested_leaf_position {
+				let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
+				let proof = data_tree.proof(&[position]);
+				let root_proof = proof.proof_hashes().to_vec();
+				// here the proof is shown empty because the root itself is the proof as there is only one appdata extrinsic
+				assert_eq!(root_proof, empty_vec);
+			}
+		}
+	}
+
+	#[test]
+	fn test_no_data_merkle_proof() {
+		let mut leaves: Vec<[u8; 32]> = Vec::new();
+		let mut interested_leaf_position: Option<usize> = None;
+		let avail_data: Vec<Vec<u8>> = vec![];
+		let mut proof_gen = false;
+
+		for (pos, xt) in avail_data.iter().enumerate() {
+			leaves.push(Sha256::hash(&xt));
+
+			if pos == 0usize {
+				interested_leaf_position = Some(leaves.len() - 1);
+			}
+		}
+		if leaves.len() > 0 {
+			if let Some(position) = interested_leaf_position {
+				let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
+				let proof = data_tree.proof(&[position]);
+				let root_proof = proof.proof_hashes().to_vec();
+				assert_eq!(root_proof, vec![[0u8; 32]]);
+				proof_gen = true;
+			}
+		}
+		//no proof is generated because there is no appdata extrinsic
+		assert_eq!(proof_gen, false, "No proof generated");
+	}
+
+	///using rs-merkle proof verify function
+	#[test]
+	fn verify_merkle_proof() {
+		let avail_data: Vec<Vec<u8>> = vec![
+			[
+				48, 51, 51, 49, 102, 97, 55, 51, 101, 101, 101, 99, 99, 98, 101, 52, 101, 50, 50,
+				53,
+			]
+			.to_vec(),
+			[
+				54, 48, 100, 101, 100, 49, 102, 53, 97, 98, 54, 55, 50, 97, 55, 49, 50, 55, 98, 97,
+			]
+			.to_vec(),
+			[
+				50, 98, 49, 49, 102, 49, 100, 100, 51, 57, 53, 53, 54, 102, 98, 50, 97, 98, 52, 50,
+			]
+			.to_vec(),
+		];
+
+		let leaves = avail_data
+			.iter()
+			.map(|xt| Sha256::hash(&xt))
+			.collect::<Vec<[u8; 32]>>();
+
+		let merkle_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
+		let indices_to_prove = vec![0, 1];
+		let leaves_to_prove = leaves.get(0..2).ok_or("can't get leaves to prove").unwrap();
+
+		let proof = merkle_tree.proof(&indices_to_prove);
+		let root = merkle_tree
+			.root()
+			.ok_or("couldn't get the merkle root")
+			.unwrap();
+
+		assert!(proof.verify(root, &indices_to_prove, leaves_to_prove, leaves.len()));
 	}
 }
