@@ -88,6 +88,24 @@ pub struct Header<Number: HeaderNumberTrait, Hash: KateHashTrait> {
 	pub app_data_lookup: DataLookup,
 }
 
+impl<N, H> Default for Header<N, H>
+where
+	N: HeaderNumberTrait,
+	H: KateHashTrait,
+	<H as sp_runtime::traits::Hash>::Output: From<[u8; 32]>,
+{
+	fn default() -> Self {
+		Self {
+			number: 1u32.into(),
+			extrinsics_root: Default::default(),
+			state_root: Default::default(),
+			parent_hash: Default::default(),
+			digest: Default::default(),
+			app_data_lookup: Default::default(),
+		}
+	}
+}
+
 impl<Number, Hash> PassBy for Header<Number, Hash>
 where
 	Number: HeaderNumberTrait,
