@@ -18,7 +18,7 @@ name = "data-avail"
 
 [dependencies]
 # Internals
-da-primitives= { path = "../primitives" }
+da-primitives= { path = "../primitives/avail" }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate = { path = "../kate" }

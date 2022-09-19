@@ -14,7 +14,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 kate = { path = "../../kate", default-features = false }
-da-primitives = { path = "../../primitives", default-features = false }
+da-primitives = { path = "../../primitives/avail", default-features = false }
 
 # Other
 impl-trait-for-tuples = "0.2.1"
