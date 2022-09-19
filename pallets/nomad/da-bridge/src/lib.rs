@@ -102,6 +102,7 @@ pub mod pallet {
 		H256: From<T::Hash>,
 		u32: From<T::BlockNumber>,
 	{
+		/// Dispatch a data root message to the home if the header is valid.
 		#[pallet::weight(100)]
 		pub fn try_dispatch_data_root(
 			origin: OriginFor<T>,
@@ -121,6 +122,7 @@ pub mod pallet {
 		H256: From<T::Hash>,
 		u32: From<T::BlockNumber>,
 	{
+		/// Dispatch a data root message for a valid header.
 		fn do_dispatch_data_root(
 			destination_domain: u32,
 			recipient_address: H256,
@@ -173,6 +175,8 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Ensure a given header's hash has been recorded in the finalized
+		/// block hash mapping.
 		fn ensure_valid_header(header: &T::Header) -> Result<(), DispatchError> {
 			let block_number = header.number();
 			let hash = header.hash();

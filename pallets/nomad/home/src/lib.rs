@@ -182,12 +182,6 @@ pub mod pallet {
 	where
 		[u8; 32]: From<T::AccountId>,
 	{
-		pub fn state() -> NomadState { Self::base().state }
-
-		pub fn root() -> H256 { Self::tree().root() }
-
-		pub fn get_nonce(domain: u32) -> u32 { Self::nonces(domain).unwrap_or_default() }
-
 		fn ensure_not_failed() -> Result<(), Error<T>> {
 			ensure!(
 				Self::base().state != NomadState::Failed,
