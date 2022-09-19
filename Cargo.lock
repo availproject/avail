@@ -3167,14 +3167,6 @@ dependencies = [
 
 [[package]]
 name = "impl-serde"
-version = "0.3.1"
-source = "git+https://github.com/paritytech/parity-common.git?tag=parity-util-mem-v0.10.1#3030a6dd28352a4a12169340d22f130f331e0d12"
-dependencies = [
- "serde",
-]
-
-[[package]]
-name = "impl-serde"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4551f042f3438e64dbd6226b20527fc84a6e1fe65688b58746a2f53623f25f5c"
@@ -6020,19 +6012,6 @@ dependencies = [
  "fixed-hash 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "impl-codec 0.6.0",
  "impl-rlp 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "impl-serde 0.3.2",
- "uint 0.9.3",
-]
-
-[[package]]
-name = "primitive-types"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e28720988bff275df1f51b171e1b2a18c30d194c4d2b61defdacecd625a5d94a"
-dependencies = [
- "fixed-hash 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "impl-codec 0.6.0",
- "impl-rlp",
  "impl-serde 0.3.2",
  "uint 0.9.3",
 ]
