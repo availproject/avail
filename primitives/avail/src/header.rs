@@ -4,7 +4,7 @@ use parity_util_mem::{MallocSizeOf, MallocSizeOfOps};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{RuntimeDebug, U256};
+use sp_core::{RuntimeDebug, H256, U256};
 use sp_runtime::{
 	traits::{
 		AtLeast32BitUnsigned, Hash as HashT, Header as HeaderT, MaybeDisplay, MaybeFromStr,
@@ -76,6 +76,7 @@ pub struct Header<Number: HeaderNumberTrait, Hash: KateHashTrait> {
 	pub parent_hash: Hash::Output,
 	/// The block number.
 	#[cfg_attr(feature = "std", serde(with = "number_serde"))]
+	#[codec(compact)]
 	pub number: Number,
 	/// The state trie merkle root
 	pub state_root: Hash::Output,
@@ -163,13 +164,20 @@ where
 	Hash::Output: Decode,
 {
 	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
+		let parent_hash = Decode::decode(input)?;
+		let number = <<Number as HasCompact>::Type>::decode(input)?.into();
+		let state_root = Decode::decode(input)?;
+		let extrinsics_root = Decode::decode(input)?;
+		let digest = Decode::decode(input)?;
+		let app_data_lookup = Decode::decode(input)?;
+
 		Ok(Self {
-			parent_hash: Decode::decode(input)?,
-			number: <<Number as HasCompact>::Type>::decode(input)?.into(),
-			state_root: Decode::decode(input)?,
-			extrinsics_root: Decode::decode(input)?,
-			digest: Decode::decode(input)?,
-			app_data_lookup: Decode::decode(input)?,
+			parent_hash,
+			number,
+			state_root,
+			extrinsics_root,
+			digest,
+			app_data_lookup,
 		})
 	}
 }
@@ -285,6 +293,12 @@ where
 	fn extrinsics_root(&self) -> &Self::Root { &self.extrinsics_root }
 
 	fn set_extrinsics_root(&mut self, root: Self::Root) { self.extrinsics_root = root; }
+
+	fn data_root(&self) -> H256 { self.extrinsics_root.data_root.into() }
+
+	fn set_data_root(&mut self, data_root: H256) {
+		self.extrinsics_root.data_root = data_root.into();
+	}
 
 	fn data_lookup(&self) -> &DataLookup { &self.app_data_lookup }
 

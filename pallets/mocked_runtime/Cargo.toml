@@ -9,7 +9,7 @@ repository = ""
 description = "Mokend Runtime for Testing"
 
 [dependencies]
-da-primitives = { path = "../../primitives" }
+da-primitives = { path = "../../primitives/avail" }
 da-control = { path = "../dactr" }
 kate = { path = "../../kate" }
 
