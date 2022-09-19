@@ -1,22 +1,26 @@
-use alloc::vec::Vec;
+use core::mem;
 
-use frame_support::BoundedVec;
+use sp_std::vec::Vec;
 
 /// This trait provides structure for encoding a Vec<u8> as a xapp message.
 /// First byte of Vec<u8> is a u8 corresponding to a message type. The remaining
 /// bytes make up the message body.
-pub trait TypedMessage<S>: AsRef<BoundedVec<u8, S>> {
+pub trait TypedMessage {
 	type MessageEnum: From<u8>;
 
-	/// Return the message type
-	fn message_type(&self) -> Self::MessageEnum {
-		let slice: &BoundedVec<u8, S> = self.as_ref();
-		slice[0].into()
-	}
-
 	/// Return the message body after the type byte
-	fn message_body(&self) -> Vec<u8> {
-		let slice: &BoundedVec<u8, S> = self.as_ref();
-		slice[1..].to_vec()
-	}
+	fn encode(&self) -> Vec<u8>;
+}
+
+pub trait TypedMessageVariant
+where
+	Self: Sized,
+{
+	const MESSAGE_TYPE: u8;
+
+	/// Size of encoded struct (+ 1 for u8 type tag)
+	fn len(&self) -> usize { mem::size_of::<Self>() + 1 }
+
+	/// Encode self into `BoundedVec<u8, S>`
+	fn encode(&self) -> Vec<u8>;
 }

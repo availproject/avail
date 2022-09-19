@@ -1,14 +1,9 @@
-use core::convert::TryInto;
-
-use frame_support::BoundedVec;
-use nomad_core::TypedMessage;
+use nomad_core::{TypedMessage, TypedMessageVariant};
 use primitive_types::H256;
 use sp_std::vec::Vec;
 
-use crate::{Config, Error};
-
-const DATA_ROOT_MESSAGE_LEN: usize = 1 + 4 + 32;
-
+/// DA Bridge message 1-byte type tags. Note that the invalid 0 variant
+/// is to maintain parity with our existing Solidity contracts.
 #[repr(u8)]
 #[derive(Clone, Debug, PartialEq)]
 pub enum DABridgeMessageTypes {
@@ -26,44 +21,89 @@ impl From<u8> for DABridgeMessageTypes {
 	}
 }
 
-pub struct DABridgeMessage<T: Config>(pub BoundedVec<u8, T::MaxMessageBodyBytes>);
-
-impl<T: Config> AsRef<BoundedVec<u8, T::MaxMessageBodyBytes>> for DABridgeMessage<T> {
-	fn as_ref(&self) -> &BoundedVec<u8, T::MaxMessageBodyBytes> { &self.0 }
+/// Data root message variant. Contains a block number and its corresponding
+/// data root.
+#[derive(Clone, Debug, PartialEq)]
+pub struct DataRootMessage {
+	/// Block number
+	pub block_number: u32,
+	/// Data root
+	pub data_root: H256,
 }
 
-impl<T: Config> TypedMessage<T::MaxMessageBodyBytes> for DABridgeMessage<T> {
-	type MessageEnum = DABridgeMessageTypes;
-}
+impl TypedMessageVariant for DataRootMessage {
+	const MESSAGE_TYPE: u8 = DABridgeMessageTypes::DataRootMessage as u8;
 
-impl<T: Config> DABridgeMessage<T> {
-	/* Extrinsic Root: message containing an extrinsic root and its
-	 * corresponding block number
-	 * type (1 byte) || block number (4 bytes) || ext root (32 bytes)
-	 */
+	fn encode(&self) -> Vec<u8> {
+		let block_number_bytes = self.block_number.to_be_bytes();
+		let data_root_bytes = self.data_root.as_bytes();
 
-	/// Format extrinsic root message with block number and root. Internally
-	/// checks that passed in generics for block number and extrinsic root are
-	/// expected lengths.
-	pub fn format_data_root_message(
-		block_number: impl Into<u32>,
-		ext_root: impl Into<H256>,
-	) -> Result<Self, Error<T>> {
-		let mut buf: Vec<u8> = Vec::with_capacity(DATA_ROOT_MESSAGE_LEN);
+		let mut buf: Vec<u8> = Vec::with_capacity(self.len());
 
-		let block_number: u32 = block_number.into();
-		let block_number_bytes = block_number.to_be_bytes();
-
-		let ext_root: H256 = ext_root.into();
-		let ext_root_bytes = ext_root.as_bytes();
-
-		buf.push(DABridgeMessageTypes::DataRootMessage as u8);
+		buf.push(Self::MESSAGE_TYPE as u8);
 		buf.extend_from_slice(block_number_bytes.as_ref());
-		buf.extend_from_slice(ext_root_bytes);
+		buf.extend_from_slice(data_root_bytes);
 
-		let bounded: BoundedVec<u8, T::MaxMessageBodyBytes> = buf
-			.try_into()
-			.or(Err(Error::<T>::DABridgeMessageExceedsMaxMessageSize))?;
-		Ok(Self(bounded))
+		buf
+	}
+}
+
+/// Enum of DABridge message types
+pub enum DABridgeMessages {
+	DataRootMessage(DataRootMessage),
+}
+
+impl From<DataRootMessage> for DABridgeMessages {
+	fn from(data_root_msg: DataRootMessage) -> Self { Self::DataRootMessage(data_root_msg) }
+}
+
+impl TypedMessage for DABridgeMessages {
+	type MessageEnum = DABridgeMessageTypes;
+
+	fn encode(&self) -> Vec<u8> {
+		match self {
+			Self::DataRootMessage(msg) => msg.encode(),
+		}
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use core::convert::TryInto;
+
+	use frame_support::{parameter_types, BoundedVec};
+	use nomad_core::{NomadMessage, NON_BODY_LENGTH};
+
+	use super::*;
+
+	const DATA_ROOT_MSG_LEN: usize = 1 + 4 + 32;
+
+	parameter_types! {
+		const MaxMessageBodyBytes: u32 = 1024;
+	}
+
+	#[test]
+	fn it_creates_data_root_msg() {
+		let message = DataRootMessage {
+			block_number: 5,
+			data_root: H256::repeat_byte(1),
+		};
+
+		assert_eq!(message.len(), DATA_ROOT_MSG_LEN);
+
+		let body: DABridgeMessages = message.into();
+		let bounded: BoundedVec<u8, MaxMessageBodyBytes> = body.encode().try_into().unwrap();
+
+		let nomad_msg = NomadMessage {
+			origin: 0,
+			sender: Default::default(),
+			nonce: 0,
+			destination: 0,
+			recipient: Default::default(),
+			body: bounded,
+		};
+
+		let nomad_msg_vec = nomad_msg.to_vec();
+		assert_eq!(nomad_msg_vec.len(), NON_BODY_LENGTH + DATA_ROOT_MSG_LEN);
 	}
 }

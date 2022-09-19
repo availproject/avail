@@ -33,7 +33,7 @@ impl<S: Get<u32>> NomadMessage<S> {
 		buf.extend_from_slice(&self.nonce.to_be_bytes());
 		buf.extend_from_slice(&self.destination.to_be_bytes());
 		buf.extend_from_slice(&self.recipient.as_ref());
-		buf.extend_from_slice(&self.body);
+		buf.extend_from_slice(body);
 
 		buf
 	}
@@ -81,5 +81,36 @@ mod tests {
 			+ size_of_val(&m.recipient);
 
 		assert_eq!(actual_non_body_len, NON_BODY_LENGTH);
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use core::convert::TryInto;
+
+	use frame_support::{parameter_types, BoundedVec};
+
+	use super::NON_BODY_LENGTH;
+	use crate::NomadMessage;
+
+	parameter_types! {
+		const MaxBodyLen :u32 = 1024;
+	}
+
+	#[test]
+	fn formats_message_to_vec() {
+		let body = [1u8; 32];
+		let bounded: BoundedVec<u8, MaxBodyLen> = body.to_vec().try_into().unwrap();
+
+		let message = NomadMessage {
+			origin: 0,
+			sender: Default::default(),
+			nonce: 0,
+			destination: 0,
+			recipient: Default::default(),
+			body: bounded,
+		};
+
+		assert_eq!(message.to_vec().len(), NON_BODY_LENGTH + 32);
 	}
 }
