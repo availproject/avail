@@ -267,7 +267,7 @@ fn build_data_root(app_ext: Vec<AppExtrinsic>) -> H256 {
 
 #[cfg(test)]
 mod tests {
-	use super::{AppExtrinsic, build_data_root, MerkleTree, Sha256};
+	use super::{build_data_root, AppExtrinsic, MerkleTree, Sha256};
 
 	/// tests for data root is created correctly
 	#[test]
