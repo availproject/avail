@@ -19,13 +19,7 @@ mod benchmarking;
 #[frame_support::pallet]
 pub mod pallet {
 	use da_primitives::traits::ExtendedHeader;
-	use frame_support::{
-		pallet_prelude::*,
-		sp_runtime::{
-			traits::{CheckedSub, Header},
-			ArithmeticError,
-		},
-	};
+	use frame_support::{pallet_prelude::*, sp_runtime::traits::Header};
 	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 	use home::Pallet as Home;
 	use nomad_core::TypedMessage;
@@ -45,12 +39,6 @@ pub mod pallet {
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
-	// Block number to block hash mapping
-	#[pallet::storage]
-	#[pallet::getter(fn finalized_block_number_to_block_hash)]
-	pub type FinalizedBlockNumberToBlockHash<T: Config> =
-		StorageMap<_, Twox64Concat, T::BlockNumber, T::Hash>;
-
 	// Genesis config
 	#[pallet::genesis_config]
 	pub struct GenesisConfig {}
@@ -63,18 +51,6 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {}
-	}
-
-	// Hooks
-	#[pallet::hooks]
-	impl<T: Config> Hooks<T::BlockNumber> for Pallet<T> {
-		fn on_finalize(block_number: T::BlockNumber) {
-			let last = block_number.checked_sub(&1u32.into()).unwrap();
-
-			// Store every finalized block's corresponding hash
-			let hash = frame_system::Pallet::<T>::block_hash(last);
-			FinalizedBlockNumberToBlockHash::<T>::insert(last, hash);
-		}
 	}
 
 	#[pallet::event]
@@ -91,7 +67,6 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T> {
 		InitializationError,
-		BlockNotFinal,
 		HashOfBlockNotMatchBlockNumber,
 		DABridgeMessageExceedsMaxMessageSize,
 	}
@@ -129,7 +104,7 @@ pub mod pallet {
 			recipient_address: H256,
 			header: T::Header,
 		) -> DispatchResult {
-			let mut block_number = *header.number();
+			let block_number = *header.number();
 			let data_root = header.data_root();
 
 			let message: DABridgeMessages = DataRootMessage {
@@ -150,28 +125,6 @@ pub mod pallet {
 				body,
 			)?;
 
-			// Clear previous block_number to hash mappings, starting at the
-			// current submitted block_number going backwards. Because the
-			// runtime maps _every_ block number's hash, the sequence is always
-			// contiguous. If we are tracing backwards and find a block number
-			// that doesn't have a hash, we know everything before it has been
-			// cleared.
-			while FinalizedBlockNumberToBlockHash::<T>::contains_key(block_number) {
-				FinalizedBlockNumberToBlockHash::<T>::remove(block_number);
-
-				// If we have cleared the 0th first block_number to hash
-				// mapping, there is nothing more to clear.
-				let b: u32 = block_number.into();
-				if b == 0 as u32 {
-					break;
-				}
-
-				// Decrement block number
-				block_number = block_number
-					.checked_sub(&1u32.into())
-					.ok_or(ArithmeticError::Underflow)?;
-			}
-
 			Self::deposit_event(Event::<T>::DataRootDispatched {
 				destination_domain,
 				recipient_address,
@@ -182,20 +135,18 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Ensure a given header's hash has been recorded in the finalized
-		/// block hash mapping.
+		/// Ensure a given header's hash has been recorded in the block hash
+		/// mapping.
 		fn ensure_valid_header(header: &T::Header) -> Result<(), DispatchError> {
-			let block_number = header.number();
-			let hash = header.hash();
-
-			// Ensure header's block number is in the finalized mapping
-			let mapped_hash = FinalizedBlockNumberToBlockHash::<T>::get(block_number)
-				.ok_or(Error::<T>::BlockNotFinal)?;
+			// Ensure header's block number is in the mapping
+			let number = header.number();
+			let stored_hash = frame_system::Pallet::<T>::block_hash(number);
 
 			// Ensure header's hash matches that in the block number to hash
 			// mapping
+			let hash = header.hash();
 			ensure!(
-				mapped_hash == hash,
+				stored_hash == hash,
 				Error::<T>::HashOfBlockNotMatchBlockNumber,
 			);
 

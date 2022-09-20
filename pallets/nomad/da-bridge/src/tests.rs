@@ -8,31 +8,10 @@ use once_cell::sync::Lazy;
 use primitive_types::H256;
 use sp_runtime::{testing::Digest, traits::BlakeTwo256, AccountId32};
 
-use crate::{mock::*, pallet::FinalizedBlockNumberToBlockHash};
+use crate::mock::*;
 
 const TEST_SENDER_VEC: [u8; 32] = [2u8; 32];
 static TEST_SENDER_ACCOUNT: Lazy<AccountId32> = Lazy::new(|| AccountId32::new(TEST_SENDER_VEC));
-
-#[test]
-fn it_fills_block_hash_mapping() {
-	ExtBuilder::default()
-		.with_base(*TEST_NOMAD_BASE)
-		.build()
-		.execute_with(|| {
-			// Fill mapping for blocks 0 to 10
-			fill_block_hash_mapping_up_to_n(10);
-
-			// Ensure there are exactly blocks 0-10 filled and block 11 has no
-			// mapping yet
-			for i in 0..=10 as u8 {
-				assert_eq!(
-					DABridge::finalized_block_number_to_block_hash(i as u32).unwrap(),
-					H256::repeat_byte(i)
-				);
-			}
-			assert!(DABridge::finalized_block_number_to_block_hash(11).is_none());
-		})
-}
 
 #[test]
 fn it_accepts_valid_extrinsic_root() {
@@ -59,8 +38,12 @@ fn it_accepts_valid_extrinsic_root() {
 				app_data_lookup: Default::default(),
 			};
 
-			// Insert block header's hash into finalized mapping
-			FinalizedBlockNumberToBlockHash::<Test>::insert(10, header.hash());
+			// Insert 10th block's hash into block number --> hash mapping so
+			// submitting 10th block's header is accepted by pallet
+			frame_system::BlockHash::<Test>::insert::<u32, <Test as frame_system::Config>::Hash>(
+				10u32.into(),
+				header.hash(),
+			);
 
 			// Get home's current merkle root pre-enqueue
 			let root_pre = Home::tree().root();
@@ -79,10 +62,5 @@ fn it_accepts_valid_extrinsic_root() {
 
 			// Ensure home's merkle root changed after enqueueing message
 			assert_ne!(root_pre, root_post);
-
-			// Ensure all previous mappings from blocks 0 to 10 are cleared
-			for i in 0..=10 {
-				assert!(DABridge::finalized_block_number_to_block_hash(i).is_none());
-			}
 		})
 }
