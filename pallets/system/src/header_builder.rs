@@ -254,6 +254,8 @@ fn build_data_root(app_ext: &[AppExtrinsic]) -> H256 {
 
 	app_ext
 		.iter()
+		// NOTE: `AvailExtrinsic` decode fn will filter onlye `Da_Control::submit_data` extrinsics.
+		// TODO: It implies a circular dependency atm between system & DA control pallets.
 		.map(|x| &x.data)
 		.filter_map(|e| AvailExtrinsic::decode(&mut &e[..]).ok())
 		.for_each(|ext| {
