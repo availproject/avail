@@ -252,7 +252,8 @@ impl Decode for AvailExtrinsic {
 fn build_data_root(app_ext: &[AppExtrinsic]) -> H256 {
 	let mut tree = MerkleTree::<Sha256>::new();
 
-	app_ext.iter()
+	app_ext
+		.iter()
 		.map(|x| &x.data)
 		.filter_map(|e| AvailExtrinsic::decode(&mut &e[..]).ok())
 		.for_each(|ext| {
@@ -267,8 +268,8 @@ fn build_data_root(app_ext: &[AppExtrinsic]) -> H256 {
 #[cfg(test)]
 mod tests {
 	use da_primitives::asdr::AppExtrinsic;
-	use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
 	use hex_literal::hex;
+	use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
 
 	use super::build_data_root;
 	/// tests for data root is created correctly
@@ -292,7 +293,10 @@ mod tests {
 		let data_root = build_data_root(&avail_ext);
 		let no_app_data_root = build_data_root(&no_app_data);
 		//test for data root for appdata extrinsics
-		assert_eq!(data_root, hex!("DDF368647A902A6F6AB9F53B32245BE28EDC99E92F43F0004BBC2CB359814B2A").into());
+		assert_eq!(
+			data_root,
+			hex!("DDF368647A902A6F6AB9F53B32245BE28EDC99E92F43F0004BBC2CB359814B2A").into()
+		);
 		//test for data root for single extrinsic without appdata
 		assert_eq!(no_app_data_root, [0u8; 32].into());
 	}
