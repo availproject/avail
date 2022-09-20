@@ -2406,6 +2406,7 @@ dependencies = [
  "sp-std",
  "sp-version",
  "static_assertions",
+ "test-case",
 ]
 
 [[package]]
