@@ -37,6 +37,7 @@ sp-runtime-interface = { version = "4.0.0-dev", default-features = false }
 [dev-dependencies]
 criterion = "0.3.3"
 hex-literal = "0.3.1"
+test-case = "1.2.3"
 sp-externalities = "0.10.0-dev"
 
 [features]
