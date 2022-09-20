@@ -256,8 +256,7 @@ fn build_data_root(app_ext: &[AppExtrinsic]) -> H256 {
 		.iter()
 		// NOTE: `AvailExtrinsic` decode fn will filter onlye `Da_Control::submit_data` extrinsics.
 		// TODO: It implies a circular dependency atm between system & DA control pallets.
-		.map(|x| &x.data)
-		.filter_map(|e| AvailExtrinsic::decode(&mut &e[..]).ok())
+		.filter_map(|e| AvailExtrinsic::decode(&mut &e.data[..]).ok())
 		.for_each(|ext| {
 			let ext_hash = Sha256::hash(&ext.data);
 			tree.insert(ext_hash);
@@ -269,56 +268,51 @@ fn build_data_root(app_ext: &[AppExtrinsic]) -> H256 {
 
 #[cfg(test)]
 mod tests {
-	use da_primitives::asdr::AppExtrinsic;
+	use da_primitives::asdr::AppId;
 	use hex_literal::hex;
-	use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
+	use sp_core::H256;
+	use test_case::test_case;
 
-	use super::build_data_root;
-	/// tests for data root is created correctly
-	#[test]
-	fn data_root_test() {
-		let avail_ext: Vec<AppExtrinsic> = vec![
-			AppExtrinsic {
-				app_id: 0,
-				data: hex!("280403000BC26208378301").into(), 
-			},
-			AppExtrinsic {
-				app_id: 3,
-				data: hex!("5D0284001CBD2D43530A44705AD088AF313E18F80B53EF16B36177CD4B77B846F2A5F07C01C44755794EA949E9410390CB4CE07FE2D8068656185B5AB9B43EEF934C3680478968C1F83E360A5D942FE75E9D58E49106A8E8B23601CBC6A633D80E5D089D83A4000400030000001D01A46868616A6B616E636B61206C61682069616B6A206361697568206162206169616A6820612067616861").into()
-			},
-		];
-		let no_app_data: Vec<AppExtrinsic> = vec![AppExtrinsic {
+	use super::*;
+
+	fn encoded_timestamp_call() -> AppExtrinsic {
+		AppExtrinsic {
 			app_id: 0,
-			data: hex!("280403000BA51408378301").into(),
-		}];
+			data: hex!("280403000BC26208378301").into(),
+		}
+	}
 
-		let data_root = build_data_root(&avail_ext);
-		let no_app_data_root = build_data_root(&no_app_data);
-		//test for data root for appdata extrinsics
-		assert_eq!(
-			data_root,
-			hex!("DDF368647A902A6F6AB9F53B32245BE28EDC99E92F43F0004BBC2CB359814B2A").into()
-		);
-		//test for data root for single extrinsic without appdata
-		assert_eq!(no_app_data_root, [0u8; 32].into());
+	fn encoded_fillblock_call(app_id: AppId) -> AppExtrinsic {
+		let data = hex!("5D0284001CBD2D43530A44705AD088AF313E18F80B53EF16B36177CD4B77B846F2A5F07C01C44755794EA949E9410390CB4CE07FE2D8068656185B5AB9B43EEF934C3680478968C1F83E360A5D942FE75E9D58E49106A8E8B23601CBC6A633D80E5D089D83A4000400030000001D01A46868616A6B616E636B61206C61682069616B6A206361697568206162206169616A6820612067616861").to_vec();
+		AppExtrinsic { app_id, data }
+	}
+
+	fn encoded_tx_bob() -> AppExtrinsic {
+		let data = hex!("490284001cbd2d43530a44705ad088af313e18f80b53ef16b36177cd4b77b846f2a5f07c0166de9fcb3903fa119cb6d23dd903b93a67719f76922b2b4c15a2539d11021102b75f4c452595b65b3bacef0e852430bbfa44bd38133b16cd5d48edb45962568204010000000000000600008eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a4802093d00").to_vec();
+		AppExtrinsic { app_id: 0, data }
+	}
+
+	fn dr_input_1() -> Vec<AppExtrinsic> {
+		vec![encoded_timestamp_call(), encoded_fillblock_call(3)]
+	}
+
+	fn dr_output_1() -> H256 {
+		hex!("DDF368647A902A6F6AB9F53B32245BE28EDC99E92F43F0004BBC2CB359814B2A").into()
+	}
+
+	#[test_case( dr_input_1() => dr_output_1())]
+	#[test_case( vec![encoded_timestamp_call()] => H256::zero(); "Empty block")]
+	#[test_case( vec![encoded_tx_bob()] => H256::zero(); "Signed Native Tx")]
+	fn it_build_data_root(app_extrinsics: Vec<AppExtrinsic>) -> H256 {
+		build_data_root(&app_extrinsics).into()
 	}
 
 	#[test]
 	fn test_merkle_proof() {
 		let avail_data: Vec<Vec<u8>> = vec![
-			[
-				48, 51, 51, 49, 102, 97, 55, 51, 101, 101, 101, 99, 99, 98, 101, 52, 101, 50, 50,
-				53,
-			]
-			.to_vec(),
-			[
-				54, 48, 100, 101, 100, 49, 102, 53, 97, 98, 54, 55, 50, 97, 55, 49, 50, 55, 98, 97,
-			]
-			.to_vec(),
-			[
-				50, 98, 49, 49, 102, 49, 100, 100, 51, 57, 53, 53, 54, 102, 98, 50, 97, 98, 52, 50,
-			]
-			.to_vec(),
+			hex!("3033333166613733656565636362653465323235").into(),
+			hex!("3630646564316635616236373261373132376261").into(),
+			hex!("3262313166316464333935353666623261623432").into(),
 		];
 
 		let leaves = avail_data
@@ -330,14 +324,8 @@ mod tests {
 		let proof = data_tree.proof(&[1usize]);
 		let root_proof = proof.proof_hashes().to_vec();
 		assert_eq!(root_proof, vec![
-			[
-				117, 75, 148, 18, 224, 237, 121, 7, 189, 244, 183, 202, 93, 42, 34, 245, 225, 41,
-				160, 61, 235, 31, 78, 28, 31, 228, 45, 50, 47, 222, 233, 14
-			],
-			[
-				141, 110, 48, 228, 148, 209, 125, 118, 117, 169, 76, 60, 97, 68, 103, 255, 140,
-				206, 53, 32, 28, 16, 86, 117, 26, 110, 154, 16, 5, 21, 218, 249
-			]
+			hex!("754B9412E0ED7907BDF4B7CA5D2A22F5E129A03DEB1F4E1C1FE42D322FDEE90E"),
+			hex!("8D6E30E494D17D7675A94C3C614467FF8CCE35201C1056751A6E9A100515DAF9")
 		]);
 	}
 
@@ -345,10 +333,8 @@ mod tests {
 	fn test_single_merkle_proof() {
 		let empty_vec: Vec<[u8; 32]> = vec![];
 
-		let avail_data: Vec<Vec<u8>> = vec![[
-			52, 53, 52, 102, 102, 56, 48, 99, 48, 56, 56, 97, 97, 55, 102, 97, 98, 57, 101, 49,
-		]
-		.to_vec()];
+		let avail_data: Vec<Vec<u8>> =
+			vec![hex!("3435346666383063303838616137666162396531").to_vec()];
 
 		let leaves = avail_data
 			.iter()
@@ -366,24 +352,10 @@ mod tests {
 	#[test]
 	fn verify_merkle_proof() {
 		let avail_data: Vec<Vec<u8>> = vec![
-			[
-				48, 51, 51, 49, 102, 97, 55, 51, 101, 101, 101, 99, 99, 98, 101, 52, 101, 50, 50,
-				53,
-			]
-			.to_vec(),
-			[
-				54, 48, 100, 101, 100, 49, 102, 53, 97, 98, 54, 55, 50, 97, 55, 49, 50, 55, 98, 97,
-			]
-			.to_vec(),
-			[
-				50, 98, 49, 49, 102, 49, 100, 100, 51, 57, 53, 53, 54, 102, 98, 50, 97, 98, 52, 50,
-			]
-			.to_vec(),
-			[
-				100, 51, 50, 102, 48, 100, 55, 98, 52, 102, 52, 48, 98, 100, 52, 101, 99, 50, 54,
-				101,
-			]
-			.to_vec(),
+			hex!("3033333166613733656565636362653465323235").into(),
+			hex!("3630646564316635616236373261373132376261").into(),
+			hex!("3262313166316464333935353666623261623432").into(),
+			hex!("6433326630643762346634306264346563323665").into(),
 		];
 		let leaves = avail_data
 			.iter()
