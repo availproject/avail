@@ -201,13 +201,6 @@ pub mod pallet {
 		) -> DispatchResult {
 			Self::ensure_not_failed()?;
 
-			// Check message length against max
-			let message_length = message_body.len() as u32;
-			ensure!(
-				message_length < T::MaxMessageBodyBytes::get(),
-				Error::<T>::MessageTooLarge
-			);
-
 			// Get nonce and set new nonce
 			let nonce = Self::nonces(destination_domain).unwrap_or_default();
 			let new_nonce = nonce.checked_add(1).ok_or(ArithmeticError::Overflow)?;

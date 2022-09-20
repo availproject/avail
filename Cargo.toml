@@ -13,8 +13,8 @@ members = [
 	"pallets/system",
 	"pallets/dactr",
 	"pallets/nomad/updater-manager",
-	"pallets//nomad/home",
-	"pallets//nomad/da-bridge",
+	"pallets/nomad/home",
+	"pallets/nomad/da-bridge",
 	"runtime",
 	"node",
 ]
