@@ -5,7 +5,6 @@ use frame_support::pallet_prelude::*;
 use serde::{Deserialize, Serialize};
 use signature::{hash_message, Signature, SignatureError};
 use sp_core::{H160, H256};
-use tiny_keccak::{Hasher, Keccak};
 
 use crate::utils::home_domain_hash;
 
@@ -22,12 +21,7 @@ pub struct UpdateV2 {
 impl UpdateV2 {
 	/// Get signing hash for update
 	pub fn signing_hash(&self) -> H256 {
-		let mut output = [0u8; 32];
-		let mut hasher = Keccak::v256();
-		hasher.update(home_domain_hash(self.home_domain).as_ref());
-		hasher.update(self.root.as_ref());
-		hasher.finalize(&mut output);
-		output.into()
+		keccak256_concat!(home_domain_hash(self.home_domain), self.root)
 	}
 
 	fn prepended_hash(&self) -> H256 { hash_message(self.signing_hash()) }
