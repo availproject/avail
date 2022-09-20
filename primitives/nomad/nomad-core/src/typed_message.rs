@@ -1,4 +1,4 @@
-use core::mem;
+use core::{convert::TryFrom, mem};
 
 use sp_std::vec::Vec;
 
@@ -6,7 +6,7 @@ use sp_std::vec::Vec;
 /// First byte of Vec<u8> is a u8 corresponding to a message type. The remaining
 /// bytes make up the message body.
 pub trait TypedMessage {
-	type MessageEnum: From<u8>;
+	type MessageEnum: TryFrom<u8>;
 
 	/// Return the message body after the type byte
 	fn encode(&self) -> Vec<u8>;

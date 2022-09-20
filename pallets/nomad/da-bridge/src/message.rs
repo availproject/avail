@@ -1,5 +1,8 @@
+use core::convert::TryFrom;
+
 use nomad_core::{TypedMessage, TypedMessageVariant};
 use primitive_types::H256;
+use sp_runtime::RuntimeDebug;
 use sp_std::vec::Vec;
 
 /// DA Bridge message 1-byte type tags. Note that the invalid 0 variant
@@ -11,12 +14,21 @@ pub enum DABridgeMessageTypes {
 	DataRootMessage = 1,
 }
 
-impl From<u8> for DABridgeMessageTypes {
-	fn from(num: u8) -> Self {
+#[derive(PartialEq, RuntimeDebug)]
+/// Errors during the creation from `extrinsics`.
+pub enum TryFromError {
+	/// Unknown DABridgeMessage variant
+	Unknown,
+}
+
+impl TryFrom<u8> for DABridgeMessageTypes {
+	type Error = TryFromError;
+
+	fn try_from(num: u8) -> Result<Self, Self::Error> {
 		match num {
-			0 => Self::Invalid,
-			1 => Self::DataRootMessage,
-			_ => panic!("Invalid u8 for DABridgeMessage enum!"),
+			0 => Ok(Self::Invalid),
+			1 => Ok(Self::DataRootMessage),
+			_ => Err(TryFromError::Unknown),
 		}
 	}
 }
