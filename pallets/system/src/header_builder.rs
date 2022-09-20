@@ -127,7 +127,7 @@ pub trait HostedHeaderBuilder {
 		};
 
 		let extrinsics: Vec<Vec<u8>> = app_extrinsics.clone().into_iter().map(|e| e.data).collect();
-		let data_root = build_data_root(app_extrinsics);
+		let data_root = build_data_root(&app_extrinsics);
 
 		log::debug!("Avail Data Root: {:?}\n", data_root);
 
@@ -249,26 +249,26 @@ impl Decode for AvailExtrinsic {
 	}
 }
 
-fn build_data_root(app_ext: Vec<AppExtrinsic>) -> H256 {
-	let ext: Vec<Vec<u8>> = app_ext.iter().map(|x| x.data.clone()).collect();
-	let avail_ext = ext
-		.iter()
+fn build_data_root(app_ext: &[AppExtrinsic]) -> [u8; 32] {
+	let mut tree = MerkleTree::<Sha256>::new();
+
+	app_ext.iter()
+		.map(|x| &x.data)
 		.filter_map(|e| AvailExtrinsic::decode(&mut &e[..]).ok())
-		.collect::<Vec<_>>();
-	let data_root: H256 = if avail_ext.len() > 0 {
-		let leaves: Vec<[u8; 32]> = avail_ext.iter().map(|e| Sha256::hash(&e.data)).collect();
-		let tree = MerkleTree::<Sha256>::from_leaves(&leaves);
-		tree.root().unwrap_or_default().into()
-	} else {
-		Default::default()
-	};
-	data_root
+		.for_each(|ext| {
+			let ext_hash = Sha256::hash(&ext.data);
+			tree.insert(ext_hash);
+		});
+
+	tree.commit();
+	tree.root().unwrap_or_default()
 }
 
 #[cfg(test)]
 mod tests {
 	use da_primitives::asdr::AppExtrinsic;
 	use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
+	use hex_literal::hex;
 
 	use super::build_data_root;
 	/// tests for data root is created correctly
@@ -277,39 +277,22 @@ mod tests {
 		let avail_ext: Vec<AppExtrinsic> = vec![
 			AppExtrinsic {
 				app_id: 0,
-				data: vec![40, 4, 3, 0, 11, 194, 98, 8, 55, 131, 1],
+				data: hex!("280403000BC26208378301").into(), 
 			},
 			AppExtrinsic {
 				app_id: 3,
-				data: vec![
-					93, 2, 132, 0, 28, 189, 45, 67, 83, 10, 68, 112, 90, 208, 136, 175, 49, 62, 24,
-					248, 11, 83, 239, 22, 179, 97, 119, 205, 75, 119, 184, 70, 242, 165, 240, 124,
-					1, 196, 71, 85, 121, 78, 169, 73, 233, 65, 3, 144, 203, 76, 224, 127, 226, 216,
-					6, 134, 86, 24, 91, 90, 185, 180, 62, 239, 147, 76, 54, 128, 71, 137, 104, 193,
-					248, 62, 54, 10, 93, 148, 47, 231, 94, 157, 88, 228, 145, 6, 168, 232, 178, 54,
-					1, 203, 198, 166, 51, 216, 14, 93, 8, 157, 131, 164, 0, 4, 0, 3, 0, 0, 0, 29,
-					1, 164, 104, 104, 97, 106, 107, 97, 110, 99, 107, 97, 32, 108, 97, 104, 32,
-					105, 97, 107, 106, 32, 99, 97, 105, 117, 104, 32, 97, 98, 32, 97, 105, 97, 106,
-					104, 32, 97, 32, 103, 97, 104, 97,
-				],
+				data: hex!("5D0284001CBD2D43530A44705AD088AF313E18F80B53EF16B36177CD4B77B846F2A5F07C01C44755794EA949E9410390CB4CE07FE2D8068656185B5AB9B43EEF934C3680478968C1F83E360A5D942FE75E9D58E49106A8E8B23601CBC6A633D80E5D089D83A4000400030000001D01A46868616A6B616E636B61206C61682069616B6A206361697568206162206169616A6820612067616861").into()
 			},
 		];
 		let no_app_data: Vec<AppExtrinsic> = vec![AppExtrinsic {
 			app_id: 0,
-			data: vec![40, 4, 3, 0, 11, 165, 20, 8, 55, 131, 1],
+			data: hex!("280403000BA51408378301").into(),
 		}];
 
-		let data_root = build_data_root(avail_ext);
-		let no_app_data_root = build_data_root(no_app_data);
+		let data_root = build_data_root(&avail_ext);
+		let empty_data_root = build_data_root(&empty_data);
 		//test for data root for appdata extrinsics
-		assert_eq!(
-			data_root,
-			[
-				221, 243, 104, 100, 122, 144, 42, 111, 106, 185, 245, 59, 50, 36, 91, 226, 142,
-				220, 153, 233, 47, 67, 240, 0, 75, 188, 44, 179, 89, 129, 75, 42
-			]
-			.into()
-		);
+		assert_eq!(data_root, hex!("DDF368647A902A6F6AB9F53B32245BE28EDC99E92F43F0004BBC2CB359814B2A"));
 		//test for data root for single extrinsic without appdata
 		assert_eq!(no_app_data_root, [0u8; 32].into());
 	}
