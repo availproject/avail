@@ -249,7 +249,7 @@ impl Decode for AvailExtrinsic {
 	}
 }
 
-fn build_data_root(app_ext: &[AppExtrinsic]) -> [u8; 32] {
+fn build_data_root(app_ext: &[AppExtrinsic]) -> H256 {
 	let mut tree = MerkleTree::<Sha256>::new();
 
 	app_ext.iter()
@@ -261,7 +261,7 @@ fn build_data_root(app_ext: &[AppExtrinsic]) -> [u8; 32] {
 		});
 
 	tree.commit();
-	tree.root().unwrap_or_default()
+	tree.root().unwrap_or_default().into()
 }
 
 #[cfg(test)]
@@ -290,9 +290,9 @@ mod tests {
 		}];
 
 		let data_root = build_data_root(&avail_ext);
-		let empty_data_root = build_data_root(&empty_data);
+		let no_app_data_root = build_data_root(&no_app_data);
 		//test for data root for appdata extrinsics
-		assert_eq!(data_root, hex!("DDF368647A902A6F6AB9F53B32245BE28EDC99E92F43F0004BBC2CB359814B2A"));
+		assert_eq!(data_root, hex!("DDF368647A902A6F6AB9F53B32245BE28EDC99E92F43F0004BBC2CB359814B2A").into());
 		//test for data root for single extrinsic without appdata
 		assert_eq!(no_app_data_root, [0u8; 32].into());
 	}
