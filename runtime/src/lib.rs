@@ -140,8 +140,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	// and set impl_version to 0. If only runtime
 	// implementation changes and behavior does not, then leave spec_version as
 	// is and increment impl_version.
-	spec_version: 4,
-	impl_version: 1,
+	spec_version: 5,
+	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
 };
@@ -1376,7 +1376,7 @@ impl_runtime_apis! {
 
 #[cfg(test)]
 mod tests {
-	use codec::{Decode, Encode};
+	use codec::Decode;
 	use hex_literal::hex;
 	use sp_keyring::Sr25519Keyring::Bob;
 	use sp_runtime::MultiAddress;
