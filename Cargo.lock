@@ -1500,7 +1500,7 @@ dependencies = [
 
 [[package]]
 name = "data-avail"
-version = "1.1.0"
+version = "1.0.0"
 dependencies = [
  "da-control",
  "da-primitives",
