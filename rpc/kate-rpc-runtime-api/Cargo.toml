@@ -8,8 +8,8 @@ edition = "2018"
 
 [dependencies]
 sp-api = { version = "4.0.0-dev", default-features = false }
-sp-std = { version = "4.0.0-dev", default-features = false }
-frame-system = { version = "4.0.0-dev", default-features = false }
+sp-std = { version = "4.0.0", default-features = false }
+frame-system = { version = "6.0.0", default-features = false }
 
 [features]
 default = ["std"]

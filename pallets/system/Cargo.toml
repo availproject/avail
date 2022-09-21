@@ -1,6 +1,6 @@
 [package]
 name = "frame-system"
-version = "4.0.0-dev"
+version = "6.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 license = "Apache-2.0"
@@ -26,13 +26,13 @@ rs_merkle = { version = "1.2.0", default-features = false }
 serde = { version = "1.0.126", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
-sp-core = { version = "4.0.0-dev", default-features = false }
-sp-std = { version = "4.0.0-dev", default-features = false }
-sp-io = { version = "4.0.0-dev", default-features = false }
-sp-runtime = { version = "4.0.0-dev", default-features = false }
-sp-version = { version = "4.0.0-dev", default-features = false }
+sp-core = { version = "6.0.0", default-features = false }
+sp-std = { version = "4.0.0", default-features = false }
+sp-io = { version = "6.0.0", default-features = false }
+sp-runtime = { version = "6.0.0", default-features = false }
+sp-version = { version = "5.0.0", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
-sp-runtime-interface = { version = "4.0.0-dev", default-features = false }
+sp-runtime-interface = { version = "6.0.0", default-features = false }
 
 [dev-dependencies]
 criterion = "0.3.3"
