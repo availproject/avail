@@ -13,7 +13,7 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-da-primitives = { path = "../../primitives", default-features = false }
+da-primitives = { path = "../../primitives/avail", default-features = false }
 
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = [
 	"derive",
@@ -36,6 +36,9 @@ pallet-balances = "4.0.0-dev"
 pallet-transaction-payment = "4.0.0-dev"
 sp-version = "4.0.0-dev"
 sp-inherents = "4.0.0-dev"
+pallet-babe = "4.0.0-dev"
+mocked-runtime = { path = "../mocked_runtime" }
+da-control = { path = "../dactr" }
 
 [features]
 default = ["std"]

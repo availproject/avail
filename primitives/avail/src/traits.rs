@@ -1,3 +1,4 @@
+use sp_core::H256;
 use sp_runtime::Digest;
 use sp_std::vec::Vec;
 
@@ -8,6 +9,7 @@ pub trait ExtrinsicsWithCommitment {
 
 	fn hash(&self) -> &Self::HashOutput;
 	fn commitment(&self) -> &Vec<u8>;
+	fn data_root(&self) -> &H256;
 
 	fn new(hash: Self::HashOutput) -> Self;
 
@@ -16,6 +18,7 @@ pub trait ExtrinsicsWithCommitment {
 		commitment: Vec<u8>,
 		rows: u16,
 		cols: u16,
+		data_root: H256,
 	) -> Self;
 }
 
@@ -33,6 +36,9 @@ pub trait ExtendedHeader {
 
 	fn extrinsics_root(&self) -> &Self::Root;
 	fn set_extrinsics_root(&mut self, root: Self::Root);
+
+	fn data_root(&self) -> H256;
+	fn set_data_root(&mut self, root: H256);
 
 	fn data_lookup(&self) -> &DataLookup;
 

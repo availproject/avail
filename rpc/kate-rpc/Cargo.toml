@@ -12,10 +12,11 @@ frame-system = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 kate-rpc-runtime-api = { path = "../kate-rpc-runtime-api", default-features = false }
 sc-client-db = { version = "0.10.0-dev", default-features = false }
+rs_merkle = { version = "1.2.0", default-features = false }
 
 
 codec = { package = "parity-scale-codec", version = "2.0.0" }
-da-primitives= { path = "../../primitives" }
+da-primitives= { path = "../../primitives/avail" }
 kate = { path = "../../kate" }
 dusk-plonk = "0.8.2"
 # frame-system = "4.0.0-dev"

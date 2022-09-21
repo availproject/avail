@@ -12,7 +12,7 @@ description = "Data Avail Control Module"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-da-primitives = { path = "../../primitives", default-features = false }
+da-primitives = { path = "../../primitives/avail", default-features = false }
 kate = { path = "../../kate", default-features = false }
 
 # Substrate

@@ -41,7 +41,7 @@ The same procedure of data submission is done here and also listens to the block
 >Using SubmitandWatch
 
 ```
-go run extrinsics/dataSubmitAndWatch/dataSubmitAndWatch.go -- -size 1000
+go run extrinsics/dataSubmitAndWatch/dataSubmitAndWatch.go -config config.json
 ```
 The same procedure of data submission is done here. But checks/logs if the data is included in the block. The default APP_ID is 0
 

@@ -9,7 +9,7 @@ edition = "2021"
 afl = "*"
 kate-recovery = {path = "../kate/recovery"}
 kate = {path = "../kate"}
-da-primitives = { path = "../primitives", default-features = false }
+da-primitives = { path = "../primitives/avail", default-features = false }
 hex-literal = "0.3.1"
 
 [[bin]]

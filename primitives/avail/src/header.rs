@@ -4,7 +4,7 @@ use parity_util_mem::{MallocSizeOf, MallocSizeOfOps};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{RuntimeDebug, U256};
+use sp_core::{RuntimeDebug, H256, U256};
 use sp_runtime::{
 	traits::{
 		AtLeast32BitUnsigned, Hash as HashT, Header as HeaderT, MaybeDisplay, MaybeFromStr,
@@ -76,6 +76,7 @@ pub struct Header<Number: HeaderNumberTrait, Hash: KateHashTrait> {
 	pub parent_hash: Hash::Output,
 	/// The block number.
 	#[cfg_attr(feature = "std", serde(with = "number_serde"))]
+	#[codec(compact)]
 	pub number: Number,
 	/// The state trie merkle root
 	pub state_root: Hash::Output,
@@ -85,6 +86,24 @@ pub struct Header<Number: HeaderNumberTrait, Hash: KateHashTrait> {
 	pub digest: Digest,
 	/// Application specific data index.
 	pub app_data_lookup: DataLookup,
+}
+
+impl<N, H> Default for Header<N, H>
+where
+	N: HeaderNumberTrait,
+	H: KateHashTrait,
+	<H as sp_runtime::traits::Hash>::Output: From<[u8; 32]>,
+{
+	fn default() -> Self {
+		Self {
+			number: 1u32.into(),
+			extrinsics_root: Default::default(),
+			state_root: Default::default(),
+			parent_hash: Default::default(),
+			digest: Default::default(),
+			app_data_lookup: Default::default(),
+		}
+	}
 }
 
 impl<Number, Hash> PassBy for Header<Number, Hash>
@@ -145,13 +164,20 @@ where
 	Hash::Output: Decode,
 {
 	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
+		let parent_hash = Decode::decode(input)?;
+		let number = <<Number as HasCompact>::Type>::decode(input)?.into();
+		let state_root = Decode::decode(input)?;
+		let extrinsics_root = Decode::decode(input)?;
+		let digest = Decode::decode(input)?;
+		let app_data_lookup = Decode::decode(input)?;
+
 		Ok(Self {
-			parent_hash: Decode::decode(input)?,
-			number: <<Number as HasCompact>::Type>::decode(input)?.into(),
-			state_root: Decode::decode(input)?,
-			extrinsics_root: Decode::decode(input)?,
-			digest: Decode::decode(input)?,
-			app_data_lookup: Decode::decode(input)?,
+			parent_hash,
+			number,
+			state_root,
+			extrinsics_root,
+			digest,
+			app_data_lookup,
 		})
 	}
 }
@@ -268,6 +294,12 @@ where
 
 	fn set_extrinsics_root(&mut self, root: Self::Root) { self.extrinsics_root = root; }
 
+	fn data_root(&self) -> H256 { self.extrinsics_root.data_root.into() }
+
+	fn set_data_root(&mut self, data_root: H256) {
+		self.extrinsics_root.data_root = data_root.into();
+	}
+
 	fn data_lookup(&self) -> &DataLookup { &self.app_data_lookup }
 
 	/// Creates new header.
@@ -345,5 +377,62 @@ mod tests {
 			deserialize("\"0x10000000000000000\""),
 			u64::max_value() as u128 + 1
 		);
+	}
+	#[test]
+	fn ensure_format_is_unchanged() {
+		use sp_runtime::{
+			generic::{Digest, DigestItem},
+			traits::BlakeTwo256,
+		};
+
+		use crate::KateCommitment;
+		let extrinsic_root = KateCommitment {
+			hash: BlakeTwo256::hash(b"4"),
+			rows: 1,
+			cols: 4,
+			commitment: vec![
+				128, 233, 73, 235, 218, 245, 193, 62, 9, 100, 156, 88, 124, 107, 25, 5, 251, 119,
+				11, 74, 104, 67, 171, 170, 198, 180, 19, 227, 167, 64, 93, 152, 37, 172, 118, 77,
+				178, 52, 29, 185, 183, 150, 89, 101, 7, 62, 151, 89, 128, 233, 73, 235, 218, 245,
+				193, 62, 9, 100, 156, 88, 124, 107, 25, 5, 251, 119, 11, 74, 104, 67, 171, 170,
+				198, 180, 19, 227, 167, 64, 93, 152, 37, 172, 118, 77, 178, 52, 29, 185, 183, 150,
+				89, 101, 7, 62, 151, 89,
+			],
+			data_root: [
+				63, 191, 50, 39, 146, 108, 250, 63, 65, 103, 119, 30, 90, 217, 28, 250, 44, 45,
+				112, 144, 102, 124, 224, 30, 145, 28, 169, 11, 79, 49, 91, 17,
+			]
+			.into(),
+		};
+		let data_lookup = DataLookup {
+			size: 1,
+			index: vec![],
+		};
+		let header = Header::<u32, BlakeTwo256> {
+			parent_hash: BlakeTwo256::hash(b"1"),
+			number: 2,
+			state_root: BlakeTwo256::hash(b"3"),
+			extrinsics_root: extrinsic_root,
+			digest: Digest {
+				logs: vec![DigestItem::Other(b"5".to_vec())],
+			},
+			app_data_lookup: data_lookup,
+		};
+		let encoded = header.encode();
+		assert_eq!(encoded, vec![
+			146, 205, 245, 120, 196, 112, 133, 165, 153, 34, 86, 240, 220, 249, 125, 11, 25, 241,
+			241, 201, 222, 77, 95, 227, 12, 58, 206, 97, 145, 182, 229, 219, 8, 88, 19, 72, 51,
+			123, 15, 62, 20, 134, 32, 23, 61, 170, 165, 249, 77, 0, 216, 129, 112, 93, 203, 240,
+			170, 131, 239, 218, 186, 97, 210, 237, 225, 235, 134, 73, 33, 73, 151, 87, 78, 32, 196,
+			100, 56, 138, 23, 36, 32, 210, 84, 3, 104, 43, 187, 184, 12, 73, 104, 49, 200, 204, 31,
+			143, 13, 129, 1, 128, 233, 73, 235, 218, 245, 193, 62, 9, 100, 156, 88, 124, 107, 25,
+			5, 251, 119, 11, 74, 104, 67, 171, 170, 198, 180, 19, 227, 167, 64, 93, 152, 37, 172,
+			118, 77, 178, 52, 29, 185, 183, 150, 89, 101, 7, 62, 151, 89, 128, 233, 73, 235, 218,
+			245, 193, 62, 9, 100, 156, 88, 124, 107, 25, 5, 251, 119, 11, 74, 104, 67, 171, 170,
+			198, 180, 19, 227, 167, 64, 93, 152, 37, 172, 118, 77, 178, 52, 29, 185, 183, 150, 89,
+			101, 7, 62, 151, 89, 1, 0, 4, 0, 63, 191, 50, 39, 146, 108, 250, 63, 65, 103, 119, 30,
+			90, 217, 28, 250, 44, 45, 112, 144, 102, 124, 224, 30, 145, 28, 169, 11, 79, 49, 91,
+			17, 4, 0, 4, 53, 1, 0, 0, 0, 0
+		],);
 	}
 }

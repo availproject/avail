@@ -1,6 +1,6 @@
 [package]
 name = "data-avail"
-version = "1.0.0"
+version = "1.1.0"
 description = "Polygon Data Avilability Node."
 authors = ["Anonymous"]
 homepage = "https://polygon.technology/"
@@ -18,7 +18,7 @@ name = "data-avail"
 
 [dependencies]
 # Internals
-da-primitives= { path = "../primitives" }
+da-primitives= { path = "../primitives/avail" }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate = { path = "../kate" }
