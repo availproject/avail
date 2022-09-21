@@ -1,13 +1,12 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::ensure;
+use nomad_core::keccak256_concat;
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::{RuntimeDebug, H256};
 
-use super::{
-	error::TreeError, utils::hash_concat, Merkle, MerkleProof, Proof, TREE_DEPTH, ZERO_HASHES,
-};
+use super::{error::TreeError, Merkle, MerkleProof, Proof, TREE_DEPTH, ZERO_HASHES};
 
 /// Const assertions at `LightMerkle` struct.
 struct AssertLightMerkleN<const N: usize>;
@@ -60,11 +59,12 @@ impl<const N: usize> Merkle for LightMerkle<N> {
 		let mut size = self.count;
 
 		self.branch.iter().enumerate().for_each(|(i, elem)| {
-			node = if (size & 1) == 1 {
-				super::utils::hash_concat(elem, node)
+			let (left, right) = if (size & 1) == 1 {
+				(elem.as_bytes(), node.as_bytes())
 			} else {
-				super::utils::hash_concat(node, ZERO_HASHES[i])
+				(node.as_bytes(), ZERO_HASHES[i].as_bytes())
 			};
+			node = keccak256_concat!(left, right);
 			size /= 2;
 		});
 
@@ -85,7 +85,7 @@ impl<const N: usize> Merkle for LightMerkle<N> {
 				self.branch[i] = node;
 				return Ok(self.root());
 			}
-			node = hash_concat(self.branch[i], node);
+			node = keccak256_concat!(self.branch[i].as_bytes(), node.as_bytes());
 			size /= 2;
 		}
 

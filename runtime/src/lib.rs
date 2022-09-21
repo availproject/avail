@@ -1403,7 +1403,7 @@ impl_runtime_apis! {
 
 #[cfg(test)]
 mod tests {
-	use codec::{Decode, Encode};
+	use codec::Decode;
 	use hex_literal::hex;
 	use sp_keyring::Sr25519Keyring::Bob;
 	use sp_runtime::MultiAddress;

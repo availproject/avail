@@ -4,6 +4,7 @@ use frame_support::traits::Randomness;
 pub use kate::Seed;
 use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
 use scale_info::TypeInfo;
+use sp_core::H256;
 use sp_runtime::{traits::Hash, AccountId32, MultiAddress, MultiSignature};
 use sp_runtime_interface::{pass_by::PassByCodec, runtime_interface};
 use sp_std::vec::Vec;
@@ -125,24 +126,8 @@ pub trait HostedHeaderBuilder {
 			(kate_commitment, block_dims, data_index)
 		};
 
-		let extrinsics: Vec<Vec<u8>> = app_extrinsics.into_iter().map(|e| e.data).collect();
-		let avail_extrinsics = extrinsics
-			.iter()
-			.filter_map(|e| <AvailExtrinsic>::decode(&mut &e[..]).ok())
-			.collect::<Vec<_>>();
-
-		let data_root: [u8; 32] = if avail_extrinsics.len() > 0 {
-			log::debug!("Decoded some avail extrinsics.");
-			let leaves: Vec<[u8; 32]> = avail_extrinsics
-				.iter()
-				.map(|x| Sha256::hash(&x.data))
-				.collect();
-
-			let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
-			data_tree.root().expect("Data Root computation failed")
-		} else {
-			Default::default()
-		};
+		let extrinsics: Vec<Vec<u8>> = app_extrinsics.clone().into_iter().map(|e| e.data).collect();
+		let data_root = build_data_root(&app_extrinsics);
 
 		log::debug!("Avail Data Root: {:?}\n", data_root);
 
@@ -261,5 +246,148 @@ impl Decode for AvailExtrinsic {
 			signature,
 			data,
 		})
+	}
+}
+
+fn build_data_root(app_ext: &[AppExtrinsic]) -> H256 {
+	let mut tree = MerkleTree::<Sha256>::new();
+
+	app_ext
+		.iter()
+		// NOTE: `AvailExtrinsic` decode fn will filter onlye `Da_Control::submit_data` extrinsics.
+		// TODO: It implies a circular dependency atm between system & DA control pallets.
+		.filter_map(|e| AvailExtrinsic::decode(&mut &e.data[..]).ok())
+		.for_each(|ext| {
+			let ext_hash = Sha256::hash(&ext.data);
+			tree.insert(ext_hash);
+		});
+
+	tree.commit();
+	tree.root().unwrap_or_default().into()
+}
+
+#[cfg(test)]
+mod tests {
+	use da_primitives::asdr::AppId;
+	use hex_literal::hex;
+	use sp_core::H256;
+	use test_case::test_case;
+
+	use super::*;
+
+	fn encoded_timestamp_call() -> AppExtrinsic {
+		AppExtrinsic {
+			app_id: 0,
+			data: hex!("280403000BC26208378301").into(),
+		}
+	}
+
+	fn encoded_fillblock_call(app_id: AppId) -> AppExtrinsic {
+		let data = hex!("5D0284001CBD2D43530A44705AD088AF313E18F80B53EF16B36177CD4B77B846F2A5F07C01C44755794EA949E9410390CB4CE07FE2D8068656185B5AB9B43EEF934C3680478968C1F83E360A5D942FE75E9D58E49106A8E8B23601CBC6A633D80E5D089D83A4000400030000001D01A46868616A6B616E636B61206C61682069616B6A206361697568206162206169616A6820612067616861").to_vec();
+		AppExtrinsic { app_id, data }
+	}
+
+	fn encoded_tx_bob() -> AppExtrinsic {
+		let data = hex!("490284001cbd2d43530a44705ad088af313e18f80b53ef16b36177cd4b77b846f2a5f07c0166de9fcb3903fa119cb6d23dd903b93a67719f76922b2b4c15a2539d11021102b75f4c452595b65b3bacef0e852430bbfa44bd38133b16cd5d48edb45962568204010000000000000600008eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a4802093d00").to_vec();
+		AppExtrinsic { app_id: 0, data }
+	}
+
+	fn dr_input_1() -> Vec<AppExtrinsic> {
+		vec![encoded_timestamp_call(), encoded_fillblock_call(3)]
+	}
+
+	fn dr_output_1() -> H256 {
+		hex!("DDF368647A902A6F6AB9F53B32245BE28EDC99E92F43F0004BBC2CB359814B2A").into()
+	}
+
+	#[test_case( dr_input_1() => dr_output_1())]
+	#[test_case( vec![encoded_timestamp_call()] => H256::zero(); "Empty block")]
+	#[test_case( vec![encoded_tx_bob()] => H256::zero(); "Signed Native Tx")]
+	fn it_build_data_root(app_extrinsics: Vec<AppExtrinsic>) -> H256 {
+		build_data_root(&app_extrinsics).into()
+	}
+
+	#[test]
+	fn test_merkle_proof() {
+		let avail_data: Vec<Vec<u8>> = vec![
+			hex!("3033333166613733656565636362653465323235").into(),
+			hex!("3630646564316635616236373261373132376261").into(),
+			hex!("3262313166316464333935353666623261623432").into(),
+		];
+
+		let leaves = avail_data
+			.iter()
+			.map(|xt| Sha256::hash(&xt))
+			.collect::<Vec<[u8; 32]>>();
+
+		let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
+		let proof = data_tree.proof(&[1usize]);
+		let root_proof = proof.proof_hashes().to_vec();
+		assert_eq!(root_proof, vec![
+			hex!("754B9412E0ED7907BDF4B7CA5D2A22F5E129A03DEB1F4E1C1FE42D322FDEE90E"),
+			hex!("8D6E30E494D17D7675A94C3C614467FF8CCE35201C1056751A6E9A100515DAF9")
+		]);
+	}
+
+	#[test]
+	fn test_single_merkle_proof() {
+		let empty_vec: Vec<[u8; 32]> = vec![];
+
+		let avail_data: Vec<Vec<u8>> =
+			vec![hex!("3435346666383063303838616137666162396531").to_vec()];
+
+		let leaves = avail_data
+			.iter()
+			.map(|xt| Sha256::hash(&xt))
+			.collect::<Vec<[u8; 32]>>();
+
+		let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
+		let proof = data_tree.proof(&[0usize]);
+		let root_proof = proof.proof_hashes().to_vec();
+		// here the proof is shown empty because the root itself is the proof as there is only one appdata extrinsic
+		assert_eq!(root_proof, empty_vec);
+	}
+
+	///using rs-merkle proof verify function
+	#[test]
+	fn verify_merkle_proof() {
+		let avail_data: Vec<Vec<u8>> = vec![
+			hex!("3033333166613733656565636362653465323235").into(),
+			hex!("3630646564316635616236373261373132376261").into(),
+			hex!("3262313166316464333935353666623261623432").into(),
+			hex!("6433326630643762346634306264346563323665").into(),
+		];
+		let leaves = avail_data
+			.iter()
+			.map(|xt| Sha256::hash(&xt))
+			.collect::<Vec<[u8; 32]>>();
+
+		let merkle_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
+		let indices_to_prove = vec![3];
+		let leaves_to_prove = leaves.get(3..4).ok_or("can't get leaves to prove").unwrap();
+
+		let proof = merkle_tree.proof(&indices_to_prove);
+		let root = merkle_tree
+			.root()
+			.ok_or("couldn't get the merkle root")
+			.unwrap();
+
+		assert!(proof.verify(root, &indices_to_prove, leaves_to_prove, leaves.len()));
+	}
+
+	#[test]
+	fn verify_nodata_merkle_proof() {
+		let avail_data: Vec<Vec<u8>> = vec![];
+
+		let leaves = avail_data
+			.iter()
+			.map(|xt| Sha256::hash(&xt))
+			.collect::<Vec<[u8; 32]>>();
+		let leaves_to_prove = if let Ok(leaves) = leaves.get(0).ok_or("can't get leaves to prove") {
+			leaves
+		} else {
+			&[0u8; 32]
+		};
+		assert_eq!(leaves_to_prove, &[0u8; 32]);
 	}
 }

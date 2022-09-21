@@ -9,7 +9,7 @@ pub trait ExtrinsicsWithCommitment {
 
 	fn hash(&self) -> &Self::HashOutput;
 	fn commitment(&self) -> &Vec<u8>;
-	fn data_root(&self) -> &[u8; 32];
+	fn data_root(&self) -> &H256;
 
 	fn new(hash: Self::HashOutput) -> Self;
 
@@ -18,7 +18,7 @@ pub trait ExtrinsicsWithCommitment {
 		commitment: Vec<u8>,
 		rows: u16,
 		cols: u16,
-		data_root: [u8; 32],
+		data_root: H256,
 	) -> Self;
 }
 
