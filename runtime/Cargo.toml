@@ -27,15 +27,15 @@ scale-info = { version = "1.0", default-features = false, features = ["derive"] 
 parity-util-mem = { version = "0.10.2", default-features = false, features = ["primitive-types"] }
 
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-sp-io = { version = "6.0.0", default-features = false }
-sp-core = { version = "6.0.0", default-features = false }
-sp-std = { version = "4.0.0", default-features = false }
+sp-io = { version = "4.0.0-dev", default-features = false }
+sp-core = { version = "4.0.0-dev", default-features = false }
+sp-std = { version = "4.0.0-dev", default-features = false }
 sp-api = { version = "4.0.0-dev", default-features = false }
-sp-runtime = { version = "6.0.0", default-features = false }
+sp-runtime = { version = "4.0.0-dev", default-features = false }
 sp-authority-discovery = { version = "4.0.0-dev", default-features = false }
-sp-version = { version = "5.0.0", default-features = false }
+sp-version = { version = "4.0.0-dev", default-features = false }
 sp-consensus-babe = { version = "0.10.0-dev", default-features = false }
-sp-staking = { version = "4.0.0-dev", default-features = false }
+sp-staking = {version = "4.0.0-dev", default-features = false }
 sp-transaction-pool = { version = "4.0.0-dev", default-features = false }
 sp-offchain = { version = "4.0.0-dev", default-features = false }
 sp-session = { version = "4.0.0-dev", default-features = false }
@@ -80,12 +80,12 @@ pallet-mmr = { version = "4.0.0-dev", default-features = false }
 
 ## Substrate::RPCs
 pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", default-features = false }
-frame-system-rpc-runtime-api = { version = "6.0.0", default-features = false }
+frame-system-rpc-runtime-api = { version = "4.0.0-dev", default-features = false }
 
 # Used for runtime benchmarking
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 frame-system-benchmarking = { path = "../pallets/system/benchmarking", default-features = false, optional = true }
-# pallet-session-benchmarking = { version = "6.0.0", default-features = false, path = "../../../frame/session/benchmarking", optional = true }
+# pallet-session-benchmarking = { version = "4.0.0-dev", default-features = false, path = "../../../frame/session/benchmarking", optional = true }
 hex-literal = { version = "0.3.4", optional = true }
 
 [build-dependencies]

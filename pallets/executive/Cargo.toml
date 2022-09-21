@@ -20,21 +20,21 @@ codec = { package = "parity-scale-codec", version = "2.0.0", default-features = 
 ] }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
 frame-support = { version = "4.0.0-dev", default-features = false }
-frame-system = { version = "6.0.0", default-features = false }
-sp-runtime = { version = "6.0.0", default-features = false }
-sp-tracing = { version = "5.0.0", default-features = false}
-sp-std = { version = "4.0.0", default-features = false }
-sp-io = { version = "6.0.0", default-features = false }
-sp-core = { version = "6.0.0", default-features = false }
+frame-system = { version = "4.0.0-dev", default-features = false }
+sp-runtime = { version = "4.0.0-dev", default-features = false }
+sp-tracing = { version = "4.0.0-dev", default-features = false}
+sp-std = { version = "4.0.0-dev", default-features = false }
+sp-io = { version = "4.0.0-dev", default-features = false }
+sp-core = { version = "4.0.0-dev", default-features = false }
 
 
 [dev-dependencies]
 hex-literal = "0.3.4"
-sp-core = "6.0.0"
-sp-io = "6.0.0"
+sp-core = "4.0.0-dev"
+sp-io = "4.0.0-dev"
 pallet-balances = "4.0.0-dev"
 pallet-transaction-payment = "4.0.0-dev"
-sp-version = "5.0.0"
+sp-version = "4.0.0-dev"
 sp-inherents = "4.0.0-dev"
 pallet-babe = "4.0.0-dev"
 mocked-runtime = { path = "../mocked_runtime" }
