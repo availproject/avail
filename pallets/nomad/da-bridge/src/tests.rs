@@ -4,14 +4,13 @@ use frame_system::Config;
 use hex_literal::hex;
 use merkle::Merkle;
 use nomad_base::testing::*;
-use once_cell::sync::Lazy;
 use primitive_types::H256;
 use sp_runtime::{testing::Digest, traits::BlakeTwo256, AccountId32};
 
 use crate::mock::*;
 
 const TEST_SENDER_VEC: [u8; 32] = [2u8; 32];
-static TEST_SENDER_ACCOUNT: Lazy<AccountId32> = Lazy::new(|| AccountId32::new(TEST_SENDER_VEC));
+const TEST_SENDER_ACCOUNT: AccountId32 = AccountId32::new(TEST_SENDER_VEC);
 
 #[test]
 fn it_accepts_valid_extrinsic_root() {
@@ -40,8 +39,10 @@ fn it_accepts_valid_extrinsic_root() {
 
 			// Insert 10th block's hash into block number --> hash mapping so
 			// submitting 10th block's header is accepted by pallet
+			let block_number :BlockNumber = 10u32.into();
+			let data_root = H256::default();
 			frame_system::BlockHash::<Test>::insert::<u32, <Test as frame_system::Config>::Hash>(
-				10u32.into(),
+				block_number,
 				header.hash(),
 			);
 
@@ -49,12 +50,12 @@ fn it_accepts_valid_extrinsic_root() {
 			let root_pre = Home::tree().root();
 
 			// Enqueue extrinsic root
-			let origin = Origin::signed((*TEST_SENDER_ACCOUNT).clone());
 			assert_ok!(DABridge::try_dispatch_data_root(
-				origin,
+				Origin::signed(TEST_SENDER_ACCOUNT),
 				1000,
 				H256::zero(),
-				header
+				block_number,
+				data_root,
 			));
 
 			// Get home's merkle root post-enqueue

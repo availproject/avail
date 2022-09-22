@@ -12,8 +12,8 @@ use crate::{self as da_bridge};
 
 // type TestXt = sp_runtime::testing::TestXt<Call, SignedExtra>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
-type BlockNumber = u32;
+pub type Block = frame_system::mocking::MockBlock<Test>;
+pub type BlockNumber = u32;
 
 // TODO: add proper config once frame executive mocking has been demonstrated
 // Configure a mock runtime to test the pallet.
@@ -25,7 +25,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		UpdaterManager: updater_manager::{Pallet, Call, Storage, Event<T>},
-		Home: home::{Pallet, Call, Storage, Event<T>},
+		Home: nomad_home::{Pallet, Call, Storage, Event<T>},
 		DABridge: da_bridge::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -73,7 +73,7 @@ frame_support::parameter_types! {
 	pub const MaxMessageBodyBytes: u32 = 2048;
 }
 
-impl home::Config for Test {
+impl nomad_home::Config for Test {
 	type Event = Event;
 	type MaxMessageBodyBytes = MaxMessageBodyBytes;
 }
@@ -116,7 +116,7 @@ impl ExtBuilder {
 			.build_storage::<Test>()
 			.expect("Frame system builds valid default genesis config");
 
-		home::GenesisConfig::<Test> {
+		nomad_home::GenesisConfig::<Test> {
 			updater: self.updater,
 			local_domain: self.local_domain,
 			committed_root: self.committed_root,

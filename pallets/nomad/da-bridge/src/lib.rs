@@ -18,17 +18,16 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use da_primitives::traits::ExtendedHeader;
-	use frame_support::{pallet_prelude::*, sp_runtime::traits::Header};
+	use frame_support::pallet_prelude::*;
 	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
-	use home::Pallet as Home;
 	use nomad_core::TypedMessage;
+	use nomad_home::Pallet as Home;
 	use primitive_types::H256;
 
 	use crate::message::{DABridgeMessages, DataRootMessage};
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + home::Config {
+	pub trait Config: frame_system::Config + nomad_home::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		#[pallet::constant]
@@ -82,13 +81,19 @@ pub mod pallet {
 		#[pallet::weight(100)]
 		pub fn try_dispatch_data_root(
 			origin: OriginFor<T>,
-			destination_domain: u32,
+			#[pallet::compact] destination_domain: u32,
 			recipient_address: H256,
-			header: T::Header,
+			#[pallet::compact] block_number: T::BlockNumber,
+			data_root: H256,
 		) -> DispatchResult {
 			ensure_signed(origin)?;
-			Self::ensure_valid_header(&header)?;
-			Self::do_dispatch_data_root(destination_domain, recipient_address, header)
+			Self::ensure_valid_block_number(block_number)?;
+			Self::do_dispatch_data_root(
+				destination_domain,
+				recipient_address,
+				block_number,
+				data_root,
+			)
 		}
 	}
 
@@ -102,11 +107,9 @@ pub mod pallet {
 		fn do_dispatch_data_root(
 			destination_domain: u32,
 			recipient_address: H256,
-			header: T::Header,
+			block_number: T::BlockNumber,
+			data_root: H256,
 		) -> DispatchResult {
-			let block_number = *header.number();
-			let data_root = header.data_root();
-
 			let message: DABridgeMessages = DataRootMessage {
 				block_number: block_number.into(),
 				data_root,
@@ -135,18 +138,11 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Ensure a given header's hash has been recorded in the block hash
-		/// mapping.
-		fn ensure_valid_header(header: &T::Header) -> Result<(), DispatchError> {
+		fn ensure_valid_block_number(number: T::BlockNumber) -> Result<(), DispatchError> {
 			// Ensure header's block number is in the mapping
-			let number = header.number();
-			let stored_hash = frame_system::Pallet::<T>::block_hash(number);
-
-			// Ensure header's hash matches that in the block number to hash
-			// mapping
-			let hash = header.hash();
+			let hash = frame_system::Pallet::<T>::block_hash(number);
 			ensure!(
-				stored_hash == hash,
+				hash != Default::default(),
 				Error::<T>::HashOfBlockNotMatchBlockNumber,
 			);
 
