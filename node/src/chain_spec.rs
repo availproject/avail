@@ -3,7 +3,7 @@ use da_primitives::currency::AVL;
 use da_runtime::{
 	wasm_binary_unwrap, AccountId, AuthorityDiscoveryConfig, BabeConfig, Balance, BalancesConfig,
 	Block, CouncilConfig, DataAvailabilityConfig, DemocracyConfig, DesiredMembers, ElectionsConfig,
-	GenesisConfig, GrandpaConfig, HomeConfig, ImOnlineConfig, IndicesConfig, SessionConfig,
+	GenesisConfig, GrandpaConfig, NomadHomeConfig, ImOnlineConfig, IndicesConfig, SessionConfig,
 	SessionKeys, Signature, StakerStatus, StakingConfig, SudoConfig, SystemConfig,
 	TechnicalCommitteeConfig, UpdaterManagerConfig, MAX_NOMINATIONS,
 };
@@ -326,7 +326,7 @@ pub fn testnet_genesis(
 				.unwrap(),
 			_phantom: Default::default(),
 		},
-		home: HomeConfig {
+		nomad_home: NomadHomeConfig {
 			local_domain: 2000,
 			committed_root: Default::default(),
 			updater: "0x1563915e194d8cfba1943570603f7606a3115508"
@@ -490,7 +490,7 @@ fn genesis_builder(
 			],
 		},
 		updater_manager: Default::default(),
-		home: Default::default(),
+		nomad_home: Default::default(),
 		da_bridge: Default::default(),
 	}
 }

@@ -20,7 +20,7 @@ kate-rpc-runtime-api = { path = "../rpc/kate-rpc-runtime-api", default-features 
 
 ## Nomad
 updater-manager = { path = "../pallets/nomad/updater-manager", default-features = false }
-home = { path = "../pallets/nomad/home", default-features = false }
+nomad-home = { path = "../pallets/nomad/home", default-features = false }
 da-bridge = { path = "../pallets/nomad/da-bridge", default-features = false }
 
 # External 
@@ -158,7 +158,7 @@ std = [
 	"frame-system-rpc-runtime-api/std",
 	"da-control/std",
 	"updater-manager/std",
-	"home/std",
+	"nomad-home/std",
 ]
 
 runtime-benchmarks = [

@@ -1397,11 +1397,10 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex-literal",
- "home",
  "merkle",
  "nomad-base",
  "nomad-core",
- "once_cell",
+ "nomad-home",
  "pallet-transaction-payment",
  "parity-scale-codec 2.3.1",
  "primitive-types 0.10.1",
@@ -1472,9 +1471,9 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "hex",
  "hex-literal",
- "home",
  "kate",
  "kate-rpc-runtime-api",
+ "nomad-home",
  "pallet-asset-tx-payment",
  "pallet-authority-discovery",
  "pallet-authorship",
@@ -1547,13 +1546,13 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "futures 0.3.21",
  "hex-literal",
- "home",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "kate",
  "kate-rpc",
  "lru 0.7.5",
+ "nomad-home",
  "pallet-asset-tx-payment",
  "pallet-im-online",
  "pallet-mmr-rpc",
@@ -2943,33 +2942,6 @@ dependencies = [
  "digest 0.9.0",
  "generic-array 0.14.5",
  "hmac 0.8.1",
-]
-
-[[package]]
-name = "home"
-version = "4.0.0-dev"
-dependencies = [
- "da-primitives",
- "ethers-signers",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "merkle",
- "nomad-base",
- "nomad-core",
- "once_cell",
- "parity-scale-codec 2.3.1",
- "primitive-types 0.10.1",
- "scale-info",
- "serde",
- "signature 0.1.0",
- "sp-arithmetic",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "thiserror-no-std",
- "updater-manager",
 ]
 
 [[package]]
@@ -4771,6 +4743,33 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "tiny-keccak",
+]
+
+[[package]]
+name = "nomad-home"
+version = "4.0.0-dev"
+dependencies = [
+ "da-primitives",
+ "ethers-signers",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "merkle",
+ "nomad-base",
+ "nomad-core",
+ "parity-scale-codec 2.3.1",
+ "primitive-types 0.10.1",
+ "scale-info",
+ "serde",
+ "signature 0.1.0",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "test-case",
+ "thiserror-no-std",
+ "updater-manager",
 ]
 
 [[package]]

@@ -11,14 +11,14 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
+// mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::{
 		pallet_prelude::{ValueQuery, *},
-		sp_runtime::ArithmeticError,
+		sp_runtime::ArithmeticError::Overflow,
+		transactional,
 	};
 	use frame_system::pallet_prelude::{OriginFor, *};
 	use merkle::{Merkle, NomadLightMerkle};
@@ -53,7 +53,7 @@ pub mod pallet {
 	// Nonces
 	#[pallet::storage]
 	#[pallet::getter(fn nonces)]
-	pub type Nonces<T> = StorageMap<_, Twox64Concat, u32, u32>;
+	pub type Nonces<T> = StorageMap<_, Twox64Concat, u32, u32, ValueQuery>;
 
 	// Leaf index to root
 	#[pallet::storage]
@@ -136,6 +136,7 @@ pub mod pallet {
 		RootForIndexNotFound,
 		IndexForRootNotFound,
 		FailedState,
+		MaxIndexWitnessExhausted,
 	}
 
 	#[pallet::call]
@@ -147,7 +148,7 @@ pub mod pallet {
 		#[pallet::weight(100)]
 		pub fn dispatch(
 			origin: OriginFor<T>,
-			destination_domain: u32,
+			#[pallet::compact] destination_domain: u32,
 			recipient_address: H256,
 			message_body: BoundedVec<u8, T::MaxMessageBodyBytes>,
 		) -> DispatchResult {
@@ -162,9 +163,13 @@ pub mod pallet {
 
 		/// Verify/submit signed update.
 		#[pallet::weight(100)]
-		pub fn update(origin: OriginFor<T>, signed_update: SignedUpdate) -> DispatchResult {
+		pub fn update(
+			origin: OriginFor<T>,
+			signed_update: SignedUpdate,
+			#[pallet::compact] max_index: u32,
+		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
-			Self::do_update(sender, signed_update)
+			Self::do_update(sender, signed_update, max_index)
 		}
 
 		/// Verify/slash updater for improper update.
@@ -200,94 +205,98 @@ pub mod pallet {
 			message_body: BoundedVec<u8, T::MaxMessageBodyBytes>,
 		) -> DispatchResult {
 			Self::ensure_not_failed()?;
+			let base = Self::base();
+			let index_of = |tree: &NomadLightMerkle| tree.count() - 1;
 
 			// Get nonce and set new nonce
-			let nonce = Self::nonces(destination_domain).unwrap_or_default();
-			let new_nonce = nonce.checked_add(1).ok_or(ArithmeticError::Overflow)?;
-			Nonces::<T>::insert(destination_domain, new_nonce);
+			Nonces::<T>::try_mutate(destination_domain, |nonce| -> Result<u32, DispatchError> {
+				let new_nonce = nonce.checked_add(1).ok_or(DispatchError::from(Overflow))?;
 
-			// Get info for message to dispatch
-			let origin = Self::base().local_domain;
+				// Format message and get message hash
+				let message = NomadMessage {
+					origin: base.local_domain,
+					sender,
+					nonce: *nonce,
+					destination: destination_domain,
+					recipient: recipient_address,
+					body: message_body,
+				};
+				let message_hash = message.hash();
 
-			// Format message and get message hash
-			let message = NomadMessage {
-				origin,
-				sender,
-				nonce,
-				destination: destination_domain,
-				recipient: recipient_address,
-				body: message_body,
-			};
-			let message_hash = message.hash();
+				// Insert message hash into tree
+				let tree =
+					Tree::<T>::try_mutate(|tree| -> Result<NomadLightMerkle, DispatchError> {
+						tree.ingest(message_hash)
+							.map_err(|_| DispatchError::from(<Error<T>>::IngestionError))?;
 
-			// Insert message hash into tree
-			Tree::<T>::try_mutate(|tree| tree.ingest(message_hash))
-				.map_err(|_| <Error<T>>::IngestionError)?;
+						// Record new tree root for message
+						let root = tree.root();
+						let index = index_of(tree);
+						RootToIndex::<T>::insert(root, index);
+						IndexToRoot::<T>::insert(index, root);
 
-			// Record new tree root for message
-			let root = Self::tree().root();
-			let index = Self::tree().count() - 1;
-			RootToIndex::<T>::insert(root, index);
-			IndexToRoot::<T>::insert(index, root);
+						Ok(*tree)
+					})?;
 
-			Self::deposit_event(Event::<T>::Dispatch {
-				message_hash,
-				leaf_index: index,
-				destination_and_nonce: destination_and_nonce(destination_domain, nonce),
-				committed_root: Self::base().committed_root,
-				message: message.to_vec(),
-			});
+				Self::deposit_event(Event::<T>::Dispatch {
+					message_hash,
+					leaf_index: index_of(&tree),
+					destination_and_nonce: destination_and_nonce(destination_domain, *nonce),
+					committed_root: base.committed_root,
+					message: message.to_vec(),
+				});
+
+				Ok(new_nonce)
+			})?;
 
 			Ok(())
 		}
 
 		/// Check for improper update, remove all previous root/index mappings,
 		/// and emit Update event if valid.
-		fn do_update(sender: T::AccountId, signed_update: SignedUpdate) -> DispatchResult {
+		#[transactional]
+		fn do_update(
+			sender: T::AccountId,
+			signed_update: SignedUpdate,
+			mut max_index_witness: u32,
+		) -> DispatchResult {
 			Self::ensure_not_failed()?;
-
 			if Self::do_improper_update(sender, &signed_update)? {
 				return Ok(());
 			}
 
-			let new_root = signed_update.new_root();
+			let mut root = signed_update.new_root();
 			let previous_root = signed_update.previous_root();
-
-			let mut root = new_root;
-			let mut index = RootToIndex::<T>::get(root).ok_or(Error::<T>::IndexForRootNotFound)?;
 
 			// Clear previous mappings starting from new_root, going back and
 			// through previous_root. A new update's previous_root has always
 			// been cleared in the previous update, as the last update's
 			// new_root is always the next update's previous_root.
 			while root != previous_root {
+				// Ensure witness
+				ensure!(max_index_witness > 0, Error::<T>::MaxIndexWitnessExhausted);
+				max_index_witness -= 1;
+
+				// Remove `RootToIndex` & `IndexToRoot` items.
+				let index = RootToIndex::<T>::take(root).ok_or(Error::<T>::IndexForRootNotFound)?;
 				IndexToRoot::<T>::remove(index);
-				RootToIndex::<T>::remove(root);
 
-				// If we cleared out the first ever root/index mappings, there
-				// is nothing more to clear.
-				if index == 0 {
-					break;
-				}
-
-				// Decrement index and try to get previous root. If none exists,
-				// we have cleared the last possible root in the sequence and
-				// break.
-				index = index.checked_sub(1).ok_or(ArithmeticError::Underflow)?;
-				if let Some(r) = IndexToRoot::<T>::get(index) {
-					root = r;
-				} else {
-					break;
-				}
+				// Force an exit if `index ==0 ` or `index -1` is not found.
+				root = (index != 0)
+					.then(|| IndexToRoot::<T>::get(index - 1))
+					.flatten()
+					.unwrap_or_else(|| previous_root.clone());
 			}
 
-			Base::<T>::mutate(|base| base.set_committed_root(new_root));
+			Base::<T>::mutate(|base| {
+				base.set_committed_root(signed_update.new_root());
 
-			Self::deposit_event(Event::<T>::Update {
-				home_domain: Self::base().local_domain,
-				previous_root: signed_update.previous_root(),
-				new_root,
-				signature: signed_update.signature.to_vec(),
+				Self::deposit_event(Event::<T>::Update {
+					home_domain: base.local_domain,
+					previous_root: signed_update.previous_root(),
+					new_root: signed_update.new_root(),
+					signature: signed_update.signature.to_vec(),
+				});
 			});
 
 			Ok(())
@@ -299,8 +308,6 @@ pub mod pallet {
 			sender: T::AccountId,
 			signed_update: &SignedUpdate,
 		) -> Result<bool, DispatchError> {
-			Self::ensure_not_failed()?;
-
 			let base = Self::base();
 
 			// Ensure previous root matches current committed root
@@ -317,20 +324,19 @@ pub mod pallet {
 			);
 
 			// Ensure new root is exists in history
-			let root_exists = RootToIndex::<T>::get(signed_update.new_root()).is_some();
+			let root_not_found = RootToIndex::<T>::get(signed_update.new_root()).is_none();
 
 			// If new root not in history (invalid), slash updater and fail home
-			if !root_exists {
+			if root_not_found {
 				Self::fail(sender);
 				Self::deposit_event(Event::<T>::ImproperUpdate {
 					previous_root: signed_update.previous_root(),
 					new_root: signed_update.new_root(),
 					signature: signed_update.signature.to_vec(),
 				});
-				return Ok(true);
 			}
 
-			Ok(false)
+			Ok(root_not_found)
 		}
 
 		/// Set self in failed state and slash updater.
