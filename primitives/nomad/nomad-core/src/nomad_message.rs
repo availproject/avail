@@ -3,7 +3,7 @@ use sp_core::H256;
 use sp_std::{mem::size_of, vec::Vec};
 
 /// Size of `NomadMessage` fields except `body`.
-const NON_BODY_LENGTH: usize = 3 * size_of::<u32>() + 2 * size_of::<H256>();
+pub const NON_BODY_LENGTH: usize = 3 * size_of::<u32>() + 2 * size_of::<H256>();
 
 /// A full Nomad message
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
