@@ -26,7 +26,7 @@ kate-rpc = { path = "../rpc/kate-rpc" }
 dusk-plonk = "0.8.2"
 
 # 3rd-party
-codec = { package = "parity-scale-codec", version = "2.0.0" }
+codec = { package = "parity-scale-codec", version = "3.0.0" }
 structopt = "0.3.25"
 jsonrpc-core = "18.0.0"
 jsonrpc-core-client = "18.0.0"
@@ -45,7 +45,7 @@ sc-executor = { version = "0.10.0-dev", features = ["wasmtime"] }
 sc-service = { version = "0.10.0-dev",  features = ["wasmtime"] }
 sc-telemetry = { version = "4.0.0-dev" }
 sc-keystore = { version = "4.0.0-dev" }
-sp-keystore = { version = "0.10.0-dev" }
+sp-keystore = { version = "0.12.0" }
 sc-transaction-pool = { version = "4.0.0-dev" }
 sp-transaction-pool = { version = "4.0.0-dev" }
 sp-inherents = { version = "4.0.0-dev" }

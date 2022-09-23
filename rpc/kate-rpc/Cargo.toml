@@ -15,7 +15,7 @@ sc-client-db = { version = "0.10.0-dev", default-features = false }
 rs_merkle = { version = "1.2.0", default-features = false }
 
 
-codec = { package = "parity-scale-codec", version = "2.0.0" }
+codec = { package = "parity-scale-codec", version = "3.0.0" }
 da-primitives= { path = "../../primitives/avail" }
 kate = { path = "../../kate" }
 dusk-plonk = "0.8.2"

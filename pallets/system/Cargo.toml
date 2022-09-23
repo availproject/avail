@@ -24,8 +24,8 @@ rs_merkle = { version = "1.2.0", default-features = false }
 
 # Substrate
 serde = { version = "1.0.126", optional = true, features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.0", default-features = false, features = ["derive"] }
 sp-core = { version = "6.0.0", default-features = false }
 sp-std = { version = "4.0.0", default-features = false }
 sp-io = { version = "6.0.0", default-features = false }
@@ -38,7 +38,7 @@ sp-runtime-interface = { version = "6.0.0", default-features = false }
 criterion = "0.3.3"
 hex-literal = "0.3.1"
 test-case = "1.2.3"
-sp-externalities = "0.10.0-dev"
+sp-externalities = "0.12.0"
 
 [features]
 default = ["std"]
