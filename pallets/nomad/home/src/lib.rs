@@ -11,7 +11,10 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-// mod benchmarking;
+#[cfg(any(test, feature = "runtime-benchmarks"))]
+mod benchmarking;
+
+pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -27,6 +30,8 @@ pub mod pallet {
 	use primitive_types::{H160, H256};
 	use sp_std::vec::Vec;
 
+	use super::weights::WeightInfo;
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config + updater_manager::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -34,6 +39,9 @@ pub mod pallet {
 		/// Max allowed message body size
 		#[pallet::constant]
 		type MaxMessageBodyBytes: Get<u32>;
+
+		/// Weights for this pallet.
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::pallet]
@@ -145,7 +153,7 @@ pub mod pallet {
 		[u8; 32]: From<T::AccountId>,
 	{
 		/// Dispatch a message to the destination domain and recipient address.
-		#[pallet::weight(100)]
+		#[pallet::weight(T::WeightInfo::dispatch(message_body.len() as u32))]
 		pub fn dispatch(
 			origin: OriginFor<T>,
 			#[pallet::compact] destination_domain: u32,
@@ -173,7 +181,7 @@ pub mod pallet {
 		}
 
 		/// Verify/slash updater for improper update.
-		#[pallet::weight(100)]
+		#[pallet::weight(T::WeightInfo::improper_update())]
 		pub fn improper_update(
 			origin: OriginFor<T>,
 			signed_update: SignedUpdate,
@@ -357,6 +365,39 @@ pub mod pallet {
 
 			// Rotate updater on updater manager
 			updater_manager::Pallet::<T>::set_updater(new_updater)
+		}
+	}
+}
+
+#[cfg(any(test, feature = "runtime-benchmarks"))]
+pub mod common_tests_and_benches {
+	use hex_literal::hex;
+	use nomad_core::{SignedUpdate, Update};
+	use signature::Signature;
+	use sp_core::{H256, U256};
+
+	const EXPECTED_NEW_ROOT_LONGEST_TREE: H256 = H256(hex!(
+		"51b8ebbf7eaf99b9b4e8ee2fc0403775ea46d52809f8bdcbae0f522dc3122744"
+	));
+
+	pub fn expected_longest_tree_signed_update() -> SignedUpdate {
+		SignedUpdate {
+			update: Update {
+				home_domain: 1111,
+				previous_root: H256::zero(),
+				new_root: EXPECTED_NEW_ROOT_LONGEST_TREE,
+			},
+			signature: Signature {
+				r: U256::from_dec_str(
+					"96290840793444073955287098934441721132125503671787988042886796467875585310521",
+				)
+				.unwrap(),
+				s: U256::from_dec_str(
+					"451573212891827195607727683122560503516167696047227341791732236584951128137",
+				)
+				.unwrap(),
+				v: 28,
+			},
 		}
 	}
 }

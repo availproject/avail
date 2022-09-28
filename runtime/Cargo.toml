@@ -159,15 +159,15 @@ std = [
 	"da-control/std",
 	"updater-manager/std",
 	"nomad-home/std",
+	"da-bridge/std",
 ]
 
 runtime-benchmarks = [
 	"frame-benchmarking",
 	"frame-system/runtime-benchmarks",
 	"da-control/runtime-benchmarks",
+	"nomad-home/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
 	"frame-system-benchmarking",
 	"hex-literal",
 ]
-#	"sp-runtime/runtime-benchmarks",  ,  "hex-literal", , "pallet-balances/runtime-benchmarks", "pallet-timestamp/runtime-benchmarks",  "pallet-babe/runtime-benchmarks", "pallet-elections-phragmen/runtime-benchmarks", "pallet-grandpa/runtime-benchmarks", "pallet-im-online/runtime-benchmarks", "pallet-treasury/runtime-benchmarks",
-

@@ -157,6 +157,17 @@ fn normalize_recovery_id(v: u64) -> u8 {
 	}
 }
 
+impl From<sp_core::ecdsa::Signature> for Signature {
+	fn from(src: sp_core::ecdsa::Signature) -> Self {
+		let raw_src = src.0;
+		let r = U256::from_big_endian(&raw_src[..32]);
+		let s = U256::from_big_endian(&raw_src[32..64]);
+		let v: u64 = raw_src[64].into();
+
+		Self { r, s, v }
+	}
+}
+
 impl<'a> TryFrom<&'a [u8]> for Signature {
 	type Error = SignatureError;
 

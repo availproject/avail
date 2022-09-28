@@ -68,6 +68,7 @@ parameter_types! {
 impl home::Config for Test {
 	type Event = Event;
 	type MaxMessageBodyBytes = MaxMessageBodyBytes;
+	type WeightInfo = ();
 }
 
 impl updater_manager::Config for Test {

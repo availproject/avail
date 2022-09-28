@@ -986,6 +986,7 @@ parameter_types! {
 impl nomad_home::Config for Runtime {
 	type Event = Event;
 	type MaxMessageBodyBytes = MaxMessageBodyBytes;
+	type WeightInfo = nomad_home::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -1352,7 +1353,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, frame_benchmarking, BaselineBench::<Runtime>);
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 			list_benchmark!(list, extra, da_control, DataAvailability);
-			//list_benchmark!(list, extra, nomad_home, NomadHome); 
+			list_benchmark!(list, extra, nomad_home, NomadHome);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1396,7 +1397,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_benchmarking, BaselineBench::<Runtime>);
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, da_control, DataAvailability);
-			// add_benchmark!(params, batches, nomad_home, NomadHome);
+			add_benchmark!(params, batches, nomad_home, NomadHome);
 
 			Ok(batches)
 		}

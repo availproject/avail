@@ -3,7 +3,7 @@ use da_primitives::currency::AVL;
 use da_runtime::{
 	wasm_binary_unwrap, AccountId, AuthorityDiscoveryConfig, BabeConfig, Balance, BalancesConfig,
 	Block, CouncilConfig, DataAvailabilityConfig, DemocracyConfig, DesiredMembers, ElectionsConfig,
-	GenesisConfig, GrandpaConfig, NomadHomeConfig, ImOnlineConfig, IndicesConfig, SessionConfig,
+	GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig, NomadHomeConfig, SessionConfig,
 	SessionKeys, Signature, StakerStatus, StakingConfig, SudoConfig, SystemConfig,
 	TechnicalCommitteeConfig, UpdaterManagerConfig, MAX_NOMINATIONS,
 };
