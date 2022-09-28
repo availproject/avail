@@ -11,7 +11,7 @@ use dusk_plonk::{
 	commitment_scheme::kzg10,
 	error::Error as PlonkError,
 	fft::{EvaluationDomain, Evaluations},
-	prelude::BlsScalar,
+	prelude::{BlsScalar, CommitKey},
 };
 use frame_support::ensure;
 use log::info;
@@ -405,26 +405,10 @@ pub fn par_build_commitments(
 
 	(0..extended_rows_num)
 		.into_par_iter()
-		.map(|i| {
-			let mut row = Vec::with_capacity(block_dims.cols);
-
-			for j in 0..block_dims.cols {
-				row.push(ext_data_matrix[i + j * extended_rows_num]);
-			}
-
-			Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate()
-		})
+		.map(|i| row(&ext_data_matrix, i, block_dims.cols, extended_rows_num))
 		.zip(result_bytes.par_chunks_exact_mut(PROVER_KEY_SIZE))
-		.map(|(poly, res)| {
-			prover_key
-				.commit(&poly)
-				.map(|commitment| commitment.to_bytes())
-				.map(move |key_bytes| (key_bytes, res))
-				.map_err(Error::from)
-		})
-		.collect::<Result<Vec<(_, _)>, _>>()?
-		.into_par_iter()
-		.for_each(|(key_bytes, res)| res.copy_from_slice(&key_bytes[..PROVER_KEY_SIZE]));
+		.map(|(row, res)| commit(&prover_key, row_eval_domain, row, res))
+		.collect::<Result<_, _>>()?;
 
 	info!(
 		target: "system",
@@ -433,6 +417,28 @@ pub fn par_build_commitments(
 	);
 
 	Ok((tx_layout, result_bytes, block_dims, ext_data_matrix))
+}
+
+// Row of column-oriented matrix
+fn row(matrix: &[BlsScalar], i: usize, cols: usize, rows: usize) -> Vec<BlsScalar> {
+	let mut row = Vec::with_capacity(cols);
+	for j in 0..cols {
+		row.push(matrix[i + j * rows]);
+	}
+	row
+}
+
+// Generate a commitment and store it into result
+fn commit(
+	prover_key: &CommitKey,
+	domain: EvaluationDomain,
+	row: Vec<BlsScalar>,
+	result: &mut [u8],
+) -> Result<(), Error> {
+	let poly = Evaluations::from_vec_and_domain(row, domain).interpolate();
+	let commitment = prover_key.commit(&poly).map_err(Error::from)?;
+	result.copy_from_slice(&commitment.to_bytes());
+	Ok(())
 }
 
 #[cfg(test)]
