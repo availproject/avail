@@ -76,6 +76,7 @@ frame_support::parameter_types! {
 impl nomad_home::Config for Test {
 	type Event = Event;
 	type MaxMessageBodyBytes = MaxMessageBodyBytes;
+	type WeightInfo = ();
 }
 
 frame_support::parameter_types! {

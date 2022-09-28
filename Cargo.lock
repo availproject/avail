@@ -4754,6 +4754,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "hex-literal",
  "merkle",
  "nomad-base",
  "nomad-core",

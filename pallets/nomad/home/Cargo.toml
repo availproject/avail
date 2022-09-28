@@ -35,6 +35,7 @@ merkle = { path = "../../../primitives/nomad/merkle", default-features = false }
 nomad-base = { path = "../../../primitives/nomad/nomad-base", default-features = false }
 nomad-core = { path = "../../../primitives/nomad/nomad-core", default-features = false }
 updater-manager = { path = "../updater-manager", default-features = false }
+hex-literal = "0.3.4"
 
 
 [dev-dependencies]
@@ -42,6 +43,7 @@ ethers-signers = { version = "0.13.0", default-features = false }
 da-primitives = { path = "../../../primitives/avail", default-features = false }
 updater-manager = { path = "../updater-manager" }
 test-case = "1.2.3"
+frame-benchmarking = "4.0.0-dev"
 
 [features]
 default = ["std"]
@@ -50,10 +52,14 @@ std = [
 	"scale-info/std",
 	"frame-support/std",
 	"frame-system/std",
-	"frame-benchmarking/std",
 	"nomad-core/std",
 	"nomad-base/std"
 ]
 
-runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
+runtime-benchmarks = [
+	"frame-benchmarking",
+	"sp-runtime/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"nomad-core/runtime-benchmarks",
+]
 try-runtime = ["frame-support/try-runtime"]

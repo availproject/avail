@@ -1,5 +1,6 @@
 use std::convert::TryInto;
 
+use frame_benchmarking::whitelisted_caller;
 use frame_support::{assert_err, assert_ok, BoundedVec};
 use merkle::Merkle;
 use nomad_base::testing::*;
@@ -8,7 +9,9 @@ use primitive_types::H256;
 use sp_runtime::{AccountId32, DispatchResult};
 use test_case::test_case;
 
-use crate::{mock::*, Config, Error};
+use crate::{
+	common_tests_and_benches::expected_longest_tree_signed_update, mock::*, Config, Error,
+};
 
 const TEST_REMOTE_DOMAIN: u32 = 2222;
 const TEST_SENDER_VEC: [u8; 32] = [2u8; 32];
@@ -241,5 +244,43 @@ fn it_rejects_invalid_signature() {
 				Home::update(origin, signed_update.clone(), 10),
 				Error::<Test>::InvalidUpdaterSignature
 			);
+		})
+}
+
+#[test]
+fn it_longest_tree() {
+	ExtBuilder::default()
+		.with_base(*TEST_NOMAD_BASE)
+		.build()
+		.execute_with(move || {
+			use merkle::TREE_DEPTH;
+
+			let committed_root = Home::base().committed_root;
+
+			let body_len = <Test as Config>::MaxMessageBodyBytes::get() as usize;
+			let body: BoundedVec<u8, _> = sp_std::iter::repeat(3u8)
+				.take(body_len)
+				.collect::<Vec<_>>()
+				.try_into()
+				.unwrap();
+
+			let origin = Origin::signed(whitelisted_caller::<AccountId32>());
+
+			for _ in 0..TREE_DEPTH {
+				assert_ok!(Home::dispatch(
+					origin.clone(),
+					1111,
+					TEST_RECIPIENT,
+					body.clone()
+				));
+			}
+
+			let new_root = Home::tree().root();
+			let signed_update = TEST_UPDATER.sign_update(committed_root, new_root);
+			let exp_signed_update = expected_longest_tree_signed_update();
+			assert_eq!(new_root, exp_signed_update.update.new_root);
+			assert_eq!(signed_update, exp_signed_update);
+
+			assert_ok!(Home::update(origin, signed_update, TREE_DEPTH as u32));
 		})
 }
