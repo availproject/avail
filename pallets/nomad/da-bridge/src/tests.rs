@@ -11,6 +11,7 @@ use crate::mock::*;
 
 const TEST_SENDER_VEC: [u8; 32] = [2u8; 32];
 const TEST_SENDER_ACCOUNT: AccountId32 = AccountId32::new(TEST_SENDER_VEC);
+const DESTINATION_DOMAIN: u32 = 1000;
 
 #[test]
 fn it_accepts_valid_extrinsic_root() {
@@ -41,27 +42,32 @@ fn it_accepts_valid_extrinsic_root() {
 			// submitting 10th block's header is accepted by pallet
 			let block_number: BlockNumber = 10u32.into();
 			let data_root = H256::default();
+			let header_hash = header.hash();
 			frame_system::BlockHash::<Test>::insert::<u32, <Test as frame_system::Config>::Hash>(
 				block_number,
-				header.hash(),
+				header_hash.clone(),
 			);
 
 			// Get home's current merkle root pre-enqueue
 			let root_pre = Home::tree().root();
+			let nonce_pre = Home::nonces(DESTINATION_DOMAIN);
 
 			// Enqueue extrinsic root
 			assert_ok!(DABridge::try_dispatch_data_root(
 				Origin::signed(TEST_SENDER_ACCOUNT),
-				1000,
+				DESTINATION_DOMAIN,
 				H256::zero(),
 				block_number,
+				header_hash,
 				data_root,
 			));
 
 			// Get home's merkle root post-enqueue
 			let root_post = Home::tree().root();
+			let nonce_post = Home::nonces(DESTINATION_DOMAIN);
 
 			// Ensure home's merkle root changed after enqueueing message
 			assert_ne!(root_pre, root_post);
+			assert_eq!(nonce_pre + 1, nonce_post);
 		})
 }

@@ -86,6 +86,7 @@ frame_support::parameter_types! {
 impl da_bridge::Config for Test {
 	type DABridgePalletId = DABridgePalletId;
 	type Event = Event;
+	type WeightInfo = ();
 }
 
 pub(crate) struct ExtBuilder {

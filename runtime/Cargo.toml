@@ -167,6 +167,7 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"da-control/runtime-benchmarks",
 	"nomad-home/runtime-benchmarks",
+	"da-bridge/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
 	"frame-system-benchmarking",
 	"hex-literal",
