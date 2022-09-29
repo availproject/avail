@@ -217,7 +217,7 @@ pub mod pallet {
 			let index_of = |tree: &NomadLightMerkle| tree.count() - 1;
 
 			// Get nonce and set new nonce
-			Nonces::<T>::try_mutate(destination_domain, |nonce| -> Result<u32, DispatchError> {
+			Nonces::<T>::try_mutate(destination_domain, |nonce| -> Result<(), DispatchError> {
 				let new_nonce = nonce.checked_add(1).ok_or(DispatchError::from(Overflow))?;
 
 				// Format message and get message hash
@@ -254,7 +254,8 @@ pub mod pallet {
 					message: message.to_vec(),
 				});
 
-				Ok(new_nonce)
+				*nonce = new_nonce;
+				Ok(())
 			})?;
 
 			Ok(())
@@ -268,7 +269,6 @@ pub mod pallet {
 			signed_update: SignedUpdate,
 			mut max_index_witness: u32,
 		) -> DispatchResult {
-			Self::ensure_not_failed()?;
 			if Self::do_improper_update(sender, &signed_update)? {
 				return Ok(());
 			}
@@ -316,6 +316,8 @@ pub mod pallet {
 			sender: T::AccountId,
 			signed_update: &SignedUpdate,
 		) -> Result<bool, DispatchError> {
+			Self::ensure_not_failed()?;
+
 			let base = Self::base();
 
 			// Ensure previous root matches current committed root
@@ -331,10 +333,8 @@ pub mod pallet {
 				Error::<T>::InvalidUpdaterSignature,
 			);
 
-			// Ensure new root is exists in history
-			let root_not_found = RootToIndex::<T>::get(signed_update.new_root()).is_none();
-
 			// If new root not in history (invalid), slash updater and fail home
+			let root_not_found = RootToIndex::<T>::get(signed_update.new_root()).is_none();
 			if root_not_found {
 				Self::fail(sender);
 				Self::deposit_event(Event::<T>::ImproperUpdate {
@@ -377,7 +377,7 @@ pub mod common_tests_and_benches {
 	use sp_core::{H256, U256};
 
 	const EXPECTED_NEW_ROOT_LONGEST_TREE: H256 = H256(hex!(
-		"51b8ebbf7eaf99b9b4e8ee2fc0403775ea46d52809f8bdcbae0f522dc3122744"
+		"dd0a05d7b71c171d06b51f11d1191f2ce23dbe679ecabea374ee3a7909383fb6"
 	));
 
 	pub fn expected_longest_tree_signed_update() -> SignedUpdate {
@@ -389,14 +389,14 @@ pub mod common_tests_and_benches {
 			},
 			signature: Signature {
 				r: U256::from_dec_str(
-					"96290840793444073955287098934441721132125503671787988042886796467875585310521",
+					"14322696571982726287696567121385710541178197176749280748421005645809674945701",
 				)
 				.unwrap(),
 				s: U256::from_dec_str(
-					"451573212891827195607727683122560503516167696047227341791732236584951128137",
+					"30270442654181520335096087658805894014217975025586657453237735885054021806875",
 				)
 				.unwrap(),
-				v: 28,
+				v: 27,
 			},
 		}
 	}

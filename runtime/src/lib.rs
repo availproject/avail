@@ -996,6 +996,7 @@ parameter_types! {
 impl da_bridge::Config for Runtime {
 	type DABridgePalletId = DABridgePalletId;
 	type Event = Event;
+	type WeightInfo = da_bridge::weights::SubstrateWeight<Runtime>;
 }
 
 // TODO @miguel Aline this with previous order and ID to keep the compatibility.
@@ -1354,6 +1355,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 			list_benchmark!(list, extra, da_control, DataAvailability);
 			list_benchmark!(list, extra, nomad_home, NomadHome);
+			list_benchmark!(list, extra, da_bridge, DABridge);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1398,6 +1400,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, da_control, DataAvailability);
 			add_benchmark!(params, batches, nomad_home, NomadHome);
+			add_benchmark!(params, batches, da_bridge, DABridge);
 
 			Ok(batches)
 		}

@@ -6,6 +6,7 @@
 pub use pallet::*;
 
 mod message;
+pub mod weights;
 
 #[cfg(test)]
 mod mock;
@@ -24,6 +25,7 @@ pub mod pallet {
 	use nomad_home::Pallet as Home;
 	use primitive_types::H256;
 
+	use super::weights::WeightInfo;
 	use crate::message::{DABridgeMessages, DataRootMessage};
 
 	#[pallet::config]
@@ -32,6 +34,9 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type DABridgePalletId: Get<H256>;
+
+		/// Weights for this pallet.
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::pallet]
@@ -78,22 +83,18 @@ pub mod pallet {
 		u32: From<T::BlockNumber>,
 	{
 		/// Dispatch a data root message to the home if the header is valid.
-		#[pallet::weight(100)]
+		#[pallet::weight(<T as Config>::WeightInfo::try_dispatch_data_root())]
 		pub fn try_dispatch_data_root(
 			origin: OriginFor<T>,
 			#[pallet::compact] destination_domain: u32,
 			recipient_address: H256,
-			#[pallet::compact] block_number: T::BlockNumber,
+			#[pallet::compact] block: T::BlockNumber,
+			header: T::Hash,
 			data_root: H256,
 		) -> DispatchResult {
 			ensure_signed(origin)?;
-			Self::ensure_valid_block_number(block_number)?;
-			Self::do_dispatch_data_root(
-				destination_domain,
-				recipient_address,
-				block_number,
-				data_root,
-			)
+			Self::ensure_valid_header(block, header)?;
+			Self::do_dispatch_data_root(destination_domain, recipient_address, block, data_root)
 		}
 	}
 
@@ -138,11 +139,17 @@ pub mod pallet {
 			Ok(())
 		}
 
-		fn ensure_valid_block_number(number: T::BlockNumber) -> Result<(), DispatchError> {
+		/// Ensure a given header's hash has been recorded in the block hash
+		/// mapping.
+		fn ensure_valid_header(
+			block: T::BlockNumber,
+			header: T::Hash,
+		) -> Result<(), DispatchError> {
 			// Ensure header's block number is in the mapping
-			let hash = frame_system::Pallet::<T>::block_hash(number);
+			let stored_hash = frame_system::Pallet::<T>::block_hash(block);
+
 			ensure!(
-				hash != Default::default(),
+				stored_hash == header && header != Default::default(),
 				Error::<T>::HashOfBlockNotMatchBlockNumber,
 			);
 

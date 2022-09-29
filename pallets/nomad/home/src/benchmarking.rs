@@ -7,6 +7,8 @@ use frame_system::RawOrigin;
 use hex_literal::hex;
 #[cfg(feature = "runtime-benchmarks")]
 use merkle::Merkle;
+#[cfg(feature = "runtime-benchmarks")]
+use nomad_core::NomadState;
 use nomad_core::{SignedUpdate, Update};
 use signature::Signature;
 use sp_core::{H160, H256, U256};
@@ -19,6 +21,12 @@ use crate::*;
 const ID: u32 = 1111;
 const UPDATER_ADDRESS: H160 = H160(hex!("19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"));
 
+// Design of benchmark cases:
+// - `improper_update`. The worst case is when updater is slashed and the state change to
+// `NomdState::Failed`.
+// - `dispatch` cost is affected by the lenght of the message.
+// - `update`. The worst case is when `Tree` is full, having `TREE_DEPTH` as max index.
+
 #[cfg(feature = "runtime-benchmarks")]
 benchmarks! {
 	where_clause { where [u8; 32]: From<<T as frame_system::Config>::AccountId> }
@@ -28,10 +36,9 @@ benchmarks! {
 
 		let origin = RawOrigin::Signed(whitelisted_caller::<T::AccountId>());
 		let signed_update = expected_signed_update();
-
 	}: _(origin, signed_update)
 	verify {
-		// TODO
+		assert_eq!(Base::<T>::get().state, NomadState::Failed);
 	}
 
 	dispatch {
@@ -43,9 +50,11 @@ benchmarks! {
 		let recipient_address = H256::zero();
 		let body = random_message::<T>(b);
 
+		let prev_nonce = Nonces::<T>::get(ID);
 	}: _(origin, ID, recipient_address, body)
 	verify {
-		// TODO
+		let new_nonce = Nonces::<T>::get(ID);
+		assert_eq!( prev_nonce +1, new_nonce);
 	}
 
 	update {

@@ -27,6 +27,7 @@ primitive-types = { git = "https://github.com/paritytech/parity-common.git", tag
 
 # Benchmarking
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
+hex-literal = "0.3.4"
 
 # Avail
 da-primitives = { path = "../../../primitives/avail", default-features = false }
@@ -34,6 +35,7 @@ da-primitives = { path = "../../../primitives/avail", default-features = false }
 # Nomad
 nomad-home = { path = "../home", default-features = false }
 nomad-core = { path = "../../../primitives/nomad/nomad-core", default-features = false }
+
 
 [dev-dependencies]
 rand = "0.8.5"
