@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2017-2021 Parity Technologies (UK) Ltd.
+// Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -337,11 +337,15 @@ impl Default for BlockWeights {
 
 impl BlockWeights {
 	/// Get per-class weight settings.
-	pub fn get(&self, class: DispatchClass) -> &WeightsPerClass { self.per_class.get(class) }
+	pub fn get(&self, class: DispatchClass) -> &WeightsPerClass {
+		self.per_class.get(class)
+	}
 
 	/// Verifies correctness of this `BlockWeights` object.
 	pub fn validate(self) -> ValidationResult {
-		fn or_max(w: Option<Weight>) -> Weight { w.unwrap_or_else(Weight::max_value) }
+		fn or_max(w: Option<Weight>) -> Weight {
+			w.unwrap_or_else(Weight::max_value)
+		}
 		let mut error = ValidationErrors::default();
 
 		for class in DispatchClass::all() {
@@ -353,14 +357,15 @@ impl BlockWeights {
 			// base_for_class
 			error_assert!(
 				(max_for_class > self.base_block && max_for_class > base_for_class)
-				|| max_for_class == 0,
+				|| max_for_class == Weight::zero(),
 				&mut error,
 				"[{:?}] {:?} (total) has to be greater than {:?} (base block) & {:?} (base extrinsic)",
 				class, max_for_class, self.base_block, base_for_class,
 			);
 			// Max extrinsic can't be greater than max_for_class.
 			error_assert!(
-				weights.max_extrinsic.unwrap_or(0) <= max_for_class.saturating_sub(base_for_class),
+				weights.max_extrinsic.unwrap_or(Weight::zero()) <=
+					max_for_class.saturating_sub(base_for_class),
 				&mut error,
 				"[{:?}] {:?} (max_extrinsic) can't be greater than {:?} (max for class)",
 				class,
@@ -369,14 +374,14 @@ impl BlockWeights {
 			);
 			// Max extrinsic should not be 0
 			error_assert!(
-				weights.max_extrinsic.unwrap_or_else(Weight::max_value) > 0,
+				weights.max_extrinsic.unwrap_or_else(Weight::max_value) > Weight::zero(),
 				&mut error,
 				"[{:?}] {:?} (max_extrinsic) must not be 0. Check base cost and average initialization cost.",
 				class, weights.max_extrinsic,
 			);
 			// Make sure that if reserved is set it's greater than base_for_class.
 			error_assert!(
-				reserved > base_for_class || reserved == 0,
+				reserved > base_for_class || reserved == Weight::zero(),
 				&mut error,
 				"[{:?}] {:?} (reserved) has to be greater than {:?} (base extrinsic) if set",
 				class,
@@ -385,7 +390,7 @@ impl BlockWeights {
 			);
 			// Make sure max block is greater than max_total if it's set.
 			error_assert!(
-				self.max_block >= weights.max_total.unwrap_or(0),
+				self.max_block >= weights.max_total.unwrap_or(Weight::zero()),
 				&mut error,
 				"[{:?}] {:?} (max block) has to be greater than {:?} (max for class)",
 				class,
@@ -417,9 +422,9 @@ impl BlockWeights {
 	/// is not suitable for production deployments.
 	pub fn simple_max(block_weight: Weight) -> Self {
 		Self::builder()
-			.base_block(0)
+			.base_block(Weight::zero())
 			.for_class(DispatchClass::all(), |weights| {
-				weights.base_extrinsic = 0;
+				weights.base_extrinsic = Weight::zero();
 			})
 			.for_class(DispatchClass::non_mandatory(), |weights| {
 				weights.max_total = block_weight.into();
@@ -456,13 +461,10 @@ impl BlockWeights {
 		BlockWeightsBuilder {
 			weights: BlockWeights {
 				base_block: constants::BlockExecutionWeight::get(),
-				max_block: 0,
+				max_block: Weight::zero(),
 				per_class: PerDispatchClass::new(|class| {
-					let initial = if class == DispatchClass::Mandatory {
-						None
-					} else {
-						Some(0)
-					};
+					let initial =
+						if class == DispatchClass::Mandatory { None } else { Some(Weight::zero()) };
 					WeightsPerClass {
 						base_extrinsic: constants::ExtrinsicBaseWeight::get(),
 						max_extrinsic: None,
@@ -496,7 +498,7 @@ impl BlockWeightsBuilder {
 	///
 	/// This is to make sure that extrinsics don't stay forever in the pool,
 	/// because they could seamingly fit the block (since they are below `max_block`),
-	/// but the cost of calling `on_initialize` alway prevents them from being included.
+	/// but the cost of calling `on_initialize` always prevents them from being included.
 	pub fn avg_block_initialization(mut self, init_cost: Perbill) -> Self {
 		self.init_cost = Some(init_cost);
 		self
@@ -520,10 +522,7 @@ impl BlockWeightsBuilder {
 	/// Construct the `BlockWeights` object.
 	pub fn build(self) -> ValidationResult {
 		// compute max extrinsic size
-		let Self {
-			mut weights,
-			init_cost,
-		} = self;
+		let Self { mut weights, init_cost } = self;
 
 		// compute max block size.
 		for class in DispatchClass::all() {
@@ -564,5 +563,7 @@ mod tests {
 	use super::*;
 
 	#[test]
-	fn default_weights_are_valid() { BlockWeights::default().validate().unwrap(); }
+	fn default_weights_are_valid() {
+		BlockWeights::default().validate().unwrap();
+	}
 }
