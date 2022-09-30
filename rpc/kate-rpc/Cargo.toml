@@ -19,6 +19,7 @@ codec = { package = "parity-scale-codec", version = "2.0.0" }
 da-primitives= { path = "../../primitives/avail" }
 kate = { path = "../../kate" }
 dusk-plonk = "0.8.2"
+dusk-bytes = { version = "0.1.5", default-features = false }
 # frame-system = "4.0.0-dev"
 frame-system-rpc-runtime-api = "4.0.0-dev"
 jsonrpc-core = "18.0.0"
