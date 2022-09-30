@@ -1,6 +1,10 @@
 use avail_subxt::{avail::runtime_types::frame_support::storage::bounded_vec::BoundedVec, *};
 use sp_keyring::AccountKeyring;
-use subxt::{ext::sp_core::H160, tx::PairSigner, OnlineClient};
+use subxt::{
+	ext::{sp_core::H160, sp_runtime::traits::Header},
+	tx::PairSigner,
+	OnlineClient,
+};
 
 const DESTINATION_DOMAIN: u32 = 1000;
 const DA_BRIDGE_ROUTER_ADDRESS: &str = "0x77534486c6467fd24b1f7d60ca61d984d91f6a2a";
@@ -26,46 +30,50 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 		.wait_for_finalized_success()
 		.await
 		.unwrap();
+	let block_hash = h.block_hash();
 
-	let header = api
+	let header: DaHeader = api
 		.rpc()
-		.header(Some(h.block_hash()))
+		.header(Some(block_hash.clone()))
 		.await
 		.unwrap()
 		.unwrap();
 
-    println!("Hash of block with example data: {:?}", &header);
-    println!("Header data root: {:?}", header.extrinsics_root.data_root);
+	println!("Hash of block with example data: {:?}", &header);
+	println!("Header data root: {:?}", header.extrinsics_root.data_root);
+	println!("Block hash: {:?}", block_hash);
 
-    let bridge_router_eth_addr: H160 = DA_BRIDGE_ROUTER_ADDRESS.parse().unwrap();
-    let tx = avail::tx().da_bridge().try_dispatch_data_root(
-        DESTINATION_DOMAIN,
-        bridge_router_eth_addr.into(),
-        header.into(),
-    );
+	let bridge_router_eth_addr: H160 = DA_BRIDGE_ROUTER_ADDRESS.parse().unwrap();
+	let tx = avail::tx().da_bridge().try_dispatch_data_root(
+		DESTINATION_DOMAIN,
+		bridge_router_eth_addr.into(),
+		*header.number(),
+		block_hash,
+		header.data_root(),
+	);
 
-    println!(
-        "Sending finalized block header. Domain: {}. Recipient: {}",
-        DESTINATION_DOMAIN, DA_BRIDGE_ROUTER_ADDRESS
-    );
-    let h = api
-        .tx()
-        .sign_and_submit_then_watch(&tx, &signer, Default::default())
-        .await
-        .unwrap()
-        .wait_for_finalized_success()
-        .await
-        .unwrap();
+	println!(
+		"Sending finalized block header. Domain: {}. Recipient: {}",
+		DESTINATION_DOMAIN, DA_BRIDGE_ROUTER_ADDRESS
+	);
+	let h = api
+		.tx()
+		.sign_and_submit_then_watch(&tx, &signer, Default::default())
+		.await
+		.unwrap()
+		.wait_for_finalized_success()
+		.await
+		.unwrap();
 
-    let submitted_block = api
-        .rpc()
-        .block(Some(h.block_hash()))
-        .await
-        .unwrap()
-        .unwrap();
+	let submitted_block = api
+		.rpc()
+		.block(Some(h.block_hash()))
+		.await
+		.unwrap()
+		.unwrap();
 
-    let xts = submitted_block.block.extrinsics;
-    println!("Submitted block extrinsic: {xts:?}");
+	let xts = submitted_block.block.extrinsics;
+	println!("Submitted block extrinsic: {xts:?}");
 
 	Ok(())
 }

@@ -1,5 +1,3 @@
-use std::{thread, time};
-
 use avail_subxt::*;
 use sp_keyring::AccountKeyring;
 use subxt::{ext::sp_core::H160, tx::PairSigner, OnlineClient};
@@ -19,38 +17,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 		println!("Finalized block header: {:?}", &header);
 		println!("Header data root: {:?}", header.extrinsics_root.data_root);
 
-		let bridge_router_eth_addr: H160 = DA_BRIDGE_ROUTER_ADDRESS.parse().unwrap();
-		let tx = avail::tx().da_bridge().try_dispatch_data_root(
-			DESTINATION_DOMAIN,
-			bridge_router_eth_addr.into(),
-			header.into(),
-		);
+		if let Some(block_hash) = api.rpc().block_hash(Some(header.number.into())).await? {
+			println!("Block hash: {:?}", block_hash);
 
-		println!(
-			"Sending finalized block header. Domain: {}. Recipient: {}",
-			DESTINATION_DOMAIN, DA_BRIDGE_ROUTER_ADDRESS
-		);
-		let h = api
-			.tx()
-			.sign_and_submit_then_watch(&tx, &signer, Default::default())
-			.await
-			.unwrap()
-			.wait_for_finalized_success()
-			.await
-			.unwrap();
+			let bridge_router_eth_addr: H160 = DA_BRIDGE_ROUTER_ADDRESS.parse().unwrap();
+			let tx = avail::tx().da_bridge().try_dispatch_data_root(
+				DESTINATION_DOMAIN,
+				bridge_router_eth_addr.into(),
+				header.number,
+				block_hash,
+				header.data_root(),
+			);
 
-		let submitted_block = api
-			.rpc()
-			.block(Some(h.block_hash()))
-			.await
-			.unwrap()
-			.unwrap();
+			println!(
+				"Sending finalized block header. Domain: {}. Recipient: {}",
+				DESTINATION_DOMAIN, DA_BRIDGE_ROUTER_ADDRESS
+			);
+			let h = api
+				.tx()
+				.sign_and_submit_then_watch(&tx, &signer, Default::default())
+				.await
+				.unwrap()
+				.wait_for_finalized_success()
+				.await
+				.unwrap();
 
-		let xts = submitted_block.block.extrinsics;
-		println!("Submitted block extrinsic: {xts:?}");
+			let submitted_block = api
+				.rpc()
+				.block(Some(h.block_hash()))
+				.await
+				.unwrap()
+				.unwrap();
 
-		println!("Sleeping for 10 sec...\n");
-		thread::sleep(time::Duration::from_secs(10));
+			let xts = submitted_block.block.extrinsics;
+			println!("Submitted block extrinsic: {xts:?}");
+		}
 	}
 
 	Ok(())
