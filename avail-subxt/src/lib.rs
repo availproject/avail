@@ -272,6 +272,10 @@ pub struct DaHeader {
 	pub app_data_lookup: DataLookup,
 }
 
+impl DaHeader {
+	pub fn data_root(&self) -> H256 { self.extrinsics_root.data_root }
+}
+
 // Type conversions for turning serializable Avail objects into avail
 // config-specific types.
 impl From<DaHeader> for AvailHeader<u32, AvailBlakeTwo256> {
