@@ -1,13 +1,13 @@
 use avail_subxt::{avail::runtime_types::frame_support::storage::bounded_vec::BoundedVec, *};
 use sp_keyring::AccountKeyring;
 use subxt::{
-	ext::{sp_core::H160, sp_runtime::traits::Header},
+	ext::sp_core::H160,
 	tx::PairSigner,
 	OnlineClient,
 };
 
 const DESTINATION_DOMAIN: u32 = 1000;
-const DA_BRIDGE_ROUTER_ADDRESS: &str = "0x77534486c6467fd24b1f7d60ca61d984d91f6a2a";
+const DA_BRIDGE_ROUTER_ADDRESS: &str = "0x3f28a3e66326c3aa494d4f8e9477d1397ee94432";
 
 /// This example submits an Avail data extrinsic, then retrieves the block containing the
 /// extrinsic and matches the data.
@@ -47,9 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let tx = avail::tx().da_bridge().try_dispatch_data_root(
 		DESTINATION_DOMAIN,
 		bridge_router_eth_addr.into(),
-		*header.number(),
-		block_hash,
-		header.data_root(),
+		header.into(),
 	);
 
 	println!(

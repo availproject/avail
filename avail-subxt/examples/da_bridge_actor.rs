@@ -3,7 +3,7 @@ use sp_keyring::AccountKeyring;
 use subxt::{ext::sp_core::H160, tx::PairSigner, OnlineClient};
 
 const DESTINATION_DOMAIN: u32 = 1000;
-const DA_BRIDGE_ROUTER_ADDRESS: &str = "0x77534486c6467fd24b1f7d60ca61d984d91f6a2a";
+const DA_BRIDGE_ROUTER_ADDRESS: &str = "0x3f28a3e66326c3aa494d4f8e9477d1397ee94432";
 
 #[async_std::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -24,9 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 			let tx = avail::tx().da_bridge().try_dispatch_data_root(
 				DESTINATION_DOMAIN,
 				bridge_router_eth_addr.into(),
-				header.number,
-				block_hash,
-				header.data_root(),
+				header.into(),			
 			);
 
 			println!(
