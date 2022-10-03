@@ -109,7 +109,7 @@ pub mod pallet {
 			recipient_address: H256,
 			header: T::Header,
 		) -> DispatchResult {
-			 block_number = *header.number();
+			block_number = *header.number();
 			let data_root = header.data_root();
 
 			let message: DABridgeMessages = DataRootMessage {
