@@ -73,7 +73,7 @@ fn verify_row(
 
 pub fn verify(
 	public_params: &PublicParameters,
-	commitments: Vec<u8>,
+	commitments: &[u8],
 	cols_num: usize,
 	rows: Vec<Option<Vec<u8>>>,
 ) -> Result<bool, Error> {
