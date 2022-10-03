@@ -19,7 +19,8 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::pallet_prelude::*;
+	use da_primitives::traits::ExtendedHeader;
+	use frame_support::{pallet_prelude::*, sp_runtime::traits::Header};
 	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 	use nomad_core::TypedMessage;
 	use nomad_home::Pallet as Home;
@@ -88,13 +89,11 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			#[pallet::compact] destination_domain: u32,
 			recipient_address: H256,
-			#[pallet::compact] block: T::BlockNumber,
-			header: T::Hash,
-			data_root: H256,
+			header: T::Header,
 		) -> DispatchResult {
 			ensure_signed(origin)?;
-			Self::ensure_valid_header(block, header)?;
-			Self::do_dispatch_data_root(destination_domain, recipient_address, block, data_root)
+			Self::ensure_valid_header(&header)?;
+			Self::do_dispatch_data_root(destination_domain, recipient_address, header)
 		}
 	}
 
@@ -108,9 +107,11 @@ pub mod pallet {
 		fn do_dispatch_data_root(
 			destination_domain: u32,
 			recipient_address: H256,
-			block_number: T::BlockNumber,
-			data_root: H256,
+			header: T::Header,
 		) -> DispatchResult {
+			 block_number = *header.number();
+			let data_root = header.data_root();
+
 			let message: DABridgeMessages = DataRootMessage {
 				block_number: block_number.into(),
 				data_root,
@@ -141,15 +142,16 @@ pub mod pallet {
 
 		/// Ensure a given header's hash has been recorded in the block hash
 		/// mapping.
-		fn ensure_valid_header(
-			block: T::BlockNumber,
-			header: T::Hash,
-		) -> Result<(), DispatchError> {
+		fn ensure_valid_header(header: &T::Header) -> Result<(), DispatchError> {
 			// Ensure header's block number is in the mapping
-			let stored_hash = frame_system::Pallet::<T>::block_hash(block);
+			let number = header.number();
+			let stored_hash = frame_system::Pallet::<T>::block_hash(number);
 
+			// Ensure header's hash matches that in the block number to hash
+			// mapping
+			let hash = header.hash();
 			ensure!(
-				stored_hash == header && header != Default::default(),
+				stored_hash == hash,
 				Error::<T>::HashOfBlockNotMatchBlockNumber,
 			);
 
