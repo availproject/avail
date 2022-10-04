@@ -68,6 +68,19 @@ fn app_extrinsics_group_by_app_id(extrinsics: &[AppExtrinsic]) -> Vec<(u32, Vec<
 	})
 }
 
+pub fn scalars_to_rows(data: &[BlsScalar], cols: usize, rows: usize) -> Vec<Option<Vec<u8>>> {
+	(0..rows)
+		.into_iter()
+		.map(|i| {
+			row(data, i, cols, rows)
+				.iter()
+				.flat_map(BlsScalar::to_bytes)
+				.collect::<Vec<u8>>()
+		})
+		.map(Some)
+		.collect::<Vec<Option<Vec<u8>>>>()
+}
+
 pub fn flatten_and_pad_block(
 	max_rows_num: usize,
 	max_cols_num: usize,
@@ -680,8 +693,7 @@ mod tests {
 		prop_assert_eq!(result.1[0].as_slice(), &xt.data);
 		}
 
-		let public_params = crate::testnet::public_params(MAX_BLOCK_COLUMNS as usize);
-		let pp = testnet::public_params(dims.cols);
+		let public_params = testnet::public_params(dims.cols);
 		for cell in random_cells(dims.cols, dims.rows, 1) {
 			let col = cell.col;
 			let row = cell.row as usize;
@@ -690,9 +702,22 @@ mod tests {
 			prop_assert!(proof.len() == 80);
 
 			let commitment = &commitments[row * 48..(row + 1) * 48];
-			let verification =  kate_proof::kc_verify_proof(col, &proof, commitment, dims.rows as usize, dims.cols as usize, &pp);
+			let verification =  kate_proof::kc_verify_proof(col, &proof, commitment, dims.rows as usize, dims.cols as usize, &public_params);
 			prop_assert!(verification.is_ok());
 		}
+	}
+	}
+
+	proptest! {
+	#![proptest_config(ProptestConfig::with_cases(20))]
+	#[test]
+	fn test_commitments_verify(ref xts in app_extrinsics_strategy())  {
+		let (_, commitments, dims, matrix) = par_build_commitments(64, 16, 32, xts, Seed::default()).unwrap();
+		let rows = dims.rows * 2;
+		let cols = dims.cols;
+		// eprintln!("pbc: {}, matrix: {}, cols: {}, rows: {}", commitments.len(), matrix.len(), dims.cols, dims.rows);
+		let public_params = testnet::public_params(cols);
+		prop_assert!(kate_recovery::commitments::verify(&public_params, &commitments, dims.cols as usize, &scalars_to_rows(&matrix, cols, rows))?);
 	}
 	}
 

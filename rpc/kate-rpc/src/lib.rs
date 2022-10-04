@@ -158,20 +158,15 @@ where
 			block_ext_cache.put(block_hash, (data, block_dims));
 		}
 
-		let (ext_data, _) = block_ext_cache
+		let (ext_data, block_dims) = block_ext_cache
 			.get(&block_hash)
 			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
 
-		Ok(ext_data
-			.chunks_exact(cols)
-			.map(|row| {
-				row.iter()
-					.map(BlsScalar::to_bytes)
-					.flat_map(|e| e.to_vec())
-					.collect::<Vec<u8>>()
-			})
-			.map(Some)
-			.collect::<Vec<Option<Vec<u8>>>>())
+		Ok(kate::com::scalars_to_rows(
+			&ext_data,
+			block_dims.cols,
+			block_dims.rows * 2,
+		))
 	}
 
 	//TODO allocate static thread pool, just for RPC related work, to free up resources, for the block producing processes.

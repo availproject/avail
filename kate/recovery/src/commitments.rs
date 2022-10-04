@@ -75,7 +75,7 @@ pub fn verify(
 	public_params: &PublicParameters,
 	commitments: &[u8],
 	cols_num: usize,
-	rows: Vec<Option<Vec<u8>>>,
+	rows: &[Option<Vec<u8>>],
 ) -> Result<bool, Error> {
 	// TODO: Replace with error
 	assert!(commitments.len() / COMMITMENT_SIZE == rows.len());
