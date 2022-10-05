@@ -18,12 +18,11 @@ name = "data-avail"
 
 [dependencies]
 # Internals
-da-primitives= { path = "../primitives/avail" }
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", branch = "kate/0.2.0", default-features = false }
+kate = { git = "https://github.com/maticnetwork/avail-core.git", branch = "kate/0.2.0", default-features = false }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
-kate = { path = "../kate" }
 kate-rpc = { path = "../rpc/kate-rpc" }
-dusk-plonk = "0.8.2"
 
 # 3rd-party
 codec = { package = "parity-scale-codec", version = "2.0.0" }

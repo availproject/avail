@@ -776,7 +776,7 @@ mod tests {
 			data_root: [0u8; 32].into(),
 		};
 		let state_root =
-			hex!("293056F7324B44B6841297FB8076DEDFF6BD04C0F3F7DACBA3781C5CF3B5A80C").into();
+			hex!("f9ab7b81043ce843b6dcea19e9866b62b1dfcd652d6cae1d7e896d5d3001e112").into();
 		let app_data_lookup = DataLookup {
 			size: 1,
 			..Default::default()

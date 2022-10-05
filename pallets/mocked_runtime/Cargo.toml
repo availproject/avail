@@ -9,9 +9,9 @@ repository = ""
 description = "Mokend Runtime for Testing"
 
 [dependencies]
-da-primitives = { path = "../../primitives/avail" }
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", branch = "kate/0.2.0", default-features = false }
+kate = { git = "https://github.com/maticnetwork/avail-core.git", branch = "kate/0.2.0", default-features = false }
 da-control = { path = "../dactr" }
-kate = { path = "../../kate" }
 
 scale-info = { version = "1.0", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "2.0.0", features = ["derive"] }

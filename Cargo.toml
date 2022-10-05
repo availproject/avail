@@ -1,14 +1,6 @@
 [workspace]
 members = [
-	"kate",
-	"kate/recovery",
-	"kate/proof",
 	"fuzzing",
-	"primitives/avail",
-	"primitives/nomad/merkle",
-	"primitives/nomad/signature",
-	"primitives/nomad/nomad-core",
-	"primitives/nomad/nomad-base",
 	"pallets/executive",
 	"pallets/system",
 	"pallets/dactr",
@@ -16,13 +8,14 @@ members = [
 	"node",
 ]
 
+
+
 [patch."https://github.com/paritytech/substrate.git"]
 frame-system = { path = "pallets/system" }
 frame-executive = { path = "pallets/executive" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 
 [patch.crates-io]
-dusk-plonk = { git = "https://github.com/maticnetwork/plonk.git", branch = "v0.8.2-polygon-5" }
 frame-system = { path = "pallets/system" }
 frame-executive = { path = "pallets/executive" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
