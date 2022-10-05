@@ -63,6 +63,44 @@ fn map_cells(
 	Ok(result)
 }
 
+/// Returns rows for data related to specified application ID.
+/// Function returns empty vectory if there are no rows for given application ID.
+///
+/// # Arguments
+///
+/// * `index` - Application data index
+/// * `dimensions` - Extended matrix dimensions
+/// * `app_id` - Application ID
+pub fn app_specific_rows(
+	index: &AppDataIndex,
+	dimensions: &ExtendedMatrixDimensions,
+	app_id: u32,
+) -> Vec<usize> {
+	index
+		.cell_ranges()
+		.into_iter()
+		.find(|&(id, _)| app_id == id)
+		.map(|(_, range)| {
+			let start = range.start * 2 % dimensions.rows;
+
+			let non_extended_rows = dimensions.rows / 2;
+			let start_row_index = range.start % non_extended_rows;
+			let end_rows_index = range.end % non_extended_rows;
+			let is_less_than_one_column = range.end - range.start < non_extended_rows;
+
+			let end = match (is_less_than_one_column, start_row_index < end_rows_index) {
+				(true, true) => end_rows_index * 2,
+				(true, false) => end_rows_index + dimensions.rows,
+				(false, _) => start + dimensions.rows,
+			};
+
+			Range { start, end }
+				.map(|row| row % dimensions.rows)
+				.collect::<Vec<usize>>()
+		})
+		.unwrap_or_else(std::vec::Vec::new)
+}
+
 /// Generates empty cell positions in extended data matrix,
 /// for data related to specified application ID.
 /// Function returns `None` if there are no cells for given application ID.
@@ -700,6 +738,41 @@ mod tests {
 		for (index, result) in cases {
 			assert_eq!(index.data_ranges(), result);
 		}
+	}
+
+	#[test]
+	fn test_app_specific_rows() {
+		let index = AppDataIndex {
+			size: 8,
+			index: vec![(1, 1), (2, 3), (3, 4)],
+		};
+		let dimensions = ExtendedMatrixDimensions { rows: 4, cols: 4 };
+
+		let expected_0: Vec<usize> = vec![0, 1];
+		let result_0 = app_specific_rows(&index, &dimensions, 0);
+
+		assert_eq!(expected_0.len(), result_0.len());
+		assert!(expected_0.iter().zip(result_0.iter()).all(|(a, b)| a == b));
+
+		let expected_1 = vec![2, 3, 0, 1];
+		let result_1 = app_specific_rows(&index, &dimensions, 1);
+
+		assert_eq!(expected_1.len(), result_1.len());
+		assert!(expected_1.iter().zip(result_1.iter()).all(|(a, b)| a == b));
+
+		let expected_2 = vec![2, 3];
+		let result_2 = app_specific_rows(&index, &dimensions, 2);
+
+		assert_eq!(expected_2.len(), result_2.len());
+		assert!(expected_2.iter().zip(result_2.iter()).all(|(a, b)| a == b));
+
+		let expected_3 = vec![0, 1, 2, 3];
+		let result_3 = app_specific_rows(&index, &dimensions, 3);
+
+		assert_eq!(expected_3.len(), result_3.len());
+		assert!(expected_3.iter().zip(result_3.iter()).all(|(a, b)| a == b));
+
+		assert!(app_specific_rows(&index, &dimensions, 4).is_empty());
 	}
 
 	#[test]
