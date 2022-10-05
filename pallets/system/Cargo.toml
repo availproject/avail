@@ -13,8 +13,10 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-kate = { path = "../../kate", default-features = false }
-da-primitives = { path = "../../primitives/avail", default-features = false }
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", branch = "kate/0.2.0", default-features = false }
+kate = { git = "https://github.com/maticnetwork/avail-core.git", branch = "kate/0.2.0", default-features = false }
+kate_v1 = { git = "https://github.com/maticnetwork/avail-core.git", branch = "kate/0.1.0", package = "kate", default-features = false }
+da-primitives_v1 = { git = "https://github.com/maticnetwork/avail-core.git", branch = "kate/0.1.0", package = "da-primitives", default-features = false }
 
 # Other
 impl-trait-for-tuples = "0.2.1"
@@ -44,7 +46,9 @@ sp-externalities = "0.10.0-dev"
 default = ["std"]
 std = [
 	"kate/std",
+	"kate_v1/std",
 	"da-primitives/std",
+	"da-primitives_v1/std",
 	"serde",
 	"codec/std",
 	"scale-info/std",
