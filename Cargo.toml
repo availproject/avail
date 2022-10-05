@@ -4,6 +4,9 @@ members = [
 	"kate",
 ]
 [patch.crates-io]
+# Dusk-Plonk for Polygon
+dusk-plonk = { git = "https://github.com/maticnetwork/plonk.git", tag = "v0.12.0-polygon-1" }
+
 # Substrate  (polkadot-v0.9.13).
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.13" }
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.13" }
@@ -13,4 +16,3 @@ sp-runtime-interface = { git = "https://github.com/paritytech/substrate.git", br
 
 # Frame
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.13" }
-

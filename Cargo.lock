@@ -594,9 +594,9 @@ checksum = "9ea835d29036a4087793836fa931b08837ad5e957da9e23886b29586fb9b6650"
 
 [[package]]
 name = "dusk-bls12_381"
-version = "0.8.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e22aa3d0bb1f8a54723a33b056022b2f71eca929a86e2e03653f18b9dff0b1b8"
+checksum = "e24fd566c9601db3afc08574e9592bac981d2adeca458439e1f06615f511ce09"
 dependencies = [
  "byteorder",
  "dusk-bytes",
@@ -616,9 +616,9 @@ dependencies = [
 
 [[package]]
 name = "dusk-jubjub"
-version = "0.10.1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f842f5a6811741a236f46d4b7cd9da8a21e435e3395b4c3878681e0bb8e38d6f"
+checksum = "2a6097b9d4dc11110f6dea84f7d3594736764a789ce16b17a7a492f5d5926e62"
 dependencies = [
  "dusk-bls12_381",
  "dusk-bytes",
@@ -628,8 +628,8 @@ dependencies = [
 
 [[package]]
 name = "dusk-plonk"
-version = "0.8.2"
-source = "git+https://github.com/maticnetwork/plonk.git?branch=v0.8.2-polygon-5#df2eb98b7cd6958159b527891708c376c895f5b4"
+version = "0.12.0"
+source = "git+https://github.com/maticnetwork/plonk.git?tag=v0.12.0-polygon-1#d8cdbd1787405ecceb494b9d1438254b1c1de53b"
 dependencies = [
  "cfg-if",
  "dusk-bls12_381",
@@ -1180,7 +1180,7 @@ dependencies = [
 
 [[package]]
 name = "kate"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "bls12_381",
  "criterion",

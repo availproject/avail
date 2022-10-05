@@ -1,3 +1,1 @@
-# Data Availability Core 
-
-
+# Data Availability Core
