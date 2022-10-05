@@ -23,7 +23,6 @@ kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }
-
 # Nomad
 updater-manager = { path = "../pallets/nomad/updater-manager" }
 nomad-home = { path = "../pallets/nomad/home" }
