@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "std")]
-pub use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
+pub use dusk_plonk::{commitment_scheme::kzg10::PublicParameters, prelude::BlsScalar};
 use static_assertions::const_assert_ne;
 
 use crate::config::DATA_CHUNK_SIZE;
