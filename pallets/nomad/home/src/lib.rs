@@ -170,7 +170,7 @@ pub mod pallet {
 		}
 
 		/// Verify/submit signed update.
-		#[pallet::weight(100)]
+		#[pallet::weight(T::WeightInfo::update())]
 		pub fn update(
 			origin: OriginFor<T>,
 			signed_update: SignedUpdate,
