@@ -60,9 +60,7 @@ pub mod da {
 pub struct DigestWrapper(pub Digest);
 
 impl From<Digest> for DigestWrapper {
-	fn from(d: Digest) -> Self {
-		Self(d)
-	}
+	fn from(d: Digest) -> Self { Self(d) }
 }
 
 /// Trait for header builder.
@@ -112,9 +110,10 @@ fn build_base(
 	seed: Seed,
 	build_commitments: fn(&[AppExtrinsic], BlockLength, Seed) -> BuildCommitmentInfo,
 ) -> da::Header {
-	use crate::generic::DigestItem;
 	use da_primitives::traits::ExtrinsicsWithCommitment as _;
 	use sp_io::storage::{changes_root, root};
+
+	use crate::generic::DigestItem;
 
 	let BuildCommitmentInfo {
 		kate_commitment,
@@ -451,13 +450,10 @@ mod tests {
 		let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
 		let proof = data_tree.proof(&[1usize]);
 		let root_proof = proof.proof_hashes().to_vec();
-		assert_eq!(
-			root_proof,
-			vec![
-				hex!("754B9412E0ED7907BDF4B7CA5D2A22F5E129A03DEB1F4E1C1FE42D322FDEE90E"),
-				hex!("8D6E30E494D17D7675A94C3C614467FF8CCE35201C1056751A6E9A100515DAF9")
-			]
-		);
+		assert_eq!(root_proof, vec![
+			hex!("754B9412E0ED7907BDF4B7CA5D2A22F5E129A03DEB1F4E1C1FE42D322FDEE90E"),
+			hex!("8D6E30E494D17D7675A94C3C614467FF8CCE35201C1056751A6E9A100515DAF9")
+		]);
 	}
 
 	#[test]
