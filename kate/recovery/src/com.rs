@@ -15,6 +15,7 @@ use thiserror::Error;
 pub const CHUNK_SIZE: usize = 32;
 pub const DATA_CHUNK_SIZE: usize = 31;
 const PADDING_TAIL_VALUE: u8 = 0x80;
+pub const COMMITMENT_SIZE: usize = 48;
 
 pub struct ExtendedMatrixDimensions {
 	pub rows: usize,

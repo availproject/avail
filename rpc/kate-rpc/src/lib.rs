@@ -5,8 +5,7 @@ use std::{
 
 use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
 use da_primitives::asdr::{AppExtrinsic, AppId, GetAppId};
-use dusk_bytes::Serializable;
-use dusk_plonk::{commitment_scheme::kzg10::PublicParameters, prelude::BlsScalar};
+use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
 use frame_system::limits::BlockLength;
 use jsonrpc_core::{Error as RpcError, Result};
 use jsonrpc_derive::rpc;
@@ -108,7 +107,6 @@ where
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
 			.ok_or_else(|| internal_err!("Missing block number {}", block_number))?;
 
-		// TODO
 		let block_hash = signed_block.block.header().hash();
 		let block_id = BlockId::hash(block_hash);
 

@@ -477,7 +477,7 @@ mod tests {
 	use super::*;
 	use crate::{
 		com::{get_block_dimensions, pad_iec_9797_1, par_extend_data_matrix, BlockDimensions},
-		config::{DATA_CHUNK_SIZE, MAX_BLOCK_COLUMNS},
+		config::DATA_CHUNK_SIZE,
 		padded_len,
 	};
 
@@ -713,11 +713,12 @@ mod tests {
 	#[test]
 	fn test_commitments_verify(ref xts in app_extrinsics_strategy())  {
 		let (_, commitments, dims, matrix) = par_build_commitments(64, 16, 32, xts, Seed::default()).unwrap();
+
 		let rows = dims.rows * 2;
 		let cols = dims.cols;
-		// eprintln!("pbc: {}, matrix: {}, cols: {}, rows: {}", commitments.len(), matrix.len(), dims.cols, dims.rows);
 		let public_params = testnet::public_params(cols);
-		prop_assert!(kate_recovery::commitments::verify(&public_params, &commitments, dims.cols as usize, &scalars_to_rows(&matrix, cols, rows))?);
+
+		prop_assert!(kate_recovery::commitments::verify_equality(&public_params, &commitments, dims.cols as usize, &scalars_to_rows(&matrix, cols, rows))?);
 	}
 	}
 
