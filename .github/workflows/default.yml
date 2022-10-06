@@ -59,7 +59,7 @@ jobs:
           command: test
           args: --workspace --exclude fuzzing
         env:
-          RUSTFLAGS: "-Zinstrument-coverage"
+          RUSTFLAGS: "-C instrument-coverage"
           LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
           SKIP_WASM_BUILD: true
 
