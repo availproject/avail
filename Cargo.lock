@@ -1240,7 +1240,7 @@ dependencies = [
 name = "da-control"
 version = "1.0.0"
 dependencies = [
- "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.2.0)",
+ "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.2.0)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -1261,7 +1261,7 @@ dependencies = [
 [[package]]
 name = "da-primitives"
 version = "0.1.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.1.0#fab02ccbc260e88e511142023fbca102ff357284"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.1.0#fab02ccbc260e88e511142023fbca102ff357284"
 dependencies = [
  "frame-support",
  "log",
@@ -1280,7 +1280,7 @@ dependencies = [
 [[package]]
 name = "da-primitives"
 version = "0.1.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.2.0#09abd9bd8f7d54ea58ce6187bd76cee681736fb1"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.2.0#09abd9bd8f7d54ea58ce6187bd76cee681736fb1"
 dependencies = [
  "frame-support",
  "log",
@@ -1301,7 +1301,7 @@ name = "da-runtime"
 version = "4.0.0"
 dependencies = [
  "da-control",
- "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.2.0)",
+ "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.2.0)",
  "frame-benchmarking",
  "frame-election-provider-support",
  "frame-executive",
@@ -1373,7 +1373,7 @@ name = "data-avail"
 version = "1.0.0"
 dependencies = [
  "da-control",
- "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.2.0)",
+ "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.2.0)",
  "da-runtime",
  "frame-benchmarking",
  "frame-benchmarking-cli",
@@ -2033,7 +2033,7 @@ name = "frame-executive"
 version = "4.0.0-dev"
 dependencies = [
  "da-control",
- "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.2.0)",
+ "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.2.0)",
  "frame-support",
  "frame-system",
  "hex-literal",
@@ -2132,8 +2132,8 @@ name = "frame-system"
 version = "4.0.0-dev"
 dependencies = [
  "criterion",
- "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.1.0)",
- "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.2.0)",
+ "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.1.0)",
+ "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.2.0)",
  "frame-support",
  "hex-literal",
  "impl-trait-for-tuples",
@@ -2159,7 +2159,7 @@ dependencies = [
 name = "frame-system-benchmarking"
 version = "4.0.0-dev"
 dependencies = [
- "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.2.0)",
+ "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.2.0)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -2375,7 +2375,7 @@ name = "fuzzing"
 version = "0.1.0"
 dependencies = [
  "afl",
- "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.2.0)",
+ "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.2.0)",
  "hex-literal",
  "kate 0.2.0",
  "kate-recovery",
@@ -3142,10 +3142,10 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.1.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.1.0#fab02ccbc260e88e511142023fbca102ff357284"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.1.0#fab02ccbc260e88e511142023fbca102ff357284"
 dependencies = [
  "bls12_381",
- "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.1.0)",
+ "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.1.0)",
  "dusk-bytes",
  "dusk-plonk 0.8.2",
  "frame-support",
@@ -3168,10 +3168,10 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.2.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.2.0#09abd9bd8f7d54ea58ce6187bd76cee681736fb1"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.2.0#09abd9bd8f7d54ea58ce6187bd76cee681736fb1"
 dependencies = [
  "bls12_381",
- "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.2.0)",
+ "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.2.0)",
  "dusk-bytes",
  "dusk-plonk 0.12.0",
  "frame-support",
@@ -3194,7 +3194,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.1.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.2.0#09abd9bd8f7d54ea58ce6187bd76cee681736fb1"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.2.0#09abd9bd8f7d54ea58ce6187bd76cee681736fb1"
 dependencies = [
  "dusk-bytes",
  "dusk-plonk 0.12.0",
@@ -3208,7 +3208,7 @@ dependencies = [
 name = "kate-rpc"
 version = "0.1.0"
 dependencies = [
- "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.2.0)",
+ "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.2.0)",
  "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",
@@ -4182,7 +4182,7 @@ name = "mocked-runtime"
 version = "1.0.0"
 dependencies = [
  "da-control",
- "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?branch=kate/0.2.0)",
+ "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?tag=kate/v0.2.0)",
  "derive_more",
  "frame-support",
  "frame-system",
