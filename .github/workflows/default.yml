@@ -40,6 +40,7 @@ jobs:
       - name: Check code formatting
         uses: actions-rs/cargo@v1
         with:
+          toolchain: nightly-2021-12-05
           command: fmt
           args: --check
 
