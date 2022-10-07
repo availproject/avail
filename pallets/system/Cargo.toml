@@ -13,8 +13,8 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.2.0", default-features = false }
-kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.2.0", default-features = false }
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.2.1", default-features = false }
+kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.2.1", default-features = false }
 kate_v1 = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.1.0", package = "kate", default-features = false }
 da-primitives_v1 = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.1.0", package = "da-primitives", default-features = false }
 
