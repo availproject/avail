@@ -1,4 +1,4 @@
-#[cfg(test)]
+#[cfg(feature = "std")]
 use ethers_signers::LocalWallet;
 use nomad_core::test_utils::Updater;
 use once_cell::sync::Lazy;
