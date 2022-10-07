@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use signature::SignatureError;
 use sp_core::{H160, H256};
 
-#[cfg(test)]
+#[cfg(feature = "std")]
 pub mod testing;
 
 #[derive(Clone, Copy, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]

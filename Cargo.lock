@@ -1387,6 +1387,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "da-bridge"
+version = "1.0.0"
+dependencies = [
+ "da-control",
+ "da-primitives",
+ "frame-benchmarking",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "merkle",
+ "nomad-base",
+ "nomad-core",
+ "nomad-home",
+ "pallet-transaction-payment",
+ "parity-scale-codec 2.3.1",
+ "primitive-types 0.10.1",
+ "rand 0.8.5",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "updater-manager",
+]
+
+[[package]]
 name = "da-control"
 version = "1.0.0"
 dependencies = [
@@ -1430,6 +1459,7 @@ dependencies = [
 name = "da-runtime"
 version = "4.0.0"
 dependencies = [
+ "da-bridge",
  "da-control",
  "da-primitives",
  "frame-benchmarking",
@@ -1443,6 +1473,7 @@ dependencies = [
  "hex-literal",
  "kate",
  "kate-rpc-runtime-api",
+ "nomad-home",
  "pallet-asset-tx-payment",
  "pallet-authority-discovery",
  "pallet-authorship",
@@ -1496,12 +1527,14 @@ dependencies = [
  "static_assertions",
  "substrate-wasm-builder",
  "test-case",
+ "updater-manager",
 ]
 
 [[package]]
 name = "data-avail"
 version = "1.0.0"
 dependencies = [
+ "da-bridge",
  "da-control",
  "da-primitives",
  "da-runtime",
@@ -1519,6 +1552,7 @@ dependencies = [
  "kate",
  "kate-rpc",
  "lru 0.7.5",
+ "nomad-home",
  "pallet-asset-tx-payment",
  "pallet-im-online",
  "pallet-mmr-rpc",
@@ -1576,6 +1610,7 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "tempfile",
+ "updater-manager",
 ]
 
 [[package]]
@@ -4708,6 +4743,34 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "tiny-keccak",
+]
+
+[[package]]
+name = "nomad-home"
+version = "4.0.0-dev"
+dependencies = [
+ "da-primitives",
+ "ethers-signers",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "merkle",
+ "nomad-base",
+ "nomad-core",
+ "parity-scale-codec 2.3.1",
+ "primitive-types 0.10.1",
+ "scale-info",
+ "serde",
+ "signature 0.1.0",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "test-case",
+ "thiserror-no-std",
+ "updater-manager",
 ]
 
 [[package]]
@@ -9565,6 +9628,26 @@ name = "untrusted"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
+
+[[package]]
+name = "updater-manager"
+version = "1.0.0"
+dependencies = [
+ "da-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "nomad-core",
+ "parity-scale-codec 2.3.1",
+ "primitive-types 0.10.1",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
 
 [[package]]
 name = "url"

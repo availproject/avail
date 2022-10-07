@@ -18,6 +18,11 @@ da-control = { path = "../pallets/dactr", default-features = false }
 kate = { path = "../kate", default-features = false }
 kate-rpc-runtime-api = { path = "../rpc/kate-rpc-runtime-api", default-features = false }
 
+## Nomad
+updater-manager = { path = "../pallets/nomad/updater-manager", default-features = false }
+nomad-home = { path = "../pallets/nomad/home", default-features = false }
+da-bridge = { path = "../pallets/nomad/da-bridge", default-features = false }
+
 # External 
 static_assertions = "1.1.0"
 serde = { version = "1.0.121", optional = true, features = ["derive"] }
@@ -152,15 +157,18 @@ std = [
 	"pallet-mmr/std",
 	"frame-system-rpc-runtime-api/std",
 	"da-control/std",
+	"updater-manager/std",
+	"nomad-home/std",
+	"da-bridge/std",
 ]
 
 runtime-benchmarks = [
 	"frame-benchmarking",
 	"frame-system/runtime-benchmarks",
 	"da-control/runtime-benchmarks",
+	"nomad-home/runtime-benchmarks",
+	"da-bridge/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
 	"frame-system-benchmarking",
 	"hex-literal",
 ]
-#	"sp-runtime/runtime-benchmarks",  ,  "hex-literal", , "pallet-balances/runtime-benchmarks", "pallet-timestamp/runtime-benchmarks",  "pallet-babe/runtime-benchmarks", "pallet-elections-phragmen/runtime-benchmarks", "pallet-grandpa/runtime-benchmarks", "pallet-im-online/runtime-benchmarks", "pallet-treasury/runtime-benchmarks",
-

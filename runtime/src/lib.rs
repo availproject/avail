@@ -25,7 +25,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{
 	crypto::KeyTypeId,
 	u32_trait::{_1, _2, _3, _4, _5},
-	OpaqueMetadata,
+	OpaqueMetadata, H256,
 };
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
@@ -975,6 +975,30 @@ impl da_control::Config for Runtime {
 	type WeightInfo = da_control::weights::SubstrateWeight<Runtime>;
 }
 
+impl updater_manager::Config for Runtime {
+	type Event = Event;
+}
+
+parameter_types! {
+	pub const MaxMessageBodyBytes: u32 = 2048;
+}
+
+impl nomad_home::Config for Runtime {
+	type Event = Event;
+	type MaxMessageBodyBytes = MaxMessageBodyBytes;
+	type WeightInfo = nomad_home::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const DABridgePalletId: H256 = H256::repeat_byte(1);
+}
+
+impl da_bridge::Config for Runtime {
+	type DABridgePalletId = DABridgePalletId;
+	type Event = Event;
+	type WeightInfo = da_bridge::weights::SubstrateWeight<Runtime>;
+}
+
 // TODO @miguel Aline this with previous order and ID to keep the compatibility.
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -1017,6 +1041,11 @@ construct_runtime!(
 
 		// DA module
 		DataAvailability: da_control,
+
+		// Nomad
+		UpdaterManager: updater_manager,
+		NomadHome: nomad_home,
+		DABridge: da_bridge,
 	}
 );
 
@@ -1325,6 +1354,8 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, frame_benchmarking, BaselineBench::<Runtime>);
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 			list_benchmark!(list, extra, da_control, DataAvailability);
+			list_benchmark!(list, extra, nomad_home, NomadHome);
+			list_benchmark!(list, extra, da_bridge, DABridge);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1368,6 +1399,8 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_benchmarking, BaselineBench::<Runtime>);
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, da_control, DataAvailability);
+			add_benchmark!(params, batches, nomad_home, NomadHome);
+			add_benchmark!(params, batches, da_bridge, DABridge);
 
 			Ok(batches)
 		}
