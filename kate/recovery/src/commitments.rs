@@ -56,21 +56,14 @@ fn try_into_scalars(data: &[u8]) -> Result<Vec<BlsScalar>, Error> {
 		.collect::<Result<Vec<BlsScalar>, Error>>()
 }
 
-fn verify_row(
+fn row_commitment(
 	prover_key: &CommitKey,
 	domain: EvaluationDomain,
-	commitment: &[u8],
-	row: &Option<Vec<u8>>,
-) -> Result<bool, Error> {
-	match row {
-		None => Ok(true),
-		Some(row) => {
-			let scalars = try_into_scalars(row)?;
-			let polynomial = Evaluations::from_vec_and_domain(scalars, domain).interpolate();
-			let row_commitment = prover_key.commit(&polynomial)?.to_bytes();
-			Ok(row_commitment == commitment)
-		},
-	}
+	row: &[u8],
+) -> Result<[u8; COMMITMENT_SIZE], Error> {
+	let scalars = try_into_scalars(row)?;
+	let polynomial = Evaluations::from_vec_and_domain(scalars, domain).interpolate();
+	Ok(prover_key.commit(&polynomial)?.to_bytes())
 }
 
 /// Verifies given commitments and row commitments equality. Commitments are verified only for specified rows,
@@ -104,7 +97,10 @@ pub fn verify_equality(
 	let verifications = commitments
 		.chunks_exact(COMMITMENT_SIZE)
 		.zip(rows.iter())
-		.map(|(commitment, row)| verify_row(&prover_key, domain, commitment, row))
+		.map(|(commitment, row)| match row {
+			None => Ok(true),
+			Some(row) => Ok(row_commitment(&prover_key, domain, row)? == commitment),
+		})
 		.collect::<Result<Vec<bool>, Error>>()?;
 
 	Ok(verifications.iter().all(|&v| v))

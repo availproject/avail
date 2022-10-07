@@ -1,4 +1,5 @@
 use std::{
+	cmp,
 	collections::HashMap,
 	convert::{TryFrom, TryInto},
 	iter::once,
@@ -16,6 +17,7 @@ pub const CHUNK_SIZE: usize = 32;
 pub const DATA_CHUNK_SIZE: usize = 31;
 const PADDING_TAIL_VALUE: u8 = 0x80;
 pub const COMMITMENT_SIZE: usize = 48;
+const EXTENSION_FACTOR: usize = 2;
 
 pub struct ExtendedMatrixDimensions {
 	pub rows: usize,
@@ -82,21 +84,12 @@ pub fn app_specific_rows(
 		.into_iter()
 		.find(|&(id, _)| app_id == id)
 		.map(|(_, range)| {
-			let start = range.start * 2 % dimensions.rows;
+			let offset = range.start * EXTENSION_FACTOR;
+			let number_of_cells = (range.end - range.start) * EXTENSION_FACTOR;
+			let number_of_rows = cmp::min(number_of_cells, dimensions.rows);
 
-			let non_extended_rows = dimensions.rows / 2;
-			let start_row_index = range.start % non_extended_rows;
-			let end_rows_index = range.end % non_extended_rows;
-			let is_less_than_one_column = range.end - range.start < non_extended_rows;
-
-			let end = match (is_less_than_one_column, start_row_index < end_rows_index) {
-				(true, true) => end_rows_index * 2,
-				(true, false) => end_rows_index + dimensions.rows,
-				(false, _) => start + dimensions.rows,
-			};
-
-			Range { start, end }
-				.map(|row| row % dimensions.rows)
+			(0..number_of_rows)
+				.map(move |row| (row + offset) % dimensions.rows)
 				.collect::<Vec<usize>>()
 		})
 		.unwrap_or_else(std::vec::Vec::new)
@@ -744,30 +737,30 @@ mod tests {
 	#[test]
 	fn test_app_specific_rows() {
 		let index = AppDataIndex {
-			size: 8,
-			index: vec![(1, 1), (2, 3), (3, 4)],
+			size: 16,
+			index: vec![(1, 2), (2, 5), (3, 8)],
 		};
-		let dimensions = ExtendedMatrixDimensions { rows: 4, cols: 4 };
+		let dimensions = ExtendedMatrixDimensions { rows: 8, cols: 4 };
 
-		let expected_0: Vec<usize> = vec![0, 1];
+		let expected_0: Vec<usize> = vec![0, 1, 2, 3];
 		let result_0 = app_specific_rows(&index, &dimensions, 0);
 
 		assert_eq!(expected_0.len(), result_0.len());
 		assert!(expected_0.iter().zip(result_0.iter()).all(|(a, b)| a == b));
 
-		let expected_1 = vec![2, 3, 0, 1];
+		let expected_1 = vec![4, 5, 6, 7, 0, 1];
 		let result_1 = app_specific_rows(&index, &dimensions, 1);
 
 		assert_eq!(expected_1.len(), result_1.len());
 		assert!(expected_1.iter().zip(result_1.iter()).all(|(a, b)| a == b));
 
-		let expected_2 = vec![2, 3];
+		let expected_2 = vec![2, 3, 4, 5, 6, 7];
 		let result_2 = app_specific_rows(&index, &dimensions, 2);
 
 		assert_eq!(expected_2.len(), result_2.len());
 		assert!(expected_2.iter().zip(result_2.iter()).all(|(a, b)| a == b));
 
-		let expected_3 = vec![0, 1, 2, 3];
+		let expected_3 = vec![0, 1, 2, 3, 4, 5, 6, 7];
 		let result_3 = app_specific_rows(&index, &dimensions, 3);
 
 		assert_eq!(expected_3.len(), result_3.len());
