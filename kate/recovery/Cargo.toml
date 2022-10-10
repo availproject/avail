@@ -15,3 +15,4 @@ serde = { version = "1.0", features = ["derive"] }
 [dev-dependencies]
 rand = "0.8.4" 
 rand_chacha = "0.3"
+test-case = "1.2.3"

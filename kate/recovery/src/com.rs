@@ -646,6 +646,7 @@ mod tests {
 	use dusk_bytes::Serializable;
 	use rand::{Rng, SeedableRng};
 	use rand_chacha::ChaChaRng;
+	use test_case::test_case;
 
 	use super::*;
 
@@ -734,39 +735,22 @@ mod tests {
 		}
 	}
 
-	#[test]
-	fn test_app_specific_rows() {
+	#[test_case(0, &[0, 1, 2, 3] ; "App 0 spans 2 rows form row 0")]
+	#[test_case(1, &[4, 5, 6, 7, 0, 1] ; "App 1 spans 6 rows from row 4 ")]
+	#[test_case(2, &[2, 3, 4, 5, 6, 7] ; "App 2 spans 6 rows from row 2")]
+	#[test_case(3, &[0, 1, 2, 3, 4, 5, 6, 7] ; "App 3 spans all rows")]
+	#[test_case(4, &[] ; "There is no app 4")]
+	fn test_app_specific_rows(app_id: u32, expected: &[usize]) {
 		let index = AppDataIndex {
 			size: 16,
 			index: vec![(1, 2), (2, 5), (3, 8)],
 		};
 		let dimensions = ExtendedMatrixDimensions { rows: 8, cols: 4 };
 
-		let expected_0: Vec<usize> = vec![0, 1, 2, 3];
-		let result_0 = app_specific_rows(&index, &dimensions, 0);
+		let result = app_specific_rows(&index, &dimensions, app_id);
 
-		assert_eq!(expected_0.len(), result_0.len());
-		assert!(expected_0.iter().zip(result_0.iter()).all(|(a, b)| a == b));
-
-		let expected_1 = vec![4, 5, 6, 7, 0, 1];
-		let result_1 = app_specific_rows(&index, &dimensions, 1);
-
-		assert_eq!(expected_1.len(), result_1.len());
-		assert!(expected_1.iter().zip(result_1.iter()).all(|(a, b)| a == b));
-
-		let expected_2 = vec![2, 3, 4, 5, 6, 7];
-		let result_2 = app_specific_rows(&index, &dimensions, 2);
-
-		assert_eq!(expected_2.len(), result_2.len());
-		assert!(expected_2.iter().zip(result_2.iter()).all(|(a, b)| a == b));
-
-		let expected_3 = vec![0, 1, 2, 3, 4, 5, 6, 7];
-		let result_3 = app_specific_rows(&index, &dimensions, 3);
-
-		assert_eq!(expected_3.len(), result_3.len());
-		assert!(expected_3.iter().zip(result_3.iter()).all(|(a, b)| a == b));
-
-		assert!(app_specific_rows(&index, &dimensions, 4).is_empty());
+		assert_eq!(expected.len(), result.len());
+		assert!(expected.iter().zip(result.iter()).all(|(a, b)| a == b));
 	}
 
 	#[test]
