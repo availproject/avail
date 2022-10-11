@@ -4,35 +4,9 @@ on:
     branches-ignore:
       - '**'
     tags:
-      - 'v*.*.*'
-      # to be used by fork patch-releases ^^
-      - 'v*.*.*-*'
+      - '*'
 
 jobs:
-
-  # awx compatible binary with correct version of gcc and clang
-  binary_centos7_amd64:
-    runs-on: ubuntu-latest
-    container:
-      image: amd64/centos:centos7
-    steps:
-         - uses: actions/checkout@v2
-         - name: install cargo deps and build avail
-           run: |
-            yum install centos-release-scl -y
-            yum install llvm-toolset-7 -y
-            yum install gcc-c++ -y
-            scl enable llvm-toolset-7 bash
-            export PATH="/opt/rh/llvm-toolset-7/root/usr/bin:$PATH"
-            export LIBCLANG_PATH="/opt/rh/llvm-toolset-7/root/usr/lib64/"
-            curl https://sh.rustup.rs -sSf | sh -s -- -y
-            source "$HOME/.cargo/env"
-            cargo build --release -p data-avail
-            mv target/release/data-avail target/release/data-avail-centos7-amd64
-         - uses: actions/upload-artifact@v2
-           with:
-             name: data-avail-centos7-amd64-binary
-             path: target/release/data-avail-centos7-amd64
 
   binary_linux_amd64:
     runs-on: ubuntu-latest
@@ -49,18 +23,63 @@ jobs:
            with:
              name: data-avail-linux-amd64-binary
              path: target/release/data-avail-linux-amd64
+             
+  binary_linux_amd64_tar:
+    runs-on: ubuntu-latest
+    steps:
+         - uses: actions/checkout@v2
+         - name: install cargo deps and build avail
+           shell: bash
+           run: |
+            curl https://sh.rustup.rs -sSf | sh -s -- -y
+            source "$HOME/.cargo/env"
+            cargo build --release -p data-avail
+            mv target/release/data-avail target/release/data-avail-linux-amd64
+            pushd target/release/
+            tar czf data-avail-linux-amd64.tar.gz data-avail-linux-amd64
+            popd
+         - uses: actions/upload-artifact@v2
+           with:
+             name: data-avail-linux-amd64-tar
+             path: target/release/data-avail-linux-amd64.tar.gz
+
+  binary_linux_aarch64:
+    runs-on: ubuntu-latest
+    steps:
+         - uses: actions/checkout@v2
+         - name: install cargo deps and build avail
+           shell: bash
+           run: |
+            curl https://sh.rustup.rs -sSf | sh -s -- -y
+            source "$HOME/.cargo/env"
+
+            rustup target add aarch64-unknown-linux-gnu
+            sudo apt-get update && sudo apt-get install -y musl-tools clang gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev libc6-dev-arm64-cross
+            env  BINDGEN_EXTRA_CLANG_ARGS='--sysroot /usr/aarch64-linux-gnu' CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=/usr/bin/aarch64-linux-gnu-gcc cargo build --release --target=aarch64-unknown-linux-gnu -p data-avail
+            mv target/aarch64-unknown-linux-gnu/release/data-avail target/aarch64-unknown-linux-gnu/release/data-avail-linux-aarch64
+            pushd target/aarch64-unknown-linux-gnu/release/
+            tar czf data-avail-linux-aarch64.tar.gz data-avail-linux-aarch64
+            popd
+         - uses: actions/upload-artifact@v2
+           with:
+             name: data-avail-linux-aarch64-tar
+             path: target/aarch64-unknown-linux-gnu/release/data-avail-linux-aarch64.tar.gz
+
 
   # compile all binaries from previous jobs into single release
   binary_publish:
-    needs: [binary_centos7_amd64, binary_linux_amd64]
+    needs: [binary_linux_amd64, binary_linux_amd64_tar, binary_linux_aarch64]
     runs-on: ubuntu-latest
     steps:
          - uses: actions/download-artifact@v2
            with:
-             name: data-avail-centos7-amd64-binary
+             name: data-avail-linux-amd64-binary
          - uses: actions/download-artifact@v2
            with:
-             name: data-avail-linux-amd64-binary
+             name: data-avail-linux-amd64-tar
+         - uses: actions/download-artifact@v2
+           with:
+             name: data-avail-linux-aarch64-tar
          - name: Prepare
            id: prepare
            run: |
