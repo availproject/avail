@@ -10,35 +10,47 @@ use thiserror::Error;
 use crate::com::{CHUNK_SIZE, COMMITMENT_SIZE};
 
 #[derive(Error, Debug)]
+pub enum DataError {
+	#[error("Scalar slice error: {0}")]
+	SliceError(TryFromSliceError),
+	#[error("Scalar data is not valid")]
+	ScalarDataError,
+	#[error("Invalid scalar data length")]
+	BadScalarDataLen,
+	#[error("Scalar data contains invalid character")]
+	BadScalarData,
+	#[error("Bad data len")]
+	BadLen,
+	#[error("Plonk error: {0}")]
+	PlonkError(dusk_plonk::error::Error),
+	#[error("Row and commitments count mismatch")]
+	RowAndCommitmentsMismatch,
+	#[error("Bad commitments data")]
+	BadCommitmentsData,
+}
+
+#[derive(Error, Debug)]
 pub enum Error {
 	#[error("Invalid data: {0}")]
-	InvalidData(String),
-	#[error("Cannot create {0}-bytes chunks from {1} bytes")]
-	InvalidChunksData(usize, usize),
+	InvalidData(DataError),
 }
 
 impl From<TryFromSliceError> for Error {
-	fn from(e: TryFromSliceError) -> Self { Self::InvalidData(format!("{}", e)) }
+	fn from(e: TryFromSliceError) -> Self { Self::InvalidData(DataError::SliceError(e)) }
 }
 
 impl From<dusk_bytes::Error> for Error {
 	fn from(e: dusk_bytes::Error) -> Self {
 		match e {
-			dusk_bytes::Error::InvalidData => {
-				Self::InvalidData("Scalar data is not valid".to_string())
-			},
-			dusk_bytes::Error::BadLength { .. } => {
-				Self::InvalidData("Invalid scalar data length".to_string())
-			},
-			dusk_bytes::Error::InvalidChar { .. } => {
-				Self::InvalidData("Scalar data contains invalid character".to_string())
-			},
+			dusk_bytes::Error::InvalidData => Self::InvalidData(DataError::ScalarDataError),
+			dusk_bytes::Error::BadLength { .. } => Self::InvalidData(DataError::BadScalarDataLen),
+			dusk_bytes::Error::InvalidChar { .. } => Self::InvalidData(DataError::BadScalarData),
 		}
 	}
 }
 
 impl From<dusk_plonk::error::Error> for Error {
-	fn from(e: dusk_plonk::error::Error) -> Self { Self::InvalidData(format!("{}", e)) }
+	fn from(e: dusk_plonk::error::Error) -> Self { Self::InvalidData(DataError::PlonkError(e)) }
 }
 
 fn try_into_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
@@ -49,7 +61,7 @@ fn try_into_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 fn try_into_scalars(data: &[u8]) -> Result<Vec<BlsScalar>, Error> {
 	let chunks = data.chunks_exact(CHUNK_SIZE);
 	if !chunks.remainder().is_empty() {
-		return Err(Error::InvalidData("Invalid data length".to_string()));
+		return Err(Error::InvalidData(DataError::BadLen));
 	}
 	chunks
 		.map(try_into_scalar)
@@ -82,13 +94,11 @@ pub fn verify_equality(
 	rows: &[Option<Vec<u8>>],
 ) -> Result<bool, Error> {
 	if commitments.len() / COMMITMENT_SIZE != rows.len() {
-		return Err(Error::InvalidData(
-			"Rows and commitments count mismatch".to_string(),
-		));
+		return Err(Error::InvalidData(DataError::RowAndCommitmentsMismatch));
 	}
 
 	if commitments.len() % COMMITMENT_SIZE > 0 {
-		return Err(Error::InvalidData("Invalid commitments data".to_string()));
+		return Err(Error::InvalidData(DataError::BadCommitmentsData));
 	}
 
 	let (prover_key, _) = public_params.trim(cols_num)?;
