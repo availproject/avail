@@ -30,11 +30,11 @@ frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional
 hex-literal = "0.3.4"
 
 # Avail
-da-primitives = { path = "../../../primitives/avail", default-features = false }
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.2.1", default-features = false }
 
 # Nomad
 nomad-home = { path = "../home", default-features = false }
-nomad-core = { path = "../../../primitives/nomad/nomad-core", default-features = false }
+nomad-core = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.2.1", default-features = false }
 
 
 [dev-dependencies]
@@ -43,8 +43,8 @@ hex-literal = "0.3.4"
 frame-executive = { version = "4.0.0-dev" }
 pallet-transaction-payment = { version = "4.0.0-dev" }
 da-control = { path = "../../dactr" }
-nomad-base = { path = "../../../primitives/nomad/nomad-base", default-features = false }
-merkle = { path = "../../../primitives/nomad/merkle", default-features = false }
+merkle = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.2.1" }
+nomad-base = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.2.1" }
 updater-manager = { path = "../updater-manager" }
 
 [features]
@@ -56,6 +56,7 @@ std = [
 	"frame-system/std",
 	"frame-benchmarking/std",
 	"nomad-home/std",
+	"nomad-core/std",
 	"da-primitives/std",
 ]
 
