@@ -5,11 +5,10 @@ use std::{
 
 use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
 use da_primitives::asdr::{AppExtrinsic, AppId, GetAppId};
-use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
 use frame_system::limits::BlockLength;
 use jsonrpc_core::{Error as RpcError, Result};
 use jsonrpc_derive::rpc;
-use kate::BlockDimensions;
+use kate::{BlockDimensions, BlsScalar, PublicParameters};
 use kate_rpc_runtime_api::KateParamsGetter;
 use lru::LruCache;
 use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
@@ -41,8 +40,7 @@ pub trait KateApi {
 
 pub struct Kate<Client, Block: BlockT> {
 	client: Arc<Client>,
-	block_ext_cache:
-		RwLock<LruCache<Block::Hash, (Vec<dusk_plonk::prelude::BlsScalar>, BlockDimensions)>>,
+	block_ext_cache: RwLock<LruCache<Block::Hash, (Vec<BlsScalar>, BlockDimensions)>>,
 }
 
 impl<Client, Block> Kate<Client, Block>

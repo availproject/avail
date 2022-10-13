@@ -1,5 +1,8 @@
 use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
-use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader};
+use da_primitives::{
+	asdr::{AppExtrinsic, DataLookup},
+	traits::ExtendedHeader,
+};
 use frame_support::traits::Randomness;
 pub use kate::Seed;
 use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
@@ -91,10 +94,165 @@ pub trait HeaderBuilder {
 	}
 }
 
+struct BuildCommitmentInfo {
+	pub kate_commitment: Vec<u8>,
+	pub rows: u16,
+	pub cols: u16,
+	pub data_index: DataLookup,
+}
+
+fn build_base(
+	app_extrinsics: &[AppExtrinsic],
+	parent_hash: da::Hash,
+	digest: DigestWrapper,
+	block_length: BlockLength,
+	block_number: da::BlockNumber,
+	seed: Seed,
+	build_commitments: fn(&[AppExtrinsic], BlockLength, Seed) -> BuildCommitmentInfo,
+) -> da::Header {
+	use da_primitives::traits::ExtrinsicsWithCommitment as _;
+	use sp_io::storage::{changes_root, root};
+
+	use crate::generic::DigestItem;
+
+	let BuildCommitmentInfo {
+		kate_commitment,
+		rows,
+		cols,
+		data_index,
+	} = build_commitments(app_extrinsics, block_length, seed);
+
+	let extrinsics = app_extrinsics
+		.iter()
+		.map(|e| e.data.clone())
+		.collect::<Vec<_>>();
+	let data_root = build_data_root(app_extrinsics);
+
+	log::debug!("Avail Data Root: {:?}\n", data_root);
+
+	let root_hash = da::Hasher::ordered_trie_root(extrinsics);
+
+	let mut digest = digest.0;
+	let storage_root =
+		da::Hash::decode(&mut &root()[..]).expect("Node is configured to use the same hash; qed");
+
+	// we can't compute changes trie root earlier && put it to the Digest
+	// because it will include all currently existing temporaries.
+	if let Some(storage_changes_root) = changes_root(&parent_hash.encode()) {
+		let hash_changes_root = da::Hash::decode(&mut &storage_changes_root[..])
+			.expect("Node is configured to use the same hash; qed");
+		let item = DigestItem::Other(hash_changes_root.as_ref().to_vec());
+		digest.push(item);
+	}
+
+	let extrinsics_root = <da::Header as ExtendedHeader>::Root::new_with_commitment(
+		root_hash,
+		kate_commitment,
+		rows,
+		cols,
+		data_root,
+	);
+
+	<da::Header as ExtendedHeader>::new(
+		block_number,
+		extrinsics_root,
+		storage_root,
+		parent_hash,
+		digest,
+		data_index,
+	)
+}
+
+/// Builds commitments using `Plonk v0.8.9`
+#[cfg(feature = "std")]
+fn build_commitments_v2(
+	app_extrinsics: &[AppExtrinsic],
+	block_length: BlockLength,
+	seed: Seed,
+) -> BuildCommitmentInfo {
+	let (xts_layout, kate_commitment, block_dims, _data_matrix) = kate::com::par_build_commitments(
+		block_length.rows as usize,
+		block_length.cols as usize,
+		block_length.chunk_size() as usize,
+		app_extrinsics,
+		seed,
+	)
+	.expect("Build commitments cannot fail .qed");
+	let data_index =
+		DataLookup::try_from(xts_layout.as_slice()).expect("Extrinsic size cannot overflow .qed");
+
+	log::debug!(
+		target: LOG_TARGET,
+		"Build Commitment (v2): App DataLookup : {:?}",
+		data_index
+	);
+
+	BuildCommitmentInfo {
+		kate_commitment,
+		data_index,
+		rows: block_dims.rows as u16,
+		cols: block_dims.cols as u16,
+	}
+}
+
+mod v1 {
+	use da_primitives::asdr::AppExtrinsic;
+	use da_primitives_v1::asdr::AppExtrinsic as AppExtrinsicV1;
+
+	/// Transforms the latest version of `AppExtrinsic` into `V1` used by `Kate V1`.
+	pub fn into_app_extrinsic_v1(src: AppExtrinsic) -> AppExtrinsicV1 {
+		AppExtrinsicV1 {
+			app_id: src.app_id,
+			data: src.data,
+		}
+	}
+}
+
+#[cfg(feature = "std")]
+fn build_commitments_v1(
+	app_extrinsics: &[AppExtrinsic],
+	block_length: BlockLength,
+	seed: Seed,
+) -> BuildCommitmentInfo {
+	use v1::into_app_extrinsic_v1;
+
+	let app_extrinsics_v1 = app_extrinsics
+		.iter()
+		.map(|app_ext| into_app_extrinsic_v1(app_ext.clone()))
+		.collect::<Vec<_>>();
+
+	let (xts_layout, kate_commitment, block_dims, _data_matrix) =
+		kate_v1::com::par_build_commitments(
+			block_length.rows as usize,
+			block_length.cols as usize,
+			block_length.chunk_size() as usize,
+			app_extrinsics_v1.as_slice(),
+			seed,
+		)
+		.expect("Build commitments cannot fail .qed");
+	let data_index =
+		DataLookup::try_from(xts_layout.as_slice()).expect("Extrinsic size cannot overflow .qed");
+
+	log::debug!(
+		target: LOG_TARGET,
+		"Build Commitment (v1): App DataLookup : {:?}",
+		data_index
+	);
+
+	BuildCommitmentInfo {
+		kate_commitment,
+		data_index,
+		rows: block_dims.rows as u16,
+		cols: block_dims.cols as u16,
+	}
+}
+
 /// Hosted function to build the header using `kate` commitments.
 #[runtime_interface]
 pub trait HostedHeaderBuilder {
 	/// Creates the header using the given parameters.
+	/// *NOTE:* Version 1 uses `dusk-plonk v0.8.2`
+	#[version(1)]
 	fn build(
 		app_extrinsics: Vec<AppExtrinsic>,
 		parent_hash: da::Hash,
@@ -103,65 +261,34 @@ pub trait HostedHeaderBuilder {
 		block_number: da::BlockNumber,
 		seed: Seed,
 	) -> da::Header {
-		use da_primitives::{asdr::DataLookup, traits::ExtrinsicsWithCommitment as _};
-		use sp_runtime::traits::Hash;
-
-		use crate::generic::DigestItem;
-
-		let (kate_commitment, block_dims, data_index) = {
-			let (xts_layout, kate_commitment, block_dims, _data_matrix) =
-				kate::com::par_build_commitments(
-					block_length.rows as usize,
-					block_length.cols as usize,
-					block_length.chunk_size() as usize,
-					app_extrinsics.as_slice(),
-					seed,
-				)
-				.expect("Build commitments cannot fail .qed");
-			let data_index = DataLookup::try_from(xts_layout.as_slice())
-				.expect("Extrinsic size cannot overflow .qed");
-
-			log::debug!(target: LOG_TARGET, "App DataLookup: {:?}", data_index);
-
-			(kate_commitment, block_dims, data_index)
-		};
-
-		let extrinsics: Vec<Vec<u8>> = app_extrinsics.clone().into_iter().map(|e| e.data).collect();
-		let data_root = build_data_root(&app_extrinsics);
-
-		log::debug!("Avail Data Root: {:?}\n", data_root);
-
-		let root_hash = da::Hasher::ordered_trie_root(extrinsics);
-
-		let storage_root = da::Hash::decode(&mut &sp_io::storage::root()[..])
-			.expect("Node is configured to use the same hash; qed");
-		let storage_changes_root = sp_io::storage::changes_root(&parent_hash.encode());
-
-		let mut digest = digest.0;
-		// we can't compute changes trie root earlier && put it to the Digest
-		// because it will include all currently existing temporaries.
-		if let Some(storage_changes_root) = storage_changes_root {
-			let hash_changes_root = da::Hash::decode(&mut &storage_changes_root[..])
-				.expect("Node is configured to use the same hash; qed");
-			let item = DigestItem::Other(hash_changes_root.as_ref().to_vec());
-			digest.push(item);
-		}
-
-		let extrinsics_root = <da::Header as ExtendedHeader>::Root::new_with_commitment(
-			root_hash,
-			kate_commitment,
-			block_dims.rows as u16,
-			block_dims.cols as u16,
-			data_root,
-		);
-
-		<da::Header as ExtendedHeader>::new(
-			block_number,
-			extrinsics_root,
-			storage_root,
+		build_base(
+			app_extrinsics.as_slice(),
 			parent_hash,
 			digest,
-			data_index,
+			block_length,
+			block_number,
+			seed,
+			build_commitments_v1,
+		)
+	}
+
+	#[version(2)]
+	fn build(
+		app_extrinsics: Vec<AppExtrinsic>,
+		parent_hash: da::Hash,
+		digest: DigestWrapper,
+		block_length: BlockLength,
+		block_number: da::BlockNumber,
+		seed: Seed,
+	) -> da::Header {
+		build_base(
+			app_extrinsics.as_slice(),
+			parent_hash,
+			digest,
+			block_length,
+			block_number,
+			seed,
+			build_commitments_v2,
 		)
 	}
 }
