@@ -18,13 +18,11 @@ name = "data-avail"
 
 [dependencies]
 # Internals
-da-primitives= { path = "../primitives/avail" }
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.2.1", default-features = false }
+kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.2.1", default-features = false }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
-kate = { path = "../kate" }
 kate-rpc = { path = "../rpc/kate-rpc" }
-dusk-plonk = "0.8.2"
-
 # Nomad
 updater-manager = { path = "../pallets/nomad/updater-manager" }
 nomad-home = { path = "../pallets/nomad/home" }
