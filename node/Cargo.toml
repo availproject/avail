@@ -18,8 +18,8 @@ name = "data-avail"
 
 [dependencies]
 # Internals
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.2.1", default-features = false }
-kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.2.1", default-features = false }
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", branch = "miguel/ava-397-compatibility-issue-between-10-11", default-features = false }
+kate = { git = "https://github.com/maticnetwork/avail-core.git", branch = "miguel/ava-397-compatibility-issue-between-10-11", default-features = false }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }
