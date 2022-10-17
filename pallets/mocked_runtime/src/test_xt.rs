@@ -45,20 +45,26 @@ where
 }
 
 impl<Call, Extra> Debug for TestXt<Call, Extra> {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { self.0.fmt(f) }
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		self.0.fmt(f)
+	}
 }
 
 impl<Call: Codec + Sync + Send, Context, Extra> Checkable<Context> for TestXt<Call, Extra> {
 	type Checked = Self;
 
-	fn check(self, _: &Context) -> Result<Self::Checked, TransactionValidityError> { Ok(self) }
+	fn check(self, _: &Context) -> Result<Self::Checked, TransactionValidityError> {
+		Ok(self)
+	}
 }
 
 impl<Call: Codec + Sync + Send, Extra> Extrinsic for TestXt<Call, Extra> {
 	type Call = Call;
 	type SignaturePayload = (u64, Extra);
 
-	fn is_signed(&self) -> Option<bool> { self.0.is_signed() }
+	fn is_signed(&self) -> Option<bool> {
+		self.0.is_signed()
+	}
 
 	fn new(c: Call, sig: Option<Self::SignaturePayload>) -> Option<Self> {
 		let sp_test = SPTestXt::<Call, Extra>::new(c, sig);
@@ -110,13 +116,19 @@ impl<Call, Extra> ExtrinsicCall for TestXt<Call, Extra>
 where
 	Call: Codec + Sync + Send,
 {
-	fn call(&self) -> &Self::Call { self.0.call() }
+	fn call(&self) -> &Self::Call {
+		self.0.call()
+	}
 }
 
-impl<Call, Extra> GetAppId<AppId> for TestXt<Call, Extra> {
-	fn app_id(&self) -> AppId { AppId::default() }
+impl<Call, Extra> GetAppId for TestXt<Call, Extra> {
+	fn app_id(&self) -> AppId {
+		AppId::default()
+	}
 }
 
 impl<Call: GetDispatchInfo, Extra> GetDispatchInfo for TestXt<Call, Extra> {
-	fn get_dispatch_info(&self) -> DispatchInfo { self.0.call.get_dispatch_info() }
+	fn get_dispatch_info(&self) -> DispatchInfo {
+		self.0.call.get_dispatch_info()
+	}
 }

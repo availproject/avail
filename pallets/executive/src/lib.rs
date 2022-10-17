@@ -117,7 +117,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Codec, Encode};
-use da_primitives::asdr::{AppId, GetAppId};
+use da_primitives::asdr::GetAppId;
 use frame_support::{
 	dispatch::PostDispatchInfo,
 	traits::{
@@ -176,7 +176,7 @@ impl<
 	> ExecuteBlock<Block>
 	for Executive<System, Block, Context, UnsignedValidator, AllPallets, COnRuntimeUpgrade>
 where
-	Block::Extrinsic: Checkable<Context> + Codec + GetAppId<AppId>,
+	Block::Extrinsic: Checkable<Context> + Codec + GetAppId,
 	CheckedOf<Block::Extrinsic, Context>: Applyable + GetDispatchInfo,
 	CallOf<Block::Extrinsic, Context>:
 		Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
@@ -208,7 +208,7 @@ impl<
 		COnRuntimeUpgrade: OnRuntimeUpgrade,
 	> Executive<System, Block, Context, UnsignedValidator, AllPallets, COnRuntimeUpgrade>
 where
-	Block::Extrinsic: Checkable<Context> + Codec + GetAppId<AppId>,
+	Block::Extrinsic: Checkable<Context> + Codec + GetAppId,
 	CheckedOf<Block::Extrinsic, Context>: Applyable + GetDispatchInfo,
 	CallOf<Block::Extrinsic, Context>:
 		Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
@@ -600,7 +600,9 @@ where
 #[cfg(test)]
 mod tests {
 	use da_control::CheckAppId;
-	use da_primitives::{asdr::DataLookup, currency::AVL, Header as DaHeader, KateCommitment};
+	use da_primitives::{
+		asdr::DataLookup, currency::AVL, extension::v1, Header as DaHeader, HeaderExtension,
+	};
 	use frame_support::{
 		assert_err,
 		traits::{Currency, LockIdentifier, LockableCurrency, WithdrawReasons},
@@ -618,7 +620,7 @@ mod tests {
 	use sp_runtime::{
 		generic::{Block, DigestItem, Era},
 		testing::Digest,
-		traits::Block as BlockT,
+		traits::{BlakeTwo256, Block as BlockT},
 		transaction_validity::{
 			InvalidTransaction, TransactionValidityError, UnknownTransaction, ValidTransaction,
 		},
@@ -766,58 +768,48 @@ mod tests {
 		t.into()
 	}
 
-	#[test]
-	fn block_import_works() {
-		let extrinsics_root = KateCommitment {
-			hash: hex!("03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314").into(),
-			commitment: vec![],
-			rows: 0,
-			cols: 0,
-			data_root: [0u8; 32].into(),
-		};
+	fn make_header() -> DaHeader<u32, BlakeTwo256> {
+		let extension = HeaderExtension::V1(v1::HeaderExtension {
+			app_lookup: DataLookup {
+				size: 1,
+				..Default::default()
+			},
+			..Default::default()
+		});
 		let state_root =
 			hex!("f9ab7b81043ce843b6dcea19e9866b62b1dfcd652d6cae1d7e896d5d3001e112").into();
-		let app_data_lookup = DataLookup {
-			size: 1,
-			..Default::default()
-		};
+		let extrinsics_root =
+			hex!("03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314").into();
 
+		DaHeader {
+			parent_hash: [69u8; 32].into(),
+			number: 1,
+			state_root,
+			extrinsics_root,
+			extension,
+			..Default::default()
+		}
+	}
+
+	#[test]
+	fn block_import_works() {
 		new_test_ext(1).execute_with(|| {
 			Executive::execute_block(Block {
-				header: DaHeader {
-					parent_hash: [69u8; 32].into(),
-					number: 1,
-					state_root,
-					extrinsics_root,
-					digest: Digest { logs: vec![] },
-					app_data_lookup,
-				},
+				header: make_header(),
 				extrinsics: vec![],
 			});
-		});
+		})
 	}
 
 	#[test]
 	#[should_panic]
 	fn block_import_of_bad_state_root_fails() {
-		let extrinsics_root = KateCommitment {
-			hash: hex!("03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314").into(),
-			commitment: vec![],
-			rows: 0,
-			cols: 0,
-			data_root: [0u8; 32].into(),
-		};
+		let mut header = DaHeader::default();
+		header.extension = HeaderExtension::default();
 
 		new_test_ext(1).execute_with(|| {
 			Executive::execute_block(Block {
-				header: DaHeader {
-					parent_hash: [69u8; 32].into(),
-					number: 1,
-					state_root: [0u8; 32].into(),
-					extrinsics_root,
-					digest: Digest { logs: vec![] },
-					app_data_lookup: Default::default(),
-				},
+				header,
 				extrinsics: vec![],
 			});
 		});
@@ -826,26 +818,13 @@ mod tests {
 	#[test]
 	#[should_panic]
 	fn block_import_of_bad_extrinsic_root_fails() {
-		let state_root =
+		let mut header = DaHeader::default();
+		header.state_root =
 			hex!("49cd58a254ccf6abc4a023d9a22dcfc421e385527a250faec69f8ad0d8ed3e48").into();
-		let extrinsics_root = KateCommitment {
-			hash: [0u8; 32].into(),
-			commitment: vec![],
-			rows: 0,
-			cols: 0,
-			data_root: [0u8; 32].into(),
-		};
 
 		new_test_ext(1).execute_with(|| {
 			Executive::execute_block(Block {
-				header: DaHeader {
-					parent_hash: [69u8; 32].into(),
-					number: 1,
-					state_root,
-					extrinsics_root,
-					digest: Digest { logs: vec![] },
-					app_data_lookup: Default::default(),
-				},
+				header,
 				extrinsics: vec![],
 			});
 		});

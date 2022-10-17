@@ -25,7 +25,10 @@ fn create_application_keys() {
 		);
 		assert_eq!(
 			DataAvailability::application_key(&new_key),
-			Some(AppKeyInfoFor::<Test> { id: 3, owner: 3 })
+			Some(AppKeyInfoFor::<Test> {
+				id: 3.into(),
+				owner: 3
+			})
 		);
 	})
 }

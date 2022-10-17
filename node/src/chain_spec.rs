@@ -253,12 +253,16 @@ pub fn testnet_genesis(
 			keys: initial_authorities
 				.iter()
 				.map(|x| {
-					(x.0.clone(), x.0.clone(), SessionKeys {
-						grandpa: x.2.clone(),
-						babe: x.3.clone(),
-						im_online: x.4.clone(),
-						authority_discovery: x.5.clone(),
-					})
+					(
+						x.0.clone(),
+						x.0.clone(),
+						SessionKeys {
+							grandpa: x.2.clone(),
+							babe: x.3.clone(),
+							im_online: x.4.clone(),
+							authority_discovery: x.5.clone(),
+						},
+					)
 				})
 				.collect::<Vec<_>>(),
 		},
@@ -306,18 +310,27 @@ pub fn testnet_genesis(
 		transaction_payment: Default::default(),
 		data_availability: DataAvailabilityConfig {
 			app_keys: vec![
-				(b"Data Avail".to_vec(), AppKeyInfo {
-					owner: root_key.clone(),
-					id: 0,
-				}),
-				(b"Ethereum".to_vec(), AppKeyInfo {
-					owner: root_key.clone(),
-					id: 1,
-				}),
-				(b"Polygon".to_vec(), AppKeyInfo {
-					owner: root_key,
-					id: 2,
-				}),
+				(
+					b"Data Avail".to_vec(),
+					AppKeyInfo {
+						owner: root_key.clone(),
+						id: 0.into(),
+					},
+				),
+				(
+					b"Ethereum".to_vec(),
+					AppKeyInfo {
+						owner: root_key.clone(),
+						id: 1.into(),
+					},
+				),
+				(
+					b"Polygon".to_vec(),
+					AppKeyInfo {
+						owner: root_key,
+						id: 2.into(),
+					},
+				),
 			],
 		},
 		updater_manager: UpdaterManagerConfig {
@@ -475,18 +488,27 @@ fn genesis_builder(
 		transaction_payment: Default::default(),
 		data_availability: DataAvailabilityConfig {
 			app_keys: vec![
-				(b"Data Avail".to_vec(), AppKeyInfo {
-					owner: sudo_key.clone(),
-					id: 0,
-				}),
-				(b"Ethereum".to_vec(), AppKeyInfo {
-					owner: sudo_key.clone(),
-					id: 1,
-				}),
-				(b"Polygon".to_vec(), AppKeyInfo {
-					owner: sudo_key,
-					id: 2,
-				}),
+				(
+					b"Data Avail".to_vec(),
+					AppKeyInfo {
+						owner: sudo_key.clone(),
+						id: 0.into(),
+					},
+				),
+				(
+					b"Ethereum".to_vec(),
+					AppKeyInfo {
+						owner: sudo_key.clone(),
+						id: 1.into(),
+					},
+				),
+				(
+					b"Polygon".to_vec(),
+					AppKeyInfo {
+						owner: sudo_key,
+						id: 2.into(),
+					},
+				),
 			],
 		},
 		updater_manager: Default::default(),
@@ -591,9 +613,13 @@ pub(crate) mod tests {
 
 	#[test]
 	#[ignore]
-	fn test_create_development_chain_spec() { development_config().build_storage().unwrap(); }
+	fn test_create_development_chain_spec() {
+		development_config().build_storage().unwrap();
+	}
 
 	#[test]
 	#[ignore]
-	fn test_create_local_testnet_chain_spec() { testnet_config().build_storage().unwrap(); }
+	fn test_create_local_testnet_chain_spec() {
+		testnet_config().build_storage().unwrap();
+	}
 }

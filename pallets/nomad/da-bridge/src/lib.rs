@@ -50,7 +50,9 @@ pub mod pallet {
 
 	#[cfg(feature = "std")]
 	impl Default for GenesisConfig {
-		fn default() -> Self { Self {} }
+		fn default() -> Self {
+			Self {}
+		}
 	}
 
 	#[pallet::genesis_build]
@@ -110,7 +112,7 @@ pub mod pallet {
 			header: T::Header,
 		) -> DispatchResult {
 			let block_number = *header.number();
-			let data_root = header.data_root();
+			let data_root = header.extension().data_root();
 
 			let message: DABridgeMessages = DataRootMessage {
 				block_number: block_number.into(),

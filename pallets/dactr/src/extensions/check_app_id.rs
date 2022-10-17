@@ -35,7 +35,9 @@ where
 	T::Call: IsSubType<DACall<T>>,
 {
 	/// utility constructor. Used only in client/factory code.
-	pub fn from(app_id: AppId) -> Self { Self(app_id, sp_std::marker::PhantomData) }
+	pub fn from(app_id: AppId) -> Self {
+		Self(app_id, sp_std::marker::PhantomData)
+	}
 
 	/// Transaction validation:
 	///  - Only `DataAvailability::submit_data(..)` extrinsic can use `AppId != 0`. Any other call
@@ -54,7 +56,7 @@ where
 			_ => {
 				// Any other call must use `AppId == 0`.
 				ensure!(
-					self.app_id() == 0,
+					self.app_id().0 == 0,
 					InvalidTransaction::Custom(InvalidTransactionCustomId::ForbiddenAppId as u8)
 				);
 			},
@@ -64,7 +66,9 @@ where
 	}
 }
 impl<T: Config + Send + Sync> Default for CheckAppId<T> {
-	fn default() -> Self { Self(AppId::default(), PhantomData) }
+	fn default() -> Self {
+		Self(AppId::default(), PhantomData)
+	}
 }
 
 impl<T> Debug for CheckAppId<T>
@@ -72,10 +76,14 @@ where
 	T: Config + Send + Sync,
 {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "CheckAppId: {}", self.0) }
+	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+		write!(f, "CheckAppId: {}", self.0)
+	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut Formatter) -> fmt::Result { Ok(()) }
+	fn fmt(&self, _: &mut Formatter) -> fmt::Result {
+		Ok(())
+	}
 }
 
 impl<T> SignedExtension for CheckAppId<T>
@@ -105,12 +113,14 @@ where
 	}
 }
 
-impl<T> GetAppId<AppId> for CheckAppId<T>
+impl<T> GetAppId for CheckAppId<T>
 where
 	T: Config + Send + Sync,
 {
 	#[inline]
-	fn app_id(&self) -> AppId { self.0 }
+	fn app_id(&self) -> AppId {
+		self.0
+	}
 }
 
 #[cfg(test)]
@@ -126,7 +136,9 @@ mod tests {
 		pallet::Call as DACall,
 	};
 
-	fn remark_call() -> Call { Call::System(SysCall::remark { remark: vec![] }) }
+	fn remark_call() -> Call {
+		Call::System(SysCall::remark { remark: vec![] })
+	}
 
 	fn submit_data_call() -> Call {
 		Call::DataAvailability(DACall::submit_data {
@@ -144,7 +156,7 @@ mod tests {
 	#[test_case(0, remark_call() => Ok(ValidTransaction::default()); "System::remark can be called if AppId == 0" )]
 	#[test_case(1, remark_call() => to_invalid_tx(ForbiddenAppId); "System::remark cannot be called if AppId != 0" )]
 	#[test_case(1, submit_data_call() => Ok(ValidTransaction::default()); "submit_data can be called with any valid AppId" )]
-	fn do_validate_test(app_id: AppId, call: Call) -> TransactionValidity {
-		new_test_ext().execute_with(|| CheckAppId::<Test>::from(app_id).do_validate(&call))
+	fn do_validate_test<A: Into<AppId>>(app_id: A, call: Call) -> TransactionValidity {
+		new_test_ext().execute_with(|| CheckAppId::<Test>::from(app_id.into()).do_validate(&call))
 	}
 }

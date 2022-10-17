@@ -4,7 +4,7 @@ use std::{
 };
 
 use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
-use da_primitives::asdr::{AppExtrinsic, AppId, GetAppId};
+use da_primitives::asdr::{AppExtrinsic, GetAppId};
 use frame_system::limits::BlockLength;
 use jsonrpc_core::{Error as RpcError, Result};
 use jsonrpc_derive::rpc;
@@ -83,7 +83,7 @@ macro_rules! internal_err {
 impl<Client, Block> KateApi for Kate<Client, Block>
 where
 	Block: BlockT,
-	Block::Extrinsic: GetAppId<AppId>,
+	Block::Extrinsic: GetAppId,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block>
 		+ ProvideRuntimeApi<Block>

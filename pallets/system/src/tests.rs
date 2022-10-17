@@ -49,7 +49,9 @@ mod tests {
 
 	use crate::*;
 
-	fn extrinsics_data_root<H: Hash>(xts: Vec<Vec<u8>>) -> H::Output { H::ordered_trie_root(xts) }
+	fn extrinsics_data_root<H: Hash>(xts: Vec<Vec<u8>>) -> H::Output {
+		H::ordered_trie_root(xts)
+	}
 
 	#[test]
 	fn origin_works() {
@@ -64,13 +66,16 @@ mod tests {
 			assert_ok!(System::insert(&0, 42));
 			assert!(!System::is_provider_required(&0));
 
-			assert_eq!(Account::<Test>::get(0), AccountInfo {
-				nonce: 0,
-				providers: 1,
-				consumers: 0,
-				sufficients: 0,
-				data: 42
-			});
+			assert_eq!(
+				Account::<Test>::get(0),
+				AccountInfo {
+					nonce: 0,
+					providers: 1,
+					consumers: 0,
+					sufficients: 0,
+					data: 42
+				}
+			);
 
 			assert_ok!(System::inc_consumers(&0));
 			assert!(System::is_provider_required(&0));
@@ -186,11 +191,14 @@ mod tests {
 			System::note_finished_extrinsics();
 			System::deposit_event(SysEvent::CodeUpdated);
 			System::finalize();
-			assert_eq!(System::events(), vec![EventRecord {
-				phase: Phase::Finalization,
-				event: SysEvent::CodeUpdated.into(),
-				topics: vec![],
-			}]);
+			assert_eq!(
+				System::events(),
+				vec![EventRecord {
+					phase: Phase::Finalization,
+					event: SysEvent::CodeUpdated.into(),
+					topics: vec![],
+				}]
+			);
 
 			System::initialize(&2, &[0u8; 32].into(), &Default::default(), InitKind::Full);
 			System::deposit_event(SysEvent::NewAccount(32));
@@ -204,37 +212,40 @@ mod tests {
 			System::note_finished_extrinsics();
 			System::deposit_event(SysEvent::NewAccount(3));
 			System::finalize();
-			assert_eq!(System::events(), vec![
-				EventRecord {
-					phase: Phase::Initialization,
-					event: SysEvent::NewAccount(32).into(),
-					topics: vec![],
-				},
-				EventRecord {
-					phase: Phase::ApplyExtrinsic(0),
-					event: SysEvent::KilledAccount(42).into(),
-					topics: vec![]
-				},
-				EventRecord {
-					phase: Phase::ApplyExtrinsic(0),
-					event: SysEvent::ExtrinsicSuccess(Default::default()).into(),
-					topics: vec![]
-				},
-				EventRecord {
-					phase: Phase::ApplyExtrinsic(1),
-					event: SysEvent::ExtrinsicFailed(
-						DispatchError::BadOrigin.into(),
-						Default::default()
-					)
-					.into(),
-					topics: vec![]
-				},
-				EventRecord {
-					phase: Phase::Finalization,
-					event: SysEvent::NewAccount(3).into(),
-					topics: vec![]
-				},
-			]);
+			assert_eq!(
+				System::events(),
+				vec![
+					EventRecord {
+						phase: Phase::Initialization,
+						event: SysEvent::NewAccount(32).into(),
+						topics: vec![],
+					},
+					EventRecord {
+						phase: Phase::ApplyExtrinsic(0),
+						event: SysEvent::KilledAccount(42).into(),
+						topics: vec![]
+					},
+					EventRecord {
+						phase: Phase::ApplyExtrinsic(0),
+						event: SysEvent::ExtrinsicSuccess(Default::default()).into(),
+						topics: vec![]
+					},
+					EventRecord {
+						phase: Phase::ApplyExtrinsic(1),
+						event: SysEvent::ExtrinsicFailed(
+							DispatchError::BadOrigin.into(),
+							Default::default()
+						)
+						.into(),
+						topics: vec![]
+					},
+					EventRecord {
+						phase: Phase::Finalization,
+						event: SysEvent::NewAccount(3).into(),
+						topics: vec![]
+					},
+				]
+			);
 		});
 	}
 
@@ -260,47 +271,50 @@ mod tests {
 				pre_info,
 			);
 
-			assert_eq!(System::events(), vec![
-				EventRecord {
-					phase: Phase::ApplyExtrinsic(0),
-					event: SysEvent::ExtrinsicSuccess(DispatchInfo {
-						weight: 300,
-						..Default::default()
-					},)
-					.into(),
-					topics: vec![]
-				},
-				EventRecord {
-					phase: Phase::ApplyExtrinsic(1),
-					event: SysEvent::ExtrinsicSuccess(DispatchInfo {
-						weight: 1000,
-						..Default::default()
-					},)
-					.into(),
-					topics: vec![]
-				},
-				EventRecord {
-					phase: Phase::ApplyExtrinsic(2),
-					event: SysEvent::ExtrinsicSuccess(DispatchInfo {
-						weight: 1000,
-						..Default::default()
-					},)
-					.into(),
-					topics: vec![]
-				},
-				EventRecord {
-					phase: Phase::ApplyExtrinsic(3),
-					event: SysEvent::ExtrinsicFailed(
-						DispatchError::BadOrigin.into(),
-						DispatchInfo {
-							weight: 999,
+			assert_eq!(
+				System::events(),
+				vec![
+					EventRecord {
+						phase: Phase::ApplyExtrinsic(0),
+						event: SysEvent::ExtrinsicSuccess(DispatchInfo {
+							weight: 300,
 							..Default::default()
-						},
-					)
-					.into(),
-					topics: vec![]
-				},
-			]);
+						},)
+						.into(),
+						topics: vec![]
+					},
+					EventRecord {
+						phase: Phase::ApplyExtrinsic(1),
+						event: SysEvent::ExtrinsicSuccess(DispatchInfo {
+							weight: 1000,
+							..Default::default()
+						},)
+						.into(),
+						topics: vec![]
+					},
+					EventRecord {
+						phase: Phase::ApplyExtrinsic(2),
+						event: SysEvent::ExtrinsicSuccess(DispatchInfo {
+							weight: 1000,
+							..Default::default()
+						},)
+						.into(),
+						topics: vec![]
+					},
+					EventRecord {
+						phase: Phase::ApplyExtrinsic(3),
+						event: SysEvent::ExtrinsicFailed(
+							DispatchError::BadOrigin.into(),
+							DispatchInfo {
+								weight: 999,
+								..Default::default()
+							},
+						)
+						.into(),
+						topics: vec![]
+					},
+				]
+			);
 		});
 	}
 
@@ -331,34 +345,37 @@ mod tests {
 			System::finalize();
 
 			// Check that topics are reflected in the event record.
-			assert_eq!(System::events(), vec![
-				EventRecord {
-					phase: Phase::Finalization,
-					event: SysEvent::NewAccount(1).into(),
-					topics: topics[0..3].to_vec(),
-				},
-				EventRecord {
-					phase: Phase::Finalization,
-					event: SysEvent::NewAccount(2).into(),
-					topics: topics[0..1].to_vec(),
-				},
-				EventRecord {
-					phase: Phase::Finalization,
-					event: SysEvent::NewAccount(3).into(),
-					topics: topics[1..2].to_vec(),
-				}
-			]);
+			assert_eq!(
+				System::events(),
+				vec![
+					EventRecord {
+						phase: Phase::Finalization,
+						event: SysEvent::NewAccount(1).into(),
+						topics: topics[0..3].to_vec(),
+					},
+					EventRecord {
+						phase: Phase::Finalization,
+						event: SysEvent::NewAccount(2).into(),
+						topics: topics[0..1].to_vec(),
+					},
+					EventRecord {
+						phase: Phase::Finalization,
+						event: SysEvent::NewAccount(3).into(),
+						topics: topics[1..2].to_vec(),
+					}
+				]
+			);
 
 			// Check that the topic-events mapping reflects the deposited topics.
 			// Note that these are indexes of the events.
-			assert_eq!(System::event_topics(&topics[0]), vec![
-				(BLOCK_NUMBER, 0),
-				(BLOCK_NUMBER, 1)
-			]);
-			assert_eq!(System::event_topics(&topics[1]), vec![
-				(BLOCK_NUMBER, 0),
-				(BLOCK_NUMBER, 2)
-			]);
+			assert_eq!(
+				System::event_topics(&topics[0]),
+				vec![(BLOCK_NUMBER, 0), (BLOCK_NUMBER, 1)]
+			);
+			assert_eq!(
+				System::event_topics(&topics[1]),
+				vec![(BLOCK_NUMBER, 0), (BLOCK_NUMBER, 2)]
+			);
 			assert_eq!(System::event_topics(&topics[2]), vec![(BLOCK_NUMBER, 0)]);
 		});
 	}
@@ -531,9 +548,9 @@ mod tests {
 		new_test_ext().execute_with(|| {
 			System::initialize(&1, &[0u8; 32].into(), &Default::default(), InitKind::Full);
 			System::note_finished_initialize();
-			System::note_extrinsic(0, vec![1]);
+			System::note_extrinsic(0.into(), vec![1]);
 			System::note_applied_extrinsic(&Ok(().into()), Default::default());
-			System::note_extrinsic(0, vec![2]);
+			System::note_extrinsic(0.into(), vec![2]);
 			System::note_applied_extrinsic(
 				&Err(DispatchError::BadOrigin.into()),
 				Default::default(),
@@ -542,8 +559,7 @@ mod tests {
 			let header = System::finalize();
 
 			let ext_root = extrinsics_data_root::<BlakeTwo256>(vec![vec![1], vec![2]]);
-			let expected = da_primitives::traits::ExtendedHeader::extrinsics_root(&header);
-			assert_eq!(ext_root, expected.hash);
+			assert_eq!(ext_root, header.extrinsics_root);
 		});
 	}
 

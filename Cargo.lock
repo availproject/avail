@@ -1443,8 +1443,9 @@ dependencies = [
 [[package]]
 name = "da-primitives"
 version = "0.1.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?branch=miguel/ava-397-compatibility-issue-between-10-11#552ac96f53cc5492cb192223fe8a8b9862432c85"
+source = "git+https://github.com/maticnetwork/avail-core.git?branch=miguel/ava-397-compatibility-issue-between-10-11#30acffc1cb8587ab50f1836ba91de847358040f4"
 dependencies = [
+ "derive_more",
  "frame-support",
  "log",
  "parity-scale-codec 2.3.1",
@@ -3543,7 +3544,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.2.1"
-source = "git+https://github.com/maticnetwork/avail-core.git?branch=miguel/ava-397-compatibility-issue-between-10-11#552ac96f53cc5492cb192223fe8a8b9862432c85"
+source = "git+https://github.com/maticnetwork/avail-core.git?branch=miguel/ava-397-compatibility-issue-between-10-11#30acffc1cb8587ab50f1836ba91de847358040f4"
 dependencies = [
  "bls12_381",
  "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?branch=miguel/ava-397-compatibility-issue-between-10-11)",
@@ -3569,13 +3570,15 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.1.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?branch=miguel/ava-397-compatibility-issue-between-10-11#552ac96f53cc5492cb192223fe8a8b9862432c85"
+source = "git+https://github.com/maticnetwork/avail-core.git?branch=miguel/ava-397-compatibility-issue-between-10-11#30acffc1cb8587ab50f1836ba91de847358040f4"
 dependencies = [
+ "da-primitives 0.1.0 (git+https://github.com/maticnetwork/avail-core.git?branch=miguel/ava-397-compatibility-issue-between-10-11)",
  "dusk-bytes",
  "dusk-plonk 0.12.0",
  "getrandom 0.2.7",
  "parity-scale-codec 3.2.1",
  "serde",
+ "sp-runtime",
  "thiserror",
 ]
 
@@ -4455,7 +4458,7 @@ checksum = "71d96e3f3c0b6325d8ccd83c33b28acb183edcb6c67938ba104ec546854b0882"
 [[package]]
 name = "merkle"
 version = "0.1.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?branch=miguel/ava-397-compatibility-issue-between-10-11#552ac96f53cc5492cb192223fe8a8b9862432c85"
+source = "git+https://github.com/maticnetwork/avail-core.git?branch=miguel/ava-397-compatibility-issue-between-10-11#30acffc1cb8587ab50f1836ba91de847358040f4"
 dependencies = [
  "frame-support",
  "hex-literal",
@@ -4775,7 +4778,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?branch=miguel/ava-397-compatibility-issue-between-10-11#552ac96f53cc5492cb192223fe8a8b9862432c85"
+source = "git+https://github.com/maticnetwork/avail-core.git?branch=miguel/ava-397-compatibility-issue-between-10-11#30acffc1cb8587ab50f1836ba91de847358040f4"
 dependencies = [
  "ethers-signers",
  "frame-support",
@@ -4796,7 +4799,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?branch=miguel/ava-397-compatibility-issue-between-10-11#552ac96f53cc5492cb192223fe8a8b9862432c85"
+source = "git+https://github.com/maticnetwork/avail-core.git?branch=miguel/ava-397-compatibility-issue-between-10-11#30acffc1cb8587ab50f1836ba91de847358040f4"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -8061,7 +8064,7 @@ dependencies = [
 [[package]]
 name = "signature"
 version = "0.1.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?branch=miguel/ava-397-compatibility-issue-between-10-11#552ac96f53cc5492cb192223fe8a8b9862432c85"
+source = "git+https://github.com/maticnetwork/avail-core.git?branch=miguel/ava-397-compatibility-issue-between-10-11#30acffc1cb8587ab50f1836ba91de847358040f4"
 dependencies = [
  "arrayvec 0.7.2",
  "elliptic-curve",

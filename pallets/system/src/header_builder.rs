@@ -2,13 +2,14 @@ use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
 use da_primitives::{
 	asdr::{AppExtrinsic, DataLookup},
 	traits::ExtendedHeader,
+	HeaderExtension, KateCommitment,
 };
-use frame_support::traits::Randomness;
+use frame_support::{ensure, traits::Randomness};
 pub use kate::Seed;
 use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
 use scale_info::TypeInfo;
 use sp_core::H256;
-use sp_runtime::{traits::Hash, AccountId32, MultiAddress, MultiSignature};
+use sp_runtime::{traits::Hash, AccountId32, MultiAddress, MultiSignature, SaturatedConversion};
 use sp_runtime_interface::{pass_by::PassByCodec, runtime_interface};
 use sp_std::vec::Vec;
 
@@ -94,13 +95,6 @@ pub trait HeaderBuilder {
 	}
 }
 
-struct BuildCommitmentInfo {
-	pub kate_commitment: Vec<u8>,
-	pub rows: u16,
-	pub cols: u16,
-	pub data_index: DataLookup,
-}
-
 fn build_base(
 	app_extrinsics: &[AppExtrinsic],
 	parent_hash: da::Hash,
@@ -108,29 +102,20 @@ fn build_base(
 	block_length: BlockLength,
 	block_number: da::BlockNumber,
 	seed: Seed,
-	build_commitments: fn(&[AppExtrinsic], BlockLength, Seed) -> BuildCommitmentInfo,
+	build_extension: fn(&[AppExtrinsic], BlockLength, Seed) -> HeaderExtension,
 ) -> da::Header {
-	use da_primitives::traits::ExtrinsicsWithCommitment as _;
 	use sp_io::storage::{changes_root, root};
 
 	use crate::generic::DigestItem;
 
-	let BuildCommitmentInfo {
-		kate_commitment,
-		rows,
-		cols,
-		data_index,
-	} = build_commitments(app_extrinsics, block_length, seed);
+	let extension = build_extension(app_extrinsics, block_length, seed);
 
+	// @TODO Miguel: Is it possible to avoid copies here?
 	let extrinsics = app_extrinsics
 		.iter()
 		.map(|e| e.data.clone())
 		.collect::<Vec<_>>();
-	let data_root = build_data_root(app_extrinsics);
-
-	log::debug!("Avail Data Root: {:?}\n", data_root);
-
-	let root_hash = da::Hasher::ordered_trie_root(extrinsics);
+	let extrinsics_root = da::Hasher::ordered_trie_root(extrinsics);
 
 	let mut digest = digest.0;
 	let storage_root =
@@ -145,32 +130,39 @@ fn build_base(
 		digest.push(item);
 	}
 
-	let extrinsics_root = <da::Header as ExtendedHeader>::Root::new_with_commitment(
-		root_hash,
-		kate_commitment,
-		rows,
-		cols,
-		data_root,
-	);
-
 	<da::Header as ExtendedHeader>::new(
 		block_number,
 		extrinsics_root,
 		storage_root,
 		parent_hash,
 		digest,
-		data_index,
+		extension,
 	)
 }
 
 /// Builds commitments using `Plonk v0.8.9`
-#[cfg(feature = "std")]
-fn build_commitments_v2(
+#[cfg(all(feature = "std", feature = "header-backward-compatibility-test"))]
+fn build_extension_v_test(
 	app_extrinsics: &[AppExtrinsic],
 	block_length: BlockLength,
 	seed: Seed,
-) -> BuildCommitmentInfo {
-	let (xts_layout, kate_commitment, block_dims, _data_matrix) = kate::com::par_build_commitments(
+) -> HeaderExtension {
+	let extension_v1 = build_extension_v1(app_extrinsics, block_length, seed);
+	match extension_v1 {
+		HeaderExtension::V1(extension) => HeaderExtension::VTest(extension.into()),
+		r @ HeaderExtension::VTest(_) => r,
+	}
+}
+
+#[cfg(feature = "std")]
+fn build_extension_v1(
+	app_extrinsics: &[AppExtrinsic],
+	block_length: BlockLength,
+	seed: Seed,
+) -> HeaderExtension {
+	use da_primitives::header::extension::v1;
+
+	let (xts_layout, commitment, block_dims, _data_matrix) = kate::com::par_build_commitments(
 		block_length.rows as usize,
 		block_length.cols as usize,
 		block_length.chunk_size() as usize,
@@ -178,73 +170,28 @@ fn build_commitments_v2(
 		seed,
 	)
 	.expect("Build commitments cannot fail .qed");
-	let data_index =
+	let app_lookup =
 		DataLookup::try_from(xts_layout.as_slice()).expect("Extrinsic size cannot overflow .qed");
+	let data_root = build_data_root(app_extrinsics);
 
 	log::debug!(
 		target: LOG_TARGET,
-		"Build Commitment (v2): App DataLookup : {:?}",
-		data_index
+		"Build Commitment (v1): Data Root: {:?}, App Lookup : {:?}",
+		data_root,
+		app_lookup
 	);
 
-	BuildCommitmentInfo {
-		kate_commitment,
-		data_index,
-		rows: block_dims.rows as u16,
-		cols: block_dims.cols as u16,
-	}
-}
+	let commitment = KateCommitment {
+		rows: block_dims.rows.saturated_into::<u16>(),
+		cols: block_dims.cols.saturated_into::<u16>(),
+		commitment,
+		data_root,
+	};
 
-mod v1 {
-	use da_primitives::asdr::AppExtrinsic;
-	use da_primitives_v1::asdr::AppExtrinsic as AppExtrinsicV1;
-
-	/// Transforms the latest version of `AppExtrinsic` into `V1` used by `Kate V1`.
-	pub fn into_app_extrinsic_v1(src: AppExtrinsic) -> AppExtrinsicV1 {
-		AppExtrinsicV1 {
-			app_id: src.app_id,
-			data: src.data,
-		}
-	}
-}
-
-#[cfg(feature = "std")]
-fn build_commitments_v1(
-	app_extrinsics: &[AppExtrinsic],
-	block_length: BlockLength,
-	seed: Seed,
-) -> BuildCommitmentInfo {
-	use v1::into_app_extrinsic_v1;
-
-	let app_extrinsics_v1 = app_extrinsics
-		.iter()
-		.map(|app_ext| into_app_extrinsic_v1(app_ext.clone()))
-		.collect::<Vec<_>>();
-
-	let (xts_layout, kate_commitment, block_dims, _data_matrix) =
-		kate_v1::com::par_build_commitments(
-			block_length.rows as usize,
-			block_length.cols as usize,
-			block_length.chunk_size() as usize,
-			app_extrinsics_v1.as_slice(),
-			seed,
-		)
-		.expect("Build commitments cannot fail .qed");
-	let data_index =
-		DataLookup::try_from(xts_layout.as_slice()).expect("Extrinsic size cannot overflow .qed");
-
-	log::debug!(
-		target: LOG_TARGET,
-		"Build Commitment (v1): App DataLookup : {:?}",
-		data_index
-	);
-
-	BuildCommitmentInfo {
-		kate_commitment,
-		data_index,
-		rows: block_dims.rows as u16,
-		cols: block_dims.cols as u16,
-	}
+	HeaderExtension::V1(v1::HeaderExtension {
+		commitment,
+		app_lookup,
+	})
 }
 
 /// Hosted function to build the header using `kate` commitments.
@@ -268,10 +215,11 @@ pub trait HostedHeaderBuilder {
 			block_length,
 			block_number,
 			seed,
-			build_commitments_v1,
+			build_extension_v1,
 		)
 	}
 
+	/*
 	#[version(2)]
 	fn build(
 		app_extrinsics: Vec<AppExtrinsic>,
@@ -288,17 +236,19 @@ pub trait HostedHeaderBuilder {
 			block_length,
 			block_number,
 			seed,
-			build_commitments_v2,
+			build_extension_v_test,
 		)
-	}
+	}*/
 }
 
+/*
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct AvailExtrinsic {
 	pub app_id: u32,
 	pub signature: Option<MultiSignature>,
 	pub data: Vec<u8>,
 }
+*/
 
 pub type AvailSignedExtra = ((), (), (), AvailMortality, Nonce, (), Balance, u32);
 
@@ -332,7 +282,7 @@ impl Decode for AvailMortality {
 	}
 }
 
-const EXTRINSIC_VERSION: u8 = 4;
+/*
 impl Decode for AvailExtrinsic {
 	fn decode<I: Input>(input: &mut I) -> Result<AvailExtrinsic, DecodeError> {
 		// This is a little more complicated than usual since the binary format must be compatible
@@ -374,6 +324,35 @@ impl Decode for AvailExtrinsic {
 			data,
 		})
 	}
+}*/
+
+fn filter_map_submit_data(input: &mut &[u8]) -> Result<<Sha256 as Hasher>::Hash, DecodeError> {
+	const EXTRINSIC_VERSION: u8 = 4;
+
+	// This is a little more complicated than usual since the binary format must be compatible
+	// with substrate's generic `Vec<u8>` type. Basically this just means accepting that there
+	// will be a prefix of vector length (we don't need
+	// to use this).
+	let _length_do_not_remove_me_see_above: Compact<u32> = Decode::decode(input)?;
+
+	let version = input.read_byte()?;
+	let is_signed = version & 0b1000_0000 != 0;
+	ensure!(is_signed, "Not signed");
+
+	let version = version & 0b0111_1111;
+	ensure!(version == EXTRINSIC_VERSION, "Invalid transaction version");
+
+	let _address = <MultiAddress<AccountId32, u32>>::decode(input)?;
+	let _signature = MultiSignature::decode(input)?;
+	let _extra = <AvailSignedExtra>::decode(input)?;
+
+	let pallet: u8 = Decode::decode(input)?;
+	let method: u8 = Decode::decode(input)?;
+	ensure!(pallet == 29 && method == 1, "Not DaCtrl::submit_data");
+
+	let data_size = Compact::<u32>::decode(input)?.0 as usize;
+	ensure!(input.len() >= data_size, "Corrupted extrinsic");
+	Ok(Sha256::hash(&input[..data_size]))
 }
 
 fn build_data_root(app_ext: &[AppExtrinsic]) -> H256 {
@@ -383,10 +362,9 @@ fn build_data_root(app_ext: &[AppExtrinsic]) -> H256 {
 		.iter()
 		// NOTE: `AvailExtrinsic` decode fn will filter onlye `Da_Control::submit_data` extrinsics.
 		// TODO: It implies a circular dependency atm between system & DA control pallets.
-		.filter_map(|e| AvailExtrinsic::decode(&mut &e.data[..]).ok())
-		.for_each(|ext| {
-			let ext_hash = Sha256::hash(&ext.data);
-			tree.insert(ext_hash);
+		.filter_map(|e| filter_map_submit_data(&mut e.data.as_slice()).ok())
+		.for_each(|hash| {
+			tree.insert(hash);
 		});
 
 	tree.commit();
@@ -404,19 +382,25 @@ mod tests {
 
 	fn encoded_timestamp_call() -> AppExtrinsic {
 		AppExtrinsic {
-			app_id: 0,
+			app_id: 0.into(),
 			data: hex!("280403000BC26208378301").into(),
 		}
 	}
 
-	fn encoded_fillblock_call(app_id: AppId) -> AppExtrinsic {
+	fn encoded_fillblock_call<A: Into<AppId>>(app_id: A) -> AppExtrinsic {
 		let data = hex!("5D0284001CBD2D43530A44705AD088AF313E18F80B53EF16B36177CD4B77B846F2A5F07C01C44755794EA949E9410390CB4CE07FE2D8068656185B5AB9B43EEF934C3680478968C1F83E360A5D942FE75E9D58E49106A8E8B23601CBC6A633D80E5D089D83A4000400030000001D01A46868616A6B616E636B61206C61682069616B6A206361697568206162206169616A6820612067616861").to_vec();
-		AppExtrinsic { app_id, data }
+		AppExtrinsic {
+			app_id: app_id.into(),
+			data,
+		}
 	}
 
 	fn encoded_tx_bob() -> AppExtrinsic {
 		let data = hex!("490284001cbd2d43530a44705ad088af313e18f80b53ef16b36177cd4b77b846f2a5f07c0166de9fcb3903fa119cb6d23dd903b93a67719f76922b2b4c15a2539d11021102b75f4c452595b65b3bacef0e852430bbfa44bd38133b16cd5d48edb45962568204010000000000000600008eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a4802093d00").to_vec();
-		AppExtrinsic { app_id: 0, data }
+		AppExtrinsic {
+			app_id: 0.into(),
+			data,
+		}
 	}
 
 	fn dr_input_1() -> Vec<AppExtrinsic> {
