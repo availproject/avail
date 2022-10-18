@@ -35,9 +35,7 @@ where
 	T::Call: IsSubType<DACall<T>>,
 {
 	/// utility constructor. Used only in client/factory code.
-	pub fn from(app_id: AppId) -> Self {
-		Self(app_id, sp_std::marker::PhantomData)
-	}
+	pub fn from(app_id: AppId) -> Self { Self(app_id, sp_std::marker::PhantomData) }
 
 	/// Transaction validation:
 	///  - Only `DataAvailability::submit_data(..)` extrinsic can use `AppId != 0`. Any other call
@@ -66,9 +64,7 @@ where
 	}
 }
 impl<T: Config + Send + Sync> Default for CheckAppId<T> {
-	fn default() -> Self {
-		Self(AppId::default(), PhantomData)
-	}
+	fn default() -> Self { Self(AppId::default(), PhantomData) }
 }
 
 impl<T> Debug for CheckAppId<T>
@@ -76,14 +72,10 @@ where
 	T: Config + Send + Sync,
 {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-		write!(f, "CheckAppId: {}", self.0)
-	}
+	fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "CheckAppId: {}", self.0) }
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut Formatter) -> fmt::Result {
-		Ok(())
-	}
+	fn fmt(&self, _: &mut Formatter) -> fmt::Result { Ok(()) }
 }
 
 impl<T> SignedExtension for CheckAppId<T>
@@ -118,9 +110,7 @@ where
 	T: Config + Send + Sync,
 {
 	#[inline]
-	fn app_id(&self) -> AppId {
-		self.0
-	}
+	fn app_id(&self) -> AppId { self.0 }
 }
 
 #[cfg(test)]
@@ -136,9 +126,7 @@ mod tests {
 		pallet::Call as DACall,
 	};
 
-	fn remark_call() -> Call {
-		Call::System(SysCall::remark { remark: vec![] })
-	}
+	fn remark_call() -> Call { Call::System(SysCall::remark { remark: vec![] }) }
 
 	fn submit_data_call() -> Call {
 		Call::DataAvailability(DACall::submit_data {

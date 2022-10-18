@@ -387,7 +387,7 @@ mod tests {
 		}
 	}
 
-	fn encoded_fillblock_call<A: Into<AppId>>(app_id: A) -> AppExtrinsic {
+	fn encoded_submit_data<A: Into<AppId>>(app_id: A) -> AppExtrinsic {
 		let data = hex!("5D0284001CBD2D43530A44705AD088AF313E18F80B53EF16B36177CD4B77B846F2A5F07C01C44755794EA949E9410390CB4CE07FE2D8068656185B5AB9B43EEF934C3680478968C1F83E360A5D942FE75E9D58E49106A8E8B23601CBC6A633D80E5D089D83A4000400030000001D01A46868616A6B616E636B61206C61682069616B6A206361697568206162206169616A6820612067616861").to_vec();
 		AppExtrinsic {
 			app_id: app_id.into(),
@@ -403,9 +403,7 @@ mod tests {
 		}
 	}
 
-	fn dr_input_1() -> Vec<AppExtrinsic> {
-		vec![encoded_timestamp_call(), encoded_fillblock_call(3)]
-	}
+	fn dr_input_1() -> Vec<AppExtrinsic> { vec![encoded_timestamp_call(), encoded_submit_data(3)] }
 
 	fn dr_output_1() -> H256 {
 		hex!("DDF368647A902A6F6AB9F53B32245BE28EDC99E92F43F0004BBC2CB359814B2A").into()

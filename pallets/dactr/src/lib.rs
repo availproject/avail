@@ -204,9 +204,7 @@ pub mod pallet {
 
 	#[cfg(feature = "std")]
 	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self {
-			Self { app_keys: vec![] }
-		}
+		fn default() -> Self { Self { app_keys: vec![] } }
 	}
 
 	#[pallet::genesis_build]
