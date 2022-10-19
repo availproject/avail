@@ -1,5 +1,4 @@
 use std::{
-	cmp,
 	collections::HashMap,
 	convert::{TryFrom, TryInto},
 	iter::once,
@@ -66,8 +65,8 @@ fn map_cells(
 	Ok(result)
 }
 
-/// Returns rows for data related to specified application ID.
-/// Function returns empty vectory if there are no rows for given application ID.
+/// Returns indexes of rows related to given application ID,
+/// or empty vector if there are no rows.
 ///
 /// # Arguments
 ///
@@ -84,12 +83,11 @@ pub fn app_specific_rows(
 		.into_iter()
 		.find(|&(id, _)| app_id == id)
 		.map(|(_, range)| {
-			let offset = range.start * EXTENSION_FACTOR;
-			let number_of_cells = (range.end - range.start) * EXTENSION_FACTOR;
-			let number_of_rows = cmp::min(number_of_cells, dimensions.rows);
+			let first_row = range.start / dimensions.cols;
+			let last_row = (range.end - 1) / dimensions.cols;
 
-			(0..number_of_rows)
-				.map(move |row| (row + offset) % dimensions.rows)
+			(first_row..=last_row)
+				.map(|row| row * EXTENSION_FACTOR)
 				.collect::<Vec<usize>>()
 		})
 		.unwrap_or_else(std::vec::Vec::new)
@@ -115,9 +113,9 @@ pub fn app_specific_cells(
 	let (_, range) = ranges.into_iter().find(|&(id, _)| app_id == id)?;
 
 	let result = range
-		.map(|cell_number| Position {
-			col: (cell_number * 2 / dimensions.rows) as u16,
-			row: (cell_number * 2 % dimensions.rows) as u16,
+		.map(|cell| Position {
+			col: (cell % dimensions.cols) as u16,
+			row: ((cell / dimensions.cols) * EXTENSION_FACTOR) as u16,
 		})
 		.collect::<Vec<_>>();
 
@@ -207,26 +205,43 @@ fn reconstruct_available(
 	dimensions: &ExtendedMatrixDimensions,
 	cells: Vec<DataCell>,
 ) -> Result<Vec<u8>, ReconstructionError> {
-	let mut column_numbers: Vec<u16> = vec![];
-	let mut data: Vec<u8> = vec![];
-	let cells_map = map_cells(dimensions, cells)?;
-	for column_number in 0..dimensions.cols as u16 {
-		match cells_map.get(&column_number) {
-			None => data.extend(vec![0; dimensions.rows / 2 * CHUNK_SIZE]),
+	let columns = map_cells(dimensions, cells)?;
+
+	let scalars = (0..dimensions.cols as u16)
+		.map(|col| match columns.get(&col) {
+			None => Ok(vec![None; dimensions.rows / 2]),
 			Some(column_cells) => {
 				if column_cells.len() < dimensions.rows / 2 {
-					return Err(ReconstructionError::InvalidColumn(column_number));
+					return Err(ReconstructionError::InvalidColumn(col));
 				}
 				let cells = column_cells.values().cloned().collect::<Vec<_>>();
-				let scalars = reconstruct_column(dimensions.rows, &cells)
-					.map_err(ReconstructionError::ColumnReconstructionError)?;
-				let column_data = scalars.iter().flat_map(|e| e.to_bytes());
-				column_numbers.push(column_number);
-				data.extend(column_data);
+
+				reconstruct_column(dimensions.rows, &cells)
+					.map(|scalars| scalars.into_iter().map(Some).collect::<Vec<_>>())
+					.map_err(ReconstructionError::ColumnReconstructionError)
 			},
+		})
+		.collect::<Result<Vec<Vec<_>>, ReconstructionError>>()?
+		.into_iter()
+		.flatten()
+		.collect::<Vec<_>>();
+
+	let mut result: Vec<u8> = Vec::with_capacity(scalars.len() * CHUNK_SIZE);
+
+	for row in 0..dimensions.rows / EXTENSION_FACTOR {
+		for col in 0..dimensions.cols {
+			let cell_index = (col * dimensions.rows / 2) + row;
+			let bytes = scalars
+				.get(cell_index)
+				.map(Option::as_ref)
+				.unwrap_or(None)
+				.map(BlsScalar::to_bytes)
+				.unwrap_or_else(|| [0; CHUNK_SIZE]);
+			result.extend(bytes);
 		}
 	}
-	Ok(data)
+
+	Ok(result)
 }
 
 /// Decode app extrinsics from extrinsics layout and data cells.
@@ -259,8 +274,8 @@ pub fn decode_app_extrinsics(
 	}
 
 	let mut app_data: Vec<u8> = vec![];
-	for col_number in 0..dimensions.cols as u16 {
-		for row_number in 0..dimensions.rows as u16 {
+	for row_number in 0..dimensions.rows as u16 {
+		for col_number in 0..dimensions.cols as u16 {
 			if row_number % 2 > 0 {
 				continue;
 			}
@@ -735,10 +750,10 @@ mod tests {
 		}
 	}
 
-	#[test_case(0, &[0, 1, 2, 3] ; "App 0 spans 2 rows form row 0")]
-	#[test_case(1, &[4, 5, 6, 7, 0, 1] ; "App 1 spans 6 rows from row 4 ")]
-	#[test_case(2, &[2, 3, 4, 5, 6, 7] ; "App 2 spans 6 rows from row 2")]
-	#[test_case(3, &[0, 1, 2, 3, 4, 5, 6, 7] ; "App 3 spans all rows")]
+	#[test_case(0, &[0] ; "App 0 spans 2 rows form row 0")]
+	#[test_case(1, &[0, 2] ; "App 1 spans 2 rows from row 0")]
+	#[test_case(2, &[2] ; "App 2 spans 1 rows from row 2")]
+	#[test_case(3, &[4, 6] ; "App 3 spans 2 rows from row 4")]
 	#[test_case(4, &[] ; "There is no app 4")]
 	fn test_app_specific_rows(app_id: u32, expected: &[usize]) {
 		let index = AppDataIndex {
@@ -753,33 +768,24 @@ mod tests {
 		assert!(expected.iter().zip(result.iter()).all(|(a, b)| a == b));
 	}
 
-	#[test]
-	fn test_app_specific_cells() {
+	#[test_case(0, &[(0, 0), (0, 1), (0, 2), (0, 3), (2, 0)] ; "App 0 has five cells")]
+	#[test_case(1, &[(2, 1), (2, 2), (2, 3)] ; "App 1 has 3 cells")]
+	#[test_case(2, &[] ; "App 2 has no cells")]
+	fn test_app_specific_cells(app_id: u32, expected: &[(u16, u16)]) {
 		let index = AppDataIndex {
 			size: 8,
 			index: vec![(1, 5)],
 		};
 		let dimensions = ExtendedMatrixDimensions { rows: 4, cols: 4 };
 
-		let expected_0 = vec![(0, 0), (0, 2), (1, 0), (1, 2), (2, 0)];
-		let result_0 = app_specific_cells(&index, &dimensions, 0).unwrap();
+		let result =
+			app_specific_cells(&index, &dimensions, app_id).unwrap_or_else(std::vec::Vec::new);
 
-		assert_eq!(expected_0.len(), result_0.len());
-		result_0.iter().zip(expected_0).for_each(|(a, (col, row))| {
-			assert_eq!(a.col, col);
+		assert_eq!(expected.len(), result.len());
+		result.iter().zip(expected).for_each(|(a, &(row, col))| {
 			assert_eq!(a.row, row);
-		});
-
-		let expected_1 = vec![(2, 2), (3, 0), (3, 2)];
-		let result_1 = app_specific_cells(&index, &dimensions, 1).unwrap();
-
-		assert_eq!(expected_1.len(), result_1.len());
-		result_1.iter().zip(expected_1).for_each(|(a, (col, row))| {
 			assert_eq!(a.col, col);
-			assert_eq!(a.row, row);
 		});
-
-		assert!(app_specific_cells(&index, &dimensions, 2).is_none());
 	}
 
 	#[test]

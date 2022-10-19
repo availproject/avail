@@ -225,13 +225,22 @@ pub fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 	BlsScalar::from_bytes(&scalar_size_chunk).map_err(|_| Error::CellLenghtExceeded)
 }
 
+pub fn row_layout<T: Copy>(data: &[T], cols_num: usize, rows_num: usize) -> Vec<T> {
+	let mut result = Vec::with_capacity(data.len());
+	for col in 0..cols_num {
+		for row in 0..rows_num {
+			result.push(data[(row * cols_num) + col]);
+		}
+	}
+	result
+}
+
 /// Build extended data matrix, by columns.
 /// We are using dusk plonk for erasure coding,
 /// which is using roots of unity as evaluation domain for fft and ifft.
 /// This means that extension factor has to be multiple of 2,
 /// and that original data will be interleaved with erasure codes,
 /// instead of being in first k chunks of a column.
-
 #[cfg(feature = "alloc")]
 pub fn par_extend_data_matrix(
 	block_dims: BlockDimensions,
@@ -239,15 +248,18 @@ pub fn par_extend_data_matrix(
 ) -> Result<Vec<BlsScalar>, Error> {
 	let start = Instant::now();
 	let rows_num = block_dims.rows;
+	let cols_num = block_dims.cols;
 	let extended_rows_num = rows_num * EXTENSION_FACTOR;
 
 	let chunks = block.par_chunks_exact(block_dims.chunk_size);
 	assert!(chunks.remainder().is_empty());
 
-	let mut chunk_elements = chunks
+	let scalars = chunks
 		.into_par_iter()
 		.map(to_bls_scalar)
-		.collect::<Result<Vec<BlsScalar>, Error>>()?
+		.collect::<Result<Vec<BlsScalar>, Error>>()?;
+
+	let mut chunk_elements = row_layout(&scalars, cols_num, rows_num)
 		.par_chunks_exact(rows_num)
 		.flat_map(|column| extend_column_with_zeros(column, extended_rows_num))
 		.collect::<Vec<BlsScalar>>();
@@ -497,21 +509,21 @@ mod tests {
 	fn test_extend_data_matrix() {
 		let expected_result = vec![
 			b"000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e00",
-			b"ef471ce5550437df64279fba7f3d31b50d6ddd1d80eebf4f0ea22d18e6efab17",
-			b"1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d00",
-			b"31d90640d024f44dc965927aba9fc7db36ac0731cf32c530892cc366c4109d5c",
-			b"3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c00",
-			b"2d865a239442751da365ddf8bd7b6ff34bab1b5cbe2cfe8d4ce06b56242eea17",
-			b"5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b00",
-			b"6f17457e0e63328c07a4d0b8f8dd051a75ea456f0d71036fc76a01a5024fdb5c",
+			b"bc1c6b8b4b02ca677b825ec9dace9aa706813f3ec47abdf9f03c680f4468555e",
 			b"7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a00",
-			b"6bc49861d280b35be1a31b37fcb9ad318ae9599afc6a3ccc8a1eaa94626c2818",
+			b"c16115f73784be22106830c9bc6bbb469bf5026ee80325e403efe5ccc3f55016",
+			b"1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d00",
+			b"db3b8aaa6a21e9869aa17de8f9edb9c625a05e5de399dc18105c872e6387745e",
 			b"9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b900",
-			b"ad5583bc4ca170ca45e20ef7361c4458b32884ad4baf41ad05a93fe3408d195d",
+			b"e080341657a3dd412f874fe8db8ada65ba14228d07234403230e05ece2147016",
+			b"3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c00",
+			b"fa5aa9c9894008a6b9c09c07190dd9e544bf7d7c02b9fb372f7ba64d82a6935e",
 			b"babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d800",
-			b"a902d79f10bff1991fe259753af8eb6fc82798d83aa97a0ac95ce8d2a0aa6618",
+			b"ff9f533576c2fc604ea66e07fba9f984d93341ac26426322422d240b02348f16",
+			b"5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b00",
+			b"197ac8e8a85f27c5d8dfbb26382cf80464de9c9b21d81a574e9ac56ca1c5b25e",
 			b"d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f700",
-			b"eb93c1fa8adfae0884204d35755a8296f166c2eb89ed7feb43e77d217fcb575d",
+			b"1ebf725495e11b806dc58d261ac918a4f85260cb45618241614c432a2153ae16",
 		]
 		.into_iter()
 		.map(|e| {
@@ -780,7 +792,7 @@ get erasure coded to ensure redundancy."#;
 		let (layout, data, dims) = flatten_and_pad_block(32, 4, chunk_size, &xts, hash).unwrap();
 		let coded: Vec<BlsScalar> = par_extend_data_matrix(dims, &data[..]).unwrap();
 
-		let cols_1 = sample_cells_from_matrix(&coded, &dims, Some(&[0, 1]));
+		let cols_1 = sample_cells_from_matrix(&coded, &dims, Some(&[0, 1, 2, 3]));
 
 		let extended_dims = ExtendedMatrixDimensions {
 			cols: dims.cols,
@@ -791,7 +803,7 @@ get erasure coded to ensure redundancy."#;
 		let res_1 = reconstruct_app_extrinsics(&index, &extended_dims, cols_1, 1).unwrap();
 		assert_eq!(res_1[0], app_id_1_data);
 
-		let cols_2 = sample_cells_from_matrix(&coded, &dims, Some(&[1, 2]));
+		let cols_2 = sample_cells_from_matrix(&coded, &dims, Some(&[0, 2, 3]));
 
 		let res_2 = reconstruct_app_extrinsics(&index, &extended_dims, cols_2, 2).unwrap();
 		assert_eq!(res_2[0], app_id_2_data);
@@ -819,13 +831,14 @@ get erasure coded to ensure redundancy."#;
 
 		let extended_dims = ExtendedMatrixDimensions {
 			cols: dims.cols,
-			rows: dims.rows * 2,
+			rows: dims.rows * EXTENSION_FACTOR,
 		};
 		let extended_matrix = coded.chunks(extended_dims.rows).collect::<Vec<_>>();
 
 		let index = AppDataIndex::try_from(&layout).unwrap();
 		for xt in xts {
 			let positions = app_specific_cells(&index, &extended_dims, xt.app_id).unwrap();
+
 			let cells = positions
 				.iter()
 				.map(|position| kate_recovery::com::DataCell {
