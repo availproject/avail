@@ -14,7 +14,7 @@ use dusk_plonk::{
 	prelude::{BlsScalar, CommitKey},
 };
 use frame_support::ensure;
-use kate_recovery::com::{app_specific_rows, AppDataIndex, ExtendedMatrixDimensions};
+use kate_recovery::com::{AppDataIndex, ExtendedMatrixDimensions};
 use log::info;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
@@ -75,7 +75,7 @@ pub fn scalars_to_rows(
 	dimensions: ExtendedMatrixDimensions,
 	data: &[BlsScalar],
 ) -> Vec<Option<Vec<u8>>> {
-	let app_rows = app_specific_rows(&index, &dimensions, app_id);
+	let app_rows = index.app_specific_rows(&dimensions, app_id);
 	(0..dimensions.rows)
 		.into_iter()
 		.map(|i| match app_rows.iter().find(|&&row| row == i) {

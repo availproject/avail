@@ -65,34 +65,6 @@ fn map_cells(
 	Ok(result)
 }
 
-/// Returns indexes of rows related to given application ID,
-/// or empty vector if there are no rows.
-///
-/// # Arguments
-///
-/// * `index` - Application data index
-/// * `dimensions` - Extended matrix dimensions
-/// * `app_id` - Application ID
-pub fn app_specific_rows(
-	index: &AppDataIndex,
-	dimensions: &ExtendedMatrixDimensions,
-	app_id: u32,
-) -> Vec<usize> {
-	index
-		.cell_ranges()
-		.into_iter()
-		.find(|&(id, _)| app_id == id)
-		.map(|(_, range)| {
-			let first_row = range.start / dimensions.cols;
-			let last_row = (range.end - 1) / dimensions.cols;
-
-			(first_row..=last_row)
-				.map(|row| row * EXTENSION_FACTOR)
-				.collect::<Vec<usize>>()
-		})
-		.unwrap_or_else(std::vec::Vec::new)
-}
-
 /// Generates empty cell positions in extended data matrix,
 /// for data related to specified application ID.
 /// Function returns `None` if there are no cells for given application ID.
@@ -230,7 +202,7 @@ fn reconstruct_available(
 
 	for row in 0..dimensions.rows / EXTENSION_FACTOR {
 		for col in 0..dimensions.cols {
-			let cell_index = (col * dimensions.rows / 2) + row;
+			let cell_index = (col * dimensions.rows / EXTENSION_FACTOR) + row;
 			let bytes = scalars
 				.get(cell_index)
 				.map(Option::as_ref)
@@ -474,6 +446,33 @@ pub struct AppDataIndex {
 }
 
 impl AppDataIndex {
+	/// Returns indexes of rows related to given application ID,
+	/// or empty vector if there are no rows.
+	///
+	/// # Arguments
+	///
+	/// * `index` - Application data index
+	/// * `dimensions` - Extended matrix dimensions
+	/// * `app_id` - Application ID
+	pub fn app_specific_rows(
+		self,
+		dimensions: &ExtendedMatrixDimensions,
+		app_id: u32,
+	) -> Vec<usize> {
+		self.cell_ranges()
+			.into_iter()
+			.find(|&(id, _)| app_id == id)
+			.map(|(_, range)| {
+				let first_row = range.start / dimensions.cols;
+				let last_row = (range.end - 1) / dimensions.cols;
+
+				(first_row..=last_row)
+					.map(|row| row * EXTENSION_FACTOR)
+					.collect::<Vec<usize>>()
+			})
+			.unwrap_or_else(std::vec::Vec::new)
+	}
+
 	/// Calculates cell range per application from extrinsic offsets.
 	/// Range is from start index to end index in matrix.
 	fn cell_ranges(&self) -> Vec<(u32, Range<usize>)> {
@@ -762,7 +761,7 @@ mod tests {
 		};
 		let dimensions = ExtendedMatrixDimensions { rows: 8, cols: 4 };
 
-		let result = app_specific_rows(&index, &dimensions, app_id);
+		let result = index.app_specific_rows(&dimensions, app_id);
 
 		assert_eq!(expected.len(), result.len());
 		assert!(expected.iter().zip(result.iter()).all(|(a, b)| a == b));
