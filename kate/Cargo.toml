@@ -8,6 +8,7 @@ edition = "2021"
 
 [dependencies]
 da-primitives = { path = "../primitives/avail", default-features = false }
+kate-recovery = { path = "recovery", default-features = false }
 
 # Others
 dusk-plonk = { git = "https://github.com/maticnetwork/plonk.git", branch = "v0.8.2-polygon-5", optional = true }
@@ -34,7 +35,6 @@ frame-support = { version = "4.0.0-dev", default-features = false }
 [dev-dependencies]
 test-case = "1.2.3"
 proptest = "1.0.0"
-kate-recovery = { path = "recovery", default-features = false }
 kate-proof = { path = "proof", default-features = false }
 hex-literal = "0.3.4"
 criterion = "0.3.5"

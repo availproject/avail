@@ -4,12 +4,16 @@ use std::{
 };
 
 use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
-use da_primitives::asdr::{AppExtrinsic, AppId, GetAppId};
+use da_primitives::{
+	asdr::{AppExtrinsic, AppId, DataLookup, GetAppId},
+	traits::ExtendedHeader,
+};
 use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
 use frame_system::limits::BlockLength;
 use jsonrpc_core::{Error as RpcError, Result};
 use jsonrpc_derive::rpc;
 use kate::BlockDimensions;
+use kate_recovery::com::{AppDataIndex, ExtendedMatrixDimensions};
 use kate_rpc_runtime_api::KateParamsGetter;
 use lru::LruCache;
 use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
@@ -25,8 +29,12 @@ use sp_runtime::{
 
 #[rpc]
 pub trait KateApi {
-	#[rpc(name = "kate_queryBlock")]
-	fn query_block(&self, block_number: NumberOrHex) -> Result<Vec<Option<Vec<u8>>>>;
+	#[rpc(name = "kate_queryAppData")]
+	fn query_app_data(
+		&self,
+		block_number: NumberOrHex,
+		app_id: AppId,
+	) -> Result<Vec<Option<Vec<u8>>>>;
 
 	#[rpc(name = "kate_queryProof")]
 	fn query_proof(
@@ -89,6 +97,7 @@ impl<Client, Block> KateApi for Kate<Client, Block>
 where
 	Block: BlockT,
 	Block::Extrinsic: GetAppId<AppId>,
+	Block::Header: ExtendedHeader,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block>
 		+ ProvideRuntimeApi<Block>
@@ -96,7 +105,11 @@ where
 		+ StorageProvider<Block, sc_client_db::Backend<Block>>,
 	Client::Api: KateParamsGetter<Block>,
 {
-	fn query_block(&self, block_number_or_hex: NumberOrHex) -> Result<Vec<Option<Vec<u8>>>> {
+	fn query_app_data(
+		&self,
+		block_number_or_hex: NumberOrHex,
+		app_id: AppId,
+	) -> Result<Vec<Option<Vec<u8>>>> {
 		let block_number = u32::try_from(block_number_or_hex)
 			.map(<NumberFor<Block>>::from)
 			.map_err(|_| RpcError::invalid_params("Invalid block number"))?;
@@ -160,10 +173,21 @@ where
 			.get(&block_hash)
 			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
 
+		let DataLookup { index, size } = signed_block.block.header().data_lookup();
+		let app_data_index = AppDataIndex {
+			index: index.clone(),
+			size: *size,
+		};
+		let extended_dims = ExtendedMatrixDimensions {
+			rows: block_dims.rows * 2,
+			cols: block_dims.cols,
+		};
+
 		Ok(kate::com::scalars_to_rows(
-			&ext_data,
-			block_dims.cols,
-			block_dims.rows * 2,
+			app_id,
+			app_data_index,
+			extended_dims,
+			ext_data,
 		))
 	}
 

@@ -3471,6 +3471,7 @@ dependencies = [
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "kate",
+ "kate-recovery",
  "kate-rpc-runtime-api",
  "lru 0.7.5",
  "parity-scale-codec 2.3.1",

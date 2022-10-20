@@ -14,6 +14,7 @@ use dusk_plonk::{
 	prelude::{BlsScalar, CommitKey},
 };
 use frame_support::ensure;
+use kate_recovery::com::{app_specific_rows, AppDataIndex, ExtendedMatrixDimensions};
 use log::info;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
@@ -68,16 +69,24 @@ fn app_extrinsics_group_by_app_id(extrinsics: &[AppExtrinsic]) -> Vec<(u32, Vec<
 	})
 }
 
-pub fn scalars_to_rows(data: &[BlsScalar], cols: usize, rows: usize) -> Vec<Option<Vec<u8>>> {
-	(0..rows)
+pub fn scalars_to_rows(
+	app_id: u32,
+	index: AppDataIndex,
+	dimensions: ExtendedMatrixDimensions,
+	data: &[BlsScalar],
+) -> Vec<Option<Vec<u8>>> {
+	let app_rows = app_specific_rows(&index, &dimensions, app_id);
+	(0..dimensions.rows)
 		.into_iter()
-		.map(|i| {
-			row(data, i, cols, rows)
-				.iter()
-				.flat_map(BlsScalar::to_bytes)
-				.collect::<Vec<u8>>()
+		.map(|i| match app_rows.iter().find(|&&row| row == i) {
+			Some(_) => Some(
+				row(data, i, dimensions.cols, dimensions.rows)
+					.iter()
+					.flat_map(BlsScalar::to_bytes)
+					.collect::<Vec<u8>>(),
+			),
+			None => None,
 		})
-		.map(Some)
 		.collect::<Vec<Option<Vec<u8>>>>()
 }
 
@@ -669,7 +678,7 @@ mod tests {
 
 	fn app_extrinsics_strategy() -> impl Strategy<Value = Vec<AppExtrinsic>> {
 		collection::vec(app_extrinsic_strategy(), size_range(1..16)).prop_map(|xts| {
-			let mut new_xts = xts.clone();
+			let mut new_xts = xts;
 			new_xts.sort_by(|a1, a2| a1.app_id.cmp(&a2.app_id));
 			new_xts
 		})
@@ -724,13 +733,16 @@ mod tests {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
 	fn test_commitments_verify(ref xts in app_extrinsics_strategy())  {
-		let (_, commitments, dims, matrix) = par_build_commitments(64, 16, 32, xts, Seed::default()).unwrap();
+		let (layout, commitments, dims, matrix) = par_build_commitments(64, 16, 32, xts, Seed::default()).unwrap();
+		let index = AppDataIndex::try_from(&layout).unwrap();
 
-		let rows = dims.rows * 2;
-		let cols = dims.cols;
-		let public_params = testnet::public_params(cols);
+		let public_params = testnet::public_params(dims.cols);
 
-		prop_assert!(kate_recovery::commitments::verify_equality(&public_params, &commitments, dims.cols as usize, &scalars_to_rows(&matrix, cols, rows))?);
+		for xt in xts {
+			let extended_dims = ExtendedMatrixDimensions { rows: dims.rows * 2, cols: dims.cols };
+			let rows = &scalars_to_rows(xt.app_id, index.clone(), extended_dims, &matrix);
+			prop_assert!(kate_recovery::commitments::verify_equality(&public_params, &commitments, dims.cols as usize, rows)?);
+		}
 	}
 	}
 
