@@ -5,6 +5,7 @@ use da_primitives::{
 	Header,
 };
 use frame_support::{parameter_types, weights::IdentityFee};
+use frame_system::{DRFCallOf, DRFOutput, DataRootFilter};
 use pallet_transaction_payment::CurrencyAdapter;
 use sp_core::H256;
 use sp_runtime::{
@@ -50,6 +51,12 @@ parameter_types! {
 	pub static ExistentialDeposit: u64 = 0;
 }
 
+impl DataRootFilter for Test {
+	type UncheckedExtrinsic = UncheckedExtrinsic<Test>;
+
+	fn filter(_call: &DRFCallOf<Self::UncheckedExtrinsic>) -> DRFOutput { None }
+}
+
 impl frame_system::Config for Test {
 	type AccountData = pallet_balances::AccountData<Balance>;
 	type AccountId = u64;
@@ -59,12 +66,13 @@ impl frame_system::Config for Test {
 	type BlockNumber = BlockNumber;
 	type BlockWeights = BlockWeights;
 	type Call = Call;
+	type DataRootBuilderFilter = Test;
 	type DbWeight = ();
 	type Event = Event;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header<Self::BlockNumber, BlakeTwo256>;
-	type HeaderBuilder = frame_system::header_builder::da::HeaderBuilder<Test>;
+	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type OnKilledAccount = ();
@@ -141,27 +149,18 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 	da_control::GenesisConfig::<Test> {
 		app_keys: vec![
-			(
-				b"Data Avail".to_vec(),
-				AppKeyInfo {
-					owner: 1,
-					id: 0.into(),
-				},
-			),
-			(
-				b"Ethereum".to_vec(),
-				AppKeyInfo {
-					owner: 2,
-					id: 1.into(),
-				},
-			),
-			(
-				b"Polygon".to_vec(),
-				AppKeyInfo {
-					owner: 2,
-					id: 2.into(),
-				},
-			),
+			(b"Data Avail".to_vec(), AppKeyInfo {
+				owner: 1,
+				id: 0.into(),
+			}),
+			(b"Ethereum".to_vec(), AppKeyInfo {
+				owner: 2,
+				id: 1.into(),
+			}),
+			(b"Polygon".to_vec(), AppKeyInfo {
+				owner: 2,
+				id: 2.into(),
+			}),
 		],
 	}
 	.assimilate_storage(&mut storage)

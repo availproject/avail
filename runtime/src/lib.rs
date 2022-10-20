@@ -32,7 +32,9 @@ use sp_runtime::{
 	create_runtime_str,
 	curve::PiecewiseLinear,
 	generic, impl_opaque_keys,
-	traits::{BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, OpaqueKeys, Verify},
+	traits::{
+		BlakeTwo256, Block as BlockT, Extrinsic, IdentifyAccount, NumberFor, OpaqueKeys, Verify,
+	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, FixedPointNumber, MultiSignature,
 };
@@ -40,6 +42,9 @@ pub use sp_runtime::{Perbill, Percent, Permill, Perquintill};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
+
+#[cfg(test)]
+mod data_root_tests;
 
 #[cfg(feature = "std")]
 pub fn wasm_binary_unwrap() -> &'static [u8] {
@@ -259,6 +264,23 @@ parameter_types! {
 
 // Configure FRAME pallets to include in runtime.
 
+impl frame_system::DataRootFilter for Runtime {
+	type UncheckedExtrinsic = UncheckedExtrinsic;
+
+	fn filter(call: &<Self::UncheckedExtrinsic as Extrinsic>::Call) -> Option<Vec<u8>> {
+		match call {
+			Call::DataAvailability(ref method) => match method {
+				da_control::Call::submit_data { data } => {
+					let data: &Vec<u8> = &*data;
+					Some(data.clone())
+				},
+				_ => None,
+			},
+			_ => None,
+		}
+	}
+}
+
 impl frame_system::Config for Runtime {
 	/// The data to be stored in an account.
 	type AccountData = pallet_balances::AccountData<Balance>;
@@ -276,6 +298,8 @@ impl frame_system::Config for Runtime {
 	type BlockWeights = BlockWeights;
 	/// The aggregated dispatch type that is available for extrinsics.
 	type Call = Call;
+	/// Data Root
+	type DataRootBuilderFilter = Runtime;
 	/// The weight of database operations that the runtime can invoke.
 	type DbWeight = RocksDbWeight;
 	/// The ubiquitous event type.
@@ -287,7 +311,7 @@ impl frame_system::Config for Runtime {
 	/// The header type.
 	type Header = DaHeader<BlockNumber, BlakeTwo256>;
 	/// The header builder type.
-	type HeaderBuilder = frame_system::header_builder::da::HeaderBuilder<Runtime>;
+	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Runtime>;
 	/// The index type for storing how many extrinsics an account has signed.
 	type Index = Index;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
@@ -1033,19 +1057,19 @@ construct_runtime!(
 		Offences: pallet_offences = 22,
 		Historical: pallet_session_historical = 23,
 
-		Scheduler: pallet_scheduler,
-		Bounties: pallet_bounties,
-		Tips: pallet_tips,
-		Mmr: pallet_mmr,
-		BagsList: pallet_bags_list,
+		Scheduler: pallet_scheduler = 24,
+		Bounties: pallet_bounties = 25,
+		Tips: pallet_tips = 26,
+		Mmr: pallet_mmr = 27,
+		BagsList: pallet_bags_list = 28,
 
 		// DA module
-		DataAvailability: da_control,
+		DataAvailability: da_control = 29,
 
 		// Nomad
-		UpdaterManager: updater_manager,
-		NomadHome: nomad_home,
-		DABridge: da_bridge,
+		UpdaterManager: updater_manager = 30,
+		NomadHome: nomad_home = 31,
+		DABridge: da_bridge = 32,
 	}
 );
 
