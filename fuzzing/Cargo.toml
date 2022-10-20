@@ -7,9 +7,9 @@ edition = "2021"
 
 [dependencies]
 afl = "*"
-kate-recovery = { git = "https://github.com/maticnetwork/avail-core.git", branch = "miguel/ava-397-compatibility-issue-between-10-11" }
-kate = { git = "https://github.com/maticnetwork/avail-core.git", branch = "miguel/ava-397-compatibility-issue-between-10-11" }
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", branch = "miguel/ava-397-compatibility-issue-between-10-11", default-features = false }
+kate-recovery = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.0" }
+kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.0" }
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.0", default-features = false }
 hex-literal = "0.3.1"
 
 [[bin]]
