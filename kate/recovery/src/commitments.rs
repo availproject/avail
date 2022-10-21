@@ -7,7 +7,7 @@ use dusk_plonk::{
 };
 use thiserror::Error;
 
-use crate::com::{CHUNK_SIZE, COMMITMENT_SIZE};
+use crate::config;
 
 #[derive(Error, Debug)]
 pub enum DataError {
@@ -54,12 +54,12 @@ impl From<dusk_plonk::error::Error> for Error {
 }
 
 fn try_into_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
-	let sized_chunk = <[u8; CHUNK_SIZE]>::try_from(chunk)?;
+	let sized_chunk = <[u8; config::CHUNK_SIZE]>::try_from(chunk)?;
 	BlsScalar::from_bytes(&sized_chunk).map_err(From::from)
 }
 
 fn try_into_scalars(data: &[u8]) -> Result<Vec<BlsScalar>, Error> {
-	let chunks = data.chunks_exact(CHUNK_SIZE);
+	let chunks = data.chunks_exact(config::CHUNK_SIZE);
 	if !chunks.remainder().is_empty() {
 		return Err(Error::InvalidData(DataError::BadLen));
 	}
@@ -72,7 +72,7 @@ fn row_commitment(
 	prover_key: &CommitKey,
 	domain: EvaluationDomain,
 	row: &[u8],
-) -> Result<[u8; COMMITMENT_SIZE], Error> {
+) -> Result<[u8; config::COMMITMENT_SIZE], Error> {
 	let scalars = try_into_scalars(row)?;
 	let polynomial = Evaluations::from_vec_and_domain(scalars, domain).interpolate();
 	Ok(prover_key.commit(&polynomial)?.to_bytes())
@@ -93,11 +93,11 @@ pub fn verify_equality(
 	cols_num: usize,
 	rows: &[Option<Vec<u8>>],
 ) -> Result<bool, Error> {
-	if commitments.len() / COMMITMENT_SIZE != rows.len() {
+	if commitments.len() / config::COMMITMENT_SIZE != rows.len() {
 		return Err(Error::InvalidData(DataError::RowAndCommitmentsMismatch));
 	}
 
-	if commitments.len() % COMMITMENT_SIZE > 0 {
+	if commitments.len() % config::COMMITMENT_SIZE > 0 {
 		return Err(Error::InvalidData(DataError::BadCommitmentsData));
 	}
 
@@ -105,7 +105,7 @@ pub fn verify_equality(
 	let domain = EvaluationDomain::new(cols_num)?;
 
 	let verifications = commitments
-		.chunks_exact(COMMITMENT_SIZE)
+		.chunks_exact(config::COMMITMENT_SIZE)
 		.zip(rows.iter())
 		.map(|(commitment, row)| match row {
 			None => Ok(true),

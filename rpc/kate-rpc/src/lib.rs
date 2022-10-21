@@ -13,7 +13,7 @@ use frame_system::limits::BlockLength;
 use jsonrpc_core::{Error as RpcError, Result};
 use jsonrpc_derive::rpc;
 use kate::BlockDimensions;
-use kate_recovery::com::{AppDataIndex, ExtendedMatrixDimensions};
+use kate_recovery::{index::AppDataIndex, matrix::Dimensions};
 use kate_rpc_runtime_api::KateParamsGetter;
 use lru::LruCache;
 use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
@@ -178,10 +178,7 @@ where
 			index: index.clone(),
 			size: *size,
 		};
-		let extended_dims = ExtendedMatrixDimensions {
-			rows: block_dims.rows * 2,
-			cols: block_dims.cols,
-		};
+		let extended_dims = Dimensions::row_wise(block_dims.rows as u16, block_dims.cols as u16);
 
 		Ok(kate::com::scalars_to_rows(
 			app_id,

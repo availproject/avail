@@ -14,7 +14,7 @@ use dusk_plonk::{
 	prelude::{BlsScalar, CommitKey},
 };
 use frame_support::ensure;
-use kate_recovery::com::{AppDataIndex, ExtendedMatrixDimensions};
+use kate_recovery::{com::app_specific_rows, index, matrix};
 use log::info;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
@@ -71,19 +71,24 @@ fn app_extrinsics_group_by_app_id(extrinsics: &[AppExtrinsic]) -> Vec<(u32, Vec<
 
 pub fn scalars_to_rows(
 	app_id: u32,
-	index: AppDataIndex,
-	dimensions: ExtendedMatrixDimensions,
+	index: index::AppDataIndex,
+	dimensions: matrix::Dimensions,
 	data: &[BlsScalar],
 ) -> Vec<Option<Vec<u8>>> {
-	let app_rows = index.app_specific_rows(&dimensions, app_id);
-	(0..dimensions.rows)
+	let app_rows = app_specific_rows(&index, &dimensions, app_id);
+	(0..dimensions.extended_rows())
 		.into_iter()
 		.map(|i| match app_rows.iter().find(|&&row| row == i) {
 			Some(_) => Some(
-				row(data, i, dimensions.cols, dimensions.rows)
-					.iter()
-					.flat_map(BlsScalar::to_bytes)
-					.collect::<Vec<u8>>(),
+				row(
+					data,
+					i as usize,
+					dimensions.cols as usize,
+					dimensions.extended_rows() as usize,
+				)
+				.iter()
+				.flat_map(BlsScalar::to_bytes)
+				.collect::<Vec<u8>>(),
 			),
 			None => None,
 		})
@@ -453,11 +458,10 @@ pub fn par_build_commitments(
 	Ok((tx_layout, result_bytes, block_dims, ext_data_matrix))
 }
 
-// Row of column-oriented matrix
-fn row(matrix: &[BlsScalar], i: usize, cols: usize, rows: usize) -> Vec<BlsScalar> {
+fn row(matrix: &[BlsScalar], i: usize, cols: usize, extended_rows: usize) -> Vec<BlsScalar> {
 	let mut row = Vec::with_capacity(cols);
-	for j in 0..cols {
-		row.push(matrix[i + j * rows]);
+	for j in 0..cols as usize {
+		row.push(matrix[i + j * extended_rows]);
 	}
 	row
 }
@@ -483,10 +487,14 @@ mod tests {
 	use dusk_bytes::Serializable;
 	use dusk_plonk::bls12_381::BlsScalar;
 	use hex_literal::hex;
-	use kate_recovery::com::{
-		app_specific_cells, decode_app_extrinsics, reconstruct_app_extrinsics,
-		reconstruct_extrinsics, unflatten_padded_data, AppDataIndex, DataCell,
-		ExtendedMatrixDimensions, Position, ReconstructionError,
+	use kate_recovery::{
+		com::{
+			app_specific_cells, decode_app_extrinsics, reconstruct_app_extrinsics,
+			reconstruct_extrinsics, unflatten_padded_data, ReconstructionError,
+		},
+		data::DataCell,
+		index::AppDataIndex,
+		matrix::{Dimensions, Position},
 	};
 	use proptest::{
 		collection::{self, size_range},
@@ -616,7 +624,7 @@ mod tests {
 		assert_eq!(dims, expected_dims, "Dimensions don't match the expected");
 		assert_eq!(data, expected_data, "Data doesn't match the expected data");
 		let index = AppDataIndex::try_from(&layout).unwrap();
-		let res = unflatten_padded_data(index.data_ranges(), data, chunk_size).unwrap();
+		let res = unflatten_padded_data(index.data_ranges(), data).unwrap();
 		assert_eq!(
 			res.len(),
 			extrinsics.len(),
@@ -657,7 +665,10 @@ mod tests {
 				random_indexes(e.len(), RNG_SEED)
 					.into_iter()
 					.map(|row| DataCell {
-						position: Position { row, col },
+						position: Position {
+							row: row as u32,
+							col,
+						},
 						data: e[row as usize].to_bytes(),
 					})
 					.filter(|cell| {
@@ -706,7 +717,7 @@ mod tests {
 		let (layout, commitments, dims, matrix) = par_build_commitments(64, 16, 32, xts, Seed::default()).unwrap();
 
 		let columns = sample_cells_from_matrix(&matrix, &dims, None);
-		let extended_dims = ExtendedMatrixDimensions{cols: dims.cols, rows: dims.rows * 2};
+		let extended_dims = Dimensions::row_wise(dims.rows as u16, dims.cols as u16);
 		let index = AppDataIndex::try_from(&layout).unwrap();
 		let reconstructed = reconstruct_extrinsics(&index, &extended_dims, columns).unwrap();
 		for (result, xt) in reconstructed.iter().zip(xts) {
@@ -739,7 +750,7 @@ mod tests {
 		let public_params = testnet::public_params(dims.cols);
 
 		for xt in xts {
-			let extended_dims = ExtendedMatrixDimensions { rows: dims.rows * 2, cols: dims.cols };
+				let extended_dims = Dimensions::row_wise(dims.rows as u16, dims.cols as u16);
 			let rows = &scalars_to_rows(xt.app_id, index.clone(), extended_dims, &matrix);
 			prop_assert!(kate_recovery::commitments::verify_equality(&public_params, &commitments, dims.cols as usize, rows)?);
 		}
@@ -806,10 +817,7 @@ get erasure coded to ensure redundancy."#;
 
 		let cols_1 = sample_cells_from_matrix(&coded, &dims, Some(&[0, 1, 2, 3]));
 
-		let extended_dims = ExtendedMatrixDimensions {
-			cols: dims.cols,
-			rows: dims.rows * 2,
-		};
+		let extended_dims = Dimensions::row_wise(dims.rows as u16, dims.cols as u16);
 
 		let index = AppDataIndex::try_from(&layout).unwrap();
 		let res_1 = reconstruct_app_extrinsics(&index, &extended_dims, cols_1, 1).unwrap();
@@ -841,29 +849,29 @@ get erasure coded to ensure redundancy."#;
 		let (layout, data, dims) = flatten_and_pad_block(32, 4, chunk_size, &xts, hash).unwrap();
 		let coded = par_extend_data_matrix(dims, &data[..]).unwrap();
 
-		let extended_dims = ExtendedMatrixDimensions {
-			cols: dims.cols,
-			rows: dims.rows * EXTENSION_FACTOR,
-		};
-		let extended_matrix = coded.chunks(extended_dims.rows).collect::<Vec<_>>();
+		let dimensions = Dimensions::row_wise(dims.rows as u16, dims.cols as u16);
+
+		let extended_matrix = coded
+			.chunks(dimensions.extended_rows() as usize)
+			.collect::<Vec<_>>();
 
 		let index = AppDataIndex::try_from(&layout).unwrap();
 		for xt in xts {
-			let positions = app_specific_cells(&index, &extended_dims, xt.app_id).unwrap();
+			let positions = app_specific_cells(&index, &dimensions, xt.app_id).unwrap();
 
 			let cells = positions
 				.iter()
-				.map(|position| kate_recovery::com::DataCell {
+				.map(|position| DataCell {
 					position: position.clone(),
 					data: extended_matrix[position.col as usize][position.row as usize].to_bytes(),
 				})
 				.collect::<Vec<_>>();
-			let data = &decode_app_extrinsics(&index, &extended_dims, cells, xt.app_id).unwrap()[0];
+			let data = &decode_app_extrinsics(&index, &dimensions, cells, xt.app_id).unwrap()[0];
 			assert_eq!(data, &xt.data);
 		}
 
 		assert!(matches!(
-			decode_app_extrinsics(&index, &extended_dims, vec![], 0),
+			decode_app_extrinsics(&index, &dimensions, vec![], 0),
 			Err(ReconstructionError::MissingCell { .. })
 		));
 	}
@@ -890,10 +898,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 		let cols = sample_cells_from_matrix(&coded, &dims, None);
 
-		let extended_dims = ExtendedMatrixDimensions {
-			cols: dims.cols,
-			rows: dims.rows * 2,
-		};
+		let extended_dims = Dimensions::row_wise(dims.rows as u16, dims.cols as u16);
 		let index = AppDataIndex::try_from(&layout).unwrap();
 		let res = reconstruct_extrinsics(&index, &extended_dims, cols).unwrap();
 		let s = String::from_utf8_lossy(res[0].1[0].as_slice());
@@ -925,11 +930,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let coded: Vec<BlsScalar> = par_extend_data_matrix(dims, &data[..]).unwrap();
 
 		let cols = sample_cells_from_matrix(&coded, &dims, None);
-		let extended_dims = ExtendedMatrixDimensions {
-			cols: dims.cols,
-			rows: dims.rows * 2,
-		};
-
+		let extended_dims = Dimensions::row_wise(dims.rows as u16, dims.cols as u16);
 		let index = AppDataIndex::try_from(&layout).unwrap();
 		let res = reconstruct_extrinsics(&index, &extended_dims, cols).unwrap();
 
