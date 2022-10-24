@@ -3517,6 +3517,7 @@ dependencies = [
  "sc-client-db",
  "sp-api",
  "sp-blockchain",
+ "sp-core",
  "sp-rpc",
  "sp-runtime",
  "sp-std",

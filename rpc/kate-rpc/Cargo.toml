@@ -28,3 +28,4 @@ sc-client-api = { version = "4.0.0-dev" }
 sp-blockchain = { version = "4.0.0-dev" }
 sp-rpc = { version = "4.0.0-dev" }
 sp-runtime = { version = "4.0.0-dev" }
+sp-core = { version = "4.0.0-dev" }

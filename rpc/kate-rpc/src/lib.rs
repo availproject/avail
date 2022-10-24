@@ -4,7 +4,10 @@ use std::{
 };
 
 use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
-use da_primitives::asdr::{AppExtrinsic, GetAppId};
+use da_primitives::{
+	asdr::{AppExtrinsic, GetAppId},
+	traits::ExtendedHeader,
+};
 use frame_system::limits::BlockLength;
 use jsonrpc_core::{Error as RpcError, Result};
 use jsonrpc_derive::rpc;
@@ -15,6 +18,7 @@ use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
 use sc_client_api::{BlockBackend, StorageProvider};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
+use sp_core::H256;
 use sp_rpc::number::NumberOrHex;
 use sp_runtime::{
 	generic::BlockId,
@@ -35,7 +39,7 @@ pub trait KateApi {
 	fn query_block_length(&self) -> Result<BlockLength>;
 
 	#[rpc(name = "kate_queryDataProof")]
-	fn query_data_proof(&self, block_number: NumberOrHex, index: usize) -> Result<Vec<[u8; 32]>>;
+	fn query_data_proof(&self, block_number: NumberOrHex, index: u32) -> Result<Vec<H256>>;
 }
 
 pub struct Kate<Client, Block: BlockT> {
@@ -84,6 +88,7 @@ impl<Client, Block> KateApi for Kate<Client, Block>
 where
 	Block: BlockT,
 	Block::Extrinsic: GetAppId,
+	Block::Header: ExtendedHeader,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block>
 		+ ProvideRuntimeApi<Block>
@@ -190,7 +195,7 @@ where
 		Ok(block_length)
 	}
 
-	fn query_data_proof(&self, block_number: NumberOrHex, index: usize) -> Result<Vec<[u8; 32]>> {
+	fn query_data_proof(&self, block_number: NumberOrHex, index: u32) -> Result<Vec<H256>> {
 		let block_num: u32 = block_number
 			.try_into()
 			.map_err(|_| RpcError::invalid_params("Invalid block number"))?;
@@ -202,6 +207,7 @@ where
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
 			.ok_or_else(|| internal_err!("Missing block number {}", block_num))?;
 
+		let index: usize = index as usize;
 		let mut leaves: Vec<[u8; 32]> = Vec::new();
 		let mut interested_leaf_position: Option<usize> = None;
 
@@ -224,10 +230,20 @@ where
 		if leaves.len() > 0 {
 			if let Some(position) = interested_leaf_position {
 				let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
-				// TODO: Enable assertion
-				// assert_eq!(data_tree.root(), signed_block.block.header().extrinsics_root().data_root(), "Wrong data root!");
-				let proof = data_tree.proof(&[position]);
-				return Ok(proof.proof_hashes().to_vec());
+				debug_assert_eq!(
+					data_tree.root().map(H256::from),
+					Some(signed_block.block.header().extension().data_root()),
+					"Wrong data root!"
+				);
+
+				let proof = data_tree
+					.proof(&[position])
+					.proof_hashes()
+					.into_iter()
+					.map(H256::from)
+					.collect::<Vec<_>>();
+
+				return Ok(proof);
 			}
 		}
 		Err(internal_err!("Proof not possible!"))
