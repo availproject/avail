@@ -31,11 +31,12 @@ pub trait DataRootBuilder<F: DataRootFilter> {
 				// Decode call and log any failure.
 				total_extrinsics_count += 1;
 				match F::UncheckedExtrinsic::decode(&mut app_extrinsic.data.as_slice()) {
-					Ok(app_unchecked_extrinsic) => {
-						// Some((app_unchecked_extrinsic, app_extrinsic.data.as_slice()))
-						Some(app_unchecked_extrinsic)
-					},
+					Ok(app_unchecked_extrinsic) => Some(app_unchecked_extrinsic),
 					Err(err) => {
+						// NOTE: Decodification issue is like a `unrecheable` because this
+						// extrinsic was decoded previously, when node executed the block.
+						// We will keep this here just to have a trace if we update
+						// `System::note_extrinsic` in the future.
 						log::error!(
 							target: LOG_TARGET,
 							"Extrinsic {} cannot be decoded: {:?}",
