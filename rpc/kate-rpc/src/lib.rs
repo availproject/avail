@@ -178,12 +178,12 @@ where
 			index: index.clone(),
 			size: *size,
 		};
-		let extended_dims = Dimensions::row_wise(block_dims.rows as u16, block_dims.cols as u16);
+		let extended_dims = Dimensions::new(block_dims.rows as u16, block_dims.cols as u16);
 
 		Ok(kate::com::scalars_to_rows(
 			app_id,
-			app_data_index,
-			extended_dims,
+			&app_data_index,
+			&extended_dims,
 			ext_data,
 		))
 	}

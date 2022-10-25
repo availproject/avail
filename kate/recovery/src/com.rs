@@ -32,7 +32,7 @@ fn map_cells(
 	let mut result: HashMap<u16, HashMap<u32, data::DataCell>> = HashMap::new();
 	for cell in cells {
 		let position = cell.position.clone();
-		if !dimensions.contains(&position) {
+		if !dimensions.extended_contains(&position) {
 			return Err(ReconstructionError::InvalidCell { position });
 		}
 		let cells = result.entry(position.col).or_insert_with(HashMap::new);
@@ -58,7 +58,7 @@ pub fn app_specific_rows(
 ) -> Vec<u32> {
 	index
 		.app_cells_range(app_id)
-		.map(|range| dimensions.data_rows(range))
+		.map(|range| dimensions.extended_data_rows(range))
 		.unwrap_or_else(std::vec::Vec::new)
 }
 
@@ -79,7 +79,7 @@ pub fn app_specific_cells(
 ) -> Option<Vec<matrix::Position>> {
 	index
 		.app_cells_range(app_id)
-		.map(|range| dimensions.positions(range))
+		.map(|range| dimensions.extended_data_positions(range))
 }
 
 /// Reconstructs app extrinsics from extrinsics layout and data.
@@ -152,7 +152,7 @@ fn reconstruct_available(
 
 	let mut result: Vec<u8> = Vec::with_capacity(scalars.len() * config::CHUNK_SIZE);
 
-	for cell_index in dimensions.iter_cells_by_row() {
+	for cell_index in dimensions.iter_cells() {
 		let bytes = scalars
 			.get(cell_index as usize)
 			.map(Option::as_ref)
@@ -195,7 +195,7 @@ pub fn decode_app_extrinsics(
 	}
 
 	let mut app_data: Vec<u8> = vec![];
-	for (row_number, col_number) in dimensions.iter_data_cells_by_row() {
+	for (row_number, col_number) in dimensions.iter_extended_data_positions() {
 		match cells_map
 			.get(&col_number)
 			.and_then(|column| column.get(&row_number))
@@ -546,7 +546,7 @@ mod tests {
 			size: 16,
 			index: vec![(1, 2), (2, 5), (3, 8)],
 		};
-		let dimensions = Dimensions::row_wise(8, 4);
+		let dimensions = Dimensions::new(8, 4);
 
 		let result = app_specific_rows(&index, &dimensions, app_id);
 
@@ -562,7 +562,7 @@ mod tests {
 			size: 8,
 			index: vec![(1, 5)],
 		};
-		let dimensions = Dimensions::row_wise(4, 4);
+		let dimensions = Dimensions::new(4, 4);
 
 		let result =
 			app_specific_cells(&index, &dimensions, app_id).unwrap_or_else(std::vec::Vec::new);

@@ -71,26 +71,22 @@ fn app_extrinsics_group_by_app_id(extrinsics: &[AppExtrinsic]) -> Vec<(u32, Vec<
 
 pub fn scalars_to_rows(
 	app_id: u32,
-	index: index::AppDataIndex,
-	dimensions: matrix::Dimensions,
+	index: &index::AppDataIndex,
+	dimensions: &matrix::Dimensions,
 	data: &[BlsScalar],
 ) -> Vec<Option<Vec<u8>>> {
-	let app_rows = app_specific_rows(&index, &dimensions, app_id);
-	(0..dimensions.extended_rows())
-		.into_iter()
-		.map(|i| match app_rows.iter().find(|&&row| row == i) {
-			Some(_) => Some(
-				row(
-					data,
-					i as usize,
-					dimensions.cols as usize,
-					dimensions.extended_rows() as usize,
-				)
-				.iter()
-				.flat_map(BlsScalar::to_bytes)
-				.collect::<Vec<u8>>(),
-			),
-			None => None,
+	let extended_rows = dimensions.extended_rows() as usize;
+	let cols = dimensions.cols as usize;
+	let app_rows = app_specific_rows(index, dimensions, app_id);
+	dimensions
+		.iter_extended_rows()
+		.map(|i| {
+			app_rows.iter().find(|&&row| row == i).map(|_| {
+				row(data, i as usize, cols, extended_rows)
+					.iter()
+					.flat_map(BlsScalar::to_bytes)
+					.collect::<Vec<u8>>()
+			})
 		})
 		.collect::<Vec<Option<Vec<u8>>>>()
 }
@@ -717,7 +713,7 @@ mod tests {
 		let (layout, commitments, dims, matrix) = par_build_commitments(64, 16, 32, xts, Seed::default()).unwrap();
 
 		let columns = sample_cells_from_matrix(&matrix, &dims, None);
-		let extended_dims = Dimensions::row_wise(dims.rows as u16, dims.cols as u16);
+		let extended_dims = Dimensions::new(dims.rows as u16, dims.cols as u16);
 		let index = AppDataIndex::try_from(&layout).unwrap();
 		let reconstructed = reconstruct_extrinsics(&index, &extended_dims, columns).unwrap();
 		for (result, xt) in reconstructed.iter().zip(xts) {
@@ -745,13 +741,13 @@ mod tests {
 	#[test]
 	fn test_commitments_verify(ref xts in app_extrinsics_strategy())  {
 		let (layout, commitments, dims, matrix) = par_build_commitments(64, 16, 32, xts, Seed::default()).unwrap();
-		let index = AppDataIndex::try_from(&layout).unwrap();
 
+		let index = AppDataIndex::try_from(&layout).unwrap();
 		let public_params = testnet::public_params(dims.cols);
+		let extended_dims = Dimensions::new(dims.rows as u16, dims.cols as u16);
 
 		for xt in xts {
-				let extended_dims = Dimensions::row_wise(dims.rows as u16, dims.cols as u16);
-			let rows = &scalars_to_rows(xt.app_id, index.clone(), extended_dims, &matrix);
+			let rows = &scalars_to_rows(xt.app_id, &index, &extended_dims, &matrix);
 			prop_assert!(kate_recovery::commitments::verify_equality(&public_params, &commitments, dims.cols as usize, rows)?);
 		}
 	}
@@ -817,7 +813,7 @@ get erasure coded to ensure redundancy."#;
 
 		let cols_1 = sample_cells_from_matrix(&coded, &dims, Some(&[0, 1, 2, 3]));
 
-		let extended_dims = Dimensions::row_wise(dims.rows as u16, dims.cols as u16);
+		let extended_dims = Dimensions::new(dims.rows as u16, dims.cols as u16);
 
 		let index = AppDataIndex::try_from(&layout).unwrap();
 		let res_1 = reconstruct_app_extrinsics(&index, &extended_dims, cols_1, 1).unwrap();
@@ -849,7 +845,7 @@ get erasure coded to ensure redundancy."#;
 		let (layout, data, dims) = flatten_and_pad_block(32, 4, chunk_size, &xts, hash).unwrap();
 		let coded = par_extend_data_matrix(dims, &data[..]).unwrap();
 
-		let dimensions = Dimensions::row_wise(dims.rows as u16, dims.cols as u16);
+		let dimensions = Dimensions::new(dims.rows as u16, dims.cols as u16);
 
 		let extended_matrix = coded
 			.chunks(dimensions.extended_rows() as usize)
@@ -898,7 +894,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 		let cols = sample_cells_from_matrix(&coded, &dims, None);
 
-		let extended_dims = Dimensions::row_wise(dims.rows as u16, dims.cols as u16);
+		let extended_dims = Dimensions::new(dims.rows as u16, dims.cols as u16);
 		let index = AppDataIndex::try_from(&layout).unwrap();
 		let res = reconstruct_extrinsics(&index, &extended_dims, cols).unwrap();
 		let s = String::from_utf8_lossy(res[0].1[0].as_slice());
@@ -930,7 +926,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let coded: Vec<BlsScalar> = par_extend_data_matrix(dims, &data[..]).unwrap();
 
 		let cols = sample_cells_from_matrix(&coded, &dims, None);
-		let extended_dims = Dimensions::row_wise(dims.rows as u16, dims.cols as u16);
+		let extended_dims = Dimensions::new(dims.rows as u16, dims.cols as u16);
 		let index = AppDataIndex::try_from(&layout).unwrap();
 		let res = reconstruct_extrinsics(&index, &extended_dims, cols).unwrap();
 
