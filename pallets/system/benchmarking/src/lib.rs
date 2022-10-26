@@ -22,7 +22,7 @@
 use codec::Encode;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::{storage, traits::Get, weights::DispatchClass};
-use frame_system::{Call, Pallet as System, RawOrigin};
+use frame_system::{header_builder::HeaderExtensionBuilder, Call, Pallet as System, RawOrigin};
 use sp_core::storage::well_known_keys;
 use sp_runtime::traits::Hash;
 use sp_std::{prelude::*, vec};
@@ -122,6 +122,17 @@ benchmarks! {
 	}: _(RawOrigin::Root, prefix, p)
 	verify {
 		assert_eq!(storage::unhashed::get_raw(&last_key), None);
+	}
+
+	#[extra]
+	header_extension_builder {
+		let app_extrinsics = vec![];
+		let data_root = Default::default();
+		let block_length = Default::default();
+		let block_number = 1u32.into();
+
+	}: {
+		let _header = T::HeaderExtensionBuilder::build(app_extrinsics, data_root, block_length, block_number);
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);

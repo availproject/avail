@@ -238,10 +238,11 @@ pub mod pallet {
 				.iter()
 				.max()
 				.cloned()
-				.unwrap_or(0)
-				.checked_add(1)
+				.map(Into::into)
+				.unwrap_or(0u32)
+				.checked_add(1u32)
 				.expect("DA Control Genesis overflows the last application id");
-			NextAppId::<T>::put(last_id);
+			NextAppId::<T>::put::<AppId>(last_id.into());
 		}
 	}
 
@@ -267,7 +268,7 @@ impl<T: Config> Pallet<T> {
 	/// Returns the latest available application ID and increases it.
 	pub fn next_application_id() -> Result<AppId, Error<T>> {
 		NextAppId::<T>::try_mutate(|id| {
-			let new_id = id.checked_add(1).ok_or(Error::<T>::LastAppIdOverflowed)?;
+			let new_id = AppId(id.0.checked_add(1).ok_or(Error::<T>::LastAppIdOverflowed)?);
 			Ok(replace(id, new_id))
 		})
 	}

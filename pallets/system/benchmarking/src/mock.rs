@@ -20,7 +20,7 @@
 #![cfg(test)]
 
 use da_primitives::Header;
-use frame_system::tests::TestRandomness;
+use frame_system::{tests::TestRandomness, DRFCallOf, DRFOutput, DataRootFilter};
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
 type AccountId = u64;
@@ -40,6 +40,12 @@ frame_support::construct_runtime!(
 	}
 );
 
+impl DataRootFilter for Test {
+	type UncheckedExtrinsic = UncheckedExtrinsic;
+
+	fn filter(_call: &DRFCallOf<Self::UncheckedExtrinsic>) -> DRFOutput { None }
+}
+
 impl frame_system::Config for Test {
 	type AccountData = ();
 	type AccountId = AccountId;
@@ -49,12 +55,13 @@ impl frame_system::Config for Test {
 	type BlockNumber = BlockNumber;
 	type BlockWeights = ();
 	type Call = Call;
+	type DataRootBuilderFilter = Test;
 	type DbWeight = ();
 	type Event = Event;
 	type Hash = sp_core::H256;
 	type Hashing = ::sp_runtime::traits::BlakeTwo256;
 	type Header = Header<BlockNumber, BlakeTwo256>;
-	type HeaderBuilder = frame_system::header_builder::da::HeaderBuilder<Test>;
+	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
 	type Index = AccountIndex;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type OnKilledAccount = ();
