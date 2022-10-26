@@ -17,8 +17,8 @@ pub use frame_support::{
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights as SystemBlockWeights},
-	CheckEra, CheckGenesis, CheckNonce, CheckSpecVersion, CheckTxVersion, CheckWeight, EnsureOneOf,
-	EnsureRoot,
+	submitted_data, CheckEra, CheckGenesis, CheckNonce, CheckSpecVersion, CheckTxVersion,
+	CheckWeight, EnsureOneOf, EnsureRoot,
 };
 use pallet_session::historical as pallet_session_historical;
 use sp_api::impl_runtime_apis;
@@ -32,9 +32,7 @@ use sp_runtime::{
 	create_runtime_str,
 	curve::PiecewiseLinear,
 	generic, impl_opaque_keys,
-	traits::{
-		BlakeTwo256, Block as BlockT, Extrinsic, IdentifyAccount, NumberFor, OpaqueKeys, Verify,
-	},
+	traits::{BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, OpaqueKeys, Verify},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, FixedPointNumber, MultiSignature,
 };
@@ -57,10 +55,10 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 use currency::*;
 /// Import the DA pallet.
 pub use da_primitives::{
-	asdr::{AppId, AppUncheckedExtrinsic, GetAppId},
+	asdr::{AppExtrinsic, AppId, AppUncheckedExtrinsic, GetAppId},
 	currency::{Balance, AVL, CENTS, MILLICENTS},
 	well_known_keys::KATE_PUBLIC_PARAMS,
-	Header as DaHeader, NORMAL_DISPATCH_RATIO,
+	DataProof, Header as DaHeader, NORMAL_DISPATCH_RATIO,
 };
 pub use pallet_balances::Call as BalancesCall;
 use pallet_grandpa::{
@@ -145,7 +143,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	// and set impl_version to 0. If only runtime
 	// implementation changes and behavior does not, then leave spec_version as
 	// is and increment impl_version.
-	spec_version: 5,
+	spec_version: 6,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -262,25 +260,35 @@ parameter_types! {
 	pub const SS58Prefix: u16 = 42;
 }
 
-// Configure FRAME pallets to include in runtime.
+/// Extractor of submitted data.
+///
+/// # TODO
+/// - Support utility pallet containing severals `DataAvailability::submit_data` calls.
+impl submitted_data::Extractor for Runtime {
+	fn extract(app_ext: AppExtrinsic, metrics: submitted_data::RcMetrics) -> Option<Vec<u8>> {
+		metrics.borrow_mut().total_extrinsics += 1;
+		let extrinsic = UncheckedExtrinsic::decode(&mut app_ext.data.as_slice()).ok()?;
 
-impl frame_system::DataRootFilter for Runtime {
-	type UncheckedExtrinsic = UncheckedExtrinsic;
-
-	fn filter(call: &<Self::UncheckedExtrinsic as Extrinsic>::Call) -> Option<Vec<u8>> {
-		match call {
-			Call::DataAvailability(ref method) => match method {
+		match extrinsic.function {
+			Call::DataAvailability(method) => match method {
 				da_control::Call::submit_data { data } => {
-					let data: &Vec<u8> = &*data;
-					Some(data.clone())
+					let mut metrics = metrics.borrow_mut();
+					metrics.data_submit_leaves += 1;
+					metrics.data_submit_extrinsics += 1;
+					Some(data.into_inner())
 				},
 				_ => None,
+			},
+			Call::Utility(_) => {
+				// TODO Support utility here.
+				None
 			},
 			_ => None,
 		}
 	}
 }
 
+// Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
 	/// The data to be stored in an account.
 	type AccountData = pallet_balances::AccountData<Balance>;
@@ -298,8 +306,6 @@ impl frame_system::Config for Runtime {
 	type BlockWeights = BlockWeights;
 	/// The aggregated dispatch type that is available for extrinsics.
 	type Call = Call;
-	/// Data Root
-	type DataRootBuilderFilter = Runtime;
 	/// The weight of database operations that the runtime can invoke.
 	type DbWeight = RocksDbWeight;
 	/// The ubiquitous event type.
@@ -332,6 +338,8 @@ impl frame_system::Config for Runtime {
 	type Randomness = pallet_babe::RandomnessFromOneEpochAgo<Runtime>;
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = SS58Prefix;
+	/// Data Root
+	type SubmittedDataExtractor = Runtime;
 	/// Weight information for the extrinsics of this pallet.
 	type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
 	/// Version of the runtime.
@@ -1344,6 +1352,22 @@ impl_runtime_apis! {
 			seed.into()
 		}
 
+		fn submitted_data_proof(data_index: u32) -> Option<DataProof>
+		{
+			use frame_system::{Pallet, submitted_data};
+
+			let iter = Pallet::<Runtime>::app_extrinsics();
+			submitted_data::proof::<Runtime, _>(iter, data_index)
+				.map(|merkle_proof| DataProof::try_from(&merkle_proof).ok())
+				.flatten()
+		}
+
+		fn submitted_data_root() -> H256 {
+			use frame_system::{Pallet, submitted_data};
+
+			let iter = Pallet::<Runtime>::app_extrinsics();
+			submitted_data::root::<Runtime, _>(iter)
+		}
 	}
 
 	impl sp_session::SessionKeys<Block> for Runtime {

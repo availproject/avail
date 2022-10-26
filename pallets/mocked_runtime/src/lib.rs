@@ -4,7 +4,7 @@ use frame_support::{
 	traits::{Get, Randomness},
 	weights::{constants::WEIGHT_PER_SECOND, IdentityFee, RuntimeDbWeight, Weight},
 };
-use frame_system::{CheckEra, CheckNonce, CheckWeight, DRFCallOf, DRFOutput, DataRootFilter};
+use frame_system::{CheckEra, CheckNonce, CheckWeight};
 use pallet_transaction_payment::CurrencyAdapter;
 use sp_runtime::{
 	generic::Block as SPBlock,
@@ -124,13 +124,6 @@ thread_local! {
 
 // Runtime
 //
-
-impl DataRootFilter for Runtime {
-	type UncheckedExtrinsic = UncheckedExtrinsic;
-
-	fn filter(_call: &DRFCallOf<Self::UncheckedExtrinsic>) -> DRFOutput { None }
-}
-
 impl frame_system::Config for Runtime {
 	type AccountData = pallet_balances::AccountData<Balance>;
 	type AccountId = AccountId;
@@ -140,7 +133,6 @@ impl frame_system::Config for Runtime {
 	type BlockNumber = BlockNumber;
 	type BlockWeights = BlockWeights;
 	type Call = Call;
-	type DataRootBuilderFilter = Runtime;
 	type DbWeight = ();
 	type Event = Event;
 	type Hash = sp_core::H256;
@@ -156,6 +148,7 @@ impl frame_system::Config for Runtime {
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Runtime>;
 	type SS58Prefix = ();
+	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
 	type Version = RuntimeVersion;
 }

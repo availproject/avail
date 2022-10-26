@@ -1,121 +1,136 @@
-use codec::Decode;
-use da_primitives::asdr::AppExtrinsic;
-use frame_support::traits::ExtrinsicCall;
+#[cfg(not(feature = "force-rs-merkle"))]
+use beefy_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
+use da_primitives::{asdr::AppExtrinsic, data_proof::HasherSha256};
 use sp_core::H256;
-use sp_runtime::traits::Extrinsic;
-use sp_std::vec::Vec;
+use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
 
-const LOG_TARGET: &str = "runtime::system::data_root_builder";
+const LOG_TARGET: &str = "runtime::system::submitted_data";
 
-pub type DRFOutput = Option<Vec<u8>>;
-pub type DRFCallOf<T> = <T as Extrinsic>::Call;
+/// Information about `submitted_data_root` and `submitted_data_proof` methods.
+#[derive(Default, Debug)]
+pub struct Metrics {
+	/// Number of extrinsics containing one or more submitted data.
+	pub data_submit_extrinsics: u32,
+	/// Total number of submitted data.
+	pub data_submit_leaves: u32,
+	/// Total number of analysed extrinsic.
+	pub total_extrinsics: u32,
+}
+pub type RcMetrics = Rc<RefCell<Metrics>>;
 
-pub trait DataRootFilter {
-	type UncheckedExtrinsic: Decode + ExtrinsicCall;
-
-	fn filter(call: &DRFCallOf<Self::UncheckedExtrinsic>) -> DRFOutput;
+impl Metrics {
+	/// Creates a shared metric with internal mutability.
+	fn new_shared() -> RcMetrics { Rc::new(RefCell::new(Self::default())) }
 }
 
-pub trait DataRootBuilder<F: DataRootFilter> {
-	fn build<'a, I>(app_extrinsics: I) -> H256
-	where
-		I: IntoIterator<Item = &'a AppExtrinsic>,
-	{
-		let mut used_extrinsics_count = 0u32;
-		let mut total_extrinsics_count = 0u32;
+pub trait Extractor {
+	/// Returns the `data` field of `app_ext` if it contains one.
+	/// The `metrics` will be used to write accountability information about the whole process.
+	fn extract(app_ext: AppExtrinsic, metrics: RcMetrics) -> Option<Vec<u8>>;
+}
 
-		let filtered_iter = app_extrinsics
-			.into_iter()
-			.enumerate()
-			.filter_map(|(idx, app_extrinsic)| {
-				// Decode call and log any failure.
-				total_extrinsics_count += 1;
-				match F::UncheckedExtrinsic::decode(&mut app_extrinsic.data.as_slice()) {
-					Ok(app_unchecked_extrinsic) => Some(app_unchecked_extrinsic),
-					Err(err) => {
-						// NOTE: Decodification issue is like a `unrecheable` because this
-						// extrinsic was decoded previously, when node executed the block.
-						// We will keep this here just to have a trace if we update
-						// `System::note_extrinsic` in the future.
-						log::error!(
-							target: LOG_TARGET,
-							"Extrinsic {} cannot be decoded: {:?}",
-							idx,
-							err
-						);
-						None
-					},
-				}
-			})
-			.filter_map(|app_unchecked_extrinsic| {
-				// Filter calls and traces removed calls
-				// @TODO: We could avoid the the copy of data from filter
-				// once `beefy_merkle_tree::merkelize` becomes public. In that case,
-				// we could work with iterator and lifescopes, having something like:
-				//
-				// ```Rust
-				// pub trait DataRootFilter {
-				//	type UncheckedExtrinsic: Decode + ExtrinsicCall;
-				//	fn filter<'a>(call: &'a <Self::UncheckedExtrinsic as Extrinsic>::Call) -> Option<&'a [u8]>;
-				//	}
-				// ```
-				let maybe_data = F::filter(app_unchecked_extrinsic.call());
-				if maybe_data.is_some() {
-					used_extrinsics_count += 1;
-				}
+impl Extractor for () {
+	fn extract(_: AppExtrinsic, _: RcMetrics) -> Option<Vec<u8>> { None }
+}
 
-				maybe_data
-			});
-
-		let root = Self::merkle_root(filtered_iter);
-
-		log::debug!(
-			target: LOG_TARGET,
-			"Used {} extrinsics of {}",
-			used_extrinsics_count,
-			total_extrinsics_count
-		);
-
-		root.into()
-	}
+/// Construct a root hash of Binary Merkle Tree created from given filtered `app_extrincs`.
+pub fn root<E, I>(app_extrinsics: I) -> H256
+where
+	E: Extractor,
+	I: Iterator<Item = AppExtrinsic>,
+{
+	let metrics = Metrics::new_shared();
+	let filtered = app_extrinsics.filter_map(|ext| E::extract(ext, Rc::clone(&metrics)));
 
 	#[cfg(not(feature = "force-rs-merkle"))]
-	fn merkle_root<I>(leaves: I) -> H256
-	where
-		I: Iterator<Item = Vec<u8>>,
-	{
-		use beefy_merkle_tree::{merkle_root, Hash, Hasher};
-		use sp_io::hashing::sha2_256;
-
-		#[derive(Copy, Clone)]
-		struct Sha2_256 {}
-
-		impl Hasher for Sha2_256 {
-			fn hash(data: &[u8]) -> Hash { sha2_256(data) }
-		}
-
-		merkle_root::<Sha2_256, _, _>(leaves).into()
-	}
-
+	let root = merkle_root::<HasherSha256, _, _>(filtered).into();
 	#[cfg(feature = "force-rs-merkle")]
-	fn merkle_root<'a, I>(leaves: I) -> H256
-	where
-		I: Iterator<Item = Vec<u8>>,
-	{
-		use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
+	let root = rs_merkle_root(filtered).into();
+	log::debug!(
+		target: LOG_TARGET,
+		"Build submitted data root: {:?}, metrics: {:?}",
+		root,
+		metrics
+	);
 
-		let mut tree = MerkleTree::<Sha256>::new();
-		leaves.for_each(|leave| {
-			let leave_hash = Sha256::hash(leave.as_slice());
-			tree.insert(leave_hash);
-		});
-
-		tree.commit();
-		tree.root().unwrap_or_default().into()
-	}
+	root
 }
 
-impl<F: DataRootFilter> DataRootBuilder<F> for F {}
+/// Calculates the merkle root using `Sha256` and `rs_merkle` crate.
+#[cfg(feature = "force-rs-merkle")]
+fn rs_merkle_root<I>(leaves: I) -> H256
+where
+	I: Iterator<Item = Vec<u8>>,
+{
+	use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
+
+	let mut tree = MerkleTree::<Sha256>::new();
+	leaves.for_each(|leave| {
+		let leave_hash = Sha256::hash(leave.as_slice());
+		tree.insert(leave_hash);
+	});
+
+	tree.commit();
+	tree.root().unwrap_or_default().into()
+}
+
+/// Creates the Merkle Proof of the submitted data items in `app_extrinsics` filtered by `F` and
+/// the given `data_index`.
+/// If `data_index` is greater than the number of Merkle leaves, it will return `None`.
+///
+/// # TODO
+/// - The `merkle_proof` requires `ExactSizeIterator`, forcing to load all submitted data into
+/// memory. That would increase the memory footprint of the node significantly. We could fix this
+/// adding the number of submitted data items at `System` pallet.
+#[cfg(not(feature = "force-rs-merkle"))]
+pub fn proof<E, I>(app_extrinsics: I, data_index: u32) -> Option<MerkleProof<Vec<u8>>>
+where
+	E: Extractor,
+	I: Iterator<Item = AppExtrinsic>,
+{
+	let data_index = data_index as usize;
+	let metrics = Metrics::new_shared();
+	let submitted_data_list = app_extrinsics
+		.filter_map(|ext| E::extract(ext, Rc::clone(&metrics)))
+		.collect::<Vec<_>>();
+
+	// NOTE: `merkle_proof` panics if `data_index > leaves`.
+	if data_index >= submitted_data_list.len() {
+		return None;
+	}
+
+	let proof = merkle_proof::<HasherSha256, _, _>(submitted_data_list, data_index);
+	log::debug!(
+		target: LOG_TARGET,
+		"Build submitted data proof of index {data_index}: {:?} metrics: {:?}",
+		proof,
+		metrics
+	);
+
+	Some(proof)
+}
+
+/// Verify correctness versus given `root`.
+#[cfg(not(feature = "force-rs-merkle"))]
+pub fn verify<I>(
+	root: H256,
+	proof: I,
+	number_of_submitted_data: u32,
+	data_index: u32,
+	data_hash: H256,
+) -> bool
+where
+	I: IntoIterator<Item = H256>,
+{
+	let leaf = Leaf::Hash(data_hash.0);
+	verify_proof::<HasherSha256, _, _>(
+		root.as_fixed_bytes(),
+		proof.into_iter().map(|hash| hash.to_fixed_bytes()),
+		number_of_submitted_data as usize,
+		data_index as usize,
+		leaf,
+	)
+}
 
 #[cfg(all(test, feature = "force-rs-merkle"))]
 mod test {

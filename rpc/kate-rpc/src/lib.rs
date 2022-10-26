@@ -7,39 +7,33 @@ use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
 use da_primitives::{
 	asdr::{AppExtrinsic, GetAppId},
 	traits::ExtendedHeader,
+	DataProof,
 };
 use frame_system::limits::BlockLength;
 use jsonrpc_core::{Error as RpcError, Result};
 use jsonrpc_derive::rpc;
-use kate::{BlockDimensions, BlsScalar, PublicParameters};
+use kate::{com::Cell, BlockDimensions, BlsScalar, PublicParameters};
 use kate_rpc_runtime_api::KateParamsGetter;
 use lru::LruCache;
-use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
 use sc_client_api::{BlockBackend, StorageProvider};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_core::H256;
-use sp_rpc::number::NumberOrHex;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{Block as BlockT, Header, NumberFor},
+	traits::{Block as BlockT, Header},
 	AccountId32, MultiAddress, MultiSignature,
 };
 
 #[rpc]
-pub trait KateApi {
+pub trait KateApi<BlockHash> {
 	#[rpc(name = "kate_queryProof")]
-	fn query_proof(
-		&self,
-		block_number: NumberOrHex,
-		cells: Vec<kate::com::Cell>,
-	) -> Result<Vec<u8>>;
+	fn query_proof(&self, cells: Vec<Cell>, at: Option<BlockHash>) -> Result<Vec<u8>>;
 
 	#[rpc(name = "kate_blockLength")]
 	fn query_block_length(&self) -> Result<BlockLength>;
 
 	#[rpc(name = "kate_queryDataProof")]
-	fn query_data_proof(&self, block_number: NumberOrHex, index: u32) -> Result<Vec<H256>>;
+	fn query_data_proof(&self, data_index: u32, at: Option<BlockHash>) -> Result<DataProof>;
 }
 
 pub struct Kate<Client, Block: BlockT> {
@@ -84,7 +78,25 @@ macro_rules! internal_err {
 	}}
 }
 
-impl<Client, Block> KateApi for Kate<Client, Block>
+impl<Client, Block> Kate<Client, Block>
+where
+	Block: BlockT,
+	Block::Extrinsic: GetAppId,
+	Block::Header: ExtendedHeader,
+	Client: Send + Sync + 'static,
+	Client: HeaderBackend<Block>
+		+ ProvideRuntimeApi<Block>
+		+ BlockBackend<Block>
+		+ StorageProvider<Block, sc_client_db::Backend<Block>>,
+	Client::Api: KateParamsGetter<Block>,
+{
+	fn block_id(&self, at: Option<<Block as BlockT>::Hash>) -> BlockId<Block> {
+		let hash = at.unwrap_or_else(|| self.client.info().best_hash);
+		BlockId::Hash(hash)
+	}
+}
+
+impl<Client, Block> KateApi<<Block as BlockT>::Hash> for Kate<Client, Block>
 where
 	Block: BlockT,
 	Block::Extrinsic: GetAppId,
@@ -99,21 +111,17 @@ where
 	//TODO allocate static thread pool, just for RPC related work, to free up resources, for the block producing processes.
 	fn query_proof(
 		&self,
-		block_number: NumberOrHex,
-		cells: Vec<kate::com::Cell>,
+		cells: Vec<Cell>,
+		at: Option<<Block as BlockT>::Hash>,
 	) -> Result<Vec<u8>> {
-		let block_num: u32 = block_number
-			.try_into()
-			.map_err(|_| RpcError::invalid_params("Invalid block number"))?;
+		let block_id = self.block_id(at);
 
-		let block_num = <NumberFor<Block>>::from(block_num);
 		let signed_block = self
 			.client
-			.block(&BlockId::number(block_num))
+			.block(&block_id)
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
-			.ok_or_else(|| internal_err!("Missing block number {}", block_num))?;
+			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
 		let block_hash = signed_block.block.header().hash();
-		let block_id = BlockId::hash(block_hash.clone());
 
 		let mut block_ext_cache = self
 			.block_ext_cache
@@ -139,13 +147,11 @@ where
 				.collect();
 
 			// Use Babe's VRF
-			let seed: [u8; 32] =
-				self.client
-					.runtime_api()
-					.get_babe_vrf(&block_id)
-					.map_err(|e| {
-						internal_err!("Babe VRF not found for block {}: {:?}", block_num, e)
-					})?;
+			let seed: [u8; 32] = self
+				.client
+				.runtime_api()
+				.get_babe_vrf(&block_id)
+				.map_err(|e| internal_err!("Babe VRF not found for block {}: {:?}", block_id, e))?;
 
 			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
 				block_length.rows as usize,
@@ -185,68 +191,31 @@ where
 	}
 
 	fn query_block_length(&self) -> Result<BlockLength> {
-		let best_hash = self.client.info().best_hash;
+		let block_id = self.block_id(None);
 		let block_length = self
 			.client
 			.runtime_api()
-			.get_block_length(&BlockId::hash(best_hash))
-			.map_err(|e| internal_err!("Length of best block({:?}): {:?}", best_hash, e))?;
+			.get_block_length(&block_id)
+			.map_err(|e| internal_err!("Length of best block({:?}): {:?}", block_id, e))?;
 
 		Ok(block_length)
 	}
 
-	fn query_data_proof(&self, block_number: NumberOrHex, index: u32) -> Result<Vec<H256>> {
-		let block_num: u32 = block_number
-			.try_into()
-			.map_err(|_| RpcError::invalid_params("Invalid block number"))?;
+	fn query_data_proof(
+		&self,
+		data_index: u32,
+		at: Option<<Block as BlockT>::Hash>,
+	) -> Result<DataProof> {
+		let block_id = self.block_id(at);
 
-		let block_num = <NumberFor<Block>>::from(block_num);
-		let signed_block = self
+		let maybe_proof = self
 			.client
-			.block(&BlockId::number(block_num))
-			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
-			.ok_or_else(|| internal_err!("Missing block number {}", block_num))?;
+			.runtime_api()
+			.submitted_data_proof(&block_id, data_index)
+			.map_err(|e| internal_err!("{:?}", e))?;
 
-		let index: usize = index as usize;
-		let mut leaves: Vec<[u8; 32]> = Vec::new();
-		let mut interested_leaf_position: Option<usize> = None;
-
-		for (pos, xt) in signed_block.block.extrinsics().iter().enumerate() {
-			let avail_extrinsic = AppExtrinsic {
-				app_id: xt.app_id(),
-				data: xt.encode(),
-			};
-			let optional_decoded_xt = <AvailExtrinsic>::decode(&mut &avail_extrinsic.data[..]);
-
-			match optional_decoded_xt {
-				Ok(decoded_xt) => leaves.push(Sha256::hash(&decoded_xt.data)),
-				Err(_) => continue,
-			}
-			if pos == index {
-				interested_leaf_position = Some(leaves.len() - 1);
-			}
-		}
-
-		if leaves.len() > 0 {
-			if let Some(position) = interested_leaf_position {
-				let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
-				debug_assert_eq!(
-					data_tree.root().map(H256::from),
-					Some(signed_block.block.header().extension().data_root()),
-					"Wrong data root!"
-				);
-
-				let proof = data_tree
-					.proof(&[position])
-					.proof_hashes()
-					.into_iter()
-					.map(H256::from)
-					.collect::<Vec<_>>();
-
-				return Ok(proof);
-			}
-		}
-		Err(internal_err!("Proof not possible!"))
+		maybe_proof
+			.ok_or_else(|| RpcError::invalid_params("Parameter `data_index` is out of bound"))
 	}
 }
 

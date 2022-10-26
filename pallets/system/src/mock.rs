@@ -86,10 +86,8 @@ impl OnKilledAccount<u64> for RecordKilled {
 	fn on_killed_account(who: &u64) { KILLED.with(|r| r.borrow_mut().push(*who)) }
 }
 
-impl DataRootFilter for Test {
-	type UncheckedExtrinsic = UncheckedExtrinsic;
-
-	fn filter(_call: &DRFCallOf<Self::UncheckedExtrinsic>) -> DRFOutput { None }
+impl submitted_data::Extractor for Test {
+	fn extract(_: AppExtrinsic, _: submitted_data::RcMetrics) -> Option<Vec<u8>> { None }
 }
 
 impl Config for Test {
@@ -101,7 +99,6 @@ impl Config for Test {
 	type BlockNumber = BlockNumber;
 	type BlockWeights = RuntimeBlockWeights;
 	type Call = Call;
-	type DataRootBuilderFilter = Test;
 	type DbWeight = DbWeight;
 	type Event = Event;
 	type Hash = H256;
@@ -117,6 +114,7 @@ impl Config for Test {
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Test>;
 	type SS58Prefix = ();
+	type SubmittedDataExtractor = Test;
 	type SystemWeightInfo = ();
 	type Version = Version;
 }

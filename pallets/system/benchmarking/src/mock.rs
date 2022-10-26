@@ -20,7 +20,7 @@
 #![cfg(test)]
 
 use da_primitives::Header;
-use frame_system::{tests::TestRandomness, DRFCallOf, DRFOutput, DataRootFilter};
+use frame_system::tests::TestRandomness;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
 type AccountId = u64;
@@ -40,12 +40,6 @@ frame_support::construct_runtime!(
 	}
 );
 
-impl DataRootFilter for Test {
-	type UncheckedExtrinsic = UncheckedExtrinsic;
-
-	fn filter(_call: &DRFCallOf<Self::UncheckedExtrinsic>) -> DRFOutput { None }
-}
-
 impl frame_system::Config for Test {
 	type AccountData = ();
 	type AccountId = AccountId;
@@ -55,7 +49,6 @@ impl frame_system::Config for Test {
 	type BlockNumber = BlockNumber;
 	type BlockWeights = ();
 	type Call = Call;
-	type DataRootBuilderFilter = Test;
 	type DbWeight = ();
 	type Event = Event;
 	type Hash = sp_core::H256;
@@ -71,6 +64,7 @@ impl frame_system::Config for Test {
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Test>;
 	type SS58Prefix = ();
+	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
 	type Version = ();
 }

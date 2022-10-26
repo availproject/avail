@@ -144,7 +144,6 @@ pub trait HostedHeaderBuilder {
 
 	// @TODO Miguel: Substrate v0.9.29 supports deactivated new version of hosted functions.
 	// NOTE: It is just for testing the forward compatibility in header extension.
-	/*
 	#[version(2)]
 	fn build(
 		app_extrinsics: Vec<AppExtrinsic>,
@@ -162,5 +161,4 @@ pub trait HostedHeaderBuilder {
 
 		build_extension_fn(app_extrinsics.as_slice(), data_root, block_length, seed)
 	}
-	*/
 }

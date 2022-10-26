@@ -105,10 +105,9 @@ use sp_std::map;
 use sp_std::{fmt::Debug, marker::PhantomData, prelude::*};
 use sp_version::RuntimeVersion;
 
-pub mod data_root_builder;
-pub use data_root_builder::{DRFCallOf, DRFOutput, DataRootBuilder, DataRootFilter};
 mod extensions;
 pub mod header_builder;
+pub mod submitted_data;
 use header_builder::HeaderExtensionBuilder;
 pub mod limits;
 pub mod migrations;
@@ -339,7 +338,7 @@ pub mod pallet {
 		type OnSetCode: SetCode<Self>;
 
 		/// Filter used by `DataRootBuilder`.
-		type DataRootBuilderFilter: DataRootFilter;
+		type SubmittedDataExtractor: submitted_data::Extractor;
 	}
 
 	#[pallet::pallet]
@@ -1345,7 +1344,7 @@ impl<T: Config> Pallet<T> {
 		let parent_hash = <ParentHash<T>>::get();
 		let digest = <Digest<T>>::get();
 
-		let app_extrinsics = Self::get_app_extrinsics();
+		let app_extrinsics = Self::take_app_extrinsics();
 
 		// @TODO Miguel: Is it possible to avoid copies here?
 		let extrinsics = app_extrinsics
@@ -1379,7 +1378,9 @@ impl<T: Config> Pallet<T> {
 		}*/
 
 		let block_length = Self::block_length();
-		let data_root = <T::DataRootBuilderFilter>::build(app_extrinsics.as_slice());
+		let data_root =
+			submitted_data::root::<T::SubmittedDataExtractor, _>(app_extrinsics.iter().cloned());
+
 		let extension = header_builder::da::HeaderExtensionBuilder::<T>::build(
 			app_extrinsics,
 			data_root,
@@ -1579,12 +1580,16 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Returns the extrinsics.
-	pub fn get_app_extrinsics() -> Vec<AppExtrinsic> {
-		let extrinsics = (0..ExtrinsicCount::<T>::take().unwrap_or_default())
+	/// Takes all extrinsics from the storage.
+	pub fn take_app_extrinsics() -> Vec<AppExtrinsic> {
+		(0..Self::extrinsic_count())
 			.map(ExtrinsicData::<T>::take)
-			.collect::<Vec<_>>();
-		extrinsics
+			.collect::<Vec<_>>()
+	}
+
+	/// Iterator over all extrinsics.
+	pub fn app_extrinsics() -> impl Iterator<Item = AppExtrinsic> {
+		(0..Self::extrinsic_count()).map(ExtrinsicData::<T>::get)
 	}
 
 	/// Creates a `ExtrinsicLen` based on `len` as raw length.
