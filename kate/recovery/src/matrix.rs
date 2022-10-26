@@ -53,7 +53,7 @@ impl Dimensions {
 	pub fn new(rows: u16, cols: u16) -> Self { Dimensions { rows, cols } }
 
 	/// Matrix size.
-	fn size(&self) -> u32 { self.rows as u32 * self.cols as u32 }
+	pub fn size(&self) -> u32 { self.rows as u32 * self.cols as u32 }
 
 	/// Extended matrix size.
 	pub fn extended_size(&self) -> u32 { self.extended_rows() * self.cols as u32 }
@@ -105,11 +105,18 @@ impl Dimensions {
 	/// Creates iterator over rows in extended matrix.
 	pub fn iter_extended_rows(&self) -> impl Iterator<Item = u32> { 0..self.extended_rows() }
 
-	/// Creates iterator over cell indexes by row in data matrix.
-	pub fn iter_cells(&self) -> impl Iterator<Item = u32> {
+	/// Creates iterator over data cells in data matrix (used to retrieve data from the matrix).
+	pub fn iter_data(&self) -> impl Iterator<Item = u32> {
 		let rows = self.rows as u32;
 		let cols = self.cols;
 		(0..rows).flat_map(move |row| (0..cols).map(move |col| col as u32 * rows + row))
+	}
+
+	/// Creates iterator over cell indexes in data matrix (used to store data in the matrix).
+	pub fn iter_cells(&self) -> impl Iterator<Item = u32> {
+		let rows = self.rows as u32;
+		let cols = self.cols;
+		(0..cols).flat_map(move |col| (0..rows).map(move |row| row * cols as u32 + col as u32))
 	}
 
 	/// Creates iterator over data positions by row in extended matrix.
@@ -134,4 +141,24 @@ impl Dimensions {
 			col: (cell / extended_rows) as u16,
 		})
 	}
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::matrix::Dimensions;
+
+
+    #[test]
+    fn iter_data() {
+	let dimensions = Dimensions::new(2,4);
+	let cells = dimensions.iter_data().collect::<Vec<_>>();
+	assert_eq!(cells, vec![0,2,4,6,1,3,5,7]);
+    }
+
+    #[test]
+    fn iter_cells() {
+	let dimensions = Dimensions::new(2,4);
+	let cells = dimensions.iter_cells().collect::<Vec<_>>();
+	assert_eq!(cells, vec![0,4,1,5,2,6,3,7]);
+    }
 }

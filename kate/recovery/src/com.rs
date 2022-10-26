@@ -152,7 +152,7 @@ fn reconstruct_available(
 
 	let mut result: Vec<u8> = Vec::with_capacity(scalars.len() * config::CHUNK_SIZE);
 
-	for cell_index in dimensions.iter_cells() {
+	for cell_index in dimensions.iter_data() {
 		let bytes = scalars
 			.get(cell_index as usize)
 			.map(Option::as_ref)

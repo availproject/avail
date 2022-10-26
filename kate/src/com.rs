@@ -235,16 +235,6 @@ pub fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 	BlsScalar::from_bytes(&scalar_size_chunk).map_err(|_| Error::CellLenghtExceeded)
 }
 
-pub fn row_layout<T: Copy>(data: &[T], cols_num: usize, rows_num: usize) -> Vec<T> {
-	let mut result = Vec::with_capacity(data.len());
-	for col in 0..cols_num {
-		for row in 0..rows_num {
-			result.push(data[(row * cols_num) + col]);
-		}
-	}
-	result
-}
-
 /// Build extended data matrix, by columns.
 /// We are using dusk plonk for erasure coding,
 /// which is using roots of unity as evaluation domain for fft and ifft.
@@ -256,11 +246,11 @@ pub fn par_extend_data_matrix(
 	block_dims: BlockDimensions,
 	block: &[u8],
 ) -> Result<Vec<BlsScalar>, Error> {
+	use kate_recovery::matrix::Dimensions;
 	let start = Instant::now();
-	let rows_num = block_dims.rows;
-	let cols_num = block_dims.cols;
-	let extended_rows_num = rows_num * EXTENSION_FACTOR;
-
+	let dimensions = Dimensions::new(block_dims.rows as u16, block_dims.cols as u16);
+	let rows_num: usize = dimensions.rows.into();
+	let extended_rows_num: usize = dimensions.extended_rows() as usize;
 	let chunks = block.par_chunks_exact(block_dims.chunk_size);
 	assert!(chunks.remainder().is_empty());
 
@@ -269,7 +259,12 @@ pub fn par_extend_data_matrix(
 		.map(to_bls_scalar)
 		.collect::<Result<Vec<BlsScalar>, Error>>()?;
 
-	let mut chunk_elements = row_layout(&scalars, cols_num, rows_num)
+	let mut row_wise_scalars = Vec::with_capacity(dimensions.size() as usize);
+	dimensions
+		.iter_cells()
+		.for_each(|cell_i| row_wise_scalars.push(scalars[cell_i as usize]));
+
+	let mut chunk_elements = row_wise_scalars
 		.par_chunks_exact(rows_num)
 		.flat_map(|column| extend_column_with_zeros(column, extended_rows_num))
 		.collect::<Vec<BlsScalar>>();
@@ -281,9 +276,8 @@ pub fn par_extend_data_matrix(
 	chunk_elements
 		.par_chunks_exact_mut(extended_rows_num)
 		.for_each(|col| {
-			let half_len = col.len() / 2;
 			// (i)fft functions input parameter slice size has to be a power of 2, otherwise it panics
-			column_eval_domain.ifft_slice(&mut col[0..half_len]);
+			column_eval_domain.ifft_slice(&mut col[0..rows_num]);
 			extended_column_eval_domain.fft_slice(col);
 		});
 
