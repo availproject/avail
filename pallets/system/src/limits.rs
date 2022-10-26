@@ -49,8 +49,11 @@ pub struct BlockLength {
 	/// `MAX(max)`
 	#[cfg_attr(feature = "std", serde(with = "per_dispatch_class_serde"))]
 	pub max: PerDispatchClass<u32>,
+	#[codec(compact)]
 	pub cols: u32,
+	#[codec(compact)]
 	pub rows: u32,
+	#[codec(compact)]
 	chunk_size: u32,
 }
 

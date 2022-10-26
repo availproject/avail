@@ -1,6 +1,6 @@
 use da_primitives::Header;
 use frame_support::parameter_types;
-use frame_system as system;
+use frame_system::{self as system, DRFCallOf, DRFOutput, DataRootFilter};
 use primitive_types::H256;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
@@ -28,6 +28,12 @@ parameter_types! {
 	pub static ExistentialDeposit: u64 = 0;
 }
 
+impl DataRootFilter for Test {
+	type UncheckedExtrinsic = UncheckedExtrinsic;
+
+	fn filter(_call: &DRFCallOf<Self::UncheckedExtrinsic>) -> DRFOutput { None }
+}
+
 impl system::Config for Test {
 	type AccountData = ();
 	type AccountId = u64;
@@ -37,12 +43,13 @@ impl system::Config for Test {
 	type BlockNumber = u32;
 	type BlockWeights = ();
 	type Call = Call;
+	type DataRootBuilderFilter = Test;
 	type DbWeight = ();
 	type Event = Event;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header<Self::BlockNumber, BlakeTwo256>;
-	type HeaderBuilder = frame_system::header_builder::da::HeaderBuilder<Test>;
+	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type OnKilledAccount = ();

@@ -30,7 +30,7 @@ benchmarks! {
 	}: create_application_key(origin, key)
 	verify {
 		let info = Pallet::<T>::application_key(&key_verify);
-		assert_eq!( info, Some(AppKeyInfoFor::<T> { owner: caller, id: 3u32 }));
+		assert_eq!( info, Some(AppKeyInfoFor::<T> { owner: caller, id: 3.into()}));
 	}
 
 	submit_data {

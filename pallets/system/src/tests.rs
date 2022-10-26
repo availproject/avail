@@ -531,9 +531,9 @@ mod tests {
 		new_test_ext().execute_with(|| {
 			System::initialize(&1, &[0u8; 32].into(), &Default::default(), InitKind::Full);
 			System::note_finished_initialize();
-			System::note_extrinsic(0, vec![1]);
+			System::note_extrinsic(0.into(), vec![1]);
 			System::note_applied_extrinsic(&Ok(().into()), Default::default());
-			System::note_extrinsic(0, vec![2]);
+			System::note_extrinsic(0.into(), vec![2]);
 			System::note_applied_extrinsic(
 				&Err(DispatchError::BadOrigin.into()),
 				Default::default(),
@@ -542,8 +542,7 @@ mod tests {
 			let header = System::finalize();
 
 			let ext_root = extrinsics_data_root::<BlakeTwo256>(vec![vec![1], vec![2]]);
-			let expected = da_primitives::traits::ExtendedHeader::extrinsics_root(&header);
-			assert_eq!(ext_root, expected.hash);
+			assert_eq!(ext_root, header.extrinsics_root);
 		});
 	}
 

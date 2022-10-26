@@ -113,7 +113,7 @@ where
 	fn call(&self) -> &Self::Call { self.0.call() }
 }
 
-impl<Call, Extra> GetAppId<AppId> for TestXt<Call, Extra> {
+impl<Call, Extra> GetAppId for TestXt<Call, Extra> {
 	fn app_id(&self) -> AppId { AppId::default() }
 }
 

@@ -13,16 +13,13 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.2.1", default-features = false }
-kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.2.1", default-features = false }
-kate_v1 = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.1.0", package = "kate", default-features = false }
-da-primitives_v1 = { git = "https://github.com/maticnetwork/avail-core.git", tag = "kate/v0.1.0", package = "da-primitives", default-features = false }
-
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.1", default-features = false, features = ["header-backward-compatibility-test"]}
+kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.1", default-features = false }
 # Other
 impl-trait-for-tuples = "0.2.1"
 static_assertions = "1.1.0"
 log = { version = "0.4.14", default-features = false }
-rs_merkle = { version = "1.2.0", default-features = false }
+rs_merkle = { version = "1.2.0", default-features = false, optional = true }
 
 # Substrate
 serde = { version = "1.0.126", optional = true, features = ["derive"] }
@@ -35,6 +32,7 @@ sp-runtime = { version = "4.0.0-dev", default-features = false }
 sp-version = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 sp-runtime-interface = { version = "4.0.0-dev", default-features = false }
+beefy-merkle-tree = { git = "https://github.com/paritytech/substrate.git/", branch = "polkadot-v0.9.13", default-features = false }
 
 [dev-dependencies]
 criterion = "0.3.3"
@@ -46,9 +44,7 @@ sp-externalities = "0.10.0-dev"
 default = ["std"]
 std = [
 	"kate/std",
-	"kate_v1/std",
 	"da-primitives/std",
-	"da-primitives_v1/std",
 	"serde",
 	"codec/std",
 	"scale-info/std",
@@ -59,6 +55,7 @@ std = [
 	"sp-runtime-interface/std",
 	"sp-runtime/std",
 	"sp-version/std",
+	"beefy-merkle-tree/std",
 	"log/std",
 ]
 runtime-benchmarks = [
@@ -66,6 +63,9 @@ runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
 ]
 try-runtime = ["frame-support/try-runtime"]
+force-rs-merkle = [
+	"rs_merkle"
+]
 
 [[bench]]
 name = "bench"

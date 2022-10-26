@@ -1,11 +1,10 @@
-use da_primitives::{traits::ExtendedHeader, HeaderNumberTrait, KateCommitment};
+use da_primitives::traits::ExtendedHeader;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_system::{BlockHash, RawOrigin};
 use hex_literal::hex;
 use nomad_home::Nonces;
 use sp_core::H256;
-use sp_runtime::{traits::Header as _, Digest};
-use sp_std::vec;
+use sp_runtime::traits::Header as _;
 
 use crate::*;
 
@@ -15,30 +14,29 @@ benchmarks! {
 			[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 			H256: From<<T as frame_system::Config>::Hash>,
 			H256: Into<<T as frame_system::Config>::Hash>,
-			<T as frame_system::Config>::BlockNumber: HeaderNumberTrait,
 			u32: From<<T as frame_system::Config>::BlockNumber>,
 			T::Header: ExtendedHeader,
-			<<T as frame_system::Config>::Header as ExtendedHeader>::Root: From<KateCommitment<H256>>
-			// <T as frame_system::Config>::Hash: From<KateCommitment<H256>>,
+			<T as frame_system::Config>::Hash: From<H256>,
 	}
 
 	try_dispatch_data_root {
 		// Create extrinsics root for block 10
-		let hash :H256 = hex!("03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314").into();
-		let extrinsics_root = KateCommitment { hash, ..Default::default() };
+		let extrinsics_root :H256 = hex!("03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314").into();
 
 		// Create block header for block 10
 		let block_number :T::BlockNumber = 10u32.into();
 		let state_root = H256::repeat_byte(2u8).into();
 		let parent_hash = H256::repeat_byte(1u8).into();
-		let app_data_lookup = Default::default();
-		let header :T::Header = ExtendedHeader::new(
+		let extension = Default::default();
+		let digest = Default::default();
+
+		let header = <T::Header as ExtendedHeader>::new(
 			block_number.clone(),
 			extrinsics_root.into(),
 			state_root,
 			parent_hash,
-			Digest { logs: vec![] },
-			app_data_lookup);
+			digest,
+			extension);
 		let header_hash :T::Hash = header.hash();
 
 		// Insert 10th block's hash into block number --> hash mapping so

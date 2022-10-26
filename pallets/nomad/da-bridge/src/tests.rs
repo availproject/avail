@@ -1,4 +1,4 @@
-use da_primitives::{Header, KateCommitment};
+use da_primitives::{Header, HeaderExtension};
 use frame_support::assert_ok;
 use frame_system::Config;
 use hex_literal::hex;
@@ -22,20 +22,19 @@ fn it_accepts_valid_extrinsic_root() {
 			fill_block_hash_mapping_up_to_n(9);
 
 			// Create extrinsics root for block 10
-			let extrinsics_root = KateCommitment {
-				hash: hex!("03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314")
-					.into(),
-				..Default::default()
-			};
+			let extension = HeaderExtension::default();
 
 			// Create block header for block 10
 			let header = Header::<<Test as Config>::BlockNumber, BlakeTwo256> {
 				parent_hash: [1u8; 32].into(),
 				number: 10 as u32,
 				state_root: [2u8; 32].into(),
-				extrinsics_root,
+				extrinsics_root: hex!(
+					"03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314"
+				)
+				.into(),
 				digest: Digest { logs: vec![] },
-				app_data_lookup: Default::default(),
+				extension,
 			};
 
 			// Insert 10th block's hash into block number --> hash mapping so

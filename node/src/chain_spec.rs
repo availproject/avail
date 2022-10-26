@@ -308,15 +308,15 @@ pub fn testnet_genesis(
 			app_keys: vec![
 				(b"Data Avail".to_vec(), AppKeyInfo {
 					owner: root_key.clone(),
-					id: 0,
+					id: 0.into(),
 				}),
 				(b"Ethereum".to_vec(), AppKeyInfo {
 					owner: root_key.clone(),
-					id: 1,
+					id: 1.into(),
 				}),
 				(b"Polygon".to_vec(), AppKeyInfo {
 					owner: root_key,
-					id: 2,
+					id: 2.into(),
 				}),
 			],
 		},
@@ -477,15 +477,15 @@ fn genesis_builder(
 			app_keys: vec![
 				(b"Data Avail".to_vec(), AppKeyInfo {
 					owner: sudo_key.clone(),
-					id: 0,
+					id: 0.into(),
 				}),
 				(b"Ethereum".to_vec(), AppKeyInfo {
 					owner: sudo_key.clone(),
-					id: 1,
+					id: 1.into(),
 				}),
 				(b"Polygon".to_vec(), AppKeyInfo {
 					owner: sudo_key,
-					id: 2,
+					id: 2.into(),
 				}),
 			],
 		},
