@@ -86,10 +86,6 @@ impl OnKilledAccount<u64> for RecordKilled {
 	fn on_killed_account(who: &u64) { KILLED.with(|r| r.borrow_mut().push(*who)) }
 }
 
-impl submitted_data::Extractor for Test {
-	fn extract(_: AppExtrinsic, _: submitted_data::RcMetrics) -> Option<Vec<u8>> { None }
-}
-
 impl Config for Test {
 	type AccountData = u32;
 	type AccountId = u64;
@@ -114,7 +110,7 @@ impl Config for Test {
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Test>;
 	type SS58Prefix = ();
-	type SubmittedDataExtractor = Test;
+	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
 	type Version = Version;
 }
