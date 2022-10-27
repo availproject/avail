@@ -79,7 +79,7 @@ pub trait HeaderExtensionBuilder {
 }
 
 #[allow(dead_code)]
-#[cfg(feature = "std")]
+#[cfg(all(feature = "std", feature = "header-compatibility-test"))]
 fn build_extension_v_test(
 	app_extrinsics: &[AppExtrinsic],
 	data_root: H256,
@@ -142,8 +142,10 @@ pub trait HostedHeaderBuilder {
 		build_extension_v1(&app_extrinsics, data_root, block_length, seed)
 	}
 
+	/*
 	// @TODO Miguel: Substrate v0.9.29 supports deactivated new version of hosted functions.
 	// NOTE: It is just for testing the forward compatibility in header extension.
+	#[cfg(feature = "header-compatibility-test")]
 	#[version(2)]
 	fn build(
 		app_extrinsics: Vec<AppExtrinsic>,
@@ -160,5 +162,5 @@ pub trait HostedHeaderBuilder {
 		};
 
 		build_extension_fn(app_extrinsics.as_slice(), data_root, block_length, seed)
-	}
+	}*/
 }
