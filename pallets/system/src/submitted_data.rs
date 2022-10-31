@@ -1,4 +1,3 @@
-#[cfg(not(feature = "force-rs-merkle"))]
 use beefy_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
 use da_primitives::{asdr::AppExtrinsic, data_proof::HasherSha256};
 use sp_core::H256;
@@ -23,6 +22,7 @@ impl Metrics {
 	fn new_shared() -> RcMetrics { Rc::new(RefCell::new(Self::default())) }
 }
 
+/// Extracts the `data` field from some types of extrinsics.
 pub trait Extractor {
 	/// Returns the `data` field of `app_ext` if it contains one.
 	/// The `metrics` will be used to write accountability information about the whole process.
@@ -33,19 +33,47 @@ impl Extractor for () {
 	fn extract(_: AppExtrinsic, _: RcMetrics) -> Option<Vec<u8>> { None }
 }
 
+/// It is similar to `Extractor` but it uses `C` type for calls, instead of `AppExtrinsic`.
+pub trait Filter<C> {
+	/// Returns the `data` field of `call` if it is a valid `da_ctrl::submit_data` call.
+	fn filter(call: C, metrics: RcMetrics) -> Option<Vec<u8>>;
+}
+
+impl<C> Filter<C> for () {
+	fn filter(_: C, _: RcMetrics) -> Option<Vec<u8>> { None }
+}
+
 /// Construct a root hash of Binary Merkle Tree created from given filtered `app_extrincs`.
-pub fn root<E, I>(app_extrinsics: I) -> H256
+pub fn extrinsics_root<E, I>(app_extrinsics: I) -> H256
 where
 	E: Extractor,
 	I: Iterator<Item = AppExtrinsic>,
 {
 	let metrics = Metrics::new_shared();
-	let filtered = app_extrinsics.filter_map(|ext| E::extract(ext, Rc::clone(&metrics)));
+	let submitted_data = app_extrinsics.filter_map(|ext| E::extract(ext, Rc::clone(&metrics)));
+	root(submitted_data, Rc::clone(&metrics))
+}
 
+/// Construct a root hash of Binary Merkle Tree created from given filtered `calls`.
+pub fn calls_root<F, C, I>(calls: I) -> H256
+where
+	F: Filter<C>,
+	I: Iterator<Item = C>,
+{
+	let metrics = Metrics::new_shared();
+	let submitted_data = calls.filter_map(|c| F::filter(c, Rc::clone(&metrics)));
+	root(submitted_data, Rc::clone(&metrics))
+}
+
+/// Construct a root hash of a Binary Merkle Tree created from given leaves and stores
+/// information about the process into `metrics`.
+///
+/// In case an empty list of leaves is passed the function returns a 0-filled hash.
+fn root<I: Iterator<Item = Vec<u8>>>(submitted_data: I, metrics: RcMetrics) -> H256 {
 	#[cfg(not(feature = "force-rs-merkle"))]
-	let root = merkle_root::<HasherSha256, _, _>(filtered).into();
+	let root = merkle_root::<HasherSha256, _, _>(submitted_data).into();
 	#[cfg(feature = "force-rs-merkle")]
-	let root = rs_merkle_root(filtered).into();
+	let root = rs_merkle_root(submitted_data).into();
 	log::debug!(
 		target: LOG_TARGET,
 		"Build submitted data root: {:?}, metrics: {:?}",
@@ -74,32 +102,66 @@ where
 	tree.root().unwrap_or_default().into()
 }
 
-/// Creates the Merkle Proof of the submitted data items in `app_extrinsics` filtered by `F` and
-/// the given `data_index`.
+/// Creates the Merkle Proof of the submitted data items in `app_extrinsics` filtered and
+/// extracted by `E` and the given `data_index`.
+///
 /// If `data_index` is greater than the number of Merkle leaves, it will return `None`.
 ///
 /// # TODO
 /// - The `merkle_proof` requires `ExactSizeIterator`, forcing to load all submitted data into
 /// memory. That would increase the memory footprint of the node significantly. We could fix this
 /// adding the number of submitted data items at `System` pallet.
-#[cfg(not(feature = "force-rs-merkle"))]
-pub fn proof<E, I>(app_extrinsics: I, data_index: u32) -> Option<MerkleProof<Vec<u8>>>
+pub fn extrinsics_proof<E, I>(app_extrinsics: I, data_index: u32) -> Option<MerkleProof<Vec<u8>>>
 where
 	E: Extractor,
 	I: Iterator<Item = AppExtrinsic>,
 {
-	let data_index = data_index as usize;
 	let metrics = Metrics::new_shared();
-	let submitted_data_list = app_extrinsics
+	let submitted_data = app_extrinsics
 		.filter_map(|ext| E::extract(ext, Rc::clone(&metrics)))
 		.collect::<Vec<_>>();
 
+	proof(submitted_data, data_index, Rc::clone(&metrics))
+}
+
+/// Creates the Merkle Proof of the submitted data items in `calls` filtered by `F` and
+/// the given `data_index`.
+///
+/// If `data_index` is greater than the number of Merkle leaves, it will return `None`.
+///
+/// # TODO
+/// - The `merkle_proof` requires `ExactSizeIterator`, forcing to load all submitted data into
+/// memory. That would increase the memory footprint of the node significantly. We could fix this
+/// adding the number of submitted data items at `System` pallet.
+pub fn calls_proof<F, I, C>(calls: I, data_index: u32) -> Option<MerkleProof<Vec<u8>>>
+where
+	F: Filter<C>,
+	I: Iterator<Item = C>,
+{
+	let metrics = Metrics::new_shared();
+	let submitted_data = calls
+		.filter_map(|c| F::filter(c, Rc::clone(&metrics)))
+		.collect::<Vec<_>>();
+
+	proof(submitted_data, data_index, Rc::clone(&metrics))
+}
+
+/// Construct a Merkle Proof for `submit_data` given by `data_index` and stores
+/// information about the process into `metrics`.
+///
+/// If `data_index` is greater than the number of Merkle leaves, it will return `None`.
+fn proof(
+	submitted_data: Vec<Vec<u8>>,
+	data_index: u32,
+	metrics: RcMetrics,
+) -> Option<MerkleProof<Vec<u8>>> {
+	let data_index = data_index as usize;
 	// NOTE: `merkle_proof` panics if `data_index > leaves`.
-	if data_index >= submitted_data_list.len() {
+	if data_index >= submitted_data.len() {
 		return None;
 	}
 
-	let proof = merkle_proof::<HasherSha256, _, _>(submitted_data_list, data_index);
+	let proof = merkle_proof::<HasherSha256, _, _>(submitted_data, data_index);
 	log::debug!(
 		target: LOG_TARGET,
 		"Build submitted data proof of index {data_index}: {:?} metrics: {:?}",
@@ -110,8 +172,13 @@ where
 	Some(proof)
 }
 
-/// Verify correctness versus given `root`.
-#[cfg(not(feature = "force-rs-merkle"))]
+/// Verify Merkle Proof correctness versus given root hash.
+///
+/// The proof is NOT expected to contain leaf hash as the first
+/// element, but only all adjacent nodes required to eventually by process of
+/// concatenating and hashing end up with given root hash.
+///
+/// The proof must not contain the root hash.
 pub fn verify<I>(
 	root: H256,
 	proof: I,

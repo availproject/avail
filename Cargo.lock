@@ -1427,7 +1427,7 @@ dependencies = [
 [[package]]
 name = "da-primitives"
 version = "0.2.2"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#52bc4a878b53029387529184a59713f334630aa8"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#8652316e2b3fb2424d2dd8d631df3d5fcd77d096"
 dependencies = [
  "beefy-merkle-tree",
  "derive_more",
@@ -3464,7 +3464,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.3.2"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#52bc4a878b53029387529184a59713f334630aa8"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#8652316e2b3fb2424d2dd8d631df3d5fcd77d096"
 dependencies = [
  "bls12_381",
  "da-primitives",
@@ -3490,7 +3490,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.1.2"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#52bc4a878b53029387529184a59713f334630aa8"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#8652316e2b3fb2424d2dd8d631df3d5fcd77d096"
 dependencies = [
  "dusk-bytes",
  "dusk-plonk",
@@ -4384,7 +4384,7 @@ checksum = "71d96e3f3c0b6325d8ccd83c33b28acb183edcb6c67938ba104ec546854b0882"
 [[package]]
 name = "merkle"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#52bc4a878b53029387529184a59713f334630aa8"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#8652316e2b3fb2424d2dd8d631df3d5fcd77d096"
 dependencies = [
  "frame-support",
  "hex-literal",
@@ -4704,7 +4704,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#52bc4a878b53029387529184a59713f334630aa8"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#8652316e2b3fb2424d2dd8d631df3d5fcd77d096"
 dependencies = [
  "ethers-signers",
  "frame-support",
@@ -4725,7 +4725,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#52bc4a878b53029387529184a59713f334630aa8"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#8652316e2b3fb2424d2dd8d631df3d5fcd77d096"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -7990,7 +7990,7 @@ dependencies = [
 [[package]]
 name = "signature"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#52bc4a878b53029387529184a59713f334630aa8"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#8652316e2b3fb2424d2dd8d631df3d5fcd77d096"
 dependencies = [
  "arrayvec 0.7.2",
  "elliptic-curve",
@@ -9472,7 +9472,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "rand 0.8.5",
  "static_assertions",
 ]

@@ -260,16 +260,15 @@ parameter_types! {
 	pub const SS58Prefix: u16 = 42;
 }
 
-/// Extractor of submitted data.
+/// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.
 ///
 /// # TODO
 /// - Support utility pallet containing severals `DataAvailability::submit_data` calls.
-impl submitted_data::Extractor for Runtime {
-	fn extract(app_ext: AppExtrinsic, metrics: submitted_data::RcMetrics) -> Option<Vec<u8>> {
+impl submitted_data::Filter<Call> for Runtime {
+	fn filter(call: Call, metrics: submitted_data::RcMetrics) -> Option<Vec<u8>> {
 		metrics.borrow_mut().total_extrinsics += 1;
-		let extrinsic = UncheckedExtrinsic::decode(&mut app_ext.data.as_slice()).ok()?;
 
-		match extrinsic.function {
+		match call {
 			Call::DataAvailability(method) => match method {
 				da_control::Call::submit_data { data } => {
 					let mut metrics = metrics.borrow_mut();
@@ -285,6 +284,14 @@ impl submitted_data::Extractor for Runtime {
 			},
 			_ => None,
 		}
+	}
+}
+
+/// Decodes and extracts the `data` of `DataAvailability::submit_data` extrinsics.
+impl submitted_data::Extractor for Runtime {
+	fn extract(app_ext: AppExtrinsic, metrics: submitted_data::RcMetrics) -> Option<Vec<u8>> {
+		let extrinsic = UncheckedExtrinsic::decode(&mut app_ext.data.as_slice()).ok()?;
+		<Runtime as submitted_data::Filter<Call>>::filter(extrinsic.function, metrics)
 	}
 }
 
@@ -1350,23 +1357,6 @@ impl_runtime_apis! {
 			let seed = <Runtime as Config>::Hashing::hash_of(&epoc_and_block);
 
 			seed.into()
-		}
-
-		fn submitted_data_proof(data_index: u32) -> Option<DataProof>
-		{
-			use frame_system::{Pallet, submitted_data};
-
-			let iter = Pallet::<Runtime>::app_extrinsics();
-			submitted_data::proof::<Runtime, _>(iter, data_index)
-				.map(|merkle_proof| DataProof::try_from(&merkle_proof).ok())
-				.flatten()
-		}
-
-		fn submitted_data_root() -> H256 {
-			use frame_system::{Pallet, submitted_data};
-
-			let iter = Pallet::<Runtime>::app_extrinsics();
-			submitted_data::root::<Runtime, _>(iter)
 		}
 	}
 

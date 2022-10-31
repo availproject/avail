@@ -338,7 +338,7 @@ pub mod pallet {
 		type OnSetCode: SetCode<Self>;
 
 		/// Filter used by `DataRootBuilder`.
-		type SubmittedDataExtractor: submitted_data::Extractor;
+		type SubmittedDataExtractor: submitted_data::Extractor + submitted_data::Filter<Self::Call>;
 	}
 
 	#[pallet::pallet]
@@ -1378,8 +1378,9 @@ impl<T: Config> Pallet<T> {
 		}*/
 
 		let block_length = Self::block_length();
-		let data_root =
-			submitted_data::root::<T::SubmittedDataExtractor, _>(app_extrinsics.iter().cloned());
+		let data_root = submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(
+			app_extrinsics.iter().cloned(),
+		);
 
 		let extension = header_builder::da::HeaderExtensionBuilder::<T>::build(
 			app_extrinsics,

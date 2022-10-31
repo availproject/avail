@@ -36,7 +36,7 @@
 
 use std::sync::Arc;
 
-use da_runtime::{Block, BlockNumber, Hash};
+use da_runtime::{Block, BlockNumber, Hash, Runtime};
 use sc_consensus_babe::{Config, Epoch};
 use sc_consensus_babe_rpc::BabeRpcHandler;
 use sc_consensus_epochs::SharedEpochChanges;
@@ -161,9 +161,9 @@ pub fn create_full(
 		),
 	));
 
-	io.extend_with(kate_rpc::KateApi::to_delegate(kate_rpc::Kate::new(
-		client.clone(),
-	)));
+	io.extend_with(kate_rpc::KateApi::<Block, Runtime>::to_delegate(
+		kate_rpc::Kate::new(client.clone()),
+	));
 
 	io.extend_with(sc_sync_state_rpc::SyncStateRpcApi::to_delegate(
 		sc_sync_state_rpc::SyncStateRpcHandler::new(

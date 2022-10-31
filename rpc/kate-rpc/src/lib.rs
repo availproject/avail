@@ -9,7 +9,8 @@ use da_primitives::{
 	traits::ExtendedHeader,
 	DataProof,
 };
-use frame_system::limits::BlockLength;
+use frame_support::traits::ExtrinsicCall;
+use frame_system::{limits::BlockLength, submitted_data};
 use jsonrpc_core::{Error as RpcError, Result};
 use jsonrpc_derive::rpc;
 use kate::{com::Cell, BlockDimensions, BlsScalar, PublicParameters};
@@ -20,20 +21,27 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{Block as BlockT, Header},
+	traits::{Block as BlockT, Extrinsic, Header},
 	AccountId32, MultiAddress, MultiSignature,
 };
 
+pub type HashOf<Block> = <Block as BlockT>::Hash;
+pub type CallOf<Block> = <<Block as BlockT>::Extrinsic as Extrinsic>::Call;
+
 #[rpc]
-pub trait KateApi<BlockHash> {
+pub trait KateApi<Block, SDFilter>
+where
+	Block: BlockT,
+	SDFilter: submitted_data::Filter<CallOf<Block>>,
+{
 	#[rpc(name = "kate_queryProof")]
-	fn query_proof(&self, cells: Vec<Cell>, at: Option<BlockHash>) -> Result<Vec<u8>>;
+	fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> Result<Vec<u8>>;
 
 	#[rpc(name = "kate_blockLength")]
-	fn query_block_length(&self) -> Result<BlockLength>;
+	fn query_block_length(&self, at: Option<HashOf<Block>>) -> Result<BlockLength>;
 
 	#[rpc(name = "kate_queryDataProof")]
-	fn query_data_proof(&self, data_index: u32, at: Option<BlockHash>) -> Result<DataProof>;
+	fn query_data_proof(&self, data_index: u32, at: Option<HashOf<Block>>) -> Result<DataProof>;
 }
 
 pub struct Kate<Client, Block: BlockT> {
@@ -96,10 +104,10 @@ where
 	}
 }
 
-impl<Client, Block> KateApi<<Block as BlockT>::Hash> for Kate<Client, Block>
+impl<Client, Block, SDFilter> KateApi<Block, SDFilter> for Kate<Client, Block>
 where
 	Block: BlockT,
-	Block::Extrinsic: GetAppId,
+	Block::Extrinsic: GetAppId + ExtrinsicCall,
 	Block::Header: ExtendedHeader,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block>
@@ -107,13 +115,11 @@ where
 		+ BlockBackend<Block>
 		+ StorageProvider<Block, sc_client_db::Backend<Block>>,
 	Client::Api: KateParamsGetter<Block>,
+	SDFilter: submitted_data::Filter<CallOf<Block>>,
+	<<Block as BlockT>::Extrinsic as Extrinsic>::Call: Clone,
 {
 	//TODO allocate static thread pool, just for RPC related work, to free up resources, for the block producing processes.
-	fn query_proof(
-		&self,
-		cells: Vec<Cell>,
-		at: Option<<Block as BlockT>::Hash>,
-	) -> Result<Vec<u8>> {
+	fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> Result<Vec<u8>> {
 		let block_id = self.block_id(at);
 
 		let signed_block = self
@@ -190,8 +196,8 @@ where
 		Ok(proof)
 	}
 
-	fn query_block_length(&self) -> Result<BlockLength> {
-		let block_id = self.block_id(None);
+	fn query_block_length(&self, at: Option<HashOf<Block>>) -> Result<BlockLength> {
+		let block_id = self.block_id(at);
 		let block_length = self
 			.client
 			.runtime_api()
@@ -201,21 +207,33 @@ where
 		Ok(block_length)
 	}
 
-	fn query_data_proof(
-		&self,
-		data_index: u32,
-		at: Option<<Block as BlockT>::Hash>,
-	) -> Result<DataProof> {
+	fn query_data_proof(&self, data_index: u32, at: Option<HashOf<Block>>) -> Result<DataProof> {
+		// Fetch block
 		let block_id = self.block_id(at);
-
-		let maybe_proof = self
+		let block = self
 			.client
-			.runtime_api()
-			.submitted_data_proof(&block_id, data_index)
-			.map_err(|e| internal_err!("{:?}", e))?;
+			.block(&block_id)
+			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
+			.ok_or_else(|| internal_err!("Missing block number {:?}", block_id))?
+			.block;
 
-		maybe_proof
-			.ok_or_else(|| RpcError::invalid_params("Parameter `data_index` is out of bound"))
+		// Get App Extrinsics from the block.
+		let calls = block
+			.extrinsics()
+			.iter()
+			.map(|extrinsic| extrinsic.call().clone());
+
+		// Build the proof.
+		let merkle_proof = submitted_data::calls_proof::<SDFilter, _, _>(calls, data_index)
+			.ok_or_else(|| {
+				internal_err!(
+					"Data proof cannot be generated for index={} at block {:?}",
+					data_index,
+					block_id
+				)
+			})?;
+		DataProof::try_from(&merkle_proof)
+			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e))
 	}
 }
 
