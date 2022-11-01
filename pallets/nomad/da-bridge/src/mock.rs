@@ -1,6 +1,6 @@
 use da_primitives::Header;
 use frame_support::traits::GenesisBuild;
-use frame_system::{self as system, DRFCallOf, DRFOutput, DataRootFilter};
+use frame_system::{self as system};
 use nomad_base::NomadBase;
 use primitive_types::{H160, H256};
 use sp_runtime::{
@@ -37,12 +37,6 @@ frame_support::parameter_types! {
 	pub static ExistentialDeposit: u64 = 0;
 }
 
-impl DataRootFilter for Test {
-	type UncheckedExtrinsic = UncheckedExtrinsic;
-
-	fn filter(_call: &DRFCallOf<Self::UncheckedExtrinsic>) -> DRFOutput { None }
-}
-
 impl system::Config for Test {
 	type AccountData = ();
 	type AccountId = AccountId32;
@@ -52,7 +46,6 @@ impl system::Config for Test {
 	type BlockNumber = BlockNumber;
 	type BlockWeights = ();
 	type Call = Call;
-	type DataRootBuilderFilter = Test;
 	type DbWeight = ();
 	type Event = Event;
 	type Hash = H256;
@@ -68,6 +61,7 @@ impl system::Config for Test {
 	type PalletInfo = PalletInfo;
 	type Randomness = frame_system::tests::TestRandomness<Test>;
 	type SS58Prefix = ();
+	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
 	type Version = ();
 }

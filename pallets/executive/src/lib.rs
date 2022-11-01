@@ -777,7 +777,7 @@ mod tests {
 			..Default::default()
 		});
 		let state_root =
-			hex!("162ed31f8ac16b3e297cf35ee950fc6e11dddf90faebdc57f6a8c0e510fa5a9a").into();
+			hex!("3f1bd581280b838db1f5f16754026f9332e7c526122b764b70106dac450e7992").into();
 		let extrinsics_root =
 			hex!("03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314").into();
 
