@@ -1,6 +1,6 @@
 use da_control::CheckAppId;
 use da_primitives::asdr::AppExtrinsic;
-use frame_system::{CheckNonce, DataRootBuilder};
+use frame_system::submitted_data::extrinsics_root;
 use hex_literal::hex;
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_core::{sr25519::Signature, H256};
@@ -65,5 +65,5 @@ fn decode_submit_call() {
 #[test_case( submit_call(0) => submit_call_expected(); "Submit data 0")]
 #[test_case( submit_call(1) => submit_call_expected(); "Submit data 1")]
 fn data_root_filter(extrinsic: AppExtrinsic) -> H256 {
-	<Runtime as DataRootBuilder<Runtime>>::build(&[extrinsic])
+	extrinsics_root::<Runtime, _>(vec![extrinsic].into_iter())
 }

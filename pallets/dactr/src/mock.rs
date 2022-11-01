@@ -5,7 +5,6 @@ use da_primitives::{
 	Header,
 };
 use frame_support::{parameter_types, weights::IdentityFee};
-use frame_system::{DRFCallOf, DRFOutput, DataRootFilter};
 use pallet_transaction_payment::CurrencyAdapter;
 use sp_core::H256;
 use sp_runtime::{
@@ -51,12 +50,6 @@ parameter_types! {
 	pub static ExistentialDeposit: u64 = 0;
 }
 
-impl DataRootFilter for Test {
-	type UncheckedExtrinsic = UncheckedExtrinsic<Test>;
-
-	fn filter(_call: &DRFCallOf<Self::UncheckedExtrinsic>) -> DRFOutput { None }
-}
-
 impl frame_system::Config for Test {
 	type AccountData = pallet_balances::AccountData<Balance>;
 	type AccountId = u64;
@@ -66,7 +59,6 @@ impl frame_system::Config for Test {
 	type BlockNumber = BlockNumber;
 	type BlockWeights = BlockWeights;
 	type Call = Call;
-	type DataRootBuilderFilter = Test;
 	type DbWeight = ();
 	type Event = Event;
 	type Hash = H256;
@@ -82,6 +74,7 @@ impl frame_system::Config for Test {
 	type PalletInfo = PalletInfo;
 	type Randomness = frame_system::tests::TestRandomness<Test>;
 	type SS58Prefix = ();
+	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
 	type Version = ();
 }

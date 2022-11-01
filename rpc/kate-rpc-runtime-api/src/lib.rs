@@ -3,7 +3,7 @@
 #![allow(clippy::unnecessary_mut_passed)]
 
 use frame_system::limits::BlockLength;
-use sp_std::prelude::*;
+use sp_std::vec::Vec;
 
 sp_api::decl_runtime_apis! {
 	pub trait KateParamsGetter {
