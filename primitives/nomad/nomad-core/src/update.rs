@@ -7,7 +7,7 @@ use sp_core::{H160, H256};
 use crate::utils::home_domain_hash;
 
 /// Nomad update
-#[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Update {
 	/// The home chain
@@ -32,7 +32,7 @@ impl Update {
 }
 
 /// A Signed Nomad Update
-#[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct SignedUpdate {
 	/// The update

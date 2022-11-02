@@ -16,7 +16,7 @@ use k256::{
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::{Hasher, H160, H256, U256};
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 use crate::utils::hash_message;
 
@@ -57,7 +57,7 @@ pub enum RecoveryMessage {
 }
 
 /// An ECDSA signature
-#[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Signature {
 	/// R value
@@ -154,6 +154,17 @@ fn normalize_recovery_id(v: u64) -> u8 {
 		28 => 1,
 		v if v >= 35 => ((v - 1) % 2) as _,
 		_ => 4,
+	}
+}
+
+impl From<sp_core::ecdsa::Signature> for Signature {
+	fn from(src: sp_core::ecdsa::Signature) -> Self {
+		let raw_src = src.0;
+		let r = U256::from_big_endian(&raw_src[..32]);
+		let s = U256::from_big_endian(&raw_src[32..64]);
+		let v: u64 = raw_src[64].into();
+
+		Self { r, s, v }
 	}
 }
 

@@ -6,6 +6,7 @@ use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::RuntimeDebug;
+use sp_runtime::traits::Zero;
 use sp_std::{convert::TryFrom, vec::Vec};
 
 use crate::asdr::AppId;
@@ -14,12 +15,41 @@ use crate::asdr::AppId;
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct DataLookup {
 	/// size of the look up
+	#[codec(compact)]
 	pub size: u32,
 	/// sorted vector of tuples(key, start index)
-	pub index: Vec<(AppId, u32)>,
+	pub index: Vec<DataLookupIndexItem>,
 }
 
-#[derive(PartialEq, RuntimeDebug)]
+#[derive(PartialEq, Eq, Copy, Clone, RuntimeDebug, Encode, Decode, Default, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct DataLookupIndexItem {
+	pub app_id: AppId,
+	#[codec(compact)]
+	pub start: u32,
+}
+
+impl<A, S> From<(A, S)> for DataLookupIndexItem
+where
+	A: Into<AppId>,
+	S: Into<u32>,
+{
+	fn from(value: (A, S)) -> Self {
+		Self {
+			app_id: value.0.into(),
+			start: value.1.into(),
+		}
+	}
+}
+
+#[cfg(feature = "std")]
+impl MallocSizeOf for DataLookupIndexItem {
+	fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
+		self.app_id.size_of(ops) + self.start.size_of(ops)
+	}
+}
+
+#[derive(PartialEq, Eq, RuntimeDebug)]
 /// Errors during the creation from `extrinsics`.
 pub enum TryFromError {
 	/// Size overflows
@@ -36,11 +66,14 @@ impl TryFrom<&[(AppId, u32)]> for DataLookup {
 		// transactions are order by application id
 		// skip transactions with 0 application id - it's not a data txs
 		let mut size = 0u32;
-		let mut prev_app_id = 0u32;
+		let mut prev_app_id = Zero::zero();
 
 		for (app_id, data_len) in extrinsics {
-			if *app_id != 0 && prev_app_id != *app_id {
-				index.push((*app_id, size));
+			if !app_id.is_zero() && prev_app_id != *app_id {
+				index.push(DataLookupIndexItem {
+					app_id: *app_id,
+					start: size,
+				});
 			}
 
 			size = size
@@ -65,21 +98,38 @@ impl MallocSizeOf for DataLookup {
 mod test {
 	use super::*;
 
+	fn into_app_ids<I, T>(vals: I) -> Vec<(AppId, u32)>
+	where
+		I: IntoIterator<Item = (T, u32)>,
+		T: Into<AppId>,
+	{
+		vals.into_iter()
+			.map(|(id, idx)| (id.into(), idx))
+			.collect::<Vec<_>>()
+	}
+	fn into_lookup_items<I, T>(vals: I) -> Vec<DataLookupIndexItem>
+	where
+		I: IntoIterator<Item = (T, u32)>,
+		T: Into<AppId>,
+	{
+		vals.into_iter().map(Into::into).collect::<Vec<_>>()
+	}
+
 	fn from_extrinsics_data() -> Vec<(Vec<(AppId, u32)>, Result<DataLookup, TryFromError>)> {
 		vec![
 			(
-				vec![(0, 5), (0, 10), (1, 5), (1, 10), (2, 100), (2, 50)],
+				into_app_ids([(0, 5), (0, 10), (1, 5), (1, 10), (2, 100), (2, 50)]),
 				Ok(DataLookup {
 					size: 180,
-					index: vec![(1, 15), (2, 30)],
+					index: into_lookup_items([(1, 15), (2, 30)]),
 				}),
 			),
 			(
-				vec![(0, 5), (0, 10), (1, u32::MAX)],
+				into_app_ids([(0, 5), (0, 10), (1, u32::MAX)]),
 				Err(TryFromError::SizeOverflow),
 			),
 			(
-				vec![(0, 5), (0, 10), (1, 5), (2, 100), (1, 10), (2, 50)],
+				into_app_ids([(0, 5), (0, 10), (1, 5), (2, 100), (1, 10), (2, 50)]),
 				Err(TryFromError::UnsortedExtrinsics),
 			),
 		]

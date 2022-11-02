@@ -23,7 +23,7 @@ const fn const_assert_n_is_valid<const N: usize>() {
 }
 
 /// An incremental merkle tree, modeled on the eth2 deposit contract
-#[derive(Clone, Copy, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct LightMerkle<const N: usize> {
 	#[cfg_attr(feature = "std", serde(with = "arrays"))]

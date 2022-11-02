@@ -299,13 +299,16 @@ where
 			return Err("Invalid transaction version".into());
 		}
 
+		let signature = if is_signed {
+			Some(Decode::decode(input)?)
+		} else {
+			None
+		};
+		let function = Decode::decode(input)?;
+
 		Ok(Self {
-			signature: if is_signed {
-				Some(Decode::decode(input)?)
-			} else {
-				None
-			},
-			function: Decode::decode(input)?,
+			signature,
+			function,
 		})
 	}
 }
@@ -398,12 +401,12 @@ where
 	}
 }
 
-impl<Address, Call, Signature, Extra> GetAppId<AppId>
+impl<Address, Call, Signature, Extra> GetAppId
 	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
 where
-	Extra: SignedExtension + GetAppId<AppId>,
+	Extra: SignedExtension + GetAppId,
 {
-	fn app_id(&self) -> u32 {
+	fn app_id(&self) -> AppId {
 		self.signature
 			.as_ref()
 			.map(|(_address, _signature, extra)| extra.app_id())
@@ -470,8 +473,8 @@ mod tests {
 		}
 	}
 
-	impl GetAppId<AppId> for TestExtra {
-		fn app_id(&self) -> AppId { 0 }
+	impl GetAppId for TestExtra {
+		fn app_id(&self) -> AppId { Default::default() }
 	}
 
 	type Ex = AppUncheckedExtrinsic<TestAccountId, TestCall, TestSig, TestExtra>;

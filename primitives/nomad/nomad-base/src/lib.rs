@@ -7,10 +7,10 @@ use serde::{Deserialize, Serialize};
 use signature::SignatureError;
 use sp_core::{H160, H256};
 
-#[cfg(test)]
+#[cfg(feature = "std")]
 pub mod testing;
 
-#[derive(Clone, Copy, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct NomadBase {
 	pub state: NomadState,

@@ -15,7 +15,7 @@ pub struct Updater {
 }
 
 impl Updater {
-	pub fn new(domain: u32, signer: LocalWallet) -> Self { Self { domain, signer } }
+	pub const fn new(domain: u32, signer: LocalWallet) -> Self { Self { domain, signer } }
 
 	pub fn address(&self) -> H160 { self.signer.address().0.into() }
 

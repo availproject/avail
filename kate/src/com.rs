@@ -5,7 +5,7 @@ use std::{
 };
 
 use codec::Encode;
-use da_primitives::asdr::AppExtrinsic;
+use da_primitives::asdr::{AppExtrinsic, AppId};
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	commitment_scheme::kzg10,
@@ -50,7 +50,7 @@ impl From<PlonkError> for Error {
 	fn from(error: PlonkError) -> Self { Self::PlonkError(error) }
 }
 
-pub type XtsLayout = Vec<(u32, u32)>;
+pub type XtsLayout = Vec<(AppId, u32)>;
 type FlatData = Vec<u8>;
 type DataChunk = [u8; DATA_CHUNK_SIZE];
 const PADDING_TAIL_VALUE: u8 = 0x80;
@@ -58,8 +58,8 @@ const PADDING_TAIL_VALUE: u8 = 0x80;
 /// Helper which groups extrinsics data that share the same app_id.
 /// We assume the input extrinsics are already sorted by app_id, i.e. extrinsics with the same app_id are consecutive.
 /// This function does the same thing as group_by (unstable), just less general.
-fn app_extrinsics_group_by_app_id(extrinsics: &[AppExtrinsic]) -> Vec<(u32, Vec<Vec<u8>>)> {
-	extrinsics.into_iter().fold(vec![], |mut acc, e| {
+fn app_extrinsics_group_by_app_id(extrinsics: &[AppExtrinsic]) -> Vec<(AppId, Vec<Vec<u8>>)> {
+	extrinsics.iter().fold(vec![], |mut acc, e| {
 		match acc.last_mut() {
 			Some((app_id, data)) if e.app_id == *app_id => data.push(e.data.clone()),
 			None | Some(_) => acc.push((e.app_id, vec![e.data.clone()])),
@@ -98,8 +98,7 @@ pub fn flatten_and_pad_block(
 		.into_iter()
 		.flat_map(|e| {
 			e.into_iter()
-				.map(|e| pad_to_chunk(e, chunk_size))
-				.flatten()
+				.flat_map(|e| pad_to_chunk(e, chunk_size))
 				.collect::<Vec<_>>()
 		})
 		.collect::<Vec<_>>();
@@ -542,19 +541,19 @@ mod tests {
 		let chunk_size = 32;
 		let extrinsics: Vec<AppExtrinsic> = vec![
 			AppExtrinsic {
-				app_id: 0,
+				app_id: 0.into(),
 				data: (1..=29).collect(),
 			},
 			AppExtrinsic {
-				app_id: 1,
+				app_id: 1.into(),
 				data: (1..=30).collect(),
 			},
 			AppExtrinsic {
-				app_id: 2,
+				app_id: 2.into(),
 				data: (1..=31).collect(),
 			},
 			AppExtrinsic {
-				app_id: 3,
+				app_id: 3.into(),
 				data: (1..=60).collect(),
 			},
 		];
@@ -568,14 +567,14 @@ mod tests {
 			flatten_and_pad_block(128, 256, chunk_size, extrinsics.as_slice(), Seed::default())
 				.unwrap();
 
-		let expected_layout = vec![(0, 2), (1, 2), (2, 2), (3, 3)];
+		let expected_layout = vec![(0.into(), 2), (1.into(), 2), (2.into(), 2), (3.into(), 3)];
 		assert_eq!(layout, expected_layout, "The layouts don't match");
 
 		let expected_data = hex!("04740102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d00800000000000000000000000000000000000000000000000000000000000000004780102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e80000000000000000000000000000000000000000000000000000000000000047c0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f80000000000000000000000000000000000000000000000000000000000004f00102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c00800000000000000000000000000000000000000000000000000000000000000076a04053bda0a88bda5177b86a15c3b29f559873cb481232299cd5743151ac004b2d63ae198e7bb0a9011f28e473c95f4013d7d53ec5fbc3b42df8ed101f6d00e831e52bfb76e51cca8b4e9016838657edfae09cb9a71eb219025c4c87a67c004aaa86f20ac0aa792bc121ee42e2c326127061eda15599cb5db3db870bea5a00ecf353161c3cb528b0c5d98050c4570bfc942d8b19ed7b0cbba5725e03e5f000b7e30db36b6df82ac151f668f5f80a5e2a9cac7c64991dd6a6ce21c060175800edb9260d2a86c836efc05f17e5c59525e404c6a93d051651fe2e4eefae281300");
 
 		assert_eq!(dims, expected_dims, "Dimensions don't match the expected");
 		assert_eq!(data, expected_data, "Data doesn't match the expected data");
-		let index = AppDataIndex::try_from(&layout).unwrap();
+		let index = AppDataIndex::try_from(layout.as_slice()).unwrap();
 		let res = unflatten_padded_data(index.data_ranges(), data, chunk_size).unwrap();
 		assert_eq!(
 			res.len(),
@@ -584,7 +583,7 @@ mod tests {
 		);
 
 		for (res, exp) in res.iter().zip(extrinsics.iter()) {
-			assert_eq!(res.0, exp.app_id);
+			assert_eq!(res.0, *exp.app_id);
 			assert_eq!(res.1[0], exp.data);
 		}
 	}
@@ -633,7 +632,10 @@ mod tests {
 			any::<u32>(),
 			any_with::<Vec<u8>>(size_range(1..2048).lift()),
 		)
-			.prop_map(|(app_id, data)| AppExtrinsic { app_id, data })
+			.prop_map(|(app_id, data)| AppExtrinsic {
+				app_id: app_id.into(),
+				data,
+			})
 	}
 
 	fn app_extrinsics_strategy() -> impl Strategy<Value = Vec<AppExtrinsic>> {
@@ -667,10 +669,10 @@ mod tests {
 
 		let columns = sample_cells_from_matrix(&matrix, &dims, None);
 		let extended_dims = ExtendedMatrixDimensions{cols: dims.cols, rows: dims.rows * 2};
-		let index = AppDataIndex::try_from(&layout).unwrap();
+		let index = AppDataIndex::try_from(layout.as_slice()).unwrap();
 		let reconstructed = reconstruct_extrinsics(&index, &extended_dims, columns).unwrap();
 		for (result, xt) in reconstructed.iter().zip(xts) {
-		prop_assert_eq!(result.0, xt.app_id);
+		prop_assert_eq!(result.0, *xt.app_id);
 		prop_assert_eq!(result.1[0].as_slice(), &xt.data);
 		}
 
@@ -730,15 +732,15 @@ get erasure coded to ensure redundancy."#;
 		let hash = Seed::default();
 		let xts = vec![
 			AppExtrinsic {
-				app_id: 0,
+				app_id: 0.into(),
 				data: vec![0],
 			},
 			AppExtrinsic {
-				app_id: 1,
+				app_id: 1.into(),
 				data: app_id_1_data.to_vec(),
 			},
 			AppExtrinsic {
-				app_id: 2,
+				app_id: 2.into(),
 				data: app_id_2_data.to_vec(),
 			},
 		];
@@ -755,7 +757,7 @@ get erasure coded to ensure redundancy."#;
 			rows: dims.rows * 2,
 		};
 
-		let index = AppDataIndex::try_from(&layout).unwrap();
+		let index = AppDataIndex::try_from(layout.as_slice()).unwrap();
 		let res_1 = reconstruct_app_extrinsics(&index, &extended_dims, cols_1, 1).unwrap();
 		assert_eq!(res_1[0], app_id_1_data);
 
@@ -777,7 +779,10 @@ get erasure coded to ensure redundancy."#;
 		let hash = Seed::default();
 		let xts = (0..=2)
 			.zip(data)
-			.map(|(app_id, data)| AppExtrinsic { app_id, data })
+			.map(|(app_id, data)| AppExtrinsic {
+				app_id: app_id.into(),
+				data,
+			})
 			.collect::<Vec<_>>();
 
 		let chunk_size = 32;
@@ -791,9 +796,9 @@ get erasure coded to ensure redundancy."#;
 		};
 		let extended_matrix = coded.chunks(extended_dims.rows).collect::<Vec<_>>();
 
-		let index = AppDataIndex::try_from(&layout).unwrap();
+		let index = AppDataIndex::try_from(layout.as_slice()).unwrap();
 		for xt in xts {
-			let positions = app_specific_cells(&index, &extended_dims, xt.app_id).unwrap();
+			let positions = app_specific_cells(&index, &extended_dims, *xt.app_id).unwrap();
 			let cells = positions
 				.iter()
 				.map(|position| kate_recovery::com::DataCell {
@@ -801,7 +806,8 @@ get erasure coded to ensure redundancy."#;
 					data: extended_matrix[position.col as usize][position.row as usize].to_bytes(),
 				})
 				.collect::<Vec<_>>();
-			let data = &decode_app_extrinsics(&index, &extended_dims, cells, xt.app_id).unwrap()[0];
+			let data =
+				&decode_app_extrinsics(&index, &extended_dims, cells, *xt.app_id).unwrap()[0];
 			assert_eq!(data, &xt.data);
 		}
 
@@ -837,7 +843,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			cols: dims.cols,
 			rows: dims.rows * 2,
 		};
-		let index = AppDataIndex::try_from(&layout).unwrap();
+		let index = AppDataIndex::try_from(layout.as_slice()).unwrap();
 		let res = reconstruct_extrinsics(&index, &extended_dims, cols).unwrap();
 		let s = String::from_utf8_lossy(res[0].1[0].as_slice());
 
@@ -852,11 +858,11 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let xt2 = vec![6, 6];
 		let xts = [
 			AppExtrinsic {
-				app_id: 1,
+				app_id: 1.into(),
 				data: xt1.clone(),
 			},
 			AppExtrinsic {
-				app_id: 1,
+				app_id: 1.into(),
 				data: xt2.clone(),
 			},
 		];
@@ -873,7 +879,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			rows: dims.rows * 2,
 		};
 
-		let index = AppDataIndex::try_from(&layout).unwrap();
+		let index = AppDataIndex::try_from(layout.as_slice()).unwrap();
 		let res = reconstruct_extrinsics(&index, &extended_dims, cols).unwrap();
 
 		assert_eq!(res[0].1[0], xt1);
@@ -888,24 +894,28 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let xt4 = vec![];
 		let xts = [
 			AppExtrinsic {
-				app_id: 1,
+				app_id: 1.into(),
 				data: xt1.clone(),
 			},
 			AppExtrinsic {
-				app_id: 1,
+				app_id: 1.into(),
 				data: xt2.clone(),
 			},
 			AppExtrinsic {
-				app_id: 2,
+				app_id: 2.into(),
 				data: xt3.clone(),
 			},
 			AppExtrinsic {
-				app_id: 3,
+				app_id: 3.into(),
 				data: xt4.clone(),
 			},
 		];
 
-		let expected = vec![(1u32, vec![xt1, xt2]), (2, vec![xt3]), (3, vec![xt4])];
+		let expected = vec![
+			(1.into(), vec![xt1, xt2]),
+			(2.into(), vec![xt3]),
+			(3.into(), vec![xt4]),
+		];
 		let rez = app_extrinsics_group_by_app_id(&xts);
 		println!("{:?}", rez);
 

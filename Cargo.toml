@@ -2,6 +2,10 @@
 members = [
 	"primitives/avail",
 	"kate",
+	"primitives/nomad/signature",
+	"primitives/nomad/nomad-core",
+	"primitives/nomad/nomad-base",
+	"primitives/nomad/merkle",
 ]
 [patch.crates-io]
 # Substrate  (polkadot-v0.9.13).

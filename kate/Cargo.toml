@@ -1,6 +1,6 @@
 [package]
 name = "kate"
-version = "0.2.0"
+version = "0.3.2"
 authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
 edition = "2021"
 
@@ -41,6 +41,7 @@ default = ["std"]
 alloc = ["dusk-plonk/alloc"]
 
 std = [
+	"kate-recovery/std",
 	"hex/std",
 	"codec/std",
 	"alloc",

@@ -64,7 +64,7 @@ pub fn padded_len(len: u32, chunk_size: u32) -> u32 {
 	iec_9797_1_len + pad_to_chunk_extra
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct BlockDimensions {
 	pub rows: usize,
 	pub cols: usize,

@@ -28,20 +28,26 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - uses: actions-rs/toolchain@v1
+      - name: Install nightly `rust-fmt` 
+        uses: actions-rs/toolchain@v1
         with:
             # NOTE: Until https://github.com/actions-rs/toolchain/pull/209 is merged,
             # this should be synced with rust-toolchain.toml file.
             # After merge, this section should be removed.
             toolchain: nightly-2021-12-05
-            components: rustfmt, clippy, llvm-tools-preview
+            components: rustfmt
             profile: minimal
 
-      - name: Check code formatting
-        uses: actions-rs/cargo@v1
+      - name: Install Rust toolchain 1.64 
+        uses: actions-rs/toolchain@v1
         with:
-          command: fmt
-          args: --check
+            toolchain: 1.64
+            components: clippy, llvm-tools-preview
+            default: true
+            profile: minimal
+
+      - name: Check `TOML`, `JSON`, and `MarkDown` formatting
+        uses: dprint/check@v2.1
 
       - name: Run tests
         uses: actions-rs/cargo@v1
@@ -49,7 +55,7 @@ jobs:
           command: test
           args: --workspace
         env:
-          RUSTFLAGS: "-Zinstrument-coverage"
+          RUSTFLAGS: "-C instrument-coverage"
           LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
 
       - name: Generate test code coverage report

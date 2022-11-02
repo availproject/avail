@@ -1,6 +1,6 @@
 [package]
 name = "signature"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Luke Tchang <luke@nomad.xyz>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -35,7 +35,7 @@ serde = { version = "1.0", default-features = false, optional = true, features =
 sp-core = { version = "4.0.0-dev", default-features = false }
 sp-io = { version = "4.0.0-dev", default-features = false }
 sp-std = { version = "4.0.0-dev", default-features = false }
-thiserror-no-std = "2.0.1"
+thiserror-no-std = "2.0.2"
 tiny-keccak = { version = "2.0.2", default-features = false }
 
 [dev-dependencies]

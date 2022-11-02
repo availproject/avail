@@ -15,6 +15,9 @@ pub mod asdr;
 
 pub mod traits;
 
+pub mod data_proof;
+pub use data_proof::DataProof;
+
 pub mod well_known_keys {
 	/// Public params used to generate Kate commitment
 	pub const KATE_PUBLIC_PARAMS: &[u8] = b":kate_public_params:";

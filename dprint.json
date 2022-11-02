@@ -9,7 +9,8 @@
 	},
 	"includes": ["**/*.{json,md,toml}"],
 	"excludes": [
-		"**/*-lock.json"
+		"**/*-lock.json",
+		"**/target"
 	],
 	"plugins": [
 		"https://plugins.dprint.dev/json-0.15.6.wasm",
