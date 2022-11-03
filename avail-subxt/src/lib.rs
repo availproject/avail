@@ -2,7 +2,16 @@ use std::fmt::Debug;
 
 use avail::runtime_types::{
 	da_primitives::{
-		asdr::data_lookup::DataLookup as AvailDataLookup, header::Header as AvailHeader,
+		asdr::{
+			data_lookup::{
+				DataLookup as AvailDataLookup, DataLookupIndexItem as AvailDataLookupIndexItem,
+			},
+			AppId as AvailAppId,
+		},
+		header::{
+			extension::{v1::HeaderExtension, HeaderExtension as AvailHeaderExtension},
+			Header as AvailHeader,
+		},
 		kate_commitment::KateCommitment as AvailKateCommitment,
 	},
 	sp_runtime::{
@@ -225,39 +234,51 @@ impl MallocSizeOf for AvailExtrinsic {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, Default)]
 pub struct KateCommitment {
-	/// The merkle root of the extrinsics.
-	pub hash: H256,
-	/// Plonk commitment.
-	pub commitment: Vec<u8>,
 	/// Rows
+	#[codec(compact)]
 	pub rows: u16,
 	/// Cols
+	#[codec(compact)]
 	pub cols: u16,
 	/// The merkle root of the data submissions
 	#[serde(rename = "dataRoot")]
 	pub data_root: H256,
+	/// Plonk commitment.
+	pub commitment: Vec<u8>,
 }
 
 impl MallocSizeOf for KateCommitment {
 	fn size_of(&self, ops: &mut parity_util_mem::MallocSizeOfOps) -> usize {
-		self.hash.size_of(ops)
-			+ self.commitment.size_of(ops)
+		self.commitment.size_of(ops)
 			+ self.rows.size_of(ops)
 			+ self.cols.size_of(ops)
 			+ self.data_root.size_of(ops)
 	}
 }
 
-pub type AppId = u32;
+#[derive(
+	Debug, PartialEq, Eq, Clone, Encode, Decode, Default, TypeInfo, Serialize, Deserialize,
+)]
+pub struct AppId(#[codec(compact)] pub u32);
 
 #[derive(
 	Debug, PartialEq, Eq, Clone, Encode, Decode, Default, TypeInfo, Serialize, Deserialize,
 )]
 pub struct DataLookup {
+	#[codec(compact)]
 	pub size: u32,
-	pub index: Vec<(AppId, u32)>,
+	pub index: Vec<DataLookupIndexItem>,
+}
+
+#[derive(
+	Debug, PartialEq, Eq, Clone, Encode, Decode, Default, TypeInfo, Serialize, Deserialize,
+)]
+pub struct DataLookupIndexItem {
+	pub app_id: AppId,
+	#[codec(compact)]
+	pub start: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode)]
@@ -265,37 +286,53 @@ pub struct DataLookup {
 pub struct DaHeader {
 	pub parent_hash: H256,
 	#[serde(deserialize_with = "number_from_hex")]
+	#[codec(compact)]
 	pub number: u32,
 	pub state_root: H256,
-	pub extrinsics_root: KateCommitment,
+	pub extrinsics_root: H256,
 	pub digest: Digest,
-	pub app_data_lookup: DataLookup,
+	pub extension: DaHeaderExtensionVersion,
 }
 
 impl DaHeader {
-	pub fn data_root(&self) -> H256 { self.extrinsics_root.data_root }
+	pub fn data_root(&self) -> H256 {
+		match &self.extension {
+			DaHeaderExtensionVersion::V1(e) => e.commitment.data_root,
+		}
+	}
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode)]
+pub enum DaHeaderExtensionVersion {
+	V1(DaHeaderExtension),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, Default)]
+pub struct DaHeaderExtension {
+	pub commitment: KateCommitment,
+	pub app_lookup: DataLookup,
 }
 
 // Type conversions for turning serializable Avail objects into avail
 // config-specific types.
 impl From<DaHeader> for AvailHeader<u32, AvailBlakeTwo256> {
 	fn from(da_header: DaHeader) -> Self {
+		let DaHeaderExtensionVersion::V1(xt) = da_header.extension;
 		Self {
 			number: da_header.number,
 			state_root: da_header.state_root,
 			parent_hash: da_header.parent_hash,
 			digest: da_header.digest.into(),
-			extrinsics_root: da_header.extrinsics_root.into(),
-			app_data_lookup: da_header.app_data_lookup.into(),
+			extrinsics_root: da_header.extrinsics_root,
+			extension: xt.into(),
 			__subxt_unused_type_params: Default::default(),
 		}
 	}
 }
 
-impl From<KateCommitment> for AvailKateCommitment<H256> {
+impl From<KateCommitment> for AvailKateCommitment {
 	fn from(commitment: KateCommitment) -> Self {
 		Self {
-			hash: commitment.hash,
 			data_root: commitment.data_root,
 			commitment: commitment.commitment,
 			rows: commitment.rows,
@@ -308,9 +345,22 @@ impl From<DataLookup> for AvailDataLookup {
 	fn from(lookup: DataLookup) -> Self {
 		Self {
 			size: lookup.size,
-			index: lookup.index,
+			index: lookup.index.into_iter().map(|e| e.into()).collect(),
 		}
 	}
+}
+
+impl From<DataLookupIndexItem> for AvailDataLookupIndexItem {
+	fn from(index: DataLookupIndexItem) -> Self {
+		Self {
+			app_id: index.app_id.into(),
+			start: index.start,
+		}
+	}
+}
+
+impl From<AppId> for AvailAppId {
+	fn from(id: AppId) -> Self { AvailAppId(id.0) }
 }
 
 impl From<Digest> for AvailDigest {
@@ -330,6 +380,15 @@ impl From<DigestItem> for AvailDigestItem {
 			DigestItem::Other(vec) => Self::Other(vec),
 			DigestItem::RuntimeEnvironmentUpdated => Self::RuntimeEnvironmentUpdated,
 		}
+	}
+}
+
+impl From<DaHeaderExtension> for AvailHeaderExtension {
+	fn from(value: DaHeaderExtension) -> Self {
+		Self::V1(HeaderExtension {
+			commitment: value.commitment.into(),
+			app_lookup: value.app_lookup.into(),
+		})
 	}
 }
 
@@ -371,28 +430,19 @@ impl Header for DaHeader {
 			parent_hash,
 			number,
 			state_root,
-			extrinsics_root: KateCommitment {
-				hash: extrinsics_root,
-				commitment: vec![],
-				rows: 0,
-				cols: 0,
-				data_root: H256([0; 32]),
-			},
+			extrinsics_root,
 			digest,
-			app_data_lookup: DataLookup {
-				size: 0,
-				index: vec![],
-			},
+			extension: DaHeaderExtensionVersion::V1(Default::default()),
 		}
 	}
 
 	fn number(&self) -> &Self::Number { &self.number }
 
-	fn set_number(&mut self, number: Self::Number) { self.number = number as u32; }
+	fn set_number(&mut self, number: Self::Number) { self.number = number; }
 
-	fn extrinsics_root(&self) -> &Self::Hash { &self.extrinsics_root.hash }
+	fn extrinsics_root(&self) -> &Self::Hash { &self.extrinsics_root }
 
-	fn set_extrinsics_root(&mut self, root: Self::Hash) { self.extrinsics_root.hash = root; }
+	fn set_extrinsics_root(&mut self, root: Self::Hash) { self.extrinsics_root = root; }
 
 	fn state_root(&self) -> &Self::Hash { &self.state_root }
 
