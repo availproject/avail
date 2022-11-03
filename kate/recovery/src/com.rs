@@ -518,7 +518,7 @@ pub struct Position {
 
 impl Position {
 	/// Refrence in format `block_number:column_number:row_number`
-	pub fn reference(&self, block_number: u64) -> String {
+	pub fn reference(&self, block_number: u32) -> String {
 		format!("{}:{}:{}", block_number, self.col, self.row)
 	}
 }
@@ -542,7 +542,7 @@ pub struct Cell {
 }
 
 impl Cell {
-	pub fn reference(&self, block: u64) -> String { self.position.reference(block) }
+	pub fn reference(&self, block: u32) -> String { self.position.reference(block) }
 
 	pub fn data(&self) -> [u8; 32] { self.content[48..].try_into().expect("content is 80 bytes") }
 
