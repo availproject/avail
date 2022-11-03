@@ -9,7 +9,7 @@ use codec::Decode;
 use dusk_bytes::Serializable;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
 use serde::{Deserialize, Serialize};
-use thiserror_no_std::Error;
+use thiserror::Error;
 
 // TODO: Constants are copy from kate crate, we should move them to common place
 pub const CHUNK_SIZE: usize = 32;
