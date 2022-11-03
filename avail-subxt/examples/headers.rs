@@ -1,16 +1,23 @@
-use avail_subxt::AvailConfig;
-use futures::{future::join_all, TryFutureExt};
-use subxt::{rpc::BlockNumber, OnlineClient};
+use anyhow::Result;
+use avail_subxt::{build_client, Opts};
+use futures::future::{join_all, TryFutureExt};
+use structopt::StructOpt;
+use subxt::{ext::sp_runtime::traits::Header as XtHeader, rpc::BlockNumber};
 
 /// This example gets all the headers from testnet. It requests them in concurrently in batches of BATCH_NUM.
 /// Fetching headers one by one is too slow for a large number of blocks.
 
 const BATCH_NUM: usize = 1000;
 #[async_std::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-	let api = OnlineClient::<AvailConfig>::new().await?;
+async fn main() -> Result<()> {
+	let args = Opts::from_args();
+	let client = build_client(args.ws).await?;
 
-	let head_block = api.rpc().block(None).await.unwrap().unwrap();
+	let head_block = client
+		.rpc()
+		.block(None)
+		.await?
+		.expect("Best block always exists .qed");
 
 	let block_num = head_block.block.header.number;
 	println!("Current head: {block_num}");
@@ -32,9 +39,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 			join_all(
 				e.iter()
 					.map(|n| {
-						api.rpc()
-							.block_hash(Some(BlockNumber::from(*n)))
-							.and_then(|h| api.rpc().header(h))
+						let block_number = Some(BlockNumber::from(*n));
+						client
+							.rpc()
+							.block_hash(block_number)
+							.and_then(|h| client.rpc().header(h))
 					})
 					.collect::<Vec<_>>(),
 			)
@@ -42,6 +51,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 		headers.extend(batch.await);
 	}
 	println!("Headers: {num}", num = headers.len());
+	let header_hashes = headers
+		.iter()
+		.map(|result_maybe_header| {
+			result_maybe_header
+				.as_ref()
+				.map(|maybe_header| maybe_header.as_ref().map(XtHeader::hash))
+				.unwrap_or_default()
+		})
+		.collect::<Vec<_>>();
+	println!("Header hashes: {:?}", header_hashes);
 
 	assert_eq!(
 		headers.len(),
