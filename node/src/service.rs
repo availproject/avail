@@ -529,7 +529,7 @@ pub fn new_full_base(
 	let config = sc_finality_grandpa::Config {
 		// FIXME #1578 make this available through chainspec
 		gossip_duration: std::time::Duration::from_millis(333),
-		justification_period: 1,
+		justification_period: 512,
 		name: Some(name),
 		observer_enabled: false,
 		keystore,
