@@ -9,7 +9,6 @@ members = [
 	"pallets/nomad/da-bridge",
 	"runtime",
 	"node",
-	# "avail-subxt",
 ]
 
 
