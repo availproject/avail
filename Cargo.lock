@@ -77,7 +77,7 @@ version = "0.12.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29d4b3411687df6020ec99478c56acd3c23b1caf0485575918f9c8852fda854d"
 dependencies = [
- "clap 4.0.17",
+ "clap 4.0.18",
  "fs_extra",
  "libc",
  "rustc_version 0.4.0",
@@ -906,9 +906,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.0.17"
+version = "4.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06badb543e734a2d6568e19a40af66ed5364360b9226184926f89d229b4b4267"
+checksum = "335867764ed2de42325fafe6d18b8af74ba97ee0c590fa016f157535b42ab04b"
 dependencies = [
  "atty",
  "bitflags",
@@ -1426,9 +1426,10 @@ dependencies = [
 
 [[package]]
 name = "da-primitives"
-version = "0.2.1"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.1#483efa604978e1313b4e578584f0a5aa0464a9b0"
+version = "0.2.2"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#e2fd5c4dc4a02f5f48f2261db1cd5f8f28ae360d"
 dependencies = [
+ "beefy-merkle-tree",
  "derive_more",
  "frame-support",
  "log",
@@ -1442,6 +1443,7 @@ dependencies = [
  "sp-runtime",
  "sp-runtime-interface",
  "sp-std",
+ "thiserror-no-std",
 ]
 
 [[package]]
@@ -1451,6 +1453,7 @@ dependencies = [
  "da-bridge",
  "da-control",
  "da-primitives",
+ "env_logger",
  "frame-benchmarking",
  "frame-election-provider-support",
  "frame-executive",
@@ -3460,8 +3463,8 @@ dependencies = [
 
 [[package]]
 name = "kate"
-version = "0.3.1"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.1#483efa604978e1313b4e578584f0a5aa0464a9b0"
+version = "0.3.2"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#e2fd5c4dc4a02f5f48f2261db1cd5f8f28ae360d"
 dependencies = [
  "bls12_381",
  "da-primitives",
@@ -3486,15 +3489,15 @@ dependencies = [
 
 [[package]]
 name = "kate-recovery"
-version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.1#483efa604978e1313b4e578584f0a5aa0464a9b0"
+version = "0.1.2"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#e2fd5c4dc4a02f5f48f2261db1cd5f8f28ae360d"
 dependencies = [
  "dusk-bytes",
  "dusk-plonk",
  "getrandom 0.2.7",
  "parity-scale-codec 3.2.1",
  "serde",
- "thiserror",
+ "thiserror-no-std",
 ]
 
 [[package]]
@@ -3521,14 +3524,21 @@ dependencies = [
  "sp-rpc",
  "sp-runtime",
  "sp-std",
+ "thiserror",
 ]
 
 [[package]]
 name = "kate-rpc-runtime-api"
 version = "0.1.0"
 dependencies = [
+ "beefy-merkle-tree",
+ "da-primitives",
  "frame-system",
+ "parity-scale-codec 2.3.1",
+ "serde",
  "sp-api",
+ "sp-arithmetic",
+ "sp-core",
  "sp-std",
 ]
 
@@ -4373,8 +4383,8 @@ checksum = "71d96e3f3c0b6325d8ccd83c33b28acb183edcb6c67938ba104ec546854b0882"
 
 [[package]]
 name = "merkle"
-version = "0.1.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.1#483efa604978e1313b4e578584f0a5aa0464a9b0"
+version = "0.1.1"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#e2fd5c4dc4a02f5f48f2261db1cd5f8f28ae360d"
 dependencies = [
  "frame-support",
  "hex-literal",
@@ -4693,8 +4703,8 @@ dependencies = [
 
 [[package]]
 name = "nomad-base"
-version = "0.1.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.1#483efa604978e1313b4e578584f0a5aa0464a9b0"
+version = "0.1.1"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#e2fd5c4dc4a02f5f48f2261db1cd5f8f28ae360d"
 dependencies = [
  "ethers-signers",
  "frame-support",
@@ -4705,7 +4715,7 @@ dependencies = [
  "primitive-types 0.10.1",
  "scale-info",
  "serde",
- "signature 0.1.0",
+ "signature 0.1.1",
  "sp-core",
  "sp-io",
  "sp-std",
@@ -4714,8 +4724,8 @@ dependencies = [
 
 [[package]]
 name = "nomad-core"
-version = "0.1.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.1#483efa604978e1313b4e578584f0a5aa0464a9b0"
+version = "0.1.1"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#e2fd5c4dc4a02f5f48f2261db1cd5f8f28ae360d"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -4726,7 +4736,7 @@ dependencies = [
  "primitive-types 0.10.1",
  "scale-info",
  "serde",
- "signature 0.1.0",
+ "signature 0.1.1",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -4751,7 +4761,7 @@ dependencies = [
  "primitive-types 0.10.1",
  "scale-info",
  "serde",
- "signature 0.1.0",
+ "signature 0.1.1",
  "sp-arithmetic",
  "sp-core",
  "sp-io",
@@ -7979,8 +7989,8 @@ dependencies = [
 
 [[package]]
 name = "signature"
-version = "0.1.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.1#483efa604978e1313b4e578584f0a5aa0464a9b0"
+version = "0.1.1"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.2.2#e2fd5c4dc4a02f5f48f2261db1cd5f8f28ae360d"
 dependencies = [
  "arrayvec 0.7.2",
  "elliptic-curve",
@@ -9462,7 +9472,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 0.1.10",
+ "cfg-if 1.0.0",
  "rand 0.8.5",
  "static_assertions",
 ]

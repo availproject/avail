@@ -12,11 +12,12 @@ frame-system = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 kate-rpc-runtime-api = { path = "../kate-rpc-runtime-api", default-features = false }
 sc-client-db = { version = "0.10.0-dev", default-features = false }
+thiserror = "1.0.30" 
 rs_merkle = { version = "1.2.0", default-features = false }
 
 codec = { package = "parity-scale-codec", version = "2.0.0" }
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.1", default-features = false }
-kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.1", default-features = false }
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.2", default-features = false }
+kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.2", default-features = false }
 
 frame-system-rpc-runtime-api = "4.0.0-dev"
 jsonrpc-core = "18.0.0"
