@@ -47,6 +47,6 @@ pub struct Opts {
 /// Creates a client and validate the code generation.
 pub async fn build_client<U: AsRef<str>>(url: U) -> Result<OnlineClient<AvailConfig>> {
 	let api = OnlineClient::<AvailConfig>::from_url(url).await?;
-	let _ = api::validate_codegen(&api)?;
+	api::validate_codegen(&api)?;
 	Ok(api)
 }

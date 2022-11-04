@@ -23,4 +23,5 @@
 	--derive_for_type da_primitives::asdr::AppId=derive_more::From \
 	--url http://localhost:9933 \
 	| sed -En "s/pub struct KateCommitment/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
+	| sed '1i \#\[allow(clippy::all)]' \
 	| rustfmt --edition=2021 --emit=stdout > src/api_dev.rs
