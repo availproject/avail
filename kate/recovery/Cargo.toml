@@ -1,6 +1,6 @@
 [package]
 name = "kate-recovery"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
 edition = "2018"
 
@@ -10,7 +10,7 @@ dusk-bytes = "0.1.6"
 dusk-plonk = { git = "https://github.com/maticnetwork/plonk.git", tag = "v0.12.0-polygon-1" }
 getrandom = { version = "0.2", features = ["js"] }
 serde = { version = "1.0", features = ["derive"] }
-thiserror-no-std = "2.0.2"
+thiserror = "1.0.37"
 
 [dev-dependencies]
 rand = "0.8.4"

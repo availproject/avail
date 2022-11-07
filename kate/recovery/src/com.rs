@@ -9,7 +9,7 @@ use codec::Decode;
 use dusk_bytes::Serializable;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
 use serde::{Deserialize, Serialize};
-use thiserror_no_std::Error;
+use thiserror::Error;
 
 // TODO: Constants are copy from kate crate, we should move them to common place
 pub const CHUNK_SIZE: usize = 32;
@@ -518,7 +518,7 @@ pub struct Position {
 
 impl Position {
 	/// Refrence in format `block_number:column_number:row_number`
-	pub fn reference(&self, block_number: u64) -> String {
+	pub fn reference(&self, block_number: u32) -> String {
 		format!("{}:{}:{}", block_number, self.col, self.row)
 	}
 }
@@ -542,7 +542,7 @@ pub struct Cell {
 }
 
 impl Cell {
-	pub fn reference(&self, block: u64) -> String { self.position.reference(block) }
+	pub fn reference(&self, block: u32) -> String { self.position.reference(block) }
 
 	pub fn data(&self) -> [u8; 32] { self.content[48..].try_into().expect("content is 80 bytes") }
 

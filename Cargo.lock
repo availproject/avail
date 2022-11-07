@@ -1687,7 +1687,7 @@ dependencies = [
 
 [[package]]
 name = "kate-recovery"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "dusk-bytes",
  "dusk-plonk",
@@ -1696,7 +1696,7 @@ dependencies = [
  "rand 0.8.5",
  "rand_chacha 0.3.1",
  "serde",
- "thiserror-no-std",
+ "thiserror",
 ]
 
 [[package]]
