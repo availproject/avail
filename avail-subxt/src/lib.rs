@@ -529,3 +529,27 @@ mod test {
 		<AppUncheckedExtrinsic>::decode(&mut encoded_ext.as_slice()).map(|ext| ext.function)
 	}
 }
+
+#[cfg(test)]
+mod test {
+	use codec::{Decode as _, Error};
+	use hex_literal::hex;
+	use test_case::test_case;
+
+	use super::{
+		api::runtime_types::pallet_timestamp::pallet::Call as TimestampCall, AppUncheckedExtrinsic,
+		Call,
+	};
+
+	const TIMESTAMP_1: &[u8] = &hex!("280403000b804aa9518401");
+	fn timestamp_1_call() -> Result<Call, Error> {
+		Ok(Call::Timestamp(TimestampCall::set {
+			now: 1_667_817_360_000,
+		}))
+	}
+
+	#[test_case( TIMESTAMP_1.to_vec() => timestamp_1_call(); "Timestamp 16678173600000" )]
+	fn decode_extrinsic(encoded_ext: Vec<u8>) -> Result<Call, Error> {
+		<AppUncheckedExtrinsic>::decode(&mut encoded_ext.as_slice()).map(|ext| ext.function)
+	}
+}
