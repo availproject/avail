@@ -1,19 +1,20 @@
-use codec::{Compact, Encode};
+use codec::{Compact, Decode, Encode, Error, Input, Output};
+use serde::{Deserialize, Serialize};
 use subxt::{
 	ext::sp_core::H256,
-	tx::{Era, ExtrinsicParams, PlainTip},
+	tx::{Era, ExtrinsicParams},
 };
 
 use crate::api::runtime_types::da_primitives::asdr::AppId;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AvailExtrinsicParams {
 	pub spec_version: u32,
 	pub tx_version: u32,
-	pub nonce: u32,
+	pub nonce: Compact<u32>,
 	pub mortality: Era,
 	pub genesis_hash: H256,
-	pub tip: PlainTip,
+	pub tip: Compact<u128>,
 	pub app_id: AppId,
 }
 
@@ -30,7 +31,7 @@ impl ExtrinsicParams<u32, H256> for AvailExtrinsicParams {
 		Self {
 			spec_version,
 			tx_version,
-			nonce,
+			nonce: nonce.into(),
 			mortality: other_params.mortality,
 			genesis_hash,
 			tip: other_params.tip,
@@ -39,7 +40,7 @@ impl ExtrinsicParams<u32, H256> for AvailExtrinsicParams {
 	}
 
 	fn encode_extra_to(&self, v: &mut Vec<u8>) {
-		(self.mortality, Compact(self.nonce), self.tip, self.app_id).encode_to(v);
+		(self.mortality, self.nonce, self.tip, self.app_id).encode_to(v);
 	}
 
 	fn encode_additional_to(&self, v: &mut Vec<u8>) {
@@ -58,10 +59,10 @@ impl Default for AvailExtrinsicParams {
 		Self {
 			spec_version: Default::default(),
 			tx_version: Default::default(),
-			nonce: Default::default(),
+			nonce: 0u32.into(),
 			mortality: Era::Immortal,
 			genesis_hash: Default::default(),
-			tip: Default::default(),
+			tip: 0u128.into(),
 			app_id: Default::default(),
 		}
 	}
@@ -70,7 +71,7 @@ impl AvailExtrinsicParams {
 	/// Create params with the addition of tip and app_id
 	pub fn new_with_tip_and_app_id(tip: u128, app_id: AppId) -> Self {
 		Self {
-			tip: PlainTip::new(tip),
+			tip: tip.into(),
 			app_id,
 			..Default::default()
 		}
@@ -82,5 +83,26 @@ impl AvailExtrinsicParams {
 			app_id,
 			..Default::default()
 		}
+	}
+}
+
+impl Encode for AvailExtrinsicParams {
+	fn encode_to<T: Output + ?Sized>(&self, dest: &mut T) {
+		// CheckMortality, CheckNonce, ChargeTransationPayment, CheckAppId
+		(self.mortality, self.nonce, self.tip, self.app_id).encode_to(dest);
+	}
+}
+
+impl Decode for AvailExtrinsicParams {
+	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
+		let (mortality, nonce, tip, app_id) =
+			<(Era, Compact<u32>, Compact<u128>, AppId)>::decode(input)?;
+		Ok(Self {
+			mortality,
+			nonce,
+			tip,
+			app_id,
+			..Default::default()
+		})
 	}
 }
