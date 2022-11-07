@@ -1,9 +1,14 @@
 use anyhow::Result;
 use avail_subxt::{
-	api::{self, runtime_types::frame_support::storage::bounded_vec::BoundedVec},
+	api::{
+		self,
+		runtime_types::{
+			da_control::pallet::Call as DaCall, frame_support::storage::bounded_vec::BoundedVec,
+		},
+	},
 	build_client,
 	primitives::AvailExtrinsicParams,
-	Opts,
+	Call, Opts,
 };
 use sp_keyring::AccountKeyring;
 use structopt::StructOpt;
@@ -33,22 +38,19 @@ async fn main() -> Result<()> {
 
 	let submitted_block = client.rpc().block(Some(h.block_hash())).await?.unwrap();
 
-	let xts = submitted_block.block.extrinsics;
-	println!("Submitted block extrinsic: {xts:?}");
-
-	/*
-	let matched_xt = xts.iter().find(move |e| match e {
-		AvailExtrinsic::AvailDataExtrinsic {
-			signature: _,
-			data,
-			address: _,
-			extra_params,
-		} => extra_params.app_id == 1 && data.eq(&example_data),
-		_ => false,
-	});
+	let matched_xt = submitted_block
+		.block
+		.extrinsics
+		.into_iter()
+		.find(|ext| match &ext.function {
+			Call::DataAvailability(da_call) => match da_call {
+				DaCall::submit_data { data } => data.0 == example_data,
+				_ => false,
+			},
+			_ => false,
+		});
 
 	assert!(matched_xt.is_some(), "Submitted data not found");
-	*/
 
 	Ok(())
 }
