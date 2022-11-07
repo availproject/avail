@@ -940,9 +940,37 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	fn test_padding_len(extrinsics: Vec<Vec<u8>>, chunk_size: usize) -> u32 {
 		extrinsics
 			.into_iter()
-			.map(pad_iec_9797_1)
-			.flatten()
+			.flat_map(pad_iec_9797_1)
 			.map(|chunk| pad_to_chunk(chunk, chunk_size).len() as u32)
 			.sum()
+	}
+
+	#[test]
+	#[should_panic]
+	fn par_build_commitments_column_wise_constant_row() {
+		// This test will fail once we switch to row-wise orientation.
+		// We should move `should_panic` to next test, until constant line issue is fixed.
+		// After the fix, should_panic should be removed.
+		let hash = Seed::default();
+		let data = (0..3).flat_map(|i| vec![i; 31]).collect::<Vec<_>>();
+		let xts = (0..4)
+			.map(|app_id| AppExtrinsic {
+				app_id: AppId(app_id),
+				data: data.clone(),
+			})
+			.collect::<Vec<_>>();
+		par_build_commitments(4, 4, 32, &xts, hash).unwrap();
+	}
+
+	#[test]
+	fn par_build_commitments_row_wise_constant_row() {
+		// Due to scale encoding, first line is not constant.
+		// We will use second line to ensure constant row.
+		let hash = Seed::default();
+		let xts = vec![AppExtrinsic {
+			app_id: AppId(0),
+			data: vec![0; 31 * 8],
+		}];
+		par_build_commitments(4, 4, 32, &xts, hash).unwrap();
 	}
 }
