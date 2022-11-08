@@ -155,7 +155,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 /// up by `pallet_babe` to implement `fn slot_duration()`.
 ///
 /// Change this to adjust the block time.
-pub const MILLISECS_PER_BLOCK: u64 = 20000;
+pub const MILLISECS_PER_BLOCK: u64 = 20_000;
 
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
@@ -166,12 +166,7 @@ pub const DAYS: BlockNumber = HOURS * 24;
 
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
 
-pub const EPOCH_DURATION_IN_BLOCKS: BlockNumber = 10 * MINUTES;
-pub const EPOCH_DURATION_IN_SLOTS: u64 = {
-	const SLOT_FILL_RATE: f64 = MILLISECS_PER_BLOCK as f64 / SLOT_DURATION as f64;
-
-	(EPOCH_DURATION_IN_BLOCKS as f64 * SLOT_FILL_RATE) as u64
-};
+pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 1 * HOURS;
 
 /// The BABE epoch configuration at genesis.
 pub const BABE_GENESIS_EPOCH_CONFIG: sp_consensus_babe::BabeEpochConfiguration =
@@ -227,7 +222,7 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
 /// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
 /// This is used to limit the maximal weight of a single extrinsic.
 const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
-/// We allow for 2 seconds of compute with a 6 second average block time.
+/// We allow for 2 seconds of compute with a 20 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
 
 parameter_types! {
@@ -378,10 +373,10 @@ impl pallet_scheduler::Config for Runtime {
 }
 
 parameter_types! {
-	pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS;
+	pub const EpochDuration: BlockNumber = EPOCH_DURATION_IN_SLOTS;
 	pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
-	pub const ReportLongevity: u64 =
-		BondingDuration::get() as u64 * SessionsPerEra::get() as u64 * EpochDuration::get();
+	pub const ReportLongevity: BlockNumber =
+		BondingDuration::get() * SessionsPerEra::get() * EpochDuration::get();
 }
 
 impl pallet_babe::Config for Runtime {
@@ -587,8 +582,8 @@ impl pallet_staking::Config for Runtime {
 
 parameter_types! {
 	// phase durations. 1/4 of the last session for each.
-	pub const SignedPhase: u32 = EPOCH_DURATION_IN_BLOCKS / 4;
-	pub const UnsignedPhase: u32 = EPOCH_DURATION_IN_BLOCKS / 4;
+	pub const SignedPhase: u32 = EPOCH_DURATION_IN_SLOTS / 4;
+	pub const UnsignedPhase: u32 = EPOCH_DURATION_IN_SLOTS / 4;
 
 	// signed config
 	pub const SignedMaxSubmissions: u32 = 10;
@@ -966,10 +961,6 @@ parameter_types! {
 // Make sure that there are no more than `MaxMembers` members elected via elections-phragmen.
 const_assert!(DesiredMembers::get() <= CouncilMaxMembers::get());
 
-parameter_types! {
-	pub const SessionDuration: BlockNumber = EPOCH_DURATION_IN_SLOTS as _;
-}
-
 impl pallet_bounties::Config for Runtime {
 	type BountyCuratorDeposit = BountyCuratorDeposit;
 	type BountyDepositBase = BountyDepositBase;
@@ -1240,7 +1231,7 @@ impl_runtime_apis! {
 			// <https://research.web3.foundation/en/latest/polkadot/BABE/Babe/#6-practical-results>
 			sp_consensus_babe::BabeGenesisConfiguration {
 				slot_duration: Babe::slot_duration(),
-				epoch_length: EpochDuration::get(),
+				epoch_length: EpochDuration::get() as u64,
 				c: BABE_GENESIS_EPOCH_CONFIG.c,
 				genesis_authorities: Babe::authorities().to_vec(),
 				randomness: Babe::randomness(),
