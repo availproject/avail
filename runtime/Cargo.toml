@@ -1,6 +1,6 @@
 [package]
 name = "da-runtime"
-version = "4.0.0"
+version = "6.0.0"
 authors = ["Anonymous"]
 description = "Polygon Data Avilability Runtime"
 edition = "2018"
