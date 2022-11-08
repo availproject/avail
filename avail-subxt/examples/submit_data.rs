@@ -1,47 +1,54 @@
-use avail_subxt::{avail::runtime_types::frame_support::storage::bounded_vec::BoundedVec, *};
+use anyhow::Result;
+use avail_subxt::{
+	api::{
+		self,
+		runtime_types::{
+			da_control::pallet::Call as DaCall, frame_support::storage::bounded_vec::BoundedVec,
+		},
+	},
+	build_client,
+	primitives::AvailExtrinsicParams,
+	Call, Opts,
+};
 use sp_keyring::AccountKeyring;
-use subxt::{tx::PairSigner, OnlineClient};
+use structopt::StructOpt;
+use subxt::tx::PairSigner;
 
 /// This example submits an Avail data extrinsic, then retrieves the block containing the
 /// extrinsic and matches the data.
 #[async_std::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-	let api = OnlineClient::<AvailConfig>::from_url("ws://127.0.0.1:9944").await?;
+async fn main() -> Result<()> {
+	let args = Opts::from_args();
+	let client = build_client(args.ws).await?;
+
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());
 	let example_data = b"example".to_vec();
-	let data_transfer = avail::tx()
+	let data_transfer = api::tx()
 		.data_availability()
 		.submit_data(BoundedVec(example_data.clone()));
-	let extrinsic_params = AvailExtrinsicParams::new_with_app_id(1);
+	let extrinsic_params = AvailExtrinsicParams::new_with_app_id(1.into());
+
 	println!("Sending example data...");
-	let h = api
+	let h = client
 		.tx()
 		.sign_and_submit_then_watch(&data_transfer, &signer, extrinsic_params)
-		.await
-		.unwrap()
+		.await?
 		.wait_for_finalized_success()
-		.await
-		.unwrap();
+		.await?;
 
-	let submitted_block = api
-		.rpc()
-		.block(Some(h.block_hash()))
-		.await
-		.unwrap()
-		.unwrap();
+	let submitted_block = client.rpc().block(Some(h.block_hash())).await?.unwrap();
 
-	let xts = submitted_block.block.extrinsics;
-	println!("Submitted block extrinsic: {xts:?}");
-
-	let matched_xt = xts.iter().find(move |e| match e {
-		AvailExtrinsic::AvailDataExtrinsic {
-			signature: _,
-			data,
-			address: _,
-			extra_params,
-		} => extra_params.app_id == 1 && data.eq(&example_data),
-		_ => false,
-	});
+	let matched_xt = submitted_block
+		.block
+		.extrinsics
+		.into_iter()
+		.find(|ext| match &ext.function {
+			Call::DataAvailability(da_call) => match da_call {
+				DaCall::submit_data { data } => data.0 == example_data,
+				_ => false,
+			},
+			_ => false,
+		});
 
 	assert!(matched_xt.is_some(), "Submitted data not found");
 
