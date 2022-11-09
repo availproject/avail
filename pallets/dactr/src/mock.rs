@@ -64,7 +64,7 @@ impl frame_system::Config for Test {
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header<Self::BlockNumber, BlakeTwo256>;
-	type HeaderBuilder = frame_system::header_builder::da::HeaderBuilder<Test>;
+	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type OnKilledAccount = ();
@@ -74,6 +74,7 @@ impl frame_system::Config for Test {
 	type PalletInfo = PalletInfo;
 	type Randomness = frame_system::tests::TestRandomness<Test>;
 	type SS58Prefix = ();
+	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
 	type Version = ();
 }
@@ -141,9 +142,18 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 	da_control::GenesisConfig::<Test> {
 		app_keys: vec![
-			(b"Data Avail".to_vec(), AppKeyInfo { owner: 1, id: 0 }),
-			(b"Ethereum".to_vec(), AppKeyInfo { owner: 2, id: 1 }),
-			(b"Polygon".to_vec(), AppKeyInfo { owner: 2, id: 2 }),
+			(b"Data Avail".to_vec(), AppKeyInfo {
+				owner: 1,
+				id: 0.into(),
+			}),
+			(b"Ethereum".to_vec(), AppKeyInfo {
+				owner: 2,
+				id: 1.into(),
+			}),
+			(b"Polygon".to_vec(), AppKeyInfo {
+				owner: 2,
+				id: 2.into(),
+			}),
 		],
 	}
 	.assimilate_storage(&mut storage)

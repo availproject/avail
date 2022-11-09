@@ -1,0 +1,63 @@
+[package]
+name = "nomad-home"
+version = "4.0.0-dev"
+description = "FRAME pallet template for defining custom runtime logic."
+authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
+homepage = "https://substrate.io/"
+edition = "2021"
+license = "Unlicense"
+publish = false
+repository = "https://github.com/substrate-developer-hub/substrate-node-template/"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+# Our crates
+signature = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.2", default-features = false }
+merkle = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.2", default-features = false }
+nomad-base = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.2", default-features = false }
+nomad-core = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.2", default-features = false }
+updater-manager = { path = "../updater-manager", default-features = false }
+
+# 3rd-party
+serde = { version = "1.0.126", optional = true, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+sp-core = { version = "4.0.0-dev", default-features = false }
+sp-std = { version = "4.0.0-dev", default-features = false }
+sp-io = { version = "4.0.0-dev", default-features = false }
+sp-runtime = { version = "4.0.0-dev", default-features = false }
+sp-arithmetic = { version = "4.0.0-dev", default-features = false }
+frame-support = { version = "4.0.0-dev", default-features = false }
+frame-system = { version = "4.0.0-dev", default-features = false }
+frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
+primitive-types = { git = "https://github.com/paritytech/parity-common.git", tag = "parity-util-mem-v0.10.1", default-features = false }
+thiserror-no-std = "2.0.2"
+hex-literal = "0.3.4"
+
+
+[dev-dependencies]
+ethers-signers = "0.13.0"
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.2" }
+test-case = "1.2.3"
+frame-benchmarking = "4.0.0-dev"
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"scale-info/std",
+	"frame-support/std",
+	"frame-system/std",
+	"nomad-core/std",
+	"nomad-base/std",
+	"updater-manager/std"
+]
+
+runtime-benchmarks = [
+	"frame-benchmarking",
+	"sp-runtime/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+]
+try-runtime = ["frame-support/try-runtime"]

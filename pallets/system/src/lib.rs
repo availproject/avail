@@ -64,7 +64,11 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 use codec::{Decode, Encode, EncodeLike, FullCodec};
-use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, BLOCK_CHUNK_SIZE};
+use da_primitives::{
+	asdr::{AppExtrinsic, AppId},
+	traits::ExtendedHeader,
+	BLOCK_CHUNK_SIZE,
+};
 #[cfg(feature = "std")]
 use frame_support::traits::GenesisBuild;
 use frame_support::{
@@ -101,15 +105,15 @@ use sp_std::map;
 use sp_std::{fmt::Debug, marker::PhantomData, prelude::*};
 use sp_version::RuntimeVersion;
 
+mod extensions;
+pub mod header_builder;
+pub mod submitted_data;
+use header_builder::HeaderExtensionBuilder;
 pub mod limits;
+pub mod migrations;
 #[cfg(test)]
 pub(crate) mod mock;
 pub mod offchain;
-
-mod extensions;
-pub mod header_builder;
-pub mod migrations;
-use header_builder::HeaderBuilder;
 
 #[cfg(feature = "std")]
 pub mod mocking;
@@ -124,6 +128,14 @@ pub use extensions::{
 pub use weights::WeightInfo;
 
 pub const LOG_TARGET: &str = "runtime::system";
+
+/// Compute the trie root of a list of extrinsics.
+pub fn extrinsics_root<H: Hash, E: codec::Encode>(extrinsics: &[E]) -> H::Output {
+	extrinsics_data_root::<H>(extrinsics.iter().map(codec::Encode::encode).collect())
+}
+
+/// Compute the trie root of a list of extrinsics.
+pub fn extrinsics_data_root<H: Hash>(xts: Vec<Vec<u8>>) -> H::Output { H::ordered_trie_root(xts) }
 
 /// An object to track the currently used extrinsic weight in a block.
 pub type ConsumedWeight = PerDispatchClass<Weight>;
@@ -214,6 +226,7 @@ pub mod pallet {
 			+ sp_std::str::FromStr
 			+ MaybeMallocSizeOf
 			+ MaxEncodedLen
+			+ Into<u32>
 			+ TypeInfo;
 
 		/// The output of the `Hashing` function.
@@ -261,7 +274,7 @@ pub mod pallet {
 			+ ExtendedHeader<Number = Self::BlockNumber, Hash = Self::Hash>;
 
 		/// Header builder
-		type HeaderBuilder: header_builder::HeaderBuilder<Header = Self::Header>;
+		type HeaderExtensionBuilder: header_builder::HeaderExtensionBuilder;
 
 		/// Source of random seeds.
 		type Randomness: frame_support::traits::Randomness<Self::Hash, Self::BlockNumber>;
@@ -323,6 +336,9 @@ pub mod pallet {
 		/// It's unlikely that this needs to be customized, unless you are writing a parachain using
 		/// `Cumulus`, where the actual code change is deferred.
 		type OnSetCode: SetCode<Self>;
+
+		/// Filter used by `DataRootBuilder`.
+		type SubmittedDataExtractor: submitted_data::Extractor + submitted_data::Filter<Self::Call>;
 	}
 
 	#[pallet::pallet]
@@ -1326,7 +1342,16 @@ impl<T: Config> Pallet<T> {
 		// stay to be inspected by the client and will be cleared by `Self::initialize`.
 		let number = <Number<T>>::get();
 		let parent_hash = <ParentHash<T>>::get();
-		let digest = <Digest<T>>::get().into();
+		let digest = <Digest<T>>::get();
+
+		let app_extrinsics = Self::take_app_extrinsics();
+
+		// @TODO Miguel: Is it possible to avoid copies here?
+		let extrinsics = app_extrinsics
+			.iter()
+			.map(|e| e.data.clone())
+			.collect::<Vec<_>>();
+		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
 
 		// move block hash pruning window by one block
 		let block_hash_count = T::BlockHashCount::get();
@@ -1339,10 +1364,42 @@ impl<T: Config> Pallet<T> {
 			<BlockHash<T>>::remove(to_remove);
 		}
 
-		let app_extrinsics = Self::get_app_extrinsics();
-		let block_length = Self::block_length();
+		let storage_root = T::Hash::decode(&mut &sp_io::storage::root()[..])
+			.expect("Node is configured to use the same hash; qed");
 
-		T::HeaderBuilder::build(app_extrinsics, parent_hash, digest, block_length, number)
+		/*
+		// we can't compute changes trie root earlier && put it to the Digest
+		// because it will include all currently existing temporaries.
+		if let Some(storage_changes_root) = changes_root(&parent_hash.encode()) {
+			let hash_changes_root = T::Hash::decode(&mut &storage_changes_root[..])
+				.expect("Node is configured to use the same hash; qed");
+			let item = DigestItem::Other(hash_changes_root.as_ref().to_vec());
+			digest.push(item);
+		}*/
+
+		let block_length = Self::block_length();
+		let data_root = submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(
+			app_extrinsics.iter().cloned(),
+		);
+
+		let extension = header_builder::da::HeaderExtensionBuilder::<T>::build(
+			app_extrinsics,
+			data_root,
+			block_length,
+			number.into(),
+		);
+
+		let header = <T::Header as ExtendedHeader>::new(
+			number,
+			extrinsics_root,
+			storage_root,
+			parent_hash,
+			digest,
+			extension,
+		);
+
+		log::trace!(target: LOG_TARGET, "Header {:?}", header);
+		header
 	}
 
 	/// Deposits a log and ensures it matches the block's log data.
@@ -1447,7 +1504,7 @@ impl<T: Config> Pallet<T> {
 	///
 	/// This is required to be called before applying an extrinsic. The data will used
 	/// in [`Self::finalize`] to calculate the correct extrinsics root.
-	pub fn note_extrinsic(app_id: u32, encoded_xt: Vec<u8>) {
+	pub fn note_extrinsic(app_id: AppId, encoded_xt: Vec<u8>) {
 		let idx = Self::extrinsic_index().unwrap_or_default();
 		ExtrinsicData::<T>::insert(idx, AppExtrinsic {
 			app_id,
@@ -1524,12 +1581,16 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Returns the extrinsics.
-	pub fn get_app_extrinsics() -> Vec<AppExtrinsic> {
-		let extrinsics = (0..ExtrinsicCount::<T>::take().unwrap_or_default())
+	/// Takes all extrinsics from the storage.
+	pub fn take_app_extrinsics() -> Vec<AppExtrinsic> {
+		(0..Self::extrinsic_count())
 			.map(ExtrinsicData::<T>::take)
-			.collect::<Vec<_>>();
-		extrinsics
+			.collect::<Vec<_>>()
+	}
+
+	/// Iterator over all extrinsics.
+	pub fn app_extrinsics() -> impl Iterator<Item = AppExtrinsic> {
+		(0..Self::extrinsic_count()).map(ExtrinsicData::<T>::get)
 	}
 
 	/// Creates a `ExtrinsicLen` based on `len` as raw length.

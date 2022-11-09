@@ -54,7 +54,7 @@ impl frame_system::Config for Test {
 	type Hash = sp_core::H256;
 	type Hashing = ::sp_runtime::traits::BlakeTwo256;
 	type Header = Header<BlockNumber, BlakeTwo256>;
-	type HeaderBuilder = frame_system::header_builder::da::HeaderBuilder<Test>;
+	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
 	type Index = AccountIndex;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type OnKilledAccount = ();
@@ -64,6 +64,7 @@ impl frame_system::Config for Test {
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Test>;
 	type SS58Prefix = ();
+	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
 	type Version = ();
 }

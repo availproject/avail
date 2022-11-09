@@ -54,7 +54,7 @@ where
 			_ => {
 				// Any other call must use `AppId == 0`.
 				ensure!(
-					self.app_id() == 0,
+					self.app_id().0 == 0,
 					InvalidTransaction::Custom(InvalidTransactionCustomId::ForbiddenAppId as u8)
 				);
 			},
@@ -105,7 +105,7 @@ where
 	}
 }
 
-impl<T> GetAppId<AppId> for CheckAppId<T>
+impl<T> GetAppId for CheckAppId<T>
 where
 	T: Config + Send + Sync,
 {
@@ -144,7 +144,7 @@ mod tests {
 	#[test_case(0, remark_call() => Ok(ValidTransaction::default()); "System::remark can be called if AppId == 0" )]
 	#[test_case(1, remark_call() => to_invalid_tx(ForbiddenAppId); "System::remark cannot be called if AppId != 0" )]
 	#[test_case(1, submit_data_call() => Ok(ValidTransaction::default()); "submit_data can be called with any valid AppId" )]
-	fn do_validate_test(app_id: AppId, call: Call) -> TransactionValidity {
-		new_test_ext().execute_with(|| CheckAppId::<Test>::from(app_id).do_validate(&call))
+	fn do_validate_test<A: Into<AppId>>(app_id: A, call: Call) -> TransactionValidity {
+		new_test_ext().execute_with(|| CheckAppId::<Test>::from(app_id.into()).do_validate(&call))
 	}
 }
