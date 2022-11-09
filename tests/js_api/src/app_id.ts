@@ -24,8 +24,6 @@ interface SignatureOptionsNew extends SignatureOptions {
     app_id: number
 }
 
-
-
 //async funtion to get the nonce    
 async function getNonce(api: ApiPromise, address: string): Promise<number> {
     const nonce = (await api.rpc.system.accountNextIndex(address)).toNumber();
@@ -62,18 +60,12 @@ async function createKey(api: ApiPromise, sender: KeyringPair, nonce: number, id
     }
 }
 
-
-
 //function to retreive data
-
-
-
 let block = async (hash: H256, api: ApiPromise) => {
     const block = await api.rpc.chain.getBlock(hash);
     const block_num = await block.block.header.number;
     console.log(`💡Tx included in Block Number: ${block_num} with hash ${hash}\n`);
 }
-
 
 async function main() {
     const argv = await cli_arguments();
