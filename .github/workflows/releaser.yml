@@ -17,13 +17,15 @@ jobs:
            run: |
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             source "$HOME/.cargo/env"
+            rustup toolchain install nightly
+            rustup default nightly
             cargo build --release -p data-avail
             mv target/release/data-avail target/release/data-avail-linux-amd64
          - uses: actions/upload-artifact@v2
            with:
              name: data-avail-linux-amd64-binary
              path: target/release/data-avail-linux-amd64
-             
+
   binary_linux_amd64_tar:
     runs-on: ubuntu-latest
     steps:
@@ -33,6 +35,8 @@ jobs:
            run: |
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             source "$HOME/.cargo/env"
+            rustup toolchain install nightly
+            rustup default nightly
             cargo build --release -p data-avail
             mv target/release/data-avail target/release/data-avail-linux-amd64
             pushd target/release/
@@ -52,6 +56,8 @@ jobs:
            run: |
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             source "$HOME/.cargo/env"
+            rustup toolchain install nightly
+            rustup default nightly
 
             rustup target add aarch64-unknown-linux-gnu
             sudo apt-get update && sudo apt-get install -y musl-tools clang gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev libc6-dev-arm64-cross
