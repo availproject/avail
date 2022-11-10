@@ -51,9 +51,9 @@ sp-transaction-pool = { version = "4.0.0-dev" }
 sp-inherents = { version = "4.0.0-dev" }
 sc-transaction-pool-api = { version = "4.0.0-dev" }
 sp-transaction-storage-proof = "4.0.0-dev" 
-sc-consensus-aura = { version = "0.10.0-dev" }
+# sc-consensus-aura = { version = "0.10.0-dev" }
 sc-consensus-babe-rpc = { version = "0.10.0-dev" }
-sp-consensus-aura = { version = "0.10.0-dev" }
+# sp-consensus-aura = { version = "0.10.0-dev" }
 sp-consensus-babe = { version = "0.10.0-dev" }
 sp-consensus = { version = "0.10.0-dev" }
 sc-consensus = { version = "0.10.0-dev" }
@@ -74,7 +74,7 @@ frame-system = "4.0.0-dev"
 sp-authority-discovery = "4.0.0-dev"
 sc-authority-discovery = "0.10.0-dev"
 sc-chain-spec = { version = "4.0.0-dev" }
-pallet-asset-tx-payment = "4.0.0-dev"
+# pallet-asset-tx-payment = "4.0.0-dev"
 pallet-transaction-payment = "4.0.0-dev"
 frame-system-rpc-runtime-api = "4.0.0-dev"
 frame-support = "4.0.0-dev"
