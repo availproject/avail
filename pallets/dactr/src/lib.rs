@@ -156,7 +156,7 @@ pub mod pallet {
 			let _id = Self::next_block_len_proposal_id()?;
 			let block_length =
 				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO);
-			DynamicBlockLength::<T>::put(&block_length);
+			DynamicBlockLength::<T>::put(block_length);
 
 			Self::deposit_event(Event::BlockLengthProposalSubmitted { rows, cols });
 

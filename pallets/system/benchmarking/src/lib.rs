@@ -34,13 +34,13 @@ pub trait Config: frame_system::Config {}
 
 benchmarks! {
 	remark {
-		let b in 0 .. *T::BlockLength::get().max.get(DispatchClass::Normal) as u32;
+		let b in 0 .. *T::BlockLength::get().max.get(DispatchClass::Normal);
 		let remark_message = vec![1; b as usize];
 		let caller = whitelisted_caller();
 	}: _(RawOrigin::Signed(caller), remark_message)
 
 	remark_with_event {
-		let b in 0 .. *T::BlockLength::get().max.get(DispatchClass::Normal) as u32;
+		let b in 0 .. *T::BlockLength::get().max.get(DispatchClass::Normal);
 		let remark_message = vec![1; b as usize];
 		let caller = whitelisted_caller();
 	}: _(RawOrigin::Signed(caller), remark_message)

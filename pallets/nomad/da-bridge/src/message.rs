@@ -52,7 +52,7 @@ impl TypedMessageVariant for DataRootMessage {
 
 		let mut buf: Vec<u8> = Vec::with_capacity(self.len());
 
-		buf.push(Self::MESSAGE_TYPE as u8);
+		buf.push(Self::MESSAGE_TYPE);
 		buf.extend_from_slice(block_number_bytes.as_ref());
 		buf.extend_from_slice(data_root_bytes);
 

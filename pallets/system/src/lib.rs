@@ -1257,7 +1257,7 @@ impl<T: Config> Pallet<T> {
 		Events::<T>::append(&event);
 
 		for topic in topics {
-			<EventTopics<T>>::append(topic, &(block_number, event_idx));
+			<EventTopics<T>>::append(topic, (block_number, event_idx));
 		}
 	}
 
