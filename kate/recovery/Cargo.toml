@@ -1,6 +1,6 @@
 [package]
 name = "kate-recovery"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
 edition = "2018"
 
@@ -15,6 +15,7 @@ thiserror = "1.0.37"
 [dev-dependencies]
 rand = "0.8.4"
 rand_chacha = "0.3"
+test-case = "1.2.3"
 
 [features]
 default = ["std"]

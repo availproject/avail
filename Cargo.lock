@@ -1643,7 +1643,7 @@ dependencies = [
 
 [[package]]
 name = "kate"
-version = "0.3.2"
+version = "0.4.0"
 dependencies = [
  "bls12_381",
  "criterion",
@@ -1687,7 +1687,7 @@ dependencies = [
 
 [[package]]
 name = "kate-recovery"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "dusk-bytes",
  "dusk-plonk",
@@ -1696,6 +1696,7 @@ dependencies = [
  "rand 0.8.5",
  "rand_chacha 0.3.1",
  "serde",
+ "test-case",
  "thiserror",
 ]
 
