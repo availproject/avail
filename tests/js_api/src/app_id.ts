@@ -4,6 +4,7 @@ import type { EventRecord, ExtrinsicStatus, H256 } from '@polkadot/types/interfa
 import type { ISubmittableResult, SignatureOptions } from '@polkadot/types/types';
 import yargs from 'yargs/yargs';
 import config from './config';
+import { createApi } from './api';
 
 const keyring = new Keyring({ type: 'sr25519' });
 
@@ -15,55 +16,13 @@ async function cli_arguments() {
             type: 'string',
             default: '1'
         }
-        
+
     }).argv;
-}
-
-async function createApi(): Promise<ApiPromise> {
-    const provider = new WsProvider(config.ApiURL);
-
-    // Create the API and wait until ready
-    return ApiPromise.create({
-        provider,
-        types: {
-            DataLookup: {
-                size: 'u32',
-                index: 'Vec<(u32,u32)>'
-            },
-            KateExtrinsicRoot: {
-                hash: 'Hash',
-                commitment: 'Vec<u8>',
-                rows: 'u16',
-                cols: 'u16',
-                dataRoot: 'H256',
-            },
-            KateHeader: {
-                parentHash: 'Hash',
-                number: 'Compact<BlockNumber>',
-                stateRoot: 'Hash',
-                extrinsicsRoot: 'KateExtrinsicRoot',
-                digest: 'Digest',
-                appDataLookup: 'DataLookup'
-            },
-            Header: 'KateHeader',
-            AppId: 'u32',
-        },
-        signedExtensions: {
-            CheckAppId: {
-                extrinsic: {
-                    appId: 'u32'
-                },
-                payload: {}
-            },
-        },
-    });
 }
 
 interface SignatureOptionsNew extends SignatureOptions {
     app_id: number
 }
-
-
 
 //async funtion to get the nonce    
 async function getNonce(api: ApiPromise, address: string): Promise<number> {
@@ -73,7 +32,7 @@ async function getNonce(api: ApiPromise, address: string): Promise<number> {
 
 
 
-async function createKey(api: ApiPromise, sender: KeyringPair, nonce: number, id:string): Promise<any> {
+async function createKey(api: ApiPromise, sender: KeyringPair, nonce: number, id: string): Promise<any> {
     try {
         /* @note here app_id is 1,
         but if you want to have one your own then create one first before initialising here */
@@ -101,18 +60,12 @@ async function createKey(api: ApiPromise, sender: KeyringPair, nonce: number, id
     }
 }
 
-
-
 //function to retreive data
-
-
-
 let block = async (hash: H256, api: ApiPromise) => {
     const block = await api.rpc.chain.getBlock(hash);
     const block_num = await block.block.header.number;
     console.log(`💡Tx included in Block Number: ${block_num} with hash ${hash}\n`);
 }
-
 
 async function main() {
     const argv = await cli_arguments();

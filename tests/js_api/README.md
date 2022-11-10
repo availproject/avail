@@ -43,7 +43,7 @@ Do Keep in mind that the receiver address should be specified when you are using
 
 - Creation of app_id
     ```
-    ts-node app_id.ts -i 10
+    ts-node app_id.ts -i "10"
     ```
     Here `i` is the app_id that we would like to create(default is 1). App Id needs to be created before mentioning it in config file. But the app_id which is mentioned in the config is the index of the app_id which is stored. You can check the app_id by checking in the explorer.
     

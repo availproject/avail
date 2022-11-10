@@ -3,9 +3,9 @@ use da_primitives::currency::AVL;
 use da_runtime::{
 	wasm_binary_unwrap, AccountId, AuthorityDiscoveryConfig, BabeConfig, Balance, BalancesConfig,
 	Block, CouncilConfig, DataAvailabilityConfig, DemocracyConfig, DesiredMembers, ElectionsConfig,
-	GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig, SessionConfig, SessionKeys,
-	Signature, StakerStatus, StakingConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
-	MAX_NOMINATIONS,
+	GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig, NomadHomeConfig, SessionConfig,
+	SessionKeys, Signature, StakerStatus, StakingConfig, SudoConfig, SystemConfig,
+	TechnicalCommitteeConfig, UpdaterManagerConfig, MAX_NOMINATIONS,
 };
 use frame_system::limits::BlockLength;
 use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
@@ -308,18 +308,33 @@ pub fn testnet_genesis(
 			app_keys: vec![
 				(b"Data Avail".to_vec(), AppKeyInfo {
 					owner: root_key.clone(),
-					id: 0,
+					id: 0.into(),
 				}),
 				(b"Ethereum".to_vec(), AppKeyInfo {
 					owner: root_key.clone(),
-					id: 1,
+					id: 1.into(),
 				}),
 				(b"Polygon".to_vec(), AppKeyInfo {
 					owner: root_key,
-					id: 2,
+					id: 2.into(),
 				}),
 			],
 		},
+		updater_manager: UpdaterManagerConfig {
+			updater: "0x1563915e194d8cfba1943570603f7606a3115508"
+				.parse()
+				.unwrap(),
+			_phantom: Default::default(),
+		},
+		nomad_home: NomadHomeConfig {
+			local_domain: 2000,
+			committed_root: Default::default(),
+			updater: "0x1563915e194d8cfba1943570603f7606a3115508"
+				.parse()
+				.unwrap(),
+			_phantom: Default::default(),
+		},
+		da_bridge: Default::default(),
 	}
 }
 
@@ -462,18 +477,21 @@ fn genesis_builder(
 			app_keys: vec![
 				(b"Data Avail".to_vec(), AppKeyInfo {
 					owner: sudo_key.clone(),
-					id: 0,
+					id: 0.into(),
 				}),
 				(b"Ethereum".to_vec(), AppKeyInfo {
 					owner: sudo_key.clone(),
-					id: 1,
+					id: 1.into(),
 				}),
 				(b"Polygon".to_vec(), AppKeyInfo {
 					owner: sudo_key,
-					id: 2,
+					id: 2.into(),
 				}),
 			],
 		},
+		updater_manager: Default::default(),
+		nomad_home: Default::default(),
+		da_bridge: Default::default(),
 	}
 }
 

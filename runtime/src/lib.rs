@@ -17,15 +17,15 @@ pub use frame_support::{
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights as SystemBlockWeights},
-	CheckEra, CheckGenesis, CheckNonce, CheckSpecVersion, CheckTxVersion, CheckWeight, EnsureOneOf,
-	EnsureRoot,
+	submitted_data, CheckEra, CheckGenesis, CheckNonce, CheckSpecVersion, CheckTxVersion,
+	CheckWeight, EnsureOneOf, EnsureRoot,
 };
 use pallet_session::historical as pallet_session_historical;
 use sp_api::impl_runtime_apis;
 use sp_core::{
 	crypto::KeyTypeId,
 	u32_trait::{_1, _2, _3, _4, _5},
-	OpaqueMetadata,
+	OpaqueMetadata, H256,
 };
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
@@ -41,6 +41,9 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 
+#[cfg(test)]
+mod data_root_tests;
+
 #[cfg(feature = "std")]
 pub fn wasm_binary_unwrap() -> &'static [u8] {
 	WASM_BINARY.expect(
@@ -52,10 +55,10 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 use currency::*;
 /// Import the DA pallet.
 pub use da_primitives::{
-	asdr::{AppId, AppUncheckedExtrinsic, GetAppId},
+	asdr::{AppExtrinsic, AppId, AppUncheckedExtrinsic, GetAppId},
 	currency::{Balance, AVL, CENTS, MILLICENTS},
 	well_known_keys::KATE_PUBLIC_PARAMS,
-	Header as DaHeader, NORMAL_DISPATCH_RATIO,
+	DataProof, Header as DaHeader, NORMAL_DISPATCH_RATIO,
 };
 pub use pallet_balances::Call as BalancesCall;
 use pallet_grandpa::{
@@ -140,7 +143,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	// and set impl_version to 0. If only runtime
 	// implementation changes and behavior does not, then leave spec_version as
 	// is and increment impl_version.
-	spec_version: 5,
+	spec_version: 6,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -152,7 +155,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 /// up by `pallet_babe` to implement `fn slot_duration()`.
 ///
 /// Change this to adjust the block time.
-pub const MILLISECS_PER_BLOCK: u64 = 20000;
+pub const MILLISECS_PER_BLOCK: u64 = 20_000;
 
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
@@ -163,12 +166,7 @@ pub const DAYS: BlockNumber = HOURS * 24;
 
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
 
-pub const EPOCH_DURATION_IN_BLOCKS: BlockNumber = 10 * MINUTES;
-pub const EPOCH_DURATION_IN_SLOTS: u64 = {
-	const SLOT_FILL_RATE: f64 = MILLISECS_PER_BLOCK as f64 / SLOT_DURATION as f64;
-
-	(EPOCH_DURATION_IN_BLOCKS as f64 * SLOT_FILL_RATE) as u64
-};
+pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 1 * HOURS;
 
 /// The BABE epoch configuration at genesis.
 pub const BABE_GENESIS_EPOCH_CONFIG: sp_consensus_babe::BabeEpochConfiguration =
@@ -224,7 +222,7 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
 /// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
 /// This is used to limit the maximal weight of a single extrinsic.
 const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
-/// We allow for 2 seconds of compute with a 6 second average block time.
+/// We allow for 2 seconds of compute with a 20 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
 
 parameter_types! {
@@ -257,8 +255,42 @@ parameter_types! {
 	pub const SS58Prefix: u16 = 42;
 }
 
-// Configure FRAME pallets to include in runtime.
+/// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.
+///
+/// # TODO
+/// - Support utility pallet containing severals `DataAvailability::submit_data` calls.
+impl submitted_data::Filter<Call> for Runtime {
+	fn filter(call: Call, metrics: submitted_data::RcMetrics) -> Option<Vec<u8>> {
+		metrics.borrow_mut().total_extrinsics += 1;
 
+		match call {
+			Call::DataAvailability(method) => match method {
+				da_control::Call::submit_data { data } => {
+					let mut metrics = metrics.borrow_mut();
+					metrics.data_submit_leaves += 1;
+					metrics.data_submit_extrinsics += 1;
+					Some(data.into_inner())
+				},
+				_ => None,
+			},
+			Call::Utility(_) => {
+				// TODO Support utility here.
+				None
+			},
+			_ => None,
+		}
+	}
+}
+
+/// Decodes and extracts the `data` of `DataAvailability::submit_data` extrinsics.
+impl submitted_data::Extractor for Runtime {
+	fn extract(app_ext: AppExtrinsic, metrics: submitted_data::RcMetrics) -> Option<Vec<u8>> {
+		let extrinsic = UncheckedExtrinsic::decode(&mut app_ext.data.as_slice()).ok()?;
+		<Runtime as submitted_data::Filter<Call>>::filter(extrinsic.function, metrics)
+	}
+}
+
+// Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
 	/// The data to be stored in an account.
 	type AccountData = pallet_balances::AccountData<Balance>;
@@ -287,7 +319,7 @@ impl frame_system::Config for Runtime {
 	/// The header type.
 	type Header = DaHeader<BlockNumber, BlakeTwo256>;
 	/// The header builder type.
-	type HeaderBuilder = frame_system::header_builder::da::HeaderBuilder<Runtime>;
+	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Runtime>;
 	/// The index type for storing how many extrinsics an account has signed.
 	type Index = Index;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
@@ -308,6 +340,8 @@ impl frame_system::Config for Runtime {
 	type Randomness = pallet_babe::RandomnessFromOneEpochAgo<Runtime>;
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = SS58Prefix;
+	/// Data Root
+	type SubmittedDataExtractor = Runtime;
 	/// Weight information for the extrinsics of this pallet.
 	type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
 	/// Version of the runtime.
@@ -339,10 +373,10 @@ impl pallet_scheduler::Config for Runtime {
 }
 
 parameter_types! {
-	pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS;
+	pub const EpochDuration: BlockNumber = EPOCH_DURATION_IN_SLOTS;
 	pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
-	pub const ReportLongevity: u64 =
-		BondingDuration::get() as u64 * SessionsPerEra::get() as u64 * EpochDuration::get();
+	pub const ReportLongevity: BlockNumber =
+		BondingDuration::get() * SessionsPerEra::get() * EpochDuration::get();
 }
 
 impl pallet_babe::Config for Runtime {
@@ -548,8 +582,8 @@ impl pallet_staking::Config for Runtime {
 
 parameter_types! {
 	// phase durations. 1/4 of the last session for each.
-	pub const SignedPhase: u32 = EPOCH_DURATION_IN_BLOCKS / 4;
-	pub const UnsignedPhase: u32 = EPOCH_DURATION_IN_BLOCKS / 4;
+	pub const SignedPhase: u32 = EPOCH_DURATION_IN_SLOTS / 4;
+	pub const UnsignedPhase: u32 = EPOCH_DURATION_IN_SLOTS / 4;
 
 	// signed config
 	pub const SignedMaxSubmissions: u32 = 10;
@@ -927,10 +961,6 @@ parameter_types! {
 // Make sure that there are no more than `MaxMembers` members elected via elections-phragmen.
 const_assert!(DesiredMembers::get() <= CouncilMaxMembers::get());
 
-parameter_types! {
-	pub const SessionDuration: BlockNumber = EPOCH_DURATION_IN_SLOTS as _;
-}
-
 impl pallet_bounties::Config for Runtime {
 	type BountyCuratorDeposit = BountyCuratorDeposit;
 	type BountyDepositBase = BountyDepositBase;
@@ -975,6 +1005,30 @@ impl da_control::Config for Runtime {
 	type WeightInfo = da_control::weights::SubstrateWeight<Runtime>;
 }
 
+impl updater_manager::Config for Runtime {
+	type Event = Event;
+}
+
+parameter_types! {
+	pub const MaxMessageBodyBytes: u32 = 2048;
+}
+
+impl nomad_home::Config for Runtime {
+	type Event = Event;
+	type MaxMessageBodyBytes = MaxMessageBodyBytes;
+	type WeightInfo = nomad_home::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const DABridgePalletId: H256 = H256::repeat_byte(1);
+}
+
+impl da_bridge::Config for Runtime {
+	type DABridgePalletId = DABridgePalletId;
+	type Event = Event;
+	type WeightInfo = da_bridge::weights::SubstrateWeight<Runtime>;
+}
+
 // TODO @miguel Aline this with previous order and ID to keep the compatibility.
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -1009,14 +1063,19 @@ construct_runtime!(
 		Offences: pallet_offences = 22,
 		Historical: pallet_session_historical = 23,
 
-		Scheduler: pallet_scheduler,
-		Bounties: pallet_bounties,
-		Tips: pallet_tips,
-		Mmr: pallet_mmr,
-		BagsList: pallet_bags_list,
+		Scheduler: pallet_scheduler = 24,
+		Bounties: pallet_bounties = 25,
+		Tips: pallet_tips = 26,
+		Mmr: pallet_mmr = 27,
+		BagsList: pallet_bags_list = 28,
 
 		// DA module
-		DataAvailability: da_control,
+		DataAvailability: da_control = 29,
+
+		// Nomad
+		UpdaterManager: updater_manager = 30,
+		NomadHome: nomad_home = 31,
+		DABridge: da_bridge = 32,
 	}
 );
 
@@ -1172,7 +1231,7 @@ impl_runtime_apis! {
 			// <https://research.web3.foundation/en/latest/polkadot/BABE/Babe/#6-practical-results>
 			sp_consensus_babe::BabeGenesisConfiguration {
 				slot_duration: Babe::slot_duration(),
-				epoch_length: EpochDuration::get(),
+				epoch_length: EpochDuration::get() as u64,
 				c: BABE_GENESIS_EPOCH_CONFIG.c,
 				genesis_authorities: Babe::authorities().to_vec(),
 				randomness: Babe::randomness(),
@@ -1290,7 +1349,6 @@ impl_runtime_apis! {
 
 			seed.into()
 		}
-
 	}
 
 	impl sp_session::SessionKeys<Block> for Runtime {
@@ -1325,6 +1383,8 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, frame_benchmarking, BaselineBench::<Runtime>);
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 			list_benchmark!(list, extra, da_control, DataAvailability);
+			list_benchmark!(list, extra, nomad_home, NomadHome);
+			list_benchmark!(list, extra, da_bridge, DABridge);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1368,6 +1428,8 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_benchmarking, BaselineBench::<Runtime>);
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, da_control, DataAvailability);
+			add_benchmark!(params, batches, nomad_home, NomadHome);
+			add_benchmark!(params, batches, da_bridge, DABridge);
 
 			Ok(batches)
 		}

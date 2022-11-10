@@ -25,7 +25,7 @@
 //! `DispatchClass`. This module contains configuration object for both resources,
 //! which should be passed to `frame_system` configuration when runtime is being set up.
 
-use codec::{Decode, Encode, Error, Input};
+use codec::{Compact, Decode, Encode, Error, Input};
 use da_primitives::BLOCK_CHUNK_SIZE;
 use frame_support::{
 	ensure,
@@ -49,8 +49,11 @@ pub struct BlockLength {
 	/// `MAX(max)`
 	#[cfg_attr(feature = "std", serde(with = "per_dispatch_class_serde"))]
 	pub max: PerDispatchClass<u32>,
+	#[codec(compact)]
 	pub cols: u32,
+	#[codec(compact)]
 	pub rows: u32,
+	#[codec(compact)]
 	chunk_size: u32,
 }
 
@@ -78,15 +81,19 @@ impl BlockLength {
 }
 
 impl Decode for BlockLength {
+	// NOTE: Decodification ensures that `chunk_size` is valid.
 	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
 		let max = <PerDispatchClass<u32>>::decode(input)
 			.map_err(|e| e.chain("Could not decode `BlockLength::max`"))?;
-		let cols =
-			<u32>::decode(input).map_err(|e| e.chain("Could not decode `BlockLength::cols`"))?;
-		let rows =
-			<u32>::decode(input).map_err(|e| e.chain("Could not decode `BlockLength::rows`"))?;
-		let chunk_size = <u32>::decode(input)
-			.map_err(|e| e.chain("Could not decode `BlockLength::chunk_size`"))?;
+		let cols = <Compact<u32>>::decode(input)
+			.map_err(|e| e.chain("Could not decode `BlockLength::cols`"))?
+			.0;
+		let rows = <Compact<u32>>::decode(input)
+			.map_err(|e| e.chain("Could not decode `BlockLength::rows`"))?
+			.0;
+		let chunk_size = <Compact<u32>>::decode(input)
+			.map_err(|e| e.chain("Could not decode `BlockLength::chunk_size`"))?
+			.0;
 		ensure!(
 			is_chunk_size_valid(chunk_size),
 			Error::from("Invalid `BlockLength::chunk_size`")

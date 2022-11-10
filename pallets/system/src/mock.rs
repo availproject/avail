@@ -100,7 +100,7 @@ impl Config for Test {
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = da_primitives::Header<BlockNumber, BlakeTwo256>;
-	type HeaderBuilder = frame_system::header_builder::da::HeaderBuilder<Test>;
+	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type OnKilledAccount = RecordKilled;
@@ -110,6 +110,7 @@ impl Config for Test {
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Test>;
 	type SS58Prefix = ();
+	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
 	type Version = Version;
 }

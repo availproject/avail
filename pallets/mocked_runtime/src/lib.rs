@@ -124,7 +124,6 @@ thread_local! {
 
 // Runtime
 //
-
 impl frame_system::Config for Runtime {
 	type AccountData = pallet_balances::AccountData<Balance>;
 	type AccountId = AccountId;
@@ -139,7 +138,7 @@ impl frame_system::Config for Runtime {
 	type Hash = sp_core::H256;
 	type Hashing = BlakeTwo256;
 	type Header = da_primitives::Header<Self::BlockNumber, Self::Hashing>;
-	type HeaderBuilder = frame_system::header_builder::da::HeaderBuilder<Runtime>;
+	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Runtime>;
 	type Index = u64;
 	type Lookup = IdentityLookup<u64>;
 	type OnKilledAccount = ();
@@ -149,6 +148,7 @@ impl frame_system::Config for Runtime {
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Runtime>;
 	type SS58Prefix = ();
+	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
 	type Version = RuntimeVersion;
 }

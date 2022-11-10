@@ -23,7 +23,7 @@ fn create_application_keys() {
 			Event::DataAvailability(ApplicationKeyCreated {
 				key: new_key.clone(),
 				owner: 3,
-				id: 3
+				id: 3.into()
 			})
 		);
 		assert_noop!(
@@ -32,7 +32,10 @@ fn create_application_keys() {
 		);
 		assert_eq!(
 			DataAvailability::application_key(&new_key),
-			Some(AppKeyInfoFor::<Test> { id: 3, owner: 3 })
+			Some(AppKeyInfoFor::<Test> {
+				id: 3.into(),
+				owner: 3
+			})
 		);
 	})
 }
