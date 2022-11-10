@@ -1,6 +1,7 @@
-pub const TEST_KEY: &[u8] = &*b":test:key:";
+pub const TEST_KEY: &[u8] = b":test:key:";
 
 #[frame_support::pallet]
+#[allow(clippy::module_inception)]
 pub mod custom {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
@@ -75,7 +76,7 @@ pub mod custom {
 
 		#[pallet::weight(0)]
 		pub fn inherent_call(origin: OriginFor<T>) -> DispatchResult {
-			let _ = frame_system::ensure_none(origin)?;
+			frame_system::ensure_none(origin)?;
 			Ok(())
 		}
 

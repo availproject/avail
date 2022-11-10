@@ -1,4 +1,3 @@
-use afl;
 use da_primitives::asdr::AppExtrinsic;
 use hex_literal::hex;
 
@@ -9,14 +8,14 @@ fn main() {
 		let block_rows = 256;
 		let block_cols = 256;
 		let chunk_size = 32;
-		let hash = hex!("4c29ae91bbc61204b6f95d1f3c3a5aa6ac2f29da18d4423e5bbbf815693").into();
+		let hash = hex!("000004c29ae91bbc61204b6f95d1f3c3a5aa6ac2f29da18d4423e5bbbf815693");
 
-		let (_, _, _, _) = kate::com::build_commitments(
+		let (_, _, _, _) = kate::com::par_build_commitments(
 			block_rows,
 			block_cols,
 			chunk_size,
 			&[AppExtrinsic::from(data.to_vec())],
-			&hash,
+			hash,
 		)
 		.unwrap();
 	});

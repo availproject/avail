@@ -46,6 +46,10 @@ impl<T: Config + Send + Sync> CheckTxVersion<T> {
 	pub fn new() -> Self { Self(sp_std::marker::PhantomData) }
 }
 
+impl<T: Config + Send + Sync> Default for CheckTxVersion<T> {
+	fn default() -> Self { Self::new() }
+}
+
 impl<T: Config + Send + Sync> SignedExtension for CheckTxVersion<T> {
 	type AccountId = T::AccountId;
 	type AdditionalSigned = u32;

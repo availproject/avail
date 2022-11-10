@@ -49,6 +49,7 @@ pub mod pallet {
 	pub struct GenesisConfig {}
 
 	#[cfg(feature = "std")]
+	#[allow(clippy::derivable_impls)]
 	impl Default for GenesisConfig {
 		fn default() -> Self { Self {} }
 	}

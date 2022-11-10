@@ -54,7 +54,7 @@ where
 // Parameters
 
 // Will contain `true` when the custom runtime logic was called.
-pub const CUSTOM_ON_RUNTIME_KEY: &[u8] = &*b":custom:on_runtime";
+pub const CUSTOM_ON_RUNTIME_KEY: &[u8] = b":custom:on_runtime";
 
 /// This determines the average expected block time that we are targetting.
 /// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.

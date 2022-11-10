@@ -32,7 +32,7 @@ pub mod pallet {
 	pub type AppDataFor<T> = BoundedVec<u8, <T as Config>::MaxAppDataLength>;
 
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-	#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, RuntimeDebug)]
+	#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, RuntimeDebug)]
 	pub struct AppKeyInfo<Acc: PartialEq> {
 		/// Owner of the key
 		pub owner: Acc,

@@ -49,6 +49,10 @@ impl<T: Config + Send + Sync> CheckGenesis<T> {
 	pub fn new() -> Self { Self(sp_std::marker::PhantomData) }
 }
 
+impl<T: Config + Send + Sync> Default for CheckGenesis<T> {
+	fn default() -> Self { Self::new() }
+}
+
 impl<T: Config + Send + Sync> SignedExtension for CheckGenesis<T> {
 	type AccountId = T::AccountId;
 	type AdditionalSigned = T::Hash;

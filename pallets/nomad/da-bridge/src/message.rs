@@ -8,13 +8,13 @@ use sp_std::vec::Vec;
 /// DA Bridge message 1-byte type tags. Note that the invalid 0 variant
 /// is to maintain parity with our existing Solidity contracts.
 #[repr(u8)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DABridgeMessageTypes {
 	Invalid = 0,
 	DataRootMessage = 1,
 }
 
-#[derive(PartialEq, RuntimeDebug)]
+#[derive(PartialEq, Eq, RuntimeDebug)]
 /// Errors during the creation from `extrinsics`.
 pub enum TryFromError {
 	/// Unknown DABridgeMessage variant
@@ -35,7 +35,7 @@ impl TryFrom<u8> for DABridgeMessageTypes {
 
 /// Data root message variant. Contains a block number and its corresponding
 /// data root.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DataRootMessage {
 	/// Block number
 	pub block_number: u32,

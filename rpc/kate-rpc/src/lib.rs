@@ -46,6 +46,7 @@ where
 
 pub struct Kate<Client, Block: BlockT> {
 	client: Arc<Client>,
+	#[allow(clippy::type_complexity)]
 	block_ext_cache: RwLock<LruCache<Block::Hash, (Vec<BlsScalar>, BlockDimensions)>>,
 }
 
