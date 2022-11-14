@@ -11,7 +11,7 @@ jobs:
         with:
           override: true
           profile: "minimal"
-          toolchain: "stable"
+          toolchain: "nightly"
       - uses: "actions-rs/cargo@v1"
         with:
           command: "check"
