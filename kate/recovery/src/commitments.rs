@@ -88,8 +88,10 @@ fn row_commitment(
 ///
 /// * `public_params` - Public parameters
 /// * `commitments` - Commitments represented as byte array (as in header)
-/// * `cols_num` - Number of columns
 /// * `rows` - Array of optional rows
+/// * `index` - Application data index
+/// * `dimensions` - Extended matrix dimensions
+/// * `app_id` - Application ID
 pub fn verify_equality(
 	public_params: &PublicParameters,
 	commitments: &[u8],
