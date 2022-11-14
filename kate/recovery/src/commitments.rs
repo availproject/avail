@@ -1,13 +1,12 @@
-use std::{array::TryFromSliceError, convert::TryFrom};
-
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	fft::{EvaluationDomain, Evaluations},
 	prelude::{BlsScalar, CommitKey, PublicParameters},
 };
+use std::{array::TryFromSliceError, convert::TryFrom};
 use thiserror::Error;
 
-use crate::config;
+use crate::{com, config, index, matrix};
 
 #[derive(Error, Debug)]
 pub enum DataError {
@@ -94,8 +93,10 @@ fn row_commitment(
 pub fn verify_equality(
 	public_params: &PublicParameters,
 	commitments: &[u8],
-	cols_num: usize,
 	rows: &[Option<Vec<u8>>],
+	index: &index::AppDataIndex,
+	dimension: &matrix::Dimensions,
+	app_id: u32,
 ) -> Result<bool, Error> {
 	if commitments.len() / config::COMMITMENT_SIZE != rows.len() {
 		return Err(Error::InvalidData(DataError::RowAndCommitmentsMismatch));
@@ -105,8 +106,21 @@ pub fn verify_equality(
 		return Err(Error::InvalidData(DataError::BadCommitmentsData));
 	}
 
-	let (prover_key, _) = public_params.trim(cols_num)?;
-	let domain = EvaluationDomain::new(cols_num)?;
+	let app_rows = com::app_specific_rows(index, dimension, app_id);
+
+	let all_rows_present = rows
+		.iter()
+		.zip(0u32..)
+		.filter(|(row, _)| row.is_some())
+		.zip(app_rows.iter())
+		.all(|((_, a), &b)| a == b);
+
+	if !all_rows_present {
+		return Err(Error::InvalidData(DataError::RowAndCommitmentsMismatch));
+	}
+
+	let (prover_key, _) = public_params.trim(dimension.cols as usize)?;
+	let domain = EvaluationDomain::new(dimension.cols as usize)?;
 
 	let verifications = commitments
 		.chunks_exact(config::COMMITMENT_SIZE)

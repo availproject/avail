@@ -41,7 +41,7 @@ pub struct Partition {
 /// Extended columns (EC is erasure code): [1,EC,5,EC], [2,EC,6,EC], [3,EC,7,EC], [4,EC,8,EC]  
 /// Matrix representation: [1,5,2,6,3,7,4,8]  
 /// Extended matrix representation: [1,EC,5,EC,2,EC,6,EC,3,EC,7,EC,4,EC,8,EC]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Dimensions {
 	pub rows: u16,
 	pub cols: u16,

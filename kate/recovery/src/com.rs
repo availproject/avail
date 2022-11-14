@@ -565,7 +565,6 @@ mod tests {
 			index: vec![(1, 5)],
 		};
 		let dimensions = Dimensions::new(4, 4);
-
 		let result =
 			app_specific_cells(&index, &dimensions, app_id).unwrap_or_else(std::vec::Vec::new);
 		assert_eq!(expected.len(), result.len());

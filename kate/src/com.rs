@@ -774,10 +774,27 @@ mod tests {
 		let index = app_data_index_try_from_layout(layout).unwrap();
 		let public_params = testnet::public_params(dims.cols);
 		let extended_dims = Dimensions::new(dims.rows as u16, dims.cols as u16);
-
 		for xt in xts {
 			let rows = &scalars_to_rows(xt.app_id.0, &index, &extended_dims, &matrix);
-			prop_assert!(kate_recovery::commitments::verify_equality(&public_params, &commitments, dims.cols as usize, rows).unwrap());
+			prop_assert!(kate_recovery::commitments::verify_equality(&public_params, &commitments, rows,&index,&extended_dims,xt.app_id.0).unwrap());
+		}
+	}
+	}
+
+	proptest! {
+	#![proptest_config(ProptestConfig::with_cases(20))]
+	#[test]
+	fn verify_commitmnets_missing_row(ref xts in app_extrinsics_strategy())  {
+		let (layout, commitments, dims, matrix) = par_build_commitments(64, 16, 32, xts, Seed::default()).unwrap();
+
+		let index = app_data_index_try_from_layout(layout).unwrap();
+		let public_params = testnet::public_params(dims.cols);
+		let extended_dims = Dimensions::new(dims.rows as u16, dims.cols as u16);
+		for xt in xts {
+			let mut rows = scalars_to_rows(xt.app_id.0, &index, &extended_dims, &matrix);
+			let app_row_index = rows.iter().position(Option::is_some).unwrap();
+			rows.remove(app_row_index);
+			prop_assert!(kate_recovery::commitments::verify_equality(&public_params, &commitments, &rows,&index,&extended_dims,xt.app_id.0).is_err());
 		}
 	}
 	}
