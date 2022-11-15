@@ -455,28 +455,21 @@ mod tests {
 					size: 8,
 					index: vec![],
 				},
-				vec![(0, Range { start: 0, end: 8 })],
+				vec![(0, 0..8)],
 			),
 			(
 				AppDataIndex {
 					size: 4,
 					index: vec![(1, 0), (2, 2)],
 				},
-				vec![
-					(1, Range { start: 0, end: 2 }),
-					(2, Range { start: 2, end: 4 }),
-				],
+				vec![(1, 0..2), (2, 2..4)],
 			),
 			(
 				AppDataIndex {
 					size: 15,
 					index: vec![(1, 3), (12, 8)],
 				},
-				vec![
-					(0, Range { start: 0, end: 3 }),
-					(1, Range { start: 3, end: 8 }),
-					(12, Range { start: 8, end: 15 }),
-				],
+				vec![(0, 0..3), (1, 3..8), (12, 8..15)],
 			),
 		];
 
@@ -493,46 +486,21 @@ mod tests {
 					size: 8,
 					index: vec![],
 				},
-				vec![(0, Range { start: 0, end: 256 })],
+				vec![(0, 0..256)],
 			),
 			(
 				AppDataIndex {
 					size: 4,
 					index: vec![(1, 0), (2, 2)],
 				},
-				vec![
-					(1, Range { start: 0, end: 64 }),
-					(
-						2,
-						Range {
-							start: 64,
-							end: 128,
-						},
-					),
-				],
+				vec![(1, 0..64), (2, 64..128)],
 			),
 			(
 				AppDataIndex {
 					size: 15,
 					index: vec![(1, 3), (12, 8)],
 				},
-				vec![
-					(0, Range { start: 0, end: 96 }),
-					(
-						1,
-						Range {
-							start: 96,
-							end: 256,
-						},
-					),
-					(
-						12,
-						Range {
-							start: 256,
-							end: 480,
-						},
-					),
-				],
+				vec![(0, 0..96), (1, 96..256), (12, 256..480)],
 			),
 		];
 
