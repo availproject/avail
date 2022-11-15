@@ -81,6 +81,9 @@ pub fn app_specific_cells(
 		.map(|range| dimensions.extended_data_positions(range))
 }
 
+/// Application data, represents list of extrinsics encoded in a block.
+pub type AppData = Vec<Vec<u8>>;
+
 /// Reconstructs app extrinsics from extrinsics layout and data.
 /// Only related extrinsics are reconstructed.
 /// Only related data cells needs to be in matrix (unrelated columns can be empty).
@@ -96,7 +99,7 @@ pub fn reconstruct_app_extrinsics(
 	dimensions: &matrix::Dimensions,
 	cells: Vec<data::DataCell>,
 	app_id: u32,
-) -> Result<Vec<Vec<u8>>, ReconstructionError> {
+) -> Result<AppData, ReconstructionError> {
 	let data = reconstruct_available(dimensions, cells)?;
 	let ranges = index.app_data_ranges(app_id);
 
@@ -118,7 +121,7 @@ pub fn reconstruct_extrinsics(
 	index: &index::AppDataIndex,
 	dimensions: &matrix::Dimensions,
 	cells: Vec<data::DataCell>,
-) -> Result<Vec<(u32, Vec<Vec<u8>>)>, ReconstructionError> {
+) -> Result<Vec<(u32, AppData)>, ReconstructionError> {
 	let data = reconstruct_available(dimensions, cells)?;
 	let ranges = index.data_ranges();
 	unflatten_padded_data(ranges, data).map_err(ReconstructionError::DataDecodingError)
@@ -174,7 +177,7 @@ pub fn decode_app_extrinsics(
 	dimensions: &matrix::Dimensions,
 	cells: Vec<data::DataCell>,
 	app_id: u32,
-) -> Result<Vec<Vec<u8>>, ReconstructionError> {
+) -> Result<AppData, ReconstructionError> {
 	let positions = app_specific_cells(index, dimensions, app_id).unwrap_or_default();
 	if positions.is_empty() {
 		return Ok(vec![]);
@@ -213,7 +216,7 @@ pub fn decode_app_extrinsics(
 pub fn unflatten_padded_data(
 	ranges: Vec<(u32, Range<u32>)>,
 	data: Vec<u8>,
-) -> Result<Vec<(u32, Vec<Vec<u8>>)>, String> {
+) -> Result<Vec<(u32, AppData)>, String> {
 	if data.len() % config::CHUNK_SIZE > 0 {
 		return Err("Invalid data size".to_string());
 	}
@@ -239,9 +242,8 @@ pub fn unflatten_padded_data(
 		}
 	}
 
-	fn decode_extrinsics(data: Vec<u8>) -> Result<Vec<Vec<u8>>, String> {
-		<Vec<Vec<u8>>>::decode(&mut data.as_slice())
-			.map_err(|err| format!("Cannot decode data: {err}"))
+	fn decode_extrinsics(data: Vec<u8>) -> Result<AppData, String> {
+		<AppData>::decode(&mut data.as_slice()).map_err(|err| format!("Cannot decode data: {err}"))
 	}
 
 	ranges
@@ -252,7 +254,7 @@ pub fn unflatten_padded_data(
 				.and_then(decode_extrinsics)
 				.map(|data| (app_id, data))
 		})
-		.collect::<Result<Vec<(u32, Vec<Vec<u8>>)>, String>>()
+		.collect::<Result<Vec<(u32, AppData)>, String>>()
 }
 
 // This module is taken from https://gist.github.com/itzmeanjan/4acf9338d9233e79cfbee5d311e7a0b4
