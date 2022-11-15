@@ -541,55 +541,6 @@ mod tests {
 		});
 	}
 
-	// #[test]
-	// fn test_app_specific_column_cells() {
-	// 	let index = AppDataIndex {
-	// 		size: 8,
-	// 		index: vec![(1, 5)],
-	// 	};
-	// 	let dimensions = Dimensions::row_wise(4, 4);
-
-	// 	let expected_0 = (0..=2).flat_map(|c| (0..=3).map(move |r| (c, r)));
-	// 	let result_0 = app_specific_column_cells(&index, &dimensions, 0).unwrap();
-
-	// 	assert_eq!(expected_0.clone().count(), result_0.len());
-	// 	result_0.iter().zip(expected_0).for_each(|(a, (col, row))| {
-	// 		assert_eq!(a.col, col);
-	// 		assert_eq!(a.row, row);
-	// 	});
-
-	// 	let expected_1 = (2..=3).flat_map(|c| (0..=3).map(move |r| (c, r)));
-	// 	let result_1 = app_specific_column_cells(&index, &dimensions, 1).unwrap();
-
-	// 	assert_eq!(expected_1.clone().count(), result_1.len());
-	// 	result_1.iter().zip(expected_1).for_each(|(a, (col, row))| {
-	// 		assert_eq!(a.col, col);
-	// 		assert_eq!(a.row, row);
-	// 	});
-
-	// 	assert!(app_specific_column_cells(&index, &dimensions, 2).is_none());
-	// }
-
-	// #[test]
-	// fn test_app_specific_column_cells_gt_chunk_size() {
-	// 	let index = AppDataIndex {
-	// 		size: 90,
-	// 		index: vec![(1, 1)],
-	// 	};
-
-	// 	let dimensions = Dimensions::row_wise(2, 128);
-
-	// 	let expected = (1..=89).flat_map(|col| (0..=1).map(move |row| (col, row)));
-
-	// 	let result = app_specific_column_cells(&index, &dimensions, 1).unwrap();
-
-	// 	assert_eq!(expected.clone().count(), result.len());
-	// 	result.iter().zip(expected).for_each(|(a, (col, row))| {
-	// 		assert_eq!(a.col, col);
-	// 		assert_eq!(a.row, row);
-	// 	});
-	// }
-
 	#[test]
 	fn data_reconstruction_success() {
 		let domain_size = 1usize << 4;

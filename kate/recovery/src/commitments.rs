@@ -124,6 +124,9 @@ pub fn verify_equality(
 	let (prover_key, _) = public_params.trim(dimension.cols as usize)?;
 	let domain = EvaluationDomain::new(dimension.cols as usize)?;
 
+	// This is a single-threaded implementation.
+	// At some point we should benchmark and decide
+	// if we need parallel commitments verification.
 	let verifications = commitments
 		.chunks_exact(config::COMMITMENT_SIZE)
 		.zip(rows.iter())
