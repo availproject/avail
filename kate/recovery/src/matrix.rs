@@ -118,10 +118,10 @@ impl Dimensions {
 	}
 
 	/// Creates iterator over data cells in data matrix (used to retrieve data from the matrix).
-	pub fn iter_data(&self) -> impl Iterator<Item = u32> {
-		let rows = self.rows as u32;
-		let cols = self.cols;
-		(0..rows).flat_map(move |row| (0..cols).map(move |col| col as u32 * rows + row))
+	pub fn iter_data(&self) -> impl Iterator<Item = (usize, usize)> {
+		let rows = self.rows as usize;
+		let cols = self.cols as usize;
+		(0..rows).flat_map(move |row| (0..cols).map(move |col| (row, col)))
 	}
 
 	/// Creates iterator over cell indexes in data matrix (used to store data in the matrix).
@@ -158,12 +158,13 @@ impl Dimensions {
 #[cfg(test)]
 mod tests {
 	use crate::matrix::Dimensions;
+	use test_case::test_case;
 
-	#[test]
-	fn iter_data() {
-		let dimensions = Dimensions::new(2, 4);
+	#[test_case(2, 4, vec![(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3)] ; "2*4 matrix data iteration")]
+	fn iter_data(rows: u16, cols: u16, expected: Vec<(usize, usize)>) {
+		let dimensions = Dimensions::new(rows, cols);
 		let cells = dimensions.iter_data().collect::<Vec<_>>();
-		assert_eq!(cells, vec![0, 2, 4, 6, 1, 3, 5, 7]);
+		assert_eq!(cells, expected);
 	}
 
 	#[test]

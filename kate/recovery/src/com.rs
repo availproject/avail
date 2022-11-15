@@ -143,16 +143,14 @@ fn reconstruct_available(
 					.map_err(ReconstructionError::ColumnReconstructionError)
 			},
 		})
-		.collect::<Result<Vec<Vec<_>>, ReconstructionError>>()?
-		.into_iter()
-		.flatten()
-		.collect::<Vec<_>>();
+		.collect::<Result<Vec<Vec<_>>, ReconstructionError>>()?;
 
 	let mut result: Vec<u8> = Vec::with_capacity(scalars.len() * config::CHUNK_SIZE);
 
-	for cell_index in dimensions.iter_data() {
+	for (row, col) in dimensions.iter_data() {
 		let bytes = scalars
-			.get(cell_index as usize)
+			.get(col)
+			.and_then(|col| col.get(row))
 			.map(Option::as_ref)
 			.unwrap_or(None)
 			.map(BlsScalar::to_bytes)
@@ -565,8 +563,7 @@ mod tests {
 			index: vec![(1, 5)],
 		};
 		let dimensions = Dimensions::new(4, 4);
-		let result =
-			app_specific_cells(&index, &dimensions, app_id).unwrap_or_else(std::vec::Vec::new);
+		let result = app_specific_cells(&index, &dimensions, app_id).unwrap_or_default();
 		assert_eq!(expected.len(), result.len());
 		result.iter().zip(expected).for_each(|(a, &(row, col))| {
 			assert_eq!(a.row, row);
