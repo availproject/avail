@@ -22,7 +22,7 @@ impl AppDataIndex {
 	pub fn cells_ranges(&self) -> Vec<(u32, Range<u32>)> {
 		// Case if first app_id in index is zero is ignored
 		// since it should be asserted elsewhere
-		let prepend = self.index.get(0).map_or(vec![(0, 0)], |&(_, offset)| {
+		let prepend = self.index.first().map_or(vec![(0, 0)], |&(_, offset)| {
 			if offset == 0 {
 				vec![]
 			} else {

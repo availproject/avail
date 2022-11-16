@@ -1,9 +1,10 @@
+use std::{array::TryFromSliceError, convert::TryFrom};
+
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	fft::{EvaluationDomain, Evaluations},
 	prelude::{BlsScalar, CommitKey, PublicParameters},
 };
-use std::{array::TryFromSliceError, convert::TryFrom};
 use thiserror::Error;
 
 use crate::{com, config, index, matrix};
@@ -35,9 +36,7 @@ pub enum Error {
 }
 
 impl From<TryFromSliceError> for Error {
-	fn from(e: TryFromSliceError) -> Self {
-		Self::InvalidData(DataError::SliceError(e))
-	}
+	fn from(e: TryFromSliceError) -> Self { Self::InvalidData(DataError::SliceError(e)) }
 }
 
 impl From<dusk_bytes::Error> for Error {
@@ -51,9 +50,7 @@ impl From<dusk_bytes::Error> for Error {
 }
 
 impl From<dusk_plonk::error::Error> for Error {
-	fn from(e: dusk_plonk::error::Error) -> Self {
-		Self::InvalidData(DataError::PlonkError(e))
-	}
+	fn from(e: dusk_plonk::error::Error) -> Self { Self::InvalidData(DataError::PlonkError(e)) }
 }
 
 fn try_into_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {

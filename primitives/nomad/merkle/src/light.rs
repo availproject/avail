@@ -18,6 +18,7 @@ impl<const N: usize> AssertLightMerkleN<N> {
 /// Verify at compilation time that `N <= TREE_DEPTH`
 #[inline]
 #[allow(path_statements)]
+#[allow(clippy::no_effect)]
 const fn const_assert_n_is_valid<const N: usize>() {
 	AssertLightMerkleN::<N>::N_LESS_EQ_TREE_DEPTH;
 }

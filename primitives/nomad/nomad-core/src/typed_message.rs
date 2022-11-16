@@ -21,6 +21,8 @@ where
 	/// Size of encoded struct (+ 1 for u8 type tag)
 	fn len(&self) -> usize { mem::size_of::<Self>() + 1 }
 
+	fn is_empty(&self) -> bool { self.len() == 0 }
+
 	/// Encode self into `BoundedVec<u8, S>`
 	fn encode(&self) -> Vec<u8>;
 }

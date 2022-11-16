@@ -50,24 +50,16 @@ pub struct Dimensions {
 impl Dimensions {
 	/// Creates new matrix dimensions.
 	/// Data layout is assumed to be row-wise.
-	pub fn new(rows: u16, cols: u16) -> Self {
-		Dimensions { rows, cols }
-	}
+	pub const fn new(rows: u16, cols: u16) -> Self { Dimensions { rows, cols } }
 
 	/// Matrix size.
-	pub fn size(&self) -> u32 {
-		self.rows as u32 * self.cols as u32
-	}
+	pub fn size(&self) -> u32 { self.rows as u32 * self.cols as u32 }
 
 	/// Extended matrix size.
-	pub fn extended_size(&self) -> u32 {
-		self.extended_rows() * self.cols as u32
-	}
+	pub fn extended_size(&self) -> u32 { self.extended_rows() * self.cols as u32 }
 
 	/// Extended matrix rows count.
-	pub fn extended_rows(&self) -> u32 {
-		(self.rows as u32) * EXTENSION_FACTOR_U32
-	}
+	pub fn extended_rows(&self) -> u32 { (self.rows as u32) * EXTENSION_FACTOR_U32 }
 
 	/// List of data row indexes in the extended matrix.
 	pub fn extended_data_rows(&self, cells: Range<u32>) -> Vec<u32> {
@@ -82,9 +74,7 @@ impl Dimensions {
 	}
 
 	/// Column index of a cell in the matrix.
-	fn col(&self, cell: u32) -> u16 {
-		(cell % self.cols as u32) as u16
-	}
+	fn col(&self, cell: u32) -> u16 { (cell % self.cols as u32) as u16 }
 
 	/// Extended matrix data row index of cell in the data matrix.
 	fn extended_data_row(&self, cell: u32) -> u32 {
@@ -113,9 +103,7 @@ impl Dimensions {
 	}
 
 	/// Creates iterator over rows in extended matrix.
-	pub fn iter_extended_rows(&self) -> impl Iterator<Item = u32> {
-		0..self.extended_rows()
-	}
+	pub fn iter_extended_rows(&self) -> impl Iterator<Item = u32> { 0..self.extended_rows() }
 
 	/// Creates iterator over data cells in data matrix (used to retrieve data from the matrix).
 	pub fn iter_data(&self) -> impl Iterator<Item = (usize, usize)> {
@@ -157,8 +145,9 @@ impl Dimensions {
 
 #[cfg(test)]
 mod tests {
-	use crate::matrix::Dimensions;
 	use test_case::test_case;
+
+	use crate::matrix::Dimensions;
 
 	#[test_case(2, 4, vec![(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3)] ; "2*4 matrix data iteration")]
 	fn iter_data(rows: u16, cols: u16, expected: Vec<(usize, usize)>) {

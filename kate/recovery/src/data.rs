@@ -21,17 +21,11 @@ pub struct Cell {
 }
 
 impl Cell {
-	pub fn reference(&self, block: u32) -> String {
-		self.position.reference(block)
-	}
+	pub fn reference(&self, block: u32) -> String { self.position.reference(block) }
 
-	pub fn data(&self) -> [u8; 32] {
-		self.content[48..].try_into().expect("content is 80 bytes")
-	}
+	pub fn data(&self) -> [u8; 32] { self.content[48..].try_into().expect("content is 80 bytes") }
 
-	pub fn proof(&self) -> [u8; 48] {
-		self.content[..48].try_into().expect("content is 80 bytes")
-	}
+	pub fn proof(&self) -> [u8; 48] { self.content[..48].try_into().expect("content is 80 bytes") }
 }
 
 impl From<Cell> for DataCell {

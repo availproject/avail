@@ -83,7 +83,7 @@ where
 			.map(|(idx, proof)| {
 				<[u8; 32]>::try_from(proof.as_ref())
 					.map_err(|_| InvalidProof(idx))
-					.map(|raw| H256(raw))
+					.map(H256::from)
 			})
 			.collect::<Result<Vec<H256>, _>>()?;
 		let number_of_leaves =

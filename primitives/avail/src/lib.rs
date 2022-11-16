@@ -1,5 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Decode, Encode};
+use derive_more::{Add, Constructor, Display, From, Into, Mul};
+use scale_info::TypeInfo;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 use sp_runtime::Perbill;
 
 /// Customized headers.
@@ -51,6 +56,8 @@ pub enum InvalidTransactionCustomId {
 	InvalidAppId = 137,
 	/// Extrinsic is not allowed for the given `AppId`.
 	ForbiddenAppId,
+	/// Max padded length was exceeded.
+	MaxPaddedLenExceeded,
 }
 
 /// Provides an implementation of [`frame_support::traits::Randomness`] that should only be used in
@@ -70,4 +77,60 @@ where
 			T::default(),
 		)
 	}
+}
+
+/// Strong type for `BlockLength::cols`
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(
+	Clone,
+	Copy,
+	Debug,
+	From,
+	Into,
+	Add,
+	Mul,
+	Display,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	TypeInfo,
+	PartialOrd,
+	Ord,
+	Constructor,
+)]
+#[mul(forward)]
+pub struct BlockLengthColumns(#[codec(compact)] pub u32);
+
+impl BlockLengthColumns {
+	#[inline]
+	pub fn as_usize(&self) -> usize { self.0 as usize }
+}
+
+/// Strong type for `BlockLength::rows`
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(
+	Clone,
+	Copy,
+	Debug,
+	From,
+	Into,
+	Add,
+	Mul,
+	Display,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	TypeInfo,
+	PartialOrd,
+	Ord,
+	Constructor,
+)]
+#[mul(forward)]
+pub struct BlockLengthRows(#[codec(compact)] pub u32);
+
+impl BlockLengthRows {
+	#[inline]
+	pub fn as_usize(&self) -> usize { self.0 as usize }
 }
