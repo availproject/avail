@@ -26,7 +26,7 @@
 //! which should be passed to `frame_system` configuration when runtime is being set up.
 
 use codec::{Compact, Decode, Encode, Error, Input};
-use da_primitives::BLOCK_CHUNK_SIZE;
+use da_primitives::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE};
 use frame_support::{
 	ensure,
 	weights::{constants, DispatchClass, OneOrMany, PerDispatchClass, Weight},
@@ -49,10 +49,8 @@ pub struct BlockLength {
 	/// `MAX(max)`
 	#[cfg_attr(feature = "std", serde(with = "per_dispatch_class_serde"))]
 	pub max: PerDispatchClass<u32>,
-	#[codec(compact)]
-	pub cols: u32,
-	#[codec(compact)]
-	pub rows: u32,
+	pub cols: BlockLengthColumns,
+	pub rows: BlockLengthRows,
 	#[codec(compact)]
 	chunk_size: u32,
 }
@@ -60,6 +58,8 @@ pub struct BlockLength {
 #[derive(RuntimeDebug, Clone, Copy)]
 pub enum BlockLengthError {
 	InvalidChunkSize,
+	OverflowBaseMax,
+	OverflowNormalMax,
 }
 
 #[inline]
@@ -85,12 +85,10 @@ impl Decode for BlockLength {
 	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
 		let max = <PerDispatchClass<u32>>::decode(input)
 			.map_err(|e| e.chain("Could not decode `BlockLength::max`"))?;
-		let cols = <Compact<u32>>::decode(input)
-			.map_err(|e| e.chain("Could not decode `BlockLength::cols`"))?
-			.0;
-		let rows = <Compact<u32>>::decode(input)
-			.map_err(|e| e.chain("Could not decode `BlockLength::rows`"))?
-			.0;
+		let cols = BlockLengthColumns::decode(input)
+			.map_err(|e| e.chain("Could not decode `BlockLength::cols`"))?;
+		let rows = BlockLengthRows::decode(input)
+			.map_err(|e| e.chain("Could not decode `BlockLength::rows`"))?;
 		let chunk_size = <Compact<u32>>::decode(input)
 			.map_err(|e| e.chain("Could not decode `BlockLength::chunk_size`"))?
 			.0;
@@ -127,7 +125,6 @@ mod per_dispatch_class_serde {
 		);
 		c_as_tuple.serialize(serializer)
 	}
-
 	pub fn deserialize<'de, D, T>(d: D) -> Result<PerDispatchClass<T>, D::Error>
 	where
 		T: Deserialize<'de> + Default + Clone,
@@ -156,47 +153,63 @@ impl BlockLength {
 		Self {
 			max: PerDispatchClass::new(|_| max),
 			cols: MAX_BLOCK_COLUMNS,
-			rows: MAX_BLOCK_COLUMNS,
+			rows: MAX_BLOCK_ROWS,
 			chunk_size: BLOCK_CHUNK_SIZE,
 		}
 	}
 
 	/// Create enw `BlockLength` with `rows*cols*chunk_size` for `Operational` & `Mandatory`
 	/// and `normal * rows*cols*chunk_siz` for `Normal`.
-	pub fn with_normal_ratio(rows: u32, cols: u32, chunk_size: u32, normal: Perbill) -> Self {
+	pub fn with_normal_ratio(
+		rows: BlockLengthRows,
+		cols: BlockLengthColumns,
+		chunk_size: u32,
+		normal: Perbill,
+	) -> Result<Self, BlockLengthError> {
 		debug_assert!(is_chunk_size_valid(chunk_size));
+		let max = Self::max_per_class(rows, cols, chunk_size, normal)?;
 
-		let max = cols * rows * chunk_size;
-		Self {
+		Ok(Self {
 			cols,
 			rows,
 			chunk_size,
-			max: PerDispatchClass::new(|class| {
-				if class == DispatchClass::Normal {
-					normal * max
-				} else {
-					max
-				}
-			}),
-		}
+			max,
+		})
 	}
 
 	/// Create new `BlockLength` with `max` for `Operational` & `Mandatory`
 	/// and `normal * max` for `Normal`.
 	pub fn max_with_normal_ratio(max: u32, normal: Perbill) -> Self {
 		const_assert!(is_chunk_size_valid(BLOCK_CHUNK_SIZE));
+		let max = PerDispatchClass::new(|class| match class {
+			DispatchClass::Normal => normal * max,
+			_ => max,
+		});
+
 		Self {
 			cols: MAX_BLOCK_COLUMNS,
 			rows: MAX_BLOCK_ROWS,
 			chunk_size: BLOCK_CHUNK_SIZE,
-			max: PerDispatchClass::new(|class| {
-				if class == DispatchClass::Normal {
-					normal * max
-				} else {
-					max
-				}
-			}),
+			max,
 		}
+	}
+
+	fn max_per_class(
+		rows: BlockLengthRows,
+		cols: BlockLengthColumns,
+		chunk_size: u32,
+		normal: Perbill,
+	) -> Result<PerDispatchClass<u32>, BlockLengthError> {
+		let max = cols
+			.0
+			.checked_mul(rows.0)
+			.and_then(|acc| acc.checked_mul(chunk_size))
+			.ok_or(BlockLengthError::OverflowBaseMax)?;
+
+		Ok(PerDispatchClass::new(|class| match class {
+			DispatchClass::Normal => normal * max,
+			_ => max,
+		}))
 	}
 }
 

@@ -3,6 +3,7 @@
 #![recursion_limit = "256"]
 
 use codec::Decode;
+use da_primitives::{BlockLengthColumns, BlockLengthRows};
 pub use frame_support::{
 	construct_runtime, debug, parameter_types,
 	traits::{
@@ -986,10 +987,10 @@ impl pallet_mmr::Config for Runtime {
 parameter_types! {
 	pub const MaxAppKeyLength :u32 = 64;
 	pub const MaxAppDataLength :u32 = 16 * 1024; // 16 Kb
-	pub const MinBlockRows: u32 = 32;
-	pub const MaxBlockRows: u32 = 1024;
-	pub const MinBlockCols: u32 = 32;
-	pub const MaxBlockCols: u32 = kate::config::MAX_BLOCK_COLUMNS;
+	pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
+	pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
+	pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(32);
+	pub const MaxBlockCols: BlockLengthColumns = kate::config::MAX_BLOCK_COLUMNS;
 
 }
 

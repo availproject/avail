@@ -110,10 +110,10 @@ impl pallet_balances::Config for Test {
 parameter_types! {
 	pub const MaxAppKeyLength: u32 = 32;
 	pub const MaxAppDataLength: u32 = 16 * 1024; // 16K
-	pub const MinBlockRows: u32 = 32;
-	pub const MaxBlockRows: u32 = 1024;
-	pub const MinBlockCols: u32 = 32;
-	pub const MaxBlockCols: u32 = kate::config::MAX_BLOCK_COLUMNS;
+	pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
+	pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
+	pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(32);
+	pub const MaxBlockCols: BlockLengthColumns = kate::config::MAX_BLOCK_COLUMNS;
 }
 
 impl da_control::Config for Test {
