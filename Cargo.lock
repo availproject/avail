@@ -1338,7 +1338,7 @@ dependencies = [
 
 [[package]]
 name = "da-bridge"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "da-control",
  "da-primitives",
@@ -1367,7 +1367,7 @@ dependencies = [
 
 [[package]]
 name = "da-control"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "da-primitives",
  "frame-benchmarking",
@@ -1488,7 +1488,7 @@ dependencies = [
 
 [[package]]
 name = "data-avail"
-version = "1.3.0"
+version = "1.4.0"
 dependencies = [
  "da-bridge",
  "da-control",
@@ -3443,7 +3443,7 @@ dependencies = [
 
 [[package]]
 name = "kate-rpc"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "da-primitives",
  "frame-support",
@@ -3453,6 +3453,7 @@ dependencies = [
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "kate",
+ "kate-recovery",
  "kate-rpc-runtime-api",
  "lru 0.7.8",
  "parity-scale-codec 2.3.1",
@@ -3470,7 +3471,7 @@ dependencies = [
 
 [[package]]
 name = "kate-rpc-runtime-api"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "beefy-merkle-tree",
  "da-primitives",
@@ -4446,7 +4447,7 @@ dependencies = [
 
 [[package]]
 name = "mocked-runtime"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "da-control",
  "da-primitives",
@@ -9401,7 +9402,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "rand 0.8.5",
  "static_assertions",
 ]
@@ -9537,7 +9538,7 @@ checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
 
 [[package]]
 name = "updater-manager"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "da-primitives",
  "frame-benchmarking",
