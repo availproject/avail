@@ -2,7 +2,9 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
-use da_primitives::{asdr::AppId, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO};
+use da_primitives::{
+	asdr::AppId, BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
+};
 use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -60,19 +62,19 @@ pub mod pallet {
 
 		/// Minimum number of rows in a block.
 		#[pallet::constant]
-		type MinBlockRows: Get<u32>;
+		type MinBlockRows: Get<BlockLengthRows>;
 
 		/// Maximum number of rows in a block.
 		#[pallet::constant]
-		type MaxBlockRows: Get<u32>;
+		type MaxBlockRows: Get<BlockLengthRows>;
 
 		/// Minimum number of cols in a block.
 		#[pallet::constant]
-		type MinBlockCols: Get<u32>;
+		type MinBlockCols: Get<BlockLengthColumns>;
 
 		/// Maximum number of cols in a block.
 		#[pallet::constant]
-		type MaxBlockCols: Get<u32>;
+		type MaxBlockCols: Get<BlockLengthColumns>;
 
 		/// Weights for this pallet.
 		type WeightInfo: weights::WeightInfo;
@@ -143,6 +145,8 @@ pub mod pallet {
 			cols: u32,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
+			let rows = BlockLengthRows(rows);
+			let cols = BlockLengthColumns(cols);
 
 			ensure!(
 				rows <= T::MaxBlockRows::get() && cols <= T::MaxBlockCols::get(),
@@ -153,9 +157,11 @@ pub mod pallet {
 				Error::<T>::BlockDimensionsTooSmall
 			);
 
-			let _id = Self::next_block_len_proposal_id()?;
 			let block_length =
-				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO);
+				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO)
+					.map_err(|_| Error::<T>::BlockDimensionsOutOfBounds)?;
+
+			let _id = Self::next_block_len_proposal_id()?;
 			DynamicBlockLength::<T>::put(&block_length);
 
 			Self::deposit_event(Event::BlockLengthProposalSubmitted { rows, cols });
@@ -179,8 +185,8 @@ pub mod pallet {
 			data: AppDataFor<T>,
 		},
 		BlockLengthProposalSubmitted {
-			rows: u32,
-			cols: u32,
+			rows: BlockLengthRows,
+			cols: BlockLengthColumns,
 		},
 	}
 

@@ -12,8 +12,8 @@ description = "Data Avail Control Module"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.2", default-features = false }
-kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.2", default-features = false }
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "da/v0.4.0", default-features = false }
+kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "da/v0.4.0", default-features = false }
 
 # Substrate
 serde = { version = "1.0.126", optional = true, features = ["derive"] }

@@ -16,6 +16,7 @@
 // limitations under the License.
 
 use codec::{Decode, Encode};
+use da_primitives::InvalidTransactionCustomId::MaxPaddedLenExceeded;
 use frame_support::{
 	fail,
 	traits::Get,
@@ -100,12 +101,14 @@ where
 		let padded_added_len = kate::padded_len(len as u32, dynamic_block_len.chunk_size());
 		all_extrinsics_len.padded = all_extrinsics_len.padded.saturating_add(padded_added_len);
 
-		let max_padded_len = BlockDimensions {
-			rows: dynamic_block_len.rows as usize,
-			cols: dynamic_block_len.cols as usize,
-			chunk_size: dynamic_block_len.chunk_size() as usize,
-		}
-		.size() as u32;
+		let max_padded_len: u32 = BlockDimensions::new(
+			dynamic_block_len.rows,
+			dynamic_block_len.cols,
+			dynamic_block_len.chunk_size(),
+		)
+		.size()
+		.try_into()
+		.map_err(|_| InvalidTransaction::Custom(MaxPaddedLenExceeded as u8))?;
 
 		if all_extrinsics_len.padded > max_padded_len {
 			log::warn!(

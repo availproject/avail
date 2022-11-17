@@ -803,9 +803,9 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							192u8, 110u8, 236u8, 62u8, 86u8, 15u8, 78u8, 228u8, 172u8, 116u8,
-							121u8, 129u8, 109u8, 54u8, 16u8, 3u8, 181u8, 137u8, 42u8, 89u8, 170u8,
-							177u8, 94u8, 2u8, 67u8, 99u8, 31u8, 95u8, 175u8, 50u8, 27u8, 2u8,
+							163u8, 156u8, 89u8, 140u8, 229u8, 237u8, 97u8, 81u8, 35u8, 199u8,
+							116u8, 178u8, 21u8, 22u8, 39u8, 254u8, 133u8, 245u8, 177u8, 18u8, 67u8,
+							1u8, 116u8, 217u8, 70u8, 1u8, 31u8, 202u8, 252u8, 14u8, 122u8, 252u8,
 						],
 					)
 				}
@@ -1007,9 +1007,9 @@ pub mod api {
 						"DynamicBlockLength",
 						vec![],
 						[
-							61u8, 67u8, 254u8, 36u8, 130u8, 136u8, 2u8, 229u8, 41u8, 248u8, 72u8,
-							49u8, 111u8, 31u8, 211u8, 59u8, 4u8, 82u8, 119u8, 131u8, 217u8, 158u8,
-							138u8, 241u8, 103u8, 99u8, 129u8, 82u8, 173u8, 126u8, 196u8, 195u8,
+							41u8, 235u8, 249u8, 191u8, 222u8, 101u8, 12u8, 241u8, 205u8, 177u8,
+							72u8, 151u8, 167u8, 198u8, 91u8, 27u8, 202u8, 34u8, 24u8, 190u8, 208u8,
+							220u8, 145u8, 91u8, 161u8, 179u8, 152u8, 118u8, 48u8, 74u8, 2u8, 28u8,
 						],
 					)
 				}
@@ -1043,9 +1043,9 @@ pub mod api {
 					>,
 				> {
 					::subxt::constants::StaticConstantAddress::new("System", "BlockLength", [
-						230u8, 122u8, 219u8, 215u8, 152u8, 88u8, 232u8, 109u8, 180u8, 145u8, 116u8,
-						158u8, 216u8, 21u8, 118u8, 159u8, 251u8, 21u8, 28u8, 72u8, 170u8, 152u8,
-						207u8, 17u8, 153u8, 57u8, 9u8, 151u8, 46u8, 182u8, 160u8, 65u8,
+						242u8, 210u8, 220u8, 76u8, 196u8, 181u8, 230u8, 121u8, 80u8, 216u8, 116u8,
+						56u8, 16u8, 204u8, 254u8, 191u8, 53u8, 101u8, 115u8, 117u8, 163u8, 218u8,
+						212u8, 187u8, 95u8, 233u8, 16u8, 179u8, 179u8, 130u8, 102u8, 158u8,
 					])
 				}
 
@@ -16190,8 +16190,8 @@ pub mod api {
 				PartialEq,
 			)]
 			pub struct BlockLengthProposalSubmitted {
-				pub rows: ::core::primitive::u32,
-				pub cols: ::core::primitive::u32,
+				pub rows: runtime_types::da_primitives::BlockLengthRows,
+				pub cols: runtime_types::da_primitives::BlockLengthColumns,
 			}
 			impl ::subxt::events::StaticEvent for BlockLengthProposalSubmitted {
 				const EVENT: &'static str = "BlockLengthProposalSubmitted";
@@ -16350,16 +16350,18 @@ pub mod api {
 				pub fn min_block_rows(
 					&self,
 				) -> ::subxt::constants::StaticConstantAddress<
-					::subxt::metadata::DecodeStaticType<::core::primitive::u32>,
+					::subxt::metadata::DecodeStaticType<
+						runtime_types::da_primitives::BlockLengthRows,
+					>,
 				> {
 					::subxt::constants::StaticConstantAddress::new(
 						"DataAvailability",
 						"MinBlockRows",
 						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
+							240u8, 185u8, 129u8, 113u8, 97u8, 167u8, 124u8, 171u8, 245u8, 13u8,
+							246u8, 129u8, 19u8, 85u8, 91u8, 215u8, 57u8, 41u8, 249u8, 219u8, 130u8,
+							113u8, 255u8, 83u8, 254u8, 106u8, 212u8, 187u8, 160u8, 46u8, 32u8,
+							61u8,
 						],
 					)
 				}
@@ -16368,16 +16370,18 @@ pub mod api {
 				pub fn max_block_rows(
 					&self,
 				) -> ::subxt::constants::StaticConstantAddress<
-					::subxt::metadata::DecodeStaticType<::core::primitive::u32>,
+					::subxt::metadata::DecodeStaticType<
+						runtime_types::da_primitives::BlockLengthRows,
+					>,
 				> {
 					::subxt::constants::StaticConstantAddress::new(
 						"DataAvailability",
 						"MaxBlockRows",
 						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
+							240u8, 185u8, 129u8, 113u8, 97u8, 167u8, 124u8, 171u8, 245u8, 13u8,
+							246u8, 129u8, 19u8, 85u8, 91u8, 215u8, 57u8, 41u8, 249u8, 219u8, 130u8,
+							113u8, 255u8, 83u8, 254u8, 106u8, 212u8, 187u8, 160u8, 46u8, 32u8,
+							61u8,
 						],
 					)
 				}
@@ -16386,16 +16390,18 @@ pub mod api {
 				pub fn min_block_cols(
 					&self,
 				) -> ::subxt::constants::StaticConstantAddress<
-					::subxt::metadata::DecodeStaticType<::core::primitive::u32>,
+					::subxt::metadata::DecodeStaticType<
+						runtime_types::da_primitives::BlockLengthColumns,
+					>,
 				> {
 					::subxt::constants::StaticConstantAddress::new(
 						"DataAvailability",
 						"MinBlockCols",
 						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
+							240u8, 185u8, 129u8, 113u8, 97u8, 167u8, 124u8, 171u8, 245u8, 13u8,
+							246u8, 129u8, 19u8, 85u8, 91u8, 215u8, 57u8, 41u8, 249u8, 219u8, 130u8,
+							113u8, 255u8, 83u8, 254u8, 106u8, 212u8, 187u8, 160u8, 46u8, 32u8,
+							61u8,
 						],
 					)
 				}
@@ -16404,16 +16410,18 @@ pub mod api {
 				pub fn max_block_cols(
 					&self,
 				) -> ::subxt::constants::StaticConstantAddress<
-					::subxt::metadata::DecodeStaticType<::core::primitive::u32>,
+					::subxt::metadata::DecodeStaticType<
+						runtime_types::da_primitives::BlockLengthColumns,
+					>,
 				> {
 					::subxt::constants::StaticConstantAddress::new(
 						"DataAvailability",
 						"MaxBlockCols",
 						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
+							240u8, 185u8, 129u8, 113u8, 97u8, 167u8, 124u8, 171u8, 245u8, 13u8,
+							246u8, 129u8, 19u8, 85u8, 91u8, 215u8, 57u8, 41u8, 249u8, 219u8, 130u8,
+							113u8, 255u8, 83u8, 254u8, 106u8, 212u8, 187u8, 160u8, 46u8, 32u8,
+							61u8,
 						],
 					)
 				}
@@ -17161,8 +17169,8 @@ pub mod api {
 					},
 					#[codec(index = 2)]
 					BlockLengthProposalSubmitted {
-						rows: ::core::primitive::u32,
-						cols: ::core::primitive::u32,
+						rows: runtime_types::da_primitives::BlockLengthRows,
+						cols: runtime_types::da_primitives::BlockLengthColumns,
 					},
 				}
 			}
@@ -17331,6 +17339,24 @@ pub mod api {
 					pub commitment: ::std::vec::Vec<::core::primitive::u8>,
 				}
 			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			pub struct BlockLengthColumns(#[codec(compact)] pub ::core::primitive::u32);
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			pub struct BlockLengthRows(#[codec(compact)] pub ::core::primitive::u32);
 		}
 		pub mod da_runtime {
 			use super::runtime_types;
@@ -17986,10 +18012,8 @@ pub mod api {
 					pub max: runtime_types::frame_support::weights::PerDispatchClass<
 						::core::primitive::u32,
 					>,
-					#[codec(compact)]
-					pub cols: ::core::primitive::u32,
-					#[codec(compact)]
-					pub rows: ::core::primitive::u32,
+					pub cols: runtime_types::da_primitives::BlockLengthColumns,
+					pub rows: runtime_types::da_primitives::BlockLengthRows,
 					#[codec(compact)]
 					pub chunk_size: ::core::primitive::u32,
 				}
@@ -24848,9 +24872,9 @@ pub mod api {
 		let runtime_metadata_hash = client.metadata().metadata_hash(&PALLETS);
 		if runtime_metadata_hash
 			!= [
-				127u8, 27u8, 160u8, 192u8, 160u8, 243u8, 224u8, 64u8, 42u8, 161u8, 227u8, 35u8,
-				148u8, 233u8, 171u8, 124u8, 33u8, 107u8, 66u8, 128u8, 225u8, 6u8, 146u8, 177u8,
-				106u8, 174u8, 22u8, 58u8, 202u8, 41u8, 84u8, 103u8,
+				204u8, 161u8, 190u8, 208u8, 228u8, 171u8, 247u8, 177u8, 184u8, 139u8, 240u8, 37u8,
+				8u8, 240u8, 253u8, 134u8, 100u8, 212u8, 1u8, 114u8, 249u8, 231u8, 108u8, 168u8,
+				81u8, 60u8, 167u8, 0u8, 10u8, 175u8, 16u8, 160u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleMetadata)
 		} else {
