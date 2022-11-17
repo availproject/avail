@@ -5,15 +5,16 @@ use std::{
 
 use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
 use da_primitives::{
-	asdr::{AppExtrinsic, GetAppId},
+	asdr::{AppExtrinsic, AppId, DataLookup, GetAppId},
 	traits::ExtendedHeader,
-	DataProof,
+	DataProof, HeaderExtension,
 };
 use frame_support::traits::ExtrinsicCall;
 use frame_system::{limits::BlockLength, submitted_data};
 use jsonrpc_core::{Error as RpcError, Result};
 use jsonrpc_derive::rpc;
 use kate::{com::Cell, BlockDimensions, BlsScalar, PublicParameters};
+use kate_recovery::{index::AppDataIndex, matrix::Dimensions};
 use kate_rpc_runtime_api::KateParamsGetter;
 use lru::LruCache;
 use sc_client_api::{BlockBackend, StorageProvider};
@@ -34,6 +35,13 @@ where
 	Block: BlockT,
 	SDFilter: submitted_data::Filter<CallOf<Block>>,
 {
+	#[rpc(name = "kate_queryAppData")]
+	fn query_app_data(
+		&self,
+		app_id: AppId,
+		at: Option<HashOf<Block>>,
+	) -> Result<Vec<Option<Vec<u8>>>>;
+
 	#[rpc(name = "kate_queryProof")]
 	fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> Result<Vec<u8>>;
 
@@ -118,6 +126,97 @@ where
 	SDFilter: submitted_data::Filter<CallOf<Block>>,
 	<<Block as BlockT>::Extrinsic as Extrinsic>::Call: Clone,
 {
+	fn query_app_data(
+		&self,
+		app_id: AppId,
+		at: Option<HashOf<Block>>,
+	) -> Result<Vec<Option<Vec<u8>>>> {
+		let block_id = self.block_id(at);
+
+		let signed_block = self
+			.client
+			.block(&block_id)
+			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
+			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
+		let block_hash = signed_block.block.header().hash();
+
+		let mut block_ext_cache = self
+			.block_ext_cache
+			.write()
+			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
+
+		let block_length: BlockLength = self
+			.client
+			.runtime_api()
+			.get_block_length(&block_id)
+			.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
+
+		let rows: usize = block_length.rows as usize;
+		let cols: usize = block_length.cols as usize;
+		let chunk_size: usize = block_length.chunk_size() as usize;
+
+		if !block_ext_cache.contains(&block_hash) {
+			// build block data extension and cache it
+			let xts_by_id: Vec<AppExtrinsic> = signed_block
+				.block
+				.extrinsics()
+				.iter()
+				.map(|e| AppExtrinsic {
+					app_id: e.app_id(),
+					data: e.encode(),
+				})
+				.collect();
+
+			// Use Babe's VRF
+			let seed: [u8; 32] = self
+				.client
+				.runtime_api()
+				.get_babe_vrf(&block_id)
+				.map_err(|e| internal_err!("Babe VRF not found for block {}: {:?}", block_id, e))?;
+
+			let (_, block, block_dims) =
+				kate::com::flatten_and_pad_block(rows, cols, chunk_size, &xts_by_id, seed)
+					.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
+
+			let data = kate::com::par_extend_data_matrix(block_dims, &block)
+				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
+
+			block_ext_cache.put(block_hash, (data, block_dims));
+		}
+
+		let (ext_data, block_dims) = block_ext_cache
+			.get(&block_hash)
+			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
+
+		let HeaderExtension::V1(header) = signed_block.block.header().extension();
+		let DataLookup { index, size } = &header.app_lookup;
+
+		let app_data_index = AppDataIndex {
+			index: index
+				.iter()
+				.map(|i| (i.app_id.0, i.start))
+				.collect::<Vec<_>>(),
+			size: *size,
+		};
+
+		let rows: u16 = block_dims
+			.rows
+			.try_into()
+			.map_err(|e| internal_err!("Invalid rows number: {:?}", e))?;
+
+		let cols: u16 = block_dims
+			.cols
+			.try_into()
+			.map_err(|e| internal_err!("Invalid cols number: {:?}", e))?;
+
+		Ok(kate::com::scalars_to_rows(
+			app_id.0,
+			&app_data_index,
+			&Dimensions::new(rows, cols),
+			ext_data,
+		))
+	}
+
 	//TODO allocate static thread pool, just for RPC related work, to free up resources, for the block producing processes.
 	fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> Result<Vec<u8>> {
 		let block_id = self.block_id(at);

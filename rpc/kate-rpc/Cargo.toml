@@ -1,6 +1,6 @@
 [package]
 name = "kate-rpc"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -16,8 +16,9 @@ thiserror = "1.0.30"
 rs_merkle = { version = "1.2.0", default-features = false }
 
 codec = { package = "parity-scale-codec", version = "2.0.0" }
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.2", default-features = false }
-kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.2", default-features = false }
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.3.0", default-features = false }
+kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.3.0", default-features = false }
+kate-recovery = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.3.0", default-features = false }
 
 frame-system-rpc-runtime-api = "4.0.0-dev"
 jsonrpc-core = "18.0.0"

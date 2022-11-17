@@ -1,6 +1,6 @@
 [package]
 name = "updater-manager"
-version = "1.0.0"
+version = "1.0.1"
 authors = [""]
 edition = "2021"
 license = "Apache-2.0"
@@ -29,10 +29,10 @@ primitive-types = { git = "https://github.com/paritytech/parity-common.git", tag
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 
 # Nomad
-nomad-core = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.2", default-features = false }
+nomad-core = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.3.0", default-features = false }
 
 [dev-dependencies]
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.2.2" }
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.3.0", default-features = false }
 
 [features]
 default = ["std"]
