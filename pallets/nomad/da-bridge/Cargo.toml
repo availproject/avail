@@ -29,7 +29,6 @@ sp-arithmetic = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false }
 primitive-types = { git = "https://github.com/paritytech/parity-common.git", tag = "parity-util-mem-v0.10.1", default-features = false }
-frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 hex-literal = "0.3.4"
 
 
@@ -50,14 +49,11 @@ std = [
 	"scale-info/std",
 	"frame-support/std",
 	"frame-system/std",
-	"frame-benchmarking/std",
 	"nomad-home/std",
-	"nomad-core/std",
 	"da-primitives/std",
 ]
 
 runtime-benchmarks = [
-	"frame-benchmarking",
 	"sp-runtime/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 ]

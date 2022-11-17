@@ -28,9 +28,6 @@ primitive-types = { git = "https://github.com/paritytech/parity-common.git", tag
 # Benchmarking
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 
-# Nomad
-nomad-core = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.3.0", default-features = false }
-
 [dev-dependencies]
 da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.3.0", default-features = false }
 
@@ -47,7 +44,6 @@ std = [
 	"sp-arithmetic/std",
 	"frame-support/std",
 	"frame-system/std",
-	"nomad-core/std"
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

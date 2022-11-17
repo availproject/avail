@@ -76,12 +76,10 @@ pallet-authority-discovery = { version = "4.0.0-dev", default-features = false }
 pallet-elections-phragmen = { version = "5.0.0-dev", default-features = false }
 pallet-tips = { version = "4.0.0-dev", default-features = false }
 pallet-membership = { version = "4.0.0-dev", default-features = false }
-pallet-randomness-collective-flip = { version = "4.0.0-dev", default-features = false }
 pallet-bags-list = { version = "4.0.0-dev", default-features = false }
 pallet-election-provider-multi-phase = { version = "4.0.0-dev", default-features = false }
 frame-election-provider-support = { version = "4.0.0-dev", default-features = false }
 pallet-democracy = { version = "4.0.0-dev", default-features = false }
-pallet-asset-tx-payment = { version = "4.0.0-dev", default-features = false }
 pallet-mmr = { version = "4.0.0-dev", default-features = false }
 
 ## Substrate::RPCs
@@ -154,9 +152,7 @@ std = [
 	"pallet-elections-phragmen/std",
 	"pallet-tips/std",
 	"pallet-membership/std",
-	"pallet-randomness-collective-flip/std",
 	"pallet-democracy/std",
-	"pallet-asset-tx-payment/std",
 	"pallet-mmr/std",
 	"frame-system-rpc-runtime-api/std",
 	"da-control/std",

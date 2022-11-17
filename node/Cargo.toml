@@ -54,9 +54,7 @@ sp-transaction-pool = { version = "4.0.0-dev" }
 sp-inherents = { version = "4.0.0-dev" }
 sc-transaction-pool-api = { version = "4.0.0-dev" }
 sp-transaction-storage-proof = "4.0.0-dev" 
-sc-consensus-aura = { version = "0.10.0-dev" }
 sc-consensus-babe-rpc = { version = "0.10.0-dev" }
-sp-consensus-aura = { version = "0.10.0-dev" }
 sp-consensus-babe = { version = "0.10.0-dev" }
 sp-consensus = { version = "0.10.0-dev" }
 sc-consensus = { version = "0.10.0-dev" }
