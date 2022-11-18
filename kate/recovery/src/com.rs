@@ -138,11 +138,11 @@ fn reconstruct_available(
 ) -> Result<Vec<u8>, ReconstructionError> {
 	let columns = map_cells(dimensions, cells)?;
 
-	let scalars = (0..dimensions.cols)
+	let scalars = (0..dimensions.cols())
 		.map(|col| match columns.get(&col) {
-			None => Ok(vec![None; dimensions.rows as usize]),
+			None => Ok(vec![None; dimensions.rows() as usize]),
 			Some(column_cells) => {
-				if column_cells.len() < dimensions.rows as usize {
+				if column_cells.len() < dimensions.rows() as usize {
 					return Err(ReconstructionError::InvalidColumn(col));
 				}
 				let cells = column_cells.values().cloned().collect::<Vec<_>>();
@@ -526,7 +526,7 @@ mod tests {
 			size: 16,
 			index: vec![(1, 2), (2, 5), (3, 8)],
 		};
-		let dimensions = Dimensions::new(8, 4);
+		let dimensions = Dimensions::new(8, 4).unwrap();
 		let result = app_specific_rows(&index, &dimensions, app_id);
 		assert_eq!(expected.len(), result.len());
 	}
@@ -539,7 +539,7 @@ mod tests {
 			size: 8,
 			index: vec![(1, 5)],
 		};
-		let dimensions = Dimensions::new(4, 4);
+		let dimensions = Dimensions::new(4, 4).unwrap();
 		let result = app_specific_cells(&index, &dimensions, app_id).unwrap_or_default();
 		assert_eq!(expected.len(), result.len());
 		result.iter().zip(expected).for_each(|(a, &(row, col))| {

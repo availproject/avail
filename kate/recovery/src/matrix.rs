@@ -43,15 +43,28 @@ pub struct Partition {
 /// Extended matrix representation: [1,EC,5,EC,2,EC,6,EC,3,EC,7,EC,4,EC,8,EC]
 #[derive(Debug, Clone)]
 pub struct Dimensions {
-	pub rows: u16,
-	pub cols: u16,
+	rows: u16,
+	cols: u16,
 }
 
 impl Dimensions {
 	/// Creates new matrix dimensions.
 	/// Data layout is assumed to be row-wise.
-	pub const fn new(rows: u16, cols: u16) -> Self {
-		Dimensions { rows, cols }
+	/// Returns `None` if rows or cols is 0.
+	pub const fn new(rows: u16, cols: u16) -> Option<Self> {
+		if rows == 0 || cols == 0 {
+			return None;
+		}
+		Some(Dimensions { rows, cols })
+	}
+
+	/// Returns number of rows
+	pub fn rows(&self) -> u16 {
+		self.rows
+	}
+	/// Returns number of columns
+	pub fn cols(&self) -> u16 {
+		self.cols
 	}
 
 	/// Matrix size.
@@ -60,8 +73,8 @@ impl Dimensions {
 	}
 
 	/// Extended matrix size.
-	pub fn extended_size(&self) -> u32 {
-		self.extended_rows() * self.cols as u32
+	pub fn extended_size(&self) -> u64 {
+		self.extended_rows() as u64 * self.cols as u64
 	}
 
 	/// Extended matrix rows count.
@@ -72,6 +85,9 @@ impl Dimensions {
 	/// List of data row indexes in the extended matrix.
 	pub fn extended_data_rows(&self, cells: Range<u32>) -> Vec<u32> {
 		assert!(cells.end <= self.size());
+		if cells.end == 0 {
+			return vec![];
+		}
 
 		let first_row = self.extended_data_row(cells.start);
 		let last_row = self.extended_data_row(cells.end - 1);
@@ -157,20 +173,28 @@ impl Dimensions {
 
 #[cfg(test)]
 mod tests {
+
 	use test_case::test_case;
 
 	use crate::matrix::Dimensions;
 
+	#[test]
+	fn zero_dimensions() {
+		assert!(Dimensions::new(0, 0).is_none());
+		assert!(Dimensions::new(0, 1).is_none());
+		assert!(Dimensions::new(1, 0).is_none());
+	}
+
 	#[test_case(2, 4, vec![(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3)] ; "2*4 matrix data iteration")]
 	fn iter_data(rows: u16, cols: u16, expected: Vec<(usize, usize)>) {
-		let dimensions = Dimensions::new(rows, cols);
+		let dimensions = Dimensions::new(rows, cols).unwrap();
 		let cells = dimensions.iter_data().collect::<Vec<_>>();
 		assert_eq!(cells, expected);
 	}
 
 	#[test]
 	fn iter_cells() {
-		let dimensions = Dimensions::new(2, 4);
+		let dimensions = Dimensions::new(2, 4).unwrap();
 		let cells = dimensions.iter_cells().collect::<Vec<_>>();
 		assert_eq!(cells, vec![0, 4, 1, 5, 2, 6, 3, 7]);
 	}
