@@ -37,7 +37,7 @@ use crate::{
 	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed, LOG_TARGET,
 };
 
-#[derive(Serialize, Deserialize, Constructor, Clone, Copy, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, Constructor, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Cell {
 	pub row: BlockLengthRows,
 	pub col: BlockLengthColumns,
@@ -607,8 +607,7 @@ mod tests {
 		let block = (0..=247)
 			.collect::<Vec<u8>>()
 			.chunks_exact(DATA_CHUNK_SIZE)
-			.map(|chunk| pad_with_zeroes(chunk.to_vec(), block_dims.chunk_size))
-			.flatten()
+			.flat_map(|chunk| pad_with_zeroes(chunk.to_vec(), block_dims.chunk_size))
 			.collect::<Vec<u8>>();
 		let res = par_extend_data_matrix(block_dims, &block);
 		eprintln!("result={:?}", res);
@@ -773,7 +772,7 @@ mod tests {
 			BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default()).unwrap();
 
 		let columns = sample_cells_from_matrix(&matrix, &dims, None);
-		let extended_dims = dims.clone().try_into().unwrap();
+		let extended_dims = dims.try_into().unwrap();
 		let index = app_data_index_try_from_layout(layout).unwrap();
 		let reconstructed = reconstruct_extrinsics(&index, &extended_dims, columns).unwrap();
 		for (result, xt) in reconstructed.iter().zip(xts) {
@@ -804,7 +803,7 @@ mod tests {
 
 		let index = app_data_index_try_from_layout(layout).unwrap();
 		let public_params = testnet::public_params(dims.cols);
-		let extended_dims = dims.clone().try_into().unwrap();
+		let extended_dims = dims.try_into().unwrap();
 		for xt in xts {
 			let rows = &scalars_to_rows(xt.app_id.0, &index, &extended_dims, &matrix);
 			prop_assert!(kate_recovery::commitments::verify_equality(&public_params, &commitments, rows,&index,&extended_dims,xt.app_id.0).unwrap());
@@ -820,7 +819,7 @@ mod tests {
 
 		let index = app_data_index_try_from_layout(layout).unwrap();
 		let public_params = testnet::public_params(dims.cols);
-		let extended_dims =  dims.clone().try_into().unwrap();
+		let extended_dims =  dims.try_into().unwrap();
 		for xt in xts {
 			let mut rows = scalars_to_rows(xt.app_id.0, &index, &extended_dims, &matrix);
 			let app_row_index = rows.iter().position(Option::is_some).unwrap();
@@ -897,7 +896,7 @@ get erasure coded to ensure redundancy."#;
 
 		let cols_1 = sample_cells_from_matrix(&coded, &dims, Some(&[0, 1, 2, 3]));
 
-		let extended_dims = dims.clone().try_into().unwrap();
+		let extended_dims = dims.try_into().unwrap();
 
 		let index = app_data_index_try_from_layout(layout).unwrap();
 		let res_1 = reconstruct_app_extrinsics(&index, &extended_dims, cols_1, 1).unwrap();
@@ -939,7 +938,7 @@ get erasure coded to ensure redundancy."#;
 		.unwrap();
 		let coded = par_extend_data_matrix(dims, &data[..]).unwrap();
 
-		let dimensions: Dimensions = dims.clone().try_into().unwrap();
+		let dimensions: Dimensions = dims.try_into().unwrap();
 		let extended_matrix = coded
 			.chunks(dimensions.extended_rows() as usize)
 			.collect::<Vec<_>>();
@@ -986,7 +985,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 		let cols = sample_cells_from_matrix(&coded, &dims, None);
 
-		let extended_dims = dims.clone().try_into().unwrap();
+		let extended_dims = dims.try_into().unwrap();
 		let index = app_data_index_try_from_layout(layout).unwrap();
 		let res = reconstruct_extrinsics(&index, &extended_dims, cols).unwrap();
 		let s = String::from_utf8_lossy(res[0].1[0].as_slice());
@@ -1025,7 +1024,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let coded: Vec<BlsScalar> = par_extend_data_matrix(dims, &data[..]).unwrap();
 
 		let cols = sample_cells_from_matrix(&coded, &dims, None);
-		let extended_dims = dims.clone().try_into().unwrap();
+		let extended_dims = dims.try_into().unwrap();
 
 		let index = app_data_index_try_from_layout(layout).unwrap();
 		let res = reconstruct_extrinsics(&index, &extended_dims, cols).unwrap();
