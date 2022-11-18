@@ -28,16 +28,6 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install nightly `rust-fmt` 
-        uses: actions-rs/toolchain@v1
-        with:
-            # NOTE: Until https://github.com/actions-rs/toolchain/pull/209 is merged,
-            # this should be synced with rust-toolchain.toml file.
-            # After merge, this section should be removed.
-            toolchain: nightly-2021-12-05
-            components: rustfmt
-            profile: minimal
-
       - name: Install Rust toolchain 1.64 
         uses: actions-rs/toolchain@v1
         with:
@@ -48,6 +38,12 @@ jobs:
 
       - name: Check `TOML`, `JSON`, and `MarkDown` formatting
         uses: dprint/check@v2.1
+
+      - name: Check code formatting
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --check
 
       - name: Run tests
         uses: actions-rs/cargo@v1
