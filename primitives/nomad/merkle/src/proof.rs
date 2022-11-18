@@ -54,5 +54,7 @@ mod const_array_serde {
 
 impl<const N: usize> MerkleProof for Proof<N> {
 	/// Calculate the merkle root produced by evaluating the proof
-	fn root(&self) -> H256 { merkle_root_from_branch(self.leaf, &self.path, self.index) }
+	fn root(&self) -> H256 {
+		merkle_root_from_branch(self.leaf, &self.path, self.index)
+	}
 }

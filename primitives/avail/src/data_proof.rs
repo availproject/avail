@@ -13,7 +13,9 @@ use thiserror_no_std::Error;
 pub struct HasherSha256 {}
 
 impl Hasher for HasherSha256 {
-	fn hash(data: &[u8]) -> Hash { sha2_256(data) }
+	fn hash(data: &[u8]) -> Hash {
+		sha2_256(data)
+	}
 }
 
 /// Wrapper of `beefy-merkle-tree::MerkleProof` with codec support.

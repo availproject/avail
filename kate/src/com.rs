@@ -53,7 +53,9 @@ pub enum Error {
 }
 
 impl From<PlonkError> for Error {
-	fn from(error: PlonkError) -> Self { Self::PlonkError(error) }
+	fn from(error: PlonkError) -> Self {
+		Self::PlonkError(error)
+	}
 }
 
 pub type XtsLayout = Vec<(AppId, u32)>;
@@ -850,11 +852,14 @@ mod tests {
 		)
 		.unwrap();
 
-		assert_eq!(dimensions, BlockDimensions {
-			rows: 1.into(),
-			cols: 4.into(),
-			chunk_size: 32
-		});
+		assert_eq!(
+			dimensions,
+			BlockDimensions {
+				rows: 1.into(),
+				cols: 4.into(),
+				chunk_size: 32
+			}
+		);
 		let expected_commitments = hex!("960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D");
 		assert_eq!(commitments, expected_commitments);
 	}
@@ -1124,5 +1129,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 	#[test_case( r#"{ "row": 42, "col": 99 }"# => Cell::new(42.into(),99.into()) ; "Simple" )]
 	#[test_case( r#"{ "row": 4294967295, "col": 99 }"# => Cell::new(4_294_967_295.into(),99.into()) ; "Max row" )]
-	fn serde_block_length_types_untagged(data: &str) -> Cell { serde_json::from_str(data).unwrap() }
+	fn serde_block_length_types_untagged(data: &str) -> Cell {
+		serde_json::from_str(data).unwrap()
+	}
 }

@@ -104,7 +104,9 @@ pub struct BlockLengthColumns(#[codec(compact)] pub u32);
 
 impl BlockLengthColumns {
 	#[inline]
-	pub fn as_usize(&self) -> usize { self.0 as usize }
+	pub fn as_usize(&self) -> usize {
+		self.0 as usize
+	}
 }
 
 /// Strong type for `BlockLength::rows`
@@ -132,5 +134,7 @@ pub struct BlockLengthRows(#[codec(compact)] pub u32);
 
 impl BlockLengthRows {
 	#[inline]
-	pub fn as_usize(&self) -> usize { self.0 as usize }
+	pub fn as_usize(&self) -> usize {
+		self.0 as usize
+	}
 }

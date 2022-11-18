@@ -16,7 +16,9 @@ pub struct HeaderExtension {
 }
 
 impl HeaderExtension {
-	pub fn data_root(&self) -> H256 { self.commitment.data_root }
+	pub fn data_root(&self) -> H256 {
+		self.commitment.data_root
+	}
 }
 
 #[cfg(feature = "std")]

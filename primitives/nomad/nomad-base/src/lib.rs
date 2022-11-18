@@ -44,7 +44,9 @@ impl NomadBase {
 		}
 	}
 
-	pub fn home_domain_hash(&self) -> H256 { home_domain_hash(self.local_domain) }
+	pub fn home_domain_hash(&self) -> H256 {
+		home_domain_hash(self.local_domain)
+	}
 
 	pub fn set_committed_root(&mut self, new_committed_root: H256) {
 		self.committed_root = new_committed_root;

@@ -12,5 +12,7 @@ pub enum NomadState {
 }
 
 impl Default for NomadState {
-	fn default() -> Self { Self::Active }
+	fn default() -> Self {
+		Self::Active
+	}
 }

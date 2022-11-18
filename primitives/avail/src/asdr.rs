@@ -41,15 +41,23 @@ pub struct AppId(#[codec(compact)] pub u32);
 
 #[cfg(feature = "std")]
 impl MallocSizeOf for AppId {
-	fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize { self.0.size_of(ops) }
+	fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
+		self.0.size_of(ops)
+	}
 }
 
 impl Zero for AppId {
-	fn zero() -> Self { 0u32.into() }
+	fn zero() -> Self {
+		0u32.into()
+	}
 
-	fn is_zero(&self) -> bool { self.0 == 0u32 }
+	fn is_zero(&self) -> bool {
+		self.0 == 0u32
+	}
 
-	fn set_zero(&mut self) { self.0 = 0u32; }
+	fn set_zero(&mut self) {
+		self.0 = 0u32;
+	}
 }
 
 /// Raw Extrinsic with application id.
@@ -70,5 +78,7 @@ impl From<Vec<u8>> for AppExtrinsic {
 }
 
 impl GetAppId for AppExtrinsic {
-	fn app_id(&self) -> AppId { self.app_id }
+	fn app_id(&self) -> AppId {
+		self.app_id
+	}
 }

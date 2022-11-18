@@ -101,7 +101,9 @@ impl<Address, Call, Signature, Extra> MallocSizeOf
 where
 	Extra: SignedExtension,
 {
-	fn size_of(&self, _ops: &mut MallocSizeOfOps) -> usize { 0 }
+	fn size_of(&self, _ops: &mut MallocSizeOfOps) -> usize {
+		0
+	}
 }
 
 impl<Address, Call, Signature, Extra: SignedExtension>
@@ -130,7 +132,9 @@ impl<Address, Call, Signature, Extra: SignedExtension> Extrinsic
 	type Call = Call;
 	type SignaturePayload = (Address, Signature, Extra);
 
-	fn is_signed(&self) -> Option<bool> { Some(self.signature.is_some()) }
+	fn is_signed(&self) -> Option<bool> {
+		Some(self.signature.is_some())
+	}
 
 	fn new(function: Call, signed_data: Option<Self::SignaturePayload>) -> Option<Self> {
 		Some(if let Some((address, signature, extra)) = signed_data {
@@ -202,7 +206,9 @@ where
 	Call: GetDispatchInfo,
 	Extra: SignedExtension,
 {
-	fn get_dispatch_info(&self) -> DispatchInfo { self.function.get_dispatch_info() }
+	fn get_dispatch_info(&self) -> DispatchInfo {
+		self.function.get_dispatch_info()
+	}
 }
 
 /// A payload that has been signed for an unchecked extrinsics.
@@ -247,7 +253,9 @@ where
 	}
 
 	/// Deconstruct the payload into it's components.
-	pub fn deconstruct(self) -> (Call, Extra, Extra::AdditionalSigned) { self.0 }
+	pub fn deconstruct(self) -> (Call, Extra, Extra::AdditionalSigned) {
+		self.0
+	}
 }
 
 impl<Call, Extra> Encode for SignedPayload<Call, Extra>
@@ -419,7 +427,9 @@ impl<Address, Call, Signature, Extra> ExtrinsicCall
 where
 	Extra: SignedExtension,
 {
-	fn call(&self) -> &Self::Call { &self.function }
+	fn call(&self) -> &Self::Call {
+		&self.function
+	}
 }
 
 impl<Address, Call, Signature, Extra> From<AppUncheckedExtrinsic<Address, Call, Signature, Extra>>
@@ -474,7 +484,9 @@ mod tests {
 	}
 
 	impl GetAppId for TestExtra {
-		fn app_id(&self) -> AppId { Default::default() }
+		fn app_id(&self) -> AppId {
+			Default::default()
+		}
 	}
 
 	type Ex = AppUncheckedExtrinsic<TestAccountId, TestCall, TestSig, TestExtra>;
