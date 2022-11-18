@@ -1042,7 +1042,7 @@ impl<T: Config> Pallet<T> {
 	/// Decrement the reference counter on an account. This *MUST* only be done once for every time
 	/// you called `inc_consumers` on `who`.
 	#[deprecated = "Use `dec_consumers` instead"]
-	pub fn dec_ref(who: &T::AccountId) { let _ = Self::dec_consumers(who); }
+	pub fn dec_ref(who: &T::AccountId) { Self::dec_consumers(who); }
 
 	/// The number of outstanding references for the account `who`.
 	#[deprecated = "Use `consumers` instead"]
@@ -1257,7 +1257,7 @@ impl<T: Config> Pallet<T> {
 		Events::<T>::append(&event);
 
 		for topic in topics {
-			<EventTopics<T>>::append(topic, &(block_number, event_idx));
+			<EventTopics<T>>::append(topic, (block_number, event_idx));
 		}
 	}
 
@@ -1566,7 +1566,7 @@ impl<T: Config> Pallet<T> {
 	/// of the old and new runtime has the same spec name and that the spec version is increasing.
 	pub fn can_set_code(code: &[u8]) -> Result<(), sp_runtime::DispatchError> {
 		let current_version = T::Version::get();
-		let new_version = sp_io::misc::runtime_version(&code)
+		let new_version = sp_io::misc::runtime_version(code)
 			.and_then(|v| RuntimeVersion::decode(&mut &v[..]).ok())
 			.ok_or(Error::<T>::FailedToExtractRuntimeVersion)?;
 

@@ -84,15 +84,17 @@ where
 	T: SendTransactionTypes<LocalCall>,
 {
 	/// Submit transaction onchain by providing the call and an optional signature
+	#[allow(clippy::result_unit_err)]
 	pub fn submit_transaction(
 		call: <T as SendTransactionTypes<LocalCall>>::OverarchingCall,
 		signature: Option<<T::Extrinsic as ExtrinsicT>::SignaturePayload>,
 	) -> Result<(), ()> {
-		let xt = T::Extrinsic::new(call.into(), signature).ok_or(())?;
+		let xt = T::Extrinsic::new(call, signature).ok_or(())?;
 		sp_io::offchain::submit_transaction(xt.encode())
 	}
 
 	/// A convenience method to submit an unsigned transaction onchain.
+	#[allow(clippy::result_unit_err)]
 	pub fn submit_unsigned_transaction(
 		call: <T as SendTransactionTypes<LocalCall>>::OverarchingCall,
 	) -> Result<(), ()> {
@@ -160,7 +162,7 @@ impl<T: SigningTypes, C: AppCrypto<T::Public, T::Signature>, X> Signer<T, C, X> 
 					keystore_accounts.map(|account| account.public).collect();
 
 				Box::new(
-					keys.into_iter()
+					keys.iter()
 						.enumerate()
 						.map(|(index, key)| {
 							let account_id = key.clone().into_account();
@@ -204,7 +206,7 @@ impl<T: SigningTypes, C: AppCrypto<T::Public, T::Signature>> Signer<T, C, ForAny
 		F: Fn(&Account<T>) -> Option<R>,
 	{
 		let accounts = self.accounts_from_keys();
-		for account in accounts.into_iter() {
+		for account in accounts {
 			let res = f(&account);
 			if let Some(res) = res {
 				return Some((account, res));

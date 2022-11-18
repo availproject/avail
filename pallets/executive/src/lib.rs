@@ -357,7 +357,7 @@ where
 		let header = block.header();
 
 		// Check that `parent_hash` is correct.
-		let n = header.number().clone();
+		let n = *header.number();
 		assert!(
 			n > System::BlockNumber::zero()
 				&& <frame_system::Pallet<System>>::block_hash(n - System::BlockNumber::one())

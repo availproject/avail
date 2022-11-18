@@ -166,7 +166,7 @@ pub const DAYS: BlockNumber = HOURS * 24;
 
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
 
-pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 1 * HOURS;
+pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = HOURS;
 
 /// The BABE epoch configuration at genesis.
 pub const BABE_GENESIS_EPOCH_CONFIG: sp_consensus_babe::BabeEpochConfiguration =
@@ -263,6 +263,7 @@ impl submitted_data::Filter<Call> for Runtime {
 	fn filter(call: Call, metrics: submitted_data::RcMetrics) -> Option<Vec<u8>> {
 		metrics.borrow_mut().total_extrinsics += 1;
 
+		#[allow(clippy::collapsible_match)]
 		match call {
 			Call::DataAvailability(method) => match method {
 				da_control::Call::submit_data { data } => {

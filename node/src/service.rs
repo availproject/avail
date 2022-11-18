@@ -159,6 +159,7 @@ pub mod tests {
 }
 
 /// Creates a new partial node.
+#[allow(clippy::type_complexity)]
 pub fn new_partial(
 	config: &Configuration,
 ) -> Result<
