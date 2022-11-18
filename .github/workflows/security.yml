@@ -1,0 +1,57 @@
+name: Security CI
+on: workflow_dispatch # Workflow is available only on manual dispatch
+
+jobs:
+  check:
+    name: "Check"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v3"
+      - uses: "actions-rs/toolchain@v1"
+        with:
+          override: true
+          profile: "minimal"
+          toolchain: "stable"
+      - uses: "actions-rs/cargo@v1"
+        with:
+          command: "check"
+
+  fmt:
+    name: "Rustfmt"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v3"
+      - uses: "actions-rs/toolchain@v1"
+        with:
+          override: true
+          profile: "minimal"
+          toolchain: "nightly"
+      - run: "rustup component add rustfmt"
+      - uses: "actions-rs/cargo@v1"
+        with:
+          command: "fmt"
+          args: "--all -- --check"
+
+  clippy:
+    name: "Clippy"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v3"
+      - uses: "actions-rs/toolchain@v1"
+        with:
+          override: true
+          profile: "minimal"
+          toolchain: "nightly"
+      - run: "rustup component add clippy"
+      - uses: "actions-rs/cargo@v1"
+        with:
+          command: "clippy"
+          args: "-- -D warnings"
+
+  security_audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/audit-check@v1.2.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

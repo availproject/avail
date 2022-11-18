@@ -52,6 +52,7 @@ pub struct BlockLength {
 	pub cols: BlockLengthColumns,
 	pub rows: BlockLengthRows,
 	#[codec(compact)]
+	#[codec(compact)]
 	chunk_size: u32,
 }
 
