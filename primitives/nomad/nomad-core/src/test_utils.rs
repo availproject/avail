@@ -15,9 +15,13 @@ pub struct Updater {
 }
 
 impl Updater {
-	pub const fn new(domain: u32, signer: LocalWallet) -> Self { Self { domain, signer } }
+	pub const fn new(domain: u32, signer: LocalWallet) -> Self {
+		Self { domain, signer }
+	}
 
-	pub fn address(&self) -> H160 { self.signer.address().0.into() }
+	pub fn address(&self) -> H160 {
+		self.signer.address().0.into()
+	}
 
 	fn sign_message_without_eip_155<M: Send + Sync + AsRef<[u8]>>(&self, message: M) -> Signature {
 		// Had to reimplement hash and signing to remove async-ness for

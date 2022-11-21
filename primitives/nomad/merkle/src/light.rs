@@ -53,7 +53,9 @@ impl<const N: usize> Merkle for LightMerkle<N> {
 		2u32.saturating_pow(N as u32)
 	}
 
-	fn count(&self) -> u32 { self.count }
+	fn count(&self) -> u32 {
+		self.count
+	}
 
 	fn root(&self) -> H256 {
 		let mut node: H256 = Default::default();
@@ -72,7 +74,9 @@ impl<const N: usize> Merkle for LightMerkle<N> {
 		node
 	}
 
-	fn depth(&self) -> usize { N }
+	fn depth(&self) -> usize {
+		N
+	}
 
 	fn ingest(&mut self, element: H256) -> Result<H256, TreeError> {
 		ensure!(Self::max_elements() > self.count, TreeError::MerkleTreeFull);
@@ -107,13 +111,19 @@ impl<const N: usize> LightMerkle<N> {
 	}
 
 	/// Calculate the initital root of a tree of this depth
-	pub fn initial_root() -> H256 { LightMerkle::<N>::default().root() }
+	pub fn initial_root() -> H256 {
+		LightMerkle::<N>::default().root()
+	}
 
 	/// Get the leading-edge branch.
-	pub fn branch(&self) -> &[H256; N] { &self.branch }
+	pub fn branch(&self) -> &[H256; N] {
+		&self.branch
+	}
 
 	/// Verify a incremental merkle proof of inclusion
-	pub fn verify(&self, proof: &Proof<N>) -> bool { proof.root() == self.root() }
+	pub fn verify(&self, proof: &Proof<N>) -> bool {
+		proof.root() == self.root()
+	}
 }
 
 #[cfg(feature = "std")]

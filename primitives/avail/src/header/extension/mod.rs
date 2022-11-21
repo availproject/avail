@@ -42,11 +42,15 @@ macro_rules! forward_to_version {
 }
 
 impl HeaderExtension {
-	pub fn data_root(&self) -> H256 { forward_to_version!(self, data_root) }
+	pub fn data_root(&self) -> H256 {
+		forward_to_version!(self, data_root)
+	}
 }
 
 impl Default for HeaderExtension {
-	fn default() -> Self { v1::HeaderExtension::default().into() }
+	fn default() -> Self {
+		v1::HeaderExtension::default().into()
+	}
 }
 
 #[cfg(feature = "std")]
@@ -58,11 +62,15 @@ impl MallocSizeOf for HeaderExtension {
 
 impl From<v1::HeaderExtension> for HeaderExtension {
 	#[inline]
-	fn from(ext: v1::HeaderExtension) -> Self { Self::V1(ext) }
+	fn from(ext: v1::HeaderExtension) -> Self {
+		Self::V1(ext)
+	}
 }
 
 #[cfg(feature = "header-backward-compatibility-test")]
 impl From<v_test::HeaderExtension> for HeaderExtension {
 	#[inline]
-	fn from(ext: v_test::HeaderExtension) -> Self { Self::VTest(ext) }
+	fn from(ext: v_test::HeaderExtension) -> Self {
+		Self::VTest(ext)
+	}
 }

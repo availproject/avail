@@ -9,7 +9,9 @@ pub fn home_domain_hash(home_domain: u32) -> H256 {
 }
 
 /// Hash a message according to EIP-191 with the ethereum signed message prefix.
-pub fn to_eth_signed_message_hash(hash: &H256) -> H256 { keccak256_concat!(ETH_PREFIX, hash) }
+pub fn to_eth_signed_message_hash(hash: &H256) -> H256 {
+	keccak256_concat!(ETH_PREFIX, hash)
+}
 
 /// Destination and destination-specific nonce combined in single field (
 /// (destination << 32) & nonce)

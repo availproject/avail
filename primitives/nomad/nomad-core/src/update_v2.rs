@@ -24,7 +24,9 @@ impl UpdateV2 {
 		keccak256_concat!(home_domain_hash(self.home_domain), self.root)
 	}
 
-	fn prepended_hash(&self) -> H256 { hash_message(self.signing_hash()) }
+	fn prepended_hash(&self) -> H256 {
+		hash_message(self.signing_hash())
+	}
 }
 
 /// A Signed Nomad Update

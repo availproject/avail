@@ -143,7 +143,9 @@ impl Signature {
 
 	/// Copies and serializes `self` into a new `Vec` with the recovery id included
 	#[allow(clippy::wrong_self_convention)]
-	pub fn to_vec(&self) -> Vec<u8> { self.into() }
+	pub fn to_vec(&self) -> Vec<u8> {
+		self.into()
+	}
 }
 
 fn normalize_recovery_id(v: u64) -> u8 {
@@ -215,39 +217,57 @@ impl From<&Signature> for [u8; 65] {
 }
 
 impl From<Signature> for [u8; 65] {
-	fn from(src: Signature) -> [u8; 65] { <[u8; 65]>::from(&src) }
+	fn from(src: Signature) -> [u8; 65] {
+		<[u8; 65]>::from(&src)
+	}
 }
 
 impl From<&Signature> for Vec<u8> {
-	fn from(src: &Signature) -> Vec<u8> { <[u8; 65]>::from(src).to_vec() }
+	fn from(src: &Signature) -> Vec<u8> {
+		<[u8; 65]>::from(src).to_vec()
+	}
 }
 
 impl From<Signature> for Vec<u8> {
-	fn from(src: Signature) -> Vec<u8> { <[u8; 65]>::from(&src).to_vec() }
+	fn from(src: Signature) -> Vec<u8> {
+		<[u8; 65]>::from(&src).to_vec()
+	}
 }
 
 impl From<&[u8]> for RecoveryMessage {
-	fn from(s: &[u8]) -> Self { s.to_owned().into() }
+	fn from(s: &[u8]) -> Self {
+		s.to_owned().into()
+	}
 }
 
 impl From<Vec<u8>> for RecoveryMessage {
-	fn from(s: Vec<u8>) -> Self { RecoveryMessage::Data(s) }
+	fn from(s: Vec<u8>) -> Self {
+		RecoveryMessage::Data(s)
+	}
 }
 
 impl From<&str> for RecoveryMessage {
-	fn from(s: &str) -> Self { s.as_bytes().to_owned().into() }
+	fn from(s: &str) -> Self {
+		s.as_bytes().to_owned().into()
+	}
 }
 
 impl From<String> for RecoveryMessage {
-	fn from(s: String) -> Self { RecoveryMessage::Data(s.into_bytes()) }
+	fn from(s: String) -> Self {
+		RecoveryMessage::Data(s.into_bytes())
+	}
 }
 
 impl From<[u8; 32]> for RecoveryMessage {
-	fn from(hash: [u8; 32]) -> Self { H256(hash).into() }
+	fn from(hash: [u8; 32]) -> Self {
+		H256(hash).into()
+	}
 }
 
 impl From<H256> for RecoveryMessage {
-	fn from(hash: H256) -> Self { RecoveryMessage::Hash(hash) }
+	fn from(hash: H256) -> Self {
+		RecoveryMessage::Hash(hash)
+	}
 }
 
 #[cfg(feature = "std")]

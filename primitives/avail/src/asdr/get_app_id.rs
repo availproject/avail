@@ -2,11 +2,15 @@ use crate::asdr::AppId;
 
 /// Get application Id trait
 pub trait GetAppId {
-	fn app_id(&self) -> AppId { Default::default() }
+	fn app_id(&self) -> AppId {
+		Default::default()
+	}
 }
 
 impl<A, B, C, D, E, F, G, H: GetAppId> GetAppId for (A, B, C, D, E, F, G, H) {
-	fn app_id(&self) -> AppId { self.7.app_id() }
+	fn app_id(&self) -> AppId {
+		self.7.app_id()
+	}
 }
 
 #[cfg(test)]
@@ -17,7 +21,9 @@ mod tests {
 	struct CustomAppId {}
 
 	impl GetAppId for CustomAppId {
-		fn app_id(&self) -> AppId { 7.into() }
+		fn app_id(&self) -> AppId {
+			7.into()
+		}
 	}
 
 	struct DefaultGetAppId {}
