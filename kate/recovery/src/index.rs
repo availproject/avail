@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::config;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct AppDataIndex {
 	pub size: u32,
 	pub index: Vec<(u32, u32)>,

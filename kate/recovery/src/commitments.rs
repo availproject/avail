@@ -72,16 +72,6 @@ fn try_into_scalars(data: &[u8]) -> Result<Vec<BlsScalar>, Error> {
 		.collect::<Result<Vec<BlsScalar>, Error>>()
 }
 
-fn row_commitment(
-	prover_key: &CommitKey,
-	domain: EvaluationDomain,
-	row: &[u8],
-) -> Result<[u8; config::COMMITMENT_SIZE], Error> {
-	let scalars = try_into_scalars(row)?;
-	let polynomial = Evaluations::from_vec_and_domain(scalars, domain).interpolate();
-	Ok(prover_key.commit(&polynomial)?.to_bytes())
-}
-
 /// Verifies given commitments and row commitments equality. Commitments are verified only for specified rows,
 /// which means that unspecified rows will be assumed as verified.
 ///
@@ -100,7 +90,7 @@ pub fn verify_equality(
 	index: &index::AppDataIndex,
 	dimension: &matrix::Dimensions,
 	app_id: u32,
-) -> Result<bool, Error> {
+) -> Result<Vec<(u16, bool)>, Error> {
 	if commitments.len() / config::COMMITMENT_SIZE != rows.len() {
 		return Err(Error::InvalidData(DataError::RowAndCommitmentsMismatch));
 	}
@@ -128,14 +118,42 @@ pub fn verify_equality(
 	// This is a single-threaded implementation.
 	// At some point we should benchmark and decide
 	// if we need parallel commitments verification.
-	let verifications = commitments
+	commitments
 		.chunks_exact(config::COMMITMENT_SIZE)
 		.zip(rows.iter())
-		.map(|(commitment, row)| match row {
-			None => Ok(true),
-			Some(row) => Ok(row_commitment(&prover_key, domain, row)? == commitment),
+		.enumerate()
+		.filter_map(|(index, (commitment, row))| row.as_ref().map(|row| (index, commitment, row)))
+		.map(|(index, commitment, row)| {
+			let scalars = try_into_scalars(row)?;
+			let polynomial = Evaluations::from_vec_and_domain(scalars, domain).interpolate();
+			let row_commitment = prover_key.commit(&polynomial)?.to_bytes();
+			Ok((index as u16, row_commitment == commitment))
 		})
-		.collect::<Result<Vec<bool>, Error>>()?;
+		.collect::<Result<Vec<(u16, bool)>, Error>>()
+}
 
-	Ok(verifications.iter().all(|&v| v))
+#[cfg(test)]
+mod tests {
+	use dusk_plonk::prelude::PublicParameters;
+	use once_cell::sync::Lazy;
+	use rand::SeedableRng;
+	use rand_chacha::ChaChaRng;
+
+	use crate::{index, matrix};
+
+	static PUBLIC_PARAMETERS: Lazy<PublicParameters> =
+		Lazy::new(|| PublicParameters::setup(256, &mut ChaChaRng::seed_from_u64(42)).unwrap());
+
+	#[test]
+	fn verify_equality() {
+		let _ = super::verify_equality(
+			&PUBLIC_PARAMETERS,
+			&[],
+			&[],
+			&index::AppDataIndex::default(),
+			&matrix::Dimensions::new(1, 1).unwrap(),
+			0,
+		)
+		.unwrap();
+	}
 }
