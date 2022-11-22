@@ -101,15 +101,27 @@ impl BlockDimensions {
 	}
 }
 
+#[derive(PartialEq, Eq, Debug)]
+pub enum TryFromBlockDimensionsError {
+	InvalidRowsOrColumns(sp_std::num::TryFromIntError),
+	InvalidDimensions,
+}
+
+impl From<sp_std::num::TryFromIntError> for TryFromBlockDimensionsError {
+	fn from(error: sp_std::num::TryFromIntError) -> Self {
+		TryFromBlockDimensionsError::InvalidRowsOrColumns(error)
+	}
+}
+
 #[cfg(feature = "std")]
 impl sp_std::convert::TryInto<Dimensions> for BlockDimensions {
-	type Error = sp_std::num::TryFromIntError;
+	type Error = TryFromBlockDimensionsError;
 
 	fn try_into(self) -> Result<Dimensions, Self::Error> {
 		let rows = self.rows.0.try_into()?;
 		let cols = self.cols.0.try_into()?;
 
-		Ok(Dimensions { rows, cols })
+		Dimensions::new(rows, cols).ok_or(TryFromBlockDimensionsError::InvalidDimensions)
 	}
 }
 

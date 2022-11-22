@@ -122,8 +122,8 @@ pub fn verify_equality(
 		return Err(Error::InvalidData(DataError::RowAndCommitmentsMismatch));
 	}
 
-	let (prover_key, _) = public_params.trim(dimension.cols as usize)?;
-	let domain = EvaluationDomain::new(dimension.cols as usize)?;
+	let (prover_key, _) = public_params.trim(dimension.cols() as usize)?;
+	let domain = EvaluationDomain::new(dimension.cols() as usize)?;
 
 	// This is a single-threaded implementation.
 	// At some point we should benchmark and decide

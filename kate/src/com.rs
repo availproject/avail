@@ -83,7 +83,7 @@ pub fn scalars_to_rows(
 	data: &[BlsScalar],
 ) -> Vec<Option<Vec<u8>>> {
 	let extended_rows = BlockLengthRows(dimensions.extended_rows());
-	let cols = BlockLengthColumns(dimensions.cols as u32);
+	let cols = BlockLengthColumns(dimensions.cols() as u32);
 	let app_rows = app_specific_rows(index, dimensions, app_id);
 	dimensions
 		.iter_extended_rows()
@@ -255,7 +255,7 @@ pub fn par_extend_data_matrix(
 ) -> Result<Vec<BlsScalar>, Error> {
 	let start = Instant::now();
 	let dimensions: matrix::Dimensions = block_dims.try_into().map_err(|_| Error::BlockTooBig)?;
-	let rows_num: usize = dimensions.rows.into();
+	let rows_num: usize = dimensions.rows().into();
 	let extended_rows_num = BlockLengthRows(dimensions.extended_rows());
 	let chunks = block.par_chunks_exact(block_dims.chunk_size as usize);
 	assert!(chunks.remainder().is_empty());
