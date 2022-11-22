@@ -1,9 +1,9 @@
-use std::{array::TryFromSliceError, convert::TryFrom};
+use std::{array::TryFromSliceError, convert::TryFrom, num::TryFromIntError};
 
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	fft::{EvaluationDomain, Evaluations},
-	prelude::{BlsScalar, CommitKey, PublicParameters},
+	prelude::{BlsScalar, PublicParameters},
 };
 use thiserror::Error;
 
@@ -23,10 +23,10 @@ pub enum DataError {
 	BadLen,
 	#[error("Plonk error: {0}")]
 	PlonkError(dusk_plonk::error::Error),
-	#[error("Row and commitments count mismatch")]
-	RowAndCommitmentsMismatch,
 	#[error("Bad commitments data")]
 	BadCommitmentsData,
+	#[error("Bad rows data")]
+	BadRowsData,
 }
 
 #[derive(Error, Debug)]
@@ -38,6 +38,12 @@ pub enum Error {
 impl From<TryFromSliceError> for Error {
 	fn from(e: TryFromSliceError) -> Self {
 		Self::InvalidData(DataError::SliceError(e))
+	}
+}
+
+impl From<TryFromIntError> for Error {
+	fn from(_: TryFromIntError) -> Self {
+		Self::InvalidData(DataError::BadCommitmentsData)
 	}
 }
 
@@ -72,8 +78,9 @@ fn try_into_scalars(data: &[u8]) -> Result<Vec<BlsScalar>, Error> {
 		.collect::<Result<Vec<BlsScalar>, Error>>()
 }
 
-/// Verifies given commitments and row commitments equality. Commitments are verified only for specified rows,
-/// which means that unspecified rows will be assumed as verified.
+/// Verifies given commitments and row commitments equality.
+/// Commitments are verified only for app specific data rows.
+/// Function returns pair of verified and missing data rows, or an error.
 ///
 /// # Arguments
 ///
@@ -88,38 +95,50 @@ pub fn verify_equality(
 	commitments: &[u8],
 	rows: &[Option<Vec<u8>>],
 	index: &index::AppDataIndex,
-	dimension: &matrix::Dimensions,
+	dimensions: &matrix::Dimensions,
 	app_id: u32,
-) -> Result<Vec<(u16, bool)>, Error> {
-	if commitments.len() / config::COMMITMENT_SIZE != rows.len() {
-		return Err(Error::InvalidData(DataError::RowAndCommitmentsMismatch));
-	}
-
+) -> Result<(Vec<u16>, Vec<u16>), Error> {
 	if commitments.len() % config::COMMITMENT_SIZE > 0 {
 		return Err(Error::InvalidData(DataError::BadCommitmentsData));
 	}
 
-	let app_rows = com::app_specific_rows(index, dimension, app_id);
+	if <u32>::try_from(commitments.len() / config::COMMITMENT_SIZE)? != dimensions.extended_rows() {
+		return Err(Error::InvalidData(DataError::BadCommitmentsData));
+	}
 
-	let all_rows_present = rows
+	if <u32>::try_from(rows.len())? != dimensions.extended_rows() {
+		return Err(Error::InvalidData(DataError::BadRowsData));
+	}
+	let commitment_chunks = commitments.chunks_exact(config::COMMITMENT_SIZE);
+
+	let app_rows = com::app_specific_rows(index, dimensions, app_id);
+
+	let present_rows = rows
 		.iter()
 		.zip(0u32..)
 		.filter(|(row, _)| row.is_some())
+		.collect::<Vec<_>>();
+
+	if present_rows.len() != app_rows.len() {
+		return Err(Error::InvalidData(DataError::BadRowsData));
+	}
+
+	let app_rows_present = present_rows
+		.into_iter()
 		.zip(app_rows.iter())
 		.all(|((_, a), &b)| a == b);
 
-	if !all_rows_present {
-		return Err(Error::InvalidData(DataError::RowAndCommitmentsMismatch));
+	if !app_rows_present {
+		return Err(Error::InvalidData(DataError::BadRowsData));
 	}
 
-	let (prover_key, _) = public_params.trim(dimension.cols() as usize)?;
-	let domain = EvaluationDomain::new(dimension.cols() as usize)?;
+	let (prover_key, _) = public_params.trim(dimensions.cols() as usize)?;
+	let domain = EvaluationDomain::new(dimensions.cols() as usize)?;
 
 	// This is a single-threaded implementation.
 	// At some point we should benchmark and decide
 	// if we need parallel commitments verification.
-	commitments
-		.chunks_exact(config::COMMITMENT_SIZE)
+	let verifications = commitment_chunks
 		.zip(rows.iter())
 		.enumerate()
 		.filter_map(|(index, (commitment, row))| row.as_ref().map(|row| (index, commitment, row)))
@@ -129,7 +148,15 @@ pub fn verify_equality(
 			let row_commitment = prover_key.commit(&polynomial)?.to_bytes();
 			Ok((index as u16, row_commitment == commitment))
 		})
-		.collect::<Result<Vec<(u16, bool)>, Error>>()
+		.collect::<Result<Vec<(u16, bool)>, Error>>()?;
+
+	let (verified, missing): (Vec<_>, Vec<_>) =
+		verifications.iter().partition(|(_, is_equal)| *is_equal);
+
+	Ok((
+		verified.into_iter().map(|(i, _)| i).collect::<Vec<u16>>(),
+		missing.into_iter().map(|(i, _)| i).collect::<Vec<u16>>(),
+	))
 }
 
 #[cfg(test)]
@@ -154,6 +181,6 @@ mod tests {
 			&matrix::Dimensions::new(1, 1).unwrap(),
 			0,
 		)
-		.unwrap();
+		.is_err();
 	}
 }

@@ -810,8 +810,8 @@ mod tests {
 		let extended_dims = dims.try_into().unwrap();
 		for xt in xts {
 			let rows = &scalars_to_rows(xt.app_id.0, &index, &extended_dims, &matrix);
-			let verifications = commitments::verify_equality(&public_params, &commitments, rows,&index,&extended_dims,xt.app_id.0).unwrap();
-			prop_assert!(verifications.iter().all(|&(_, is_equal)| is_equal ));
+			let (_, missing) = commitments::verify_equality(&public_params, &commitments, rows, &index, &extended_dims, xt.app_id.0).unwrap();
+			prop_assert!(missing.is_empty());
 		}
 	}
 	}

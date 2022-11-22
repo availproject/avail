@@ -62,6 +62,7 @@ impl Dimensions {
 	pub fn rows(&self) -> u16 {
 		self.rows
 	}
+
 	/// Returns number of columns
 	pub fn cols(&self) -> u16 {
 		self.cols
