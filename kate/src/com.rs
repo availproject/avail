@@ -793,6 +793,7 @@ mod tests {
 			let commitment = &commitments[row * 48..(row + 1) * 48];
 			let verification =  kate_proof::kc_verify_proof(col, &proof, commitment, dims.rows.as_usize(), dims.cols.as_usize(), &public_params);
 			prop_assert!(verification.is_ok());
+			prop_assert!(verification.unwrap());
 		}
 	}
 	}
@@ -1115,7 +1116,6 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	}
 
 	#[test]
-	#[should_panic]
 	fn par_build_commitments_row_wise_constant_row() {
 		// Due to scale encoding, first line is not constant.
 		// We will use second line to ensure constant row.
@@ -1125,6 +1125,63 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			data: vec![0; 31 * 8],
 		}];
 		par_build_commitments(BlockLengthRows(4), BlockLengthColumns(4), 32, &xts, hash).unwrap();
+	}
+	#[test_case( (&[1,1,1,1]).to_vec(); "All values are non-zero but same")]
+	#[test_case( (&[0,0,0,0]).to_vec(); "All values are zero")]
+	#[test_case( (&[0,5,2,1]).to_vec(); "All values are different")]
+	fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
+		// There are two main cases that generate a zero degree polynomial. One is for data that is non-zero, but the same.
+		// The other is for all-zero data. They differ, as the former yields a polynomial with one coefficient, and latter generates zero coefficients.
+		let len = row_values.len();
+		let public_params = testnet::public_params(BlockLengthColumns(len as u32));
+		let (prover_key, _) = public_params.trim(len).map_err(Error::from).unwrap();
+		let row_eval_domain = EvaluationDomain::new(len).map_err(Error::from).unwrap();
+
+		let row = row_values
+			.iter()
+			.map(|val| {
+				let mut value = [0u8; 32];
+				let v = value.last_mut().unwrap();
+				*v = *val;
+				BlsScalar::from_bytes(&value).unwrap()
+			})
+			.collect::<Vec<_>>();
+
+		assert_eq!(row.len(), len as usize);
+		let mut result_bytes: Vec<u8> = vec![0u8; 48];
+		let _ = commit(&prover_key, row_eval_domain, row.clone(), &mut result_bytes).unwrap();
+		println!("Commitment: {result_bytes:?}");
+
+		// We artificially extend the matrix by doubling values, this is not proper erasure coding.
+		let ext_m = row.into_iter().flat_map(|e| vec![e, e]).collect::<Vec<_>>();
+
+		for i in 0..row_values.len() {
+			// Randomly chosen cell to prove, probably should test all of them
+			let cell = Cell {
+				col: BlockLengthColumns(i as u32),
+				row: BlockLengthRows(0),
+			};
+			let proof = build_proof(
+				&public_params,
+				BlockDimensions {
+					rows: BlockLengthRows(1),
+					cols: BlockLengthColumns(4),
+					chunk_size: 32,
+				},
+				&ext_m,
+				&[cell],
+			)
+			.unwrap();
+			println!("Proof: {proof:?}");
+
+			assert!(proof.len() == 80);
+
+			let commitment = &result_bytes;
+			let verification =
+				kate_proof::kc_verify_proof(i as u32, &proof, commitment, 1, 4, &public_params);
+			assert!(verification.is_ok());
+			assert!(verification.unwrap())
+		}
 	}
 
 	#[test_case( r#"{ "row": 42, "col": 99 }"# => Cell::new(42.into(),99.into()) ; "Simple" )]
