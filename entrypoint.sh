@@ -19,7 +19,7 @@ cleanup()
 	--name $DA_NAME \
 	--chain $DA_CHAIN \
 	--port $DA_P2P_PORT \
-	--bootnodes=/ip4/52.47.205.129/tcp/30333/p2p/12D3KooW9tVuCzq3eknsevL5uyqQ3LpVcuqtkTqropjNccbhsWBz \
-	--bootnodes=/ip4/15.237.127.118/tcp/30333/p2p/12D3KooWQtxig5HukFDwQzshGWgQEZAqGqdCN7AQBW7cQRJWCyxL \
-	--bootnodes=/ip4/52.47.205.129/tcp/30333/p2p/12D3KooW9tVuCzq3eknsevL5uyqQ3LpVcuqtkTqropjNccbhsWBz \
+	--bootnodes=$BOOTNODE_1 \
+	--bootnodes=$BOOTNODE_2 \
+	--bootnodes=$BOOTNODE_3 \
 	$@
