@@ -109,7 +109,6 @@ pub fn verify_equality(
 	if <u32>::try_from(rows.len())? != dimensions.extended_rows() {
 		return Err(Error::InvalidData(DataError::BadRowsData));
 	}
-	let commitment_chunks = commitments.chunks_exact(config::COMMITMENT_SIZE);
 
 	let app_rows = com::app_specific_rows(index, dimensions, app_id);
 
@@ -138,7 +137,8 @@ pub fn verify_equality(
 	// This is a single-threaded implementation.
 	// At some point we should benchmark and decide
 	// if we need parallel commitments verification.
-	let verifications = commitment_chunks
+	let verifications = commitments
+		.chunks_exact(config::COMMITMENT_SIZE)
 		.zip(rows.iter())
 		.enumerate()
 		.filter_map(|(index, (commitment, row))| row.as_ref().map(|row| (index, commitment, row)))
