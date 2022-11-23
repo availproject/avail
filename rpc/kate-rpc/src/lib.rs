@@ -151,9 +151,9 @@ where
 			.get_block_length(&block_id)
 			.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
-		let rows: usize = block_length.rows as usize;
-		let cols: usize = block_length.cols as usize;
-		let chunk_size: usize = block_length.chunk_size() as usize;
+		let rows: u32 = block_length.rows;
+		let cols: u32 = block_length.cols;
+		let chunk_size: u32 = block_length.chunk_size();
 
 		if !block_ext_cache.contains(&block_hash) {
 			// build block data extension and cache it
@@ -174,9 +174,14 @@ where
 				.get_babe_vrf(&block_id)
 				.map_err(|e| internal_err!("Babe VRF not found for block {}: {:?}", block_id, e))?;
 
-			let (_, block, block_dims) =
-				kate::com::flatten_and_pad_block(rows, cols, chunk_size, &xts_by_id, seed)
-					.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
+			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
+				rows.into(),
+				cols.into(),
+				chunk_size,
+				&xts_by_id,
+				seed,
+			)
+			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
 
 			let data = kate::com::par_extend_data_matrix(block_dims, &block)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
@@ -201,18 +206,21 @@ where
 
 		let rows: u16 = block_dims
 			.rows
+			.0
 			.try_into()
 			.map_err(|e| internal_err!("Invalid rows number: {:?}", e))?;
 
 		let cols: u16 = block_dims
 			.cols
+			.0
 			.try_into()
 			.map_err(|e| internal_err!("Invalid cols number: {:?}", e))?;
 
+		let dims = Dimensions::new(rows, cols).ok_or(internal_err!("Invalid rows/cols number."))?;
 		Ok(kate::com::scalars_to_rows(
 			app_id.0,
 			&app_data_index,
-			&Dimensions::new(rows, cols),
+			&dims,
 			ext_data,
 		))
 	}
@@ -259,9 +267,9 @@ where
 				.map_err(|e| internal_err!("Babe VRF not found for block {}: {:?}", block_id, e))?;
 
 			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
-				block_length.rows as usize,
-				block_length.cols as usize,
-				block_length.chunk_size() as usize,
+				block_length.rows.into(),
+				block_length.cols.into(),
+				block_length.chunk_size(),
 				&xts_by_id,
 				seed,
 			)

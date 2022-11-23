@@ -155,8 +155,8 @@ impl BlockLength {
 		const_assert!(is_chunk_size_valid(BLOCK_CHUNK_SIZE));
 		Self {
 			max: PerDispatchClass::new(|_| max),
-			cols: MAX_BLOCK_COLUMNS,
-			rows: MAX_BLOCK_COLUMNS,
+			cols: MAX_BLOCK_COLUMNS.0,
+			rows: MAX_BLOCK_ROWS.0,
 			chunk_size: BLOCK_CHUNK_SIZE,
 		}
 	}
@@ -186,8 +186,8 @@ impl BlockLength {
 	pub fn max_with_normal_ratio(max: u32, normal: Perbill) -> Self {
 		const_assert!(is_chunk_size_valid(BLOCK_CHUNK_SIZE));
 		Self {
-			cols: MAX_BLOCK_COLUMNS,
-			rows: MAX_BLOCK_ROWS,
+			cols: MAX_BLOCK_COLUMNS.0,
+			rows: MAX_BLOCK_ROWS.0,
 			chunk_size: BLOCK_CHUNK_SIZE,
 			max: PerDispatchClass::new(|class| {
 				if class == DispatchClass::Normal {

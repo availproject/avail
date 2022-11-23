@@ -103,9 +103,9 @@ fn build_extension_v1(
 	use da_primitives::header::extension::v1;
 
 	let (xts_layout, commitment, block_dims, _data_matrix) = kate::com::par_build_commitments(
-		block_length.rows as usize,
-		block_length.cols as usize,
-		block_length.chunk_size() as usize,
+		block_length.rows.into(),
+		block_length.cols.into(),
+		block_length.chunk_size(),
 		app_extrinsics,
 		seed,
 	)
@@ -114,8 +114,8 @@ fn build_extension_v1(
 		DataLookup::try_from(xts_layout.as_slice()).expect("Extrinsic size cannot overflow .qed");
 
 	let commitment = KateCommitment {
-		rows: block_dims.rows.saturated_into::<u16>(),
-		cols: block_dims.cols.saturated_into::<u16>(),
+		rows: block_dims.rows.0.saturated_into::<u16>(),
+		cols: block_dims.cols.0.saturated_into::<u16>(),
 		commitment,
 		data_root,
 	};

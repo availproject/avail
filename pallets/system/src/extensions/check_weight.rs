@@ -101,9 +101,9 @@ where
 		all_extrinsics_len.padded = all_extrinsics_len.padded.saturating_add(padded_added_len);
 
 		let max_padded_len = BlockDimensions {
-			rows: dynamic_block_len.rows as usize,
-			cols: dynamic_block_len.cols as usize,
-			chunk_size: dynamic_block_len.chunk_size() as usize,
+			rows: dynamic_block_len.rows.into(),
+			cols: dynamic_block_len.cols.into(),
+			chunk_size: dynamic_block_len.chunk_size().into(),
 		}
 		.size() as u32;
 

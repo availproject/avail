@@ -654,14 +654,14 @@ pub mod pallet {
 
 			let normal = Perbill::from_percent(90);
 			let block_length = limits::BlockLength::with_normal_ratio(
-				MAX_BLOCK_ROWS,
-				MAX_BLOCK_COLUMNS,
+				MAX_BLOCK_ROWS.0,
+				MAX_BLOCK_COLUMNS.0,
 				BLOCK_CHUNK_SIZE,
 				normal,
 			);
 
 			let kc_public_params =
-				kate::testnet::public_params(MAX_BLOCK_COLUMNS as usize).to_raw_var_bytes();
+				kate::testnet::public_params(MAX_BLOCK_COLUMNS).to_raw_var_bytes();
 
 			Self {
 				code: Default::default(),

@@ -989,7 +989,7 @@ parameter_types! {
 	pub const MinBlockRows: u32 = 32;
 	pub const MaxBlockRows: u32 = 1024;
 	pub const MinBlockCols: u32 = 32;
-	pub const MaxBlockCols: u32 = kate::config::MAX_BLOCK_COLUMNS;
+	pub const MaxBlockCols: u32 = kate::config::MAX_BLOCK_COLUMNS.0;
 
 }
 
