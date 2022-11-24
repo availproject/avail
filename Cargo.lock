@@ -1695,6 +1695,7 @@ dependencies = [
  "dusk-bytes",
  "dusk-plonk",
  "getrandom 0.2.7",
+ "hex",
  "once_cell",
  "parity-scale-codec 3.1.5",
  "rand 0.8.5",
