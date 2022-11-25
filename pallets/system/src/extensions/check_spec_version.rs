@@ -47,9 +47,7 @@ impl<T: Config + Send + Sync> CheckSpecVersion<T> {
 }
 
 impl<T: Config + Send + Sync> Default for CheckSpecVersion<T> {
-    fn default() -> Self {
-        Self::new()
-    }
+	fn default() -> Self { Self::new() }
 }
 
 impl<T: Config + Send + Sync> SignedExtension for CheckSpecVersion<T> {

@@ -28,7 +28,8 @@ use sp_runtime::{
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
 pub type CallOf<Block> = <<Block as BlockT>::Extrinsic as Extrinsic>::Call;
-pub type BlockExtCache<Block> = RwLock<LruCache<<Block as BlockT>::Hash, (Vec<BlsScalar>, BlockDimensions)>>;
+pub type BlockExtCache<Block> =
+	RwLock<LruCache<<Block as BlockT>::Hash, (Vec<BlsScalar>, BlockDimensions)>>;
 
 #[rpc]
 pub trait KateApi<Block, SDFilter>

@@ -50,9 +50,7 @@ impl<T: Config + Send + Sync> CheckGenesis<T> {
 }
 
 impl<T: Config + Send + Sync> Default for CheckGenesis<T> {
-    fn default() -> Self {
-        Self::new()
-    }
+	fn default() -> Self { Self::new() }
 }
 
 impl<T: Config + Send + Sync> SignedExtension for CheckGenesis<T> {
