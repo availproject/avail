@@ -43,8 +43,13 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckSpecVersion<T> {
 
 impl<T: Config + Send + Sync> CheckSpecVersion<T> {
 	/// Create new `SignedExtension` to check runtime version.
-	#[allow(clippy::new_without_default)]
 	pub fn new() -> Self { Self(sp_std::marker::PhantomData) }
+}
+
+impl<T: Config + Send + Sync> Default for CheckSpecVersion<T> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<T: Config + Send + Sync> SignedExtension for CheckSpecVersion<T> {
