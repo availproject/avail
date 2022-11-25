@@ -28,6 +28,7 @@ use sp_runtime::{
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
 pub type CallOf<Block> = <<Block as BlockT>::Extrinsic as Extrinsic>::Call;
+pub type BlockExtCache<Block> = RwLock<LruCache<<Block as BlockT>::Hash, (Vec<BlsScalar>, BlockDimensions)>>;
 
 #[rpc]
 pub trait KateApi<Block, SDFilter>
@@ -54,8 +55,7 @@ where
 
 pub struct Kate<Client, Block: BlockT> {
 	client: Arc<Client>,
-	#[allow(clippy::type_complexity)]
-	block_ext_cache: RwLock<LruCache<Block::Hash, (Vec<BlsScalar>, BlockDimensions)>>,
+	block_ext_cache: BlockExtCache<Block>,
 }
 
 impl<Client, Block> Kate<Client, Block>
