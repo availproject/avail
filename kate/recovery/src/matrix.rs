@@ -100,8 +100,7 @@ impl Dimensions {
 
 	/// Cell positions for given rows in extended matrix.
 	/// Empty if row index is not valid.
-	fn extended_row_positions(&self, row: u16) -> Vec<Position> {
-		let row: u32 = row.into();
+	fn extended_row_positions(&self, row: u32) -> Vec<Position> {
 		if self.extended_rows() <= row {
 			return vec![];
 		}
@@ -112,7 +111,7 @@ impl Dimensions {
 
 	/// Cell positions for given rows in extended matrix.
 	/// Row indexes that are out of bounds are ignored.
-	pub fn extended_rows_positions(&self, rows: &[u16]) -> Vec<Position> {
+	pub fn extended_rows_positions(&self, rows: &[u32]) -> Vec<Position> {
 		rows.iter()
 			.flat_map(|&row| self.extended_row_positions(row))
 			.collect::<Vec<_>>()
@@ -224,7 +223,7 @@ mod tests {
 	#[test_case(&[1], &[(1, 0), (1, 1)] ; "second row positions")]
 	#[test_case(&[0,1], &[(0, 0), (0, 1), (1,0), (1,1)] ; "all positions")]
 	#[test_case(&[2], &[] ; "no positions")]
-	fn extended_row_positions(rows: &[u16], expected: &[(usize, usize)]) {
+	fn extended_rows_positions(rows: &[u32], expected: &[(usize, usize)]) {
 		let dimensions = Dimensions::new(1, 2).unwrap();
 		let cells = dimensions
 			.extended_rows_positions(rows)

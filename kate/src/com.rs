@@ -829,7 +829,8 @@ mod tests {
 			let mut rows = scalars_to_rows(xt.app_id.0, &index, &extended_dims, &matrix);
 			let app_row_index = rows.iter().position(Option::is_some).unwrap();
 			rows.remove(app_row_index);
-			prop_assert!(commitments::verify_equality(&public_params, &commitments, &rows,&index,&extended_dims,xt.app_id.0).is_err());
+			let (_, missing) = commitments::verify_equality(&public_params, &commitments, &rows,&index,&extended_dims,xt.app_id.0).unwrap();
+			prop_assert!(!missing.is_empty());
 		}
 	}
 	}

@@ -81,6 +81,7 @@ fn try_into_scalars(data: &[u8]) -> Result<Vec<BlsScalar>, Error> {
 /// Verifies given commitments and row commitments equality.
 /// Commitments are verified only for app specific data rows.
 /// Function returns pair of verified and missing data rows, or an error.
+/// Invalid rows are treated as missing.
 ///
 /// # Arguments
 ///
@@ -97,7 +98,7 @@ pub fn verify_equality(
 	index: &index::AppDataIndex,
 	dimensions: &matrix::Dimensions,
 	app_id: u32,
-) -> Result<(Vec<u16>, Vec<u16>), Error> {
+) -> Result<(Vec<u32>, Vec<u32>), Error> {
 	if commitments.len() % config::COMMITMENT_SIZE > 0 {
 		return Err(Error::InvalidData(DataError::BadCommitmentsData));
 	}
@@ -106,29 +107,10 @@ pub fn verify_equality(
 		return Err(Error::InvalidData(DataError::BadCommitmentsData));
 	}
 
-	if <u32>::try_from(rows.len())? != dimensions.extended_rows() {
-		return Err(Error::InvalidData(DataError::BadRowsData));
-	}
-
 	let app_rows = com::app_specific_rows(index, dimensions, app_id);
 
-	let present_rows = rows
-		.iter()
-		.zip(0u32..)
-		.filter(|(row, _)| row.is_some())
-		.collect::<Vec<_>>();
-
-	if present_rows.len() != app_rows.len() {
-		return Err(Error::InvalidData(DataError::BadRowsData));
-	}
-
-	let app_rows_present = present_rows
-		.into_iter()
-		.zip(app_rows.iter())
-		.all(|((_, a), &b)| a == b);
-
-	if !app_rows_present {
-		return Err(Error::InvalidData(DataError::BadRowsData));
+	if <u32>::try_from(rows.len())? != dimensions.extended_rows() {
+		return Ok((vec![], app_rows));
 	}
 
 	let (prover_key, _) = public_params.trim(dimensions.cols() as usize)?;
@@ -141,22 +123,28 @@ pub fn verify_equality(
 		.chunks_exact(config::COMMITMENT_SIZE)
 		.zip(rows.iter())
 		.enumerate()
+		.filter(|&(index, _)| app_rows.contains(&(index as u32)))
 		.filter_map(|(index, (commitment, row))| row.as_ref().map(|row| (index, commitment, row)))
 		.map(|(index, commitment, row)| {
 			let scalars = try_into_scalars(row)?;
 			let polynomial = Evaluations::from_vec_and_domain(scalars, domain).interpolate();
 			let row_commitment = prover_key.commit(&polynomial)?.to_bytes();
-			Ok((index as u16, row_commitment == commitment))
+			Ok((index as u32, row_commitment == commitment))
 		})
-		.collect::<Result<Vec<(u16, bool)>, Error>>()?;
+		.collect::<Result<Vec<(u32, bool)>, Error>>()?;
 
-	let (verified, missing): (Vec<_>, Vec<_>) =
-		verifications.iter().partition(|(_, is_equal)| *is_equal);
+	let verified = verifications
+		.iter()
+		.filter(|(_, is_equal)| *is_equal)
+		.map(|&(i, _)| i)
+		.collect::<Vec<u32>>();
 
-	Ok((
-		verified.into_iter().map(|(i, _)| i).collect::<Vec<u16>>(),
-		missing.into_iter().map(|(i, _)| i).collect::<Vec<u16>>(),
-	))
+	let missing = app_rows
+		.into_iter()
+		.filter(|&row| !verified.contains(&row))
+		.collect::<Vec<u32>>();
+
+	Ok((verified, missing))
 }
 
 #[cfg(test)]
@@ -205,11 +193,37 @@ mod tests {
 		let result = verify_equality(
 			&PUBLIC_PARAMETERS,
 			&commitments,
-			&[row_0, None, row_2, None, row_4, None, None, None],
+			&[row_0.clone(), None, row_2, None, row_4, None, None, None],
 			&AppDataIndex { size, index },
 			&matrix::Dimensions::new(4, 32).unwrap(),
 			1,
 		);
 		assert_eq!(result.unwrap(), (vec![0, 2, 4], vec![]));
+
+		let size = 79;
+		let index = vec![(1, 1), (2, 74)];
+
+		let result = verify_equality(
+			&PUBLIC_PARAMETERS,
+			&commitments,
+			&[row_0, None, None, None, None, None, None, None],
+			&AppDataIndex { size, index },
+			&matrix::Dimensions::new(4, 32).unwrap(),
+			1,
+		);
+		assert_eq!(result.unwrap(), (vec![0], vec![2, 4]));
+
+		let size = 79;
+		let index = vec![(1, 1), (2, 74)];
+
+		let result = verify_equality(
+			&PUBLIC_PARAMETERS,
+			&commitments,
+			&[None, None, None, None, None, None, None, None],
+			&AppDataIndex { size, index },
+			&matrix::Dimensions::new(4, 32).unwrap(),
+			1,
+		);
+		assert_eq!(result.unwrap(), (vec![], vec![0, 2, 4]));
 	}
 }
