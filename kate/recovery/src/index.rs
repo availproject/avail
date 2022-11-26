@@ -4,13 +4,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::config;
 
-/// Data index per application.
-/// Size is nuber of the data cells in the matrix.
 /// Index is list of pairs (app_id, start_index),
 /// where start index is index of first cell for that application.
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct AppDataIndex {
+	/// Number of the data cells in the matrix
 	pub size: u32,
+	/// Data index per application
 	pub index: Vec<(u32, u32)>,
 }
 

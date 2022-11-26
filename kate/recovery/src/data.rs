@@ -38,11 +38,9 @@ impl Cell {
 /// Cells are sorted before merge.
 pub fn rows(cells: &[Cell]) -> Vec<(u32, Vec<u8>)> {
 	let mut sorted_cells = cells.to_vec();
-	sorted_cells.sort_by(|a, b| {
-		let by_row = a.position.row.cmp(&b.position.row);
-		let by_col = a.position.col.cmp(&b.position.col);
-		by_row.then(by_col)
-	});
+
+	sorted_cells
+		.sort_by(|a, b| (a.position.row, a.position.col).cmp(&(b.position.row, b.position.col)));
 
 	let mut rows = HashMap::new();
 	for cell in sorted_cells {

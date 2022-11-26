@@ -1,4 +1,8 @@
-use std::{array::TryFromSliceError, convert::TryFrom, num::TryFromIntError};
+use std::{
+	array::TryFromSliceError,
+	convert::{TryFrom, TryInto},
+	num::TryFromIntError,
+};
 
 use dusk_bytes::Serializable;
 use dusk_plonk::{
@@ -103,13 +107,13 @@ pub fn verify_equality(
 		return Err(Error::InvalidData(DataError::BadCommitmentsData));
 	}
 
-	if <u32>::try_from(commitments.len() / config::COMMITMENT_SIZE)? != dimensions.extended_rows() {
+	if (commitments.len() / config::COMMITMENT_SIZE) != dimensions.extended_rows().try_into()? {
 		return Err(Error::InvalidData(DataError::BadCommitmentsData));
 	}
 
-	let app_rows = com::app_specific_rows(index, dimensions, app_id);
+	let mut app_rows = com::app_specific_rows(index, dimensions, app_id);
 
-	if <u32>::try_from(rows.len())? != dimensions.extended_rows() {
+	if rows.len() != dimensions.extended_rows().try_into()? {
 		return Ok((vec![], app_rows));
 	}
 
@@ -119,32 +123,23 @@ pub fn verify_equality(
 	// This is a single-threaded implementation.
 	// At some point we should benchmark and decide
 	// if we need parallel commitments verification.
-	let verifications = commitments
+	let verified = commitments
 		.chunks_exact(config::COMMITMENT_SIZE)
 		.zip(rows.iter())
-		.enumerate()
-		.filter(|&(index, _)| app_rows.contains(&(index as u32)))
-		.filter_map(|(index, (commitment, row))| row.as_ref().map(|row| (index, commitment, row)))
-		.map(|(index, commitment, row)| {
-			let scalars = try_into_scalars(row)?;
-			let polynomial = Evaluations::from_vec_and_domain(scalars, domain).interpolate();
-			let row_commitment = prover_key.commit(&polynomial)?.to_bytes();
-			Ok((index as u32, row_commitment == commitment))
+		.zip(0u32..)
+		.filter(|(.., index)| app_rows.contains(index))
+		.filter_map(|((commitment, row), index)| {
+			try_into_scalars(row.as_ref()?)
+				.map(|scalars| Evaluations::from_vec_and_domain(scalars, domain).interpolate())
+				.and_then(|polynomial| prover_key.commit(&polynomial).map_err(From::from))
+				.map(|result| (result.to_bytes() == commitment).then_some(index))
+				.transpose()
 		})
-		.collect::<Result<Vec<(u32, bool)>, Error>>()?;
+		.collect::<Result<Vec<u32>, Error>>()?;
 
-	let verified = verifications
-		.iter()
-		.filter(|(_, is_equal)| *is_equal)
-		.map(|&(i, _)| i)
-		.collect::<Vec<u32>>();
+	app_rows.retain(|row| !verified.contains(row));
 
-	let missing = app_rows
-		.into_iter()
-		.filter(|&row| !verified.contains(&row))
-		.collect::<Vec<u32>>();
-
-	Ok((verified, missing))
+	Ok((verified, app_rows))
 }
 
 #[cfg(test)]
