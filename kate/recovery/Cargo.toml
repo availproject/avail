@@ -5,11 +5,14 @@ authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
 edition = "2018"
 
 [dependencies]
+anyhow = "1.0.41"
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 derive_more = "0.99.17"
 dusk-bytes = "0.1.6"
 dusk-plonk = { git = "https://github.com/maticnetwork/plonk.git", tag = "v0.12.0-polygon-2" }
 getrandom = { version = "0.2", features = ["js"] }
+rand = "0.8.4"
+rand_chacha = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "1.0.37"
 

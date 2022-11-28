@@ -518,6 +518,7 @@ mod tests {
 		data::DataCell,
 		index::{AppDataIndex, AppDataIndexError},
 		matrix::{Dimensions, Position},
+		proof,
 	};
 	use proptest::{
 		collection::{self, size_range},
@@ -792,7 +793,7 @@ mod tests {
 			prop_assert!(proof.len() == 80);
 
 			let commitment = &commitments[row * 48..(row + 1) * 48];
-			let verification =  kate_proof::kc_verify_proof(col, &proof, commitment, dims.rows.as_usize(), dims.cols.as_usize(), &public_params);
+			let verification =  proof::kc_verify_proof(col, &proof, commitment, dims.rows.as_usize(), dims.cols.as_usize(), &public_params);
 			prop_assert!(verification.is_ok());
 			prop_assert!(verification.unwrap());
 		}
@@ -1181,7 +1182,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 			let commitment = &result_bytes;
 			let verification =
-				kate_proof::kc_verify_proof(i as u32, &proof, commitment, 1, 4, &public_params);
+				proof::kc_verify_proof(i as u32, &proof, commitment, 1, 4, &public_params);
 			assert!(verification.is_ok());
 			assert!(verification.unwrap())
 		}

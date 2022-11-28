@@ -1656,7 +1656,6 @@ dependencies = [
  "hex",
  "hex-literal",
  "itertools 0.10.5",
- "kate-proof",
  "kate-recovery",
  "log",
  "num_cpus",
@@ -1676,21 +1675,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "kate-proof"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "dusk-bytes",
- "dusk-plonk",
- "merlin 3.0.0",
- "rand 0.8.5",
- "rand_chacha 0.3.1",
-]
-
-[[package]]
 name = "kate-recovery"
 version = "0.5.0"
 dependencies = [
+ "anyhow",
  "derive_more",
  "dusk-bytes",
  "dusk-plonk",
