@@ -28,7 +28,7 @@ use serde::{Deserialize, Serialize};
 use static_assertions::const_assert_eq;
 
 #[cfg(feature = "std")]
-use crate::testnet;
+use kate_recovery::testnet;
 use crate::{
 	config::{
 		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE, MINIMUM_BLOCK_SIZE, PROOF_SIZE,
@@ -413,7 +413,7 @@ pub fn par_build_commitments(
 
 	info!(target: LOG_TARGET, "Time to prepare {:?}", start.elapsed());
 
-	let public_params = testnet::public_params(block_dims.cols);
+	let public_params = testnet::public_params(block_dims.cols.as_usize());
 
 	if log::log_enabled!(target: LOG_TARGET, log::Level::Debug) {
 		let raw_pp = public_params.to_raw_var_bytes();
@@ -784,7 +784,7 @@ mod tests {
 		prop_assert_eq!(result.1[0].as_slice(), &xt.data);
 		}
 
-		let public_params = testnet::public_params(dims.cols);
+		let public_params = testnet::public_params(dims.cols.as_usize());
 		for cell in random_cells(dims.cols, dims.rows, 1) {
 			let col = cell.col.into();
 			let row = cell.row.as_usize();
@@ -807,7 +807,7 @@ mod tests {
 		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default()).unwrap();
 
 		let index = app_data_index_try_from_layout(layout).unwrap();
-		let public_params = testnet::public_params(dims.cols);
+		let public_params = testnet::public_params(dims.cols.as_usize());
 		let extended_dims = dims.try_into().unwrap();
 		for xt in xts {
 			let rows = &scalars_to_rows(xt.app_id.0, &index, &extended_dims, &matrix);
@@ -824,7 +824,7 @@ mod tests {
 		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default()).unwrap();
 
 		let index = app_data_index_try_from_layout(layout).unwrap();
-		let public_params = testnet::public_params(dims.cols);
+		let public_params = testnet::public_params(dims.cols.as_usize());
 		let extended_dims =  dims.try_into().unwrap();
 		for xt in xts {
 			let mut rows = scalars_to_rows(xt.app_id.0, &index, &extended_dims, &matrix);
@@ -1137,7 +1137,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		// There are two main cases that generate a zero degree polynomial. One is for data that is non-zero, but the same.
 		// The other is for all-zero data. They differ, as the former yields a polynomial with one coefficient, and latter generates zero coefficients.
 		let len = row_values.len();
-		let public_params = testnet::public_params(BlockLengthColumns(len as u32));
+		let public_params = testnet::public_params(len);
 		let (prover_key, _) = public_params.trim(len).map_err(Error::from).unwrap();
 		let row_eval_domain = EvaluationDomain::new(len).map_err(Error::from).unwrap();
 

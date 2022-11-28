@@ -5,3 +5,5 @@ pub mod data;
 pub mod index;
 pub mod matrix;
 pub mod proof;
+#[cfg(feature = "std")]
+pub mod testnet;

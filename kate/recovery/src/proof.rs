@@ -8,17 +8,6 @@ use dusk_plonk::{
 	fft::EvaluationDomain,
 };
 
-pub mod testnet {
-	use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
-	use rand::SeedableRng;
-	use rand_chacha::ChaChaRng;
-
-	pub fn public_params(max_degree: usize) -> PublicParameters {
-		let mut rng = ChaChaRng::seed_from_u64(42);
-		PublicParameters::setup(max_degree, &mut rng).unwrap()
-	}
-}
-
 // code for light client to verify incoming kate proofs
 // args - now - column number, response (witness + evaluation_point = 48 + 32 bytes), commitment (as bytes)
 // args - in future - multiple sets of these
