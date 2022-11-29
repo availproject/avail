@@ -7,7 +7,7 @@ use dusk_plonk::{
 };
 use thiserror::Error;
 
-use crate::{data::Cell, matrix::Dimensions};
+use crate::{config::COMMITMENT_SIZE, data::Cell, matrix::Dimensions};
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -29,7 +29,7 @@ impl From<dusk_bytes::Error> for Error {
 pub fn verify(
 	public_parameters: &PublicParameters,
 	dimensions: &Dimensions,
-	commitment: &[u8; 48],
+	commitment: &[u8; COMMITMENT_SIZE],
 	cell: &Cell,
 ) -> Result<bool, Error> {
 	let commitment_to_witness = G1Affine::from_bytes(&cell.proof()).map(Commitment::from)?;

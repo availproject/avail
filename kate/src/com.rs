@@ -514,7 +514,7 @@ mod tests {
 			app_specific_cells, decode_app_extrinsics, reconstruct_app_extrinsics,
 			reconstruct_extrinsics, unflatten_padded_data, ReconstructionError,
 		},
-		commitments,
+		commitments, config,
 		data::{self, DataCell},
 		index::{AppDataIndex, AppDataIndexError},
 		matrix::{Dimensions, Position},
@@ -787,7 +787,6 @@ mod tests {
 		let public_params = testnet::public_params(dims.cols.as_usize());
 		for cell in random_cells(dims.cols, dims.rows, 1) {
 			let row = cell.row.as_usize();
-			let commitment_range = row * 48..(row + 1) * 48;
 
 			let proof = build_proof(&public_params, dims, &matrix, &[cell]).unwrap();
 			prop_assert!(proof.len() == 80);
@@ -796,7 +795,7 @@ mod tests {
 			let cell = data::Cell { position,  content: proof.try_into().unwrap() };
 
 			let extended_dims = dims.try_into().unwrap();
-			let commitment: [u8; 48] = commitments[commitment_range].try_into().unwrap();
+			let commitment = commitments::from_slice(&commitments).unwrap()[row];
 			let verification =  proof::verify(&public_params, &extended_dims, &commitment,  &cell);
 			prop_assert!(verification.is_ok());
 			prop_assert!(verification.unwrap());
@@ -813,6 +812,7 @@ mod tests {
 		let index = app_data_index_try_from_layout(layout).unwrap();
 		let public_params = testnet::public_params(dims.cols.as_usize());
 		let extended_dims = dims.try_into().unwrap();
+		let commitments = commitments::from_slice(&commitments).unwrap();
 		for xt in xts {
 			let rows = &scalars_to_rows(xt.app_id.0, &index, &extended_dims, &matrix);
 			let (_, missing) = commitments::verify_equality(&public_params, &commitments, rows, &index, &extended_dims, xt.app_id.0).unwrap();
@@ -830,6 +830,7 @@ mod tests {
 		let index = app_data_index_try_from_layout(layout).unwrap();
 		let public_params = testnet::public_params(dims.cols.as_usize());
 		let extended_dims =  dims.try_into().unwrap();
+		let commitments = commitments::from_slice(&commitments).unwrap();
 		for xt in xts {
 			let mut rows = scalars_to_rows(xt.app_id.0, &index, &extended_dims, &matrix);
 			let app_row_index = rows.iter().position(Option::is_some).unwrap();
@@ -1134,9 +1135,9 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		}];
 		par_build_commitments(BlockLengthRows(4), BlockLengthColumns(4), 32, &xts, hash).unwrap();
 	}
-	#[test_case( (&[1,1,1,1]).to_vec(); "All values are non-zero but same")]
-	#[test_case( (&[0,0,0,0]).to_vec(); "All values are zero")]
-	#[test_case( (&[0,5,2,1]).to_vec(); "All values are different")]
+	#[test_case( ([1,1,1,1]).to_vec(); "All values are non-zero but same")]
+	#[test_case( ([0,0,0,0]).to_vec(); "All values are zero")]
+	#[test_case( ([0,5,2,1]).to_vec(); "All values are different")]
 	fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 		// There are two main cases that generate a zero degree polynomial. One is for data that is non-zero, but the same.
 		// The other is for all-zero data. They differ, as the former yields a polynomial with one coefficient, and latter generates zero coefficients.
@@ -1156,14 +1157,13 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			.collect::<Vec<_>>();
 
 		assert_eq!(row.len(), len as usize);
-		let mut result_bytes: Vec<u8> = vec![0u8; 48];
+		let mut result_bytes: Vec<u8> = vec![0u8; config::COMMITMENT_SIZE];
 		commit(&prover_key, row_eval_domain, row.clone(), &mut result_bytes).unwrap();
 		println!("Commitment: {result_bytes:?}");
 
 		// We artificially extend the matrix by doubling values, this is not proper erasure coding.
 		let ext_m = row.into_iter().flat_map(|e| vec![e, e]).collect::<Vec<_>>();
 
-		// TODO: Is this bug in a test?
 		for col in 0..row_values.len() as u16 {
 			// Randomly chosen cell to prove, probably should test all of them
 			let cell = Cell {
