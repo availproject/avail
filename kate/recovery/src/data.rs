@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+use std::{collections::HashMap, convert::TryInto};
 
 use crate::matrix::Position;
 
@@ -34,11 +34,72 @@ impl Cell {
 	}
 }
 
+/// Merges cells data per row.
+/// Cells are sorted before merge.
+pub fn rows(cells: &[Cell]) -> Vec<(u32, Vec<u8>)> {
+	let mut sorted_cells = cells.to_vec();
+
+	sorted_cells
+		.sort_by(|a, b| (a.position.row, a.position.col).cmp(&(b.position.row, b.position.col)));
+
+	let mut rows = HashMap::new();
+	for cell in sorted_cells {
+		rows.entry(cell.position.row)
+			.or_insert_with(Vec::default)
+			.extend(cell.data());
+	}
+
+	rows.into_iter().collect::<Vec<(_, _)>>()
+}
+
 impl From<Cell> for DataCell {
 	fn from(cell: Cell) -> Self {
 		DataCell {
 			position: cell.position.clone(),
 			data: cell.data(),
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use std::convert::TryInto;
+
+	use crate::{data::rows, data::Cell, matrix::Position};
+
+	fn cell(position: Position, content: [u8; 80]) -> Cell {
+		Cell { position, content }
+	}
+
+	fn position(row: u32, col: u16) -> Position {
+		Position { row, col }
+	}
+
+	#[test]
+	fn rows_ok() {
+		fn content(data: [u8; 32]) -> [u8; 80] {
+			[&[0u8; 48], &data[..]].concat().try_into().unwrap()
+		}
+
+		let cells = [
+			cell(position(1, 1), content([3; 32])),
+			cell(position(1, 0), content([2; 32])),
+			cell(position(0, 0), content([0; 32])),
+			cell(position(0, 1), content([1; 32])),
+		];
+
+		let mut rows = rows(&cells);
+		rows.sort_by_key(|&(key, _)| key);
+
+		let expected = [
+			[[0u8; 32], [1u8; 32]].concat(),
+			[[2u8; 32], [3u8; 32]].concat(),
+		];
+
+		for i in 0..1 {
+			let (row_index, row) = &rows[i];
+			assert_eq!(*row_index, 0);
+			assert_eq!(*row, expected[i]);
 		}
 	}
 }

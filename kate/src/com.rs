@@ -514,6 +514,7 @@ mod tests {
 			app_specific_cells, decode_app_extrinsics, reconstruct_app_extrinsics,
 			reconstruct_extrinsics, unflatten_padded_data, ReconstructionError,
 		},
+		commitments,
 		data::DataCell,
 		index::{AppDataIndex, AppDataIndexError},
 		matrix::{Dimensions, Position},
@@ -809,7 +810,8 @@ mod tests {
 		let extended_dims = dims.try_into().unwrap();
 		for xt in xts {
 			let rows = &scalars_to_rows(xt.app_id.0, &index, &extended_dims, &matrix);
-			prop_assert!(kate_recovery::commitments::verify_equality(&public_params, &commitments, rows,&index,&extended_dims,xt.app_id.0).unwrap());
+			let (_, missing) = commitments::verify_equality(&public_params, &commitments, rows, &index, &extended_dims, xt.app_id.0).unwrap();
+			prop_assert!(missing.is_empty());
 		}
 	}
 	}
@@ -827,7 +829,8 @@ mod tests {
 			let mut rows = scalars_to_rows(xt.app_id.0, &index, &extended_dims, &matrix);
 			let app_row_index = rows.iter().position(Option::is_some).unwrap();
 			rows.remove(app_row_index);
-			prop_assert!(kate_recovery::commitments::verify_equality(&public_params, &commitments, &rows,&index,&extended_dims,xt.app_id.0).is_err());
+			let (_, missing) = commitments::verify_equality(&public_params, &commitments, &rows,&index,&extended_dims,xt.app_id.0).unwrap();
+			prop_assert!(!missing.is_empty());
 		}
 	}
 	}

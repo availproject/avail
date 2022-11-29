@@ -62,6 +62,7 @@ impl Dimensions {
 	pub fn rows(&self) -> u16 {
 		self.rows
 	}
+
 	/// Returns number of columns
 	pub fn cols(&self) -> u16 {
 		self.cols
@@ -95,6 +96,25 @@ impl Dimensions {
 		(first_row..=last_row)
 			.step_by(config::EXTENSION_FACTOR)
 			.collect::<Vec<u32>>()
+	}
+
+	/// Cell positions for given rows in extended matrix.
+	/// Empty if row index is not valid.
+	fn extended_row_positions(&self, row: u32) -> Vec<Position> {
+		if self.extended_rows() <= row {
+			return vec![];
+		}
+		(0..self.cols())
+			.map(|col| Position { col, row })
+			.collect::<Vec<_>>()
+	}
+
+	/// Cell positions for given rows in extended matrix.
+	/// Row indexes that are out of bounds are ignored.
+	pub fn extended_rows_positions(&self, rows: &[u32]) -> Vec<Position> {
+		rows.iter()
+			.flat_map(|&row| self.extended_row_positions(row))
+			.collect::<Vec<_>>()
 	}
 
 	/// Column index of a cell in the matrix.
@@ -176,7 +196,7 @@ mod tests {
 
 	use test_case::test_case;
 
-	use crate::matrix::Dimensions;
+	use crate::matrix::{Dimensions, Position};
 
 	#[test]
 	fn zero_dimensions() {
@@ -197,5 +217,19 @@ mod tests {
 		let dimensions = Dimensions::new(2, 4).unwrap();
 		let cells = dimensions.iter_cells().collect::<Vec<_>>();
 		assert_eq!(cells, vec![0, 4, 1, 5, 2, 6, 3, 7]);
+	}
+
+	#[test_case(&[0], &[(0, 0), (0, 1)] ; "first row positions")]
+	#[test_case(&[1], &[(1, 0), (1, 1)] ; "second row positions")]
+	#[test_case(&[0,1], &[(0, 0), (0, 1), (1,0), (1,1)] ; "all positions")]
+	#[test_case(&[2], &[] ; "no positions")]
+	fn extended_rows_positions(rows: &[u32], expected: &[(usize, usize)]) {
+		let dimensions = Dimensions::new(1, 2).unwrap();
+		let cells = dimensions
+			.extended_rows_positions(rows)
+			.iter()
+			.map(|&Position { row, col }| (row as usize, col as usize))
+			.collect::<Vec<_>>();
+		assert_eq!(cells, expected);
 	}
 }
