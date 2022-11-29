@@ -5,7 +5,6 @@ authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
 edition = "2018"
 
 [dependencies]
-anyhow = "1.0.41"
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 derive_more = "0.99.17"
 dusk-bytes = "0.1.6"

@@ -1677,7 +1677,6 @@ dependencies = [
 name = "kate-recovery"
 version = "0.5.0"
 dependencies = [
- "anyhow",
  "derive_more",
  "dusk-bytes",
  "dusk-plonk",

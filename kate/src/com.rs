@@ -27,8 +27,6 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use static_assertions::const_assert_eq;
 
-#[cfg(feature = "std")]
-use kate_recovery::testnet;
 use crate::{
 	config::{
 		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE, MINIMUM_BLOCK_SIZE, PROOF_SIZE,
@@ -36,6 +34,8 @@ use crate::{
 	},
 	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed, LOG_TARGET,
 };
+#[cfg(feature = "std")]
+use kate_recovery::testnet;
 
 #[derive(Serialize, Deserialize, Constructor, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Cell {
@@ -515,7 +515,7 @@ mod tests {
 			reconstruct_extrinsics, unflatten_padded_data, ReconstructionError,
 		},
 		commitments,
-		data::DataCell,
+		data::{self, DataCell},
 		index::{AppDataIndex, AppDataIndexError},
 		matrix::{Dimensions, Position},
 		proof,
@@ -786,14 +786,18 @@ mod tests {
 
 		let public_params = testnet::public_params(dims.cols.as_usize());
 		for cell in random_cells(dims.cols, dims.rows, 1) {
-			let col = cell.col.into();
 			let row = cell.row.as_usize();
+			let commitment_range = row * 48..(row + 1) * 48;
 
 			let proof = build_proof(&public_params, dims, &matrix, &[cell]).unwrap();
 			prop_assert!(proof.len() == 80);
 
-			let commitment = &commitments[row * 48..(row + 1) * 48];
-			let verification =  proof::kc_verify_proof(col, &proof, commitment, dims.rows.as_usize(), dims.cols.as_usize(), &public_params);
+			let position = Position { row: cell.row.0, col: cell.col.0 as u16};
+			let cell = data::Cell { position,  content: proof.try_into().unwrap() };
+
+			let extended_dims = dims.try_into().unwrap();
+			let commitment: [u8; 48] = commitments[commitment_range].try_into().unwrap();
+			let verification =  proof::verify(&public_params, &extended_dims, &commitment,  &cell);
 			prop_assert!(verification.is_ok());
 			prop_assert!(verification.unwrap());
 		}
@@ -1153,16 +1157,17 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 		assert_eq!(row.len(), len as usize);
 		let mut result_bytes: Vec<u8> = vec![0u8; 48];
-		let _ = commit(&prover_key, row_eval_domain, row.clone(), &mut result_bytes).unwrap();
+		commit(&prover_key, row_eval_domain, row.clone(), &mut result_bytes).unwrap();
 		println!("Commitment: {result_bytes:?}");
 
 		// We artificially extend the matrix by doubling values, this is not proper erasure coding.
 		let ext_m = row.into_iter().flat_map(|e| vec![e, e]).collect::<Vec<_>>();
 
-		for i in 0..row_values.len() {
+		// TODO: Is this bug in a test?
+		for col in 0..row_values.len() as u16 {
 			// Randomly chosen cell to prove, probably should test all of them
 			let cell = Cell {
-				col: BlockLengthColumns(i as u32),
+				col: BlockLengthColumns(col.into()),
 				row: BlockLengthRows(0),
 			};
 			let proof = build_proof(
@@ -1180,9 +1185,13 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 			assert!(proof.len() == 80);
 
-			let commitment = &result_bytes;
-			let verification =
-				proof::kc_verify_proof(i as u32, &proof, commitment, 1, 4, &public_params);
+			let commitment = result_bytes.clone().try_into().unwrap();
+			let dims = Dimensions::new(1, 4).unwrap();
+			let cell = data::Cell {
+				position: Position { row: 0, col },
+				content: proof.try_into().unwrap(),
+			};
+			let verification = proof::verify(&public_params, &dims, &commitment, &cell);
 			assert!(verification.is_ok());
 			assert!(verification.unwrap())
 		}
