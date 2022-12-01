@@ -1643,7 +1643,7 @@ dependencies = [
 
 [[package]]
 name = "kate"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "bls12_381",
  "criterion",
@@ -1675,7 +1675,7 @@ dependencies = [
 
 [[package]]
 name = "kate-recovery"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "derive_more",
  "dusk-bytes",
