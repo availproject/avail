@@ -1,7 +1,4 @@
-use std::{
-	collections::HashMap,
-	convert::{TryFrom, TryInto},
-};
+use std::{collections::HashMap, convert::TryFrom};
 
 use codec::Decode;
 use dusk_bytes::Serializable;
@@ -132,6 +129,32 @@ pub fn reconstruct_extrinsics(
 	unflatten_padded_data(ranges, data).map_err(ReconstructionError::DataDecodingError)
 }
 
+pub fn reconstruct_columns(
+	dimensions: &matrix::Dimensions,
+	cells: Vec<data::DataCell>,
+) -> Result<Vec<(u16, Vec<u8>)>, ReconstructionError> {
+	let columns = map_cells(dimensions, cells)?;
+
+	columns
+		.iter()
+		.map(|(&col, cells)| {
+			if cells.len() < dimensions.rows().into() {
+				return Err(ReconstructionError::InvalidColumn(col));
+			}
+
+			let cells = cells.values().cloned().collect::<Vec<_>>();
+
+			let column = reconstruct_column(dimensions.extended_rows(), &cells)
+				.map_err(ReconstructionError::ColumnReconstructionError)?
+				.iter()
+				.flat_map(BlsScalar::to_bytes)
+				.collect::<Vec<_>>();
+
+			Ok((col, column))
+		})
+		.collect::<Result<_, _>>()
+}
+
 fn reconstruct_available(
 	dimensions: &matrix::Dimensions,
 	cells: Vec<data::DataCell>,
@@ -146,12 +169,8 @@ fn reconstruct_available(
 					return Err(ReconstructionError::InvalidColumn(col));
 				}
 				let cells = column_cells.values().cloned().collect::<Vec<_>>();
-				let row_count: u16 = dimensions
-					.extended_rows()
-					.try_into()
-					.map_err(|_| ReconstructionError::RowCountExceeded)?;
 
-				reconstruct_column(row_count, &cells)
+				reconstruct_column(dimensions.extended_rows(), &cells)
 					.map(|scalars| scalars.into_iter().map(Some).collect::<Vec<_>>())
 					.map_err(ReconstructionError::ColumnReconstructionError)
 			},
@@ -396,7 +415,7 @@ pub type AppDataRange = std::ops::Range<u32>;
 // performing one round of ifft should reveal original data which were
 // coded together
 pub fn reconstruct_column(
-	row_count: u16,
+	row_count: u32,
 	cells: &[data::DataCell],
 ) -> Result<Vec<BlsScalar>, String> {
 	// just ensures all rows are from same column !
@@ -410,10 +429,10 @@ pub fn reconstruct_column(
 
 	// given row index in column of interest, finds it if present
 	// and returns back wrapped in `Some`, otherwise returns `None`
-	fn find_row_by_index(idx: u16, cells: &[data::DataCell]) -> Option<BlsScalar> {
+	fn find_row_by_index(idx: u32, cells: &[data::DataCell]) -> Option<BlsScalar> {
 		cells
 			.iter()
-			.find(|cell| cell.position.row == idx as u32)
+			.find(|cell| cell.position.row == idx)
 			.map(|cell| {
 				<[u8; BlsScalar::SIZE]>::try_from(&cell.data[..])
 					.expect("didn't find u8 array of length 32")
@@ -774,7 +793,7 @@ mod tests {
 		}
 	}
 
-	fn build_coded_eval_domain() -> (Vec<BlsScalar>, u16, u16) {
+	fn build_coded_eval_domain() -> (Vec<BlsScalar>, u32, u16) {
 		let domain_size = 1u16 << 2;
 		let row_count = domain_size.checked_mul(2).unwrap();
 		let eval_domain = EvaluationDomain::new(domain_size as usize).unwrap();
@@ -793,7 +812,7 @@ mod tests {
 		let coded = eval_domain.fft(&src);
 		assert!(coded.len() == row_count as usize);
 
-		(coded, row_count, domain_size)
+		(coded, row_count.into(), domain_size)
 	}
 
 	// Following test cases attempt to figure out any loop holes
