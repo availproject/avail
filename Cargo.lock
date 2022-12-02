@@ -1390,7 +1390,7 @@ dependencies = [
 [[package]]
 name = "da-primitives"
 version = "0.4.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=da/v0.4.0#38ee87987228946ba8f8bba67e77209f18cd5518"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.5.1#f536c60c21279f62c8d6e47894f446c22889a030"
 dependencies = [
  "beefy-merkle-tree",
  "derive_more",
@@ -1756,7 +1756,7 @@ dependencies = [
 [[package]]
 name = "dusk-plonk"
 version = "0.12.0"
-source = "git+https://github.com/maticnetwork/plonk.git?tag=v0.12.0-polygon-1#d8cdbd1787405ecceb494b9d1438254b1c1de53b"
+source = "git+https://github.com/maticnetwork/plonk.git?tag=v0.12.0-polygon-2#6ada57a82b6e3a92a677b9f6263f9f3c9b501b23"
 dependencies = [
  "cfg-if 1.0.0",
  "dusk-bls12_381",
@@ -3401,8 +3401,8 @@ dependencies = [
 
 [[package]]
 name = "kate"
-version = "0.5.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=da/v0.4.0#38ee87987228946ba8f8bba67e77209f18cd5518"
+version = "0.5.1"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.5.1#f536c60c21279f62c8d6e47894f446c22889a030"
 dependencies = [
  "bls12_381",
  "da-primitives",
@@ -3429,8 +3429,8 @@ dependencies = [
 
 [[package]]
 name = "kate-recovery"
-version = "0.4.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=da/v0.4.0#38ee87987228946ba8f8bba67e77209f18cd5518"
+version = "0.5.0"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.5.1#f536c60c21279f62c8d6e47894f446c22889a030"
 dependencies = [
  "derive_more",
  "dusk-bytes",
@@ -4326,7 +4326,7 @@ checksum = "71d96e3f3c0b6325d8ccd83c33b28acb183edcb6c67938ba104ec546854b0882"
 [[package]]
 name = "merkle"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=da/v0.4.0#38ee87987228946ba8f8bba67e77209f18cd5518"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.5.1#f536c60c21279f62c8d6e47894f446c22889a030"
 dependencies = [
  "frame-support",
  "hex-literal",
@@ -4646,7 +4646,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=da/v0.4.0#38ee87987228946ba8f8bba67e77209f18cd5518"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.5.1#f536c60c21279f62c8d6e47894f446c22889a030"
 dependencies = [
  "ethers-signers",
  "frame-support",
@@ -4667,7 +4667,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=da/v0.4.0#38ee87987228946ba8f8bba67e77209f18cd5518"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.5.1#f536c60c21279f62c8d6e47894f446c22889a030"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -7926,7 +7926,7 @@ dependencies = [
 [[package]]
 name = "signature"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=da/v0.4.0#38ee87987228946ba8f8bba67e77209f18cd5518"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.5.1#f536c60c21279f62c8d6e47894f446c22889a030"
 dependencies = [
  "arrayvec 0.7.2",
  "elliptic-curve",
