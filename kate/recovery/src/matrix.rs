@@ -98,6 +98,17 @@ impl Dimensions {
 			.collect::<Vec<u32>>()
 	}
 
+	/// Cell positions for given column in extended matrix.
+	/// Empty if column index is not valid.
+	pub fn col_positions(&self, col: u16) -> Vec<Position> {
+		if self.cols() <= col {
+			return vec![];
+		}
+		(0..self.extended_rows())
+			.map(|row| Position { col, row })
+			.collect::<Vec<_>>()
+	}
+
 	/// Cell positions for given rows in extended matrix.
 	/// Empty if row index is not valid.
 	fn extended_row_positions(&self, row: u32) -> Vec<Position> {

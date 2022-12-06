@@ -1,8 +1,13 @@
-use std::{collections::HashMap, convert::TryFrom};
-
 use codec::Decode;
 use dusk_bytes::Serializable;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
+use num::ToPrimitive;
+use rand::seq::SliceRandom;
+use std::{
+	collections::{BTreeSet, HashMap},
+	convert::TryFrom,
+	iter::FromIterator,
+};
 use thiserror::Error;
 
 use crate::{config, data, index, matrix};
@@ -23,6 +28,30 @@ pub enum ReconstructionError {
 	DataDecodingError(String),
 	#[error("Column reconstruction supports up to {}", u16::MAX)]
 	RowCountExceeded,
+}
+
+/// From given positions, constructs related columns positions, up to given factor.
+/// E.g. if factor is 0.66, 66% of matched columns will be returned.
+/// Positions in columns are random.
+/// Function panics if factor is above 1.0.
+pub fn columns_positions(
+	dimensions: &matrix::Dimensions,
+	positions: Vec<matrix::Position>,
+	factor: f64,
+) -> Vec<matrix::Position> {
+	assert!(factor <= 1.0);
+
+	let cells = (factor * dimensions.extended_rows() as f64)
+		.to_usize()
+		.expect("result is lesser than usize maximum");
+
+	let rng = &mut rand::thread_rng();
+
+	BTreeSet::from_iter(positions.iter().map(|position| position.col))
+		.into_iter()
+		.map(|col| dimensions.col_positions(col))
+		.flat_map(|col| col.choose_multiple(rng, cells).cloned().collect::<Vec<_>>())
+		.collect::<Vec<matrix::Position>>()
 }
 
 /// Creates hash map of columns, each being hash map of cells, from vector of cells.
