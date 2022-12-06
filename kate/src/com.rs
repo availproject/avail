@@ -791,7 +791,8 @@ mod tests {
 			let proof = build_proof(&public_params, dims, &matrix, &[cell]).unwrap();
 			prop_assert!(proof.len() == 80);
 
-			let position = Position { row: cell.row.0, col: cell.col.0 as u16};
+			let col: u16 = cell.col.0.try_into().expect("`random_cells` function generates a valid `u16` for columns");
+			let position = Position { row: cell.row.0, col};
 			let cell = data::Cell { position,  content: proof.try_into().unwrap() };
 
 			let extended_dims = dims.try_into().unwrap();
@@ -1164,7 +1165,9 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		// We artificially extend the matrix by doubling values, this is not proper erasure coding.
 		let ext_m = row.into_iter().flat_map(|e| vec![e, e]).collect::<Vec<_>>();
 
-		for col in 0..row_values.len() as u16 {
+		let rows: u16 = len.try_into().expect("rows length should be valid `u16`");
+
+		for col in 0..rows {
 			// Randomly chosen cell to prove, probably should test all of them
 			let cell = Cell {
 				col: BlockLengthColumns(col.into()),
