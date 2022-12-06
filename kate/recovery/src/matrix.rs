@@ -7,7 +7,7 @@ use crate::config;
 const EXTENSION_FACTOR_U32: u32 = config::EXTENSION_FACTOR as u32;
 
 /// Position of a cell in the the matrix.
-#[derive(Default, Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Position {
 	pub row: u32,
 	pub col: u16,
