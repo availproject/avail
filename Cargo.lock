@@ -1643,7 +1643,7 @@ dependencies = [
 
 [[package]]
 name = "kate"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "bls12_381",
  "criterion",
@@ -1656,11 +1656,9 @@ dependencies = [
  "hex",
  "hex-literal",
  "itertools 0.10.5",
- "kate-proof",
  "kate-recovery",
  "log",
  "num_cpus",
- "once_cell",
  "parity-scale-codec 3.1.5",
  "proptest",
  "rand 0.8.5",
@@ -1676,20 +1674,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "kate-proof"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "dusk-bytes",
- "dusk-plonk",
- "merlin 3.0.0",
- "rand 0.8.5",
- "rand_chacha 0.3.1",
-]
-
-[[package]]
 name = "kate-recovery"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "derive_more",
  "dusk-bytes",

@@ -27,8 +27,6 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use static_assertions::const_assert_eq;
 
-#[cfg(feature = "std")]
-use crate::testnet;
 use crate::{
 	config::{
 		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE, MINIMUM_BLOCK_SIZE, PROOF_SIZE,
@@ -36,6 +34,8 @@ use crate::{
 	},
 	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed, LOG_TARGET,
 };
+#[cfg(feature = "std")]
+use kate_recovery::testnet;
 
 #[derive(Serialize, Deserialize, Constructor, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Cell {
@@ -413,7 +413,7 @@ pub fn par_build_commitments(
 
 	info!(target: LOG_TARGET, "Time to prepare {:?}", start.elapsed());
 
-	let public_params = testnet::public_params(block_dims.cols);
+	let public_params = testnet::public_params(block_dims.cols.as_usize());
 
 	if log::log_enabled!(target: LOG_TARGET, log::Level::Debug) {
 		let raw_pp = public_params.to_raw_var_bytes();
@@ -514,10 +514,11 @@ mod tests {
 			app_specific_cells, decode_app_extrinsics, reconstruct_app_extrinsics,
 			reconstruct_extrinsics, unflatten_padded_data, ReconstructionError,
 		},
-		commitments,
-		data::DataCell,
+		commitments, config,
+		data::{self, DataCell},
 		index::{AppDataIndex, AppDataIndexError},
 		matrix::{Dimensions, Position},
+		proof,
 	};
 	use proptest::{
 		collection::{self, size_range},
@@ -783,16 +784,20 @@ mod tests {
 		prop_assert_eq!(result.1[0].as_slice(), &xt.data);
 		}
 
-		let public_params = testnet::public_params(dims.cols);
+		let public_params = testnet::public_params(dims.cols.as_usize());
 		for cell in random_cells(dims.cols, dims.rows, 1) {
-			let col = cell.col.into();
 			let row = cell.row.as_usize();
 
 			let proof = build_proof(&public_params, dims, &matrix, &[cell]).unwrap();
 			prop_assert!(proof.len() == 80);
 
-			let commitment = &commitments[row * 48..(row + 1) * 48];
-			let verification =  kate_proof::kc_verify_proof(col, &proof, commitment, dims.rows.as_usize(), dims.cols.as_usize(), &public_params);
+			let col: u16 = cell.col.0.try_into().expect("`random_cells` function generates a valid `u16` for columns");
+			let position = Position { row: cell.row.0, col};
+			let cell = data::Cell { position,  content: proof.try_into().unwrap() };
+
+			let extended_dims = dims.try_into().unwrap();
+			let commitment = commitments::from_slice(&commitments).unwrap()[row];
+			let verification =  proof::verify(&public_params, &extended_dims, &commitment,  &cell);
 			prop_assert!(verification.is_ok());
 			prop_assert!(verification.unwrap());
 		}
@@ -806,8 +811,9 @@ mod tests {
 		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default()).unwrap();
 
 		let index = app_data_index_try_from_layout(layout).unwrap();
-		let public_params = testnet::public_params(dims.cols);
+		let public_params = testnet::public_params(dims.cols.as_usize());
 		let extended_dims = dims.try_into().unwrap();
+		let commitments = commitments::from_slice(&commitments).unwrap();
 		for xt in xts {
 			let rows = &scalars_to_rows(xt.app_id.0, &index, &extended_dims, &matrix);
 			let (_, missing) = commitments::verify_equality(&public_params, &commitments, rows, &index, &extended_dims, xt.app_id.0).unwrap();
@@ -823,8 +829,9 @@ mod tests {
 		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default()).unwrap();
 
 		let index = app_data_index_try_from_layout(layout).unwrap();
-		let public_params = testnet::public_params(dims.cols);
+		let public_params = testnet::public_params(dims.cols.as_usize());
 		let extended_dims =  dims.try_into().unwrap();
+		let commitments = commitments::from_slice(&commitments).unwrap();
 		for xt in xts {
 			let mut rows = scalars_to_rows(xt.app_id.0, &index, &extended_dims, &matrix);
 			let app_row_index = rows.iter().position(Option::is_some).unwrap();
@@ -1129,14 +1136,14 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		}];
 		par_build_commitments(BlockLengthRows(4), BlockLengthColumns(4), 32, &xts, hash).unwrap();
 	}
-	#[test_case( (&[1,1,1,1]).to_vec(); "All values are non-zero but same")]
-	#[test_case( (&[0,0,0,0]).to_vec(); "All values are zero")]
-	#[test_case( (&[0,5,2,1]).to_vec(); "All values are different")]
+	#[test_case( ([1,1,1,1]).to_vec(); "All values are non-zero but same")]
+	#[test_case( ([0,0,0,0]).to_vec(); "All values are zero")]
+	#[test_case( ([0,5,2,1]).to_vec(); "All values are different")]
 	fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 		// There are two main cases that generate a zero degree polynomial. One is for data that is non-zero, but the same.
 		// The other is for all-zero data. They differ, as the former yields a polynomial with one coefficient, and latter generates zero coefficients.
 		let len = row_values.len();
-		let public_params = testnet::public_params(BlockLengthColumns(len as u32));
+		let public_params = testnet::public_params(len);
 		let (prover_key, _) = public_params.trim(len).map_err(Error::from).unwrap();
 		let row_eval_domain = EvaluationDomain::new(len).map_err(Error::from).unwrap();
 
@@ -1151,17 +1158,19 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			.collect::<Vec<_>>();
 
 		assert_eq!(row.len(), len as usize);
-		let mut result_bytes: Vec<u8> = vec![0u8; 48];
-		let _ = commit(&prover_key, row_eval_domain, row.clone(), &mut result_bytes).unwrap();
+		let mut result_bytes: Vec<u8> = vec![0u8; config::COMMITMENT_SIZE];
+		commit(&prover_key, row_eval_domain, row.clone(), &mut result_bytes).unwrap();
 		println!("Commitment: {result_bytes:?}");
 
 		// We artificially extend the matrix by doubling values, this is not proper erasure coding.
 		let ext_m = row.into_iter().flat_map(|e| vec![e, e]).collect::<Vec<_>>();
 
-		for i in 0..row_values.len() {
+		let rows: u16 = len.try_into().expect("rows length should be valid `u16`");
+
+		for col in 0..rows {
 			// Randomly chosen cell to prove, probably should test all of them
 			let cell = Cell {
-				col: BlockLengthColumns(i as u32),
+				col: BlockLengthColumns(col.into()),
 				row: BlockLengthRows(0),
 			};
 			let proof = build_proof(
@@ -1179,9 +1188,13 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 			assert!(proof.len() == 80);
 
-			let commitment = &result_bytes;
-			let verification =
-				kate_proof::kc_verify_proof(i as u32, &proof, commitment, 1, 4, &public_params);
+			let commitment = result_bytes.clone().try_into().unwrap();
+			let dims = Dimensions::new(1, 4).unwrap();
+			let cell = data::Cell {
+				position: Position { row: 0, col },
+				content: proof.try_into().unwrap(),
+			};
+			let verification = proof::verify(&public_params, &dims, &commitment, &cell);
 			assert!(verification.is_ok());
 			assert!(verification.unwrap())
 		}

@@ -4,9 +4,8 @@ use itertools::Itertools;
 use kate::{
 	com::{build_proof, par_build_commitments, Cell},
 	config::DATA_CHUNK_SIZE,
-	testnet,
 };
-use kate_proof::kc_verify_proof;
+use kate_recovery::{data, matrix::Position, proof, testnet};
 use rand::prelude::*;
 use rand_chacha::ChaCha20Rng;
 
@@ -113,7 +112,7 @@ fn bench_build_proof(c: &mut Criterion) {
 		let tx = AppExtrinsic::from(data.to_vec());
 		let txs = [tx];
 
-		let public_params = crate::testnet::public_params(BlockLengthColumns(dim.1));
+		let public_params = testnet::public_params(dim.1 as usize);
 
 		let (_, _, dims, mat) = par_build_commitments(
 			BlockLengthRows(dim.0),
@@ -164,7 +163,7 @@ fn bench_verify_proof(c: &mut Criterion) {
 		let tx = AppExtrinsic::from(data.to_vec());
 		let txs = [tx];
 
-		let pp = crate::testnet::public_params(BlockLengthColumns(dim.1));
+		let pp = testnet::public_params(dim.1 as usize);
 
 		let (_, comms, dims, mat) = par_build_commitments(
 			BlockLengthRows(dim.0),
@@ -190,17 +189,17 @@ fn bench_verify_proof(c: &mut Criterion) {
 			),
 			|b| {
 				b.iter(|| {
-					let comm = &comms[row.as_usize() * 48..(row.as_usize() + 1) * 48];
-					let flg = kc_verify_proof(
-						col.0,
-						&proof,
-						comm,
-						dims.rows.as_usize(),
-						dims.cols.as_usize(),
-						&pp,
-					);
+					let comm: [u8; 48] = comms[row.as_usize() * 48..(row.as_usize() + 1) * 48]
+						.try_into()
+						.unwrap();
+					let dims = dims.try_into().unwrap();
+					let cell = data::Cell {
+						position: Position { row: 0, col: 0 },
+						content: proof.clone().try_into().unwrap(),
+					};
+					let flg = proof::verify(&pp, &dims, &comm, &cell);
 
-					assert_eq!(flg.unwrap(), true);
+					assert!(flg.unwrap());
 				});
 			},
 		);
