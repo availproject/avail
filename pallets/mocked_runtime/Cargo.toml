@@ -9,8 +9,8 @@ repository = ""
 description = "Mokend Runtime for Testing"
 
 [dependencies]
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.5.1", default-features = false }
-kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.5.1", default-features = false }
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.6.0", default-features = false }
+kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.6.0", default-features = false }
 da-control = { path = "../dactr" }
 
 scale-info = { version = "1.0", features = ["derive"] }

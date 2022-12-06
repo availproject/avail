@@ -232,7 +232,8 @@ pub fn testnet_genesis(
 		system: SystemConfig {
 			// Add Wasm runtime to storage.
 			code: wasm_binary_unwrap().to_vec(),
-			kc_public_params: kate::testnet::public_params(MAX_BLOCK_COLUMNS).to_raw_var_bytes(),
+			kc_public_params: kate_recovery::testnet::public_params(MAX_BLOCK_COLUMNS.as_usize())
+				.to_raw_var_bytes(),
 			block_length: BlockLength::with_normal_ratio(
 				MAX_BLOCK_ROWS,
 				MAX_BLOCK_COLUMNS,
@@ -406,7 +407,8 @@ fn genesis_builder(
 		system: SystemConfig {
 			// Add Wasm runtime to storage.
 			code: wasm_binary_unwrap().to_vec(),
-			kc_public_params: kate::testnet::public_params(MAX_BLOCK_COLUMNS).to_raw_var_bytes(),
+			kc_public_params: kate_recovery::testnet::public_params(MAX_BLOCK_COLUMNS.as_usize())
+				.to_raw_var_bytes(),
 			block_length: BlockLength::with_normal_ratio(
 				MAX_BLOCK_ROWS,
 				MAX_BLOCK_COLUMNS,
