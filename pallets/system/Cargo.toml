@@ -13,8 +13,9 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.5.1", default-features = false}
-kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.5.1", default-features = false }
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.6.0", default-features = false}
+kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.6.0", default-features = false }
+kate-recovery = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.6.0", default-features = false, optional = true }
 # Other
 impl-trait-for-tuples = "0.2.1"
 static_assertions = "1.1.0"
@@ -45,6 +46,7 @@ sp-externalities = "0.10.0-dev"
 default = ["std"]
 std = [
 	"kate/std",
+	"kate-recovery/std",
 	"da-primitives/std",
 	"serde",
 	"codec/std",

@@ -662,7 +662,8 @@ pub mod pallet {
 			.expect("Valid BlockLength at genesis .qed");
 
 			let kc_public_params =
-				kate::testnet::public_params(MAX_BLOCK_COLUMNS).to_raw_var_bytes();
+				kate_recovery::testnet::public_params(MAX_BLOCK_COLUMNS.as_usize())
+					.to_raw_var_bytes();
 
 			Self {
 				code: Default::default(),
