@@ -4,13 +4,16 @@ use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
 use num::ToPrimitive;
 use rand::seq::SliceRandom;
 use std::{
-	collections::{BTreeSet, HashMap},
+	collections::{HashMap, HashSet},
 	convert::TryFrom,
 	iter::FromIterator,
 };
 use thiserror::Error;
 
-use crate::{config, data, index, matrix};
+use crate::{
+	config::{self, CHUNK_SIZE},
+	data, index, matrix,
+};
 
 #[derive(Debug, Error)]
 pub enum ReconstructionError {
@@ -36,7 +39,7 @@ pub enum ReconstructionError {
 /// Function panics if factor is above 1.0.
 pub fn columns_positions(
 	dimensions: &matrix::Dimensions,
-	positions: Vec<matrix::Position>,
+	positions: &[matrix::Position],
 	factor: f64,
 ) -> Vec<matrix::Position> {
 	assert!(factor <= 1.0);
@@ -47,7 +50,9 @@ pub fn columns_positions(
 
 	let rng = &mut rand::thread_rng();
 
-	BTreeSet::from_iter(positions.iter().map(|position| position.col))
+	let columns: HashSet<u16> = HashSet::from_iter(positions.iter().map(|position| position.col));
+
+	columns
 		.into_iter()
 		.map(|col| dimensions.col_positions(col))
 		.flat_map(|col| col.choose_multiple(rng, cells).cloned().collect::<Vec<_>>())
@@ -158,10 +163,17 @@ pub fn reconstruct_extrinsics(
 	unflatten_padded_data(ranges, data).map_err(ReconstructionError::DataDecodingError)
 }
 
+/// Reconstructs columns for given cells.
+///
+/// # Arguments
+///
+/// * `dimensions` - Extended matrix dimensions
+/// * `cells` - Cells from required columns, at least 50% cells per column
 pub fn reconstruct_columns(
 	dimensions: &matrix::Dimensions,
-	cells: Vec<data::DataCell>,
-) -> Result<Vec<(u16, Vec<u8>)>, ReconstructionError> {
+	cells: &[data::Cell],
+) -> Result<HashMap<u16, Vec<[u8; CHUNK_SIZE]>>, ReconstructionError> {
+	let cells: Vec<data::DataCell> = cells.iter().cloned().map(Into::into).collect::<Vec<_>>();
 	let columns = map_cells(dimensions, cells)?;
 
 	columns
@@ -176,8 +188,8 @@ pub fn reconstruct_columns(
 			let column = reconstruct_column(dimensions.extended_rows(), &cells)
 				.map_err(ReconstructionError::ColumnReconstructionError)?
 				.iter()
-				.flat_map(BlsScalar::to_bytes)
-				.collect::<Vec<_>>();
+				.map(BlsScalar::to_bytes)
+				.collect::<Vec<[u8; CHUNK_SIZE]>>();
 
 			Ok((col, column))
 		})
