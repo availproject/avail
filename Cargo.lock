@@ -1675,7 +1675,7 @@ dependencies = [
 
 [[package]]
 name = "kate-recovery"
-version = "0.6.1"
+version = "0.7.0"
 dependencies = [
  "derive_more",
  "dusk-bytes",
