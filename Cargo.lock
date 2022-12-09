@@ -1390,7 +1390,7 @@ dependencies = [
 [[package]]
 name = "da-primitives"
 version = "0.4.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.6.0#2b4605dc38457b323800b92a7c3d8e951141c5d3"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.7.0#5782da6cd648da6bb3381713b8df12a8bd237e5c"
 dependencies = [
  "beefy-merkle-tree",
  "derive_more",
@@ -3404,7 +3404,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.5.2"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.6.0#2b4605dc38457b323800b92a7c3d8e951141c5d3"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.7.0#5782da6cd648da6bb3381713b8df12a8bd237e5c"
 dependencies = [
  "bls12_381",
  "da-primitives",
@@ -3430,13 +3430,14 @@ dependencies = [
 
 [[package]]
 name = "kate-recovery"
-version = "0.6.0"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.6.0#2b4605dc38457b323800b92a7c3d8e951141c5d3"
+version = "0.7.0"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.7.0#5782da6cd648da6bb3381713b8df12a8bd237e5c"
 dependencies = [
  "derive_more",
  "dusk-bytes",
  "dusk-plonk",
  "getrandom 0.2.7",
+ "num",
  "once_cell",
  "parity-scale-codec 3.2.1",
  "rand 0.8.5",
@@ -4330,7 +4331,7 @@ checksum = "71d96e3f3c0b6325d8ccd83c33b28acb183edcb6c67938ba104ec546854b0882"
 [[package]]
 name = "merkle"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.6.0#2b4605dc38457b323800b92a7c3d8e951141c5d3"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.7.0#5782da6cd648da6bb3381713b8df12a8bd237e5c"
 dependencies = [
  "frame-support",
  "hex-literal",
@@ -4650,7 +4651,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.6.0#2b4605dc38457b323800b92a7c3d8e951141c5d3"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.7.0#5782da6cd648da6bb3381713b8df12a8bd237e5c"
 dependencies = [
  "ethers-signers",
  "frame-support",
@@ -4671,7 +4672,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.6.0#2b4605dc38457b323800b92a7c3d8e951141c5d3"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.7.0#5782da6cd648da6bb3381713b8df12a8bd237e5c"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -4719,10 +4720,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "num"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43db66d1170d347f9a065114077f7dccb00c1b9478c89384490a3425279a4606"
+dependencies = [
+ "num-bigint 0.4.3",
+ "num-complex",
+ "num-integer",
+ "num-iter",
+ "num-rational 0.4.1",
+ "num-traits",
+]
+
+[[package]]
 name = "num-bigint"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "090c7f9998ee0ff65aa5b723e4009f7b217707f1fb5ea551329cc4d6231fb304"
+dependencies = [
+ "autocfg",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
+name = "num-bigint"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f93ab6289c7b344a8a9f60f88d80aa20032336fe78da341afc91c8a2341fc75f"
 dependencies = [
  "autocfg",
  "num-integer",
@@ -4759,13 +4785,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "num-iter"
+version = "0.1.43"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d03e6c028c5dc5cac6e2dec0efda81fc887605bb3d884578bb6d6bf7514e252"
+dependencies = [
+ "autocfg",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
 name = "num-rational"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c000134b5dbf44adc5cb772486d335293351644b801551abe8f75c84cfa4aef"
 dependencies = [
  "autocfg",
- "num-bigint",
+ "num-bigint 0.2.6",
  "num-integer",
  "num-traits",
 ]
@@ -4777,6 +4814,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0638a1c9d0a3c0914158145bc76cff373a75a627e6ecbfb71cbe6f453a5a19b0"
 dependencies = [
  "autocfg",
+ "num-bigint 0.4.3",
  "num-integer",
  "num-traits",
 ]
@@ -6895,7 +6933,7 @@ dependencies = [
  "futures 0.3.24",
  "log",
  "merlin 2.0.1",
- "num-bigint",
+ "num-bigint 0.2.6",
  "num-rational 0.2.4",
  "num-traits",
  "parity-scale-codec 2.3.1",
@@ -7930,7 +7968,7 @@ dependencies = [
 [[package]]
 name = "signature"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.6.0#2b4605dc38457b323800b92a7c3d8e951141c5d3"
+source = "git+https://github.com/maticnetwork/avail-core.git?tag=v0.7.0#5782da6cd648da6bb3381713b8df12a8bd237e5c"
 dependencies = [
  "arrayvec 0.7.2",
  "elliptic-curve",
