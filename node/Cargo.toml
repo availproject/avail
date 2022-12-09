@@ -18,9 +18,9 @@ name = "data-avail"
 
 [dependencies]
 # Internals
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.6.0", default-features = false }
-kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.6.0", default-features = false }
-kate-recovery = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.6.0", default-features = false }
+da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.7.0", default-features = false }
+kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.7.0", default-features = false }
+kate-recovery = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.7.0", default-features = false }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }
