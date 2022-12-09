@@ -1,14 +1,19 @@
-use std::{
-	collections::HashMap,
-	convert::{TryFrom, TryInto},
-};
-
 use codec::Decode;
 use dusk_bytes::Serializable;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
+use num::ToPrimitive;
+use rand::seq::SliceRandom;
+use std::{
+	collections::{HashMap, HashSet},
+	convert::TryFrom,
+	iter::FromIterator,
+};
 use thiserror::Error;
 
-use crate::{config, data, index, matrix};
+use crate::{
+	config::{self, CHUNK_SIZE},
+	data, index, matrix,
+};
 
 #[derive(Debug, Error)]
 pub enum ReconstructionError {
@@ -26,6 +31,32 @@ pub enum ReconstructionError {
 	DataDecodingError(String),
 	#[error("Column reconstruction supports up to {}", u16::MAX)]
 	RowCountExceeded,
+}
+
+/// From given positions, constructs related columns positions, up to given factor.
+/// E.g. if factor is 0.66, 66% of matched columns will be returned.
+/// Positions in columns are random.
+/// Function panics if factor is above 1.0.
+pub fn columns_positions(
+	dimensions: &matrix::Dimensions,
+	positions: &[matrix::Position],
+	factor: f64,
+) -> Vec<matrix::Position> {
+	assert!(factor <= 1.0);
+
+	let cells = (factor * dimensions.extended_rows() as f64)
+		.to_usize()
+		.expect("result is lesser than usize maximum");
+
+	let rng = &mut rand::thread_rng();
+
+	let columns: HashSet<u16> = HashSet::from_iter(positions.iter().map(|position| position.col));
+
+	columns
+		.into_iter()
+		.map(|col| dimensions.col_positions(col))
+		.flat_map(|col| col.choose_multiple(rng, cells).cloned().collect::<Vec<_>>())
+		.collect::<Vec<matrix::Position>>()
 }
 
 /// Creates hash map of columns, each being hash map of cells, from vector of cells.
@@ -132,6 +163,39 @@ pub fn reconstruct_extrinsics(
 	unflatten_padded_data(ranges, data).map_err(ReconstructionError::DataDecodingError)
 }
 
+/// Reconstructs columns for given cells.
+///
+/// # Arguments
+///
+/// * `dimensions` - Extended matrix dimensions
+/// * `cells` - Cells from required columns, at least 50% cells per column
+pub fn reconstruct_columns(
+	dimensions: &matrix::Dimensions,
+	cells: &[data::Cell],
+) -> Result<HashMap<u16, Vec<[u8; CHUNK_SIZE]>>, ReconstructionError> {
+	let cells: Vec<data::DataCell> = cells.iter().cloned().map(Into::into).collect::<Vec<_>>();
+	let columns = map_cells(dimensions, cells)?;
+
+	columns
+		.iter()
+		.map(|(&col, cells)| {
+			if cells.len() < dimensions.rows().into() {
+				return Err(ReconstructionError::InvalidColumn(col));
+			}
+
+			let cells = cells.values().cloned().collect::<Vec<_>>();
+
+			let column = reconstruct_column(dimensions.extended_rows(), &cells)
+				.map_err(ReconstructionError::ColumnReconstructionError)?
+				.iter()
+				.map(BlsScalar::to_bytes)
+				.collect::<Vec<[u8; CHUNK_SIZE]>>();
+
+			Ok((col, column))
+		})
+		.collect::<Result<_, _>>()
+}
+
 fn reconstruct_available(
 	dimensions: &matrix::Dimensions,
 	cells: Vec<data::DataCell>,
@@ -146,12 +210,8 @@ fn reconstruct_available(
 					return Err(ReconstructionError::InvalidColumn(col));
 				}
 				let cells = column_cells.values().cloned().collect::<Vec<_>>();
-				let row_count: u16 = dimensions
-					.extended_rows()
-					.try_into()
-					.map_err(|_| ReconstructionError::RowCountExceeded)?;
 
-				reconstruct_column(row_count, &cells)
+				reconstruct_column(dimensions.extended_rows(), &cells)
 					.map(|scalars| scalars.into_iter().map(Some).collect::<Vec<_>>())
 					.map_err(ReconstructionError::ColumnReconstructionError)
 			},
@@ -396,7 +456,7 @@ pub type AppDataRange = std::ops::Range<u32>;
 // performing one round of ifft should reveal original data which were
 // coded together
 pub fn reconstruct_column(
-	row_count: u16,
+	row_count: u32,
 	cells: &[data::DataCell],
 ) -> Result<Vec<BlsScalar>, String> {
 	// just ensures all rows are from same column !
@@ -410,10 +470,10 @@ pub fn reconstruct_column(
 
 	// given row index in column of interest, finds it if present
 	// and returns back wrapped in `Some`, otherwise returns `None`
-	fn find_row_by_index(idx: u16, cells: &[data::DataCell]) -> Option<BlsScalar> {
+	fn find_row_by_index(idx: u32, cells: &[data::DataCell]) -> Option<BlsScalar> {
 		cells
 			.iter()
-			.find(|cell| cell.position.row == idx as u32)
+			.find(|cell| cell.position.row == idx)
 			.map(|cell| {
 				<[u8; BlsScalar::SIZE]>::try_from(&cell.data[..])
 					.expect("didn't find u8 array of length 32")
@@ -774,7 +834,7 @@ mod tests {
 		}
 	}
 
-	fn build_coded_eval_domain() -> (Vec<BlsScalar>, u16, u16) {
+	fn build_coded_eval_domain() -> (Vec<BlsScalar>, u32, u16) {
 		let domain_size = 1u16 << 2;
 		let row_count = domain_size.checked_mul(2).unwrap();
 		let eval_domain = EvaluationDomain::new(domain_size as usize).unwrap();
@@ -793,7 +853,7 @@ mod tests {
 		let coded = eval_domain.fft(&src);
 		assert!(coded.len() == row_count as usize);
 
-		(coded, row_count, domain_size)
+		(coded, row_count.into(), domain_size)
 	}
 
 	// Following test cases attempt to figure out any loop holes
