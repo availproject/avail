@@ -39,7 +39,6 @@ hex-literal = "0.3.4"
 thiserror-no-std = "2.0.2"
 
 [dev-dependencies]
-# ethers-signers = "1"
 da-primitives = "0.4"
 test-case = "1.2.3"
 
