@@ -11,8 +11,10 @@ use da_primitives::{
 };
 use frame_support::traits::ExtrinsicCall;
 use frame_system::{limits::BlockLength, submitted_data};
-use jsonrpc_core::{Error as RpcError, Result};
-use jsonrpc_derive::rpc;
+use jsonrpsee::{
+	core::{Error as JsonRpseeError, RpcResult},
+	proc_macros::rpc,
+};
 use kate::{com::Cell, BlockDimensions, BlsScalar, PublicParameters};
 use kate_recovery::{index::AppDataIndex, matrix::Dimensions};
 use kate_rpc_runtime_api::KateParamsGetter;
@@ -29,27 +31,27 @@ use sp_runtime::{
 pub type HashOf<Block> = <Block as BlockT>::Hash;
 pub type CallOf<Block> = <<Block as BlockT>::Extrinsic as Extrinsic>::Call;
 
-#[rpc]
+#[rpc(client, server)]
 pub trait KateApi<Block, SDFilter>
 where
 	Block: BlockT,
 	SDFilter: submitted_data::Filter<CallOf<Block>>,
 {
-	#[rpc(name = "kate_queryAppData")]
+	#[method(name = "kate_queryAppData")]
 	fn query_app_data(
 		&self,
 		app_id: AppId,
 		at: Option<HashOf<Block>>,
-	) -> Result<Vec<Option<Vec<u8>>>>;
+	) -> RpcResult<Vec<Option<Vec<u8>>>>;
 
-	#[rpc(name = "kate_queryProof")]
-	fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> Result<Vec<u8>>;
+	#[method(name = "kate_queryProof")]
+	fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>>;
 
-	#[rpc(name = "kate_blockLength")]
-	fn query_block_length(&self, at: Option<HashOf<Block>>) -> Result<BlockLength>;
+	#[method(name = "kate_blockLength")]
+	fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength>;
 
-	#[rpc(name = "kate_queryDataProof")]
-	fn query_data_proof(&self, data_index: u32, at: Option<HashOf<Block>>) -> Result<DataProof>;
+	#[method(name = "kate_queryDataProof")]
+	fn query_data_proof(&self, data_index: u32, at: Option<HashOf<Block>>) -> RpcResult<DataProof>;
 }
 
 pub struct Kate<Client, Block: BlockT> {
@@ -88,9 +90,7 @@ impl From<Error> for i64 {
 
 macro_rules! internal_err {
 	($($arg:tt)*) => {{
-		let mut error = RpcError::internal_error();
-		error.message = format!($($arg)*);
-		error
+		JsonRpseeError::Custom(format!($($arg)*))
 	}}
 }
 
@@ -112,7 +112,7 @@ where
 	}
 }
 
-impl<Client, Block, SDFilter> KateApi<Block, SDFilter> for Kate<Client, Block>
+impl<Client, Block, SDFilter> KateApiServer<Block, SDFilter> for Kate<Client, Block>
 where
 	Block: BlockT,
 	Block::Extrinsic: GetAppId + ExtrinsicCall,
@@ -130,7 +130,7 @@ where
 		&self,
 		app_id: AppId,
 		at: Option<HashOf<Block>>,
-	) -> Result<Vec<Option<Vec<u8>>>> {
+	) -> RpcResult<Vec<Option<Vec<u8>>>> {
 		let block_id = self.block_id(at);
 
 		let signed_block = self
@@ -214,7 +214,7 @@ where
 	}
 
 	//TODO allocate static thread pool, just for RPC related work, to free up resources, for the block producing processes.
-	fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> Result<Vec<u8>> {
+	fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
 		let block_id = self.block_id(at);
 
 		let signed_block = self
@@ -291,7 +291,7 @@ where
 		Ok(proof)
 	}
 
-	fn query_block_length(&self, at: Option<HashOf<Block>>) -> Result<BlockLength> {
+	fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength> {
 		let block_id = self.block_id(at);
 		let block_length = self
 			.client
@@ -302,7 +302,7 @@ where
 		Ok(block_length)
 	}
 
-	fn query_data_proof(&self, data_index: u32, at: Option<HashOf<Block>>) -> Result<DataProof> {
+	fn query_data_proof(&self, data_index: u32, at: Option<HashOf<Block>>) -> RpcResult<DataProof> {
 		// Fetch block
 		let block_id = self.block_id(at);
 		let block = self

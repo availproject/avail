@@ -55,29 +55,21 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: NomadHome Base (r:1 w:1)
 	// Storage: NomadHome RootToIndex (r:1 w:0)
 	fn improper_update() -> Weight {
-		(342_727_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+        Weight::default()
 	}
 	// Storage: NomadHome Base (r:1 w:0)
 	// Storage: NomadHome Nonces (r:1 w:1)
 	// Storage: NomadHome Tree (r:1 w:1)
 	// Storage: NomadHome IndexToRoot (r:0 w:1)
 	// Storage: NomadHome RootToIndex (r:0 w:1)
-	fn dispatch(b: u32, ) -> Weight {
-		(80_065_000 as Weight)
-			// Standard Error: 0
-			.saturating_add((5_000 as Weight).saturating_mul(b as Weight))
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(4 as Weight))
+	fn dispatch(_b: u32, ) -> Weight {
+        Weight::default()
 	}
 	// Storage: NomadHome Base (r:1 w:1)
 	// Storage: NomadHome RootToIndex (r:32 w:32)
 	// Storage: NomadHome IndexToRoot (r:31 w:32)
 	fn update() -> Weight {
-		(657_713_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(64 as Weight))
-			.saturating_add(T::DbWeight::get().writes(65 as Weight))
+        Weight::default()
 	}
 }
 
@@ -86,28 +78,20 @@ impl WeightInfo for () {
 	// Storage: NomadHome Base (r:1 w:1)
 	// Storage: NomadHome RootToIndex (r:1 w:0)
 	fn improper_update() -> Weight {
-		(342_727_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+        Weight::default()
 	}
 	// Storage: NomadHome Base (r:1 w:0)
 	// Storage: NomadHome Nonces (r:1 w:1)
 	// Storage: NomadHome Tree (r:1 w:1)
 	// Storage: NomadHome IndexToRoot (r:0 w:1)
 	// Storage: NomadHome RootToIndex (r:0 w:1)
-	fn dispatch(b: u32, ) -> Weight {
-		(80_065_000 as Weight)
-			// Standard Error: 0
-			.saturating_add((5_000 as Weight).saturating_mul(b as Weight))
-			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
+	fn dispatch(_b: u32, ) -> Weight {
+        Weight::default()
 	}
 	// Storage: NomadHome Base (r:1 w:1)
 	// Storage: NomadHome RootToIndex (r:32 w:32)
 	// Storage: NomadHome IndexToRoot (r:31 w:32)
 	fn update() -> Weight {
-		(657_713_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(64 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(65 as Weight))
+        Weight::default()
 	}
 }

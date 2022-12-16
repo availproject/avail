@@ -1,5 +1,5 @@
 use beefy_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
-use da_primitives::{asdr::AppExtrinsic, data_proof::HasherSha256};
+use da_primitives::{asdr::AppExtrinsic, ShaTwo256};
 use sp_core::H256;
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
 
@@ -71,7 +71,7 @@ where
 /// In case an empty list of leaves is passed the function returns a 0-filled hash.
 fn root<I: Iterator<Item = Vec<u8>>>(submitted_data: I, metrics: RcMetrics) -> H256 {
 	#[cfg(not(feature = "force-rs-merkle"))]
-	let root = merkle_root::<HasherSha256, _, _>(submitted_data).into();
+	let root = merkle_root::<ShaTwo256, _>(submitted_data).into();
 	#[cfg(feature = "force-rs-merkle")]
 	let root = rs_merkle_root(submitted_data).into();
 	log::debug!(
@@ -111,7 +111,10 @@ where
 /// - The `merkle_proof` requires `ExactSizeIterator`, forcing to load all submitted data into
 /// memory. That would increase the memory footprint of the node significantly. We could fix this
 /// adding the number of submitted data items at `System` pallet.
-pub fn extrinsics_proof<E, I>(app_extrinsics: I, data_index: u32) -> Option<MerkleProof<Vec<u8>>>
+pub fn extrinsics_proof<E, I>(
+	app_extrinsics: I,
+	data_index: u32,
+) -> Option<MerkleProof<H256, Vec<u8>>>
 where
 	E: Extractor,
 	I: Iterator<Item = AppExtrinsic>,
@@ -133,7 +136,7 @@ where
 /// - The `merkle_proof` requires `ExactSizeIterator`, forcing to load all submitted data into
 /// memory. That would increase the memory footprint of the node significantly. We could fix this
 /// adding the number of submitted data items at `System` pallet.
-pub fn calls_proof<F, I, C>(calls: I, data_index: u32) -> Option<MerkleProof<Vec<u8>>>
+pub fn calls_proof<F, I, C>(calls: I, data_index: u32) -> Option<MerkleProof<H256, Vec<u8>>>
 where
 	F: Filter<C>,
 	I: Iterator<Item = C>,
@@ -154,14 +157,14 @@ fn proof(
 	submitted_data: Vec<Vec<u8>>,
 	data_index: u32,
 	metrics: RcMetrics,
-) -> Option<MerkleProof<Vec<u8>>> {
+) -> Option<MerkleProof<H256, Vec<u8>>> {
 	let data_index = data_index as usize;
 	// NOTE: `merkle_proof` panics if `data_index > leaves`.
 	if data_index >= submitted_data.len() {
 		return None;
 	}
 
-	let proof = merkle_proof::<HasherSha256, _, _>(submitted_data, data_index);
+	let proof = merkle_proof::<ShaTwo256, _, _>(submitted_data, data_index);
 	log::debug!(
 		target: LOG_TARGET,
 		"Build submitted data proof of index {data_index}: {:?} metrics: {:?}",
@@ -189,10 +192,10 @@ pub fn verify<I>(
 where
 	I: IntoIterator<Item = H256>,
 {
-	let leaf = Leaf::Hash(data_hash.0);
-	verify_proof::<HasherSha256, _, _>(
-		root.as_fixed_bytes(),
-		proof.into_iter().map(|hash| hash.to_fixed_bytes()),
+	let leaf = Leaf::Hash(data_hash);
+	verify_proof::<ShaTwo256, _, _>(
+		&root,
+		proof.into_iter(),
 		number_of_submitted_data as usize,
 		data_index as usize,
 		leaf,

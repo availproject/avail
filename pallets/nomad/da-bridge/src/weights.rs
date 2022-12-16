@@ -57,9 +57,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: NomadHome IndexToRoot (r:0 w:1)
 	// Storage: NomadHome RootToIndex (r:0 w:1)
 	fn try_dispatch_data_root() -> Weight {
-		(93_524_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(4 as Weight))
-			.saturating_add(T::DbWeight::get().writes(4 as Weight))
+        Weight::default()
 	}
 }
 
@@ -72,8 +70,7 @@ impl WeightInfo for () {
 	// Storage: NomadHome IndexToRoot (r:0 w:1)
 	// Storage: NomadHome RootToIndex (r:0 w:1)
 	fn try_dispatch_data_root() -> Weight {
-		(93_524_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
+
+        Weight::default()
 	}
 }

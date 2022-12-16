@@ -1,16 +1,18 @@
 use da_primitives::{BlockLengthColumns, BlockLengthRows, NORMAL_DISPATCH_RATIO};
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{Get, Randomness},
-	weights::{constants::WEIGHT_PER_SECOND, IdentityFee, RuntimeDbWeight, Weight},
+	traits::Randomness,
+	weights::{
+		constants::WEIGHT_PER_SECOND, ConstantMultiplier, IdentityFee, RuntimeDbWeight, Weight,
+	},
 };
 use frame_system::{CheckEra, CheckNonce, CheckWeight};
 use pallet_transaction_payment::CurrencyAdapter;
 use sp_runtime::{
 	generic::Block as SPBlock,
-	traits::{BlakeTwo256, IdentityLookup, TrailingZeroInput},
+	traits::{BlakeTwo256, ConstU32, IdentityLookup, TrailingZeroInput},
 };
-use sp_std::{cell::RefCell, marker::PhantomData};
+use sp_std::marker::PhantomData;
 
 pub mod custom;
 pub mod test_xt;
@@ -24,7 +26,7 @@ pub type BlockNumber = u32;
 pub type Moment = u64;
 pub type Header = da_primitives::Header<BlockNumber, BlakeTwo256>;
 pub type Signature = sp_runtime::testing::sr25519::Signature;
-pub type TestXt = test_xt::TestXt<Call, SignedExtra>;
+pub type TestXt = test_xt::TestXt<RuntimeCall, SignedExtra>;
 pub type UncheckedExtrinsic = TestXt;
 pub type Block = SPBlock<Header, UncheckedExtrinsic>;
 pub type SignedExtra = (
@@ -81,7 +83,7 @@ pub const EPOCH_DURATION_IN_SLOTS: u64 = {
 };
 
 /// We allow for 2 seconds of compute with a 6 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
+const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_mul(2).set_proof_size(u64::MAX);
 
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 250;
@@ -91,12 +93,12 @@ parameter_types! {
 		read: 10,
 		write: 100,
 	};
-	pub const TransactionByteFee: Balance = 0;
+	pub const TransactionByteFee: Balance = 1;
 	pub const OperationalFeeMultiplier: u8 = 5;
 	pub const ExistentialDeposit: Balance = 1;
 	pub const MaxAuthorities: u32 = 100;
 	pub const SessionsPerEra: sp_staking::SessionIndex = 6;
-	pub const BondingDuration: pallet_staking::EraIndex = 24 * 28;
+	pub const BondingDuration: sp_staking::EraIndex = 24 * 28;
 	pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS;
 	pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
@@ -112,13 +114,14 @@ parameter_types! {
 	pub const MaxBlockCols: BlockLengthColumns = kate::config::MAX_BLOCK_COLUMNS;
 }
 
+#[derive(Clone, Copy)]
 pub struct RuntimeVersion;
-impl Get<sp_version::RuntimeVersion> for RuntimeVersion {
-	fn get() -> sp_version::RuntimeVersion { RUNTIME_VERSION.with(|v| v.borrow().clone()) }
+impl frame_support::traits::Get<sp_version::RuntimeVersion> for RuntimeVersion {
+	fn get() -> sp_version::RuntimeVersion { RuntimeVersionTestValues::get().clone() }
 }
 
-thread_local! {
-	pub static RUNTIME_VERSION: RefCell<sp_version::RuntimeVersion> =
+parameter_types! {
+	pub static RuntimeVersionTestValues: sp_version::RuntimeVersion =
 		Default::default();
 }
 
@@ -132,21 +135,22 @@ impl frame_system::Config for Runtime {
 	type BlockLength = ();
 	type BlockNumber = BlockNumber;
 	type BlockWeights = BlockWeights;
-	type Call = Call;
 	type DbWeight = ();
-	type Event = Event;
 	type Hash = sp_core::H256;
 	type Hashing = BlakeTwo256;
 	type Header = da_primitives::Header<Self::BlockNumber, Self::Hashing>;
 	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Runtime>;
 	type Index = u64;
 	type Lookup = IdentityLookup<u64>;
+	type MaxConsumers = ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
-	type Origin = Origin;
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Runtime>;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeOrigin = RuntimeOrigin;
 	type SS58Prefix = ();
 	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
@@ -155,9 +159,10 @@ impl frame_system::Config for Runtime {
 
 impl pallet_transaction_payment::Config for Runtime {
 	type FeeMultiplierUpdate = ();
+	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
-	type TransactionByteFee = TransactionByteFee;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightToFee = IdentityFee<Balance>;
 }
 
@@ -165,23 +170,23 @@ impl pallet_balances::Config for Runtime {
 	type AccountStore = System;
 	type Balance = Balance;
 	type DustRemoval = ();
-	type Event = Event;
 	type ExistentialDeposit = ExistentialDeposit;
 	type MaxLocks = ();
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }
 
 impl da_control::Config for Runtime {
 	type BlockLenProposalId = u32;
-	type Event = Event;
 	type MaxAppDataLength = MaxAppDataLength;
 	type MaxAppKeyLength = MaxAppKeyLength;
 	type MaxBlockCols = MaxBlockCols;
 	type MaxBlockRows = MaxBlockRows;
 	type MinBlockCols = MinBlockCols;
 	type MinBlockRows = MinBlockRows;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = da_control::weights::SubstrateWeight<Runtime>;
 }
 
@@ -193,11 +198,10 @@ construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
-		Custom: custom::custom::{Pallet, Call, ValidateUnsigned, Inherent},
-
+		System: frame_system,
+		Balances: pallet_balances,
+		TransactionPayment: pallet_transaction_payment,
+		Custom: custom::custom,
 		DataAvailability: da_control,
 	}
 );

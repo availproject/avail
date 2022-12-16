@@ -34,7 +34,7 @@ pub mod pallet {
 	pub type AppDataFor<T> = BoundedVec<u8, <T as Config>::MaxAppDataLength>;
 
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-	#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, RuntimeDebug)]
+	#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, RuntimeDebug, MaxEncodedLen)]
 	pub struct AppKeyInfo<Acc: PartialEq> {
 		/// Owner of the key
 		pub owner: Acc,
@@ -47,10 +47,10 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// Pallet Event
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Block length proposal Id.
-		type BlockLenProposalId: Parameter + Default + One + CheckedAdd;
+		type BlockLenProposalId: Parameter + Default + One + CheckedAdd + MaxEncodedLen;
 
 		/// The max length of application key.
 		#[pallet::constant]
@@ -232,7 +232,7 @@ pub mod pallet {
 			self.app_keys
 				.iter()
 				.cloned()
-				.try_for_each(|(key, info)| -> Result<(), ()> {
+				.try_for_each(|(key, info)| -> Result<(), Vec<u8>> {
 					let key = AppKeyFor::<T>::try_from(key)?;
 					AppKeys::<T>::insert(key, info);
 					Ok(())

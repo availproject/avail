@@ -3,9 +3,9 @@ use da_primitives::currency::AVL;
 use da_runtime::{
 	wasm_binary_unwrap, AccountId, AuthorityDiscoveryConfig, BabeConfig, Balance, BalancesConfig,
 	Block, CouncilConfig, DataAvailabilityConfig, DemocracyConfig, DesiredMembers, ElectionsConfig,
-	GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig, NomadHomeConfig, SessionConfig,
-	SessionKeys, Signature, StakerStatus, StakingConfig, SudoConfig, SystemConfig,
-	TechnicalCommitteeConfig, UpdaterManagerConfig, MAX_NOMINATIONS,
+	GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig, MaxNominations, NomadHomeConfig,
+	NominationPoolsConfig, SessionConfig, SessionKeys, Signature, StakerStatus, StakingConfig,
+	SudoConfig, SystemConfig, TechnicalCommitteeConfig, UpdaterManagerConfig,
 };
 use frame_system::limits::BlockLength;
 use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
@@ -78,6 +78,10 @@ mod testnet {
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
+/// Node `ChainSpec` extensions.
+///
+/// Additional parameters for some Substrate core modules,
+/// customizable from the chain spec.
 #[derive(Default, Clone, Serialize, Deserialize, ChainSpecExtension)]
 #[serde(rename_all = "camelCase")]
 pub struct Extensions {
@@ -206,7 +210,7 @@ pub fn testnet_genesis(
 		.map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
 		.chain(initial_nominators.iter().map(|x| {
 			use rand::{seq::SliceRandom, Rng};
-			let limit = (MAX_NOMINATIONS as usize).min(initial_authorities.len());
+			let limit = (MaxNominations::get() as usize).min(initial_authorities.len());
 			let count = rng.gen::<usize>() % limit;
 			let nominations = initial_authorities
 				.as_slice()
@@ -289,11 +293,11 @@ pub fn testnet_genesis(
 			phantom: Default::default(),
 		},
 		sudo: SudoConfig {
-			key: root_key.clone(),
+			key: Some(root_key.clone()),
 		},
 		babe: BabeConfig {
 			authorities: vec![],
-			epoch_config: Some(da_runtime::BABE_GENESIS_EPOCH_CONFIG),
+			epoch_config: Some(da_runtime::constants::BABE_GENESIS_EPOCH_CONFIG),
 		},
 		im_online: ImOnlineConfig { keys: vec![] },
 		authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
@@ -302,7 +306,6 @@ pub fn testnet_genesis(
 		},
 		technical_membership: Default::default(),
 		treasury: Default::default(),
-		scheduler: Default::default(),
 		transaction_payment: Default::default(),
 		data_availability: DataAvailabilityConfig {
 			app_keys: vec![
@@ -335,6 +338,11 @@ pub fn testnet_genesis(
 			_phantom: Default::default(),
 		},
 		da_bridge: Default::default(),
+		nomination_pools: NominationPoolsConfig {
+			min_create_bond: 10 * AVL,
+			min_join_bond: 1 * AVL,
+			..Default::default()
+		},
 	}
 }
 
@@ -354,6 +362,7 @@ pub fn development_config() -> ChainSpec {
 		ChainType::Development,
 		development_config_genesis,
 		vec![],
+		None,
 		None,
 		None,
 		chain_properties(),
@@ -458,11 +467,11 @@ fn genesis_builder(
 			phantom: Default::default(),
 		},
 		sudo: SudoConfig {
-			key: sudo_key.clone(),
+			key: Some(sudo_key.clone()),
 		},
 		babe: BabeConfig {
 			authorities: vec![],
-			epoch_config: Some(da_runtime::BABE_GENESIS_EPOCH_CONFIG),
+			epoch_config: Some(da_runtime::constants::BABE_GENESIS_EPOCH_CONFIG),
 		},
 		im_online: ImOnlineConfig { keys: vec![] },
 		authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
@@ -471,7 +480,6 @@ fn genesis_builder(
 		},
 		technical_membership: Default::default(),
 		treasury: Default::default(),
-		scheduler: Default::default(),
 		transaction_payment: Default::default(),
 		data_availability: DataAvailabilityConfig {
 			app_keys: vec![
@@ -492,6 +500,11 @@ fn genesis_builder(
 		updater_manager: Default::default(),
 		nomad_home: Default::default(),
 		da_bridge: Default::default(),
+		nomination_pools: NominationPoolsConfig {
+			min_create_bond: 10 * AVL,
+			min_join_bond: 1 * AVL,
+			..Default::default()
+		},
 	}
 }
 
@@ -513,6 +526,7 @@ pub fn testnet_config() -> ChainSpec {
 		vec![],
 		None,
 		Some("da1"),
+		None,
 		chain_properties(),
 		Default::default(),
 	)

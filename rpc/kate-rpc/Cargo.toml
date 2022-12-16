@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 sp-api = { version = "4.0.0-dev", default-features = false }
-sp-std = { version = "4.0.0-dev", default-features = false }
+sp-std = { version = "4.0.0", default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 kate-rpc-runtime-api = { path = "../kate-rpc-runtime-api", default-features = false }
@@ -15,19 +15,16 @@ sc-client-db = { version = "0.10.0-dev", default-features = false }
 thiserror = "1.0.30" 
 rs_merkle = { version = "1.2.0", default-features = false }
 
-codec = { package = "parity-scale-codec", version = "2.0.0" }
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "da/v0.4.0", default-features = false }
-kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "da/v0.4.0", default-features = false }
-kate-recovery = { git = "https://github.com/maticnetwork/avail-core.git", tag = "da/v0.4.0", default-features = false }
+codec = { package = "parity-scale-codec", version = "3" }
+da-primitives = { version = "0.4", default-features = false }
+kate = { version = "0.5", default-features = false }
+kate-recovery = { version = "0.7", default-features = false }
+jsonrpsee = { version = "0.15.1", features = ["server", "client"] }
 
 frame-system-rpc-runtime-api = "4.0.0-dev"
-jsonrpc-core = "18.0.0"
-jsonrpc-core-client = "18.0.0"
-jsonrpc-derive = "18.0.0"
 lru = "0.7.2"
-sc-client-api = { version = "4.0.0-dev" }
-# sp-api = { version = "4.0.0-dev" }
-sp-blockchain = { version = "4.0.0-dev" }
-sp-rpc = { version = "4.0.0-dev" }
-sp-runtime = { version = "4.0.0-dev" }
-sp-core = { version = "4.0.0-dev" }
+sc-client-api = "4.0.0-dev"
+sp-blockchain = "4.0.0-dev"
+sp-rpc = "6.0.0"
+sp-runtime = "6.0.0"
+sp-core = "6.0.0"

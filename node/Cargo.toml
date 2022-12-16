@@ -18,99 +18,123 @@ name = "data-avail"
 
 [dependencies]
 # Internals
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "da/v0.4.0", default-features = false }
-kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "da/v0.4.0", default-features = false }
+da-primitives = { version = "0.4", default-features = false }
+kate = { version = "0.5", default-features = false }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }
 # Nomad
-updater-manager = { path = "../pallets/nomad/updater-manager" }
+nomad-updater-manager = { path = "../pallets/nomad/updater-manager" }
 nomad-home = { path = "../pallets/nomad/home" }
 da-bridge = { path = "../pallets/nomad/da-bridge" }
 
 # 3rd-party
-codec = { package = "parity-scale-codec", version = "2.0.0" }
-structopt = "0.3.25"
-jsonrpc-core = "18.0.0"
-jsonrpc-core-client = "18.0.0"
-jsonrpc-derive = "18.0.0"
-futures = "0.3.16"
+codec = { package = "parity-scale-codec", version = "3" }
+clap = { version = "4.0.9", features = ["derive"], optional = true }
+jsonrpsee = { version = "0.15.1", features = ["server"] }
+futures = "0.3.21"
 serde = { version = "1.0.126", features = ["derive"] }
 serde_json = "1.0"
 lru = "0.7.2"
-rand = "0.7.2"
+log = "0.4.17"
+rand = "0.8"
 hex-literal = "0.3.4"
 
 # Substrate
+## Primitives
 sc-cli = { version = "0.10.0-dev", features = ["wasmtime"] }
-sp-core = { version = "4.0.0-dev" }
+sp-core = "6.0.0"
 sc-executor = { version = "0.10.0-dev", features = ["wasmtime"] }
 sc-service = { version = "0.10.0-dev",  features = ["wasmtime"] }
-sc-telemetry = { version = "4.0.0-dev" }
-sc-keystore = { version = "4.0.0-dev" }
-sp-keystore = { version = "0.10.0-dev" }
-sc-transaction-pool = { version = "4.0.0-dev" }
-sp-transaction-pool = { version = "4.0.0-dev" }
-sp-inherents = { version = "4.0.0-dev" }
-sc-transaction-pool-api = { version = "4.0.0-dev" }
+sc-telemetry = "4.0.0-dev"
+sc-keystore = "4.0.0-dev"
+sp-keystore = "0.12.0"
+sp-keyring = "6.0.0"
+sc-transaction-pool = "4.0.0-dev"
+sp-transaction-pool = "4.0.0-dev"
+sp-inherents = "4.0.0-dev"
+sc-transaction-pool-api = "4.0.0-dev"
 sp-transaction-storage-proof = "4.0.0-dev" 
-sc-consensus-aura = { version = "0.10.0-dev" }
-sc-consensus-babe-rpc = { version = "0.10.0-dev" }
-sp-consensus-aura = { version = "0.10.0-dev" }
-sp-consensus-babe = { version = "0.10.0-dev" }
-sp-consensus = { version = "0.10.0-dev" }
-sc-consensus = { version = "0.10.0-dev" }
-sc-finality-grandpa = { version = "0.10.0-dev" }
-sc-finality-grandpa-rpc = { version = "0.10.0-dev" }
-sp-finality-grandpa = { version = "4.0.0-dev" }
-sc-client-api = { version = "4.0.0-dev" }
-sp-runtime = { version = "4.0.0-dev" }
-sp-timestamp = { version = "4.0.0-dev" }
-sc-consensus-babe = { version = "0.10.0-dev" }
-sc-consensus-epochs = { version = "0.10.0-dev" }
-sc-consensus-slots = { version = "0.10.0-dev" }
-sc-consensus-uncles = { version = "0.10.0-dev" }
-sc-network = { version = "0.10.0-dev" }
+sc-consensus-aura = "0.10.0-dev"
+sc-consensus-babe-rpc = "0.10.0-dev"
+sp-consensus-aura = "0.10.0-dev"
+sp-consensus-babe = "0.10.0-dev"
+sp-consensus = "0.10.0-dev"
+sc-consensus = "0.10.0-dev"
+sc-finality-grandpa = "0.10.0-dev"
+sc-finality-grandpa-rpc = "0.10.0-dev"
+sp-finality-grandpa = "4.0.0-dev"
+sc-client-api = "4.0.0-dev"
+sp-runtime = "6.0.0"
+sp-timestamp = "4.0.0-dev"
+sc-consensus-babe = "0.10.0-dev"
+sc-consensus-epochs = "0.10.0-dev"
+sc-consensus-slots = "0.10.0-dev"
+sc-consensus-uncles = "0.10.0-dev"
+sc-network = "0.10.0-dev"
 sp-authorship = "4.0.0-dev" 
-pallet-im-online = { version = "4.0.0-dev" }
-frame-system = "4.0.0-dev"
 sp-authority-discovery = "4.0.0-dev"
 sc-authority-discovery = "0.10.0-dev"
-sc-chain-spec = { version = "4.0.0-dev" }
+sc-chain-spec = "4.0.0-dev"
+sc-client-db = "0.10.0-dev"
+sp-blockchain = "4.0.0-dev"
+sp-block-builder = "4.0.0-dev"
+sc-basic-authorship = "0.10.0-dev"
+sc-sync-state-rpc = "0.10.0-dev"
+sp-api = "4.0.0-dev"
+sc-sysinfo = "6.0.0-dev"
+sc-network-common = "0.10.0-dev"
+
+# FRAME
+pallet-im-online = "4.0.0-dev"
+frame-system = "4.0.0-dev"
 pallet-asset-tx-payment = "4.0.0-dev"
 pallet-transaction-payment = "4.0.0-dev"
 frame-system-rpc-runtime-api = "4.0.0-dev"
 frame-support = "4.0.0-dev"
 pallet-mmr-rpc = "3.0.0"
-sc-client-db = "0.10.0-dev"
 
 # These dependencies are used for the node template's RPCs
-sc-rpc = { version = "4.0.0-dev" }
-sp-rpc = { version = "4.0.0-dev" }
-sp-api = { version = "4.0.0-dev" }
-sc-rpc-api = { version = "0.10.0-dev" }
-sp-blockchain = { version = "4.0.0-dev" }
-sp-block-builder = { version = "4.0.0-dev" }
-sc-basic-authorship = { version = "0.10.0-dev" }
-sc-sync-state-rpc = { version = "0.10.0-dev" }
-substrate-frame-rpc-system = { version = "4.0.0-dev" }
-pallet-transaction-payment-rpc = { version = "4.0.0-dev" }
+sc-rpc = "4.0.0-dev"
+sp-rpc = "6.0.0"
+sc-rpc-api = "0.10.0-dev"
+sc-rpc-spec-v2 = "0.10.0-dev"
+substrate-frame-rpc-system = "4.0.0-dev"
+pallet-transaction-payment-rpc = "4.0.0-dev"
+substrate-state-trie-migration-rpc = "4.0.0-dev"
 
 # These dependencies are used for runtime benchmarking
-frame-benchmarking = { version = "4.0.0-dev" }
-frame-benchmarking-cli = { version = "4.0.0-dev" }
+frame-benchmarking = "4.0.0-dev"
+frame-benchmarking-cli = "4.0.0-dev"
 
 [build-dependencies]
-substrate-build-script-utils = { version = "3.0.0" }
+substrate-build-script-utils = "3.0.0"
+clap = { version = "4.0.9", optional = true }
+clap_complete = { version = "4.0.2", optional = true }
+try-runtime-cli = { version = "0.10.0-dev", optional = true }
+frame-benchmarking-cli = { version = "4.0.0-dev", optional = true }
 
 [dev-dependencies]
-sp-keyring = "4.0.0-dev"
 sp-tracing = "4.0.0-dev"
 tempfile = "3.1.0"
 
 [features]
-default = []
+default = ["cli"]
+cli = [
+	"clap",
+	"clap_complete",
+	"try-runtime-cli",
+	"frame-benchmarking-cli",
+]
 runtime-benchmarks = [
 	"da-runtime/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 ]
+# Enable features that allow the runtime to be tried and debugged. Name might be subject to change
+# in the near future.
+try-runtime = [
+	"da-runtime/try-runtime", 
+	"try-runtime-cli/try-runtime"
+]
+
+

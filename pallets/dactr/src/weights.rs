@@ -54,21 +54,15 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: DataAvailability AppKeys (r:1 w:1)
 	// Storage: DataAvailability LastAppId (r:1 w:1)
 	fn create_application_key() -> Weight {
-		(19_446_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+        Weight::default()
 	}
-	fn submit_data(i: u32, ) -> Weight {
-		(12_870_000 as Weight)
-			// Standard Error: 0
-			.saturating_add((1_000 as Weight).saturating_mul(i as Weight))
+	fn submit_data(_i: u32, ) -> Weight {
+        Weight::default()
 	}
 	// Storage: DataAvailability LastBlockLenId (r:1 w:1)
 	// Storage: unknown [0x3a626c6f636b5f6c656e6774683a] (r:0 w:1)
 	fn submit_block_length_proposal() -> Weight {
-		(15_599_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+        Weight::default()
 	}
 }
 
@@ -77,20 +71,15 @@ impl WeightInfo for () {
 	// Storage: DataAvailability AppKeys (r:1 w:1)
 	// Storage: DataAvailability LastAppId (r:1 w:1)
 	fn create_application_key() -> Weight {
-		(19_446_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
+
+        Weight::default()
 	}
-	fn submit_data(i: u32, ) -> Weight {
-		(12_870_000 as Weight)
-			// Standard Error: 0
-			.saturating_add((1_000 as Weight).saturating_mul(i as Weight))
+	fn submit_data(_i: u32, ) -> Weight {
+        Weight::default()
 	}
 	// Storage: DataAvailability LastBlockLenId (r:1 w:1)
 	// Storage: unknown [0x3a626c6f636b5f6c656e6774683a] (r:0 w:1)
 	fn submit_block_length_proposal() -> Weight {
-		(15_599_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
+        Weight::default()
 	}
 }

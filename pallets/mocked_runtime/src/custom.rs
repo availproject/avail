@@ -18,12 +18,12 @@ pub mod custom {
 		// one with block number arg and one without
 		fn on_initialize(n: T::BlockNumber) -> Weight {
 			println!("on_initialize({})", n);
-			175
+			Weight::from_ref_time(175)
 		}
 
 		fn on_idle(n: T::BlockNumber, remaining_weight: Weight) -> Weight {
 			println!("on_idle{}, {})", n, remaining_weight);
-			175
+			Weight::from_ref_time(175)
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
@@ -32,7 +32,7 @@ pub mod custom {
 
 		fn on_runtime_upgrade() -> Weight {
 			sp_io::storage::set(super::TEST_KEY, "module".as_bytes());
-			200
+			Weight::from_ref_time(200)
 		}
 
 		fn offchain_worker(n: T::BlockNumber) {
@@ -81,7 +81,7 @@ pub mod custom {
 
 		#[pallet::weight(0)]
 		pub fn calculate_storage_root(_origin: OriginFor<T>) -> DispatchResult {
-			let root = sp_io::storage::root();
+			let root = sp_io::storage::root(sp_runtime::StateVersion::V1);
 			sp_io::storage::set("storage_root".as_bytes(), &root);
 			Ok(())
 		}

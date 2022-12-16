@@ -25,13 +25,14 @@ pub mod pallet {
 	use nomad_core::TypedMessage;
 	use nomad_home::Pallet as Home;
 	use primitive_types::H256;
+	use sp_std::boxed::Box;
 
 	use super::weights::WeightInfo;
 	use crate::message::{DABridgeMessages, DataRootMessage};
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + nomad_home::Config {
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		#[pallet::constant]
 		type DABridgePalletId: Get<H256>;
@@ -89,7 +90,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			#[pallet::compact] destination_domain: u32,
 			recipient_address: H256,
-			header: T::Header,
+			header: Box<T::Header>,
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 			Self::ensure_valid_header(&header)?;
@@ -107,7 +108,7 @@ pub mod pallet {
 		fn do_dispatch_data_root(
 			destination_domain: u32,
 			recipient_address: H256,
-			header: T::Header,
+			header: Box<T::Header>,
 		) -> DispatchResult {
 			let block_number = *header.number();
 			let data_root = header.extension().data_root();

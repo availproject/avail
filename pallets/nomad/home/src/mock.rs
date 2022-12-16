@@ -1,6 +1,10 @@
 use da_primitives::Header;
-use frame_support::{parameter_types, traits::GenesisBuild};
-use frame_system::{self as system};
+use frame_support::{
+	parameter_types,
+	traits::{ConstU32, GenesisBuild},
+	weights::Weight,
+};
+use frame_system::{self as system, header_builder::da, test_utils::TestRandomness};
 use nomad_base::NomadBase;
 use primitive_types::{H160, H256};
 use sp_runtime::{
@@ -20,16 +24,16 @@ frame_support::construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Home: home::{Pallet, Call, Storage, Event<T>},
-		UpdaterManager: updater_manager::{Pallet, Call, Storage, Event<T>},
+		System: frame_system,
+		Home: home,
+		UpdaterManager: nomad_updater_manager,
 	}
 );
 
 parameter_types! {
 	pub const BlockHashCount: u32 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(1024);
+		frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1_024));
 	pub static ExistentialDeposit: u64 = 0;
 }
 
@@ -41,21 +45,22 @@ impl system::Config for Test {
 	type BlockLength = ();
 	type BlockNumber = u32;
 	type BlockWeights = ();
-	type Call = Call;
 	type DbWeight = ();
-	type Event = Event;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header<Self::BlockNumber, BlakeTwo256>;
-	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
+	type HeaderExtensionBuilder = da::HeaderExtensionBuilder<Test>;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
-	type Origin = Origin;
 	type PalletInfo = PalletInfo;
-	type Randomness = frame_system::tests::TestRandomness<Test>;
+	type Randomness = TestRandomness<Test>;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeOrigin = RuntimeOrigin;
 	type SS58Prefix = ();
 	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
@@ -67,13 +72,13 @@ parameter_types! {
 }
 
 impl home::Config for Test {
-	type Event = Event;
 	type MaxMessageBodyBytes = MaxMessageBodyBytes;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }
 
-impl updater_manager::Config for Test {
-	type Event = Event;
+impl nomad_updater_manager::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
 }
 
 pub(crate) struct ExtBuilder {
@@ -113,7 +118,7 @@ impl ExtBuilder {
 		}
 		.assimilate_storage(&mut t)
 		.expect("Nomad base storage cannot be assimilated");
-		updater_manager::GenesisConfig::<Test> {
+		nomad_updater_manager::GenesisConfig::<Test> {
 			updater: self.updater,
 			_phantom: Default::default(),
 		}
@@ -131,7 +136,7 @@ pub(crate) fn events() -> Vec<super::Event<Test>> {
 		.into_iter()
 		.map(|r| r.event)
 		.filter_map(|e| {
-			if let Event::Home(inner) = e {
+			if let RuntimeEvent::Home(inner) = e {
 				Some(inner)
 			} else {
 				None
