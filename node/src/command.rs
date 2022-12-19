@@ -114,13 +114,16 @@ pub fn run() -> Result<()> {
 							.into(),
 					),
 					#[cfg(feature = "runtime-benchmarks")]
-					BenchmarkCmd::Storage(cmd) => {
+					BenchmarkCmd::Storage(_cmd) => {
+						unimplemented!();
+						/*
 						// ensure that we keep the task manager alive
 						let partial = new_partial(&config)?;
 						let db = partial.backend.expose_db();
 						let storage = partial.backend.expose_storage();
 
 						cmd.run(config, partial.client, db, storage)
+						*/
 					},
 					BenchmarkCmd::Overhead(_cmd) => {
 						unimplemented!();

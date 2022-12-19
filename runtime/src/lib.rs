@@ -1,3 +1,23 @@
+// This file is part of Substrate.
+
+// Copyright (C) 2018-2022 Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+//! The Data Availability runtime. This can be compiled with `#[no_std]`, ready for Wasm.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 512.
 #![recursion_limit = "512"]
@@ -50,14 +70,6 @@ use sp_version::NativeVersion;
 #[cfg(test)]
 mod data_root_tests;
 
-#[cfg(feature = "std")]
-pub fn wasm_binary_unwrap() -> &'static [u8] {
-	WASM_BINARY.expect(
-		"Development wasm binary is not available. This means the client is \
-						built with `SKIP_WASM_BUILD` flag and it is only usable for \
-						production chains. Please rebuild with the flag disabled.",
-	)
-}
 /// Import the DA pallet.
 pub use da_primitives::{
 	asdr::{AppExtrinsic, AppId, AppUncheckedExtrinsic, GetAppId},
@@ -121,6 +133,16 @@ pub type Moment = u64;
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
+
+/// Wasm binary unwrapped. If built with `SKIP_WASM_BUILD`, the function panics.
+#[cfg(feature = "std")]
+pub fn wasm_binary_unwrap() -> &'static [u8] {
+	WASM_BINARY.expect(
+		"Development wasm binary is not available. This means the client is built with \
+		 `SKIP_WASM_BUILD` flag and it is only usable for production chains. Please rebuild with \
+		 the flag disabled.",
+	)
+}
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -770,11 +792,15 @@ parameter_types! {
 use sp_runtime::traits::Convert;
 pub struct BalanceToU256;
 impl Convert<Balance, sp_core::U256> for BalanceToU256 {
-	fn convert(balance: Balance) -> sp_core::U256 { sp_core::U256::from(balance) }
+	fn convert(balance: Balance) -> sp_core::U256 {
+		sp_core::U256::from(balance)
+	}
 }
 pub struct U256ToBalance;
 impl Convert<sp_core::U256, Balance> for U256ToBalance {
-	fn convert(n: sp_core::U256) -> Balance { n.try_into().unwrap_or(Balance::max_value()) }
+	fn convert(n: sp_core::U256) -> Balance {
+		n.try_into().unwrap_or(Balance::max_value())
+	}
 }
 
 impl pallet_nomination_pools::Config for Runtime {
@@ -1423,8 +1449,6 @@ impl_runtime_apis! {
 			_set_id: fg_primitives::SetId,
 			authority_id: GrandpaId,
 		) -> Option<fg_primitives::OpaqueKeyOwnershipProof> {
-			// NOTE: this is the only implementation possible since we've
-			// defined our key owner proof type as a bottom type (i.e. a type
 			// with no values).
 			use codec::Encode;
 
