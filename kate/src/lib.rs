@@ -37,6 +37,31 @@ pub mod config {
 	pub const MAXIMUM_BLOCK_SIZE: bool = cfg!(feature = "maximum-block-size");
 }
 
+/// TODO
+///  - Dedup this from `kate-recovery` once that library support `no-std`.
+#[cfg(feature = "std")]
+pub mod testnet {
+	use super::{BlockLengthColumns, PublicParameters};
+	use once_cell::sync::Lazy;
+	use rand::SeedableRng;
+	use rand_chacha::ChaChaRng;
+	use std::{collections::HashMap, sync::Mutex};
+
+	static SRS_DATA: Lazy<Mutex<HashMap<u32, PublicParameters>>> =
+		Lazy::new(|| Mutex::new(HashMap::new()));
+
+	pub fn public_params(max_degree: BlockLengthColumns) -> PublicParameters {
+		let mut srs_data_locked = SRS_DATA.lock().unwrap();
+		srs_data_locked
+			.entry(max_degree.0)
+			.or_insert_with(|| {
+				let mut rng = ChaChaRng::seed_from_u64(42);
+				PublicParameters::setup(max_degree.as_usize(), &mut rng).unwrap()
+			})
+			.clone()
+	}
+}
+
 #[cfg(feature = "std")]
 pub mod com;
 /// Precalculate the length of padding IEC 9797 1.

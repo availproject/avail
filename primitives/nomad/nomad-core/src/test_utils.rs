@@ -1,6 +1,6 @@
 use ethers_core::utils::hash_message;
 use ethers_signers::{LocalWallet, Signer};
-use signature::Signature;
+use nomad_signature::Signature;
 use sp_core::{H160, H256};
 
 use crate::{

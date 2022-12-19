@@ -1,12 +1,11 @@
 [package]
 name = "kate-recovery"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
 edition = "2018"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
-derive_more = "0.99.17"
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 dusk-bytes = "0.1.6"
 dusk-plonk = { git = "https://github.com/maticnetwork/plonk.git", tag = "v0.12.0-polygon-2" }
 getrandom = { version = "0.2", features = ["js"] }

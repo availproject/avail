@@ -1,7 +1,7 @@
 use frame_support::pallet_prelude::*;
+use nomad_signature::{hash_message, Signature, SignatureError};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use signature::{hash_message, Signature, SignatureError};
 use sp_core::{H160, H256};
 
 use crate::utils::home_domain_hash;

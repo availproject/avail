@@ -2,9 +2,9 @@
 
 use frame_support::pallet_prelude::*;
 use nomad_core::{home_domain_hash, to_eth_signed_message_hash, NomadState, SignedUpdate, Update};
+use nomad_signature::SignatureError;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use signature::SignatureError;
 use sp_core::{H160, H256};
 
 #[cfg(feature = "std")]

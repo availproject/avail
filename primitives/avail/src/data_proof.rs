@@ -1,4 +1,4 @@
-use beefy_merkle_tree::{Hash, Hasher, MerkleProof};
+use beefy_merkle_tree::MerkleProof;
 use codec::{Decode, Encode};
 use frame_support::ensure;
 #[cfg(feature = "std")]
@@ -7,16 +7,6 @@ use sp_core::H256;
 use sp_io::hashing::sha2_256;
 use sp_std::{convert::TryFrom, vec::Vec};
 use thiserror_no_std::Error;
-
-/// Sha2 256 wrapper which supports `beefy-merkle-tree::Hasher`.
-#[derive(Copy, Clone)]
-pub struct HasherSha256 {}
-
-impl Hasher for HasherSha256 {
-	fn hash(data: &[u8]) -> Hash {
-		sha2_256(data)
-	}
-}
 
 /// Wrapper of `beefy-merkle-tree::MerkleProof` with codec support.
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, Default)]
@@ -65,19 +55,20 @@ pub enum DataProofTryFromError {
 	InvalidLeafIndex,
 }
 
-impl<T> TryFrom<&MerkleProof<T>> for DataProof
+impl<H, T> TryFrom<&MerkleProof<H, T>> for DataProof
 where
 	T: AsRef<[u8]>,
+	H: PartialEq + Eq + AsRef<[u8]>,
 {
 	type Error = DataProofTryFromError;
 
-	fn try_from(merkle_proof: &MerkleProof<T>) -> Result<Self, Self::Error> {
+	fn try_from(merkle_proof: &MerkleProof<H, T>) -> Result<Self, Self::Error> {
 		use DataProofTryFromError::*;
 
 		let root = <[u8; 32]>::try_from(merkle_proof.root.as_ref())
 			.map_err(|_| InvalidRoot)?
 			.into();
-		let leaf = HasherSha256::hash(merkle_proof.leaf.as_ref()).into();
+		let leaf = sha2_256(merkle_proof.leaf.as_ref()).into();
 		let proof = merkle_proof
 			.proof
 			.iter()
@@ -107,6 +98,7 @@ where
 
 #[cfg(test)]
 mod test {
+	use crate::ShaTwo256;
 	use hex_literal::hex;
 	use sp_core::H512;
 	use sp_std::cmp::min;
@@ -125,18 +117,18 @@ mod test {
 	/// If `leaf_index >= number_of_leaves`, it will create a fake proof using the latest possible
 	/// index and overwriting the proof. That case is used to test transformations into
 	/// `DataProof`.
-	fn merkle_proof_idx(leaf_index: usize) -> MerkleProof<Vec<u8>> {
+	fn merkle_proof_idx(leaf_index: usize) -> MerkleProof<H256, Vec<u8>> {
 		let leaves = leaves();
 		let index = min(leaf_index, leaves.len() - 1);
 
-		let mut proof = beefy_merkle_tree::merkle_proof::<HasherSha256, _, _>(leaves, index);
+		let mut proof = beefy_merkle_tree::merkle_proof::<ShaTwo256, _, _>(leaves, index);
 		proof.leaf_index = leaf_index;
 		proof
 	}
 
-	fn invalid_merkle_proof_zero_leaves() -> MerkleProof<Vec<u8>> {
+	fn invalid_merkle_proof_zero_leaves() -> MerkleProof<H256, Vec<u8>> {
 		MerkleProof {
-			root: H256::default().to_fixed_bytes(),
+			root: H256::default(),
 			proof: vec![],
 			number_of_leaves: 0,
 			leaf_index: 0,
@@ -154,7 +146,7 @@ mod test {
 			],
 			number_of_leaves: 7,
 			leaf_index: 1,
-			leaf: HasherSha256::hash(H512::repeat_byte(1).as_bytes()).into(),
+			leaf: sha2_256(H512::repeat_byte(1).as_bytes()).into(),
 		})
 	}
 
@@ -168,7 +160,7 @@ mod test {
 			],
 			number_of_leaves: 7,
 			leaf_index: 0,
-			leaf: HasherSha256::hash(H512::repeat_byte(0).as_bytes()).into(),
+			leaf: sha2_256(H512::repeat_byte(0).as_bytes()).into(),
 		})
 	}
 
@@ -181,7 +173,7 @@ mod test {
 			],
 			number_of_leaves: 7,
 			leaf_index: 6,
-			leaf: HasherSha256::hash(H512::repeat_byte(6).as_bytes()).into(),
+			leaf: sha2_256(H512::repeat_byte(6).as_bytes()).into(),
 		})
 	}
 
@@ -190,7 +182,9 @@ mod test {
 	#[test_case( merkle_proof_idx(6) => expected_data_proof_6(); "From merkle proof 6")]
 	#[test_case( merkle_proof_idx(7) => Err(DataProofTryFromError::InvalidLeafIndex); "From invalid leaf index")]
 	#[test_case( invalid_merkle_proof_zero_leaves() => Err(DataProofTryFromError::InvalidNumberOfLeaves); "From invalid number of leaves")]
-	fn from_beefy(beefy_proof: MerkleProof<Vec<u8>>) -> Result<DataProof, DataProofTryFromError> {
+	fn from_beefy(
+		beefy_proof: MerkleProof<H256, Vec<u8>>,
+	) -> Result<DataProof, DataProofTryFromError> {
 		let data_proof = DataProof::try_from(&beefy_proof)?;
 		Ok(data_proof)
 	}

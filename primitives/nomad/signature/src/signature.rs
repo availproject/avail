@@ -3,7 +3,7 @@
 use alloc::{borrow::ToOwned, string::String, vec::Vec};
 use core::{convert::TryFrom, fmt, str::FromStr};
 
-use elliptic_curve::{consts::U32, sec1::ToEncodedPoint};
+use elliptic_curve::{consts::U32, sec1::ToEncodedPoint as _};
 use frame_support::{pallet_prelude::*, sp_runtime::traits::Keccak256};
 use generic_array::GenericArray;
 use k256::{
@@ -107,8 +107,8 @@ impl Signature {
 		};
 
 		let (recoverable_sig, _recovery_id) = self.as_signature()?;
-		let verify_key =
-			recoverable_sig.recover_verify_key_from_digest_bytes(message_hash.as_ref().into())?;
+		let verify_key = recoverable_sig
+			.recover_verifying_key_from_digest_bytes(message_hash.as_ref().into())?;
 
 		let public_key = K256PublicKey::from(&verify_key);
 		let public_key = public_key.to_encoded_point(/* compress = */ false);

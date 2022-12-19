@@ -1,4 +1,4 @@
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use derive_more::{Add, Deref, Display, From, Into};
 use frame_support::RuntimeDebug;
 #[cfg(feature = "std")]
@@ -35,6 +35,7 @@ pub use app_unchecked_extrinsic::*;
 	Display,
 	Into,
 	Default,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct AppId(#[codec(compact)] pub u32);

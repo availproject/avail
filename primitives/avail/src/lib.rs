@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use derive_more::{Add, Constructor, Display, From, Into, Mul};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
@@ -18,7 +18,9 @@ pub use kate_commitment::*;
 /// Application Specific Data Retrieval
 pub mod asdr;
 
+pub mod sha2;
 pub mod traits;
+pub use sha2::ShaTwo256;
 
 pub mod data_proof;
 pub use data_proof::DataProof;
@@ -98,6 +100,7 @@ where
 	PartialOrd,
 	Ord,
 	Constructor,
+	MaxEncodedLen,
 )]
 #[mul(forward)]
 pub struct BlockLengthColumns(#[codec(compact)] pub u32);
@@ -128,6 +131,7 @@ impl BlockLengthColumns {
 	PartialOrd,
 	Ord,
 	Constructor,
+	MaxEncodedLen,
 )]
 #[mul(forward)]
 pub struct BlockLengthRows(#[codec(compact)] pub u32);

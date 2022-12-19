@@ -1,26 +1,29 @@
 [package]
 name = "nomad-base"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-frame-support = { version = "4.0.0-dev", default-features = false }
 nomad-core = { path = "../nomad-core", default-features = false }
-parity-util-mem = { version = "0.10.2", default-features = false, features = ["primitive-types"] }
-primitive-types = { version = "0.10.1", default-features = false, features = ["scale-info", "codec"] }
-scale-info = { version = "1.0", default-features = false, features = ["derive"] }
-serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
-signature = { path = "../signature", default-features = false }
-sp-core = { version = "4.0.0-dev", default-features = false }
-sp-io = { version = "4.0.0-dev", default-features = false }
-sp-std = { version = "4.0.0-dev", default-features = false }
-tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
+nomad-signature = { path = "../signature", default-features = false }
 
-ethers-signers = { version = "0.13.0", default-features = false, optional = true }
-once_cell = { version = "1.8.0", default-features = false, optional = true }
+# Substrate
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+frame-support = { version = "4.0.0-dev", default-features = false }
+primitive-types = { version = "0.12", default-features = false, features = ["scale-info", "codec"] }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+sp-core = { version = "6.0.0", default-features = false }
+sp-io = { version = "6.0.0", default-features = false }
+sp-std = { version = "4.0.0", default-features = false }
+
+# Eth
+ethers-signers = { version = "1", optional = true }
+
+# Others
+once_cell = { version = "1.8.0", optional = true }
+serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 
 [features]
 default = ["std"]
@@ -30,6 +33,7 @@ std = [
 	"once_cell",
 	"primitive-types/serde",
 	"codec/std",
+	"nomad-signature/std",
 	"scale-info/std",
 	"frame-support/std",
 	"nomad-core/std",

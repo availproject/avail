@@ -1,28 +1,28 @@
 [package]
-name = "merkle"
-version = "0.1.1"
+name = "nomad-merkle"
+version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 frame-support = { version = "4.0.0-dev", default-features = false }
 hex-literal = "0.3.4"
 nomad-core = { path = "../nomad-core", default-features = false }
-parity-util-mem = { version = "0.10.2", default-features = false, features = ["primitive-types"] }
-primitive-types = { version = "0.10.1", default-features = false, features = ["scale-info", "codec"] }
-scale-info = { version = "1.0", default-features = false, features = ["derive"] }
-sp-core = { version = "4.0.0-dev", default-features = false }
-sp-io = { version = "4.0.0-dev", default-features = false }
-sp-runtime = { version = "4.0.0-dev", default-features = false }
+# parity-util-mem = { version = "0.10.2", default-features = false, features = ["primitive-types"] }
+primitive-types = { version = "0.12", default-features = false, features = ["scale-info", "codec"] }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+sp-core = { version = "6.0.0", default-features = false }
+sp-io = { version = "6.0.0", default-features = false }
+sp-runtime = { version = "6.0.0", default-features = false }
 sp-std = { version = "4.0.0-dev", default-features = false }
 static_assertions = "1.1.0"
 thiserror-no-std = "2.0.2"
 tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
 
 [dev-dependencies]
-ethers-core = "0.13.0"
+ethers-core = "1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0" }
 

@@ -19,8 +19,8 @@
 
 use codec::{Compact, Decode, Encode, EncodeLike, Error, Input};
 use frame_support::{
+	dispatch::{DispatchInfo, GetDispatchInfo},
 	traits::ExtrinsicCall,
-	weights::{DispatchInfo, GetDispatchInfo},
 };
 #[cfg(feature = "std")]
 use parity_util_mem::{MallocSizeOf, MallocSizeOfOps};
@@ -454,7 +454,7 @@ mod tests {
 	use sp_runtime::{
 		codec::{Decode, Encode},
 		testing::TestSignature as TestSig,
-		traits::{IdentityLookup, SignedExtension},
+		traits::{DispatchInfoOf, IdentityLookup, SignedExtension},
 	};
 
 	use super::*;
@@ -479,6 +479,16 @@ mod tests {
 		const IDENTIFIER: &'static str = "TestExtra";
 
 		fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+			Ok(())
+		}
+
+		fn pre_dispatch(
+			self,
+			_who: &Self::AccountId,
+			_call: &Self::Call,
+			_info: &DispatchInfoOf<Self::Call>,
+			_len: usize,
+		) -> Result<Self::Pre, TransactionValidityError> {
 			Ok(())
 		}
 	}

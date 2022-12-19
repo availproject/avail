@@ -1,25 +1,29 @@
 [package]
 name = "nomad-core"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-ethers-core = { version = "0.13.0", optional = true }
-ethers-signers = { version = "0.13.0", optional = true }
+nomad-signature = { path = "../signature", default-features = false }
+
+# Substrate
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 frame-support = { version = "4.0.0-dev", default-features = false }
-getrandom = { version = "0.2", default-features = false, features = ["js"] }
-parity-util-mem = { version = "0.10.2", default-features = false, features = ["primitive-types"] }
-primitive-types = { version = "0.10.1", default-features = false, features = ["scale-info", "codec"] }
-scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+primitive-types = { version = "0.12", default-features = false, features = ["scale-info", "codec"] }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+sp-core = { version = "6.0.0", default-features = false }
+sp-io = { version = "6.0.0", default-features = false }
+sp-runtime = { version = "6.0.0", default-features = false }
+sp-std = { version = "4.0.0", default-features = false }
+
+# Eth
+ethers-core = { version = "1", optional = true }
+ethers-signers = { version = "1", optional = true }
+
+# Others
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
-signature = { path = "../signature", default-features = false }
-sp-core = { version = "4.0.0-dev", default-features = false }
-sp-io = { version = "4.0.0-dev", default-features = false }
-sp-runtime = { version = "4.0.0-dev", default-features = false }
-sp-std = { version = "4.0.0-dev", default-features = false }
 tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
 
 [dev-dependencies]
@@ -32,7 +36,7 @@ std = [
 	"ethers-core",
 	"ethers-signers",
 	"primitive-types/serde",
-	"signature/std",
+	"nomad-signature/std",
 	"codec/std",
 	"scale-info/std",
 	"frame-support/std",
