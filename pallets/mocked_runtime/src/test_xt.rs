@@ -120,10 +120,6 @@ where
 impl<Call, Extra> GetAppId for TestXt<Call, Extra> {
 	fn app_id(&self) -> AppId { AppId::default() }
 }
-/*
-impl<Call: weights::GetDispatchInfo, Extra> weights::GetDispatchInfo for TestXt<Call, Extra> {
-	fn get_dispatch_info(&self) -> weights::DispatchInfo { self.0.call.get_dispatch_info() }
-}*/
 
 impl<Call: dispatch::GetDispatchInfo, Extra> dispatch::GetDispatchInfo for TestXt<Call, Extra> {
 	fn get_dispatch_info(&self) -> dispatch::DispatchInfo { self.0.call.get_dispatch_info() }

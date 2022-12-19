@@ -59,7 +59,6 @@ pub trait HeaderExtensionBuilder {
 		app_extrinsics: Vec<AppExtrinsic>,
 		data_root: H256,
 		block_length: BlockLength,
-		// block_number: <Self::Header as sp_runtime::traits::Header>::Number,
 	) -> HeaderExtension;
 
 	/// Generates a random seed using the _epoch seed_ and the _current block_ returned by

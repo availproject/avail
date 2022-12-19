@@ -1023,7 +1023,7 @@ impl pallet_bounties::Config for Runtime {
 	type BountyDepositPayoutDelay = BountyDepositPayoutDelay;
 	type BountyUpdatePeriod = BountyUpdatePeriod;
 	type BountyValueMinimum = BountyValueMinimum;
-	type ChildBountyManager = ChildBounties;
+	type ChildBountyManager = ();
 	type CuratorDepositMax = CuratorDepositMax;
 	type CuratorDepositMin = CuratorDepositMin;
 	type CuratorDepositMultiplier = CuratorDepositMultiplier;
@@ -1035,13 +1035,6 @@ impl pallet_bounties::Config for Runtime {
 
 parameter_types! {
 	pub const ChildBountyValueMinimum: Balance = 1 * AVL;
-}
-
-impl pallet_child_bounties::Config for Runtime {
-	type ChildBountyValueMinimum = ChildBountyValueMinimum;
-	type MaxActiveChildBountyCount = ConstU32<5>;
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_child_bounties::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_tips::Config for Runtime {
@@ -1283,8 +1276,7 @@ construct_runtime!(
 		Preimage: pallet_preimage = 33,
 		Multisig: pallet_multisig = 34,
 		VoterList: pallet_bags_list::<Instance1> = 35,
-		ChildBounties: pallet_child_bounties = 36,
-		NominationPools: pallet_nomination_pools = 37,
+		NominationPools: pallet_nomination_pools = 36,
 	}
 );
 

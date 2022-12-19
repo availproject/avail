@@ -823,8 +823,6 @@ mod tests {
 			},
 			..Default::default()
 		});
-		// let state_root =
-		// 	hex!("3f1bd581280b838db1f5f16754026f9332e7c526122b764b70106dac450e7992").into());
 		let extrinsics_root =
 			hex!("03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314").into();
 
