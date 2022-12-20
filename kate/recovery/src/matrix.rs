@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use serde::{Deserialize, Serialize};
 
-use crate::config;
+use crate::config::{self, CHUNK_SIZE};
 
 const EXTENSION_FACTOR_U32: u32 = config::EXTENSION_FACTOR as u32;
 
@@ -18,6 +18,11 @@ impl Position {
 	pub fn reference(&self, block_number: u32) -> String {
 		format!("{}:{}:{}", block_number, self.col, self.row)
 	}
+
+	/// Checks if position is from extended row
+	pub fn is_extended(&self) -> bool {
+		self.row % 2 == 1
+	}
 }
 
 /// Matrix partition (column-wise)
@@ -25,6 +30,17 @@ impl Position {
 pub struct Partition {
 	pub number: u8,
 	pub fraction: u8,
+}
+
+/// Matrix row index
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct RowIndex(pub u32);
+
+impl RowIndex {
+	/// Refrence in format `block_number:row_number`
+	pub fn reference(&self, block_number: u32) -> String {
+		format!("{}:{}", block_number, self.0)
+	}
 }
 
 /// Dimensions of a non-extended matrix.
@@ -76,6 +92,11 @@ impl Dimensions {
 	/// Extended matrix size.
 	pub fn extended_size(&self) -> u64 {
 		self.extended_rows() as u64 * self.cols as u64
+	}
+
+	/// Row size in bytes
+	pub fn row_byte_size(&self) -> usize {
+		CHUNK_SIZE * self.cols as usize
 	}
 
 	/// Extended matrix rows count.
@@ -193,11 +214,11 @@ impl Dimensions {
 		let size = (self.extended_size() as f64 / partition.fraction as f64).ceil() as u32;
 		let start = size * (partition.number - 1) as u32;
 		let end = size * (partition.number as u32);
-		let extended_rows = self.extended_rows();
+		let cols: u32 = self.cols().into();
 
 		(start..end).map(move |cell| Position {
-			row: cell / extended_rows,
-			col: (cell % extended_rows) as u16,
+			row: cell / cols,
+			col: (cell % cols) as u16,
 		})
 	}
 }
@@ -246,10 +267,10 @@ mod tests {
 		assert_eq!(cells, expected);
 	}
 
-	#[test_case(1, 2, &[(0, 0), (0, 1)] ; "First partition")]
-	#[test_case(2, 2, &[(1, 0), (1, 1)] ; "Second partition")]
+	#[test_case(1, 2, &[(0, 0), (0, 1), (0, 2), (0, 3)] ; "First partition")]
+	#[test_case(2, 2, &[(1, 0), (1, 1), (1, 2), (1, 3)] ; "Second partition")]
 	fn iter_extended_partition_positions(number: u8, fraction: u8, expected: &[(u32, u16)]) {
-		Dimensions::new(1, 2)
+		Dimensions::new(1, 4)
 			.unwrap()
 			.iter_extended_partition_positions(&Partition { number, fraction })
 			.zip(expected.iter().map(|&(row, col)| Position { row, col }))

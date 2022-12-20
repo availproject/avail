@@ -1664,7 +1664,7 @@ dependencies = [
 
 [[package]]
 name = "kate"
-version = "0.5.3"
+version = "0.6.0"
 dependencies = [
  "criterion",
  "da-primitives",
@@ -1696,7 +1696,7 @@ dependencies = [
 
 [[package]]
 name = "kate-recovery"
-version = "0.7.1"
+version = "0.8.0"
 dependencies = [
  "dusk-bytes",
  "dusk-plonk",
