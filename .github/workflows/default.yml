@@ -62,7 +62,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --workspace --featuress runtime-benchmarks --exclude fuzzing
+          args: --workspace --features runtime-benchmarks --exclude fuzzing
         env:
           RUSTFLAGS: "-C instrument-coverage"
           LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
