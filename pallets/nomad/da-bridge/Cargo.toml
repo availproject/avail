@@ -13,22 +13,22 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 # Our crates
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.7.0", default-features = false }
-nomad-core = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.7.0", default-features = false }
+da-primitives = { version = "0.4", default-features = false }
+nomad-core = { version = "0.1", default-features = false }
 nomad-home = { path = "../home", default-features = false }
 
 # 3rd-party 
 serde = { version = "1.0.126", optional = true, features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-scale-info = { version = "1.0", default-features = false, features = ["derive"] }
-sp-core = { version = "4.0.0-dev", default-features = false }
-sp-std = { version = "4.0.0-dev", default-features = false }
-sp-io = { version = "4.0.0-dev", default-features = false }
-sp-runtime = { version = "4.0.0-dev", default-features = false }
-sp-arithmetic = { version = "4.0.0-dev", default-features = false }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+sp-core = { version = "6.0.0", default-features = false }
+sp-std = { version = "4.0.0", default-features = false }
+sp-io = { version = "6.0.0", default-features = false }
+sp-runtime = { version = "6.0.0", default-features = false }
+sp-arithmetic = { version = "5", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false }
-primitive-types = { git = "https://github.com/paritytech/parity-common.git", tag = "parity-util-mem-v0.10.1", default-features = false }
+primitive-types = { version = "0.12", default-features = false }
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 hex-literal = "0.3.4"
 
@@ -36,12 +36,12 @@ hex-literal = "0.3.4"
 [dev-dependencies]
 rand = "0.8.5"
 hex-literal = "0.3.4"
-frame-executive = { version = "4.0.0-dev" }
-pallet-transaction-payment = { version = "4.0.0-dev" }
+frame-executive = "4.0.0-dev"
+pallet-transaction-payment = "4.0.0-dev"
 da-control = { path = "../../dactr" }
-nomad-base = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.7.0" }
-merkle  = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.7.0" }
-updater-manager = { path = "../updater-manager" }
+nomad-base = "0.1" 
+nomad-merkle  = "0.1" 
+nomad-updater-manager = { path = "../updater-manager" }
 
 [features]
 default = ["std"]

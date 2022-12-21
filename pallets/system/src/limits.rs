@@ -1,6 +1,5 @@
 // This file is part of Substrate.
-
-// Copyright (C) 2017-2021 Parity Technologies (UK) Ltd.
+// Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,23 +24,24 @@
 //! `DispatchClass`. This module contains configuration object for both resources,
 //! which should be passed to `frame_system` configuration when runtime is being set up.
 
-use codec::{Compact, Decode, Encode, Error, Input};
+use codec::{Compact, Decode, Encode, Error, Input, MaxEncodedLen};
 use da_primitives::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE};
 use frame_support::{
+	dispatch::{DispatchClass, OneOrMany, PerDispatchClass},
 	ensure,
-	weights::{constants, DispatchClass, OneOrMany, PerDispatchClass, Weight},
+	weights::{constants, Weight},
 };
 use kate::config::{DATA_CHUNK_SIZE, MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::{Perbill, RuntimeDebug};
+use sp_runtime::{traits::Bounded, Perbill, RuntimeDebug};
 use sp_runtime_interface::pass_by::PassByCodec;
 use static_assertions::const_assert;
 
 /// Block length limit configuration.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(RuntimeDebug, PartialEq, Clone, Encode, TypeInfo, PassByCodec)]
+#[derive(RuntimeDebug, PartialEq, Clone, Encode, TypeInfo, PassByCodec, MaxEncodedLen)]
 pub struct BlockLength {
 	/// Maximal total length in bytes for each extrinsic class.
 	///
@@ -352,7 +352,10 @@ pub struct BlockWeights {
 
 impl Default for BlockWeights {
 	fn default() -> Self {
-		Self::with_sensible_defaults(constants::WEIGHT_PER_SECOND, DEFAULT_NORMAL_RATIO)
+		Self::with_sensible_defaults(
+			Weight::from_parts(constants::WEIGHT_PER_SECOND.ref_time(), u64::MAX),
+			DEFAULT_NORMAL_RATIO,
+		)
 	}
 }
 
@@ -373,15 +376,18 @@ impl BlockWeights {
 			// Make sure that if total is set it's greater than base_block &&
 			// base_for_class
 			error_assert!(
-				(max_for_class > self.base_block && max_for_class > base_for_class)
-				|| max_for_class == 0,
+				(max_for_class.all_gt(self.base_block) && max_for_class.all_gt(base_for_class))
+				|| max_for_class == Weight::zero(),
 				&mut error,
 				"[{:?}] {:?} (total) has to be greater than {:?} (base block) & {:?} (base extrinsic)",
 				class, max_for_class, self.base_block, base_for_class,
 			);
 			// Max extrinsic can't be greater than max_for_class.
 			error_assert!(
-				weights.max_extrinsic.unwrap_or(0) <= max_for_class.saturating_sub(base_for_class),
+				weights
+					.max_extrinsic
+					.unwrap_or(Weight::zero())
+					.all_lte(max_for_class.saturating_sub(base_for_class)),
 				&mut error,
 				"[{:?}] {:?} (max_extrinsic) can't be greater than {:?} (max for class)",
 				class,
@@ -390,14 +396,14 @@ impl BlockWeights {
 			);
 			// Max extrinsic should not be 0
 			error_assert!(
-				weights.max_extrinsic.unwrap_or_else(Weight::max_value) > 0,
+				weights.max_extrinsic.unwrap_or_else(Weight::max_value).all_gt(Weight::zero()),
 				&mut error,
 				"[{:?}] {:?} (max_extrinsic) must not be 0. Check base cost and average initialization cost.",
 				class, weights.max_extrinsic,
 			);
 			// Make sure that if reserved is set it's greater than base_for_class.
 			error_assert!(
-				reserved > base_for_class || reserved == 0,
+				reserved.all_gt(base_for_class) || reserved == Weight::zero(),
 				&mut error,
 				"[{:?}] {:?} (reserved) has to be greater than {:?} (base extrinsic) if set",
 				class,
@@ -406,7 +412,8 @@ impl BlockWeights {
 			);
 			// Make sure max block is greater than max_total if it's set.
 			error_assert!(
-				self.max_block >= weights.max_total.unwrap_or(0),
+				self.max_block
+					.all_gte(weights.max_total.unwrap_or(Weight::zero())),
 				&mut error,
 				"[{:?}] {:?} (max block) has to be greater than {:?} (max for class)",
 				class,
@@ -415,7 +422,7 @@ impl BlockWeights {
 			);
 			// Make sure we can fit at least one extrinsic.
 			error_assert!(
-				self.max_block > base_for_class + self.base_block,
+				self.max_block.all_gt(base_for_class + self.base_block),
 				&mut error,
 				"[{:?}] {:?} (max block) must fit at least one extrinsic {:?} (base weight)",
 				class,
@@ -438,9 +445,9 @@ impl BlockWeights {
 	/// is not suitable for production deployments.
 	pub fn simple_max(block_weight: Weight) -> Self {
 		Self::builder()
-			.base_block(0)
+			.base_block(Weight::zero())
 			.for_class(DispatchClass::all(), |weights| {
-				weights.base_extrinsic = 0;
+				weights.base_extrinsic = Weight::zero();
 			})
 			.for_class(DispatchClass::non_mandatory(), |weights| {
 				weights.max_total = block_weight.into();
@@ -477,12 +484,12 @@ impl BlockWeights {
 		BlockWeightsBuilder {
 			weights: BlockWeights {
 				base_block: constants::BlockExecutionWeight::get(),
-				max_block: 0,
+				max_block: Weight::zero(),
 				per_class: PerDispatchClass::new(|class| {
 					let initial = if class == DispatchClass::Mandatory {
 						None
 					} else {
-						Some(0)
+						Some(Weight::zero())
 					};
 					WeightsPerClass {
 						base_extrinsic: constants::ExtrinsicBaseWeight::get(),
@@ -517,7 +524,7 @@ impl BlockWeightsBuilder {
 	///
 	/// This is to make sure that extrinsics don't stay forever in the pool,
 	/// because they could seamingly fit the block (since they are below `max_block`),
-	/// but the cost of calling `on_initialize` alway prevents them from being included.
+	/// but the cost of calling `on_initialize` always prevents them from being included.
 	pub fn avg_block_initialization(mut self, init_cost: Perbill) -> Self {
 		self.init_cost = Some(init_cost);
 		self
@@ -549,7 +556,7 @@ impl BlockWeightsBuilder {
 		// compute max block size.
 		for class in DispatchClass::all() {
 			weights.max_block = match weights.per_class.get(*class).max_total {
-				Some(max) if max > weights.max_block => max,
+				Some(max) => max.max(weights.max_block),
 				_ => weights.max_block,
 			};
 		}

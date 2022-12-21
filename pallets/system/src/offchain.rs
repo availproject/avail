@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2019-2021 Parity Technologies (UK) Ltd.
+// Copyright (C) 2019-2022 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -88,7 +88,7 @@ where
 		call: <T as SendTransactionTypes<LocalCall>>::OverarchingCall,
 		signature: Option<<T::Extrinsic as ExtrinsicT>::SignaturePayload>,
 	) -> Result<(), ()> {
-		let xt = T::Extrinsic::new(call.into(), signature).ok_or(())?;
+		let xt = T::Extrinsic::new(call, signature).ok_or(())?;
 		sp_io::offchain::submit_transaction(xt.encode())
 	}
 
@@ -160,7 +160,7 @@ impl<T: SigningTypes, C: AppCrypto<T::Public, T::Signature>, X> Signer<T, C, X> 
 					keystore_accounts.map(|account| account.public).collect();
 
 				Box::new(
-					keys.into_iter()
+					keys.iter()
 						.enumerate()
 						.map(|(index, key)| {
 							let account_id = key.clone().into_account();
@@ -628,18 +628,18 @@ mod tests {
 	use sp_runtime::testing::{TestSignature, TestXt, UintAuthorityId};
 
 	use super::*;
-	use crate::mock::{Call, Test as TestRuntime, CALL};
+	use crate::mock::{RuntimeCall, Test as TestRuntime, CALL};
 
 	impl SigningTypes for TestRuntime {
 		type Public = UintAuthorityId;
 		type Signature = TestSignature;
 	}
 
-	type Extrinsic = TestXt<Call, ()>;
+	type Extrinsic = TestXt<RuntimeCall, ()>;
 
-	impl SendTransactionTypes<Call> for TestRuntime {
+	impl SendTransactionTypes<RuntimeCall> for TestRuntime {
 		type Extrinsic = Extrinsic;
-		type OverarchingCall = Call;
+		type OverarchingCall = RuntimeCall;
 	}
 
 	#[derive(codec::Encode, codec::Decode)]

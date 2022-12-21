@@ -4,17 +4,15 @@ version = "0.1.1"
 authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.7.0", default-features = false }
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+da-primitives = { version = "0.4", default-features = false }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 sp-api = { version = "4.0.0-dev", default-features = false }
-sp-std = { version = "4.0.0-dev", default-features = false }
-sp-core = { version = "4.0.0-dev", default-features = false }
-sp-arithmetic = { version = "4.0.0-dev", default-features = false }
+sp-std = { version = "4.0.0", default-features = false }
+sp-core = { version = "6.0.0", default-features = false }
+sp-arithmetic = { version = "5.0.0", default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false }
-beefy-merkle-tree = { git = "https://github.com/paritytech/substrate.git/", branch = "polkadot-v0.9.13", default-features = false }
+beefy-merkle-tree = { version = "4.0.0-dev", default-features = false }
 serde = { version = "1.0.126", optional = true, features = ["derive"] }
 
 [features]

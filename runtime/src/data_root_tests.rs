@@ -1,6 +1,9 @@
-use da_control::CheckAppId;
+use da_control::{Call as DaCall, CheckAppId};
 use da_primitives::asdr::AppExtrinsic;
-use frame_system::submitted_data::extrinsics_root;
+use frame_system::{
+	submitted_data::extrinsics_root, CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce,
+	CheckSpecVersion, CheckTxVersion, CheckWeight,
+};
 use hex_literal::hex;
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_core::{sr25519::Signature, H256};
@@ -31,7 +34,7 @@ fn decode_submit_call() {
 	let account = hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
 	let expected_signature = MultiSignature::Sr25519(Signature(hex!("be06880f2f6203365b508b4226fd697d3d79d3a50a5617aad714466d40ef47067225e823135b32121aa0f6f56e696f5f71107a6d44768c2fefe38cb209f7f282")));
 	let expected_call = AppUncheckedExtrinsic {
-		function: Call::DataAvailability(da_control::Call::submit_data {
+		function: RuntimeCall::DataAvailability(DaCall::submit_data {
 			data: hex!("54657374207375626d69742064617461")
 				.to_vec()
 				.try_into()
@@ -44,6 +47,7 @@ fn decode_submit_call() {
 			expected_signature.clone(),
 			// super::SignedExtra::default()
 			(
+				CheckNonZeroSender::<Runtime>::new(),
 				CheckSpecVersion::<Runtime>::new(),
 				CheckTxVersion::<Runtime>::new(),
 				CheckGenesis::<Runtime>::new(),

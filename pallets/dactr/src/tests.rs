@@ -2,7 +2,7 @@ use frame_support::{assert_noop, assert_ok};
 use frame_system::RawOrigin;
 
 use crate::{
-	mock::{new_test_ext, DataAvailability, Event, System, Test},
+	mock::{new_test_ext, DataAvailability, RuntimeEvent, System, Test},
 	AppKeyFor, AppKeyInfoFor,
 	Event::ApplicationKeyCreated,
 };
@@ -20,7 +20,7 @@ fn create_application_keys() {
 
 		assert_eq!(
 			System::events()[0].event,
-			Event::DataAvailability(ApplicationKeyCreated {
+			RuntimeEvent::DataAvailability(ApplicationKeyCreated {
 				key: new_key.clone(),
 				owner: 3,
 				id: 3.into()

@@ -24,17 +24,17 @@ pub mod pallet {
 		transactional,
 	};
 	use frame_system::pallet_prelude::{OriginFor, *};
-	use merkle::{Merkle, NomadLightMerkle};
 	use nomad_base::NomadBase;
 	use nomad_core::{destination_and_nonce, NomadMessage, NomadState, SignedUpdate};
+	use nomad_merkle::{Merkle, NomadLightMerkle};
 	use primitive_types::{H160, H256};
 	use sp_std::vec::Vec;
 
 	use super::weights::WeightInfo;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + updater_manager::Config {
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+	pub trait Config: frame_system::Config + nomad_updater_manager::Config {
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Max allowed message body size
 		#[pallet::constant]
@@ -350,7 +350,7 @@ pub mod pallet {
 		/// Set self in failed state and slash updater.
 		fn fail(reporter: T::AccountId) {
 			Base::<T>::mutate(|base| base.state = NomadState::Failed);
-			updater_manager::Pallet::<T>::slash_updater(reporter.clone());
+			nomad_updater_manager::Pallet::<T>::slash_updater(reporter.clone());
 
 			let updater = Self::base().updater;
 			Self::deposit_event(Event::<T>::UpdaterSlashed { updater, reporter });
@@ -364,7 +364,7 @@ pub mod pallet {
 			Base::<T>::mutate(|base| base.updater = new_updater);
 
 			// Rotate updater on updater manager
-			updater_manager::Pallet::<T>::set_updater(new_updater)
+			nomad_updater_manager::Pallet::<T>::set_updater(new_updater)
 		}
 	}
 }
@@ -373,7 +373,7 @@ pub mod pallet {
 pub mod common_tests_and_benches {
 	use hex_literal::hex;
 	use nomad_core::{SignedUpdate, Update};
-	use signature::Signature;
+	use nomad_signature::Signature;
 	use sp_core::{H256, U256};
 
 	const EXPECTED_NEW_ROOT_LONGEST_TREE: H256 = H256(hex!(

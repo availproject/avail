@@ -6,11 +6,11 @@ use frame_support::{assert_ok, traits::Get as _, BoundedVec};
 use frame_system::RawOrigin;
 use hex_literal::hex;
 #[cfg(feature = "runtime-benchmarks")]
-use merkle::Merkle;
-#[cfg(feature = "runtime-benchmarks")]
 use nomad_core::NomadState;
 use nomad_core::{SignedUpdate, Update};
-use signature::Signature;
+#[cfg(feature = "runtime-benchmarks")]
+use nomad_merkle::Merkle;
+use nomad_signature::Signature;
 use sp_core::{H160, H256, U256};
 #[cfg(feature = "runtime-benchmarks")]
 use sp_std::{iter::repeat, vec::Vec};
@@ -58,7 +58,7 @@ benchmarks! {
 	}
 
 	update {
-		use merkle::TREE_DEPTH;
+		use nomad_merkle::TREE_DEPTH;
 		use crate::common_tests_and_benches::expected_longest_tree_signed_update;
 
 		let max_index = TREE_DEPTH as u32;

@@ -1,10 +1,10 @@
 use da_primitives::Header;
-use frame_support::traits::GenesisBuild;
-use frame_system::{self as system};
+use frame_support::{traits::GenesisBuild, weights::Weight};
+use frame_system::{self as system, header_builder::da, test_utils::TestRandomness};
 use nomad_base::NomadBase;
 use primitive_types::{H160, H256};
 use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, ConstU32, IdentityLookup},
 	AccountId32,
 };
 
@@ -24,7 +24,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		UpdaterManager: updater_manager::{Pallet, Call, Storage, Event<T>},
+		UpdaterManager: nomad_updater_manager::{Pallet, Call, Storage, Event<T>},
 		Home: nomad_home::{Pallet, Call, Storage, Event<T>},
 		DABridge: da_bridge::{Pallet, Call, Storage, Event<T>},
 	}
@@ -33,7 +33,7 @@ frame_support::construct_runtime!(
 frame_support::parameter_types! {
 	pub const BlockHashCount: u32 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(1024);
+		frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1_024));
 	pub static ExistentialDeposit: u64 = 0;
 }
 
@@ -45,29 +45,30 @@ impl system::Config for Test {
 	type BlockLength = ();
 	type BlockNumber = BlockNumber;
 	type BlockWeights = ();
-	type Call = Call;
 	type DbWeight = ();
-	type Event = Event;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header<Self::BlockNumber, BlakeTwo256>;
-	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
+	type HeaderExtensionBuilder = da::HeaderExtensionBuilder<Test>;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
-	type Origin = Origin;
 	type PalletInfo = PalletInfo;
-	type Randomness = frame_system::tests::TestRandomness<Test>;
+	type Randomness = TestRandomness<Test>;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeOrigin = RuntimeOrigin;
 	type SS58Prefix = ();
 	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
 	type Version = ();
 }
 
-impl updater_manager::Config for Test {
-	type Event = Event;
+impl nomad_updater_manager::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
 }
 
 frame_support::parameter_types! {
@@ -75,8 +76,8 @@ frame_support::parameter_types! {
 }
 
 impl nomad_home::Config for Test {
-	type Event = Event;
 	type MaxMessageBodyBytes = MaxMessageBodyBytes;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }
 
@@ -86,7 +87,7 @@ frame_support::parameter_types! {
 
 impl da_bridge::Config for Test {
 	type DABridgePalletId = DABridgePalletId;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }
 
@@ -127,7 +128,7 @@ impl ExtBuilder {
 		}
 		.assimilate_storage(&mut t)
 		.expect("Pallet base storage can be assimilated");
-		updater_manager::GenesisConfig::<Test> {
+		nomad_updater_manager::GenesisConfig::<Test> {
 			updater: self.updater,
 			_phantom: Default::default(),
 		}
@@ -145,7 +146,7 @@ pub(crate) fn _events() -> Vec<super::Event<Test>> {
 		.into_iter()
 		.map(|r| r.event)
 		.filter_map(|e| {
-			if let Event::DABridge(inner) = e {
+			if let RuntimeEvent::DABridge(inner) = e {
 				Some(inner)
 			} else {
 				None

@@ -28,13 +28,18 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: '3.x'
+
       - name: Install nightly `rust-fmt` 
         uses: actions-rs/toolchain@v1
         with:
             # NOTE: Until https://github.com/actions-rs/toolchain/pull/209 is merged,
             # this should be synced with rust-toolchain.toml file.
             # After merge, this section should be removed.
-            toolchain: nightly-2021-12-05
+            toolchain: nightly-2022-11-25
             components: rustfmt
             profile: minimal
 
@@ -49,7 +54,7 @@ jobs:
       - name: Check code formatting
         uses: actions-rs/cargo@v1
         with:
-          toolchain: nightly-2021-12-05
+          toolchain: nightly-2022-11-25
           command: fmt
           args: --check
 
@@ -57,7 +62,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --workspace --exclude fuzzing
+          args: --workspace --features runtime-benchmarks --exclude fuzzing
         env:
           RUSTFLAGS: "-C instrument-coverage"
           LLVM_PROFILE_FILE: "profile-%p-%m.profraw"

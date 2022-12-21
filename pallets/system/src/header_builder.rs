@@ -19,7 +19,9 @@ pub mod da {
 	use sp_runtime::traits::BlakeTwo256;
 
 	use super::{AppExtrinsic, BlockLength, Config, HeaderExtension, Vec, H256};
+
 	pub type Hash = sp_core::H256;
+	// @todo Miguel: Link this type with `Config::BlockNumber`.
 	pub type BlockNumber = u32;
 
 	/// Data-Avail Header builder.
@@ -33,15 +35,15 @@ pub mod da {
 			app_extrinsics: Vec<AppExtrinsic>,
 			data_root: H256,
 			block_length: BlockLength,
-			block_number: BlockNumber,
 		) -> HeaderExtension {
 			let seed = Self::random_seed::<T>();
 
+			let unused_block_number = 0u32;
 			super::hosted_header_builder::build(
 				app_extrinsics,
 				data_root,
 				block_length,
-				block_number,
+				unused_block_number,
 				seed,
 			)
 		}
@@ -57,7 +59,6 @@ pub trait HeaderExtensionBuilder {
 		app_extrinsics: Vec<AppExtrinsic>,
 		data_root: H256,
 		block_length: BlockLength,
-		block_number: <Self::Header as sp_runtime::traits::Header>::Number,
 	) -> HeaderExtension;
 
 	/// Generates a random seed using the _epoch seed_ and the _current block_ returned by
