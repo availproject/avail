@@ -754,7 +754,7 @@ pub mod pallet {
 			sp_io::storage::set(KATE_PUBLIC_PARAMS, &self.kc_public_params);
 			<DynamicBlockLength<T>>::put(&self.block_length);
 
-			StorageVersion::new(2).put::<Pallet<T>>();
+			StorageVersion::new(1).put::<Pallet<T>>();
 		}
 	}
 }

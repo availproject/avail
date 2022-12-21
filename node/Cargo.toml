@@ -107,11 +107,13 @@ substrate-state-trie-migration-rpc = "4.0.0-dev"
 frame-benchmarking = "4.0.0-dev"
 frame-benchmarking-cli = "4.0.0-dev"
 
+# Try-runtime
+try-runtime-cli = { version = "0.10.0-dev", optional = true }
+
 [build-dependencies]
 substrate-build-script-utils = "3.0.0"
 clap = { version = "4.0.9", optional = true }
 clap_complete = { version = "4.0.2", optional = true }
-try-runtime-cli = { version = "0.10.0-dev", optional = true }
 frame-benchmarking-cli = { version = "4.0.0-dev", optional = true }
 
 [dev-dependencies]
@@ -123,7 +125,6 @@ default = ["cli"]
 cli = [
 	"clap",
 	"clap_complete",
-	"try-runtime-cli",
 	"frame-benchmarking-cli",
 ]
 runtime-benchmarks = [
