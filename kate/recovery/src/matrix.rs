@@ -196,8 +196,8 @@ impl Dimensions {
 		let extended_rows = self.extended_rows();
 
 		(start..end).map(move |cell| Position {
-			row: cell % extended_rows,
-			col: (cell / extended_rows) as u16,
+			row: cell / extended_rows,
+			col: (cell % extended_rows) as u16,
 		})
 	}
 }
@@ -208,6 +208,8 @@ mod tests {
 	use test_case::test_case;
 
 	use crate::matrix::{Dimensions, Position};
+
+	use super::Partition;
 
 	#[test]
 	fn zero_dimensions() {
@@ -242,5 +244,15 @@ mod tests {
 			.map(|&Position { row, col }| (row as usize, col as usize))
 			.collect::<Vec<_>>();
 		assert_eq!(cells, expected);
+	}
+
+	#[test_case(1, 2, &[(0, 0), (0, 1)] ; "First partition")]
+	#[test_case(2, 2, &[(1, 0), (1, 1)] ; "Second partition")]
+	fn iter_extended_partition_positions(number: u8, fraction: u8, expected: &[(u32, u16)]) {
+		Dimensions::new(1, 2)
+			.unwrap()
+			.iter_extended_partition_positions(&Partition { number, fraction })
+			.zip(expected.iter().map(|&(row, col)| Position { row, col }))
+			.for_each(|(p1, p2)| assert!(p1 == p2));
 	}
 }
