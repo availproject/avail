@@ -17,9 +17,11 @@
 
 //! A set of constant values used in substrate runtime.
 
+use da_primitives::currency::Balance;
+
 /// Money matters.
 pub mod currency {
-	use da_primitives::currency::Balance;
+	use super::Balance;
 
 	pub const MILLICENTS: Balance = 1_000_000_000;
 	pub const CENTS: Balance = 1_000 * MILLICENTS; // assume this is worth about a cent.
@@ -70,6 +72,18 @@ pub mod time {
 	pub const MINUTES: BlockNumber = 60 / (SECS_PER_BLOCK as BlockNumber);
 	pub const HOURS: BlockNumber = MINUTES * 60;
 	pub const DAYS: BlockNumber = HOURS * 24;
+}
+
+pub mod nomination_pools {
+	use da_primitives::currency::AVL;
+
+	use super::Balance;
+
+	pub const MIN_CREATE_BOND: Balance = 10 * AVL;
+	pub const MIN_JOIN_BOND: Balance = 1 * AVL;
+	pub const MAX_POOLS: u32 = 16;
+	pub const MAX_MEMBERS_PER_POOL: u32 = 100;
+	pub const MAX_MEMBERS: u32 = MAX_POOLS * MAX_MEMBERS_PER_POOL;
 }
 
 /// The BABE epoch configuration at genesis.

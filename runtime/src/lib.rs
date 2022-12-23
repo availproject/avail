@@ -105,6 +105,8 @@ pub mod constants;
 use constants::{currency::*, time::*, BABE_GENESIS_EPOCH_CONFIG};
 use sp_runtime::generic::Era;
 
+mod migration;
+
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -1326,7 +1328,7 @@ pub type Executive = frame_executive::Executive<
 
 // All migrations executed on runtime upgrade as a nested tuple of types implementing
 // `OnRuntimeUpgrade`.
-type Migrations = ();
+type Migrations = (migration::Migration,);
 
 /// MMR helper types.
 mod mmr {
