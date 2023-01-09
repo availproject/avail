@@ -20,6 +20,8 @@ use log;
 use pallet_nomination_pools::{
 	MaxPoolMembers, MaxPoolMembersPerPool, MaxPools, MinCreateBond, MinJoinBond, Pallet,
 };
+#[cfg(feature = "try-runtime")]
+use sp_std::vec::Vec;
 
 use crate::Weight;
 
