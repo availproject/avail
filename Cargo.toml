@@ -37,9 +37,7 @@ nomad-base = { git="https://github.com/maticnetwork/avail-core", version = "0.1.
 nomad-core = { git="https://github.com/maticnetwork/avail-core", version = "0.1.2", tag = "da-primitives/v0.4.2" }
 
 # Other stuff
-syn = { git = "https://github.com/dtolnay/syn.git", tag = "1.0.96" }
 primitive-types = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }
-parity-db = { git = "https://github.com/paritytech/parity-db.git", tag = "v0.3.12" }
 parity-util-mem = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }
 uint = { git = "https://github.com/paritytech/parity-common.git", tag="rlp-v0.5.2" }
 rlp = { git = "https://github.com/paritytech/parity-common.git", tag="rlp-v0.5.2" }
@@ -133,8 +131,6 @@ pallet-multisig = { git = "https://github.com/paritytech/substrate.git", branch 
 pallet-child-bounties = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.33" }
 pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.33" }
 pallet-nomination-pools = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.33" }
-pallet-session-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.33" }
-pallet-offences-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.33" }
 pallet-election-provider-support-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.33" }
 
 

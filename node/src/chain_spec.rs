@@ -1,11 +1,11 @@
 use da_control::AppKeyInfo;
 use da_primitives::currency::AVL;
 use da_runtime::{
-	wasm_binary_unwrap, AccountId, AuthorityDiscoveryConfig, BabeConfig, Balance, BalancesConfig,
-	Block, CouncilConfig, DataAvailabilityConfig, DemocracyConfig, DesiredMembers, ElectionsConfig,
-	GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig, MaxNominations, NomadHomeConfig,
-	NominationPoolsConfig, SessionConfig, SessionKeys, Signature, StakerStatus, StakingConfig,
-	SudoConfig, SystemConfig, TechnicalCommitteeConfig, UpdaterManagerConfig,
+	constants, wasm_binary_unwrap, AccountId, AuthorityDiscoveryConfig, BabeConfig, Balance,
+	BalancesConfig, Block, CouncilConfig, DataAvailabilityConfig, DemocracyConfig, DesiredMembers,
+	ElectionsConfig, GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig, MaxNominations,
+	NomadHomeConfig, NominationPoolsConfig, SessionConfig, SessionKeys, Signature, StakerStatus,
+	StakingConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig, UpdaterManagerConfig,
 };
 use frame_system::limits::BlockLength;
 use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
@@ -339,9 +339,11 @@ pub fn testnet_genesis(
 		},
 		da_bridge: Default::default(),
 		nomination_pools: NominationPoolsConfig {
-			min_create_bond: 10 * AVL,
-			min_join_bond: 1 * AVL,
-			..Default::default()
+			min_create_bond: constants::nomination_pools::MIN_CREATE_BOND,
+			min_join_bond: constants::nomination_pools::MIN_JOIN_BOND,
+			max_pools: Some(constants::nomination_pools::MAX_POOLS),
+			max_members_per_pool: Some(constants::nomination_pools::MAX_MEMBERS_PER_POOL),
+			max_members: Some(constants::nomination_pools::MAX_MEMBERS),
 		},
 	}
 }
@@ -501,9 +503,11 @@ fn genesis_builder(
 		nomad_home: Default::default(),
 		da_bridge: Default::default(),
 		nomination_pools: NominationPoolsConfig {
-			min_create_bond: 10 * AVL,
-			min_join_bond: 1 * AVL,
-			..Default::default()
+			min_create_bond: constants::nomination_pools::MIN_CREATE_BOND,
+			min_join_bond: constants::nomination_pools::MIN_JOIN_BOND,
+			max_pools: Some(constants::nomination_pools::MAX_POOLS),
+			max_members_per_pool: Some(constants::nomination_pools::MAX_MEMBERS_PER_POOL),
+			max_members: Some(constants::nomination_pools::MAX_MEMBERS),
 		},
 	}
 }

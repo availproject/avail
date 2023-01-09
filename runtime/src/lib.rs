@@ -105,6 +105,8 @@ pub mod constants;
 use constants::{currency::*, time::*, BABE_GENESIS_EPOCH_CONFIG};
 use sp_runtime::generic::Era;
 
+mod migration;
+
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -1326,7 +1328,7 @@ pub type Executive = frame_executive::Executive<
 
 // All migrations executed on runtime upgrade as a nested tuple of types implementing
 // `OnRuntimeUpgrade`.
-type Migrations = ();
+type Migrations = (migration::Migration,);
 
 /// MMR helper types.
 mod mmr {
@@ -1437,7 +1439,6 @@ impl_runtime_apis! {
 			_set_id: fg_primitives::SetId,
 			authority_id: GrandpaId,
 		) -> Option<fg_primitives::OpaqueKeyOwnershipProof> {
-			// with no values).
 			use codec::Encode;
 
 			Historical::prove((fg_primitives::KEY_TYPE, authority_id))
@@ -1708,6 +1709,66 @@ mod tests {
 	use test_case::test_case;
 
 	use super::*;
+
+	/// This test was used to detect any missing support of `TryState` needed for `try-runtime`
+	/// feature.
+	#[cfg(feature = "try-runtime")]
+	#[allow(dead_code)]
+	fn check_try_runtime_support_on_pallets() -> Result<(), &'static str> {
+		use frame_support::traits::{TryState, TryStateSelect::All};
+		use sp_runtime::traits::Zero;
+
+		let block = Zero::zero();
+
+		<frame_system::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+
+		<pallet_utility::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_babe::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_timestamp::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_authorship::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_indices::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_balances::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_transaction_payment::Pallet<Runtime> as TryState<BlockNumber>>::try_state(
+			block, All,
+		)?;
+		<pallet_election_provider_multi_phase::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_staking::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_session::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_democracy::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_collective::Pallet<Runtime, CouncilCollective> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_collective::Pallet<Runtime, TechnicalCollective> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_elections_phragmen::Pallet<Runtime> as TryState<BlockNumber>>::try_state(
+			block, All,
+		)?;
+		<pallet_membership::Pallet<Runtime, pallet_membership::Instance1> as TryState<
+			BlockNumber,
+		>>::try_state(block, All)?;
+		<pallet_grandpa::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_treasury::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_sudo::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_im_online::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_authority_discovery::Pallet<Runtime> as TryState<BlockNumber>>::try_state(
+			block, All,
+		)?;
+		<pallet_offences::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_session::historical::Pallet<Runtime> as TryState<BlockNumber>>::try_state(
+			block, All,
+		)?;
+		<pallet_scheduler::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_bounties::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_tips::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_mmr::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<da_control::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<nomad_updater_manager::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<nomad_home::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<da_bridge::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_preimage::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_multisig::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_bags_list::Pallet<Runtime, pallet_bags_list::Instance1> as TryState<
+			BlockNumber,
+		>>::try_state(block, All)?;
+		<pallet_nomination_pools::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)
+	}
 
 	#[test]
 	fn check_whitelist() {

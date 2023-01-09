@@ -841,13 +841,13 @@ mod tests {
 		block_import_works_inner(
 			new_test_ext_v0(1),
 			array_bytes::hex_n_into_unchecked(
-				"29e2f2885158e4179d302f7f7ed0a64e75423a1fc2cf1d6fdc4219cd30023792",
+				"6d988b132b3dc0200c6d8102274428b9f58024fbb32c210b8b432302bc85be17",
 			),
 		);
 		block_import_works_inner(
 			new_test_ext(1),
 			array_bytes::hex_n_into_unchecked(
-				"0c32c81e9258686fdb492888b7630e757096548842326e5d603138474ca2e49d",
+				"0b93b0592690a181d6e080c6cc73108793e0447c24ad82145c763b798d94edc7",
 			),
 		);
 	}

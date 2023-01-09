@@ -25,6 +25,7 @@ use frame_support::{
 use sp_std::prelude::*;
 
 use crate::{Config, Pallet};
+pub mod v1;
 
 /// Type used to encode the number of references an account has.
 type RefCount = u32;
