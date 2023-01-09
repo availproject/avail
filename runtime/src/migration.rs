@@ -20,7 +20,6 @@ use log;
 use pallet_nomination_pools::{
 	MaxPoolMembers, MaxPoolMembersPerPool, MaxPools, MinCreateBond, MinJoinBond, Pallet,
 };
-use sp_std::prelude::*;
 
 use crate::Weight;
 

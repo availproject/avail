@@ -34,7 +34,7 @@ pub use frame_support::{
 	parameter_types,
 	traits::{
 		ConstU32, Currency, EitherOfDiverse, EqualPrivilegeOnly, Everything, ExtrinsicCall,
-		Imbalance, KeyOwnerProofSystem, LockIdentifier, OnUnbalanced, Randomness, TryState as _,
+		Imbalance, KeyOwnerProofSystem, LockIdentifier, OnUnbalanced, Randomness,
 		U128CurrencyToVote,
 	},
 	weights::{
