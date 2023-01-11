@@ -36,7 +36,7 @@
 
 use std::sync::Arc;
 
-use da_runtime::{Block, BlockNumber, Hash};
+use da_runtime::{Block, BlockNumber, Hash, Runtime};
 use jsonrpsee::RpcModule;
 use sc_client_api::BlockBackend;
 use sc_consensus_babe::{BabeConfiguration, Epoch};
@@ -182,7 +182,7 @@ pub fn create_full(
 	io.merge(StateMigration::new(client.clone(), backend, deny_unsafe).into_rpc())?;
 	// io.merge(Dev::new(client, deny_unsafe).into_rpc())?;
 
-	// io.merge(Kate::<FullClient, Block>::new(client.clone()).into_rpc())?;
+	io.merge(Kate::<_, _, Runtime>::new(client.clone()).into_rpc())?;
 
 	Ok(io)
 }
