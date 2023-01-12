@@ -910,19 +910,22 @@ mod tests {
 		});
 	}
 
-	#[ignore]
 	#[test]
 	fn block_weight_limit_enforced() {
 		let mut t = new_test_ext(10000);
+
 		// on_initialize weight + base block execution weight
 		let block_weights = <Runtime as frame_system::Config>::BlockWeights::get();
 		let base_block_weight = Weight::from_ref_time(175) + block_weights.base_block;
-		let limit = block_weights.get(DispatchClass::Normal).max_total.unwrap() - base_block_weight;
+		let limit = block_weights.get(DispatchClass::Normal).max_total.unwrap();
+
 		let call = RuntimeCall::Balances(BalancesCall::transfer { dest: 33, value: 0 });
-		let cxt_weight = TestXt::new(call.clone(), sign_extra(1, 0, 0))
+		let call_weight = TestXt::new(call.clone(), sign_extra(1, 0, 0))
 			.get_dispatch_info()
 			.weight;
-		let num_to_exhaust_block = limit.ref_time() / cxt_weight.ref_time();
+		let extrinsic_weight = call_weight + EXTRINSIC_BASE_COST;
+		let num_to_exhaust_block = limit.ref_time() / extrinsic_weight.ref_time();
+
 		t.execute_with(|| {
 			Executive::initialize_block(&Header::new(
 				1,
@@ -939,8 +942,6 @@ mod tests {
 
 			for nonce in 0..=num_to_exhaust_block {
 				let xt = TestXt::new(call.clone(), sign_extra(1, nonce.into(), 0));
-				let xt_weight = xt.get_dispatch_info().weight;
-				assert_eq!(xt_weight, cxt_weight);
 
 				let res = Executive::apply_extrinsic(xt);
 				if nonce != num_to_exhaust_block {
@@ -952,7 +953,7 @@ mod tests {
 					let block_total_weight = block_weight.total();
 					//--------------------- on_initialize + block_execution + extrinsic_base weight
 					let expected_total_weight =
-						(xt_weight + EXTRINSIC_BASE_COST) * (nonce + 1) + base_block_weight;
+						(call_weight + EXTRINSIC_BASE_COST) * (nonce + 1) + base_block_weight;
 					assert_eq!(block_total_weight, expected_total_weight);
 					assert_eq!(
 						<frame_system::Pallet<Runtime>>::extrinsic_index(),
