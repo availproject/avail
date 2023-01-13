@@ -1,4 +1,5 @@
 use std::{
+	marker::{PhantomData, Sync},
 	result::Result as AvailResult,
 	sync::{Arc, RwLock},
 };
@@ -27,6 +28,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, Extrinsic, Header},
 	AccountId32, MultiAddress, MultiSignature,
 };
+use submitted_data::Filter;
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
 pub type CallOf<Block> = <<Block as BlockT>::Extrinsic as Extrinsic>::Call;
@@ -35,7 +37,7 @@ pub type CallOf<Block> = <<Block as BlockT>::Extrinsic as Extrinsic>::Call;
 pub trait KateApi<Block, SDFilter>
 where
 	Block: BlockT,
-	SDFilter: submitted_data::Filter<CallOf<Block>>,
+	SDFilter: Filter<CallOf<Block>>,
 {
 	#[method(name = "kate_queryAppData")]
 	fn query_app_data(
@@ -54,19 +56,31 @@ where
 	fn query_data_proof(&self, data_index: u32, at: Option<HashOf<Block>>) -> RpcResult<DataProof>;
 }
 
-pub struct Kate<Client, Block: BlockT> {
+pub struct Kate<Client, Block: BlockT, SDFilter: Filter<CallOf<Block>>> {
 	client: Arc<Client>,
 	block_ext_cache: RwLock<LruCache<Block::Hash, (Vec<BlsScalar>, BlockDimensions)>>,
+	filter: PhantomData<SDFilter>,
 }
 
-impl<Client, Block> Kate<Client, Block>
+unsafe impl<Client, Block: BlockT, SDFilter: Filter<CallOf<Block>>> Send
+	for Kate<Client, Block, SDFilter>
+{
+}
+unsafe impl<Client, Block: BlockT, SDFilter: Filter<CallOf<Block>>> Sync
+	for Kate<Client, Block, SDFilter>
+{
+}
+
+impl<Client, Block, SDFilter> Kate<Client, Block, SDFilter>
 where
 	Block: BlockT,
+	SDFilter: Filter<CallOf<Block>>,
 {
 	pub fn new(client: Arc<Client>) -> Self {
 		Self {
 			client,
 			block_ext_cache: RwLock::new(LruCache::new(2048)), // 524288 bytes per block, ~1Gb max size
+			filter: Default::default(),
 		}
 	}
 }
@@ -94,7 +108,7 @@ macro_rules! internal_err {
 	}}
 }
 
-impl<Client, Block> Kate<Client, Block>
+impl<Client, Block, SDFilter> Kate<Client, Block, SDFilter>
 where
 	Block: BlockT,
 	Block::Extrinsic: GetAppId,
@@ -105,6 +119,7 @@ where
 		+ BlockBackend<Block>
 		+ StorageProvider<Block, sc_client_db::Backend<Block>>,
 	Client::Api: KateParamsGetter<Block>,
+	SDFilter: Filter<CallOf<Block>>,
 {
 	fn block_id(&self, at: Option<<Block as BlockT>::Hash>) -> BlockId<Block> {
 		let hash = at.unwrap_or_else(|| self.client.info().best_hash);
@@ -112,7 +127,7 @@ where
 	}
 }
 
-impl<Client, Block, SDFilter> KateApiServer<Block, SDFilter> for Kate<Client, Block>
+impl<Client, Block, SDFilter> KateApiServer<Block, SDFilter> for Kate<Client, Block, SDFilter>
 where
 	Block: BlockT,
 	Block::Extrinsic: GetAppId + ExtrinsicCall,
@@ -123,7 +138,7 @@ where
 		+ BlockBackend<Block>
 		+ StorageProvider<Block, sc_client_db::Backend<Block>>,
 	Client::Api: KateParamsGetter<Block>,
-	SDFilter: submitted_data::Filter<CallOf<Block>>,
+	SDFilter: Filter<CallOf<Block>> + 'static,
 	<<Block as BlockT>::Extrinsic as Extrinsic>::Call: Clone,
 {
 	fn query_app_data(
