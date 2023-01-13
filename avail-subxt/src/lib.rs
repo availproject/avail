@@ -18,7 +18,7 @@ pub type Signature = MultiSignature;
 pub type AccountId = AccountId32;
 pub type AccountIndex = u32;
 pub type Address = MultiAddress<AccountId, AccountIndex>;
-pub type Call = api::runtime_types::da_runtime::Call;
+pub type Call = api::runtime_types::da_runtime::RuntimeCall;
 pub type SignaturePayload = (Address, Signature, AvailExtrinsicParams);
 
 /// Avail Blockchain configuration
@@ -64,8 +64,8 @@ mod test {
 	use test_case::test_case;
 
 	use super::{
-		api::runtime_types::pallet_timestamp::pallet::Call as TimestampCall, AppUncheckedExtrinsic,
-		Call,
+		api::runtime_types::pallet_timestamp::pallet::RuntimeCall as TimestampCall,
+		AppUncheckedExtrinsic, Call,
 	};
 
 	const TIMESTAMP_1: &[u8] = &hex!("280403000b804aa9518401");
@@ -76,7 +76,7 @@ mod test {
 	}
 
 	#[test_case( TIMESTAMP_1.to_vec() => timestamp_1_call(); "Timestamp 16678173600000" )]
-	fn decode_extrinsic(encoded_ext: Vec<u8>) -> Result<Call, Error> {
+	fn decode_extrinsic(encoded_ext: Vec<u8>) -> Result<RuntimeCall, Error> {
 		<AppUncheckedExtrinsic>::decode(&mut encoded_ext.as_slice()).map(|ext| ext.function)
 	}
 }
