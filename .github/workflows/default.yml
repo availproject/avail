@@ -13,6 +13,8 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
+
       - name: Install nightly `rust-fmt` 
         uses: actions-rs/toolchain@v1
         with:
@@ -22,8 +24,6 @@ jobs:
             toolchain: nightly-2022-11-25
             components: rustfmt
             profile: minimal
-
-      - uses: actions/checkout@v2
 
       - name: Check code formatting
         uses: actions-rs/cargo@v1
@@ -40,13 +40,10 @@ jobs:
 
         # A repository can have up to 10GB of caches.
         # Check https://github.com/actions/cache for details.
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
+            ~/.cargo/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
@@ -74,19 +71,15 @@ jobs:
     needs: [lint]
     steps:
       - uses: actions/checkout@v2
-
-        # A repository can have up to 10GB of caches.
-        # Check https://github.com/actions/cache for details.
-      - uses: actions/cache@v2
+     
+      # Restore cache from `build`
+      - uses: actions/cache/restore@v3
         with:
           path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
+            ~/.cargo/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
- 
+
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
@@ -104,15 +97,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-        # A repository can have up to 10GB of caches.
-        # Check https://github.com/actions/cache for details.
-      - uses: actions/cache@v2
+      # Restore cache from `build`
+      - uses: actions/cache/restore@v3
         with:
           path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
+            ~/.cargo/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
