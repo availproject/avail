@@ -8,6 +8,8 @@ on:
     branches:
       - main
       - develop
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
   lint:
@@ -35,36 +37,58 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: [lint]
+  env:
+      CARGO_SCCACHE_COMMIT: bed5571c
+      RUSTFLAGS: "-C opt-level=3 -D warnings"
+      # MOONBEAM_LOG: info
+      # DEBUG: "test*"
     steps:
       - uses: actions/checkout@v2
 
-        # A repository can have up to 10GB of caches.
-        # Check https://github.com/actions/cache for details.
-      - uses: actions/cache@v3
+      - uses: actions/cache@v2
         with:
-          path: |
-            ~/.cargo/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
+          path: ${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
+          key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+     
       - name: Install Protoc
         uses: arduino/setup-protoc@v1
         with:
           version: '3.x'
 
-      - name: Install Rust toolchain 1.64 
-        uses: actions-rs/toolchain@v1
-        with:
-            toolchain: 1.64
-            components: clippy, llvm-tools-preview
-            default: true
-            profile: minimal
+      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
+      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
+      - name: Setup Rust toolchain
+        run: rustup show
 
-      - name: Run tests
-        uses: actions-rs/cargo@v1
+      - name: SCCache
+        run: |
+          # We altered the path to avoid old actions to overwrite it
+          SCCACHE_PATH=${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
+          SCCACHE_BIN=${SCCACHE_PATH}/bin/sccache
+          if [ ! -f $SCCACHE_BIN ]; then
+            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_PATH
+          fi
+          ls -la $SCCACHE_BIN
+          ps aux | grep sccache
+          if [[ -z `pgrep sccache` ]]; then
+            chmod +x $SCCACHE_BIN
+            $SCCACHE_BIN --start-server
+          fi
+          $SCCACHE_BIN -s
+          echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
+
+      - name: Build node 
+        run: |
+          env  
+          cargo build --workspace -p data-avail 
+      - name: Check other features
+        run: cargo check --workspace --features "runtime-benchmarks try-runtime" -p data-avail 
+      - name: Upload data-avail binary
+        uses: actions/upload-artifact@v2
         with:
-          command: build 
-          args: --workspace --features "runtime-benchmarks try-runtime" --exclude fuzzing
+          name: data-avail 
+          path: target/debug/data-avail
+
 
   unit_tests:
     runs-on: ubuntu-latest
@@ -75,51 +99,46 @@ jobs:
       # Restore cache from `build`
       - uses: actions/cache/restore@v3
         with:
-          path: |
-            ~/.cargo/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          path: ${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
+          key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: '3.x'
+
+      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
+      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
+      - name: Setup Rust toolchain
+        run: rustup show
+
+      - name: SCCache
+        run: |
+          # We altered the path to avoid old actions to overwrite it
+          SCCACHE_PATH=${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
+          SCCACHE_BIN=${SCCACHE_PATH}/bin/sccache
+          if [ ! -f $SCCACHE_BIN ]; then
+            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_PATH
+          fi
+          ls -la $SCCACHE_BIN
+          ps aux | grep sccache
+          if [[ -z `pgrep sccache` ]]; then
+            chmod +x $SCCACHE_BIN
+            $SCCACHE_BIN --start-server
+          fi
+          $SCCACHE_BIN -s
+          echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
+
 
       - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --workspace --features "runtime-benchmarks try-runtime" --exclude fuzzing
+        run: |
+          env
+          cargo test --workspace
         env:
           RUSTFLAGS: "-C instrument-coverage"
           LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
           SKIP_WASM_BUILD: true
-  
 
-  e2e_tests:
-    runs-on: ubuntu-latest
-    needs: [build]
-    steps:
-      - uses: actions/checkout@v2
-
-      # Restore cache from `build`
-      - uses: actions/cache/restore@v3
-        with:
-          path: |
-            ~/.cargo/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Run E2E SubXt tests
-        run: |
-          cargo build --features "runtime-benchmarks try-runtime" -p data-avail
-          cargo run --features "runtime-benchmarks try-runtime" -p data-avail -- --dev --tmp &
-          cargo run --manifest-path avail-subxt/Cargo.toml --example accounts_from_mnemonics.rs
-          cargo run --manifest-path avail-subxt/Cargo.toml --example headers
-          cargo run --manifest-path avail-subxt/Cargo.toml --example max_block_submit 
-          cargo run --manifest-path avail-subxt/Cargo.toml --example max_block_submit 
-          cargo run --manifest-path avail-subxt/Cargo.toml --example submit_data
-          cargo run --manifest-path avail-subxt/Cargo.toml --example submit_data_and_dispatch_data_root
-
-  post:
-    runs-on: ubuntu-latest
-    needs: [unit_tests, e2e_tests]
-    steps:
       - name: Generate test code coverage report
         run: |
           cargo +stable install --force grcov
@@ -132,3 +151,58 @@ jobs:
 
       - name: Cleanup
         run: find . -name \*.profraw -type f -exec rm -f {} +
+  
+
+  e2e_tests:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v2
+
+      # Restore cache from `build`
+      - uses: actions/cache/restore@v3
+        with:
+          path: ${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
+          key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: '3.x'
+
+      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
+      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
+      - name: Setup Rust toolchain
+        run: rustup show
+
+      - name: SCCache
+        run: |
+          # We altered the path to avoid old actions to overwrite it
+          SCCACHE_PATH=${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
+          SCCACHE_BIN=${SCCACHE_PATH}/bin/sccache
+          if [ ! -f $SCCACHE_BIN ]; then
+            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_PATH
+          fi
+          ls -la $SCCACHE_BIN
+          ps aux | grep sccache
+          if [[ -z `pgrep sccache` ]]; then
+            chmod +x $SCCACHE_BIN
+            $SCCACHE_BIN --start-server
+          fi
+          $SCCACHE_BIN -s
+          echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: data-avail 
+
+      - name: Run E2E SubXt tests
+        run: |
+          chmod uog+x data-avail
+          ./data-avail --dev --tmp &
+          cargo run --manifest-path avail-subxt/Cargo.toml --example accounts_from_mnemonics.rs
+          cargo run --manifest-path avail-subxt/Cargo.toml --example headers
+          cargo run --manifest-path avail-subxt/Cargo.toml --example max_block_submit 
+          cargo run --manifest-path avail-subxt/Cargo.toml --example max_block_submit 
+          cargo run --manifest-path avail-subxt/Cargo.toml --example submit_data
+          cargo run --manifest-path avail-subxt/Cargo.toml --example submit_data_and_dispatch_data_root
