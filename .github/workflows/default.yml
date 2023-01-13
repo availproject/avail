@@ -68,7 +68,7 @@ jobs:
 
   unit_tests:
     runs-on: ubuntu-latest
-    needs: [lint]
+    needs: [build]
     steps:
       - uses: actions/checkout@v2
      
