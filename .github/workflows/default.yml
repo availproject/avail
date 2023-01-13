@@ -10,8 +10,31 @@ on:
       - develop
 
 jobs:
-  pre:
+  lint:
     runs-on: ubuntu-latest
+    steps:
+      - name: Install nightly `rust-fmt` 
+        uses: actions-rs/toolchain@v1
+        with:
+            # NOTE: Until https://github.com/actions-rs/toolchain/pull/209 is merged,
+            # this should be synced with rust-toolchain.toml file.
+            # After merge, this section should be removed.
+            toolchain: nightly-2022-11-25
+            components: rustfmt
+            profile: minimal
+
+      - uses: actions/checkout@v2
+
+      - name: Check code formatting
+        uses: actions-rs/cargo@v1
+        with:
+          toolchain: nightly-2022-11-25
+          command: fmt
+          args: --check
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint]
     steps:
       - uses: actions/checkout@v2
 
@@ -32,16 +55,6 @@ jobs:
         with:
           version: '3.x'
 
-      - name: Install nightly `rust-fmt` 
-        uses: actions-rs/toolchain@v1
-        with:
-            # NOTE: Until https://github.com/actions-rs/toolchain/pull/209 is merged,
-            # this should be synced with rust-toolchain.toml file.
-            # After merge, this section should be removed.
-            toolchain: nightly-2022-11-25
-            components: rustfmt
-            profile: minimal
-
       - name: Install Rust toolchain 1.64 
         uses: actions-rs/toolchain@v1
         with:
@@ -50,35 +63,35 @@ jobs:
             default: true
             profile: minimal
 
-  lint:
-    runs-on: ubuntu-latest
-    needs: [pre]
-    steps:
-      - name: Check code formatting
-        uses: actions-rs/cargo@v1
-        with:
-          toolchain: nightly-2022-11-25
-          command: fmt
-          args: --check
-  build:
-    runs-on: ubuntu-latest
-    needs: [lint]
-    steps:
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
           command: build 
-          args: --workspace --features runtime-benchmarks --exclude fuzzing
+          args: --workspace --features "runtime-benchmarks try-runtime" --exclude fuzzing
 
   unit_tests:
     runs-on: ubuntu-latest
     needs: [lint]
     steps:
+      - uses: actions/checkout@v2
+
+        # A repository can have up to 10GB of caches.
+        # Check https://github.com/actions/cache for details.
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+ 
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --workspace --features runtime-benchmarks --exclude fuzzing
+          args: --workspace --features "runtime-benchmarks try-runtime" --exclude fuzzing
         env:
           RUSTFLAGS: "-C instrument-coverage"
           LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
@@ -89,6 +102,20 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     steps:
+      - uses: actions/checkout@v2
+
+        # A repository can have up to 10GB of caches.
+        # Check https://github.com/actions/cache for details.
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Run E2E SubXt tests
         run: |
           cargo build --features "runtime-benchmarks try-runtime" -p data-avail
