@@ -77,14 +77,15 @@ jobs:
         run: |
           env  
           cargo build --workspace -p data-avail 
-      - name: Check other features
-        run: cargo check --workspace --features "runtime-benchmarks try-runtime" -p data-avail 
+
       - name: Upload data-avail binary
         uses: actions/upload-artifact@v2
         with:
           name: data-avail 
           path: target/debug/data-avail
 
+      - name: Check other features
+        run: cargo check --workspace --features "runtime-benchmarks try-runtime" -p data-avail 
 
   unit_tests:
     runs-on: ubuntu-latest
@@ -106,7 +107,10 @@ jobs:
       # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
       # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
       - name: Setup Rust toolchain
-        run: rustup show
+        run: |
+          rustup show
+          rustup update nightly-2022-09-22
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2022-09-22
 
       - name: SCCache
         run: |
@@ -169,7 +173,10 @@ jobs:
       # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
       # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
       - name: Setup Rust toolchain
-        run: rustup show
+        run: |
+          rustup show
+          rustup update nightly-2022-09-22
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2022-09-22
 
       - name: SCCache
         run: |
