@@ -46,7 +46,7 @@ jobs:
 
       - uses: actions/cache@v3
         with:
-          path: ${{ SCCACHE_DIR }}
+          path: ${{ env.SCCACHE_DIR }}
           key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
      
       - name: Install Protoc
@@ -102,7 +102,7 @@ jobs:
       # Restore cache from `build`
       - uses: actions/cache/restore@v3
         with:
-          path: ${{ SCCACHE_DIR }} 
+          path: ${{ env.SCCACHE_DIR }} 
           key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
 
       - name: Install Protoc
@@ -170,7 +170,7 @@ jobs:
       # Restore cache from `build`
       - uses: actions/cache/restore@v3
         with:
-          path: ${{ SCCACHE_DIR }}
+          path: ${{ env.SCCACHE_DIR }}
           key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
 
       - name: Install Protoc
