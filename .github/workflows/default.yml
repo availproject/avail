@@ -10,6 +10,8 @@ on:
       - develop
 env:
   BUILD_TOOLCHAIN: nightly-2022-09-22
+  SCCACHE_DIR: ${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
+  SCCACHE_BIN: ${SCCACHE_DIR}/bin/sccache
 
 jobs:
   lint:
@@ -66,10 +68,10 @@ jobs:
       - name: SCCache
         run: |
           # We altered the path to avoid old actions to overwrite it
-          SCCACHE_PATH=${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
-          SCCACHE_BIN=${SCCACHE_PATH}/bin/sccache
+          # export SCCACHE_DIR=${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
+          # export SCCACHE_BIN=${SCCACHE_DIR}/bin/sccache
           if [ ! -f $SCCACHE_BIN ]; then
-            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_PATH
+            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_DIR
           fi
           ls -la $SCCACHE_BIN
           ps aux | grep sccache
@@ -124,10 +126,10 @@ jobs:
       - name: SCCache
         run: |
           # We altered the path to avoid old actions to overwrite it
-          SCCACHE_PATH=${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
-          SCCACHE_BIN=${SCCACHE_PATH}/bin/sccache
+          # SCCACHE_DIR=${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
+          # SCCACHE_BIN=${SCCACHE_DIR}/bin/sccache
           if [ ! -f $SCCACHE_BIN ]; then
-            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_PATH
+            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_DIR
           fi
           ls -la $SCCACHE_BIN
           ps aux | grep sccache
@@ -192,10 +194,10 @@ jobs:
       - name: SCCache
         run: |
           # We altered the path to avoid old actions to overwrite it
-          SCCACHE_PATH=${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
-          SCCACHE_BIN=${SCCACHE_PATH}/bin/sccache
+          # SCCACHE_DIR=${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
+          # SCCACHE_BIN=${SCCACHE_DIR}/bin/sccache
           if [ ! -f $SCCACHE_BIN ]; then
-            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_PATH
+            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_DIR
           fi
           ls -la $SCCACHE_BIN
           ps aux | grep sccache
