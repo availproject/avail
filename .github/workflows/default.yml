@@ -11,8 +11,8 @@ on:
 env:
   BUILD_TOOLCHAIN: nightly-2022-09-22
   CARGO_SCCACHE_COMMIT: bed5571c
-  SCCACHE_DIR: /home/runner/.cache/cargo-sccache-${{ env.CARGO_SCCACHE_COMMIT }}
-  SCCACHE_BIN: ${{ env.SCCACHE_DIR }}/bin/sccache
+  SCCACHE_DIR: /home/runner/.cache/cargo-sccache-bed5571c
+  SCCACHE_BIN: /home/runner/.cache/cargo-sccache-bed5571c/bin/sccache
 
 jobs:
   lint:
