@@ -9,7 +9,7 @@ on:
       - main
       - develop
 env:
-  WASM_BUILD_TOOLCHAIN: nightly-2022-09-22
+  BUILD_TOOLCHAIN: nightly-2022-09-22
 
 jobs:
   lint:
@@ -17,21 +17,21 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install nightly ${{ env.WASM_BUILD_TOOLCHAIN }}
+      - name: Install nightly ${{ env.BUILD_TOOLCHAIN }}
         uses: actions-rs/toolchain@v1
         with:
             # NOTE: Until https://github.com/actions-rs/toolchain/pull/209 is merged,
             # this should be synced with rust-toolchain.toml file.
             # After merge, this section should be removed.
             # toolchain: nightly-2022-11-25
-            toolchain: ${{ env.WASM_BUILD_TOOLCHAIN }}
+            toolchain: ${{ env.BUILD_TOOLCHAIN }}
             components: rustfmt
             profile: minimal
 
       - name: Check code formatting
         uses: actions-rs/cargo@v1
         with:
-          toolchain: ${{ env.WASM_BUILD_TOOLCHAIN }}
+          toolchain: ${{ env.BUILD_TOOLCHAIN }}
           command: fmt
           args: --check
 
@@ -58,10 +58,11 @@ jobs:
       # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
       - name: Setup Rust toolchain
         run: |
-          rustup show
-          rustup toolchain install nightly
-          rustup default nightly
-          rustup target add wasm32-unknown-unknown --toolchain nightly
+            curl https://sh.rustup.rs -sSf | sh -s -- -y
+            source "$HOME/.cargo/env"
+            rustup toolchain install nightly
+            rustup default nightly
+            rustup target add wasm32-unknown-unknown --toolchain nightly
 
       - name: SCCache
         run: |
@@ -81,12 +82,9 @@ jobs:
           echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
 
       - name: Build node 
-        run: |
-          env
-          rustup toolchain install nightly
-          rustup default nightly
-          rustup target add wasm32-unknown-unknown --toolchain nightly
-          cargo build --workspace -p data-avail 
+        run: cargo build --release -p data-avail
+        env:
+          SKIP_WASM_BUILD: true
 
       - name: Upload data-avail binary
         uses: actions/upload-artifact@v2
@@ -118,10 +116,11 @@ jobs:
       # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
       - name: Setup Rust toolchain
         run: |
-          rustup show
-          rustup toolchain install nightly
-          rustup default nightly
-          rustup target add wasm32-unknown-unknown --toolchain nightly
+            curl https://sh.rustup.rs -sSf | sh -s -- -y
+            source "$HOME/.cargo/env"
+            rustup toolchain install nightly
+            rustup default nightly
+            rustup target add wasm32-unknown-unknown --toolchain nightly
 
       - name: SCCache
         run: |
@@ -185,10 +184,11 @@ jobs:
       # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
       - name: Setup Rust toolchain
         run: |
-          rustup show
-          rustup toolchain install nightly
-          rustup default nightly
-          rustup target add wasm32-unknown-unknown --toolchain nightly
+            curl https://sh.rustup.rs -sSf | sh -s -- -y
+            source "$HOME/.cargo/env"
+            rustup toolchain install nightly
+            rustup default nightly
+            rustup target add wasm32-unknown-unknown --toolchain nightly
 
       - name: SCCache
         run: |
