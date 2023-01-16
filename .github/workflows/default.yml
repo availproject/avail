@@ -9,7 +9,7 @@ on:
       - main
       - develop
 env:
-  WASM_BUILD_TOOLCHAIN=nightly-2022-09-22
+  WASM_BUILD_TOOLCHAIN: nightly-2022-09-22
 
 jobs:
   lint:
