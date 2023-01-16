@@ -40,7 +40,6 @@ jobs:
     needs: [lint]
     env:
       CARGO_SCCACHE_COMMIT: bed5571c
-      RUSTFLAGS: "-C opt-level=3 -D warnings"
     steps:
       - uses: actions/checkout@v2
 
