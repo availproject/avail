@@ -8,6 +8,8 @@ on:
     branches:
       - main
       - develop
+env:
+  WASM_BUILD_TOOLCHAIN=nightly-2022-09-22
 
 jobs:
   lint:
@@ -21,14 +23,15 @@ jobs:
             # NOTE: Until https://github.com/actions-rs/toolchain/pull/209 is merged,
             # this should be synced with rust-toolchain.toml file.
             # After merge, this section should be removed.
-            toolchain: nightly-2022-11-25
+            # toolchain: nightly-2022-11-25
+            toolchain: ${{ env.WASM_BUILD_TOOLCHAIN }}
             components: rustfmt
             profile: minimal
 
       - name: Check code formatting
         uses: actions-rs/cargo@v1
         with:
-          toolchain: nightly-2022-11-25
+          toolchain: ${{ env.WASM_BUILD_TOOLCHAIN }}
           command: fmt
           args: --check
 
@@ -109,8 +112,8 @@ jobs:
       - name: Setup Rust toolchain
         run: |
           rustup show
-          rustup update nightly-2022-09-22
-          rustup target add wasm32-unknown-unknown --toolchain nightly-2022-09-22
+          rustup update $WASM_BUILD_TOOLCHAIN
+          rustup target add wasm32-unknown-unknown --toolchain $WASM_BUILD_TOOLCHAIN
 
       - name: SCCache
         run: |
@@ -175,8 +178,8 @@ jobs:
       - name: Setup Rust toolchain
         run: |
           rustup show
-          rustup update nightly-2022-09-22
-          rustup target add wasm32-unknown-unknown --toolchain nightly-2022-09-22
+          rustup update $WASM_BUILD_TOOLCHAIN
+          rustup target add wasm32-unknown-unknown --toolchain $WASM_BUILD_TOOLCHAIN
 
       - name: SCCache
         run: |
