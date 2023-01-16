@@ -44,9 +44,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
-          path: ${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
+          path: ${{ SCCACHE_DIR }}
           key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
      
       - name: Install Protoc
@@ -67,8 +67,6 @@ jobs:
       - name: SCCache
         run: |
           # We altered the path to avoid old actions to overwrite it
-          # export SCCACHE_DIR=${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
-          # export SCCACHE_BIN=${SCCACHE_DIR}/bin/sccache
           if [ ! -f $SCCACHE_BIN ]; then
             cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_DIR
           fi
@@ -104,7 +102,7 @@ jobs:
       # Restore cache from `build`
       - uses: actions/cache/restore@v3
         with:
-          path: ${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
+          path: ${{ SCCACHE_DIR }} 
           key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
 
       - name: Install Protoc
@@ -172,7 +170,7 @@ jobs:
       # Restore cache from `build`
       - uses: actions/cache/restore@v3
         with:
-          path: ${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
+          path: ${{ SCCACHE_DIR }}
           key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
 
       - name: Install Protoc
