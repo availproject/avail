@@ -87,8 +87,8 @@ jobs:
       - name: Upload data-avail binary
         uses: actions/upload-artifact@v2
         with:
-          name: data-avail 
-          path: target/debug/data-avail
+          name: data-avail
+          path: target/release/data-avail
 
       - name: Check other features
         run: cargo check --workspace --features "runtime-benchmarks try-runtime" -p data-avail 
@@ -207,7 +207,7 @@ jobs:
 
       - uses: actions/download-artifact@v2
         with:
-          name: data-avail 
+          name: data-avail
 
       - name: Run E2E SubXt tests
         run: |
