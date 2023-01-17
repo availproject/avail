@@ -91,7 +91,7 @@ jobs:
           path: target/release/data-avail
 
       - name: Display SCCache Stats
-        run: sccache --show-stats
+        run: ${{ env.SCCACHE_BIN }} --show-stats
 
       - name: Check other features
         run: cargo check --workspace --features "runtime-benchmarks try-runtime" -p data-avail 
@@ -200,5 +200,5 @@ jobs:
           cargo run --manifest-path avail-subxt/Cargo.toml --example submit_data_and_dispatch_data_root
 
       - name: Display SCCache Stats
-        run: sccache --show-stats
+        run: ${{ env.SCCACHE_BIN }} --show-stats
 
