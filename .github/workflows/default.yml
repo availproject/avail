@@ -80,7 +80,7 @@ jobs:
           echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
 
       - name: Build node 
-        run: cargo build -p data-avail
+        run: cargo build --release -p data-avail
         #env:
         #  SKIP_WASM_BUILD: true
 
@@ -94,7 +94,7 @@ jobs:
         run: ${{ env.SCCACHE_BIN }} --show-stats
 
       - name: Check other features
-        run: cargo check --workspace --features "runtime-benchmarks try-runtime" -p data-avail 
+        run: cargo check --release --workspace --features "runtime-benchmarks try-runtime" -p data-avail 
 
   unit_tests:
     runs-on: ubuntu-latest
@@ -126,7 +126,7 @@ jobs:
       - name: Run tests
         run: |
           env
-          cargo test --workspace
+          cargo test --release --workspace
         env:
           RUSTFLAGS: "-C instrument-coverage"
           LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
@@ -192,12 +192,12 @@ jobs:
         run: |
           chmod uog+x data-avail
           ./data-avail --dev --tmp &
-          cargo run --manifest-path avail-subxt/Cargo.toml --example accounts_from_mnemonics.rs
-          cargo run --manifest-path avail-subxt/Cargo.toml --example headers
-          cargo run --manifest-path avail-subxt/Cargo.toml --example max_block_submit 
-          cargo run --manifest-path avail-subxt/Cargo.toml --example max_block_submit 
-          cargo run --manifest-path avail-subxt/Cargo.toml --example submit_data
-          cargo run --manifest-path avail-subxt/Cargo.toml --example submit_data_and_dispatch_data_root
+          cargo run --release --manifest-path avail-subxt/Cargo.toml --example accounts_from_mnemonics.rs
+          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example headers
+          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example max_block_submit 
+          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example max_block_submit 
+          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data
+          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data_and_dispatch_data_root
 
       - name: Display SCCache Stats
         run: ${{ env.SCCACHE_BIN }} --show-stats
