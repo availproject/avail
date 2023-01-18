@@ -3,7 +3,7 @@ use avail_subxt::{
 	api::{
 		self,
 		runtime_types::{
-			da_control::pallet::Call as DaCall, frame_support::storage::bounded_vec::BoundedVec,
+			da_control::pallet::Call as DaCall, sp_core::bounded::bounded_vec::BoundedVec,
 		},
 	},
 	build_client,

@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use anyhow::Result;
 use avail_subxt::{
-	api::{self, runtime_types::frame_support::storage::bounded_vec::BoundedVec},
+	api::{self, runtime_types::sp_core::bounded::bounded_vec::BoundedVec},
 	build_client,
 	primitives::AvailExtrinsicParams,
 	Opts,
