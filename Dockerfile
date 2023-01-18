@@ -15,7 +15,7 @@ RUN --mount=type=cache,id=build_apt,target=/var/cache/apt \
 	rustup default nightly && \
 	mkdir -p /avail
 
-ARG AVAIL_TAG=v1.3.0-rc3
+ARG AVAIL_TAG=v1.4.0-rc1
 
 RUN \
 	# Build DA \
