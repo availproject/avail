@@ -135,7 +135,7 @@ jobs:
       - name: Generate test code coverage report
         run: |
           cargo +stable install --force grcov
-          grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o lcov.info
+          grcov . -s . --binary-path ./target/release/ -t lcov --branch --ignore-not-existing -o lcov.info
 
       - name: Upload test code coverage report to codecov.io
         uses: codecov/codecov-action@v2
@@ -192,10 +192,11 @@ jobs:
         run: |
           chmod uog+x data-avail
           ./data-avail --dev --tmp &
-          cargo run --release --manifest-path avail-subxt/Cargo.toml --example accounts_from_mnemonics.rs
+          sleep 5
+          cargo run --release --manifest-path avail-subxt/Cargo.toml --example accounts_from_mnemonics
+          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example da_bridge_actor 
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example headers
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example max_block_submit 
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example max_block_submit 
+          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example max_block_submit
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data_and_dispatch_data_root
 
