@@ -1511,7 +1511,7 @@ dependencies = [
 [[package]]
 name = "da-primitives"
 version = "0.4.2"
-source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.2#d94ec5cb79aee3e6eb2c93235b44a08b7ce69450"
+source = "git+https://github.com/maticnetwork/avail-core?tag=kate-recovery/v0.8.0#4c32cbeaf24abd7707a104b3f1e89679c0d7462e"
 dependencies = [
  "beefy-merkle-tree",
  "derive_more",
@@ -1616,7 +1616,7 @@ dependencies = [
 
 [[package]]
 name = "data-avail"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
  "clap 4.0.29",
  "clap_complete",
@@ -3678,8 +3678,8 @@ dependencies = [
 
 [[package]]
 name = "kate"
-version = "0.5.3"
-source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.2#d94ec5cb79aee3e6eb2c93235b44a08b7ce69450"
+version = "0.6.0"
+source = "git+https://github.com/maticnetwork/avail-core?tag=kate-recovery/v0.8.0#4c32cbeaf24abd7707a104b3f1e89679c0d7462e"
 dependencies = [
  "da-primitives",
  "derive_more",
@@ -3705,8 +3705,8 @@ dependencies = [
 
 [[package]]
 name = "kate-recovery"
-version = "0.7.1"
-source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.2#d94ec5cb79aee3e6eb2c93235b44a08b7ce69450"
+version = "0.8.0"
+source = "git+https://github.com/maticnetwork/avail-core?tag=kate-recovery/v0.8.0#4c32cbeaf24abd7707a104b3f1e89679c0d7462e"
 dependencies = [
  "dusk-bytes",
  "dusk-plonk",
