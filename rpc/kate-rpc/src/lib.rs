@@ -160,18 +160,19 @@ where
 			.block(&block_id)
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
 			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
+
 		let block_hash = signed_block.block.header().hash();
+
+		if self.client.info().finalized_number < *signed_block.block.header().number() {
+			return Err(internal_err!(
+				"Requested block {block_hash} is not finalized"
+			));
+		}
 
 		let mut block_ext_cache = self
 			.block_ext_cache
 			.write()
 			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
-
-		let block_length: BlockLength = self
-			.client
-			.runtime_api()
-			.get_block_length(&block_id)
-			.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
 		if !block_ext_cache.contains(&block_hash) {
 			// build block data extension and cache it
@@ -191,6 +192,12 @@ where
 				.runtime_api()
 				.get_babe_vrf(&block_id)
 				.map_err(|e| internal_err!("Babe VRF not found for block {}: {:?}", block_id, e))?;
+
+			let block_length: BlockLength =
+				self.client
+					.runtime_api()
+					.get_block_length(&block_id)
+					.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
 			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
 				block_length.rows,
@@ -231,18 +238,19 @@ where
 			.block(&block_id)
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
 			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
+
 		let block_hash = signed_block.block.header().hash();
+
+		if self.client.info().finalized_number < *signed_block.block.header().number() {
+			return Err(internal_err!(
+				"Requested block {block_hash} is not finalized"
+			));
+		}
 
 		let mut block_ext_cache = self
 			.block_ext_cache
 			.write()
 			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
-
-		let block_length: BlockLength = self
-			.client
-			.runtime_api()
-			.get_block_length(&block_id)
-			.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
 		if !block_ext_cache.contains(&block_hash) {
 			// build block data extension and cache it
@@ -255,6 +263,12 @@ where
 					data: e.encode(),
 				})
 				.collect();
+
+			let block_length: BlockLength =
+				self.client
+					.runtime_api()
+					.get_block_length(&block_id)
+					.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
 			// Use Babe's VRF
 			let seed: [u8; 32] = self
@@ -315,18 +329,19 @@ where
 			.block(&block_id)
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
 			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
+
 		let block_hash = signed_block.block.header().hash();
+
+		if self.client.info().finalized_number < *signed_block.block.header().number() {
+			return Err(internal_err!(
+				"Requested block {block_hash} is not finalized"
+			));
+		}
 
 		let mut block_ext_cache = self
 			.block_ext_cache
 			.write()
 			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
-
-		let block_length: BlockLength = self
-			.client
-			.runtime_api()
-			.get_block_length(&block_id)
-			.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
 		if !block_ext_cache.contains(&block_hash) {
 			// build block data extension and cache it
@@ -339,6 +354,12 @@ where
 					data: e.encode(),
 				})
 				.collect();
+
+			let block_length: BlockLength =
+				self.client
+					.runtime_api()
+					.get_block_length(&block_id)
+					.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
 			// Use Babe's VRF
 			let seed: [u8; 32] = self
