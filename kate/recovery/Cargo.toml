@@ -1,6 +1,6 @@
 [package]
 name = "kate-recovery"
-version = "0.7.1"
+version = "0.8.0"
 authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
 edition = "2018"
 

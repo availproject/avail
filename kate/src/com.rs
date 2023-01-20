@@ -77,6 +77,27 @@ fn app_extrinsics_group_by_app_id(extrinsics: &[AppExtrinsic]) -> Vec<(AppId, Ve
 
 #[cfg(feature = "std")]
 pub fn scalars_to_rows(
+	rows: &[u32],
+	dimensions: &matrix::Dimensions,
+	data: &[BlsScalar],
+) -> Vec<Option<Vec<u8>>> {
+	let extended_rows = BlockLengthRows(dimensions.extended_rows());
+	let cols = BlockLengthColumns(dimensions.cols() as u32);
+	dimensions
+		.iter_extended_rows()
+		.map(|i| {
+			rows.contains(&i).then(|| {
+				row(data, i as usize, cols, extended_rows)
+					.iter()
+					.flat_map(BlsScalar::to_bytes)
+					.collect::<Vec<u8>>()
+			})
+		})
+		.collect::<Vec<Option<Vec<u8>>>>()
+}
+
+#[cfg(feature = "std")]
+pub fn scalars_to_app_rows(
 	app_id: u32,
 	index: &index::AppDataIndex,
 	dimensions: &matrix::Dimensions,
@@ -815,7 +836,7 @@ mod tests {
 		let extended_dims = dims.try_into().unwrap();
 		let commitments = commitments::from_slice(&commitments).unwrap();
 		for xt in xts {
-			let rows = &scalars_to_rows(xt.app_id.0, &index, &extended_dims, &matrix);
+			let rows = &scalars_to_app_rows(xt.app_id.0, &index, &extended_dims, &matrix);
 			let (_, missing) = commitments::verify_equality(&public_params, &commitments, rows, &index, &extended_dims, xt.app_id.0).unwrap();
 			prop_assert!(missing.is_empty());
 		}
@@ -833,7 +854,7 @@ mod tests {
 		let extended_dims =  dims.try_into().unwrap();
 		let commitments = commitments::from_slice(&commitments).unwrap();
 		for xt in xts {
-			let mut rows = scalars_to_rows(xt.app_id.0, &index, &extended_dims, &matrix);
+			let mut rows = scalars_to_app_rows(xt.app_id.0, &index, &extended_dims, &matrix);
 			let app_row_index = rows.iter().position(Option::is_some).unwrap();
 			rows.remove(app_row_index);
 			let (_, missing) = commitments::verify_equality(&public_params, &commitments, &rows,&index,&extended_dims,xt.app_id.0).unwrap();
