@@ -25,9 +25,9 @@ frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 
 # Polygon Primitives
-da-primitives = { git="https://github.com/maticnetwork/avail-core", version = "0.4.2", tag = "da-primitives/v0.4.2" }
-kate = { git="https://github.com/maticnetwork/avail-core", version = "0.5.3", tag = "da-primitives/v0.4.2" }
-kate-recovery = { git="https://github.com/maticnetwork/avail-core", version = "0.7.1", tag = "da-primitives/v0.4.2" }
+da-primitives = { git="https://github.com/maticnetwork/avail-core", version = "0.4.2", tag = "kate-recovery/v0.8.0" }
+kate = { git="https://github.com/maticnetwork/avail-core", version = "0.6.0", tag = "kate-recovery/v0.8.0" }
+kate-recovery = { git="https://github.com/maticnetwork/avail-core", version = "0.8.0", tag = "kate-recovery/v0.8.0" }
 
 
 # Nomad

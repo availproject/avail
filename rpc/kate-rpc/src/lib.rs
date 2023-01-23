@@ -39,6 +39,13 @@ where
 	Block: BlockT,
 	SDFilter: Filter<CallOf<Block>>,
 {
+	#[method(name = "kate_queryRows")]
+	fn query_rows(
+		&self,
+		rows: Vec<u32>,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<Vec<Option<Vec<u8>>>>;
+
 	#[method(name = "kate_queryAppData")]
 	fn query_app_data(
 		&self,
@@ -141,9 +148,9 @@ where
 	SDFilter: Filter<CallOf<Block>> + 'static,
 	<<Block as BlockT>::Extrinsic as Extrinsic>::Call: Clone,
 {
-	fn query_app_data(
+	fn query_rows(
 		&self,
-		app_id: AppId,
+		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<Vec<u8>>>> {
 		let block_id = self.block_id(at);
@@ -153,18 +160,19 @@ where
 			.block(&block_id)
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
 			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
+
 		let block_hash = signed_block.block.header().hash();
+
+		if self.client.info().finalized_number < *signed_block.block.header().number() {
+			return Err(internal_err!(
+				"Requested block {block_hash} is not finalized"
+			));
+		}
 
 		let mut block_ext_cache = self
 			.block_ext_cache
 			.write()
 			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
-
-		let block_length: BlockLength = self
-			.client
-			.runtime_api()
-			.get_block_length(&block_id)
-			.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
 		if !block_ext_cache.contains(&block_hash) {
 			// build block data extension and cache it
@@ -177,6 +185,90 @@ where
 					data: e.encode(),
 				})
 				.collect();
+
+			// Use Babe's VRF
+			let seed: [u8; 32] = self
+				.client
+				.runtime_api()
+				.get_babe_vrf(&block_id)
+				.map_err(|e| internal_err!("Babe VRF not found for block {}: {:?}", block_id, e))?;
+
+			let block_length: BlockLength =
+				self.client
+					.runtime_api()
+					.get_block_length(&block_id)
+					.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
+
+			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
+				block_length.rows,
+				block_length.cols,
+				block_length.chunk_size(),
+				&xts_by_id,
+				seed,
+			)
+			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
+
+			let data = kate::com::par_extend_data_matrix(block_dims, &block)
+				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
+
+			block_ext_cache.put(block_hash, (data, block_dims));
+		}
+
+		let (ext_data, block_dims) = block_ext_cache
+			.get(&block_hash)
+			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
+
+		let dimensions: Dimensions = block_dims
+			.clone()
+			.try_into()
+			.map_err(|e| internal_err!("Invalid dimensions: {:?}", e))?;
+
+		Ok(kate::com::scalars_to_rows(&rows, &dimensions, ext_data))
+	}
+
+	fn query_app_data(
+		&self,
+		app_id: AppId,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<Vec<Option<Vec<u8>>>> {
+		let block_id = self.block_id(at);
+
+		let signed_block = self
+			.client
+			.block(&block_id)
+			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
+			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
+
+		let block_hash = signed_block.block.header().hash();
+
+		if self.client.info().finalized_number < *signed_block.block.header().number() {
+			return Err(internal_err!(
+				"Requested block {block_hash} is not finalized"
+			));
+		}
+
+		let mut block_ext_cache = self
+			.block_ext_cache
+			.write()
+			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
+
+		if !block_ext_cache.contains(&block_hash) {
+			// build block data extension and cache it
+			let xts_by_id: Vec<AppExtrinsic> = signed_block
+				.block
+				.extrinsics()
+				.iter()
+				.map(|e| AppExtrinsic {
+					app_id: e.app_id(),
+					data: e.encode(),
+				})
+				.collect();
+
+			let block_length: BlockLength =
+				self.client
+					.runtime_api()
+					.get_block_length(&block_id)
+					.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
 			// Use Babe's VRF
 			let seed: [u8; 32] = self
@@ -220,7 +312,7 @@ where
 			.try_into()
 			.map_err(|e| internal_err!("Invalid dimensions: {:?}", e))?;
 
-		Ok(kate::com::scalars_to_rows(
+		Ok(kate::com::scalars_to_app_rows(
 			app_id.0,
 			&app_data_index,
 			&dimensions,
@@ -237,18 +329,19 @@ where
 			.block(&block_id)
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
 			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
+
 		let block_hash = signed_block.block.header().hash();
+
+		if self.client.info().finalized_number < *signed_block.block.header().number() {
+			return Err(internal_err!(
+				"Requested block {block_hash} is not finalized"
+			));
+		}
 
 		let mut block_ext_cache = self
 			.block_ext_cache
 			.write()
 			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
-
-		let block_length: BlockLength = self
-			.client
-			.runtime_api()
-			.get_block_length(&block_id)
-			.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
 		if !block_ext_cache.contains(&block_hash) {
 			// build block data extension and cache it
@@ -261,6 +354,12 @@ where
 					data: e.encode(),
 				})
 				.collect();
+
+			let block_length: BlockLength =
+				self.client
+					.runtime_api()
+					.get_block_length(&block_id)
+					.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
 			// Use Babe's VRF
 			let seed: [u8; 32] = self
