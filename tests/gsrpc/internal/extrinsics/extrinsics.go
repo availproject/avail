@@ -49,7 +49,7 @@ func SubmitData(api *gsrpc.SubstrateAPI, data string, seed string, appID int, no
 		Nonce:              types.NewUCompactFromUInt(uint64(nonce)),
 		SpecVersion:        rv.SpecVersion,
 		Tip:                types.NewUCompactFromUInt(100),
-		AppID:              types.NewU32(uint32(appID)),
+		AppID:              types.NewUCompactFromUInt(uint64(appID)),
 		TransactionVersion: rv.TransactionVersion,
 	}
 

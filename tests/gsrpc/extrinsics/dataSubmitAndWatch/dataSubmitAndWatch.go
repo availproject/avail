@@ -1,14 +1,15 @@
 package main
 
 import (
-	"fmt"
-	"time"
 	"flag"
+	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"avail-gsrpc-examples/internal/config"
 	"avail-gsrpc-examples/internal/extrinsics"
+
 	gsrpc "github.com/centrifuge/go-substrate-rpc-client/v4"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
@@ -30,7 +31,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	
+
 	// Instantiate the API (locally)
 	api, err := gsrpc.NewSubstrateAPI(config.ApiURL)
 	// api, err := gsrpc.NewSubstrateAPI(config.Default().RPCURL)
@@ -45,10 +46,12 @@ func main() {
 
 	// Set data and appID according to need
 	size := 0
-	if config.Size == 0  || config.Size > -1 {
+	if config.Size == 0 || config.Size > -1 {
 		size = 100
 	}
-	sub_data , _:=  extrinsics.RandToken(size)
+	sub_data, _ := extrinsics.RandToken(size)
+	t_data := sub_data
+	fmt.Println("Data to be submitted: ", t_data)
 	appID := 0
 
 	//if app id is greater than 0 then it must be created before submitting data
@@ -56,7 +59,7 @@ func main() {
 		appID = config.AppID
 	}
 
-	c, err := types.NewCall(meta, "DataAvailability.submit_data", types.NewBytes([]byte(sub_data)))
+	c, err := types.NewCall(meta, "DataAvailability.submit_data", types.NewBytes([]byte(t_data)))
 	if err != nil {
 		panic(err)
 	}
@@ -98,7 +101,7 @@ func main() {
 		Nonce:              types.NewUCompactFromUInt(uint64(nonce)),
 		SpecVersion:        rv.SpecVersion,
 		Tip:                types.NewUCompactFromUInt(100),
-		AppID:              types.NewU32(uint32(appID)),
+		AppID:              types.NewUCompactFromUInt(uint64(appID)),
 		TransactionVersion: rv.TransactionVersion,
 	}
 
@@ -114,7 +117,7 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("Data submitted by Alice: %v against appID %v\n", sub_data, appID)
+	fmt.Printf("Data submitted by Alice: %v against appID %v\n", t_data, appID)
 
 	defer sub.Unsubscribe()
 	timeout := time.After(100 * time.Second)
@@ -123,6 +126,8 @@ func main() {
 		case status := <-sub.Chan():
 			if status.IsInBlock {
 				fmt.Printf("Txn inside block %v\n", status.AsInBlock.Hex())
+				hash := status.AsInBlock
+				get(hash, api, sub_data)
 			} else if status.IsFinalized {
 				fmt.Printf("Txn inside finalized block\n")
 				return
@@ -132,4 +137,31 @@ func main() {
 			return
 		}
 	}
+}
+
+func get(hash types.Hash, api *gsrpc.SubstrateAPI, data string) {
+	block, err := api.RPC.Chain.GetBlock(hash)
+	if err != nil {
+		panic(err)
+	}
+	for _, ext := range block.Block.Extrinsics {
+		if ext.Method.CallIndex.SectionIndex == 29 && ext.Method.CallIndex.MethodIndex == 1 {
+			arg := ext.Method.Args
+			str := string(arg)
+			slice := str[2:]
+			fmt.Println("string value", slice)
+			fmt.Println("data", data)
+			if slice == data {
+				fmt.Println("Data found in block")
+			}
+			// buf := bytes.NewBuffer(ext.Method.Args)
+			// encoder := scale.NewDecoder(buf)
+			// // fmt.Println("EXT Encoded value \n ", encoder)
+			// strn := fmt.Sprintf("%v", encoder)
+			// fmt.Println("Decoded string: ", strn)
+			// // enc_arg := hex.EncodeToString(arg)
+			// // fmt.Println("EXT Encoded Args \n ", enc_arg)
+		}
+	}
+
 }

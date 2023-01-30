@@ -1,22 +1,17 @@
 package main
 
 import (
-	"avail-gsrpc-examples/internal/config"
-	"avail-gsrpc-examples/internal/extrinsics"
-	"flag"
+	// "avail-gsrpc-examples/internal/config"
+	// "avail-gsrpc-examples/internal/extrinsics"
+	// "flag"
 	"fmt"
-	"log"
-	"os"
-
 	gsrpc "github.com/centrifuge/go-substrate-rpc-client/v4"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 )
 
-func submit_data(size int, ApiURL string, Seed string, AppID int) {
+func transfers(ApiURL string, Seed string) {
 
-	// This sample shows how to create a transaction to make a Avail data submission
-	// Instantiate the API (locally)
 	api, err := gsrpc.NewSubstrateAPI(ApiURL)
 	if err != nil {
 		panic(err)
@@ -26,17 +21,13 @@ func submit_data(size int, ApiURL string, Seed string, AppID int) {
 	if err != nil {
 		panic(err)
 	}
-
-	// Set data and appID according to need
-	data, _ := extrinsics.RandToken(size)
-	appID := 0
-
-	//if app id is greater than 0 then it must be created before submitting data
-	if AppID != 0 {
-		appID = AppID
+	// Create a call, transferring 12345 units to Bob
+	bob, err := types.NewAddressFromHexAccountID("0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48")
+	if err != nil {
+		panic(err)
 	}
 
-	c, err := types.NewCall(meta, "DataAvailability.submit_data", types.NewBytes([]byte(data)))
+	c, err := types.NewCall(meta, "Balances.transfer", bob, types.NewUCompactFromUInt(12345))
 	if err != nil {
 		panic(err)
 	}
@@ -78,44 +69,23 @@ func submit_data(size int, ApiURL string, Seed string, AppID int) {
 		Nonce:              types.NewUCompactFromUInt(uint64(nonce)),
 		SpecVersion:        rv.SpecVersion,
 		Tip:                types.NewUCompactFromUInt(0),
-		AppID:              types.NewUCompactFromUInt(uint64(appID)),
+		AppID:              types.NewUCompactFromUInt(uint64(0)),
 		TransactionVersion: rv.TransactionVersion,
 	}
 
-	// Sign the transaction using Alice's default account
 	err = ext.Sign(keyringPair, o)
 	if err != nil {
 		panic(err)
 	}
 
 	// Send the extrinsic
-	_, err = api.RPC.Author.SubmitAndWatchExtrinsic(ext)
+	hash, err := api.RPC.Author.SubmitExtrinsic(ext)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("Data submitted by Alice: %v against appID %v\n", data, appID)
+	fmt.Printf("Transfer sent with hash %#x\n", hash)
+
 }
 
-func main() {
 
-	var configJSON string
-	var config config.Config
-	flag.StringVar(&configJSON, "config", "", "config json file")
-	flag.Parse()
-
-	if configJSON == "" {
-		log.Println("No config file provided. Exiting...")
-		os.Exit(0)
-	}
-
-	err := config.GetConfig(configJSON)
-	if err != nil {
-		panic(err)
-	}
-	size := 0
-	if config.Size == 0  || config.Size > -1 {
-		size = 100
-	}
-	submit_data(size, config.ApiURL, config.Seed, config.AppID)
-}
