@@ -98,7 +98,7 @@ pub fn create_full(
 	backend: Arc<FullBackend>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>> {
 	use kate_rpc::{Kate, KateApiServer};
-	use pallet_mmr_rpc::{Mmr, MmrApiServer};
+	use mmr_rpc::{Mmr, MmrApiServer};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	use sc_consensus_babe_rpc::{Babe, BabeApiServer};
 	use sc_finality_grandpa_rpc::{Grandpa, GrandpaApiServer};

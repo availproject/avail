@@ -104,6 +104,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Creates an application key if `key` does not exist yet.
+		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::create_application_key())]
 		pub fn create_application_key(
 			origin: OriginFor<T>,
@@ -127,6 +128,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::submit_data(data.len() as u32))]
 		pub fn submit_data(
 			origin: OriginFor<T>,
@@ -138,6 +140,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::submit_block_length_proposal())]
 		pub fn submit_block_length_proposal(
 			origin: OriginFor<T>,

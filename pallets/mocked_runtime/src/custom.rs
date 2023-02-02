@@ -43,42 +43,49 @@ pub mod custom {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(100)]
+		#[pallet::call_index(0)]
 		pub fn some_function(origin: OriginFor<T>) -> DispatchResult {
 			// NOTE: does not make any different.
 			frame_system::ensure_signed(origin)?;
 			Ok(())
 		}
 
+		#[pallet::call_index(1)]
 		#[pallet::weight((200, DispatchClass::Operational))]
 		pub fn some_root_operation(origin: OriginFor<T>) -> DispatchResult {
 			frame_system::ensure_root(origin)?;
 			Ok(())
 		}
 
+		#[pallet::call_index(2)]
 		#[pallet::weight(0)]
 		pub fn some_unsigned_message(origin: OriginFor<T>) -> DispatchResult {
 			frame_system::ensure_none(origin)?;
 			Ok(())
 		}
 
+		#[pallet::call_index(3)]
 		#[pallet::weight(0)]
 		pub fn allowed_unsigned(origin: OriginFor<T>) -> DispatchResult {
 			frame_system::ensure_root(origin)?;
 			Ok(())
 		}
 
+		#[pallet::call_index(4)]
 		#[pallet::weight(0)]
 		pub fn unallowed_unsigned(origin: OriginFor<T>) -> DispatchResult {
 			frame_system::ensure_root(origin)?;
 			Ok(())
 		}
 
+		#[pallet::call_index(5)]
 		#[pallet::weight(0)]
 		pub fn inherent_call(origin: OriginFor<T>) -> DispatchResult {
 			let _ = frame_system::ensure_none(origin)?;
 			Ok(())
 		}
 
+		#[pallet::call_index(6)]
 		#[pallet::weight(0)]
 		pub fn calculate_storage_root(_origin: OriginFor<T>) -> DispatchResult {
 			let root = sp_io::storage::root(sp_runtime::StateVersion::V1);

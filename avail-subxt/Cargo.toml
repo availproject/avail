@@ -23,12 +23,12 @@ structopt = "0.3.25"
 anyhow = "1.0.66"
 tokio = { version = "1.21.2", features = [ "process", "fs", "rt-multi-thread"]}
 futures = "0.3.25"
-jsonrpsee = { version ="0.15.1", features = ["client", "async-client", "macros"]}
+jsonrpsee = { version ="0.16.2", features = ["client", "async-client", "macros"]}
 
 
 [dev-dependencies]
 async-std = { version = "1.9.0", features = ["attributes", "tokio1"] }
-sp-keyring = "6.0.0"
+sp-keyring = "7.0.0"
 futures = "0.3.13"
 hex-literal = "0.3.4"
 test-case = "1.2.3"

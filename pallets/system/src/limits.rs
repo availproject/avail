@@ -1,4 +1,5 @@
 // This file is part of Substrate.
+
 // Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -353,7 +354,7 @@ pub struct BlockWeights {
 impl Default for BlockWeights {
 	fn default() -> Self {
 		Self::with_sensible_defaults(
-			Weight::from_parts(constants::WEIGHT_PER_SECOND.ref_time(), u64::MAX),
+			Weight::from_parts(constants::WEIGHT_REF_TIME_PER_SECOND, u64::MAX),
 			DEFAULT_NORMAL_RATIO,
 		)
 	}
