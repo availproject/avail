@@ -282,7 +282,7 @@ where
 					e,
 					err,
 				);
-				break
+				break;
 			}
 		}
 
@@ -589,7 +589,7 @@ where
 		// The entire block should be discarded if an inherent fails to apply. Otherwise
 		// it may open an attack vector.
 		if r.is_err() && dispatch_info.class == DispatchClass::Mandatory {
-			return Err(InvalidTransaction::BadMandatory.into())
+			return Err(InvalidTransaction::BadMandatory.into());
 		}
 
 		<frame_system::Pallet<System>>::note_applied_extrinsic(&r, dispatch_info);
@@ -669,7 +669,7 @@ where
 		};
 
 		if dispatch_info.class == DispatchClass::Mandatory {
-			return Err(InvalidTransaction::MandatoryValidation.into())
+			return Err(InvalidTransaction::MandatoryValidation.into());
 		}
 
 		within_span! {

@@ -78,7 +78,11 @@ impl TransferKeepAliveBuilder {
 	/// Creates a new [`Self`] from the given client.
 	#[allow(dead_code)]
 	pub fn new(client: Arc<FullClient>, dest: AccountId, value: Balance) -> Self {
-		Self { client, dest, value }
+		Self {
+			client,
+			dest,
+			value,
+		}
 	}
 }
 

@@ -38,7 +38,9 @@ pub use frame_support::{
 		U128CurrencyToVote,
 	},
 	weights::{
-		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
+		constants::{
+			BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
+		},
 		ConstantMultiplier, IdentityFee, Weight,
 	},
 	PalletId, RuntimeDebug, StorageValue,
@@ -220,7 +222,8 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
 /// This is used to limit the maximal weight of a single extrinsic.
 const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// We allow for 2 seconds of compute with a 6 second average block time, with maximum proof size.
-const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2)).set_proof_size(u64::MAX);
+const MAXIMUM_BLOCK_WEIGHT: Weight =
+	Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2)).set_proof_size(u64::MAX);
 
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 2400;

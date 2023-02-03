@@ -291,9 +291,13 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckWeight<T> {
 #[cfg(test)]
 mod tests {
 	use da_primitives::BLOCK_CHUNK_SIZE;
-	use frame_support::{assert_err, assert_ok, dispatch::{Pays, DispatchClass}, weights::Weight};
+	use frame_support::{
+		assert_err, assert_ok,
+		dispatch::{DispatchClass, Pays},
+		weights::Weight,
+	};
 	use sp_std::marker::PhantomData;
-	
+
 	use super::*;
 	use crate::{
 		mock::{new_test_ext, System, Test, CALL},

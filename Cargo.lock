@@ -1577,6 +1577,7 @@ dependencies = [
 [[package]]
 name = "da-primitives"
 version = "0.4.2"
+source = "git+https://github.com/maticnetwork/avail-core?branch=upgrade_v0.9.37#27c6b00afd063edebc4bb11067e62b4a258300ef"
 dependencies = [
  "beefy-merkle-tree",
  "derive_more",
@@ -3839,6 +3840,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.6.0"
+source = "git+https://github.com/maticnetwork/avail-core?branch=upgrade_v0.9.37#27c6b00afd063edebc4bb11067e62b4a258300ef"
 dependencies = [
  "da-primitives",
  "derive_more",
@@ -3865,6 +3867,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.8.0"
+source = "git+https://github.com/maticnetwork/avail-core?branch=upgrade_v0.9.37#27c6b00afd063edebc4bb11067e62b4a258300ef"
 dependencies = [
  "dusk-bytes",
  "dusk-plonk",
@@ -5036,6 +5039,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.2"
+source = "git+https://github.com/maticnetwork/avail-core?branch=upgrade_v0.9.37#27c6b00afd063edebc4bb11067e62b4a258300ef"
 dependencies = [
  "ethers-signers",
  "frame-support",
@@ -5054,6 +5058,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.2"
+source = "git+https://github.com/maticnetwork/avail-core?branch=upgrade_v0.9.37#27c6b00afd063edebc4bb11067e62b4a258300ef"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -5100,6 +5105,7 @@ dependencies = [
 [[package]]
 name = "nomad-merkle"
 version = "0.1.0"
+source = "git+https://github.com/maticnetwork/avail-core?branch=upgrade_v0.9.37#27c6b00afd063edebc4bb11067e62b4a258300ef"
 dependencies = [
  "frame-support",
  "hex-literal",
@@ -5120,6 +5126,7 @@ dependencies = [
 [[package]]
 name = "nomad-signature"
 version = "0.1.0"
+source = "git+https://github.com/maticnetwork/avail-core?branch=upgrade_v0.9.37#27c6b00afd063edebc4bb11067e62b4a258300ef"
 dependencies = [
  "elliptic-curve",
  "ethers-core",

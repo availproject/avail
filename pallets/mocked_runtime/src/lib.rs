@@ -3,7 +3,8 @@ use frame_support::{
 	construct_runtime, parameter_types,
 	traits::Randomness,
 	weights::{
-		constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, IdentityFee, RuntimeDbWeight, Weight,
+		constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, IdentityFee, RuntimeDbWeight,
+		Weight,
 	},
 };
 use frame_system::{CheckEra, CheckNonce, CheckWeight};
@@ -83,7 +84,8 @@ pub const EPOCH_DURATION_IN_SLOTS: u64 = {
 };
 
 /// We allow for 2 seconds of compute with a 6 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight =  Weight::from_ref_time( WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2)).set_proof_size(u64::MAX);
+const MAXIMUM_BLOCK_WEIGHT: Weight =
+	Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2)).set_proof_size(u64::MAX);
 
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 250;

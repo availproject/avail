@@ -17,7 +17,10 @@
 
 use frame_support::{parameter_types, traits::ConstU32};
 use sp_core::H256;
-use sp_runtime::{traits::{BlakeTwo256, IdentityLookup}, Perbill };
+use sp_runtime::{
+	traits::{BlakeTwo256, IdentityLookup},
+	Perbill,
+};
 
 use crate::{self as frame_system, test_utils::TestRandomness, *};
 

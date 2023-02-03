@@ -97,8 +97,8 @@ use sp_runtime::{
 	generic,
 	traits::{
 		self, AtLeast32Bit, AtLeast32BitUnsigned, BadOrigin, BlockNumberProvider, Bounded,
-		CheckEqual, Dispatchable, Hash, Lookup, LookupError, MaybeDisplay,
-		Member, One, Saturating, SimpleBitOps, StaticLookup, Zero,
+		CheckEqual, Dispatchable, Hash, Lookup, LookupError, MaybeDisplay, Member, One, Saturating,
+		SimpleBitOps, StaticLookup, Zero,
 	},
 	DispatchError, RuntimeDebug,
 };
@@ -398,7 +398,9 @@ pub mod pallet {
 		#[cfg(feature = "std")]
 		fn integrity_test() {
 			sp_io::TestExternalities::default().execute_with(|| {
-				T::BlockWeights::get().validate().expect("The weights are invalid.");
+				T::BlockWeights::get()
+					.validate()
+					.expect("The weights are invalid.");
 			});
 		}
 	}
@@ -922,9 +924,7 @@ impl<
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
-	fn try_successful_origin() -> Result<O, ()> {
-		Ensure::try_successful_origin()
-	}
+	fn try_successful_origin() -> Result<O, ()> { Ensure::try_successful_origin() }
 }
 
 /// Ensure the origin is any `Signed` origin.
