@@ -32,6 +32,9 @@ sp-keyring = "6.0.0"
 futures = "0.3.13"
 hex-literal = "0.3.4"
 test-case = "1.2.3"
+log = "0.4.14"
+pretty_env_logger = "0.4.0"
+derive_more = "0.99.17"
 
 [features]
 default = ["api-dev"]

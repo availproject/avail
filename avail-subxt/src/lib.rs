@@ -37,6 +37,17 @@ impl Config for AvailConfig {
 	type Signature = Signature;
 }
 
+pub mod avail {
+	use super::{api, AvailConfig};
+
+	pub type Client = subxt::OnlineClient<AvailConfig>;
+	pub type TxProgress = subxt::tx::TxProgress<AvailConfig, Client>;
+	pub type TxEvents = subxt::tx::TxEvents<AvailConfig>;
+
+	pub type RuntimeCall = api::runtime_types::da_runtime::RuntimeCall;
+	pub type Bounded = api::runtime_types::frame_support::traits::preimages::Bounded<RuntimeCall>;
+}
+
 #[cfg(feature = "api-dev")]
 mod api_dev;
 #[cfg(feature = "api-dev")]
@@ -55,6 +66,30 @@ pub async fn build_client<U: AsRef<str>>(url: U) -> Result<OnlineClient<AvailCon
 	let api = OnlineClient::<AvailConfig>::from_url(url).await?;
 	api::validate_codegen(&api)?;
 	Ok(api)
+}
+
+#[macro_export]
+macro_rules! tx_send {
+	($client: expr, $call: expr, $signer: expr) => {
+		$client
+			.tx()
+			.sign_and_submit_then_watch_default($call, $signer)
+			.await?
+			.wait_for_in_block()
+			.await?
+			.wait_for_success()
+			.await?
+	};
+}
+
+#[macro_export]
+macro_rules! tx_asend {
+	($client: expr, $call: expr, $signer: expr) => {
+		$client
+			.tx()
+			.sign_and_submit_then_watch_default($call, $signer)
+			.await
+	};
 }
 
 #[cfg(test)]
