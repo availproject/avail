@@ -1,29 +1,39 @@
+use std::time::Duration;
+
 use anyhow::{ensure, Result};
 use avail_subxt::{
 	api::{
 		self,
 		council::events as CouncilEvent,
+		democracy::events as DemocracyEvent,
 		preimage::events as PreimageEvent,
 		runtime_types::{
 			frame_system::pallet::Call as SystemCall,
-			pallet_democracy::pallet::Call as DemocracyCall, sp_weights::weight_v2::Weight,
+			pallet_democracy::{pallet::Call as DemocracyCall, vote::AccountVote},
+			sp_weights::weight_v2::Weight,
 		},
+		scheduler::events as SchedulerEvent,
+		system::events as SystemEvent,
 		technical_committee::events as TechComEvent,
 	},
-	avail::{Bounded, Client, TxEvents, TxProgress},
+	avail::{Bounded, Client, TxProgress},
 	build_client, tx_asend, tx_send, AvailConfig, Call, Opts,
 };
 use codec::Encode;
 use derive_more::Constructor;
 use futures::stream::{self, StreamExt as _, TryStreamExt as _};
-use sp_keyring::AccountKeyring::{self, Alice, Bob, Charlie, Dave, Eve, Ferdie};
+use sp_keyring::AccountKeyring::{Alice, Bob, Charlie, Dave, Eve, Ferdie};
 use structopt::StructOpt;
 use subxt::{
 	ext::sp_core::{sr25519::Pair, Pair as _, H256},
 	tx::{PairSigner, Signer},
 };
 
-const THREASHOLD: u32 = 5;
+#[rustfmt::skip]
+pub mod constants {
+	pub const COUNCIL_SUPER_MAJORITY: [&'static str; 9] = [ "Alice", "Bob", "Charlie", "Dave", "Eve", "Ferdie", "Alice//stash", "Bob//stash", "Charlie//stash"];
+	pub const THREASHOLD: u32 = 5;
+}
 
 #[derive(Debug, Default, Constructor)]
 pub struct IndexedProposalContext {
@@ -38,21 +48,20 @@ pub struct ProposalContext {
 	len: u32,
 }
 
-#[derive(Debug, Default, Constructor)]
-pub struct Context {
-	council: IndexedProposalContext,
-	democracy: ProposalContext,
+/// Builds a signer from `seed`.
+fn signer_from_seed(seed: &str) -> PairSigner<AvailConfig, Pair> {
+	let pair = Pair::from_string(&format!("//{}", seed), None).expect("Valid seed .qed");
+	PairSigner::new(pair)
 }
 
 mod council {
-	use super::*;
+	use super::{constants::*, *};
 
 	pub async fn create_external_proposal(
 		client: &Client,
-		signer: AccountKeyring,
-	) -> Result<Context> {
+	) -> Result<(IndexedProposalContext, ProposalContext)> {
 		log::trace!("Creating the external proposal ...");
-		let signer = PairSigner::new(signer.pair());
+		let signer = PairSigner::new(Alice.pair());
 		let remark = b"Proposal Done".to_vec();
 
 		// 1. Push pre-image of inner call
@@ -82,7 +91,7 @@ mod council {
 		let event = tx_send!(client, &council_proposal, &signer)
 			.find_first::<CouncilEvent::Proposed>()?
 			.expect("Council proposed event is emitted .qed");
-		let context = Context::new(
+		let context = (
 			IndexedProposalContext::new(event.proposal_index, event.proposal_hash, len_bound),
 			ProposalContext::new(noted_event.hash, inner_call_len),
 		);
@@ -102,20 +111,18 @@ mod council {
 		tx_asend!(client, &vote, signer).map_err(Into::into)
 	}
 
-	pub async fn simple_majority_of_council_vote_yes(
+	pub async fn simple_majority_of_vote_yes(
 		client: &Client,
 		proposal: &IndexedProposalContext,
 	) -> Result<()> {
-		log::trace!("Council will vote proposal ...");
-		let alice_stash = Pair::from_string("//Alice//stash", None).expect("Wellknow key .qed");
-		let simple_majority_of_council = [Alice, Bob, Charlie, Dave, Eve, Ferdie]
+		log::trace!("Council will vote proposal using 3/4 of council ...");
+
+		let super_majority = COUNCIL_SUPER_MAJORITY
 			.into_iter()
-			.map(|s| s.pair())
-			.chain([alice_stash])
-			.map(|p| PairSigner::new(p))
+			.map(signer_from_seed)
 			.collect::<Vec<_>>();
 
-		let pending_txs = stream::iter(simple_majority_of_council.iter())
+		let pending_txs = stream::iter(super_majority.iter())
 			.map(|signer| vote_yes(client, signer, proposal))
 			.buffer_unordered(32)
 			.try_collect::<Vec<_>>()
@@ -131,11 +138,9 @@ mod council {
 		Ok(())
 	}
 
-	async fn close(
-		client: &Client,
-		signer: AccountKeyring,
-		proposal: &IndexedProposalContext,
-	) -> Result<TxEvents> {
+	pub async fn close(client: &Client, proposal: &IndexedProposalContext) -> Result<()> {
+		log::trace!("Closing the council proposal ...");
+
 		// TODO Calculate in advance the real weight.
 		let close_weight = Weight {
 			ref_time: 1_000_000_000,
@@ -145,17 +150,7 @@ mod council {
 			api::tx()
 				.council()
 				.close(proposal.hash, proposal.index, close_weight, proposal.len);
-		let events = tx_send!(client, &close, &PairSigner::new(signer.pair()));
-		Ok(events)
-	}
-
-	pub async fn close_and_check(
-		client: &Client,
-		signer: AccountKeyring,
-		proposal: &IndexedProposalContext,
-	) -> Result<()> {
-		log::trace!("Closing the council proposal ...");
-		let events = close(&client, signer, &proposal).await?;
+		let events = tx_send!(client, &close, &PairSigner::new(Alice.pair()));
 
 		ensure!(
 			events.has::<CouncilEvent::Closed>()?,
@@ -169,6 +164,7 @@ mod council {
 		let executed = events
 			.find_first::<CouncilEvent::Executed>()?
 			.expect("An approved proposal is always executed .qed");
+		ensure!(executed.result.is_ok(), "Council proposal fails");
 
 		log::info!(
 			"Proposal {} has been dispatched: {:?}",
@@ -180,19 +176,18 @@ mod council {
 	}
 }
 
-mod democracy {
+mod techies {
 	use super::*;
 
 	pub async fn create_fast_track_proposal(
 		client: &Client,
-		signer: AccountKeyring,
 		proposal: &ProposalContext,
 	) -> Result<IndexedProposalContext> {
-		let signer = PairSigner::new(signer.pair());
+		let signer = PairSigner::new(Alice.pair());
 		let fast_track = Call::Democracy(DemocracyCall::fast_track {
 			proposal_hash: proposal.hash,
-			voting_period: 361,
-			delay: 10,
+			voting_period: 3,
+			delay: 1,
 		});
 		let fast_track_len = fast_track.encode().len() as u32;
 
@@ -222,7 +217,10 @@ mod democracy {
 		tx_asend!(client, &vote, signer).map_err(Into::into)
 	}
 
-	pub async fn techies_votes(client: &Client, proposal: &IndexedProposalContext) -> Result<()> {
+	pub async fn super_majority_votes_yes(
+		client: &Client,
+		proposal: &IndexedProposalContext,
+	) -> Result<()> {
 		let techies = [Alice, Bob, Charlie, Dave, Eve, Ferdie]
 			.into_iter()
 			.map(|acc| PairSigner::new(acc.pair()))
@@ -244,11 +242,7 @@ mod democracy {
 		Ok(())
 	}
 
-	pub async fn close(
-		client: &Client,
-		signer: AccountKeyring,
-		proposal: &IndexedProposalContext,
-	) -> Result<TxEvents> {
+	pub async fn close(client: &Client, proposal: &IndexedProposalContext) -> Result<u32> {
 		// TODO Calculate in advance the real weight.
 		let close_weight = Weight {
 			ref_time: 1_000_000_000,
@@ -260,8 +254,121 @@ mod democracy {
 			close_weight,
 			proposal.len,
 		);
-		let events = tx_send!(client, &close, &PairSigner::new(signer.pair()));
-		Ok(events)
+		let events = tx_send!(client, &close, &PairSigner::new(Alice.pair()));
+		ensure!(
+			events.has::<TechComEvent::Approved>()?,
+			"Fast-track proposal was not approved"
+		);
+		ensure!(
+			events.has::<TechComEvent::Executed>()?,
+			"Fast-track proposal was not executed"
+		);
+		ensure!(
+			events.has::<DemocracyEvent::Started>()?,
+			"Referendum was not started"
+		);
+		let referendum_started = events
+			.find_first::<DemocracyEvent::Started>()?
+			.expect("Referendum was started .qed");
+		log::info!("Referendum started {:?}", referendum_started);
+
+		Ok(referendum_started.ref_index)
+	}
+}
+
+mod democracy {
+
+	use anyhow::anyhow;
+	use async_std::future;
+	use avail_subxt::{
+		avail::AVL,
+		helpers::democracy::{Conviction, Vote},
+	};
+	use futures::FutureExt as _;
+
+	use super::*;
+
+	pub async fn vote_yes(client: &Client, referendum: u32) -> Result<()> {
+		let signer = PairSigner::new(Alice.pair());
+		let vote = AccountVote::Standard {
+			vote: Vote::new(true, Conviction::Locked1x).into(),
+			balance: 1_000 * AVL,
+		};
+		let vote_call = api::tx().democracy().vote(referendum, vote);
+
+		let events = tx_send!(client, &vote_call, &signer);
+		ensure!(
+			events.has::<DemocracyEvent::Voted>()?,
+			"Referendum's Vote failed"
+		);
+
+		Ok(())
+	}
+
+	type EventFilter = (
+		SystemEvent::RemarkedByRoot,
+		DemocracyEvent::Passed,
+		SchedulerEvent::Scheduled,
+		SchedulerEvent::Dispatched,
+	);
+
+	pub async fn wait_passed_and_dispatch_or_timeout(
+		client: &Client,
+		referendum: u32,
+		duration: Duration,
+	) -> Result<()> {
+		future::timeout(
+			duration,
+			wait_passed_and_dispatch(client, referendum).fuse(),
+		)
+		.await??;
+		Ok(())
+	}
+
+	pub async fn wait_passed_and_dispatch(client: &Client, referendum: u32) -> Result<()> {
+		let mut events = client
+			.events()
+			.subscribe()
+			.await?
+			.filter_events::<EventFilter>();
+
+		loop {
+			let event = events
+				.next()
+				.await
+				.ok_or(anyhow!("Empty filtered event"))??
+				.event;
+			match event {
+				(Some(SystemEvent::RemarkedByRoot { hash }), ..) => {
+					log::info!("Remarked by Root with hash {}", hash);
+					return Ok(());
+				},
+				(None, Some(DemocracyEvent::Passed { ref_index }), ..) => {
+					log::trace!("Democracy Referendum {} passed", ref_index)
+				},
+				(None, None, Some(SchedulerEvent::Scheduled { when, index }), ..) => {
+					log::trace!("Referendum {} was scheduled on {}", index, when)
+				},
+				(
+					None,
+					None,
+					None,
+					Some(SchedulerEvent::Dispatched {
+						task,
+						id: _,
+						result,
+					}),
+				) => {
+					log::trace!(
+						"Referendum {} was dispatched at {}: {:?}",
+						referendum,
+						task.0,
+						result
+					)
+				},
+				_ => {},
+			}
+		}
 	}
 }
 
@@ -269,22 +376,30 @@ mod democracy {
 /// Use `RUST_LOG="democracy_external=trace"` to see traces.
 #[async_std::main]
 async fn main() -> Result<()> {
-	use crate::{council::*, democracy::*};
+	use crate::{council, democracy, techies};
 
 	pretty_env_logger::init();
 	let args = Opts::from_args();
 	let client = build_client(args.ws).await?;
 
 	// In Council,  create, approve and execute ...
-	let context = create_external_proposal(&client, Alice).await?;
-	simple_majority_of_council_vote_yes(&client, &context.council).await?;
-	close_and_check(&client, Alice, &context.council).await?;
+	let (council_proposal, proposal) = council::create_external_proposal(&client).await?;
+	council::simple_majority_of_vote_yes(&client, &council_proposal).await?;
+	council::close(&client, &council_proposal).await?;
 
-	// In Democracy, external proposal is accepted.
-	// Let's fast-track it.
-	let tech_proposal = create_fast_track_proposal(&client, Alice, &context.democracy).await?;
-	techies_votes(&client, &tech_proposal).await?;
-	close(&client, Alice, &tech_proposal).await?;
+	// The technical committee do a fast-track of the proposal.
+	let tech_proposal = techies::create_fast_track_proposal(&client, &proposal).await?;
+	techies::super_majority_votes_yes(&client, &tech_proposal).await?;
+	let referendum_index = techies::close(&client, &tech_proposal).await?;
+
+	// In democracy, vote the `proposal` and wait its execution.
+	democracy::vote_yes(&client, referendum_index).await?;
+	democracy::wait_passed_and_dispatch_or_timeout(
+		&client,
+		referendum_index,
+		Duration::from_secs(2 * 60),
+	)
+	.await?;
 
 	Ok(())
 }

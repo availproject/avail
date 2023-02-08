@@ -46,12 +46,16 @@ pub mod avail {
 
 	pub type RuntimeCall = api::runtime_types::da_runtime::RuntimeCall;
 	pub type Bounded = api::runtime_types::frame_support::traits::preimages::Bounded<RuntimeCall>;
+
+	pub const AVL: u128 = 1_000_000_000_000_000_000;
 }
 
 #[cfg(feature = "api-dev")]
 mod api_dev;
 #[cfg(feature = "api-dev")]
 pub use api_dev::api;
+
+pub mod helpers;
 
 #[allow(dead_code)]
 #[derive(Debug, StructOpt)]
