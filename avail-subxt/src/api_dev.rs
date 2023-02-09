@@ -497,6 +497,22 @@ pub mod api {
 				const EVENT: &'static str = "Remarked";
 				const PALLET: &'static str = "System";
 			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			#[doc = "On on-chain remark happend called by Root."]
+			pub struct RemarkedByRoot {
+				pub hash: ::subxt::ext::sp_core::H256,
+			}
+			impl ::subxt::events::StaticEvent for RemarkedByRoot {
+				const EVENT: &'static str = "RemarkedByRoot";
+				const PALLET: &'static str = "System";
+			}
 		}
 		pub mod storage {
 			use super::runtime_types;
@@ -819,10 +835,9 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							207u8, 90u8, 59u8, 131u8, 52u8, 63u8, 89u8, 248u8, 66u8, 63u8, 205u8,
-							70u8, 223u8, 17u8, 108u8, 196u8, 68u8, 234u8, 210u8, 220u8, 121u8,
-							246u8, 14u8, 145u8, 66u8, 75u8, 44u8, 143u8, 128u8, 178u8, 171u8,
-							150u8,
+							50u8, 76u8, 103u8, 39u8, 63u8, 213u8, 57u8, 224u8, 144u8, 99u8, 149u8,
+							126u8, 174u8, 200u8, 60u8, 76u8, 2u8, 147u8, 167u8, 219u8, 230u8, 78u8,
+							93u8, 159u8, 94u8, 0u8, 81u8, 159u8, 183u8, 188u8, 187u8, 228u8,
 						],
 					)
 				}
@@ -21023,6 +21038,9 @@ pub mod api {
 						sender: ::subxt::ext::sp_core::crypto::AccountId32,
 						hash: ::subxt::ext::sp_core::H256,
 					},
+					#[codec(index = 6)]
+					#[doc = "On on-chain remark happend called by Root."]
+					RemarkedByRoot { hash: ::subxt::ext::sp_core::H256 },
 				}
 			}
 			#[derive(
@@ -29112,9 +29130,9 @@ pub mod api {
 		let runtime_metadata_hash = client.metadata().metadata_hash(&PALLETS);
 		if runtime_metadata_hash
 			!= [
-				23u8, 253u8, 161u8, 158u8, 149u8, 44u8, 137u8, 192u8, 220u8, 162u8, 220u8, 253u8,
-				193u8, 5u8, 99u8, 192u8, 129u8, 211u8, 116u8, 206u8, 249u8, 67u8, 227u8, 41u8,
-				195u8, 228u8, 122u8, 48u8, 118u8, 195u8, 127u8, 43u8,
+				241u8, 130u8, 53u8, 154u8, 179u8, 232u8, 152u8, 86u8, 197u8, 9u8, 139u8, 59u8,
+				201u8, 109u8, 98u8, 156u8, 60u8, 68u8, 91u8, 116u8, 3u8, 81u8, 51u8, 244u8, 34u8,
+				246u8, 34u8, 132u8, 245u8, 147u8, 170u8, 126u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleMetadata)
 		} else {

@@ -537,9 +537,15 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			remark: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
-			let who = ensure_signed(origin)?;
+			let maybe_who = ensure_signed_or_root(origin)?;
 			let hash = T::Hashing::hash(&remark[..]);
-			Self::deposit_event(Event::Remarked { sender: who, hash });
+
+			let event = match maybe_who {
+				Some(who) => Event::Remarked { sender: who, hash },
+				None => Event::RemarkedByRoot { hash },
+			};
+
+			Self::deposit_event(event);
 			Ok(().into())
 		}
 	}
@@ -562,6 +568,8 @@ pub mod pallet {
 		KilledAccount { account: T::AccountId },
 		/// On on-chain remark happened.
 		Remarked { sender: T::AccountId, hash: T::Hash },
+		/// On on-chain remark happend called by Root.
+		RemarkedByRoot { hash: T::Hash },
 	}
 
 	/// Error for the System pallet
