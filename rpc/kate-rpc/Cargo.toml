@@ -14,6 +14,7 @@ kate-rpc-runtime-api = { path = "../kate-rpc-runtime-api", default-features = fa
 sc-client-db = { version = "0.10.0-dev", default-features = false }
 thiserror = "1.0.30" 
 rs_merkle = { version = "1.2.0", default-features = false }
+moka = "0.10"
 
 codec = { package = "parity-scale-codec", version = "3" }
 da-primitives = { version = "0.4", default-features = false }
@@ -22,7 +23,6 @@ kate-recovery = { version = "0.8", default-features = false }
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
 
 frame-system-rpc-runtime-api = "4.0.0-dev"
-lru = "0.7.2"
 sc-client-api = "4.0.0-dev"
 sp-blockchain = "4.0.0-dev"
 sp-rpc = "6.0.0"

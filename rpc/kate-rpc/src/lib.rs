@@ -1,8 +1,4 @@
-use std::{
-	marker::{PhantomData, Sync},
-	result::Result as AvailResult,
-	sync::{Arc, RwLock},
-};
+use std::{marker::PhantomData, sync::Arc};
 
 use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
 use da_primitives::{
@@ -19,12 +15,12 @@ use jsonrpsee::{
 use kate::{com::Cell, BlockDimensions, BlsScalar, PublicParameters};
 use kate_recovery::{index::AppDataIndex, matrix::Dimensions};
 use kate_rpc_runtime_api::KateParamsGetter;
-use lru::LruCache;
+use moka::sync::Cache;
 use sc_client_api::{BlockBackend, StorageProvider};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
-	generic::BlockId,
+	generic::{BlockId, SignedBlock},
 	traits::{Block as BlockT, Extrinsic, Header},
 	AccountId32, MultiAddress, MultiSignature,
 };
@@ -59,13 +55,20 @@ where
 	#[method(name = "kate_blockLength")]
 	fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength>;
 
+	#[method(name = "kate_queryMultiProof")]
+	fn query_multiproof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>>;
+
 	#[method(name = "kate_queryDataProof")]
 	fn query_data_proof(&self, data_index: u32, at: Option<HashOf<Block>>) -> RpcResult<DataProof>;
 }
 
+struct Grid {
+	ext_data: Vec<BlsScalar>,
+	d: BlockDimensions,
+}
 pub struct Kate<Client, Block: BlockT, SDFilter: Filter<CallOf<Block>>> {
 	client: Arc<Client>,
-	block_ext_cache: RwLock<LruCache<Block::Hash, (Vec<BlsScalar>, BlockDimensions)>>,
+	block_ext_cache: Cache<Block::Hash, Arc<Grid>>,
 	filter: PhantomData<SDFilter>,
 }
 
@@ -84,9 +87,14 @@ where
 	SDFilter: Filter<CallOf<Block>>,
 {
 	pub fn new(client: Arc<Client>) -> Self {
+		const GB: u64 = 2u64.pow(30);
 		Self {
 			client,
-			block_ext_cache: RwLock::new(LruCache::new(2048)), // 524288 bytes per block, ~1Gb max size
+			block_ext_cache: Cache::<_, Arc<Grid>>::builder()
+				.weigher(|_, v| 1 + v.d.cols.0 * v.d.rows.0 * 2 * 32)
+				.thread_pool_enabled(false) // TODO: decide if this should be true
+				.max_capacity(GB)
+				.build(),
 			filter: Default::default(),
 		}
 	}
@@ -136,6 +144,65 @@ where
 	fn block_id(&self, at: Option<<Block as BlockT>::Hash>) -> BlockId<Block> {
 		BlockId::Hash(self.at_or_best(at))
 	}
+
+	fn get_grid(&self, signed_block: &SignedBlock<Block>) -> RpcResult<Arc<Grid>> {
+		let block_hash = signed_block.block.hash();
+		let block_id = BlockId::Hash(block_hash.clone());
+
+		let block_length: BlockLength = self
+			.client
+			.runtime_api()
+			.get_block_length(&block_id)
+			.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
+
+		self.block_ext_cache
+			.try_get_with(block_hash, || {
+				// build block data extension and cache it
+				let xts_by_id: Vec<AppExtrinsic> = signed_block
+					.block
+					.extrinsics()
+					.iter()
+					.map(|e| AppExtrinsic {
+						app_id: e.app_id(),
+						data: e.encode(),
+					})
+					.collect();
+
+				// Use Babe's VRF
+				let seed: [u8; 32] =
+					self.client
+						.runtime_api()
+						.get_babe_vrf(&block_id)
+						.map_err(|e| {
+							internal_err!("Babe VRF not found for block {}: {:?}", block_id, e)
+						})?;
+
+				let (_, block, block_dims) = kate::com::flatten_and_pad_block(
+					block_length.rows,
+					block_length.cols,
+					block_length.chunk_size(),
+					&xts_by_id,
+					seed,
+				)
+				.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
+
+				let data = kate::com::par_extend_data_matrix(block_dims, &block)
+					.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
+				Ok::<_, JsonRpseeError>(Arc::new(Grid {
+					d: block_dims,
+					ext_data: data,
+				}))
+			})
+			.map_err(|e: Arc<_>| internal_err!("failed to construct block: {}", e)) // Deref the arc into a reference, clone the ref
+	}
+
+	fn get_signed_block(&self, at: Option<Block::Hash>) -> RpcResult<SignedBlock<Block>> {
+		let at = self.at_or_best(at);
+		self.client
+			.block(at)
+			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
+			.ok_or_else(|| internal_err!("Missing block {}", at))
+	}
 }
 
 impl<Client, Block, SDFilter> KateApiServer<Block, SDFilter> for Kate<Client, Block, SDFilter>
@@ -157,15 +224,7 @@ where
 		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<Vec<u8>>>> {
-		let at = self.at_or_best(at);
-		let block_id = BlockId::Hash(at);
-
-		let signed_block = self
-			.client
-			.block(at)
-			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
-			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
-
+		let signed_block = self.get_signed_block(at)?;
 		let block_hash = signed_block.block.header().hash();
 
 		if self.client.info().finalized_number < *signed_block.block.header().number() {
@@ -174,61 +233,18 @@ where
 			));
 		}
 
-		let mut block_ext_cache = self
-			.block_ext_cache
-			.write()
-			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
-
-		if !block_ext_cache.contains(&block_hash) {
-			// build block data extension and cache it
-			let xts_by_id: Vec<AppExtrinsic> = signed_block
-				.block
-				.extrinsics()
-				.iter()
-				.map(|e| AppExtrinsic {
-					app_id: e.app_id(),
-					data: e.encode(),
-				})
-				.collect();
-
-			// Use Babe's VRF
-			let seed: [u8; 32] = self
-				.client
-				.runtime_api()
-				.get_babe_vrf(&block_id)
-				.map_err(|e| internal_err!("Babe VRF not found for block {}: {:?}", block_id, e))?;
-
-			let block_length: BlockLength =
-				self.client
-					.runtime_api()
-					.get_block_length(&block_id)
-					.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
-
-			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
-				block_length.rows,
-				block_length.cols,
-				block_length.chunk_size(),
-				&xts_by_id,
-				seed,
-			)
-			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
-
-			let data = kate::com::par_extend_data_matrix(block_dims, &block)
-				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
-
-			block_ext_cache.put(block_hash, (data, block_dims));
-		}
-
-		let (ext_data, block_dims) = block_ext_cache
-			.get(&block_hash)
-			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
-
-		let dimensions: Dimensions = block_dims
+		let grid = self.get_grid(&signed_block)?;
+		let dimensions: Dimensions = grid
+			.d
 			.clone()
 			.try_into()
 			.map_err(|e| internal_err!("Invalid dimensions: {:?}", e))?;
 
-		Ok(kate::com::scalars_to_rows(&rows, &dimensions, ext_data))
+		Ok(kate::com::scalars_to_rows(
+			&rows,
+			&dimensions,
+			&grid.ext_data,
+		))
 	}
 
 	fn query_app_data(
@@ -236,16 +252,9 @@ where
 		app_id: AppId,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<Vec<u8>>>> {
-		let at = self.at_or_best(at);
-		let block_id = BlockId::Hash(at);
-
-		let signed_block = self
-			.client
-			.block(at)
-			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
-			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
-
+		let signed_block = self.get_signed_block(at)?;
 		let block_hash = signed_block.block.header().hash();
+		let grid = self.get_grid(&signed_block)?;
 
 		if self.client.info().finalized_number < *signed_block.block.header().number() {
 			return Err(internal_err!(
@@ -253,56 +262,10 @@ where
 			));
 		}
 
-		let mut block_ext_cache = self
-			.block_ext_cache
-			.write()
-			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
-
-		if !block_ext_cache.contains(&block_hash) {
-			// build block data extension and cache it
-			let xts_by_id: Vec<AppExtrinsic> = signed_block
-				.block
-				.extrinsics()
-				.iter()
-				.map(|e| AppExtrinsic {
-					app_id: e.app_id(),
-					data: e.encode(),
-				})
-				.collect();
-
-			let block_length: BlockLength =
-				self.client
-					.runtime_api()
-					.get_block_length(&block_id)
-					.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
-
-			// Use Babe's VRF
-			let seed: [u8; 32] = self
-				.client
-				.runtime_api()
-				.get_babe_vrf(&block_id)
-				.map_err(|e| internal_err!("Babe VRF not found for block {}: {:?}", block_id, e))?;
-
-			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
-				block_length.rows,
-				block_length.cols,
-				block_length.chunk_size(),
-				&xts_by_id,
-				seed,
-			)
-			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
-
-			let data = kate::com::par_extend_data_matrix(block_dims, &block)
-				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
-
-			block_ext_cache.put(block_hash, (data, block_dims));
-		}
-
-		let (ext_data, block_dims) = block_ext_cache
-			.get(&block_hash)
-			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
-
-		let HeaderExtension::V1(header) = signed_block.block.header().extension();
+		let header = match signed_block.block.header().extension() {
+            HeaderExtension::V1(header) => header,
+            _ => todo!(),
+        };
 		let DataLookup { index, size } = &header.app_lookup;
 
 		let app_data_index = AppDataIndex {
@@ -313,7 +276,8 @@ where
 			size: *size,
 		};
 
-		let dimensions: Dimensions = block_dims
+		let dimensions: Dimensions = grid
+			.d
 			.clone()
 			.try_into()
 			.map_err(|e| internal_err!("Invalid dimensions: {:?}", e))?;
@@ -322,21 +286,13 @@ where
 			app_id.0,
 			&app_data_index,
 			&dimensions,
-			ext_data,
+			&grid.ext_data,
 		))
 	}
 
 	//TODO allocate static thread pool, just for RPC related work, to free up resources, for the block producing processes.
 	fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
-		let at = self.at_or_best(at);
-		let block_id = BlockId::Hash(at);
-
-		let signed_block = self
-			.client
-			.block(at)
-			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
-			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
-
+		let signed_block = self.get_signed_block(at)?;
 		let block_hash = signed_block.block.header().hash();
 
 		if self.client.info().finalized_number < *signed_block.block.header().number() {
@@ -345,68 +301,23 @@ where
 			));
 		}
 
-		let mut block_ext_cache = self
-			.block_ext_cache
-			.write()
-			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
-
-		if !block_ext_cache.contains(&block_hash) {
-			// build block data extension and cache it
-			let xts_by_id: Vec<AppExtrinsic> = signed_block
-				.block
-				.extrinsics()
-				.iter()
-				.map(|e| AppExtrinsic {
-					app_id: e.app_id(),
-					data: e.encode(),
-				})
-				.collect();
-
-			let block_length: BlockLength =
-				self.client
-					.runtime_api()
-					.get_block_length(&block_id)
-					.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
-
-			// Use Babe's VRF
-			let seed: [u8; 32] = self
-				.client
-				.runtime_api()
-				.get_babe_vrf(&block_id)
-				.map_err(|e| internal_err!("Babe VRF not found for block {}: {:?}", block_id, e))?;
-
-			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
-				block_length.rows,
-				block_length.cols,
-				block_length.chunk_size(),
-				&xts_by_id,
-				seed,
-			)
-			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
-
-			let data = kate::com::par_extend_data_matrix(block_dims, &block)
-				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
-			block_ext_cache.put(block_hash, (data, block_dims));
-		}
-
-		let (ext_data, block_dims) = block_ext_cache
-			.get(&block_hash)
-			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
 		let kc_public_params_raw = self
 			.client
 			.runtime_api()
-			.get_public_params(&block_id)
+			.get_public_params(&BlockId::Hash(block_hash))
 			.map_err(|e| {
 				internal_err!(
 					"Public params cannot be fetched on block {}: {:?}",
-					block_hash,
+					signed_block.block.header().hash(),
 					e
 				)
 			})?;
 		let kc_public_params =
 			unsafe { PublicParameters::from_slice_unchecked(&kc_public_params_raw) };
 
-		let proof = kate::com::build_proof(&kc_public_params, *block_dims, ext_data, &cells)
+		let grid = self.get_grid(&signed_block)?;
+
+		let proof = kate::com::build_proof(&kc_public_params, grid.d, &grid.ext_data, &cells)
 			.map_err(|e| internal_err!("Proof cannot be generated: {:?}", e))?;
 
 		Ok(proof)
@@ -425,14 +336,7 @@ where
 
 	fn query_data_proof(&self, data_index: u32, at: Option<HashOf<Block>>) -> RpcResult<DataProof> {
 		// Fetch block
-		let at = self.at_or_best(at);
-
-		let block = self
-			.client
-			.block(at)
-			.map_err(|e| internal_err!("Invalid block hash: {:?}", e))?
-			.ok_or_else(|| internal_err!("Missing block hash {:?}", at))?
-			.block;
+		let block = self.get_signed_block(at)?.block;
 
 		// Get App Extrinsics from the block.
 		let calls = block
@@ -451,6 +355,14 @@ where
 			})?;
 		DataProof::try_from(&merkle_proof)
 			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e))
+	}
+
+	fn query_multiproof(
+		&self,
+		_cells: Vec<Cell>,
+		_at: Option<HashOf<Block>>,
+	) -> RpcResult<Vec<u8>> {
+		todo!()
 	}
 }
 
@@ -475,7 +387,7 @@ pub enum AvailMortality {
 }
 
 impl Decode for AvailMortality {
-	fn decode<I: Input>(input: &mut I) -> AvailResult<Self, DecodeError> {
+	fn decode<I: Input>(input: &mut I) -> Result<Self, DecodeError> {
 		let first = input.read_byte()?;
 		if first == 0 {
 			Ok(Self::Immortal)
@@ -495,7 +407,7 @@ impl Decode for AvailMortality {
 
 const EXTRINSIC_VERSION: u8 = 4;
 impl Decode for AvailExtrinsic {
-	fn decode<I: Input>(input: &mut I) -> AvailResult<AvailExtrinsic, DecodeError> {
+	fn decode<I: Input>(input: &mut I) -> Result<AvailExtrinsic, DecodeError> {
 		// This is a little more complicated than usual since the binary format must be compatible
 		// with substrate's generic `Vec<u8>` type. Basically this just means accepting that there
 		// will be a prefix of vector length (we don't need
