@@ -55,4 +55,8 @@ std = [
 	"sp-tracing/std",
 	"da-primitives/std",
 ]
-try-runtime = ["frame-support/try-runtime", "frame-try-runtime/try-runtime" ]
+try-runtime = [
+	"frame-support/try-runtime", 
+	"frame-try-runtime/try-runtime" ,
+	"da-primitives/try-runtime"
+]

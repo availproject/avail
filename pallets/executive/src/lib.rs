@@ -117,6 +117,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Codec, Encode};
+#[cfg(feature = "try-runtime")]
+use da_primitives::asdr::AppId;
 use da_primitives::asdr::GetAppId;
 use frame_support::{
 	dispatch::{DispatchClass, DispatchInfo, GetDispatchInfo, PostDispatchInfo},
@@ -265,7 +267,7 @@ where
 			} else {
 				uxt.unchecked_into_checked_i_know_what_i_am_doing(&Default::default())
 			}?;
-			<frame_system::Pallet<System>>::note_extrinsic(encoded);
+			<frame_system::Pallet<System>>::note_extrinsic(AppId::default(), encoded);
 
 			let dispatch_info = xt.get_dispatch_info();
 			let r = Applyable::apply::<UnsignedValidator>(xt, &dispatch_info, encoded_len)?;

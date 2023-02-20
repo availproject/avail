@@ -66,7 +66,10 @@ runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 ]
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"frame-support/try-runtime",
+	"da-primitives/try-runtime"
+]
 force-rs-merkle = [ "rs_merkle" ]
 
 # For testing backward/forward header compatibility.
