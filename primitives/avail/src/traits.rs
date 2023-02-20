@@ -2,8 +2,8 @@ use codec::{Codec, Decode};
 use sp_core::U256;
 use sp_runtime::{
 	traits::{
-		AtLeast32BitUnsigned, Hash as HashT, MaybeDisplay, MaybeFromStr, MaybeMallocSizeOf,
-		MaybeSerializeDeserialize, Member, SimpleBitOps,
+		AtLeast32BitUnsigned, Hash as HashT, MaybeDisplay, MaybeFromStr, MaybeSerializeDeserialize,
+		Member, SimpleBitOps,
 	},
 	Digest,
 };
@@ -20,7 +20,6 @@ pub trait HeaderBlockNumber:
 	+ MaybeDisplay
 	+ MaybeFromStr
 	+ MaybeFromStr
-	+ MaybeMallocSizeOf
 	+ StdHash
 	+ Copy
 	+ Into<U256>
@@ -36,7 +35,6 @@ impl<
 			+ MaybeSerializeDeserialize
 			+ MaybeDisplay
 			+ MaybeFromStr
-			+ MaybeMallocSizeOf
 			+ StdHash
 			+ Copy
 			+ Into<U256>
@@ -51,8 +49,8 @@ impl<
 pub trait HeaderHash: HashT {}
 impl<T: HashT> HeaderHash for T {}
 
-pub trait HeaderHashOutput: MaybeDisplay + Decode + MaybeMallocSizeOf + SimpleBitOps + Ord {}
-impl<T: MaybeDisplay + Decode + MaybeMallocSizeOf + SimpleBitOps + Ord> HeaderHashOutput for T {}
+pub trait HeaderHashOutput: MaybeDisplay + Decode + SimpleBitOps + Ord {}
+impl<T: MaybeDisplay + Decode + SimpleBitOps + Ord> HeaderHashOutput for T {}
 
 /// Extended header access
 pub trait ExtendedHeader {

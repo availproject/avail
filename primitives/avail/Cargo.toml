@@ -1,6 +1,6 @@
 [package]
 name = "da-primitives"
-version = "0.4.2"
+version = "0.4.3"
 authors = []
 edition = "2018"
 
@@ -13,18 +13,18 @@ serde_json = { version = "1.0", optional = true }
 thiserror-no-std = "2.0.2"
 
 # Substrate
-beefy-merkle-tree = { git = "https://github.com/paritytech/substrate.git/", branch = "polkadot-v0.9.33", default-features = false }
+beefy-merkle-tree = { git = "https://github.com/paritytech/substrate.git/", branch = "polkadot-v0.9.37", default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 frame-support = { version = "4.0.0-dev", default-features = false }
 hash256-std-hasher = { version = "0.15.2", default-features = false }
 parity-util-mem = { version = "0.12.0", default-features = false, features = ["primitive-types"] }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
-sp-core = { version = "6.0.0", default-features = false }
-sp-io = { version = "6.0.0", default-features = false }
-sp-runtime = { version = "6.0.0", default-features = false }
-sp-runtime-interface = { version = "6.0.0", default-features = false }
+sp-core = { version = "7.0.0", default-features = false }
+sp-io = { version = "7.0.0", default-features = false }
+sp-runtime = { version = "7.0.0", default-features = false }
+sp-runtime-interface = { version = "7.0.0", default-features = false }
 sp-std = { version = "4.0.0", default-features = false }
-sp-trie = { version = "6.0.0", default-features = false }
+sp-trie = { version = "7.0.0", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.3.4"
@@ -51,3 +51,6 @@ std = [
 ]
 
 header-backward-compatibility-test = []
+try-runtime = [
+	"sp-runtime/try-runtime",
+]

@@ -1,6 +1,6 @@
 [package]
 name = "kate"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
 edition = "2021"
 
@@ -24,7 +24,7 @@ rand_chacha = { version = "0.3", default-features = false, optional = true }
 rand_core = { version = "0.6", default-features = false }
 rayon = { version = "1.5.2", optional = true }
 serde = { version = "1.0.121", optional = true, features = ["derive"] }
-sp-core = { version = "6.0.0", default-features = false }
+sp-core = { version = "7.0.0", default-features = false }
 sp-std = { version = "4.0.0", default-features = false }
 static_assertions = "1.1.0"
 

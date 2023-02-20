@@ -1,6 +1,6 @@
 [package]
 name = "nomad-merkle"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -13,9 +13,9 @@ nomad-core = { path = "../nomad-core", default-features = false }
 # parity-util-mem = { version = "0.10.2", default-features = false, features = ["primitive-types"] }
 primitive-types = { version = "0.12", default-features = false, features = ["scale-info", "codec"] }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
-sp-core = { version = "6.0.0", default-features = false }
-sp-io = { version = "6.0.0", default-features = false }
-sp-runtime = { version = "6.0.0", default-features = false }
+sp-core = { version = "7.0.0", default-features = false }
+sp-io = { version = "7.0.0", default-features = false }
+sp-runtime = { version = "7.0.0", default-features = false }
 sp-std = { version = "4.0.0-dev", default-features = false }
 static_assertions = "1.1.0"
 thiserror-no-std = "2.0.2"

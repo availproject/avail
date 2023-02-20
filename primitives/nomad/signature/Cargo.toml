@@ -1,6 +1,6 @@
 [package]
 name = "nomad-signature"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Luke Tchang <luke@nomad.xyz>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -23,8 +23,8 @@ primitive-types = { version = "0.12", default-features = false, features = ["sca
 rlp = { version = "0.5.0", default-features = false }
 rlp-derive = { version = "0.1.0", default-features = false }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
-sp-core = { version = "6.0.0", default-features = false }
-sp-io = { version = "6.0.0", default-features = false }
+sp-core = { version = "7.0.0", default-features = false }
+sp-io = { version = "7.0.0", default-features = false }
 sp-std = { version = "4.0.0", default-features = false }
 
 # Eth

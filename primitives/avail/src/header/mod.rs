@@ -1,14 +1,31 @@
+// This file is part of Substrate.
+
+// Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+//! Data-Avail implementation of a block header.
+
 use codec::{Codec, Decode, Encode};
-#[cfg(feature = "std")]
-use parity_util_mem::{MallocSizeOf, MallocSizeOfOps};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::{RuntimeDebug, U256};
 use sp_runtime::{
 	traits::{
-		AtLeast32BitUnsigned, Hash as HashT, Header as HeaderT, MaybeDisplay, MaybeMallocSizeOf,
-		MaybeSerialize, MaybeSerializeDeserialize, Member, SimpleBitOps,
+		AtLeast32BitUnsigned, Hash as HashT, Header as HeaderT, MaybeDisplay, MaybeSerialize,
+		MaybeSerializeDeserialize, Member, SimpleBitOps,
 	},
 	Digest,
 };
@@ -119,21 +136,6 @@ impl<N: HeaderBlockNumber, H: HeaderHash> PassBy for Header<N, H> {
 	type PassBy = PassByCodecImpl<Header<N, H>>;
 }
 
-#[cfg(feature = "std")]
-impl<N: HeaderBlockNumber, H: HeaderHash> MallocSizeOf for Header<N, H>
-where
-	H::Output: MallocSizeOf,
-{
-	fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
-		self.parent_hash.size_of(ops)
-			+ self.number.size_of(ops)
-			+ self.state_root.size_of(ops)
-			+ self.extrinsics_root.size_of(ops)
-			+ self.digest.size_of(ops)
-			+ self.extension.size_of(ops)
-	}
-}
-
 impl<Number, Hash> HeaderT for Header<Number, Hash>
 where
 	Number: Member
@@ -146,8 +148,7 @@ where
 		+ Copy
 		+ Into<U256>
 		+ TryFrom<U256>
-		+ sp_std::str::FromStr
-		+ MaybeMallocSizeOf,
+		+ sp_std::str::FromStr,
 	Hash: HashT,
 	Hash::Output: Default
 		+ sp_std::hash::Hash
@@ -158,8 +159,7 @@ where
 		+ Debug
 		+ MaybeDisplay
 		+ SimpleBitOps
-		+ Codec
-		+ MaybeMallocSizeOf,
+		+ Codec,
 {
 	type Hash = <Hash as HashT>::Output;
 	type Hashing = Hash;

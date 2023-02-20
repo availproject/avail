@@ -22,8 +22,6 @@ use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo},
 	traits::ExtrinsicCall,
 };
-#[cfg(feature = "std")]
-use parity_util_mem::{MallocSizeOf, MallocSizeOfOps};
 use scale_info::{build::Fields, meta_type, Path, StaticTypeInfo, Type, TypeInfo, TypeParameter};
 use sp_io::hashing::blake2_256;
 use sp_runtime::{
@@ -43,8 +41,12 @@ use sp_std::{
 
 use crate::asdr::{AppId, GetAppId};
 
-/// Current version of the [`AppUncheckedExtrinsic`] format.
-const EXTRINSIC_VERSION: u8 = 4;
+/// Current version of the [`UncheckedExtrinsic`] encoded format.
+///
+/// This version needs to be bumped if the encoded representation changes.
+/// It ensures that if the representation is changed and the format is not known,
+/// the decoding fails.
+const EXTRINSIC_FORMAT_VERSION: u8 = 4;
 
 /// A extrinsic right from the external world. This is unchecked and so
 /// can contain a signature.
@@ -95,17 +97,6 @@ where
 	}
 }
 
-#[cfg(feature = "std")]
-impl<Address, Call, Signature, Extra> MallocSizeOf
-	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
-where
-	Extra: SignedExtension,
-{
-	fn size_of(&self, _ops: &mut MallocSizeOfOps) -> usize {
-		0
-	}
-}
-
 impl<Address, Call, Signature, Extra: SignedExtension>
 	AppUncheckedExtrinsic<Address, Call, Signature, Extra>
 {
@@ -130,6 +121,7 @@ impl<Address, Call, Signature, Extra: SignedExtension> Extrinsic
 	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
 {
 	type Call = Call;
+
 	type SignaturePayload = (Address, Signature, Extra);
 
 	fn is_signed(&self) -> Option<bool> {
@@ -188,6 +180,28 @@ where
 			},
 		})
 	}
+
+	#[cfg(feature = "try-runtime")]
+	fn unchecked_into_checked_i_know_what_i_am_doing(
+		self,
+		lookup: &Lookup,
+	) -> Result<Self::Checked, TransactionValidityError> {
+		Ok(match self.signature {
+			Some((signed, _, extra)) => {
+				let signed = lookup.lookup(signed)?;
+				let raw_payload = SignedPayload::new(self.function, extra)?;
+				let (function, extra, _) = raw_payload.deconstruct();
+				CheckedExtrinsic {
+					signed: Some((signed, extra)),
+					function,
+				}
+			},
+			None => CheckedExtrinsic {
+				signed: None,
+				function: self.function,
+			},
+		})
+	}
 }
 
 impl<Address, Call, Signature, Extra> ExtrinsicMetadata
@@ -195,9 +209,8 @@ impl<Address, Call, Signature, Extra> ExtrinsicMetadata
 where
 	Extra: SignedExtension,
 {
+	const VERSION: u8 = EXTRINSIC_FORMAT_VERSION;
 	type SignedExtensions = Extra;
-
-	const VERSION: u8 = EXTRINSIC_VERSION;
 }
 
 impl<Address, Call, Signature, Extra> GetDispatchInfo
@@ -294,25 +307,32 @@ where
 {
 	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
 		// This is a little more complicated than usual since the binary format must be compatible
-		// with substrate's generic `Vec<u8>` type. Basically this just means accepting that there
-		// will be a prefix of vector length (we don't need
-		// to use this).
-		let _length_do_not_remove_me_see_above: Compact<u32> = Decode::decode(input)?;
+		// with SCALE's generic `Vec<u8>` type. Basically this just means accepting that there
+		// will be a prefix of vector length.
+		let expected_length: Compact<u32> = Decode::decode(input)?;
+		let before_length = input.remaining_len()?;
 
 		let version = input.read_byte()?;
 
 		let is_signed = version & 0b1000_0000 != 0;
 		let version = version & 0b0111_1111;
-		if version != EXTRINSIC_VERSION {
+		if version != EXTRINSIC_FORMAT_VERSION {
 			return Err("Invalid transaction version".into());
 		}
 
-		let signature = if is_signed {
-			Some(Decode::decode(input)?)
-		} else {
-			None
-		};
+		let signature = is_signed.then(|| Decode::decode(input)).transpose()?;
 		let function = Decode::decode(input)?;
+
+		if let Some((before_length, after_length)) = input
+			.remaining_len()?
+			.and_then(|a| before_length.map(|b| (b, a)))
+		{
+			let length = before_length.saturating_sub(after_length);
+
+			if length != expected_length.0 as usize {
+				return Err("Invalid length prefix".into());
+			}
+		}
 
 		Ok(Self {
 			signature,
@@ -335,11 +355,11 @@ where
 		// 1 byte version id.
 		match self.signature.as_ref() {
 			Some(s) => {
-				tmp.push(EXTRINSIC_VERSION | 0b1000_0000);
+				tmp.push(EXTRINSIC_FORMAT_VERSION | 0b1000_0000);
 				s.encode_to(&mut tmp);
 			},
 			None => {
-				tmp.push(EXTRINSIC_VERSION & 0b0111_1111);
+				tmp.push(EXTRINSIC_FORMAT_VERSION & 0b0111_1111);
 			},
 		}
 		self.function.encode_to(&mut tmp);
@@ -374,7 +394,7 @@ impl<Address: Encode, Signature: Encode, Call: Encode, Extra: SignedExtension> s
 	where
 		S: ::serde::Serializer,
 	{
-		self.using_encoded(|bytes| sp_core::bytes::serialize(bytes, seq))
+		self.using_encoded(|bytes| seq.serialize_bytes(bytes))
 	}
 }
 
@@ -466,9 +486,7 @@ mod tests {
 	const TEST_ACCOUNT: TestAccountId = 0;
 
 	// NOTE: this is demonstration. One can simply use `()` for testing.
-	#[derive(
-		Debug, Encode, Decode, Clone, Eq, PartialEq, Ord, PartialOrd, TypeInfo, MallocSizeOf,
-	)]
+	#[derive(Debug, Encode, Decode, Clone, Eq, PartialEq, Ord, PartialOrd, TypeInfo)]
 	struct TestExtra;
 	impl SignedExtension for TestExtra {
 		type AccountId = u64;
@@ -507,6 +525,20 @@ mod tests {
 		let ux = Ex::new_unsigned(vec![0u8; 0]);
 		let encoded = ux.encode();
 		assert_eq!(Ex::decode(&mut &encoded[..]), Ok(ux));
+	}
+
+	#[test]
+	fn invalid_length_prefix_is_detected() {
+		let ux = Ex::new_unsigned(vec![0u8; 0]);
+		let mut encoded = ux.encode();
+
+		let length = Compact::<u32>::decode(&mut &encoded[..]).unwrap();
+		Compact(length.0 + 10).encode_to(&mut &mut encoded[..1]);
+
+		assert_eq!(
+			Ex::decode(&mut &encoded[..]),
+			Err("Invalid length prefix".into())
+		);
 	}
 
 	#[test]
