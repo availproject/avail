@@ -3,14 +3,12 @@ package main
 import (
 	"avail-gsrpc-examples/internal/config"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 
 	"github.com/centrifuge/go-substrate-rpc-client/signature"
 	gsrpc "github.com/centrifuge/go-substrate-rpc-client/v4"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
-	"github.com/centrifuge/go-substrate-rpc-client/v4/types/codec"
 )
 
 // Example use: go run cmd/blockListener/blockListener.go -config config.json
@@ -68,24 +66,10 @@ func main() {
 	if err != nil || !ok {
 		panic(err)
 	}
-	nonce := uint32(accountInfo.Nonce)
-	log.Println("Nonce: ", nonce)
 
 	for {
 		head := <-sub.Chan()
 		count++
-		x2, err := codec.EncodeToHex(head)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println("head: ", x2)
-
-		// x, _ := codec.EncodeToHex(head)
-		x, err := codec.EncodeToHex(head)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println("head: ", x)
 
 		blockHash, err := api.RPC.Chain.GetBlockHash(uint64(head.Number))
 		if err != nil {

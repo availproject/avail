@@ -118,7 +118,7 @@ func transfer(api *gsrpc.SubstrateAPI, Seed string, Dest string, amount *big.Int
 			// }
 			if status.IsFinalized {
 				fmt.Printf("Txn finalized %v\n", status.AsFinalized.Hex())
-				balance(api, keyringDest)
+				// balance(api, keyringDest)
 			}
 
 			// default:
