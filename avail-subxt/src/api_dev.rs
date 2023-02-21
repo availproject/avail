@@ -121,17 +121,6 @@ pub mod api {
 				Eq,
 				PartialEq,
 			)]
-			pub struct FillBlock {
-				pub ratio: runtime_types::sp_arithmetic::per_things::Perbill,
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
 			pub struct Remark {
 				pub remark: ::std::vec::Vec<::core::primitive::u8>,
 			}
@@ -219,24 +208,6 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "A dispatch that will fill the block weight up to the given ratio."]
-				pub fn fill_block(
-					&self,
-					ratio: runtime_types::sp_arithmetic::per_things::Perbill,
-				) -> ::subxt::tx::StaticTxPayload<FillBlock> {
-					::subxt::tx::StaticTxPayload::new(
-						"System",
-						"fill_block",
-						FillBlock { ratio },
-						[
-							48u8, 18u8, 205u8, 90u8, 222u8, 4u8, 20u8, 251u8, 173u8, 76u8, 167u8,
-							4u8, 83u8, 203u8, 160u8, 89u8, 132u8, 218u8, 191u8, 145u8, 130u8,
-							245u8, 177u8, 201u8, 169u8, 129u8, 173u8, 105u8, 88u8, 45u8, 136u8,
-							191u8,
-						],
-					)
-				}
-
 				#[doc = "Make some on-chain remark."]
 				#[doc = ""]
 				#[doc = "# <weight>"]
@@ -835,9 +806,9 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							50u8, 76u8, 103u8, 39u8, 63u8, 213u8, 57u8, 224u8, 144u8, 99u8, 149u8,
-							126u8, 174u8, 200u8, 60u8, 76u8, 2u8, 147u8, 167u8, 219u8, 230u8, 78u8,
-							93u8, 159u8, 94u8, 0u8, 81u8, 159u8, 183u8, 188u8, 187u8, 228u8,
+							217u8, 120u8, 112u8, 52u8, 97u8, 173u8, 44u8, 68u8, 95u8, 67u8, 226u8,
+							59u8, 8u8, 238u8, 121u8, 232u8, 23u8, 189u8, 166u8, 7u8, 59u8, 63u8,
+							222u8, 234u8, 98u8, 211u8, 32u8, 78u8, 150u8, 40u8, 166u8, 189u8,
 						],
 					)
 				}
@@ -1202,6 +1173,18 @@ pub mod api {
 			pub struct ForceBatch {
 				pub calls: ::std::vec::Vec<runtime_types::da_runtime::RuntimeCall>,
 			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			pub struct WithWeight {
+				pub call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
+				pub weight: runtime_types::sp_weights::weight_v2::Weight,
+			}
 			pub struct TransactionApi;
 			impl TransactionApi {
 				#[doc = "Send a batch of dispatch calls."]
@@ -1228,9 +1211,9 @@ pub mod api {
 					calls: ::std::vec::Vec<runtime_types::da_runtime::RuntimeCall>,
 				) -> ::subxt::tx::StaticTxPayload<Batch> {
 					::subxt::tx::StaticTxPayload::new("Utility", "batch", Batch { calls }, [
-						242u8, 106u8, 81u8, 95u8, 200u8, 233u8, 85u8, 127u8, 55u8, 144u8, 239u8,
-						88u8, 163u8, 97u8, 59u8, 255u8, 140u8, 106u8, 252u8, 30u8, 208u8, 101u8,
-						222u8, 88u8, 227u8, 6u8, 144u8, 105u8, 253u8, 119u8, 173u8, 43u8,
+						104u8, 17u8, 10u8, 124u8, 88u8, 183u8, 191u8, 183u8, 123u8, 111u8, 239u8,
+						83u8, 67u8, 182u8, 152u8, 219u8, 130u8, 162u8, 23u8, 90u8, 137u8, 109u8,
+						113u8, 39u8, 191u8, 78u8, 167u8, 255u8, 222u8, 143u8, 115u8, 234u8,
 					])
 				}
 
@@ -1260,9 +1243,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							215u8, 231u8, 245u8, 139u8, 8u8, 214u8, 52u8, 244u8, 227u8, 251u8,
-							153u8, 25u8, 205u8, 92u8, 16u8, 88u8, 123u8, 58u8, 148u8, 128u8, 9u8,
-							88u8, 35u8, 121u8, 124u8, 156u8, 36u8, 173u8, 38u8, 29u8, 120u8, 234u8,
+							29u8, 139u8, 168u8, 182u8, 180u8, 143u8, 104u8, 71u8, 225u8, 43u8,
+							91u8, 42u8, 71u8, 200u8, 123u8, 125u8, 150u8, 244u8, 196u8, 199u8,
+							51u8, 116u8, 227u8, 195u8, 17u8, 138u8, 85u8, 237u8, 172u8, 208u8,
+							215u8, 153u8,
 						],
 					)
 				}
@@ -1286,9 +1270,9 @@ pub mod api {
 					calls: ::std::vec::Vec<runtime_types::da_runtime::RuntimeCall>,
 				) -> ::subxt::tx::StaticTxPayload<BatchAll> {
 					::subxt::tx::StaticTxPayload::new("Utility", "batch_all", BatchAll { calls }, [
-						89u8, 45u8, 147u8, 23u8, 48u8, 231u8, 88u8, 114u8, 82u8, 181u8, 183u8,
-						23u8, 179u8, 108u8, 175u8, 163u8, 111u8, 14u8, 134u8, 163u8, 251u8, 185u8,
-						202u8, 136u8, 145u8, 147u8, 129u8, 41u8, 33u8, 47u8, 236u8, 210u8,
+						59u8, 80u8, 180u8, 46u8, 131u8, 10u8, 149u8, 177u8, 169u8, 106u8, 184u8,
+						129u8, 164u8, 28u8, 124u8, 173u8, 70u8, 7u8, 7u8, 157u8, 104u8, 168u8,
+						213u8, 37u8, 67u8, 196u8, 200u8, 47u8, 85u8, 58u8, 204u8, 92u8,
 					])
 				}
 
@@ -1315,9 +1299,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							92u8, 65u8, 115u8, 33u8, 198u8, 72u8, 11u8, 84u8, 197u8, 39u8, 116u8,
-							45u8, 172u8, 226u8, 128u8, 175u8, 251u8, 56u8, 51u8, 99u8, 203u8,
-							226u8, 123u8, 18u8, 23u8, 160u8, 86u8, 43u8, 105u8, 99u8, 247u8, 250u8,
+							75u8, 209u8, 25u8, 45u8, 146u8, 80u8, 59u8, 126u8, 184u8, 66u8, 127u8,
+							119u8, 142u8, 252u8, 6u8, 242u8, 45u8, 24u8, 139u8, 55u8, 99u8, 226u8,
+							254u8, 26u8, 76u8, 192u8, 86u8, 149u8, 168u8, 9u8, 68u8, 28u8,
 						],
 					)
 				}
@@ -1345,9 +1329,36 @@ pub mod api {
 						"force_batch",
 						ForceBatch { calls },
 						[
-							95u8, 100u8, 42u8, 235u8, 215u8, 152u8, 52u8, 78u8, 26u8, 33u8, 190u8,
-							211u8, 9u8, 69u8, 248u8, 89u8, 33u8, 9u8, 248u8, 69u8, 115u8, 131u8,
-							178u8, 49u8, 121u8, 234u8, 76u8, 112u8, 115u8, 191u8, 114u8, 75u8,
+							234u8, 71u8, 2u8, 173u8, 120u8, 55u8, 61u8, 60u8, 253u8, 30u8, 207u8,
+							77u8, 106u8, 66u8, 118u8, 88u8, 186u8, 84u8, 34u8, 118u8, 201u8, 176u8,
+							29u8, 232u8, 25u8, 250u8, 112u8, 14u8, 193u8, 162u8, 215u8, 84u8,
+						],
+					)
+				}
+
+				#[doc = "Dispatch a function call with a specified weight."]
+				#[doc = ""]
+				#[doc = "This function does not check the weight of the call, and instead allows the"]
+				#[doc = "Root origin to specify the weight of the call."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Root_."]
+				pub fn with_weight(
+					&self,
+					call: runtime_types::da_runtime::RuntimeCall,
+					weight: runtime_types::sp_weights::weight_v2::Weight,
+				) -> ::subxt::tx::StaticTxPayload<WithWeight> {
+					::subxt::tx::StaticTxPayload::new(
+						"Utility",
+						"with_weight",
+						WithWeight {
+							call: ::std::boxed::Box::new(call),
+							weight,
+						},
+						[
+							129u8, 186u8, 162u8, 61u8, 114u8, 242u8, 176u8, 106u8, 104u8, 129u8,
+							200u8, 132u8, 59u8, 147u8, 22u8, 118u8, 238u8, 187u8, 83u8, 152u8,
+							14u8, 2u8, 152u8, 151u8, 124u8, 145u8, 69u8, 200u8, 236u8, 99u8, 70u8,
+							41u8,
 						],
 					)
 				}
@@ -3279,6 +3290,28 @@ pub mod api {
 					)
 				}
 
+				#[doc = " The total units of outstanding deactivated balance in the system."]
+				pub fn inactive_issuance(
+					&self,
+				) -> ::subxt::storage::address::StaticStorageAddress<
+					::subxt::metadata::DecodeStaticType<::core::primitive::u128>,
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+					(),
+				> {
+					::subxt::storage::address::StaticStorageAddress::new(
+						"Balances",
+						"InactiveIssuance",
+						vec![],
+						[
+							74u8, 203u8, 111u8, 142u8, 225u8, 104u8, 173u8, 51u8, 226u8, 12u8,
+							85u8, 135u8, 41u8, 206u8, 177u8, 238u8, 94u8, 246u8, 184u8, 250u8,
+							140u8, 213u8, 91u8, 118u8, 163u8, 111u8, 211u8, 46u8, 204u8, 160u8,
+							154u8, 21u8,
+						],
+					)
+				}
+
 				#[doc = " The Balances pallet example of storing the balance of an account."]
 				#[doc = ""]
 				#[doc = " # Example"]
@@ -3487,30 +3520,6 @@ pub mod api {
 							17u8, 32u8, 191u8, 46u8, 76u8, 220u8, 101u8, 100u8, 42u8, 250u8, 128u8,
 							167u8, 117u8, 44u8, 85u8, 96u8, 105u8, 216u8, 16u8, 147u8, 74u8, 55u8,
 							183u8, 94u8, 160u8, 177u8, 26u8, 187u8, 71u8, 197u8, 187u8, 163u8,
-						],
-					)
-				}
-
-				#[doc = " Storage version of the pallet."]
-				#[doc = ""]
-				#[doc = " This is set to v2.0.0 for new networks."]
-				pub fn storage_version(
-					&self,
-				) -> ::subxt::storage::address::StaticStorageAddress<
-					::subxt::metadata::DecodeStaticType<runtime_types::pallet_balances::Releases>,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::StaticStorageAddress::new(
-						"Balances",
-						"StorageVersion",
-						vec![],
-						[
-							135u8, 96u8, 28u8, 234u8, 124u8, 212u8, 56u8, 140u8, 40u8, 101u8,
-							235u8, 128u8, 136u8, 221u8, 182u8, 81u8, 17u8, 9u8, 184u8, 228u8,
-							174u8, 165u8, 200u8, 162u8, 214u8, 178u8, 227u8, 72u8, 34u8, 5u8,
-							173u8, 96u8,
 						],
 					)
 				}
@@ -3923,12 +3932,14 @@ pub mod api {
 			)]
 			#[doc = "A solution was stored with the given compute."]
 			#[doc = ""]
-			#[doc = "If the solution is signed, this means that it hasn't yet been processed. If the"]
-			#[doc = "solution is unsigned, this means that it has also been processed."]
-			#[doc = ""]
-			#[doc = "The `bool` is `true` when a previous solution was ejected to make room for this one."]
+			#[doc = "The `origin` indicates the origin of the solution. If `origin` is `Some(AccountId)`,"]
+			#[doc = "the stored solution was submited in the signed phase by a miner with the `AccountId`."]
+			#[doc = "Otherwise, the solution was stored either during the unsigned phase or by"]
+			#[doc = "`T::ForceOrigin`. The `bool` is `true` when a previous solution was ejected to make"]
+			#[doc = "room for this one."]
 			pub struct SolutionStored {
 				pub compute: runtime_types::pallet_election_provider_multi_phase::ElectionCompute,
+				pub origin: ::core::option::Option<::subxt::ext::sp_core::crypto::AccountId32>,
 				pub prev_ejected: ::core::primitive::bool,
 			}
 			impl ::subxt::events::StaticEvent for SolutionStored {
@@ -4003,7 +4014,6 @@ pub mod api {
 				const PALLET: &'static str = "ElectionProviderMultiPhase";
 			}
 			#[derive(
-				:: subxt :: ext :: codec :: CompactAs,
 				:: subxt :: ext :: codec :: Decode,
 				:: subxt :: ext :: codec :: Encode,
 				Clone,
@@ -4011,29 +4021,18 @@ pub mod api {
 				Eq,
 				PartialEq,
 			)]
-			#[doc = "The signed phase of the given round has started."]
-			pub struct SignedPhaseStarted {
+			#[doc = "There was a phase transition in a given round."]
+			pub struct PhaseTransitioned {
+				pub from: runtime_types::pallet_election_provider_multi_phase::Phase<
+					::core::primitive::u32,
+				>,
+				pub to: runtime_types::pallet_election_provider_multi_phase::Phase<
+					::core::primitive::u32,
+				>,
 				pub round: ::core::primitive::u32,
 			}
-			impl ::subxt::events::StaticEvent for SignedPhaseStarted {
-				const EVENT: &'static str = "SignedPhaseStarted";
-				const PALLET: &'static str = "ElectionProviderMultiPhase";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: CompactAs,
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			#[doc = "The unsigned phase of the given round has started."]
-			pub struct UnsignedPhaseStarted {
-				pub round: ::core::primitive::u32,
-			}
-			impl ::subxt::events::StaticEvent for UnsignedPhaseStarted {
-				const EVENT: &'static str = "UnsignedPhaseStarted";
+			impl ::subxt::events::StaticEvent for PhaseTransitioned {
+				const EVENT: &'static str = "PhaseTransitioned";
 				const PALLET: &'static str = "ElectionProviderMultiPhase";
 			}
 		}
@@ -5009,6 +5008,17 @@ pub mod api {
 			pub struct ForceApplyMinCommission {
 				pub validator_stash: ::subxt::ext::sp_core::crypto::AccountId32,
 			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			pub struct SetMinCommission {
+				pub new: runtime_types::sp_arithmetic::per_things::Perbill,
+			}
 			pub struct TransactionApi;
 			impl TransactionApi {
 				#[doc = "Take the origin account as a stash and lock up `value` of its balance. `controller` will"]
@@ -5096,8 +5106,8 @@ pub mod api {
 				#[doc = "the funds out of management ready for transfer."]
 				#[doc = ""]
 				#[doc = "No more than a limited number of unlocking chunks (see `MaxUnlockingChunks`)"]
-				#[doc = "can co-exists at the same time. In that case, [`Call::withdraw_unbonded`] need"]
-				#[doc = "to be called first to remove some of the chunks (if possible)."]
+				#[doc = "can co-exists at the same time. If there are no unlocking chunks slots available"]
+				#[doc = "[`Call::withdraw_unbonded`] is called to remove some of the chunks (if possible)."]
 				#[doc = ""]
 				#[doc = "If a user encounters the `InsufficientBond` error when calling this extrinsic,"]
 				#[doc = "they should call `chill` first in order to free up their bonded funds."]
@@ -5469,7 +5479,7 @@ pub mod api {
 
 				#[doc = "Cancel enactment of a deferred slash."]
 				#[doc = ""]
-				#[doc = "Can be called by the `T::SlashCancelOrigin`."]
+				#[doc = "Can be called by the `T::AdminOrigin`."]
 				#[doc = ""]
 				#[doc = "Parameters: era and indices of the slashes for that era to kill."]
 				pub fn cancel_deferred_slash(
@@ -5729,6 +5739,27 @@ pub mod api {
 						],
 					)
 				}
+
+				#[doc = "Sets the minimum amount of commission that each validators must maintain."]
+				#[doc = ""]
+				#[doc = "This call has lower privilege requirements than `set_staking_config` and can be called"]
+				#[doc = "by the `T::AdminOrigin`. Root can always call this."]
+				pub fn set_min_commission(
+					&self,
+					new: runtime_types::sp_arithmetic::per_things::Perbill,
+				) -> ::subxt::tx::StaticTxPayload<SetMinCommission> {
+					::subxt::tx::StaticTxPayload::new(
+						"Staking",
+						"set_min_commission",
+						SetMinCommission { new },
+						[
+							62u8, 139u8, 175u8, 245u8, 212u8, 113u8, 117u8, 130u8, 191u8, 173u8,
+							78u8, 97u8, 19u8, 104u8, 185u8, 207u8, 201u8, 14u8, 200u8, 208u8,
+							184u8, 195u8, 242u8, 175u8, 158u8, 156u8, 51u8, 58u8, 118u8, 154u8,
+							68u8, 221u8,
+						],
+					)
+				}
 			}
 		}
 		#[doc = "\n\t\t\tThe [event](https://docs.substrate.io/main-docs/build/events-errors/) emitted\n\t\t\tby this pallet.\n\t\t\t"]
@@ -5779,13 +5810,32 @@ pub mod api {
 				Eq,
 				PartialEq,
 			)]
-			#[doc = "One staker (and potentially its nominators) has been slashed by the given amount."]
+			#[doc = "A staker (validator or nominator) has been slashed by the given amount."]
 			pub struct Slashed {
 				pub staker: ::subxt::ext::sp_core::crypto::AccountId32,
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Slashed {
 				const EVENT: &'static str = "Slashed";
+				const PALLET: &'static str = "Staking";
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			#[doc = "A slash for the given validator, for the given percentage of their stake, at the given"]
+			#[doc = "era as been reported."]
+			pub struct SlashReported {
+				pub validator: ::subxt::ext::sp_core::crypto::AccountId32,
+				pub fraction: runtime_types::sp_arithmetic::per_things::Perbill,
+				pub slash_era: ::core::primitive::u32,
+			}
+			impl ::subxt::events::StaticEvent for SlashReported {
+				const EVENT: &'static str = "SlashReported";
 				const PALLET: &'static str = "Staking";
 			}
 			#[derive(
@@ -5956,6 +6006,22 @@ pub mod api {
 				const EVENT: &'static str = "ValidatorPrefsSet";
 				const PALLET: &'static str = "Staking";
 			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			#[doc = "A new force era mode was set."]
+			pub struct ForceEra {
+				pub mode: runtime_types::pallet_staking::Forcing,
+			}
+			impl ::subxt::events::StaticEvent for ForceEra {
+				const EVENT: &'static str = "ForceEra";
+				const PALLET: &'static str = "Staking";
+			}
 		}
 		pub mod storage {
 			use super::runtime_types;
@@ -6029,6 +6095,8 @@ pub mod api {
 				}
 
 				#[doc = " Map from all locked \"stash\" accounts to the controller account."]
+				#[doc = ""]
+				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
 				pub fn bonded(
 					&self,
 					_0: impl ::std::borrow::Borrow<::subxt::ext::sp_core::crypto::AccountId32>,
@@ -6054,6 +6122,8 @@ pub mod api {
 				}
 
 				#[doc = " Map from all locked \"stash\" accounts to the controller account."]
+				#[doc = ""]
+				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
 				pub fn bonded_root(
 					&self,
 				) -> ::subxt::storage::address::StaticStorageAddress<
@@ -6112,6 +6182,27 @@ pub mod api {
 							48u8, 105u8, 85u8, 178u8, 142u8, 208u8, 208u8, 19u8, 236u8, 130u8,
 							129u8, 169u8, 35u8, 245u8, 66u8, 182u8, 92u8, 20u8, 22u8, 109u8, 155u8,
 							174u8, 87u8, 118u8, 242u8, 216u8, 193u8, 154u8, 4u8, 5u8, 66u8, 56u8,
+						],
+					)
+				}
+
+				#[doc = " The minimum active nominator stake of the last successful election."]
+				pub fn minimum_active_stake(
+					&self,
+				) -> ::subxt::storage::address::StaticStorageAddress<
+					::subxt::metadata::DecodeStaticType<::core::primitive::u128>,
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+					(),
+				> {
+					::subxt::storage::address::StaticStorageAddress::new(
+						"Staking",
+						"MinimumActiveStake",
+						vec![],
+						[
+							172u8, 190u8, 228u8, 47u8, 47u8, 192u8, 182u8, 59u8, 9u8, 18u8, 103u8,
+							46u8, 175u8, 54u8, 17u8, 79u8, 89u8, 107u8, 255u8, 200u8, 182u8, 107u8,
+							89u8, 157u8, 55u8, 16u8, 77u8, 46u8, 154u8, 169u8, 103u8, 151u8,
 						],
 					)
 				}
@@ -6194,6 +6285,8 @@ pub mod api {
 				}
 
 				#[doc = " Where the reward payment should be made. Keyed by stash."]
+				#[doc = ""]
+				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
 				pub fn payee(
 					&self,
 					_0: impl ::std::borrow::Borrow<::subxt::ext::sp_core::crypto::AccountId32>,
@@ -6224,6 +6317,8 @@ pub mod api {
 				}
 
 				#[doc = " Where the reward payment should be made. Keyed by stash."]
+				#[doc = ""]
+				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
 				pub fn payee_root(
 					&self,
 				) -> ::subxt::storage::address::StaticStorageAddress<
@@ -6250,6 +6345,8 @@ pub mod api {
 				}
 
 				#[doc = " The map from (wannabe) validator stash key to the preferences of that validator."]
+				#[doc = ""]
+				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
 				pub fn validators(
 					&self,
 					_0: impl ::std::borrow::Borrow<::subxt::ext::sp_core::crypto::AccountId32>,
@@ -6278,6 +6375,8 @@ pub mod api {
 				}
 
 				#[doc = " The map from (wannabe) validator stash key to the preferences of that validator."]
+				#[doc = ""]
+				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
 				pub fn validators_root(
 					&self,
 				) -> ::subxt::storage::address::StaticStorageAddress<
@@ -6361,6 +6460,8 @@ pub mod api {
 				#[doc = ""]
 				#[doc = " Lastly, if any of the nominators become non-decodable, they can be chilled immediately via"]
 				#[doc = " [`Call::chill_other`] dispatchable by anyone."]
+				#[doc = ""]
+				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
 				pub fn nominators(
 					&self,
 					_0: impl ::std::borrow::Borrow<::subxt::ext::sp_core::crypto::AccountId32>,
@@ -6402,6 +6503,8 @@ pub mod api {
 				#[doc = ""]
 				#[doc = " Lastly, if any of the nominators become non-decodable, they can be chilled immediately via"]
 				#[doc = " [`Call::chill_other`] dispatchable by anyone."]
+				#[doc = ""]
+				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
 				pub fn nominators_root(
 					&self,
 				) -> ::subxt::storage::address::StaticStorageAddress<
@@ -7382,30 +7485,6 @@ pub mod api {
 							94u8, 254u8, 0u8, 50u8, 76u8, 232u8, 51u8, 153u8, 118u8, 14u8, 70u8,
 							101u8, 112u8, 215u8, 173u8, 82u8, 182u8, 104u8, 167u8, 103u8, 187u8,
 							168u8, 86u8, 16u8, 51u8, 235u8, 51u8, 119u8, 38u8, 154u8, 42u8, 113u8,
-						],
-					)
-				}
-
-				#[doc = " True if network has been upgraded to this version."]
-				#[doc = " Storage version of the pallet."]
-				#[doc = ""]
-				#[doc = " This is set to v7.0.0 for new networks."]
-				pub fn storage_version(
-					&self,
-				) -> ::subxt::storage::address::StaticStorageAddress<
-					::subxt::metadata::DecodeStaticType<runtime_types::pallet_staking::Releases>,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::StaticStorageAddress::new(
-						"Staking",
-						"StorageVersion",
-						vec![],
-						[
-							70u8, 24u8, 179u8, 189u8, 168u8, 164u8, 175u8, 150u8, 215u8, 43u8,
-							18u8, 110u8, 180u8, 137u8, 237u8, 187u8, 185u8, 50u8, 31u8, 57u8, 16u8,
-							110u8, 6u8, 170u8, 19u8, 7u8, 160u8, 134u8, 232u8, 227u8, 151u8, 116u8,
 						],
 					)
 				}
@@ -9730,9 +9809,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							150u8, 122u8, 102u8, 91u8, 151u8, 143u8, 14u8, 151u8, 148u8, 78u8, 2u8,
-							219u8, 31u8, 177u8, 217u8, 27u8, 164u8, 36u8, 78u8, 83u8, 73u8, 12u8,
-							173u8, 127u8, 137u8, 2u8, 226u8, 196u8, 187u8, 245u8, 212u8, 5u8,
+							34u8, 213u8, 155u8, 102u8, 114u8, 111u8, 49u8, 115u8, 171u8, 164u8,
+							92u8, 27u8, 169u8, 57u8, 36u8, 239u8, 222u8, 150u8, 137u8, 69u8, 213u8,
+							186u8, 162u8, 29u8, 90u8, 17u8, 32u8, 181u8, 209u8, 93u8, 61u8, 97u8,
 						],
 					)
 				}
@@ -9779,9 +9858,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							244u8, 71u8, 210u8, 101u8, 176u8, 89u8, 194u8, 206u8, 104u8, 212u8,
-							4u8, 82u8, 0u8, 8u8, 2u8, 147u8, 53u8, 33u8, 192u8, 236u8, 22u8, 208u8,
-							131u8, 233u8, 241u8, 233u8, 71u8, 152u8, 181u8, 168u8, 114u8, 79u8,
+							40u8, 88u8, 113u8, 251u8, 118u8, 239u8, 156u8, 71u8, 138u8, 245u8,
+							174u8, 108u8, 5u8, 113u8, 178u8, 41u8, 47u8, 231u8, 9u8, 191u8, 26u8,
+							0u8, 163u8, 54u8, 6u8, 229u8, 212u8, 253u8, 95u8, 46u8, 169u8, 33u8,
 						],
 					)
 				}
@@ -10144,9 +10223,10 @@ pub mod api {
 							::subxt::storage::address::StorageHasher::Identity,
 						)],
 						[
-							239u8, 173u8, 84u8, 82u8, 158u8, 55u8, 45u8, 98u8, 60u8, 240u8, 224u8,
-							168u8, 238u8, 3u8, 99u8, 103u8, 51u8, 57u8, 197u8, 64u8, 171u8, 38u8,
-							155u8, 109u8, 141u8, 15u8, 224u8, 68u8, 21u8, 64u8, 18u8, 127u8,
+							4u8, 133u8, 155u8, 159u8, 59u8, 180u8, 215u8, 221u8, 90u8, 125u8, 37u8,
+							202u8, 136u8, 234u8, 128u8, 178u8, 145u8, 212u8, 235u8, 68u8, 222u8,
+							138u8, 241u8, 108u8, 229u8, 226u8, 174u8, 29u8, 173u8, 188u8, 117u8,
+							253u8,
 						],
 					)
 				}
@@ -10165,9 +10245,10 @@ pub mod api {
 						"ProposalOf",
 						Vec::new(),
 						[
-							239u8, 173u8, 84u8, 82u8, 158u8, 55u8, 45u8, 98u8, 60u8, 240u8, 224u8,
-							168u8, 238u8, 3u8, 99u8, 103u8, 51u8, 57u8, 197u8, 64u8, 171u8, 38u8,
-							155u8, 109u8, 141u8, 15u8, 224u8, 68u8, 21u8, 64u8, 18u8, 127u8,
+							4u8, 133u8, 155u8, 159u8, 59u8, 180u8, 215u8, 221u8, 90u8, 125u8, 37u8,
+							202u8, 136u8, 234u8, 128u8, 178u8, 145u8, 212u8, 235u8, 68u8, 222u8,
+							138u8, 241u8, 108u8, 229u8, 226u8, 174u8, 29u8, 173u8, 188u8, 117u8,
+							253u8,
 						],
 					)
 				}
@@ -10486,9 +10567,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							150u8, 122u8, 102u8, 91u8, 151u8, 143u8, 14u8, 151u8, 148u8, 78u8, 2u8,
-							219u8, 31u8, 177u8, 217u8, 27u8, 164u8, 36u8, 78u8, 83u8, 73u8, 12u8,
-							173u8, 127u8, 137u8, 2u8, 226u8, 196u8, 187u8, 245u8, 212u8, 5u8,
+							34u8, 213u8, 155u8, 102u8, 114u8, 111u8, 49u8, 115u8, 171u8, 164u8,
+							92u8, 27u8, 169u8, 57u8, 36u8, 239u8, 222u8, 150u8, 137u8, 69u8, 213u8,
+							186u8, 162u8, 29u8, 90u8, 17u8, 32u8, 181u8, 209u8, 93u8, 61u8, 97u8,
 						],
 					)
 				}
@@ -10535,9 +10616,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							244u8, 71u8, 210u8, 101u8, 176u8, 89u8, 194u8, 206u8, 104u8, 212u8,
-							4u8, 82u8, 0u8, 8u8, 2u8, 147u8, 53u8, 33u8, 192u8, 236u8, 22u8, 208u8,
-							131u8, 233u8, 241u8, 233u8, 71u8, 152u8, 181u8, 168u8, 114u8, 79u8,
+							40u8, 88u8, 113u8, 251u8, 118u8, 239u8, 156u8, 71u8, 138u8, 245u8,
+							174u8, 108u8, 5u8, 113u8, 178u8, 41u8, 47u8, 231u8, 9u8, 191u8, 26u8,
+							0u8, 163u8, 54u8, 6u8, 229u8, 212u8, 253u8, 95u8, 46u8, 169u8, 33u8,
 						],
 					)
 				}
@@ -10900,9 +10981,10 @@ pub mod api {
 							::subxt::storage::address::StorageHasher::Identity,
 						)],
 						[
-							239u8, 173u8, 84u8, 82u8, 158u8, 55u8, 45u8, 98u8, 60u8, 240u8, 224u8,
-							168u8, 238u8, 3u8, 99u8, 103u8, 51u8, 57u8, 197u8, 64u8, 171u8, 38u8,
-							155u8, 109u8, 141u8, 15u8, 224u8, 68u8, 21u8, 64u8, 18u8, 127u8,
+							4u8, 133u8, 155u8, 159u8, 59u8, 180u8, 215u8, 221u8, 90u8, 125u8, 37u8,
+							202u8, 136u8, 234u8, 128u8, 178u8, 145u8, 212u8, 235u8, 68u8, 222u8,
+							138u8, 241u8, 108u8, 229u8, 226u8, 174u8, 29u8, 173u8, 188u8, 117u8,
+							253u8,
 						],
 					)
 				}
@@ -10921,9 +11003,10 @@ pub mod api {
 						"ProposalOf",
 						Vec::new(),
 						[
-							239u8, 173u8, 84u8, 82u8, 158u8, 55u8, 45u8, 98u8, 60u8, 240u8, 224u8,
-							168u8, 238u8, 3u8, 99u8, 103u8, 51u8, 57u8, 197u8, 64u8, 171u8, 38u8,
-							155u8, 109u8, 141u8, 15u8, 224u8, 68u8, 21u8, 64u8, 18u8, 127u8,
+							4u8, 133u8, 155u8, 159u8, 59u8, 180u8, 215u8, 221u8, 90u8, 125u8, 37u8,
+							202u8, 136u8, 234u8, 128u8, 178u8, 145u8, 212u8, 235u8, 68u8, 222u8,
+							138u8, 241u8, 108u8, 229u8, 226u8, 174u8, 29u8, 173u8, 188u8, 117u8,
+							253u8,
 						],
 					)
 				}
@@ -12941,6 +13024,23 @@ pub mod api {
 				const EVENT: &'static str = "SpendApproved";
 				const PALLET: &'static str = "Treasury";
 			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			#[doc = "The inactive funds of the pallet have been updated."]
+			pub struct UpdatedInactive {
+				pub reactivated: ::core::primitive::u128,
+				pub deactivated: ::core::primitive::u128,
+			}
+			impl ::subxt::events::StaticEvent for UpdatedInactive {
+				const EVENT: &'static str = "UpdatedInactive";
+				const PALLET: &'static str = "Treasury";
+			}
 		}
 		pub mod storage {
 			use super::runtime_types;
@@ -13020,6 +13120,27 @@ pub mod api {
 							62u8, 223u8, 55u8, 209u8, 151u8, 134u8, 122u8, 65u8, 207u8, 38u8,
 							113u8, 213u8, 237u8, 48u8, 129u8, 32u8, 91u8, 228u8, 108u8, 91u8, 37u8,
 							49u8, 94u8, 4u8, 75u8, 122u8, 25u8, 34u8, 198u8, 224u8, 246u8, 160u8,
+						],
+					)
+				}
+
+				#[doc = " The amount which has been reported as inactive to Currency."]
+				pub fn deactivated(
+					&self,
+				) -> ::subxt::storage::address::StaticStorageAddress<
+					::subxt::metadata::DecodeStaticType<::core::primitive::u128>,
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+					(),
+				> {
+					::subxt::storage::address::StaticStorageAddress::new(
+						"Treasury",
+						"Deactivated",
+						vec![],
+						[
+							159u8, 57u8, 5u8, 85u8, 136u8, 128u8, 70u8, 43u8, 67u8, 76u8, 123u8,
+							206u8, 48u8, 253u8, 51u8, 40u8, 14u8, 35u8, 162u8, 173u8, 127u8, 79u8,
+							38u8, 235u8, 9u8, 141u8, 201u8, 37u8, 211u8, 176u8, 119u8, 106u8,
 						],
 					)
 				}
@@ -13247,9 +13368,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							26u8, 231u8, 126u8, 255u8, 51u8, 35u8, 162u8, 17u8, 136u8, 124u8,
-							253u8, 43u8, 144u8, 189u8, 4u8, 58u8, 4u8, 199u8, 246u8, 115u8, 129u8,
-							78u8, 81u8, 63u8, 247u8, 160u8, 148u8, 3u8, 112u8, 6u8, 194u8, 39u8,
+							219u8, 163u8, 250u8, 130u8, 173u8, 105u8, 238u8, 131u8, 62u8, 63u8,
+							52u8, 153u8, 123u8, 2u8, 172u8, 190u8, 215u8, 41u8, 93u8, 119u8, 46u8,
+							61u8, 163u8, 213u8, 117u8, 45u8, 254u8, 95u8, 135u8, 211u8, 107u8,
+							217u8,
 						],
 					)
 				}
@@ -13277,10 +13399,10 @@ pub mod api {
 							weight,
 						},
 						[
-							184u8, 12u8, 214u8, 157u8, 25u8, 25u8, 230u8, 14u8, 166u8, 170u8,
-							110u8, 145u8, 232u8, 25u8, 166u8, 195u8, 183u8, 137u8, 140u8, 247u8,
-							47u8, 5u8, 3u8, 121u8, 27u8, 76u8, 142u8, 65u8, 200u8, 209u8, 176u8,
-							84u8,
+							193u8, 193u8, 169u8, 53u8, 111u8, 73u8, 124u8, 99u8, 79u8, 216u8, 86u8,
+							132u8, 189u8, 156u8, 210u8, 179u8, 105u8, 182u8, 11u8, 191u8, 218u8,
+							166u8, 76u8, 187u8, 31u8, 190u8, 247u8, 196u8, 98u8, 121u8, 238u8,
+							150u8,
 						],
 					)
 				}
@@ -13336,10 +13458,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							57u8, 58u8, 99u8, 60u8, 221u8, 46u8, 174u8, 215u8, 142u8, 113u8, 85u8,
-							16u8, 30u8, 163u8, 44u8, 145u8, 33u8, 212u8, 171u8, 191u8, 215u8,
-							109u8, 101u8, 190u8, 97u8, 122u8, 240u8, 191u8, 108u8, 56u8, 190u8,
-							187u8,
+							235u8, 201u8, 176u8, 110u8, 69u8, 39u8, 219u8, 82u8, 210u8, 50u8,
+							252u8, 175u8, 0u8, 94u8, 158u8, 220u8, 140u8, 148u8, 192u8, 144u8,
+							188u8, 56u8, 192u8, 55u8, 28u8, 122u8, 22u8, 144u8, 6u8, 68u8, 144u8,
+							219u8,
 						],
 					)
 				}
@@ -14215,10 +14337,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							73u8, 54u8, 74u8, 111u8, 203u8, 84u8, 73u8, 99u8, 61u8, 155u8, 144u8,
-							49u8, 242u8, 23u8, 174u8, 135u8, 157u8, 172u8, 72u8, 19u8, 143u8,
-							142u8, 39u8, 228u8, 137u8, 205u8, 155u8, 65u8, 244u8, 10u8, 146u8,
-							47u8,
+							99u8, 239u8, 27u8, 125u8, 24u8, 149u8, 25u8, 241u8, 55u8, 117u8, 19u8,
+							84u8, 232u8, 58u8, 242u8, 8u8, 35u8, 187u8, 136u8, 61u8, 182u8, 152u8,
+							124u8, 127u8, 100u8, 121u8, 186u8, 49u8, 133u8, 160u8, 34u8, 92u8,
 						],
 					)
 				}
@@ -14264,9 +14385,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							57u8, 134u8, 96u8, 254u8, 141u8, 50u8, 182u8, 86u8, 29u8, 154u8, 11u8,
-							135u8, 26u8, 115u8, 64u8, 3u8, 250u8, 104u8, 138u8, 83u8, 133u8, 42u8,
-							207u8, 66u8, 205u8, 91u8, 84u8, 11u8, 127u8, 182u8, 1u8, 63u8,
+							149u8, 209u8, 15u8, 211u8, 221u8, 7u8, 161u8, 238u8, 0u8, 242u8, 220u8,
+							35u8, 107u8, 36u8, 197u8, 63u8, 48u8, 86u8, 55u8, 94u8, 144u8, 250u8,
+							192u8, 247u8, 14u8, 61u8, 61u8, 182u8, 203u8, 82u8, 93u8, 102u8,
 						],
 					)
 				}
@@ -14313,9 +14434,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							180u8, 135u8, 65u8, 150u8, 89u8, 118u8, 67u8, 148u8, 90u8, 175u8, 36u8,
-							249u8, 110u8, 109u8, 109u8, 36u8, 250u8, 193u8, 21u8, 77u8, 154u8,
-							84u8, 4u8, 77u8, 70u8, 14u8, 134u8, 5u8, 194u8, 80u8, 87u8, 12u8,
+							175u8, 41u8, 39u8, 213u8, 108u8, 178u8, 200u8, 250u8, 37u8, 222u8,
+							17u8, 51u8, 153u8, 81u8, 204u8, 139u8, 146u8, 26u8, 23u8, 165u8, 99u8,
+							100u8, 239u8, 146u8, 98u8, 48u8, 253u8, 0u8, 17u8, 49u8, 62u8, 37u8,
 						],
 					)
 				}
@@ -14347,9 +14468,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							8u8, 16u8, 18u8, 133u8, 68u8, 123u8, 65u8, 181u8, 146u8, 109u8, 142u8,
-							203u8, 75u8, 44u8, 239u8, 5u8, 38u8, 29u8, 125u8, 118u8, 244u8, 46u8,
-							43u8, 142u8, 87u8, 245u8, 107u8, 93u8, 15u8, 107u8, 148u8, 187u8,
+							72u8, 57u8, 226u8, 90u8, 170u8, 179u8, 182u8, 36u8, 220u8, 91u8, 72u8,
+							151u8, 8u8, 2u8, 199u8, 172u8, 0u8, 202u8, 106u8, 114u8, 72u8, 153u8,
+							67u8, 162u8, 167u8, 6u8, 69u8, 234u8, 167u8, 115u8, 33u8, 195u8,
 						],
 					)
 				}
@@ -14823,7 +14944,7 @@ pub mod api {
 				#[doc = "Approve a bounty proposal. At a later time, the bounty will be funded and become active"]
 				#[doc = "and the original deposit will be returned."]
 				#[doc = ""]
-				#[doc = "May only be called from `T::ApproveOrigin`."]
+				#[doc = "May only be called from `T::SpendOrigin`."]
 				#[doc = ""]
 				#[doc = "# <weight>"]
 				#[doc = "- O(1)."]
@@ -14846,7 +14967,7 @@ pub mod api {
 
 				#[doc = "Assign a curator to a funded bounty."]
 				#[doc = ""]
-				#[doc = "May only be called from `T::ApproveOrigin`."]
+				#[doc = "May only be called from `T::SpendOrigin`."]
 				#[doc = ""]
 				#[doc = "# <weight>"]
 				#[doc = "- O(1)."]
@@ -17547,9 +17668,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							179u8, 216u8, 2u8, 65u8, 84u8, 42u8, 154u8, 62u8, 212u8, 39u8, 54u8,
-							7u8, 63u8, 207u8, 179u8, 221u8, 160u8, 193u8, 175u8, 23u8, 222u8,
-							105u8, 70u8, 46u8, 134u8, 11u8, 0u8, 92u8, 192u8, 220u8, 75u8, 33u8,
+							44u8, 62u8, 75u8, 122u8, 179u8, 199u8, 137u8, 40u8, 240u8, 219u8, 5u8,
+							20u8, 230u8, 74u8, 149u8, 238u8, 21u8, 88u8, 186u8, 181u8, 159u8,
+							253u8, 65u8, 180u8, 142u8, 121u8, 182u8, 103u8, 213u8, 163u8, 163u8,
+							242u8,
 						],
 					)
 				}
@@ -17620,10 +17742,9 @@ pub mod api {
 							max_weight,
 						},
 						[
-							123u8, 241u8, 55u8, 242u8, 102u8, 70u8, 170u8, 127u8, 68u8, 134u8,
-							102u8, 103u8, 108u8, 195u8, 31u8, 127u8, 148u8, 46u8, 120u8, 204u8,
-							122u8, 169u8, 171u8, 235u8, 238u8, 219u8, 48u8, 111u8, 82u8, 179u8,
-							14u8, 252u8,
+							11u8, 71u8, 243u8, 78u8, 176u8, 236u8, 255u8, 63u8, 195u8, 176u8, 53u8,
+							35u8, 23u8, 74u8, 44u8, 15u8, 40u8, 171u8, 81u8, 150u8, 219u8, 2u8,
+							249u8, 73u8, 84u8, 0u8, 82u8, 41u8, 247u8, 183u8, 44u8, 125u8,
 						],
 					)
 				}
@@ -18585,9 +18706,12 @@ pub mod api {
 				#[doc = "# Note"]
 				#[doc = ""]
 				#[doc = "If there are too many unlocking chunks to unbond with the pool account,"]
-				#[doc = "[`Call::pool_withdraw_unbonded`] can be called to try and minimize unlocking chunks. If"]
-				#[doc = "there are too many unlocking chunks, the result of this call will likely be the"]
-				#[doc = "`NoMoreChunks` error from the staking system."]
+				#[doc = "[`Call::pool_withdraw_unbonded`] can be called to try and minimize unlocking chunks."]
+				#[doc = "The [`StakingInterface::unbond`] will implicitly call [`Call::pool_withdraw_unbonded`]"]
+				#[doc = "to try to free chunks if necessary (ie. if unbound was called and no unlocking chunks"]
+				#[doc = "are available). However, it may not be possible to release the current unlocking chunks,"]
+				#[doc = "in which case, the result of this call will likely be the `NoMoreChunks` error from the"]
+				#[doc = "staking system."]
 				pub fn unbond(
 					&self,
 					member_account: ::subxt::ext::sp_runtime::MultiAddress<
@@ -19297,6 +19421,8 @@ pub mod api {
 				}
 
 				#[doc = " Active members."]
+				#[doc = ""]
+				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
 				pub fn pool_members(
 					&self,
 					_0: impl ::std::borrow::Borrow<::subxt::ext::sp_core::crypto::AccountId32>,
@@ -19325,6 +19451,8 @@ pub mod api {
 				}
 
 				#[doc = " Active members."]
+				#[doc = ""]
+				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
 				pub fn pool_members_root(
 					&self,
 				) -> ::subxt::storage::address::StaticStorageAddress<
@@ -20892,11 +21020,6 @@ pub mod api {
 				#[doc = "Contains one variant per dispatchable that can be called by an extrinsic."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "A dispatch that will fill the block weight up to the given ratio."]
-					fill_block {
-						ratio: runtime_types::sp_arithmetic::per_things::Perbill,
-					},
-					#[codec(index = 1)]
 					#[doc = "Make some on-chain remark."]
 					#[doc = ""]
 					#[doc = "# <weight>"]
@@ -20905,10 +21028,10 @@ pub mod api {
 					remark {
 						remark: ::std::vec::Vec<::core::primitive::u8>,
 					},
-					#[codec(index = 2)]
+					#[codec(index = 1)]
 					#[doc = "Set the number of pages in the WebAssembly environment's heap."]
 					set_heap_pages { pages: ::core::primitive::u64 },
-					#[codec(index = 3)]
+					#[codec(index = 2)]
 					#[doc = "Set the new runtime code."]
 					#[doc = ""]
 					#[doc = "# <weight>"]
@@ -20924,7 +21047,7 @@ pub mod api {
 					set_code {
 						code: ::std::vec::Vec<::core::primitive::u8>,
 					},
-					#[codec(index = 4)]
+					#[codec(index = 3)]
 					#[doc = "Set the new runtime code without doing any checks of the given `code`."]
 					#[doc = ""]
 					#[doc = "# <weight>"]
@@ -20937,7 +21060,7 @@ pub mod api {
 					set_code_without_checks {
 						code: ::std::vec::Vec<::core::primitive::u8>,
 					},
-					#[codec(index = 5)]
+					#[codec(index = 4)]
 					#[doc = "Set some items of storage."]
 					set_storage {
 						items: ::std::vec::Vec<(
@@ -20945,12 +21068,12 @@ pub mod api {
 							::std::vec::Vec<::core::primitive::u8>,
 						)>,
 					},
-					#[codec(index = 6)]
+					#[codec(index = 5)]
 					#[doc = "Kill some items from storage."]
 					kill_storage {
 						keys: ::std::vec::Vec<::std::vec::Vec<::core::primitive::u8>>,
 					},
-					#[codec(index = 7)]
+					#[codec(index = 6)]
 					#[doc = "Kill all storage items with a key that starts with the given prefix."]
 					#[doc = ""]
 					#[doc = "**NOTE:** We rely on the Root origin to provide us the number of subkeys under"]
@@ -20959,7 +21082,7 @@ pub mod api {
 						prefix: ::std::vec::Vec<::core::primitive::u8>,
 						subkeys: ::core::primitive::u32,
 					},
-					#[codec(index = 8)]
+					#[codec(index = 7)]
 					#[doc = "Make some on-chain remark and emit event."]
 					remark_with_event {
 						remark: ::std::vec::Vec<::core::primitive::u8>,
@@ -21968,20 +22091,6 @@ pub mod api {
 				Eq,
 				PartialEq,
 			)]
-			pub enum Releases {
-				#[codec(index = 0)]
-				V1_0_0,
-				#[codec(index = 1)]
-				V2_0_0,
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
 			pub struct ReserveData<_0, _1> {
 				pub id: _0,
 				pub amount: _1,
@@ -22023,7 +22132,7 @@ pub mod api {
 					#[doc = "Approve a bounty proposal. At a later time, the bounty will be funded and become active"]
 					#[doc = "and the original deposit will be returned."]
 					#[doc = ""]
-					#[doc = "May only be called from `T::ApproveOrigin`."]
+					#[doc = "May only be called from `T::SpendOrigin`."]
 					#[doc = ""]
 					#[doc = "# <weight>"]
 					#[doc = "- O(1)."]
@@ -22035,7 +22144,7 @@ pub mod api {
 					#[codec(index = 2)]
 					#[doc = "Assign a curator to a funded bounty."]
 					#[doc = ""]
-					#[doc = "May only be called from `T::ApproveOrigin`."]
+					#[doc = "May only be called from `T::SpendOrigin`."]
 					#[doc = ""]
 					#[doc = "# <weight>"]
 					#[doc = "- O(1)."]
@@ -23373,13 +23482,15 @@ pub mod api {
 					#[codec(index = 0)]
 					#[doc = "A solution was stored with the given compute."]
 					#[doc = ""]
-					#[doc = "If the solution is signed, this means that it hasn't yet been processed. If the"]
-					#[doc = "solution is unsigned, this means that it has also been processed."]
-					#[doc = ""]
-					#[doc = "The `bool` is `true` when a previous solution was ejected to make room for this one."]
+					#[doc = "The `origin` indicates the origin of the solution. If `origin` is `Some(AccountId)`,"]
+					#[doc = "the stored solution was submited in the signed phase by a miner with the `AccountId`."]
+					#[doc = "Otherwise, the solution was stored either during the unsigned phase or by"]
+					#[doc = "`T::ForceOrigin`. The `bool` is `true` when a previous solution was ejected to make"]
+					#[doc = "room for this one."]
 					SolutionStored {
 						compute:
 							runtime_types::pallet_election_provider_multi_phase::ElectionCompute,
+						origin: ::core::option::Option<::subxt::ext::sp_core::crypto::AccountId32>,
 						prev_ejected: ::core::primitive::bool,
 					},
 					#[codec(index = 1)]
@@ -23407,11 +23518,16 @@ pub mod api {
 						value: ::core::primitive::u128,
 					},
 					#[codec(index = 5)]
-					#[doc = "The signed phase of the given round has started."]
-					SignedPhaseStarted { round: ::core::primitive::u32 },
-					#[codec(index = 6)]
-					#[doc = "The unsigned phase of the given round has started."]
-					UnsignedPhaseStarted { round: ::core::primitive::u32 },
+					#[doc = "There was a phase transition in a given round."]
+					PhaseTransitioned {
+						from: runtime_types::pallet_election_provider_multi_phase::Phase<
+							::core::primitive::u32,
+						>,
+						to: runtime_types::pallet_election_provider_multi_phase::Phase<
+							::core::primitive::u32,
+						>,
+						round: ::core::primitive::u32,
+					},
 				}
 			}
 			pub mod signed {
@@ -24832,9 +24948,12 @@ pub mod api {
 					#[doc = "# Note"]
 					#[doc = ""]
 					#[doc = "If there are too many unlocking chunks to unbond with the pool account,"]
-					#[doc = "[`Call::pool_withdraw_unbonded`] can be called to try and minimize unlocking chunks. If"]
-					#[doc = "there are too many unlocking chunks, the result of this call will likely be the"]
-					#[doc = "`NoMoreChunks` error from the staking system."]
+					#[doc = "[`Call::pool_withdraw_unbonded`] can be called to try and minimize unlocking chunks."]
+					#[doc = "The [`StakingInterface::unbond`] will implicitly call [`Call::pool_withdraw_unbonded`]"]
+					#[doc = "to try to free chunks if necessary (ie. if unbound was called and no unlocking chunks"]
+					#[doc = "are available). However, it may not be possible to release the current unlocking chunks,"]
+					#[doc = "in which case, the result of this call will likely be the `NoMoreChunks` error from the"]
+					#[doc = "staking system."]
 					unbond {
 						member_account: ::subxt::ext::sp_runtime::MultiAddress<
 							::subxt::ext::sp_core::crypto::AccountId32,
@@ -25869,8 +25988,8 @@ pub mod api {
 						#[doc = "the funds out of management ready for transfer."]
 						#[doc = ""]
 						#[doc = "No more than a limited number of unlocking chunks (see `MaxUnlockingChunks`)"]
-						#[doc = "can co-exists at the same time. In that case, [`Call::withdraw_unbonded`] need"]
-						#[doc = "to be called first to remove some of the chunks (if possible)."]
+						#[doc = "can co-exists at the same time. If there are no unlocking chunks slots available"]
+						#[doc = "[`Call::withdraw_unbonded`] is called to remove some of the chunks (if possible)."]
 						#[doc = ""]
 						#[doc = "If a user encounters the `InsufficientBond` error when calling this extrinsic,"]
 						#[doc = "they should call `chill` first in order to free up their bonded funds."]
@@ -26091,7 +26210,7 @@ pub mod api {
 						#[codec(index = 17)]
 						#[doc = "Cancel enactment of a deferred slash."]
 						#[doc = ""]
-						#[doc = "Can be called by the `T::SlashCancelOrigin`."]
+						#[doc = "Can be called by the `T::AdminOrigin`."]
 						#[doc = ""]
 						#[doc = "Parameters: era and indices of the slashes for that era to kill."]
 						cancel_deferred_slash {
@@ -26255,6 +26374,14 @@ pub mod api {
 						force_apply_min_commission {
 							validator_stash: ::subxt::ext::sp_core::crypto::AccountId32,
 						},
+						#[codec(index = 25)]
+						#[doc = "Sets the minimum amount of commission that each validators must maintain."]
+						#[doc = ""]
+						#[doc = "This call has lower privilege requirements than `set_staking_config` and can be called"]
+						#[doc = "by the `T::AdminOrigin`. Root can always call this."]
+						set_min_commission {
+							new: runtime_types::sp_arithmetic::per_things::Perbill,
+						},
 					}
 					#[derive(
 						:: subxt :: ext :: codec :: Decode,
@@ -26387,21 +26514,29 @@ pub mod api {
 							amount: ::core::primitive::u128,
 						},
 						#[codec(index = 2)]
-						#[doc = "One staker (and potentially its nominators) has been slashed by the given amount."]
+						#[doc = "A staker (validator or nominator) has been slashed by the given amount."]
 						Slashed {
 							staker: ::subxt::ext::sp_core::crypto::AccountId32,
 							amount: ::core::primitive::u128,
 						},
 						#[codec(index = 3)]
+						#[doc = "A slash for the given validator, for the given percentage of their stake, at the given"]
+						#[doc = "era as been reported."]
+						SlashReported {
+							validator: ::subxt::ext::sp_core::crypto::AccountId32,
+							fraction: runtime_types::sp_arithmetic::per_things::Perbill,
+							slash_era: ::core::primitive::u32,
+						},
+						#[codec(index = 4)]
 						#[doc = "An old slashing report from a prior era was discarded because it could"]
 						#[doc = "not be processed."]
 						OldSlashingReportDiscarded {
 							session_index: ::core::primitive::u32,
 						},
-						#[codec(index = 4)]
+						#[codec(index = 5)]
 						#[doc = "A new set of stakers was elected."]
 						StakersElected,
-						#[codec(index = 5)]
+						#[codec(index = 6)]
 						#[doc = "An account has bonded this amount. \\[stash, amount\\]"]
 						#[doc = ""]
 						#[doc = "NOTE: This event is only emitted when funds are bonded via a dispatchable. Notably,"]
@@ -26410,44 +26545,49 @@ pub mod api {
 							stash: ::subxt::ext::sp_core::crypto::AccountId32,
 							amount: ::core::primitive::u128,
 						},
-						#[codec(index = 6)]
+						#[codec(index = 7)]
 						#[doc = "An account has unbonded this amount."]
 						Unbonded {
 							stash: ::subxt::ext::sp_core::crypto::AccountId32,
 							amount: ::core::primitive::u128,
 						},
-						#[codec(index = 7)]
+						#[codec(index = 8)]
 						#[doc = "An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`"]
 						#[doc = "from the unlocking queue."]
 						Withdrawn {
 							stash: ::subxt::ext::sp_core::crypto::AccountId32,
 							amount: ::core::primitive::u128,
 						},
-						#[codec(index = 8)]
+						#[codec(index = 9)]
 						#[doc = "A nominator has been kicked from a validator."]
 						Kicked {
 							nominator: ::subxt::ext::sp_core::crypto::AccountId32,
 							stash: ::subxt::ext::sp_core::crypto::AccountId32,
 						},
-						#[codec(index = 9)]
+						#[codec(index = 10)]
 						#[doc = "The election failed. No new era is planned."]
 						StakingElectionFailed,
-						#[codec(index = 10)]
+						#[codec(index = 11)]
 						#[doc = "An account has stopped participating as either a validator or nominator."]
 						Chilled {
 							stash: ::subxt::ext::sp_core::crypto::AccountId32,
 						},
-						#[codec(index = 11)]
+						#[codec(index = 12)]
 						#[doc = "The stakers' rewards are getting paid."]
 						PayoutStarted {
 							era_index: ::core::primitive::u32,
 							validator_stash: ::subxt::ext::sp_core::crypto::AccountId32,
 						},
-						#[codec(index = 12)]
+						#[codec(index = 13)]
 						#[doc = "A validator has set their preferences."]
 						ValidatorPrefsSet {
 							stash: ::subxt::ext::sp_core::crypto::AccountId32,
 							prefs: runtime_types::pallet_staking::ValidatorPrefs,
+						},
+						#[codec(index = 14)]
+						#[doc = "A new force era mode was set."]
+						ForceEra {
+							mode: runtime_types::pallet_staking::Forcing,
 						},
 					}
 				}
@@ -26566,40 +26706,6 @@ pub mod api {
 				>,
 				pub submitted_in: ::core::primitive::u32,
 				pub suppressed: ::core::primitive::bool,
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			pub enum Releases {
-				#[codec(index = 0)]
-				V1_0_0Ancient,
-				#[codec(index = 1)]
-				V2_0_0,
-				#[codec(index = 2)]
-				V3_0_0,
-				#[codec(index = 3)]
-				V4_0_0,
-				#[codec(index = 4)]
-				V5_0_0,
-				#[codec(index = 5)]
-				V6_0_0,
-				#[codec(index = 6)]
-				V7_0_0,
-				#[codec(index = 7)]
-				V8_0_0,
-				#[codec(index = 8)]
-				V9_0_0,
-				#[codec(index = 9)]
-				V10_0_0,
-				#[codec(index = 10)]
-				V11_0_0,
-				#[codec(index = 11)]
-				V12_0_0,
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -27320,6 +27426,12 @@ pub mod api {
 						amount: ::core::primitive::u128,
 						beneficiary: ::subxt::ext::sp_core::crypto::AccountId32,
 					},
+					#[codec(index = 8)]
+					#[doc = "The inactive funds of the pallet have been updated."]
+					UpdatedInactive {
+						reactivated: ::core::primitive::u128,
+						deactivated: ::core::primitive::u128,
+					},
 				}
 			}
 			#[derive(
@@ -27442,6 +27554,17 @@ pub mod api {
 					#[doc = "# </weight>"]
 					force_batch {
 						calls: ::std::vec::Vec<runtime_types::da_runtime::RuntimeCall>,
+					},
+					#[codec(index = 5)]
+					#[doc = "Dispatch a function call with a specified weight."]
+					#[doc = ""]
+					#[doc = "This function does not check the weight of the call, and instead allows the"]
+					#[doc = "Root origin to specify the weight of the call."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Root_."]
+					with_weight {
+						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
+						weight: runtime_types::sp_weights::weight_v2::Weight,
 					},
 				}
 				#[derive(
@@ -27585,6 +27708,22 @@ pub mod api {
 					PartialEq,
 				)]
 				pub struct Permill(pub ::core::primitive::u32);
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			pub enum ArithmeticError {
+				#[codec(index = 0)]
+				Underflow,
+				#[codec(index = 1)]
+				Overflow,
+				#[codec(index = 2)]
+				DivisionByZero,
 			}
 		}
 		pub mod sp_authority_discovery {
@@ -28615,22 +28754,6 @@ pub mod api {
 				Eq,
 				PartialEq,
 			)]
-			pub enum ArithmeticError {
-				#[codec(index = 0)]
-				Underflow,
-				#[codec(index = 1)]
-				Overflow,
-				#[codec(index = 2)]
-				DivisionByZero,
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
 			pub enum DispatchError {
 				#[codec(index = 0)]
 				Other,
@@ -28649,7 +28772,7 @@ pub mod api {
 				#[codec(index = 7)]
 				Token(runtime_types::sp_runtime::TokenError),
 				#[codec(index = 8)]
-				Arithmetic(runtime_types::sp_runtime::ArithmeticError),
+				Arithmetic(runtime_types::sp_arithmetic::ArithmeticError),
 				#[codec(index = 9)]
 				Transactional(runtime_types::sp_runtime::TransactionalError),
 				#[codec(index = 10)]
@@ -29130,9 +29253,9 @@ pub mod api {
 		let runtime_metadata_hash = client.metadata().metadata_hash(&PALLETS);
 		if runtime_metadata_hash
 			!= [
-				241u8, 130u8, 53u8, 154u8, 179u8, 232u8, 152u8, 86u8, 197u8, 9u8, 139u8, 59u8,
-				201u8, 109u8, 98u8, 156u8, 60u8, 68u8, 91u8, 116u8, 3u8, 81u8, 51u8, 244u8, 34u8,
-				246u8, 34u8, 132u8, 245u8, 147u8, 170u8, 126u8,
+				0u8, 112u8, 129u8, 241u8, 184u8, 237u8, 230u8, 119u8, 190u8, 125u8, 148u8, 26u8,
+				90u8, 213u8, 67u8, 19u8, 128u8, 165u8, 176u8, 158u8, 43u8, 167u8, 151u8, 170u8,
+				176u8, 32u8, 12u8, 170u8, 14u8, 203u8, 45u8, 196u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleMetadata)
 		} else {
