@@ -12,6 +12,7 @@ type Config struct {
 	Size   int    `json:"size"`
 	AppID  int    `json:"app_id"`
 	Dest   string `json:"dest"`
+	Amount uint64 `json:"amount"`
 }
 
 func (c *Config) GetConfig(configFileName string) error {

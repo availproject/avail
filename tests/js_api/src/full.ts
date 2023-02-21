@@ -41,7 +41,7 @@ async function sendTx(api: ApiPromise, sender: KeyringPair, nonce: number): Prom
     try {
 
         let data = generateData(config.size);
-        let submit = await api.tx.dataAvailability.submitData("new_world");
+        let submit = api.tx.dataAvailability.submitData(data);
         /* @note here app_id is 1,
         but if you want to have one your own then create one first before initialising here */
         const options: Partial<any> = { app_id: config.app_id, nonce: nonce }
@@ -93,7 +93,6 @@ async function get(api: any, block_hash: H256, extrinsic_hash: H256) {
 
     let data: Array<string> = [];
     extrinsics.forEach(async (ex: any, index: number) => {
-        console.log("Call Index: ", ex.callIndex[0], ' ', ex.callIndex[1])
         if (extrinsic_hash == ex.hash.toHex()) {
             console.log(index, ex.toHuman());
             const { method: { args, method, section } } = ex;

@@ -89,12 +89,13 @@ func submit_data(size int, ApiURL string, Seed string, AppID int) {
 	}
 
 	// Send the extrinsic
-	_, err = api.RPC.Author.SubmitAndWatchExtrinsic(ext)
+	hash, err := api.RPC.Author.SubmitExtrinsic(ext)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("Data submitted by Alice: %v against appID %v\n", data, appID)
+	fmt.Printf("Data submitted by Alice: %v against appID %v  sent with hash %#x\n", data, appID, hash)
+
 }
 
 func main() {
@@ -114,7 +115,7 @@ func main() {
 		panic(err)
 	}
 	size := 0
-	if config.Size == 0 || config.Size > -1 {
+	if config.Size <= 0 {
 		size = 100
 	}
 	submit_data(size, config.ApiURL, config.Seed, config.AppID)
