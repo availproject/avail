@@ -126,6 +126,8 @@ func main() {
 		case status := <-sub.Chan():
 			if status.IsInBlock {
 				fmt.Printf("Txn inside block %v\n", status.AsInBlock.Hex())
+				hash := status.AsInBlock
+				get(hash, api, sub_data)
 			} else if status.IsFinalized {
 				fmt.Printf("Txn inside finalized block\n")
 				return
@@ -135,4 +137,25 @@ func main() {
 			return
 		}
 	}
+}
+
+func get(hash types.Hash, api *gsrpc.SubstrateAPI, data string) {
+	block, err := api.RPC.Chain.GetBlock(hash)
+	if err != nil {
+		panic(err)
+	}
+	for _, ext := range block.Block.Extrinsics {
+		// these values below are specific indexes only for datasubmission, differs with each extrinsics
+		if ext.Method.CallIndex.SectionIndex == 29 && ext.Method.CallIndex.MethodIndex == 1 {
+			arg := ext.Method.Args
+			str := string(arg)
+			slice := str[2:]
+			fmt.Println("string value", slice)
+			fmt.Println("data", data)
+			if slice == data {
+				fmt.Println("Data found in block")
+			}
+		}
+	}
+
 }
