@@ -18,7 +18,7 @@
 use codec::{Decode, Encode};
 use da_primitives::InvalidTransactionCustomId::MaxPaddedLenExceeded;
 use frame_support::{
-	dispatch::{DispatchClass, DispatchInfo, PostDispatchInfo},
+	dispatch::{DispatchInfo, PostDispatchInfo},
 	fail,
 	traits::Get,
 };
@@ -231,9 +231,6 @@ where
 		info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> Result<(), TransactionValidityError> {
-		if info.class == DispatchClass::Mandatory {
-			return Err(InvalidTransaction::MandatoryDispatch.into());
-		}
 		Self::do_pre_dispatch(info, len)
 	}
 
@@ -244,9 +241,6 @@ where
 		info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> TransactionValidity {
-		if info.class == DispatchClass::Mandatory {
-			return Err(InvalidTransaction::MandatoryDispatch.into());
-		}
 		Self::do_validate(info, len)
 	}
 
@@ -271,16 +265,8 @@ where
 		info: &DispatchInfoOf<Self::Call>,
 		post_info: &PostDispatchInfoOf<Self::Call>,
 		_len: usize,
-		result: &DispatchResult,
+		_result: &DispatchResult,
 	) -> Result<(), TransactionValidityError> {
-		// Since mandatory dispatched do not get validated for being overweight, we are sensitive
-		// to them actually being useful. Block producers are thus not allowed to include mandatory
-		// extrinsics that result in error.
-		if let (DispatchClass::Mandatory, Err(e)) = (info.class, result) {
-			log::error!(target: LOG_TARGET, "Bad mandatory: {:?}", e);
-			Err(InvalidTransaction::BadMandatory)?
-		}
-
 		let unspent = post_info.calc_unspent(info);
 		if unspent.any_gt(Weight::zero()) {
 			crate::BlockWeight::<T>::mutate(|current_weight| {
@@ -305,7 +291,11 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckWeight<T> {
 #[cfg(test)]
 mod tests {
 	use da_primitives::BLOCK_CHUNK_SIZE;
-	use frame_support::{assert_err, assert_ok, dispatch::Pays, weights::Weight};
+	use frame_support::{
+		assert_err, assert_ok,
+		dispatch::{DispatchClass, Pays},
+		weights::Weight,
+	};
 	use sp_std::marker::PhantomData;
 
 	use super::*;

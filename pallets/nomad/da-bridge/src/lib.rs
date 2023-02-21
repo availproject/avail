@@ -85,6 +85,7 @@ pub mod pallet {
 		u32: From<T::BlockNumber>,
 	{
 		/// Dispatch a data root message to the home if the header is valid.
+		#[pallet::call_index(0)]
 		#[pallet::weight(<T as Config>::WeightInfo::try_dispatch_data_root())]
 		pub fn try_dispatch_data_root(
 			origin: OriginFor<T>,

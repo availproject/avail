@@ -17,7 +17,10 @@
 
 use frame_support::{parameter_types, traits::ConstU32};
 use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
+use sp_runtime::{
+	traits::{BlakeTwo256, IdentityLookup},
+	Perbill,
+};
 
 use crate::{self as frame_system, test_utils::TestRandomness, *};
 
@@ -113,16 +116,13 @@ impl Config for Test {
 	type Version = Version;
 }
 
-#[allow(dead_code)]
 pub type SysEvent = frame_system::Event<Test>;
 
 /// A simple call, which one doesn't matter.
-#[allow(dead_code)]
 pub const CALL: &<Test as Config>::RuntimeCall =
 	&RuntimeCall::System(frame_system::Call::set_heap_pages { pages: 0u64 });
 
 /// Create new externalities for `System` module tests.
-#[allow(dead_code)]
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut ext: sp_io::TestExternalities = GenesisConfig::default()
 		.system

@@ -31,7 +31,7 @@ da-bridge = { path = "../pallets/nomad/da-bridge" }
 # 3rd-party
 codec = { package = "parity-scale-codec", version = "3" }
 clap = { version = "4.0.9", features = ["derive"], optional = true }
-jsonrpsee = { version = "0.15.1", features = ["server"] }
+jsonrpsee = { version = "0.16.2", features = ["server"] }
 futures = "0.3.21"
 serde = { version = "1.0.126", features = ["derive"] }
 serde_json = "1.0"
@@ -42,14 +42,14 @@ hex-literal = "0.3.4"
 
 # Substrate
 ## Primitives
-sc-cli = { version = "0.10.0-dev", features = ["wasmtime"] }
-sp-core = "6.0.0"
-sc-executor = { version = "0.10.0-dev", features = ["wasmtime"] }
-sc-service = { version = "0.10.0-dev",  features = ["wasmtime"] }
+sc-cli = "0.10.0-dev"
+sp-core = "7.0.0"
+sc-executor = "0.10.0-dev"
+sc-service = "0.10.0-dev"
 sc-telemetry = "4.0.0-dev"
 sc-keystore = "4.0.0-dev"
-sp-keystore = "0.12.0"
-sp-keyring = "6.0.0"
+sp-keystore = "0.13.0"
+sp-keyring = "7.0.0"
 sc-transaction-pool = "4.0.0-dev"
 sp-transaction-pool = "4.0.0-dev"
 sp-inherents = "4.0.0-dev"
@@ -65,7 +65,7 @@ sc-finality-grandpa = "0.10.0-dev"
 sc-finality-grandpa-rpc = "0.10.0-dev"
 sp-finality-grandpa = "4.0.0-dev"
 sc-client-api = "4.0.0-dev"
-sp-runtime = "6.0.0"
+sp-runtime = "7.0.0"
 sp-timestamp = "4.0.0-dev"
 sc-consensus-babe = "0.10.0-dev"
 sc-consensus-epochs = "0.10.0-dev"
@@ -92,7 +92,7 @@ pallet-asset-tx-payment = "4.0.0-dev"
 pallet-transaction-payment = "4.0.0-dev"
 frame-system-rpc-runtime-api = "4.0.0-dev"
 frame-support = "4.0.0-dev"
-pallet-mmr-rpc = "3.0.0"
+mmr-rpc = "4.0.0-dev"
 
 # These dependencies are used for the node template's RPCs
 sc-rpc = "4.0.0-dev"

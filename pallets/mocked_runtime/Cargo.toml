@@ -20,13 +20,13 @@ derive_more = "0.99.17"
 serde = { version = "1.0.121", features = ["derive"] }
 
 frame-support = "4.0.0-dev"
-sp-runtime = "6.0.0"
-sp-core = "6.0.0"
+sp-runtime = "7.0.0"
+sp-core = "7.0.0"
 sp-staking = "4.0.0-dev"
-sp-io = "6.0.0"
+sp-io = "7.0.0"
 sp-version = "5"
 sp-inherents = "4.0.0-dev"
-sp-std = "4.0.0"
+sp-std = "5.0.0"
 
 # Pallets
 frame-system = { path = "../system" }

@@ -28,7 +28,7 @@ da-bridge = { path = "../pallets/nomad/da-bridge", default-features = false }
 # External 
 static_assertions = "1.1.0"
 serde = { version = "1.0.121", optional = true, features = ["derive"] }
-log = { version = "0.4.14", default-features = false }
+log = { version = "0.4.17", default-features = false }
 hex-literal = { version = "0.3.4", optional = true }
 
 # Substrate
@@ -37,10 +37,10 @@ parity-util-mem = { version = "0.12.0", default-features = false, features = ["p
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 
 ## primitives
-sp-io = { version = "6.0.0", default-features = false }
-sp-core = { version = "6.0.0", default-features = false }
+sp-io = { version = "7.0.0", default-features = false }
+sp-core = { version = "7.0.0", default-features = false }
 sp-api = { version = "4.0.0-dev", default-features = false }
-sp-runtime = { version = "6.0.0", default-features = false }
+sp-runtime = { version = "7.0.0", default-features = false }
 sp-authority-discovery = { version = "4.0.0-dev", default-features = false }
 sp-version = { version = "5", default-features = false }
 sp-consensus-babe = { version = "0.10.0-dev", default-features = false }
@@ -51,7 +51,7 @@ sp-session = { version = "4.0.0-dev", default-features = false }
 sp-block-builder = { version = "4.0.0-dev", default-features = false }
 sp-inherents = { version = "4.0.0-dev", default-features = false }
 sp-npos-elections = { version = "4.0.0-dev", default-features = false }
-sp-std = { version = "4.0.0", default-features = false }
+sp-std = { version = "5.0.0", default-features = false }
 
 ## frame dependencies
 frame-support = { version = "4.0.0-dev", default-features = false }
@@ -112,7 +112,7 @@ test-case = "1.2.3"
 hex = "0.4"
 hex-literal = "0.3.4"
 serde_json = "1.0"
-sp-keyring = "6.0.0"
+sp-keyring = "7.0.0"
 env_logger = "0.9.1"
 
 [features]

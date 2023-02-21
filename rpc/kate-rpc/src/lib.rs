@@ -128,9 +128,13 @@ where
 	Client::Api: KateParamsGetter<Block>,
 	SDFilter: Filter<CallOf<Block>>,
 {
+	fn at_or_best(&self, at: Option<<Block as BlockT>::Hash>) -> <Block as BlockT>::Hash {
+		at.unwrap_or_else(|| self.client.info().best_hash)
+	}
+
+	#[inline]
 	fn block_id(&self, at: Option<<Block as BlockT>::Hash>) -> BlockId<Block> {
-		let hash = at.unwrap_or_else(|| self.client.info().best_hash);
-		BlockId::Hash(hash)
+		BlockId::Hash(self.at_or_best(at))
 	}
 }
 
@@ -153,11 +157,12 @@ where
 		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<Vec<u8>>>> {
-		let block_id = self.block_id(at);
+		let at = self.at_or_best(at);
+		let block_id = BlockId::Hash(at);
 
 		let signed_block = self
 			.client
-			.block(&block_id)
+			.block(at)
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
 			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
 
@@ -231,11 +236,12 @@ where
 		app_id: AppId,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<Vec<u8>>>> {
-		let block_id = self.block_id(at);
+		let at = self.at_or_best(at);
+		let block_id = BlockId::Hash(at);
 
 		let signed_block = self
 			.client
-			.block(&block_id)
+			.block(at)
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
 			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
 
@@ -322,11 +328,12 @@ where
 
 	//TODO allocate static thread pool, just for RPC related work, to free up resources, for the block producing processes.
 	fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
-		let block_id = self.block_id(at);
+		let at = self.at_or_best(at);
+		let block_id = BlockId::Hash(at);
 
 		let signed_block = self
 			.client
-			.block(&block_id)
+			.block(at)
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
 			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
 
@@ -418,12 +425,13 @@ where
 
 	fn query_data_proof(&self, data_index: u32, at: Option<HashOf<Block>>) -> RpcResult<DataProof> {
 		// Fetch block
-		let block_id = self.block_id(at);
+		let at = self.at_or_best(at);
+
 		let block = self
 			.client
-			.block(&block_id)
-			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
-			.ok_or_else(|| internal_err!("Missing block number {:?}", block_id))?
+			.block(at)
+			.map_err(|e| internal_err!("Invalid block hash: {:?}", e))?
+			.ok_or_else(|| internal_err!("Missing block hash {:?}", at))?
 			.block;
 
 		// Get App Extrinsics from the block.
@@ -438,7 +446,7 @@ where
 				internal_err!(
 					"Data proof cannot be generated for index={} at block {:?}",
 					data_index,
-					block_id
+					at
 				)
 			})?;
 		DataProof::try_from(&merkle_proof)

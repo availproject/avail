@@ -153,6 +153,7 @@ pub mod pallet {
 		[u8; 32]: From<T::AccountId>,
 	{
 		/// Dispatch a message to the destination domain and recipient address.
+		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::dispatch(message_body.len() as u32))]
 		pub fn dispatch(
 			origin: OriginFor<T>,
@@ -170,6 +171,7 @@ pub mod pallet {
 		}
 
 		/// Verify/submit signed update.
+		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::update())]
 		pub fn update(
 			origin: OriginFor<T>,
@@ -181,6 +183,7 @@ pub mod pallet {
 		}
 
 		/// Verify/slash updater for improper update.
+		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::improper_update())]
 		pub fn improper_update(
 			origin: OriginFor<T>,

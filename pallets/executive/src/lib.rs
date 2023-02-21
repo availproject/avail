@@ -120,6 +120,7 @@ use codec::{Codec, Encode};
 use da_primitives::asdr::GetAppId;
 use frame_support::{
 	dispatch::{DispatchClass, DispatchInfo, GetDispatchInfo, PostDispatchInfo},
+	pallet_prelude::InvalidTransaction,
 	traits::{
 		EnsureInherentsAreFirst, ExecuteBlock, OffchainWorker, OnFinalize, OnIdle, OnInitialize,
 		OnRuntimeUpgrade,
@@ -227,27 +228,71 @@ where
 {
 	/// Execute given block, but don't as strict is the normal block execution.
 	///
-	/// Some consensus related checks such as the state root check can be switched off via
-	/// `try_state_root`. Some additional non-consensus checks can be additionally enabled via
-	/// `try_state`.
+	/// Some checks can be disabled via:
+	///
+	/// - `state_root_check`
+	/// - `signature_check`
 	///
 	/// Should only be used for testing ONLY.
 	pub fn try_execute_block(
 		block: Block,
-		try_state_root: bool,
+		state_root_check: bool,
+		signature_check: bool,
 		select: frame_try_runtime::TryStateSelect,
-	) -> Result<frame_support::weights::Weight, &'static str> {
-		use frame_support::traits::TryState;
+	) -> Result<Weight, &'static str> {
+		frame_support::log::info!(
+			target: "frame::executive",
+			"try-runtime: executing block #{:?} / state root check: {:?} / signature check: {:?} / try-state-select: {:?}",
+			block.header().number(),
+			state_root_check,
+			signature_check,
+			select,
+		);
 
 		Self::initialize_block(block.header());
 		Self::initial_checks(&block);
 
 		let (header, extrinsics) = block.deconstruct();
 
-		Self::execute_extrinsics_with_book_keeping(extrinsics, *header.number());
+		let try_apply_extrinsic = |uxt: Block::Extrinsic| -> ApplyExtrinsicResult {
+			sp_io::init_tracing();
+			let encoded = uxt.encode();
+			let encoded_len = encoded.len();
 
-		// run the try-state checks of all pallets.
-		<AllPalletsWithSystem as TryState<System::BlockNumber>>::try_state(
+			// skip signature verification.
+			let xt = if signature_check {
+				uxt.check(&Default::default())
+			} else {
+				uxt.unchecked_into_checked_i_know_what_i_am_doing(&Default::default())
+			}?;
+			<frame_system::Pallet<System>>::note_extrinsic(encoded);
+
+			let dispatch_info = xt.get_dispatch_info();
+			let r = Applyable::apply::<UnsignedValidator>(xt, &dispatch_info, encoded_len)?;
+
+			<frame_system::Pallet<System>>::note_applied_extrinsic(&r, dispatch_info);
+
+			Ok(r.map(|_| ()).map_err(|e| e.error))
+		};
+
+		for e in extrinsics {
+			if let Err(err) = try_apply_extrinsic(e.clone()) {
+				frame_support::log::error!(
+					target: "runtime::executive", "executing transaction {:?} failed due to {:?}. Aborting the rest of the block execution.",
+					e,
+					err,
+				);
+				break;
+			}
+		}
+
+		// post-extrinsics book-keeping
+		<frame_system::Pallet<System>>::note_finished_extrinsics();
+		Self::idle_and_finalize_hook(*header.number());
+
+		// run the try-state checks of all pallets, ensuring they don't alter any state.
+		let _guard = frame_support::StorageNoopGuard::default();
+		<AllPalletsWithSystem as frame_support::traits::TryState<System::BlockNumber>>::try_state(
 			*header.number(),
 			select,
 		)
@@ -255,6 +300,7 @@ where
 			frame_support::log::error!(target: "runtime::executive", "failure: {:?}", e);
 			e
 		})?;
+		drop(_guard);
 
 		// do some of the checks that would normally happen in `final_checks`, but perhaps skip
 		// the state root check.
@@ -273,7 +319,7 @@ where
 				);
 			}
 
-			if try_state_root {
+			if state_root_check {
 				let storage_root = new_header.state_root();
 				header.state_root().check_equal(storage_root);
 				assert!(
@@ -293,9 +339,32 @@ where
 
 	/// Execute all `OnRuntimeUpgrade` of this runtime, including the pre and post migration checks.
 	///
-	/// This should only be used for testing.
-	pub fn try_runtime_upgrade() -> Result<frame_support::weights::Weight, &'static str> {
-		let weight = Self::execute_on_runtime_upgrade();
+	/// Runs the try-state code both before and after the migration function if `checks` is set to
+	/// `true`. Also, if set to `true`, it runs the `pre_upgrade` and `post_upgrade` hooks.
+	pub fn try_runtime_upgrade(
+		checks: frame_try_runtime::UpgradeCheckSelect,
+	) -> Result<Weight, &'static str> {
+		if checks.try_state() {
+			let _guard = frame_support::StorageNoopGuard::default();
+			<AllPalletsWithSystem as frame_support::traits::TryState<System::BlockNumber>>::try_state(
+				frame_system::Pallet::<System>::block_number(),
+				frame_try_runtime::TryStateSelect::All,
+			)?;
+		}
+
+		let weight =
+			<(COnRuntimeUpgrade, AllPalletsWithSystem) as OnRuntimeUpgrade>::try_on_runtime_upgrade(
+				checks.pre_and_post(),
+			)?;
+
+		if checks.try_state() {
+			let _guard = frame_support::StorageNoopGuard::default();
+			<AllPalletsWithSystem as frame_support::traits::TryState<System::BlockNumber>>::try_state(
+				frame_system::Pallet::<System>::block_number(),
+				frame_try_runtime::TryStateSelect::All,
+			)?;
+		}
+
 		Ok(weight)
 	}
 }
@@ -515,6 +584,14 @@ where
 		let dispatch_info = xt.get_dispatch_info();
 		let r = Applyable::apply::<UnsignedValidator>(xt, &dispatch_info, encoded_len)?;
 
+		// Mandatory(inherents) are not allowed to fail.
+		//
+		// The entire block should be discarded if an inherent fails to apply. Otherwise
+		// it may open an attack vector.
+		if r.is_err() && dispatch_info.class == DispatchClass::Mandatory {
+			return Err(InvalidTransaction::BadMandatory.into());
+		}
+
 		<frame_system::Pallet<System>>::note_applied_extrinsic(&r, dispatch_info);
 
 		Ok(r.map(|_| ()).map_err(|e| e.error))
@@ -590,6 +667,10 @@ where
 		let dispatch_info = within_span! { sp_tracing::Level::TRACE, "dispatch_info";
 			xt.get_dispatch_info()
 		};
+
+		if dispatch_info.class == DispatchClass::Mandatory {
+			return Err(InvalidTransaction::MandatoryValidation.into());
+		}
 
 		within_span! {
 			sp_tracing::Level::TRACE, "validate";
@@ -841,13 +922,15 @@ mod tests {
 		block_import_works_inner(
 			new_test_ext_v0(1),
 			array_bytes::hex_n_into_unchecked(
-				"6d988b132b3dc0200c6d8102274428b9f58024fbb32c210b8b432302bc85be17",
+				// "6d988b132b3dc0200c6d8102274428b9f58024fbb32c210b8b432302bc85be17",
+				"f5704fe05e3ffdfeb97315b98d65e5dbbdd14a3d3232e7e673733f3bafd076b2",
 			),
 		);
 		block_import_works_inner(
 			new_test_ext(1),
 			array_bytes::hex_n_into_unchecked(
-				"0b93b0592690a181d6e080c6cc73108793e0447c24ad82145c763b798d94edc7",
+				// "0b93b0592690a181d6e080c6cc73108793e0447c24ad82145c763b798d94edc7",
+				"a711032732f5af9bf29e1a44ab333af1ee3cd1c774f835c27a42c9a673578f1a",
 			),
 		);
 	}
