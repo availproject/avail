@@ -114,9 +114,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	size := 0
-	if config.Size <= 0 {
-		size = 100
+	size := 100
+	if config.Size > 0 {
+		size = config.Size
 	}
 	submit_data(size, config.ApiURL, config.Seed, config.AppID)
 }

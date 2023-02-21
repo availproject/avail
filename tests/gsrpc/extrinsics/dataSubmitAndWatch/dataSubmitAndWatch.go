@@ -45,12 +45,11 @@ func main() {
 	}
 
 	// Set data and appID according to need
-	size := 0
-	if config.Size <= 0 {
-		size = 100
-	} else {
+	size := 100
+	if config.Size > 0 {
 		size = config.Size
 	}
+
 	sub_data, _ := extrinsics.RandToken(size)
 	fmt.Println("Submitting data ...")
 	appID := 0
