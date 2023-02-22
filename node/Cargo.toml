@@ -40,6 +40,7 @@ log = "0.4.17"
 rand = "0.8"
 hex-literal = "0.3.4"
 
+
 # Substrate
 ## Primitives
 sc-cli = "0.10.0-dev"
@@ -103,6 +104,7 @@ sc-rpc-spec-v2 = "0.10.0-dev"
 substrate-frame-rpc-system = "4.0.0-dev"
 pallet-transaction-payment-rpc = "4.0.0-dev"
 substrate-state-trie-migration-rpc = "4.0.0-dev"
+substrate-prometheus-endpoint = "0.10.0-dev"
 
 # These dependencies are used for runtime benchmarking
 frame-benchmarking = "4.0.0-dev"
