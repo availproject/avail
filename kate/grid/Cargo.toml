@@ -1,0 +1,5 @@
+[package]
+name = "kate-grid"
+version = "0.6.1"
+authors = ["William Arnold warnold@polygon.technology"]
+edition = "2021"
