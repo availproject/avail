@@ -26,7 +26,6 @@ use da_primitives::asdr::AppId;
 use da_runtime::{Block, Runtime, RuntimeApi};
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use futures::prelude::*;
-use log;
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sc_client_api::BlockBackend;
 use sc_consensus_babe::{self, SlotProportion};
@@ -42,9 +41,7 @@ use sp_runtime::{
 	traits::Block as BlockT,
 	SaturatedConversion,
 };
-use substrate_prometheus_endpoint::{
-	exponential_buckets, register, Histogram, HistogramOpts, Opts, PrometheusError, Registry,
-};
+use substrate_prometheus_endpoint::{PrometheusError, Registry};
 
 use crate::rpc as node_rpc;
 
@@ -614,40 +611,9 @@ pub fn new_full(
 }
 
 fn extend_metrics(prometheus: &Registry) -> Result<(), PrometheusError> {
-	// NOTE: `linear_buckets` exists on `prometheus` library but it is not exported by
-	// `prometheus-endpoint` O_o!
-	let linear_buckets = |start: f64, width: f64, count: usize| -> Vec<f64> {
-		(0..count)
-			.map(|step| start + width * (step as f64))
-			.collect()
-	};
+	use avail_base::metrics::{AvailMetrics, AVAIL_METRICS};
 
-	#[rustfmt::skip]
-	let metrics = [
-		// (name, help, buckets)
-		("avail_kate_extend_block_time", "Duration in microseconds of the block extension process", linear_buckets(100.0, 100.0, 20)),
-		("avail_kate_preparation_block_time", "Duration in microseconds of the whole block preparation process", linear_buckets(100.0, 100.0, 20)),
-		("avail_kate_commitment_time", "Duration in microseconds of the kate commitment", linear_buckets(1000.0, 250.0, 16)),
-		("avail_kate_proof_build_time", "Duration in microseconds of the kate proof", linear_buckets(1000.0, 250.0, 16)),
-		("avail_block_dim_row", "Block dimension row", exponential_buckets(32.0, 2.0, 5)?),
-		("avail_block_dim_col", "Block dimension col", exponential_buckets(32.0, 2.0, 5)?),
-		// @TODO Define buckets properly
-		("avail_block_len", "Block length", exponential_buckets(0.001, 4.0, 9)?),
-	];
-
-	for (name, help, buckets) in metrics {
-		let metric = Histogram::with_opts(HistogramOpts {
-			common_opts: Opts::new(name, help),
-			buckets,
-		})?;
-		log::trace!(target: LOG_TARGET, "Adding `{name}` metric to prometheus");
-		register(metric, &prometheus)?;
-	}
-
-	log::info!(
-		target: LOG_TARGET,
-		"Prometheus metrics extended with avail metrics"
-	);
+	AVAIL_METRICS.get_or_try_init(|| AvailMetrics::new(prometheus))?;
 	Ok(())
 }
 

@@ -118,6 +118,7 @@ env_logger = "0.9.1"
 [features]
 default = ["std"]
 with-tracing = ["frame-executive/with-tracing"]
+fast-runtime = []
 std = [
 	"serde",
 	#"parity-util-mem/std",

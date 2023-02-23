@@ -2,7 +2,10 @@ use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, HeaderExtension}
 #[cfg(feature = "std")]
 use da_primitives::{asdr::DataLookup, KateCommitment};
 use frame_support::traits::Randomness;
-pub use kate::Seed;
+pub use kate::{
+	metrics::{IgnoreMetrics, Metrics},
+	Seed,
+};
 use sp_core::H256;
 use sp_runtime::traits::Hash;
 #[cfg(feature = "std")]
@@ -79,6 +82,73 @@ pub trait HeaderExtensionBuilder {
 	}
 }
 
+#[cfg(feature = "std")]
+pub(crate) mod metrics {
+	use avail_base::metrics::AVAIL_METRICS;
+	use kate::BlockDimensions;
+	use sp_std::time::Duration;
+
+	use super::*;
+
+	/// Helper macro to implement methods from `MetricAdapter`.
+	macro_rules! may_observe {
+		($($metric:tt, $observation:expr),+) => {
+			if let Some(avail) = AVAIL_METRICS.get() {
+				observe!(avail, $($metric, $observation),+)
+			}
+		};
+	}
+
+	/// Variadic macro to support multiple pairs of `metric` and `observation`
+	macro_rules! observe {
+		($avail: tt, $metric:tt, $observation: expr) => {
+			$avail.$metric.observe($observation as f64)
+		};
+
+		($avail: tt, $metric:tt, $observation: expr, $($m:tt, $o: expr),+) => {{
+			$avail.$metric.observe($observation as f64);
+			observe!($avail, $($m, $o),+)
+		}};
+	}
+
+	/// Adapter which implements `Metrics` using `AVAIL_METRIC` signleton.
+	pub(crate) struct MetricAdapter {}
+
+	impl Metrics for MetricAdapter {
+		fn extended_block_time(&self, elapsed: Duration) {
+			may_observe!(kate_extend_block_time, elapsed.as_micros());
+		}
+
+		fn preparation_block_time(&self, elapsed: Duration) {
+			may_observe!(kate_preparation_block_time, elapsed.as_micros());
+		}
+
+		fn commitment_build_time(&self, elapsed: Duration) {
+			may_observe!(kate_commitment_time, elapsed.as_micros());
+		}
+
+		fn proof_build_time(&self, elapsed: Duration, cells: u32) {
+			may_observe!(
+				kate_proof_build_time,
+				elapsed.as_micros(),
+				kate_proof_cells,
+				cells
+			);
+		}
+
+		fn block_dims_and_size(&self, block_dims: &BlockDimensions, block_len: u32) {
+			may_observe!(
+				block_dims_rows,
+				block_dims.rows.0,
+				block_dims_cols,
+				block_dims.cols.0,
+				block_len,
+				block_len
+			);
+		}
+	}
+}
+
 #[allow(dead_code)]
 #[cfg(all(feature = "std", feature = "header-compatibility-test"))]
 fn build_extension_v_test(
@@ -95,11 +165,12 @@ fn build_extension_v_test(
 }
 
 #[cfg(feature = "std")]
-fn build_extension_v1(
+fn build_extension<M: Metrics>(
 	app_extrinsics: &[AppExtrinsic],
 	data_root: H256,
 	block_length: BlockLength,
 	seed: Seed,
+	metrics: &M,
 ) -> HeaderExtension {
 	use da_primitives::header::extension::v1;
 
@@ -109,6 +180,7 @@ fn build_extension_v1(
 		block_length.chunk_size(),
 		app_extrinsics,
 		seed,
+		metrics,
 	)
 	.expect("Build commitments cannot fail .qed");
 	let app_lookup =
@@ -140,7 +212,8 @@ pub trait HostedHeaderBuilder {
 		_block_number: u32,
 		seed: Seed,
 	) -> HeaderExtension {
-		build_extension_v1(&app_extrinsics, data_root, block_length, seed)
+		let metrics = metrics::MetricAdapter {};
+		build_extension(&app_extrinsics, data_root, block_length, seed, &metrics)
 	}
 
 	/*

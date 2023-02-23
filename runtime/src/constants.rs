@@ -53,7 +53,11 @@ pub mod time {
 	/// `SLOT_DURATION` should have the same value.
 	///
 	/// <https://research.web3.foundation/en/latest/polkadot/block-production/Babe.html#-6.-practical-results>
+	#[cfg(not(feature = "fast-runtime"))]
 	pub const MILLISECS_PER_BLOCK: Moment = 20_000;
+	#[cfg(feature = "fast-runtime")]
+	pub const MILLISECS_PER_BLOCK: Moment = 6_000;
+
 	pub const SECS_PER_BLOCK: Moment = MILLISECS_PER_BLOCK / 1000;
 
 	// NOTE: Currently it is not possible to change the slot duration after the chain has started.
@@ -65,8 +69,11 @@ pub mod time {
 
 	// NOTE: Currently it is not possible to change the epoch duration after the chain has started.
 	//       Attempting to do so will brick block production.
-	pub const EPOCH_DURATION_IN_BLOCKS: BlockNumber = 10 * MINUTES;
+	// pub const EPOCH_DURATION_IN_BLOCKS: BlockNumber = 10 * MINUTES;
+	#[cfg(not(feature = "fast-runtime"))]
 	pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 1 * HOURS;
+	#[cfg(feature = "fast-runtime")]
+	pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 15 * MINUTES;
 
 	// These time units are defined in number of blocks.
 	pub const MINUTES: BlockNumber = 60 / (SECS_PER_BLOCK as BlockNumber);

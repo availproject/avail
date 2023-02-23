@@ -17,6 +17,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 name = "data-avail"
 
 [dependencies]
+avail-base = { path = "../base" }
 # Internals
 da-primitives = { version = "0.4", default-features = false }
 kate = { version = "0.6", default-features = false }
@@ -125,6 +126,7 @@ tempfile = "3.1.0"
 
 [features]
 default = ["cli"]
+fast-runtime = [ "da-runtime/fast-runtime" ]
 cli = [
 	"clap",
 	"clap_complete",

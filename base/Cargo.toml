@@ -1,0 +1,19 @@
+[package]
+name = "avail-base"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4.17"
+once_cell = { version = "1.17.1", optional = true }
+substrate-prometheus-endpoint = {  version = "0.10.0-dev", optional = true }
+
+
+[features]
+default = ["std"]
+std = [
+	"once_cell",
+	"substrate-prometheus-endpoint"
+]
