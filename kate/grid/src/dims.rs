@@ -11,11 +11,27 @@ pub struct Extension {
 	/// This means extending the height of the grid by some factor.
 	/// `2` would mean doubling the grid upwards, increasing the height by a factor of
 	/// 2 and multiplying the number of rows by 2
-	height_factor: u16,
+	pub height_factor: u16,
 	/// This means extending the width of the grid by some factor.
 	/// `2` would mean doubling the grid sideways, increasing the width by a factor of
 	/// 2 and multiplying the number of columns by 2
-	width_factor: u16,
+	pub width_factor: u16,
+}
+
+impl Extension {
+    pub fn height(factor: u16) -> Self {
+        Self {
+            height_factor: factor,
+            width_factor: 1,
+        }
+    }
+
+    pub fn width(factor: u16) -> Self {
+        Self {
+            height_factor: 1,
+            width_factor: factor,
+        }
+    }
 }
 
 impl Dimensions {
@@ -28,7 +44,7 @@ impl Dimensions {
 	}
 
 	pub fn height(&self) -> usize {
-		self.width
+		self.height
 	}
 
 	pub fn size(&self) -> u32 {

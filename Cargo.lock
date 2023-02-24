@@ -1786,6 +1786,7 @@ dependencies = [
  "hex",
  "hex-literal",
  "itertools 0.10.5",
+ "kate-grid",
  "kate-recovery",
  "log",
  "num_cpus",
@@ -1803,6 +1804,10 @@ dependencies = [
  "static_assertions",
  "test-case",
 ]
+
+[[package]]
+name = "kate-grid"
+version = "0.6.1"
 
 [[package]]
 name = "kate-recovery"

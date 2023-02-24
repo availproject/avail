@@ -27,6 +27,7 @@ serde = { version = "1.0.121", optional = true, features = ["derive"] }
 sp-core = { version = "7.0.0", default-features = false }
 sp-std = { version = "4.0.0", default-features = false }
 static_assertions = "1.1.0"
+kate-grid = { path = "grid" }
 
 [dev-dependencies]
 criterion = "0.3.5"

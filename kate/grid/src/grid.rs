@@ -70,6 +70,12 @@ impl<A: Sized, T: AsRef<[A]>> RowMajor<A, T> {
 			(0..self.width).map(move |x| self.get(x, y).expect("Bounds already checked"))
 		})
 	}
+
+	pub fn iter_column_wise(&self) -> impl Iterator<Item = &A> + '_ {
+		(0..self.width).flat_map(move |x| {
+			(0..self.height).map(move |y| self.get(x, y).expect("Bounds already checked"))
+		})
+	}
 }
 
 impl<A: Sized, T: AsRef<[A]>> ColumnMajor<A, T> {
@@ -90,6 +96,12 @@ impl<A: Sized, T: AsRef<[A]>> ColumnMajor<A, T> {
 	pub fn iter_row_wise(&self) -> impl Iterator<Item = &A> + '_ {
 		(0..self.height).flat_map(move |y| {
 			(0..self.width).map(move |x| self.get(x, y).expect("Bounds already checked"))
+		})
+	}
+
+	pub fn iter_column_wise(&self) -> impl Iterator<Item = &A> + '_ {
+		(0..self.width).flat_map(move |x| {
+			(0..self.height).map(move |y| self.get(x, y).expect("Bounds already checked"))
 		})
 	}
 }

@@ -247,12 +247,9 @@ fn pad_iec_9797_1(mut data: Vec<u8>) -> Vec<DataChunk> {
 		.expect("Const assertion ensures this transformation to `DataChunk`. qed")
 }
 
-fn extend_column_with_zeros(
-	column: &[BlsScalar],
-	extended_rows: BlockLengthRows,
-) -> Vec<BlsScalar> {
+fn extend_column_with_zeros(column: &[BlsScalar], height: usize) -> Vec<BlsScalar> {
 	let mut result = column.to_vec();
-	result.resize(extended_rows.as_usize(), BlsScalar::zero());
+	result.resize(height, BlsScalar::zero());
 	result
 }
 
@@ -269,16 +266,23 @@ pub fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 /// This means that extension factor has to be multiple of 2,
 /// and that original data will be interleaved with erasure codes,
 /// instead of being in first k chunks of a column.
+///
+/// `block` should be the raw data of a matrix, stored in row-major orientation.
 #[cfg(feature = "std")]
 pub fn par_extend_data_matrix(
 	block_dims: BlockDimensions,
 	block: &[u8],
 ) -> Result<Vec<BlsScalar>, Error> {
+	use kate_grid::AsRowMajor;
+	use kate_grid::Extension;
+
 	let start = Instant::now();
-	let dimensions: matrix::Dimensions = block_dims.try_into().map_err(|_| Error::BlockTooBig)?;
-	let rows_num: usize = dimensions.rows().into();
-	let extended_rows_num = BlockLengthRows(dimensions.extended_rows());
+	let dims = kate_grid::Dimensions::new(block_dims.cols.0 as usize, block_dims.rows.0 as usize);
+	let extended_dims = dims.extend(Extension::height(2));
+
+	// simple length with mod check would work...
 	let chunks = block.par_chunks_exact(block_dims.chunk_size as usize);
+	// TODO: Shouldn't assert, should error
 	assert!(chunks.remainder().is_empty());
 
 	let scalars = chunks
@@ -286,25 +290,23 @@ pub fn par_extend_data_matrix(
 		.map(to_bls_scalar)
 		.collect::<Result<Vec<BlsScalar>, Error>>()?;
 
-	let mut row_wise_scalars = Vec::with_capacity(dimensions.size() as usize);
-	dimensions
-		.iter_cells()
-		.for_each(|cell_i| row_wise_scalars.push(scalars[cell_i as usize]));
+	// The data is currently row-major, so we need to put it into column-major
+	let rm = scalars.as_row_major(dims.width(), dims.height()).unwrap();
+	let col_wise_scalars = rm.iter_column_wise().map(Clone::clone).collect::<Vec<_>>();
 
-	let mut chunk_elements = row_wise_scalars
-		.par_chunks_exact(rows_num)
-		.flat_map(|column| extend_column_with_zeros(column, extended_rows_num))
+	let mut chunk_elements = col_wise_scalars
+		.chunks_exact(dims.height())
+		.flat_map(|column| extend_column_with_zeros(column, extended_dims.height()))
 		.collect::<Vec<BlsScalar>>();
 
-	// extend data matrix, column by column
-	let extended_column_eval_domain = EvaluationDomain::new(extended_rows_num.as_usize())?;
-	let column_eval_domain = EvaluationDomain::new(rows_num)?; // rows_num = column_length
+	let extended_column_eval_domain = EvaluationDomain::new(extended_dims.height())?;
+	let column_eval_domain = EvaluationDomain::new(dims.height())?; // rows_num = column_length
 
 	chunk_elements
-		.par_chunks_exact_mut(extended_rows_num.as_usize())
+		.par_chunks_exact_mut(extended_dims.height())
 		.for_each(|col| {
 			// (i)fft functions input parameter slice size has to be a power of 2, otherwise it panics
-			column_eval_domain.ifft_slice(&mut col[0..rows_num]);
+			column_eval_domain.ifft_slice(&mut col[0..dims.height()]);
 			extended_column_eval_domain.fft_slice(col);
 		});
 
