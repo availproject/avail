@@ -1787,6 +1787,7 @@ dependencies = [
  "sp-core",
  "sp-finality-grandpa",
  "sp-inherents",
+ "sp-io",
  "sp-keyring",
  "sp-keystore",
  "sp-rpc",

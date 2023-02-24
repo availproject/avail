@@ -9,7 +9,7 @@ on:
       - main
       - develop
 env:
-  BUILD_TOOLCHAIN: nightly-2022-09-22
+  BUILD_TOOLCHAIN: nightly-2022-11-15
   CARGO_SCCACHE_COMMIT: bed5571c
   SCCACHE_DIR: /home/runner/.cache/cargo-sccache-bed5571c
   SCCACHE_BIN: /home/runner/.cache/cargo-sccache-bed5571c/bin/sccache
@@ -60,9 +60,8 @@ jobs:
         run: |
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             source "$HOME/.cargo/env"
-            rustup toolchain install nightly
-            rustup default nightly
-            rustup target add wasm32-unknown-unknown --toolchain nightly
+            rustup default ${{ env.BUILD_TOOLCHAIN }} 
+            rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }} 
 
       - name: SCCache
         run: |
@@ -119,9 +118,8 @@ jobs:
         run: |
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             source "$HOME/.cargo/env"
-            rustup toolchain install nightly
-            rustup default nightly
-            rustup target add wasm32-unknown-unknown --toolchain nightly
+            rustup default ${{ env.BUILD_TOOLCHAIN }} 
+            rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }}
 
       - name: SCCache
         run: |
@@ -181,9 +179,8 @@ jobs:
         run: |
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             source "$HOME/.cargo/env"
-            rustup toolchain install nightly
-            rustup default nightly
-            rustup target add wasm32-unknown-unknown --toolchain nightly
+            rustup default ${{ env.BUILD_TOOLCHAIN }} 
+            rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }} 
 
       - name: SCCache
         run: |

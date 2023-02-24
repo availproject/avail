@@ -43,6 +43,7 @@ hex-literal = "0.3.4"
 # Substrate
 ## Primitives
 sc-cli = "0.10.0-dev"
+sp-io = "7.0.0"
 sp-core = "7.0.0"
 sc-executor = "0.10.0-dev"
 sc-service = "0.10.0-dev"
@@ -135,7 +136,8 @@ runtime-benchmarks = [
 # in the near future.
 try-runtime = [
 	"da-runtime/try-runtime", 
-	"try-runtime-cli/try-runtime"
+	"try-runtime-cli/try-runtime",
+	"da-primitives/try-runtime"
 ]
 
 

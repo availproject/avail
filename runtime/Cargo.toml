@@ -236,4 +236,5 @@ try-runtime = [
 	"pallet-nomination-pools/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-tips/try-runtime",
+	"da-primitives/try-runtime",
 ]
