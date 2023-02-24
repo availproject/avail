@@ -18,6 +18,7 @@ use dusk_plonk::{
 	prelude::{BlsScalar, CommitKey},
 };
 use frame_support::{ensure, sp_runtime::SaturatedConversion};
+use kate_grid::{AsColumnMajor, AsRowMajor, Extension};
 #[cfg(feature = "std")]
 use kate_recovery::{com::app_specific_rows, index, matrix};
 use log::info;
@@ -50,6 +51,7 @@ pub enum Error {
 	BadHeaderHash,
 	BlockTooBig,
 	InvalidChunkLength,
+	DimensionsMismatch,
 }
 
 impl From<PlonkError> for Error {
@@ -273,9 +275,6 @@ pub fn par_extend_data_matrix(
 	block_dims: BlockDimensions,
 	block: &[u8],
 ) -> Result<Vec<BlsScalar>, Error> {
-	use kate_grid::AsRowMajor;
-	use kate_grid::Extension;
-
 	let start = Instant::now();
 	let dims = kate_grid::Dimensions::new(block_dims.cols.0 as usize, block_dims.rows.0 as usize);
 	let extended_dims = dims.extend(Extension::height(2));
@@ -327,27 +326,18 @@ pub fn build_proof(
 	ext_data_matrix: &[BlsScalar],
 	cells: &[Cell],
 ) -> Result<Vec<u8>, Error> {
-	let cols_num = block_dims.cols.as_usize();
-	let extended_rows_num = block_dims
-		.rows
-		.0
-		.checked_mul(EXTENSION_FACTOR)
-		.ok_or(Error::BlockTooBig)?;
+	let dims = kate_grid::Dimensions::new(block_dims.cols.as_usize(), block_dims.rows.as_usize());
+	let extended_dims = dims.extend(Extension::height(EXTENSION_FACTOR as usize));
 
 	const SPROOF_SIZE: usize = PROOF_SIZE + SCALAR_SIZE;
 
-	let (prover_key, _) = public_params.trim(cols_num).map_err(Error::from)?;
+	let (prover_key, _) = public_params.trim(dims.width()).map_err(Error::from)?;
 
 	// Generate all the x-axis points of the domain on which all the row polynomials reside
-	let row_eval_domain = EvaluationDomain::new(cols_num).map_err(Error::from)?;
-	let mut row_dom_x_pts = Vec::with_capacity(row_eval_domain.size());
-	row_dom_x_pts.extend(row_eval_domain.elements());
+	let row_eval_domain = EvaluationDomain::new(dims.width()).map_err(Error::from)?;
+	let row_dom_x_pts = row_eval_domain.elements().collect::<Vec<_>>();
 
-	let mut result_bytes: Vec<u8> = Vec::new();
-	result_bytes.reserve_exact(SPROOF_SIZE * cells.len());
-	unsafe {
-		result_bytes.set_len(SPROOF_SIZE * cells.len());
-	}
+	let mut result_bytes: Vec<u8> = vec![0u8; SPROOF_SIZE * cells.len()];
 
 	let prover_key = &prover_key;
 	let row_dom_x_pts = &row_dom_x_pts;
@@ -360,30 +350,37 @@ pub fn build_proof(
 	// generate proof only for requested cells
 	let total_start = Instant::now();
 
+	// TODO: better error type
+	let ext_data_matrix_cm = ext_data_matrix
+		.as_column_major(extended_dims.width(), extended_dims.height())
+		.ok_or(Error::DimensionsMismatch)?;
+
 	// attempt to parallelly compute proof for all requested cells
 	cells
 		.into_par_iter()
 		.zip(result_bytes.par_chunks_exact_mut(SPROOF_SIZE))
 		.for_each(|(cell, res)| {
 			let r_index = cell.row.as_usize();
-			if (r_index >= extended_rows_num as usize) || (cell.col >= block_dims.cols) {
+			if r_index >= extended_dims.height() || cell.col >= block_dims.cols {
 				res.fill(0); // for bad cell identifier, fill whole proof with zero bytes !
 			} else {
 				let c_index = cell.col.as_usize();
 
 				// construct polynomial per extended matrix row
-				let row = (0..cols_num)
-					.into_par_iter()
-					.map(|j| ext_data_matrix[r_index + j * extended_rows_num as usize])
-					.collect::<Vec<BlsScalar>>();
+				let row = ext_data_matrix_cm
+					.iter_row(r_index)
+					.expect("Already checked row index")
+					.map(Clone::clone)
+					.collect::<Vec<_>>();
 
 				// row has to be a power of 2, otherwise interpolate() function panics
+				// TODO: cache evaluations
 				let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
 				let witness = prover_key.compute_single_witness(&poly, &row_dom_x_pts[c_index]);
 				match prover_key.commit(&witness) {
 					Ok(commitment_to_witness) => {
 						let evaluated_point =
-							ext_data_matrix[r_index + c_index * extended_rows_num as usize];
+							ext_data_matrix[r_index + c_index * extended_dims.height()];
 
 						res[0..PROOF_SIZE].copy_from_slice(&commitment_to_witness.to_bytes());
 						res[PROOF_SIZE..].copy_from_slice(&evaluated_point.to_bytes());
