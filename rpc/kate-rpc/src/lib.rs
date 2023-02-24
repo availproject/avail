@@ -4,6 +4,7 @@ use std::{
 	sync::{Arc, RwLock},
 };
 
+use avail_base::metrics::RPCMetricAdapter;
 use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
 use da_primitives::{
 	asdr::{AppExtrinsic, AppId, DataLookup, GetAppId},
@@ -29,7 +30,6 @@ use sp_runtime::{
 	AccountId32, MultiAddress, MultiSignature,
 };
 use submitted_data::Filter;
-use avail_base::metrics::RPCMetricAdapter;
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
 pub type CallOf<Block> = <<Block as BlockT>::Extrinsic as Extrinsic>::Call;
@@ -294,7 +294,7 @@ where
 			)
 			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
 
-			let metrics = RPCMetricAdapter{};
+			let metrics = RPCMetricAdapter {};
 			let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
 

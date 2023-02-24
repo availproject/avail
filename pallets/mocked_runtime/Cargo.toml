@@ -41,3 +41,4 @@ pallet-staking = "4.0.0-dev"
 [features]
 default = ["std"]
 std = [ ]
+try-runtime = []
