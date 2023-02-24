@@ -6,6 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+avail-base = { path = "../../base" }
+
 sp-api = { version = "4.0.0-dev", default-features = false }
 sp-std = { version = "5.0.0", default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false }

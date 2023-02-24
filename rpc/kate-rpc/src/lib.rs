@@ -29,6 +29,7 @@ use sp_runtime::{
 	AccountId32, MultiAddress, MultiSignature,
 };
 use submitted_data::Filter;
+use avail_base::metrics::RPCMetricAdapter;
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
 pub type CallOf<Block> = <<Block as BlockT>::Extrinsic as Extrinsic>::Call;
@@ -213,7 +214,8 @@ where
 			)
 			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
 
-			let data = kate::com::par_extend_data_matrix(block_dims, &block)
+			let metrics = RPCMetricAdapter {};
+			let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
 
 			block_ext_cache.put(block_hash, (data, block_dims));
@@ -292,7 +294,8 @@ where
 			)
 			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
 
-			let data = kate::com::par_extend_data_matrix(block_dims, &block)
+			let metrics = RPCMetricAdapter{};
+			let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
 
 			block_ext_cache.put(block_hash, (data, block_dims));
@@ -349,6 +352,7 @@ where
 			.block_ext_cache
 			.write()
 			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
+		let metrics = RPCMetricAdapter {};
 
 		if !block_ext_cache.contains(&block_hash) {
 			// build block data extension and cache it
@@ -384,7 +388,7 @@ where
 			)
 			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
 
-			let data = kate::com::par_extend_data_matrix(block_dims, &block)
+			let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
 			block_ext_cache.put(block_hash, (data, block_dims));
 		}
@@ -406,8 +410,9 @@ where
 		let kc_public_params =
 			unsafe { PublicParameters::from_slice_unchecked(&kc_public_params_raw) };
 
-		let proof = kate::com::build_proof(&kc_public_params, *block_dims, ext_data, &cells)
-			.map_err(|e| internal_err!("Proof cannot be generated: {:?}", e))?;
+		let proof =
+			kate::com::build_proof(&kc_public_params, *block_dims, ext_data, &cells, &metrics)
+				.map_err(|e| internal_err!("Proof cannot be generated: {:?}", e))?;
 
 		Ok(proof)
 	}
