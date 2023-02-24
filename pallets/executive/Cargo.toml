@@ -58,5 +58,6 @@ std = [
 try-runtime = [
 	"frame-support/try-runtime", 
 	"frame-try-runtime/try-runtime" ,
-	"da-primitives/try-runtime"
+	"da-primitives/try-runtime",
+	"mocked-runtime/try-runtime"
 ]
