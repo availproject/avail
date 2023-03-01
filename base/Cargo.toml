@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 # Our crates
 da-primitives = { version = "0.4", default-features = false }
-kate = { version = "0.6", default-features = false }
+kate = { version = "0.7", default-features = false }
 
 # Substrate related
 substrate-prometheus-endpoint = {  version = "0.10.0-dev", optional = true }

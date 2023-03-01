@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 afl = "*"
 kate-recovery = "0.8" 
-kate = "0.6" 
+kate = "0.7" 
 da-primitives = "0.4"
 hex-literal = "0.3.1"
 

@@ -20,7 +20,7 @@ name = "data-avail"
 avail-base = { path = "../base" }
 # Internals
 da-primitives = { version = "0.4", default-features = false }
-kate = { version = "0.6", default-features = false }
+kate = { version = "0.7", default-features = false }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }

@@ -13,7 +13,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 da-primitives = { version = "0.4", default-features = false }
-kate = { version = "0.6", default-features = false }
+kate = { version = "0.7", default-features = false }
 
 # Substrate
 serde = { version = "1.0.126", optional = true, features = ["derive"] }
