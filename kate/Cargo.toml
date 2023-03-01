@@ -1,6 +1,6 @@
 [package]
 name = "kate"
-version = "0.6.1"
+version = "0.7.0"
 authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
 edition = "2021"
 
