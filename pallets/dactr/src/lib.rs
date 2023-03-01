@@ -165,7 +165,7 @@ pub mod pallet {
 					.map_err(|_| Error::<T>::BlockDimensionsOutOfBounds)?;
 
 			let _id = Self::next_block_len_proposal_id()?;
-			DynamicBlockLength::<T>::put(&block_length);
+			DynamicBlockLength::<T>::put(block_length);
 
 			Self::deposit_event(Event::BlockLengthProposalSubmitted { rows, cols });
 

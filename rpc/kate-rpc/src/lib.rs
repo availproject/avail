@@ -225,8 +225,7 @@ where
 			.get(&block_hash)
 			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
 
-		let dimensions: Dimensions = block_dims
-			.clone()
+		let dimensions: Dimensions = (*block_dims)
 			.try_into()
 			.map_err(|e| internal_err!("Invalid dimensions: {:?}", e))?;
 
@@ -316,8 +315,7 @@ where
 			size: *size,
 		};
 
-		let dimensions: Dimensions = block_dims
-			.clone()
+		let dimensions: Dimensions = (*block_dims)
 			.try_into()
 			.map_err(|e| internal_err!("Invalid dimensions: {:?}", e))?;
 

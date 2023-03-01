@@ -70,6 +70,7 @@ pub mod time {
 	// NOTE: Currently it is not possible to change the epoch duration after the chain has started.
 	//       Attempting to do so will brick block production.
 	// pub const EPOCH_DURATION_IN_BLOCKS: BlockNumber = 10 * MINUTES;
+	#[allow(clippy::identity_op)]
 	#[cfg(not(feature = "fast-runtime"))]
 	pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 1 * HOURS;
 	#[cfg(feature = "fast-runtime")]
@@ -87,6 +88,7 @@ pub mod nomination_pools {
 	use super::Balance;
 
 	pub const MIN_CREATE_BOND: Balance = 10 * AVL;
+	#[allow(clippy::identity_op)]
 	pub const MIN_JOIN_BOND: Balance = 1 * AVL;
 	pub const MAX_POOLS: u32 = 16;
 	pub const MAX_MEMBERS_PER_POOL: u32 = 100;

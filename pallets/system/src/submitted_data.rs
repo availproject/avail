@@ -71,7 +71,7 @@ where
 /// In case an empty list of leaves is passed the function returns a 0-filled hash.
 fn root<I: Iterator<Item = Vec<u8>>>(submitted_data: I, metrics: RcMetrics) -> H256 {
 	#[cfg(not(feature = "force-rs-merkle"))]
-	let root = merkle_root::<ShaTwo256, _>(submitted_data).into();
+	let root = merkle_root::<ShaTwo256, _>(submitted_data);
 	#[cfg(feature = "force-rs-merkle")]
 	let root = rs_merkle_root(submitted_data).into();
 	log::debug!(

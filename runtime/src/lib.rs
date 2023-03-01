@@ -255,11 +255,13 @@ parameter_types! {
 /// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.
 ///
 /// # TODO
-/// - Support utility pallet containing severals `DataAvailability::submit_data` calls.
+/// - Support utility pallet containing severals `DataAvailability::submit_data` calls and
+/// double-check if we can remove the `clippy::collapsible_match` then.
 impl submitted_data::Filter<RuntimeCall> for Runtime {
 	fn filter(call: RuntimeCall, metrics: submitted_data::RcMetrics) -> Option<Vec<u8>> {
 		metrics.borrow_mut().total_extrinsics += 1;
 
+		#[allow(clippy::collapsible_match)]
 		match call {
 			RuntimeCall::DataAvailability(method) => match method {
 				da_control::Call::submit_data { data } => {

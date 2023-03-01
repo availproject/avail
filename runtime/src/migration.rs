@@ -16,7 +16,6 @@
 // limitations under the License.
 
 use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade};
-use log;
 use pallet_nomination_pools::{
 	MaxPoolMembers, MaxPoolMembersPerPool, MaxPools, MinCreateBond, MinJoinBond, Pallet,
 };
