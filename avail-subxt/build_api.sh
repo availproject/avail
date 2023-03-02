@@ -1,5 +1,5 @@
 #!/bin/sh
-cargo install --git https://github.com/fmiguelgarcia/subxt --branch cli_derives_for_type_2
+cargo install --git https://github.com/paritytech/subxt --tag v0.27.1 
 subxt codegen \
 	--derive Clone \
 	--derive PartialEq \
