@@ -1,11 +1,11 @@
-use da_primitives::{Header as DaHeader, asdr::AppUncheckedExtrinsic};
+use da_primitives::{asdr::AppUncheckedExtrinsic, Header as DaHeader};
 use sp_runtime::{
 	generic,
-	traits::{IdentifyAccount, Verify, BlakeTwo256},
-	MultiSignature, OpaqueExtrinsic, 
+	traits::{BlakeTwo256, IdentifyAccount, Verify},
+	MultiSignature, OpaqueExtrinsic,
 };
 
-use crate::{migration, RuntimeCall, Runtime, AllPalletsWithSystem};
+use crate::{migration, AllPalletsWithSystem, Runtime, RuntimeCall};
 
 /// An index to a block.
 pub type BlockNumber = u32;

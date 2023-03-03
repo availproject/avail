@@ -56,10 +56,9 @@ use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
 	create_runtime_str,
-	curve::PiecewiseLinear, impl_opaque_keys,
-	traits::{
-		self, BlakeTwo256, Block as BlockT, Bounded, NumberFor, OpaqueKeys,
-	},
+	curve::PiecewiseLinear,
+	impl_opaque_keys,
+	traits::{self, BlakeTwo256, Block as BlockT, Bounded, NumberFor, OpaqueKeys},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, FixedPointNumber, FixedU128,
 };
