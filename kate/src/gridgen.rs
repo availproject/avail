@@ -241,8 +241,8 @@ fn multiproof_block(
 ) -> Option<CellBlock> {
 	let target_width = core::cmp::min(grid_dims.width(), target_dims.width());
 	let target_height = core::cmp::min(grid_dims.height(), target_dims.height());
-    dbg!(&target_width, target_height);
-    dbg!(&x, &y);
+	dbg!(&target_width, target_height);
+	dbg!(&x, &y);
 	if x >= target_width || y >= target_height {
 		return None;
 	}
@@ -318,7 +318,10 @@ fn round_up_power_of_2(mut v: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
+	use crate::testnet;
+
 	use super::*;
+	use hex_literal::hex;
 	use proptest::{prop_assert_eq, proptest};
 	use test_case::test_case;
 
@@ -343,28 +346,40 @@ mod tests {
 		multiproof_block(x, y, &GRID, &TARGET)
 	}
 
-	//#[test]
-	//// Test build_commitments() function with a predefined input
-	//fn test_build_commitments_simple_commitment_check() {
-	//	let original_data = br#"test"#;
-	//	let hash: Seed = [
-	//		76, 41, 174, 145, 187, 12, 97, 32, 75, 111, 149, 209, 243, 195, 165, 10, 166, 172, 47,
-	//		41, 218, 24, 212, 66, 62, 5, 187, 191, 129, 5, 105, 3,
-	//	];
+	#[test]
+	// Test build_commitments() function with a predefined input
+	fn newapi_test_build_commitments_simple_commitment_check() {
+		let original_data = br#"test"#;
+		let block_height = 256usize;
+		let block_width = 256usize;
+		let hash: Seed = [
+			76, 41, 174, 145, 187, 12, 97, 32, 75, 111, 149, 209, 243, 195, 165, 10, 166, 172, 47,
+			41, 218, 24, 212, 66, 62, 5, 187, 191, 129, 5, 105, 3,
+		];
 
-	//	let (_, commitments, dimensions, _) = par_build_commitments(
-	//		block_rows,
-	//		block_cols,
-	//		chunk_size,
-	//		&[AppExtrinsic::from(original_data.to_vec())],
-	//		hash,
-	//	)
-	//	.unwrap();
+		let evals = EvaluationGrid::from_extrinsics(
+			vec![AppExtrinsic::from(original_data.to_vec())],
+			4,
+			block_width,
+			block_height,
+			hash,
+		)
+		.unwrap();
+		let evals = evals.extend_columns(2).unwrap();
+		let polys = evals.make_polynomial_grid().unwrap();
+		let public_params =
+			testnet::public_params(da_primitives::BlockLengthColumns(block_width as u32));
+		let commits = polys
+			.commitments(public_params.commit_key())
+			.unwrap()
+			.into_iter()
+			.flat_map(|p| p.to_bytes())
+			.collect::<Vec<_>>();
 
-	//	assert_eq!(dimensions, Dimensions::new(4, 1));
-	//	let expected_commitments = hex!("960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D");
-	//	assert_eq!(commitments, expected_commitments);
-	//}
+		assert_eq!(evals.dims, Dimensions::new(4, 2));
+		let expected_commitments = hex!("960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D");
+		assert_eq!(commits, expected_commitments);
+	}
 
 	use proptest::prelude::*;
 	proptest! {
