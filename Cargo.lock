@@ -65,6 +65,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ahash"
+version = "0.8.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c99f64d1e06488f620f932677e24bc6e2897582980441ae90a671415bd7ec2f"
+dependencies = [
+ "cfg-if",
+ "once_cell",
+ "version_check",
+]
+
+[[package]]
 name = "aho-corasick"
 version = "0.7.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -96,6 +107,124 @@ name = "anyhow"
 version = "1.0.68"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2cb2f989d18dd141ab8ae82f64d1a8cdd37e0840f73a406896cf5e99502fab61"
+
+[[package]]
+name = "ark-bls12-381"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c775f0d12169cba7aae4caeb547bb6a50781c7449a8aa53793827c9ec4abf488"
+dependencies = [
+ "ark-ec",
+ "ark-ff",
+ "ark-serialize",
+ "ark-std",
+]
+
+[[package]]
+name = "ark-ec"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c60370a92f8e1a5f053cad73a862e1b99bc642333cd676fa11c0c39f80f4ac2"
+dependencies = [
+ "ark-ff",
+ "ark-poly",
+ "ark-serialize",
+ "ark-std",
+ "derivative",
+ "hashbrown 0.13.2",
+ "itertools 0.10.5",
+ "num-traits",
+ "zeroize",
+]
+
+[[package]]
+name = "ark-ff"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4c2d42532524bee1da5a4f6f733eb4907301baa480829557adcff5dfaeee1d9a"
+dependencies = [
+ "ark-ff-asm",
+ "ark-ff-macros",
+ "ark-serialize",
+ "ark-std",
+ "derivative",
+ "digest 0.10.6",
+ "itertools 0.10.5",
+ "num-bigint",
+ "num-traits",
+ "paste",
+ "rustc_version",
+ "zeroize",
+]
+
+[[package]]
+name = "ark-ff-asm"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d6873aaba7959593d89babed381d33e2329453368f1bf3c67e07686a1c1056f"
+dependencies = [
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "ark-ff-macros"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3c2e7d0f2d67cc7fc925355c74d36e7eda19073639be4a0a233d4611b8c959d"
+dependencies = [
+ "num-bigint",
+ "num-traits",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "ark-poly"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f6ec811462cabe265cfe1b102fcfe3df79d7d2929c2425673648ee9abfd0272"
+dependencies = [
+ "ark-ff",
+ "ark-serialize",
+ "ark-std",
+ "derivative",
+ "hashbrown 0.13.2",
+]
+
+[[package]]
+name = "ark-serialize"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7e735959bc173ea4baf13327b19c22d452b8e9e8e8f7b7fc34e6bf0e316c33e"
+dependencies = [
+ "ark-serialize-derive",
+ "ark-std",
+ "digest 0.10.6",
+ "num-bigint",
+]
+
+[[package]]
+name = "ark-serialize-derive"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd34f0920d995d2c932f38861c416f70de89a6de9875876b012557079603e6cc"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "ark-std"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "94893f1e0c6eeab764ade8dc4c0db24caf4fe7cbbaafc0eba0a9030f447b5185"
+dependencies = [
+ "num-traits",
+ "rand 0.8.5",
+]
 
 [[package]]
 name = "array-bytes"
@@ -336,6 +465,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fa79dedbb091f449f1f39e53edf88d5dbe95f895dae6135a8d7b881fb5af73f5"
 dependencies = [
  "byte-tools",
+]
+
+[[package]]
+name = "blst"
+version = "0.3.10"
+source = "git+https://github.com/aphoh/blst?rev=556e037926d9c526c2eb6cb1522bea39690416ea#556e037926d9c526c2eb6cb1522bea39690416ea"
+dependencies = [
+ "cc",
+ "glob",
+ "threadpool",
+ "zeroize",
 ]
 
 [[package]]
@@ -852,6 +992,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "derivative"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcc3dd5e9e9c0b295d6e1e4d811fb6f157d5ffd784b8d202fc62eac8035a770b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "derive-hex"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -947,7 +1098,7 @@ dependencies = [
 [[package]]
 name = "dusk-plonk"
 version = "0.12.0"
-source = "git+https://github.com/maticnetwork/plonk.git?tag=v0.12.0-polygon-2#6ada57a82b6e3a92a677b9f6263f9f3c9b501b23"
+source = "git+https://github.com/maticnetwork/plonk?branch=will/polynomial-visibility#96ddfec2208cb32b7b51aa7b64736d1b4f580cbd"
 dependencies = [
  "cfg-if",
  "dusk-bls12_381",
@@ -1489,6 +1640,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "221996f774192f0f718773def8201c4ae31f02616a54ccfc2d358bb0e5cefdec"
 
 [[package]]
+name = "glob"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
+
+[[package]]
 name = "group"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1536,6 +1693,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
 dependencies = [
  "ahash 0.7.6",
+]
+
+[[package]]
+name = "hashbrown"
+version = "0.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
+dependencies = [
+ "ahash 0.8.3",
 ]
 
 [[package]]
@@ -1776,6 +1942,9 @@ dependencies = [
 name = "kate"
 version = "0.6.1"
 dependencies = [
+ "ark-bls12-381",
+ "ark-ff",
+ "ark-serialize",
  "criterion",
  "da-primitives",
  "derive_more",
@@ -1789,9 +1958,11 @@ dependencies = [
  "kate-grid",
  "kate-recovery",
  "log",
+ "merlin 3.0.0",
  "num_cpus",
  "once_cell",
  "parity-scale-codec",
+ "poly-multiproof",
  "proptest",
  "rand 0.8.5",
  "rand_chacha 0.3.1",
@@ -2468,6 +2639,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9a81d2759aae1dae668f783c308bc5c8ebd191ff4184aaa1b37f65a6ae5a56f"
 dependencies = [
  "plotters-backend",
+]
+
+[[package]]
+name = "poly-multiproof"
+version = "0.0.1"
+source = "git+https://github.com/aphoh/poly-multiproof#b0783e1b69b35c744abd522ee482de51a2181888"
+dependencies = [
+ "ark-bls12-381",
+ "ark-ec",
+ "ark-ff",
+ "ark-poly",
+ "ark-serialize",
+ "ark-std",
+ "blst",
+ "merlin 3.0.0",
+ "thiserror",
 ]
 
 [[package]]
@@ -3770,6 +3957,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5516c27b78311c50bf42c071425c560ac799b11c30b31f87e3081965fe5e0180"
 dependencies = [
  "once_cell",
+]
+
+[[package]]
+name = "threadpool"
+version = "1.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d050e60b33d41c19108b32cea32164033a9013fe3b46cbd4457559bfbf77afaa"
+dependencies = [
+ "num_cpus",
 ]
 
 [[package]]

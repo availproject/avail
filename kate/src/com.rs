@@ -351,9 +351,9 @@ pub fn build_proof(
 	let total_start = Instant::now();
 
 	// TODO: better error type
-	let ext_data_matrix_cm = ext_data_matrix
-		.as_column_major(extended_dims.width(), extended_dims.height())
-		.ok_or(Error::DimensionsMismatch)?;
+	//let ext_data_matrix_cm = ext_data_matrix
+	//	.as_column_major(extended_dims.width(), extended_dims.height())
+	//	.ok_or(Error::DimensionsMismatch)?;
 
 	// attempt to parallelly compute proof for all requested cells
 	cells
@@ -367,11 +367,15 @@ pub fn build_proof(
 				let c_index = cell.col.as_usize();
 
 				// construct polynomial per extended matrix row
-				let row = ext_data_matrix_cm
-					.iter_row(r_index)
-					.expect("Already checked row index")
-					.map(Clone::clone)
-					.collect::<Vec<_>>();
+				let row = (0..extended_dims.width())
+					.into_par_iter()
+					.map(|j| ext_data_matrix[r_index + j * extended_dims.height()])
+					.collect::<Vec<BlsScalar>>();
+				//let row = ext_data_matrix_cm
+				//	.iter_row(r_index)
+				//	.expect("Already checked row index")
+				//	.map(Clone::clone)
+				//	.collect::<Vec<_>>();
 
 				// row has to be a power of 2, otherwise interpolate() function panics
 				// TODO: cache evaluations

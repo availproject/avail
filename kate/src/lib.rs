@@ -16,7 +16,9 @@ pub type Seed = [u8; 32];
 pub mod config {
 	use super::{BlockLengthColumns, BlockLengthRows};
 
+    // TODO: Delete this? not used anywhere
 	pub const SCALAR_SIZE_WIDE: usize = 64;
+
 	pub const SCALAR_SIZE: usize = 32;
 	pub const DATA_CHUNK_SIZE: usize = 31; // Actual chunk size is 32 after 0 padding is done
 	pub const EXTENSION_FACTOR: u32 = 2;
@@ -64,6 +66,8 @@ pub mod testnet {
 
 #[cfg(feature = "std")]
 pub mod com;
+
+pub mod gridgen;
 /// Precalculate the length of padding IEC 9797 1.
 ///
 /// # NOTE

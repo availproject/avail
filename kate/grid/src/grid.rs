@@ -1,4 +1,4 @@
-use core::marker::PhantomData;
+use alloc::vec::Vec;
 
 pub trait Grid<A> {
 	fn width(&self) -> usize;
@@ -8,21 +8,19 @@ pub trait Grid<A> {
 	fn get(&self, x: usize, y: usize) -> Option<&A>;
 }
 
-pub struct RowMajor<A, T> {
+pub struct RowMajor<A> {
 	width: usize,
 	height: usize,
-	pub inner: T,
-	_phantom: PhantomData<A>,
+	pub inner: Vec<A>,
 }
 
-pub struct ColumnMajor<A, T> {
+pub struct ColumnMajor<A> {
 	width: usize,
 	height: usize,
-	pub inner: T,
-	_phantom: PhantomData<A>,
+	pub inner: Vec<A>,
 }
 
-impl<A, T: AsRef<[A]>> Grid<A> for RowMajor<A, T> {
+impl<A> Grid<A> for RowMajor<A> {
 	fn width(&self) -> usize {
 		self.width
 	}
@@ -32,11 +30,11 @@ impl<A, T: AsRef<[A]>> Grid<A> for RowMajor<A, T> {
 	}
 
 	fn get(&self, x: usize, y: usize) -> Option<&A> {
-		self.inner.as_ref().get(x + y * self.width)
+		self.inner.get(x + y * self.width)
 	}
 }
 
-impl<A, T: AsRef<[A]>> Grid<A> for ColumnMajor<A, T> {
+impl<A> Grid<A> for ColumnMajor<A> {
 	fn width(&self) -> usize {
 		self.width
 	}
@@ -46,16 +44,16 @@ impl<A, T: AsRef<[A]>> Grid<A> for ColumnMajor<A, T> {
 	}
 
 	fn get(&self, x: usize, y: usize) -> Option<&A> {
-		self.inner.as_ref().get(y + x * self.height)
+		self.inner.get(y + x * self.height)
 	}
 }
 
-impl<A: Sized, T: AsRef<[A]>> RowMajor<A, T> {
+impl<A: Clone> RowMajor<A> {
 	pub fn row(&self, y: usize) -> Option<&[A]> {
 		if y >= self.height {
 			return None;
 		}
-		Some(&self.inner.as_ref()[(y * self.width)..((y + 1) * self.width)])
+		Some(&self.inner[(y * self.width)..((y + 1) * self.width)])
 	}
 
 	pub fn iter_col(&self, x: usize) -> Option<impl Iterator<Item = &A> + '_> {
@@ -63,6 +61,15 @@ impl<A: Sized, T: AsRef<[A]>> RowMajor<A, T> {
 			return None;
 		}
 		Some((0..self.height).map(move |y| self.get(x, y).expect("Size checked at instantiation")))
+	}
+
+	pub fn rows(&self) -> impl Iterator<Item = (usize, &[A])> + '_ {
+		(0..self.height).map(|y| (y, self.row(y).expect("Bounds already checked")))
+	}
+
+	// TODO: this return type is kinda gross, should it just iterate over vecs?
+	pub fn columns(&self) -> impl Iterator<Item = (usize, impl Iterator<Item = &A>)> + '_ {
+		(0..self.width).map(|x| (x, self.iter_col(x).expect("Bounds already checked")))
 	}
 
 	pub fn iter_row_wise(&self) -> impl Iterator<Item = &A> + '_ {
@@ -76,14 +83,22 @@ impl<A: Sized, T: AsRef<[A]>> RowMajor<A, T> {
 			(0..self.height).map(move |y| self.get(x, y).expect("Bounds already checked"))
 		})
 	}
+
+	pub fn to_column_major(&self) -> ColumnMajor<A> {
+		self.iter_column_wise()
+			.map(Clone::clone)
+			.collect::<Vec<_>>()
+			.as_column_major(self.width, self.height)
+			.expect("Bounds already checked")
+	}
 }
 
-impl<A: Sized, T: AsRef<[A]>> ColumnMajor<A, T> {
+impl<A: Clone> ColumnMajor<A> {
 	pub fn col(&self, x: usize) -> Option<&[A]> {
 		if x >= self.width {
 			return None;
 		}
-		Some(&self.inner.as_ref()[(x * self.height)..((x + 1) * self.height)])
+		Some(&self.inner[(x * self.height)..((x + 1) * self.height)])
 	}
 
 	pub fn iter_row(&self, y: usize) -> Option<impl Iterator<Item = &A> + '_> {
@@ -104,27 +119,31 @@ impl<A: Sized, T: AsRef<[A]>> ColumnMajor<A, T> {
 			(0..self.height).map(move |y| self.get(x, y).expect("Bounds already checked"))
 		})
 	}
+
+	pub fn to_row_major(&self) -> RowMajor<A> {
+		self.iter_row_wise()
+			.map(Clone::clone)
+			.collect::<Vec<_>>()
+			.as_row_major(self.width, self.height)
+			.expect("Bounds already checked")
+	}
 }
 
-pub trait AsRowMajor<A: Sized> {
-	type Output: Sized;
-	fn as_row_major(self, width: usize, height: usize) -> Option<RowMajor<A, Self::Output>>;
+pub trait AsRowMajor<A> {
+	fn as_row_major(self, width: usize, height: usize) -> Option<RowMajor<A>>;
 }
 
-pub trait AsColumnMajor<A: Sized> {
-	type Output: Sized;
-	fn as_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A, Self::Output>>;
+pub trait AsColumnMajor<A> {
+	fn as_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A>>;
 }
 
-impl<A: Sized, T: AsRef<[A]>> AsRowMajor<A> for T {
-	type Output = Self;
-	fn as_row_major(self, width: usize, height: usize) -> Option<RowMajor<A, Self>> {
-		if self.as_ref().len() == width * height {
+impl<A> AsRowMajor<A> for Vec<A> {
+	fn as_row_major(self, width: usize, height: usize) -> Option<RowMajor<A>> {
+		if self.len() == width * height {
 			Some(RowMajor {
 				width,
 				height,
 				inner: self,
-				_phantom: PhantomData,
 			})
 		} else {
 			None
@@ -132,15 +151,41 @@ impl<A: Sized, T: AsRef<[A]>> AsRowMajor<A> for T {
 	}
 }
 
-impl<A: Sized, T: AsRef<[A]>> AsColumnMajor<A> for T {
-	type Output = Self;
-	fn as_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A, Self::Output>> {
-		if self.as_ref().len() == width * height {
+impl<A> AsColumnMajor<A> for Vec<A> {
+	fn as_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A>> {
+		if self.len() == width * height {
 			Some(ColumnMajor {
 				width,
 				height,
 				inner: self,
-				_phantom: PhantomData,
+			})
+		} else {
+			None
+		}
+	}
+}
+
+impl<A, const LEN: usize> AsColumnMajor<A> for [A; LEN] {
+	fn as_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A>> {
+		if self.len() == width * height {
+			Some(ColumnMajor {
+				width,
+				height,
+				inner: self.into(),
+			})
+		} else {
+			None
+		}
+	}
+}
+
+impl<A, const LEN: usize> AsRowMajor<A> for [A; LEN] {
+	fn as_row_major(self, width: usize, height: usize) -> Option<RowMajor<A>> {
+		if self.len() == width * height {
+			Some(RowMajor {
+				width,
+				height,
+				inner: self.into(),
 			})
 		} else {
 			None

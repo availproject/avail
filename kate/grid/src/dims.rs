@@ -1,5 +1,5 @@
 /// The dimensions of a grid
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Dimensions {
 	width: usize,
 	height: usize,
@@ -47,8 +47,8 @@ impl Dimensions {
 		self.height
 	}
 
-	pub fn size(&self) -> u32 {
-		self.width as u32 * self.height as u32
+	pub fn n_cells(&self) -> usize {
+		self.width  * self.height 
 	}
 
 	pub fn extend(&self, e: Extension) -> Self {
