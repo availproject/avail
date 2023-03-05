@@ -318,10 +318,7 @@ fn round_up_power_of_2(mut v: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-	use crate::testnet;
-
 	use super::*;
-	use hex_literal::hex;
 	use proptest::{prop_assert_eq, proptest};
 	use test_case::test_case;
 
@@ -344,41 +341,6 @@ mod tests {
 	#[test_case(0, 16 => None)]
 	fn multiproof_max_grid_size(x: usize, y: usize) -> Option<CellBlock> {
 		multiproof_block(x, y, &GRID, &TARGET)
-	}
-
-	#[test]
-	// Test build_commitments() function with a predefined input
-	fn newapi_test_build_commitments_simple_commitment_check() {
-		let original_data = br#"test"#;
-		let block_height = 256usize;
-		let block_width = 256usize;
-		let hash: Seed = [
-			76, 41, 174, 145, 187, 12, 97, 32, 75, 111, 149, 209, 243, 195, 165, 10, 166, 172, 47,
-			41, 218, 24, 212, 66, 62, 5, 187, 191, 129, 5, 105, 3,
-		];
-
-		let evals = EvaluationGrid::from_extrinsics(
-			vec![AppExtrinsic::from(original_data.to_vec())],
-			4,
-			block_width,
-			block_height,
-			hash,
-		)
-		.unwrap();
-		let evals = evals.extend_columns(2).unwrap();
-		let polys = evals.make_polynomial_grid().unwrap();
-		let public_params =
-			testnet::public_params(da_primitives::BlockLengthColumns(block_width as u32));
-		let commits = polys
-			.commitments(public_params.commit_key())
-			.unwrap()
-			.into_iter()
-			.flat_map(|p| p.to_bytes())
-			.collect::<Vec<_>>();
-
-		assert_eq!(evals.dims, Dimensions::new(4, 2));
-		let expected_commitments = hex!("960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D");
-		assert_eq!(commits, expected_commitments);
 	}
 
 	use proptest::prelude::*;
@@ -427,5 +389,108 @@ mod tests {
 	fn test_get_block_dims(size: usize) -> Dimensions
 where {
 		get_block_dims(size, 4, 256, 256).unwrap()
+	}
+}
+
+#[cfg(test)]
+mod consistency_tests {
+
+	use super::*;
+	use crate::testnet;
+	use dusk_plonk::prelude::PublicParameters;
+	use hex_literal::hex;
+
+	fn pp() -> PublicParameters {
+		testnet::public_params(da_primitives::BlockLengthColumns(256))
+	}
+
+	#[test]
+	fn newapi_test_build_commitments_simple_commitment_check() {
+		let original_data = br#"test"#;
+		let block_height = 256usize;
+		let block_width = 256usize;
+		let hash: Seed = [
+			76, 41, 174, 145, 187, 12, 97, 32, 75, 111, 149, 209, 243, 195, 165, 10, 166, 172, 47,
+			41, 218, 24, 212, 66, 62, 5, 187, 191, 129, 5, 105, 3,
+		];
+
+		let evals = EvaluationGrid::from_extrinsics(
+			vec![AppExtrinsic::from(original_data.to_vec())],
+			4,
+			block_width,
+			block_height,
+			hash,
+		)
+		.unwrap();
+		let evals = evals.extend_columns(2).unwrap();
+		let polys = evals.make_polynomial_grid().unwrap();
+		let commits = polys
+			.commitments(pp().commit_key())
+			.unwrap()
+			.into_iter()
+			.flat_map(|p| p.to_bytes())
+			.collect::<Vec<_>>();
+
+		assert_eq!(evals.dims, Dimensions::new(4, 2));
+		let expected_commitments = hex!("960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D");
+		assert_eq!(commits, expected_commitments);
+	}
+
+	#[test]
+	fn newapi_par_build_commitments_row_wise_constant_row() {
+		// Due to scale encoding, first line is not constant.
+		// We will use second line to ensure constant row.
+		let hash = Seed::default();
+		let xts = vec![AppExtrinsic {
+			app_id: AppId(0),
+			data: vec![0; 31 * 8],
+		}];
+
+		let evals = EvaluationGrid::from_extrinsics(xts, 4, 4, 4, hash).unwrap();
+		let evals = evals.extend_columns(2).unwrap();
+		let polys = evals.make_polynomial_grid().unwrap();
+		polys.commitments(pp().commit_key()).unwrap();
+	}
+	#[test]
+	fn newapi_test_flatten_block() {
+		let extrinsics: Vec<AppExtrinsic> = vec![
+			AppExtrinsic {
+				app_id: 0.into(),
+				data: (1..=29).collect(),
+			},
+			AppExtrinsic {
+				app_id: 1.into(),
+				data: (1..=30).collect(),
+			},
+			AppExtrinsic {
+				app_id: 2.into(),
+				data: (1..=31).collect(),
+			},
+			AppExtrinsic {
+				app_id: 3.into(),
+				data: (1..=60).collect(),
+			},
+		];
+
+		let expected_dims = Dimensions::new(16, 1);
+		let evals =
+			EvaluationGrid::from_extrinsics(extrinsics, 4, 256, 256, Seed::default()).unwrap();
+
+		let expected_layout = vec![(0.into(), 2), (1.into(), 2), (2.into(), 2), (3.into(), 3)];
+		assert_eq!(evals.layout, expected_layout, "The layouts don't match");
+		assert_eq!(
+			evals.dims, expected_dims,
+			"Dimensions don't match the expected"
+		);
+
+		let expected_data = hex!("04740102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d00800000000000000000000000000000000000000000000000000000000000000004780102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e80000000000000000000000000000000000000000000000000000000000000047c0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f80000000000000000000000000000000000000000000000000000000000004f00102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c00800000000000000000000000000000000000000000000000000000000000000076a04053bda0a88bda5177b86a15c3b29f559873cb481232299cd5743151ac004b2d63ae198e7bb0a9011f28e473c95f4013d7d53ec5fbc3b42df8ed101f6d00e831e52bfb76e51cca8b4e9016838657edfae09cb9a71eb219025c4c87a67c004aaa86f20ac0aa792bc121ee42e2c326127061eda15599cb5db3db870bea5a00ecf353161c3cb528b0c5d98050c4570bfc942d8b19ed7b0cbba5725e03e5f000b7e30db36b6df82ac151f668f5f80a5e2a9cac7c64991dd6a6ce21c060175800edb9260d2a86c836efc05f17e5c59525e404c6a93d051651fe2e4eefae281300");
+
+		let data = evals
+			.evals
+			.inner
+			.into_iter()
+			.flat_map(|s| s.to_bytes())
+			.collect::<Vec<_>>();
+		assert_eq!(data, expected_data, "Data doesn't match the expected data");
 	}
 }
