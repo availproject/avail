@@ -1944,6 +1944,7 @@ version = "0.6.1"
 dependencies = [
  "ark-bls12-381",
  "ark-ff",
+ "ark-poly",
  "ark-serialize",
  "criterion",
  "da-primitives",
