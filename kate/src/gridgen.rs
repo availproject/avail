@@ -493,4 +493,63 @@ mod consistency_tests {
 			.collect::<Vec<_>>();
 		assert_eq!(data, expected_data, "Data doesn't match the expected data");
 	}
+
+	#[test]
+	fn newapi_test_extend_data_matrix() {
+        // This test expects this result in column major
+		let expected_result = vec![
+			hex!("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e00"),
+			hex!("bc1c6b8b4b02ca677b825ec9dace9aa706813f3ec47abdf9f03c680f4468555e"),
+			hex!("7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a00"),
+			hex!("c16115f73784be22106830c9bc6bbb469bf5026ee80325e403efe5ccc3f55016"),
+			hex!("1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d00"),
+			hex!("db3b8aaa6a21e9869aa17de8f9edb9c625a05e5de399dc18105c872e6387745e"),
+			hex!("9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b900"),
+			hex!("e080341657a3dd412f874fe8db8ada65ba14228d07234403230e05ece2147016"),
+			hex!("3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c00"),
+			hex!("fa5aa9c9894008a6b9c09c07190dd9e544bf7d7c02b9fb372f7ba64d82a6935e"),
+			hex!("babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d800"),
+			hex!("ff9f533576c2fc604ea66e07fba9f984d93341ac26426322422d240b02348f16"),
+			hex!("5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b00"),
+			hex!("197ac8e8a85f27c5d8dfbb26382cf80464de9c9b21d81a574e9ac56ca1c5b25e"),
+			hex!("d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f700"),
+			hex!("1ebf725495e11b806dc58d261ac918a4f85260cb45618241614c432a2153ae16"),
+		]
+		.into_iter()
+		.map(|e| BlsScalar::from_bytes(e.as_slice().try_into().unwrap()).unwrap())
+		.collect::<Vec<_>>()
+		.as_column_major(4, 4)
+		.unwrap()
+		.to_row_major()
+		.inner;
+
+		let block_dims = Dimensions::new(4, 2);
+		let scalars = (0..=247)
+			.collect::<Vec<u8>>()
+			.chunks_exact(DATA_CHUNK_SIZE)
+			.flat_map(|chunk| pad_to_bls_scalar(chunk))
+			.collect::<Vec<_>>();
+		dbg!(scalars.len());
+
+		let grid = EvaluationGrid {
+			layout: vec![],
+			evals: scalars
+				.as_row_major(block_dims.width(), block_dims.height())
+				.unwrap(),
+			dims: block_dims,
+		};
+		let extend = grid.extend_columns(2).unwrap();
+
+		for i in 0..expected_result.len() {
+			let e = expected_result[i];
+			for j in 0..expected_result.len() {
+				let r = extend.evals.inner[j];
+				if e == r {
+					eprintln!("Eq: {} {}", i, j);
+				}
+			}
+		}
+
+		assert_eq!(extend.evals.inner, expected_result);
+	}
 }
