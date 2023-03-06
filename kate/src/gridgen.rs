@@ -157,10 +157,18 @@ impl PolynomialGrid {
 			.collect()
 	}
 
+	pub fn commitment(&self, srs: &CommitKey, row: usize) -> Result<Commitment, Error> {
+		self.inner
+			.get(row)
+			.ok_or(Error::CellLenghtExceeded)
+			.and_then(|poly| srs.commit(&poly).map_err(|e| Error::PlonkError(e)))
+	}
+
 	pub fn proof(&self, srs: &CommitKey, cell: &Cell) -> Result<Commitment, Error> {
 		let x = cell.col.0 as usize;
 		let y = cell.row.0 as usize;
 		// TODO: better error msg
+		dbg!(y, self.inner.len());
 		let poly = self.inner.get(y).ok_or(Error::CellLenghtExceeded)?;
 		let witness = srs.compute_single_witness(poly, &self.points[x]);
 		Ok(srs.commit(&witness)?)
@@ -394,11 +402,19 @@ where {
 
 #[cfg(test)]
 mod consistency_tests {
-
 	use super::*;
 	use crate::testnet;
 	use dusk_plonk::prelude::PublicParameters;
 	use hex_literal::hex;
+	use kate_grid::Grid;
+	use kate_recovery::com::reconstruct_extrinsics;
+	use kate_recovery::data::Cell as DCell;
+	use kate_recovery::index::AppDataIndex;
+	use kate_recovery::matrix::Position as DPosition;
+	use proptest::prelude::*;
+	use proptest::{collection, sample::size_range, strategy::Strategy};
+	use rand::distributions::Uniform;
+	use rand::prelude::Distribution;
 
 	fn pp() -> PublicParameters {
 		testnet::public_params(da_primitives::BlockLengthColumns(256))
@@ -496,7 +512,7 @@ mod consistency_tests {
 
 	#[test]
 	fn newapi_test_extend_data_matrix() {
-        // This test expects this result in column major
+		// This test expects this result in column major
 		let expected_result = vec![
 			hex!("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e00"),
 			hex!("bc1c6b8b4b02ca677b825ec9dace9aa706813f3ec47abdf9f03c680f4468555e"),
@@ -551,5 +567,113 @@ mod consistency_tests {
 		}
 
 		assert_eq!(extend.evals.inner, expected_result);
+	}
+
+	fn app_extrinsic_strategy() -> impl Strategy<Value = AppExtrinsic> {
+		(
+			any::<u32>(),
+			any_with::<Vec<u8>>(size_range(1..2048).lift()),
+		)
+			.prop_map(|(app_id, data)| AppExtrinsic {
+				app_id: app_id.into(),
+				data,
+			})
+	}
+
+	fn app_extrinsics_strategy() -> impl Strategy<Value = Vec<AppExtrinsic>> {
+		collection::vec(app_extrinsic_strategy(), size_range(1..16)).prop_map(|xts| {
+			let mut new_xts = xts;
+			new_xts.sort_by(|a1, a2| a1.app_id.cmp(&a2.app_id));
+			new_xts
+		})
+	}
+
+	fn sample_unique(rng: &mut impl Rng, n_samples: usize, n: usize) -> Vec<usize> {
+		let mut sampled = vec![];
+		let u = Uniform::from(0..n);
+		while sampled.len() < n_samples || sampled.len() < n {
+			let t = u.sample(rng);
+			if !sampled.contains(&t) {
+				sampled.push(t)
+			}
+		}
+		sampled
+	}
+
+	// This copied method is still confusing to me... it just accumulates the size but skips over
+	// the app_id 0 size? not sure what's going on...
+	fn app_data_index_try_from_layout(layout: Vec<(AppId, u32)>) -> AppDataIndex {
+		let mut index = Vec::new();
+		// transactions are ordered by application id
+		// skip transactions with 0 application id - it's not a data txs
+		let mut size = 0u32;
+		let mut prev_app_id = AppId(0u32);
+
+		for (app_id, data_len) in layout {
+			if app_id.0 != 0 && prev_app_id != app_id {
+				index.push((app_id.0, size));
+			}
+
+			size += data_len;
+			if prev_app_id > app_id {
+				panic!("App ID out of order")
+			}
+			prev_app_id = app_id;
+		}
+
+		AppDataIndex { size, index }
+	}
+
+	proptest! {
+	#![proptest_config(ProptestConfig::with_cases(5))]
+	#[test]
+	fn newapi_test_build_and_reconstruct(exts in app_extrinsics_strategy())  {
+		let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 256, 256, Seed::default()).unwrap().extend_columns(2).unwrap();
+		let gref = &grid;
+		let dims = &grid.dims;
+		//let (layout, commitments, dims, matrix) = par_build_commitments(
+		//	BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default()).unwrap();
+		const RNG_SEED: Seed = [42u8; 32];
+		let mut rng = ChaChaRng::from_seed(RNG_SEED);
+		let cells = (0..dims.width())
+			.flat_map(move |x| {
+				sample_unique(&mut rng, dims.height()/2, dims.height())
+					.into_iter()
+					.map(move |y| {
+						kate_recovery::data::DataCell {
+							position: kate_recovery::matrix::Position { row: y as u32, col: x as u16 },
+							data: gref.evals.get(x, y).unwrap().to_bytes()
+						}
+					}).collect::<Vec<_>>()
+			}).collect::<Vec<_>>();
+		let index = app_data_index_try_from_layout(grid.layout.clone());
+		let bdims = kate_recovery::matrix::Dimensions::new(dims.height() as u16, dims.width() as u16).unwrap();
+		let reconstructed = reconstruct_extrinsics(&index, &bdims, cells).unwrap();
+		for (result, xt) in reconstructed.iter().zip(exts) {
+			prop_assert_eq!(result.0, *xt.app_id);
+			prop_assert_eq!(result.1[0].as_slice(), &xt.data);
+		}
+
+		let pp = pp();
+		let polys = grid.make_polynomial_grid().unwrap();
+		let commitments = polys.commitments(&pp.commit_key()).unwrap();
+		let indices = (0..dims.width()).flat_map(|x| (0..dims.height()).map(move |y| (x, y))).collect::<Vec<_>>();
+
+		// Sample some number 10 of the indices, all is too slow for tests...
+		let mut rng = ChaChaRng::from_seed(RNG_SEED);
+		let sampled = Uniform::from(0..indices.len()).sample_iter(&mut rng).take(10).map(|i| indices[i].clone());
+		for (x, y) in sampled {
+			let cell = Cell { row: (y as u32).into(), col: (x as u32).into() };
+			let proof = polys.proof(&pp.commit_key(), &cell).unwrap();
+			let mut content = [0u8; 80];
+			content[..48].copy_from_slice(&proof.to_bytes()[..]);
+			content[48..].copy_from_slice(&grid.evals.get(x, y).unwrap().to_bytes()[..]);
+
+			let dcell = DCell{position: DPosition { row: y as u32, col: x as u16 }, content };
+			let verification =  kate_recovery::proof::verify(&pp, &bdims, &commitments[y].to_bytes(),  &dcell);
+			prop_assert!(verification.is_ok());
+			prop_assert!(verification.unwrap());
+		}
+	}
 	}
 }
