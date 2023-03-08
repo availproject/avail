@@ -72,15 +72,6 @@ pub struct Kate<Client, Block: BlockT, SDFilter: Filter<CallOf<Block>>> {
 	filter: PhantomData<SDFilter>,
 }
 
-unsafe impl<Client, Block: BlockT, SDFilter: Filter<CallOf<Block>>> Send
-	for Kate<Client, Block, SDFilter>
-{
-}
-unsafe impl<Client, Block: BlockT, SDFilter: Filter<CallOf<Block>>> Sync
-	for Kate<Client, Block, SDFilter>
-{
-}
-
 impl<Client, Block, SDFilter> Kate<Client, Block, SDFilter>
 where
 	Block: BlockT,
@@ -216,7 +207,7 @@ where
 		+ BlockBackend<Block>
 		+ StorageProvider<Block, sc_client_db::Backend<Block>>,
 	Client::Api: KateParamsGetter<Block>,
-	SDFilter: Filter<CallOf<Block>> + 'static,
+	SDFilter: Filter<CallOf<Block>> + 'static + Send + Sync,
 	<<Block as BlockT>::Extrinsic as Extrinsic>::Call: Clone,
 {
 	fn query_rows(
@@ -263,9 +254,10 @@ where
 		}
 
 		let header = match signed_block.block.header().extension() {
-            HeaderExtension::V1(header) => header,
-            _ => todo!(),
-        };
+			HeaderExtension::V1(header) => header,
+            // Only used in test?
+			_ => todo!(),
+		};
 		let DataLookup { index, size } = &header.app_lookup;
 
 		let app_data_index = AppDataIndex {
