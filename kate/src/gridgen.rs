@@ -1,28 +1,28 @@
 use core::marker::PhantomData;
 
 use codec::Encode;
-use da_primitives::asdr::{AppExtrinsic, AppId};
+use da_primitives::asdr::{AppExtrinsic, AppId, DataLookup, DataLookupIndexItem};
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	commitment_scheme::kzg10::commitment::Commitment,
 	fft::{EvaluationDomain, Polynomial},
 	prelude::{BlsScalar, CommitKey},
 };
-use kate_grid::{AsColumnMajor, AsRowMajor, Dimensions, Extension, RowMajor};
-use kate_recovery::config::PADDING_TAIL_VALUE;
+use kate_grid::{AsColumnMajor, AsRowMajor, Dimensions, Extension, Grid, RowMajor};
+use kate_recovery::config::PADDING_TAIL_VALUE, index::AppDataIndex};
 use merlin::Transcript;
 use poly_multiproof::m1_blst::M1NoPrecomp;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 
 use crate::{
-	com::{Cell, Error, XtsLayout},
+	com::{Cell, Error},
 	config::DATA_CHUNK_SIZE,
 	Seed,
 };
 
 pub struct EvaluationGrid {
-	pub layout: XtsLayout,
+	pub lookup: DataLookup,
 	pub evals: RowMajor<BlsScalar>,
 	pub dims: Dimensions,
 }
@@ -62,17 +62,27 @@ impl EvaluationGrid {
 			})
 			.collect::<Result<Vec<_>, _>>()?;
 
-		// Get the layout of each app id's start
-		let layout = encoded
-			.iter()
-			.map(|(id, data)| (*id, data.len() as u32))
-			.collect::<Vec<_>>();
+		// make the index of app info
+		let mut start = 0u32;
+		let mut index = vec![];
+		for (app_id, scalars) in &encoded {
+			index.push(DataLookupIndexItem {
+				app_id: *app_id,
+				start,
+			});
+			start += scalars.len() as u32; // next item should start after current one
+		}
 
 		// Flatten the grid
 		let mut grid = encoded
 			.into_iter()
 			.flat_map(|(_, scalars)| scalars)
 			.collect::<Vec<_>>();
+
+		let lookup = DataLookup {
+			size: grid.len() as u32,
+			index,
+		};
 
 		// Fit the grid to the desired grid size
 		let dims = get_block_dims(grid.len(), min_width, max_width, max_height)?;
@@ -84,12 +94,61 @@ impl EvaluationGrid {
 		}
 
 		Ok(EvaluationGrid {
-			layout,
+			lookup,
 			evals: grid
 				.as_row_major(dims.width(), dims.height())
 				.ok_or(Error::DimensionsMismatch)?,
 			dims,
 		})
+	}
+
+	/// Returns the start/end indices of the given app id *for the non-extended grid*
+	fn app_data_indices(&self, app_id: &AppId) -> Option<(usize, usize)> {
+		if self.lookup.size == 0 {
+			// Empty block, short circuit.
+			return None;
+		}
+		let (i, start_index) = self
+			.lookup
+			.index
+			.iter()
+			.enumerate()
+			.find(|(_i, item)| &item.app_id == app_id)
+			.map(|(i, item)| (i, item.start as usize))?;
+		let end_index = self
+			.lookup
+			.index
+			.get(i + 1)
+			.map(|elem| elem.start)
+			.unwrap_or(self.lookup.size) as usize;
+		Some((start_index, end_index))
+	}
+
+	/// Returns a list of `(index, row)` pairs for the underlying rows of an application.
+	/// Returns `None` if the `app_id` cannot be found, or if the provided `orig_dims` are invalid.
+	pub fn app_rows(
+		&self,
+		app_id: &AppId,
+		orig_dims: Option<&Dimensions>,
+	) -> Option<Vec<(usize, Vec<BlsScalar>)>> {
+		let orig_dims = orig_dims.unwrap_or(&self.dims);
+		if !orig_dims.divides(&self.dims) {
+			dbg!(&orig_dims, &self.dims);
+			dbg!("hello");
+			return None;
+		}
+		let h_mul = self.dims.height() / orig_dims.height();
+
+		dbg!(&app_id, &self.lookup.index);
+		let (start_ind, end_ind) = self.app_data_indices(app_id)?;
+		let (_, start_y) = RowMajor::<()>::ind_to_coord(&orig_dims, start_ind);
+		let (_, end_y) = RowMajor::<()>::ind_to_coord(&orig_dims, end_ind - 1); // Find y of last cell elt
+		let (new_start_y, new_end_y) = (start_y * h_mul, end_y * h_mul);
+
+		(new_start_y..=new_end_y)
+			.step_by(h_mul)
+			.map(|y| self.evals.row(y).map(|a| (y, a.to_vec())))
+			.collect()
 	}
 
 	pub fn extend_columns(&self, extension_factor: usize) -> Result<Self, Error> {
@@ -121,7 +180,7 @@ impl EvaluationGrid {
 			.to_row_major();
 
 		Ok(Self {
-			layout: self.layout.clone(),
+			lookup: self.lookup.clone(),
 			evals: new_evals,
 			dims: new_dims,
 		})
@@ -241,7 +300,7 @@ pub struct CellBlock {
 	end_x: usize,
 	end_y: usize,
 }
-fn multiproof_block(
+pub fn multiproof_block(
 	x: usize,
 	y: usize,
 	grid_dims: &Dimensions,
@@ -492,8 +551,17 @@ mod consistency_tests {
 		let evals =
 			EvaluationGrid::from_extrinsics(extrinsics, 4, 256, 256, Seed::default()).unwrap();
 
-		let expected_layout = vec![(0.into(), 2), (1.into(), 2), (2.into(), 2), (3.into(), 3)];
-		assert_eq!(evals.layout, expected_layout, "The layouts don't match");
+		let expected_index = [(0.into(), 0), (1.into(), 2), (2.into(), 4), (3.into(), 6)]
+			.into_iter()
+			.map(|(app_id, start)| DataLookupIndexItem { app_id, start })
+			.collect::<Vec<_>>();
+
+		let expected_lookup = DataLookup {
+			size: 9,
+			index: expected_index,
+		};
+
+		assert_eq!(evals.lookup, expected_lookup, "The layouts don't match");
 		assert_eq!(
 			evals.dims, expected_dims,
 			"Dimensions don't match the expected"
@@ -548,7 +616,7 @@ mod consistency_tests {
 		dbg!(scalars.len());
 
 		let grid = EvaluationGrid {
-			layout: vec![],
+			lookup: DataLookup::default(),
 			evals: scalars
 				.as_row_major(block_dims.width(), block_dims.height())
 				.unwrap(),
@@ -602,26 +670,11 @@ mod consistency_tests {
 
 	// This copied method is still confusing to me... it just accumulates the size but skips over
 	// the app_id 0 size? not sure what's going on...
-	fn app_data_index_try_from_layout(layout: Vec<(AppId, u32)>) -> AppDataIndex {
-		let mut index = Vec::new();
-		// transactions are ordered by application id
-		// skip transactions with 0 application id - it's not a data txs
-		let mut size = 0u32;
-		let mut prev_app_id = AppId(0u32);
-
-		for (app_id, data_len) in layout {
-			if app_id.0 != 0 && prev_app_id != app_id {
-				index.push((app_id.0, size));
-			}
-
-			size += data_len;
-			if prev_app_id > app_id {
-				panic!("App ID out of order")
-			}
-			prev_app_id = app_id;
+	fn app_data_index_from_lookup(lookup: &DataLookup) -> AppDataIndex {
+		AppDataIndex {
+			size: lookup.size,
+			index: lookup.index.iter().map(|e| (e.app_id.0, e.start)).collect(),
 		}
-
-		AppDataIndex { size, index }
 	}
 
 	proptest! {
@@ -646,7 +699,7 @@ mod consistency_tests {
 						}
 					}).collect::<Vec<_>>()
 			}).collect::<Vec<_>>();
-		let index = app_data_index_try_from_layout(grid.layout.clone());
+		let index = app_data_index_from_lookup(&grid.lookup);
 		let bdims = kate_recovery::matrix::Dimensions::new(dims.height() as u16, dims.width() as u16).unwrap();
 		let reconstructed = reconstruct_extrinsics(&index, &bdims, cells).unwrap();
 		for (result, xt) in reconstructed.iter().zip(exts) {
@@ -675,5 +728,37 @@ mod consistency_tests {
 			prop_assert!(verification.unwrap());
 		}
 	}
+	}
+
+	proptest! {
+		#![proptest_config(ProptestConfig::with_cases(1))]
+		#[test]
+		fn newapi_commitments_verify(ref exts in app_extrinsics_strategy())  {
+			//let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default()).unwrap();
+			let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 16, 64, Seed::default()).unwrap().extend_columns(2).unwrap();
+			let orig_dims = Dimensions::new(grid.dims.width(), grid.dims.height() / 2);
+			let polys = grid.make_polynomial_grid().unwrap();
+			let commits = polys.commitments(&pp().commit_key())
+				.unwrap()
+				.iter()
+				.map(|c| c.to_bytes())
+				.collect::<Vec<_>>();
+
+			let index = app_data_index_from_lookup(&grid.lookup);
+			let public_params = testnet::public_params((grid.dims.width() as u32).into());
+
+			for xt in exts {
+				let rows = grid.app_rows(&xt.app_id, Some(&orig_dims)).unwrap();
+                // Have to put the rows we find in this funky data structure
+				let mut app_rows = vec![None; grid.dims.height()];
+				for (row_i, row) in rows {
+					app_rows[row_i] = Some(row.iter().flat_map(|s| s.to_bytes()).collect());
+				}
+                // Need to provide the original dimensions here too
+                let extended_dims = kate_recovery::matrix::Dimensions::new(orig_dims.height() as u16, orig_dims.width() as u16).unwrap();
+				let (_, missing) = kate_recovery::commitments::verify_equality(&public_params, &commits, &app_rows, &index, &extended_dims, xt.app_id.0).unwrap();
+				prop_assert!(missing.is_empty());
+			}
+		}
 	}
 }

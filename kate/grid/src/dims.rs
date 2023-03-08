@@ -19,19 +19,19 @@ pub struct Extension {
 }
 
 impl Extension {
-    pub fn height(factor: usize) -> Self {
-        Self {
-            height_factor: factor,
-            width_factor: 1,
-        }
-    }
+	pub fn height(factor: usize) -> Self {
+		Self {
+			height_factor: factor,
+			width_factor: 1,
+		}
+	}
 
-    pub fn width(factor: usize) -> Self {
-        Self {
-            height_factor: 1,
-            width_factor: factor,
-        }
-    }
+	pub fn width(factor: usize) -> Self {
+		Self {
+			height_factor: 1,
+			width_factor: factor,
+		}
+	}
 }
 
 impl Dimensions {
@@ -48,7 +48,11 @@ impl Dimensions {
 	}
 
 	pub fn n_cells(&self) -> usize {
-		self.width  * self.height 
+		self.width * self.height
+	}
+
+	pub fn divides(&self, other: &Self) -> bool {
+		other.width() % self.width() == 0 && other.height() % self.height() == 0
 	}
 
 	pub fn extend(&self, e: Extension) -> Self {
