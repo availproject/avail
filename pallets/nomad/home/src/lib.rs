@@ -193,6 +193,18 @@ pub mod pallet {
 			Self::do_improper_update(sender, &signed_update)?;
 			Ok(())
 		}
+
+		/// Set new updater on self as well as updater manager.
+		/// Note: Not exposed as pallet call, will only be callable by the
+		/// GovernanceRouter pallet when implemented.
+		#[pallet::weight(0)]
+		pub fn set_updater(origin: OriginFor<T>, new_updater: H160) -> DispatchResult {
+			// Modify NomadBase updater
+			Base::<T>::mutate(|base| base.updater = new_updater);
+
+			// Rotate updater on updater manager
+			nomad_updater_manager::Pallet::<T>::set_updater(new_updater)
+		}
 	}
 
 	impl<T: Config> Pallet<T>
@@ -359,17 +371,6 @@ pub mod pallet {
 
 			let updater = Self::base().updater;
 			Self::deposit_event(Event::<T>::UpdaterSlashed { updater, reporter });
-		}
-
-		/// Set new updater on self as well as updater manager.
-		/// Note: Not exposed as pallet call, will only be callable by the
-		/// GovernanceRouter pallet when implemented.
-		pub fn set_updater(new_updater: H160) -> DispatchResult {
-			// Modify NomadBase updater
-			Base::<T>::mutate(|base| base.updater = new_updater);
-
-			// Rotate updater on updater manager
-			nomad_updater_manager::Pallet::<T>::set_updater(new_updater)
 		}
 	}
 }
