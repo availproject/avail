@@ -2,41 +2,30 @@ package main
 
 import (
 	"avail-gsrpc-examples/internal/config"
-	"avail-gsrpc-examples/internal/extrinsics"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	gsrpc "github.com/centrifuge/go-substrate-rpc-client/v4"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 )
 
-func submit_data(size int, ApiURL string, Seed string, AppID int) {
-
-	// This sample shows how to create a transaction to make a Avail data submission
-	// Instantiate the API (locally)
-	api, err := gsrpc.NewSubstrateAPI(ApiURL)
-	if err != nil {
-		panic(err)
-	}
+func transfer(api *gsrpc.SubstrateAPI, Seed string, Dest string, amount uint64) {
 
 	meta, err := api.RPC.State.GetMetadataLatest()
 	if err != nil {
 		panic(err)
 	}
 
-	// Set data and appID according to need
-	data, _ := extrinsics.RandToken(size)
-	appID := 0
-
-	//if app id is greater than 0 then it must be created before submitting data
-	if AppID != 0 {
-		appID = AppID
+	dest, err := types.NewMultiAddressFromHexAccountID(Dest)
+	if err != nil {
+		panic(err)
 	}
 
-	c, err := types.NewCall(meta, "DataAvailability.submit_data", types.NewBytes([]byte(data)))
+	c, err := types.NewCall(meta, "Balances.transfer", dest, types.NewUCompactFromUInt(amount))
 	if err != nil {
 		panic(err)
 	}
@@ -59,7 +48,7 @@ func submit_data(size int, ApiURL string, Seed string, AppID int) {
 		panic(err)
 	}
 
-	key, err := types.CreateStorageKey(meta, "System", "Account", keyringPair.PublicKey)
+	key, err := types.CreateStorageKey(meta, "System", "Account", signature.TestKeyringPairAlice.PublicKey, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -78,28 +67,46 @@ func submit_data(size int, ApiURL string, Seed string, AppID int) {
 		Nonce:              types.NewUCompactFromUInt(uint64(nonce)),
 		SpecVersion:        rv.SpecVersion,
 		Tip:                types.NewUCompactFromUInt(0),
-		AppID:              types.NewUCompactFromUInt(uint64(appID)),
+		AppID:              types.NewUCompactFromUInt(uint64(0)),
 		TransactionVersion: rv.TransactionVersion,
 	}
 
-	// Sign the transaction using Alice's default account
 	err = ext.Sign(keyringPair, o)
 	if err != nil {
 		panic(err)
 	}
 
 	// Send the extrinsic
-	hash, err := api.RPC.Author.SubmitExtrinsic(ext)
+	sub, err := api.RPC.Author.SubmitAndWatchExtrinsic(ext)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("Data submitted by Alice: %v against appID %v  sent with hash %#x\n", data, appID, hash)
+	defer sub.Unsubscribe()
+	timeout := time.After(100 * time.Second)
+	for {
+		select {
+		case status := <-sub.Chan():
+			// NOTE: See first line of this function for supported extrinsic status expectations.
+			if status.IsInBlock {
+				fmt.Printf("Txn inside block %v\n", status.AsInBlock.Hex())
+			}
+			if status.IsFinalized {
+				fmt.Printf("Txn finalized %v\n", status.AsFinalized.Hex())
+				return
+			}
+			if status.IsDropped || status.IsInvalid {
+				fmt.Printf("unexpected extrinsic status from Avail: %#v", status)
+			}
+
+		case <-timeout:
+			fmt.Printf("timeout of 100 seconds reached without getting finalized status for extrinsic")
+			return
+		}
+	}
 
 }
-
 func main() {
-
 	var configJSON string
 	var config config.Config
 	flag.StringVar(&configJSON, "config", "", "config json file")
@@ -114,9 +121,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	size := 100
-	if config.Size > 0 {
-		size = config.Size
+
+	api, err := gsrpc.NewSubstrateAPI(config.ApiURL)
+	if err != nil {
+		panic(err)
 	}
-	submit_data(size, config.ApiURL, config.Seed, config.AppID)
+
+	fmt.Printf("Sending amount %d....", config.Amount)
+
+	transfer(api, config.Seed, config.Dest, config.Amount)
+
 }
