@@ -4,6 +4,7 @@ use std::{
 	sync::{Arc, RwLock},
 };
 
+use avail_base::metrics::RPCMetricAdapter;
 use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
 use da_primitives::{
 	asdr::{AppExtrinsic, AppId, DataLookup, GetAppId},
@@ -213,7 +214,8 @@ where
 			)
 			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
 
-			let data = kate::com::par_extend_data_matrix(block_dims, &block)
+			let metrics = RPCMetricAdapter {};
+			let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
 
 			block_ext_cache.put(block_hash, (data, block_dims));
@@ -223,8 +225,7 @@ where
 			.get(&block_hash)
 			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
 
-		let dimensions: Dimensions = block_dims
-			.clone()
+		let dimensions: Dimensions = (*block_dims)
 			.try_into()
 			.map_err(|e| internal_err!("Invalid dimensions: {:?}", e))?;
 
@@ -292,7 +293,8 @@ where
 			)
 			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
 
-			let data = kate::com::par_extend_data_matrix(block_dims, &block)
+			let metrics = RPCMetricAdapter {};
+			let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
 
 			block_ext_cache.put(block_hash, (data, block_dims));
@@ -313,8 +315,7 @@ where
 			size: *size,
 		};
 
-		let dimensions: Dimensions = block_dims
-			.clone()
+		let dimensions: Dimensions = (*block_dims)
 			.try_into()
 			.map_err(|e| internal_err!("Invalid dimensions: {:?}", e))?;
 
@@ -349,6 +350,7 @@ where
 			.block_ext_cache
 			.write()
 			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
+		let metrics = RPCMetricAdapter {};
 
 		if !block_ext_cache.contains(&block_hash) {
 			// build block data extension and cache it
@@ -384,7 +386,7 @@ where
 			)
 			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
 
-			let data = kate::com::par_extend_data_matrix(block_dims, &block)
+			let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
 			block_ext_cache.put(block_hash, (data, block_dims));
 		}
@@ -406,8 +408,9 @@ where
 		let kc_public_params =
 			unsafe { PublicParameters::from_slice_unchecked(&kc_public_params_raw) };
 
-		let proof = kate::com::build_proof(&kc_public_params, *block_dims, ext_data, &cells)
-			.map_err(|e| internal_err!("Proof cannot be generated: {:?}", e))?;
+		let proof =
+			kate::com::build_proof(&kc_public_params, *block_dims, ext_data, &cells, &metrics)
+				.map_err(|e| internal_err!("Proof cannot be generated: {:?}", e))?;
 
 		Ok(proof)
 	}

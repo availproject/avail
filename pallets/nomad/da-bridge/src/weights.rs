@@ -61,9 +61,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: NomadHome RootToIndex (r:0 w:1)
 	fn try_dispatch_data_root() -> Weight {
 		// Minimum execution time: 86_831 nanoseconds.
-		Weight::from_ref_time(87_904_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(4 as u64))
-			.saturating_add(T::DbWeight::get().writes(4 as u64))
+		Weight::from_ref_time(87_904_000_u64)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 }
 
@@ -77,8 +77,8 @@ impl WeightInfo for () {
 	// Storage: NomadHome RootToIndex (r:0 w:1)
 	fn try_dispatch_data_root() -> Weight {
 		// Minimum execution time: 86_831 nanoseconds.
-		Weight::from_ref_time(87_904_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(4 as u64))
-			.saturating_add(RocksDbWeight::get().writes(4 as u64))
+		Weight::from_ref_time(87_904_000_u64)
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
 }

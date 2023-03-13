@@ -182,7 +182,7 @@ pub fn create_full(
 	io.merge(StateMigration::new(client.clone(), backend, deny_unsafe).into_rpc())?;
 	// io.merge(Dev::new(client, deny_unsafe).into_rpc())?;
 
-	io.merge(Kate::<_, _, Runtime>::new(client.clone()).into_rpc())?;
+	io.merge(Kate::<_, _, Runtime>::new(client).into_rpc())?;
 
 	Ok(io)
 }

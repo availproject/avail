@@ -13,8 +13,9 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+avail-base = { path = "../../base", default-features = false }
 da-primitives = { version = "0.4", default-features = false }
-kate = { version = "0.6", default-features = false }
+kate = { version = "0.7", default-features = false }
 
 # Other
 impl-trait-for-tuples = "0.2.1"
@@ -46,6 +47,7 @@ sp-externalities = "0.13"
 [features]
 default = ["std"]
 std = [
+	"avail-base/std",
 	"kate/std",
 	"da-primitives/std",
 	"codec/std",

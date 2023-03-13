@@ -41,8 +41,11 @@ use sp_runtime::{
 	traits::Block as BlockT,
 	SaturatedConversion,
 };
+use substrate_prometheus_endpoint::{PrometheusError, Registry};
 
 use crate::rpc as node_rpc;
+
+pub const LOG_TARGET: &str = "avail::node::service";
 
 // Declare an instance of the native executor named `ExecutorDispatch`. Include the wasm binary as
 // the equivalent wasm code.
@@ -346,7 +349,7 @@ pub fn new_full_base(
 ) -> Result<NewFullBase, ServiceError> {
 	let hwbench = if !disable_hardware_benchmarks {
 		config.database.path().map(|database_path| {
-			let _ = std::fs::create_dir_all(&database_path);
+			let _ = std::fs::create_dir_all(database_path);
 			sc_sysinfo::gather_hwbench(Some(database_path))
 		})
 	} else {
@@ -414,6 +417,9 @@ pub fn new_full_base(
 	let name = config.network.node_name.clone();
 	let enable_grandpa = !config.disable_grandpa;
 	let prometheus_registry = config.prometheus_registry().cloned();
+	if let Some(reg) = prometheus_registry.as_ref() {
+		extend_metrics(reg)?;
+	}
 
 	let rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		config,
@@ -602,6 +608,13 @@ pub fn new_full(
 ) -> Result<TaskManager, ServiceError> {
 	new_full_base(config, disable_hardware_benchmarks, |_, _| ())
 		.map(|NewFullBase { task_manager, .. }| task_manager)
+}
+
+fn extend_metrics(prometheus: &Registry) -> Result<(), PrometheusError> {
+	use avail_base::metrics::{AvailMetrics, AVAIL_METRICS};
+
+	AVAIL_METRICS.get_or_try_init(|| AvailMetrics::new(prometheus))?;
+	Ok(())
 }
 
 /*

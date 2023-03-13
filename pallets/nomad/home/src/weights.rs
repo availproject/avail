@@ -59,9 +59,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: NomadHome RootToIndex (r:1 w:0)
 	fn improper_update() -> Weight {
 		// Minimum execution time: 338_660 nanoseconds.
-		Weight::from_ref_time(340_072_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(2 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+		Weight::from_ref_time(340_072_000_u64)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: NomadHome Base (r:1 w:0)
 	// Storage: NomadHome Nonces (r:1 w:1)
@@ -71,20 +71,20 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// The range of component `b` is `[1, 2048]`.
 	fn dispatch(b: u32, ) -> Weight {
 		// Minimum execution time: 72_715 nanoseconds.
-		Weight::from_ref_time(74_149_080 as u64)
+		Weight::from_ref_time(74_149_080_u64)
 			// Standard Error: 48
-			.saturating_add(Weight::from_ref_time(4_473 as u64).saturating_mul(b as u64))
-			.saturating_add(T::DbWeight::get().reads(3 as u64))
-			.saturating_add(T::DbWeight::get().writes(4 as u64))
+			.saturating_add(Weight::from_ref_time(4_473_u64).saturating_mul(b as u64))
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 	// Storage: NomadHome Base (r:1 w:1)
 	// Storage: NomadHome RootToIndex (r:32 w:32)
 	// Storage: NomadHome IndexToRoot (r:31 w:32)
 	fn update() -> Weight {
 		// Minimum execution time: 616_947 nanoseconds.
-		Weight::from_ref_time(627_426_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(64 as u64))
-			.saturating_add(T::DbWeight::get().writes(65 as u64))
+		Weight::from_ref_time(627_426_000_u64)
+			.saturating_add(T::DbWeight::get().reads(64_u64))
+			.saturating_add(T::DbWeight::get().writes(65_u64))
 	}
 }
 
@@ -94,9 +94,9 @@ impl WeightInfo for () {
 	// Storage: NomadHome RootToIndex (r:1 w:0)
 	fn improper_update() -> Weight {
 		// Minimum execution time: 338_660 nanoseconds.
-		Weight::from_ref_time(340_072_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(2 as u64))
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+		Weight::from_ref_time(340_072_000_u64)
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	// Storage: NomadHome Base (r:1 w:0)
 	// Storage: NomadHome Nonces (r:1 w:1)
@@ -106,19 +106,19 @@ impl WeightInfo for () {
 	/// The range of component `b` is `[1, 2048]`.
 	fn dispatch(b: u32, ) -> Weight {
 		// Minimum execution time: 72_715 nanoseconds.
-		Weight::from_ref_time(74_149_080 as u64)
+		Weight::from_ref_time(74_149_080_u64)
 			// Standard Error: 48
-			.saturating_add(Weight::from_ref_time(4_473 as u64).saturating_mul(b as u64))
-			.saturating_add(RocksDbWeight::get().reads(3 as u64))
-			.saturating_add(RocksDbWeight::get().writes(4 as u64))
+			.saturating_add(Weight::from_ref_time(4_473_u64).saturating_mul(b as u64))
+			.saturating_add(RocksDbWeight::get().reads(3_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
 	// Storage: NomadHome Base (r:1 w:1)
 	// Storage: NomadHome RootToIndex (r:32 w:32)
 	// Storage: NomadHome IndexToRoot (r:31 w:32)
 	fn update() -> Weight {
 		// Minimum execution time: 616_947 nanoseconds.
-		Weight::from_ref_time(627_426_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(64 as u64))
-			.saturating_add(RocksDbWeight::get().writes(65 as u64))
+		Weight::from_ref_time(627_426_000_u64)
+			.saturating_add(RocksDbWeight::get().reads(64_u64))
+			.saturating_add(RocksDbWeight::get().writes(65_u64))
 	}
 }

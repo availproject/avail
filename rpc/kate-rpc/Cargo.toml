@@ -6,6 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+avail-base = { path = "../../base" }
+
 sp-api = { version = "4.0.0-dev", default-features = false }
 sp-std = { version = "5.0.0", default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false }
@@ -17,7 +19,7 @@ rs_merkle = { version = "1.2.0", default-features = false }
 
 codec = { package = "parity-scale-codec", version = "3" }
 da-primitives = { version = "0.4", default-features = false }
-kate = { version = "0.6", default-features = false }
+kate = { version = "0.7", default-features = false }
 kate-recovery = { version = "0.8", default-features = false }
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
 

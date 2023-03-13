@@ -2,7 +2,10 @@ use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, HeaderExtension}
 #[cfg(feature = "std")]
 use da_primitives::{asdr::DataLookup, KateCommitment};
 use frame_support::traits::Randomness;
-pub use kate::Seed;
+pub use kate::{
+	metrics::{IgnoreMetrics, Metrics},
+	Seed,
+};
 use sp_core::H256;
 use sp_runtime::traits::Hash;
 #[cfg(feature = "std")]
@@ -95,11 +98,12 @@ fn build_extension_v_test(
 }
 
 #[cfg(feature = "std")]
-fn build_extension_v1(
+fn build_extension<M: Metrics>(
 	app_extrinsics: &[AppExtrinsic],
 	data_root: H256,
 	block_length: BlockLength,
 	seed: Seed,
+	metrics: &M,
 ) -> HeaderExtension {
 	use da_primitives::header::extension::v1;
 
@@ -109,6 +113,7 @@ fn build_extension_v1(
 		block_length.chunk_size(),
 		app_extrinsics,
 		seed,
+		metrics,
 	)
 	.expect("Build commitments cannot fail .qed");
 	let app_lookup =
@@ -140,7 +145,8 @@ pub trait HostedHeaderBuilder {
 		_block_number: u32,
 		seed: Seed,
 	) -> HeaderExtension {
-		build_extension_v1(&app_extrinsics, data_root, block_length, seed)
+		let metrics = avail_base::metrics::MetricAdapter {};
+		build_extension(&app_extrinsics, data_root, block_length, seed, &metrics)
 	}
 
 	/*

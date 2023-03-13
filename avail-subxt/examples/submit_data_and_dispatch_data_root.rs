@@ -7,7 +7,7 @@ use avail_subxt::{
 };
 use sp_keyring::AccountKeyring;
 use structopt::StructOpt;
-use subxt::{ext::sp_core::H160, tx::PairSigner};
+use subxt::{tx::PairSigner, utils::H160};
 
 const DESTINATION_DOMAIN: u32 = 1000;
 const DA_BRIDGE_ROUTER_ADDRESS: &str = "0x3f28a3e66326c3aa494d4f8e9477d1397ee94432";

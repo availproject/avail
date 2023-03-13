@@ -32,7 +32,7 @@ fn decode_submit_call() {
 	let call = super::UncheckedExtrinsic::decode(&mut encoded_call.as_slice()).unwrap();
 
 	let account = hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
-	let expected_signature = MultiSignature::Sr25519(Signature(hex!("be06880f2f6203365b508b4226fd697d3d79d3a50a5617aad714466d40ef47067225e823135b32121aa0f6f56e696f5f71107a6d44768c2fefe38cb209f7f282")));
+	let expected_signature = sp_runtime::MultiSignature::Sr25519(Signature(hex!("be06880f2f6203365b508b4226fd697d3d79d3a50a5617aad714466d40ef47067225e823135b32121aa0f6f56e696f5f71107a6d44768c2fefe38cb209f7f282")));
 	let expected_call = AppUncheckedExtrinsic {
 		function: RuntimeCall::DataAvailability(DaCall::submit_data {
 			data: hex!("54657374207375626d69742064617461")
