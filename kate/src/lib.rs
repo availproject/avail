@@ -16,7 +16,7 @@ pub type Seed = [u8; 32];
 pub mod config {
 	use super::{BlockLengthColumns, BlockLengthRows};
 
-    // TODO: Delete this? not used anywhere
+	// TODO: Delete this? not used anywhere
 	pub const SCALAR_SIZE_WIDE: usize = 64;
 
 	pub const SCALAR_SIZE: usize = 32;
@@ -44,12 +44,12 @@ pub mod config {
 #[cfg(feature = "std")]
 pub mod testnet {
 	use super::{BlockLengthColumns, PublicParameters};
-	use ark_bls12_381::{G1Projective, G2Projective, Fr};
-use ark_ff::{Fp, BigInt};
-use ark_serialize::CanonicalDeserialize;
-use once_cell::sync::Lazy;
+	use ark_bls12_381::{Fr, G1Projective, G2Projective};
+	use ark_ff::{BigInt, Fp};
+	use ark_serialize::CanonicalDeserialize;
+	use once_cell::sync::Lazy;
 	use poly_multiproof::m1_blst;
-use rand::SeedableRng;
+	use rand::SeedableRng;
 	use rand_chacha::ChaChaRng;
 	use std::{collections::HashMap, sync::Mutex};
 

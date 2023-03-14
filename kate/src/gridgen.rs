@@ -9,7 +9,7 @@ use dusk_plonk::{
 	prelude::{BlsScalar, CommitKey},
 };
 use kate_grid::{AsColumnMajor, AsRowMajor, Dimensions, Extension, Grid, RowMajor};
-use kate_recovery::config::PADDING_TAIL_VALUE, index::AppDataIndex};
+use kate_recovery::config::PADDING_TAIL_VALUE;
 use merlin::Transcript;
 use poly_multiproof::m1_blst::M1NoPrecomp;
 use rand::{Rng, SeedableRng};
@@ -101,6 +101,10 @@ impl EvaluationGrid {
 			dims,
 		})
 	}
+
+    pub fn row(&self, y: usize) -> Option<&[BlsScalar]> {
+        self.evals.row(y)
+    }
 
 	/// Returns the start/end indices of the given app id *for the non-extended grid*
 	fn app_data_indices(&self, app_id: &AppId) -> Option<(usize, usize)> {
