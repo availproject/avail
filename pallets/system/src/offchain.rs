@@ -204,7 +204,7 @@ impl<T: SigningTypes, C: AppCrypto<T::Public, T::Signature>> Signer<T, C, ForAny
 		F: Fn(&Account<T>) -> Option<R>,
 	{
 		let accounts = self.accounts_from_keys();
-		for account in accounts.into_iter() {
+		for account in accounts {
 			let res = f(&account);
 			if let Some(res) = res {
 				return Some((account, res));

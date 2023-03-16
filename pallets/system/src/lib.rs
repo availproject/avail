@@ -1113,7 +1113,7 @@ impl<T: Config> Pallet<T> {
 	/// Decrement the reference counter on an account. This *MUST* only be done once for every time
 	/// you called `inc_consumers` on `who`.
 	#[deprecated = "Use `dec_consumers` instead"]
-	pub fn dec_ref(who: &T::AccountId) { let _ = Self::dec_consumers(who); }
+	pub fn dec_ref(who: &T::AccountId) { Self::dec_consumers(who); }
 
 	/// The number of outstanding references for the account `who`.
 	#[deprecated = "Use `consumers` instead"]
@@ -1350,7 +1350,7 @@ impl<T: Config> Pallet<T> {
 		Events::<T>::append(event);
 
 		for topic in topics {
-			<EventTopics<T>>::append(topic, &(block_number, event_idx));
+			<EventTopics<T>>::append(topic, (block_number, event_idx));
 		}
 	}
 
@@ -1430,17 +1430,17 @@ impl<T: Config> Pallet<T> {
 			Self::block_weight().get(DispatchClass::Normal),
 			sp_runtime::Percent::from_rational(
 				Self::block_weight().get(DispatchClass::Normal).ref_time(),
-				T::BlockWeights::get().get(DispatchClass::Normal).max_total.unwrap_or(Bounded::max_value()).ref_time()
+				T::BlockWeights::get().get(DispatchClass::Normal).max_total.unwrap_or_else(Bounded::max_value).ref_time()
 			).deconstruct(),
 			Self::block_weight().get(DispatchClass::Operational),
 			sp_runtime::Percent::from_rational(
 				Self::block_weight().get(DispatchClass::Operational).ref_time(),
-				T::BlockWeights::get().get(DispatchClass::Operational).max_total.unwrap_or(Bounded::max_value()).ref_time()
+				T::BlockWeights::get().get(DispatchClass::Operational).max_total.unwrap_or_else(Bounded::max_value).ref_time()
 			).deconstruct(),
 			Self::block_weight().get(DispatchClass::Mandatory),
 			sp_runtime::Percent::from_rational(
 				Self::block_weight().get(DispatchClass::Mandatory).ref_time(),
-				T::BlockWeights::get().get(DispatchClass::Mandatory).max_total.unwrap_or(Bounded::max_value()).ref_time()
+				T::BlockWeights::get().get(DispatchClass::Mandatory).max_total.unwrap_or_else(Bounded::max_value).ref_time()
 			).deconstruct(),
 		);
 		ExecutionPhase::<T>::kill();

@@ -1,0 +1,76 @@
+use da_primitives::{asdr::AppUncheckedExtrinsic, Header as DaHeader};
+use sp_runtime::{
+	generic,
+	traits::{BlakeTwo256, IdentifyAccount, Verify},
+	MultiSignature, OpaqueExtrinsic,
+};
+
+use crate::{migration, AllPalletsWithSystem, Runtime, RuntimeCall};
+
+/// An index to a block.
+pub type BlockNumber = u32;
+/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
+pub type Signature = MultiSignature;
+/// Some way of identifying an account on the chain. We intentionally make it equivalent
+/// to the public key of our transaction signing scheme.
+pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
+/// The type for looking up accounts. We don't expect more than 4 billion of them, but you
+/// never know...
+pub type AccountIndex = u32;
+/// Index of a transaction in the chain.
+pub type Index = u32;
+/// A hash of some data used by the chain.
+pub type Hash = sp_core::H256;
+/// Digest item type.
+pub type DigestItem = generic::DigestItem;
+/// Time type
+pub type Moment = u64;
+
+/// The address format for describing accounts.
+pub type Address = sp_runtime::MultiAddress<AccountId, AccountIndex>;
+/// Block header type as expected by this runtime.
+pub type Header = DaHeader<BlockNumber, BlakeTwo256>;
+/// Unchecked extrinsic type as expected by this runtime.
+pub type UncheckedExtrinsic = AppUncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+/// Block type as expected by this runtime.
+pub type Block = generic::Block<Header, UncheckedExtrinsic>;
+/// Block type for the node
+pub type NodeBlock = generic::Block<Header, OpaqueExtrinsic>;
+/// A Block signed with a Justification
+pub type SignedBlock = generic::SignedBlock<Block>;
+/// BlockId type as expected by this runtime.
+pub type BlockId = generic::BlockId<Block>;
+/// The SignedExtension to the basic transaction logic.
+///
+/// When you change this, you **MUST** modify [`sign`] in `bin/node/testing/src/keyring.rs`!
+///
+/// [`sign`]: <../../testing/src/keyring.rs.html>
+pub type SignedExtra = (
+	frame_system::CheckNonZeroSender<Runtime>,
+	frame_system::CheckSpecVersion<Runtime>,
+	frame_system::CheckTxVersion<Runtime>,
+	frame_system::CheckGenesis<Runtime>,
+	frame_system::CheckEra<Runtime>,
+	frame_system::CheckNonce<Runtime>,
+	frame_system::CheckWeight<Runtime>,
+	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+	da_control::CheckAppId<Runtime>,
+);
+
+/// The payload being signed in transactions.
+pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
+/// Extrinsic type that has already been checked.
+pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
+/// Executive: handles dispatch to the various modules.
+pub type Executive = frame_executive::Executive<
+	Runtime,
+	Block,
+	frame_system::ChainContext<Runtime>,
+	Runtime,
+	AllPalletsWithSystem,
+	Migrations,
+>;
+
+// All migrations executed on runtime upgrade as a nested tuple of types implementing
+// `OnRuntimeUpgrade`.
+type Migrations = (migration::Migration,);

@@ -57,7 +57,7 @@ where
 // Parameters
 
 // Will contain `true` when the custom runtime logic was called.
-pub const CUSTOM_ON_RUNTIME_KEY: &[u8] = &*b":custom:on_runtime";
+pub const CUSTOM_ON_RUNTIME_KEY: &[u8] = b":custom:on_runtime";
 
 /// This determines the average expected block time that we are targetting.
 /// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
@@ -119,7 +119,7 @@ parameter_types! {
 #[derive(Clone, Copy)]
 pub struct RuntimeVersion;
 impl frame_support::traits::Get<sp_version::RuntimeVersion> for RuntimeVersion {
-	fn get() -> sp_version::RuntimeVersion { RuntimeVersionTestValues::get().clone() }
+	fn get() -> sp_version::RuntimeVersion { RuntimeVersionTestValues::get() }
 }
 
 parameter_types! {

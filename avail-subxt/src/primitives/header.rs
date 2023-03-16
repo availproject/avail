@@ -1,14 +1,13 @@
 use core::marker::PhantomData;
 
 use codec::{Decode, Encode};
-use parity_util_mem::MallocSizeOf;
 use serde::{Deserialize, Deserializer, Serialize};
-use subxt::ext::{
-	sp_core::H256,
-	sp_runtime::{
-		traits::{BlakeTwo256, Hash, Header as SPHeader},
-		Digest as XtDigest, DigestItem as XtDigestItem,
+use subxt::{
+	config::{
+		substrate::{BlakeTwo256, Digest, DigestItem},
+		Hasher, Header as SPHeader,
 	},
+	utils::H256,
 };
 
 use crate::api::runtime_types::{
@@ -25,7 +24,7 @@ pub struct Header {
 	pub number: u32,
 	pub state_root: H256,
 	pub extrinsics_root: H256,
-	pub digest: XtDigest,
+	pub digest: Digest,
 	pub extension: HeaderExtension,
 }
 
@@ -37,59 +36,13 @@ impl Header {
 	}
 }
 
-impl MallocSizeOf for Header {
-	fn size_of(&self, ops: &mut parity_util_mem::MallocSizeOfOps) -> usize {
-		self.parent_hash.size_of(ops)
-			+ self.number.size_of(ops)
-			+ self.state_root.size_of(ops)
-			+ self.extrinsics_root.size_of(ops)
-			+ self.digest.size_of(ops)
-	}
-}
-
 impl SPHeader for Header {
-	type Hash = H256;
-	type Hashing = BlakeTwo256;
+	type Hasher = BlakeTwo256;
 	type Number = u32;
 
-	fn new(
-		number: Self::Number,
-		extrinsics_root: Self::Hash,
-		state_root: Self::Hash,
-		parent_hash: Self::Hash,
-		digest: XtDigest,
-	) -> Self {
-		Self {
-			parent_hash,
-			number,
-			state_root,
-			extrinsics_root,
-			digest,
-			extension: HeaderExtension::V1(Default::default()),
-		}
-	}
+	fn number(&self) -> Self::Number { self.number }
 
-	fn number(&self) -> &Self::Number { &self.number }
-
-	fn set_number(&mut self, number: Self::Number) { self.number = number; }
-
-	fn extrinsics_root(&self) -> &Self::Hash { &self.extrinsics_root }
-
-	fn set_extrinsics_root(&mut self, root: Self::Hash) { self.extrinsics_root = root; }
-
-	fn state_root(&self) -> &Self::Hash { &self.state_root }
-
-	fn set_state_root(&mut self, root: Self::Hash) { self.state_root = root; }
-
-	fn parent_hash(&self) -> &Self::Hash { &self.parent_hash }
-
-	fn set_parent_hash(&mut self, hash: Self::Hash) { self.parent_hash = hash; }
-
-	fn digest(&self) -> &XtDigest { &self.digest }
-
-	fn digest_mut(&mut self) -> &mut XtDigest { &mut self.digest }
-
-	fn hash(&self) -> Self::Hash { <Self::Hashing as Hash>::hash_of(self) }
+	fn hash(&self) -> <Self::Hasher as Hasher>::Output { Self::Hasher::hash_of(self) }
 }
 
 fn number_from_hex<'de, D>(deserializer: D) -> Result<u32, D::Error>
@@ -118,8 +71,8 @@ where
 	}
 }
 
-impl From<XtDigest> for ApiDigest {
-	fn from(d: XtDigest) -> Self {
+impl From<Digest> for ApiDigest {
+	fn from(d: Digest) -> Self {
 		let logs = d
 			.logs
 			.into_iter()
@@ -129,14 +82,14 @@ impl From<XtDigest> for ApiDigest {
 	}
 }
 
-impl From<XtDigestItem> for ApiDigestItem {
-	fn from(di: XtDigestItem) -> Self {
+impl From<DigestItem> for ApiDigestItem {
+	fn from(di: DigestItem) -> Self {
 		match di {
-			XtDigestItem::PreRuntime(id, data) => ApiDigestItem::PreRuntime(id, data),
-			XtDigestItem::Consensus(id, data) => ApiDigestItem::Consensus(id, data),
-			XtDigestItem::Seal(id, data) => ApiDigestItem::Seal(id, data),
-			XtDigestItem::Other(data) => ApiDigestItem::Other(data),
-			XtDigestItem::RuntimeEnvironmentUpdated => ApiDigestItem::RuntimeEnvironmentUpdated,
+			DigestItem::PreRuntime(id, data) => ApiDigestItem::PreRuntime(id, data),
+			DigestItem::Consensus(id, data) => ApiDigestItem::Consensus(id, data),
+			DigestItem::Seal(id, data) => ApiDigestItem::Seal(id, data),
+			DigestItem::Other(data) => ApiDigestItem::Other(data),
+			DigestItem::RuntimeEnvironmentUpdated => ApiDigestItem::RuntimeEnvironmentUpdated,
 		}
 	}
 }

@@ -1,11 +1,9 @@
 use anyhow::Result;
 use avail_subxt::{api, build_client, primitives::AvailExtrinsicParams, AvailConfig, Opts};
-use sp_keyring::sr25519::sr25519;
+use sp_core::crypto::Pair as _;
+use sp_keyring::sr25519::sr25519::{self, Pair};
 use structopt::StructOpt;
-use subxt::{
-	ext::{sp_core::Pair, sp_runtime::MultiAddress},
-	tx::PairSigner,
-};
+use subxt::{tx::PairSigner, utils::MultiAddress};
 
 /// This example demonstrates using mnemonic seed for generating signer pairs. It creates Alice and Bob
 /// from seeds, but could also be used for an arbitrary account.

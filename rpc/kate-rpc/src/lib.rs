@@ -1,5 +1,6 @@
 use std::{marker::PhantomData, sync::Arc};
 
+use avail_base::metrics::RPCMetricAdapter;
 use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
 use da_primitives::{
 	asdr::{AppExtrinsic, AppId, DataLookup, GetAppId},
@@ -177,7 +178,8 @@ where
 				)
 				.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
 
-				let data = kate::com::par_extend_data_matrix(block_dims, &block)
+                let metrics = RPCMetricAdapter {};
+				let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
 					.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
 				Ok::<_, JsonRpseeError>(Arc::new(Grid {
 					d: block_dims,
@@ -309,7 +311,8 @@ where
 
 		let grid = self.get_grid(&signed_block)?;
 
-		let proof = kate::com::build_proof(&kc_public_params, grid.d, &grid.ext_data, &cells)
+        let metrics = RPCMetricAdapter {};
+		let proof = kate::com::build_proof(&kc_public_params, grid.d, &grid.ext_data, &cells, &metrics)
 			.map_err(|e| internal_err!("Proof cannot be generated: {:?}", e))?;
 
 		Ok(proof)

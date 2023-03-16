@@ -3,16 +3,19 @@ use avail_subxt::{
 	api::{
 		self,
 		runtime_types::{
-			da_control::pallet::Call as DaCall, sp_core::bounded::bounded_vec::BoundedVec,
+			da_control::pallet::Call as DaCall, da_primitives::header::extension::HeaderExtension,
+			sp_core::bounded::bounded_vec::BoundedVec,
 		},
 	},
+	avail::AppUncheckedExtrinsic,
 	build_client,
 	primitives::AvailExtrinsicParams,
 	Call, Opts,
 };
+use kate_recovery::{data::Cell, matrix::Dimensions};
 use sp_keyring::AccountKeyring;
 use structopt::StructOpt;
-use subxt::tx::PairSigner;
+use subxt::{config::Header, rpc::RpcParams, tx::PairSigner};
 
 /// This example submits an Avail data extrinsic, then retrieves the block containing the
 /// extrinsic and matches the data.
@@ -42,7 +45,12 @@ async fn main() -> Result<()> {
 		.block
 		.extrinsics
 		.into_iter()
-		.find(|ext| match &ext.function {
+		.filter_map(|chain_block_ext| {
+			AppUncheckedExtrinsic::try_from(chain_block_ext)
+				.map(|ext| ext.function)
+				.ok()
+		})
+		.find(|call| match call {
 			Call::DataAvailability(da_call) => match da_call {
 				DaCall::submit_data { data } => data.0 == example_data,
 				_ => false,
@@ -51,6 +59,38 @@ async fn main() -> Result<()> {
 		});
 
 	assert!(matched_xt.is_some(), "Submitted data not found");
+
+	// Grab and verify proof
+	let mut params = RpcParams::new();
+	let cell = kate::com::Cell { row: 0.into(), col: 0.into() };
+	params.push(vec![cell.clone()]).unwrap();
+	params
+		.push(Some(submitted_block.block.header.hash()))
+		.unwrap();
+
+	let res: [u8; 80] = client
+		.rpc()
+		.request::<Vec<u8>>("kate_queryProof", params)
+		.await
+		.unwrap()
+		.try_into()
+		.unwrap();
+
+	let pp = kate::testnet::public_params(256.into());
+	let HeaderExtension::V1(ext) = submitted_block.block.header.extension;
+	let commitment: [u8; 48] = ext.commitment.commitment[..48].try_into().unwrap();
+	let dcell = kate_recovery::data::Cell {
+		position: kate_recovery::matrix::Position { row: 0, col: 0 },
+		content: res,
+	};
+	let res = kate_recovery::proof::verify(
+		&pp,
+		&Dimensions::new(ext.commitment.rows, ext.commitment.cols).unwrap(),
+		&commitment,
+		&dcell,
+	)
+	.unwrap();
+	assert!(res);
 
 	Ok(())
 }

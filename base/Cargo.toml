@@ -1,0 +1,30 @@
+[package]
+name = "avail-base"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# Our crates
+da-primitives = { version = "0.4", default-features = false }
+kate = { version = "0.7", default-features = false }
+
+# Substrate related
+substrate-prometheus-endpoint = {  version = "0.10.0-dev", optional = true }
+sp-std = { version = "5.0.0", default-features = false }
+
+# 3rd-party
+log = "0.4.17"
+once_cell = { version = "1.17.1", optional = true }
+
+
+[features]
+default = ["std"]
+std = [
+	"once_cell",
+	"substrate-prometheus-endpoint",
+	"sp-std/std",
+	"da-primitives/std",
+	"kate/std"
+]

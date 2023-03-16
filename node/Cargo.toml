@@ -17,9 +17,10 @@ targets = ["x86_64-unknown-linux-gnu"]
 name = "data-avail"
 
 [dependencies]
+avail-base = { path = "../base" }
 # Internals
 da-primitives = { version = "0.4", default-features = false }
-kate = { version = "0.6", default-features = false }
+kate = { version = "0.7", default-features = false }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }
@@ -39,6 +40,7 @@ lru = "0.7.2"
 log = "0.4.17"
 rand = "0.8"
 hex-literal = "0.3.4"
+
 
 # Substrate
 ## Primitives
@@ -103,6 +105,7 @@ sc-rpc-spec-v2 = "0.10.0-dev"
 substrate-frame-rpc-system = "4.0.0-dev"
 pallet-transaction-payment-rpc = "4.0.0-dev"
 substrate-state-trie-migration-rpc = "4.0.0-dev"
+substrate-prometheus-endpoint = "0.10.0-dev"
 
 # These dependencies are used for runtime benchmarking
 frame-benchmarking = "4.0.0-dev"
@@ -123,6 +126,7 @@ tempfile = "3.1.0"
 
 [features]
 default = ["cli"]
+fast-runtime = [ "da-runtime/fast-runtime" ]
 cli = [
 	"clap",
 	"clap_complete",

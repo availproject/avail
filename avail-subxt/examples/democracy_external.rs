@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use anyhow::{ensure, Result};
+use anyhow::{bail, ensure, Result};
 use avail_subxt::{
 	api::{
 		self,
@@ -16,18 +16,19 @@ use avail_subxt::{
 		system::events as SystemEvent,
 		technical_committee::events as TechComEvent,
 	},
-	avail::{Bounded, Client, TxProgress},
-	build_client, tx_asend, tx_send, AvailConfig, Call, Opts,
+	avail::{Bounded, Client, PairSigner, TxProgress},
+	build_client, tx_asend, tx_send, Call, Opts,
 };
 use codec::Encode;
 use derive_more::Constructor;
 use futures::stream::{self, StreamExt as _, TryStreamExt as _};
-use sp_keyring::AccountKeyring::{Alice, Bob, Charlie, Dave, Eve, Ferdie};
-use structopt::StructOpt;
-use subxt::{
-	ext::sp_core::{sr25519::Pair, Pair as _, H256},
-	tx::{PairSigner, Signer},
+use sp_core::crypto::Pair as _;
+use sp_keyring::{
+	sr25519::sr25519::Pair,
+	AccountKeyring::{Alice, Bob, Charlie, Dave, Eve, Ferdie},
 };
+use structopt::StructOpt;
+use subxt::utils::H256;
 
 #[rustfmt::skip]
 pub mod constants {
@@ -45,11 +46,12 @@ pub struct IndexedProposalContext {
 #[derive(Debug, Default, Constructor)]
 pub struct ProposalContext {
 	hash: H256,
+	#[allow(dead_code)]
 	len: u32,
 }
 
 /// Builds a signer from `seed`.
-fn signer_from_seed(seed: &str) -> PairSigner<AvailConfig, Pair> {
+fn signer_from_seed(seed: &str) -> PairSigner {
 	let pair = Pair::from_string(&format!("//{}", seed), None).expect("Valid seed .qed");
 	PairSigner::new(pair)
 }
@@ -102,7 +104,7 @@ mod council {
 
 	async fn vote_yes(
 		client: &Client,
-		signer: &(dyn Signer<AvailConfig> + Send + Sync),
+		signer: &PairSigner,
 		proposal: &IndexedProposalContext,
 	) -> Result<TxProgress> {
 		let vote = api::tx()
@@ -208,7 +210,7 @@ mod techies {
 
 	async fn vote_yes(
 		client: &Client,
-		signer: &(dyn Signer<AvailConfig> + Send + Sync),
+		signer: &PairSigner,
 		proposal: &IndexedProposalContext,
 	) -> Result<TxProgress> {
 		let vote = api::tx()
@@ -278,7 +280,6 @@ mod techies {
 
 mod democracy {
 
-	use anyhow::anyhow;
 	use async_std::future;
 	use avail_subxt::{
 		avail::AVL,
@@ -305,13 +306,6 @@ mod democracy {
 		Ok(())
 	}
 
-	type EventFilter = (
-		SystemEvent::RemarkedByRoot,
-		DemocracyEvent::Passed,
-		SchedulerEvent::Scheduled,
-		SchedulerEvent::Dispatched,
-	);
-
 	pub async fn wait_passed_and_dispatch_or_timeout(
 		client: &Client,
 		referendum: u32,
@@ -326,49 +320,32 @@ mod democracy {
 	}
 
 	pub async fn wait_passed_and_dispatch(client: &Client, referendum: u32) -> Result<()> {
-		let mut events = client
-			.events()
-			.subscribe()
-			.await?
-			.filter_events::<EventFilter>();
+		let mut block_sub = client.blocks().subscribe_finalized().await?;
 
-		loop {
-			let event = events
-				.next()
-				.await
-				.ok_or(anyhow!("Empty filtered event"))??
-				.event;
-			match event {
-				(Some(SystemEvent::RemarkedByRoot { hash }), ..) => {
-					log::info!("Remarked by Root with hash {}", hash);
+		while let Some(block) = block_sub.next().await {
+			let events = block?.events().await?;
+
+			for event in events.iter() {
+				let event = event?;
+
+				if let Some(event) = event.as_event::<SystemEvent::RemarkedByRoot>()? {
+					log::info!("Remarked by Root with hash {}", event.hash);
 					return Ok(());
-				},
-				(None, Some(DemocracyEvent::Passed { ref_index }), ..) => {
-					log::trace!("Democracy Referendum {} passed", ref_index)
-				},
-				(None, None, Some(SchedulerEvent::Scheduled { when, index }), ..) => {
-					log::trace!("Referendum {} was scheduled on {}", index, when)
-				},
-				(
-					None,
-					None,
-					None,
-					Some(SchedulerEvent::Dispatched {
-						task,
-						id: _,
-						result,
-					}),
-				) => {
+				} else if let Some(event) = event.as_event::<DemocracyEvent::Passed>()? {
+					log::trace!("Democracy Referendum {} passed", event.ref_index);
+				} else if let Some(event) = event.as_event::<SchedulerEvent::Scheduled>()? {
+					log::trace!("Referendum {} was scheduled on {}", event.index, event.when);
+				} else if let Some(event) = event.as_event::<SchedulerEvent::Dispatched>()? {
 					log::trace!(
-						"Referendum {} was dispatched at {}: {:?}",
-						referendum,
-						task.0,
-						result
-					)
-				},
-				_ => {},
+						"Referendum {referendum} was dispatched at {}: {:?}",
+						event.task.0,
+						event.result
+					);
+				}
 			}
 		}
+
+		bail!("Block subscription fails")
 	}
 }
 

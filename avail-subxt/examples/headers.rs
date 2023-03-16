@@ -2,7 +2,7 @@ use anyhow::Result;
 use avail_subxt::{build_client, Opts};
 use futures::future::{join_all, TryFutureExt};
 use structopt::StructOpt;
-use subxt::{ext::sp_runtime::traits::Header as XtHeader, rpc::BlockNumber};
+use subxt::{config::Header as XtHeader, rpc::types::BlockNumber};
 
 /// This example gets all the headers from testnet. It requests them in concurrently in batches of BATCH_NUM.
 /// Fetching headers one by one is too slow for a large number of blocks.

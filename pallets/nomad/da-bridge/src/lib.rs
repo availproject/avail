@@ -47,12 +47,8 @@ pub mod pallet {
 
 	// Genesis config
 	#[pallet::genesis_config]
+	#[cfg_attr(feature = "std", derive(Default))]
 	pub struct GenesisConfig {}
-
-	#[cfg(feature = "std")]
-	impl Default for GenesisConfig {
-		fn default() -> Self { Self {} }
-	}
 
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
@@ -95,7 +91,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 			Self::ensure_valid_header(&header)?;
-			Self::do_dispatch_data_root(destination_domain, recipient_address, header)
+			Self::do_dispatch_data_root(destination_domain, recipient_address, &header)
 		}
 	}
 
@@ -109,7 +105,7 @@ pub mod pallet {
 		fn do_dispatch_data_root(
 			destination_domain: u32,
 			recipient_address: H256,
-			header: Box<T::Header>,
+			header: &T::Header,
 		) -> DispatchResult {
 			let block_number = *header.number();
 			let data_root = header.extension().data_root();

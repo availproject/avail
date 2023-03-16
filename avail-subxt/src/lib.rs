@@ -1,15 +1,13 @@
 use anyhow::Result;
 use structopt::StructOpt;
 use subxt::{
-	ext::{
-		sp_core::H256,
-		sp_runtime::{traits::BlakeTwo256, AccountId32, MultiAddress, MultiSignature},
-	},
+	config::substrate::BlakeTwo256,
+	utils::{AccountId32, MultiAddress, MultiSignature, H256},
 	Config, OnlineClient,
 };
 
 pub mod primitives;
-use primitives::{AppUncheckedExtrinsic, AvailExtrinsicParams, Header};
+use primitives::{AvailExtrinsicParams, Header};
 
 #[derive(Clone, Debug, Default)]
 pub struct AvailConfig;
@@ -25,13 +23,12 @@ pub type SignaturePayload = (Address, Signature, AvailExtrinsicParams);
 impl Config for AvailConfig {
 	type AccountId = AccountId;
 	type Address = Address;
-	type BlockNumber = u32;
 	// type Extrinsic = AvailExtrinsic;
 	// type Extrinsic = Vec<u8>;
-	type Extrinsic = AppUncheckedExtrinsic;
+	// type Extrinsic = AppUncheckedExtrinsic;
 	type ExtrinsicParams = AvailExtrinsicParams;
 	type Hash = H256;
-	type Hashing = BlakeTwo256;
+	type Hasher = BlakeTwo256;
 	type Header = Header;
 	type Index = u32;
 	type Signature = Signature;
@@ -42,7 +39,9 @@ pub mod avail {
 
 	pub type Client = subxt::OnlineClient<AvailConfig>;
 	pub type TxProgress = subxt::tx::TxProgress<AvailConfig, Client>;
-	pub type TxEvents = subxt::tx::TxEvents<AvailConfig>;
+	pub type AppUncheckedExtrinsic =
+		crate::primitives::app_unchecked_extrinsic::AppUncheckedExtrinsic;
+	pub type PairSigner = subxt::tx::PairSigner<AvailConfig, sp_core::sr25519::Pair>;
 
 	pub type RuntimeCall = api::runtime_types::da_runtime::RuntimeCall;
 	pub type Bounded = api::runtime_types::frame_support::traits::preimages::Bounded<RuntimeCall>;

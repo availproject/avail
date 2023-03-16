@@ -1,4 +1,4 @@
-pub const TEST_KEY: &[u8] = &*b":test:key:";
+pub const TEST_KEY: &[u8] = b":test:key:";
 
 #[frame_support::pallet]
 pub mod custom {
@@ -81,7 +81,7 @@ pub mod custom {
 		#[pallet::call_index(5)]
 		#[pallet::weight(0)]
 		pub fn inherent_call(origin: OriginFor<T>) -> DispatchResult {
-			let _ = frame_system::ensure_none(origin)?;
+			frame_system::ensure_none(origin)?;
 			Ok(())
 		}
 
