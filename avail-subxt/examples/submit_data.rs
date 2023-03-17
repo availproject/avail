@@ -12,10 +12,11 @@ use avail_subxt::{
 	primitives::AvailExtrinsicParams,
 	Call, Opts,
 };
+use kate::pmp::traits::PolyMultiProofNoPrecomp;
 use kate_recovery::{data::Cell, matrix::Dimensions};
 use sp_keyring::AccountKeyring;
 use structopt::StructOpt;
-use subxt::{config::Header, rpc::RpcParams, tx::PairSigner};
+use subxt::{config::Header, rpc::RpcParams, tx::PairSigner, utils::MultiSignature};
 
 /// This example submits an Avail data extrinsic, then retrieves the block containing the
 /// extrinsic and matches the data.
@@ -62,7 +63,10 @@ async fn main() -> Result<()> {
 
 	// Grab and verify proof
 	let mut params = RpcParams::new();
-	let cell = kate::com::Cell { row: 0.into(), col: 0.into() };
+	let cell = kate::com::Cell {
+		row: 0.into(),
+		col: 0.into(),
+	};
 	params.push(vec![cell.clone()]).unwrap();
 	params
 		.push(Some(submitted_block.block.header.hash()))
@@ -77,7 +81,7 @@ async fn main() -> Result<()> {
 		.unwrap();
 
 	let pp = kate::testnet::public_params(256.into());
-	let HeaderExtension::V1(ext) = submitted_block.block.header.extension;
+	let HeaderExtension::V1(ref ext) = submitted_block.block.header.extension;
 	let commitment: [u8; 48] = ext.commitment.commitment[..48].try_into().unwrap();
 	let dcell = kate_recovery::data::Cell {
 		position: kate_recovery::matrix::Position { row: 0, col: 0 },
@@ -92,5 +96,31 @@ async fn main() -> Result<()> {
 	.unwrap();
 	assert!(res);
 
+	// Grab and verify multiproof
+	let mut params = RpcParams::new();
+	let cell = kate::com::Cell {
+		row: 0.into(),
+		col: 0.into(),
+	};
+	params.push(vec![cell.clone()]).unwrap();
+	params
+		.push(Some(submitted_block.block.header.hash()))
+		.unwrap();
+
+	let res = client
+		.rpc()
+		.request::<Vec<MultiproofSer>>("kate_queryMultiProof", params)
+		.await
+		.unwrap();
+
+	println!("Got res: {:?}", res);
+
 	Ok(())
+}
+
+use serde::{Deserialize, Serialize};
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MultiproofSer {
+	pub proof: Vec<u8>,
+	pub evals: Vec<u8>,
 }

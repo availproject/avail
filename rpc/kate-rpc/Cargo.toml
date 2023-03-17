@@ -17,8 +17,8 @@ codec = { package = "parity-scale-codec", version = "3" }
 da-primitives = { version = "0.4", default-features = false }
 kate = { version = "0.7", default-features = false }
 dusk-bytes = { version = "*" } # TODO: fix, maybe re-export from kate
-kate-grid = { git="https://github.com/maticnetwork/avail-core",  rev = "cab10176702b76c5853a28dd11bca6fbe58f9706" }
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
+serde = {version = "1.0", features = ["derive"]}
 
 sc-client-api = "4.0.0-dev"
 sp-blockchain = "4.0.0-dev"

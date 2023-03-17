@@ -36,8 +36,8 @@ futures = "0.3.13"
 hex-literal = "0.3.4"
 hex = "0.4"
 test-case = "1.2.3"
-kate = { version = "0.7", git="https://github.com/maticnetwork/avail-core", tag = "da-primitives/v0.4.4" }
-kate-recovery = { version = "0.8", git="https://github.com/maticnetwork/avail-core", tag = "da-primitives/v0.4.4" }
+kate = { version = "0.7", git="https://github.com/maticnetwork/avail-core", rev = "6560e2eaf6143f16918fa9653d78094a7e4dafa7" }
+kate-recovery = { version = "0.8", git="https://github.com/maticnetwork/avail-core", rev = "6560e2eaf6143f16918fa9653d78094a7e4dafa7" }
 log = "0.4.14"
 pretty_env_logger = "0.4.0"
 derive_more = "0.99.17"

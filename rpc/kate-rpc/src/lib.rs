@@ -15,12 +15,15 @@ use jsonrpsee::{
 };
 use kate::{
 	com::Cell,
+	grid::{Dimensions, Grid as GridTrait},
 	gridgen::{EvaluationGrid, PolynomialGrid},
+	pmp::m1_blst,
 	PublicParameters,
 };
 use kate_rpc_runtime_api::KateParamsGetter;
 use moka::sync::Cache;
 use sc_client_api::{BlockBackend, StorageProvider};
+use serde::{Deserialize, Serialize};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
@@ -60,7 +63,11 @@ where
 	fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength>;
 
 	#[method(name = "kate_queryMultiProof")]
-	fn query_multiproof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>>;
+	fn query_multiproof(
+		&self,
+		cells: Vec<Cell>,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<Vec<MultiproofSer>>;
 
 	#[method(name = "kate_queryDataProof")]
 	fn query_data_proof(&self, data_index: u32, at: Option<HashOf<Block>>) -> RpcResult<DataProof>;
@@ -73,6 +80,7 @@ struct Grid {
 pub struct Kate<Client, Block: BlockT, SDFilter: Filter<CallOf<Block>>> {
 	client: Arc<Client>,
 	block_ext_cache: Cache<Block::Hash, Arc<Grid>>,
+	multiproof_srs: m1_blst::M1NoPrecomp,
 	filter: PhantomData<SDFilter>,
 }
 
@@ -91,6 +99,7 @@ where
 				.max_capacity(GB)
 				.build(),
 			filter: Default::default(),
+			multiproof_srs: kate::testnet::multiproof_params(256, 256),
 		}
 	}
 }
@@ -258,8 +267,7 @@ where
 			));
 		}
 
-		let orig_dims =
-			kate_grid::Dimensions::new(grid.evals.dims.width(), grid.evals.dims.height() / 2);
+		let orig_dims = Dimensions::new(grid.evals.dims.width(), grid.evals.dims.height() / 2);
 
 		let rows = grid
 			.evals
@@ -308,7 +316,6 @@ where
 		let proof = cells
 			.iter()
 			.map(|cell| {
-				use kate_grid::Grid;
 				grid.evals
 					.evals
 					.get(cell.col.as_usize(), cell.row.as_usize())
@@ -369,11 +376,44 @@ where
 
 	fn query_multiproof(
 		&self,
-		_cells: Vec<Cell>,
-		_at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<u8>> {
-		todo!()
+		cells: Vec<Cell>,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<Vec<MultiproofSer>> {
+		let block = self.get_signed_block(at)?;
+		let grid = self.get_grid(&block)?;
+
+		const TARGET_DIMS: Dimensions = Dimensions::new(16, 64);
+		let multiproofs = cells
+			.iter()
+			.map(|cell| {
+				grid.polys
+					.multiproof(&self.multiproof_srs, cell, &grid.evals, &TARGET_DIMS)
+					.map_err(|e| internal_err!("Error building multiproof {:?}", e))
+			})
+			.collect::<Result<Vec<_>, _>>()?;
+
+		use kate::pmp::ark_serialize::CanonicalSerialize;
+		Ok(multiproofs
+			.iter()
+			.map(|mp| {
+				let mut proof = vec![0u8; 48];
+				mp.proof.0.serialize_compressed(&mut proof[..]).unwrap();
+				let cells = mp.evals.iter().flat_map(|s| s).collect::<Vec<_>>();
+				let mut evals = vec![0u8; 32 * cells.len()];
+				for (i, c) in cells.iter().enumerate() {
+					c.serialize_compressed(&mut evals[i * 32..(i + 1) * 32][..])
+						.unwrap();
+				}
+				MultiproofSer { proof, evals }
+			})
+			.collect::<Vec<_>>())
 	}
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct MultiproofSer {
+	pub proof: Vec<u8>,
+	pub evals: Vec<u8>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
