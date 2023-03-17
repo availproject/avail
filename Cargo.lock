@@ -2655,7 +2655,6 @@ dependencies = [
  "ark-std",
  "blst",
  "merlin 3.0.0",
- "thiserror",
 ]
 
 [[package]]
