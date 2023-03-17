@@ -28,12 +28,7 @@ sp-core = { version = "7.0.0", default-features = false }
 sp-std = { version = "4.0.0", default-features = false }
 static_assertions = "1.1.0"
 kate-grid = { path = "grid" }
-poly-multiproof = { git = "https://github.com/aphoh/poly-multiproof", default-features = false }
-ark-bls12-381 = { version = "0.4.0" }
-ark-ff = { version = "0.4.1", default-features = false }
-ark-poly = { version = "0.4.1", default-features = false }
-ark-serialize = { version = "0.4", default-features = false }
-merlin = { version = "3", default-features = false }
+poly-multiproof = { git = "https://github.com/aphoh/poly-multiproof", default-features = false, rev = "3345c76b84a14accb90020974a8cab837fe598a0" }
 
 [dev-dependencies]
 criterion = "0.3.5"
@@ -68,11 +63,6 @@ std = [
 	"rand_core/std",
 	"frame-support/std",
 	"da-primitives/std",
-  "ark-bls12-381/std",
-  "ark-ff/std",
-  "ark-poly/std",
-  "ark-serialize/std",
-  "merlin/std",
   "poly-multiproof/blst",
 ]
 extended-columns = []

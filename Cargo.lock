@@ -1942,10 +1942,6 @@ dependencies = [
 name = "kate"
 version = "0.7.0"
 dependencies = [
- "ark-bls12-381",
- "ark-ff",
- "ark-poly",
- "ark-serialize",
  "criterion",
  "da-primitives",
  "derive_more",
@@ -1959,7 +1955,6 @@ dependencies = [
  "kate-grid",
  "kate-recovery",
  "log",
- "merlin 3.0.0",
  "num_cpus",
  "once_cell",
  "parity-scale-codec",
@@ -2645,7 +2640,7 @@ dependencies = [
 [[package]]
 name = "poly-multiproof"
 version = "0.0.1"
-source = "git+https://github.com/aphoh/poly-multiproof#b0783e1b69b35c744abd522ee482de51a2181888"
+source = "git+https://github.com/aphoh/poly-multiproof?rev=3345c76b84a14accb90020974a8cab837fe598a0#3345c76b84a14accb90020974a8cab837fe598a0"
 dependencies = [
  "ark-bls12-381",
  "ark-ec",

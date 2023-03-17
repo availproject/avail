@@ -10,8 +10,7 @@ use dusk_plonk::{
 };
 use kate_grid::{AsColumnMajor, AsRowMajor, Dimensions, Extension, Grid, RowMajor};
 use kate_recovery::config::PADDING_TAIL_VALUE;
-use merlin::Transcript;
-use poly_multiproof::m1_blst::M1NoPrecomp;
+use poly_multiproof::{m1_blst::M1NoPrecomp, merlin::Transcript};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 
@@ -102,9 +101,9 @@ impl EvaluationGrid {
 		})
 	}
 
-    pub fn row(&self, y: usize) -> Option<&[BlsScalar]> {
-        self.evals.row(y)
-    }
+	pub fn row(&self, y: usize) -> Option<&[BlsScalar]> {
+		self.evals.row(y)
+	}
 
 	/// Returns the start/end indices of the given app id *for the non-extended grid*
 	fn app_data_indices(&self, app_id: &AppId) -> Option<(usize, usize)> {
@@ -283,9 +282,9 @@ impl PolynomialGrid {
 	}
 }
 
-fn convert_bls(dusk: &dusk_plonk::bls12_381::BlsScalar) -> ark_bls12_381::Fr {
-	ark_bls12_381::Fr {
-		0: ark_ff::BigInt(dusk.0.clone()),
+fn convert_bls(dusk: &dusk_plonk::bls12_381::BlsScalar) -> poly_multiproof::m1_blst::Fr {
+	poly_multiproof::m1_blst::Fr {
+		0: poly_multiproof::ark_ff::BigInt(dusk.0.clone()),
 		1: PhantomData,
 	}
 }
@@ -293,7 +292,7 @@ fn convert_bls(dusk: &dusk_plonk::bls12_381::BlsScalar) -> ark_bls12_381::Fr {
 #[derive(Debug, Clone)]
 pub struct Multiproof {
 	pub proof: poly_multiproof::m1_blst::Proof,
-	pub evals: Vec<Vec<ark_bls12_381::Fr>>,
+	pub evals: Vec<Vec<poly_multiproof::m1_blst::Fr>>,
 	pub block: CellBlock,
 }
 
@@ -429,7 +428,7 @@ mod tests {
 
 		#[test]
 		fn test_convert_bls_scalar(input: [u8; 31]) {
-			use ark_serialize::CanonicalSerialize;
+			use poly_multiproof::ark_serialize::CanonicalSerialize;
 			let dusk = pad_to_bls_scalar(&input).unwrap();
 			let ark = convert_bls(&dusk);
 			let dusk_out = dusk.to_bytes();
@@ -753,13 +752,13 @@ mod consistency_tests {
 
 			for xt in exts {
 				let rows = grid.app_rows(&xt.app_id, Some(&orig_dims)).unwrap();
-                // Have to put the rows we find in this funky data structure
+				// Have to put the rows we find in this funky data structure
 				let mut app_rows = vec![None; grid.dims.height()];
 				for (row_i, row) in rows {
 					app_rows[row_i] = Some(row.iter().flat_map(|s| s.to_bytes()).collect());
 				}
-                // Need to provide the original dimensions here too
-                let extended_dims = kate_recovery::matrix::Dimensions::new(orig_dims.height() as u16, orig_dims.width() as u16).unwrap();
+				// Need to provide the original dimensions here too
+				let extended_dims = kate_recovery::matrix::Dimensions::new(orig_dims.height() as u16, orig_dims.width() as u16).unwrap();
 				let (_, missing) = kate_recovery::commitments::verify_equality(&public_params, &commits, &app_rows, &index, &extended_dims, xt.app_id.0).unwrap();
 				prop_assert!(missing.is_empty());
 			}

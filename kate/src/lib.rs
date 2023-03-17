@@ -44,11 +44,11 @@ pub mod config {
 #[cfg(feature = "std")]
 pub mod testnet {
 	use super::{BlockLengthColumns, PublicParameters};
-	use ark_bls12_381::{Fr, G1Projective, G2Projective};
-	use ark_ff::{BigInt, Fp};
-	use ark_serialize::CanonicalDeserialize;
 	use once_cell::sync::Lazy;
+	use poly_multiproof::ark_ff::{BigInt, Fp};
+	use poly_multiproof::ark_serialize::CanonicalDeserialize;
 	use poly_multiproof::m1_blst;
+	use poly_multiproof::m1_blst::{Fr, G1, G2};
 	use rand::SeedableRng;
 	use rand_chacha::ChaChaRng;
 	use std::{collections::HashMap, sync::Mutex};
@@ -89,8 +89,8 @@ pub mod testnet {
 	pub fn multiproof_params(max_degree: usize, max_pts: usize) -> m1_blst::M1NoPrecomp {
 		let x: Fr = Fp(BigInt(SEC_LIMBS), core::marker::PhantomData);
 
-		let g1 = G1Projective::deserialize_compressed(&G1_BYTES[..]).unwrap();
-		let g2 = G2Projective::deserialize_compressed(&G2_BYTES[..]).unwrap();
+		let g1 = G1::deserialize_compressed(&G1_BYTES[..]).unwrap();
+		let g2 = G2::deserialize_compressed(&G2_BYTES[..]).unwrap();
 
 		m1_blst::M1NoPrecomp::new_from_scalar(x, g1, g2, max_degree + 1, max_pts)
 	}
@@ -100,16 +100,18 @@ pub mod testnet {
 		use core::marker::PhantomData;
 
 		use super::*;
-		use ark_bls12_381::Fr;
-		use ark_ff::{BigInt, Fp};
-		use ark_poly::EvaluationDomain;
-		use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 		use dusk_bytes::Serializable;
 		use dusk_plonk::{
 			fft::{EvaluationDomain as PlonkED, Evaluations as PlonkEV},
 			prelude::BlsScalar,
 		};
-		use poly_multiproof::traits::Committer;
+		use poly_multiproof::{
+			ark_ff::{BigInt, Fp},
+			ark_poly::{EvaluationDomain, GeneralEvaluationDomain},
+			ark_serialize::{CanonicalDeserialize, CanonicalSerialize},
+			m1_blst::Fr,
+			traits::Committer,
+		};
 		use rand::thread_rng;
 
 		use crate::testnet;
@@ -124,8 +126,8 @@ pub mod testnet {
 			];
 			assert_eq!(SEC_BYTES, out);
 
-			let g1 = ark_bls12_381::G1Projective::deserialize_compressed(&G1_BYTES[..]).unwrap();
-			let g2 = ark_bls12_381::G2Projective::deserialize_compressed(&G2_BYTES[..]).unwrap();
+			let g1 = G1::deserialize_compressed(&G1_BYTES[..]).unwrap();
+			let g2 = G2::deserialize_compressed(&G2_BYTES[..]).unwrap();
 
 			let pmp = poly_multiproof::m1_blst::M1NoPrecomp::new_from_scalar(x, g1, g2, 1024, 256);
 
@@ -140,7 +142,7 @@ pub mod testnet {
 
 			let dp_poly =
 				PlonkEV::from_vec_and_domain(dp_evals, PlonkED::new(1024).unwrap()).interpolate();
-			let pmp_ev = ark_poly::GeneralEvaluationDomain::<Fr>::new(1024).unwrap();
+			let pmp_ev = GeneralEvaluationDomain::<Fr>::new(1024).unwrap();
 			let pmp_poly = pmp_ev.ifft(&pmp_evals);
 
 			let pubs = testnet::public_params(da_primitives::BlockLengthColumns(1024));

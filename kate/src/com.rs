@@ -18,7 +18,7 @@ use dusk_plonk::{
 	prelude::{BlsScalar, CommitKey},
 };
 use frame_support::{ensure, sp_runtime::SaturatedConversion};
-use kate_grid::{AsColumnMajor, AsRowMajor, Extension};
+use kate_grid::{AsRowMajor, Extension};
 #[cfg(feature = "std")]
 use kate_recovery::{com::app_specific_rows, index, matrix};
 use rand::{Rng, SeedableRng};
