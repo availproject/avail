@@ -302,21 +302,16 @@ pub struct CellBlock {
 
 /// Computes the `x, y`-th multiproof block of a grid of size `grid_dims`.
 /// `mp_grid_dims` is the size of the multiproof grid, which `x,y` lies in.
-/// For example, a 256x256 grid could be converted to a 4x4 multiproof grid, by making 16 multiproofs
-/// of size 64x64. So the `mp_grid_dims` would be 4x4, and the `grid_dims` size would be 256x256.
-///
-/// In order to get `mp_grid_dims`, it's recommended to use the `multiproof_dims` function.
+/// For example, a 256x256 grid could be converted to a 4x4 target size multiproof grid, by making 16 multiproofs
+/// of size 64x64.
 pub fn multiproof_block(
 	x: usize,
 	y: usize,
 	grid_dims: &Dimensions,
-	mp_grid_dims: &Dimensions,
+	target_dims: &Dimensions,
 ) -> Option<CellBlock> {
-	if x >= mp_grid_dims.width()
-		|| y >= mp_grid_dims.height()
-		|| grid_dims.width() % mp_grid_dims.width() != 0
-		|| grid_dims.height() % mp_grid_dims.height() != 0
-	{
+	let mp_grid_dims = multiproof_dims(grid_dims, target_dims)?;
+	if x >= mp_grid_dims.width() || y >= mp_grid_dims.height() {
 		return None;
 	}
 
@@ -330,7 +325,7 @@ pub fn multiproof_block(
 	})
 }
 
-/// Dimensions of the multiproof grid. These are guarenteed to cleanly divide `grid_dims`. 
+/// Dimensions of the multiproof grid. These are guarenteed to cleanly divide `grid_dims`.
 /// `target_dims` must cleanly divide `grid_dims`.
 pub fn multiproof_dims(grid_dims: &Dimensions, target_dims: &Dimensions) -> Option<Dimensions> {
 	let target_width = core::cmp::min(grid_dims.width(), target_dims.width());
@@ -421,6 +416,25 @@ mod tests {
 	#[test_case(0, 16 => None)]
 	fn multiproof_max_grid_size(x: usize, y: usize) -> Option<CellBlock> {
 		multiproof_block(x, y, &GRID, &TARGET)
+	}
+
+	#[test_case(256, 256,  64,  16 => Some((64, 16)))]
+	#[test_case(256, 256,  32,  32 => Some((32, 32)))]
+	#[test_case(256, 256,   7,  32 => None)]
+	#[test_case(32 ,  32,  32,  32 => Some((32, 32)))]
+	#[test_case(256,   8,  32,  32 => Some((32, 8)))]
+	#[test_case(4  ,   1,  32,  32 => Some((4, 1)))]
+	fn test_multiproof_dims(
+		grid_w: usize,
+		grid_h: usize,
+		target_w: usize,
+		target_h: usize,
+	) -> Option<(usize, usize)> {
+		multiproof_dims(
+			&Dimensions::new(grid_w, grid_h),
+			&Dimensions::new(target_w, target_h),
+		)
+		.map(|i| (i.width(), i.height()))
 	}
 
 	use proptest::prelude::*;
