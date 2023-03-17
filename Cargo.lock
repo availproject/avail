@@ -225,6 +225,124 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bddcadddf5e9015d310179a59bb28c4d4b9920ad0f11e8e14dbadf654890c9a6"
 
 [[package]]
+name = "ark-bls12-381"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c775f0d12169cba7aae4caeb547bb6a50781c7449a8aa53793827c9ec4abf488"
+dependencies = [
+ "ark-ec",
+ "ark-ff",
+ "ark-serialize",
+ "ark-std",
+]
+
+[[package]]
+name = "ark-ec"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c60370a92f8e1a5f053cad73a862e1b99bc642333cd676fa11c0c39f80f4ac2"
+dependencies = [
+ "ark-ff",
+ "ark-poly",
+ "ark-serialize",
+ "ark-std",
+ "derivative",
+ "hashbrown 0.13.2",
+ "itertools 0.10.5",
+ "num-traits",
+ "zeroize",
+]
+
+[[package]]
+name = "ark-ff"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4c2d42532524bee1da5a4f6f733eb4907301baa480829557adcff5dfaeee1d9a"
+dependencies = [
+ "ark-ff-asm",
+ "ark-ff-macros",
+ "ark-serialize",
+ "ark-std",
+ "derivative",
+ "digest 0.10.6",
+ "itertools 0.10.5",
+ "num-bigint",
+ "num-traits",
+ "paste",
+ "rustc_version 0.4.0",
+ "zeroize",
+]
+
+[[package]]
+name = "ark-ff-asm"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d6873aaba7959593d89babed381d33e2329453368f1bf3c67e07686a1c1056f"
+dependencies = [
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "ark-ff-macros"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3c2e7d0f2d67cc7fc925355c74d36e7eda19073639be4a0a233d4611b8c959d"
+dependencies = [
+ "num-bigint",
+ "num-traits",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "ark-poly"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f6ec811462cabe265cfe1b102fcfe3df79d7d2929c2425673648ee9abfd0272"
+dependencies = [
+ "ark-ff",
+ "ark-serialize",
+ "ark-std",
+ "derivative",
+ "hashbrown 0.13.2",
+]
+
+[[package]]
+name = "ark-serialize"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7e735959bc173ea4baf13327b19c22d452b8e9e8e8f7b7fc34e6bf0e316c33e"
+dependencies = [
+ "ark-serialize-derive",
+ "ark-std",
+ "digest 0.10.6",
+ "num-bigint",
+]
+
+[[package]]
+name = "ark-serialize-derive"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd34f0920d995d2c932f38861c416f70de89a6de9875876b012557079603e6cc"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "ark-std"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "94893f1e0c6eeab764ade8dc4c0db24caf4fe7cbbaafc0eba0a9030f447b5185"
+dependencies = [
+ "num-traits",
+ "rand 0.8.5",
+]
+
+[[package]]
 name = "array-bytes"
 version = "4.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -497,8 +615,8 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 name = "avail-base"
 version = "0.1.0"
 dependencies = [
- "da-primitives",
- "kate",
+ "da-primitives 0.4.4 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
+ "kate 0.7.0 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "log",
  "once_cell",
  "sp-std 5.0.0",
@@ -516,8 +634,8 @@ dependencies = [
  "hex",
  "hex-literal",
  "jsonrpsee",
- "kate",
- "kate-recovery",
+ "kate 0.7.0 (git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.4)",
+ "kate-recovery 0.8.0 (git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.4)",
  "log",
  "num_enum",
  "parity-scale-codec 3.4.0",
@@ -811,6 +929,17 @@ dependencies = [
  "atomic-waker",
  "fastrand",
  "futures-lite",
+]
+
+[[package]]
+name = "blst"
+version = "0.3.10"
+source = "git+https://github.com/aphoh/blst?rev=556e037926d9c526c2eb6cb1522bea39690416ea#556e037926d9c526c2eb6cb1522bea39690416ea"
+dependencies = [
+ "cc",
+ "glob",
+ "threadpool",
+ "zeroize",
 ]
 
 [[package]]
@@ -1703,7 +1832,7 @@ name = "da-bridge"
 version = "1.0.1"
 dependencies = [
  "da-control",
- "da-primitives",
+ "da-primitives 0.4.4 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1731,11 +1860,11 @@ dependencies = [
 name = "da-control"
 version = "1.0.1"
 dependencies = [
- "da-primitives",
+ "da-primitives 0.4.4 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "kate",
+ "kate 0.7.0 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "pallet-balances",
  "pallet-transaction-payment",
  "parity-scale-codec 3.4.0",
@@ -1774,12 +1903,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "da-primitives"
+version = "0.4.4"
+source = "git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706#cab10176702b76c5853a28dd11bca6fbe58f9706"
+dependencies = [
+ "beefy-merkle-tree",
+ "derive_more",
+ "frame-support",
+ "hash256-std-hasher",
+ "log",
+ "parity-scale-codec 3.4.0",
+ "parity-util-mem",
+ "scale-info",
+ "serde",
+ "serde_json",
+ "sp-core 7.0.0",
+ "sp-io 7.0.0",
+ "sp-runtime 7.0.0",
+ "sp-runtime-interface 7.0.0",
+ "sp-std 4.0.0",
+ "sp-trie 7.0.0",
+ "thiserror-no-std",
+]
+
+[[package]]
 name = "da-runtime"
 version = "6.0.0"
 dependencies = [
  "da-bridge",
  "da-control",
- "da-primitives",
+ "da-primitives 0.4.4 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "env_logger 0.9.3",
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -1791,7 +1944,7 @@ dependencies = [
  "frame-try-runtime",
  "hex",
  "hex-literal",
- "kate",
+ "kate 0.7.0 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "kate-rpc-runtime-api",
  "log",
  "nomad-home",
@@ -1899,7 +2052,7 @@ dependencies = [
  "clap_complete",
  "da-bridge",
  "da-control",
- "da-primitives",
+ "da-primitives 0.4.4 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "da-runtime",
  "frame-benchmarking",
  "frame-benchmarking-cli",
@@ -1909,7 +2062,7 @@ dependencies = [
  "futures",
  "hex-literal",
  "jsonrpsee",
- "kate",
+ "kate 0.7.0 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "kate-rpc",
  "log",
  "lru 0.7.8",
@@ -2254,6 +2407,22 @@ dependencies = [
 name = "dusk-plonk"
 version = "0.12.0"
 source = "git+https://github.com/maticnetwork/plonk.git?tag=v0.12.0-polygon-2#6ada57a82b6e3a92a677b9f6263f9f3c9b501b23"
+dependencies = [
+ "cfg-if",
+ "dusk-bls12_381",
+ "dusk-bytes",
+ "dusk-jubjub",
+ "hashbrown 0.9.1",
+ "itertools 0.9.0",
+ "merlin 3.0.0",
+ "rand_core 0.6.4",
+ "rayon",
+]
+
+[[package]]
+name = "dusk-plonk"
+version = "0.12.0"
+source = "git+https://github.com/maticnetwork/plonk?branch=will/polynomial-visibility#96ddfec2208cb32b7b51aa7b64736d1b4f580cbd"
 dependencies = [
  "cfg-if",
  "dusk-bls12_381",
@@ -2844,7 +3013,7 @@ version = "4.0.0-dev"
 dependencies = [
  "array-bytes",
  "da-control",
- "da-primitives",
+ "da-primitives 0.4.4 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "frame-support",
  "frame-system",
  "frame-try-runtime",
@@ -2967,12 +3136,12 @@ dependencies = [
  "avail-base",
  "beefy-merkle-tree",
  "criterion",
- "da-primitives",
+ "da-primitives 0.4.4 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "derive_more",
  "frame-support",
  "hex-literal",
  "impl-trait-for-tuples",
- "kate",
+ "kate 0.7.0 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "log",
  "parity-scale-codec 3.4.0",
  "rs_merkle",
@@ -2994,7 +3163,7 @@ dependencies = [
 name = "frame-system-benchmarking"
 version = "4.0.0-dev"
 dependencies = [
- "da-primitives",
+ "da-primitives 0.4.4 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -3425,6 +3594,9 @@ name = "hashbrown"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
+dependencies = [
+ "ahash 0.8.3",
+]
 
 [[package]]
 name = "heck"
@@ -4081,14 +4253,14 @@ name = "kate"
 version = "0.7.0"
 source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.4#3de909c9bbe5926b282f597959e806dbff684d48"
 dependencies = [
- "da-primitives",
+ "da-primitives 0.4.4 (git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.4)",
  "derive_more",
  "dusk-bytes",
- "dusk-plonk",
+ "dusk-plonk 0.12.0 (git+https://github.com/maticnetwork/plonk.git?tag=v0.12.0-polygon-2)",
  "frame-support",
  "getrandom 0.2.8",
  "hex",
- "kate-recovery",
+ "kate-recovery 0.8.0 (git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.4)",
  "log",
  "num_cpus",
  "once_cell",
@@ -4104,12 +4276,68 @@ dependencies = [
 ]
 
 [[package]]
+name = "kate"
+version = "0.7.0"
+source = "git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706#cab10176702b76c5853a28dd11bca6fbe58f9706"
+dependencies = [
+ "ark-bls12-381",
+ "ark-ff",
+ "ark-poly",
+ "ark-serialize",
+ "da-primitives 0.4.4 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
+ "derive_more",
+ "dusk-bytes",
+ "dusk-plonk 0.12.0 (git+https://github.com/maticnetwork/plonk?branch=will/polynomial-visibility)",
+ "frame-support",
+ "getrandom 0.2.8",
+ "hex",
+ "kate-grid",
+ "kate-recovery 0.8.0 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
+ "log",
+ "merlin 3.0.0",
+ "num_cpus",
+ "once_cell",
+ "parity-scale-codec 3.4.0",
+ "poly-multiproof",
+ "rand 0.8.5",
+ "rand_chacha 0.3.1",
+ "rand_core 0.6.4",
+ "rayon",
+ "serde",
+ "sp-core 7.0.0",
+ "sp-std 4.0.0",
+ "static_assertions",
+]
+
+[[package]]
+name = "kate-grid"
+version = "0.6.1"
+source = "git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706#cab10176702b76c5853a28dd11bca6fbe58f9706"
+
+[[package]]
 name = "kate-recovery"
 version = "0.8.0"
 source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.4#3de909c9bbe5926b282f597959e806dbff684d48"
 dependencies = [
  "dusk-bytes",
- "dusk-plonk",
+ "dusk-plonk 0.12.0 (git+https://github.com/maticnetwork/plonk.git?tag=v0.12.0-polygon-2)",
+ "getrandom 0.2.8",
+ "num",
+ "once_cell",
+ "parity-scale-codec 3.4.0",
+ "rand 0.8.5",
+ "rand_chacha 0.3.1",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "kate-recovery"
+version = "0.8.0"
+source = "git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706#cab10176702b76c5853a28dd11bca6fbe58f9706"
+dependencies = [
+ "dusk-bytes",
+ "dusk-plonk 0.12.0 (git+https://github.com/maticnetwork/plonk?branch=will/polynomial-visibility)",
  "getrandom 0.2.8",
  "num",
  "once_cell",
@@ -4124,27 +4352,21 @@ dependencies = [
 name = "kate-rpc"
 version = "0.2.0"
 dependencies = [
- "avail-base",
- "da-primitives",
+ "da-primitives 0.4.4 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
+ "dusk-bytes",
  "frame-support",
  "frame-system",
- "frame-system-rpc-runtime-api",
  "jsonrpsee",
- "kate",
- "kate-recovery",
+ "kate 0.7.0 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
+ "kate-grid",
  "kate-rpc-runtime-api",
  "moka",
  "parity-scale-codec 3.4.0",
- "rs_merkle",
  "sc-client-api",
  "sc-client-db",
  "sp-api",
  "sp-blockchain",
- "sp-core 7.0.0",
- "sp-rpc",
  "sp-runtime 7.0.0",
- "sp-std 5.0.0",
- "thiserror",
 ]
 
 [[package]]
@@ -4152,7 +4374,7 @@ name = "kate-rpc-runtime-api"
 version = "0.1.1"
 dependencies = [
  "beefy-merkle-tree",
- "da-primitives",
+ "da-primitives 0.4.4 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "frame-system",
  "parity-scale-codec 3.4.0",
  "serde",
@@ -5099,11 +5321,11 @@ name = "mocked-runtime"
 version = "1.0.1"
 dependencies = [
  "da-control",
- "da-primitives",
+ "da-primitives 0.4.4 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "derive_more",
  "frame-support",
  "frame-system",
- "kate",
+ "kate 0.7.0 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "pallet-babe",
  "pallet-balances",
  "pallet-staking",
@@ -5431,7 +5653,7 @@ dependencies = [
 name = "nomad-home"
 version = "4.0.0-dev"
 dependencies = [
- "da-primitives",
+ "da-primitives 0.4.4 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5503,7 +5725,7 @@ dependencies = [
 name = "nomad-updater-manager"
 version = "1.0.1"
 dependencies = [
- "da-primitives",
+ "da-primitives 0.4.4 (git+https://github.com/maticnetwork/avail-core?rev=cab10176702b76c5853a28dd11bca6fbe58f9706)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6780,6 +7002,21 @@ dependencies = [
  "log",
  "pin-project-lite 0.2.9",
  "windows-sys 0.45.0",
+]
+
+[[package]]
+name = "poly-multiproof"
+version = "0.0.1"
+source = "git+https://github.com/aphoh/poly-multiproof#b0783e1b69b35c744abd522ee482de51a2181888"
+dependencies = [
+ "ark-bls12-381",
+ "ark-ec",
+ "ark-ff",
+ "ark-poly",
+ "ark-serialize",
+ "ark-std",
+ "blst",
+ "merlin 3.0.0",
 ]
 
 [[package]]

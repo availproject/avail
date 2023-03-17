@@ -1,20 +1,23 @@
-use std::{marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, sync::Arc, vec};
 
-use avail_base::metrics::RPCMetricAdapter;
 use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
 use da_primitives::{
-	asdr::{AppExtrinsic, AppId, DataLookup, GetAppId},
+	asdr::{AppExtrinsic, AppId, GetAppId},
 	traits::ExtendedHeader,
-	DataProof, HeaderExtension,
+	DataProof,
 };
+use dusk_bytes::Serializable;
 use frame_support::traits::ExtrinsicCall;
 use frame_system::{limits::BlockLength, submitted_data};
 use jsonrpsee::{
 	core::{Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 };
-use kate::{com::Cell, BlockDimensions, BlsScalar, PublicParameters};
-use kate_recovery::{index::AppDataIndex, matrix::Dimensions};
+use kate::{
+	com::Cell,
+	gridgen::{EvaluationGrid, PolynomialGrid},
+	PublicParameters,
+};
 use kate_rpc_runtime_api::KateParamsGetter;
 use moka::sync::Cache;
 use sc_client_api::{BlockBackend, StorageProvider};
@@ -64,8 +67,8 @@ where
 }
 
 struct Grid {
-	ext_data: Vec<BlsScalar>,
-	d: BlockDimensions,
+	evals: EvaluationGrid,
+	polys: PolynomialGrid,
 }
 pub struct Kate<Client, Block: BlockT, SDFilter: Filter<CallOf<Block>>> {
 	client: Arc<Client>,
@@ -83,7 +86,7 @@ where
 		Self {
 			client,
 			block_ext_cache: Cache::<_, Arc<Grid>>::builder()
-				.weigher(|_, v| 1 + v.d.cols.0 * v.d.rows.0 * 2 * 32)
+				.weigher(|_, v| (v.evals.dims.n_cells() * 2 * 32) as u32)
 				.thread_pool_enabled(false) // TODO: decide if this should be true
 				.max_capacity(GB)
 				.build(),
@@ -169,22 +172,21 @@ where
 							internal_err!("Babe VRF not found for block {}: {:?}", block_id, e)
 						})?;
 
-				let (_, block, block_dims) = kate::com::flatten_and_pad_block(
-					block_length.rows,
-					block_length.cols,
-					block_length.chunk_size(),
-					&xts_by_id,
-					seed,
+				let evals = kate::gridgen::EvaluationGrid::from_extrinsics(
+					xts_by_id.clone(),
+					4,
+					block_length.cols.as_usize(), // 'cols' is the # of cols, so width
+					block_length.rows.as_usize(), // 'rows' is the # of rows, so height
+					seed.clone(),
 				)
-				.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
+				.map_err(|e| internal_err!("Building evals grid failed: {:?}", e))?
+				.extend_columns(2)
+				.map_err(|e| internal_err!("Error extending grid {:?}", e))?;
+				let polys = evals
+					.make_polynomial_grid()
+					.map_err(|e| internal_err!("Error getting polynomial grid {:?}", e))?;
 
-                let metrics = RPCMetricAdapter {};
-				let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
-					.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
-				Ok::<_, JsonRpseeError>(Arc::new(Grid {
-					d: block_dims,
-					ext_data: data,
-				}))
+				Ok::<_, JsonRpseeError>(Arc::new(Grid { evals, polys }))
 			})
 			.map_err(|e: Arc<_>| internal_err!("failed to construct block: {}", e)) // Deref the arc into a reference, clone the ref
 	}
@@ -227,17 +229,18 @@ where
 		}
 
 		let grid = self.get_grid(&signed_block)?;
-		let dimensions: Dimensions = grid
-			.d
-			.clone()
-			.try_into()
-			.map_err(|e| internal_err!("Invalid dimensions: {:?}", e))?;
 
-		Ok(kate::com::scalars_to_rows(
-			&rows,
-			&dimensions,
-			&grid.ext_data,
-		))
+		let mut all_rows = vec![None; grid.evals.dims.height()];
+		rows.iter()
+			.map(|y| (*y as usize, grid.evals.row(*y as usize)))
+			.for_each(|(y, row)| match row {
+				Some(row) => {
+					let row_bytes = row.iter().flat_map(|s| s.to_bytes()).collect();
+					all_rows[y as usize] = Some(row_bytes)
+				},
+				_ => (),
+			});
+		Ok(all_rows)
 	}
 
 	fn query_app_data(
@@ -255,33 +258,23 @@ where
 			));
 		}
 
-		let header = match signed_block.block.header().extension() {
-			HeaderExtension::V1(header) => header,
-            // Only used in test?
-			_ => todo!(),
-		};
-		let DataLookup { index, size } = &header.app_lookup;
+		let orig_dims =
+			kate_grid::Dimensions::new(grid.evals.dims.width(), grid.evals.dims.height() / 2);
 
-		let app_data_index = AppDataIndex {
-			index: index
-				.iter()
-				.map(|i| (i.app_id.0, i.start))
-				.collect::<Vec<_>>(),
-			size: *size,
-		};
+		let rows = grid
+			.evals
+			.app_rows(&app_id, Some(&orig_dims))
+			.unwrap_or(vec![]);
+		let mut all_rows = vec![None; orig_dims.height()];
+		for (row_y, row) in rows {
+			all_rows[row_y] = Some(
+				row.into_iter()
+					.flat_map(|s| s.to_bytes())
+					.collect::<Vec<_>>(),
+			);
+		}
 
-		let dimensions: Dimensions = grid
-			.d
-			.clone()
-			.try_into()
-			.map_err(|e| internal_err!("Invalid dimensions: {:?}", e))?;
-
-		Ok(kate::com::scalars_to_app_rows(
-			app_id.0,
-			&app_data_index,
-			&dimensions,
-			&grid.ext_data,
-		))
+		Ok(all_rows)
 	}
 
 	//TODO allocate static thread pool, just for RPC related work, to free up resources, for the block producing processes.
@@ -311,9 +304,31 @@ where
 
 		let grid = self.get_grid(&signed_block)?;
 
-        let metrics = RPCMetricAdapter {};
-		let proof = kate::com::build_proof(&kc_public_params, grid.d, &grid.ext_data, &cells, &metrics)
-			.map_err(|e| internal_err!("Proof cannot be generated: {:?}", e))?;
+		// TODO: cleaner serialization code
+		let proof = cells
+			.iter()
+			.map(|cell| {
+				use kate_grid::Grid;
+				grid.evals
+					.evals
+					.get(cell.col.as_usize(), cell.row.as_usize())
+					.ok_or(internal_err!(
+						"Invalid cell {:?} for dims {:?}",
+						cell,
+						grid.evals.dims
+					))
+					.and_then(|data| {
+						grid.polys
+							.proof(kc_public_params.commit_key(), cell)
+							.map_err(|e| internal_err!("Unable to make proof: {:?}", e))
+							.map(|proof| (data.to_bytes(), proof.to_bytes()))
+					})
+			})
+			.collect::<Result<Vec<_>, _>>()?
+			.into_iter()
+			.flat_map(|(data, proof)| [proof.to_vec(), data.to_vec()])
+			.collect::<Vec<_>>()
+			.concat();
 
 		Ok(proof)
 	}

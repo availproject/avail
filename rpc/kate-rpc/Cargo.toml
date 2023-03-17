@@ -6,27 +6,20 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-avail-base = { path = "../../base" }
-
 sp-api = { version = "4.0.0-dev", default-features = false }
-sp-std = { version = "5.0.0", default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 kate-rpc-runtime-api = { path = "../kate-rpc-runtime-api", default-features = false }
 sc-client-db = { version = "0.10.0-dev", default-features = false }
-thiserror = "1.0.30" 
-rs_merkle = { version = "1.2.0", default-features = false }
 moka = "0.10"
 
 codec = { package = "parity-scale-codec", version = "3" }
 da-primitives = { version = "0.4", default-features = false }
 kate = { version = "0.7", default-features = false }
-kate-recovery = { version = "0.8", default-features = false }
+dusk-bytes = { version = "*" } # TODO: fix, maybe re-export from kate
+kate-grid = { git="https://github.com/maticnetwork/avail-core",  rev = "cab10176702b76c5853a28dd11bca6fbe58f9706" }
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
 
-frame-system-rpc-runtime-api = "4.0.0-dev"
 sc-client-api = "4.0.0-dev"
 sp-blockchain = "4.0.0-dev"
-sp-rpc = "6.0.0"
 sp-runtime = "7.0.0"
-sp-core = "7.0.0"
