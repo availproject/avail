@@ -136,13 +136,10 @@ impl EvaluationGrid {
 	) -> Option<Vec<(usize, Vec<BlsScalar>)>> {
 		let orig_dims = orig_dims.unwrap_or(&self.dims);
 		if !orig_dims.divides(&self.dims) {
-			dbg!(&orig_dims, &self.dims);
-			dbg!("hello");
 			return None;
 		}
 		let h_mul = self.dims.height() / orig_dims.height();
 
-		dbg!(&app_id, &self.lookup.index);
 		let (start_ind, end_ind) = self.app_data_indices(app_id)?;
 		let (_, start_y) = RowMajor::<()>::ind_to_coord(&orig_dims, start_ind);
 		let (_, end_y) = RowMajor::<()>::ind_to_coord(&orig_dims, end_ind - 1); // Find y of last cell elt
@@ -230,7 +227,6 @@ impl PolynomialGrid {
 		let x = cell.col.0 as usize;
 		let y = cell.row.0 as usize;
 		// TODO: better error msg
-		dbg!(y, self.inner.len());
 		let poly = self.inner.get(y).ok_or(Error::CellLenghtExceeded)?;
 		let witness = srs.compute_single_witness(poly, &self.points[x]);
 		Ok(srs.commit(&witness)?)
@@ -303,26 +299,29 @@ pub struct CellBlock {
 	end_x: usize,
 	end_y: usize,
 }
+
+/// Computes the `x, y`-th multiproof block of a grid of size `grid_dims`.
+/// `mp_grid_dims` is the size of the multiproof grid, which `x,y` lies in.
+/// For example, a 256x256 grid could be converted to a 4x4 multiproof grid, by making 16 multiproofs
+/// of size 64x64. So the `mp_grid_dims` would be 4x4, and the `grid_dims` size would be 256x256.
+///
+/// In order to get `mp_grid_dims`, it's recommended to use the `multiproof_dims` function.
 pub fn multiproof_block(
 	x: usize,
 	y: usize,
 	grid_dims: &Dimensions,
-	target_dims: &Dimensions,
+	mp_grid_dims: &Dimensions,
 ) -> Option<CellBlock> {
-	let target_width = core::cmp::min(grid_dims.width(), target_dims.width());
-	let target_height = core::cmp::min(grid_dims.height(), target_dims.height());
-	dbg!(&target_width, target_height);
-	dbg!(&x, &y);
-	if x >= target_width || y >= target_height {
+	if x >= mp_grid_dims.width()
+		|| y >= mp_grid_dims.height()
+		|| grid_dims.width() % mp_grid_dims.width() != 0
+		|| grid_dims.height() % mp_grid_dims.height() != 0
+	{
 		return None;
 	}
 
-	if grid_dims.width() % target_width != 0 || grid_dims.height() % target_height != 0 {
-		return None;
-	}
-
-	let block_width = grid_dims.width() / target_width;
-	let block_height = grid_dims.height() / target_height;
+	let block_width = grid_dims.width() / mp_grid_dims.width();
+	let block_height = grid_dims.height() / mp_grid_dims.height();
 	Some(CellBlock {
 		start_x: x * block_width,
 		start_y: y * block_height,
@@ -331,7 +330,18 @@ pub fn multiproof_block(
 	})
 }
 
-fn get_block_dims(
+/// Dimensions of the multiproof grid. These are guarenteed to cleanly divide `grid_dims`. 
+/// `target_dims` must cleanly divide `grid_dims`.
+pub fn multiproof_dims(grid_dims: &Dimensions, target_dims: &Dimensions) -> Option<Dimensions> {
+	let target_width = core::cmp::min(grid_dims.width(), target_dims.width());
+	let target_height = core::cmp::min(grid_dims.height(), target_dims.height());
+	if grid_dims.width() % target_width != 0 || grid_dims.height() % target_height != 0 {
+		return None;
+	}
+	Some(Dimensions::new(target_width, target_height))
+}
+
+pub fn get_block_dims(
 	n_scalars: usize,
 	min_width: usize,
 	max_width: usize,
@@ -616,7 +626,6 @@ mod consistency_tests {
 			.chunks_exact(DATA_CHUNK_SIZE)
 			.flat_map(|chunk| pad_to_bls_scalar(chunk))
 			.collect::<Vec<_>>();
-		dbg!(scalars.len());
 
 		let grid = EvaluationGrid {
 			lookup: DataLookup::default(),

@@ -13,6 +13,8 @@ use crate::config::DATA_CHUNK_SIZE;
 pub const LOG_TARGET: &str = "kate";
 pub type Seed = [u8; 32];
 
+pub use kate_grid as grid;
+
 pub mod config {
 	use super::{BlockLengthColumns, BlockLengthRows};
 
