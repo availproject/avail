@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 
 use codec::Encode;
-use da_primitives::asdr::{AppExtrinsic, AppId, DataLookup, DataLookupIndexItem};
+use da_types::{AppExtrinsic, AppId, DataLookup, DataLookupIndexItem};
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	commitment_scheme::kzg10::commitment::Commitment,

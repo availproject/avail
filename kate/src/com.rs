@@ -5,11 +5,7 @@ use std::{
 };
 
 use codec::Encode;
-use da_primitives::{
-	asdr::{AppExtrinsic, AppId},
-	BlockLengthColumns, BlockLengthRows,
-};
-use derive_more::Constructor;
+use da_types::{AppId, AppExtrinsic, BlockLengthRows, BlockLengthColumns};
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	commitment_scheme::kzg10,
@@ -17,7 +13,6 @@ use dusk_plonk::{
 	fft::{EvaluationDomain, Evaluations},
 	prelude::{BlsScalar, CommitKey},
 };
-use frame_support::{ensure, sp_runtime::SaturatedConversion};
 use kate_grid::{AsRowMajor, Extension};
 #[cfg(feature = "std")]
 use kate_recovery::{com::app_specific_rows, index, matrix};
@@ -25,6 +20,7 @@ use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
+use sp_arithmetic::traits::SaturatedConversion;
 use static_assertions::const_assert_eq;
 
 use crate::{
@@ -38,10 +34,16 @@ use crate::{
 #[cfg(feature = "std")]
 use kate_recovery::testnet;
 
-#[derive(Serialize, Deserialize, Constructor, Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Cell {
 	pub row: BlockLengthRows,
 	pub col: BlockLengthColumns,
+}
+
+impl Cell {
+    pub fn new(row: BlockLengthRows, col: BlockLengthColumns) -> Self {
+        Cell { row, col }
+    }
 }
 
 #[derive(Debug)]
@@ -163,7 +165,9 @@ pub fn flatten_and_pad_block(
 	// Determine the block size after padding
 	let block_dims = get_block_dimensions(padded_block_len, max_rows, max_cols, chunk_size)?;
 
-	ensure!(padded_block.len() <= block_dims.size(), Error::BlockTooBig);
+	if !(padded_block.len() <= block_dims.size()) {
+		return Err(Error::BlockTooBig);
+	}
 
 	let mut rng = ChaChaRng::from_seed(rng_seed);
 
@@ -184,10 +188,9 @@ pub fn get_block_dimensions(
 	chunk_size: u32,
 ) -> Result<BlockDimensions, Error> {
 	let max_block_dimensions = BlockDimensions::new(max_rows, max_cols, chunk_size);
-	ensure!(
-		block_size as usize <= max_block_dimensions.size(),
-		Error::BlockTooBig
-	);
+	if !(block_size as usize <= max_block_dimensions.size()) {
+		return Err(Error::BlockTooBig);
+	}
 
 	if block_size as usize == max_block_dimensions.size() || MAXIMUM_BLOCK_SIZE {
 		return Ok(max_block_dimensions);
@@ -424,7 +427,7 @@ pub fn par_build_commitments<M: Metrics>(
 
 	if log::log_enabled!(target: LOG_TARGET, log::Level::Debug) {
 		let raw_pp = public_params.to_raw_var_bytes();
-		let hash_pp = hex::encode(sp_core::blake2_128(&raw_pp));
+		let hash_pp = hex::encode(sp_core_hashing::blake2_128(&raw_pp));
 		let hex_pp = hex::encode(raw_pp);
 		log::debug!(
 			target: LOG_TARGET,

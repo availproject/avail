@@ -8,26 +8,22 @@ edition = "2021"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-da-primitives = { path = "../primitives/avail", default-features = false }
-derive_more = "0.99.17"
 dusk-bytes = { version = "0.1.6", default-features = false, optional = true }
 dusk-plonk = { git = "https://github.com/maticnetwork/plonk", branch = "will/polynomial-visibility", optional = true }
-frame-support = { version = "4.0.0-dev", default-features = false }
-getrandom = { version = "0.2", features = ["js"], optional = true }
-hex = { version = "0.4", default-features = false, features = ["alloc"] }
+hex = { version = "0.4", default-features = false, features = ["alloc"], optional = true }
 kate-recovery = { path = "recovery", default-features = false, optional = true }
 log = { version = "0.4.8", optional = true }
-num_cpus = { version = "1.13.0", optional = true }
 once_cell = { version = "1.8.0", optional = true }
 rand = { version = "0.8.4", default-features = false, optional = true }
 rand_chacha = { version = "0.3", default-features = false, optional = true }
-rand_core = { version = "0.6", default-features = false }
 rayon = { version = "1.5.2", optional = true }
 serde = { version = "1.0.121", optional = true, features = ["derive"] }
-sp-core = { version = "7.0.0", default-features = false }
+sp-arithmetic = { version = "7.0.0", default-features = false }
 sp-std = { version = "4.0.0", default-features = false }
+sp-core-hashing = { version = "5.0.0", default-features = false, optional = true }
 static_assertions = "1.1.0"
 kate-grid = { path = "grid" }
+da-types = { path = "../primitives/types" }
 poly-multiproof = { git = "https://github.com/aphoh/poly-multiproof", default-features = false, rev = "3345c76b84a14accb90020974a8cab837fe598a0" }
 
 [dev-dependencies]
@@ -44,26 +40,27 @@ alloc = ["dusk-plonk/alloc"]
 
 std = [
 	"kate-recovery/std",
+  "hex",
 	"hex/std",
 	"once_cell",
 	"codec/std",
 	"alloc",
 	"serde",
-	"num_cpus",
 	"rayon",
-	"getrandom",
 	"rand",
 	"rand_chacha/std",
 	"log",
 	"dusk-plonk/std",
 	"dusk-bytes",
 	"sp-std/std",
-	"sp-core/std",
-	"getrandom/std",
-	"rand_core/std",
-	"frame-support/std",
-	"da-primitives/std",
+	"da-types/std",
+  "sp-arithmetic/std",
+  "sp-core-hashing",
+  "sp-core-hashing/std",
   "poly-multiproof/blst",
+]
+substrate = [
+  "da-types/substrate",
 ]
 extended-columns = []
 maximum-block-size = []

@@ -1,17 +1,12 @@
-use codec::{Decode, Encode};
-use frame_support::ensure;
-#[cfg(feature = "std")]
-use parity_util_mem::{MallocSizeOf, MallocSizeOfOps};
+use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::RuntimeDebug;
-use sp_runtime::traits::Zero;
-use sp_std::{convert::TryFrom, vec::Vec};
 
-use crate::asdr::AppId;
+use crate::AppId;
 
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, Default, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, Encode, Decode, Default, TypeInfo)]
+#[cfg_attr(feature = "substrate", derive(sp_debug_derive::RuntimeDebug))]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct DataLookup {
 	/// size of the look up
@@ -21,7 +16,8 @@ pub struct DataLookup {
 	pub index: Vec<DataLookupIndexItem>,
 }
 
-#[derive(PartialEq, Eq, Copy, Clone, RuntimeDebug, Encode, Decode, Default, TypeInfo)]
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Default, TypeInfo)]
+#[cfg_attr(feature = "substrate", derive(sp_debug_derive::RuntimeDebug))]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct DataLookupIndexItem {
 	pub app_id: AppId,
@@ -42,14 +38,15 @@ where
 	}
 }
 
-#[cfg(feature = "std")]
-impl MallocSizeOf for DataLookupIndexItem {
-	fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
+#[cfg(all(feature = "std", feature = "substrate"))]
+impl parity_util_mem::MallocSizeOf for DataLookupIndexItem {
+	fn size_of(&self, ops: &mut parity_util_mem::MallocSizeOfOps) -> usize {
 		self.app_id.size_of(ops) + self.start.size_of(ops)
 	}
 }
 
-#[derive(PartialEq, Eq, RuntimeDebug)]
+#[derive(PartialEq, Eq)]
+#[cfg_attr(feature = "substrate", derive(sp_debug_derive::RuntimeDebug))]
 /// Errors during the creation from `extrinsics`.
 pub enum TryFromError {
 	/// Size overflows
@@ -58,6 +55,7 @@ pub enum TryFromError {
 	UnsortedExtrinsics,
 }
 
+use core::convert::TryFrom;
 impl TryFrom<&[(AppId, u32)]> for DataLookup {
 	type Error = TryFromError;
 
@@ -66,10 +64,10 @@ impl TryFrom<&[(AppId, u32)]> for DataLookup {
 		// transactions are order by application id
 		// skip transactions with 0 application id - it's not a data txs
 		let mut size = 0u32;
-		let mut prev_app_id = Zero::zero();
+		let mut prev_app_id = AppId(0);
 
 		for (app_id, data_len) in extrinsics {
-			if !app_id.is_zero() && prev_app_id != *app_id {
+			if !app_id.0 == 0 && prev_app_id != *app_id {
 				index.push(DataLookupIndexItem {
 					app_id: *app_id,
 					start: size,
@@ -79,7 +77,9 @@ impl TryFrom<&[(AppId, u32)]> for DataLookup {
 			size = size
 				.checked_add(*data_len)
 				.ok_or(Self::Error::SizeOverflow)?;
-			ensure!(prev_app_id <= *app_id, Self::Error::UnsortedExtrinsics);
+			if !(prev_app_id <= *app_id) {
+				return Err(Self::Error::UnsortedExtrinsics);
+			}
 			prev_app_id = *app_id;
 		}
 
@@ -87,9 +87,9 @@ impl TryFrom<&[(AppId, u32)]> for DataLookup {
 	}
 }
 
-#[cfg(feature = "std")]
-impl MallocSizeOf for DataLookup {
-	fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
+#[cfg(all(feature = "std", feature = "substrate"))]
+impl parity_util_mem::MallocSizeOf for DataLookup {
+	fn size_of(&self, ops: &mut parity_util_mem::MallocSizeOfOps) -> usize {
 		self.size.size_of(ops) + self.index.size_of(ops)
 	}
 }

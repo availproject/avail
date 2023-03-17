@@ -1,6 +1,7 @@
 [workspace]
 members = [
 	"primitives/avail",
+	"primitives/types",
 	"kate",
 	"kate/recovery",
 	"kate/grid",
@@ -12,8 +13,12 @@ members = [
 [patch.crates-io]
 # Substrate  (polkadot-v0.9.37).
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-core-hashing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-debug-derive = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-trie = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-runtime-interface = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }

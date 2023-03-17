@@ -1,0 +1,23 @@
+[package]
+name = "da-types"
+version = "0.4.4"
+authors = []
+edition = "2018"
+
+[dependencies]
+parity-scale-codec = { version = "3", default-features = false }
+scale-info = { version = "2.3.1"}
+derive_more = "0.99.17"
+num-traits = "0.2"
+
+serde = { version = "1.0", features = ["derive"], optional = true }
+
+sp-debug-derive = { version = "*", default-features = false, optional = true }
+parity-util-mem = { version = "*", default-features = false, optional = true }
+
+[dev-dependencies]
+
+[features]
+default = ["std"]
+std = [ "serde" ]
+substrate = ["sp-debug-derive", "parity-util-mem"]

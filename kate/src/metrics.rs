@@ -1,5 +1,5 @@
 use crate::BlockDimensions;
-use sp_std::time::Duration;
+use core::time::Duration;
 
 /// Trait for measurements during the header built process.
 pub trait Metrics {

@@ -1,11 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode, MaxEncodedLen};
-use derive_more::{Add, Constructor, Display, From, Into, Mul};
-use scale_info::TypeInfo;
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
 use sp_runtime::Perbill;
+pub use da_types::{BlockLengthColumns, BlockLengthRows};
 
 /// Customized headers.
 pub mod header;
@@ -78,67 +74,5 @@ where
 			Output::decode(&mut TrailingZeroInput::new(subject)).unwrap_or_default(),
 			T::default(),
 		)
-	}
-}
-
-/// Strong type for `BlockLength::cols`
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(
-	Clone,
-	Copy,
-	Debug,
-	From,
-	Into,
-	Add,
-	Mul,
-	Display,
-	PartialEq,
-	Eq,
-	Encode,
-	Decode,
-	TypeInfo,
-	PartialOrd,
-	Ord,
-	Constructor,
-	MaxEncodedLen,
-)]
-#[mul(forward)]
-pub struct BlockLengthColumns(#[codec(compact)] pub u32);
-
-impl BlockLengthColumns {
-	#[inline]
-	pub fn as_usize(&self) -> usize {
-		self.0 as usize
-	}
-}
-
-/// Strong type for `BlockLength::rows`
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(
-	Clone,
-	Copy,
-	Debug,
-	From,
-	Into,
-	Add,
-	Mul,
-	Display,
-	PartialEq,
-	Eq,
-	Encode,
-	Decode,
-	TypeInfo,
-	PartialOrd,
-	Ord,
-	Constructor,
-	MaxEncodedLen,
-)]
-#[mul(forward)]
-pub struct BlockLengthRows(#[codec(compact)] pub u32);
-
-impl BlockLengthRows {
-	#[inline]
-	pub fn as_usize(&self) -> usize {
-		self.0 as usize
 	}
 }

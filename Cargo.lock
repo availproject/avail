@@ -961,6 +961,7 @@ name = "da-primitives"
 version = "0.4.4"
 dependencies = [
  "beefy-merkle-tree",
+ "da-types",
  "derive_more",
  "frame-support",
  "hash256-std-hasher",
@@ -979,6 +980,19 @@ dependencies = [
  "sp-trie",
  "test-case",
  "thiserror-no-std",
+]
+
+[[package]]
+name = "da-types"
+version = "0.4.4"
+dependencies = [
+ "derive_more",
+ "num-traits",
+ "parity-scale-codec",
+ "parity-util-mem",
+ "scale-info",
+ "serde",
+ "sp-debug-derive 6.0.0",
 ]
 
 [[package]]
@@ -1434,7 +1448,7 @@ dependencies = [
  "serde",
  "smallvec",
  "sp-api",
- "sp-arithmetic",
+ "sp-arithmetic 6.0.0",
  "sp-core",
  "sp-core-hashing-proc-macro",
  "sp-inherents",
@@ -1943,30 +1957,26 @@ name = "kate"
 version = "0.7.0"
 dependencies = [
  "criterion",
- "da-primitives",
- "derive_more",
+ "da-types",
  "dusk-bytes",
  "dusk-plonk",
- "frame-support",
- "getrandom 0.2.8",
  "hex",
  "hex-literal",
  "itertools 0.10.5",
  "kate-grid",
  "kate-recovery",
  "log",
- "num_cpus",
  "once_cell",
  "parity-scale-codec",
  "poly-multiproof",
  "proptest",
  "rand 0.8.5",
  "rand_chacha 0.3.1",
- "rand_core 0.6.4",
  "rayon",
  "serde",
  "serde_json",
- "sp-core",
+ "sp-arithmetic 7.0.0",
+ "sp-core-hashing",
  "sp-std 4.0.0",
  "static_assertions",
  "test-case",
@@ -3361,6 +3371,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp-arithmetic"
+version = "7.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd6413ad82d166d40d995aa95ca6e0cbb473f973d3a2f0b433ae19813048c6c1"
+dependencies = [
+ "integer-sqrt",
+ "num-traits",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-debug-derive 6.0.0",
+ "sp-std 6.0.0",
+ "static_assertions",
+]
+
+[[package]]
 name = "sp-beefy"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.37#946507ba9ef13e263534176b7b74e26fc56efbd4"
@@ -3407,7 +3433,7 @@ dependencies = [
  "secrecy",
  "serde",
  "sp-core-hashing",
- "sp-debug-derive",
+ "sp-debug-derive 5.0.0",
  "sp-externalities",
  "sp-runtime-interface",
  "sp-std 5.0.0",
@@ -3448,6 +3474,17 @@ dependencies = [
 name = "sp-debug-derive"
 version = "5.0.0"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.37#946507ba9ef13e263534176b7b74e26fc56efbd4"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "sp-debug-derive"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "66fb9dc63d54de7d7bed62a505b6e0bd66c122525ea1abb348f6564717c3df2d"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3532,7 +3569,7 @@ dependencies = [
  "serde",
  "sp-api",
  "sp-core",
- "sp-debug-derive",
+ "sp-debug-derive 5.0.0",
  "sp-runtime",
  "sp-std 5.0.0",
  "thiserror",
@@ -3563,7 +3600,7 @@ dependencies = [
  "scale-info",
  "serde",
  "sp-application-crypto",
- "sp-arithmetic",
+ "sp-arithmetic 6.0.0",
  "sp-core",
  "sp-io",
  "sp-std 5.0.0",
@@ -3644,6 +3681,12 @@ version = "5.0.0"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.37#946507ba9ef13e263534176b7b74e26fc56efbd4"
 
 [[package]]
+name = "sp-std"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af0ee286f98455272f64ac5bb1384ff21ac029fbb669afbaf48477faff12760e"
+
+[[package]]
 name = "sp-storage"
 version = "7.0.0"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.37#946507ba9ef13e263534176b7b74e26fc56efbd4"
@@ -3652,7 +3695,7 @@ dependencies = [
  "parity-scale-codec",
  "ref-cast",
  "serde",
- "sp-debug-derive",
+ "sp-debug-derive 5.0.0",
  "sp-std 5.0.0",
 ]
 
@@ -3741,9 +3784,9 @@ dependencies = [
  "scale-info",
  "serde",
  "smallvec",
- "sp-arithmetic",
+ "sp-arithmetic 6.0.0",
  "sp-core",
- "sp-debug-derive",
+ "sp-debug-derive 5.0.0",
  "sp-std 5.0.0",
 ]
 
