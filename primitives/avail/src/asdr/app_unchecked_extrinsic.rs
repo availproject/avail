@@ -390,11 +390,12 @@ where
 impl<Address: Encode, Signature: Encode, Call: Encode, Extra: SignedExtension> serde::Serialize
 	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
 {
-	fn serialize<S>(&self, seq: S) -> Result<S::Ok, S::Error>
+	fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
 	where
 		S: ::serde::Serializer,
 	{
-		self.using_encoded(|bytes| seq.serialize_bytes(bytes))
+		let encoded = self.encode();
+		sp_core::bytes::serialize(&encoded, s)
 	}
 }
 

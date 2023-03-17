@@ -270,7 +270,7 @@ pub fn decode_app_extrinsics(
 			.filter(|cell| !cell.data.is_empty())
 		{
 			None => app_data.extend(vec![0; config::CHUNK_SIZE]),
-			Some(cell) => app_data.extend(&cell.data),
+			Some(cell) => app_data.extend(cell.data),
 		}
 	}
 	let ranges = index.app_data_ranges(app_id);
@@ -398,7 +398,7 @@ fn zero_poly_fn(
 	let mut zero_poly: Vec<BlsScalar> = Vec::with_capacity(length as usize);
 	let mut sub: BlsScalar;
 	for i in 0..missing_indices.len() {
-		let v = missing_indices[i as usize];
+		let v = missing_indices[i];
 		sub = BlsScalar::zero() - expanded_r_o_u[(v * domain_stride) as usize];
 		zero_poly.push(sub);
 		if i > 0 {

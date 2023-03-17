@@ -158,6 +158,8 @@ pub mod testnet {
 	}
 }
 
+pub mod metrics;
+
 #[cfg(feature = "std")]
 pub mod com;
 

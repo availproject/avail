@@ -21,7 +21,6 @@ use frame_support::{ensure, sp_runtime::SaturatedConversion};
 use kate_grid::{AsColumnMajor, AsRowMajor, Extension};
 #[cfg(feature = "std")]
 use kate_recovery::{com::app_specific_rows, index, matrix};
-use log::info;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 use rayon::prelude::*;
@@ -33,6 +32,7 @@ use crate::{
 		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE, MINIMUM_BLOCK_SIZE, PROOF_SIZE,
 		PROVER_KEY_SIZE, SCALAR_SIZE,
 	},
+	metrics::Metrics,
 	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed, LOG_TARGET,
 };
 #[cfg(feature = "std")]
@@ -271,9 +271,10 @@ pub fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 ///
 /// `block` should be the raw data of a matrix, stored in row-major orientation.
 #[cfg(feature = "std")]
-pub fn par_extend_data_matrix(
+pub fn par_extend_data_matrix<M: Metrics>(
 	block_dims: BlockDimensions,
 	block: &[u8],
+	metrics: &M,
 ) -> Result<Vec<BlsScalar>, Error> {
 	let start = Instant::now();
 	let dims = kate_grid::Dimensions::new(block_dims.cols.0 as usize, block_dims.rows.0 as usize);
@@ -309,22 +310,19 @@ pub fn par_extend_data_matrix(
 			extended_column_eval_domain.fft_slice(col);
 		});
 
-	info!(
-		target: LOG_TARGET,
-		"Time to extend block {:?}",
-		start.elapsed()
-	);
+	metrics.extended_block_time(start.elapsed());
 
 	Ok(chunk_elements)
 }
 
 //TODO cache extended data matrix
 //TODO explore faster Variable Base Multi Scalar Multiplication
-pub fn build_proof(
+pub fn build_proof<M: Metrics>(
 	public_params: &kzg10::PublicParameters,
 	block_dims: BlockDimensions,
 	ext_data_matrix: &[BlsScalar],
 	cells: &[Cell],
+	metrics: &M,
 ) -> Result<Vec<u8>, Error> {
 	let dims = kate_grid::Dimensions::new(block_dims.cols.as_usize(), block_dims.rows.as_usize());
 	let extended_dims = dims.extend(Extension::height(EXTENSION_FACTOR as usize));
@@ -342,11 +340,6 @@ pub fn build_proof(
 	let prover_key = &prover_key;
 	let row_dom_x_pts = &row_dom_x_pts;
 
-	info!(
-		target: LOG_TARGET,
-		"Number of CPU cores: {:#?}",
-		num_cpus::get()
-	);
 	// generate proof only for requested cells
 	let total_start = Instant::now();
 
@@ -396,23 +389,19 @@ pub fn build_proof(
 			}
 		});
 
-	info!(
-		target: LOG_TARGET,
-		"Time to build proofs of {} cells: {:?}",
-		cells.len(),
-		total_start.elapsed()
-	);
+	metrics.proof_build_time(total_start.elapsed(), cells.len().saturated_into());
 
 	Ok(result_bytes)
 }
 
 #[cfg(feature = "std")]
-pub fn par_build_commitments(
+pub fn par_build_commitments<M: Metrics>(
 	rows: BlockLengthRows,
 	cols: BlockLengthColumns,
 	chunk_size: u32,
 	extrinsics_by_key: &[AppExtrinsic],
 	rng_seed: Seed,
+	metrics: &M,
 ) -> Result<(XtsLayout, Vec<u8>, BlockDimensions, Vec<BlsScalar>), Error> {
 	let start = Instant::now();
 
@@ -420,22 +409,16 @@ pub fn par_build_commitments(
 	let (tx_layout, block, block_dims) =
 		flatten_and_pad_block(rows, cols, chunk_size, extrinsics_by_key, rng_seed)?;
 
-	info!(
-		target: LOG_TARGET,
-		"Rows: {} Cols: {} Size: {}",
-		block_dims.rows,
-		block_dims.cols,
-		block.len(),
-	);
+	metrics.block_dims_and_size(&block_dims, block.len().saturated_into());
 
-	let ext_data_matrix = par_extend_data_matrix(block_dims, &block)?;
+	let ext_data_matrix = par_extend_data_matrix(block_dims, &block, metrics)?;
 	let extended_rows_num = block_dims
 		.rows
 		.0
 		.checked_mul(EXTENSION_FACTOR)
 		.ok_or(Error::BlockTooBig)?;
 
-	info!(target: LOG_TARGET, "Time to prepare {:?}", start.elapsed());
+	metrics.preparation_block_time(start.elapsed());
 
 	let public_params = testnet::public_params(block_dims.cols.as_usize());
 
@@ -465,12 +448,6 @@ pub fn par_build_commitments(
 		result_bytes.set_len(result_bytes_len);
 	}
 
-	info!(
-		target: "system",
-		"Number of CPU cores: {:#?}",
-		num_cpus::get()
-	);
-
 	let start = Instant::now();
 
 	(0..extended_rows_num)
@@ -487,11 +464,7 @@ pub fn par_build_commitments(
 		.map(|(row, res)| commit(&prover_key, row_eval_domain, row, res))
 		.collect::<Result<_, _>>()?;
 
-	info!(
-		target: "system",
-		"Time to build a commitment {:?}",
-		start.elapsed()
-	);
+	metrics.commitment_build_time(start.elapsed());
 
 	Ok((tx_layout, result_bytes, block_dims, ext_data_matrix))
 }
@@ -555,6 +528,7 @@ mod tests {
 	use crate::{
 		com::{get_block_dimensions, pad_iec_9797_1, par_extend_data_matrix, BlockDimensions},
 		config::DATA_CHUNK_SIZE,
+		metrics::IgnoreMetrics,
 		padded_len,
 	};
 
@@ -637,7 +611,7 @@ mod tests {
 			.chunks_exact(DATA_CHUNK_SIZE)
 			.flat_map(|chunk| pad_with_zeroes(chunk.to_vec(), block_dims.chunk_size))
 			.collect::<Vec<u8>>();
-		let res = par_extend_data_matrix(block_dims, &block);
+		let res = par_extend_data_matrix(block_dims, &block, &IgnoreMetrics {});
 		eprintln!("result={:?}", res);
 		eprintln!("expect={:?}", expected_result);
 		assert_eq!(res.unwrap(), expected_result);
@@ -796,8 +770,9 @@ mod tests {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
 	fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy())  {
+		let metrics = IgnoreMetrics {};
 		let (layout, commitments, dims, matrix) = par_build_commitments(
-			BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default()).unwrap();
+			BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default(), &metrics).unwrap();
 
 		let columns = sample_cells_from_matrix(&matrix, &dims, None);
 		let extended_dims = dims.try_into().unwrap();
@@ -812,7 +787,7 @@ mod tests {
 		for cell in random_cells(dims.cols, dims.rows, 1) {
 			let row = cell.row.as_usize();
 
-			let proof = build_proof(&public_params, dims, &matrix, &[cell]).unwrap();
+			let proof = build_proof(&public_params, dims, &matrix, &[cell], &metrics).unwrap();
 			prop_assert!(proof.len() == 80);
 
 			let col: u16 = cell.col.0.try_into().expect("`random_cells` function generates a valid `u16` for columns");
@@ -832,7 +807,7 @@ mod tests {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
 	fn test_commitments_verify(ref xts in app_extrinsics_strategy())  {
-		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default()).unwrap();
+		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
 
 		let index = app_data_index_try_from_layout(layout).unwrap();
 		let public_params = testnet::public_params(dims.cols.as_usize());
@@ -850,7 +825,7 @@ mod tests {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
 	fn verify_commitmnets_missing_row(ref xts in app_extrinsics_strategy())  {
-		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default()).unwrap();
+		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
 
 		let index = app_data_index_try_from_layout(layout).unwrap();
 		let public_params = testnet::public_params(dims.cols.as_usize());
@@ -884,6 +859,7 @@ mod tests {
 			chunk_size,
 			&[AppExtrinsic::from(original_data.to_vec())],
 			hash,
+			&IgnoreMetrics {},
 		)
 		.unwrap();
 
@@ -932,7 +908,8 @@ get erasure coded to ensure redundancy."#;
 			hash,
 		)
 		.unwrap();
-		let coded: Vec<BlsScalar> = par_extend_data_matrix(dims, &data[..]).unwrap();
+		let coded: Vec<BlsScalar> =
+			par_extend_data_matrix(dims, &data[..], &IgnoreMetrics {}).unwrap();
 
 		let cols_1 = sample_cells_from_matrix(&coded, &dims, Some(&[0, 1, 2, 3]));
 
@@ -976,7 +953,7 @@ get erasure coded to ensure redundancy."#;
 			hash,
 		)
 		.unwrap();
-		let coded = par_extend_data_matrix(dims, &data[..]).unwrap();
+		let coded = par_extend_data_matrix(dims, &data[..], &IgnoreMetrics {}).unwrap();
 
 		let dimensions: Dimensions = dims.try_into().unwrap();
 		let extended_matrix = coded
@@ -1021,7 +998,8 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		)
 		.unwrap();
 
-		let coded: Vec<BlsScalar> = par_extend_data_matrix(dims, &data[..]).unwrap();
+		let coded: Vec<BlsScalar> =
+			par_extend_data_matrix(dims, &data[..], &IgnoreMetrics {}).unwrap();
 
 		let cols = sample_cells_from_matrix(&coded, &dims, None);
 
@@ -1061,7 +1039,8 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		)
 		.unwrap();
 
-		let coded: Vec<BlsScalar> = par_extend_data_matrix(dims, &data[..]).unwrap();
+		let coded: Vec<BlsScalar> =
+			par_extend_data_matrix(dims, &data[..], &IgnoreMetrics {}).unwrap();
 
 		let cols = sample_cells_from_matrix(&coded, &dims, None);
 		let extended_dims = dims.try_into().unwrap();
@@ -1146,7 +1125,15 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 				data: data.clone(),
 			})
 			.collect::<Vec<_>>();
-		par_build_commitments(BlockLengthRows(4), BlockLengthColumns(4), 32, &xts, hash).unwrap();
+		par_build_commitments(
+			BlockLengthRows(4),
+			BlockLengthColumns(4),
+			32,
+			&xts,
+			hash,
+			&IgnoreMetrics {},
+		)
+		.unwrap();
 	}
 
 	#[test]
@@ -1158,7 +1145,15 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			app_id: AppId(0),
 			data: vec![0; 31 * 8],
 		}];
-		par_build_commitments(BlockLengthRows(4), BlockLengthColumns(4), 32, &xts, hash).unwrap();
+		par_build_commitments(
+			BlockLengthRows(4),
+			BlockLengthColumns(4),
+			32,
+			&xts,
+			hash,
+			&IgnoreMetrics {},
+		)
+		.unwrap();
 	}
 	#[test_case( ([1,1,1,1]).to_vec(); "All values are non-zero but same")]
 	#[test_case( ([0,0,0,0]).to_vec(); "All values are zero")]
@@ -1190,6 +1185,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let ext_m = row.into_iter().flat_map(|e| vec![e, e]).collect::<Vec<_>>();
 
 		let rows: u16 = len.try_into().expect("rows length should be valid `u16`");
+		let metrics = IgnoreMetrics {};
 
 		for col in 0..rows {
 			// Randomly chosen cell to prove, probably should test all of them
@@ -1206,6 +1202,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 				},
 				&ext_m,
 				&[cell],
+				&metrics,
 			)
 			.unwrap();
 			println!("Proof: {proof:?}");

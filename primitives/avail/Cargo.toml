@@ -1,6 +1,6 @@
 [package]
 name = "da-primitives"
-version = "0.4.3"
+version = "0.4.4"
 authors = []
 edition = "2018"
 

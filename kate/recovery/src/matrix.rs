@@ -177,7 +177,7 @@ impl Dimensions {
 
 	/// Checks if extended matrix contains given position.
 	pub fn extended_contains(&self, position: &Position) -> bool {
-		(position.row as u32) < self.extended_rows() && position.col < self.cols
+		position.row < self.extended_rows() && position.col < self.cols
 	}
 
 	/// Creates iterator over rows in extended matrix.
