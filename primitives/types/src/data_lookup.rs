@@ -48,7 +48,7 @@ impl parity_util_mem::MallocSizeOf for DataLookupIndexItem {
 #[derive(PartialEq, Eq)]
 #[cfg_attr(feature = "substrate", derive(sp_debug_derive::RuntimeDebug))]
 /// Errors during the creation from `extrinsics`.
-pub enum TryFromError {
+pub enum TryFromError{
 	/// Size overflows
 	SizeOverflow,
 	/// Extrinsics are not sorted.

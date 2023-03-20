@@ -1960,6 +1960,7 @@ dependencies = [
  "da-types",
  "dusk-bytes",
  "dusk-plonk",
+ "getrandom 0.2.8",
  "hex",
  "hex-literal",
  "itertools 0.10.5",

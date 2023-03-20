@@ -6,12 +6,12 @@ edition = "2018"
 
 [dependencies]
 # Others
+da-types = { path = "../types", default-features = false, features = ["substrate"] }
 derive_more = "0.99.17"
 log = { version = "0.4.8", default-features = false }
 serde = { version = "1.0.121", optional = true, features = ["derive"] }
 serde_json = { version = "1.0", optional = true }
 thiserror-no-std = "2.0.2"
-da-types = { path = "../types", features = ["substrate"] }
 
 # Substrate
 beefy-merkle-tree = { git = "https://github.com/paritytech/substrate.git/", branch = "polkadot-v0.9.37", default-features = false }
@@ -23,7 +23,7 @@ scale-info = { version = "2.1.1", default-features = false, features = ["derive"
 sp-core = { version = "7.0.0", default-features = false }
 sp-io = { version = "7.0.0", default-features = false }
 sp-runtime = { version = "7.0.0", default-features = false }
-sp-runtime-interface = { version = "7.0.0", default-features = false }
+sp-runtime-interface = { version = "7.0.0", default-features = false, features = ["disable_target_static_assertions"] }
 sp-std = { version = "4.0.0", default-features = false }
 sp-trie = { version = "7.0.0", default-features = false }
 
