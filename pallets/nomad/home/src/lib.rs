@@ -198,8 +198,10 @@ pub mod pallet {
 		/// Note: Not exposed as pallet call, will only be callable by the
 		/// GovernanceRouter pallet when implemented.
 		#[pallet::call_index(3)]
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::set_updater())]
 		pub fn set_updater(origin: OriginFor<T>, new_updater: H160) -> DispatchResult {
+			ensure_root(origin)?;
+
 			// Modify NomadBase updater
 			Base::<T>::mutate(|base| base.updater = new_updater);
 

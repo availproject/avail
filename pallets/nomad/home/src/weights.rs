@@ -50,6 +50,7 @@ pub trait WeightInfo {
 	fn improper_update() -> Weight;
 	fn dispatch(b: u32, ) -> Weight;
 	fn update() -> Weight;
+	fn set_updater() -> Weight;
 }
 
 /// Weights for nomad_home using the Data Avaiability node and recommended hardware.
@@ -86,6 +87,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(64_u64))
 			.saturating_add(T::DbWeight::get().writes(65_u64))
 	}
+	
+    fn set_updater() -> Weight {
+		Weight::from_ref_time(0u64)
+    }
 }
 
 // For backwards compatibility and tests
@@ -121,4 +126,9 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(64_u64))
 			.saturating_add(RocksDbWeight::get().writes(65_u64))
 	}
+
+	fn set_updater() -> Weight {
+		Weight::from_ref_time(0u64)
+    }
+
 }
