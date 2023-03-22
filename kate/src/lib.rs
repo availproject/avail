@@ -148,7 +148,7 @@ pub mod testnet {
 			let pmp_ev = GeneralEvaluationDomain::<Fr>::new(1024).unwrap();
 			let pmp_poly = pmp_ev.ifft(&pmp_evals);
 
-			let pubs = testnet::public_params(da_primitives::BlockLengthColumns(1024));
+			let pubs = testnet::public_params(da_types::BlockLengthColumns(1024));
 
 			let dp_commit = pubs.commit_key().commit(&dp_poly).unwrap().0.to_bytes();
 			let mut pmp_commit = [0u8; 48];

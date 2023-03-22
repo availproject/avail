@@ -1,3 +1,4 @@
+use num_traits::Zero;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
@@ -7,6 +8,7 @@ use crate::AppId;
 
 #[derive(PartialEq, Eq, Clone, Encode, Decode, Default, TypeInfo)]
 #[cfg_attr(feature = "substrate", derive(sp_debug_derive::RuntimeDebug))]
+#[cfg_attr(all(feature = "std", not(feature = "substrate")), derive(Debug))]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct DataLookup {
 	/// size of the look up
@@ -18,6 +20,7 @@ pub struct DataLookup {
 
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Default, TypeInfo)]
 #[cfg_attr(feature = "substrate", derive(sp_debug_derive::RuntimeDebug))]
+#[cfg_attr(all(feature = "std", not(feature = "substrate")), derive(Debug))]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct DataLookupIndexItem {
 	pub app_id: AppId,
@@ -47,6 +50,7 @@ impl parity_util_mem::MallocSizeOf for DataLookupIndexItem {
 
 #[derive(PartialEq, Eq)]
 #[cfg_attr(feature = "substrate", derive(sp_debug_derive::RuntimeDebug))]
+#[cfg_attr(all(feature = "std", not(feature = "substrate")), derive(Debug))]
 /// Errors during the creation from `extrinsics`.
 pub enum TryFromError {
 	/// Size overflows
@@ -67,7 +71,7 @@ impl TryFrom<&[(AppId, u32)]> for DataLookup {
 		let mut prev_app_id = AppId(0);
 
 		for (app_id, data_len) in extrinsics {
-			if !app_id.0 == 0 && prev_app_id != *app_id {
+			if !app_id.is_zero() && prev_app_id != *app_id {
 				index.push(DataLookupIndexItem {
 					app_id: *app_id,
 					start: size,

@@ -505,7 +505,7 @@ fn commit(
 mod tests {
 	use std::{convert::TryInto, iter::repeat, str::from_utf8};
 
-	use da_primitives::asdr::AppExtrinsic;
+	use da_types::AppExtrinsic;
 	use dusk_bytes::Serializable;
 	use dusk_plonk::bls12_381::BlsScalar;
 	use hex_literal::hex;

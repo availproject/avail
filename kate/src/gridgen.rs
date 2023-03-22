@@ -503,7 +503,7 @@ mod consistency_tests {
 	use rand::prelude::Distribution;
 
 	fn pp() -> PublicParameters {
-		testnet::public_params(da_primitives::BlockLengthColumns(256))
+		testnet::public_params(da_types::BlockLengthColumns(256))
 	}
 
 	#[test]
