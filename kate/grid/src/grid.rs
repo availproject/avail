@@ -140,8 +140,8 @@ impl<A: Clone> ColumnMajor<A> {
 		if x >= self.width() {
 			return None;
 		}
-        let start = x.checked_mul(self.height())?;
-        let end = x.checked_add(1)?.checked_mul(self.height())?;
+		let start = x.checked_mul(self.height())?;
+		let end = x.checked_add(1)?.checked_mul(self.height())?;
 		Some(&self.inner[start..end])
 	}
 

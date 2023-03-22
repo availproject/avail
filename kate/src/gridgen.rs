@@ -333,7 +333,7 @@ pub fn multiproof_block(
 /// `target_dims` must cleanly divide `grid_dims`.
 pub fn multiproof_dims(grid_dims: &Dimensions, target_dims: &Dimensions) -> Option<Dimensions> {
 	let target_width = grid_dims.width_nz().min(target_dims.width_nz());
-	let target_height = grid_dims.height_nz().min(target_dims._nz());
+	let target_height = grid_dims.height_nz().min(target_dims.height_nz());
 	if grid_dims.width() % target_width != 0 || grid_dims.height() % target_height != 0 {
 		return None;
 	}

@@ -86,12 +86,12 @@ impl Extension {
 		}
 	}
 
-    pub const fn width_unchecked(factor: usize) -> Self {
+	pub const fn width_unchecked(factor: usize) -> Self {
 		Self {
 			height_factor: nonzero_unchecked(1),
 			width_factor: nonzero_unchecked(factor),
 		}
-    }
+	}
 }
 
 #[allow(unconditional_panic)]
