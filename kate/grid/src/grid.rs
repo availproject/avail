@@ -91,7 +91,9 @@ impl<A: Clone> RowMajor<A> {
 		if x >= self.width() {
 			return None;
 		}
-		Some((0..self.height()).map(move |y| self.get(x, y).expect("Size checked at instantiation")))
+		Some(
+			(0..self.height()).map(move |y| self.get(x, y).expect("Size checked at instantiation")),
+		)
 	}
 
 	pub fn rows(&self) -> impl Iterator<Item = (usize, &[A])> + '_ {
@@ -172,7 +174,7 @@ impl<A> AsRowMajor<A> for Vec<A> {
 	fn as_row_major(self, width: usize, height: usize) -> Option<RowMajor<A>> {
 		if self.len() == width * height {
 			Some(RowMajor {
-                dims: Dimensions::new(width, height),
+				dims: Dimensions::new(width, height),
 				inner: self,
 			})
 		} else {
@@ -185,7 +187,7 @@ impl<A> AsColumnMajor<A> for Vec<A> {
 	fn as_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A>> {
 		if self.len() == width * height {
 			Some(ColumnMajor {
-                dims: Dimensions::new(width, height),
+				dims: Dimensions::new(width, height),
 				inner: self,
 			})
 		} else {
@@ -198,7 +200,7 @@ impl<A, const LEN: usize> AsColumnMajor<A> for [A; LEN] {
 	fn as_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A>> {
 		if self.len() == width * height {
 			Some(ColumnMajor {
-                dims: Dimensions::new(width, height),
+				dims: Dimensions::new(width, height),
 				inner: self.into(),
 			})
 		} else {
@@ -211,7 +213,7 @@ impl<A, const LEN: usize> AsRowMajor<A> for [A; LEN] {
 	fn as_row_major(self, width: usize, height: usize) -> Option<RowMajor<A>> {
 		if self.len() == width * height {
 			Some(RowMajor {
-                dims: Dimensions::new(width, height),
+				dims: Dimensions::new(width, height),
 				inner: self.into(),
 			})
 		} else {

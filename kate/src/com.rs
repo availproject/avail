@@ -5,7 +5,7 @@ use std::{
 };
 
 use codec::Encode;
-use da_types::{AppId, AppExtrinsic, BlockLengthRows, BlockLengthColumns};
+use da_types::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	commitment_scheme::kzg10,
@@ -41,9 +41,9 @@ pub struct Cell {
 }
 
 impl Cell {
-    pub fn new(row: BlockLengthRows, col: BlockLengthColumns) -> Self {
-        Cell { row, col }
-    }
+	pub fn new(row: BlockLengthRows, col: BlockLengthColumns) -> Self {
+		Cell { row, col }
+	}
 }
 
 #[derive(Debug)]

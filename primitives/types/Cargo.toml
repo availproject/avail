@@ -21,6 +21,3 @@ sp-debug-derive = { version = "*", default-features = false, optional = true }
 default = ["std"]
 std = ["serde", "parity-scale-codec/std", "scale-info/std", "num-traits/std"]
 substrate = ["sp-debug-derive", "parity-util-mem"]
-
-[package.metadata.cargo-all-features]
-skip_optional_dependencies = true

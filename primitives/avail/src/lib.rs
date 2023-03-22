@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_runtime::Perbill;
 pub use da_types::{BlockLengthColumns, BlockLengthRows};
+use sp_runtime::Perbill;
 
 /// Customized headers.
 pub mod header;
