@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2019-2021 Parity Technologies (UK) Ltd.
+// Copyright (C) 2019-2022 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,17 +28,17 @@
 //! are part of it. Therefore all node-runtime-specific RPCs can
 //! be placed here or imported from corresponding FRAME RPC definitions.
 
-//! # Polygon Changes
+//! # Data Availability Changes
 //! - Add Kate RPC extension.
-//! - Remove Contrats extensions.
+//! - Remove `sc_rpc::dev` extension.
 
 #![warn(missing_docs)]
 
 use std::sync::Arc;
 
-use da_runtime::{Block, BlockNumber, Hash, Runtime};
+use da_runtime::{AccountId, Balance, BlockNumber, Hash, Index, NodeBlock as Block};
 use jsonrpsee::RpcModule;
-use sc_client_api::BlockBackend;
+use sc_client_api::AuxStore;
 use sc_consensus_babe::{BabeConfiguration, Epoch};
 use sc_consensus_epochs::SharedEpochChanges;
 use sc_finality_grandpa::{
@@ -46,9 +46,13 @@ use sc_finality_grandpa::{
 };
 use sc_rpc::SubscriptionTaskExecutor;
 pub use sc_rpc_api::DenyUnsafe;
+use sc_transaction_pool_api::TransactionPool;
+use sp_api::ProvideRuntimeApi;
+use sp_block_builder::BlockBuilder;
+use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
+use sp_consensus::SelectChain;
+use sp_consensus_babe::BabeApi;
 use sp_keystore::SyncCryptoStorePtr;
-
-use crate::service::{FullBackend, FullClient, TransactionPool};
 
 /// Extra dependencies for BABE.
 pub struct BabeDeps {
@@ -61,7 +65,7 @@ pub struct BabeDeps {
 }
 
 /// Extra dependencies for GRANDPA
-pub struct GrandpaDeps {
+pub struct GrandpaDeps<B> {
 	/// Voting round info.
 	pub shared_voter_state: SharedVoterState,
 	/// Authority set info.
@@ -71,17 +75,17 @@ pub struct GrandpaDeps {
 	/// Executor to drive the subscription manager in the Grandpa RPC handler.
 	pub subscription_executor: SubscriptionTaskExecutor,
 	/// Finality proof provider.
-	pub finality_provider: Arc<FinalityProofProvider<FullBackend, Block>>,
+	pub finality_provider: Arc<FinalityProofProvider<B, Block>>,
 }
 
 /// Full client dependencies.
-pub struct FullDeps {
+pub struct FullDeps<C, P, SC, B> {
 	/// The client instance to use.
-	pub client: Arc<FullClient>,
+	pub client: Arc<C>,
 	/// Transaction pool instance.
-	pub pool: Arc<TransactionPool>,
+	pub pool: Arc<P>,
 	/// The SelectChain Strategy
-	pub select_chain: sc_consensus::LongestChain<FullBackend, Block>,
+	pub select_chain: SC,
 	/// A copy of the chain spec.
 	pub chain_spec: Box<dyn sc_chain_spec::ChainSpec>,
 	/// Whether to deny unsafe calls
@@ -89,20 +93,39 @@ pub struct FullDeps {
 	/// BABE specific dependencies.
 	pub babe: BabeDeps,
 	/// GRANDPA specific dependencies.
-	pub grandpa: GrandpaDeps,
+	pub grandpa: GrandpaDeps<B>,
 }
 
 /// Instantiate all Full RPC extensions.
-pub fn create_full(
-	deps: FullDeps,
-	backend: Arc<FullBackend>,
-) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>> {
+pub fn create_full<C, P, SC, B>(
+	deps: FullDeps<C, P, SC, B>,
+	backend: Arc<B>,
+) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
+where
+	C: ProvideRuntimeApi<Block>
+		+ sc_client_api::BlockBackend<Block>
+		+ HeaderBackend<Block>
+		+ AuxStore
+		+ HeaderMetadata<Block, Error = BlockChainError>
+		+ Sync
+		+ Send
+		+ 'static,
+	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
+	C::Api: mmr_rpc::MmrRuntimeApi<Block, <Block as sp_runtime::traits::Block>::Hash, BlockNumber>,
+	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+	C::Api: BabeApi<Block>,
+	C::Api: BlockBuilder<Block>,
+	C::Api: kate_rpc_runtime_api::KateParamsGetter<Block>,
+	P: TransactionPool + 'static,
+	SC: SelectChain<Block> + 'static,
+	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
+	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashFor<Block>>,
+{
 	use kate_rpc::{Kate, KateApiServer};
 	use mmr_rpc::{Mmr, MmrApiServer};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	use sc_consensus_babe_rpc::{Babe, BabeApiServer};
 	use sc_finality_grandpa_rpc::{Grandpa, GrandpaApiServer};
-	// use sc_rpc::dev::{Dev, DevApiServer};
 	use sc_rpc_spec_v2::chain_spec::{ChainSpec, ChainSpecApiServer};
 	use sc_sync_state_rpc::{SyncState, SyncStateApiServer};
 	use substrate_frame_rpc_system::{System, SystemApiServer};
@@ -180,9 +203,9 @@ pub fn create_full(
 	)?;
 
 	io.merge(StateMigration::new(client.clone(), backend, deny_unsafe).into_rpc())?;
-	// io.merge(Dev::new(client, deny_unsafe).into_rpc())?;
 
-	io.merge(Kate::<_, _, Runtime>::new(client).into_rpc())?;
+	let kate = Kate::<C, Block>::new(client);
+	io.merge(kate.into_rpc())?;
 
 	Ok(io)
 }
