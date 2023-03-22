@@ -13,6 +13,7 @@ dusk-bytes = { version = "0.1.6", default-features = false, optional = true }
 dusk-plonk = { git = "https://github.com/maticnetwork/plonk", branch = "will/polynomial-visibility", optional = true }
 getrandom = { version = "0.2.8", default-features = false, features = ["js"] }
 hex = { version = "0.4", default-features = false, features = ["alloc"], optional = true }
+hex-literal = "0.3.4"
 kate-grid = { path = "grid" }
 kate-recovery = { path = "recovery", default-features = false, optional = true }
 log = { version = "0.4.8", optional = true }
@@ -26,7 +27,6 @@ sp-arithmetic = { version = "7.0.0", default-features = false }
 sp-core-hashing = { version = "5.0.0", default-features = false, optional = true }
 sp-std = { version = "4.0.0", default-features = false }
 static_assertions = "1.1.0"
-hex-literal = "0.3.4"
 
 [dev-dependencies]
 criterion = "0.3.5"

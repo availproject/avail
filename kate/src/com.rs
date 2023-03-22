@@ -309,8 +309,9 @@ pub fn par_extend_data_matrix<M: Metrics>(
 
 	// simple length with mod check would work...
 	let chunks = block.par_chunks_exact(block_dims.chunk_size as usize);
-	// TODO: Shouldn't assert, should error
-	assert!(chunks.remainder().is_empty());
+    if chunks.remainder().is_empty() {
+        return Err(Error::DimensionsMismatch);
+    }
 
 	let scalars = chunks
 		.into_par_iter()
@@ -371,11 +372,6 @@ pub fn build_proof<M: Metrics>(
 
 	// generate proof only for requested cells
 	let total_start = Instant::now();
-
-	// TODO: better error type
-	//let ext_data_matrix_cm = ext_data_matrix
-	//	.as_column_major(extended_dims.width(), extended_dims.height())
-	//	.ok_or(Error::DimensionsMismatch)?;
 
 	// attempt to parallelly compute proof for all requested cells
 	cells
