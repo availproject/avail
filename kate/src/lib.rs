@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(clippy::integer_arithmetic)]
 
 use da_types::{BlockLengthColumns, BlockLengthRows};
 #[cfg(feature = "std")]
@@ -17,6 +18,8 @@ pub use kate_grid as grid;
 pub use poly_multiproof as pmp;
 
 pub mod config {
+	use kate_grid::Extension;
+
 	use super::{BlockLengthColumns, BlockLengthRows};
 
 	// TODO: Delete this? not used anywhere
@@ -25,6 +28,7 @@ pub mod config {
 	pub const SCALAR_SIZE: usize = 32;
 	pub const DATA_CHUNK_SIZE: usize = 31; // Actual chunk size is 32 after 0 padding is done
 	pub const EXTENSION_FACTOR: u32 = 2;
+	pub const EXTENSION: Extension = Extension::height_unchecked(2);
 	pub const PROVER_KEY_SIZE: u32 = 48;
 	pub const PROOF_SIZE: usize = 48;
 	// MINIMUM_BLOCK_SIZE, MAX_BLOCK_ROWS and MAX_BLOCK_COLUMNS have to be a power of 2 because of the FFT functions requirements
@@ -95,7 +99,7 @@ pub mod testnet {
 		let g1 = G1::deserialize_compressed(&G1_BYTES[..]).unwrap();
 		let g2 = G2::deserialize_compressed(&G2_BYTES[..]).unwrap();
 
-		m1_blst::M1NoPrecomp::new_from_scalar(x, g1, g2, max_degree + 1, max_pts)
+		m1_blst::M1NoPrecomp::new_from_scalar(x, g1, g2, max_degree.saturating_add(1), max_pts)
 	}
 
 	#[cfg(test)]
@@ -152,7 +156,7 @@ pub mod testnet {
 
 			let dp_commit = pubs.commit_key().commit(&dp_poly).unwrap().0.to_bytes();
 			let mut pmp_commit = [0u8; 48];
-			pmp.commit(&pmp_poly)
+			pmp.commit(pmp_poly)
 				.unwrap()
 				.0
 				.serialize_compressed(&mut pmp_commit[..])
@@ -177,6 +181,7 @@ pub mod gridgen;
 /// There is a unit test to ensure this formula match with the current
 /// IEC 9797 1 algorithm we implemented. See `fn pad_iec_9797_1`
 #[inline]
+#[allow(clippy::integer_arithmetic)]
 fn padded_len_of_pad_iec_9797_1(len: u32) -> u32 {
 	let len_plus_one = len.saturating_add(1);
 	let offset = (DATA_CHUNK_SIZE - (len_plus_one as usize % DATA_CHUNK_SIZE)) % DATA_CHUNK_SIZE;
@@ -186,6 +191,7 @@ fn padded_len_of_pad_iec_9797_1(len: u32) -> u32 {
 }
 
 /// Calculates the padded len based of initial `len`.
+#[allow(clippy::integer_arithmetic)]
 pub fn padded_len(len: u32, chunk_size: u32) -> u32 {
 	let iec_9797_1_len = padded_len_of_pad_iec_9797_1(len);
 

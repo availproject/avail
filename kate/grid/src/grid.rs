@@ -6,6 +6,7 @@ pub trait Grid<A> {
 	fn width(&self) -> usize;
 	fn height(&self) -> usize;
 	fn dims(&self) -> &Dimensions;
+	fn inner(&self) -> &Vec<A>;
 	// x indexes within a row, y indexes within a column
 	// 0 <= x < width, 0 <= y < height
 	fn get(&self, x: usize, y: usize) -> Option<&A> {
@@ -19,12 +20,12 @@ pub trait Grid<A> {
 
 pub struct RowMajor<A> {
 	dims: Dimensions,
-	pub inner: Vec<A>,
+	inner: Vec<A>,
 }
 
 pub struct ColumnMajor<A> {
 	dims: Dimensions,
-	pub inner: Vec<A>,
+	inner: Vec<A>,
 }
 
 impl<A> Grid<A> for RowMajor<A> {
@@ -45,11 +46,15 @@ impl<A> Grid<A> for RowMajor<A> {
 	}
 
 	fn ind_to_coord(dims: &Dimensions, i: usize) -> (usize, usize) {
-		(i % dims.width(), i / dims.width())
+		(i % dims.width_nz(), i / dims.width_nz())
 	}
 
 	fn coord_to_ind(dims: &Dimensions, x: usize, y: usize) -> usize {
-		x + y * dims.width()
+		x.saturating_add(y.saturating_mul(dims.width()))
+	}
+
+	fn inner(&self) -> &Vec<A> {
+		&self.inner
 	}
 }
 
@@ -71,11 +76,15 @@ impl<A> Grid<A> for ColumnMajor<A> {
 	}
 
 	fn ind_to_coord(dims: &Dimensions, i: usize) -> (usize, usize) {
-		(i / dims.height(), i % dims.height())
+		(i / dims.height_nz(), i % dims.height_nz())
 	}
 
 	fn coord_to_ind(dims: &Dimensions, x: usize, y: usize) -> usize {
-		y + x * dims.height()
+		y.saturating_add(x.saturating_mul(dims.height()))
+	}
+
+	fn inner(&self) -> &Vec<A> {
+		&self.inner
 	}
 }
 
@@ -84,16 +93,16 @@ impl<A: Clone> RowMajor<A> {
 		if y >= self.height() {
 			return None;
 		}
-		Some(&self.inner[(y * self.width())..((y + 1) * self.width())])
+		let start = y.checked_mul(self.width())?;
+		let end = y.checked_add(1)?.checked_mul(self.width())?;
+		Some(&self.inner[start..end])
 	}
 
 	pub fn iter_col(&self, x: usize) -> Option<impl Iterator<Item = &A> + '_> {
 		if x >= self.width() {
 			return None;
 		}
-		Some(
-			(0..self.height()).map(move |y| self.get(x, y).expect("Size checked at instantiation")),
-		)
+		Some((0..self.height()).map(move |y| self.get(x, y).expect("Bounds already checked")))
 	}
 
 	pub fn rows(&self) -> impl Iterator<Item = (usize, &[A])> + '_ {
@@ -121,7 +130,7 @@ impl<A: Clone> RowMajor<A> {
 		self.iter_column_wise()
 			.map(Clone::clone)
 			.collect::<Vec<_>>()
-			.as_column_major(self.width(), self.height())
+			.into_column_major(self.width(), self.height())
 			.expect("Bounds already checked")
 	}
 }
@@ -131,7 +140,9 @@ impl<A: Clone> ColumnMajor<A> {
 		if x >= self.width() {
 			return None;
 		}
-		Some(&self.inner[(x * self.height())..((x + 1) * self.height())])
+        let start = x.checked_mul(self.height())?;
+        let end = x.checked_add(1)?.checked_mul(self.height())?;
+		Some(&self.inner[start..end])
 	}
 
 	pub fn iter_row(&self, y: usize) -> Option<impl Iterator<Item = &A> + '_> {
@@ -157,24 +168,24 @@ impl<A: Clone> ColumnMajor<A> {
 		self.iter_row_wise()
 			.map(Clone::clone)
 			.collect::<Vec<_>>()
-			.as_row_major(self.width(), self.height())
+			.into_row_major(self.width(), self.height())
 			.expect("Bounds already checked")
 	}
 }
 
-pub trait AsRowMajor<A> {
-	fn as_row_major(self, width: usize, height: usize) -> Option<RowMajor<A>>;
+pub trait IntoRowMajor<A> {
+	fn into_row_major(self, width: usize, height: usize) -> Option<RowMajor<A>>;
 }
 
-pub trait AsColumnMajor<A> {
-	fn as_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A>>;
+pub trait IntoColumnMajor<A> {
+	fn into_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A>>;
 }
 
-impl<A> AsRowMajor<A> for Vec<A> {
-	fn as_row_major(self, width: usize, height: usize) -> Option<RowMajor<A>> {
-		if self.len() == width * height {
+impl<A> IntoRowMajor<A> for Vec<A> {
+	fn into_row_major(self, width: usize, height: usize) -> Option<RowMajor<A>> {
+		if self.len() == usize::checked_mul(width, height)? {
 			Some(RowMajor {
-				dims: Dimensions::new(width, height),
+				dims: Dimensions::new(width.try_into().ok()?, height.try_into().ok()?),
 				inner: self,
 			})
 		} else {
@@ -183,11 +194,11 @@ impl<A> AsRowMajor<A> for Vec<A> {
 	}
 }
 
-impl<A> AsColumnMajor<A> for Vec<A> {
-	fn as_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A>> {
-		if self.len() == width * height {
+impl<A> IntoColumnMajor<A> for Vec<A> {
+	fn into_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A>> {
+		if self.len() == width.checked_mul(height)? {
 			Some(ColumnMajor {
-				dims: Dimensions::new(width, height),
+				dims: Dimensions::new(width.try_into().ok()?, height.try_into().ok()?),
 				inner: self,
 			})
 		} else {
@@ -196,11 +207,11 @@ impl<A> AsColumnMajor<A> for Vec<A> {
 	}
 }
 
-impl<A, const LEN: usize> AsColumnMajor<A> for [A; LEN] {
-	fn as_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A>> {
-		if self.len() == width * height {
+impl<A, const LEN: usize> IntoColumnMajor<A> for [A; LEN] {
+	fn into_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A>> {
+		if self.len() == width.checked_mul(height)? {
 			Some(ColumnMajor {
-				dims: Dimensions::new(width, height),
+				dims: Dimensions::new(width.try_into().ok()?, height.try_into().ok()?),
 				inner: self.into(),
 			})
 		} else {
@@ -209,11 +220,11 @@ impl<A, const LEN: usize> AsColumnMajor<A> for [A; LEN] {
 	}
 }
 
-impl<A, const LEN: usize> AsRowMajor<A> for [A; LEN] {
-	fn as_row_major(self, width: usize, height: usize) -> Option<RowMajor<A>> {
-		if self.len() == width * height {
+impl<A, const LEN: usize> IntoRowMajor<A> for [A; LEN] {
+	fn into_row_major(self, width: usize, height: usize) -> Option<RowMajor<A>> {
+		if self.len() == width.checked_mul(height)? {
 			Some(RowMajor {
-				dims: Dimensions::new(width, height),
+				dims: Dimensions::new(width.try_into().ok()?, height.try_into().ok()?),
 				inner: self.into(),
 			})
 		} else {
@@ -230,7 +241,7 @@ mod tests {
 	#[test]
 	fn test_row_major() {
 		let data = [1, 2, 3, 4, 5, 6];
-		let rm = data.as_row_major(3, 2).unwrap();
+		let rm = data.into_row_major(3, 2).unwrap();
 
 		assert_eq!(rm.get(0, 0), Some(&1));
 		assert_eq!(rm.get(1, 0), Some(&2));
@@ -249,7 +260,7 @@ mod tests {
 	#[test]
 	fn test_column_major() {
 		let data = [1, 4, 2, 5, 3, 6];
-		let cm = data.as_column_major(3, 2).unwrap();
+		let cm = data.into_column_major(3, 2).unwrap();
 
 		assert_eq!(cm.get(0, 0), Some(&1));
 		assert_eq!(cm.get(1, 0), Some(&2));

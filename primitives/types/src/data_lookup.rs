@@ -81,7 +81,7 @@ impl TryFrom<&[(AppId, u32)]> for DataLookup {
 			size = size
 				.checked_add(*data_len)
 				.ok_or(Self::Error::SizeOverflow)?;
-			if !(prev_app_id <= *app_id) {
+			if prev_app_id > *app_id {
 				return Err(Self::Error::UnsortedExtrinsics);
 			}
 			prev_app_id = *app_id;

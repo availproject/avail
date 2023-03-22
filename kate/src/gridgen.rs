@@ -1,4 +1,4 @@
-use core::marker::PhantomData;
+use core::{marker::PhantomData, num::NonZeroUsize};
 
 use codec::Encode;
 use da_types::{AppExtrinsic, AppId, DataLookup, DataLookupIndexItem};
@@ -8,7 +8,7 @@ use dusk_plonk::{
 	fft::{EvaluationDomain, Polynomial},
 	prelude::{BlsScalar, CommitKey},
 };
-use kate_grid::{AsColumnMajor, AsRowMajor, Dimensions, Extension, Grid, RowMajor};
+use kate_grid::{Dimensions, Extension, Grid, IntoColumnMajor, IntoRowMajor, RowMajor};
 use kate_recovery::config::PADDING_TAIL_VALUE;
 use poly_multiproof::{m1_blst::M1NoPrecomp, merlin::Transcript};
 use rand::{Rng, SeedableRng};
@@ -55,7 +55,7 @@ impl EvaluationGrid {
 				let mut enc = datas.encode();
 				enc.push(PADDING_TAIL_VALUE); // TODO: remove 9797 padding stuff
 				enc.chunks(DATA_CHUNK_SIZE)
-					.map(|c| pad_to_bls_scalar(c))
+					.map(pad_to_bls_scalar)
 					.collect::<Result<Vec<_>, _>>()
 					.map(|scalars| (id, scalars))
 			})
@@ -69,7 +69,7 @@ impl EvaluationGrid {
 				app_id: *app_id,
 				start,
 			});
-			start += scalars.len() as u32; // next item should start after current one
+			start = start.saturating_add(scalars.len() as u32); // next item should start after current one
 		}
 
 		// Flatten the grid
@@ -89,13 +89,13 @@ impl EvaluationGrid {
 		while grid.len() != dims.n_cells() {
 			let rnd_values: [u8; BlsScalar::SIZE - 1] = rng.gen();
 			// TODO: can we just use zeros instead?
-			grid.push(pad_to_bls_scalar(&rnd_values)?);
+			grid.push(pad_to_bls_scalar(rnd_values)?);
 		}
 
 		Ok(EvaluationGrid {
 			lookup,
 			evals: grid
-				.as_row_major(dims.width(), dims.height())
+				.into_row_major(dims.width(), dims.height())
 				.ok_or(Error::DimensionsMismatch)?,
 			dims,
 		})
@@ -121,7 +121,7 @@ impl EvaluationGrid {
 		let end_index = self
 			.lookup
 			.index
-			.get(i + 1)
+			.get(i.saturating_add(1))
 			.map(|elem| elem.start)
 			.unwrap_or(self.lookup.size) as usize;
 		Some((start_index, end_index))
@@ -138,12 +138,12 @@ impl EvaluationGrid {
 		if !orig_dims.divides(&self.dims) {
 			return None;
 		}
-		let h_mul = self.dims.height() / orig_dims.height();
+		let h_mul = self.dims.height() / orig_dims.height_nz();
 
 		let (start_ind, end_ind) = self.app_data_indices(app_id)?;
-		let (_, start_y) = RowMajor::<()>::ind_to_coord(&orig_dims, start_ind);
-		let (_, end_y) = RowMajor::<()>::ind_to_coord(&orig_dims, end_ind - 1); // Find y of last cell elt
-		let (new_start_y, new_end_y) = (start_y * h_mul, end_y * h_mul);
+		let (_, start_y) = RowMajor::<()>::ind_to_coord(orig_dims, start_ind);
+		let (_, end_y) = RowMajor::<()>::ind_to_coord(orig_dims, end_ind.saturating_sub(1)); // Find y of last cell elt
+		let (new_start_y, new_end_y) = (start_y.saturating_mul(h_mul), end_y.saturating_mul(h_mul));
 
 		(new_start_y..=new_end_y)
 			.step_by(h_mul)
@@ -152,7 +152,11 @@ impl EvaluationGrid {
 	}
 
 	pub fn extend_columns(&self, extension_factor: usize) -> Result<Self, Error> {
-		let new_dims = self.dims.extend(Extension::height(extension_factor));
+		let new_dims = self.dims.extend(Extension::height(
+			extension_factor
+				.try_into()
+				.map_err(|_| Error::CellLenghtExceeded)?,
+		));
 
 		let domain = EvaluationDomain::new(self.dims.height())?;
 		let domain_new = EvaluationDomain::new(new_dims.height())?;
@@ -167,7 +171,7 @@ impl EvaluationGrid {
 			.flat_map(|(_x, col)| {
 				// put elts into a new column
 				let mut ext_col = Vec::with_capacity(domain_new.size());
-				col.for_each(|s| ext_col.push(s.clone()));
+				col.for_each(|s| ext_col.push(*s));
 				// ifft, resize, fft
 				domain.ifft_slice(&mut ext_col);
 				ext_col.resize(domain_new.size(), BlsScalar::zero());
@@ -175,7 +179,7 @@ impl EvaluationGrid {
 				ext_col
 			})
 			.collect::<Vec<_>>()
-			.as_column_major(new_dims.width(), new_dims.height())
+			.into_column_major(new_dims.width(), new_dims.height())
 			.expect("Each column should be expanded to news dims")
 			.to_row_major();
 
@@ -212,7 +216,7 @@ impl PolynomialGrid {
 	pub fn commitments(&self, srs: &CommitKey) -> Result<Vec<Commitment>, Error> {
 		self.inner
 			.iter()
-			.map(|poly| srs.commit(&poly).map_err(|e| Error::PlonkError(e)))
+			.map(|poly| srs.commit(poly).map_err(Error::PlonkError))
 			.collect()
 	}
 
@@ -220,7 +224,7 @@ impl PolynomialGrid {
 		self.inner
 			.get(row)
 			.ok_or(Error::CellLenghtExceeded)
-			.and_then(|poly| srs.commit(&poly).map_err(|e| Error::PlonkError(e)))
+			.and_then(|poly| srs.commit(poly).map_err(Error::PlonkError))
 	}
 
 	pub fn proof(&self, srs: &CommitKey, cell: &Cell) -> Result<Commitment, Error> {
@@ -268,7 +272,7 @@ impl PolynomialGrid {
 
 		let mut ts = Transcript::new(b"avail-mp");
 		let proof = srs
-			.open(&mut ts, &evals, &polys, &points)
+			.open(&mut ts, &evals, &polys, points)
 			.expect("TODO: real error msg");
 		Ok(Multiproof {
 			proof,
@@ -280,7 +284,7 @@ impl PolynomialGrid {
 
 fn convert_bls(dusk: &dusk_plonk::bls12_381::BlsScalar) -> poly_multiproof::m1_blst::Fr {
 	poly_multiproof::m1_blst::Fr {
-		0: poly_multiproof::ark_ff::BigInt(dusk.0.clone()),
+		0: poly_multiproof::ark_ff::BigInt(dusk.0),
 		1: PhantomData,
 	}
 }
@@ -315,21 +319,21 @@ pub fn multiproof_block(
 		return None;
 	}
 
-	let block_width = grid_dims.width() / mp_grid_dims.width();
-	let block_height = grid_dims.height() / mp_grid_dims.height();
+	let block_width = grid_dims.width() / mp_grid_dims.width_nz();
+	let block_height = grid_dims.height() / mp_grid_dims.height_nz();
 	Some(CellBlock {
-		start_x: x * block_width,
-		start_y: y * block_height,
-		end_x: (x + 1) * block_width,
-		end_y: (y + 1) * block_height,
+		start_x: x.checked_mul(block_width)?,
+		start_y: y.checked_mul(block_height)?,
+		end_x: x.checked_add(1)?.checked_mul(block_width)?,
+		end_y: y.checked_add(1)?.checked_mul(block_height)?,
 	})
 }
 
 /// Dimensions of the multiproof grid. These are guarenteed to cleanly divide `grid_dims`.
 /// `target_dims` must cleanly divide `grid_dims`.
 pub fn multiproof_dims(grid_dims: &Dimensions, target_dims: &Dimensions) -> Option<Dimensions> {
-	let target_width = core::cmp::min(grid_dims.width(), target_dims.width());
-	let target_height = core::cmp::min(grid_dims.height(), target_dims.height());
+	let target_width = grid_dims.width_nz().min(target_dims.width_nz());
+	let target_height = grid_dims.height_nz().min(target_dims._nz());
 	if grid_dims.width() % target_width != 0 || grid_dims.height() % target_height != 0 {
 		return None;
 	}
@@ -347,9 +351,12 @@ pub fn get_block_dims(
 		let current_width = n_scalars;
 		// Don't let the width get lower than the minimum provided
 		let width = core::cmp::max(round_up_power_of_2(current_width), min_width);
-		Ok(Dimensions::new(width, 1))
+		Ok(Dimensions::new(
+			width.try_into().map_err(|_| Error::ZeroDimension)?,
+			1.try_into().expect("1 is nonzero"),
+		))
 	} else {
-		let width = max_width;
+		let width = NonZeroUsize::new(max_width).ok_or(Error::ZeroDimension)?;
 		let current_height = round_up_to_multiple(n_scalars, width) / width;
 		// Round the height up to a power of 2 for ffts
 		let height = round_up_power_of_2(current_height);
@@ -357,13 +364,16 @@ pub fn get_block_dims(
 		if height > max_height {
 			return Err(Error::BlockTooBig);
 		}
-		Ok(Dimensions::new(width, height))
+		Ok(Dimensions::new(
+			width,
+			height.try_into().map_err(|_| Error::ZeroDimension)?,
+		))
 	}
 }
 
-fn round_up_to_multiple(input: usize, multiple: usize) -> usize {
-	let n_multiples = (input + multiple - 1) / multiple;
-	n_multiples * multiple
+fn round_up_to_multiple(input: usize, multiple: NonZeroUsize) -> usize {
+	let n_multiples = input.saturating_add(multiple.get()).saturating_sub(1) / multiple;
+	n_multiples.saturating_mul(multiple.get())
 }
 
 fn pad_to_bls_scalar(a: impl AsRef<[u8]>) -> Result<BlsScalar, Error> {
@@ -377,6 +387,7 @@ fn pad_to_bls_scalar(a: impl AsRef<[u8]>) -> Result<BlsScalar, Error> {
 }
 
 // Round up. only valid for positive integers
+#[allow(clippy::integer_arithmetic)]
 fn round_up_power_of_2(mut v: usize) -> usize {
 	if v == 0 {
 		return 1;
@@ -388,18 +399,20 @@ fn round_up_power_of_2(mut v: usize) -> usize {
 	v |= v >> 8;
 	v |= v >> 16;
 	v += 1;
-	return v;
+	v
 }
 
 #[cfg(test)]
+#[allow(clippy::integer_arithmetic)]
 mod tests {
 	use super::*;
 	use proptest::{prop_assert_eq, proptest};
 	use test_case::test_case;
 
 	// parameters that will split a 256x256 grid into pieces of size 4x16
-	const TARGET: Dimensions = Dimensions::new(64, 16);
-	const GRID: Dimensions = Dimensions::new(256, 256);
+	const TARGET: Dimensions = Dimensions::new_unchecked(64, 16);
+	const GRID: Dimensions = Dimensions::new_unchecked(256, 256);
+
 	fn cb(start_x: usize, start_y: usize, end_x: usize, end_y: usize) -> CellBlock {
 		CellBlock {
 			start_x,
@@ -431,8 +444,8 @@ mod tests {
 		target_h: usize,
 	) -> Option<(usize, usize)> {
 		multiproof_dims(
-			&Dimensions::new(grid_w, grid_h),
-			&Dimensions::new(target_w, target_h),
+			&Dimensions::new_unchecked(grid_w, grid_h),
+			&Dimensions::new_unchecked(target_w, target_h),
 		)
 		.map(|i| (i.width(), i.height()))
 	}
@@ -446,14 +459,14 @@ mod tests {
 		fn test_round_up_to_multiple(i in 1..1000usize, m in 1..32usize) {
 			for k in 0..m {
 				let a = i * m - k;
-				prop_assert_eq!(round_up_to_multiple(a, m), i * m)
+				prop_assert_eq!(round_up_to_multiple(a, m.try_into().unwrap()), i * m)
 			}
 		}
 
 		#[test]
 		fn test_convert_bls_scalar(input: [u8; 31]) {
 			use poly_multiproof::ark_serialize::CanonicalSerialize;
-			let dusk = pad_to_bls_scalar(&input).unwrap();
+			let dusk = pad_to_bls_scalar(input).unwrap();
 			let ark = convert_bls(&dusk);
 			let dusk_out = dusk.to_bytes();
 			let mut ark_out = [0u8; 32];
@@ -472,13 +485,13 @@ mod tests {
 		round_up_power_of_2(i)
 	}
 
-	#[test_case(0 => Dimensions::new(4,  1) ; "block size zero")]
-	#[test_case(1 => Dimensions::new(4,  1) ; "below minimum block size")]
-	#[test_case(10 => Dimensions::new(16, 1) ; "regular case")]
-	#[test_case(17 => Dimensions::new(32, 1) ; "minimum overhead after 512")]
-	#[test_case(256 => Dimensions::new(256, 1) ; "maximum cols")]
-	#[test_case(257 => Dimensions::new(256, 2) ; "two rows")]
-	#[test_case(256 * 256 => Dimensions::new(256, 256) ; "max block size")]
+	#[test_case(0 => Dimensions::new_unchecked(4,  1) ; "block size zero")]
+	#[test_case(1 => Dimensions::new_unchecked(4,  1) ; "below minimum block size")]
+	#[test_case(10 => Dimensions::new_unchecked(16, 1) ; "regular case")]
+	#[test_case(17 => Dimensions::new_unchecked(32, 1) ; "minimum overhead after 512")]
+	#[test_case(256 => Dimensions::new_unchecked(256, 1) ; "maximum cols")]
+	#[test_case(257 => Dimensions::new_unchecked(256, 2) ; "two rows")]
+	#[test_case(256 * 256 => Dimensions::new_unchecked(256, 256) ; "max block size")]
 	#[test_case(256 * 256 + 1 => panics "BlockTooBig" ; "too much data")]
 	fn test_get_block_dims(size: usize) -> Dimensions
 where {
@@ -533,7 +546,7 @@ mod consistency_tests {
 			.flat_map(|p| p.to_bytes())
 			.collect::<Vec<_>>();
 
-		assert_eq!(evals.dims, Dimensions::new(4, 2));
+		assert_eq!(evals.dims, Dimensions::new_unchecked(4, 2));
 		let expected_commitments = hex!("960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D");
 		assert_eq!(commits, expected_commitments);
 	}
@@ -574,7 +587,7 @@ mod consistency_tests {
 			},
 		];
 
-		let expected_dims = Dimensions::new(16, 1);
+		let expected_dims = Dimensions::new_unchecked(16, 1);
 		let evals =
 			EvaluationGrid::from_extrinsics(extrinsics, 4, 256, 256, Seed::default()).unwrap();
 
@@ -598,8 +611,8 @@ mod consistency_tests {
 
 		let data = evals
 			.evals
-			.inner
-			.into_iter()
+			.inner()
+			.iter()
 			.flat_map(|s| s.to_bytes())
 			.collect::<Vec<_>>();
 		assert_eq!(data, expected_data, "Data doesn't match the expected data");
@@ -629,38 +642,27 @@ mod consistency_tests {
 		.into_iter()
 		.map(|e| BlsScalar::from_bytes(e.as_slice().try_into().unwrap()).unwrap())
 		.collect::<Vec<_>>()
-		.as_column_major(4, 4)
+		.into_column_major(4, 4)
 		.unwrap()
-		.to_row_major()
-		.inner;
+		.to_row_major();
 
-		let block_dims = Dimensions::new(4, 2);
+		let block_dims = Dimensions::new_unchecked(4, 2);
 		let scalars = (0..=247)
 			.collect::<Vec<u8>>()
 			.chunks_exact(DATA_CHUNK_SIZE)
-			.flat_map(|chunk| pad_to_bls_scalar(chunk))
+			.flat_map(pad_to_bls_scalar)
 			.collect::<Vec<_>>();
 
 		let grid = EvaluationGrid {
 			lookup: DataLookup::default(),
 			evals: scalars
-				.as_row_major(block_dims.width(), block_dims.height())
+				.into_row_major(block_dims.width(), block_dims.height())
 				.unwrap(),
 			dims: block_dims,
 		};
 		let extend = grid.extend_columns(2).unwrap();
 
-		for i in 0..expected_result.len() {
-			let e = expected_result[i];
-			for j in 0..expected_result.len() {
-				let r = extend.evals.inner[j];
-				if e == r {
-					eprintln!("Eq: {} {}", i, j);
-				}
-			}
-		}
-
-		assert_eq!(extend.evals.inner, expected_result);
+		assert_eq!(extend.evals.inner(), expected_result.inner());
 	}
 
 	fn app_extrinsic_strategy() -> impl Strategy<Value = AppExtrinsic> {
@@ -735,15 +737,15 @@ mod consistency_tests {
 
 		let pp = pp();
 		let polys = grid.make_polynomial_grid().unwrap();
-		let commitments = polys.commitments(&pp.commit_key()).unwrap();
+		let commitments = polys.commitments(pp.commit_key()).unwrap();
 		let indices = (0..dims.width()).flat_map(|x| (0..dims.height()).map(move |y| (x, y))).collect::<Vec<_>>();
 
 		// Sample some number 10 of the indices, all is too slow for tests...
 		let mut rng = ChaChaRng::from_seed(RNG_SEED);
-		let sampled = Uniform::from(0..indices.len()).sample_iter(&mut rng).take(10).map(|i| indices[i].clone());
+		let sampled = Uniform::from(0..indices.len()).sample_iter(&mut rng).take(10).map(|i| indices[i]);
 		for (x, y) in sampled {
 			let cell = Cell { row: (y as u32).into(), col: (x as u32).into() };
-			let proof = polys.proof(&pp.commit_key(), &cell).unwrap();
+			let proof = polys.proof(pp.commit_key(), &cell).unwrap();
 			let mut content = [0u8; 80];
 			content[..48].copy_from_slice(&proof.to_bytes()[..]);
 			content[48..].copy_from_slice(&grid.evals.get(x, y).unwrap().to_bytes()[..]);
@@ -762,9 +764,9 @@ mod consistency_tests {
 		fn newapi_commitments_verify(ref exts in app_extrinsics_strategy())  {
 			//let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default()).unwrap();
 			let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 16, 64, Seed::default()).unwrap().extend_columns(2).unwrap();
-			let orig_dims = Dimensions::new(grid.dims.width(), grid.dims.height() / 2);
+			let orig_dims = Dimensions::new(grid.dims.width_nz(), (grid.dims.height() / 2).try_into().unwrap());
 			let polys = grid.make_polynomial_grid().unwrap();
-			let commits = polys.commitments(&pp().commit_key())
+			let commits = polys.commitments(pp().commit_key())
 				.unwrap()
 				.iter()
 				.map(|c| c.to_bytes())

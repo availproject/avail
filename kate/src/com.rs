@@ -1,3 +1,4 @@
+use core::num::{NonZeroU32, NonZeroUsize};
 use std::{
 	convert::{TryFrom, TryInto},
 	mem::size_of,
@@ -13,7 +14,7 @@ use dusk_plonk::{
 	fft::{EvaluationDomain, Evaluations},
 	prelude::{BlsScalar, CommitKey},
 };
-use kate_grid::{AsRowMajor, Extension};
+use kate_grid::{Dimensions, IntoRowMajor};
 #[cfg(feature = "std")]
 use kate_recovery::{com::app_specific_rows, index, matrix};
 use rand::{Rng, SeedableRng};
@@ -25,8 +26,8 @@ use static_assertions::const_assert_eq;
 
 use crate::{
 	config::{
-		DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE, MINIMUM_BLOCK_SIZE, PROOF_SIZE,
-		PROVER_KEY_SIZE, SCALAR_SIZE,
+		DATA_CHUNK_SIZE, EXTENSION, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE, MINIMUM_BLOCK_SIZE,
+		PROOF_SIZE, PROVER_KEY_SIZE, SCALAR_SIZE,
 	},
 	metrics::Metrics,
 	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed, LOG_TARGET,
@@ -54,6 +55,7 @@ pub enum Error {
 	BlockTooBig,
 	InvalidChunkLength,
 	DimensionsMismatch,
+	ZeroDimension,
 }
 
 impl From<PlonkError> for Error {
@@ -165,15 +167,23 @@ pub fn flatten_and_pad_block(
 	// Determine the block size after padding
 	let block_dims = get_block_dimensions(padded_block_len, max_rows, max_cols, chunk_size)?;
 
-	if !(padded_block.len() <= block_dims.size()) {
+	if padded_block.len() > block_dims.size() {
 		return Err(Error::BlockTooBig);
 	}
 
 	let mut rng = ChaChaRng::from_seed(rng_seed);
 
-	assert!((block_dims.size() - padded_block.len()) % block_dims.chunk_size as usize == 0);
+	assert!(
+		(block_dims.size().saturating_sub(padded_block.len()))
+			.checked_rem(block_dims.chunk_size as usize)
+			== Some(0)
+	);
+	let nz_chunk_size: NonZeroUsize = usize::try_from(block_dims.chunk_size)
+		.map_err(|_| Error::CellLenghtExceeded)?
+		.try_into()
+		.map_err(|_| Error::ZeroDimension)?;
 
-	for _ in 0..((block_dims.size() - padded_block.len()) / block_dims.chunk_size as usize) {
+	for _ in 0..(block_dims.size().saturating_sub(padded_block.len()) / nz_chunk_size) {
 		let rnd_values: DataChunk = rng.gen();
 		padded_block.append(&mut pad_with_zeroes(rnd_values.to_vec(), chunk_size));
 	}
@@ -188,7 +198,7 @@ pub fn get_block_dimensions(
 	chunk_size: u32,
 ) -> Result<BlockDimensions, Error> {
 	let max_block_dimensions = BlockDimensions::new(max_rows, max_cols, chunk_size);
-	if !(block_size as usize <= max_block_dimensions.size()) {
+	if block_size as usize > max_block_dimensions.size() {
 		return Err(Error::BlockTooBig);
 	}
 
@@ -207,8 +217,9 @@ pub fn get_block_dimensions(
 
 	// we must minimize number of rows, to minimize header size
 	// (performance wise it doesn't matter)
+	let nz_max_cols = NonZeroU32::new(max_cols.0).ok_or(Error::ZeroDimension)?;
 	let (cols, rows) = if total_cells > max_cols.0 {
-		(max_cols, BlockLengthRows(total_cells / max_cols.0))
+		(max_cols, BlockLengthRows(total_cells / nz_max_cols))
 	} else {
 		(total_cells.into(), 1.into())
 	};
@@ -265,6 +276,19 @@ pub fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 	BlsScalar::from_bytes(&scalar_size_chunk).map_err(|_| Error::CellLenghtExceeded)
 }
 
+fn make_dims(bd: &BlockDimensions) -> Result<Dimensions, Error> {
+	Ok(Dimensions::new(
+		bd.cols
+			.as_usize()
+			.try_into()
+			.map_err(|_| Error::ZeroDimension)?,
+		bd.rows
+			.as_usize()
+			.try_into()
+			.map_err(|_| Error::ZeroDimension)?,
+	))
+}
+
 /// Build extended data matrix, by columns.
 /// We are using dusk plonk for erasure coding,
 /// which is using roots of unity as evaluation domain for fft and ifft.
@@ -280,8 +304,8 @@ pub fn par_extend_data_matrix<M: Metrics>(
 	metrics: &M,
 ) -> Result<Vec<BlsScalar>, Error> {
 	let start = Instant::now();
-	let dims = kate_grid::Dimensions::new(block_dims.cols.0 as usize, block_dims.rows.0 as usize);
-	let extended_dims = dims.extend(Extension::height(2));
+	let dims = make_dims(&block_dims)?;
+	let extended_dims = dims.extend(EXTENSION);
 
 	// simple length with mod check would work...
 	let chunks = block.par_chunks_exact(block_dims.chunk_size as usize);
@@ -294,7 +318,7 @@ pub fn par_extend_data_matrix<M: Metrics>(
 		.collect::<Result<Vec<BlsScalar>, Error>>()?;
 
 	// The data is currently row-major, so we need to put it into column-major
-	let rm = scalars.as_row_major(dims.width(), dims.height()).unwrap();
+	let rm = scalars.into_row_major(dims.width(), dims.height()).unwrap();
 	let col_wise_scalars = rm.iter_column_wise().map(Clone::clone).collect::<Vec<_>>();
 
 	let mut chunk_elements = col_wise_scalars
@@ -327,8 +351,8 @@ pub fn build_proof<M: Metrics>(
 	cells: &[Cell],
 	metrics: &M,
 ) -> Result<Vec<u8>, Error> {
-	let dims = kate_grid::Dimensions::new(block_dims.cols.as_usize(), block_dims.rows.as_usize());
-	let extended_dims = dims.extend(Extension::height(EXTENSION_FACTOR as usize));
+	let dims = make_dims(&block_dims)?;
+	let extended_dims = dims.extend(EXTENSION);
 
 	const SPROOF_SIZE: usize = PROOF_SIZE + SCALAR_SIZE;
 
@@ -338,7 +362,7 @@ pub fn build_proof<M: Metrics>(
 	let row_eval_domain = EvaluationDomain::new(dims.width()).map_err(Error::from)?;
 	let row_dom_x_pts = row_eval_domain.elements().collect::<Vec<_>>();
 
-	let mut result_bytes: Vec<u8> = vec![0u8; SPROOF_SIZE * cells.len()];
+	let mut result_bytes: Vec<u8> = vec![0u8; SPROOF_SIZE.saturating_mul(cells.len())];
 
 	let prover_key = &prover_key;
 	let row_dom_x_pts = &row_dom_x_pts;
@@ -365,7 +389,10 @@ pub fn build_proof<M: Metrics>(
 				// construct polynomial per extended matrix row
 				let row = (0..extended_dims.width())
 					.into_par_iter()
-					.map(|j| ext_data_matrix[r_index + j * extended_dims.height()])
+					.map(|j| {
+						ext_data_matrix
+							[r_index.saturating_add(j.saturating_mul(extended_dims.height()))]
+					})
 					.collect::<Vec<BlsScalar>>();
 				//let row = ext_data_matrix_cm
 				//	.iter_row(r_index)
@@ -379,8 +406,8 @@ pub fn build_proof<M: Metrics>(
 				let witness = prover_key.compute_single_witness(&poly, &row_dom_x_pts[c_index]);
 				match prover_key.commit(&witness) {
 					Ok(commitment_to_witness) => {
-						let evaluated_point =
-							ext_data_matrix[r_index + c_index * extended_dims.height()];
+						let evaluated_point = ext_data_matrix[r_index
+							.saturating_add(c_index.saturating_mul(extended_dims.height()))];
 
 						res[0..PROOF_SIZE].copy_from_slice(&commitment_to_witness.to_bytes());
 						res[PROOF_SIZE..].copy_from_slice(&evaluated_point.to_bytes());
@@ -480,9 +507,9 @@ fn row(
 	extended_rows: BlockLengthRows,
 ) -> Vec<BlsScalar> {
 	let mut row = Vec::with_capacity(cols.as_usize());
-	(0..cols.as_usize() * extended_rows.as_usize())
+	(0..cols.as_usize().saturating_mul(extended_rows.as_usize()))
 		.step_by(extended_rows.as_usize())
-		.for_each(|idx| row.push(matrix[i + idx]));
+		.for_each(|idx| row.push(matrix[i.saturating_add(idx)]));
 
 	row
 }
@@ -709,7 +736,7 @@ mod tests {
 
 		const RNG_SEED: Seed = [42u8; 32];
 		matrix
-			.chunks_exact(dimensions.rows.as_usize() * 2)
+			.chunks_exact(dimensions.rows.as_usize().saturating_mul(2))
 			.enumerate()
 			.map(|(col, e)| (col as u16, e))
 			.flat_map(|(col, e)| {
@@ -1179,7 +1206,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			})
 			.collect::<Vec<_>>();
 
-		assert_eq!(row.len(), len as usize);
+		assert_eq!(row.len(), len);
 		let mut result_bytes: Vec<u8> = vec![0u8; config::COMMITMENT_SIZE];
 		commit(&prover_key, row_eval_domain, row.clone(), &mut result_bytes).unwrap();
 		println!("Commitment: {result_bytes:?}");
