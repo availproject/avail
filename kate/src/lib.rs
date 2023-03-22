@@ -51,6 +51,7 @@ pub mod config {
 #[cfg(feature = "std")]
 pub mod testnet {
 	use super::{BlockLengthColumns, PublicParameters};
+	use hex_literal::hex;
 	use once_cell::sync::Lazy;
 	use poly_multiproof::ark_ff::{BigInt, Fp};
 	use poly_multiproof::ark_serialize::CanonicalDeserialize;
@@ -80,18 +81,8 @@ pub mod testnet {
 		15693365399533249662,
 		1020900941429372507,
 	];
-	const G1_BYTES: [u8; 48] = [
-		164, 95, 117, 74, 158, 148, 204, 203, 178, 203, 233, 215, 196, 65, 184, 181, 39, 2, 110,
-		240, 94, 42, 58, 255, 74, 164, 187, 28, 87, 223, 55, 103, 251, 102, 156, 196, 199, 99, 155,
-		211, 126, 104, 54, 83, 189, 197, 11, 90,
-	];
-	const G2_BYTES: [u8; 96] = [
-		184, 69, 172, 94, 123, 78, 200, 84, 29, 1, 38, 96, 39, 103, 114, 224, 1, 193, 224, 71, 94,
-		96, 151, 24, 132, 72, 29, 67, 252, 189, 68, 222, 42, 2, 233, 134, 45, 191, 159, 83, 108,
-		33, 24, 20, 246, 204, 84, 72, 16, 11, 205, 165, 220, 112, 120, 84, 175, 142, 56, 41, 117,
-		13, 31, 177, 139, 18, 114, 134, 170, 164, 252, 149, 158, 115, 46, 33, 40, 168, 163, 21,
-		242, 248, 244, 25, 191, 87, 116, 254, 4, 58, 244, 111, 187, 235, 75, 39,
-	];
+	const G1_BYTES: [u8; 48] = hex!("a45f754a9e94cccbb2cbe9d7c441b8b527026ef05e2a3aff4aa4bb1c57df3767fb669cc4c7639bd37e683653bdc50b5a");
+	const G2_BYTES: [u8; 96] = hex!("b845ac5e7b4ec8541d012660276772e001c1e0475e60971884481d43fcbd44de2a02e9862dbf9f536c211814f6cc5448100bcda5dc707854af8e3829750d1fb18b127286aaa4fc959e732e2128a8a315f2f8f419bf5774fe043af46fbbeb4b27");
 
 	pub fn multiproof_params(max_degree: usize, max_pts: usize) -> m1_blst::M1NoPrecomp {
 		let x: Fr = Fp(BigInt(SEC_LIMBS), core::marker::PhantomData);
@@ -127,10 +118,8 @@ pub mod testnet {
 			let x: Fr = Fp(BigInt(SEC_LIMBS), core::marker::PhantomData);
 			let mut out = [0u8; 32];
 			x.serialize_compressed(&mut out[..]).unwrap();
-			const SEC_BYTES: [u8; 32] = [
-				120, 72, 181, 215, 17, 188, 152, 131, 153, 99, 23, 163, 249, 201, 2, 105, 213, 103,
-				113, 0, 93, 84, 10, 25, 24, 73, 57, 201, 232, 208, 219, 42,
-			];
+			const SEC_BYTES: [u8; 32] =
+				hex!("7848b5d711bc9883996317a3f9c90269d56771005d540a19184939c9e8d0db2a");
 			assert_eq!(SEC_BYTES, out);
 
 			let g1 = G1::deserialize_compressed(&G1_BYTES[..]).unwrap();

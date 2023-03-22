@@ -318,11 +318,13 @@ pub fn par_extend_data_matrix<M: Metrics>(
 		.collect::<Result<Vec<BlsScalar>, Error>>()?;
 
 	// The data is currently row-major, so we need to put it into column-major
-	let rm = scalars.into_row_major(dims.width(), dims.height()).unwrap();
+	let rm = scalars
+		.into_row_major(dims.width(), dims.height())
+		.ok_or(Error::DimensionsMismatch)?;
 	let col_wise_scalars = rm.iter_column_wise().map(Clone::clone).collect::<Vec<_>>();
 
 	let mut chunk_elements = col_wise_scalars
-		.chunks_exact(dims.height())
+		.chunks_exact(dims.height_nz().get())
 		.flat_map(|column| extend_column_with_zeros(column, extended_dims.height()))
 		.collect::<Vec<BlsScalar>>();
 
