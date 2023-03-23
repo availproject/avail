@@ -6,7 +6,7 @@ use parity_util_mem::{MallocSizeOf, MallocSizeOfOps};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::traits::Zero;
+use sp_runtime::traits::{SignedExtension, Zero};
 use sp_std::vec::Vec;
 
 mod data_lookup;
@@ -74,6 +74,18 @@ impl From<Vec<u8>> for AppExtrinsic {
 		Self {
 			data,
 			app_id: <_>::default(),
+		}
+	}
+}
+
+impl<A: Encode, C: Encode, S: Encode, E> From<AppUncheckedExtrinsic<A, C, S, E>> for AppExtrinsic
+where
+	E: SignedExtension + GetAppId,
+{
+	fn from(app_ext: AppUncheckedExtrinsic<A, C, S, E>) -> Self {
+		Self {
+			app_id: app_ext.app_id(),
+			data: app_ext.encode(),
 		}
 	}
 }
