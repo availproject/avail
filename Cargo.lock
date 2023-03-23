@@ -1572,6 +1572,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "kate",
+ "log",
  "pallet-balances",
  "pallet-transaction-payment",
  "parity-scale-codec 3.4.0",
@@ -1587,8 +1588,8 @@ dependencies = [
 
 [[package]]
 name = "da-primitives"
-version = "0.4.4"
-source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.4#3de909c9bbe5926b282f597959e806dbff684d48"
+version = "0.4.5"
+source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.5#eea185bf562fb24797f3fe5ba48481486da40854"
 dependencies = [
  "beefy-merkle-tree",
  "derive_more",
@@ -1747,6 +1748,7 @@ dependencies = [
  "jsonrpsee",
  "kate",
  "kate-rpc",
+ "kate-rpc-runtime-api",
  "log",
  "lru 0.7.8",
  "mmr-rpc",
@@ -3868,7 +3870,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.7.0"
-source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.4#3de909c9bbe5926b282f597959e806dbff684d48"
+source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.5#eea185bf562fb24797f3fe5ba48481486da40854"
 dependencies = [
  "da-primitives",
  "derive_more",
@@ -3895,7 +3897,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.8.0"
-source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.4#3de909c9bbe5926b282f597959e806dbff684d48"
+source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.5#eea185bf562fb24797f3fe5ba48481486da40854"
 dependencies = [
  "dusk-bytes",
  "dusk-plonk",
@@ -3915,25 +3917,20 @@ version = "0.2.0"
 dependencies = [
  "avail-base",
  "da-primitives",
+ "da-runtime",
  "frame-support",
  "frame-system",
- "frame-system-rpc-runtime-api",
  "jsonrpsee",
  "kate",
  "kate-recovery",
  "kate-rpc-runtime-api",
  "lru 0.7.8",
  "parity-scale-codec 3.4.0",
- "rs_merkle",
  "sc-client-api",
  "sc-client-db",
  "sp-api",
  "sp-blockchain",
- "sp-core",
- "sp-rpc",
  "sp-runtime",
- "sp-std 5.0.0",
- "thiserror",
 ]
 
 [[package]]
@@ -5074,7 +5071,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.3"
-source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.4#3de909c9bbe5926b282f597959e806dbff684d48"
+source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.5#eea185bf562fb24797f3fe5ba48481486da40854"
 dependencies = [
  "ethers-signers",
  "frame-support",
@@ -5093,7 +5090,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.3"
-source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.4#3de909c9bbe5926b282f597959e806dbff684d48"
+source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.5#eea185bf562fb24797f3fe5ba48481486da40854"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -5140,7 +5137,7 @@ dependencies = [
 [[package]]
 name = "nomad-merkle"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.4#3de909c9bbe5926b282f597959e806dbff684d48"
+source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.5#eea185bf562fb24797f3fe5ba48481486da40854"
 dependencies = [
  "frame-support",
  "hex-literal",
@@ -5161,7 +5158,7 @@ dependencies = [
 [[package]]
 name = "nomad-signature"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.4#3de909c9bbe5926b282f597959e806dbff684d48"
+source = "git+https://github.com/maticnetwork/avail-core?tag=da-primitives/v0.4.5#eea185bf562fb24797f3fe5ba48481486da40854"
 dependencies = [
  "elliptic-curve",
  "ethers-core",
