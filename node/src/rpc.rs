@@ -204,8 +204,7 @@ where
 
 	io.merge(StateMigration::new(client.clone(), backend, deny_unsafe).into_rpc())?;
 
-	let kate = Kate::<C, Block>::new(client);
-	io.merge(kate.into_rpc())?;
+	io.merge(Kate::<C, Block>::new(client).into_rpc())?;
 
 	Ok(io)
 }
