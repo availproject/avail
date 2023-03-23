@@ -1,3 +1,6 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+extern crate alloc;
+use alloc::vec::Vec;
 use derive_more::{Add, Constructor, Deref, Display, From, Into, Mul};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;

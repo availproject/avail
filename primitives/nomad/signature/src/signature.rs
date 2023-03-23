@@ -68,6 +68,7 @@ pub struct Signature {
 	pub v: u64,
 }
 
+#[cfg(feature = "std")]
 impl fmt::Display for Signature {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		let sig = <[u8; 65]>::from(self);
@@ -189,6 +190,7 @@ impl<'a> TryFrom<&'a [u8]> for Signature {
 	}
 }
 
+#[cfg(feature = "std")]
 impl FromStr for Signature {
 	type Err = SignatureError;
 
