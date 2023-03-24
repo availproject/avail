@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, sync::Arc, vec};
+use std::{marker::PhantomData, num::NonZeroUsize, sync::Arc, vec};
 
 use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
 use da_primitives::{
@@ -267,7 +267,10 @@ where
 			));
 		}
 
-		let orig_dims = Dimensions::new(grid.evals.dims.width(), grid.evals.dims.height() / 2);
+		let orig_height = NonZeroUsize::new(grid.evals.dims.height() / 2).ok_or(internal_err!(
+			"Extended grid has height 1? This should never happen"
+		))?;
+		let orig_dims = Dimensions::new(grid.evals.dims.width_nz(), orig_height);
 
 		let rows = grid
 			.evals
@@ -382,12 +385,15 @@ where
 		let block = self.get_signed_block(at)?;
 		let grid = self.get_grid(&block)?;
 
-		const TARGET_DIMS: Dimensions = Dimensions::new(16, 64);
+		let target_dims = Dimensions::new(
+			NonZeroUsize::new(16).expect("16>0"),
+			NonZeroUsize::new(64).expect("64>0"),
+		);
 		let multiproofs = cells
 			.iter()
 			.map(|cell| {
 				grid.polys
-					.multiproof(&self.multiproof_srs, cell, &grid.evals, &TARGET_DIMS)
+					.multiproof(&self.multiproof_srs, cell, &grid.evals, &target_dims)
 					.map_err(|e| internal_err!("Error building multiproof {:?}", e))
 			})
 			.collect::<Result<Vec<_>, _>>()?;

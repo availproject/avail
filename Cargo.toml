@@ -26,15 +26,15 @@ frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 
 # Polygon Primitives
-da-primitives = { version = "0.4", git="https://github.com/maticnetwork/avail-core",  rev = "30bbd77c4ec4a6f552b1cd890df7e33f573cbd77" } 
-kate = { version = "0.7", git="https://github.com/maticnetwork/avail-core",  rev = "30bbd77c4ec4a6f552b1cd890df7e33f573cbd77" }
-kate-recovery = { version = "0.8", git="https://github.com/maticnetwork/avail-core",  rev = "30bbd77c4ec4a6f552b1cd890df7e33f573cbd77" }
+da-primitives = { version = "0.4", git="https://github.com/maticnetwork/avail-core",  rev = "01cf7c7f6faa83bad0ed87e54594b8f2bd267f6e" } 
+kate = { version = "0.7", git="https://github.com/maticnetwork/avail-core",  rev = "01cf7c7f6faa83bad0ed87e54594b8f2bd267f6e" }
+kate-recovery = { version = "0.8", git="https://github.com/maticnetwork/avail-core",  rev = "01cf7c7f6faa83bad0ed87e54594b8f2bd267f6e" }
 
 # Nomad
-nomad-signature = { version = "0.1", git="https://github.com/maticnetwork/avail-core", tag = "da-primitives/v0.4.4" }
-nomad-merkle = { version = "0.1", git="https://github.com/maticnetwork/avail-core", tag = "da-primitives/v0.4.4" }
-nomad-base = { version = "0.1", git="https://github.com/maticnetwork/avail-core", tag = "da-primitives/v0.4.4" }
-nomad-core = { version = "0.1", git="https://github.com/maticnetwork/avail-core", tag = "da-primitives/v0.4.4" }
+nomad-signature = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "01cf7c7f6faa83bad0ed87e54594b8f2bd267f6e" }
+nomad-merkle = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "01cf7c7f6faa83bad0ed87e54594b8f2bd267f6e" }
+nomad-base = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "01cf7c7f6faa83bad0ed87e54594b8f2bd267f6e" }
+nomad-core = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "01cf7c7f6faa83bad0ed87e54594b8f2bd267f6e" }
 
 # Other stuff
 uint = { git = "https://github.com/paritytech/parity-common.git", tag="rlp-v0.5.2" }

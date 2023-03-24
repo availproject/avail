@@ -7,15 +7,15 @@ edition = "2021"
 
 [dependencies]
 sp-api = { version = "4.0.0-dev", default-features = false }
-frame-system = { version = "4.0.0-dev", default-features = false }
+frame-system = { version = "4.0.0-dev" }
 frame-support = { version = "4.0.0-dev", default-features = false }
-kate-rpc-runtime-api = { path = "../kate-rpc-runtime-api", default-features = false }
+kate-rpc-runtime-api = { path = "../kate-rpc-runtime-api" }
 sc-client-db = { version = "0.10.0-dev", default-features = false }
 moka = "0.10"
 
 codec = { package = "parity-scale-codec", version = "3" }
-da-primitives = { version = "0.4", default-features = false }
-kate = { version = "0.7", default-features = false }
+da-primitives = { version = "0.4" }
+kate = { version = "0.7" }
 dusk-bytes = { version = "*" } # TODO: fix, maybe re-export from kate
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
 serde = {version = "1.0", features = ["derive"]}
