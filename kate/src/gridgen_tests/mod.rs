@@ -6,6 +6,8 @@ use proptest::{collection, prelude::*, sample::size_range};
 use crate::testnet;
 
 mod commitments;
+mod formatting;
+mod reconstruction;
 
 pub(crate) fn pp() -> PublicParameters {
 	testnet::public_params(da_types::BlockLengthColumns(256))
