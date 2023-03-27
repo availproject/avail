@@ -20,6 +20,9 @@ use crate::{
 	Seed,
 };
 
+#[cfg(test)]
+mod tests;
+
 pub struct EvaluationGrid {
 	pub lookup: DataLookup,
 	pub evals: RowMajor<BlsScalar>,
@@ -404,7 +407,7 @@ fn round_up_power_of_2(mut v: usize) -> usize {
 
 #[cfg(test)]
 #[allow(clippy::integer_arithmetic)]
-mod tests {
+mod unit_tests {
 	use super::*;
 	use proptest::{prop_assert_eq, proptest};
 	use test_case::test_case;

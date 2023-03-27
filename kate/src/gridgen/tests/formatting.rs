@@ -6,8 +6,6 @@ use hex_literal::hex;
 
 use crate::{gridgen::EvaluationGrid, Seed, config::DATA_CHUNK_SIZE};
 
-
-
 #[test]
 fn newapi_test_flatten_block() {
 	let extrinsics: Vec<AppExtrinsic> = vec![

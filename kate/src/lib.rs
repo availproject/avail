@@ -164,9 +164,6 @@ pub mod com;
 #[cfg(feature = "std")]
 pub mod gridgen;
 
-#[cfg(test)]
-mod gridgen_tests;
-
 /// Precalculate the length of padding IEC 9797 1.
 ///
 /// # NOTE

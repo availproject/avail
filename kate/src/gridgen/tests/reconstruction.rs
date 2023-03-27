@@ -1,6 +1,6 @@
 use crate::com::Cell;
 use crate::gridgen::EvaluationGrid;
-use crate::gridgen_tests::{app_data_index_from_lookup, pp};
+use super::{app_data_index_from_lookup, pp};
 use crate::Seed;
 use dusk_bytes::Serializable;
 use kate_grid::Grid;
