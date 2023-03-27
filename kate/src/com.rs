@@ -309,7 +309,7 @@ pub fn par_extend_data_matrix<M: Metrics>(
 
 	// simple length with mod check would work...
 	let chunks = block.par_chunks_exact(block_dims.chunk_size as usize);
-    if chunks.remainder().is_empty() {
+    if !chunks.remainder().is_empty() {
         return Err(Error::DimensionsMismatch);
     }
 
