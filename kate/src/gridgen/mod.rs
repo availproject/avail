@@ -5,7 +5,7 @@ use da_types::{AppExtrinsic, AppId, DataLookup, DataLookupIndexItem};
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	commitment_scheme::kzg10::commitment::Commitment,
-	fft::{EvaluationDomain, Polynomial},
+	fft::{EvaluationDomain, Evaluations, Polynomial},
 	prelude::{BlsScalar, CommitKey},
 };
 use kate_grid::{Dimensions, Extension, Grid, IntoColumnMajor, IntoRowMajor, RowMajor};
@@ -158,14 +158,13 @@ impl EvaluationGrid {
 		let new_dims = self.dims.extend(Extension::height(
 			extension_factor
 				.try_into()
-				.map_err(|_| Error::CellLenghtExceeded)?,
+				.map_err(|_| Error::CellLengthExceeded)?,
 		));
 
 		let domain = EvaluationDomain::new(self.dims.height())?;
 		let domain_new = EvaluationDomain::new(new_dims.height())?;
 		if domain_new.size() != new_dims.height() {
-			// TODO: throw a reasonable error
-			return Err(Error::CellLenghtExceeded);
+			return Err(Error::DomainSizeInalid);
 		}
 
 		let new_evals = self
@@ -201,8 +200,8 @@ impl EvaluationGrid {
 			inner: self
 				.evals
 				.rows()
-				.map(|(_, row)| Polynomial {
-					coeffs: domain.ifft(row),
+				.map(|(_, row)| {
+					Evaluations::from_vec_and_domain(row.to_vec(), domain).interpolate()
 				})
 				.collect::<Vec<_>>(),
 		})
@@ -226,15 +225,14 @@ impl PolynomialGrid {
 	pub fn commitment(&self, srs: &CommitKey, row: usize) -> Result<Commitment, Error> {
 		self.inner
 			.get(row)
-			.ok_or(Error::CellLenghtExceeded)
+			.ok_or(Error::CellLengthExceeded)
 			.and_then(|poly| srs.commit(poly).map_err(Error::PlonkError))
 	}
 
 	pub fn proof(&self, srs: &CommitKey, cell: &Cell) -> Result<Commitment, Error> {
 		let x = cell.col.0 as usize;
 		let y = cell.row.0 as usize;
-		// TODO: better error msg
-		let poly = self.inner.get(y).ok_or(Error::CellLenghtExceeded)?;
+		let poly = self.inner.get(y).ok_or(Error::CellLengthExceeded)?;
 		let witness = srs.compute_single_witness(poly, &self.points[x]);
 		Ok(srs.commit(&witness)?)
 	}
@@ -247,14 +245,13 @@ impl PolynomialGrid {
 		target_dims: &Dimensions,
 	) -> Result<Multiproof, Error> {
 		use poly_multiproof::traits::PolyMultiProofNoPrecomp;
-		// TODO: useful error
 		let block = multiproof_block(
 			cell.col.0 as usize,
 			cell.row.0 as usize,
 			&self.dims,
 			target_dims,
 		)
-		.ok_or(Error::CellLenghtExceeded)?;
+		.ok_or(Error::CellLengthExceeded)?;
 		let polys = self.inner[block.start_y..block.end_y]
 			.iter()
 			.map(|s| s.coeffs.iter().map(convert_bls).collect::<Vec<_>>())
@@ -271,12 +268,12 @@ impl PolynomialGrid {
 			.iter()
 			.map(convert_bls)
 			.collect::<Vec<_>>();
-		//let eval_slices = eval_grid.evals.rows().map(|(_, row)| &row[]).collect::<Vec<_>>();
 
 		let mut ts = Transcript::new(b"avail-mp");
 		let proof = srs
 			.open(&mut ts, &evals, &polys, points)
-			.expect("TODO: real error msg");
+			.map_err(Error::MultiproofError)?;
+
 		Ok(Multiproof {
 			proof,
 			evals,
@@ -381,12 +378,11 @@ fn round_up_to_multiple(input: usize, multiple: NonZeroUsize) -> usize {
 
 pub(crate) fn pad_to_bls_scalar(a: impl AsRef<[u8]>) -> Result<BlsScalar, Error> {
 	if a.as_ref().len() > DATA_CHUNK_SIZE {
-		todo!()
+		return Err(Error::InvalidChunkLength);
 	}
 	let mut buf = [0u8; BlsScalar::SIZE];
 	buf[0..a.as_ref().len()].copy_from_slice(a.as_ref());
-	//TODO: better error type
-	BlsScalar::from_bytes(&buf).map_err(|_| Error::CellLenghtExceeded)
+	BlsScalar::from_bytes(&buf).map_err(Error::DuskBytesError)
 }
 
 // Round up. only valid for positive integers

@@ -50,12 +50,15 @@ impl Cell {
 #[derive(Debug)]
 pub enum Error {
 	PlonkError(PlonkError),
-	CellLenghtExceeded,
+    DuskBytesError(dusk_bytes::Error),
+    MultiproofError(poly_multiproof::Error),
+	CellLengthExceeded,
 	BadHeaderHash,
 	BlockTooBig,
 	InvalidChunkLength,
 	DimensionsMismatch,
 	ZeroDimension,
+    DomainSizeInalid,
 }
 
 impl From<PlonkError> for Error {
@@ -179,7 +182,7 @@ pub fn flatten_and_pad_block(
 			== Some(0)
 	);
 	let nz_chunk_size: NonZeroUsize = usize::try_from(block_dims.chunk_size)
-		.map_err(|_| Error::CellLenghtExceeded)?
+		.map_err(|_| Error::CellLengthExceeded)?
 		.try_into()
 		.map_err(|_| Error::ZeroDimension)?;
 
@@ -273,7 +276,7 @@ pub fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 	// TODO: Better error type for BlsScalar case?
 	let scalar_size_chunk =
 		<[u8; SCALAR_SIZE]>::try_from(chunk).map_err(|_| Error::InvalidChunkLength)?;
-	BlsScalar::from_bytes(&scalar_size_chunk).map_err(|_| Error::CellLenghtExceeded)
+	BlsScalar::from_bytes(&scalar_size_chunk).map_err(|_| Error::CellLengthExceeded)
 }
 
 fn make_dims(bd: &BlockDimensions) -> Result<Dimensions, Error> {
@@ -594,6 +597,7 @@ mod tests {
 	#[test_case(8224, 256, 256 => BlockDimensions::new(2, 256, 32) ; "two rows")]
 	#[test_case(2097152, 256, 256 => BlockDimensions::new(256, 256, 32) ; "max block size")]
 	#[test_case(2097155, 256, 256 => panics "BlockTooBig" ; "too much data")]
+    // newapi done
 	fn test_get_block_dimensions<R, C>(size: u32, rows: R, cols: C) -> BlockDimensions
 	where
 		R: Into<BlockLengthRows>,
@@ -602,6 +606,7 @@ mod tests {
 		get_block_dimensions(size, rows.into(), cols.into(), 32).unwrap()
 	}
 
+    // newapi done
 	#[test]
 	fn test_extend_data_matrix() {
 		let expected_result = vec![
@@ -651,6 +656,7 @@ mod tests {
 	#[test_case( 1..=32 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20800000000000000000000000000000000000000000000000000000000000" ; "Chunk same size")]
 	#[test_case( 1..=33 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20218000000000000000000000000000000000000000000000000000000000" ; "Chunk 1 value longer")]
 	#[test_case( 1..=34 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20212280000000000000000000000000000000000000000000000000000000" ; "Chunk 2 value longer")]
+    // newapi ignore 
 	fn test_padding<I: Iterator<Item = u8>>(block: I) -> String {
 		let padded = pad_iec_9797_1(block.collect())
 			.iter()
@@ -660,6 +666,7 @@ mod tests {
 		hex::encode(padded)
 	}
 
+    // newapi done
 	#[test]
 	fn test_flatten_block() {
 		let chunk_size = 32;
@@ -797,6 +804,7 @@ mod tests {
 	proptest! {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
+    // newapi done
 	fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy())  {
 		let metrics = IgnoreMetrics {};
 		let (layout, commitments, dims, matrix) = par_build_commitments(
@@ -834,6 +842,7 @@ mod tests {
 	proptest! {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
+    // newapi done
 	fn test_commitments_verify(ref xts in app_extrinsics_strategy())  {
 		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
 
@@ -852,6 +861,7 @@ mod tests {
 	proptest! {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
+    // newapi done
 	fn verify_commitmnets_missing_row(ref xts in app_extrinsics_strategy())  {
 		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
 
@@ -871,6 +881,7 @@ mod tests {
 
 	#[test]
 	// Test build_commitments() function with a predefined input
+    // newapi done
 	fn test_build_commitments_simple_commitment_check() {
 		let block_rows = BlockLengthRows(256);
 		let block_cols = BlockLengthColumns(256);
@@ -1206,6 +1217,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 		assert_eq!(row.len(), len);
 		let mut result_bytes: Vec<u8> = vec![0u8; config::COMMITMENT_SIZE];
+        println!("Row: {:?}", row);
 		commit(&prover_key, row_eval_domain, row.clone(), &mut result_bytes).unwrap();
 		println!("Commitment: {result_bytes:?}");
 

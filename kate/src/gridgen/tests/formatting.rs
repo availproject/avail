@@ -1,10 +1,10 @@
-use da_types::{AppExtrinsic, DataLookupIndexItem, DataLookup};
+use da_types::{AppExtrinsic, DataLookup, DataLookupIndexItem};
 use dusk_bytes::Serializable;
 use dusk_plonk::prelude::BlsScalar;
-use kate_grid::{Dimensions, Grid, IntoColumnMajor, IntoRowMajor};
 use hex_literal::hex;
+use kate_grid::{Dimensions, Grid, IntoColumnMajor, IntoRowMajor};
 
-use crate::{gridgen::EvaluationGrid, Seed, config::DATA_CHUNK_SIZE};
+use crate::{config::DATA_CHUNK_SIZE, gridgen::EvaluationGrid, Seed};
 
 #[test]
 fn newapi_test_flatten_block() {

@@ -139,6 +139,7 @@ pub fn reconstruct_app_extrinsics(
 	let data = reconstruct_available(dimensions, cells)?;
 	let ranges = index.app_data_ranges(app_id);
 
+    dbg!(&hex::encode(&data), &ranges);
 	Ok(unflatten_padded_data(ranges, data)
 		.map_err(ReconstructionError::DataDecodingError)?
 		.into_iter()
@@ -305,6 +306,7 @@ pub fn unflatten_padded_data(
 			data.pop();
 		}
 
+        dbg!(hex::encode(&data));
 		match data.pop() {
 			None => Err("Cannot trim padding on empty data".to_string()),
 			Some(config::PADDING_TAIL_VALUE) => Ok(data),
