@@ -112,12 +112,11 @@ get erasure coded to ensure redundancy."#;
 		},
 	];
 
-	let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 32, 4, Seed::default())
+	let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 4, 32, Seed::default())
 		.unwrap()
 		.extend_columns(2)
 		.unwrap();
 
-    dbg!(&grid.evals.inner());
 
 	let cols_1 = sample_cells(&grid, Some(&[0, 1, 2, 3]));
 

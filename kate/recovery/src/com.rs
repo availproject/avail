@@ -139,7 +139,6 @@ pub fn reconstruct_app_extrinsics(
 	let data = reconstruct_available(dimensions, cells)?;
 	let ranges = index.app_data_ranges(app_id);
 
-    dbg!(&hex::encode(&data), &ranges);
 	Ok(unflatten_padded_data(ranges, data)
 		.map_err(ReconstructionError::DataDecodingError)?
 		.into_iter()
