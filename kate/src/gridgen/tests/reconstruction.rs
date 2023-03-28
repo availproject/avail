@@ -1,13 +1,13 @@
 use super::{app_data_index_from_lookup, pp};
 use crate::com::Cell;
+use crate::gridgen::tests::sample_cells;
 use crate::gridgen::EvaluationGrid;
 use crate::Seed;
-use crate::gridgen::tests::sample_cells;
 use da_types::AppExtrinsic;
 use dusk_bytes::Serializable;
 use kate_grid::Grid;
 use kate_recovery::com::reconstruct_extrinsics;
-use kate_recovery::data::{Cell as DCell};
+use kate_recovery::data::Cell as DCell;
 use kate_recovery::matrix::Position as DPosition;
 use proptest::prelude::*;
 use rand::distributions::Uniform;
@@ -116,7 +116,6 @@ get erasure coded to ensure redundancy."#;
 		.unwrap()
 		.extend_columns(2)
 		.unwrap();
-
 
 	let cols_1 = sample_cells(&grid, Some(&[0, 1, 2, 3]));
 

@@ -50,15 +50,15 @@ impl Cell {
 #[derive(Debug)]
 pub enum Error {
 	PlonkError(PlonkError),
-    DuskBytesError(dusk_bytes::Error),
-    MultiproofError(poly_multiproof::Error),
+	DuskBytesError(dusk_bytes::Error),
+	MultiproofError(poly_multiproof::Error),
 	CellLengthExceeded,
 	BadHeaderHash,
 	BlockTooBig,
 	InvalidChunkLength,
 	DimensionsMismatch,
 	ZeroDimension,
-    DomainSizeInalid,
+	DomainSizeInalid,
 }
 
 impl From<PlonkError> for Error {
@@ -312,9 +312,9 @@ pub fn par_extend_data_matrix<M: Metrics>(
 
 	// simple length with mod check would work...
 	let chunks = block.par_chunks_exact(block_dims.chunk_size as usize);
-    if !chunks.remainder().is_empty() {
-        return Err(Error::DimensionsMismatch);
-    }
+	if !chunks.remainder().is_empty() {
+		return Err(Error::DimensionsMismatch);
+	}
 
 	let scalars = chunks
 		.into_par_iter()
@@ -597,7 +597,7 @@ mod tests {
 	#[test_case(8224, 256, 256 => BlockDimensions::new(2, 256, 32) ; "two rows")]
 	#[test_case(2097152, 256, 256 => BlockDimensions::new(256, 256, 32) ; "max block size")]
 	#[test_case(2097155, 256, 256 => panics "BlockTooBig" ; "too much data")]
-    // newapi done
+	// newapi done
 	fn test_get_block_dimensions<R, C>(size: u32, rows: R, cols: C) -> BlockDimensions
 	where
 		R: Into<BlockLengthRows>,
@@ -606,7 +606,7 @@ mod tests {
 		get_block_dimensions(size, rows.into(), cols.into(), 32).unwrap()
 	}
 
-    // newapi done
+	// newapi done
 	#[test]
 	fn test_extend_data_matrix() {
 		let expected_result = vec![
@@ -656,7 +656,7 @@ mod tests {
 	#[test_case( 1..=32 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20800000000000000000000000000000000000000000000000000000000000" ; "Chunk same size")]
 	#[test_case( 1..=33 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20218000000000000000000000000000000000000000000000000000000000" ; "Chunk 1 value longer")]
 	#[test_case( 1..=34 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20212280000000000000000000000000000000000000000000000000000000" ; "Chunk 2 value longer")]
-    // newapi ignore 
+	// newapi ignore
 	fn test_padding<I: Iterator<Item = u8>>(block: I) -> String {
 		let padded = pad_iec_9797_1(block.collect())
 			.iter()
@@ -666,7 +666,7 @@ mod tests {
 		hex::encode(padded)
 	}
 
-    // newapi done
+	// newapi done
 	#[test]
 	fn test_flatten_block() {
 		let chunk_size = 32;
@@ -804,7 +804,7 @@ mod tests {
 	proptest! {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
-    // newapi done
+	// newapi done
 	fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy())  {
 		let metrics = IgnoreMetrics {};
 		let (layout, commitments, dims, matrix) = par_build_commitments(
@@ -842,7 +842,7 @@ mod tests {
 	proptest! {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
-    // newapi done
+	// newapi done
 	fn test_commitments_verify(ref xts in app_extrinsics_strategy())  {
 		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
 
@@ -861,7 +861,7 @@ mod tests {
 	proptest! {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
-    // newapi done
+	// newapi done
 	fn verify_commitmnets_missing_row(ref xts in app_extrinsics_strategy())  {
 		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
 
@@ -881,7 +881,7 @@ mod tests {
 
 	#[test]
 	// Test build_commitments() function with a predefined input
-    // newapi done
+	// newapi done
 	fn test_build_commitments_simple_commitment_check() {
 		let block_rows = BlockLengthRows(256);
 		let block_cols = BlockLengthColumns(256);
@@ -915,7 +915,7 @@ mod tests {
 	}
 
 	#[test]
-    // newapi wip
+	// newapi wip
 	fn test_reconstruct_app_extrinsics_with_app_id() {
 		let app_id_1_data = br#""This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
 get erasure coded to ensure redundancy."#;
@@ -966,7 +966,7 @@ get erasure coded to ensure redundancy."#;
 	}
 
 	#[test]
-    // newapi done
+	// newapi done
 	fn test_decode_app_extrinsics() {
 		let app_id_1_data = br#""This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
 get erasure coded to ensure redundancy."#;
@@ -1022,7 +1022,7 @@ get erasure coded to ensure redundancy."#;
 	}
 
 	#[test]
-    // newapi done
+	// newapi done
 	fn test_extend_mock_data() {
 		let orig_data = br#"This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
 get erasure coded to ensure redundancy.
@@ -1056,7 +1056,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	}
 
 	#[test]
-    // newapi done
+	// newapi done
 	fn test_multiple_extrinsics_for_same_app_id() {
 		let xt1 = vec![5, 5];
 		let xt2 = vec![6, 6];
@@ -1096,7 +1096,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	}
 
 	#[test]
-    // newapi ignore
+	// newapi ignore
 	fn test_extrinsics_grouping() {
 		let xt1 = vec![5, 5];
 		let xt2 = vec![6, 6];
@@ -1157,7 +1157,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	}
 
 	#[test]
-    // newapi ignore
+	// newapi ignore
 	fn par_build_commitments_column_wise_constant_row() {
 		// This test will fail once we switch to row-wise orientation.
 		// We should move `should_panic` to next test, until constant line issue is fixed.
@@ -1182,7 +1182,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	}
 
 	#[test]
-    // newapi done
+	// newapi done
 	fn par_build_commitments_row_wise_constant_row() {
 		// Due to scale encoding, first line is not constant.
 		// We will use second line to ensure constant row.
@@ -1204,7 +1204,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	#[test_case( ([1,1,1,1]).to_vec(); "All values are non-zero but same")]
 	#[test_case( ([0,0,0,0]).to_vec(); "All values are zero")]
 	#[test_case( ([0,5,2,1]).to_vec(); "All values are different")]
-    // newapi done
+	// newapi done
 	fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 		// There are two main cases that generate a zero degree polynomial. One is for data that is non-zero, but the same.
 		// The other is for all-zero data. They differ, as the former yields a polynomial with one coefficient, and latter generates zero coefficients.
@@ -1225,7 +1225,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 		assert_eq!(row.len(), len);
 		let mut result_bytes: Vec<u8> = vec![0u8; config::COMMITMENT_SIZE];
-        println!("Row: {:?}", row);
+		println!("Row: {:?}", row);
 		commit(&prover_key, row_eval_domain, row.clone(), &mut result_bytes).unwrap();
 		println!("Commitment: {result_bytes:?}");
 
@@ -1271,7 +1271,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 	#[test_case( r#"{ "row": 42, "col": 99 }"# => Cell::new(42.into(),99.into()) ; "Simple" )]
 	#[test_case( r#"{ "row": 4294967295, "col": 99 }"# => Cell::new(4_294_967_295.into(),99.into()) ; "Max row" )]
-    // newapi ignore
+	// newapi ignore
 	fn serde_block_length_types_untagged(data: &str) -> Cell {
 		serde_json::from_str(data).unwrap()
 	}

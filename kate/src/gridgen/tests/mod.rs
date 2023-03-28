@@ -2,7 +2,7 @@ use da_types::{AppExtrinsic, DataLookup};
 use dusk_bytes::Serializable;
 use dusk_plonk::prelude::PublicParameters;
 use kate_grid::Grid;
-use kate_recovery::{index::AppDataIndex, data::DataCell};
+use kate_recovery::{data::DataCell, index::AppDataIndex};
 use proptest::{collection, prelude::*, sample::size_range};
 use rand::{distributions::Uniform, prelude::Distribution, SeedableRng};
 use rand_chacha::ChaChaRng;
@@ -77,4 +77,3 @@ fn sample_cells(grid: &EvaluationGrid, columns: Option<&[usize]>) -> Vec<DataCel
 		})
 		.collect::<Vec<_>>()
 }
-

@@ -305,7 +305,6 @@ pub fn unflatten_padded_data(
 			data.pop();
 		}
 
-        dbg!(hex::encode(&data));
 		match data.pop() {
 			None => Err("Cannot trim padding on empty data".to_string()),
 			Some(config::PADDING_TAIL_VALUE) => Ok(data),
