@@ -2,50 +2,18 @@ use super::{app_data_index_from_lookup, pp};
 use crate::com::Cell;
 use crate::gridgen::EvaluationGrid;
 use crate::Seed;
+use crate::gridgen::tests::sample_cells;
 use da_types::AppExtrinsic;
 use dusk_bytes::Serializable;
 use kate_grid::Grid;
 use kate_recovery::com::reconstruct_extrinsics;
-use kate_recovery::data::{Cell as DCell, DataCell};
+use kate_recovery::data::{Cell as DCell};
 use kate_recovery::matrix::Position as DPosition;
 use proptest::prelude::*;
 use rand::distributions::Uniform;
 use rand::prelude::Distribution;
 use rand::SeedableRng;
 use rand_chacha::ChaChaRng;
-
-fn sample_unique(rng: &mut impl Rng, n_samples: usize, n: usize) -> Vec<usize> {
-	let mut sampled = vec![];
-	let u = Uniform::from(0..n);
-	while sampled.len() < n_samples || sampled.len() < n {
-		let t = u.sample(rng);
-		if !sampled.contains(&t) {
-			sampled.push(t)
-		}
-	}
-	sampled
-}
-
-fn sample_cells(grid: &EvaluationGrid, columns: Option<&[usize]>) -> Vec<DataCell> {
-	let mut rng = ChaChaRng::from_seed([42u8; 32]);
-	let cols: Vec<usize> = match columns {
-		Some(cols) => cols.to_vec(),
-		None => (0..grid.dims.width()).into_iter().collect(),
-	};
-	cols.iter()
-		.flat_map(|x| {
-			sample_unique(&mut rng, grid.dims.height() / 2, grid.dims.height())
-				.into_iter()
-				.map(move |y| kate_recovery::data::DataCell {
-					position: kate_recovery::matrix::Position {
-						row: y as u32,
-						col: *x as u16,
-					},
-					data: grid.evals.get(*x, y).unwrap().to_bytes(),
-				})
-		})
-		.collect::<Vec<_>>()
-}
 
 #[test]
 fn test_multiple_extrinsics_for_same_app_id() {

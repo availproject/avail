@@ -915,6 +915,7 @@ mod tests {
 	}
 
 	#[test]
+    // newapi wip
 	fn test_reconstruct_app_extrinsics_with_app_id() {
 		let app_id_1_data = br#""This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
 get erasure coded to ensure redundancy."#;
@@ -965,6 +966,7 @@ get erasure coded to ensure redundancy."#;
 	}
 
 	#[test]
+    // newapi done
 	fn test_decode_app_extrinsics() {
 		let app_id_1_data = br#""This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
 get erasure coded to ensure redundancy."#;
@@ -1020,6 +1022,7 @@ get erasure coded to ensure redundancy."#;
 	}
 
 	#[test]
+    // newapi done
 	fn test_extend_mock_data() {
 		let orig_data = br#"This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
 get erasure coded to ensure redundancy.
@@ -1053,6 +1056,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	}
 
 	#[test]
+    // newapi done
 	fn test_multiple_extrinsics_for_same_app_id() {
 		let xt1 = vec![5, 5];
 		let xt2 = vec![6, 6];
@@ -1092,6 +1096,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	}
 
 	#[test]
+    // newapi ignore
 	fn test_extrinsics_grouping() {
 		let xt1 = vec![5, 5];
 		let xt2 = vec![6, 6];
@@ -1152,6 +1157,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	}
 
 	#[test]
+    // newapi ignore
 	fn par_build_commitments_column_wise_constant_row() {
 		// This test will fail once we switch to row-wise orientation.
 		// We should move `should_panic` to next test, until constant line issue is fixed.
@@ -1176,6 +1182,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	}
 
 	#[test]
+    // newapi done
 	fn par_build_commitments_row_wise_constant_row() {
 		// Due to scale encoding, first line is not constant.
 		// We will use second line to ensure constant row.
@@ -1197,6 +1204,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	#[test_case( ([1,1,1,1]).to_vec(); "All values are non-zero but same")]
 	#[test_case( ([0,0,0,0]).to_vec(); "All values are zero")]
 	#[test_case( ([0,5,2,1]).to_vec(); "All values are different")]
+    // newapi done
 	fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 		// There are two main cases that generate a zero degree polynomial. One is for data that is non-zero, but the same.
 		// The other is for all-zero data. They differ, as the former yields a polynomial with one coefficient, and latter generates zero coefficients.
@@ -1263,6 +1271,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 	#[test_case( r#"{ "row": 42, "col": 99 }"# => Cell::new(42.into(),99.into()) ; "Simple" )]
 	#[test_case( r#"{ "row": 4294967295, "col": 99 }"# => Cell::new(4_294_967_295.into(),99.into()) ; "Max row" )]
+    // newapi ignore
 	fn serde_block_length_types_untagged(data: &str) -> Cell {
 		serde_json::from_str(data).unwrap()
 	}
