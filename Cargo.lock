@@ -958,7 +958,7 @@ dependencies = [
 
 [[package]]
 name = "da-primitives"
-version = "0.4.4"
+version = "0.4.5"
 dependencies = [
  "beefy-merkle-tree",
  "da-types",

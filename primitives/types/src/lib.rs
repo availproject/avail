@@ -53,7 +53,7 @@ impl num_traits::Zero for AppId {
 	}
 }
 
-impl From<Vec<u8>> for AppExtrinsic {
+impl From<alloc::vec::Vec<u8>> for AppExtrinsic {
 	#[inline]
 	fn from(data: Vec<u8>) -> Self {
 		Self {

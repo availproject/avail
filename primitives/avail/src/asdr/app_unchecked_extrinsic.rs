@@ -34,6 +34,7 @@ use sp_runtime::{
 	OpaqueExtrinsic,
 };
 use sp_std::{
+	convert::TryFrom,
 	fmt::{Debug, Formatter, Result as FmtResult},
 	vec,
 	vec::Vec,
@@ -114,6 +115,33 @@ impl<Address, Call, Signature, Extra: SignedExtension>
 			signature: None,
 			function,
 		}
+	}
+}
+
+impl<Address, Call, Signature, Extra: SignedExtension>
+	AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+where
+	Address: Decode,
+	Signature: Decode,
+	Call: Decode,
+	Extra: SignedExtension,
+{
+	fn decode_no_prefix<I: Input>(input: &mut I) -> Result<Self, Error> {
+		let version = input.read_byte()?;
+
+		let is_signed = version & 0b1000_0000 != 0;
+		let version = version & 0b0111_1111;
+		if version != EXTRINSIC_FORMAT_VERSION {
+			return Err("Invalid transaction version".into());
+		}
+
+		let signature = is_signed.then(|| Decode::decode(input)).transpose()?;
+		let function = Decode::decode(input)?;
+
+		Ok(Self {
+			signature,
+			function,
+		})
 	}
 }
 
@@ -312,16 +340,7 @@ where
 		let expected_length: Compact<u32> = Decode::decode(input)?;
 		let before_length = input.remaining_len()?;
 
-		let version = input.read_byte()?;
-
-		let is_signed = version & 0b1000_0000 != 0;
-		let version = version & 0b0111_1111;
-		if version != EXTRINSIC_FORMAT_VERSION {
-			return Err("Invalid transaction version".into());
-		}
-
-		let signature = is_signed.then(|| Decode::decode(input)).transpose()?;
-		let function = Decode::decode(input)?;
+		let extrinsic = Self::decode_no_prefix(input)?;
 
 		if let Some((before_length, after_length)) = input
 			.remaining_len()?
@@ -334,10 +353,7 @@ where
 			}
 		}
 
-		Ok(Self {
-			signature,
-			function,
-		})
+		Ok(extrinsic)
 	}
 }
 
@@ -453,6 +469,29 @@ where
 	}
 }
 
+impl<Address, Call, Signature, Extra> TryFrom<OpaqueExtrinsic>
+	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+where
+	Address: Decode,
+	Signature: Decode,
+	Call: Decode,
+	Extra: SignedExtension,
+{
+	type Error = codec::Error;
+
+	#[cfg(not(feture = "fast_app_unchecked_try_from_opaque"))]
+	fn try_from(opaque: OpaqueExtrinsic) -> Result<Self, Self::Error> {
+		let encoded = opaque.encode();
+		Self::decode(&mut encoded.as_slice())
+	}
+
+	#[cfg(feature = "fast_app_unchecked_try_from_opaque")]
+	fn try_from(opaque: OpaqueExtrinsic) -> Result<Self, Self::Error> {
+		let raw = unsafe { sp_std::mem::transmute::<OpaqueExtrinsic, Vec<u8>>(opaque) };
+		Self::decode_no_prefix(&mut raw.as_slice())
+	}
+}
+
 impl<Address, Call, Signature, Extra> From<AppUncheckedExtrinsic<Address, Call, Signature, Extra>>
 	for OpaqueExtrinsic
 where
@@ -477,6 +516,7 @@ mod tests {
 		testing::TestSignature as TestSig,
 		traits::{DispatchInfoOf, IdentityLookup, SignedExtension},
 	};
+	use test_case::test_case;
 
 	use super::*;
 
@@ -635,5 +675,43 @@ mod tests {
 			Ex::decode(&mut &encoded[..]),
 			Err(Error::from("Not enough data to fill buffer"))
 		);
+	}
+
+	fn unsigned_to_opaque() -> OpaqueExtrinsic {
+		let ex = Ex::new_unsigned(vec![1u8, 2, 3]).encode();
+		OpaqueExtrinsic::decode(&mut ex.as_slice()).unwrap()
+	}
+
+	fn signed_to_opaque() -> OpaqueExtrinsic {
+		let ex = Ex::new_signed(
+			vec![0u8; 0],
+			TEST_ACCOUNT,
+			TestSig(TEST_ACCOUNT, (vec![0u8; 0], TestExtra).encode()),
+			TestExtra,
+		)
+		.encode();
+
+		OpaqueExtrinsic::decode(&mut ex.as_slice()).unwrap()
+	}
+
+	fn malformed_opaque() -> OpaqueExtrinsic {
+		use core::mem::transmute;
+
+		let op = unsigned_to_opaque();
+		let new_op = unsafe {
+			// Using `transmute` because `OpaqueExtrinsic.0` is not public.
+			let mut raw = transmute::<OpaqueExtrinsic, Vec<u8>>(op);
+			raw.pop();
+			transmute::<Vec<u8>, OpaqueExtrinsic>(raw)
+		};
+		new_op
+	}
+
+	#[test_case( unsigned_to_opaque() => true ; "Unsigned Ex")]
+	#[test_case( signed_to_opaque() => true ; "Signed Ex")]
+	#[test_case( malformed_opaque() => false ; "Invalid opaque")]
+	fn opaque_conversion_tests(opaque: OpaqueExtrinsic) -> bool {
+		let opaque = opaque.encode();
+		Ex::decode(&mut opaque.as_slice()).is_ok()
 	}
 }
