@@ -73,98 +73,98 @@ benchmarks! {
 		assert_eq!( Base::<T>::get().committed_root, new_root);
 	}
 
-    set_updater {
+	set_updater {
 		let _ = init_tree::<T>(0, 0);
 
-        let new_updater: H160 = H160(hex!("39dD11C243Ac4Ac250980FA3AEa016f73C509f37"));
-        let origin = RawOrigin::Root;
+		let new_updater: H160 = H160(hex!("39dD11C243Ac4Ac250980FA3AEa016f73C509f37"));
+		let origin = RawOrigin::Root;
 
 	}: _(origin, new_updater)
-    verify {
-        //  check new updater
-        assert_eq!(Base::<T>::get().updater, new_updater);
+	verify {
+		//  check new updater
+		assert_eq!(Base::<T>::get().updater, new_updater);
 	}
 }
 
 #[cfg(test)]
 mod tests {
-    use nomad_core::test_utils::Updater;
-    use sp_core::H256;
+	use nomad_core::test_utils::Updater;
+	use sp_core::H256;
 
-    use super::*;
+	use super::*;
 
-    const TEST_UPDATER_PRIVKEY: &str =
-        "1111111111111111111111111111111111111111111111111111111111111111";
+	const TEST_UPDATER_PRIVKEY: &str =
+		"1111111111111111111111111111111111111111111111111111111111111111";
 
-    /// Test case used to generate the constant `SIGNED_UPDATE`.
-    #[test]
-    fn generate_sign_update() {
-        let updater = Updater::new(ID, TEST_UPDATER_PRIVKEY.parse().unwrap());
-        assert_eq!(updater.address(), UPDATER_ADDRESS);
+	/// Test case used to generate the constant `SIGNED_UPDATE`.
+	#[test]
+	fn generate_sign_update() {
+		let updater = Updater::new(ID, TEST_UPDATER_PRIVKEY.parse().unwrap());
+		assert_eq!(updater.address(), UPDATER_ADDRESS);
 
-        let previous_root = H256::repeat_byte(0);
-        let new_root = H256::repeat_byte(1);
-        let signed_update = updater.sign_update(previous_root.clone(), new_root.clone());
+		let previous_root = H256::repeat_byte(0);
+		let new_root = H256::repeat_byte(1);
+		let signed_update = updater.sign_update(previous_root.clone(), new_root.clone());
 
-        assert_eq!(signed_update, expected_signed_update());
-    }
+		assert_eq!(signed_update, expected_signed_update());
+	}
 }
 
 fn expected_signed_update() -> SignedUpdate {
-    SignedUpdate {
-        update: Update {
-            home_domain: ID,
-            previous_root: H256([0u8; 32]),
-            new_root: H256([1u8; 32]),
-        },
-        signature: Signature {
-            r: U256::from_dec_str(
-                "108172166467498881923382587939104653020584515778413535909202974529351125581995",
-            )
-                .unwrap(),
-            s: U256::from_dec_str(
-                "24567415212865781861322727855523398821160274507883582359476963266144744361252",
-            )
-                .unwrap(),
-            v: 27,
-        },
-    }
+	SignedUpdate {
+		update: Update {
+			home_domain: ID,
+			previous_root: H256([0u8; 32]),
+			new_root: H256([1u8; 32]),
+		},
+		signature: Signature {
+			r: U256::from_dec_str(
+				"108172166467498881923382587939104653020584515778413535909202974529351125581995",
+			)
+			.unwrap(),
+			s: U256::from_dec_str(
+				"24567415212865781861322727855523398821160274507883582359476963266144744361252",
+			)
+			.unwrap(),
+			v: 27,
+		},
+	}
 }
 
 #[cfg(feature = "runtime-benchmarks")]
 fn random_message<T: Config>(size: u32) -> BoundedVec<u8, T::MaxMessageBodyBytes> {
-    repeat(3u8)
-        .take(size as usize)
-        .collect::<Vec<_>>()
-        .try_into()
-        .expect("`size` must be less than `T::MaxMessageBodyBytes`")
+	repeat(3u8)
+		.take(size as usize)
+		.collect::<Vec<_>>()
+		.try_into()
+		.expect("`size` must be less than `T::MaxMessageBodyBytes`")
 }
 
 #[cfg(feature = "runtime-benchmarks")]
 fn init_tree<T>(index: u32, message_size: u32) -> H256
-    where
-        T: Config,
-        [u8; 32]: From<<T as frame_system::Config>::AccountId>,
+where
+	T: Config,
+	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 {
-    let message = random_message::<T>(message_size);
-    let recipient_address = H256::repeat_byte(3);
-    let origin = RawOrigin::Signed(whitelisted_caller::<T::AccountId>());
+	let message = random_message::<T>(message_size);
+	let recipient_address = H256::repeat_byte(3);
+	let origin = RawOrigin::Signed(whitelisted_caller::<T::AccountId>());
 
-    // Initial base:
-    Base::<T>::put(nomad_base::NomadBase::new(
-        ID,
-        H256([0u8; 32]),
-        UPDATER_ADDRESS,
-    ));
+	// Initial base:
+	Base::<T>::put(nomad_base::NomadBase::new(
+		ID,
+		H256([0u8; 32]),
+		UPDATER_ADDRESS,
+	));
 
-    for _ in 0..index {
-        assert_ok!(Pallet::<T>::dispatch(
+	for _ in 0..index {
+		assert_ok!(Pallet::<T>::dispatch(
 			origin.clone().into(),
 			ID,
 			recipient_address,
 			message.clone()
 		));
-    }
+	}
 
-    Tree::<T>::get().root()
+	Tree::<T>::get().root()
 }

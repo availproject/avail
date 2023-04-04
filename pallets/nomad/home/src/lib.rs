@@ -45,7 +45,7 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::generate_store(pub (super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	// Nomad base
@@ -107,7 +107,7 @@ pub mod pallet {
 	}
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		Dispatch {
 			message_hash: H256,
@@ -353,60 +353,60 @@ pub mod pallet {
 				Error::<T>::InvalidUpdaterSignature,
 			);
 
-            // If new root not in history (invalid), slash updater and fail home
-            let root_not_found = RootToIndex::<T>::get(signed_update.new_root()).is_none();
-            if root_not_found {
-                Self::fail(sender);
-                Self::deposit_event(Event::<T>::ImproperUpdate {
-                    previous_root: signed_update.previous_root(),
-                    new_root: signed_update.new_root(),
-                    signature: signed_update.signature.to_vec(),
-                });
-            }
+			// If new root not in history (invalid), slash updater and fail home
+			let root_not_found = RootToIndex::<T>::get(signed_update.new_root()).is_none();
+			if root_not_found {
+				Self::fail(sender);
+				Self::deposit_event(Event::<T>::ImproperUpdate {
+					previous_root: signed_update.previous_root(),
+					new_root: signed_update.new_root(),
+					signature: signed_update.signature.to_vec(),
+				});
+			}
 
-            Ok(root_not_found)
-        }
+			Ok(root_not_found)
+		}
 
-        /// Set self in failed state and slash updater.
-        fn fail(reporter: T::AccountId) {
-            Base::<T>::mutate(|base| base.state = NomadState::Failed);
-            nomad_updater_manager::Pallet::<T>::slash_updater(reporter.clone());
+		/// Set self in failed state and slash updater.
+		fn fail(reporter: T::AccountId) {
+			Base::<T>::mutate(|base| base.state = NomadState::Failed);
+			nomad_updater_manager::Pallet::<T>::slash_updater(reporter.clone());
 
-            let updater = Self::base().updater;
-            Self::deposit_event(Event::<T>::UpdaterSlashed { updater, reporter });
-        }
-    }
+			let updater = Self::base().updater;
+			Self::deposit_event(Event::<T>::UpdaterSlashed { updater, reporter });
+		}
+	}
 }
 
 #[cfg(any(test, feature = "runtime-benchmarks"))]
 pub mod common_tests_and_benches {
-    use hex_literal::hex;
-    use nomad_core::{SignedUpdate, Update};
-    use nomad_signature::Signature;
-    use sp_core::{H256, U256};
+	use hex_literal::hex;
+	use nomad_core::{SignedUpdate, Update};
+	use nomad_signature::Signature;
+	use sp_core::{H256, U256};
 
-    const EXPECTED_NEW_ROOT_LONGEST_TREE: H256 = H256(hex!(
+	const EXPECTED_NEW_ROOT_LONGEST_TREE: H256 = H256(hex!(
 		"dd0a05d7b71c171d06b51f11d1191f2ce23dbe679ecabea374ee3a7909383fb6"
 	));
 
-    pub fn expected_longest_tree_signed_update() -> SignedUpdate {
-        SignedUpdate {
-            update: Update {
-                home_domain: 1111,
-                previous_root: H256::zero(),
-                new_root: EXPECTED_NEW_ROOT_LONGEST_TREE,
-            },
-            signature: Signature {
-                r: U256::from_dec_str(
-                    "14322696571982726287696567121385710541178197176749280748421005645809674945701",
-                )
-                    .unwrap(),
-                s: U256::from_dec_str(
-                    "30270442654181520335096087658805894014217975025586657453237735885054021806875",
-                )
-                    .unwrap(),
-                v: 27,
-            },
-        }
-    }
+	pub fn expected_longest_tree_signed_update() -> SignedUpdate {
+		SignedUpdate {
+			update: Update {
+				home_domain: 1111,
+				previous_root: H256::zero(),
+				new_root: EXPECTED_NEW_ROOT_LONGEST_TREE,
+			},
+			signature: Signature {
+				r: U256::from_dec_str(
+					"14322696571982726287696567121385710541178197176749280748421005645809674945701",
+				)
+				.unwrap(),
+				s: U256::from_dec_str(
+					"30270442654181520335096087658805894014217975025586657453237735885054021806875",
+				)
+				.unwrap(),
+				v: 27,
+			},
+		}
+	}
 }
