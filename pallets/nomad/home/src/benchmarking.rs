@@ -72,6 +72,18 @@ benchmarks! {
 		assert_eq!( Tree::<T>::get().root(), new_root);
 		assert_eq!( Base::<T>::get().committed_root, new_root);
 	}
+
+	set_updater {
+		let _ = init_tree::<T>(0, 0);
+
+		let new_updater: H160 = H160(hex!("39dD11C243Ac4Ac250980FA3AEa016f73C509f37"));
+		let origin = RawOrigin::Root;
+
+	}: _(origin, new_updater)
+	verify {
+		//  check new updater
+		assert_eq!(Base::<T>::get().updater, new_updater);
+	}
 }
 
 #[cfg(test)]
