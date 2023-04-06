@@ -45,7 +45,7 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::generate_store(pub (super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	// Nomad base
@@ -107,7 +107,7 @@ pub mod pallet {
 	}
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		Dispatch {
 			message_hash: H256,
@@ -193,6 +193,23 @@ pub mod pallet {
 			Self::do_improper_update(sender, &signed_update)?;
 			Ok(())
 		}
+
+		/// Set new updater on self as well as updater manager.
+		/// Note: Not exposed as pallet call, will only be callable by the
+		/// GovernanceRouter pallet when implemented.
+		#[pallet::call_index(3)]
+		#[pallet::weight(T::WeightInfo::set_updater())]
+		pub fn set_updater(origin: OriginFor<T>, new_updater: H160) -> DispatchResult {
+			ensure_root(origin)?;
+
+			// Modify NomadBase updater
+			Base::<T>::mutate(|base| base.updater = new_updater);
+
+			// update nomad state to active
+			Base::<T>::mutate(|base| base.state = NomadState::Active);
+			// Rotate updater on updater manager
+			nomad_updater_manager::Pallet::<T>::set_updater(new_updater)
+		}
 	}
 
 	impl<T: Config> Pallet<T>
@@ -221,9 +238,7 @@ pub mod pallet {
 
 			// Get nonce and set new nonce
 			Nonces::<T>::try_mutate(destination_domain, |nonce| -> Result<(), DispatchError> {
-				let new_nonce = nonce
-					.checked_add(1)
-					.ok_or_else(|| DispatchError::from(Overflow))?;
+				let new_nonce = nonce.checked_add(1).ok_or(DispatchError::from(Overflow))?;
 
 				// Format message and get message hash
 				let message = NomadMessage {
@@ -333,7 +348,7 @@ pub mod pallet {
 
 			// Ensure updater signature is valid
 			ensure!(
-				base.is_updater_signature(signed_update)
+				base.is_updater_signature(&signed_update)
 					.map_err(|_| Error::<T>::SignatureRecoveryError)?,
 				Error::<T>::InvalidUpdaterSignature,
 			);
@@ -359,17 +374,6 @@ pub mod pallet {
 
 			let updater = Self::base().updater;
 			Self::deposit_event(Event::<T>::UpdaterSlashed { updater, reporter });
-		}
-
-		/// Set new updater on self as well as updater manager.
-		/// Note: Not exposed as pallet call, will only be callable by the
-		/// GovernanceRouter pallet when implemented.
-		pub fn set_updater(new_updater: H160) -> DispatchResult {
-			// Modify NomadBase updater
-			Base::<T>::mutate(|base| base.updater = new_updater);
-
-			// Rotate updater on updater manager
-			nomad_updater_manager::Pallet::<T>::set_updater(new_updater)
 		}
 	}
 }
