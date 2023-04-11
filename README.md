@@ -1,6 +1,6 @@
 # Data Availability Node
 
-[![Build status](https://github.com/maticnetwork/avail/actions/workflows/default.yml/badge.svg)](https://github.com/maticnetwork/avail/actions/workflows/default.yml) [![Code coverage](https://codecov.io/gh/maticnetwork/avail/branch/main/graph/badge.svg?token=OBX2NEE31T)](https://codecov.io/gh/maticnetwork/avail)
+[![Build status](https://github.com/availproject/avail/actions/workflows/default.yml/badge.svg)](https://github.com/availproject/avail/actions/workflows/default.yml) [![Code coverage](https://codecov.io/gh/availproject/avail/branch/main/graph/badge.svg?token=OBX2NEE31T)](https://codecov.io/gh/availproject/avail)
 
 ## Compile
 
@@ -16,7 +16,7 @@ We also add `--tmp`, therefore the state will be deleted at the end of the proce
     Finished release [optimized] target(s) in 0.41s
      Running `target/release/data-avail --dev --tmp`
     2022-02-14 11:13:35 Running in --dev mode, RPC CORS has been disabled.    
-    2022-02-14 11:13:35 Polygon Avail Node    
+    2022-02-14 11:13:35 Avail Node    
     2022-02-14 11:13:35 ✌️  version 3.0.0-8983b6b-x86_64-linux-gnu    
     2022-02-14 11:13:35 ❤️  by Anonymous, 2017-2022    
     2022-02-14 11:13:35 📋 Chain specification: Avail-Dev    
