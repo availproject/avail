@@ -23,7 +23,7 @@ use std::sync::Arc;
 
 use codec::Encode;
 use da_primitives::asdr::AppId;
-use da_runtime::{Block, Runtime, RuntimeApi};
+use da_runtime::{NodeBlock as Block, Runtime, RuntimeApi};
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use futures::prelude::*;
 use pallet_transaction_payment::ChargeTransactionPayment;
@@ -196,7 +196,7 @@ pub fn new_partial(
 	);
 
 	let (client, backend, keystore_container, task_manager) =
-		sc_service::new_full_parts::<da_runtime::Block, RuntimeApi, _>(
+		sc_service::new_full_parts::<Block, RuntimeApi, _>(
 			config,
 			telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
 			executor,

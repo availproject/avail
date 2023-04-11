@@ -6,27 +6,39 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-avail-base = { path = "../../base" }
-
-sp-api = { version = "4.0.0-dev", default-features = false }
-sp-std = { version = "5.0.0", default-features = false }
-frame-system = { version = "4.0.0-dev", default-features = false }
-frame-support = { version = "4.0.0-dev", default-features = false }
+avail-base = { path = "../../base", default-features = false }
 kate-rpc-runtime-api = { path = "../kate-rpc-runtime-api", default-features = false }
-sc-client-db = { version = "0.10.0-dev", default-features = false }
-thiserror = "1.0.30" 
-rs_merkle = { version = "1.2.0", default-features = false }
+da-runtime = { path = "../../runtime", default-features = false }
 
-codec = { package = "parity-scale-codec", version = "3" }
 da-primitives = { version = "0.4", default-features = false }
 kate = { version = "0.7", default-features = false }
 kate-recovery = { version = "0.8", default-features = false }
-jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
 
-frame-system-rpc-runtime-api = "4.0.0-dev"
+jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
 lru = "0.7.2"
+
+# Substrate
+sp-api = { version = "4.0.0-dev", default-features = false }
+frame-system = { version = "4.0.0-dev", default-features = false }
+frame-support = { version = "4.0.0-dev", default-features = false }
+sc-client-db = "0.10.0-dev"
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 sc-client-api = "4.0.0-dev"
 sp-blockchain = "4.0.0-dev"
-sp-rpc = "6.0.0"
-sp-runtime = "7.0.0"
-sp-core = "7.0.0"
+sp-runtime = { version = "7.0.0", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"avail-base/std",
+	"da-runtime/std",
+	"kate-rpc-runtime-api/std",
+	"da-primitives/std",
+	"kate/std",
+	"kate-recovery/std",
+	"frame-support/std",
+	"frame-system/std",
+	"codec/std",
+	"sp-api/std",
+	"sp-runtime/std",
+]
