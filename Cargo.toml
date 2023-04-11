@@ -24,7 +24,7 @@ frame-executive = { path = "pallets/executive" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 
-# Polygon Primitives
+# DA Primitives
 da-primitives = { version = "0.4", git="https://github.com/maticnetwork/avail-core", tag = "da-primitives/v0.4.5" }
 kate = { version = "0.7", git="https://github.com/maticnetwork/avail-core", tag = "da-primitives/v0.4.5" }
 kate-recovery = { version = "0.8", git="https://github.com/maticnetwork/avail-core", tag = "da-primitives/v0.4.5" }
