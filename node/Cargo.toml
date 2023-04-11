@@ -1,7 +1,7 @@
 [package]
 name = "data-avail"
 version = "1.5.0"
-description = "Data Avilability Node"
+description = "Avail Node"
 authors = ["Anonymous"]
 homepage = "https://www.availproject.org/"
 edition = "2021"
