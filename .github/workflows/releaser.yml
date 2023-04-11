@@ -121,4 +121,4 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           push: true
-          tags: 0xpolygon/avail:${{ steps.prepare.outputs.tag_name }}
+          tags: availj/avail:${{ steps.prepare.outputs.tag_name }}
