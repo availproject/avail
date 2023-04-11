@@ -19,7 +19,7 @@ ARG AVAIL_TAG=v1.4.0-rc1
 
 RUN \
 	# Build DA \
-	git clone -b $AVAIL_TAG --single-branch https://github.com/maticnetwork/avail.git /avail/ && \
+	git clone -b $AVAIL_TAG --single-branch https://github.com/availproject/avail.git /avail/ && \
 	cd /avail && \
 	cargo build --release -p data-avail && \
 	# Install binaries \
