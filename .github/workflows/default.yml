@@ -1,4 +1,4 @@
-name: Polygon Avail CI
+name: Avail CI
 on:
   push:
     branches:

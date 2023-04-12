@@ -2,12 +2,12 @@
 name = "da-runtime"
 version = "6.0.0"
 authors = ["Anonymous"]
-description = "Polygon Data Avilability Runtime"
+description = "Avail Runtime"
 edition = "2021"
 build = "build.rs"
 license = "GNU GPLv3"
-homepage = "https://polygon.technology/"
-repository = "https://github.com/maticnetwork/avail/"
+homepage = "https://www.availproject.org/"
+repository = "https://github.com/availproject/avail"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
