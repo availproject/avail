@@ -1,8 +1,8 @@
 use da_primitives::Header;
-use frame_support::parameter_types;
-use frame_system::{self as system};
+use frame_support::{parameter_types, weights::Weight};
+use frame_system::{self as system, test_utils::TestRandomness};
 use primitive_types::H256;
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
+use sp_runtime::traits::{BlakeTwo256, ConstU32, IdentityLookup};
 
 use crate as updater_manager;
 
@@ -24,7 +24,7 @@ frame_support::construct_runtime!(
 parameter_types! {
 	pub const BlockHashCount: u32 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(1024);
+		frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1_024));
 	pub static ExistentialDeposit: u64 = 0;
 }
 
@@ -36,21 +36,22 @@ impl system::Config for Test {
 	type BlockLength = ();
 	type BlockNumber = u32;
 	type BlockWeights = ();
-	type Call = Call;
 	type DbWeight = ();
-	type Event = Event;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header<Self::BlockNumber, BlakeTwo256>;
 	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
-	type Origin = Origin;
 	type PalletInfo = PalletInfo;
-	type Randomness = frame_system::tests::TestRandomness<Test>;
+	type Randomness = TestRandomness<Test>;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeOrigin = RuntimeOrigin;
 	type SS58Prefix = ();
 	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
@@ -58,7 +59,7 @@ impl system::Config for Test {
 }
 
 impl updater_manager::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 }
 
 // Build genesis storage according to the mock runtime.
@@ -77,7 +78,7 @@ pub(crate) fn events() -> Vec<super::Event<Test>> {
 		.into_iter()
 		.map(|r| r.event)
 		.filter_map(|e| {
-			if let Event::UpdaterManager(inner) = e {
+			if let RuntimeEvent::UpdaterManager(inner) = e {
 				Some(inner)
 			} else {
 				None

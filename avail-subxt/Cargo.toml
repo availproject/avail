@@ -1,6 +1,6 @@
 [package]
 name = "avail-subxt"
-version = "0.1.0"
+version = "0.2.1"
 authors = ["Luka Borkovic <luka.borkovic@ethernal.tech>"]
 edition = "2021"
 
@@ -13,29 +13,40 @@ name = "e2e"
 path = "src/e2e.rs"
 
 [dependencies]
-subxt = "0.24.0"
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "full", "bit-vec"] }
-serde = { version = "1.0", features = ["derive"] }
-parity-util-mem = "0.11.0"
-scale-info = { version = "2.0.0", features = ["bit-vec"] }
+# Other
 derive_more = "0.99.17"
 structopt = "0.3.25"
 anyhow = "1.0.66"
 tokio = { version = "1.21.2", features = [ "process", "fs", "rt-multi-thread"]}
 futures = "0.3.25"
-jsonrpsee = { version ="0.15.1", features = ["client", "async-client", "macros"]}
+jsonrpsee = { version ="0.16.2", features = ["client", "async-client", "macros"]}
+num_enum = "0.5.9"
+
+# Substrate
+subxt = "0.27"
+sp-core = { version = "16.0.0", default-features = false }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "full", "bit-vec"] }
+serde = { version = "1.0", features = ["derive"] }
+scale-info = { version = "2.0.0", features = ["bit-vec"] }
 
 
 [dev-dependencies]
-async-std = { version = "1.9.0", features = ["attributes", "tokio1"] }
-sp-keyring = "6.0.0"
+async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
 futures = "0.3.13"
 hex-literal = "0.3.4"
 test-case = "1.2.3"
+log = "0.4.14"
+pretty_env_logger = "0.4.0"
+derive_more = "0.99.17"
+serde_json = "1.0"
+
+# Substrate 
+sp-keyring = "18.0.0"
 
 [features]
-default = ["api-dev"]
+default = ["api-dev", "std"]
 api-dev = []
 api-main = []
+std = [ "sp-core/std"]
 
 [workspace]

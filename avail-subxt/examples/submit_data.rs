@@ -3,9 +3,10 @@ use avail_subxt::{
 	api::{
 		self,
 		runtime_types::{
-			da_control::pallet::Call as DaCall, frame_support::storage::bounded_vec::BoundedVec,
+			da_control::pallet::Call as DaCall, sp_core::bounded::bounded_vec::BoundedVec,
 		},
 	},
+	avail::AppUncheckedExtrinsic,
 	build_client,
 	primitives::AvailExtrinsicParams,
 	Call, Opts,
@@ -42,7 +43,12 @@ async fn main() -> Result<()> {
 		.block
 		.extrinsics
 		.into_iter()
-		.find(|ext| match &ext.function {
+		.filter_map(|chain_block_ext| {
+			AppUncheckedExtrinsic::try_from(chain_block_ext)
+				.map(|ext| ext.function)
+				.ok()
+		})
+		.find(|call| match call {
 			Call::DataAvailability(da_call) => match da_call {
 				DaCall::submit_data { data } => data.0 == example_data,
 				_ => false,

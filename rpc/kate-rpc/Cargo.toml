@@ -6,28 +6,39 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+avail-base = { path = "../../base", default-features = false }
+kate-rpc-runtime-api = { path = "../kate-rpc-runtime-api", default-features = false }
+da-runtime = { path = "../../runtime", default-features = false }
+
+da-primitives = { version = "0.4", default-features = false }
+kate = { version = "0.7", default-features = false }
+kate-recovery = { version = "0.8", default-features = false }
+
+jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
+lru = "0.7.2"
+
+# Substrate
 sp-api = { version = "4.0.0-dev", default-features = false }
-sp-std = { version = "4.0.0-dev", default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
-kate-rpc-runtime-api = { path = "../kate-rpc-runtime-api", default-features = false }
-sc-client-db = { version = "0.10.0-dev", default-features = false }
-thiserror = "1.0.30" 
-rs_merkle = { version = "1.2.0", default-features = false }
+sc-client-db = "0.10.0-dev"
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+sc-client-api = "4.0.0-dev"
+sp-blockchain = "4.0.0-dev"
+sp-runtime = { version = "7.0.0", default-features = false }
 
-codec = { package = "parity-scale-codec", version = "2.0.0" }
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.3.0", default-features = false }
-kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.3.0", default-features = false }
-kate-recovery = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.3.0", default-features = false }
-
-frame-system-rpc-runtime-api = "4.0.0-dev"
-jsonrpc-core = "18.0.0"
-jsonrpc-core-client = "18.0.0"
-jsonrpc-derive = "18.0.0"
-lru = "0.7.2"
-sc-client-api = { version = "4.0.0-dev" }
-# sp-api = { version = "4.0.0-dev" }
-sp-blockchain = { version = "4.0.0-dev" }
-sp-rpc = { version = "4.0.0-dev" }
-sp-runtime = { version = "4.0.0-dev" }
-sp-core = { version = "4.0.0-dev" }
+[features]
+default = ["std"]
+std = [
+	"avail-base/std",
+	"da-runtime/std",
+	"kate-rpc-runtime-api/std",
+	"da-primitives/std",
+	"kate/std",
+	"kate-recovery/std",
+	"frame-support/std",
+	"frame-system/std",
+	"codec/std",
+	"sp-api/std",
+	"sp-runtime/std",
+]

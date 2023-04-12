@@ -2,15 +2,15 @@ use anyhow::Result;
 use avail_subxt::{
 	api::{
 		self, data_availability::calls::SubmitData,
-		runtime_types::frame_support::storage::bounded_vec::BoundedVec,
+		runtime_types::sp_core::bounded::bounded_vec::BoundedVec,
 	},
 	build_client, Opts,
 };
-use sp_keyring::AccountKeyring;
+use sp_keyring::AccountKeyring::Alice;
 use structopt::StructOpt;
 use subxt::{
-	ext::sp_core::H160,
 	tx::{PairSigner, StaticTxPayload},
+	utils::H160,
 };
 
 const DESTINATION_DOMAIN: u32 = 1000;
@@ -27,11 +27,12 @@ async fn main() -> Result<()> {
 	let args = Opts::from_args();
 	let client = build_client(args.ws).await?;
 
-	let signer = PairSigner::new(AccountKeyring::Alice.pair());
-	let mut finalized_blocks = client.rpc().subscribe_finalized_blocks().await?;
+	let signer = PairSigner::new(Alice.pair());
+	let mut finalized_headers_subscription =
+		client.rpc().subscribe_finalized_block_headers().await?;
 
-	if let Some(finalized_block) = finalized_blocks.next().await {
-		let header = finalized_block?;
+	if let Some(header) = finalized_headers_subscription.next().await {
+		let header = header?;
 		if let Some(_block_hash) = client.rpc().block_hash(Some(header.number.into())).await? {
 			// 1. Send some data.
 			let block_hash = client

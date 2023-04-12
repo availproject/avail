@@ -1,55 +1,65 @@
 use std::{
-	result::Result as AvailResult,
+	marker::Sync,
 	sync::{Arc, RwLock},
 };
 
-use codec::{Compact, Decode, Encode, Error as DecodeError, Input};
+use avail_base::metrics::RPCMetricAdapter;
 use da_primitives::{
-	asdr::{AppExtrinsic, AppId, DataLookup, GetAppId},
+	asdr::{AppExtrinsic, AppId, DataLookup},
 	traits::ExtendedHeader,
 	DataProof, HeaderExtension,
 };
-use frame_support::traits::ExtrinsicCall;
+use da_runtime::{Runtime, UncheckedExtrinsic};
 use frame_system::{limits::BlockLength, submitted_data};
-use jsonrpc_core::{Error as RpcError, Result};
-use jsonrpc_derive::rpc;
+use jsonrpsee::{
+	core::{async_trait, Error as JsonRpseeError, RpcResult},
+	proc_macros::rpc,
+};
 use kate::{com::Cell, BlockDimensions, BlsScalar, PublicParameters};
 use kate_recovery::{index::AppDataIndex, matrix::Dimensions};
 use kate_rpc_runtime_api::KateParamsGetter;
 use lru::LruCache;
-use sc_client_api::{BlockBackend, StorageProvider};
+use sc_client_api::BlockBackend;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{Block as BlockT, Extrinsic, Header},
-	AccountId32, MultiAddress, MultiSignature,
+	traits::{Block as BlockT, Header},
 };
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
-pub type CallOf<Block> = <<Block as BlockT>::Extrinsic as Extrinsic>::Call;
 
-#[rpc]
-pub trait KateApi<Block, SDFilter>
+#[rpc(client, server)]
+pub trait KateApi<Block>
 where
 	Block: BlockT,
-	SDFilter: submitted_data::Filter<CallOf<Block>>,
 {
-	#[rpc(name = "kate_queryAppData")]
-	fn query_app_data(
+	#[method(name = "kate_queryRows")]
+	async fn query_rows(
+		&self,
+		rows: Vec<u32>,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<Vec<Option<Vec<u8>>>>;
+
+	#[method(name = "kate_queryAppData")]
+	async fn query_app_data(
 		&self,
 		app_id: AppId,
 		at: Option<HashOf<Block>>,
-	) -> Result<Vec<Option<Vec<u8>>>>;
+	) -> RpcResult<Vec<Option<Vec<u8>>>>;
 
-	#[rpc(name = "kate_queryProof")]
-	fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> Result<Vec<u8>>;
+	#[method(name = "kate_queryProof")]
+	async fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>>;
 
-	#[rpc(name = "kate_blockLength")]
-	fn query_block_length(&self, at: Option<HashOf<Block>>) -> Result<BlockLength>;
+	#[method(name = "kate_blockLength")]
+	async fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength>;
 
-	#[rpc(name = "kate_queryDataProof")]
-	fn query_data_proof(&self, data_index: u32, at: Option<HashOf<Block>>) -> Result<DataProof>;
+	#[method(name = "kate_queryDataProof")]
+	async fn query_data_proof(
+		&self,
+		data_index: u32,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<DataProof>;
 }
 
 pub struct Kate<Client, Block: BlockT> {
@@ -57,10 +67,7 @@ pub struct Kate<Client, Block: BlockT> {
 	block_ext_cache: RwLock<LruCache<Block::Hash, (Vec<BlsScalar>, BlockDimensions)>>,
 }
 
-impl<Client, Block> Kate<Client, Block>
-where
-	Block: BlockT,
-{
+impl<Client, Block: BlockT> Kate<Client, Block> {
 	pub fn new(client: Arc<Client>) -> Self {
 		Self {
 			client,
@@ -88,72 +95,64 @@ impl From<Error> for i64 {
 
 macro_rules! internal_err {
 	($($arg:tt)*) => {{
-		let mut error = RpcError::internal_error();
-		error.message = format!($($arg)*);
-		error
+		JsonRpseeError::Custom(format!($($arg)*))
 	}}
 }
 
 impl<Client, Block> Kate<Client, Block>
 where
 	Block: BlockT,
-	Block::Extrinsic: GetAppId,
 	Block::Header: ExtendedHeader,
 	Client: Send + Sync + 'static,
-	Client: HeaderBackend<Block>
-		+ ProvideRuntimeApi<Block>
-		+ BlockBackend<Block>
-		+ StorageProvider<Block, sc_client_db::Backend<Block>>,
+	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: KateParamsGetter<Block>,
 {
+	fn at_or_best(&self, at: Option<<Block as BlockT>::Hash>) -> <Block as BlockT>::Hash {
+		at.unwrap_or_else(|| self.client.info().best_hash)
+	}
+
+	#[inline]
 	fn block_id(&self, at: Option<<Block as BlockT>::Hash>) -> BlockId<Block> {
-		let hash = at.unwrap_or_else(|| self.client.info().best_hash);
-		BlockId::Hash(hash)
+		BlockId::Hash(self.at_or_best(at))
 	}
 }
 
-impl<Client, Block, SDFilter> KateApi<Block, SDFilter> for Kate<Client, Block>
+#[async_trait]
+impl<Client, Block> KateApiServer<Block> for Kate<Client, Block>
 where
 	Block: BlockT,
-	Block::Extrinsic: GetAppId + ExtrinsicCall,
 	Block::Header: ExtendedHeader,
 	Client: Send + Sync + 'static,
-	Client: HeaderBackend<Block>
-		+ ProvideRuntimeApi<Block>
-		+ BlockBackend<Block>
-		+ StorageProvider<Block, sc_client_db::Backend<Block>>,
+	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: KateParamsGetter<Block>,
-	SDFilter: submitted_data::Filter<CallOf<Block>>,
-	<<Block as BlockT>::Extrinsic as Extrinsic>::Call: Clone,
+	UncheckedExtrinsic: TryFrom<<Block as BlockT>::Extrinsic>,
 {
-	fn query_app_data(
+	async fn query_rows(
 		&self,
-		app_id: AppId,
+		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
-	) -> Result<Vec<Option<Vec<u8>>>> {
-		let block_id = self.block_id(at);
+	) -> RpcResult<Vec<Option<Vec<u8>>>> {
+		let at = self.at_or_best(at);
+		let block_id = BlockId::Hash(at);
 
 		let signed_block = self
 			.client
-			.block(&block_id)
+			.block(at)
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
 			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
+
 		let block_hash = signed_block.block.header().hash();
+
+		if self.client.info().finalized_number < *signed_block.block.header().number() {
+			return Err(internal_err!(
+				"Requested block {block_hash} is not finalized"
+			));
+		}
 
 		let mut block_ext_cache = self
 			.block_ext_cache
 			.write()
 			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
-
-		let block_length: BlockLength = self
-			.client
-			.runtime_api()
-			.get_block_length(&block_id)
-			.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
-
-		let rows: usize = block_length.rows as usize;
-		let cols: usize = block_length.cols as usize;
-		let chunk_size: usize = block_length.chunk_size() as usize;
 
 		if !block_ext_cache.contains(&block_hash) {
 			// build block data extension and cache it
@@ -161,10 +160,9 @@ where
 				.block
 				.extrinsics()
 				.iter()
-				.map(|e| AppExtrinsic {
-					app_id: e.app_id(),
-					data: e.encode(),
-				})
+				.cloned()
+				.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
+				.map(AppExtrinsic::from)
 				.collect();
 
 			// Use Babe's VRF
@@ -174,11 +172,101 @@ where
 				.get_babe_vrf(&block_id)
 				.map_err(|e| internal_err!("Babe VRF not found for block {}: {:?}", block_id, e))?;
 
-			let (_, block, block_dims) =
-				kate::com::flatten_and_pad_block(rows, cols, chunk_size, &xts_by_id, seed)
-					.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
+			let block_length: BlockLength =
+				self.client
+					.runtime_api()
+					.get_block_length(&block_id)
+					.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
-			let data = kate::com::par_extend_data_matrix(block_dims, &block)
+			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
+				block_length.rows,
+				block_length.cols,
+				block_length.chunk_size(),
+				&xts_by_id,
+				seed,
+			)
+			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
+
+			let metrics = RPCMetricAdapter {};
+			let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
+				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
+
+			block_ext_cache.put(block_hash, (data, block_dims));
+		}
+
+		let (ext_data, block_dims) = block_ext_cache
+			.get(&block_hash)
+			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
+
+		let dimensions: Dimensions = (*block_dims)
+			.try_into()
+			.map_err(|e| internal_err!("Invalid dimensions: {:?}", e))?;
+
+		Ok(kate::com::scalars_to_rows(&rows, &dimensions, ext_data))
+	}
+
+	async fn query_app_data(
+		&self,
+		app_id: AppId,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<Vec<Option<Vec<u8>>>> {
+		let at = self.at_or_best(at);
+		let block_id = BlockId::Hash(at);
+
+		let signed_block = self
+			.client
+			.block(at)
+			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
+			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
+
+		let block_hash = signed_block.block.header().hash();
+
+		if self.client.info().finalized_number < *signed_block.block.header().number() {
+			return Err(internal_err!(
+				"Requested block {block_hash} is not finalized"
+			));
+		}
+
+		let mut block_ext_cache = self
+			.block_ext_cache
+			.write()
+			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
+
+		if !block_ext_cache.contains(&block_hash) {
+			// build block data extension and cache it
+			let xts_by_id: Vec<AppExtrinsic> = signed_block
+				.block
+				.extrinsics()
+				.iter()
+				.cloned()
+				.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
+				.map(AppExtrinsic::from)
+				.collect();
+
+			let block_length: BlockLength =
+				self.client
+					.runtime_api()
+					.get_block_length(&block_id)
+					.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
+
+			// Use Babe's VRF
+			let seed: [u8; 32] = self
+				.client
+				.runtime_api()
+				.get_babe_vrf(&block_id)
+				.map_err(|e| internal_err!("Babe VRF not found for block {}: {:?}", block_id, e))?;
+
+			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
+				block_length.rows,
+				block_length.cols,
+				block_length.chunk_size(),
+				&xts_by_id,
+				seed,
+			)
+			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
+
+			let metrics = RPCMetricAdapter {};
+			let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
 
 			block_ext_cache.put(block_hash, (data, block_dims));
@@ -199,45 +287,42 @@ where
 			size: *size,
 		};
 
-		let rows: u16 = block_dims
-			.rows
+		let dimensions: Dimensions = (*block_dims)
 			.try_into()
-			.map_err(|e| internal_err!("Invalid rows number: {:?}", e))?;
+			.map_err(|e| internal_err!("Invalid dimensions: {:?}", e))?;
 
-		let cols: u16 = block_dims
-			.cols
-			.try_into()
-			.map_err(|e| internal_err!("Invalid cols number: {:?}", e))?;
-
-		Ok(kate::com::scalars_to_rows(
+		Ok(kate::com::scalars_to_app_rows(
 			app_id.0,
 			&app_data_index,
-			&Dimensions::new(rows, cols),
+			&dimensions,
 			ext_data,
 		))
 	}
 
 	//TODO allocate static thread pool, just for RPC related work, to free up resources, for the block producing processes.
-	fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> Result<Vec<u8>> {
-		let block_id = self.block_id(at);
+	async fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
+		let at = self.at_or_best(at);
+		let block_id = BlockId::Hash(at);
 
 		let signed_block = self
 			.client
-			.block(&block_id)
+			.block(at)
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
 			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
+
 		let block_hash = signed_block.block.header().hash();
+
+		if self.client.info().finalized_number < *signed_block.block.header().number() {
+			return Err(internal_err!(
+				"Requested block {block_hash} is not finalized"
+			));
+		}
 
 		let mut block_ext_cache = self
 			.block_ext_cache
 			.write()
 			.map_err(|_| internal_err!("Block cache lock is poisoned .qed"))?;
-
-		let block_length: BlockLength = self
-			.client
-			.runtime_api()
-			.get_block_length(&block_id)
-			.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
+		let metrics = RPCMetricAdapter {};
 
 		if !block_ext_cache.contains(&block_hash) {
 			// build block data extension and cache it
@@ -245,11 +330,16 @@ where
 				.block
 				.extrinsics()
 				.iter()
-				.map(|e| AppExtrinsic {
-					app_id: e.app_id(),
-					data: e.encode(),
-				})
+				.cloned()
+				.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
+				.map(AppExtrinsic::from)
 				.collect();
+
+			let block_length: BlockLength =
+				self.client
+					.runtime_api()
+					.get_block_length(&block_id)
+					.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
 			// Use Babe's VRF
 			let seed: [u8; 32] = self
@@ -259,15 +349,15 @@ where
 				.map_err(|e| internal_err!("Babe VRF not found for block {}: {:?}", block_id, e))?;
 
 			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
-				block_length.rows as usize,
-				block_length.cols as usize,
-				block_length.chunk_size() as usize,
+				block_length.rows,
+				block_length.cols,
+				block_length.chunk_size(),
 				&xts_by_id,
 				seed,
 			)
 			.map_err(|e| internal_err!("Flatten and pad block failed: {:?}", e))?;
 
-			let data = kate::com::par_extend_data_matrix(block_dims, &block)
+			let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
 			block_ext_cache.put(block_hash, (data, block_dims));
 		}
@@ -289,13 +379,14 @@ where
 		let kc_public_params =
 			unsafe { PublicParameters::from_slice_unchecked(&kc_public_params_raw) };
 
-		let proof = kate::com::build_proof(&kc_public_params, *block_dims, ext_data, &cells)
-			.map_err(|e| internal_err!("Proof cannot be generated: {:?}", e))?;
+		let proof =
+			kate::com::build_proof(&kc_public_params, *block_dims, ext_data, &cells, &metrics)
+				.map_err(|e| internal_err!("Proof cannot be generated: {:?}", e))?;
 
 		Ok(proof)
 	}
 
-	fn query_block_length(&self, at: Option<HashOf<Block>>) -> Result<BlockLength> {
+	async fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength> {
 		let block_id = self.block_id(at);
 		let block_length = self
 			.client
@@ -306,115 +397,39 @@ where
 		Ok(block_length)
 	}
 
-	fn query_data_proof(&self, data_index: u32, at: Option<HashOf<Block>>) -> Result<DataProof> {
+	async fn query_data_proof(
+		&self,
+		data_index: u32,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<DataProof> {
 		// Fetch block
-		let block_id = self.block_id(at);
+		let at = self.at_or_best(at);
+
 		let block = self
 			.client
-			.block(&block_id)
-			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
-			.ok_or_else(|| internal_err!("Missing block number {:?}", block_id))?
+			.block(at)
+			.map_err(|e| internal_err!("Invalid block hash: {:?}", e))?
+			.ok_or_else(|| internal_err!("Missing block hash {:?}", at))?
 			.block;
 
-		// Get App Extrinsics from the block.
+		// Get Opaque Extrinsics and transform into AppUncheckedExt.
 		let calls = block
 			.extrinsics()
 			.iter()
-			.map(|extrinsic| extrinsic.call().clone());
+			.cloned()
+			.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
+			.map(|app_ext| app_ext.function);
 
 		// Build the proof.
-		let merkle_proof = submitted_data::calls_proof::<SDFilter, _, _>(calls, data_index)
+		let merkle_proof = submitted_data::calls_proof::<Runtime, _, _>(calls, data_index)
 			.ok_or_else(|| {
 				internal_err!(
 					"Data proof cannot be generated for index={} at block {:?}",
 					data_index,
-					block_id
+					at
 				)
 			})?;
 		DataProof::try_from(&merkle_proof)
 			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e))
-	}
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct AvailExtrinsic {
-	pub app_id: u32,
-	pub signature: Option<MultiSignature>,
-	pub data: Vec<u8>,
-}
-
-pub type AvailSignedExtra = ((), (), (), AvailMortality, Nonce, (), Balance, u32);
-
-#[derive(Decode)]
-pub struct Balance(#[codec(compact)] u128);
-
-#[derive(Decode)]
-pub struct Nonce(#[codec(compact)] u32);
-
-pub enum AvailMortality {
-	Immortal,
-	Mortal(u64, u64),
-}
-
-impl Decode for AvailMortality {
-	fn decode<I: Input>(input: &mut I) -> AvailResult<Self, DecodeError> {
-		let first = input.read_byte()?;
-		if first == 0 {
-			Ok(Self::Immortal)
-		} else {
-			let encoded = first as u64 + ((input.read_byte()? as u64) << 8);
-			let period = 2 << (encoded % (1 << 4));
-			let quantize_factor = (period >> 12).max(1);
-			let phase = (encoded >> 4) * quantize_factor;
-			if period >= 4 && phase < period {
-				Ok(Self::Mortal(period, phase))
-			} else {
-				Err("Invalid period and phase".into())
-			}
-		}
-	}
-}
-
-const EXTRINSIC_VERSION: u8 = 4;
-impl Decode for AvailExtrinsic {
-	fn decode<I: Input>(input: &mut I) -> AvailResult<AvailExtrinsic, DecodeError> {
-		// This is a little more complicated than usual since the binary format must be compatible
-		// with substrate's generic `Vec<u8>` type. Basically this just means accepting that there
-		// will be a prefix of vector length (we don't need
-		// to use this).
-		let _length_do_not_remove_me_see_above: Compact<u32> = Decode::decode(input)?;
-
-		let version = input.read_byte()?;
-
-		let is_signed = version & 0b1000_0000 != 0;
-		let version = version & 0b0111_1111;
-		if version != EXTRINSIC_VERSION {
-			return Err("Invalid transaction version".into());
-		}
-		let (app_id, signature) = if is_signed {
-			let _address = <MultiAddress<AccountId32, u32>>::decode(input)?;
-			let sig = MultiSignature::decode(input)?;
-			let extra = <AvailSignedExtra>::decode(input)?;
-			let app_id = extra.7;
-
-			(app_id, Some(sig))
-		} else {
-			return Err("Not signed".into());
-		};
-
-		let section: u8 = Decode::decode(input)?;
-		let method: u8 = Decode::decode(input)?;
-
-		let data: Vec<u8> = match (section, method) {
-			// TODO: Define these pairs as enums or better yet - make a dependency on substrate enums if possible
-			(29, 1) => Decode::decode(input)?,
-			_ => return Err("Not Avail Extrinsic".into()),
-		};
-
-		Ok(Self {
-			app_id,
-			signature,
-			data,
-		})
 	}
 }

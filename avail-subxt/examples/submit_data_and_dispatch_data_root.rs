@@ -1,13 +1,13 @@
 use anyhow::Result;
 use avail_subxt::{
-	api::{self, runtime_types::frame_support::storage::bounded_vec::BoundedVec},
+	api::{self, runtime_types::sp_core::bounded::bounded_vec::BoundedVec},
 	build_client,
 	primitives::AvailExtrinsicParams,
 	Opts,
 };
 use sp_keyring::AccountKeyring;
 use structopt::StructOpt;
-use subxt::{ext::sp_core::H160, tx::PairSigner};
+use subxt::{tx::PairSigner, utils::H160};
 
 const DESTINATION_DOMAIN: u32 = 1000;
 const DA_BRIDGE_ROUTER_ADDRESS: &str = "0x3f28a3e66326c3aa494d4f8e9477d1397ee94432";

@@ -2,9 +2,9 @@ use std::convert::TryInto;
 
 use frame_benchmarking::whitelisted_caller;
 use frame_support::{assert_err, assert_ok, BoundedVec};
-use merkle::Merkle;
 use nomad_base::testing::*;
 use nomad_core::{destination_and_nonce, NomadMessage, NomadState};
+use nomad_merkle::Merkle;
 use primitive_types::H256;
 use sp_runtime::{AccountId32, DispatchResult};
 use test_case::test_case;
@@ -46,7 +46,7 @@ fn it_dispatches_message() {
 			let message_hash = message.hash();
 
 			// Dispatch message
-			let origin = Origin::signed(TEST_SENDER_ACCOUNT);
+			let origin = RuntimeOrigin::signed(TEST_SENDER_ACCOUNT);
 			assert_ok!(Home::dispatch(
 				origin,
 				TEST_REMOTE_DOMAIN,
@@ -100,7 +100,7 @@ fn it_catches_improper_update() {
 			let fake_root = H256::repeat_byte(9);
 			let improper_signed = TEST_UPDATER.sign_update(committed_root, fake_root);
 
-			let origin = Origin::signed(TEST_SENDER_ACCOUNT);
+			let origin = RuntimeOrigin::signed(TEST_SENDER_ACCOUNT);
 			assert_ok!(Home::improper_update(origin, improper_signed.clone()));
 			assert!(Home::base().state == NomadState::Failed);
 
@@ -120,7 +120,7 @@ fn it_catches_improper_update() {
 }
 
 /// Dispatch a random message and returns the new `root`.
-fn dispatch_random_message(origin: Origin) -> H256 {
+fn dispatch_random_message(origin: RuntimeOrigin) -> H256 {
 	let body = [1u8; 8].to_vec().try_into().unwrap();
 	assert_ok!(Home::dispatch(
 		origin,
@@ -143,7 +143,7 @@ fn it_update_max_index_witness(dispatch_messages: usize, max_index: u32) -> Disp
 			let committed_root = Home::base().committed_root;
 
 			// Dispatch `dispatch_messages` messages and get the latest root.
-			let sender = Origin::signed(TEST_SENDER_ACCOUNT);
+			let sender = RuntimeOrigin::signed(TEST_SENDER_ACCOUNT);
 			let last_root = (0..)
 				.take(dispatch_messages)
 				.map(|_| dispatch_random_message(sender.clone()))
@@ -163,7 +163,7 @@ fn it_dispatches_messages_and_accepts_updates() {
 		.execute_with(move || {
 			let committed_root = Home::base().committed_root;
 
-			let origin = Origin::signed(TEST_SENDER_ACCOUNT);
+			let origin = RuntimeOrigin::signed(TEST_SENDER_ACCOUNT);
 
 			// Dispatch 2 messages.
 			let roots = (0..2)
@@ -227,7 +227,7 @@ fn it_rejects_invalid_signature() {
 
 			let body: BoundedVec<u8, _> = [1u8; 8].to_vec().try_into().unwrap();
 			// Dispatch message
-			let origin = Origin::signed(TEST_SENDER_ACCOUNT);
+			let origin = RuntimeOrigin::signed(TEST_SENDER_ACCOUNT);
 			assert_ok!(Home::dispatch(
 				origin.clone(),
 				TEST_REMOTE_DOMAIN,
@@ -253,7 +253,7 @@ fn it_longest_tree() {
 		.with_base(*TEST_NOMAD_BASE)
 		.build()
 		.execute_with(move || {
-			use merkle::TREE_DEPTH;
+			use nomad_merkle::TREE_DEPTH;
 
 			let committed_root = Home::base().committed_root;
 
@@ -264,7 +264,7 @@ fn it_longest_tree() {
 				.try_into()
 				.unwrap();
 
-			let origin = Origin::signed(whitelisted_caller::<AccountId32>());
+			let origin = RuntimeOrigin::signed(whitelisted_caller::<AccountId32>());
 
 			for _ in 0..TREE_DEPTH {
 				assert_ok!(Home::dispatch(

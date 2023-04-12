@@ -1,11 +1,11 @@
 use da_control::AppKeyInfo;
 use da_primitives::currency::AVL;
 use da_runtime::{
-	wasm_binary_unwrap, AccountId, AuthorityDiscoveryConfig, BabeConfig, Balance, BalancesConfig,
-	Block, CouncilConfig, DataAvailabilityConfig, DemocracyConfig, DesiredMembers, ElectionsConfig,
-	GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig, NomadHomeConfig, SessionConfig,
-	SessionKeys, Signature, StakerStatus, StakingConfig, SudoConfig, SystemConfig,
-	TechnicalCommitteeConfig, UpdaterManagerConfig, MAX_NOMINATIONS,
+	constants, wasm_binary_unwrap, AccountId, AuthorityDiscoveryConfig, BabeConfig, Balance,
+	BalancesConfig, Block, CouncilConfig, DataAvailabilityConfig, DemocracyConfig, DesiredMembers,
+	ElectionsConfig, GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig, MaxNominations,
+	NomadHomeConfig, NominationPoolsConfig, SessionConfig, SessionKeys, Signature, StakerStatus,
+	StakingConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig, UpdaterManagerConfig,
 };
 use frame_system::limits::BlockLength;
 use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
@@ -78,6 +78,10 @@ mod testnet {
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
+/// Node `ChainSpec` extensions.
+///
+/// Additional parameters for some Substrate core modules,
+/// customizable from the chain spec.
 #[derive(Default, Clone, Serialize, Deserialize, ChainSpecExtension)]
 #[serde(rename_all = "camelCase")]
 pub struct Extensions {
@@ -206,7 +210,7 @@ pub fn testnet_genesis(
 		.map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
 		.chain(initial_nominators.iter().map(|x| {
 			use rand::{seq::SliceRandom, Rng};
-			let limit = (MAX_NOMINATIONS as usize).min(initial_authorities.len());
+			let limit = (MaxNominations::get() as usize).min(initial_authorities.len());
 			let count = rng.gen::<usize>() % limit;
 			let nominations = initial_authorities
 				.as_slice()
@@ -232,14 +236,14 @@ pub fn testnet_genesis(
 		system: SystemConfig {
 			// Add Wasm runtime to storage.
 			code: wasm_binary_unwrap().to_vec(),
-			kc_public_params: kate::testnet::public_params(MAX_BLOCK_COLUMNS as usize)
-				.to_raw_var_bytes(),
+			kc_public_params: kate::testnet::public_params(MAX_BLOCK_COLUMNS).to_raw_var_bytes(),
 			block_length: BlockLength::with_normal_ratio(
 				MAX_BLOCK_ROWS,
 				MAX_BLOCK_COLUMNS,
 				32,
 				Perbill::from_percent(90),
-			),
+			)
+			.expect("Valid `BlockLength` genesis definition .qed"),
 		},
 		balances: BalancesConfig {
 			balances: endowed_accounts
@@ -289,11 +293,11 @@ pub fn testnet_genesis(
 			phantom: Default::default(),
 		},
 		sudo: SudoConfig {
-			key: root_key.clone(),
+			key: Some(root_key.clone()),
 		},
 		babe: BabeConfig {
 			authorities: vec![],
-			epoch_config: Some(da_runtime::BABE_GENESIS_EPOCH_CONFIG),
+			epoch_config: Some(da_runtime::constants::BABE_GENESIS_EPOCH_CONFIG),
 		},
 		im_online: ImOnlineConfig { keys: vec![] },
 		authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
@@ -302,7 +306,6 @@ pub fn testnet_genesis(
 		},
 		technical_membership: Default::default(),
 		treasury: Default::default(),
-		scheduler: Default::default(),
 		transaction_payment: Default::default(),
 		data_availability: DataAvailabilityConfig {
 			app_keys: vec![
@@ -335,6 +338,13 @@ pub fn testnet_genesis(
 			_phantom: Default::default(),
 		},
 		da_bridge: Default::default(),
+		nomination_pools: NominationPoolsConfig {
+			min_create_bond: constants::nomination_pools::MIN_CREATE_BOND,
+			min_join_bond: constants::nomination_pools::MIN_JOIN_BOND,
+			max_pools: Some(constants::nomination_pools::MAX_POOLS),
+			max_members_per_pool: Some(constants::nomination_pools::MAX_MEMBERS_PER_POOL),
+			max_members: Some(constants::nomination_pools::MAX_MEMBERS),
+		},
 	}
 }
 
@@ -354,6 +364,7 @@ pub fn development_config() -> ChainSpec {
 		ChainType::Development,
 		development_config_genesis,
 		vec![],
+		None,
 		None,
 		None,
 		chain_properties(),
@@ -406,14 +417,14 @@ fn genesis_builder(
 		system: SystemConfig {
 			// Add Wasm runtime to storage.
 			code: wasm_binary_unwrap().to_vec(),
-			kc_public_params: kate::testnet::public_params(MAX_BLOCK_COLUMNS as usize)
-				.to_raw_var_bytes(),
+			kc_public_params: kate::testnet::public_params(MAX_BLOCK_COLUMNS).to_raw_var_bytes(),
 			block_length: BlockLength::with_normal_ratio(
 				MAX_BLOCK_ROWS,
 				MAX_BLOCK_COLUMNS,
 				32,
 				Perbill::from_percent(90),
-			),
+			)
+			.expect("Valid `BlockLength` genesis definition .qed"),
 		},
 		balances: BalancesConfig { balances },
 		indices: IndicesConfig { indices: vec![] },
@@ -458,11 +469,11 @@ fn genesis_builder(
 			phantom: Default::default(),
 		},
 		sudo: SudoConfig {
-			key: sudo_key.clone(),
+			key: Some(sudo_key.clone()),
 		},
 		babe: BabeConfig {
 			authorities: vec![],
-			epoch_config: Some(da_runtime::BABE_GENESIS_EPOCH_CONFIG),
+			epoch_config: Some(da_runtime::constants::BABE_GENESIS_EPOCH_CONFIG),
 		},
 		im_online: ImOnlineConfig { keys: vec![] },
 		authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
@@ -471,7 +482,6 @@ fn genesis_builder(
 		},
 		technical_membership: Default::default(),
 		treasury: Default::default(),
-		scheduler: Default::default(),
 		transaction_payment: Default::default(),
 		data_availability: DataAvailabilityConfig {
 			app_keys: vec![
@@ -492,6 +502,13 @@ fn genesis_builder(
 		updater_manager: Default::default(),
 		nomad_home: Default::default(),
 		da_bridge: Default::default(),
+		nomination_pools: NominationPoolsConfig {
+			min_create_bond: constants::nomination_pools::MIN_CREATE_BOND,
+			min_join_bond: constants::nomination_pools::MIN_JOIN_BOND,
+			max_pools: Some(constants::nomination_pools::MAX_POOLS),
+			max_members_per_pool: Some(constants::nomination_pools::MAX_MEMBERS_PER_POOL),
+			max_members: Some(constants::nomination_pools::MAX_MEMBERS),
+		},
 	}
 }
 
@@ -513,6 +530,7 @@ pub fn testnet_config() -> ChainSpec {
 		vec![],
 		None,
 		Some("da1"),
+		None,
 		chain_properties(),
 		Default::default(),
 	)

@@ -3,43 +3,46 @@ name = "da-runtime"
 version = "6.0.0"
 authors = ["Anonymous"]
 description = "Polygon Data Avilability Runtime"
-edition = "2018"
+edition = "2021"
+build = "build.rs"
 license = "GNU GPLv3"
 homepage = "https://polygon.technology/"
-repository = ""
+repository = "https://github.com/maticnetwork/avail/"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+
 # Internal
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.3.0", default-features = false }
-kate = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.3.0", default-features = false }
+da-primitives = { version = "0.4", default-features = false }
+kate = { version = "0.7" , default-features = false }
 da-control = { path = "../pallets/dactr", default-features = false }
 kate-rpc-runtime-api = { path = "../rpc/kate-rpc-runtime-api", default-features = false }
 
 ## Nomad
-updater-manager = { path = "../pallets/nomad/updater-manager", default-features = false }
+nomad-updater-manager = { path = "../pallets/nomad/updater-manager", default-features = false }
 nomad-home = { path = "../pallets/nomad/home", default-features = false }
 da-bridge = { path = "../pallets/nomad/da-bridge", default-features = false }
 
 # External 
 static_assertions = "1.1.0"
 serde = { version = "1.0.121", optional = true, features = ["derive"] }
-log = { version = "0.4.14", default-features = false }
+log = { version = "0.4.17", default-features = false }
+hex-literal = { version = "0.3.4", optional = true }
 
 # Substrate
-scale-info = { version = "1.0", default-features = false, features = ["derive"] }
-parity-util-mem = { version = "0.10.2", default-features = false, features = ["primitive-types"] }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+parity-util-mem = { version = "0.12.0", default-features = false, features = ["primitive-types"] }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-sp-io = { version = "4.0.0-dev", default-features = false }
-sp-core = { version = "4.0.0-dev", default-features = false }
-sp-std = { version = "4.0.0-dev", default-features = false }
+## primitives
+sp-io = { version = "7.0.0", default-features = false }
+sp-core = { version = "7.0.0", default-features = false }
 sp-api = { version = "4.0.0-dev", default-features = false }
-sp-runtime = { version = "4.0.0-dev", default-features = false }
+sp-runtime = { version = "7.0.0", default-features = false }
 sp-authority-discovery = { version = "4.0.0-dev", default-features = false }
-sp-version = { version = "4.0.0-dev", default-features = false }
+sp-version = { version = "5", default-features = false }
 sp-consensus-babe = { version = "0.10.0-dev", default-features = false }
 sp-staking = {version = "4.0.0-dev", default-features = false }
 sp-transaction-pool = { version = "4.0.0-dev", default-features = false }
@@ -48,11 +51,13 @@ sp-session = { version = "4.0.0-dev", default-features = false }
 sp-block-builder = { version = "4.0.0-dev", default-features = false }
 sp-inherents = { version = "4.0.0-dev", default-features = false }
 sp-npos-elections = { version = "4.0.0-dev", default-features = false }
+sp-std = { version = "5.0.0", default-features = false }
 
-## Substrate::Pallets
+## frame dependencies
 frame-support = { version = "4.0.0-dev", default-features = false }
 frame-system = { path = "../pallets/system", default-features = false }
 frame-executive = { version = "4.0.0-dev", default-features = false }
+frame-try-runtime = { version = "0.10.0-dev", default-features = false, optional = true }
 
 pallet-balances = { version = "4.0.0-dev", default-features = false }
 pallet-session = { version = "4.0.0-dev", features = ['historical'], default-features = false }
@@ -83,95 +88,154 @@ frame-election-provider-support = { version = "4.0.0-dev", default-features = fa
 pallet-democracy = { version = "4.0.0-dev", default-features = false }
 pallet-asset-tx-payment = { version = "4.0.0-dev", default-features = false }
 pallet-mmr = { version = "4.0.0-dev", default-features = false }
+pallet-multisig = { version = "4.0.0-dev", default-features = false }
+pallet-child-bounties = { version = "4.0.0-dev", default-features = false }
+pallet-preimage = { version = "4.0.0-dev", default-features = false }
+pallet-nomination-pools = { version = "1", default-features = false }
 
-## Substrate::RPCs
+## RPCs
 pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", default-features = false }
 frame-system-rpc-runtime-api = { version = "4.0.0-dev", default-features = false }
 
-# Used for runtime benchmarking
+## benchmarking
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 frame-system-benchmarking = { path = "../pallets/system/benchmarking", default-features = false, optional = true }
-# pallet-session-benchmarking = { version = "4.0.0-dev", default-features = false, path = "../../../frame/session/benchmarking", optional = true }
-hex-literal = { version = "0.3.4", optional = true }
+#pallet-session-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
+#pallet-offences-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
+#pallet-election-provider-support-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 
 [build-dependencies]
-substrate-wasm-builder = "4.0.0"
+substrate-wasm-builder = "5.0.0-dev"
 
 [dev-dependencies]
 test-case = "1.2.3"
 hex = "0.4"
 hex-literal = "0.3.4"
 serde_json = "1.0"
-sp-keyring = "4.0.0-dev"
+sp-keyring = "7.0.0"
 env_logger = "0.9.1"
 
 [features]
 default = ["std"]
+with-tracing = ["frame-executive/with-tracing"]
+fast-runtime = []
 std = [
 	"serde",
-	"parity-util-mem/std",
-	"log/std",
+	#"parity-util-mem/std",
+	"frame-system-benchmarking?/std",
+	"frame-election-provider-support/std",
+	"sp-authority-discovery/std",
+	"pallet-authority-discovery/std",
+	"pallet-authorship/std",
+	"sp-consensus-babe/std",
+	"pallet-babe/std",
+	"pallet-bags-list/std",
+	"pallet-balances/std",
+	"pallet-bounties/std",
+	"sp-block-builder/std",
+	"codec/std",
+	"scale-info/std",
+	"pallet-collective/std",
+	"pallet-democracy/std",
+	"pallet-elections-phragmen/std",
+	"frame-executive/std",
+	"pallet-grandpa/std",
+	"pallet-im-online/std",
+	"pallet-indices/std",
+	"sp-inherents/std",
+	"pallet-membership/std",
+	"pallet-mmr/std",
+	"pallet-multisig/std",
+	"pallet-nomination-pools/std",
+	"pallet-scheduler/std",
 	"da-primitives/std",
-	"sp-io/std", 
-	"sp-core/std", 
+	"sp-offchain/std",
+	"pallet-offences/std",
+	"pallet-preimage/std",
+	"sp-core/std",
+	"pallet-randomness-collective-flip/std",
 	"sp-std/std",
+	"pallet-session/std",
 	"sp-api/std",
 	"sp-runtime/std",
-	"sp-version/std", 
-	"sp-authority-discovery/std",
-	"sp-consensus-babe/std",
 	"sp-staking/std",
-	"sp-transaction-pool/std",
-	"sp-offchain/std", 
+	"pallet-staking/std",
 	"sp-session/std",
-	"sp-block-builder/std",
-	"sp-inherents/std",
-	"sp-npos-elections/std",
-	"frame-executive/std",
+	"pallet-sudo/std",
+	"frame-support/std",
+	"frame-benchmarking?/std",
+	"frame-system-rpc-runtime-api/std",
+	"frame-system/std",
+	"pallet-election-provider-multi-phase/std",
+	"pallet-timestamp/std",
+	"pallet-tips/std",
+	"pallet-transaction-payment-rpc-runtime-api/std",
+	"pallet-transaction-payment/std",
+	"pallet-treasury/std",
+	"sp-transaction-pool/std",
+	"pallet-utility/std",
+	"sp-version/std",
+	"log/std",
+	"frame-try-runtime?/std",
+	"sp-io/std",
+	"pallet-child-bounties/std",
+
+	"da-control/std",
 	"kate/std",
 	"kate-rpc-runtime-api/std",
-	"frame-support/std",
-	"frame-system/std",
-	"pallet-session/std",
-	"pallet-balances/std",
-	"pallet-im-online/std",
-	"pallet-grandpa/std",
-	"pallet-timestamp/std",
-	"pallet-transaction-payment/std",
-	"pallet-transaction-payment-rpc-runtime-api/std",
-	"pallet-staking/std",
-	"pallet-utility/std",
-	"pallet-scheduler/std",
-	"pallet-babe/std",
-	"pallet-authorship/std",
-	"pallet-indices/std",
-	"pallet-offences/std",
-	"pallet-treasury/std",
-	"pallet-collective/std",
-	"pallet-bounties/std",
-	"pallet-sudo/std",
-	"pallet-authority-discovery/std",
-	"pallet-elections-phragmen/std",
-	"pallet-tips/std",
-	"pallet-membership/std",
-	"pallet-randomness-collective-flip/std",
-	"pallet-democracy/std",
-	"pallet-asset-tx-payment/std",
-	"pallet-mmr/std",
-	"frame-system-rpc-runtime-api/std",
-	"da-control/std",
-	"updater-manager/std",
+	"nomad-updater-manager/std",
 	"nomad-home/std",
 	"da-bridge/std",
 ]
 
 runtime-benchmarks = [
-	"frame-benchmarking",
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"frame-system-benchmarking/runtime-benchmarks",
 	"da-control/runtime-benchmarks",
 	"nomad-home/runtime-benchmarks",
 	"da-bridge/runtime-benchmarks",
-	"pallet-collective/runtime-benchmarks",
-	"frame-system-benchmarking",
 	"hex-literal",
+]
+
+try-runtime = [
+	"frame-try-runtime/try-runtime",
+	"frame-executive/try-runtime",
+	"frame-system/try-runtime",
+	"frame-support/try-runtime",
+	"da-control/try-runtime",
+	"nomad-home/try-runtime",
+	"da-bridge/try-runtime",
+	"nomad-updater-manager/try-runtime",
+	"pallet-utility/try-runtime",
+	"pallet-babe/try-runtime",
+	"pallet-timestamp/try-runtime",
+	"pallet-authorship/try-runtime",
+	"pallet-indices/try-runtime",
+	"pallet-balances/try-runtime",
+	"pallet-election-provider-multi-phase/try-runtime",
+	"pallet-staking/try-runtime",
+	"pallet-session/try-runtime",
+	"pallet-democracy/try-runtime",
+	"pallet-collective/try-runtime",
+	"pallet-elections-phragmen/try-runtime",
+	"pallet-membership/try-runtime",
+	"pallet-grandpa/try-runtime",
+	"pallet-treasury/try-runtime",
+	"pallet-sudo/try-runtime",
+	"pallet-im-online/try-runtime",
+	"pallet-authority-discovery/try-runtime",
+	"pallet-offences/try-runtime",
+	"pallet-scheduler/try-runtime",
+	"pallet-bounties/try-runtime",
+	"pallet-mmr/try-runtime",
+	"pallet-preimage/try-runtime",
+	"pallet-multisig/try-runtime",
+	"pallet-bags-list/try-runtime",
+	"pallet-nomination-pools/try-runtime",
+	"pallet-transaction-payment/try-runtime",
+	"pallet-tips/try-runtime",
+	"da-primitives/try-runtime",
 ]
