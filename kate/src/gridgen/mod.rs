@@ -4,7 +4,6 @@ use codec::Encode;
 use da_types::{AppExtrinsic, AppId, DataLookup, DataLookupIndexItem};
 use dusk_bytes::Serializable;
 use dusk_plonk::{
-	commitment_scheme::kzg10::commitment::Commitment,
 	fft::{EvaluationDomain, Evaluations, Polynomial},
 	prelude::{BlsScalar, CommitKey},
 };
@@ -19,6 +18,8 @@ use crate::{
 	config::DATA_CHUNK_SIZE,
 	Seed,
 };
+
+pub use dusk_plonk::commitment_scheme::kzg10::commitment::Commitment;
 
 #[cfg(test)]
 mod tests;
@@ -274,6 +275,13 @@ impl PolynomialGrid {
 			.open(&mut ts, &evals, &polys, points)
 			.map_err(Error::MultiproofError)?;
 
+        for r in &evals {
+            for e in r {
+                use crate::pmp::ark_serialize::{CanonicalSerialize, Compress};
+                assert!(e.serialized_size(Compress::Yes) == 32)
+            }
+        }
+
 		Ok(Multiproof {
 			proof,
 			evals,
@@ -298,10 +306,10 @@ pub struct Multiproof {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CellBlock {
-	start_x: usize,
-	start_y: usize,
-	end_x: usize,
-	end_y: usize,
+	pub start_x: usize,
+	pub start_y: usize,
+	pub end_x: usize,
+	pub end_y: usize,
 }
 
 /// Computes the `x, y`-th multiproof block of a grid of size `grid_dims`.
