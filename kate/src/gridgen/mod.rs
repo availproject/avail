@@ -9,7 +9,7 @@ use dusk_plonk::{
 };
 use kate_grid::{Dimensions, Extension, Grid, IntoColumnMajor, IntoRowMajor, RowMajor};
 use kate_recovery::config::PADDING_TAIL_VALUE;
-use poly_multiproof::{m1_blst::M1NoPrecomp, merlin::Transcript};
+use poly_multiproof::{m1_blst::M1NoPrecomp, merlin::Transcript, traits::AsBytes};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 
@@ -20,6 +20,9 @@ use crate::{
 };
 
 pub use dusk_plonk::commitment_scheme::kzg10::commitment::Commitment;
+
+pub type ArkScalar = crate::pmp::m1_blst::Fr;
+pub type MpCommitment = crate::pmp::Commitment<poly_multiproof::m1_blst::Bls12_381>;
 
 #[cfg(test)]
 mod tests;
@@ -275,13 +278,6 @@ impl PolynomialGrid {
 			.open(&mut ts, &evals, &polys, points)
 			.map_err(Error::MultiproofError)?;
 
-        for r in &evals {
-            for e in r {
-                use crate::pmp::ark_serialize::{CanonicalSerialize, Compress};
-                assert!(e.serialized_size(Compress::Yes) == 32)
-            }
-        }
-
 		Ok(Multiproof {
 			proof,
 			evals,
@@ -377,6 +373,22 @@ pub fn get_block_dims(
 			height.try_into().map_err(|_| Error::ZeroDimension)?,
 		))
 	}
+}
+
+pub fn domain_points(n: usize) -> Result<Vec<BlsScalar>, Error> {
+	let domain = EvaluationDomain::new(n)?;
+	Ok(domain.elements().collect())
+}
+
+pub fn to_ark_scalar(s: &BlsScalar) -> ArkScalar {
+	ArkScalar {
+		0: poly_multiproof::ark_ff::BigInt(s.0),
+		1: PhantomData,
+	}
+}
+
+pub fn to_mp_commitment(c: Commitment) -> MpCommitment {
+    MpCommitment::from_bytes(&c.to_bytes()).expect("commitment is valid")
 }
 
 fn round_up_to_multiple(input: usize, multiple: NonZeroUsize) -> usize {
