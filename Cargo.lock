@@ -2651,7 +2651,7 @@ dependencies = [
 [[package]]
 name = "poly-multiproof"
 version = "0.0.1"
-source = "git+https://github.com/aphoh/poly-multiproof?rev=48aafccb0e10278b16894034a0240a7561f1efa0#48aafccb0e10278b16894034a0240a7561f1efa0"
+source = "git+https://github.com/aphoh/poly-multiproof?rev=f09b4d502e2239ccfc5a7a1658713393feca8674#f09b4d502e2239ccfc5a7a1658713393feca8674"
 dependencies = [
  "ark-bls12-381",
  "ark-ec",

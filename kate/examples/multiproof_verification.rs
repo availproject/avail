@@ -6,7 +6,7 @@ use poly_multiproof::traits::AsBytes;
 use rand::thread_rng;
 
 fn main() {
-	let target_dims = kate::grid::Dimensions::new_unchecked(64, 16);
+	let target_dims = kate::grid::Dimensions::new_unchecked(16, 64);
 	let pp = kate::testnet::public_params(256.into());
 	let pmp = poly_multiproof::m1_blst::M1NoPrecomp::new(256, 256, &mut thread_rng());
 	let points = kate::gridgen::domain_points(256).unwrap();
@@ -14,7 +14,7 @@ fn main() {
 		let exts = vec![
 			AppExtrinsic {
 				app_id: AppId(0),
-				data: hex!("CAFEBABE0000000000000000").to_vec(),
+				data: hex!("CAFEBABE00000000000000000000000000000000000000").to_vec(),
 			},
 			AppExtrinsic {
 				app_id: AppId(1),
