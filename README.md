@@ -1,6 +1,6 @@
 # Data Availability Node
 
-[![Build status](https://github.com/maticnetwork/avail/actions/workflows/default.yml/badge.svg)](https://github.com/maticnetwork/avail/actions/workflows/default.yml) [![Code coverage](https://codecov.io/gh/maticnetwork/avail/branch/main/graph/badge.svg?token=OBX2NEE31T)](https://codecov.io/gh/maticnetwork/avail)
+[![Build status](https://github.com/availproject/avail/actions/workflows/default.yml/badge.svg)](https://github.com/availproject/avail/actions/workflows/default.yml) [![Code coverage](https://codecov.io/gh/availproject/avail/branch/main/graph/badge.svg?token=OBX2NEE31T)](https://codecov.io/gh/availproject/avail)
 
 ## Compile
 
@@ -16,7 +16,7 @@ We also add `--tmp`, therefore the state will be deleted at the end of the proce
     Finished release [optimized] target(s) in 0.41s
      Running `target/release/data-avail --dev --tmp`
     2022-02-14 11:13:35 Running in --dev mode, RPC CORS has been disabled.    
-    2022-02-14 11:13:35 Polygon Avail Node    
+    2022-02-14 11:13:35 Avail Node    
     2022-02-14 11:13:35 ✌️  version 3.0.0-8983b6b-x86_64-linux-gnu    
     2022-02-14 11:13:35 ❤️  by Anonymous, 2017-2022    
     2022-02-14 11:13:35 📋 Chain specification: Avail-Dev    
@@ -163,3 +163,62 @@ To check if runtime is upgraded, query `system/version:SpVersionRuntimeVersion` 
 Some load testing cases requires blocks of maximum size. To compile node which will always pad block with random data up to maximum block size, compile node with:
 
 	$> cargo build -p data-avail --features "kate/maximum-block-size"
+
+## Docker build
+
+The easiest way to build and deploy your own node is using docker.
+
+### Build the docker image
+
+We recommend the use of `BuildKit`, and specify the branch/tag you want to build. The following
+example shows the latest tag for devnet:
+
+	$> export DOCKER_BUILDKIT=1
+	$> docker build --build-arg AVAIL_TAG=v1.3.0-rc3 -t avail:v1.3.0-rc3 .
+
+### How to use this image
+
+#### Run an Avail Node
+
+	$> docker run avail:v1.3.0-rc3
+
+### Where to Store Data
+
+There are two main volumes:
+  - `/da/state`, where the state of the blockchain is stored.
+  - `/da/keystore`, where the keystore is stored.
+
+You can bind to a host folder if you want to persist them even after remove the container:
+
+	$> docker run -v (pwd)/state:/da/state avail:v1.3.0-rc3
+
+
+### How to customize the node
+
+This image uses several environmental variables to customize the node:
+
+#### DA_CHAIN
+
+It sets the chainspec file used by the node. The default value is `/da/genesis/chainspec.raw.json`,
+which allows connection to `devnet06`. You can also customize it by the build argument `CHAIN_SPEC`.
+
+#### DA_NAME
+
+The human-readable name for this node. By default, "AvailNode" is used.
+
+#### DA_MAX_IN_PEERS
+
+The maximum number of incoming connections we're accepting. The default value is `50`.
+
+#### DA_MAX_OUT_PEERS
+
+The number of outgoing connections we're trying to maintain. Default value is `50`.
+
+#### DA_P2P_PORT
+
+Specify p2p protocol TCP port. Default value is `30333`.
+
+#### BOOTNODE_1, BOOTNODE_2, and BOOTNODE_3
+
+Defines 3 bootnodes. By default, `devnet06`'s bootnodes are loaded.
+

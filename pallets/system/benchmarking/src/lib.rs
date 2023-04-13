@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2019-2021 Parity Technologies (UK) Ltd.
+// Copyright (C) 2019-2022 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +21,7 @@
 
 use codec::Encode;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
-use frame_support::{storage, traits::Get, weights::DispatchClass};
+use frame_support::{dispatch::DispatchClass, storage, traits::Get};
 use frame_system::{header_builder::HeaderExtensionBuilder, Call, Pallet as System, RawOrigin};
 use sp_core::storage::well_known_keys;
 use sp_runtime::traits::Hash;
@@ -34,13 +34,13 @@ pub trait Config: frame_system::Config {}
 
 benchmarks! {
 	remark {
-		let b in 0 .. *T::BlockLength::get().max.get(DispatchClass::Normal) as u32;
+		let b in 0 .. *T::BlockLength::get().max.get(DispatchClass::Normal);
 		let remark_message = vec![1; b as usize];
 		let caller = whitelisted_caller();
 	}: _(RawOrigin::Signed(caller), remark_message)
 
 	remark_with_event {
-		let b in 0 .. *T::BlockLength::get().max.get(DispatchClass::Normal) as u32;
+		let b in 0 .. *T::BlockLength::get().max.get(DispatchClass::Normal);
 		let remark_message = vec![1; b as usize];
 		let caller = whitelisted_caller();
 	}: _(RawOrigin::Signed(caller), remark_message)
@@ -55,16 +55,16 @@ benchmarks! {
 	#[extra]
 	set_code_without_checks {
 		// Assume Wasm ~4MB
-		let code = vec![1; 4_000_000 as usize];
+		let code = vec![1; 4_000_000_usize];
 	}: _(RawOrigin::Root, code)
 	verify {
 		let current_code = storage::unhashed::get_raw(well_known_keys::CODE).ok_or("Code not stored.")?;
-		assert_eq!(current_code.len(), 4_000_000 as usize);
+		assert_eq!(current_code.len(), 4_000_000_usize);
 	}
 
 	#[skip_meta]
 	set_storage {
-		let i in 1 .. 1000;
+		let i in 0 .. 1000;
 
 		// Set up i items to add
 		let mut items = Vec::new();
@@ -72,56 +72,69 @@ benchmarks! {
 			let hash = (i, j).using_encoded(T::Hashing::hash).as_ref().to_vec();
 			items.push((hash.clone(), hash.clone()));
 		}
+
+		let items_to_verify = items.clone();
 	}: _(RawOrigin::Root, items)
 	verify {
-		let last_hash = (i, i - 1).using_encoded(T::Hashing::hash);
-		let value = storage::unhashed::get_raw(last_hash.as_ref()).ok_or("No value stored")?;
-		assert_eq!(value, last_hash.as_ref().to_vec());
+		// Verify that they're actually in the storage.
+		for (item, _) in items_to_verify {
+			let value = storage::unhashed::get_raw(&item).ok_or("No value stored")?;
+			assert_eq!(value, *item);
+		}
 	}
 
 	#[skip_meta]
 	kill_storage {
-		let i in 1 .. 1000;
+		let i in 0 .. 1000;
 
 		// Add i items to storage
-		let mut items = Vec::new();
+		let mut items = Vec::with_capacity(i as usize);
 		for j in 0 .. i {
 			let hash = (i, j).using_encoded(T::Hashing::hash).as_ref().to_vec();
 			storage::unhashed::put_raw(&hash, &hash);
 			items.push(hash);
 		}
 
-		// We will verify this value is removed
-		let last_hash = (i, i - 1).using_encoded(T::Hashing::hash);
-		let value = storage::unhashed::get_raw(last_hash.as_ref()).ok_or("No value stored")?;
-		assert_eq!(value, last_hash.as_ref().to_vec());
+		// Verify that they're actually in the storage.
+		for item in &items {
+			let value = storage::unhashed::get_raw(item).ok_or("No value stored")?;
+			assert_eq!(value, *item);
+		}
 
+		let items_to_verify = items.clone();
 	}: _(RawOrigin::Root, items)
 	verify {
-		assert_eq!(storage::unhashed::get_raw(last_hash.as_ref()), None);
+		// Verify that they're not in the storage anymore.
+		for item in items_to_verify {
+			assert!(storage::unhashed::get_raw(&item).is_none());
+		}
 	}
 
 	#[skip_meta]
 	kill_prefix {
-		let p in 1 .. 1000;
+		let p in 0 .. 1000;
 
 		let prefix = p.using_encoded(T::Hashing::hash).as_ref().to_vec();
+		let mut items = Vec::with_capacity(p as usize);
 		// add p items that share a prefix
 		for i in 0 .. p {
 			let hash = (p, i).using_encoded(T::Hashing::hash).as_ref().to_vec();
 			let key = [&prefix[..], &hash[..]].concat();
 			storage::unhashed::put_raw(&key, &key);
+			items.push(key);
 		}
 
-		// We will verify this value is removed
-		let last_hash = (p, p - 1).using_encoded(T::Hashing::hash).as_ref().to_vec();
-		let last_key = [&prefix[..], &last_hash[..]].concat();
-		let value = storage::unhashed::get_raw(&last_key).ok_or("No value stored")?;
-		assert_eq!(value, last_key);
-
+		// Verify that they're actually in the storage.
+		for item in &items {
+			let value = storage::unhashed::get_raw(item).ok_or("No value stored")?;
+			assert_eq!(value, *item);
+		}
 	}: _(RawOrigin::Root, prefix, p)
 	verify {
-		assert_eq!(storage::unhashed::get_raw(&last_key), None);
+		// Verify that they're not in the storage anymore.
+		for item in items {
+			assert!(storage::unhashed::get_raw(&item).is_none());
+		}
 	}
 
 	#[extra]
@@ -129,10 +142,9 @@ benchmarks! {
 		let app_extrinsics = vec![];
 		let data_root = Default::default();
 		let block_length = Default::default();
-		let block_number = 1u32.into();
 
 	}: {
-		let _header = T::HeaderExtensionBuilder::build(app_extrinsics, data_root, block_length, block_number);
+		let _header = T::HeaderExtensionBuilder::build(app_extrinsics, data_root, block_length);
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);

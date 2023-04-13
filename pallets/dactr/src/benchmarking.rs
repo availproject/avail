@@ -44,6 +44,6 @@ benchmarks! {
 	submit_block_length_proposal {
 		let rows = T::MaxBlockRows::get();
 		let cols = T::MaxBlockCols::get();
-		let origin = RawOrigin::Signed(whitelisted_caller::<T::AccountId>());
-	}: submit_block_length_proposal(origin, rows, cols)
+		let origin = RawOrigin::Root;
+	}: submit_block_length_proposal(origin, rows.0, cols.0)
 }

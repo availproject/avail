@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2017-2021 Parity Technologies (UK) Ltd.
+// Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,7 @@
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{SignedExtension, Zero},
+	traits::{DispatchInfoOf, SignedExtension, Zero},
 	transaction_validity::TransactionValidityError,
 };
 
@@ -46,18 +46,29 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckGenesis<T> {
 
 impl<T: Config + Send + Sync> CheckGenesis<T> {
 	/// Creates new `SignedExtension` to check genesis hash.
+	#[allow(clippy::new_without_default)]
 	pub fn new() -> Self { Self(sp_std::marker::PhantomData) }
 }
 
 impl<T: Config + Send + Sync> SignedExtension for CheckGenesis<T> {
 	type AccountId = T::AccountId;
 	type AdditionalSigned = T::Hash;
-	type Call = <T as Config>::Call;
+	type Call = <T as Config>::RuntimeCall;
 	type Pre = ();
 
 	const IDENTIFIER: &'static str = "CheckGenesis";
 
 	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
 		Ok(<Pallet<T>>::block_hash(T::BlockNumber::zero()))
+	}
+
+	fn pre_dispatch(
+		self,
+		who: &Self::AccountId,
+		call: &Self::Call,
+		info: &DispatchInfoOf<Self::Call>,
+		len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		self.validate(who, call, info, len).map(|_| ())
 	}
 }

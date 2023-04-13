@@ -2,7 +2,9 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
-use da_primitives::{asdr::AppId, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO};
+use da_primitives::{
+	asdr::AppId, BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
+};
 use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -32,7 +34,7 @@ pub mod pallet {
 	pub type AppDataFor<T> = BoundedVec<u8, <T as Config>::MaxAppDataLength>;
 
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-	#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, RuntimeDebug)]
+	#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, RuntimeDebug, MaxEncodedLen)]
 	pub struct AppKeyInfo<Acc: PartialEq> {
 		/// Owner of the key
 		pub owner: Acc,
@@ -45,10 +47,10 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// Pallet Event
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Block length proposal Id.
-		type BlockLenProposalId: Parameter + Default + One + CheckedAdd;
+		type BlockLenProposalId: Parameter + Default + One + CheckedAdd + MaxEncodedLen;
 
 		/// The max length of application key.
 		#[pallet::constant]
@@ -60,19 +62,19 @@ pub mod pallet {
 
 		/// Minimum number of rows in a block.
 		#[pallet::constant]
-		type MinBlockRows: Get<u32>;
+		type MinBlockRows: Get<BlockLengthRows>;
 
 		/// Maximum number of rows in a block.
 		#[pallet::constant]
-		type MaxBlockRows: Get<u32>;
+		type MaxBlockRows: Get<BlockLengthRows>;
 
 		/// Minimum number of cols in a block.
 		#[pallet::constant]
-		type MinBlockCols: Get<u32>;
+		type MinBlockCols: Get<BlockLengthColumns>;
 
 		/// Maximum number of cols in a block.
 		#[pallet::constant]
-		type MaxBlockCols: Get<u32>;
+		type MaxBlockCols: Get<BlockLengthColumns>;
 
 		/// Weights for this pallet.
 		type WeightInfo: weights::WeightInfo;
@@ -102,6 +104,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Creates an application key if `key` does not exist yet.
+		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::create_application_key())]
 		pub fn create_application_key(
 			origin: OriginFor<T>,
@@ -125,6 +128,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::submit_data(data.len() as u32))]
 		pub fn submit_data(
 			origin: OriginFor<T>,
@@ -136,6 +140,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::submit_block_length_proposal())]
 		pub fn submit_block_length_proposal(
 			origin: OriginFor<T>,
@@ -143,6 +148,8 @@ pub mod pallet {
 			cols: u32,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
+			let rows = BlockLengthRows(rows);
+			let cols = BlockLengthColumns(cols);
 
 			ensure!(
 				rows <= T::MaxBlockRows::get() && cols <= T::MaxBlockCols::get(),
@@ -153,10 +160,12 @@ pub mod pallet {
 				Error::<T>::BlockDimensionsTooSmall
 			);
 
-			let _id = Self::next_block_len_proposal_id()?;
 			let block_length =
-				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO);
-			DynamicBlockLength::<T>::put(&block_length);
+				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO)
+					.map_err(|_| Error::<T>::BlockDimensionsOutOfBounds)?;
+
+			let _id = Self::next_block_len_proposal_id()?;
+			DynamicBlockLength::<T>::put(block_length);
 
 			Self::deposit_event(Event::BlockLengthProposalSubmitted { rows, cols });
 
@@ -179,8 +188,8 @@ pub mod pallet {
 			data: AppDataFor<T>,
 		},
 		BlockLengthProposalSubmitted {
-			rows: u32,
-			cols: u32,
+			rows: BlockLengthRows,
+			cols: BlockLengthColumns,
 		},
 	}
 
@@ -226,7 +235,7 @@ pub mod pallet {
 			self.app_keys
 				.iter()
 				.cloned()
-				.try_for_each(|(key, info)| -> Result<(), ()> {
+				.try_for_each(|(key, info)| -> Result<(), Vec<u8>> {
 					let key = AppKeyFor::<T>::try_from(key)?;
 					AppKeys::<T>::insert(key, info);
 					Ok(())

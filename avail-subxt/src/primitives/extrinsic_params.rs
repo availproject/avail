@@ -1,8 +1,8 @@
 use codec::{Compact, Decode, Encode, Error, Input, Output};
 use serde::{Deserialize, Serialize};
 use subxt::{
-	ext::sp_core::H256,
-	tx::{Era, ExtrinsicParams},
+	config::{extrinsic_params::Era, ExtrinsicParams},
+	utils::H256,
 };
 
 use crate::api::runtime_types::da_primitives::asdr::AppId;

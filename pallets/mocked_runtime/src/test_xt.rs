@@ -1,10 +1,7 @@
 use codec::{Codec, Decode, Encode};
 use da_primitives::asdr::{AppId, GetAppId};
 use derive_more::From;
-use frame_support::{
-	traits::ExtrinsicCall,
-	weights::{DispatchInfo, GetDispatchInfo},
-};
+use frame_support::{dispatch, traits::ExtrinsicCall};
 use scale_info::TypeInfo;
 use serde::Serializer;
 use sp_runtime::{
@@ -52,6 +49,14 @@ impl<Call: Codec + Sync + Send, Context, Extra> Checkable<Context> for TestXt<Ca
 	type Checked = Self;
 
 	fn check(self, _: &Context) -> Result<Self::Checked, TransactionValidityError> { Ok(self) }
+
+	#[cfg(feature = "try-runtime")]
+	fn unchecked_into_checked_i_know_what_i_am_doing(
+		self,
+		_: &Context,
+	) -> Result<Self::Checked, TransactionValidityError> {
+		unreachable!()
+	}
 }
 
 impl<Call: Codec + Sync + Send, Extra> Extrinsic for TestXt<Call, Extra> {
@@ -78,8 +83,15 @@ where
 
 impl<Origin, Call, Extra> Applyable for TestXt<Call, Extra>
 where
-	Call:
-		'static + Sized + Send + Sync + Clone + Eq + Codec + Debug + Dispatchable<Origin = Origin>,
+	Call: 'static
+		+ Sized
+		+ Send
+		+ Sync
+		+ Clone
+		+ Eq
+		+ Codec
+		+ Debug
+		+ Dispatchable<RuntimeOrigin = Origin>,
 	Extra: SignedExtension<AccountId = u64, Call = Call>,
 	Origin: From<Option<u64>>,
 {
@@ -117,6 +129,6 @@ impl<Call, Extra> GetAppId for TestXt<Call, Extra> {
 	fn app_id(&self) -> AppId { AppId::default() }
 }
 
-impl<Call: GetDispatchInfo, Extra> GetDispatchInfo for TestXt<Call, Extra> {
-	fn get_dispatch_info(&self) -> DispatchInfo { self.0.call.get_dispatch_info() }
+impl<Call: dispatch::GetDispatchInfo, Extra> dispatch::GetDispatchInfo for TestXt<Call, Extra> {
+	fn get_dispatch_info(&self) -> dispatch::DispatchInfo { self.0.call.get_dispatch_info() }
 }

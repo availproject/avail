@@ -2,8 +2,8 @@ use da_primitives::{Header, HeaderExtension};
 use frame_support::assert_ok;
 use frame_system::Config;
 use hex_literal::hex;
-use merkle::Merkle;
 use nomad_base::testing::*;
+use nomad_merkle::Merkle;
 use primitive_types::H256;
 use sp_runtime::{testing::Digest, traits::BlakeTwo256, AccountId32};
 
@@ -50,10 +50,10 @@ fn it_accepts_valid_extrinsic_root() {
 
 			// Enqueue extrinsic root
 			assert_ok!(DABridge::try_dispatch_data_root(
-				Origin::signed(TEST_SENDER_ACCOUNT),
+				RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
 				DESTINATION_DOMAIN,
 				H256::zero(),
-				header
+				Box::new(header)
 			));
 
 			// Get home's merkle root post-enqueue

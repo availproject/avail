@@ -24,17 +24,17 @@ pub mod pallet {
 		transactional,
 	};
 	use frame_system::pallet_prelude::{OriginFor, *};
-	use merkle::{Merkle, NomadLightMerkle};
 	use nomad_base::NomadBase;
 	use nomad_core::{destination_and_nonce, NomadMessage, NomadState, SignedUpdate};
+	use nomad_merkle::{Merkle, NomadLightMerkle};
 	use primitive_types::{H160, H256};
 	use sp_std::vec::Vec;
 
 	use super::weights::WeightInfo;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + updater_manager::Config {
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+	pub trait Config: frame_system::Config + nomad_updater_manager::Config {
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Max allowed message body size
 		#[pallet::constant]
@@ -45,7 +45,7 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::generate_store(pub (super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	// Nomad base
@@ -107,7 +107,7 @@ pub mod pallet {
 	}
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		Dispatch {
 			message_hash: H256,
@@ -153,6 +153,7 @@ pub mod pallet {
 		[u8; 32]: From<T::AccountId>,
 	{
 		/// Dispatch a message to the destination domain and recipient address.
+		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::dispatch(message_body.len() as u32))]
 		pub fn dispatch(
 			origin: OriginFor<T>,
@@ -170,6 +171,7 @@ pub mod pallet {
 		}
 
 		/// Verify/submit signed update.
+		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::update())]
 		pub fn update(
 			origin: OriginFor<T>,
@@ -181,6 +183,7 @@ pub mod pallet {
 		}
 
 		/// Verify/slash updater for improper update.
+		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::improper_update())]
 		pub fn improper_update(
 			origin: OriginFor<T>,
@@ -189,6 +192,23 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 			Self::do_improper_update(sender, &signed_update)?;
 			Ok(())
+		}
+
+		/// Set new updater on self as well as updater manager.
+		/// Note: Not exposed as pallet call, will only be callable by the
+		/// GovernanceRouter pallet when implemented.
+		#[pallet::call_index(3)]
+		#[pallet::weight(T::WeightInfo::set_updater())]
+		pub fn set_updater(origin: OriginFor<T>, new_updater: H160) -> DispatchResult {
+			ensure_root(origin)?;
+
+			// Modify NomadBase updater
+			Base::<T>::mutate(|base| base.updater = new_updater);
+
+			// update nomad state to active
+			Base::<T>::mutate(|base| base.state = NomadState::Active);
+			// Rotate updater on updater manager
+			nomad_updater_manager::Pallet::<T>::set_updater(new_updater)
 		}
 	}
 
@@ -293,7 +313,7 @@ pub mod pallet {
 				root = (index != 0)
 					.then(|| IndexToRoot::<T>::get(index - 1))
 					.flatten()
-					.unwrap_or_else(|| previous_root.clone());
+					.unwrap_or(previous_root);
 			}
 
 			Base::<T>::mutate(|base| {
@@ -350,21 +370,10 @@ pub mod pallet {
 		/// Set self in failed state and slash updater.
 		fn fail(reporter: T::AccountId) {
 			Base::<T>::mutate(|base| base.state = NomadState::Failed);
-			updater_manager::Pallet::<T>::slash_updater(reporter.clone());
+			nomad_updater_manager::Pallet::<T>::slash_updater(reporter.clone());
 
 			let updater = Self::base().updater;
 			Self::deposit_event(Event::<T>::UpdaterSlashed { updater, reporter });
-		}
-
-		/// Set new updater on self as well as updater manager.
-		/// Note: Not exposed as pallet call, will only be callable by the
-		/// GovernanceRouter pallet when implemented.
-		pub fn set_updater(new_updater: H160) -> DispatchResult {
-			// Modify NomadBase updater
-			Base::<T>::mutate(|base| base.updater = new_updater);
-
-			// Rotate updater on updater manager
-			updater_manager::Pallet::<T>::set_updater(new_updater)
 		}
 	}
 }
@@ -373,7 +382,7 @@ pub mod pallet {
 pub mod common_tests_and_benches {
 	use hex_literal::hex;
 	use nomad_core::{SignedUpdate, Update};
-	use signature::Signature;
+	use nomad_signature::Signature;
 	use sp_core::{H256, U256};
 
 	const EXPECTED_NEW_ROOT_LONGEST_TREE: H256 = H256(hex!(

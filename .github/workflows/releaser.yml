@@ -11,6 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
          - uses: actions/checkout@v2
+         - name: Install Protoc
+           uses: arduino/setup-protoc@v1
+           with:
+             version: '3.x'
+
          - name: install cargo deps and build avail
            shell: bash
            run: |
@@ -34,6 +39,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
          - uses: actions/checkout@v2
+         - name: Install Protoc
+           uses: arduino/setup-protoc@v1
+           with:
+             version: '3.x'
+
          - name: install cargo deps and build avail
            shell: bash
            run: |
@@ -111,4 +121,4 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           push: true
-          tags: 0xpolygon/avail:${{ steps.prepare.outputs.tag_name }}
+          tags: availj/avail:${{ steps.prepare.outputs.tag_name }}

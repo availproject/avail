@@ -32,7 +32,7 @@ pub struct CheckAppId<T: Config + Send + Sync>(pub AppId, sp_std::marker::Phanto
 impl<T> CheckAppId<T>
 where
 	T: Config + Send + Sync,
-	T::Call: IsSubType<DACall<T>>,
+	T::RuntimeCall: IsSubType<DACall<T>>,
 {
 	/// utility constructor. Used only in client/factory code.
 	pub fn from(app_id: AppId) -> Self { Self(app_id, sp_std::marker::PhantomData) }
@@ -41,7 +41,7 @@ where
 	///  - Only `DataAvailability::submit_data(..)` extrinsic can use `AppId != 0`. Any other call
 	///  must use `AppId == 0`.
 	///  - It validates that `AppId` is already registered.
-	pub fn do_validate(&self, call: &T::Call) -> TransactionValidity {
+	pub fn do_validate(&self, call: &T::RuntimeCall) -> TransactionValidity {
 		match call.is_sub_type() {
 			// Only `dactrl::submit_data` can use `AppId != 0`.
 			Some(DACall::<T>::submit_data { .. }) => {
@@ -81,11 +81,11 @@ where
 impl<T> SignedExtension for CheckAppId<T>
 where
 	T: Config + Send + Sync,
-	T::Call: IsSubType<DACall<T>>,
+	T::RuntimeCall: IsSubType<DACall<T>>,
 {
 	type AccountId = T::AccountId;
 	type AdditionalSigned = ();
-	type Call = T::Call;
+	type Call = T::RuntimeCall;
 	type Pre = ();
 
 	const IDENTIFIER: &'static str = "CheckAppId";
@@ -98,6 +98,17 @@ where
 		_len: usize,
 	) -> TransactionValidity {
 		self.do_validate(call)
+	}
+
+	fn pre_dispatch(
+		self,
+		_who: &Self::AccountId,
+		call: &Self::Call,
+		_info: &DispatchInfoOf<Self::Call>,
+		_len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		self.do_validate(call)?;
+		Ok(())
 	}
 
 	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
@@ -122,14 +133,14 @@ mod tests {
 
 	use super::*;
 	use crate::{
-		mock::{new_test_ext, Call, Test},
+		mock::{new_test_ext, RuntimeCall, Test},
 		pallet::Call as DACall,
 	};
 
-	fn remark_call() -> Call { Call::System(SysCall::remark { remark: vec![] }) }
+	fn remark_call() -> RuntimeCall { RuntimeCall::System(SysCall::remark { remark: vec![] }) }
 
-	fn submit_data_call() -> Call {
-		Call::DataAvailability(DACall::submit_data {
+	fn submit_data_call() -> RuntimeCall {
+		RuntimeCall::DataAvailability(DACall::submit_data {
 			data: vec![].try_into().unwrap(),
 		})
 	}
@@ -144,7 +155,7 @@ mod tests {
 	#[test_case(0, remark_call() => Ok(ValidTransaction::default()); "System::remark can be called if AppId == 0" )]
 	#[test_case(1, remark_call() => to_invalid_tx(ForbiddenAppId); "System::remark cannot be called if AppId != 0" )]
 	#[test_case(1, submit_data_call() => Ok(ValidTransaction::default()); "submit_data can be called with any valid AppId" )]
-	fn do_validate_test<A: Into<AppId>>(app_id: A, call: Call) -> TransactionValidity {
+	fn do_validate_test<A: Into<AppId>>(app_id: A, call: RuntimeCall) -> TransactionValidity {
 		new_test_ext().execute_with(|| CheckAppId::<Test>::from(app_id.into()).do_validate(&call))
 	}
 }

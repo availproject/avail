@@ -5,6 +5,7 @@ use hex_literal::hex;
 use nomad_home::Nonces;
 use sp_core::H256;
 use sp_runtime::traits::Header as _;
+use sp_std::boxed::Box;
 
 use crate::*;
 
@@ -30,13 +31,13 @@ benchmarks! {
 		let extension = Default::default();
 		let digest = Default::default();
 
-		let header = <T::Header as ExtendedHeader>::new(
+		let header = Box::new(<T::Header as ExtendedHeader>::new(
 			block_number.clone(),
 			extrinsics_root.into(),
 			state_root,
 			parent_hash,
 			digest,
-			extension);
+			extension));
 		let header_hash :T::Hash = header.hash();
 
 		// Insert 10th block's hash into block number --> hash mapping so

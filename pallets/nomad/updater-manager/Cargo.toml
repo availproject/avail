@@ -1,5 +1,5 @@
 [package]
-name = "updater-manager"
+name = "nomad-updater-manager"
 version = "1.0.1"
 authors = [""]
 edition = "2021"
@@ -14,25 +14,22 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 # Substrate
 serde = { version = "1.0.126", optional = true, features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-scale-info = { version = "1.0", default-features = false, features = ["derive"] }
-sp-core = { version = "4.0.0-dev", default-features = false }
-sp-std = { version = "4.0.0-dev", default-features = false }
-sp-io = { version = "4.0.0-dev", default-features = false }
-sp-runtime = { version = "4.0.0-dev", default-features = false }
-sp-arithmetic = { version = "4.0.0-dev", default-features = false }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+sp-core = { version = "7.0.0", default-features = false }
+sp-std = { version = "5.0.0", default-features = false }
+sp-io = { version = "7.0.0", default-features = false }
+sp-runtime = { version = "7.0.0", default-features = false }
+sp-arithmetic = { version = "5", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false }
-primitive-types = { git = "https://github.com/paritytech/parity-common.git", tag = "parity-util-mem-v0.10.1", default-features = false }
+primitive-types = { version = "0.12.0", default-features = false }
 
 # Benchmarking
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 
-# Nomad
-nomad-core = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.3.0", default-features = false }
-
 [dev-dependencies]
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.3.0", default-features = false }
+da-primitives = "0.4"
 
 [features]
 default = ["std"]
@@ -47,11 +44,13 @@ std = [
 	"sp-arithmetic/std",
 	"frame-support/std",
 	"frame-system/std",
-	"nomad-core/std"
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
 	"sp-runtime/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 ]
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"frame-support/try-runtime",
+	"da-primitives/try-runtime"
+]

@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2020-2021 Parity Technologies (UK) Ltd.
+// Copyright (C) 2020-2022 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,8 +19,9 @@
 
 #![cfg(test)]
 
-use da_primitives::Header;
-use frame_system::tests::TestRandomness;
+use da_primitives::Header as DaHeader;
+use frame_system::{header_builder::da::HeaderExtensionBuilder, test_utils::TestRandomness};
+use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
 type AccountId = u64;
@@ -36,7 +37,7 @@ frame_support::construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system,
 	}
 );
 
@@ -48,21 +49,22 @@ impl frame_system::Config for Test {
 	type BlockLength = ();
 	type BlockNumber = BlockNumber;
 	type BlockWeights = ();
-	type Call = Call;
 	type DbWeight = ();
-	type Event = Event;
-	type Hash = sp_core::H256;
-	type Hashing = ::sp_runtime::traits::BlakeTwo256;
-	type Header = Header<BlockNumber, BlakeTwo256>;
-	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
+	type Hash = H256;
+	type Hashing = BlakeTwo256;
+	type Header = DaHeader<BlockNumber, BlakeTwo256>;
+	type HeaderExtensionBuilder = HeaderExtensionBuilder<Test>;
 	type Index = AccountIndex;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
-	type Origin = Origin;
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Test>;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeOrigin = RuntimeOrigin;
 	type SS58Prefix = ();
 	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
