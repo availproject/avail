@@ -15,9 +15,9 @@ pub const LOG_TARGET: &str = "kate";
 pub type Seed = [u8; 32];
 
 #[cfg(feature = "std")]
-pub use kate_grid as grid;
-#[cfg(feature = "std")]
 pub use dusk_bytes::Serializable;
+#[cfg(feature = "std")]
+pub use kate_grid as grid;
 #[cfg(feature = "std")]
 pub use poly_multiproof as pmp;
 

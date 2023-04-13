@@ -388,7 +388,7 @@ pub fn to_ark_scalar(s: &BlsScalar) -> ArkScalar {
 }
 
 pub fn to_mp_commitment(c: Commitment) -> MpCommitment {
-    MpCommitment::from_bytes(&c.to_bytes()).expect("commitment is valid")
+	MpCommitment::from_bytes(&c.to_bytes()).expect("commitment is valid")
 }
 
 fn round_up_to_multiple(input: usize, multiple: NonZeroUsize) -> usize {
