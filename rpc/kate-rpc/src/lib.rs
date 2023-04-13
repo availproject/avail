@@ -398,19 +398,22 @@ where
 			})
 			.collect::<Result<Vec<_>, _>>()?;
 
-		use kate::pmp::ark_serialize::CanonicalSerialize;
+		use kate::pmp::traits::AsBytes;
 		Ok(multiproofs
 			.iter()
 			.map(|mp| {
-				let mut proof = vec![0u8; 48];
-				mp.proof.0.serialize_compressed(&mut proof[..]).unwrap();
-				let cells = mp.evals.iter().flat_map(|s| s).collect::<Vec<_>>();
-				let mut evals = vec![0u8; 32 * cells.len()];
-				for (i, c) in cells.iter().enumerate() {
-					c.serialize_compressed(&mut evals[i * 32..(i + 1) * 32][..])
-						.unwrap();
+				let evals = mp
+					.evals
+					.iter()
+					.flat_map(|s| s)
+					.flat_map(|c| c.to_bytes().unwrap())
+					.collect::<Vec<u8>>();
+                let proof: Vec<u8> = mp.proof.to_bytes().unwrap().into();
+                log::info!("proof: {}, evals: {}", hex::encode(&proof), hex::encode(&evals));
+				MultiproofSer {
+					proof,
+					evals,
 				}
-				MultiproofSer { proof, evals }
 			})
 			.collect::<Vec<_>>())
 	}

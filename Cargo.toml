@@ -26,15 +26,15 @@ frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 
 # Polygon Primitives
-da-primitives = { version = "0.4", git="https://github.com/maticnetwork/avail-core",  rev = "c58c1bd50faca4eeb3cb0b40d1ff3b00578d27ba" } 
-kate = { version = "0.7", git="https://github.com/maticnetwork/avail-core",  rev = "c58c1bd50faca4eeb3cb0b40d1ff3b00578d27ba" }
-kate-recovery = { version = "0.8", git="https://github.com/maticnetwork/avail-core",  rev = "c58c1bd50faca4eeb3cb0b40d1ff3b00578d27ba" }
+da-primitives = { version = "0.4", git="https://github.com/maticnetwork/avail-core",  rev = "19c04e212caadaa553799c4ee896f6f0b67d646a" } 
+kate = { version = "0.7", git="https://github.com/maticnetwork/avail-core",  rev = "19c04e212caadaa553799c4ee896f6f0b67d646a" }
+kate-recovery = { version = "0.8", git="https://github.com/maticnetwork/avail-core",  rev = "19c04e212caadaa553799c4ee896f6f0b67d646a" }
 
 # Nomad
-nomad-signature = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "c58c1bd50faca4eeb3cb0b40d1ff3b00578d27ba" }
-nomad-merkle = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "c58c1bd50faca4eeb3cb0b40d1ff3b00578d27ba" }
-nomad-base = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "c58c1bd50faca4eeb3cb0b40d1ff3b00578d27ba" }
-nomad-core = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "c58c1bd50faca4eeb3cb0b40d1ff3b00578d27ba" }
+nomad-signature = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "19c04e212caadaa553799c4ee896f6f0b67d646a" }
+nomad-merkle = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "19c04e212caadaa553799c4ee896f6f0b67d646a" }
+nomad-base = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "19c04e212caadaa553799c4ee896f6f0b67d646a" }
+nomad-core = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "19c04e212caadaa553799c4ee896f6f0b67d646a" }
 
 # Other stuff
 uint = { git = "https://github.com/paritytech/parity-common.git", tag="rlp-v0.5.2" }
@@ -220,6 +220,7 @@ wasmi = { opt-level = 3 }
 x25519-dalek = { opt-level = 3 }
 yamux = { opt-level = 3 }
 zeroize = { opt-level = 3 }
+kate = { opt-level = 3 }
 
 [profile.release]
 # Substrate runtime requires unwinding.

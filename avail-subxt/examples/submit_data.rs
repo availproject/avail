@@ -1,3 +1,5 @@
+use std::num::NonZeroUsize;
+
 use anyhow::Result;
 use avail_subxt::{
 	api::{
@@ -12,11 +14,18 @@ use avail_subxt::{
 	primitives::AvailExtrinsicParams,
 	Call, Opts,
 };
-use kate::pmp::traits::PolyMultiProofNoPrecomp;
-use kate_recovery::{data::Cell, matrix::Dimensions};
+use kate::{
+	grid::Dimensions as KDims,
+	gridgen::ArkScalar,
+	pmp::{
+		merlin::Transcript,
+		traits::{AsBytes, PolyMultiProofNoPrecomp},
+	},
+};
+use kate_recovery::matrix::Dimensions;
 use sp_keyring::AccountKeyring;
 use structopt::StructOpt;
-use subxt::{config::Header, rpc::RpcParams, tx::PairSigner, utils::MultiSignature};
+use subxt::{config::Header, rpc::RpcParams, tx::PairSigner};
 
 /// This example submits an Avail data extrinsic, then retrieves the block containing the
 /// extrinsic and matches the data.
@@ -26,10 +35,11 @@ async fn main() -> Result<()> {
 	let client = build_client(args.ws).await?;
 
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());
-	let example_data = b"example".to_vec();
+	let mut example_data = [0u8; 1024];
+	example_data[..7].copy_from_slice(b"example");
 	let data_transfer = api::tx()
 		.data_availability()
-		.submit_data(BoundedVec(example_data.clone()));
+		.submit_data(BoundedVec(example_data.to_vec()));
 	let extrinsic_params = AvailExtrinsicParams::new_with_app_id(1.into());
 
 	println!("Sending example data...");
@@ -96,13 +106,26 @@ async fn main() -> Result<()> {
 	.unwrap();
 	assert!(res);
 
-	// Grab and verify multiproof
+	let kdims = KDims::new(
+		NonZeroUsize::new(ext.commitment.cols.into()).unwrap(),
+		NonZeroUsize::new(ext.commitment.rows.into()).unwrap(),
+	);
+	let target_dims = KDims::new_unchecked(16, 64);
+
+	let mp_grid_dims = kate::gridgen::multiproof_dims(&kdims, &target_dims).unwrap();
+
+    // Take every cell in `mp_grid_dims` for verification
+	let cells = (0..mp_grid_dims.width() as u32)
+		.flat_map(|col| {
+			(0..mp_grid_dims.height() as u32).map(move |row| kate::com::Cell {
+				row: row.into(),
+				col: col.into(),
+			})
+		})
+		.collect::<Vec<_>>();
+
 	let mut params = RpcParams::new();
-	let cell = kate::com::Cell {
-		row: 0.into(),
-		col: 0.into(),
-	};
-	params.push(vec![cell.clone()]).unwrap();
+	params.push(cells.clone()).unwrap();
 	params
 		.push(Some(submitted_block.block.header.hash()))
 		.unwrap();
@@ -113,7 +136,59 @@ async fn main() -> Result<()> {
 		.await
 		.unwrap();
 
-	println!("Got res: {:?}", res);
+	let commits = ext
+		.commitment
+		.commitment
+		.chunks_exact(48)
+		.map(|c| kate::pmp::Commitment::from_bytes(c.try_into().unwrap()).unwrap())
+		.collect::<Vec<_>>();
+
+	let pmp = kate::testnet::multiproof_params(256, 256);
+	let points = kate::gridgen::domain_points(kdims.width())
+		.unwrap()
+		.iter()
+		.map(kate::gridgen::to_ark_scalar)
+		.collect::<Vec<_>>();
+
+	for (mp, cell) in res.iter().zip(cells) {
+		let mp_block = kate::gridgen::multiproof_block(
+			cell.col.as_usize(),
+			cell.row.as_usize(),
+			&kdims,
+			&KDims::new_unchecked(16, 64),
+		)
+		.unwrap();
+
+		println!("Verifying multiproof of cells: {:?}", &mp_block);
+
+		let evals: Vec<ArkScalar> = mp
+			.evals
+			.chunks_exact(32)
+			.map(|c| {
+				let mut arr = [0u8; 32];
+				arr.copy_from_slice(c);
+				kate::gridgen::ArkScalar::from_bytes(&arr).unwrap()
+			})
+			.collect::<Vec<_>>();
+
+		let evals_grid = evals
+			.chunks_exact(mp_block.end_x - mp_block.start_x)
+			.collect::<Vec<_>>();
+
+		let proof =
+			kate::pmp::m1_blst::Proof::from_bytes(&mp.proof[..48].try_into().unwrap()).unwrap();
+
+		let mut transcript = Transcript::new(b"avail-mp");
+		assert!(pmp
+			.verify(
+				&mut transcript,
+				&commits[mp_block.start_y..mp_block.end_y],
+				&points[mp_block.start_x..mp_block.end_x],
+				&evals_grid,
+				&proof,
+			)
+			.unwrap());
+	}
 
 	Ok(())
 }

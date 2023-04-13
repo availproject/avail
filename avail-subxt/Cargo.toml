@@ -36,12 +36,13 @@ futures = "0.3.13"
 hex-literal = "0.3.4"
 hex = "0.4"
 test-case = "1.2.3"
-kate = { version = "0.7", git="https://github.com/maticnetwork/avail-core", rev = "6560e2eaf6143f16918fa9653d78094a7e4dafa7" }
-kate-recovery = { version = "0.8", git="https://github.com/maticnetwork/avail-core", rev = "6560e2eaf6143f16918fa9653d78094a7e4dafa7" }
+kate = { version = "0.7", git="https://github.com/maticnetwork/avail-core", rev = "19c04e212caadaa553799c4ee896f6f0b67d646a" }
+kate-recovery = { version = "0.8", git="https://github.com/maticnetwork/avail-core", rev = "19c04e212caadaa553799c4ee896f6f0b67d646a" }
 log = "0.4.14"
 pretty_env_logger = "0.4.0"
 derive_more = "0.99.17"
 serde_json = "1.0"
+dusk-bytes = "*"
 
 # Substrate 
 sp-keyring = "18.0.0"
