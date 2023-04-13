@@ -408,12 +408,8 @@ where
 					.flat_map(|s| s)
 					.flat_map(|c| c.to_bytes().unwrap())
 					.collect::<Vec<u8>>();
-                let proof: Vec<u8> = mp.proof.to_bytes().unwrap().into();
-                log::info!("proof: {}, evals: {}", hex::encode(&proof), hex::encode(&evals));
-				MultiproofSer {
-					proof,
-					evals,
-				}
+				let proof: Vec<u8> = mp.proof.to_bytes().unwrap().into();
+				MultiproofSer { proof, evals }
 			})
 			.collect::<Vec<_>>())
 	}

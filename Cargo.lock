@@ -1882,7 +1882,7 @@ dependencies = [
 [[package]]
 name = "da-primitives"
 version = "0.4.5"
-source = "git+https://github.com/maticnetwork/avail-core?rev=19c04e212caadaa553799c4ee896f6f0b67d646a#19c04e212caadaa553799c4ee896f6f0b67d646a"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ed0f2994506fd71550175722fe0e80f46d95c5e6#ed0f2994506fd71550175722fe0e80f46d95c5e6"
 dependencies = [
  "beefy-merkle-tree",
  "da-types",
@@ -1989,7 +1989,7 @@ dependencies = [
 [[package]]
 name = "da-types"
 version = "0.4.4"
-source = "git+https://github.com/maticnetwork/avail-core?rev=19c04e212caadaa553799c4ee896f6f0b67d646a#19c04e212caadaa553799c4ee896f6f0b67d646a"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ed0f2994506fd71550175722fe0e80f46d95c5e6#ed0f2994506fd71550175722fe0e80f46d95c5e6"
 dependencies = [
  "derive_more",
  "num-traits",
@@ -4227,7 +4227,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.7.0"
-source = "git+https://github.com/maticnetwork/avail-core?rev=19c04e212caadaa553799c4ee896f6f0b67d646a#19c04e212caadaa553799c4ee896f6f0b67d646a"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ed0f2994506fd71550175722fe0e80f46d95c5e6#ed0f2994506fd71550175722fe0e80f46d95c5e6"
 dependencies = [
  "da-types",
  "dusk-bytes",
@@ -4254,12 +4254,12 @@ dependencies = [
 [[package]]
 name = "kate-grid"
 version = "0.6.1"
-source = "git+https://github.com/maticnetwork/avail-core?rev=19c04e212caadaa553799c4ee896f6f0b67d646a#19c04e212caadaa553799c4ee896f6f0b67d646a"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ed0f2994506fd71550175722fe0e80f46d95c5e6#ed0f2994506fd71550175722fe0e80f46d95c5e6"
 
 [[package]]
 name = "kate-recovery"
 version = "0.8.0"
-source = "git+https://github.com/maticnetwork/avail-core?rev=19c04e212caadaa553799c4ee896f6f0b67d646a#19c04e212caadaa553799c4ee896f6f0b67d646a"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ed0f2994506fd71550175722fe0e80f46d95c5e6#ed0f2994506fd71550175722fe0e80f46d95c5e6"
 dependencies = [
  "dusk-bytes",
  "dusk-plonk",
@@ -4282,11 +4282,9 @@ dependencies = [
  "dusk-bytes",
  "frame-support",
  "frame-system",
- "hex",
  "jsonrpsee",
  "kate",
  "kate-rpc-runtime-api",
- "log",
  "moka",
  "parity-scale-codec 3.4.0",
  "sc-client-api",
@@ -5541,7 +5539,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.3"
-source = "git+https://github.com/maticnetwork/avail-core?rev=19c04e212caadaa553799c4ee896f6f0b67d646a#19c04e212caadaa553799c4ee896f6f0b67d646a"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ed0f2994506fd71550175722fe0e80f46d95c5e6#ed0f2994506fd71550175722fe0e80f46d95c5e6"
 dependencies = [
  "ethers-signers",
  "frame-support",
@@ -5560,7 +5558,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.3"
-source = "git+https://github.com/maticnetwork/avail-core?rev=19c04e212caadaa553799c4ee896f6f0b67d646a#19c04e212caadaa553799c4ee896f6f0b67d646a"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ed0f2994506fd71550175722fe0e80f46d95c5e6#ed0f2994506fd71550175722fe0e80f46d95c5e6"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -5607,7 +5605,7 @@ dependencies = [
 [[package]]
 name = "nomad-merkle"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core?rev=19c04e212caadaa553799c4ee896f6f0b67d646a#19c04e212caadaa553799c4ee896f6f0b67d646a"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ed0f2994506fd71550175722fe0e80f46d95c5e6#ed0f2994506fd71550175722fe0e80f46d95c5e6"
 dependencies = [
  "frame-support",
  "hex-literal",
@@ -5628,7 +5626,7 @@ dependencies = [
 [[package]]
 name = "nomad-signature"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core?rev=19c04e212caadaa553799c4ee896f6f0b67d646a#19c04e212caadaa553799c4ee896f6f0b67d646a"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ed0f2994506fd71550175722fe0e80f46d95c5e6#ed0f2994506fd71550175722fe0e80f46d95c5e6"
 dependencies = [
  "elliptic-curve",
  "ethers-core",
@@ -6935,7 +6933,7 @@ dependencies = [
 [[package]]
 name = "poly-multiproof"
 version = "0.0.1"
-source = "git+https://github.com/aphoh/poly-multiproof?rev=48aafccb0e10278b16894034a0240a7561f1efa0#48aafccb0e10278b16894034a0240a7561f1efa0"
+source = "git+https://github.com/aphoh/poly-multiproof?rev=99335b664253ba4eca35f52b812af8e691f2497e#99335b664253ba4eca35f52b812af8e691f2497e"
 dependencies = [
  "ark-bls12-381",
  "ark-ec",

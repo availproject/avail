@@ -35,7 +35,7 @@ async fn main() -> Result<()> {
 	let client = build_client(args.ws).await?;
 
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());
-	let mut example_data = [0u8; 1024];
+	let mut example_data = [0u8; 12_500];
 	example_data[..7].copy_from_slice(b"example");
 	let data_transfer = api::tx()
 		.data_availability()
@@ -114,7 +114,7 @@ async fn main() -> Result<()> {
 
 	let mp_grid_dims = kate::gridgen::multiproof_dims(&kdims, &target_dims).unwrap();
 
-    // Take every cell in `mp_grid_dims` for verification
+	// Take every cell in `mp_grid_dims` for verification
 	let cells = (0..mp_grid_dims.width() as u32)
 		.flat_map(|col| {
 			(0..mp_grid_dims.height() as u32).map(move |row| kate::com::Cell {
