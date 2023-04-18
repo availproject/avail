@@ -29,6 +29,7 @@ pub trait Extractor {
 	fn extract(app_ext: AppExtrinsic, metrics: RcMetrics) -> Option<Vec<u8>>;
 }
 
+#[cfg(any(feature = "std", test))]
 impl Extractor for () {
 	fn extract(_: AppExtrinsic, _: RcMetrics) -> Option<Vec<u8>> { None }
 }
@@ -39,6 +40,7 @@ pub trait Filter<C> {
 	fn filter(call: C, metrics: RcMetrics) -> Option<Vec<u8>>;
 }
 
+#[cfg(any(feature = "std", test))]
 impl<C> Filter<C> for () {
 	fn filter(_: C, _: RcMetrics) -> Option<Vec<u8>> { None }
 }

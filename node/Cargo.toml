@@ -1,13 +1,13 @@
 [package]
 name = "data-avail"
 version = "1.5.0"
-description = "Polygon Data Avilability Node."
+description = "Avail Node"
 authors = ["Anonymous"]
-homepage = "https://polygon.technology/"
+homepage = "https://www.availproject.org/"
 edition = "2021"
 license = "GNU GPLv3"
 publish = false
-repository = ""
+repository = "https://github.com/availproject/avail"
 build = "build.rs"
 
 [package.metadata.docs.rs]
@@ -18,6 +18,8 @@ name = "data-avail"
 
 [dependencies]
 avail-base = { path = "../base" }
+kate-rpc-runtime-api = { path = "../rpc/kate-rpc-runtime-api" }
+
 # Internals
 da-primitives = { version = "0.4", default-features = false }
 kate = { version = "0.7", default-features = false }

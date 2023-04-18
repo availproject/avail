@@ -6,20 +6,33 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+avail-base = { path = "../../base", default-features = false }
+kate-rpc-runtime-api = { path = "../kate-rpc-runtime-api" }
+da-runtime = { path = "../../runtime", default-features = false } # check
+
 sp-api = { version = "4.0.0-dev", default-features = false }
 frame-system = { version = "4.0.0-dev" }
-frame-support = { version = "4.0.0-dev", default-features = false }
-kate-rpc-runtime-api = { path = "../kate-rpc-runtime-api" }
-sc-client-db = { version = "0.10.0-dev", default-features = false }
-moka = "0.10"
-
-codec = { package = "parity-scale-codec", version = "3" }
-da-primitives = { version = "0.4" }
-kate = { version = "0.7" }
-dusk-bytes = { version = "*" } # TODO: fix, maybe re-export from kate
-jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
-serde = {version = "1.0", features = ["derive"]}
-
 sc-client-api = "4.0.0-dev"
 sp-blockchain = "4.0.0-dev"
 sp-runtime = "7.0.0"
+
+da-primitives = { version = "0.4", default-features = false }
+kate = { version = "0.7", default-features = false }
+dusk-bytes = { version = "*" } # TODO: fix, maybe re-export from kate
+
+jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
+moka = "0.10"
+serde = {version = "1.0", features = ["derive"]}
+
+[features]
+default = ["std"]
+std = [
+	"avail-base/std",
+	"kate-rpc-runtime-api/std",
+	"da-runtime/std",
+	"sp-api/std",
+	"frame-system/std",
+	"da-primitives/std",
+	"kate/std",
+	"sp-runtime/std",
+]

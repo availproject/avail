@@ -7,7 +7,7 @@ sudo yum update -y
 sudo yum install git -y
 
 # Clone the avail repo
-git clone https://github.com/maticnetwork/avail
+git clone https://github.com/availproject/avail
 
 # Install and configure Rust dependencies
 sudo yum install -y clang curl libssl-dev llvm libudev-dev

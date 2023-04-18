@@ -31,7 +31,7 @@ use crate::{
 };
 
 impl SubstrateCli for Cli {
-	fn impl_name() -> String { "Polygon Avail Node".into() }
+	fn impl_name() -> String { "Avail Node".into() }
 
 	fn impl_version() -> String { env!("SUBSTRATE_CLI_IMPL_VERSION").into() }
 
