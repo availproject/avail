@@ -1,6 +1,7 @@
 #![deny(unused_crate_dependencies)]
 use std::{num::NonZeroUsize, sync::Arc, vec};
 
+use avail_base::metrics::RPCMetricAdapter;
 use da_primitives::{
 	asdr::{AppExtrinsic, AppId},
 	traits::ExtendedHeader,
@@ -13,7 +14,6 @@ use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 };
-use avail_base::metrics::RPCMetricAdapter;
 use kate::{
 	com::Cell,
 	grid::{Dimensions, Grid as GridTrait},
@@ -125,7 +125,6 @@ macro_rules! internal_err {
 	}}
 }
 
-
 impl<Client, Block> Kate<Client, Block>
 where
 	Block: BlockT,
@@ -156,10 +155,10 @@ where
 
 		self.block_ext_cache
 			.try_get_with(block_hash, || {
-                use kate::metrics::Metrics; // TODO: Just do this in the RPC
-                let metrics = RPCMetricAdapter{};
+				use kate::metrics::Metrics; // TODO: Just do this in the RPC
+				let metrics = RPCMetricAdapter {};
 				// build block data extension and cache it
-                let t1 = std::time::Instant::now();
+				let t1 = std::time::Instant::now();
 				let xts_by_id: Vec<AppExtrinsic> = signed_block
 					.block
 					.extrinsics()
@@ -187,15 +186,15 @@ where
 				)
 				.map_err(|e| internal_err!("Building evals grid failed: {:?}", e))?;
 
-                let t2 = std::time::Instant::now();
-                metrics.preparation_block_time(t2 - t1);
-                
-                evals = evals
-				.extend_columns(2)
-				.map_err(|e| internal_err!("Error extending grid {:?}", e))?;
+				let t2 = std::time::Instant::now();
+				metrics.preparation_block_time(t2 - t1);
 
-                let t3 = std::time::Instant::now();
-                metrics.extended_block_time(t3 - t2);
+				evals = evals
+					.extend_columns(2)
+					.map_err(|e| internal_err!("Error extending grid {:?}", e))?;
+
+				let t3 = std::time::Instant::now();
+				metrics.extended_block_time(t3 - t2);
 
 				let polys = evals
 					.make_polynomial_grid()
