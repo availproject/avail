@@ -1,6 +1,6 @@
 [package]
 name = "data-avail"
-version = "1.5.0"
+version = "1.4.0"
 description = "Avail Node"
 authors = ["Anonymous"]
 homepage = "https://www.availproject.org/"
@@ -27,9 +27,9 @@ da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }
 # Nomad
-nomad-updater-manager = { path = "../pallets/nomad/updater-manager" }
-nomad-home = { path = "../pallets/nomad/home" }
-da-bridge = { path = "../pallets/nomad/da-bridge" }
+nomad-updater-manager = { path = "../pallets/bridges/nomad/updater-manager" }
+nomad-home = { path = "../pallets/bridges/nomad/home" }
+nomad-da-bridge = { path = "../pallets/bridges/nomad/da-bridge" }
 
 # 3rd-party
 codec = { package = "parity-scale-codec", version = "3" }
@@ -89,6 +89,7 @@ sc-sync-state-rpc = "0.10.0-dev"
 sp-api = "4.0.0-dev"
 sc-sysinfo = "6.0.0-dev"
 sc-network-common = "0.10.0-dev"
+primitive-types = "0.12.0"
 
 # FRAME
 pallet-im-online = "4.0.0-dev"

@@ -14,7 +14,7 @@ const BOB_SEED: &str = "bottom drive obey lake curtain smoke basket hold race lo
 #[async_std::main]
 async fn main() -> Result<()> {
 	let args = Opts::from_args();
-	let client = build_client(args.ws).await?;
+	let client = build_client(args.ws, args.validate_codegen).await?;
 
 	// Accounts
 	let pair_a = Pair::from_string_with_seed(ALICE_SEED, None).unwrap();

@@ -1,12 +1,12 @@
 [package]
-name = "da-bridge"
+name = "nomad-da-bridge"
 version = "1.0.1"
 authors = [""]
 edition = "2021"
 license = "Apache-2.0"
 homepage = ""
 repository = ""
-description = "Data Attestation Bridge Module"
+description = "Nomad Data Attestation Bridge Module"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -38,7 +38,7 @@ rand = "0.8.5"
 hex-literal = "0.3.4"
 frame-executive = "4.0.0-dev"
 pallet-transaction-payment = "4.0.0-dev"
-da-control = { path = "../../dactr" }
+da-control = { path = "../../../dactr" }
 nomad-base = "0.1" 
 nomad-merkle  = "0.1" 
 nomad-updater-manager = { path = "../updater-manager" }

@@ -11,7 +11,7 @@ const BATCH_NUM: usize = 1000;
 #[async_std::main]
 async fn main() -> Result<()> {
 	let args = Opts::from_args();
-	let client = build_client(args.ws).await?;
+	let client = build_client(args.ws, args.validate_codegen).await?;
 
 	let head_block = client
 		.rpc()

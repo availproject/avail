@@ -357,7 +357,7 @@ async fn main() -> Result<()> {
 
 	pretty_env_logger::init();
 	let args = Opts::from_args();
-	let client = build_client(args.ws).await?;
+	let client = build_client(args.ws, args.validate_codegen).await?;
 
 	// In Council,  create, approve and execute ...
 	let (council_proposal, proposal) = council::create_external_proposal(&client).await?;
