@@ -143,9 +143,9 @@ pub(crate) fn make_genesis(
 	GenesisConfig {
 		// General
 		system: config::make_system_config(),
-		babe: config::make_babe_config(authorities.iter()),
+		babe: config::make_babe_config(),
 		indices: Default::default(),
-        balances: config::make_balances_config(endowed_accounts.into_iter(), endowment),
+		balances: config::make_balances_config(endowed_accounts.into_iter(), endowment),
 		transaction_payment: Default::default(),
 		elections: config::make_elections(authorities.iter(), min_validator_bond),
 		staking: config::make_staking_config(
@@ -153,30 +153,31 @@ pub(crate) fn make_genesis(
 			min_validator_bond,
 			min_nominator_bond,
 		),
-        session: config::make_session_config(authorities.iter()),
-		// session: Default::default(),
+		session: config::make_session_config(authorities.iter()),
 		democracy: Default::default(),
-		council: config::make_council_config(authorities.iter()),
-		technical_committee: config::make_technical_committee_config(
-			tech_committee_members.clone(),
-		),
-		grandpa: config::make_grandpa_config(authorities.iter()),
+		// `council`'s members initialized by `elections`.
+		council: Default::default(),
+		technical_committee: config::make_technical_committee_config(tech_committee_members),
+		// `grandpa`'s keys were initialized by `Session`.
+		grandpa: Default::default(),
 		treasury: Default::default(),
 		sudo: config::make_sudo_config(sudo.clone()),
-		im_online: config::make_im_online_config(authorities.iter()),
-		authority_discovery: config::make_auth_discovery_config(authorities.iter()),
-	
+		// `im_online`'s keys were initialized by `Session::Historical`
+		im_online: Default::default(),
+		// `authority_discovery`'s keys were initialized by `Session`.
+		authority_discovery: Default::default(),
+
 		// Data Avail
 		data_availability: config::make_data_avail_config(sudo),
-	
+
 		// Nomad
 		nomad_home: config::nomad::make_home_config(NOMAD_LOCAL_DOMAIN, NOMAD_UPDATER),
 		nomad_updater_manager: config::nomad::make_update_manager_config(NOMAD_UPDATER),
 		nomad_da_bridge: Default::default(),
 
-
 		nomination_pools: config::make_nomination_pools_config(),
-		technical_membership: config::make_tech_membership_config(tech_committee_members),
+		// `technical_membership`'s members were initialized on `technical_committee`
+		technical_membership: Default::default(),
 	}
 }
 
@@ -253,6 +254,11 @@ pub(crate) mod tests {
 
 	#[test]
 	fn test_create_development_chain_spec() { locals::solo::chain_spec().build_storage().unwrap(); }
+
+	#[test]
+	fn test_create_development_tri_chain_spec() {
+		locals::tri::chain_spec().build_storage().unwrap();
+	}
 
 	#[test]
 	fn test_create_local_testnet_chain_spec() {

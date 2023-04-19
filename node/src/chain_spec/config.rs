@@ -1,10 +1,9 @@
 use da_control::AppKeyInfo;
 use da_primitives::asdr::AppId;
 use da_runtime::{
-	constants, wasm_binary_unwrap, AccountId, AuthorityDiscoveryConfig, BabeConfig, Balance,
-	BalancesConfig, CouncilConfig, DataAvailabilityConfig, DesiredMembers, ElectionsConfig,
-	GrandpaConfig, ImOnlineConfig, NominationPoolsConfig, SessionConfig, StakerStatus,
-	StakingConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig, TechnicalMembershipConfig,
+	constants, wasm_binary_unwrap, AccountId, BabeConfig, Balance, BalancesConfig,
+	DataAvailabilityConfig, DesiredMembers, ElectionsConfig, NominationPoolsConfig, SessionConfig,
+	StakerStatus, StakingConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
 };
 use frame_system::limits::BlockLength;
 use kate::{
@@ -48,15 +47,8 @@ pub(crate) fn make_session_config<'a, I: Iterator<Item = &'a AuthorityKeys>>(
 	authorities: I,
 ) -> SessionConfig {
 	let keys = authorities
-		.map(|a| {
-			(
-				a.stash.clone(),
-				a.stash.clone(),
-				a.session_keys.clone(),
-			)
-		})
+		.map(|a| (a.stash.clone(), a.stash.clone(), a.session_keys.clone()))
 		.collect();
-    println!("{keys:?}");
 
 	SessionConfig { keys }
 }
@@ -106,15 +98,6 @@ pub(crate) fn make_technical_committee_config(members: Vec<AccountId>) -> Techni
 	}
 }
 
-pub(crate) fn make_tech_membership_config(members: Vec<AccountId>) -> TechnicalMembershipConfig {
-	TechnicalMembershipConfig {
-		members: members
-			.try_into()
-			.expect("Tech members > Runtime::TechnicalMaxMembers .qed"),
-		..Default::default()
-	}
-}
-
 /// Uses `key` as `sudo` key.
 pub(crate) fn make_sudo_config(key: AccountId) -> SudoConfig { SudoConfig { key: Some(key) } }
 
@@ -146,28 +129,14 @@ pub(crate) fn make_nomination_pools_config() -> NominationPoolsConfig {
 	}
 }
 
-pub(crate) fn make_babe_config<'a, I: Iterator<Item = &'a AuthorityKeys>>(
-	authorities: I,
-) -> BabeConfig {
-	/*let authorities = authorities
-	.map(|auth| (auth.session_keys.babe.clone(), 1))
-	.collect();*/
+pub(crate) fn make_babe_config() -> BabeConfig {
 	let epoch_config = Some(da_runtime::constants::BABE_GENESIS_EPOCH_CONFIG);
 
 	BabeConfig {
+		// NOTE: `authorities` were initialized by `Session`.
 		authorities: vec![],
 		epoch_config,
 	}
-}
-
-/// Creates the GRANDPA configuration using `authorities` as initial authorities.
-pub(crate) fn make_grandpa_config<'a, I: Iterator<Item = &'a AuthorityKeys>>(
-	authorities: I,
-) -> GrandpaConfig {
-	let authorities = authorities
-		.map(|auth| (auth.session_keys.grandpa.clone(), 1u64))
-		.collect();
-	GrandpaConfig { authorities }
 }
 
 /// Creates the Phragmen Election configuration, using up to `T::DesiredMembers` from
@@ -178,41 +147,10 @@ pub(crate) fn make_elections<'a, I: Iterator<Item = &'a AuthorityKeys>>(
 ) -> ElectionsConfig {
 	let members = authorities
 		.take(DesiredMembers::get().saturated_into())
-		.map(|auth| (auth.controller.clone(), validator_bond))
+		.map(|auth| (auth.stash.clone(), validator_bond))
 		.collect();
 
 	ElectionsConfig { members }
-}
-
-pub(crate) fn make_auth_discovery_config<'a, I: Iterator<Item = &'a AuthorityKeys>>(
-	authorities: I,
-) -> AuthorityDiscoveryConfig {
-	let keys = authorities
-		.map(|auth| auth.session_keys.authority_discovery.clone())
-		.collect();
-
-	AuthorityDiscoveryConfig { keys }
-}
-
-pub(crate) fn make_council_config<'a, I: Iterator<Item = &'a AuthorityKeys>>(
-	authorities: I,
-) -> CouncilConfig {
-	let members = authorities.map(|auth| auth.controller.clone()).collect();
-
-	CouncilConfig {
-		members,
-		phantom: Default::default(),
-	}
-}
-
-pub(crate) fn make_im_online_config<'a, I: Iterator<Item = &'a AuthorityKeys>>(
-	authorities: I,
-) -> ImOnlineConfig {
-	let keys = authorities
-		.map(|auth| auth.session_keys.im_online.clone())
-		.collect();
-
-	ImOnlineConfig { keys }
 }
 
 pub(crate) mod nomad {
