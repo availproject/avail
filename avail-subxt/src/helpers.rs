@@ -44,10 +44,10 @@ pub mod democracy {
 		}
 	}
 
-	impl Into<NativeVote> for Vote {
-		fn into(self) -> NativeVote {
-			let flag = if self.aye { 0b1000_0000 } else { 0u8 };
-			NativeVote(self.conviction as u8 | flag)
+	impl From<Vote> for NativeVote {
+		fn from(vote: Vote) -> Self {
+			let flag = if vote.aye { 0b1000_0000 } else { 0u8 };
+			NativeVote(vote.conviction as u8 | flag)
 		}
 	}
 }

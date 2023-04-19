@@ -31,12 +31,19 @@ jobs:
             components: rustfmt
             profile: minimal
 
-      - name: Check code formatting
+      - name: Check Avail code formatting
         uses: actions-rs/cargo@v1
         with:
           toolchain: ${{ env.BUILD_TOOLCHAIN }}
           command: fmt
           args: --check
+
+      - name: Check Avail-SubXt code formatting
+        uses: actions-rs/cargo@v1
+        with:
+          toolchain: ${{ env.BUILD_TOOLCHAIN }}
+          command: fmt
+          args: --manifest-path avail-subxt/Cargo.toml --check
 
   build:
     runs-on: ubuntu-latest
@@ -140,6 +147,7 @@ jobs:
         run: |
           env
           cargo test --release --workspace
+          cargo test --release --manifest-path avail-subxt/Cargo.toml
         env:
           RUSTFLAGS: "-C instrument-coverage"
           LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
