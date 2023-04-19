@@ -3,9 +3,9 @@ members = [
 	"pallets/executive",
 	"pallets/system",
 	"pallets/dactr",
-	"pallets/nomad/updater-manager",
-	"pallets/nomad/home",
-	"pallets/nomad/da-bridge",
+	"pallets/bridges/nomad/updater-manager",
+	"pallets/bridges/nomad/home",
+	"pallets/bridges/nomad/da-bridge",
 	"runtime",
 	"node",
 ]
