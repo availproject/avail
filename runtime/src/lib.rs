@@ -200,7 +200,6 @@ parameter_types! {
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
 	pub const MaximumBlockWeight: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2));
-	pub const SS58Prefix: u16 = 42;
 }
 
 /// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.
@@ -270,7 +269,7 @@ impl frame_system::Config for Runtime {
 	type Index = Index;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
 	type Lookup = Indices;
-	type MaxConsumers = ConstU32<16>;
+	type MaxConsumers = constants::system::MaxConsumers;
 	/// What to do if an account is fully reaped from the system.
 	type OnKilledAccount = ();
 	/// What to do if a new account is created.
@@ -290,7 +289,7 @@ impl frame_system::Config for Runtime {
 	/// The ubiquitous origin type.
 	type RuntimeOrigin = RuntimeOrigin;
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
-	type SS58Prefix = SS58Prefix;
+	type SS58Prefix = constants::system::SS58Prefix;
 	/// Data Root
 	type SubmittedDataExtractor = Runtime;
 	/// Weight information for the extrinsics of this pallet.
@@ -358,8 +357,6 @@ impl pallet_preimage::Config for Runtime {
 }
 
 parameter_types! {
-	pub const EpochDuration: BlockNumber = EPOCH_DURATION_IN_SLOTS;
-	pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
 	pub const ReportLongevity: BlockNumber =
 		BondingDuration::get() * SessionsPerEra::get() * EpochDuration::get();
 }
@@ -367,8 +364,8 @@ parameter_types! {
 impl pallet_babe::Config for Runtime {
 	type DisabledValidators = Session;
 	type EpochChangeTrigger = pallet_babe::ExternalTrigger;
-	type EpochDuration = EpochDuration;
-	type ExpectedBlockTime = ExpectedBlockTime;
+	type EpochDuration = constants::time::EpochDuration;
+	type ExpectedBlockTime = constants::time::ExpectedBlockTime;
 	type HandleEquivocation =
 		pallet_babe::EquivocationHandler<Self::KeyOwnerIdentification, Offences, ReportLongevity>;
 	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
@@ -380,42 +377,26 @@ impl pallet_babe::Config for Runtime {
 		pallet_babe::AuthorityId,
 	)>>::Proof;
 	type KeyOwnerProofSystem = Historical;
-	type MaxAuthorities = MaxAuthorities;
+	type MaxAuthorities = constants::system::MaxAuthorities;
 	type WeightInfo = ();
-}
-
-parameter_types! {
-	pub const IndexDeposit: Balance = AVL;
 }
 
 impl pallet_indices::Config for Runtime {
 	type AccountIndex = AccountIndex;
 	type Currency = Balances;
-	type Deposit = IndexDeposit;
+	type Deposit = constants::indices::IndexDeposit;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_indices::weights::SubstrateWeight<Runtime>;
 }
-
-parameter_types! {
-	// TODO @miguel: Define the existential deposit based on Avail Token.
-	pub const ExistentialDeposit: Balance = 1 * AVL;
-	// For weight estimation, we assume that the most locks on an individual account will be 50.
-	// This number may need to be adjusted in the future if this assumption no longer holds true.
-	pub const MaxLocks: u32 = 50;
-	pub const MaxReserves: u32 = 50;
-}
-
-// ID type for named reserves.
-type ReserveIdentifier = [u8; 8];
 
 impl pallet_balances::Config for Runtime {
 	type AccountStore = frame_system::Pallet<Runtime>;
 	/// The type for recording an account's balance.
 	type Balance = Balance;
 	type DustRemoval = ();
-	type ExistentialDeposit = ExistentialDeposit;
-	type MaxLocks = MaxLocks;
-	type MaxReserves = MaxReserves;
+	type ExistentialDeposit = constants::balances::ExistentialDeposit;
+	type MaxLocks = constants::balances::MaxLocks;
+	type MaxReserves = constants::balances::MaxReserves;
 	type ReserveIdentifier = ReserveIdentifier;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
@@ -832,18 +813,12 @@ impl pallet_democracy::Config for Runtime {
 	type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-	pub const CouncilMotionDuration: BlockNumber = 3 * DAYS;
-	pub const CouncilMaxProposals: u32 = 100;
-	pub const CouncilMaxMembers: u32 = 100;
-}
-
 type CouncilCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
-	type MaxMembers = CouncilMaxMembers;
-	type MaxProposals = CouncilMaxProposals;
-	type MotionDuration = CouncilMotionDuration;
+	type MaxMembers = constants::council::MaxMembers;
+	type MaxProposals = constants::council::MaxProposals;
+	type MotionDuration = constants::council::MotionDuration;
 	type Proposal = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
@@ -865,7 +840,7 @@ parameter_types! {
 }
 
 // Make sure that there are no more than `MaxMembers` members elected via elections-phragmen.
-const_assert!(DesiredMembers::get() <= CouncilMaxMembers::get());
+const_assert!(DesiredMembers::get() <= constants::council::MaxMembers::get());
 
 impl pallet_elections_phragmen::Config for Runtime {
 	type CandidacyBond = CandidacyBond;
@@ -1012,7 +987,6 @@ parameter_types! {
 	pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
 	/// We prioritize im-online heartbeats over election solution submission.
 	pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
-	pub const MaxAuthorities: u32 = 100;
 	pub const MaxKeys: u32 = 10_000;
 	pub const MaxPeerInHeartbeats: u32 = 10_000;
 	pub const MaxPeerDataEncodingSize: u32 = 1_000;
@@ -1102,7 +1076,7 @@ impl pallet_offences::Config for Runtime {
 }
 
 impl pallet_authority_discovery::Config for Runtime {
-	type MaxAuthorities = MaxAuthorities;
+	type MaxAuthorities = constants::system::MaxAuthorities;
 }
 
 impl pallet_grandpa::Config for Runtime {
@@ -1118,7 +1092,7 @@ impl pallet_grandpa::Config for Runtime {
 	type KeyOwnerProof =
 		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
 	type KeyOwnerProofSystem = Historical;
-	type MaxAuthorities = MaxAuthorities;
+	type MaxAuthorities = constants::system::MaxAuthorities;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }

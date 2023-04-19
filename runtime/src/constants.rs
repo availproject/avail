@@ -17,7 +17,13 @@
 
 //! A set of constant values used in substrate runtime.
 
-use da_primitives::currency::Balance;
+use da_primitives::currency::{Balance, AVL};
+use frame_support::{
+	parameter_types,
+	traits::{ConstU16, ConstU32},
+};
+
+use crate::BlockNumber;
 
 /// Money matters.
 pub mod currency {
@@ -34,7 +40,8 @@ pub mod currency {
 
 /// Time.
 pub mod time {
-	use crate::{BlockNumber, Moment};
+	use super::*;
+	use crate::Moment;
 
 	/// Since BABE is probabilistic this is the average expected block time that
 	/// we are targeting. Blocks will be produced at a minimum duration defined
@@ -80,12 +87,62 @@ pub mod time {
 	pub const MINUTES: BlockNumber = 60 / (SECS_PER_BLOCK as BlockNumber);
 	pub const HOURS: BlockNumber = MINUTES * 60;
 	pub const DAYS: BlockNumber = HOURS * 24;
+
+	parameter_types! {
+		pub const EpochDuration: BlockNumber = EPOCH_DURATION_IN_SLOTS;
+		pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
+	}
+}
+
+pub mod system {
+	use super::*;
+
+	pub type MaxConsumers = ConstU32<16>;
+	pub type SS58Prefix = ConstU16<42>;
+	pub type MaxAuthorities = ConstU32<128>;
+}
+
+pub mod indices {
+	use super::*;
+
+	parameter_types! {
+		pub const IndexDeposit :Balance =  1 * AVL;
+	}
+}
+
+pub mod balances {
+	use super::*;
+
+	parameter_types! {
+		pub const ExistentialDeposit :Balance =  1 * AVL;
+	}
+
+	pub type MaxLocks = ConstU32<32>;
+	pub type MaxReserves = ConstU32<32>;
+}
+
+pub mod council {
+	use super::*;
+
+	#[cfg(not(feature = "fast-runtime"))]
+	parameter_types! {
+		pub const MotionDuration :BlockNumber = 14 * super::time::DAYS;
+	}
+
+	#[cfg(feature = "fast-runtime")]
+	parameter_types! {
+		pub const MotionDuration :BlockNumber = 5 * super::time::MINUTES;
+	}
+
+	pub type MaxProposals = ConstU32<128>;
+
+	parameter_types! {
+		pub const MaxMembers: u32 = 32;
+	}
 }
 
 pub mod nomination_pools {
-	use da_primitives::currency::AVL;
-
-	use super::Balance;
+	use super::*;
 
 	pub const MIN_CREATE_BOND: Balance = 10 * AVL;
 	#[allow(clippy::identity_op)]
