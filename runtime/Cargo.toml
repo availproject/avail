@@ -21,9 +21,9 @@ da-control = { path = "../pallets/dactr", default-features = false }
 kate-rpc-runtime-api = { path = "../rpc/kate-rpc-runtime-api", default-features = false }
 
 ## Nomad
-nomad-updater-manager = { path = "../pallets/bridges/nomad/updater-manager", default-features = false }
-nomad-home = { path = "../pallets/bridges/nomad/home", default-features = false }
-nomad-da-bridge = { path = "../pallets/bridges/nomad/da-bridge", default-features = false }
+nomad-updater-manager = { path = "../pallets/nomad/updater-manager", default-features = false }
+nomad-home = { path = "../pallets/nomad/home", default-features = false }
+da-bridge = { path = "../pallets/nomad/da-bridge", default-features = false }
 
 # External 
 static_assertions = "1.1.0"
@@ -185,7 +185,7 @@ std = [
 	"kate-rpc-runtime-api/std",
 	"nomad-updater-manager/std",
 	"nomad-home/std",
-	"nomad-da-bridge/std",
+	"da-bridge/std",
 ]
 
 runtime-benchmarks = [
@@ -196,7 +196,7 @@ runtime-benchmarks = [
 	"frame-system-benchmarking/runtime-benchmarks",
 	"da-control/runtime-benchmarks",
 	"nomad-home/runtime-benchmarks",
-	"nomad-da-bridge/runtime-benchmarks",
+	"da-bridge/runtime-benchmarks",
 	"hex-literal",
 ]
 
@@ -207,7 +207,7 @@ try-runtime = [
 	"frame-support/try-runtime",
 	"da-control/try-runtime",
 	"nomad-home/try-runtime",
-	"nomad-da-bridge/try-runtime",
+	"da-bridge/try-runtime",
 	"nomad-updater-manager/try-runtime",
 	"pallet-utility/try-runtime",
 	"pallet-babe/try-runtime",

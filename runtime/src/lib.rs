@@ -1173,10 +1173,10 @@ parameter_types! {
 	pub const DABridgePalletId: H256 = H256::repeat_byte(1);
 }
 
-impl nomad_da_bridge::Config for Runtime {
+impl da_bridge::Config for Runtime {
 	type DABridgePalletId = DABridgePalletId;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = nomad_da_bridge::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = da_bridge::weights::SubstrateWeight<Runtime>;
 }
 
 // TODO @miguel Aline this with previous order and ID to keep the compatibility.
@@ -1223,9 +1223,9 @@ construct_runtime!(
 		DataAvailability: da_control = 29,
 
 		// Nomad
-		NomadUpdaterManager: nomad_updater_manager = 30,
+		UpdaterManager: nomad_updater_manager = 30,
 		NomadHome: nomad_home = 31,
-		NomadDABridge: nomad_da_bridge = 32,
+		DABridge: da_bridge = 32,
 
 		// More from upgrade to v0.9.33
 		Preimage: pallet_preimage = 33,
@@ -1257,7 +1257,7 @@ mod benches {
 		[frame_system, SystemBench::<Runtime>]
 		[da_control, DataAvailability]
 		[nomad_home, NomadHome]
-		[nomad_da_bridge, DABridge]
+		[da_bridge, DABridge]
 	);
 }
 
@@ -1671,7 +1671,7 @@ mod tests {
 		<da_control::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<nomad_updater_manager::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<nomad_home::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
-		<nomad_da_bridge::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<da_bridge::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_preimage::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_multisig::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_bags_list::Pallet<Runtime, pallet_bags_list::Instance1> as TryState<
@@ -1742,7 +1742,7 @@ mod tests {
 	const NOMAD_UPDATER_MANAGER_CALL_SIZE: usize =
 		size_of::<nomad_updater_manager::Call<Runtime>>();
 	const NOMAD_HOME_CALL_SIZE: usize = size_of::<nomad_home::Call<Runtime>>();
-	const NOMAD_BRIDGE_CALL_SIZE: usize = size_of::<nomad_da_bridge::Call<Runtime>>();
+	const NOMAD_BRIDGE_CALL_SIZE: usize = size_of::<da_bridge::Call<Runtime>>();
 
 	#[test_case( RUNTIME_CALL_SIZE => 160)]
 	#[test_case( DA_CALL_SIZE => 32)]

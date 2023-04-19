@@ -17,7 +17,7 @@ const DA_BRIDGE_ROUTER_ADDRESS: &str = "0x3f28a3e66326c3aa494d4f8e9477d1397ee944
 #[async_std::main]
 async fn main() -> Result<()> {
 	let args = Opts::from_args();
-	let client = build_client(args.ws, args.validate_codegen).await?;
+	let client = build_client(args.ws).await?;
 
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());
 	let example_data = b"example".to_vec();

@@ -25,7 +25,7 @@ fn submit_some_data() -> Result<StaticTxPayload<SubmitData>> {
 #[async_std::main]
 async fn main() -> Result<()> {
 	let args = Opts::from_args();
-	let client = build_client(args.ws, args.validate_codegen).await?;
+	let client = build_client(args.ws).await?;
 
 	let signer = PairSigner::new(Alice.pair());
 	let mut finalized_headers_subscription =

@@ -29,12 +29,12 @@
 // --chain=dev
 // --steps=50
 // --repeat=20
-// --pallet=nomad-da-bridge
+// --pallet=da-bridge
 // --extrinsic=*
 // --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
-// --output=./pallets/bridges/nomad/da-bridge/src/weights.rs
+// --output=./pallets/nomad/da-bridge/src/weights.rs
 // --header=./HEADER-APACHE2
 // --template=./.maintain/frame-weight-template.hbs
 

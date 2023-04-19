@@ -20,7 +20,7 @@ use subxt::tx::PairSigner;
 #[async_std::main]
 async fn main() -> Result<()> {
 	let args = Opts::from_args();
-	let client = build_client(args.ws, args.validate_codegen).await?;
+	let client = build_client(args.ws).await?;
 
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());
 	let size: usize = 2 * 1024 * 1024;

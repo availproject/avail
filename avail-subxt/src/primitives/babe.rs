@@ -12,7 +12,7 @@ impl Serialize for AuthorityId {
 	where
 		S: Serializer,
 	{
-		let raw = hex::encode(self.0 .0 .0);
+		let raw = hex::encode(&self.0 .0 .0);
 		serializer.serialize_str(&raw)
 	}
 }
@@ -25,7 +25,7 @@ impl Serialize for AuthoritySignature {
 	where
 		S: Serializer,
 	{
-		let raw = hex::encode(self.0 .0);
+		let raw = hex::encode(&self.0 .0);
 		serializer.serialize_str(&raw)
 	}
 }
