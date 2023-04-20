@@ -947,7 +947,7 @@ dependencies = [
 [[package]]
 name = "dusk-plonk"
 version = "0.12.0"
-source = "git+https://github.com/maticnetwork/plonk.git?tag=v0.12.0-polygon-2#6ada57a82b6e3a92a677b9f6263f9f3c9b501b23"
+source = "git+https://github.com/availproject/plonk.git?tag=v0.12.0-polygon-2#6ada57a82b6e3a92a677b9f6263f9f3c9b501b23"
 dependencies = [
  "cfg-if",
  "dusk-bls12_381",
@@ -1774,7 +1774,7 @@ dependencies = [
 
 [[package]]
 name = "kate"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "criterion",
  "da-primitives",
@@ -1806,7 +1806,7 @@ dependencies = [
 
 [[package]]
 name = "kate-recovery"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "dusk-bytes",
  "dusk-plonk",

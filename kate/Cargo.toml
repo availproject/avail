@@ -1,6 +1,6 @@
 [package]
 name = "kate"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
 edition = "2021"
 
@@ -11,7 +11,7 @@ codec = { package = "parity-scale-codec", version = "3", default-features = fals
 da-primitives = { path = "../primitives/avail", default-features = false }
 derive_more = "0.99.17"
 dusk-bytes = { version = "0.1.6", default-features = false, optional = true }
-dusk-plonk = { git = "https://github.com/maticnetwork/plonk.git", tag = "v0.12.0-polygon-2", optional = true }
+dusk-plonk = { git = "https://github.com/availproject/plonk.git", tag = "v0.12.0-polygon-2", optional = true }
 frame-support = { version = "4.0.0-dev", default-features = false }
 getrandom = { version = "0.2", features = ["js"], optional = true }
 hex = { version = "0.4", default-features = false, features = ["alloc"] }
