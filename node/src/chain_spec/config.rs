@@ -1,9 +1,9 @@
 use da_control::AppKeyInfo;
 use da_primitives::asdr::AppId;
 use da_runtime::{
-	constants, wasm_binary_unwrap, AccountId, BabeConfig, Balance, BalancesConfig,
-	DataAvailabilityConfig, DesiredMembers, ElectionsConfig, NominationPoolsConfig, SessionConfig,
-	StakerStatus, StakingConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
+	constants, constants::elections::DesiredMembers, wasm_binary_unwrap, AccountId, BabeConfig,
+	Balance, BalancesConfig, DataAvailabilityConfig, ElectionsConfig, NominationPoolsConfig,
+	SessionConfig, StakerStatus, StakingConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
 };
 use frame_system::limits::BlockLength;
 use kate::{
@@ -130,7 +130,7 @@ pub(crate) fn make_nomination_pools_config() -> NominationPoolsConfig {
 }
 
 pub(crate) fn make_babe_config() -> BabeConfig {
-	let epoch_config = Some(da_runtime::constants::BABE_GENESIS_EPOCH_CONFIG);
+	let epoch_config = Some(da_runtime::constants::babe::GENESIS_EPOCH_CONFIG);
 
 	BabeConfig {
 		// NOTE: `authorities` were initialized by `Session`.

@@ -1,9 +1,10 @@
 use da_primitives::{asdr::AppUncheckedExtrinsic, Header as DaHeader};
 use sp_runtime::{
-	generic,
+	generic, impl_opaque_keys,
 	traits::{BlakeTwo256, IdentifyAccount, Verify},
 	MultiSignature, OpaqueExtrinsic,
 };
+use sp_std::vec::Vec;
 
 use crate::{migration, AllPalletsWithSystem, Runtime, RuntimeCall};
 
@@ -77,3 +78,12 @@ type Migrations = (migration::Migration,);
 
 /// ID type for named reserves.
 pub type ReserveIdentifier = [u8; 8];
+
+impl_opaque_keys! {
+	pub struct SessionKeys {
+		pub babe: crate::Babe,
+		pub grandpa: crate::Grandpa,
+		pub im_online: crate::ImOnline,
+		pub authority_discovery: crate::AuthorityDiscovery,
+	}
+}

@@ -1,3 +1,4 @@
+#![allow(clippy::identity_op)]
 use core::cmp::max;
 
 use da_runtime::{AccountId, Balance, Block, GenesisConfig, SessionKeys, Signature};
