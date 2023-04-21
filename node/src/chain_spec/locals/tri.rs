@@ -31,10 +31,15 @@ pub fn chain_spec() -> ChainSpec {
 /// - All devs account are endowed.
 ///
 fn config_genesis() -> GenesisConfig {
-	let authorities = ["Alice", "Bob", "Charlie"]
+	let mut authorities = ["Alice", "Bob", "Charlie"]
 		.into_iter()
 		.map(AuthorityKeys::from_seed)
 		.collect::<Vec<_>>();
+
+	// Charlie uses same account for stash
+	authorities
+		.get_mut(2)
+		.map(|auth| auth.stash = auth.controller.clone());
 
 	let tc_members = tech_committee_from_authorities(&authorities);
 	let endowed_accs = dev_endowed_accounts();
