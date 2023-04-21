@@ -1029,7 +1029,7 @@ mod benches {
 		[frame_system, SystemBench::<Runtime>]
 		[da_control, DataAvailability]
 		[nomad_home, NomadHome]
-		[nomad_da_bridge, DABridge]
+		[nomad_da_bridge, NomadDABridge]
 	);
 }
 
@@ -1300,7 +1300,7 @@ impl_runtime_apis! {
 			// have a backtrace here. If any of the pre/post migration checks fail, we shall stop
 			// right here and right now.
 			let weight = Executive::try_runtime_upgrade(checks).unwrap();
-			(weight, constans::system::RuntimeBlockWeights::get().max_block)
+			(weight, constants::system::RuntimeBlockWeights::get().max_block)
 		}
 
 		fn execute_block(
