@@ -80,8 +80,6 @@ jobs:
 
       - name: Build node 
         run: cargo build --release -p data-avail
-        #env:
-        #  SKIP_WASM_BUILD: true
 
       - name: Upload data-avail binary
         uses: actions/upload-artifact@v2
@@ -143,7 +141,6 @@ jobs:
         env:
           RUSTFLAGS: "-C instrument-coverage"
           LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
-          SKIP_WASM_BUILD: true
 
       - name: Display SCCache Stats
         run: ${{ env.SCCACHE_BIN }} --show-stats
