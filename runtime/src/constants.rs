@@ -194,10 +194,19 @@ pub mod elections {
 
 	use super::{currency::*, time::*, *};
 
+	#[cfg(not(feature = "fast-runtime"))]
+	parameter_types! {
+		pub const TermDuration: BlockNumber = 7 * super::time::DAYS;
+	}
+
+	#[cfg(feature = "fast-runtime")]
+	parameter_types! {
+		pub const TermDuration: BlockNumber = 10 * super::time::MINUTES;
+	}
+
 	parameter_types! {
 		pub const CandidacyBond: Balance = 3 * AVL;
 		pub const PalletId: LockIdentifier = *b"phrelect";
-		pub const TermDuration: BlockNumber = 7 * super::time::DAYS;
 		// 1 storage item created, key size is 32 bytes, value size is 16+16.
 		pub const VotingBondBase: Balance = deposit(1, 64);
 		// additional data per vote is 32 bytes (account id).
@@ -330,7 +339,7 @@ pub mod democracy {
 		pub const EnactmentPeriod: BlockNumber = 5 * MINUTES;
 		pub const FastTrackVotingPeriod: BlockNumber = 1 * MINUTES;
 		pub const LaunchPeriod: BlockNumber = 5 * MINUTES;
-		pub const VotingPeriod: BlockNumber = 1 * MINUTES;
+		pub const VotingPeriod: BlockNumber = 10 * MINUTES;
 	}
 
 	parameter_types! {
