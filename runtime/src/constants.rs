@@ -148,10 +148,10 @@ pub mod indices {
 }
 
 pub mod balances {
-	use super::*;
+	use super::{currency::*, *};
 
 	parameter_types! {
-		pub const ExistentialDeposit :Balance =  1 * AVL;
+		pub const ExistentialDeposit :Balance =  10 * CENTS; // 0.1 AVLs
 	}
 
 	pub type MaxLocks = ConstU32<32>;
@@ -192,7 +192,7 @@ pub mod nomination_pools {
 pub mod elections {
 	use frame_support::traits::LockIdentifier;
 
-	use super::{currency::*, time::*, *};
+	use super::{currency::*, *};
 
 	#[cfg(not(feature = "fast-runtime"))]
 	parameter_types! {
@@ -205,56 +205,22 @@ pub mod elections {
 	}
 
 	parameter_types! {
-		pub const CandidacyBond: Balance = 3 * AVL;
+		pub const CandidacyBond: Balance = 1_000_000 * AVL;
 		pub const PalletId: LockIdentifier = *b"phrelect";
 		// 1 storage item created, key size is 32 bytes, value size is 16+16.
-		pub const VotingBondBase: Balance = deposit(1, 64);
+		pub const VotingBondBase: Balance = 1 * AVL + deposit(1, 64);
 		// additional data per vote is 32 bytes (account id).
 		pub const VotingBondFactor: Balance = deposit(0, 32);
-		pub const DesiredMembers :u32 = 13;
-		pub const OffchainRepeat: BlockNumber = 5;
+		pub const DesiredMembers :u32 = 3;
 
 		// phase durations. 1/4 of the last session for each.
-		pub const SignedPhase: u32 = EPOCH_DURATION_IN_SLOTS / 4;
-		pub const UnsignedPhase: u32 = EPOCH_DURATION_IN_SLOTS / 4;
-
-		pub const SignedRewardBase: Balance = AVL;
-		pub const SignedDepositBase: Balance = AVL;
-		pub const SignedDepositByte: Balance = CENTS;
-
-		pub BetterUnsignedThreshold: Perbill = Perbill::from_rational(1u32, 10_000);
-
-		pub SolutionImprovementThreshold: Perbill = Perbill::from_rational(1u32, 10_000);
-		// miner configs		/// We prioritize im-online heartbeats over election solution submission.
-		pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
-		pub const MultiPhaseUnsignedPriority: TransactionPriority = StakingUnsignedPriority::get() - 1u64;
-		pub MinerMaxWeight: Weight = system::RuntimeBlockWeights::get()
-			.get(DispatchClass::Normal)
-			.max_extrinsic.expect("Normal extrinsics have a weight limit configured; qed")
-			.saturating_sub(BlockExecutionWeight::get());
-		// Solution can occupy 90% of normal block size
-		pub MinerMaxLength: u32 = Perbill::from_rational(9u32, 10) *
-			*crate::RuntimeBlockLength::get()
-			.max
-			.get(DispatchClass::Normal);
 	}
 
-	pub type DesiredRunnersUp = ConstU32<7>;
-	pub type MaxCandidates = ConstU32<512>;
+	pub type DesiredRunnersUp = ConstU32<3>;
+	pub type MaxCandidates = ConstU32<6>;
 	pub type MaxVoters = ConstU32<1_024>;
 
 	pub type MaxElectableTargets = MaxCandidates;
-	// OnChain values are lower.
-	pub type MaxOnChainElectingVoters = MaxVoters;
-	pub type MaxOnChainElectableTargets = ConstU16<512>;
-	// The maximum winners that can be elected by the Election pallet which is equivalent to the
-	// maximum active validators the staking pallet can have.
-	pub type MaxActiveValidators = system::MaxAuthorities;
-
-	// signed config
-	pub type SignedMaxSubmissions = ConstU32<32>;
-	pub type SignedMaxRefunds = ConstU32<4>;
-
 	// @TODO const_assert!(MaxOnChainElectableTargets::get() <= MaxCandidates::get());
 }
 
@@ -262,7 +228,7 @@ pub mod staking {
 	use sp_runtime::curve::PiecewiseLinear;
 	use sp_std::vec;
 
-	use super::*;
+	use super::{currency::*, time::*, *};
 
 	pallet_staking_reward_curve::build! {
 	const REWARD_CURVE: PiecewiseLinear<'static> = curve!(
@@ -291,15 +257,51 @@ pub mod staking {
 		pub const SlashDeferDuration: sp_staking::EraIndex = 112 / 4; // 1/4 the bonding duration.
 		pub MaxNominations: u32 = <NposSolution16 as frame_election_provider_support::NposSolution>::LIMIT as u32;
 		pub const OffendingValidatorsThreshold: Perbill = Perbill::from_percent(17);
-		pub  const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
+		pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
+
+		// phase durations. 1/4 of the last session for each.
+		pub const SignedPhase: u32 = EPOCH_DURATION_IN_SLOTS / 4;
+		pub const UnsignedPhase: u32 = EPOCH_DURATION_IN_SLOTS / 4;
+
+		pub const SignedRewardBase: Balance = AVL;
+		pub const SignedDepositBase: Balance = AVL;
+		pub const SignedDepositByte: Balance = CENTS;
+
+		pub BetterUnsignedThreshold: Perbill = Perbill::from_rational(1u32, 10_000);
+
+		pub SolutionImprovementThreshold: Perbill = Perbill::from_rational(1u32, 10_000);
+		// miner configs		/// We prioritize im-online heartbeats over election solution submission.
+		pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
+		pub const MultiPhaseUnsignedPriority: TransactionPriority = StakingUnsignedPriority::get() - 1u64;
+		pub MinerMaxWeight: Weight = system::RuntimeBlockWeights::get()
+			.get(DispatchClass::Normal)
+			.max_extrinsic.expect("Normal extrinsics have a weight limit configured; qed")
+			.saturating_sub(BlockExecutionWeight::get());
+		// Solution can occupy 90% of normal block size
+		pub MinerMaxLength: u32 = Perbill::from_rational(9u32, 10) *
+			*crate::RuntimeBlockLength::get()
+			.max
+			.get(DispatchClass::Normal);
+		pub const OffchainRepeat: BlockNumber = 5;
 	}
 
-	pub type MaxElectingVoters = ConstU32<10_000>;
+	pub type MaxElectingVoters = ConstU32<512>;
 	pub type MaxNominatorRewardedPerValidator = ConstU32<256>;
 	pub type MaxUnlockingChunks = ConstU32<32>;
 	pub type HistoryDepth = ConstU32<84>;
-	pub type MaxNominators = elections::MaxVoters;
-	pub type MaxValidators = elections::MaxCandidates;
+	pub type MaxNominators = ConstU32<1_024>;
+	pub type MaxValidators = ConstU32<32>;
+
+	// OnChain values are lower.
+	pub type MaxOnChainElectingVoters = elections::MaxVoters;
+	pub type MaxOnChainElectableTargets = ConstU16<512>;
+	// The maximum winners that can be elected by the Election pallet which is equivalent to the
+	// maximum active validators the staking pallet can have.
+	pub type MaxActiveValidators = system::MaxAuthorities;
+
+	// signed config
+	pub type SignedMaxSubmissions = ConstU32<32>;
+	pub type SignedMaxRefunds = ConstU32<4>;
 }
 
 pub mod babe {

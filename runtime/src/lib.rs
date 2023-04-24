@@ -519,17 +519,17 @@ impl onchain::Config for OnChainSeqPhragmen {
 		pallet_election_provider_multi_phase::SolutionAccuracyOf<Runtime>,
 	>;
 	type System = Runtime;
-	type TargetsBound = constants::elections::MaxCandidates;
-	type VotersBound = constants::elections::MaxOnChainElectingVoters;
+	type TargetsBound = constants::staking::MaxValidators;
+	type VotersBound = constants::staking::MaxOnChainElectingVoters;
 	type WeightInfo = frame_election_provider_support::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_election_provider_multi_phase::MinerConfig for Runtime {
 	type AccountId = AccountId;
-	type MaxLength = constants::elections::MinerMaxLength;
+	type MaxLength = constants::staking::MinerMaxLength;
 	type MaxVotesPerVoter =
 	<<Self as pallet_election_provider_multi_phase::Config>::DataProvider as ElectionDataProvider>::MaxVotesPerVoter;
-	type MaxWeight = constants::elections::MinerMaxWeight;
+	type MaxWeight = constants::staking::MinerMaxWeight;
 	type Solution = constants::staking::NposSolution16;
 
 	// The unsigned submissions have to respect the weight of the submit_unsigned call, thus their
@@ -546,7 +546,7 @@ impl pallet_election_provider_multi_phase::MinerConfig for Runtime {
 impl pallet_election_provider_multi_phase::Config for Runtime {
 	type BenchmarkingConfig = ElectionProviderBenchmarkConfig;
 	type BetterSignedThreshold = ();
-	type BetterUnsignedThreshold = constants::elections::BetterUnsignedThreshold;
+	type BetterUnsignedThreshold = constants::staking::BetterUnsignedThreshold;
 	type Currency = Balances;
 	// nothing to do upon rewards
 	type DataProvider = Staking;
@@ -554,26 +554,26 @@ impl pallet_election_provider_multi_phase::Config for Runtime {
 	type Fallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
 	type ForceOrigin = EnsureRootOrHalfCouncil;
 	type GovernanceFallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
-	type MaxElectableTargets = constants::elections::MaxOnChainElectableTargets;
+	type MaxElectableTargets = constants::staking::MaxOnChainElectableTargets;
 	type MaxElectingVoters = constants::staking::MaxElectingVoters;
-	type MaxWinners = constants::elections::MaxActiveValidators;
+	type MaxWinners = constants::staking::MaxActiveValidators;
 	type MinerConfig = Self;
-	type MinerTxPriority = constants::elections::MultiPhaseUnsignedPriority;
-	type OffchainRepeat = constants::elections::OffchainRepeat;
+	type MinerTxPriority = constants::staking::MultiPhaseUnsignedPriority;
+	type OffchainRepeat = constants::staking::OffchainRepeat;
 	// burn slashes
 	type RewardHandler = ();
 	type RuntimeEvent = RuntimeEvent;
-	type SignedDepositBase = constants::elections::SignedDepositBase;
-	type SignedDepositByte = constants::elections::SignedDepositByte;
+	type SignedDepositBase = constants::staking::SignedDepositBase;
+	type SignedDepositByte = constants::staking::SignedDepositByte;
 	type SignedDepositWeight = ();
-	type SignedMaxRefunds = constants::elections::SignedMaxRefunds;
-	type SignedMaxSubmissions = constants::elections::SignedMaxSubmissions;
-	type SignedMaxWeight = constants::elections::MinerMaxWeight;
-	type SignedPhase = constants::elections::SignedPhase;
-	type SignedRewardBase = constants::elections::SignedRewardBase;
+	type SignedMaxRefunds = constants::staking::SignedMaxRefunds;
+	type SignedMaxSubmissions = constants::staking::SignedMaxSubmissions;
+	type SignedMaxWeight = constants::staking::MinerMaxWeight;
+	type SignedPhase = constants::staking::SignedPhase;
+	type SignedRewardBase = constants::staking::SignedRewardBase;
 	type SlashHandler = ();
 	type Solver = SequentialPhragmen<AccountId, SolutionAccuracyOf<Self>, OffchainRandomBalancing>;
-	type UnsignedPhase = constants::elections::UnsignedPhase;
+	type UnsignedPhase = constants::staking::UnsignedPhase;
 	type WeightInfo = pallet_election_provider_multi_phase::weights::SubstrateWeight<Self>;
 }
 
