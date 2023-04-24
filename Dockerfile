@@ -10,7 +10,7 @@ RUN --mount=type=cache,id=build_apt,target=/var/cache/apt \
 	apt-get install -yqq --no-install-recommends git openssh-client && \
 	rm -rf /var/lib/apt/lists && \
 	# Reinstall nightly \
-    rustup toolchain uninstall nightly && \
+	rustup toolchain uninstall nightly && \
 	rustup toolchain install nightly && \
 	rustup target add wasm32-unknown-unknown --toolchain nightly && \
 	rustup default nightly && \
