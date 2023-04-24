@@ -9,13 +9,14 @@ RUN --mount=type=cache,id=build_apt,target=/var/cache/apt \
 	apt-get update && \
 	apt-get install -yqq --no-install-recommends git openssh-client && \
 	rm -rf /var/lib/apt/lists && \
-	# Install nightly \
+	# Reinstall nightly \
+	rustup toolchain uninstall nightly && \
 	rustup toolchain install nightly && \
 	rustup target add wasm32-unknown-unknown --toolchain nightly && \
 	rustup default nightly && \
 	mkdir -p /avail
 
-ARG AVAIL_TAG=v1.4.0-rc1
+ARG AVAIL_TAG=v1.5.0
 
 RUN \
 	# Build DA \
