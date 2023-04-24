@@ -155,7 +155,6 @@ pub(crate) fn make_genesis(
 			min_nominator_bond,
 		),
 		session: config::make_session_config(authorities.iter()),
-		democracy: Default::default(),
 		// `council`'s members initialized by `elections`.
 		council: Default::default(),
 		technical_committee: config::make_technical_committee_config(tech_committee_members),

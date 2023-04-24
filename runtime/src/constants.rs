@@ -22,7 +22,7 @@ use da_primitives::currency::{Balance, AVL};
 use frame_support::{
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{ConstBool, ConstU16, ConstU32},
+	traits::{ConstU16, ConstU32},
 	weights::{constants::BlockExecutionWeight, Weight},
 };
 use sp_runtime::{transaction_validity::TransactionPriority, Perbill, Permill};
@@ -317,44 +317,6 @@ pub mod babe {
 		pub const ReportLongevity: BlockNumber =
 			staking::BondingDuration::get() * staking::SessionsPerEra::get() * time::EpochDuration::get();
 	}
-}
-
-pub mod democracy {
-	use time::*;
-
-	use super::*;
-
-	#[cfg(not(feature = "fast-runtime"))]
-	parameter_types! {
-		pub const CooloffPeriod: BlockNumber = 5 * DAYS;
-		pub const EnactmentPeriod: BlockNumber = 3 * DAYS;
-		pub const FastTrackVotingPeriod: BlockNumber = 3 * HOURS;
-		pub const LaunchPeriod: BlockNumber = 1 * DAYS;
-		pub const VotingPeriod: BlockNumber = 1 * DAYS;
-	}
-
-	#[cfg(feature = "fast-runtime")]
-	parameter_types! {
-		pub const CooloffPeriod: BlockNumber = 5 * MINUTES;
-		pub const EnactmentPeriod: BlockNumber = 5 * MINUTES;
-		pub const FastTrackVotingPeriod: BlockNumber = 1 * MINUTES;
-		pub const LaunchPeriod: BlockNumber = 5 * MINUTES;
-		pub const VotingPeriod: BlockNumber = 10 * MINUTES;
-	}
-
-	parameter_types! {
-		pub const MinimumDeposit: Balance = 1 * AVL;
-	}
-
-	#[cfg(feature = "fast-runtime")]
-	pub type InstantAllowed = ConstBool<true>;
-	#[cfg(not(feature = "fast-runtime"))]
-	pub type InstantAllowed = ConstBool<false>;
-
-	pub type MaxBlacklisted = ConstU32<1_024>;
-	pub type MaxDeposits = ConstU32<128>;
-	pub type MaxProposals = ConstU32<256>;
-	pub type MaxVotes = ConstU32<64>;
 }
 
 pub mod technical {
