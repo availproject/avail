@@ -623,6 +623,58 @@ impl pallet_nomination_pools::Config for Runtime {
 	type WeightInfo = ();
 }
 
+impl pallet_democracy::Config for Runtime {
+	type BlacklistOrigin = EnsureRoot<AccountId>;
+	// To cancel a proposal before it has been passed, the technical committee must be unanimous or
+	// Root must agree.
+	type CancelProposalOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>,
+	>;
+	// To cancel a proposal which has been passed, 2/3 of the council must agree to it.
+	type CancellationOrigin =
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>;
+	type CooloffPeriod = constants::democracy::CooloffPeriod;
+	type Currency = Balances;
+	type EnactmentPeriod = constants::democracy::EnactmentPeriod;
+	/// A unanimous council can have the next scheduled referendum be a straight default-carries
+	/// (NTB) vote.
+	type ExternalDefaultOrigin =
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>;
+	/// A super-majority can have the next scheduled referendum be a straight majority-carries vote.
+	type ExternalMajorityOrigin =
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 4>;
+	/// A straight majority of the council can decide what their next motion is.
+	type ExternalOrigin =
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>;
+	/// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
+	/// be tabled immediately and with a shorter voting/enactment period.
+	type FastTrackOrigin =
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>;
+	type FastTrackVotingPeriod = constants::democracy::FastTrackVotingPeriod;
+	type InstantAllowed = constants::democracy::InstantAllowed;
+	type InstantOrigin =
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>;
+	type LaunchPeriod = constants::democracy::LaunchPeriod;
+	type MaxBlacklisted = constants::democracy::MaxBlacklisted;
+	type MaxDeposits = constants::democracy::MaxDeposits;
+	type MaxProposals = constants::democracy::MaxProposals;
+	type MaxVotes = constants::democracy::MaxVotes;
+	// Same as EnactmentPeriod
+	type MinimumDeposit = constants::democracy::MinimumDeposit;
+	type PalletsOrigin = OriginCaller;
+	type Preimages = Preimage;
+	type RuntimeEvent = RuntimeEvent;
+	type Scheduler = Scheduler;
+	type Slash = Treasury;
+	// Any single technical committee member may veto a coming council proposal, however they can
+	// only do it once and it lasts only for the cool-off period.
+	type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCollective>;
+	type VoteLockingPeriod = constants::democracy::EnactmentPeriod;
+	type VotingPeriod = constants::democracy::VotingPeriod;
+	type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
+}
+
 type CouncilCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
@@ -659,7 +711,7 @@ impl pallet_elections_phragmen::Config for Runtime {
 
 type TechnicalCollective = pallet_collective::Instance2;
 impl pallet_collective::Config<TechnicalCollective> for Runtime {
-	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
+	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type MaxMembers = constants::technical::TechnicalMaxMembers;
 	type MaxProposals = constants::technical::TechnicalMaxProposals;
 	type MotionDuration = constants::technical::TechnicalMotionDuration;
@@ -919,7 +971,7 @@ construct_runtime!(
 		ElectionProviderMultiPhase: pallet_election_provider_multi_phase = 9,
 		Staking: pallet_staking = 10,
 		Session: pallet_session = 11,
-		// Democracy: pallet_democracy = 12,
+		Democracy: pallet_democracy = 12,
 		Council: pallet_collective::<Instance1> = 13,
 		TechnicalCommittee: pallet_collective::<Instance2> = 14,
 		Elections: pallet_elections_phragmen = 15,
@@ -1364,6 +1416,7 @@ mod tests {
 		<pallet_election_provider_multi_phase::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_staking::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_session::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_democracy::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_collective::Pallet<Runtime, CouncilCollective> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_collective::Pallet<Runtime, TechnicalCollective> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_elections_phragmen::Pallet<Runtime> as TryState<BlockNumber>>::try_state(

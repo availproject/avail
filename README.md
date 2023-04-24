@@ -176,18 +176,6 @@ example shows the latest tag for devnet:
 	$> export DOCKER_BUILDKIT=1
 	$> docker build --build-arg AVAIL_TAG=v1.3.0-rc3 -t avail:v1.3.0-rc3 .
 
-#### Feature `fast-runtime`
-
-You can build your runtime using the feature `fast-runtime` which reduces significantly the
-expected periods on different areas:
-  - Slot time is 6 seconds,
-  - Epoch duration is 15 minutes,
-  - Motion duration on Councils is 5 minutes,
-  - Election duration is 10 minutes,
-  - Technical Motion duration is 2 minutes,
-  - In bounties, payout delay is just 1 minute and the bounty duration is 10 minutes, 
-
-
 ### How to use this image
 
 #### Run an Avail Node
