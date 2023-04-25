@@ -711,7 +711,7 @@ impl pallet_elections_phragmen::Config for Runtime {
 
 type TechnicalCollective = pallet_collective::Instance2;
 impl pallet_collective::Config<TechnicalCollective> for Runtime {
-	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
 	type MaxMembers = constants::technical::TechnicalMaxMembers;
 	type MaxProposals = constants::technical::TechnicalMaxProposals;
 	type MotionDuration = constants::technical::TechnicalMotionDuration;

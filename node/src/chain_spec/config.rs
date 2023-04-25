@@ -147,7 +147,7 @@ pub(crate) fn make_elections<'a, I: Iterator<Item = &'a AuthorityKeys>>(
 ) -> ElectionsConfig {
 	let members = authorities
 		.take(DesiredMembers::get().saturated_into())
-		.map(|auth| (auth.stash.clone(), validator_bond))
+		.map(|auth| (auth.controller.clone(), validator_bond))
 		.collect();
 
 	ElectionsConfig { members }

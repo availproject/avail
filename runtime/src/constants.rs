@@ -205,15 +205,13 @@ pub mod elections {
 	}
 
 	parameter_types! {
-		pub const CandidacyBond: Balance = 1_000_000 * AVL;
+		pub const CandidacyBond: Balance = 1_000_000_000 * AVL;
 		pub const PalletId: LockIdentifier = *b"phrelect";
 		// 1 storage item created, key size is 32 bytes, value size is 16+16.
 		pub const VotingBondBase: Balance = 1 * AVL + deposit(1, 64);
 		// additional data per vote is 32 bytes (account id).
 		pub const VotingBondFactor: Balance = deposit(0, 32);
 		pub const DesiredMembers :u32 = 3;
-
-		// phase durations. 1/4 of the last session for each.
 	}
 
 	pub type DesiredRunnersUp = ConstU32<3>;
@@ -251,10 +249,21 @@ pub mod staking {
 		>(16)
 	);
 
+	#[cfg(feature = "fast-runtime")]
+	parameter_types! {
+		pub const SessionsPerEra: sp_staking::SessionIndex = 1;
+		pub const BondingDuration: sp_staking::EraIndex = 2; // 2 eras
+		pub const SlashDeferDuration: sp_staking::EraIndex = 1; // 1/2 the bonding duration.
+	}
+
+	#[cfg(not(feature = "fast-runtime"))]
 	parameter_types! {
 		pub const SessionsPerEra: sp_staking::SessionIndex = 6;
 		pub const BondingDuration: sp_staking::EraIndex = 112; // 28 days
-		pub const SlashDeferDuration: sp_staking::EraIndex = 112 / 4; // 1/4 the bonding duration.
+		pub const SlashDeferDuration: sp_staking::EraIndex = BondingDuration / 4; // 1/4 the bonding duration.
+	}
+
+	parameter_types! {
 		pub MaxNominations: u32 = <NposSolution16 as frame_election_provider_support::NposSolution>::LIMIT as u32;
 		pub const OffendingValidatorsThreshold: Perbill = Perbill::from_percent(17);
 		pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
@@ -329,23 +338,23 @@ pub mod democracy {
 	#[cfg(not(feature = "fast-runtime"))]
 	parameter_types! {
 		pub const CooloffPeriod: BlockNumber = 5 * DAYS;
-		pub const EnactmentPeriod: BlockNumber = 3 * DAYS;
+		pub const EnactmentPeriod: BlockNumber = 7 * DAYS;
 		pub const FastTrackVotingPeriod: BlockNumber = 3 * HOURS;
 		pub const LaunchPeriod: BlockNumber = 1 * DAYS;
-		pub const VotingPeriod: BlockNumber = 1 * DAYS;
+		pub const VotingPeriod: BlockNumber = 7 * DAYS;
 	}
 
 	#[cfg(feature = "fast-runtime")]
 	parameter_types! {
-		pub const CooloffPeriod: BlockNumber = 5 * MINUTES;
-		pub const EnactmentPeriod: BlockNumber = 5 * MINUTES;
+		pub const CooloffPeriod: BlockNumber = 2 * MINUTES;
+		pub const EnactmentPeriod: BlockNumber = 3 * MINUTES;
 		pub const FastTrackVotingPeriod: BlockNumber = 1 * MINUTES;
-		pub const LaunchPeriod: BlockNumber = 5 * MINUTES;
-		pub const VotingPeriod: BlockNumber = 10 * MINUTES;
+		pub const LaunchPeriod: BlockNumber = 1 * MINUTES;
+		pub const VotingPeriod: BlockNumber = 5 * MINUTES;
 	}
 
 	parameter_types! {
-		pub const MinimumDeposit: Balance = 1 * AVL;
+		pub const MinimumDeposit: Balance = 150 * AVL;
 	}
 
 	#[cfg(feature = "fast-runtime")]
@@ -372,7 +381,7 @@ pub mod technical {
 	}
 
 	pub type TechnicalMaxProposals = ConstU32<32>;
-	pub type TechnicalMaxMembers = ConstU32<64>;
+	pub type TechnicalMaxMembers = ConstU32<16>;
 }
 
 pub mod im {
