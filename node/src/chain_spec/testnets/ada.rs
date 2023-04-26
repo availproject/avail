@@ -1,4 +1,6 @@
-use da_runtime::{AccountId, GenesisConfig};
+use std::{collections::HashMap, iter::once};
+
+use da_runtime::{constants::elections::InitialMemberBond, AccountId, Balance, GenesisConfig, AVL};
 use hex_literal::hex;
 use sc_service::ChainType;
 use sp_core::crypto::UncheckedInto;
@@ -7,45 +9,92 @@ use crate::chain_spec::{
 	chain_properties, testnets::make_genesis, AuthorityKeys, ChainSpec, FORK_ID, PROTOCOL_ID,
 };
 
-#[rustfmt::skip]
 fn authorities() -> Vec<AuthorityKeys> {
 	vec![
-		// Validator 1.
+		// Validator 1 5CDA2QG5ir4EUuWM5Mpve328P1YXtUH4M5orPwvkPoboCJzD
 		AuthorityKeys::from_accounts(
-			hex!("b2dad89ebcbf90f48021d8f18ad72339da8eb3de16fcefac84402c7615dce932").into(),
-			hex!("9fa3481874ee8d02456438fff97273f320a9e11ad45f52cbc8391b9165d7aa70").unchecked_into(),
+			hex!("06720d4c1c934b28cce1c830714d587d0b5ddc43968fcbce51dd13f017be8d46").into(),
+			hex!("995d40330b598da1ad50e38aa7d72550103bdb5878ffca945fe5a49e3014154b")
+				.unchecked_into(),
 		),
-		// Validator 2.
+		// Validator 2 5FsQBbxBeUvkPv8vJbrhs2j5WCcRQb9jTEa3M41t7iVZhhKT
 		AuthorityKeys::from_accounts(
-			hex!("101020d67afe1df8b2811d30e8a6d57dc74bc2c1b76d4f8c4b20da21b581f710").into(),
-			hex!("3f190c60714a0f233bcc6a8941e3802b3a1eeca6dbef157727c859a13c6bca1e").unchecked_into(),
+			hex!("a851bd6bb41d8614645d6a12ce2431ab30819af0483cfb7870038ce3aef55c38").into(),
+			hex!("e3f90d187c983c99f6648b8035cd63ec49cc6889592953edf4feaa8247022834")
+				.unchecked_into(),
 		),
-		// Validator 3.
+		// Validator 3 5Ey2QhfwiQBHoQ1MU9xYkLzoQRRfXnhQaJPbAtFZ5pHhkRuT
 		AuthorityKeys::from_accounts(
-			hex!("e099cabb7e96b3e5033fcc9eac120f15877b03881aafe811c98fe48e67047e06").into(),
-			hex!("2d12c83a0bd991a8888620a215c1e214d954790cb4c42a7adaf7e49d877f099f").unchecked_into(),
+			hex!("805fae3795a8f479bdafd34753957dcf26ce7207adbedfde51ce6a1872a1827b").into(),
+			hex!("eb236122afff271e82ebc489e1cea12e6352668b518ccca8604aacb5b9b38695")
+				.unchecked_into(),
+		),
+		// Validator 4 5Gj58EEcyXhVu16dcmLBZVxNXq4vvwxEnaKbyhmen15TxDu4
+		AuthorityKeys::from_accounts(
+			hex!("ce33dac6783b876d7d6b5012a0e25b5fe93a46824fbaa2fef6f229f43deb8a28").into(),
+			hex!("acd803975a0e70942a507f20f4ad0572bc17bb1321dc204054b7dc6af82eaae5")
+				.unchecked_into(),
+		),
+		// Validator 5 5ETyro1PqeQJrYXots7e4m2donhrede251s8CQNZPCNbpV9K
+		AuthorityKeys::from_accounts(
+			hex!("6a38fab2076c1634b743aeeac004e55c6ab560a66f24f1e6baa134f2a2fbf24e").into(),
+			hex!("379a8e9cea41c74405b617c8e4ddbd6455664ecd4878a01584b32c6d4391d20a")
+				.unchecked_into(),
+		),
+		// Validator 6 5ECEHdvgq79WJGuR55PR2zjQNpregui6B8KHgM1tEoT1bYDg
+		AuthorityKeys::from_accounts(
+			hex!("5e359f775013228eb4ecc54ca3af7d2c14c5fc50f1f3eafed775515ca7c8af79").into(),
+			hex!("31920433c10117862ee3f3b52f102b15f81cf7fcd0a0a7c2be9f0e417b953181")
+				.unchecked_into(),
+		),
+		// Validator 7 5CSt9Pn7NrTHpHSDTC5Yd4YHronw64HAPr9h6K5YR6UMYV8y
+		AuthorityKeys::from_accounts(
+			hex!("10ea08584efaa8bf8c9563333b47bec02ecd3046feb53a1491e23e794104f34f").into(),
+			hex!("8d41197aa896bd924ad41662702fcd5477e59370cb226183664fca120bfc2cc5")
+				.unchecked_into(),
 		),
 	]
+}
+
+pub fn council_members() -> Vec<AccountId> {
+	[
+		// 5CiSXC1o4L257Gq7vd244jgGfMsWQadSqVwwLEz8KvF9ME36
+		hex!("1cc7b34b29b7166de967d6bc7fae39430a4787d92b9bac9e53e3dc462a0a9b7a").into(),
+		// 5DnsSWZRC7MiPKcpfYdbj67FSUvSMMNMMF8Uw3ZdAqYd4rPZ
+		hex!("4c64cd21d679f0fb0c10f3320c70f61e142c53d915cd4188bb909810506a7835").into(),
+		// 5FH2QRq2k2uA6HHwwMggDbjGHjJJE9R3SXac9aBPxcK6rn8x
+		hex!("8e1a14fb549c3c9e96f6a31bad454fe16f40c22e67a3e536e99443a7e8143f7a").into(),
+		// 5GmUKWK1aoqyndcJcmDfJScF26LUwyj1woVN2E2AhCdZw4Mk
+		hex!("d0086cc14858ddc8edb7adc5c45e2ae881738bc2fe43e88be3e2239268b59f27").into(),
+	]
+	.to_vec()
 }
 
 pub fn technical_committee() -> Vec<AccountId> {
-	vec![
-		hex!("d2fba4e644431142a62d320c4ca1590a1b493af416d165a0e502b08376babc4a").into(), // TC 1
-		hex!("a0777497f1d3b4c163c8cc265a201eb7c9fc0eaea2313641260ab622deb8882a").into(), // TC 2
-		hex!("cac01e6ea3ecd574c8f91800669ee2fcd164f88b0a51b83bfb1fa5ed986d5023").into(), // TC 3
+	[
+		// 5CSgF4xbSZ5EN2Z52tbdu63CwYnPsvM6HahhKjoXumV8AJom
+		hex!("10c1f76625e973060cf4fd26ae9fc7a844455f0ace85ea6c542ecaab18d79228").into(),
+		// 5CcnpV9rsL98Vv8CxvSDXNXXi4vTZLc2pzv1KKJcSvvQuXGh
+		hex!("18788ec9bf57fe0c0ac41d2559b24e9ee9ff2324f81ce0577e5d8937c993fd09").into(),
+		// 5EHdVc8aX4KGQrL1MxNBgrkGJDNBe6Xg1PcGQTyvKLxhrfiV
+		hex!("6253f8324cfa92fb324e2b3c469256ea7ec3ae98611071be69524bd24f10b64c").into(),
 	]
+	.to_vec()
 }
 
 #[rustfmt::skip]
-const SUDO: AccountId = AccountId::new(hex!("f8ce86d05d54a80ca05e8879bdaeecfc56169ec41f3a9bebf58c07dcaa5b0423"));
+const SUDO: AccountId = AccountId::new(
+	// 5C7vaq3yC94X4mbv4cgrrNod1G5HLhaeiBP8aeSBCy4iZyUp
+	hex!("0274942c0845b86feae8dc7ed7448d79f2781b2440f83135b9e5094087ca0829"));
 
-fn user_accounts() -> Vec<AccountId> {
-	[
-		SUDO,
-		// Faucet bridge.
-		hex!("166efe5750d52f473dee8ef21a3b31779e09b2140753db34f9e9aa6cab6c9000").into(),
-	]
-	.to_vec()
+// TODO --- Review below items
+
+fn user_accounts(council: &[AccountId]) -> HashMap<AccountId, Balance> {
+	council
+		.iter()
+		.map(|acc| (acc.clone(), InitialMemberBond::get()))
+		.chain(once((SUDO, 100 * AVL)))
+		.collect()
 }
 
 pub fn chain_spec() -> ChainSpec {
@@ -66,7 +115,8 @@ pub fn chain_spec() -> ChainSpec {
 fn config_genesis() -> GenesisConfig {
 	let authorities = authorities();
 	let tc_members = technical_committee();
-	let endowed_accs = user_accounts();
+	let council = council_members();
+	let endowed_accs = user_accounts(&council);
 
-	make_genesis(SUDO, authorities, tc_members, endowed_accs)
+	make_genesis(SUDO, authorities, council, tc_members, endowed_accs)
 }

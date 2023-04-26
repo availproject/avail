@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use da_primitives::currency::AVL;
 use da_runtime::{AccountId, Balance, GenesisConfig};
 use sp_core::sr25519::Public;
@@ -14,11 +16,11 @@ const MIN_VALIDATOR_BOND: Balance = 10 * AVL;
 const MIN_NOMINATOR_BOND: Balance = 1 * AVL;
 
 /// Generates a default endowed accounts.
-fn dev_endowed_accounts() -> Vec<AccountId> {
+fn dev_endowed_accounts() -> HashMap<AccountId, Balance> {
 	DEFAULT_ENDOWED_SEEDS
 		.iter()
-		.map(|seed| get_account_id_from_seed::<Public>(seed))
-		.collect::<Vec<_>>()
+		.map(|seed| (get_account_id_from_seed::<Public>(seed), ENDOWMENT))
+		.collect::<HashMap<_, _>>()
 }
 
 /// `Alice` is the sudo key in `dev`.
@@ -28,14 +30,19 @@ fn make_genesis(
 	sudo: AccountId,
 	authorities: Vec<AuthorityKeys>,
 	tech_committee_members: Vec<AccountId>,
-	endowed_accounts: Vec<AccountId>,
+	endowed_accounts: HashMap<AccountId, Balance>,
 ) -> GenesisConfig {
+	let council = authorities
+		.iter()
+		.map(|auth| auth.controller.clone())
+		.collect::<Vec<_>>();
+
 	crate::chain_spec::make_genesis(
 		sudo,
 		authorities,
+		council,
 		tech_committee_members,
 		endowed_accounts,
-		ENDOWMENT,
 		MIN_VALIDATOR_BOND,
 		MIN_NOMINATOR_BOND,
 	)

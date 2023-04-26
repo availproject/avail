@@ -1,7 +1,11 @@
 #![allow(clippy::identity_op)]
 use core::cmp::max;
+use std::collections::HashMap;
 
-use da_runtime::{AccountId, Balance, Block, GenesisConfig, SessionKeys, Signature};
+use da_runtime::{
+	constants::elections::InitialMemberBond, AccountId, Balance, Block, GenesisConfig, SessionKeys,
+	Signature, AVL,
+};
 use hex_literal::hex;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use primitive_types::H160;
@@ -128,27 +132,31 @@ fn session_keys(common: AccountId, grandpa: GrandpaId) -> SessionKeys {
 pub(crate) fn make_genesis(
 	sudo: AccountId,
 	authorities: Vec<AuthorityKeys>,
+	council: Vec<AccountId>,
 	tech_committee_members: Vec<AccountId>,
-	mut endowed_accounts: Vec<AccountId>,
-	endowment: Balance,
+	mut endowed_accounts: HashMap<AccountId, Balance>,
 	min_validator_bond: Balance,
 	min_nominator_bond: Balance,
 ) -> GenesisConfig {
-	// endow all authorities and nominators.
-	authorities.iter().for_each(|auth| {
-		if !endowed_accounts.contains(&auth.controller) {
-			endowed_accounts.push(auth.controller.clone())
-		}
-	});
+	// Extends endowed accounts with council members, authorities and TC members
+	for acc in council.iter().cloned() {
+		*endowed_accounts.entry(acc).or_default() += InitialMemberBond::get();
+	}
+	for acc in authorities.iter().map(|auth| auth.controller.clone()) {
+		*endowed_accounts.entry(acc).or_default() += min_validator_bond + AVL;
+	}
+	for acc in tech_committee_members.iter().cloned() {
+		*endowed_accounts.entry(acc).or_default() += 10 * AVL;
+	}
 
 	GenesisConfig {
 		// General
 		system: config::make_system_config(),
 		babe: config::make_babe_config(),
 		indices: Default::default(),
-		balances: config::make_balances_config(endowed_accounts.into_iter(), endowment),
+		balances: config::make_balances_config(endowed_accounts),
 		transaction_payment: Default::default(),
-		elections: config::make_elections(authorities.iter(), min_validator_bond),
+		elections: config::make_elections(council.into_iter()),
 		staking: config::make_staking_config(
 			authorities.iter(),
 			min_validator_bond,

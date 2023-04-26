@@ -206,6 +206,7 @@ pub mod elections {
 
 	parameter_types! {
 		pub const CandidacyBond: Balance = 1_000_000_000 * AVL;
+		pub const InitialMemberBond: Balance = 1 * AVL;
 		pub const PalletId: LockIdentifier = *b"phrelect";
 		// 1 storage item created, key size is 32 bytes, value size is 16+16.
 		pub const VotingBondBase: Balance = 1 * AVL + deposit(1, 64);

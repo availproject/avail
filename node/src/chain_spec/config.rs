@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use da_control::AppKeyInfo;
 use da_primitives::asdr::AppId;
 use da_runtime::{
@@ -33,12 +35,9 @@ pub(crate) fn make_system_config() -> SystemConfig {
 	}
 }
 
-/// Creates the Balances configuration and endows each account in `accounts` with `amount`
-pub(crate) fn make_balances_config<I: Iterator<Item = AccountId>>(
-	accounts: I,
-	amount: Balance,
-) -> BalancesConfig {
-	let balances = accounts.map(|acc| (acc, amount)).collect();
+/// Creates the Balances configuration and endows each account
+pub(crate) fn make_balances_config(accs: HashMap<AccountId, Balance>) -> BalancesConfig {
+	let balances = accs.into_iter().collect();
 	BalancesConfig { balances }
 }
 
@@ -141,13 +140,10 @@ pub(crate) fn make_babe_config() -> BabeConfig {
 
 /// Creates the Phragmen Election configuration, using up to `T::DesiredMembers` from
 /// `authorities` as members.
-pub(crate) fn make_elections<'a, I: Iterator<Item = &'a AuthorityKeys>>(
-	authorities: I,
-	validator_bond: Balance,
-) -> ElectionsConfig {
-	let members = authorities
+pub(crate) fn make_elections<I: Iterator<Item = AccountId>>(council_members: I) -> ElectionsConfig {
+	let members = council_members
 		.take(DesiredMembers::get().saturated_into())
-		.map(|auth| (auth.controller.clone(), validator_bond))
+		.map(|acc| (acc, constants::elections::InitialMemberBond::get()))
 		.collect();
 
 	ElectionsConfig { members }
