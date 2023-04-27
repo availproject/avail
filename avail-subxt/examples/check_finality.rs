@@ -65,7 +65,7 @@ impl<'de> Deserialize<'de> for GrandpaJustification {
 pub enum Messages {
 	Justification(GrandpaJustification),
 	ValidatorSetChange((Vec<EdPublic>, u64)),
-	NewHeader(Header),
+	NewHeader((H256, u32)),
 }
 
 #[tokio::main]
@@ -125,7 +125,9 @@ async fn main() {
 		async move {
 			while let Some(Ok(header)) = header_subscription.next().await {
 				let head_hash: H256 = Encode::using_encoded(&header, blake2_256).into();
-				msg_sender.send(Messages::NewHeader(header)).unwrap();
+				msg_sender
+					.send(Messages::NewHeader((head_hash, header.number)))
+					.unwrap();
 				// Fetch all events at the incoming header hight.
 				let events = subxt_client.events().at(Some(head_hash)).await.unwrap();
 
@@ -181,7 +183,7 @@ async fn main() {
 	});
 
 	// An accumulated collection of unverified headers and justifications that are matched one by one as headers/justifications arrive.
-	let mut unverified_headers: Vec<Header> = vec![];
+	let mut unverified_headers: Vec<H256> = vec![];
 	let mut justifications: Vec<GrandpaJustification> = vec![];
 
 	// Main loop, gathers blocks, justifications and validator sets and checks finality
@@ -200,15 +202,14 @@ async fn main() {
 				println!("######################");
 				(validator_set, set_id) = valset;
 			},
-			Messages::NewHeader(header) => {
-				let hash: H256 = Encode::using_encoded(&header, blake2_256).into();
-				println!("Header no.: {}, hash: {hash:?}", header.number);
-				unverified_headers.push(header);
+			Messages::NewHeader((hash, number)) => {
+				println!("Header no.: {}, hash: {hash:?}", number);
+				unverified_headers.push(hash);
 			},
 		}
 
-		while let Some(header) = unverified_headers.pop() {
-			let hash = Encode::using_encoded(&header, blake2_256).into();
+		while let Some(hash) = unverified_headers.pop() {
+			//let hash = Encode::using_encoded(&header, blake2_256).into();
 
 			// Iterate through justifications and try to find a matching one.
 			if let Some(pos) = justifications
@@ -244,13 +245,11 @@ async fn main() {
 					.collect::<Vec<_>>();
 
 				// Match all the signer addresses to the current validator set.
-				let num_matched_addresses = signer_addresses.iter().fold(0usize, |acc, x| {
-					if validator_set.iter().any(|e| e.0.eq(&x.0)) {
-						acc + 1
-					} else {
-						acc
-					}
-				});
+				let num_matched_addresses = signer_addresses
+					.iter()
+					.filter(|x| validator_set.iter().any(|e| e.0.eq(&x.0)))
+					.count();
+
 				println!(
 					"Number of matching signatures: {num_matched_addresses}/{}",
 					validator_set.len()
