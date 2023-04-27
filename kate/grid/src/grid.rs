@@ -112,10 +112,12 @@ impl<A: Clone + Send + Sync> RowMajor<A> {
 		(0..self.height()).map(|y| (y, self.row(y).expect("Bounds already checked")))
 	}
 
-    #[cfg(feature = "parallel")]
-    pub fn rows_par_iter(&self) -> impl ParallelIterator<Item = (usize, &[A])> + '_ {
-        (0..self.height()).into_par_iter().map(|y| (y, self.row(y).expect("Bounds already checked")))
-    }
+	#[cfg(feature = "parallel")]
+	pub fn rows_par_iter(&self) -> impl ParallelIterator<Item = (usize, &[A])> + '_ {
+		(0..self.height())
+			.into_par_iter()
+			.map(|y| (y, self.row(y).expect("Bounds already checked")))
+	}
 
 	// TODO: this return type is kinda gross, should it just iterate over vecs?
 	pub fn columns(&self) -> impl Iterator<Item = (usize, impl Iterator<Item = &A>)> + '_ {

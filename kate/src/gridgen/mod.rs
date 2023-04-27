@@ -19,6 +19,9 @@ use crate::{
 	Seed,
 };
 
+#[cfg(feature = "parallel")]
+use rayon::prelude::*;
+
 pub use dusk_plonk::commitment_scheme::kzg10::commitment::Commitment;
 
 pub type ArkScalar = crate::pmp::m1_blst::Fr;
@@ -171,18 +174,24 @@ impl EvaluationGrid {
 			return Err(Error::DomainSizeInalid);
 		}
 
-		let new_evals = self
+		let cols = self
 			.evals
 			.columns()
-			.flat_map(|(_x, col)| {
-				// put elts into a new column
-				let mut ext_col = Vec::with_capacity(domain_new.size());
-				col.for_each(|s| ext_col.push(*s));
+			.map(|(_i, col)| col.map(|s| *s).collect::<Vec<_>>())
+			.collect::<Vec<_>>();
+
+		#[cfg(not(feature = "parallel"))]
+		let col_iter = cols.into_iter();
+		#[cfg(feature = "parallel")]
+		let col_iter = cols.into_par_iter();
+
+		let new_evals = col_iter
+			.flat_map(|mut col| {
 				// ifft, resize, fft
-				domain.ifft_slice(&mut ext_col);
-				ext_col.resize(domain_new.size(), BlsScalar::zero());
-				domain_new.fft_slice(&mut ext_col);
-				ext_col
+				domain.ifft_slice(col.as_mut_slice());
+				col.resize(domain_new.size(), BlsScalar::zero());
+				domain_new.fft_slice(&mut col);
+				col
 			})
 			.collect::<Vec<_>>()
 			.into_column_major(new_dims.width(), new_dims.height())
@@ -198,22 +207,9 @@ impl EvaluationGrid {
 
 	pub fn make_polynomial_grid(&self) -> Result<PolynomialGrid, Error> {
 		let domain = EvaluationDomain::new(self.dims.width())?;
+		#[cfg(not(feature = "parallel"))]
 		let rows = self.evals.rows();
-		Ok(PolynomialGrid {
-			dims: self.dims.clone(),
-			points: domain.elements().collect(),
-			inner: rows
-				.map(|(_, row)| {
-					Evaluations::from_vec_and_domain(row.to_vec(), domain).interpolate()
-				})
-				.collect::<Vec<_>>(),
-		})
-	}
-
-	#[cfg(feature = "parallel")]
-	pub fn make_polynomial_grid_par(&self) -> Result<PolynomialGrid, Error> {
-        use rayon::prelude::*;
-		let domain = EvaluationDomain::new(self.dims.width())?;
+		#[cfg(feature = "parallel")]
 		let rows = self.evals.rows_par_iter();
 		Ok(PolynomialGrid {
 			dims: self.dims.clone(),
