@@ -21,6 +21,7 @@ fn test_build_commitments_simple_commitment_check() {
 		76, 41, 174, 145, 187, 12, 97, 32, 75, 111, 149, 209, 243, 195, 165, 10, 166, 172, 47, 41,
 		218, 24, 212, 66, 62, 5, 187, 191, 129, 5, 105, 3,
 	];
+	let pmp_pp = crate::testnet::multiproof_params(256, 256);
 
 	let evals = EvaluationGrid::from_extrinsics(
 		vec![AppExtrinsic::from(original_data.to_vec())],
@@ -30,18 +31,27 @@ fn test_build_commitments_simple_commitment_check() {
 		hash,
 	)
 	.unwrap();
-	let evals = evals.extend_columns(2).unwrap();
-	let polys = evals.make_polynomial_grid().unwrap();
+	let ext_evals = evals.extend_columns(2).unwrap();
+	let polys = ext_evals.make_polynomial_grid().unwrap();
 	let commits = polys
 		.commitments(pp().commit_key())
 		.unwrap()
 		.into_iter()
 		.flat_map(|p| p.to_bytes())
 		.collect::<Vec<_>>();
+	let commits_fft_extended = evals
+		.make_polynomial_grid()
+		.unwrap()
+		.extended_commitments(&pmp_pp, 2)
+		.unwrap()
+		.into_iter()
+		.flat_map(|p| p.to_bytes())
+		.collect::<Vec<_>>();
 
-	assert_eq!(evals.dims, Dimensions::new_unchecked(4, 2));
+	assert_eq!(ext_evals.dims, Dimensions::new_unchecked(4, 2));
 	let expected_commitments = hex!("960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D");
 	assert_eq!(commits, expected_commitments);
+	assert_eq!(commits_fft_extended, expected_commitments);
 }
 
 #[test]

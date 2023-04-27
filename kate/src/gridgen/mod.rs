@@ -9,7 +9,11 @@ use dusk_plonk::{
 };
 use kate_grid::{Dimensions, Extension, Grid, IntoColumnMajor, IntoRowMajor, RowMajor};
 use kate_recovery::config::PADDING_TAIL_VALUE;
-use poly_multiproof::{m1_blst::M1NoPrecomp, merlin::Transcript, traits::AsBytes};
+use poly_multiproof::{
+	m1_blst::{Bls12_381, M1NoPrecomp},
+	merlin::Transcript,
+	traits::{AsBytes, Committer},
+};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 
@@ -229,12 +233,52 @@ pub struct PolynomialGrid {
 	dims: Dimensions,
 }
 
+macro_rules! cfg_iter {
+	($e: expr) => {{
+		#[cfg(feature = "parallel")]
+		let result = $e.par_iter();
+
+		#[cfg(not(feature = "parallel"))]
+		let result = $e.iter();
+
+		result
+	}};
+}
+
 impl PolynomialGrid {
 	pub fn commitments(&self, srs: &CommitKey) -> Result<Vec<Commitment>, Error> {
-		self.inner
-			.iter()
+		cfg_iter!(self.inner)
 			.map(|poly| srs.commit(poly).map_err(Error::PlonkError))
 			.collect()
+	}
+
+	/// Computes the commitments of the grid for the given extension by committing, then fft-ing
+	/// the commitments.
+	// TODO: fix this all up without the gross conversions after moving to arkworks
+	pub fn extended_commitments(
+		&self,
+		srs: &(impl Committer<Bls12_381> + Sync),
+		extension_factor: usize,
+	) -> Result<Vec<Commitment>, Error> {
+		use poly_multiproof::ark_poly::{EvaluationDomain, GeneralEvaluationDomain};
+		use poly_multiproof::m1_blst::{Fr, G1};
+		let mut res = cfg_iter!(self.inner)
+			.map(|poly| poly.coeffs.iter().map(convert_scalar).collect::<Vec<_>>())
+			.map(|coeffs| {
+				srs.commit(&coeffs)
+					.map_err(Error::MultiproofError)
+					.map(|a| a.0.into())
+			})
+			.collect::<Result<Vec<G1>, _>>()?;
+		let domain_n = GeneralEvaluationDomain::<Fr>::new(res.len()).unwrap();
+		let domain_ext =
+			GeneralEvaluationDomain::<Fr>::new(res.len().saturating_mul(extension_factor)).unwrap();
+		domain_n.ifft_in_place(&mut res);
+		domain_ext.fft_in_place(&mut res);
+		Ok(res
+			.into_iter()
+			.map(|a| Commitment(convert_g1(a.into())))
+			.collect())
 	}
 
 	pub fn commitment(&self, srs: &CommitKey, row: usize) -> Result<Commitment, Error> {
@@ -269,19 +313,19 @@ impl PolynomialGrid {
 		.ok_or(Error::CellLengthExceeded)?;
 		let polys = self.inner[block.start_y..block.end_y]
 			.iter()
-			.map(|s| s.coeffs.iter().map(convert_bls).collect::<Vec<_>>())
+			.map(|s| s.coeffs.iter().map(convert_scalar).collect::<Vec<_>>())
 			.collect::<Vec<_>>();
 		let evals = (block.start_y..block.end_y)
 			.map(|y| {
 				eval_grid.evals.row(y).expect("Already bounds checked")[block.start_x..block.end_x]
 					.iter()
-					.map(convert_bls)
+					.map(convert_scalar)
 					.collect::<Vec<_>>()
 			})
 			.collect::<Vec<_>>();
 		let points = &self.points[block.start_x..block.end_x]
 			.iter()
-			.map(convert_bls)
+			.map(convert_scalar)
 			.collect::<Vec<_>>();
 
 		let mut ts = Transcript::new(b"avail-mp");
@@ -297,11 +341,19 @@ impl PolynomialGrid {
 	}
 }
 
-fn convert_bls(dusk: &dusk_plonk::bls12_381::BlsScalar) -> poly_multiproof::m1_blst::Fr {
+fn convert_scalar(dusk: &dusk_plonk::bls12_381::BlsScalar) -> poly_multiproof::m1_blst::Fr {
 	poly_multiproof::m1_blst::Fr {
 		0: poly_multiproof::ark_ff::BigInt(dusk.0),
 		1: PhantomData,
 	}
+}
+
+// TODO: stop using this when we switch everything over to arkworks
+fn convert_g1(ark: poly_multiproof::m1_blst::G1Affine) -> dusk_plonk::bls12_381::G1Affine {
+	let comm = poly_multiproof::Commitment(ark)
+		.to_bytes()
+		.expect("TODO: stop using this");
+	dusk_plonk::bls12_381::G1Affine::from_bytes(&comm).expect("TODO: stop using this")
 }
 
 #[derive(Debug, Clone)]
@@ -497,7 +549,7 @@ mod unit_tests {
 		fn test_convert_bls_scalar(input: [u8; 31]) {
 			use poly_multiproof::ark_serialize::CanonicalSerialize;
 			let dusk = pad_to_bls_scalar(input).unwrap();
-			let ark = convert_bls(&dusk);
+			let ark = convert_scalar(&dusk);
 			let dusk_out = dusk.to_bytes();
 			let mut ark_out = [0u8; 32];
 			ark.serialize_compressed(&mut ark_out[..]).unwrap();
