@@ -59,6 +59,20 @@ where
 	#[method(name = "kate_blockLength")]
 	async fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength>;
 
+	/// Query the multiproof for a given cell. The cells must be within the multiproof grid given
+	/// by `kate::gridgen::multiproof_dims`. This returns a JSON of the following format:
+	/// ```json
+	/// [{
+	///    "proof": "0x...",
+	///    "evals": "0x...",
+	/// }..]
+	/// ```
+	///
+	/// The `proof` key contains the serialized multiproof, and the `evals` key contains the
+	/// scalars in the chunk of the base grid for the given cell of the multiproof grid, stored in
+	/// row-wise order.
+	///
+	/// The size of `evals` will correspond to the result of `kate::gridgen::multiproof_block`.
 	#[method(name = "kate_queryMultiProof")]
 	async fn query_multiproof(
 		&self,
