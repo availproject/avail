@@ -38,6 +38,7 @@ test-case = "1.2.3"
 [features]
 default = ["std"]
 alloc = ["dusk-plonk/alloc"]
+parallel = ["std", "rayon", "kate-grid/parallel"]
 
 std = [
 	"kate-recovery/std",

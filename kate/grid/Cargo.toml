@@ -3,3 +3,9 @@ name = "kate-grid"
 version = "0.6.1"
 authors = ["William Arnold warnold@polygon.technology"]
 edition = "2021"
+
+[dependencies]
+rayon = {version = "1.5.2", optional = true}
+
+[features]
+parallel = ["rayon"]

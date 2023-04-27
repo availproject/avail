@@ -198,12 +198,27 @@ impl EvaluationGrid {
 
 	pub fn make_polynomial_grid(&self) -> Result<PolynomialGrid, Error> {
 		let domain = EvaluationDomain::new(self.dims.width())?;
+		let rows = self.evals.rows();
 		Ok(PolynomialGrid {
 			dims: self.dims.clone(),
 			points: domain.elements().collect(),
-			inner: self
-				.evals
-				.rows()
+			inner: rows
+				.map(|(_, row)| {
+					Evaluations::from_vec_and_domain(row.to_vec(), domain).interpolate()
+				})
+				.collect::<Vec<_>>(),
+		})
+	}
+
+	#[cfg(feature = "parallel")]
+	pub fn make_polynomial_grid_par(&self) -> Result<PolynomialGrid, Error> {
+        use rayon::prelude::*;
+		let domain = EvaluationDomain::new(self.dims.width())?;
+		let rows = self.evals.rows_par_iter();
+		Ok(PolynomialGrid {
+			dims: self.dims.clone(),
+			points: domain.elements().collect(),
+			inner: rows
 				.map(|(_, row)| {
 					Evaluations::from_vec_and_domain(row.to_vec(), domain).interpolate()
 				})

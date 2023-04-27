@@ -88,7 +88,10 @@ impl<A> Grid<A> for ColumnMajor<A> {
 	}
 }
 
-impl<A: Clone> RowMajor<A> {
+#[cfg(feature = "parallel")]
+use rayon::prelude::*;
+
+impl<A: Clone + Send + Sync> RowMajor<A> {
 	pub fn row(&self, y: usize) -> Option<&[A]> {
 		if y >= self.height() {
 			return None;
@@ -108,6 +111,11 @@ impl<A: Clone> RowMajor<A> {
 	pub fn rows(&self) -> impl Iterator<Item = (usize, &[A])> + '_ {
 		(0..self.height()).map(|y| (y, self.row(y).expect("Bounds already checked")))
 	}
+
+    #[cfg(feature = "parallel")]
+    pub fn rows_par_iter(&self) -> impl ParallelIterator<Item = (usize, &[A])> + '_ {
+        (0..self.height()).into_par_iter().map(|y| (y, self.row(y).expect("Bounds already checked")))
+    }
 
 	// TODO: this return type is kinda gross, should it just iterate over vecs?
 	pub fn columns(&self) -> impl Iterator<Item = (usize, impl Iterator<Item = &A>)> + '_ {

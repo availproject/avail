@@ -1986,6 +1986,9 @@ dependencies = [
 [[package]]
 name = "kate-grid"
 version = "0.6.1"
+dependencies = [
+ "rayon",
+]
 
 [[package]]
 name = "kate-recovery"
@@ -2651,7 +2654,7 @@ dependencies = [
 [[package]]
 name = "poly-multiproof"
 version = "0.0.1"
-source = "git+https://github.com/aphoh/poly-multiproof?rev=f09b4d502e2239ccfc5a7a1658713393feca8674#f09b4d502e2239ccfc5a7a1658713393feca8674"
+source = "git+https://github.com/aphoh/poly-multiproof?rev=99335b664253ba4eca35f52b812af8e691f2497e#99335b664253ba4eca35f52b812af8e691f2497e"
 dependencies = [
  "ark-bls12-381",
  "ark-ec",
