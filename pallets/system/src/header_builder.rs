@@ -106,29 +106,40 @@ fn build_extension<M: Metrics>(
 	metrics: &M,
 ) -> HeaderExtension {
 	use da_primitives::header::extension::v1;
+	use kate::Serializable;
+	use once_cell::sync::Lazy;
+	static PMP: Lazy<kate::pmp::m1_blst::M1NoPrecomp> =
+		once_cell::sync::Lazy::new(|| kate::testnet::multiproof_params(256, 256));
 
-	let (xts_layout, commitment, block_dims, _data_matrix) = kate::com::par_build_commitments(
-		block_length.rows,
-		block_length.cols,
-		block_length.chunk_size(),
-		app_extrinsics,
+	let grid = kate::gridgen::EvaluationGrid::from_extrinsics(
+		app_extrinsics.to_vec(),
+		4, //TODO: where should this minimum grid width be specified
+		block_length.cols.as_usize(),
+		block_length.rows.as_usize(),
 		seed,
-		metrics,
 	)
-	.expect("Build commitments cannot fail .qed");
-	let app_lookup =
-		DataLookup::try_from(xts_layout.as_slice()).expect("Extrinsic size cannot overflow .qed");
+	.expect("Grid construction cannot fail");
 
+	let commitment = grid
+		.make_polynomial_grid()
+		.expect("Make polynomials cannot fail")
+		.extended_commitments(&*PMP, 2)
+		.expect("Extended commitments cannot fail")
+		.iter()
+		.flat_map(|c| c.0.to_bytes())
+		.collect::<Vec<u8>>();
+
+    // We must put the un-extended dimensions into this commitment object!
 	let commitment = KateCommitment {
-		rows: block_dims.rows.0.saturated_into::<u16>(),
-		cols: block_dims.cols.0.saturated_into::<u16>(),
+		rows: grid.dims.height().saturated_into::<u16>(),
+		cols: grid.dims.width().saturated_into::<u16>(),
 		commitment,
 		data_root,
 	};
 
 	HeaderExtension::V1(v1::HeaderExtension {
 		commitment,
-		app_lookup,
+		app_lookup: grid.lookup,
 	})
 }
 

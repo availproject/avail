@@ -18,6 +18,7 @@ da-primitives = { version = "0.4", default-features = false }
 kate = { version = "0.7", default-features = false }
 
 # Other
+once_cell = { version = "1.17", optional = true }
 impl-trait-for-tuples = "0.2.1"
 static_assertions = "1.1.0"
 log = { version = "0.4.17", default-features = false }
@@ -49,7 +50,9 @@ default = ["std"]
 std = [
 	"avail-base/std",
 	"kate/std",
+  "kate/parallel",
 	"da-primitives/std",
+  "once_cell",
 	"codec/std",
 	"frame-support/std",
 	"log/std",

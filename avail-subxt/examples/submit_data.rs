@@ -106,9 +106,10 @@ async fn main() -> Result<()> {
 	.unwrap();
 	assert!(res);
 
+	// ext.commitment contains un-extended dims, so we have to multiply rows by 2!
 	let kdims = KDims::new(
 		NonZeroUsize::new(ext.commitment.cols.into()).unwrap(),
-		NonZeroUsize::new(ext.commitment.rows.into()).unwrap(),
+		NonZeroUsize::new((2 * ext.commitment.rows).into()).unwrap(),
 	);
 	let target_dims = KDims::new_unchecked(16, 64);
 
