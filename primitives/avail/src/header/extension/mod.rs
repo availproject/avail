@@ -8,6 +8,7 @@ use sp_core::{RuntimeDebug, H256};
 use sp_runtime_interface::pass_by::PassByCodec;
 
 pub mod v1;
+pub mod v2;
 
 #[cfg(feature = "header-backward-compatibility-test")]
 pub mod v_test;
@@ -17,6 +18,7 @@ pub mod v_test;
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum HeaderExtension {
 	V1(v1::HeaderExtension),
+	V2(v2::HeaderExtension),
 	#[cfg(feature = "header-backward-compatibility-test")]
 	VTest(v_test::HeaderExtension),
 }
@@ -27,6 +29,7 @@ macro_rules! forward_to_version {
 	($self:ident, $function:ident) => {{
 		match $self {
 			HeaderExtension::V1(header) => header.$function(),
+			HeaderExtension::V2(header) => header.$function(),
 			#[cfg(feature = "header-backward-compatibility-test")]
 			HeaderExtension::VTest(header) => header.$function(),
 		}
@@ -35,6 +38,7 @@ macro_rules! forward_to_version {
 	($self:ident, $function:ident, $arg:expr) => {{
 		match $self {
 			HeaderExtension::V1(header) => header.$function($arg),
+			HeaderExtension::V2(header) => header.$function($arg),
 			#[cfg(feature = "header-backward-compatibility-test")]
 			HeaderExtension::VTest(header) => header.$function($arg),
 		}
@@ -49,7 +53,7 @@ impl HeaderExtension {
 
 impl Default for HeaderExtension {
 	fn default() -> Self {
-		v1::HeaderExtension::default().into()
+		v2::HeaderExtension::default().into()
 	}
 }
 
@@ -64,6 +68,13 @@ impl From<v1::HeaderExtension> for HeaderExtension {
 	#[inline]
 	fn from(ext: v1::HeaderExtension) -> Self {
 		Self::V1(ext)
+	}
+}
+
+impl From<v2::HeaderExtension> for HeaderExtension {
+	#[inline]
+	fn from(ext: v2::HeaderExtension) -> Self {
+		Self::V2(ext)
 	}
 }
 

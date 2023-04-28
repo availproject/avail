@@ -258,7 +258,7 @@ mod tests {
 	use test_case::test_case;
 
 	use super::*;
-	use crate::kate_commitment::KateCommitment;
+	use crate::kate_commitment::{v1, v2};
 
 	#[test]
 	fn should_serialize_numbers() {
@@ -304,7 +304,7 @@ mod tests {
 
 	#[test]
 	fn ensure_format_is_unchanged() {
-		let commitment = KateCommitment {
+		let commitment = v1::KateCommitment {
 				rows: 1,
 				cols: 4,
 				data_root: hex!("3fbf3227926cfa3f4167771e5ad91cfa2c2d7090667ce01e911ca90b4f315b11").into(),
@@ -332,12 +332,29 @@ mod tests {
 	}
 
 	fn header_v1() -> Header<u32, BlakeTwo256> {
-		let commitment = KateCommitment {
+		let commitment = v1::KateCommitment {
 				commitment: hex!("80e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e975980e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e9759").to_vec(),
 				data_root: hex!("3fbf3227926cfa3f4167771e5ad91cfa2c2d7090667ce01e911ca90b4f315b11").into(),
 				..Default::default()
 			};
 		let extension = extension::v1::HeaderExtension {
+			commitment,
+			..Default::default()
+		};
+
+		Header::<u32, BlakeTwo256> {
+			extension: extension.into(),
+			..Default::default()
+		}
+	}
+
+	/// The `commitment.data_root is none`.
+	fn header_v2() -> Header<u32, BlakeTwo256> {
+		let commitment = v2::KateCommitment {
+				commitment: hex!("80e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e975980e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e9759").to_vec(),
+				..Default::default()
+			};
+		let extension = extension::v2::HeaderExtension {
 			commitment,
 			..Default::default()
 		};
@@ -366,6 +383,7 @@ mod tests {
 	}
 
 	#[test_case( header_v1().encode().as_ref() => Ok(header_v1()) ; "Decode V1 header")]
+	#[test_case( header_v2().encode().as_ref() => Ok(header_v2()) ; "Decode V2 header")]
 	#[test_case( header_test().encode().as_ref() => Ok(header_test()) ; "Decode test header")]
 	fn header_decoding(mut encoded_header: &[u8]) -> Result<Header<u32, BlakeTwo256>, Error> {
 		Header::decode(&mut encoded_header)
