@@ -1,18 +1,17 @@
-use core::{marker::PhantomData, num::NonZeroUsize};
-
-use codec::Encode;
-use da_types::{AppExtrinsic, AppId, DataLookup, DataLookupIndexItem};
-use dusk_bytes::Serializable;
-use dusk_plonk::{
-	fft::{EvaluationDomain, Evaluations, Polynomial},
-	prelude::{BlsScalar, CommitKey},
+use crate::pmp::{
+	ark_poly::{EvaluationDomain, GeneralEvaluationDomain},
+	m1_blst::{Bls12_381, M1NoPrecomp},
+	merlin::Transcript,
+	traits::Committer,
 };
+use codec::Encode;
+use core::num::NonZeroUsize;
+use da_types::{AppExtrinsic, AppId, DataLookup, DataLookupIndexItem};
 use kate_grid::{Dimensions, Extension, Grid, IntoColumnMajor, IntoRowMajor, RowMajor};
 use kate_recovery::config::PADDING_TAIL_VALUE;
 use poly_multiproof::{
-	m1_blst::{Bls12_381, M1NoPrecomp},
-	merlin::Transcript,
-	traits::{AsBytes, Committer},
+	m1_blst::Proof,
+	traits::{KZGProof, PolyMultiProofNoPrecomp},
 };
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
@@ -26,17 +25,37 @@ use crate::{
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
 
-pub use dusk_plonk::commitment_scheme::kzg10::commitment::Commitment;
+macro_rules! cfg_iter {
+	($e: expr) => {{
+		#[cfg(feature = "parallel")]
+		let result = $e.par_iter();
+		#[cfg(not(feature = "parallel"))]
+		let result = $e.iter();
+		result
+	}};
+}
 
+macro_rules! cfg_into_iter {
+	($e: expr) => {{
+		#[cfg(feature = "parallel")]
+		let result = $e.into_par_iter();
+		#[cfg(not(feature = "parallel"))]
+		let result = $e.into_iter();
+		result
+	}};
+}
+
+pub const SCALAR_SIZE: usize = 32;
 pub type ArkScalar = crate::pmp::m1_blst::Fr;
-pub type MpCommitment = crate::pmp::Commitment<poly_multiproof::m1_blst::Bls12_381>;
+pub type Commitment = crate::pmp::Commitment<Bls12_381>;
+pub use poly_multiproof::traits::AsBytes;
 
 #[cfg(test)]
 mod tests;
 
 pub struct EvaluationGrid {
 	pub lookup: DataLookup,
-	pub evals: RowMajor<BlsScalar>,
+	pub evals: RowMajor<ArkScalar>,
 	pub dims: Dimensions,
 }
 
@@ -101,7 +120,7 @@ impl EvaluationGrid {
 		let dims = get_block_dims(grid.len(), min_width, max_width, max_height)?;
 		let mut rng = ChaChaRng::from_seed(rng_seed);
 		while grid.len() != dims.n_cells() {
-			let rnd_values: [u8; BlsScalar::SIZE - 1] = rng.gen();
+			let rnd_values: [u8; SCALAR_SIZE - 1] = rng.gen();
 			// TODO: can we just use zeros instead?
 			grid.push(pad_to_bls_scalar(rnd_values)?);
 		}
@@ -115,7 +134,7 @@ impl EvaluationGrid {
 		})
 	}
 
-	pub fn row(&self, y: usize) -> Option<&[BlsScalar]> {
+	pub fn row(&self, y: usize) -> Option<&[ArkScalar]> {
 		self.evals.row(y)
 	}
 
@@ -147,7 +166,7 @@ impl EvaluationGrid {
 		&self,
 		app_id: &AppId,
 		orig_dims: Option<&Dimensions>,
-	) -> Option<Vec<(usize, Vec<BlsScalar>)>> {
+	) -> Option<Vec<(usize, Vec<ArkScalar>)>> {
 		let orig_dims = orig_dims.unwrap_or(&self.dims);
 		if !orig_dims.divides(&self.dims) {
 			return None;
@@ -172,29 +191,25 @@ impl EvaluationGrid {
 				.map_err(|_| Error::CellLengthExceeded)?,
 		));
 
-		let domain = EvaluationDomain::new(self.dims.height())?;
-		let domain_new = EvaluationDomain::new(new_dims.height())?;
+		let domain = GeneralEvaluationDomain::<ArkScalar>::new(self.dims.height())
+			.ok_or(Error::DomainSizeInvalid)?;
+		let domain_new = GeneralEvaluationDomain::<ArkScalar>::new(new_dims.height())
+			.ok_or(Error::DomainSizeInvalid)?;
 		if domain_new.size() != new_dims.height() {
-			return Err(Error::DomainSizeInalid);
+			return Err(Error::DomainSizeInvalid);
 		}
 
-		let cols = self
+		let cols: Vec<Vec<ArkScalar>> = self
 			.evals
 			.columns()
 			.map(|(_i, col)| col.map(|s| *s).collect::<Vec<_>>())
 			.collect::<Vec<_>>();
 
-		#[cfg(not(feature = "parallel"))]
-		let col_iter = cols.into_iter();
-		#[cfg(feature = "parallel")]
-		let col_iter = cols.into_par_iter();
-
-		let new_evals = col_iter
+		let new_evals = cfg_into_iter!(cols)
 			.flat_map(|mut col| {
 				// ifft, resize, fft
-				domain.ifft_slice(col.as_mut_slice());
-				col.resize(domain_new.size(), BlsScalar::zero());
-				domain_new.fft_slice(&mut col);
+				domain.ifft_in_place(&mut col);
+				domain_new.fft_in_place(&mut col);
 				col
 			})
 			.collect::<Vec<_>>()
@@ -210,7 +225,8 @@ impl EvaluationGrid {
 	}
 
 	pub fn make_polynomial_grid(&self) -> Result<PolynomialGrid, Error> {
-		let domain = EvaluationDomain::new(self.dims.width())?;
+		let domain = GeneralEvaluationDomain::<ArkScalar>::new(self.dims.width())
+			.ok_or(Error::DomainSizeInvalid)?;
 		#[cfg(not(feature = "parallel"))]
 		let rows = self.evals.rows();
 		#[cfg(feature = "parallel")]
@@ -218,37 +234,21 @@ impl EvaluationGrid {
 		Ok(PolynomialGrid {
 			dims: self.dims.clone(),
 			points: domain.elements().collect(),
-			inner: rows
-				.map(|(_, row)| {
-					Evaluations::from_vec_and_domain(row.to_vec(), domain).interpolate()
-				})
-				.collect::<Vec<_>>(),
+			inner: rows.map(|(_, row)| domain.ifft(row)).collect::<Vec<_>>(),
 		})
 	}
 }
 
 pub struct PolynomialGrid {
-	inner: Vec<Polynomial>,
-	points: Vec<BlsScalar>,
+	inner: Vec<Vec<ArkScalar>>,
+	points: Vec<ArkScalar>,
 	dims: Dimensions,
 }
 
-macro_rules! cfg_iter {
-	($e: expr) => {{
-		#[cfg(feature = "parallel")]
-		let result = $e.par_iter();
-
-		#[cfg(not(feature = "parallel"))]
-		let result = $e.iter();
-
-		result
-	}};
-}
-
 impl PolynomialGrid {
-	pub fn commitments(&self, srs: &CommitKey) -> Result<Vec<Commitment>, Error> {
+	pub fn commitments(&self, srs: &impl Committer<Bls12_381>) -> Result<Vec<Commitment>, Error> {
 		cfg_iter!(self.inner)
-			.map(|poly| srs.commit(poly).map_err(Error::PlonkError))
+			.map(|poly| srs.commit(poly).map_err(Error::MultiproofError))
 			.collect()
 	}
 
@@ -261,33 +261,32 @@ impl PolynomialGrid {
 		extension_factor: usize,
 	) -> Result<Vec<Commitment>, Error> {
 		let res = cfg_iter!(self.inner)
-			.map(|poly| poly.coeffs.iter().map(convert_scalar).collect::<Vec<_>>())
 			.map(|coeffs| srs.commit(&coeffs).map_err(Error::MultiproofError))
 			.collect::<Result<Vec<_>, _>>()?;
-		let commits = poly_multiproof::Commitment::<Bls12_381>::extend_commitments(
+		poly_multiproof::Commitment::<Bls12_381>::extend_commitments(
 			&res,
 			res.len().saturating_mul(extension_factor),
 		)
-		.map_err(Error::MultiproofError)?;
-		Ok(commits
-			.iter()
-			.map(|c| Commitment(convert_g1(c.0)))
-			.collect::<Vec<_>>())
+		.map_err(Error::MultiproofError)
 	}
 
-	pub fn commitment(&self, srs: &CommitKey, row: usize) -> Result<Commitment, Error> {
+	pub fn commitment(
+		&self,
+		srs: &impl Committer<Bls12_381>,
+		row: usize,
+	) -> Result<Commitment, Error> {
 		self.inner
 			.get(row)
 			.ok_or(Error::CellLengthExceeded)
-			.and_then(|poly| srs.commit(poly).map_err(Error::PlonkError))
+			.and_then(|poly| srs.commit(poly).map_err(Error::MultiproofError))
 	}
 
-	pub fn proof(&self, srs: &CommitKey, cell: &Cell) -> Result<Commitment, Error> {
+	pub fn proof(&self, srs: &M1NoPrecomp, cell: &Cell) -> Result<Proof, Error> {
 		let x = cell.col.0 as usize;
 		let y = cell.row.0 as usize;
 		let poly = self.inner.get(y).ok_or(Error::CellLengthExceeded)?;
-		let witness = srs.compute_single_witness(poly, &self.points[x]);
-		Ok(srs.commit(&witness)?)
+		let witness = KZGProof::compute_witness_polynomial(srs, poly.clone(), self.points[x])?;
+		Ok(KZGProof::open(srs, witness)?)
 	}
 
 	pub fn multiproof(
@@ -297,7 +296,6 @@ impl PolynomialGrid {
 		eval_grid: &EvaluationGrid,
 		target_dims: &Dimensions,
 	) -> Result<Multiproof, Error> {
-		use poly_multiproof::traits::PolyMultiProofNoPrecomp;
 		let block = multiproof_block(
 			cell.col.0 as usize,
 			cell.row.0 as usize,
@@ -305,26 +303,16 @@ impl PolynomialGrid {
 			target_dims,
 		)
 		.ok_or(Error::CellLengthExceeded)?;
-		let polys = self.inner[block.start_y..block.end_y]
-			.iter()
-			.map(|s| s.coeffs.iter().map(convert_scalar).collect::<Vec<_>>())
-			.collect::<Vec<_>>();
+		let polys = &self.inner[block.start_y..block.end_y];
 		let evals = (block.start_y..block.end_y)
 			.map(|y| {
 				eval_grid.evals.row(y).expect("Already bounds checked")[block.start_x..block.end_x]
-					.iter()
-					.map(convert_scalar)
-					.collect::<Vec<_>>()
+					.to_vec()
 			})
 			.collect::<Vec<_>>();
-		let points = &self.points[block.start_x..block.end_x]
-			.iter()
-			.map(convert_scalar)
-			.collect::<Vec<_>>();
-
+		let points = &self.points[block.start_x..block.end_x];
 		let mut ts = Transcript::new(b"avail-mp");
-		let proof = srs
-			.open(&mut ts, &evals, &polys, points)
+		let proof = PolyMultiProofNoPrecomp::open(srs, &mut ts, &evals, &polys, points)
 			.map_err(Error::MultiproofError)?;
 
 		Ok(Multiproof {
@@ -333,21 +321,6 @@ impl PolynomialGrid {
 			block,
 		})
 	}
-}
-
-fn convert_scalar(dusk: &dusk_plonk::bls12_381::BlsScalar) -> poly_multiproof::m1_blst::Fr {
-	poly_multiproof::m1_blst::Fr {
-		0: poly_multiproof::ark_ff::BigInt(dusk.0),
-		1: PhantomData,
-	}
-}
-
-// TODO: stop using this when we switch everything over to arkworks
-fn convert_g1(ark: poly_multiproof::m1_blst::G1Affine) -> dusk_plonk::bls12_381::G1Affine {
-	let comm = poly_multiproof::Commitment(ark)
-		.to_bytes()
-		.expect("TODO: stop using this");
-	dusk_plonk::bls12_381::G1Affine::from_bytes(&comm).expect("TODO: stop using this")
 }
 
 #[derive(Debug, Clone)]
@@ -432,20 +405,9 @@ pub fn get_block_dims(
 	}
 }
 
-pub fn domain_points(n: usize) -> Result<Vec<BlsScalar>, Error> {
-	let domain = EvaluationDomain::new(n)?;
+pub fn domain_points(n: usize) -> Result<Vec<ArkScalar>, Error> {
+	let domain = GeneralEvaluationDomain::<ArkScalar>::new(n).ok_or(Error::DomainSizeInvalid)?;
 	Ok(domain.elements().collect())
-}
-
-pub fn to_ark_scalar(s: &BlsScalar) -> ArkScalar {
-	ArkScalar {
-		0: poly_multiproof::ark_ff::BigInt(s.0),
-		1: PhantomData,
-	}
-}
-
-pub fn to_mp_commitment(c: Commitment) -> MpCommitment {
-	MpCommitment::from_bytes(&c.to_bytes()).expect("commitment is valid")
 }
 
 fn round_up_to_multiple(input: usize, multiple: NonZeroUsize) -> usize {
@@ -453,13 +415,13 @@ fn round_up_to_multiple(input: usize, multiple: NonZeroUsize) -> usize {
 	n_multiples.saturating_mul(multiple.get())
 }
 
-pub(crate) fn pad_to_bls_scalar(a: impl AsRef<[u8]>) -> Result<BlsScalar, Error> {
+pub(crate) fn pad_to_bls_scalar(a: impl AsRef<[u8]>) -> Result<ArkScalar, Error> {
 	if a.as_ref().len() > DATA_CHUNK_SIZE {
 		return Err(Error::InvalidChunkLength);
 	}
-	let mut buf = [0u8; BlsScalar::SIZE];
+	let mut buf = [0u8; SCALAR_SIZE];
 	buf[0..a.as_ref().len()].copy_from_slice(a.as_ref());
-	BlsScalar::from_bytes(&buf).map_err(Error::DuskBytesError)
+	ArkScalar::from_bytes(&buf).map_err(Error::MultiproofError)
 }
 
 // Round up. only valid for positive integers
@@ -538,18 +500,6 @@ mod unit_tests {
 				prop_assert_eq!(round_up_to_multiple(a, m.try_into().unwrap()), i * m)
 			}
 		}
-
-		#[test]
-		fn test_convert_bls_scalar(input: [u8; 31]) {
-			use poly_multiproof::ark_serialize::CanonicalSerialize;
-			let dusk = pad_to_bls_scalar(input).unwrap();
-			let ark = convert_scalar(&dusk);
-			let dusk_out = dusk.to_bytes();
-			let mut ark_out = [0u8; 32];
-			ark.serialize_compressed(&mut ark_out[..]).unwrap();
-			assert_eq!(dusk_out, ark_out);
-		}
-
 	}
 	#[test_case(0 => 1)]
 	#[test_case(1 => 1)]

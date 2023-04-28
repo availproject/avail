@@ -1,14 +1,14 @@
-use super::{app_data_index_from_lookup, pp};
+use super::{app_data_index_from_lookup, PMP};
 use crate::com::Cell;
 use crate::gridgen::tests::sample_cells;
 use crate::gridgen::EvaluationGrid;
 use crate::Seed;
 use da_types::AppExtrinsic;
-use dusk_bytes::Serializable;
 use kate_grid::Grid;
 use kate_recovery::com::reconstruct_extrinsics;
 use kate_recovery::data::Cell as DCell;
 use kate_recovery::matrix::Position as DPosition;
+use poly_multiproof::traits::AsBytes;
 use proptest::prelude::*;
 use rand::distributions::Uniform;
 use rand::prelude::Distribution;
@@ -66,9 +66,9 @@ fn test_build_and_reconstruct(exts in super::app_extrinsics_strategy())  {
 		prop_assert_eq!(result.1[0].as_slice(), &xt.data);
 	}
 
-	let pp = pp();
+	let pp = &*PMP;
 	let polys = grid.make_polynomial_grid().unwrap();
-	let commitments = polys.commitments(pp.commit_key()).unwrap();
+	let commitments = polys.commitments(pp).unwrap();
 	let indices = (0..dims.width()).flat_map(|x| (0..dims.height()).map(move |y| (x, y))).collect::<Vec<_>>();
 
 	// Sample some number 10 of the indices, all is too slow for tests...
@@ -76,13 +76,13 @@ fn test_build_and_reconstruct(exts in super::app_extrinsics_strategy())  {
 	let sampled = Uniform::from(0..indices.len()).sample_iter(&mut rng).take(10).map(|i| indices[i]);
 	for (x, y) in sampled {
 		let cell = Cell { row: (y as u32).into(), col: (x as u32).into() };
-		let proof = polys.proof(pp.commit_key(), &cell).unwrap();
+		let proof = polys.proof(pp, &cell).unwrap();
 		let mut content = [0u8; 80];
-		content[..48].copy_from_slice(&proof.to_bytes()[..]);
-		content[48..].copy_from_slice(&grid.evals.get(x, y).unwrap().to_bytes()[..]);
+		content[..48].copy_from_slice(&proof.to_bytes().unwrap()[..]);
+		content[48..].copy_from_slice(&grid.evals.get(x, y).unwrap().to_bytes().unwrap()[..]);
 
 		let dcell = DCell{position: DPosition { row: y as u32, col: x as u16 }, content };
-		let verification =  kate_recovery::proof::verify(&pp, &bdims, &commitments[y].to_bytes(),  &dcell);
+		let verification =  kate_recovery::proof::verify(&kate_recovery::testnet::public_params(256), &bdims, &commitments[y].to_bytes().unwrap(),  &dcell);
 		prop_assert!(verification.is_ok());
 		prop_assert!(verification.unwrap());
 	}

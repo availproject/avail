@@ -58,13 +58,19 @@ pub enum Error {
 	InvalidChunkLength,
 	DimensionsMismatch,
 	ZeroDimension,
-	DomainSizeInalid,
+	DomainSizeInvalid,
 }
 
 impl From<PlonkError> for Error {
 	fn from(error: PlonkError) -> Self {
 		Self::PlonkError(error)
 	}
+}
+
+impl From<poly_multiproof::Error> for Error {
+    fn from(err: poly_multiproof::Error) -> Self {
+        Self::MultiproofError(err)
+    }
 }
 
 pub type XtsLayout = Vec<(AppId, u32)>;

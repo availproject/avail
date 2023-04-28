@@ -1,8 +1,8 @@
 use da_types::{AppExtrinsic, DataLookup};
-use dusk_bytes::Serializable;
-use dusk_plonk::prelude::PublicParameters;
 use kate_grid::Grid;
 use kate_recovery::{data::DataCell, index::AppDataIndex};
+use once_cell::sync::Lazy;
+use poly_multiproof::{m1_blst::M1NoPrecomp, traits::AsBytes};
 use proptest::{collection, prelude::*, sample::size_range};
 use rand::{distributions::Uniform, prelude::Distribution, SeedableRng};
 use rand_chacha::ChaChaRng;
@@ -15,9 +15,7 @@ mod commitments;
 mod formatting;
 mod reconstruction;
 
-pub(crate) fn pp() -> PublicParameters {
-	testnet::public_params(da_types::BlockLengthColumns(256))
-}
+pub static PMP: Lazy<M1NoPrecomp> = Lazy::new(|| testnet::multiproof_params(256, 256));
 
 fn app_extrinsic_strategy() -> impl Strategy<Value = AppExtrinsic> {
 	(
@@ -72,7 +70,7 @@ fn sample_cells(grid: &EvaluationGrid, columns: Option<&[usize]>) -> Vec<DataCel
 						row: y as u32,
 						col: *x as u16,
 					},
-					data: grid.evals.get(*x, y).unwrap().to_bytes(),
+					data: grid.evals.get(*x, y).unwrap().to_bytes().unwrap(),
 				})
 		})
 		.collect::<Vec<_>>()

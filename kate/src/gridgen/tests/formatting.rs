@@ -1,18 +1,17 @@
 use da_types::{AppExtrinsic, DataLookup, DataLookupIndexItem};
-use dusk_bytes::Serializable;
-use dusk_plonk::prelude::BlsScalar;
 use hex_literal::hex;
 use kate_grid::{Dimensions, Grid, IntoColumnMajor, IntoRowMajor};
 use kate_recovery::{
 	com::{app_specific_cells, decode_app_extrinsics, reconstruct_extrinsics},
 	data::DataCell,
 };
+use poly_multiproof::traits::AsBytes;
 
 use crate::{
 	config::DATA_CHUNK_SIZE,
 	gridgen::{
 		tests::{app_data_index_from_lookup, sample_cells},
-		EvaluationGrid,
+		ArkScalar, EvaluationGrid,
 	},
 	Seed,
 };
@@ -63,7 +62,7 @@ fn newapi_test_flatten_block() {
 		.evals
 		.inner()
 		.iter()
-		.flat_map(|s| s.to_bytes())
+		.flat_map(|s| s.to_bytes().unwrap())
 		.collect::<Vec<_>>();
 	assert_eq!(data, expected_data, "Data doesn't match the expected data");
 }
@@ -90,7 +89,7 @@ fn newapi_test_extend_data_matrix() {
 		hex!("1ebf725495e11b806dc58d261ac918a4f85260cb45618241614c432a2153ae16"),
 	]
 	.into_iter()
-	.map(|e| BlsScalar::from_bytes(e.as_slice().try_into().unwrap()).unwrap())
+	.map(|e| ArkScalar::from_bytes(e.as_slice().try_into().unwrap()).unwrap())
 	.collect::<Vec<_>>()
 	.into_column_major(4, 4)
 	.unwrap()
@@ -153,7 +152,8 @@ get erasure coded to ensure redundancy."#;
 					.evals
 					.get(pos.col as usize, pos.row as usize)
 					.unwrap()
-					.to_bytes(),
+					.to_bytes()
+					.unwrap(),
 			})
 			.collect::<Vec<_>>();
 		let data = &decode_app_extrinsics(&index, &bdims, cells, xt.app_id.0).unwrap()[0];

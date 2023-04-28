@@ -1,13 +1,12 @@
 use da_types::{AppExtrinsic, AppId};
 use hex_literal::hex;
-use kate::pmp::{merlin::Transcript, traits::PolyMultiProofNoPrecomp};
-use kate::{Seed, Serializable};
+use kate::{pmp::{merlin::Transcript, traits::PolyMultiProofNoPrecomp}, Seed};
 use poly_multiproof::traits::AsBytes;
 use rand::thread_rng;
 
 fn main() {
 	let target_dims = kate::grid::Dimensions::new_unchecked(16, 64);
-	let pp = kate::testnet::public_params(256.into());
+	let pp = kate::testnet::multiproof_params(256, 256);
 	let pmp = poly_multiproof::m1_blst::M1NoPrecomp::new(256, 256, &mut thread_rng());
 	let points = kate::gridgen::domain_points(256).unwrap();
 	let (proof, evals, commitments, dims) = {
@@ -35,10 +34,10 @@ fn main() {
 		let polys = grid.make_polynomial_grid().unwrap();
 
 		let commitments = polys
-			.commitments(&pp.commit_key())
+			.commitments(&pp)
 			.unwrap()
 			.iter()
-			.flat_map(|c| c.0.to_bytes())
+			.flat_map(|c| c.to_bytes().unwrap())
 			.collect::<Vec<_>>();
 
 		let multiproof = polys
@@ -71,11 +70,6 @@ fn main() {
 		.collect::<Result<Vec<_>, _>>()
 		.unwrap();
 
-	let points = points[mp_block.start_x..mp_block.end_x]
-		.iter()
-		.map(kate::gridgen::to_ark_scalar)
-		.collect::<Vec<_>>();
-
 	let block_commits = &commits[mp_block.start_x..mp_block.end_x];
 	let evals_flat = evals
 		.chunks_exact(32)
@@ -91,7 +85,7 @@ fn main() {
 	pmp.verify(
 		&mut Transcript::new(b"avail-mp"),
 		block_commits,
-		&points,
+		&points[mp_block.start_x..mp_block.end_x],
 		&evals_grid,
 		&proof,
 	)
