@@ -46,7 +46,7 @@ async fn main() -> Result<()> {
 	println!("Block hash: {:?}", block_hash);
 
 	let bridge_router_eth_addr: H160 = DA_BRIDGE_ROUTER_ADDRESS.parse().unwrap();
-	let tx = api::tx().da_bridge().try_dispatch_data_root(
+	let tx = api::tx().nomad_da_bridge().try_dispatch_data_root(
 		DESTINATION_DOMAIN,
 		bridge_router_eth_addr.into(),
 		header.into(),
