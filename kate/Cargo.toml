@@ -18,7 +18,7 @@ kate-grid = { path = "grid" }
 kate-recovery = { path = "recovery", default-features = false, optional = true }
 log = { version = "0.4.8", optional = true }
 once_cell = { version = "1.8.0", optional = true }
-poly-multiproof = { git = "https://github.com/aphoh/poly-multiproof", default-features = false, rev = "99335b664253ba4eca35f52b812af8e691f2497e" }
+poly-multiproof = { git = "https://github.com/aphoh/poly-multiproof", default-features = false, rev = "359cf33b40d5e2b7e1dde8e92326d0685244960c" }
 rand = { version = "0.8.4", default-features = false, optional = true }
 rand_chacha = { version = "0.3", default-features = false, optional = true }
 rayon = { version = "1.5.2", optional = true }

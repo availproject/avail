@@ -260,25 +260,19 @@ impl PolynomialGrid {
 		srs: &(impl Committer<Bls12_381> + Sync),
 		extension_factor: usize,
 	) -> Result<Vec<Commitment>, Error> {
-		use poly_multiproof::ark_poly::{EvaluationDomain, GeneralEvaluationDomain};
-		use poly_multiproof::m1_blst::{Fr, G1};
-		let mut res = cfg_iter!(self.inner)
+		let res = cfg_iter!(self.inner)
 			.map(|poly| poly.coeffs.iter().map(convert_scalar).collect::<Vec<_>>())
-			.map(|coeffs| {
-				srs.commit(&coeffs)
-					.map_err(Error::MultiproofError)
-					.map(|a| a.0.into())
-			})
-			.collect::<Result<Vec<G1>, _>>()?;
-		let domain_n = GeneralEvaluationDomain::<Fr>::new(res.len()).unwrap();
-		let domain_ext =
-			GeneralEvaluationDomain::<Fr>::new(res.len().saturating_mul(extension_factor)).unwrap();
-		domain_n.ifft_in_place(&mut res);
-		domain_ext.fft_in_place(&mut res);
-		Ok(res
-			.into_iter()
-			.map(|a| Commitment(convert_g1(a.into())))
-			.collect())
+			.map(|coeffs| srs.commit(&coeffs).map_err(Error::MultiproofError))
+			.collect::<Result<Vec<_>, _>>()?;
+		let commits = poly_multiproof::Commitment::<Bls12_381>::extend_commitments(
+			&res,
+			res.len().saturating_mul(extension_factor),
+		)
+		.map_err(Error::MultiproofError)?;
+		Ok(commits
+			.iter()
+			.map(|c| Commitment(convert_g1(c.0)))
+			.collect::<Vec<_>>())
 	}
 
 	pub fn commitment(&self, srs: &CommitKey, row: usize) -> Result<Commitment, Error> {
