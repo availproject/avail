@@ -261,7 +261,7 @@ pub mod staking {
 	parameter_types! {
 		pub const SessionsPerEra: sp_staking::SessionIndex = 6;
 		pub const BondingDuration: sp_staking::EraIndex = 112; // 28 days
-		pub const SlashDeferDuration: sp_staking::EraIndex = BondingDuration / 4; // 1/4 the bonding duration.
+		pub const SlashDeferDuration: sp_staking::EraIndex = BondingDuration::get() / 4; // 1/4 the bonding duration.
 	}
 
 	parameter_types! {
