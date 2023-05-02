@@ -12,7 +12,7 @@ PS: Do keep in mind that the gsprc is not that stable like polakdot-js and subxt
     "api_url":"ws://127.0.0.1:9944",
     "size":1000,
     "app_id" : 0,
-    "dest" : "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+    "dest" : "5H3qehpRTFiB3XwyTzYU43SpG7e8jW87vFug95fxdew76Vyi",
     "amount" : 10
 }
 ```
@@ -52,8 +52,7 @@ The same procedure of data submission is done here. But checks/logs if the data 
 go run extrinsics/balance/balance.go -config config.json
 ```
 
-Amount is transferred from the seed account to the dest account with the amount mentioned in config file. Note that the dest account mentioned must be using the public hex key. 
-You can refer [here](https://docs.substrate.io/tutorials/build-a-blockchain/add-trusted-nodes/#generate-your-account-and-keys) on how to create or inspect account 
+Amount is transferred from the seed account to the dest account with the amount mentioned in config file. You can refer [here](https://docs.substrate.io/tutorials/build-a-blockchain/add-trusted-nodes/#generate-your-account-and-keys) on how to create or inspect account 
 
 >LoadTesting(only for testing)
 
