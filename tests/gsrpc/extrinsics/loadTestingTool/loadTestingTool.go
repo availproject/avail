@@ -90,7 +90,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			log.Printf("Extrinsic submitted with hash: %s", submittedHash)
+			log.Printf("Extrinsic submitted with hash: %v", submittedHash.Hex())
 		}()
 	}
 

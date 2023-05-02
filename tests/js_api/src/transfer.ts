@@ -4,6 +4,7 @@ import type { EventRecord, ExtrinsicStatus, H256 } from '@polkadot/types/interfa
 import type { ISubmittableResult, SignatureOptions } from '@polkadot/types/types';
 import config from './config';
 import { createApi } from './api';
+import '@polkadot/api-augment';
 
 const keyring = new Keyring({ type: 'sr25519' });
 
@@ -20,6 +21,10 @@ async function getNonce(api: ApiPromise, address: string): Promise<number> {
 async function Transfer(api: ApiPromise) {
     try {
         const acc = keyring.addFromUri(config.mnemonic);  //and its address can be used by `acc.address`
+        const now = await api.query.timestamp.now();
+        const account = await api.query.system.account(acc.address);
+        const { data: { free: freeBalance } } = await api.query.system.account(acc.address);
+        console.log(`Free balance of ${acc.address}: ${freeBalance}`);
         let nonce1 = await getNonce(api, acc.address);
         let amount = 0;
         if (config.amount > 0) {
@@ -56,7 +61,13 @@ async function Transfer(api: ApiPromise) {
 async function main() {
     const api = await createApi();
     const metadata = await api.rpc.state.getMetadata();
-    console.log(config.amount);
+    const [chain, nodeName, nodeVersion] = await Promise.all([
+        api.rpc.system.chain(),
+        api.rpc.system.name(),
+        api.rpc.system.version()
+      ]);
+    
+      console.log(`You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`);
     await Transfer(api);
 }
 

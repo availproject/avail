@@ -11,6 +11,7 @@ import (
 	gsrpc "github.com/centrifuge/go-substrate-rpc-client/v4"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	"github.com/vedhavyas/go-subkey/v2"
 )
 
 func transfer(api *gsrpc.SubstrateAPI, Seed string, Dest string, amount uint64) {
@@ -20,7 +21,10 @@ func transfer(api *gsrpc.SubstrateAPI, Seed string, Dest string, amount uint64) 
 		panic(err)
 	}
 
-	dest, err := types.NewMultiAddressFromHexAccountID(Dest)
+	_, pubkeyBytes, _ := subkey.SS58Decode(Dest)
+	hexString := subkey.EncodeHex(pubkeyBytes)
+
+	dest, err := types.NewMultiAddressFromHexAccountID(hexString)
 	if err != nil {
 		panic(err)
 	}
@@ -89,10 +93,10 @@ func transfer(api *gsrpc.SubstrateAPI, Seed string, Dest string, amount uint64) 
 		case status := <-sub.Chan():
 			// NOTE: See first line of this function for supported extrinsic status expectations.
 			if status.IsInBlock {
-				fmt.Printf("Txn inside block %v\n", status.AsInBlock.Hex())
+				fmt.Printf("\nTxn inside block %v\n", status.AsInBlock.Hex())
 			}
 			if status.IsFinalized {
-				fmt.Printf("Txn finalized %v\n", status.AsFinalized.Hex())
+				fmt.Printf("\nTxn finalized %v\n", status.AsFinalized.Hex())
 				return
 			}
 			if status.IsDropped || status.IsInvalid {
@@ -106,6 +110,7 @@ func transfer(api *gsrpc.SubstrateAPI, Seed string, Dest string, amount uint64) 
 	}
 
 }
+
 func main() {
 	var configJSON string
 	var config config.Config
