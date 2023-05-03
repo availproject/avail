@@ -29,19 +29,19 @@ fn dev_sudo() -> AccountId { get_account_id_from_seed::<Public>("Alice") }
 fn make_genesis(
 	sudo: AccountId,
 	authorities: Vec<AuthorityKeys>,
-	tech_committee_members: Vec<AccountId>,
 	endowed_accounts: HashMap<AccountId, Balance>,
 ) -> GenesisConfig {
-	let council = authorities
+	let council = DEFAULT_ENDOWED_SEEDS[..5]
 		.iter()
-		.map(|auth| auth.controller.clone())
+		.map(|seed| get_account_id_from_seed::<Public>(seed))
 		.collect::<Vec<_>>();
+	let tech_committee = council.clone();
 
 	crate::chain_spec::make_genesis(
 		sudo,
 		authorities,
 		council,
-		tech_committee_members,
+		tech_committee,
 		endowed_accounts,
 		MIN_VALIDATOR_BOND,
 		MIN_NOMINATOR_BOND,

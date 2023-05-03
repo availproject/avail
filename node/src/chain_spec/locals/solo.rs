@@ -4,7 +4,7 @@ use sp_core::sr25519::Public;
 use crate::chain_spec::{
 	chain_properties, get_account_id_from_seed,
 	locals::{dev_endowed_accounts, make_genesis},
-	tech_committee_from_authorities, AuthorityKeys, ChainSpec, ChainType, FORK_ID, PROTOCOL_ID,
+	AuthorityKeys, ChainSpec, ChainType, FORK_ID, PROTOCOL_ID,
 };
 
 pub fn chain_spec() -> ChainSpec {
@@ -33,8 +33,7 @@ pub fn chain_spec() -> ChainSpec {
 fn config_genesis() -> GenesisConfig {
 	let sudo = get_account_id_from_seed::<Public>("Alice");
 	let authorities = vec![AuthorityKeys::from_seed("Alice")];
-	let tc_members = tech_committee_from_authorities(&authorities);
 	let endowed_accs = dev_endowed_accounts();
 
-	make_genesis(sudo, authorities, tc_members, endowed_accs)
+	make_genesis(sudo, authorities, endowed_accs)
 }

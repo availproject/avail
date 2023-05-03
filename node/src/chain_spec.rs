@@ -1,5 +1,4 @@
 #![allow(clippy::identity_op)]
-use core::cmp::max;
 use std::collections::HashMap;
 
 use da_runtime::{
@@ -69,15 +68,6 @@ where
 	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
 {
 	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
-}
-
-pub fn tech_committee_from_authorities(authorities: &[AuthorityKeys]) -> Vec<AccountId> {
-	let max_members = max(1, (authorities.len() + 1) / 2);
-	authorities
-		.iter()
-		.map(|auth| auth.controller.clone())
-		.take(max_members)
-		.collect::<Vec<_>>()
 }
 
 #[derive(Clone)]

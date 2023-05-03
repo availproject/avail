@@ -3,7 +3,7 @@ use da_runtime::GenesisConfig;
 use crate::chain_spec::{
 	chain_properties,
 	locals::{dev_endowed_accounts, dev_sudo, make_genesis},
-	tech_committee_from_authorities, AuthorityKeys, ChainSpec, ChainType, FORK_ID, PROTOCOL_ID,
+	AuthorityKeys, ChainSpec, ChainType, FORK_ID, PROTOCOL_ID,
 };
 
 pub fn chain_spec() -> ChainSpec {
@@ -37,13 +37,12 @@ fn config_genesis() -> GenesisConfig {
 		.collect::<Vec<_>>();
 
 	// Charlie uses same account for stash
-	authorities
-		.get_mut(2)
-		.map(|auth| auth.stash = auth.controller.clone());
+	if let Some(auth) = authorities.get_mut(2) {
+		auth.stash = auth.controller.clone();
+	}
 
-	let tc_members = tech_committee_from_authorities(&authorities);
 	let endowed_accs = dev_endowed_accounts();
 	let sudo = dev_sudo();
 
-	make_genesis(sudo, authorities, tc_members, endowed_accs)
+	make_genesis(sudo, authorities, endowed_accs)
 }
