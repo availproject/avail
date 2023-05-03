@@ -23,9 +23,6 @@ pub type SignaturePayload = (Address, Signature, AvailExtrinsicParams);
 impl Config for AvailConfig {
 	type AccountId = AccountId;
 	type Address = Address;
-	// type Extrinsic = AvailExtrinsic;
-	// type Extrinsic = Vec<u8>;
-	// type Extrinsic = AppUncheckedExtrinsic;
 	type ExtrinsicParams = AvailExtrinsicParams;
 	type Hash = H256;
 	type Hasher = BlakeTwo256;
@@ -41,7 +38,8 @@ pub mod avail {
 	pub type TxProgress = subxt::tx::TxProgress<AvailConfig, Client>;
 	pub type AppUncheckedExtrinsic =
 		crate::primitives::app_unchecked_extrinsic::AppUncheckedExtrinsic;
-	pub type PairSigner = subxt::tx::PairSigner<AvailConfig, sp_core::sr25519::Pair>;
+	pub type Pair = sp_core::sr25519::Pair;
+	pub type PairSigner = subxt::tx::PairSigner<AvailConfig, Pair>;
 
 	pub type RuntimeCall = api::runtime_types::da_runtime::RuntimeCall;
 	pub type Bounded = api::runtime_types::frame_support::traits::preimages::Bounded<RuntimeCall>;
@@ -62,12 +60,21 @@ pub struct Opts {
 	/// The WebSocket address of the target the Avail Node,
 	#[structopt(name = "ws_uri", long, default_value = "ws://127.0.0.1:9944")]
 	pub ws: String,
+
+	/// Check whether the Client you are using is aligned with the statically generated codegen.
+	#[structopt(name = "validate_codege", short = "c", long)]
+	pub validate_codegen: bool,
 }
 
-/// Creates a client and validate the code generation.
-pub async fn build_client<U: AsRef<str>>(url: U) -> Result<OnlineClient<AvailConfig>> {
+/// Creates a client and validate the code generation if `validate_codegen == true`.
+pub async fn build_client<U: AsRef<str>>(
+	url: U,
+	validate_codegen: bool,
+) -> Result<OnlineClient<AvailConfig>> {
 	let api = OnlineClient::<AvailConfig>::from_url(url).await?;
-	api::validate_codegen(&api)?;
+	if validate_codegen {
+		api::validate_codegen(&api)?;
+	}
 	Ok(api)
 }
 
@@ -103,7 +110,7 @@ mod test {
 
 	use super::{
 		api::runtime_types::pallet_timestamp::pallet::Call as TimestampCall,
-		avail::AppUncheckedExtrinsic, Call,
+		primitives::AppUncheckedExtrinsic, Call,
 	};
 
 	const TIMESTAMP_1: &[u8] = &hex!("280403000b804aa9518401");
