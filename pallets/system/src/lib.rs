@@ -273,6 +273,7 @@ pub mod pallet {
 			+ sp_std::hash::Hash
 			+ sp_std::str::FromStr
 			+ MaxEncodedLen
+			+ Into<u32>
 			+ TypeInfo;
 
 		/// The output of the `Hashing` function.
@@ -1493,6 +1494,7 @@ impl<T: Config> Pallet<T> {
 			app_extrinsics,
 			data_root,
 			block_length,
+			number.into(),
 		);
 
 		let header = <T::Header as ExtendedHeader>::new(

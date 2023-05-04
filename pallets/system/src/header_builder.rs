@@ -1,6 +1,6 @@
-use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, HeaderExtension};
 #[cfg(feature = "std")]
-use da_primitives::{asdr::DataLookup, KateCommitment};
+use da_primitives::asdr::DataLookup;
+use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, HeaderExtension};
 use frame_support::traits::Randomness;
 pub use kate::{
 	metrics::{IgnoreMetrics, Metrics},
@@ -38,15 +38,15 @@ pub mod da {
 			app_extrinsics: Vec<AppExtrinsic>,
 			data_root: H256,
 			block_length: BlockLength,
+			block_number: u32,
 		) -> HeaderExtension {
 			let seed = Self::random_seed::<T>();
 
-			let unused_block_number = 0u32;
 			super::hosted_header_builder::build(
 				app_extrinsics,
 				data_root,
 				block_length,
-				unused_block_number,
+				block_number,
 				seed,
 			)
 		}
@@ -62,6 +62,7 @@ pub trait HeaderExtensionBuilder {
 		app_extrinsics: Vec<AppExtrinsic>,
 		data_root: H256,
 		block_length: BlockLength,
+		block_number: u32,
 	) -> HeaderExtension;
 
 	/// Generates a random seed using the _epoch seed_ and the _current block_ returned by
@@ -102,10 +103,11 @@ fn build_extension<M: Metrics>(
 	app_extrinsics: &[AppExtrinsic],
 	data_root: H256,
 	block_length: BlockLength,
+	_block_number: u32,
 	seed: Seed,
 	metrics: &M,
 ) -> HeaderExtension {
-	use da_primitives::header::extension::v1;
+	use da_primitives::header::extension::{v1, v2};
 
 	let (xts_layout, commitment, block_dims, _data_matrix) = kate::com::par_build_commitments(
 		block_length.rows,
@@ -118,18 +120,47 @@ fn build_extension<M: Metrics>(
 	.expect("Build commitments cannot fail .qed");
 	let app_lookup =
 		DataLookup::try_from(xts_layout.as_slice()).expect("Extrinsic size cannot overflow .qed");
+	let rows = block_dims.rows.0.saturated_into::<u16>();
+	let cols = block_dims.cols.0.saturated_into::<u16>();
 
-	let commitment = KateCommitment {
-		rows: block_dims.rows.0.saturated_into::<u16>(),
-		cols: block_dims.cols.0.saturated_into::<u16>(),
-		commitment,
-		data_root,
-	};
+	// **NOTE:** Header extension V2 is not yet enable by default.
+	if cfg!(feature = "header_extension_v2") {
+		use da_primitives::kate_commitment::v2::KateCommitment;
+		let mut kate = KateCommitment::new(rows, cols, data_root, commitment);
 
-	HeaderExtension::V1(v1::HeaderExtension {
-		commitment,
-		app_lookup,
-	})
+		#[cfg(feature = "header_commitment_corruption")]
+		if _block_number != 0 {
+			if let Some(ref_byte) = kate.commitment.get_mut(0) {
+				*ref_byte ^= 0xffu8;
+			}
+		}
+
+		v2::HeaderExtension {
+			commitment: kate,
+			app_lookup,
+		}
+		.into()
+	} else {
+		let mut kate = da_primitives::kate_commitment::v1::KateCommitment {
+			rows,
+			cols,
+			commitment,
+			data_root,
+		};
+
+		#[cfg(feature = "header_commitment_corruption")]
+		if _block_number != 0 {
+			if let Some(ref_byte) = kate.commitment.get_mut(0) {
+				*ref_byte ^= 0xffu8;
+			}
+		}
+
+		v1::HeaderExtension {
+			commitment: kate,
+			app_lookup,
+		}
+		.into()
+	}
 }
 
 /// Hosted function to build the header using `kate` commitments.
@@ -142,11 +173,11 @@ pub trait HostedHeaderBuilder {
 		app_extrinsics: Vec<AppExtrinsic>,
 		data_root: H256,
 		block_length: BlockLength,
-		_block_number: u32,
+		block_number: u32,
 		seed: Seed,
 	) -> HeaderExtension {
 		let metrics = avail_base::metrics::MetricAdapter {};
-		build_extension(&app_extrinsics, data_root, block_length, seed, &metrics)
+		build_extension(&app_extrinsics, data_root, block_length, block_number, seed, &metrics)
 	}
 
 	/*
