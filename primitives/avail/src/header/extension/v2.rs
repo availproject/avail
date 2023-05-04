@@ -19,6 +19,10 @@ impl HeaderExtension {
 	pub fn data_root(&self) -> H256 {
 		self.commitment.data_root.unwrap_or_default()
 	}
+
+	pub fn app_lookup(&self) -> &DataLookup {
+		&self.app_lookup
+	}
 }
 
 #[cfg(feature = "std")]

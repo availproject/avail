@@ -51,7 +51,7 @@ impl HeaderExtension {
 		forward_to_version!(self, data_root)
 	}
 
-	pub fn app_lookup(&self) -> DataLookup {
+	pub fn app_lookup(&self) -> &DataLookup {
 		forward_to_version!(self, app_lookup)
 	}
 }
