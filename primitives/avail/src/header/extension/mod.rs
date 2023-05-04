@@ -28,19 +28,19 @@ pub enum HeaderExtension {
 macro_rules! forward_to_version {
 	($self:ident, $function:ident) => {{
 		match $self {
-			HeaderExtension::V1(header) => header.$function(),
-			HeaderExtension::V2(header) => header.$function(),
+			HeaderExtension::V1(ext) => ext.$function(),
+			HeaderExtension::V2(ext) => ext.$function(),
 			#[cfg(feature = "header-backward-compatibility-test")]
-			HeaderExtension::VTest(header) => header.$function(),
+			HeaderExtension::VTest(ext) => ext.$function(),
 		}
 	}};
 
 	($self:ident, $function:ident, $arg:expr) => {{
 		match $self {
-			HeaderExtension::V1(header) => header.$function($arg),
-			HeaderExtension::V2(header) => header.$function($arg),
+			HeaderExtension::V1(ext) => ext.$function($arg),
+			HeaderExtension::V2(ext) => ext.$function($arg),
 			#[cfg(feature = "header-backward-compatibility-test")]
-			HeaderExtension::VTest(header) => header.$function($arg),
+			HeaderExtension::VTest(ext) => ext.$function($arg),
 		}
 	}};
 }
@@ -48,6 +48,10 @@ macro_rules! forward_to_version {
 impl HeaderExtension {
 	pub fn data_root(&self) -> H256 {
 		forward_to_version!(self, data_root)
+	}
+
+	pub fn app_lookup(&self) -> DataLookup {
+		forward_to_version!(self, app_lookup)
 	}
 }
 
