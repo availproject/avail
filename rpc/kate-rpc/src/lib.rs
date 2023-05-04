@@ -7,7 +7,7 @@ use avail_base::metrics::RPCMetricAdapter;
 use da_primitives::{
 	asdr::{AppExtrinsic, AppId, DataLookup},
 	traits::ExtendedHeader,
-	DataProof, HeaderExtension,
+	DataProof,
 };
 use da_runtime::{Runtime, UncheckedExtrinsic};
 use frame_system::{limits::BlockLength, submitted_data};
@@ -276,8 +276,7 @@ where
 			.get(&block_hash)
 			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
 
-		let HeaderExtension::V1(header) = signed_block.block.header().extension();
-		let DataLookup { index, size } = &header.app_lookup;
+		let DataLookup { index, size } = signed_block.block.header().extension().app_lookup();
 
 		let app_data_index = AppDataIndex {
 			index: index
