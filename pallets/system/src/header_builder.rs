@@ -98,6 +98,25 @@ fn build_extension_v_test(
 	}
 }
 
+#[cfg(feature = "header_commitment_corruption")]
+fn corrupt_commitment(block_number: u32, commitment: &mut Vec<u8>) {
+	if let Some(ref_byte) = commitment.get_mut(0) {
+		log::trace!(
+			target: LOG_TARGET,
+			"Block {block_number}, corrupting 1st byte of commitment from {ref_byte:x} to {:x}",
+			*ref_byte ^ 0xffu8
+		);
+
+		*ref_byte ^= 0xffu8;
+	} else {
+		log::trace!(
+			target: LOG_TARGET,
+			"Block {block_number}, corrupting commitment by adding one `0xFF` byte "
+		);
+		commitment.push(0xffu8)
+	}
+}
+
 #[cfg(feature = "std")]
 fn build_extension<M: Metrics>(
 	app_extrinsics: &[AppExtrinsic],
@@ -129,10 +148,8 @@ fn build_extension<M: Metrics>(
 		let mut kate = KateCommitment::new(rows, cols, data_root, commitment);
 
 		#[cfg(feature = "header_commitment_corruption")]
-		if _block_number != 0 {
-			if let Some(ref_byte) = kate.commitment.get_mut(0) {
-				*ref_byte ^= 0xffu8;
-			}
+		if _block_number > 20 {
+			corrupt_commitment(_block_number, &mut kate.commitment);
 		}
 
 		v2::HeaderExtension {
@@ -149,10 +166,8 @@ fn build_extension<M: Metrics>(
 		};
 
 		#[cfg(feature = "header_commitment_corruption")]
-		if _block_number != 0 {
-			if let Some(ref_byte) = kate.commitment.get_mut(0) {
-				*ref_byte ^= 0xffu8;
-			}
+		if _block_number > 20 {
+			corrupt_commitment(_block_number, &mut kate.commitment);
 		}
 
 		v1::HeaderExtension {
@@ -177,7 +192,14 @@ pub trait HostedHeaderBuilder {
 		seed: Seed,
 	) -> HeaderExtension {
 		let metrics = avail_base::metrics::MetricAdapter {};
-		build_extension(&app_extrinsics, data_root, block_length, block_number, seed, &metrics)
+		build_extension(
+			&app_extrinsics,
+			data_root,
+			block_length,
+			block_number,
+			seed,
+			&metrics,
+		)
 	}
 
 	/*

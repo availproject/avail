@@ -200,8 +200,8 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 
 /// Decodes and extracts the `data` of `DataAvailability::submit_data` extrinsics.
 impl submitted_data::Extractor for Runtime {
-	fn extract(app_ext: AppExtrinsic, metrics: submitted_data::RcMetrics) -> Option<Vec<u8>> {
-		let extrinsic = UncheckedExtrinsic::decode(&mut app_ext.data.as_slice()).ok()?;
+	fn extract(mut encoded_ext: &[u8], metrics: submitted_data::RcMetrics) -> Option<Vec<u8>> {
+		let extrinsic = UncheckedExtrinsic::decode(&mut encoded_ext).ok()?;
 		<Runtime as submitted_data::Filter<RuntimeCall>>::filter(extrinsic.function, metrics)
 	}
 }

@@ -28,6 +28,7 @@ use frame_system_rpc_runtime_api::AccountNonceApi;
 use futures::prelude::*;
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sc_client_api::BlockBackend;
+use sc_consensus::block_import::BlockImport as BlockImportT;
 use sc_consensus_babe::{self, SlotProportion};
 pub use sc_executor::NativeElseWasmExecutor;
 use sc_network::{Event, NetworkService};
@@ -74,6 +75,103 @@ type FullGrandpaBlockImport =
 
 /// The transaction pool type defintion.
 pub type TransactionPool = sc_transaction_pool::FullPool<Block, FullClient>;
+
+pub type BlockImport =
+	da::BlockImport<sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>>;
+
+pub mod da {
+	use std::collections::HashMap;
+
+	use da_primitives::{
+		asdr::AppExtrinsic, BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+	};
+	use da_runtime::{Header as DaHeader, Runtime, UncheckedExtrinsic};
+	use derive_more::From;
+	use frame_support::ensure;
+	use frame_system::{
+		header_builder::{da::HeaderExtensionBuilder, HeaderExtensionBuilder as _},
+		limits::BlockLength,
+		submitted_data,
+	};
+	use sc_consensus::{
+		block_import::{BlockCheckParams, BlockImportParams},
+		ImportResult,
+	};
+	use sp_consensus::{CacheKeyId, Error as ConsensusError};
+	use sp_runtime::traits::Block as BlockT;
+
+	use super::BlockImportT;
+
+	#[derive(Clone, From)]
+	pub struct BlockImport<I: Clone> {
+		pub inner: I,
+	}
+
+	#[async_trait::async_trait]
+	impl<B, I> BlockImportT<B> for BlockImport<I>
+	where
+		B: BlockT<Extrinsic = OpaqueExtrinsic, Header = DaHeader>,
+		// AppExtrinsic: From<<B as BlockT>::Extrinsic>,
+		I: BlockImportT<B> + Clone + Send + Sync,
+		I::Error: Into<ConsensusError>,
+	{
+		type Error = ConsensusError;
+		type Transaction = <I as BlockImportT<B>>::Transaction;
+
+		/// It verifies that header extension (Kate commitment & data root) is properly calculated.
+		async fn import_block(
+			&mut self,
+			block: BlockImportParams<B, Self::Transaction>,
+			new_cache: HashMap<CacheKeyId, Vec<u8>>,
+		) -> Result<ImportResult, Self::Error> {
+			let no_extrinsics = vec![];
+			let number = block.header.number;
+			let extrinsics = block.body.as_ref().unwrap_or(&no_extrinsics);
+			let raw_ext_iter = extrinsics.iter().map(|opaque| opaque.0.as_slice());
+			let data_root = submitted_data::extrinsics_root::<Runtime, _>(raw_ext_iter);
+
+			let extension = &block.header.extension;
+			let block_len = BlockLength::with_normal_ratio(
+				BlockLengthRows(extension.rows() as u32),
+				BlockLengthColumns(extension.cols() as u32),
+				BLOCK_CHUNK_SIZE,
+				sp_runtime::Perbill::from_percent(90),
+			)
+			.expect("Valid BlockLength at genesis .qed");
+
+			let app_extrinsics = extrinsics
+				.iter()
+				.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
+				.map(AppExtrinsic::from)
+				.collect();
+			let gen_ext = HeaderExtensionBuilder::<Runtime>::build(
+				app_extrinsics,
+				data_root,
+				block_len,
+				number,
+			);
+
+			ensure!(
+				extension == &gen_ext,
+				ConsensusError::ClientImport("DA Extension do NOT match".into())
+			);
+
+			self.inner
+				.import_block(block, new_cache)
+				.await
+				.map_err(Into::into)
+		}
+
+		/// # TODO
+		/// - Check that `Runtime::System::BlockLenght` was not changed inside the block;
+		async fn check_block(
+			&mut self,
+			block: BlockCheckParams<B>,
+		) -> Result<ImportResult, Self::Error> {
+			self.inner.check_block(block).await.map_err(Into::into)
+		}
+	}
+}
 
 /// Fetch the nonce of the given `account` from the chain state.
 ///
@@ -167,7 +265,7 @@ pub fn new_partial(
 				sc_rpc::SubscriptionTaskExecutor,
 			) -> Result<jsonrpsee::RpcModule<()>, sc_service::Error>,
 			(
-				sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
+				BlockImport,
 				sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
 				sc_consensus_babe::BabeLink<Block>,
 			),
@@ -233,11 +331,12 @@ pub fn new_partial(
 		grandpa_block_import,
 		client.clone(),
 	)?;
+	let da_block_import = da::BlockImport::from(block_import);
 
 	let slot_duration = babe_link.config().slot_duration();
 	let import_queue = sc_consensus_babe::import_queue(
 		babe_link.clone(),
-		block_import.clone(),
+		da_block_import.clone(),
 		Some(Box::new(justification_import)),
 		client.clone(),
 		select_chain.clone(),
@@ -260,7 +359,7 @@ pub fn new_partial(
 		telemetry.as_ref().map(|x| x.handle()),
 	)?;
 
-	let import_setup = (block_import, grandpa_link, babe_link);
+	let import_setup = (da_block_import, grandpa_link, babe_link);
 
 	let (rpc_extensions_builder, rpc_setup) = {
 		let (_, grandpa_link, babe_link) = &import_setup;
@@ -342,10 +441,7 @@ pub struct NewFullBase {
 pub fn new_full_base(
 	mut config: Configuration,
 	disable_hardware_benchmarks: bool,
-	with_startup_data: impl FnOnce(
-		&sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
-		&sc_consensus_babe::BabeLink<Block>,
-	),
+	with_startup_data: impl FnOnce(&BlockImport, &sc_consensus_babe::BabeLink<Block>),
 ) -> Result<NewFullBase, ServiceError> {
 	let hwbench = if !disable_hardware_benchmarks {
 		config.database.path().map(|database_path| {

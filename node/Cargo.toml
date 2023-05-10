@@ -42,7 +42,8 @@ lru = "0.7.2"
 log = "0.4.17"
 rand = "0.8"
 hex-literal = "0.3.4"
-
+derive_more = "0.99.17"
+async-trait = "0.1.60"
 
 # Substrate
 ## Primitives

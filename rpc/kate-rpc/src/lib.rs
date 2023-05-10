@@ -7,7 +7,7 @@ use avail_base::metrics::RPCMetricAdapter;
 use da_primitives::{
 	asdr::{AppExtrinsic, AppId, DataLookup},
 	traits::ExtendedHeader,
-	DataProof,
+	DataProof, OpaqueExtrinsic,
 };
 use da_runtime::{Runtime, UncheckedExtrinsic};
 use frame_system::{limits::BlockLength, submitted_data};
@@ -120,12 +120,11 @@ where
 #[async_trait]
 impl<Client, Block> KateApiServer<Block> for Kate<Client, Block>
 where
-	Block: BlockT,
+	Block: BlockT<Extrinsic = OpaqueExtrinsic>,
 	Block::Header: ExtendedHeader,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: KateParamsGetter<Block>,
-	UncheckedExtrinsic: TryFrom<<Block as BlockT>::Extrinsic>,
 {
 	async fn query_rows(
 		&self,
@@ -160,7 +159,6 @@ where
 				.block
 				.extrinsics()
 				.iter()
-				.cloned()
 				.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
 				.map(AppExtrinsic::from)
 				.collect();
@@ -238,7 +236,6 @@ where
 				.block
 				.extrinsics()
 				.iter()
-				.cloned()
 				.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
 				.map(AppExtrinsic::from)
 				.collect();
@@ -329,7 +326,6 @@ where
 				.block
 				.extrinsics()
 				.iter()
-				.cloned()
 				.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
 				.map(AppExtrinsic::from)
 				.collect();
@@ -415,7 +411,6 @@ where
 		let calls = block
 			.extrinsics()
 			.iter()
-			.cloned()
 			.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
 			.map(|app_ext| app_ext.function);
 

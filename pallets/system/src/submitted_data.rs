@@ -1,5 +1,5 @@
 use beefy_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
-use da_primitives::{asdr::AppExtrinsic, ShaTwo256};
+use da_primitives::ShaTwo256;
 use sp_core::H256;
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
 
@@ -24,14 +24,16 @@ impl Metrics {
 
 /// Extracts the `data` field from some types of extrinsics.
 pub trait Extractor {
-	/// Returns the `data` field of `app_ext` if it contains one.
+	/// Returns the `data` field of `encoded_extrinsic` if it contains one, like a
+	/// `Avail::SubmitData` call.
+	///
 	/// The `metrics` will be used to write accountability information about the whole process.
-	fn extract(app_ext: AppExtrinsic, metrics: RcMetrics) -> Option<Vec<u8>>;
+	fn extract(encoded_extrinsic: &[u8], metrics: RcMetrics) -> Option<Vec<u8>>;
 }
 
 #[cfg(any(feature = "std", test))]
 impl Extractor for () {
-	fn extract(_: AppExtrinsic, _: RcMetrics) -> Option<Vec<u8>> { None }
+	fn extract(_: &[u8], _: RcMetrics) -> Option<Vec<u8>> { None }
 }
 
 /// It is similar to `Extractor` but it uses `C` type for calls, instead of `AppExtrinsic`.
@@ -46,13 +48,13 @@ impl<C> Filter<C> for () {
 }
 
 /// Construct a root hash of Binary Merkle Tree created from given filtered `app_extrincs`.
-pub fn extrinsics_root<E, I>(app_extrinsics: I) -> H256
+pub fn extrinsics_root<'a, E, I>(encoded_extrinsics: I) -> H256
 where
 	E: Extractor,
-	I: Iterator<Item = AppExtrinsic>,
+	I: Iterator<Item = &'a [u8]>,
 {
 	let metrics = Metrics::new_shared();
-	let submitted_data = app_extrinsics.filter_map(|ext| E::extract(ext, Rc::clone(&metrics)));
+	let submitted_data = encoded_extrinsics.filter_map(|ext| E::extract(ext, Rc::clone(&metrics)));
 	root(submitted_data, Rc::clone(&metrics))
 }
 
@@ -113,13 +115,13 @@ where
 /// - The `merkle_proof` requires `ExactSizeIterator`, forcing to load all submitted data into
 /// memory. That would increase the memory footprint of the node significantly. We could fix this
 /// adding the number of submitted data items at `System` pallet.
-pub fn extrinsics_proof<E, I>(
+pub fn extrinsics_proof<'a, E, I>(
 	app_extrinsics: I,
 	data_index: u32,
 ) -> Option<MerkleProof<H256, Vec<u8>>>
 where
 	E: Extractor,
-	I: Iterator<Item = AppExtrinsic>,
+	I: Iterator<Item = &'a [u8]>,
 {
 	let metrics = Metrics::new_shared();
 	let submitted_data = app_extrinsics

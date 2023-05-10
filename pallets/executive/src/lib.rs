@@ -119,7 +119,7 @@
 use codec::{Codec, Encode};
 #[cfg(feature = "try-runtime")]
 use da_primitives::asdr::AppId;
-use da_primitives::asdr::GetAppId;
+use da_primitives::{asdr::GetAppId, traits::ExtendedHeader as _};
 use frame_support::{
 	dispatch::{DispatchClass, DispatchInfo, GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::InvalidTransaction,
@@ -334,6 +334,12 @@ where
 				header.extrinsics_root() == new_header.extrinsics_root(),
 				"Transaction trie root must be valid.",
 			);
+
+			// Assert header extensions.
+			assert!(
+				header.extension() == new_header.extension(),
+				"Header extensions must match that calculated."
+			)
 		}
 
 		Ok(frame_system::Pallet::<System>::block_weight().total())
@@ -634,6 +640,11 @@ where
 		assert!(
 			header.extrinsics_root() == new_header.extrinsics_root(),
 			"Transaction trie root must be valid.",
+		);
+
+		assert!(
+			header.extension() == new_header.extension(),
+			"Header extension must match that calculated."
 		);
 	}
 

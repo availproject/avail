@@ -22,6 +22,7 @@
 
 use std::{sync::Arc, time::Duration};
 
+use codec::Encode;
 use da_primitives::asdr::AppId;
 use da_runtime::{AccountId, Balance, BalancesCall};
 use frame_system::Call as SystemCall;
@@ -52,16 +53,15 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for RemarkBuilder {
 
 	fn build(&self, nonce: u32) -> std::result::Result<OpaqueExtrinsic, &'static str> {
 		let acc = Sr25519Keyring::Bob.pair();
-		let extrinsic: OpaqueExtrinsic = create_extrinsic(
+		let extrinsic = create_extrinsic(
 			self.client.as_ref(),
 			acc,
 			SystemCall::remark { remark: vec![] },
 			Some(nonce),
 			AppId(0),
-		)
-		.into();
-
-		Ok(extrinsic)
+		);
+		OpaqueExtrinsic::from_bytes(&extrinsic.encode())
+			.map_err(|_| "`AppUncheckedExtrinsic` cannot be decoded as `OpaqueExtrinsic`")
 	}
 }
 
@@ -93,7 +93,7 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for TransferKeepAliveBuilder {
 
 	fn build(&self, nonce: u32) -> std::result::Result<OpaqueExtrinsic, &'static str> {
 		let acc = Sr25519Keyring::Bob.pair();
-		let extrinsic: OpaqueExtrinsic = create_extrinsic(
+		let extrinsic = create_extrinsic(
 			self.client.as_ref(),
 			acc,
 			BalancesCall::transfer_keep_alive {
@@ -102,10 +102,9 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for TransferKeepAliveBuilder {
 			},
 			Some(nonce),
 			AppId(0),
-		)
-		.into();
-
-		Ok(extrinsic)
+		);
+		OpaqueExtrinsic::from_bytes(&extrinsic.encode())
+			.map_err(|_| "`AppUncheckedExtrinsic` cannot be decoded as `OpaqueExtrinsic`")
 	}
 }
 

@@ -98,7 +98,7 @@ use sp_runtime::{
 	traits::{
 		self, AtLeast32Bit, AtLeast32BitUnsigned, BadOrigin, BlockNumberProvider, Bounded,
 		CheckEqual, Dispatchable, Hash, Lookup, LookupError, MaybeDisplay, Member, One, Saturating,
-		SimpleBitOps, StaticLookup, Zero,
+		SimpleBitOps, StaticLookup, UniqueSaturatedInto, Zero,
 	},
 	DispatchError, RuntimeDebug,
 };
@@ -273,7 +273,6 @@ pub mod pallet {
 			+ sp_std::hash::Hash
 			+ sp_std::str::FromStr
 			+ MaxEncodedLen
-			+ Into<u32>
 			+ TypeInfo;
 
 		/// The output of the `Hashing` function.
@@ -1487,14 +1486,14 @@ impl<T: Config> Pallet<T> {
 
 		let block_length = Self::block_length();
 		let data_root = submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(
-			app_extrinsics.iter().cloned(),
+			app_extrinsics.iter().map(|app_ext| app_ext.data.as_slice()),
 		);
 
 		let extension = header_builder::da::HeaderExtensionBuilder::<T>::build(
 			app_extrinsics,
 			data_root,
 			block_length,
-			number.into(),
+			number.unique_saturated_into(),
 		);
 
 		let header = <T::Header as ExtendedHeader>::new(
@@ -1506,7 +1505,14 @@ impl<T: Config> Pallet<T> {
 			extension,
 		);
 
-		log::trace!(target: LOG_TARGET, "Header {:?}", header);
+		use sp_runtime::traits::Header as _;
+		log::trace!(
+			target: LOG_TARGET,
+			"Header ({:?}) {:?}  ",
+			header.hash(),
+			header
+		);
+
 		header
 	}
 
