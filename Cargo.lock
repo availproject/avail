@@ -1560,7 +1560,7 @@ dependencies = [
 [[package]]
 name = "da-primitives"
 version = "0.4.6"
-source = "git+https://github.com/availproject/avail-core?branch=miguel/new_chainspec#42560603fef8a3778522faf3973a04077c312c1f"
+source = "git+https://github.com/availproject/avail-core?branch=header_update#b3dafcb300d6e4248e76720ffd0e9376ba9a242d"
 dependencies = [
  "beefy-merkle-tree",
  "derive_more",
@@ -3842,7 +3842,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.7.1"
-source = "git+https://github.com/availproject/avail-core?branch=miguel/new_chainspec#42560603fef8a3778522faf3973a04077c312c1f"
+source = "git+https://github.com/availproject/avail-core?branch=header_update#b3dafcb300d6e4248e76720ffd0e9376ba9a242d"
 dependencies = [
  "da-primitives",
  "derive_more",
@@ -3869,7 +3869,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.8.1"
-source = "git+https://github.com/availproject/avail-core?branch=miguel/new_chainspec#42560603fef8a3778522faf3973a04077c312c1f"
+source = "git+https://github.com/availproject/avail-core?branch=header_update#b3dafcb300d6e4248e76720ffd0e9376ba9a242d"
 dependencies = [
  "dusk-bytes",
  "dusk-plonk",
@@ -5043,7 +5043,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?branch=miguel/new_chainspec#42560603fef8a3778522faf3973a04077c312c1f"
+source = "git+https://github.com/availproject/avail-core?branch=header_update#b3dafcb300d6e4248e76720ffd0e9376ba9a242d"
 dependencies = [
  "ethers-signers",
  "frame-support",
@@ -5062,7 +5062,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?branch=miguel/new_chainspec#42560603fef8a3778522faf3973a04077c312c1f"
+source = "git+https://github.com/availproject/avail-core?branch=header_update#b3dafcb300d6e4248e76720ffd0e9376ba9a242d"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -5138,7 +5138,7 @@ dependencies = [
 [[package]]
 name = "nomad-merkle"
 version = "0.1.1"
-source = "git+https://github.com/availproject/avail-core?branch=miguel/new_chainspec#42560603fef8a3778522faf3973a04077c312c1f"
+source = "git+https://github.com/availproject/avail-core?branch=header_update#b3dafcb300d6e4248e76720ffd0e9376ba9a242d"
 dependencies = [
  "frame-support",
  "hex-literal",
@@ -5159,7 +5159,7 @@ dependencies = [
 [[package]]
 name = "nomad-signature"
 version = "0.1.1"
-source = "git+https://github.com/availproject/avail-core?branch=miguel/new_chainspec#42560603fef8a3778522faf3973a04077c312c1f"
+source = "git+https://github.com/availproject/avail-core?branch=header_update#b3dafcb300d6e4248e76720ffd0e9376ba9a242d"
 dependencies = [
  "elliptic-curve",
  "ethers-core",

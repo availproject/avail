@@ -25,15 +25,15 @@ frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 
 # DA Primitives
-da-primitives = { version = "0.4", git="https://github.com/availproject/avail-core", branch = "miguel/new_chainspec" }
-kate = { version = "0.7", git="https://github.com/availproject/avail-core", branch = "miguel/new_chainspec" }
-kate-recovery = { version = "0.8", git="https://github.com/availproject/avail-core", branch = "miguel/new_chainspec" }
+da-primitives = { version = "0.4.6", git="https://github.com/availproject/avail-core", branch = "header_update" }
+kate = { version = "0.7.1", git="https://github.com/availproject/avail-core", branch = "header_update" }
+kate-recovery = { version = "0.8", git="https://github.com/availproject/avail-core", branch = "header_update" }
 
 # Nomad
-nomad-signature = { version = "0.1", git="https://github.com/availproject/avail-core", branch = "miguel/new_chainspec" }
-nomad-merkle = { version = "0.1", git="https://github.com/availproject/avail-core", branch = "miguel/new_chainspec" }
-nomad-base = { version = "0.1", git="https://github.com/availproject/avail-core", branch = "miguel/new_chainspec" }
-nomad-core = { version = "0.1", git="https://github.com/availproject/avail-core", branch = "miguel/new_chainspec" }
+nomad-signature = { version = "0.1", git="https://github.com/availproject/avail-core", branch = "header_update" }
+nomad-merkle = { version = "0.1", git="https://github.com/availproject/avail-core", branch = "header_update" }
+nomad-base = { version = "0.1", git="https://github.com/availproject/avail-core", branch = "header_update" }
+nomad-core = { version = "0.1", git="https://github.com/availproject/avail-core", branch = "header_update" }
 
 # Other stuff
 uint = { git = "https://github.com/paritytech/parity-common.git", tag="rlp-v0.5.2" }

@@ -1,6 +1,6 @@
 use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, HeaderExtension};
 #[cfg(feature = "std")]
-use da_primitives::{asdr::DataLookup, KateCommitment};
+use da_primitives::{asdr::DataLookup, v1::KateCommitment, v2::KateCommitment as KateCommitmentV2};
 use frame_support::traits::Randomness;
 pub use kate::{
 	metrics::{IgnoreMetrics, Metrics},
@@ -44,7 +44,7 @@ pub mod da {
 			let unused_block_number = 0u32;
 			super::hosted_header_builder::build(
 				app_extrinsics,
-				data_root,
+				Some(data_root),
 				block_length,
 				unused_block_number,
 				seed,
@@ -132,6 +132,43 @@ fn build_extension<M: Metrics>(
 	})
 }
 
+
+//TODO:: followup on tests @kroos
+#[cfg(feature = "std")]
+fn build_extension_v2<M: Metrics>(
+	app_extrinsics: &[AppExtrinsic],
+	data_root: Option<H256>,
+	block_length: BlockLength,
+	seed: Seed,
+	metrics: &M,
+) -> HeaderExtension {
+	use da_primitives::header::extension::v2;
+
+	let (xts_layout, commitment, block_dims, _data_matrix) = kate::com::par_build_commitments(
+		block_length.rows,
+		block_length.cols,
+		block_length.chunk_size(),
+		app_extrinsics,
+		seed,
+		metrics,
+	)
+	.expect("Build commitments cannot fail .qed");
+	let app_lookup =
+		DataLookup::try_from(xts_layout.as_slice()).expect("Extrinsic size cannot overflow .qed");
+
+	let commitment = KateCommitmentV2 {
+		rows: block_dims.rows.0.saturated_into::<u16>(),
+		cols: block_dims.cols.0.saturated_into::<u16>(),
+		commitment,
+	};
+
+	HeaderExtension::V2(v2::HeaderExtension {
+		commitment,
+		app_lookup,
+		data_root,
+	})
+}
+
 /// Hosted function to build the header using `kate` commitments.
 #[runtime_interface]
 pub trait HostedHeaderBuilder {
@@ -147,6 +184,18 @@ pub trait HostedHeaderBuilder {
 	) -> HeaderExtension {
 		let metrics = avail_base::metrics::MetricAdapter {};
 		build_extension(&app_extrinsics, data_root, block_length, seed, &metrics)
+	}
+
+	#[version(2)]
+	fn build(
+		app_extrinsics: Vec<AppExtrinsic>,
+		data_root: Option<H256>,
+		block_length: BlockLength,
+		_block_number: u32,
+		seed: Seed,
+	) -> HeaderExtension {
+		let metrics = avail_base::metrics::MetricAdapter {};
+		build_extension_v2(&app_extrinsics, data_root, block_length, seed, &metrics)
 	}
 
 	/*
