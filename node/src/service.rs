@@ -76,44 +76,56 @@ type FullGrandpaBlockImport =
 /// The transaction pool type defintion.
 pub type TransactionPool = sc_transaction_pool::FullPool<Block, FullClient>;
 
-pub type BlockImport =
-	da::BlockImport<sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>>;
+pub type BlockImport = da::BlockImport<
+	FullClient,
+	sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
+>;
 
 pub mod da {
-	use std::collections::HashMap;
+	use std::{collections::HashMap, sync::Arc};
 
 	use da_primitives::{
 		asdr::AppExtrinsic, BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 	};
 	use da_runtime::{Header as DaHeader, Runtime, UncheckedExtrinsic};
-	use derive_more::From;
+	use derive_more::Constructor;
 	use frame_support::ensure;
-	use frame_system::{
-		header_builder::{da::HeaderExtensionBuilder, HeaderExtensionBuilder as _},
-		limits::BlockLength,
-		submitted_data,
-	};
+	use frame_system::{header_builder::build_extension, limits::BlockLength, submitted_data};
+	use kate::metrics::IgnoreMetrics;
+	use kate_rpc_runtime_api::KateParamsGetter;
 	use sc_consensus::{
 		block_import::{BlockCheckParams, BlockImportParams},
 		ImportResult,
 	};
+	use sp_api::ProvideRuntimeApi;
 	use sp_consensus::{CacheKeyId, Error as ConsensusError};
-	use sp_runtime::traits::Block as BlockT;
+	use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
 	use super::BlockImportT;
 
-	#[derive(Clone, From)]
-	pub struct BlockImport<I: Clone> {
+	#[derive(Constructor)]
+	pub struct BlockImport<C, I> {
+		pub client: Arc<C>,
 		pub inner: I,
 	}
 
+	impl<C, I: Clone> Clone for BlockImport<C, I> {
+		fn clone(&self) -> Self {
+			Self {
+				client: self.client.clone(),
+				inner: self.inner.clone(),
+			}
+		}
+	}
+
 	#[async_trait::async_trait]
-	impl<B, I> BlockImportT<B> for BlockImport<I>
+	impl<B, C, I> BlockImportT<B> for BlockImport<C, I>
 	where
 		B: BlockT<Extrinsic = OpaqueExtrinsic, Header = DaHeader>,
-		// AppExtrinsic: From<<B as BlockT>::Extrinsic>,
 		I: BlockImportT<B> + Clone + Send + Sync,
 		I::Error: Into<ConsensusError>,
+		C: ProvideRuntimeApi<B> + Send + Sync,
+		C::Api: KateParamsGetter<B>,
 	{
 		type Error = ConsensusError;
 		type Transaction = <I as BlockImportT<B>>::Transaction;
@@ -125,7 +137,6 @@ pub mod da {
 			new_cache: HashMap<CacheKeyId, Vec<u8>>,
 		) -> Result<ImportResult, Self::Error> {
 			let no_extrinsics = vec![];
-			let number = block.header.number;
 			let extrinsics = block.body.as_ref().unwrap_or(&no_extrinsics);
 			let raw_ext_iter = extrinsics.iter().map(|opaque| opaque.0.as_slice());
 			let data_root = submitted_data::extrinsics_root::<Runtime, _>(raw_ext_iter);
@@ -143,16 +154,31 @@ pub mod da {
 				.iter()
 				.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
 				.map(AppExtrinsic::from)
-				.collect();
-			let gen_ext = HeaderExtensionBuilder::<Runtime>::build(
-				app_extrinsics,
+				.collect::<Vec<_>>();
+
+			let block_id = BlockId::Number(block.header.number);
+			let seed = self
+				.client
+				.runtime_api()
+				.get_babe_vrf(&block_id)
+				.map_err(|_| {
+					ConsensusError::ClientImport(format!(
+						"DA Protocol cannot fetch Babe VRF for block {block_id:?}"
+					))
+				})?;
+
+			let metrics = IgnoreMetrics {};
+			let generated_ext = build_extension::<IgnoreMetrics>(
+				&app_extrinsics,
 				data_root,
 				block_len,
-				number,
+				block.header.number,
+				seed,
+				&metrics,
 			);
 
 			ensure!(
-				extension == &gen_ext,
+				extension == &generated_ext,
 				ConsensusError::ClientImport("DA Extension do NOT match".into())
 			);
 
@@ -331,7 +357,7 @@ pub fn new_partial(
 		grandpa_block_import,
 		client.clone(),
 	)?;
-	let da_block_import = da::BlockImport::from(block_import);
+	let da_block_import = da::BlockImport::new(client.clone(), block_import);
 
 	let slot_duration = babe_link.config().slot_duration();
 	let import_queue = sc_consensus_babe::import_queue(

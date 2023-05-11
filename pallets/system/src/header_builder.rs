@@ -118,7 +118,7 @@ fn corrupt_commitment(block_number: u32, commitment: &mut Vec<u8>) {
 }
 
 #[cfg(feature = "std")]
-fn build_extension<M: Metrics>(
+pub fn build_extension<M: Metrics>(
 	app_extrinsics: &[AppExtrinsic],
 	data_root: H256,
 	block_length: BlockLength,
