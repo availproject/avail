@@ -23,7 +23,7 @@ use std::sync::Arc;
 
 use codec::Encode;
 use da_primitives::asdr::AppId;
-use da_runtime::{NodeBlock as Block, Runtime, RuntimeApi};
+use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use futures::prelude::*;
 use pallet_transaction_payment::ChargeTransactionPayment;
@@ -59,7 +59,7 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 	);
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		da_runtime::api::dispatch(method, data)
+		da_runtime::apis::api::dispatch(method, data)
 	}
 
 	fn native_version() -> sc_executor::NativeVersion { da_runtime::native_version() }
@@ -87,17 +87,19 @@ pub mod da {
 	use da_primitives::{
 		asdr::AppExtrinsic, BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 	};
-	use da_runtime::{Header as DaHeader, Runtime, UncheckedExtrinsic};
+	use da_runtime::{
+		apis::{DataAvailApi, ExtensionBuilder},
+		Header as DaHeader, Runtime, UncheckedExtrinsic,
+	};
 	use derive_more::Constructor;
 	use frame_support::ensure;
-	use frame_system::{header_builder::build_extension, limits::BlockLength, submitted_data};
-	use kate::metrics::IgnoreMetrics;
-	use kate_rpc_runtime_api::KateParamsGetter;
+	use frame_system::{limits::BlockLength, submitted_data};
 	use sc_consensus::{
 		block_import::{BlockCheckParams, BlockImportParams},
 		ImportResult,
 	};
 	use sp_api::ProvideRuntimeApi;
+	use sp_blockchain::HeaderBackend;
 	use sp_consensus::{CacheKeyId, Error as ConsensusError};
 	use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
@@ -124,8 +126,9 @@ pub mod da {
 		B: BlockT<Extrinsic = OpaqueExtrinsic, Header = DaHeader>,
 		I: BlockImportT<B> + Clone + Send + Sync,
 		I::Error: Into<ConsensusError>,
-		C: ProvideRuntimeApi<B> + Send + Sync,
-		C::Api: KateParamsGetter<B>,
+		C: ProvideRuntimeApi<B> + HeaderBackend<B> + Send + Sync,
+		C::Api: DataAvailApi<B>,
+		C::Api: ExtensionBuilder<B>,
 	{
 		type Error = ConsensusError;
 		type Transaction = <I as BlockImportT<B>>::Transaction;
@@ -156,16 +159,27 @@ pub mod da {
 				.map(AppExtrinsic::from)
 				.collect::<Vec<_>>();
 
-			let block_id = BlockId::Number(block.header.number);
-			let seed = self
+			let best_hash = self.client.info().best_hash;
+			let block_id = BlockId::Hash(best_hash);
+			let generated_ext = self
 				.client
 				.runtime_api()
-				.get_babe_vrf(&block_id)
-				.map_err(|_| {
-					ConsensusError::ClientImport(format!(
-						"DA Protocol cannot fetch Babe VRF for block {block_id:?}"
-					))
+				.build_extension(
+					&block_id,
+					app_extrinsics,
+					data_root,
+					block_len,
+					block.header.number,
+				)
+				.map_err(|e| {
+					ConsensusError::ClientImport(format!("Build extension fails due to: {e:?}"))
 				})?;
+			/*
+			let seed = self.client.runtime_api().babe_vrf(&block_id).map_err(|_| {
+				ConsensusError::ClientImport(format!(
+					"DA Protocol cannot fetch Babe VRF for block {block_id:?}"
+				))
+			})?;
 
 			let metrics = IgnoreMetrics {};
 			let generated_ext = build_extension::<IgnoreMetrics>(
@@ -175,7 +189,7 @@ pub mod da {
 				block.header.number,
 				seed,
 				&metrics,
-			);
+			);*/
 
 			ensure!(
 				extension == &generated_ext,

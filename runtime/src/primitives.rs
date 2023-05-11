@@ -41,6 +41,9 @@ pub type NodeBlock = generic::Block<Header, OpaqueExtrinsic>;
 pub type SignedBlock = generic::SignedBlock<Block>;
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
+/// VRF Seed type.
+pub type Seed = [u8; 32];
+
 /// The SignedExtension to the basic transaction logic.
 ///
 /// When you change this, you **MUST** modify [`sign`] in `bin/node/testing/src/keyring.rs`!

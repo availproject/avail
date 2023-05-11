@@ -36,7 +36,9 @@
 
 use std::sync::Arc;
 
-use da_runtime::{AccountId, Balance, BlockNumber, Hash, Index, NodeBlock as Block};
+use da_runtime::{
+	apis::DataAvailApi, AccountId, Balance, BlockNumber, Hash, Index, NodeBlock as Block,
+};
 use jsonrpsee::RpcModule;
 use sc_client_api::AuxStore;
 use sc_consensus_babe::{BabeConfiguration, Epoch};
@@ -115,7 +117,7 @@ where
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: BabeApi<Block>,
 	C::Api: BlockBuilder<Block>,
-	C::Api: kate_rpc_runtime_api::KateParamsGetter<Block>,
+	C::Api: DataAvailApi<Block>,
 	P: TransactionPool + 'static,
 	SC: SelectChain<Block> + 'static,
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,

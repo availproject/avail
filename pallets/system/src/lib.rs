@@ -110,7 +110,7 @@ use sp_weights::{RuntimeDbWeight, Weight};
 
 pub mod header_builder;
 pub mod submitted_data;
-use header_builder::HeaderExtensionBuilder;
+pub use header_builder::HeaderExtensionBuilder;
 
 pub mod limits;
 #[cfg(any(feature = "std", test))]

@@ -1598,7 +1598,6 @@ dependencies = [
  "hex",
  "hex-literal",
  "kate",
- "kate-rpc-runtime-api",
  "log",
  "nomad-da-bridge",
  "nomad-home",
@@ -1719,7 +1718,6 @@ dependencies = [
  "jsonrpsee",
  "kate",
  "kate-rpc",
- "kate-rpc-runtime-api",
  "log",
  "lru 0.7.8",
  "mmr-rpc",
@@ -3894,7 +3892,6 @@ dependencies = [
  "jsonrpsee",
  "kate",
  "kate-recovery",
- "kate-rpc-runtime-api",
  "lru 0.7.8",
  "parity-scale-codec 3.4.0",
  "sc-client-api",
@@ -3902,21 +3899,6 @@ dependencies = [
  "sp-api",
  "sp-blockchain",
  "sp-runtime",
-]
-
-[[package]]
-name = "kate-rpc-runtime-api"
-version = "0.1.1"
-dependencies = [
- "beefy-merkle-tree",
- "da-primitives",
- "frame-system",
- "parity-scale-codec 3.4.0",
- "serde",
- "sp-api",
- "sp-arithmetic 5.0.0",
- "sp-core",
- "sp-std 5.0.0",
 ]
 
 [[package]]
