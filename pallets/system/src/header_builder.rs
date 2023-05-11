@@ -163,8 +163,8 @@ fn build_extension_v2<M: Metrics>(
 	};
 
 	HeaderExtension::V2(v2::HeaderExtension {
-		commitment,
 		app_lookup,
+		commitment,
 		data_root,
 	})
 }
