@@ -3,6 +3,7 @@ use avail_subxt::{build_client, Opts};
 use futures::future::{join_all, TryFutureExt};
 use structopt::StructOpt;
 use subxt::{config::Header as XtHeader, rpc::types::BlockNumber};
+use sp_core::{Encode};
 
 /// This example gets all the headers from testnet. It requests them in concurrently in batches of BATCH_NUM.
 /// Fetching headers one by one is too slow for a large number of blocks.
@@ -25,10 +26,11 @@ async fn main() -> Result<()> {
 		"Current head block extrinsic: {block:?}",
 		block = head_block.block.extrinsics
 	);
+	let header = head_block.block.header;
 	println!(
-		"Current head block header: {header:?}",
-		header = head_block.block.header
-	);
+		"Current head block header: {header:?}");
+	let encoded = header.encode();
+	println!("encoded head header {:?}",encoded);
 
 	let mut headers = vec![];
 

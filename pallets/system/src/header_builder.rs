@@ -44,7 +44,7 @@ pub mod da {
 			let unused_block_number = 0u32;
 			super::hosted_header_builder::build(
 				app_extrinsics,
-				Some(data_root),
+				data_root,
 				block_length,
 				unused_block_number,
 				seed,
@@ -189,12 +189,13 @@ pub trait HostedHeaderBuilder {
 	#[version(2)]
 	fn build(
 		app_extrinsics: Vec<AppExtrinsic>,
-		data_root: Option<H256>,
+		data_root: H256,
 		block_length: BlockLength,
 		_block_number: u32,
 		seed: Seed,
 	) -> HeaderExtension {
 		let metrics = avail_base::metrics::MetricAdapter {};
+		let data_root = (!data_root.is_zero()).then_some(data_root);
 		build_extension_v2(&app_extrinsics, data_root, block_length, seed, &metrics)
 	}
 

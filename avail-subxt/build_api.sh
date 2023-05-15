@@ -1,5 +1,5 @@
 #!/bin/sh
-cargo install --git https://github.com/paritytech/subxt --tag v0.27.1 
+# cargo install --git https://github.com/paritytech/subxt --tag v0.27.1 
 subxt codegen \
 	--derive Clone \
 	--derive PartialEq \
@@ -9,9 +9,15 @@ subxt codegen \
 	--derive-for-type da_primitives::header::extension::v1::HeaderExtension=serde::Serialize  \
 	--derive-for-type da_primitives::header::extension::v1::HeaderExtension=serde::Deserialize  \
 	--derive-for-type da_primitives::header::extension::v1::HeaderExtension=Default \
-	--derive-for-type da_primitives::kate_commitment::KateCommitment=serde::Serialize \
-	--derive-for-type da_primitives::kate_commitment::KateCommitment=serde::Deserialize \
-	--derive-for-type da_primitives::kate_commitment::KateCommitment=Default \
+	--derive-for-type da_primitives::header::extension::v2::HeaderExtension=serde::Serialize  \
+	--derive-for-type da_primitives::header::extension::v2::HeaderExtension=serde::Deserialize  \
+	--derive-for-type da_primitives::header::extension::v2::HeaderExtension=Default \
+	--derive-for-type da_primitives::kate_commitment::v1::KateCommitment=serde::Serialize \
+	--derive-for-type da_primitives::kate_commitment::v1::KateCommitment=serde::Deserialize \
+	--derive-for-type da_primitives::kate_commitment::v1::KateCommitment=Default \
+	--derive-for-type da_primitives::kate_commitment::v2::KateCommitment=serde::Serialize \
+	--derive-for-type da_primitives::kate_commitment::v2::KateCommitment=serde::Deserialize \
+	--derive-for-type da_primitives::kate_commitment::v2::KateCommitment=Default \
 	--derive-for-type da_primitives::asdr::data_lookup::DataLookup=serde::Serialize \
 	--derive-for-type da_primitives::asdr::data_lookup::DataLookup=serde::Deserialize \
 	--derive-for-type da_primitives::asdr::data_lookup::DataLookup=Default \
@@ -24,5 +30,5 @@ subxt codegen \
 	--derive-for-type da_primitives::asdr::AppId=derive_more::From \
 	--url http://localhost:9933 \
 	| sed -En "s/pub struct KateCommitment/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
-	| sed '1i \#\[allow(clippy::all)]' \
+	| sed -E '1i \#\[allow(clippy::all)]' \
 	| rustfmt --edition=2021 --emit=stdout > src/api_dev.rs
