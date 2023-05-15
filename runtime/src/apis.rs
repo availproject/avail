@@ -1,4 +1,4 @@
-use da_primitives::{asdr::AppExtrinsic, well_known_keys::KATE_PUBLIC_PARAMS, HeaderExtension};
+use da_primitives::{well_known_keys::KATE_PUBLIC_PARAMS, HeaderExtension, OpaqueExtrinsic};
 use frame_support::traits::{KeyOwnerProofSystem, Randomness};
 use frame_system::limits::BlockLength;
 use pallet_grandpa::{
@@ -32,7 +32,7 @@ decl_runtime_apis! {
 
 	pub trait ExtensionBuilder {
 		fn build_extension(
-			app_extrinsics: Vec<AppExtrinsic>,
+			extrinsics: Vec<OpaqueExtrinsic>,
 			data_root: H256,
 			block_length: BlockLength,
 			block_number: u32,
@@ -44,7 +44,7 @@ pub(crate) const fn runtime_api_versions() -> Cow<'static, [([u8; 8], u32)]> {
 	RUNTIME_API_VERSIONS
 }
 
-pub static NATIVE_VERSION: &'static RuntimeVersion = &VERSION;
+pub static NATIVE_VERSION: &RuntimeVersion = &VERSION;
 
 impl_runtime_apis! {
 	impl sp_api::Core<Block> for Runtime {
@@ -298,12 +298,23 @@ impl_runtime_apis! {
 
 	impl crate::apis::ExtensionBuilder<Block> for Runtime {
 		fn build_extension(
-			app_extrinsics: Vec<AppExtrinsic>,
+			extrinsics: Vec<OpaqueExtrinsic>,
 			data_root: H256,
 			block_length: BlockLength,
 			block_number: u32,
 		) -> HeaderExtension {
-			use frame_system::HeaderExtensionBuilder;
+			use frame_system::HeaderExtensionBuilder as _;
+
+			type UncheckedExtrinsic = <Runtime as frame_system::Config>::UncheckedExtrinsic;
+
+			let app_extrinsics = extrinsics
+				.into_iter()
+				.filter_map(|opaque| {
+					let unchecked = UncheckedExtrinsic::try_from(&opaque).ok()?;
+					let app_ext = unchecked.into();
+					Some(app_ext)
+				})
+				.collect::<Vec<_>>();
 
 			frame_system::header_builder::da::HeaderExtensionBuilder::<Runtime>::build(
 			app_extrinsics,

@@ -65,11 +65,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
-use da_primitives::{
-	asdr::{AppExtrinsic, AppId},
-	traits::ExtendedHeader,
-	BLOCK_CHUNK_SIZE,
-};
+use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, BLOCK_CHUNK_SIZE};
 #[cfg(feature = "std")]
 use frame_support::traits::GenesisBuild;
 use frame_support::{
@@ -387,6 +383,11 @@ pub mod pallet {
 		/// Filter used by `DataRootBuilder`.
 		type SubmittedDataExtractor: submitted_data::Extractor
 			+ submitted_data::Filter<Self::RuntimeCall>;
+
+		/// UncheckedExtrinsic Type used on Kate commitment & Data root calculation.
+		type UncheckedExtrinsic: Into<AppExtrinsic>
+			+ Decode
+			+ for<'a> TryFrom<&'a [u8], Error = codec::Error>;
 	}
 
 	#[pallet::pallet]
@@ -623,7 +624,7 @@ pub mod pallet {
 	#[pallet::getter(fn extrinsic_data)]
 	#[pallet::unbounded]
 	pub(super) type ExtrinsicData<T: Config> =
-		StorageMap<_, Twox64Concat, u32, AppExtrinsic, ValueQuery>;
+		StorageMap<_, Twox64Concat, u32, Vec<u8>, ValueQuery>;
 
 	/// The current block number being processed. Set by `execute_block`.
 	#[pallet::storage]
@@ -1460,14 +1461,10 @@ impl<T: Config> Pallet<T> {
 		let parent_hash = <ParentHash<T>>::get();
 		let digest = <Digest<T>>::get();
 
-		let app_extrinsics = Self::take_app_extrinsics();
-
-		// @TODO Miguel: Is it possible to avoid copies here?
-		let extrinsics = app_extrinsics
-			.iter()
-			.map(|e| e.data.clone())
-			.collect::<Vec<_>>();
-		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
+		let extrinsics = Self::take_extrinsics().collect::<Vec<_>>();
+		let data_root = submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(
+			extrinsics.iter().map(|data| data.as_slice()),
+		);
 
 		// move block hash pruning window by one block
 		let block_hash_count = T::BlockHashCount::get();
@@ -1485,9 +1482,16 @@ impl<T: Config> Pallet<T> {
 			.expect("Node is configured to use the same hash; qed");
 
 		let block_length = Self::block_length();
-		let data_root = submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(
-			app_extrinsics.iter().map(|app_ext| app_ext.data.as_slice()),
-		);
+
+		// Transform extrinsics into AppExtrinsic.
+		let app_extrinsics = extrinsics
+			.iter()
+			.filter_map(|xt| {
+				let unchecked = T::UncheckedExtrinsic::decode(&mut xt.as_slice()).ok()?;
+				let app_ext = unchecked.into();
+				Some(app_ext)
+			})
+			.collect::<Vec<AppExtrinsic>>();
 
 		let extension = header_builder::da::HeaderExtensionBuilder::<T>::build(
 			app_extrinsics,
@@ -1496,6 +1500,7 @@ impl<T: Config> Pallet<T> {
 			number.unique_saturated_into(),
 		);
 
+		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
 		let header = <T::Header as ExtendedHeader>::new(
 			number,
 			extrinsics_root,
@@ -1546,10 +1551,7 @@ impl<T: Config> Pallet<T> {
 	pub fn events() -> Vec<EventRecord<T::RuntimeEvent, T::Hash>> {
 		// Dereferencing the events here is fine since we are not in the
 		// memory-restricted runtime.
-		Self::read_events_no_consensus()
-			.into_iter()
-			.map(|e| *e)
-			.collect()
+		Self::read_events_no_consensus().map(|e| *e).collect()
 	}
 
 	/// Get the current events deposited by the runtime.
@@ -1632,12 +1634,8 @@ impl<T: Config> Pallet<T> {
 	///
 	/// This is required to be called before applying an extrinsic. The data will used
 	/// in [`Self::finalize`] to calculate the correct extrinsics root.
-	pub fn note_extrinsic(app_id: AppId, encoded_xt: Vec<u8>) {
-		let idx = Self::extrinsic_index().unwrap_or_default();
-		ExtrinsicData::<T>::insert(idx, AppExtrinsic {
-			app_id,
-			data: encoded_xt,
-		});
+	pub fn note_extrinsic(encoded_xt: Vec<u8>) {
+		ExtrinsicData::<T>::insert(Self::extrinsic_index().unwrap_or_default(), encoded_xt);
 	}
 
 	/// To be called immediately after an extrinsic has been applied.
@@ -1721,16 +1719,8 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Takes all extrinsics from the storage.
-	pub fn take_app_extrinsics() -> Vec<AppExtrinsic> {
-		(0..Self::extrinsic_count())
-			.map(ExtrinsicData::<T>::take)
-			.collect::<Vec<_>>()
-	}
-
-	/// Iterator over all extrinsics.
-	pub fn app_extrinsics() -> impl Iterator<Item = AppExtrinsic> {
-		(0..Self::extrinsic_count()).map(ExtrinsicData::<T>::get)
+	pub fn take_extrinsics() -> impl Iterator<Item = Vec<u8>> {
+		(0..Self::extrinsic_count()).map(ExtrinsicData::<T>::take)
 	}
 
 	/// Creates a `ExtrinsicLen` based on `len` as raw length.

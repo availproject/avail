@@ -84,12 +84,10 @@ pub type BlockImport = da::BlockImport<
 pub mod da {
 	use std::{collections::HashMap, sync::Arc};
 
-	use da_primitives::{
-		asdr::AppExtrinsic, BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
-	};
+	use da_primitives::{BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE};
 	use da_runtime::{
 		apis::{DataAvailApi, ExtensionBuilder},
-		Header as DaHeader, Runtime, UncheckedExtrinsic,
+		Header as DaHeader, Runtime,
 	};
 	use derive_more::Constructor;
 	use frame_support::ensure;
@@ -141,6 +139,7 @@ pub mod da {
 		) -> Result<ImportResult, Self::Error> {
 			let no_extrinsics = vec![];
 			let extrinsics = block.body.as_ref().unwrap_or(&no_extrinsics);
+
 			let raw_ext_iter = extrinsics.iter().map(|opaque| opaque.0.as_slice());
 			let data_root = submitted_data::extrinsics_root::<Runtime, _>(raw_ext_iter);
 
@@ -153,12 +152,6 @@ pub mod da {
 			)
 			.expect("Valid BlockLength at genesis .qed");
 
-			let app_extrinsics = extrinsics
-				.iter()
-				.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
-				.map(AppExtrinsic::from)
-				.collect::<Vec<_>>();
-
 			let best_hash = self.client.info().best_hash;
 			let block_id = BlockId::Hash(best_hash);
 			let generated_ext = self
@@ -166,7 +159,7 @@ pub mod da {
 				.runtime_api()
 				.build_extension(
 					&block_id,
-					app_extrinsics,
+					extrinsics.clone(),
 					data_root,
 					block_len,
 					block.header.number,
@@ -174,26 +167,11 @@ pub mod da {
 				.map_err(|e| {
 					ConsensusError::ClientImport(format!("Build extension fails due to: {e:?}"))
 				})?;
-			/*
-			let seed = self.client.runtime_api().babe_vrf(&block_id).map_err(|_| {
-				ConsensusError::ClientImport(format!(
-					"DA Protocol cannot fetch Babe VRF for block {block_id:?}"
-				))
-			})?;
-
-			let metrics = IgnoreMetrics {};
-			let generated_ext = build_extension::<IgnoreMetrics>(
-				&app_extrinsics,
-				data_root,
-				block_len,
-				block.header.number,
-				seed,
-				&metrics,
-			);*/
 
 			ensure!(
 				extension == &generated_ext,
-				ConsensusError::ClientImport("DA Extension do NOT match".into())
+				ConsensusError::ClientImport(
+                    format!("DA Extension does NOT match\nExpected: {extension:?}\nGenerated:{generated_ext:?}"))
 			);
 
 			self.inner

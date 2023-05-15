@@ -145,6 +145,7 @@ pub fn build_extension<M: Metrics>(
 	// **NOTE:** Header extension V2 is not yet enable by default.
 	if cfg!(feature = "header_extension_v2") {
 		use da_primitives::kate_commitment::v2::KateCommitment;
+		#[allow(unused_mut)]
 		let mut kate = KateCommitment::new(rows, cols, data_root, commitment);
 
 		#[cfg(feature = "header_commitment_corruption")]
@@ -158,6 +159,7 @@ pub fn build_extension<M: Metrics>(
 		}
 		.into()
 	} else {
+		#[allow(unused_mut)]
 		let mut kate = da_primitives::kate_commitment::v1::KateCommitment {
 			rows,
 			cols,

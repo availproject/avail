@@ -654,14 +654,13 @@ fn events_not_emitted_during_genesis() {
 
 #[test]
 fn extrinsics_root_is_calculated_correctly() {
-	let app_id = AppId(0);
 	new_test_ext().execute_with(|| {
 		System::reset_events();
 		System::initialize(&1, &[0u8; 32].into(), &Default::default());
 		System::note_finished_initialize();
-		System::note_extrinsic(app_id, vec![1]);
+		System::note_extrinsic(vec![1]);
 		System::note_applied_extrinsic(&Ok(().into()), Default::default());
-		System::note_extrinsic(app_id, vec![2]);
+		System::note_extrinsic(vec![2]);
 		System::note_applied_extrinsic(&Err(DispatchError::BadOrigin.into()), Default::default());
 		System::note_finished_extrinsics();
 		let header = System::finalize();

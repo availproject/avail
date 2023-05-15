@@ -21,6 +21,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 512.
 #![recursion_limit = "512"]
+#![feature(result_option_inspect)]
 
 use codec::Decode;
 use frame_election_provider_support::{
@@ -257,6 +258,7 @@ impl frame_system::Config for Runtime {
 	type SubmittedDataExtractor = Runtime;
 	/// Weight information for the extrinsics of this pallet.
 	type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
+	type UncheckedExtrinsic = UncheckedExtrinsic;
 	/// Version of the runtime.
 	type Version = Version;
 }
