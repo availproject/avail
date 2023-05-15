@@ -51,7 +51,6 @@ std = [
 ]
 
 header-backward-compatibility-test = []
-fast_app_unchecked_try_from_opaque = []
 try-runtime = [
 	"sp-runtime/try-runtime",
 ]

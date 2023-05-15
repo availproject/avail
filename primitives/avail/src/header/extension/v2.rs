@@ -23,6 +23,14 @@ impl HeaderExtension {
 	pub fn app_lookup(&self) -> &DataLookup {
 		&self.app_lookup
 	}
+
+	pub fn rows(&self) -> u16 {
+		self.commitment.rows
+	}
+
+	pub fn cols(&self) -> u16 {
+		self.commitment.cols
+	}
 }
 
 #[cfg(feature = "std")]

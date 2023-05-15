@@ -54,6 +54,14 @@ impl HeaderExtension {
 	pub fn app_lookup(&self) -> &DataLookup {
 		forward_to_version!(self, app_lookup)
 	}
+
+	pub fn rows(&self) -> u16 {
+		forward_to_version!(self, rows)
+	}
+
+	pub fn cols(&self) -> u16 {
+		forward_to_version!(self, cols)
+	}
 }
 
 impl Default for HeaderExtension {

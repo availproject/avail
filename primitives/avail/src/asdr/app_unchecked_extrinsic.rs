@@ -31,7 +31,6 @@ use sp_runtime::{
 		SignedExtension,
 	},
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
-	OpaqueExtrinsic,
 };
 use sp_std::{
 	convert::TryFrom,
@@ -40,14 +39,17 @@ use sp_std::{
 	vec::Vec,
 };
 
-use crate::asdr::{AppId, GetAppId};
+use crate::{
+	asdr::{AppId, GetAppId},
+	OpaqueExtrinsic,
+};
 
 /// Current version of the [`UncheckedExtrinsic`] encoded format.
 ///
 /// This version needs to be bumped if the encoded representation changes.
 /// It ensures that if the representation is changed and the format is not known,
 /// the decoding fails.
-const EXTRINSIC_FORMAT_VERSION: u8 = 4;
+pub const EXTRINSIC_FORMAT_VERSION: u8 = 4;
 
 /// A extrinsic right from the external world. This is unchecked and so
 /// can contain a signature.
@@ -126,7 +128,7 @@ where
 	Call: Decode,
 	Extra: SignedExtension,
 {
-	fn decode_no_prefix<I: Input>(input: &mut I) -> Result<Self, Error> {
+	pub fn decode_no_vec_prefix<I: Input>(input: &mut I) -> Result<Self, Error> {
 		let version = input.read_byte()?;
 
 		let is_signed = version & 0b1000_0000 != 0;
@@ -340,7 +342,7 @@ where
 		let expected_length: Compact<u32> = Decode::decode(input)?;
 		let before_length = input.remaining_len()?;
 
-		let extrinsic = Self::decode_no_prefix(input)?;
+		let extrinsic = Self::decode_no_vec_prefix(input)?;
 
 		if let Some((before_length, after_length)) = input
 			.remaining_len()?
@@ -469,7 +471,7 @@ where
 	}
 }
 
-impl<Address, Call, Signature, Extra> TryFrom<OpaqueExtrinsic>
+impl<Address, Call, Signature, Extra> TryFrom<&OpaqueExtrinsic>
 	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
 where
 	Address: Decode,
@@ -479,16 +481,23 @@ where
 {
 	type Error = codec::Error;
 
-	#[cfg(not(feture = "fast_app_unchecked_try_from_opaque"))]
-	fn try_from(opaque: OpaqueExtrinsic) -> Result<Self, Self::Error> {
-		let encoded = opaque.encode();
-		Self::decode(&mut encoded.as_slice())
+	fn try_from(opaque: &OpaqueExtrinsic) -> Result<Self, Self::Error> {
+		Self::try_from(opaque.0.as_slice())
 	}
+}
 
-	#[cfg(feature = "fast_app_unchecked_try_from_opaque")]
-	fn try_from(opaque: OpaqueExtrinsic) -> Result<Self, Self::Error> {
-		let raw = unsafe { sp_std::mem::transmute::<OpaqueExtrinsic, Vec<u8>>(opaque) };
-		Self::decode_no_prefix(&mut raw.as_slice())
+impl<Address, Call, Signature, Extra> TryFrom<&[u8]>
+	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+where
+	Address: Decode,
+	Signature: Decode,
+	Call: Decode,
+	Extra: SignedExtension,
+{
+	type Error = codec::Error;
+
+	fn try_from(mut raw: &[u8]) -> Result<Self, Self::Error> {
+		Self::decode_no_vec_prefix(&mut raw)
 	}
 }
 
