@@ -34,6 +34,7 @@ use sp_std::{convert::TryFrom, fmt::Debug};
 
 use crate::traits::{ExtendedHeader, HeaderBlockNumber, HeaderHash};
 
+#[cfg(feature = "std")]
 const LOG_TARGET: &str = "header";
 
 pub mod extension;
