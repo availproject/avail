@@ -21,7 +21,7 @@ use codec::{Codec, Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{RuntimeDebug, U256};
+use sp_core::U256;
 use sp_runtime::{
 	traits::{
 		AtLeast32BitUnsigned, Hash as HashT, Header as HeaderT, MaybeDisplay, MaybeSerialize,
@@ -30,6 +30,7 @@ use sp_runtime::{
 	Digest,
 };
 use sp_runtime_interface::pass_by::{Codec as PassByCodecImpl, PassBy};
+use sp_std::fmt;
 use sp_std::{convert::TryFrom, fmt::Debug};
 
 use crate::traits::{ExtendedHeader, HeaderBlockNumber, HeaderHash};
@@ -41,7 +42,7 @@ pub mod extension;
 pub use extension::HeaderExtension;
 
 /// Abstraction over a block header for a substrate chain.
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, TypeInfo, Encode, Decode)]
+#[derive(PartialEq, Eq, Clone, TypeInfo, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "std", serde(deny_unknown_fields, rename_all = "camelCase"))]
 pub struct Header<Number: HeaderBlockNumber, Hash: HeaderHash> {
@@ -59,6 +60,24 @@ pub struct Header<Number: HeaderBlockNumber, Hash: HeaderHash> {
 	pub digest: Digest,
 	/// Data Availability header extension.
 	pub extension: HeaderExtension,
+}
+
+#[cfg(feature = "std")]
+impl<N: HeaderBlockNumber, H: HeaderHash> fmt::Debug for Header<N, H> {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		let parent_hash = format!("0x{}", hex::encode(self.parent_hash.as_ref()));
+		let state_root = format!("0x{}", hex::encode(self.state_root.as_ref()));
+		let extrinsics_root = format!("0x{}", hex::encode(self.extrinsics_root.as_ref()));
+
+		f.debug_struct("Header")
+			.field("parent_hash", &parent_hash)
+			.field("number", &self.number)
+			.field("state_root", &state_root)
+			.field("extrinsics_root", &extrinsics_root)
+			.field("digest", &self.digest)
+			.field("extension", &self.extension)
+			.finish()
+	}
 }
 
 /// This module adds serialization support to `Header::number` field.
@@ -375,6 +394,21 @@ mod tests {
 		}
 	}
 
+	/// It creates a corrupted V2 header and the associated error on decodification.
+	fn corrupted_header() -> (Vec<u8>, Error) {
+		let mut encoded = header_v2().encode();
+
+		// Change the discriminator
+		let discriminator = encoded.get_mut(98).expect("Discriminator at position 98");
+		assert_eq!(*discriminator, 1u8);
+		*discriminator = 0u8;
+		assert_eq!(*discriminator, 0u8);
+
+		let error = THeader::decode(&mut encoded.as_slice()).unwrap_err();
+
+		(encoded, error)
+	}
+
 	#[cfg(not(feature = "header-backward-compatibility-test"))]
 	fn header_test() -> THeader {
 		header_v1()
@@ -395,6 +429,7 @@ mod tests {
 	#[test_case( header_v1().encode().as_ref() => Ok(header_v1()) ; "Decode V1 header")]
 	#[test_case( header_v2().encode().as_ref() => Ok(header_v2()) ; "Decode V2 header")]
 	#[test_case( header_test().encode().as_ref() => Ok(header_test()) ; "Decode test header")]
+	#[test_case( corrupted_header().0.as_ref() => Err(corrupted_header().1) ; "Decode corrupted header")]
 	fn header_decoding(mut encoded_header: &[u8]) -> Result<THeader, Error> {
 		Header::decode(&mut encoded_header)
 	}
