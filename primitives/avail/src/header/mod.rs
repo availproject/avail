@@ -21,7 +21,7 @@ use codec::{Codec, Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{RuntimeDebug, U256};
+use sp_core::U256;
 use sp_runtime::{
 	traits::{
 		AtLeast32BitUnsigned, Hash as HashT, Header as HeaderT, MaybeDisplay, MaybeSerialize,
@@ -30,17 +30,19 @@ use sp_runtime::{
 	Digest,
 };
 use sp_runtime_interface::pass_by::{Codec as PassByCodecImpl, PassBy};
+use sp_std::fmt;
 use sp_std::{convert::TryFrom, fmt::Debug};
 
 use crate::traits::{ExtendedHeader, HeaderBlockNumber, HeaderHash};
 
+#[cfg(feature = "std")]
 const LOG_TARGET: &str = "header";
 
 pub mod extension;
 pub use extension::HeaderExtension;
 
 /// Abstraction over a block header for a substrate chain.
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, TypeInfo, Encode, Decode)]
+#[derive(PartialEq, Eq, Clone, TypeInfo, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "std", serde(deny_unknown_fields, rename_all = "camelCase"))]
 pub struct Header<Number: HeaderBlockNumber, Hash: HeaderHash> {
@@ -58,6 +60,24 @@ pub struct Header<Number: HeaderBlockNumber, Hash: HeaderHash> {
 	pub digest: Digest,
 	/// Data Availability header extension.
 	pub extension: HeaderExtension,
+}
+
+#[cfg(feature = "std")]
+impl<N: HeaderBlockNumber, H: HeaderHash> fmt::Debug for Header<N, H> {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		let parent_hash = format!("0x{}", hex::encode(self.parent_hash.as_ref()));
+		let state_root = format!("0x{}", hex::encode(self.state_root.as_ref()));
+		let extrinsics_root = format!("0x{}", hex::encode(self.extrinsics_root.as_ref()));
+
+		f.debug_struct("Header")
+			.field("parent_hash", &parent_hash)
+			.field("number", &self.number)
+			.field("state_root", &state_root)
+			.field("extrinsics_root", &extrinsics_root)
+			.field("digest", &self.digest)
+			.field("extension", &self.extension)
+			.finish()
+	}
 }
 
 /// This module adds serialization support to `Header::number` field.
@@ -254,11 +274,20 @@ impl<N: HeaderBlockNumber, H: HeaderHash> ExtendedHeader for Header<N, H> {
 mod tests {
 	use codec::Error;
 	use hex_literal::hex;
-	use sp_runtime::{traits::BlakeTwo256, DigestItem};
+	use sp_core::H256;
+	use sp_runtime::{
+		traits::{BlakeTwo256, Hash},
+		DigestItem,
+	};
 	use test_case::test_case;
 
 	use super::*;
-	use crate::kate_commitment::KateCommitment;
+	use crate::{
+		asdr::DataLookup,
+		kate_commitment::{v1, v2},
+	};
+
+	type THeader = Header<u32, BlakeTwo256>;
 
 	#[test]
 	fn should_serialize_numbers() {
@@ -304,7 +333,7 @@ mod tests {
 
 	#[test]
 	fn ensure_format_is_unchanged() {
-		let commitment = KateCommitment {
+		let commitment = v1::KateCommitment {
 				rows: 1,
 				cols: 4,
 				data_root: hex!("3fbf3227926cfa3f4167771e5ad91cfa2c2d7090667ce01e911ca90b4f315b11").into(),
@@ -316,7 +345,7 @@ mod tests {
 			..Default::default()
 		};
 
-		let header = Header::<u32, BlakeTwo256> {
+		let header = THeader {
 			parent_hash: BlakeTwo256::hash(b"1"),
 			number: 2,
 			state_root: BlakeTwo256::hash(b"3"),
@@ -331,8 +360,8 @@ mod tests {
 		assert_eq!(encoded, hex!("92cdf578c47085a5992256f0dcf97d0b19f1f1c9de4d5fe30c3ace6191b6e5db08581348337b0f3e148620173daaa5f94d00d881705dcbf0aa83efdaba61d2ede1eb8649214997574e20c464388a172420d25403682bbbb80c496831c8cc1f8f0d040004350004103fbf3227926cfa3f4167771e5ad91cfa2c2d7090667ce01e911ca90b4f315b11810180e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e975980e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e97590000").to_vec());
 	}
 
-	fn header_v1() -> Header<u32, BlakeTwo256> {
-		let commitment = KateCommitment {
+	fn header_v1() -> THeader {
+		let commitment = v1::KateCommitment {
 				commitment: hex!("80e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e975980e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e9759").to_vec(),
 				data_root: hex!("3fbf3227926cfa3f4167771e5ad91cfa2c2d7090667ce01e911ca90b4f315b11").into(),
 				..Default::default()
@@ -342,19 +371,51 @@ mod tests {
 			..Default::default()
 		};
 
-		Header::<u32, BlakeTwo256> {
+		THeader {
 			extension: extension.into(),
 			..Default::default()
 		}
 	}
 
+	/// The `commitment.data_root is none`.
+	fn header_v2() -> THeader {
+		let commitment = v2::KateCommitment {
+				commitment: hex!("80e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e975980e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e9759").to_vec(),
+				..Default::default()
+			};
+		let extension = extension::v2::HeaderExtension {
+			commitment,
+			..Default::default()
+		};
+
+		THeader {
+			extension: extension.into(),
+			..Default::default()
+		}
+	}
+
+	/// It creates a corrupted V2 header and the associated error on decodification.
+	fn corrupted_header() -> (Vec<u8>, Error) {
+		let mut encoded = header_v2().encode();
+
+		// Change the discriminator
+		let discriminator = encoded.get_mut(98).expect("Discriminator at position 98");
+		assert_eq!(*discriminator, 1u8);
+		*discriminator = 0u8;
+		assert_eq!(*discriminator, 0u8);
+
+		let error = THeader::decode(&mut encoded.as_slice()).unwrap_err();
+
+		(encoded, error)
+	}
+
 	#[cfg(not(feature = "header-backward-compatibility-test"))]
-	fn header_test() -> Header<u32, BlakeTwo256> {
+	fn header_test() -> THeader {
 		header_v1()
 	}
 
 	#[cfg(feature = "header-backward-compatibility-test")]
-	fn header_test() -> Header<u32, BlakeTwo256> {
+	fn header_test() -> THeader {
 		let mut header = header_v1();
 		header.extension = extension::v_test::HeaderExtension {
 			new_field: b"New field for testing".to_vec(),
@@ -366,8 +427,10 @@ mod tests {
 	}
 
 	#[test_case( header_v1().encode().as_ref() => Ok(header_v1()) ; "Decode V1 header")]
+	#[test_case( header_v2().encode().as_ref() => Ok(header_v2()) ; "Decode V2 header")]
 	#[test_case( header_test().encode().as_ref() => Ok(header_test()) ; "Decode test header")]
-	fn header_decoding(mut encoded_header: &[u8]) -> Result<Header<u32, BlakeTwo256>, Error> {
+	#[test_case( corrupted_header().0.as_ref() => Err(corrupted_header().1) ; "Decode corrupted header")]
+	fn header_decoding(mut encoded_header: &[u8]) -> Result<THeader, Error> {
 		Header::decode(&mut encoded_header)
 	}
 
@@ -377,7 +440,169 @@ mod tests {
 
 	#[test_case( header_serde_encode(header_v1()) => Ok(header_v1()) ; "Serde V1 header")]
 	#[test_case( header_serde_encode(header_test()) => Ok(header_test()) ; "Serde test header")]
-	fn header_serde(json_header: String) -> Result<Header<u32, BlakeTwo256>, String> {
+	fn header_serde(json_header: String) -> Result<THeader, String> {
 		serde_json::from_str(&json_header).map_err(|serde_err| format!("{}", serde_err))
+	}
+
+	/// It is the header of block #368726 of current testnet.
+	fn header() -> (THeader, H256) {
+		let commitment = v1::KateCommitment {
+			rows:1,
+			cols:4,
+			data_root: hex!("0000000000000000000000000000000000000000000000000000000000000000").into(),
+			commitment: hex!("ace5bc6a21eef8b28987eb878e0b97b5ae3c8b8e05efe957802dc0008b23327b349f62ec96bcee48bdc30f6bb670f3d1ace5bc6a21eef8b28987eb878e0b97b5ae3c8b8e05efe957802dc0008b23327b349f62ec96bcee48bdc30f6bb670f3d1").into()
+		};
+		let extension = extension::v1::HeaderExtension {
+			commitment,
+			app_lookup: DataLookup {
+				size: 1,
+				index: vec![],
+			},
+		};
+		let digest = Digest {
+			logs: vec![
+				DigestItem::PreRuntime(
+					hex!("42414245").into(),
+					hex!("0201000000aa23040500000000").into()),
+					DigestItem::Seal(
+						hex!("42414245").into(),
+						hex!("82a0c0a19f4548adcd575cdc37555b3aeaaae4048a6d39013b98f412420977752459afdc5295d026a4d3476d4d8d3d5e55c3c109235350d9242b4e3132db7e88").into(),
+						),
+			]
+		};
+
+		let header = THeader {
+			parent_hash: hex!("84a90eef1c4a75c3cbfdf5095450725f924f1a2696946f6d9cf8401f6db99128")
+				.into(),
+			number: 368726,
+			state_root: hex!("586140044543d7bb7471781322bcc2d7e4290716fbac7267e001843162f151d8")
+				.into(),
+			extrinsics_root: hex!(
+				"9ea39eed403afde19c6688785530654a601bb62f0c178c78563933e303e001b6"
+			)
+			.into(),
+			extension: extension.into(),
+			digest,
+		};
+		let hash = header.hash();
+
+		// Check `hash` is what we have in the testnet.
+		assert_eq!(
+			hash,
+			H256(hex!(
+				"21bbb83a624df177036ec0f5b03db7a5fcf47ce661138853743c72fef339b30b"
+			))
+		);
+
+		(header, hash)
+	}
+
+	fn corrupted_kate_commitment(header_and_hash: (THeader, H256)) -> (THeader, H256) {
+		let (mut header, hash) = header_and_hash;
+
+		match header.extension {
+			extension::HeaderExtension::V1(ref mut ext) => {
+				ext.commitment.commitment = b"invalid commitment v1".to_vec();
+			},
+			extension::HeaderExtension::V2(ref mut ext) => {
+				ext.commitment.commitment = b"invalid commitment v2".to_vec();
+			},
+			#[cfg(feature = "header-backward-compatibility-test")]
+			_ => unreachable!(),
+		};
+
+		(header, hash)
+	}
+
+	fn corrupted_kate_data_root(header_and_hash: (THeader, H256)) -> (THeader, H256) {
+		let (mut header, hash) = header_and_hash;
+
+		match header.extension {
+			extension::HeaderExtension::V1(ref mut ext) => {
+				ext.commitment.data_root = H256::repeat_byte(1u8);
+			},
+			extension::HeaderExtension::V2(ref mut ext) => {
+				ext.commitment.data_root = Some(H256::repeat_byte(2u8));
+			},
+			#[cfg(feature = "header-backward-compatibility-test")]
+			_ => unreachable!(),
+		};
+
+		(header, hash)
+	}
+
+	fn corrupted_kate_cols(header_and_hash: (THeader, H256)) -> (THeader, H256) {
+		let (mut header, hash) = header_and_hash;
+
+		match header.extension {
+			extension::HeaderExtension::V1(ref mut ext) => {
+				ext.commitment.cols += 1;
+			},
+			extension::HeaderExtension::V2(ref mut ext) => {
+				ext.commitment.cols += 2;
+			},
+			#[cfg(feature = "header-backward-compatibility-test")]
+			_ => unreachable!(),
+		};
+
+		(header, hash)
+	}
+
+	fn corrupted_kate_rows(header_and_hash: (THeader, H256)) -> (THeader, H256) {
+		let (mut header, hash) = header_and_hash;
+
+		match header.extension {
+			extension::HeaderExtension::V1(ref mut ext) => {
+				ext.commitment.rows += 1;
+			},
+			extension::HeaderExtension::V2(ref mut ext) => {
+				ext.commitment.rows += 2;
+			},
+			#[cfg(feature = "header-backward-compatibility-test")]
+			_ => unreachable!(),
+		};
+
+		(header, hash)
+	}
+
+	fn corrupted_app_lookup(header_and_hash: (THeader, H256)) -> (THeader, H256) {
+		let (mut header, hash) = header_and_hash;
+
+		match header.extension {
+			extension::HeaderExtension::V1(ref mut ext) => ext.app_lookup.size += 1,
+			extension::HeaderExtension::V2(ref mut ext) => ext.app_lookup.size += 1,
+			#[cfg(feature = "header-backward-compatibility-test")]
+			_ => unreachable!(),
+		};
+
+		(header, hash)
+	}
+
+	fn corrupted_number(mut header_and_hash: (THeader, H256)) -> (THeader, H256) {
+		header_and_hash.0.number += 1;
+		header_and_hash
+	}
+
+	fn corrupted_state_root(mut header_and_hash: (THeader, H256)) -> (THeader, H256) {
+		header_and_hash.0.state_root.0[0] ^= 0xFFu8;
+		header_and_hash
+	}
+	fn corrupted_parent(mut header_and_hash: (THeader, H256)) -> (THeader, H256) {
+		header_and_hash.0.parent_hash.0[0] ^= 0xFFu8;
+		header_and_hash
+	}
+
+	#[test_case( header() => true ; "Valid header hash")]
+	#[test_case( corrupted_kate_commitment(header()) => false; "Corrupted commitment in kate")]
+	#[test_case( corrupted_kate_data_root(header()) => false; "Corrupted data root in kate")]
+	#[test_case( corrupted_kate_cols(header()) => false; "Corrupted cols in kate")]
+	#[test_case( corrupted_kate_rows(header()) => false; "Corrupted rows in kate")]
+	#[test_case( corrupted_app_lookup(header()) => false )]
+	#[test_case( corrupted_number(header()) => false )]
+	#[test_case( corrupted_state_root(header()) => false )]
+	#[test_case( corrupted_parent(header()) => false )]
+	fn header_corruption(header_and_hash: (THeader, H256)) -> bool {
+		let (header, hash) = header_and_hash;
+		header.hash() == hash
 	}
 }

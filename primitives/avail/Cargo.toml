@@ -1,12 +1,13 @@
 [package]
 name = "da-primitives"
-version = "0.4.5"
+version = "0.4.6"
 authors = []
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 # Others
 derive_more = "0.99.17"
+hex = { version = "0.4.3", default-features = false }
 log = { version = "0.4.8", default-features = false }
 serde = { version = "1.0.121", optional = true, features = ["derive"] }
 serde_json = { version = "1.0", optional = true }
@@ -36,6 +37,7 @@ std = [
 	"serde",
 	"serde_json",
 	"codec/std",
+	"hex/std",
 	"scale-info/std",
 	"log/std",
 	"sp-core/std",
@@ -51,7 +53,6 @@ std = [
 ]
 
 header-backward-compatibility-test = []
-fast_app_unchecked_try_from_opaque = []
 try-runtime = [
 	"sp-runtime/try-runtime",
 ]

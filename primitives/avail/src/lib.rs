@@ -7,6 +7,9 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::Perbill;
 
+pub mod opaque_extrinsic;
+pub use opaque_extrinsic::*;
+
 /// Customized headers.
 pub mod header;
 pub use header::*;
