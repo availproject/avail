@@ -824,7 +824,6 @@ dependencies = [
  "derive_more",
  "frame-support",
  "hash256-std-hasher",
- "hex",
  "hex-literal",
  "log",
  "parity-scale-codec",

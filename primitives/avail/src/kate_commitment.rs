@@ -2,7 +2,7 @@ use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::H256;
+use sp_core::{hexdisplay::HexDisplay, H256};
 #[cfg(feature = "std")]
 use sp_std::fmt;
 use sp_std::vec::Vec;
@@ -31,14 +31,11 @@ pub mod v1 {
 	#[cfg(feature = "std")]
 	impl fmt::Debug for KateCommitment {
 		fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-			let data_root = format!("0x{}", hex::encode(self.data_root.as_ref()));
-			let commitment = format!("0x{}", hex::encode(self.commitment.as_slice()));
-
 			f.debug_struct("KateCommitment(v1)")
 				.field("rows", &self.rows)
 				.field("cols", &self.cols)
-				.field("data_root", &data_root)
-				.field("commitment", &commitment)
+				.field("data_root", &HexDisplay::from(&self.data_root.as_ref()))
+				.field("commitment", &HexDisplay::from(&self.commitment.as_slice()))
 				.finish()
 		}
 	}
@@ -90,18 +87,18 @@ pub mod v2 {
 	#[cfg(feature = "std")]
 	impl fmt::Debug for KateCommitment {
 		fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+			let commitment = self.commitment.as_slice();
 			let data_root = self
 				.data_root
 				.as_ref()
-				.map(|data_root| format!("Some(0x{})", hex::encode(data_root.as_ref())))
-				.unwrap_or_else(|| "None".to_string());
-			let commitment = format!("0x{}", hex::encode(self.commitment.as_slice()));
+				.map(AsRef::as_ref)
+				.unwrap_or_default();
 
 			f.debug_struct("KateCommitment(v2)")
 				.field("rows", &self.rows)
 				.field("cols", &self.cols)
-				.field("data_root", &data_root)
-				.field("commitment", &commitment)
+				.field("commitment", &HexDisplay::from(&commitment))
+				.field("data_root", &HexDisplay::from(&data_root))
 				.finish()
 		}
 	}
