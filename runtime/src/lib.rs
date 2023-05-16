@@ -22,6 +22,7 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 512.
 #![recursion_limit = "512"]
 #![feature(result_option_inspect)]
+#![allow(macro_expanded_macro_exports_accessed_by_absolute_paths)]
 
 use codec::Decode;
 use frame_election_provider_support::{
@@ -1025,9 +1026,9 @@ mod benches {
 	define_benchmarks!(
 		[frame_benchmarking, BaselineBench::<Runtime>]
 		[frame_system, SystemBench::<Runtime>]
-		[da_control, DataAvailability]
-		[nomad_home, NomadHome]
-		[nomad_da_bridge, NomadDABridge]
+		[da_control, crate::DataAvailability]
+		[nomad_home, crate::NomadHome]
+		[nomad_da_bridge, crate::NomadDABridge]
 	);
 }
 

@@ -111,8 +111,8 @@ impl<T: Config> TryFrom<&[u8]> for MockUncheckedExtrinsic<T> {
 	}
 }
 
-impl<T: Config> Into<AppExtrinsic> for MockUncheckedExtrinsic<T> {
-	fn into(self) -> AppExtrinsic { AppExtrinsic::from(self.0) }
+impl<T: Config> From<MockUncheckedExtrinsic<T>> for AppExtrinsic {
+	fn from(xt: MockUncheckedExtrinsic<T>) -> Self { AppExtrinsic::from(xt.0) }
 }
 
 /// An implementation of `sp_runtime::traits::Block` to be used in tests.

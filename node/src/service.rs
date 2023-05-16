@@ -171,7 +171,7 @@ pub mod da {
 			ensure!(
 				extension == &generated_ext,
 				ConsensusError::ClientImport(
-                    format!("DA Extension does NOT match\nExpected: {extension:?}\nGenerated:{generated_ext:?}"))
+                    format!("DA Extension does NOT match\nExpected: {extension:#?}\nGenerated:{generated_ext:#?}"))
 			);
 
 			self.inner

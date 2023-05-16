@@ -94,6 +94,7 @@ where
 	}
 
 	/// A convenience method to submit an unsigned transaction onchain.
+	#[allow(clippy::result_unit_err)]
 	pub fn submit_unsigned_transaction(
 		call: <T as SendTransactionTypes<LocalCall>>::OverarchingCall,
 	) -> Result<(), ()> {

@@ -1,5 +1,4 @@
 use da_control::{Call as DaCall, CheckAppId};
-use da_primitives::asdr::AppExtrinsic;
 use frame_system::{
 	submitted_data::extrinsics_root, CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce,
 	CheckSpecVersion, CheckTxVersion, CheckWeight,
@@ -12,12 +11,8 @@ use test_case::test_case;
 
 use super::*;
 
-fn submit_call<A: Into<AppId>>(app_id: A) -> AppExtrinsic {
-	let data = hex!("ed018400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d01be06880f2f6203365b508b4226fd697d3d79d3a50a5617aad714466d40ef47067225e823135b32121aa0f6f56e696f5f71107a6d44768c2fefe38cb209f7f28224000000041d014054657374207375626d69742064617461").to_vec();
-	AppExtrinsic {
-		app_id: app_id.into(),
-		data,
-	}
+fn submit_call() -> Vec<u8> {
+	hex!("ed018400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d01be06880f2f6203365b508b4226fd697d3d79d3a50a5617aad714466d40ef47067225e823135b32121aa0f6f56e696f5f71107a6d44768c2fefe38cb209f7f28224000000041d014054657374207375626d69742064617461").to_vec()
 }
 fn submit_call_expected() -> H256 {
 	// hex!("ddf368647a902a6f6ab9f53b32245be28edc99e92f43f0004bbc2cb359814b2a").into()
@@ -27,7 +22,7 @@ fn submit_call_expected() -> H256 {
 
 #[test]
 fn decode_submit_call() {
-	let encoded_call = submit_call(1).data;
+	let encoded_call = submit_call();
 
 	let call = super::UncheckedExtrinsic::decode(&mut encoded_call.as_slice()).unwrap();
 
@@ -66,8 +61,8 @@ fn decode_submit_call() {
 	assert_eq!(call, expected_call);
 }
 
-#[test_case( submit_call(0) => submit_call_expected(); "Submit data 0")]
-#[test_case( submit_call(1) => submit_call_expected(); "Submit data 1")]
-fn data_root_filter(extrinsic: AppExtrinsic) -> H256 {
-	extrinsics_root::<Runtime, _>(vec![extrinsic].into_iter())
+#[test_case( submit_call() => submit_call_expected(); "Submit data 0")]
+fn data_root_filter(extrinsic: Vec<u8>) -> H256 {
+	let raw_ext = extrinsic.as_slice();
+	extrinsics_root::<Runtime, _>([raw_ext].into_iter())
 }

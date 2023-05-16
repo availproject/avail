@@ -1,5 +1,7 @@
 use da_primitives::{well_known_keys::KATE_PUBLIC_PARAMS, HeaderExtension, OpaqueExtrinsic};
 use frame_support::traits::{KeyOwnerProofSystem, Randomness};
+#[cfg(feature = "try-runtime")]
+use frame_support::weights::Weight;
 use frame_system::limits::BlockLength;
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
@@ -373,6 +375,7 @@ impl_runtime_apis! {
 		) {
 			use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
+			use crate::{list_benchmarks, AllPalletsWithSystem };
 
 			// Trying to add benchmarks directly to the Session Pallet caused cyclic dependency
 			// issues. To get around that, we separated the Session benchmarks into its own crate,
@@ -392,6 +395,7 @@ impl_runtime_apis! {
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
 			use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch,  TrackedStorageKey};
+			use crate::{add_benchmarks, Treasury, AllPalletsWithSystem};
 
 			// Trying to add benchmarks directly to the Session Pallet caused cyclic dependency
 			// issues. To get around that, we separated the Session benchmarks into its own crate,
