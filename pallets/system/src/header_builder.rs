@@ -137,7 +137,7 @@ fn build_extension<M: Metrics>(
 #[cfg(feature = "std")]
 fn build_extension_v2<M: Metrics>(
 	app_extrinsics: &[AppExtrinsic],
-	data_root: Option<H256>,
+	data_root: H256,
 	block_length: BlockLength,
 	seed: Seed,
 	metrics: &M,
@@ -156,17 +156,17 @@ fn build_extension_v2<M: Metrics>(
 	let app_lookup =
 		DataLookup::try_from(xts_layout.as_slice()).expect("Extrinsic size cannot overflow .qed");
 
-	let commitment = KateCommitmentV2 {
+	let commitment = KateCommitmentV2{
 		rows: block_dims.rows.0.saturated_into::<u16>(),
 		cols: block_dims.cols.0.saturated_into::<u16>(),
 		commitment,
 	};
 
-	HeaderExtension::V2(v2::HeaderExtension {
-		app_lookup,
+	HeaderExtension::V2(v2::HeaderExtension::new(
 		commitment,
+		app_lookup,
 		data_root,
-	})
+	))
 }
 
 /// Hosted function to build the header using `kate` commitments.
@@ -195,7 +195,6 @@ pub trait HostedHeaderBuilder {
 		seed: Seed,
 	) -> HeaderExtension {
 		let metrics = avail_base::metrics::MetricAdapter {};
-		let data_root = (!data_root.is_zero()).then_some(data_root);
 		build_extension_v2(&app_extrinsics, data_root, block_length, seed, &metrics)
 	}
 
