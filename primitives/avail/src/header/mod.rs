@@ -21,7 +21,7 @@ use codec::{Codec, Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::U256;
+use sp_core::{hexdisplay::HexDisplay, U256};
 use sp_runtime::{
 	traits::{
 		AtLeast32BitUnsigned, Hash as HashT, Header as HeaderT, MaybeDisplay, MaybeSerialize,
@@ -62,18 +62,17 @@ pub struct Header<Number: HeaderBlockNumber, Hash: HeaderHash> {
 	pub extension: HeaderExtension,
 }
 
-#[cfg(feature = "std")]
 impl<N: HeaderBlockNumber, H: HeaderHash> fmt::Debug for Header<N, H> {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		let parent_hash = format!("0x{}", hex::encode(self.parent_hash.as_ref()));
-		let state_root = format!("0x{}", hex::encode(self.state_root.as_ref()));
-		let extrinsics_root = format!("0x{}", hex::encode(self.extrinsics_root.as_ref()));
+		let parent_hash = self.parent_hash.as_ref();
+		let state_root = self.state_root.as_ref();
+		let extrinsics_root = self.extrinsics_root.as_ref();
 
 		f.debug_struct("Header")
-			.field("parent_hash", &parent_hash)
+			.field("parent_hash", &HexDisplay::from(&parent_hash))
 			.field("number", &self.number)
-			.field("state_root", &state_root)
-			.field("extrinsics_root", &extrinsics_root)
+			.field("state_root", &HexDisplay::from(&state_root))
+			.field("extrinsics_root", &HexDisplay::from(&extrinsics_root))
 			.field("digest", &self.digest)
 			.field("extension", &self.extension)
 			.finish()
