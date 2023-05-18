@@ -68,16 +68,16 @@ pub trait HeaderExtensionBuilder {
 	/// Generates a random seed using the _epoch seed_ and the _current block_ returned by
 	/// `T::Randomness` type.
 	fn random_seed<T: Config>() -> Seed {
-		let (epoch_seed, block_number) = <T as Config>::Randomness::random_seed();
-		let seed = <T as Config>::Hashing::hash_of(&(&epoch_seed, &block_number));
-
-		log::trace!(
-			target: LOG_TARGET,
-			"Header builder seed {:?} from epoch seed {:?} and block {:?}",
-			seed,
-			epoch_seed,
-			block_number
-		);
+		let seed = if cfg!(feature = "secure_padding_fill") {
+			let (epoch_seed, block_number) = <T as Config>::Randomness::random_seed();
+			let seed = <T as Config>::Hashing::hash_of(&(&epoch_seed, &block_number));
+			log::trace!(
+				target: LOG_TARGET,
+				"Header builder seed {seed:?} from epoch seed {epoch_seed:?} and block {block_number:?}");
+			seed
+		} else {
+			<T as Config>::Hash::default()
+		};
 
 		seed.into()
 	}
