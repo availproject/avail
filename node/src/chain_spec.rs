@@ -324,7 +324,7 @@ pub fn testnet_genesis(
 			],
 		},
 		updater_manager: UpdaterManagerConfig {
-			updater: "0x7eB31daE170c1Cb25A7257524e98273e89F32DdC"
+			updater: "0x695dFcFc604F9b2992642BDC5b173d1a1ed60b03"
 				.parse()
 				.unwrap(),
 			_phantom: Default::default(),
@@ -332,7 +332,7 @@ pub fn testnet_genesis(
 		nomad_home: NomadHomeConfig {
 			local_domain: 2000,
 			committed_root: Default::default(),
-			updater: "0x7eB31daE170c1Cb25A7257524e98273e89F32DdC"
+			updater: "0x695dFcFc604F9b2992642BDC5b173d1a1ed60b03"
 				.parse()
 				.unwrap(),
 			_phantom: Default::default(),
