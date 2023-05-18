@@ -28,7 +28,6 @@ use frame_system_rpc_runtime_api::AccountNonceApi;
 use futures::prelude::*;
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sc_client_api::BlockBackend;
-use sc_consensus::block_import::BlockImport as BlockImportT;
 use sc_consensus_babe::{self, SlotProportion};
 pub use sc_executor::NativeElseWasmExecutor;
 use sc_network::{Event, NetworkService};
@@ -76,120 +75,10 @@ type FullGrandpaBlockImport =
 /// The transaction pool type defintion.
 pub type TransactionPool = sc_transaction_pool::FullPool<Block, FullClient>;
 
-pub type BlockImport = da::BlockImport<
+pub type BlockImport = crate::da_block_import::BlockImport<
 	FullClient,
 	sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
 >;
-
-pub mod da {
-	use std::{collections::HashMap, sync::Arc};
-
-	use da_primitives::{BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE};
-	use da_runtime::{
-		apis::{DataAvailApi, ExtensionBuilder},
-		Header as DaHeader, Runtime,
-	};
-	use derive_more::Constructor;
-	use frame_support::ensure;
-	use frame_system::{limits::BlockLength, submitted_data};
-	use sc_consensus::{
-		block_import::{BlockCheckParams, BlockImportParams},
-		ImportResult,
-	};
-	use sp_api::ProvideRuntimeApi;
-	use sp_blockchain::HeaderBackend;
-	use sp_consensus::{CacheKeyId, Error as ConsensusError};
-	use sp_runtime::{generic::BlockId, traits::Block as BlockT};
-
-	use super::BlockImportT;
-
-	#[derive(Constructor)]
-	pub struct BlockImport<C, I> {
-		pub client: Arc<C>,
-		pub inner: I,
-	}
-
-	impl<C, I: Clone> Clone for BlockImport<C, I> {
-		fn clone(&self) -> Self {
-			Self {
-				client: self.client.clone(),
-				inner: self.inner.clone(),
-			}
-		}
-	}
-
-	#[async_trait::async_trait]
-	impl<B, C, I> BlockImportT<B> for BlockImport<C, I>
-	where
-		B: BlockT<Extrinsic = OpaqueExtrinsic, Header = DaHeader>,
-		I: BlockImportT<B> + Clone + Send + Sync,
-		I::Error: Into<ConsensusError>,
-		C: ProvideRuntimeApi<B> + HeaderBackend<B> + Send + Sync,
-		C::Api: DataAvailApi<B>,
-		C::Api: ExtensionBuilder<B>,
-	{
-		type Error = ConsensusError;
-		type Transaction = <I as BlockImportT<B>>::Transaction;
-
-		/// It verifies that header extension (Kate commitment & data root) is properly calculated.
-		async fn import_block(
-			&mut self,
-			block: BlockImportParams<B, Self::Transaction>,
-			new_cache: HashMap<CacheKeyId, Vec<u8>>,
-		) -> Result<ImportResult, Self::Error> {
-			let no_extrinsics = vec![];
-			let extrinsics = block.body.as_ref().unwrap_or(&no_extrinsics);
-
-			let raw_ext_iter = extrinsics.iter().map(|opaque| opaque.0.as_slice());
-			let data_root = submitted_data::extrinsics_root::<Runtime, _>(raw_ext_iter);
-
-			let extension = &block.header.extension;
-			let block_len = BlockLength::with_normal_ratio(
-				BlockLengthRows(extension.rows() as u32),
-				BlockLengthColumns(extension.cols() as u32),
-				BLOCK_CHUNK_SIZE,
-				sp_runtime::Perbill::from_percent(90),
-			)
-			.expect("Valid BlockLength at genesis .qed");
-
-			let best_hash = self.client.info().best_hash;
-			let block_id = BlockId::Hash(best_hash);
-			let generated_ext = self
-				.client
-				.runtime_api()
-				.build_extension(
-					&block_id,
-					extrinsics.clone(),
-					data_root,
-					block_len,
-					block.header.number,
-				)
-				.map_err(|e| {
-					ConsensusError::ClientImport(format!("Build extension fails due to: {e:?}"))
-				})?;
-
-			ensure!(
-				extension == &generated_ext,
-				ConsensusError::ClientImport(
-                    format!("DA Extension does NOT match\nExpected: {extension:#?}\nGenerated:{generated_ext:#?}"))
-			);
-
-			self.inner
-				.import_block(block, new_cache)
-				.await
-				.map_err(Into::into)
-		}
-
-		/// # TODO
-		/// - Check that `Runtime::System::BlockLenght` was not changed inside the block;
-		async fn check_block(
-			&mut self,
-			block: BlockCheckParams<B>,
-		) -> Result<ImportResult, Self::Error> {
-			self.inner.check_block(block).await.map_err(Into::into)
-		}
-	}
-}
 
 /// Fetch the nonce of the given `account` from the chain state.
 ///
@@ -349,7 +238,7 @@ pub fn new_partial(
 		grandpa_block_import,
 		client.clone(),
 	)?;
-	let da_block_import = da::BlockImport::new(client.clone(), block_import);
+	let da_block_import = BlockImport::new(client.clone(), block_import);
 
 	let slot_duration = babe_link.config().slot_duration();
 	let import_queue = sc_consensus_babe::import_queue(

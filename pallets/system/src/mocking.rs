@@ -18,7 +18,10 @@
 //! Provide types to help defining a mock environment when testing pallets.
 
 use codec::{Decode, Encode};
-use da_primitives::asdr::{AppExtrinsic, GetAppId, EXTRINSIC_FORMAT_VERSION};
+use da_primitives::{
+	asdr::{AppExtrinsic, GetAppId, EXTRINSIC_FORMAT_VERSION},
+	OpaqueExtrinsic,
+};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	generic,
@@ -108,6 +111,15 @@ impl<T: Config> TryFrom<&[u8]> for MockUncheckedExtrinsic<T> {
 		let ut = Self::decode(&mut encoded.as_slice())?;
 
 		Ok(ut)
+	}
+}
+
+impl<T: Config> TryFrom<&OpaqueExtrinsic> for MockUncheckedExtrinsic<T> {
+	type Error = codec::Error;
+
+	fn try_from(opaque: &OpaqueExtrinsic) -> Result<Self, Self::Error> {
+		let encoded = opaque.encode();
+		Self::decode(&mut encoded.as_slice())
 	}
 }
 

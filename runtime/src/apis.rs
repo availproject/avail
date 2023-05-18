@@ -39,6 +39,8 @@ decl_runtime_apis! {
 			block_length: BlockLength,
 			block_number: u32,
 		) -> HeaderExtension;
+
+		fn build_data_root( extrinsics: Vec<OpaqueExtrinsic>) -> H256;
 	}
 }
 
@@ -299,6 +301,11 @@ impl_runtime_apis! {
 
 
 	impl crate::apis::ExtensionBuilder<Block> for Runtime {
+		fn build_data_root( extrinsics: Vec<OpaqueExtrinsic>) -> H256  {
+			type Extractor = <Runtime as frame_system::Config>::SubmittedDataExtractor;
+			frame_system::submitted_data::extrinsics_root::<Extractor, _>(extrinsics.iter())
+		}
+
 		fn build_extension(
 			extrinsics: Vec<OpaqueExtrinsic>,
 			data_root: H256,

@@ -63,9 +63,12 @@
 //! extensions included in a chain.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![feature(result_option_inspect)]
 
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
-use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, BLOCK_CHUNK_SIZE};
+use da_primitives::{
+	asdr::AppExtrinsic, traits::ExtendedHeader, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+};
 #[cfg(feature = "std")]
 use frame_support::traits::GenesisBuild;
 use frame_support::{
@@ -386,8 +389,7 @@ pub mod pallet {
 
 		/// UncheckedExtrinsic Type used on Kate commitment & Data root calculation.
 		type UncheckedExtrinsic: Into<AppExtrinsic>
-			+ Decode
-			+ for<'a> TryFrom<&'a [u8], Error = codec::Error>;
+			+ for<'a> TryFrom<&'a OpaqueExtrinsic, Error = codec::Error>;
 	}
 
 	#[pallet::pallet]
@@ -1462,9 +1464,14 @@ impl<T: Config> Pallet<T> {
 		let digest = <Digest<T>>::get();
 
 		let extrinsics = Self::take_extrinsics().collect::<Vec<_>>();
-		let data_root = submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(
-			extrinsics.iter().map(|data| data.as_slice()),
-		);
+		let opaques = extrinsics
+			.iter()
+			.map(|ext| OpaqueExtrinsic::decode(&mut ext.as_slice()))
+			.collect::<Result<Vec<_>, _>>()
+			.expect("Any extrinsic MUST be decoded as OpaqueExtrinsic .qed");
+
+		let data_root =
+			submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(opaques.iter());
 
 		// move block hash pruning window by one block
 		let block_hash_count = T::BlockHashCount::get();
@@ -1484,12 +1491,18 @@ impl<T: Config> Pallet<T> {
 		let block_length = Self::block_length();
 
 		// Transform extrinsics into AppExtrinsic.
-		let app_extrinsics = extrinsics
+		let app_extrinsics = opaques
 			.iter()
-			.filter_map(|xt| {
-				let unchecked = T::UncheckedExtrinsic::decode(&mut xt.as_slice()).ok()?;
-				let app_ext = unchecked.into();
-				Some(app_ext)
+			.filter_map(|opaque| {
+				T::UncheckedExtrinsic::try_from(opaque)
+					.inspect_err(|e| {
+						log::error!(
+							target: LOG_TARGET,
+							"Opaque extrinsic cannot be decoded as UncheckedExtrinsic: {e:?}"
+						)
+					})
+					.map(T::UncheckedExtrinsic::into)
+					.ok()
 			})
 			.collect::<Vec<AppExtrinsic>>();
 

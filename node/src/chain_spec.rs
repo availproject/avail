@@ -261,6 +261,6 @@ pub(crate) mod tests {
 
 	#[test]
 	fn test_create_local_testnet_chain_spec() {
-		testnets::ada::chain_spec().build_storage().unwrap();
+		testnets::kate::chain_spec().build_storage().unwrap();
 	}
 }

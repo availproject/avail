@@ -67,7 +67,7 @@ pub use da_primitives::{
 	asdr::{AppExtrinsic, AppId, AppUncheckedExtrinsic, GetAppId},
 	currency::{Balance, AVL, CENTS, MILLICENTS},
 	well_known_keys::KATE_PUBLIC_PARAMS,
-	DataProof, Header as DaHeader, NORMAL_DISPATCH_RATIO,
+	DataProof, Header as DaHeader, OpaqueExtrinsic, NORMAL_DISPATCH_RATIO,
 };
 pub use pallet_balances::Call as BalancesCall;
 use pallet_grandpa::AuthorityId as GrandpaId;
@@ -198,9 +198,18 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 
 /// Decodes and extracts the `data` of `DataAvailability::submit_data` extrinsics.
 impl submitted_data::Extractor for Runtime {
-	fn extract(mut encoded_ext: &[u8], metrics: submitted_data::RcMetrics) -> Option<Vec<u8>> {
-		let extrinsic = UncheckedExtrinsic::decode(&mut encoded_ext).ok()?;
-		<Runtime as submitted_data::Filter<RuntimeCall>>::filter(extrinsic.function, metrics)
+	type Error = codec::Error;
+
+	fn extract(
+		opaque: &OpaqueExtrinsic,
+		metrics: submitted_data::RcMetrics,
+	) -> Result<Vec<u8>, Self::Error> {
+		let extrinsic = UncheckedExtrinsic::try_from(opaque)?;
+		let data =
+			<Runtime as submitted_data::Filter<RuntimeCall>>::filter(extrinsic.function, metrics)
+				.unwrap_or_default();
+
+		Ok(data)
 	}
 }
 

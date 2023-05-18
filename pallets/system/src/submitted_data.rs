@@ -1,5 +1,7 @@
+use core::fmt::Debug;
+
 use beefy_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
-use da_primitives::ShaTwo256;
+use da_primitives::{OpaqueExtrinsic, ShaTwo256};
 use sp_core::H256;
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
 
@@ -24,16 +26,19 @@ impl Metrics {
 
 /// Extracts the `data` field from some types of extrinsics.
 pub trait Extractor {
+	type Error: Debug;
 	/// Returns the `data` field of `encoded_extrinsic` if it contains one, like a
 	/// `Avail::SubmitData` call.
 	///
 	/// The `metrics` will be used to write accountability information about the whole process.
-	fn extract(encoded_extrinsic: &[u8], metrics: RcMetrics) -> Option<Vec<u8>>;
+	fn extract(extrinsic: &OpaqueExtrinsic, metrics: RcMetrics) -> Result<Vec<u8>, Self::Error>;
 }
 
 #[cfg(any(feature = "std", test))]
 impl Extractor for () {
-	fn extract(_: &[u8], _: RcMetrics) -> Option<Vec<u8>> { None }
+	type Error = ();
+
+	fn extract(_: &OpaqueExtrinsic, _: RcMetrics) -> Result<Vec<u8>, ()> { Ok(vec![]) }
 }
 
 /// It is similar to `Extractor` but it uses `C` type for calls, instead of `AppExtrinsic`.
@@ -47,14 +52,28 @@ impl<C> Filter<C> for () {
 	fn filter(_: C, _: RcMetrics) -> Option<Vec<u8>> { None }
 }
 
-/// Construct a root hash of Binary Merkle Tree created from given filtered `app_extrincs`.
-pub fn extrinsics_root<'a, E, I>(encoded_extrinsics: I) -> H256
+fn extract_and_inspect<E>(opaque: &OpaqueExtrinsic, metrics: RcMetrics) -> Option<Vec<u8>>
 where
 	E: Extractor,
-	I: Iterator<Item = &'a [u8]>,
+	E::Error: Debug,
+{
+	E::extract(opaque, metrics)
+		.inspect_err(|e| log::error!("Extractor cannot decode opaque: {e:?}"))
+		.ok()
+		.filter(|data| !data.is_empty())
+}
+
+/// Construct a root hash of Binary Merkle Tree created from given filtered `app_extrincs`.
+pub fn extrinsics_root<'a, E, I>(opaque_itr: I) -> H256
+where
+	E: Extractor,
+	E::Error: Debug,
+	I: Iterator<Item = &'a OpaqueExtrinsic>,
 {
 	let metrics = Metrics::new_shared();
-	let submitted_data = encoded_extrinsics.filter_map(|ext| E::extract(ext, Rc::clone(&metrics)));
+	let submitted_data =
+		opaque_itr.filter_map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)));
+
 	root(submitted_data, Rc::clone(&metrics))
 }
 
@@ -121,11 +140,12 @@ pub fn extrinsics_proof<'a, E, I>(
 ) -> Option<MerkleProof<H256, Vec<u8>>>
 where
 	E: Extractor,
-	I: Iterator<Item = &'a [u8]>,
+	E::Error: Debug,
+	I: Iterator<Item = &'a OpaqueExtrinsic>,
 {
 	let metrics = Metrics::new_shared();
 	let submitted_data = app_extrinsics
-		.filter_map(|ext| E::extract(ext, Rc::clone(&metrics)))
+		.filter_map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
 		.collect::<Vec<_>>();
 
 	proof(submitted_data, data_index, Rc::clone(&metrics))

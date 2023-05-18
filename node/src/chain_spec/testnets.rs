@@ -5,7 +5,7 @@ use da_runtime::{AccountId, Balance};
 
 use crate::chain_spec::{AuthorityKeys, GenesisConfig};
 
-pub mod ada;
+pub mod kate;
 
 const MIN_VALIDATOR_BOND: Balance = 10 * AVL;
 const MIN_NOMINATOR_BOND: Balance = 1 * AVL;

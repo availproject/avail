@@ -63,6 +63,6 @@ fn decode_submit_call() {
 
 #[test_case( submit_call() => submit_call_expected(); "Submit data 0")]
 fn data_root_filter(extrinsic: Vec<u8>) -> H256 {
-	let raw_ext = extrinsic.as_slice();
-	extrinsics_root::<Runtime, _>([raw_ext].into_iter())
+	let opaque = OpaqueExtrinsic::decode(&mut extrinsic.as_slice()).unwrap();
+	extrinsics_root::<Runtime, _>([opaque].iter())
 }
