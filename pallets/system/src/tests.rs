@@ -655,17 +655,20 @@ fn events_not_emitted_during_genesis() {
 #[test]
 fn extrinsics_root_is_calculated_correctly() {
 	new_test_ext().execute_with(|| {
+		let call_maker = |n| RuntimeCall::System(Call::remark { remark: vec![n] }).encode();
+		let extrinsics = [call_maker(1), call_maker(2)];
+
 		System::reset_events();
 		System::initialize(&1, &[0u8; 32].into(), &Default::default());
 		System::note_finished_initialize();
-		System::note_extrinsic(vec![1]);
+		System::note_extrinsic(extrinsics[0].clone());
 		System::note_applied_extrinsic(&Ok(().into()), Default::default());
-		System::note_extrinsic(vec![2]);
+		System::note_extrinsic(extrinsics[1].clone());
 		System::note_applied_extrinsic(&Err(DispatchError::BadOrigin.into()), Default::default());
 		System::note_finished_extrinsics();
 		let header = System::finalize();
 
-		let ext_root = extrinsics_data_root::<BlakeTwo256>(vec![vec![1], vec![2]]);
+		let ext_root = extrinsics_data_root::<BlakeTwo256>(extrinsics.to_vec());
 		assert_eq!(ext_root, *header.extrinsics_root());
 	});
 }

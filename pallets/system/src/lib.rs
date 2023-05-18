@@ -1466,6 +1466,7 @@ impl<T: Config> Pallet<T> {
 		let extrinsics = Self::take_extrinsics().collect::<Vec<_>>();
 		let opaques = extrinsics
 			.iter()
+			.filter(|ext| !ext.is_empty())
 			.map(|ext| OpaqueExtrinsic::decode(&mut ext.as_slice()))
 			.collect::<Result<Vec<_>, _>>()
 			.expect("Any extrinsic MUST be decoded as OpaqueExtrinsic .qed");
