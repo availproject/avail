@@ -132,11 +132,3 @@ pub type MockBlock<T> = generic::Block<
 	generic::Header<<T as Config>::BlockNumber, sp_runtime::traits::BlakeTwo256>,
 	MockUncheckedExtrinsic<T>,
 >;
-
-/*
-#[derive(Decode, From)]
-pub struct UncheckedExtrinsicWithAppId<T: Config>(pub MockUncheckedExtrinsic<T>);
-
-impl<T: Config> GetAppId for UncheckedExtrinsicWithAppId<T> {
-	fn app_id(&self) -> AppId { AppId::default() }
-}*/
