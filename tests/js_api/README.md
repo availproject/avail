@@ -10,13 +10,13 @@ Sample scripts to send transactions to Avail using Polkadot JS. The following ha
 - Install dependencies 
 
     ```
-    npm i
+    yarn
     ```
 
 - Install ts-node
     You can install globally or use `npx`. 
     ```
-    npm i -g ts-node
+    yarn add ts-node
     ```
 - Create a `config.json` file
     ```
@@ -62,4 +62,19 @@ Do Keep in mind that the receiver address should be specified when you are using
     ```
     ts-node transfer.ts
     ```
-    Script sends from the account whose mnemonic is mentioned on config to the receiver mentioned on config. 
+    Script sends from the account whose mnemonic is mentioned on config to the receiver mentioned on config.
+
+- For governance proposal (council) use: 
+
+    ```
+    ts-node proposal.ts
+    ```
+    Script creates a proposal to increase the validator count from the account whose mnemonic is mentioned on config. 
+
+
+You can also use yarn command to run the scripts. For example 
+
+```
+yarn build
+yarn data
+```
