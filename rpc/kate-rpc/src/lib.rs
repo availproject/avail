@@ -7,9 +7,9 @@ use avail_base::metrics::RPCMetricAdapter;
 use da_primitives::{
 	asdr::{AppExtrinsic, AppId, DataLookup},
 	traits::ExtendedHeader,
-	DataProof,
+	DataProof, OpaqueExtrinsic,
 };
-use da_runtime::{Runtime, UncheckedExtrinsic};
+use da_runtime::{apis::DataAvailApi, Runtime, UncheckedExtrinsic};
 use frame_system::{limits::BlockLength, submitted_data};
 use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
@@ -17,7 +17,6 @@ use jsonrpsee::{
 };
 use kate::{com::Cell, BlockDimensions, BlsScalar, PublicParameters};
 use kate_recovery::{index::AppDataIndex, matrix::Dimensions};
-use kate_rpc_runtime_api::KateParamsGetter;
 use lru::LruCache;
 use sc_client_api::BlockBackend;
 use sp_api::ProvideRuntimeApi;
@@ -105,7 +104,7 @@ where
 	Block::Header: ExtendedHeader,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
-	Client::Api: KateParamsGetter<Block>,
+	Client::Api: DataAvailApi<Block>,
 {
 	fn at_or_best(&self, at: Option<<Block as BlockT>::Hash>) -> <Block as BlockT>::Hash {
 		at.unwrap_or_else(|| self.client.info().best_hash)
@@ -120,12 +119,11 @@ where
 #[async_trait]
 impl<Client, Block> KateApiServer<Block> for Kate<Client, Block>
 where
-	Block: BlockT,
+	Block: BlockT<Extrinsic = OpaqueExtrinsic>,
 	Block::Header: ExtendedHeader,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
-	Client::Api: KateParamsGetter<Block>,
-	UncheckedExtrinsic: TryFrom<<Block as BlockT>::Extrinsic>,
+	Client::Api: DataAvailApi<Block>,
 {
 	async fn query_rows(
 		&self,
@@ -160,23 +158,21 @@ where
 				.block
 				.extrinsics()
 				.iter()
-				.cloned()
 				.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
 				.map(AppExtrinsic::from)
 				.collect();
 
 			// Use Babe's VRF
-			let seed: [u8; 32] = self
+			let seed: [u8; 32] =
+				self.client.runtime_api().babe_vrf(&block_id).map_err(|e| {
+					internal_err!("Babe VRF not found for block {}: {:?}", block_id, e)
+				})?;
+
+			let block_length: BlockLength = self
 				.client
 				.runtime_api()
-				.get_babe_vrf(&block_id)
-				.map_err(|e| internal_err!("Babe VRF not found for block {}: {:?}", block_id, e))?;
-
-			let block_length: BlockLength =
-				self.client
-					.runtime_api()
-					.get_block_length(&block_id)
-					.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
+				.block_length(&block_id)
+				.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
 			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
 				block_length.rows,
@@ -238,23 +234,21 @@ where
 				.block
 				.extrinsics()
 				.iter()
-				.cloned()
 				.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
 				.map(AppExtrinsic::from)
 				.collect();
 
-			let block_length: BlockLength =
-				self.client
-					.runtime_api()
-					.get_block_length(&block_id)
-					.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
-
-			// Use Babe's VRF
-			let seed: [u8; 32] = self
+			let block_length: BlockLength = self
 				.client
 				.runtime_api()
-				.get_babe_vrf(&block_id)
-				.map_err(|e| internal_err!("Babe VRF not found for block {}: {:?}", block_id, e))?;
+				.block_length(&block_id)
+				.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
+
+			// Use Babe's VRF
+			let seed: [u8; 32] =
+				self.client.runtime_api().babe_vrf(&block_id).map_err(|e| {
+					internal_err!("Babe VRF not found for block {}: {:?}", block_id, e)
+				})?;
 
 			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
 				block_length.rows,
@@ -329,23 +323,21 @@ where
 				.block
 				.extrinsics()
 				.iter()
-				.cloned()
 				.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
 				.map(AppExtrinsic::from)
 				.collect();
 
-			let block_length: BlockLength =
-				self.client
-					.runtime_api()
-					.get_block_length(&block_id)
-					.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
-
-			// Use Babe's VRF
-			let seed: [u8; 32] = self
+			let block_length: BlockLength = self
 				.client
 				.runtime_api()
-				.get_babe_vrf(&block_id)
-				.map_err(|e| internal_err!("Babe VRF not found for block {}: {:?}", block_id, e))?;
+				.block_length(&block_id)
+				.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
+
+			// Use Babe's VRF
+			let seed: [u8; 32] =
+				self.client.runtime_api().babe_vrf(&block_id).map_err(|e| {
+					internal_err!("Babe VRF not found for block {}: {:?}", block_id, e)
+				})?;
 
 			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
 				block_length.rows,
@@ -364,17 +356,17 @@ where
 		let (ext_data, block_dims) = block_ext_cache
 			.get(&block_hash)
 			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
-		let kc_public_params_raw = self
-			.client
-			.runtime_api()
-			.get_public_params(&block_id)
-			.map_err(|e| {
-				internal_err!(
-					"Public params cannot be fetched on block {}: {:?}",
-					block_hash,
-					e
-				)
-			})?;
+		let kc_public_params_raw =
+			self.client
+				.runtime_api()
+				.public_params(&block_id)
+				.map_err(|e| {
+					internal_err!(
+						"Public params cannot be fetched on block {}: {:?}",
+						block_hash,
+						e
+					)
+				})?;
 		let kc_public_params =
 			unsafe { PublicParameters::from_slice_unchecked(&kc_public_params_raw) };
 
@@ -390,7 +382,7 @@ where
 		let block_length = self
 			.client
 			.runtime_api()
-			.get_block_length(&block_id)
+			.block_length(&block_id)
 			.map_err(|e| internal_err!("Length of best block({:?}): {:?}", block_id, e))?;
 
 		Ok(block_length)
@@ -415,7 +407,6 @@ where
 		let calls = block
 			.extrinsics()
 			.iter()
-			.cloned()
 			.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
 			.map(|app_ext| app_ext.function);
 

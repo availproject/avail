@@ -48,9 +48,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: NomadHome RootToIndex (r:1 w:0)
 	fn improper_update() -> Weight {
 		// Minimum execution time: 495_656 nanoseconds.
-		Weight::from_ref_time(513_119_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(2 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+		Weight::from_ref_time(513_119_000u64)
+			.saturating_add(T::DbWeight::get().reads(2u64))
+			.saturating_add(T::DbWeight::get().writes(1u64))
 	}
 	// Storage: NomadHome Base (r:1 w:0)
 	// Storage: NomadHome Nonces (r:1 w:1)
@@ -60,28 +60,28 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// The range of component `b` is `[1, 2048]`.
 	fn dispatch(b: u32, ) -> Weight {
 		// Minimum execution time: 114_230 nanoseconds.
-		Weight::from_ref_time(117_260_068 as u64)
+		Weight::from_ref_time(117_260_068u64)
 			// Standard Error: 1_140
-			.saturating_add(Weight::from_ref_time(9_021 as u64).saturating_mul(b as u64))
-			.saturating_add(T::DbWeight::get().reads(3 as u64))
-			.saturating_add(T::DbWeight::get().writes(4 as u64))
+			.saturating_add(Weight::from_ref_time(9_021u64).saturating_mul(b as u64))
+			.saturating_add(T::DbWeight::get().reads(3u64))
+			.saturating_add(T::DbWeight::get().writes(4u64))
 	}
 	// Storage: NomadHome Base (r:1 w:1)
 	// Storage: NomadHome RootToIndex (r:32 w:32)
 	// Storage: NomadHome IndexToRoot (r:31 w:32)
 	fn update() -> Weight {
 		// Minimum execution time: 845_072 nanoseconds.
-		Weight::from_ref_time(881_385_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(64 as u64))
-			.saturating_add(T::DbWeight::get().writes(65 as u64))
+		Weight::from_ref_time(881_385_000u64)
+			.saturating_add(T::DbWeight::get().reads(64u64))
+			.saturating_add(T::DbWeight::get().writes(65u64))
 	}
 	// Storage: NomadHome Base (r:1 w:1)
 	// Storage: UpdaterManager Updater (r:1 w:1)
 	fn set_updater() -> Weight {
 		// Minimum execution time: 45_128 nanoseconds.
-		Weight::from_ref_time(46_213_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(2 as u64))
-			.saturating_add(T::DbWeight::get().writes(2 as u64))
+		Weight::from_ref_time(46_213_000u64)
+			.saturating_add(T::DbWeight::get().reads(2u64))
+			.saturating_add(T::DbWeight::get().writes(2u64))
 	}
 }
 
@@ -91,9 +91,9 @@ impl WeightInfo for () {
 	// Storage: NomadHome RootToIndex (r:1 w:0)
 	fn improper_update() -> Weight {
 		// Minimum execution time: 495_656 nanoseconds.
-		Weight::from_ref_time(513_119_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(2 as u64))
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+		Weight::from_ref_time(513_119_000u64)
+			.saturating_add(RocksDbWeight::get().reads(2u64))
+			.saturating_add(RocksDbWeight::get().writes(1u64))
 	}
 	// Storage: NomadHome Base (r:1 w:0)
 	// Storage: NomadHome Nonces (r:1 w:1)
@@ -103,27 +103,27 @@ impl WeightInfo for () {
 	/// The range of component `b` is `[1, 2048]`.
 	fn dispatch(b: u32, ) -> Weight {
 		// Minimum execution time: 114_230 nanoseconds.
-		Weight::from_ref_time(117_260_068 as u64)
+		Weight::from_ref_time(117_260_068u64)
 			// Standard Error: 1_140
-			.saturating_add(Weight::from_ref_time(9_021 as u64).saturating_mul(b as u64))
-			.saturating_add(RocksDbWeight::get().reads(3 as u64))
-			.saturating_add(RocksDbWeight::get().writes(4 as u64))
+			.saturating_add(Weight::from_ref_time(9_021u64).saturating_mul(b as u64))
+			.saturating_add(RocksDbWeight::get().reads(3u64))
+			.saturating_add(RocksDbWeight::get().writes(4u64))
 	}
 	// Storage: NomadHome Base (r:1 w:1)
 	// Storage: NomadHome RootToIndex (r:32 w:32)
 	// Storage: NomadHome IndexToRoot (r:31 w:32)
 	fn update() -> Weight {
 		// Minimum execution time: 845_072 nanoseconds.
-		Weight::from_ref_time(881_385_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(64 as u64))
-			.saturating_add(RocksDbWeight::get().writes(65 as u64))
+		Weight::from_ref_time(881_385_000u64)
+			.saturating_add(RocksDbWeight::get().reads(64u64))
+			.saturating_add(RocksDbWeight::get().writes(65u64))
 	}
 	// Storage: NomadHome Base (r:1 w:1)
 	// Storage: UpdaterManager Updater (r:1 w:1)
 	fn set_updater() -> Weight {
 		// Minimum execution time: 45_128 nanoseconds.
-		Weight::from_ref_time(46_213_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(2 as u64))
-			.saturating_add(RocksDbWeight::get().writes(2 as u64))
+		Weight::from_ref_time(46_213_000u64)
+			.saturating_add(RocksDbWeight::get().reads(2u64))
+			.saturating_add(RocksDbWeight::get().writes(2u64))
 	}
 }

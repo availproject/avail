@@ -1,8 +1,8 @@
-use da_primitives::{asdr::AppUncheckedExtrinsic, Header as DaHeader};
+use da_primitives::{asdr::AppUncheckedExtrinsic, Header as DaHeader, OpaqueExtrinsic};
 use sp_runtime::{
 	generic, impl_opaque_keys,
 	traits::{BlakeTwo256, IdentifyAccount, Verify},
-	MultiSignature, OpaqueExtrinsic,
+	MultiSignature,
 };
 use sp_std::vec::Vec;
 
@@ -41,6 +41,9 @@ pub type NodeBlock = generic::Block<Header, OpaqueExtrinsic>;
 pub type SignedBlock = generic::SignedBlock<Block>;
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
+/// VRF Seed type.
+pub type Seed = [u8; 32];
+
 /// The SignedExtension to the basic transaction logic.
 ///
 /// When you change this, you **MUST** modify [`sign`] in `bin/node/testing/src/keyring.rs`!

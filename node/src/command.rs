@@ -53,7 +53,7 @@ impl SubstrateCli for Cli {
 			},
 			"dev" | "local" | "local.solo" => Box::new(chain_spec::locals::solo::chain_spec()),
 			"local.tri" => Box::new(chain_spec::locals::tri::chain_spec()),
-			"testnet" | "testnet.ada" => Box::new(chain_spec::testnets::ada::chain_spec()),
+			"testnet" | "testnet.kate" => Box::new(chain_spec::testnets::kate::chain_spec()),
 			// "mainnet" => Box::new(chain_spec::mainnet::chain_spec()),
 			path => Box::new(chain_spec::ChainSpec::from_json_file(
 				std::path::PathBuf::from(path),
@@ -63,7 +63,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&da_runtime::VERSION
+		da_runtime::apis::NATIVE_VERSION
 	}
 }
 

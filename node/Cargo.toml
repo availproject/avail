@@ -18,7 +18,6 @@ name = "data-avail"
 
 [dependencies]
 avail-base = { path = "../base" }
-kate-rpc-runtime-api = { path = "../rpc/kate-rpc-runtime-api" }
 
 # Internals
 da-primitives = { version = "0.4", default-features = false }
@@ -42,7 +41,8 @@ lru = "0.7.2"
 log = "0.4.17"
 rand = "0.8"
 hex-literal = "0.3.4"
-
+derive_more = "0.99.17"
+async-trait = "0.1.60"
 
 # Substrate
 ## Primitives
@@ -129,6 +129,7 @@ tempfile = "3.1.0"
 
 [features]
 default = ["cli"]
+header_commitment_corruption = [ "da-runtime/header_commitment_corruption"]
 fast-runtime = [ "da-runtime/fast-runtime" ]
 cli = [
 	"clap",

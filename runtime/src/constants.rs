@@ -85,7 +85,7 @@ pub mod time {
 	#[cfg(not(feature = "fast-runtime"))]
 	pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 1 * HOURS;
 	#[cfg(feature = "fast-runtime")]
-	pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 15 * MINUTES;
+	pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 5 * MINUTES;
 
 	// These time units are defined in number of blocks.
 	pub const MINUTES: BlockNumber = 60 / (SECS_PER_BLOCK as BlockNumber);

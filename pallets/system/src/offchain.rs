@@ -84,6 +84,7 @@ where
 	T: SendTransactionTypes<LocalCall>,
 {
 	/// Submit transaction onchain by providing the call and an optional signature
+	#[allow(clippy::result_unit_err)]
 	pub fn submit_transaction(
 		call: <T as SendTransactionTypes<LocalCall>>::OverarchingCall,
 		signature: Option<<T::Extrinsic as ExtrinsicT>::SignaturePayload>,
@@ -93,6 +94,7 @@ where
 	}
 
 	/// A convenience method to submit an unsigned transaction onchain.
+	#[allow(clippy::result_unit_err)]
 	pub fn submit_unsigned_transaction(
 		call: <T as SendTransactionTypes<LocalCall>>::OverarchingCall,
 	) -> Result<(), ()> {
