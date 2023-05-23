@@ -23,7 +23,7 @@
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("dev"), DB CACHE: 1024
 
 // Executed Command:
-// target/release/data-avail
+// ./target/release/data-avail
 // benchmark
 // pallet
 // --chain=dev
@@ -59,24 +59,24 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: DataAvailability NextAppId (r:1 w:1)
 	fn create_application_key() -> Weight {
 		// Minimum execution time: 39_159 nanoseconds.
-		Weight::from_ref_time(41_338_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(2 as u64))
-			.saturating_add(T::DbWeight::get().writes(2 as u64))
+		Weight::from_ref_time(41_338_000_u64)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	/// The range of component `i` is `[0, 16384]`.
 	fn submit_data(i: u32, ) -> Weight {
 		// Minimum execution time: 26_145 nanoseconds.
-		Weight::from_ref_time(27_777_179 as u64)
+		Weight::from_ref_time(27_777_179_u64)
 			// Standard Error: 3
-			.saturating_add(Weight::from_ref_time(1_328 as u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_ref_time(1_328_u64).saturating_mul(i as u64))
 	}
 	// Storage: DataAvailability LastBlockLenId (r:1 w:1)
 	// Storage: System DynamicBlockLength (r:0 w:1)
 	fn submit_block_length_proposal() -> Weight {
 		// Minimum execution time: 34_500 nanoseconds.
-		Weight::from_ref_time(35_272_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(2 as u64))
+		Weight::from_ref_time(35_272_000_u64)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 }
 
@@ -86,23 +86,23 @@ impl WeightInfo for () {
 	// Storage: DataAvailability NextAppId (r:1 w:1)
 	fn create_application_key() -> Weight {
 		// Minimum execution time: 39_159 nanoseconds.
-		Weight::from_ref_time(41_338_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(2 as u64))
-			.saturating_add(RocksDbWeight::get().writes(2 as u64))
+		Weight::from_ref_time(41_338_000_u64)
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
 	/// The range of component `i` is `[0, 16384]`.
 	fn submit_data(i: u32, ) -> Weight {
 		// Minimum execution time: 26_145 nanoseconds.
-		Weight::from_ref_time(27_777_179 as u64)
+		Weight::from_ref_time(27_777_179_u64)
 			// Standard Error: 3
-			.saturating_add(Weight::from_ref_time(1_328 as u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_ref_time(1_328_u64).saturating_mul(i as u64))
 	}
 	// Storage: DataAvailability LastBlockLenId (r:1 w:1)
 	// Storage: System DynamicBlockLength (r:0 w:1)
 	fn submit_block_length_proposal() -> Weight {
 		// Minimum execution time: 34_500 nanoseconds.
-		Weight::from_ref_time(35_272_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(1 as u64))
-			.saturating_add(RocksDbWeight::get().writes(2 as u64))
+		Weight::from_ref_time(35_272_000_u64)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
 }
