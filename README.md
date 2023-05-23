@@ -79,6 +79,7 @@ running the benchmarks from `da-control` pallet, and the generated file is
         --execution=wasm \
         --wasm-execution=compiled \
         --template=./.maintain/frame-weight-template.hbs \
+        --header=./HEADER-APACHE2 \
         --pallet=da-control \
         --extrinsic=* \
         --output=./pallets/dactr/src/weights.rs
