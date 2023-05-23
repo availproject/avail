@@ -3,11 +3,11 @@
 //!
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-05-23, STEPS: `50`, REPEAT: 30, LOW RANGE: `[]`, HIGH RANGE: `[]`
-//! HOSTNAME: `DESKTOP-PAL18UV`, CPU: `AMD Ryzen 5 5600X 6-Core Processor`
+//! HOSTNAME: `ip-172-31-36-5`, CPU: `Intel(R) Xeon(R) Platinum 8259CL CPU @ 2.50GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("dev"), DB CACHE: 1024
 
 // Executed Command:
-// target/release/data-avail
+// ./data-avail
 // benchmark
 // pallet
 // --chain=dev
@@ -19,7 +19,7 @@
 // --template=./.maintain/frame-weight-template.hbs
 // --pallet=da-control
 // --extrinsic=*
-// --output=./pallets/dactr/src/weights.rs
+// --output=./weights.rs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
@@ -41,23 +41,23 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: DataAvailability AppKeys (r:1 w:1)
 	// Storage: DataAvailability NextAppId (r:1 w:1)
 	fn create_application_key() -> Weight {
-		// Minimum execution time: 22_172 nanoseconds.
-		Weight::from_ref_time(22_864_000 as u64)
+		// Minimum execution time: 39_159 nanoseconds.
+		Weight::from_ref_time(41_338_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	/// The range of component `i` is `[0, 16384]`.
 	fn submit_data(i: u32, ) -> Weight {
-		// Minimum execution time: 14_317 nanoseconds.
-		Weight::from_ref_time(15_616_256 as u64)
-			// Standard Error: 7
-			.saturating_add(Weight::from_ref_time(590 as u64).saturating_mul(i as u64))
+		// Minimum execution time: 26_145 nanoseconds.
+		Weight::from_ref_time(27_777_179 as u64)
+			// Standard Error: 3
+			.saturating_add(Weight::from_ref_time(1_328 as u64).saturating_mul(i as u64))
 	}
 	// Storage: DataAvailability LastBlockLenId (r:1 w:1)
 	// Storage: System DynamicBlockLength (r:0 w:1)
 	fn submit_block_length_proposal() -> Weight {
-		// Minimum execution time: 18_195 nanoseconds.
-		Weight::from_ref_time(18_725_000 as u64)
+		// Minimum execution time: 34_500 nanoseconds.
+		Weight::from_ref_time(35_272_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -68,23 +68,23 @@ impl WeightInfo for () {
 	// Storage: DataAvailability AppKeys (r:1 w:1)
 	// Storage: DataAvailability NextAppId (r:1 w:1)
 	fn create_application_key() -> Weight {
-		// Minimum execution time: 22_172 nanoseconds.
-		Weight::from_ref_time(22_864_000 as u64)
+		// Minimum execution time: 39_159 nanoseconds.
+		Weight::from_ref_time(41_338_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
 	/// The range of component `i` is `[0, 16384]`.
 	fn submit_data(i: u32, ) -> Weight {
-		// Minimum execution time: 14_317 nanoseconds.
-		Weight::from_ref_time(15_616_256 as u64)
-			// Standard Error: 7
-			.saturating_add(Weight::from_ref_time(590 as u64).saturating_mul(i as u64))
+		// Minimum execution time: 26_145 nanoseconds.
+		Weight::from_ref_time(27_777_179 as u64)
+			// Standard Error: 3
+			.saturating_add(Weight::from_ref_time(1_328 as u64).saturating_mul(i as u64))
 	}
 	// Storage: DataAvailability LastBlockLenId (r:1 w:1)
 	// Storage: System DynamicBlockLength (r:0 w:1)
 	fn submit_block_length_proposal() -> Weight {
-		// Minimum execution time: 18_195 nanoseconds.
-		Weight::from_ref_time(18_725_000 as u64)
+		// Minimum execution time: 34_500 nanoseconds.
+		Weight::from_ref_time(35_272_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(1 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
