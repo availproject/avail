@@ -71,8 +71,9 @@ running the benchmarks from `da-control` pallet, and the generated file is
 
     $> cargo run --release -p data-avail --features runtime-benchmarks -- \
         benchmark \
+        pallet \
         --chain=dev \
-        --steps=20 \
+        --steps=50 \
         --repeat=30 \
         --log=warn \
         --execution=wasm \
