@@ -15,7 +15,7 @@ use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 };
-use kate::{com::Cell, BlockDimensions, BlsScalar, PublicParameters};
+use kate::{com::Cell, BlockDimensions, BlsScalar, PublicParameters, Seed};
 use kate_recovery::{index::AppDataIndex, matrix::Dimensions};
 use lru::LruCache;
 use sc_client_api::BlockBackend;
@@ -98,6 +98,19 @@ macro_rules! internal_err {
 	}}
 }
 
+fn get_seed<B, C>(client: &C, block_id: &BlockId<B>) -> Option<Seed>
+where
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
+	C::Api: DataAvailApi<B>,
+{
+	if cfg!(feature = "secure_padding_fill") {
+		client.runtime_api().babe_vrf(block_id).ok()
+	} else {
+		Some(Seed::default())
+	}
+}
+
 impl<Client, Block> Kate<Client, Block>
 where
 	Block: BlockT,
@@ -163,10 +176,8 @@ where
 				.collect();
 
 			// Use Babe's VRF
-			let seed: [u8; 32] =
-				self.client.runtime_api().babe_vrf(&block_id).map_err(|e| {
-					internal_err!("Babe VRF not found for block {}: {:?}", block_id, e)
-				})?;
+			let seed = get_seed::<Block, Client>(&self.client, &block_id)
+				.ok_or_else(|| internal_err!("Babe VRF not found for block {}", block_id))?;
 
 			let block_length: BlockLength = self
 				.client
@@ -245,10 +256,8 @@ where
 				.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
 			// Use Babe's VRF
-			let seed: [u8; 32] =
-				self.client.runtime_api().babe_vrf(&block_id).map_err(|e| {
-					internal_err!("Babe VRF not found for block {}: {:?}", block_id, e)
-				})?;
+			let seed = get_seed::<Block, Client>(&self.client, &block_id)
+				.ok_or_else(|| internal_err!("Babe VRF not found for block {block_id}"))?;
 
 			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
 				block_length.rows,
@@ -334,10 +343,8 @@ where
 				.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
 			// Use Babe's VRF
-			let seed: [u8; 32] =
-				self.client.runtime_api().babe_vrf(&block_id).map_err(|e| {
-					internal_err!("Babe VRF not found for block {}: {:?}", block_id, e)
-				})?;
+			let seed = get_seed::<Block, Client>(&self.client, &block_id)
+				.ok_or_else(|| internal_err!("Babe VRF not found for block {block_id}"))?;
 
 			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
 				block_length.rows,

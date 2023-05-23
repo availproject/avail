@@ -78,9 +78,18 @@ force-rs-merkle = [ "rs_merkle" ]
 header-compatibility-test = [
 	"da-primitives/header-backward-compatibility-test" ]
 
-
+# It enables the use of header extension V2
 header_extension_v2 = []
+
+# It enables the corruption of header extension where block number is greater than 20.
+# NOTE: Only for testing and development purpose.
 header_commitment_corruption = []
+
+# Enables secure seed generation using for padding fill during the matrix 
+# generation for Kate commitment.
+# NOTE: WIP because that affects the Data Availability Protocol used during 
+# the block import process.
+secure_padding_fill = []
 
 [[bench]]
 name = "bench"

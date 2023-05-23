@@ -40,3 +40,9 @@ std = [
 	"sp-api/std",
 	"sp-runtime/std",
 ]
+
+# Enables secure seed generation using for padding fill during the matrix 
+# generation for Kate commitment.
+# NOTE: WIP because that affects the Data Availability Protocol used during 
+# the block import process.
+secure_padding_fill = []
