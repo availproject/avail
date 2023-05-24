@@ -1,12 +1,12 @@
 use anyhow::Result;
 use structopt::StructOpt;
+// Re-export some tools from `subxt`
+pub use subxt::{config, rpc, utils};
 use subxt::{
 	config::substrate::BlakeTwo256,
 	utils::{AccountId32, MultiAddress, MultiSignature, H256},
 	Config, OnlineClient,
 };
-// Re-export some tools from `subxt`
-pub use subxt::{rpc, config, utils};
 
 pub mod primitives;
 use primitives::{AvailExtrinsicParams, Header};
