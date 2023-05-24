@@ -18,7 +18,7 @@ use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 pub const NOMAD_LOCAL_DOMAIN: u32 = 2000;
-pub const NOMAD_UPDATER: H160 = H160(hex!("1563915e194d8cfba1943570603f7606a3115508"));
+pub const NOMAD_UPDATER: H160 = H160(hex!("695dFcFc604F9b2992642BDC5b173d1a1ed60b03"));
 pub const PROTOCOL_ID: Option<&str> = Some("Avail");
 pub const FORK_ID: Option<&str> = None;
 

@@ -47,12 +47,52 @@
       "balances": {
         "balances": [
           [
-            "5ECEHdvgq79WJGuR55PR2zjQNpregui6B8KHgM1tEoT1bYDg",
+            "5FH2QRq2k2uA6HHwwMggDbjGHjJJE9R3SXac9aBPxcK6rn8x",
+            2000000000000000000
+          ],
+          [
+            "5ETyro1PqeQJrYXots7e4m2donhrede251s8CQNZPCNbpV9K",
+            11000000000000000000
+          ],
+          [
+            "5CDA2QG5ir4EUuWM5Mpve328P1YXtUH4M5orPwvkPoboCJzD",
             11000000000000000000
           ],
           [
             "5GmUKWK1aoqyndcJcmDfJScF26LUwyj1woVN2E2AhCdZw4Mk",
             2000000000000000000
+          ],
+          [
+            "5CSt9Pn7NrTHpHSDTC5Yd4YHronw64HAPr9h6K5YR6UMYV8y",
+            11000000000000000000
+          ],
+          [
+            "5Ey2QhfwiQBHoQ1MU9xYkLzoQRRfXnhQaJPbAtFZ5pHhkRuT",
+            11000000000000000000
+          ],
+          [
+            "5EHdVc8aX4KGQrL1MxNBgrkGJDNBe6Xg1PcGQTyvKLxhrfiV",
+            10000000000000000000
+          ],
+          [
+            "5DnsSWZRC7MiPKcpfYdbj67FSUvSMMNMMF8Uw3ZdAqYd4rPZ",
+            2000000000000000000
+          ],
+          [
+            "5ECEHdvgq79WJGuR55PR2zjQNpregui6B8KHgM1tEoT1bYDg",
+            11000000000000000000
+          ],
+          [
+            "5CiSXC1o4L257Gq7vd244jgGfMsWQadSqVwwLEz8KvF9ME36",
+            2000000000000000000
+          ],
+          [
+            "5FsQBbxBeUvkPv8vJbrhs2j5WCcRQb9jTEa3M41t7iVZhhKT",
+            11000000000000000000
+          ],
+          [
+            "5CSgF4xbSZ5EN2Z52tbdu63CwYnPsvM6HahhKjoXumV8AJom",
+            10000000000000000000
           ],
           [
             "5C7vaq3yC94X4mbv4cgrrNod1G5HLhaeiBP8aeSBCy4iZyUp",
@@ -64,46 +104,6 @@
           ],
           [
             "5CcnpV9rsL98Vv8CxvSDXNXXi4vTZLc2pzv1KKJcSvvQuXGh",
-            10000000000000000000
-          ],
-          [
-            "5DnsSWZRC7MiPKcpfYdbj67FSUvSMMNMMF8Uw3ZdAqYd4rPZ",
-            2000000000000000000
-          ],
-          [
-            "5CSt9Pn7NrTHpHSDTC5Yd4YHronw64HAPr9h6K5YR6UMYV8y",
-            11000000000000000000
-          ],
-          [
-            "5CSgF4xbSZ5EN2Z52tbdu63CwYnPsvM6HahhKjoXumV8AJom",
-            10000000000000000000
-          ],
-          [
-            "5ETyro1PqeQJrYXots7e4m2donhrede251s8CQNZPCNbpV9K",
-            11000000000000000000
-          ],
-          [
-            "5CiSXC1o4L257Gq7vd244jgGfMsWQadSqVwwLEz8KvF9ME36",
-            2000000000000000000
-          ],
-          [
-            "5CDA2QG5ir4EUuWM5Mpve328P1YXtUH4M5orPwvkPoboCJzD",
-            11000000000000000000
-          ],
-          [
-            "5FH2QRq2k2uA6HHwwMggDbjGHjJJE9R3SXac9aBPxcK6rn8x",
-            2000000000000000000
-          ],
-          [
-            "5FsQBbxBeUvkPv8vJbrhs2j5WCcRQb9jTEa3M41t7iVZhhKT",
-            11000000000000000000
-          ],
-          [
-            "5Ey2QhfwiQBHoQ1MU9xYkLzoQRRfXnhQaJPbAtFZ5pHhkRuT",
-            11000000000000000000
-          ],
-          [
-            "5EHdVc8aX4KGQrL1MxNBgrkGJDNBe6Xg1PcGQTyvKLxhrfiV",
             10000000000000000000
           ]
         ]
@@ -351,13 +351,13 @@
         ]
       },
       "nomadUpdaterManager": {
-        "updater": "0x1563915e194d8cfba1943570603f7606a3115508",
+        "updater": "0x695dfcfc604f9b2992642bdc5b173d1a1ed60b03",
         "phantom": null
       },
       "nomadHome": {
         "localDomain": 2000,
         "committedRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
-        "updater": "0x1563915e194d8cfba1943570603f7606a3115508",
+        "updater": "0x695dfcfc604f9b2992642bdc5b173d1a1ed60b03",
         "phantom": null
       },
       "nomadDaBridge": {},
