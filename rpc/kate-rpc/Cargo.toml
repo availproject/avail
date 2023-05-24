@@ -10,6 +10,7 @@ avail-base = { path = "../../base", default-features = false }
 kate-rpc-runtime-api = { path = "../kate-rpc-runtime-api" }
 da-runtime = { path = "../../runtime", default-features = false } # check
 
+once_cell = "1.5.2"
 sp-api = { version = "4.0.0-dev", default-features = false }
 frame-system = { version = "4.0.0-dev" }
 sc-client-api = "4.0.0-dev"
@@ -18,7 +19,6 @@ sp-runtime = "7.0.0"
 
 da-primitives = { version = "0.4", default-features = false }
 kate = { version = "0.7", default-features = false }
-dusk-bytes = { version = "*" } # TODO: fix, maybe re-export from kate
 
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
 moka = "0.10"
@@ -29,6 +29,7 @@ default = ["std"]
 std = [
 	"avail-base/std",
 	"kate-rpc-runtime-api/std",
+  "kate/parallel",
 	"da-runtime/std",
 	"sp-api/std",
 	"frame-system/std",

@@ -1944,7 +1944,7 @@ dependencies = [
 [[package]]
 name = "da-primitives"
 version = "0.4.5"
-source = "git+https://github.com/maticnetwork/avail-core?rev=f23cd90ac248ca17c2cf2be520ff36b5367e9a3f#f23cd90ac248ca17c2cf2be520ff36b5367e9a3f"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ff0af9d7fae3eca2489c87db50593cc53f9b0e5d#ff0af9d7fae3eca2489c87db50593cc53f9b0e5d"
 dependencies = [
  "beefy-merkle-tree",
  "da-types",
@@ -2051,7 +2051,7 @@ dependencies = [
 [[package]]
 name = "da-types"
 version = "0.4.4"
-source = "git+https://github.com/maticnetwork/avail-core?rev=f23cd90ac248ca17c2cf2be520ff36b5367e9a3f#f23cd90ac248ca17c2cf2be520ff36b5367e9a3f"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ff0af9d7fae3eca2489c87db50593cc53f9b0e5d#ff0af9d7fae3eca2489c87db50593cc53f9b0e5d"
 dependencies = [
  "derive_more",
  "num-traits",
@@ -4303,7 +4303,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.7.0"
-source = "git+https://github.com/maticnetwork/avail-core?rev=f23cd90ac248ca17c2cf2be520ff36b5367e9a3f#f23cd90ac248ca17c2cf2be520ff36b5367e9a3f"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ff0af9d7fae3eca2489c87db50593cc53f9b0e5d#ff0af9d7fae3eca2489c87db50593cc53f9b0e5d"
 dependencies = [
  "da-types",
  "dusk-bytes",
@@ -4330,7 +4330,7 @@ dependencies = [
 [[package]]
 name = "kate-grid"
 version = "0.6.1"
-source = "git+https://github.com/maticnetwork/avail-core?rev=f23cd90ac248ca17c2cf2be520ff36b5367e9a3f#f23cd90ac248ca17c2cf2be520ff36b5367e9a3f"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ff0af9d7fae3eca2489c87db50593cc53f9b0e5d#ff0af9d7fae3eca2489c87db50593cc53f9b0e5d"
 dependencies = [
  "rayon",
 ]
@@ -4338,7 +4338,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.8.0"
-source = "git+https://github.com/maticnetwork/avail-core?rev=f23cd90ac248ca17c2cf2be520ff36b5367e9a3f#f23cd90ac248ca17c2cf2be520ff36b5367e9a3f"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ff0af9d7fae3eca2489c87db50593cc53f9b0e5d#ff0af9d7fae3eca2489c87db50593cc53f9b0e5d"
 dependencies = [
  "dusk-bytes",
  "dusk-plonk",
@@ -4360,12 +4360,12 @@ dependencies = [
  "avail-base",
  "da-primitives",
  "da-runtime",
- "dusk-bytes",
  "frame-system",
  "jsonrpsee",
  "kate",
  "kate-rpc-runtime-api",
  "moka",
+ "once_cell",
  "sc-client-api",
  "serde",
  "sp-api",
@@ -5632,7 +5632,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.3"
-source = "git+https://github.com/maticnetwork/avail-core?rev=f23cd90ac248ca17c2cf2be520ff36b5367e9a3f#f23cd90ac248ca17c2cf2be520ff36b5367e9a3f"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ff0af9d7fae3eca2489c87db50593cc53f9b0e5d#ff0af9d7fae3eca2489c87db50593cc53f9b0e5d"
 dependencies = [
  "ethers-signers",
  "frame-support",
@@ -5651,7 +5651,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.3"
-source = "git+https://github.com/maticnetwork/avail-core?rev=f23cd90ac248ca17c2cf2be520ff36b5367e9a3f#f23cd90ac248ca17c2cf2be520ff36b5367e9a3f"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ff0af9d7fae3eca2489c87db50593cc53f9b0e5d#ff0af9d7fae3eca2489c87db50593cc53f9b0e5d"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -5698,7 +5698,7 @@ dependencies = [
 [[package]]
 name = "nomad-merkle"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core?rev=f23cd90ac248ca17c2cf2be520ff36b5367e9a3f#f23cd90ac248ca17c2cf2be520ff36b5367e9a3f"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ff0af9d7fae3eca2489c87db50593cc53f9b0e5d#ff0af9d7fae3eca2489c87db50593cc53f9b0e5d"
 dependencies = [
  "frame-support",
  "hex-literal",
@@ -5719,7 +5719,7 @@ dependencies = [
 [[package]]
 name = "nomad-signature"
 version = "0.1.1"
-source = "git+https://github.com/maticnetwork/avail-core?rev=f23cd90ac248ca17c2cf2be520ff36b5367e9a3f#f23cd90ac248ca17c2cf2be520ff36b5367e9a3f"
+source = "git+https://github.com/maticnetwork/avail-core?rev=ff0af9d7fae3eca2489c87db50593cc53f9b0e5d#ff0af9d7fae3eca2489c87db50593cc53f9b0e5d"
 dependencies = [
  "elliptic-curve",
  "ethers-core",
@@ -7020,7 +7020,7 @@ dependencies = [
 [[package]]
 name = "poly-multiproof"
 version = "0.0.1"
-source = "git+https://github.com/aphoh/poly-multiproof?rev=99335b664253ba4eca35f52b812af8e691f2497e#99335b664253ba4eca35f52b812af8e691f2497e"
+source = "git+https://github.com/aphoh/poly-multiproof?rev=1ec7c7eca0861ad89427c45534006f49d039820a#1ec7c7eca0861ad89427c45534006f49d039820a"
 dependencies = [
  "ark-bls12-381",
  "ark-ec",

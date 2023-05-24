@@ -8,7 +8,6 @@ use da_primitives::{
 	DataProof,
 };
 use da_runtime::{Runtime, UncheckedExtrinsic};
-use dusk_bytes::Serializable;
 use frame_system::{limits::BlockLength, submitted_data};
 use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
@@ -17,9 +16,8 @@ use jsonrpsee::{
 use kate::{
 	com::Cell,
 	grid::{Dimensions, Grid as GridTrait},
-	gridgen::{EvaluationGrid, PolynomialGrid},
+	gridgen::{AsBytes, EvaluationGrid, PolynomialGrid},
 	pmp::m1_blst,
-	PublicParameters,
 };
 use kate_rpc_runtime_api::KateParamsGetter;
 use moka::sync::Cache;
@@ -228,6 +226,11 @@ where
 	}
 }
 
+// TODO: figure out what to actually do here
+use once_cell::sync::Lazy;
+static PMP: Lazy<kate::pmp::m1_blst::M1NoPrecomp> =
+	once_cell::sync::Lazy::new(|| kate::testnet::multiproof_params(256, 256));
+
 #[async_trait]
 impl<Client, Block> KateApiServer<Block> for Kate<Client, Block>
 where
@@ -260,7 +263,10 @@ where
 			.map(|y| (*y as usize, grid.evals.row(*y as usize)))
 			.for_each(|(y, row)| match row {
 				Some(row) => {
-					let row_bytes = row.iter().flat_map(|s| s.to_bytes()).collect();
+					let row_bytes = row
+						.iter()
+						.flat_map(|s| s.to_bytes().expect("Ser cannot fail"))
+						.collect();
 					all_rows[y as usize] = Some(row_bytes)
 				},
 				_ => (),
@@ -296,8 +302,8 @@ where
 		for (row_y, row) in rows {
 			all_rows[row_y] = Some(
 				row.into_iter()
-					.flat_map(|s| s.to_bytes())
-					.collect::<Vec<_>>(),
+					.flat_map(|s| s.to_bytes().expect("Ser cannot fail"))
+					.collect::<Vec<u8>>(),
 			);
 		}
 
@@ -315,20 +321,6 @@ where
 			));
 		}
 
-		let kc_public_params_raw = self
-			.client
-			.runtime_api()
-			.get_public_params(&BlockId::Hash(block_hash))
-			.map_err(|e| {
-				internal_err!(
-					"Public params cannot be fetched on block {}: {:?}",
-					signed_block.block.header().hash(),
-					e
-				)
-			})?;
-		let kc_public_params =
-			unsafe { PublicParameters::from_slice_unchecked(&kc_public_params_raw) };
-
 		let grid = self.get_grid(&signed_block)?;
 
 		let proof = cells
@@ -344,9 +336,14 @@ where
 					))
 					.and_then(|data| {
 						grid.polys
-							.proof(kc_public_params.commit_key(), cell)
+							.proof(&*PMP, cell)
 							.map_err(|e| internal_err!("Unable to make proof: {:?}", e))
-							.map(|proof| (data.to_bytes(), proof.to_bytes()))
+							.map(|proof| {
+								(
+									data.to_bytes().expect("Ser cannot fail"),
+									proof.to_bytes().expect("Ser cannot fail"),
+								)
+							})
 					})
 			})
 			.collect::<Result<Vec<_>, _>>()?

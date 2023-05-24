@@ -147,8 +147,7 @@ async fn main() -> Result<()> {
 	let pmp = kate::testnet::multiproof_params(256, 256);
 	let points = kate::gridgen::domain_points(kdims.width())
 		.unwrap()
-		.iter()
-		.map(kate::gridgen::to_ark_scalar)
+		.into_iter()
 		.collect::<Vec<_>>();
 
 	for (mp, cell) in res.iter().zip(cells) {

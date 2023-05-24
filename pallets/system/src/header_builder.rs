@@ -1,6 +1,6 @@
-use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, HeaderExtension};
 #[cfg(feature = "std")]
-use da_primitives::{asdr::DataLookup, KateCommitment};
+use da_primitives::KateCommitment;
+use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, HeaderExtension};
 use frame_support::traits::Randomness;
 pub use kate::{
 	metrics::{IgnoreMetrics, Metrics},
@@ -106,7 +106,6 @@ fn build_extension<M: Metrics>(
 	metrics: &M,
 ) -> HeaderExtension {
 	use da_primitives::header::extension::v1;
-	use kate::Serializable;
 	use once_cell::sync::Lazy;
 	static PMP: Lazy<kate::pmp::m1_blst::M1NoPrecomp> =
 		once_cell::sync::Lazy::new(|| kate::testnet::multiproof_params(256, 256));
@@ -120,16 +119,17 @@ fn build_extension<M: Metrics>(
 	)
 	.expect("Grid construction cannot fail");
 
+	use kate::gridgen::AsBytes;
 	let commitment = grid
 		.make_polynomial_grid()
 		.expect("Make polynomials cannot fail")
 		.extended_commitments(&*PMP, 2)
 		.expect("Extended commitments cannot fail")
 		.iter()
-		.flat_map(|c| c.0.to_bytes())
+		.flat_map(|c| c.to_bytes().expect("Commitment serialization cannot fail"))
 		.collect::<Vec<u8>>();
 
-    // We must put the un-extended dimensions into this commitment object!
+	// We must put the un-extended dimensions into this commitment object!
 	let commitment = KateCommitment {
 		rows: grid.dims.height().saturated_into::<u16>(),
 		cols: grid.dims.width().saturated_into::<u16>(),
