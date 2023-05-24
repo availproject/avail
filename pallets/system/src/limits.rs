@@ -160,7 +160,7 @@ impl BlockLength {
 		}
 	}
 
-	/// Create enw `BlockLength` with `rows*cols*chunk_size` for `Operational` & `Mandatory`
+	/// Create new `BlockLength` with `rows*cols*chunk_size` for `Operational` & `Mandatory`
 	/// and `normal * rows*cols*chunk_siz` for `Normal`.
 	pub fn with_normal_ratio(
 		rows: BlockLengthRows,
