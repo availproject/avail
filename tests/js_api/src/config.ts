@@ -12,7 +12,7 @@ export interface Config {
 export default {
   mnemonic: 'bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice',
   size: 0,
-  ApiURL: 'wss://https://testnet.avail.tools/ws',
+  ApiURL: 'wss://testnet.avail.tools/ws',
   app_id: 0,
   batch: 0,
   count: 0,
