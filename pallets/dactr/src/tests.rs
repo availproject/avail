@@ -1,5 +1,5 @@
 use da_primitives::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO};
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, error::BadOrigin};
 use frame_system::{limits::BlockLength, RawOrigin};
 
 use crate::{
@@ -137,7 +137,7 @@ mod submit_block_length_proposal {
 	use super::*;
 
 	#[test]
-	fn submit_data() {
+	fn submit_block_length_proposal() {
 		new_test_ext().execute_with(|| {
 			let root: RuntimeOrigin = RawOrigin::Root.into();
 			let rows = BlockLengthRows(128);
@@ -160,7 +160,7 @@ mod submit_block_length_proposal {
 	}
 
 	#[test]
-	fn submit_data_min() {
+	fn submit_block_length_proposal_min() {
 		new_test_ext().execute_with(|| {
 			let root: RuntimeOrigin = RawOrigin::Root.into();
 			let rows = MinBlockRows::get();
@@ -183,7 +183,7 @@ mod submit_block_length_proposal {
 	}
 
 	#[test]
-	fn submit_data_max() {
+	fn submit_block_length_proposal_max() {
 		new_test_ext().execute_with(|| {
 			let root: RuntimeOrigin = RawOrigin::Root.into();
 			let rows = MaxBlockRows::get();
@@ -202,6 +202,18 @@ mod submit_block_length_proposal {
 			let event =
 				RuntimeEvent::DataAvailability(Event::BlockLengthProposalSubmitted { rows, cols });
 			System::assert_last_event(event);
+		})
+	}
+
+	#[test]
+	fn bad_origin() {
+		new_test_ext().execute_with(|| {
+			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
+			let rows = MaxBlockRows::get();
+			let cols = MaxBlockCols::get();
+
+			let err = DataAvailability::submit_block_length_proposal(alice, rows.0, cols.0);
+			assert_noop!(err, BadOrigin);
 		})
 	}
 
