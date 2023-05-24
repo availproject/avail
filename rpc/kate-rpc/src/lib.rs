@@ -98,6 +98,8 @@ macro_rules! internal_err {
 	}}
 }
 
+/// If feature `secure_padding_fill` is enabled then the returned seed is generated using Babe VRF.
+/// Otherwise, it will use the default `Seed` value.
 fn get_seed<B, C>(client: &C, block_id: &BlockId<B>) -> Option<Seed>
 where
 	B: BlockT,
@@ -175,7 +177,6 @@ where
 				.map(AppExtrinsic::from)
 				.collect();
 
-			// Use Babe's VRF
 			let seed = get_seed::<Block, Client>(&self.client, &block_id)
 				.ok_or_else(|| internal_err!("Babe VRF not found for block {}", block_id))?;
 
@@ -255,7 +256,6 @@ where
 				.block_length(&block_id)
 				.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
-			// Use Babe's VRF
 			let seed = get_seed::<Block, Client>(&self.client, &block_id)
 				.ok_or_else(|| internal_err!("Babe VRF not found for block {block_id}"))?;
 
@@ -342,7 +342,6 @@ where
 				.block_length(&block_id)
 				.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
-			// Use Babe's VRF
 			let seed = get_seed::<Block, Client>(&self.client, &block_id)
 				.ok_or_else(|| internal_err!("Babe VRF not found for block {block_id}"))?;
 
