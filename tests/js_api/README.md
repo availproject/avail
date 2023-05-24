@@ -39,8 +39,6 @@ Sample scripts to send transactions to Avail using Polkadot JS. The following ha
 Keep in mind that the fields `batch`(default is 0 and if its specified then it switches to batch transaction mode), `count`(if not specified the subscription will continue infinitely) and `amount`(if not specified default is `12345`) are optional. If you do not want to use them, you can leave them empty.
 Do Keep in mind that the receiver address should be specified when you are using transfer calls. The data will be send from the mnemonic address to the receiver. 
 
-
-
 - Creation of app_id
     ```
     ts-node app_id.ts -i "10"
@@ -72,9 +70,18 @@ Do Keep in mind that the receiver address should be specified when you are using
     Script creates a proposal to increase the validator count from the account whose mnemonic is mentioned on config. 
 
 
-You can also use yarn command to run the scripts. For example 
+You can also use yarn commands to run the scripts. For example 
+- Start by building the project:
+    ```
+    yarn build
+    ```
 
-```
-yarn build
-yarn data
-```
+- Then run the commands:
+    ```
+    yarn app_id
+    yarn app_id -i "test"
+    yarn data
+    yarn transfer
+    yarn subscribe
+    yarn proposal
+    ```

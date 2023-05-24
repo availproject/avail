@@ -7,11 +7,9 @@
     "build": "tsc --build",
     "app_id": "node dist/app_id.js",
     "data": "node dist/data_submit.js",
-    "data:prod": "node dist/data_submit.js",
     "transfer": "node dist/transfer.js",
     "subscribe": "node dist/subscribe.js",
-    "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package app_id/interfaces --input ./src/interfaces --endpoint ./data-avail.json",
-    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package app_id/interfaces --endpoint ./edgeware.json --output ./src/interfaces",
+    "proposal": "node dist/proposal.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "kailas@polygon.technology",
