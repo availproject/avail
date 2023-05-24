@@ -99,7 +99,7 @@ fn user_accounts(council: &[AccountId]) -> HashMap<AccountId, Balance> {
 
 pub fn chain_spec() -> ChainSpec {
 	ChainSpec::from_genesis(
-		"Avail Ada Testnet",
+		"Avail Kate Testnet",
 		"Avail Testnet",
 		ChainType::Live,
 		config_genesis,
