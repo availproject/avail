@@ -6,7 +6,7 @@ use avail_subxt::{
 use sp_core::crypto::Pair as _;
 use sp_keyring::sr25519::sr25519::{self, Pair};
 use structopt::StructOpt;
-use subxt::{tx::PairSigner, utils::MultiAddress};
+use subxt::tx::PairSigner;
 
 /// This example demonstrates creation of application key.
 const ALICE_SEED: &str =
@@ -15,7 +15,7 @@ const ALICE_SEED: &str =
 #[async_std::main]
 async fn main() -> Result<()> {
 	let args = Opts::from_args();
-	let client = build_client(args.ws).await?;
+	let client = build_client(args.ws, args.validate_codegen).await?;
 
 	// Account
 	let pair_a = Pair::from_string_with_seed(ALICE_SEED, None).unwrap();
