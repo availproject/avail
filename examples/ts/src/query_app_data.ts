@@ -1,17 +1,21 @@
 import {createApi} from "./api";
+import {BlockHash} from "@polkadot/types/interfaces/chain";
 
 /**
  * Example returning data that belongs to application id.
  */
 async function main() {
     const api: any = await createApi()
-    const hashBlock = "0x60eaba2542b72a0c17b0e78ad4ae73c3e42e616bb3b5b0dbbc8abfaee5a4aea1";
+    // get the latest finalized block hash
+    const finalizedHead: BlockHash = await api.rpc.chain.getFinalizedHead();
+    console.log(`Latest finalized block: ${finalizedHead}`)
     const appId = 1;
-    const appData = await api.rpc.kate.queryAppData(appId, hashBlock);
+    const appData = await api.rpc.kate.queryAppData(appId, finalizedHead);
 
-    console.log(appData)
+    console.log(`Application data: ${appData}`)
     await api.disconnect();
 }
 
 
-main().catch(console.error);
+main()
+    .catch(console.error)

@@ -14,20 +14,21 @@ const keyring = new Keyring({type: 'sr25519'});
  */
 async function main() {
     const api = await createApi();
-    // alice is making a token transfer to bob
-    const alice = keyring.addFromUri(config.mnemonic);
-    const bob = config.receiver;
+    // account that is making a token transfer
+    const sender = keyring.addFromUri(config.mnemonic);
+    // account that is receiving tokens
+    const receiver = config.receiver;
     // default config amount of tokens to transfer
     let amount = config.amount;
 
     // get available balance from the account
-    const {data: {free: freeBalance}} = await api.query.system.account(alice.address);
-    console.log(`Available balance of ${alice.address}: ${freeBalance}`);
+    const {data: {free: freeBalance}} = await api.query.system.account(sender.address);
+    console.log(`Available balance of ${sender.address}: ${freeBalance}`);
 
     // make a transfer and track the status of the transaction
-    await api.tx.balances.transfer(bob, amount)
+    await api.tx.balances.transfer(receiver, amount)
         .signAndSend(
-            alice,
+            sender,
             (result: ISubmittableResult) => {
                 console.log(`Tx status: ${result.status}`);
                 if (result.status.isInBlock) {

@@ -8,19 +8,22 @@ import config from "./config";
 async function main() {
     // instantiate the api
     const api = await createApi()
-    // construct the keyring after the API (crypto has an async init)
+    // construct the keyring after the api
     const keyring = new Keyring({type: 'sr25519'});
-    // add Alice to our keyring with a hard-derivation path (empty phrase, so uses dev)
-    const alice = keyring.addFromUri(config.mnemonic);
+    // add sender to our keyring with a hard-derivation path (empty phrase, so uses dev)
+    const sender = keyring.addFromUri(config.mnemonic);
     // receiver address from config
-    const BOB = config.receiver;
+    const receiver = config.receiver;
+    // amount we wesh to send
     const amount = config.amount;
-    // Transfer some amount to BOB
-    const transfer = api.tx.balances.transfer(BOB, amount);
-    // Sign and send the transaction using our account
-    const hash = await transfer.signAndSend(alice);
+    // transfer some amount to BOB
+    const transfer = api.tx.balances.transfer(receiver, amount);
+    // sign and send the transaction using our account
+    const hash = await transfer.signAndSend(sender);
 
     console.log('Transfer sent with hash', hash.toHex());
 }
 
-main().catch(console.error).finally(() => process.exit());
+main()
+    .catch(console.error)
+    .finally(() => process.exit());

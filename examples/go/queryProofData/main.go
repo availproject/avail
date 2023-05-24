@@ -2,6 +2,7 @@ package main
 
 import (
 	"avail-gsrpc-examples/internal/config"
+	"avail-gsrpc-examples/internal/extrinsics"
 	"flag"
 	"fmt"
 	"log"
@@ -13,11 +14,6 @@ import (
 
 // The following example shows how to query Merkle proof for particular data and block hash.
 func main() {
-	// block hash to query proof
-	blockHash := "fcedf5363a5e5126d8d53fdd9a251dd9bf9ee965dd3ed15212aa356709bd4bbf"
-	h, _ := types.NewHashFromHexString(blockHash)
-    dataIndex := types.NewU32(0)
-
 	var configJSON string
 	var config config.Config
 
@@ -38,14 +34,27 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("cannot create api client:%v", err))
 	}
+
+	var finalizedBlockCh = make(chan types.Hash)
+	go func() {
+		err = extrinsics.SubmitData(api, "data", config.Seed, 1, finalizedBlockCh)
+		if err != nil {
+			panic(fmt.Sprintf("cannot submit data:%v", err))
+		}
+	}()
+
+	// block hash to query proof
+	blockHash := <-finalizedBlockCh
+	fmt.Printf("Transaction included in finalized block: %v\n", blockHash.Hex())
+	h, _ := types.NewHashFromHexString(blockHash.Hex())
+	dataIndex := types.NewU32(0)
+
+	// query proof
 	var data HeaderF
 	err = api.Client.Call(&data, "kate_queryDataProof", dataIndex, h)
 	if err != nil {
 		panic(fmt.Sprintf("%v\n", err))
 	}
-
-	fmt.Printf("%v\n", data)
-
 	fmt.Printf("Root:%v\n", data.Root.Hex())
 	// print array of proof
 	fmt.Printf("Proof:\n")

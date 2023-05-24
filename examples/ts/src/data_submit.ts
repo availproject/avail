@@ -55,7 +55,6 @@ async function main() {
                 console.log(`Finalized block hash ${blockHash}`);
                 // get data from finalized block
                 await extractData(api, blockHash, exHash);
-                process.exit(0);
             }
         });
 }
@@ -64,4 +63,5 @@ main()
     .catch((err) => {
         console.error(err);
         process.exit(1);
-    });
+    })
+

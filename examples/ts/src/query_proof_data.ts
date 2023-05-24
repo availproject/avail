@@ -1,4 +1,7 @@
 import {createApi} from "./api";
+import {ISubmittableResult} from "@polkadot/types/types";
+import config from "./config";
+import {Keyring} from "@polkadot/api";
 
 /**
  * Example of getting the proof for the particular leaf in the block.
@@ -6,9 +9,24 @@ import {createApi} from "./api";
 async function main() {
     const api: any = await createApi()
     // index of a leaf in the merkle trie for which the proof is generated
-    const dataIndex = 0;
     // hash of the block from where to get the proof
-    const hashBlock = "0x693ae169131a736a88c672b313a5abbf97e7e2dc0d2a4c47a220874453260c10";
+    const keyring = new Keyring({type: 'sr25519'});
+    const sender = keyring.addFromUri(config.mnemonic);
+    // submit one data transaction and wait until block is finalized
+    let res: ISubmittableResult = await new Promise(async (resolve) => {
+        api.tx.dataAvailability.submitData("0x01")
+            .signAndSend(sender, async (result: ISubmittableResult) => {
+                console.log(`Tx status: ${result.status}`);
+                if (result.isFinalized) {
+                    console.log("Block is finalized.")
+                    resolve(result);
+                }
+            });
+    });
+
+    // after block finalization we can query for the Merkle proof of the data submitted
+    const dataIndex = 0;
+    const hashBlock = res.status.asFinalized;
 
     const daHeader = await api.rpc.kate.queryDataProof(dataIndex, hashBlock);
     console.log(`Fetched proof from Avail for txn index ${dataIndex} inside block ${hashBlock}`);

@@ -11,22 +11,33 @@ import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
 async function main() {
     // Instantiate the API
     const api = await createApi()
-    // Construct the keyring after the API (crypto has an async init)
+    // Construct the keyring after the API
     const keyring = new Keyring({type: 'sr25519'});
-    // Add Alice to our keyring
-    const alice = keyring.addFromUri(config.mnemonic);
+    const sender = keyring.addFromUri(config.mnemonic);
+    // submit one data transaction and wait until block is finalized
+    // in order to dispatch data root once the block is finalized
+    let res: ISubmittableResult = await new Promise(async (resolve) => {
+        api.tx.dataAvailability.submitData("0x01")
+            .signAndSend(sender, async (result: ISubmittableResult) => {
+                console.log(`Tx status: ${result.status}`);
+                if (result.isFinalized) {
+                    console.log("Block is finalized.")
+                    resolve(result);
+                }
+            });
+    });
 
     // destination domain always 1000
     const destinationDomain = 1000;
-    // data availability bridge router address e.g. 0x000000000000000000000000aAB16A9fb03D5845193e87F596Fa610FCE6054F0
-    const bridgeRouterEthAddress = "0x00000000000000000000000007AF11e412ed7C343603c0F4b35645f7870686Eb";
+    // data availability bridge router address deployed on Sepolia network e.g. 0x000000000000000000000000aAB16A9fb03D5845193e87F596Fa610FCE6054F0
+    const bridgeRouterEthAddress = "0x000000000000000000000000bD824890A51ed8bda53F51F27303b14EFfEbC152";
     // hash of the block to dispatch data root
-    const blockHash = "0x693ae169131a736a88c672b313a5abbf97e7e2dc0d2a4c47a220874453260c10"
+    const blockHash = res.status.asFinalized
     const header = await api.rpc.chain.getHeader(blockHash);
 
     const tx = api.tx.daBridge.tryDispatchDataRoot(destinationDomain, bridgeRouterEthAddress, header);
 
-    await dispatchDataRoot(api, alice, tx)
+    await dispatchDataRoot(api, sender, tx)
 }
 
 async function dispatchDataRoot(api: ApiPromise, sender: KeyringPair, dispatchTransaction: SubmittableExtrinsic) {
@@ -41,7 +52,7 @@ async function dispatchDataRoot(api: ApiPromise, sender: KeyringPair, dispatchTr
                         } else if (result.status.isInBlock) {
                             console.log(`Tx hash: ${result.txHash} is in block ${result.status.asInBlock}`);
                         } else if (result.status.isFinalized) {
-                            console.log(`Block: ${result.status.asFinalized} finalized.`);
+                            console.log(`Data root dispatched. Block: ${result.status.asFinalized} finalized.`);
                             resolve();
                         }
                     });
