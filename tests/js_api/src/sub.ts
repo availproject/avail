@@ -1,19 +1,11 @@
-import { ApiPromise, WsProvider, Keyring } from '@polkadot/api';
-import { KeyringPair } from '@polkadot/keyring/types';
-import type { EventRecord, ExtrinsicStatus, H256 } from '@polkadot/types/interfaces';
-import type { ISubmittableResult, SignatureOptions } from '@polkadot/types/types';
 import config from './config';
 import { createApi } from './api';
-
-
-const keyring = new Keyring({ type: 'sr25519' });
 
 async function main() {
     const api = await createApi();
     const chain = await api.rpc.system.chain();
-    console.log("connected to chain: " + chain.toString());
-    const metadata = await api.rpc.state.getMetadata();
-    let rep = config.count;
+    console.log('connected to chain: ' + chain.toString());
+    const rep = config.count;
     let count = 0;
     // Subscribe to the new headers
     const unsubHeads = await api.rpc.chain.subscribeNewHeads((lastHeader) => {
@@ -24,7 +16,6 @@ async function main() {
             process.exit(0);
         }
     });
-
 }
 
 main().catch((err) => {

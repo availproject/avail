@@ -7,6 +7,8 @@ export function createApi(): Promise<ApiPromise> {
     // Create the API and wait until ready
     return ApiPromise.create({
         provider,
+        // Pass the below flag to true 👇 to see initial warning about api / rpc decorations
+        noInitWarn: true,
         rpc: {
             kate: {
                 blockLength: {
@@ -68,6 +70,12 @@ export function createApi(): Promise<ApiPromise> {
                 dataRoot: 'H256',
                 commitment: 'Vec<u8>'
             },
+            KateCommitmentV2: {
+                rows: 'Compact<u16>',
+                cols: 'Compact<u16>',
+                dataRoot: 'Option<H256>',
+                commitment: 'Vec<u8>'
+            },
             V1HeaderExtension: {
                 commitment: 'KateCommitment',
                 appLookup: 'DataLookup'
@@ -77,9 +85,14 @@ export function createApi(): Promise<ApiPromise> {
                 commitment: 'KateCommitment',
                 appLookup: 'DataLookup'
             },
+            V2HeaderExtension: {
+                commitment: 'KateCommitmentV2',
+                appLookup: 'DataLookup'
+            },
             HeaderExtension: {
                 _enum: {
                     V1: 'V1HeaderExtension',
+                    V2: 'V2HeaderExtension',
                     VTest: 'VTHeaderExtension'
                 }
             },
@@ -132,4 +145,10 @@ export function createApi(): Promise<ApiPromise> {
             },
         },
     });
+}
+
+//async funtion to get the nonce    
+export async function getNonce(api: ApiPromise, address: string): Promise<number> {
+    const nonce = (await api.rpc.system.accountNextIndex(address)).toNumber();
+    return nonce;
 }

@@ -24,7 +24,7 @@
     "typescript": "^4.5.5"
   },
   "dependencies": {
-    "@polkadot/api": "^7.9.1",
+    "@polkadot/api": "^10.7.2",
     "yargs": "^17.6.2"
   }
 }
