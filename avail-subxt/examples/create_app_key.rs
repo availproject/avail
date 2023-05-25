@@ -21,8 +21,7 @@ async fn main() -> Result<()> {
 	let pair_a = Pair::from_string_with_seed(ALICE_SEED, None).unwrap();
 	let signer_a = PairSigner::<AvailConfig, sr25519::Pair>::new(pair_a.0);
 
-	// app key to submit
-	let app_id = b"1".to_vec();
+	let app_id = b"my_app_name".to_vec();
 	let create_application_key = api::tx()
 		.data_availability()
 		.create_application_key(BoundedVec(app_id));
