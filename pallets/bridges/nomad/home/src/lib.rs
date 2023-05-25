@@ -238,7 +238,9 @@ pub mod pallet {
 
 			// Get nonce and set new nonce
 			Nonces::<T>::try_mutate(destination_domain, |nonce| -> Result<(), DispatchError> {
-				let new_nonce = nonce.checked_add(1).ok_or(DispatchError::from(Overflow))?;
+				let new_nonce = nonce
+					.checked_add(1)
+					.ok_or_else(|| DispatchError::from(Overflow))?;
 
 				// Format message and get message hash
 				let message = NomadMessage {
@@ -348,7 +350,7 @@ pub mod pallet {
 
 			// Ensure updater signature is valid
 			ensure!(
-				base.is_updater_signature(&signed_update)
+				base.is_updater_signature(signed_update)
 					.map_err(|_| Error::<T>::SignatureRecoveryError)?,
 				Error::<T>::InvalidUpdaterSignature,
 			);

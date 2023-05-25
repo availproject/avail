@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 avail-base = { path = "../../base", default-features = false }
-kate-rpc-runtime-api = { path = "../kate-rpc-runtime-api", default-features = false }
 da-runtime = { path = "../../runtime", default-features = false }
 
 da-primitives = { version = "0.4", default-features = false }
@@ -32,7 +31,6 @@ default = ["std"]
 std = [
 	"avail-base/std",
 	"da-runtime/std",
-	"kate-rpc-runtime-api/std",
 	"da-primitives/std",
 	"kate/std",
 	"kate-recovery/std",
@@ -42,3 +40,9 @@ std = [
 	"sp-api/std",
 	"sp-runtime/std",
 ]
+
+# Enables secure seed generation using for padding fill during the matrix 
+# generation for Kate commitment.
+# NOTE: WIP because that affects the Data Availability Protocol used during 
+# the block import process.
+secure_padding_fill = []

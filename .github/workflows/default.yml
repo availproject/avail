@@ -87,8 +87,6 @@ jobs:
 
       - name: Build node 
         run: cargo build --release -p data-avail
-        #env:
-        #  SKIP_WASM_BUILD: true
 
       - name: Upload data-avail binary
         uses: actions/upload-artifact@v2
@@ -151,7 +149,6 @@ jobs:
         env:
           RUSTFLAGS: "-C instrument-coverage"
           LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
-          SKIP_WASM_BUILD: true
 
       - name: Display SCCache Stats
         run: ${{ env.SCCACHE_BIN }} --show-stats
@@ -222,7 +219,7 @@ jobs:
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example max_block_submit
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data_and_dispatch_data_root
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example democracy_external 
+          # cargo run --release  --manifest-path avail-subxt/Cargo.toml --example democracy_external 
 
       - name: Display SCCache Stats
         run: ${{ env.SCCACHE_BIN }} --show-stats

@@ -1,9 +1,10 @@
-use da_primitives::{asdr::AppUncheckedExtrinsic, Header as DaHeader};
+use da_primitives::{asdr::AppUncheckedExtrinsic, Header as DaHeader, OpaqueExtrinsic};
 use sp_runtime::{
-	generic,
+	generic, impl_opaque_keys,
 	traits::{BlakeTwo256, IdentifyAccount, Verify},
-	MultiSignature, OpaqueExtrinsic,
+	MultiSignature,
 };
+use sp_std::vec::Vec;
 
 use crate::{migration, AllPalletsWithSystem, Runtime, RuntimeCall};
 
@@ -40,6 +41,9 @@ pub type NodeBlock = generic::Block<Header, OpaqueExtrinsic>;
 pub type SignedBlock = generic::SignedBlock<Block>;
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
+/// VRF Seed type.
+pub type Seed = [u8; 32];
+
 /// The SignedExtension to the basic transaction logic.
 ///
 /// When you change this, you **MUST** modify [`sign`] in `bin/node/testing/src/keyring.rs`!
@@ -71,6 +75,18 @@ pub type Executive = frame_executive::Executive<
 	Migrations,
 >;
 
-// All migrations executed on runtime upgrade as a nested tuple of types implementing
-// `OnRuntimeUpgrade`.
+/// All migrations executed on runtime upgrade as a nested tuple of types implementing
+/// `OnRuntimeUpgrade`.
 type Migrations = (migration::Migration,);
+
+/// ID type for named reserves.
+pub type ReserveIdentifier = [u8; 8];
+
+impl_opaque_keys! {
+	pub struct SessionKeys {
+		pub babe: crate::Babe,
+		pub grandpa: crate::Grandpa,
+		pub im_online: crate::ImOnline,
+		pub authority_discovery: crate::AuthorityDiscovery,
+	}
+}

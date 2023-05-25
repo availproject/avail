@@ -1,12 +1,12 @@
 use da_primitives::Header;
 use frame_support::{parameter_types, weights::Weight};
-use frame_system::{self as system, test_utils::TestRandomness};
+use frame_system::{self as system, mocking::MockUncheckedExtrinsic, test_utils::TestRandomness};
 use primitive_types::H256;
 use sp_runtime::traits::{BlakeTwo256, ConstU32, IdentityLookup};
 
 use crate as updater_manager;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
@@ -55,6 +55,7 @@ impl system::Config for Test {
 	type SS58Prefix = ();
 	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
+	type UncheckedExtrinsic = UncheckedExtrinsic;
 	type Version = ();
 }
 

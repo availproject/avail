@@ -33,7 +33,7 @@ use subxt::utils::H256;
 #[rustfmt::skip]
 pub mod constants {
 	pub const COUNCIL_SUPER_MAJORITY: [&'static str; 9] = [ "Alice", "Bob", "Charlie", "Dave", "Eve", "Ferdie", "Alice//stash", "Bob//stash", "Charlie//stash"];
-	pub const THREASHOLD: u32 = 5;
+	pub const THREASHOLD: u32 = 2;
 }
 
 #[derive(Debug, Default, Constructor)]

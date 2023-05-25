@@ -1,25 +1,36 @@
-#!/bin/sh
-cat /entrypoint.sh;
+#!/bin/bash
 
-trap cleanup 1 2 3 6
+da_bin=/da/bin/data-avail
+da_keystore=/da/keystore
 
-cleanup()
-{
-  echo "Done cleanup ... quitting."
-  exit 1
-}
+# Reload the keystore from secrets at /run/secrets/keystore.suri
+if [[ ! -z "${RELOAD_KEYSTORE}" ]]; then
+	for item in "babe sr25519" "gran ed25519" "imon sr25519" "audi sr25519" "auth sr25519"; do
+		item_to_array=( $item )
+		key_type=${item_to_array[0]}
+		scheme=${item_to_array[1]}
 
-/da/bin/data-avail \
+		echo "Reloading key type ${key_type}:${scheme} into ${da_keystore}"
+
+		${da_bin} key insert \
+			--chain=${DA_CHAIN} \
+			--keystore-path=${da_keystore} \
+			--key-type=${key_type} \
+			--scheme=${scheme} \
+			--suri=/run/secrets/keystore.suri
+
+		done;
+fi
+
+echo "Launching validator ${DA_NAME} on chain ${DA_CHAIN}..."
+${da_bin} \
 	--validator \
 	--base-path /da/state \
-	--keystore-path /da/keystore \
-	--execution=NativeElseWasm \
+	--keystore-path ${da_keystore} \
 	--offchain-worker=Always \
 	--enable-offchain-indexing=true \
-	--name $DA_NAME \
-	--chain $DA_CHAIN \
-	--port $DA_P2P_PORT \
-	--bootnodes=$BOOTNODE_1 \
-	--bootnodes=$BOOTNODE_2 \
-	--bootnodes=$BOOTNODE_3 \
+	--execution native-else-wasm \
+	--name=${DA_NAME} \
+	--chain=${DA_CHAIN} \
+	--port=${DA_P2P_PORT} \
 	$@

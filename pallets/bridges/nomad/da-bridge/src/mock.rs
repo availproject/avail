@@ -1,22 +1,21 @@
 use da_primitives::Header;
-use frame_support::{
-	parameter_types,
-	traits::{ConstU32, GenesisBuild},
-	weights::Weight,
-};
+use frame_support::{traits::GenesisBuild, weights::Weight};
 use frame_system::{self as system, header_builder::da, test_utils::TestRandomness};
 use nomad_base::NomadBase;
 use primitive_types::{H160, H256};
 use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, ConstU32, IdentityLookup},
 	AccountId32,
 };
 
-use crate as home;
+use crate::{self as da_bridge};
 
+// type TestXt = sp_runtime::testing::TestXt<Call, SignedExtra>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+pub type Block = frame_system::mocking::MockBlock<Test>;
+pub type BlockNumber = u32;
 
+// TODO: add proper config once frame executive mocking has been demonstrated
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
 	pub enum Test where
@@ -24,13 +23,14 @@ frame_support::construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system,
-		Home: home,
-		UpdaterManager: nomad_updater_manager,
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		UpdaterManager: nomad_updater_manager::{Pallet, Call, Storage, Event<T>},
+		Home: nomad_home::{Pallet, Call, Storage, Event<T>},
+		DABridge: da_bridge::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
-parameter_types! {
+frame_support::parameter_types! {
 	pub const BlockHashCount: u32 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1_024));
@@ -43,7 +43,7 @@ impl system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
-	type BlockNumber = u32;
+	type BlockNumber = BlockNumber;
 	type BlockWeights = ();
 	type DbWeight = ();
 	type Hash = H256;
@@ -64,21 +64,32 @@ impl system::Config for Test {
 	type SS58Prefix = ();
 	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
+	type UncheckedExtrinsic = UncheckedExtrinsic;
 	type Version = ();
 }
 
-parameter_types! {
+impl nomad_updater_manager::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
+}
+
+frame_support::parameter_types! {
 	pub const MaxMessageBodyBytes: u32 = 2048;
 }
 
-impl home::Config for Test {
+impl nomad_home::Config for Test {
 	type MaxMessageBodyBytes = MaxMessageBodyBytes;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }
 
-impl nomad_updater_manager::Config for Test {
+frame_support::parameter_types! {
+	pub const DABridgePalletId: H256 = H256::zero();
+}
+
+impl da_bridge::Config for Test {
+	type DABridgePalletId = DABridgePalletId;
 	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
 }
 
 pub(crate) struct ExtBuilder {
@@ -110,14 +121,14 @@ impl ExtBuilder {
 			.build_storage::<Test>()
 			.expect("Frame system builds valid default genesis config");
 
-		home::GenesisConfig::<Test> {
+		nomad_home::GenesisConfig::<Test> {
 			updater: self.updater,
 			local_domain: self.local_domain,
 			committed_root: self.committed_root,
 			_phantom: Default::default(),
 		}
 		.assimilate_storage(&mut t)
-		.expect("Nomad base storage cannot be assimilated");
+		.expect("Pallet base storage can be assimilated");
 		nomad_updater_manager::GenesisConfig::<Test> {
 			updater: self.updater,
 			_phantom: Default::default(),
@@ -131,16 +142,25 @@ impl ExtBuilder {
 	}
 }
 
-pub(crate) fn events() -> Vec<super::Event<Test>> {
+pub(crate) fn _events() -> Vec<super::Event<Test>> {
 	System::events()
 		.into_iter()
 		.map(|r| r.event)
 		.filter_map(|e| {
-			if let RuntimeEvent::Home(inner) = e {
+			if let RuntimeEvent::DABridge(inner) = e {
 				Some(inner)
 			} else {
 				None
 			}
 		})
 		.collect::<Vec<_>>()
+}
+
+pub(crate) fn fill_block_hash_mapping_up_to_n(n: u8) {
+	for i in 0..=n {
+		frame_system::BlockHash::<Test>::insert::<u32, <Test as system::Config>::Hash>(
+			(n as u32).into(),
+			H256::repeat_byte(i).into(),
+		);
+	}
 }

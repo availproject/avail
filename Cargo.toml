@@ -1,11 +1,10 @@
 [workspace]
 members = [
-	"pallets/executive",
 	"pallets/system",
 	"pallets/dactr",
-	"pallets/nomad/updater-manager",
-	"pallets/nomad/home",
-	"pallets/nomad/da-bridge",
+	"pallets/bridges/nomad/updater-manager",
+	"pallets/bridges/nomad/home",
+	"pallets/bridges/nomad/da-bridge",
 	"runtime",
 	"node",
 ]
@@ -14,26 +13,24 @@ members = [
 [patch."https://github.com/paritytech/substrate.git"]
 frame-system = { path = "pallets/system" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
-frame-executive = { path = "pallets/executive" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 
 [patch.crates-io]
 # Customized Local pallets
 frame-system = { path = "pallets/system" }
-frame-executive = { path = "pallets/executive" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 
 # DA Primitives
-da-primitives = { version = "0.4", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.5" }
-kate = { version = "0.7", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.5" }
-kate-recovery = { version = "0.8", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.5" }
+da-primitives = { version = "0.4", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
+kate = { version = "0.7", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
+kate-recovery = { version = "0.8", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
 
 # Nomad
-nomad-signature = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.5" }
-nomad-merkle = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.5" }
-nomad-base = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.5" }
-nomad-core = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.5" }
+nomad-signature = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
+nomad-merkle = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
+nomad-base = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
+nomad-core = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
 
 # Other stuff
 uint = { git = "https://github.com/paritytech/parity-common.git", tag="rlp-v0.5.2" }
@@ -93,6 +90,7 @@ sp-weights = { git = "https://github.com/paritytech/substrate.git", branch = "po
 sc-sysinfo = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 
 ## Frame
+frame-executive = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 frame-try-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
