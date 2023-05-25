@@ -15,7 +15,9 @@ This example queries the Avail for the Merkle proof which is then checked agains
 contract [ValidiumContract.sol](contracts%2FValidiumContract.sol).
 
 In order to run these examples, install all necessary dependencies via **npm** 
-and make sure that all variables in **.env** file are populated (`DATA`, `SURI`, etc...).  
+and make sure that all variables in **.env** file are populated (`DATA`, `SURI`, etc...), 
+more details in the Avail documentation for [Validiums](https://availproject.github.io/using-avail/validiums#verify-data-availability-on-ethereum).
+
 Running submit data example:
 ```bash
   node submitData.js
