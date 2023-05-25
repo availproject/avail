@@ -1,0 +1,19 @@
+{
+  "name": "avail-examples",
+  "version": "1.0.0",
+  "description": "Examples of submitting data to Avail and checking data availability on Ethereum network.",
+  "main": "index.js",
+  "type": "module",
+  "keywords": [
+    "avail",
+    "validium",
+    "bridge"
+  ],
+  "license": "ISC",
+  "dependencies": {
+    "@polkadot/api": "^10.4.1",
+    "@polkadot/keyring": "^12.2.1",
+    "dotenv": "^16.0.3",
+    "ethers": "^5.7.2"
+  }
+}
