@@ -1,13 +1,10 @@
-import {ApiPromise, WsProvider, Keyring} from '@polkadot/api';
-import {KeyringPair} from '@polkadot/keyring/types';
-import type {EventRecord, ExtrinsicStatus, H256} from '@polkadot/types/interfaces';
-import type {ISubmittableResult, SignatureOptions} from '@polkadot/types/types';
+import {Keyring} from '@polkadot/api';
+import type {ISubmittableResult} from '@polkadot/types/types';
 import config from './config';
 import {createApi} from './api';
 import '@polkadot/api-augment';
 
 const keyring = new Keyring({type: 'sr25519'});
-
 
 /**
  * Example of transfer token from Alice to Bob with status end event tracking.

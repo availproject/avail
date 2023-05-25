@@ -1,6 +1,5 @@
 import {ApiPromise, Keyring} from '@polkadot/api';
 import {KeyringPair} from '@polkadot/keyring/types';
-import type {H256} from '@polkadot/types/interfaces';
 import type {ISubmittableResult} from '@polkadot/types/types';
 import yargs from 'yargs/yargs';
 import {createApi} from './api';
