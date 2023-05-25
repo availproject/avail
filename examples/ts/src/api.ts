@@ -5,6 +5,8 @@ export async function createApi(): Promise<ApiPromise> {
     const provider = new WsProvider(config.ApiURL);
     return ApiPromise.create({
         provider,
+        // Pass the below flag to true 👇 to see initial warning about api / rpc decorations
+        noInitWarn: true,
         rpc: {
             kate: {
                 blockLength: {

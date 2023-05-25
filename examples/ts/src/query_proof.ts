@@ -4,7 +4,7 @@ import config from "./config";
 import {ISubmittableResult} from "@polkadot/types/types";
 
 /**
- *
+ * Example of getting the proof for data submission.
  */
 async function main() {
     const api: any = await createApi();
