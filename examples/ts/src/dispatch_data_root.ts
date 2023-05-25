@@ -35,7 +35,7 @@ async function main() {
     const blockHash = res.status.asFinalized
     const header = await api.rpc.chain.getHeader(blockHash);
 
-    const tx = api.tx.daBridge.tryDispatchDataRoot(destinationDomain, bridgeRouterEthAddress, header);
+    const tx = api.tx.nomadDABridge.tryDispatchDataRoot(destinationDomain, bridgeRouterEthAddress, header);
 
     await dispatchDataRoot(api, sender, tx)
 }

@@ -31,7 +31,7 @@ async function dispatchDataRoot(availApi, blockHash, account) {
     const header = await availApi.rpc.chain.getHeader(blockHash);
     console.log(`Block Number: ${header.number}`);
     console.log(`State Root: ${header.stateRoot}`);
-    let tx = await availApi.tx.daBridge.tryDispatchDataRoot(destinationDomain, bridgeRouterEthAddress, header);
+    let tx = await availApi.tx.nomadDABridge.tryDispatchDataRoot(destinationDomain, bridgeRouterEthAddress, header);
     return await sendTx(availApi, account, tx);
 }
 
