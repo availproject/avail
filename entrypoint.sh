@@ -33,4 +33,4 @@ ${da_bin} \
 	--name=${DA_NAME} \
 	--chain=${DA_CHAIN} \
 	--port=${DA_P2P_PORT} \
-	$@
+	"$@"
