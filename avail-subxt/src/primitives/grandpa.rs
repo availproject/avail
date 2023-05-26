@@ -4,7 +4,7 @@ use serde::{Serialize, Serializer};
 use crate::api::runtime_types::sp_finality_grandpa::app::Public;
 
 #[derive(Decode)]
-pub struct AuthorityId(Public);
+pub struct AuthorityId(pub Public);
 
 impl Serialize for AuthorityId {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

@@ -5,7 +5,7 @@ use serde_hex::{SerHex, StrictPfx};
 use crate::api::runtime_types::{sp_consensus_babe::app::Public, sp_core::sr25519::Signature};
 
 #[derive(Decode)]
-pub struct AuthorityId(Public);
+pub struct AuthorityId(pub Public);
 
 impl Serialize for AuthorityId {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -18,7 +18,7 @@ impl Serialize for AuthorityId {
 }
 
 #[derive(Decode)]
-pub struct AuthoritySignature(Signature);
+pub struct AuthoritySignature(pub Signature);
 
 impl Serialize for AuthoritySignature {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
