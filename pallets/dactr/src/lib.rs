@@ -111,7 +111,7 @@ pub mod pallet {
 			key: AppKeyFor<T>,
 		) -> DispatchResultWithPostInfo {
 			let owner = ensure_signed(origin)?;
-
+			ensure!(!key.is_empty(), Error::<T>::AppKeyCannotBeEmpty);
 			let id = AppKeys::<T>::try_mutate(&key, |key_info| -> Result<AppId, Error<T>> {
 				ensure!(key_info.is_none(), Error::<T>::AppKeyAlreadyExists);
 
@@ -135,6 +135,7 @@ pub mod pallet {
 			data: AppDataFor<T>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
+			ensure!(!data.is_empty(), Error::<T>::DataCannotBeEmpty);
 			Self::deposit_event(Event::DataSubmitted { who, data });
 
 			Ok(().into())
@@ -198,11 +199,17 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// The application key already exists.
 		AppKeyAlreadyExists,
+		/// The application key is an empty string.
+		AppKeyCannotBeEmpty,
 		/// The last application ID overflowed.
 		LastAppIdOverflowed,
+		/// The submitted data is empty.
+		DataCannotBeEmpty,
 		/// The last block length proposal Id overflowed.
 		LastBlockLenProposalIdOverflowed,
+		/// The proposed block dimensions are out of bounds.
 		BlockDimensionsOutOfBounds,
+		/// The proposed block dimensions are too small.
 		BlockDimensionsTooSmall,
 	}
 

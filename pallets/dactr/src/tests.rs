@@ -47,31 +47,13 @@ mod create_application_key {
 	}
 
 	#[test]
-	fn create_application_key_empty() {
+	fn app_key_cannot_be_empty() {
 		new_test_ext().execute_with(|| {
 			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
-			let new_id = DataAvailability::peek_next_application_id();
 			let new_key = AppKeyFor::<Test>::try_from(vec![]).unwrap();
 
-			assert_eq!(DataAvailability::application_key(&new_key), None);
-			assert_ok!(DataAvailability::create_application_key(
-				alice,
-				new_key.clone()
-			));
-			assert_eq!(
-				DataAvailability::application_key(&new_key),
-				Some(AppKeyInfoFor::<Test> {
-					id: new_id,
-					owner: ALICE
-				})
-			);
-
-			let event = RuntimeEvent::DataAvailability(Event::ApplicationKeyCreated {
-				key: new_key,
-				owner: ALICE,
-				id: new_id,
-			});
-			System::assert_last_event(event);
+			let err = DataAvailability::create_application_key(alice, new_key);
+			assert_noop!(err, Error::AppKeyCannotBeEmpty);
 		})
 	}
 
@@ -110,15 +92,13 @@ mod submit_data {
 	}
 
 	#[test]
-	fn submit_data_empty() {
+	fn data_cannot_be_empty() {
 		new_test_ext().execute_with(|| {
 			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
 			let data = AppDataFor::<Test>::try_from(vec![]).unwrap();
 
-			assert_ok!(DataAvailability::submit_data(alice, data.clone()));
-
-			let event = RuntimeEvent::DataAvailability(Event::DataSubmitted { who: ALICE, data });
-			System::assert_last_event(event);
+			let err = DataAvailability::submit_data(alice, data);
+			assert_noop!(err, Error::DataCannotBeEmpty);
 		})
 	}
 
