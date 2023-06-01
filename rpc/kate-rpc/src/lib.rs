@@ -197,12 +197,9 @@ where
 
 				// Use Babe's VRF
 				let seed: [u8; 32] =
-					self.client
-						.runtime_api()
-						.babe_vrf(&block_id)
-						.map_err(|e| {
-							internal_err!("Babe VRF not found for block {}: {:?}", block_id, e)
-						})?;
+					self.client.runtime_api().babe_vrf(&block_id).map_err(|e| {
+						internal_err!("Babe VRF not found for block {}: {:?}", block_id, e)
+					})?;
 
 				let mut evals = kate::gridgen::EvaluationGrid::from_extrinsics(
 					xts_by_id.clone(),
@@ -393,7 +390,7 @@ where
 		let calls = block
 			.extrinsics()
 			.iter()
-            .cloned()
+			.cloned()
 			.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
 			.map(|app_ext| app_ext.function);
 

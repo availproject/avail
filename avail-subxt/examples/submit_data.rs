@@ -92,10 +92,10 @@ async fn main() -> Result<()> {
 
 	let pp = kate::testnet::public_params(256.into());
 	let ext = if let HeaderExtension::V1(ref ext) = submitted_block.block.header.extension {
-        ext
-    } else {
-        panic!("Unsupported header extension version")
-    };
+		ext
+	} else {
+		panic!("Unsupported header extension version")
+	};
 	let commitment: [u8; 48] = ext.commitment.commitment[..48].try_into().unwrap();
 	let dcell = kate_recovery::data::Cell {
 		position: kate_recovery::matrix::Position { row: 0, col: 0 },
