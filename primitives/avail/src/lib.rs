@@ -3,6 +3,9 @@
 pub use da_types::{BlockLengthColumns, BlockLengthRows};
 use sp_runtime::Perbill;
 
+pub mod opaque_extrinsic;
+pub use opaque_extrinsic::*;
+
 /// Customized headers.
 pub mod header;
 pub use header::*;

@@ -8,7 +8,9 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 
 mod data_lookup;
+mod get_app_id;
 pub use data_lookup::*;
+pub use get_app_id::*;
 
 /// Raw Extrinsic with application id.
 #[derive(Clone, TypeInfo, Default, Encode, Decode)]
@@ -18,6 +20,31 @@ pub use data_lookup::*;
 pub struct AppExtrinsic {
 	pub app_id: AppId,
 	pub data: Vec<u8>,
+}
+#[cfg(feature = "substrate")]
+impl<A, C, S, E> From<sp_runtime::generic::UncheckedExtrinsic<A, C, S, E>> for AppExtrinsic
+where
+	A: Encode,
+	C: Encode,
+	S: Encode,
+	E: sp_runtime::traits::SignedExtension + crate::GetAppId,
+{
+	fn from(ue: sp_runtime::generic::UncheckedExtrinsic<A, C, S, E>) -> Self {
+		let app_id = ue
+			.signature
+			.as_ref()
+			.map(|(_, _, extra)| extra.app_id())
+			.unwrap_or_default();
+		let data = ue.encode();
+
+		Self { app_id, data }
+	}
+}
+
+impl GetAppId for AppExtrinsic {
+	fn app_id(&self) -> AppId {
+		self.app_id
+	}
 }
 
 #[derive(

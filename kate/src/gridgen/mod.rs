@@ -246,7 +246,10 @@ pub struct PolynomialGrid {
 }
 
 impl PolynomialGrid {
-	pub fn commitments(&self, srs: &(impl Committer<Bls12_381> + Sync)) -> Result<Vec<Commitment>, Error> {
+	pub fn commitments(
+		&self,
+		srs: &(impl Committer<Bls12_381> + Sync),
+	) -> Result<Vec<Commitment>, Error> {
 		cfg_iter!(self.inner)
 			.map(|poly| srs.commit(poly).map_err(Error::MultiproofError))
 			.collect()

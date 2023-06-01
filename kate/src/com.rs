@@ -68,9 +68,9 @@ impl From<PlonkError> for Error {
 }
 
 impl From<poly_multiproof::Error> for Error {
-    fn from(err: poly_multiproof::Error) -> Self {
-        Self::MultiproofError(err)
-    }
+	fn from(err: poly_multiproof::Error) -> Self {
+		Self::MultiproofError(err)
+	}
 }
 
 pub type XtsLayout = Vec<(AppId, u32)>;

@@ -1,4 +1,4 @@
-use crate::asdr::AppId;
+use crate::AppId;
 
 /// Get application Id trait
 pub trait GetAppId {
@@ -22,7 +22,7 @@ impl<A, B, C, D, E, F, G, H, I: GetAppId> GetAppId for (A, B, C, D, E, F, G, H, 
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::asdr::AppId;
+	use crate::AppId;
 
 	struct CustomAppId {}
 

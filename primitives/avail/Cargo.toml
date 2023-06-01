@@ -1,8 +1,8 @@
 [package]
 name = "da-primitives"
-version = "0.4.5"
+version = "0.4.6"
 authors = []
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 # Others
@@ -52,7 +52,6 @@ std = [
 ]
 
 header-backward-compatibility-test = []
-fast_app_unchecked_try_from_opaque = []
 try-runtime = [
 	"sp-runtime/try-runtime",
 ]

@@ -14,10 +14,11 @@ serde = { version = "1.0", features = ["derive"], optional = true }
 
 parity-util-mem = { version = "*", default-features = false, optional = true }
 sp-debug-derive = { version = "*", default-features = false, optional = true }
+sp-runtime = { version = "*", default-features = false, optional = true }
 
 [dev-dependencies]
 
 [features]
 default = ["std"]
 std = ["serde", "parity-scale-codec/std", "scale-info/std", "num-traits/std"]
-substrate = ["sp-debug-derive", "parity-util-mem"]
+substrate = ["sp-debug-derive", "parity-util-mem", "sp-runtime"]

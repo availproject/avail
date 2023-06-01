@@ -1,6 +1,9 @@
 use da_types::{AppExtrinsic, AppId};
 use hex_literal::hex;
-use kate::{pmp::{merlin::Transcript, traits::PolyMultiProofNoPrecomp}, Seed};
+use kate::{
+	pmp::{merlin::Transcript, traits::PolyMultiProofNoPrecomp},
+	Seed,
+};
 use poly_multiproof::traits::AsBytes;
 use rand::thread_rng;
 
