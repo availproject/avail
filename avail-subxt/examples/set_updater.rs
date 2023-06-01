@@ -9,7 +9,7 @@ use subxt::tx::PairSigner;
 #[async_std::main]
 async fn main() -> Result<()> {
 	let args = Opts::from_args();
-	let client = build_client(args.ws).await?;
+	let client = build_client(args.ws, args.validate_codegen).await?;
 
 	let new_updater = "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955";
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());

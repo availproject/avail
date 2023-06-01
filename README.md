@@ -71,13 +71,15 @@ running the benchmarks from `da-control` pallet, and the generated file is
 
     $> cargo run --release -p data-avail --features runtime-benchmarks -- \
         benchmark \
+        pallet \
         --chain=dev \
-        --steps=20 \
+        --steps=50 \
         --repeat=30 \
         --log=warn \
         --execution=wasm \
         --wasm-execution=compiled \
         --template=./.maintain/frame-weight-template.hbs \
+        --header=./HEADER-APACHE2 \
         --pallet=da-control \
         --extrinsic=* \
         --output=./pallets/dactr/src/weights.rs

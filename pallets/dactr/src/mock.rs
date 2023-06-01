@@ -8,37 +8,29 @@ use frame_support::{
 	parameter_types,
 	weights::{ConstantMultiplier, IdentityFee, Weight},
 };
-use frame_system::{header_builder::da::HeaderExtensionBuilder, test_utils::TestRandomness};
+use frame_system::{
+	header_builder::da::HeaderExtensionBuilder, mocking::MockUncheckedExtrinsic,
+	test_utils::TestRandomness,
+};
 use pallet_transaction_payment::CurrencyAdapter;
 use sp_core::H256;
-use sp_runtime::{
-	generic,
-	traits::{BlakeTwo256, ConstU32, IdentityLookup},
-};
+use sp_runtime::traits::{BlakeTwo256, ConstU32, IdentityLookup};
 
 use crate::{self as da_control, *};
 
 /// An unchecked extrinsic type to be used in tests.
-pub type UncheckedExtrinsic<T, Signature = (), Extra = ()> = generic::UncheckedExtrinsic<
-	<T as frame_system::Config>::AccountId,
-	<T as frame_system::Config>::RuntimeCall,
-	Signature,
-	Extra,
->;
+type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
 
 /// An implementation of `sp_runtime::traits::Block` to be used in tests.
-pub type Block<T> = generic::Block<
-	Header<<T as frame_system::Config>::BlockNumber, sp_runtime::traits::BlakeTwo256>,
-	UncheckedExtrinsic<T>,
->;
+type Block = frame_system::mocking::MockBlock<Test>;
 
 type BlockNumber = u32;
 
 frame_support::construct_runtime!(
 	pub enum Test where
-		Block = Block<Test>,
-		NodeBlock = Block<Test>,
-		UncheckedExtrinsic = UncheckedExtrinsic<Test>,
+		Block = Block,
+		NodeBlock = Block,
+		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system,
 		Balances: pallet_balances,
@@ -81,6 +73,7 @@ impl frame_system::Config for Test {
 	type SS58Prefix = ();
 	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
+	type UncheckedExtrinsic = UncheckedExtrinsic;
 	type Version = ();
 }
 

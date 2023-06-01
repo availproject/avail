@@ -16,13 +16,18 @@
 // limitations under the License.
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use da_primitives::Header as DaHeader;
 use frame_support::{
 	traits::{ConstU32, ConstU64},
 	weights::Weight,
 };
+use frame_system::{
+	header_builder::da::HeaderExtensionBuilder,
+	mocking::{MockBlock, MockUncheckedExtrinsic},
+	test_utils::TestRandomness,
+};
 use sp_core::H256;
 use sp_runtime::{
-	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 	Perbill,
 };
@@ -47,8 +52,8 @@ mod module {
 	}
 }
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
-type Block = frame_system::mocking::MockBlock<Runtime>;
+type UncheckedExtrinsic = MockUncheckedExtrinsic<Runtime>;
+type Block = MockBlock<Runtime>;
 
 frame_support::construct_runtime!(
 	pub enum Runtime where
@@ -83,7 +88,8 @@ impl frame_system::Config for Runtime {
 	type DbWeight = ();
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type Header = Header;
+	type Header = DaHeader<u64, BlakeTwo256>;
+	type HeaderExtensionBuilder = HeaderExtensionBuilder<Runtime>;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type MaxConsumers = ConstU32<16>;
@@ -91,11 +97,14 @@ impl frame_system::Config for Runtime {
 	type OnNewAccount = ();
 	type OnSetCode = ();
 	type PalletInfo = PalletInfo;
+	type Randomness = TestRandomness<Runtime>;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type SS58Prefix = ();
+	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
+	type UncheckedExtrinsic = UncheckedExtrinsic;
 	type Version = ();
 }
 

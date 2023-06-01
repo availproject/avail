@@ -20,7 +20,10 @@
 #![cfg(test)]
 
 use da_primitives::Header as DaHeader;
-use frame_system::{header_builder::da::HeaderExtensionBuilder, test_utils::TestRandomness};
+use frame_system::{
+	header_builder::da::HeaderExtensionBuilder, mocking::MockUncheckedExtrinsic,
+	test_utils::TestRandomness,
+};
 use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
@@ -28,7 +31,7 @@ type AccountId = u64;
 type AccountIndex = u32;
 type BlockNumber = u32;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 frame_support::construct_runtime!(
@@ -68,6 +71,7 @@ impl frame_system::Config for Test {
 	type SS58Prefix = ();
 	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
+	type UncheckedExtrinsic = UncheckedExtrinsic;
 	type Version = ();
 }
 

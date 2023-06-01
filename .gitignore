@@ -1,10 +1,7 @@
 target
 .gdb_history
 .DS_Store
-tests/.DS_Store
-tests/js_api/.DS_Store
-tests/js_api/node_modules
-tests/js_api/dist
-tests/js_api/src/config.json
+node_modules
+dist
 fuzzing/testing/out
 tests/rust_scripts/target

@@ -1,5 +1,3 @@
-#[cfg(feature = "std")]
-use da_primitives::KateCommitment;
 use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, HeaderExtension};
 use frame_support::traits::Randomness;
 pub use kate::{
@@ -7,9 +5,7 @@ pub use kate::{
 	Seed,
 };
 use sp_core::H256;
-use sp_runtime::traits::Hash;
-#[cfg(feature = "std")]
-use sp_runtime::SaturatedConversion;
+use sp_runtime::{traits::Hash, SaturatedConversion};
 use sp_runtime_interface::runtime_interface;
 use sp_std::vec::Vec;
 
@@ -38,15 +34,15 @@ pub mod da {
 			app_extrinsics: Vec<AppExtrinsic>,
 			data_root: H256,
 			block_length: BlockLength,
+			block_number: u32,
 		) -> HeaderExtension {
 			let seed = Self::random_seed::<T>();
 
-			let unused_block_number = 0u32;
 			super::hosted_header_builder::build(
 				app_extrinsics,
 				data_root,
 				block_length,
-				unused_block_number,
+				block_number,
 				seed,
 			)
 		}
@@ -62,21 +58,22 @@ pub trait HeaderExtensionBuilder {
 		app_extrinsics: Vec<AppExtrinsic>,
 		data_root: H256,
 		block_length: BlockLength,
+		block_number: u32,
 	) -> HeaderExtension;
 
 	/// Generates a random seed using the _epoch seed_ and the _current block_ returned by
 	/// `T::Randomness` type.
 	fn random_seed<T: Config>() -> Seed {
-		let (epoch_seed, block_number) = <T as Config>::Randomness::random_seed();
-		let seed = <T as Config>::Hashing::hash_of(&(&epoch_seed, &block_number));
-
-		log::trace!(
-			target: LOG_TARGET,
-			"Header builder seed {:?} from epoch seed {:?} and block {:?}",
-			seed,
-			epoch_seed,
-			block_number
-		);
+		let seed = if cfg!(feature = "secure_padding_fill") {
+			let (epoch_seed, block_number) = <T as Config>::Randomness::random_seed();
+			let seed = <T as Config>::Hashing::hash_of(&(&epoch_seed, &block_number));
+			log::trace!(
+				target: LOG_TARGET,
+				"Header builder seed {seed:?} from epoch seed {epoch_seed:?} and block {block_number:?}");
+			seed
+		} else {
+			<T as Config>::Hash::default()
+		};
 
 		seed.into()
 	}
@@ -97,18 +94,38 @@ fn build_extension_v_test(
 	}
 }
 
+#[cfg(feature = "header_commitment_corruption")]
+fn corrupt_commitment(block_number: u32, commitment: &mut Vec<u8>) {
+	if let Some(ref_byte) = commitment.get_mut(0) {
+		log::trace!(
+			target: LOG_TARGET,
+			"Block {block_number}, corrupting 1st byte of commitment from {ref_byte:x} to {:x}",
+			*ref_byte ^ 0xffu8
+		);
+
+		*ref_byte ^= 0xffu8;
+	} else {
+		log::trace!(
+			target: LOG_TARGET,
+			"Block {block_number}, corrupting commitment by adding one `0xFF` byte "
+		);
+		commitment.push(0xffu8)
+	}
+}
+
 #[cfg(feature = "std")]
-fn build_extension<M: Metrics>(
+pub fn build_extension<M: Metrics>(
 	app_extrinsics: &[AppExtrinsic],
 	data_root: H256,
 	block_length: BlockLength,
+	_block_number: u32,
 	seed: Seed,
 	metrics: &M,
 ) -> HeaderExtension {
-	use da_primitives::header::extension::v1;
 	use once_cell::sync::Lazy;
 	static PMP: Lazy<kate::pmp::m1_blst::M1NoPrecomp> =
 		once_cell::sync::Lazy::new(|| kate::testnet::multiproof_params(256, 256));
+	use da_primitives::header::extension::{v1, v2};
 
 	let grid = kate::gridgen::EvaluationGrid::from_extrinsics(
 		app_extrinsics.to_vec(),
@@ -130,17 +147,55 @@ fn build_extension<M: Metrics>(
 		.collect::<Vec<u8>>();
 
 	// We must put the un-extended dimensions into this commitment object!
-	let commitment = KateCommitment {
-		rows: grid.dims.height().saturated_into::<u16>(),
-		cols: grid.dims.width().saturated_into::<u16>(),
-		commitment,
-		data_root,
-	};
+	//let commitment = KateCommitment {
+	//	rows: grid.dims.height().saturated_into::<u16>(),
+	//	cols: grid.dims.width().saturated_into::<u16>(),
+	//	commitment,
+	//	data_root,
+	//};
 
-	HeaderExtension::V1(v1::HeaderExtension {
-		commitment,
-		app_lookup: grid.lookup,
-	})
+	//HeaderExtension::V1(v1::HeaderExtension {
+	//	commitment,
+	//	app_lookup: grid.lookup,
+	//})
+	let rows = grid.dims.height().saturated_into::<u16>();
+	let cols = grid.dims.width().saturated_into::<u16>();
+
+	if cfg!(feature = "header_extension_v2") {
+		use da_primitives::kate_commitment::v2::KateCommitment;
+		#[allow(unused_mut)]
+		let mut kate = KateCommitment::new(rows, cols, data_root, commitment);
+
+		#[cfg(feature = "header_commitment_corruption")]
+		if _block_number > 20 {
+			corrupt_commitment(_block_number, &mut kate.commitment);
+		}
+
+		v2::HeaderExtension {
+			commitment: kate,
+			app_lookup: grid.lookup,
+		}
+		.into()
+	} else {
+		#[allow(unused_mut)]
+		let mut kate = da_primitives::kate_commitment::v1::KateCommitment {
+			rows,
+			cols,
+			commitment,
+			data_root,
+		};
+
+		#[cfg(feature = "header_commitment_corruption")]
+		if _block_number > 20 {
+			corrupt_commitment(_block_number, &mut kate.commitment);
+		}
+
+		v1::HeaderExtension {
+			commitment: kate,
+			app_lookup: grid.lookup,
+		}
+		.into()
+	}
 }
 
 /// Hosted function to build the header using `kate` commitments.
@@ -153,11 +208,18 @@ pub trait HostedHeaderBuilder {
 		app_extrinsics: Vec<AppExtrinsic>,
 		data_root: H256,
 		block_length: BlockLength,
-		_block_number: u32,
+		block_number: u32,
 		seed: Seed,
 	) -> HeaderExtension {
 		let metrics = avail_base::metrics::MetricAdapter {};
-		build_extension(&app_extrinsics, data_root, block_length, seed, &metrics)
+		build_extension(
+			&app_extrinsics,
+			data_root,
+			block_length,
+			block_number,
+			seed,
+			&metrics,
+		)
 	}
 
 	/*

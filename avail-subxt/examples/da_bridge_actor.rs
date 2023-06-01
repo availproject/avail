@@ -25,7 +25,7 @@ fn submit_some_data() -> Result<StaticTxPayload<SubmitData>> {
 #[async_std::main]
 async fn main() -> Result<()> {
 	let args = Opts::from_args();
-	let client = build_client(args.ws).await?;
+	let client = build_client(args.ws, args.validate_codegen).await?;
 
 	let signer = PairSigner::new(Alice.pair());
 	let mut finalized_headers_subscription =
@@ -55,7 +55,7 @@ async fn main() -> Result<()> {
 
 			// 2. Send the `DaBridge::try_dispatch_data_root`.
 			let bridge_router_eth_addr: H160 = DA_BRIDGE_ROUTER_ADDRESS.parse()?;
-			let tx = api::tx().da_bridge().try_dispatch_data_root(
+			let tx = api::tx().nomad_da_bridge().try_dispatch_data_root(
 				DESTINATION_DOMAIN,
 				bridge_router_eth_addr.into(),
 				submit_data_header.into(),

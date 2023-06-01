@@ -17,18 +17,118 @@
 
 //! Provide types to help defining a mock environment when testing pallets.
 
-use sp_runtime::generic;
+use codec::{Decode, Encode};
+use da_primitives::{
+	asdr::{AppExtrinsic, GetAppId, EXTRINSIC_FORMAT_VERSION},
+	OpaqueExtrinsic,
+};
+use scale_info::TypeInfo;
+use sp_runtime::{
+	generic,
+	traits::{DispatchInfoOf, Extrinsic, ExtrinsicMetadata, SignedExtension},
+	transaction_validity::TransactionValidityError,
+};
 
+use crate::Config;
+
+#[derive(Clone, Copy, Default, Debug, Encode, Decode, PartialEq, Eq, TypeInfo)]
+pub struct DefaultGetAppId {}
+
+impl GetAppId for DefaultGetAppId {}
+impl SignedExtension for DefaultGetAppId {
+	type AccountId = u32;
+	type AdditionalSigned = ();
+	type Call = ();
+	type Pre = ();
+
+	const IDENTIFIER: &'static str = "DefaultGetAppId";
+
+	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
+		Ok(())
+	}
+
+	fn pre_dispatch(
+		self,
+		_who: &Self::AccountId,
+		_call: &Self::Call,
+		_info: &DispatchInfoOf<Self::Call>,
+		_len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		Ok(())
+	}
+}
+
+#[derive(Clone, Debug, Decode, Encode, PartialEq, Eq, TypeInfo)]
 /// An unchecked extrinsic type to be used in tests.
-pub type MockUncheckedExtrinsic<T, Signature = (), Extra = ()> = generic::UncheckedExtrinsic<
-	<T as crate::Config>::AccountId,
-	<T as crate::Config>::RuntimeCall,
-	Signature,
-	Extra,
->;
+pub struct MockUncheckedExtrinsic<T: Config>(
+	pub  generic::UncheckedExtrinsic<
+		<T as Config>::AccountId,
+		<T as Config>::RuntimeCall,
+		(),
+		DefaultGetAppId,
+	>,
+);
+
+impl<T: Config> Extrinsic for MockUncheckedExtrinsic<T> {
+	type Call = <T as Config>::RuntimeCall;
+	type SignaturePayload = (<T as Config>::AccountId, (), DefaultGetAppId);
+}
+
+impl<T: Config> ExtrinsicMetadata for MockUncheckedExtrinsic<T> {
+	type SignedExtensions = DefaultGetAppId;
+
+	const VERSION: u8 = EXTRINSIC_FORMAT_VERSION;
+}
+
+#[cfg(feature = "std")]
+impl<T: Config> serde::Serialize for MockUncheckedExtrinsic<T> {
+	fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
+	where
+		S: ::serde::Serializer,
+	{
+		let encoded = self.encode();
+		sp_core::bytes::serialize(&encoded, s)
+	}
+}
+
+#[cfg(feature = "std")]
+impl<'a, T: Config> serde::Deserialize<'a> for MockUncheckedExtrinsic<T> {
+	fn deserialize<D>(de: D) -> Result<Self, D::Error>
+	where
+		D: serde::Deserializer<'a>,
+	{
+		let r = sp_core::bytes::deserialize(de)?;
+		Decode::decode(&mut &r[..])
+			.map_err(|e| serde::de::Error::custom(format!("Decode error: {}", e)))
+	}
+}
+
+impl<T: Config> TryFrom<&[u8]> for MockUncheckedExtrinsic<T> {
+	type Error = codec::Error;
+
+	fn try_from(raw: &[u8]) -> Result<Self, Self::Error> {
+		let encoded = raw.encode();
+		let ut = Self::decode(&mut encoded.as_slice())?;
+
+		Ok(ut)
+	}
+}
+
+impl<T: Config> TryFrom<&OpaqueExtrinsic> for MockUncheckedExtrinsic<T> {
+	type Error = codec::Error;
+
+	fn try_from(opaque: &OpaqueExtrinsic) -> Result<Self, Self::Error> {
+		let encoded = opaque.encode();
+		Self::decode(&mut encoded.as_slice())
+	}
+}
+
+impl<T: Config> From<MockUncheckedExtrinsic<T>> for AppExtrinsic {
+	fn from(xt: MockUncheckedExtrinsic<T>) -> Self { AppExtrinsic::from(xt.0.encode()) }
+}
 
 /// An implementation of `sp_runtime::traits::Block` to be used in tests.
 pub type MockBlock<T> = generic::Block<
-	generic::Header<<T as crate::Config>::BlockNumber, sp_runtime::traits::BlakeTwo256>,
+	generic::Header<<T as Config>::BlockNumber, sp_runtime::traits::BlakeTwo256>,
 	MockUncheckedExtrinsic<T>,
 >;

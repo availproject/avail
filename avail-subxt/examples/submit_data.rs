@@ -32,7 +32,7 @@ use subxt::{config::Header, rpc::RpcParams, tx::PairSigner};
 #[async_std::main]
 async fn main() -> Result<()> {
 	let args = Opts::from_args();
-	let client = build_client(args.ws).await?;
+	let client = build_client(args.ws, args.validate_codegen).await?;
 
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());
 	let mut example_data = [0u8; 12_500];
@@ -91,7 +91,11 @@ async fn main() -> Result<()> {
 		.unwrap();
 
 	let pp = kate::testnet::public_params(256.into());
-	let HeaderExtension::V1(ref ext) = submitted_block.block.header.extension;
+	let ext = if let HeaderExtension::V1(ref ext) = submitted_block.block.header.extension {
+        ext
+    } else {
+        panic!("Unsupported header extension version")
+    };
 	let commitment: [u8; 48] = ext.commitment.commitment[..48].try_into().unwrap();
 	let dcell = kate_recovery::data::Cell {
 		position: kate_recovery::matrix::Position { row: 0, col: 0 },

@@ -123,9 +123,9 @@ mod multiplier_tests {
 	};
 
 	use crate::{
-		constants::{currency::*, time::*},
-		AdjustmentVariable, MaximumMultiplier, MinimumMultiplier, Runtime,
-		RuntimeBlockWeights as BlockWeights, System, TargetBlockFullness, TransactionPayment,
+		constants::{currency::*, system::RuntimeBlockWeights as BlockWeights, time::*},
+		AdjustmentVariable, MaximumMultiplier, MinimumMultiplier, Runtime, System,
+		TargetBlockFullness, TransactionPayment,
 	};
 
 	fn max_normal() -> Weight {

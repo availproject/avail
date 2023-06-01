@@ -23,7 +23,7 @@ use std::sync::Arc;
 
 use codec::Encode;
 use da_primitives::asdr::AppId;
-use da_runtime::{NodeBlock as Block, Runtime, RuntimeApi};
+use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use futures::prelude::*;
 use pallet_transaction_payment::ChargeTransactionPayment;
@@ -58,7 +58,7 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 	);
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		da_runtime::api::dispatch(method, data)
+		da_runtime::apis::api::dispatch(method, data)
 	}
 
 	fn native_version() -> sc_executor::NativeVersion { da_runtime::native_version() }
@@ -74,6 +74,11 @@ type FullGrandpaBlockImport =
 
 /// The transaction pool type defintion.
 pub type TransactionPool = sc_transaction_pool::FullPool<Block, FullClient>;
+
+pub type BlockImport = crate::da_block_import::BlockImport<
+	FullClient,
+	sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
+>;
 
 /// Fetch the nonce of the given `account` from the chain state.
 ///
@@ -167,7 +172,7 @@ pub fn new_partial(
 				sc_rpc::SubscriptionTaskExecutor,
 			) -> Result<jsonrpsee::RpcModule<()>, sc_service::Error>,
 			(
-				sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
+				BlockImport,
 				sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
 				sc_consensus_babe::BabeLink<Block>,
 			),
@@ -233,11 +238,12 @@ pub fn new_partial(
 		grandpa_block_import,
 		client.clone(),
 	)?;
+	let da_block_import = BlockImport::new(client.clone(), block_import);
 
 	let slot_duration = babe_link.config().slot_duration();
 	let import_queue = sc_consensus_babe::import_queue(
 		babe_link.clone(),
-		block_import.clone(),
+		da_block_import.clone(),
 		Some(Box::new(justification_import)),
 		client.clone(),
 		select_chain.clone(),
@@ -260,7 +266,7 @@ pub fn new_partial(
 		telemetry.as_ref().map(|x| x.handle()),
 	)?;
 
-	let import_setup = (block_import, grandpa_link, babe_link);
+	let import_setup = (da_block_import, grandpa_link, babe_link);
 
 	let (rpc_extensions_builder, rpc_setup) = {
 		let (_, grandpa_link, babe_link) = &import_setup;
@@ -342,10 +348,7 @@ pub struct NewFullBase {
 pub fn new_full_base(
 	mut config: Configuration,
 	disable_hardware_benchmarks: bool,
-	with_startup_data: impl FnOnce(
-		&sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
-		&sc_consensus_babe::BabeLink<Block>,
-	),
+	with_startup_data: impl FnOnce(&BlockImport, &sc_consensus_babe::BabeLink<Block>),
 ) -> Result<NewFullBase, ServiceError> {
 	let hwbench = if !disable_hardware_benchmarks {
 		config.database.path().map(|database_path| {

@@ -5,9 +5,9 @@ use avail_base::metrics::RPCMetricAdapter;
 use da_primitives::{
 	asdr::{AppExtrinsic, AppId},
 	traits::ExtendedHeader,
-	DataProof,
+	DataProof, OpaqueExtrinsic,
 };
-use da_runtime::{Runtime, UncheckedExtrinsic};
+use da_runtime::{apis::DataAvailApi, Runtime, UncheckedExtrinsic};
 use frame_system::{limits::BlockLength, submitted_data};
 use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
@@ -18,8 +18,8 @@ use kate::{
 	grid::{Dimensions, Grid as GridTrait},
 	gridgen::{AsBytes, EvaluationGrid, PolynomialGrid},
 	pmp::m1_blst,
+	Seed,
 };
-use kate_rpc_runtime_api::KateParamsGetter;
 use moka::sync::Cache;
 use sc_client_api::BlockBackend;
 use serde::{Deserialize, Serialize};
@@ -137,13 +137,28 @@ macro_rules! internal_err {
 	}}
 }
 
+/// If feature `secure_padding_fill` is enabled then the returned seed is generated using Babe VRF.
+/// Otherwise, it will use the default `Seed` value.
+fn get_seed<B, C>(client: &C, block_id: &BlockId<B>) -> Option<Seed>
+where
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
+	C::Api: DataAvailApi<B>,
+{
+	if cfg!(feature = "secure_padding_fill") {
+		client.runtime_api().babe_vrf(block_id).ok()
+	} else {
+		Some(Seed::default())
+	}
+}
+
 impl<Client, Block> Kate<Client, Block>
 where
 	Block: BlockT,
 	Block::Header: ExtendedHeader,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
-	Client::Api: KateParamsGetter<Block>,
+	Client::Api: DataAvailApi<Block>,
 	UncheckedExtrinsic: TryFrom<<Block as BlockT>::Extrinsic>,
 {
 	fn at_or_best(&self, at: Option<<Block as BlockT>::Hash>) -> <Block as BlockT>::Hash {
@@ -162,7 +177,7 @@ where
 		let block_length: BlockLength = self
 			.client
 			.runtime_api()
-			.get_block_length(&block_id)
+			.block_length(&block_id)
 			.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
 		self.block_ext_cache
@@ -184,7 +199,7 @@ where
 				let seed: [u8; 32] =
 					self.client
 						.runtime_api()
-						.get_babe_vrf(&block_id)
+						.babe_vrf(&block_id)
 						.map_err(|e| {
 							internal_err!("Babe VRF not found for block {}: {:?}", block_id, e)
 						})?;
@@ -238,7 +253,7 @@ where
 	Block::Header: ExtendedHeader,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
-	Client::Api: KateParamsGetter<Block>,
+	Client::Api: DataAvailApi<Block>,
 	<<Block as BlockT>::Extrinsic as Extrinsic>::Call: Clone,
 	UncheckedExtrinsic: TryFrom<<Block as BlockT>::Extrinsic>,
 {
@@ -360,7 +375,7 @@ where
 		let block_length = self
 			.client
 			.runtime_api()
-			.get_block_length(&block_id)
+			.block_length(&block_id)
 			.map_err(|e| internal_err!("Length of best block({:?}): {:?}", block_id, e))?;
 
 		Ok(block_length)
@@ -378,7 +393,7 @@ where
 		let calls = block
 			.extrinsics()
 			.iter()
-			.cloned()
+            .cloned()
 			.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
 			.map(|app_ext| app_ext.function);
 

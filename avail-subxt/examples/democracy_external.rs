@@ -33,7 +33,7 @@ use subxt::utils::H256;
 #[rustfmt::skip]
 pub mod constants {
 	pub const COUNCIL_SUPER_MAJORITY: [&'static str; 9] = [ "Alice", "Bob", "Charlie", "Dave", "Eve", "Ferdie", "Alice//stash", "Bob//stash", "Charlie//stash"];
-	pub const THREASHOLD: u32 = 5;
+	pub const THREASHOLD: u32 = 2;
 }
 
 #[derive(Debug, Default, Constructor)]
@@ -357,7 +357,7 @@ async fn main() -> Result<()> {
 
 	pretty_env_logger::init();
 	let args = Opts::from_args();
-	let client = build_client(args.ws).await?;
+	let client = build_client(args.ws, args.validate_codegen).await?;
 
 	// In Council,  create, approve and execute ...
 	let (council_proposal, proposal) = council::create_external_proposal(&client).await?;
