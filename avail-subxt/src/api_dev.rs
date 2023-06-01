@@ -20235,6 +20235,7 @@ pub mod api {
 						serde :: Deserialize,
 						serde :: Serialize,
 					)]
+					#[serde(rename_all = "camelCase")]
 					pub struct KateCommitment {
 						#[codec(compact)]
 						pub rows: ::core::primitive::u16,
