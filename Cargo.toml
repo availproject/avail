@@ -21,16 +21,18 @@ frame-system = { path = "pallets/system" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 
+
 # DA Primitives
-da-primitives = { version = "0.4", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
-kate = { version = "0.7", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
-kate-recovery = { version = "0.8", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
+da-primitives = { version = "0.4",  path = "../../avail-core/primitives/avail"  }
+kate = { version = "0.7",  path = "../../avail-core/kate"}
+kate-recovery = { version = "0.8", path = "../../avail-core/kate/recovery"}
 
 # Nomad
-nomad-signature = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
-nomad-merkle = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
-nomad-base = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
-nomad-core = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
+nomad-signature = { version = "0.1", path = "../../avail-core/primitives/nomad/signature" }
+nomad-merkle = { version = "0.1",   path = "../../avail-core/primitives/nomad/merkle"}
+nomad-base = { version = "0.1",   path = "../../avail-core/primitives/nomad/nomad-base"}
+nomad-core = { version = "0.1",  path = "../../avail-core/primitives/nomad/nomad-core"}
+
 
 # Other stuff
 uint = { git = "https://github.com/paritytech/parity-common.git", tag="rlp-v0.5.2" }

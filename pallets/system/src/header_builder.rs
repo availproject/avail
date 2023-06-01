@@ -147,6 +147,7 @@ pub fn build_extension<M: Metrics>(
 		use da_primitives::kate_commitment::v2::KateCommitment;
 		#[allow(unused_mut)]
 		let mut kate = KateCommitment::new(rows, cols, data_root, commitment);
+		log::info!("kate is {:?}", kate);
 
 		#[cfg(feature = "header_commitment_corruption")]
 		if _block_number > 20 {
@@ -154,8 +155,8 @@ pub fn build_extension<M: Metrics>(
 		}
 
 		v2::HeaderExtension {
-			commitment: kate,
 			app_lookup,
+			commitment: kate,
 		}
 		.into()
 	} else {
