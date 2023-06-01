@@ -19,3 +19,18 @@ where
 		}
 	}
 }
+
+impl<A, C, S, E> From<AppUncheckedExtrinsic<A, C, S, E>> for AppExtrinsic
+where
+	A: Encode,
+	C: Encode,
+	S: Encode,
+	E: SignedExtension + GetAppId,
+{
+	fn from(app_ext: AppUncheckedExtrinsic<A, C, S, E>) -> Self {
+		Self {
+			app_id: app_ext.app_id(),
+			data: app_ext.encode(),
+		}
+	}
+}

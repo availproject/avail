@@ -486,6 +486,21 @@ where
 	}
 }
 
+impl<Address, Call, Signature, Extra> TryFrom<OpaqueExtrinsic>
+	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+where
+	Address: Decode,
+	Signature: Decode,
+	Call: Decode,
+	Extra: SignedExtension,
+{
+	type Error = codec::Error;
+
+	fn try_from(opaque: OpaqueExtrinsic) -> Result<Self, Self::Error> {
+		Self::try_from(opaque.0.as_slice())
+	}
+}
+
 impl<Address, Call, Signature, Extra> TryFrom<&[u8]>
 	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
 where
