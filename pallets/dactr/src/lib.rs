@@ -89,13 +89,6 @@ pub mod pallet {
 	#[pallet::getter(fn peek_next_application_id)]
 	pub type NextAppId<T: Config> = StorageValue<_, AppId, ValueQuery>;
 
-	/// Last block length proposal.
-	/// # TODO
-	/// - It is not used, could we removed it?
-	#[pallet::storage]
-	#[pallet::getter(fn last_block_length_proposal_id)]
-	pub type LastBlockLenId<T: Config> = StorageValue<_, T::BlockLenProposalId, ValueQuery>;
-
 	/// Store all application keys.
 	#[pallet::storage]
 	#[pallet::getter(fn application_key)]
@@ -164,7 +157,6 @@ pub mod pallet {
 				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO)
 					.map_err(|_| Error::<T>::BlockDimensionsOutOfBounds)?;
 
-			let _id = Self::next_block_len_proposal_id()?;
 			DynamicBlockLength::<T>::put(block_length);
 
 			Self::deposit_event(Event::BlockLengthProposalSubmitted { rows, cols });
@@ -278,15 +270,6 @@ impl<T: Config> Pallet<T> {
 	pub fn next_application_id() -> Result<AppId, Error<T>> {
 		NextAppId::<T>::try_mutate(|id| {
 			let new_id = AppId(id.0.checked_add(1).ok_or(Error::<T>::LastAppIdOverflowed)?);
-			Ok(replace(id, new_id))
-		})
-	}
-
-	pub fn next_block_len_proposal_id() -> Result<T::BlockLenProposalId, Error<T>> {
-		LastBlockLenId::<T>::try_mutate(|id| {
-			let new_id = id
-				.checked_add(&One::one())
-				.ok_or(Error::<T>::LastBlockLenProposalIdOverflowed)?;
 			Ok(replace(id, new_id))
 		})
 	}
