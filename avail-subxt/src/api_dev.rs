@@ -16478,29 +16478,6 @@ pub mod api {
 					)
 				}
 
-				#[doc = " Last block length proposal."]
-				#[doc = " # TODO"]
-				#[doc = " - It is not used, could we removed it?"]
-				pub fn last_block_len_id(
-					&self,
-				) -> ::subxt::storage::address::StaticStorageAddress<
-					::subxt::metadata::DecodeStaticType<::core::primitive::u32>,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::StaticStorageAddress::new(
-						"DataAvailability",
-						"LastBlockLenId",
-						vec![],
-						[
-							51u8, 88u8, 3u8, 49u8, 185u8, 211u8, 12u8, 141u8, 53u8, 34u8, 47u8,
-							67u8, 163u8, 215u8, 249u8, 135u8, 80u8, 9u8, 236u8, 177u8, 219u8, 94u8,
-							56u8, 168u8, 176u8, 149u8, 104u8, 19u8, 20u8, 189u8, 124u8, 213u8,
-						],
-					)
-				}
-
 				#[doc = " Store all application keys."]
 				pub fn app_keys(
 					&self,
