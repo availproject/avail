@@ -6,6 +6,7 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_debug_derive::RuntimeDebug;
 
 mod data_lookup;
 mod get_app_id;
@@ -13,10 +14,8 @@ pub use data_lookup::*;
 pub use get_app_id::*;
 
 /// Raw Extrinsic with application id.
-#[derive(Clone, TypeInfo, Default, Encode, Decode)]
-#[cfg_attr(feature = "substrate", derive(sp_debug_derive::RuntimeDebug))]
+#[derive(Clone, TypeInfo, Default, Encode, Decode, RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[cfg_attr(all(feature = "std", not(feature = "substrate")), derive(Debug))]
 pub struct AppExtrinsic {
 	pub app_id: AppId,
 	pub data: Vec<u8>,
@@ -64,10 +63,9 @@ impl GetAppId for AppExtrinsic {
 	Into,
 	Default,
 	MaxEncodedLen,
+	RuntimeDebug,
 )]
-#[cfg_attr(feature = "substrate", derive(sp_debug_derive::RuntimeDebug))]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[cfg_attr(all(feature = "std", not(feature = "substrate")), derive(Debug))]
 pub struct AppId(#[codec(compact)] pub u32);
 
 impl num_traits::Zero for AppId {

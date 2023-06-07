@@ -5,20 +5,16 @@ authors = []
 edition = "2018"
 
 [dependencies]
-derive_more = "0.99.17"
-num-traits = { version = "0.2", default-features = false }
+# Substrate
 parity-scale-codec = { version = "3", default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
+sp-debug-derive = { version = "5", default-features = false }
 
+# 3rd-parties
+derive_more = "0.99.17"
+num-traits = { version = "0.2", default-features = false }
 serde = { version = "1.0", features = ["derive"], optional = true }
-
-parity-util-mem = { version = "*", default-features = false, optional = true }
-sp-debug-derive = { version = "*", default-features = false, optional = true }
-sp-runtime = { version = "*", default-features = false, optional = true }
-
-[dev-dependencies]
 
 [features]
 default = ["std"]
 std = ["serde", "parity-scale-codec/std", "scale-info/std", "num-traits/std"]
-substrate = ["sp-debug-derive", "parity-util-mem", "sp-runtime"]

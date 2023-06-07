@@ -4,12 +4,11 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_debug_derive::RuntimeDebug;
 
 use crate::AppId;
 
-#[derive(PartialEq, Eq, Clone, Encode, Decode, Default, TypeInfo)]
-#[cfg_attr(feature = "substrate", derive(sp_debug_derive::RuntimeDebug))]
-#[cfg_attr(all(feature = "std", not(feature = "substrate")), derive(Debug))]
+#[derive(PartialEq, Eq, Clone, Encode, Decode, Default, TypeInfo, RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct DataLookup {
 	/// size of the look up
@@ -19,9 +18,7 @@ pub struct DataLookup {
 	pub index: Vec<DataLookupIndexItem>,
 }
 
-#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Default, TypeInfo)]
-#[cfg_attr(feature = "substrate", derive(sp_debug_derive::RuntimeDebug))]
-#[cfg_attr(all(feature = "std", not(feature = "substrate")), derive(Debug))]
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Default, TypeInfo, RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct DataLookupIndexItem {
 	pub app_id: AppId,
@@ -49,9 +46,7 @@ impl parity_util_mem::MallocSizeOf for DataLookupIndexItem {
 	}
 }
 
-#[derive(PartialEq, Eq)]
-#[cfg_attr(feature = "substrate", derive(sp_debug_derive::RuntimeDebug))]
-#[cfg_attr(all(feature = "std", not(feature = "substrate")), derive(Debug))]
+#[derive(PartialEq, Eq, RuntimeDebug)]
 /// Errors during the creation from `extrinsics`.
 pub enum TryFromError {
 	/// Size overflows
