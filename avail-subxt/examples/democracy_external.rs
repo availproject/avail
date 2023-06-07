@@ -16,7 +16,7 @@ use avail_subxt::{
 		system::events as SystemEvent,
 		technical_committee::events as TechComEvent,
 	},
-	avail::{Bounded, Client, PairSigner, TxProgress},
+	avail::{Bounded, Client, PairSigner, RuntimeCall, TxProgress},
 	build_client, tx_asend, tx_send, Call, Opts,
 };
 use codec::Encode;
@@ -28,7 +28,7 @@ use sp_keyring::{
 	AccountKeyring::{Alice, Bob, Charlie, Dave, Eve, Ferdie},
 };
 use structopt::StructOpt;
-use subxt::utils::H256;
+use subxt::{events::StaticEvent, utils::H256};
 
 #[rustfmt::skip]
 pub mod constants {
@@ -61,13 +61,13 @@ mod council {
 
 	pub async fn create_external_proposal(
 		client: &Client,
+		call: RuntimeCall,
 	) -> Result<(IndexedProposalContext, ProposalContext)> {
 		log::trace!("Creating the external proposal ...");
 		let signer = PairSigner::new(Alice.pair());
-		let remark = b"Proposal Done".to_vec();
 
 		// 1. Push pre-image of inner call
-		let inner_call = Call::System(SystemCall::remark_with_event { remark }).encode();
+		let inner_call = call.encode();
 		let inner_call_len = inner_call.len() as u32;
 		let note_preimage = api::tx().preimage().note_preimage(inner_call);
 
@@ -228,19 +228,12 @@ mod techies {
 			.map(|acc| PairSigner::new(acc.pair()))
 			.collect::<Vec<_>>();
 
-		let txs = stream::iter(techies.iter())
+		stream::iter(techies.iter())
 			.map(|signer| vote_yes(client, signer, proposal))
 			.buffer_unordered(32)
 			.try_collect::<Vec<_>>()
 			.await?;
 
-		for tx in txs {
-			log::trace!(
-				"Waiting for `Ayes` voting finalization of {}",
-				tx.extrinsic_hash()
-			);
-			let _ = tx.wait_for_in_block().await?;
-		}
 		Ok(())
 	}
 
@@ -250,6 +243,7 @@ mod techies {
 			ref_time: 1_000_000_000,
 			proof_size: 0,
 		};
+		log::info!("Proposal to close {:?}", proposal);
 		let close = api::tx().technical_committee().close(
 			proposal.hash,
 			proposal.index,
@@ -265,11 +259,12 @@ mod techies {
 			events.has::<TechComEvent::Executed>()?,
 			"Fast-track proposal was not executed"
 		);
+		let block_events = events.all_events_in_block();
 		ensure!(
-			events.has::<DemocracyEvent::Started>()?,
+			block_events.has::<DemocracyEvent::Started>()?,
 			"Referendum was not started"
 		);
-		let referendum_started = events
+		let referendum_started = block_events
 			.find_first::<DemocracyEvent::Started>()?
 			.expect("Referendum was started .qed");
 		log::info!("Referendum started {:?}", referendum_started);
@@ -310,16 +305,23 @@ mod democracy {
 		client: &Client,
 		referendum: u32,
 		duration: Duration,
+		pallet_name: &str,
+		event_name: &str,
 	) -> Result<()> {
 		future::timeout(
 			duration,
-			wait_passed_and_dispatch(client, referendum).fuse(),
+			wait_passed_and_dispatch(client, referendum, pallet_name, event_name).fuse(),
 		)
 		.await??;
 		Ok(())
 	}
 
-	pub async fn wait_passed_and_dispatch(client: &Client, referendum: u32) -> Result<()> {
+	pub async fn wait_passed_and_dispatch(
+		client: &Client,
+		referendum: u32,
+		pallet_name: &str,
+		event_name: &str,
+	) -> Result<()> {
 		let mut block_sub = client.blocks().subscribe_finalized().await?;
 
 		while let Some(block) = block_sub.next().await {
@@ -328,8 +330,8 @@ mod democracy {
 			for event in events.iter() {
 				let event = event?;
 
-				if let Some(event) = event.as_event::<SystemEvent::RemarkedByRoot>()? {
-					log::info!("Remarked by Root with hash {}", event.hash);
+				if event.pallet_name() == pallet_name && event.variant_name() == event_name {
+					log::info!("{} {} found !", pallet_name, event_name);
 					return Ok(());
 				} else if let Some(event) = event.as_event::<DemocracyEvent::Passed>()? {
 					log::trace!("Democracy Referendum {} passed", event.ref_index);
@@ -349,18 +351,16 @@ mod democracy {
 	}
 }
 
-/// # Trace
-/// Use `RUST_LOG="democracy_external=trace"` to see traces.
-#[async_std::main]
-async fn main() -> Result<()> {
-	use crate::{council, democracy, techies};
-
-	pretty_env_logger::init();
+pub async fn start_democracy_call(
+	call: RuntimeCall,
+	pallet_name: &str,
+	event_name: &str,
+) -> Result<()> {
 	let args = Opts::from_args();
 	let client = build_client(args.ws, args.validate_codegen).await?;
 
 	// In Council,  create, approve and execute ...
-	let (council_proposal, proposal) = council::create_external_proposal(&client).await?;
+	let (council_proposal, proposal) = council::create_external_proposal(&client, call).await?;
 	council::simple_majority_of_vote_yes(&client, &council_proposal).await?;
 	council::close(&client, &council_proposal).await?;
 
@@ -375,8 +375,22 @@ async fn main() -> Result<()> {
 		&client,
 		referendum_index,
 		Duration::from_secs(2 * 60),
+		pallet_name,
+		event_name,
 	)
 	.await?;
+	Ok(())
+}
 
+/// # Trace
+/// Use `RUST_LOG="democracy_external=trace"` to see traces.
+#[async_std::main]
+async fn main() -> Result<()> {
+	pretty_env_logger::init();
+	let remark = b"Proposal Done".to_vec();
+	let call = Call::System(SystemCall::remark_with_event { remark });
+	let checked_pallet_name = SystemEvent::RemarkedByRoot::PALLET;
+	let checked_event_name = SystemEvent::RemarkedByRoot::EVENT;
+	start_democracy_call(call, checked_pallet_name, checked_event_name).await?;
 	Ok(())
 }
