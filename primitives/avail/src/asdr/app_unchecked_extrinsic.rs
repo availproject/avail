@@ -23,7 +23,7 @@ use frame_support::{
 	traits::ExtrinsicCall,
 };
 use scale_info::{build::Fields, meta_type, Path, StaticTypeInfo, Type, TypeInfo, TypeParameter};
-use sp_io::hashing::blake2_256;
+use sp_core::blake2_256;
 use sp_runtime::{
 	generic::CheckedExtrinsic,
 	traits::{

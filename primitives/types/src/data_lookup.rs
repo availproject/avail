@@ -4,7 +4,7 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_debug_derive::RuntimeDebug;
+use sp_core::RuntimeDebug;
 
 use crate::AppId;
 
@@ -36,13 +36,6 @@ where
 			app_id: value.0.into(),
 			start: value.1.into(),
 		}
-	}
-}
-
-#[cfg(all(feature = "std", feature = "substrate"))]
-impl parity_util_mem::MallocSizeOf for DataLookupIndexItem {
-	fn size_of(&self, ops: &mut parity_util_mem::MallocSizeOfOps) -> usize {
-		self.app_id.size_of(ops) + self.start.size_of(ops)
 	}
 }
 
@@ -84,13 +77,6 @@ impl TryFrom<&[(AppId, u32)]> for DataLookup {
 		}
 
 		Ok(DataLookup { size, index })
-	}
-}
-
-#[cfg(all(feature = "std", feature = "substrate"))]
-impl parity_util_mem::MallocSizeOf for DataLookup {
-	fn size_of(&self, ops: &mut parity_util_mem::MallocSizeOfOps) -> usize {
-		self.size.size_of(ops) + self.index.size_of(ops)
 	}
 }
 

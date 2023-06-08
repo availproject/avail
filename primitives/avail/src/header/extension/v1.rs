@@ -1,6 +1,4 @@
 use codec::{Decode, Encode};
-#[cfg(feature = "std")]
-use parity_util_mem::{MallocSizeOf, MallocSizeOfOps};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -30,12 +28,5 @@ impl HeaderExtension {
 
 	pub fn cols(&self) -> u16 {
 		self.commitment.cols
-	}
-}
-
-#[cfg(feature = "std")]
-impl MallocSizeOf for HeaderExtension {
-	fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
-		self.commitment.size_of(ops) + self.app_lookup.size_of(ops)
 	}
 }

@@ -3,8 +3,7 @@ use codec::{Decode, Encode};
 use frame_support::ensure;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::H256;
-use sp_io::hashing::sha2_256;
+use sp_core::{hashing::sha2_256, H256};
 use sp_std::{convert::TryFrom, vec::Vec};
 use thiserror_no_std::Error;
 

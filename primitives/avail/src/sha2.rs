@@ -1,8 +1,7 @@
-use frame_support::RuntimeDebug;
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{storage::StateVersion, Hasher};
+use sp_core::{hashing::sha2_256, storage::StateVersion, Hasher, RuntimeDebug};
 use sp_runtime::traits::Hash;
 use sp_std::vec::Vec;
 use sp_trie::{LayoutV0, LayoutV1, TrieConfiguration as _};
@@ -18,7 +17,7 @@ impl Hasher for ShaTwo256 {
 	const LENGTH: usize = 32;
 
 	fn hash(s: &[u8]) -> Self::Out {
-		sp_io::hashing::sha2_256(s).into()
+		sha2_256(s).into()
 	}
 }
 

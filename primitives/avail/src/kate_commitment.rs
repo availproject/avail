@@ -39,16 +39,6 @@ pub mod v1 {
 				.finish()
 		}
 	}
-
-	#[cfg(feature = "std")]
-	impl parity_util_mem::MallocSizeOf for KateCommitment {
-		fn size_of(&self, ops: &mut parity_util_mem::MallocSizeOfOps) -> usize {
-			self.commitment.size_of(ops)
-				+ self.rows.size_of(ops)
-				+ self.cols.size_of(ops)
-				+ self.data_root.size_of(ops)
-		}
-	}
 }
 
 pub mod v2 {
@@ -100,16 +90,6 @@ pub mod v2 {
 				.field("commitment", &HexDisplay::from(&commitment))
 				.field("data_root", &HexDisplay::from(&data_root))
 				.finish()
-		}
-	}
-
-	#[cfg(feature = "std")]
-	impl parity_util_mem::MallocSizeOf for KateCommitment {
-		fn size_of(&self, ops: &mut parity_util_mem::MallocSizeOfOps) -> usize {
-			self.commitment.size_of(ops)
-				+ self.rows.size_of(ops)
-				+ self.cols.size_of(ops)
-				+ self.data_root.size_of(ops)
 		}
 	}
 

@@ -1,7 +1,5 @@
 use crate::asdr::DataLookup;
 use codec::{Decode, Encode};
-#[cfg(feature = "std")]
-use parity_util_mem::{MallocSizeOf, MallocSizeOfOps};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -67,13 +65,6 @@ impl HeaderExtension {
 impl Default for HeaderExtension {
 	fn default() -> Self {
 		v2::HeaderExtension::default().into()
-	}
-}
-
-#[cfg(feature = "std")]
-impl MallocSizeOf for HeaderExtension {
-	fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
-		forward_to_version!(self, size_of, ops)
 	}
 }
 

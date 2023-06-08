@@ -6,7 +6,7 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_debug_derive::RuntimeDebug;
+use sp_core::RuntimeDebug;
 
 mod data_lookup;
 mod get_app_id;

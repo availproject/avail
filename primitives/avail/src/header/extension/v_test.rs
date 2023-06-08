@@ -1,6 +1,4 @@
 use codec::{Decode, Encode};
-#[cfg(feature = "std")]
-use parity_util_mem::{MallocSizeOf, MallocSizeOfOps};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -20,13 +18,6 @@ pub struct HeaderExtension {
 impl HeaderExtension {
 	pub fn data_root(&self) -> H256 {
 		self.commitment.data_root
-	}
-}
-
-#[cfg(feature = "std")]
-impl MallocSizeOf for HeaderExtension {
-	fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
-		self.new_field.size_of(ops) + self.commitment.size_of(ops) + self.app_lookup.size_of(ops)
 	}
 }
 

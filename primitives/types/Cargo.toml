@@ -8,7 +8,7 @@ edition = "2018"
 # Substrate
 parity-scale-codec = { version = "3", default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
-sp-debug-derive = { version = "5", default-features = false }
+sp-core = { version = "7", default-features = false }
 
 # 3rd-parties
 derive_more = "0.99.17"
@@ -17,4 +17,10 @@ serde = { version = "1.0", features = ["derive"], optional = true }
 
 [features]
 default = ["std"]
-std = ["serde", "parity-scale-codec/std", "scale-info/std", "num-traits/std"]
+std = [
+	"serde", 
+	"sp-core/std",
+	"parity-scale-codec/std", 
+	"scale-info/std", 
+	"num-traits/std"
+]
