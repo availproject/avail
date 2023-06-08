@@ -4,12 +4,13 @@ use std::{
 	num::TryFromIntError,
 };
 
+#[cfg(feature = "std")]
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	fft::{EvaluationDomain, Evaluations},
 	prelude::{BlsScalar, PublicParameters},
 };
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 use crate::{
 	com,
@@ -55,6 +56,7 @@ impl From<TryFromIntError> for Error {
 	}
 }
 
+#[cfg(feature = "std")]
 impl From<dusk_bytes::Error> for Error {
 	fn from(e: dusk_bytes::Error) -> Self {
 		match e {

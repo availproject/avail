@@ -1,3 +1,4 @@
+#[cfg(feature = "std")]
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	bls12_381::G1Affine,
@@ -5,7 +6,7 @@ use dusk_plonk::{
 	fft::EvaluationDomain,
 	prelude::BlsScalar,
 };
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 use crate::{config::COMMITMENT_SIZE, data::Cell, matrix::Dimensions};
 
@@ -19,6 +20,7 @@ pub enum Error {
 	InvalidDegree(String),
 }
 
+#[cfg(feature = "std")]
 impl From<dusk_bytes::Error> for Error {
 	fn from(error: dusk_bytes::Error) -> Self {
 		Error::InvalidData(format!("{error:?}"))

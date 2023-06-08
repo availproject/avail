@@ -1,18 +1,18 @@
 use codec::Decode;
-use dusk_bytes::Serializable;
+use dusk_bytes::Serializable as _;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
-use num::ToPrimitive;
 use rand::seq::SliceRandom;
+use sp_arithmetic::{traits::SaturatedConversion, Percent};
 use std::{
 	collections::{HashMap, HashSet},
-	convert::TryFrom,
+	convert::{TryFrom, TryInto},
 	iter::FromIterator,
 };
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 use crate::{
 	config::{self, CHUNK_SIZE},
-	data, index, matrix,
+	data, ensure, index, matrix,
 };
 
 #[derive(Debug, Error)]
@@ -40,14 +40,11 @@ pub enum ReconstructionError {
 pub fn columns_positions(
 	dimensions: &matrix::Dimensions,
 	positions: &[matrix::Position],
-	factor: f64,
+	factor: Percent,
 ) -> Vec<matrix::Position> {
-	assert!(factor <= 1.0);
-
-	let cells = (factor * dimensions.extended_rows() as f64)
-		.to_usize()
-		.expect("result is lesser than usize maximum");
-
+	let cells = factor
+		.mul_ceil(dimensions.extended_rows())
+		.saturated_into::<usize>();
 	let rng = &mut rand::thread_rng();
 
 	let columns: HashSet<u16> = HashSet::from_iter(positions.iter().map(|position| position.col));
@@ -94,8 +91,8 @@ pub fn app_specific_rows(
 ) -> Vec<u32> {
 	index
 		.app_cells_range(app_id)
-		.map(|range| dimensions.extended_data_rows(range))
-		.unwrap_or_else(std::vec::Vec::new)
+		.and_then(|range| dimensions.extended_data_rows(range))
+		.unwrap_or_default()
 }
 
 /// Generates empty cell positions in extended data matrix,
@@ -114,7 +111,7 @@ pub fn app_specific_cells(
 ) -> Option<Vec<matrix::Position>> {
 	index
 		.app_cells_range(app_id)
-		.map(|range| dimensions.extended_data_positions(range))
+		.and_then(|range| dimensions.extended_data_positions(range))
 }
 
 /// Application data, represents list of extrinsics encoded in a block.
@@ -462,10 +459,12 @@ pub fn reconstruct_column(
 	// just ensures all rows are from same column !
 	// it's required as that's how it's erasure coded during
 	// construction in validator node
-	fn check_cells(cells: &[data::DataCell]) {
-		assert!(!cells.is_empty());
+	fn check_cells(cells: &[data::DataCell]) -> bool {
+		if cells.is_empty() {
+			return false;
+		}
 		let first_col = cells[0].position.col;
-		assert!(cells.iter().all(|c| c.position.col == first_col));
+		cells.iter().all(|c| c.position.col == first_col)
 	}
 
 	// given row index in column of interest, finds it if present
@@ -474,20 +473,35 @@ pub fn reconstruct_column(
 		cells
 			.iter()
 			.find(|cell| cell.position.row == idx)
-			.map(|cell| {
+			.and_then(|cell| {
 				<[u8; BlsScalar::SIZE]>::try_from(&cell.data[..])
-					.expect("didn't find u8 array of length 32")
+					.map(|data| BlsScalar::from_bytes(&data).ok())
+					.ok()
+					.flatten()
 			})
-			.and_then(|data| BlsScalar::from_bytes(&data).ok())
 	}
 
 	// row count of data matrix must be power of two !
-	assert!(row_count % 2 == 0);
-	assert!(cells.len() >= (row_count / 2) as usize && cells.len() <= row_count as usize);
-	check_cells(cells);
+	let row_count_sz: usize = row_count
+		.try_into()
+		.map_err(|_| "Row count overflows `usize`")?;
+	ensure!(row_count % 2 == 0, "`row_count` must be power of two");
+	ensure!(
+		cells.len() >= row_count_sz / 2,
+		"Number of `cells` must be equal or greater than the half of `row_count`"
+	);
+	ensure!(
+		cells.len() <= row_count_sz,
+		"Number of `cells` must be equal or less than `row_count`"
+	);
+	ensure!(
+		check_cells(cells),
+		"At least one row is not from same column"
+	);
 
-	let eval_domain = EvaluationDomain::new(row_count as usize).unwrap();
-	let mut subset: Vec<Option<BlsScalar>> = Vec::with_capacity(row_count as usize);
+	let eval_domain = EvaluationDomain::new(row_count_sz)
+		.map_err(|e| format!("Evaluation domain cannot be created: {e:?}"))?;
+	let mut subset: Vec<Option<BlsScalar>> = Vec::with_capacity(row_count_sz);
 
 	// fill up vector in ordered fashion
 	// @note the way it's done should be improved

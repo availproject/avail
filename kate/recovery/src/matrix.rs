@@ -105,18 +105,19 @@ impl Dimensions {
 	}
 
 	/// List of data row indexes in the extended matrix.
-	pub fn extended_data_rows(&self, cells: Range<u32>) -> Vec<u32> {
-		assert!(cells.end <= self.size());
-		if cells.end == 0 {
-			return vec![];
+	pub fn extended_data_rows(&self, cells: Range<u32>) -> Option<Vec<u32>> {
+		// Invalid range returns `None`
+		if cells.end > self.size() || cells.end == 0 {
+			return None;
 		}
 
 		let first_row = self.extended_data_row(cells.start);
 		let last_row = self.extended_data_row(cells.end - 1);
 
-		(first_row..=last_row)
+		let data = (first_row..=last_row)
 			.step_by(config::EXTENSION_FACTOR)
-			.collect::<Vec<u32>>()
+			.collect::<Vec<u32>>();
+		Some(data)
 	}
 
 	/// Cell positions for given column in extended matrix.
@@ -168,11 +169,12 @@ impl Dimensions {
 	}
 
 	/// Extended matrix data positions for given data matrix cells range.
-	pub fn extended_data_positions(&self, cells: Range<u32>) -> Vec<Position> {
-		assert!(cells.end <= self.size());
-		cells
-			.map(|cell| self.extended_data_position(cell))
-			.collect::<Vec<_>>()
+	pub fn extended_data_positions(&self, cells: Range<u32>) -> Option<Vec<Position>> {
+		(cells.end <= self.size()).then(|| {
+			cells
+				.map(|cell| self.extended_data_position(cell))
+				.collect::<Vec<_>>()
+		})
 	}
 
 	/// Checks if extended matrix contains given position.

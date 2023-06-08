@@ -9,11 +9,11 @@ edition = "2021"
 da-types = { path = "../types", default-features = false }
 
 # Others
+hash256-std-hasher = { version = "0.15.2", default-features = false }
 log = { version = "0.4.8", default-features = false }
 serde = { version = "1", optional = true, features = ["derive"] }
 thiserror-no-std = "2.0.2"
-hash256-std-hasher = { version = "0.15.2", default-features = false }
- 
+
 # Substrate
 beefy-merkle-tree = { git = "https://github.com/paritytech/substrate.git/", branch = "polkadot-v0.9.37", default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"] }
@@ -27,23 +27,23 @@ sp-trie = { version = "7.0.0", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.3.4"
-test-case = "1.2.3"
 serde_json = "1"
+test-case = "1.2.3"
 
 [features]
 default = ["std"]
 std = [
- 	"serde",
- 	"codec/std",
- 	"scale-info/std",
- 	"log/std",
- 	"sp-core/std",
- 	"sp-std/std",
+	"serde",
+	"codec/std",
+	"scale-info/std",
+	"log/std",
+	"sp-core/std",
+	"sp-std/std",
 	"sp-runtime/std",
- 	"sp-trie/std",
- 	"sp-runtime-interface/std",
- 	"hash256-std-hasher/std",
- 	"frame-support/std",
+	"sp-trie/std",
+	"sp-runtime-interface/std",
+	"hash256-std-hasher/std",
+	"frame-support/std",
 	"beefy-merkle-tree/std",
 	"da-types/std",
 ]

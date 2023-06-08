@@ -18,9 +18,9 @@ serde = { version = "1.0", features = ["derive"], optional = true }
 [features]
 default = ["std"]
 std = [
-	"serde", 
+	"serde",
 	"sp-core/std",
-	"parity-scale-codec/std", 
-	"scale-info/std", 
-	"num-traits/std"
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"num-traits/std",
 ]
