@@ -34,7 +34,7 @@ async function getProof(availApi, hashBlock, dataIndex) {
 async function checkProof(sepoliaApi, blockNumber, proof, numberOfLeaves, leafIndex, leafHash) {
     const abi = JSON.parse(readFileSync(process.env.VALIDIYM_ABI_PATH).toString());
     const availContract = new ethers.Contract(process.env.VALIDIUM_ADDRESS, abi, sepoliaApi);
-    return await availContract.checkDataRootMembership(BigInt(blockNumber), proof, BigInt(numberOfLeaves), BigInt(leafIndex), "0x63cd0ce830dcc00e53239b1f203a33f554514f09ab5a20cd5fc8ed9d0b5383f1")
+    return await availContract.checkDataRootMembership(BigInt(blockNumber), proof, BigInt(numberOfLeaves), BigInt(leafIndex), leafHash)
 }
 
 (async function submitProof() {
