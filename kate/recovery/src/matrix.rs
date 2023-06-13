@@ -189,8 +189,8 @@ impl Dimensions {
 
 	/// Creates iterator over data cells in data matrix (used to retrieve data from the matrix).
 	pub fn iter_data(&self) -> impl Iterator<Item = (usize, usize)> {
-		let rows = self.rows as usize;
-		let cols = self.cols as usize;
+		let rows :usize = self.rows.get().into();
+		let cols :usize = self.cols.get().into();
 		(0..rows).flat_map(move |row| (0..cols).map(move |col| (row, col)))
 	}
 
