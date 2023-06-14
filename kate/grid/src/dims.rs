@@ -12,8 +12,8 @@ impl Dimensions {
 		Dimensions { width, height }
 	}
 
-    /// Make a new `Dimensions` panicking if either width or height are zero.
-    /// Again, **this will panic if a zero width or zero height are given**.
+	/// Make a new `Dimensions` panicking if either width or height are zero.
+	/// Again, **this will panic if a zero width or zero height are given**.
 	pub const fn new_unchecked(width: usize, height: usize) -> Self {
 		Self {
 			width: nonzero_unchecked(width),
@@ -74,8 +74,8 @@ impl Extension {
 		}
 	}
 
-    /// Make a new height extension without checking if `factor` is nonzero.
-    /// Again, **this will panic if a zero `factor` is given**.
+	/// Make a new height extension without checking if `factor` is nonzero.
+	/// Again, **this will panic if a zero `factor` is given**.
 	pub const fn height_unchecked(factor: usize) -> Self {
 		Self {
 			height_factor: nonzero_unchecked(factor),
@@ -90,8 +90,8 @@ impl Extension {
 		}
 	}
 
-    /// Make a new width extension without checking if `factor` is nonzero.
-    /// Again, **this will panic if a zero `factor` is given**.
+	/// Make a new width extension without checking if `factor` is nonzero.
+	/// Again, **this will panic if a zero `factor` is given**.
 	pub const fn width_unchecked(factor: usize) -> Self {
 		Self {
 			height_factor: nonzero_unchecked(1),
