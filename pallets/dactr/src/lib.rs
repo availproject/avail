@@ -89,13 +89,6 @@ pub mod pallet {
 	#[pallet::getter(fn peek_next_application_id)]
 	pub type NextAppId<T: Config> = StorageValue<_, AppId, ValueQuery>;
 
-	/// Last block length proposal.
-	/// # TODO
-	/// - It is not used, could we removed it?
-	#[pallet::storage]
-	#[pallet::getter(fn last_block_length_proposal_id)]
-	pub type LastBlockLenId<T: Config> = StorageValue<_, T::BlockLenProposalId, ValueQuery>;
-
 	/// Store all application keys.
 	#[pallet::storage]
 	#[pallet::getter(fn application_key)]
@@ -111,7 +104,7 @@ pub mod pallet {
 			key: AppKeyFor<T>,
 		) -> DispatchResultWithPostInfo {
 			let owner = ensure_signed(origin)?;
-
+			ensure!(!key.is_empty(), Error::<T>::AppKeyCannotBeEmpty);
 			let id = AppKeys::<T>::try_mutate(&key, |key_info| -> Result<AppId, Error<T>> {
 				ensure!(key_info.is_none(), Error::<T>::AppKeyAlreadyExists);
 
@@ -135,6 +128,7 @@ pub mod pallet {
 			data: AppDataFor<T>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
+			ensure!(!data.is_empty(), Error::<T>::DataCannotBeEmpty);
 			Self::deposit_event(Event::DataSubmitted { who, data });
 
 			Ok(().into())
@@ -164,7 +158,6 @@ pub mod pallet {
 				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO)
 					.map_err(|_| Error::<T>::BlockDimensionsOutOfBounds)?;
 
-			let _id = Self::next_block_len_proposal_id()?;
 			DynamicBlockLength::<T>::put(block_length);
 
 			Self::deposit_event(Event::BlockLengthProposalSubmitted { rows, cols });
@@ -198,11 +191,17 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// The application key already exists.
 		AppKeyAlreadyExists,
+		/// The application key is an empty string.
+		AppKeyCannotBeEmpty,
 		/// The last application ID overflowed.
 		LastAppIdOverflowed,
+		/// The submitted data is empty.
+		DataCannotBeEmpty,
 		/// The last block length proposal Id overflowed.
 		LastBlockLenProposalIdOverflowed,
+		/// The proposed block dimensions are out of bounds.
 		BlockDimensionsOutOfBounds,
+		/// The proposed block dimensions are too small.
 		BlockDimensionsTooSmall,
 	}
 
@@ -278,15 +277,6 @@ impl<T: Config> Pallet<T> {
 	pub fn next_application_id() -> Result<AppId, Error<T>> {
 		NextAppId::<T>::try_mutate(|id| {
 			let new_id = AppId(id.0.checked_add(1).ok_or(Error::<T>::LastAppIdOverflowed)?);
-			Ok(replace(id, new_id))
-		})
-	}
-
-	pub fn next_block_len_proposal_id() -> Result<T::BlockLenProposalId, Error<T>> {
-		LastBlockLenId::<T>::try_mutate(|id| {
-			let new_id = id
-				.checked_add(&One::one())
-				.ok_or(Error::<T>::LastBlockLenProposalIdOverflowed)?;
 			Ok(replace(id, new_id))
 		})
 	}

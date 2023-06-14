@@ -70,13 +70,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			// Standard Error: 3
 			.saturating_add(Weight::from_ref_time(1_328_u64).saturating_mul(i as u64))
 	}
-	// Storage: DataAvailability LastBlockLenId (r:1 w:1)
 	// Storage: System DynamicBlockLength (r:0 w:1)
 	fn submit_block_length_proposal() -> Weight {
 		// Minimum execution time: 34_500 nanoseconds.
 		Weight::from_ref_time(35_272_000_u64)
-			.saturating_add(T::DbWeight::get().reads(1_u64))
-			.saturating_add(T::DbWeight::get().writes(2_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 
@@ -97,12 +95,10 @@ impl WeightInfo for () {
 			// Standard Error: 3
 			.saturating_add(Weight::from_ref_time(1_328_u64).saturating_mul(i as u64))
 	}
-	// Storage: DataAvailability LastBlockLenId (r:1 w:1)
 	// Storage: System DynamicBlockLength (r:0 w:1)
 	fn submit_block_length_proposal() -> Weight {
 		// Minimum execution time: 34_500 nanoseconds.
 		Weight::from_ref_time(35_272_000_u64)
-			.saturating_add(RocksDbWeight::get().reads(1_u64))
-			.saturating_add(RocksDbWeight::get().writes(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }
