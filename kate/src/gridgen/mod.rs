@@ -15,6 +15,7 @@ use poly_multiproof::{
 };
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
+use std::collections::BTreeMap;
 
 use crate::{
 	com::{Cell, Error},
@@ -62,24 +63,21 @@ pub struct EvaluationGrid {
 impl EvaluationGrid {
 	/// From the app extrinsics, create a data grid of Scalars
 	pub fn from_extrinsics(
-		mut extrinsics: Vec<AppExtrinsic>,
+		extrinsics: Vec<AppExtrinsic>,
 		min_width: usize,
 		max_width: usize,
 		max_height: usize,
 		rng_seed: Seed,
 	) -> Result<Self, Error> {
 		// Group extrinsics by app id, also sorted by app id.
-		extrinsics.sort_by(|a, b| a.app_id.cmp(&b.app_id));
-		let grouped =
-			extrinsics
-				.iter()
-				.fold::<Vec<(AppId, Vec<Vec<_>>)>, _>(vec![], |mut acc, e| {
-					match acc.last_mut() {
-						Some((app_id, data)) if e.app_id == *app_id => data.push(e.data.clone()),
-						None | Some(_) => acc.push((e.app_id, vec![e.data.clone()])),
-					}
-					acc
-				});
+		// Using a BTreeMap here will still iter in sorted order. Sweet!
+		let grouped = extrinsics.into_iter().fold::<BTreeMap<AppId, Vec<_>>, _>(
+			BTreeMap::default(),
+			|mut acc, e| {
+				acc.entry(e.app_id).or_default().push(e.data);
+				acc
+			},
+		);
 
 		// Convert each grup of extrinsics into scalars
 		let encoded = grouped
@@ -102,7 +100,9 @@ impl EvaluationGrid {
 				app_id: *app_id,
 				start,
 			});
-			start = start.saturating_add(scalars.len() as u32); // next item should start after current one
+			start = start
+				.checked_add(scalars.len() as u32)
+				.ok_or(Error::CellLengthExceeded)?; // next item should start after current one
 		}
 
 		// Flatten the grid
@@ -192,9 +192,9 @@ impl EvaluationGrid {
 		));
 
 		let domain = GeneralEvaluationDomain::<ArkScalar>::new(self.dims.height())
-			.ok_or(Error::DomainSizeInvalid)?;
+			.ok_or(Error::BaseGridDomainSizeInvalid(self.dims.width()))?;
 		let domain_new = GeneralEvaluationDomain::<ArkScalar>::new(new_dims.height())
-			.ok_or(Error::DomainSizeInvalid)?;
+			.ok_or(Error::ExtendedGridDomianSizeInvalid(new_dims.width()))?;
 		if domain_new.size() != new_dims.height() {
 			return Err(Error::DomainSizeInvalid);
 		}
@@ -358,11 +358,14 @@ pub fn multiproof_block(
 
 	let block_width = grid_dims.width() / mp_grid_dims.width_nz();
 	let block_height = grid_dims.height() / mp_grid_dims.height_nz();
+	// SAFETY: values never overflow since x,y are always less than grid_dims.{width,height}().
+	// This is because x,y < mp_grid_dims.{width, height} and block width is the quotient of
+	// grid_dims and mp_grid_dims.
 	Some(CellBlock {
-		start_x: x.checked_mul(block_width)?,
-		start_y: y.checked_mul(block_height)?,
-		end_x: x.checked_add(1)?.checked_mul(block_width)?,
-		end_y: y.checked_add(1)?.checked_mul(block_height)?,
+		start_x: x * block_width,
+		start_y: y * block_height,
+		end_x: (x + 1) * block_width,
+		end_y: (y + 1) * block_height,
 	})
 }
 
@@ -387,13 +390,11 @@ pub fn get_block_dims(
 	if n_scalars < max_width {
 		let current_width = n_scalars;
 		// Don't let the width get lower than the minimum provided
-		let width = core::cmp::max(round_up_power_of_2(current_width), min_width);
-		Ok(Dimensions::new(
-			width.try_into().map_err(|_| Error::ZeroDimension)?,
-			1.try_into().expect("1 is nonzero"),
-		))
+		let width = core::cmp::max(round_up_power_of_2(current_width), min_width).try_into()?;
+		let height = 1.try_into()?;
+		Ok(Dimensions::new(width, height))
 	} else {
-		let width = NonZeroUsize::new(max_width).ok_or(Error::ZeroDimension)?;
+		let width = NonZeroUsize::try_from(max_width)?;
 		let current_height = round_up_to_multiple(n_scalars, width) / width;
 		// Round the height up to a power of 2 for ffts
 		let height = round_up_power_of_2(current_height);
@@ -401,10 +402,7 @@ pub fn get_block_dims(
 		if height > max_height {
 			return Err(Error::BlockTooBig);
 		}
-		Ok(Dimensions::new(
-			width,
-			height.try_into().map_err(|_| Error::ZeroDimension)?,
-		))
+		Ok(Dimensions::new(width, height.try_into()?))
 	}
 }
 

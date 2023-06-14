@@ -1,4 +1,4 @@
-use core::num::{NonZeroU32, NonZeroUsize};
+use core::num::{NonZeroU32, NonZeroUsize, TryFromIntError};
 use std::{
 	convert::{TryFrom, TryInto},
 	mem::size_of,
@@ -59,6 +59,16 @@ pub enum Error {
 	DimensionsMismatch,
 	ZeroDimension,
 	DomainSizeInvalid,
+	/// The base grid width, before extension, does not fit cleanly into a domain for FFTs
+	BaseGridDomainSizeInvalid(usize),
+	/// The extended grid width does not fit cleanly into a domain for FFTs
+	ExtendedGridDomianSizeInvalid(usize),
+}
+
+impl From<TryFromIntError> for Error {
+	fn from(_: TryFromIntError) -> Self {
+		Self::ZeroDimension
+	}
 }
 
 impl From<PlonkError> for Error {
