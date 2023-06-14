@@ -50,6 +50,7 @@ pub trait WeightInfo {
 	fn create_application_key() -> Weight;
 	fn submit_data(i: u32, ) -> Weight;
 	fn submit_block_length_proposal() -> Weight;
+	fn data_root(i: u32, ) -> Weight;
 }
 
 /// Weights for da_control using the Data Avaiability node and recommended hardware.
@@ -76,6 +77,13 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_ref_time(35_272_000_u64)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+	/// The range of component `i` is `[0, 16384]`.
+	fn data_root(i: u32, ) -> Weight {
+		// Minimum execution time: 290 nanoseconds.
+		Weight::from_ref_time(533_838_u64)
+			// Standard Error: 2
+			.saturating_add(Weight::from_ref_time(491_u64).saturating_mul(i as u64))
+	}
 }
 
 // For backwards compatibility and tests
@@ -100,5 +108,12 @@ impl WeightInfo for () {
 		// Minimum execution time: 34_500 nanoseconds.
 		Weight::from_ref_time(35_272_000_u64)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// The range of component `i` is `[0, 16384]`.
+	fn data_root(i: u32, ) -> Weight {
+		// Minimum execution time: 290 nanoseconds.
+		Weight::from_ref_time(533_838_u64)
+			// Standard Error: 2
+			.saturating_add(Weight::from_ref_time(491_u64).saturating_mul(i as u64))
 	}
 }

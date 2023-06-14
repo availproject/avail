@@ -122,7 +122,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::submit_data(data.len() as u32))]
+		#[pallet::weight(({T::WeightInfo::submit_data(data.len() as u32) + T::WeightInfo::data_root(data.len() as u32)}, DispatchClass::Normal))]
 		pub fn submit_data(
 			origin: OriginFor<T>,
 			data: AppDataFor<T>,
