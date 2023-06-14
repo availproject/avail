@@ -10,12 +10,12 @@ pub trait Grid<A> {
 	// x indexes within a row, y indexes within a column
 	// 0 <= x < width, 0 <= y < height
 	fn get(&self, x: usize, y: usize) -> Option<&A> {
-		let i = Self::coord_to_ind(self.dims(), x, y);
+		let i = Self::coord_to_ind(self.dims(), x, y)?;
 		self.get_ind(i)
 	}
 	fn get_ind(&self, i: usize) -> Option<&A>;
 	fn ind_to_coord(dims: &Dimensions, i: usize) -> (usize, usize);
-	fn coord_to_ind(dims: &Dimensions, x: usize, y: usize) -> usize;
+	fn coord_to_ind(dims: &Dimensions, x: usize, y: usize) -> Option<usize>;
 }
 
 pub struct RowMajor<A> {
@@ -49,8 +49,8 @@ impl<A> Grid<A> for RowMajor<A> {
 		(i % dims.width_nz(), i / dims.width_nz())
 	}
 
-	fn coord_to_ind(dims: &Dimensions, x: usize, y: usize) -> usize {
-		x.saturating_add(y.saturating_mul(dims.width()))
+	fn coord_to_ind(dims: &Dimensions, x: usize, y: usize) -> Option<usize> {
+		x.checked_add(y.checked_mul(dims.width())?)
 	}
 
 	fn inner(&self) -> &Vec<A> {
@@ -79,8 +79,8 @@ impl<A> Grid<A> for ColumnMajor<A> {
 		(i / dims.height_nz(), i % dims.height_nz())
 	}
 
-	fn coord_to_ind(dims: &Dimensions, x: usize, y: usize) -> usize {
-		y.saturating_add(x.saturating_mul(dims.height()))
+	fn coord_to_ind(dims: &Dimensions, x: usize, y: usize) -> Option<usize> {
+		y.checked_add(x.checked_mul(dims.height())?)
 	}
 
 	fn inner(&self) -> &Vec<A> {
@@ -91,13 +91,25 @@ impl<A> Grid<A> for ColumnMajor<A> {
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
 
-impl<A: Clone + Send + Sync> RowMajor<A> {
+impl<A> RowMajor<A> {
+	pub fn new(width: usize, height: usize, data: Vec<A>) -> Option<Self> {
+		if data.len() == usize::checked_mul(width, height)? {
+			Some(Self {
+				dims: Dimensions::new(width.try_into().ok()?, height.try_into().ok()?),
+				inner: data,
+			})
+		} else {
+			None
+		}
+	}
 	pub fn row(&self, y: usize) -> Option<&[A]> {
 		if y >= self.height() {
 			return None;
 		}
-		let start = y.checked_mul(self.width())?;
-		let end = y.checked_add(1)?.checked_mul(self.width())?;
+		// SAFETY: `y < height` (just one line up)  and `height * width` **is already checked** at `new / into_column_mayor` fns
+		// as invariant of this type, then we can omit `checked_` operations.
+		let start = y * self.width();
+		let end = (y + 1) * self.width();
 		Some(&self.inner[start..end])
 	}
 
@@ -111,14 +123,6 @@ impl<A: Clone + Send + Sync> RowMajor<A> {
 	pub fn rows(&self) -> impl Iterator<Item = (usize, &[A])> + '_ {
 		(0..self.height()).map(|y| (y, self.row(y).expect("Bounds already checked")))
 	}
-
-	#[cfg(feature = "parallel")]
-	pub fn rows_par_iter(&self) -> impl ParallelIterator<Item = (usize, &[A])> + '_ {
-		(0..self.height())
-			.into_par_iter()
-			.map(|y| (y, self.row(y).expect("Bounds already checked")))
-	}
-
 	// TODO: this return type is kinda gross, should it just iterate over vecs?
 	pub fn columns(&self) -> impl Iterator<Item = (usize, impl Iterator<Item = &A>)> + '_ {
 		(0..self.width()).map(|x| (x, self.iter_col(x).expect("Bounds already checked")))
@@ -135,7 +139,9 @@ impl<A: Clone + Send + Sync> RowMajor<A> {
 			(0..self.height()).map(move |y| self.get(x, y).expect("Bounds already checked"))
 		})
 	}
+}
 
+impl<A: Clone> RowMajor<A> {
 	pub fn to_column_major(&self) -> ColumnMajor<A> {
 		self.iter_column_wise()
 			.map(Clone::clone)
@@ -145,7 +151,26 @@ impl<A: Clone + Send + Sync> RowMajor<A> {
 	}
 }
 
-impl<A: Clone> ColumnMajor<A> {
+#[cfg(feature = "parallel")]
+impl<A: Clone + Send + Sync> RowMajor<A> {
+	pub fn rows_par_iter(&self) -> impl ParallelIterator<Item = (usize, &[A])> + '_ {
+		(0..self.height())
+			.into_par_iter()
+			.map(|y| (y, self.row(y).expect("Bounds already checked")))
+	}
+}
+
+impl<A> ColumnMajor<A> {
+	pub fn new(width: usize, height: usize, data: Vec<A>) -> Option<Self> {
+		if data.len() == usize::checked_mul(width, height)? {
+			Some(Self {
+				dims: Dimensions::new(width.try_into().ok()?, height.try_into().ok()?),
+				inner: data,
+			})
+		} else {
+			None
+		}
+	}
 	pub fn col(&self, x: usize) -> Option<&[A]> {
 		if x >= self.width() {
 			return None;
@@ -173,7 +198,9 @@ impl<A: Clone> ColumnMajor<A> {
 			(0..self.height()).map(move |y| self.get(x, y).expect("Bounds already checked"))
 		})
 	}
+}
 
+impl<A: Clone> ColumnMajor<A> {
 	pub fn to_row_major(&self) -> RowMajor<A> {
 		self.iter_row_wise()
 			.map(Clone::clone)
@@ -184,62 +211,26 @@ impl<A: Clone> ColumnMajor<A> {
 }
 
 pub trait IntoRowMajor<A> {
+	/// Convert the underlying data structure to be row-major. This likely involves
+	/// re-allocating the array or re-arranging its elements.
 	fn into_row_major(self, width: usize, height: usize) -> Option<RowMajor<A>>;
 }
 
 pub trait IntoColumnMajor<A> {
+	/// Convert the underlying data structure to be column-major. This likely involves
+	/// re-allocating the array or re-arranging its elements.
 	fn into_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A>>;
 }
 
-impl<A> IntoRowMajor<A> for Vec<A> {
+impl<A, B: Into<Vec<A>>> IntoRowMajor<A> for B {
 	fn into_row_major(self, width: usize, height: usize) -> Option<RowMajor<A>> {
-		if self.len() == usize::checked_mul(width, height)? {
-			Some(RowMajor {
-				dims: Dimensions::new(width.try_into().ok()?, height.try_into().ok()?),
-				inner: self,
-			})
-		} else {
-			None
-		}
+		RowMajor::new(width, height, self.into())
 	}
 }
 
-impl<A> IntoColumnMajor<A> for Vec<A> {
+impl<A, B: Into<Vec<A>>> IntoColumnMajor<A> for B {
 	fn into_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A>> {
-		if self.len() == width.checked_mul(height)? {
-			Some(ColumnMajor {
-				dims: Dimensions::new(width.try_into().ok()?, height.try_into().ok()?),
-				inner: self,
-			})
-		} else {
-			None
-		}
-	}
-}
-
-impl<A, const LEN: usize> IntoColumnMajor<A> for [A; LEN] {
-	fn into_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A>> {
-		if self.len() == width.checked_mul(height)? {
-			Some(ColumnMajor {
-				dims: Dimensions::new(width.try_into().ok()?, height.try_into().ok()?),
-				inner: self.into(),
-			})
-		} else {
-			None
-		}
-	}
-}
-
-impl<A, const LEN: usize> IntoRowMajor<A> for [A; LEN] {
-	fn into_row_major(self, width: usize, height: usize) -> Option<RowMajor<A>> {
-		if self.len() == width.checked_mul(height)? {
-			Some(RowMajor {
-				dims: Dimensions::new(width.try_into().ok()?, height.try_into().ok()?),
-				inner: self.into(),
-			})
-		} else {
-			None
-		}
+		ColumnMajor::new(width, height, self.into())
 	}
 }
 
