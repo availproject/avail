@@ -13,9 +13,11 @@ import (
 	gsrpc "github.com/centrifuge/go-substrate-rpc-client/v4"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	// "github.com/centrifuge/go-substrate-rpc-client/v4/types/codec"
 )
 
 func main() {
+
 	// This sample shows how to create a transaction to make a Avail data submission
 	var configJSON string
 	var config config.Config
@@ -140,17 +142,23 @@ func main() {
 }
 
 func get(hash types.Hash, api *gsrpc.SubstrateAPI, data string) {
+
 	block, err := api.RPC.Chain.GetBlock(hash)
 	if err != nil {
 		panic(err)
 	}
 	for _, ext := range block.Block.Extrinsics {
+		// fmt.Println("pritingh appid test", ext.Signature.AppID)
+		appId := ext.Signature.AppID
+		value := appId.Int64()
+		fmt.Printf("\ntype of AppId: %T", value)
+		fmt.Println("AppId:", value)
 		// these values below are specific indexes only for datasubmission, differs with each extrinsics
 		if ext.Method.CallIndex.SectionIndex == 29 && ext.Method.CallIndex.MethodIndex == 1 {
 			arg := ext.Method.Args
 			str := string(arg)
 			slice := str[2:]
-			fmt.Println("string value", slice)
+			// fmt.Println("string value", slice)
 			fmt.Println("data", data)
 			if slice == data {
 				fmt.Println("Data found in block")
