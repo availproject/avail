@@ -46,14 +46,15 @@ pub fn verify(
 		commitment_to_polynomial,
 	};
 
-	let point = EvaluationDomain::new(dimensions.cols().into())
+	let cols: usize = dimensions.cols().get().into();
+	let point = EvaluationDomain::new(cols)
 		.map_err(|error| Error::InvalidDomain(format!("{error:?}")))?
 		.elements()
 		.nth(cell.position.col.into())
 		.ok_or_else(|| Error::InvalidDomain("Position isn't in domain".to_string()))?;
 
 	public_parameters
-		.trim(dimensions.cols().into())
+		.trim(cols)
 		.map(|(_, verifier_key)| verifier_key.check(point, proof))
 		.map_err(|error| Error::InvalidDegree(format!("{error:?}")))
 }

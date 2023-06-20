@@ -6,7 +6,5 @@
 #[cfg_attr(test, macro_use)]
 extern crate alloc;
 
-mod dims;
 mod grid;
-pub use dims::*;
 pub use grid::*;

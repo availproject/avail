@@ -4,11 +4,13 @@ use kate::{
 	pmp::{merlin::Transcript, traits::PolyMultiProofNoPrecomp},
 	Seed,
 };
+use kate_recovery::matrix::Dimensions;
 use poly_multiproof::traits::AsBytes;
 use rand::thread_rng;
+use std::num::NonZeroU16;
 
 fn main() {
-	let target_dims = kate::grid::Dimensions::new_unchecked(16, 64);
+	let target_dims = Dimensions::new_from(16, 64).unwrap();
 	let pp = kate::testnet::multiproof_params(256, 256);
 	let pmp = poly_multiproof::m1_blst::M1NoPrecomp::new(256, 256, &mut thread_rng());
 	let points = kate::gridgen::domain_points(256).unwrap();
@@ -30,7 +32,7 @@ fn main() {
 		let seed = Seed::default();
 		let grid = kate::gridgen::EvaluationGrid::from_extrinsics(exts, 4, 256, 256, seed)
 			.unwrap()
-			.extend_columns(2)
+			.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 			.unwrap();
 
 		// Setup, serializing as bytes
@@ -61,10 +63,10 @@ fn main() {
 			.iter()
 			.flat_map(|row| row.iter().flat_map(|e| e.to_bytes().unwrap()))
 			.collect::<Vec<_>>();
-		(proof_bytes, evals_bytes, commitments, grid.dims)
+		(proof_bytes, evals_bytes, commitments, grid.dims())
 	};
 
-	let mp_block = kate::gridgen::multiproof_block(0, 0, &dims, &target_dims).unwrap();
+	let mp_block = kate::gridgen::multiproof_block(0, 0, dims, &target_dims).unwrap();
 	let commits = commitments
 		.chunks_exact(48)
 		.skip(mp_block.start_y)

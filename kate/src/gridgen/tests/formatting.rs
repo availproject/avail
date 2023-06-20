@@ -1,10 +1,11 @@
 use da_types::{AppExtrinsic, DataLookup, DataLookupIndexItem};
 use hex_literal::hex;
-use kate_grid::{Dimensions, Grid, IntoColumnMajor, IntoRowMajor};
 use kate_recovery::{
 	com::{app_specific_cells, decode_app_extrinsics, reconstruct_extrinsics},
 	data::DataCell,
+	matrix::Dimensions,
 };
+use nalgebra::base::DMatrix;
 use poly_multiproof::traits::AsBytes;
 
 use crate::{
@@ -15,6 +16,7 @@ use crate::{
 	},
 	Seed,
 };
+use core::num::NonZeroU16;
 
 #[test]
 fn newapi_test_flatten_block() {
@@ -37,7 +39,7 @@ fn newapi_test_flatten_block() {
 		},
 	];
 
-	let expected_dims = Dimensions::new_unchecked(16, 1);
+	let expected_dims = Dimensions::new_from(1, 16).unwrap();
 	let evals = EvaluationGrid::from_extrinsics(extrinsics, 4, 256, 256, Seed::default()).unwrap();
 
 	let expected_index = [(0.into(), 0), (1.into(), 2), (2.into(), 4), (3.into(), 6)]
@@ -52,7 +54,8 @@ fn newapi_test_flatten_block() {
 
 	assert_eq!(evals.lookup, expected_lookup, "The layouts don't match");
 	assert_eq!(
-		evals.dims, expected_dims,
+		evals.dims(),
+		expected_dims,
 		"Dimensions don't match the expected"
 	);
 
@@ -60,7 +63,8 @@ fn newapi_test_flatten_block() {
 
 	let data = evals
 		.evals
-		.inner()
+		.data
+		.as_slice()
 		.iter()
 		.flat_map(|s| s.to_bytes().unwrap())
 		.collect::<Vec<_>>();
@@ -70,7 +74,7 @@ fn newapi_test_flatten_block() {
 #[test]
 fn newapi_test_extend_data_matrix() {
 	// This test expects this result in column major
-	let expected_result = vec![
+	let expected_data = vec![
 		hex!("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e00"),
 		hex!("bc1c6b8b4b02ca677b825ec9dace9aa706813f3ec47abdf9f03c680f4468555e"),
 		hex!("7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a00"),
@@ -88,14 +92,13 @@ fn newapi_test_extend_data_matrix() {
 		hex!("d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f700"),
 		hex!("1ebf725495e11b806dc58d261ac918a4f85260cb45618241614c432a2153ae16"),
 	]
-	.into_iter()
-	.map(|e| ArkScalar::from_bytes(e.as_slice().try_into().unwrap()).unwrap())
-	.collect::<Vec<_>>()
-	.into_column_major(4, 4)
-	.unwrap()
-	.to_row_major();
+	.iter()
+	.map(ArkScalar::from_bytes)
+	.collect::<Result<Vec<_>, _>>()
+	.expect("Invalid Expected result");
 
-	let block_dims = Dimensions::new_unchecked(4, 2);
+	let expected_result = DMatrix::from_column_slice(4, 4, &expected_data);
+
 	let scalars = (0..=247)
 		.collect::<Vec<u8>>()
 		.chunks_exact(DATA_CHUNK_SIZE)
@@ -104,14 +107,13 @@ fn newapi_test_extend_data_matrix() {
 
 	let grid = EvaluationGrid {
 		lookup: DataLookup::default(),
-		evals: scalars
-			.into_row_major(block_dims.width(), block_dims.height())
-			.unwrap(),
-		dims: block_dims,
+		evals: DMatrix::from_row_iterator(2, 4, scalars.into_iter()),
 	};
-	let extend = grid.extend_columns(2).unwrap();
+	let extend = grid
+		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
+		.unwrap();
 
-	assert_eq!(extend.evals.inner(), expected_result.inner());
+	assert_eq!(extend.evals, expected_result);
 }
 
 #[test]
@@ -135,13 +137,11 @@ get erasure coded to ensure redundancy."#;
 
 	let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 32, 4, hash)
 		.unwrap()
-		.extend_columns(2)
+		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 		.unwrap();
 
 	let index = app_data_index_from_lookup(&grid.lookup);
-	let bdims =
-		kate_recovery::matrix::Dimensions::new(grid.dims.height() as u16, grid.dims.width() as u16)
-			.unwrap();
+	let bdims = grid.dims();
 	for xt in &xts {
 		let positions = app_specific_cells(&index, &bdims, xt.app_id.0).unwrap();
 		let cells = positions
@@ -150,46 +150,45 @@ get erasure coded to ensure redundancy."#;
 				position: pos.clone(),
 				data: grid
 					.evals
-					.get(pos.col as usize, pos.row as usize)
+					.get((pos.row as usize, pos.col as usize))
 					.unwrap()
 					.to_bytes()
 					.unwrap(),
 			})
 			.collect::<Vec<_>>();
-		let data = &decode_app_extrinsics(&index, &bdims, cells, xt.app_id.0).unwrap()[0];
+		let data = &decode_app_extrinsics(&index, bdims, cells, xt.app_id.0).unwrap()[0];
 		assert_eq!(data, &xt.data);
 	}
 
 	assert!(matches!(
-		decode_app_extrinsics(&index, &bdims, vec![], 0),
+		decode_app_extrinsics(&index, bdims, vec![], 0),
 		Err(kate_recovery::com::ReconstructionError::MissingCell { .. })
 	));
 }
 
 #[test]
 fn test_extend_mock_data() {
-	let orig_data = br#"This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
+	let orig_data = r#"This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
 get erasure coded to ensure redundancy.
 Let's see how this gets encoded and then reconstructed by sampling only some data."#;
-	let exts = vec![AppExtrinsic::from(orig_data.to_vec())];
+	let exts = vec![AppExtrinsic::from(orig_data.as_bytes().to_vec())];
 
 	// The hash is used for seed for padding the block to next power of two value
 	let hash = Seed::default();
 	let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 128, 2, hash)
 		.unwrap()
-		.extend_columns(2)
+		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 		.unwrap();
 
 	let cols = sample_cells(&grid, None);
-	let bdims =
-		kate_recovery::matrix::Dimensions::new(grid.dims.height() as u16, grid.dims.width() as u16)
-			.unwrap();
+	let bdims = grid.dims();
 
 	let index = app_data_index_from_lookup(&grid.lookup);
 	let res = reconstruct_extrinsics(&index, &bdims, cols).unwrap();
 	let s = String::from_utf8_lossy(res[0].1[0].as_slice());
 
-	assert_eq!(res[0].1[0], orig_data);
+	assert_eq!(s, orig_data);
+	assert_eq!(res[0].1[0], orig_data.as_bytes());
 
 	eprintln!("Decoded: {}", s);
 }

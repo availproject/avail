@@ -1,17 +1,20 @@
 use codec::Decode;
+use core::num::TryFromIntError;
 use dusk_bytes::Serializable as _;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
 use rand::seq::SliceRandom;
 use sp_arithmetic::{traits::SaturatedConversion, Percent};
+use static_assertions::const_assert_ne;
 use std::{
 	collections::{HashMap, HashSet},
 	convert::{TryFrom, TryInto},
 	iter::FromIterator,
+	ops::Range,
 };
 use thiserror_no_std::Error;
 
 use crate::{
-	config::{self, CHUNK_SIZE},
+	config::{self, CHUNK_SIZE, DATA_CHUNK_SIZE, PADDING_TAIL_VALUE},
 	data, ensure, index, matrix,
 };
 
@@ -28,7 +31,7 @@ pub enum ReconstructionError {
 	#[error("Cannot reconstruct column: {0}")]
 	ColumnReconstructionError(String),
 	#[error("Cannot decode data: {0}")]
-	DataDecodingError(String),
+	DataDecodingError(#[from] UnflattenError),
 	#[error("Column reconstruction supports up to {}", u16::MAX)]
 	RowCountExceeded,
 }
@@ -64,7 +67,7 @@ fn map_cells(
 ) -> Result<HashMap<u16, HashMap<u32, data::DataCell>>, ReconstructionError> {
 	let mut result: HashMap<u16, HashMap<u32, data::DataCell>> = HashMap::new();
 	for cell in cells {
-		let position = cell.position.clone();
+		let position = cell.position;
 		if !dimensions.extended_contains(&position) {
 			return Err(ReconstructionError::InvalidCell { position });
 		}
@@ -136,8 +139,7 @@ pub fn reconstruct_app_extrinsics(
 	let data = reconstruct_available(dimensions, cells)?;
 	let ranges = index.app_data_ranges(app_id);
 
-	Ok(unflatten_padded_data(ranges, data)
-		.map_err(ReconstructionError::DataDecodingError)?
+	Ok(unflatten_padded_data(ranges, data)?
 		.into_iter()
 		.flat_map(|(_, xts)| xts)
 		.collect::<Vec<_>>())
@@ -176,9 +178,10 @@ pub fn reconstruct_columns(
 	columns
 		.iter()
 		.map(|(&col, cells)| {
-			if cells.len() < dimensions.rows().into() {
-				return Err(ReconstructionError::InvalidColumn(col));
-			}
+			ensure!(
+				cells.len() >= dimensions.rows().get().into(),
+				ReconstructionError::InvalidColumn(col)
+			);
 
 			let cells = cells.values().cloned().collect::<Vec<_>>();
 
@@ -198,14 +201,16 @@ fn reconstruct_available(
 	cells: Vec<data::DataCell>,
 ) -> Result<Vec<u8>, ReconstructionError> {
 	let columns = map_cells(dimensions, cells)?;
+	let rows: usize = dimensions.rows().get().into();
 
-	let scalars = (0..dimensions.cols())
+	let scalars = (0..dimensions.cols().get())
 		.map(|col| match columns.get(&col) {
-			None => Ok(vec![None; dimensions.rows() as usize]),
+			None => Ok(vec![None; rows]),
 			Some(column_cells) => {
-				if column_cells.len() < dimensions.rows() as usize {
-					return Err(ReconstructionError::InvalidColumn(col));
-				}
+				ensure!(
+					column_cells.len() >= rows,
+					ReconstructionError::InvalidColumn(col)
+				);
 				let cells = column_cells.values().cloned().collect::<Vec<_>>();
 
 				reconstruct_column(dimensions.extended_rows(), &cells)
@@ -241,15 +246,15 @@ fn reconstruct_available(
 /// * `app_id` - Application ID
 pub fn decode_app_extrinsics(
 	index: &index::AppDataIndex,
-	dimensions: &matrix::Dimensions,
+	dimensions: matrix::Dimensions,
 	cells: Vec<data::DataCell>,
 	app_id: u32,
 ) -> Result<AppData, ReconstructionError> {
-	let positions = app_specific_cells(index, dimensions, app_id).unwrap_or_default();
+	let positions = app_specific_cells(index, &dimensions, app_id).unwrap_or_default();
 	if positions.is_empty() {
 		return Ok(vec![]);
 	}
-	let cells_map = map_cells(dimensions, cells)?;
+	let cells_map = map_cells(&dimensions, cells)?;
 
 	for position in positions {
 		cells_map
@@ -279,50 +284,60 @@ pub fn decode_app_extrinsics(
 		.collect::<Vec<_>>())
 }
 
+#[derive(Error, Clone, Debug)]
+pub enum UnflattenError {
+	#[error("`AppDataRange` cannot be converted into `Range<usize>`")]
+	RangeConversion(#[from] TryFromIntError),
+	#[error("`AppData` cannot be decoded due to {0}")]
+	Codec(#[from] codec::Error),
+	#[error("Invalid data size, it needs to be a multiple of CHUNK_SIZE")]
+	InvalidLen,
+}
+
 // Removes both extrinsics and block padding (iec_9797 and seeded random data)
 pub fn unflatten_padded_data(
 	ranges: Vec<(u32, AppDataRange)>,
 	data: Vec<u8>,
-) -> Result<Vec<(u32, AppData)>, String> {
-	if data.len() % config::CHUNK_SIZE > 0 {
-		return Err("Invalid data size".to_string());
-	}
+) -> Result<Vec<(u32, AppData)>, UnflattenError> {
+	ensure!(data.len() % CHUNK_SIZE == 0, UnflattenError::InvalidLen);
 
-	fn trim_to_data_chunks(range_data: &[u8]) -> Result<Vec<u8>, String> {
-		range_data
-			.chunks_exact(config::CHUNK_SIZE)
-			.map(|chunk| chunk.get(0..config::DATA_CHUNK_SIZE))
-			.collect::<Option<Vec<&[u8]>>>()
-			.map(|data_chunks| data_chunks.concat())
-			.ok_or_else(|| format!("Chunk data size less than {}", config::DATA_CHUNK_SIZE))
-	}
+	fn extract_encoded_extrinsic(range_data: &[u8]) -> Vec<u8> {
+		const_assert_ne!(CHUNK_SIZE, 0);
+		const_assert_ne!(DATA_CHUNK_SIZE, 0);
 
-	fn trim_padding(mut data: Vec<u8>) -> Result<Vec<u8>, String> {
-		while data.last() == Some(&0) {
-			data.pop();
+		// INTERNAL: Chunk into 32 bytes (CHUNK_SIZE), then remove padding (0..30 bytes).
+		let mut data = range_data
+			.chunks_exact(CHUNK_SIZE)
+			.flat_map(|chunk| chunk[0..DATA_CHUNK_SIZE].iter())
+			.cloned()
+			.collect::<Vec<u8>>();
+
+		// INTERNAL: Remove zeros and `PADDING_TAIL_VALUE` at the end.
+		let tail_value_pos = data
+			.iter()
+			.rev()
+			.enumerate()
+			.skip_while(|(_, byte)| **byte == 0)
+			.find(|(_, byte)| **byte == PADDING_TAIL_VALUE)
+			.map(|(rev_pos, _)| data.len() - rev_pos - 1);
+		if let Some(tail_value_pos) = tail_value_pos {
+			data.truncate(tail_value_pos);
 		}
 
-		match data.pop() {
-			None => Err("Cannot trim padding on empty data".to_string()),
-			Some(config::PADDING_TAIL_VALUE) => Ok(data),
-			Some(_) => Err("Invalid padding tail value".to_string()),
-		}
-	}
-
-	fn decode_extrinsics(data: Vec<u8>) -> Result<AppData, String> {
-		<AppData>::decode(&mut data.as_slice()).map_err(|err| format!("Cannot decode data: {err}"))
+		data
 	}
 
 	ranges
 		.into_iter()
 		.map(|(app_id, range)| {
-			let range = range.start as usize..range.end as usize;
-			trim_to_data_chunks(&data[range])
-				.and_then(trim_padding)
-				.and_then(decode_extrinsics)
-				.map(|data| (app_id, data))
+			//let range = range.start as usize..range.end as usize;
+			let range: Range<usize> = range.start.try_into()?..range.end.try_into()?;
+			let encoded = extract_encoded_extrinsic(&data[range]);
+			let extrinsic = <AppData>::decode(&mut encoded.as_slice())?;
+
+			Ok((app_id, extrinsic))
 		})
-		.collect::<Result<Vec<(u32, AppData)>, String>>()
+		.collect::<Result<Vec<(u32, AppData)>, _>>()
 }
 
 // This module is taken from https://gist.github.com/itzmeanjan/4acf9338d9233e79cfbee5d311e7a0b4
@@ -443,7 +458,7 @@ fn unshift_poly(poly: &mut [BlsScalar]) {
 	}
 }
 
-pub type AppDataRange = std::ops::Range<u32>;
+pub type AppDataRange = Range<u32>;
 // use this function for reconstructing back all cells of certain column
 // when at least 50% of them are available
 //

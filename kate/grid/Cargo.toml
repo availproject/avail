@@ -5,7 +5,13 @@ authors = ["William Arnold warnold@polygon.technology"]
 edition = "2021"
 
 [dependencies]
+kate-recovery = { path = "../recovery", default-features = false }
 rayon = { version = "1.5.2", optional = true }
 
+[dev-dependencies]
+nalgebra = "0.32.2"
+
 [features]
+default = ["std"]
+std = ["kate-recovery/std"]
 parallel = ["rayon"]

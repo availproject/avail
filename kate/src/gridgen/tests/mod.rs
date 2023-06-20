@@ -1,5 +1,4 @@
 use da_types::{AppExtrinsic, DataLookup};
-use kate_grid::Grid;
 use kate_recovery::{data::DataCell, index::AppDataIndex};
 use once_cell::sync::Lazy;
 use poly_multiproof::{m1_blst::M1NoPrecomp, traits::AsBytes};
@@ -57,20 +56,21 @@ fn sample_unique(rng: &mut impl Rng, n_samples: usize, n: usize) -> Vec<usize> {
 
 fn sample_cells(grid: &EvaluationGrid, columns: Option<&[usize]>) -> Vec<DataCell> {
 	let mut rng = ChaChaRng::from_seed([42u8; 32]);
+	let (g_rows, g_cols) = grid.evals.shape();
 	let cols: Vec<usize> = match columns {
 		Some(cols) => cols.to_vec(),
-		None => (0..grid.dims.width()).into_iter().collect(),
+		None => (0..g_cols).into_iter().collect(),
 	};
 	cols.iter()
 		.flat_map(|x| {
-			sample_unique(&mut rng, grid.dims.height() / 2, grid.dims.height())
+			sample_unique(&mut rng, g_rows / 2, g_rows)
 				.into_iter()
 				.map(move |y| kate_recovery::data::DataCell {
 					position: kate_recovery::matrix::Position {
 						row: y as u32,
 						col: *x as u16,
 					},
-					data: grid.evals.get(*x, y).unwrap().to_bytes().unwrap(),
+					data: grid.evals.get((y, *x)).unwrap().to_bytes().unwrap(),
 				})
 		})
 		.collect::<Vec<_>>()

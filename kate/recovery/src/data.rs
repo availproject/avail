@@ -56,7 +56,7 @@ pub fn rows(dimensions: &Dimensions, cells: &[&Cell]) -> Vec<(RowIndex, Vec<u8>)
 impl From<Cell> for DataCell {
 	fn from(cell: Cell) -> Self {
 		DataCell {
-			position: cell.position.clone(),
+			position: cell.position,
 			data: cell.data(),
 		}
 	}
@@ -123,7 +123,7 @@ mod tests {
 		let mut rows = rows(&dimensions, &cells);
 		rows.sort_by_key(|(key, _)| key.0);
 
-		assert!(rows.len() == 1);
+		assert_eq!(rows.len(), 1);
 		let (row_index, row) = &rows[0];
 		assert_eq!(row_index.0, 0);
 		assert_eq!(*row, [[0u8; 32], [1u8; 32]].concat());

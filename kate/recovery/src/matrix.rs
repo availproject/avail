@@ -1,22 +1,57 @@
-use std::ops::Range;
-
+#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use std::{
+	convert::TryInto,
+	fmt::{Display, Formatter, Result},
+	num::NonZeroU16,
+	ops::{Mul, Range},
+};
 
 use crate::config::{self, CHUNK_SIZE};
 
 const EXTENSION_FACTOR_U32: u32 = config::EXTENSION_FACTOR as u32;
 
 /// Position of a cell in the the matrix.
-#[derive(Default, Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Default, Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct Position {
 	pub row: u32,
 	pub col: u16,
 }
 
+impl<R, C> From<(R, C)> for Position
+where
+	R: Into<u32>,
+	C: Into<u16>,
+{
+	fn from(row_col: (R, C)) -> Self {
+		Self {
+			row: row_col.0.into(),
+			col: row_col.1.into(),
+		}
+	}
+}
+
+impl<R, C> From<Position> for (R, C)
+where
+	R: From<u32>,
+	C: From<u16>,
+{
+	fn from(p: Position) -> (R, C) {
+		(p.row.into(), p.col.into())
+	}
+}
+
+impl Display for Position {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		f.write_fmt(format_args!("{}:{}", self.col, self.row))
+	}
+}
+
 impl Position {
 	/// Refrence in format `block_number:column_number:row_number`
 	pub fn reference(&self, block_number: u32) -> String {
-		format!("{}:{}:{}", block_number, self.col, self.row)
+		format!("{}:{}", block_number, self)
 	}
 
 	/// Checks if position is from extended row
@@ -57,51 +92,103 @@ impl RowIndex {
 /// Extended columns (EC is erasure code): [1,EC,5,EC], [2,EC,6,EC], [3,EC,7,EC], [4,EC,8,EC]  
 /// Matrix representation: [1,5,2,6,3,7,4,8]  
 /// Extended matrix representation: [1,EC,5,EC,2,EC,6,EC,3,EC,7,EC,4,EC,8,EC]
-#[derive(Debug, Clone)]
+#[derive(Copy, Debug, Clone, PartialEq, Eq)]
 pub struct Dimensions {
-	rows: u16,
-	cols: u16,
+	rows: NonZeroU16,
+	cols: NonZeroU16,
+}
+
+impl<R, C> From<(R, C)> for Dimensions
+where
+	R: Into<NonZeroU16>,
+	C: Into<NonZeroU16>,
+{
+	fn from(rows_cols: (R, C)) -> Self {
+		let (rows, cols) = rows_cols;
+		Self {
+			rows: rows.into(),
+			cols: cols.into(),
+		}
+	}
+}
+
+impl<R, C> From<Dimensions> for (R, C)
+where
+	R: From<u16>,
+	C: From<u16>,
+{
+	fn from(d: Dimensions) -> Self {
+		(d.rows.get().into(), d.cols.get().into())
+	}
 }
 
 impl Dimensions {
-	/// Creates new matrix dimensions.
-	/// Data layout is assumed to be row-wise.
-	/// Returns `None` if rows or cols is 0.
-	pub const fn new(rows: u16, cols: u16) -> Option<Self> {
-		if rows == 0 || cols == 0 {
-			return None;
+	pub fn new<R: TryInto<NonZeroU16>, C: TryInto<NonZeroU16>>(rows: R, cols: C) -> Option<Self> {
+		let rows = rows.try_into().ok()?;
+		let cols = cols.try_into().ok()?;
+
+		Some(Self { rows, cols })
+	}
+
+	pub fn new_from<R: TryInto<u16>, C: TryInto<u16>>(rows: R, cols: C) -> Option<Self> {
+		let rows: u16 = rows.try_into().ok()?;
+		let cols: u16 = cols.try_into().ok()?;
+
+		Self::new(rows, cols)
+	}
+
+	/// Creates a `Dimension` without checking whether parameters are non-zero. This results in
+	/// undefined behaviour if any parameter is zero.
+	///
+	/// # Safety
+	/// Parameters `rows` and `cols` must not be zero.
+	pub const unsafe fn new_unchecked(rows: u16, cols: u16) -> Self {
+		Self {
+			rows: NonZeroU16::new_unchecked(rows),
+			cols: NonZeroU16::new_unchecked(cols),
 		}
-		Some(Dimensions { rows, cols })
 	}
 
 	/// Returns number of rows
-	pub fn rows(&self) -> u16 {
+	pub fn rows(&self) -> NonZeroU16 {
 		self.rows
 	}
 
 	/// Returns number of columns
-	pub fn cols(&self) -> u16 {
+	pub fn cols(&self) -> NonZeroU16 {
 		self.cols
 	}
 
 	/// Matrix size.
-	pub fn size(&self) -> u32 {
-		self.rows as u32 * self.cols as u32
+	pub fn size<T: From<u16> + Mul<Output = T>>(&self) -> T {
+		T::from(self.rows.get()) * T::from(self.cols.get())
+	}
+
+	pub fn divides(&self, other: &Self) -> bool {
+		other.cols.get() % self.cols == 0u16 && other.rows.get() % self.rows == 0u16
+	}
+
+	/// Extends rows by `row_factor` and cols by `col_factor`.
+	pub fn extend(&self, row_factor: NonZeroU16, col_factor: NonZeroU16) -> Option<Self> {
+		let rows = self.rows.checked_mul(row_factor)?;
+		let cols = self.cols.checked_mul(col_factor)?;
+
+		Some(Self { rows, cols })
 	}
 
 	/// Extended matrix size.
-	pub fn extended_size(&self) -> u64 {
-		self.extended_rows() as u64 * self.cols as u64
+	pub fn extended_size(&self) -> u32 {
+		self.extended_rows() * u32::from(self.cols.get())
 	}
 
 	/// Row size in bytes
 	pub fn row_byte_size(&self) -> usize {
-		CHUNK_SIZE * self.cols as usize
+		CHUNK_SIZE * usize::from(self.cols.get())
 	}
 
 	/// Extended matrix rows count.
 	pub fn extended_rows(&self) -> u32 {
-		(self.rows as u32) * EXTENSION_FACTOR_U32
+		u32::from(self.rows.get()) * EXTENSION_FACTOR_U32
 	}
 
 	/// List of data row indexes in the extended matrix.
@@ -123,7 +210,7 @@ impl Dimensions {
 	/// Cell positions for given column in extended matrix.
 	/// Empty if column index is not valid.
 	pub fn col_positions(&self, col: u16) -> Vec<Position> {
-		if self.cols() <= col {
+		if self.cols().get() <= col {
 			return vec![];
 		}
 		(0..self.extended_rows())
@@ -137,7 +224,7 @@ impl Dimensions {
 		if self.extended_rows() <= row {
 			return vec![];
 		}
-		(0..self.cols())
+		(0..self.cols().get())
 			.map(|col| Position { col, row })
 			.collect::<Vec<_>>()
 	}
@@ -152,12 +239,12 @@ impl Dimensions {
 
 	/// Column index of a cell in the matrix.
 	fn col(&self, cell: u32) -> u16 {
-		(cell % self.cols as u32) as u16
+		(cell % u32::from(self.cols.get())) as u16
 	}
 
 	/// Extended matrix data row index of cell in the data matrix.
 	fn extended_data_row(&self, cell: u32) -> u32 {
-		(cell / self.cols as u32) * EXTENSION_FACTOR_U32
+		(cell / u32::from(self.cols.get())) * EXTENSION_FACTOR_U32
 	}
 
 	/// Extended matrix data position of a cell in the data matrix.
@@ -179,7 +266,7 @@ impl Dimensions {
 
 	/// Checks if extended matrix contains given position.
 	pub fn extended_contains(&self, position: &Position) -> bool {
-		position.row < self.extended_rows() && position.col < self.cols
+		position.row < self.extended_rows() && position.col < self.cols.get()
 	}
 
 	/// Creates iterator over rows in extended matrix.
@@ -189,22 +276,22 @@ impl Dimensions {
 
 	/// Creates iterator over data cells in data matrix (used to retrieve data from the matrix).
 	pub fn iter_data(&self) -> impl Iterator<Item = (usize, usize)> {
-		let rows :usize = self.rows.get().into();
-		let cols :usize = self.cols.get().into();
+		let rows = self.rows.get().into();
+		let cols = self.cols.get().into();
 		(0..rows).flat_map(move |row| (0..cols).map(move |col| (row, col)))
 	}
 
 	/// Creates iterator over cell indexes in data matrix (used to store data in the matrix).
 	pub fn iter_cells(&self) -> impl Iterator<Item = u32> {
-		let rows = self.rows as u32;
-		let cols = self.cols;
-		(0..cols).flat_map(move |col| (0..rows).map(move |row| row * cols as u32 + col as u32))
+		let rows: u32 = self.rows.get().into();
+		let cols: u32 = self.cols.get().into();
+		(0..cols).flat_map(move |col| (0..rows).map(move |row| row * cols + col))
 	}
 
 	/// Creates iterator over data positions by row in extended matrix.
 	pub fn iter_extended_data_positions(&self) -> impl Iterator<Item = (u32, u16)> {
-		let rows = self.rows as u32;
-		let cols = self.cols;
+		let rows: u32 = self.rows.get().into();
+		let cols = self.cols.get();
 		(0..rows).flat_map(move |row| (0..cols).map(move |col| (row * EXTENSION_FACTOR_U32, col)))
 	}
 
@@ -216,12 +303,19 @@ impl Dimensions {
 		let size = (self.extended_size() as f64 / partition.fraction as f64).ceil() as u32;
 		let start = size * (partition.number - 1) as u32;
 		let end = size * (partition.number as u32);
-		let cols: u32 = self.cols().into();
+		let cols: u32 = self.cols.get().into();
 
 		(start..end).map(move |cell| Position {
 			row: cell / cols,
 			col: (cell % cols) as u16,
 		})
+	}
+
+	pub fn transpose(self) -> Self {
+		Self {
+			rows: self.cols,
+			cols: self.rows,
+		}
 	}
 }
 
@@ -276,6 +370,6 @@ mod tests {
 			.unwrap()
 			.iter_extended_partition_positions(&Partition { number, fraction })
 			.zip(expected.iter().map(|&(row, col)| Position { row, col }))
-			.for_each(|(p1, p2)| assert!(p1 == p2));
+			.for_each(|(p1, p2)| assert_eq!(p1, p2));
 	}
 }

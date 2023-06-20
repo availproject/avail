@@ -4,7 +4,6 @@ members = [
 	"primitives/types",
 	"kate",
 	"kate/recovery",
-	"kate/grid",
 	"primitives/nomad/signature",
 	"primitives/nomad/nomad-core",
 	"primitives/nomad/nomad-base",

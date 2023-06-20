@@ -8,20 +8,20 @@ use std::{
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	fft::{EvaluationDomain, Evaluations},
-	prelude::{BlsScalar, PublicParameters},
+	prelude::{BlsScalar, CommitKey, PublicParameters},
 };
 use thiserror_no_std::Error;
 
 use crate::{
 	com,
 	config::{self, COMMITMENT_SIZE},
-	index, matrix,
+	ensure, index, matrix,
 };
 
 #[derive(Error, Debug)]
-pub enum DataError {
+pub enum Error {
 	#[error("Scalar slice error: {0}")]
-	SliceError(TryFromSliceError),
+	SliceError(#[from] TryFromSliceError),
 	#[error("Scalar data is not valid")]
 	ScalarDataError,
 	#[error("Invalid scalar data length")]
@@ -31,45 +31,23 @@ pub enum DataError {
 	#[error("Bad data len")]
 	BadLen,
 	#[error("Plonk error: {0}")]
-	PlonkError(dusk_plonk::error::Error),
+	PlonkError(#[from] dusk_plonk::error::Error),
 	#[error("Bad commitments data")]
 	BadCommitmentsData,
 	#[error("Bad rows data")]
 	BadRowsData,
-}
-
-#[derive(Error, Debug)]
-pub enum Error {
-	#[error("Invalid data: {0}")]
-	InvalidData(DataError),
-}
-
-impl From<TryFromSliceError> for Error {
-	fn from(e: TryFromSliceError) -> Self {
-		Self::InvalidData(DataError::SliceError(e))
-	}
-}
-
-impl From<TryFromIntError> for Error {
-	fn from(_: TryFromIntError) -> Self {
-		Self::InvalidData(DataError::BadCommitmentsData)
-	}
+	#[error("Integer conversion error")]
+	IntError(#[from] TryFromIntError),
 }
 
 #[cfg(feature = "std")]
 impl From<dusk_bytes::Error> for Error {
 	fn from(e: dusk_bytes::Error) -> Self {
 		match e {
-			dusk_bytes::Error::InvalidData => Self::InvalidData(DataError::ScalarDataError),
-			dusk_bytes::Error::BadLength { .. } => Self::InvalidData(DataError::BadScalarDataLen),
-			dusk_bytes::Error::InvalidChar { .. } => Self::InvalidData(DataError::BadScalarData),
+			dusk_bytes::Error::InvalidData => Self::ScalarDataError,
+			dusk_bytes::Error::BadLength { .. } => Self::BadScalarDataLen,
+			dusk_bytes::Error::InvalidChar { .. } => Self::BadScalarData,
 		}
-	}
-}
-
-impl From<dusk_plonk::error::Error> for Error {
-	fn from(e: dusk_plonk::error::Error) -> Self {
-		Self::InvalidData(DataError::PlonkError(e))
 	}
 }
 
@@ -80,9 +58,7 @@ fn try_into_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 
 fn try_into_scalars(data: &[u8]) -> Result<Vec<BlsScalar>, Error> {
 	let chunks = data.chunks_exact(config::CHUNK_SIZE);
-	if !chunks.remainder().is_empty() {
-		return Err(Error::InvalidData(DataError::BadLen));
-	}
+	ensure!(chunks.remainder().is_empty(), Error::BadLen);
 	chunks
 		.map(try_into_scalar)
 		.collect::<Result<Vec<BlsScalar>, Error>>()
@@ -109,18 +85,17 @@ pub fn verify_equality(
 	dimensions: &matrix::Dimensions,
 	app_id: u32,
 ) -> Result<(Vec<u32>, Vec<u32>), Error> {
-	if commitments.len() != dimensions.extended_rows().try_into()? {
-		return Err(Error::InvalidData(DataError::BadCommitmentsData));
-	}
-
+	let ext_rows: usize = dimensions.extended_rows().try_into()?;
+	ensure!(commitments.len() == ext_rows, Error::BadCommitmentsData);
 	let mut app_rows = com::app_specific_rows(index, dimensions, app_id);
 
-	if rows.len() != dimensions.extended_rows().try_into()? {
+	if rows.len() != ext_rows {
 		return Ok((vec![], app_rows));
 	}
 
-	let (prover_key, _) = public_params.trim(dimensions.cols() as usize)?;
-	let domain = EvaluationDomain::new(dimensions.cols() as usize)?;
+	let dim_cols = dimensions.cols().get().into();
+	let (prover_key, _) = public_params.trim(dim_cols)?;
+	let domain = EvaluationDomain::new(dim_cols)?;
 
 	// This is a single-threaded implementation.
 	// At some point we should benchmark and decide
@@ -130,11 +105,8 @@ pub fn verify_equality(
 		.zip(rows.iter())
 		.zip(0u32..)
 		.filter(|(.., index)| app_rows.contains(index))
-		.filter_map(|((&commitment, row), index)| {
-			try_into_scalars(row.as_ref()?)
-				.map(|scalars| Evaluations::from_vec_and_domain(scalars, domain).interpolate())
-				.and_then(|polynomial| prover_key.commit(&polynomial).map_err(From::from))
-				.map(|result| (result.to_bytes() == commitment).then_some(index))
+		.filter_map(|((commitment, maybe_row), index)| {
+			row_index_commitment_verification(&prover_key, domain, commitment, maybe_row, index)
 				.transpose()
 		})
 		.collect::<Result<Vec<u32>, Error>>()?;
@@ -142,6 +114,25 @@ pub fn verify_equality(
 	app_rows.retain(|row| !verified.contains(row));
 
 	Ok((verified, app_rows))
+}
+
+fn row_index_commitment_verification(
+	prover_key: &CommitKey,
+	domain: EvaluationDomain,
+	commitment: &[u8],
+	maybe_row: &Option<Vec<u8>>,
+	index: u32,
+) -> Result<Option<u32>, Error> {
+	if let Some(row) = maybe_row.as_ref() {
+		let scalars = try_into_scalars(row)?;
+		let polynomial = Evaluations::from_vec_and_domain(scalars, domain).interpolate();
+		let result = prover_key.commit(&polynomial)?;
+
+		if result.to_bytes() == commitment {
+			return Ok(Some(index));
+		}
+	}
+	Ok(None)
 }
 
 /// Creates vector of exact size commitments, from commitments slice

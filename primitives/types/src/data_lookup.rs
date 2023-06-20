@@ -18,6 +18,23 @@ pub struct DataLookup {
 	pub index: Vec<DataLookupIndexItem>,
 }
 
+impl DataLookup {
+	pub fn range_of(&self, app_id: AppId) -> Option<(u32, u32)> {
+		self.index
+			.iter()
+			.position(|item| item.app_id == app_id)
+			.map(|pos| {
+				let start_idx = unsafe { self.index.get_unchecked(pos).start };
+				let end_idx = self
+					.index
+					.get(pos.saturating_add(1))
+					.map(|item| item.start)
+					.unwrap_or(self.size);
+				(start_idx, end_idx)
+			})
+	}
+}
+
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Default, TypeInfo, RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct DataLookupIndexItem {

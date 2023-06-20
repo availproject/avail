@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 
-use crate::Dimensions;
+use kate_recovery::matrix::Dimensions;
 
 pub trait Grid<A> {
 	fn width(&self) -> usize;
@@ -30,11 +30,11 @@ pub struct ColumnMajor<A> {
 
 impl<A> Grid<A> for RowMajor<A> {
 	fn width(&self) -> usize {
-		self.dims.width()
+		self.dims.cols().get().into()
 	}
 
 	fn height(&self) -> usize {
-		self.dims.height()
+		self.dims.rows().get().into()
 	}
 
 	fn dims(&self) -> &Dimensions {
@@ -46,11 +46,12 @@ impl<A> Grid<A> for RowMajor<A> {
 	}
 
 	fn ind_to_coord(dims: &Dimensions, i: usize) -> (usize, usize) {
-		(i % dims.width_nz(), i / dims.width_nz())
+		let cols: usize = dims.cols().get().into();
+		(i % cols, i / cols)
 	}
 
 	fn coord_to_ind(dims: &Dimensions, x: usize, y: usize) -> usize {
-		x.saturating_add(y.saturating_mul(dims.width()))
+		x.saturating_add(y.saturating_mul(dims.cols().get().into()))
 	}
 
 	fn inner(&self) -> &Vec<A> {
@@ -60,11 +61,11 @@ impl<A> Grid<A> for RowMajor<A> {
 
 impl<A> Grid<A> for ColumnMajor<A> {
 	fn width(&self) -> usize {
-		self.dims.width()
+		self.dims.cols().get().into()
 	}
 
 	fn height(&self) -> usize {
-		self.dims.height()
+		self.dims.rows().get().into()
 	}
 
 	fn dims(&self) -> &Dimensions {
@@ -76,11 +77,12 @@ impl<A> Grid<A> for ColumnMajor<A> {
 	}
 
 	fn ind_to_coord(dims: &Dimensions, i: usize) -> (usize, usize) {
-		(i / dims.height_nz(), i % dims.height_nz())
+		let rows: usize = dims.rows().get().into();
+		(i / rows, i % rows)
 	}
 
 	fn coord_to_ind(dims: &Dimensions, x: usize, y: usize) -> usize {
-		y.saturating_add(x.saturating_mul(dims.height()))
+		y.saturating_add(x.saturating_mul(dims.rows().get().into()))
 	}
 
 	fn inner(&self) -> &Vec<A> {
@@ -195,7 +197,7 @@ impl<A> IntoRowMajor<A> for Vec<A> {
 	fn into_row_major(self, width: usize, height: usize) -> Option<RowMajor<A>> {
 		if self.len() == usize::checked_mul(width, height)? {
 			Some(RowMajor {
-				dims: Dimensions::new(width.try_into().ok()?, height.try_into().ok()?),
+				dims: Dimensions::new_from(height, width)?,
 				inner: self,
 			})
 		} else {
@@ -208,7 +210,7 @@ impl<A> IntoColumnMajor<A> for Vec<A> {
 	fn into_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A>> {
 		if self.len() == width.checked_mul(height)? {
 			Some(ColumnMajor {
-				dims: Dimensions::new(width.try_into().ok()?, height.try_into().ok()?),
+				dims: Dimensions::new_from(height, width)?,
 				inner: self,
 			})
 		} else {
@@ -221,7 +223,7 @@ impl<A, const LEN: usize> IntoColumnMajor<A> for [A; LEN] {
 	fn into_column_major(self, width: usize, height: usize) -> Option<ColumnMajor<A>> {
 		if self.len() == width.checked_mul(height)? {
 			Some(ColumnMajor {
-				dims: Dimensions::new(width.try_into().ok()?, height.try_into().ok()?),
+				dims: Dimensions::new_from(height, width)?,
 				inner: self.into(),
 			})
 		} else {
@@ -234,7 +236,7 @@ impl<A, const LEN: usize> IntoRowMajor<A> for [A; LEN] {
 	fn into_row_major(self, width: usize, height: usize) -> Option<RowMajor<A>> {
 		if self.len() == width.checked_mul(height)? {
 			Some(RowMajor {
-				dims: Dimensions::new(width.try_into().ok()?, height.try_into().ok()?),
+				dims: Dimensions::new_from(height, width)?,
 				inner: self.into(),
 			})
 		} else {
@@ -247,12 +249,13 @@ impl<A, const LEN: usize> IntoRowMajor<A> for [A; LEN] {
 mod tests {
 	use super::*;
 	use alloc::vec::Vec;
+	use nalgebra::base::DMatrix;
 
 	#[test]
 	fn test_row_major() {
 		let data = [1, 2, 3, 4, 5, 6];
-		let rm = data.into_row_major(3, 2).unwrap();
 
+		let rm = data.clone().into_row_major(3, 2).unwrap();
 		assert_eq!(rm.get(0, 0), Some(&1));
 		assert_eq!(rm.get(1, 0), Some(&2));
 		assert_eq!(rm.get(2, 0), Some(&3));
@@ -265,12 +268,33 @@ mod tests {
 		assert_eq!(vec![&1, &4], rm.iter_col(0).unwrap().collect::<Vec<_>>());
 		assert_eq!(vec![&2, &5], rm.iter_col(1).unwrap().collect::<Vec<_>>());
 		assert_eq!(vec![&3, &6], rm.iter_col(2).unwrap().collect::<Vec<_>>());
+
+		let rm_matrix = DMatrix::from_row_iterator(2, 3, data);
+		assert_eq!(rm_matrix.get((0, 0)), Some(&1));
+		assert_eq!(rm_matrix.get((1, 0)), Some(&4));
+		assert_eq!(rm_matrix.get((0, 1)), Some(&2));
+		assert_eq!(rm_matrix.get((1, 1)), Some(&5));
+		assert_eq!(rm_matrix.get((0, 2)), Some(&3));
+		assert_eq!(rm_matrix.get((1, 2)), Some(&6));
+
+		for (row, expected) in rm_matrix.row_iter().zip([[1, 2, 3], [4, 5, 6]].into_iter()) {
+			assert_eq!(row.iter().cloned().collect::<Vec<i32>>(), expected.to_vec());
+		}
+		for (cols, expected) in rm_matrix
+			.column_iter()
+			.zip([[1, 4], [2, 5], [3, 6]].into_iter())
+		{
+			assert_eq!(
+				cols.iter().cloned().collect::<Vec<i32>>(),
+				expected.to_vec()
+			);
+		}
 	}
 
 	#[test]
 	fn test_column_major() {
 		let data = [1, 4, 2, 5, 3, 6];
-		let cm = data.into_column_major(3, 2).unwrap();
+		let cm = data.clone().into_column_major(3, 2).unwrap();
 
 		assert_eq!(cm.get(0, 0), Some(&1));
 		assert_eq!(cm.get(1, 0), Some(&2));
@@ -290,5 +314,23 @@ mod tests {
 			vec![&4, &5, &6],
 			cm.iter_row(1).unwrap().collect::<Vec<_>>()
 		);
+
+		let cm_matrix = DMatrix::from_column_slice(2, 3, &data);
+		assert_eq!(cm_matrix.get((0, 0)), Some(&1));
+		assert_eq!(cm_matrix.get((1, 0)), Some(&4));
+		assert_eq!(cm_matrix.get((0, 1)), Some(&2));
+		assert_eq!(cm_matrix.get((1, 1)), Some(&5));
+		assert_eq!(cm_matrix.get((0, 2)), Some(&3));
+		assert_eq!(cm_matrix.get((1, 2)), Some(&6));
+
+		for (col, expected) in cm_matrix
+			.column_iter()
+			.zip([[1, 4], [2, 5], [3, 6]].into_iter())
+		{
+			assert_eq!(col.iter().cloned().collect::<Vec<i32>>(), expected.to_vec());
+		}
+		for (row, expected) in cm_matrix.row_iter().zip([[1, 2, 3], [4, 5, 6]].into_iter()) {
+			assert_eq!(row.iter().cloned().collect::<Vec<i32>>(), expected.to_vec());
+		}
 	}
 }

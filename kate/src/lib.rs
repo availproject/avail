@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(clippy::integer_arithmetic)]
 
+use core::{convert::TryInto, num::TryFromIntError};
 use da_types::{BlockLengthColumns, BlockLengthRows};
 #[cfg(feature = "std")]
 pub use dusk_plonk::{commitment_scheme::kzg10::PublicParameters, prelude::BlsScalar};
@@ -8,6 +9,7 @@ pub use dusk_plonk::{commitment_scheme::kzg10::PublicParameters, prelude::BlsSca
 use kate_recovery::matrix::Dimensions;
 use sp_arithmetic::traits::SaturatedConversion;
 use static_assertions::const_assert_ne;
+use thiserror_no_std::Error;
 
 use crate::config::DATA_CHUNK_SIZE;
 
@@ -17,14 +19,11 @@ pub type Seed = [u8; 32];
 #[cfg(feature = "std")]
 pub use dusk_bytes::Serializable;
 #[cfg(feature = "std")]
-pub use kate_grid as grid;
-#[cfg(feature = "std")]
 pub use poly_multiproof as pmp;
 
 pub mod config {
-	use kate_grid::Extension;
-
 	use super::{BlockLengthColumns, BlockLengthRows};
+	use core::num::NonZeroU16;
 
 	// TODO: Delete this? not used anywhere
 	pub const SCALAR_SIZE_WIDE: usize = 64;
@@ -32,7 +31,8 @@ pub mod config {
 	pub const SCALAR_SIZE: usize = 32;
 	pub const DATA_CHUNK_SIZE: usize = 31; // Actual chunk size is 32 after 0 padding is done
 	pub const EXTENSION_FACTOR: u32 = 2;
-	pub const EXTENSION: Extension = Extension::height_unchecked(2);
+	pub const ROW_EXTENSION: NonZeroU16 = unsafe { NonZeroU16::new_unchecked(2) };
+	pub const COL_EXTENSION: NonZeroU16 = unsafe { NonZeroU16::new_unchecked(1) };
 	pub const PROVER_KEY_SIZE: u32 = 48;
 	pub const PROOF_SIZE: usize = 48;
 	// MINIMUM_BLOCK_SIZE, MAX_BLOCK_ROWS and MAX_BLOCK_COLUMNS have to be a power of 2 because of the FFT functions requirements
@@ -232,27 +232,17 @@ impl BlockDimensions {
 	}
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(Error, Copy, Clone, PartialEq, Eq, Debug)]
 pub enum TryFromBlockDimensionsError {
-	InvalidRowsOrColumns(sp_std::num::TryFromIntError),
+	InvalidRowsOrColumns(#[from] TryFromIntError),
 	InvalidDimensions,
 }
 
-impl From<sp_std::num::TryFromIntError> for TryFromBlockDimensionsError {
-	fn from(error: sp_std::num::TryFromIntError) -> Self {
-		TryFromBlockDimensionsError::InvalidRowsOrColumns(error)
-	}
-}
-
-#[cfg(feature = "std")]
-impl sp_std::convert::TryInto<Dimensions> for BlockDimensions {
+impl TryInto<Dimensions> for BlockDimensions {
 	type Error = TryFromBlockDimensionsError;
 
 	fn try_into(self) -> Result<Dimensions, Self::Error> {
-		let rows = self.rows.0.try_into()?;
-		let cols = self.cols.0.try_into()?;
-
-		Dimensions::new(rows, cols).ok_or(TryFromBlockDimensionsError::InvalidDimensions)
+		Dimensions::new_from(self.rows.0, self.cols.0).ok_or(Self::Error::InvalidDimensions)
 	}
 }
 

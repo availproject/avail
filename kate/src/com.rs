@@ -2,11 +2,13 @@ use core::num::{NonZeroU32, NonZeroUsize};
 use std::{
 	convert::{TryFrom, TryInto},
 	mem::size_of,
+	num::TryFromIntError,
 	time::Instant,
 };
 
 use codec::Encode;
 use da_types::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
+use derive_more::Constructor;
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	commitment_scheme::kzg10,
@@ -14,20 +16,23 @@ use dusk_plonk::{
 	fft::{EvaluationDomain, Evaluations},
 	prelude::{BlsScalar, CommitKey},
 };
-use kate_grid::{Dimensions, IntoRowMajor};
 #[cfg(feature = "std")]
-use kate_recovery::{com::app_specific_rows, index, matrix};
+use kate_recovery::{com::app_specific_rows, ensure, index, matrix::Dimensions};
+use nalgebra::base::DMatrix;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
+#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_arithmetic::traits::SaturatedConversion;
 use static_assertions::const_assert_eq;
+use thiserror_no_std::Error;
 
 use crate::{
 	config::{
-		DATA_CHUNK_SIZE, EXTENSION, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE, MINIMUM_BLOCK_SIZE,
-		PROOF_SIZE, PROVER_KEY_SIZE, SCALAR_SIZE,
+		COL_EXTENSION, DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE, MINIMUM_BLOCK_SIZE,
+		PROOF_SIZE, PROVER_KEY_SIZE, ROW_EXTENSION, SCALAR_SIZE,
 	},
 	metrics::Metrics,
 	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed, LOG_TARGET,
@@ -35,41 +40,41 @@ use crate::{
 #[cfg(feature = "std")]
 use kate_recovery::testnet;
 
-#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Constructor, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Cell {
 	pub row: BlockLengthRows,
 	pub col: BlockLengthColumns,
 }
 
-impl Cell {
-	pub fn new(row: BlockLengthRows, col: BlockLengthColumns) -> Self {
-		Cell { row, col }
-	}
-}
-
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum Error {
-	PlonkError(PlonkError),
-	DuskBytesError(dusk_bytes::Error),
-	MultiproofError(poly_multiproof::Error),
+	PlonkError(#[from] PlonkError),
+	DuskBytesError(#[from] dusk_bytes::Error),
+	MultiproofError(#[from] poly_multiproof::Error),
 	CellLengthExceeded,
 	BadHeaderHash,
 	BlockTooBig,
 	InvalidChunkLength,
 	DimensionsMismatch,
 	ZeroDimension,
+	InvalidDimensionExtension,
 	DomainSizeInvalid,
 }
 
-impl From<PlonkError> for Error {
-	fn from(error: PlonkError) -> Self {
-		Self::PlonkError(error)
+impl From<TryFromIntError> for Error {
+	fn from(_: TryFromIntError) -> Self {
+		Self::ZeroDimension
 	}
 }
 
-impl From<poly_multiproof::Error> for Error {
-	fn from(err: poly_multiproof::Error) -> Self {
-		Self::MultiproofError(err)
+/// We cannot derive `PartialEq` becasue `PlonkError` does not support it in the current version.
+/// and we only need to double check its discriminat for testing.
+/// Only needed on tests by now.
+#[cfg(test)]
+impl PartialEq for Error {
+	fn eq(&self, other: &Self) -> bool {
+		std::mem::discriminant(self) == std::mem::discriminant(other)
 	}
 }
 
@@ -93,11 +98,11 @@ fn app_extrinsics_group_by_app_id(extrinsics: &[AppExtrinsic]) -> Vec<(AppId, Ve
 #[cfg(feature = "std")]
 pub fn scalars_to_rows(
 	rows: &[u32],
-	dimensions: &matrix::Dimensions,
+	dimensions: &Dimensions,
 	data: &[BlsScalar],
 ) -> Vec<Option<Vec<u8>>> {
 	let extended_rows = BlockLengthRows(dimensions.extended_rows());
-	let cols = BlockLengthColumns(dimensions.cols() as u32);
+	let cols = BlockLengthColumns(dimensions.cols().get().into());
 	dimensions
 		.iter_extended_rows()
 		.map(|i| {
@@ -115,11 +120,11 @@ pub fn scalars_to_rows(
 pub fn scalars_to_app_rows(
 	app_id: u32,
 	index: &index::AppDataIndex,
-	dimensions: &matrix::Dimensions,
+	dimensions: &Dimensions,
 	data: &[BlsScalar],
 ) -> Vec<Option<Vec<u8>>> {
 	let extended_rows = BlockLengthRows(dimensions.extended_rows());
-	let cols = BlockLengthColumns(dimensions.cols() as u32);
+	let cols = BlockLengthColumns(dimensions.cols().get().into());
 	let app_rows = app_specific_rows(index, dimensions, app_id);
 	dimensions
 		.iter_extended_rows()
@@ -182,11 +187,20 @@ pub fn flatten_and_pad_block(
 
 	let mut rng = ChaChaRng::from_seed(rng_seed);
 
-	assert!(
-		(block_dims.size().saturating_sub(padded_block.len()))
-			.checked_rem(block_dims.chunk_size as usize)
-			== Some(0)
-	);
+	// SAFETY: `padded_block.len() <= block_dims.size()` checked some lines above.
+	if cfg!(debug_assertions) {
+		let chunk_size: usize =
+			usize::try_from(block_dims.chunk_size).expect("Cast to `usize` overflows");
+		let dims_sub_pad = block_dims
+			.size()
+			.checked_sub(padded_block.len())
+			.expect("`padded_block.len() <= block_dims.size() .qed");
+		let rem = dims_sub_pad
+			.checked_rem(chunk_size)
+			.expect("`chunk_size != 0 .qed");
+		assert_eq!(rem, 0);
+	}
+
 	let nz_chunk_size: NonZeroUsize = usize::try_from(block_dims.chunk_size)
 		.map_err(|_| Error::CellLengthExceeded)?
 		.try_into()
@@ -207,11 +221,13 @@ pub fn get_block_dimensions(
 	chunk_size: u32,
 ) -> Result<BlockDimensions, Error> {
 	let max_block_dimensions = BlockDimensions::new(max_rows, max_cols, chunk_size);
-	if block_size as usize > max_block_dimensions.size() {
-		return Err(Error::BlockTooBig);
-	}
+	let block_size = usize::try_from(block_size)?;
+	ensure!(
+		block_size <= max_block_dimensions.size(),
+		Error::BlockTooBig
+	);
 
-	if block_size as usize == max_block_dimensions.size() || MAXIMUM_BLOCK_SIZE {
+	if block_size == max_block_dimensions.size() || MAXIMUM_BLOCK_SIZE {
 		return Ok(max_block_dimensions);
 	}
 
@@ -272,10 +288,13 @@ fn pad_iec_9797_1(mut data: Vec<u8>) -> Vec<DataChunk> {
 		.expect("Const assertion ensures this transformation to `DataChunk`. qed")
 }
 
-fn extend_column_with_zeros(column: &[BlsScalar], height: usize) -> Vec<BlsScalar> {
-	let mut result = column.to_vec();
-	result.resize(height, BlsScalar::zero());
-	result
+fn extend_column_with_zeros<'a, I>(column: I, height: usize) -> Vec<BlsScalar>
+where
+	I: Iterator<Item = &'a BlsScalar>,
+{
+	let mut extended = column.take(height).cloned().collect::<Vec<_>>();
+	extended.resize(height, BlsScalar::zero());
+	extended
 }
 
 pub fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
@@ -286,16 +305,7 @@ pub fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 }
 
 fn make_dims(bd: &BlockDimensions) -> Result<Dimensions, Error> {
-	Ok(Dimensions::new(
-		bd.cols
-			.as_usize()
-			.try_into()
-			.map_err(|_| Error::ZeroDimension)?,
-		bd.rows
-			.as_usize()
-			.try_into()
-			.map_err(|_| Error::ZeroDimension)?,
-	))
+	Dimensions::new_from(bd.rows.0, bd.cols.0).ok_or(Error::ZeroDimension)
 }
 
 /// Build extended data matrix, by columns.
@@ -314,40 +324,50 @@ pub fn par_extend_data_matrix<M: Metrics>(
 ) -> Result<Vec<BlsScalar>, Error> {
 	let start = Instant::now();
 	let dims = make_dims(&block_dims)?;
-	let extended_dims = dims.extend(EXTENSION);
+	let (ext_rows, _): (usize, usize) = dims
+		.extend(ROW_EXTENSION, COL_EXTENSION)
+		.ok_or(Error::InvalidDimensionExtension)?
+		.into();
+	let (rows, cols) = dims.into();
 
 	// simple length with mod check would work...
-	let chunks = block.par_chunks_exact(block_dims.chunk_size as usize);
-	if !chunks.remainder().is_empty() {
-		return Err(Error::DimensionsMismatch);
-	}
+	let chunk_size: usize = block_dims.chunk_size.try_into()?;
+
+	#[cfg(feature = "parallel")]
+	let chunks = block.par_chunks_exact(chunk_size);
+	#[cfg(not(feature = "parallel"))]
+	let chunks = block.chunks_exact(chunk_size);
+
+	ensure!(chunks.remainder().is_empty(), Error::DimensionsMismatch);
+
+	#[cfg(feature = "parallel")]
+	let chunks = chunks.into_par_iter();
 
 	let scalars = chunks
-		.into_par_iter()
 		.map(to_bls_scalar)
 		.collect::<Result<Vec<BlsScalar>, Error>>()?;
 
 	// The data is currently row-major, so we need to put it into column-major
-	let rm = scalars
-		.into_row_major(dims.width(), dims.height())
-		.ok_or(Error::DimensionsMismatch)?;
-	let col_wise_scalars = rm.iter_column_wise().map(Clone::clone).collect::<Vec<_>>();
+	let col_wise_scalars = DMatrix::from_row_iterator(rows, cols, scalars.into_iter());
 
 	let mut chunk_elements = col_wise_scalars
-		.chunks_exact(dims.height_nz().get())
-		.flat_map(|column| extend_column_with_zeros(column, extended_dims.height()))
+		.column_iter()
+		.flat_map(|column| extend_column_with_zeros(column.iter(), ext_rows))
 		.collect::<Vec<BlsScalar>>();
 
-	let extended_column_eval_domain = EvaluationDomain::new(extended_dims.height())?;
-	let column_eval_domain = EvaluationDomain::new(dims.height())?; // rows_num = column_length
+	let extended_column_eval_domain = EvaluationDomain::new(ext_rows)?;
+	let column_eval_domain = EvaluationDomain::new(rows)?; // rows_num = column_length
 
-	chunk_elements
-		.par_chunks_exact_mut(extended_dims.height())
-		.for_each(|col| {
-			// (i)fft functions input parameter slice size has to be a power of 2, otherwise it panics
-			column_eval_domain.ifft_slice(&mut col[0..dims.height()]);
-			extended_column_eval_domain.fft_slice(col);
-		});
+	#[cfg(feature = "parallel")]
+	let chunk_elements_iter = chunk_elements.par_chunks_exact_mut(ext_rows);
+	#[cfg(not(feature = "parallel"))]
+	let chunk_elements_iter = chunk_elements.chunks_exact_mut(ext_rows);
+
+	chunk_elements_iter.for_each(|col| {
+		// (i)fft functions input parameter slice size has to be a power of 2, otherwise it panics
+		column_eval_domain.ifft_slice(&mut col[0..rows]);
+		extended_column_eval_domain.fft_slice(col);
+	});
 
 	metrics.extended_block_time(start.elapsed());
 
@@ -364,14 +384,18 @@ pub fn build_proof<M: Metrics>(
 	metrics: &M,
 ) -> Result<Vec<u8>, Error> {
 	let dims = make_dims(&block_dims)?;
-	let extended_dims = dims.extend(EXTENSION);
+	let (ext_rows, ext_cols): (usize, usize) = dims
+		.extend(ROW_EXTENSION, COL_EXTENSION)
+		.ok_or(Error::InvalidDimensionExtension)?
+		.into();
+	let (_, cols): (usize, usize) = dims.into();
 
 	const SPROOF_SIZE: usize = PROOF_SIZE + SCALAR_SIZE;
 
-	let (prover_key, _) = public_params.trim(dims.width()).map_err(Error::from)?;
+	let (prover_key, _) = public_params.trim(cols).map_err(Error::from)?;
 
 	// Generate all the x-axis points of the domain on which all the row polynomials reside
-	let row_eval_domain = EvaluationDomain::new(dims.width()).map_err(Error::from)?;
+	let row_eval_domain = EvaluationDomain::new(cols)?;
 	let row_dom_x_pts = row_eval_domain.elements().collect::<Vec<_>>();
 
 	let mut result_bytes: Vec<u8> = vec![0u8; SPROOF_SIZE.saturating_mul(cells.len())];
@@ -383,48 +407,52 @@ pub fn build_proof<M: Metrics>(
 	let total_start = Instant::now();
 
 	// attempt to parallelly compute proof for all requested cells
-	cells
+	#[cfg(feature = "parallel")]
+	let cell_iter = cells
 		.into_par_iter()
-		.zip(result_bytes.par_chunks_exact_mut(SPROOF_SIZE))
-		.for_each(|(cell, res)| {
-			let r_index = cell.row.as_usize();
-			if r_index >= extended_dims.height() || cell.col >= block_dims.cols {
-				res.fill(0); // for bad cell identifier, fill whole proof with zero bytes !
-			} else {
-				let c_index = cell.col.as_usize();
+		.zip(result_bytes.par_chunks_exact_mut(SPROOF_SIZE));
+	#[cfg(not(feature = "parallel"))]
+	let cell_iter = cells.iter().zip(result_bytes.chunks_exact_mut(SPROOF_SIZE));
 
-				// construct polynomial per extended matrix row
-				let row = (0..extended_dims.width())
-					.into_par_iter()
-					.map(|j| {
-						ext_data_matrix
-							[r_index.saturating_add(j.saturating_mul(extended_dims.height()))]
-					})
-					.collect::<Vec<BlsScalar>>();
-				//let row = ext_data_matrix_cm
-				//	.iter_row(r_index)
-				//	.expect("Already checked row index")
-				//	.map(Clone::clone)
-				//	.collect::<Vec<_>>();
+	cell_iter.for_each(|(cell, res)| {
+		let r_index = cell.row.as_usize();
+		if r_index >= ext_rows || cell.col >= block_dims.cols {
+			res.fill(0); // for bad cell identifier, fill whole proof with zero bytes !
+		} else {
+			let c_index = cell.col.as_usize();
 
-				// row has to be a power of 2, otherwise interpolate() function panics
-				// TODO: cache evaluations
-				let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
-				let witness = prover_key.compute_single_witness(&poly, &row_dom_x_pts[c_index]);
-				match prover_key.commit(&witness) {
-					Ok(commitment_to_witness) => {
-						let evaluated_point = ext_data_matrix[r_index
-							.saturating_add(c_index.saturating_mul(extended_dims.height()))];
+			// construct polynomial per extended matrix row
+			#[cfg(feature = "parallel")]
+			let ext_cols_iter = (0..ext_cols).into_par_iter();
+			#[cfg(not(feature = "parallel"))]
+			let ext_cols_iter = 0..ext_cols;
 
-						res[0..PROOF_SIZE].copy_from_slice(&commitment_to_witness.to_bytes());
-						res[PROOF_SIZE..].copy_from_slice(&evaluated_point.to_bytes());
-					},
-					Err(_) => {
-						res.fill(0); // for bad cell identifier, fill whole proof with zero bytes !
-					},
-				};
-			}
-		});
+			let row = ext_cols_iter
+				.map(|j| ext_data_matrix[r_index.saturating_add(j.saturating_mul(ext_rows))])
+				.collect::<Vec<BlsScalar>>();
+
+			//let row = ext_data_matrix_cm
+			//	.iter_row(r_index)
+			//	.expect("Already checked row index")
+			//	.map(Clone::clone)
+			//	.collect::<Vec<_>>();
+			// row has to be a power of 2, otherwise interpolate() function panics TODO: cache evaluations
+			let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
+			let witness = prover_key.compute_single_witness(&poly, &row_dom_x_pts[c_index]);
+			match prover_key.commit(&witness) {
+				Ok(commitment_to_witness) => {
+					let evaluated_point =
+						ext_data_matrix[r_index.saturating_add(c_index.saturating_mul(ext_rows))];
+
+					res[0..PROOF_SIZE].copy_from_slice(&commitment_to_witness.to_bytes());
+					res[PROOF_SIZE..].copy_from_slice(&evaluated_point.to_bytes());
+				},
+				Err(_) => {
+					res.fill(0); // for bad cell identifier, fill whole proof with zero bytes !
+				},
+			};
+		}
+	});
 
 	metrics.proof_build_time(total_start.elapsed(), cells.len().saturated_into());
 
@@ -461,7 +489,7 @@ pub fn par_build_commitments<M: Metrics>(
 
 	if log::log_enabled!(target: LOG_TARGET, log::Level::Debug) {
 		let raw_pp = public_params.to_raw_var_bytes();
-		let hash_pp = hex::encode(sp_core_hashing::blake2_128(&raw_pp));
+		let hash_pp = hex::encode(sp_core::hashing::blake2_128(&raw_pp));
 		let hex_pp = hex::encode(raw_pp);
 		log::debug!(
 			target: LOG_TARGET,
@@ -487,19 +515,26 @@ pub fn par_build_commitments<M: Metrics>(
 
 	let start = Instant::now();
 
-	(0..extended_rows_num)
-		.into_par_iter()
-		.map(|i| {
-			row(
-				&ext_data_matrix,
-				i as usize,
-				block_dims.cols,
-				BlockLengthRows(extended_rows_num),
-			)
-		})
-		.zip(result_bytes.par_chunks_exact_mut(PROVER_KEY_SIZE as usize))
-		.map(|(row, res)| commit(&prover_key, row_eval_domain, row, res))
-		.collect::<Result<_, _>>()?;
+	#[cfg(feature = "parallel")]
+	let iter = (0..extended_rows_num).into_par_iter();
+	#[cfg(not(feature = "parallel"))]
+	let iter = 0..extended_rows_num;
+
+	let iter = iter.map(|i| {
+		row(
+			&ext_data_matrix,
+			i as usize,
+			block_dims.cols,
+			BlockLengthRows(extended_rows_num),
+		)
+	});
+
+	#[cfg(feature = "parallel")]
+	let mut iter = iter.zip(result_bytes.par_chunks_exact_mut(PROVER_KEY_SIZE as usize));
+	#[cfg(not(feature = "parallel"))]
+	let mut iter = iter.zip(result_bytes.chunks_exact_mut(PROVER_KEY_SIZE as usize));
+
+	iter.try_for_each(|(row, res)| commit(&prover_key, row_eval_domain, row, res))?;
 
 	metrics.commitment_build_time(start.elapsed());
 
@@ -537,7 +572,7 @@ fn commit(
 
 #[cfg(test)]
 mod tests {
-	use std::{convert::TryInto, iter::repeat, str::from_utf8};
+	use std::{convert::TryInto, iter::repeat};
 
 	use da_types::AppExtrinsic;
 	use dusk_bytes::Serializable;
@@ -559,6 +594,7 @@ mod tests {
 		prelude::*,
 	};
 	use rand::{prelude::IteratorRandom, Rng, SeedableRng};
+	use sp_arithmetic::Percent;
 	use test_case::test_case;
 
 	use super::*;
@@ -615,34 +651,32 @@ mod tests {
 	// newapi done
 	#[test]
 	fn test_extend_data_matrix() {
-		let expected_result = vec![
-			b"000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e00",
-			b"bc1c6b8b4b02ca677b825ec9dace9aa706813f3ec47abdf9f03c680f4468555e",
-			b"7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a00",
-			b"c16115f73784be22106830c9bc6bbb469bf5026ee80325e403efe5ccc3f55016",
-			b"1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d00",
-			b"db3b8aaa6a21e9869aa17de8f9edb9c625a05e5de399dc18105c872e6387745e",
-			b"9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b900",
-			b"e080341657a3dd412f874fe8db8ada65ba14228d07234403230e05ece2147016",
-			b"3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c00",
-			b"fa5aa9c9894008a6b9c09c07190dd9e544bf7d7c02b9fb372f7ba64d82a6935e",
-			b"babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d800",
-			b"ff9f533576c2fc604ea66e07fba9f984d93341ac26426322422d240b02348f16",
-			b"5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b00",
-			b"197ac8e8a85f27c5d8dfbb26382cf80464de9c9b21d81a574e9ac56ca1c5b25e",
-			b"d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f700",
-			b"1ebf725495e11b806dc58d261ac918a4f85260cb45618241614c432a2153ae16",
+		let expected_result = [
+			// Row 0
+			hex!("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e00"),
+			hex!("bc1c6b8b4b02ca677b825ec9dace9aa706813f3ec47abdf9f03c680f4468555e"),
+			hex!("7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a00"),
+			hex!("c16115f73784be22106830c9bc6bbb469bf5026ee80325e403efe5ccc3f55016"),
+			// Row 1
+			hex!("1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d00"),
+			hex!("db3b8aaa6a21e9869aa17de8f9edb9c625a05e5de399dc18105c872e6387745e"),
+			hex!("9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b900"),
+			hex!("e080341657a3dd412f874fe8db8ada65ba14228d07234403230e05ece2147016"),
+			// Row 2
+			hex!("3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c00"),
+			hex!("fa5aa9c9894008a6b9c09c07190dd9e544bf7d7c02b9fb372f7ba64d82a6935e"),
+			hex!("babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d800"),
+			hex!("ff9f533576c2fc604ea66e07fba9f984d93341ac26426322422d240b02348f16"),
+			// Row 3
+			hex!("5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b00"),
+			hex!("197ac8e8a85f27c5d8dfbb26382cf80464de9c9b21d81a574e9ac56ca1c5b25e"),
+			hex!("d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f700"),
+			hex!("1ebf725495e11b806dc58d261ac918a4f85260cb45618241614c432a2153ae16"),
 		]
-		.into_iter()
-		.map(|e| {
-			e.chunks_exact(2)
-				.map(|h| u8::from_str_radix(from_utf8(h).unwrap(), 16).unwrap())
-				.collect::<Vec<u8>>()
-		})
-		.map(|e| {
-			BlsScalar::from_bytes(e.as_slice().try_into().expect("wrong number of elems")).unwrap()
-		})
-		.collect::<Vec<_>>();
+		.iter()
+		.map(BlsScalar::from_bytes)
+		.collect::<Result<Vec<_>, _>>()
+		.expect("Invalid Expected result");
 
 		let block_dims = BlockDimensions::new(BlockLengthRows(2), BlockLengthColumns(4), 32);
 		let block = (0..=247)
@@ -651,8 +685,6 @@ mod tests {
 			.flat_map(|chunk| pad_with_zeroes(chunk.to_vec(), block_dims.chunk_size))
 			.collect::<Vec<u8>>();
 		let res = par_extend_data_matrix(block_dims, &block, &IgnoreMetrics {});
-		eprintln!("result={:?}", res);
-		eprintln!("expect={:?}", expected_result);
 		assert_eq!(res.unwrap(), expected_result);
 	}
 
@@ -790,14 +822,15 @@ mod tests {
 	fn random_cells(
 		max_cols: BlockLengthColumns,
 		max_rows: BlockLengthRows,
-		percents: usize,
+		percents: Percent,
 	) -> Vec<Cell> {
-		assert!(percents > 0 && percents <= 100);
 		let max_cols = max_cols.into();
 		let max_rows = max_rows.into();
 
 		let rng = &mut ChaChaRng::from_seed([0u8; 32]);
-		let amount = ((max_cols * max_rows) as f32 * (percents as f32 / 100.0)).ceil() as usize;
+		let amount: usize = percents
+			.mul_ceil::<u32>(max_cols * max_rows)
+			.saturated_into();
 
 		(0..max_cols)
 			.flat_map(move |col| {
@@ -826,7 +859,7 @@ mod tests {
 		}
 
 		let public_params = testnet::public_params(dims.cols.as_usize());
-		for cell in random_cells(dims.cols, dims.rows, 1) {
+		for cell in random_cells(dims.cols, dims.rows, Percent::one() ) {
 			let row = cell.row.as_usize();
 
 			let proof = build_proof(&public_params, dims, &matrix, &[cell], &metrics).unwrap();
@@ -1017,12 +1050,12 @@ get erasure coded to ensure redundancy."#;
 					data: extended_matrix[position.col as usize][position.row as usize].to_bytes(),
 				})
 				.collect::<Vec<_>>();
-			let data = &decode_app_extrinsics(&index, &dimensions, cells, xt.app_id.0).unwrap()[0];
+			let data = &decode_app_extrinsics(&index, dimensions, cells, xt.app_id.0).unwrap()[0];
 			assert_eq!(data, &xt.data);
 		}
 
 		assert!(matches!(
-			decode_app_extrinsics(&index, &dimensions, vec![], 0),
+			decode_app_extrinsics(&index, dimensions, vec![], 0),
 			Err(ReconstructionError::MissingCell { .. })
 		));
 	}
@@ -1261,7 +1294,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			.unwrap();
 			println!("Proof: {proof:?}");
 
-			assert!(proof.len() == 80);
+			assert_eq!(proof.len(), 80);
 
 			let commitment = result_bytes.clone().try_into().unwrap();
 			let dims = Dimensions::new(1, 4).unwrap();
