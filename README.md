@@ -90,7 +90,7 @@ To run in native (for kate commitment benchmarking):
         benchmark \
         pallet \
         --chain=dev \
-        --steps=50 \
+        --steps=25 \
         --repeat=10 \
         --log=warn \
         --execution=native \

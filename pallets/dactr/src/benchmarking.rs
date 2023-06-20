@@ -161,25 +161,23 @@ benchmarks! {
 
 	commitment_builder{
 		let seed = [0u8;32];
-		let i in 128..T::MaxBlockRows::get().0;
-		let j in 128..T::MaxBlockCols::get().0;
-		let k in 0..T::MaxAppDataLength::get();
-		// let k: u32 = T::MaxAppDataLength::get();// in 0..T::MaxAppDataLength::get();
-		// let l in 0..128;
+		let i in 6..10; // Power of two for rows [64, 128, 256, 512, 1024]
+		let j in 6..8; // Power of two for cols [64, 128, 256]
+		let k in 0..T::MaxAppDataLength::get(); // Quantity of submitted data
+		let l in 0..512; // Number of txs
 
-		let l:u32 = 128;
+		let rows = 2u32.pow(i);
+		let cols = 2u32.pow(j);
 
-		info!("i: {} - j: {}", i, j);
-		info!("k: {} - l: {}", k, l);
-
-		let row = BlockLengthRows(i);
-		let col = BlockLengthColumns(j);
+		let rows = BlockLengthRows(rows);
+		let cols = BlockLengthColumns(cols);
 		let data:Vec<u8> = generate_bounded::<AppDataFor<T>>(k).to_vec();
-		let txs = vec![AppExtrinsic::from(data.to_vec()); l.try_into().unwrap()];
-		info!("Launching extrinsic");
+		let txs = vec![AppExtrinsic::from(data.to_vec()); l as usize];
+		info!("Launching extrinsic with:");
+		info!("rows: {} - cols: {} - DataLength: {} - Nb Txs: {}", rows.0, cols.0, k, l);
 	}: {
 		#[cfg(feature = "std")]
-		let _commitment = par_build_commitments(row, col, BLOCK_CHUNK_SIZE, &txs, seed, &IgnoreMetrics {});
+		let _commitment = par_build_commitments(rows, cols, BLOCK_CHUNK_SIZE, &txs, seed, &IgnoreMetrics {});
 	}
 
 }
