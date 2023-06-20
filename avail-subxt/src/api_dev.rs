@@ -20002,14 +20002,22 @@ pub mod api {
 					#[doc = "The application key already exists."]
 					AppKeyAlreadyExists,
 					#[codec(index = 1)]
+					#[doc = "The application key is an empty string."]
+					AppKeyCannotBeEmpty,
+					#[codec(index = 2)]
 					#[doc = "The last application ID overflowed."]
 					LastAppIdOverflowed,
-					#[codec(index = 2)]
+					#[codec(index = 3)]
+					#[doc = "The submitted data is empty."]
+					DataCannotBeEmpty,
+					#[codec(index = 4)]
 					#[doc = "The last block length proposal Id overflowed."]
 					LastBlockLenProposalIdOverflowed,
-					#[codec(index = 3)]
+					#[codec(index = 5)]
+					#[doc = "The proposed block dimensions are out of bounds."]
 					BlockDimensionsOutOfBounds,
-					#[codec(index = 4)]
+					#[codec(index = 6)]
+					#[doc = "The proposed block dimensions are too small."]
 					BlockDimensionsTooSmall,
 				}
 				#[derive(
@@ -29197,9 +29205,9 @@ pub mod api {
 		let runtime_metadata_hash = client.metadata().metadata_hash(&PALLETS);
 		if runtime_metadata_hash
 			!= [
-				203u8, 21u8, 152u8, 140u8, 238u8, 249u8, 239u8, 2u8, 19u8, 24u8, 45u8, 181u8,
-				178u8, 78u8, 37u8, 92u8, 227u8, 141u8, 219u8, 40u8, 57u8, 255u8, 95u8, 168u8,
-				211u8, 29u8, 27u8, 83u8, 113u8, 173u8, 49u8, 207u8,
+				107u8, 84u8, 102u8, 9u8, 215u8, 250u8, 41u8, 18u8, 206u8, 47u8, 61u8, 63u8, 91u8,
+				122u8, 203u8, 248u8, 80u8, 23u8, 165u8, 35u8, 21u8, 169u8, 155u8, 52u8, 150u8,
+				147u8, 176u8, 119u8, 15u8, 101u8, 5u8, 213u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleMetadata)
 		} else {
