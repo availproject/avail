@@ -84,23 +84,6 @@ running the benchmarks from `da-control` pallet, and the generated file is
         --extrinsic=* \
         --output=./pallets/dactr/src/weights.rs
 
-To run in native (for kate commitment benchmarking): 
-
-    $> cargo run --release -p data-avail --features runtime-benchmarks -- \
-        benchmark \
-        pallet \
-        --chain=dev \
-        --steps=25 \
-        --repeat=10 \
-        --log=warn \
-        --execution=native \
-        --template=./.maintain/frame-weight-template.hbs \
-        --header=./HEADER-APACHE2 \
-        --pallet=da-control \
-        --extrinsic=commitment_builder \
-        --output=./pallets/dactr/src/weights_kate.rs
-
-
 
 ## Transaction Custom IDs
 

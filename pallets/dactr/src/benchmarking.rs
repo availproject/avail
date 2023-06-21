@@ -3,15 +3,15 @@
 use codec::{Decode, Encode};
 use da_primitives::{
 	asdr::{AppExtrinsic, AppUncheckedExtrinsic},
-	BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+	BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
 };
 use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_support::{log::info, traits::Get};
-use frame_system::{submitted_data, RawOrigin};
-#[cfg(feature = "std")]
-use kate::com::par_build_commitments;
-use kate::metrics::IgnoreMetrics;
+use frame_system::{
+	header_builder::hosted_header_builder, limits::BlockLength, submitted_data, RawOrigin,
+};
 use scale_info::{StaticTypeInfo, TypeInfo};
+use sp_core::H256;
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, SignedExtension},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
@@ -161,23 +161,88 @@ benchmarks! {
 
 	commitment_builder{
 		let seed = [0u8;32];
+		let root = H256::zero();
+		let block_number:u32 = 0;
+
 		let i in 6..10; // Power of two for rows [64, 128, 256, 512, 1024]
 		let j in 6..8; // Power of two for cols [64, 128, 256]
-		let k in 0..T::MaxAppDataLength::get(); // Quantity of submitted data
-		let l in 0..512; // Number of txs
+		let k in 1..T::MaxAppDataLength::get(); // Quantity of data
+		let l in 0..128; // Number of txs
 
-		let rows = 2u32.pow(i);
-		let cols = 2u32.pow(j);
+		let rows = BlockLengthRows(2u32.pow(i));
+		let cols = BlockLengthColumns(2u32.pow(j));
 
-		let rows = BlockLengthRows(rows);
-		let cols = BlockLengthColumns(cols);
+		let mut nb_tx = l;
+		let max_tx:u32 = rows.0 * cols.0 * (BLOCK_CHUNK_SIZE-2) / k;
+		if nb_tx > max_tx {
+			nb_tx = max_tx;
+		}
+
+		let block_length = BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO).unwrap();
 		let data:Vec<u8> = generate_bounded::<AppDataFor<T>>(k).to_vec();
-		let txs = vec![AppExtrinsic::from(data.to_vec()); l as usize];
+		let txs = vec![AppExtrinsic::from(data.to_vec()); nb_tx as usize];
+
 		info!("Launching extrinsic with:");
-		info!("rows: {} - cols: {} - DataLength: {} - Nb Txs: {}", rows.0, cols.0, k, l);
+		info!("rows: {} - cols: {} - DataLength: {} - Nb Txs: {}", rows.0, cols.0, k, nb_tx);
 	}: {
-		#[cfg(feature = "std")]
-		let _commitment = par_build_commitments(rows, cols, BLOCK_CHUNK_SIZE, &txs, seed, &IgnoreMetrics {});
+		let _ = hosted_header_builder::build(txs, root, block_length, block_number, seed);
 	}
 
+	commitment_builder_rows{
+		let seed = [0u8;32];
+		let root = H256::zero();
+		let block_number:u32 = 0;
+
+		let i in 6..10; // Power of two for rows [64, 128, 256, 512, 1024]
+		let k in 1..T::MaxAppDataLength::get(); // Quantity of data
+		let l in 0..128; // Number of txs
+		let j: u32 = T::MaxBlockCols::get().0;
+
+		let rows = BlockLengthRows(2u32.pow(i));
+		let cols = BlockLengthColumns(j);
+
+		let mut nb_tx = l;
+		let max_tx:u32 = rows.0 * cols.0 * (BLOCK_CHUNK_SIZE-2) / k;
+		if nb_tx > max_tx {
+			nb_tx = max_tx;
+		}
+
+		let block_length = BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO).unwrap();
+		let data:Vec<u8> = generate_bounded::<AppDataFor<T>>(k).to_vec();
+		let txs = vec![AppExtrinsic::from(data.to_vec()); nb_tx as usize];
+
+		info!("Launching extrinsic with:");
+		info!("rows: {} - cols: {} - DataLength: {} - Nb Txs: {}", rows.0, cols.0, k, nb_tx);
+	}: {
+		let _ = hosted_header_builder::build(txs, root, block_length, block_number, seed);
+	}
+
+	commitment_builder_cols{
+		let seed = [0u8;32];
+		let root = H256::zero();
+		let block_number:u32 = 0;
+
+		let j in 6..8; // Power of two for cols [64, 128, 256]
+		let k in 1..T::MaxAppDataLength::get(); // Quantity of data
+		let l in 0..128; // Number of txs
+		let i: u32 = T::MaxBlockRows::get().0;
+
+		let rows = BlockLengthRows(i);
+		let cols = BlockLengthColumns(2u32.pow(j));
+
+		let mut nb_tx = l;
+		let max_tx:u32 = rows.0 * cols.0 * (BLOCK_CHUNK_SIZE-2) / k;
+		if nb_tx > max_tx {
+			nb_tx = max_tx;
+		}
+
+		let block_length = BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO).unwrap();
+		let data:Vec<u8> = generate_bounded::<AppDataFor<T>>(k).to_vec();
+		let txs = vec![AppExtrinsic::from(data.to_vec()); nb_tx as usize];
+
+		info!("Launching extrinsic with:");
+		info!("rows: {} - cols: {} - DataLength: {} - Nb Txs: {}", rows.0, cols.0, k, nb_tx);
+	}: {
+		let _ = hosted_header_builder::build(txs, root, block_length, block_number, seed);
+	}
 }
