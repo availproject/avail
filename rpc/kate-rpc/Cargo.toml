@@ -9,7 +9,7 @@ edition = "2021"
 avail-base = { path = "../../base", default-features = false }
 da-runtime = { path = "../../runtime", default-features = false }
 
-da-primitives = { version = "0.4.6", git="https://github.com/availproject/avail-core", branch = "feat/use_keccak256" }
+da-primitives = { version = "0.4", default-features = false }
 kate = { version = "0.7", default-features = false }
 kate-recovery = { version = "0.8", default-features = false }
 
