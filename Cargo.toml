@@ -91,7 +91,7 @@ sc-sysinfo = { git = "https://github.com/paritytech/substrate.git", branch = "po
 
 ## Frame
 frame-executive = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+frame-support = {version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 frame-try-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-session = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }

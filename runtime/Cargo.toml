@@ -17,7 +17,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 # Internal
 da-primitives = { version = "0.4", default-features = false }
 kate = { version = "0.7" , default-features = false }
-da-control = { path = "../pallets/dactr", default-features = false }
+da-control = { version = "1.0.1", path = "../pallets/dactr", default-features = false }
 
 ## Nomad
 nomad-updater-manager = { path = "../pallets/bridges/nomad/updater-manager", default-features = false }

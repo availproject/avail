@@ -22,8 +22,8 @@ avail-base = { path = "../base" }
 # Internals
 da-primitives = { version = "0.4", default-features = false }
 kate = { version = "0.7", default-features = false }
-da-runtime = { path = "../runtime" }
-da-control = { path = "../pallets/dactr" }
+da-runtime = {version = "6.0.0", path = "../runtime" }
+da-control = {version = "1.0.1", path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }
 # Nomad
 nomad-updater-manager = { path = "../pallets/bridges/nomad/updater-manager" }
