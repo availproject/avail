@@ -83,6 +83,14 @@ fn repeat_bytes(byte: u8, len: u32) -> Vec<u8> {
 	repeat(byte).take(len as usize).collect::<Vec<_>>()
 }
 
+fn prev_power_of_two(n: u32) -> u32 {
+	if n.is_power_of_two() {
+		n
+	} else {
+		(n.next_power_of_two()) / 2
+	}
+}
+
 /// Generates a bounded container of `len` elements.
 fn generate_bounded<B: TryFrom<Vec<u8>>>(len: u32) -> B
 where
@@ -112,6 +120,42 @@ where
 
 	OpaqueExtrinsic::decode(&mut encoded_call.as_slice())
 		.expect("Unchecked is always decoded as opaque .qed")
+}
+
+fn commitment_parameters<T: frame_system::Config + pallet::Config>(
+	rows: u32,
+	cols: u32,
+) -> (Vec<AppExtrinsic>, H256, BlockLength, u32, [u8; 32])
+where
+	T: frame_system::Config + pallet::Config,
+{
+	let seed = [0u8; 32];
+	let root = H256::zero();
+	let block_number: u32 = 0;
+	let data_length = T::MaxAppDataLength::get();
+
+	let rows = BlockLengthRows(prev_power_of_two(rows));
+	let cols = BlockLengthColumns(cols);
+
+	let mut nb_tx = 128; // Value set depending on MaxAppDataLength (16 kb) to reach 2 mb
+	let max_tx: u32 = rows.0 * cols.0 * (BLOCK_CHUNK_SIZE - 2) / data_length;
+	if nb_tx > max_tx {
+		nb_tx = max_tx;
+	}
+
+	let block_length =
+		BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO)
+			.unwrap();
+	let data: Vec<u8> = generate_bounded::<AppDataFor<T>>(data_length).to_vec();
+	let txs = vec![AppExtrinsic::from(data.to_vec()); nb_tx as usize];
+
+	info!("Launching extrinsic with:");
+	info!(
+		"rows: {} - cols: {} - DataLength: {} - Nb Txs: {}",
+		rows.0, cols.0, data_length, nb_tx
+	);
+
+	(txs, root, block_length, block_number, seed)
 }
 
 benchmarks! {
@@ -159,89 +203,30 @@ benchmarks! {
 		let _data_root =submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(once(&opaque));
 	}
 
-	commitment_builder{
-		let seed = [0u8;32];
-		let root = H256::zero();
-		let block_number:u32 = 0;
-
-		let i in 6..10; // Power of two for rows [64, 128, 256, 512, 1024]
-		let j in 6..8; // Power of two for cols [64, 128, 256]
-		let k in 1..T::MaxAppDataLength::get(); // Quantity of data
-		let l in 0..128; // Number of txs
-
-		let rows = BlockLengthRows(2u32.pow(i));
-		let cols = BlockLengthColumns(2u32.pow(j));
-
-		let mut nb_tx = l;
-		let max_tx:u32 = rows.0 * cols.0 * (BLOCK_CHUNK_SIZE-2) / k;
-		if nb_tx > max_tx {
-			nb_tx = max_tx;
-		}
-
-		let block_length = BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO).unwrap();
-		let data:Vec<u8> = generate_bounded::<AppDataFor<T>>(k).to_vec();
-		let txs = vec![AppExtrinsic::from(data.to_vec()); nb_tx as usize];
-
-		info!("Launching extrinsic with:");
-		info!("rows: {} - cols: {} - DataLength: {} - Nb Txs: {}", rows.0, cols.0, k, nb_tx);
+	commitment_builder_32{
+		let i in 32..T::MaxBlockRows::get().0;
+		let (txs, root, block_length, block_number, seed) = commitment_parameters::<T>(i, 32);
 	}: {
 		let _ = hosted_header_builder::build(txs, root, block_length, block_number, seed);
 	}
 
-	commitment_builder_rows{
-		let seed = [0u8;32];
-		let root = H256::zero();
-		let block_number:u32 = 0;
-
-		let i in 6..10; // Power of two for rows [64, 128, 256, 512, 1024]
-		let k in 1..T::MaxAppDataLength::get(); // Quantity of data
-		let l in 0..128; // Number of txs
-		let j: u32 = T::MaxBlockCols::get().0;
-
-		let rows = BlockLengthRows(2u32.pow(i));
-		let cols = BlockLengthColumns(j);
-
-		let mut nb_tx = l;
-		let max_tx:u32 = rows.0 * cols.0 * (BLOCK_CHUNK_SIZE-2) / k;
-		if nb_tx > max_tx {
-			nb_tx = max_tx;
-		}
-
-		let block_length = BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO).unwrap();
-		let data:Vec<u8> = generate_bounded::<AppDataFor<T>>(k).to_vec();
-		let txs = vec![AppExtrinsic::from(data.to_vec()); nb_tx as usize];
-
-		info!("Launching extrinsic with:");
-		info!("rows: {} - cols: {} - DataLength: {} - Nb Txs: {}", rows.0, cols.0, k, nb_tx);
+	commitment_builder_64{
+		let i in 32..T::MaxBlockRows::get().0;
+		let (txs, root, block_length, block_number, seed) = commitment_parameters::<T>(i, 64);
 	}: {
 		let _ = hosted_header_builder::build(txs, root, block_length, block_number, seed);
 	}
 
-	commitment_builder_cols{
-		let seed = [0u8;32];
-		let root = H256::zero();
-		let block_number:u32 = 0;
+	commitment_builder_128{
+		let i in 32..T::MaxBlockRows::get().0;
+		let (txs, root, block_length, block_number, seed) = commitment_parameters::<T>(i, 128);
+	}: {
+		let _ = hosted_header_builder::build(txs, root, block_length, block_number, seed);
+	}
 
-		let j in 6..8; // Power of two for cols [64, 128, 256]
-		let k in 1..T::MaxAppDataLength::get(); // Quantity of data
-		let l in 0..128; // Number of txs
-		let i: u32 = T::MaxBlockRows::get().0;
-
-		let rows = BlockLengthRows(i);
-		let cols = BlockLengthColumns(2u32.pow(j));
-
-		let mut nb_tx = l;
-		let max_tx:u32 = rows.0 * cols.0 * (BLOCK_CHUNK_SIZE-2) / k;
-		if nb_tx > max_tx {
-			nb_tx = max_tx;
-		}
-
-		let block_length = BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO).unwrap();
-		let data:Vec<u8> = generate_bounded::<AppDataFor<T>>(k).to_vec();
-		let txs = vec![AppExtrinsic::from(data.to_vec()); nb_tx as usize];
-
-		info!("Launching extrinsic with:");
-		info!("rows: {} - cols: {} - DataLength: {} - Nb Txs: {}", rows.0, cols.0, k, nb_tx);
+	commitment_builder_256{
+		let i in 32..T::MaxBlockRows::get().0;
+		let (txs, root, block_length, block_number, seed) = commitment_parameters::<T>(i, 256);
 	}: {
 		let _ = hosted_header_builder::build(txs, root, block_length, block_number, seed);
 	}
