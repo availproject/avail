@@ -109,17 +109,28 @@ fn root<I: Iterator<Item=Vec<u8>>>(submitted_data: I, metrics: RcMetrics) -> H25
     root
 }
 
-/// Calculates the merkle root using `Sha256` and `rs_merkle` crate.
+/// Calculates the merkle root using `Keccak256` and `rs_merkle` crate.
 #[cfg(feature = "force-rs-merkle")]
 fn rs_merkle_root<I>(leaves: I) -> H256
     where
         I: Iterator<Item=Vec<u8>>,
 {
-    use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
+    use rs_merkle::{Hasher, MerkleTree};
 
-    let mut tree = MerkleTree::<Sha256>::new();
+    #[derive(Clone)]
+    pub struct Keccak256Algorithm {}
+
+    impl Hasher for Keccak256Algorithm {
+        type Hash = [u8; 32];
+
+        fn hash(data: &[u8]) -> [u8; 32] {
+            sp_io::hashing::keccak_256(data).into()
+        }
+    }
+
+    let mut tree = MerkleTree::<Keccak256Algorithm>::new();
     leaves.for_each(|leave| {
-        let leave_hash = Sha256::hash(leave.as_slice());
+        let leave_hash = Keccak256Algorithm::hash(leave.as_slice());
         tree.insert(leave_hash);
     });
 
