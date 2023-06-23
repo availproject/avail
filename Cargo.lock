@@ -1560,7 +1560,7 @@ dependencies = [
 [[package]]
 name = "da-primitives"
 version = "0.4.6"
-source = "git+https://github.com/availproject/avail-core?rev=95a04f4#95a04f434cde263e96aecf877714ea90cb7799ae"
+source = "git+https://github.com/availproject/avail-core?rev=b21c835ac963592abd3df7376b8bcd5a06e7b0d8#b21c835ac963592abd3df7376b8bcd5a06e7b0d8"
 dependencies = [
  "beefy-merkle-tree",
  "derive_more",
@@ -3833,7 +3833,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.7.1"
-source = "git+https://github.com/availproject/avail-core?rev=95a04f4#95a04f434cde263e96aecf877714ea90cb7799ae"
+source = "git+https://github.com/availproject/avail-core?rev=b21c835ac963592abd3df7376b8bcd5a06e7b0d8#b21c835ac963592abd3df7376b8bcd5a06e7b0d8"
 dependencies = [
  "da-primitives",
  "derive_more",
@@ -3860,7 +3860,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.8.1"
-source = "git+https://github.com/availproject/avail-core?rev=95a04f4#95a04f434cde263e96aecf877714ea90cb7799ae"
+source = "git+https://github.com/availproject/avail-core?rev=b21c835ac963592abd3df7376b8bcd5a06e7b0d8#b21c835ac963592abd3df7376b8bcd5a06e7b0d8"
 dependencies = [
  "dusk-bytes",
  "dusk-plonk",
@@ -4990,7 +4990,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?rev=95a04f4#95a04f434cde263e96aecf877714ea90cb7799ae"
+source = "git+https://github.com/availproject/avail-core?rev=b21c835ac963592abd3df7376b8bcd5a06e7b0d8#b21c835ac963592abd3df7376b8bcd5a06e7b0d8"
 dependencies = [
  "ethers-signers",
  "frame-support",
@@ -5009,7 +5009,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?rev=95a04f4#95a04f434cde263e96aecf877714ea90cb7799ae"
+source = "git+https://github.com/availproject/avail-core?rev=b21c835ac963592abd3df7376b8bcd5a06e7b0d8#b21c835ac963592abd3df7376b8bcd5a06e7b0d8"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -5085,7 +5085,7 @@ dependencies = [
 [[package]]
 name = "nomad-merkle"
 version = "0.1.1"
-source = "git+https://github.com/availproject/avail-core?rev=95a04f4#95a04f434cde263e96aecf877714ea90cb7799ae"
+source = "git+https://github.com/availproject/avail-core?rev=b21c835ac963592abd3df7376b8bcd5a06e7b0d8#b21c835ac963592abd3df7376b8bcd5a06e7b0d8"
 dependencies = [
  "frame-support",
  "hex-literal",
@@ -5106,7 +5106,7 @@ dependencies = [
 [[package]]
 name = "nomad-signature"
 version = "0.1.1"
-source = "git+https://github.com/availproject/avail-core?rev=95a04f4#95a04f434cde263e96aecf877714ea90cb7799ae"
+source = "git+https://github.com/availproject/avail-core?rev=b21c835ac963592abd3df7376b8bcd5a06e7b0d8#b21c835ac963592abd3df7376b8bcd5a06e7b0d8"
 dependencies = [
  "elliptic-curve",
  "ethers-core",
