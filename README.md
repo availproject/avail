@@ -73,8 +73,8 @@ running the benchmarks from `da-control` pallet, and the generated file is
         benchmark \
         pallet \
         --chain=dev \
-        --steps=50 \
-        --repeat=30 \
+        --steps=30 \
+        --repeat=20 \
         --log=warn \
         --execution=wasm \
         --wasm-execution=compiled \

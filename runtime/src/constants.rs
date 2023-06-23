@@ -446,7 +446,7 @@ pub mod da {
 		pub const MaxBlockCols: BlockLengthColumns = kate::config::MAX_BLOCK_COLUMNS;
 	}
 	pub type MaxAppKeyLength = ConstU32<64>;
-	pub type MaxAppDataLength = ConstU32<16384>; // 16 Kb
+	pub type MaxAppDataLength = ConstU32<524_288>; // 512 Kb
 }
 
 pub mod nomad {
