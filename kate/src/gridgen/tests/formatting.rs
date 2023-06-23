@@ -1,4 +1,4 @@
-use da_types::{AppExtrinsic, DataLookup, DataLookupIndexItem};
+use da_types::{AppExtrinsic, DataLookup};
 use hex_literal::hex;
 use kate_recovery::{
 	com::{app_specific_cells, decode_app_extrinsics, reconstruct_extrinsics},
@@ -42,15 +42,8 @@ fn newapi_test_flatten_block() {
 	let expected_dims = Dimensions::new_from(1, 16).unwrap();
 	let evals = EvaluationGrid::from_extrinsics(extrinsics, 4, 256, 256, Seed::default()).unwrap();
 
-	let expected_index = [(0.into(), 0), (1.into(), 2), (2.into(), 4), (3.into(), 6)]
-		.into_iter()
-		.map(|(app_id, start)| DataLookupIndexItem { app_id, start })
-		.collect::<Vec<_>>();
-
-	let expected_lookup = DataLookup {
-		size: 9,
-		index: expected_index,
-	};
+	let expected_lookup =
+		DataLookup::new_from_id_lenght([(0, 2), (1, 2), (2, 2), (3, 3)].into_iter()).unwrap();
 
 	assert_eq!(evals.lookup, expected_lookup, "The layouts don't match");
 	assert_eq!(
@@ -63,10 +56,12 @@ fn newapi_test_flatten_block() {
 
 	let data = evals
 		.evals
-		.data
-		.as_slice()
-		.iter()
-		.flat_map(|s| s.to_bytes().unwrap())
+		.row_iter()
+		.flat_map(|row| {
+			row.iter()
+				.flat_map(|s| s.to_bytes().unwrap())
+				.collect::<Vec<_>>()
+		})
 		.collect::<Vec<_>>();
 	assert_eq!(data, expected_data, "Data doesn't match the expected data");
 }

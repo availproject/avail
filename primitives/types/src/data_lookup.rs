@@ -1,24 +1,95 @@
 use alloc::vec::Vec;
-use num_traits::Zero;
+use core::convert::TryFrom;
+use derive_more::Constructor;
+use num_traits::{CheckedAdd, Zero};
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::RuntimeDebug;
+use thiserror_no_std::Error;
 
-use crate::AppId;
+use crate::{ensure, AppId};
 
 #[derive(PartialEq, Eq, Clone, Encode, Decode, Default, TypeInfo, RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(test, derive(Constructor))]
 pub struct DataLookup {
 	/// size of the look up
 	#[codec(compact)]
-	pub size: u32,
+	size: u32,
 	/// sorted vector of tuples(key, start index)
-	pub index: Vec<DataLookupIndexItem>,
+	index: Vec<DataLookupIndexItem>,
+}
+
+#[derive(Error, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Error {
+	#[error("Input data is not sorted by AppId")]
+	DataNotSorted,
+	#[error("Data is empty on AppId {0}")]
+	DataEmptyOn(AppId),
+	#[error("Offset overflows")]
+	OffsetOverflows,
 }
 
 impl DataLookup {
+	/// Creates the `DataLookup` from an iterator sorted by `AppId`
+	pub fn new_from_id_lenght<I, A, L>(data: I) -> Result<Self, Error>
+	where
+		I: Iterator<Item = (A, L)>,
+		AppId: From<A>,
+		L: Zero + CheckedAdd,
+		u32: TryFrom<L>,
+	{
+		let mut offset = 0;
+		let mut maybe_prev_id = None;
+
+		let index = data
+			// .skip_while(|(id, _)| id.is_zero())
+			.map(|(id, len)| {
+				// Check sorted by AppId
+				let id = AppId::from(id);
+				if let Some(prev_id) = maybe_prev_id.replace(id) {
+					ensure!(prev_id < id, Error::DataNotSorted);
+				}
+
+				// Check non-empty data per AppId
+				let len = u32::try_from(len).map_err(|_| Error::OffsetOverflows)?;
+				ensure!(len > 0, Error::DataEmptyOn(id));
+
+				let item = DataLookupIndexItem::new(id, offset);
+				offset = offset.checked_add(len).ok_or(Error::OffsetOverflows)?;
+
+				Ok::<DataLookupIndexItem, Error>(item)
+			})
+			.filter(|res_item| {
+				// Filter valid items where AppId == 0
+				if let Ok(item) = res_item.as_ref() {
+					!item.app_id.is_zero()
+				} else {
+					true
+				}
+			})
+			.collect::<Result<_, _>>()?;
+
+		Ok(Self {
+			size: offset,
+			index,
+		})
+	}
+
+	pub fn len(&self) -> u32 {
+		self.size
+	}
+
+	pub fn is_empty(&self) -> bool {
+		self.size == 0
+	}
+
+	pub fn index(&self) -> &Vec<DataLookupIndexItem> {
+		&self.index
+	}
+
 	pub fn range_of(&self, app_id: AppId) -> Option<(u32, u32)> {
 		self.index
 			.iter()
@@ -30,12 +101,15 @@ impl DataLookup {
 					.get(pos.saturating_add(1))
 					.map(|item| item.start)
 					.unwrap_or(self.size);
+				debug_assert!(start_idx < end_idx);
 				(start_idx, end_idx)
 			})
 	}
 }
 
-#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Default, TypeInfo, RuntimeDebug)]
+#[derive(
+	PartialEq, Eq, Copy, Clone, Encode, Decode, Default, TypeInfo, RuntimeDebug, Constructor,
+)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct DataLookupIndexItem {
 	pub app_id: AppId,
@@ -56,60 +130,11 @@ where
 	}
 }
 
-#[derive(PartialEq, Eq, RuntimeDebug)]
-/// Errors during the creation from `extrinsics`.
-pub enum TryFromError {
-	/// Size overflows
-	SizeOverflow,
-	/// Extrinsics are not sorted.
-	UnsortedExtrinsics,
-}
-
-use core::convert::TryFrom;
-impl TryFrom<&[(AppId, u32)]> for DataLookup {
-	type Error = TryFromError;
-
-	fn try_from(extrinsics: &[(AppId, u32)]) -> Result<Self, Self::Error> {
-		let mut index = Vec::new();
-		// transactions are order by application id
-		// skip transactions with 0 application id - it's not a data txs
-		let mut size = 0u32;
-		let mut prev_app_id = AppId(0);
-
-		for (app_id, data_len) in extrinsics {
-			if !app_id.is_zero() && prev_app_id != *app_id {
-				index.push(DataLookupIndexItem {
-					app_id: *app_id,
-					start: size,
-				});
-			}
-
-			size = size
-				.checked_add(*data_len)
-				.ok_or(Self::Error::SizeOverflow)?;
-			if prev_app_id > *app_id {
-				return Err(Self::Error::UnsortedExtrinsics);
-			}
-			prev_app_id = *app_id;
-		}
-
-		Ok(DataLookup { size, index })
-	}
-}
-
 #[cfg(test)]
 mod test {
 	use super::*;
+	use test_case::test_case;
 
-	fn into_app_ids<I, T>(vals: I) -> Vec<(AppId, u32)>
-	where
-		I: IntoIterator<Item = (T, u32)>,
-		T: Into<AppId>,
-	{
-		vals.into_iter()
-			.map(|(id, idx)| (id.into(), idx))
-			.collect::<Vec<_>>()
-	}
 	fn into_lookup_items<I, T>(vals: I) -> Vec<DataLookupIndexItem>
 	where
 		I: IntoIterator<Item = (T, u32)>,
@@ -118,31 +143,16 @@ mod test {
 		vals.into_iter().map(Into::into).collect::<Vec<_>>()
 	}
 
-	fn from_extrinsics_data() -> Vec<(Vec<(AppId, u32)>, Result<DataLookup, TryFromError>)> {
-		vec![
-			(
-				into_app_ids([(0, 5), (0, 10), (1, 5), (1, 10), (2, 100), (2, 50)]),
-				Ok(DataLookup {
-					size: 180,
-					index: into_lookup_items([(1, 15), (2, 30)]),
-				}),
-			),
-			(
-				into_app_ids([(0, 5), (0, 10), (1, u32::MAX)]),
-				Err(TryFromError::SizeOverflow),
-			),
-			(
-				into_app_ids([(0, 5), (0, 10), (1, 5), (2, 100), (1, 10), (2, 50)]),
-				Err(TryFromError::UnsortedExtrinsics),
-			),
-		]
-	}
+	#[test_case( vec![(0, 15), (1, 20), (2, 150)] => Ok(DataLookup::new(185, into_lookup_items([(1, 15), (2, 35)]))); "Valid case")]
+	#[test_case( vec![(0, usize::MAX)] => Err(Error::OffsetOverflows); "Offset overflows at zero")]
+	#[test_case( vec![(0, (u32::MAX -1) as usize), (1, 2)] => Err(Error::OffsetOverflows); "Offset overflows at non zero")]
+	#[test_case( vec![(1, 10), (0, 2)] => Err(Error::DataNotSorted); "Unsortend data")]
+	#[test_case( vec![] => Ok(DataLookup::new(0, vec![])); "Empty data")]
+	fn from_len(id_len_data: Vec<(u32, usize)>) -> Result<DataLookup, Error> {
+		let iter = id_len_data
+			.into_iter()
+			.map(|(id, len)| (AppId::from(id), len));
 
-	#[test]
-	fn from_extrinsics() {
-		for (extrinsic, expected) in from_extrinsics_data() {
-			let data_lookup = DataLookup::try_from(extrinsic.as_slice());
-			assert_eq!(data_lookup, expected);
-		}
+		DataLookup::new_from_id_lenght(iter)
 	}
 }

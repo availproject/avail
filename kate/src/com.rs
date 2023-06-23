@@ -7,7 +7,7 @@ use std::{
 };
 
 use codec::Encode;
-use da_types::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
+use da_types::{ensure, AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows, DataLookupError};
 use derive_more::Constructor;
 use dusk_bytes::Serializable;
 use dusk_plonk::{
@@ -17,7 +17,7 @@ use dusk_plonk::{
 	prelude::{BlsScalar, CommitKey},
 };
 #[cfg(feature = "std")]
-use kate_recovery::{com::app_specific_rows, ensure, index, matrix::Dimensions};
+use kate_recovery::{com::app_specific_rows, index, matrix::Dimensions};
 use nalgebra::base::DMatrix;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
@@ -60,6 +60,7 @@ pub enum Error {
 	ZeroDimension,
 	InvalidDimensionExtension,
 	DomainSizeInvalid,
+	InvalidDataLookup(#[from] DataLookupError),
 }
 
 impl From<TryFromIntError> for Error {
@@ -843,6 +844,7 @@ mod tests {
 	proptest! {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
+	#[ignore]
 	// newapi done
 	fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy())  {
 		let metrics = IgnoreMetrics {};

@@ -8,7 +8,7 @@ edition = "2021"
 
 [dependencies]
 # Pending to review
-poly-multiproof = { git = "https://github.com/aphoh/poly-multiproof", default-features = false, rev = "1ec7c7eca0861ad89427c45534006f49d039820a" }
+poly-multiproof = { git = "https://github.com/availproject/poly-multiproof", default-features = false, tag = "v0.0.1" }
 
 # Internal
 da-types = { path = "../primitives/types", default-features = false }
@@ -44,7 +44,7 @@ test-case = "1.2.3"
 [features]
 default = ["std"]
 alloc = ["dusk-plonk/alloc", "nalgebra/alloc"]
-parallel = ["rayon"]
+parallel = ["rayon", "std"]
 
 std = [
 	"kate-recovery/std",

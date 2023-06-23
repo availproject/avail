@@ -94,8 +94,8 @@ proptest! {
 		let index = app_data_index_from_lookup(&grid.lookup);
 		let public_params = testnet::public_params(BlockLengthColumns(g_cols as u32));
 
-		for (i, xt) in exts.iter().enumerate() {
-			let rows = grid.app_rows(xt.app_id, Some(orig_dims)).unwrap();
+		for xt in exts.iter() {
+			let rows = grid.app_rows(xt.app_id, Some(orig_dims)).unwrap().unwrap();
 			// Have to put the rows we find in this funky data structure
 			let mut app_rows = vec![None; g_rows.into()];
 			for (row_i, row) in rows {
@@ -104,11 +104,6 @@ proptest! {
 			// Need to provide the original dimensions here too
 			let extended_dims = orig_dims.clone();
 			let (_, missing) = verify_equality(&public_params, &commits, &app_rows, &index, &extended_dims, xt.app_id.0).unwrap();
-			if !missing.is_empty() {
-				log::error!("Debug this spot at {i}");
-				let d_rows = grid.app_rows(xt.app_id, Some(orig_dims)).unwrap();
-				let (_, _) = verify_equality(&public_params, &commits, &app_rows, &index, &extended_dims, xt.app_id.0).unwrap();
-			}
 			prop_assert!(missing.is_empty());
 		}
 	}
@@ -128,7 +123,7 @@ proptest! {
 		let public_params = testnet::public_params((g_cols as u32).into());
 
 		for xt in xts {
-			let rows = grid.app_rows(xt.app_id, Some(orig_dims)).unwrap();
+			let rows = grid.app_rows(xt.app_id, Some(orig_dims)).unwrap().unwrap();
 			let mut row_elems = vec![None; g_rows.into()];
 			for (i, data) in &rows {
 				row_elems[*i] = Some(data.iter().flat_map(|s| s.to_bytes().unwrap()).collect());
@@ -143,9 +138,9 @@ proptest! {
 	}
 }
 
-#[test_case( ([1,1,1,1]).to_vec(); "All values are non-zero but same")]
-#[test_case( ([0,0,0,0]).to_vec(); "All values are zero")]
-#[test_case( ([0,5,2,1]).to_vec(); "All values are different")]
+#[test_case( vec![1;4]; "All values are non-zero but same")]
+#[test_case( vec![0;4]; "All values are zero")]
+#[test_case( vec![0,5,2,1]; "All values are different")]
 fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 	// There are two main cases that generate a zero degree polynomial. One is for data that is non-zero, but the same.
 	// The other is for all-zero data. They differ, as the former yields a polynomial with one coefficient, and latter generates zero coefficients.
@@ -158,7 +153,7 @@ fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 	//let ae = AppExtrinsic { 0.into(), vec![}
 	let ev = EvaluationGrid {
 		lookup: Default::default(), // Shouldn't need to care about this
-		evals: DMatrix::from_row_iterator(1, len, row.into_iter()),
+		evals: DMatrix::from_row_iterator(len, 1, row.into_iter()).transpose(),
 	};
 
 	println!("Row: {:?}", ev.evals);
@@ -177,7 +172,7 @@ fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 		let proof = pg.proof(&*PMP, &cell).unwrap();
 
 		let proof_bytes = proof.to_bytes().unwrap();
-		let cell_bytes = ev.evals.get((0, x)).unwrap().to_bytes().unwrap();
+		let cell_bytes = ev.get(0usize, x).unwrap().to_bytes().unwrap();
 		let content = [&proof_bytes[..], &cell_bytes[..]].concat();
 		let dims = Dimensions::new(1, 4).unwrap();
 		let cell = kate_recovery::data::Cell {

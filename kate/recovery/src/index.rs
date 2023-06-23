@@ -6,6 +6,9 @@ use crate::config;
 
 /// Index is list of pairs (app_id, start_index),
 /// where start index is index of first cell for that application.
+///
+/// # TODO
+/// - Replace it with `DataLookup`?
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct AppDataIndex {
 	/// Number of the data cells in the matrix

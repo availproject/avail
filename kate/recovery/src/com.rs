@@ -1,5 +1,6 @@
 use codec::Decode;
 use core::num::TryFromIntError;
+use da_types::ensure;
 use dusk_bytes::Serializable as _;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
 use rand::seq::SliceRandom;
@@ -15,7 +16,7 @@ use thiserror_no_std::Error;
 
 use crate::{
 	config::{self, CHUNK_SIZE, DATA_CHUNK_SIZE, PADDING_TAIL_VALUE},
-	data, ensure, index, matrix,
+	data, index, matrix,
 };
 
 #[derive(Debug, Error)]

@@ -4,6 +4,7 @@ use std::{
 	num::TryFromIntError,
 };
 
+use da_types::ensure;
 #[cfg(feature = "std")]
 use dusk_bytes::Serializable;
 use dusk_plonk::{
@@ -15,7 +16,7 @@ use thiserror_no_std::Error;
 use crate::{
 	com,
 	config::{self, COMMITMENT_SIZE},
-	ensure, index, matrix,
+	index, matrix,
 };
 
 #[derive(Error, Debug)]

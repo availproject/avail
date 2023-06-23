@@ -10,7 +10,7 @@ use sp_core::RuntimeDebug;
 
 mod data_lookup;
 mod get_app_id;
-pub use data_lookup::*;
+pub use data_lookup::{DataLookup, DataLookupIndexItem, Error as DataLookupError};
 pub use get_app_id::*;
 
 /// Raw Extrinsic with application id.
@@ -148,4 +148,26 @@ impl BlockLengthRows {
 	pub fn as_usize(&self) -> usize {
 		self.0 as usize
 	}
+}
+
+/// Return Err of the expression: `return Err($expression);`.
+///
+/// Used as `fail!(expression)`.
+#[macro_export]
+macro_rules! fail {
+	( $y:expr ) => {{
+		return Err($y.into());
+	}};
+}
+
+/// Evaluate `$x:expr` and if not true return `Err($y:expr)`.
+///
+/// Used as `ensure!(expression_to_ensure, expression_to_return_on_false)`.
+#[macro_export]
+macro_rules! ensure {
+	( $x:expr, $y:expr $(,)? ) => {{
+		if !$x {
+			$crate::fail!($y);
+		}
+	}};
 }

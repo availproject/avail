@@ -468,7 +468,7 @@ dependencies = [
 [[package]]
 name = "blst"
 version = "0.3.10"
-source = "git+https://github.com/aphoh/blst?rev=556e037926d9c526c2eb6cb1522bea39690416ea#556e037926d9c526c2eb6cb1522bea39690416ea"
+source = "git+https://github.com/availproject/blst?tag=v0.3.10#556e037926d9c526c2eb6cb1522bea39690416ea"
 dependencies = [
  "cc",
  "glob",
@@ -852,6 +852,8 @@ dependencies = [
  "scale-info",
  "serde",
  "sp-core",
+ "test-case",
+ "thiserror-no-std",
 ]
 
 [[package]]
@@ -1850,6 +1852,8 @@ dependencies = [
 name = "kate-recovery"
 version = "0.8.1"
 dependencies = [
+ "da-types",
+ "derive_more",
  "dusk-bytes",
  "dusk-plonk",
  "hex",
@@ -2440,7 +2444,7 @@ dependencies = [
 [[package]]
 name = "poly-multiproof"
 version = "0.0.1"
-source = "git+https://github.com/aphoh/poly-multiproof?rev=1ec7c7eca0861ad89427c45534006f49d039820a#1ec7c7eca0861ad89427c45534006f49d039820a"
+source = "git+https://github.com/availproject/poly-multiproof?tag=v0.0.1#cd8d31b7eb568dea2fddfc9237e2e31ea7ae7ed3"
 dependencies = [
  "ark-bls12-381",
  "ark-ec",

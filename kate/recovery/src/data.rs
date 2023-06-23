@@ -1,9 +1,10 @@
+use derive_more::Constructor;
 use std::{collections::HashMap, convert::TryInto};
 
 use crate::matrix::{Dimensions, Position, RowIndex};
 
 /// Position and data of a cell in extended matrix
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, Constructor)]
 pub struct DataCell {
 	/// Cell's position
 	pub position: Position,
@@ -12,7 +13,7 @@ pub struct DataCell {
 }
 
 /// Position and content of a cell in extended matrix
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Constructor)]
 pub struct Cell {
 	/// Cell's position
 	pub position: Position,

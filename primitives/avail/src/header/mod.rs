@@ -453,10 +453,8 @@ mod tests {
 		};
 		let extension = extension::v1::HeaderExtension {
 			commitment,
-			app_lookup: DataLookup {
-				size: 1,
-				index: vec![],
-			},
+			app_lookup: DataLookup::lenghts_from_sorted_by_app_id(vec![(0, 1)].into_iter())
+				.expect("Valid DataLookup .qed"),
 		};
 		let digest = Digest {
 			logs: vec![
@@ -564,19 +562,6 @@ mod tests {
 		(header, hash)
 	}
 
-	fn corrupted_app_lookup(header_and_hash: (THeader, H256)) -> (THeader, H256) {
-		let (mut header, hash) = header_and_hash;
-
-		match header.extension {
-			extension::HeaderExtension::V1(ref mut ext) => ext.app_lookup.size += 1,
-			extension::HeaderExtension::V2(ref mut ext) => ext.app_lookup.size += 1,
-			#[cfg(feature = "header-backward-compatibility-test")]
-			_ => unreachable!(),
-		};
-
-		(header, hash)
-	}
-
 	fn corrupted_number(mut header_and_hash: (THeader, H256)) -> (THeader, H256) {
 		header_and_hash.0.number += 1;
 		header_and_hash
@@ -596,7 +581,6 @@ mod tests {
 	#[test_case( corrupted_kate_data_root(header()) => false; "Corrupted data root in kate")]
 	#[test_case( corrupted_kate_cols(header()) => false; "Corrupted cols in kate")]
 	#[test_case( corrupted_kate_rows(header()) => false; "Corrupted rows in kate")]
-	#[test_case( corrupted_app_lookup(header()) => false )]
 	#[test_case( corrupted_number(header()) => false )]
 	#[test_case( corrupted_state_root(header()) => false )]
 	#[test_case( corrupted_parent(header()) => false )]

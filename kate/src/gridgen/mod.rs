@@ -5,17 +5,23 @@ use crate::pmp::{
 	traits::Committer,
 };
 use codec::Encode;
-use core::{cmp::max, num::NonZeroU16};
-use da_types::{AppExtrinsic, AppId, DataLookup, DataLookupIndexItem};
-use kate_recovery::{config::PADDING_TAIL_VALUE, ensure, matrix::Dimensions};
+use core::{
+	cmp::{max, min},
+	iter,
+	num::NonZeroU16,
+};
+use da_types::{ensure, AppExtrinsic, AppId, DataLookup};
+use kate_recovery::{config::PADDING_TAIL_VALUE, matrix::Dimensions};
 use nalgebra::base::DMatrix;
 use poly_multiproof::{
 	m1_blst::Proof,
 	traits::{KZGProof, PolyMultiProofNoPrecomp},
 };
-use rand::{Rng, SeedableRng};
+use rand::{CryptoRng, Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
-use std::{cmp::min, collections::BTreeMap};
+use static_assertions::const_assert;
+use std::collections::BTreeMap;
+use thiserror_no_std::Error;
 
 use crate::{
 	com::{Cell, Error},
@@ -36,6 +42,7 @@ macro_rules! cfg_iter {
 	}};
 }
 
+/*
 macro_rules! cfg_into_iter {
 	($e: expr) => {{
 		#[cfg(feature = "parallel")]
@@ -44,7 +51,7 @@ macro_rules! cfg_into_iter {
 		let result = $e.into_iter();
 		result
 	}};
-}
+}*/
 
 pub const SCALAR_SIZE: usize = 32;
 pub type ArkScalar = crate::pmp::m1_blst::Fr;
@@ -55,8 +62,18 @@ pub use poly_multiproof::traits::AsBytes;
 mod tests;
 
 pub struct EvaluationGrid {
-	pub lookup: DataLookup,
-	pub evals: DMatrix<ArkScalar>,
+	lookup: DataLookup,
+	evals: DMatrix<ArkScalar>,
+}
+
+#[derive(Error, Debug, Clone, Copy)]
+pub enum AppRowError {
+	#[error("Original dimensions are not divisible by current ones")]
+	OrigDimNotDivisible,
+	#[error("AppId({0}) not found")]
+	IdNotFound(AppId),
+	#[error("Lineal index overflows")]
+	LinealIndexOverflows,
 }
 
 impl EvaluationGrid {
@@ -78,7 +95,7 @@ impl EvaluationGrid {
 		);
 
 		// Convert each grup of extrinsics into scalars
-		let encoded = grouped
+		let scalars_by_app = grouped
 			.into_iter()
 			.map(|(id, datas)| {
 				let mut enc = datas.encode();
@@ -90,54 +107,51 @@ impl EvaluationGrid {
 			})
 			.collect::<Result<Vec<_>, _>>()?;
 
+		let len_by_app = scalars_by_app
+			.iter()
+			.map(|(app, scalars)| (*app, scalars.len()));
+
 		// make the index of app info
-		let mut start = 0u32;
-		let mut index = vec![];
-		for (app_id, scalars) in &encoded {
-			index.push(DataLookupIndexItem {
-				app_id: *app_id,
-				start,
-			});
-			start = start.saturating_add(scalars.len() as u32); // next item should start after current one
-		}
+		let lookup = DataLookup::new_from_id_lenght(len_by_app)?;
+		let grid_size = usize::try_from(lookup.len())?;
+		let (rows, cols): (usize, usize) =
+			get_block_dims(grid_size, min_width, max_width, max_height)?.into();
 
 		// Flatten the grid
-		let mut grid = encoded
+		let mut rng = ChaChaRng::from_seed(rng_seed);
+		let grid = scalars_by_app
 			.into_iter()
 			.flat_map(|(_, scalars)| scalars)
-			.collect::<Vec<_>>();
+			.chain(iter::repeat_with(|| random_scalar(&mut rng)));
 
-		let lookup = DataLookup {
-			size: grid.len() as u32,
-			index,
-		};
-
-		// Fit the grid to the desired grid size
-		let dims = get_block_dims(grid.len(), min_width, max_width, max_height)?;
-		let dim_size: usize = dims.size();
-		let (rows, cols): (usize, usize) = dims.into();
-		let mut rng = ChaChaRng::from_seed(rng_seed);
-		while grid.len() != dim_size {
-			let rnd_values: [u8; SCALAR_SIZE - 1] = rng.gen();
-			// TODO: can we just use zeros instead?
-			grid.push(pad_to_bls_scalar(rnd_values)?);
-		}
+		let row_major_evals = DMatrix::from_row_iterator(rows, cols, grid);
 
 		Ok(EvaluationGrid {
 			lookup,
-			evals: DMatrix::from_row_iterator(rows, cols, grid.into_iter()),
+			evals: row_major_evals,
 		})
 	}
 
+	/// Get the row `y` of the evaluation.
 	pub fn row(&self, y: usize) -> Option<Vec<ArkScalar>> {
-		let (rows, _) = self.evals.shape();
-		(y < rows).then(|| self.evals.row(y).into_iter().cloned().collect::<Vec<_>>())
+		let (rows, _cols) = self.evals.shape();
+		(y < rows).then(|| self.evals.row(y).iter().cloned().collect())
 	}
 
 	pub fn dims(&self) -> Dimensions {
 		let (rows, cols) = self.evals.shape();
 		// SAFETY: We cannot construct an `EvaluationGrid` with any dimension `< 1` or `> u16::MAX`
+		debug_assert!(rows <= usize::from(u16::MAX) && cols <= usize::from(u16::MAX));
 		unsafe { Dimensions::new_unchecked(rows as u16, cols as u16) }
+	}
+
+	#[inline]
+	pub fn get<R, C>(&self, row: R, col: C) -> Option<&ArkScalar>
+	where
+		usize: From<R>,
+		usize: From<C>,
+	{
+		self.evals.get::<(usize, usize)>((row.into(), col.into()))
 	}
 
 	/// Returns a list of `(index, row)` pairs for the underlying rows of an application.
@@ -145,15 +159,15 @@ impl EvaluationGrid {
 	pub fn app_rows(
 		&self,
 		app_id: AppId,
-		orig_dims: Option<Dimensions>,
-	) -> Option<Vec<(usize, Vec<ArkScalar>)>> {
-		let (rows, _cols) = self.evals.shape();
+		maybe_orig_dims: Option<Dimensions>,
+	) -> Result<Option<Vec<(usize, Vec<ArkScalar>)>>, AppRowError> {
 		let dims = self.dims();
-		let orig_dims = match orig_dims {
+		let (rows, _cols): (usize, usize) = dims.into();
+
+		// Ensure `origin_dims` is divisible by `dims` if some.
+		let orig_dims = match maybe_orig_dims {
 			Some(d) => {
-				if !d.divides(&dims) {
-					return None;
-				}
+				ensure!(d.divides(&dims), AppRowError::OrigDimNotDivisible);
 				d
 			},
 			None => dims,
@@ -165,21 +179,33 @@ impl EvaluationGrid {
 		#[allow(clippy::integer_arithmetic)]
 		let h_mul: usize = rows / usize::from(NonZeroU16::get(orig_dims.rows()));
 		#[allow(clippy::integer_arithmetic)]
-		let index_to_y_coord = |dims: &Dimensions, index: u32| -> u32 {
-			index / u32::from(NonZeroU16::get(dims.rows()))
+		let row_from_lineal_index = |cols, lineal_index| {
+			let lineal_index =
+				usize::try_from(lineal_index).map_err(|_| AppRowError::LinealIndexOverflows)?;
+			let cols = usize::from(NonZeroU16::get(cols));
+
+			Ok(lineal_index / cols)
 		};
 
-		let (start_ind, end_ind) = self.lookup.range_of(app_id)?;
-		let start_y: usize = index_to_y_coord(&orig_dims, start_ind).try_into().ok()?;
-		let end_y: usize = index_to_y_coord(&orig_dims, end_ind.saturating_sub(1))
-			.try_into()
-			.ok()?; // Find y of last cell elt
-		let (new_start_y, new_end_y) = (start_y.checked_mul(h_mul)?, end_y.checked_mul(h_mul)?);
+		let (data_begin, data_end) = self
+			.lookup
+			.range_of(app_id)
+			.ok_or(AppRowError::IdNotFound(app_id))?;
+		let start_y: usize = row_from_lineal_index(orig_dims.cols(), data_begin)?;
+		let end_y: usize = row_from_lineal_index(orig_dims.cols(), data_end.saturating_sub(1))?;
 
-		(new_start_y..=new_end_y)
+		// SAFETY: This won't overflow because `h_mul = rows / orig_dim.rows()`  and `*_y < rows)
+		debug_assert!(start_y < rows);
+		debug_assert!(end_y < rows);
+		#[allow(clippy::integer_arithmetic)]
+		let (new_start_y, new_end_y) = (start_y * h_mul, end_y * h_mul);
+
+		let app_rows = (new_start_y..=new_end_y)
 			.step_by(h_mul)
 			.map(|y| self.row(y).map(|a| (y, a)))
-			.collect()
+			.collect();
+
+		Ok(app_rows)
 	}
 
 	pub fn extend_columns(&self, row_factor: NonZeroU16) -> Result<Self, Error> {
@@ -188,7 +214,7 @@ impl EvaluationGrid {
 			.extend(row_factor, unsafe { NonZeroU16::new_unchecked(1) })
 			.ok_or(Error::CellLengthExceeded)?
 			.into();
-		let (rows, cols): (usize, usize) = dims.into();
+		let (rows, _cols): (usize, usize) = dims.into();
 
 		let domain =
 			GeneralEvaluationDomain::<ArkScalar>::new(rows).ok_or(Error::DomainSizeInvalid)?;
@@ -196,39 +222,32 @@ impl EvaluationGrid {
 			GeneralEvaluationDomain::<ArkScalar>::new(new_rows).ok_or(Error::DomainSizeInvalid)?;
 		ensure!(domain_new.size() == new_rows, Error::DomainSizeInvalid);
 
-		let cols = (0..cols)
-			.into_iter()
-			.map(|c| self.evals.column(c).iter().cloned().collect::<Vec<_>>());
+		let new_data = self.evals.column_iter().flat_map(|col| {
+			let mut col = col.iter().cloned().collect::<Vec<_>>();
+			domain.ifft_in_place(&mut col);
+			domain_new.fft_in_place(&mut col);
+			col
+		});
 
-		let new_evals = cfg_into_iter!(cols)
-			.flat_map(|mut col| {
-				// ifft, resize, fft
-				domain.ifft_in_place(&mut col);
-				domain_new.fft_in_place(&mut col);
-				col
-			})
-			.collect::<Vec<_>>();
-
-		let new_evals = DMatrix::from_column_slice(new_rows, new_cols, &new_evals);
-		debug_assert!(new_evals.shape() == (new_rows, new_cols));
-
+		let row_major_evals = DMatrix::from_iterator(new_rows, new_cols, new_data);
+		debug_assert!(row_major_evals.shape() == (new_rows, new_cols));
 		Ok(Self {
 			lookup: self.lookup.clone(),
-			evals: new_evals,
+			evals: row_major_evals,
 		})
 	}
 
 	pub fn make_polynomial_grid(&self) -> Result<PolynomialGrid, Error> {
-		let (_rows, cols) = self.evals.shape();
+		let (_rows, cols): (usize, usize) = self.evals.shape();
 		let domain =
 			GeneralEvaluationDomain::<ArkScalar>::new(cols).ok_or(Error::DomainSizeInvalid)?;
 
 		let inner = self
 			.evals
 			.row_iter()
-			.map(|row_iter| {
-				let row = row_iter.iter().cloned().collect::<Vec<_>>();
-				domain.ifft(row.as_slice())
+			.map(|view| {
+				let row = view.iter().cloned().collect::<Vec<_>>();
+				domain.ifft(&row)
 			})
 			.collect::<Vec<_>>();
 
@@ -435,12 +454,27 @@ fn round_up_to_multiple(input: usize, multiple: NonZeroU16) -> usize {
 }
 
 pub(crate) fn pad_to_bls_scalar(a: impl AsRef<[u8]>) -> Result<ArkScalar, Error> {
-	if a.as_ref().len() > DATA_CHUNK_SIZE {
-		return Err(Error::InvalidChunkLength);
-	}
+	let bytes = a.as_ref();
+	ensure!(bytes.len() <= DATA_CHUNK_SIZE, Error::InvalidChunkLength);
+	const_assert!(DATA_CHUNK_SIZE <= SCALAR_SIZE);
+
 	let mut buf = [0u8; SCALAR_SIZE];
-	buf[0..a.as_ref().len()].copy_from_slice(a.as_ref());
+	buf[0..bytes.len()].copy_from_slice(bytes);
+
 	ArkScalar::from_bytes(&buf).map_err(Error::MultiproofError)
+}
+
+pub(crate) fn random_scalar<R: Rng + CryptoRng>(rng: &mut R) -> ArkScalar {
+	/*
+	let mut random = [0u8; SCALAR_SIZE];
+	rng.fill(&mut random[..SCALAR_SIZE - 1]);
+	debug_assert!(random[SCALAR_SIZE - 1] == 0u8);
+
+	ArkScalar::from_bytes(&random)
+		.expect("ArkScalar can be generated from SCALAR_SIZE -1 bytes .qed")
+	*/
+	let rnd_values: [u8; SCALAR_SIZE - 1] = rng.gen();
+	pad_to_bls_scalar(rnd_values).unwrap()
 }
 
 #[cfg(test)]
