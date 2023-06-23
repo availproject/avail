@@ -1,19 +1,35 @@
+use core::num::NonZeroU16;
 use da_types::{AppExtrinsic, AppId};
 use hex_literal::hex;
 use kate::{
+	gridgen::EvaluationGrid,
 	pmp::{merlin::Transcript, traits::PolyMultiProofNoPrecomp},
+	testnet::multiproof_params,
 	Seed,
 };
 use kate_recovery::matrix::Dimensions;
 use poly_multiproof::traits::AsBytes;
 use rand::thread_rng;
-use std::num::NonZeroU16;
+use thiserror_no_std::Error;
 
-fn main() {
+#[derive(Error, Debug)]
+enum AppError {
+	Kate(#[from] kate::com::Error),
+	MultiProof(#[from] poly_multiproof::Error),
+}
+
+fn main() -> Result<(), AppError> {
+	let verified = multiproof_verification()?;
+	println!("Multiproof verfication is {verified}");
+
+	Ok(())
+}
+
+fn multiproof_verification() -> Result<bool, AppError> {
 	let target_dims = Dimensions::new_from(16, 64).unwrap();
-	let pp = kate::testnet::multiproof_params(256, 256);
+	let pp = multiproof_params(256, 256);
 	let pmp = poly_multiproof::m1_blst::M1NoPrecomp::new(256, 256, &mut thread_rng());
-	let points = kate::gridgen::domain_points(256).unwrap();
+	let points = kate::gridgen::domain_points(256)?;
 	let (proof, evals, commitments, dims) = {
 		let exts = vec![
 			AppExtrinsic {
@@ -30,13 +46,11 @@ fn main() {
 			},
 		];
 		let seed = Seed::default();
-		let grid = kate::gridgen::EvaluationGrid::from_extrinsics(exts, 4, 256, 256, seed)
-			.unwrap()
-			.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
-			.unwrap();
+		let grid = EvaluationGrid::from_extrinsics(exts, 4, 256, 256, seed)?
+			.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })?;
 
 		// Setup, serializing as bytes
-		let polys = grid.make_polynomial_grid().unwrap();
+		let polys = grid.make_polynomial_grid()?;
 
 		let commitments = polys
 			.commitments(&pp)
@@ -57,7 +71,7 @@ fn main() {
 			)
 			.unwrap();
 
-		let proof_bytes = multiproof.proof.to_bytes().unwrap();
+		let proof_bytes = multiproof.proof.to_bytes()?;
 		let evals_bytes = multiproof
 			.evals
 			.iter()
@@ -85,14 +99,15 @@ fn main() {
 		.chunks_exact(mp_block.end_x - mp_block.start_x)
 		.collect::<Vec<_>>();
 
-	let proof = kate::pmp::m1_blst::Proof::from_bytes(&proof).unwrap();
+	let proof = kate::pmp::m1_blst::Proof::from_bytes(&proof)?;
 
-	pmp.verify(
+	let verified = pmp.verify(
 		&mut Transcript::new(b"avail-mp"),
 		block_commits,
 		&points[mp_block.start_x..mp_block.end_x],
 		&evals_grid,
 		&proof,
-	)
-	.unwrap();
+	)?;
+
+	Ok(verified)
 }
