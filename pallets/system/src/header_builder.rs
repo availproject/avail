@@ -128,7 +128,7 @@ pub fn build_extension<M: Metrics>(
 ) -> HeaderExtension {
 	use da_primitives::header::extension::{v1, v2};
 
-	let (xts_layout, commitment, block_dims, _data_matrix)= kate::com::par_build_commitments(
+	let (xts_layout, commitment, block_dims, _data_matrix) = kate::com::par_build_commitments(
 		block_length.rows,
 		block_length.cols,
 		block_length.chunk_size(),
