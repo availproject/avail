@@ -40,13 +40,16 @@ thiserror-no-std = "2.0.2"
 proptest = "1"
 serde_json = "1"
 test-case = "1.2.3"
+criterion = "0.5.1"
+da-primitives = { path = "../primitives/avail" }
 
 [features]
-default = ["std"]
+default = ["std",]
 alloc = ["dusk-plonk/alloc", "nalgebra/alloc"]
-parallel = ["rayon", "std"]
+parallel = ["rayon"]
 
 std = [
+	"parallel",
 	"kate-recovery/std",
 	"once_cell",
 	"hex-literal",
@@ -68,5 +71,5 @@ extended-columns = []
 maximum-block-size = []
 
 [[bench]]
-name = "kzg"
+name = "reconstruct"
 harness = false

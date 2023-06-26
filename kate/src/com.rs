@@ -21,7 +21,6 @@ use kate_recovery::{com::app_specific_rows, index, matrix::Dimensions};
 use nalgebra::base::DMatrix;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
-#[cfg(feature = "parallel")]
 use rayon::prelude::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -516,26 +515,19 @@ pub fn par_build_commitments<M: Metrics>(
 
 	let start = Instant::now();
 
-	#[cfg(feature = "parallel")]
-	let iter = (0..extended_rows_num).into_par_iter();
-	#[cfg(not(feature = "parallel"))]
-	let iter = 0..extended_rows_num;
-
-	let iter = iter.map(|i| {
-		row(
-			&ext_data_matrix,
-			i as usize,
-			block_dims.cols,
-			BlockLengthRows(extended_rows_num),
-		)
-	});
-
-	#[cfg(feature = "parallel")]
-	let mut iter = iter.zip(result_bytes.par_chunks_exact_mut(PROVER_KEY_SIZE as usize));
-	#[cfg(not(feature = "parallel"))]
-	let mut iter = iter.zip(result_bytes.chunks_exact_mut(PROVER_KEY_SIZE as usize));
-
-	iter.try_for_each(|(row, res)| commit(&prover_key, row_eval_domain, row, res))?;
+	(0..extended_rows_num)
+		.into_par_iter()
+		.map(|i| {
+			row(
+				&ext_data_matrix,
+				i as usize,
+				block_dims.cols,
+				BlockLengthRows(extended_rows_num),
+			)
+		})
+		.zip(result_bytes.par_chunks_exact_mut(PROVER_KEY_SIZE as usize))
+		.map(|(row, res)| commit(&prover_key, row_eval_domain, row, res))
+		.collect::<Result<_, _>>()?;
 
 	metrics.commitment_build_time(start.elapsed());
 
@@ -844,9 +836,9 @@ mod tests {
 	proptest! {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
-	#[ignore]
 	// newapi done
 	fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy())  {
+
 		let metrics = IgnoreMetrics {};
 		let (layout, commitments, dims, matrix) = par_build_commitments(
 			BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default(), &metrics).unwrap();
