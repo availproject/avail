@@ -21,11 +21,12 @@ pub use kate_commitment::*;
 /// Application Specific Data Retrieval
 pub mod asdr;
 
-pub mod sha2;
+pub mod keccak256;
 pub mod traits;
-pub use sha2::ShaTwo256;
+pub use keccak256::Keccak256;
 
 pub mod data_proof;
+
 pub use data_proof::DataProof;
 
 pub mod well_known_keys {
