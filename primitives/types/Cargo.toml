@@ -12,6 +12,7 @@ sp-core = { version = "7", default-features = false }
 
 # 3rd-parties
 derive_more = "0.99.17"
+hex = { version = "0.4", optional = true, default-features = false, features = ["alloc", "serde"] }
 num-traits = { version = "0.2", default-features = false }
 serde = { version = "1.0", features = ["derive"], optional = true }
 thiserror-no-std = "2.0.2"
@@ -23,6 +24,7 @@ test-case = "1.2.3"
 default = ["std"]
 std = [
 	"serde",
+	"hex",
 	"sp-core/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
