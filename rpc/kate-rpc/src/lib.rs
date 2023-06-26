@@ -425,6 +425,7 @@ where
 					at
 				)
 			})?;
+
 		DataProof::try_from(&merkle_proof)
 			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e))
 	}
