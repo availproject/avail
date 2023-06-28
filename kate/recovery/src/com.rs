@@ -1,4 +1,4 @@
-use codec::Decode;
+use codec::{Decode, IoReader};
 use core::num::TryFromIntError;
 use da_types::ensure;
 use dusk_bytes::Serializable as _;
@@ -15,7 +15,7 @@ use std::{
 use thiserror_no_std::Error;
 
 use crate::{
-	config::{self, CHUNK_SIZE, DATA_CHUNK_SIZE, PADDING_TAIL_VALUE},
+	config::{self, CHUNK_SIZE, DATA_CHUNK_SIZE},
 	data, index, matrix,
 };
 
@@ -295,6 +295,53 @@ pub enum UnflattenError {
 	InvalidLen,
 }
 
+use std::{collections::VecDeque, io};
+
+struct SparseSliceRead<'a> {
+	parts: VecDeque<&'a [u8]>,
+}
+
+impl<'a> FromIterator<&'a [u8]> for SparseSliceRead<'a> {
+	fn from_iter<I: IntoIterator<Item = &'a [u8]>>(iter: I) -> Self {
+		let parts = VecDeque::from_iter(iter);
+		Self { parts }
+	}
+}
+
+impl<'a> io::Read for SparseSliceRead<'a> {
+	fn read(&mut self, mut buf: &mut [u8]) -> io::Result<usize> {
+		let mut bytes = 0usize;
+
+		loop {
+			let buf_len = buf.len();
+			if buf_len == 0 || self.parts.is_empty() {
+				break;
+			}
+
+			if let Some(next_part) = self.parts.pop_front() {
+				// Define max copied bytes and pending for next iteration.
+				let copied_len = std::cmp::min(next_part.len(), buf_len);
+				bytes += copied_len;
+
+				// Copy data into `buf`.
+				let (source, pending_next_part) = next_part.split_at(copied_len);
+				let (dest, pending_buf) = buf.split_at_mut(copied_len);
+				dest.copy_from_slice(source);
+
+				// Advance output buffer.
+				buf = pending_buf;
+
+				// Reinsert if it is still pending
+				if !pending_next_part.is_empty() {
+					self.parts.push_front(pending_next_part);
+				}
+			}
+		}
+
+		Ok(bytes)
+	}
+}
+
 // Removes both extrinsics and block padding (iec_9797 and seeded random data)
 pub fn unflatten_padded_data(
 	ranges: Vec<(u32, AppDataRange)>,
@@ -302,30 +349,16 @@ pub fn unflatten_padded_data(
 ) -> Result<Vec<(u32, AppData)>, UnflattenError> {
 	ensure!(data.len() % CHUNK_SIZE == 0, UnflattenError::InvalidLen);
 
-	fn extract_encoded_extrinsic(range_data: &[u8]) -> Vec<u8> {
+	fn extract_encoded_extrinsic<'a>(range_data: &'a [u8]) -> SparseSliceRead<'a> {
 		const_assert_ne!(CHUNK_SIZE, 0);
 		const_assert_ne!(DATA_CHUNK_SIZE, 0);
 
 		// INTERNAL: Chunk into 32 bytes (CHUNK_SIZE), then remove padding (0..30 bytes).
-		let mut data = range_data
-			.chunks_exact(CHUNK_SIZE)
-			.flat_map(|chunk| chunk[0..DATA_CHUNK_SIZE].iter())
-			.cloned()
-			.collect::<Vec<u8>>();
-
-		// INTERNAL: Remove zeros and `PADDING_TAIL_VALUE` at the end.
-		let tail_value_pos = data
-			.iter()
-			.rev()
-			.enumerate()
-			.skip_while(|(_, byte)| **byte == 0)
-			.find(|(_, byte)| **byte == PADDING_TAIL_VALUE)
-			.map(|(rev_pos, _)| data.len() - rev_pos - 1);
-		if let Some(tail_value_pos) = tail_value_pos {
-			data.truncate(tail_value_pos);
-		}
-
-		data
+		SparseSliceRead::from_iter(
+			range_data
+				.chunks_exact(CHUNK_SIZE)
+				.map(|chunk| &chunk[0..DATA_CHUNK_SIZE]),
+		)
 	}
 
 	ranges
@@ -333,8 +366,8 @@ pub fn unflatten_padded_data(
 		.map(|(app_id, range)| {
 			//let range = range.start as usize..range.end as usize;
 			let range: Range<usize> = range.start.try_into()?..range.end.try_into()?;
-			let encoded = extract_encoded_extrinsic(&data[range]);
-			let extrinsic = <AppData>::decode(&mut encoded.as_slice())?;
+			let reader = extract_encoded_extrinsic(&data[range]);
+			let extrinsic = <AppData>::decode(&mut IoReader(reader))?;
 
 			Ok((app_id, extrinsic))
 		})
