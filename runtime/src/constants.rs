@@ -100,7 +100,9 @@ pub mod time {
 
 pub mod system {
 	use da_primitives::NORMAL_DISPATCH_RATIO;
-	use frame_support::weights::constants::{ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND};
+	use frame_support::weights::constants::{
+		ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_MILLIS, WEIGHT_REF_TIME_PER_SECOND,
+	};
 	use frame_system::limits::BlockWeights as SystemBlockWeights;
 
 	use super::*;
@@ -112,10 +114,21 @@ pub mod system {
 	/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
 	/// This is used to limit the maximal weight of a single extrinsic.
 	const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
+
+	/// Proof size allowed up to 500ms.
+	const MAX_POV_SIZE: u64 = WEIGHT_REF_TIME_PER_MILLIS.saturating_mul(500);
+
 	/// We allow for 2 seconds of compute with a 6 second average block time, with maximum proof size.
+	#[cfg(feature = "fast-runtime")]
 	const MAXIMUM_BLOCK_WEIGHT: Weight =
 		Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2))
-			.set_proof_size(u64::MAX);
+			.set_proof_size(MAX_POV_SIZE);
+
+	/// We allow for 5 seconds of compute with a 20 second average block time, with maximum proof size.
+	#[cfg(not(feature = "fast-runtime"))]
+	const MAXIMUM_BLOCK_WEIGHT: Weight =
+		Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(5))
+			.set_proof_size(MAX_POV_SIZE);
 
 	parameter_types! {
 	pub RuntimeBlockWeights: SystemBlockWeights = SystemBlockWeights::builder()
