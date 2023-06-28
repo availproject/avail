@@ -5,10 +5,11 @@
 use da_primitives::{
 	asdr::AppId, BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
 };
+use frame_support::{dispatch::DispatchClass, weights::Weight};
 use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_arithmetic::traits::{CheckedAdd, One};
+use sp_arithmetic::traits::{CheckedAdd, One, SaturatedConversion};
 use sp_std::mem::replace;
 
 pub use crate::{pallet::*, weights::WeightInfo};
@@ -122,7 +123,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight(({T::WeightInfo::submit_data(data.len() as u32) + T::WeightInfo::data_root(data.len() as u32)}, DispatchClass::Normal))]
+		#[pallet::weight(weight_helper::submit_data::<T>(data.len()))]
 		pub fn submit_data(
 			origin: OriginFor<T>,
 			data: AppDataFor<T>,
@@ -279,5 +280,19 @@ impl<T: Config> Pallet<T> {
 			let new_id = AppId(id.0.checked_add(1).ok_or(Error::<T>::LastAppIdOverflowed)?);
 			Ok(replace(id, new_id))
 		})
+	}
+}
+
+mod weight_helper {
+
+	use super::*;
+
+	/// Weight for `dataAvailability::submit_data`.
+	pub(crate) fn submit_data<T: Config>(data_len: usize) -> (Weight, DispatchClass) {
+		let data_len: u32 = data_len.saturated_into();
+		let basic_weight = T::WeightInfo::submit_data(data_len);
+		let data_root_weight = T::WeightInfo::data_root(data_len);
+		let total_weight = basic_weight.saturating_add(data_root_weight);
+		(total_weight, DispatchClass::Normal)
 	}
 }
