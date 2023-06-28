@@ -29,16 +29,16 @@ sp-runtime = { version = "7.0.0", default-features = false }
 [features]
 default = ["std"]
 std = [
-	"avail-base/std",
-	"da-runtime/std",
-	"da-primitives/std",
-	"kate/std",
-	"kate-recovery/std",
-	"frame-support/std",
-	"frame-system/std",
-	"codec/std",
-	"sp-api/std",
-	"sp-runtime/std",
+    "avail-base/std",
+    "da-runtime/std",
+    "da-primitives/std",
+    "kate/std",
+    "kate-recovery/std",
+    "frame-support/std",
+    "frame-system/std",
+    "codec/std",
+    "sp-api/std",
+    "sp-runtime/std",
 ]
 
 # Enables secure seed generation using for padding fill during the matrix 

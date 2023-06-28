@@ -17,7 +17,7 @@ fn submit_call() -> Vec<u8> {
 fn submit_call_expected() -> H256 {
 	// hex!("ddf368647a902a6f6ab9f53b32245be28edc99e92f43f0004bbc2cb359814b2a").into()
 	// hex!("9c6cf805b377632c6a224e1ca035f8f6975932529a5e492e73742e4f861ba89d").into()
-	hex!("66dde8b32cbd3e6c3ae02f570a23202413d67870b15354c17cc12c4c49894c55").into()
+	hex!("db45128913020d152dbee4d00a1dffebdb703425c44adbd7d7dfc7ae93d836bc").into()
 }
 
 #[test]

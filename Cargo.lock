@@ -1560,7 +1560,7 @@ dependencies = [
 [[package]]
 name = "da-primitives"
 version = "0.4.6"
-source = "git+https://github.com/availproject/avail-core?tag=da-primitives/v0.4.6#6468206d95e55bad150d66f446bc3404488e460c"
+source = "git+https://github.com/availproject/avail-core?tag=da-primitives/v0.4.7#a9d0f1796d0c02a32df5091e576702d8f976cfa2"
 dependencies = [
  "beefy-merkle-tree",
  "derive_more",
@@ -3833,7 +3833,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.7.1"
-source = "git+https://github.com/availproject/avail-core?tag=da-primitives/v0.4.6#6468206d95e55bad150d66f446bc3404488e460c"
+source = "git+https://github.com/availproject/avail-core?tag=da-primitives/v0.4.7#a9d0f1796d0c02a32df5091e576702d8f976cfa2"
 dependencies = [
  "da-primitives",
  "derive_more",
@@ -3860,7 +3860,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.8.1"
-source = "git+https://github.com/availproject/avail-core?tag=da-primitives/v0.4.6#6468206d95e55bad150d66f446bc3404488e460c"
+source = "git+https://github.com/availproject/avail-core?tag=da-primitives/v0.4.7#a9d0f1796d0c02a32df5091e576702d8f976cfa2"
 dependencies = [
  "dusk-bytes",
  "dusk-plonk",
@@ -4990,7 +4990,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?tag=da-primitives/v0.4.6#6468206d95e55bad150d66f446bc3404488e460c"
+source = "git+https://github.com/availproject/avail-core?tag=da-primitives/v0.4.7#a9d0f1796d0c02a32df5091e576702d8f976cfa2"
 dependencies = [
  "ethers-signers",
  "frame-support",
@@ -5009,7 +5009,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?tag=da-primitives/v0.4.6#6468206d95e55bad150d66f446bc3404488e460c"
+source = "git+https://github.com/availproject/avail-core?tag=da-primitives/v0.4.7#a9d0f1796d0c02a32df5091e576702d8f976cfa2"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -5085,7 +5085,7 @@ dependencies = [
 [[package]]
 name = "nomad-merkle"
 version = "0.1.1"
-source = "git+https://github.com/availproject/avail-core?tag=da-primitives/v0.4.6#6468206d95e55bad150d66f446bc3404488e460c"
+source = "git+https://github.com/availproject/avail-core?tag=da-primitives/v0.4.7#a9d0f1796d0c02a32df5091e576702d8f976cfa2"
 dependencies = [
  "frame-support",
  "hex-literal",
@@ -5106,7 +5106,7 @@ dependencies = [
 [[package]]
 name = "nomad-signature"
 version = "0.1.1"
-source = "git+https://github.com/availproject/avail-core?tag=da-primitives/v0.4.6#6468206d95e55bad150d66f446bc3404488e460c"
+source = "git+https://github.com/availproject/avail-core?tag=da-primitives/v0.4.7#a9d0f1796d0c02a32df5091e576702d8f976cfa2"
 dependencies = [
  "elliptic-curve",
  "ethers-core",

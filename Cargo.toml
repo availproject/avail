@@ -1,12 +1,12 @@
 [workspace]
 members = [
-	"pallets/system",
-	"pallets/dactr",
-	"pallets/bridges/nomad/updater-manager",
-	"pallets/bridges/nomad/home",
-	"pallets/bridges/nomad/da-bridge",
-	"runtime",
-	"node",
+    "pallets/system",
+    "pallets/dactr",
+    "pallets/bridges/nomad/updater-manager",
+    "pallets/bridges/nomad/home",
+    "pallets/bridges/nomad/da-bridge",
+    "runtime",
+    "node",
 ]
 
 
@@ -22,19 +22,19 @@ frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 
 # DA Primitives
-da-primitives = { version = "0.4", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
-kate = { version = "0.7", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
-kate-recovery = { version = "0.8", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
+da-primitives = { version = "0.4", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.7" }
+kate = { version = "0.7", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.7" }
+kate-recovery = { version = "0.8", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.7" }
 
 # Nomad
-nomad-signature = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
-nomad-merkle = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
-nomad-base = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
-nomad-core = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.6" }
+nomad-signature = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.7" }
+nomad-merkle = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.7" }
+nomad-base = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.7" }
+nomad-core = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.7" }
 
 # Other stuff
-uint = { git = "https://github.com/paritytech/parity-common.git", tag="rlp-v0.5.2" }
-rlp = { git = "https://github.com/paritytech/parity-common.git", tag="rlp-v0.5.2" }
+uint = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }
+rlp = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }
 
 # Substrate  (polkadot-v0.9.37).
 beefy-merkle-tree = { git = "https://github.com/paritytech/substrate.git/", branch = "polkadot-v0.9.37" }
@@ -81,7 +81,7 @@ sc-consensus-babe-rpc = { git = "https://github.com/paritytech/substrate.git", b
 sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sc-network-common = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sc-consensus-slots  = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sc-consensus-slots = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sc-consensus-uncles = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-authorship = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-keyring = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
@@ -102,14 +102,14 @@ pallet-transaction-payment = { git = "https://github.com/paritytech/substrate.gi
 pallet-staking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-staking-reward-curve = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-utility = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" } 
+pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-babe = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-authorship = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-indices = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-offences = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-treasury = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-collective = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-pallet-bounties = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" } 
+pallet-bounties = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-authority-discovery = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-tips = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }

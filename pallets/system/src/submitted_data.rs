@@ -1,8 +1,9 @@
 use core::fmt::Debug;
 
 use beefy_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
-use da_primitives::{OpaqueExtrinsic, ShaTwo256};
+use da_primitives::OpaqueExtrinsic;
 use sp_core::H256;
+use sp_runtime::traits::Keccak256;
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
 
 const LOG_TARGET: &str = "runtime::system::submitted_data";
@@ -17,6 +18,7 @@ pub struct Metrics {
 	/// Total number of analysed extrinsic.
 	pub total_extrinsics: u32,
 }
+
 pub type RcMetrics = Rc<RefCell<Metrics>>;
 
 impl Metrics {
@@ -94,7 +96,7 @@ where
 /// In case an empty list of leaves is passed the function returns a 0-filled hash.
 fn root<I: Iterator<Item = Vec<u8>>>(submitted_data: I, metrics: RcMetrics) -> H256 {
 	#[cfg(not(feature = "force-rs-merkle"))]
-	let root = merkle_root::<ShaTwo256, _>(submitted_data);
+	let root = merkle_root::<Keccak256, _>(submitted_data);
 	#[cfg(feature = "force-rs-merkle")]
 	let root = rs_merkle_root(submitted_data).into();
 	log::debug!(
@@ -107,17 +109,26 @@ fn root<I: Iterator<Item = Vec<u8>>>(submitted_data: I, metrics: RcMetrics) -> H
 	root
 }
 
-/// Calculates the merkle root using `Sha256` and `rs_merkle` crate.
+/// Calculates the merkle root using `Keccak256` and `rs_merkle` crate.
 #[cfg(feature = "force-rs-merkle")]
 fn rs_merkle_root<I>(leaves: I) -> H256
 where
 	I: Iterator<Item = Vec<u8>>,
 {
-	use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
+	use rs_merkle::{Hasher, MerkleTree};
 
-	let mut tree = MerkleTree::<Sha256>::new();
+	#[derive(Clone)]
+	pub struct Keccak256Algorithm {}
+
+	impl Hasher for Keccak256Algorithm {
+		type Hash = [u8; 32];
+
+		fn hash(data: &[u8]) -> [u8; 32] { sp_io::hashing::keccak_256(data).into() }
+	}
+
+	let mut tree = MerkleTree::<Keccak256Algorithm>::new();
 	leaves.for_each(|leave| {
-		let leave_hash = Sha256::hash(leave.as_slice());
+		let leave_hash = Keccak256Algorithm::hash(leave.as_slice());
 		tree.insert(leave_hash);
 	});
 
@@ -188,13 +199,20 @@ fn proof(
 		return None;
 	}
 
-	let proof = merkle_proof::<ShaTwo256, _, _>(submitted_data, data_index);
+	let proof = merkle_proof::<Keccak256, _, _>(submitted_data, data_index);
 	log::debug!(
 		target: LOG_TARGET,
 		"Build submitted data proof of index {data_index}: {:?} metrics: {:?}",
 		proof,
 		metrics
 	);
+
+	// let leaf = str::from_utf8(proof.leaf.as_slice()).unwrap(); //str::from_utf8(proof.leaf.as_slice()).unwrap();
+	log::debug!("Leaf generated size: {}", proof.leaf.len());
+
+	for l in &proof.leaf {
+		log::debug!(target: LOG_TARGET, "Leaf generated {}", l);
+	}
 
 	Some(proof)
 }
@@ -217,7 +235,7 @@ where
 	I: IntoIterator<Item = H256>,
 {
 	let leaf = Leaf::Hash(data_hash);
-	verify_proof::<ShaTwo256, _, _>(
+	verify_proof::<Keccak256, _, _>(
 		&root,
 		proof.into_iter(),
 		number_of_submitted_data as usize,
@@ -281,6 +299,7 @@ mod test {
 		}
 
 		const EXTRINSIC_VERSION: u8 = 4;
+
 		impl Decode for AvailExtrinsic {
 			fn decode<I: Input>(input: &mut I) -> Result<AvailExtrinsic, DecodeError> {
 				// This is a little more complicated than usual since the binary format must be compatible
@@ -382,7 +401,7 @@ mod test {
 		let root_proof = proof.proof_hashes().to_vec();
 		assert_eq!(root_proof, vec![
 			hex!("754B9412E0ED7907BDF4B7CA5D2A22F5E129A03DEB1F4E1C1FE42D322FDEE90E"),
-			hex!("8D6E30E494D17D7675A94C3C614467FF8CCE35201C1056751A6E9A100515DAF9")
+			hex!("8D6E30E494D17D7675A94C3C614467FF8CCE35201C1056751A6E9A100515DAF9"),
 		]);
 	}
 

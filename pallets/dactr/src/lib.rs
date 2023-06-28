@@ -155,6 +155,14 @@ pub mod pallet {
 				Error::<T>::BlockDimensionsTooSmall
 			);
 
+			let current_block_dimension = DynamicBlockLength::<T>::get();
+			let is_increase =
+				rows >= current_block_dimension.rows && cols >= current_block_dimension.cols;
+			ensure!(
+				is_increase || Self::is_block_weight_acceptable(),
+				Error::<T>::InvalidBlockWeightReduction
+			);
+
 			let block_length =
 				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO)
 					.map_err(|_| Error::<T>::BlockDimensionsOutOfBounds)?;
@@ -204,6 +212,8 @@ pub mod pallet {
 		BlockDimensionsOutOfBounds,
 		/// The proposed block dimensions are too small.
 		BlockDimensionsTooSmall,
+		/// The request to reduce block dimensions was made in a non-empty block
+		InvalidBlockWeightReduction,
 	}
 
 	#[pallet::genesis_config]
@@ -280,6 +290,16 @@ impl<T: Config> Pallet<T> {
 			let new_id = AppId(id.0.checked_add(1).ok_or(Error::<T>::LastAppIdOverflowed)?);
 			Ok(replace(id, new_id))
 		})
+	}
+
+	/// Check if the block weight is acceptable to execute the extrinsic
+	/// We check the current normal ratio weight of the block and compare it with the extrinsic weight
+	pub fn is_block_weight_acceptable() -> bool {
+		let current_weight = <frame_system::Pallet<T>>::block_weight();
+		let current_normal_weight = current_weight.get(DispatchClass::Normal);
+		let acceptable_limit = T::WeightInfo::submit_block_length_proposal().saturating_mul(2);
+
+		current_normal_weight.all_lte(acceptable_limit)
 	}
 }
 
