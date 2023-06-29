@@ -445,7 +445,7 @@ pub mod pallet {
 		/// expensive. We will treat this as a full block.
 		/// # </weight>
 		#[pallet::call_index(2)]
-		#[pallet::weight((T::BlockWeights::get().max_block, DispatchClass::Operational))]
+		#[pallet::weight(weight_helper::set_code::<T>())]
 		pub fn set_code(origin: OriginFor<T>, code: Vec<u8>) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			Self::can_set_code(&code)?;
@@ -463,7 +463,7 @@ pub mod pallet {
 		/// The weight of this function is dependent on the runtime. We will treat this as a full
 		/// block. # </weight>
 		#[pallet::call_index(3)]
-		#[pallet::weight((T::BlockWeights::get().max_block, DispatchClass::Operational))]
+		#[pallet::weight(weight_helper::set_code::<T>())]
 		pub fn set_code_without_checks(
 			origin: OriginFor<T>,
 			code: Vec<u8>,
@@ -1866,4 +1866,22 @@ pub mod pallet_prelude {
 
 	/// Type alias for the `BlockNumber` associated type of system config.
 	pub type BlockNumberFor<T> = <T as crate::Config>::BlockNumber;
+}
+
+mod weight_helper {
+	use super::*;
+
+	/// Weight for `system::set_code`.
+	///
+	/// It fills the whole block in terms of weight.
+	pub(crate) fn set_code<T: Config>() -> (Weight, DispatchClass) {
+		let class = DispatchClass::Operational;
+		let block_weights = T::BlockWeights::get();
+		let max = block_weights
+			.get(class)
+			.max_extrinsic
+			.unwrap_or(block_weights.max_block);
+
+		(max, class)
+	}
 }
