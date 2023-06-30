@@ -317,7 +317,7 @@ impl PolynomialGrid {
 		srs: &M1NoPrecomp,
 		cell: &Cell,
 		eval_grid: &EvaluationGrid,
-		target_dims: &Dimensions,
+		target_dims: Dimensions,
 	) -> Result<Multiproof, Error> {
 		let block = multiproof_block(
 			cell.col.0 as usize,
@@ -371,7 +371,7 @@ pub fn multiproof_block(
 	x: usize,
 	y: usize,
 	grid: Dimensions,
-	target: &Dimensions,
+	target: Dimensions,
 ) -> Option<CellBlock> {
 	let (mp_rows, mp_cols): (usize, usize) = multiproof_dims(grid, target)?.into();
 	let (g_rows, g_cols): (usize, usize) = grid.into();
@@ -395,7 +395,7 @@ pub fn multiproof_block(
 
 /// Dimensions of the multiproof grid. These are guarenteed to cleanly divide `grid_dims`.
 /// `target_dims` must cleanly divide `grid_dims`.
-pub fn multiproof_dims(grid: Dimensions, target: &Dimensions) -> Option<Dimensions> {
+pub fn multiproof_dims(grid: Dimensions, target: Dimensions) -> Option<Dimensions> {
 	let cols = min(grid.cols(), target.cols());
 	let rows = min(grid.rows(), target.rows());
 	if grid.cols().get() % cols != 0 || grid.rows().get() % rows != 0 {
@@ -503,7 +503,7 @@ mod unit_tests {
 	#[test_case(64, 0 => None)]
 	#[test_case(0, 16 => None)]
 	fn multiproof_max_grid_size(x: usize, y: usize) -> Option<CellBlock> {
-		multiproof_block(x, y, GRID.clone(), &TARGET)
+		multiproof_block(x, y, GRID.clone(), TARGET)
 	}
 
 	#[test_case(256, 256,  64,  16 => Some((64, 16)))]
@@ -521,7 +521,7 @@ mod unit_tests {
 		let grid = unsafe { Dimensions::new_unchecked(grid_w, grid_h) };
 		let target = unsafe { Dimensions::new_unchecked(target_w, target_h) };
 
-		multiproof_dims(grid, &target).map(Into::into)
+		multiproof_dims(grid, target).map(Into::into)
 	}
 
 	use proptest::prelude::*;

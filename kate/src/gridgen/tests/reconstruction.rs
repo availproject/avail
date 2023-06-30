@@ -41,7 +41,7 @@ fn test_multiple_extrinsics_for_same_app_id() {
 	let index = app_data_index_from_lookup(&ev.lookup);
 	let (rows, cols): (u16, u16) = ev.dims().into();
 	let bdims = Dimensions::new_from(rows, cols).unwrap();
-	let res = reconstruct_extrinsics(&index, &bdims, cells).unwrap();
+	let res = reconstruct_extrinsics(&index, bdims, cells).unwrap();
 
 	assert_eq!(res[0].1[0], xt1);
 	assert_eq!(res[0].1[1], xt2);
@@ -60,7 +60,7 @@ fn test_build_and_reconstruct(exts in super::app_extrinsics_strategy())  {
 	let cells = sample_cells(&grid, None);
 	let index = app_data_index_from_lookup(&grid.lookup);
 	let bdims = Dimensions::new_from(rows, cols).unwrap();
-	let reconstructed = reconstruct_extrinsics(&index, &bdims, cells).unwrap();
+	let reconstructed = reconstruct_extrinsics(&index, bdims, cells).unwrap();
 	for (result, xt) in reconstructed.iter().zip(exts) {
 		prop_assert_eq!(result.0, *xt.app_id);
 		prop_assert_eq!(result.1[0].as_slice(), &xt.data);
@@ -82,7 +82,7 @@ fn test_build_and_reconstruct(exts in super::app_extrinsics_strategy())  {
 		content[48..].copy_from_slice(&grid.get(y, x).unwrap().to_bytes().unwrap()[..]);
 
 		let dcell = DCell{position: Position { row: y as u32, col: x as u16 }, content };
-		let verification =  kate_recovery::proof::verify(&kate_recovery::testnet::public_params(256), &bdims, &commitments[y].to_bytes().unwrap(),  &dcell);
+		let verification =  kate_recovery::proof::verify(&kate_recovery::testnet::public_params(256), bdims, &commitments[y].to_bytes().unwrap(),  &dcell);
 		prop_assert!(verification.is_ok());
 		prop_assert!(verification.unwrap());
 	}
@@ -122,11 +122,11 @@ get erasure coded to ensure redundancy."#;
 	let index = app_data_index_from_lookup(&grid.lookup);
 
 	let bdims = grid.dims();
-	let res_1 = kate_recovery::com::reconstruct_app_extrinsics(&index, &bdims, cols_1, 1).unwrap();
+	let res_1 = kate_recovery::com::reconstruct_app_extrinsics(&index, bdims, cols_1, 1).unwrap();
 	assert_eq!(res_1[0], app_id_1_data);
 
 	let cols_2 = sample_cells(&grid, Some(vec![0, 2, 3]));
 
-	let res_2 = kate_recovery::com::reconstruct_app_extrinsics(&index, &bdims, cols_2, 2).unwrap();
+	let res_2 = kate_recovery::com::reconstruct_app_extrinsics(&index, bdims, cols_2, 2).unwrap();
 	assert_eq!(res_2[0], app_id_2_data);
 }

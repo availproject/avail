@@ -42,7 +42,7 @@ pub enum ReconstructionError {
 /// Positions in columns are random.
 /// Function panics if factor is above 1.0.
 pub fn columns_positions(
-	dimensions: &matrix::Dimensions,
+	dimensions: matrix::Dimensions,
 	positions: &[matrix::Position],
 	factor: Percent,
 ) -> Vec<matrix::Position> {
@@ -63,7 +63,7 @@ pub fn columns_positions(
 /// Creates hash map of columns, each being hash map of cells, from vector of cells.
 /// Intention is to be able to find duplicates and to group cells by column.
 fn map_cells(
-	dimensions: &matrix::Dimensions,
+	dimensions: matrix::Dimensions,
 	cells: Vec<data::DataCell>,
 ) -> Result<HashMap<u16, HashMap<u32, data::DataCell>>, ReconstructionError> {
 	let mut result: HashMap<u16, HashMap<u32, data::DataCell>> = HashMap::new();
@@ -90,7 +90,7 @@ fn map_cells(
 /// * `app_id` - Application ID
 pub fn app_specific_rows(
 	index: &index::AppDataIndex,
-	dimensions: &matrix::Dimensions,
+	dimensions: matrix::Dimensions,
 	app_id: u32,
 ) -> Vec<u32> {
 	index
@@ -110,7 +110,7 @@ pub fn app_specific_rows(
 /// * `app_id` - Application ID
 pub fn app_specific_cells(
 	index: &index::AppDataIndex,
-	dimensions: &matrix::Dimensions,
+	dimensions: matrix::Dimensions,
 	app_id: u32,
 ) -> Option<Vec<matrix::Position>> {
 	index
@@ -133,7 +133,7 @@ pub type AppData = Vec<Vec<u8>>;
 /// * `app_id` - Application ID
 pub fn reconstruct_app_extrinsics(
 	index: &index::AppDataIndex,
-	dimensions: &matrix::Dimensions,
+	dimensions: matrix::Dimensions,
 	cells: Vec<data::DataCell>,
 	app_id: u32,
 ) -> Result<AppData, ReconstructionError> {
@@ -155,7 +155,7 @@ pub fn reconstruct_app_extrinsics(
 /// * `cells` - Cells from required columns, at least 50% cells per column
 pub fn reconstruct_extrinsics(
 	index: &index::AppDataIndex,
-	dimensions: &matrix::Dimensions,
+	dimensions: matrix::Dimensions,
 	cells: Vec<data::DataCell>,
 ) -> Result<Vec<(u32, AppData)>, ReconstructionError> {
 	let data = reconstruct_available(dimensions, cells)?;
@@ -170,7 +170,7 @@ pub fn reconstruct_extrinsics(
 /// * `dimensions` - Extended matrix dimensions
 /// * `cells` - Cells from required columns, at least 50% cells per column
 pub fn reconstruct_columns(
-	dimensions: &matrix::Dimensions,
+	dimensions: matrix::Dimensions,
 	cells: &[data::Cell],
 ) -> Result<HashMap<u16, Vec<[u8; CHUNK_SIZE]>>, ReconstructionError> {
 	let cells: Vec<data::DataCell> = cells.iter().cloned().map(Into::into).collect::<Vec<_>>();
@@ -198,7 +198,7 @@ pub fn reconstruct_columns(
 }
 
 fn reconstruct_available(
-	dimensions: &matrix::Dimensions,
+	dimensions: matrix::Dimensions,
 	cells: Vec<data::DataCell>,
 ) -> Result<Vec<u8>, ReconstructionError> {
 	let columns = map_cells(dimensions, cells)?;
@@ -251,11 +251,11 @@ pub fn decode_app_extrinsics(
 	cells: Vec<data::DataCell>,
 	app_id: u32,
 ) -> Result<AppData, ReconstructionError> {
-	let positions = app_specific_cells(index, &dimensions, app_id).unwrap_or_default();
+	let positions = app_specific_cells(index, dimensions, app_id).unwrap_or_default();
 	if positions.is_empty() {
 		return Ok(vec![]);
 	}
-	let cells_map = map_cells(&dimensions, cells)?;
+	let cells_map = map_cells(dimensions, cells)?;
 
 	for position in positions {
 		cells_map
@@ -297,6 +297,7 @@ pub enum UnflattenError {
 
 use std::{collections::VecDeque, io};
 
+/// It is a Codec Reader which allows decoding from non-sequential data.
 struct SparseSliceRead<'a> {
 	parts: VecDeque<&'a [u8]>,
 }
@@ -349,7 +350,7 @@ pub fn unflatten_padded_data(
 ) -> Result<Vec<(u32, AppData)>, UnflattenError> {
 	ensure!(data.len() % CHUNK_SIZE == 0, UnflattenError::InvalidLen);
 
-	fn extract_encoded_extrinsic<'a>(range_data: &'a [u8]) -> SparseSliceRead<'a> {
+	fn extract_encoded_extrinsic(range_data: &[u8]) -> SparseSliceRead {
 		const_assert_ne!(CHUNK_SIZE, 0);
 		const_assert_ne!(DATA_CHUNK_SIZE, 0);
 
@@ -650,7 +651,7 @@ mod tests {
 			index: vec![(1, 2), (2, 5), (3, 8)],
 		};
 		let dimensions = Dimensions::new(8, 4).unwrap();
-		let result = app_specific_rows(&index, &dimensions, app_id);
+		let result = app_specific_rows(&index, dimensions, app_id);
 		assert_eq!(expected.len(), result.len());
 	}
 
@@ -663,7 +664,7 @@ mod tests {
 			index: vec![(1, 5)],
 		};
 		let dimensions = Dimensions::new(4, 4).unwrap();
-		let result = app_specific_cells(&index, &dimensions, app_id).unwrap_or_default();
+		let result = app_specific_cells(&index, dimensions, app_id).unwrap_or_default();
 		assert_eq!(expected.len(), result.len());
 		result.iter().zip(expected).for_each(|(a, &(row, col))| {
 			assert_eq!(a.row, row);

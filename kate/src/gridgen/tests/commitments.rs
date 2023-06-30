@@ -103,7 +103,7 @@ proptest! {
 			}
 			// Need to provide the original dimensions here too
 			let extended_dims = orig_dims.clone();
-			let (_, missing) = verify_equality(&public_params, &commits, &app_rows, &index, &extended_dims, xt.app_id.0).unwrap();
+			let (_, missing) = verify_equality(&public_params, &commits, &app_rows, &index, extended_dims, xt.app_id.0).unwrap();
 			prop_assert!(missing.is_empty());
 		}
 	}
@@ -132,7 +132,7 @@ proptest! {
 			row_elems.remove(first_index);
 
 			let extended_dims = orig_dims.transpose();
-			let (_, missing) = verify_equality(&public_params, &commits, &row_elems,&index,&extended_dims,xt.app_id.0).unwrap();
+			let (_, missing) = verify_equality(&public_params, &commits, &row_elems,&index,extended_dims,xt.app_id.0).unwrap();
 			prop_assert!(!missing.is_empty());
 		}
 	}
@@ -184,7 +184,7 @@ fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 		};
 		let verification = kate_recovery::proof::verify(
 			&kate_recovery::testnet::public_params(256),
-			&dims,
+			dims,
 			&commitment,
 			&cell,
 		);

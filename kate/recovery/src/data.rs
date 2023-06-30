@@ -37,7 +37,7 @@ impl Cell {
 
 /// Merges cells data per row.
 /// Cells are sorted before merge.
-pub fn rows(dimensions: &Dimensions, cells: &[&Cell]) -> Vec<(RowIndex, Vec<u8>)> {
+pub fn rows(dimensions: Dimensions, cells: &[&Cell]) -> Vec<(RowIndex, Vec<u8>)> {
 	let mut sorted_cells = cells.to_vec();
 
 	sorted_cells
@@ -96,7 +96,7 @@ mod tests {
 			&cell(position(0, 1), content([1; 32])),
 		];
 
-		let mut rows = rows(&dimensions, &cells);
+		let mut rows = rows(dimensions, &cells);
 		rows.sort_by_key(|(key, _)| key.0);
 
 		let expected = [
@@ -121,7 +121,7 @@ mod tests {
 			&cell(position(0, 1), content([1; 32])),
 		];
 
-		let mut rows = rows(&dimensions, &cells);
+		let mut rows = rows(dimensions, &cells);
 		rows.sort_by_key(|(key, _)| key.0);
 
 		assert_eq!(rows.len(), 1);

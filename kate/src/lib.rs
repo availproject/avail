@@ -5,7 +5,6 @@ use core::{convert::TryInto, num::TryFromIntError};
 use da_types::{BlockLengthColumns, BlockLengthRows};
 #[cfg(feature = "std")]
 pub use dusk_plonk::{commitment_scheme::kzg10::PublicParameters, prelude::BlsScalar};
-#[cfg(feature = "std")]
 use kate_recovery::matrix::Dimensions;
 use sp_arithmetic::traits::SaturatedConversion;
 use static_assertions::const_assert_ne;

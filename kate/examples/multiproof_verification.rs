@@ -67,7 +67,7 @@ fn multiproof_verification() -> Result<bool, AppError> {
 					col: 0.into(),
 				},
 				&grid,
-				&target_dims,
+				target_dims,
 			)
 			.unwrap();
 
@@ -80,7 +80,7 @@ fn multiproof_verification() -> Result<bool, AppError> {
 		(proof_bytes, evals_bytes, commitments, grid.dims())
 	};
 
-	let mp_block = kate::gridgen::multiproof_block(0, 0, dims, &target_dims).unwrap();
+	let mp_block = kate::gridgen::multiproof_block(0, 0, dims, target_dims).unwrap();
 	let commits = commitments
 		.chunks_exact(48)
 		.skip(mp_block.start_y)

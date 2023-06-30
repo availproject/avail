@@ -30,7 +30,7 @@ impl From<dusk_bytes::Error> for Error {
 /// Verifies proof for given cell
 pub fn verify(
 	public_parameters: &PublicParameters,
-	dimensions: &Dimensions,
+	dimensions: Dimensions,
 	commitment: &[u8; COMMITMENT_SIZE],
 	cell: &Cell,
 ) -> Result<bool, Error> {

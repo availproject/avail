@@ -1,3 +1,4 @@
+use derive_more::Constructor;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use std::{
@@ -13,7 +14,7 @@ const EXTENSION_FACTOR_U32: u32 = config::EXTENSION_FACTOR as u32;
 
 /// Position of a cell in the the matrix.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Default, Debug, Clone, Copy, Hash, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, Copy, Hash, Eq, PartialEq, Constructor)]
 pub struct Position {
 	pub row: u32,
 	pub col: u16,
@@ -150,13 +151,33 @@ impl Dimensions {
 	}
 
 	/// Returns number of rows
+	#[inline]
 	pub fn rows(&self) -> NonZeroU16 {
 		self.rows
 	}
 
+	/// Returns number of rows, which is always greater than zero.
+	///
+	/// # SAFETY
+	/// As internal member is `NonZeroU16`, this always returns greater than zero.
+	#[inline]
+	pub fn height(&self) -> usize {
+		NonZeroU16::get(self.rows).into()
+	}
+
 	/// Returns number of columns
+	#[inline]
 	pub fn cols(&self) -> NonZeroU16 {
 		self.cols
+	}
+
+	/// Returns number of cols, which is always greater than zero.
+	///
+	/// # SAFETY
+	/// As internal member is `NonZeroU16`, this always returns greater than zero.
+	#[inline]
+	pub fn width(&self) -> usize {
+		NonZeroU16::get(self.cols).into()
 	}
 
 	/// Matrix size.

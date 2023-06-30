@@ -138,7 +138,7 @@ get erasure coded to ensure redundancy."#;
 	let index = app_data_index_from_lookup(&grid.lookup);
 	let bdims = grid.dims();
 	for xt in &xts {
-		let positions = app_specific_cells(&index, &bdims, xt.app_id.0).unwrap();
+		let positions = app_specific_cells(&index, bdims, xt.app_id.0).unwrap();
 		let cells = positions
 			.iter()
 			.map(|pos| DataCell {
@@ -179,7 +179,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	let bdims = grid.dims();
 
 	let index = app_data_index_from_lookup(&grid.lookup);
-	let res = reconstruct_extrinsics(&index, &bdims, cols).unwrap();
+	let res = reconstruct_extrinsics(&index, bdims, cols).unwrap();
 	let s = String::from_utf8_lossy(res[0].1[0].as_slice());
 
 	assert_eq!(s, orig_data);

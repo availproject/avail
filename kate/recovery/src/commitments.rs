@@ -83,7 +83,7 @@ pub fn verify_equality(
 	commitments: &[[u8; COMMITMENT_SIZE]],
 	rows: &[Option<Vec<u8>>],
 	index: &index::AppDataIndex,
-	dimensions: &matrix::Dimensions,
+	dimensions: matrix::Dimensions,
 	app_id: u32,
 ) -> Result<(Vec<u32>, Vec<u32>), Error> {
 	let ext_rows: usize = dimensions.extended_rows().try_into()?;
@@ -94,7 +94,8 @@ pub fn verify_equality(
 		return Ok((vec![], app_rows));
 	}
 
-	let dim_cols = dimensions.cols().get().into();
+	let dim_cols = dimensions.width();
+	// @TODO Opening Key here???
 	let (prover_key, _) = public_params.trim(dim_cols)?;
 	let domain = EvaluationDomain::new(dim_cols)?;
 
@@ -169,7 +170,7 @@ mod tests {
 			&[],
 			&[],
 			&index::AppDataIndex::default(),
-			&matrix::Dimensions::new(1, 1).unwrap(),
+			matrix::Dimensions::new(1, 1).unwrap(),
 			0,
 		)
 		.is_err());
@@ -195,7 +196,7 @@ mod tests {
 			&commitments,
 			&[row_0.clone(), None, row_2, None, row_4, None, None, None],
 			&AppDataIndex { size, index },
-			&matrix::Dimensions::new(4, 32).unwrap(),
+			matrix::Dimensions::new(4, 32).unwrap(),
 			1,
 		);
 		assert_eq!(result.unwrap(), (vec![0, 2, 4], vec![]));
@@ -208,7 +209,7 @@ mod tests {
 			&commitments,
 			&[row_0, None, None, None, None, None, None, None],
 			&AppDataIndex { size, index },
-			&matrix::Dimensions::new(4, 32).unwrap(),
+			matrix::Dimensions::new(4, 32).unwrap(),
 			1,
 		);
 		assert_eq!(result.unwrap(), (vec![0], vec![2, 4]));
@@ -221,7 +222,7 @@ mod tests {
 			&commitments,
 			&[None, None, None, None, None, None, None, None],
 			&AppDataIndex { size, index },
-			&matrix::Dimensions::new(4, 32).unwrap(),
+			matrix::Dimensions::new(4, 32).unwrap(),
 			1,
 		);
 		assert_eq!(result.unwrap(), (vec![], vec![0, 2, 4]));
