@@ -1,16 +1,18 @@
-pragma solidity 0.8.15;
+//SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.8.19;
+
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract DataAvailabilityRouter {
     mapping(uint32 => bytes32) public roots;
 }
 
-contract ValidiumContract {
-
-    DataAvailabilityRouter router;
+contract ValidiumContract is Ownable {
+    DataAvailabilityRouter private router;
 
     function setRouter(
         address _router
-    ) public {
+    ) public onlyOwner {
         router = DataAvailabilityRouter(_router);
     }
 
@@ -22,16 +24,16 @@ contract ValidiumContract {
 
     function checkDataRootMembership(
         uint32 blockNumber,
-        bytes32[] memory proof,
-        uint256 numberOfLeaves,
-        uint256 leafIndex,
+        bytes32[] calldata proof,
+        uint32 numberOfLeaves,
+        uint256 index,
         bytes32 leaf
-    ) public view returns (bool) {
-        if (leafIndex >= numberOfLeaves) {
+    ) public view returns (bool isMember) {
+        if (index >= numberOfLeaves) {
             return false;
         }
 
-        uint256 position = leafIndex;
+        uint256 position = index;
         uint256 width = numberOfLeaves;
 
         bytes32 computedHash = leaf;
@@ -40,9 +42,9 @@ contract ValidiumContract {
             bytes32 proofElement = proof[i];
 
             if (position % 2 == 1 || position + 1 == width) {
-                computedHash = sha256(abi.encodePacked(proofElement, computedHash));
+                computedHash = keccak256(abi.encodePacked(proofElement, computedHash));
             } else {
-                computedHash = sha256(abi.encodePacked(computedHash, proofElement));
+                computedHash = keccak256(abi.encodePacked(computedHash, proofElement));
             }
 
             position /= 2;
