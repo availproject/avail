@@ -4,7 +4,7 @@ use std::{
 	num::TryFromIntError,
 };
 
-use da_types::ensure;
+use avail_core::ensure;
 #[cfg(feature = "std")]
 use dusk_bytes::Serializable;
 use dusk_plonk::{
@@ -39,6 +39,18 @@ pub enum Error {
 	BadRowsData,
 	#[error("Integer conversion error")]
 	IntError(#[from] TryFromIntError),
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {
+	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+		match &self {
+			Self::SliceError(slice) => Some(slice),
+			Self::PlonkError(plonk) => Some(plonk),
+			Self::IntError(try_int) => Some(try_int),
+			_ => None,
+		}
+	}
 }
 
 #[cfg(feature = "std")]

@@ -1,20 +1,17 @@
 [workspace]
 members = [
-	"primitives/avail",
-	"primitives/types",
-	"kate",
+	"core",
 	"kate/recovery",
-	"primitives/nomad/signature",
-	"primitives/nomad/nomad-core",
-	"primitives/nomad/nomad-base",
-	"primitives/nomad/merkle",
+	"kate",
 ]
 [patch.crates-io]
 # Substrate  (polkadot-v0.9.37).
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-core-hashing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-debug-derive = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-arithmetic = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
@@ -23,6 +20,13 @@ sp-trie = { git = "https://github.com/paritytech/substrate.git", branch = "polka
 sp-runtime-interface = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-weights = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-inherents = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-staking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-tracing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-version = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-wasm-interface = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 
 [profile.dev.package]
 nalgebra = { opt-level = 3 }

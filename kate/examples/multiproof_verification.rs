@@ -1,5 +1,5 @@
+use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 use core::num::NonZeroU16;
-use da_types::{AppExtrinsic, AppId};
 use hex_literal::hex;
 use kate::{
 	gridgen::EvaluationGrid,
@@ -62,10 +62,7 @@ fn multiproof_verification() -> Result<bool, AppError> {
 		let multiproof = polys
 			.multiproof(
 				&pmp,
-				&kate::com::Cell {
-					row: 0.into(),
-					col: 0.into(),
-				},
+				&kate::com::Cell::new(BlockLengthRows(0), BlockLengthColumns(0)),
 				&grid,
 				target_dims,
 			)

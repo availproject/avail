@@ -30,8 +30,7 @@ use sp_runtime::{
 	Digest,
 };
 use sp_runtime_interface::pass_by::{Codec as PassByCodecImpl, PassBy};
-use sp_std::fmt;
-use sp_std::{convert::TryFrom, fmt::Debug};
+use sp_std::{convert::TryFrom, fmt};
 
 use crate::traits::{ExtendedHeader, HeaderBlockNumber, HeaderHash};
 
@@ -159,7 +158,7 @@ impl<Number, Hash> HeaderT for Header<Number, Hash>
 where
 	Number: Member
 		+ MaybeSerializeDeserialize
-		+ Debug
+		+ fmt::Debug
 		+ sp_std::hash::Hash
 		+ MaybeDisplay
 		+ AtLeast32BitUnsigned
@@ -175,7 +174,7 @@ where
 		+ Member
 		+ Ord
 		+ MaybeSerialize
-		+ Debug
+		+ fmt::Debug
 		+ MaybeDisplay
 		+ SimpleBitOps
 		+ Codec,
@@ -244,7 +243,7 @@ where
 	}
 }
 
-impl<N: HeaderBlockNumber, H: HeaderHash> ExtendedHeader for Header<N, H> {
+impl<N: HeaderBlockNumber, H: HeaderHash> ExtendedHeader<Digest, HeaderExtension> for Header<N, H> {
 	type Hash = <H as HashT>::Output;
 	type Number = N;
 
@@ -269,7 +268,7 @@ impl<N: HeaderBlockNumber, H: HeaderHash> ExtendedHeader for Header<N, H> {
 	}
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "runtime"))]
 mod tests {
 	use codec::Error;
 	use hex_literal::hex;
@@ -282,8 +281,8 @@ mod tests {
 
 	use super::*;
 	use crate::{
-		asdr::DataLookup,
 		kate_commitment::{v1, v2},
+		AppId, DataLookup,
 	};
 
 	type THeader = Header<u32, BlakeTwo256>;
@@ -453,7 +452,7 @@ mod tests {
 		};
 		let extension = extension::v1::HeaderExtension {
 			commitment,
-			app_lookup: DataLookup::new_from_id_lenght(vec![(0, 1)].into_iter())
+			app_lookup: DataLookup::new_from_id_lenght(vec![(AppId(0), 1)].into_iter())
 				.expect("Valid DataLookup .qed"),
 		};
 		let digest = Digest {

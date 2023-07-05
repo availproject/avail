@@ -1,4 +1,4 @@
-use core::num::{NonZeroU32, NonZeroUsize};
+use core::num::NonZeroU32;
 use std::{
 	convert::{TryFrom, TryInto},
 	mem::size_of,
@@ -6,8 +6,11 @@ use std::{
 	time::Instant,
 };
 
+use avail_core::{
+	data_lookup::Error as DataLookupError, ensure, AppExtrinsic, AppId, BlockLengthColumns,
+	BlockLengthRows,
+};
 use codec::Encode;
-use da_types::{ensure, AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows, DataLookupError};
 use derive_more::Constructor;
 use dusk_bytes::Serializable;
 use dusk_plonk::{
@@ -19,8 +22,10 @@ use dusk_plonk::{
 #[cfg(feature = "std")]
 use kate_recovery::matrix::Dimensions;
 use nalgebra::base::DMatrix;
-use rand::{Rng, SeedableRng};
-use rand_chacha::ChaChaRng;
+use rand_chacha::{
+	rand_core::{Error as ChaChaError, RngCore, SeedableRng},
+	ChaChaRng,
+};
 use rayon::prelude::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -36,6 +41,7 @@ use crate::{
 	},
 	metrics::Metrics,
 	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed, TryFromBlockDimensionsError, LOG_TARGET,
+	U32_USIZE_ERR,
 };
 #[cfg(feature = "std")]
 use kate_recovery::testnet;
@@ -61,6 +67,7 @@ pub enum Error {
 	InvalidDimensionExtension,
 	DomainSizeInvalid,
 	InvalidDataLookup(#[from] DataLookupError),
+	Rng(#[from] ChaChaError),
 }
 
 impl From<TryFromIntError> for Error {
@@ -105,7 +112,7 @@ fn app_extrinsics_group_by_app_id(extrinsics: &[AppExtrinsic]) -> Vec<(AppId, Ve
 pub fn flatten_and_pad_block(
 	max_rows: BlockLengthRows,
 	max_cols: BlockLengthColumns,
-	chunk_size: u32,
+	chunk_size: NonZeroU32,
 	extrinsics: &[AppExtrinsic],
 	rng_seed: Seed,
 ) -> Result<(XtsLayout, FlatData, BlockDimensions), Error> {
@@ -143,19 +150,16 @@ pub fn flatten_and_pad_block(
 
 	// Determine the block size after padding
 	let block_dims = get_block_dimensions(padded_block_len, max_rows, max_cols, chunk_size)?;
+	let chunk_size = usize::try_from(NonZeroU32::get(block_dims.chunk_size)).expect(U32_USIZE_ERR);
 
-	if padded_block.len() > block_dims.size() {
-		return Err(Error::BlockTooBig);
-	}
+	let block_dims_size = block_dims.size().ok_or(Error::BlockTooBig)?;
+	ensure!(padded_block.len() <= block_dims_size, Error::BlockTooBig);
 
 	let mut rng = ChaChaRng::from_seed(rng_seed);
 
 	// SAFETY: `padded_block.len() <= block_dims.size()` checked some lines above.
 	if cfg!(debug_assertions) {
-		let chunk_size: usize =
-			usize::try_from(block_dims.chunk_size).expect("Cast to `usize` overflows");
-		let dims_sub_pad = block_dims
-			.size()
+		let dims_sub_pad = block_dims_size
 			.checked_sub(padded_block.len())
 			.expect("`padded_block.len() <= block_dims.size() .qed");
 		let rem = dims_sub_pad
@@ -164,13 +168,12 @@ pub fn flatten_and_pad_block(
 		assert_eq!(rem, 0);
 	}
 
-	let nz_chunk_size: NonZeroUsize = usize::try_from(block_dims.chunk_size)
-		.map_err(|_| Error::CellLengthExceeded)?
-		.try_into()
-		.map_err(|_| Error::ZeroDimension)?;
-
-	for _ in 0..(block_dims.size().saturating_sub(padded_block.len()) / nz_chunk_size) {
-		let rnd_values: DataChunk = rng.gen();
+	#[allow(clippy::integer_arithmetic)]
+	// SAFETY: `chunk_size` comes from `NonZeroU32::get(...)` so we can safetly use `/`.
+	let last = block_dims_size.saturating_sub(padded_block.len()) / chunk_size;
+	for _ in 0..last {
+		let mut rnd_values = DataChunk::default();
+		rng.try_fill_bytes(&mut rnd_values)?;
 		padded_block.append(&mut pad_with_zeroes(rnd_values.to_vec(), chunk_size));
 	}
 
@@ -181,16 +184,15 @@ pub fn get_block_dimensions(
 	block_size: u32,
 	max_rows: BlockLengthRows,
 	max_cols: BlockLengthColumns,
-	chunk_size: u32,
+	chunk_size: NonZeroU32,
 ) -> Result<BlockDimensions, Error> {
 	let max_block_dimensions = BlockDimensions::new(max_rows, max_cols, chunk_size);
-	let block_size = usize::try_from(block_size)?;
-	ensure!(
-		block_size <= max_block_dimensions.size(),
-		Error::BlockTooBig
-	);
+	let max_block_dimensions_size = max_block_dimensions.size().ok_or(Error::BlockTooBig)?;
 
-	if block_size == max_block_dimensions.size() || MAXIMUM_BLOCK_SIZE {
+	let block_size = usize::try_from(block_size)?;
+	ensure!(block_size <= max_block_dimensions_size, Error::BlockTooBig);
+
+	if block_size == max_block_dimensions_size || MAXIMUM_BLOCK_SIZE {
 		return Ok(max_block_dimensions);
 	}
 
@@ -201,7 +203,7 @@ pub fn get_block_dimensions(
 		nearest_power_2_size = MINIMUM_BLOCK_SIZE;
 	}
 
-	let total_cells = (nearest_power_2_size as f32 / chunk_size as f32).ceil() as u32;
+	let total_cells = (nearest_power_2_size as f32 / chunk_size.get() as f32).ceil() as u32;
 
 	// we must minimize number of rows, to minimize header size
 	// (performance wise it doesn't matter)
@@ -209,7 +211,7 @@ pub fn get_block_dimensions(
 	let (cols, rows) = if total_cells > max_cols.0 {
 		(max_cols, BlockLengthRows(total_cells / nz_max_cols))
 	} else {
-		(total_cells.into(), 1.into())
+		(BlockLengthColumns(total_cells), BlockLengthRows(1))
 	};
 
 	Ok(BlockDimensions {
@@ -220,20 +222,21 @@ pub fn get_block_dimensions(
 }
 
 #[inline]
-fn pad_with_zeroes(mut chunk: Vec<u8>, length: u32) -> Vec<u8> {
-	chunk.resize(length as usize, 0);
+fn pad_with_zeroes(mut chunk: Vec<u8>, len: usize) -> Vec<u8> {
+	chunk.resize(len, 0);
 	chunk
 }
 
-fn pad_to_chunk(chunk: DataChunk, chunk_size: u32) -> Vec<u8> {
+fn pad_to_chunk(chunk: DataChunk, chunk_size: NonZeroU32) -> Vec<u8> {
 	const_assert_eq!(DATA_CHUNK_SIZE, size_of::<DataChunk>());
+	let chunk_size = usize::try_from(chunk_size.get()).expect(U32_USIZE_ERR);
 	debug_assert!(
-		chunk_size as usize >= DATA_CHUNK_SIZE,
+		chunk_size >= DATA_CHUNK_SIZE,
 		"`BlockLength.chunk_size` is valid by design .qed"
 	);
 
 	let mut padded = chunk.to_vec();
-	padded.resize(chunk_size as usize, 0);
+	padded.resize(chunk_size, 0);
 	padded
 }
 
@@ -295,7 +298,8 @@ pub fn par_extend_data_matrix<M: Metrics>(
 	let (rows, cols) = dims.into();
 
 	// simple length with mod check would work...
-	let chunk_size: usize = block_dims.chunk_size.try_into()?;
+	let chunk_size =
+		usize::try_from(block_dims.chunk_size.get()).map_err(|_| Error::BlockTooBig)?;
 
 	let chunks = block.par_chunks_exact(chunk_size);
 	ensure!(chunks.remainder().is_empty(), Error::DimensionsMismatch);
@@ -373,12 +377,12 @@ pub fn build_proof<M: Metrics>(
 	// #[cfg(not(feature = "parallel"))]
 	let cell_iter = cells.iter().zip(result_bytes.chunks_exact_mut(SPROOF_SIZE));
 
-	cell_iter.for_each(|(cell, res)| {
-		let r_index = cell.row.as_usize();
+	for (cell, res) in cell_iter {
+		let r_index = usize::try_from(cell.row.0)?;
 		if r_index >= ext_rows || cell.col >= block_dims.cols {
 			res.fill(0); // for bad cell identifier, fill whole proof with zero bytes !
 		} else {
-			let c_index = cell.col.as_usize();
+			let c_index = usize::try_from(cell.col.0)?;
 
 			// construct polynomial per extended matrix row
 			#[cfg(feature = "parallel")]
@@ -406,7 +410,7 @@ pub fn build_proof<M: Metrics>(
 				},
 			};
 		}
-	});
+	}
 
 	metrics.proof_build_time(total_start.elapsed(), cells.len().saturated_into());
 
@@ -417,7 +421,7 @@ pub fn build_proof<M: Metrics>(
 pub fn par_build_commitments<M: Metrics>(
 	rows: BlockLengthRows,
 	cols: BlockLengthColumns,
-	chunk_size: u32,
+	chunk_size: NonZeroU32,
 	extrinsics_by_key: &[AppExtrinsic],
 	rng_seed: Seed,
 	metrics: &M,
@@ -496,7 +500,6 @@ fn commit(
 mod tests {
 	use std::{convert::TryInto, iter::repeat};
 
-	use da_types::AppExtrinsic;
 	use dusk_bytes::Serializable;
 	use dusk_plonk::bls12_381::BlsScalar;
 	use hex_literal::hex;
@@ -527,6 +530,8 @@ mod tests {
 		metrics::IgnoreMetrics,
 		padded_len,
 	};
+
+	const TCHUNK: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(32) };
 
 	fn app_data_index_try_from_layout(
 		layout: Vec<(AppId, u32)>,
@@ -574,21 +579,25 @@ mod tests {
 			.collect()
 	}
 
-	#[test_case(0,   256, 256 => BlockDimensions::new(1, 4, 32) ; "block size zero")]
-	#[test_case(11,   256, 256 => BlockDimensions::new(1, 4, 32) ; "below minimum block size")]
-	#[test_case(300,  256, 256 => BlockDimensions::new(1, 16, 32) ; "regular case")]
-	#[test_case(513,  256, 256 => BlockDimensions::new(1, 32, 32) ; "minimum overhead after 512")]
-	#[test_case(8192, 256, 256 => BlockDimensions::new(1, 256, 32) ; "maximum cols")]
-	#[test_case(8224, 256, 256 => BlockDimensions::new(2, 256, 32) ; "two rows")]
-	#[test_case(2097152, 256, 256 => BlockDimensions::new(256, 256, 32) ; "max block size")]
+	#[test_case(0,   256, 256 => (1, 4, 32) ; "block size zero")]
+	#[test_case(11,   256, 256 => (1, 4, 32) ; "below minimum block size")]
+	#[test_case(300,  256, 256 => (1, 16, 32) ; "regular case")]
+	#[test_case(513,  256, 256 => (1, 32, 32) ; "minimum overhead after 512")]
+	#[test_case(8192, 256, 256 => (1, 256, 32) ; "maximum cols")]
+	#[test_case(8224, 256, 256 => (2, 256, 32) ; "two rows")]
+	#[test_case(2097152, 256, 256 => (256, 256, 32) ; "max block size")]
 	#[test_case(2097155, 256, 256 => panics "BlockTooBig" ; "too much data")]
 	// newapi done
-	fn test_get_block_dimensions<R, C>(size: u32, rows: R, cols: C) -> BlockDimensions
-	where
-		R: Into<BlockLengthRows>,
-		C: Into<BlockLengthColumns>,
-	{
-		get_block_dimensions(size, rows.into(), cols.into(), 32).unwrap()
+	fn test_get_block_dimensions(size: u32, rows: u32, cols: u32) -> (u32, u32, u32) {
+		let dims = get_block_dimensions(
+			size,
+			BlockLengthRows(rows),
+			BlockLengthColumns(cols),
+			TCHUNK,
+		)
+		.unwrap();
+
+		(dims.rows.0, dims.cols.0, dims.chunk_size.get())
 	}
 
 	// newapi done
@@ -622,11 +631,12 @@ mod tests {
 		.expect("Invalid Expected result");
 		let expected = DMatrix::from_iterator(4, 4, expected.into_iter());
 
-		let block_dims = BlockDimensions::new(BlockLengthRows(2), BlockLengthColumns(4), 32);
+		let block_dims = BlockDimensions::new(BlockLengthRows(2), BlockLengthColumns(4), TCHUNK);
+		let chunk_size = usize::try_from(block_dims.chunk_size.get()).unwrap();
 		let block = (0..=247)
 			.collect::<Vec<u8>>()
 			.chunks_exact(DATA_CHUNK_SIZE)
-			.flat_map(|chunk| pad_with_zeroes(chunk.to_vec(), block_dims.chunk_size))
+			.flat_map(|chunk| pad_with_zeroes(chunk.to_vec(), chunk_size))
 			.collect::<Vec<u8>>();
 		let ext_matrix = par_extend_data_matrix(block_dims, &block, &IgnoreMetrics {}).unwrap();
 		assert_eq!(ext_matrix, expected);
@@ -651,40 +661,28 @@ mod tests {
 	// newapi done
 	#[test]
 	fn test_flatten_block() {
-		let chunk_size = 32;
 		let extrinsics: Vec<AppExtrinsic> = vec![
-			AppExtrinsic {
-				app_id: 0.into(),
-				data: (1..=29).collect(),
-			},
-			AppExtrinsic {
-				app_id: 1.into(),
-				data: (1..=30).collect(),
-			},
-			AppExtrinsic {
-				app_id: 2.into(),
-				data: (1..=31).collect(),
-			},
-			AppExtrinsic {
-				app_id: 3.into(),
-				data: (1..=60).collect(),
-			},
+			AppExtrinsic::new(AppId(0), (1..=29).collect()),
+			AppExtrinsic::new(AppId(1), (1..=30).collect()),
+			AppExtrinsic::new(AppId(2), (1..=31).collect()),
+			AppExtrinsic::new(AppId(3), (1..=60).collect()),
 		];
 
-		let expected_dims = BlockDimensions::new(1, 16, chunk_size);
+		let expected_dims =
+			BlockDimensions::new(BlockLengthRows(1), BlockLengthColumns(16), TCHUNK);
 		let (layout, data, dims) = flatten_and_pad_block(
-			128.into(),
-			256.into(),
-			chunk_size,
+			BlockLengthRows(128),
+			BlockLengthColumns(256),
+			TCHUNK,
 			extrinsics.as_slice(),
 			Seed::default(),
 		)
 		.unwrap();
 
-		let expected_layout = vec![(0.into(), 2), (1.into(), 2), (2.into(), 2), (3.into(), 3)];
+		let expected_layout = vec![(AppId(0), 2), (AppId(1), 2), (AppId(2), 2), (AppId(3), 3)];
 		assert_eq!(layout, expected_layout, "The layouts don't match");
 
-		let expected_data = hex!("04740102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d00800000000000000000000000000000000000000000000000000000000000000004780102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e80000000000000000000000000000000000000000000000000000000000000047c0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f80000000000000000000000000000000000000000000000000000000000004f00102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c00800000000000000000000000000000000000000000000000000000000000000076a04053bda0a88bda5177b86a15c3b29f559873cb481232299cd5743151ac004b2d63ae198e7bb0a9011f28e473c95f4013d7d53ec5fbc3b42df8ed101f6d00e831e52bfb76e51cca8b4e9016838657edfae09cb9a71eb219025c4c87a67c004aaa86f20ac0aa792bc121ee42e2c326127061eda15599cb5db3db870bea5a00ecf353161c3cb528b0c5d98050c4570bfc942d8b19ed7b0cbba5725e03e5f000b7e30db36b6df82ac151f668f5f80a5e2a9cac7c64991dd6a6ce21c060175800edb9260d2a86c836efc05f17e5c59525e404c6a93d051651fe2e4eefae281300");
+		let expected_data = hex!("04740102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d00800000000000000000000000000000000000000000000000000000000000000004780102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e80000000000000000000000000000000000000000000000000000000000000047c0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f80000000000000000000000000000000000000000000000000000000000004f00102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c00800000000000000000000000000000000000000000000000000000000000000076b8e0ada0f13d90405d6ae55386bd28bdd219b8a08ded1aa836efcc8b770d00da41597c5157488d7724e03fb8d84a376a43b8f41518a11cc387b669b2ee65009f07e7be5551387a98ba977c732d080dcb0f29a048e3656912c6533e32ee7a0029b721769ce64e43d57133b074d839d531ed1f28510afb45ace10a1f4b794d002d09a0e663266ce1ae7ed1081968a0758e718e997bd362c6b0c34634a9a0b300012737681f7b5d0f281e3afde458bc1e73d2d313c9cf94c05ff3716240a248001320a058d7b3566bd520daaa3ed2bf0ac5b8b120fb852773c3639734b45c9100");
 
 		assert_eq!(dims, expected_dims, "Dimensions don't match the expected");
 		assert_eq!(data, expected_data, "Data doesn't match the expected data");
@@ -753,7 +751,7 @@ mod tests {
 			any_with::<Vec<u8>>(size_range(1..2048).lift()),
 		)
 			.prop_map(|(app_id, data)| AppExtrinsic {
-				app_id: app_id.into(),
+				app_id: AppId(app_id),
 				data,
 			})
 	}
@@ -788,14 +786,13 @@ mod tests {
 	}
 
 	proptest! {
-	#![proptest_config(ProptestConfig::with_cases(20))]
+	#![proptest_config(ProptestConfig::with_cases(10))]
 	#[test]
-	#[ignore]
 	// newapi done
 	fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy())  {
 		let metrics = IgnoreMetrics {};
 		let (layout, commitments, dims, matrix) = par_build_commitments(
-			BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default(), &metrics).unwrap();
+			BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &metrics).unwrap();
 
 		let columns = sample_cells_from_matrix(&matrix, None);
 		let extended_dims = dims.try_into().unwrap();
@@ -806,9 +803,10 @@ mod tests {
 			prop_assert_eq!(result.1[0].as_slice(), &xt.data);
 		}
 
-		let public_params = testnet::public_params(dims.cols.as_usize());
+		let dims_cols = usize::try_from(dims.cols.0).unwrap();
+		let public_params = testnet::public_params(dims_cols);
 		for cell in random_cells(dims.cols, dims.rows, Percent::one() ) {
-			let row = cell.row.as_usize();
+			let row = usize::try_from(cell.row.0).unwrap();
 
 			let proof = build_proof(&public_params, dims, &matrix, &[cell], &metrics).unwrap();
 			prop_assert!(proof.len() == 80);
@@ -831,10 +829,11 @@ mod tests {
 	#[test]
 	// newapi done
 	fn test_commitments_verify(ref xts in app_extrinsics_strategy())  {
-		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
+		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
 
 		let index = app_data_index_try_from_layout(layout).unwrap();
-		let public_params = testnet::public_params(dims.cols.as_usize());
+		let dims_cols = usize::try_from(dims.cols.0).unwrap();
+		let public_params = testnet::public_params(dims_cols);
 		let extended_dims = dims.try_into().unwrap();
 		let commitments = commitments::from_slice(&commitments).unwrap();
 		for xt in xts {
@@ -850,10 +849,11 @@ mod tests {
 	#[test]
 	// newapi done
 	fn verify_commitmnets_missing_row(ref xts in app_extrinsics_strategy())  {
-		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
+		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
 
 		let index = app_data_index_try_from_layout(layout).unwrap();
-		let public_params = testnet::public_params(dims.cols.as_usize());
+		let dims_cols = usize::try_from(dims.cols.0).unwrap();
+		let public_params = testnet::public_params(dims_cols);
 		let extended_dims =  dims.try_into().unwrap();
 		let commitments = commitments::from_slice(&commitments).unwrap();
 		for xt in xts {
@@ -872,14 +872,13 @@ mod tests {
 	fn test_build_commitments_simple_commitment_check() {
 		let block_rows = BlockLengthRows(256);
 		let block_cols = BlockLengthColumns(256);
-		let chunk_size = 32;
 		let original_data = br#"test"#;
 		let hash: Seed = hex!("4c29ae91bb0c61204b6f95d1f3c3a50aa6ac2f29da18d4423e05bbbf81056903");
 
 		let (_, commitments, dimensions, _) = par_build_commitments(
 			block_rows,
 			block_cols,
-			chunk_size,
+			TCHUNK,
 			&[AppExtrinsic::from(original_data.to_vec())],
 			hash,
 			&IgnoreMetrics {},
@@ -888,13 +887,9 @@ mod tests {
 
 		assert_eq!(
 			dimensions,
-			BlockDimensions {
-				rows: 1.into(),
-				cols: 4.into(),
-				chunk_size: 32
-			}
+			BlockDimensions::new(BlockLengthRows(1), BlockLengthColumns(4), TCHUNK),
 		);
-		let expected_commitments = hex!("960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D");
+		let expected_commitments = hex!("9046c691ce4c7ba93c9860746d6ff3dfb5560e119f1eac26aa9a10b6fe29d5c8e2b90f23e2ef3a7a950965b08035470d9046c691ce4c7ba93c9860746d6ff3dfb5560e119f1eac26aa9a10b6fe29d5c8e2b90f23e2ef3a7a950965b08035470d");
 		assert_eq!(commitments, expected_commitments);
 	}
 
@@ -908,24 +903,18 @@ get erasure coded to ensure redundancy."#;
 
 		let hash = Seed::default();
 		let xts = vec![
-			AppExtrinsic {
-				app_id: 0.into(),
-				data: vec![0],
-			},
-			AppExtrinsic {
-				app_id: 1.into(),
-				data: app_id_1_data.to_vec(),
-			},
-			AppExtrinsic {
-				app_id: 2.into(),
-				data: app_id_2_data.to_vec(),
-			},
+			AppExtrinsic::new(AppId(0), vec![0]),
+			AppExtrinsic::new(AppId(1), app_id_1_data.to_vec()),
+			AppExtrinsic::new(AppId(2), app_id_2_data.to_vec()),
 		];
 
-		let chunk_size = 32;
-
-		let (layout, data, dims) =
-			flatten_and_pad_block(32.into(), 4.into(), chunk_size, &xts, hash)?;
+		let (layout, data, dims) = flatten_and_pad_block(
+			BlockLengthRows(32),
+			BlockLengthColumns(4),
+			TCHUNK,
+			&xts,
+			hash,
+		)?;
 		let matrix = par_extend_data_matrix(dims, &data[..], &IgnoreMetrics {})?;
 
 		let cols_1 = sample_cells_from_matrix(&matrix, Some(&[0, 1, 2, 3]));
@@ -956,18 +945,13 @@ get erasure coded to ensure redundancy."#;
 		let hash = Seed::default();
 		let xts = (0..=2)
 			.zip(data)
-			.map(|(app_id, data)| AppExtrinsic {
-				app_id: app_id.into(),
-				data,
-			})
+			.map(|(app_id, data)| AppExtrinsic::new(AppId(app_id), data))
 			.collect::<Vec<_>>();
-
-		let chunk_size = 32;
 
 		let (layout, data, dims) = flatten_and_pad_block(
 			BlockLengthRows(32),
 			BlockLengthColumns(4),
-			chunk_size,
+			TCHUNK,
 			&xts,
 			hash,
 		)?;
@@ -1006,11 +990,10 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 		// The hash is used for seed for padding the block to next power of two value
 		let hash = Seed::default();
-		let chunk_size = 32;
 		let (layout, data, dims) = flatten_and_pad_block(
 			BlockLengthRows(128),
 			BlockLengthColumns(2),
-			chunk_size,
+			TCHUNK,
 			&[AppExtrinsic::from(orig_data.to_vec())],
 			hash,
 		)?;
@@ -1035,22 +1018,15 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let xt1 = vec![5, 5];
 		let xt2 = vec![6, 6];
 		let xts = [
-			AppExtrinsic {
-				app_id: 1.into(),
-				data: xt1.clone(),
-			},
-			AppExtrinsic {
-				app_id: 1.into(),
-				data: xt2.clone(),
-			},
+			AppExtrinsic::new(AppId(1), xt1.clone()),
+			AppExtrinsic::new(AppId(1), xt2.clone()),
 		];
 		// The hash is used for seed for padding the block to next power of two value
 		let hash = Seed::default();
-		let chunk_size = 32;
 		let (layout, data, dims) = flatten_and_pad_block(
 			BlockLengthRows(128),
 			BlockLengthColumns(2),
-			chunk_size,
+			TCHUNK,
 			&xts,
 			hash,
 		)?;
@@ -1076,28 +1052,16 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let xt3 = vec![7];
 		let xt4 = vec![];
 		let xts = [
-			AppExtrinsic {
-				app_id: 1.into(),
-				data: xt1.clone(),
-			},
-			AppExtrinsic {
-				app_id: 1.into(),
-				data: xt2.clone(),
-			},
-			AppExtrinsic {
-				app_id: 2.into(),
-				data: xt3.clone(),
-			},
-			AppExtrinsic {
-				app_id: 3.into(),
-				data: xt4.clone(),
-			},
+			AppExtrinsic::new(AppId(1), xt1.clone()),
+			AppExtrinsic::new(AppId(1), xt2.clone()),
+			AppExtrinsic::new(AppId(2), xt3.clone()),
+			AppExtrinsic::new(AppId(3), xt4.clone()),
 		];
 
 		let expected = vec![
-			(1.into(), vec![xt1, xt2]),
-			(2.into(), vec![xt3]),
-			(3.into(), vec![xt4]),
+			(AppId(1), vec![xt1, xt2]),
+			(AppId(2), vec![xt3]),
+			(AppId(3), vec![xt4]),
 		];
 		let rez = app_extrinsics_group_by_app_id(&xts);
 		println!("{:?}", rez);
@@ -1121,6 +1085,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	#[test_case( build_extrinsics(&[]), 32 => padded_len_group(&[], 32) ; "Empty chunk list")]
 	#[test_case( build_extrinsics(&[4096]), 32 => padded_len_group(&[4096], 32) ; "4K chunk")]
 	fn test_padding_len(extrinsics: Vec<Vec<u8>>, chunk_size: u32) -> u32 {
+		let chunk_size = NonZeroU32::new(chunk_size).expect("Invalid chunk size .qed");
 		extrinsics
 			.into_iter()
 			.flat_map(pad_iec_9797_1)
@@ -1146,7 +1111,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		par_build_commitments(
 			BlockLengthRows(4),
 			BlockLengthColumns(4),
-			32,
+			TCHUNK,
 			&xts,
 			hash,
 			&IgnoreMetrics {},
@@ -1167,7 +1132,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		par_build_commitments(
 			BlockLengthRows(4),
 			BlockLengthColumns(4),
-			32,
+			TCHUNK,
 			&xts,
 			hash,
 			&IgnoreMetrics {},
@@ -1218,11 +1183,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			};
 			let proof = build_proof(
 				&public_params,
-				BlockDimensions {
-					rows: BlockLengthRows(1),
-					cols: BlockLengthColumns(4),
-					chunk_size: 32,
-				},
+				BlockDimensions::new(BlockLengthRows(1), BlockLengthColumns(4), TCHUNK),
 				&ext_m,
 				&[cell],
 				&metrics,
@@ -1243,8 +1204,8 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		}
 	}
 
-	#[test_case( r#"{ "row": 42, "col": 99 }"# => Cell::new(42.into(),99.into()) ; "Simple" )]
-	#[test_case( r#"{ "row": 4294967295, "col": 99 }"# => Cell::new(4_294_967_295.into(),99.into()) ; "Max row" )]
+	#[test_case( r#"{ "row": 42, "col": 99 }"# => Cell::new(BlockLengthRows(42), BlockLengthColumns(99)) ; "Simple" )]
+	#[test_case( r#"{ "row": 4294967295, "col": 99 }"# => Cell::new(BlockLengthRows(4_294_967_295),BlockLengthColumns(99)) ; "Max row" )]
 	// newapi ignore
 	fn serde_block_length_types_untagged(data: &str) -> Cell {
 		serde_json::from_str(data).unwrap()

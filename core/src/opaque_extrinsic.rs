@@ -1,6 +1,5 @@
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
-use sp_runtime::traits::Extrinsic;
 use sp_std::vec::Vec;
 
 /// Simple blob to hold an extrinsic without committing to its format and ensure it is serialized
@@ -51,7 +50,8 @@ impl<'a> ::serde::Deserialize<'a> for OpaqueExtrinsic {
 	}
 }
 
-impl Extrinsic for OpaqueExtrinsic {
+#[cfg(feature = "runtime")]
+impl sp_runtime::traits::Extrinsic for OpaqueExtrinsic {
 	type Call = ();
 	type SignaturePayload = ();
 }

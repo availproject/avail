@@ -1,9 +1,8 @@
+use avail_core::ensure;
 use codec::{Decode, IoReader};
 use core::num::TryFromIntError;
-use da_types::ensure;
 use dusk_bytes::Serializable as _;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
-use rand::seq::SliceRandom;
 use sp_arithmetic::{traits::SaturatedConversion, Percent};
 use static_assertions::const_assert_ne;
 use std::{
@@ -37,19 +36,32 @@ pub enum ReconstructionError {
 	RowCountExceeded,
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for ReconstructionError {
+	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+		match &self {
+			Self::DataDecodingError(unflatten) => Some(unflatten),
+			_ => None,
+		}
+	}
+}
+
 /// From given positions, constructs related columns positions, up to given factor.
 /// E.g. if factor is 0.66, 66% of matched columns will be returned.
 /// Positions in columns are random.
 /// Function panics if factor is above 1.0.
-pub fn columns_positions(
+#[cfg(feature = "std")]
+pub fn columns_positions<R: rand::RngCore>(
 	dimensions: matrix::Dimensions,
 	positions: &[matrix::Position],
 	factor: Percent,
+	rng: &mut R,
 ) -> Vec<matrix::Position> {
+	use rand::seq::SliceRandom;
+
 	let cells = factor
 		.mul_ceil(dimensions.extended_rows())
 		.saturated_into::<usize>();
-	let rng = &mut rand::thread_rng();
 
 	let columns: HashSet<u16> = HashSet::from_iter(positions.iter().map(|position| position.col));
 
@@ -293,6 +305,17 @@ pub enum UnflattenError {
 	Codec(#[from] codec::Error),
 	#[error("Invalid data size, it needs to be a multiple of CHUNK_SIZE")]
 	InvalidLen,
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for UnflattenError {
+	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+		match &self {
+			Self::RangeConversion(try_int) => Some(try_int),
+			Self::Codec(codec) => Some(codec),
+			_ => None,
+		}
+	}
 }
 
 use std::{collections::VecDeque, io};

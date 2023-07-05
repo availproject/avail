@@ -4,8 +4,8 @@ use crate::{
 	gridgen::{tests::sample_cells, EvaluationGrid},
 	Seed,
 };
+use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 use core::num::NonZeroU16;
-use da_types::AppExtrinsic;
 use kate_recovery::{
 	com::reconstruct_extrinsics,
 	data::Cell as DCell,
@@ -21,14 +21,8 @@ fn test_multiple_extrinsics_for_same_app_id() {
 	let xt1 = vec![5, 5];
 	let xt2 = vec![6, 6];
 	let xts = [
-		AppExtrinsic {
-			app_id: 1.into(),
-			data: xt1.clone(),
-		},
-		AppExtrinsic {
-			app_id: 1.into(),
-			data: xt2.clone(),
-		},
+		AppExtrinsic::new(AppId(1), xt1.clone()),
+		AppExtrinsic::new(AppId(1), xt2.clone()),
 	];
 	// The hash is used for seed for padding the block to next power of two value
 	let hash = Seed::default();
@@ -75,7 +69,9 @@ fn test_build_and_reconstruct(exts in super::app_extrinsics_strategy())  {
 	let mut rng = ChaChaRng::from_seed(RNG_SEED);
 	let sampled = Uniform::from(0..indices.len()).sample_iter(&mut rng).take(10).map(|i| indices[i]);
 	for (x, y) in sampled {
-		let cell = Cell { row: (y as u32).into(), col: (x as u32).into() };
+		let row = BlockLengthRows(u32::try_from(y).unwrap());
+		let col = BlockLengthColumns(u32::try_from(x).unwrap());
+		let cell = Cell::new( row, col);
 		let proof = polys.proof(pp, &cell).unwrap();
 		let mut content = [0u8; 80];
 		content[..48].copy_from_slice(&proof.to_bytes().unwrap()[..]);
@@ -98,18 +94,9 @@ get erasure coded to ensure redundancy."#;
 		br#""Let's see how this gets encoded and then reconstructed by sampling only some data."#;
 
 	let xts = vec![
-		AppExtrinsic {
-			app_id: 0.into(),
-			data: vec![0],
-		},
-		AppExtrinsic {
-			app_id: 1.into(),
-			data: app_id_1_data.to_vec(),
-		},
-		AppExtrinsic {
-			app_id: 2.into(),
-			data: app_id_2_data.to_vec(),
-		},
+		AppExtrinsic::new(AppId(0), vec![0]),
+		AppExtrinsic::new(AppId(1), app_id_1_data.to_vec()),
+		AppExtrinsic::new(AppId(2), app_id_2_data.to_vec()),
 	];
 
 	let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 4, 32, Seed::default())

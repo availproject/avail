@@ -1,7 +1,9 @@
 // Code adapted from: https://github.com/gakonst/ethers-rs/blob/master/ethers-core/src/types/signature.rs
 
 use alloc::{borrow::ToOwned, string::String, vec::Vec};
-use core::{convert::TryFrom, fmt, str::FromStr};
+use core::convert::TryFrom;
+#[cfg(feature = "std")]
+use core::{fmt, str::FromStr};
 
 use elliptic_curve::{consts::U32, sec1::ToEncodedPoint as _};
 use frame_support::{pallet_prelude::*, sp_runtime::traits::Keccak256};

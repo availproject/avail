@@ -28,7 +28,7 @@ mod tests {
 
 	impl GetAppId for CustomAppId {
 		fn app_id(&self) -> AppId {
-			7.into()
+			AppId(7)
 		}
 	}
 
@@ -40,7 +40,7 @@ mod tests {
 		let custom_app_id = (0, 1, 2, 3, 4, 5, 6, CustomAppId {});
 		let default_app_id = (0, 1, 2, 3, 4, 5, 6, DefaultGetAppId {});
 
-		assert_eq!(custom_app_id.app_id(), 7.into());
+		assert_eq!(custom_app_id.app_id(), AppId(7));
 		assert_eq!(default_app_id.app_id(), Default::default());
 	}
 }

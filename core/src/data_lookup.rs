@@ -1,12 +1,12 @@
-use alloc::vec::Vec;
+use codec::{Decode, Encode};
 use core::convert::TryFrom;
 use derive_more::Constructor;
-use num_traits::{CheckedAdd, Zero};
-use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_arithmetic::traits::{CheckedAdd, Zero};
 use sp_core::RuntimeDebug;
+use sp_std::vec::Vec;
 use thiserror_no_std::Error;
 
 use crate::{ensure, AppId};
@@ -138,20 +138,20 @@ mod test {
 	fn into_lookup_items<I, T>(vals: I) -> Vec<DataLookupIndexItem>
 	where
 		I: IntoIterator<Item = (T, u32)>,
-		T: Into<AppId>,
+		T: Into<u32>,
 	{
-		vals.into_iter().map(Into::into).collect::<Vec<_>>()
+		vals.into_iter()
+			.map(|v| (AppId(v.0.into()), v.1).into())
+			.collect::<Vec<_>>()
 	}
 
-	#[test_case( vec![(0, 15), (1, 20), (2, 150)] => Ok(DataLookup::new(185, into_lookup_items([(1, 15), (2, 35)]))); "Valid case")]
+	#[test_case( vec![(0, 15), (1, 20), (2, 150)] => Ok(DataLookup::new(185, into_lookup_items([(1u32, 15), (2, 35)]))); "Valid case")]
 	#[test_case( vec![(0, usize::MAX)] => Err(Error::OffsetOverflows); "Offset overflows at zero")]
 	#[test_case( vec![(0, (u32::MAX -1) as usize), (1, 2)] => Err(Error::OffsetOverflows); "Offset overflows at non zero")]
 	#[test_case( vec![(1, 10), (0, 2)] => Err(Error::DataNotSorted); "Unsortend data")]
 	#[test_case( vec![] => Ok(DataLookup::new(0, vec![])); "Empty data")]
 	fn from_len(id_len_data: Vec<(u32, usize)>) -> Result<DataLookup, Error> {
-		let iter = id_len_data
-			.into_iter()
-			.map(|(id, len)| (AppId::from(id), len));
+		let iter = id_len_data.into_iter().map(|(id, len)| (AppId(id), len));
 
 		DataLookup::new_from_id_lenght(iter)
 	}

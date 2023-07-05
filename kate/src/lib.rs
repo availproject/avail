@@ -1,8 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(clippy::integer_arithmetic)]
 
-use core::{convert::TryInto, num::TryFromIntError};
-use da_types::{BlockLengthColumns, BlockLengthRows};
+use avail_core::{BlockLengthColumns, BlockLengthRows};
+use core::{
+	convert::TryInto,
+	num::{NonZeroU32, TryFromIntError},
+};
+use derive_more::Constructor;
 #[cfg(feature = "std")]
 pub use dusk_plonk::{commitment_scheme::kzg10::PublicParameters, prelude::BlsScalar};
 use kate_recovery::matrix::Dimensions;
@@ -13,6 +17,8 @@ use thiserror_no_std::Error;
 use crate::config::DATA_CHUNK_SIZE;
 
 pub const LOG_TARGET: &str = "kate";
+pub const U32_USIZE_ERR: &str = "`u32` cast to `usize` overflows, unsupported platform";
+
 pub type Seed = [u8; 32];
 
 #[cfg(feature = "std")]
@@ -53,27 +59,28 @@ pub mod config {
 ///  - Dedup this from `kate-recovery` once that library support `no-std`.
 #[cfg(feature = "std")]
 pub mod testnet {
-	use super::{BlockLengthColumns, PublicParameters};
+	use super::*;
 	use hex_literal::hex;
 	use once_cell::sync::Lazy;
 	use poly_multiproof::ark_ff::{BigInt, Fp};
 	use poly_multiproof::ark_serialize::CanonicalDeserialize;
 	use poly_multiproof::m1_blst;
 	use poly_multiproof::m1_blst::{Fr, G1, G2};
-	use rand::SeedableRng;
-	use rand_chacha::ChaChaRng;
+	use rand_chacha::{rand_core::SeedableRng, ChaChaRng};
 	use std::{collections::HashMap, sync::Mutex};
 
 	static SRS_DATA: Lazy<Mutex<HashMap<u32, PublicParameters>>> =
 		Lazy::new(|| Mutex::new(HashMap::new()));
 
 	pub fn public_params(max_degree: BlockLengthColumns) -> PublicParameters {
+		let max_degree: u32 = max_degree.into();
 		let mut srs_data_locked = SRS_DATA.lock().unwrap();
 		srs_data_locked
-			.entry(max_degree.0)
+			.entry(max_degree)
 			.or_insert_with(|| {
 				let mut rng = ChaChaRng::seed_from_u64(42);
-				PublicParameters::setup(max_degree.as_usize(), &mut rng).unwrap()
+				let max_degree = usize::try_from(max_degree).unwrap();
+				PublicParameters::setup(max_degree, &mut rng).unwrap()
 			})
 			.clone()
 	}
@@ -144,7 +151,7 @@ pub mod testnet {
 			let pmp_ev = GeneralEvaluationDomain::<Fr>::new(1024).unwrap();
 			let pmp_poly = pmp_ev.ifft(&pmp_evals);
 
-			let pubs = testnet::public_params(da_types::BlockLengthColumns(1024));
+			let pubs = testnet::public_params(BlockLengthColumns(1024));
 
 			let dp_commit = pubs.commit_key().commit(&dp_poly).unwrap().0.to_bytes();
 			let mut pmp_commit = [0u8; 48];
@@ -203,31 +210,18 @@ pub fn padded_len(len: u32, chunk_size: u32) -> u32 {
 	iec_9797_1_len + pad_to_chunk_extra
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Constructor)]
 pub struct BlockDimensions {
 	pub rows: BlockLengthRows,
 	pub cols: BlockLengthColumns,
-	pub chunk_size: u32,
+	pub chunk_size: NonZeroU32,
 }
 
 impl BlockDimensions {
-	pub fn size(&self) -> usize {
-		self.rows
-			.0
-			.saturating_mul(self.cols.0)
-			.saturating_mul(self.chunk_size) as usize
-	}
-
-	pub fn new<R, C>(rows: R, cols: C, chunk_size: u32) -> Self
-	where
-		R: Into<BlockLengthRows>,
-		C: Into<BlockLengthColumns>,
-	{
-		Self {
-			rows: rows.into(),
-			cols: cols.into(),
-			chunk_size,
-		}
+	pub fn size(&self) -> Option<usize> {
+		let rows_cols = self.rows.0.checked_mul(self.cols.0)?;
+		let rows_cols_chunk = rows_cols.checked_mul(self.chunk_size.get())?;
+		usize::try_from(rows_cols_chunk).ok()
 	}
 }
 

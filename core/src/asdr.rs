@@ -18,12 +18,9 @@
 //! Generic implementation of an unchecked (pre-verification) extrinsic.
 
 use codec::{Compact, Decode, Encode, EncodeLike, Error, Input};
-use frame_support::{
-	dispatch::{DispatchInfo, GetDispatchInfo},
-	traits::ExtrinsicCall,
-};
 use scale_info::{build::Fields, meta_type, Path, StaticTypeInfo, Type, TypeInfo, TypeParameter};
 use sp_core::blake2_256;
+#[cfg(feature = "runtime")]
 use sp_runtime::{
 	generic::CheckedExtrinsic,
 	traits::{
@@ -39,10 +36,7 @@ use sp_std::{
 	vec::Vec,
 };
 
-use crate::{
-	asdr::{AppId, GetAppId},
-	OpaqueExtrinsic,
-};
+use crate::{traits::GetAppId, AppId, OpaqueExtrinsic};
 
 /// Current version of the [`UncheckedExtrinsic`] encoded format.
 ///
@@ -243,6 +237,10 @@ where
 	type SignedExtensions = Extra;
 }
 
+#[cfg(feature = "runtime")]
+use frame_support::dispatch::{DispatchInfo, GetDispatchInfo};
+
+#[cfg(feature = "runtime")]
 impl<Address, Call, Signature, Extra> GetDispatchInfo
 	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
 where
@@ -461,7 +459,8 @@ where
 	}
 }
 
-impl<Address, Call, Signature, Extra> ExtrinsicCall
+#[cfg(feature = "runtime")]
+impl<Address, Call, Signature, Extra> frame_support::traits::ExtrinsicCall
 	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
 where
 	Extra: SignedExtension,

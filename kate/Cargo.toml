@@ -3,6 +3,7 @@ name = "kate"
 version = "0.7.1"
 authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
 edition = "2021"
+license = "Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -11,15 +12,14 @@ edition = "2021"
 poly-multiproof = { git = "https://github.com/availproject/poly-multiproof", default-features = false, tag = "v0.0.1" }
 
 # Internal
-da-types = { path = "../primitives/types", default-features = false }
+avail-core = { path = "../core", default-features = false, feature = "runtime" }
 dusk-plonk = { git = "https://github.com/availproject/plonk.git", tag = "v0.12.0-polygon-2", optional = true }
-kate-recovery = { path = "recovery", default-features = false, optional = true }
-# kate-grid = { path = "grid" }
+kate-recovery = { path = "recovery", default-features = false }
 
 # Parity & Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-sp-arithmetic = { version = "6", default-features = false }
-sp-core = { version = "7.0.0", default-features = false, optional = true }
+sp-arithmetic = { version = "*", default-features = false }
+sp-core = { version = "*", default-features = false, optional = true }
 
 # 3rd-party
 derive_more = { version = "0.99.17", default-features = false, features = ["constructor"] }
@@ -29,7 +29,7 @@ hex-literal = { version = "0.3.4", optional = true }
 log = { version = "0.4.8", optional = true }
 nalgebra = { version = "0.32.2", default-features = false }
 once_cell = { version = "1.8.0", optional = true }
-rand = { version = "0.8.4", default-features = false, optional = true }
+rand = { version = "0.8.5", default-features = false, optional = true }
 rand_chacha = { version = "0.3", default-features = false, optional = true }
 rayon = { version = "1.5.2", optional = true }
 serde = { version = "1", optional = true, features = ["derive"] }
@@ -39,7 +39,6 @@ thiserror-no-std = "2.0.2"
 
 [dev-dependencies]
 criterion = "0.5.1"
-da-primitives = { path = "../primitives/avail" }
 proptest = "1"
 serde_json = "1"
 test-case = "1.2.3"
@@ -58,11 +57,11 @@ std = [
 	"codec/std",
 	"serde",
 	"serde_json",
-	"rand",
 	"rand_chacha/std",
+	"rand/std",
 	"log",
 	"dusk-plonk/std",
-	"da-types/std",
+	"avail-core/std",
 	"sp-arithmetic/std",
 	"sp-core/std",
 	"poly-multiproof/blst",

@@ -1,6 +1,6 @@
+use crate::ensure;
 use beefy_merkle_tree::MerkleProof;
 use codec::{Decode, Encode};
-use frame_support::ensure;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::{hashing::sha2_256, H256};
@@ -95,7 +95,7 @@ where
 	}
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "runtime"))]
 mod test {
 	use crate::ShaTwo256;
 	use hex_literal::hex;
