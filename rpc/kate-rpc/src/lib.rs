@@ -61,6 +61,7 @@ where
 	) -> RpcResult<DataProof>;
 }
 
+#[allow(clippy::type_complexity)]
 pub struct Kate<Client, Block: BlockT> {
 	client: Arc<Client>,
 	block_ext_cache: RwLock<LruCache<Block::Hash, (Vec<BlsScalar>, BlockDimensions)>>,

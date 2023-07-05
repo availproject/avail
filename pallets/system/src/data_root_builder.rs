@@ -7,7 +7,7 @@ use sp_std::vec::Vec;
 
 const LOG_TARGET: &str = "runtime::system::data_root_builder";
 
-pub type DRFOutput = Option<Vec<u8>>;
+pub type DRFOutput = Option<Vec<Vec<u8>>>;
 pub type DRFCallOf<T> = <T as Extrinsic>::Call;
 
 pub trait DataRootFilter {
