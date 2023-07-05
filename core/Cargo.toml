@@ -7,7 +7,7 @@ license = "Apache-2.0"
 
 [dependencies]
 # Others
-derive_more = { version = "0.99.17", default-features = false, features = ["constructor", "from", "add", "deref", "mul"] }
+derive_more = { version = "0.99.17", default-features = false, features = ["constructor", "from", "add", "deref", "mul", "into"] }
 hash256-std-hasher = { version = "0.15.2", default-features = false }
 hex = { version = "0.4", optional = true, default-features = false, features = ["alloc", "serde"] }
 log = { version = "0.4.8", default-features = false }
@@ -15,7 +15,7 @@ serde = { version = "1", optional = true, features = ["derive"] }
 thiserror-no-std = "2.0.2"
 
 # Substrate
-beefy-merkle-tree = { git = "https://github.com/paritytech/substrate.git/", branch = "polkadot-v0.9.37", default-features = false }
+beefy-merkle-tree = { git = "https://github.com/paritytech/substrate.git/", branch = "polkadot-v0.9.37", default-features = false, optional = true }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "2", default-features = false, features = ["derive"] }
 sp-arithmetic = { version = "*", default-features = false }
@@ -46,7 +46,7 @@ std = [
 	"sp-trie/std",
 	"sp-arithmetic/std",
 	"hash256-std-hasher/std",
-	"beefy-merkle-tree/std",
+	"beefy-merkle-tree?/std",
 	"derive_more/display",
 	"sp-runtime-interface?/std",
 	"sp-runtime?/std",
@@ -56,6 +56,7 @@ runtime = [
 	"sp-runtime-interface",
 	"sp-runtime",
 	"frame-support",
+	"beefy-merkle-tree",
 ]
 
 header-backward-compatibility-test = []

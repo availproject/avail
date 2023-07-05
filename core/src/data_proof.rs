@@ -1,10 +1,11 @@
-use crate::ensure;
+#[cfg(feature = "runtime")]
 use beefy_merkle_tree::MerkleProof;
 use codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{hashing::sha2_256, H256};
-use sp_std::{convert::TryFrom, vec::Vec};
+use sp_core::H256;
+use sp_std::vec::Vec;
+
 use thiserror_no_std::Error;
 
 /// Wrapper of `beefy-merkle-tree::MerkleProof` with codec support.
@@ -54,7 +55,8 @@ pub enum DataProofTryFromError {
 	InvalidLeafIndex,
 }
 
-impl<H, T> TryFrom<&MerkleProof<H, T>> for DataProof
+#[cfg(feature = "runtime")]
+impl<H, T> core::convert::TryFrom<&MerkleProof<H, T>> for DataProof
 where
 	T: AsRef<[u8]>,
 	H: PartialEq + Eq + AsRef<[u8]>,
@@ -62,6 +64,8 @@ where
 	type Error = DataProofTryFromError;
 
 	fn try_from(merkle_proof: &MerkleProof<H, T>) -> Result<Self, Self::Error> {
+		use crate::ensure;
+		use sp_core::hashing::sha2_256;
 		use DataProofTryFromError::*;
 
 		let root = <[u8; 32]>::try_from(merkle_proof.root.as_ref())
@@ -99,7 +103,7 @@ where
 mod test {
 	use crate::ShaTwo256;
 	use hex_literal::hex;
-	use sp_core::H512;
+	use sp_core::{hashing::sha2_256, H512};
 	use sp_std::cmp::min;
 	use test_case::test_case;
 
