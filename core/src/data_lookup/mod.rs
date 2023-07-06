@@ -219,4 +219,16 @@ mod test {
 			"Lookup: {lookup:?} -> Compacted: {compact_lookup:?} -> Expanded: {expanded_lookup:?}"
 		);
 	}
+
+	#[test_case( vec![(0, 15), (1, 20), (2, 150)] ; "Valid case")]
+	#[test_case( vec![(0, 15)] ; "Only Zero AppId")]
+	#[test_case( vec![] ; "Empty")]
+	fn serialization_compatibility(id_lens: Vec<(u32, usize)>) {
+		let lookup = DataLookup::from_id_and_len_iter(id_lens.into_iter()).unwrap();
+		let lookup_json = serde_json::to_string(&lookup).unwrap();
+		let compressed_from_json = serde_json::from_str::<CompactDataLookup>(&lookup_json).unwrap();
+		let expanded_lookup = DataLookup::try_from(compressed_from_json.clone()).unwrap();
+
+		assert_eq!(lookup, expanded_lookup);
+	}
 }
