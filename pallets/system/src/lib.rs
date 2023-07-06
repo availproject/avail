@@ -1880,7 +1880,9 @@ mod weight_helper {
 		let max = block_weights
 			.get(class)
 			.max_extrinsic
-			.unwrap_or(block_weights.max_block);
+			.unwrap_or(block_weights.max_block)
+			.saturating_div(5)
+			.saturating_mul(4);
 
 		(max, class)
 	}
