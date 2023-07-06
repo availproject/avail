@@ -1,9 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(clippy::integer_arithmetic)]
 
 use codec::{Decode, Encode, MaxEncodedLen};
-#[cfg(feature = "std")]
-use derive_more::Display;
-use derive_more::{Add, Constructor, Deref, Into, Mul};
+use derive_more::{Add, Constructor, Deref, Display, Into, Mul};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -34,7 +33,7 @@ pub mod data_proof;
 pub use data_proof::DataProof;
 
 pub mod data_lookup;
-pub use data_lookup::{DataLookup, DataLookupIndexItem};
+pub use data_lookup::*;
 
 pub mod app_extrinsic;
 pub use app_extrinsic::*;
@@ -71,8 +70,9 @@ pub enum InvalidTransactionCustomId {
 	Into,
 	MaxEncodedLen,
 	RuntimeDebug,
+	Display,
 )]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Display))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct AppId(#[codec(compact)] pub u32);
 
 impl Zero for AppId {
@@ -101,13 +101,14 @@ impl Zero for AppId {
 	Into,
 	Constructor,
 	MaxEncodedLen,
+	Display,
 )]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Display, Debug))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 #[mul(forward)]
 pub struct BlockLengthColumns(#[codec(compact)] pub u32);
 
 /// Strong type for `BlockLength::rows`
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Display, Debug))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 #[derive(
 	Encode,
 	Decode,
@@ -123,6 +124,7 @@ pub struct BlockLengthColumns(#[codec(compact)] pub u32);
 	Ord,
 	Into,
 	Constructor,
+	Display,
 )]
 #[mul(forward)]
 pub struct BlockLengthRows(#[codec(compact)] pub u32);

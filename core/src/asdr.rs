@@ -383,7 +383,11 @@ where
 		let compact_len = codec::Compact::<u32>(tmp.len() as u32);
 
 		// Allocate the output buffer with the correct length
-		let mut output = Vec::with_capacity(compact_len.size_hint() + tmp.len());
+		let output_len = compact_len
+			.size_hint()
+			.checked_add(tmp.len())
+			.expect("Cannot encode this `AppUncheckedExtrinsic` into memory");
+		let mut output = Vec::with_capacity(output_len);
 
 		compact_len.encode_to(&mut output);
 		output.extend(tmp);

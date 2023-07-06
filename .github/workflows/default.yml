@@ -43,7 +43,13 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --check
+          args: --check --features "avail-core/runtime"
+
+      - name: Check Clippy 
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy 
+          args: --check --features "avail-core/runtime"
 
       - name: Run tests
         uses: actions-rs/cargo@v1

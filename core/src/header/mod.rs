@@ -452,7 +452,7 @@ mod tests {
 		};
 		let extension = extension::v1::HeaderExtension {
 			commitment,
-			app_lookup: DataLookup::new_from_id_lenght(vec![(AppId(0), 1)].into_iter())
+			app_lookup: DataLookup::from_id_and_len_iter([(AppId(0), 1)].into_iter())
 				.expect("Valid DataLookup .qed"),
 		};
 		let digest = Digest {
