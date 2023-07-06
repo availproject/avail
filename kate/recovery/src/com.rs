@@ -1,21 +1,25 @@
-use avail_core::ensure;
+use avail_core::{data_lookup::Error as DataLookupError, ensure, AppId, DataLookup};
 use codec::{Decode, IoReader};
 use core::num::TryFromIntError;
+use core::{
+	convert::{TryFrom, TryInto},
+	ops::Range,
+};
 use dusk_bytes::Serializable as _;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
 use sp_arithmetic::{traits::SaturatedConversion, Percent};
-use static_assertions::const_assert_ne;
-use std::{
-	collections::{HashMap, HashSet},
-	convert::{TryFrom, TryInto},
-	iter::FromIterator,
-	ops::Range,
-};
+use sp_std::{iter::FromIterator, vec::Vec};
+use static_assertions::{const_assert, const_assert_ne};
 use thiserror_no_std::Error;
+
+#[cfg(feature = "std")]
+use crate::sparse_slice_read::SparseSliceRead;
+#[cfg(feature = "std")]
+use std::collections::{HashMap, HashSet};
 
 use crate::{
 	config::{self, CHUNK_SIZE, DATA_CHUNK_SIZE},
-	data, index, matrix,
+	data, matrix,
 };
 
 #[derive(Debug, Error)]
@@ -34,6 +38,10 @@ pub enum ReconstructionError {
 	DataDecodingError(#[from] UnflattenError),
 	#[error("Column reconstruction supports up to {}", u16::MAX)]
 	RowCountExceeded,
+	#[error("Missing AppId {0}")]
+	MissingId(AppId),
+	#[error("DataLookup {0}")]
+	DataLookup(#[from] DataLookupError),
 }
 
 #[cfg(feature = "std")]
@@ -74,6 +82,7 @@ pub fn columns_positions<R: rand::RngCore>(
 
 /// Creates hash map of columns, each being hash map of cells, from vector of cells.
 /// Intention is to be able to find duplicates and to group cells by column.
+#[cfg(feature = "std")]
 fn map_cells(
 	dimensions: matrix::Dimensions,
 	cells: Vec<data::DataCell>,
@@ -101,12 +110,12 @@ fn map_cells(
 /// * `dimensions` - Extended matrix dimensions
 /// * `app_id` - Application ID
 pub fn app_specific_rows(
-	index: &index::AppDataIndex,
+	index: &DataLookup,
 	dimensions: matrix::Dimensions,
-	app_id: u32,
+	app_id: AppId,
 ) -> Vec<u32> {
 	index
-		.app_cells_range(app_id)
+		.range_of(app_id)
 		.and_then(|range| dimensions.extended_data_rows(range))
 		.unwrap_or_default()
 }
@@ -121,12 +130,12 @@ pub fn app_specific_rows(
 /// * `dimensions` - Extended matrix dimensions
 /// * `app_id` - Application ID
 pub fn app_specific_cells(
-	index: &index::AppDataIndex,
+	index: &DataLookup,
 	dimensions: matrix::Dimensions,
-	app_id: u32,
+	id: AppId,
 ) -> Option<Vec<matrix::Position>> {
 	index
-		.app_cells_range(app_id)
+		.range_of(id)
 		.and_then(|range| dimensions.extended_data_positions(range))
 }
 
@@ -144,15 +153,18 @@ pub type AppData = Vec<Vec<u8>>;
 /// * `cells` - Cells from required columns, at least 50% cells per column
 /// * `app_id` - Application ID
 pub fn reconstruct_app_extrinsics(
-	index: &index::AppDataIndex,
+	index: &DataLookup,
 	dimensions: matrix::Dimensions,
 	cells: Vec<data::DataCell>,
-	app_id: u32,
+	app_id: AppId,
 ) -> Result<AppData, ReconstructionError> {
 	let data = reconstruct_available(dimensions, cells)?;
-	let ranges = index.app_data_ranges(app_id);
+	const_assert!(config::CHUNK_SIZE as u64 <= u32::MAX as u64);
+	let range = index
+		.projected_range_of(app_id, config::CHUNK_SIZE as u32)
+		.ok_or(ReconstructionError::MissingId(app_id))?;
 
-	Ok(unflatten_padded_data(ranges, data)?
+	Ok(unflatten_padded_data(vec![(app_id, range)], data)?
 		.into_iter()
 		.flat_map(|(_, xts)| xts)
 		.collect::<Vec<_>>())
@@ -166,12 +178,14 @@ pub fn reconstruct_app_extrinsics(
 /// * `dimensions` - Extended matrix dimensions
 /// * `cells` - Cells from required columns, at least 50% cells per column
 pub fn reconstruct_extrinsics(
-	index: &index::AppDataIndex,
+	lookup: &DataLookup,
 	dimensions: matrix::Dimensions,
 	cells: Vec<data::DataCell>,
-) -> Result<Vec<(u32, AppData)>, ReconstructionError> {
+) -> Result<Vec<(AppId, AppData)>, ReconstructionError> {
 	let data = reconstruct_available(dimensions, cells)?;
-	let ranges = index.data_ranges();
+
+	const_assert!(config::CHUNK_SIZE as u64 <= u32::MAX as u64);
+	let ranges = lookup.projected_ranges(config::CHUNK_SIZE as u32)?;
 	unflatten_padded_data(ranges, data).map_err(ReconstructionError::DataDecodingError)
 }
 
@@ -258,10 +272,10 @@ fn reconstruct_available(
 /// * `cells` - Application specific data cells in extended matrix, without erasure coded data.
 /// * `app_id` - Application ID
 pub fn decode_app_extrinsics(
-	index: &index::AppDataIndex,
+	index: &DataLookup,
 	dimensions: matrix::Dimensions,
 	cells: Vec<data::DataCell>,
-	app_id: u32,
+	app_id: AppId,
 ) -> Result<AppData, ReconstructionError> {
 	let positions = app_specific_cells(index, dimensions, app_id).unwrap_or_default();
 	if positions.is_empty() {
@@ -288,7 +302,12 @@ pub fn decode_app_extrinsics(
 			Some(cell) => app_data.extend(cell.data),
 		}
 	}
-	let ranges = index.app_data_ranges(app_id);
+
+	const_assert!((config::CHUNK_SIZE as u64) <= (u32::MAX as u64));
+	let ranges = index
+		.projected_range_of(app_id, config::CHUNK_SIZE as u32)
+		.map(|range| vec![(app_id, range)])
+		.unwrap_or_default();
 
 	Ok(unflatten_padded_data(ranges, app_data)
 		.map_err(ReconstructionError::DataDecodingError)?
@@ -318,59 +337,12 @@ impl std::error::Error for UnflattenError {
 	}
 }
 
-use std::{collections::VecDeque, io};
-
-/// It is a Codec Reader which allows decoding from non-sequential data.
-struct SparseSliceRead<'a> {
-	parts: VecDeque<&'a [u8]>,
-}
-
-impl<'a> FromIterator<&'a [u8]> for SparseSliceRead<'a> {
-	fn from_iter<I: IntoIterator<Item = &'a [u8]>>(iter: I) -> Self {
-		let parts = VecDeque::from_iter(iter);
-		Self { parts }
-	}
-}
-
-impl<'a> io::Read for SparseSliceRead<'a> {
-	fn read(&mut self, mut buf: &mut [u8]) -> io::Result<usize> {
-		let mut bytes = 0usize;
-
-		loop {
-			let buf_len = buf.len();
-			if buf_len == 0 || self.parts.is_empty() {
-				break;
-			}
-
-			if let Some(next_part) = self.parts.pop_front() {
-				// Define max copied bytes and pending for next iteration.
-				let copied_len = std::cmp::min(next_part.len(), buf_len);
-				bytes += copied_len;
-
-				// Copy data into `buf`.
-				let (source, pending_next_part) = next_part.split_at(copied_len);
-				let (dest, pending_buf) = buf.split_at_mut(copied_len);
-				dest.copy_from_slice(source);
-
-				// Advance output buffer.
-				buf = pending_buf;
-
-				// Reinsert if it is still pending
-				if !pending_next_part.is_empty() {
-					self.parts.push_front(pending_next_part);
-				}
-			}
-		}
-
-		Ok(bytes)
-	}
-}
-
+#[cfg(feature = "std")]
 // Removes both extrinsics and block padding (iec_9797 and seeded random data)
 pub fn unflatten_padded_data(
-	ranges: Vec<(u32, AppDataRange)>,
+	ranges: Vec<(AppId, AppDataRange)>,
 	data: Vec<u8>,
-) -> Result<Vec<(u32, AppData)>, UnflattenError> {
+) -> Result<Vec<(AppId, AppData)>, UnflattenError> {
 	ensure!(data.len() % CHUNK_SIZE == 0, UnflattenError::InvalidLen);
 
 	fn extract_encoded_extrinsic(range_data: &[u8]) -> SparseSliceRead {
@@ -395,7 +367,7 @@ pub fn unflatten_padded_data(
 
 			Ok((app_id, extrinsic))
 		})
-		.collect::<Result<Vec<(u32, AppData)>, _>>()
+		.collect::<Result<Vec<_>, _>>()
 }
 
 // This module is taken from https://gist.github.com/itzmeanjan/4acf9338d9233e79cfbee5d311e7a0b4
@@ -597,102 +569,35 @@ mod tests {
 	use super::*;
 	use crate::{
 		data::DataCell,
-		index::AppDataIndex,
 		matrix::{Dimensions, Position},
 	};
 
-	#[test]
-	fn app_data_index_cell_ranges() {
-		let cases = vec![
-			(
-				AppDataIndex {
-					size: 8,
-					index: vec![],
-				},
-				vec![(0, 0..8)],
-			),
-			(
-				AppDataIndex {
-					size: 4,
-					index: vec![(1, 0), (2, 2)],
-				},
-				vec![(1, 0..2), (2, 2..4)],
-			),
-			(
-				AppDataIndex {
-					size: 15,
-					index: vec![(1, 3), (12, 8)],
-				},
-				vec![(0, 0..3), (1, 3..8), (12, 8..15)],
-			),
-		];
-
-		for (index, result) in cases {
-			assert_eq!(index.cells_ranges(), result);
-		}
-	}
-
-	#[test]
-	fn app_data_index_data_ranges() {
-		let cases = vec![
-			(
-				AppDataIndex {
-					size: 8,
-					index: vec![],
-				},
-				vec![(0, 0..256)],
-			),
-			(
-				AppDataIndex {
-					size: 4,
-					index: vec![(1, 0), (2, 2)],
-				},
-				vec![(1, 0..64), (2, 64..128)],
-			),
-			(
-				AppDataIndex {
-					size: 15,
-					index: vec![(1, 3), (12, 8)],
-				},
-				vec![(0, 0..96), (1, 96..256), (12, 256..480)],
-			),
-		];
-
-		for (index, result) in cases {
-			assert_eq!(index.data_ranges(), result);
-		}
-	}
-
-	#[test_case(0, &[0] ; "App 0 spans 2 rows form row 0")]
-	#[test_case(1, &[0, 2] ; "App 1 spans 2 rows from row 0")]
-	#[test_case(2, &[2] ; "App 2 spans 1 rows from row 2")]
-	#[test_case(3, &[4, 6] ; "App 3 spans 2 rows from row 4")]
-	#[test_case(4, &[] ; "There is no app 4")]
-	fn test_app_specific_rows(app_id: u32, expected: &[u32]) {
-		let index = AppDataIndex {
-			size: 16,
-			index: vec![(1, 2), (2, 5), (3, 8)],
-		};
+	#[test_case(0 => vec![0] ; "App 0 spans 2 rows form row 0")]
+	#[test_case(1 => vec![0, 2] ; "App 1 spans 2 rows from row 0")]
+	#[test_case(2 => vec![2] ; "App 2 spans 1 rows from row 2")]
+	#[test_case(3 => vec![4, 6] ; "App 3 spans 2 rows from row 4")]
+	#[test_case(4 => Vec::<u32>::new() ; "There is no app 4")]
+	fn test_app_specific_rows(id: u32) -> Vec<u32> {
+		let id_lens: Vec<(u32, u32)> = vec![(0, 2), (1, 3), (2, 3), (3, 8)];
+		let index = DataLookup::from_id_and_len_iter(id_lens.into_iter()).unwrap();
 		let dimensions = Dimensions::new(8, 4).unwrap();
-		let result = app_specific_rows(&index, dimensions, app_id);
-		assert_eq!(expected.len(), result.len());
+
+		app_specific_rows(&index, dimensions, AppId(id))
 	}
 
-	#[test_case(0, &[(0, 0), (0, 1), (0, 2), (0, 3), (2, 0)] ; "App 0 has five cells")]
-	#[test_case(1, &[(2, 1), (2, 2), (2, 3)] ; "App 1 has 3 cells")]
-	#[test_case(2, &[] ; "App 2 has no cells")]
-	fn test_app_specific_cells(app_id: u32, expected: &[(u32, u16)]) {
-		let index = AppDataIndex {
-			size: 8,
-			index: vec![(1, 5)],
-		};
+	fn to_matrix_pos(data: &[(u32, u16)]) -> Vec<Position> {
+		data.iter().cloned().map(Position::from).collect()
+	}
+
+	#[test_case(0 => to_matrix_pos(&[(0, 0), (0, 1), (0, 2), (0, 3), (2, 0)]) ; "App 0 has five cells")]
+	#[test_case(1 => to_matrix_pos(&[(2, 1), (2, 2), (2, 3)]) ; "App 1 has 3 cells")]
+	#[test_case(2 => Vec::<Position>::new() ; "App 2 has no cells")]
+	fn test_app_specific_cells(app_id: u32) -> Vec<Position> {
+		let id_lens: Vec<(u32, usize)> = vec![(0, 5), (1, 3)];
+		let index = DataLookup::from_id_and_len_iter(id_lens.into_iter()).unwrap();
 		let dimensions = Dimensions::new(4, 4).unwrap();
-		let result = app_specific_cells(&index, dimensions, app_id).unwrap_or_default();
-		assert_eq!(expected.len(), result.len());
-		result.iter().zip(expected).for_each(|(a, &(row, col))| {
-			assert_eq!(a.row, row);
-			assert_eq!(a.col, col);
-		});
+
+		app_specific_cells(&index, dimensions, AppId(app_id)).unwrap_or_default()
 	}
 
 	#[test]

@@ -13,6 +13,7 @@ dusk-plonk = { git = "https://github.com/availproject/plonk.git", tag = "v0.12.0
 # Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 sp-arithmetic = { version = "*", default-features = false }
+sp-std = { version = "*", default-features = false }
 
 # 3rd-parties
 derive_more = "0.99.17"
@@ -34,6 +35,7 @@ std = [
 	"once_cell",
 	"serde",
 	"sp-arithmetic/std",
+	"sp-std/std",
 	"avail-core/std",
 	"rand/std",
 	"rand_chacha/std",

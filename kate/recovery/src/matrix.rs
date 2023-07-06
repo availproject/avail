@@ -22,8 +22,8 @@ pub struct Position {
 
 impl<R, C> From<(R, C)> for Position
 where
-	R: Into<u32>,
-	C: Into<u16>,
+	u32: From<R>,
+	u16: From<C>,
 {
 	fn from(row_col: (R, C)) -> Self {
 		Self {

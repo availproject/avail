@@ -1,5 +1,6 @@
+use core::convert::TryInto;
 use derive_more::Constructor;
-use std::{collections::HashMap, convert::TryInto};
+use sp_std::collections::btree_map::BTreeMap;
 
 use crate::matrix::{Dimensions, Position, RowIndex};
 
@@ -43,7 +44,7 @@ pub fn rows(dimensions: Dimensions, cells: &[&Cell]) -> Vec<(RowIndex, Vec<u8>)>
 	sorted_cells
 		.sort_by(|a, b| (a.position.row, a.position.col).cmp(&(b.position.row, b.position.col)));
 
-	let mut rows = HashMap::new();
+	let mut rows = BTreeMap::new();
 	for cell in sorted_cells {
 		rows.entry(RowIndex(cell.position.row))
 			.or_insert_with(Vec::default)
