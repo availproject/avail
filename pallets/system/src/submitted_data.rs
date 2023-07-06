@@ -207,13 +207,6 @@ fn proof(
 		metrics
 	);
 
-	// let leaf = str::from_utf8(proof.leaf.as_slice()).unwrap(); //str::from_utf8(proof.leaf.as_slice()).unwrap();
-	log::debug!("Leaf generated size: {}", proof.leaf.len());
-
-	for l in &proof.leaf {
-		log::debug!(target: LOG_TARGET, "Leaf generated {}", l);
-	}
-
 	Some(proof)
 }
 
