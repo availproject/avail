@@ -1873,7 +1873,7 @@ mod weight_helper {
 
 	/// Weight for `system::set_code`.
 	///
-	/// It fills the whole block in terms of weight.
+	/// We allocate 80% of operational block weight to set_code to leave some weight for wrapping calls (scheduler, ...).
 	pub(crate) fn set_code<T: Config>() -> (Weight, DispatchClass) {
 		let class = DispatchClass::Operational;
 		let block_weights = T::BlockWeights::get();
