@@ -102,6 +102,7 @@ impl frame_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type SS58Prefix = ();
+	type SubmittedDataAppIdExtractor = ();
 	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;

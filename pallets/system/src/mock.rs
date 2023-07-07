@@ -111,6 +111,7 @@ impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type SS58Prefix = ();
+	type SubmittedDataAppIdExtractor = ();
 	type SubmittedDataExtractor = ();
 	type SystemWeightInfo = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;

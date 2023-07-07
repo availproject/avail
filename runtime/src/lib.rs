@@ -217,6 +217,21 @@ impl submitted_data::Extractor for Runtime {
 	}
 }
 
+/// Decodes and extracts the `AppId` of signed extrinsics.
+impl submitted_data::AppIdExtractor for Runtime {
+	type Error = codec::Error;
+
+	fn extract(
+		opaque: &OpaqueExtrinsic,
+		metrics: submitted_data::RcMetrics,
+	) -> Result<AppId, Self::Error> {
+		let extrinsic = UncheckedExtrinsic::try_from(opaque)?;
+		let appid = extrinsic.signature.map(|e| e.2 .8 .0).unwrap_or(AppId(0));
+
+		Ok(appid)
+	}
+}
+
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
 	/// The data to be stored in an account.
@@ -268,6 +283,8 @@ impl frame_system::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = constants::system::SS58Prefix;
+	/// AppId extractor
+	type SubmittedDataAppIdExtractor = Runtime;
 	/// Data Root
 	type SubmittedDataExtractor = Runtime;
 	/// Weight information for the extrinsics of this pallet.

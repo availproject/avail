@@ -9,8 +9,14 @@ use avail_core::{
 	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, BlockLengthColumns,
 	BlockLengthRows, DataProof, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
-use da_runtime::{apis::DataAvailApi, Runtime, UncheckedExtrinsic};
-use frame_system::{limits::BlockLength, submitted_data};
+use codec::{Decode, Encode, Input};
+use da_runtime::{
+	apis::DataAvailApi, Address, Runtime, Signature, SignedExtra,
+};
+use frame_system::{
+	limits::BlockLength,
+	submitted_data::{self},
+};
 use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
@@ -142,6 +148,24 @@ where
 	}
 }
 
+fn app_id_from_opaque(opaque: &OpaqueExtrinsic) -> Result<AppId, String> {
+	let input = &mut opaque.0.as_slice();
+	let version = input.read_byte().unwrap();
+
+	let is_signed = version & 0b1000_0000 != 0;
+	let version = version & 0b0111_1111;
+	if version != 4 {
+		return Err("Invalid transaction version".to_string());
+	}
+
+	let signature: Option<(Address, Signature, SignedExtra)> = is_signed
+		.then(|| Decode::decode(input))
+		.transpose()
+		.map_err(|e| format!("{e:?}"))?;
+
+	signature.map(|e| e.2 .8 .0).ok_or("Not signed".to_string())
+}
+
 #[async_trait]
 impl<Client, Block> KateApiServer<Block> for Kate<Client, Block>
 where
@@ -189,8 +213,13 @@ where
 				.block
 				.extrinsics()
 				.iter()
-				.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
-				.map(AppExtrinsic::from)
+				.map(|e| {
+					let appid = submitted_data::extract_app_id::<Runtime>(e).unwrap_or(AppId(0));
+					AppExtrinsic {
+						app_id: appid,
+						data: Encode::encode(&e.0),
+					}
+				})
 				.collect();
 
 			let seed = get_seed::<Block, Client>(&self.client, &block_id)
@@ -258,8 +287,13 @@ where
 				.block
 				.extrinsics()
 				.iter()
-				.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
-				.map(AppExtrinsic::from)
+				.map(|e| {
+					let appid = submitted_data::extract_app_id::<Runtime>(e).unwrap_or(AppId(0));
+					AppExtrinsic {
+						app_id: appid,
+						data: Encode::encode(&e.0),
+					}
+				})
 				.collect();
 
 			let block_length: BlockLength = self
@@ -333,8 +367,13 @@ where
 				.block
 				.extrinsics()
 				.iter()
-				.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
-				.map(AppExtrinsic::from)
+				.map(|e| {
+					let appid = submitted_data::extract_app_id::<Runtime>(e).unwrap_or(AppId(0));
+					AppExtrinsic {
+						app_id: appid,
+						data: Encode::encode(&e.0),
+					}
+				})
 				.collect();
 
 			let block_length: BlockLength = self
@@ -418,16 +457,10 @@ where
 			.ok_or_else(|| internal_err!("Missing block hash {:?}", at))?
 			.block;
 
-		// Get Opaque Extrinsics and transform into AppUncheckedExt.
-		let calls = block
-			.extrinsics()
-			.iter()
-			.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
-			.map(|app_ext| app_ext.function);
-
 		// Build the proof.
-		let merkle_proof = submitted_data::calls_proof::<Runtime, _, _>(calls, data_index)
-			.ok_or_else(|| {
+		let merkle_proof =
+			submitted_data::extrinsics_proof::<Runtime, _>(block.extrinsics().iter(), data_index)
+				.ok_or_else(|| {
 				internal_err!(
 					"Data proof cannot be generated for index={} at block {:?}",
 					data_index,

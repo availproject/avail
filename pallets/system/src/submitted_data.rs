@@ -1,6 +1,6 @@
 use core::fmt::Debug;
 
-use avail_core::OpaqueExtrinsic;
+use avail_core::{AppId, OpaqueExtrinsic};
 use beefy_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
 use sp_core::H256;
 use sp_runtime::traits::Keccak256;
@@ -39,6 +39,22 @@ pub trait Extractor {
 	) -> Result<Vec<Vec<u8>>, Self::Error>;
 }
 
+/// Extracts the `AppId` field from signed extrinsics.
+pub trait AppIdExtractor {
+	type Error: Debug;
+	/// Returns the `AppId` field of `encoded_extrinsic` if it is a signed extrinsic.
+	///
+	/// The `metrics` will be used to write accountability information about the whole process.
+	fn extract(extrinsic: &OpaqueExtrinsic, metrics: RcMetrics) -> Result<AppId, Self::Error>;
+}
+
+#[cfg(any(feature = "std", test))]
+impl AppIdExtractor for () {
+	type Error = ();
+
+	fn extract(_: &OpaqueExtrinsic, _: RcMetrics) -> Result<AppId, ()> { Ok(AppId(0)) }
+}
+
 #[cfg(any(feature = "std", test))]
 impl Extractor for () {
 	type Error = ();
@@ -73,6 +89,19 @@ where
 		.into_iter()
 		.filter(|data| !data.is_empty())
 		.collect()
+}
+
+/// Extracts just the AppId from the extrinsic (if it is signed), otherwise returns None.
+fn extract_app_id_and_inspect<AE>(opaque: &OpaqueExtrinsic, metrics: RcMetrics) -> Option<AppId>
+where
+	AE: AppIdExtractor,
+	AE::Error: Debug,
+{
+	let app_id = AE::extract(opaque, Rc::clone(&metrics))
+		.inspect_err(|e| log::error!("Extractor cannot extract AppId from opaque: {e:?}"))
+		.ok();
+
+	app_id
 }
 
 /// Construct a root hash of Binary Merkle Tree created from given filtered `app_extrincs`.
@@ -170,6 +199,18 @@ where
 		.collect::<Vec<_>>();
 
 	proof(submitted_data, data_index, Rc::clone(&metrics))
+}
+
+/// Extracts the AppId from extrinsic, if it is signed, returns None otherwise.
+pub fn extract_app_id<AE>(extrinsic: &OpaqueExtrinsic) -> Option<AppId>
+where
+	AE: AppIdExtractor,
+	AE::Error: Debug,
+{
+	let metrics = Metrics::new_shared();
+	let app_id = extract_app_id_and_inspect::<AE>(extrinsic, metrics);
+
+	app_id
 }
 
 /// Creates the Merkle Proof of the submitted data items in `calls` filtered by `F` and
