@@ -18,14 +18,11 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 # Substrate & Parity
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2", default-features = false, features = ["derive"] }
+sp-core = { version = "*", default-features = false }
+
 frame-support = { version = "4.0.0-dev", default-features = false }
-primitive-types = { version = "0.12", default-features = false, features = ["scale-info", "codec"] }
-rlp = { version = "0.5.0", default-features = false }
-rlp-derive = { version = "0.1.0", default-features = false }
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
-sp-core = { version = "7.0.0", default-features = false }
-sp-io = { version = "7.0.0", default-features = false }
-sp-std = { version = "4.0.0", default-features = false }
+sp-runtime = { version = "7", default-features = false, optional = true }
 
 # Eth
 ethers-core = { version = "1", default-features = false, optional = true }
@@ -47,9 +44,10 @@ default = ["std"]
 std = [
 	"serde",
 	"hex/std",
-	"primitive-types/serde",
-	"codec/std",
 	"scale-info/std",
+	"codec/std",
+	"sp-core/std",
+	"sp-runtime/std",
 	"frame-support/std",
 	"ethers-core",
 ]

@@ -11,13 +11,10 @@ nomad-core = { path = "../core", default-features = false }
 
 # Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-frame-support = { version = "4.0.0-dev", default-features = false }
-primitive-types = { version = "0.12", default-features = false, features = ["scale-info", "codec"] }
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
-sp-core = { version = "7.0.0", default-features = false }
-sp-io = { version = "7.0.0", default-features = false }
-sp-runtime = { version = "7.0.0", default-features = false }
-sp-std = { version = "4.0.0-dev", default-features = false }
+scale-info = { version = "2", default-features = false, features = ["derive"] }
+sp-core = { version = "*", default-features = false }
+
+frame-support = { version = "4.0.0-dev", default-features = false, optional = true }
 
 # 3rd-party
 hex-literal = "0.3.4"
@@ -41,8 +38,8 @@ default = ["std"]
 std = [
 	"serde",
 	"nomad-core/std",
-	"primitive-types/serde",
 	"codec/std",
 	"scale-info/std",
+	"sp-core/std",
 	"frame-support/std",
 ]

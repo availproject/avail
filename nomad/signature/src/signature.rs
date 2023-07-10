@@ -1,12 +1,11 @@
 // Code adapted from: https://github.com/gakonst/ethers-rs/blob/master/ethers-core/src/types/signature.rs
 
+use crate::utils::hash_message;
 use alloc::{borrow::ToOwned, string::String, vec::Vec};
+use codec::{Decode, Encode};
 use core::convert::TryFrom;
-#[cfg(feature = "std")]
-use core::{fmt, str::FromStr};
-
 use elliptic_curve::{consts::U32, sec1::ToEncodedPoint as _};
-use frame_support::{pallet_prelude::*, sp_runtime::traits::Keccak256};
+use frame_support::ensure;
 use generic_array::GenericArray;
 use k256::{
 	ecdsa::{
@@ -15,12 +14,15 @@ use k256::{
 	},
 	PublicKey as K256PublicKey,
 };
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-use sp_core::{Hasher, H160, H256, U256};
+use scale_info::TypeInfo;
+use sp_core::{Hasher as _, H160, H256, U256};
+use sp_runtime::{traits::Keccak256, RuntimeDebug};
 use thiserror_no_std::Error;
 
-use crate::utils::hash_message;
+#[cfg(feature = "std")]
+use core::{fmt, str::FromStr};
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 type Address = H160;
 

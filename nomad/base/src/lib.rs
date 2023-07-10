@@ -1,14 +1,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::pallet_prelude::*;
+use codec::{Decode, Encode, MaxEncodedLen};
 use nomad_core::{home_domain_hash, to_eth_signed_message_hash, NomadState, SignedUpdate, Update};
 use nomad_signature::SignatureError;
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
+use scale_info::TypeInfo;
 use sp_core::{H160, H256};
+use sp_runtime::RuntimeDebug;
 
 #[cfg(feature = "std")]
 pub mod testing;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

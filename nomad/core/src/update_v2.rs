@@ -1,10 +1,12 @@
 #![allow(dead_code)]
 
-use frame_support::pallet_prelude::*;
+use codec::{Decode, Encode};
 use nomad_signature::{hash_message, Signature, SignatureError};
+use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::{H160, H256};
+use sp_runtime::RuntimeDebug;
 
 use crate::utils::home_domain_hash;
 

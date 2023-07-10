@@ -1,6 +1,6 @@
+use avail_core::{AppExtrinsic, BlockLengthColumns, BlockLengthRows, DataLookup};
+use core::num::NonZeroU32;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
-use da_primitives::{BlockLengthColumns, BlockLengthRows};
-use da_types::{AppExtrinsic, AppId};
 use dusk_plonk::prelude::BlsScalar;
 use kate::{
 	com::{Cell, *},
@@ -11,7 +11,6 @@ use kate_recovery::{
 	com::reconstruct_extrinsics,
 	commitments,
 	data::{self, DataCell},
-	index::*,
 	matrix::Position,
 	proof, testnet,
 };
@@ -69,32 +68,6 @@ fn sample_cells_from_matrix(matrix: &DMatrix<BlsScalar>, columns: Option<&[u16]>
 		.collect()
 }
 
-fn app_data_index_try_from_layout(
-	layout: Vec<(AppId, u32)>,
-) -> Result<AppDataIndex, AppDataIndexError> {
-	let mut index = Vec::new();
-	// transactions are ordered by application id
-	// skip transactions with 0 application id - it's not a data txs
-	let mut size = 0u32;
-	let mut prev_app_id = AppId(0u32);
-
-	for (app_id, data_len) in layout {
-		if app_id.0 != 0 && prev_app_id != app_id {
-			index.push((app_id.0, size));
-		}
-
-		size = size
-			.checked_add(data_len)
-			.ok_or(AppDataIndexError::SizeOverflow)?;
-		if prev_app_id > app_id {
-			return Err(AppDataIndexError::UnsortedLayout);
-		}
-		prev_app_id = app_id;
-	}
-
-	Ok(AppDataIndex { size, index })
-}
-
 fn random_cells(
 	max_cols: BlockLengthColumns,
 	max_rows: BlockLengthRows,
@@ -140,7 +113,7 @@ fn reconstruct(xts: &[AppExtrinsic]) {
 	let (layout, commitments, dims, matrix) = par_build_commitments(
 		BlockLengthRows(64),
 		BlockLengthColumns(16),
-		32,
+		unsafe { NonZeroU32::new_unchecked(32) },
 		xts,
 		Seed::default(),
 		&metrics,
@@ -149,16 +122,17 @@ fn reconstruct(xts: &[AppExtrinsic]) {
 
 	let columns = sample_cells_from_matrix(&matrix, None);
 	let extended_dims = dims.try_into().unwrap();
-	let index = app_data_index_try_from_layout(layout).unwrap();
-	let reconstructed = reconstruct_extrinsics(&index, extended_dims, columns).unwrap();
-	for (result, xt) in reconstructed.iter().zip(xts) {
-		assert_eq!(result.0, *xt.app_id);
-		assert_eq!(result.1[0].as_slice(), &xt.data);
+	let lookup = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
+	let reconstructed = reconstruct_extrinsics(&lookup, extended_dims, columns).unwrap();
+	for ((app_id, data), xt) in reconstructed.iter().zip(xts) {
+		assert_eq!(app_id.0, *xt.app_id);
+		assert_eq!(data[0].as_slice(), &xt.data);
 	}
 
-	let public_params = testnet::public_params(dims.cols.as_usize());
+	let dims_cols: u32 = dims.cols.into();
+	let public_params = testnet::public_params(usize::try_from(dims_cols).unwrap());
 	for cell in random_cells(dims.cols, dims.rows, Percent::one()) {
-		let row = cell.row.as_usize();
+		let row: u32 = cell.row.into();
 
 		let proof = build_proof(&public_params, dims, &matrix, &[cell], &metrics).unwrap();
 		assert_eq!(proof.len(), 80);
@@ -168,17 +142,14 @@ fn reconstruct(xts: &[AppExtrinsic]) {
 			.0
 			.try_into()
 			.expect("`random_cells` function generates a valid `u16` for columns");
-		let position = Position {
-			row: cell.row.0,
-			col,
-		};
+		let position = Position { row, col };
 		let cell = data::Cell {
 			position,
 			content: proof.try_into().unwrap(),
 		};
 
 		let extended_dims = dims.try_into().unwrap();
-		let commitment = commitments::from_slice(&commitments).unwrap()[row];
+		let commitment = commitments::from_slice(&commitments).unwrap()[row as usize];
 		let verification = proof::verify(&public_params, extended_dims, &commitment, &cell);
 		assert!(verification.is_ok());
 		assert!(verification.unwrap());

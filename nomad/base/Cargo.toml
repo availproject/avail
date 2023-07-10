@@ -11,12 +11,10 @@ nomad-signature = { path = "../signature", default-features = false }
 
 # Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-frame-support = { version = "4.0.0-dev", default-features = false }
-primitive-types = { version = "0.12", default-features = false, features = ["scale-info", "codec"] }
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
-sp-core = { version = "7.0.0", default-features = false }
-sp-io = { version = "7.0.0", default-features = false }
-sp-std = { version = "4.0.0", default-features = false }
+scale-info = { version = "2", default-features = false, features = ["derive"] }
+sp-core = { version = "*", default-features = false }
+
+sp-runtime = { version = "7", default-features = false, optional = true }
 
 # Eth
 ethers-signers = { version = "1", optional = true }
@@ -31,12 +29,10 @@ std = [
 	"serde",
 	"ethers-signers",
 	"once_cell",
-	"primitive-types/serde",
 	"codec/std",
 	"nomad-signature/std",
 	"scale-info/std",
-	"frame-support/std",
 	"nomad-core/std",
-	"sp-std/std",
 	"sp-core/std",
+	"sp-runtime/std",
 ]

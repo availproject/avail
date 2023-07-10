@@ -1,5 +1,7 @@
-use frame_support::{pallet_prelude::*, traits::Get};
-use sp_core::H256;
+use codec::{Decode, Encode};
+use scale_info::TypeInfo;
+use sp_core::{bounded::BoundedVec, Get, H256};
+use sp_runtime::RuntimeDebug;
 use sp_std::{mem::size_of, vec::Vec};
 
 /// Size of `NomadMessage` fields except `body`.
@@ -53,16 +55,11 @@ impl<S: Get<u32>> NomadMessage<S> {
 
 #[cfg(test)]
 mod tests {
-	use core::convert::TryInto;
-
-	use frame_support::{parameter_types, BoundedVec};
+	use super::*;
+	use sp_core::ConstU32;
 	use sp_std::mem::size_of_val;
 
-	use super::{NomadMessage, NON_BODY_LENGTH};
-
-	parameter_types! {
-		const MaxBodyLen :u32 = 1024;
-	}
+	type MaxBodyLen = ConstU32<1024>;
 
 	/// Double checks that constant `NON_BODY_LENGTH` will be synchronized with actual
 	#[test]
