@@ -155,6 +155,7 @@ jobs:
 
       - name: Generate test code coverage report
         run: |
+          df -h
           cargo +stable install --force grcov
           grcov . -s . --binary-path ./target/release/ -t lcov --branch --ignore-not-existing -o lcov.info
 
