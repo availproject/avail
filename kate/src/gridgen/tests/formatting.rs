@@ -10,10 +10,7 @@ use poly_multiproof::traits::AsBytes;
 
 use crate::{
 	config::DATA_CHUNK_SIZE,
-	gridgen::{
-		tests::{app_data_index_from_lookup, sample_cells},
-		ArkScalar, EvaluationGrid,
-	},
+	gridgen::{tests::sample_cells, ArkScalar, EvaluationGrid},
 	Seed,
 };
 use core::num::NonZeroU16;
@@ -30,10 +27,8 @@ fn newapi_test_flatten_block() {
 	let expected_dims = Dimensions::new_from(1, 16).unwrap();
 	let evals = EvaluationGrid::from_extrinsics(extrinsics, 4, 256, 256, Seed::default()).unwrap();
 
-	let expected_lookup = DataLookup::new_from_id_lenght(
-		[(AppId(0), 2), (AppId(1), 2), (AppId(2), 2), (AppId(3), 3)].into_iter(),
-	)
-	.unwrap();
+	let id_lens: Vec<(u32, usize)> = vec![(0, 2), (1, 2), (2, 2), (3, 3)];
+	let expected_lookup = DataLookup::from_id_and_len_iter(id_lens.into_iter()).unwrap();
 
 	assert_eq!(evals.lookup, expected_lookup, "The layouts don't match");
 	assert_eq!(
@@ -122,10 +117,9 @@ get erasure coded to ensure redundancy."#;
 		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 		.unwrap();
 
-	let index = app_data_index_from_lookup(&grid.lookup);
 	let bdims = grid.dims();
 	for xt in &xts {
-		let positions = app_specific_cells(&index, bdims, xt.app_id.0).unwrap();
+		let positions = app_specific_cells(&grid.lookup, bdims, xt.app_id).unwrap();
 		let cells = positions
 			.iter()
 			.map(|pos| DataCell {
@@ -138,12 +132,12 @@ get erasure coded to ensure redundancy."#;
 					.unwrap(),
 			})
 			.collect::<Vec<_>>();
-		let data = &decode_app_extrinsics(&index, bdims, cells, xt.app_id.0).unwrap()[0];
+		let data = &decode_app_extrinsics(&grid.lookup, bdims, cells, xt.app_id).unwrap()[0];
 		assert_eq!(data, &xt.data);
 	}
 
 	assert!(matches!(
-		decode_app_extrinsics(&index, bdims, vec![], 0),
+		decode_app_extrinsics(&grid.lookup, bdims, vec![], AppId(0)),
 		Err(kate_recovery::com::ReconstructionError::MissingCell { .. })
 	));
 }
@@ -165,8 +159,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	let cols = sample_cells(&grid, None);
 	let bdims = grid.dims();
 
-	let index = app_data_index_from_lookup(&grid.lookup);
-	let res = reconstruct_extrinsics(&index, bdims, cols).unwrap();
+	let res = reconstruct_extrinsics(&grid.lookup, bdims, cols).unwrap();
 	let s = String::from_utf8_lossy(res[0].1[0].as_slice());
 
 	assert_eq!(s, orig_data);

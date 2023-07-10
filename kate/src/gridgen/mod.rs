@@ -114,7 +114,7 @@ impl EvaluationGrid {
 			.map(|(app, scalars)| (*app, scalars.len()));
 
 		// make the index of app info
-		let lookup = DataLookup::new_from_id_lenght(len_by_app)?;
+		let lookup = DataLookup::from_id_and_len_iter(len_by_app)?;
 		let grid_size = usize::try_from(lookup.len())?;
 		let (rows, cols): (usize, usize) =
 			get_block_dims(grid_size, min_width, max_width, max_height)?.into();
@@ -189,12 +189,12 @@ impl EvaluationGrid {
 			Ok(lineal_index / cols)
 		};
 
-		let (data_begin, data_end) = self
+		let range = self
 			.lookup
 			.range_of(app_id)
 			.ok_or(AppRowError::IdNotFound(app_id))?;
-		let start_y: usize = row_from_lineal_index(orig_dims.cols(), data_begin)?;
-		let end_y: usize = row_from_lineal_index(orig_dims.cols(), data_end.saturating_sub(1))?;
+		let start_y: usize = row_from_lineal_index(orig_dims.cols(), range.start)?;
+		let end_y: usize = row_from_lineal_index(orig_dims.cols(), range.end.saturating_sub(1))?;
 
 		// SAFETY: This won't overflow because `h_mul = rows / orig_dim.rows()`  and `*_y < rows)
 		debug_assert!(start_y < rows);

@@ -86,7 +86,6 @@ proptest! {
 			.map(|c| c.to_bytes().unwrap())
 			.collect::<Vec<_>>();
 
-		let index = app_data_index_from_lookup(&grid.lookup);
 		let public_params = testnet::public_params(BlockLengthColumns(g_cols as u32));
 
 		for xt in exts.iter() {
@@ -98,7 +97,7 @@ proptest! {
 			}
 			// Need to provide the original dimensions here too
 			let extended_dims = orig_dims.clone();
-			let (_, missing) = verify_equality(&public_params, &commits, &app_rows, &index, extended_dims, xt.app_id.0).unwrap();
+			let (_, missing) = verify_equality(&public_params, &commits, &app_rows, &grid.lookup, extended_dims, xt.app_id).unwrap();
 			prop_assert!(missing.is_empty());
 		}
 	}
@@ -114,7 +113,6 @@ proptest! {
 			.map(|c| c.to_bytes().unwrap())
 			.collect::<Vec<_>>();
 
-		let index = app_data_index_from_lookup(&grid.lookup);
 		let public_params = testnet::public_params( BlockLengthColumns(g_cols.into()));
 
 		for xt in xts {
@@ -127,7 +125,7 @@ proptest! {
 			row_elems.remove(first_index);
 
 			let extended_dims = orig_dims.transpose();
-			let (_, missing) = verify_equality(&public_params, &commits, &row_elems,&index,extended_dims,xt.app_id.0).unwrap();
+			let (_, missing) = verify_equality(&public_params, &commits, &row_elems,&grid.lookup,extended_dims,xt.app_id).unwrap();
 			prop_assert!(!missing.is_empty());
 		}
 	}

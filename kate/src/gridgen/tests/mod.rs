@@ -1,5 +1,5 @@
-use avail_core::{AppExtrinsic, AppId, DataLookup};
-use kate_recovery::{data::DataCell, index::AppDataIndex, matrix::Position};
+use avail_core::{AppExtrinsic, AppId};
+use kate_recovery::{data::DataCell, matrix::Position};
 use once_cell::sync::Lazy;
 use poly_multiproof::{m1_blst::M1NoPrecomp, traits::AsBytes};
 use proptest::{collection, prelude::*, sample::size_range};
@@ -33,17 +33,6 @@ fn app_extrinsics_strategy() -> impl Strategy<Value = Vec<AppExtrinsic>> {
 		new_xts.sort_by(|a1, a2| a1.app_id.cmp(&a2.app_id));
 		new_xts
 	})
-}
-
-fn app_data_index_from_lookup(lookup: &DataLookup) -> AppDataIndex {
-	AppDataIndex {
-		size: lookup.len(),
-		index: lookup
-			.index()
-			.iter()
-			.map(|e| (e.app_id.0, e.start))
-			.collect(),
-	}
 }
 
 fn sample_unique(rng: &mut impl Rng, n_samples: usize, n: usize) -> Vec<usize> {

@@ -1,4 +1,4 @@
-use super::{app_data_index_from_lookup, PMP};
+use super::PMP;
 use crate::{
 	com::Cell,
 	gridgen::{tests::sample_cells, EvaluationGrid},
@@ -7,7 +7,7 @@ use crate::{
 use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 use core::num::NonZeroU16;
 use kate_recovery::{
-	com::reconstruct_extrinsics,
+	com::{reconstruct_app_extrinsics, reconstruct_extrinsics},
 	data::Cell as DCell,
 	matrix::{Dimensions, Position},
 };
@@ -32,10 +32,9 @@ fn test_multiple_extrinsics_for_same_app_id() {
 		.unwrap();
 
 	let cells = sample_cells(&ev, None);
-	let index = app_data_index_from_lookup(&ev.lookup);
 	let (rows, cols): (u16, u16) = ev.dims().into();
 	let bdims = Dimensions::new_from(rows, cols).unwrap();
-	let res = reconstruct_extrinsics(&index, bdims, cells).unwrap();
+	let res = reconstruct_extrinsics(&ev.lookup, bdims, cells).unwrap();
 
 	assert_eq!(res[0].1[0], xt1);
 	assert_eq!(res[0].1[1], xt2);
@@ -52,12 +51,11 @@ fn test_build_and_reconstruct(exts in super::app_extrinsics_strategy())  {
 	const RNG_SEED: Seed = [42u8; 32];
 
 	let cells = sample_cells(&grid, None);
-	let index = app_data_index_from_lookup(&grid.lookup);
 	let bdims = Dimensions::new_from(rows, cols).unwrap();
-	let reconstructed = reconstruct_extrinsics(&index, bdims, cells).unwrap();
-	for (result, xt) in reconstructed.iter().zip(exts) {
-		prop_assert_eq!(result.0, *xt.app_id);
-		prop_assert_eq!(result.1[0].as_slice(), &xt.data);
+	let reconstructed = reconstruct_extrinsics(&grid.lookup, bdims, cells).unwrap();
+	for ((id,data), xt) in reconstructed.iter().zip(exts) {
+		prop_assert_eq!(id.0, *xt.app_id);
+		prop_assert_eq!(data[0].as_slice(), &xt.data);
 	}
 
 	let pp = &*PMP;
@@ -106,14 +104,12 @@ get erasure coded to ensure redundancy."#;
 
 	let cols_1 = sample_cells(&grid, Some(vec![0, 1, 2, 3]));
 
-	let index = app_data_index_from_lookup(&grid.lookup);
-
 	let bdims = grid.dims();
-	let res_1 = kate_recovery::com::reconstruct_app_extrinsics(&index, bdims, cols_1, 1).unwrap();
+	let res_1 = reconstruct_app_extrinsics(&grid.lookup, bdims, cols_1, AppId(1)).unwrap();
 	assert_eq!(res_1[0], app_id_1_data);
 
 	let cols_2 = sample_cells(&grid, Some(vec![0, 2, 3]));
 
-	let res_2 = kate_recovery::com::reconstruct_app_extrinsics(&index, bdims, cols_2, 2).unwrap();
+	let res_2 = reconstruct_app_extrinsics(&grid.lookup, bdims, cols_2, AppId(2)).unwrap();
 	assert_eq!(res_2[0], app_id_2_data);
 }
