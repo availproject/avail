@@ -45,7 +45,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --check --features "avail-core/runtime"
+          args: --check
 
       - name: Check Clippy 
         uses: actions-rs/cargo@v1
