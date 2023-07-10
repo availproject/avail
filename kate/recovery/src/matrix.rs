@@ -1,14 +1,15 @@
-use derive_more::Constructor;
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-use std::{
+use crate::config::{self, CHUNK_SIZE};
+use core::{
 	convert::TryInto,
 	fmt::{Display, Formatter, Result},
 	num::NonZeroU16,
 	ops::{Mul, Range},
 };
+use derive_more::Constructor;
+use sp_std::prelude::*;
 
-use crate::config::{self, CHUNK_SIZE};
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 const EXTENSION_FACTOR_U32: u32 = config::EXTENSION_FACTOR as u32;
 
@@ -51,6 +52,7 @@ impl Display for Position {
 
 impl Position {
 	/// Refrence in format `block_number:column_number:row_number`
+	#[cfg(feature = "std")]
 	pub fn reference(&self, block_number: u32) -> String {
 		format!("{}:{}", block_number, self)
 	}
@@ -62,18 +64,20 @@ impl Position {
 }
 
 /// Matrix partition (column-wise)
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Partition {
 	pub number: u8,
 	pub fraction: u8,
 }
 
 /// Matrix row index
-#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RowIndex(pub u32);
 
 impl RowIndex {
 	/// Refrence in format `block_number:row_number`
+	#[cfg(feature = "std")]
 	pub fn reference(&self, block_number: u32) -> String {
 		format!("{}:{}", block_number, self.0)
 	}

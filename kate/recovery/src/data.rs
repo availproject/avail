@@ -1,6 +1,6 @@
 use core::convert::TryInto;
 use derive_more::Constructor;
-use sp_std::collections::btree_map::BTreeMap;
+use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
 use crate::matrix::{Dimensions, Position, RowIndex};
 
@@ -23,6 +23,7 @@ pub struct Cell {
 }
 
 impl Cell {
+	#[cfg(feature = "std")]
 	pub fn reference(&self, block: u32) -> String {
 		self.position.reference(block)
 	}

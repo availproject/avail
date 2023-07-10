@@ -498,20 +498,15 @@ fn commit(
 
 #[cfg(test)]
 mod tests {
-	use std::{convert::TryInto, iter::repeat};
-
+	use avail_core::DataLookup;
 	use dusk_bytes::Serializable;
 	use dusk_plonk::bls12_381::BlsScalar;
 	use hex_literal::hex;
 	use kate_recovery::{
-		com::{
-			app_specific_cells, app_specific_rows, decode_app_extrinsics,
-			reconstruct_app_extrinsics, reconstruct_extrinsics, unflatten_padded_data,
-			ReconstructionError,
-		},
+		com::*,
 		commitments, config,
+		config::CHUNK_SIZE,
 		data::{self, DataCell},
-		index::{AppDataIndex, AppDataIndexError},
 		matrix::{Dimensions, Position},
 		proof,
 	};
@@ -521,6 +516,8 @@ mod tests {
 	};
 	use rand::{prelude::IteratorRandom, Rng, SeedableRng};
 	use sp_arithmetic::Percent;
+	use static_assertions::const_assert;
+	use std::{convert::TryInto, iter::repeat};
 	use test_case::test_case;
 
 	use super::*;
@@ -533,39 +530,13 @@ mod tests {
 
 	const TCHUNK: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(32) };
 
-	fn app_data_index_try_from_layout(
-		layout: Vec<(AppId, u32)>,
-	) -> Result<AppDataIndex, AppDataIndexError> {
-		let mut index = Vec::new();
-		// transactions are ordered by application id
-		// skip transactions with 0 application id - it's not a data txs
-		let mut size = 0u32;
-		let mut prev_app_id = AppId(0u32);
-
-		for (app_id, data_len) in layout {
-			if app_id.0 != 0 && prev_app_id != app_id {
-				index.push((app_id.0, size));
-			}
-
-			size = size
-				.checked_add(data_len)
-				.ok_or(AppDataIndexError::SizeOverflow)?;
-			if prev_app_id > app_id {
-				return Err(AppDataIndexError::UnsortedLayout);
-			}
-			prev_app_id = app_id;
-		}
-
-		Ok(AppDataIndex { size, index })
-	}
-
 	fn scalars_to_app_rows(
-		app_id: u32,
-		index: &AppDataIndex,
+		id: AppId,
+		lookup: &DataLookup,
 		dimensions: Dimensions,
 		matrix: &DMatrix<BlsScalar>,
 	) -> Vec<Option<Vec<u8>>> {
-		let app_rows = app_specific_rows(index, dimensions, app_id);
+		let app_rows = app_specific_rows(lookup, dimensions, id);
 		dimensions
 			.iter_extended_rows()
 			.map(|i| {
@@ -686,17 +657,20 @@ mod tests {
 
 		assert_eq!(dims, expected_dims, "Dimensions don't match the expected");
 		assert_eq!(data, expected_data, "Data doesn't match the expected data");
-		let index = app_data_index_try_from_layout(layout).unwrap();
-		let res = unflatten_padded_data(index.data_ranges(), data).unwrap();
+		let lookup = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
+
+		const_assert!((CHUNK_SIZE as u64) <= (u32::MAX as u64));
+		let data_lookup = lookup.projected_ranges(CHUNK_SIZE as u32).unwrap();
+		let res = unflatten_padded_data(data_lookup, data).unwrap();
 		assert_eq!(
 			res.len(),
 			extrinsics.len(),
 			"Number of extrinsics is not as expected."
 		);
 
-		for (res, exp) in res.iter().zip(extrinsics.iter()) {
-			assert_eq!(res.0, *exp.app_id);
-			assert_eq!(res.1[0], exp.data);
+		for ((id, data), exp) in res.iter().zip(extrinsics.iter()) {
+			assert_eq!(id.0, *exp.app_id);
+			assert_eq!(data[0], exp.data);
 		}
 	}
 
@@ -796,11 +770,11 @@ mod tests {
 
 		let columns = sample_cells_from_matrix(&matrix, None);
 		let extended_dims = dims.try_into().unwrap();
-		let index = app_data_index_try_from_layout(layout).unwrap();
+		let index = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
 		let reconstructed = reconstruct_extrinsics(&index, extended_dims, columns).unwrap();
-		for (result, xt) in reconstructed.iter().zip(xts) {
-			prop_assert_eq!(result.0, *xt.app_id);
-			prop_assert_eq!(result.1[0].as_slice(), &xt.data);
+		for ((app_id, data), xt) in reconstructed.iter().zip(xts) {
+			prop_assert_eq!(app_id.0, *xt.app_id);
+			prop_assert_eq!(data[0].as_slice(), &xt.data);
 		}
 
 		let dims_cols = usize::try_from(dims.cols.0).unwrap();
@@ -831,14 +805,14 @@ mod tests {
 	fn test_commitments_verify(ref xts in app_extrinsics_strategy())  {
 		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
 
-		let index = app_data_index_try_from_layout(layout).unwrap();
+		let index = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
 		let dims_cols = usize::try_from(dims.cols.0).unwrap();
 		let public_params = testnet::public_params(dims_cols);
 		let extended_dims = dims.try_into().unwrap();
 		let commitments = commitments::from_slice(&commitments).unwrap();
 		for xt in xts {
-			let rows = scalars_to_app_rows(xt.app_id.0, &index, extended_dims, &matrix);
-			let (_, missing) = commitments::verify_equality(&public_params, &commitments, rows.as_slice(), &index, extended_dims, xt.app_id.0).unwrap();
+			let rows = scalars_to_app_rows(xt.app_id, &index, extended_dims, &matrix);
+			let (_, missing) = commitments::verify_equality(&public_params, &commitments, rows.as_slice(), &index, extended_dims, xt.app_id).unwrap();
 			prop_assert!(missing.is_empty());
 		}
 	}
@@ -851,16 +825,16 @@ mod tests {
 	fn verify_commitmnets_missing_row(ref xts in app_extrinsics_strategy())  {
 		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
 
-		let index = app_data_index_try_from_layout(layout).unwrap();
+		let index = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
 		let dims_cols = usize::try_from(dims.cols.0).unwrap();
 		let public_params = testnet::public_params(dims_cols);
 		let extended_dims =  dims.try_into().unwrap();
 		let commitments = commitments::from_slice(&commitments).unwrap();
 		for xt in xts {
-			let mut rows = scalars_to_app_rows(xt.app_id.0, &index, extended_dims, &matrix);
+			let mut rows = scalars_to_app_rows(xt.app_id, &index, extended_dims, &matrix);
 			let app_row_index = rows.iter().position(Option::is_some).unwrap();
 			rows.remove(app_row_index);
-			let (_, missing) = commitments::verify_equality(&public_params, &commitments, &rows,&index, extended_dims,xt.app_id.0).unwrap();
+			let (_, missing) = commitments::verify_equality(&public_params, &commitments, &rows,&index, extended_dims,xt.app_id).unwrap();
 			prop_assert!(!missing.is_empty());
 		}
 	}
@@ -921,13 +895,13 @@ get erasure coded to ensure redundancy."#;
 
 		let extended_dims = dims.try_into()?;
 
-		let index = app_data_index_try_from_layout(layout).unwrap();
-		let res_1 = reconstruct_app_extrinsics(&index, extended_dims, cols_1, 1).unwrap();
+		let index = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
+		let res_1 = reconstruct_app_extrinsics(&index, extended_dims, cols_1, AppId(1)).unwrap();
 		assert_eq!(res_1[0], app_id_1_data);
 
 		let cols_2 = sample_cells_from_matrix(&matrix, Some(&[0, 2, 3]));
 
-		let res_2 = reconstruct_app_extrinsics(&index, extended_dims, cols_2, 2).unwrap();
+		let res_2 = reconstruct_app_extrinsics(&index, extended_dims, cols_2, AppId(2)).unwrap();
 		assert_eq!(res_2[0], app_id_2_data);
 		Ok(())
 	}
@@ -958,9 +932,9 @@ get erasure coded to ensure redundancy."#;
 		let matrix = par_extend_data_matrix(dims, &data[..], &IgnoreMetrics {})?;
 		let dimensions: Dimensions = dims.try_into()?;
 
-		let index = app_data_index_try_from_layout(layout).unwrap();
+		let index = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
 		for xt in xts {
-			let positions = app_specific_cells(&index, dimensions, xt.app_id.0).unwrap();
+			let positions = app_specific_cells(&index, dimensions, xt.app_id).unwrap();
 			let cells = positions
 				.into_iter()
 				.map(|position| {
@@ -970,12 +944,12 @@ get erasure coded to ensure redundancy."#;
 					DataCell::new(position, data)
 				})
 				.collect::<Vec<_>>();
-			let data = &decode_app_extrinsics(&index, dimensions, cells, xt.app_id.0).unwrap()[0];
+			let data = &decode_app_extrinsics(&index, dimensions, cells, xt.app_id).unwrap()[0];
 			assert_eq!(data, &xt.data);
 		}
 
 		assert!(matches!(
-			decode_app_extrinsics(&index, dimensions, vec![], 0),
+			decode_app_extrinsics(&index, dimensions, vec![], AppId(0)),
 			Err(ReconstructionError::MissingCell { .. })
 		));
 		Ok(())
@@ -1003,7 +977,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let cols = sample_cells_from_matrix(&matrix, None);
 
 		let extended_dims = dims.try_into()?;
-		let index = app_data_index_try_from_layout(layout).unwrap();
+		let index = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
 		let res = reconstruct_extrinsics(&index, extended_dims, cols).unwrap();
 		let s = String::from_utf8_lossy(res[0].1[0].as_slice());
 
@@ -1036,7 +1010,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let cols = sample_cells_from_matrix(&matrix, None);
 		let extended_dims = dims.try_into().unwrap();
 
-		let index = app_data_index_try_from_layout(layout).unwrap();
+		let index = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
 		let res = reconstruct_extrinsics(&index, extended_dims, cols).unwrap();
 
 		assert_eq!(res[0].1[0], xt1);

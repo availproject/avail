@@ -1,16 +1,15 @@
+use avail_core::{ensure, AppId, DataLookup};
 use core::{
 	array::TryFromSliceError,
 	convert::{TryFrom, TryInto},
 	num::TryFromIntError,
 };
-
-use avail_core::{ensure, AppId, DataLookup};
-#[cfg(feature = "std")]
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	fft::{EvaluationDomain, Evaluations},
 	prelude::{BlsScalar, CommitKey, PublicParameters},
 };
+use sp_std::prelude::*;
 use thiserror_no_std::Error;
 
 use crate::{
@@ -53,7 +52,6 @@ impl std::error::Error for Error {
 	}
 }
 
-#[cfg(feature = "std")]
 impl From<dusk_bytes::Error> for Error {
 	fn from(e: dusk_bytes::Error) -> Self {
 		match e {

@@ -1,47 +1,56 @@
+use crate::{data, matrix};
+use core::{convert::TryFrom, num::TryFromIntError, ops::Range};
+
 use avail_core::{data_lookup::Error as DataLookupError, ensure, AppId, DataLookup};
-use codec::{Decode, IoReader};
-use core::num::TryFromIntError;
-use core::{
-	convert::{TryFrom, TryInto},
-	ops::Range,
-};
 use dusk_bytes::Serializable as _;
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
-use sp_arithmetic::{traits::SaturatedConversion, Percent};
-use sp_std::{iter::FromIterator, vec::Vec};
-use static_assertions::{const_assert, const_assert_ne};
+use sp_arithmetic::{traits::SaturatedConversion as _, Percent};
+use sp_std::prelude::*;
 use thiserror_no_std::Error;
 
 #[cfg(feature = "std")]
-use crate::sparse_slice_read::SparseSliceRead;
+use crate::{config, sparse_slice_read::SparseSliceRead};
 #[cfg(feature = "std")]
-use std::collections::{HashMap, HashSet};
-
-use crate::{
-	config::{self, CHUNK_SIZE, DATA_CHUNK_SIZE},
-	data, matrix,
+use codec::{Decode, IoReader};
+#[cfg(feature = "std")]
+use static_assertions::{const_assert, const_assert_ne};
+#[cfg(feature = "std")]
+use std::{
+	collections::{HashMap, HashSet},
+	convert::TryInto,
+	iter::FromIterator,
 };
 
 #[derive(Debug, Error)]
 pub enum ReconstructionError {
-	#[error("Missing cell (col {}, row {})", .position.col, .position.row)]
-	MissingCell { position: matrix::Position },
-	#[error("Invalid cell (col {}, row {})", .position.col, .position.row)]
-	InvalidCell { position: matrix::Position },
+	#[error("Missing cell ({0})")]
+	MissingCell(matrix::Position),
+	#[error("Invalid cell ({0})")]
+	InvalidCell(matrix::Position),
+	#[error("Maximum cells allowed {0}")]
+	MaxCells(usize),
+	#[error("Minimum cells allowed {0}")]
+	MinCells(usize),
 	#[error("Duplicate cell found")]
 	DuplicateCellFound,
 	#[error("Column {0} contains less than half rows")]
 	InvalidColumn(u16),
-	#[error("Cannot reconstruct column: {0}")]
-	ColumnReconstructionError(String),
 	#[error("Cannot decode data: {0}")]
 	DataDecodingError(#[from] UnflattenError),
 	#[error("Column reconstruction supports up to {}", u16::MAX)]
 	RowCountExceeded,
+	#[error("Rows must be power of two")]
+	InvalidRowCount,
 	#[error("Missing AppId {0}")]
 	MissingId(AppId),
 	#[error("DataLookup {0}")]
 	DataLookup(#[from] DataLookupError),
+	#[error("Some cells are from different columns")]
+	CellsFromDifferentCols,
+	#[error("Invalid evaluation domain")]
+	InvalidEvaluationDomain,
+	#[error("Bad zero poly evaluation")]
+	BadZeroPoly,
 }
 
 #[cfg(feature = "std")]
@@ -91,7 +100,7 @@ fn map_cells(
 	for cell in cells {
 		let position = cell.position;
 		if !dimensions.extended_contains(&position) {
-			return Err(ReconstructionError::InvalidCell { position });
+			return Err(ReconstructionError::InvalidCell(position));
 		}
 		let cells = result.entry(position.col).or_insert_with(HashMap::new);
 		if cells.insert(position.row, cell).is_some() {
@@ -152,6 +161,7 @@ pub type AppData = Vec<Vec<u8>>;
 /// * `dimensions` - Extended matrix dimensions
 /// * `cells` - Cells from required columns, at least 50% cells per column
 /// * `app_id` - Application ID
+#[cfg(feature = "std")]
 pub fn reconstruct_app_extrinsics(
 	index: &DataLookup,
 	dimensions: matrix::Dimensions,
@@ -177,6 +187,7 @@ pub fn reconstruct_app_extrinsics(
 /// * `index` - Application data index
 /// * `dimensions` - Extended matrix dimensions
 /// * `cells` - Cells from required columns, at least 50% cells per column
+#[cfg(feature = "std")]
 pub fn reconstruct_extrinsics(
 	lookup: &DataLookup,
 	dimensions: matrix::Dimensions,
@@ -195,10 +206,11 @@ pub fn reconstruct_extrinsics(
 ///
 /// * `dimensions` - Extended matrix dimensions
 /// * `cells` - Cells from required columns, at least 50% cells per column
+#[cfg(feature = "std")]
 pub fn reconstruct_columns(
 	dimensions: matrix::Dimensions,
 	cells: &[data::Cell],
-) -> Result<HashMap<u16, Vec<[u8; CHUNK_SIZE]>>, ReconstructionError> {
+) -> Result<HashMap<u16, Vec<[u8; config::CHUNK_SIZE]>>, ReconstructionError> {
 	let cells: Vec<data::DataCell> = cells.iter().cloned().map(Into::into).collect::<Vec<_>>();
 	let columns = map_cells(dimensions, cells)?;
 
@@ -212,17 +224,17 @@ pub fn reconstruct_columns(
 
 			let cells = cells.values().cloned().collect::<Vec<_>>();
 
-			let column = reconstruct_column(dimensions.extended_rows(), &cells)
-				.map_err(ReconstructionError::ColumnReconstructionError)?
+			let column = reconstruct_column(dimensions.extended_rows(), &cells)?
 				.iter()
 				.map(BlsScalar::to_bytes)
-				.collect::<Vec<[u8; CHUNK_SIZE]>>();
+				.collect::<Vec<[u8; config::CHUNK_SIZE]>>();
 
 			Ok((col, column))
 		})
 		.collect::<Result<_, _>>()
 }
 
+#[cfg(feature = "std")]
 fn reconstruct_available(
 	dimensions: matrix::Dimensions,
 	cells: Vec<data::DataCell>,
@@ -242,7 +254,6 @@ fn reconstruct_available(
 
 				reconstruct_column(dimensions.extended_rows(), &cells)
 					.map(|scalars| scalars.into_iter().map(Some).collect::<Vec<_>>())
-					.map_err(ReconstructionError::ColumnReconstructionError)
 			},
 		})
 		.collect::<Result<Vec<Vec<_>>, ReconstructionError>>()?;
@@ -271,6 +282,7 @@ fn reconstruct_available(
 /// * `dimensions` - Extended matrix dimensions
 /// * `cells` - Application specific data cells in extended matrix, without erasure coded data.
 /// * `app_id` - Application ID
+#[cfg(feature = "std")]
 pub fn decode_app_extrinsics(
 	index: &DataLookup,
 	dimensions: matrix::Dimensions,
@@ -288,7 +300,7 @@ pub fn decode_app_extrinsics(
 			.get(&position.col)
 			.and_then(|column| column.get(&position.row))
 			.filter(|cell| !cell.data.is_empty())
-			.ok_or(ReconstructionError::MissingCell { position })?;
+			.ok_or(ReconstructionError::MissingCell(position))?;
 	}
 
 	let mut app_data: Vec<u8> = vec![];
@@ -343,17 +355,20 @@ pub fn unflatten_padded_data(
 	ranges: Vec<(AppId, AppDataRange)>,
 	data: Vec<u8>,
 ) -> Result<Vec<(AppId, AppData)>, UnflattenError> {
-	ensure!(data.len() % CHUNK_SIZE == 0, UnflattenError::InvalidLen);
+	ensure!(
+		data.len() % config::CHUNK_SIZE == 0,
+		UnflattenError::InvalidLen
+	);
 
 	fn extract_encoded_extrinsic(range_data: &[u8]) -> SparseSliceRead {
-		const_assert_ne!(CHUNK_SIZE, 0);
-		const_assert_ne!(DATA_CHUNK_SIZE, 0);
+		const_assert_ne!(config::CHUNK_SIZE, 0);
+		const_assert_ne!(config::DATA_CHUNK_SIZE, 0);
 
 		// INTERNAL: Chunk into 32 bytes (CHUNK_SIZE), then remove padding (0..30 bytes).
 		SparseSliceRead::from_iter(
 			range_data
-				.chunks_exact(CHUNK_SIZE)
-				.map(|chunk| &chunk[0..DATA_CHUNK_SIZE]),
+				.chunks_exact(config::CHUNK_SIZE)
+				.map(|chunk| &chunk[0..config::DATA_CHUNK_SIZE]),
 		)
 	}
 
@@ -379,7 +394,7 @@ fn reconstruct_poly(
 	eval_domain: EvaluationDomain,
 	// subset of available data
 	subset: Vec<Option<BlsScalar>>,
-) -> Result<Vec<BlsScalar>, String> {
+) -> Result<Vec<BlsScalar>, ReconstructionError> {
 	let missing_indices = subset
 		.iter()
 		.enumerate()
@@ -390,7 +405,7 @@ fn reconstruct_poly(
 		zero_poly_fn(eval_domain, missing_indices.as_slice(), subset.len() as u64);
 	for i in 0..subset.len() {
 		if subset[i].is_none() && zero_eval[i] != BlsScalar::zero() {
-			return Err("bad zero poly evaluation !".to_owned());
+			return Err(ReconstructionError::BadZeroPoly);
 		}
 	}
 	let mut poly_evals_with_zero: Vec<BlsScalar> = Vec::new();
@@ -489,6 +504,7 @@ fn unshift_poly(poly: &mut [BlsScalar]) {
 }
 
 pub type AppDataRange = Range<u32>;
+
 // use this function for reconstructing back all cells of certain column
 // when at least 50% of them are available
 //
@@ -500,7 +516,7 @@ pub type AppDataRange = Range<u32>;
 pub fn reconstruct_column(
 	row_count: u32,
 	cells: &[data::DataCell],
-) -> Result<Vec<BlsScalar>, String> {
+) -> Result<Vec<BlsScalar>, ReconstructionError> {
 	// just ensures all rows are from same column !
 	// it's required as that's how it's erasure coded during
 	// construction in validator node
@@ -527,25 +543,24 @@ pub fn reconstruct_column(
 	}
 
 	// row count of data matrix must be power of two !
-	let row_count_sz: usize = row_count
-		.try_into()
-		.map_err(|_| "Row count overflows `usize`")?;
-	ensure!(row_count % 2 == 0, "`row_count` must be power of two");
+	let row_count_sz =
+		usize::try_from(row_count).map_err(|_| ReconstructionError::RowCountExceeded)?;
+	ensure!(row_count % 2 == 0, ReconstructionError::InvalidRowCount);
 	ensure!(
 		cells.len() >= row_count_sz / 2,
-		"Number of `cells` must be equal or greater than the half of `row_count`"
+		ReconstructionError::MinCells(row_count_sz / 2)
 	);
 	ensure!(
 		cells.len() <= row_count_sz,
-		"Number of `cells` must be equal or less than `row_count`"
+		ReconstructionError::MaxCells(row_count_sz)
 	);
 	ensure!(
 		check_cells(cells),
-		"At least one row is not from same column"
+		ReconstructionError::CellsFromDifferentCols
 	);
 
 	let eval_domain = EvaluationDomain::new(row_count_sz)
-		.map_err(|e| format!("Evaluation domain cannot be created: {e:?}"))?;
+		.map_err(|_| ReconstructionError::InvalidEvaluationDomain)?;
 	let mut subset: Vec<Option<BlsScalar>> = Vec::with_capacity(row_count_sz);
 
 	// fill up vector in ordered fashion
