@@ -29,6 +29,9 @@ pub use sha2::ShaTwo256;
 
 pub mod traits;
 
+pub mod keccak256;
+pub use keccak256::Keccak256;
+
 pub mod data_proof;
 pub use data_proof::DataProof;
 

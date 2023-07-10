@@ -5,9 +5,7 @@ use codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
 use sp_std::vec::Vec;
-
 use thiserror_no_std::Error;
-
 /// Wrapper of `beefy-merkle-tree::MerkleProof` with codec support.
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, Default)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -41,13 +39,13 @@ pub enum DataProofTryFromError {
 	/// The given index of proofs cannot be converted into `H256`.
 	#[error("Proof at {0} cannot be converted into `H256`")]
 	InvalidProof(usize),
-	/// Number of leaves overflowed
+	/// Number of leaves overflowed.
 	#[error("Number of leaves overflowed")]
 	OverflowedNumberOfLeaves,
 	/// Number of leaves must be greater than zero.
 	#[error("Number of leaves cannot be zero")]
 	InvalidNumberOfLeaves,
-	/// Leaf index overflowed
+	/// Leaf index overflowed.
 	#[error("Leaf index overflowed")]
 	OverflowedLeafIndex,
 	/// Leaf index overflowed or invalid (greater or equal to `number_of_leaves`)
@@ -65,13 +63,14 @@ where
 
 	fn try_from(merkle_proof: &MerkleProof<H, T>) -> Result<Self, Self::Error> {
 		use crate::ensure;
-		use sp_core::hashing::sha2_256;
+		use sp_core::keccak_256;
 		use DataProofTryFromError::*;
 
 		let root = <[u8; 32]>::try_from(merkle_proof.root.as_ref())
 			.map_err(|_| InvalidRoot)?
 			.into();
-		let leaf = sha2_256(merkle_proof.leaf.as_ref()).into();
+		let leaf = keccak_256(merkle_proof.leaf.as_ref()).into();
+
 		let proof = merkle_proof
 			.proof
 			.iter()
@@ -101,9 +100,9 @@ where
 
 #[cfg(all(test, feature = "runtime"))]
 mod test {
-	use crate::ShaTwo256;
+	use crate::Keccak256;
 	use hex_literal::hex;
-	use sp_core::{hashing::sha2_256, H512};
+	use sp_core::{keccak_256, H512};
 	use sp_std::cmp::min;
 	use test_case::test_case;
 
@@ -124,8 +123,9 @@ mod test {
 		let leaves = leaves();
 		let index = min(leaf_index, leaves.len() - 1);
 
-		let mut proof = beefy_merkle_tree::merkle_proof::<ShaTwo256, _, _>(leaves, index);
+		let mut proof = beefy_merkle_tree::merkle_proof::<Keccak256, _, _>(leaves, index);
 		proof.leaf_index = leaf_index;
+
 		proof
 	}
 
@@ -141,50 +141,50 @@ mod test {
 
 	fn expected_data_proof_1() -> Result<DataProof, DataProofTryFromError> {
 		Ok(DataProof {
-			root: hex!("e18e5f531a15090555c2d3539b5d93a5a872ffc3422bd9b9410776549d71f6f6").into(),
+			root: hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95").into(),
 			proof: vec![
-				hex!("f5a5fd42d16a20302798ef6ed309979b43003d2320d9f0e8ea9831a92759fb4b").into(),
-				hex!("e59d380e38bc66ab4e5452df8ee47bb4611e719efb8985c2a5e6598784e3d642").into(),
-				hex!("fc7ad74dc17cb03a8464bbfb12fd037cceaef8ef5973d9f1772b4913503bff6e").into(),
+				hex!("ad3228b676f7d3cd4284a5443f17f1962b36e491b30a40b2405849e597ba5fb5").into(),
+				hex!("8421b50025cb27f1412ed7103442ecdd09d4aa1e4a1ba777597ae921e48b31e1").into(),
+				hex!("08f1f28658e6a37fa6fd9be84bd7315c3ca1eceb0849ec88cbd5bf9a69160653").into(),
 			],
 			number_of_leaves: 7,
 			leaf_index: 1,
-			leaf: sha2_256(H512::repeat_byte(1).as_bytes()).into(),
+			leaf: keccak_256(H512::repeat_byte(1).as_bytes()).into(),
 		})
 	}
 
 	fn expected_data_proof_0() -> Result<DataProof, DataProofTryFromError> {
 		Ok(DataProof {
-			root: hex!("e18e5f531a15090555c2d3539b5d93a5a872ffc3422bd9b9410776549d71f6f6").into(),
+			root: hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95").into(),
 			proof: vec![
-				hex!("7c8975e1e60a5c8337f28edf8c33c3b180360b7279644a9bc1af3c51e6220bf5").into(),
-				hex!("e59d380e38bc66ab4e5452df8ee47bb4611e719efb8985c2a5e6598784e3d642").into(),
-				hex!("fc7ad74dc17cb03a8464bbfb12fd037cceaef8ef5973d9f1772b4913503bff6e").into(),
+				hex!("401617bc4f769381f86be40df0207a0a3e31ae0839497a5ac6d4252dfc35577f").into(),
+				hex!("8421b50025cb27f1412ed7103442ecdd09d4aa1e4a1ba777597ae921e48b31e1").into(),
+				hex!("08f1f28658e6a37fa6fd9be84bd7315c3ca1eceb0849ec88cbd5bf9a69160653").into(),
 			],
 			number_of_leaves: 7,
 			leaf_index: 0,
-			leaf: sha2_256(H512::repeat_byte(0).as_bytes()).into(),
+			leaf: keccak_256(H512::repeat_byte(0).as_bytes()).into(),
 		})
 	}
 
 	fn expected_data_proof_6() -> Result<DataProof, DataProofTryFromError> {
 		Ok(DataProof {
-			root: hex!("e18e5f531a15090555c2d3539b5d93a5a872ffc3422bd9b9410776549d71f6f6").into(),
+			root: hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95").into(),
 			proof: vec![
-				hex!("6b19c42f81575abc499679f91bb649e0aa8af83d9634aab78af04b5e13b04e5f").into(),
-				hex!("e4117bb4906266f46977187ca43a9151b88928ab1aa03283ddf5ead4b33c3e78").into(),
+				hex!("8663c7e2962f98579b883bf5e2179f9200ae3615ec6fc3bd8027a0de9973606a").into(),
+				hex!("b225b28cd9168524306b0d944342b11bb21d37e9156cdbf42073d4e51b2f0a41").into(),
 			],
 			number_of_leaves: 7,
 			leaf_index: 6,
-			leaf: sha2_256(H512::repeat_byte(6).as_bytes()).into(),
+			leaf: keccak_256(H512::repeat_byte(6).as_bytes()).into(),
 		})
 	}
 
-	#[test_case( merkle_proof_idx(0) => expected_data_proof_0(); "From merkle proof 0")]
-	#[test_case( merkle_proof_idx(1) => expected_data_proof_1(); "From merkle proof 1")]
-	#[test_case( merkle_proof_idx(6) => expected_data_proof_6(); "From merkle proof 6")]
-	#[test_case( merkle_proof_idx(7) => Err(DataProofTryFromError::InvalidLeafIndex); "From invalid leaf index")]
-	#[test_case( invalid_merkle_proof_zero_leaves() => Err(DataProofTryFromError::InvalidNumberOfLeaves); "From invalid number of leaves")]
+	#[test_case(merkle_proof_idx(0) => expected_data_proof_0(); "From merkle proof 0")]
+	#[test_case(merkle_proof_idx(1) => expected_data_proof_1(); "From merkle proof 1")]
+	#[test_case(merkle_proof_idx(6) => expected_data_proof_6(); "From merkle proof 6")]
+	#[test_case(merkle_proof_idx(7) => Err(DataProofTryFromError::InvalidLeafIndex); "From invalid leaf index")]
+	#[test_case(invalid_merkle_proof_zero_leaves() => Err(DataProofTryFromError::InvalidNumberOfLeaves); "From invalid number of leaves")]
 	fn from_beefy(
 		beefy_proof: MerkleProof<H256, Vec<u8>>,
 	) -> Result<DataProof, DataProofTryFromError> {
