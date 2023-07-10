@@ -72,3 +72,26 @@ jobs:
 
       - name: Cleanup
         run: find . -name \*.profraw -type f -exec rm -f {} +
+
+      # Run Bencmarks 
+      - name: Run benchmark
+        run: cargo bench --features "avail-core/runtime" | tee output.txt
+      - name: Download previous benchmark data
+        uses: actions/cache@v1
+        with:
+          path: ./cache
+          key: ${{ runner.os }}-benchmark
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'cargo'
+          output-file-path: output.txt
+          # GitHub API token to make a commit comment
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Enable alert commit comment
+          comment-on-alert: true
+          fail-on-alert: true
+          summary-always: true
+          # Mention users in the commit comment
+          # alert-comment-cc-users: '@fmiguelgarcia,@delroybosco,@prabal-banerjee,@kroos47,@jakubcech'
+
