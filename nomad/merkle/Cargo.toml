@@ -1,13 +1,13 @@
 [package]
-name = "nomad-base"
-version = "0.1.3"
+name = "nomad-merkle"
+version = "0.1.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-nomad-core = { path = "../nomad-core", default-features = false }
-nomad-signature = { path = "../signature", default-features = false }
+# Internal
+nomad-core = { path = "../core", default-features = false }
 
 # Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
@@ -16,27 +16,33 @@ primitive-types = { version = "0.12", default-features = false, features = ["sca
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 sp-core = { version = "7.0.0", default-features = false }
 sp-io = { version = "7.0.0", default-features = false }
-sp-std = { version = "4.0.0", default-features = false }
+sp-runtime = { version = "7.0.0", default-features = false }
+sp-std = { version = "4.0.0-dev", default-features = false }
 
-# Eth
-ethers-signers = { version = "1", optional = true }
+# 3rd-party
+hex-literal = "0.3.4"
+static_assertions = "1.1.0"
+thiserror-no-std = "2.0.2"
+tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
 
-# Others
-once_cell = { version = "1.8.0", optional = true }
-serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
+[dev-dependencies]
+ethers-core = "1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0" }
+
+[dependencies.serde]
+version = "1.0"
+default-features = false
+optional = true
+features = ["derive"]
 
 [features]
 default = ["std"]
 std = [
 	"serde",
-	"ethers-signers",
-	"once_cell",
+	"nomad-core/std",
 	"primitive-types/serde",
 	"codec/std",
-	"nomad-signature/std",
 	"scale-info/std",
 	"frame-support/std",
-	"nomad-core/std",
-	"sp-std/std",
-	"sp-core/std",
 ]

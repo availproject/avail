@@ -3,6 +3,10 @@ members = [
 	"core",
 	"kate/recovery",
 	"kate",
+	"nomad/signature",
+	"nomad/core",
+	"nomad/base",
+	"nomad/merkle",
 ]
 [patch.crates-io]
 # Substrate  (polkadot-v0.9.37).

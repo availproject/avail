@@ -1,11 +1,14 @@
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
+use sp_core::H256;
+use sp_std::vec::Vec;
+
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{hexdisplay::HexDisplay, H256};
+#[cfg(feature = "std")]
+use sp_core::hexdisplay::HexDisplay;
 #[cfg(feature = "std")]
 use sp_std::fmt;
-use sp_std::vec::Vec;
 
 pub mod v1 {
 	use super::*;

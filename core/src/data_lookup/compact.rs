@@ -3,6 +3,8 @@ use crate::{AppId, DataLookup};
 use codec::{Decode, Encode};
 use derive_more::Constructor;
 use scale_info::TypeInfo;
+use sp_std::vec::Vec;
+
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
