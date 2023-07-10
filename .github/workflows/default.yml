@@ -51,7 +51,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy 
-          args: --check
+          args: --workspace --features "avail-core/runtime"
 
       - name: Run tests
         uses: actions-rs/cargo@v1
