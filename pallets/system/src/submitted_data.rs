@@ -52,19 +52,7 @@ pub trait Filter<C> {
 	fn filter(call: C, metrics: RcMetrics) -> Option<Vec<Vec<u8>>>;
 
 	/// This function processes a list of calls and returns their data as Vec<Vec<u8>>
-	fn process_calls(calls: Vec<C>, metrics: &RcMetrics) -> Option<Vec<Vec<u8>>> {
-		let mut result = Vec::with_capacity(calls.len());
-		for call in calls {
-			if let Some(data) = Self::filter(call, Rc::clone(metrics)) {
-				result.extend(data);
-			}
-		}
-		if !result.is_empty() {
-			Some(result)
-		} else {
-			None
-		}
-	}
+	fn process_calls(calls: Vec<C>, metrics: &RcMetrics) -> Option<Vec<Vec<u8>>>;
 }
 
 #[cfg(any(feature = "std", test))]
