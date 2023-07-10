@@ -44,17 +44,6 @@ macro_rules! cfg_iter {
 	}};
 }
 
-/*
-macro_rules! cfg_into_iter {
-	($e: expr) => {{
-		#[cfg(feature = "parallel")]
-		let result = $e.into_par_iter();
-		#[cfg(not(feature = "parallel"))]
-		let result = $e.into_iter();
-		result
-	}};
-}*/
-
 pub const SCALAR_SIZE: usize = 32;
 pub type ArkScalar = crate::pmp::m1_blst::Fr;
 pub type Commitment = crate::pmp::Commitment<Bls12_381>;

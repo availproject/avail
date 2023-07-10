@@ -370,11 +370,6 @@ pub fn build_proof<M: Metrics>(
 	let total_start = Instant::now();
 
 	// attempt to parallelly compute proof for all requested cells
-	// #[cfg(feature = "parallel")]
-	// let cell_iter = cells
-	// 	.into_par_iter()
-	// 	.zip(result_bytes.par_chunks_exact_mut(SPROOF_SIZE));
-	// #[cfg(not(feature = "parallel"))]
 	let cell_iter = cells.iter().zip(result_bytes.chunks_exact_mut(SPROOF_SIZE));
 
 	for (cell, res) in cell_iter {
@@ -383,15 +378,23 @@ pub fn build_proof<M: Metrics>(
 			res.fill(0); // for bad cell identifier, fill whole proof with zero bytes !
 		} else {
 			let c_index = usize::try_from(cell.col.0)?;
+			let get_ext_data_matrix =
+				|j: usize| ext_data_matrix[r_index.saturating_add(j.saturating_mul(ext_rows))];
 
 			// construct polynomial per extended matrix row
 			#[cfg(feature = "parallel")]
-			let ext_cols_iter = (0..ext_cols).into_par_iter();
+			let row = {
+				let mut row =
+					Vec::with_capacity(ext_cols.checked_add(1).ok_or(Error::BlockTooBig)?);
+				(0..ext_cols)
+					.into_par_iter()
+					.map(get_ext_data_matrix)
+					.collect_into_vec(&mut row);
+				row
+			};
 			#[cfg(not(feature = "parallel"))]
-			let ext_cols_iter = 0..ext_cols;
-
-			let row = ext_cols_iter
-				.map(|j| ext_data_matrix[r_index.saturating_add(j.saturating_mul(ext_rows))])
+			let row = (0..ext_cols)
+				.map(get_ext_data_matrix)
 				.collect::<Vec<BlsScalar>>();
 
 			// row has to be a power of 2, otherwise interpolate() function panics TODO: cache evaluations
@@ -462,13 +465,16 @@ pub fn par_build_commitments<M: Metrics>(
 	let row_eval_domain = EvaluationDomain::new(block_dims_cols)?;
 
 	let start = Instant::now();
-	let commitments = (0..extended_rows)
+	let mut commitments =
+		Vec::with_capacity(extended_rows.checked_add(1).ok_or(Error::BlockTooBig)?);
+	(0..extended_rows)
 		.into_par_iter()
 		.map(|row_idx| {
 			let ext_row = get_row(&ext_matrix, row_idx);
 			commit(&prover_key, row_eval_domain, ext_row)
 		})
-		.collect::<Vec<_>>();
+		.collect_into_vec(&mut commitments);
+
 	let commitments = commitments.into_iter().collect::<Result<Vec<_>, _>>()?;
 	let commitments_bytes = commitments
 		.into_par_iter()
