@@ -4,10 +4,12 @@ on:
     branches:
       - main
       - develop
+      - will/grid-refactor
   pull_request:
     branches:
       - main
       - develop
+      - will/grid-refactor
 
 jobs:
   build_and_test:
