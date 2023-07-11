@@ -68,6 +68,10 @@ pub enum Error {
 	DomainSizeInvalid,
 	InvalidDataLookup(#[from] DataLookupError),
 	Rng(#[from] ChaChaError),
+	/// The base grid width, before extension, does not fit cleanly into a domain for FFTs
+	BaseGridDomainSizeInvalid(usize),
+	/// The extended grid width does not fit cleanly into a domain for FFTs
+	ExtendedGridDomianSizeInvalid(usize),
 }
 
 impl From<TryFromIntError> for Error {

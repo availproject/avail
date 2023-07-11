@@ -77,6 +77,7 @@ impl EvaluationGrid {
 		rng_seed: Seed,
 	) -> Result<Self, Error> {
 		// Group extrinsics by app id, also sorted by app id.
+		// Using a BTreeMap here will still iter in sorted order. Sweet!
 		let grouped = extrinsics.into_iter().fold::<BTreeMap<AppId, Vec<_>>, _>(
 			BTreeMap::default(),
 			|mut acc, e| {
@@ -358,29 +359,31 @@ pub struct CellBlock {
 /// `mp_grid_dims` is the size of the multiproof grid, which `x,y` lies in.
 /// For example, a 256x256 grid could be converted to a 4x4 target size multiproof grid, by making 16 multiproofs
 /// of size 64x64.
+#[allow(clippy::integer_arithmetic)]
 pub fn multiproof_block(
 	x: usize,
 	y: usize,
 	grid: Dimensions,
 	target: Dimensions,
 ) -> Option<CellBlock> {
-	let (mp_rows, mp_cols): (usize, usize) = multiproof_dims(grid, target)?.into();
+	let mp_grid_dims = multiproof_dims(grid, target)?;
 	let (g_rows, g_cols): (usize, usize) = grid.into();
-	if x >= mp_cols || y >= mp_rows {
+	if x >= mp_grid_dims.width() || y >= mp_grid_dims.height() {
 		return None;
 	}
 
-	let block_width = g_cols
-		.checked_div(mp_cols)
-		.expect("`mp_cols` created from a `NonZeroU16` .qed");
-	let block_height = g_rows
-		.checked_div(mp_rows)
-		.expect("`mp_rows` created from a `NonZeroU16` .qed");
+	// SAFETY: Division is safe because `cols() != 0 && rows() != 0`.
+	let block_width = g_cols / usize::from(NonZeroU16::get(mp_grid_dims.cols()));
+	let block_height = g_rows / usize::from(NonZeroU16::get(mp_grid_dims.rows()));
+
+	// SAFETY: values never overflow since `x` and `y` are always less than grid_dims.{width,height}().
+	// This is because x,y < mp_grid_dims.{width, height} and block width is the quotient of
+	// grid_dims and mp_grid_dims.
 	Some(CellBlock {
-		start_x: x.checked_mul(block_width)?,
-		start_y: y.checked_mul(block_height)?,
-		end_x: x.checked_add(1)?.checked_mul(block_width)?,
-		end_y: y.checked_add(1)?.checked_mul(block_height)?,
+		start_x: x * block_width,
+		start_y: y * block_height,
+		end_x: (x + 1) * block_width,
+		end_y: (y + 1) * block_height,
 	})
 }
 
