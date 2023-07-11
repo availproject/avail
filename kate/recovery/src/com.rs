@@ -218,7 +218,7 @@ pub fn reconstruct_columns(
 		.iter()
 		.map(|(&col, cells)| {
 			ensure!(
-				cells.len() >= dimensions.rows().get().into(),
+				cells.len() >= dimensions.height(),
 				ReconstructionError::InvalidColumn(col)
 			);
 
@@ -240,7 +240,7 @@ fn reconstruct_available(
 	cells: Vec<data::DataCell>,
 ) -> Result<Vec<u8>, ReconstructionError> {
 	let columns = map_cells(dimensions, cells)?;
-	let rows: usize = dimensions.rows().get().into();
+	let rows: usize = dimensions.height();
 
 	let scalars = (0..dimensions.cols().get())
 		.map(|col| match columns.get(&col) {

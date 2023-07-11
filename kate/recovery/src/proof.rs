@@ -49,7 +49,7 @@ pub fn verify(
 		commitment_to_polynomial,
 	};
 
-	let cols: usize = dimensions.cols().get().into();
+	let cols: usize = dimensions.width();
 	let point = EvaluationDomain::new(cols)
 		.map_err(|_| Error::InvalidDomain)?
 		.elements()

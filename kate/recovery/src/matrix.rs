@@ -208,7 +208,7 @@ impl Dimensions {
 
 	/// Row size in bytes
 	pub fn row_byte_size(&self) -> usize {
-		CHUNK_SIZE * usize::from(self.cols.get())
+		CHUNK_SIZE * self.width()
 	}
 
 	/// Extended matrix rows count.
@@ -301,8 +301,8 @@ impl Dimensions {
 
 	/// Creates iterator over data cells in data matrix (used to retrieve data from the matrix).
 	pub fn iter_data(&self) -> impl Iterator<Item = (usize, usize)> {
-		let rows = self.rows.get().into();
-		let cols = self.cols.get().into();
+		let rows = self.height();
+		let cols = self.width();
 		(0..rows).flat_map(move |row| (0..cols).map(move |col| (row, col)))
 	}
 
