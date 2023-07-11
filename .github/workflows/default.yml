@@ -155,6 +155,13 @@ jobs:
 
       - name: Generate test code coverage report
         run: |
+          df -h
+          sudo apt-get autoremove
+          sudo apt-get clean
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           cargo +stable install --force grcov
           grcov . -s . --binary-path ./target/release/ -t lcov --branch --ignore-not-existing -o lcov.info
 

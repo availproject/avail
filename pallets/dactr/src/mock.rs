@@ -108,7 +108,7 @@ impl pallet_balances::Config for Test {
 
 parameter_types! {
 	pub const MaxAppKeyLength: u32 = 32;
-	pub const MaxAppDataLength: u32 = 16 * 1024; // 16 Kb
+	pub const MaxAppDataLength: u32 = 512 * 1024; // 512 Kb
 	pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
 	pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
 	pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(32);

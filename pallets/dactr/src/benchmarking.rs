@@ -137,7 +137,7 @@ where
 	let rows = BlockLengthRows(prev_power_of_two(rows));
 	let cols = BlockLengthColumns(cols);
 
-	let mut nb_tx = 128; // Value set depending on MaxAppDataLength (16 kb) to reach 2 mb
+	let mut nb_tx = 4; // Value set depending on MaxAppDataLength (512 kb) to reach 2 mb
 	let max_tx: u32 = rows.0 * cols.0 * (BLOCK_CHUNK_SIZE - 2) / data_length;
 	if nb_tx > max_tx {
 		nb_tx = max_tx;
