@@ -27,6 +27,9 @@ jobs:
 
             cargo build --release -p data-avail
             mv target/release/data-avail target/release/data-avail-linux-amd64
+            chmod 777 runtime
+            docker run --name srtool --rm -e PACKAGE=da-runtime -e RUNTIME_DIR=runtime/ -e PROFILE=release -v $(pwd):/build:rw -v /tmp/cargo:/cargo-home docker.io/paritytech/srtool:1.66.1 build
+            mv runtime/target/srtool/release/wbuild/da-runtime/da_runtime.compact.compressed.wasm target/release/wbuild/da-runtime/data-avail-runtime.compact.compressed.wasm
             pushd target/release/
             tar czf data-avail-linux-amd64.tar.gz data-avail-linux-amd64
             popd
@@ -34,6 +37,10 @@ jobs:
            with:
              name: data-avail-linux-amd64-tar
              path: target/release/data-avail-linux-amd64.tar.gz
+         - uses: actions/upload-artifact@v2
+           with:
+             name: avail-runtime-compressed-wasm
+             path: target/release/wbuild/da-runtime/data-avail-runtime.compact.compressed.wasm
 
   binary_linux_aarch64:
     runs-on: ubuntu-latest
@@ -77,6 +84,9 @@ jobs:
          - uses: actions/download-artifact@v2
            with:
              name: data-avail-linux-aarch64-tar
+         - uses: actions/download-artifact@v2
+           with:
+             name: avail-runtime-compressed-wasm
          - name: Prepare
            id: prepare
            run: |
