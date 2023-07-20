@@ -1,26 +1,27 @@
-use std::{
+use avail_core::{ensure, AppId, DataLookup};
+use core::{
 	array::TryFromSliceError,
 	convert::{TryFrom, TryInto},
 	num::TryFromIntError,
 };
-
 use dusk_bytes::Serializable;
 use dusk_plonk::{
 	fft::{EvaluationDomain, Evaluations},
-	prelude::{BlsScalar, PublicParameters},
+	prelude::{BlsScalar, CommitKey, PublicParameters},
 };
-use thiserror::Error;
+use sp_std::prelude::*;
+use thiserror_no_std::Error;
 
 use crate::{
 	com,
 	config::{self, COMMITMENT_SIZE},
-	index, matrix,
+	matrix,
 };
 
 #[derive(Error, Debug)]
-pub enum DataError {
+pub enum Error {
 	#[error("Scalar slice error: {0}")]
-	SliceError(TryFromSliceError),
+	SliceError(#[from] TryFromSliceError),
 	#[error("Scalar data is not valid")]
 	ScalarDataError,
 	#[error("Invalid scalar data length")]
@@ -30,44 +31,34 @@ pub enum DataError {
 	#[error("Bad data len")]
 	BadLen,
 	#[error("Plonk error: {0}")]
-	PlonkError(dusk_plonk::error::Error),
+	PlonkError(#[from] dusk_plonk::error::Error),
 	#[error("Bad commitments data")]
 	BadCommitmentsData,
 	#[error("Bad rows data")]
 	BadRowsData,
+	#[error("Integer conversion error")]
+	IntError(#[from] TryFromIntError),
 }
 
-#[derive(Error, Debug)]
-pub enum Error {
-	#[error("Invalid data: {0}")]
-	InvalidData(DataError),
-}
-
-impl From<TryFromSliceError> for Error {
-	fn from(e: TryFromSliceError) -> Self {
-		Self::InvalidData(DataError::SliceError(e))
-	}
-}
-
-impl From<TryFromIntError> for Error {
-	fn from(_: TryFromIntError) -> Self {
-		Self::InvalidData(DataError::BadCommitmentsData)
+#[cfg(feature = "std")]
+impl std::error::Error for Error {
+	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+		match &self {
+			Self::SliceError(slice) => Some(slice),
+			Self::PlonkError(plonk) => Some(plonk),
+			Self::IntError(try_int) => Some(try_int),
+			_ => None,
+		}
 	}
 }
 
 impl From<dusk_bytes::Error> for Error {
 	fn from(e: dusk_bytes::Error) -> Self {
 		match e {
-			dusk_bytes::Error::InvalidData => Self::InvalidData(DataError::ScalarDataError),
-			dusk_bytes::Error::BadLength { .. } => Self::InvalidData(DataError::BadScalarDataLen),
-			dusk_bytes::Error::InvalidChar { .. } => Self::InvalidData(DataError::BadScalarData),
+			dusk_bytes::Error::InvalidData => Self::ScalarDataError,
+			dusk_bytes::Error::BadLength { .. } => Self::BadScalarDataLen,
+			dusk_bytes::Error::InvalidChar { .. } => Self::BadScalarData,
 		}
-	}
-}
-
-impl From<dusk_plonk::error::Error> for Error {
-	fn from(e: dusk_plonk::error::Error) -> Self {
-		Self::InvalidData(DataError::PlonkError(e))
 	}
 }
 
@@ -78,9 +69,7 @@ fn try_into_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 
 fn try_into_scalars(data: &[u8]) -> Result<Vec<BlsScalar>, Error> {
 	let chunks = data.chunks_exact(config::CHUNK_SIZE);
-	if !chunks.remainder().is_empty() {
-		return Err(Error::InvalidData(DataError::BadLen));
-	}
+	ensure!(chunks.remainder().is_empty(), Error::BadLen);
 	chunks
 		.map(try_into_scalar)
 		.collect::<Result<Vec<BlsScalar>, Error>>()
@@ -103,22 +92,22 @@ pub fn verify_equality(
 	public_params: &PublicParameters,
 	commitments: &[[u8; COMMITMENT_SIZE]],
 	rows: &[Option<Vec<u8>>],
-	index: &index::AppDataIndex,
-	dimensions: &matrix::Dimensions,
-	app_id: u32,
+	index: &DataLookup,
+	dimensions: matrix::Dimensions,
+	app_id: AppId,
 ) -> Result<(Vec<u32>, Vec<u32>), Error> {
-	if commitments.len() != dimensions.extended_rows().try_into()? {
-		return Err(Error::InvalidData(DataError::BadCommitmentsData));
-	}
-
+	let ext_rows: usize = dimensions.extended_rows().try_into()?;
+	ensure!(commitments.len() == ext_rows, Error::BadCommitmentsData);
 	let mut app_rows = com::app_specific_rows(index, dimensions, app_id);
 
-	if rows.len() != dimensions.extended_rows().try_into()? {
+	if rows.len() != ext_rows {
 		return Ok((vec![], app_rows));
 	}
 
-	let (prover_key, _) = public_params.trim(dimensions.cols() as usize)?;
-	let domain = EvaluationDomain::new(dimensions.cols() as usize)?;
+	let dim_cols = dimensions.width();
+	// @TODO Opening Key here???
+	let (prover_key, _) = public_params.trim(dim_cols)?;
+	let domain = EvaluationDomain::new(dim_cols)?;
 
 	// This is a single-threaded implementation.
 	// At some point we should benchmark and decide
@@ -128,11 +117,8 @@ pub fn verify_equality(
 		.zip(rows.iter())
 		.zip(0u32..)
 		.filter(|(.., index)| app_rows.contains(index))
-		.filter_map(|((&commitment, row), index)| {
-			try_into_scalars(row.as_ref()?)
-				.map(|scalars| Evaluations::from_vec_and_domain(scalars, domain).interpolate())
-				.and_then(|polynomial| prover_key.commit(&polynomial).map_err(From::from))
-				.map(|result| (result.to_bytes() == commitment).then_some(index))
+		.filter_map(|((commitment, maybe_row), index)| {
+			row_index_commitment_verification(&prover_key, domain, commitment, maybe_row, index)
 				.transpose()
 		})
 		.collect::<Result<Vec<u32>, Error>>()?;
@@ -140,6 +126,25 @@ pub fn verify_equality(
 	app_rows.retain(|row| !verified.contains(row));
 
 	Ok((verified, app_rows))
+}
+
+fn row_index_commitment_verification(
+	prover_key: &CommitKey,
+	domain: EvaluationDomain,
+	commitment: &[u8],
+	maybe_row: &Option<Vec<u8>>,
+	index: u32,
+) -> Result<Option<u32>, Error> {
+	if let Some(row) = maybe_row.as_ref() {
+		let scalars = try_into_scalars(row)?;
+		let polynomial = Evaluations::from_vec_and_domain(scalars, domain).interpolate();
+		let result = prover_key.commit(&polynomial)?;
+
+		if result.to_bytes() == commitment {
+			return Ok(Some(index));
+		}
+	}
+	Ok(None)
 }
 
 /// Creates vector of exact size commitments, from commitments slice
@@ -152,18 +157,14 @@ pub fn from_slice(source: &[u8]) -> Result<Vec<[u8; COMMITMENT_SIZE]>, TryFromSl
 
 #[cfg(test)]
 mod tests {
+	use super::verify_equality;
+	use avail_core::{AppId, DataLookup};
 	use dusk_plonk::prelude::PublicParameters;
 	use once_cell::sync::Lazy;
 	use rand::SeedableRng;
 	use rand_chacha::ChaChaRng;
 
-	use crate::{
-		commitments,
-		index::{self, AppDataIndex},
-		matrix,
-	};
-
-	use super::verify_equality;
+	use crate::{commitments, matrix};
 
 	static PUBLIC_PARAMETERS: Lazy<PublicParameters> =
 		Lazy::new(|| PublicParameters::setup(256, &mut ChaChaRng::seed_from_u64(42)).unwrap());
@@ -174,9 +175,9 @@ mod tests {
 			&PUBLIC_PARAMETERS,
 			&[],
 			&[],
-			&index::AppDataIndex::default(),
-			&matrix::Dimensions::new(1, 1).unwrap(),
-			0,
+			&DataLookup::default(),
+			matrix::Dimensions::new(1, 1).unwrap(),
+			AppId(0),
 		)
 		.is_err());
 	}
@@ -193,42 +194,38 @@ mod tests {
 
 		let row_4 = Some(hex::decode("722c20416c65782073657473206f757420746f207265736375652074686520006b696e67646f6d2e204f6e206869732071756573742c206865206465666561007473204a616e6b656e27732068656e63686d656e20616e64207265747269650076657320766172696f7573206974656d73207768696368206c656164206869006d20746f77617264204a616e6b656e2077686f6d20686520646566656174730020616e642073656573207475726e656420746f2073746f6e652e20416c65780020726574726965766573207468652063726f776e2c20616e6420746865207000656f706c65206f6620526164617869616e2061726520726573746f7265642000756e64657220746865206e65776c792063726f776e6564204b696e67204567006c652e800000000000000000000000000000000000000000000000000000000004fd01412072656d616b65206f66207468652067616d652c207469746c65640020416c6578204b69646420696e204d697261636c6520576f726c642044582c002077617320616e6e6f756e636564206f6e204a756e652031302c2032303230002c20616e642072656c6561736564206f6e204a756e652032322c2032303231002e2054686520800000000000000000000000000000000000000000000000000076a04053bda0a88bda5177b86a15c3b29f559873cb481232299cd5743151ac004b2d63ae198e7bb0a9011f28e473c95f4013d7d53ec5fbc3b42df8ed101f6d00e831e52bfb76e51cca8b4e9016838657edfae09cb9a71eb219025c4c87a67c004aaa86f20ac0aa792bc121ee42e2c326127061eda15599cb5db3db870bea5a00ecf353161c3cb528b0c5d98050c4570bfc942d8b19ed7b0cbba5725e03e5f000b7e30db36b6df82ac151f668f5f80a5e2a9cac7c64991dd6a6ce21c060175800edb9260d2a86c836efc05f17e5c59525e404c6a93d051651fe2e4eefae2813004925683890a942f63ce493f512f0b2cfb7c42a07ce9130cb6d059a388d886100536cb9c5b81a9a8dc46c2d64a7a5b1d93b2d8646805d8d2a122fccdb3bc7dc00975ab75fc865793536f66e64189050360f623dc88abb8300180cdd0a8f33d700d2159b3df296b46dd64bec57609a3f2fb4ad8b46e2fd4c9f25d44328dd50ce00514db7bbf50ef518c195a7053763d0a8dfdab6b946ee9f3954549319ac7dc600bac203232876b27b541433fb2f1438289799049b349f7a2c205d3a97f66ef4002800baa3cb78fb33130181775fb26a62630236bd8bc644a3656489d135ba1800b11846029a9183d434593cbbc1e03a4f8dba40cf6cfa07ba043c83f6a4888700364c233191a4b99aff1e9b8ab2aba54ecc61a6a8d2a50043e8948be1e76a43007d348990b99e55fee2a4bc79b29b27f2f9720e96840517dc8a0be65757110400").unwrap());
 
-		let size = 79;
-		let index = vec![(1, 1), (2, 74)];
+		let id_lens: Vec<(u32, u32)> = vec![(0, 1), (1, 73), (2, 6)];
+		let lookup = DataLookup::from_id_and_len_iter(id_lens.into_iter()).unwrap();
+		let dimension = matrix::Dimensions::new(4, 32).unwrap();
+		let id = AppId(1);
 
 		let result = verify_equality(
 			&PUBLIC_PARAMETERS,
 			&commitments,
 			&[row_0.clone(), None, row_2, None, row_4, None, None, None],
-			&AppDataIndex { size, index },
-			&matrix::Dimensions::new(4, 32).unwrap(),
-			1,
+			&lookup,
+			dimension,
+			id,
 		);
 		assert_eq!(result.unwrap(), (vec![0, 2, 4], vec![]));
-
-		let size = 79;
-		let index = vec![(1, 1), (2, 74)];
 
 		let result = verify_equality(
 			&PUBLIC_PARAMETERS,
 			&commitments,
 			&[row_0, None, None, None, None, None, None, None],
-			&AppDataIndex { size, index },
-			&matrix::Dimensions::new(4, 32).unwrap(),
-			1,
+			&lookup,
+			dimension,
+			id,
 		);
 		assert_eq!(result.unwrap(), (vec![0], vec![2, 4]));
-
-		let size = 79;
-		let index = vec![(1, 1), (2, 74)];
 
 		let result = verify_equality(
 			&PUBLIC_PARAMETERS,
 			&commitments,
 			&[None, None, None, None, None, None, None, None],
-			&AppDataIndex { size, index },
-			&matrix::Dimensions::new(4, 32).unwrap(),
-			1,
+			&lookup,
+			dimension,
+			id,
 		);
 		assert_eq!(result.unwrap(), (vec![], vec![0, 2, 4]));
 	}

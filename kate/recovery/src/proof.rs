@@ -5,30 +5,35 @@ use dusk_plonk::{
 	fft::EvaluationDomain,
 	prelude::BlsScalar,
 };
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 use crate::{config::COMMITMENT_SIZE, data::Cell, matrix::Dimensions};
 
 #[derive(Error, Debug)]
 pub enum Error {
-	#[error("Proof, data or commitment is not valid: {0}")]
-	InvalidData(String),
-	#[error("Evaluation domain is not valid for given dimensions: {0}")]
-	InvalidDomain(String),
-	#[error("Public parameters degree is to small for given dimensions: {0}")]
-	InvalidDegree(String),
+	#[error("Proof, data or commitment is not valid")]
+	InvalidData,
+	#[error("Evaluation domain is not valid for given dimensions")]
+	InvalidDomain,
+	#[error("Public parameters degree is to small for given dimensions")]
+	InvalidDegree,
+	#[error("Position isn't in domain")]
+	InvalidPositionInDomain,
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for Error {}
+
 impl From<dusk_bytes::Error> for Error {
-	fn from(error: dusk_bytes::Error) -> Self {
-		Error::InvalidData(format!("{error:?}"))
+	fn from(_: dusk_bytes::Error) -> Self {
+		Error::InvalidData
 	}
 }
 
 /// Verifies proof for given cell
 pub fn verify(
 	public_parameters: &PublicParameters,
-	dimensions: &Dimensions,
+	dimensions: Dimensions,
 	commitment: &[u8; COMMITMENT_SIZE],
 	cell: &Cell,
 ) -> Result<bool, Error> {
@@ -44,14 +49,15 @@ pub fn verify(
 		commitment_to_polynomial,
 	};
 
-	let point = EvaluationDomain::new(dimensions.cols().into())
-		.map_err(|error| Error::InvalidDomain(format!("{error:?}")))?
+	let cols: usize = dimensions.width();
+	let point = EvaluationDomain::new(cols)
+		.map_err(|_| Error::InvalidDomain)?
 		.elements()
 		.nth(cell.position.col.into())
-		.ok_or_else(|| Error::InvalidDomain("Position isn't in domain".to_string()))?;
+		.ok_or(Error::InvalidPositionInDomain)?;
 
 	public_parameters
-		.trim(dimensions.cols().into())
+		.trim(cols)
 		.map(|(_, verifier_key)| verifier_key.check(point, proof))
-		.map_err(|error| Error::InvalidDegree(format!("{error:?}")))
+		.map_err(|_| Error::InvalidDegree)
 }

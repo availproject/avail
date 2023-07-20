@@ -1,13 +1,12 @@
-use da_types::{AppExtrinsic, DataLookup};
-use kate_grid::Grid;
-use kate_recovery::{data::DataCell, index::AppDataIndex};
+use avail_core::{AppExtrinsic, AppId};
+use kate_recovery::{data::DataCell, matrix::Position};
 use once_cell::sync::Lazy;
 use poly_multiproof::{m1_blst::M1NoPrecomp, traits::AsBytes};
 use proptest::{collection, prelude::*, sample::size_range};
 use rand::{distributions::Uniform, prelude::Distribution, SeedableRng};
 use rand_chacha::ChaChaRng;
 
-use crate::testnet;
+use crate::{gridgen::ArkScalar, testnet};
 
 use super::EvaluationGrid;
 
@@ -23,7 +22,7 @@ fn app_extrinsic_strategy() -> impl Strategy<Value = AppExtrinsic> {
 		any_with::<Vec<u8>>(size_range(1..2048).lift()),
 	)
 		.prop_map(|(app_id, data)| AppExtrinsic {
-			app_id: app_id.into(),
+			app_id: AppId(app_id),
 			data,
 		})
 }
@@ -34,13 +33,6 @@ fn app_extrinsics_strategy() -> impl Strategy<Value = Vec<AppExtrinsic>> {
 		new_xts.sort_by(|a1, a2| a1.app_id.cmp(&a2.app_id));
 		new_xts
 	})
-}
-
-fn app_data_index_from_lookup(lookup: &DataLookup) -> AppDataIndex {
-	AppDataIndex {
-		size: lookup.size,
-		index: lookup.index.iter().map(|e| (e.app_id.0, e.start)).collect(),
-	}
 }
 
 fn sample_unique(rng: &mut impl Rng, n_samples: usize, n: usize) -> Vec<usize> {
@@ -55,22 +47,27 @@ fn sample_unique(rng: &mut impl Rng, n_samples: usize, n: usize) -> Vec<usize> {
 	sampled
 }
 
-fn sample_cells(grid: &EvaluationGrid, columns: Option<&[usize]>) -> Vec<DataCell> {
+fn sample_cells(grid: &EvaluationGrid, columns: Option<Vec<usize>>) -> Vec<DataCell> {
 	let mut rng = ChaChaRng::from_seed([42u8; 32]);
-	let cols: Vec<usize> = match columns {
-		Some(cols) => cols.to_vec(),
-		None => (0..grid.dims.width()).into_iter().collect(),
-	};
+	let (g_rows, g_cols): (usize, usize) = grid.dims().into();
+	let cols = columns.unwrap_or_else(|| (0..g_cols).into_iter().collect());
+
 	cols.iter()
 		.flat_map(|x| {
-			sample_unique(&mut rng, grid.dims.height() / 2, grid.dims.height())
+			debug_assert!(*x < g_cols);
+			sample_unique(&mut rng, g_rows / 2, g_rows)
 				.into_iter()
-				.map(move |y| kate_recovery::data::DataCell {
-					position: kate_recovery::matrix::Position {
-						row: y as u32,
-						col: *x as u16,
-					},
-					data: grid.evals.get(*x, y).unwrap().to_bytes().unwrap(),
+				.map(move |y| {
+					let data = grid
+						.evals
+						.get((y, *x))
+						.and_then(|s: &ArkScalar| s.to_bytes().ok())
+						.unwrap();
+					// SAFETY: `y` and `x` can be casted safetly becasue `x < g_cols (u16)` and `y
+					// < g_rows(u16)`
+					let position = Position::from((y as u32, *x as u16));
+
+					DataCell::new(position, data)
 				})
 		})
 		.collect::<Vec<_>>()

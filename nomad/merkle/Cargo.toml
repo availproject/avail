@@ -1,0 +1,45 @@
+[package]
+name = "nomad-merkle"
+version = "0.1.2"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# Internal
+nomad-core = { path = "../core", default-features = false }
+
+# Substrate
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2", default-features = false, features = ["derive"] }
+sp-core = { version = "*", default-features = false }
+
+frame-support = { version = "4.0.0-dev", default-features = false, optional = true }
+
+# 3rd-party
+hex-literal = "0.3.4"
+static_assertions = "1.1.0"
+thiserror-no-std = "2.0.2"
+tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
+
+[dev-dependencies]
+ethers-core = "1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0" }
+
+[dependencies.serde]
+version = "1.0"
+default-features = false
+optional = true
+features = ["derive"]
+
+[features]
+default = ["std"]
+std = [
+	"serde",
+	"nomad-core/std",
+	"codec/std",
+	"scale-info/std",
+	"sp-core/std",
+	"frame-support/std",
+]

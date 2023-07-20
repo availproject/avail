@@ -4,18 +4,26 @@ use crate::pmp::{
 	merlin::Transcript,
 	traits::Committer,
 };
+use avail_core::{ensure, AppExtrinsic, AppId, DataLookup};
 use codec::Encode;
-use core::num::NonZeroUsize;
-use da_types::{AppExtrinsic, AppId, DataLookup, DataLookupIndexItem};
-use kate_grid::{Dimensions, Extension, Grid, IntoColumnMajor, IntoRowMajor, RowMajor};
-use kate_recovery::config::PADDING_TAIL_VALUE;
+use core::{
+	cmp::{max, min},
+	iter,
+	num::NonZeroU16,
+};
+use kate_recovery::{config::PADDING_TAIL_VALUE, matrix::Dimensions};
+use nalgebra::base::DMatrix;
 use poly_multiproof::{
 	m1_blst::Proof,
 	traits::{KZGProof, PolyMultiProofNoPrecomp},
 };
-use rand::{Rng, SeedableRng};
-use rand_chacha::ChaChaRng;
+use rand_chacha::{
+	rand_core::{RngCore, SeedableRng},
+	ChaChaRng,
+};
+use static_assertions::const_assert;
 use std::collections::BTreeMap;
+use thiserror_no_std::Error;
 
 use crate::{
 	com::{Cell, Error},
@@ -36,16 +44,6 @@ macro_rules! cfg_iter {
 	}};
 }
 
-macro_rules! cfg_into_iter {
-	($e: expr) => {{
-		#[cfg(feature = "parallel")]
-		let result = $e.into_par_iter();
-		#[cfg(not(feature = "parallel"))]
-		let result = $e.into_iter();
-		result
-	}};
-}
-
 pub const SCALAR_SIZE: usize = 32;
 pub type ArkScalar = crate::pmp::m1_blst::Fr;
 pub type Commitment = crate::pmp::Commitment<Bls12_381>;
@@ -55,9 +53,18 @@ pub use poly_multiproof::traits::AsBytes;
 mod tests;
 
 pub struct EvaluationGrid {
-	pub lookup: DataLookup,
-	pub evals: RowMajor<ArkScalar>,
-	pub dims: Dimensions,
+	lookup: DataLookup,
+	evals: DMatrix<ArkScalar>,
+}
+
+#[derive(Error, Debug, Clone, Copy)]
+pub enum AppRowError {
+	#[error("Original dimensions are not divisible by current ones")]
+	OrigDimNotDivisible,
+	#[error("AppId({0}) not found")]
+	IdNotFound(AppId),
+	#[error("Lineal index overflows")]
+	LinealIndexOverflows,
 }
 
 impl EvaluationGrid {
@@ -80,7 +87,7 @@ impl EvaluationGrid {
 		);
 
 		// Convert each grup of extrinsics into scalars
-		let encoded = grouped
+		let scalars_by_app = grouped
 			.into_iter()
 			.map(|(id, datas)| {
 				let mut enc = datas.encode();
@@ -92,149 +99,154 @@ impl EvaluationGrid {
 			})
 			.collect::<Result<Vec<_>, _>>()?;
 
+		let len_by_app = scalars_by_app
+			.iter()
+			.map(|(app, scalars)| (*app, scalars.len()));
+
 		// make the index of app info
-		let mut start = 0u32;
-		let mut index = vec![];
-		for (app_id, scalars) in &encoded {
-			index.push(DataLookupIndexItem {
-				app_id: *app_id,
-				start,
-			});
-			start = start
-				.checked_add(scalars.len() as u32)
-				.ok_or(Error::CellLengthExceeded)?; // next item should start after current one
-		}
+		let lookup = DataLookup::from_id_and_len_iter(len_by_app)?;
+		let grid_size = usize::try_from(lookup.len())?;
+		let (rows, cols): (usize, usize) =
+			get_block_dims(grid_size, min_width, max_width, max_height)?.into();
 
 		// Flatten the grid
-		let mut grid = encoded
+		let mut rng = ChaChaRng::from_seed(rng_seed);
+		let grid = scalars_by_app
 			.into_iter()
 			.flat_map(|(_, scalars)| scalars)
-			.collect::<Vec<_>>();
+			.chain(iter::repeat_with(|| random_scalar(&mut rng)));
 
-		let lookup = DataLookup {
-			size: grid.len() as u32,
-			index,
-		};
-
-		// Fit the grid to the desired grid size
-		let dims = get_block_dims(grid.len(), min_width, max_width, max_height)?;
-		let mut rng = ChaChaRng::from_seed(rng_seed);
-		while grid.len() != dims.n_cells() {
-			let rnd_values: [u8; SCALAR_SIZE - 1] = rng.gen();
-			// TODO: can we just use zeros instead?
-			grid.push(pad_to_bls_scalar(rnd_values)?);
-		}
+		let row_major_evals = DMatrix::from_row_iterator(rows, cols, grid);
 
 		Ok(EvaluationGrid {
 			lookup,
-			evals: grid
-				.into_row_major(dims.width(), dims.height())
-				.ok_or(Error::DimensionsMismatch)?,
-			dims,
+			evals: row_major_evals,
 		})
 	}
 
-	pub fn row(&self, y: usize) -> Option<&[ArkScalar]> {
-		self.evals.row(y)
+	/// Get the row `y` of the evaluation.
+	pub fn row(&self, y: usize) -> Option<Vec<ArkScalar>> {
+		let (rows, _cols) = self.evals.shape();
+		(y < rows).then(|| self.evals.row(y).iter().cloned().collect())
 	}
 
-	/// Returns the start/end indices of the given app id *for the non-extended grid*
-	fn app_data_indices(&self, app_id: &AppId) -> Option<(usize, usize)> {
-		if self.lookup.size == 0 {
-			// Empty block, short circuit.
-			return None;
-		}
-		let (i, start_index) = self
-			.lookup
-			.index
-			.iter()
-			.enumerate()
-			.find(|(_i, item)| &item.app_id == app_id)
-			.map(|(i, item)| (i, item.start as usize))?;
-		let end_index = self
-			.lookup
-			.index
-			.get(i.saturating_add(1))
-			.map(|elem| elem.start)
-			.unwrap_or(self.lookup.size) as usize;
-		Some((start_index, end_index))
+	pub fn dims(&self) -> Dimensions {
+		let (rows, cols) = self.evals.shape();
+		// SAFETY: We cannot construct an `EvaluationGrid` with any dimension `< 1` or `> u16::MAX`
+		debug_assert!(rows <= usize::from(u16::MAX) && cols <= usize::from(u16::MAX));
+		unsafe { Dimensions::new_unchecked(rows as u16, cols as u16) }
+	}
+
+	#[inline]
+	pub fn get<R, C>(&self, row: R, col: C) -> Option<&ArkScalar>
+	where
+		usize: From<R>,
+		usize: From<C>,
+	{
+		self.evals.get::<(usize, usize)>((row.into(), col.into()))
 	}
 
 	/// Returns a list of `(index, row)` pairs for the underlying rows of an application.
 	/// Returns `None` if the `app_id` cannot be found, or if the provided `orig_dims` are invalid.
 	pub fn app_rows(
 		&self,
-		app_id: &AppId,
-		orig_dims: Option<&Dimensions>,
-	) -> Option<Vec<(usize, Vec<ArkScalar>)>> {
-		let orig_dims = orig_dims.unwrap_or(&self.dims);
-		if !orig_dims.divides(&self.dims) {
-			return None;
-		}
-		let h_mul = self.dims.height() / orig_dims.height_nz();
+		app_id: AppId,
+		maybe_orig_dims: Option<Dimensions>,
+	) -> Result<Option<Vec<(usize, Vec<ArkScalar>)>>, AppRowError> {
+		let dims = self.dims();
+		let (rows, _cols): (usize, usize) = dims.into();
 
-		let (start_ind, end_ind) = self.app_data_indices(app_id)?;
-		let (_, start_y) = RowMajor::<()>::ind_to_coord(orig_dims, start_ind);
-		let (_, end_y) = RowMajor::<()>::ind_to_coord(orig_dims, end_ind.saturating_sub(1)); // Find y of last cell elt
-		let (new_start_y, new_end_y) = (start_y.saturating_mul(h_mul), end_y.saturating_mul(h_mul));
+		// Ensure `origin_dims` is divisible by `dims` if some.
+		let orig_dims = match maybe_orig_dims {
+			Some(d) => {
+				ensure!(d.divides(&dims), AppRowError::OrigDimNotDivisible);
+				d
+			},
+			None => dims,
+		};
 
-		(new_start_y..=new_end_y)
+		// SAFETY: `origin_dims.rows is NonZeroU16`
+		// Compiler checks that `Dimensions::rows()` returns a `NonZeroU16` using the expression
+		// `NonZeroU16::get(x)` instead of `x.get()`.
+		#[allow(clippy::integer_arithmetic)]
+		let h_mul: usize = rows / usize::from(NonZeroU16::get(orig_dims.rows()));
+		#[allow(clippy::integer_arithmetic)]
+		let row_from_lineal_index = |cols, lineal_index| {
+			let lineal_index =
+				usize::try_from(lineal_index).map_err(|_| AppRowError::LinealIndexOverflows)?;
+			let cols = usize::from(NonZeroU16::get(cols));
+
+			Ok(lineal_index / cols)
+		};
+
+		let range = self
+			.lookup
+			.range_of(app_id)
+			.ok_or(AppRowError::IdNotFound(app_id))?;
+		let start_y: usize = row_from_lineal_index(orig_dims.cols(), range.start)?;
+		let end_y: usize = row_from_lineal_index(orig_dims.cols(), range.end.saturating_sub(1))?;
+
+		// SAFETY: This won't overflow because `h_mul = rows / orig_dim.rows()`  and `*_y < rows)
+		debug_assert!(start_y < rows);
+		debug_assert!(end_y < rows);
+		#[allow(clippy::integer_arithmetic)]
+		let (new_start_y, new_end_y) = (start_y * h_mul, end_y * h_mul);
+
+		let app_rows = (new_start_y..=new_end_y)
 			.step_by(h_mul)
-			.map(|y| self.evals.row(y).map(|a| (y, a.to_vec())))
-			.collect()
+			.map(|y| self.row(y).map(|a| (y, a)))
+			.collect();
+
+		Ok(app_rows)
 	}
 
-	pub fn extend_columns(&self, extension_factor: usize) -> Result<Self, Error> {
-		let new_dims = self.dims.extend(Extension::height(
-			extension_factor
-				.try_into()
-				.map_err(|_| Error::CellLengthExceeded)?,
-		));
+	pub fn extend_columns(&self, row_factor: NonZeroU16) -> Result<Self, Error> {
+		let dims = self.dims();
+		let (new_rows, new_cols): (usize, usize) = dims
+			.extend(row_factor, unsafe { NonZeroU16::new_unchecked(1) })
+			.ok_or(Error::CellLengthExceeded)?
+			.into();
+		let (rows, _cols): (usize, usize) = dims.into();
 
-		let domain = GeneralEvaluationDomain::<ArkScalar>::new(self.dims.height())
-			.ok_or(Error::BaseGridDomainSizeInvalid(self.dims.width()))?;
-		let domain_new = GeneralEvaluationDomain::<ArkScalar>::new(new_dims.height())
-			.ok_or(Error::ExtendedGridDomianSizeInvalid(new_dims.width()))?;
-		if domain_new.size() != new_dims.height() {
-			return Err(Error::DomainSizeInvalid);
-		}
+		let domain =
+			GeneralEvaluationDomain::<ArkScalar>::new(rows).ok_or(Error::DomainSizeInvalid)?;
+		let domain_new =
+			GeneralEvaluationDomain::<ArkScalar>::new(new_rows).ok_or(Error::DomainSizeInvalid)?;
+		ensure!(domain_new.size() == new_rows, Error::DomainSizeInvalid);
 
-		let cols: Vec<Vec<ArkScalar>> = self
-			.evals
-			.columns()
-			.map(|(_i, col)| col.map(|s| *s).collect::<Vec<_>>())
-			.collect::<Vec<_>>();
+		let new_data = self.evals.column_iter().flat_map(|col| {
+			let mut col = col.iter().cloned().collect::<Vec<_>>();
+			domain.ifft_in_place(&mut col);
+			domain_new.fft_in_place(&mut col);
+			col
+		});
 
-		let new_evals = cfg_into_iter!(cols)
-			.flat_map(|mut col| {
-				// ifft, resize, fft
-				domain.ifft_in_place(&mut col);
-				domain_new.fft_in_place(&mut col);
-				col
-			})
-			.collect::<Vec<_>>()
-			.into_column_major(new_dims.width(), new_dims.height())
-			.expect("Each column should be expanded to news dims")
-			.to_row_major();
-
+		let row_major_evals = DMatrix::from_iterator(new_rows, new_cols, new_data);
+		debug_assert!(row_major_evals.shape() == (new_rows, new_cols));
 		Ok(Self {
 			lookup: self.lookup.clone(),
-			evals: new_evals,
-			dims: new_dims,
+			evals: row_major_evals,
 		})
 	}
 
 	pub fn make_polynomial_grid(&self) -> Result<PolynomialGrid, Error> {
-		let domain = GeneralEvaluationDomain::<ArkScalar>::new(self.dims.width())
-			.ok_or(Error::DomainSizeInvalid)?;
-		#[cfg(not(feature = "parallel"))]
-		let rows = self.evals.rows();
-		#[cfg(feature = "parallel")]
-		let rows = self.evals.rows_par_iter();
+		let (_rows, cols): (usize, usize) = self.evals.shape();
+		let domain =
+			GeneralEvaluationDomain::<ArkScalar>::new(cols).ok_or(Error::DomainSizeInvalid)?;
+
+		let inner = self
+			.evals
+			.row_iter()
+			.map(|view| {
+				let row = view.iter().cloned().collect::<Vec<_>>();
+				domain.ifft(&row)
+			})
+			.collect::<Vec<_>>();
+
 		Ok(PolynomialGrid {
-			dims: self.dims.clone(),
+			dims: self.dims(),
 			points: domain.elements().collect(),
-			inner: rows.map(|(_, row)| domain.ifft(row)).collect::<Vec<_>>(),
+			inner,
 		})
 	}
 }
@@ -264,7 +276,7 @@ impl PolynomialGrid {
 		extension_factor: usize,
 	) -> Result<Vec<Commitment>, Error> {
 		let res = cfg_iter!(self.inner)
-			.map(|coeffs| srs.commit(&coeffs).map_err(Error::MultiproofError))
+			.map(|coeffs| srs.commit(coeffs).map_err(Error::MultiproofError))
 			.collect::<Result<Vec<_>, _>>()?;
 		poly_multiproof::Commitment::<Bls12_381>::extend_commitments(
 			&res,
@@ -297,25 +309,27 @@ impl PolynomialGrid {
 		srs: &M1NoPrecomp,
 		cell: &Cell,
 		eval_grid: &EvaluationGrid,
-		target_dims: &Dimensions,
+		target_dims: Dimensions,
 	) -> Result<Multiproof, Error> {
 		let block = multiproof_block(
 			cell.col.0 as usize,
 			cell.row.0 as usize,
-			&self.dims,
+			self.dims,
 			target_dims,
 		)
 		.ok_or(Error::CellLengthExceeded)?;
 		let polys = &self.inner[block.start_y..block.end_y];
-		let evals = (block.start_y..block.end_y)
+		let evals: Vec<Vec<ArkScalar>> = (block.start_y..block.end_y)
 			.map(|y| {
-				eval_grid.evals.row(y).expect("Already bounds checked")[block.start_x..block.end_x]
+				eval_grid.row(y).expect("Already bounds checked .qed")[block.start_x..block.end_x]
 					.to_vec()
 			})
 			.collect::<Vec<_>>();
+		let evals_view = evals.iter().map(|row| row.as_slice()).collect::<Vec<_>>();
+
 		let points = &self.points[block.start_x..block.end_x];
 		let mut ts = Transcript::new(b"avail-mp");
-		let proof = PolyMultiProofNoPrecomp::open(srs, &mut ts, &evals, &polys, points)
+		let proof = PolyMultiProofNoPrecomp::open(srs, &mut ts, &evals_view, polys, points)
 			.map_err(Error::MultiproofError)?;
 
 		Ok(Multiproof {
@@ -345,20 +359,24 @@ pub struct CellBlock {
 /// `mp_grid_dims` is the size of the multiproof grid, which `x,y` lies in.
 /// For example, a 256x256 grid could be converted to a 4x4 target size multiproof grid, by making 16 multiproofs
 /// of size 64x64.
+#[allow(clippy::integer_arithmetic)]
 pub fn multiproof_block(
 	x: usize,
 	y: usize,
-	grid_dims: &Dimensions,
-	target_dims: &Dimensions,
+	grid: Dimensions,
+	target: Dimensions,
 ) -> Option<CellBlock> {
-	let mp_grid_dims = multiproof_dims(grid_dims, target_dims)?;
+	let mp_grid_dims = multiproof_dims(grid, target)?;
+	let (g_rows, g_cols): (usize, usize) = grid.into();
 	if x >= mp_grid_dims.width() || y >= mp_grid_dims.height() {
 		return None;
 	}
 
-	let block_width = grid_dims.width() / mp_grid_dims.width_nz();
-	let block_height = grid_dims.height() / mp_grid_dims.height_nz();
-	// SAFETY: values never overflow since x,y are always less than grid_dims.{width,height}().
+	// SAFETY: Division is safe because `cols() != 0 && rows() != 0`.
+	let block_width = g_cols / usize::from(NonZeroU16::get(mp_grid_dims.cols()));
+	let block_height = g_rows / usize::from(NonZeroU16::get(mp_grid_dims.rows()));
+
+	// SAFETY: values never overflow since `x` and `y` are always less than grid_dims.{width,height}().
 	// This is because x,y < mp_grid_dims.{width, height} and block width is the quotient of
 	// grid_dims and mp_grid_dims.
 	Some(CellBlock {
@@ -371,13 +389,14 @@ pub fn multiproof_block(
 
 /// Dimensions of the multiproof grid. These are guarenteed to cleanly divide `grid_dims`.
 /// `target_dims` must cleanly divide `grid_dims`.
-pub fn multiproof_dims(grid_dims: &Dimensions, target_dims: &Dimensions) -> Option<Dimensions> {
-	let target_width = grid_dims.width_nz().min(target_dims.width_nz());
-	let target_height = grid_dims.height_nz().min(target_dims.height_nz());
-	if grid_dims.width() % target_width != 0 || grid_dims.height() % target_height != 0 {
+pub fn multiproof_dims(grid: Dimensions, target: Dimensions) -> Option<Dimensions> {
+	let cols = min(grid.cols(), target.cols());
+	let rows = min(grid.rows(), target.rows());
+	if grid.cols().get() % cols != 0 || grid.rows().get() % rows != 0 {
 		return None;
 	}
-	Some(Dimensions::new(target_width, target_height))
+
+	Dimensions::new(rows, cols)
 }
 
 pub fn get_block_dims(
@@ -390,19 +409,28 @@ pub fn get_block_dims(
 	if n_scalars < max_width {
 		let current_width = n_scalars;
 		// Don't let the width get lower than the minimum provided
-		let width = core::cmp::max(round_up_power_of_2(current_width), min_width).try_into()?;
-		let height = 1.try_into()?;
-		Ok(Dimensions::new(width, height))
+		let width = max(
+			current_width
+				.checked_next_power_of_two()
+				.ok_or(Error::BlockTooBig)?,
+			min_width,
+		);
+		let height = unsafe { NonZeroU16::new_unchecked(1) };
+
+		Dimensions::new_from(height, width).ok_or(Error::ZeroDimension)
 	} else {
-		let width = NonZeroUsize::try_from(max_width)?;
-		let current_height = round_up_to_multiple(n_scalars, width) / width;
+		let width = NonZeroU16::try_from(u16::try_from(max_width)?)?;
+		let current_height = round_up_to_multiple(n_scalars, width)
+			.checked_div(max_width)
+			.expect("`max_width` is non zero, checked one line before");
 		// Round the height up to a power of 2 for ffts
-		let height = round_up_power_of_2(current_height);
+		let height = current_height
+			.checked_next_power_of_two()
+			.ok_or(Error::BlockTooBig)?;
 		// Error if height too big
-		if height > max_height {
-			return Err(Error::BlockTooBig);
-		}
-		Ok(Dimensions::new(width, height.try_into()?))
+		ensure!(height <= max_height, Error::BlockTooBig);
+
+		Dimensions::new_from(height, width).ok_or(Error::ZeroDimension)
 	}
 }
 
@@ -411,34 +439,36 @@ pub fn domain_points(n: usize) -> Result<Vec<ArkScalar>, Error> {
 	Ok(domain.elements().collect())
 }
 
-fn round_up_to_multiple(input: usize, multiple: NonZeroUsize) -> usize {
-	let n_multiples = input.saturating_add(multiple.get()).saturating_sub(1) / multiple;
-	n_multiples.saturating_mul(multiple.get())
+/// SAFETY: As `multiple` is a `NonZeroU16` we can safetly make the following ops.
+#[allow(clippy::integer_arithmetic)]
+fn round_up_to_multiple(input: usize, multiple: NonZeroU16) -> usize {
+	let multiple: usize = multiple.get().into();
+	let n_multiples = input.saturating_add(multiple - 1) / multiple;
+	n_multiples.saturating_mul(multiple)
 }
 
 pub(crate) fn pad_to_bls_scalar(a: impl AsRef<[u8]>) -> Result<ArkScalar, Error> {
-	if a.as_ref().len() > DATA_CHUNK_SIZE {
-		return Err(Error::InvalidChunkLength);
-	}
+	let bytes = a.as_ref();
+	ensure!(bytes.len() <= DATA_CHUNK_SIZE, Error::InvalidChunkLength);
+	const_assert!(DATA_CHUNK_SIZE <= SCALAR_SIZE);
+
 	let mut buf = [0u8; SCALAR_SIZE];
-	buf[0..a.as_ref().len()].copy_from_slice(a.as_ref());
+	buf[0..bytes.len()].copy_from_slice(bytes);
+
 	ArkScalar::from_bytes(&buf).map_err(Error::MultiproofError)
 }
 
-// Round up. only valid for positive integers
 #[allow(clippy::integer_arithmetic)]
-fn round_up_power_of_2(mut v: usize) -> usize {
-	if v == 0 {
-		return 1;
-	}
-	v -= 1;
-	v |= v >> 1;
-	v |= v >> 2;
-	v |= v >> 4;
-	v |= v >> 8;
-	v |= v >> 16;
-	v += 1;
-	v
+pub(crate) fn random_scalar(rng: &mut ChaChaRng) -> ArkScalar {
+	let mut raw_scalar = [0u8; SCALAR_SIZE];
+
+	const_assert!(SCALAR_SIZE >= 1);
+	rng.try_fill_bytes(&mut raw_scalar[..SCALAR_SIZE - 1])
+		.expect("ChaChaRng::try_fill_bytes failed");
+	debug_assert!(raw_scalar[SCALAR_SIZE - 1] == 0u8);
+
+	ArkScalar::from_bytes(&raw_scalar)
+		.expect("ArkScalar can be generated from SCALAR_SIZE -1 bytes .qed")
 }
 
 #[cfg(test)]
@@ -449,8 +479,8 @@ mod unit_tests {
 	use test_case::test_case;
 
 	// parameters that will split a 256x256 grid into pieces of size 4x16
-	const TARGET: Dimensions = Dimensions::new_unchecked(64, 16);
-	const GRID: Dimensions = Dimensions::new_unchecked(256, 256);
+	const TARGET: Dimensions = unsafe { Dimensions::new_unchecked(16, 64) };
+	const GRID: Dimensions = unsafe { Dimensions::new_unchecked(256, 256) };
 
 	fn cb(start_x: usize, start_y: usize, end_x: usize, end_y: usize) -> CellBlock {
 		CellBlock {
@@ -467,7 +497,7 @@ mod unit_tests {
 	#[test_case(64, 0 => None)]
 	#[test_case(0, 16 => None)]
 	fn multiproof_max_grid_size(x: usize, y: usize) -> Option<CellBlock> {
-		multiproof_block(x, y, &GRID, &TARGET)
+		multiproof_block(x, y, GRID.clone(), TARGET)
 	}
 
 	#[test_case(256, 256,  64,  16 => Some((64, 16)))]
@@ -477,16 +507,15 @@ mod unit_tests {
 	#[test_case(256,   8,  32,  32 => Some((32, 8)))]
 	#[test_case(4  ,   1,  32,  32 => Some((4, 1)))]
 	fn test_multiproof_dims(
-		grid_w: usize,
-		grid_h: usize,
-		target_w: usize,
-		target_h: usize,
+		grid_w: u16,
+		grid_h: u16,
+		target_w: u16,
+		target_h: u16,
 	) -> Option<(usize, usize)> {
-		multiproof_dims(
-			&Dimensions::new_unchecked(grid_w, grid_h),
-			&Dimensions::new_unchecked(target_w, target_h),
-		)
-		.map(|i| (i.width(), i.height()))
+		let grid = unsafe { Dimensions::new_unchecked(grid_w, grid_h) };
+		let target = unsafe { Dimensions::new_unchecked(target_w, target_h) };
+
+		multiproof_dims(grid, target).map(Into::into)
 	}
 
 	use proptest::prelude::*;
@@ -495,10 +524,12 @@ mod unit_tests {
 			cases: 200, .. ProptestConfig::default()
 		  })]
 		#[test]
-		fn test_round_up_to_multiple(i in 1..1000usize, m in 1..32usize) {
-			for k in 0..m {
-				let a = i * m - k;
-				prop_assert_eq!(round_up_to_multiple(a, m.try_into().unwrap()), i * m)
+		fn test_round_up_to_multiple(i in 1..1000usize, m in 1..32u16) {
+			for k in 0..usize::from(m) {
+				let a :usize = i * usize::from(m) - k;
+				let output = round_up_to_multiple(a, m.try_into().unwrap());
+				let expected :usize = i * usize::from(m);
+				prop_assert_eq!( output, expected)
 			}
 		}
 	}
@@ -509,19 +540,23 @@ mod unit_tests {
 	#[test_case(6 => 8)]
 	#[test_case(972 => 1024)]
 	fn test_round_up_to_2(i: usize) -> usize {
-		round_up_power_of_2(i)
+		i.next_power_of_two()
 	}
 
-	#[test_case(0 => Dimensions::new_unchecked(4,  1) ; "block size zero")]
-	#[test_case(1 => Dimensions::new_unchecked(4,  1) ; "below minimum block size")]
-	#[test_case(10 => Dimensions::new_unchecked(16, 1) ; "regular case")]
-	#[test_case(17 => Dimensions::new_unchecked(32, 1) ; "minimum overhead after 512")]
-	#[test_case(256 => Dimensions::new_unchecked(256, 1) ; "maximum cols")]
-	#[test_case(257 => Dimensions::new_unchecked(256, 2) ; "two rows")]
-	#[test_case(256 * 256 => Dimensions::new_unchecked(256, 256) ; "max block size")]
-	#[test_case(256 * 256 + 1 => panics "BlockTooBig" ; "too much data")]
-	fn test_get_block_dims(size: usize) -> Dimensions
+	fn new_dim(rows: u16, cols: u16) -> Result<Dimensions, Error> {
+		Dimensions::new(rows, cols).ok_or(Error::BlockTooBig)
+	}
+
+	#[test_case(0 => new_dim(1,4) ; "block size zero")]
+	#[test_case(1 => new_dim(1,4) ; "below minimum block size")]
+	#[test_case(10 => new_dim(1, 16) ; "regular case")]
+	#[test_case(17 => new_dim(1, 32) ; "minimum overhead after 512")]
+	#[test_case(256 => new_dim(1, 256) ; "maximum cols")]
+	#[test_case(257 => new_dim(2, 256) ; "two rows")]
+	#[test_case(256 * 256 => new_dim(256, 256) ; "max block size")]
+	#[test_case(256 * 256 + 1 => Err(Error::BlockTooBig) ; "too much data")]
+	fn test_get_block_dims(size: usize) -> Result<Dimensions, Error>
 where {
-		get_block_dims(size, 4, 256, 256).unwrap()
+		get_block_dims(size, 4, 256, 256)
 	}
 }

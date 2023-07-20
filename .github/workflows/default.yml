@@ -4,10 +4,12 @@ on:
     branches:
       - main
       - develop
+      - will/grid-refactor
   pull_request:
     branches:
       - main
       - develop
+      - will/grid-refactor
 
 jobs:
   build_and_test:
@@ -45,11 +47,17 @@ jobs:
           command: fmt
           args: --check
 
+      - name: Check Clippy 
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy 
+          args: --workspace --features "avail-core/runtime"
+
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --workspace
+          args: --workspace --features "avail-core/runtime"
         env:
           RUSTFLAGS: "-C instrument-coverage"
           LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
