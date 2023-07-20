@@ -23,15 +23,15 @@ frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 
 # DA Primitives
-da-primitives = { version = "0.4", git="https://github.com/maticnetwork/avail-core",  rev = "5bd30863f15cca7b0158319979202650dc775d04" } 
-kate = { version = "0.7", git="https://github.com/maticnetwork/avail-core",  rev = "5bd30863f15cca7b0158319979202650dc775d04" }
-kate-recovery = { version = "0.8", git="https://github.com/maticnetwork/avail-core",  rev = "5bd30863f15cca7b0158319979202650dc775d04" }
+da-primitives = { version = "0.4", git="https://github.com/maticnetwork/avail-core",  rev = "00595215eb9d4cae78ce8504545fba5dc15d6364" } 
+kate = { version = "0.7", git="https://github.com/maticnetwork/avail-core",  rev = "00595215eb9d4cae78ce8504545fba5dc15d6364" }
+kate-recovery = { version = "0.8", git="https://github.com/maticnetwork/avail-core",  rev = "00595215eb9d4cae78ce8504545fba5dc15d6364" }
 
 # Nomad
-nomad-signature = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "5bd30863f15cca7b0158319979202650dc775d04" }
-nomad-merkle = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "5bd30863f15cca7b0158319979202650dc775d04" }
-nomad-base = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "5bd30863f15cca7b0158319979202650dc775d04" }
-nomad-core = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "5bd30863f15cca7b0158319979202650dc775d04" }
+nomad-signature = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "00595215eb9d4cae78ce8504545fba5dc15d6364" }
+nomad-merkle = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "00595215eb9d4cae78ce8504545fba5dc15d6364" }
+nomad-base = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "00595215eb9d4cae78ce8504545fba5dc15d6364" }
+nomad-core = { version = "0.1", git="https://github.com/maticnetwork/avail-core", rev = "00595215eb9d4cae78ce8504545fba5dc15d6364" }
 
 # Other stuff
 uint = { git = "https://github.com/paritytech/parity-common.git", tag="rlp-v0.5.2" }

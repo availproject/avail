@@ -161,6 +161,11 @@ pub fn build_extension<M: Metrics>(
 	let rows = grid.dims.height().saturated_into::<u16>();
 	let cols = grid.dims.width().saturated_into::<u16>();
 
+    // Don't include app index 0 if it's there. It's normally omitted because it's redundant.
+    let mut lookup = grid.lookup.clone();
+    if lookup.index.get(0).map(|x| x.app_id.0) == Some(0) {
+        lookup.index.remove(0);
+    }
 	if cfg!(feature = "header_extension_v2") {
 		use da_primitives::kate_commitment::v2::KateCommitment;
 		#[allow(unused_mut)]
@@ -173,7 +178,7 @@ pub fn build_extension<M: Metrics>(
 
 		v2::HeaderExtension {
 			commitment: kate,
-			app_lookup: grid.lookup,
+			app_lookup: lookup,
 		}
 		.into()
 	} else {
@@ -192,7 +197,7 @@ pub fn build_extension<M: Metrics>(
 
 		v1::HeaderExtension {
 			commitment: kate,
-			app_lookup: grid.lookup,
+			app_lookup: lookup,
 		}
 		.into()
 	}
