@@ -4,7 +4,7 @@ use da_primitives::{
 	InvalidTransactionCustomId,
 };
 use frame_support::{ensure, traits::IsSubType};
-use pallet_utility::{Call as UtilityCall, Config as UtilityConfig};
+use pallet_utility::Call as UtilityCall;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, SignedExtension},
@@ -46,14 +46,16 @@ where
 
 	/// Transaction validation:
 	///  - `DataAvailability::submit_data(..)` extrinsic can use `AppId != 0`.
-	///  - `Utility::batch/batch_all/force_batch(..)` extrinsic can use `AppId != 0` IF the wrapped calls are ALL `DataAvailability::submit_data(..)`.
+	///  - `Utility::batch/batch_all/force_batch(..)` extrinsic can use `AppId != 0` If the wrapped calls are ALL `DataAvailability::submit_data(..)`.
 	///  - Any other call must use `AppId == 0`.
 	pub fn do_validate_nested(
 		&self,
 		call: &<T as frame_system::Config>::RuntimeCall,
 	) -> Result<(), TransactionValidityError> {
 		let done = match call.is_sub_type() {
-			Some(UtilityCall::<T>::batch { calls }) => {
+			Some(UtilityCall::<T>::batch { calls })
+			| Some(UtilityCall::<T>::batch_all { calls })
+			| Some(UtilityCall::<T>::force_batch { calls }) => {
 				for call in calls.iter() {
 					let cast = call.clone().into();
 					self.do_validate_nested(&cast)?;
@@ -76,7 +78,6 @@ where
 				);
 			},
 			_ => {
-				// Any other call must use `AppId == 0`.
 				ensure!(
 					self.app_id().0 == 0,
 					InvalidTransaction::Custom(InvalidTransactionCustomId::ForbiddenAppId as u8)
