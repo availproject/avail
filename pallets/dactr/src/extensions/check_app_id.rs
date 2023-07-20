@@ -4,7 +4,7 @@ use da_primitives::{
 	InvalidTransactionCustomId,
 };
 use frame_support::{ensure, traits::IsSubType};
-// use pallet_utility::{Call as UtilityCall, Config as UtilityConfig};
+use pallet_utility::{Call as UtilityCall, Config as UtilityConfig};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, SignedExtension},
@@ -28,12 +28,16 @@ use crate::{Call as DACall, Config, Pallet};
 ///
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct CheckAppId<T: Config + Send + Sync>(pub AppId, sp_std::marker::PhantomData<T>);
+pub struct CheckAppId<T: Config + pallet_utility::Config + Send + Sync>(
+	pub AppId,
+	sp_std::marker::PhantomData<T>,
+);
 
 impl<T> CheckAppId<T>
 where
-	T: Config + Send + Sync,
-	T::RuntimeCall: IsSubType<DACall<T>>,
+	T: super::check_app_id::Config + pallet_utility::Config + Send + Sync,
+	<T as frame_system::Config>::RuntimeCall: IsSubType<DACall<T>>,
+	<T as frame_system::Config>::RuntimeCall: IsSubType<pallet_utility::Call<T>>,
 {
 	/// utility constructor. Used only in client/factory code.
 	pub fn from(app_id: AppId) -> Self { Self(app_id, sp_std::marker::PhantomData) }
@@ -44,10 +48,21 @@ where
 	///  - Any other call must use `AppId == 0`.
 	pub fn do_validate_nested(
 		&self,
-		call: &T::RuntimeCall,
+		call: &<T as frame_system::Config>::RuntimeCall,
 	) -> Result<(), TransactionValidityError> {
-		match call.is_sub_type() {
+		let done = match call.is_sub_type() {
 			// Only `dactrl::submit_data` can use `AppId != 0`.
+			Some(UtilityCall::<T>::batch { calls }) => {
+				for call in calls {
+					//self.do_validate_nested2(call)?;
+					// DO your stuff
+				}
+				true
+			},
+			_ => false,
+		};
+
+		match call.is_sub_type() {
 			Some(DACall::<T>::submit_data { .. }) => {
 				let next_app_id = <Pallet<T>>::peek_next_application_id();
 				ensure!(
@@ -55,13 +70,6 @@ where
 					InvalidTransaction::Custom(InvalidTransactionCustomId::InvalidAppId as u8)
 				);
 			},
-			// Some(UtilityCall::<T>::batch { calls })
-			// | Some(UtilityCall::<T>::batch_all { calls })
-			// | Some(UtilityCall::<T>::force_batch { calls }) => {
-			// 	for call in calls {
-			// 		self.do_validate_nested(call)?;
-			// 	}
-			// },
 			_ => {
 				// Any other call must use `AppId == 0`.
 				ensure!(
@@ -75,18 +83,21 @@ where
 	}
 
 	/// It validates that `AppId` is correct and already registered for the call and potential nested calls.
-	pub fn do_validate(&self, call: &T::RuntimeCall) -> TransactionValidity {
+	pub fn do_validate(
+		&self,
+		call: &<T as frame_system::Config>::RuntimeCall,
+	) -> TransactionValidity {
 		self.do_validate_nested(call)?;
 		Ok(ValidTransaction::default())
 	}
 }
-impl<T: Config + Send + Sync> Default for CheckAppId<T> {
+impl<T: Config + pallet_utility::Config + Send + Sync> Default for CheckAppId<T> {
 	fn default() -> Self { Self(AppId::default(), PhantomData) }
 }
 
 impl<T> Debug for CheckAppId<T>
 where
-	T: Config + Send + Sync,
+	T: Config + pallet_utility::Config + Send + Sync,
 {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "CheckAppId: {}", self.0) }
@@ -97,12 +108,13 @@ where
 
 impl<T> SignedExtension for CheckAppId<T>
 where
-	T: Config + Send + Sync,
-	T::RuntimeCall: IsSubType<DACall<T>>,
+	T: super::check_app_id::Config + pallet_utility::Config + Send + Sync,
+	<T as frame_system::Config>::RuntimeCall: IsSubType<DACall<T>>,
+	<T as frame_system::Config>::RuntimeCall: IsSubType<pallet_utility::Call<T>>,
 {
 	type AccountId = T::AccountId;
 	type AdditionalSigned = ();
-	type Call = T::RuntimeCall;
+	type Call = <T as frame_system::Config>::RuntimeCall;
 	type Pre = ();
 
 	const IDENTIFIER: &'static str = "CheckAppId";
@@ -135,7 +147,7 @@ where
 
 impl<T> GetAppId for CheckAppId<T>
 where
-	T: Config + Send + Sync,
+	T: Config + pallet_utility::Config + Send + Sync,
 {
 	#[inline]
 	fn app_id(&self) -> AppId { self.0 }
