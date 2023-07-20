@@ -4,6 +4,7 @@ use da_primitives::{
 	InvalidTransactionCustomId,
 };
 use frame_support::{ensure, traits::IsSubType};
+// use pallet_utility::{Call as UtilityCall, Config as UtilityConfig};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, SignedExtension},
@@ -38,10 +39,13 @@ where
 	pub fn from(app_id: AppId) -> Self { Self(app_id, sp_std::marker::PhantomData) }
 
 	/// Transaction validation:
-	///  - Only `DataAvailability::submit_data(..)` extrinsic can use `AppId != 0`. Any other call
-	///  must use `AppId == 0`.
-	///  - It validates that `AppId` is already registered.
-	pub fn do_validate(&self, call: &T::RuntimeCall) -> TransactionValidity {
+	///  - `DataAvailability::submit_data(..)` extrinsic can use `AppId != 0`.
+	///  - `Utility::batch/batch_all/force_batch(..)` extrinsic can use `AppId != 0` IF the wrapped calls are ALL `DataAvailability::submit_data(..)`.
+	///  - Any other call must use `AppId == 0`.
+	pub fn do_validate_nested(
+		&self,
+		call: &T::RuntimeCall,
+	) -> Result<(), TransactionValidityError> {
 		match call.is_sub_type() {
 			// Only `dactrl::submit_data` can use `AppId != 0`.
 			Some(DACall::<T>::submit_data { .. }) => {
@@ -51,6 +55,13 @@ where
 					InvalidTransaction::Custom(InvalidTransactionCustomId::InvalidAppId as u8)
 				);
 			},
+			// Some(UtilityCall::<T>::batch { calls })
+			// | Some(UtilityCall::<T>::batch_all { calls })
+			// | Some(UtilityCall::<T>::force_batch { calls }) => {
+			// 	for call in calls {
+			// 		self.do_validate_nested(call)?;
+			// 	}
+			// },
 			_ => {
 				// Any other call must use `AppId == 0`.
 				ensure!(
@@ -60,6 +71,12 @@ where
 			},
 		};
 
+		Ok(())
+	}
+
+	/// It validates that `AppId` is correct and already registered for the call and potential nested calls.
+	pub fn do_validate(&self, call: &T::RuntimeCall) -> TransactionValidity {
+		self.do_validate_nested(call)?;
 		Ok(ValidTransaction::default())
 	}
 }
@@ -128,6 +145,7 @@ where
 mod tests {
 	use da_primitives::InvalidTransactionCustomId::{ForbiddenAppId, InvalidAppId};
 	use frame_system::pallet::Call as SysCall;
+	use pallet_utility::pallet::Call as UtilityCall;
 	use sp_runtime::transaction_validity::InvalidTransaction;
 	use test_case::test_case;
 
@@ -145,6 +163,21 @@ mod tests {
 		})
 	}
 
+	fn batch_submit_call() -> RuntimeCall {
+		let call = submit_data_call();
+		RuntimeCall::Utility(UtilityCall::batch {
+			calls: vec![call.clone(), call.clone(), call],
+		})
+	}
+
+	fn batch_mixed_call() -> RuntimeCall {
+		let call = submit_data_call();
+		let remark = remark_call();
+		RuntimeCall::Utility(UtilityCall::batch {
+			calls: vec![remark, call.clone(), call],
+		})
+	}
+
 	fn to_invalid_tx(custom_id: InvalidTransactionCustomId) -> TransactionValidity {
 		Err(TransactionValidityError::Invalid(
 			InvalidTransaction::Custom(custom_id as u8),
@@ -155,6 +188,9 @@ mod tests {
 	#[test_case(0, remark_call() => Ok(ValidTransaction::default()); "System::remark can be called if AppId == 0" )]
 	#[test_case(1, remark_call() => to_invalid_tx(ForbiddenAppId); "System::remark cannot be called if AppId != 0" )]
 	#[test_case(1, submit_data_call() => Ok(ValidTransaction::default()); "submit_data can be called with any valid AppId" )]
+	#[test_case(1, batch_submit_call() => Ok(ValidTransaction::default()); "utility batch filled with submit_data can be called with any valid AppId" )]
+	#[test_case(1, batch_mixed_call() => to_invalid_tx(ForbiddenAppId); "utility batch filled with submit_data and remark cannot be called if AppId != 0" )]
+	#[test_case(0, batch_mixed_call() => Ok(ValidTransaction::default()); "utility batch filled with submit_data and remark can be called if AppId == 0" )]
 	fn do_validate_test<A: Into<AppId>>(app_id: A, call: RuntimeCall) -> TransactionValidity {
 		new_test_ext().execute_with(|| CheckAppId::<Test>::from(app_id.into()).do_validate(&call))
 	}

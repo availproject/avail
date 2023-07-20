@@ -193,7 +193,7 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 		calls: Vec<RuntimeCall>,
 		metrics: &submitted_data::RcMetrics,
 	) -> Option<Vec<Vec<u8>>> {
-		let mut result = Vec::new();
+		let mut result = Vec::with_capacity(calls.len());
 		for call in calls {
 			if let Some(data) = Self::filter(call, Rc::clone(metrics)) {
 				result.extend(data);
