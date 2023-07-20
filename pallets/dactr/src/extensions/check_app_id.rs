@@ -36,11 +36,13 @@ pub struct CheckAppId<T: Config + pallet_utility::Config + Send + Sync>(
 impl<T> CheckAppId<T>
 where
 	T: super::check_app_id::Config + pallet_utility::Config + Send + Sync,
-	<T as frame_system::Config>::RuntimeCall: IsSubType<DACall<T>>,
-	<T as frame_system::Config>::RuntimeCall: IsSubType<pallet_utility::Call<T>>,
+	<T as frame_system::Config>::RuntimeCall:
+		IsSubType<DACall<T>> + IsSubType<pallet_utility::Call<T>> + From<pallet_utility::Call<T>>,
 {
 	/// utility constructor. Used only in client/factory code.
 	pub fn from(app_id: AppId) -> Self { Self(app_id, sp_std::marker::PhantomData) }
+
+	/* 	pub fn validate_batch_call(&self, call: &<T as pallet_utility::Config>::RuntimeCall) {} */
 
 	/// Transaction validation:
 	///  - `DataAvailability::submit_data(..)` extrinsic can use `AppId != 0`.
@@ -51,16 +53,19 @@ where
 		call: &<T as frame_system::Config>::RuntimeCall,
 	) -> Result<(), TransactionValidityError> {
 		let done = match call.is_sub_type() {
-			// Only `dactrl::submit_data` can use `AppId != 0`.
 			Some(UtilityCall::<T>::batch { calls }) => {
-				for call in calls {
-					//self.do_validate_nested2(call)?;
-					// DO your stuff
+				for call in calls.iter() {
+					let cast = call.clone().into();
+					self.do_validate_nested(&cast)?;
 				}
 				true
 			},
 			_ => false,
 		};
+
+		if done {
+			return Ok(());
+		}
 
 		match call.is_sub_type() {
 			Some(DACall::<T>::submit_data { .. }) => {
@@ -109,8 +114,8 @@ where
 impl<T> SignedExtension for CheckAppId<T>
 where
 	T: super::check_app_id::Config + pallet_utility::Config + Send + Sync,
-	<T as frame_system::Config>::RuntimeCall: IsSubType<DACall<T>>,
-	<T as frame_system::Config>::RuntimeCall: IsSubType<pallet_utility::Call<T>>,
+	<T as frame_system::Config>::RuntimeCall:
+		IsSubType<DACall<T>> + IsSubType<pallet_utility::Call<T>> + From<pallet_utility::Call<T>>,
 {
 	type AccountId = T::AccountId;
 	type AdditionalSigned = ();
