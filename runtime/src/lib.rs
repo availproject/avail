@@ -55,7 +55,7 @@ use sp_runtime::{
 	FixedPointNumber, FixedU128,
 };
 pub use sp_runtime::{Perbill, Percent, Permill, Perquintill};
-use sp_std::{prelude::*, rc::Rc};
+use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 
@@ -185,24 +185,6 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 				Self::process_calls(calls, &metrics)
 			},
 			_ => None,
-		}
-	}
-
-	/// This function processes a list of calls and returns their data as Vec<Vec<u8>>
-	fn process_calls(
-		calls: Vec<RuntimeCall>,
-		metrics: &submitted_data::RcMetrics,
-	) -> Option<Vec<Vec<u8>>> {
-		let mut result = Vec::with_capacity(calls.len());
-		for call in calls {
-			if let Some(data) = Self::filter(call, Rc::clone(metrics)) {
-				result.extend(data);
-			}
-		}
-		if !result.is_empty() {
-			Some(result)
-		} else {
-			None
 		}
 	}
 }
