@@ -143,6 +143,12 @@ jobs:
 
       - name: Run tests
         run: |
+          sudo apt-get autoremove
+          sudo apt-get clean
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           env
           cargo test --release --workspace
           cargo test --release --manifest-path avail-subxt/Cargo.toml
