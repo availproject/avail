@@ -4,7 +4,7 @@ use da_primitives::{
 	InvalidTransactionCustomId,
 };
 use frame_support::{ensure, traits::IsSubType};
-use pallet_utility::Call as UtilityCall;
+use pallet_utility::{Call as UtilityCall, Config as UtilityConfig};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, SignedExtension},
@@ -18,7 +18,7 @@ use sp_std::{
 	marker::PhantomData,
 };
 
-use crate::{Call as DACall, Config, Pallet};
+use crate::{Call as DACall, Config as DAConfig, Pallet};
 
 /// Check for Application Id.
 ///
@@ -28,16 +28,16 @@ use crate::{Call as DACall, Config, Pallet};
 ///
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct CheckAppId<T: Config + pallet_utility::Config + Send + Sync>(
+pub struct CheckAppId<T: DAConfig + UtilityConfig + Send + Sync>(
 	pub AppId,
 	sp_std::marker::PhantomData<T>,
 );
 
 impl<T> CheckAppId<T>
 where
-	T: super::check_app_id::Config + pallet_utility::Config + Send + Sync,
+	T: DAConfig + UtilityConfig + Send + Sync,
 	<T as frame_system::Config>::RuntimeCall:
-		IsSubType<DACall<T>> + IsSubType<pallet_utility::Call<T>> + From<pallet_utility::Call<T>>,
+		IsSubType<DACall<T>> + IsSubType<UtilityCall<T>> + From<UtilityCall<T>>,
 {
 	/// utility constructor. Used only in client/factory code.
 	pub fn from(app_id: AppId) -> Self { Self(app_id, sp_std::marker::PhantomData) }
@@ -77,9 +77,7 @@ where
 				self.app_id() < next_app_id,
 				InvalidTransaction::Custom(InvalidTransactionCustomId::InvalidAppId as u8)
 			);
-			if maybe_next_app_id.is_none() {
-				*maybe_next_app_id = Some(next_app_id)
-			}
+			*maybe_next_app_id = Some(next_app_id);
 		} else {
 			ensure!(
 				self.app_id().0 == 0,
@@ -95,18 +93,17 @@ where
 		&self,
 		call: &<T as frame_system::Config>::RuntimeCall,
 	) -> TransactionValidity {
-		let mut maybe_next_app_id: Option<AppId> = None;
-		self.do_validate_nested(call, &mut maybe_next_app_id)?;
+		self.do_validate_nested(call, &mut None)?;
 		Ok(ValidTransaction::default())
 	}
 }
-impl<T: Config + pallet_utility::Config + Send + Sync> Default for CheckAppId<T> {
+impl<T: DAConfig + UtilityConfig + Send + Sync> Default for CheckAppId<T> {
 	fn default() -> Self { Self(AppId::default(), PhantomData) }
 }
 
 impl<T> Debug for CheckAppId<T>
 where
-	T: Config + pallet_utility::Config + Send + Sync,
+	T: DAConfig + UtilityConfig + Send + Sync,
 {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "CheckAppId: {}", self.0) }
@@ -117,7 +114,7 @@ where
 
 impl<T> SignedExtension for CheckAppId<T>
 where
-	T: super::check_app_id::Config + pallet_utility::Config + Send + Sync,
+	T: DAConfig + UtilityConfig + Send + Sync,
 	<T as frame_system::Config>::RuntimeCall:
 		IsSubType<DACall<T>> + IsSubType<pallet_utility::Call<T>> + From<pallet_utility::Call<T>>,
 {
@@ -156,7 +153,7 @@ where
 
 impl<T> GetAppId for CheckAppId<T>
 where
-	T: Config + pallet_utility::Config + Send + Sync,
+	T: DAConfig + UtilityConfig + Send + Sync,
 {
 	#[inline]
 	fn app_id(&self) -> AppId { self.0 }
