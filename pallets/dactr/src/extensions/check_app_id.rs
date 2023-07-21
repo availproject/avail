@@ -4,6 +4,7 @@ use da_primitives::{
 	InvalidTransactionCustomId,
 };
 use frame_support::{ensure, traits::IsSubType};
+use frame_system::Config as SystemConfig;
 use pallet_utility::{Call as UtilityCall, Config as UtilityConfig};
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -16,11 +17,12 @@ use sp_std::{
 	default::Default,
 	fmt::{self, Debug, Formatter},
 	marker::PhantomData,
+	vec::Vec,
 };
 
 use crate::{Call as DACall, Config as DAConfig, Pallet};
 
-const MAX_RECURSION_ITERATIONS: usize = 2;
+const MAX_ITERATIONS: usize = 2;
 
 /// Check for Application Id.
 ///
@@ -38,79 +40,71 @@ pub struct CheckAppId<T: DAConfig + UtilityConfig + Send + Sync>(
 impl<T> CheckAppId<T>
 where
 	T: DAConfig + UtilityConfig + Send + Sync,
-	<T as frame_system::Config>::RuntimeCall: IsSubType<DACall<T>> + IsSubType<UtilityCall<T>>,
+	<T as SystemConfig>::RuntimeCall: IsSubType<DACall<T>> + IsSubType<UtilityCall<T>>,
 {
 	/// utility constructor. Used only in client/factory code.
 	pub fn from(app_id: AppId) -> Self { Self(app_id, sp_std::marker::PhantomData) }
 
-	/* 	pub fn validate_batch_call(&self, call: &<T as pallet_utility::Config>::RuntimeCall) {} */
-
+	/// It validates that `AppId` is correct and already registered for the call and potential nested calls.
 	/// Transaction validation:
 	///  - `DataAvailability::submit_data(..)` extrinsic can use `AppId != 0`.
 	///  - `Utility::batch/batch_all/force_batch(..)` extrinsic can use `AppId != 0` If the wrapped calls are ALL `DataAvailability::submit_data(..)`.
 	///  - Any other call must use `AppId == 0`.
-	pub fn do_validate_nested(
-		&self,
-		call: &<T as frame_system::Config>::RuntimeCall,
-		maybe_next_app_id: &mut Option<AppId>,
-		iteration: &mut usize,
-	) -> Result<(), TransactionValidityError> {
-		ensure!(
-			*iteration < MAX_RECURSION_ITERATIONS,
-			// TODO @Marko @Ghali Error name - Replace with MaxRecursionExceeded when PR gets merged
-			InvalidTransaction::Custom(InvalidTransactionCustomId::ForbiddenAppId as u8)
-		);
-
-		let done = match call.is_sub_type() {
-			Some(UtilityCall::<T>::batch { calls })
-			| Some(UtilityCall::<T>::batch_all { calls })
-			| Some(UtilityCall::<T>::force_batch { calls }) => {
-				*iteration = *iteration + 1;
-				for call in calls.iter() {
-					// TODO @Marko Make it readable
-					let a = call as *const <T as pallet_utility::Config>::RuntimeCall;
-					let b = a as *const <T as frame_system::Config>::RuntimeCall;
-					let c = unsafe { &*b };
-					self.do_validate_nested(c, maybe_next_app_id, iteration)?;
-				}
-				true
-			},
-			_ => false,
-		};
-
-		if done {
-			return Ok(());
-		}
-
-		if let Some(DACall::<T>::submit_data { .. }) = call.is_sub_type() {
-			let next_app_id =
-				maybe_next_app_id.unwrap_or_else(|| <Pallet<T>>::peek_next_application_id());
-			ensure!(
-				self.app_id() < next_app_id,
-				InvalidTransaction::Custom(InvalidTransactionCustomId::InvalidAppId as u8)
-			);
-			*maybe_next_app_id = Some(next_app_id);
-		} else {
-			return Err(TransactionValidityError::Invalid(
-				InvalidTransaction::Custom(InvalidTransactionCustomId::ForbiddenAppId as u8),
-			));
-		}
-
-		Ok(())
-	}
-
-	/// It validates that `AppId` is correct and already registered for the call and potential nested calls.
-	pub fn do_validate(
-		&self,
-		call: &<T as frame_system::Config>::RuntimeCall,
-	) -> TransactionValidity {
+	pub fn do_validate(&self, call: &<T as SystemConfig>::RuntimeCall) -> TransactionValidity {
 		if self.app_id() == AppId(0) {
 			return Ok(ValidTransaction::default());
 		}
-		self.do_validate_nested(call, &mut None, &mut 0)?;
+
+		let mut stack = Vec::new();
+		stack.push(call);
+
+		let mut maybe_next_app_id: Option<AppId> = None;
+		let mut iterations = 0;
+
+		while let Some(call) = stack.pop() {
+			if let Some(DACall::<T>::submit_data { .. }) = call.is_sub_type() {
+				let next_app_id =
+					maybe_next_app_id.unwrap_or_else(|| <Pallet<T>>::peek_next_application_id());
+				ensure!(
+					self.app_id() < next_app_id,
+					InvalidTransaction::Custom(InvalidTransactionCustomId::InvalidAppId as u8)
+				);
+				maybe_next_app_id = Some(next_app_id);
+			} else {
+				match call.is_sub_type() {
+					Some(UtilityCall::<T>::batch { calls })
+					| Some(UtilityCall::<T>::batch_all { calls })
+					| Some(UtilityCall::<T>::force_batch { calls }) => {
+						iterations += 1;
+						ensure!(
+							iterations < MAX_ITERATIONS,
+							// TODO @Marko @Ghali Error name - Replace with MaxRecursionExceeded when PR gets merged
+							InvalidTransaction::Custom(
+								InvalidTransactionCustomId::ForbiddenAppId as u8
+							)
+						);
+						for call in calls.iter() {
+							// TODO @Marko Make it readable
+							let a = call as *const <T as UtilityConfig>::RuntimeCall;
+							let b = a as *const <T as SystemConfig>::RuntimeCall;
+							let c = unsafe { &*b };
+							stack.push(c);
+						}
+						Ok(())
+					},
+					_ => Err(TransactionValidityError::Invalid(
+						InvalidTransaction::Custom(
+							InvalidTransactionCustomId::ForbiddenAppId as u8,
+						),
+					)),
+				}?;
+			}
+		}
+
 		Ok(ValidTransaction::default())
 	}
 }
+
 impl<T: DAConfig + UtilityConfig + Send + Sync> Default for CheckAppId<T> {
 	fn default() -> Self { Self(AppId::default(), PhantomData) }
 }
