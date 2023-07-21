@@ -57,7 +57,7 @@ where
 	) -> Result<(), TransactionValidityError> {
 		ensure!(
 			*iteration < MAX_RECURSION_ITERATIONS,
-			// TODO @Marko @Ghali Error name
+			// TODO @Marko @Ghali Error name - Replace with MaxRecursionExceeded when PR gets merged
 			InvalidTransaction::Custom(InvalidTransactionCustomId::ForbiddenAppId as u8)
 		);
 
@@ -91,10 +91,9 @@ where
 			);
 			*maybe_next_app_id = Some(next_app_id);
 		} else {
-			ensure!(
-				self.app_id().0 == 0,
-				InvalidTransaction::Custom(InvalidTransactionCustomId::ForbiddenAppId as u8)
-			);
+			return Err(TransactionValidityError::Invalid(
+				InvalidTransaction::Custom(InvalidTransactionCustomId::ForbiddenAppId as u8),
+			));
 		}
 
 		Ok(())
@@ -105,6 +104,9 @@ where
 		&self,
 		call: &<T as frame_system::Config>::RuntimeCall,
 	) -> TransactionValidity {
+		if self.app_id() == AppId(0) {
+			return Ok(ValidTransaction::default());
+		}
 		self.do_validate_nested(call, &mut None, &mut 0)?;
 		Ok(ValidTransaction::default())
 	}
