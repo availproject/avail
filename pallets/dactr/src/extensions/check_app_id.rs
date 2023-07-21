@@ -20,6 +20,8 @@ use sp_std::{
 
 use crate::{Call as DACall, Config as DAConfig, Pallet};
 
+const MAX_RECURSION_ITERATIONS: usize = 2;
+
 /// Check for Application Id.
 ///
 /// # Transaction Validity
@@ -36,8 +38,7 @@ pub struct CheckAppId<T: DAConfig + UtilityConfig + Send + Sync>(
 impl<T> CheckAppId<T>
 where
 	T: DAConfig + UtilityConfig + Send + Sync,
-	<T as frame_system::Config>::RuntimeCall:
-		IsSubType<DACall<T>> + IsSubType<UtilityCall<T>> + From<UtilityCall<T>>,
+	<T as frame_system::Config>::RuntimeCall: IsSubType<DACall<T>> + IsSubType<UtilityCall<T>>,
 {
 	/// utility constructor. Used only in client/factory code.
 	pub fn from(app_id: AppId) -> Self { Self(app_id, sp_std::marker::PhantomData) }
@@ -52,14 +53,25 @@ where
 		&self,
 		call: &<T as frame_system::Config>::RuntimeCall,
 		maybe_next_app_id: &mut Option<AppId>,
+		iteration: &mut usize,
 	) -> Result<(), TransactionValidityError> {
+		ensure!(
+			*iteration < MAX_RECURSION_ITERATIONS,
+			// TODO @Marko @Ghali Error name
+			InvalidTransaction::Custom(InvalidTransactionCustomId::ForbiddenAppId as u8)
+		);
+
 		let done = match call.is_sub_type() {
 			Some(UtilityCall::<T>::batch { calls })
 			| Some(UtilityCall::<T>::batch_all { calls })
 			| Some(UtilityCall::<T>::force_batch { calls }) => {
+				*iteration = *iteration + 1;
 				for call in calls.iter() {
-					let cast = call.clone().into();
-					self.do_validate_nested(&cast, maybe_next_app_id)?;
+					// TODO @Marko Make it readable
+					let a = call as *const <T as pallet_utility::Config>::RuntimeCall;
+					let b = a as *const <T as frame_system::Config>::RuntimeCall;
+					let c = unsafe { &*b };
+					self.do_validate_nested(c, maybe_next_app_id, iteration)?;
 				}
 				true
 			},
@@ -93,7 +105,7 @@ where
 		&self,
 		call: &<T as frame_system::Config>::RuntimeCall,
 	) -> TransactionValidity {
-		self.do_validate_nested(call, &mut None)?;
+		self.do_validate_nested(call, &mut None, &mut 0)?;
 		Ok(ValidTransaction::default())
 	}
 }
@@ -116,7 +128,7 @@ impl<T> SignedExtension for CheckAppId<T>
 where
 	T: DAConfig + UtilityConfig + Send + Sync,
 	<T as frame_system::Config>::RuntimeCall:
-		IsSubType<DACall<T>> + IsSubType<pallet_utility::Call<T>> + From<pallet_utility::Call<T>>,
+		IsSubType<DACall<T>> + IsSubType<pallet_utility::Call<T>>,
 {
 	type AccountId = T::AccountId;
 	type AdditionalSigned = ();
