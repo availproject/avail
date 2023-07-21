@@ -89,10 +89,12 @@ running the benchmarks from `da-control` pallet, and the generated file is
 
 Here is the table of custom IDs for invalid transaction errors:
 
-| Custom ID | Name                | Description |
-| --------- | ------------------- | ----------- |
-| 137       | InvalidAppId        | The given `AppId` is not yet registered |
-| 138       | ForbiddenAppId      | The extrinsic is not available for the given `AppId` |
+| Custom ID | Name                 | Description |
+| --------- | -------------------- | ----------- |
+| 137       | InvalidAppId         | The given `AppId` is not yet registered |
+| 138       | ForbiddenAppId       | The extrinsic is not available for the given `AppId` |
+| 139       | MaxPaddedLenExceeded | The maximum padded length for a block was exceeded |
+| 140       | MaxRecursionExceeded | The maximum recursion was reached for a call with `AppId != 0` |
 
 ## Generate test code coverage report
 
