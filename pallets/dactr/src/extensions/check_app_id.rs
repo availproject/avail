@@ -51,6 +51,7 @@ where
 	pub fn do_validate_nested(
 		&self,
 		call: &<T as frame_system::Config>::RuntimeCall,
+		maybe_next_app_id: &mut Option<AppId>,
 	) -> Result<(), TransactionValidityError> {
 		let done = match call.is_sub_type() {
 			Some(UtilityCall::<T>::batch { calls })
@@ -58,7 +59,7 @@ where
 			| Some(UtilityCall::<T>::force_batch { calls }) => {
 				for call in calls.iter() {
 					let cast = call.clone().into();
-					self.do_validate_nested(&cast)?;
+					self.do_validate_nested(&cast, maybe_next_app_id)?;
 				}
 				true
 			},
@@ -69,21 +70,22 @@ where
 			return Ok(());
 		}
 
-		match call.is_sub_type() {
-			Some(DACall::<T>::submit_data { .. }) => {
-				let next_app_id = <Pallet<T>>::peek_next_application_id();
-				ensure!(
-					self.app_id() < next_app_id,
-					InvalidTransaction::Custom(InvalidTransactionCustomId::InvalidAppId as u8)
-				);
-			},
-			_ => {
-				ensure!(
-					self.app_id().0 == 0,
-					InvalidTransaction::Custom(InvalidTransactionCustomId::ForbiddenAppId as u8)
-				);
-			},
-		};
+		if let Some(DACall::<T>::submit_data { .. }) = call.is_sub_type() {
+			let next_app_id =
+				maybe_next_app_id.unwrap_or_else(|| <Pallet<T>>::peek_next_application_id());
+			ensure!(
+				self.app_id() < next_app_id,
+				InvalidTransaction::Custom(InvalidTransactionCustomId::InvalidAppId as u8)
+			);
+			if maybe_next_app_id.is_none() {
+				*maybe_next_app_id = Some(next_app_id)
+			}
+		} else {
+			ensure!(
+				self.app_id().0 == 0,
+				InvalidTransaction::Custom(InvalidTransactionCustomId::ForbiddenAppId as u8)
+			);
+		}
 
 		Ok(())
 	}
@@ -93,7 +95,8 @@ where
 		&self,
 		call: &<T as frame_system::Config>::RuntimeCall,
 	) -> TransactionValidity {
-		self.do_validate_nested(call)?;
+		let mut maybe_next_app_id: Option<AppId> = None;
+		self.do_validate_nested(call, &mut maybe_next_app_id)?;
 		Ok(ValidTransaction::default())
 	}
 }
