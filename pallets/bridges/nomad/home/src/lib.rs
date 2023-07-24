@@ -27,7 +27,7 @@ pub mod pallet {
 	use nomad_base::NomadBase;
 	use nomad_core::{destination_and_nonce, NomadMessage, NomadState, SignedUpdate};
 	use nomad_merkle::{Merkle, NomadLightMerkle};
-	use primitive_types::{H160, H256};
+	use sp_core::{H160, H256};
 	use sp_std::vec::Vec;
 
 	use super::weights::WeightInfo;

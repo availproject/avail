@@ -24,9 +24,10 @@
 //! `frame_system` tracks consumption of each of these resources separately for each
 //! `DispatchClass`. This module contains configuration object for both resources,
 //! which should be passed to `frame_system` configuration when runtime is being set up.
+use core::num::NonZeroU32;
 
-use codec::{Compact, Decode, Encode, Error, Input, MaxEncodedLen};
-use da_primitives::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE};
+use avail_core::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE};
+use codec::{Compact, Decode, Encode, EncodeLike, Error, Input, MaxEncodedLen, Output};
 use frame_support::{
 	dispatch::{DispatchClass, OneOrMany, PerDispatchClass},
 	ensure,
@@ -42,7 +43,7 @@ use static_assertions::const_assert;
 
 /// Block length limit configuration.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(RuntimeDebug, PartialEq, Clone, Encode, TypeInfo, PassByCodec, MaxEncodedLen)]
+#[derive(RuntimeDebug, PartialEq, Clone, TypeInfo, PassByCodec, MaxEncodedLen)]
 pub struct BlockLength {
 	/// Maximal total length in bytes for each extrinsic class.
 	///
@@ -52,9 +53,7 @@ pub struct BlockLength {
 	pub max: PerDispatchClass<u32>,
 	pub cols: BlockLengthColumns,
 	pub rows: BlockLengthRows,
-	#[codec(compact)]
-	#[codec(compact)]
-	chunk_size: u32,
+	chunk_size: NonZeroU32,
 }
 
 #[derive(RuntimeDebug, Clone, Copy)]
@@ -65,13 +64,15 @@ pub enum BlockLengthError {
 }
 
 #[inline]
-const fn is_chunk_size_valid(new_size: u32) -> bool { new_size >= DATA_CHUNK_SIZE as u32 }
+const fn is_chunk_size_valid(new_size: NonZeroU32) -> bool {
+	new_size.get() >= DATA_CHUNK_SIZE as u32
+}
 
 impl BlockLength {
 	#[inline]
-	pub fn chunk_size(&self) -> u32 { self.chunk_size }
+	pub fn chunk_size(&self) -> NonZeroU32 { self.chunk_size }
 
-	pub fn set_chunk_size(&mut self, new_size: u32) -> Result<(), BlockLengthError> {
+	pub fn set_chunk_size(&mut self, new_size: NonZeroU32) -> Result<(), BlockLengthError> {
 		ensure!(
 			is_chunk_size_valid(new_size),
 			BlockLengthError::InvalidChunkSize
@@ -79,6 +80,17 @@ impl BlockLength {
 
 		self.chunk_size = new_size;
 		Ok(())
+	}
+}
+
+impl EncodeLike for BlockLength {}
+
+impl Encode for BlockLength {
+	fn encode_to<T: Output + ?Sized>(&self, dest: &mut T) {
+		self.max.encode_to(dest);
+		self.cols.encode_to(dest);
+		self.rows.encode_to(dest);
+		Compact(self.chunk_size.get()).encode_to(dest);
 	}
 }
 
@@ -94,6 +106,8 @@ impl Decode for BlockLength {
 		let chunk_size = <Compact<u32>>::decode(input)
 			.map_err(|e| e.chain("Could not decode `BlockLength::chunk_size`"))?
 			.0;
+		let chunk_size = NonZeroU32::new(chunk_size).ok_or("Zero `BlockLength::chunk_size`")?;
+
 		ensure!(
 			is_chunk_size_valid(chunk_size),
 			Error::from("Invalid `BlockLength::chunk_size`")
@@ -165,7 +179,7 @@ impl BlockLength {
 	pub fn with_normal_ratio(
 		rows: BlockLengthRows,
 		cols: BlockLengthColumns,
-		chunk_size: u32,
+		chunk_size: NonZeroU32,
 		normal: Perbill,
 	) -> Result<Self, BlockLengthError> {
 		debug_assert!(is_chunk_size_valid(chunk_size));
@@ -199,13 +213,13 @@ impl BlockLength {
 	fn max_per_class(
 		rows: BlockLengthRows,
 		cols: BlockLengthColumns,
-		chunk_size: u32,
+		chunk_size: NonZeroU32,
 		normal: Perbill,
 	) -> Result<PerDispatchClass<u32>, BlockLengthError> {
 		let max = cols
 			.0
 			.checked_mul(rows.0)
-			.and_then(|acc| acc.checked_mul(chunk_size))
+			.and_then(|acc| acc.checked_mul(chunk_size.get()))
 			.ok_or(BlockLengthError::OverflowBaseMax)?;
 
 		Ok(PerDispatchClass::new(|class| match class {

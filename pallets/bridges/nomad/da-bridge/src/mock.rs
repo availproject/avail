@@ -1,8 +1,8 @@
-use da_primitives::Header;
+use avail_core::header::Header;
 use frame_support::{traits::GenesisBuild, weights::Weight};
 use frame_system::{self as system, header_builder::da, test_utils::TestRandomness};
 use nomad_base::NomadBase;
-use primitive_types::{H160, H256};
+use sp_core::{H160, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, ConstU32, IdentityLookup},
 	AccountId32,

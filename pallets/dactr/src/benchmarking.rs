@@ -1,10 +1,10 @@
 #![cfg(feature = "runtime-benchmarks")]
 
-use codec::{Decode, Encode};
-use da_primitives::{
-	asdr::{AppExtrinsic, AppUncheckedExtrinsic},
-	BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
+use avail_core::{
+	asdr::AppUncheckedExtrinsic, AppExtrinsic, BlockLengthColumns, BlockLengthRows,
+	OpaqueExtrinsic, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
 };
+use codec::{Decode, Encode};
 use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_support::{log::info, traits::Get};
 use frame_system::{
@@ -138,7 +138,8 @@ where
 	let cols = BlockLengthColumns(cols);
 
 	let mut nb_tx = 128; // Value set depending on MaxAppDataLength (16 kb) to reach 2 mb
-	let max_tx: u32 = rows.0 * cols.0 * (BLOCK_CHUNK_SIZE - 2) / data_length;
+	let max_tx: u32 =
+		rows.0 * cols.0 * (BLOCK_CHUNK_SIZE.get().checked_sub(2).unwrap()) / data_length;
 	if nb_tx > max_tx {
 		nb_tx = max_tx;
 	}
@@ -176,7 +177,7 @@ benchmarks! {
 	}: create_application_key(origin, key)
 	verify {
 		let info = Pallet::<T>::application_key(&key_verify);
-		assert_eq!( info, Some(AppKeyInfoFor::<T> { owner: caller, id: 3.into()}));
+		assert_eq!( info, Some(AppKeyInfoFor::<T> { owner: caller, id: AppId(3)}));
 	}
 
 	submit_block_length_proposal {

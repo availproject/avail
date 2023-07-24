@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
+use avail_core::{AppId, BLOCK_CHUNK_SIZE};
 use da_control::AppKeyInfo;
-use da_primitives::asdr::AppId;
 use da_runtime::{
 	constants, constants::elections::DesiredMembers, wasm_binary_unwrap, AccountId, BabeConfig,
 	Balance, BalancesConfig, DataAvailabilityConfig, ElectionsConfig, NominationPoolsConfig,
@@ -20,10 +20,11 @@ use crate::chain_spec::AuthorityKeys;
 pub(crate) fn make_system_config() -> SystemConfig {
 	let code = wasm_binary_unwrap().to_vec();
 	let kc_public_params = public_params(MAX_BLOCK_COLUMNS).to_raw_var_bytes();
+
 	let block_length = BlockLength::with_normal_ratio(
 		MAX_BLOCK_ROWS,
 		MAX_BLOCK_COLUMNS,
-		32,
+		BLOCK_CHUNK_SIZE,
 		Perbill::from_percent(90),
 	)
 	.expect("Valid `BlockLength` genesis definition .qed");

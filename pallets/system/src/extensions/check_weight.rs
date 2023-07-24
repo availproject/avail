@@ -15,8 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use avail_core::InvalidTransactionCustomId::MaxPaddedLenExceeded;
 use codec::{Decode, Encode};
-use da_primitives::InvalidTransactionCustomId::MaxPaddedLenExceeded;
 use frame_support::{
 	dispatch::{DispatchInfo, PostDispatchInfo},
 	fail,
@@ -104,14 +104,16 @@ where
 		let padded_added_len = kate::padded_len(len as u32, dynamic_block_len.chunk_size());
 		all_extrinsics_len.padded = all_extrinsics_len.padded.saturating_add(padded_added_len);
 
-		let max_padded_len: u32 = BlockDimensions::new(
+		let max_padded_len = BlockDimensions::new(
 			dynamic_block_len.rows,
 			dynamic_block_len.cols,
 			dynamic_block_len.chunk_size(),
 		)
 		.size()
-		.try_into()
-		.map_err(|_| InvalidTransaction::Custom(MaxPaddedLenExceeded as u8))?;
+		.ok_or(InvalidTransaction::Custom(MaxPaddedLenExceeded as u8))?;
+
+		let max_padded_len = u32::try_from(max_padded_len)
+			.map_err(|_| InvalidTransaction::Custom(MaxPaddedLenExceeded as u8))?;
 
 		if all_extrinsics_len.padded > max_padded_len {
 			log::warn!(
@@ -290,7 +292,7 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckWeight<T> {
 
 #[cfg(test)]
 mod tests {
-	use da_primitives::BLOCK_CHUNK_SIZE;
+	use avail_core::BLOCK_CHUNK_SIZE;
 	use frame_support::{
 		assert_err, assert_ok,
 		dispatch::{DispatchClass, Pays},

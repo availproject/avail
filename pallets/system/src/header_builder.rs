@@ -1,15 +1,15 @@
 #[cfg(feature = "std")]
-use da_primitives::asdr::DataLookup;
-use da_primitives::{asdr::AppExtrinsic, traits::ExtendedHeader, HeaderExtension};
+use avail_core::DataLookup;
+use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic};
 use frame_support::traits::Randomness;
 pub use kate::{
 	metrics::{IgnoreMetrics, Metrics},
 	Seed,
 };
 use sp_core::H256;
-use sp_runtime::traits::Hash;
 #[cfg(feature = "std")]
 use sp_runtime::SaturatedConversion;
+use sp_runtime::{generic::Digest, traits::Hash};
 use sp_runtime_interface::runtime_interface;
 use sp_std::vec::Vec;
 
@@ -18,10 +18,10 @@ use crate::{limits::BlockLength, Config, LOG_TARGET};
 pub mod da {
 	use core::marker::PhantomData;
 
-	use da_primitives::Header as DaHeader;
+	use avail_core::header::{Header as DaHeader, HeaderExtension};
 	use sp_runtime::traits::BlakeTwo256;
 
-	use super::{AppExtrinsic, BlockLength, Config, HeaderExtension, Vec, H256};
+	use super::*;
 
 	pub type Hash = sp_core::H256;
 	// @todo Miguel: Link this type with `Config::BlockNumber`.
@@ -55,7 +55,7 @@ pub mod da {
 
 /// Trait for header builder.
 pub trait HeaderExtensionBuilder {
-	type Header: sp_runtime::traits::Header + ExtendedHeader;
+	type Header: sp_runtime::traits::Header + ExtendedHeader<u32, H256, Digest, HeaderExtension>;
 
 	/// Creates the header using the given parameters.
 	fn build(
@@ -126,7 +126,7 @@ pub fn build_extension<M: Metrics>(
 	seed: Seed,
 	metrics: &M,
 ) -> HeaderExtension {
-	use da_primitives::header::extension::{v1, v2};
+	use avail_core::header::extension::{v1, v2};
 
 	let (xts_layout, commitment, block_dims, _data_matrix) = kate::com::par_build_commitments(
 		block_length.rows,
@@ -137,14 +137,14 @@ pub fn build_extension<M: Metrics>(
 		metrics,
 	)
 	.expect("Build commitments cannot fail .qed");
-	let app_lookup =
-		DataLookup::try_from(xts_layout.as_slice()).expect("Extrinsic size cannot overflow .qed");
+	let app_lookup = DataLookup::from_id_and_len_iter(xts_layout.into_iter())
+		.expect("Extrinsic size cannot overflow .qed");
 	let rows = block_dims.rows.0.saturated_into::<u16>();
 	let cols = block_dims.cols.0.saturated_into::<u16>();
 
 	// **NOTE:** Header extension V2 is not yet enable by default.
 	if cfg!(feature = "header_extension_v2") {
-		use da_primitives::kate_commitment::v2::KateCommitment;
+		use avail_core::kate_commitment::v2::KateCommitment;
 		#[allow(unused_mut)]
 		let mut kate = KateCommitment::new(rows, cols, data_root, commitment);
 
@@ -160,7 +160,7 @@ pub fn build_extension<M: Metrics>(
 		.into()
 	} else {
 		#[allow(unused_mut)]
-		let mut kate = da_primitives::kate_commitment::v1::KateCommitment {
+		let mut kate = avail_core::kate_commitment::v1::KateCommitment {
 			rows,
 			cols,
 			commitment,

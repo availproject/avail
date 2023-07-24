@@ -1,8 +1,8 @@
-use da_primitives::Header;
+use avail_core::header::Header;
 use frame_support::{parameter_types, weights::Weight};
 use frame_system::{self as system, mocking::MockUncheckedExtrinsic, test_utils::TestRandomness};
-use primitive_types::H256;
-use sp_runtime::traits::{BlakeTwo256, ConstU32, IdentityLookup};
+use sp_core::{ConstU32, H256};
+use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
 use crate as updater_manager;
 

@@ -1,4 +1,4 @@
-use da_primitives::{asdr::AppUncheckedExtrinsic, Header as DaHeader, OpaqueExtrinsic};
+use avail_core::{asdr::AppUncheckedExtrinsic, header::Header as DaHeader, OpaqueExtrinsic};
 use sp_runtime::{
 	generic, impl_opaque_keys,
 	traits::{BlakeTwo256, IdentifyAccount, Verify},

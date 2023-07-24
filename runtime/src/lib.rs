@@ -63,11 +63,13 @@ use sp_version::NativeVersion;
 mod data_root_tests;
 
 /// Import the DA pallet.
-pub use da_primitives::{
-	asdr::{AppExtrinsic, AppId, AppUncheckedExtrinsic, GetAppId},
+pub use avail_core::{
+	asdr::AppUncheckedExtrinsic,
 	currency::{Balance, AVL, CENTS, MILLICENTS},
+	header::Header as DaHeader,
+	traits::GetAppId,
 	well_known_keys::KATE_PUBLIC_PARAMS,
-	DataProof, Header as DaHeader, OpaqueExtrinsic, NORMAL_DISPATCH_RATIO,
+	AppId, DataProof, OpaqueExtrinsic, NORMAL_DISPATCH_RATIO,
 };
 pub use pallet_balances::Call as BalancesCall;
 use pallet_grandpa::AuthorityId as GrandpaId;

@@ -20,8 +20,8 @@ name = "data-avail"
 avail-base = { path = "../base" }
 
 # Internals
-da-primitives = { version = "0.4", default-features = false }
-kate = { version = "0.7", default-features = false }
+avail-core = { version = "0.5", default-features = false, features = ["runtime"] }
+kate = { version = "0.8", default-features = false }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }
@@ -124,7 +124,7 @@ clap_complete = { version = "4.0.2", optional = true }
 frame-benchmarking-cli = { version = "4.0.0-dev", optional = true }
 
 [dev-dependencies]
-sp-tracing = "4.0.0-dev"
+sp-tracing = "6.0.0"
 tempfile = "3.1.0"
 
 [features]
@@ -145,7 +145,7 @@ runtime-benchmarks = [
 try-runtime = [
 	"da-runtime/try-runtime", 
 	"try-runtime-cli/try-runtime",
-	"da-primitives/try-runtime"
+	"avail-core/try-runtime"
 ]
 
 

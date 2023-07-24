@@ -2,8 +2,8 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
-use da_primitives::{
-	asdr::AppId, BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
+use avail_core::{
+	AppId, BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
 };
 use frame_support::{dispatch::DispatchClass, weights::Weight};
 use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
@@ -261,7 +261,7 @@ pub mod pallet {
 				.unwrap_or(0u32)
 				.checked_add(1u32)
 				.expect("DA Control Genesis overflows the last application id");
-			NextAppId::<T>::put::<AppId>(last_id.into());
+			NextAppId::<T>::put::<AppId>(AppId(last_id));
 		}
 	}
 

@@ -1,4 +1,4 @@
-use da_primitives::{well_known_keys::KATE_PUBLIC_PARAMS, HeaderExtension, OpaqueExtrinsic};
+use avail_core::{header::HeaderExtension, well_known_keys::KATE_PUBLIC_PARAMS, OpaqueExtrinsic};
 use frame_support::traits::{KeyOwnerProofSystem, Randomness};
 #[cfg(feature = "try-runtime")]
 use frame_support::weights::Weight;

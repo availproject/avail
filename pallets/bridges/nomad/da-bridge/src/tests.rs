@@ -1,10 +1,10 @@
-use da_primitives::{Header, HeaderExtension};
+use avail_core::header::{Header, HeaderExtension};
 use frame_support::assert_ok;
 use frame_system::Config;
 use hex_literal::hex;
 use nomad_base::testing::*;
 use nomad_merkle::Merkle;
-use primitive_types::H256;
+use sp_core::H256;
 use sp_runtime::{testing::Digest, traits::BlakeTwo256, AccountId32};
 
 use crate::mock::*;

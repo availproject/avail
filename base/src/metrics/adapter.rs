@@ -48,7 +48,7 @@ impl Metrics for MetricAdapter {
 			);
 	}
 
-	fn block_dims_and_size(&self, block_dims: &BlockDimensions, block_len: u32) {
+	fn block_dims_and_size(&self, block_dims: BlockDimensions, block_len: u32) {
 		#[rustfmt::skip]
 			may_observe!(
 				general, block_dims_rows, block_dims.rows.0,
@@ -81,7 +81,7 @@ impl Metrics for RPCMetricAdapter {
 			);
 	}
 
-	fn block_dims_and_size(&self, block_dims: &BlockDimensions, block_len: u32) {
+	fn block_dims_and_size(&self, block_dims: BlockDimensions, block_len: u32) {
 		#[rustfmt::skip]
 			may_observe!(
 				general, block_dims_rows, block_dims.rows.0,

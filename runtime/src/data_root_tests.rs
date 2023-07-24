@@ -50,7 +50,7 @@ fn decode_submit_call() {
 				CheckNonce::<Runtime>::from(0),
 				CheckWeight::<Runtime>::new(),
 				ChargeTransactionPayment::<Runtime>::from(0),
-				CheckAppId::<Runtime>::from(1.into()),
+				CheckAppId::<Runtime>::from(AppId(1)),
 			),
 		)),
 	};

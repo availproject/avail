@@ -12,20 +12,21 @@ description = "Data Avail Control Module"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-da-primitives = { version = "0.4", default-features = false }
-kate = { version = "0.7", default-features = false }
+avail-core = { version = "0.5", default-features = false, features = ["runtime"] }
+kate = { version = "0.8", default-features = false }
 
 log = { version = "0.4.17", default-features = false }
+static_assertions = "1.1.0"
 
 # Substrate
 serde = { version = "1.0.126", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
-sp-core = { version = "7.0.0", default-features = false }
-sp-std = { version = "5.0.0", default-features = false }
-sp-io = { version = "7.0.0", default-features = false }
-sp-runtime = { version = "7.0.0", default-features = false }
-sp-arithmetic = { version = "5", default-features = false }
+scale-info = { version = "2", default-features = false, features = ["derive"] }
+sp-core = { version = "7", default-features = false }
+sp-std = { version = "5", default-features = false }
+sp-io = { version = "7", default-features = false }
+sp-runtime = { version = "7", default-features = false }
+sp-arithmetic = { version = "6", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false }
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
@@ -39,7 +40,7 @@ test-case = "1.2.3"
 default = ["std"]
 std = [
 	"log/std",
-	"da-primitives/std",
+	"avail-core/std",
 	"serde",
 	"codec/std",
 	"scale-info/std",
@@ -59,5 +60,5 @@ runtime-benchmarks = [
 ]
 try-runtime = [
 	"frame-support/try-runtime",
-	"da-primitives/try-runtime"
+	"avail-core/try-runtime"
 ]

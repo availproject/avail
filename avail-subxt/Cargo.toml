@@ -3,6 +3,7 @@ name = "avail-subxt"
 version = "0.2.1"
 authors = ["Luka Borkovic <luka.borkovic@ethernal.tech>"]
 edition = "2021"
+license = "Apache-2.0"
 
 [lib]
 name = "avail_subxt"

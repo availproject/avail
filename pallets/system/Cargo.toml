@@ -14,8 +14,8 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 avail-base = { path = "../../base", default-features = false }
-da-primitives = { version = "0.4", default-features = false }
-kate = { version = "0.7", default-features = false }
+avail-core = { version = "0.5", default-features = false, features = ["runtime"] }
+kate = { version = "0.8", default-features = false }
 
 # Other
 impl-trait-for-tuples = "0.2.1"
@@ -49,7 +49,7 @@ default = ["std"]
 std = [
 	"avail-base/std",
 	"kate/std",
-	"da-primitives/std",
+	"avail-core/std",
 	"codec/std",
 	"frame-support/std",
 	"log/std",
@@ -70,13 +70,13 @@ runtime-benchmarks = [
 ]
 try-runtime = [
 	"frame-support/try-runtime",
-	"da-primitives/try-runtime"
+	"avail-core/try-runtime"
 ]
 force-rs-merkle = [ "rs_merkle" ]
 
 # For testing backward/forward header compatibility.
 header-compatibility-test = [
-	"da-primitives/header-backward-compatibility-test" ]
+	"avail-core/header-backward-compatibility-test" ]
 
 # It enables the use of header extension V2
 header_extension_v2 = []

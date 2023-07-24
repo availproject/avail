@@ -21,8 +21,8 @@
 
 use std::sync::Arc;
 
+use avail_core::AppId;
 use codec::Encode;
-use da_primitives::asdr::AppId;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use futures::prelude::*;
