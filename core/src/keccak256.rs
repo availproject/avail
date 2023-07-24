@@ -1,5 +1,5 @@
 use scale_info::TypeInfo;
-use sp_core::{keccak_256, Hasher, RuntimeDebug};
+use sp_core::{Hasher, RuntimeDebug};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -15,7 +15,8 @@ impl Hasher for Keccak256 {
 	const LENGTH: usize = 32;
 
 	fn hash(s: &[u8]) -> Self::Out {
-		keccak_256(s).into()
+		let keccak_out = sp_io::hashing::keccak_256(s);
+		keccak_out.into()
 	}
 }
 

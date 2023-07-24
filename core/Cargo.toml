@@ -20,6 +20,7 @@ codec = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2", default-features = false, features = ["derive"] }
 sp-arithmetic = { version = "*", default-features = false }
 sp-core = { version = "*", default-features = false }
+sp-io = { version = "*", default-features = false }
 sp-std = { version = "*", default-features = false }
 sp-trie = { version = "*", default-features = false }
 
@@ -42,6 +43,7 @@ std = [
 	"scale-info/std",
 	"log/std",
 	"sp-core/std",
+	"sp-io/std",
 	"sp-std/std",
 	"sp-trie/std",
 	"sp-arithmetic/std",

@@ -1,7 +1,7 @@
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{hashing::sha2_256, Hasher, RuntimeDebug};
+use sp_core::{Hasher, RuntimeDebug};
 
 /// Sha2 256 wrapper which supports `beefy-merkle-tree::Hasher`.
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, TypeInfo)]
@@ -14,7 +14,8 @@ impl Hasher for ShaTwo256 {
 	const LENGTH: usize = 32;
 
 	fn hash(s: &[u8]) -> Self::Out {
-		sha2_256(s).into()
+		let sha2_out = sp_io::hashing::sha2_256(s);
+		sha2_out.into()
 	}
 }
 

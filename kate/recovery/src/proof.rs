@@ -1,4 +1,6 @@
+#[cfg(feature = "std")]
 use dusk_bytes::Serializable;
+#[cfg(feature = "std")]
 use dusk_plonk::{
 	bls12_381::G1Affine,
 	commitment_scheme::kzg10::{commitment::Commitment, proof::Proof, PublicParameters},
@@ -24,6 +26,7 @@ pub enum Error {
 #[cfg(feature = "std")]
 impl std::error::Error for Error {}
 
+#[cfg(feature = "std")]
 impl From<dusk_bytes::Error> for Error {
 	fn from(_: dusk_bytes::Error) -> Self {
 		Error::InvalidData
@@ -31,6 +34,7 @@ impl From<dusk_bytes::Error> for Error {
 }
 
 /// Verifies proof for given cell
+#[cfg(feature = "std")]
 pub fn verify(
 	public_parameters: &PublicParameters,
 	dimensions: Dimensions,

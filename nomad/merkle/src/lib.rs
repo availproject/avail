@@ -20,7 +20,7 @@ pub mod proof;
 #[cfg(test)]
 pub(crate) mod test_utils;
 
-use frame_support::ensure;
+use avail_core::ensure;
 use sp_core::H256;
 
 /// Tree depth

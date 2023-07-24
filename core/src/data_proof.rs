@@ -63,8 +63,9 @@ where
 
 	fn try_from(merkle_proof: &MerkleProof<H, T>) -> Result<Self, Self::Error> {
 		use crate::ensure;
-		use sp_core::keccak_256;
 		use DataProofTryFromError::*;
+
+		use sp_io::hashing::keccak_256;
 
 		let root = <[u8; 32]>::try_from(merkle_proof.root.as_ref())
 			.map_err(|_| InvalidRoot)?
@@ -102,7 +103,8 @@ where
 mod test {
 	use crate::Keccak256;
 	use hex_literal::hex;
-	use sp_core::{keccak_256, H512};
+	use sp_core::H512;
+	use sp_io::hashing::keccak_256;
 	use sp_std::cmp::min;
 	use test_case::test_case;
 

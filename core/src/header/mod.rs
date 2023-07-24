@@ -243,16 +243,15 @@ where
 	}
 }
 
-impl<N: HeaderBlockNumber, H: HeaderHash> ExtendedHeader<Digest, HeaderExtension> for Header<N, H> {
-	type Hash = <H as HashT>::Output;
-	type Number = N;
-
+impl<N: HeaderBlockNumber, H: HeaderHash>
+	ExtendedHeader<N, <H as HashT>::Output, Digest, HeaderExtension> for Header<N, H>
+{
 	/// Creates new header.
 	fn new(
-		n: Self::Number,
-		extrinsics: Self::Hash,
-		state: Self::Hash,
-		parent: Self::Hash,
+		n: N,
+		extrinsics: <H as HashT>::Output,
+		state: <H as HashT>::Output,
+		parent: <H as HashT>::Output,
 		digest: Digest,
 		extension: HeaderExtension,
 	) -> Self {

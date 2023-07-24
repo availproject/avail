@@ -19,7 +19,6 @@
 
 use codec::{Compact, Decode, Encode, EncodeLike, Error, Input};
 use scale_info::{build::Fields, meta_type, Path, StaticTypeInfo, Type, TypeInfo, TypeParameter};
-use sp_core::blake2_256;
 #[cfg(feature = "runtime")]
 use sp_runtime::{
 	generic::CheckedExtrinsic,
@@ -35,6 +34,8 @@ use sp_std::{
 	vec,
 	vec::Vec,
 };
+
+use sp_io::hashing::blake2_256;
 
 use crate::{traits::GetAppId, AppId, OpaqueExtrinsic};
 
@@ -537,7 +538,6 @@ where
 
 #[cfg(test)]
 mod tests {
-	use sp_core::blake2_256;
 	use sp_runtime::{
 		codec::{Decode, Encode},
 		testing::TestSignature as TestSig,

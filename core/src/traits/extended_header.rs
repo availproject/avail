@@ -1,22 +1,16 @@
 /// Extended header access
-pub trait ExtendedHeader<D, E> {
-	/// Header number.
-	type Number;
-
-	/// Header hash type
-	type Hash;
-
+pub trait ExtendedHeader<Number, Hash, Digest, Extension> {
 	/// Creates new header.
 	fn new(
-		number: Self::Number,
-		extrinsics_root: Self::Hash,
-		state_root: Self::Hash,
-		parent_hash: Self::Hash,
-		digest: D,
-		extension: E,
+		number: Number,
+		extrinsics_root: Hash,
+		state_root: Hash,
+		parent_hash: Hash,
+		digest: Digest,
+		extension: Extension,
 	) -> Self;
 
-	fn extension(&self) -> &E;
+	fn extension(&self) -> &Extension;
 
-	fn set_extension(&mut self, extension: E);
+	fn set_extension(&mut self, extension: Extension);
 }

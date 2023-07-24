@@ -321,6 +321,7 @@ impl Dimensions {
 	}
 
 	/// Generates cell positions for given block partition
+	#[cfg(feature = "std")]
 	pub fn iter_extended_partition_positions(
 		&self,
 		partition: &Partition,

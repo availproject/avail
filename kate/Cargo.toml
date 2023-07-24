@@ -9,36 +9,38 @@ license = "Apache-2.0"
 
 [dependencies]
 # Pending to review
-poly-multiproof = { git = "https://github.com/availproject/poly-multiproof", default-features = false, tag = "v0.0.1" }
+poly-multiproof = { git = "https://github.com/availproject/poly-multiproof", default-features = false, tag = "v0.0.1", optional = true }
 
 # Internal
 avail-core = { path = "../core", default-features = false, feature = "runtime" }
-dusk-plonk = { git = "https://github.com/availproject/plonk.git", tag = "v0.12.0-polygon-2", optional = true }
 kate-recovery = { path = "recovery", default-features = false }
+
+dusk-plonk = { git = "https://github.com/availproject/plonk.git", tag = "v0.12.0-polygon-2", optional = true }
 
 # Parity & Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 sp-arithmetic = { version = "*", default-features = false }
-sp-core = { version = "*", default-features = false, optional = true }
+sp-core = { version = "*", default-features = false }
 
 # 3rd-party
 derive_more = { version = "0.99.17", default-features = false, features = ["constructor"] }
-dusk-bytes = { version = "0.1.6", default-features = false }
+static_assertions = "1.1.0"
+thiserror-no-std = "2.0.2"
+
+dusk-bytes = { version = "0.1.6", default-features = false, optional = true }
 hex = { version = "0.4", optional = true, default-features = false, features = ["alloc", "serde"] }
 hex-literal = { version = "0.3.4", optional = true }
 log = { version = "0.4.8", optional = true }
-nalgebra = { version = "0.32.2", default-features = false }
+nalgebra = { version = "0.32.2", default-features = false, optional = true }
 once_cell = { version = "1.8.0", optional = true }
-rand = { version = "0.8.5", default-features = false, optional = true }
+rand = { version = "0.8", default-features = false, features = ["alloc", "small_rng"], optional = true }
 rand_chacha = { version = "0.3", default-features = false, optional = true }
 rayon = { version = "1.5.2", optional = true }
 serde = { version = "1", optional = true, features = ["derive"] }
 serde_json = { version = "1", optional = true }
-static_assertions = "1.1.0"
-thiserror-no-std = "2.0.2"
 
 [dev-dependencies]
-criterion = "0.5.1"
+criterion = { version = "0.5.1", default-features = false }
 proptest = "1"
 serde_json = "1"
 test-case = "1.2.3"
@@ -46,7 +48,10 @@ test-case = "1.2.3"
 [features]
 default = ["std"]
 alloc = ["dusk-plonk/alloc", "nalgebra/alloc"]
-parallel = ["rayon"]
+parallel = [
+	"rayon",
+	"criterion/rayon",
+]
 
 std = [
 	"parallel",
@@ -61,6 +66,7 @@ std = [
 	"rand/std",
 	"log",
 	"dusk-plonk/std",
+	"dusk-bytes",
 	"avail-core/std",
 	"sp-arithmetic/std",
 	"sp-core/std",
