@@ -328,6 +328,7 @@ dependencies = [
  "sp-runtime-interface",
  "sp-std",
  "sp-trie",
+ "static_assertions",
  "test-case",
  "thiserror-no-std",
 ]

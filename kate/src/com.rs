@@ -518,7 +518,7 @@ pub fn scalars_to_app_rows(
 		.iter_extended_rows()
 		.map(|i| {
 			app_rows.iter().find(|&&row| row == i).map(|_| {
-				let row = get_row(&matrix, i as usize);
+				let row = get_row(matrix, i as usize);
 				row.iter()
 					.flat_map(BlsScalar::to_bytes)
 					.collect::<Vec<u8>>()

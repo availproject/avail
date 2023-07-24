@@ -1,19 +1,15 @@
-use core::{
-	array::TryFromSliceError,
-	convert::{TryFrom, TryInto},
-	num::TryFromIntError,
-};
+use core::{array::TryFromSliceError, convert::TryInto, num::TryFromIntError};
 use sp_std::prelude::*;
 use thiserror_no_std::Error;
 
-use crate::{
-	com,
-	config::{self, COMMITMENT_SIZE},
-	matrix,
-};
+use crate::config::COMMITMENT_SIZE;
 
 #[cfg(feature = "std")]
+use crate::{com, config, matrix};
+#[cfg(feature = "std")]
 use avail_core::{ensure, AppId, DataLookup};
+#[cfg(feature = "std")]
+use core::convert::TryFrom;
 #[cfg(feature = "std")]
 use dusk_bytes::Serializable;
 #[cfg(feature = "std")]
