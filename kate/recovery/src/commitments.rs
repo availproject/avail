@@ -1,8 +1,7 @@
+use crate::config::COMMITMENT_SIZE;
 use core::{array::TryFromSliceError, convert::TryInto, num::TryFromIntError};
 use sp_std::prelude::*;
 use thiserror_no_std::Error;
-
-use crate::config::COMMITMENT_SIZE;
 
 #[cfg(feature = "std")]
 use crate::{com, config, matrix};
@@ -61,7 +60,6 @@ impl From<dusk_bytes::Error> for Error {
 		}
 	}
 }
-
 #[cfg(feature = "std")]
 impl From<dusk_plonk::error::Error> for Error {
 	fn from(_: dusk_plonk::error::Error) -> Self {
