@@ -19,7 +19,7 @@ use dusk_bytes::Serializable as _;
 #[cfg(feature = "std")]
 use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
 #[cfg(feature = "std")]
-use sp_arithmetic::{traits::SaturatedConversion as _, Percent};
+pub use sp_arithmetic::{traits::SaturatedConversion as _, Percent};
 #[cfg(feature = "std")]
 use static_assertions::{const_assert, const_assert_ne};
 #[cfg(feature = "std")]

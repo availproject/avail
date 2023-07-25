@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{ensure, AppId};
 
-mod compact;
+pub mod compact;
 use compact::CompactDataLookup;
 
 pub type DataLookupRange = Range<u32>;
