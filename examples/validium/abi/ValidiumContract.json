@@ -1,5 +1,24 @@
 [
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint32",
@@ -18,7 +37,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "leafIndex",
+        "name": "index",
         "type": "uint256"
       },
       {
@@ -31,7 +50,7 @@
     "outputs": [
       {
         "internalType": "bool",
-        "name": "",
+        "name": "isMember",
         "type": "bool"
       }
     ],
@@ -58,6 +77,26 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -66,6 +105,19 @@
       }
     ],
     "name": "setRouter",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
