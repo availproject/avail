@@ -1,14 +1,13 @@
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_core::{bounded::BoundedVec, Get, H256};
-use sp_runtime::RuntimeDebug;
 use sp_std::{mem::size_of, vec::Vec};
 
 /// Size of `NomadMessage` fields except `body`.
 pub const NON_BODY_LENGTH: usize = 3 * size_of::<u32>() + 2 * size_of::<H256>();
 
 /// A full Nomad message
-#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 pub struct NomadMessage<S: Get<u32>> {
 	/// 4   SLIP-44 ID
 	pub origin: u32,

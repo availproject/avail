@@ -6,12 +6,11 @@ use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::{H160, H256};
-use sp_runtime::RuntimeDebug;
 
 use crate::utils::home_domain_hash;
 
 /// Nomad update
-#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct UpdateV2 {
 	/// The home chain
@@ -32,7 +31,7 @@ impl UpdateV2 {
 }
 
 /// A Signed Nomad Update
-#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct SignedUpdateV2 {
 	/// The update

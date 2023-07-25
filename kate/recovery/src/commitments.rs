@@ -1,21 +1,20 @@
-use avail_core::{ensure, AppId, DataLookup};
-use core::{
-	array::TryFromSliceError,
-	convert::{TryFrom, TryInto},
-	num::TryFromIntError,
-};
-use dusk_bytes::Serializable;
-use dusk_plonk::{
-	fft::{EvaluationDomain, Evaluations},
-	prelude::{BlsScalar, CommitKey, PublicParameters},
-};
+use crate::config::COMMITMENT_SIZE;
+use core::{array::TryFromSliceError, convert::TryInto, num::TryFromIntError};
 use sp_std::prelude::*;
 use thiserror_no_std::Error;
 
-use crate::{
-	com,
-	config::{self, COMMITMENT_SIZE},
-	matrix,
+#[cfg(feature = "std")]
+use crate::{com, config, matrix};
+#[cfg(feature = "std")]
+use avail_core::{ensure, AppId, DataLookup};
+#[cfg(feature = "std")]
+use core::convert::TryFrom;
+#[cfg(feature = "std")]
+use dusk_bytes::Serializable;
+#[cfg(feature = "std")]
+use dusk_plonk::{
+	fft::{EvaluationDomain, Evaluations},
+	prelude::{BlsScalar, CommitKey, PublicParameters},
 };
 
 #[derive(Error, Debug)]
@@ -30,8 +29,8 @@ pub enum Error {
 	BadScalarData,
 	#[error("Bad data len")]
 	BadLen,
-	#[error("Plonk error: {0}")]
-	PlonkError(#[from] dusk_plonk::error::Error),
+	#[error("Plonk error")]
+	PlonkError,
 	#[error("Bad commitments data")]
 	BadCommitmentsData,
 	#[error("Bad rows data")]
@@ -45,13 +44,13 @@ impl std::error::Error for Error {
 	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
 		match &self {
 			Self::SliceError(slice) => Some(slice),
-			Self::PlonkError(plonk) => Some(plonk),
 			Self::IntError(try_int) => Some(try_int),
 			_ => None,
 		}
 	}
 }
 
+#[cfg(feature = "std")]
 impl From<dusk_bytes::Error> for Error {
 	fn from(e: dusk_bytes::Error) -> Self {
 		match e {
@@ -61,12 +60,20 @@ impl From<dusk_bytes::Error> for Error {
 		}
 	}
 }
+#[cfg(feature = "std")]
+impl From<dusk_plonk::error::Error> for Error {
+	fn from(_: dusk_plonk::error::Error) -> Self {
+		Self::PlonkError
+	}
+}
 
+#[cfg(feature = "std")]
 fn try_into_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
 	let sized_chunk = <[u8; config::CHUNK_SIZE]>::try_from(chunk)?;
 	BlsScalar::from_bytes(&sized_chunk).map_err(From::from)
 }
 
+#[cfg(feature = "std")]
 fn try_into_scalars(data: &[u8]) -> Result<Vec<BlsScalar>, Error> {
 	let chunks = data.chunks_exact(config::CHUNK_SIZE);
 	ensure!(chunks.remainder().is_empty(), Error::BadLen);
@@ -88,6 +95,7 @@ fn try_into_scalars(data: &[u8]) -> Result<Vec<BlsScalar>, Error> {
 /// * `index` - Application data index
 /// * `dimensions` - Extended matrix dimensions
 /// * `app_id` - Application ID
+#[cfg(feature = "std")]
 pub fn verify_equality(
 	public_params: &PublicParameters,
 	commitments: &[[u8; COMMITMENT_SIZE]],
@@ -128,6 +136,7 @@ pub fn verify_equality(
 	Ok((verified, app_rows))
 }
 
+#[cfg(feature = "std")]
 fn row_index_commitment_verification(
 	prover_key: &CommitKey,
 	domain: EvaluationDomain,

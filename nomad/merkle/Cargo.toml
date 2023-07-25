@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 # Internal
+avail-core = { path = "../../core", default-features = false }
 nomad-core = { path = "../core", default-features = false }
 
 # Substrate
@@ -38,6 +39,7 @@ default = ["std"]
 std = [
 	"serde",
 	"nomad-core/std",
+	"avail-core/std",
 	"codec/std",
 	"scale-info/std",
 	"sp-core/std",

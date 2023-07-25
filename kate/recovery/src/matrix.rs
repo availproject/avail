@@ -7,6 +7,7 @@ use core::{
 };
 use derive_more::Constructor;
 use sp_std::prelude::*;
+use sp_std::vec;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -321,6 +322,7 @@ impl Dimensions {
 	}
 
 	/// Generates cell positions for given block partition
+	#[cfg(feature = "std")]
 	pub fn iter_extended_partition_positions(
 		&self,
 		partition: &Partition,

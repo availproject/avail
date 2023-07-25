@@ -1,4 +1,6 @@
+use core::num::NonZeroU32;
 use sp_arithmetic::Perbill;
+use static_assertions::const_assert;
 
 pub mod well_known_keys {
 	/// Public params used to generate Kate commitment
@@ -9,7 +11,8 @@ pub mod well_known_keys {
 /// by  Operational  extrinsics.
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(90);
 
-pub const BLOCK_CHUNK_SIZE: u32 = 32;
+const_assert!(BLOCK_CHUNK_SIZE.get() > 0);
+pub const BLOCK_CHUNK_SIZE: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(32) };
 
 /// Money matters.
 pub mod currency {

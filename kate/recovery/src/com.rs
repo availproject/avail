@@ -1,23 +1,31 @@
-use crate::{data, matrix};
-use core::{convert::TryFrom, num::TryFromIntError, ops::Range};
+use crate::matrix;
+use core::{num::TryFromIntError, ops::Range};
 
-use avail_core::{data_lookup::Error as DataLookupError, ensure, AppId, DataLookup};
-use dusk_bytes::Serializable as _;
-use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
-use sp_arithmetic::{traits::SaturatedConversion as _, Percent};
+use avail_core::{data_lookup::Error as DataLookupError, AppId, DataLookup};
+
 use sp_std::prelude::*;
 use thiserror_no_std::Error;
 
 #[cfg(feature = "std")]
+use crate::data;
+#[cfg(feature = "std")]
 use crate::{config, sparse_slice_read::SparseSliceRead};
 #[cfg(feature = "std")]
+use avail_core::ensure;
+#[cfg(feature = "std")]
 use codec::{Decode, IoReader};
+#[cfg(feature = "std")]
+use dusk_bytes::Serializable as _;
+#[cfg(feature = "std")]
+use dusk_plonk::{fft::EvaluationDomain, prelude::BlsScalar};
+#[cfg(feature = "std")]
+pub use sp_arithmetic::{traits::SaturatedConversion as _, Percent};
 #[cfg(feature = "std")]
 use static_assertions::{const_assert, const_assert_ne};
 #[cfg(feature = "std")]
 use std::{
 	collections::{HashMap, HashSet},
-	convert::TryInto,
+	convert::{TryFrom, TryInto},
 	iter::FromIterator,
 };
 
@@ -387,7 +395,7 @@ pub fn unflatten_padded_data(
 
 // This module is taken from https://gist.github.com/itzmeanjan/4acf9338d9233e79cfbee5d311e7a0b4
 // which I wrote few months back when exploring polynomial based erasure coding technique !
-
+#[cfg(feature = "std")]
 fn reconstruct_poly(
 	// domain I'm working with
 	// all (i)ffts to be performed on it
@@ -434,6 +442,7 @@ fn reconstruct_poly(
 	Ok(reconstructed_data)
 }
 
+#[cfg(feature = "std")]
 fn expand_root_of_unity(eval_domain: EvaluationDomain) -> Vec<BlsScalar> {
 	let root_of_unity = eval_domain.group_gen;
 	let mut roots: Vec<BlsScalar> = vec![BlsScalar::one(), root_of_unity];
@@ -445,6 +454,7 @@ fn expand_root_of_unity(eval_domain: EvaluationDomain) -> Vec<BlsScalar> {
 	roots
 }
 
+#[cfg(feature = "std")]
 fn zero_poly_fn(
 	eval_domain: EvaluationDomain,
 	missing_indices: &[u64],
@@ -476,6 +486,7 @@ fn zero_poly_fn(
 }
 
 // in-place shifting
+#[cfg(feature = "std")]
 fn shift_poly(poly: &mut [BlsScalar]) {
 	// primitive root of unity
 	let shift_factor = BlsScalar::from(5);
@@ -492,6 +503,7 @@ fn shift_poly(poly: &mut [BlsScalar]) {
 }
 
 // in-place unshifting
+#[cfg(feature = "std")]
 fn unshift_poly(poly: &mut [BlsScalar]) {
 	// primitive root of unity
 	let shift_factor = BlsScalar::from(5);
@@ -513,6 +525,7 @@ pub type AppDataRange = Range<u32>;
 //
 // performing one round of ifft should reveal original data which were
 // coded together
+#[cfg(feature = "std")]
 pub fn reconstruct_column(
 	row_count: u32,
 	cells: &[data::DataCell],

@@ -12,6 +12,7 @@ hash256-std-hasher = { version = "0.15.2", default-features = false }
 hex = { version = "0.4", optional = true, default-features = false, features = ["alloc", "serde"] }
 log = { version = "0.4.8", default-features = false }
 serde = { version = "1", optional = true, features = ["derive"] }
+static_assertions = "1.1.0"
 thiserror-no-std = "2.0.2"
 
 # Substrate
@@ -20,6 +21,7 @@ codec = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2", default-features = false, features = ["derive"] }
 sp-arithmetic = { version = "*", default-features = false }
 sp-core = { version = "*", default-features = false }
+sp-io = { version = "*", default-features = false }
 sp-std = { version = "*", default-features = false }
 sp-trie = { version = "*", default-features = false }
 
@@ -42,6 +44,7 @@ std = [
 	"scale-info/std",
 	"log/std",
 	"sp-core/std",
+	"sp-io/std",
 	"sp-std/std",
 	"sp-trie/std",
 	"sp-arithmetic/std",

@@ -1,5 +1,5 @@
+use avail_core::ensure;
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::ensure;
 use nomad_core::keccak256_concat;
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]

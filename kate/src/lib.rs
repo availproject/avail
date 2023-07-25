@@ -191,15 +191,15 @@ fn padded_len_of_pad_iec_9797_1(len: u32) -> u32 {
 
 /// Calculates the padded len based of initial `len`.
 #[allow(clippy::integer_arithmetic)]
-pub fn padded_len(len: u32, chunk_size: u32) -> u32 {
+pub fn padded_len(len: u32, chunk_size: NonZeroU32) -> u32 {
 	let iec_9797_1_len = padded_len_of_pad_iec_9797_1(len);
 
 	const_assert_ne!(DATA_CHUNK_SIZE, 0);
 	debug_assert!(
-		chunk_size >= DATA_CHUNK_SIZE as u32,
+		chunk_size.get() >= DATA_CHUNK_SIZE as u32,
 		"`BlockLength.chunk_size` is valid by design .qed"
 	);
-	let diff_per_chunk = chunk_size - DATA_CHUNK_SIZE as u32;
+	let diff_per_chunk = chunk_size.get() - DATA_CHUNK_SIZE as u32;
 	let pad_to_chunk_extra = if diff_per_chunk != 0 {
 		let chunks_count = iec_9797_1_len / DATA_CHUNK_SIZE as u32;
 		chunks_count * diff_per_chunk
@@ -210,7 +210,8 @@ pub fn padded_len(len: u32, chunk_size: u32) -> u32 {
 	iec_9797_1_len + pad_to_chunk_extra
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Constructor)]
+#[cfg_attr(feature = "std", derive(Debug))]
+#[derive(Clone, Copy, PartialEq, Eq, Constructor)]
 pub struct BlockDimensions {
 	pub rows: BlockLengthRows,
 	pub cols: BlockLengthColumns,

@@ -1,5 +1,6 @@
 use codec::{Codec, Decode};
 use sp_arithmetic::traits::AtLeast32BitUnsigned;
+use sp_arithmetic::traits::Saturating;
 use sp_core::U256;
 use sp_std::{convert::TryFrom, fmt::Debug, hash::Hash as StdHash};
 
@@ -11,12 +12,20 @@ pub use extended_header::*;
 
 /// Header block number trait.
 pub trait HeaderBlockNumber:
-	AtLeast32BitUnsigned + Codec + StdHash + Copy + Into<U256> + TryFrom<U256> + Debug + Eq
+	AtLeast32BitUnsigned + Codec + StdHash + Copy + Into<U256> + TryFrom<U256> + Debug + Eq + Saturating
 {
 }
 
 impl<
-		T: AtLeast32BitUnsigned + Codec + StdHash + Copy + Into<U256> + TryFrom<U256> + Debug + Eq,
+		T: AtLeast32BitUnsigned
+			+ Codec
+			+ StdHash
+			+ Copy
+			+ Into<U256>
+			+ TryFrom<U256>
+			+ Debug
+			+ Eq
+			+ Saturating,
 	> HeaderBlockNumber for T
 {
 }

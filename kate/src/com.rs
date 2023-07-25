@@ -8,7 +8,7 @@ use std::{
 
 use avail_core::{
 	data_lookup::Error as DataLookupError, ensure, AppExtrinsic, AppId, BlockLengthColumns,
-	BlockLengthRows,
+	BlockLengthRows, DataLookup,
 };
 use codec::Encode;
 use derive_more::Constructor;
@@ -506,6 +506,39 @@ fn commit(
 	prover_key.commit(&poly).map_err(Error::from)
 }
 
+#[cfg(feature = "std")]
+pub fn scalars_to_app_rows(
+	id: AppId,
+	lookup: &DataLookup,
+	dimensions: Dimensions,
+	matrix: &DMatrix<BlsScalar>,
+) -> Vec<Option<Vec<u8>>> {
+	let app_rows = kate_recovery::com::app_specific_rows(lookup, dimensions, id);
+	dimensions
+		.iter_extended_rows()
+		.map(|i| {
+			app_rows.iter().find(|&&row| row == i).map(|_| {
+				let row = get_row(matrix, i as usize);
+				row.iter()
+					.flat_map(BlsScalar::to_bytes)
+					.collect::<Vec<u8>>()
+			})
+		})
+		.collect()
+}
+
+#[cfg(feature = "std")]
+pub fn scalars_to_rows(rows: &[u32], data: &DMatrix<BlsScalar>) -> Vec<Vec<u8>> {
+	rows.iter()
+		.map(|i| {
+			let row = get_row(data, *i as usize);
+			row.iter()
+				.flat_map(BlsScalar::to_bytes)
+				.collect::<Vec<u8>>()
+		})
+		.collect::<Vec<Vec<u8>>>()
+}
+
 #[cfg(test)]
 mod tests {
 	use avail_core::DataLookup;
@@ -539,27 +572,6 @@ mod tests {
 	};
 
 	const TCHUNK: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(32) };
-
-	fn scalars_to_app_rows(
-		id: AppId,
-		lookup: &DataLookup,
-		dimensions: Dimensions,
-		matrix: &DMatrix<BlsScalar>,
-	) -> Vec<Option<Vec<u8>>> {
-		let app_rows = app_specific_rows(lookup, dimensions, id);
-		dimensions
-			.iter_extended_rows()
-			.map(|i| {
-				app_rows.iter().find(|&&row| row == i).map(|_| {
-					let row = get_row(&matrix, i as usize);
-					row.iter()
-						.flat_map(BlsScalar::to_bytes)
-						.collect::<Vec<u8>>()
-				})
-			})
-			.collect()
-	}
-
 	#[test_case(0,   256, 256 => (1, 4, 32) ; "block size zero")]
 	#[test_case(11,   256, 256 => (1, 4, 32) ; "below minimum block size")]
 	#[test_case(300,  256, 256 => (1, 16, 32) ; "regular case")]
@@ -1060,6 +1072,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	}
 
 	fn padded_len_group(lens: &[u32], chunk_size: u32) -> u32 {
+		let chunk_size = NonZeroU32::new(chunk_size).unwrap();
 		lens.iter().map(|len| padded_len(*len, chunk_size)).sum()
 	}
 
