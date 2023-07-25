@@ -3,7 +3,10 @@ use da_primitives::{
 	asdr::{AppId, GetAppId},
 	InvalidTransactionCustomId,
 };
-use frame_support::{ensure, traits::IsSubType};
+use frame_support::{
+	ensure,
+	traits::{IsSubType, IsType},
+};
 use frame_system::Config as SystemConfig;
 use pallet_utility::{Call as UtilityCall, Config as UtilityConfig};
 use scale_info::TypeInfo;
@@ -84,11 +87,7 @@ where
 							)
 						);
 						for call in calls.iter() {
-							// TODO @Marko Make it readable
-							let a = call as *const <T as UtilityConfig>::RuntimeCall;
-							let b = a as *const <T as SystemConfig>::RuntimeCall;
-							let c = unsafe { &*b };
-							stack.push(c);
+							stack.push(call.into_ref());
 						}
 						Ok(())
 					},
