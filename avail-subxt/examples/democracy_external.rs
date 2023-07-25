@@ -389,8 +389,8 @@ async fn main() -> Result<()> {
 	pretty_env_logger::init();
 	let remark = b"Proposal Done".to_vec();
 	let call = Call::System(SystemCall::remark_with_event { remark });
-	let checked_pallet_name = SystemEvent::RemarkedByRoot::PALLET;
-	let checked_event_name = SystemEvent::RemarkedByRoot::EVENT;
+	let checked_pallet_name = SystemEvent::RemarkedByJoe::PALLET;
+	let checked_event_name = SystemEvent::RemarkedByJoe::EVENT;
 	start_democracy_call(call, checked_pallet_name, checked_event_name).await?;
 	Ok(())
 }

@@ -10,7 +10,7 @@ use crate::chain_spec::{
 pub fn chain_spec() -> ChainSpec {
 	let empty_boot_nodes = vec![];
 	ChainSpec::from_genesis(
-		"Avail Local Solo",
+		"Spicy Solo",
 		"Avail Local",
 		ChainType::Development,
 		config_genesis,

@@ -109,7 +109,7 @@ pub mod system {
 
 	pub type MaxConsumers = ConstU32<16>;
 	pub type SS58Prefix = ConstU16<42>;
-	pub type MaxAuthorities = ConstU32<128>;
+	pub type MaxAuthorities = ConstU32<256>;
 
 	/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
 	/// This is used to limit the maximal weight of a single extrinsic.

@@ -56,7 +56,7 @@ benchmarks! {
 	set_code_without_checks {
 		// Assume Wasm ~4MB
 		let code = vec![1; 4_000_000_usize];
-	}: _(RawOrigin::Root, code)
+	}: _(RawOrigin::Root, code.clone(), code)
 	verify {
 		let current_code = storage::unhashed::get_raw(well_known_keys::CODE).ok_or("Code not stored.")?;
 		assert_eq!(current_code.len(), 4_000_000_usize);

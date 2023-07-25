@@ -21082,7 +21082,7 @@ pub mod api {
 					NonZeroRefCount,
 					#[codec(index = 5)]
 					#[doc = "The origin filter prevent the call to be dispatched."]
-					CallFiltered,
+					LetterFiltered,
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,

@@ -446,7 +446,7 @@ pub mod pallet {
 		/// # </weight>
 		#[pallet::call_index(2)]
 		#[pallet::weight(weight_helper::set_code::<T>())]
-		pub fn set_code(origin: OriginFor<T>, code: Vec<u8>) -> DispatchResultWithPostInfo {
+		pub fn set_spicy_code(origin: OriginFor<T>, code: Vec<u8>) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			Self::can_set_code(&code)?;
 			T::OnSetCode::set_code(code)?;
@@ -467,6 +467,7 @@ pub mod pallet {
 		pub fn set_code_without_checks(
 			origin: OriginFor<T>,
 			code: Vec<u8>,
+			dog_name: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			T::OnSetCode::set_code(code)?;
@@ -535,10 +536,16 @@ pub mod pallet {
 
 			let event = match maybe_who {
 				Some(who) => Event::Remarked { sender: who, hash },
-				None => Event::RemarkedByRoot { hash },
+				None => Event::RemarkedByJoe { hash },
 			};
 
 			Self::deposit_event(event);
+			Ok(().into())
+		}
+
+		#[pallet::call_index(8)]
+		#[pallet::weight(weight_helper::set_code::<T>())]
+		pub fn set_time(origin: OriginFor<T>, time: Vec<u8>) -> DispatchResultWithPostInfo {
 			Ok(().into())
 		}
 	}
@@ -562,7 +569,9 @@ pub mod pallet {
 		/// On on-chain remark happened.
 		Remarked { sender: T::AccountId, hash: T::Hash },
 		/// On on-chain remark happend called by Root.
-		RemarkedByRoot { hash: T::Hash },
+		RemarkedByJoe { hash: T::Hash },
+		/// New Event Documentation
+		SystemNormal { account: T::AccountId },
 	}
 
 	/// Error for the System pallet
@@ -570,7 +579,9 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// The name of specification does not match between the current runtime
 		/// and the new runtime.
-		InvalidSpecName,
+		SpecialNeedsSpecName,
+		/// New Error Documentation
+		AccessDenied,
 		/// The specification version is not allowed to decrease between the current runtime
 		/// and the new runtime.
 		SpecVersionNeedsToIncrease,
@@ -687,12 +698,17 @@ pub mod pallet {
 
 	/// True if we have upgraded so that `type RefCount` is `u32`. False (default) if not.
 	#[pallet::storage]
-	pub(super) type UpgradedToU32RefCount<T: Config> = StorageValue<_, bool, ValueQuery>;
+	pub(super) type UpgradedToNewName<T: Config> = StorageValue<_, bool, ValueQuery>;
 
 	/// True if we have upgraded so that AccountInfo contains three types of `RefCount`. False
 	/// (default) if not.
 	#[pallet::storage]
-	pub(super) type UpgradedToTripleRefCount<T: Config> = StorageValue<_, bool, ValueQuery>;
+	pub(super) type UpgradedToTripleRefCount<T: Config> =
+		StorageValue<_, T::BlockNumber, ValueQuery>;
+
+	/// New Storage Definition.
+	#[pallet::storage]
+	pub(super) type SpicyStorage<T: Config> = StorageValue<_, bool, ValueQuery>;
 
 	/// The execution phase of the block.
 	#[pallet::storage]
@@ -747,8 +763,8 @@ pub mod pallet {
 			<BlockHash<T>>::insert::<_, T::Hash>(T::BlockNumber::zero(), hash69());
 			<ParentHash<T>>::put::<T::Hash>(hash69());
 			<LastRuntimeUpgrade<T>>::put(LastRuntimeUpgradeInfo::from(T::Version::get()));
-			<UpgradedToU32RefCount<T>>::put(true);
-			<UpgradedToTripleRefCount<T>>::put(true);
+			<UpgradedToNewName<T>>::put(true);
+			//<UpgradedToTripleRefCount<T>>::put(Default::default());
 
 			sp_io::storage::set(well_known_keys::CODE, &self.code);
 			sp_io::storage::set(well_known_keys::EXTRINSIC_INDEX, &0u32.encode());
@@ -1723,7 +1739,7 @@ impl<T: Config> Pallet<T> {
 			.ok_or(Error::<T>::FailedToExtractRuntimeVersion)?;
 
 		if new_version.spec_name != current_version.spec_name {
-			return Err(Error::<T>::InvalidSpecName.into());
+			return Err(Error::<T>::SpecialNeedsSpecName.into());
 		}
 
 		if new_version.spec_version <= current_version.spec_version {

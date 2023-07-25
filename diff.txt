@@ -1,0 +1,52 @@
+Errors
+  System
+    (CHANGED) SpecVersionNeedsToIncrease Index 1 -> 2
+    (CHANGED) FailedToExtractRuntimeVersion Index 2 -> 3
+    (CHANGED) NonDefaultComposite Index 3 -> 4
+    (CHANGED) NonZeroRefCount Index 4 -> 5
+    (CHANGED) CallFiltered Index 5 -> 6
+    (NEW) {"name":"SpecialNeedsSpecName","fields":[],"index":0,"docs":["The name of specification does not match between the current runtime","and the new runtime."]}
+    (NEW) {"name":"AccessDenied","fields":[],"index":1,"docs":["New Error Documentation"]}
+    (REMOVED) {"name":"InvalidSpecName","fields":[],"index":0,"docs":["The name of specification does not match between the current runtime","and the new runtime."]}
+Events
+  System
+    (NEW) {"name":"RemarkedByJoe","fields":[{"name":"hash","type":12,"typeName":"T::Hash","docs":[]}],"index":6,"docs":["On on-chain remark happend called by Root."]}
+    (NEW) {"name":"SystemNormal","fields":[{"name":"account","type":0,"typeName":"T::AccountId","docs":[]}],"index":7,"docs":["New Event Documentation"]}
+    (REMOVED) {"name":"RemarkedByRoot","fields":[{"name":"hash","type":12,"typeName":"T::Hash","docs":[]}],"index":6,"docs":["On on-chain remark happend called by Root."]}
+Calls
+  System
+    (CHANGED) set_code_without_checks Field
+      - [{"name":"code","type":13,"typeName":"Vec<u8>","docs":[]}]
+      + [{"name":"code","type":13,"typeName":"Vec<u8>","docs":[]}, {"name":"dog_name","type":13,"typeName":"Vec<u8>","docs":[]}]
+    (NEW) {"name":"set_spicy_code","fields":[{"name":"code","type":13,"typeName":"Vec<u8>","docs":[]}],"index":2,"docs":["Set the new runtime code.","","# <weight>","- `O(C + S)` where `C` length of `code` and `S` complexity of `can_set_code`","- 1 call to `can_set_code`: `O(S)` (calls `sp_io::misc::runtime_version` which is","  expensive).","- 1 storage write (codec `O(C)`).","- 1 digest item.","- 1 event.","The weight of this function is dependent on the runtime, but generally this is very","expensive. We will treat this as a full block.","# </weight>"]}
+    (NEW) {"name":"set_time","fields":[{"name":"time","type":13,"typeName":"Vec<u8>","docs":[]}],"index":8,"docs":[]}
+    (REMOVED) {"name":"set_code","fields":[{"name":"code","type":13,"typeName":"Vec<u8>","docs":[]}],"index":2,"docs":["Set the new runtime code.","","# <weight>","- `O(C + S)` where `C` length of `code` and `S` complexity of `can_set_code`","- 1 call to `can_set_code`: `O(S)` (calls `sp_io::misc::runtime_version` which is","  expensive).","- 1 storage write (codec `O(C)`).","- 1 digest item.","- 1 event.","The weight of this function is dependent on the runtime, but generally this is very","expensive. We will treat this as a full block.","# </weight>"]}
+Storage
+  System
+    (NEW) name: UpgradedToNewName, modifier: Default, type: Bool, docs: 0x00
+    (NEW) name: SpicyStorage, modifier: Default, type: Bool, docs: 0x00
+    (REMOVED) name: UpgradedToU32RefCount, modifier: Default, type: Bool, docs: 0x00
+    (CHANGED) UpgradedToTripleRefCount Type
+      - Bool
+      + U32
+Constants
+  System
+    (CHANGED) Version Value
+      - 0x28646174612d617661696c28646174612d617661696c0b0000000b000000000000003cdf6acb689907609b0400000037e397fc7c91f5e40100000040fe3ad401f8959a06000000d2bc9897eed08f1503000000f78b278be53f454c02000000ed99c5acb25eedf503000000cbca25e39f14238702000000687ad44ad37f03c201000000bc9d89904f5b923f0100000037c8bb1350a9a2a802000000f3ff14d5ab5270590200000091d5df18b0d2cf58010000007915d720c2769ac801000000537dc9ebb965e7c001000000ab3c0572291feb8b010000000100000001
+      + 0x28646174612d617661696c28646174612d617661696c0b000000a4010000000000003cdf6acb689907609b0400000037e397fc7c91f5e40100000040fe3ad401f8959a06000000d2bc9897eed08f1503000000f78b278be53f454c02000000ed99c5acb25eedf503000000cbca25e39f14238702000000687ad44ad37f03c201000000bc9d89904f5b923f0100000037c8bb1350a9a2a802000000f3ff14d5ab5270590200000091d5df18b0d2cf58010000007915d720c2769ac801000000537dc9ebb965e7c001000000ab3c0572291feb8b010000000100000001
+  Babe
+    (CHANGED) MaxAuthorities Value
+      - 0x80000000
+      + 0x00010000
+  ElectionProviderMultiPhase
+    (CHANGED) MaxWinners Value
+      - 0x80000000
+      + 0x00010000
+  Grandpa
+    (CHANGED) MaxAuthorities Value
+      - 0x80000000
+      + 0x00010000
+Runtime Version
+    (CHANGED) Spec Version 11 -> 420
+Runtime Chain
+    (CHANGED) Name Avail Kate Testnet -> Spicy Solo
