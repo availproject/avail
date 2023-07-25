@@ -11,7 +11,7 @@ use subxt::{
 };
 
 use crate::api::runtime_types::{
-	da_primitives::header::{extension::HeaderExtension, Header as ApiHeader},
+	avail_core::header::{extension::HeaderExtension, Header as ApiHeader},
 	sp_runtime::generic::digest::{Digest as ApiDigest, DigestItem as ApiDigestItem},
 };
 

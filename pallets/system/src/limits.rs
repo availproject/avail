@@ -34,16 +34,17 @@ use frame_support::{
 	weights::{constants, Weight},
 };
 use kate::config::{DATA_CHUNK_SIZE, MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
-use scale_info::TypeInfo;
+use scale_info::{build::Fields, Path, Type, TypeInfo};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Bounded, Perbill, RuntimeDebug};
 use sp_runtime_interface::pass_by::PassByCodec;
+use sp_std::vec::Vec;
 use static_assertions::const_assert;
 
 /// Block length limit configuration.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(RuntimeDebug, PartialEq, Clone, TypeInfo, PassByCodec, MaxEncodedLen)]
+#[derive(RuntimeDebug, PartialEq, Clone, PassByCodec, MaxEncodedLen)]
 pub struct BlockLength {
 	/// Maximal total length in bytes for each extrinsic class.
 	///
@@ -80,6 +81,37 @@ impl BlockLength {
 
 		self.chunk_size = new_size;
 		Ok(())
+	}
+}
+
+/// Customized `TypeInfo` to support `NonZeroU32` as `Compact<u32>`.
+impl TypeInfo for BlockLength {
+	type Identity = Self;
+
+	fn type_info() -> Type {
+		Type::builder()
+			.path(Path::new("BlockLength", "frame_system::limits"))
+			.type_params(Vec::new())
+			.docs(&["Block length limit configuration."])
+			.composite(
+				Fields::named()
+					.field(|f| {
+						f.ty::<PerDispatchClass<u32>>()
+							.name("max")
+							.type_name("PerDispatchClass<u32>")
+					})
+					.field(|f| {
+						f.ty::<BlockLengthColumns>()
+							.name("cols")
+							.type_name("BlockLengthColumns")
+					})
+					.field(|f| {
+						f.ty::<BlockLengthRows>()
+							.name("rows")
+							.type_name("BlockLengthRows")
+					})
+					.field(|f| f.compact::<u32>().name("chunk_size").type_name("u32")),
+			)
 	}
 }
 

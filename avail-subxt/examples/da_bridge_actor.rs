@@ -1,7 +1,7 @@
 use anyhow::Result;
 use avail_subxt::{
 	api::{
-		self, data_availability::calls::SubmitData,
+		self, data_availability::calls::types::SubmitData,
 		runtime_types::sp_core::bounded::bounded_vec::BoundedVec,
 	},
 	build_client, Opts,
@@ -9,14 +9,14 @@ use avail_subxt::{
 use sp_keyring::AccountKeyring::Alice;
 use structopt::StructOpt;
 use subxt::{
-	tx::{PairSigner, StaticTxPayload},
+	tx::{PairSigner, Payload},
 	utils::H160,
 };
 
 const DESTINATION_DOMAIN: u32 = 1000;
 const DA_BRIDGE_ROUTER_ADDRESS: &str = "0x3f28a3e66326c3aa494d4f8e9477d1397ee94432";
 
-fn submit_some_data() -> Result<StaticTxPayload<SubmitData>> {
+fn submit_some_data() -> Result<Payload<SubmitData>> {
 	let data = BoundedVec(b"Test Data".to_vec());
 	let submit_data_tx = api::tx().data_availability().submit_data(data);
 	Ok(submit_data_tx)
