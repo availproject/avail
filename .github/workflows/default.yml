@@ -105,6 +105,17 @@ jobs:
     needs: [build]
     steps:
       - uses: actions/checkout@v2
+
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+
+      - name: Install build-essential
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential
+          sudo apt install -y git clang curl libssl-dev protobuf-compiler
      
       # Restore cache from `build`
       - uses: actions/cache/restore@v3
@@ -156,12 +167,6 @@ jobs:
       - name: Generate test code coverage report
         run: |
           df -h
-          sudo apt-get autoremove
-          sudo apt-get clean
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           cargo +stable install --force grcov
           grcov . -s . --binary-path ./target/release/ -t lcov --branch --ignore-not-existing -o lcov.info
 
