@@ -387,6 +387,7 @@ pub mod pallet {
 		/// Filter used by `DataRootBuilder`.
 		type SubmittedDataExtractor: submitted_data::Extractor
 			+ submitted_data::Filter<Self::RuntimeCall>;
+
 		/// Extractor of AppId.
 		type SubmittedDataAppIdExtractor: submitted_data::AppIdExtractor
 			+ submitted_data::Filter<Self::RuntimeCall>;

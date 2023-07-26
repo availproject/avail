@@ -148,6 +148,8 @@ where
 	}
 }
 
+/// Unused function to demonstrate how to get only extract the app_id from an opaque extrinsic
+#[allow(dead_code)]
 fn app_id_from_opaque(opaque: &OpaqueExtrinsic) -> Result<AppId, String> {
 	let input = &mut opaque.0.as_slice();
 	let version = input.read_byte().unwrap();

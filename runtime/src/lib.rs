@@ -221,10 +221,7 @@ impl submitted_data::Extractor for Runtime {
 impl submitted_data::AppIdExtractor for Runtime {
 	type Error = codec::Error;
 
-	fn extract(
-		opaque: &OpaqueExtrinsic,
-		metrics: submitted_data::RcMetrics,
-	) -> Result<AppId, Self::Error> {
+	fn extract(opaque: &OpaqueExtrinsic) -> Result<AppId, Self::Error> {
 		let extrinsic = UncheckedExtrinsic::try_from(opaque)?;
 		let appid = extrinsic.signature.map(|e| e.2 .8 .0).unwrap_or(AppId(0));
 

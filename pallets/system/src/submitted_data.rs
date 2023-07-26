@@ -43,16 +43,14 @@ pub trait Extractor {
 pub trait AppIdExtractor {
 	type Error: Debug;
 	/// Returns the `AppId` field of `encoded_extrinsic` if it is a signed extrinsic.
-	///
-	/// The `metrics` will be used to write accountability information about the whole process.
-	fn extract(extrinsic: &OpaqueExtrinsic, metrics: RcMetrics) -> Result<AppId, Self::Error>;
+	fn extract(extrinsic: &OpaqueExtrinsic) -> Result<AppId, Self::Error>;
 }
 
 #[cfg(any(feature = "std", test))]
 impl AppIdExtractor for () {
 	type Error = ();
 
-	fn extract(_: &OpaqueExtrinsic, _: RcMetrics) -> Result<AppId, ()> { Ok(AppId(0)) }
+	fn extract(_: &OpaqueExtrinsic) -> Result<AppId, ()> { Ok(AppId(0)) }
 }
 
 #[cfg(any(feature = "std", test))]
@@ -92,12 +90,12 @@ where
 }
 
 /// Extracts just the AppId from the extrinsic (if it is signed), otherwise returns None.
-fn extract_app_id_and_inspect<AE>(opaque: &OpaqueExtrinsic, metrics: RcMetrics) -> Option<AppId>
+fn extract_app_id_and_inspect<AE>(opaque: &OpaqueExtrinsic) -> Option<AppId>
 where
 	AE: AppIdExtractor,
 	AE::Error: Debug,
 {
-	let app_id = AE::extract(opaque, Rc::clone(&metrics))
+	let app_id = AE::extract(opaque)
 		.inspect_err(|e| log::error!("Extractor cannot extract AppId from opaque: {e:?}"))
 		.ok();
 
@@ -207,8 +205,7 @@ where
 	AE: AppIdExtractor,
 	AE::Error: Debug,
 {
-	let metrics = Metrics::new_shared();
-	let app_id = extract_app_id_and_inspect::<AE>(extrinsic, metrics);
+	let app_id = extract_app_id_and_inspect::<AE>(extrinsic);
 
 	app_id
 }
