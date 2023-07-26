@@ -64,6 +64,8 @@ pub enum InvalidTransactionCustomId {
 	ForbiddenAppId,
 	/// Max padded length was exceeded.
 	MaxPaddedLenExceeded,
+	/// Max recursion was reached for a call with AppId != 0.
+	MaxRecursionExceeded,
 }
 
 /// Provides an implementation of [`frame_support::traits::Randomness`] that should only be used in
