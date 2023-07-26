@@ -90,7 +90,7 @@ where
 }
 
 /// Extracts just the AppId from the extrinsic (if it is signed), otherwise returns None.
-fn extract_app_id_and_inspect<AE>(opaque: &OpaqueExtrinsic) -> Option<AppId>
+pub fn extract_app_id<AE>(opaque: &OpaqueExtrinsic) -> Option<AppId>
 where
 	AE: AppIdExtractor,
 	AE::Error: Debug,
@@ -197,17 +197,6 @@ where
 		.collect::<Vec<_>>();
 
 	proof(submitted_data, data_index, Rc::clone(&metrics))
-}
-
-/// Extracts the AppId from extrinsic, if it is signed, returns None otherwise.
-pub fn extract_app_id<AE>(extrinsic: &OpaqueExtrinsic) -> Option<AppId>
-where
-	AE: AppIdExtractor,
-	AE::Error: Debug,
-{
-	let app_id = extract_app_id_and_inspect::<AE>(extrinsic);
-
-	app_id
 }
 
 /// Creates the Merkle Proof of the submitted data items in `calls` filtered by `F` and
