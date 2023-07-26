@@ -105,6 +105,13 @@ jobs:
     needs: [build]
     steps:
       - uses: actions/checkout@v2
+
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # when set to "true" but frees about 6 GB
+          tool-cache: true
      
       # Restore cache from `build`
       - uses: actions/cache/restore@v3
@@ -144,10 +151,6 @@ jobs:
       - name: Run tests
         run: |
           env
-          df -h
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
           cargo test --release --workspace
           cargo test --release --manifest-path avail-subxt/Cargo.toml
         env:
@@ -160,9 +163,6 @@ jobs:
       - name: Generate test code coverage report
         run: |
           df -h
-          sudo apt-get autoremove
-          sudo apt-get clean
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           cargo +stable install --force grcov
           grcov . -s . --binary-path ./target/release/ -t lcov --branch --ignore-not-existing -o lcov.info
 
