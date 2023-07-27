@@ -67,12 +67,11 @@ where
 		while let Some(call) = stack.pop() {
 			if let Some(DACall::<T>::submit_data { .. }) = call.is_sub_type() {
 				let next_app_id =
-					maybe_next_app_id.unwrap_or_else(|| <Pallet<T>>::peek_next_application_id());
+					maybe_next_app_id.get_or_insert_with(<Pallet<T>>::peek_next_application_id);
 				ensure!(
-					self.app_id() < next_app_id,
+					self.app_id() < *next_app_id,
 					InvalidTransaction::Custom(InvalidTransactionCustomId::InvalidAppId as u8)
 				);
-				maybe_next_app_id = Some(next_app_id);
 			} else {
 				match call.is_sub_type() {
 					Some(UtilityCall::<T>::batch { calls })

@@ -169,41 +169,34 @@ parameter_types! {
 
 /// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.
 impl submitted_data::Filter<RuntimeCall> for Runtime {
-	fn filter(call: RuntimeCall, metrics: submitted_data::RcMetrics) -> Option<Vec<Vec<u8>>> {
+	fn filter(call: RuntimeCall, metrics: submitted_data::RcMetrics) -> Vec<Vec<u8>> {
 		metrics.borrow_mut().total_extrinsics += 1;
 
 		match call {
-			RuntimeCall::DataAvailability(da_control::Call::submit_data { data }) => {
+			RuntimeCall::DataAvailability(da_control::Call::submit_data { data })
+				if !data.is_empty() =>
+			{
 				let mut metrics = metrics.borrow_mut();
 				metrics.data_submit_leaves += 1;
 				metrics.data_submit_extrinsics += 1;
-				Some(vec![data.into_inner()])
+				vec![data.into_inner()]
 			},
 			RuntimeCall::Utility(pallet_utility::Call::batch { calls })
 			| RuntimeCall::Utility(pallet_utility::Call::batch_all { calls })
 			| RuntimeCall::Utility(pallet_utility::Call::force_batch { calls }) => {
 				Self::process_calls(calls, &metrics)
 			},
-			_ => None,
+			_ => vec![],
 		}
 	}
 
 	/// This function processes a list of calls and returns their data as Vec<Vec<u8>>
-	fn process_calls(
-		calls: Vec<RuntimeCall>,
-		metrics: &submitted_data::RcMetrics,
-	) -> Option<Vec<Vec<u8>>> {
-		let mut result = Vec::with_capacity(calls.len());
-		for call in calls {
-			if let Some(data) = Self::filter(call, Rc::clone(metrics)) {
-				result.extend(data);
-			}
-		}
-		if !result.is_empty() {
-			Some(result)
-		} else {
-			None
-		}
+	fn process_calls(calls: Vec<RuntimeCall>, metrics: &submitted_data::RcMetrics) -> Vec<Vec<u8>> {
+		calls
+			.into_iter()
+			.map(|call| Self::filter(call, Rc::clone(metrics)))
+			.flatten()
+			.collect()
 	}
 }
 
@@ -217,8 +210,7 @@ impl submitted_data::Extractor for Runtime {
 	) -> Result<Vec<Vec<u8>>, Self::Error> {
 		let extrinsic = UncheckedExtrinsic::try_from(opaque)?;
 		let data =
-			<Runtime as submitted_data::Filter<RuntimeCall>>::filter(extrinsic.function, metrics)
-				.unwrap_or_default();
+			<Runtime as submitted_data::Filter<RuntimeCall>>::filter(extrinsic.function, metrics);
 
 		Ok(data)
 	}
