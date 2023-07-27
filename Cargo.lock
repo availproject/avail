@@ -1546,6 +1546,7 @@ dependencies = [
  "log",
  "pallet-balances",
  "pallet-transaction-payment",
+ "pallet-utility",
  "parity-scale-codec 3.4.0",
  "scale-info",
  "serde",

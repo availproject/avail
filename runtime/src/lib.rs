@@ -55,7 +55,7 @@ use sp_runtime::{
 	FixedPointNumber, FixedU128,
 };
 pub use sp_runtime::{Perbill, Percent, Permill, Perquintill};
-use sp_std::prelude::*;
+use sp_std::{prelude::*, rc::Rc};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 
@@ -168,31 +168,35 @@ parameter_types! {
 }
 
 /// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.
-///
-/// # TODO
-/// - Support utility pallet containing severals `DataAvailability::submit_data` calls and
-/// double-check if we can remove the `clippy::collapsible_match` then.
 impl submitted_data::Filter<RuntimeCall> for Runtime {
-	fn filter(call: RuntimeCall, metrics: submitted_data::RcMetrics) -> Option<Vec<u8>> {
+	fn filter(call: RuntimeCall, metrics: submitted_data::RcMetrics) -> Vec<Vec<u8>> {
 		metrics.borrow_mut().total_extrinsics += 1;
 
-		#[allow(clippy::collapsible_match)]
 		match call {
-			RuntimeCall::DataAvailability(method) => match method {
-				da_control::Call::submit_data { data } => {
-					let mut metrics = metrics.borrow_mut();
-					metrics.data_submit_leaves += 1;
-					metrics.data_submit_extrinsics += 1;
-					Some(data.into_inner())
-				},
-				_ => None,
+			RuntimeCall::DataAvailability(da_control::Call::submit_data { data })
+				if !data.is_empty() =>
+			{
+				let mut metrics = metrics.borrow_mut();
+				metrics.data_submit_leaves += 1;
+				metrics.data_submit_extrinsics += 1;
+				vec![data.into_inner()]
 			},
-			RuntimeCall::Utility(_) => {
-				// TODO Support utility here.
-				None
+			RuntimeCall::Utility(pallet_utility::Call::batch { calls })
+			| RuntimeCall::Utility(pallet_utility::Call::batch_all { calls })
+			| RuntimeCall::Utility(pallet_utility::Call::force_batch { calls }) => {
+				Self::process_calls(calls, &metrics)
 			},
-			_ => None,
+			_ => vec![],
 		}
+	}
+
+	/// This function processes a list of calls and returns their data as Vec<Vec<u8>>
+	fn process_calls(calls: Vec<RuntimeCall>, metrics: &submitted_data::RcMetrics) -> Vec<Vec<u8>> {
+		calls
+			.into_iter()
+			.map(|call| Self::filter(call, Rc::clone(metrics)))
+			.flatten()
+			.collect()
 	}
 }
 
@@ -203,11 +207,10 @@ impl submitted_data::Extractor for Runtime {
 	fn extract(
 		opaque: &OpaqueExtrinsic,
 		metrics: submitted_data::RcMetrics,
-	) -> Result<Vec<u8>, Self::Error> {
+	) -> Result<Vec<Vec<u8>>, Self::Error> {
 		let extrinsic = UncheckedExtrinsic::try_from(opaque)?;
 		let data =
-			<Runtime as submitted_data::Filter<RuntimeCall>>::filter(extrinsic.function, metrics)
-				.unwrap_or_default();
+			<Runtime as submitted_data::Filter<RuntimeCall>>::filter(extrinsic.function, metrics);
 
 		Ok(data)
 	}
