@@ -49,28 +49,30 @@ impl Extractor for () {
 /// It is similar to `Extractor` but it uses `C` type for calls, instead of `AppExtrinsic`.
 pub trait Filter<C> {
 	/// Returns the `data` field of `call` if it is a one or multiple valid `da_ctrl::submit_data` call.
-	fn filter(call: C, metrics: RcMetrics) -> Option<Vec<Vec<u8>>>;
+	fn filter(call: C, metrics: RcMetrics) -> Vec<Vec<u8>>;
 
 	/// This function processes a list of calls and returns their data as Vec<Vec<u8>>
-	fn process_calls(calls: Vec<C>, metrics: &RcMetrics) -> Option<Vec<Vec<u8>>>;
+	fn process_calls(calls: Vec<C>, metrics: &RcMetrics) -> Vec<Vec<u8>>;
 }
 
 #[cfg(any(feature = "std", test))]
 impl<C> Filter<C> for () {
-	fn filter(_: C, _: RcMetrics) -> Option<Vec<Vec<u8>>> { None }
+	fn filter(_: C, _: RcMetrics) -> Vec<Vec<u8>> { vec![] }
 
-	fn process_calls(_: Vec<C>, _: &RcMetrics) -> Option<Vec<Vec<u8>>> { None }
+	fn process_calls(_: Vec<C>, _: &RcMetrics) -> Vec<Vec<u8>> { vec![] }
 }
 
-fn extract_and_inspect<E>(opaque: &OpaqueExtrinsic, metrics: RcMetrics) -> Option<Vec<Vec<u8>>>
+fn extract_and_inspect<E>(opaque: &OpaqueExtrinsic, metrics: RcMetrics) -> Vec<Vec<u8>>
 where
 	E: Extractor,
 	E::Error: Debug,
 {
 	E::extract(opaque, metrics)
 		.inspect_err(|e| log::error!("Extractor cannot decode opaque: {e:?}"))
-		.ok()
+		.unwrap_or_default()
+		.into_iter()
 		.filter(|data| !data.is_empty())
+		.collect()
 }
 
 /// Construct a root hash of Binary Merkle Tree created from given filtered `app_extrincs`.
@@ -82,7 +84,7 @@ where
 {
 	let metrics = Metrics::new_shared();
 	let submitted_data = opaque_itr
-		.filter_map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
+		.map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
 		.flatten();
 
 	root(submitted_data, Rc::clone(&metrics))
@@ -95,9 +97,7 @@ where
 	I: Iterator<Item = C>,
 {
 	let metrics = Metrics::new_shared();
-	let submitted_data = calls
-		.filter_map(|c| F::filter(c, Rc::clone(&metrics)))
-		.flatten();
+	let submitted_data = calls.map(|c| F::filter(c, Rc::clone(&metrics))).flatten();
 	root(submitted_data, Rc::clone(&metrics))
 }
 
@@ -167,7 +167,7 @@ where
 {
 	let metrics = Metrics::new_shared();
 	let submitted_data = app_extrinsics
-		.filter_map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
+		.map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
 		.flatten()
 		.collect::<Vec<_>>();
 
@@ -190,7 +190,7 @@ where
 {
 	let metrics = Metrics::new_shared();
 	let submitted_data = calls
-		.filter_map(|c| F::filter(c, Rc::clone(&metrics)))
+		.map(|c| F::filter(c, Rc::clone(&metrics)))
 		.flatten()
 		.collect::<Vec<_>>();
 
