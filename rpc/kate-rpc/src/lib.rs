@@ -367,7 +367,8 @@ where
 			BlockLengthRows(dimensions.rows().get().into()),
 			BlockLengthColumns(dimensions.cols().get().into()),
 			BLOCK_CHUNK_SIZE,
-		);
+		)
+		.ok_or_else(|| internal_err!("Block dimensions are invalid"))?;
 
 		let kc_public_params_raw =
 			self.client

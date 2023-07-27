@@ -139,8 +139,8 @@ pub fn build_extension<M: Metrics>(
 	.expect("Build commitments cannot fail .qed");
 	let app_lookup = DataLookup::from_id_and_len_iter(xts_layout.into_iter())
 		.expect("Extrinsic size cannot overflow .qed");
-	let rows = block_dims.rows.0.saturated_into::<u16>();
-	let cols = block_dims.cols.0.saturated_into::<u16>();
+	let rows = block_dims.rows().0.saturated_into::<u16>();
+	let cols = block_dims.cols().0.saturated_into::<u16>();
 
 	// **NOTE:** Header extension V2 is not yet enable by default.
 	if cfg!(feature = "header_extension_v2") {

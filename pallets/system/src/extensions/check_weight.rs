@@ -109,8 +109,8 @@ where
 			dynamic_block_len.cols,
 			dynamic_block_len.chunk_size(),
 		)
-		.size()
-		.ok_or(InvalidTransaction::Custom(MaxPaddedLenExceeded as u8))?;
+		.ok_or(InvalidTransaction::Custom(MaxPaddedLenExceeded as u8))?
+		.size();
 
 		let max_padded_len = u32::try_from(max_padded_len)
 			.map_err(|_| InvalidTransaction::Custom(MaxPaddedLenExceeded as u8))?;
