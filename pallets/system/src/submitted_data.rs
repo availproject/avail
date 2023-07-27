@@ -83,9 +83,8 @@ where
 	I: Iterator<Item = &'a OpaqueExtrinsic>,
 {
 	let metrics = Metrics::new_shared();
-	let submitted_data = opaque_itr
-		.map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
-		.flatten();
+	let submitted_data =
+		opaque_itr.flat_map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)));
 
 	root(submitted_data, Rc::clone(&metrics))
 }
@@ -97,7 +96,7 @@ where
 	I: Iterator<Item = C>,
 {
 	let metrics = Metrics::new_shared();
-	let submitted_data = calls.map(|c| F::filter(c, Rc::clone(&metrics))).flatten();
+	let submitted_data = calls.flat_map(|c| F::filter(c, Rc::clone(&metrics)));
 	root(submitted_data, Rc::clone(&metrics))
 }
 
@@ -167,8 +166,7 @@ where
 {
 	let metrics = Metrics::new_shared();
 	let submitted_data = app_extrinsics
-		.map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
-		.flatten()
+		.flat_map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
 		.collect::<Vec<_>>();
 
 	proof(submitted_data, data_index, Rc::clone(&metrics))
@@ -190,8 +188,7 @@ where
 {
 	let metrics = Metrics::new_shared();
 	let submitted_data = calls
-		.map(|c| F::filter(c, Rc::clone(&metrics)))
-		.flatten()
+		.flat_map(|c| F::filter(c, Rc::clone(&metrics)))
 		.collect::<Vec<_>>();
 
 	proof(submitted_data, data_index, Rc::clone(&metrics))
