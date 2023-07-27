@@ -5841,6 +5841,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-session",
  "parity-scale-codec 3.4.0",
+ "rand_chacha 0.2.2",
  "scale-info",
  "serde",
  "sp-application-crypto",
