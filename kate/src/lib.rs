@@ -6,7 +6,6 @@ use core::{
 	convert::TryInto,
 	num::{NonZeroU32, TryFromIntError},
 };
-use derive_more::Constructor;
 #[cfg(feature = "std")]
 pub use dusk_plonk::{commitment_scheme::kzg10::PublicParameters, prelude::BlsScalar};
 use kate_recovery::matrix::Dimensions;
@@ -211,18 +210,45 @@ pub fn padded_len(len: u32, chunk_size: NonZeroU32) -> u32 {
 }
 
 #[cfg_attr(feature = "std", derive(Debug))]
-#[derive(Clone, Copy, PartialEq, Eq, Constructor)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct BlockDimensions {
-	pub rows: BlockLengthRows,
-	pub cols: BlockLengthColumns,
-	pub chunk_size: NonZeroU32,
+	rows: BlockLengthRows,
+	cols: BlockLengthColumns,
+	chunk_size: NonZeroU32,
+	size: usize,
 }
 
 impl BlockDimensions {
-	pub fn size(&self) -> Option<usize> {
-		let rows_cols = self.rows.0.checked_mul(self.cols.0)?;
-		let rows_cols_chunk = rows_cols.checked_mul(self.chunk_size.get())?;
-		usize::try_from(rows_cols_chunk).ok()
+	pub fn new(
+		rows: BlockLengthRows,
+		cols: BlockLengthColumns,
+		chunk_size: NonZeroU32,
+	) -> Option<Self> {
+		let rows_cols = rows.0.checked_mul(cols.0)?;
+		let size_u32 = rows_cols.checked_mul(chunk_size.get())?;
+		let size = usize::try_from(size_u32).ok()?;
+
+		Some(Self {
+			rows,
+			cols,
+			chunk_size,
+			size,
+		})
+	}
+
+	#[inline]
+	pub fn size(&self) -> usize {
+		self.size
+	}
+
+	#[inline]
+	pub fn rows(&self) -> BlockLengthRows {
+		self.rows
+	}
+
+	#[inline]
+	pub fn cols(&self) -> BlockLengthColumns {
+		self.cols
 	}
 }
 

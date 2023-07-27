@@ -156,7 +156,7 @@ pub fn flatten_and_pad_block(
 	let block_dims = get_block_dimensions(padded_block_len, max_rows, max_cols, chunk_size)?;
 	let chunk_size = usize::try_from(NonZeroU32::get(block_dims.chunk_size)).expect(U32_USIZE_ERR);
 
-	let block_dims_size = block_dims.size().ok_or(Error::BlockTooBig)?;
+	let block_dims_size = block_dims.size();
 	ensure!(padded_block.len() <= block_dims_size, Error::BlockTooBig);
 
 	let mut rng = ChaChaRng::from_seed(rng_seed);
@@ -190,8 +190,9 @@ pub fn get_block_dimensions(
 	max_cols: BlockLengthColumns,
 	chunk_size: NonZeroU32,
 ) -> Result<BlockDimensions, Error> {
-	let max_block_dimensions = BlockDimensions::new(max_rows, max_cols, chunk_size);
-	let max_block_dimensions_size = max_block_dimensions.size().ok_or(Error::BlockTooBig)?;
+	let max_block_dimensions =
+		BlockDimensions::new(max_rows, max_cols, chunk_size).ok_or(Error::BlockTooBig)?;
+	let max_block_dimensions_size = max_block_dimensions.size();
 
 	let block_size = usize::try_from(block_size)?;
 	ensure!(block_size <= max_block_dimensions_size, Error::BlockTooBig);
@@ -218,11 +219,7 @@ pub fn get_block_dimensions(
 		(BlockLengthColumns(total_cells), BlockLengthRows(1))
 	};
 
-	Ok(BlockDimensions {
-		cols,
-		rows,
-		chunk_size,
-	})
+	BlockDimensions::new(rows, cols, chunk_size).ok_or(Error::BlockTooBig)
 }
 
 #[inline]
@@ -624,7 +621,8 @@ mod tests {
 		.expect("Invalid Expected result");
 		let expected = DMatrix::from_iterator(4, 4, expected.into_iter());
 
-		let block_dims = BlockDimensions::new(BlockLengthRows(2), BlockLengthColumns(4), TCHUNK);
+		let block_dims =
+			BlockDimensions::new(BlockLengthRows(2), BlockLengthColumns(4), TCHUNK).unwrap();
 		let chunk_size = usize::try_from(block_dims.chunk_size.get()).unwrap();
 		let block = (0..=247)
 			.collect::<Vec<u8>>()
@@ -662,7 +660,7 @@ mod tests {
 		];
 
 		let expected_dims =
-			BlockDimensions::new(BlockLengthRows(1), BlockLengthColumns(16), TCHUNK);
+			BlockDimensions::new(BlockLengthRows(1), BlockLengthColumns(16), TCHUNK).unwrap();
 		let (layout, data, dims) = flatten_and_pad_block(
 			BlockLengthRows(128),
 			BlockLengthColumns(256),
@@ -883,7 +881,7 @@ mod tests {
 
 		assert_eq!(
 			dimensions,
-			BlockDimensions::new(BlockLengthRows(1), BlockLengthColumns(4), TCHUNK),
+			BlockDimensions::new(BlockLengthRows(1), BlockLengthColumns(4), TCHUNK).unwrap(),
 		);
 		let expected_commitments = hex!("9046c691ce4c7ba93c9860746d6ff3dfb5560e119f1eac26aa9a10b6fe29d5c8e2b90f23e2ef3a7a950965b08035470d9046c691ce4c7ba93c9860746d6ff3dfb5560e119f1eac26aa9a10b6fe29d5c8e2b90f23e2ef3a7a950965b08035470d");
 		assert_eq!(commitments, expected_commitments);
@@ -1180,7 +1178,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			};
 			let proof = build_proof(
 				&public_params,
-				BlockDimensions::new(BlockLengthRows(1), BlockLengthColumns(4), TCHUNK),
+				BlockDimensions::new(BlockLengthRows(1), BlockLengthColumns(4), TCHUNK).unwrap(),
 				&ext_m,
 				&[cell],
 				&metrics,
