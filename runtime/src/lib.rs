@@ -194,8 +194,7 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 	fn process_calls(calls: Vec<RuntimeCall>, metrics: &submitted_data::RcMetrics) -> Vec<Vec<u8>> {
 		calls
 			.into_iter()
-			.map(|call| Self::filter(call, Rc::clone(metrics)))
-			.flatten()
+			.flat_map(|call| Self::filter(call, Rc::clone(metrics)))
 			.collect()
 	}
 }
