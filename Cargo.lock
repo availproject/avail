@@ -2769,9 +2769,11 @@ dependencies = [
  "parity-scale-codec 3.4.0",
  "scale-info",
  "sp-core",
+ "sp-externalities",
  "sp-io",
  "sp-runtime",
  "sp-std 5.0.0",
+ "sp-version",
 ]
 
 [[package]]

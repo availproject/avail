@@ -19,6 +19,7 @@
 
 #![cfg(test)]
 
+use codec::Encode;
 use da_primitives::Header as DaHeader;
 use frame_system::{
 	header_builder::da::HeaderExtensionBuilder, mocking::MockUncheckedExtrinsic,
@@ -77,9 +78,34 @@ impl frame_system::Config for Test {
 
 impl crate::Config for Test {}
 
+struct MockedReadRuntimeVersion(Vec<u8>);
+
+impl sp_core::traits::ReadRuntimeVersion for MockedReadRuntimeVersion {
+	fn read_runtime_version(
+		&self,
+		_wasm_code: &[u8],
+		_ext: &mut dyn sp_externalities::Externalities,
+	) -> Result<Vec<u8>, String> {
+		Ok(self.0.clone())
+	}
+}
+
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = frame_system::GenesisConfig::default()
 		.build_storage::<Test>()
 		.unwrap();
-	sp_io::TestExternalities::new(t)
+
+	let version = sp_version::RuntimeVersion {
+		spec_name: "".into(),
+		spec_version: 10,
+		impl_version: 420,
+		..Default::default()
+	};
+	let mut ext = sp_io::TestExternalities::new(t);
+	let read_runtime_version = MockedReadRuntimeVersion(version.encode());
+	ext.register_extension(sp_core::traits::ReadRuntimeVersionExt::new(
+		read_runtime_version,
+	));
+
+	ext
 }
