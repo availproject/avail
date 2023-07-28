@@ -1,6 +1,20 @@
 #!/bin/bash
 
-# The script requires an alredy setup Rust env, Avail repo and installed AFL.rs
+# Install Rust
+curl https://sh.rustup.rs -sSf | sh
+
+# Install Substrate
+cargo install --git https://github.com/paritytech/substrate substrate
+
+# Install Avail
+git clone https://github.com/avail-sdk/avail.git
+cd avail
+cargo build
+cd ..
+
+# Install AFL.rs
+cargo install afl
+
 echo "Starting AFL instances..." 
 
 target_binary=$1
@@ -12,8 +26,6 @@ if [[ (-z "$target_binary") || (-z "$num_of_instances") ]]; then
     echo "Usage: $0 target_binary num_of_instances" 1>&2
     exit 1
 fi
-
-# TODO: automate full Rust, Substrate, Avail and AFL initial setup
 
 # Execute fuzzers in parallel 
 # Create a single obligatory master instance
