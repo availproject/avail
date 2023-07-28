@@ -1604,7 +1604,6 @@ dependencies = [
  "nomad-da-bridge",
  "nomad-home",
  "nomad-updater-manager",
- "pallet-asset-tx-payment",
  "pallet-authority-discovery",
  "pallet-authorship",
  "pallet-babe",
@@ -1625,7 +1624,6 @@ dependencies = [
  "pallet-nomination-pools",
  "pallet-offences",
  "pallet-preimage",
- "pallet-randomness-collective-flip",
  "pallet-scheduler",
  "pallet-session",
  "pallet-staking",
@@ -1726,7 +1724,6 @@ dependencies = [
  "nomad-da-bridge",
  "nomad-home",
  "nomad-updater-manager",
- "pallet-asset-tx-payment",
  "pallet-im-online",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
@@ -1740,7 +1737,6 @@ dependencies = [
  "sc-client-api",
  "sc-client-db",
  "sc-consensus",
- "sc-consensus-aura",
  "sc-consensus-babe",
  "sc-consensus-babe-rpc",
  "sc-consensus-epochs",
@@ -1769,7 +1765,6 @@ dependencies = [
  "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
- "sp-consensus-aura",
  "sp-consensus-babe",
  "sp-core",
  "sp-finality-grandpa",
@@ -1907,7 +1902,7 @@ dependencies = [
  "convert_case 0.4.0",
  "proc-macro2",
  "quote",
- "rustc_version 0.4.0",
+ "rustc_version",
  "syn 1.0.109",
 ]
 
@@ -5385,24 +5380,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-asset-tx-payment"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate.git/?branch=polkadot-v0.9.37#f38bd6671d460293c93062cc1e4fe9e9e490cb29"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-transaction-payment",
- "parity-scale-codec 3.4.0",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std 5.0.0",
-]
-
-[[package]]
 name = "pallet-authority-discovery"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git/?branch=polkadot-v0.9.37#f38bd6671d460293c93062cc1e4fe9e9e490cb29"
@@ -5775,20 +5752,6 @@ dependencies = [
  "scale-info",
  "sp-core",
  "sp-io",
- "sp-runtime",
- "sp-std 5.0.0",
-]
-
-[[package]]
-name = "pallet-randomness-collective-flip"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate.git/?branch=polkadot-v0.9.37#f38bd6671d460293c93062cc1e4fe9e9e490cb29"
-dependencies = [
- "frame-support",
- "frame-system",
- "parity-scale-codec 3.4.0",
- "safe-mix",
- "scale-info",
  "sp-runtime",
  "sp-std 5.0.0",
 ]
@@ -7094,15 +7057,6 @@ checksum = "3e75f6a532d0fd9f7f13144f392b6ad56a32696bfcd9c78f797f16bbb6f072d6"
 
 [[package]]
 name = "rustc_version"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"
-dependencies = [
- "semver 0.9.0",
-]
-
-[[package]]
-name = "rustc_version"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bfa0f585226d2e68097d4f95d113b15b83a82e819ab25717ec0590d9584ef366"
@@ -7215,15 +7169,6 @@ name = "ryu"
 version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7b4b9743ed687d4b4bcedf9ff5eaa7398495ae14e61cba0a295704edbc7decde"
-
-[[package]]
-name = "safe-mix"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d3d055a2582e6b00ed7a31c1524040aa391092bf636328350813f3a0605215c"
-dependencies = [
- "rustc_version 0.2.3",
-]
 
 [[package]]
 name = "salsa20"
@@ -7458,35 +7403,6 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-state-machine",
- "substrate-prometheus-endpoint 0.10.0-dev",
- "thiserror",
-]
-
-[[package]]
-name = "sc-consensus-aura"
-version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate.git/?branch=polkadot-v0.9.37#f38bd6671d460293c93062cc1e4fe9e9e490cb29"
-dependencies = [
- "async-trait",
- "futures",
- "log",
- "parity-scale-codec 3.4.0",
- "sc-block-builder",
- "sc-client-api",
- "sc-consensus",
- "sc-consensus-slots",
- "sc-telemetry",
- "sp-api",
- "sp-application-crypto",
- "sp-block-builder",
- "sp-blockchain",
- "sp-consensus",
- "sp-consensus-aura",
- "sp-consensus-slots",
- "sp-core",
- "sp-inherents",
- "sp-keystore",
- "sp-runtime",
  "substrate-prometheus-endpoint 0.10.0-dev",
  "thiserror",
 ]
@@ -8486,15 +8402,6 @@ dependencies = [
 
 [[package]]
 name = "semver"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d7eb9ef2c18661902cc47e535f9bc51b78acd254da71d375c2f6720d9a40403"
-dependencies = [
- "semver-parser",
-]
-
-[[package]]
-name = "semver"
 version = "1.0.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "58bc9567378fc7690d6b2addae4e60ac2eeea07becb2c64b9f218b53865cba2a"
@@ -8699,7 +8606,7 @@ dependencies = [
  "curve25519-dalek 4.0.0-rc.0",
  "rand_core 0.6.4",
  "ring",
- "rustc_version 0.4.0",
+ "rustc_version",
  "sha2 0.10.6",
  "subtle",
 ]
@@ -8892,24 +8799,6 @@ dependencies = [
  "sp-std 5.0.0",
  "sp-version",
  "thiserror",
-]
-
-[[package]]
-name = "sp-consensus-aura"
-version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate.git/?branch=polkadot-v0.9.37#f38bd6671d460293c93062cc1e4fe9e9e490cb29"
-dependencies = [
- "async-trait",
- "parity-scale-codec 3.4.0",
- "scale-info",
- "sp-api",
- "sp-application-crypto",
- "sp-consensus",
- "sp-consensus-slots",
- "sp-inherents",
- "sp-runtime",
- "sp-std 5.0.0",
- "sp-timestamp",
 ]
 
 [[package]]
