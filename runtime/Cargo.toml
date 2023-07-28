@@ -80,12 +80,10 @@ pallet-authority-discovery = { version = "4.0.0-dev", default-features = false }
 pallet-elections-phragmen = { version = "5.0.0-dev", default-features = false }
 pallet-tips = { version = "4.0.0-dev", default-features = false }
 pallet-membership = { version = "4.0.0-dev", default-features = false }
-pallet-randomness-collective-flip = { version = "4.0.0-dev", default-features = false }
 pallet-bags-list = { version = "4.0.0-dev", default-features = false }
 pallet-election-provider-multi-phase = { version = "4.0.0-dev", default-features = false }
 frame-election-provider-support = { version = "4.0.0-dev", default-features = false }
 pallet-democracy = { version = "4.0.0-dev", default-features = false }
-pallet-asset-tx-payment = { version = "4.0.0-dev", default-features = false }
 pallet-mmr = { version = "4.0.0-dev", default-features = false }
 pallet-multisig = { version = "4.0.0-dev", default-features = false }
 pallet-child-bounties = { version = "4.0.0-dev", default-features = false }
@@ -153,7 +151,6 @@ std = [
 	"pallet-offences/std",
 	"pallet-preimage/std",
 	"sp-core/std",
-	"pallet-randomness-collective-flip/std",
 	"sp-std/std",
 	"pallet-session/std",
 	"sp-api/std",
