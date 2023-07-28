@@ -57,54 +57,49 @@ where
 		block: BlockImportParams<B, Self::Transaction>,
 		new_cache: HashMap<CacheKeyId, Vec<u8>>,
 	) -> Result<ImportResult, Self::Error> {
-		// We only want to check for blocks that are not from "Own" and when the network is fully synced
-		match block.origin {
-			BlockOrigin::NetworkBroadcast | BlockOrigin::ConsensusBroadcast => {
-				let no_extrinsics = vec![];
-				let extrinsics = block.body.as_ref().unwrap_or(&no_extrinsics);
-				let best_hash = self.client.info().best_hash;
-				let block_id = BlockId::Hash(best_hash);
+		// We only want to check for blocks that are not from "Own"
+		if !matches!(block.origin, BlockOrigin::Own) {
+			let no_extrinsics = vec![];
+			let extrinsics = block.body.as_ref().unwrap_or(&no_extrinsics);
+			let best_hash = self.client.info().best_hash;
+			let block_id = BlockId::Hash(best_hash);
 
-				let data_root = self
-					.client
-					.runtime_api()
-					.build_data_root(&block_id, extrinsics.clone())
-					.map_err(|e| {
-						ConsensusError::ClientImport(format!(
-							"Data root cannot be calculated: {e:?}"
-						))
-					})?;
+			let data_root = self
+				.client
+				.runtime_api()
+				.build_data_root(&block_id, extrinsics.clone())
+				.map_err(|e| {
+					ConsensusError::ClientImport(format!("Data root cannot be calculated: {e:?}"))
+				})?;
 
-				let extension = &block.header.extension;
-				let block_len = BlockLength::with_normal_ratio(
-					BlockLengthRows(extension.rows() as u32),
-					BlockLengthColumns(extension.cols() as u32),
-					BLOCK_CHUNK_SIZE,
-					sp_runtime::Perbill::from_percent(90),
+			let extension = &block.header.extension;
+			let block_len = BlockLength::with_normal_ratio(
+				BlockLengthRows(extension.rows() as u32),
+				BlockLengthColumns(extension.cols() as u32),
+				BLOCK_CHUNK_SIZE,
+				sp_runtime::Perbill::from_percent(90),
+			)
+			.expect("Valid BlockLength at genesis .qed");
+
+			let generated_ext = self
+				.client
+				.runtime_api()
+				.build_extension(
+					&block_id,
+					extrinsics.clone(),
+					data_root,
+					block_len,
+					block.header.number,
 				)
-				.expect("Valid BlockLength at genesis .qed");
+				.map_err(|e| {
+					ConsensusError::ClientImport(format!("Build extension fails due to: {e:?}"))
+				})?;
 
-				let generated_ext = self
-					.client
-					.runtime_api()
-					.build_extension(
-						&block_id,
-						extrinsics.clone(),
-						data_root,
-						block_len,
-						block.header.number,
-					)
-					.map_err(|e| {
-						ConsensusError::ClientImport(format!("Build extension fails due to: {e:?}"))
-					})?;
-
-				ensure!(
-					extension == &generated_ext,
-					ConsensusError::ClientImport(
-						format!("DA Extension does NOT match\nExpected: {extension:#?}\nGenerated:{generated_ext:#?}"))
-				);
-			},
-			_ => (),
+			ensure!(
+				extension == &generated_ext,
+				ConsensusError::ClientImport(
+					format!("DA Extension does NOT match\nExpected: {extension:#?}\nGenerated:{generated_ext:#?}"))
+			);
 		}
 		self.inner
 			.import_block(block, new_cache)
