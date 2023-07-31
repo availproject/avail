@@ -129,9 +129,9 @@ fn reconstruct(xts: &[AppExtrinsic]) {
 		assert_eq!(data[0].as_slice(), &xt.data);
 	}
 
-	let dims_cols: u32 = dims.cols.into();
+	let dims_cols: u32 = dims.cols().into();
 	let public_params = testnet::public_params(usize::try_from(dims_cols).unwrap());
-	for cell in random_cells(dims.cols, dims.rows, Percent::one()) {
+	for cell in random_cells(dims.cols(), dims.rows(), Percent::one()) {
 		let row: u32 = cell.row.into();
 
 		let proof = build_proof(&public_params, dims, &matrix, &[cell], &metrics).unwrap();
