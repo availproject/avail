@@ -27,6 +27,8 @@ sp-std = { version = "5.0.0", default-features = false }
 
 [dev-dependencies]
 sp-io = "7.0.0" 
+sp-version = "5"
+sp-externalities = "0.13"
 
 [features]
 default = ["std"]

@@ -60,7 +60,7 @@ mod nomination_pools {
 	}
 
 	#[cfg(feature = "try-runtime")]
-	pub(crate) fn pre_upgrade() -> Result<Vec<u8>, &'static str> { Ok(vec![]) }
+	pub(crate) fn pre_upgrade() -> Result<Vec<u8>, &'static str> { Ok(sp_std::vec![]) }
 
 	#[cfg(feature = "try-runtime")]
 	pub(crate) fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {

@@ -66,6 +66,7 @@ We also add `--tmp`, therefore the state will be deleted at the end of the proce
 
 ## Run benchmarks
 
+### Manually
 You can run any benchmark and generate the proper `weight.rs` file. In the following command, we are
 running the benchmarks from `da-control` pallet, and the generated file is 
 
@@ -84,15 +85,43 @@ running the benchmarks from `da-control` pallet, and the generated file is
         --extrinsic=* \
         --output=./pallets/dactr/src/weights.rs
 
+### Via Script
+To run all benchmarks from all pallets:
+```bash
+./run_benchmarks.sh
+```
+
+You can customize the number of steps and repeats for the benchmarks using
+environment variables. For example, to set the number of steps to 4 and the
+number of repeats to 20, use the following command:
+```bash
+STEPS=4 REPEAT=20 ./run_benchmarks.sh
+```
+
+If you only want to run benchmarks just for our own custom pallets, you can set the
+OUR_PALLETS environment variable:
+```bash
+OUR_PALLETS=1 ./run_benchmarks.sh
+```
+
+To run benchmarks for specific pallets, you need to set the PALLETS environment
+variable and provide a space-separated list of pallet names. For example, to run
+benchmarks for the frame_system and mocked_runtime pallets, use the following
+command:
+```bash
+PALLETS="frame_system mocked_runtime" ./run_benchmarks.sh
+```
 
 ## Transaction Custom IDs
 
 Here is the table of custom IDs for invalid transaction errors:
 
-| Custom ID | Name                | Description |
-| --------- | ------------------- | ----------- |
-| 137       | InvalidAppId        | The given `AppId` is not yet registered |
-| 138       | ForbiddenAppId      | The extrinsic is not available for the given `AppId` |
+| Custom ID | Name                 | Description |
+| --------- | -------------------- | ----------- |
+| 137       | InvalidAppId         | The given `AppId` is not yet registered |
+| 138       | ForbiddenAppId       | The extrinsic is not available for the given `AppId` |
+| 139       | MaxPaddedLenExceeded | The maximum padded length for a block was exceeded |
+| 140       | MaxRecursionExceeded | The maximum recursion was reached for a call with `AppId != 0` |
 
 ## Generate test code coverage report
 

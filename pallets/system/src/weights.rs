@@ -50,6 +50,7 @@ pub trait WeightInfo {
 	fn remark(b: u32, ) -> Weight;
 	fn remark_with_event(b: u32, ) -> Weight;
 	fn set_heap_pages() -> Weight;
+	fn set_code() -> Weight;
 	fn set_storage(i: u32, ) -> Weight;
 	fn kill_storage(i: u32, ) -> Weight;
 	fn kill_prefix(p: u32, ) -> Weight;
@@ -77,6 +78,14 @@ impl<T: crate::Config> WeightInfo for SubstrateWeight<T> {
 	fn set_heap_pages() -> Weight {
 		// Minimum execution time: 17_916 nanoseconds.
 		Weight::from_ref_time(18_282_000_u64)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
+	}
+	// Storage: System Digest (r:1 w:1)
+	// Storage: unknown [0x3a636f6465] (r:0 w:1)
+	fn set_code() -> Weight {
+		// Minimum execution time: 212_972_630 nanoseconds.
+		Weight::from_ref_time(225_594_161_000_u64)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -130,6 +139,14 @@ impl WeightInfo for () {
 	fn set_heap_pages() -> Weight {
 		// Minimum execution time: 17_916 nanoseconds.
 		Weight::from_ref_time(18_282_000_u64)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
+	}
+	// Storage: System Digest (r:1 w:1)
+	// Storage: unknown [0x3a636f6465] (r:0 w:1)
+	fn set_code() -> Weight {
+		// Minimum execution time: 212_972_630 nanoseconds.
+		Weight::from_ref_time(225_594_161_000_u64)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}

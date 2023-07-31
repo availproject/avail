@@ -30,6 +30,7 @@ sp-arithmetic = { version = "6", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false }
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
+pallet-utility = { version = "4.0.0-dev", default-features = false }
 
 [dev-dependencies]
 pallet-transaction-payment = "4.0.0-dev"
@@ -52,6 +53,7 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"kate/std",
+	"pallet-utility/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
