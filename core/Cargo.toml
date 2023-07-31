@@ -1,0 +1,69 @@
+[package]
+name = "avail-core"
+version = "0.5.0"
+authors = []
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+# Others
+derive_more = { version = "0.99.17", default-features = false, features = ["constructor", "from", "add", "deref", "mul", "into"] }
+hash256-std-hasher = { version = "0.15.2", default-features = false }
+hex = { version = "0.4", optional = true, default-features = false, features = ["alloc", "serde"] }
+log = { version = "0.4.8", default-features = false }
+serde = { version = "1", optional = true, features = ["derive"] }
+static_assertions = "1.1.0"
+thiserror-no-std = "2.0.2"
+
+# Substrate
+beefy-merkle-tree = { git = "https://github.com/paritytech/substrate.git/", branch = "polkadot-v0.9.37", default-features = false, optional = true }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"] }
+scale-info = { version = "2", default-features = false, features = ["derive"] }
+sp-arithmetic = { version = "*", default-features = false }
+sp-core = { version = "*", default-features = false }
+sp-io = { version = "*", default-features = false }
+sp-std = { version = "*", default-features = false }
+sp-trie = { version = "*", default-features = false }
+
+# Substrate Runtime
+frame-support = { version = "4.0.0-dev", default-features = false, optional = true }
+sp-runtime = { version = "7", default-features = false, optional = true }
+sp-runtime-interface = { version = "7", default-features = false, optional = true }
+
+[dev-dependencies]
+hex-literal = "0.3.4"
+serde_json = "1"
+test-case = "1.2.3"
+
+[features]
+default = ["std"]
+std = [
+	"serde",
+	"hex",
+	"codec/std",
+	"scale-info/std",
+	"log/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-std/std",
+	"sp-trie/std",
+	"sp-arithmetic/std",
+	"hash256-std-hasher/std",
+	"beefy-merkle-tree?/std",
+	"derive_more/display",
+	"sp-runtime-interface?/std",
+	"sp-runtime?/std",
+	"frame-support?/std",
+]
+runtime = [
+	"sp-runtime-interface",
+	"sp-runtime",
+	"frame-support",
+	"beefy-merkle-tree",
+]
+
+header-backward-compatibility-test = []
+try-runtime = [
+	"runtime",
+	"sp-runtime/try-runtime",
+]

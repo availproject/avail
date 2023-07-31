@@ -1,19 +1,51 @@
 [workspace]
 members = [
-	"primitives/avail",
+	"core",
+	"kate/recovery",
 	"kate",
-	"primitives/nomad/signature",
-	"primitives/nomad/nomad-core",
-	"primitives/nomad/nomad-base",
-	"primitives/nomad/merkle",
+	"nomad/signature",
+	"nomad/core",
+	"nomad/base",
+	"nomad/merkle",
 ]
 [patch.crates-io]
 # Substrate  (polkadot-v0.9.37).
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-core-hashing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-debug-derive = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-trie = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-runtime-interface = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-weights = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-inherents = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-staking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-tracing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-version = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-wasm-interface = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+
+[profile.dev.package]
+nalgebra = { opt-level = 3 }
+blst = { opt-level = 3 }
+dusk-bls12_381 = { opt-level = 3 }
+dusk-plonk = { opt-level = 3 }
+dusk-jubjub = { opt-level = 3 }
+dusk-bytes = { opt-level = 3 }
+rayon = { opt-level = 3 }
+rayon-core = { opt-level = 3 }
+poly-multiproof = { opt-level = 3 }
+ark-bls12-381 = { opt-level = 3 }
+ark-ec = { opt-level = 3 }
+ark-ff = { opt-level = 3 }
+ark-poly = { opt-level = 3 }
+ark-serialize = { opt-level = 3 }
+ark-std = { opt-level = 3 }
+merlin = { opt-level = 3 }

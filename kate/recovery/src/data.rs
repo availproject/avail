@@ -1,9 +1,11 @@
-use std::{collections::HashMap, convert::TryInto};
+use core::convert::TryInto;
+use derive_more::Constructor;
+use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
 use crate::matrix::{Dimensions, Position, RowIndex};
 
 /// Position and data of a cell in extended matrix
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, Constructor)]
 pub struct DataCell {
 	/// Cell's position
 	pub position: Position,
@@ -12,7 +14,7 @@ pub struct DataCell {
 }
 
 /// Position and content of a cell in extended matrix
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Constructor)]
 pub struct Cell {
 	/// Cell's position
 	pub position: Position,
@@ -21,6 +23,7 @@ pub struct Cell {
 }
 
 impl Cell {
+	#[cfg(feature = "std")]
 	pub fn reference(&self, block: u32) -> String {
 		self.position.reference(block)
 	}
@@ -36,13 +39,13 @@ impl Cell {
 
 /// Merges cells data per row.
 /// Cells are sorted before merge.
-pub fn rows(dimensions: &Dimensions, cells: &[&Cell]) -> Vec<(RowIndex, Vec<u8>)> {
+pub fn rows(dimensions: Dimensions, cells: &[&Cell]) -> Vec<(RowIndex, Vec<u8>)> {
 	let mut sorted_cells = cells.to_vec();
 
 	sorted_cells
 		.sort_by(|a, b| (a.position.row, a.position.col).cmp(&(b.position.row, b.position.col)));
 
-	let mut rows = HashMap::new();
+	let mut rows = BTreeMap::new();
 	for cell in sorted_cells {
 		rows.entry(RowIndex(cell.position.row))
 			.or_insert_with(Vec::default)
@@ -56,7 +59,7 @@ pub fn rows(dimensions: &Dimensions, cells: &[&Cell]) -> Vec<(RowIndex, Vec<u8>)
 impl From<Cell> for DataCell {
 	fn from(cell: Cell) -> Self {
 		DataCell {
-			position: cell.position.clone(),
+			position: cell.position,
 			data: cell.data(),
 		}
 	}
@@ -95,7 +98,7 @@ mod tests {
 			&cell(position(0, 1), content([1; 32])),
 		];
 
-		let mut rows = rows(&dimensions, &cells);
+		let mut rows = rows(dimensions, &cells);
 		rows.sort_by_key(|(key, _)| key.0);
 
 		let expected = [
@@ -120,10 +123,10 @@ mod tests {
 			&cell(position(0, 1), content([1; 32])),
 		];
 
-		let mut rows = rows(&dimensions, &cells);
+		let mut rows = rows(dimensions, &cells);
 		rows.sort_by_key(|(key, _)| key.0);
 
-		assert!(rows.len() == 1);
+		assert_eq!(rows.len(), 1);
 		let (row_index, row) = &rows[0];
 		assert_eq!(row_index.0, 0);
 		assert_eq!(*row, [[0u8; 32], [1u8; 32]].concat());

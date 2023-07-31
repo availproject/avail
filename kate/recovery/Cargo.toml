@@ -1,28 +1,45 @@
 [package]
 name = "kate-recovery"
-version = "0.8.1"
+version = "0.9.0"
 authors = ["Denis Ermolin <denis.ermolin@matic.network>"]
 edition = "2018"
+license = "Apache-2.0"
 
 [dependencies]
+# Internals
+avail-core = { path = "../../core", default-features = false }
+dusk-plonk = { git = "https://github.com/availproject/plonk.git", tag = "v0.12.0-polygon-2", default-features = false, optional = true }
+
+# Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-dusk-bytes = "0.1.6"
-dusk-plonk = { git = "https://github.com/availproject/plonk.git", tag = "v0.12.0-polygon-2" }
-getrandom = { version = "0.2", features = ["js"] }
-num = "0.4.0"
-once_cell = { version = "1.9.0", default-features = false }
-rand = "0.8.4"
-rand_chacha = "0.3"
-serde = { version = "1.0", features = ["derive"] }
-thiserror = "1.0.37"
+sp-arithmetic = { version = "*", default-features = false }
+sp-std = { version = "*", default-features = false }
+
+# 3rd-parties
+derive_more = "0.99.17"
+static_assertions = "1.1.0"
+thiserror-no-std = "2.0.2"
+
+dusk-bytes = { version = "0.1.6", default-features = false, optional = true }
+once_cell = { version = "1.9.0", optional = true }
+rand = { version = "0.8", default-features = false, features = ["alloc", "small_rng"], optional = true }
+rand_chacha = { version = "0.3", default-features = false, optional = true }
+serde = { version = "1", optional = true, features = ["derive"] }
 
 [dev-dependencies]
 hex = "0.4"
-once_cell = "1.9.0"
-rand = "0.8.4"
-rand_chacha = "0.3"
 test-case = "1.2.3"
 
 [features]
 default = ["std"]
-std = []
+std = [
+	"once_cell",
+	"serde",
+	"sp-arithmetic/std",
+	"sp-std/std",
+	"avail-core/std",
+	"rand/std",
+	"rand_chacha/std",
+	"dusk-bytes",
+	"dusk-plonk/std",
+]
