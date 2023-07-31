@@ -15,8 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use avail_core::header::Header as DaHeader;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use da_primitives::Header as DaHeader;
 use frame_support::{
 	traits::{ConstU32, ConstU64},
 	weights::Weight,
