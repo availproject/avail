@@ -1,5 +1,5 @@
 use codec::Decode;
-use da_primitives::asdr::AppExtrinsic;
+use avail_core::AppExtrinsic;
 use frame_support::traits::ExtrinsicCall;
 use sp_core::H256;
 use sp_runtime::traits::Extrinsic;
@@ -119,7 +119,7 @@ impl<F: DataRootFilter> DataRootBuilder<F> for F {}
 
 #[cfg(all(test, feature = "force-rs-merkle"))]
 mod test {
-	use da_primitives::asdr::AppId;
+	use avail_core::AppId;
 	use hex_literal::hex;
 	use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
 	use test_case::test_case;

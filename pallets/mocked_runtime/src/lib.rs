@@ -1,4 +1,4 @@
-use da_primitives::{BlockLengthColumns, BlockLengthRows, NORMAL_DISPATCH_RATIO};
+use avail_core::{BlockLengthColumns, BlockLengthRows, NORMAL_DISPATCH_RATIO};
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::Randomness,
@@ -25,7 +25,7 @@ pub type AccountId = u64;
 pub type Balance = u128;
 pub type BlockNumber = u32;
 pub type Moment = u64;
-pub type Header = da_primitives::Header<BlockNumber, BlakeTwo256>;
+pub type Header = avail_core::header::Header<BlockNumber, BlakeTwo256>;
 pub type Signature = sp_runtime::testing::sr25519::Signature;
 pub type TestXt = test_xt::TestXt<RuntimeCall, SignedExtra>;
 pub type UncheckedExtrinsic = TestXt;
@@ -140,7 +140,7 @@ impl frame_system::Config for Runtime {
 	type DbWeight = ();
 	type Hash = sp_core::H256;
 	type Hashing = BlakeTwo256;
-	type Header = da_primitives::Header<Self::BlockNumber, Self::Hashing>;
+	type Header = avail_core::header::Header<Self::BlockNumber, Self::Hashing>;
 	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Runtime>;
 	type Index = u64;
 	type Lookup = IdentityLookup<u64>;

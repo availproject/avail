@@ -239,7 +239,7 @@ where
 
 #[cfg(all(test, feature = "force-rs-merkle"))]
 mod test {
-	use da_primitives::asdr::AppId;
+	use avail_core::AppId;
 	use hex_literal::hex;
 	use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
 	use test_case::test_case;
