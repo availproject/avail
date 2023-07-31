@@ -596,6 +596,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.5.0"
+source = "git+https://github.com/availproject/avail-core?tag=avail-core/v0.5.0#3e972524dce089d73140a2e32c83084e5c9c418c"
 dependencies = [
  "beefy-merkle-tree",
  "derive_more",
@@ -4044,6 +4045,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.8.0"
+source = "git+https://github.com/availproject/avail-core?tag=avail-core/v0.5.0#3e972524dce089d73140a2e32c83084e5c9c418c"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -4071,6 +4073,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.9.0"
+source = "git+https://github.com/availproject/avail-core?tag=avail-core/v0.5.0#3e972524dce089d73140a2e32c83084e5c9c418c"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -5306,6 +5309,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.4"
+source = "git+https://github.com/availproject/avail-core?tag=avail-core/v0.5.0#3e972524dce089d73140a2e32c83084e5c9c418c"
 dependencies = [
  "ethers-signers",
  "nomad-core",
@@ -5321,6 +5325,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.4"
+source = "git+https://github.com/availproject/avail-core?tag=avail-core/v0.5.0#3e972524dce089d73140a2e32c83084e5c9c418c"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -5383,6 +5388,7 @@ dependencies = [
 [[package]]
 name = "nomad-merkle"
 version = "0.1.2"
+source = "git+https://github.com/availproject/avail-core?tag=avail-core/v0.5.0#3e972524dce089d73140a2e32c83084e5c9c418c"
 dependencies = [
  "avail-core",
  "frame-support",
@@ -5400,6 +5406,7 @@ dependencies = [
 [[package]]
 name = "nomad-signature"
 version = "0.1.2"
+source = "git+https://github.com/availproject/avail-core?tag=avail-core/v0.5.0#3e972524dce089d73140a2e32c83084e5c9c418c"
 dependencies = [
  "elliptic-curve",
  "ethers-core",
