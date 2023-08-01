@@ -27,8 +27,8 @@ sp-trie = { version = "*", default-features = false }
 
 # Substrate Runtime
 frame-support = { version = "4.0.0-dev", default-features = false, optional = true }
-sp-runtime = { version = "7", default-features = false, optional = true }
-sp-runtime-interface = { version = "7", default-features = false, optional = true }
+sp-runtime = { version = "24", default-features = false, optional = true }
+sp-runtime-interface = { version = "17", default-features = false, optional = true }
 
 [dev-dependencies]
 hex-literal = "0.3.4"

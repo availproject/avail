@@ -22,7 +22,7 @@ scale-info = { version = "2", default-features = false, features = ["derive"] }
 sp-core = { version = "*", default-features = false }
 
 frame-support = { version = "4.0.0-dev", default-features = false }
-sp-runtime = { version = "7", default-features = false }
+sp-runtime = { version = "24", default-features = false }
 
 # Eth
 ethers-core = { version = "1", default-features = false, optional = true }

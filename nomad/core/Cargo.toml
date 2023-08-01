@@ -15,7 +15,7 @@ scale-info = { version = "2", default-features = false, features = ["derive"] }
 sp-core = { version = "*", default-features = false }
 sp-std = { version = "*", default-features = false }
 
-sp-runtime = { version = "7", default-features = false, optional = true }
+sp-runtime = { version = "24", default-features = false, optional = true }
 
 # Eth
 ethers-core = { version = "1", optional = true }

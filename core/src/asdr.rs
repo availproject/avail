@@ -46,6 +46,9 @@ use crate::{traits::GetAppId, AppId, OpaqueExtrinsic};
 /// the decoding fails.
 pub const EXTRINSIC_FORMAT_VERSION: u8 = 4;
 
+/// The `SingaturePayload` of `UncheckedExtrinsic`.
+type AppUncheckedSignaturePayload<Address, Signature, Extra> = (Address, Signature, Extra);
+
 /// A extrinsic right from the external world. This is unchecked and so
 /// can contain a signature.
 #[derive(PartialEq, Eq, Clone)]
@@ -56,7 +59,7 @@ where
 	/// The signature, address, number of extrinsics have come before from
 	/// the same signer and an era describing the longevity of this transaction,
 	/// if this is a signed extrinsic.
-	pub signature: Option<(Address, Signature, Extra)>,
+	pub signature: Option<AppUncheckedSignaturePayload<Address, Signature, Extra>>,
 	/// The function that should be called.
 	pub function: Call,
 }
@@ -142,12 +145,12 @@ where
 	}
 }
 
-impl<Address, Call, Signature, Extra: SignedExtension> Extrinsic
-	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<Address: TypeInfo, Call: TypeInfo, Signature: TypeInfo, Extra: SignedExtension + TypeInfo>
+	Extrinsic for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
 {
 	type Call = Call;
 
-	type SignaturePayload = (Address, Signature, Extra);
+	type SignaturePayload = AppUncheckedSignaturePayload<Address, Signature, Extra>;
 
 	fn is_signed(&self) -> Option<bool> {
 		Some(self.signature.is_some())
@@ -468,7 +471,10 @@ where
 impl<Address, Call, Signature, Extra> frame_support::traits::ExtrinsicCall
 	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
 where
-	Extra: SignedExtension,
+	Address: TypeInfo,
+	Call: TypeInfo,
+	Signature: TypeInfo,
+	Extra: SignedExtension + TypeInfo,
 {
 	fn call(&self) -> &Self::Call {
 		&self.function

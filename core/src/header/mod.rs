@@ -17,10 +17,11 @@
 
 //! Data-Avail implementation of a block header.
 
-use codec::{Codec, Decode, Encode};
+use codec::{Codec, Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_arithmetic::{traits::Saturating, MultiplyRational};
 use sp_core::{hexdisplay::HexDisplay, U256};
 use sp_runtime::{
 	traits::{
@@ -166,8 +167,15 @@ where
 		+ Copy
 		+ Into<U256>
 		+ TryFrom<U256>
-		+ sp_std::str::FromStr,
-	Hash: HashT,
+		+ sp_std::str::FromStr
+		+ MultiplyRational
+		+ Saturating
+		+ TypeInfo
+		+ EncodeLike
+		+ MaxEncodedLen
+		+ FullCodec
+		+ Default,
+	Hash: HashT + TypeInfo,
 	Hash::Output: Default
 		+ sp_std::hash::Hash
 		+ Copy
@@ -178,6 +186,7 @@ where
 		+ MaybeDisplay
 		+ SimpleBitOps
 		+ Codec,
+	Header<Number, Hash>: Encode + Decode,
 {
 	type Hash = <Hash as HashT>::Output;
 	type Hashing = Hash;
