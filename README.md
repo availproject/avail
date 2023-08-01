@@ -131,8 +131,8 @@ To synchronize your node the chain, you have access to the [chainspec](https://k
 ### Sync mode
 You can sync to the chain using:
 - Full mode: This is the default if nothing is specified and will download all the blocks data, you can also use `--sync full`
-- Warp mode: This is will download the latest state then all the blocks data. It's the fastest and recommended way to have a running node. User `--sync warp`
-- Fast / Fast Unsafe: This is currently not supported since it does not download data needed for Avail computation.
+- Warp mode: This is will download the latest state then all the blocks data. It's the fastest and recommended way to have a running node. Use `--sync warp`
+- Fast / Fast Unsafe: This is currently not supported since it does not download data needed for Avail specific computation.
 
 
 ## Generate test code coverage report
