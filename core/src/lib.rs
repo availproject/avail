@@ -1,5 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![deny(clippy::integer_arithmetic)]
+#![deny(clippy::arithmetic_side_effects)]
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use derive_more::{Add, Constructor, Deref, Display, Into, Mul};

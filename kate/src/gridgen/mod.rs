@@ -148,6 +148,7 @@ impl EvaluationGrid {
 
 	/// Returns a list of `(index, row)` pairs for the underlying rows of an application.
 	/// Returns `None` if the `app_id` cannot be found, or if the provided `orig_dims` are invalid.
+	#[allow(clippy::type_complexity)]
 	pub fn app_rows(
 		&self,
 		app_id: AppId,
@@ -168,9 +169,9 @@ impl EvaluationGrid {
 		// SAFETY: `origin_dims.rows is NonZeroU16`
 		// Compiler checks that `Dimensions::rows()` returns a `NonZeroU16` using the expression
 		// `NonZeroU16::get(x)` instead of `x.get()`.
-		#[allow(clippy::integer_arithmetic)]
+		#[allow(clippy::arithmetic_side_effects)]
 		let h_mul: usize = rows / usize::from(NonZeroU16::get(orig_dims.rows()));
-		#[allow(clippy::integer_arithmetic)]
+		#[allow(clippy::arithmetic_side_effects)]
 		let row_from_lineal_index = |cols, lineal_index| {
 			let lineal_index =
 				usize::try_from(lineal_index).map_err(|_| AppRowError::LinealIndexOverflows)?;
@@ -189,7 +190,7 @@ impl EvaluationGrid {
 		// SAFETY: This won't overflow because `h_mul = rows / orig_dim.rows()`  and `*_y < rows)
 		debug_assert!(start_y < rows);
 		debug_assert!(end_y < rows);
-		#[allow(clippy::integer_arithmetic)]
+		#[allow(clippy::arithmetic_side_effects)]
 		let (new_start_y, new_end_y) = (start_y * h_mul, end_y * h_mul);
 
 		let app_rows = (new_start_y..=new_end_y)
@@ -359,7 +360,7 @@ pub struct CellBlock {
 /// `mp_grid_dims` is the size of the multiproof grid, which `x,y` lies in.
 /// For example, a 256x256 grid could be converted to a 4x4 target size multiproof grid, by making 16 multiproofs
 /// of size 64x64.
-#[allow(clippy::integer_arithmetic)]
+#[allow(clippy::arithmetic_side_effects)]
 pub fn multiproof_block(
 	x: usize,
 	y: usize,
@@ -389,6 +390,7 @@ pub fn multiproof_block(
 
 /// Dimensions of the multiproof grid. These are guarenteed to cleanly divide `grid_dims`.
 /// `target_dims` must cleanly divide `grid_dims`.
+#[allow(clippy::arithmetic_side_effects)]
 pub fn multiproof_dims(grid: Dimensions, target: Dimensions) -> Option<Dimensions> {
 	let cols = min(grid.cols(), target.cols());
 	let rows = min(grid.rows(), target.rows());
@@ -440,7 +442,7 @@ pub fn domain_points(n: usize) -> Result<Vec<ArkScalar>, Error> {
 }
 
 /// SAFETY: As `multiple` is a `NonZeroU16` we can safetly make the following ops.
-#[allow(clippy::integer_arithmetic)]
+#[allow(clippy::arithmetic_side_effects)]
 fn round_up_to_multiple(input: usize, multiple: NonZeroU16) -> usize {
 	let multiple: usize = multiple.get().into();
 	let n_multiples = input.saturating_add(multiple - 1) / multiple;
@@ -458,7 +460,7 @@ pub(crate) fn pad_to_bls_scalar(a: impl AsRef<[u8]>) -> Result<ArkScalar, Error>
 	ArkScalar::from_bytes(&buf).map_err(Error::MultiproofError)
 }
 
-#[allow(clippy::integer_arithmetic)]
+#[allow(clippy::arithmetic_side_effects)]
 pub(crate) fn random_scalar(rng: &mut ChaChaRng) -> ArkScalar {
 	let mut raw_scalar = [0u8; SCALAR_SIZE];
 
@@ -472,7 +474,7 @@ pub(crate) fn random_scalar(rng: &mut ChaChaRng) -> ArkScalar {
 }
 
 #[cfg(test)]
-#[allow(clippy::integer_arithmetic)]
+#[allow(clippy::arithmetic_side_effects)]
 mod unit_tests {
 	use super::*;
 	use proptest::{prop_assert_eq, proptest};

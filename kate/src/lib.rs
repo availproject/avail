@@ -1,5 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![deny(clippy::integer_arithmetic)]
+#![deny(clippy::arithmetic_side_effects)]
 
 use avail_core::{BlockLengthColumns, BlockLengthRows};
 use core::{
@@ -179,7 +179,7 @@ pub mod gridgen;
 /// There is a unit test to ensure this formula match with the current
 /// IEC 9797 1 algorithm we implemented. See `fn pad_iec_9797_1`
 #[inline]
-#[allow(clippy::integer_arithmetic)]
+#[allow(clippy::arithmetic_side_effects)]
 fn padded_len_of_pad_iec_9797_1(len: u32) -> u32 {
 	let len_plus_one = len.saturating_add(1);
 	let offset = (DATA_CHUNK_SIZE - (len_plus_one as usize % DATA_CHUNK_SIZE)) % DATA_CHUNK_SIZE;
@@ -189,7 +189,7 @@ fn padded_len_of_pad_iec_9797_1(len: u32) -> u32 {
 }
 
 /// Calculates the padded len based of initial `len`.
-#[allow(clippy::integer_arithmetic)]
+#[allow(clippy::arithmetic_side_effects)]
 pub fn padded_len(len: u32, chunk_size: NonZeroU32) -> u32 {
 	let iec_9797_1_len = padded_len_of_pad_iec_9797_1(len);
 
