@@ -3,7 +3,7 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::{Hasher, RuntimeDebug};
 
-/// Sha2 256 wrapper which supports `beefy-merkle-tree::Hasher`.
+/// Sha2 256 wrapper which supports `binary-merkle-tree::Hasher`.
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct ShaTwo256 {}

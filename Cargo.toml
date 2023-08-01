@@ -9,28 +9,28 @@ members = [
 	"nomad/merkle",
 ]
 [patch.crates-io]
-# Substrate  (polkadot-v0.9.37).
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-core-hashing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-debug-derive = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-arithmetic = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-trie = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-runtime-interface = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-weights = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-inherents = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-staking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-tracing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-version = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-wasm-interface = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+# Substrate  (polkadot-v0.9.40).
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-core-hashing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-debug-derive = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-trie = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-runtime-interface = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-weights = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-inherents = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-staking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-tracing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-version = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+sp-wasm-interface = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
 
 [profile.dev.package]
 nalgebra = { opt-level = 3 }

@@ -4,7 +4,7 @@ use sp_core::{Hasher, RuntimeDebug};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
-/// Keccak 256 wrapper which supports `beefy-merkle-tree::Hasher`.
+/// Keccak 256 wrapper which supports `binary-merkle-tree::Hasher`.
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Keccak256 {}
