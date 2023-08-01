@@ -123,6 +123,18 @@ Here is the table of custom IDs for invalid transaction errors:
 | 139       | MaxPaddedLenExceeded | The maximum padded length for a block was exceeded |
 | 140       | MaxRecursionExceeded | The maximum recursion was reached for a call with `AppId != 0` |
 
+
+## Sychronize the chain
+### Chainspec
+To synchronize your node the chain, you have access to the [chainspec](https://kate.avail.tools/chainspec.json) and most importantly the [raw chainspec](https://kate.avail.tools/chainspec.raw.json).
+
+### Sync mode
+You can sync to the chain using:
+- Full mode: This is the default if nothing is specified and will download all the blocks data, you can also use `--sync full`
+- Warp mode: This is will download the latest state then all the blocks data. It's the fastest and recommended way to have a running node. Use `--sync warp`
+- Fast / Fast Unsafe: This is currently not supported since it does not download data needed for Avail specific computation.
+
+
 ## Generate test code coverage report
 
 We are using [grcov](https://github.com/mozilla/grcov) to aggregate code coverage information and generate reports.
