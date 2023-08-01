@@ -72,6 +72,7 @@ pub enum Error {
 	BaseGridDomainSizeInvalid(usize),
 	/// The extended grid width does not fit cleanly into a domain for FFTs
 	ExtendedGridDomianSizeInvalid(usize),
+	IndexOutOfRange,
 }
 
 impl From<TryFromIntError> for Error {
@@ -376,7 +377,7 @@ pub fn build_proof<M: Metrics>(
 	for (cell, res) in cell_iter {
 		let r_index = usize::try_from(cell.row.0)?;
 		if r_index >= ext_rows || cell.col >= block_dims.cols {
-			res.fill(0); // for bad cell identifier, fill whole proof with zero bytes !
+			return Err(Error::IndexOutOfRange);
 		} else {
 			let c_index = usize::try_from(cell.col.0)?;
 			let get_ext_data_matrix =
@@ -401,6 +402,7 @@ pub fn build_proof<M: Metrics>(
 			// row has to be a power of 2, otherwise interpolate() function panics TODO: cache evaluations
 			let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
 			let witness = prover_key.compute_single_witness(&poly, &row_dom_x_pts[c_index]);
+
 			match prover_key.commit(&witness) {
 				Ok(commitment_to_witness) => {
 					let evaluated_point =
@@ -409,9 +411,7 @@ pub fn build_proof<M: Metrics>(
 					res[0..PROOF_SIZE].copy_from_slice(&commitment_to_witness.to_bytes());
 					res[PROOF_SIZE..].copy_from_slice(&evaluated_point.to_bytes());
 				},
-				Err(_) => {
-					res.fill(0); // for bad cell identifier, fill whole proof with zero bytes !
-				},
+				Err(e) => return Err(Error::PlonkError(e)),
 			};
 		}
 	}
