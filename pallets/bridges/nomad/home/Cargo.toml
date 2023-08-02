@@ -22,24 +22,24 @@ nomad-updater-manager = { path = "../updater-manager", default-features = false 
 
 # Substrate 
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
-sp-core = { version = "7.0.0", default-features = false }
-sp-std = { version = "5.0.0", default-features = false }
-sp-io = { version = "7.0.0", default-features = false }
-sp-runtime = { version = "7.0.0", default-features = false }
-sp-arithmetic = { version = "5", default-features = false }
+scale-info = { version = "2", default-features = false, features = ["derive"] }
+sp-core = { version = "7", default-features = false }
+
+sp-std = { version = "5", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false }
-frame-benchmarking = { version = "4.0.0-dev", default-features = false }
-primitive-types = { version = "0.12.0", default-features = false }
+frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 
 # Others
-serde = { version = "1.0.126", default-features = false, optional = true, features = ["derive"] }
-hex-literal = "0.3.4"
-thiserror-no-std = "2.0.2"
+hex-literal = { version = "0.3.4", optional = true }
 
 [dev-dependencies]
-da-primitives = "0.4"
+avail-core = { version = "0.5", features = ["runtime"] }
+
+sp-runtime = { version = "7" }
+frame-benchmarking = { version = "4.0.0-dev" }
+sp-io = { version = "7" }
+
 test-case = "1.2.3"
 
 [features]
@@ -47,6 +47,8 @@ default = ["std"]
 std = [
 	"codec/std",
 	"scale-info/std",
+	"sp-core/std",
+	"sp-std/std",
 	"frame-support/std",
 	"frame-system/std",
 	"nomad-base/std",
@@ -54,14 +56,15 @@ std = [
 	"nomad-signature/std",
 	"nomad-merkle/std",
 	"nomad-updater-manager/std",
-	"frame-benchmarking/std"
+	"hex-literal",
+	"frame-benchmarking?/std"
 ]
 
 runtime-benchmarks = [
-	"sp-runtime/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
+	"frame-benchmarking",
+	"hex-literal",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
-	"da-primitives/try-runtime"
 ]

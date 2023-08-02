@@ -19,12 +19,13 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use da_primitives::traits::ExtendedHeader;
-	use frame_support::{pallet_prelude::*, sp_runtime::traits::Header};
-	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
+	use avail_core::traits::ExtendedHeader;
+	use frame_support::pallet_prelude::*;
+	use frame_system::pallet_prelude::*;
 	use nomad_core::TypedMessage;
 	use nomad_home::Pallet as Home;
-	use primitive_types::H256;
+	use sp_core::{bounded::BoundedVec, Get, H256};
+	use sp_runtime::traits::Header as _;
 	use sp_std::boxed::Box;
 
 	use super::weights::WeightInfo;
@@ -88,7 +89,7 @@ pub mod pallet {
 			#[pallet::compact] destination_domain: u32,
 			recipient_address: H256,
 			header: Box<T::Header>,
-		) -> DispatchResult {
+		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			Self::ensure_valid_header(&header)?;
 			Self::do_dispatch_data_root(destination_domain, recipient_address, &header)
@@ -106,7 +107,7 @@ pub mod pallet {
 			destination_domain: u32,
 			recipient_address: H256,
 			header: &T::Header,
-		) -> DispatchResult {
+		) -> DispatchResultWithPostInfo {
 			let block_number = *header.number();
 			let data_root = header.extension().data_root();
 
@@ -135,12 +136,12 @@ pub mod pallet {
 				data_root,
 			});
 
-			Ok(())
+			Ok(().into())
 		}
 
 		/// Ensure a given header's hash has been recorded in the block hash
 		/// mapping.
-		fn ensure_valid_header(header: &T::Header) -> Result<(), DispatchError> {
+		fn ensure_valid_header(header: &T::Header) -> DispatchResultWithPostInfo {
 			// Ensure header's block number is in the mapping
 			let number = header.number();
 			let stored_hash = frame_system::Pallet::<T>::block_hash(number);
@@ -153,7 +154,7 @@ pub mod pallet {
 				Error::<T>::HashOfBlockNotMatchBlockNumber,
 			);
 
-			Ok(())
+			Ok(().into())
 		}
 	}
 }

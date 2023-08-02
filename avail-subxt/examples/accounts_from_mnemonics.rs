@@ -1,9 +1,11 @@
 use anyhow::Result;
 use avail_subxt::{api, build_client, primitives::AvailExtrinsicParams, AvailConfig, Opts};
-use sp_core::crypto::Pair as _;
-use sp_keyring::sr25519::sr25519::{self, Pair};
 use structopt::StructOpt;
-use subxt::{tx::PairSigner, utils::MultiAddress};
+use subxt::{
+	ext::sp_core::{sr25519::Pair, Pair as _},
+	tx::PairSigner,
+	utils::MultiAddress,
+};
 
 /// This example demonstrates using mnemonic seed for generating signer pairs. It creates Alice and Bob
 /// from seeds, but could also be used for an arbitrary account.
@@ -18,9 +20,9 @@ async fn main() -> Result<()> {
 
 	// Accounts
 	let pair_a = Pair::from_string_with_seed(ALICE_SEED, None).unwrap();
-	let signer_a = PairSigner::<AvailConfig, sr25519::Pair>::new(pair_a.0);
+	let signer_a = PairSigner::<AvailConfig, Pair>::new(pair_a.0);
 	let pair_b = Pair::from_string_with_seed(BOB_SEED, None).unwrap();
-	let signer_b = PairSigner::<AvailConfig, sr25519::Pair>::new(pair_b.0);
+	let signer_b = PairSigner::<AvailConfig, Pair>::new(pair_b.0);
 
 	// Transfer and wait finalized
 	let balance_transfer = api::tx()

@@ -5,7 +5,7 @@ use frame_support::{assert_err, assert_ok, BoundedVec};
 use nomad_base::testing::*;
 use nomad_core::{destination_and_nonce, NomadMessage, NomadState};
 use nomad_merkle::Merkle;
-use primitive_types::H256;
+use sp_core::H256;
 use sp_runtime::{AccountId32, DispatchResult};
 use test_case::test_case;
 

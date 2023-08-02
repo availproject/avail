@@ -7,8 +7,8 @@ edition = "2021"
 
 [dependencies]
 # Our crates
-da-primitives = { version = "0.4", default-features = false }
-kate = { version = "0.7", default-features = false }
+avail-core = { version = "0.5", default-features = false, features = ["runtime"] }
+kate = { version = "0.8", default-features = false }
 
 # Substrate related
 substrate-prometheus-endpoint = {  version = "0.10.0-dev", optional = true }
@@ -25,6 +25,6 @@ std = [
 	"once_cell",
 	"substrate-prometheus-endpoint",
 	"sp-std/std",
-	"da-primitives/std",
+	"avail-core/std",
 	"kate/std"
 ]

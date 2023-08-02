@@ -6,7 +6,7 @@
 /// Root`.
 use std::{collections::HashMap, sync::Arc};
 
-use da_primitives::{BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE};
+use avail_core::{BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE};
 use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
 	Header as DaHeader,

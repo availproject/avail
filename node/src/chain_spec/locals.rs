@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use da_primitives::currency::AVL;
+use avail_core::currency::AVL;
 use da_runtime::{AccountId, Balance, GenesisConfig};
 use sp_core::sr25519::Public;
 

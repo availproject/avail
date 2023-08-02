@@ -5,7 +5,7 @@ use subxt::{
 	utils::H256,
 };
 
-use crate::api::runtime_types::da_primitives::asdr::AppId;
+use crate::api::runtime_types::avail_core::AppId;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AvailExtrinsicParams {

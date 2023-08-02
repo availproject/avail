@@ -19,8 +19,8 @@
 
 #![cfg(test)]
 
+use avail_core::header::Header as DaHeader;
 use codec::Encode;
-use da_primitives::Header as DaHeader;
 use frame_system::{
 	header_builder::da::HeaderExtensionBuilder, mocking::MockUncheckedExtrinsic,
 	test_utils::TestRandomness,

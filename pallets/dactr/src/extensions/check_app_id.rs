@@ -1,8 +1,5 @@
+use avail_core::{traits::GetAppId, AppId, InvalidTransactionCustomId};
 use codec::{Decode, Encode};
-use da_primitives::{
-	asdr::{AppId, GetAppId},
-	InvalidTransactionCustomId,
-};
 use frame_support::{
 	ensure,
 	traits::{IsSubType, IsType},
@@ -167,7 +164,7 @@ where
 
 #[cfg(test)]
 mod tests {
-	use da_primitives::InvalidTransactionCustomId::{ForbiddenAppId, InvalidAppId};
+	use avail_core::InvalidTransactionCustomId::{ForbiddenAppId, InvalidAppId};
 	use frame_system::pallet::Call as SysCall;
 	use pallet_utility::pallet::Call as UtilityCall;
 	use sp_runtime::transaction_validity::InvalidTransaction;
@@ -215,7 +212,7 @@ mod tests {
 	#[test_case(1, batch_submit_call() => Ok(ValidTransaction::default()); "utility batch filled with submit_data can be called with any valid AppId" )]
 	#[test_case(1, batch_mixed_call() => to_invalid_tx(ForbiddenAppId); "utility batch filled with submit_data and remark cannot be called if AppId != 0" )]
 	#[test_case(0, batch_mixed_call() => Ok(ValidTransaction::default()); "utility batch filled with submit_data and remark can be called if AppId == 0" )]
-	fn do_validate_test<A: Into<AppId>>(app_id: A, call: RuntimeCall) -> TransactionValidity {
-		new_test_ext().execute_with(|| CheckAppId::<Test>::from(app_id.into()).do_validate(&call))
+	fn do_validate_test(id: u32, call: RuntimeCall) -> TransactionValidity {
+		new_test_ext().execute_with(|| CheckAppId::<Test>::from(AppId(id)).do_validate(&call))
 	}
 }

@@ -1,13 +1,13 @@
+use core::num::NonZeroU16;
 use std::{
 	marker::Sync,
 	sync::{Arc, RwLock},
 };
 
 use avail_base::metrics::RPCMetricAdapter;
-use da_primitives::{
-	asdr::{AppExtrinsic, AppId, DataLookup},
-	traits::ExtendedHeader,
-	DataProof, OpaqueExtrinsic,
+use avail_core::{
+	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, BlockLengthColumns,
+	BlockLengthRows, DataProof, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
 use da_runtime::{apis::DataAvailApi, Runtime, UncheckedExtrinsic};
 use frame_system::{limits::BlockLength, submitted_data};
@@ -15,14 +15,19 @@ use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 };
-use kate::{com::Cell, BlockDimensions, BlsScalar, PublicParameters, Seed};
-use kate_recovery::{index::AppDataIndex, matrix::Dimensions};
+use kate::{
+	com::Cell,
+	config::{COL_EXTENSION, ROW_EXTENSION},
+	BlockDimensions, BlsScalar, PublicParameters, Seed,
+};
+use kate_recovery::matrix::Dimensions;
 use lru::LruCache;
+use nalgebra::DMatrix;
 use sc_client_api::BlockBackend;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
-	generic::BlockId,
+	generic::{BlockId, Digest},
 	traits::{Block as BlockT, Header},
 };
 
@@ -38,7 +43,7 @@ where
 		&self,
 		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<Option<Vec<u8>>>>;
+	) -> RpcResult<Vec<Vec<u8>>>;
 
 	#[method(name = "kate_queryAppData")]
 	async fn query_app_data(
@@ -64,7 +69,7 @@ where
 #[allow(clippy::type_complexity)]
 pub struct Kate<Client, Block: BlockT> {
 	client: Arc<Client>,
-	block_ext_cache: RwLock<LruCache<Block::Hash, (Vec<BlsScalar>, BlockDimensions)>>,
+	block_ext_cache: RwLock<LruCache<Block::Hash, DMatrix<BlsScalar>>>,
 }
 
 impl<Client, Block: BlockT> Kate<Client, Block> {
@@ -104,6 +109,12 @@ macro_rules! internal_err {
 fn get_seed<B, C>(client: &C, block_id: &BlockId<B>) -> Option<Seed>
 where
 	B: BlockT,
+	<B as BlockT>::Header: ExtendedHeader<
+		<<B as BlockT>::Header as Header>::Number,
+		<B as BlockT>::Hash,
+		Digest,
+		HeaderExtension,
+	>,
 	C: ProvideRuntimeApi<B>,
 	C::Api: DataAvailApi<B>,
 {
@@ -117,7 +128,6 @@ where
 impl<Client, Block> Kate<Client, Block>
 where
 	Block: BlockT,
-	Block::Header: ExtendedHeader,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: DataAvailApi<Block>,
@@ -136,7 +146,12 @@ where
 impl<Client, Block> KateApiServer<Block> for Kate<Client, Block>
 where
 	Block: BlockT<Extrinsic = OpaqueExtrinsic>,
-	Block::Header: ExtendedHeader,
+	<Block as BlockT>::Header: ExtendedHeader<
+		<<Block as BlockT>::Header as Header>::Number,
+		<Block as BlockT>::Hash,
+		Digest,
+		HeaderExtension,
+	>,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: DataAvailApi<Block>,
@@ -145,7 +160,7 @@ where
 		&self,
 		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<Option<Vec<u8>>>> {
+	) -> RpcResult<Vec<Vec<u8>>> {
 		let at = self.at_or_best(at);
 		let block_id = BlockId::Hash(at);
 
@@ -200,18 +215,14 @@ where
 			let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
 
-			block_ext_cache.put(block_hash, (data, block_dims));
+			block_ext_cache.put(block_hash, data);
 		}
 
-		let (ext_data, block_dims) = block_ext_cache
+		let ext_data = block_ext_cache
 			.get(&block_hash)
 			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
 
-		let dimensions: Dimensions = (*block_dims)
-			.try_into()
-			.map_err(|e| internal_err!("Invalid dimensions: {:?}", e))?;
-
-		Ok(kate::com::scalars_to_rows(&rows, &dimensions, ext_data))
+		Ok(kate::com::scalars_to_rows(&rows, ext_data))
 	}
 
 	async fn query_app_data(
@@ -273,31 +284,20 @@ where
 			let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
 
-			block_ext_cache.put(block_hash, (data, block_dims));
+			block_ext_cache.put(block_hash, data);
 		}
 
-		let (ext_data, block_dims) = block_ext_cache
+		let ext_data = block_ext_cache
 			.get(&block_hash)
 			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
 
-		let DataLookup { index, size } = signed_block.block.header().extension().app_lookup();
-
-		let app_data_index = AppDataIndex {
-			index: index
-				.iter()
-				.map(|i| (i.app_id.0, i.start))
-				.collect::<Vec<_>>(),
-			size: *size,
-		};
-
-		let dimensions: Dimensions = (*block_dims)
-			.try_into()
-			.map_err(|e| internal_err!("Invalid dimensions: {:?}", e))?;
+		let app_data_index = signed_block.block.header().extension().app_lookup();
+		let dimensions = non_extended_dimensions(ext_data)?;
 
 		Ok(kate::com::scalars_to_app_rows(
-			app_id.0,
-			&app_data_index,
-			&dimensions,
+			app_id,
+			app_data_index,
+			dimensions,
 			ext_data,
 		))
 	}
@@ -357,12 +357,20 @@ where
 
 			let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
-			block_ext_cache.put(block_hash, (data, block_dims));
+			block_ext_cache.put(block_hash, data);
 		}
 
-		let (ext_data, block_dims) = block_ext_cache
+		let ext_data = block_ext_cache
 			.get(&block_hash)
 			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
+		let dimensions = non_extended_dimensions(ext_data)?;
+		let block_dims = BlockDimensions::new(
+			BlockLengthRows(dimensions.rows().get().into()),
+			BlockLengthColumns(dimensions.cols().get().into()),
+			BLOCK_CHUNK_SIZE,
+		)
+		.ok_or_else(|| internal_err!("Block dimensions are invalid"))?;
+
 		let kc_public_params_raw =
 			self.client
 				.runtime_api()
@@ -378,7 +386,7 @@ where
 			unsafe { PublicParameters::from_slice_unchecked(&kc_public_params_raw) };
 
 		let proof =
-			kate::com::build_proof(&kc_public_params, *block_dims, ext_data, &cells, &metrics)
+			kate::com::build_proof(&kc_public_params, block_dims, ext_data, &cells, &metrics)
 				.map_err(|e| internal_err!("Proof cannot be generated: {:?}", e))?;
 
 		Ok(proof)
@@ -430,4 +438,19 @@ where
 		DataProof::try_from(&merkle_proof)
 			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e))
 	}
+}
+
+fn non_extended_dimensions(ext_data: &DMatrix<BlsScalar>) -> RpcResult<Dimensions> {
+	// Dimension of no extended matrix.
+	let (ext_rows, ext_cols) = ext_data.shape();
+	let rows = ext_rows
+		.checked_div(NonZeroU16::get(ROW_EXTENSION).into())
+		.ok_or_else(|| internal_err!("Invalid row extension"))?;
+	let cols = ext_cols
+		.checked_div(NonZeroU16::get(COL_EXTENSION).into())
+		.ok_or_else(|| internal_err!("Invalid col extension"))?;
+	let dimensions =
+		Dimensions::new_from(rows, cols).ok_or_else(|| internal_err!("Invalid dimensions"))?;
+
+	Ok(dimensions)
 }

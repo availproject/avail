@@ -1,4 +1,4 @@
-use da_primitives::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO};
+use avail_core::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO};
 use frame_support::{assert_noop, assert_ok, error::BadOrigin};
 use frame_system::{limits::BlockLength, RawOrigin};
 

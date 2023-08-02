@@ -1,7 +1,7 @@
 use core::fmt::Debug;
 
+use avail_core::OpaqueExtrinsic;
 use beefy_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
-use da_primitives::OpaqueExtrinsic;
 use sp_core::H256;
 use sp_runtime::traits::Keccak256;
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
@@ -249,7 +249,7 @@ where
 
 #[cfg(all(test, feature = "force-rs-merkle"))]
 mod test {
-	use da_primitives::asdr::AppId;
+	use avail_core::AppId;
 	use hex_literal::hex;
 	use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
 	use test_case::test_case;

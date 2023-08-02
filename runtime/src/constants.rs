@@ -18,7 +18,7 @@
 //! A set of constant values used in substrate runtime.
 
 #![allow(clippy::identity_op)]
-use da_primitives::currency::{Balance, AVL};
+use avail_core::currency::{Balance, AVL};
 use frame_support::{
 	dispatch::DispatchClass,
 	parameter_types,
@@ -99,7 +99,7 @@ pub mod time {
 }
 
 pub mod system {
-	use da_primitives::NORMAL_DISPATCH_RATIO;
+	use avail_core::NORMAL_DISPATCH_RATIO;
 	use frame_support::weights::constants::{
 		ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_MILLIS, WEIGHT_REF_TIME_PER_SECOND,
 	};
@@ -448,7 +448,7 @@ pub mod bounty {
 }
 
 pub mod da {
-	use da_primitives::{BlockLengthColumns, BlockLengthRows};
+	use avail_core::{BlockLengthColumns, BlockLengthRows};
 
 	use super::*;
 

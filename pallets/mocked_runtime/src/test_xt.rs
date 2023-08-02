@@ -1,5 +1,5 @@
 use codec::{Codec, Decode, Encode};
-use da_primitives::asdr::{AppId, GetAppId};
+use avail_core::{AppId, traits::GetAppId};
 use derive_more::From;
 use frame_support::{dispatch, traits::ExtrinsicCall};
 use scale_info::TypeInfo;

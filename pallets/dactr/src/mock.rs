@@ -1,8 +1,9 @@
 #![cfg(test)]
 
-use da_primitives::{
+use avail_core::{
 	currency::{Balance, AVL},
-	Header,
+	header::Header,
+	AppId,
 };
 use frame_support::{
 	parameter_types,
@@ -151,15 +152,15 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		app_keys: vec![
 			(b"Data Avail".to_vec(), AppKeyInfo {
 				owner: 1,
-				id: 0.into(),
+				id: AppId(0),
 			}),
 			(b"Ethereum".to_vec(), AppKeyInfo {
 				owner: 2,
-				id: 1.into(),
+				id: AppId(1),
 			}),
 			(b"Polygon".to_vec(), AppKeyInfo {
 				owner: 2,
-				id: 2.into(),
+				id: AppId(2),
 			}),
 		],
 	}

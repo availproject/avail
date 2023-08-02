@@ -1,5 +1,5 @@
 use afl;
-use da_primitives::asdr::AppExtrinsic;
+use avail_core::AppExtrinsic;
 use hex_literal::hex;
 
 fn main() {

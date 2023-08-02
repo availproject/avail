@@ -65,10 +65,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(result_option_inspect)]
 
-use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
-use da_primitives::{
-	asdr::AppExtrinsic, traits::ExtendedHeader, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+use avail_core::{
+	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, OpaqueExtrinsic,
+	BLOCK_CHUNK_SIZE,
 };
+use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
 #[cfg(feature = "std")]
 use frame_support::traits::GenesisBuild;
 use frame_support::{
@@ -208,7 +209,7 @@ impl Default for ExtrinsicLen {
 	fn default() -> Self {
 		Self {
 			raw: <_>::default(),
-			padded: BLOCK_CHUNK_SIZE,
+			padded: BLOCK_CHUNK_SIZE.get(),
 		}
 	}
 }
@@ -314,7 +315,7 @@ pub mod pallet {
 		/// The block header.
 		type Header: Parameter
 			+ traits::Header<Number = Self::BlockNumber, Hash = Self::Hash>
-			+ ExtendedHeader<Number = Self::BlockNumber, Hash = Self::Hash>;
+			+ ExtendedHeader<Self::BlockNumber, Self::Hash, generic::Digest, HeaderExtension>;
 
 		/// Header builder
 		type HeaderExtensionBuilder: header_builder::HeaderExtensionBuilder;
@@ -741,7 +742,7 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
-			use da_primitives::well_known_keys::KATE_PUBLIC_PARAMS;
+			use avail_core::well_known_keys::KATE_PUBLIC_PARAMS;
 			use frame_support::traits::StorageVersion;
 
 			<BlockHash<T>>::insert::<_, T::Hash>(T::BlockNumber::zero(), hash69());
@@ -1515,7 +1516,12 @@ impl<T: Config> Pallet<T> {
 		);
 
 		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
-		let header = <T::Header as ExtendedHeader>::new(
+		let header = <T::Header as ExtendedHeader<
+			T::BlockNumber,
+			T::Hash,
+			generic::Digest,
+			HeaderExtension,
+		>>::new(
 			number,
 			extrinsics_root,
 			storage_root,

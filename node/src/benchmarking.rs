@@ -22,8 +22,8 @@
 
 use std::{sync::Arc, time::Duration};
 
+use avail_core::AppId;
 use codec::Encode;
-use da_primitives::asdr::AppId;
 use da_runtime::{AccountId, Balance, BalancesCall};
 use frame_system::Call as SystemCall;
 use sc_cli::Result;

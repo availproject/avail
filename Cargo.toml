@@ -22,15 +22,15 @@ frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 
 # DA Primitives
-da-primitives = { version = "0.4", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.7" }
-kate = { version = "0.7", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.7" }
-kate-recovery = { version = "0.8", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.7" }
+avail-core = { version = "0.5", git="https://github.com/availproject/avail-core", tag = "avail-core/v0.5.0" }
+kate = { version = "0.8", git="https://github.com/availproject/avail-core", tag = "avail-core/v0.5.0" }
+kate-recovery = { version = "0.9", git="https://github.com/availproject/avail-core", tag = "avail-core/v0.5.0" }
 
 # Nomad
-nomad-signature = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.7" }
-nomad-merkle = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.7" }
-nomad-base = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.7" }
-nomad-core = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "da-primitives/v0.4.7" }
+nomad-signature = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "avail-core/v0.5.0" }
+nomad-merkle = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "avail-core/v0.5.0" }
+nomad-base = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "avail-core/v0.5.0" }
+nomad-core = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "avail-core/v0.5.0" }
 
 # Other stuff
 uint = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }
@@ -123,6 +123,7 @@ pallet-child-bounties = { git = "https://github.com/paritytech/substrate.git", b
 pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-nomination-pools = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-election-provider-support-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 
 
 

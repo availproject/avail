@@ -17,11 +17,8 @@
 
 //! Provide types to help defining a mock environment when testing pallets.
 
+use avail_core::{traits::GetAppId, AppExtrinsic, OpaqueExtrinsic};
 use codec::{Decode, Encode};
-use da_primitives::{
-	asdr::{AppExtrinsic, GetAppId, EXTRINSIC_FORMAT_VERSION},
-	OpaqueExtrinsic,
-};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	generic,
@@ -77,7 +74,7 @@ impl<T: Config> Extrinsic for MockUncheckedExtrinsic<T> {
 impl<T: Config> ExtrinsicMetadata for MockUncheckedExtrinsic<T> {
 	type SignedExtensions = DefaultGetAppId;
 
-	const VERSION: u8 = EXTRINSIC_FORMAT_VERSION;
+	const VERSION: u8 = avail_core::asdr::EXTRINSIC_FORMAT_VERSION;
 }
 
 #[cfg(feature = "std")]

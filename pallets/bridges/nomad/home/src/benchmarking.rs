@@ -38,7 +38,7 @@ benchmarks! {
 		let signed_update = expected_signed_update();
 	}: _(origin, signed_update)
 	verify {
-		assert_eq!(Base::<T>::get().state, NomadState::Failed);
+		assert!(Base::<T>::get().state == NomadState::Failed);
 	}
 
 	dispatch {

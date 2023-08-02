@@ -1,4 +1,4 @@
-use da_primitives::traits::ExtendedHeader;
+use avail_core::{header::HeaderExtension, traits::ExtendedHeader};
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_system::{BlockHash, RawOrigin};
 use hex_literal::hex;
@@ -16,7 +16,11 @@ benchmarks! {
 			H256: From<<T as frame_system::Config>::Hash>,
 			H256: Into<<T as frame_system::Config>::Hash>,
 			u32: From<<T as frame_system::Config>::BlockNumber>,
-			T::Header: ExtendedHeader,
+			T::Header: ExtendedHeader<
+				<T as frame_system::Config>::BlockNumber,
+				<T as frame_system::Config>::Hash,
+				sp_runtime::generic::Digest,
+				HeaderExtension>,
 			<T as frame_system::Config>::Hash: From<H256>,
 	}
 
@@ -31,7 +35,7 @@ benchmarks! {
 		let extension = Default::default();
 		let digest = Default::default();
 
-		let header = Box::new(<T::Header as ExtendedHeader>::new(
+		let header = Box::new(<T::Header as ExtendedHeader<_,_,_,_>>::new(
 			block_number.clone(),
 			extrinsics_root.into(),
 			state_root,
