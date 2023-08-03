@@ -25,7 +25,7 @@ use sp_runtime::{
 	},
 };
 
-use crate::{BlockHash, Config, Pallet};
+use crate::{pallet_prelude::BlockNumberFor, BlockHash, Config, Pallet};
 
 /// Check for transaction mortality.
 ///
@@ -76,7 +76,10 @@ impl<T: Config + Send + Sync> SignedExtension for CheckMortality<T> {
 
 	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
 		let current_u64 = <Pallet<T>>::block_number().saturated_into::<u64>();
-		let n = self.0.birth(current_u64).saturated_into::<T::BlockNumber>();
+		let n = self
+			.0
+			.birth(current_u64)
+			.saturated_into::<BlockNumberFor<T>>();
 		if !<BlockHash<T>>::contains_key(n) {
 			Err(InvalidTransaction::AncientBirthBlock.into())
 		} else {
@@ -131,7 +134,7 @@ mod tests {
 	fn signed_ext_check_era_should_change_longevity() {
 		new_test_ext().execute_with(|| {
 			let normal = DispatchInfo {
-				weight: Weight::from_ref_time(100),
+				weight: Weight::from_parts(100, 0),
 				class: DispatchClass::Normal,
 				pays_fee: Pays::Yes,
 			};

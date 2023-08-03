@@ -38,11 +38,11 @@ use crate::Config;
 /// some kind of priority upon validating transactions.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct CheckNonce<T: Config>(#[codec(compact)] pub T::Index);
+pub struct CheckNonce<T: Config>(#[codec(compact)] pub T::Nonce);
 
 impl<T: Config> CheckNonce<T> {
 	/// utility constructor. Used only in client/factory code.
-	pub fn from(nonce: T::Index) -> Self { Self(nonce) }
+	pub fn from(nonce: T::Nonce) -> Self { Self(nonce) }
 }
 
 impl<T: Config> sp_std::fmt::Debug for CheckNonce<T> {
@@ -84,7 +84,7 @@ where
 			}
 			.into());
 		}
-		account.nonce += T::Index::one();
+		account.nonce += T::Nonce::one();
 		crate::Account::<T>::insert(who, account);
 		Ok(())
 	}

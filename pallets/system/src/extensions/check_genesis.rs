@@ -22,7 +22,7 @@ use sp_runtime::{
 	transaction_validity::TransactionValidityError,
 };
 
-use crate::{Config, Pallet};
+use crate::{pallet_prelude::BlockNumberFor, Config, Pallet};
 
 /// Genesis hash check to provide replay protection between different networks.
 ///
@@ -59,7 +59,7 @@ impl<T: Config + Send + Sync> SignedExtension for CheckGenesis<T> {
 	const IDENTIFIER: &'static str = "CheckGenesis";
 
 	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
-		Ok(<Pallet<T>>::block_hash(T::BlockNumber::zero()))
+		Ok(<Pallet<T>>::block_hash(<BlockNumberFor<T>>::zero()))
 	}
 
 	fn pre_dispatch(
