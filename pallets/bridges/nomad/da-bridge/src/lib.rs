@@ -43,7 +43,6 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	// Genesis config
@@ -52,7 +51,7 @@ pub mod pallet {
 	pub struct GenesisConfig {}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+	impl BuildGenesisConfig for GenesisConfig {
 		fn build(&self) {}
 	}
 
@@ -62,7 +61,7 @@ pub mod pallet {
 		DataRootDispatched {
 			destination_domain: u32,
 			recipient_address: H256,
-			block_number: T::BlockNumber,
+			block_number: BlockNumberFor<T>,
 			data_root: H256,
 		},
 	}
@@ -79,7 +78,7 @@ pub mod pallet {
 	where
 		[u8; 32]: From<T::AccountId>,
 		H256: From<T::Hash>,
-		u32: From<T::BlockNumber>,
+		u32: From<BlockNumberFor<T>>,
 	{
 		/// Dispatch a data root message to the home if the header is valid.
 		#[pallet::call_index(0)]
@@ -88,7 +87,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			#[pallet::compact] destination_domain: u32,
 			recipient_address: H256,
-			header: Box<T::Header>,
+			header: Box<HeaderFor<T>>,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			Self::ensure_valid_header(&header)?;
@@ -100,13 +99,13 @@ pub mod pallet {
 	where
 		[u8; 32]: From<T::AccountId>,
 		H256: From<T::Hash>,
-		u32: From<T::BlockNumber>,
+		u32: From<BlockNumberFor<T>>,
 	{
 		/// Dispatch a data root message for a valid header.
 		fn do_dispatch_data_root(
 			destination_domain: u32,
 			recipient_address: H256,
-			header: &T::Header,
+			header: &HeaderFor<T>,
 		) -> DispatchResultWithPostInfo {
 			let block_number = *header.number();
 			let data_root = header.extension().data_root();
@@ -141,7 +140,7 @@ pub mod pallet {
 
 		/// Ensure a given header's hash has been recorded in the block hash
 		/// mapping.
-		fn ensure_valid_header(header: &T::Header) -> DispatchResultWithPostInfo {
+		fn ensure_valid_header(header: &HeaderFor<T>) -> DispatchResultWithPostInfo {
 			// Ensure header's block number is in the mapping
 			let number = header.number();
 			let stored_hash = frame_system::Pallet::<T>::block_hash(number);

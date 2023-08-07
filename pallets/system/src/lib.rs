@@ -71,7 +71,6 @@ use avail_core::{
 };
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
 #[cfg(feature = "std")]
-use frame_support::traits::BuildGenesisConfig;
 use frame_support::{
 	dispatch::{
 		extract_actual_pays_fee, extract_actual_weight, DispatchClass, DispatchInfo,
@@ -302,21 +301,6 @@ pub mod pallet {
 			+ AtLeast32Bit
 			+ Copy
 			+ MaxEncodedLen;
-
-		// /// The block number type used by the runtime.
-		// type BlockNumber: Parameter
-		// 	+ Member
-		// 	+ MaybeSerializeDeserialize
-		// 	+ Debug
-		// 	+ MaybeDisplay
-		// 	+ AtLeast32BitUnsigned
-		// 	+ Default
-		// 	+ Bounded
-		// 	+ Copy
-		// 	+ sp_std::hash::Hash
-		// 	+ sp_std::str::FromStr
-		// 	+ MaxEncodedLen
-		// 	+ TypeInfo;
 
 		/// The output of the `Hashing` function.
 		type Hash: Parameter
