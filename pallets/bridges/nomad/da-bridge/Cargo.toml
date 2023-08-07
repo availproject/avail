@@ -19,10 +19,10 @@ nomad-home = { path = "../home", default-features = false }
 
 #  Substrate 
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-scale-info = { version = "2", default-features = false, features = ["derive"] }
-sp-core = { version = "7", default-features = false }
-sp-std = { version = "5", default-features = false }
-sp-runtime = { version = "7", default-features = false }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
+sp-core = { version = "21.0.0", default-features = false }
+sp-std = { version = "8.0.0", default-features = false }
+sp-runtime = { version = "24.0.0", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false }
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
@@ -35,7 +35,7 @@ nomad-base = "0.1"
 nomad-merkle  = "0.1" 
 nomad-updater-manager = { path = "../updater-manager" }
 
-sp-io = { version = "7" }
+sp-io = { version = "23.0.0" }
 
 [features]
 default = ["std"]

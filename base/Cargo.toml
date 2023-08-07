@@ -12,7 +12,7 @@ kate = { version = "0.8", default-features = false }
 
 # Substrate related
 substrate-prometheus-endpoint = {  version = "0.10.0-dev", optional = true }
-sp-std = { version = "5.0.0", default-features = false }
+sp-std = { version = "8.0.0", default-features = false }
 
 # 3rd-party
 log = "0.4.17"

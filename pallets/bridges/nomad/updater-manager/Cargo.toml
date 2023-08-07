@@ -14,11 +14,11 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 # Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-scale-info = { version = "2", default-features = false, features = ["derive"] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 
-sp-core = { version = "7", default-features = false }
-sp-io = { version = "7", default-features = false, optional = true }
-sp-runtime = { version = "7", default-features = false, optional = true }
+sp-core = { version = "21.0.0", default-features = false }
+sp-io = { version = "23.0.0", default-features = false, optional = true }
+sp-runtime = { version = "24.0.0", default-features = false, optional = true }
 
 frame-support = { version = "4.0.0-dev", default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false }
