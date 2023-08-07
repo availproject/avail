@@ -276,7 +276,10 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 		let normal_base = <Test as crate::Config>::BlockWeights::get()
 			.get(DispatchClass::Normal)
 			.base_extrinsic;
-		let pre_info = DispatchInfo { weight: Weight::from_parts(1000, 0), ..Default::default() };
+		let pre_info = DispatchInfo {
+			weight: Weight::from_parts(1000, 0),
+			..Default::default()
+		};
 		System::note_applied_extrinsic(&Ok(from_actual_ref_time(Some(300))), pre_info);
 		System::note_applied_extrinsic(&Ok(from_actual_ref_time(Some(1000))), pre_info);
 		System::note_applied_extrinsic(
@@ -301,7 +304,10 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 
 		System::note_applied_extrinsic(
 			&Err(DispatchErrorWithPostInfo {
-				post_info: PostDispatchInfo { actual_weight: None, pays_fee: Pays::Yes },
+				post_info: PostDispatchInfo {
+					actual_weight: None,
+					pays_fee: Pays::Yes,
+				},
 				error: DispatchError::BadOrigin,
 			}),
 			pre_info,
@@ -330,7 +336,10 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 		let operational_base = <Test as crate::Config>::BlockWeights::get()
 			.get(DispatchClass::Operational)
 			.base_extrinsic;
-		assert!(normal_base != operational_base, "Test pre-condition violated");
+		assert!(
+			normal_base != operational_base,
+			"Test pre-condition violated"
+		);
 		let pre_info = DispatchInfo {
 			weight: Weight::from_parts(1000, 0),
 			class: DispatchClass::Operational,

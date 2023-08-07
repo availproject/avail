@@ -23,15 +23,16 @@ use crate::{self as da_control, *};
 type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
 
 /// An implementation of `sp_runtime::traits::Block` to be used in tests.
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = frame_system::mocking::MockDaBlock<Test>;
 
 type BlockNumber = u32;
 
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Test
+	// where
+	// 	Block = Block,
+	// 	NodeBlock = Block,
+	// 	UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system,
 		Utility: pallet_utility,
@@ -52,14 +53,15 @@ impl frame_system::Config for Test {
 	type AccountData = pallet_balances::AccountData<Balance>;
 	type AccountId = u64;
 	type BaseCallFilter = frame_support::traits::Everything;
+	type Block = Block;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
-	type BlockNumber = BlockNumber;
+	// type BlockNumber = BlockNumber;
 	type BlockWeights = ();
 	type DbWeight = ();
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type Header = Header<Self::BlockNumber, BlakeTwo256>;
+	// type Header = Header<Self::BlockNumber, BlakeTwo256>;
 	type HeaderExtensionBuilder = HeaderExtensionBuilder<Test>;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
@@ -138,8 +140,8 @@ impl da_control::Config for Test {
 
 /// Create new externalities for `System` module tests.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut storage = frame_system::GenesisConfig::default()
-		.build_storage::<Test>()
+	let mut storage = frame_system::GenesisConfig::<Test>::default()
+		.build_storage()
 		.unwrap();
 
 	pallet_balances::GenesisConfig::<Test> {
