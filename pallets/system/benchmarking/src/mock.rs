@@ -33,13 +33,14 @@ type AccountIndex = u32;
 type BlockNumber = u32;
 
 type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = mocking::MockDaBlock<Test>;
 
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Test 
+	// where
+	// 	Block = Block,
+	// 	NodeBlock = Block,
+	// 	UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system,
 	}
@@ -51,12 +52,13 @@ impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = ();
 	type BlockLength = ();
-	type BlockNumber = BlockNumber;
+	// type BlockNumber = BlockNumber;
 	type BlockWeights = ();
 	type DbWeight = ();
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type Header = DaHeader<BlockNumber, BlakeTwo256>;
+	type Block = Block;
+	// type Header = DaHeader<BlockNumber, BlakeTwo256>;
 	type HeaderExtensionBuilder = HeaderExtensionBuilder<Test>;
 	type Index = AccountIndex;
 	type Lookup = IdentityLookup<Self::AccountId>;

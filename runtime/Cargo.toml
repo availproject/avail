@@ -118,7 +118,7 @@ with-tracing = ["frame-executive/with-tracing"]
 fast-runtime = []
 header_commitment_corruption = [ "frame-system/header_commitment_corruption"]
 std = [
-	"serde/std",
+	"serde",
 	#"parity-util-mem/std",
 	"frame-system-benchmarking?/std",
 	"frame-election-provider-support/std",

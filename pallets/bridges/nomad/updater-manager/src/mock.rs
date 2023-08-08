@@ -7,14 +7,15 @@ use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 use crate as updater_manager;
 
 type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = frame_system::mocking::MockDaBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Test 
+	// where
+	// 	Block = Block,
+	// 	NodeBlock = Block,
+	// 	UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		UpdaterManager: updater_manager::{Pallet, Call, Storage, Event<T>},
@@ -34,12 +35,13 @@ impl system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
-	type BlockNumber = u32;
+	// type BlockNumber = u32;
 	type BlockWeights = ();
 	type DbWeight = ();
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type Header = Header<Self::BlockNumber, BlakeTwo256>;
+	type Block = Block;
+	// type Header = Header<Self::BlockNumber, BlakeTwo256>;
 	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;

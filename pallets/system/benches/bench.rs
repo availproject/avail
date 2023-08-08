@@ -53,13 +53,14 @@ mod module {
 }
 
 type UncheckedExtrinsic = MockUncheckedExtrinsic<Runtime>;
-type Block = MockBlock<Runtime>;
+type Block = mocking::MockDaBlock<Test>;
 
 frame_support::construct_runtime!(
-	pub enum Runtime where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Runtime 
+	// where
+	// 	Block = Block,
+	// 	NodeBlock = Block,
+	// 	UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Module: module::{Pallet, Event},
@@ -83,12 +84,13 @@ impl frame_system::Config for Runtime {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = ConstU64<250>;
 	type BlockLength = BlockLength;
-	type BlockNumber = u64;
+	// type BlockNumber = u64;
 	type BlockWeights = ();
 	type DbWeight = ();
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type Header = DaHeader<u64, BlakeTwo256>;
+	type Block = Block;
+	// type Header = DaHeader<u64, BlakeTwo256>;
 	type HeaderExtensionBuilder = HeaderExtensionBuilder<Runtime>;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;

@@ -12,16 +12,17 @@ use crate::{self as da_bridge};
 
 // type TestXt = sp_runtime::testing::TestXt<Call, SignedExtra>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-pub type Block = frame_system::mocking::MockBlock<Test>;
-pub type BlockNumber = u32;
+type Block = frame_system::mocking::MockDaBlock<Test>;
+// pub type BlockNumber = u32;
 
 // TODO: add proper config once frame executive mocking has been demonstrated
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Test 
+	// where
+	// 	Block = Block,
+	// 	NodeBlock = Block,
+	// 	UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		UpdaterManager: nomad_updater_manager::{Pallet, Call, Storage, Event<T>},
@@ -43,12 +44,13 @@ impl system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
-	type BlockNumber = BlockNumber;
+	// type BlockNumber = BlockNumber;
 	type BlockWeights = ();
 	type DbWeight = ();
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type Header = Header<Self::BlockNumber, BlakeTwo256>;
+	type Block = Block;
+	// type Header = Header<Self::BlockNumber, BlakeTwo256>;
 	type HeaderExtensionBuilder = da::HeaderExtensionBuilder<Test>;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
