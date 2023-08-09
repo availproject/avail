@@ -56,16 +56,14 @@ impl frame_system::Config for Test {
 	type Block = Block;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
-	// type BlockNumber = BlockNumber;
 	type BlockWeights = ();
 	type DbWeight = ();
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	// type Header = Header<Self::BlockNumber, BlakeTwo256>;
 	type HeaderExtensionBuilder = HeaderExtensionBuilder<Test>;
-	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type MaxConsumers = ConstU32<16>;
+	type Nonce = u64;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();

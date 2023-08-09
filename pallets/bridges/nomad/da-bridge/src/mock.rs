@@ -13,18 +13,13 @@ use crate::{self as da_bridge};
 // type TestXt = sp_runtime::testing::TestXt<Call, SignedExtra>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockDaBlock<Test>;
-// pub type BlockNumber = u32;
 
 // TODO: add proper config once frame executive mocking has been demonstrated
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-	pub enum Test 
-	// where
-	// 	Block = Block,
-	// 	NodeBlock = Block,
-	// 	UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Test
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		UpdaterManager: nomad_updater_manager::{Pallet, Call, Storage, Event<T>},
 		Home: nomad_home::{Pallet, Call, Storage, Event<T>},
 		DABridge: da_bridge::{Pallet, Call, Storage, Event<T>},
@@ -42,19 +37,17 @@ impl system::Config for Test {
 	type AccountData = ();
 	type AccountId = AccountId32;
 	type BaseCallFilter = frame_support::traits::Everything;
+	type Block = Block;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
-	// type BlockNumber = BlockNumber;
 	type BlockWeights = ();
 	type DbWeight = ();
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type Block = Block;
-	// type Header = Header<Self::BlockNumber, BlakeTwo256>;
 	type HeaderExtensionBuilder = da::HeaderExtensionBuilder<Test>;
-	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type MaxConsumers = ConstU32<16>;
+	type Nonce = u64;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();

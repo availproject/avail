@@ -226,11 +226,11 @@ impl frame_system::Config for Runtime {
 	type AccountId = AccountId;
 	/// The basic call filter to use in dispatchable.
 	type BaseCallFilter = Everything;
+	/// The Block type used by the runtime
+	type Block = Block<Runtime>;
 	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = RuntimeBlockLength;
-	/// The index type for blocks.
-	type BlockNumber = BlockNumber;
 	/// Block & extrinsics weights: base values and limits.
 	type BlockWeights = constants::system::RuntimeBlockWeights;
 	/// The weight of database operations that the runtime can invoke.
@@ -239,15 +239,13 @@ impl frame_system::Config for Runtime {
 	type Hash = Hash;
 	/// The hashing algorithm used.
 	type Hashing = BlakeTwo256;
-	/// The header type.
-	type Header = DaHeader<BlockNumber, BlakeTwo256>;
 	/// The header builder type.
 	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Runtime>;
-	/// The index type for storing how many extrinsics an account has signed.
-	type Index = Index;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
 	type Lookup = Indices;
 	type MaxConsumers = constants::system::MaxConsumers;
+	/// The index type for storing how many extrinsics an account has signed.
+	type Nonce = Index;
 	/// What to do if an account is fully reaped from the system.
 	type OnKilledAccount = ();
 	/// What to do if a new account is created.
@@ -960,10 +958,7 @@ impl nomad_da_bridge::Config for Runtime {
 // TODO @miguel Aline this with previous order and ID to keep the compatibility.
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
-	pub enum Runtime where
-		Block = Block,
-		NodeBlock = NodeBlock,
-		UncheckedExtrinsic = UncheckedExtrinsic
+	pub enum Runtime
 	{
 		System: frame_system = 0,
 		Utility: pallet_utility = 1,

@@ -66,8 +66,9 @@
 #![feature(result_option_inspect)]
 
 use avail_core::{
-	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, OpaqueExtrinsic,
-	BLOCK_CHUNK_SIZE,
+	header::HeaderExtension,
+	traits::{ExtendedBlock, ExtendedHeader},
+	AppExtrinsic, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
 #[cfg(feature = "std")]
@@ -86,7 +87,7 @@ use frame_support::{
 	Parameter,
 };
 use kate::Seed;
-use pallet_prelude::{BlockNumberFor, HeaderFor};
+use pallet_prelude::{BlockNumberFor, DaHeaderFor};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::Serialize;
@@ -99,9 +100,9 @@ use sp_runtime::traits::TrailingZeroInput;
 use sp_runtime::{
 	generic,
 	traits::{
-		self, AtLeast32Bit, BadOrigin, BlockNumberProvider, Bounded, CheckEqual, Dispatchable,
-		Hash, Lookup, LookupError, MaybeDisplay, Member, One, Saturating, SimpleBitOps,
-		StaticLookup, UniqueSaturatedInto, Zero,
+		AtLeast32Bit, BadOrigin, BlockNumberProvider, Bounded, CheckEqual, Dispatchable, Hash,
+		Lookup, LookupError, MaybeDisplay, Member, One, Saturating, SimpleBitOps, StaticLookup,
+		UniqueSaturatedInto, Zero,
 	},
 	DispatchError, RuntimeDebug,
 };
@@ -223,43 +224,6 @@ pub mod pallet {
 
 	use crate::{self as frame_system, pallet_prelude::*, *};
 
-	// /// Contains default types suitable for various environments
-	// pub mod config_preludes {
-	// 	use super::DefaultConfig;
-
-	// 	/// Provides a viable default config that can be used with
-	// 	/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
-	// 	/// based on this one.
-	// 	///
-	// 	/// See `Test` in the `default-config` example pallet's `test.rs` for an example of
-	// 	/// a downstream user of this particular `TestDefaultConfig`
-	// 	pub struct TestDefaultConfig;
-
-	// 	#[frame_support::register_default_impl(TestDefaultConfig)]
-	// 	impl DefaultConfig for TestDefaultConfig {
-	// 		type AccountData = ();
-	// 		type AccountId = u64;
-	// 		type BlockLength = ();
-	// 		type BlockWeights = ();
-	// 		type DbWeight = ();
-	// 		type BlockNumber  = u32;
-	// 		type Header = ();
-	// 		type HeaderExtensionBuilder = ();
-	// 		type Hash = sp_core::hash::H256;
-	// 		type Hashing = sp_runtime::traits::BlakeTwo256;
-	// 		type Lookup = sp_runtime::traits::IdentityLookup<u64>;
-	// 		type MaxConsumers = frame_support::traits::ConstU32<16>;
-	// 		type Nonce = u32;
-	// 		type OnKilledAccount = ();
-	// 		type OnNewAccount = ();
-	// 		type Randomness = ();
-	// 		type SS58Prefix = ();
-	// 		type SystemWeightInfo = ();
-	// 		type UncheckedExtrinsic = ();
-	// 		type Version = ();
-	// 	}
-	// }
-
 	/// System configuration trait. Implemented by runtime.
 	#[pallet::config(with_default)]
 	#[pallet::disable_frame_system_supertrait_check]
@@ -339,11 +303,6 @@ pub mod pallet {
 		/// functional/efficient alternatives.
 		type Lookup: StaticLookup<Target = Self::AccountId>;
 
-		// /// The block header.
-		// type Header: Parameter
-		// 	+ traits::Header<Number = BlockNumberFor<Self>, Hash = Self::Hash>
-		// 	+ ExtendedHeader<BlockNumberFor<Self>, Self::Hash, generic::Digest, HeaderExtension>;
-
 		/// Header builder
 		type HeaderExtensionBuilder: header_builder::HeaderExtensionBuilder;
 
@@ -361,7 +320,7 @@ pub mod pallet {
 		/// The Block type used by the runtime. This is used by `construct_runtime` to retrieve the
 		/// extrinsics or other block specific data as needed.
 		#[pallet::no_default]
-		type Block: Parameter + Member + traits::Block<Hash = Self::Hash>;
+		type Block: Parameter + Member + ExtendedBlock<HeaderExtension, Hash = Self::Hash>;
 
 		/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 		#[pallet::constant]
@@ -1463,7 +1422,9 @@ impl<T: Config> Pallet<T> {
 
 	/// Remove temporary "environment" entries in storage, compute the storage root and return the
 	/// resulting header for this block.
-	pub fn finalize() -> HeaderFor<T> where <<T as pallet::Config>::Block as sp_runtime::traits::Block>::Header: avail_core::traits::ExtendedHeader<<<<T as pallet::Config>::Block as sp_runtime::traits::Block>::Header as sp_runtime::traits::Header>::Number, <T as pallet::Config>::Hash, sp_runtime::Digest, avail_core::header::HeaderExtension>{
+	pub fn finalize() -> DaHeaderFor<T>
+// <<T as pallet::Config>::Block as sp_runtime::traits::Block>::Header: avail_core::traits::ExtendedHeader<<<<T as pallet::Config>::Block as sp_runtime::traits::Block>::Header as sp_runtime::traits::Header>::Number, <T as pallet::Config>::Hash, sp_runtime::Digest, avail_core::header::HeaderExtension>
+	{
 		log::debug!(
 			target: LOG_TARGET,
 			"[{:?}] {} extrinsics, length: {} (normal {}%, op: {}%, mandatory {}%) / normal weight:\
@@ -1569,7 +1530,7 @@ impl<T: Config> Pallet<T> {
 		);
 
 		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
-		let header = <HeaderFor<T> as ExtendedHeader<
+		let header = <DaHeaderFor<T> as ExtendedHeader<
 			BlockNumberFor<T>,
 			T::Hash,
 			generic::Digest,
@@ -1953,14 +1914,20 @@ impl<T: Config> Lookup for ChainContext<T> {
 
 /// Prelude to be used alongside pallet macro, for ease of use.
 pub mod pallet_prelude {
+	use avail_core::header::HeaderExtension;
+
 	pub use crate::{ensure_none, ensure_root, ensure_signed, ensure_signed_or_root};
 
 	/// Type alias for the `Origin` associated type of system config.
 	pub type OriginFor<T> = <T as crate::Config>::RuntimeOrigin;
 
-	/// Type alias for the `Header`.
+	/// Type alias for the substrate `Header`.
 	pub type HeaderFor<T> =
 		<<T as crate::Config>::Block as sp_runtime::traits::HeaderProvider>::HeaderT;
+
+	/// Type alias for the DA Header
+	pub type DaHeaderFor<T> =
+		<<T as crate::Config>::Block as avail_core::traits::ExtendedBlock<HeaderExtension>>::Header;
 
 	/// Type alias for the `BlockNumber` associated type of system config.
 	pub type BlockNumberFor<T> = <HeaderFor<T> as sp_runtime::traits::Header>::Number;

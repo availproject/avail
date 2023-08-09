@@ -25,7 +25,7 @@ pub mod pallet {
 	use nomad_core::TypedMessage;
 	use nomad_home::Pallet as Home;
 	use sp_core::{bounded::BoundedVec, Get, H256};
-	use sp_runtime::traits::Header as _;
+	use sp_runtime::{traits::Header as _, SaturatedConversion};
 	use sp_std::boxed::Box;
 
 	use super::weights::WeightInfo;
@@ -87,7 +87,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			#[pallet::compact] destination_domain: u32,
 			recipient_address: H256,
-			header: Box<HeaderFor<T>>,
+			header: Box<DaHeaderFor<T>>,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			Self::ensure_valid_header(&header)?;
@@ -99,19 +99,19 @@ pub mod pallet {
 	where
 		[u8; 32]: From<T::AccountId>,
 		H256: From<T::Hash>,
-		u32: From<BlockNumberFor<T>>,
 	{
 		/// Dispatch a data root message for a valid header.
 		fn do_dispatch_data_root(
 			destination_domain: u32,
 			recipient_address: H256,
-			header: &HeaderFor<T>,
+			header: &DaHeaderFor<T>,
 		) -> DispatchResultWithPostInfo {
-			let block_number = *header.number();
+			// TODO: avoid saturating values
+			let block_number: u32 = (*header.number()).saturated_into();
 			let data_root = header.extension().data_root();
 
 			let message: DABridgeMessages = DataRootMessage {
-				block_number: block_number.into(),
+				block_number,
 				data_root,
 			}
 			.into();
@@ -131,7 +131,7 @@ pub mod pallet {
 			Self::deposit_event(Event::<T>::DataRootDispatched {
 				destination_domain,
 				recipient_address,
-				block_number,
+				block_number: block_number.into(),
 				data_root,
 			});
 
@@ -140,10 +140,13 @@ pub mod pallet {
 
 		/// Ensure a given header's hash has been recorded in the block hash
 		/// mapping.
-		fn ensure_valid_header(header: &HeaderFor<T>) -> DispatchResultWithPostInfo {
+		fn ensure_valid_header(header: &DaHeaderFor<T>) -> DispatchResultWithPostInfo {
 			// Ensure header's block number is in the mapping
-			let number = header.number();
-			let stored_hash = frame_system::Pallet::<T>::block_hash(number);
+			// TODO: Even though we're sure that the block number is of type u32, we should probably avoid saturating values
+			// Temporary  type conversions until we fix the interoperatibility across header block numbers
+			let number: u32 = (*header.number()).saturated_into();
+			let stored_hash =
+				frame_system::Pallet::<T>::block_hash::<BlockNumberFor<T>>(number.into());
 
 			// Ensure header's hash matches that in the block number to hash
 			// mapping
