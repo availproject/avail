@@ -12,6 +12,9 @@ use sp_core::RuntimeDebug;
 pub mod opaque_extrinsic;
 pub use opaque_extrinsic::*;
 
+pub mod da_block;
+pub use da_block::*;
+
 /// Customized headers.
 #[cfg(feature = "runtime")]
 pub mod header;
