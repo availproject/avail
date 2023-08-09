@@ -1,6 +1,5 @@
 use avail_core::header::{Header, HeaderExtension};
 use frame_support::assert_ok;
-use frame_system::Config;
 use hex_literal::hex;
 use nomad_base::testing::*;
 use nomad_merkle::Merkle;
@@ -25,17 +24,18 @@ fn it_accepts_valid_extrinsic_root() {
 			let extension = HeaderExtension::default();
 
 			// Create block header for block 10
-			let header = Header::<<Test as Config>::BlockNumber, BlakeTwo256> {
-				parent_hash: [1u8; 32].into(),
-				number: 10 as u32,
-				state_root: [2u8; 32].into(),
-				extrinsics_root: hex!(
-					"03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314"
-				)
-				.into(),
-				digest: Digest { logs: vec![] },
-				extension,
-			};
+			let header =
+				Header::<<Test as sp_runtime::traits::Block>::Header::BlockNumber, BlakeTwo256> {
+					parent_hash: [1u8; 32].into(),
+					number: 10 as u32,
+					state_root: [2u8; 32].into(),
+					extrinsics_root: hex!(
+						"03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314"
+					)
+					.into(),
+					digest: Digest { logs: vec![] },
+					extension,
+				};
 
 			// Insert 10th block's hash into block number --> hash mapping so
 			// submitting 10th block's header is accepted by pallet

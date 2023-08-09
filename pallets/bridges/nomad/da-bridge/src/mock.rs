@@ -1,5 +1,4 @@
-use avail_core::header::Header;
-use frame_support::{traits::GenesisBuild, weights::Weight};
+use frame_support::weights::Weight;
 use frame_system::{self as system, header_builder::da, test_utils::TestRandomness};
 use nomad_base::NomadBase;
 use sp_core::{H160, H256};
