@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "pallets/executive",
     "pallets/system",
     "pallets/dactr",
     "pallets/bridges/nomad/updater-manager",
@@ -11,12 +12,14 @@ members = [
 
 
 [patch."https://github.com/paritytech/substrate.git"]
+frame-executive = { path = "pallets/executive" }
 frame-system = { path = "pallets/system" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 
 [patch.crates-io]
 # Customized Local pallets
+frame-executive = { path = "pallets/executive" }
 frame-system = { path = "pallets/system" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
@@ -94,7 +97,6 @@ sp-weights = { git = "https://github.com/paritytech/substrate.git", branch = "po
 sc-sysinfo = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
 ## Frame
-frame-executive = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 frame-try-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
@@ -175,7 +177,6 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.
 # This list is ordered alphabetically.
 [profile.dev.package]
 blake2 = { opt-level = 3 }
-blake2-rfc = { opt-level = 3 }
 blake2b_simd = { opt-level = 3 }
 chacha20poly1305 = { opt-level = 3 }
 cranelift-codegen = { opt-level = 3 }
