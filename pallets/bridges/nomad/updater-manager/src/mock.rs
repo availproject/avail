@@ -1,8 +1,10 @@
-use avail_core::header::Header;
 use frame_support::{parameter_types, weights::Weight};
 use frame_system::{self as system, mocking::MockUncheckedExtrinsic, test_utils::TestRandomness};
 use sp_core::{ConstU32, H256};
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
+use sp_runtime::{
+	traits::{BlakeTwo256, IdentityLookup},
+	BuildStorage,
+};
 
 use crate as updater_manager;
 
@@ -21,7 +23,7 @@ frame_support::construct_runtime!(
 parameter_types! {
 	pub const BlockHashCount: u32 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1_024));
+		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1_024, 0));
 	pub static ExistentialDeposit: u64 = 0;
 }
 
@@ -61,8 +63,9 @@ impl updater_manager::Config for Test {
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = system::GenesisConfig::default()
-		.build_storage::<Test>()
+	let t = RuntimeGenesisConfig::default()
+		.system
+		.build_storage()
 		.unwrap()
 		.into();
 	let mut ext = sp_io::TestExternalities::new(t);
