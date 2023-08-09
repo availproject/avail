@@ -17,12 +17,12 @@ pub mod custom {
 		// one with block number arg and one without
 		fn on_initialize(n: T::BlockNumber) -> Weight {
 			println!("on_initialize({})", n);
-			Weight::from_ref_time(175)
+			Weight::from_parts(175, 0)
 		}
 
 		fn on_idle(n: T::BlockNumber, remaining_weight: Weight) -> Weight {
 			println!("on_idle{}, {})", n, remaining_weight);
-			Weight::from_ref_time(175)
+			Weight::from_parts(175, 0)
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
@@ -31,7 +31,7 @@ pub mod custom {
 
 		fn on_runtime_upgrade() -> Weight {
 			sp_io::storage::set(super::TEST_KEY, "module".as_bytes());
-			Weight::from_ref_time(200)
+			Weight::from_parts(200, 0)
 		}
 
 		fn offchain_worker(n: T::BlockNumber) {
