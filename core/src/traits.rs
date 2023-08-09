@@ -10,6 +10,9 @@ pub use get_app_id::*;
 pub mod extended_header;
 pub use extended_header::*;
 
+pub mod extended_block;
+pub use extended_block::*;
+
 /// Header block number trait.
 pub trait HeaderBlockNumber:
 	AtLeast32BitUnsigned + Codec + StdHash + Copy + Into<U256> + TryFrom<U256> + Debug + Eq + Saturating
