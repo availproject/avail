@@ -1,11 +1,10 @@
-use avail_core::header::Header;
 use frame_support::{parameter_types, traits::ConstU32, weights::Weight};
 use frame_system::{self as system, header_builder::da, test_utils::TestRandomness};
 use nomad_base::NomadBase;
 use sp_core::{H160, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
-	AccountId32,
+	AccountId32, BuildStorage,
 };
 
 use crate as home;
@@ -26,7 +25,7 @@ frame_support::construct_runtime!(
 parameter_types! {
 	pub const BlockHashCount: u32 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1_024));
+		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1_024, 0));
 	pub static ExistentialDeposit: u64 = 0;
 }
 
@@ -99,9 +98,11 @@ impl ExtBuilder {
 	}
 
 	pub(crate) fn build(self) -> sp_io::TestExternalities {
-		let mut t = frame_system::GenesisConfig::default()
-			.build_storage::<Test>()
-			.expect("Frame system builds valid default genesis config");
+		let mut t = RuntimeGenesisConfig::default()
+			.system
+			.build_storage()
+			.unwrap()
+			.into();
 
 		home::GenesisConfig::<Test> {
 			updater: self.updater,
