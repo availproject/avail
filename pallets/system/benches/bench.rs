@@ -15,12 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use avail_core::header::Header as DaHeader;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use frame_support::{
-	traits::{ConstU32, ConstU64},
-	weights::Weight,
-};
+use frame_support::{traits::ConstU32, weights::Weight};
 use frame_system::{
 	header_builder::da::HeaderExtensionBuilder,
 	mocking::{MockDaBlock, MockUncheckedExtrinsic},
@@ -29,7 +25,7 @@ use frame_system::{
 use sp_core::H256;
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
-	Perbill,
+	BuildStorage, Perbill,
 };
 
 #[frame_support::pallet]
@@ -66,7 +62,7 @@ frame_support::parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::with_sensible_defaults(
-			Weight::from_ref_time(4 * 1024 * 1024), Perbill::from_percent(75),
+			Weight::from_parts(4 * 1024 * 1024, 0), Perbill::from_percent(75),
 		);
 	pub BlockLength: frame_system::limits::BlockLength =
 		frame_system::limits::BlockLength::max_with_normal_ratio(
@@ -78,7 +74,7 @@ impl frame_system::Config for Runtime {
 	type AccountId = u64;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type Block = Block;
-	type BlockHashCount = ConstU64<250>;
+	type BlockHashCount = ConstU32<250>;
 	type BlockLength = BlockLength;
 	type BlockWeights = ();
 	type DbWeight = ();
@@ -108,8 +104,9 @@ impl module::Config for Runtime {
 }
 
 fn new_test_ext() -> sp_io::TestExternalities {
-	frame_system::GenesisConfig::default()
-		.build_storage::<Runtime>()
+	RuntimeGenesisConfig::default()
+		.system
+		.build_storage()
 		.unwrap()
 		.into()
 }

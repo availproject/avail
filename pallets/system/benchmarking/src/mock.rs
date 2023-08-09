@@ -19,18 +19,19 @@
 
 #![cfg(test)]
 
-use avail_core::header::Header as DaHeader;
 use codec::Encode;
 use frame_system::{
 	header_builder::da::HeaderExtensionBuilder, mocking::MockUncheckedExtrinsic,
 	test_utils::TestRandomness,
 };
 use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
+use sp_runtime::{
+	traits::{BlakeTwo256, IdentityLookup},
+	BuildStorage,
+};
 
 type AccountId = u64;
 type AccountIndex = u32;
-type BlockNumber = u32;
 
 type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockDaBlock<Test>;
@@ -87,9 +88,11 @@ impl sp_core::traits::ReadRuntimeVersion for MockedReadRuntimeVersion {
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = frame_system::GenesisConfig::default()
-		.build_storage::<Test>()
-		.unwrap();
+	let t = RuntimeGenesisConfig::default()
+		.system
+		.build_storage()
+		.unwrap()
+		.into();
 
 	let version = sp_version::RuntimeVersion {
 		spec_name: "".into(),
