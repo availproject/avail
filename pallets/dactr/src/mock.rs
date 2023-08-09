@@ -2,7 +2,6 @@
 
 use avail_core::{
 	currency::{Balance, AVL},
-	header::Header,
 	AppId,
 };
 use frame_support::{
@@ -15,7 +14,10 @@ use frame_system::{
 };
 use pallet_transaction_payment::CurrencyAdapter;
 use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, ConstU32, IdentityLookup};
+use sp_runtime::{
+	traits::{BlakeTwo256, ConstU32, IdentityLookup},
+	BuildStorage,
+};
 
 use crate::{self as da_control, *};
 
@@ -29,10 +31,6 @@ type BlockNumber = u32;
 
 frame_support::construct_runtime!(
 	pub enum Test
-	// where
-	// 	Block = Block,
-	// 	NodeBlock = Block,
-	// 	UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system,
 		Utility: pallet_utility,
@@ -45,8 +43,8 @@ frame_support::construct_runtime!(
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1_024));
-	pub static ExistentialDeposit: u64 = 0;
+		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1_024, 0));
+	pub static ExistentialDeposit: u64 = 1;
 }
 
 impl frame_system::Config for Test {
@@ -101,10 +99,14 @@ impl pallet_balances::Config for Test {
 	type Balance = Balance;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
+	type FreezeIdentifier = [u8; 8];
+	type MaxFreezes = ConstU32<2>;
+	type MaxHolds = ConstU32<2>;
 	type MaxLocks = ();
 	type MaxReserves = MaxReserves;
 	type ReserveIdentifier = [u8; 8];
 	type RuntimeEvent = RuntimeEvent;
+	type RuntimeHoldReason = [u8; 8];
 	type WeightInfo = ();
 }
 
