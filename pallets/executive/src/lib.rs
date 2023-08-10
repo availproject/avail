@@ -536,7 +536,7 @@ where
 	}
 
 	/// Finalize the block - it is up the caller to ensure that all header fields are valid
-	/// except state-root. 
+	/// except state-root.
 	// Note: Only change for avail is this function's return type
 	// TODO: Find a work around for this outside of this pallet to avoid the patching
 	pub fn finalize_block() -> frame_system::pallet_prelude::DaHeaderFor<System> {
