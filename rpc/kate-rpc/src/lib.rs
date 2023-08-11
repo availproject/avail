@@ -165,7 +165,7 @@ fn app_id_from_opaque(opaque: &OpaqueExtrinsic) -> Result<AppId, String> {
 		.transpose()
 		.map_err(|e| format!("{e:?}"))?;
 
-	signature.map(|e| e.2 .8 .0).ok_or("Not signed".to_string())
+	signature.map(|(_address, _signature, extra)| extra.app_id()).ok_or("Not signed".to_string())
 }
 
 #[async_trait]
