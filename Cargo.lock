@@ -532,7 +532,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.5.0"
-source = "git+https://github.com/availproject/avail-core?tag=avail-core/v0.5.0#3e972524dce089d73140a2e32c83084e5c9c418c"
+source = "git+https://github.com/availproject/avail-core?rev=6ef03178444b727ce849a9ac213adca4072237ff#6ef03178444b727ce849a9ac213adca4072237ff"
 dependencies = [
  "beefy-merkle-tree",
  "derive_more",
@@ -1834,7 +1834,7 @@ dependencies = [
 
 [[package]]
 name = "data-avail"
-version = "1.6.2"
+version = "1.6.3"
 dependencies = [
  "async-trait",
  "avail-base",
@@ -2885,6 +2885,7 @@ dependencies = [
  "impl-trait-for-tuples",
  "kate",
  "log",
+ "once_cell",
  "parity-scale-codec",
  "rs_merkle",
  "scale-info",
@@ -3984,7 +3985,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.8.0"
-source = "git+https://github.com/availproject/avail-core?tag=avail-core/v0.5.0#3e972524dce089d73140a2e32c83084e5c9c418c"
+source = "git+https://github.com/availproject/avail-core?rev=6ef03178444b727ce849a9ac213adca4072237ff#6ef03178444b727ce849a9ac213adca4072237ff"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -4012,7 +4013,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.9.0"
-source = "git+https://github.com/availproject/avail-core?tag=avail-core/v0.5.0#3e972524dce089d73140a2e32c83084e5c9c418c"
+source = "git+https://github.com/availproject/avail-core?rev=6ef03178444b727ce849a9ac213adca4072237ff#6ef03178444b727ce849a9ac213adca4072237ff"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -5174,7 +5175,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.4"
-source = "git+https://github.com/availproject/avail-core?tag=avail-core/v0.5.0#3e972524dce089d73140a2e32c83084e5c9c418c"
+source = "git+https://github.com/availproject/avail-core?rev=6ef03178444b727ce849a9ac213adca4072237ff#6ef03178444b727ce849a9ac213adca4072237ff"
 dependencies = [
  "ethers-signers",
  "nomad-core",
@@ -5190,7 +5191,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.4"
-source = "git+https://github.com/availproject/avail-core?tag=avail-core/v0.5.0#3e972524dce089d73140a2e32c83084e5c9c418c"
+source = "git+https://github.com/availproject/avail-core?rev=6ef03178444b727ce849a9ac213adca4072237ff#6ef03178444b727ce849a9ac213adca4072237ff"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -5253,7 +5254,7 @@ dependencies = [
 [[package]]
 name = "nomad-merkle"
 version = "0.1.2"
-source = "git+https://github.com/availproject/avail-core?tag=avail-core/v0.5.0#3e972524dce089d73140a2e32c83084e5c9c418c"
+source = "git+https://github.com/availproject/avail-core?rev=6ef03178444b727ce849a9ac213adca4072237ff#6ef03178444b727ce849a9ac213adca4072237ff"
 dependencies = [
  "avail-core",
  "frame-support",
@@ -5271,7 +5272,7 @@ dependencies = [
 [[package]]
 name = "nomad-signature"
 version = "0.1.2"
-source = "git+https://github.com/availproject/avail-core?tag=avail-core/v0.5.0#3e972524dce089d73140a2e32c83084e5c9c418c"
+source = "git+https://github.com/availproject/avail-core?rev=6ef03178444b727ce849a9ac213adca4072237ff#6ef03178444b727ce849a9ac213adca4072237ff"
 dependencies = [
  "elliptic-curve",
  "ethers-core",
@@ -5421,9 +5422,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.17.1"
+version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7e5500299e16ebb147ae15a00a942af264cf3688f47923b8fc2cd5858f23ad3"
+checksum = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d"
 
 [[package]]
 name = "oorandom"

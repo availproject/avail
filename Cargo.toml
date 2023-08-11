@@ -22,15 +22,15 @@ frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 
 # DA Primitives
-avail-core = { version = "0.5", git="https://github.com/availproject/avail-core", tag = "avail-core/v0.5.0" }
-kate = { version = "0.8", git="https://github.com/availproject/avail-core", tag = "avail-core/v0.5.0" }
-kate-recovery = { version = "0.9", git="https://github.com/availproject/avail-core", tag = "avail-core/v0.5.0" }
+avail-core = { version = "0.5", git="https://github.com/availproject/avail-core", rev="6ef03178444b727ce849a9ac213adca4072237ff" }
+kate = { version = "0.8", git="https://github.com/availproject/avail-core", rev = "6ef03178444b727ce849a9ac213adca4072237ff" }
+kate-recovery = { version = "0.9", git="https://github.com/availproject/avail-core", rev = "6ef03178444b727ce849a9ac213adca4072237ff" }
 
 # Nomad
-nomad-signature = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "avail-core/v0.5.0" }
-nomad-merkle = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "avail-core/v0.5.0" }
-nomad-base = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "avail-core/v0.5.0" }
-nomad-core = { version = "0.1", git="https://github.com/availproject/avail-core", tag = "avail-core/v0.5.0" }
+nomad-signature = { version = "0.1", git="https://github.com/availproject/avail-core", rev = "6ef03178444b727ce849a9ac213adca4072237ff" }
+nomad-merkle = { version = "0.1", git="https://github.com/availproject/avail-core", rev = "6ef03178444b727ce849a9ac213adca4072237ff" }
+nomad-base = { version = "0.1", git="https://github.com/availproject/avail-core", rev = "6ef03178444b727ce849a9ac213adca4072237ff" }
+nomad-core = { version = "0.1", git="https://github.com/availproject/avail-core", rev = "6ef03178444b727ce849a9ac213adca4072237ff" }
 
 # Other stuff
 uint = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }
