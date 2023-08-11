@@ -364,6 +364,10 @@ impl pallet_balances::Config for Runtime {
 	type Balance = Balance;
 	type DustRemoval = ();
 	type ExistentialDeposit = constants::balances::ExistentialDeposit;
+	type FreezeIdentifier = ();
+	type HoldIdentifier = ReserveIdentifier;
+	type MaxFreezes = ();
+	type MaxHolds = constants::balances::MaxReserves;
 	type MaxLocks = constants::balances::MaxLocks;
 	type MaxReserves = constants::balances::MaxReserves;
 	type ReserveIdentifier = ReserveIdentifier;
@@ -448,6 +452,7 @@ impl pallet_staking::Config for Runtime {
 	type CurrencyToVote = U128CurrencyToVote;
 	type ElectionProvider = ElectionProviderMultiPhase;
 	type EraPayout = pallet_staking::ConvertCurve<constants::staking::RewardCurve>;
+	type EventListeners = NominationPools;
 	type GenesisElectionProvider = onchain::OnChainExecution<OnChainSeqPhragmen>;
 	type HistoryDepth = constants::staking::HistoryDepth;
 	type MaxNominations = constants::staking::MaxNominations;
@@ -455,7 +460,6 @@ impl pallet_staking::Config for Runtime {
 	type MaxUnlockingChunks = constants::staking::MaxUnlockingChunks;
 	type NextNewSession = Session;
 	type OffendingValidatorsThreshold = constants::staking::OffendingValidatorsThreshold;
-	type OnStakerSlash = NominationPools;
 	// send the slashed funds to the treasury.
 	type Reward = ();
 	type RewardRemainder = Treasury;
@@ -683,6 +687,7 @@ type CouncilCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
 	type MaxMembers = constants::council::MaxMembers;
+	type MaxProposalWeight = constants::council::MaxProposalWeight;
 	type MaxProposals = constants::council::MaxProposals;
 	type MotionDuration = constants::council::MotionDuration;
 	type Proposal = RuntimeCall;
@@ -717,6 +722,7 @@ type TechnicalCollective = pallet_collective::Instance2;
 impl pallet_collective::Config<TechnicalCollective> for Runtime {
 	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
 	type MaxMembers = constants::technical::TechnicalMaxMembers;
+	type MaxProposalWeight = constants::council::MaxProposalWeight;
 	type MaxProposals = constants::technical::TechnicalMaxProposals;
 	type MotionDuration = constants::technical::TechnicalMotionDuration;
 	type Proposal = RuntimeCall;

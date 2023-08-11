@@ -188,6 +188,7 @@ pub mod council {
 	pub type MaxProposals = ConstU32<128>;
 
 	parameter_types! {
+		pub MaxProposalWeight: Weight = Perbill::from_percent(50) * SystemBlockWeights::get().max_block;
 		pub const MaxMembers: u32 = 32;
 	}
 }
