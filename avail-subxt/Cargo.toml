@@ -56,4 +56,3 @@ api-dev = []
 api-main = []
 std = [ "sp-core/std", "codec/std"]
 
-[workspace]
