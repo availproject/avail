@@ -15,6 +15,8 @@ type Block = frame_system::mocking::MockDaBlock<Test>;
 
 // TODO: add proper config once frame executive mocking has been demonstrated
 // Configure a mock runtime to test the pallet.
+// NOTE: We're getting a error E0275 here beacuse of https://github.com/rust-lang/rust/issues/96634 in rust compiler. 
+// We may need to comment out the tests for this pallet until the above issue is fixed or we find an alternative to GAT for Block.
 frame_support::construct_runtime!(
 	pub enum Test
 	{
@@ -28,7 +30,7 @@ frame_support::construct_runtime!(
 frame_support::parameter_types! {
 	pub const BlockHashCount: u32 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1_024));
+		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1_024, 0));
 	pub static ExistentialDeposit: u64 = 0;
 }
 
@@ -111,8 +113,8 @@ impl ExtBuilder {
 	}
 
 	pub(crate) fn build(self) -> sp_io::TestExternalities {
-		let mut t = frame_system::GenesisConfig::default()
-			.build_storage::<Test>()
+		let mut t = frame_system::GenesisConfig::<Test>::default()
+			.build_storage()
 			.expect("Frame system builds valid default genesis config");
 
 		nomad_home::GenesisConfig::<Test> {
