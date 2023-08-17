@@ -181,6 +181,7 @@ std = [
 	"nomad-updater-manager/std",
 	"nomad-home/std",
 	"nomad-da-bridge/std",
+	"sp-npos-elections/std"
 ]
 
 runtime-benchmarks = [

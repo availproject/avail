@@ -35,7 +35,7 @@ pub use frame_support::{
 	parameter_types,
 	traits::{
 		ConstU32, Currency, EitherOfDiverse, EqualPrivilegeOnly, Everything, ExtrinsicCall,
-		Imbalance, KeyOwnerProofSystem, OnUnbalanced, Randomness, U128CurrencyToVote,
+		Imbalance, KeyOwnerProofSystem, OnUnbalanced, Randomness,
 	},
 	weights::{
 		constants::{
@@ -227,7 +227,7 @@ impl frame_system::Config for Runtime {
 	/// The basic call filter to use in dispatchable.
 	type BaseCallFilter = Everything;
 	/// The Block type used by the runtime
-	type Block = Block<Runtime>;
+	type Block = Block;
 	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = RuntimeBlockLength;
@@ -331,21 +331,15 @@ impl pallet_babe::Config for Runtime {
 	type DisabledValidators = Session;
 	type EpochChangeTrigger = pallet_babe::ExternalTrigger;
 	type EpochDuration = constants::time::EpochDuration;
-	type ExpectedBlockTime = constants::time::ExpectedBlockTime;
-	type HandleEquivocation = pallet_babe::EquivocationHandler<
-		Self::KeyOwnerIdentification,
+	type EquivocationReportSystem = pallet_babe::EquivocationReportSystem<
+		Self,
 		Offences,
+		Historical,
 		constants::babe::ReportLongevity,
 	>;
-	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-		KeyTypeId,
-		pallet_babe::AuthorityId,
-	)>>::IdentificationTuple;
-	type KeyOwnerProof = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-		KeyTypeId,
-		pallet_babe::AuthorityId,
-	)>>::Proof;
-	type KeyOwnerProofSystem = Historical;
+	type ExpectedBlockTime = constants::time::ExpectedBlockTime;
+	type KeyOwnerProof =
+		<Historical as KeyOwnerProofSystem<(KeyTypeId, pallet_babe::AuthorityId)>>::Proof;
 	type MaxAuthorities = constants::system::MaxAuthorities;
 	type WeightInfo = ();
 }
@@ -365,13 +359,13 @@ impl pallet_balances::Config for Runtime {
 	type DustRemoval = ();
 	type ExistentialDeposit = constants::balances::ExistentialDeposit;
 	type FreezeIdentifier = ();
-	type HoldIdentifier = ReserveIdentifier;
 	type MaxFreezes = ();
 	type MaxHolds = constants::balances::MaxReserves;
 	type MaxLocks = constants::balances::MaxLocks;
 	type MaxReserves = constants::balances::MaxReserves;
 	type ReserveIdentifier = ReserveIdentifier;
 	type RuntimeEvent = RuntimeEvent;
+	type RuntimeHoldReason = RuntimeHoldReason;
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
 
@@ -449,7 +443,7 @@ impl pallet_staking::Config for Runtime {
 	type BondingDuration = constants::staking::BondingDuration;
 	type Currency = Balances;
 	type CurrencyBalance = Balance;
-	type CurrencyToVote = U128CurrencyToVote;
+	type CurrencyToVote = sp_staking::currency_to_vote::U128CurrencyToVote;
 	type ElectionProvider = ElectionProviderMultiPhase;
 	type EraPayout = pallet_staking::ConvertCurve<constants::staking::RewardCurve>;
 	type EventListeners = NominationPools;
@@ -700,7 +694,7 @@ impl pallet_elections_phragmen::Config for Runtime {
 	type CandidacyBond = constants::elections::CandidacyBond;
 	type ChangeMembers = Council;
 	type Currency = Balances;
-	type CurrencyToVote = U128CurrencyToVote;
+	type CurrencyToVote = sp_staking::currency_to_vote::U128CurrencyToVote;
 	type DesiredMembers = constants::elections::DesiredMembers;
 	type DesiredRunnersUp = constants::elections::DesiredRunnersUp;
 	// NOTE: this implies that council's genesis members cannot be set directly and must come from
@@ -885,7 +879,6 @@ where
 impl pallet_im_online::Config for Runtime {
 	type AuthorityId = ImOnlineId;
 	type MaxKeys = constants::im::MaxKeys;
-	type MaxPeerDataEncodingSize = constants::im::MaxPeerDataEncodingSize;
 	type MaxPeerInHeartbeats = constants::im::MaxPeerInHeartbeats;
 	type NextSessionRotation = Babe;
 	type ReportUnresponsiveness = Offences;
@@ -905,26 +898,25 @@ impl pallet_authority_discovery::Config for Runtime {
 	type MaxAuthorities = constants::system::MaxAuthorities;
 }
 
+parameter_types! {
+	pub const MaxSetIdSessionEntries: u32 = constants::staking::BondingDuration::get() * constants::staking::SessionsPerEra::get();
+}
+
 impl pallet_grandpa::Config for Runtime {
-	type HandleEquivocation = pallet_grandpa::EquivocationHandler<
-		Self::KeyOwnerIdentification,
+	type EquivocationReportSystem = pallet_grandpa::EquivocationReportSystem<
+		Self,
 		Offences,
+		Historical,
 		constants::babe::ReportLongevity,
 	>;
-	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-		KeyTypeId,
-		GrandpaId,
-	)>>::IdentificationTuple;
-	type KeyOwnerProof =
-		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
-	type KeyOwnerProofSystem = Historical;
+	type KeyOwnerProof = <Historical as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
 	type MaxAuthorities = constants::system::MaxAuthorities;
+	type MaxSetIdSessionEntries = MaxSetIdSessionEntries;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }
 
 impl pallet_mmr::Config for Runtime {
-	type Hash = <Runtime as frame_system::Config>::Hash;
 	type Hashing = <Runtime as frame_system::Config>::Hashing;
 	type LeafData = pallet_mmr::ParentNumberAndHash<Self>;
 	type OnNewRoot = ();
@@ -1021,7 +1013,7 @@ pub(crate) mod mmr {
 	use super::Runtime;
 
 	pub type Leaf = <<Runtime as pallet_mmr::Config>::LeafData as LeafDataProvider>::LeafData;
-	pub type Hash = <Runtime as pallet_mmr::Config>::Hash;
+	pub type Hash = <Hashing as sp_runtime::traits::Hash>::Output;
 	pub type Hashing = <Runtime as pallet_mmr::Config>::Hashing;
 }
 
