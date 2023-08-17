@@ -20,8 +20,9 @@
 #[cfg(feature = "std")]
 use std::fmt;
 
+use crate::traits::{ExtendedBlock, ExtendedHeader};
 use codec::{Codec, Decode, Encode};
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sp_core::RuntimeDebug;
 use sp_runtime::{
@@ -32,7 +33,6 @@ use sp_runtime::{
 	Justifications,
 };
 use sp_std::prelude::*;
-use crate::traits::{ExtendedBlock, ExtendedHeader};
 
 /// Something to identify a block.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
@@ -91,7 +91,7 @@ pub struct DaBlock<Header, Extrinsic> {
 
 impl<Header, Extrinsic> traits::HeaderProvider for DaBlock<Header, Extrinsic>
 where
-	Header: HeaderT
+	Header: HeaderT,
 {
 	type HeaderT = Header;
 }
@@ -99,7 +99,7 @@ where
 impl<Header, Extrinsic: MaybeSerialize> BlockT for DaBlock<Header, Extrinsic>
 where
 	Header: HeaderT + MaybeSerializeDeserialize,
-	Extrinsic: Member + Codec + traits::Extrinsic,
+	Extrinsic: Member + Codec + MaybeSerializeDeserialize + traits::Extrinsic,
 {
 	type Extrinsic = Extrinsic;
 	type Header = Header;
@@ -148,4 +148,3 @@ where
 {
 	type Header = Header;
 }
-
