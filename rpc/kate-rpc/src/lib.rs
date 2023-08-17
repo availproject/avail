@@ -9,7 +9,7 @@ use avail_core::{
 	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, BlockLengthColumns,
 	BlockLengthRows, DataProof, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
-use da_runtime::{apis::DataAvailApi, Runtime, UncheckedExtrinsic};
+use da_runtime::{apis::DataAvailApi, Runtime, RuntimeCall, UncheckedExtrinsic};
 use frame_system::{limits::BlockLength, submitted_data};
 use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
@@ -405,7 +405,7 @@ where
 
 	async fn query_data_proof(
 		&self,
-		data_index: u32,
+		transaction_index: u32,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<DataProof> {
 		// Fetch block
@@ -418,6 +418,37 @@ where
 			.ok_or_else(|| internal_err!("Missing block hash {:?}", at))?
 			.block;
 
+		// data index starts from 0
+		let mut data_idx: i32 = -1;
+		// keep track of the last transaction
+		let mut is_da_transaction: bool = false;
+		for (i, ex) in block.extrinsics().iter().enumerate() {
+			let o = UncheckedExtrinsic::try_from(ex).ok();
+			// todo is unwrap safe
+			match &o.unwrap().function {
+				RuntimeCall::DataAvailability(da_control::Call::submit_data { data }) => {
+					data_idx = data_idx + 1;
+					is_da_transaction = true;
+				},
+				_ => {
+					is_da_transaction = false;
+				},
+			};
+			// loop until all transactions are filtered to the given transaction index
+			if transaction_index == i as u32 {
+				break;
+			}
+		}
+
+		// passed transaction index must be the last DA transaction in the block
+		if !is_da_transaction {
+			return Err(internal_err!(
+					"Data proof cannot be generated for transaction index={} at block {:?}. Not a DA transaction.",
+					transaction_index,
+					at
+				));
+		}
+
 		// Get Opaque Extrinsics and transform into AppUncheckedExt.
 		let calls = block
 			.extrinsics()
@@ -426,11 +457,11 @@ where
 			.map(|app_ext| app_ext.function);
 
 		// Build the proof.
-		let merkle_proof = submitted_data::calls_proof::<Runtime, _, _>(calls, data_index)
+		let merkle_proof = submitted_data::calls_proof::<Runtime, _, _>(calls, data_idx as u32)
 			.ok_or_else(|| {
 				internal_err!(
-					"Data proof cannot be generated for index={} at block {:?}",
-					data_index,
+					"Data proof cannot be generated for transaction index={} at block {:?}",
+					transaction_index,
 					at
 				)
 			})?;
