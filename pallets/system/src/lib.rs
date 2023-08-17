@@ -71,7 +71,6 @@ use avail_core::{
 	AppExtrinsic, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
-#[cfg(feature = "std")]
 use frame_support::{
 	dispatch::{
 		extract_actual_pays_fee, extract_actual_weight, DispatchClass, DispatchInfo,
