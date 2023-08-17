@@ -18,6 +18,7 @@
 //! Generic implementation of an unchecked (pre-verification) extrinsic.
 
 use codec::{Compact, Decode, Encode, EncodeLike, Error, Input};
+use scale_info::prelude::format;
 use scale_info::{build::Fields, meta_type, Path, StaticTypeInfo, Type, TypeInfo, TypeParameter};
 #[cfg(feature = "runtime")]
 use sp_runtime::{
@@ -410,7 +411,7 @@ where
 {
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 impl<Address: Encode, Signature: Encode, Call: Encode, Extra: SignedExtension> serde::Serialize
 	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
 {
@@ -423,7 +424,7 @@ impl<Address: Encode, Signature: Encode, Call: Encode, Extra: SignedExtension> s
 	}
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 impl<'a, Address: Decode, Signature: Decode, Call: Decode, Extra: SignedExtension>
 	serde::Deserialize<'a> for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
 {

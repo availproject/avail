@@ -1,6 +1,6 @@
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sp_core::{RuntimeDebug, H256};
 #[cfg(feature = "runtime")]
@@ -16,7 +16,7 @@ pub mod v_test;
 
 /// Header extension data.
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, TypeInfo, Encode, Decode)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "runtime", derive(PassByCodec))]
 pub enum HeaderExtension {
 	V1(v1::HeaderExtension),

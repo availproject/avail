@@ -3,7 +3,7 @@ use scale_info::TypeInfo;
 use sp_core::H256;
 use sp_std::vec::Vec;
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "std")]
 use sp_core::hexdisplay::HexDisplay;
@@ -15,9 +15,9 @@ pub mod v1 {
 
 	/// Customized extrinsics root to save the commitment.
 	#[derive(PartialEq, Eq, Clone, Default, Encode, Decode, TypeInfo)]
-	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-	#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
-	#[cfg_attr(feature = "std", serde(deny_unknown_fields))]
+	#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+	#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+	#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 	pub struct KateCommitment {
 		/// Rows
 		#[codec(compact)]
@@ -49,9 +49,9 @@ pub mod v2 {
 
 	/// Customized extrinsics root to save the commitment.
 	#[derive(PartialEq, Eq, Clone, Default, Encode, Decode, TypeInfo)]
-	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-	#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
-	#[cfg_attr(feature = "std", serde(deny_unknown_fields))]
+	#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+	#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+	#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 	pub struct KateCommitment {
 		/// Rows
 		#[codec(compact)]

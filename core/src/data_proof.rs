@@ -1,14 +1,14 @@
 #[cfg(feature = "runtime")]
 use binary_merkle_tree::MerkleProof;
 use codec::{Decode, Encode};
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
 use sp_std::vec::Vec;
 use thiserror_no_std::Error;
 /// Wrapper of `binary-merkle-tree::MerkleProof` with codec support.
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, Default)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DataProof {
 	/// Root hash of generated merkle tree.
 	pub root: H256,

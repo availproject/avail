@@ -79,9 +79,9 @@ impl<Block: BlockT> fmt::Display for BlockId<Block> {
 
 /// Abstraction over a substrate block.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
-#[cfg_attr(feature = "std", serde(deny_unknown_fields))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct DaBlock<Header, Extrinsic> {
 	/// The block header.
 	pub header: Header,
@@ -124,9 +124,9 @@ where
 
 /// Abstraction over a substrate block and justification.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
-#[cfg_attr(feature = "std", serde(deny_unknown_fields))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct SignedBlock<Block> {
 	/// Full block.
 	pub block: Block,

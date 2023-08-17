@@ -1,6 +1,6 @@
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sp_core::{RuntimeDebug, H256};
 use sp_std::vec::Vec;
@@ -8,7 +8,7 @@ use sp_std::vec::Vec;
 use crate::{asdr::DataLookup, header::extension::v1, KateCommitment};
 
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, TypeInfo, Encode, Decode, Default)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct HeaderExtension {
 	pub new_field: Vec<u8>,
 	pub commitment: KateCommitment,

@@ -4,7 +4,7 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use derive_more::{Add, Constructor, Deref, Display, Into, Mul};
 use scale_info::TypeInfo;
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sp_arithmetic::traits::Zero;
 use sp_core::RuntimeDebug;
@@ -12,7 +12,10 @@ use sp_core::RuntimeDebug;
 pub mod opaque_extrinsic;
 pub use opaque_extrinsic::*;
 
+/// DA Block
+#[cfg(feature = "runtime")]
 pub mod da_block;
+#[cfg(feature = "runtime")]
 pub use da_block::*;
 
 /// Customized headers.
@@ -80,7 +83,7 @@ pub enum InvalidTransactionCustomId {
 	RuntimeDebug,
 	Display,
 )]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AppId(#[codec(compact)] pub u32);
 
 impl Zero for AppId {
@@ -111,12 +114,12 @@ impl Zero for AppId {
 	MaxEncodedLen,
 	Display,
 )]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, Debug))]
 #[mul(forward)]
 pub struct BlockLengthColumns(#[codec(compact)] pub u32);
 
 /// Strong type for `BlockLength::rows`
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, Debug))]
 #[derive(
 	Encode,
 	Decode,

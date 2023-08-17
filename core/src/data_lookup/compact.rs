@@ -5,11 +5,11 @@ use derive_more::Constructor;
 use scale_info::TypeInfo;
 use sp_std::vec::Vec;
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Copy, Clone, Encode, Decode, TypeInfo, Constructor, Debug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DataLookupItem {
 	pub app_id: AppId,
 	#[codec(compact)]
@@ -30,7 +30,7 @@ where
 }
 
 #[derive(Encode, Decode, TypeInfo, Constructor, Debug, Clone)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CompactDataLookup {
 	/// size of the look up
 	#[codec(compact)]

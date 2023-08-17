@@ -2,7 +2,7 @@ use crate::traits::GetAppId;
 use codec::{Decode, Encode};
 use derive_more::Constructor;
 use scale_info::TypeInfo;
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sp_core::RuntimeDebug;
 use sp_std::vec::Vec;
@@ -11,10 +11,10 @@ use crate::AppId;
 
 /// Raw Extrinsic with application id.
 #[derive(Clone, TypeInfo, Default, Encode, Decode, RuntimeDebug, Constructor)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AppExtrinsic {
 	pub app_id: AppId,
-	#[cfg_attr(feature = "std", serde(with = "hex"))]
+	#[cfg_attr(feature = "serde", serde(with = "hex"))]
 	pub data: Vec<u8>,
 }
 
