@@ -6,8 +6,8 @@ use std::{
 
 use avail_base::metrics::RPCMetricAdapter;
 use avail_core::{
-	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, BlockLengthColumns,
-	BlockLengthRows, DataProof, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+	asdr::AppUncheckedExtrinsic, header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic,
+	AppId, BlockLengthColumns, BlockLengthRows, DataProof, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
 use da_runtime::{apis::DataAvailApi, Runtime, RuntimeCall, UncheckedExtrinsic};
 use frame_system::{limits::BlockLength, submitted_data};
@@ -28,7 +28,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
 	generic::{BlockId, Digest},
-	traits::{Block as BlockT, Header},
+	traits::{Block as BlockT, Header, SignedExtension},
 };
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
@@ -421,19 +421,14 @@ where
 		// data index starts from 0
 		let mut data_idx: i32 = -1;
 		// keep track of the last transaction
-		let mut is_da_transaction: bool = false;
+		let mut last_da_transaction: bool = false;
 		for (i, ex) in block.extrinsics().iter().enumerate() {
-			let o = UncheckedExtrinsic::try_from(ex).ok();
-			// todo is unwrap safe
-			match &o.unwrap().function {
-				RuntimeCall::DataAvailability(da_control::Call::submit_data { data }) => {
-					data_idx = data_idx + 1;
-					is_da_transaction = true;
-				},
-				_ => {
-					is_da_transaction = false;
-				},
+			let o = UncheckedExtrinsic::try_from(ex).ok().unwrap();
+			last_da_transaction = is_da_transaction(&o);
+			if last_da_transaction {
+				data_idx = data_idx + 1;
 			};
+
 			// loop until all transactions are filtered to the given transaction index
 			if transaction_index == i as u32 {
 				break;
@@ -441,12 +436,12 @@ where
 		}
 
 		// passed transaction index must be the last DA transaction in the block
-		if !is_da_transaction {
+		if !last_da_transaction {
 			return Err(internal_err!(
-					"Data proof cannot be generated for transaction index={} at block {:?}. Not a DA transaction.",
-					transaction_index,
-					at
-				));
+				"Data proof cannot be generated for transaction index={} at block {:?}.",
+				transaction_index,
+				at
+			));
 		}
 
 		// Get Opaque Extrinsics and transform into AppUncheckedExt.
@@ -484,4 +479,13 @@ fn non_extended_dimensions(ext_data: &DMatrix<BlsScalar>) -> RpcResult<Dimension
 		Dimensions::new_from(rows, cols).ok_or_else(|| internal_err!("Invalid dimensions"))?;
 
 	Ok(dimensions)
+}
+
+fn is_da_transaction<A, C, D: SignedExtension>(
+	extrinsic: &AppUncheckedExtrinsic<A, RuntimeCall, C, D>,
+) -> bool {
+	matches!(
+		extrinsic.function,
+		RuntimeCall::DataAvailability(da_control::Call::submit_data { .. })
+	)
 }
