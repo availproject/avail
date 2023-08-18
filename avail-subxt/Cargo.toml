@@ -28,7 +28,7 @@ schnorrkel = "0.9.1"
 
 # Substrate
 subxt = "0.29"
-sp-core = { version = "*", default-features = false }
+sp-core = { version = "21", default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "full", "bit-vec"] }
 serde = { version = "1", features = ["derive"] }
 serde-hex = "0.1"
@@ -48,7 +48,7 @@ indicatif = "0.17"
 
 
 # Substrate 
-sp-keyring = "*"
+sp-keyring = "24"
 
 [features]
 default = ["api-dev", "std"]
