@@ -47,7 +47,7 @@ pub mod pallet {
 
 	// Genesis config
 	#[pallet::genesis_config]
-	#[cfg_attr(feature = "std", derive(Default))]
+	#[derive(Default)]
 	pub struct GenesisConfig {}
 
 	#[pallet::genesis_build]

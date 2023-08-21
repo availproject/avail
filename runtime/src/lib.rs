@@ -21,6 +21,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 512.
 #![recursion_limit = "512"]
+#![feature(trivial_bounds)]
 #![feature(result_option_inspect)]
 #![allow(macro_expanded_macro_exports_accessed_by_absolute_paths)]
 

@@ -15,9 +15,11 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::pallet_prelude::{ValueQuery, *};
+	use frame_support::{
+		pallet_prelude::{ValueQuery, *},
+		DefaultNoBound,
+	};
 	use sp_core::H160;
-
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -33,19 +35,10 @@ pub mod pallet {
 
 	// Genesis config
 	#[pallet::genesis_config]
+	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
 		pub updater: H160,
 		pub _phantom: PhantomData<T>,
-	}
-
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self {
-			Self {
-				updater: Default::default(),
-				_phantom: Default::default(),
-			}
-		}
 	}
 
 	#[pallet::genesis_build]
