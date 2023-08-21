@@ -258,6 +258,8 @@ where
 
 #[cfg(test)]
 mod test {
+	use frame_support::Hashable;
+	use hex_literal::hex;
 	use std::vec;
 
 	use crate::submitted_data::{calls_proof, Filter, RcMetrics};
@@ -279,6 +281,17 @@ mod test {
 		fn process_calls(_: Vec<C>, _: &RcMetrics) -> Vec<Vec<u8>> {
 			vec![]
 		}
+	}
+
+	#[test]
+	fn test_blake2b() {
+		let bytes = "0".as_bytes();
+		println!("{:x?}", bytes);
+		let in2 = sp_io::hashing::blake2_256(bytes);
+
+		let inp2 = hex::encode(&in2);
+		// sp_io::hashing::blake2_256(s)
+		println!("{}", inp2);
 	}
 
 	#[test]

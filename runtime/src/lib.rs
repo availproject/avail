@@ -149,6 +149,7 @@ construct_runtime!(
 		NominationPools: pallet_nomination_pools = 36,
 		Identity: pallet_identity = 37,
 		Mandate: pallet_mandate = 38,
+		Succinct: pallet_succinct = 39,
 	}
 );
 
@@ -193,6 +194,7 @@ mod benches {
 		[nomad_da_bridge, $crate::NomadDABridge]
 		[pallet_identity, $crate::Identity]
 		[pallet_mandate, $crate::Mandate]
+		[pallet_succinct, $crate::Succinct]
 	);
 }
 
@@ -267,6 +269,7 @@ mod tests {
 		>>::try_state(block, All)?;
 		<pallet_identity::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_mandate::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_succinct::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_nomination_pools::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		Ok(())
 	}

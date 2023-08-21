@@ -76,6 +76,26 @@ impl pallet_mandate::Config for Runtime {
 }
 
 parameter_types! {
+	pub const MaxPublicInputsLength: u32 = 9;
+	pub const MaxVerificationKeyLength: u32 = 4143;
+	pub const MaxProofLength: u32 = 1133;
+}
+
+impl pallet_succinct::Config for Runtime {
+	type ApprovedOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 1, 2>,
+	>;
+
+	type MaxPublicInputsLength = MaxPublicInputsLength;
+	type MaxProofLength = MaxProofLength;
+	type MaxVerificationKeyLength = MaxVerificationKeyLength;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = weights::pallet_succinct::WeightInfo<Runtime>;
+}
+
+parameter_types! {
 	pub const BasicDeposit: Balance = 10 * AVL;
 	pub const FieldDeposit: Balance = 250 * CENTS;
 	pub const SubAccountDeposit: Balance = 2 * AVL;
@@ -175,6 +195,7 @@ impl pallet_bounties::Config for Runtime {
 }
 
 pub struct Tippers;
+
 impl SortedMembers<AccountId> for Tippers {
 	fn sorted_members() -> Vec<AccountId> {
 		let Some(account) = pallet_sudo::Pallet::<Runtime>::key() else {
@@ -265,6 +286,7 @@ impl pallet_session::historical::Config for Runtime {
 }
 
 pub struct DealWithFees;
+
 impl OnUnbalanced<NegativeImbalance> for DealWithFees {
 	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
 		if let Some(fees) = fees_then_tips.next() {
@@ -405,6 +427,7 @@ impl pallet_grandpa::Config for Runtime {
 }
 
 pub type TechnicalCollective = pallet_collective::Instance2;
+
 impl pallet_collective::Config<TechnicalCollective> for Runtime {
 	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
 	type MaxMembers = constants::technical::TechnicalMaxMembers;
@@ -435,7 +458,7 @@ impl pallet_election_provider_multi_phase::MinerConfig for Runtime {
 	type AccountId = AccountId;
 	type MaxLength = constants::staking::MinerMaxLength;
 	type MaxVotesPerVoter =
-	<<Self as pallet_election_provider_multi_phase::Config>::DataProvider as ElectionDataProvider>::MaxVotesPerVoter;
+    <<Self as pallet_election_provider_multi_phase::Config>::DataProvider as ElectionDataProvider>::MaxVotesPerVoter;
 	type MaxWeight = constants::staking::MinerMaxWeight;
 	type MaxWinners = <Runtime as pallet_election_provider_multi_phase::Config>::MaxWinners;
 	type Solution = constants::staking::NposSolution16;
@@ -444,10 +467,10 @@ impl pallet_election_provider_multi_phase::MinerConfig for Runtime {
 	// weight estimate function is wired to this call's weight.
 	fn solution_weight(v: u32, t: u32, a: u32, d: u32) -> Weight {
 		<
-			<Self as pallet_election_provider_multi_phase::Config>::WeightInfo
-			as
-			pallet_election_provider_multi_phase::WeightInfo
-		>::submit_unsigned(v, t, a, d)
+        <Self as pallet_election_provider_multi_phase::Config>::WeightInfo
+        as
+        pallet_election_provider_multi_phase::WeightInfo
+        >::submit_unsigned(v, t, a, d)
 	}
 }
 
@@ -486,6 +509,7 @@ impl pallet_election_provider_multi_phase::Config for Runtime {
 }
 
 pub struct StakingBenchmarkingConfig;
+
 impl pallet_staking::BenchmarkingConfig for StakingBenchmarkingConfig {
 	type MaxNominators = constants::staking::MaxNominators;
 	type MaxValidators = constants::staking::MaxValidators;
@@ -529,6 +553,7 @@ impl pallet_staking::Config for Runtime {
 /// to ensure election snapshot will not run out of memory. For now, we set them to smaller values
 /// since the staking is bounded and the weight pipeline takes hours for this single pallet.
 pub struct ElectionProviderBenchmarkConfig;
+
 impl pallet_election_provider_multi_phase::BenchmarkingConfig for ElectionProviderBenchmarkConfig {
 	const ACTIVE_VOTERS: [u32; 2] = [500, 800];
 	const DESIRED_TARGETS: [u32; 2] = [200, 400];
@@ -545,6 +570,7 @@ pub const MINER_MAX_ITERATIONS: u32 = 10;
 
 /// A source of random balance for NposSolver, which is meant to be run by the OCW election miner.
 pub struct OffchainRandomBalancing;
+
 impl Get<Option<BalancingConfig>> for OffchainRandomBalancing {
 	fn get() -> Option<BalancingConfig> {
 		use sp_runtime::traits::TrailingZeroInput;
@@ -568,6 +594,7 @@ impl Get<Option<BalancingConfig>> for OffchainRandomBalancing {
 }
 
 pub struct OnChainSeqPhragmen;
+
 impl onchain::Config for OnChainSeqPhragmen {
 	type DataProvider = <Runtime as pallet_election_provider_multi_phase::Config>::DataProvider;
 	type MaxWinners = <Runtime as pallet_election_provider_multi_phase::Config>::MaxWinners;
@@ -586,6 +613,7 @@ parameter_types! {
 }
 
 type VoterBagsListInstance = pallet_bags_list::Instance1;
+
 impl pallet_bags_list::Config<VoterBagsListInstance> for Runtime {
 	type BagThresholds = BagThresholds;
 	type RuntimeEvent = RuntimeEvent;
@@ -603,13 +631,17 @@ parameter_types! {
 }
 
 use sp_runtime::traits::Convert;
+
 pub struct BalanceToU256;
+
 impl Convert<Balance, sp_core::U256> for BalanceToU256 {
 	fn convert(balance: Balance) -> sp_core::U256 {
 		sp_core::U256::from(balance)
 	}
 }
+
 pub struct U256ToBalance;
+
 impl Convert<sp_core::U256, Balance> for U256ToBalance {
 	fn convert(n: sp_core::U256) -> Balance {
 		n.try_into().unwrap_or(Balance::max_value())
@@ -837,6 +869,7 @@ where
 }
 
 pub struct Author;
+
 impl OnUnbalanced<NegativeImbalance> for Author {
 	fn on_nonzero_unbalanced(amount: NegativeImbalance) {
 		if let Some(author) = Authorship::author() {

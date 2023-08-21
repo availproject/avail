@@ -93,6 +93,7 @@ pallet-nomination-pools = { version = "1", default-features = false }
 pallet-identity = { version = "4.0.0-dev", default-features = false }
 
 pallet-mandate = { path = "../pallets/mandate", default-features = false }
+pallet-succinct = { path = "../pallets/succinct", default-features = false }
 
 ## RPCs
 pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", default-features = false }
@@ -189,6 +190,7 @@ std = [
 	"nomad-home/std",
 	"nomad-da-bridge/std",
 	"pallet-mandate/std",
+	"pallet-succinct/std",
 	"sp-npos-elections/std"
 ]
 
@@ -227,6 +229,7 @@ runtime-benchmarks = [
 	"frame-system-benchmarking/runtime-benchmarks",
 	"pallet-identity/runtime-benchmarks",
 	"pallet-mandate/runtime-benchmarks",
+	"pallet-succinct/runtime-benchmarks",
 	"nomad-updater-manager/runtime-benchmarks"
 ]
 
@@ -270,5 +273,6 @@ try-runtime = [
 	"pallet-identity/try-runtime",
 	"avail-core/try-runtime",
 	"pallet-mandate/try-runtime",
+	"pallet-succinct/try-runtime",
 	"sp-runtime/try-runtime",
 ]

@@ -13,7 +13,7 @@ use da_runtime::{
 };
 use frame_system::limits::BlockLength;
 use hex_literal::hex;
-use primitive_types::H160;
+use primitive_types::{H160, H256};
 use sc_telemetry::TelemetryEndpoints;
 use sp_core::sr25519::Public;
 use sp_runtime::{AccountId32, Perbill};
@@ -22,6 +22,7 @@ pub const PROTOCOL_ID: Option<&str> = Some("Avail");
 pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
 const NOMAD_LOCAL_DOMAIN: u32 = 2000;
 const NOMAD_UPDATER: H160 = H160(hex!("695dFcFc604F9b2992642BDC5b173d1a1ed60b03"));
+const SUCCINCT_UPDATER: H256 = H256([0u8; 32]);
 const ENDOWMENT: Balance = 1_000_000 * AVL;
 const STASH_BOND: Balance = ENDOWMENT / 100;
 const DEFAULT_ENDOWED_SEEDS: [&str; 12] = [
