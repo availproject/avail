@@ -219,7 +219,7 @@ impl Default for ExtrinsicLen {
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::pallet_prelude::*;
+	use frame_support::{pallet_prelude::*, DefaultNoBound};
 
 	use crate::{self as frame_system, pallet_prelude::*, *};
 
@@ -682,7 +682,7 @@ pub mod pallet {
 	#[pallet::getter(fn block_length)]
 	pub type DynamicBlockLength<T: Config> = StorageValue<_, limits::BlockLength, ValueQuery>;
 
-	// #[derive(frame_support::DefaultNoBound)]
+	#[derive(DefaultNoBound)]
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
 		#[serde(with = "sp_core::bytes")]
@@ -691,33 +691,9 @@ pub mod pallet {
 		pub _config: sp_std::marker::PhantomData<T>,
 		#[serde(with = "sp_core::bytes")]
 		pub kc_public_params: Vec<u8>,
+		// TODO: Add serialiization support for BlockLength in no_std
+		#[serde(skip)]
 		pub block_length: limits::BlockLength,
-	}
-
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self {
-			use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
-
-			let normal = sp_runtime::Perbill::from_percent(90);
-			let block_length = limits::BlockLength::with_normal_ratio(
-				MAX_BLOCK_ROWS,
-				MAX_BLOCK_COLUMNS,
-				BLOCK_CHUNK_SIZE,
-				normal,
-			)
-			.expect("Valid BlockLength at genesis .qed");
-
-			let kc_public_params =
-				kate::testnet::public_params(MAX_BLOCK_COLUMNS).to_raw_var_bytes();
-
-			Self {
-				code: Default::default(),
-				_config: Default::default(),
-				kc_public_params,
-				block_length,
-			}
-		}
 	}
 
 	#[pallet::genesis_build]

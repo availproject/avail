@@ -21,7 +21,7 @@ pub mod pallet {
 	use frame_support::{
 		pallet_prelude::{ValueQuery, *},
 		sp_runtime::ArithmeticError::Overflow,
-		transactional,
+		transactional, DefaultNoBound,
 	};
 	use frame_system::pallet_prelude::{OriginFor, *};
 	use nomad_base::NomadBase;
@@ -74,23 +74,12 @@ pub mod pallet {
 
 	// Genesis config
 	#[pallet::genesis_config]
+	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
 		pub local_domain: u32,
 		pub committed_root: H256,
 		pub updater: H160,
 		pub _phantom: PhantomData<T>,
-	}
-
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self {
-			Self {
-				local_domain: Default::default(),
-				committed_root: Default::default(),
-				updater: Default::default(),
-				_phantom: Default::default(),
-			}
-		}
 	}
 
 	#[pallet::genesis_build]
