@@ -4035,7 +4035,6 @@ version = "0.2.0"
 dependencies = [
  "avail-base",
  "avail-core",
- "da-control",
  "da-runtime",
  "frame-support",
  "frame-system",

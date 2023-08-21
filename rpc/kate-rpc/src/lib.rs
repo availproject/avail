@@ -418,48 +418,21 @@ where
 			.ok_or_else(|| internal_err!("Missing block hash {:?}", at))?
 			.block;
 
-		// data index starts from 0
-		let mut data_idx: i32 = -1;
-		// keep track of the last transaction
-		let mut last_da_transaction: bool = false;
-		for (i, ex) in block.extrinsics().iter().enumerate() {
-			let o = UncheckedExtrinsic::try_from(ex).ok().unwrap();
-			last_da_transaction = is_da_transaction(&o);
-			if last_da_transaction {
-				data_idx = data_idx + 1;
-			};
-
-			// loop until all transactions are filtered to the given transaction index
-			if transaction_index == i as u32 {
-				break;
-			}
-		}
-
-		// passed transaction index must be the last DA transaction in the block
-		if !last_da_transaction {
-			return Err(internal_err!(
-				"Data proof cannot be generated for transaction index={} at block {:?}.",
-				transaction_index,
-				at
-			));
-		}
-
-		// Get Opaque Extrinsics and transform into AppUncheckedExt.
 		let calls = block
 			.extrinsics()
 			.iter()
-			.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
-			.map(|app_ext| app_ext.function);
+			.flat_map(|extrinsic| UncheckedExtrinsic::try_from(extrinsic).ok())
+			.map(|extrinsic| extrinsic.function);
 
 		// Build the proof.
-		let merkle_proof = submitted_data::calls_proof::<Runtime, _, _>(calls, data_idx as u32)
+		let merkle_proof = submitted_data::calls_proof::<Runtime, _, _>(calls, transaction_index)
 			.ok_or_else(|| {
-				internal_err!(
-					"Data proof cannot be generated for transaction index={} at block {:?}",
-					transaction_index,
-					at
-				)
-			})?;
+			internal_err!(
+				"Data proof cannot be generated for transaction index={} at block {:?}",
+				transaction_index,
+				at
+			)
+		})?;
 
 		DataProof::try_from(&merkle_proof)
 			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e))
@@ -479,13 +452,4 @@ fn non_extended_dimensions(ext_data: &DMatrix<BlsScalar>) -> RpcResult<Dimension
 		Dimensions::new_from(rows, cols).ok_or_else(|| internal_err!("Invalid dimensions"))?;
 
 	Ok(dimensions)
-}
-
-fn is_da_transaction<A, C, D: SignedExtension>(
-	extrinsic: &AppUncheckedExtrinsic<A, RuntimeCall, C, D>,
-) -> bool {
-	matches!(
-		extrinsic.function,
-		RuntimeCall::DataAvailability(da_control::Call::submit_data { .. })
-	)
 }

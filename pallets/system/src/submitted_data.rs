@@ -181,17 +181,39 @@ where
 /// - The `merkle_proof` requires `ExactSizeIterator`, forcing to load all submitted data into
 /// memory. That would increase the memory footprint of the node significantly. We could fix this
 /// adding the number of submitted data items at `System` pallet.
-pub fn calls_proof<F, I, C>(calls: I, data_index: u32) -> Option<MerkleProof<H256, Vec<u8>>>
+pub fn calls_proof<F, I, C>(calls: I, transaction_index: u32) -> Option<MerkleProof<H256, Vec<u8>>>
 where
 	F: Filter<C>,
 	I: Iterator<Item = C>,
 {
 	let metrics = Metrics::new_shared();
 	let submitted_data = calls
-		.flat_map(|c| F::filter(c, Rc::clone(&metrics)))
+		.map(|c| {
+			F::filter(c, Rc::clone(&metrics))
+				.into_iter()
+				.flatten()
+				.collect::<Vec<_>>()
+		})
 		.collect::<Vec<_>>();
 
-	proof(submitted_data, data_index, Rc::clone(&metrics))
+	match submitted_data.get(transaction_index as usize) {
+		None => return None,
+		Some(data) if data.is_empty() => return None,
+		_ => (),
+	};
+
+	let data_index = submitted_data
+		.iter()
+		.take(transaction_index as usize + 1)
+		.filter(|data| !data.is_empty())
+		.count() - 1;
+
+	let data = submitted_data
+		.into_iter()
+		.filter(|v| !v.is_empty())
+		.collect::<Vec<_>>();
+
+	proof(data, data_index as u32, Rc::clone(&metrics))
 }
 
 /// Construct a Merkle Proof for `submit_data` given by `data_index` and stores
