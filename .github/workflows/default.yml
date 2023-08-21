@@ -107,7 +107,8 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
+        # Change back to jlumbroso/free-disk-space@main when https://github.com/jlumbroso/free-disk-space/pull/11 gets merged
+        uses: hirnidrin/free-disk-space@main
         with:
           tool-cache: true
 
