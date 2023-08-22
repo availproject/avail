@@ -46,7 +46,7 @@ pub use frame_support::{
 	},
 	PalletId, RuntimeDebug, StorageValue,
 };
-use frame_system::{limits::BlockLength, submitted_data, EnsureRoot};
+use frame_system::{limits::BlockLength, submitted_data, EnsureRoot, EnsureSigned};
 use pallet_election_provider_multi_phase::SolutionAccuracyOf;
 use pallet_session::historical as pallet_session_historical;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -118,6 +118,7 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 }
 
 /// Runtime version.
+#[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("data-avail"),
 	impl_name: create_runtime_str!("data-avail"),
@@ -167,7 +168,6 @@ parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
 	pub RuntimeBlockLength: BlockLength =
 		BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
-	pub const MaximumBlockWeight: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2));
 }
 
 /// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.
@@ -533,6 +533,7 @@ impl pallet_election_provider_multi_phase::MinerConfig for Runtime {
 	type MaxVotesPerVoter =
 	<<Self as pallet_election_provider_multi_phase::Config>::DataProvider as ElectionDataProvider>::MaxVotesPerVoter;
 	type MaxWeight = constants::staking::MinerMaxWeight;
+	type MaxWinners = <Runtime as pallet_election_provider_multi_phase::Config>::MaxWinners;
 	type Solution = constants::staking::NposSolution16;
 
 	// The unsigned submissions have to respect the weight of the submit_unsigned call, thus their
@@ -670,6 +671,7 @@ impl pallet_democracy::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Scheduler = Scheduler;
 	type Slash = Treasury;
+	type SubmitOrigin = EnsureSigned<AccountId>;
 	// Any single technical committee member may veto a coming council proposal, however they can
 	// only do it once and it lasts only for the cool-off period.
 	type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCollective>;
@@ -688,6 +690,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type Proposal = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
+	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
@@ -705,6 +708,7 @@ impl pallet_elections_phragmen::Config for Runtime {
 	type LoserCandidate = Treasury;
 	type MaxCandidates = constants::elections::MaxCandidates;
 	type MaxVoters = constants::elections::MaxVoters;
+	type MaxVotesPerVoter = constants::elections::MaxVotesPerVoter;
 	type PalletId = constants::elections::PalletId;
 	type RuntimeEvent = RuntimeEvent;
 	type TermDuration = constants::elections::TermDuration;
@@ -723,6 +727,7 @@ impl pallet_collective::Config<TechnicalCollective> for Runtime {
 	type Proposal = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
+	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
@@ -811,6 +816,7 @@ impl pallet_tips::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime

@@ -151,6 +151,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.unwrap();
 
 	da_control::GenesisConfig::<Test> {
+		_config: Default::default(),
 		app_keys: vec![
 			(b"Data Avail".to_vec(), AppKeyInfo {
 				owner: 1,
