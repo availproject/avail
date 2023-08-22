@@ -2,6 +2,11 @@
 
 [![Build status](https://github.com/availproject/avail/actions/workflows/default.yml/badge.svg)](https://github.com/availproject/avail/actions/workflows/default.yml) [![Code coverage](https://codecov.io/gh/availproject/avail/branch/main/graph/badge.svg?token=OBX2NEE31T)](https://codecov.io/gh/availproject/avail)
 
+## Relative documentation
+- [Changelog](/CHANGELOG.md)
+- [Contributing guide](/CONTRIBUTING.md)
+- [Code of conduct](/CODE_OF_CONDUCT.md)
+
 ## Compile
 
     $> cargo build --release -p data-avail
