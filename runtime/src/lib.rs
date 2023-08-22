@@ -954,11 +954,11 @@ impl nomad_home::Config for Runtime {
 	type WeightInfo = nomad_home::weights::SubstrateWeight<Runtime>;
 }
 
-impl nomad_da_bridge::Config for Runtime {
-	type DABridgePalletId = constants::nomad::DABridgePalletId;
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = nomad_da_bridge::weights::SubstrateWeight<Runtime>;
-}
+// impl nomad_da_bridge::Config for Runtime {
+// 	type DABridgePalletId = constants::nomad::DABridgePalletId;
+// 	type RuntimeEvent = RuntimeEvent;
+// 	type WeightInfo = nomad_da_bridge::weights::SubstrateWeight<Runtime>;
+// }
 
 // TODO @miguel Aline this with previous order and ID to keep the compatibility.
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -1003,7 +1003,7 @@ construct_runtime!(
 		// Nomad
 		NomadUpdaterManager: nomad_updater_manager = 30,
 		NomadHome: nomad_home = 31,
-		NomadDABridge: nomad_da_bridge = 32,
+		// NomadDABridge: nomad_da_bridge = 32,
 
 		// More from upgrade to v0.9.33
 		Preimage: pallet_preimage = 33,
@@ -1054,7 +1054,7 @@ mod benches {
 		[frame_system, SystemBench::<Runtime>]
 		[da_control, crate::DataAvailability]
 		[nomad_home, crate::NomadHome]
-		[nomad_da_bridge, crate::NomadDABridge]
+		// [nomad_da_bridge, crate::NomadDABridge]
 	);
 }
 
@@ -1125,7 +1125,7 @@ mod tests {
 		<da_control::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<nomad_updater_manager::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<nomad_home::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
-		<nomad_da_bridge::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		// <nomad_da_bridge::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_preimage::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_multisig::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_bags_list::Pallet<Runtime, pallet_bags_list::Instance1> as TryState<
@@ -1197,14 +1197,14 @@ mod tests {
 	const NOMAD_UPDATER_MANAGER_CALL_SIZE: usize =
 		size_of::<nomad_updater_manager::Call<Runtime>>();
 	const NOMAD_HOME_CALL_SIZE: usize = size_of::<nomad_home::Call<Runtime>>();
-	const NOMAD_BRIDGE_CALL_SIZE: usize = size_of::<nomad_da_bridge::Call<Runtime>>();
+	// const NOMAD_BRIDGE_CALL_SIZE: usize = size_of::<nomad_da_bridge::Call<Runtime>>();
 
 	#[test_case( RUNTIME_CALL_SIZE => 160)]
 	#[test_case( DA_CALL_SIZE => 32)]
 	#[test_case( SYSTEM_CALL_SIZE => 32)]
 	#[test_case( NOMAD_UPDATER_MANAGER_CALL_SIZE => 0)]
 	#[test_case( NOMAD_HOME_CALL_SIZE => 152)]
-	#[test_case( NOMAD_BRIDGE_CALL_SIZE => 48)]
+	// #[test_case( NOMAD_BRIDGE_CALL_SIZE => 48)]
 	fn call_size(size: usize) -> usize {
 		const MAX_CALL_SIZE: usize = 208;
 		assert!(
