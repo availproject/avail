@@ -146,28 +146,6 @@ where
 	}
 }
 
-/// Unused function to demonstrate how to get only extract the app_id from an opaque extrinsic
-#[allow(dead_code)]
-fn app_id_from_opaque(opaque: &OpaqueExtrinsic) -> Result<AppId, String> {
-	let input = &mut opaque.0.as_slice();
-	let version = input.read_byte().unwrap();
-
-	let is_signed = version & 0b1000_0000 != 0;
-	let version = version & 0b0111_1111;
-	if version != 4 {
-		return Err("Invalid transaction version".to_string());
-	}
-
-	let signature: Option<(Address, Signature, SignedExtra)> = is_signed
-		.then(|| Decode::decode(input))
-		.transpose()
-		.map_err(|e| format!("{e:?}"))?;
-
-	signature
-		.map(|(_address, _signature, extra)| extra.8 .0)
-		.ok_or("Not signed".to_string())
-}
-
 #[async_trait]
 impl<Client, Block> KateApiServer<Block> for Kate<Client, Block>
 where
