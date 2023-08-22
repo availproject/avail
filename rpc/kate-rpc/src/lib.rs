@@ -6,10 +6,10 @@ use std::{
 
 use avail_base::metrics::RPCMetricAdapter;
 use avail_core::{
-	asdr::AppUncheckedExtrinsic, header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic,
-	AppId, BlockLengthColumns, BlockLengthRows, DataProof, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, BlockLengthColumns,
+	BlockLengthRows, DataProof, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
-use da_runtime::{apis::DataAvailApi, Runtime, RuntimeCall, UncheckedExtrinsic};
+use da_runtime::{apis::DataAvailApi, Runtime, UncheckedExtrinsic};
 use frame_system::{limits::BlockLength, submitted_data};
 use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
@@ -28,7 +28,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
 	generic::{BlockId, Digest},
-	traits::{Block as BlockT, Header, SignedExtension},
+	traits::{Block as BlockT, Header},
 };
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
