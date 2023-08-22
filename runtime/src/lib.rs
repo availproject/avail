@@ -223,7 +223,10 @@ impl submitted_data::AppIdExtractor for Runtime {
 
 	fn extract(opaque: &OpaqueExtrinsic) -> Result<AppId, Self::Error> {
 		let extrinsic = UncheckedExtrinsic::try_from(opaque)?;
-		let appid = extrinsic.signature.map(|(_a, _s, extra)| extra.app_id()).unwrap_or_default();
+		let appid = extrinsic
+			.signature
+			.map(|(_a, _s, extra)| extra.app_id())
+			.unwrap_or_default();
 
 		Ok(appid)
 	}

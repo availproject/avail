@@ -10,9 +10,7 @@ use avail_core::{
 	BlockLengthRows, DataProof, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
 use codec::{Decode, Encode, Input};
-use da_runtime::{
-	apis::DataAvailApi, Address, Runtime, Signature, SignedExtra,
-};
+use da_runtime::{apis::DataAvailApi, Address, Runtime, Signature, SignedExtra};
 use frame_system::{
 	limits::BlockLength,
 	submitted_data::{self},
@@ -165,7 +163,9 @@ fn app_id_from_opaque(opaque: &OpaqueExtrinsic) -> Result<AppId, String> {
 		.transpose()
 		.map_err(|e| format!("{e:?}"))?;
 
-	signature.map(|(_address, _signature, extra)| extra.app_id()).ok_or("Not signed".to_string())
+	signature
+		.map(|(_address, _signature, extra)| extra.8 .0)
+		.ok_or("Not signed".to_string())
 }
 
 #[async_trait]
