@@ -20,14 +20,13 @@ use std::sync::Arc;
 
 use da_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-use sc_cli::{ChainSpec, Result, SubstrateCli};
+use sc_cli::{Result, SubstrateCli};
 use sc_service::PartialComponents;
 
 use crate::{
 	chain_spec,
 	cli::{Cli, Subcommand},
-	service::{self, new_partial, ExecutorDispatch, FullClient},
-	// benchmarking::{RemarkBuilder, inherent_benchmark_data, TransferKeepAliveBuilder},
+	service::{self, new_partial, FullClient},
 };
 
 impl SubstrateCli for Cli {
@@ -95,8 +94,7 @@ pub fn run() -> Result<()> {
 									.into(),
 							);
 						}
-						// TODO: Add the executor back
-						cmd.run::<Block, ()>(config)
+						cmd.run::<Block, frame_system::header_builder::hosted_header_builder::HostFunctions>(config)
 					},
 					BenchmarkCmd::Block(_cmd) => {
 						unimplemented!();
