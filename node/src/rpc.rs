@@ -171,7 +171,7 @@ where
 			client.clone(),
 			backend
 				.offchain_storage()
-				.ok_or_else(|| "Backend doesn't provide an offchain storage")?,
+				.ok_or("Backend doesn't provide an offchain storage")?,
 		)
 		.into_rpc(),
 	)?;
