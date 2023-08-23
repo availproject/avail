@@ -201,7 +201,7 @@ where
 		})
 		.collect::<Vec<_>>();
 
-	match submitted_data.get(transaction_index as usize) {
+	match submitted_data.get(transaction_index) {
 		None => return None,
 		Some(data) if data.is_empty() => return None,
 		_ => (),
