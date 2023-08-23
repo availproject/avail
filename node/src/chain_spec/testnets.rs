@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use avail_core::currency::AVL;
 use da_runtime::{AccountId, Balance};
 
-use crate::chain_spec::{AuthorityKeys, GenesisConfig};
+use crate::chain_spec::{AuthorityKeys, RuntimeGenesisConfig};
 
 pub mod kate;
 
@@ -16,7 +16,7 @@ fn make_genesis(
 	council: Vec<AccountId>,
 	tech_committee_members: Vec<AccountId>,
 	endowed_accounts: HashMap<AccountId, Balance>,
-) -> GenesisConfig {
+) -> RuntimeGenesisConfig {
 	crate::chain_spec::make_genesis(
 		sudo,
 		authorities,

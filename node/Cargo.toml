@@ -65,19 +65,15 @@ sp-consensus-babe = "0.10.0-dev"
 sp-consensus = "0.10.0-dev"
 sc-consensus = "0.10.0-dev"
 # Renamed: (https://github.com/paritytech/substrate/pull/13458)
-sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", package = "sp-consensus-grandpa" }
-sc-finality-grandpa-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", package = "sc-consensus-grandpa-rpc" }
-sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", package = "sc-consensus-grandpa" }
+sc-consensus-grandpa-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sc-consensus-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sp-consensus-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 sc-client-api = "4.0.0-dev"
 sp-runtime = "24.0.0"
 sp-timestamp = "4.0.0-dev"
 sc-consensus-babe = "0.10.0-dev"
-sc-consensus-epochs = "0.10.0-dev"
 sc-consensus-slots = "0.10.0-dev"
-# Removed https://github.com/paritytech/substrate/pull/13216
-# sc-consensus-uncles = "0.10.0-dev"
 sc-network = "0.10.0-dev"
-# sp-authorship = "4.0.0-dev" 
 sp-authority-discovery = "4.0.0-dev"
 sc-authority-discovery = "0.10.0-dev"
 sc-chain-spec = "4.0.0-dev"
@@ -89,6 +85,7 @@ sc-sync-state-rpc = "0.10.0-dev"
 sp-api = "4.0.0-dev"
 sc-sysinfo = "6.0.0-dev"
 sc-network-common = "0.10.0-dev"
+sc-network-sync = "0.10.0-dev"
 primitive-types = "0.12.0"
 
 # FRAME

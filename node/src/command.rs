@@ -240,7 +240,7 @@ pub fn run() -> Result<()> {
 				} = new_partial(&config)?;
 				let aux_revert = Box::new(|client: Arc<FullClient>, backend, blocks| {
 					sc_consensus_babe::revert(client.clone(), backend, blocks)?;
-					sc_finality_grandpa::revert(client, blocks)?;
+					sc_consensus_grandpa::revert(client, blocks)?;
 					Ok(())
 				});
 				Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))

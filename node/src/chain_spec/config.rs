@@ -33,6 +33,7 @@ pub(crate) fn make_system_config() -> SystemConfig {
 		code,
 		kc_public_params,
 		block_length,
+		..Default::default()
 	}
 }
 
@@ -116,7 +117,10 @@ pub(crate) fn make_data_avail_config(owner: AccountId) -> DataAvailabilityConfig
 		})
 		.collect();
 
-	DataAvailabilityConfig { app_keys }
+	DataAvailabilityConfig {
+		app_keys,
+		..Default::default()
+	}
 }
 
 pub(crate) fn make_nomination_pools_config() -> NominationPoolsConfig {
@@ -126,6 +130,7 @@ pub(crate) fn make_nomination_pools_config() -> NominationPoolsConfig {
 		max_pools: Some(constants::nomination_pools::MAX_POOLS),
 		max_members_per_pool: Some(constants::nomination_pools::MAX_MEMBERS_PER_POOL),
 		max_members: Some(constants::nomination_pools::MAX_MEMBERS),
+		..Default::default()
 	}
 }
 
@@ -136,6 +141,7 @@ pub(crate) fn make_babe_config() -> BabeConfig {
 		// NOTE: `authorities` were initialized by `Session`.
 		authorities: vec![],
 		epoch_config,
+		..Default::default()
 	}
 }
 

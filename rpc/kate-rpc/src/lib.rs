@@ -6,10 +6,8 @@ use std::{
 
 use avail_base::metrics::RPCMetricAdapter;
 use avail_core::{
-	header::extension::v1::HeaderExtension,
-	traits::{ExtendedBlock as DaBlock, ExtendedHeader},
-	AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows, DataProof, OpaqueExtrinsic,
-	BLOCK_CHUNK_SIZE,
+	header::extension::v1::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId,
+	BlockLengthColumns, BlockLengthRows, DataProof, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
 use da_runtime::{apis::DataAvailApi, Runtime, UncheckedExtrinsic};
 use frame_system::{limits::BlockLength, submitted_data};
@@ -38,7 +36,7 @@ pub type HashOf<Block> = <Block as BlockT>::Hash;
 #[rpc(client, server)]
 pub trait KateApi<Block>
 where
-	Block: DaBlock<HeaderExtension>,
+	Block: BlockT,
 {
 	#[method(name = "kate_queryRows")]
 	async fn query_rows(
@@ -69,12 +67,12 @@ where
 }
 
 #[allow(clippy::type_complexity)]
-pub struct Kate<Client, Block: DaBlock<HeaderExtension>> {
+pub struct Kate<Client, Block: BlockT> {
 	client: Arc<Client>,
 	block_ext_cache: RwLock<LruCache<Block::Hash, DMatrix<BlsScalar>>>,
 }
 
-impl<Client, Block: DaBlock<HeaderExtension>> Kate<Client, Block> {
+impl<Client, Block: BlockT> Kate<Client, Block> {
 	pub fn new(client: Arc<Client>) -> Self {
 		Self {
 			client,
@@ -110,7 +108,7 @@ macro_rules! internal_err {
 /// Otherwise, it will use the default `Seed` value.
 fn get_seed<B, C>(client: &C, at: <B as BlockT>::Hash) -> Option<Seed>
 where
-	B: DaBlock<HeaderExtension>,
+	B: BlockT,
 	<B as BlockT>::Header: ExtendedHeader<
 		<<B as BlockT>::Header as Header>::Number,
 		<B as BlockT>::Hash,
@@ -129,7 +127,7 @@ where
 
 impl<Client, Block> Kate<Client, Block>
 where
-	Block: DaBlock<HeaderExtension>,
+	Block: BlockT,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: DataAvailApi<Block>,
@@ -142,7 +140,7 @@ where
 #[async_trait]
 impl<Client, Block> KateApiServer<Block> for Kate<Client, Block>
 where
-	Block: BlockT<Extrinsic = OpaqueExtrinsic> + DaBlock<HeaderExtension>,
+	Block: BlockT<Extrinsic = OpaqueExtrinsic>,
 	<Block as BlockT>::Header: ExtendedHeader<
 		<<Block as BlockT>::Header as Header>::Number,
 		<Block as BlockT>::Hash,

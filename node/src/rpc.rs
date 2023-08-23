@@ -41,9 +41,8 @@ use da_runtime::{
 };
 use jsonrpsee::RpcModule;
 use sc_client_api::AuxStore;
-use sc_consensus_babe::{BabeConfiguration, Epoch};
-use sc_consensus_epochs::SharedEpochChanges;
-use sc_finality_grandpa::{
+use sc_consensus_babe::BabeWorkerHandle;
+use sc_consensus_grandpa::{
 	FinalityProofProvider, GrandpaJustificationStream, SharedAuthoritySet, SharedVoterState,
 };
 use sc_rpc::SubscriptionTaskExecutor;
@@ -54,16 +53,14 @@ use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_consensus::SelectChain;
 use sp_consensus_babe::BabeApi;
-use sp_keystore::SyncCryptoStorePtr;
+use sp_keystore::KeystorePtr;
 
 /// Extra dependencies for BABE.
 pub struct BabeDeps {
-	/// BABE protocol config.
-	pub babe_config: BabeConfiguration,
-	/// BABE pending epoch changes.
-	pub shared_epoch_changes: SharedEpochChanges<Block, Epoch>,
+	/// A handle to the BABE worker for issuing requests.
+	pub babe_worker_handle: BabeWorkerHandle<Block>,
 	/// The keystore that manages the keys of the node.
-	pub keystore: SyncCryptoStorePtr,
+	pub keystore: KeystorePtr,
 }
 
 /// Extra dependencies for GRANDPA
@@ -123,11 +120,11 @@ where
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashFor<Block>>,
 {
-	use kate_rpc::{Kate, KateApiServer};
+	use kate_rpc::Kate;
 	use mmr_rpc::{Mmr, MmrApiServer};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	use sc_consensus_babe_rpc::{Babe, BabeApiServer};
-	use sc_finality_grandpa_rpc::{Grandpa, GrandpaApiServer};
+	use sc_consensus_grandpa_rpc::{Grandpa, GrandpaApiServer};
 	use sc_rpc_spec_v2::chain_spec::{ChainSpec, ChainSpecApiServer};
 	use sc_sync_state_rpc::{SyncState, SyncStateApiServer};
 	use substrate_frame_rpc_system::{System, SystemApiServer};
@@ -146,8 +143,7 @@ where
 
 	let BabeDeps {
 		keystore,
-		babe_config,
-		shared_epoch_changes,
+		babe_worker_handle,
 	} = babe;
 	let GrandpaDeps {
 		shared_voter_state,
@@ -170,14 +166,21 @@ where
 	// Making synchronous calls in light client freezes the browser currently,
 	// more context: https://github.com/paritytech/substrate/pull/3480
 	// These RPCs should use an asynchronous caller instead.
-	io.merge(Mmr::new(client.clone()).into_rpc())?;
+	io.merge(
+		Mmr::new(
+			client.clone(),
+			backend
+				.offchain_storage()
+				.ok_or_else(|| "Backend doesn't provide an offchain storage")?,
+		)
+		.into_rpc(),
+	)?;
 	io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 	io.merge(
 		Babe::new(
 			client.clone(),
-			shared_epoch_changes.clone(),
+			babe_worker_handle.clone(),
 			keystore,
-			babe_config,
 			select_chain,
 			deny_unsafe,
 		)
@@ -199,7 +202,7 @@ where
 			chain_spec,
 			client.clone(),
 			shared_authority_set,
-			shared_epoch_changes,
+			babe_worker_handle,
 		)?
 		.into_rpc(),
 	)?;

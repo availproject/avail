@@ -36,6 +36,7 @@ parity-util-mem = { version = "0.12.0", default-features = false, features = ["p
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 
 ## primitives
+sp-consensus-grandpa = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
 sp-io = { version = "23.0.0", default-features = false }
 sp-core = { version = "21.0.0", default-features = false }
 sp-api = { version = "4.0.0-dev", default-features = false }
@@ -174,6 +175,7 @@ std = [
 	"sp-version/std",
 	"log/std",
 	"frame-try-runtime?/std",
+	"sp-consensus-grandpa/std",
 	"sp-io/std",
 	"pallet-child-bounties/std",
 	"da-control/std",
