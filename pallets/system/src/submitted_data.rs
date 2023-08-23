@@ -188,6 +188,10 @@ where
 	I: Iterator<Item = C>,
 {
 	let metrics = Metrics::new_shared();
+
+	let transaction_index = usize::try_from(transaction_index).ok()?;
+	let tx_max = transaction_index.checked_add(1)?;
+
 	let submitted_data = calls
 		.map(|c| {
 			F::filter(c, Rc::clone(&metrics))
@@ -205,7 +209,7 @@ where
 
 	let data_index = submitted_data
 		.iter()
-		.take(transaction_index as usize + 1)
+		.take(tx_max)
 		.filter(|data| !data.is_empty())
 		.count() - 1;
 
@@ -214,7 +218,8 @@ where
 		.filter(|v| !v.is_empty())
 		.collect::<Vec<_>>();
 
-	proof(data, data_index as u32, Rc::clone(&metrics))
+	let data_index = u32::try_from(data_index).ok()?;
+	proof(data, data_index, Rc::clone(&metrics))
 }
 
 /// Construct a Merkle Proof for `submit_data` given by `data_index` and stores
