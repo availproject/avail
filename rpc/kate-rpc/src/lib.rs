@@ -61,7 +61,7 @@ where
 	#[method(name = "kate_queryDataProof")]
 	async fn query_data_proof(
 		&self,
-		data_index: u32,
+		transaction_index: u32,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<DataProof>;
 }

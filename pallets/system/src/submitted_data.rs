@@ -175,6 +175,7 @@ where
 /// Creates the Merkle Proof of the submitted data items in `calls` filtered by `F` and
 /// the given `data_index`.
 ///
+/// If `transaction_index` is greater than the number transactions in the block, it will return `None`.
 /// If `data_index` is greater than the number of Merkle leaves, it will return `None`.
 ///
 /// # TODO
