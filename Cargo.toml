@@ -77,6 +77,7 @@ sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git", bra
 sp-transaction-storage-proof = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-keystore = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-state-machine = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-statement-store = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-trie = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-npos-elections = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }

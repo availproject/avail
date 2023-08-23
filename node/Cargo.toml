@@ -48,6 +48,7 @@ async-trait = "0.1.60"
 ## Primitives
 sc-cli = "0.10.0-dev"
 sp-io = "23.0.0"
+sp-statement-store = "4.0.0-dev"
 sp-core = "21.0.0"
 sc-executor = "0.10.0-dev"
 sc-service = "0.10.0-dev"

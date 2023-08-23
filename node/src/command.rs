@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use da_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-use sc_cli::{ChainSpec, Result, RuntimeVersion, SubstrateCli};
+use sc_cli::{ChainSpec, Result, SubstrateCli};
 use sc_service::PartialComponents;
 
 use crate::{
@@ -61,10 +61,6 @@ impl SubstrateCli for Cli {
 		};
 		Ok(spec)
 	}
-
-	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		da_runtime::apis::NATIVE_VERSION
-	}
 }
 
 /// Parse command line arguments into service configuration.
@@ -99,8 +95,8 @@ pub fn run() -> Result<()> {
 									.into(),
 							);
 						}
-
-						cmd.run::<Block, ExecutorDispatch>(config)
+						// TODO: Add the executor back
+						cmd.run::<Block, ()>(config)
 					},
 					BenchmarkCmd::Block(_cmd) => {
 						unimplemented!();

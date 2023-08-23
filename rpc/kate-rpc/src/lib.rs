@@ -6,8 +6,8 @@ use std::{
 
 use avail_base::metrics::RPCMetricAdapter;
 use avail_core::{
-	header::extension::v1::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId,
-	BlockLengthColumns, BlockLengthRows, DataProof, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, BlockLengthColumns,
+	BlockLengthRows, DataProof, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
 use da_runtime::{apis::DataAvailApi, Runtime, UncheckedExtrinsic};
 use frame_system::{limits::BlockLength, submitted_data};
