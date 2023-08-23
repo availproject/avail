@@ -129,6 +129,8 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: availj/avail:${{ steps.prepare.outputs.tag_name }}
+          build-args: |
+            AVAIL_TAG=${{ steps.prepare.outputs.tag_name }}

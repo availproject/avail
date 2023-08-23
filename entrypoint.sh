@@ -22,9 +22,8 @@ if [[ ! -z "${RELOAD_KEYSTORE}" ]]; then
 		done;
 fi
 
-echo "Launching validator ${DA_NAME} on chain ${DA_CHAIN}..."
+echo "Launching node ${DA_NAME} on chain ${DA_CHAIN}..."
 ${da_bin} \
-	--validator \
 	--base-path /da/state \
 	--keystore-path ${da_keystore} \
 	--offchain-worker=Always \
