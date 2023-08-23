@@ -182,39 +182,44 @@ where
 /// - The `merkle_proof` requires `ExactSizeIterator`, forcing to load all submitted data into
 /// memory. That would increase the memory footprint of the node significantly. We could fix this
 /// adding the number of submitted data items at `System` pallet.
+/// - It could fail due to multiple reasons, like `u32` to `usize` transformation. We should
+/// modify the function to handle those properly
 pub fn calls_proof<F, I, C>(calls: I, transaction_index: u32) -> Option<MerkleProof<H256, Vec<u8>>>
 where
 	F: Filter<C>,
 	I: Iterator<Item = C>,
 {
 	let metrics = Metrics::new_shared();
+	let filter_with_metrics = |c| F::filter(c, Rc::clone(&metrics));
+
+	// Conversions and boundaries.
+	let transaction_index = usize::try_from(transaction_index).ok()?;
+	let tx_max = transaction_index.checked_add(1)?;
+
+	// It tries to get the `data_index` and `data` of the `transaction_index`-th transaction.
+	// Items are in form `(data_index, (transaction_index, data))`.
 	let submitted_data = calls
-		.map(|c| {
-			F::filter(c, Rc::clone(&metrics))
-				.into_iter()
-				.flatten()
-				.collect::<Vec<_>>()
-		})
+		.flat_map(&filter_with_metrics)
+		.take(tx_max)
+		// Adds the transaction index to the data.
+		.enumerate()
+		// Removes non submitted-data transactions and adds the data index.
+		.filter(|(_tx_idx, data)| !data.is_empty())
+		.enumerate()
 		.collect::<Vec<_>>();
 
-	match submitted_data.get(transaction_index as usize) {
-		None => return None,
-		Some(data) if data.is_empty() => return None,
-		_ => (),
-	};
-
-	let data_index = submitted_data
-		.iter()
-		.take(transaction_index as usize + 1)
-		.filter(|data| !data.is_empty())
-		.count() - 1;
-
+	// Returns `None` if it is not the expected transaction or it is not a submitted data Tx.
+	let (data_index, (tx_idx, data)) = submitted_data.last()?;
+	if *tx_idx != transaction_index || data.is_empty() {
+		return None;
+	}
+	let data_index = u32::try_from(*data_index).ok()?;
 	let data = submitted_data
 		.into_iter()
-		.filter(|v| !v.is_empty())
+		.map(|(_, (_, data))| data)
 		.collect::<Vec<_>>();
 
-	proof(data, data_index as u32, Rc::clone(&metrics))
+	proof(data, data_index, Rc::clone(&metrics))
 }
 
 /// Construct a Merkle Proof for `submit_data` given by `data_index` and stores
