@@ -66,6 +66,7 @@ runtime = [
 header-backward-compatibility-test = []
 try-runtime = [
 	"runtime",
+	"sp-runtime/try-runtime",
 ]
 serde = [
 	"dep:serde",
