@@ -102,7 +102,6 @@ frame-system-benchmarking = { path = "../pallets/system/benchmarking", default-f
 #pallet-election-provider-support-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 
 [build-dependencies]
-# substrate-wasm-builder = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 substrate-wasm-builder = "5.0.0-dev"
 
 [dev-dependencies]
