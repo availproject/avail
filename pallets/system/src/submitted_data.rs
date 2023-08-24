@@ -314,6 +314,7 @@ mod test {
 		// data_root 0f1d00f4d84258b8d99bfc4748ff45b8039f108f43ca47e22ac5a1eab2e8c02d
 
 		if let Some(da_proof) = calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 0) {
+			assert_eq!(da_proof.leaf_index, 0);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
 				"0x0f1d00f4d84258b8d99bfc4748ff45b8039f108f43ca47e22ac5a1eab2e8c02d"
@@ -339,6 +340,7 @@ mod test {
 		);
 
 		if let Some(da_proof) = calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 2) {
+			assert_eq!(da_proof.leaf_index, 1);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
 				"0x0f1d00f4d84258b8d99bfc4748ff45b8039f108f43ca47e22ac5a1eab2e8c02d"
@@ -358,6 +360,7 @@ mod test {
 		}
 
 		if let Some(da_proof) = calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 3) {
+			assert_eq!(da_proof.leaf_index, 2);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
 				"0x0f1d00f4d84258b8d99bfc4748ff45b8039f108f43ca47e22ac5a1eab2e8c02d"
