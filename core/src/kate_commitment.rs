@@ -5,9 +5,9 @@ use sp_std::vec::Vec;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use sp_core::hexdisplay::HexDisplay;
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use sp_std::fmt;
 
 pub mod v1 {
@@ -31,7 +31,7 @@ pub mod v1 {
 		pub commitment: Vec<u8>,
 	}
 
-	#[cfg(feature = "std")]
+	#[cfg(feature = "serde")]
 	impl fmt::Debug for KateCommitment {
 		fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 			f.debug_struct("KateCommitment(v1)")
@@ -77,7 +77,7 @@ pub mod v2 {
 		}
 	}
 
-	#[cfg(feature = "std")]
+	#[cfg(feature = "serde")]
 	impl fmt::Debug for KateCommitment {
 		fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 			let commitment = self.commitment.as_slice();
