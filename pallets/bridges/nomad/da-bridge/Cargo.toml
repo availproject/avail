@@ -52,6 +52,7 @@ std = [
 	"nomad-home/std",
 	"nomad-core/std",
 	"avail-core/std",
+	"nomad-updater-manager/std"
 ]
 
 runtime-benchmarks = [
@@ -59,7 +60,13 @@ runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"hex-literal",
+	"frame-system/runtime-benchmarks",
+	"nomad-home/runtime-benchmarks",
+	"nomad-updater-manager/runtime-benchmarks"
 ]
 try-runtime = [
 	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"nomad-home/try-runtime",
+	"nomad-updater-manager/try-runtime"
 ]

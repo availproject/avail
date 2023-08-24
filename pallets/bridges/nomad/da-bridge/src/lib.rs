@@ -14,8 +14,8 @@ pub mod weights;
 // #[cfg(test)]
 // mod tests;
 
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
+// #[cfg(feature = "runtime-benchmarks")]
+// mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {

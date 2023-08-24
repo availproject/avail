@@ -22,6 +22,11 @@ use da_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use sc_cli::{Result, SubstrateCli};
 use sc_service::PartialComponents;
+#[cfg(feature = "try-runtime")]
+use {
+	crate::service::ExecutorDispatch, da_runtime::constants::time::SLOT_DURATION,
+	try_runtime_cli::block_building_info::substrate_info,
+};
 
 use crate::{
 	chain_spec,
@@ -251,12 +256,12 @@ pub fn run() -> Result<()> {
 				let task_manager =
 					sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
 						.map_err(|e| sc_cli::Error::Service(sc_service::Error::Prometheus(e)))?;
-
+				let info_provider = substrate_info(SLOT_DURATION);
 				Ok((
 					cmd.run::<Block, ExtendedHostFunctions<
 						sp_io::SubstrateHostFunctions,
 						<ExecutorDispatch as NativeExecutionDispatch>::ExtendHostFunctions,
-					>>(),
+					>, _>(Some(info_provider)),
 					task_manager,
 				))
 			})

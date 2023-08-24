@@ -20,6 +20,8 @@ use pallet_nomination_pools::{
 	MaxPoolMembers, MaxPoolMembersPerPool, MaxPools, MinCreateBond, MinJoinBond, Pallet,
 };
 #[cfg(feature = "try-runtime")]
+use sp_runtime::TryRuntimeError;
+#[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
 
 use crate::Weight;
@@ -31,11 +33,11 @@ impl OnRuntimeUpgrade for Migration {
 	fn on_runtime_upgrade() -> Weight { nomination_pools::migrate() }
 
 	#[cfg(feature = "try-runtime")]
-	fn pre_upgrade() -> Result<Vec<u8>, &'static str> { nomination_pools::pre_upgrade() }
+	fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> { Ok(nomination_pools::pre_upgrade()?) }
 
 	#[cfg(feature = "try-runtime")]
-	fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
-		nomination_pools::post_upgrade(state)
+	fn post_upgrade(prev_count: Vec<u8>) -> Result<(), TryRuntimeError> {
+		Ok(nomination_pools::post_upgrade(prev_count)?)
 	}
 }
 

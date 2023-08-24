@@ -136,13 +136,22 @@ cli = [
 runtime-benchmarks = [
 	"da-runtime/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
+	"da-control/runtime-benchmarks",
+	"nomad-da-bridge/runtime-benchmarks",
+	"nomad-home/runtime-benchmarks",
+	"nomad-updater-manager/runtime-benchmarks"
 ]
 # Enable features that allow the runtime to be tried and debugged. Name might be subject to change
 # in the near future.
 try-runtime = [
-	"da-runtime/try-runtime", 
+	"da-runtime/try-runtime",
 	"try-runtime-cli/try-runtime",
-	"avail-core/try-runtime"
+	"avail-core/try-runtime",
+	"da-control/try-runtime",
+	"frame-system/try-runtime",
+	"nomad-da-bridge/try-runtime",
+	"nomad-home/try-runtime",
+	"nomad-updater-manager/try-runtime"
 ]
 
 

@@ -219,6 +219,7 @@ runtime-benchmarks = [
 	"pallet-treasury/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
+	"nomad-updater-manager/runtime-benchmarks"
 ]
 
 try-runtime = [
@@ -259,4 +260,5 @@ try-runtime = [
 	"pallet-transaction-payment/try-runtime",
 	"pallet-tips/try-runtime",
 	"avail-core/try-runtime",
+	"sp-runtime/try-runtime",
 ]
