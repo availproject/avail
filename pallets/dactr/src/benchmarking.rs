@@ -204,6 +204,35 @@ benchmarks! {
 		let _data_root =submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(once(&opaque));
 	}
 
+	// This benchmark is not directly used by extrinsic.
+	// It is mostly used to check that the weight is lower or approximately equal the `data_root` benchmark
+	data_root_batch {
+		let i in 0..(2 * 1024 * 1024);
+
+		let max_tx_size = T::MaxAppDataLength::get();
+		let nb_full_tx = i / max_tx_size;
+		let remaining_size = i % max_tx_size;
+		let nb_additional_tx = if remaining_size > 0 { 1 } else { 0 };
+
+		let mut calls = Vec::with_capacity(nb_full_tx as usize + nb_additional_tx as usize);
+
+		// Create the full-sized transactions
+		for _ in 0..nb_full_tx {
+			let data = generate_bounded::<AppDataFor<T>>(max_tx_size);
+			let opaque = submit_data_ext::<T>(data);
+			calls.push(opaque);
+		}
+
+		// If there is a remaining size, create one more transaction
+		if remaining_size > 0 {
+			let data = generate_bounded::<AppDataFor<T>>(remaining_size);
+			let opaque = submit_data_ext::<T>(data);
+			calls.push(opaque);
+		}
+	}:{
+		let _data_root = submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(calls.iter());
+	}
+
 	commitment_builder_32{
 		let i in 32..T::MaxBlockRows::get().0;
 		let (txs, root, block_length, block_number, seed) = commitment_parameters::<T>(i, 32);
