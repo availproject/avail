@@ -213,7 +213,6 @@ benchmarks! {
 		let nb_full_tx = i / max_tx_size;
 		let remaining_size = i % max_tx_size;
 		let nb_additional_tx = if remaining_size > 0 { 1 } else { 0 };
-
 		let mut calls = Vec::with_capacity(nb_full_tx as usize + nb_additional_tx as usize);
 
 		// Create the full-sized transactions
@@ -230,6 +229,8 @@ benchmarks! {
 			calls.push(opaque);
 		}
 	}:{
+		// TODO: Here the `.iter()` is also accounted in the benchmark. It's unwanted
+		// and should be avoidable when we'll use the new benchmarking syntax.
 		let _data_root = submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(calls.iter());
 	}
 
