@@ -24,11 +24,7 @@ Examples of unacceptable behavior include:
 
 ## Reporting & Enforcement
 
-If you experience or witness unacceptable behavior, or have any other concerns, please report it by contacting the project team in our [Discord](https://discord.com/invite/y6fHnxZQX8). All reports will be handled with discretion and confidentiality.
-
-1. **Acknowledgment**: We will acknowledge receipt of the report and begin an investigation.
-2. **Investigation**: We will conduct a thorough investigation to validate the report.
-3. **Outcome**: We will communicate the outcome of the investigation and any actions to be taken.
+If you experience or witness unacceptable behavior, or have any other concerns, please report it by contacting the project team in our [Discord](https://discord.com/invite/y6fHnxZQX8) and take appropriate action. All reports will be handled with discretion and confidentiality.
 
 ## Attribution
 
