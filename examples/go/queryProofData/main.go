@@ -47,11 +47,11 @@ func main() {
 	blockHash := <-finalizedBlockCh
 	fmt.Printf("Transaction included in finalized block: %v\n", blockHash.Hex())
 	h, _ := types.NewHashFromHexString(blockHash.Hex())
-	dataIndex := types.NewU32(0)
+	transactionIndex := types.NewU32(1)
 
 	// query proof
 	var data HeaderF
-	err = api.Client.Call(&data, "kate_queryDataProof", dataIndex, h)
+	err = api.Client.Call(&data, "kate_queryDataProof", transactionIndex, h)
 	if err != nil {
 		panic(fmt.Sprintf("%v\n", err))
 	}

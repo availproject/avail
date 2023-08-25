@@ -11,12 +11,12 @@ dotenv.config()
  *
  * @param availApi Api instance
  * @param hashBlock Hash of the block
- * @param dataIndex Leaf index in the merkle trie fot which the proof is returned
+ * @param transactionIndex Index of the transaction in the block
  * @returns {Promise<*>}
  */
-async function getProof(availApi, hashBlock, dataIndex) {
-    const daHeader = await availApi.rpc.kate.queryDataProof(dataIndex, hashBlock);
-    console.log(`Fetched proof from Avail for txn index ${dataIndex} inside block ${hashBlock}`);
+async function getProof(availApi, hashBlock, transactionIndex) {
+    const daHeader = await availApi.rpc.kate.queryDataProof(transactionIndex, hashBlock);
+    console.log(`Fetched proof from Avail for txn index ${transactionIndex} inside block ${hashBlock}`);
     return daHeader;
 }
 
@@ -41,8 +41,8 @@ async function checkProof(sepoliaApi, blockNumber, proof, numberOfLeaves, leafIn
     const sepoliaApi = new ethers.providers.getDefaultProvider("sepolia")
     const availApi = await createApi(process.env.AVAIL_RPC);
 
-    console.log(`Getting proof for data index ${process.env.DATA_INDEX} block number ${process.env.BLOCK_NUMBER} and block hash ${process.env.BLOCK_HASH}`)
-    const daHeader = await getProof(availApi, process.env.BLOCK_HASH, process.env.DATA_INDEX)
+    console.log(`Getting proof for data index ${process.env.TRANSACTION_INDEX} block number ${process.env.BLOCK_NUMBER} and block hash ${process.env.BLOCK_HASH}`)
+    const daHeader = await getProof(availApi, process.env.BLOCK_HASH, process.env.TRANSACTION_INDEX)
 
     console.log(`Data Root: ${hexlify(daHeader.root)}`);
     console.log(`Proof: ${daHeader.proof}`);
