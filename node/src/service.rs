@@ -238,7 +238,7 @@ pub fn new_partial(
 		grandpa_block_import,
 		client.clone(),
 	)?;
-	let da_block_import = BlockImport::new(client.clone(), block_import);
+	let da_block_import = BlockImport::new(client.clone(), &config, block_import);
 
 	let slot_duration = babe_link.config().slot_duration();
 	let import_queue = sc_consensus_babe::import_queue(

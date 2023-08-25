@@ -11,22 +11,38 @@ use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
 	Header as DaHeader,
 };
-use derive_more::Constructor;
 use frame_support::ensure;
 use frame_system::limits::BlockLength;
 use sc_consensus::{
 	block_import::{BlockCheckParams, BlockImport as BlockImportT, BlockImportParams},
 	ImportResult,
 };
+use sc_network::config::SyncMode;
+use sc_service::Configuration;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{CacheKeyId, Error as ConsensusError};
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
-#[derive(Constructor)]
 pub struct BlockImport<C, I> {
 	pub client: Arc<C>,
 	pub inner: I,
+	pub disable_kate_check: bool,
+}
+
+impl<C, I> BlockImport<C, I> {
+	pub fn new(client: Arc<C>, config: &Configuration, inner: I) -> Self {
+		let disable_kate_check = match config.network.sync_mode {
+			SyncMode::Fast { .. } | SyncMode::Warp => true,
+			_ => false,
+		};
+
+		Self {
+			client,
+			inner,
+			disable_kate_check,
+		}
+	}
 }
 
 impl<C, I: Clone> Clone for BlockImport<C, I> {
@@ -34,6 +50,7 @@ impl<C, I: Clone> Clone for BlockImport<C, I> {
 		Self {
 			client: self.client.clone(),
 			inner: self.inner.clone(),
+			disable_kate_check: self.disable_kate_check,
 		}
 	}
 }
@@ -57,6 +74,50 @@ where
 		block: BlockImportParams<B, Self::Transaction>,
 		new_cache: HashMap<CacheKeyId, Vec<u8>>,
 	) -> Result<ImportResult, Self::Error> {
+		if !self.disable_kate_check {
+			self.check_header_extension(&block)?;
+		}
+
+		self.inner
+			.import_block(block, new_cache)
+			.await
+			.map_err(Into::into)
+	}
+
+	/// # TODO
+	/// - Check that `Runtime::System::BlockLenght` was not changed inside the block;
+	async fn check_block(
+		&mut self,
+		block: BlockCheckParams<B>,
+	) -> Result<ImportResult, Self::Error> {
+		self.inner.check_block(block).await.map_err(Into::into)
+	}
+}
+
+trait CheckHeaderExtension<B: BlockT> {
+	type Transaction: Send + 'static;
+
+	fn check_header_extension(
+		&self,
+		block: &BlockImportParams<B, Self::Transaction>,
+	) -> Result<(), ConsensusError>;
+}
+
+impl<B, C, I> CheckHeaderExtension<B> for BlockImport<C, I>
+where
+	B: BlockT<Extrinsic = OpaqueExtrinsic, Header = DaHeader>,
+	I: BlockImportT<B> + Clone + Send + Sync,
+	C: ProvideRuntimeApi<B> + HeaderBackend<B> + Send + Sync,
+	C::Api: DataAvailApi<B>,
+	C::Api: ExtensionBuilder<B>,
+{
+	type Transaction = <I as BlockImportT<B>>::Transaction;
+
+	// It verifies that header extension (Kate commitment & data root) is properly calculated.
+	fn check_header_extension(
+		&self,
+		block: &BlockImportParams<B, Self::Transaction>,
+	) -> Result<(), ConsensusError> {
 		let no_extrinsics = vec![];
 		let extrinsics = block.body.as_ref().unwrap_or(&no_extrinsics);
 		let best_hash = self.client.info().best_hash;
@@ -99,18 +160,6 @@ where
                     format!("DA Extension does NOT match\nExpected: {extension:#?}\nGenerated:{generated_ext:#?}"))
 			);
 
-		self.inner
-			.import_block(block, new_cache)
-			.await
-			.map_err(Into::into)
-	}
-
-	/// # TODO
-	/// - Check that `Runtime::System::BlockLenght` was not changed inside the block;
-	async fn check_block(
-		&mut self,
-		block: BlockCheckParams<B>,
-	) -> Result<ImportResult, Self::Error> {
-		self.inner.check_block(block).await.map_err(Into::into)
+		Ok(())
 	}
 }
