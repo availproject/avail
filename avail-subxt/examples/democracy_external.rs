@@ -143,7 +143,6 @@ mod council {
 	pub async fn close(client: &Client, proposal: &IndexedProposalContext) -> Result<()> {
 		log::trace!("Closing the council proposal ...");
 
-		// TODO Calculate in advance the real weight.
 		let close_weight = Weight {
 			ref_time: 1_000_000_000,
 			proof_size: 0,
@@ -238,7 +237,6 @@ mod techies {
 	}
 
 	pub async fn close(client: &Client, proposal: &IndexedProposalContext) -> Result<u32> {
-		// TODO Calculate in advance the real weight.
 		let close_weight = Weight {
 			ref_time: 1_000_000_000,
 			proof_size: 0,
