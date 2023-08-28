@@ -32,7 +32,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "numberOfLeaves",
+        "name": "width",
         "type": "uint256"
       },
       {
@@ -52,25 +52,6 @@
         "internalType": "bool",
         "name": "isMember",
         "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint32",
-        "name": "blockNumber",
-        "type": "uint32"
-      }
-    ],
-    "name": "getDataRoot",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
       }
     ],
     "stateMutability": "view",
@@ -99,7 +80,7 @@
   {
     "inputs": [
       {
-        "internalType": "address",
+        "internalType": "contract IDataAvailabilityRouter",
         "name": "_router",
         "type": "address"
       }
