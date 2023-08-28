@@ -24,7 +24,7 @@ export async function createApi(url) {
                     description: 'Generate the data proof for the given `index`',
                     params: [
                         {
-                            name: 'data_index',
+                            name: 'transaction_index',
                             type: 'u32'
                         },
                         {

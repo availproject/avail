@@ -46,7 +46,7 @@ derive_more = "0.99.17"
 serde_json = "1.0"
 indicatif = "0.17"
 # Substrate 
-sp-keyring = "24.0.0"
+sp-keyring = "*"
 
 [features]
 default = ["api-dev", "std"]

@@ -77,9 +77,8 @@ where
 						iterations += 1;
 						ensure!(
 							iterations < MAX_ITERATIONS,
-							// TODO @Marko @Ghali Error name - Replace with MaxRecursionExceeded when PR gets merged
 							InvalidTransaction::Custom(
-								InvalidTransactionCustomId::ForbiddenAppId as u8
+								InvalidTransactionCustomId::MaxRecursionExceeded as u8
 							)
 						);
 						for call in calls.iter() {
