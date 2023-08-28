@@ -240,7 +240,7 @@ pub(crate) mod tests {
 				   network,
 				   transaction_pool,
 				   ..
-			   } = new_full_base(config, |_, _| ())?;
+			   } = new_full_base(config, |_, _| (), false)?;
 			   Ok(sc_service_test::TestNetComponents::new(
 				   task_manager,
 				   client,

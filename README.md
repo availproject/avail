@@ -139,6 +139,11 @@ You can sync to the chain using:
 - Warp mode: This is will download the latest state then all the blocks data. It's the fastest and recommended way to have a running node. Use `--sync warp`
 - Fast / Fast Unsafe: This is currently not supported since it does not download data needed for Avail specific computation.
 
+### Unsafe sync
+When importing blocks, their content go through an additional check to make sure that the DA commitments are valid.
+During initial sync, you can chose to ignore this check to increase the sync speed. This command is compatible with any `sync` mode.
+- `--unsafe-da-sync`
+
 
 ## Generate test code coverage report
 
