@@ -12,6 +12,7 @@ async function main() {
     // hash of the block from where to get the proof
     const keyring = new Keyring({type: 'sr25519'});
     const sender = keyring.addFromUri(config.mnemonic);
+    let transactionIndex: number | undefined = 0;
     // submit one data transaction and wait until block is finalized
     let res: ISubmittableResult = await new Promise(async (resolve) => {
         api.tx.dataAvailability.submitData("0x01")
@@ -19,17 +20,17 @@ async function main() {
                 console.log(`Tx status: ${result.status}`);
                 if (result.isFinalized) {
                     console.log("Block is finalized.")
+                    transactionIndex = result.txIndex;
                     resolve(result);
                 }
             });
     });
 
     // after block finalization we can query for the Merkle proof of the data submitted
-    const dataIndex = 0;
     const hashBlock = res.status.asFinalized;
 
-    const daHeader = await api.rpc.kate.queryDataProof(dataIndex, hashBlock);
-    console.log(`Fetched proof from Avail for txn index ${dataIndex} inside block ${hashBlock}`);
+    const daHeader = await api.rpc.kate.queryDataProof(transactionIndex, hashBlock);
+    console.log(`Fetched proof from Avail for txn index ${transactionIndex} inside block ${hashBlock}`);
     console.log(`Root: ${daHeader.root}`);
     console.log(`Proof: ${daHeader.proof}`);
     console.log(`NumberOfLeaves: ${daHeader.numberOfLeaves}`);
