@@ -9711,7 +9711,7 @@ dependencies = [
 [[package]]
 name = "substrate-wasm-builder"
 version = "5.0.0-dev"
-source = "git+https://github.com/paritytech/substrate.git/?branch=polkadot-v0.9.37#6fa7fe1326ecaab9921c2c3888530ad679cfbb87"
+source = "git+https://github.com/availproject/substrate.git/?branch=polkadot-v0.9.37-patch#4747a3634b8dac28b28f0a8e608232c8e8d085dc"
 dependencies = [
  "ansi_term",
  "build-helper",
