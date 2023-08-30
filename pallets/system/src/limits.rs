@@ -35,7 +35,7 @@ use frame_support::{
 };
 use kate::config::{DATA_CHUNK_SIZE, MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 use scale_info::{build::Fields, Path, Type, TypeInfo};
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Bounded, Perbill, RuntimeDebug};
 use sp_runtime_interface::pass_by::PassByCodec;
@@ -43,14 +43,14 @@ use sp_std::vec::Vec;
 use static_assertions::const_assert;
 
 /// Block length limit configuration.
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(RuntimeDebug, PartialEq, Clone, PassByCodec, MaxEncodedLen)]
 pub struct BlockLength {
 	/// Maximal total length in bytes for each extrinsic class.
 	///
 	/// In the worst case, the total block length is going to be:
 	/// `MAX(max)`
-	#[cfg_attr(feature = "std", serde(with = "per_dispatch_class_serde"))]
+	#[cfg_attr(feature = "serde", serde(with = "per_dispatch_class_serde"))]
 	pub max: PerDispatchClass<u32>,
 	pub cols: BlockLengthColumns,
 	pub rows: BlockLengthRows,
@@ -155,7 +155,7 @@ impl Decode for BlockLength {
 }
 
 /// This module adds serialization support to `BlockLength::max` field.
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 mod per_dispatch_class_serde {
 	use serde::{Deserializer, Serializer};
 

@@ -691,8 +691,6 @@ pub mod pallet {
 		pub _config: sp_std::marker::PhantomData<T>,
 		#[serde(with = "sp_core::bytes")]
 		pub kc_public_params: Vec<u8>,
-		// TODO: Add serialiization support for BlockLength in no_std
-		#[serde(skip)]
 		pub block_length: limits::BlockLength,
 	}
 
@@ -934,9 +932,9 @@ impl<
 
 	#[cfg(feature = "runtime-benchmarks")]
 	fn try_successful_origin() -> Result<O, ()> {
-		let zero_account_id =
+		let _zero_account_id =
 			AccountId::decode(&mut TrailingZeroInput::zeroes()).map_err(|_| ())?;
-		let members = Who::sorted_members();
+		let _members = Who::sorted_members();
 		let first_member = match Who::sorted_members().first() {
 			Some(account) => account.clone(),
 			None => AccountId::decode(&mut TrailingZeroInput::zeroes()).map_err(|_| ())?,
