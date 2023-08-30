@@ -61,7 +61,7 @@ where
 	#[method(name = "kate_queryDataProof")]
 	async fn query_data_proof(
 		&self,
-		data_index: u32,
+		transaction_index: u32,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<DataProof>;
 }
@@ -393,7 +393,7 @@ where
 
 	async fn query_data_proof(
 		&self,
-		data_index: u32,
+		transaction_index: u32,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<DataProof> {
 		// Fetch block
@@ -406,22 +406,21 @@ where
 			.ok_or_else(|| internal_err!("Missing block hash {:?}", at))?
 			.block;
 
-		// Get Opaque Extrinsics and transform into AppUncheckedExt.
 		let calls = block
 			.extrinsics()
 			.iter()
-			.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
-			.map(|app_ext| app_ext.function);
+			.flat_map(|extrinsic| UncheckedExtrinsic::try_from(extrinsic).ok())
+			.map(|extrinsic| extrinsic.function);
 
 		// Build the proof.
-		let merkle_proof = submitted_data::calls_proof::<Runtime, _, _>(calls, data_index)
+		let merkle_proof = submitted_data::calls_proof::<Runtime, _, _>(calls, transaction_index)
 			.ok_or_else(|| {
-				internal_err!(
-					"Data proof cannot be generated for index={} at block {:?}",
-					data_index,
-					at
-				)
-			})?;
+			internal_err!(
+				"Data proof cannot be generated for transaction index={} at block {:?}",
+				transaction_index,
+				at
+			)
+		})?;
 
 		DataProof::try_from(&merkle_proof)
 			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e))
