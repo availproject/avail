@@ -1,10 +1,10 @@
-use frame_support::weights::Weight;
+use frame_support::{parameter_types, traits::ConstU32, weights::Weight};
 use frame_system::{self as system, header_builder::da, test_utils::TestRandomness};
 use nomad_base::NomadBase;
 use sp_core::{H160, H256};
 use sp_runtime::{
-	traits::{BlakeTwo256, ConstU32, IdentityLookup},
-	AccountId32,
+	traits::{BlakeTwo256, IdentityLookup},
+	AccountId32, BuildStorage,
 };
 
 use crate::{self as da_bridge};
@@ -15,7 +15,7 @@ type Block = frame_system::mocking::MockDaBlock<Test>;
 
 // TODO: add proper config once frame executive mocking has been demonstrated
 // Configure a mock runtime to test the pallet.
-// NOTE: We're getting a error E0275 here beacuse of https://github.com/rust-lang/rust/issues/96634 in rust compiler. 
+// NOTE: We're getting a error E0275 here beacuse of https://github.com/rust-lang/rust/issues/96634 in rust compiler.
 // We may need to comment out the tests for this pallet until the above issue is fixed or we find an alternative to GAT for Block.
 frame_support::construct_runtime!(
 	pub enum Test
@@ -27,7 +27,7 @@ frame_support::construct_runtime!(
 	}
 );
 
-frame_support::parameter_types! {
+parameter_types! {
 	pub const BlockHashCount: u32 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1_024, 0));
@@ -68,7 +68,7 @@ impl nomad_updater_manager::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 }
 
-frame_support::parameter_types! {
+parameter_types! {
 	pub const MaxMessageBodyBytes: u32 = 2048;
 }
 
@@ -78,7 +78,7 @@ impl nomad_home::Config for Test {
 	type WeightInfo = ();
 }
 
-frame_support::parameter_types! {
+parameter_types! {
 	pub const DABridgePalletId: H256 = H256::zero();
 }
 
@@ -113,9 +113,11 @@ impl ExtBuilder {
 	}
 
 	pub(crate) fn build(self) -> sp_io::TestExternalities {
-		let mut t = frame_system::GenesisConfig::<Test>::default()
+		let mut t = RuntimeGenesisConfig::default()
+			.system
 			.build_storage()
-			.expect("Frame system builds valid default genesis config");
+			.unwrap()
+			.into();
 
 		nomad_home::GenesisConfig::<Test> {
 			updater: self.updater,
