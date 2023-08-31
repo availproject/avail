@@ -10,6 +10,8 @@ use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_arithmetic::traits::{CheckedAdd, One, SaturatedConversion};
+use sp_core::H256;
+use sp_io::{hashing::blake2_256, transaction_index};
 use sp_std::mem::replace;
 
 pub use crate::{pallet::*, weights::WeightInfo};
@@ -130,7 +132,21 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(!data.is_empty(), Error::<T>::DataCannotBeEmpty);
-			Self::deposit_event(Event::DataSubmitted { who, data });
+
+			// SAFETY: `data.len()` is always less than `u32::MAX` because it is bounded by
+			// `BoundedVec`
+			let len = data.len() as u32;
+
+			// Index Tx in DB block.
+			let data_hash = blake2_256(&data);
+			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
+				.ok_or_else(|| Error::<T>::BadContext)?;
+			transaction_index::index(extrinsic_index, len, data_hash);
+
+			Self::deposit_event(Event::DataSubmitted {
+				who,
+				data_hash: H256(data_hash),
+			});
 
 			Ok(().into())
 		}
@@ -187,7 +203,7 @@ pub mod pallet {
 		},
 		DataSubmitted {
 			who: T::AccountId,
-			data: AppDataFor<T>,
+			data_hash: H256,
 		},
 		BlockLengthProposalSubmitted {
 			rows: BlockLengthRows,
@@ -214,6 +230,8 @@ pub mod pallet {
 		BlockDimensionsTooSmall,
 		/// The request to reduce block dimensions was made in a non-empty block
 		InvalidBlockWeightReduction,
+		/// Submit data call outside of block execution context.
+		BadContext,
 	}
 
 	#[pallet::genesis_config]
