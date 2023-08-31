@@ -90,8 +90,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = RuntimeGenesisConfig::default()
 		.system
 		.build_storage()
-		.unwrap()
-		.into();
+		.unwrap();
 
 	let version = sp_version::RuntimeVersion {
 		spec_name: "".into(),

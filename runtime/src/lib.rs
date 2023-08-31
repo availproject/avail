@@ -1032,7 +1032,7 @@ extern crate frame_benchmarking;
 mod benches {
 	define_benchmarks!(
 		[frame_benchmarking, BaselineBench::<Runtime>]
-		[pallet_utility, crate::Utility]
+		[pallet_utility, $crate::Utility]
 		[pallet_babe, crate::Babe]
 		[pallet_timestamp, crate::Timestamp]
 		[pallet_indices, crate::Indices]
@@ -1054,7 +1054,7 @@ mod benches {
 		[frame_system, SystemBench::<Runtime>]
 		[da_control, crate::DataAvailability]
 		[nomad_home, crate::NomadHome]
-		// [nomad_da_bridge, crate::NomadDABridge]
+		[nomad_da_bridge, crate::NomadDABridge]
 	);
 }
 

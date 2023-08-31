@@ -72,20 +72,11 @@ impl nomad_updater_manager::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 }
 
+#[derive(Default)]
 pub(crate) struct ExtBuilder {
 	updater: H160,
 	local_domain: u32,
 	committed_root: H256,
-}
-
-impl Default for ExtBuilder {
-	fn default() -> ExtBuilder {
-		ExtBuilder {
-			updater: Default::default(),
-			local_domain: Default::default(),
-			committed_root: Default::default(),
-		}
-	}
 }
 
 impl ExtBuilder {
@@ -100,8 +91,7 @@ impl ExtBuilder {
 		let mut t = RuntimeGenesisConfig::default()
 			.system
 			.build_storage()
-			.unwrap()
-			.into();
+			.unwrap();
 
 		home::GenesisConfig::<Test> {
 			updater: self.updater,

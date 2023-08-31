@@ -86,20 +86,11 @@ impl da_bridge::Config for Test {
 	type WeightInfo = ();
 }
 
+#[derive(Default)]
 pub(crate) struct ExtBuilder {
 	updater: H160,
 	local_domain: u32,
 	committed_root: H256,
-}
-
-impl Default for ExtBuilder {
-	fn default() -> ExtBuilder {
-		ExtBuilder {
-			updater: Default::default(),
-			local_domain: Default::default(),
-			committed_root: Default::default(),
-		}
-	}
 }
 
 impl ExtBuilder {
@@ -114,8 +105,7 @@ impl ExtBuilder {
 		let mut t = RuntimeGenesisConfig::default()
 			.system
 			.build_storage()
-			.unwrap()
-			.into();
+			.unwrap();
 
 		nomad_home::GenesisConfig::<Test> {
 			updater: self.updater,
@@ -155,8 +145,8 @@ pub(crate) fn _events() -> Vec<super::Event<Test>> {
 pub(crate) fn fill_block_hash_mapping_up_to_n(n: u8) {
 	for i in 0..=n {
 		frame_system::BlockHash::<Test>::insert::<u32, <Test as system::Config>::Hash>(
-			(n as u32).into(),
-			H256::repeat_byte(i).into(),
+			(n as u32),
+			H256::repeat_byte(i),
 		);
 	}
 }

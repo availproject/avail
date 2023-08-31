@@ -14,8 +14,8 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-// #[cfg(feature = "runtime-benchmarks")]
-// mod benchmarking;
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -68,7 +68,6 @@ pub mod pallet {
 	where
 		[u8; 32]: From<T::AccountId>,
 		H256: From<T::Hash>,
-		u32: From<BlockNumberFor<T>>,
 	{
 		/// Dispatch a data root message to the home if the header is valid.
 		#[pallet::call_index(0)]
