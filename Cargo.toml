@@ -40,9 +40,7 @@ uint = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.
 rlp = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }
 
 # Substrate  (polkadot-v1.0.0).
-# Renamed in the upstream (https://github.com/paritytech/substrate/pull/13076)
-# TODO: use the updated name
-beefy-merkle-tree = { git = "https://github.com/paritytech/substrate.git/", branch = "polkadot-v1.0.0", package = "binary-merkle-tree" }
+binary-merkle-tree = { git = "https://github.com/paritytech/substrate.git/", branch = "polkadot-v1.0.0" }
 sc-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }

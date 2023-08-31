@@ -37,7 +37,7 @@ sp-std = { version = "8.0.0", default-features = false }
 sp-version = { version = "22.0.0", default-features = false, features = ["serde"] }
 sp-weights = { version = "20.0.0", default-features = false, features = ["serde"] }
 sp-runtime-interface = { version = "17", default-features = false }
-beefy-merkle-tree = { version = "4.0.0-dev", default-features = false, package = "binary-merkle-tree" }
+binary-merkle-tree = { version = "4.0.0-dev", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.3.1"
@@ -63,7 +63,7 @@ std = [
 	"sp-std/std",
 	"sp-version/std",
 	"sp-weights/std",
-	"beefy-merkle-tree/std",
+	"binary-merkle-tree/std",
 ]
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",

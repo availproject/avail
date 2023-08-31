@@ -1,7 +1,7 @@
 use core::fmt::Debug;
 
 use avail_core::OpaqueExtrinsic;
-use beefy_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
+use binary_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
 use sp_core::H256;
 use sp_runtime::traits::Keccak256;
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
