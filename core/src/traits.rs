@@ -1,6 +1,5 @@
 use codec::{Codec, Decode};
-use sp_arithmetic::traits::AtLeast32BitUnsigned;
-use sp_arithmetic::traits::Saturating;
+use sp_arithmetic::traits::{AtLeast32BitUnsigned, Saturating};
 use sp_core::U256;
 use sp_std::{convert::TryFrom, fmt::Debug, hash::Hash as StdHash};
 
@@ -10,7 +9,9 @@ pub use get_app_id::*;
 pub mod extended_header;
 pub use extended_header::*;
 
+#[cfg(feature = "runtime")]
 pub mod extended_block;
+#[cfg(feature = "runtime")]
 pub use extended_block::*;
 
 /// Header block number trait.

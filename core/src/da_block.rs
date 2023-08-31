@@ -20,7 +20,7 @@
 #[cfg(feature = "std")]
 use std::fmt;
 
-use crate::traits::{ExtendedBlock, ExtendedHeader};
+use crate::traits::{DaHeaderProvider, ExtendedBlock, ExtendedHeader};
 use codec::{Codec, Decode, Encode};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -146,5 +146,24 @@ where
 		>,
 	Extrinsic: Member + Codec + traits::Extrinsic + MaybeSerializeDeserialize,
 {
-	type Header = Header;
+	type DaHeader = Header;
+}
+
+impl<Header, Extrinsic, Extension>
+	DaHeaderProvider<
+		<Header as sp_runtime::traits::Header>::Number,
+		<Header as sp_runtime::traits::Header>::Hash,
+		sp_runtime::Digest,
+		Extension,
+	> for DaBlock<Header, Extrinsic>
+where
+	Header: HeaderT
+		+ ExtendedHeader<
+			<Header as sp_runtime::traits::Header>::Number,
+			<Header as sp_runtime::traits::Header>::Hash,
+			sp_runtime::Digest,
+			Extension,
+		>,
+{
+	type DaHeader = Header;
 }
