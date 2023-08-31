@@ -15,8 +15,6 @@ type Block = frame_system::mocking::MockDaBlock<Test>;
 
 // TODO: add proper config once frame executive mocking has been demonstrated
 // Configure a mock runtime to test the pallet.
-// NOTE: We're getting a error E0275 here beacuse of https://github.com/rust-lang/rust/issues/96634 in rust compiler.
-// We may need to comment out the tests for this pallet until the above issue is fixed or we find an alternative to GAT for Block.
 frame_support::construct_runtime!(
 	pub struct Test
 	{

@@ -1395,9 +1395,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Remove temporary "environment" entries in storage, compute the storage root and return the
 	/// resulting header for this block.
-	pub fn finalize() -> DaHeaderFor<T>
-// <<T as pallet::Config>::Block as sp_runtime::traits::Block>::Header: avail_core::traits::ExtendedHeader<<<<T as pallet::Config>::Block as sp_runtime::traits::Block>::Header as sp_runtime::traits::Header>::Number, <T as pallet::Config>::Hash, sp_runtime::Digest, avail_core::header::HeaderExtension>
-	{
+	pub fn finalize() -> DaHeaderFor<T> {
 		log::debug!(
 			target: LOG_TARGET,
 			"[{:?}] {} extrinsics, length: {} (normal {}%, op: {}%, mandatory {}%) / normal weight:\
@@ -1898,10 +1896,15 @@ pub mod pallet_prelude {
 	pub type HeaderFor<T> =
 		<<T as crate::Config>::Block as sp_runtime::traits::HeaderProvider>::HeaderT;
 
-	/// Type alias for the DA Header
-	pub type DaHeaderFor<T> =
-		<<T as crate::Config>::Block as avail_core::traits::ExtendedBlock<HeaderExtension>>::Header;
-
 	/// Type alias for the `BlockNumber` associated type of system config.
 	pub type BlockNumberFor<T> = <HeaderFor<T> as sp_runtime::traits::Header>::Number;
+
+	/// Type alias for the DA Header
+	pub type DaHeaderFor<T> =
+		<<T as crate::Config>::Block as avail_core::traits::DaHeaderProvider<
+			BlockNumberFor<T>,
+			<T as crate::Config>::Hash,
+			sp_runtime::generic::Digest,
+			HeaderExtension,
+		>>::DaHeader;
 }

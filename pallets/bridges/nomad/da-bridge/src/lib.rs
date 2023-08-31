@@ -8,11 +8,11 @@ pub use pallet::*;
 mod message;
 pub mod weights;
 
-// #[cfg(test)]
-// mod mock;
+#[cfg(test)]
+mod mock;
 
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
@@ -44,16 +44,6 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
-
-	// Genesis config
-	#[pallet::genesis_config]
-	#[derive(Default)]
-	pub struct GenesisConfig {}
-
-	#[pallet::genesis_build]
-	impl BuildGenesisConfig for GenesisConfig {
-		fn build(&self) {}
-	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
