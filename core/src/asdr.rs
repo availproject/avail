@@ -18,8 +18,6 @@
 //! Generic implementation of an unchecked (pre-verification) extrinsic.
 
 use codec::{Compact, Decode, Encode, EncodeLike, Error, Input};
-#[cfg(all(not(feature = "std"), feature = "serde"))]
-use sp_std::alloc::format;
 use scale_info::{build::Fields, meta_type, Path, StaticTypeInfo, Type, TypeInfo, TypeParameter};
 #[cfg(feature = "runtime")]
 use sp_runtime::{
@@ -30,6 +28,8 @@ use sp_runtime::{
 	},
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
 };
+#[cfg(all(not(feature = "std"), feature = "serde"))]
+use sp_std::alloc::format;
 use sp_std::{
 	convert::TryFrom,
 	fmt::{Debug, Formatter, Result as FmtResult},
