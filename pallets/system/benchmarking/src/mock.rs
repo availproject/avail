@@ -37,8 +37,7 @@ type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockDaBlock<Test>;
 
 frame_support::construct_runtime!(
-	pub enum Test
-	{
+	pub struct Test {
 		System: frame_system,
 	}
 );

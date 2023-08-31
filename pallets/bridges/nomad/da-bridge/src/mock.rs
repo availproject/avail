@@ -18,7 +18,7 @@ type Block = frame_system::mocking::MockDaBlock<Test>;
 // NOTE: We're getting a error E0275 here beacuse of https://github.com/rust-lang/rust/issues/96634 in rust compiler.
 // We may need to comment out the tests for this pallet until the above issue is fixed or we find an alternative to GAT for Block.
 frame_support::construct_runtime!(
-	pub enum Test
+	pub struct Test
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		UpdaterManager: nomad_updater_manager::{Pallet, Call, Storage, Event<T>},

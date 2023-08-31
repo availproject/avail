@@ -30,8 +30,7 @@ type Block = frame_system::mocking::MockDaBlock<Test>;
 type BlockNumber = u32;
 
 frame_support::construct_runtime!(
-	pub enum Test
-	{
+	pub struct Test {
 		System: frame_system,
 		Utility: pallet_utility,
 		Balances: pallet_balances,

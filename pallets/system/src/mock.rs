@@ -29,7 +29,7 @@ type Block = mocking::MockDaBlock<Test>;
 // type BlockNumber = u32;
 
 frame_support::construct_runtime!(
-	pub enum Test
+	pub struct Test
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 	}

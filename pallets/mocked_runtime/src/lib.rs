@@ -193,7 +193,7 @@ impl da_control::Config for Runtime {
 impl custom::custom::Config for Runtime {}
 
 construct_runtime!(
-	pub enum Runtime
+	pub struct Runtime
 	{
 		System: frame_system,
 		Balances: pallet_balances,

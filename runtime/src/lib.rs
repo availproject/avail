@@ -963,7 +963,7 @@ impl nomad_home::Config for Runtime {
 // TODO @miguel Aline this with previous order and ID to keep the compatibility.
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
-	pub enum Runtime
+	pub struct Runtime
 	{
 		System: frame_system = 0,
 		Utility: pallet_utility = 1,

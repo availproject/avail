@@ -51,7 +51,7 @@ type UncheckedExtrinsic = MockUncheckedExtrinsic<Runtime>;
 type Block = MockDaBlock<Runtime>;
 
 frame_support::construct_runtime!(
-	pub enum Runtime
+	pub struct Runtime
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Module: module::{Pallet, Event},
