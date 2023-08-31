@@ -18,7 +18,8 @@
 //! Generic implementation of an unchecked (pre-verification) extrinsic.
 
 use codec::{Compact, Decode, Encode, EncodeLike, Error, Input};
-use scale_info::prelude::format;
+#[cfg(all(not(feature = "std"), feature = "serde"))]
+use sp_std::alloc::format;
 use scale_info::{build::Fields, meta_type, Path, StaticTypeInfo, Type, TypeInfo, TypeParameter};
 #[cfg(feature = "runtime")]
 use sp_runtime::{
