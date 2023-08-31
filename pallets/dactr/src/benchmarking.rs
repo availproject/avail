@@ -212,8 +212,7 @@ benchmarks! {
 		let max_tx_size = T::MaxAppDataLength::get();
 		let nb_full_tx = i / max_tx_size;
 		let remaining_size = i % max_tx_size;
-		let nb_additional_tx = if remaining_size > 0 { 1 } else { 0 };
-		let mut calls = Vec::with_capacity(nb_full_tx as usize + nb_additional_tx as usize);
+		let mut calls = Vec::with_capacity(nb_full_tx as usize + 1usize);
 
 		// Create the full-sized transactions
 		for _ in 0..nb_full_tx {
