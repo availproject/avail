@@ -86,16 +86,16 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// The range of component `i` is `[0, 524288]`.
 	fn data_root(i: u32, ) -> Weight {
 		// Minimum execution time: 1_457 nanoseconds.
-		Weight::from_ref_time(1_487_000_u64)
+		Weight::from_parts(1_487_000, 0)
 			// Standard Error: 21
-			.saturating_add(Weight::from_ref_time(5_251_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(5_251, 0).saturating_mul(i as u64))
 	}
 	/// The range of component `i` is `[0, 2097152]`.
 	fn data_root_batch(i: u32, ) -> Weight {
 		// Minimum execution time: 778 nanoseconds.
-		Weight::from_ref_time(825_000_u64)
+		Weight::from_parts(825_000, 0)
 			// Standard Error: 5
-			.saturating_add(Weight::from_ref_time(4_931_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(4_931, 0).saturating_mul(i as u64))
 	}
 	/// The range of component `i` is `[32, 1024]`.
 	fn commitment_builder_32(i: u32, ) -> Weight {
@@ -154,16 +154,16 @@ impl WeightInfo for () {
 	/// The range of component `i` is `[0, 524288]`.
 	fn data_root(i: u32, ) -> Weight {
 		// Minimum execution time: 1_457 nanoseconds.
-		Weight::from_ref_time(1_487_000_u64)
+		Weight::from_parts(1_487_000, 0)
 			// Standard Error: 21
-			.saturating_add(Weight::from_ref_time(5_251_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(5_251, 0).saturating_mul(i as u64))
 	}
 	/// The range of component `i` is `[0, 2097152]`.
 	fn data_root_batch(i: u32, ) -> Weight {
 		// Minimum execution time: 778 nanoseconds.
-		Weight::from_ref_time(825_000_u64)
+		Weight::from_parts(825_000, 0)
 			// Standard Error: 5
-			.saturating_add(Weight::from_ref_time(4_931_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(4_931, 0).saturating_mul(i as u64))
 	}
 	/// The range of component `i` is `[32, 1024]`.
 	fn commitment_builder_32(i: u32, ) -> Weight {
