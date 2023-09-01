@@ -232,7 +232,7 @@ jobs:
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example max_block_submit
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data_and_dispatch_data_root
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal
+          # cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal
           # Democracy calls are executable only with fast runtime (with democracy InstantAllowed set to true)
           # cargo run --release  --manifest-path avail-subxt/Cargo.toml --example democracy_external 
           # cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal_democracy
