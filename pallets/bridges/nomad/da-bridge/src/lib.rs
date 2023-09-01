@@ -95,7 +95,7 @@ pub mod pallet {
 			recipient_address: H256,
 			header: &DaHeaderFor<T>,
 		) -> DispatchResultWithPostInfo {
-			// TODO: avoid saturating values
+			// Safety: Even if a BlockNumber type is larger than u32, it won't pose any issues for the next 2000+ years
 			let block_number: u32 = (*header.number()).saturated_into();
 			let data_root = header.extension().data_root();
 
@@ -131,8 +131,6 @@ pub mod pallet {
 		/// mapping.
 		fn ensure_valid_header(header: &DaHeaderFor<T>) -> DispatchResultWithPostInfo {
 			// Ensure header's block number is in the mapping
-			// TODO: Even though we're sure that the block number is of type u32, we should probably avoid saturating values
-			// Temporary  type conversions until we fix the interoperatibility across header block numbers
 			let number: u32 = (*header.number()).saturated_into();
 			let stored_hash =
 				frame_system::Pallet::<T>::block_hash::<BlockNumberFor<T>>(number.into());

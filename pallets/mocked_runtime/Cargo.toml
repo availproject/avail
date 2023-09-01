@@ -20,11 +20,11 @@ derive_more = "0.99.17"
 serde = { version = "1.0.121", features = ["derive"] }
 
 frame-support = "4.0.0-dev"
-sp-runtime = { version = "24.0.0" }
-sp-core = { version = "21.0.0" }
+sp-runtime = "24.0.0"
+sp-core = "21.0.0"
 sp-staking = "4.0.0-dev"
 sp-io = "23.0.0"
-sp-version = { version = "22.0.0" }
+sp-version = "22.0.0"
 sp-inherents = "4.0.0-dev"
 sp-std = "8.0.0"
 

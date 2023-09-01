@@ -1734,7 +1734,7 @@ impl<T: Config> Pallet<T> {
 		Self::deposit_event(Event::KilledAccount { account: who });
 	}
 
-	//// Determine whether or not it is possible to update the code.
+	/// Determine whether or not it is possible to update the code.
 	///
 	/// Checks the given code if it is a valid runtime wasm blob by instantianting
 	/// it and extracting the runtime version of it. It checks that the runtime version

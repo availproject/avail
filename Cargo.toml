@@ -53,9 +53,6 @@ sc-transaction-pool = { git = "https://github.com/paritytech/substrate.git", bra
 sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sc-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-# Renamed: (https://github.com/paritytech/substrate/pull/13458)
-# sp-finality-grandpa -> sp-consensus-grandpa
-# sc-finality-grandpa -> sc-consensus-grandpa
 sp-consensus-grandpa = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sc-client-db = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
@@ -87,9 +84,6 @@ sc-network-common = { git = "https://github.com/paritytech/substrate.git", branc
 sc-network-sync = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sc-consensus-slots = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-# Removed: https://github.com/paritytech/substrate/pull/13216
-# sc-consensus-uncles = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-# sp-authorship = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-keyring = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-tracing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-weights = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }

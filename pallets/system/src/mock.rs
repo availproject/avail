@@ -94,7 +94,6 @@ impl Config for Test {
 	type DbWeight = DbWeight;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	// type Header = avail_core::header::Header<BlockNumber, BlakeTwo256>;
 	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type MaxConsumers = ConstU32<16>;

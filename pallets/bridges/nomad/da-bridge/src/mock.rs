@@ -145,7 +145,7 @@ pub(crate) fn _events() -> Vec<super::Event<Test>> {
 pub(crate) fn fill_block_hash_mapping_up_to_n(n: u8) {
 	for i in 0..=n {
 		frame_system::BlockHash::<Test>::insert::<u32, <Test as system::Config>::Hash>(
-			(n as u32),
+			n as u32,
 			H256::repeat_byte(i),
 		);
 	}
