@@ -107,8 +107,7 @@ async fn run_alice_node(opts: &E2EOpts) -> Result<Child> {
 		"--execution=NativeElseWasm",
 		"--alice",
 		"--port=30333",
-		"--ws-port=9944",
-		"--rpc-port=9933",
+		"--rpc-port=9944",
 		"--validator",
 		"--rpc-cors=all",
 	];

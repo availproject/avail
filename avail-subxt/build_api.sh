@@ -33,7 +33,7 @@ subxt codegen \
 	--derive-for-type avail_core::AppId=Default \
 	--derive-for-type avail_core::AppId=Copy \
 	--derive-for-type avail_core::AppId=derive_more::From \
-	--url http://localhost:9933 \
+	--url http://localhost:9944 \
 	| sed -En "s/pub struct KateCommitment/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
 	| sed -E '1i \#\[allow(clippy::all)]' \
 	| rustfmt --edition=2021 --emit=stdout > src/api_dev.rs
