@@ -1,6 +1,6 @@
 [package]
 name = "avail-core"
-version = "0.5.0"
+version = "0.5.1"
 authors = []
 edition = "2021"
 license = "Apache-2.0"
