@@ -1,7 +1,7 @@
 use codec::{Codec, Decode};
 use serde::{Serialize, Serializer};
 
-use crate::api::runtime_types::sp_finality_grandpa::app::Public;
+use crate::api::runtime_types::sp_consensus_grandpa::app::Public;
 
 #[derive(Decode)]
 pub struct AuthorityId(pub Public);
