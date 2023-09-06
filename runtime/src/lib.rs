@@ -936,6 +936,9 @@ impl pallet_mmr::Config for Runtime {
 }
 
 impl da_control::Config for Runtime {
+	type AvailRuntimeVersionMajor = constants::da::AvailRuntimeVersionMajor;
+	type AvailRuntimeVersionMinor = constants::da::AvailRuntimeVersionMinor;
+	type AvailRuntimeVersionPatch = constants::da::AvailRuntimeVersionPatch;
 	type BlockLenProposalId = u32;
 	type MaxAppDataLength = constants::da::MaxAppDataLength;
 	type MaxAppKeyLength = constants::da::MaxAppKeyLength;

@@ -61,6 +61,18 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxAppDataLength: Get<u32>;
 
+		/// Major version of runtime
+		#[pallet::constant]
+		type AvailRuntimeVersionMajor: Get<u16>;
+
+		/// Minor version of runtime
+		#[pallet::constant]
+		type AvailRuntimeVersionMinor: Get<u16>;
+
+		/// Patch version of runtime
+		#[pallet::constant]
+		type AvailRuntimeVersionPatch: Get<u16>;
+
 		/// Minimum number of rows in a block.
 		#[pallet::constant]
 		type MinBlockRows: Get<BlockLengthRows>;

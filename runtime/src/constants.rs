@@ -460,6 +460,9 @@ pub mod da {
 	}
 	pub type MaxAppKeyLength = ConstU32<64>;
 	pub type MaxAppDataLength = ConstU32<524_288>; // 512 Kb
+	pub type AvailRuntimeVersionMajor = ConstU16<6>;
+	pub type AvailRuntimeVersionMinor = ConstU16<0>;
+	pub type AvailRuntimeVersionPatch = ConstU16<0>;
 }
 
 pub mod nomad {

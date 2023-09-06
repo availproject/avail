@@ -184,6 +184,9 @@ impl da_control::Config for Runtime {
 	type BlockLenProposalId = u32;
 	type MaxAppDataLength = MaxAppDataLength;
 	type MaxAppKeyLength = MaxAppKeyLength;
+	type AvailRuntimeVersionMajor = AvailRuntimeVersionMajor;
+	type AvailRuntimeVersionMinor = AvailRuntimeVersionMinor;
+	type AvailRuntimeVersionPatch = AvailRuntimeVersionPatch;
 	type MaxBlockCols = MaxBlockCols;
 	type MaxBlockRows = MaxBlockRows;
 	type MinBlockCols = MinBlockCols;
