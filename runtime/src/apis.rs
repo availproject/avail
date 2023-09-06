@@ -19,6 +19,8 @@ use sp_runtime::{
 use sp_std::{borrow::Cow, vec::Vec};
 use sp_version::RuntimeVersion;
 
+#[allow(unused)]
+use crate::Identity;
 use crate::{
 	constants, mmr, AccountId, AuthorityDiscovery, Babe, Balance, Block, BlockNumber,
 	EpochDuration, Executive, Grandpa, Historical, Index, InherentDataExt, KeyTypeId, Mmr,

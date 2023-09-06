@@ -124,7 +124,7 @@ pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch 
 pallet-nomination-pools = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-election-provider-support-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", version = "5.0.0-dev" }
-
+pallet-identity = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 
 
 ## RPCs
