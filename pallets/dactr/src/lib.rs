@@ -173,6 +173,17 @@ pub mod pallet {
 
 			Ok(().into())
 		}
+
+		#[pallet::call_index(3)]
+		#[pallet::weight(1_000_000_000_000)]
+		pub fn submit_dummy_data(
+			origin: OriginFor<T>,
+			_data: AppDataFor<T>,
+		) -> DispatchResult {
+			let _who = ensure_signed(origin)?;
+			Ok(())
+		}
+
 	}
 
 	/// Event for the pallet.
