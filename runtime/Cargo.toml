@@ -89,6 +89,7 @@ pallet-multisig = { version = "4.0.0-dev", default-features = false }
 pallet-child-bounties = { version = "4.0.0-dev", default-features = false }
 pallet-preimage = { version = "4.0.0-dev", default-features = false }
 pallet-nomination-pools = { version = "1", default-features = false }
+pallet-identity = { version = "4.0.0-dev", default-features = false }
 
 ## RPCs
 pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", default-features = false }
@@ -176,6 +177,7 @@ std = [
 	"frame-try-runtime?/std",
 	"sp-io/std",
 	"pallet-child-bounties/std",
+	"pallet-identity/std",
 
 	"da-control/std",
 	"kate/std",
@@ -218,6 +220,7 @@ runtime-benchmarks = [
 	"pallet-treasury/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
+	"pallet-identity/runtime-benchmarks",
 ]
 
 try-runtime = [
@@ -257,5 +260,6 @@ try-runtime = [
 	"pallet-nomination-pools/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-tips/try-runtime",
+	"pallet-identity/try-runtime",
 	"avail-core/try-runtime",
 ]
