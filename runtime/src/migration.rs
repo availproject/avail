@@ -19,12 +19,43 @@ use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade};
 use pallet_nomination_pools::{
 	MaxPoolMembers, MaxPoolMembersPerPool, MaxPools, MinCreateBond, MinJoinBond, Pallet,
 };
+use sp_runtime::Perbill;
 #[cfg(feature = "try-runtime")]
 use sp_runtime::TryRuntimeError;
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
 
-use crate::Weight;
+use crate::{Bounties, RocksDbWeight, Runtime, Weight};
+
+// Migrations that set `StorageVersion`s which was missed to set.
+pub struct SetStorageVersions;
+
+impl OnRuntimeUpgrade for SetStorageVersions {
+	fn on_runtime_upgrade() -> Weight {
+		let storage_version = Bounties::on_chain_storage_version();
+		if storage_version < 4 {
+			StorageVersion::new(4).put::<Bounties>();
+		}
+
+		RocksDbWeight::get().reads_writes(1, 1)
+	}
+}
+pub struct NominationPoolsMigrationV4OldPallet;
+impl Get<Perbill> for NominationPoolsMigrationV4OldPallet {
+	fn get() -> Perbill { Perbill::zero() }
+}
+
+/// Implements `OnRuntimeUpgrade` trait for upstream migrations
+pub type UpstreamMigrations = (
+	pallet_im_online::migration::v1::Migration<Runtime>,
+	pallet_offences::migration::v1::MigrateToV1<Runtime>,
+	pallet_nomination_pools::migration::v4::MigrateV3ToV5<
+		Runtime,
+		NominationPoolsMigrationV4OldPallet,
+	>,
+	pallet_scheduler::migration::v3::MigrateToV4<Runtime>,
+	SetStorageVersions,
+);
 
 /// Implements `OnRuntimeUpgrade` trait.
 pub struct Migration {}

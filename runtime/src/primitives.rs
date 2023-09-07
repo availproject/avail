@@ -77,7 +77,7 @@ pub type Executive = frame_executive::Executive<
 
 /// All migrations executed on runtime upgrade as a nested tuple of types implementing
 /// `OnRuntimeUpgrade`.
-type Migrations = (migration::Migration,);
+type Migrations = (migration::UpstreamMigrations,);
 
 /// ID type for named reserves.
 pub type ReserveIdentifier = [u8; 8];
