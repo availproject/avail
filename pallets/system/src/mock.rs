@@ -127,7 +127,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut ext: sp_io::TestExternalities = RuntimeGenesisConfig::default()
 		.system
 		.build_storage()
-		.unwrap()
+		.expect("Genesis build should work")
 		.into();
 	// Add to each test the initial weight of a block
 	ext.execute_with(|| {

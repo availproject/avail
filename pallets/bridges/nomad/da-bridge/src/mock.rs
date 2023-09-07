@@ -105,7 +105,7 @@ impl ExtBuilder {
 		let mut t = RuntimeGenesisConfig::default()
 			.system
 			.build_storage()
-			.unwrap();
+			.expect("Genesis build should work");
 
 		nomad_home::GenesisConfig::<Test> {
 			updater: self.updater,
