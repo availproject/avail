@@ -91,6 +91,8 @@ pallet-preimage = { version = "4.0.0-dev", default-features = false }
 pallet-nomination-pools = { version = "1", default-features = false }
 pallet-identity = { version = "4.0.0-dev", default-features = false }
 
+pallet-mandate = { path = "../pallets/mandate", default-features = false }
+
 ## RPCs
 pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", default-features = false }
 frame-system-rpc-runtime-api = { version = "4.0.0-dev", default-features = false }
@@ -184,6 +186,7 @@ std = [
 	"nomad-updater-manager/std",
 	"nomad-home/std",
 	"nomad-da-bridge/std",
+	"pallet-mandate/std",
 ]
 
 runtime-benchmarks = [
@@ -221,6 +224,7 @@ runtime-benchmarks = [
 	"pallet-utility/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
 	"pallet-identity/runtime-benchmarks",
+	"pallet-mandate/runtime-benchmarks",
 ]
 
 try-runtime = [
@@ -262,4 +266,5 @@ try-runtime = [
 	"pallet-tips/try-runtime",
 	"pallet-identity/try-runtime",
 	"avail-core/try-runtime",
+	"pallet-mandate/try-runtime",
 ]
