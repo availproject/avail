@@ -24,6 +24,8 @@
 #![feature(result_option_inspect)]
 #![allow(macro_expanded_macro_exports_accessed_by_absolute_paths)]
 
+mod weights;
+
 use codec::Decode;
 use frame_election_provider_support::{
 	onchain, BalancingConfig, ElectionDataProvider, SequentialPhragmen, VoteWeight,
@@ -995,6 +997,16 @@ impl pallet_identity::Config for Runtime {
 	type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
 }
 
+impl pallet_mandate::Config for Runtime {
+	type ApprovedOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 1, 2>,
+	>;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = weights::pallet_mandate::WeightInfo<Runtime>;
+}
+
 // TODO @miguel Aline this with previous order and ID to keep the compatibility.
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -1049,6 +1061,7 @@ construct_runtime!(
 		VoterList: pallet_bags_list::<Instance1> = 35,
 		NominationPools: pallet_nomination_pools = 36,
 		Identity: pallet_identity = 37,
+		Mandate: pallet_mandate = 38,
 	}
 );
 
@@ -1095,6 +1108,7 @@ mod benches {
 		[nomad_home, crate::NomadHome]
 		[nomad_da_bridge, crate::NomadDABridge]
 		[pallet_identity, Identity]
+		[pallet_mandate, crate::Mandate]
 	);
 }
 
@@ -1172,6 +1186,7 @@ mod tests {
 			BlockNumber,
 		>>::try_state(block, All)?;
 		<pallet_identity::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_mandate::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_nomination_pools::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)
 	}
 

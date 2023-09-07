@@ -6,7 +6,7 @@ pub mod api {
 	mod root_mod {
 		pub use super::*;
 	}
-	pub static PALLETS: [&str; 36usize] = [
+	pub static PALLETS: [&str; 37usize] = [
 		"System",
 		"Utility",
 		"Babe",
@@ -43,6 +43,7 @@ pub mod api {
 		"VoterList",
 		"NominationPools",
 		"Identity",
+		"Mandate",
 	];
 	#[doc = r" The error type returned when there is a runtime issue."]
 	pub type DispatchError = runtime_types::sp_runtime::DispatchError;
@@ -120,6 +121,8 @@ pub mod api {
 		NominationPools(nomination_pools::Event),
 		#[codec(index = 37)]
 		Identity(identity::Event),
+		#[codec(index = 38)]
+		Mandate(mandate::Event),
 	}
 	impl ::subxt::events::RootEvent for Event {
 		fn root_event(
@@ -355,6 +358,13 @@ pub mod api {
 					metadata,
 				)?));
 			}
+			if pallet_name == "Mandate" {
+				return Ok(Event::Mandate(mandate::Event::decode_with_metadata(
+					&mut &*pallet_bytes,
+					pallet_ty,
+					metadata,
+				)?));
+			}
 			Err(::subxt::ext::scale_decode::Error::custom(format!(
 				"Pallet name '{}' not found in root Event enum",
 				pallet_name
@@ -438,6 +448,8 @@ pub mod api {
 		NominationPools(nomination_pools::Call),
 		#[codec(index = 37)]
 		Identity(identity::Call),
+		#[codec(index = 38)]
+		Mandate(mandate::Call),
 	}
 	impl ::subxt::blocks::RootExtrinsic for Call {
 		fn root_extrinsic(
@@ -678,6 +690,13 @@ pub mod api {
 					metadata,
 				)?));
 			}
+			if pallet_name == "Mandate" {
+				return Ok(Call::Mandate(mandate::Call::decode_with_metadata(
+					&mut &*pallet_bytes,
+					pallet_ty,
+					metadata,
+				)?));
+			}
 			Err(::subxt::ext::scale_decode::Error::custom(format!(
 				"Pallet name '{}' not found in root Call enum",
 				pallet_name
@@ -769,144 +788,144 @@ pub mod api {
 			use ::subxt::metadata::DecodeWithMetadata;
 			let cursor = &mut &pallet_bytes[..];
 			if pallet_name == "System" {
-				let variant_error = system::Error::decode_with_metadata(cursor, 124u32, metadata)?;
+				let variant_error = system::Error::decode_with_metadata(cursor, 125u32, metadata)?;
 				return Ok(Error::System(variant_error));
 			}
 			if pallet_name == "Utility" {
-				let variant_error = utility::Error::decode_with_metadata(cursor, 326u32, metadata)?;
+				let variant_error = utility::Error::decode_with_metadata(cursor, 328u32, metadata)?;
 				return Ok(Error::Utility(variant_error));
 			}
 			if pallet_name == "Babe" {
-				let variant_error = babe::Error::decode_with_metadata(cursor, 338u32, metadata)?;
+				let variant_error = babe::Error::decode_with_metadata(cursor, 340u32, metadata)?;
 				return Ok(Error::Babe(variant_error));
 			}
 			if pallet_name == "Authorship" {
 				let variant_error =
-					authorship::Error::decode_with_metadata(cursor, 342u32, metadata)?;
+					authorship::Error::decode_with_metadata(cursor, 344u32, metadata)?;
 				return Ok(Error::Authorship(variant_error));
 			}
 			if pallet_name == "Indices" {
-				let variant_error = indices::Error::decode_with_metadata(cursor, 344u32, metadata)?;
+				let variant_error = indices::Error::decode_with_metadata(cursor, 346u32, metadata)?;
 				return Ok(Error::Indices(variant_error));
 			}
 			if pallet_name == "Balances" {
 				let variant_error =
-					balances::Error::decode_with_metadata(cursor, 352u32, metadata)?;
+					balances::Error::decode_with_metadata(cursor, 354u32, metadata)?;
 				return Ok(Error::Balances(variant_error));
 			}
 			if pallet_name == "ElectionProviderMultiPhase" {
 				let variant_error = election_provider_multi_phase::Error::decode_with_metadata(
-					cursor, 365u32, metadata,
+					cursor, 367u32, metadata,
 				)?;
 				return Ok(Error::ElectionProviderMultiPhase(variant_error));
 			}
 			if pallet_name == "Staking" {
-				let variant_error = staking::Error::decode_with_metadata(cursor, 386u32, metadata)?;
+				let variant_error = staking::Error::decode_with_metadata(cursor, 388u32, metadata)?;
 				return Ok(Error::Staking(variant_error));
 			}
 			if pallet_name == "Session" {
-				let variant_error = session::Error::decode_with_metadata(cursor, 391u32, metadata)?;
+				let variant_error = session::Error::decode_with_metadata(cursor, 393u32, metadata)?;
 				return Ok(Error::Session(variant_error));
 			}
 			if pallet_name == "Democracy" {
 				let variant_error =
-					democracy::Error::decode_with_metadata(cursor, 409u32, metadata)?;
+					democracy::Error::decode_with_metadata(cursor, 411u32, metadata)?;
 				return Ok(Error::Democracy(variant_error));
 			}
 			if pallet_name == "Council" {
-				let variant_error = council::Error::decode_with_metadata(cursor, 412u32, metadata)?;
+				let variant_error = council::Error::decode_with_metadata(cursor, 414u32, metadata)?;
 				return Ok(Error::Council(variant_error));
 			}
 			if pallet_name == "TechnicalCommittee" {
 				let variant_error =
-					technical_committee::Error::decode_with_metadata(cursor, 414u32, metadata)?;
+					technical_committee::Error::decode_with_metadata(cursor, 416u32, metadata)?;
 				return Ok(Error::TechnicalCommittee(variant_error));
 			}
 			if pallet_name == "Elections" {
 				let variant_error =
-					elections::Error::decode_with_metadata(cursor, 418u32, metadata)?;
+					elections::Error::decode_with_metadata(cursor, 420u32, metadata)?;
 				return Ok(Error::Elections(variant_error));
 			}
 			if pallet_name == "TechnicalMembership" {
 				let variant_error =
-					technical_membership::Error::decode_with_metadata(cursor, 420u32, metadata)?;
+					technical_membership::Error::decode_with_metadata(cursor, 422u32, metadata)?;
 				return Ok(Error::TechnicalMembership(variant_error));
 			}
 			if pallet_name == "Grandpa" {
-				let variant_error = grandpa::Error::decode_with_metadata(cursor, 424u32, metadata)?;
+				let variant_error = grandpa::Error::decode_with_metadata(cursor, 426u32, metadata)?;
 				return Ok(Error::Grandpa(variant_error));
 			}
 			if pallet_name == "Treasury" {
 				let variant_error =
-					treasury::Error::decode_with_metadata(cursor, 430u32, metadata)?;
+					treasury::Error::decode_with_metadata(cursor, 432u32, metadata)?;
 				return Ok(Error::Treasury(variant_error));
 			}
 			if pallet_name == "Sudo" {
-				let variant_error = sudo::Error::decode_with_metadata(cursor, 431u32, metadata)?;
+				let variant_error = sudo::Error::decode_with_metadata(cursor, 433u32, metadata)?;
 				return Ok(Error::Sudo(variant_error));
 			}
 			if pallet_name == "ImOnline" {
 				let variant_error =
-					im_online::Error::decode_with_metadata(cursor, 439u32, metadata)?;
+					im_online::Error::decode_with_metadata(cursor, 441u32, metadata)?;
 				return Ok(Error::ImOnline(variant_error));
 			}
 			if pallet_name == "Scheduler" {
 				let variant_error =
-					scheduler::Error::decode_with_metadata(cursor, 449u32, metadata)?;
+					scheduler::Error::decode_with_metadata(cursor, 451u32, metadata)?;
 				return Ok(Error::Scheduler(variant_error));
 			}
 			if pallet_name == "Bounties" {
 				let variant_error =
-					bounties::Error::decode_with_metadata(cursor, 453u32, metadata)?;
+					bounties::Error::decode_with_metadata(cursor, 455u32, metadata)?;
 				return Ok(Error::Bounties(variant_error));
 			}
 			if pallet_name == "Tips" {
-				let variant_error = tips::Error::decode_with_metadata(cursor, 455u32, metadata)?;
+				let variant_error = tips::Error::decode_with_metadata(cursor, 457u32, metadata)?;
 				return Ok(Error::Tips(variant_error));
 			}
 			if pallet_name == "DataAvailability" {
 				let variant_error =
-					data_availability::Error::decode_with_metadata(cursor, 457u32, metadata)?;
+					data_availability::Error::decode_with_metadata(cursor, 459u32, metadata)?;
 				return Ok(Error::DataAvailability(variant_error));
 			}
 			if pallet_name == "NomadUpdaterManager" {
 				let variant_error =
-					nomad_updater_manager::Error::decode_with_metadata(cursor, 458u32, metadata)?;
+					nomad_updater_manager::Error::decode_with_metadata(cursor, 460u32, metadata)?;
 				return Ok(Error::NomadUpdaterManager(variant_error));
 			}
 			if pallet_name == "NomadHome" {
 				let variant_error =
-					nomad_home::Error::decode_with_metadata(cursor, 463u32, metadata)?;
+					nomad_home::Error::decode_with_metadata(cursor, 465u32, metadata)?;
 				return Ok(Error::NomadHome(variant_error));
 			}
 			if pallet_name == "NomadDABridge" {
 				let variant_error =
-					nomad_da_bridge::Error::decode_with_metadata(cursor, 464u32, metadata)?;
+					nomad_da_bridge::Error::decode_with_metadata(cursor, 466u32, metadata)?;
 				return Ok(Error::NomadDABridge(variant_error));
 			}
 			if pallet_name == "Preimage" {
 				let variant_error =
-					preimage::Error::decode_with_metadata(cursor, 468u32, metadata)?;
+					preimage::Error::decode_with_metadata(cursor, 470u32, metadata)?;
 				return Ok(Error::Preimage(variant_error));
 			}
 			if pallet_name == "Multisig" {
 				let variant_error =
-					multisig::Error::decode_with_metadata(cursor, 472u32, metadata)?;
+					multisig::Error::decode_with_metadata(cursor, 474u32, metadata)?;
 				return Ok(Error::Multisig(variant_error));
 			}
 			if pallet_name == "VoterList" {
 				let variant_error =
-					voter_list::Error::decode_with_metadata(cursor, 476u32, metadata)?;
+					voter_list::Error::decode_with_metadata(cursor, 478u32, metadata)?;
 				return Ok(Error::VoterList(variant_error));
 			}
 			if pallet_name == "NominationPools" {
 				let variant_error =
-					nomination_pools::Error::decode_with_metadata(cursor, 493u32, metadata)?;
+					nomination_pools::Error::decode_with_metadata(cursor, 495u32, metadata)?;
 				return Ok(Error::NominationPools(variant_error));
 			}
 			if pallet_name == "Identity" {
 				let variant_error =
-					identity::Error::decode_with_metadata(cursor, 505u32, metadata)?;
+					identity::Error::decode_with_metadata(cursor, 507u32, metadata)?;
 				return Ok(Error::Identity(variant_error));
 			}
 			Err(::subxt::ext::scale_decode::Error::custom(format!(
@@ -1228,6 +1247,8 @@ pub mod api {
 		pub fn identity(&self) -> identity::calls::TransactionApi {
 			identity::calls::TransactionApi
 		}
+
+		pub fn mandate(&self) -> mandate::calls::TransactionApi { mandate::calls::TransactionApi }
 	}
 	#[doc = r" check whether the Client you are using is aligned with the statically generated codegen."]
 	pub fn validate_codegen<T: ::subxt::Config, C: ::subxt::client::OfflineClientT<T>>(
@@ -1240,9 +1261,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				120u8, 119u8, 4u8, 69u8, 113u8, 26u8, 225u8, 77u8, 153u8, 148u8, 136u8, 56u8,
-				202u8, 21u8, 98u8, 15u8, 34u8, 246u8, 120u8, 111u8, 110u8, 249u8, 85u8, 41u8,
-				101u8, 180u8, 185u8, 207u8, 51u8, 141u8, 215u8, 12u8,
+				95u8, 200u8, 63u8, 120u8, 111u8, 95u8, 101u8, 241u8, 126u8, 223u8, 74u8, 198u8,
+				208u8, 106u8, 244u8, 239u8, 182u8, 193u8, 50u8, 254u8, 137u8, 50u8, 52u8, 184u8,
+				241u8, 228u8, 203u8, 247u8, 193u8, 205u8, 158u8, 38u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -2054,9 +2075,9 @@ pub mod api {
 					(),
 				> {
 					::subxt::storage::address::Address::new_static("System", "Events", vec![], [
-						169u8, 188u8, 245u8, 113u8, 25u8, 148u8, 129u8, 85u8, 91u8, 59u8, 157u8,
-						244u8, 74u8, 106u8, 34u8, 99u8, 38u8, 115u8, 252u8, 84u8, 87u8, 55u8,
-						252u8, 104u8, 63u8, 49u8, 93u8, 182u8, 202u8, 197u8, 110u8, 12u8,
+						0u8, 81u8, 218u8, 171u8, 200u8, 86u8, 36u8, 162u8, 95u8, 224u8, 129u8, 1u8,
+						186u8, 154u8, 16u8, 159u8, 96u8, 154u8, 146u8, 244u8, 87u8, 2u8, 67u8,
+						132u8, 213u8, 74u8, 214u8, 191u8, 15u8, 5u8, 143u8, 46u8,
 					])
 				}
 
@@ -2497,9 +2518,9 @@ pub mod api {
 					calls: ::std::vec::Vec<runtime_types::da_runtime::RuntimeCall>,
 				) -> ::subxt::tx::Payload<types::Batch> {
 					::subxt::tx::Payload::new_static("Utility", "batch", types::Batch { calls }, [
-						10u8, 47u8, 112u8, 252u8, 220u8, 22u8, 147u8, 7u8, 104u8, 73u8, 144u8,
-						187u8, 23u8, 185u8, 219u8, 192u8, 131u8, 69u8, 167u8, 2u8, 127u8, 213u8,
-						38u8, 25u8, 34u8, 36u8, 121u8, 252u8, 170u8, 156u8, 100u8, 62u8,
+						162u8, 47u8, 212u8, 156u8, 189u8, 80u8, 247u8, 183u8, 13u8, 95u8, 89u8,
+						91u8, 228u8, 94u8, 252u8, 248u8, 179u8, 221u8, 187u8, 219u8, 205u8, 255u8,
+						91u8, 148u8, 88u8, 145u8, 145u8, 147u8, 85u8, 242u8, 152u8, 85u8,
 					])
 				}
 
@@ -2529,10 +2550,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							225u8, 43u8, 143u8, 222u8, 202u8, 143u8, 237u8, 240u8, 95u8, 222u8,
-							177u8, 228u8, 140u8, 180u8, 180u8, 197u8, 17u8, 150u8, 191u8, 250u8,
-							117u8, 235u8, 148u8, 70u8, 150u8, 194u8, 246u8, 33u8, 124u8, 11u8,
-							205u8, 28u8,
+							247u8, 86u8, 221u8, 216u8, 187u8, 146u8, 164u8, 177u8, 211u8, 27u8,
+							66u8, 166u8, 57u8, 127u8, 197u8, 46u8, 35u8, 159u8, 108u8, 119u8, 28u8,
+							26u8, 148u8, 43u8, 187u8, 226u8, 159u8, 177u8, 87u8, 255u8, 173u8,
+							131u8,
 						],
 					)
 				}
@@ -2560,9 +2581,9 @@ pub mod api {
 						"batch_all",
 						types::BatchAll { calls },
 						[
-							221u8, 215u8, 48u8, 122u8, 7u8, 108u8, 79u8, 255u8, 246u8, 208u8,
-							114u8, 87u8, 99u8, 68u8, 186u8, 183u8, 163u8, 55u8, 248u8, 42u8, 150u8,
-							34u8, 61u8, 89u8, 189u8, 212u8, 147u8, 134u8, 241u8, 74u8, 67u8, 104u8,
+							74u8, 219u8, 12u8, 83u8, 166u8, 178u8, 11u8, 23u8, 33u8, 200u8, 32u8,
+							95u8, 108u8, 233u8, 135u8, 170u8, 155u8, 190u8, 242u8, 245u8, 14u8,
+							155u8, 7u8, 105u8, 178u8, 38u8, 7u8, 5u8, 205u8, 85u8, 46u8, 115u8,
 						],
 					)
 				}
@@ -2590,10 +2611,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							202u8, 0u8, 137u8, 203u8, 107u8, 201u8, 240u8, 106u8, 200u8, 211u8,
-							202u8, 206u8, 183u8, 82u8, 17u8, 243u8, 172u8, 111u8, 69u8, 156u8,
-							35u8, 70u8, 39u8, 6u8, 205u8, 1u8, 106u8, 132u8, 150u8, 127u8, 121u8,
-							174u8,
+							133u8, 76u8, 140u8, 166u8, 229u8, 105u8, 252u8, 199u8, 30u8, 62u8,
+							244u8, 23u8, 208u8, 139u8, 17u8, 44u8, 118u8, 251u8, 185u8, 179u8,
+							101u8, 243u8, 189u8, 223u8, 99u8, 217u8, 224u8, 186u8, 201u8, 184u8,
+							201u8, 49u8,
 						],
 					)
 				}
@@ -2621,9 +2642,10 @@ pub mod api {
 						"force_batch",
 						types::ForceBatch { calls },
 						[
-							44u8, 205u8, 14u8, 242u8, 194u8, 11u8, 149u8, 8u8, 164u8, 96u8, 177u8,
-							127u8, 202u8, 167u8, 148u8, 149u8, 130u8, 225u8, 126u8, 180u8, 231u8,
-							207u8, 100u8, 127u8, 255u8, 48u8, 68u8, 47u8, 124u8, 41u8, 227u8, 93u8,
+							200u8, 88u8, 62u8, 43u8, 145u8, 54u8, 115u8, 198u8, 254u8, 180u8, 76u8,
+							192u8, 128u8, 186u8, 167u8, 47u8, 255u8, 200u8, 146u8, 59u8, 212u8,
+							248u8, 163u8, 200u8, 237u8, 219u8, 41u8, 157u8, 80u8, 115u8, 217u8,
+							137u8,
 						],
 					)
 				}
@@ -2647,9 +2669,9 @@ pub mod api {
 							weight,
 						},
 						[
-							241u8, 242u8, 72u8, 23u8, 245u8, 13u8, 102u8, 138u8, 203u8, 200u8,
-							152u8, 178u8, 205u8, 4u8, 55u8, 221u8, 63u8, 132u8, 18u8, 220u8, 142u8,
-							125u8, 121u8, 89u8, 45u8, 40u8, 229u8, 153u8, 16u8, 149u8, 91u8, 137u8,
+							59u8, 40u8, 39u8, 149u8, 111u8, 212u8, 53u8, 94u8, 218u8, 63u8, 231u8,
+							77u8, 142u8, 33u8, 55u8, 132u8, 196u8, 197u8, 178u8, 208u8, 236u8,
+							193u8, 80u8, 72u8, 86u8, 135u8, 17u8, 182u8, 38u8, 81u8, 73u8, 98u8,
 						],
 					)
 				}
@@ -11915,10 +11937,10 @@ pub mod api {
 							length_bound,
 						},
 						[
-							233u8, 76u8, 92u8, 86u8, 177u8, 202u8, 121u8, 243u8, 73u8, 233u8,
-							173u8, 209u8, 223u8, 208u8, 236u8, 5u8, 167u8, 116u8, 32u8, 241u8,
-							196u8, 70u8, 113u8, 221u8, 16u8, 43u8, 80u8, 21u8, 131u8, 73u8, 158u8,
-							56u8,
+							198u8, 87u8, 116u8, 221u8, 113u8, 19u8, 112u8, 232u8, 174u8, 30u8,
+							89u8, 100u8, 201u8, 230u8, 90u8, 71u8, 51u8, 44u8, 160u8, 176u8, 158u8,
+							121u8, 104u8, 65u8, 123u8, 210u8, 169u8, 136u8, 1u8, 240u8, 234u8,
+							43u8,
 						],
 					)
 				}
@@ -11965,9 +11987,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							188u8, 175u8, 65u8, 66u8, 212u8, 6u8, 98u8, 193u8, 86u8, 227u8, 159u8,
-							185u8, 138u8, 157u8, 69u8, 187u8, 208u8, 123u8, 170u8, 47u8, 37u8,
-							88u8, 60u8, 32u8, 110u8, 133u8, 218u8, 107u8, 74u8, 171u8, 99u8, 193u8,
+							164u8, 216u8, 6u8, 170u8, 87u8, 172u8, 87u8, 143u8, 0u8, 83u8, 116u8,
+							185u8, 238u8, 71u8, 143u8, 46u8, 228u8, 113u8, 246u8, 153u8, 47u8,
+							62u8, 43u8, 130u8, 204u8, 242u8, 218u8, 3u8, 194u8, 26u8, 133u8, 25u8,
 						],
 					)
 				}
@@ -12362,9 +12384,9 @@ pub mod api {
 							_0.borrow(),
 						)],
 						[
-							53u8, 57u8, 110u8, 123u8, 89u8, 10u8, 34u8, 106u8, 81u8, 191u8, 129u8,
-							126u8, 99u8, 228u8, 29u8, 254u8, 221u8, 88u8, 184u8, 126u8, 3u8, 51u8,
-							251u8, 79u8, 74u8, 88u8, 251u8, 240u8, 18u8, 47u8, 249u8, 52u8,
+							245u8, 171u8, 227u8, 191u8, 139u8, 41u8, 19u8, 77u8, 192u8, 167u8,
+							33u8, 207u8, 17u8, 75u8, 248u8, 105u8, 251u8, 217u8, 77u8, 169u8, 47u8,
+							225u8, 226u8, 70u8, 125u8, 67u8, 110u8, 195u8, 227u8, 52u8, 17u8, 99u8,
 						],
 					)
 				}
@@ -12384,9 +12406,9 @@ pub mod api {
 						"ProposalOf",
 						Vec::new(),
 						[
-							53u8, 57u8, 110u8, 123u8, 89u8, 10u8, 34u8, 106u8, 81u8, 191u8, 129u8,
-							126u8, 99u8, 228u8, 29u8, 254u8, 221u8, 88u8, 184u8, 126u8, 3u8, 51u8,
-							251u8, 79u8, 74u8, 88u8, 251u8, 240u8, 18u8, 47u8, 249u8, 52u8,
+							245u8, 171u8, 227u8, 191u8, 139u8, 41u8, 19u8, 77u8, 192u8, 167u8,
+							33u8, 207u8, 17u8, 75u8, 248u8, 105u8, 251u8, 217u8, 77u8, 169u8, 47u8,
+							225u8, 226u8, 70u8, 125u8, 67u8, 110u8, 195u8, 227u8, 52u8, 17u8, 99u8,
 						],
 					)
 				}
@@ -12757,10 +12779,10 @@ pub mod api {
 							length_bound,
 						},
 						[
-							233u8, 76u8, 92u8, 86u8, 177u8, 202u8, 121u8, 243u8, 73u8, 233u8,
-							173u8, 209u8, 223u8, 208u8, 236u8, 5u8, 167u8, 116u8, 32u8, 241u8,
-							196u8, 70u8, 113u8, 221u8, 16u8, 43u8, 80u8, 21u8, 131u8, 73u8, 158u8,
-							56u8,
+							198u8, 87u8, 116u8, 221u8, 113u8, 19u8, 112u8, 232u8, 174u8, 30u8,
+							89u8, 100u8, 201u8, 230u8, 90u8, 71u8, 51u8, 44u8, 160u8, 176u8, 158u8,
+							121u8, 104u8, 65u8, 123u8, 210u8, 169u8, 136u8, 1u8, 240u8, 234u8,
+							43u8,
 						],
 					)
 				}
@@ -12807,9 +12829,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							188u8, 175u8, 65u8, 66u8, 212u8, 6u8, 98u8, 193u8, 86u8, 227u8, 159u8,
-							185u8, 138u8, 157u8, 69u8, 187u8, 208u8, 123u8, 170u8, 47u8, 37u8,
-							88u8, 60u8, 32u8, 110u8, 133u8, 218u8, 107u8, 74u8, 171u8, 99u8, 193u8,
+							164u8, 216u8, 6u8, 170u8, 87u8, 172u8, 87u8, 143u8, 0u8, 83u8, 116u8,
+							185u8, 238u8, 71u8, 143u8, 46u8, 228u8, 113u8, 246u8, 153u8, 47u8,
+							62u8, 43u8, 130u8, 204u8, 242u8, 218u8, 3u8, 194u8, 26u8, 133u8, 25u8,
 						],
 					)
 				}
@@ -13204,9 +13226,9 @@ pub mod api {
 							_0.borrow(),
 						)],
 						[
-							53u8, 57u8, 110u8, 123u8, 89u8, 10u8, 34u8, 106u8, 81u8, 191u8, 129u8,
-							126u8, 99u8, 228u8, 29u8, 254u8, 221u8, 88u8, 184u8, 126u8, 3u8, 51u8,
-							251u8, 79u8, 74u8, 88u8, 251u8, 240u8, 18u8, 47u8, 249u8, 52u8,
+							245u8, 171u8, 227u8, 191u8, 139u8, 41u8, 19u8, 77u8, 192u8, 167u8,
+							33u8, 207u8, 17u8, 75u8, 248u8, 105u8, 251u8, 217u8, 77u8, 169u8, 47u8,
+							225u8, 226u8, 70u8, 125u8, 67u8, 110u8, 195u8, 227u8, 52u8, 17u8, 99u8,
 						],
 					)
 				}
@@ -13226,9 +13248,9 @@ pub mod api {
 						"ProposalOf",
 						Vec::new(),
 						[
-							53u8, 57u8, 110u8, 123u8, 89u8, 10u8, 34u8, 106u8, 81u8, 191u8, 129u8,
-							126u8, 99u8, 228u8, 29u8, 254u8, 221u8, 88u8, 184u8, 126u8, 3u8, 51u8,
-							251u8, 79u8, 74u8, 88u8, 251u8, 240u8, 18u8, 47u8, 249u8, 52u8,
+							245u8, 171u8, 227u8, 191u8, 139u8, 41u8, 19u8, 77u8, 192u8, 167u8,
+							33u8, 207u8, 17u8, 75u8, 248u8, 105u8, 251u8, 217u8, 77u8, 169u8, 47u8,
+							225u8, 226u8, 70u8, 125u8, 67u8, 110u8, 195u8, 227u8, 52u8, 17u8, 99u8,
 						],
 					)
 				}
@@ -15880,10 +15902,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							231u8, 116u8, 41u8, 224u8, 172u8, 59u8, 123u8, 163u8, 152u8, 52u8,
-							128u8, 141u8, 152u8, 160u8, 84u8, 199u8, 233u8, 247u8, 82u8, 119u8,
-							85u8, 3u8, 140u8, 46u8, 200u8, 203u8, 7u8, 29u8, 187u8, 237u8, 147u8,
-							209u8,
+							126u8, 151u8, 82u8, 38u8, 67u8, 149u8, 126u8, 220u8, 107u8, 133u8,
+							149u8, 47u8, 46u8, 28u8, 21u8, 239u8, 253u8, 176u8, 231u8, 124u8,
+							150u8, 127u8, 72u8, 205u8, 234u8, 45u8, 132u8, 32u8, 184u8, 75u8, 31u8,
+							201u8,
 						],
 					)
 				}
@@ -15911,9 +15933,9 @@ pub mod api {
 							weight,
 						},
 						[
-							15u8, 41u8, 247u8, 220u8, 192u8, 137u8, 179u8, 49u8, 74u8, 36u8, 121u8,
-							192u8, 90u8, 112u8, 202u8, 63u8, 253u8, 47u8, 31u8, 92u8, 83u8, 170u8,
-							96u8, 159u8, 144u8, 60u8, 167u8, 235u8, 173u8, 87u8, 251u8, 22u8,
+							74u8, 19u8, 83u8, 84u8, 119u8, 0u8, 69u8, 87u8, 11u8, 156u8, 19u8,
+							235u8, 170u8, 164u8, 5u8, 144u8, 157u8, 170u8, 106u8, 74u8, 18u8,
+							129u8, 250u8, 9u8, 200u8, 52u8, 65u8, 6u8, 213u8, 216u8, 48u8, 174u8,
 						],
 					)
 				}
@@ -15969,9 +15991,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							234u8, 86u8, 153u8, 140u8, 93u8, 81u8, 174u8, 166u8, 158u8, 2u8, 179u8,
-							102u8, 103u8, 143u8, 6u8, 24u8, 55u8, 68u8, 248u8, 85u8, 41u8, 44u8,
-							57u8, 187u8, 252u8, 182u8, 53u8, 52u8, 52u8, 171u8, 186u8, 232u8,
+							15u8, 75u8, 186u8, 43u8, 252u8, 87u8, 185u8, 90u8, 17u8, 202u8, 15u8,
+							237u8, 18u8, 136u8, 172u8, 49u8, 18u8, 0u8, 204u8, 4u8, 222u8, 46u8,
+							177u8, 26u8, 195u8, 241u8, 236u8, 17u8, 154u8, 145u8, 110u8, 83u8,
 						],
 					)
 				}
@@ -16920,9 +16942,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							126u8, 19u8, 167u8, 76u8, 196u8, 168u8, 73u8, 166u8, 241u8, 146u8,
-							80u8, 57u8, 28u8, 12u8, 248u8, 120u8, 189u8, 8u8, 54u8, 229u8, 69u8,
-							72u8, 97u8, 0u8, 14u8, 139u8, 77u8, 156u8, 59u8, 181u8, 65u8, 175u8,
+							132u8, 192u8, 19u8, 192u8, 196u8, 62u8, 208u8, 193u8, 23u8, 227u8,
+							143u8, 95u8, 218u8, 209u8, 189u8, 183u8, 42u8, 34u8, 213u8, 69u8,
+							225u8, 124u8, 11u8, 155u8, 244u8, 82u8, 109u8, 30u8, 182u8, 243u8,
+							190u8, 93u8,
 						],
 					)
 				}
@@ -16969,10 +16992,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							241u8, 46u8, 233u8, 19u8, 110u8, 238u8, 124u8, 98u8, 97u8, 101u8,
-							152u8, 52u8, 10u8, 108u8, 112u8, 240u8, 134u8, 239u8, 180u8, 137u8,
-							145u8, 78u8, 238u8, 56u8, 23u8, 39u8, 12u8, 242u8, 79u8, 230u8, 172u8,
-							95u8,
+							182u8, 139u8, 229u8, 211u8, 254u8, 4u8, 93u8, 96u8, 70u8, 109u8, 196u8,
+							140u8, 140u8, 184u8, 185u8, 8u8, 196u8, 225u8, 105u8, 183u8, 120u8,
+							177u8, 211u8, 40u8, 245u8, 244u8, 71u8, 181u8, 48u8, 74u8, 211u8,
+							123u8,
 						],
 					)
 				}
@@ -17019,10 +17042,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							201u8, 116u8, 134u8, 121u8, 134u8, 227u8, 247u8, 103u8, 124u8, 166u8,
-							133u8, 217u8, 14u8, 241u8, 235u8, 6u8, 146u8, 84u8, 157u8, 49u8, 241u8,
-							68u8, 114u8, 165u8, 135u8, 196u8, 207u8, 82u8, 147u8, 77u8, 137u8,
-							95u8,
+							151u8, 78u8, 57u8, 186u8, 179u8, 254u8, 164u8, 45u8, 196u8, 198u8,
+							144u8, 73u8, 114u8, 8u8, 215u8, 231u8, 83u8, 7u8, 73u8, 139u8, 112u8,
+							213u8, 89u8, 19u8, 47u8, 47u8, 136u8, 128u8, 123u8, 131u8, 98u8, 53u8,
 						],
 					)
 				}
@@ -17054,10 +17076,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							82u8, 123u8, 171u8, 214u8, 235u8, 139u8, 227u8, 228u8, 100u8, 250u8,
-							231u8, 82u8, 67u8, 215u8, 209u8, 223u8, 181u8, 98u8, 254u8, 212u8,
-							142u8, 222u8, 103u8, 74u8, 135u8, 145u8, 186u8, 24u8, 90u8, 209u8,
-							189u8, 218u8,
+							242u8, 198u8, 254u8, 9u8, 255u8, 227u8, 60u8, 103u8, 3u8, 152u8, 103u8,
+							136u8, 162u8, 207u8, 215u8, 105u8, 153u8, 59u8, 77u8, 198u8, 149u8,
+							96u8, 87u8, 4u8, 48u8, 178u8, 146u8, 193u8, 157u8, 127u8, 114u8, 63u8,
 						],
 					)
 				}
@@ -20584,9 +20605,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							131u8, 159u8, 2u8, 113u8, 66u8, 242u8, 23u8, 129u8, 96u8, 122u8, 74u8,
-							94u8, 98u8, 247u8, 19u8, 225u8, 172u8, 0u8, 118u8, 184u8, 37u8, 253u8,
-							0u8, 228u8, 84u8, 175u8, 217u8, 200u8, 15u8, 183u8, 182u8, 19u8,
+							208u8, 9u8, 77u8, 122u8, 185u8, 9u8, 5u8, 118u8, 78u8, 129u8, 88u8,
+							102u8, 37u8, 175u8, 34u8, 188u8, 7u8, 151u8, 240u8, 237u8, 46u8, 86u8,
+							170u8, 103u8, 119u8, 96u8, 163u8, 70u8, 191u8, 88u8, 32u8, 210u8,
 						],
 					)
 				}
@@ -20657,10 +20678,9 @@ pub mod api {
 							max_weight,
 						},
 						[
-							58u8, 179u8, 121u8, 172u8, 203u8, 53u8, 145u8, 233u8, 217u8, 13u8,
-							164u8, 59u8, 131u8, 231u8, 75u8, 202u8, 238u8, 58u8, 151u8, 44u8,
-							117u8, 93u8, 191u8, 135u8, 36u8, 141u8, 215u8, 197u8, 134u8, 166u8,
-							229u8, 189u8,
+							54u8, 186u8, 227u8, 85u8, 68u8, 154u8, 5u8, 230u8, 152u8, 31u8, 170u8,
+							133u8, 186u8, 212u8, 8u8, 252u8, 135u8, 76u8, 235u8, 32u8, 106u8, 50u8,
+							233u8, 91u8, 171u8, 25u8, 4u8, 140u8, 218u8, 44u8, 161u8, 155u8,
 						],
 					)
 				}
@@ -24442,6 +24462,85 @@ pub mod api {
 			}
 		}
 	}
+	pub mod mandate {
+		use super::{root_mod, runtime_types};
+		#[doc = "Contains one variant per dispatchable that can be called by an extrinsic."]
+		pub type Call = runtime_types::pallet_mandate::pallet::Call;
+		pub mod calls {
+			use super::{root_mod, runtime_types};
+			type DispatchError = runtime_types::sp_runtime::DispatchError;
+			pub mod types {
+				use super::runtime_types;
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct Mandate {
+					pub call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
+				}
+				impl ::subxt::blocks::StaticExtrinsic for Mandate {
+					const CALL: &'static str = "mandate";
+					const PALLET: &'static str = "Mandate";
+				}
+			}
+			pub struct TransactionApi;
+			impl TransactionApi {
+				pub fn mandate(
+					&self,
+					call: runtime_types::da_runtime::RuntimeCall,
+				) -> ::subxt::tx::Payload<types::Mandate> {
+					::subxt::tx::Payload::new_static(
+						"Mandate",
+						"mandate",
+						types::Mandate {
+							call: ::std::boxed::Box::new(call),
+						},
+						[
+							107u8, 107u8, 66u8, 52u8, 40u8, 103u8, 189u8, 70u8, 110u8, 233u8, 59u8,
+							238u8, 199u8, 241u8, 196u8, 211u8, 28u8, 36u8, 44u8, 161u8, 222u8,
+							234u8, 164u8, 141u8, 186u8, 179u8, 206u8, 244u8, 12u8, 208u8, 84u8,
+							176u8,
+						],
+					)
+				}
+			}
+		}
+		#[doc = "\n\t\t\tThe [event](https://docs.substrate.io/main-docs/build/events-errors/) emitted\n\t\t\tby this pallet.\n\t\t\t"]
+		pub type Event = runtime_types::pallet_mandate::pallet::Event;
+		pub mod events {
+			use super::runtime_types;
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "A root operation was executed, show result"]
+			pub struct RootOp {
+				pub result: ::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
+			}
+			impl ::subxt::events::StaticEvent for RootOp {
+				const EVENT: &'static str = "RootOp";
+				const PALLET: &'static str = "Mandate";
+			}
+		}
+	}
 	pub mod runtime_types {
 		use super::runtime_types;
 		pub mod avail_core {
@@ -25194,6 +25293,8 @@ pub mod api {
 				NominationPools(runtime_types::pallet_nomination_pools::pallet::Call),
 				#[codec(index = 37)]
 				Identity(runtime_types::pallet_identity::pallet::Call),
+				#[codec(index = 38)]
+				Mandate(runtime_types::pallet_mandate::pallet::Call),
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -25271,6 +25372,8 @@ pub mod api {
 				NominationPools(runtime_types::pallet_nomination_pools::pallet::Event),
 				#[codec(index = 37)]
 				Identity(runtime_types::pallet_identity::pallet::Event),
+				#[codec(index = 38)]
+				Mandate(runtime_types::pallet_mandate::pallet::Event),
 			}
 		}
 		pub mod finality_grandpa {
@@ -30729,6 +30832,54 @@ pub mod api {
 					IndexFrozen {
 						index: ::core::primitive::u32,
 						who: ::subxt::utils::AccountId32,
+					},
+				}
+			}
+		}
+		pub mod pallet_mandate {
+			use super::runtime_types;
+			pub mod pallet {
+				use super::runtime_types;
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "Contains one variant per dispatchable that can be called by an extrinsic."]
+				pub enum Call {
+					#[codec(index = 0)]
+					mandate {
+						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
+					},
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "\n\t\t\tThe [event](https://docs.substrate.io/main-docs/build/events-errors/) emitted\n\t\t\tby this pallet.\n\t\t\t"]
+				pub enum Event {
+					#[codec(index = 0)]
+					#[doc = "A root operation was executed, show result"]
+					RootOp {
+						result:
+							::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
 					},
 				}
 			}
