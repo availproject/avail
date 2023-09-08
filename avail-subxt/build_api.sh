@@ -2,6 +2,7 @@
 echo "⛓ Installing SubXt..."
 cargo install --git https://github.com/paritytech/subxt --tag v0.29.0 subxt-cli || true 
 echo "🔨 Generating Avail-SubXt API from localhost..."
+# TODO: After updating Subxt, verify whether the 'sed' lines can be replaced with the '--attributes-for-type' option.
 subxt codegen \
 	--derive Clone \
 	--derive PartialEq \
@@ -35,6 +36,8 @@ subxt codegen \
 	--derive-for-type avail_core::AppId=derive_more::From \
 	--url http://localhost:9933 \
 	| sed -En "s/pub struct KateCommitment/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
+	| sed -En "s/pub struct HeaderExtension/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
+	| sed -En "s/pub struct DataLookupItem/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
 	| sed -E '1i \#\[allow(clippy::all)]' \
 	| rustfmt --edition=2021 --emit=stdout > src/api_dev.rs
 echo "🎁 Avail-SubXt API generated in 'src/api_dev.rs'"
