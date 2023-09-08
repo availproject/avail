@@ -2,6 +2,7 @@
 echo "⛓ Installing SubXt..."
 cargo install --git https://github.com/paritytech/subxt --tag v0.29.0 subxt-cli || true 
 echo "🔨 Generating Avail-SubXt API from localhost..."
+# TODO: After updating Subxt, verify whether the 'sed' lines can be replaced with the '--attributes-for-type' option.
 subxt codegen \
 	--derive Clone \
 	--derive PartialEq \
