@@ -25,6 +25,7 @@ frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 
 # DA Primitives
+# TODO: Once the companion PR 'substrate/upgrade-v1.0.0' is merged, change reference to tag
 avail-core = { version = "0.5", git="https://github.com/availproject/avail-core", branch = "substrate/upgrade-v1.0.0" }
 kate = { version = "0.8", git="https://github.com/availproject/avail-core", branch = "substrate/upgrade-v1.0.0" }
 kate-recovery = { version = "0.9", git="https://github.com/availproject/avail-core", branch = "substrate/upgrade-v1.0.0" }
@@ -125,6 +126,8 @@ pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch 
 pallet-nomination-pools = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 pallet-election-provider-support-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-identity = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+
 
 ## RPCs
 sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
