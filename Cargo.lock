@@ -617,8 +617,8 @@ dependencies = [
 
 [[package]]
 name = "avail-core"
-version = "0.5.0"
-source = "git+https://github.com/availproject/avail-core?branch=substrate/upgrade-v1.0.0#a185f93b3f98f9b1e653d05a85f4020f756be1e9"
+version = "0.5.1"
+source = "git+https://github.com/availproject/avail-core?branch=substrate/upgrade-v1.0.0#a7e020ca9a9b278f25139decb126d6bd4e60dc8c"
 dependencies = [
  "binary-merkle-tree",
  "derive_more",
@@ -4352,8 +4352,8 @@ dependencies = [
 
 [[package]]
 name = "kate"
-version = "0.8.0"
-source = "git+https://github.com/availproject/avail-core?branch=substrate/upgrade-v1.0.0#a185f93b3f98f9b1e653d05a85f4020f756be1e9"
+version = "0.8.1"
+source = "git+https://github.com/availproject/avail-core?branch=substrate/upgrade-v1.0.0#a7e020ca9a9b278f25139decb126d6bd4e60dc8c"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -4380,8 +4380,8 @@ dependencies = [
 
 [[package]]
 name = "kate-recovery"
-version = "0.9.0"
-source = "git+https://github.com/availproject/avail-core?branch=substrate/upgrade-v1.0.0#a185f93b3f98f9b1e653d05a85f4020f756be1e9"
+version = "0.9.1"
+source = "git+https://github.com/availproject/avail-core?branch=substrate/upgrade-v1.0.0#a7e020ca9a9b278f25139decb126d6bd4e60dc8c"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -5576,8 +5576,8 @@ dependencies = [
 
 [[package]]
 name = "nomad-base"
-version = "0.1.4"
-source = "git+https://github.com/availproject/avail-core?branch=substrate/upgrade-v1.0.0#a185f93b3f98f9b1e653d05a85f4020f756be1e9"
+version = "0.1.5"
+source = "git+https://github.com/availproject/avail-core?branch=substrate/upgrade-v1.0.0#a7e020ca9a9b278f25139decb126d6bd4e60dc8c"
 dependencies = [
  "ethers-signers",
  "nomad-core",
@@ -5592,8 +5592,8 @@ dependencies = [
 
 [[package]]
 name = "nomad-core"
-version = "0.1.4"
-source = "git+https://github.com/availproject/avail-core?branch=substrate/upgrade-v1.0.0#a185f93b3f98f9b1e653d05a85f4020f756be1e9"
+version = "0.1.5"
+source = "git+https://github.com/availproject/avail-core?branch=substrate/upgrade-v1.0.0#a7e020ca9a9b278f25139decb126d6bd4e60dc8c"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -5655,8 +5655,8 @@ dependencies = [
 
 [[package]]
 name = "nomad-merkle"
-version = "0.1.2"
-source = "git+https://github.com/availproject/avail-core?branch=substrate/upgrade-v1.0.0#a185f93b3f98f9b1e653d05a85f4020f756be1e9"
+version = "0.1.3"
+source = "git+https://github.com/availproject/avail-core?branch=substrate/upgrade-v1.0.0#a7e020ca9a9b278f25139decb126d6bd4e60dc8c"
 dependencies = [
  "avail-core",
  "frame-support",
@@ -5673,8 +5673,8 @@ dependencies = [
 
 [[package]]
 name = "nomad-signature"
-version = "0.1.2"
-source = "git+https://github.com/availproject/avail-core?branch=substrate/upgrade-v1.0.0#a185f93b3f98f9b1e653d05a85f4020f756be1e9"
+version = "0.1.3"
+source = "git+https://github.com/availproject/avail-core?branch=substrate/upgrade-v1.0.0#a7e020ca9a9b278f25139decb126d6bd4e60dc8c"
 dependencies = [
  "elliptic-curve 0.12.3",
  "ethers-core",
