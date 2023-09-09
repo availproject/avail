@@ -100,7 +100,8 @@ mod scheduler {
 		use super::*;
 		use crate::Runtime;
 
-		const CORRUPTED_AGENDAS: [u32; 4] = [38_674, 86_664, 124_473, 128_931];
+		// This `436_320` should get executed, if not migration should not happen, if it is, then this can safely be ignored
+		const CORRUPTED_AGENDAS: [u32; 5] = [38_674, 86_664, 124_473, 128_931, 436_320];
 
 		#[cfg(feature = "try-runtime")]
 		pub fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
