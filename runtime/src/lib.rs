@@ -24,6 +24,8 @@
 #![feature(result_option_inspect)]
 #![allow(macro_expanded_macro_exports_accessed_by_absolute_paths)]
 
+mod weights;
+
 use codec::Decode;
 use frame_election_provider_support::{
 	onchain, BalancingConfig, ElectionDataProvider, SequentialPhragmen, VoteWeight,
@@ -959,6 +961,48 @@ impl nomad_da_bridge::Config for Runtime {
 	type WeightInfo = nomad_da_bridge::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub const BasicDeposit: Balance = 10 * AVL;
+	pub const FieldDeposit: Balance = 250 * CENTS;
+	pub const SubAccountDeposit: Balance = 2 * AVL;
+	pub const MaxSubAccounts: u32 = 100;
+	pub const MaxAdditionalFields: u32 = 100;
+	pub const MaxRegistrars: u32 = 20;
+}
+
+impl pallet_identity::Config for Runtime {
+	/// The amount held on deposit for a registered identity.
+	type BasicDeposit = BasicDeposit;
+	type Currency = Balances;
+	/// The amount held on deposit per additional field for a registered identity
+	type FieldDeposit = FieldDeposit;
+	/// The origin which may forcibly set or remove a name. Root can always do this.
+	type ForceOrigin = EnsureRootOrHalfCouncil;
+	/// Maximum number of additional fields that may be stored in an ID.
+	type MaxAdditionalFields = MaxAdditionalFields;
+	/// Maxmimum number of registrars allowed in the system.
+	type MaxRegistrars = MaxRegistrars;
+	/// The maximum number of sub-accounts allowed per identified account.
+	type MaxSubAccounts = MaxSubAccounts;
+	/// The origin which may add or remove registrars. Root can always do this.
+	type RegistrarOrigin = EnsureRootOrHalfCouncil;
+	type RuntimeEvent = RuntimeEvent;
+	type Slashed = Treasury;
+	/// The amount held on deposit for a registered subaccount.
+	type SubAccountDeposit = SubAccountDeposit;
+	type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_mandate::Config for Runtime {
+	type ApprovedOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 1, 2>,
+	>;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = weights::pallet_mandate::WeightInfo<Runtime>;
+}
+
 // TODO @miguel Aline this with previous order and ID to keep the compatibility.
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -1009,6 +1053,8 @@ construct_runtime!(
 		Multisig: pallet_multisig = 34,
 		VoterList: pallet_bags_list::<Instance1> = 35,
 		NominationPools: pallet_nomination_pools = 36,
+		Identity: pallet_identity = 37,
+		Mandate: pallet_mandate = 38,
 	}
 );
 
@@ -1054,6 +1100,8 @@ mod benches {
 		[da_control, $crate::DataAvailability]
 		[nomad_home, $crate::NomadHome]
 		[nomad_da_bridge, $crate::NomadDABridge]
+		[pallet_identity, $crate::Identity]
+		[pallet_mandate, $crate::Mandate]
 	);
 }
 
@@ -1130,6 +1178,8 @@ mod tests {
 		<pallet_bags_list::Pallet<Runtime, pallet_bags_list::Instance1> as TryState<
 			BlockNumber,
 		>>::try_state(block, All)?;
+		<pallet_identity::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_mandate::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_nomination_pools::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)
 	}
 

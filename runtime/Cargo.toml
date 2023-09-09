@@ -56,7 +56,7 @@ sp-std = { version = "8.0.0", default-features = false }
 ## frame dependencies
 frame-support = { version = "4.0.0-dev", default-features = false }
 frame-system = { path = "../pallets/system", default-features = false, features = ["serde"] }
-frame-executive = { version = "4.0.0-dev", default-features = false }
+frame-executive = { path = "../pallets/executive", default-features = false }
 frame-try-runtime = { version = "0.10.0-dev", default-features = false, optional = true }
 
 pallet-balances = { version = "4.0.0-dev", default-features = false }
@@ -90,6 +90,9 @@ pallet-multisig = { version = "4.0.0-dev", default-features = false }
 pallet-child-bounties = { version = "4.0.0-dev", default-features = false }
 pallet-preimage = { version = "4.0.0-dev", default-features = false }
 pallet-nomination-pools = { version = "1", default-features = false }
+pallet-identity = { version = "4.0.0-dev", default-features = false }
+
+pallet-mandate = { path = "../pallets/mandate", default-features = false }
 
 ## RPCs
 pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", default-features = false }
@@ -178,11 +181,14 @@ std = [
 	"sp-consensus-grandpa/std",
 	"sp-io/std",
 	"pallet-child-bounties/std",
+	"pallet-identity/std",
+
 	"da-control/std",
 	"kate/std",
 	"nomad-updater-manager/std",
 	"nomad-home/std",
 	"nomad-da-bridge/std",
+	"pallet-mandate/std",
 	"sp-npos-elections/std"
 ]
 
@@ -219,6 +225,8 @@ runtime-benchmarks = [
 	"pallet-treasury/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
+	"pallet-identity/runtime-benchmarks",
+	"pallet-mandate/runtime-benchmarks",
 	"nomad-updater-manager/runtime-benchmarks"
 ]
 
@@ -259,6 +267,8 @@ try-runtime = [
 	"pallet-nomination-pools/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-tips/try-runtime",
+	"pallet-identity/try-runtime",
 	"avail-core/try-runtime",
+	"pallet-mandate/try-runtime",
 	"sp-runtime/try-runtime",
 ]
