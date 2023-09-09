@@ -8,6 +8,7 @@ use crate::{v2::KateCommitment, DataLookup};
 
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, TypeInfo, Encode, Decode, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct HeaderExtension {
 	pub commitment: KateCommitment,
 	pub app_lookup: DataLookup,

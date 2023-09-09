@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Copy, Clone, Encode, Decode, TypeInfo, Constructor, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct DataLookupItem {
 	pub app_id: AppId,
 	#[codec(compact)]

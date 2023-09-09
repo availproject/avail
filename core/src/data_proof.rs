@@ -9,6 +9,7 @@ use thiserror_no_std::Error;
 /// Wrapper of `binary-merkle-tree::MerkleProof` with codec support.
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct DataProof {
 	/// Root hash of generated merkle tree.
 	pub root: H256,
