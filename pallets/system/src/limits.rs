@@ -43,8 +43,7 @@ use sp_std::vec::Vec;
 use static_assertions::const_assert;
 
 /// Block length limit configuration.
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
 #[derive(RuntimeDebug, PartialEq, Clone, PassByCodec, MaxEncodedLen)]
 pub struct BlockLength {
 	/// Maximal total length in bytes for each extrinsic class.

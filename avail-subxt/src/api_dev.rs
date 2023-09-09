@@ -23585,7 +23585,6 @@ pub mod api {
 					#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 					#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 					#[serde(rename_all = "camelCase")]
-					#[serde(rename_all = "camelCase")]
 					pub struct DataLookupItem {
 						pub app_id: runtime_types::avail_core::AppId,
 						#[codec(compact)]
@@ -23615,7 +23614,6 @@ pub mod api {
 						# [codec (crate = :: subxt :: ext :: codec)]
 						#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 						#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-						#[serde(rename_all = "camelCase")]
 						#[serde(rename_all = "camelCase")]
 						pub struct HeaderExtension {
 							pub commitment:
