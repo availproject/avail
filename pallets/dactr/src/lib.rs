@@ -177,14 +177,10 @@ pub mod pallet {
 		#[pallet::call_index(3)]
 		// 100_000 micro_second weight for each tx
 		#[pallet::weight(100_000_000)]
-		pub fn submit_dummy_data(
-			origin: OriginFor<T>,
-			_data: AppDataFor<T>,
-		) -> DispatchResult {
+		pub fn submit_dummy_data(origin: OriginFor<T>, _data: AppDataFor<T>) -> DispatchResult {
 			let _who = ensure_signed(origin)?;
 			Ok(())
 		}
-
 	}
 
 	/// Event for the pallet.

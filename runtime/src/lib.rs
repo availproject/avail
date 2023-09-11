@@ -379,7 +379,7 @@ pub const PICO: Balance = 1_000_000;
 pub const NANO: Balance = 1_000_000_000;
 
 parameter_types! {
-	pub const WeightFee: Balance = PICO; 
+	pub const WeightFee: Balance = PICO;
 	pub const TransactionByteFee: Balance = 100 * NANO; // 0.0000001 AVL
 	pub const OperationalFeeMultiplier: u8 = 5u8;
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
