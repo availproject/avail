@@ -710,13 +710,13 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "sp-arithmetic 6.0.0",
- "sp-core 7.0.0",
- "sp-io 7.0.0",
+ "sp-arithmetic 16.0.0",
+ "sp-core 21.0.0",
+ "sp-io 23.0.0",
  "sp-runtime 7.0.0",
  "sp-runtime-interface 7.0.0",
- "sp-std 5.0.0",
- "sp-trie 7.0.0",
+ "sp-std 8.0.0",
+ "sp-trie 22.0.0",
  "static_assertions",
  "thiserror-no-std",
 ]
@@ -4369,8 +4369,8 @@ dependencies = [
  "rayon",
  "serde",
  "serde_json",
- "sp-arithmetic 6.0.0",
- "sp-core 7.0.0",
+ "sp-arithmetic 16.0.0",
+ "sp-core 21.0.0",
  "static_assertions",
  "thiserror-no-std",
 ]
@@ -4389,8 +4389,8 @@ dependencies = [
  "rand 0.8.5",
  "rand_chacha 0.3.1",
  "serde",
- "sp-arithmetic 6.0.0",
- "sp-std 5.0.0",
+ "sp-arithmetic 16.0.0",
+ "sp-std 8.0.0",
  "static_assertions",
  "thiserror-no-std",
 ]
@@ -5671,7 +5671,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "sp-core 7.0.0",
+ "sp-core 21.0.0",
  "sp-runtime 7.0.0",
 ]
 
@@ -5687,9 +5687,9 @@ dependencies = [
  "primitive-types",
  "scale-info",
  "serde",
- "sp-core 7.0.0",
+ "sp-core 21.0.0",
  "sp-runtime 7.0.0",
- "sp-std 5.0.0",
+ "sp-std 8.0.0",
  "tiny-keccak",
 ]
 
@@ -5750,7 +5750,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "sp-core 7.0.0",
+ "sp-core 21.0.0",
  "static_assertions",
  "thiserror-no-std",
  "tiny-keccak",
@@ -5770,7 +5770,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "sp-core 7.0.0",
+ "sp-core 21.0.0",
  "sp-runtime 7.0.0",
  "thiserror-no-std",
  "tiny-keccak",
@@ -7083,9 +7083,9 @@ dependencies = [
 
 [[package]]
 name = "portable-atomic"
-version = "1.4.2"
+version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f32154ba0af3a075eefa1eda8bb414ee928f62303a54ea85b8d6638ff1a6ee9e"
+checksum = "31114a898e107c51bb1609ffaf55a0e011cf6a4d7f1170d0015a165082c0338b"
 
 [[package]]
 name = "ppv-lite86"

@@ -44,7 +44,6 @@ nomad-signature = { version = "0.1", git="https://github.com/availproject/avail-
 nomad-merkle = { version = "0.1", git="https://github.com/availproject/avail-core", rev = "6ef03178444b727ce849a9ac213adca4072237ff" }
 nomad-base = { version = "0.1", git="https://github.com/availproject/avail-core", rev = "6ef03178444b727ce849a9ac213adca4072237ff" }
 nomad-core = { version = "0.1", git="https://github.com/availproject/avail-core", rev = "6ef03178444b727ce849a9ac213adca4072237ff" }
->>>>>>> e4dfbcb (Switch commitment gen to new api)
 
 # Other stuff
 uint = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }
