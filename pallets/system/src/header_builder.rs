@@ -1,5 +1,3 @@
-#[cfg(feature = "std")]
-use avail_core::DataLookup;
 use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic};
 use frame_support::traits::Randomness;
 pub use kate::{
@@ -158,7 +156,7 @@ pub fn build_extension<M: Metrics>(
 	let rows = grid.dims().rows().get();
 	let cols = grid.dims().cols().get();
 
-	let mut app_lookup = grid.lookup().clone();
+	let app_lookup = grid.lookup().clone();
 	// **NOTE:** Header extension V2 is not yet enable by default.
 	if cfg!(feature = "header_extension_v2") {
 		use avail_core::kate_commitment::v2::KateCommitment;
