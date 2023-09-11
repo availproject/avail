@@ -175,7 +175,8 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(3)]
-		#[pallet::weight(1_000_000_000_000)]
+		// 100_000 micro_second weight for each tx
+		#[pallet::weight(100_000_000)]
 		pub fn submit_dummy_data(
 			origin: OriginFor<T>,
 			_data: AppDataFor<T>,

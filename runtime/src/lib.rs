@@ -374,11 +374,16 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
 
+// TODO: Move to constants
+pub const PICO: Balance = 1_000_000;
+pub const NANO: Balance = 1_000_000_000;
+
 parameter_types! {
-	pub const TransactionByteFee: Balance = 10 * MILLICENTS;
+	pub const WeightFee: Balance = PICO; 
+	pub const TransactionByteFee: Balance = 100 * NANO; // 0.0000001 AVL
 	pub const OperationalFeeMultiplier: u8 = 5u8;
-	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(10);
-	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(65, 1_000);
+	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
+	pub AdjustmentVariable: Multiplier = 0u128.into(); // Temp: to set weight mutiplier to 1
 	pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
 	pub MaximumMultiplier: Multiplier = Bounded::max_value();
 }
@@ -395,7 +400,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = CurrencyAdapter<Balances, DealWithFees>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightToFee = IdentityFee<Balance>;
+	type WeightToFee = ConstantMultiplier<Balance, WeightFee>; // 1 weight = 1 PICO AVL
 }
 
 parameter_types! {
