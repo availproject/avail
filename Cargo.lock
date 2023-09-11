@@ -743,8 +743,8 @@ dependencies = [
  "serde",
  "serde-hex",
  "serde_json",
- "sp-core 7.0.0",
- "sp-keyring",
+ "sp-core 21.0.0",
+ "sp-keyring 24.0.0",
  "structopt",
  "subxt",
  "test-case",
@@ -2038,7 +2038,7 @@ dependencies = [
  "sp-core 7.0.0",
  "sp-inherents",
  "sp-io 7.0.0",
- "sp-keyring",
+ "sp-keyring 7.0.0",
  "sp-npos-elections",
  "sp-offchain",
  "sp-runtime 7.0.0",
@@ -2196,7 +2196,7 @@ dependencies = [
  "sp-finality-grandpa",
  "sp-inherents",
  "sp-io 7.0.0",
- "sp-keyring",
+ "sp-keyring 7.0.0",
  "sp-keystore 0.13.0",
  "sp-rpc",
  "sp-runtime 7.0.0",
@@ -6320,7 +6320,7 @@ dependencies = [
  "scale-info",
  "sp-core 7.0.0",
  "sp-io 7.0.0",
- "sp-keyring",
+ "sp-keyring 7.0.0",
  "sp-runtime 7.0.0",
  "sp-std 5.0.0",
 ]
@@ -8109,7 +8109,7 @@ dependencies = [
  "serde_json",
  "sp-blockchain",
  "sp-core 7.0.0",
- "sp-keyring",
+ "sp-keyring 7.0.0",
  "sp-keystore 0.13.0",
  "sp-panic-handler 5.0.0",
  "sp-runtime 7.0.0",
@@ -10081,6 +10081,18 @@ dependencies = [
  "lazy_static",
  "sp-core 7.0.0",
  "sp-runtime 7.0.0",
+ "strum",
+]
+
+[[package]]
+name = "sp-keyring"
+version = "24.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4673405248580504a8bc4e09615ab25ccb182dfaccd27e000fda9dcb2ca1dab1"
+dependencies = [
+ "lazy_static",
+ "sp-core 21.0.0",
+ "sp-runtime 24.0.0",
  "strum",
 ]
 
