@@ -29,7 +29,9 @@ use crate::{Bounties, NominationPools, Runtime, Weight};
 
 struct NominationPoolsMigrationV4OldPallet;
 impl Get<Perbill> for NominationPoolsMigrationV4OldPallet {
-	fn get() -> Perbill { Perbill::zero() }
+	fn get() -> Perbill {
+		Perbill::zero()
+	}
 }
 
 /// Implements `OnRuntimeUpgrade` trait.
@@ -211,7 +213,9 @@ mod nomination_pools {
 		pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
 		#[cfg(feature = "try-runtime")]
-		pub(crate) fn pre_upgrade() -> Result<Vec<u8>, &'static str> { Ok(sp_std::vec![]) }
+		pub(crate) fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+			Ok(sp_std::vec![])
+		}
 
 		#[cfg(feature = "try-runtime")]
 		pub(crate) fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {

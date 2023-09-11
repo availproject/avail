@@ -38,7 +38,9 @@ pub struct CheckMortality<T: Config + Send + Sync>(pub Era, sp_std::marker::Phan
 
 impl<T: Config + Send + Sync> CheckMortality<T> {
 	/// utility constructor. Used only in client/factory code.
-	pub fn from(era: Era) -> Self { Self(era, sp_std::marker::PhantomData) }
+	pub fn from(era: Era) -> Self {
+		Self(era, sp_std::marker::PhantomData)
+	}
 }
 
 impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckMortality<T> {
@@ -48,7 +50,9 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckMortality<T> {
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result { Ok(()) }
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
 }
 
 impl<T: Config + Send + Sync> SignedExtension for CheckMortality<T> {

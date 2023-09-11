@@ -100,7 +100,9 @@ pub(crate) fn make_technical_committee_config(members: Vec<AccountId>) -> Techni
 }
 
 /// Uses `key` as `sudo` key.
-pub(crate) fn make_sudo_config(key: AccountId) -> SudoConfig { SudoConfig { key: Some(key) } }
+pub(crate) fn make_sudo_config(key: AccountId) -> SudoConfig {
+	SudoConfig { key: Some(key) }
+}
 
 const INIT_APP_IDS: [&str; 3] = ["Data Avail", "Ethereum", "Polygon"];
 

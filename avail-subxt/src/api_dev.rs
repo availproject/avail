@@ -919,10 +919,18 @@ pub mod api {
 			.into())
 		}
 	}
-	pub fn constants() -> ConstantsApi { ConstantsApi }
-	pub fn storage() -> StorageApi { StorageApi }
-	pub fn tx() -> TransactionApi { TransactionApi }
-	pub fn apis() -> runtime_apis::RuntimeApi { runtime_apis::RuntimeApi }
+	pub fn constants() -> ConstantsApi {
+		ConstantsApi
+	}
+	pub fn storage() -> StorageApi {
+		StorageApi
+	}
+	pub fn tx() -> TransactionApi {
+		TransactionApi
+	}
+	pub fn apis() -> runtime_apis::RuntimeApi {
+		runtime_apis::RuntimeApi
+	}
 	pub mod runtime_apis {
 		use ::subxt::ext::codec::Encode;
 
@@ -932,13 +940,17 @@ pub mod api {
 	}
 	pub struct ConstantsApi;
 	impl ConstantsApi {
-		pub fn system(&self) -> system::constants::ConstantsApi { system::constants::ConstantsApi }
+		pub fn system(&self) -> system::constants::ConstantsApi {
+			system::constants::ConstantsApi
+		}
 
 		pub fn utility(&self) -> utility::constants::ConstantsApi {
 			utility::constants::ConstantsApi
 		}
 
-		pub fn babe(&self) -> babe::constants::ConstantsApi { babe::constants::ConstantsApi }
+		pub fn babe(&self) -> babe::constants::ConstantsApi {
+			babe::constants::ConstantsApi
+		}
 
 		pub fn timestamp(&self) -> timestamp::constants::ConstantsApi {
 			timestamp::constants::ConstantsApi
@@ -1002,7 +1014,9 @@ pub mod api {
 			bounties::constants::ConstantsApi
 		}
 
-		pub fn tips(&self) -> tips::constants::ConstantsApi { tips::constants::ConstantsApi }
+		pub fn tips(&self) -> tips::constants::ConstantsApi {
+			tips::constants::ConstantsApi
+		}
 
 		pub fn data_availability(&self) -> data_availability::constants::ConstantsApi {
 			data_availability::constants::ConstantsApi
@@ -1034,19 +1048,29 @@ pub mod api {
 	}
 	pub struct StorageApi;
 	impl StorageApi {
-		pub fn system(&self) -> system::storage::StorageApi { system::storage::StorageApi }
+		pub fn system(&self) -> system::storage::StorageApi {
+			system::storage::StorageApi
+		}
 
-		pub fn babe(&self) -> babe::storage::StorageApi { babe::storage::StorageApi }
+		pub fn babe(&self) -> babe::storage::StorageApi {
+			babe::storage::StorageApi
+		}
 
-		pub fn timestamp(&self) -> timestamp::storage::StorageApi { timestamp::storage::StorageApi }
+		pub fn timestamp(&self) -> timestamp::storage::StorageApi {
+			timestamp::storage::StorageApi
+		}
 
 		pub fn authorship(&self) -> authorship::storage::StorageApi {
 			authorship::storage::StorageApi
 		}
 
-		pub fn indices(&self) -> indices::storage::StorageApi { indices::storage::StorageApi }
+		pub fn indices(&self) -> indices::storage::StorageApi {
+			indices::storage::StorageApi
+		}
 
-		pub fn balances(&self) -> balances::storage::StorageApi { balances::storage::StorageApi }
+		pub fn balances(&self) -> balances::storage::StorageApi {
+			balances::storage::StorageApi
+		}
 
 		pub fn transaction_payment(&self) -> transaction_payment::storage::StorageApi {
 			transaction_payment::storage::StorageApi
@@ -1058,49 +1082,77 @@ pub mod api {
 			election_provider_multi_phase::storage::StorageApi
 		}
 
-		pub fn staking(&self) -> staking::storage::StorageApi { staking::storage::StorageApi }
+		pub fn staking(&self) -> staking::storage::StorageApi {
+			staking::storage::StorageApi
+		}
 
-		pub fn session(&self) -> session::storage::StorageApi { session::storage::StorageApi }
+		pub fn session(&self) -> session::storage::StorageApi {
+			session::storage::StorageApi
+		}
 
-		pub fn democracy(&self) -> democracy::storage::StorageApi { democracy::storage::StorageApi }
+		pub fn democracy(&self) -> democracy::storage::StorageApi {
+			democracy::storage::StorageApi
+		}
 
-		pub fn council(&self) -> council::storage::StorageApi { council::storage::StorageApi }
+		pub fn council(&self) -> council::storage::StorageApi {
+			council::storage::StorageApi
+		}
 
 		pub fn technical_committee(&self) -> technical_committee::storage::StorageApi {
 			technical_committee::storage::StorageApi
 		}
 
-		pub fn elections(&self) -> elections::storage::StorageApi { elections::storage::StorageApi }
+		pub fn elections(&self) -> elections::storage::StorageApi {
+			elections::storage::StorageApi
+		}
 
 		pub fn technical_membership(&self) -> technical_membership::storage::StorageApi {
 			technical_membership::storage::StorageApi
 		}
 
-		pub fn grandpa(&self) -> grandpa::storage::StorageApi { grandpa::storage::StorageApi }
+		pub fn grandpa(&self) -> grandpa::storage::StorageApi {
+			grandpa::storage::StorageApi
+		}
 
-		pub fn treasury(&self) -> treasury::storage::StorageApi { treasury::storage::StorageApi }
+		pub fn treasury(&self) -> treasury::storage::StorageApi {
+			treasury::storage::StorageApi
+		}
 
-		pub fn sudo(&self) -> sudo::storage::StorageApi { sudo::storage::StorageApi }
+		pub fn sudo(&self) -> sudo::storage::StorageApi {
+			sudo::storage::StorageApi
+		}
 
-		pub fn im_online(&self) -> im_online::storage::StorageApi { im_online::storage::StorageApi }
+		pub fn im_online(&self) -> im_online::storage::StorageApi {
+			im_online::storage::StorageApi
+		}
 
 		pub fn authority_discovery(&self) -> authority_discovery::storage::StorageApi {
 			authority_discovery::storage::StorageApi
 		}
 
-		pub fn offences(&self) -> offences::storage::StorageApi { offences::storage::StorageApi }
+		pub fn offences(&self) -> offences::storage::StorageApi {
+			offences::storage::StorageApi
+		}
 
 		pub fn historical(&self) -> historical::storage::StorageApi {
 			historical::storage::StorageApi
 		}
 
-		pub fn scheduler(&self) -> scheduler::storage::StorageApi { scheduler::storage::StorageApi }
+		pub fn scheduler(&self) -> scheduler::storage::StorageApi {
+			scheduler::storage::StorageApi
+		}
 
-		pub fn bounties(&self) -> bounties::storage::StorageApi { bounties::storage::StorageApi }
+		pub fn bounties(&self) -> bounties::storage::StorageApi {
+			bounties::storage::StorageApi
+		}
 
-		pub fn tips(&self) -> tips::storage::StorageApi { tips::storage::StorageApi }
+		pub fn tips(&self) -> tips::storage::StorageApi {
+			tips::storage::StorageApi
+		}
 
-		pub fn mmr(&self) -> mmr::storage::StorageApi { mmr::storage::StorageApi }
+		pub fn mmr(&self) -> mmr::storage::StorageApi {
+			mmr::storage::StorageApi
+		}
 
 		pub fn data_availability(&self) -> data_availability::storage::StorageApi {
 			data_availability::storage::StorageApi
@@ -1114,9 +1166,13 @@ pub mod api {
 			nomad_home::storage::StorageApi
 		}
 
-		pub fn preimage(&self) -> preimage::storage::StorageApi { preimage::storage::StorageApi }
+		pub fn preimage(&self) -> preimage::storage::StorageApi {
+			preimage::storage::StorageApi
+		}
 
-		pub fn multisig(&self) -> multisig::storage::StorageApi { multisig::storage::StorageApi }
+		pub fn multisig(&self) -> multisig::storage::StorageApi {
+			multisig::storage::StorageApi
+		}
 
 		pub fn voter_list(&self) -> voter_list::storage::StorageApi {
 			voter_list::storage::StorageApi
@@ -1126,21 +1182,31 @@ pub mod api {
 			nomination_pools::storage::StorageApi
 		}
 
-		pub fn identity(&self) -> identity::storage::StorageApi { identity::storage::StorageApi }
+		pub fn identity(&self) -> identity::storage::StorageApi {
+			identity::storage::StorageApi
+		}
 	}
 	pub struct TransactionApi;
 	impl TransactionApi {
-		pub fn system(&self) -> system::calls::TransactionApi { system::calls::TransactionApi }
+		pub fn system(&self) -> system::calls::TransactionApi {
+			system::calls::TransactionApi
+		}
 
-		pub fn utility(&self) -> utility::calls::TransactionApi { utility::calls::TransactionApi }
+		pub fn utility(&self) -> utility::calls::TransactionApi {
+			utility::calls::TransactionApi
+		}
 
-		pub fn babe(&self) -> babe::calls::TransactionApi { babe::calls::TransactionApi }
+		pub fn babe(&self) -> babe::calls::TransactionApi {
+			babe::calls::TransactionApi
+		}
 
 		pub fn timestamp(&self) -> timestamp::calls::TransactionApi {
 			timestamp::calls::TransactionApi
 		}
 
-		pub fn indices(&self) -> indices::calls::TransactionApi { indices::calls::TransactionApi }
+		pub fn indices(&self) -> indices::calls::TransactionApi {
+			indices::calls::TransactionApi
+		}
 
 		pub fn balances(&self) -> balances::calls::TransactionApi {
 			balances::calls::TransactionApi
@@ -1152,15 +1218,21 @@ pub mod api {
 			election_provider_multi_phase::calls::TransactionApi
 		}
 
-		pub fn staking(&self) -> staking::calls::TransactionApi { staking::calls::TransactionApi }
+		pub fn staking(&self) -> staking::calls::TransactionApi {
+			staking::calls::TransactionApi
+		}
 
-		pub fn session(&self) -> session::calls::TransactionApi { session::calls::TransactionApi }
+		pub fn session(&self) -> session::calls::TransactionApi {
+			session::calls::TransactionApi
+		}
 
 		pub fn democracy(&self) -> democracy::calls::TransactionApi {
 			democracy::calls::TransactionApi
 		}
 
-		pub fn council(&self) -> council::calls::TransactionApi { council::calls::TransactionApi }
+		pub fn council(&self) -> council::calls::TransactionApi {
+			council::calls::TransactionApi
+		}
 
 		pub fn technical_committee(&self) -> technical_committee::calls::TransactionApi {
 			technical_committee::calls::TransactionApi
@@ -1174,13 +1246,17 @@ pub mod api {
 			technical_membership::calls::TransactionApi
 		}
 
-		pub fn grandpa(&self) -> grandpa::calls::TransactionApi { grandpa::calls::TransactionApi }
+		pub fn grandpa(&self) -> grandpa::calls::TransactionApi {
+			grandpa::calls::TransactionApi
+		}
 
 		pub fn treasury(&self) -> treasury::calls::TransactionApi {
 			treasury::calls::TransactionApi
 		}
 
-		pub fn sudo(&self) -> sudo::calls::TransactionApi { sudo::calls::TransactionApi }
+		pub fn sudo(&self) -> sudo::calls::TransactionApi {
+			sudo::calls::TransactionApi
+		}
 
 		pub fn im_online(&self) -> im_online::calls::TransactionApi {
 			im_online::calls::TransactionApi
@@ -1194,7 +1270,9 @@ pub mod api {
 			bounties::calls::TransactionApi
 		}
 
-		pub fn tips(&self) -> tips::calls::TransactionApi { tips::calls::TransactionApi }
+		pub fn tips(&self) -> tips::calls::TransactionApi {
+			tips::calls::TransactionApi
+		}
 
 		pub fn data_availability(&self) -> data_availability::calls::TransactionApi {
 			data_availability::calls::TransactionApi
@@ -1232,7 +1310,9 @@ pub mod api {
 			identity::calls::TransactionApi
 		}
 
-		pub fn mandate(&self) -> mandate::calls::TransactionApi { mandate::calls::TransactionApi }
+		pub fn mandate(&self) -> mandate::calls::TransactionApi {
+			mandate::calls::TransactionApi
+		}
 	}
 	#[doc = r" check whether the Client you are using is aligned with the statically generated codegen."]
 	pub fn validate_codegen<T: ::subxt::Config, C: ::subxt::client::OfflineClientT<T>>(
@@ -1965,11 +2045,16 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("System", "Number", vec![], [
-						30u8, 194u8, 177u8, 90u8, 194u8, 232u8, 46u8, 180u8, 85u8, 129u8, 14u8,
-						9u8, 8u8, 8u8, 23u8, 95u8, 230u8, 5u8, 13u8, 105u8, 125u8, 2u8, 22u8,
-						200u8, 78u8, 93u8, 115u8, 28u8, 150u8, 113u8, 48u8, 53u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"System",
+						"Number",
+						vec![],
+						[
+							30u8, 194u8, 177u8, 90u8, 194u8, 232u8, 46u8, 180u8, 85u8, 129u8, 14u8,
+							9u8, 8u8, 8u8, 23u8, 95u8, 230u8, 5u8, 13u8, 105u8, 125u8, 2u8, 22u8,
+							200u8, 78u8, 93u8, 115u8, 28u8, 150u8, 113u8, 48u8, 53u8,
+						],
+					)
 				}
 
 				#[doc = " Hash of the previous block."]
@@ -2004,11 +2089,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("System", "Digest", vec![], [
-						70u8, 156u8, 127u8, 89u8, 115u8, 250u8, 103u8, 62u8, 185u8, 153u8, 26u8,
-						72u8, 39u8, 226u8, 181u8, 97u8, 137u8, 225u8, 45u8, 158u8, 212u8, 254u8,
-						142u8, 136u8, 90u8, 22u8, 243u8, 125u8, 226u8, 49u8, 235u8, 215u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"System",
+						"Digest",
+						vec![],
+						[
+							70u8, 156u8, 127u8, 89u8, 115u8, 250u8, 103u8, 62u8, 185u8, 153u8,
+							26u8, 72u8, 39u8, 226u8, 181u8, 97u8, 137u8, 225u8, 45u8, 158u8, 212u8,
+							254u8, 142u8, 136u8, 90u8, 22u8, 243u8, 125u8, 226u8, 49u8, 235u8,
+							215u8,
+						],
+					)
 				}
 
 				#[doc = " Events deposited for the current block."]
@@ -2032,11 +2123,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("System", "Events", vec![], [
-						135u8, 70u8, 188u8, 138u8, 189u8, 89u8, 46u8, 4u8, 225u8, 244u8, 212u8,
-						189u8, 221u8, 105u8, 161u8, 239u8, 176u8, 2u8, 188u8, 39u8, 88u8, 209u8,
-						24u8, 183u8, 165u8, 251u8, 104u8, 239u8, 253u8, 88u8, 150u8, 34u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"System",
+						"Events",
+						vec![],
+						[
+							135u8, 70u8, 188u8, 138u8, 189u8, 89u8, 46u8, 4u8, 225u8, 244u8, 212u8,
+							189u8, 221u8, 105u8, 161u8, 239u8, 176u8, 2u8, 188u8, 39u8, 88u8,
+							209u8, 24u8, 183u8, 165u8, 251u8, 104u8, 239u8, 253u8, 88u8, 150u8,
+							34u8,
+						],
+					)
 				}
 
 				#[doc = " The number of events in the `Events<T>` list."]
@@ -2249,55 +2346,77 @@ pub mod api {
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::frame_system::limits::BlockWeights>
 				{
-					::subxt::constants::Address::new_static("System", "BlockWeights", [
-						238u8, 20u8, 221u8, 11u8, 146u8, 236u8, 47u8, 103u8, 8u8, 239u8, 13u8,
-						176u8, 202u8, 10u8, 151u8, 68u8, 110u8, 162u8, 99u8, 40u8, 211u8, 136u8,
-						71u8, 82u8, 50u8, 80u8, 244u8, 211u8, 231u8, 198u8, 36u8, 152u8,
-					])
+					::subxt::constants::Address::new_static(
+						"System",
+						"BlockWeights",
+						[
+							238u8, 20u8, 221u8, 11u8, 146u8, 236u8, 47u8, 103u8, 8u8, 239u8, 13u8,
+							176u8, 202u8, 10u8, 151u8, 68u8, 110u8, 162u8, 99u8, 40u8, 211u8,
+							136u8, 71u8, 82u8, 50u8, 80u8, 244u8, 211u8, 231u8, 198u8, 36u8, 152u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum length of a block (in bytes)."]
 				pub fn block_length(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::frame_system::limits::BlockLength> {
-					::subxt::constants::Address::new_static("System", "BlockLength", [
-						166u8, 7u8, 126u8, 154u8, 133u8, 31u8, 100u8, 149u8, 118u8, 168u8, 1u8,
-						21u8, 202u8, 114u8, 104u8, 193u8, 44u8, 97u8, 240u8, 37u8, 177u8, 43u8,
-						83u8, 195u8, 176u8, 252u8, 201u8, 229u8, 170u8, 45u8, 136u8, 81u8,
-					])
+					::subxt::constants::Address::new_static(
+						"System",
+						"BlockLength",
+						[
+							166u8, 7u8, 126u8, 154u8, 133u8, 31u8, 100u8, 149u8, 118u8, 168u8, 1u8,
+							21u8, 202u8, 114u8, 104u8, 193u8, 44u8, 97u8, 240u8, 37u8, 177u8, 43u8,
+							83u8, 195u8, 176u8, 252u8, 201u8, 229u8, 170u8, 45u8, 136u8, 81u8,
+						],
+					)
 				}
 
 				#[doc = " Maximum number of block number to block hash mappings to keep (oldest pruned first)."]
 				pub fn block_hash_count(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("System", "BlockHashCount", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"System",
+						"BlockHashCount",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The weight of runtime database operations the runtime can invoke."]
 				pub fn db_weight(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::sp_weights::RuntimeDbWeight> {
-					::subxt::constants::Address::new_static("System", "DbWeight", [
-						206u8, 53u8, 134u8, 247u8, 42u8, 38u8, 197u8, 59u8, 191u8, 83u8, 160u8,
-						9u8, 207u8, 133u8, 108u8, 152u8, 150u8, 103u8, 109u8, 228u8, 218u8, 24u8,
-						27u8, 210u8, 106u8, 252u8, 74u8, 93u8, 27u8, 63u8, 109u8, 252u8,
-					])
+					::subxt::constants::Address::new_static(
+						"System",
+						"DbWeight",
+						[
+							206u8, 53u8, 134u8, 247u8, 42u8, 38u8, 197u8, 59u8, 191u8, 83u8, 160u8,
+							9u8, 207u8, 133u8, 108u8, 152u8, 150u8, 103u8, 109u8, 228u8, 218u8,
+							24u8, 27u8, 210u8, 106u8, 252u8, 74u8, 93u8, 27u8, 63u8, 109u8, 252u8,
+						],
+					)
 				}
 
 				#[doc = " Get the chain's current version."]
 				pub fn version(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::sp_version::RuntimeVersion> {
-					::subxt::constants::Address::new_static("System", "Version", [
-						134u8, 0u8, 23u8, 0u8, 199u8, 213u8, 89u8, 240u8, 194u8, 186u8, 239u8,
-						157u8, 168u8, 211u8, 223u8, 156u8, 138u8, 140u8, 194u8, 23u8, 167u8, 158u8,
-						195u8, 233u8, 25u8, 165u8, 27u8, 237u8, 198u8, 206u8, 233u8, 28u8,
-					])
+					::subxt::constants::Address::new_static(
+						"System",
+						"Version",
+						[
+							134u8, 0u8, 23u8, 0u8, 199u8, 213u8, 89u8, 240u8, 194u8, 186u8, 239u8,
+							157u8, 168u8, 211u8, 223u8, 156u8, 138u8, 140u8, 194u8, 23u8, 167u8,
+							158u8, 195u8, 233u8, 25u8, 165u8, 27u8, 237u8, 198u8, 206u8, 233u8,
+							28u8,
+						],
+					)
 				}
 
 				#[doc = " The designated SS58 prefix of this chain."]
@@ -2306,11 +2425,15 @@ pub mod api {
 				#[doc = " that the runtime should know about the prefix in order to make use of it as"]
 				#[doc = " an identifier of the chain."]
 				pub fn ss58_prefix(&self) -> ::subxt::constants::Address<::core::primitive::u16> {
-					::subxt::constants::Address::new_static("System", "SS58Prefix", [
-						116u8, 33u8, 2u8, 170u8, 181u8, 147u8, 171u8, 169u8, 167u8, 227u8, 41u8,
-						144u8, 11u8, 236u8, 82u8, 100u8, 74u8, 60u8, 184u8, 72u8, 169u8, 90u8,
-						208u8, 135u8, 15u8, 117u8, 10u8, 123u8, 128u8, 193u8, 29u8, 70u8,
-					])
+					::subxt::constants::Address::new_static(
+						"System",
+						"SS58Prefix",
+						[
+							116u8, 33u8, 2u8, 170u8, 181u8, 147u8, 171u8, 169u8, 167u8, 227u8,
+							41u8, 144u8, 11u8, 236u8, 82u8, 100u8, 74u8, 60u8, 184u8, 72u8, 169u8,
+							90u8, 208u8, 135u8, 15u8, 117u8, 10u8, 123u8, 128u8, 193u8, 29u8, 70u8,
+						],
+					)
 				}
 			}
 		}
@@ -2457,11 +2580,16 @@ pub mod api {
 					&self,
 					calls: ::std::vec::Vec<runtime_types::da_runtime::RuntimeCall>,
 				) -> ::subxt::tx::Payload<types::Batch> {
-					::subxt::tx::Payload::new_static("Utility", "batch", types::Batch { calls }, [
-						220u8, 133u8, 43u8, 120u8, 158u8, 223u8, 27u8, 148u8, 207u8, 167u8, 54u8,
-						93u8, 208u8, 199u8, 29u8, 110u8, 176u8, 77u8, 51u8, 216u8, 24u8, 86u8,
-						103u8, 71u8, 108u8, 82u8, 226u8, 22u8, 10u8, 20u8, 117u8, 152u8,
-					])
+					::subxt::tx::Payload::new_static(
+						"Utility",
+						"batch",
+						types::Batch { calls },
+						[
+							220u8, 133u8, 43u8, 120u8, 158u8, 223u8, 27u8, 148u8, 207u8, 167u8,
+							54u8, 93u8, 208u8, 199u8, 29u8, 110u8, 176u8, 77u8, 51u8, 216u8, 24u8,
+							86u8, 103u8, 71u8, 108u8, 82u8, 226u8, 22u8, 10u8, 20u8, 117u8, 152u8,
+						],
+					)
 				}
 
 				#[doc = "See [`Pallet::as_derivative`]."]
@@ -2700,11 +2828,16 @@ pub mod api {
 				pub fn batched_calls_limit(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Utility", "batched_calls_limit", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Utility",
+						"batched_calls_limit",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
@@ -2889,11 +3022,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "EpochIndex", vec![], [
-						32u8, 82u8, 130u8, 31u8, 190u8, 162u8, 237u8, 189u8, 104u8, 244u8, 30u8,
-						199u8, 179u8, 0u8, 161u8, 107u8, 72u8, 240u8, 201u8, 222u8, 177u8, 222u8,
-						35u8, 156u8, 81u8, 132u8, 162u8, 118u8, 238u8, 84u8, 112u8, 89u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"EpochIndex",
+						vec![],
+						[
+							32u8, 82u8, 130u8, 31u8, 190u8, 162u8, 237u8, 189u8, 104u8, 244u8,
+							30u8, 199u8, 179u8, 0u8, 161u8, 107u8, 72u8, 240u8, 201u8, 222u8,
+							177u8, 222u8, 35u8, 156u8, 81u8, 132u8, 162u8, 118u8, 238u8, 84u8,
+							112u8, 89u8,
+						],
+					)
 				}
 
 				#[doc = " Current epoch authorities."]
@@ -2909,11 +3048,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "Authorities", vec![], [
-						67u8, 196u8, 244u8, 13u8, 246u8, 245u8, 198u8, 98u8, 81u8, 55u8, 182u8,
-						187u8, 214u8, 5u8, 181u8, 76u8, 251u8, 213u8, 144u8, 166u8, 36u8, 153u8,
-						234u8, 181u8, 252u8, 55u8, 198u8, 175u8, 55u8, 211u8, 105u8, 85u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"Authorities",
+						vec![],
+						[
+							67u8, 196u8, 244u8, 13u8, 246u8, 245u8, 198u8, 98u8, 81u8, 55u8, 182u8,
+							187u8, 214u8, 5u8, 181u8, 76u8, 251u8, 213u8, 144u8, 166u8, 36u8,
+							153u8, 234u8, 181u8, 252u8, 55u8, 198u8, 175u8, 55u8, 211u8, 105u8,
+							85u8,
+						],
+					)
 				}
 
 				#[doc = " The slot at which the first epoch actually started. This is 0"]
@@ -2927,11 +3072,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "GenesisSlot", vec![], [
-						218u8, 174u8, 152u8, 76u8, 188u8, 214u8, 7u8, 88u8, 253u8, 187u8, 139u8,
-						234u8, 51u8, 28u8, 220u8, 57u8, 73u8, 1u8, 18u8, 205u8, 80u8, 160u8, 120u8,
-						216u8, 139u8, 191u8, 100u8, 108u8, 162u8, 106u8, 175u8, 107u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"GenesisSlot",
+						vec![],
+						[
+							218u8, 174u8, 152u8, 76u8, 188u8, 214u8, 7u8, 88u8, 253u8, 187u8,
+							139u8, 234u8, 51u8, 28u8, 220u8, 57u8, 73u8, 1u8, 18u8, 205u8, 80u8,
+							160u8, 120u8, 216u8, 139u8, 191u8, 100u8, 108u8, 162u8, 106u8, 175u8,
+							107u8,
+						],
+					)
 				}
 
 				#[doc = " Current slot number."]
@@ -2944,11 +3095,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "CurrentSlot", vec![], [
-						112u8, 199u8, 115u8, 248u8, 217u8, 242u8, 45u8, 231u8, 178u8, 53u8, 236u8,
-						167u8, 219u8, 238u8, 81u8, 243u8, 39u8, 140u8, 68u8, 19u8, 201u8, 169u8,
-						211u8, 133u8, 135u8, 213u8, 150u8, 105u8, 60u8, 252u8, 43u8, 57u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"CurrentSlot",
+						vec![],
+						[
+							112u8, 199u8, 115u8, 248u8, 217u8, 242u8, 45u8, 231u8, 178u8, 53u8,
+							236u8, 167u8, 219u8, 238u8, 81u8, 243u8, 39u8, 140u8, 68u8, 19u8,
+							201u8, 169u8, 211u8, 133u8, 135u8, 213u8, 150u8, 105u8, 60u8, 252u8,
+							43u8, 57u8,
+						],
+					)
 				}
 
 				#[doc = " The epoch randomness for the *current* epoch."]
@@ -2970,11 +3127,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "Randomness", vec![], [
-						36u8, 15u8, 52u8, 73u8, 195u8, 177u8, 186u8, 125u8, 134u8, 11u8, 103u8,
-						248u8, 170u8, 237u8, 105u8, 239u8, 168u8, 204u8, 147u8, 52u8, 15u8, 226u8,
-						126u8, 176u8, 133u8, 186u8, 169u8, 241u8, 156u8, 118u8, 67u8, 58u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"Randomness",
+						vec![],
+						[
+							36u8, 15u8, 52u8, 73u8, 195u8, 177u8, 186u8, 125u8, 134u8, 11u8, 103u8,
+							248u8, 170u8, 237u8, 105u8, 239u8, 168u8, 204u8, 147u8, 52u8, 15u8,
+							226u8, 126u8, 176u8, 133u8, 186u8, 169u8, 241u8, 156u8, 118u8, 67u8,
+							58u8,
+						],
+					)
 				}
 
 				#[doc = " Pending epoch configuration change that will be applied when the next epoch is enacted."]
@@ -3141,11 +3304,16 @@ pub mod api {
 					(),
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "Initialized", vec![], [
-						61u8, 100u8, 12u8, 43u8, 50u8, 166u8, 173u8, 130u8, 86u8, 36u8, 92u8,
-						221u8, 44u8, 235u8, 241u8, 150u8, 231u8, 108u8, 15u8, 134u8, 12u8, 6u8,
-						198u8, 102u8, 63u8, 69u8, 201u8, 171u8, 14u8, 135u8, 254u8, 239u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"Initialized",
+						vec![],
+						[
+							61u8, 100u8, 12u8, 43u8, 50u8, 166u8, 173u8, 130u8, 86u8, 36u8, 92u8,
+							221u8, 44u8, 235u8, 241u8, 150u8, 231u8, 108u8, 15u8, 134u8, 12u8, 6u8,
+							198u8, 102u8, 63u8, 69u8, 201u8, 171u8, 14u8, 135u8, 254u8, 239u8,
+						],
+					)
 				}
 
 				#[doc = " This field should always be populated during block processing unless"]
@@ -3188,11 +3356,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "EpochStart", vec![], [
-						246u8, 69u8, 165u8, 217u8, 181u8, 138u8, 201u8, 64u8, 251u8, 121u8, 50u8,
-						231u8, 221u8, 144u8, 225u8, 249u8, 42u8, 135u8, 31u8, 136u8, 21u8, 160u8,
-						186u8, 148u8, 139u8, 232u8, 182u8, 121u8, 82u8, 110u8, 14u8, 160u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"EpochStart",
+						vec![],
+						[
+							246u8, 69u8, 165u8, 217u8, 181u8, 138u8, 201u8, 64u8, 251u8, 121u8,
+							50u8, 231u8, 221u8, 144u8, 225u8, 249u8, 42u8, 135u8, 31u8, 136u8,
+							21u8, 160u8, 186u8, 148u8, 139u8, 232u8, 182u8, 121u8, 82u8, 110u8,
+							14u8, 160u8,
+						],
+					)
 				}
 
 				#[doc = " How late the current block is compared to its parent."]
@@ -3209,11 +3383,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "Lateness", vec![], [
-						229u8, 214u8, 133u8, 149u8, 32u8, 159u8, 26u8, 22u8, 252u8, 131u8, 200u8,
-						191u8, 231u8, 176u8, 178u8, 127u8, 33u8, 212u8, 139u8, 220u8, 157u8, 38u8,
-						4u8, 226u8, 204u8, 32u8, 55u8, 20u8, 205u8, 141u8, 29u8, 87u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"Lateness",
+						vec![],
+						[
+							229u8, 214u8, 133u8, 149u8, 32u8, 159u8, 26u8, 22u8, 252u8, 131u8,
+							200u8, 191u8, 231u8, 176u8, 178u8, 127u8, 33u8, 212u8, 139u8, 220u8,
+							157u8, 38u8, 4u8, 226u8, 204u8, 32u8, 55u8, 20u8, 205u8, 141u8, 29u8,
+							87u8,
+						],
+					)
 				}
 
 				#[doc = " The configuration for the current epoch. Should never be `None` as it is initialized in"]
@@ -3227,11 +3407,17 @@ pub mod api {
 					(),
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "EpochConfig", vec![], [
-						23u8, 188u8, 70u8, 119u8, 36u8, 199u8, 230u8, 191u8, 131u8, 219u8, 85u8,
-						201u8, 237u8, 70u8, 214u8, 149u8, 212u8, 94u8, 87u8, 87u8, 62u8, 16u8,
-						46u8, 143u8, 73u8, 169u8, 42u8, 139u8, 157u8, 139u8, 190u8, 166u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"EpochConfig",
+						vec![],
+						[
+							23u8, 188u8, 70u8, 119u8, 36u8, 199u8, 230u8, 191u8, 131u8, 219u8,
+							85u8, 201u8, 237u8, 70u8, 214u8, 149u8, 212u8, 94u8, 87u8, 87u8, 62u8,
+							16u8, 46u8, 143u8, 73u8, 169u8, 42u8, 139u8, 157u8, 139u8, 190u8,
+							166u8,
+						],
+					)
 				}
 
 				#[doc = " The configuration for the next epoch, `None` if the config will not change"]
@@ -3300,11 +3486,16 @@ pub mod api {
 				pub fn epoch_duration(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u64> {
-					::subxt::constants::Address::new_static("Babe", "EpochDuration", [
-						128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8, 59u8,
-						226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8, 103u8, 119u8,
-						53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8, 246u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Babe",
+						"EpochDuration",
+						[
+							128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8,
+							59u8, 226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8,
+							103u8, 119u8, 53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8,
+							246u8,
+						],
+					)
 				}
 
 				#[doc = " The expected average block time at which BABE should be creating"]
@@ -3315,22 +3506,32 @@ pub mod api {
 				pub fn expected_block_time(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u64> {
-					::subxt::constants::Address::new_static("Babe", "ExpectedBlockTime", [
-						128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8, 59u8,
-						226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8, 103u8, 119u8,
-						53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8, 246u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Babe",
+						"ExpectedBlockTime",
+						[
+							128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8,
+							59u8, 226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8,
+							103u8, 119u8, 53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8,
+							246u8,
+						],
+					)
 				}
 
 				#[doc = " Max number of authorities allowed"]
 				pub fn max_authorities(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Babe", "MaxAuthorities", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Babe",
+						"MaxAuthorities",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
@@ -3370,11 +3571,16 @@ pub mod api {
 			impl TransactionApi {
 				#[doc = "See [`Pallet::set`]."]
 				pub fn set(&self, now: ::core::primitive::u64) -> ::subxt::tx::Payload<types::Set> {
-					::subxt::tx::Payload::new_static("Timestamp", "set", types::Set { now }, [
-						37u8, 95u8, 49u8, 218u8, 24u8, 22u8, 0u8, 95u8, 72u8, 35u8, 155u8, 199u8,
-						213u8, 54u8, 207u8, 22u8, 185u8, 193u8, 221u8, 70u8, 18u8, 200u8, 4u8,
-						231u8, 195u8, 173u8, 6u8, 122u8, 11u8, 203u8, 231u8, 227u8,
-					])
+					::subxt::tx::Payload::new_static(
+						"Timestamp",
+						"set",
+						types::Set { now },
+						[
+							37u8, 95u8, 49u8, 218u8, 24u8, 22u8, 0u8, 95u8, 72u8, 35u8, 155u8,
+							199u8, 213u8, 54u8, 207u8, 22u8, 185u8, 193u8, 221u8, 70u8, 18u8,
+							200u8, 4u8, 231u8, 195u8, 173u8, 6u8, 122u8, 11u8, 203u8, 231u8, 227u8,
+						],
+					)
 				}
 			}
 		}
@@ -3392,11 +3598,16 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Timestamp", "Now", vec![], [
-						44u8, 50u8, 80u8, 30u8, 195u8, 146u8, 123u8, 238u8, 8u8, 163u8, 187u8,
-						92u8, 61u8, 39u8, 51u8, 29u8, 173u8, 169u8, 217u8, 158u8, 85u8, 187u8,
-						141u8, 26u8, 12u8, 115u8, 51u8, 11u8, 200u8, 244u8, 138u8, 152u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Timestamp",
+						"Now",
+						vec![],
+						[
+							44u8, 50u8, 80u8, 30u8, 195u8, 146u8, 123u8, 238u8, 8u8, 163u8, 187u8,
+							92u8, 61u8, 39u8, 51u8, 29u8, 173u8, 169u8, 217u8, 158u8, 85u8, 187u8,
+							141u8, 26u8, 12u8, 115u8, 51u8, 11u8, 200u8, 244u8, 138u8, 152u8,
+						],
+					)
 				}
 
 				#[doc = " Did the timestamp get updated in this block?"]
@@ -3434,11 +3645,16 @@ pub mod api {
 				pub fn minimum_period(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u64> {
-					::subxt::constants::Address::new_static("Timestamp", "MinimumPeriod", [
-						128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8, 59u8,
-						226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8, 103u8, 119u8,
-						53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8, 246u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Timestamp",
+						"MinimumPeriod",
+						[
+							128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8,
+							59u8, 226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8,
+							103u8, 119u8, 53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8,
+							246u8,
+						],
+					)
 				}
 			}
 		}
@@ -3605,11 +3821,16 @@ pub mod api {
 					&self,
 					index: ::core::primitive::u32,
 				) -> ::subxt::tx::Payload<types::Claim> {
-					::subxt::tx::Payload::new_static("Indices", "claim", types::Claim { index }, [
-						146u8, 58u8, 246u8, 135u8, 59u8, 90u8, 3u8, 5u8, 140u8, 169u8, 232u8,
-						195u8, 11u8, 107u8, 36u8, 141u8, 118u8, 174u8, 160u8, 160u8, 19u8, 205u8,
-						177u8, 193u8, 18u8, 102u8, 115u8, 31u8, 72u8, 29u8, 91u8, 235u8,
-					])
+					::subxt::tx::Payload::new_static(
+						"Indices",
+						"claim",
+						types::Claim { index },
+						[
+							146u8, 58u8, 246u8, 135u8, 59u8, 90u8, 3u8, 5u8, 140u8, 169u8, 232u8,
+							195u8, 11u8, 107u8, 36u8, 141u8, 118u8, 174u8, 160u8, 160u8, 19u8,
+							205u8, 177u8, 193u8, 18u8, 102u8, 115u8, 31u8, 72u8, 29u8, 91u8, 235u8,
+						],
+					)
 				}
 
 				#[doc = "See [`Pallet::transfer`]."]
@@ -3639,11 +3860,17 @@ pub mod api {
 					&self,
 					index: ::core::primitive::u32,
 				) -> ::subxt::tx::Payload<types::Free> {
-					::subxt::tx::Payload::new_static("Indices", "free", types::Free { index }, [
-						241u8, 211u8, 234u8, 102u8, 189u8, 22u8, 209u8, 27u8, 8u8, 229u8, 80u8,
-						227u8, 138u8, 252u8, 222u8, 111u8, 77u8, 201u8, 235u8, 51u8, 163u8, 247u8,
-						13u8, 126u8, 216u8, 136u8, 57u8, 222u8, 56u8, 66u8, 215u8, 244u8,
-					])
+					::subxt::tx::Payload::new_static(
+						"Indices",
+						"free",
+						types::Free { index },
+						[
+							241u8, 211u8, 234u8, 102u8, 189u8, 22u8, 209u8, 27u8, 8u8, 229u8, 80u8,
+							227u8, 138u8, 252u8, 222u8, 111u8, 77u8, 201u8, 235u8, 51u8, 163u8,
+							247u8, 13u8, 126u8, 216u8, 136u8, 57u8, 222u8, 56u8, 66u8, 215u8,
+							244u8,
+						],
+					)
 				}
 
 				#[doc = "See [`Pallet::force_transfer`]."]
@@ -3827,11 +4054,15 @@ pub mod api {
 			impl ConstantsApi {
 				#[doc = " The deposit needed for reserving an index."]
 				pub fn deposit(&self) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Indices", "Deposit", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Indices",
+						"Deposit",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 			}
 		}
@@ -5134,48 +5365,72 @@ pub mod api {
 				pub fn existential_deposit(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Balances", "ExistentialDeposit", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Balances",
+						"ExistentialDeposit",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum number of locks that should exist on an account."]
 				#[doc = " Not strictly enforced, but used for weight estimation."]
 				pub fn max_locks(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Balances", "MaxLocks", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Balances",
+						"MaxLocks",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum number of named reserves that can exist on an account."]
 				pub fn max_reserves(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Balances", "MaxReserves", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Balances",
+						"MaxReserves",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum number of holds that can exist on an account at any time."]
 				pub fn max_holds(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Balances", "MaxHolds", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Balances",
+						"MaxHolds",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum number of individual freeze locks that can exist on an account at any time."]
 				pub fn max_freezes(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Balances", "MaxFreezes", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Balances",
+						"MaxFreezes",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
@@ -7019,11 +7274,16 @@ pub mod api {
 
 				#[doc = "See [`Pallet::chill`]."]
 				pub fn chill(&self) -> ::subxt::tx::Payload<types::Chill> {
-					::subxt::tx::Payload::new_static("Staking", "chill", types::Chill {}, [
-						157u8, 75u8, 243u8, 69u8, 110u8, 192u8, 22u8, 27u8, 107u8, 68u8, 236u8,
-						58u8, 179u8, 34u8, 118u8, 98u8, 131u8, 62u8, 242u8, 84u8, 149u8, 24u8,
-						83u8, 223u8, 78u8, 12u8, 192u8, 22u8, 111u8, 11u8, 171u8, 149u8,
-					])
+					::subxt::tx::Payload::new_static(
+						"Staking",
+						"chill",
+						types::Chill {},
+						[
+							157u8, 75u8, 243u8, 69u8, 110u8, 192u8, 22u8, 27u8, 107u8, 68u8, 236u8,
+							58u8, 179u8, 34u8, 118u8, 98u8, 131u8, 62u8, 242u8, 84u8, 149u8, 24u8,
+							83u8, 223u8, 78u8, 12u8, 192u8, 22u8, 111u8, 11u8, 171u8, 149u8,
+						],
+					)
 				}
 
 				#[doc = "See [`Pallet::set_payee`]."]
@@ -7286,11 +7546,16 @@ pub mod api {
 						>,
 					>,
 				) -> ::subxt::tx::Payload<types::Kick> {
-					::subxt::tx::Payload::new_static("Staking", "kick", types::Kick { who }, [
-						28u8, 254u8, 219u8, 14u8, 44u8, 187u8, 186u8, 72u8, 55u8, 21u8, 129u8,
-						205u8, 225u8, 204u8, 162u8, 53u8, 255u8, 56u8, 49u8, 194u8, 63u8, 43u8,
-						96u8, 177u8, 125u8, 0u8, 163u8, 97u8, 231u8, 159u8, 43u8, 249u8,
-					])
+					::subxt::tx::Payload::new_static(
+						"Staking",
+						"kick",
+						types::Kick { who },
+						[
+							28u8, 254u8, 219u8, 14u8, 44u8, 187u8, 186u8, 72u8, 55u8, 21u8, 129u8,
+							205u8, 225u8, 204u8, 162u8, 53u8, 255u8, 56u8, 49u8, 194u8, 63u8, 43u8,
+							96u8, 177u8, 125u8, 0u8, 163u8, 97u8, 231u8, 159u8, 43u8, 249u8,
+						],
+					)
 				}
 
 				#[doc = "See [`Pallet::set_staking_configs`]."]
@@ -8738,11 +9003,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Staking", "ForceEra", vec![], [
-						177u8, 148u8, 73u8, 108u8, 136u8, 126u8, 89u8, 18u8, 124u8, 66u8, 30u8,
-						102u8, 133u8, 164u8, 78u8, 214u8, 184u8, 163u8, 75u8, 164u8, 117u8, 233u8,
-						209u8, 158u8, 99u8, 208u8, 21u8, 194u8, 152u8, 82u8, 16u8, 222u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Staking",
+						"ForceEra",
+						vec![],
+						[
+							177u8, 148u8, 73u8, 108u8, 136u8, 126u8, 89u8, 18u8, 124u8, 66u8, 30u8,
+							102u8, 133u8, 164u8, 78u8, 214u8, 184u8, 163u8, 75u8, 164u8, 117u8,
+							233u8, 209u8, 158u8, 99u8, 208u8, 21u8, 194u8, 152u8, 82u8, 16u8,
+							222u8,
+						],
+					)
 				}
 
 				#[doc = " The percentage of the slash that is distributed to reporters."]
@@ -9173,11 +9444,16 @@ pub mod api {
 				pub fn max_nominations(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Staking", "MaxNominations", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Staking",
+						"MaxNominations",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " Number of eras to keep in history."]
@@ -9201,33 +9477,48 @@ pub mod api {
 				#[doc = " `StakingLedger` and will need to be handled properly in a migration."]
 				#[doc = " The test `reducing_history_depth_abrupt` shows this effect."]
 				pub fn history_depth(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Staking", "HistoryDepth", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Staking",
+						"HistoryDepth",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " Number of sessions per era."]
 				pub fn sessions_per_era(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Staking", "SessionsPerEra", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Staking",
+						"SessionsPerEra",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " Number of eras that staked funds must remain bonded for."]
 				pub fn bonding_duration(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Staking", "BondingDuration", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Staking",
+						"BondingDuration",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " Number of eras that slashes are deferred by, after computation."]
@@ -9237,11 +9528,16 @@ pub mod api {
 				pub fn slash_defer_duration(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Staking", "SlashDeferDuration", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Staking",
+						"SlashDeferDuration",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum number of nominators rewarded for each validator."]
@@ -9276,11 +9572,16 @@ pub mod api {
 				pub fn max_unlocking_chunks(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Staking", "MaxUnlockingChunks", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Staking",
+						"MaxUnlockingChunks",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
@@ -11326,29 +11627,44 @@ pub mod api {
 				pub fn enactment_period(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "EnactmentPeriod", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"EnactmentPeriod",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " How often (in blocks) new public referenda are launched."]
 				pub fn launch_period(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "LaunchPeriod", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"LaunchPeriod",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " How often (in blocks) to check for new votes."]
 				pub fn voting_period(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "VotingPeriod", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"VotingPeriod",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The minimum period of vote locking."]
@@ -11358,22 +11674,31 @@ pub mod api {
 				pub fn vote_locking_period(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "VoteLockingPeriod", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"VoteLockingPeriod",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The minimum amount to be used as a deposit for a public referendum proposal."]
 				pub fn minimum_deposit(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Democracy", "MinimumDeposit", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"MinimumDeposit",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 
 				#[doc = " Indicator for whether an emergency origin is even allowed to happen. Some chains may"]
@@ -11382,33 +11707,47 @@ pub mod api {
 				pub fn instant_allowed(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::bool> {
-					::subxt::constants::Address::new_static("Democracy", "InstantAllowed", [
-						165u8, 28u8, 112u8, 190u8, 18u8, 129u8, 182u8, 206u8, 237u8, 1u8, 68u8,
-						252u8, 125u8, 234u8, 185u8, 50u8, 149u8, 164u8, 47u8, 126u8, 134u8, 100u8,
-						14u8, 86u8, 209u8, 39u8, 20u8, 4u8, 233u8, 115u8, 102u8, 131u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"InstantAllowed",
+						[
+							165u8, 28u8, 112u8, 190u8, 18u8, 129u8, 182u8, 206u8, 237u8, 1u8, 68u8,
+							252u8, 125u8, 234u8, 185u8, 50u8, 149u8, 164u8, 47u8, 126u8, 134u8,
+							100u8, 14u8, 86u8, 209u8, 39u8, 20u8, 4u8, 233u8, 115u8, 102u8, 131u8,
+						],
+					)
 				}
 
 				#[doc = " Minimum voting period allowed for a fast-track referendum."]
 				pub fn fast_track_voting_period(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "FastTrackVotingPeriod", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"FastTrackVotingPeriod",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " Period in blocks where an external proposal may not be re-submitted after being vetoed."]
 				pub fn cooloff_period(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "CooloffPeriod", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"CooloffPeriod",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum number of votes for an account."]
@@ -11416,40 +11755,60 @@ pub mod api {
 				#[doc = " Also used to compute weight, an overly big value can"]
 				#[doc = " lead to extrinsic with very big weight: see `delegate` for instance."]
 				pub fn max_votes(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "MaxVotes", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"MaxVotes",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum number of public proposals that can exist at any time."]
 				pub fn max_proposals(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "MaxProposals", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"MaxProposals",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum number of deposits a public proposal may have at any time."]
 				pub fn max_deposits(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "MaxDeposits", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"MaxDeposits",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum number of items which can be blacklisted."]
 				pub fn max_blacklisted(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "MaxBlacklisted", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"MaxBlacklisted",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
@@ -12067,11 +12426,16 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Council", "Members", vec![], [
-						16u8, 29u8, 32u8, 222u8, 175u8, 136u8, 111u8, 101u8, 43u8, 74u8, 209u8,
-						81u8, 47u8, 97u8, 129u8, 39u8, 225u8, 243u8, 110u8, 229u8, 237u8, 21u8,
-						90u8, 127u8, 80u8, 239u8, 156u8, 32u8, 90u8, 109u8, 179u8, 0u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Council",
+						"Members",
+						vec![],
+						[
+							16u8, 29u8, 32u8, 222u8, 175u8, 136u8, 111u8, 101u8, 43u8, 74u8, 209u8,
+							81u8, 47u8, 97u8, 129u8, 39u8, 225u8, 243u8, 110u8, 229u8, 237u8, 21u8,
+							90u8, 127u8, 80u8, 239u8, 156u8, 32u8, 90u8, 109u8, 179u8, 0u8,
+						],
+					)
 				}
 
 				#[doc = " The prime member that helps determine the default vote behavior in case of absentations."]
@@ -12084,11 +12448,16 @@ pub mod api {
 					(),
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Council", "Prime", vec![], [
-						72u8, 128u8, 214u8, 72u8, 78u8, 80u8, 100u8, 198u8, 114u8, 215u8, 59u8,
-						3u8, 103u8, 14u8, 152u8, 202u8, 12u8, 165u8, 224u8, 10u8, 41u8, 154u8,
-						77u8, 95u8, 116u8, 143u8, 250u8, 250u8, 176u8, 92u8, 238u8, 154u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Council",
+						"Prime",
+						vec![],
+						[
+							72u8, 128u8, 214u8, 72u8, 78u8, 80u8, 100u8, 198u8, 114u8, 215u8, 59u8,
+							3u8, 103u8, 14u8, 152u8, 202u8, 12u8, 165u8, 224u8, 10u8, 41u8, 154u8,
+							77u8, 95u8, 116u8, 143u8, 250u8, 250u8, 176u8, 92u8, 238u8, 154u8,
+						],
+					)
 				}
 			}
 		}
@@ -12100,11 +12469,15 @@ pub mod api {
 				pub fn max_proposal_weight(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::sp_weights::weight_v2::Weight> {
-					::subxt::constants::Address::new_static("Council", "MaxProposalWeight", [
-						222u8, 183u8, 203u8, 169u8, 31u8, 134u8, 28u8, 12u8, 47u8, 140u8, 71u8,
-						74u8, 61u8, 55u8, 71u8, 236u8, 215u8, 83u8, 28u8, 70u8, 45u8, 128u8, 184u8,
-						57u8, 101u8, 83u8, 42u8, 165u8, 34u8, 155u8, 64u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Council",
+						"MaxProposalWeight",
+						[
+							222u8, 183u8, 203u8, 169u8, 31u8, 134u8, 28u8, 12u8, 47u8, 140u8, 71u8,
+							74u8, 61u8, 55u8, 71u8, 236u8, 215u8, 83u8, 28u8, 70u8, 45u8, 128u8,
+							184u8, 57u8, 101u8, 83u8, 42u8, 165u8, 34u8, 155u8, 64u8, 145u8,
+						],
+					)
 				}
 			}
 		}
@@ -13378,22 +13751,30 @@ pub mod api {
 				pub fn pallet_id(
 					&self,
 				) -> ::subxt::constants::Address<[::core::primitive::u8; 8usize]> {
-					::subxt::constants::Address::new_static("Elections", "PalletId", [
-						157u8, 118u8, 79u8, 88u8, 241u8, 22u8, 185u8, 37u8, 42u8, 20u8, 133u8,
-						240u8, 11u8, 25u8, 66u8, 154u8, 84u8, 163u8, 78u8, 92u8, 171u8, 82u8,
-						248u8, 76u8, 189u8, 70u8, 142u8, 249u8, 153u8, 84u8, 180u8, 60u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"PalletId",
+						[
+							157u8, 118u8, 79u8, 88u8, 241u8, 22u8, 185u8, 37u8, 42u8, 20u8, 133u8,
+							240u8, 11u8, 25u8, 66u8, 154u8, 84u8, 163u8, 78u8, 92u8, 171u8, 82u8,
+							248u8, 76u8, 189u8, 70u8, 142u8, 249u8, 153u8, 84u8, 180u8, 60u8,
+						],
+					)
 				}
 
 				#[doc = " How much should be locked up in order to submit one's candidacy."]
 				pub fn candidacy_bond(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Elections", "CandidacyBond", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"CandidacyBond",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 
 				#[doc = " Base deposit associated with voting."]
@@ -13403,55 +13784,78 @@ pub mod api {
 				pub fn voting_bond_base(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Elections", "VotingBondBase", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"VotingBondBase",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 
 				#[doc = " The amount of bond that need to be locked for each vote (32 bytes)."]
 				pub fn voting_bond_factor(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Elections", "VotingBondFactor", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"VotingBondFactor",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 
 				#[doc = " Number of members to elect."]
 				pub fn desired_members(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Elections", "DesiredMembers", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"DesiredMembers",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " Number of runners_up to keep."]
 				pub fn desired_runners_up(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Elections", "DesiredRunnersUp", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"DesiredRunnersUp",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " How long each seat is kept. This defines the next block number at which an election"]
 				#[doc = " round will happen. If set to zero, no elections are ever triggered and the module will"]
 				#[doc = " be in passive mode."]
 				pub fn term_duration(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Elections", "TermDuration", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"TermDuration",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum number of candidates in a phragmen election."]
@@ -13463,11 +13867,16 @@ pub mod api {
 				pub fn max_candidates(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Elections", "MaxCandidates", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"MaxCandidates",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum number of voters to allow in a phragmen election."]
@@ -13477,11 +13886,16 @@ pub mod api {
 				#[doc = ""]
 				#[doc = " When the limit is reached the new voters are ignored."]
 				pub fn max_voters(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Elections", "MaxVoters", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"MaxVoters",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " Maximum numbers of votes per voter."]
@@ -13491,11 +13905,16 @@ pub mod api {
 				pub fn max_votes_per_voter(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Elections", "MaxVotesPerVoter", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"MaxVotesPerVoter",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
@@ -14223,11 +14642,16 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Grandpa", "State", vec![], [
-						254u8, 81u8, 54u8, 203u8, 26u8, 74u8, 162u8, 215u8, 165u8, 247u8, 143u8,
-						139u8, 242u8, 164u8, 67u8, 27u8, 97u8, 172u8, 66u8, 98u8, 28u8, 151u8,
-						32u8, 38u8, 209u8, 82u8, 41u8, 209u8, 72u8, 3u8, 167u8, 42u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Grandpa",
+						"State",
+						vec![],
+						[
+							254u8, 81u8, 54u8, 203u8, 26u8, 74u8, 162u8, 215u8, 165u8, 247u8,
+							143u8, 139u8, 242u8, 164u8, 67u8, 27u8, 97u8, 172u8, 66u8, 98u8, 28u8,
+							151u8, 32u8, 38u8, 209u8, 82u8, 41u8, 209u8, 72u8, 3u8, 167u8, 42u8,
+						],
+					)
 				}
 
 				#[doc = " Pending change: (signaled at, scheduled change)."]
@@ -14284,11 +14708,16 @@ pub mod api {
 					(),
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Grandpa", "Stalled", vec![], [
-						146u8, 18u8, 59u8, 59u8, 21u8, 246u8, 5u8, 167u8, 221u8, 8u8, 230u8, 74u8,
-						81u8, 217u8, 67u8, 158u8, 136u8, 36u8, 23u8, 106u8, 136u8, 89u8, 110u8,
-						217u8, 31u8, 138u8, 107u8, 251u8, 164u8, 10u8, 119u8, 18u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Grandpa",
+						"Stalled",
+						vec![],
+						[
+							146u8, 18u8, 59u8, 59u8, 21u8, 246u8, 5u8, 167u8, 221u8, 8u8, 230u8,
+							74u8, 81u8, 217u8, 67u8, 158u8, 136u8, 36u8, 23u8, 106u8, 136u8, 89u8,
+							110u8, 217u8, 31u8, 138u8, 107u8, 251u8, 164u8, 10u8, 119u8, 18u8,
+						],
+					)
 				}
 
 				#[doc = " The number of changes (both in terms of keys and underlying economic responsibilities)"]
@@ -14389,11 +14818,16 @@ pub mod api {
 				pub fn max_authorities(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Grandpa", "MaxAuthorities", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Grandpa",
+						"MaxAuthorities",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum number of entries to keep in the set id to session index mapping."]
@@ -14405,11 +14839,16 @@ pub mod api {
 				pub fn max_set_id_session_entries(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u64> {
-					::subxt::constants::Address::new_static("Grandpa", "MaxSetIdSessionEntries", [
-						128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8, 59u8,
-						226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8, 103u8, 119u8,
-						53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8, 246u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Grandpa",
+						"MaxSetIdSessionEntries",
+						[
+							128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8,
+							59u8, 226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8,
+							103u8, 119u8, 53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8,
+							246u8,
+						],
+					)
 				}
 			}
 		}
@@ -14982,42 +15421,60 @@ pub mod api {
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::sp_arithmetic::per_things::Permill>
 				{
-					::subxt::constants::Address::new_static("Treasury", "ProposalBond", [
-						65u8, 93u8, 120u8, 165u8, 204u8, 81u8, 159u8, 163u8, 93u8, 135u8, 114u8,
-						121u8, 147u8, 35u8, 215u8, 213u8, 4u8, 223u8, 83u8, 37u8, 225u8, 200u8,
-						189u8, 156u8, 140u8, 36u8, 58u8, 46u8, 42u8, 232u8, 155u8, 0u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Treasury",
+						"ProposalBond",
+						[
+							65u8, 93u8, 120u8, 165u8, 204u8, 81u8, 159u8, 163u8, 93u8, 135u8,
+							114u8, 121u8, 147u8, 35u8, 215u8, 213u8, 4u8, 223u8, 83u8, 37u8, 225u8,
+							200u8, 189u8, 156u8, 140u8, 36u8, 58u8, 46u8, 42u8, 232u8, 155u8, 0u8,
+						],
+					)
 				}
 
 				#[doc = " Minimum amount of funds that should be placed in a deposit for making a proposal."]
 				pub fn proposal_bond_minimum(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Treasury", "ProposalBondMinimum", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Treasury",
+						"ProposalBondMinimum",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 
 				#[doc = " Maximum amount of funds that should be placed in a deposit for making a proposal."]
 				pub fn proposal_bond_maximum(
 					&self,
 				) -> ::subxt::constants::Address<::core::option::Option<::core::primitive::u128>> {
-					::subxt::constants::Address::new_static("Treasury", "ProposalBondMaximum", [
-						198u8, 51u8, 89u8, 159u8, 124u8, 251u8, 51u8, 80u8, 167u8, 193u8, 44u8,
-						199u8, 80u8, 36u8, 41u8, 130u8, 137u8, 229u8, 178u8, 208u8, 37u8, 215u8,
-						169u8, 183u8, 180u8, 191u8, 140u8, 240u8, 250u8, 61u8, 42u8, 147u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Treasury",
+						"ProposalBondMaximum",
+						[
+							198u8, 51u8, 89u8, 159u8, 124u8, 251u8, 51u8, 80u8, 167u8, 193u8, 44u8,
+							199u8, 80u8, 36u8, 41u8, 130u8, 137u8, 229u8, 178u8, 208u8, 37u8,
+							215u8, 169u8, 183u8, 180u8, 191u8, 140u8, 240u8, 250u8, 61u8, 42u8,
+							147u8,
+						],
+					)
 				}
 
 				#[doc = " Period between successive spends."]
 				pub fn spend_period(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Treasury", "SpendPeriod", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Treasury",
+						"SpendPeriod",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " Percentage of spare funds (if any) that are burnt per spend period."]
@@ -15025,33 +15482,46 @@ pub mod api {
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::sp_arithmetic::per_things::Permill>
 				{
-					::subxt::constants::Address::new_static("Treasury", "Burn", [
-						65u8, 93u8, 120u8, 165u8, 204u8, 81u8, 159u8, 163u8, 93u8, 135u8, 114u8,
-						121u8, 147u8, 35u8, 215u8, 213u8, 4u8, 223u8, 83u8, 37u8, 225u8, 200u8,
-						189u8, 156u8, 140u8, 36u8, 58u8, 46u8, 42u8, 232u8, 155u8, 0u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Treasury",
+						"Burn",
+						[
+							65u8, 93u8, 120u8, 165u8, 204u8, 81u8, 159u8, 163u8, 93u8, 135u8,
+							114u8, 121u8, 147u8, 35u8, 215u8, 213u8, 4u8, 223u8, 83u8, 37u8, 225u8,
+							200u8, 189u8, 156u8, 140u8, 36u8, 58u8, 46u8, 42u8, 232u8, 155u8, 0u8,
+						],
+					)
 				}
 
 				#[doc = " The treasury's pallet id, used for deriving its sovereign account ID."]
 				pub fn pallet_id(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::frame_support::PalletId> {
-					::subxt::constants::Address::new_static("Treasury", "PalletId", [
-						56u8, 243u8, 53u8, 83u8, 154u8, 179u8, 170u8, 80u8, 133u8, 173u8, 61u8,
-						161u8, 47u8, 225u8, 146u8, 21u8, 50u8, 229u8, 248u8, 27u8, 104u8, 58u8,
-						129u8, 197u8, 102u8, 160u8, 168u8, 205u8, 154u8, 42u8, 217u8, 53u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Treasury",
+						"PalletId",
+						[
+							56u8, 243u8, 53u8, 83u8, 154u8, 179u8, 170u8, 80u8, 133u8, 173u8, 61u8,
+							161u8, 47u8, 225u8, 146u8, 21u8, 50u8, 229u8, 248u8, 27u8, 104u8, 58u8,
+							129u8, 197u8, 102u8, 160u8, 168u8, 205u8, 154u8, 42u8, 217u8, 53u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum number of approvals that can wait in the spending queue."]
 				#[doc = ""]
 				#[doc = " NOTE: This parameter is also used within the Bounties Pallet extension if enabled."]
 				pub fn max_approvals(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Treasury", "MaxApprovals", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Treasury",
+						"MaxApprovals",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
@@ -15207,11 +15677,17 @@ pub mod api {
 						::core::primitive::u32,
 					>,
 				) -> ::subxt::tx::Payload<types::SetKey> {
-					::subxt::tx::Payload::new_static("Sudo", "set_key", types::SetKey { new }, [
-						46u8, 208u8, 84u8, 223u8, 141u8, 188u8, 184u8, 156u8, 101u8, 97u8, 255u8,
-						166u8, 168u8, 102u8, 75u8, 3u8, 149u8, 105u8, 202u8, 220u8, 187u8, 117u8,
-						156u8, 83u8, 159u8, 115u8, 231u8, 201u8, 171u8, 47u8, 170u8, 36u8,
-					])
+					::subxt::tx::Payload::new_static(
+						"Sudo",
+						"set_key",
+						types::SetKey { new },
+						[
+							46u8, 208u8, 84u8, 223u8, 141u8, 188u8, 184u8, 156u8, 101u8, 97u8,
+							255u8, 166u8, 168u8, 102u8, 75u8, 3u8, 149u8, 105u8, 202u8, 220u8,
+							187u8, 117u8, 156u8, 83u8, 159u8, 115u8, 231u8, 201u8, 171u8, 47u8,
+							170u8, 36u8,
+						],
+					)
 				}
 
 				#[doc = "See [`Pallet::sudo_as`]."]
@@ -15324,11 +15800,16 @@ pub mod api {
 					(),
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Sudo", "Key", vec![], [
-						72u8, 14u8, 225u8, 162u8, 205u8, 247u8, 227u8, 105u8, 116u8, 57u8, 4u8,
-						31u8, 84u8, 137u8, 227u8, 228u8, 133u8, 245u8, 206u8, 227u8, 117u8, 36u8,
-						252u8, 151u8, 107u8, 15u8, 180u8, 4u8, 4u8, 152u8, 195u8, 144u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Sudo",
+						"Key",
+						vec![],
+						[
+							72u8, 14u8, 225u8, 162u8, 205u8, 247u8, 227u8, 105u8, 116u8, 57u8, 4u8,
+							31u8, 84u8, 137u8, 227u8, 228u8, 133u8, 245u8, 206u8, 227u8, 117u8,
+							36u8, 252u8, 151u8, 107u8, 15u8, 180u8, 4u8, 4u8, 152u8, 195u8, 144u8,
+						],
+					)
 				}
 			}
 		}
@@ -15512,11 +15993,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("ImOnline", "Keys", vec![], [
-						111u8, 104u8, 188u8, 46u8, 152u8, 140u8, 137u8, 244u8, 52u8, 214u8, 115u8,
-						156u8, 39u8, 239u8, 15u8, 168u8, 193u8, 125u8, 57u8, 195u8, 250u8, 156u8,
-						234u8, 222u8, 222u8, 253u8, 135u8, 232u8, 196u8, 163u8, 29u8, 218u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"ImOnline",
+						"Keys",
+						vec![],
+						[
+							111u8, 104u8, 188u8, 46u8, 152u8, 140u8, 137u8, 244u8, 52u8, 214u8,
+							115u8, 156u8, 39u8, 239u8, 15u8, 168u8, 193u8, 125u8, 57u8, 195u8,
+							250u8, 156u8, 234u8, 222u8, 222u8, 253u8, 135u8, 232u8, 196u8, 163u8,
+							29u8, 218u8,
+						],
+					)
 				}
 
 				#[doc = " For each session index, we keep a mapping of `SessionIndex` and `AuthIndex`."]
@@ -15633,11 +16120,16 @@ pub mod api {
 				pub fn unsigned_priority(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u64> {
-					::subxt::constants::Address::new_static("ImOnline", "UnsignedPriority", [
-						128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8, 59u8,
-						226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8, 103u8, 119u8,
-						53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8, 246u8,
-					])
+					::subxt::constants::Address::new_static(
+						"ImOnline",
+						"UnsignedPriority",
+						[
+							128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8,
+							59u8, 226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8,
+							103u8, 119u8, 53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8,
+							246u8,
+						],
+					)
 				}
 			}
 		}
@@ -16542,11 +17034,15 @@ pub mod api {
 				pub fn maximum_weight(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::sp_weights::weight_v2::Weight> {
-					::subxt::constants::Address::new_static("Scheduler", "MaximumWeight", [
-						222u8, 183u8, 203u8, 169u8, 31u8, 134u8, 28u8, 12u8, 47u8, 140u8, 71u8,
-						74u8, 61u8, 55u8, 71u8, 236u8, 215u8, 83u8, 28u8, 70u8, 45u8, 128u8, 184u8,
-						57u8, 101u8, 83u8, 42u8, 165u8, 34u8, 155u8, 64u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Scheduler",
+						"MaximumWeight",
+						[
+							222u8, 183u8, 203u8, 169u8, 31u8, 134u8, 28u8, 12u8, 47u8, 140u8, 71u8,
+							74u8, 61u8, 55u8, 71u8, 236u8, 215u8, 83u8, 28u8, 70u8, 45u8, 128u8,
+							184u8, 57u8, 101u8, 83u8, 42u8, 165u8, 34u8, 155u8, 64u8, 145u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum number of scheduled calls in the queue for a single block."]
@@ -16557,11 +17053,16 @@ pub mod api {
 				pub fn max_scheduled_per_block(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Scheduler", "MaxScheduledPerBlock", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Scheduler",
+						"MaxScheduledPerBlock",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
@@ -17288,11 +17789,15 @@ pub mod api {
 				pub fn bounty_deposit_base(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Bounties", "BountyDepositBase", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Bounties",
+						"BountyDepositBase",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 
 				#[doc = " The delay period for which a bounty beneficiary need to wait before claim the payout."]
@@ -17315,11 +17820,16 @@ pub mod api {
 				pub fn bounty_update_period(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Bounties", "BountyUpdatePeriod", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Bounties",
+						"BountyUpdatePeriod",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The curator deposit is calculated as a percentage of the curator fee."]
@@ -17345,44 +17855,62 @@ pub mod api {
 				pub fn curator_deposit_max(
 					&self,
 				) -> ::subxt::constants::Address<::core::option::Option<::core::primitive::u128>> {
-					::subxt::constants::Address::new_static("Bounties", "CuratorDepositMax", [
-						198u8, 51u8, 89u8, 159u8, 124u8, 251u8, 51u8, 80u8, 167u8, 193u8, 44u8,
-						199u8, 80u8, 36u8, 41u8, 130u8, 137u8, 229u8, 178u8, 208u8, 37u8, 215u8,
-						169u8, 183u8, 180u8, 191u8, 140u8, 240u8, 250u8, 61u8, 42u8, 147u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Bounties",
+						"CuratorDepositMax",
+						[
+							198u8, 51u8, 89u8, 159u8, 124u8, 251u8, 51u8, 80u8, 167u8, 193u8, 44u8,
+							199u8, 80u8, 36u8, 41u8, 130u8, 137u8, 229u8, 178u8, 208u8, 37u8,
+							215u8, 169u8, 183u8, 180u8, 191u8, 140u8, 240u8, 250u8, 61u8, 42u8,
+							147u8,
+						],
+					)
 				}
 
 				#[doc = " Minimum amount of funds that should be placed in a deposit for making a proposal."]
 				pub fn curator_deposit_min(
 					&self,
 				) -> ::subxt::constants::Address<::core::option::Option<::core::primitive::u128>> {
-					::subxt::constants::Address::new_static("Bounties", "CuratorDepositMin", [
-						198u8, 51u8, 89u8, 159u8, 124u8, 251u8, 51u8, 80u8, 167u8, 193u8, 44u8,
-						199u8, 80u8, 36u8, 41u8, 130u8, 137u8, 229u8, 178u8, 208u8, 37u8, 215u8,
-						169u8, 183u8, 180u8, 191u8, 140u8, 240u8, 250u8, 61u8, 42u8, 147u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Bounties",
+						"CuratorDepositMin",
+						[
+							198u8, 51u8, 89u8, 159u8, 124u8, 251u8, 51u8, 80u8, 167u8, 193u8, 44u8,
+							199u8, 80u8, 36u8, 41u8, 130u8, 137u8, 229u8, 178u8, 208u8, 37u8,
+							215u8, 169u8, 183u8, 180u8, 191u8, 140u8, 240u8, 250u8, 61u8, 42u8,
+							147u8,
+						],
+					)
 				}
 
 				#[doc = " Minimum value for a bounty."]
 				pub fn bounty_value_minimum(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Bounties", "BountyValueMinimum", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Bounties",
+						"BountyValueMinimum",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 
 				#[doc = " The amount held on deposit per byte within the tip report reason or bounty description."]
 				pub fn data_deposit_per_byte(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Bounties", "DataDepositPerByte", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Bounties",
+						"DataDepositPerByte",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 
 				#[doc = " Maximum acceptable reason length."]
@@ -17391,11 +17919,16 @@ pub mod api {
 				pub fn maximum_reason_length(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Bounties", "MaximumReasonLength", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Bounties",
+						"MaximumReasonLength",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
@@ -17836,11 +18369,16 @@ pub mod api {
 					(),
 					::subxt::storage::address::Yes,
 				> {
-					::subxt::storage::address::Address::new_static("Tips", "Tips", Vec::new(), [
-						173u8, 172u8, 116u8, 247u8, 202u8, 228u8, 47u8, 222u8, 67u8, 146u8, 225u8,
-						0u8, 74u8, 189u8, 226u8, 206u8, 245u8, 209u8, 26u8, 49u8, 189u8, 73u8,
-						20u8, 117u8, 30u8, 41u8, 129u8, 170u8, 5u8, 226u8, 92u8, 140u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Tips",
+						"Tips",
+						Vec::new(),
+						[
+							173u8, 172u8, 116u8, 247u8, 202u8, 228u8, 47u8, 222u8, 67u8, 146u8,
+							225u8, 0u8, 74u8, 189u8, 226u8, 206u8, 245u8, 209u8, 26u8, 49u8, 189u8,
+							73u8, 20u8, 117u8, 30u8, 41u8, 129u8, 170u8, 5u8, 226u8, 92u8, 140u8,
+						],
+					)
 				}
 
 				#[doc = " Simple preimage lookup from the reason's hash to the original data. Again, has an"]
@@ -17881,11 +18419,17 @@ pub mod api {
 					(),
 					::subxt::storage::address::Yes,
 				> {
-					::subxt::storage::address::Address::new_static("Tips", "Reasons", Vec::new(), [
-						212u8, 224u8, 153u8, 133u8, 234u8, 213u8, 134u8, 255u8, 59u8, 61u8, 200u8,
-						47u8, 186u8, 177u8, 35u8, 108u8, 85u8, 144u8, 185u8, 69u8, 159u8, 38u8,
-						83u8, 166u8, 200u8, 20u8, 220u8, 234u8, 59u8, 61u8, 223u8, 167u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Tips",
+						"Reasons",
+						Vec::new(),
+						[
+							212u8, 224u8, 153u8, 133u8, 234u8, 213u8, 134u8, 255u8, 59u8, 61u8,
+							200u8, 47u8, 186u8, 177u8, 35u8, 108u8, 85u8, 144u8, 185u8, 69u8,
+							159u8, 38u8, 83u8, 166u8, 200u8, 20u8, 220u8, 234u8, 59u8, 61u8, 223u8,
+							167u8,
+						],
+					)
 				}
 			}
 		}
@@ -17899,31 +18443,45 @@ pub mod api {
 				pub fn maximum_reason_length(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Tips", "MaximumReasonLength", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Tips",
+						"MaximumReasonLength",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The amount held on deposit per byte within the tip report reason or bounty description."]
 				pub fn data_deposit_per_byte(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Tips", "DataDepositPerByte", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Tips",
+						"DataDepositPerByte",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 
 				#[doc = " The period for which a tip remains open after is has achieved threshold tippers."]
 				pub fn tip_countdown(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Tips", "TipCountdown", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Tips",
+						"TipCountdown",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " The percent of the final tip which goes to the original reporter of the tip."]
@@ -17931,22 +18489,31 @@ pub mod api {
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::sp_arithmetic::per_things::Percent>
 				{
-					::subxt::constants::Address::new_static("Tips", "TipFindersFee", [
-						40u8, 171u8, 69u8, 196u8, 34u8, 184u8, 50u8, 128u8, 139u8, 192u8, 63u8,
-						231u8, 249u8, 200u8, 252u8, 73u8, 244u8, 170u8, 51u8, 177u8, 106u8, 47u8,
-						114u8, 234u8, 84u8, 104u8, 62u8, 118u8, 227u8, 50u8, 225u8, 122u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Tips",
+						"TipFindersFee",
+						[
+							40u8, 171u8, 69u8, 196u8, 34u8, 184u8, 50u8, 128u8, 139u8, 192u8, 63u8,
+							231u8, 249u8, 200u8, 252u8, 73u8, 244u8, 170u8, 51u8, 177u8, 106u8,
+							47u8, 114u8, 234u8, 84u8, 104u8, 62u8, 118u8, 227u8, 50u8, 225u8,
+							122u8,
+						],
+					)
 				}
 
 				#[doc = " The amount held on deposit for placing a tip report."]
 				pub fn tip_report_deposit_base(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Tips", "TipReportDepositBase", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Tips",
+						"TipReportDepositBase",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 			}
 		}
@@ -17967,11 +18534,16 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Mmr", "RootHash", vec![], [
-						111u8, 206u8, 173u8, 92u8, 67u8, 49u8, 150u8, 113u8, 90u8, 245u8, 38u8,
-						254u8, 76u8, 250u8, 167u8, 66u8, 130u8, 129u8, 251u8, 220u8, 172u8, 229u8,
-						162u8, 251u8, 36u8, 227u8, 43u8, 189u8, 7u8, 106u8, 23u8, 13u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Mmr",
+						"RootHash",
+						vec![],
+						[
+							111u8, 206u8, 173u8, 92u8, 67u8, 49u8, 150u8, 113u8, 90u8, 245u8, 38u8,
+							254u8, 76u8, 250u8, 167u8, 66u8, 130u8, 129u8, 251u8, 220u8, 172u8,
+							229u8, 162u8, 251u8, 36u8, 227u8, 43u8, 189u8, 7u8, 106u8, 23u8, 13u8,
+						],
+					)
 				}
 
 				#[doc = " Current size of the MMR (number of leaves)."]
@@ -18037,11 +18609,16 @@ pub mod api {
 					(),
 					::subxt::storage::address::Yes,
 				> {
-					::subxt::storage::address::Address::new_static("Mmr", "Nodes", Vec::new(), [
-						27u8, 84u8, 41u8, 195u8, 146u8, 81u8, 211u8, 189u8, 63u8, 125u8, 173u8,
-						206u8, 69u8, 198u8, 202u8, 213u8, 89u8, 31u8, 89u8, 177u8, 76u8, 154u8,
-						249u8, 197u8, 133u8, 78u8, 142u8, 71u8, 183u8, 3u8, 132u8, 25u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Mmr",
+						"Nodes",
+						Vec::new(),
+						[
+							27u8, 84u8, 41u8, 195u8, 146u8, 81u8, 211u8, 189u8, 63u8, 125u8, 173u8,
+							206u8, 69u8, 198u8, 202u8, 213u8, 89u8, 31u8, 89u8, 177u8, 76u8, 154u8,
+							249u8, 197u8, 133u8, 78u8, 142u8, 71u8, 183u8, 3u8, 132u8, 25u8,
+						],
+					)
 				}
 			}
 		}
@@ -18378,44 +18955,60 @@ pub mod api {
 				pub fn min_block_rows(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::avail_core::BlockLengthRows> {
-					::subxt::constants::Address::new_static("DataAvailability", "MinBlockRows", [
-						65u8, 68u8, 180u8, 146u8, 16u8, 133u8, 230u8, 51u8, 17u8, 170u8, 88u8,
-						49u8, 171u8, 96u8, 82u8, 152u8, 101u8, 63u8, 46u8, 141u8, 161u8, 104u8,
-						204u8, 24u8, 1u8, 20u8, 116u8, 46u8, 232u8, 62u8, 223u8, 15u8,
-					])
+					::subxt::constants::Address::new_static(
+						"DataAvailability",
+						"MinBlockRows",
+						[
+							65u8, 68u8, 180u8, 146u8, 16u8, 133u8, 230u8, 51u8, 17u8, 170u8, 88u8,
+							49u8, 171u8, 96u8, 82u8, 152u8, 101u8, 63u8, 46u8, 141u8, 161u8, 104u8,
+							204u8, 24u8, 1u8, 20u8, 116u8, 46u8, 232u8, 62u8, 223u8, 15u8,
+						],
+					)
 				}
 
 				#[doc = " Maximum number of rows in a block."]
 				pub fn max_block_rows(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::avail_core::BlockLengthRows> {
-					::subxt::constants::Address::new_static("DataAvailability", "MaxBlockRows", [
-						65u8, 68u8, 180u8, 146u8, 16u8, 133u8, 230u8, 51u8, 17u8, 170u8, 88u8,
-						49u8, 171u8, 96u8, 82u8, 152u8, 101u8, 63u8, 46u8, 141u8, 161u8, 104u8,
-						204u8, 24u8, 1u8, 20u8, 116u8, 46u8, 232u8, 62u8, 223u8, 15u8,
-					])
+					::subxt::constants::Address::new_static(
+						"DataAvailability",
+						"MaxBlockRows",
+						[
+							65u8, 68u8, 180u8, 146u8, 16u8, 133u8, 230u8, 51u8, 17u8, 170u8, 88u8,
+							49u8, 171u8, 96u8, 82u8, 152u8, 101u8, 63u8, 46u8, 141u8, 161u8, 104u8,
+							204u8, 24u8, 1u8, 20u8, 116u8, 46u8, 232u8, 62u8, 223u8, 15u8,
+						],
+					)
 				}
 
 				#[doc = " Minimum number of cols in a block."]
 				pub fn min_block_cols(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::avail_core::BlockLengthColumns> {
-					::subxt::constants::Address::new_static("DataAvailability", "MinBlockCols", [
-						65u8, 68u8, 180u8, 146u8, 16u8, 133u8, 230u8, 51u8, 17u8, 170u8, 88u8,
-						49u8, 171u8, 96u8, 82u8, 152u8, 101u8, 63u8, 46u8, 141u8, 161u8, 104u8,
-						204u8, 24u8, 1u8, 20u8, 116u8, 46u8, 232u8, 62u8, 223u8, 15u8,
-					])
+					::subxt::constants::Address::new_static(
+						"DataAvailability",
+						"MinBlockCols",
+						[
+							65u8, 68u8, 180u8, 146u8, 16u8, 133u8, 230u8, 51u8, 17u8, 170u8, 88u8,
+							49u8, 171u8, 96u8, 82u8, 152u8, 101u8, 63u8, 46u8, 141u8, 161u8, 104u8,
+							204u8, 24u8, 1u8, 20u8, 116u8, 46u8, 232u8, 62u8, 223u8, 15u8,
+						],
+					)
 				}
 
 				#[doc = " Maximum number of cols in a block."]
 				pub fn max_block_cols(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::avail_core::BlockLengthColumns> {
-					::subxt::constants::Address::new_static("DataAvailability", "MaxBlockCols", [
-						65u8, 68u8, 180u8, 146u8, 16u8, 133u8, 230u8, 51u8, 17u8, 170u8, 88u8,
-						49u8, 171u8, 96u8, 82u8, 152u8, 101u8, 63u8, 46u8, 141u8, 161u8, 104u8,
-						204u8, 24u8, 1u8, 20u8, 116u8, 46u8, 232u8, 62u8, 223u8, 15u8,
-					])
+					::subxt::constants::Address::new_static(
+						"DataAvailability",
+						"MaxBlockCols",
+						[
+							65u8, 68u8, 180u8, 146u8, 16u8, 133u8, 230u8, 51u8, 17u8, 170u8, 88u8,
+							49u8, 171u8, 96u8, 82u8, 152u8, 101u8, 63u8, 46u8, 141u8, 161u8, 104u8,
+							204u8, 24u8, 1u8, 20u8, 116u8, 46u8, 232u8, 62u8, 223u8, 15u8,
+						],
+					)
 				}
 			}
 		}
@@ -18800,11 +19393,16 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("NomadHome", "Base", vec![], [
-						254u8, 56u8, 220u8, 109u8, 51u8, 237u8, 70u8, 31u8, 134u8, 49u8, 145u8,
-						104u8, 204u8, 243u8, 216u8, 242u8, 57u8, 113u8, 132u8, 190u8, 170u8, 80u8,
-						232u8, 190u8, 37u8, 91u8, 20u8, 188u8, 41u8, 41u8, 187u8, 107u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"NomadHome",
+						"Base",
+						vec![],
+						[
+							254u8, 56u8, 220u8, 109u8, 51u8, 237u8, 70u8, 31u8, 134u8, 49u8, 145u8,
+							104u8, 204u8, 243u8, 216u8, 242u8, 57u8, 113u8, 132u8, 190u8, 170u8,
+							80u8, 232u8, 190u8, 37u8, 91u8, 20u8, 188u8, 41u8, 41u8, 187u8, 107u8,
+						],
+					)
 				}
 
 				pub fn tree(
@@ -18816,11 +19414,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("NomadHome", "Tree", vec![], [
-						22u8, 211u8, 114u8, 109u8, 20u8, 79u8, 40u8, 238u8, 244u8, 223u8, 95u8,
-						97u8, 85u8, 113u8, 201u8, 242u8, 23u8, 140u8, 106u8, 222u8, 130u8, 29u8,
-						218u8, 108u8, 210u8, 13u8, 115u8, 231u8, 22u8, 137u8, 227u8, 175u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"NomadHome",
+						"Tree",
+						vec![],
+						[
+							22u8, 211u8, 114u8, 109u8, 20u8, 79u8, 40u8, 238u8, 244u8, 223u8, 95u8,
+							97u8, 85u8, 113u8, 201u8, 242u8, 23u8, 140u8, 106u8, 222u8, 130u8,
+							29u8, 218u8, 108u8, 210u8, 13u8, 115u8, 231u8, 22u8, 137u8, 227u8,
+							175u8,
+						],
+					)
 				}
 
 				pub fn nonces(
@@ -18967,11 +19571,16 @@ pub mod api {
 				pub fn max_message_body_bytes(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("NomadHome", "MaxMessageBodyBytes", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"NomadHome",
+						"MaxMessageBodyBytes",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
@@ -19080,11 +19689,16 @@ pub mod api {
 				pub fn da_bridge_pallet_id(
 					&self,
 				) -> ::subxt::constants::Address<::subxt::utils::H256> {
-					::subxt::constants::Address::new_static("NomadDABridge", "DABridgePalletId", [
-						115u8, 233u8, 13u8, 223u8, 88u8, 20u8, 202u8, 139u8, 153u8, 28u8, 155u8,
-						157u8, 224u8, 66u8, 3u8, 250u8, 23u8, 53u8, 88u8, 168u8, 211u8, 204u8,
-						122u8, 166u8, 248u8, 23u8, 174u8, 225u8, 99u8, 108u8, 89u8, 135u8,
-					])
+					::subxt::constants::Address::new_static(
+						"NomadDABridge",
+						"DABridgePalletId",
+						[
+							115u8, 233u8, 13u8, 223u8, 88u8, 20u8, 202u8, 139u8, 153u8, 28u8,
+							155u8, 157u8, 224u8, 66u8, 3u8, 250u8, 23u8, 53u8, 88u8, 168u8, 211u8,
+							204u8, 122u8, 166u8, 248u8, 23u8, 174u8, 225u8, 99u8, 108u8, 89u8,
+							135u8,
+						],
+					)
 				}
 			}
 		}
@@ -19827,11 +20441,15 @@ pub mod api {
 				#[doc = " `4 + sizeof((BlockNumber, Balance, AccountId))` bytes and whose key size is"]
 				#[doc = " `32 + sizeof(AccountId)` bytes."]
 				pub fn deposit_base(&self) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Multisig", "DepositBase", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Multisig",
+						"DepositBase",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 
 				#[doc = " The amount of currency needed per unit threshold when creating a multisig execution."]
@@ -19840,22 +20458,31 @@ pub mod api {
 				pub fn deposit_factor(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Multisig", "DepositFactor", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Multisig",
+						"DepositFactor",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum amount of signatories allowed in the multisig."]
 				pub fn max_signatories(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Multisig", "MaxSignatories", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Multisig",
+						"MaxSignatories",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
@@ -20194,11 +20821,15 @@ pub mod api {
 				pub fn bag_thresholds(
 					&self,
 				) -> ::subxt::constants::Address<::std::vec::Vec<::core::primitive::u64>> {
-					::subxt::constants::Address::new_static("VoterList", "BagThresholds", [
-						215u8, 118u8, 183u8, 172u8, 4u8, 42u8, 248u8, 108u8, 4u8, 110u8, 43u8,
-						165u8, 228u8, 7u8, 36u8, 30u8, 135u8, 184u8, 56u8, 201u8, 107u8, 68u8,
-						25u8, 164u8, 134u8, 32u8, 82u8, 107u8, 200u8, 219u8, 212u8, 198u8,
-					])
+					::subxt::constants::Address::new_static(
+						"VoterList",
+						"BagThresholds",
+						[
+							215u8, 118u8, 183u8, 172u8, 4u8, 42u8, 248u8, 108u8, 4u8, 110u8, 43u8,
+							165u8, 228u8, 7u8, 36u8, 30u8, 135u8, 184u8, 56u8, 201u8, 107u8, 68u8,
+							25u8, 164u8, 134u8, 32u8, 82u8, 107u8, 200u8, 219u8, 212u8, 198u8,
+						],
+					)
 				}
 			}
 		}
@@ -22238,11 +22869,15 @@ pub mod api {
 				pub fn pallet_id(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::frame_support::PalletId> {
-					::subxt::constants::Address::new_static("NominationPools", "PalletId", [
-						56u8, 243u8, 53u8, 83u8, 154u8, 179u8, 170u8, 80u8, 133u8, 173u8, 61u8,
-						161u8, 47u8, 225u8, 146u8, 21u8, 50u8, 229u8, 248u8, 27u8, 104u8, 58u8,
-						129u8, 197u8, 102u8, 160u8, 168u8, 205u8, 154u8, 42u8, 217u8, 53u8,
-					])
+					::subxt::constants::Address::new_static(
+						"NominationPools",
+						"PalletId",
+						[
+							56u8, 243u8, 53u8, 83u8, 154u8, 179u8, 170u8, 80u8, 133u8, 173u8, 61u8,
+							161u8, 47u8, 225u8, 146u8, 21u8, 50u8, 229u8, 248u8, 27u8, 104u8, 58u8,
+							129u8, 197u8, 102u8, 160u8, 168u8, 205u8, 154u8, 42u8, 217u8, 53u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum pool points-to-balance ratio that an `open` pool can have."]
@@ -22916,11 +23551,17 @@ pub mod api {
 
 				#[doc = "See [`Pallet::quit_sub`]."]
 				pub fn quit_sub(&self) -> ::subxt::tx::Payload<types::QuitSub> {
-					::subxt::tx::Payload::new_static("Identity", "quit_sub", types::QuitSub {}, [
-						147u8, 131u8, 175u8, 171u8, 187u8, 201u8, 240u8, 26u8, 146u8, 224u8, 74u8,
-						166u8, 242u8, 193u8, 204u8, 247u8, 168u8, 93u8, 18u8, 32u8, 27u8, 208u8,
-						149u8, 146u8, 179u8, 172u8, 75u8, 112u8, 84u8, 141u8, 233u8, 223u8,
-					])
+					::subxt::tx::Payload::new_static(
+						"Identity",
+						"quit_sub",
+						types::QuitSub {},
+						[
+							147u8, 131u8, 175u8, 171u8, 187u8, 201u8, 240u8, 26u8, 146u8, 224u8,
+							74u8, 166u8, 242u8, 193u8, 204u8, 247u8, 168u8, 93u8, 18u8, 32u8, 27u8,
+							208u8, 149u8, 146u8, 179u8, 172u8, 75u8, 112u8, 84u8, 141u8, 233u8,
+							223u8,
+						],
+					)
 				}
 			}
 		}
@@ -23371,22 +24012,30 @@ pub mod api {
 				pub fn basic_deposit(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Identity", "BasicDeposit", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Identity",
+						"BasicDeposit",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 
 				#[doc = " The amount held on deposit per additional field for a registered identity."]
 				pub fn field_deposit(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Identity", "FieldDeposit", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Identity",
+						"FieldDeposit",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 
 				#[doc = " The amount held on deposit for a registered subaccount. This should account for the fact"]
@@ -23395,22 +24044,31 @@ pub mod api {
 				pub fn sub_account_deposit(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Identity", "SubAccountDeposit", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Identity",
+						"SubAccountDeposit",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 
 				#[doc = " The maximum number of sub-accounts allowed per identified account."]
 				pub fn max_sub_accounts(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Identity", "MaxSubAccounts", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Identity",
+						"MaxSubAccounts",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " Maximum number of additional fields that may be stored in an ID. Needed to bound the I/O"]
@@ -23418,11 +24076,16 @@ pub mod api {
 				pub fn max_additional_fields(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Identity", "MaxAdditionalFields", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Identity",
+						"MaxAdditionalFields",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 
 				#[doc = " Maxmimum number of registrars allowed in the system. Needed to bound the complexity"]
@@ -23430,11 +24093,16 @@ pub mod api {
 				pub fn max_registrars(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Identity", "MaxRegistrars", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Identity",
+						"MaxRegistrars",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}

@@ -43,7 +43,9 @@ pub mod pallet {
 
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
-		fn build(&self) { <Updater<T>>::put(self.updater); }
+		fn build(&self) {
+			<Updater<T>>::put(self.updater);
+		}
 	}
 
 	#[pallet::event]
@@ -69,7 +71,9 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {}
 
 	impl<T: Config> Pallet<T> {
-		pub fn get_updater() -> H160 { Updater::<T>::get() }
+		pub fn get_updater() -> H160 {
+			Updater::<T>::get()
+		}
 
 		pub fn set_updater(new_updater: H160) -> DispatchResult {
 			let old_updater = Updater::<T>::get();

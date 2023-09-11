@@ -135,9 +135,13 @@ mod multiplier_tests {
 			.unwrap_or_else(|| BlockWeights::get().max_block)
 	}
 
-	fn min_multiplier() -> Multiplier { MinimumMultiplier::get() }
+	fn min_multiplier() -> Multiplier {
+		MinimumMultiplier::get()
+	}
 
-	fn target() -> Weight { TargetBlockFullness::get() * max_normal() }
+	fn target() -> Weight {
+		TargetBlockFullness::get() * max_normal()
+	}
 
 	// update based on runtime impl.
 	fn runtime_multiplier_update(fm: Multiplier) -> Multiplier {

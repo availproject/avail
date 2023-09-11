@@ -251,7 +251,9 @@ pub(crate) mod tests {
 	   */
 
 	#[test]
-	fn test_create_development_chain_spec() { locals::solo::chain_spec().build_storage().unwrap(); }
+	fn test_create_development_chain_spec() {
+		locals::solo::chain_spec().build_storage().unwrap();
+	}
 
 	#[test]
 	fn test_create_development_tri_chain_spec() {

@@ -80,7 +80,9 @@ parameter_types! {
 
 pub struct RecordKilled;
 impl OnKilledAccount<u64> for RecordKilled {
-	fn on_killed_account(who: &u64) { Killed::mutate(|r| r.push(*who)) }
+	fn on_killed_account(who: &u64) {
+		Killed::mutate(|r| r.push(*who))
+	}
 }
 
 impl Config for Test {

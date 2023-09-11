@@ -79,13 +79,16 @@ fn stored_map_works() {
 		assert_ok!(System::insert(&0, 42));
 		assert!(!System::is_provider_required(&0));
 
-		assert_eq!(Account::<Test>::get(0), AccountInfo {
-			nonce: 0,
-			providers: 1,
-			consumers: 0,
-			sufficients: 0,
-			data: 42
-		});
+		assert_eq!(
+			Account::<Test>::get(0),
+			AccountInfo {
+				nonce: 0,
+				providers: 1,
+				consumers: 0,
+				sufficients: 0,
+				data: 42
+			}
+		);
 
 		assert_ok!(System::inc_consumers(&0));
 		assert!(System::is_provider_required(&0));
@@ -203,11 +206,14 @@ fn deposit_event_should_work() {
 		System::note_finished_extrinsics();
 		System::deposit_event(SysEvent::CodeUpdated);
 		System::finalize();
-		assert_eq!(System::events(), vec![EventRecord {
-			phase: Phase::Finalization,
-			event: SysEvent::CodeUpdated.into(),
-			topics: vec![],
-		}]);
+		assert_eq!(
+			System::events(),
+			vec![EventRecord {
+				phase: Phase::Finalization,
+				event: SysEvent::CodeUpdated.into(),
+				topics: vec![],
+			}]
+		);
 
 		let normal_base = <Test as crate::Config>::BlockWeights::get()
 			.get(DispatchClass::Normal)
@@ -223,46 +229,49 @@ fn deposit_event_should_work() {
 		System::note_finished_extrinsics();
 		System::deposit_event(SysEvent::NewAccount { account: 3 });
 		System::finalize();
-		assert_eq!(System::events(), vec![
-			EventRecord {
-				phase: Phase::Initialization,
-				event: SysEvent::NewAccount { account: 32 }.into(),
-				topics: vec![],
-			},
-			EventRecord {
-				phase: Phase::ApplyExtrinsic(0),
-				event: SysEvent::KilledAccount { account: 42 }.into(),
-				topics: vec![]
-			},
-			EventRecord {
-				phase: Phase::ApplyExtrinsic(0),
-				event: SysEvent::ExtrinsicSuccess {
-					dispatch_info: DispatchInfo {
-						weight: normal_base,
-						..Default::default()
+		assert_eq!(
+			System::events(),
+			vec![
+				EventRecord {
+					phase: Phase::Initialization,
+					event: SysEvent::NewAccount { account: 32 }.into(),
+					topics: vec![],
+				},
+				EventRecord {
+					phase: Phase::ApplyExtrinsic(0),
+					event: SysEvent::KilledAccount { account: 42 }.into(),
+					topics: vec![]
+				},
+				EventRecord {
+					phase: Phase::ApplyExtrinsic(0),
+					event: SysEvent::ExtrinsicSuccess {
+						dispatch_info: DispatchInfo {
+							weight: normal_base,
+							..Default::default()
+						}
 					}
-				}
-				.into(),
-				topics: vec![]
-			},
-			EventRecord {
-				phase: Phase::ApplyExtrinsic(1),
-				event: SysEvent::ExtrinsicFailed {
-					dispatch_error: DispatchError::BadOrigin.into(),
-					dispatch_info: DispatchInfo {
-						weight: normal_base,
-						..Default::default()
+					.into(),
+					topics: vec![]
+				},
+				EventRecord {
+					phase: Phase::ApplyExtrinsic(1),
+					event: SysEvent::ExtrinsicFailed {
+						dispatch_error: DispatchError::BadOrigin.into(),
+						dispatch_info: DispatchInfo {
+							weight: normal_base,
+							..Default::default()
+						}
 					}
-				}
-				.into(),
-				topics: vec![]
-			},
-			EventRecord {
-				phase: Phase::Finalization,
-				event: SysEvent::NewAccount { account: 3 }.into(),
-				topics: vec![]
-			},
-		]);
+					.into(),
+					topics: vec![]
+				},
+				EventRecord {
+					phase: Phase::Finalization,
+					event: SysEvent::NewAccount { account: 3 }.into(),
+					topics: vec![]
+				},
+			]
+		);
 	});
 }
 
@@ -523,34 +532,37 @@ fn deposit_event_topics() {
 		System::finalize();
 
 		// Check that topics are reflected in the event record.
-		assert_eq!(System::events(), vec![
-			EventRecord {
-				phase: Phase::Finalization,
-				event: SysEvent::NewAccount { account: 1 }.into(),
-				topics: topics[0..3].to_vec(),
-			},
-			EventRecord {
-				phase: Phase::Finalization,
-				event: SysEvent::NewAccount { account: 2 }.into(),
-				topics: topics[0..1].to_vec(),
-			},
-			EventRecord {
-				phase: Phase::Finalization,
-				event: SysEvent::NewAccount { account: 3 }.into(),
-				topics: topics[1..2].to_vec(),
-			}
-		]);
+		assert_eq!(
+			System::events(),
+			vec![
+				EventRecord {
+					phase: Phase::Finalization,
+					event: SysEvent::NewAccount { account: 1 }.into(),
+					topics: topics[0..3].to_vec(),
+				},
+				EventRecord {
+					phase: Phase::Finalization,
+					event: SysEvent::NewAccount { account: 2 }.into(),
+					topics: topics[0..1].to_vec(),
+				},
+				EventRecord {
+					phase: Phase::Finalization,
+					event: SysEvent::NewAccount { account: 3 }.into(),
+					topics: topics[1..2].to_vec(),
+				}
+			]
+		);
 
 		// Check that the topic-events mapping reflects the deposited topics.
 		// Note that these are indexes of the events.
-		assert_eq!(System::event_topics(&topics[0]), vec![
-			(BLOCK_NUMBER, 0),
-			(BLOCK_NUMBER, 1)
-		]);
-		assert_eq!(System::event_topics(&topics[1]), vec![
-			(BLOCK_NUMBER, 0),
-			(BLOCK_NUMBER, 2)
-		]);
+		assert_eq!(
+			System::event_topics(&topics[0]),
+			vec![(BLOCK_NUMBER, 0), (BLOCK_NUMBER, 1)]
+		);
+		assert_eq!(
+			System::event_topics(&topics[1]),
+			vec![(BLOCK_NUMBER, 0), (BLOCK_NUMBER, 2)]
+		);
 		assert_eq!(System::event_topics(&topics[2]), vec![(BLOCK_NUMBER, 0)]);
 	});
 }
@@ -738,7 +750,9 @@ fn runtime_updated_digest_emitted_when_heap_pages_changed() {
 fn ensure_signed_stuff_works() {
 	struct Members;
 	impl SortedMembers<u64> for Members {
-		fn sorted_members() -> Vec<u64> { (0..10).collect() }
+		fn sorted_members() -> Vec<u64> {
+			(0..10).collect()
+		}
 	}
 
 	let signed_origin = RuntimeOrigin::signed(0u64);

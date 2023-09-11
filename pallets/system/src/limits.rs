@@ -75,7 +75,9 @@ const fn is_chunk_size_valid(new_size: NonZeroU32) -> bool {
 
 impl BlockLength {
 	#[inline]
-	pub fn chunk_size(&self) -> NonZeroU32 { self.chunk_size }
+	pub fn chunk_size(&self) -> NonZeroU32 {
+		self.chunk_size
+	}
 
 	pub fn set_chunk_size(&mut self, new_size: NonZeroU32) -> Result<(), BlockLengthError> {
 		ensure!(
@@ -412,11 +414,15 @@ impl Default for BlockWeights {
 
 impl BlockWeights {
 	/// Get per-class weight settings.
-	pub fn get(&self, class: DispatchClass) -> &WeightsPerClass { self.per_class.get(class) }
+	pub fn get(&self, class: DispatchClass) -> &WeightsPerClass {
+		self.per_class.get(class)
+	}
 
 	/// Verifies correctness of this `BlockWeights` object.
 	pub fn validate(self) -> ValidationResult {
-		fn or_max(w: Option<Weight>) -> Weight { w.unwrap_or_else(Weight::max_value) }
+		fn or_max(w: Option<Weight>) -> Weight {
+			w.unwrap_or_else(Weight::max_value)
+		}
 		let mut error = ValidationErrors::default();
 
 		for class in DispatchClass::all() {
@@ -643,5 +649,7 @@ mod tests {
 	use super::*;
 
 	#[test]
-	fn default_weights_are_valid() { BlockWeights::default().validate().unwrap(); }
+	fn default_weights_are_valid() {
+		BlockWeights::default().validate().unwrap();
+	}
 }

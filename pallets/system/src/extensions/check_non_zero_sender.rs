@@ -40,13 +40,17 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckNonZeroSender<T> {
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result { Ok(()) }
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
 }
 
 impl<T: Config + Send + Sync> CheckNonZeroSender<T> {
 	/// Create new `SignedExtension` to check runtime version.
 	#[allow(clippy::new_without_default)]
-	pub fn new() -> Self { Self(sp_std::marker::PhantomData) }
+	pub fn new() -> Self {
+		Self(sp_std::marker::PhantomData)
+	}
 }
 
 impl<T: Config + Send + Sync> SignedExtension for CheckNonZeroSender<T>
@@ -60,7 +64,9 @@ where
 
 	const IDENTIFIER: &'static str = "CheckNonZeroSender";
 
-	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> { Ok(()) }
+	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+		Ok(())
+	}
 
 	fn pre_dispatch(
 		self,

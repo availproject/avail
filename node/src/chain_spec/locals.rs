@@ -24,7 +24,9 @@ fn dev_endowed_accounts() -> HashMap<AccountId, Balance> {
 }
 
 /// `Alice` is the sudo key in `dev`.
-fn dev_sudo() -> AccountId { get_account_id_from_seed::<Public>("Alice") }
+fn dev_sudo() -> AccountId {
+	get_account_id_from_seed::<Public>("Alice")
+}
 
 fn make_genesis(
 	sudo: AccountId,

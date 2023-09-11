@@ -41,13 +41,17 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckGenesis<T> {
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result { Ok(()) }
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
 }
 
 impl<T: Config + Send + Sync> CheckGenesis<T> {
 	/// Creates new `SignedExtension` to check genesis hash.
 	#[allow(clippy::new_without_default)]
-	pub fn new() -> Self { Self(sp_std::marker::PhantomData) }
+	pub fn new() -> Self {
+		Self(sp_std::marker::PhantomData)
+	}
 }
 
 impl<T: Config + Send + Sync> SignedExtension for CheckGenesis<T> {

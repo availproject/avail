@@ -129,7 +129,9 @@ where
 	}
 
 	/// Creates new `SignedExtension` to check weight of the extrinsic.
-	pub fn new() -> Self { Self(Default::default()) }
+	pub fn new() -> Self {
+		Self(Default::default())
+	}
 
 	/// Do the pre-dispatch checks. This can be applied to both signed and unsigned.
 	///
@@ -224,7 +226,9 @@ where
 
 	const IDENTIFIER: &'static str = "CheckWeight";
 
-	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> { Ok(()) }
+	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+		Ok(())
+	}
 
 	fn pre_dispatch(
 		self,
@@ -287,7 +291,9 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckWeight<T> {
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result { Ok(()) }
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
 }
 
 #[cfg(test)]
@@ -317,7 +323,9 @@ mod tests {
 			.unwrap_or_else(|| block_weights().max_block)
 	}
 
-	fn block_weight_limit() -> Weight { block_weights().max_block }
+	fn block_weight_limit() -> Weight {
+		block_weights().max_block
+	}
 
 	fn normal_length_limit() -> u32 {
 		*<Test as Config>::BlockLength::get()

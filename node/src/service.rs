@@ -59,7 +59,9 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 		da_runtime::apis::api::dispatch(method, data)
 	}
 
-	fn native_version() -> sc_executor::NativeVersion { da_runtime::native_version() }
+	fn native_version() -> sc_executor::NativeVersion {
+		da_runtime::native_version()
+	}
 }
 
 /// The full client type definition.

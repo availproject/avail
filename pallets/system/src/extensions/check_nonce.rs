@@ -42,7 +42,9 @@ pub struct CheckNonce<T: Config>(#[codec(compact)] pub T::Nonce);
 
 impl<T: Config> CheckNonce<T> {
 	/// utility constructor. Used only in client/factory code.
-	pub fn from(nonce: T::Nonce) -> Self { Self(nonce) }
+	pub fn from(nonce: T::Nonce) -> Self {
+		Self(nonce)
+	}
 }
 
 impl<T: Config> sp_std::fmt::Debug for CheckNonce<T> {
@@ -52,7 +54,9 @@ impl<T: Config> sp_std::fmt::Debug for CheckNonce<T> {
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result { Ok(()) }
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
 }
 
 impl<T: Config> SignedExtension for CheckNonce<T>
@@ -66,7 +70,9 @@ where
 
 	const IDENTIFIER: &'static str = "CheckNonce";
 
-	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> { Ok(()) }
+	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+		Ok(())
+	}
 
 	fn pre_dispatch(
 		self,
@@ -129,13 +135,16 @@ mod tests {
 	#[test]
 	fn signed_ext_check_nonce_works() {
 		new_test_ext().execute_with(|| {
-			crate::Account::<Test>::insert(1, crate::AccountInfo {
-				nonce: 1,
-				consumers: 0,
-				providers: 0,
-				sufficients: 0,
-				data: 0,
-			});
+			crate::Account::<Test>::insert(
+				1,
+				crate::AccountInfo {
+					nonce: 1,
+					consumers: 0,
+					providers: 0,
+					sufficients: 0,
+					data: 0,
+				},
+			);
 			let info = DispatchInfo::default();
 			let len = 0_usize;
 			// stale

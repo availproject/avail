@@ -35,17 +35,29 @@ use crate::{
 };
 
 impl SubstrateCli for Cli {
-	fn impl_name() -> String { "Avail Node".into() }
+	fn impl_name() -> String {
+		"Avail Node".into()
+	}
 
-	fn impl_version() -> String { env!("SUBSTRATE_CLI_IMPL_VERSION").into() }
+	fn impl_version() -> String {
+		env!("SUBSTRATE_CLI_IMPL_VERSION").into()
+	}
 
-	fn description() -> String { env!("CARGO_PKG_DESCRIPTION").into() }
+	fn description() -> String {
+		env!("CARGO_PKG_DESCRIPTION").into()
+	}
 
-	fn author() -> String { env!("CARGO_PKG_AUTHORS").into() }
+	fn author() -> String {
+		env!("CARGO_PKG_AUTHORS").into()
+	}
 
-	fn support_url() -> String { "support.anonymous.an".into() }
+	fn support_url() -> String {
+		"support.anonymous.an".into()
+	}
 
-	fn copyright_start_year() -> i32 { 2017 }
+	fn copyright_start_year() -> i32 {
+		2017
+	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 		let spec = match id {
