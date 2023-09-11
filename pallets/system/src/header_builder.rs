@@ -125,6 +125,7 @@ pub fn build_extension<M: Metrics>(
 	metrics: &M,
 ) -> HeaderExtension {
 	use avail_core::header::extension::{v1, v2};
+	// TODO Marko Move to OnceLock  https://doc.rust-lang.org/stable/std/sync/struct.OnceLock.html on sub-upgrade v1 branch
 	use once_cell::sync::Lazy;
 	static PMP: Lazy<kate::pmp::m1_blst::M1NoPrecomp> =
 		once_cell::sync::Lazy::new(|| kate::testnet::multiproof_params(256, 256));
