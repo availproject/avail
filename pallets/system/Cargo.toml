@@ -37,6 +37,7 @@ sp-version = { version = "5.0.0", default-features = false }
 sp-weights = { version = "4.0.0", default-features = false }
 sp-runtime-interface = { version = "7.0.0", default-features = false }
 beefy-merkle-tree = { version = "4.0.0-dev", default-features = false }
+
 once_cell = { version = "1.18", optional = true }
 
 [dev-dependencies]
@@ -64,7 +65,7 @@ std = [
 	"sp-version/std",
 	"sp-weights/std",
 	"beefy-merkle-tree/std",
-  "once_cell"
+	"once_cell"
 ]
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",

@@ -124,10 +124,10 @@ pub fn build_extension<M: Metrics>(
 	seed: Seed,
 	metrics: &M,
 ) -> HeaderExtension {
+	use avail_core::header::extension::{v1, v2};
 	use once_cell::sync::Lazy;
 	static PMP: Lazy<kate::pmp::m1_blst::M1NoPrecomp> =
 		once_cell::sync::Lazy::new(|| kate::testnet::multiproof_params(256, 256));
-	use avail_core::header::extension::{v1, v2};
 
 	let timer = std::time::Instant::now();
 	let grid = kate::gridgen::EvaluationGrid::from_extrinsics(
