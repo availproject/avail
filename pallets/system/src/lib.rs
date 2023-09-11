@@ -191,23 +191,15 @@ pub trait ConsumerLimits {
 }
 
 impl<const Z: u32> ConsumerLimits for ConstU32<Z> {
-	fn max_consumers() -> RefCount {
-		Z
-	}
+	fn max_consumers() -> RefCount { Z }
 
-	fn max_overflow() -> RefCount {
-		Z
-	}
+	fn max_overflow() -> RefCount { Z }
 }
 
 impl<MaxNormal: Get<u32>, MaxOverflow: Get<u32>> ConsumerLimits for (MaxNormal, MaxOverflow) {
-	fn max_consumers() -> RefCount {
-		MaxNormal::get()
-	}
+	fn max_consumers() -> RefCount { MaxNormal::get() }
 
-	fn max_overflow() -> RefCount {
-		MaxOverflow::get()
-	}
+	fn max_overflow() -> RefCount { MaxOverflow::get() }
 }
 #[derive(Clone, Encode, Decode, TypeInfo, MaxEncodedLen)]
 pub struct ExtrinsicLen {
@@ -739,9 +731,7 @@ pub enum Phase {
 }
 
 impl Default for Phase {
-	fn default() -> Self {
-		Self::Initialization
-	}
+	fn default() -> Self { Self::Initialization }
 }
 
 /// Record of an event happening.
@@ -834,9 +824,7 @@ impl<O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>, Acco
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
-	fn try_successful_origin() -> Result<O, ()> {
-		Ok(O::from(RawOrigin::Root))
-	}
+	fn try_successful_origin() -> Result<O, ()> { Ok(O::from(RawOrigin::Root)) }
 }
 
 impl_ensure_origin_with_arg_ignoring_arg! {
@@ -865,9 +853,7 @@ impl<
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
-	fn try_successful_origin() -> Result<O, ()> {
-		Ok(O::from(RawOrigin::Root))
-	}
+	fn try_successful_origin() -> Result<O, ()> { Ok(O::from(RawOrigin::Root)) }
 }
 
 impl_ensure_origin_with_arg_ignoring_arg! {
@@ -895,9 +881,7 @@ impl<
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
-	fn try_successful_origin() -> Result<O, ()> {
-		Ensure::try_successful_origin()
-	}
+	fn try_successful_origin() -> Result<O, ()> { Ensure::try_successful_origin() }
 }
 
 impl_ensure_origin_with_arg_ignoring_arg! {
@@ -979,9 +963,7 @@ impl<O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>, Acco
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
-	fn try_successful_origin() -> Result<O, ()> {
-		Ok(O::from(RawOrigin::None))
-	}
+	fn try_successful_origin() -> Result<O, ()> { Ok(O::from(RawOrigin::None)) }
 }
 
 impl_ensure_origin_with_arg_ignoring_arg! {
@@ -995,14 +977,10 @@ pub struct EnsureNever<Success>(sp_std::marker::PhantomData<Success>);
 impl<O, Success> EnsureOrigin<O> for EnsureNever<Success> {
 	type Success = Success;
 
-	fn try_origin(o: O) -> Result<Self::Success, O> {
-		Err(o)
-	}
+	fn try_origin(o: O) -> Result<Self::Success, O> { Err(o) }
 
 	#[cfg(feature = "runtime-benchmarks")]
-	fn try_successful_origin() -> Result<O, ()> {
-		Err(())
-	}
+	fn try_successful_origin() -> Result<O, ()> { Err(()) }
 }
 
 impl_ensure_origin_with_arg_ignoring_arg! {
@@ -1087,9 +1065,7 @@ pub enum DecRefStatus {
 }
 
 impl<T: Config> Pallet<T> {
-	pub fn account_exists(who: &T::AccountId) -> bool {
-		Account::<T>::contains_key(who)
-	}
+	pub fn account_exists(who: &T::AccountId) -> bool { Account::<T>::contains_key(who) }
 
 	/// Write code to the storage and emit related events and digest items.
 	///
@@ -1105,28 +1081,20 @@ impl<T: Config> Pallet<T> {
 
 	/// Increment the reference counter on an account.
 	#[deprecated = "Use `inc_consumers` instead"]
-	pub fn inc_ref(who: &T::AccountId) {
-		let _ = Self::inc_consumers(who);
-	}
+	pub fn inc_ref(who: &T::AccountId) { let _ = Self::inc_consumers(who); }
 
 	/// Decrement the reference counter on an account. This *MUST* only be done once for every time
 	/// you called `inc_consumers` on `who`.
 	#[deprecated = "Use `dec_consumers` instead"]
-	pub fn dec_ref(who: &T::AccountId) {
-		Self::dec_consumers(who);
-	}
+	pub fn dec_ref(who: &T::AccountId) { Self::dec_consumers(who); }
 
 	/// The number of outstanding references for the account `who`.
 	#[deprecated = "Use `consumers` instead"]
-	pub fn refs(who: &T::AccountId) -> RefCount {
-		Self::consumers(who)
-	}
+	pub fn refs(who: &T::AccountId) -> RefCount { Self::consumers(who) }
 
 	/// True if the account has no outstanding references.
 	#[deprecated = "Use `!is_provider_required` instead"]
-	pub fn allow_death(who: &T::AccountId) -> bool {
-		!Self::is_provider_required(who)
-	}
+	pub fn allow_death(who: &T::AccountId) -> bool { !Self::is_provider_required(who) }
 
 	/// Increment the provider reference counter on an account.
 	pub fn inc_providers(who: &T::AccountId) -> IncRefStatus {
@@ -1236,14 +1204,10 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// The number of outstanding provider references for the account `who`.
-	pub fn providers(who: &T::AccountId) -> RefCount {
-		Account::<T>::get(who).providers
-	}
+	pub fn providers(who: &T::AccountId) -> RefCount { Account::<T>::get(who).providers }
 
 	/// The number of outstanding sufficient references for the account `who`.
-	pub fn sufficients(who: &T::AccountId) -> RefCount {
-		Account::<T>::get(who).sufficients
-	}
+	pub fn sufficients(who: &T::AccountId) -> RefCount { Account::<T>::get(who).sufficients }
 
 	/// The number of outstanding provider and sufficient references for the account `who`.
 	pub fn reference_count(who: &T::AccountId) -> RefCount {
@@ -1300,9 +1264,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// The number of outstanding references for the account `who`.
-	pub fn consumers(who: &T::AccountId) -> RefCount {
-		Account::<T>::get(who).consumers
-	}
+	pub fn consumers(who: &T::AccountId) -> RefCount { Account::<T>::get(who).consumers }
 
 	/// True if the account has some outstanding consumer references.
 	pub fn is_provider_required(who: &T::AccountId) -> bool {
@@ -1327,9 +1289,7 @@ impl<T: Config> Pallet<T> {
 
 	/// True if the account has at least one provider reference and fewer consumer references than
 	/// the maximum.
-	pub fn can_inc_consumer(who: &T::AccountId) -> bool {
-		Self::can_accrue_consumers(who, 1)
-	}
+	pub fn can_inc_consumer(who: &T::AccountId) -> bool { Self::can_accrue_consumers(who, 1) }
 
 	/// Deposits an event into this block's event record.
 	///
@@ -1385,14 +1345,10 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Gets extrinsics count.
-	pub fn extrinsic_count() -> u32 {
-		ExtrinsicCount::<T>::get().unwrap_or_default()
-	}
+	pub fn extrinsic_count() -> u32 { ExtrinsicCount::<T>::get().unwrap_or_default() }
 
 	/// Returns all extrinsics len in raw.
-	pub fn all_extrinsics_len() -> u32 {
-		AllExtrinsicsLen::<T>::get().unwrap_or_default().raw
-	}
+	pub fn all_extrinsics_len() -> u32 { AllExtrinsicsLen::<T>::get().unwrap_or_default().raw }
 
 	/// Returns all extrinsics len with padding.
 	pub fn all_padded_extrinsics_len() -> u32 {
@@ -1574,9 +1530,7 @@ impl<T: Config> Pallet<T> {
 	/// - `O(1)`
 	/// - 1 storage write (codec `O(1)`)
 	/// # </weight>
-	pub fn deposit_log(item: generic::DigestItem) {
-		<Digest<T>>::append(item);
-	}
+	pub fn deposit_log(item: generic::DigestItem) { <Digest<T>>::append(item); }
 
 	/// Get the basic externalities for this pallet, useful for tests.
 	#[cfg(any(feature = "std", test))]
@@ -1631,9 +1585,7 @@ impl<T: Config> Pallet<T> {
 	/// Set the block number to something in particular. Can be used as an alternative to
 	/// `initialize` for tests that don't need to bother with the other environment entries.
 	#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
-	pub fn set_block_number(n: BlockNumberFor<T>) {
-		<Number<T>>::put(n);
-	}
+	pub fn set_block_number(n: BlockNumberFor<T>) { <Number<T>>::put(n); }
 
 	/// Sets the index of extrinsic that is currently executing.
 	#[cfg(any(feature = "std", test))]
@@ -1644,9 +1596,7 @@ impl<T: Config> Pallet<T> {
 	/// Set the parent hash number to something in particular. Can be used as an alternative to
 	/// `initialize` for tests that don't need to bother with the other environment entries.
 	#[cfg(any(feature = "std", test))]
-	pub fn set_parent_hash(n: T::Hash) {
-		<ParentHash<T>>::put(n);
-	}
+	pub fn set_parent_hash(n: T::Hash) { <ParentHash<T>>::put(n); }
 
 	/// Set the current block weight. This should only be used in some integration tests.
 	#[cfg(any(feature = "std", test))]
@@ -1703,9 +1653,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Return the chain's current runtime version.
-	pub fn runtime_version() -> RuntimeVersion {
-		T::Version::get()
-	}
+	pub fn runtime_version() -> RuntimeVersion { T::Version::get() }
 
 	/// Retrieve the account transaction counter from storage.
 	pub fn account_nonce(who: impl EncodeLike<T::AccountId>) -> T::Nonce {
@@ -1770,9 +1718,7 @@ impl<T: Config> Pallet<T> {
 
 	/// To be called immediately after finishing the initialization of the block
 	/// (e.g., called `on_initialize` for all pallets).
-	pub fn note_finished_initialize() {
-		ExecutionPhase::<T>::put(Phase::ApplyExtrinsic(0))
-	}
+	pub fn note_finished_initialize() { ExecutionPhase::<T>::put(Phase::ApplyExtrinsic(0)) }
 
 	/// An account is being created.
 	pub fn on_created_account(who: T::AccountId, _a: &mut AccountInfo<T::Nonce, T::AccountData>) {
@@ -1868,9 +1814,7 @@ impl<T: Config> HandleLifetime<T::AccountId> for SelfSufficient<T> {
 /// Event handler which registers a consumer when created.
 pub struct Consumer<T>(PhantomData<T>);
 impl<T: Config> HandleLifetime<T::AccountId> for Consumer<T> {
-	fn created(t: &T::AccountId) -> Result<(), DispatchError> {
-		Pallet::<T>::inc_consumers(t)
-	}
+	fn created(t: &T::AccountId) -> Result<(), DispatchError> { Pallet::<T>::inc_consumers(t) }
 
 	fn killed(t: &T::AccountId) -> Result<(), DispatchError> {
 		Pallet::<T>::dec_consumers(t);
@@ -1881,9 +1825,7 @@ impl<T: Config> HandleLifetime<T::AccountId> for Consumer<T> {
 impl<T: Config> BlockNumberProvider for Pallet<T> {
 	type BlockNumber = BlockNumberFor<T>;
 
-	fn current_block_number() -> Self::BlockNumber {
-		Pallet::<T>::block_number()
-	}
+	fn current_block_number() -> Self::BlockNumber { Pallet::<T>::block_number() }
 }
 
 /// Implement StoredMap for a simple single-item, provide-when-not-default system. This works fine
@@ -1892,9 +1834,7 @@ impl<T: Config> BlockNumberProvider for Pallet<T> {
 ///
 /// Anything more complex will need more sophisticated logic.
 impl<T: Config> StoredMap<T::AccountId, T::AccountData> for Pallet<T> {
-	fn get(k: &T::AccountId) -> T::AccountData {
-		Account::<T>::get(k).data
-	}
+	fn get(k: &T::AccountId) -> T::AccountData { Account::<T>::get(k).data }
 
 	fn try_mutate_exists<R, E: From<DispatchError>>(
 		k: &T::AccountId,
@@ -1929,9 +1869,7 @@ pub fn split_inner<T, R, S>(
 
 pub struct ChainContext<T>(PhantomData<T>);
 impl<T> Default for ChainContext<T> {
-	fn default() -> Self {
-		ChainContext(PhantomData)
-	}
+	fn default() -> Self { ChainContext(PhantomData) }
 }
 
 impl<T: Config> Lookup for ChainContext<T> {
