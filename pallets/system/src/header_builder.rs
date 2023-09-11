@@ -126,22 +126,39 @@ pub fn build_extension<M: Metrics>(
 	seed: Seed,
 	metrics: &M,
 ) -> HeaderExtension {
+	use once_cell::sync::Lazy;
+	static PMP: Lazy<kate::pmp::m1_blst::M1NoPrecomp> =
+		once_cell::sync::Lazy::new(|| kate::testnet::multiproof_params(256, 256));
 	use avail_core::header::extension::{v1, v2};
 
-	let (xts_layout, commitment, block_dims, _data_matrix) = kate::com::par_build_commitments(
-		block_length.rows,
-		block_length.cols,
-		block_length.chunk_size(),
-		app_extrinsics,
+	let timer = std::time::Instant::now();
+	let grid = kate::gridgen::EvaluationGrid::from_extrinsics(
+		app_extrinsics.to_vec(),
+		4,                                    //TODO: where should this minimum grid width be specified
+		block_length.cols.0.saturated_into(), // even if we run on a u16 target this is fine
+		block_length.rows.0.saturated_into(),
 		seed,
-		metrics,
 	)
-	.expect("Build commitments cannot fail .qed");
-	let app_lookup = DataLookup::from_id_and_len_iter(xts_layout.into_iter())
-		.expect("Extrinsic size cannot overflow .qed");
-	let rows = block_dims.rows().0.saturated_into::<u16>();
-	let cols = block_dims.cols().0.saturated_into::<u16>();
+	.expect("Grid construction cannot fail");
+	metrics.preparation_block_time(timer.elapsed());
 
+	let timer = std::time::Instant::now();
+	use kate::gridgen::AsBytes;
+	let commitment = grid
+		.make_polynomial_grid()
+		.expect("Make polynomials cannot fail")
+		.extended_commitments(&*PMP, 2)
+		.expect("Extended commitments cannot fail")
+		.iter()
+		.flat_map(|c| c.to_bytes().expect("Commitment serialization cannot fail"))
+		.collect::<Vec<u8>>();
+	metrics.commitment_build_time(timer.elapsed());
+
+	// Note that this uses the original dims, _not the extended ones_
+	let rows = grid.dims().rows().get();
+	let cols = grid.dims().cols().get();
+
+	let mut app_lookup = grid.lookup().clone();
 	// **NOTE:** Header extension V2 is not yet enable by default.
 	if cfg!(feature = "header_extension_v2") {
 		use avail_core::kate_commitment::v2::KateCommitment;
