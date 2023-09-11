@@ -21,7 +21,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 512.
 #![recursion_limit = "512"]
-#![feature(result_option_inspect)]
 #![allow(macro_expanded_macro_exports_accessed_by_absolute_paths)]
 
 mod weights;
@@ -606,11 +605,15 @@ parameter_types! {
 use sp_runtime::traits::Convert;
 pub struct BalanceToU256;
 impl Convert<Balance, sp_core::U256> for BalanceToU256 {
-	fn convert(balance: Balance) -> sp_core::U256 { sp_core::U256::from(balance) }
+	fn convert(balance: Balance) -> sp_core::U256 {
+		sp_core::U256::from(balance)
+	}
 }
 pub struct U256ToBalance;
 impl Convert<sp_core::U256, Balance> for U256ToBalance {
-	fn convert(n: sp_core::U256) -> Balance { n.try_into().unwrap_or(Balance::max_value()) }
+	fn convert(n: sp_core::U256) -> Balance {
+		n.try_into().unwrap_or(Balance::max_value())
+	}
 }
 
 impl pallet_nomination_pools::Config for Runtime {

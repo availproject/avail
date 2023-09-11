@@ -23,7 +23,9 @@ pub type RcMetrics = Rc<RefCell<Metrics>>;
 
 impl Metrics {
 	/// Creates a shared metric with internal mutability.
-	fn new_shared() -> RcMetrics { Rc::new(RefCell::new(Self::default())) }
+	fn new_shared() -> RcMetrics {
+		Rc::new(RefCell::new(Self::default()))
+	}
 }
 
 /// Extracts the `data` field from some types of extrinsics.
@@ -43,7 +45,9 @@ pub trait Extractor {
 impl Extractor for () {
 	type Error = ();
 
-	fn extract(_: &OpaqueExtrinsic, _: RcMetrics) -> Result<Vec<Vec<u8>>, ()> { Ok(vec![]) }
+	fn extract(_: &OpaqueExtrinsic, _: RcMetrics) -> Result<Vec<Vec<u8>>, ()> {
+		Ok(vec![])
+	}
 }
 
 /// It is similar to `Extractor` but it uses `C` type for calls, instead of `AppExtrinsic`.
@@ -57,9 +61,13 @@ pub trait Filter<C> {
 
 #[cfg(any(feature = "std", test))]
 impl<C> Filter<C> for () {
-	fn filter(_: C, _: RcMetrics) -> Vec<Vec<u8>> { vec![] }
+	fn filter(_: C, _: RcMetrics) -> Vec<Vec<u8>> {
+		vec![]
+	}
 
-	fn process_calls(_: Vec<C>, _: &RcMetrics) -> Vec<Vec<u8>> { vec![] }
+	fn process_calls(_: Vec<C>, _: &RcMetrics) -> Vec<Vec<u8>> {
+		vec![]
+	}
 }
 
 fn extract_and_inspect<E>(opaque: &OpaqueExtrinsic, metrics: RcMetrics) -> Vec<Vec<u8>>
@@ -67,8 +75,11 @@ where
 	E: Extractor,
 	E::Error: Debug,
 {
-	E::extract(opaque, metrics)
-		.inspect_err(|e| log::error!("Extractor cannot decode opaque: {e:?}"))
+	let extracted = E::extract(opaque, metrics);
+	if let Err(e) = extracted.as_ref() {
+		log::error!("Extractor cannot decode opaque: {e:?}");
+	}
+	extracted
 		.unwrap_or_default()
 		.into_iter()
 		.filter(|data| !data.is_empty())
@@ -133,7 +144,9 @@ where
 	impl Hasher for Keccak256Algorithm {
 		type Hash = [u8; 32];
 
-		fn hash(data: &[u8]) -> [u8; 32] { sp_io::hashing::keccak_256(data).into() }
+		fn hash(data: &[u8]) -> [u8; 32] {
+			sp_io::hashing::keccak_256(data).into()
+		}
 	}
 
 	let mut tree = MerkleTree::<Keccak256Algorithm>::new();
@@ -295,7 +308,9 @@ mod test {
 			}
 		}
 
-		fn process_calls(_: Vec<C>, _: &RcMetrics) -> Vec<Vec<u8>> { vec![] }
+		fn process_calls(_: Vec<C>, _: &RcMetrics) -> Vec<Vec<u8>> {
+			vec![]
+		}
 	}
 
 	#[test]
@@ -538,10 +553,13 @@ mod test {
 		let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
 		let proof = data_tree.proof(&[1usize]);
 		let root_proof = proof.proof_hashes().to_vec();
-		assert_eq!(root_proof, vec![
-			hex!("754B9412E0ED7907BDF4B7CA5D2A22F5E129A03DEB1F4E1C1FE42D322FDEE90E"),
-			hex!("8D6E30E494D17D7675A94C3C614467FF8CCE35201C1056751A6E9A100515DAF9"),
-		]);
+		assert_eq!(
+			root_proof,
+			vec![
+				hex!("754B9412E0ED7907BDF4B7CA5D2A22F5E129A03DEB1F4E1C1FE42D322FDEE90E"),
+				hex!("8D6E30E494D17D7675A94C3C614467FF8CCE35201C1056751A6E9A100515DAF9"),
+			]
+		);
 	}
 
 	#[test]

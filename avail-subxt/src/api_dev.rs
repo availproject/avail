@@ -919,320 +919,312 @@ pub mod api {
 			.into())
 		}
 	}
-	pub fn constants() -> ConstantsApi { ConstantsApi }
-	pub fn storage() -> StorageApi { StorageApi }
-	pub fn tx() -> TransactionApi { TransactionApi }
-	pub fn apis() -> runtime_apis::RuntimeApi { runtime_apis::RuntimeApi }
+	pub fn constants() -> ConstantsApi {
+		ConstantsApi
+	}
+	pub fn storage() -> StorageApi {
+		StorageApi
+	}
+	pub fn tx() -> TransactionApi {
+		TransactionApi
+	}
+	pub fn apis() -> runtime_apis::RuntimeApi {
+		runtime_apis::RuntimeApi
+	}
 	pub mod runtime_apis {
+		use super::root_mod;
+		use super::runtime_types;
 		use ::subxt::ext::codec::Encode;
-
-		use super::{root_mod, runtime_types};
 		pub struct RuntimeApi;
 		impl RuntimeApi {}
 	}
 	pub struct ConstantsApi;
 	impl ConstantsApi {
-		pub fn system(&self) -> system::constants::ConstantsApi { system::constants::ConstantsApi }
-
+		pub fn system(&self) -> system::constants::ConstantsApi {
+			system::constants::ConstantsApi
+		}
 		pub fn utility(&self) -> utility::constants::ConstantsApi {
 			utility::constants::ConstantsApi
 		}
-
-		pub fn babe(&self) -> babe::constants::ConstantsApi { babe::constants::ConstantsApi }
-
+		pub fn babe(&self) -> babe::constants::ConstantsApi {
+			babe::constants::ConstantsApi
+		}
 		pub fn timestamp(&self) -> timestamp::constants::ConstantsApi {
 			timestamp::constants::ConstantsApi
 		}
-
 		pub fn indices(&self) -> indices::constants::ConstantsApi {
 			indices::constants::ConstantsApi
 		}
-
 		pub fn balances(&self) -> balances::constants::ConstantsApi {
 			balances::constants::ConstantsApi
 		}
-
 		pub fn transaction_payment(&self) -> transaction_payment::constants::ConstantsApi {
 			transaction_payment::constants::ConstantsApi
 		}
-
 		pub fn election_provider_multi_phase(
 			&self,
 		) -> election_provider_multi_phase::constants::ConstantsApi {
 			election_provider_multi_phase::constants::ConstantsApi
 		}
-
 		pub fn staking(&self) -> staking::constants::ConstantsApi {
 			staking::constants::ConstantsApi
 		}
-
 		pub fn democracy(&self) -> democracy::constants::ConstantsApi {
 			democracy::constants::ConstantsApi
 		}
-
 		pub fn council(&self) -> council::constants::ConstantsApi {
 			council::constants::ConstantsApi
 		}
-
 		pub fn technical_committee(&self) -> technical_committee::constants::ConstantsApi {
 			technical_committee::constants::ConstantsApi
 		}
-
 		pub fn elections(&self) -> elections::constants::ConstantsApi {
 			elections::constants::ConstantsApi
 		}
-
 		pub fn grandpa(&self) -> grandpa::constants::ConstantsApi {
 			grandpa::constants::ConstantsApi
 		}
-
 		pub fn treasury(&self) -> treasury::constants::ConstantsApi {
 			treasury::constants::ConstantsApi
 		}
-
 		pub fn im_online(&self) -> im_online::constants::ConstantsApi {
 			im_online::constants::ConstantsApi
 		}
-
 		pub fn scheduler(&self) -> scheduler::constants::ConstantsApi {
 			scheduler::constants::ConstantsApi
 		}
-
 		pub fn bounties(&self) -> bounties::constants::ConstantsApi {
 			bounties::constants::ConstantsApi
 		}
-
-		pub fn tips(&self) -> tips::constants::ConstantsApi { tips::constants::ConstantsApi }
-
+		pub fn tips(&self) -> tips::constants::ConstantsApi {
+			tips::constants::ConstantsApi
+		}
 		pub fn data_availability(&self) -> data_availability::constants::ConstantsApi {
 			data_availability::constants::ConstantsApi
 		}
-
 		pub fn nomad_home(&self) -> nomad_home::constants::ConstantsApi {
 			nomad_home::constants::ConstantsApi
 		}
-
 		pub fn nomad_da_bridge(&self) -> nomad_da_bridge::constants::ConstantsApi {
 			nomad_da_bridge::constants::ConstantsApi
 		}
-
 		pub fn multisig(&self) -> multisig::constants::ConstantsApi {
 			multisig::constants::ConstantsApi
 		}
-
 		pub fn voter_list(&self) -> voter_list::constants::ConstantsApi {
 			voter_list::constants::ConstantsApi
 		}
-
 		pub fn nomination_pools(&self) -> nomination_pools::constants::ConstantsApi {
 			nomination_pools::constants::ConstantsApi
 		}
-
 		pub fn identity(&self) -> identity::constants::ConstantsApi {
 			identity::constants::ConstantsApi
 		}
 	}
 	pub struct StorageApi;
 	impl StorageApi {
-		pub fn system(&self) -> system::storage::StorageApi { system::storage::StorageApi }
-
-		pub fn babe(&self) -> babe::storage::StorageApi { babe::storage::StorageApi }
-
-		pub fn timestamp(&self) -> timestamp::storage::StorageApi { timestamp::storage::StorageApi }
-
+		pub fn system(&self) -> system::storage::StorageApi {
+			system::storage::StorageApi
+		}
+		pub fn babe(&self) -> babe::storage::StorageApi {
+			babe::storage::StorageApi
+		}
+		pub fn timestamp(&self) -> timestamp::storage::StorageApi {
+			timestamp::storage::StorageApi
+		}
 		pub fn authorship(&self) -> authorship::storage::StorageApi {
 			authorship::storage::StorageApi
 		}
-
-		pub fn indices(&self) -> indices::storage::StorageApi { indices::storage::StorageApi }
-
-		pub fn balances(&self) -> balances::storage::StorageApi { balances::storage::StorageApi }
-
+		pub fn indices(&self) -> indices::storage::StorageApi {
+			indices::storage::StorageApi
+		}
+		pub fn balances(&self) -> balances::storage::StorageApi {
+			balances::storage::StorageApi
+		}
 		pub fn transaction_payment(&self) -> transaction_payment::storage::StorageApi {
 			transaction_payment::storage::StorageApi
 		}
-
 		pub fn election_provider_multi_phase(
 			&self,
 		) -> election_provider_multi_phase::storage::StorageApi {
 			election_provider_multi_phase::storage::StorageApi
 		}
-
-		pub fn staking(&self) -> staking::storage::StorageApi { staking::storage::StorageApi }
-
-		pub fn session(&self) -> session::storage::StorageApi { session::storage::StorageApi }
-
-		pub fn democracy(&self) -> democracy::storage::StorageApi { democracy::storage::StorageApi }
-
-		pub fn council(&self) -> council::storage::StorageApi { council::storage::StorageApi }
-
+		pub fn staking(&self) -> staking::storage::StorageApi {
+			staking::storage::StorageApi
+		}
+		pub fn session(&self) -> session::storage::StorageApi {
+			session::storage::StorageApi
+		}
+		pub fn democracy(&self) -> democracy::storage::StorageApi {
+			democracy::storage::StorageApi
+		}
+		pub fn council(&self) -> council::storage::StorageApi {
+			council::storage::StorageApi
+		}
 		pub fn technical_committee(&self) -> technical_committee::storage::StorageApi {
 			technical_committee::storage::StorageApi
 		}
-
-		pub fn elections(&self) -> elections::storage::StorageApi { elections::storage::StorageApi }
-
+		pub fn elections(&self) -> elections::storage::StorageApi {
+			elections::storage::StorageApi
+		}
 		pub fn technical_membership(&self) -> technical_membership::storage::StorageApi {
 			technical_membership::storage::StorageApi
 		}
-
-		pub fn grandpa(&self) -> grandpa::storage::StorageApi { grandpa::storage::StorageApi }
-
-		pub fn treasury(&self) -> treasury::storage::StorageApi { treasury::storage::StorageApi }
-
-		pub fn sudo(&self) -> sudo::storage::StorageApi { sudo::storage::StorageApi }
-
-		pub fn im_online(&self) -> im_online::storage::StorageApi { im_online::storage::StorageApi }
-
+		pub fn grandpa(&self) -> grandpa::storage::StorageApi {
+			grandpa::storage::StorageApi
+		}
+		pub fn treasury(&self) -> treasury::storage::StorageApi {
+			treasury::storage::StorageApi
+		}
+		pub fn sudo(&self) -> sudo::storage::StorageApi {
+			sudo::storage::StorageApi
+		}
+		pub fn im_online(&self) -> im_online::storage::StorageApi {
+			im_online::storage::StorageApi
+		}
 		pub fn authority_discovery(&self) -> authority_discovery::storage::StorageApi {
 			authority_discovery::storage::StorageApi
 		}
-
-		pub fn offences(&self) -> offences::storage::StorageApi { offences::storage::StorageApi }
-
+		pub fn offences(&self) -> offences::storage::StorageApi {
+			offences::storage::StorageApi
+		}
 		pub fn historical(&self) -> historical::storage::StorageApi {
 			historical::storage::StorageApi
 		}
-
-		pub fn scheduler(&self) -> scheduler::storage::StorageApi { scheduler::storage::StorageApi }
-
-		pub fn bounties(&self) -> bounties::storage::StorageApi { bounties::storage::StorageApi }
-
-		pub fn tips(&self) -> tips::storage::StorageApi { tips::storage::StorageApi }
-
-		pub fn mmr(&self) -> mmr::storage::StorageApi { mmr::storage::StorageApi }
-
+		pub fn scheduler(&self) -> scheduler::storage::StorageApi {
+			scheduler::storage::StorageApi
+		}
+		pub fn bounties(&self) -> bounties::storage::StorageApi {
+			bounties::storage::StorageApi
+		}
+		pub fn tips(&self) -> tips::storage::StorageApi {
+			tips::storage::StorageApi
+		}
+		pub fn mmr(&self) -> mmr::storage::StorageApi {
+			mmr::storage::StorageApi
+		}
 		pub fn data_availability(&self) -> data_availability::storage::StorageApi {
 			data_availability::storage::StorageApi
 		}
-
 		pub fn nomad_updater_manager(&self) -> nomad_updater_manager::storage::StorageApi {
 			nomad_updater_manager::storage::StorageApi
 		}
-
 		pub fn nomad_home(&self) -> nomad_home::storage::StorageApi {
 			nomad_home::storage::StorageApi
 		}
-
-		pub fn preimage(&self) -> preimage::storage::StorageApi { preimage::storage::StorageApi }
-
-		pub fn multisig(&self) -> multisig::storage::StorageApi { multisig::storage::StorageApi }
-
+		pub fn preimage(&self) -> preimage::storage::StorageApi {
+			preimage::storage::StorageApi
+		}
+		pub fn multisig(&self) -> multisig::storage::StorageApi {
+			multisig::storage::StorageApi
+		}
 		pub fn voter_list(&self) -> voter_list::storage::StorageApi {
 			voter_list::storage::StorageApi
 		}
-
 		pub fn nomination_pools(&self) -> nomination_pools::storage::StorageApi {
 			nomination_pools::storage::StorageApi
 		}
-
-		pub fn identity(&self) -> identity::storage::StorageApi { identity::storage::StorageApi }
+		pub fn identity(&self) -> identity::storage::StorageApi {
+			identity::storage::StorageApi
+		}
 	}
 	pub struct TransactionApi;
 	impl TransactionApi {
-		pub fn system(&self) -> system::calls::TransactionApi { system::calls::TransactionApi }
-
-		pub fn utility(&self) -> utility::calls::TransactionApi { utility::calls::TransactionApi }
-
-		pub fn babe(&self) -> babe::calls::TransactionApi { babe::calls::TransactionApi }
-
+		pub fn system(&self) -> system::calls::TransactionApi {
+			system::calls::TransactionApi
+		}
+		pub fn utility(&self) -> utility::calls::TransactionApi {
+			utility::calls::TransactionApi
+		}
+		pub fn babe(&self) -> babe::calls::TransactionApi {
+			babe::calls::TransactionApi
+		}
 		pub fn timestamp(&self) -> timestamp::calls::TransactionApi {
 			timestamp::calls::TransactionApi
 		}
-
-		pub fn indices(&self) -> indices::calls::TransactionApi { indices::calls::TransactionApi }
-
+		pub fn indices(&self) -> indices::calls::TransactionApi {
+			indices::calls::TransactionApi
+		}
 		pub fn balances(&self) -> balances::calls::TransactionApi {
 			balances::calls::TransactionApi
 		}
-
 		pub fn election_provider_multi_phase(
 			&self,
 		) -> election_provider_multi_phase::calls::TransactionApi {
 			election_provider_multi_phase::calls::TransactionApi
 		}
-
-		pub fn staking(&self) -> staking::calls::TransactionApi { staking::calls::TransactionApi }
-
-		pub fn session(&self) -> session::calls::TransactionApi { session::calls::TransactionApi }
-
+		pub fn staking(&self) -> staking::calls::TransactionApi {
+			staking::calls::TransactionApi
+		}
+		pub fn session(&self) -> session::calls::TransactionApi {
+			session::calls::TransactionApi
+		}
 		pub fn democracy(&self) -> democracy::calls::TransactionApi {
 			democracy::calls::TransactionApi
 		}
-
-		pub fn council(&self) -> council::calls::TransactionApi { council::calls::TransactionApi }
-
+		pub fn council(&self) -> council::calls::TransactionApi {
+			council::calls::TransactionApi
+		}
 		pub fn technical_committee(&self) -> technical_committee::calls::TransactionApi {
 			technical_committee::calls::TransactionApi
 		}
-
 		pub fn elections(&self) -> elections::calls::TransactionApi {
 			elections::calls::TransactionApi
 		}
-
 		pub fn technical_membership(&self) -> technical_membership::calls::TransactionApi {
 			technical_membership::calls::TransactionApi
 		}
-
-		pub fn grandpa(&self) -> grandpa::calls::TransactionApi { grandpa::calls::TransactionApi }
-
+		pub fn grandpa(&self) -> grandpa::calls::TransactionApi {
+			grandpa::calls::TransactionApi
+		}
 		pub fn treasury(&self) -> treasury::calls::TransactionApi {
 			treasury::calls::TransactionApi
 		}
-
-		pub fn sudo(&self) -> sudo::calls::TransactionApi { sudo::calls::TransactionApi }
-
+		pub fn sudo(&self) -> sudo::calls::TransactionApi {
+			sudo::calls::TransactionApi
+		}
 		pub fn im_online(&self) -> im_online::calls::TransactionApi {
 			im_online::calls::TransactionApi
 		}
-
 		pub fn scheduler(&self) -> scheduler::calls::TransactionApi {
 			scheduler::calls::TransactionApi
 		}
-
 		pub fn bounties(&self) -> bounties::calls::TransactionApi {
 			bounties::calls::TransactionApi
 		}
-
-		pub fn tips(&self) -> tips::calls::TransactionApi { tips::calls::TransactionApi }
-
+		pub fn tips(&self) -> tips::calls::TransactionApi {
+			tips::calls::TransactionApi
+		}
 		pub fn data_availability(&self) -> data_availability::calls::TransactionApi {
 			data_availability::calls::TransactionApi
 		}
-
 		pub fn nomad_updater_manager(&self) -> nomad_updater_manager::calls::TransactionApi {
 			nomad_updater_manager::calls::TransactionApi
 		}
-
 		pub fn nomad_home(&self) -> nomad_home::calls::TransactionApi {
 			nomad_home::calls::TransactionApi
 		}
-
 		pub fn nomad_da_bridge(&self) -> nomad_da_bridge::calls::TransactionApi {
 			nomad_da_bridge::calls::TransactionApi
 		}
-
 		pub fn preimage(&self) -> preimage::calls::TransactionApi {
 			preimage::calls::TransactionApi
 		}
-
 		pub fn multisig(&self) -> multisig::calls::TransactionApi {
 			multisig::calls::TransactionApi
 		}
-
 		pub fn voter_list(&self) -> voter_list::calls::TransactionApi {
 			voter_list::calls::TransactionApi
 		}
-
 		pub fn nomination_pools(&self) -> nomination_pools::calls::TransactionApi {
 			nomination_pools::calls::TransactionApi
 		}
-
 		pub fn identity(&self) -> identity::calls::TransactionApi {
 			identity::calls::TransactionApi
 		}
-
-		pub fn mandate(&self) -> mandate::calls::TransactionApi { mandate::calls::TransactionApi }
+		pub fn mandate(&self) -> mandate::calls::TransactionApi {
+			mandate::calls::TransactionApi
+		}
 	}
 	#[doc = r" check whether the Client you are using is aligned with the statically generated codegen."]
 	pub fn validate_codegen<T: ::subxt::Config, C: ::subxt::client::OfflineClientT<T>>(
@@ -1255,13 +1247,15 @@ pub mod api {
 		}
 	}
 	pub mod system {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "Error for the System pallet"]
 		pub type Error = runtime_types::frame_system::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::frame_system::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -1282,8 +1276,8 @@ pub mod api {
 					pub remark: ::std::vec::Vec<::core::primitive::u8>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Remark {
-					const CALL: &'static str = "remark";
 					const PALLET: &'static str = "System";
+					const CALL: &'static str = "remark";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: CompactAs,
@@ -1303,8 +1297,8 @@ pub mod api {
 					pub pages: ::core::primitive::u64,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetHeapPages {
-					const CALL: &'static str = "set_heap_pages";
 					const PALLET: &'static str = "System";
+					const CALL: &'static str = "set_heap_pages";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -1323,8 +1317,8 @@ pub mod api {
 					pub code: ::std::vec::Vec<::core::primitive::u8>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetCode {
-					const CALL: &'static str = "set_code";
 					const PALLET: &'static str = "System";
+					const CALL: &'static str = "set_code";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -1343,8 +1337,8 @@ pub mod api {
 					pub code: ::std::vec::Vec<::core::primitive::u8>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetCodeWithoutChecks {
-					const CALL: &'static str = "set_code_without_checks";
 					const PALLET: &'static str = "System";
+					const CALL: &'static str = "set_code_without_checks";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -1366,8 +1360,8 @@ pub mod api {
 					)>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetStorage {
-					const CALL: &'static str = "set_storage";
 					const PALLET: &'static str = "System";
+					const CALL: &'static str = "set_storage";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -1386,8 +1380,8 @@ pub mod api {
 					pub keys: ::std::vec::Vec<::std::vec::Vec<::core::primitive::u8>>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for KillStorage {
-					const CALL: &'static str = "kill_storage";
 					const PALLET: &'static str = "System";
+					const CALL: &'static str = "kill_storage";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -1407,8 +1401,8 @@ pub mod api {
 					pub subkeys: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for KillPrefix {
-					const CALL: &'static str = "kill_prefix";
 					const PALLET: &'static str = "System";
+					const CALL: &'static str = "kill_prefix";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -1427,8 +1421,8 @@ pub mod api {
 					pub remark: ::std::vec::Vec<::core::primitive::u8>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for RemarkWithEvent {
-					const CALL: &'static str = "remark_with_event";
 					const PALLET: &'static str = "System";
+					const CALL: &'static str = "remark_with_event";
 				}
 			}
 			pub struct TransactionApi;
@@ -1450,7 +1444,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_heap_pages`]."]
 				pub fn set_heap_pages(
 					&self,
@@ -1468,7 +1461,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_code`]."]
 				pub fn set_code(
 					&self,
@@ -1485,7 +1477,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_code_without_checks`]."]
 				pub fn set_code_without_checks(
 					&self,
@@ -1503,7 +1494,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_storage`]."]
 				pub fn set_storage(
 					&self,
@@ -1523,7 +1513,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::kill_storage`]."]
 				pub fn kill_storage(
 					&self,
@@ -1541,7 +1530,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::kill_prefix`]."]
 				pub fn kill_prefix(
 					&self,
@@ -1560,7 +1548,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::remark_with_event`]."]
 				pub fn remark_with_event(
 					&self,
@@ -1601,8 +1588,8 @@ pub mod api {
 				pub dispatch_info: runtime_types::frame_support::dispatch::DispatchInfo,
 			}
 			impl ::subxt::events::StaticEvent for ExtrinsicSuccess {
-				const EVENT: &'static str = "ExtrinsicSuccess";
 				const PALLET: &'static str = "System";
+				const EVENT: &'static str = "ExtrinsicSuccess";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -1623,8 +1610,8 @@ pub mod api {
 				pub dispatch_info: runtime_types::frame_support::dispatch::DispatchInfo,
 			}
 			impl ::subxt::events::StaticEvent for ExtrinsicFailed {
-				const EVENT: &'static str = "ExtrinsicFailed";
 				const PALLET: &'static str = "System";
+				const EVENT: &'static str = "ExtrinsicFailed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -1642,8 +1629,8 @@ pub mod api {
 			#[doc = "`:code` was updated."]
 			pub struct CodeUpdated;
 			impl ::subxt::events::StaticEvent for CodeUpdated {
-				const EVENT: &'static str = "CodeUpdated";
 				const PALLET: &'static str = "System";
+				const EVENT: &'static str = "CodeUpdated";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -1663,8 +1650,8 @@ pub mod api {
 				pub account: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for NewAccount {
-				const EVENT: &'static str = "NewAccount";
 				const PALLET: &'static str = "System";
+				const EVENT: &'static str = "NewAccount";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -1684,8 +1671,8 @@ pub mod api {
 				pub account: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for KilledAccount {
-				const EVENT: &'static str = "KilledAccount";
 				const PALLET: &'static str = "System";
+				const EVENT: &'static str = "KilledAccount";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -1706,8 +1693,8 @@ pub mod api {
 				pub hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for Remarked {
-				const EVENT: &'static str = "Remarked";
 				const PALLET: &'static str = "System";
+				const EVENT: &'static str = "Remarked";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -1727,8 +1714,8 @@ pub mod api {
 				pub hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for RemarkedByRoot {
-				const EVENT: &'static str = "RemarkedByRoot";
 				const PALLET: &'static str = "System";
+				const EVENT: &'static str = "RemarkedByRoot";
 			}
 		}
 		pub mod storage {
@@ -1762,7 +1749,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The full account information for a particular account ID."]
 				pub fn account_root(
 					&self,
@@ -1787,7 +1773,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Total extrinsics count for the current block."]
 				pub fn extrinsic_count(
 					&self,
@@ -1810,7 +1795,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The current weight for the block."]
 				pub fn block_weight(
 					&self,
@@ -1835,7 +1819,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Total length (in bytes) for all extrinsics put together, for the current block."]
 				pub fn all_extrinsics_len(
 					&self,
@@ -1858,7 +1841,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Map of block numbers to block hashes."]
 				pub fn block_hash(
 					&self,
@@ -1884,7 +1866,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Map of block numbers to block hashes."]
 				pub fn block_hash_root(
 					&self,
@@ -1907,7 +1888,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Extrinsics data for the current block (maps an extrinsic's index to its data)."]
 				pub fn extrinsic_data(
 					&self,
@@ -1932,7 +1912,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Extrinsics data for the current block (maps an extrinsic's index to its data)."]
 				pub fn extrinsic_data_root(
 					&self,
@@ -1954,7 +1933,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The current block number being processed. Set by `execute_block`."]
 				pub fn number(
 					&self,
@@ -1965,13 +1943,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("System", "Number", vec![], [
-						30u8, 194u8, 177u8, 90u8, 194u8, 232u8, 46u8, 180u8, 85u8, 129u8, 14u8,
-						9u8, 8u8, 8u8, 23u8, 95u8, 230u8, 5u8, 13u8, 105u8, 125u8, 2u8, 22u8,
-						200u8, 78u8, 93u8, 115u8, 28u8, 150u8, 113u8, 48u8, 53u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"System",
+						"Number",
+						vec![],
+						[
+							30u8, 194u8, 177u8, 90u8, 194u8, 232u8, 46u8, 180u8, 85u8, 129u8, 14u8,
+							9u8, 8u8, 8u8, 23u8, 95u8, 230u8, 5u8, 13u8, 105u8, 125u8, 2u8, 22u8,
+							200u8, 78u8, 93u8, 115u8, 28u8, 150u8, 113u8, 48u8, 53u8,
+						],
+					)
 				}
-
 				#[doc = " Hash of the previous block."]
 				pub fn parent_hash(
 					&self,
@@ -1993,7 +1975,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Digest of the current block, also part of the block header."]
 				pub fn digest(
 					&self,
@@ -2004,13 +1985,18 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("System", "Digest", vec![], [
-						70u8, 156u8, 127u8, 89u8, 115u8, 250u8, 103u8, 62u8, 185u8, 153u8, 26u8,
-						72u8, 39u8, 226u8, 181u8, 97u8, 137u8, 225u8, 45u8, 158u8, 212u8, 254u8,
-						142u8, 136u8, 90u8, 22u8, 243u8, 125u8, 226u8, 49u8, 235u8, 215u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"System",
+						"Digest",
+						vec![],
+						[
+							70u8, 156u8, 127u8, 89u8, 115u8, 250u8, 103u8, 62u8, 185u8, 153u8,
+							26u8, 72u8, 39u8, 226u8, 181u8, 97u8, 137u8, 225u8, 45u8, 158u8, 212u8,
+							254u8, 142u8, 136u8, 90u8, 22u8, 243u8, 125u8, 226u8, 49u8, 235u8,
+							215u8,
+						],
+					)
 				}
-
 				#[doc = " Events deposited for the current block."]
 				#[doc = ""]
 				#[doc = " NOTE: The item is unbound and should therefore never be read on chain."]
@@ -2032,13 +2018,18 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("System", "Events", vec![], [
-						135u8, 70u8, 188u8, 138u8, 189u8, 89u8, 46u8, 4u8, 225u8, 244u8, 212u8,
-						189u8, 221u8, 105u8, 161u8, 239u8, 176u8, 2u8, 188u8, 39u8, 88u8, 209u8,
-						24u8, 183u8, 165u8, 251u8, 104u8, 239u8, 253u8, 88u8, 150u8, 34u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"System",
+						"Events",
+						vec![],
+						[
+							135u8, 70u8, 188u8, 138u8, 189u8, 89u8, 46u8, 4u8, 225u8, 244u8, 212u8,
+							189u8, 221u8, 105u8, 161u8, 239u8, 176u8, 2u8, 188u8, 39u8, 88u8,
+							209u8, 24u8, 183u8, 165u8, 251u8, 104u8, 239u8, 253u8, 88u8, 150u8,
+							34u8,
+						],
+					)
 				}
-
 				#[doc = " The number of events in the `Events<T>` list."]
 				pub fn event_count(
 					&self,
@@ -2061,7 +2052,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Mapping between a topic (represented by T::Hash) and a vector of indexes"]
 				#[doc = " of events in the `<Events<T>>` list."]
 				#[doc = ""]
@@ -2095,7 +2085,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Mapping between a topic (represented by T::Hash) and a vector of indexes"]
 				#[doc = " of events in the `<Events<T>>` list."]
 				#[doc = ""]
@@ -2126,7 +2115,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Stores the `spec_version` and `spec_name` of when the last runtime upgrade happened."]
 				pub fn last_runtime_upgrade(
 					&self,
@@ -2148,7 +2136,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " True if we have upgraded so that `type RefCount` is `u32`. False (default) if not."]
 				pub fn upgraded_to_u32_ref_count(
 					&self,
@@ -2170,7 +2157,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " True if we have upgraded so that AccountInfo contains three types of `RefCount`. False"]
 				#[doc = " (default) if not."]
 				pub fn upgraded_to_triple_ref_count(
@@ -2194,7 +2180,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The execution phase of the block."]
 				pub fn execution_phase(
 					&self,
@@ -2216,7 +2201,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The dynamic block length"]
 				pub fn dynamic_block_length(
 					&self,
@@ -2249,80 +2233,103 @@ pub mod api {
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::frame_system::limits::BlockWeights>
 				{
-					::subxt::constants::Address::new_static("System", "BlockWeights", [
-						238u8, 20u8, 221u8, 11u8, 146u8, 236u8, 47u8, 103u8, 8u8, 239u8, 13u8,
-						176u8, 202u8, 10u8, 151u8, 68u8, 110u8, 162u8, 99u8, 40u8, 211u8, 136u8,
-						71u8, 82u8, 50u8, 80u8, 244u8, 211u8, 231u8, 198u8, 36u8, 152u8,
-					])
+					::subxt::constants::Address::new_static(
+						"System",
+						"BlockWeights",
+						[
+							238u8, 20u8, 221u8, 11u8, 146u8, 236u8, 47u8, 103u8, 8u8, 239u8, 13u8,
+							176u8, 202u8, 10u8, 151u8, 68u8, 110u8, 162u8, 99u8, 40u8, 211u8,
+							136u8, 71u8, 82u8, 50u8, 80u8, 244u8, 211u8, 231u8, 198u8, 36u8, 152u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum length of a block (in bytes)."]
 				pub fn block_length(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::frame_system::limits::BlockLength> {
-					::subxt::constants::Address::new_static("System", "BlockLength", [
-						166u8, 7u8, 126u8, 154u8, 133u8, 31u8, 100u8, 149u8, 118u8, 168u8, 1u8,
-						21u8, 202u8, 114u8, 104u8, 193u8, 44u8, 97u8, 240u8, 37u8, 177u8, 43u8,
-						83u8, 195u8, 176u8, 252u8, 201u8, 229u8, 170u8, 45u8, 136u8, 81u8,
-					])
+					::subxt::constants::Address::new_static(
+						"System",
+						"BlockLength",
+						[
+							166u8, 7u8, 126u8, 154u8, 133u8, 31u8, 100u8, 149u8, 118u8, 168u8, 1u8,
+							21u8, 202u8, 114u8, 104u8, 193u8, 44u8, 97u8, 240u8, 37u8, 177u8, 43u8,
+							83u8, 195u8, 176u8, 252u8, 201u8, 229u8, 170u8, 45u8, 136u8, 81u8,
+						],
+					)
 				}
-
 				#[doc = " Maximum number of block number to block hash mappings to keep (oldest pruned first)."]
 				pub fn block_hash_count(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("System", "BlockHashCount", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"System",
+						"BlockHashCount",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The weight of runtime database operations the runtime can invoke."]
 				pub fn db_weight(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::sp_weights::RuntimeDbWeight> {
-					::subxt::constants::Address::new_static("System", "DbWeight", [
-						206u8, 53u8, 134u8, 247u8, 42u8, 38u8, 197u8, 59u8, 191u8, 83u8, 160u8,
-						9u8, 207u8, 133u8, 108u8, 152u8, 150u8, 103u8, 109u8, 228u8, 218u8, 24u8,
-						27u8, 210u8, 106u8, 252u8, 74u8, 93u8, 27u8, 63u8, 109u8, 252u8,
-					])
+					::subxt::constants::Address::new_static(
+						"System",
+						"DbWeight",
+						[
+							206u8, 53u8, 134u8, 247u8, 42u8, 38u8, 197u8, 59u8, 191u8, 83u8, 160u8,
+							9u8, 207u8, 133u8, 108u8, 152u8, 150u8, 103u8, 109u8, 228u8, 218u8,
+							24u8, 27u8, 210u8, 106u8, 252u8, 74u8, 93u8, 27u8, 63u8, 109u8, 252u8,
+						],
+					)
 				}
-
 				#[doc = " Get the chain's current version."]
 				pub fn version(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::sp_version::RuntimeVersion> {
-					::subxt::constants::Address::new_static("System", "Version", [
-						134u8, 0u8, 23u8, 0u8, 199u8, 213u8, 89u8, 240u8, 194u8, 186u8, 239u8,
-						157u8, 168u8, 211u8, 223u8, 156u8, 138u8, 140u8, 194u8, 23u8, 167u8, 158u8,
-						195u8, 233u8, 25u8, 165u8, 27u8, 237u8, 198u8, 206u8, 233u8, 28u8,
-					])
+					::subxt::constants::Address::new_static(
+						"System",
+						"Version",
+						[
+							134u8, 0u8, 23u8, 0u8, 199u8, 213u8, 89u8, 240u8, 194u8, 186u8, 239u8,
+							157u8, 168u8, 211u8, 223u8, 156u8, 138u8, 140u8, 194u8, 23u8, 167u8,
+							158u8, 195u8, 233u8, 25u8, 165u8, 27u8, 237u8, 198u8, 206u8, 233u8,
+							28u8,
+						],
+					)
 				}
-
 				#[doc = " The designated SS58 prefix of this chain."]
 				#[doc = ""]
 				#[doc = " This replaces the \"ss58Format\" property declared in the chain spec. Reason is"]
 				#[doc = " that the runtime should know about the prefix in order to make use of it as"]
 				#[doc = " an identifier of the chain."]
 				pub fn ss58_prefix(&self) -> ::subxt::constants::Address<::core::primitive::u16> {
-					::subxt::constants::Address::new_static("System", "SS58Prefix", [
-						116u8, 33u8, 2u8, 170u8, 181u8, 147u8, 171u8, 169u8, 167u8, 227u8, 41u8,
-						144u8, 11u8, 236u8, 82u8, 100u8, 74u8, 60u8, 184u8, 72u8, 169u8, 90u8,
-						208u8, 135u8, 15u8, 117u8, 10u8, 123u8, 128u8, 193u8, 29u8, 70u8,
-					])
+					::subxt::constants::Address::new_static(
+						"System",
+						"SS58Prefix",
+						[
+							116u8, 33u8, 2u8, 170u8, 181u8, 147u8, 171u8, 169u8, 167u8, 227u8,
+							41u8, 144u8, 11u8, 236u8, 82u8, 100u8, 74u8, 60u8, 184u8, 72u8, 169u8,
+							90u8, 208u8, 135u8, 15u8, 117u8, 10u8, 123u8, 128u8, 193u8, 29u8, 70u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod utility {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_utility::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_utility::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -2343,8 +2350,8 @@ pub mod api {
 					pub calls: ::std::vec::Vec<runtime_types::da_runtime::RuntimeCall>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Batch {
-					const CALL: &'static str = "batch";
 					const PALLET: &'static str = "Utility";
+					const CALL: &'static str = "batch";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -2364,8 +2371,8 @@ pub mod api {
 					pub call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for AsDerivative {
-					const CALL: &'static str = "as_derivative";
 					const PALLET: &'static str = "Utility";
+					const CALL: &'static str = "as_derivative";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -2384,8 +2391,8 @@ pub mod api {
 					pub calls: ::std::vec::Vec<runtime_types::da_runtime::RuntimeCall>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for BatchAll {
-					const CALL: &'static str = "batch_all";
 					const PALLET: &'static str = "Utility";
+					const CALL: &'static str = "batch_all";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -2405,8 +2412,8 @@ pub mod api {
 					pub call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for DispatchAs {
-					const CALL: &'static str = "dispatch_as";
 					const PALLET: &'static str = "Utility";
+					const CALL: &'static str = "dispatch_as";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -2425,8 +2432,8 @@ pub mod api {
 					pub calls: ::std::vec::Vec<runtime_types::da_runtime::RuntimeCall>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ForceBatch {
-					const CALL: &'static str = "force_batch";
 					const PALLET: &'static str = "Utility";
+					const CALL: &'static str = "force_batch";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -2446,8 +2453,8 @@ pub mod api {
 					pub weight: runtime_types::sp_weights::weight_v2::Weight,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for WithWeight {
-					const CALL: &'static str = "with_weight";
 					const PALLET: &'static str = "Utility";
+					const CALL: &'static str = "with_weight";
 				}
 			}
 			pub struct TransactionApi;
@@ -2457,13 +2464,17 @@ pub mod api {
 					&self,
 					calls: ::std::vec::Vec<runtime_types::da_runtime::RuntimeCall>,
 				) -> ::subxt::tx::Payload<types::Batch> {
-					::subxt::tx::Payload::new_static("Utility", "batch", types::Batch { calls }, [
-						220u8, 133u8, 43u8, 120u8, 158u8, 223u8, 27u8, 148u8, 207u8, 167u8, 54u8,
-						93u8, 208u8, 199u8, 29u8, 110u8, 176u8, 77u8, 51u8, 216u8, 24u8, 86u8,
-						103u8, 71u8, 108u8, 82u8, 226u8, 22u8, 10u8, 20u8, 117u8, 152u8,
-					])
+					::subxt::tx::Payload::new_static(
+						"Utility",
+						"batch",
+						types::Batch { calls },
+						[
+							220u8, 133u8, 43u8, 120u8, 158u8, 223u8, 27u8, 148u8, 207u8, 167u8,
+							54u8, 93u8, 208u8, 199u8, 29u8, 110u8, 176u8, 77u8, 51u8, 216u8, 24u8,
+							86u8, 103u8, 71u8, 108u8, 82u8, 226u8, 22u8, 10u8, 20u8, 117u8, 152u8,
+						],
+					)
 				}
-
 				#[doc = "See [`Pallet::as_derivative`]."]
 				pub fn as_derivative(
 					&self,
@@ -2485,7 +2496,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::batch_all`]."]
 				pub fn batch_all(
 					&self,
@@ -2503,7 +2513,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::dispatch_as`]."]
 				pub fn dispatch_as(
 					&self,
@@ -2524,7 +2533,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::force_batch`]."]
 				pub fn force_batch(
 					&self,
@@ -2541,7 +2549,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::with_weight`]."]
 				pub fn with_weight(
 					&self,
@@ -2589,8 +2596,8 @@ pub mod api {
 				pub error: runtime_types::sp_runtime::DispatchError,
 			}
 			impl ::subxt::events::StaticEvent for BatchInterrupted {
-				const EVENT: &'static str = "BatchInterrupted";
 				const PALLET: &'static str = "Utility";
+				const EVENT: &'static str = "BatchInterrupted";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -2608,8 +2615,8 @@ pub mod api {
 			#[doc = "Batch of dispatches completed fully with no error."]
 			pub struct BatchCompleted;
 			impl ::subxt::events::StaticEvent for BatchCompleted {
-				const EVENT: &'static str = "BatchCompleted";
 				const PALLET: &'static str = "Utility";
+				const EVENT: &'static str = "BatchCompleted";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -2627,8 +2634,8 @@ pub mod api {
 			#[doc = "Batch of dispatches completed but has errors."]
 			pub struct BatchCompletedWithErrors;
 			impl ::subxt::events::StaticEvent for BatchCompletedWithErrors {
-				const EVENT: &'static str = "BatchCompletedWithErrors";
 				const PALLET: &'static str = "Utility";
+				const EVENT: &'static str = "BatchCompletedWithErrors";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -2646,8 +2653,8 @@ pub mod api {
 			#[doc = "A single item within a Batch of dispatches has completed with no error."]
 			pub struct ItemCompleted;
 			impl ::subxt::events::StaticEvent for ItemCompleted {
-				const EVENT: &'static str = "ItemCompleted";
 				const PALLET: &'static str = "Utility";
+				const EVENT: &'static str = "ItemCompleted";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -2667,8 +2674,8 @@ pub mod api {
 				pub error: runtime_types::sp_runtime::DispatchError,
 			}
 			impl ::subxt::events::StaticEvent for ItemFailed {
-				const EVENT: &'static str = "ItemFailed";
 				const PALLET: &'static str = "Utility";
+				const EVENT: &'static str = "ItemFailed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -2688,8 +2695,8 @@ pub mod api {
 				pub result: ::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
 			}
 			impl ::subxt::events::StaticEvent for DispatchedAs {
-				const EVENT: &'static str = "DispatchedAs";
 				const PALLET: &'static str = "Utility";
+				const EVENT: &'static str = "DispatchedAs";
 			}
 		}
 		pub mod constants {
@@ -2700,23 +2707,30 @@ pub mod api {
 				pub fn batched_calls_limit(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Utility", "batched_calls_limit", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Utility",
+						"batched_calls_limit",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod babe {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_babe::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_babe::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -2746,8 +2760,8 @@ pub mod api {
 					pub key_owner_proof: runtime_types::sp_session::MembershipProof,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ReportEquivocation {
-					const CALL: &'static str = "report_equivocation";
 					const PALLET: &'static str = "Babe";
+					const CALL: &'static str = "report_equivocation";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -2775,8 +2789,8 @@ pub mod api {
 					pub key_owner_proof: runtime_types::sp_session::MembershipProof,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ReportEquivocationUnsigned {
-					const CALL: &'static str = "report_equivocation_unsigned";
 					const PALLET: &'static str = "Babe";
+					const CALL: &'static str = "report_equivocation_unsigned";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -2795,8 +2809,8 @@ pub mod api {
 					pub config: runtime_types::sp_consensus_babe::digests::NextConfigDescriptor,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for PlanConfigChange {
-					const CALL: &'static str = "plan_config_change";
 					const PALLET: &'static str = "Babe";
+					const CALL: &'static str = "plan_config_change";
 				}
 			}
 			pub struct TransactionApi;
@@ -2828,7 +2842,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::report_equivocation_unsigned`]."]
 				pub fn report_equivocation_unsigned(
 					&self,
@@ -2855,7 +2868,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::plan_config_change`]."]
 				pub fn plan_config_change(
 					&self,
@@ -2889,13 +2901,18 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "EpochIndex", vec![], [
-						32u8, 82u8, 130u8, 31u8, 190u8, 162u8, 237u8, 189u8, 104u8, 244u8, 30u8,
-						199u8, 179u8, 0u8, 161u8, 107u8, 72u8, 240u8, 201u8, 222u8, 177u8, 222u8,
-						35u8, 156u8, 81u8, 132u8, 162u8, 118u8, 238u8, 84u8, 112u8, 89u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"EpochIndex",
+						vec![],
+						[
+							32u8, 82u8, 130u8, 31u8, 190u8, 162u8, 237u8, 189u8, 104u8, 244u8,
+							30u8, 199u8, 179u8, 0u8, 161u8, 107u8, 72u8, 240u8, 201u8, 222u8,
+							177u8, 222u8, 35u8, 156u8, 81u8, 132u8, 162u8, 118u8, 238u8, 84u8,
+							112u8, 89u8,
+						],
+					)
 				}
-
 				#[doc = " Current epoch authorities."]
 				pub fn authorities(
 					&self,
@@ -2909,13 +2926,18 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "Authorities", vec![], [
-						67u8, 196u8, 244u8, 13u8, 246u8, 245u8, 198u8, 98u8, 81u8, 55u8, 182u8,
-						187u8, 214u8, 5u8, 181u8, 76u8, 251u8, 213u8, 144u8, 166u8, 36u8, 153u8,
-						234u8, 181u8, 252u8, 55u8, 198u8, 175u8, 55u8, 211u8, 105u8, 85u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"Authorities",
+						vec![],
+						[
+							67u8, 196u8, 244u8, 13u8, 246u8, 245u8, 198u8, 98u8, 81u8, 55u8, 182u8,
+							187u8, 214u8, 5u8, 181u8, 76u8, 251u8, 213u8, 144u8, 166u8, 36u8,
+							153u8, 234u8, 181u8, 252u8, 55u8, 198u8, 175u8, 55u8, 211u8, 105u8,
+							85u8,
+						],
+					)
 				}
-
 				#[doc = " The slot at which the first epoch actually started. This is 0"]
 				#[doc = " until the first block of the chain."]
 				pub fn genesis_slot(
@@ -2927,13 +2949,18 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "GenesisSlot", vec![], [
-						218u8, 174u8, 152u8, 76u8, 188u8, 214u8, 7u8, 88u8, 253u8, 187u8, 139u8,
-						234u8, 51u8, 28u8, 220u8, 57u8, 73u8, 1u8, 18u8, 205u8, 80u8, 160u8, 120u8,
-						216u8, 139u8, 191u8, 100u8, 108u8, 162u8, 106u8, 175u8, 107u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"GenesisSlot",
+						vec![],
+						[
+							218u8, 174u8, 152u8, 76u8, 188u8, 214u8, 7u8, 88u8, 253u8, 187u8,
+							139u8, 234u8, 51u8, 28u8, 220u8, 57u8, 73u8, 1u8, 18u8, 205u8, 80u8,
+							160u8, 120u8, 216u8, 139u8, 191u8, 100u8, 108u8, 162u8, 106u8, 175u8,
+							107u8,
+						],
+					)
 				}
-
 				#[doc = " Current slot number."]
 				pub fn current_slot(
 					&self,
@@ -2944,13 +2971,18 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "CurrentSlot", vec![], [
-						112u8, 199u8, 115u8, 248u8, 217u8, 242u8, 45u8, 231u8, 178u8, 53u8, 236u8,
-						167u8, 219u8, 238u8, 81u8, 243u8, 39u8, 140u8, 68u8, 19u8, 201u8, 169u8,
-						211u8, 133u8, 135u8, 213u8, 150u8, 105u8, 60u8, 252u8, 43u8, 57u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"CurrentSlot",
+						vec![],
+						[
+							112u8, 199u8, 115u8, 248u8, 217u8, 242u8, 45u8, 231u8, 178u8, 53u8,
+							236u8, 167u8, 219u8, 238u8, 81u8, 243u8, 39u8, 140u8, 68u8, 19u8,
+							201u8, 169u8, 211u8, 133u8, 135u8, 213u8, 150u8, 105u8, 60u8, 252u8,
+							43u8, 57u8,
+						],
+					)
 				}
-
 				#[doc = " The epoch randomness for the *current* epoch."]
 				#[doc = ""]
 				#[doc = " # Security"]
@@ -2970,13 +3002,18 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "Randomness", vec![], [
-						36u8, 15u8, 52u8, 73u8, 195u8, 177u8, 186u8, 125u8, 134u8, 11u8, 103u8,
-						248u8, 170u8, 237u8, 105u8, 239u8, 168u8, 204u8, 147u8, 52u8, 15u8, 226u8,
-						126u8, 176u8, 133u8, 186u8, 169u8, 241u8, 156u8, 118u8, 67u8, 58u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"Randomness",
+						vec![],
+						[
+							36u8, 15u8, 52u8, 73u8, 195u8, 177u8, 186u8, 125u8, 134u8, 11u8, 103u8,
+							248u8, 170u8, 237u8, 105u8, 239u8, 168u8, 204u8, 147u8, 52u8, 15u8,
+							226u8, 126u8, 176u8, 133u8, 186u8, 169u8, 241u8, 156u8, 118u8, 67u8,
+							58u8,
+						],
+					)
 				}
-
 				#[doc = " Pending epoch configuration change that will be applied when the next epoch is enacted."]
 				pub fn pending_epoch_config_change(
 					&self,
@@ -2999,7 +3036,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Next epoch randomness."]
 				pub fn next_randomness(
 					&self,
@@ -3021,7 +3057,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Next epoch authorities."]
 				pub fn next_authorities(
 					&self,
@@ -3047,7 +3082,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Randomness under construction."]
 				#[doc = ""]
 				#[doc = " We make a trade-off between storage accesses and list length."]
@@ -3078,7 +3112,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " TWOX-NOTE: `SegmentIndex` is an increasing integer, so this is okay."]
 				pub fn under_construction(
 					&self,
@@ -3105,7 +3138,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " TWOX-NOTE: `SegmentIndex` is an increasing integer, so this is okay."]
 				pub fn under_construction_root(
 					&self,
@@ -3129,7 +3161,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Temporary value (cleared at block finalization) which is `Some`"]
 				#[doc = " if per-block initialization has already been called for current block."]
 				pub fn initialized(
@@ -3141,13 +3172,17 @@ pub mod api {
 					(),
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "Initialized", vec![], [
-						61u8, 100u8, 12u8, 43u8, 50u8, 166u8, 173u8, 130u8, 86u8, 36u8, 92u8,
-						221u8, 44u8, 235u8, 241u8, 150u8, 231u8, 108u8, 15u8, 134u8, 12u8, 6u8,
-						198u8, 102u8, 63u8, 69u8, 201u8, 171u8, 14u8, 135u8, 254u8, 239u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"Initialized",
+						vec![],
+						[
+							61u8, 100u8, 12u8, 43u8, 50u8, 166u8, 173u8, 130u8, 86u8, 36u8, 92u8,
+							221u8, 44u8, 235u8, 241u8, 150u8, 231u8, 108u8, 15u8, 134u8, 12u8, 6u8,
+							198u8, 102u8, 63u8, 69u8, 201u8, 171u8, 14u8, 135u8, 254u8, 239u8,
+						],
+					)
 				}
-
 				#[doc = " This field should always be populated during block processing unless"]
 				#[doc = " secondary plain slots are enabled (which don't contain a VRF output)."]
 				#[doc = ""]
@@ -3173,7 +3208,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The block numbers when the last and current epoch have started, respectively `N-1` and"]
 				#[doc = " `N`."]
 				#[doc = " NOTE: We track this is in order to annotate the block number when a given pool of"]
@@ -3188,13 +3222,18 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "EpochStart", vec![], [
-						246u8, 69u8, 165u8, 217u8, 181u8, 138u8, 201u8, 64u8, 251u8, 121u8, 50u8,
-						231u8, 221u8, 144u8, 225u8, 249u8, 42u8, 135u8, 31u8, 136u8, 21u8, 160u8,
-						186u8, 148u8, 139u8, 232u8, 182u8, 121u8, 82u8, 110u8, 14u8, 160u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"EpochStart",
+						vec![],
+						[
+							246u8, 69u8, 165u8, 217u8, 181u8, 138u8, 201u8, 64u8, 251u8, 121u8,
+							50u8, 231u8, 221u8, 144u8, 225u8, 249u8, 42u8, 135u8, 31u8, 136u8,
+							21u8, 160u8, 186u8, 148u8, 139u8, 232u8, 182u8, 121u8, 82u8, 110u8,
+							14u8, 160u8,
+						],
+					)
 				}
-
 				#[doc = " How late the current block is compared to its parent."]
 				#[doc = ""]
 				#[doc = " This entry is populated as part of block execution and is cleaned up"]
@@ -3209,13 +3248,18 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "Lateness", vec![], [
-						229u8, 214u8, 133u8, 149u8, 32u8, 159u8, 26u8, 22u8, 252u8, 131u8, 200u8,
-						191u8, 231u8, 176u8, 178u8, 127u8, 33u8, 212u8, 139u8, 220u8, 157u8, 38u8,
-						4u8, 226u8, 204u8, 32u8, 55u8, 20u8, 205u8, 141u8, 29u8, 87u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"Lateness",
+						vec![],
+						[
+							229u8, 214u8, 133u8, 149u8, 32u8, 159u8, 26u8, 22u8, 252u8, 131u8,
+							200u8, 191u8, 231u8, 176u8, 178u8, 127u8, 33u8, 212u8, 139u8, 220u8,
+							157u8, 38u8, 4u8, 226u8, 204u8, 32u8, 55u8, 20u8, 205u8, 141u8, 29u8,
+							87u8,
+						],
+					)
 				}
-
 				#[doc = " The configuration for the current epoch. Should never be `None` as it is initialized in"]
 				#[doc = " genesis."]
 				pub fn epoch_config(
@@ -3227,13 +3271,18 @@ pub mod api {
 					(),
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Babe", "EpochConfig", vec![], [
-						23u8, 188u8, 70u8, 119u8, 36u8, 199u8, 230u8, 191u8, 131u8, 219u8, 85u8,
-						201u8, 237u8, 70u8, 214u8, 149u8, 212u8, 94u8, 87u8, 87u8, 62u8, 16u8,
-						46u8, 143u8, 73u8, 169u8, 42u8, 139u8, 157u8, 139u8, 190u8, 166u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Babe",
+						"EpochConfig",
+						vec![],
+						[
+							23u8, 188u8, 70u8, 119u8, 36u8, 199u8, 230u8, 191u8, 131u8, 219u8,
+							85u8, 201u8, 237u8, 70u8, 214u8, 149u8, 212u8, 94u8, 87u8, 87u8, 62u8,
+							16u8, 46u8, 143u8, 73u8, 169u8, 42u8, 139u8, 157u8, 139u8, 190u8,
+							166u8,
+						],
+					)
 				}
-
 				#[doc = " The configuration for the next epoch, `None` if the config will not change"]
 				#[doc = " (you can fallback to `EpochConfig` instead in that case)."]
 				pub fn next_epoch_config(
@@ -3256,7 +3305,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " A list of the last 100 skipped epochs and the corresponding session index"]
 				#[doc = " when the epoch was skipped."]
 				#[doc = ""]
@@ -3300,13 +3348,17 @@ pub mod api {
 				pub fn epoch_duration(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u64> {
-					::subxt::constants::Address::new_static("Babe", "EpochDuration", [
-						128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8, 59u8,
-						226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8, 103u8, 119u8,
-						53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8, 246u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Babe",
+						"EpochDuration",
+						[
+							128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8,
+							59u8, 226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8,
+							103u8, 119u8, 53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8,
+							246u8,
+						],
+					)
 				}
-
 				#[doc = " The expected average block time at which BABE should be creating"]
 				#[doc = " blocks. Since BABE is probabilistic it is not trivial to figure out"]
 				#[doc = " what the expected average block time should be based on the slot"]
@@ -3315,32 +3367,43 @@ pub mod api {
 				pub fn expected_block_time(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u64> {
-					::subxt::constants::Address::new_static("Babe", "ExpectedBlockTime", [
-						128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8, 59u8,
-						226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8, 103u8, 119u8,
-						53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8, 246u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Babe",
+						"ExpectedBlockTime",
+						[
+							128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8,
+							59u8, 226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8,
+							103u8, 119u8, 53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8,
+							246u8,
+						],
+					)
 				}
-
 				#[doc = " Max number of authorities allowed"]
 				pub fn max_authorities(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Babe", "MaxAuthorities", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Babe",
+						"MaxAuthorities",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod timestamp {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_timestamp::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -3362,19 +3425,24 @@ pub mod api {
 					pub now: ::core::primitive::u64,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Set {
-					const CALL: &'static str = "set";
 					const PALLET: &'static str = "Timestamp";
+					const CALL: &'static str = "set";
 				}
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
 				#[doc = "See [`Pallet::set`]."]
 				pub fn set(&self, now: ::core::primitive::u64) -> ::subxt::tx::Payload<types::Set> {
-					::subxt::tx::Payload::new_static("Timestamp", "set", types::Set { now }, [
-						37u8, 95u8, 49u8, 218u8, 24u8, 22u8, 0u8, 95u8, 72u8, 35u8, 155u8, 199u8,
-						213u8, 54u8, 207u8, 22u8, 185u8, 193u8, 221u8, 70u8, 18u8, 200u8, 4u8,
-						231u8, 195u8, 173u8, 6u8, 122u8, 11u8, 203u8, 231u8, 227u8,
-					])
+					::subxt::tx::Payload::new_static(
+						"Timestamp",
+						"set",
+						types::Set { now },
+						[
+							37u8, 95u8, 49u8, 218u8, 24u8, 22u8, 0u8, 95u8, 72u8, 35u8, 155u8,
+							199u8, 213u8, 54u8, 207u8, 22u8, 185u8, 193u8, 221u8, 70u8, 18u8,
+							200u8, 4u8, 231u8, 195u8, 173u8, 6u8, 122u8, 11u8, 203u8, 231u8, 227u8,
+						],
+					)
 				}
 			}
 		}
@@ -3392,13 +3460,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Timestamp", "Now", vec![], [
-						44u8, 50u8, 80u8, 30u8, 195u8, 146u8, 123u8, 238u8, 8u8, 163u8, 187u8,
-						92u8, 61u8, 39u8, 51u8, 29u8, 173u8, 169u8, 217u8, 158u8, 85u8, 187u8,
-						141u8, 26u8, 12u8, 115u8, 51u8, 11u8, 200u8, 244u8, 138u8, 152u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Timestamp",
+						"Now",
+						vec![],
+						[
+							44u8, 50u8, 80u8, 30u8, 195u8, 146u8, 123u8, 238u8, 8u8, 163u8, 187u8,
+							92u8, 61u8, 39u8, 51u8, 29u8, 173u8, 169u8, 217u8, 158u8, 85u8, 187u8,
+							141u8, 26u8, 12u8, 115u8, 51u8, 11u8, 200u8, 244u8, 138u8, 152u8,
+						],
+					)
 				}
-
 				#[doc = " Did the timestamp get updated in this block?"]
 				pub fn did_update(
 					&self,
@@ -3434,17 +3506,23 @@ pub mod api {
 				pub fn minimum_period(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u64> {
-					::subxt::constants::Address::new_static("Timestamp", "MinimumPeriod", [
-						128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8, 59u8,
-						226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8, 103u8, 119u8,
-						53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8, 246u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Timestamp",
+						"MinimumPeriod",
+						[
+							128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8,
+							59u8, 226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8,
+							103u8, 119u8, 53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8,
+							246u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod authorship {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		pub mod storage {
 			use super::runtime_types;
 			pub struct StorageApi;
@@ -3475,13 +3553,15 @@ pub mod api {
 		}
 	}
 	pub mod indices {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_indices::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_indices::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -3503,8 +3583,8 @@ pub mod api {
 					pub index: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Claim {
-					const CALL: &'static str = "claim";
 					const PALLET: &'static str = "Indices";
+					const CALL: &'static str = "claim";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -3527,8 +3607,8 @@ pub mod api {
 					pub index: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Transfer {
-					const CALL: &'static str = "transfer";
 					const PALLET: &'static str = "Indices";
+					const CALL: &'static str = "transfer";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: CompactAs,
@@ -3548,8 +3628,8 @@ pub mod api {
 					pub index: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Free {
-					const CALL: &'static str = "free";
 					const PALLET: &'static str = "Indices";
+					const CALL: &'static str = "free";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -3573,8 +3653,8 @@ pub mod api {
 					pub freeze: ::core::primitive::bool,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ForceTransfer {
-					const CALL: &'static str = "force_transfer";
 					const PALLET: &'static str = "Indices";
+					const CALL: &'static str = "force_transfer";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: CompactAs,
@@ -3594,8 +3674,8 @@ pub mod api {
 					pub index: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Freeze {
-					const CALL: &'static str = "freeze";
 					const PALLET: &'static str = "Indices";
+					const CALL: &'static str = "freeze";
 				}
 			}
 			pub struct TransactionApi;
@@ -3605,13 +3685,17 @@ pub mod api {
 					&self,
 					index: ::core::primitive::u32,
 				) -> ::subxt::tx::Payload<types::Claim> {
-					::subxt::tx::Payload::new_static("Indices", "claim", types::Claim { index }, [
-						146u8, 58u8, 246u8, 135u8, 59u8, 90u8, 3u8, 5u8, 140u8, 169u8, 232u8,
-						195u8, 11u8, 107u8, 36u8, 141u8, 118u8, 174u8, 160u8, 160u8, 19u8, 205u8,
-						177u8, 193u8, 18u8, 102u8, 115u8, 31u8, 72u8, 29u8, 91u8, 235u8,
-					])
+					::subxt::tx::Payload::new_static(
+						"Indices",
+						"claim",
+						types::Claim { index },
+						[
+							146u8, 58u8, 246u8, 135u8, 59u8, 90u8, 3u8, 5u8, 140u8, 169u8, 232u8,
+							195u8, 11u8, 107u8, 36u8, 141u8, 118u8, 174u8, 160u8, 160u8, 19u8,
+							205u8, 177u8, 193u8, 18u8, 102u8, 115u8, 31u8, 72u8, 29u8, 91u8, 235u8,
+						],
+					)
 				}
-
 				#[doc = "See [`Pallet::transfer`]."]
 				pub fn transfer(
 					&self,
@@ -3633,19 +3717,23 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::free`]."]
 				pub fn free(
 					&self,
 					index: ::core::primitive::u32,
 				) -> ::subxt::tx::Payload<types::Free> {
-					::subxt::tx::Payload::new_static("Indices", "free", types::Free { index }, [
-						241u8, 211u8, 234u8, 102u8, 189u8, 22u8, 209u8, 27u8, 8u8, 229u8, 80u8,
-						227u8, 138u8, 252u8, 222u8, 111u8, 77u8, 201u8, 235u8, 51u8, 163u8, 247u8,
-						13u8, 126u8, 216u8, 136u8, 57u8, 222u8, 56u8, 66u8, 215u8, 244u8,
-					])
+					::subxt::tx::Payload::new_static(
+						"Indices",
+						"free",
+						types::Free { index },
+						[
+							241u8, 211u8, 234u8, 102u8, 189u8, 22u8, 209u8, 27u8, 8u8, 229u8, 80u8,
+							227u8, 138u8, 252u8, 222u8, 111u8, 77u8, 201u8, 235u8, 51u8, 163u8,
+							247u8, 13u8, 126u8, 216u8, 136u8, 57u8, 222u8, 56u8, 66u8, 215u8,
+							244u8,
+						],
+					)
 				}
-
 				#[doc = "See [`Pallet::force_transfer`]."]
 				pub fn force_transfer(
 					&self,
@@ -3668,7 +3756,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::freeze`]."]
 				pub fn freeze(
 					&self,
@@ -3711,8 +3798,8 @@ pub mod api {
 				pub index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for IndexAssigned {
-				const EVENT: &'static str = "IndexAssigned";
 				const PALLET: &'static str = "Indices";
+				const EVENT: &'static str = "IndexAssigned";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -3733,8 +3820,8 @@ pub mod api {
 				pub index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for IndexFreed {
-				const EVENT: &'static str = "IndexFreed";
 				const PALLET: &'static str = "Indices";
+				const EVENT: &'static str = "IndexFreed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -3755,8 +3842,8 @@ pub mod api {
 				pub who: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for IndexFrozen {
-				const EVENT: &'static str = "IndexFrozen";
 				const PALLET: &'static str = "Indices";
+				const EVENT: &'static str = "IndexFrozen";
 			}
 		}
 		pub mod storage {
@@ -3792,7 +3879,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The lookup from index to account."]
 				pub fn accounts_root(
 					&self,
@@ -3827,23 +3913,29 @@ pub mod api {
 			impl ConstantsApi {
 				#[doc = " The deposit needed for reserving an index."]
 				pub fn deposit(&self) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Indices", "Deposit", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Indices",
+						"Deposit",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod balances {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_balances::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_balances::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -3869,8 +3961,8 @@ pub mod api {
 					pub value: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for TransferAllowDeath {
-					const CALL: &'static str = "transfer_allow_death";
 					const PALLET: &'static str = "Balances";
+					const CALL: &'static str = "transfer_allow_death";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -3896,8 +3988,8 @@ pub mod api {
 					pub old_reserved: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetBalanceDeprecated {
-					const CALL: &'static str = "set_balance_deprecated";
 					const PALLET: &'static str = "Balances";
+					const CALL: &'static str = "set_balance_deprecated";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -3925,8 +4017,8 @@ pub mod api {
 					pub value: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ForceTransfer {
-					const CALL: &'static str = "force_transfer";
 					const PALLET: &'static str = "Balances";
+					const CALL: &'static str = "force_transfer";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -3950,8 +4042,8 @@ pub mod api {
 					pub value: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for TransferKeepAlive {
-					const CALL: &'static str = "transfer_keep_alive";
 					const PALLET: &'static str = "Balances";
+					const CALL: &'static str = "transfer_keep_alive";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -3974,8 +4066,8 @@ pub mod api {
 					pub keep_alive: ::core::primitive::bool,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for TransferAll {
-					const CALL: &'static str = "transfer_all";
 					const PALLET: &'static str = "Balances";
+					const CALL: &'static str = "transfer_all";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -3998,8 +4090,8 @@ pub mod api {
 					pub amount: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ForceUnreserve {
-					const CALL: &'static str = "force_unreserve";
 					const PALLET: &'static str = "Balances";
+					const CALL: &'static str = "force_unreserve";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -4018,8 +4110,8 @@ pub mod api {
 					pub who: ::std::vec::Vec<::subxt::utils::AccountId32>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for UpgradeAccounts {
-					const CALL: &'static str = "upgrade_accounts";
 					const PALLET: &'static str = "Balances";
+					const CALL: &'static str = "upgrade_accounts";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -4043,8 +4135,8 @@ pub mod api {
 					pub value: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Transfer {
-					const CALL: &'static str = "transfer";
 					const PALLET: &'static str = "Balances";
+					const CALL: &'static str = "transfer";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -4068,8 +4160,8 @@ pub mod api {
 					pub new_free: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ForceSetBalance {
-					const CALL: &'static str = "force_set_balance";
 					const PALLET: &'static str = "Balances";
+					const CALL: &'static str = "force_set_balance";
 				}
 			}
 			pub struct TransactionApi;
@@ -4094,7 +4186,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_balance_deprecated`]."]
 				pub fn set_balance_deprecated(
 					&self,
@@ -4120,7 +4211,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::force_transfer`]."]
 				pub fn force_transfer(
 					&self,
@@ -4150,7 +4240,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::transfer_keep_alive`]."]
 				pub fn transfer_keep_alive(
 					&self,
@@ -4171,7 +4260,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::transfer_all`]."]
 				pub fn transfer_all(
 					&self,
@@ -4193,7 +4281,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::force_unreserve`]."]
 				pub fn force_unreserve(
 					&self,
@@ -4215,7 +4302,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::upgrade_accounts`]."]
 				pub fn upgrade_accounts(
 					&self,
@@ -4232,7 +4318,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::transfer`]."]
 				pub fn transfer(
 					&self,
@@ -4253,7 +4338,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::force_set_balance`]."]
 				pub fn force_set_balance(
 					&self,
@@ -4299,8 +4383,8 @@ pub mod api {
 				pub free_balance: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Endowed {
-				const EVENT: &'static str = "Endowed";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Endowed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4322,8 +4406,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for DustLost {
-				const EVENT: &'static str = "DustLost";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "DustLost";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4345,8 +4429,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Transfer {
-				const EVENT: &'static str = "Transfer";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Transfer";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4367,8 +4451,8 @@ pub mod api {
 				pub free: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for BalanceSet {
-				const EVENT: &'static str = "BalanceSet";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "BalanceSet";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4389,8 +4473,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Reserved {
-				const EVENT: &'static str = "Reserved";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Reserved";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4411,8 +4495,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Unreserved {
-				const EVENT: &'static str = "Unreserved";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Unreserved";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4437,8 +4521,8 @@ pub mod api {
 					runtime_types::frame_support::traits::tokens::misc::BalanceStatus,
 			}
 			impl ::subxt::events::StaticEvent for ReserveRepatriated {
-				const EVENT: &'static str = "ReserveRepatriated";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "ReserveRepatriated";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4459,8 +4543,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Deposit {
-				const EVENT: &'static str = "Deposit";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Deposit";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4481,8 +4565,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Withdraw {
-				const EVENT: &'static str = "Withdraw";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Withdraw";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4503,8 +4587,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Slashed {
-				const EVENT: &'static str = "Slashed";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Slashed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4525,8 +4609,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Minted {
-				const EVENT: &'static str = "Minted";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Minted";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4547,8 +4631,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Burned {
-				const EVENT: &'static str = "Burned";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Burned";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4569,8 +4653,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Suspended {
-				const EVENT: &'static str = "Suspended";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Suspended";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4591,8 +4675,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Restored {
-				const EVENT: &'static str = "Restored";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Restored";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4612,8 +4696,8 @@ pub mod api {
 				pub who: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for Upgraded {
-				const EVENT: &'static str = "Upgraded";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Upgraded";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -4634,8 +4718,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Issued {
-				const EVENT: &'static str = "Issued";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Issued";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -4656,8 +4740,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Rescinded {
-				const EVENT: &'static str = "Rescinded";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Rescinded";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4678,8 +4762,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Locked {
-				const EVENT: &'static str = "Locked";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Locked";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4700,8 +4784,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Unlocked {
-				const EVENT: &'static str = "Unlocked";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Unlocked";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4722,8 +4806,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Frozen {
-				const EVENT: &'static str = "Frozen";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Frozen";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -4744,8 +4828,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Thawed {
-				const EVENT: &'static str = "Thawed";
 				const PALLET: &'static str = "Balances";
+				const EVENT: &'static str = "Thawed";
 			}
 		}
 		pub mod storage {
@@ -4774,7 +4858,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The total units of outstanding deactivated balance in the system."]
 				pub fn inactive_issuance(
 					&self,
@@ -4796,7 +4879,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The Balances pallet example of storing the balance of an account."]
 				#[doc = ""]
 				#[doc = " # Example"]
@@ -4845,7 +4927,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The Balances pallet example of storing the balance of an account."]
 				#[doc = ""]
 				#[doc = " # Example"]
@@ -4891,7 +4972,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Any liquidity locks on some account balances."]
 				#[doc = " NOTE: Should only be accessed when setting, changing and freeing a lock."]
 				pub fn locks(
@@ -4919,7 +4999,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Any liquidity locks on some account balances."]
 				#[doc = " NOTE: Should only be accessed when setting, changing and freeing a lock."]
 				pub fn locks_root(
@@ -4944,7 +5023,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Named reserves on some account balances."]
 				pub fn reserves(
 					&self,
@@ -4975,7 +5053,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Named reserves on some account balances."]
 				pub fn reserves_root(
 					&self,
@@ -5003,7 +5080,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Holds on account balances."]
 				pub fn holds(
 					&self,
@@ -5033,7 +5109,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Holds on account balances."]
 				pub fn holds_root(
 					&self,
@@ -5060,7 +5135,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Freeze locks on account balances."]
 				pub fn freezes(
 					&self,
@@ -5090,7 +5164,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Freeze locks on account balances."]
 				pub fn freezes_root(
 					&self,
@@ -5134,54 +5207,75 @@ pub mod api {
 				pub fn existential_deposit(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Balances", "ExistentialDeposit", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Balances",
+						"ExistentialDeposit",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum number of locks that should exist on an account."]
 				#[doc = " Not strictly enforced, but used for weight estimation."]
 				pub fn max_locks(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Balances", "MaxLocks", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Balances",
+						"MaxLocks",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum number of named reserves that can exist on an account."]
 				pub fn max_reserves(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Balances", "MaxReserves", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Balances",
+						"MaxReserves",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum number of holds that can exist on an account at any time."]
 				pub fn max_holds(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Balances", "MaxHolds", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Balances",
+						"MaxHolds",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum number of individual freeze locks that can exist on an account at any time."]
 				pub fn max_freezes(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Balances", "MaxFreezes", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Balances",
+						"MaxFreezes",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod transaction_payment {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Event` enum of this pallet"]
 		pub type Event = runtime_types::pallet_transaction_payment::pallet::Event;
 		pub mod events {
@@ -5207,8 +5301,8 @@ pub mod api {
 				pub tip: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for TransactionFeePaid {
-				const EVENT: &'static str = "TransactionFeePaid";
 				const PALLET: &'static str = "TransactionPayment";
+				const EVENT: &'static str = "TransactionFeePaid";
 			}
 		}
 		pub mod storage {
@@ -5236,7 +5330,6 @@ pub mod api {
 						],
 					)
 				}
-
 				pub fn storage_version(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -5303,13 +5396,15 @@ pub mod api {
 		}
 	}
 	pub mod election_provider_multi_phase {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "Error of the pallet that can be returned in response to dispatches."]
 		pub type Error = runtime_types::pallet_election_provider_multi_phase::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_election_provider_multi_phase::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -5336,8 +5431,8 @@ pub mod api {
 						runtime_types::pallet_election_provider_multi_phase::SolutionOrSnapshotSize,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SubmitUnsigned {
-					const CALL: &'static str = "submit_unsigned";
 					const PALLET: &'static str = "ElectionProviderMultiPhase";
+					const CALL: &'static str = "submit_unsigned";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -5357,8 +5452,8 @@ pub mod api {
 						::core::option::Option<runtime_types::sp_npos_elections::ElectionScore>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetMinimumUntrustedScore {
-					const CALL: &'static str = "set_minimum_untrusted_score";
 					const PALLET: &'static str = "ElectionProviderMultiPhase";
+					const CALL: &'static str = "set_minimum_untrusted_score";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -5380,8 +5475,8 @@ pub mod api {
 					)>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetEmergencyElectionResult {
-					const CALL: &'static str = "set_emergency_election_result";
 					const PALLET: &'static str = "ElectionProviderMultiPhase";
+					const CALL: &'static str = "set_emergency_election_result";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -5404,8 +5499,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Submit {
-					const CALL: &'static str = "submit";
 					const PALLET: &'static str = "ElectionProviderMultiPhase";
+					const CALL: &'static str = "submit";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -5425,8 +5520,8 @@ pub mod api {
 					pub maybe_max_targets: ::core::option::Option<::core::primitive::u32>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for GovernanceFallback {
-					const CALL: &'static str = "governance_fallback";
 					const PALLET: &'static str = "ElectionProviderMultiPhase";
+					const CALL: &'static str = "governance_fallback";
 				}
 			}
 			pub struct TransactionApi;
@@ -5453,7 +5548,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_minimum_untrusted_score`]."]
 				pub fn set_minimum_untrusted_score(
 					&self,
@@ -5473,7 +5567,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_emergency_election_result`]."]
 				pub fn set_emergency_election_result(
 					&self,
@@ -5493,7 +5586,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::submit`]."]
 				pub fn submit(
 					&self,
@@ -5514,7 +5606,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::governance_fallback`]."]
 				pub fn governance_fallback(
 					&self,
@@ -5568,8 +5659,8 @@ pub mod api {
 				pub prev_ejected: ::core::primitive::bool,
 			}
 			impl ::subxt::events::StaticEvent for SolutionStored {
-				const EVENT: &'static str = "SolutionStored";
 				const PALLET: &'static str = "ElectionProviderMultiPhase";
+				const EVENT: &'static str = "SolutionStored";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -5590,8 +5681,8 @@ pub mod api {
 				pub score: runtime_types::sp_npos_elections::ElectionScore,
 			}
 			impl ::subxt::events::StaticEvent for ElectionFinalized {
-				const EVENT: &'static str = "ElectionFinalized";
 				const PALLET: &'static str = "ElectionProviderMultiPhase";
+				const EVENT: &'static str = "ElectionFinalized";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -5611,8 +5702,8 @@ pub mod api {
 			#[doc = "Not much can be said about which computes failed in the process."]
 			pub struct ElectionFailed;
 			impl ::subxt::events::StaticEvent for ElectionFailed {
-				const EVENT: &'static str = "ElectionFailed";
 				const PALLET: &'static str = "ElectionProviderMultiPhase";
+				const EVENT: &'static str = "ElectionFailed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -5633,8 +5724,8 @@ pub mod api {
 				pub value: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Rewarded {
-				const EVENT: &'static str = "Rewarded";
 				const PALLET: &'static str = "ElectionProviderMultiPhase";
+				const EVENT: &'static str = "Rewarded";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -5655,8 +5746,8 @@ pub mod api {
 				pub value: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Slashed {
-				const EVENT: &'static str = "Slashed";
 				const PALLET: &'static str = "ElectionProviderMultiPhase";
+				const EVENT: &'static str = "Slashed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -5682,8 +5773,8 @@ pub mod api {
 				pub round: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for PhaseTransitioned {
-				const EVENT: &'static str = "PhaseTransitioned";
 				const PALLET: &'static str = "ElectionProviderMultiPhase";
+				const EVENT: &'static str = "PhaseTransitioned";
 			}
 		}
 		pub mod storage {
@@ -5716,7 +5807,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Current phase."]
 				pub fn current_phase(
 					&self,
@@ -5740,7 +5830,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Current best solution, signed or unsigned, queued to be returned upon `elect`."]
 				#[doc = ""]
 				#[doc = " Always sorted by score."]
@@ -5765,7 +5854,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Snapshot data of the round."]
 				#[doc = ""]
 				#[doc = " This is created at the beginning of the signed phase and cleared upon calling `elect`."]
@@ -5799,7 +5887,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Desired number of targets to elect for this round."]
 				#[doc = ""]
 				#[doc = " Only exists when [`Snapshot`] is present."]
@@ -5823,7 +5910,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The metadata of the [`RoundSnapshot`]"]
 				#[doc = ""]
 				#[doc = " Only exists when [`Snapshot`] is present."]
@@ -5848,7 +5934,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The next index to be assigned to an incoming signed submission."]
 				#[doc = ""]
 				#[doc = " Every accepted submission is assigned a unique index; that index is bound to that particular"]
@@ -5878,7 +5963,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " A sorted, bounded vector of `(score, block_number, index)`, where each `index` points to a"]
 				#[doc = " value in `SignedSubmissions`."]
 				#[doc = ""]
@@ -5909,7 +5993,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Unchecked, signed solutions."]
 				#[doc = ""]
 				#[doc = " Together with `SubmissionIndices`, this stores a bounded set of `SignedSubmissions` while"]
@@ -5945,7 +6028,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Unchecked, signed solutions."]
 				#[doc = ""]
 				#[doc = " Together with `SubmissionIndices`, this stores a bounded set of `SignedSubmissions` while"]
@@ -5978,7 +6060,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The minimum score that each 'untrusted' solution must attain in order to be considered"]
 				#[doc = " feasible."]
 				#[doc = ""]
@@ -6024,7 +6105,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Duration of the signed phase."]
 				pub fn signed_phase(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
 					::subxt::constants::Address::new_static(
@@ -6038,7 +6118,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The minimum amount of improvement to the solution score that defines a solution as"]
 				#[doc = " \"better\" in the Signed phase."]
 				pub fn better_signed_threshold(
@@ -6055,7 +6134,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The minimum amount of improvement to the solution score that defines a solution as"]
 				#[doc = " \"better\" in the Unsigned phase."]
 				pub fn better_unsigned_threshold(
@@ -6072,7 +6150,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The repeat threshold of the offchain worker."]
 				#[doc = ""]
 				#[doc = " For example, if it is 5, that means that at least 5 blocks will elapse between attempts"]
@@ -6091,7 +6168,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The priority of the unsigned transaction submitted in the unsigned-phase"]
 				pub fn miner_tx_priority(
 					&self,
@@ -6107,7 +6183,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Maximum number of signed submissions that can be queued."]
 				#[doc = ""]
 				#[doc = " It is best to avoid adjusting this during an election, as it impacts downstream data"]
@@ -6129,7 +6204,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Maximum weight of a signed solution."]
 				#[doc = ""]
 				#[doc = " If [`Config::MinerConfig`] is being implemented to submit signed solutions (outside of"]
@@ -6148,7 +6222,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The maximum amount of unchecked solutions to refund the call fee for."]
 				pub fn signed_max_refunds(
 					&self,
@@ -6164,7 +6237,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Base reward for a signed solution"]
 				pub fn signed_reward_base(
 					&self,
@@ -6179,7 +6251,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Base deposit for a signed solution."]
 				pub fn signed_deposit_base(
 					&self,
@@ -6194,7 +6265,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Per-byte deposit for a signed solution."]
 				pub fn signed_deposit_byte(
 					&self,
@@ -6209,7 +6279,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Per-weight deposit for a signed solution."]
 				pub fn signed_deposit_weight(
 					&self,
@@ -6224,7 +6293,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The maximum number of electing voters to put in the snapshot. At the moment, snapshots"]
 				#[doc = " are only over a single block, but once multi-block elections are introduced they will"]
 				#[doc = " take place over multiple blocks."]
@@ -6242,7 +6310,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The maximum number of electable targets to put in the snapshot."]
 				pub fn max_electable_targets(
 					&self,
@@ -6257,7 +6324,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The maximum number of winners that can be elected by this `ElectionProvider`"]
 				#[doc = " implementation."]
 				#[doc = ""]
@@ -6274,7 +6340,6 @@ pub mod api {
 						],
 					)
 				}
-
 				pub fn miner_max_length(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
@@ -6289,7 +6354,6 @@ pub mod api {
 						],
 					)
 				}
-
 				pub fn miner_max_weight(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::sp_weights::weight_v2::Weight> {
@@ -6303,7 +6367,6 @@ pub mod api {
 						],
 					)
 				}
-
 				pub fn miner_max_votes_per_voter(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
@@ -6318,7 +6381,6 @@ pub mod api {
 						],
 					)
 				}
-
 				pub fn miner_max_winners(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
@@ -6337,13 +6399,15 @@ pub mod api {
 		}
 	}
 	pub mod staking {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_staking::pallet::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_staking::pallet::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -6368,8 +6432,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Bond {
-					const CALL: &'static str = "bond";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "bond";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6389,8 +6453,8 @@ pub mod api {
 					pub max_additional: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for BondExtra {
-					const CALL: &'static str = "bond_extra";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "bond_extra";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6410,8 +6474,8 @@ pub mod api {
 					pub value: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Unbond {
-					const CALL: &'static str = "unbond";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "unbond";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: CompactAs,
@@ -6431,8 +6495,8 @@ pub mod api {
 					pub num_slashing_spans: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for WithdrawUnbonded {
-					const CALL: &'static str = "withdraw_unbonded";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "withdraw_unbonded";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6451,8 +6515,8 @@ pub mod api {
 					pub prefs: runtime_types::pallet_staking::ValidatorPrefs,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Validate {
-					const CALL: &'static str = "validate";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "validate";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6476,8 +6540,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Nominate {
-					const CALL: &'static str = "nominate";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "nominate";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6494,8 +6558,8 @@ pub mod api {
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				pub struct Chill;
 				impl ::subxt::blocks::StaticExtrinsic for Chill {
-					const CALL: &'static str = "chill";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "chill";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6516,8 +6580,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetPayee {
-					const CALL: &'static str = "set_payee";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "set_payee";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6534,8 +6598,8 @@ pub mod api {
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				pub struct SetController;
 				impl ::subxt::blocks::StaticExtrinsic for SetController {
-					const CALL: &'static str = "set_controller";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "set_controller";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6555,8 +6619,8 @@ pub mod api {
 					pub new: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetValidatorCount {
-					const CALL: &'static str = "set_validator_count";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "set_validator_count";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6576,8 +6640,8 @@ pub mod api {
 					pub additional: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for IncreaseValidatorCount {
-					const CALL: &'static str = "increase_validator_count";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "increase_validator_count";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6596,8 +6660,8 @@ pub mod api {
 					pub factor: runtime_types::sp_arithmetic::per_things::Percent,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ScaleValidatorCount {
-					const CALL: &'static str = "scale_validator_count";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "scale_validator_count";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6614,8 +6678,8 @@ pub mod api {
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				pub struct ForceNoEras;
 				impl ::subxt::blocks::StaticExtrinsic for ForceNoEras {
-					const CALL: &'static str = "force_no_eras";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "force_no_eras";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6632,8 +6696,8 @@ pub mod api {
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				pub struct ForceNewEra;
 				impl ::subxt::blocks::StaticExtrinsic for ForceNewEra {
-					const CALL: &'static str = "force_new_era";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "force_new_era";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6652,8 +6716,8 @@ pub mod api {
 					pub invulnerables: ::std::vec::Vec<::subxt::utils::AccountId32>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetInvulnerables {
-					const CALL: &'static str = "set_invulnerables";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "set_invulnerables";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6673,8 +6737,8 @@ pub mod api {
 					pub num_slashing_spans: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ForceUnstake {
-					const CALL: &'static str = "force_unstake";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "force_unstake";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6691,8 +6755,8 @@ pub mod api {
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				pub struct ForceNewEraAlways;
 				impl ::subxt::blocks::StaticExtrinsic for ForceNewEraAlways {
-					const CALL: &'static str = "force_new_era_always";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "force_new_era_always";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6712,8 +6776,8 @@ pub mod api {
 					pub slash_indices: ::std::vec::Vec<::core::primitive::u32>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for CancelDeferredSlash {
-					const CALL: &'static str = "cancel_deferred_slash";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "cancel_deferred_slash";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6733,8 +6797,8 @@ pub mod api {
 					pub era: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for PayoutStakers {
-					const CALL: &'static str = "payout_stakers";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "payout_stakers";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6754,8 +6818,8 @@ pub mod api {
 					pub value: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Rebond {
-					const CALL: &'static str = "rebond";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "rebond";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6775,8 +6839,8 @@ pub mod api {
 					pub num_slashing_spans: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ReapStash {
-					const CALL: &'static str = "reap_stash";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "reap_stash";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6800,8 +6864,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Kick {
-					const CALL: &'static str = "kick";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "kick";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6839,8 +6903,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetStakingConfigs {
-					const CALL: &'static str = "set_staking_configs";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "set_staking_configs";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6859,8 +6923,8 @@ pub mod api {
 					pub controller: ::subxt::utils::AccountId32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ChillOther {
-					const CALL: &'static str = "chill_other";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "chill_other";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6879,8 +6943,8 @@ pub mod api {
 					pub validator_stash: ::subxt::utils::AccountId32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ForceApplyMinCommission {
-					const CALL: &'static str = "force_apply_min_commission";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "force_apply_min_commission";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -6899,8 +6963,8 @@ pub mod api {
 					pub new: runtime_types::sp_arithmetic::per_things::Perbill,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetMinCommission {
-					const CALL: &'static str = "set_min_commission";
 					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "set_min_commission";
 				}
 			}
 			pub struct TransactionApi;
@@ -6924,7 +6988,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::bond_extra`]."]
 				pub fn bond_extra(
 					&self,
@@ -6941,7 +7004,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::unbond`]."]
 				pub fn unbond(
 					&self,
@@ -6958,7 +7020,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::withdraw_unbonded`]."]
 				pub fn withdraw_unbonded(
 					&self,
@@ -6976,7 +7037,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::validate`]."]
 				pub fn validate(
 					&self,
@@ -6993,7 +7053,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::nominate`]."]
 				pub fn nominate(
 					&self,
@@ -7016,16 +7075,19 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::chill`]."]
 				pub fn chill(&self) -> ::subxt::tx::Payload<types::Chill> {
-					::subxt::tx::Payload::new_static("Staking", "chill", types::Chill {}, [
-						157u8, 75u8, 243u8, 69u8, 110u8, 192u8, 22u8, 27u8, 107u8, 68u8, 236u8,
-						58u8, 179u8, 34u8, 118u8, 98u8, 131u8, 62u8, 242u8, 84u8, 149u8, 24u8,
-						83u8, 223u8, 78u8, 12u8, 192u8, 22u8, 111u8, 11u8, 171u8, 149u8,
-					])
+					::subxt::tx::Payload::new_static(
+						"Staking",
+						"chill",
+						types::Chill {},
+						[
+							157u8, 75u8, 243u8, 69u8, 110u8, 192u8, 22u8, 27u8, 107u8, 68u8, 236u8,
+							58u8, 179u8, 34u8, 118u8, 98u8, 131u8, 62u8, 242u8, 84u8, 149u8, 24u8,
+							83u8, 223u8, 78u8, 12u8, 192u8, 22u8, 111u8, 11u8, 171u8, 149u8,
+						],
+					)
 				}
-
 				#[doc = "See [`Pallet::set_payee`]."]
 				pub fn set_payee(
 					&self,
@@ -7045,7 +7107,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_controller`]."]
 				pub fn set_controller(&self) -> ::subxt::tx::Payload<types::SetController> {
 					::subxt::tx::Payload::new_static(
@@ -7060,7 +7121,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_validator_count`]."]
 				pub fn set_validator_count(
 					&self,
@@ -7078,7 +7138,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::increase_validator_count`]."]
 				pub fn increase_validator_count(
 					&self,
@@ -7096,7 +7155,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::scale_validator_count`]."]
 				pub fn scale_validator_count(
 					&self,
@@ -7114,7 +7172,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::force_no_eras`]."]
 				pub fn force_no_eras(&self) -> ::subxt::tx::Payload<types::ForceNoEras> {
 					::subxt::tx::Payload::new_static(
@@ -7129,7 +7186,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::force_new_era`]."]
 				pub fn force_new_era(&self) -> ::subxt::tx::Payload<types::ForceNewEra> {
 					::subxt::tx::Payload::new_static(
@@ -7143,7 +7199,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_invulnerables`]."]
 				pub fn set_invulnerables(
 					&self,
@@ -7160,7 +7215,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::force_unstake`]."]
 				pub fn force_unstake(
 					&self,
@@ -7181,7 +7235,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::force_new_era_always`]."]
 				pub fn force_new_era_always(
 					&self,
@@ -7197,7 +7250,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::cancel_deferred_slash`]."]
 				pub fn cancel_deferred_slash(
 					&self,
@@ -7216,7 +7268,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::payout_stakers`]."]
 				pub fn payout_stakers(
 					&self,
@@ -7237,7 +7288,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::rebond`]."]
 				pub fn rebond(
 					&self,
@@ -7254,7 +7304,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::reap_stash`]."]
 				pub fn reap_stash(
 					&self,
@@ -7275,7 +7324,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::kick`]."]
 				pub fn kick(
 					&self,
@@ -7286,13 +7334,17 @@ pub mod api {
 						>,
 					>,
 				) -> ::subxt::tx::Payload<types::Kick> {
-					::subxt::tx::Payload::new_static("Staking", "kick", types::Kick { who }, [
-						28u8, 254u8, 219u8, 14u8, 44u8, 187u8, 186u8, 72u8, 55u8, 21u8, 129u8,
-						205u8, 225u8, 204u8, 162u8, 53u8, 255u8, 56u8, 49u8, 194u8, 63u8, 43u8,
-						96u8, 177u8, 125u8, 0u8, 163u8, 97u8, 231u8, 159u8, 43u8, 249u8,
-					])
+					::subxt::tx::Payload::new_static(
+						"Staking",
+						"kick",
+						types::Kick { who },
+						[
+							28u8, 254u8, 219u8, 14u8, 44u8, 187u8, 186u8, 72u8, 55u8, 21u8, 129u8,
+							205u8, 225u8, 204u8, 162u8, 53u8, 255u8, 56u8, 49u8, 194u8, 63u8, 43u8,
+							96u8, 177u8, 125u8, 0u8, 163u8, 97u8, 231u8, 159u8, 43u8, 249u8,
+						],
+					)
 				}
-
 				#[doc = "See [`Pallet::set_staking_configs`]."]
 				pub fn set_staking_configs(
 					&self,
@@ -7334,7 +7386,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::chill_other`]."]
 				pub fn chill_other(
 					&self,
@@ -7351,7 +7402,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::force_apply_min_commission`]."]
 				pub fn force_apply_min_commission(
 					&self,
@@ -7368,7 +7418,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_min_commission`]."]
 				pub fn set_min_commission(
 					&self,
@@ -7413,8 +7462,8 @@ pub mod api {
 				pub remainder: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for EraPaid {
-				const EVENT: &'static str = "EraPaid";
 				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "EraPaid";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -7435,8 +7484,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Rewarded {
-				const EVENT: &'static str = "Rewarded";
 				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "Rewarded";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -7457,8 +7506,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Slashed {
-				const EVENT: &'static str = "Slashed";
 				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "Slashed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -7481,8 +7530,8 @@ pub mod api {
 				pub slash_era: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for SlashReported {
-				const EVENT: &'static str = "SlashReported";
 				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "SlashReported";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -7504,8 +7553,8 @@ pub mod api {
 				pub session_index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for OldSlashingReportDiscarded {
-				const EVENT: &'static str = "OldSlashingReportDiscarded";
 				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "OldSlashingReportDiscarded";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -7523,8 +7572,8 @@ pub mod api {
 			#[doc = "A new set of stakers was elected."]
 			pub struct StakersElected;
 			impl ::subxt::events::StaticEvent for StakersElected {
-				const EVENT: &'static str = "StakersElected";
 				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "StakersElected";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -7548,8 +7597,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Bonded {
-				const EVENT: &'static str = "Bonded";
 				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "Bonded";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -7570,8 +7619,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Unbonded {
-				const EVENT: &'static str = "Unbonded";
 				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "Unbonded";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -7593,8 +7642,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Withdrawn {
-				const EVENT: &'static str = "Withdrawn";
 				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "Withdrawn";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -7615,8 +7664,8 @@ pub mod api {
 				pub stash: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for Kicked {
-				const EVENT: &'static str = "Kicked";
 				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "Kicked";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -7634,8 +7683,8 @@ pub mod api {
 			#[doc = "The election failed. No new era is planned."]
 			pub struct StakingElectionFailed;
 			impl ::subxt::events::StaticEvent for StakingElectionFailed {
-				const EVENT: &'static str = "StakingElectionFailed";
 				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "StakingElectionFailed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -7655,8 +7704,8 @@ pub mod api {
 				pub stash: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for Chilled {
-				const EVENT: &'static str = "Chilled";
 				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "Chilled";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -7677,8 +7726,8 @@ pub mod api {
 				pub validator_stash: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for PayoutStarted {
-				const EVENT: &'static str = "PayoutStarted";
 				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "PayoutStarted";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -7699,8 +7748,8 @@ pub mod api {
 				pub prefs: runtime_types::pallet_staking::ValidatorPrefs,
 			}
 			impl ::subxt::events::StaticEvent for ValidatorPrefsSet {
-				const EVENT: &'static str = "ValidatorPrefsSet";
 				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "ValidatorPrefsSet";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -7720,8 +7769,8 @@ pub mod api {
 				pub mode: runtime_types::pallet_staking::Forcing,
 			}
 			impl ::subxt::events::StaticEvent for ForceEra {
-				const EVENT: &'static str = "ForceEra";
 				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "ForceEra";
 			}
 		}
 		pub mod storage {
@@ -7750,7 +7799,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Minimum number of staking participants before emergency conditions are imposed."]
 				pub fn minimum_validator_count(
 					&self,
@@ -7772,7 +7820,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Any validators that may never be slashed or forcibly kicked. It's a Vec since they're"]
 				#[doc = " easy to initialize and the performance hit is minimal (we expect no more than four"]
 				#[doc = " invulnerables) and restricted to testnets."]
@@ -7797,7 +7844,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Map from all locked \"stash\" accounts to the controller account."]
 				#[doc = ""]
 				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
@@ -7825,7 +7871,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Map from all locked \"stash\" accounts to the controller account."]
 				#[doc = ""]
 				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
@@ -7850,7 +7895,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The minimum active bond to become and maintain the role of a nominator."]
 				pub fn min_nominator_bond(
 					&self,
@@ -7873,7 +7917,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The minimum active bond to become and maintain the role of a validator."]
 				pub fn min_validator_bond(
 					&self,
@@ -7896,7 +7939,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The minimum active nominator stake of the last successful election."]
 				pub fn minimum_active_stake(
 					&self,
@@ -7918,7 +7960,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The minimum amount of commission that validators can set."]
 				#[doc = ""]
 				#[doc = " If set to `0`, no limit exists."]
@@ -7942,7 +7983,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Map from all (unlocked) \"controller\" accounts to the info regarding the staking."]
 				pub fn ledger(
 					&self,
@@ -7968,7 +8008,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Map from all (unlocked) \"controller\" accounts to the info regarding the staking."]
 				pub fn ledger_root(
 					&self,
@@ -7991,7 +8030,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Where the reward payment should be made. Keyed by stash."]
 				#[doc = ""]
 				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
@@ -8018,7 +8056,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Where the reward payment should be made. Keyed by stash."]
 				#[doc = ""]
 				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
@@ -8042,7 +8079,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The map from (wannabe) validator stash key to the preferences of that validator."]
 				#[doc = ""]
 				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
@@ -8069,7 +8105,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The map from (wannabe) validator stash key to the preferences of that validator."]
 				#[doc = ""]
 				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
@@ -8093,7 +8128,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "Counter for the related counted storage map"]
 				pub fn counter_for_validators(
 					&self,
@@ -8116,7 +8150,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The maximum validator count before we stop allowing new validators to join."]
 				#[doc = ""]
 				#[doc = " When this value is not set, no limits are enforced."]
@@ -8141,7 +8174,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The map from nominator stash key to their nomination preferences, namely the validators that"]
 				#[doc = " they wish to support."]
 				#[doc = ""]
@@ -8183,7 +8215,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The map from nominator stash key to their nomination preferences, namely the validators that"]
 				#[doc = " they wish to support."]
 				#[doc = ""]
@@ -8222,7 +8253,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "Counter for the related counted storage map"]
 				pub fn counter_for_nominators(
 					&self,
@@ -8244,7 +8274,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The maximum nominator count before we stop allowing new validators to join."]
 				#[doc = ""]
 				#[doc = " When this value is not set, no limits are enforced."]
@@ -8268,7 +8297,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The current era index."]
 				#[doc = ""]
 				#[doc = " This is the latest planned era, depending on how the Session pallet queues the validator"]
@@ -8294,7 +8322,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The active era information, it holds index and start."]
 				#[doc = ""]
 				#[doc = " The active era is the era being currently rewarded. Validator set of this era must be"]
@@ -8320,7 +8347,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The session index at which the era start for the last `HISTORY_DEPTH` eras."]
 				#[doc = ""]
 				#[doc = " Note: This tracks the starting session (i.e. session index when era start being active)"]
@@ -8349,7 +8375,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The session index at which the era start for the last `HISTORY_DEPTH` eras."]
 				#[doc = ""]
 				#[doc = " Note: This tracks the starting session (i.e. session index when era start being active)"]
@@ -8375,7 +8400,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Exposure of validator at era."]
 				#[doc = ""]
 				#[doc = " This is keyed first by the era index to allow bulk deletion and then the stash account."]
@@ -8410,7 +8434,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Exposure of validator at era."]
 				#[doc = ""]
 				#[doc = " This is keyed first by the era index to allow bulk deletion and then the stash account."]
@@ -8440,7 +8463,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Clipped Exposure of validator at era."]
 				#[doc = ""]
 				#[doc = " This is similar to [`ErasStakers`] but number of nominators exposed is reduced to the"]
@@ -8481,7 +8503,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Clipped Exposure of validator at era."]
 				#[doc = ""]
 				#[doc = " This is similar to [`ErasStakers`] but number of nominators exposed is reduced to the"]
@@ -8517,7 +8538,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Similar to `ErasStakers`, this holds the preferences of validators."]
 				#[doc = ""]
 				#[doc = " This is keyed first by the era index to allow bulk deletion and then the stash account."]
@@ -8549,7 +8569,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Similar to `ErasStakers`, this holds the preferences of validators."]
 				#[doc = ""]
 				#[doc = " This is keyed first by the era index to allow bulk deletion and then the stash account."]
@@ -8576,7 +8595,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The total validator era payout for the last `HISTORY_DEPTH` eras."]
 				#[doc = ""]
 				#[doc = " Eras that haven't finished yet or has been removed doesn't have reward."]
@@ -8603,7 +8621,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The total validator era payout for the last `HISTORY_DEPTH` eras."]
 				#[doc = ""]
 				#[doc = " Eras that haven't finished yet or has been removed doesn't have reward."]
@@ -8627,7 +8644,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Rewards for the last `HISTORY_DEPTH` eras."]
 				#[doc = " If reward hasn't been set or has been removed then 0 reward is returned."]
 				pub fn eras_reward_points(
@@ -8653,7 +8669,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Rewards for the last `HISTORY_DEPTH` eras."]
 				#[doc = " If reward hasn't been set or has been removed then 0 reward is returned."]
 				pub fn eras_reward_points_root(
@@ -8676,7 +8691,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The total amount staked for the last `HISTORY_DEPTH` eras."]
 				#[doc = " If total hasn't been set or has been removed then 0 stake is returned."]
 				pub fn eras_total_stake(
@@ -8703,7 +8717,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The total amount staked for the last `HISTORY_DEPTH` eras."]
 				#[doc = " If total hasn't been set or has been removed then 0 stake is returned."]
 				pub fn eras_total_stake_root(
@@ -8727,7 +8740,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Mode of era forcing."]
 				pub fn force_era(
 					&self,
@@ -8738,13 +8750,18 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Staking", "ForceEra", vec![], [
-						177u8, 148u8, 73u8, 108u8, 136u8, 126u8, 89u8, 18u8, 124u8, 66u8, 30u8,
-						102u8, 133u8, 164u8, 78u8, 214u8, 184u8, 163u8, 75u8, 164u8, 117u8, 233u8,
-						209u8, 158u8, 99u8, 208u8, 21u8, 194u8, 152u8, 82u8, 16u8, 222u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Staking",
+						"ForceEra",
+						vec![],
+						[
+							177u8, 148u8, 73u8, 108u8, 136u8, 126u8, 89u8, 18u8, 124u8, 66u8, 30u8,
+							102u8, 133u8, 164u8, 78u8, 214u8, 184u8, 163u8, 75u8, 164u8, 117u8,
+							233u8, 209u8, 158u8, 99u8, 208u8, 21u8, 194u8, 152u8, 82u8, 16u8,
+							222u8,
+						],
+					)
 				}
-
 				#[doc = " The percentage of the slash that is distributed to reporters."]
 				#[doc = ""]
 				#[doc = " The rest of the slashed value is handled by the `Slash`."]
@@ -8769,7 +8786,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The amount of currency given to reporters of a slash event which was"]
 				#[doc = " canceled by extraordinary circumstances (e.g. governance)."]
 				pub fn canceled_slash_payout(
@@ -8793,7 +8809,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " All unapplied slashes that are queued for later."]
 				pub fn unapplied_slashes(
 					&self,
@@ -8824,7 +8839,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " All unapplied slashes that are queued for later."]
 				pub fn unapplied_slashes_root(
 					&self,
@@ -8852,7 +8866,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " A mapping from still-bonded eras to the first session index of that era."]
 				#[doc = ""]
 				#[doc = " Must contains information for eras for the range:"]
@@ -8878,7 +8891,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " All slashing events on validators, mapped by era to the highest slash proportion"]
 				#[doc = " and slash value of the era."]
 				pub fn validator_slash_in_era(
@@ -8909,7 +8921,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " All slashing events on validators, mapped by era to the highest slash proportion"]
 				#[doc = " and slash value of the era."]
 				pub fn validator_slash_in_era_root(
@@ -8935,7 +8946,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " All slashing events on nominators, mapped by era to the highest slash value of the era."]
 				pub fn nominator_slash_in_era(
 					&self,
@@ -8962,7 +8972,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " All slashing events on nominators, mapped by era to the highest slash value of the era."]
 				pub fn nominator_slash_in_era_root(
 					&self,
@@ -8984,7 +8993,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Slashing spans for stash accounts."]
 				pub fn slashing_spans(
 					&self,
@@ -9010,7 +9018,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Slashing spans for stash accounts."]
 				pub fn slashing_spans_root(
 					&self,
@@ -9033,7 +9040,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Records information about the maximum slash of a stash within a slashing span,"]
 				#[doc = " as well as how much reward has been paid out."]
 				pub fn span_slash(
@@ -9061,7 +9067,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Records information about the maximum slash of a stash within a slashing span,"]
 				#[doc = " as well as how much reward has been paid out."]
 				pub fn span_slash_root(
@@ -9084,7 +9089,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The last planned session scheduled by the session pallet."]
 				#[doc = ""]
 				#[doc = " This is basically in sync with the call to [`pallet_session::SessionManager::new_session`]."]
@@ -9108,7 +9112,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Indices of validators that have offended in the active era and whether they are currently"]
 				#[doc = " disabled."]
 				#[doc = ""]
@@ -9139,7 +9142,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The threshold for when users can start calling `chill_other` for other validators /"]
 				#[doc = " nominators. The threshold is compared to the actual number of validators / nominators"]
 				#[doc = " (`CountFor*`) in the system compared to the configured max (`Max*Count`)."]
@@ -9173,13 +9175,17 @@ pub mod api {
 				pub fn max_nominations(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Staking", "MaxNominations", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Staking",
+						"MaxNominations",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " Number of eras to keep in history."]
 				#[doc = ""]
 				#[doc = " Following information is kept for eras in `[current_era -"]
@@ -9201,35 +9207,47 @@ pub mod api {
 				#[doc = " `StakingLedger` and will need to be handled properly in a migration."]
 				#[doc = " The test `reducing_history_depth_abrupt` shows this effect."]
 				pub fn history_depth(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Staking", "HistoryDepth", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Staking",
+						"HistoryDepth",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " Number of sessions per era."]
 				pub fn sessions_per_era(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Staking", "SessionsPerEra", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Staking",
+						"SessionsPerEra",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " Number of eras that staked funds must remain bonded for."]
 				pub fn bonding_duration(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Staking", "BondingDuration", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Staking",
+						"BondingDuration",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " Number of eras that slashes are deferred by, after computation."]
 				#[doc = ""]
 				#[doc = " This should be less than the bonding duration. Set to 0 if slashes"]
@@ -9237,13 +9255,17 @@ pub mod api {
 				pub fn slash_defer_duration(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Staking", "SlashDeferDuration", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Staking",
+						"SlashDeferDuration",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum number of nominators rewarded for each validator."]
 				#[doc = ""]
 				#[doc = " For each validator only the `$MaxNominatorRewardedPerValidator` biggest stakers can"]
@@ -9262,7 +9284,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The maximum number of `unlocking` chunks a [`StakingLedger`] can"]
 				#[doc = " have. Effectively determines how many unique eras a staker may be"]
 				#[doc = " unbonding in."]
@@ -9276,23 +9297,30 @@ pub mod api {
 				pub fn max_unlocking_chunks(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Staking", "MaxUnlockingChunks", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Staking",
+						"MaxUnlockingChunks",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod session {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "Error for the session pallet."]
 		pub type Error = runtime_types::pallet_session::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_session::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -9314,8 +9342,8 @@ pub mod api {
 					pub proof: ::std::vec::Vec<::core::primitive::u8>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetKeys {
-					const CALL: &'static str = "set_keys";
 					const PALLET: &'static str = "Session";
+					const CALL: &'static str = "set_keys";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -9332,8 +9360,8 @@ pub mod api {
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				pub struct PurgeKeys;
 				impl ::subxt::blocks::StaticExtrinsic for PurgeKeys {
-					const CALL: &'static str = "purge_keys";
 					const PALLET: &'static str = "Session";
+					const CALL: &'static str = "purge_keys";
 				}
 			}
 			pub struct TransactionApi;
@@ -9355,7 +9383,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::purge_keys`]."]
 				pub fn purge_keys(&self) -> ::subxt::tx::Payload<types::PurgeKeys> {
 					::subxt::tx::Payload::new_static(
@@ -9396,8 +9423,8 @@ pub mod api {
 				pub session_index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for NewSession {
-				const EVENT: &'static str = "NewSession";
 				const PALLET: &'static str = "Session";
+				const EVENT: &'static str = "NewSession";
 			}
 		}
 		pub mod storage {
@@ -9426,7 +9453,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Current index of the session."]
 				pub fn current_index(
 					&self,
@@ -9449,7 +9475,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " True if the underlying economic identities or weighting behind the validators"]
 				#[doc = " has changed in the queued validator set."]
 				pub fn queued_changed(
@@ -9473,7 +9498,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The queued keys for the next session. When the next session begins, these keys"]
 				#[doc = " will be used to determine the validator's session keys."]
 				pub fn queued_keys(
@@ -9500,7 +9524,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Indices of disabled validators."]
 				#[doc = ""]
 				#[doc = " The vec is always kept sorted so that we can find whether a given validator is"]
@@ -9526,7 +9549,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The next session keys for a validator."]
 				pub fn next_keys(
 					&self,
@@ -9551,7 +9573,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The next session keys for a validator."]
 				pub fn next_keys_root(
 					&self,
@@ -9573,7 +9594,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The owner of a key. The key is the `KeyTypeId` + the encoded key."]
 				pub fn key_owner(
 					&self,
@@ -9600,7 +9620,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The owner of a key. The key is the `KeyTypeId` + the encoded key."]
 				pub fn key_owner_root(
 					&self,
@@ -9626,13 +9645,15 @@ pub mod api {
 		}
 	}
 	pub mod democracy {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_democracy::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_democracy::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -9657,8 +9678,8 @@ pub mod api {
 					pub value: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Propose {
-					const CALL: &'static str = "propose";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "propose";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -9678,8 +9699,8 @@ pub mod api {
 					pub proposal: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Second {
-					const CALL: &'static str = "second";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "second";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -9701,8 +9722,8 @@ pub mod api {
 						runtime_types::pallet_democracy::vote::AccountVote<::core::primitive::u128>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Vote {
-					const CALL: &'static str = "vote";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "vote";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: CompactAs,
@@ -9722,8 +9743,8 @@ pub mod api {
 					pub ref_index: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for EmergencyCancel {
-					const CALL: &'static str = "emergency_cancel";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "emergency_cancel";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -9744,8 +9765,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ExternalPropose {
-					const CALL: &'static str = "external_propose";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "external_propose";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -9766,8 +9787,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ExternalProposeMajority {
-					const CALL: &'static str = "external_propose_majority";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "external_propose_majority";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -9788,8 +9809,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ExternalProposeDefault {
-					const CALL: &'static str = "external_propose_default";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "external_propose_default";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -9810,8 +9831,8 @@ pub mod api {
 					pub delay: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for FastTrack {
-					const CALL: &'static str = "fast_track";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "fast_track";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -9830,8 +9851,8 @@ pub mod api {
 					pub proposal_hash: ::subxt::utils::H256,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for VetoExternal {
-					const CALL: &'static str = "veto_external";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "veto_external";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -9851,8 +9872,8 @@ pub mod api {
 					pub ref_index: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for CancelReferendum {
-					const CALL: &'static str = "cancel_referendum";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "cancel_referendum";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -9876,8 +9897,8 @@ pub mod api {
 					pub balance: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Delegate {
-					const CALL: &'static str = "delegate";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "delegate";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -9894,8 +9915,8 @@ pub mod api {
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				pub struct Undelegate;
 				impl ::subxt::blocks::StaticExtrinsic for Undelegate {
-					const CALL: &'static str = "undelegate";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "undelegate";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -9912,8 +9933,8 @@ pub mod api {
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				pub struct ClearPublicProposals;
 				impl ::subxt::blocks::StaticExtrinsic for ClearPublicProposals {
-					const CALL: &'static str = "clear_public_proposals";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "clear_public_proposals";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -9935,8 +9956,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Unlock {
-					const CALL: &'static str = "unlock";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "unlock";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: CompactAs,
@@ -9956,8 +9977,8 @@ pub mod api {
 					pub index: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for RemoveVote {
-					const CALL: &'static str = "remove_vote";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "remove_vote";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -9980,8 +10001,8 @@ pub mod api {
 					pub index: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for RemoveOtherVote {
-					const CALL: &'static str = "remove_other_vote";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "remove_other_vote";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -10001,8 +10022,8 @@ pub mod api {
 					pub maybe_ref_index: ::core::option::Option<::core::primitive::u32>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Blacklist {
-					const CALL: &'static str = "blacklist";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "blacklist";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -10022,8 +10043,8 @@ pub mod api {
 					pub prop_index: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for CancelProposal {
-					const CALL: &'static str = "cancel_proposal";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "cancel_proposal";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -10043,8 +10064,8 @@ pub mod api {
 					pub maybe_hash: ::core::option::Option<::subxt::utils::H256>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetMetadata {
-					const CALL: &'static str = "set_metadata";
 					const PALLET: &'static str = "Democracy";
+					const CALL: &'static str = "set_metadata";
 				}
 			}
 			pub struct TransactionApi;
@@ -10069,7 +10090,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::second`]."]
 				pub fn second(
 					&self,
@@ -10087,7 +10107,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::vote`]."]
 				pub fn vote(
 					&self,
@@ -10108,7 +10127,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::emergency_cancel`]."]
 				pub fn emergency_cancel(
 					&self,
@@ -10125,7 +10143,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::external_propose`]."]
 				pub fn external_propose(
 					&self,
@@ -10145,7 +10162,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::external_propose_majority`]."]
 				pub fn external_propose_majority(
 					&self,
@@ -10165,7 +10181,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::external_propose_default`]."]
 				pub fn external_propose_default(
 					&self,
@@ -10185,7 +10200,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::fast_track`]."]
 				pub fn fast_track(
 					&self,
@@ -10209,7 +10223,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::veto_external`]."]
 				pub fn veto_external(
 					&self,
@@ -10227,7 +10240,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::cancel_referendum`]."]
 				pub fn cancel_referendum(
 					&self,
@@ -10245,7 +10257,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::delegate`]."]
 				pub fn delegate(
 					&self,
@@ -10271,7 +10282,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::undelegate`]."]
 				pub fn undelegate(&self) -> ::subxt::tx::Payload<types::Undelegate> {
 					::subxt::tx::Payload::new_static(
@@ -10286,7 +10296,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::clear_public_proposals`]."]
 				pub fn clear_public_proposals(
 					&self,
@@ -10303,7 +10312,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::unlock`]."]
 				pub fn unlock(
 					&self,
@@ -10323,7 +10331,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::remove_vote`]."]
 				pub fn remove_vote(
 					&self,
@@ -10341,7 +10348,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::remove_other_vote`]."]
 				pub fn remove_other_vote(
 					&self,
@@ -10363,7 +10369,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::blacklist`]."]
 				pub fn blacklist(
 					&self,
@@ -10385,7 +10390,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::cancel_proposal`]."]
 				pub fn cancel_proposal(
 					&self,
@@ -10402,7 +10406,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_metadata`]."]
 				pub fn set_metadata(
 					&self,
@@ -10446,8 +10449,8 @@ pub mod api {
 				pub deposit: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Proposed {
-				const EVENT: &'static str = "Proposed";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "Proposed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -10468,8 +10471,8 @@ pub mod api {
 				pub deposit: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Tabled {
-				const EVENT: &'static str = "Tabled";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "Tabled";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -10487,8 +10490,8 @@ pub mod api {
 			#[doc = "An external proposal has been tabled."]
 			pub struct ExternalTabled;
 			impl ::subxt::events::StaticEvent for ExternalTabled {
-				const EVENT: &'static str = "ExternalTabled";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "ExternalTabled";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -10509,8 +10512,8 @@ pub mod api {
 				pub threshold: runtime_types::pallet_democracy::vote_threshold::VoteThreshold,
 			}
 			impl ::subxt::events::StaticEvent for Started {
-				const EVENT: &'static str = "Started";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "Started";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -10531,8 +10534,8 @@ pub mod api {
 				pub ref_index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Passed {
-				const EVENT: &'static str = "Passed";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "Passed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -10553,8 +10556,8 @@ pub mod api {
 				pub ref_index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for NotPassed {
-				const EVENT: &'static str = "NotPassed";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "NotPassed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -10575,8 +10578,8 @@ pub mod api {
 				pub ref_index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Cancelled {
-				const EVENT: &'static str = "Cancelled";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "Cancelled";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -10597,8 +10600,8 @@ pub mod api {
 				pub target: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for Delegated {
-				const EVENT: &'static str = "Delegated";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "Delegated";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -10618,8 +10621,8 @@ pub mod api {
 				pub account: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for Undelegated {
-				const EVENT: &'static str = "Undelegated";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "Undelegated";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -10641,8 +10644,8 @@ pub mod api {
 				pub until: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Vetoed {
-				const EVENT: &'static str = "Vetoed";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "Vetoed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -10662,8 +10665,8 @@ pub mod api {
 				pub proposal_hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for Blacklisted {
-				const EVENT: &'static str = "Blacklisted";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "Blacklisted";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -10686,8 +10689,8 @@ pub mod api {
 					runtime_types::pallet_democracy::vote::AccountVote<::core::primitive::u128>,
 			}
 			impl ::subxt::events::StaticEvent for Voted {
-				const EVENT: &'static str = "Voted";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "Voted";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -10708,8 +10711,8 @@ pub mod api {
 				pub prop_index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Seconded {
-				const EVENT: &'static str = "Seconded";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "Seconded";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -10730,8 +10733,8 @@ pub mod api {
 				pub prop_index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for ProposalCanceled {
-				const EVENT: &'static str = "ProposalCanceled";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "ProposalCanceled";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -10752,8 +10755,8 @@ pub mod api {
 				pub hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for MetadataSet {
-				const EVENT: &'static str = "MetadataSet";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "MetadataSet";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -10774,8 +10777,8 @@ pub mod api {
 				pub hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for MetadataCleared {
-				const EVENT: &'static str = "MetadataCleared";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "MetadataCleared";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -10797,8 +10800,8 @@ pub mod api {
 				pub hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for MetadataTransferred {
-				const EVENT: &'static str = "MetadataTransferred";
 				const PALLET: &'static str = "Democracy";
+				const EVENT: &'static str = "MetadataTransferred";
 			}
 		}
 		pub mod storage {
@@ -10827,7 +10830,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The public proposals. Unsorted. The second item is the proposal."]
 				pub fn public_props(
 					&self,
@@ -10855,7 +10857,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Those who have locked a deposit."]
 				#[doc = ""]
 				#[doc = " TWOX-NOTE: Safe, as increasing integer keys are safe."]
@@ -10887,7 +10888,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Those who have locked a deposit."]
 				#[doc = ""]
 				#[doc = " TWOX-NOTE: Safe, as increasing integer keys are safe."]
@@ -10916,7 +10916,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The next free referendum index, aka the number of referenda started so far."]
 				pub fn referendum_count(
 					&self,
@@ -10939,7 +10938,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The lowest referendum index representing an unbaked referendum. Equal to"]
 				#[doc = " `ReferendumCount` if there isn't a unbaked referendum."]
 				pub fn lowest_unbaked(
@@ -10962,7 +10960,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Information concerning any given referendum."]
 				#[doc = ""]
 				#[doc = " TWOX-NOTE: SAFE as indexes are not under an attacker’s control."]
@@ -10996,7 +10993,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Information concerning any given referendum."]
 				#[doc = ""]
 				#[doc = " TWOX-NOTE: SAFE as indexes are not under an attacker’s control."]
@@ -11027,7 +11023,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " All votes for a particular voter. We store the balance for the number of votes that we"]
 				#[doc = " have recorded. The second item is the total amount of delegations, that will be added."]
 				#[doc = ""]
@@ -11060,7 +11055,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " All votes for a particular voter. We store the balance for the number of votes that we"]
 				#[doc = " have recorded. The second item is the total amount of delegations, that will be added."]
 				#[doc = ""]
@@ -11090,7 +11084,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " True if the last referendum tabled was submitted externally. False if it was a public"]
 				#[doc = " proposal."]
 				pub fn last_tabled_was_external(
@@ -11113,7 +11106,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The referendum to be tabled whenever it would be valid to table an external proposal."]
 				#[doc = " This happens when a referendum needs to be tabled and one of two conditions are met:"]
 				#[doc = " - `LastTabledWasExternal` is `false`; or"]
@@ -11143,7 +11135,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " A record of who vetoed what. Maps proposal hash to a possible existent block number"]
 				#[doc = " (until when it may not be resubmitted) and who vetoed it."]
 				pub fn blacklist(
@@ -11174,7 +11165,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " A record of who vetoed what. Maps proposal hash to a possible existent block number"]
 				#[doc = " (until when it may not be resubmitted) and who vetoed it."]
 				pub fn blacklist_root(
@@ -11202,7 +11192,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Record of all proposals that have been subject to emergency cancellation."]
 				pub fn cancellations(
 					&self,
@@ -11228,7 +11217,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Record of all proposals that have been subject to emergency cancellation."]
 				pub fn cancellations_root(
 					&self,
@@ -11251,7 +11239,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " General information concerning any proposal or referendum."]
 				#[doc = " The `PreimageHash` refers to the preimage of the `Preimages` provider which can be a JSON"]
 				#[doc = " dump or IPFS hash of a JSON file."]
@@ -11284,7 +11271,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " General information concerning any proposal or referendum."]
 				#[doc = " The `PreimageHash` refers to the preimage of the `Preimages` provider which can be a JSON"]
 				#[doc = " dump or IPFS hash of a JSON file."]
@@ -11326,31 +11312,43 @@ pub mod api {
 				pub fn enactment_period(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "EnactmentPeriod", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"EnactmentPeriod",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " How often (in blocks) new public referenda are launched."]
 				pub fn launch_period(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "LaunchPeriod", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"LaunchPeriod",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " How often (in blocks) to check for new votes."]
 				pub fn voting_period(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "VotingPeriod", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"VotingPeriod",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The minimum period of vote locking."]
 				#[doc = ""]
 				#[doc = " It should be no shorter than enactment period to ensure that in the case of an approval,"]
@@ -11358,110 +11356,147 @@ pub mod api {
 				pub fn vote_locking_period(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "VoteLockingPeriod", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"VoteLockingPeriod",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The minimum amount to be used as a deposit for a public referendum proposal."]
 				pub fn minimum_deposit(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Democracy", "MinimumDeposit", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"MinimumDeposit",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
-
 				#[doc = " Indicator for whether an emergency origin is even allowed to happen. Some chains may"]
 				#[doc = " want to set this permanently to `false`, others may want to condition it on things such"]
 				#[doc = " as an upgrade having happened recently."]
 				pub fn instant_allowed(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::bool> {
-					::subxt::constants::Address::new_static("Democracy", "InstantAllowed", [
-						165u8, 28u8, 112u8, 190u8, 18u8, 129u8, 182u8, 206u8, 237u8, 1u8, 68u8,
-						252u8, 125u8, 234u8, 185u8, 50u8, 149u8, 164u8, 47u8, 126u8, 134u8, 100u8,
-						14u8, 86u8, 209u8, 39u8, 20u8, 4u8, 233u8, 115u8, 102u8, 131u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"InstantAllowed",
+						[
+							165u8, 28u8, 112u8, 190u8, 18u8, 129u8, 182u8, 206u8, 237u8, 1u8, 68u8,
+							252u8, 125u8, 234u8, 185u8, 50u8, 149u8, 164u8, 47u8, 126u8, 134u8,
+							100u8, 14u8, 86u8, 209u8, 39u8, 20u8, 4u8, 233u8, 115u8, 102u8, 131u8,
+						],
+					)
 				}
-
 				#[doc = " Minimum voting period allowed for a fast-track referendum."]
 				pub fn fast_track_voting_period(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "FastTrackVotingPeriod", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"FastTrackVotingPeriod",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " Period in blocks where an external proposal may not be re-submitted after being vetoed."]
 				pub fn cooloff_period(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "CooloffPeriod", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"CooloffPeriod",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum number of votes for an account."]
 				#[doc = ""]
 				#[doc = " Also used to compute weight, an overly big value can"]
 				#[doc = " lead to extrinsic with very big weight: see `delegate` for instance."]
 				pub fn max_votes(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "MaxVotes", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"MaxVotes",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum number of public proposals that can exist at any time."]
 				pub fn max_proposals(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "MaxProposals", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"MaxProposals",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum number of deposits a public proposal may have at any time."]
 				pub fn max_deposits(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "MaxDeposits", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"MaxDeposits",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum number of items which can be blacklisted."]
 				pub fn max_blacklisted(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Democracy", "MaxBlacklisted", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Democracy",
+						"MaxBlacklisted",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod council {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_collective::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_collective::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -11484,8 +11519,8 @@ pub mod api {
 					pub old_count: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetMembers {
-					const CALL: &'static str = "set_members";
 					const PALLET: &'static str = "Council";
+					const CALL: &'static str = "set_members";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -11506,8 +11541,8 @@ pub mod api {
 					pub length_bound: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Execute {
-					const CALL: &'static str = "execute";
 					const PALLET: &'static str = "Council";
+					const CALL: &'static str = "execute";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -11530,8 +11565,8 @@ pub mod api {
 					pub length_bound: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Propose {
-					const CALL: &'static str = "propose";
 					const PALLET: &'static str = "Council";
+					const CALL: &'static str = "propose";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -11553,8 +11588,8 @@ pub mod api {
 					pub approve: ::core::primitive::bool,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Vote {
-					const CALL: &'static str = "vote";
 					const PALLET: &'static str = "Council";
+					const CALL: &'static str = "vote";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -11573,8 +11608,8 @@ pub mod api {
 					pub proposal_hash: ::subxt::utils::H256,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for DisapproveProposal {
-					const CALL: &'static str = "disapprove_proposal";
 					const PALLET: &'static str = "Council";
+					const CALL: &'static str = "disapprove_proposal";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -11598,8 +11633,8 @@ pub mod api {
 					pub length_bound: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Close {
-					const CALL: &'static str = "close";
 					const PALLET: &'static str = "Council";
+					const CALL: &'static str = "close";
 				}
 			}
 			pub struct TransactionApi;
@@ -11627,7 +11662,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::execute`]."]
 				pub fn execute(
 					&self,
@@ -11649,7 +11683,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::propose`]."]
 				pub fn propose(
 					&self,
@@ -11672,7 +11705,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::vote`]."]
 				pub fn vote(
 					&self,
@@ -11696,7 +11728,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::disapprove_proposal`]."]
 				pub fn disapprove_proposal(
 					&self,
@@ -11713,7 +11744,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::close`]."]
 				pub fn close(
 					&self,
@@ -11766,8 +11796,8 @@ pub mod api {
 				pub threshold: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Proposed {
-				const EVENT: &'static str = "Proposed";
 				const PALLET: &'static str = "Council";
+				const EVENT: &'static str = "Proposed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -11792,8 +11822,8 @@ pub mod api {
 				pub no: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Voted {
-				const EVENT: &'static str = "Voted";
 				const PALLET: &'static str = "Council";
+				const EVENT: &'static str = "Voted";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -11813,8 +11843,8 @@ pub mod api {
 				pub proposal_hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for Approved {
-				const EVENT: &'static str = "Approved";
 				const PALLET: &'static str = "Council";
+				const EVENT: &'static str = "Approved";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -11834,8 +11864,8 @@ pub mod api {
 				pub proposal_hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for Disapproved {
-				const EVENT: &'static str = "Disapproved";
 				const PALLET: &'static str = "Council";
+				const EVENT: &'static str = "Disapproved";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -11856,8 +11886,8 @@ pub mod api {
 				pub result: ::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
 			}
 			impl ::subxt::events::StaticEvent for Executed {
-				const EVENT: &'static str = "Executed";
 				const PALLET: &'static str = "Council";
+				const EVENT: &'static str = "Executed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -11878,8 +11908,8 @@ pub mod api {
 				pub result: ::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
 			}
 			impl ::subxt::events::StaticEvent for MemberExecuted {
-				const EVENT: &'static str = "MemberExecuted";
 				const PALLET: &'static str = "Council";
+				const EVENT: &'static str = "MemberExecuted";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -11901,8 +11931,8 @@ pub mod api {
 				pub no: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Closed {
-				const EVENT: &'static str = "Closed";
 				const PALLET: &'static str = "Council";
+				const EVENT: &'static str = "Closed";
 			}
 		}
 		pub mod storage {
@@ -11932,7 +11962,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Actual proposal for a given hash, if it's current."]
 				pub fn proposal_of(
 					&self,
@@ -11958,7 +11987,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Actual proposal for a given hash, if it's current."]
 				pub fn proposal_of_root(
 					&self,
@@ -11981,7 +12009,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Votes on a given proposal, if it is ongoing."]
 				pub fn voting(
 					&self,
@@ -12009,7 +12036,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Votes on a given proposal, if it is ongoing."]
 				pub fn voting_root(
 					&self,
@@ -12034,7 +12060,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Proposals so far."]
 				pub fn proposal_count(
 					&self,
@@ -12056,7 +12081,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The current members of the collective. This is stored sorted (just by value)."]
 				pub fn members(
 					&self,
@@ -12067,13 +12091,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Council", "Members", vec![], [
-						16u8, 29u8, 32u8, 222u8, 175u8, 136u8, 111u8, 101u8, 43u8, 74u8, 209u8,
-						81u8, 47u8, 97u8, 129u8, 39u8, 225u8, 243u8, 110u8, 229u8, 237u8, 21u8,
-						90u8, 127u8, 80u8, 239u8, 156u8, 32u8, 90u8, 109u8, 179u8, 0u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Council",
+						"Members",
+						vec![],
+						[
+							16u8, 29u8, 32u8, 222u8, 175u8, 136u8, 111u8, 101u8, 43u8, 74u8, 209u8,
+							81u8, 47u8, 97u8, 129u8, 39u8, 225u8, 243u8, 110u8, 229u8, 237u8, 21u8,
+							90u8, 127u8, 80u8, 239u8, 156u8, 32u8, 90u8, 109u8, 179u8, 0u8,
+						],
+					)
 				}
-
 				#[doc = " The prime member that helps determine the default vote behavior in case of absentations."]
 				pub fn prime(
 					&self,
@@ -12084,11 +12112,16 @@ pub mod api {
 					(),
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Council", "Prime", vec![], [
-						72u8, 128u8, 214u8, 72u8, 78u8, 80u8, 100u8, 198u8, 114u8, 215u8, 59u8,
-						3u8, 103u8, 14u8, 152u8, 202u8, 12u8, 165u8, 224u8, 10u8, 41u8, 154u8,
-						77u8, 95u8, 116u8, 143u8, 250u8, 250u8, 176u8, 92u8, 238u8, 154u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Council",
+						"Prime",
+						vec![],
+						[
+							72u8, 128u8, 214u8, 72u8, 78u8, 80u8, 100u8, 198u8, 114u8, 215u8, 59u8,
+							3u8, 103u8, 14u8, 152u8, 202u8, 12u8, 165u8, 224u8, 10u8, 41u8, 154u8,
+							77u8, 95u8, 116u8, 143u8, 250u8, 250u8, 176u8, 92u8, 238u8, 154u8,
+						],
+					)
 				}
 			}
 		}
@@ -12100,23 +12133,29 @@ pub mod api {
 				pub fn max_proposal_weight(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::sp_weights::weight_v2::Weight> {
-					::subxt::constants::Address::new_static("Council", "MaxProposalWeight", [
-						222u8, 183u8, 203u8, 169u8, 31u8, 134u8, 28u8, 12u8, 47u8, 140u8, 71u8,
-						74u8, 61u8, 55u8, 71u8, 236u8, 215u8, 83u8, 28u8, 70u8, 45u8, 128u8, 184u8,
-						57u8, 101u8, 83u8, 42u8, 165u8, 34u8, 155u8, 64u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Council",
+						"MaxProposalWeight",
+						[
+							222u8, 183u8, 203u8, 169u8, 31u8, 134u8, 28u8, 12u8, 47u8, 140u8, 71u8,
+							74u8, 61u8, 55u8, 71u8, 236u8, 215u8, 83u8, 28u8, 70u8, 45u8, 128u8,
+							184u8, 57u8, 101u8, 83u8, 42u8, 165u8, 34u8, 155u8, 64u8, 145u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod technical_committee {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_collective::pallet::Error2;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_collective::pallet::Call2;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -12139,8 +12178,8 @@ pub mod api {
 					pub old_count: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetMembers {
-					const CALL: &'static str = "set_members";
 					const PALLET: &'static str = "TechnicalCommittee";
+					const CALL: &'static str = "set_members";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -12161,8 +12200,8 @@ pub mod api {
 					pub length_bound: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Execute {
-					const CALL: &'static str = "execute";
 					const PALLET: &'static str = "TechnicalCommittee";
+					const CALL: &'static str = "execute";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -12185,8 +12224,8 @@ pub mod api {
 					pub length_bound: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Propose {
-					const CALL: &'static str = "propose";
 					const PALLET: &'static str = "TechnicalCommittee";
+					const CALL: &'static str = "propose";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -12208,8 +12247,8 @@ pub mod api {
 					pub approve: ::core::primitive::bool,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Vote {
-					const CALL: &'static str = "vote";
 					const PALLET: &'static str = "TechnicalCommittee";
+					const CALL: &'static str = "vote";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -12228,8 +12267,8 @@ pub mod api {
 					pub proposal_hash: ::subxt::utils::H256,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for DisapproveProposal {
-					const CALL: &'static str = "disapprove_proposal";
 					const PALLET: &'static str = "TechnicalCommittee";
+					const CALL: &'static str = "disapprove_proposal";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -12253,8 +12292,8 @@ pub mod api {
 					pub length_bound: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Close {
-					const CALL: &'static str = "close";
 					const PALLET: &'static str = "TechnicalCommittee";
+					const CALL: &'static str = "close";
 				}
 			}
 			pub struct TransactionApi;
@@ -12282,7 +12321,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::execute`]."]
 				pub fn execute(
 					&self,
@@ -12304,7 +12342,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::propose`]."]
 				pub fn propose(
 					&self,
@@ -12327,7 +12364,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::vote`]."]
 				pub fn vote(
 					&self,
@@ -12351,7 +12387,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::disapprove_proposal`]."]
 				pub fn disapprove_proposal(
 					&self,
@@ -12368,7 +12403,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::close`]."]
 				pub fn close(
 					&self,
@@ -12421,8 +12455,8 @@ pub mod api {
 				pub threshold: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Proposed {
-				const EVENT: &'static str = "Proposed";
 				const PALLET: &'static str = "TechnicalCommittee";
+				const EVENT: &'static str = "Proposed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -12447,8 +12481,8 @@ pub mod api {
 				pub no: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Voted {
-				const EVENT: &'static str = "Voted";
 				const PALLET: &'static str = "TechnicalCommittee";
+				const EVENT: &'static str = "Voted";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -12468,8 +12502,8 @@ pub mod api {
 				pub proposal_hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for Approved {
-				const EVENT: &'static str = "Approved";
 				const PALLET: &'static str = "TechnicalCommittee";
+				const EVENT: &'static str = "Approved";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -12489,8 +12523,8 @@ pub mod api {
 				pub proposal_hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for Disapproved {
-				const EVENT: &'static str = "Disapproved";
 				const PALLET: &'static str = "TechnicalCommittee";
+				const EVENT: &'static str = "Disapproved";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -12511,8 +12545,8 @@ pub mod api {
 				pub result: ::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
 			}
 			impl ::subxt::events::StaticEvent for Executed {
-				const EVENT: &'static str = "Executed";
 				const PALLET: &'static str = "TechnicalCommittee";
+				const EVENT: &'static str = "Executed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -12533,8 +12567,8 @@ pub mod api {
 				pub result: ::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
 			}
 			impl ::subxt::events::StaticEvent for MemberExecuted {
-				const EVENT: &'static str = "MemberExecuted";
 				const PALLET: &'static str = "TechnicalCommittee";
+				const EVENT: &'static str = "MemberExecuted";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -12556,8 +12590,8 @@ pub mod api {
 				pub no: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Closed {
-				const EVENT: &'static str = "Closed";
 				const PALLET: &'static str = "TechnicalCommittee";
+				const EVENT: &'static str = "Closed";
 			}
 		}
 		pub mod storage {
@@ -12587,7 +12621,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Actual proposal for a given hash, if it's current."]
 				pub fn proposal_of(
 					&self,
@@ -12613,7 +12646,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Actual proposal for a given hash, if it's current."]
 				pub fn proposal_of_root(
 					&self,
@@ -12636,7 +12668,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Votes on a given proposal, if it is ongoing."]
 				pub fn voting(
 					&self,
@@ -12664,7 +12695,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Votes on a given proposal, if it is ongoing."]
 				pub fn voting_root(
 					&self,
@@ -12689,7 +12719,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Proposals so far."]
 				pub fn proposal_count(
 					&self,
@@ -12711,7 +12740,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The current members of the collective. This is stored sorted (just by value)."]
 				pub fn members(
 					&self,
@@ -12733,7 +12761,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The prime member that helps determine the default vote behavior in case of absentations."]
 				pub fn prime(
 					&self,
@@ -12779,13 +12806,15 @@ pub mod api {
 		}
 	}
 	pub mod elections {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_elections_phragmen::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_elections_phragmen::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -12808,8 +12837,8 @@ pub mod api {
 					pub value: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Vote {
-					const CALL: &'static str = "vote";
 					const PALLET: &'static str = "Elections";
+					const CALL: &'static str = "vote";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -12826,8 +12855,8 @@ pub mod api {
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				pub struct RemoveVoter;
 				impl ::subxt::blocks::StaticExtrinsic for RemoveVoter {
-					const CALL: &'static str = "remove_voter";
 					const PALLET: &'static str = "Elections";
+					const CALL: &'static str = "remove_voter";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -12847,8 +12876,8 @@ pub mod api {
 					pub candidate_count: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SubmitCandidacy {
-					const CALL: &'static str = "submit_candidacy";
 					const PALLET: &'static str = "Elections";
+					const CALL: &'static str = "submit_candidacy";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -12867,8 +12896,8 @@ pub mod api {
 					pub renouncing: runtime_types::pallet_elections_phragmen::Renouncing,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for RenounceCandidacy {
-					const CALL: &'static str = "renounce_candidacy";
 					const PALLET: &'static str = "Elections";
+					const CALL: &'static str = "renounce_candidacy";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -12892,8 +12921,8 @@ pub mod api {
 					pub rerun_election: ::core::primitive::bool,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for RemoveMember {
-					const CALL: &'static str = "remove_member";
 					const PALLET: &'static str = "Elections";
+					const CALL: &'static str = "remove_member";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -12913,8 +12942,8 @@ pub mod api {
 					pub num_defunct: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for CleanDefunctVoters {
-					const CALL: &'static str = "clean_defunct_voters";
 					const PALLET: &'static str = "Elections";
+					const CALL: &'static str = "clean_defunct_voters";
 				}
 			}
 			pub struct TransactionApi;
@@ -12936,7 +12965,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::remove_voter`]."]
 				pub fn remove_voter(&self) -> ::subxt::tx::Payload<types::RemoveVoter> {
 					::subxt::tx::Payload::new_static(
@@ -12951,7 +12979,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::submit_candidacy`]."]
 				pub fn submit_candidacy(
 					&self,
@@ -12969,7 +12996,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::renounce_candidacy`]."]
 				pub fn renounce_candidacy(
 					&self,
@@ -12987,7 +13013,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::remove_member`]."]
 				pub fn remove_member(
 					&self,
@@ -13014,7 +13039,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::clean_defunct_voters`]."]
 				pub fn clean_defunct_voters(
 					&self,
@@ -13065,8 +13089,8 @@ pub mod api {
 					::std::vec::Vec<(::subxt::utils::AccountId32, ::core::primitive::u128)>,
 			}
 			impl ::subxt::events::StaticEvent for NewTerm {
-				const EVENT: &'static str = "NewTerm";
 				const PALLET: &'static str = "Elections";
+				const EVENT: &'static str = "NewTerm";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -13085,8 +13109,8 @@ pub mod api {
 			#[doc = "`NewTerm(\\[\\])`. See the description of `NewTerm`."]
 			pub struct EmptyTerm;
 			impl ::subxt::events::StaticEvent for EmptyTerm {
-				const EVENT: &'static str = "EmptyTerm";
 				const PALLET: &'static str = "Elections";
+				const EVENT: &'static str = "EmptyTerm";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -13104,8 +13128,8 @@ pub mod api {
 			#[doc = "Internal error happened while trying to perform election."]
 			pub struct ElectionError;
 			impl ::subxt::events::StaticEvent for ElectionError {
-				const EVENT: &'static str = "ElectionError";
 				const PALLET: &'static str = "Elections";
+				const EVENT: &'static str = "ElectionError";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -13126,8 +13150,8 @@ pub mod api {
 				pub member: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for MemberKicked {
-				const EVENT: &'static str = "MemberKicked";
 				const PALLET: &'static str = "Elections";
+				const EVENT: &'static str = "MemberKicked";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -13147,8 +13171,8 @@ pub mod api {
 				pub candidate: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for Renounced {
-				const EVENT: &'static str = "Renounced";
 				const PALLET: &'static str = "Elections";
+				const EVENT: &'static str = "Renounced";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -13172,8 +13196,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for CandidateSlashed {
-				const EVENT: &'static str = "CandidateSlashed";
 				const PALLET: &'static str = "Elections";
+				const EVENT: &'static str = "CandidateSlashed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -13194,8 +13218,8 @@ pub mod api {
 				pub amount: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for SeatHolderSlashed {
-				const EVENT: &'static str = "SeatHolderSlashed";
 				const PALLET: &'static str = "Elections";
+				const EVENT: &'static str = "SeatHolderSlashed";
 			}
 		}
 		pub mod storage {
@@ -13231,7 +13255,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The current reserved runners-up."]
 				#[doc = ""]
 				#[doc = " Invariant: Always sorted based on rank (worse to best). Upon removal of a member, the"]
@@ -13262,7 +13285,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The present candidate list. A current member or runner-up can never enter this vector"]
 				#[doc = " and is always implicitly assumed to be a candidate."]
 				#[doc = ""]
@@ -13289,7 +13311,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The total number of vote rounds that have happened, excluding the upcoming one."]
 				pub fn election_rounds(
 					&self,
@@ -13311,7 +13332,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Votes and locked stake of a particular voter."]
 				#[doc = ""]
 				#[doc = " TWOX-NOTE: SAFE as `AccountId` is a crypto hash."]
@@ -13341,7 +13361,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Votes and locked stake of a particular voter."]
 				#[doc = ""]
 				#[doc = " TWOX-NOTE: SAFE as `AccountId` is a crypto hash."]
@@ -13378,24 +13397,30 @@ pub mod api {
 				pub fn pallet_id(
 					&self,
 				) -> ::subxt::constants::Address<[::core::primitive::u8; 8usize]> {
-					::subxt::constants::Address::new_static("Elections", "PalletId", [
-						157u8, 118u8, 79u8, 88u8, 241u8, 22u8, 185u8, 37u8, 42u8, 20u8, 133u8,
-						240u8, 11u8, 25u8, 66u8, 154u8, 84u8, 163u8, 78u8, 92u8, 171u8, 82u8,
-						248u8, 76u8, 189u8, 70u8, 142u8, 249u8, 153u8, 84u8, 180u8, 60u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"PalletId",
+						[
+							157u8, 118u8, 79u8, 88u8, 241u8, 22u8, 185u8, 37u8, 42u8, 20u8, 133u8,
+							240u8, 11u8, 25u8, 66u8, 154u8, 84u8, 163u8, 78u8, 92u8, 171u8, 82u8,
+							248u8, 76u8, 189u8, 70u8, 142u8, 249u8, 153u8, 84u8, 180u8, 60u8,
+						],
+					)
 				}
-
 				#[doc = " How much should be locked up in order to submit one's candidacy."]
 				pub fn candidacy_bond(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Elections", "CandidacyBond", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"CandidacyBond",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
-
 				#[doc = " Base deposit associated with voting."]
 				#[doc = ""]
 				#[doc = " This should be sensibly high to economically ensure the pallet cannot be attacked by"]
@@ -13403,57 +13428,75 @@ pub mod api {
 				pub fn voting_bond_base(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Elections", "VotingBondBase", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"VotingBondBase",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
-
 				#[doc = " The amount of bond that need to be locked for each vote (32 bytes)."]
 				pub fn voting_bond_factor(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Elections", "VotingBondFactor", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"VotingBondFactor",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
-
 				#[doc = " Number of members to elect."]
 				pub fn desired_members(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Elections", "DesiredMembers", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"DesiredMembers",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " Number of runners_up to keep."]
 				pub fn desired_runners_up(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Elections", "DesiredRunnersUp", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"DesiredRunnersUp",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " How long each seat is kept. This defines the next block number at which an election"]
 				#[doc = " round will happen. If set to zero, no elections are ever triggered and the module will"]
 				#[doc = " be in passive mode."]
 				pub fn term_duration(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Elections", "TermDuration", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"TermDuration",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum number of candidates in a phragmen election."]
 				#[doc = ""]
 				#[doc = " Warning: This impacts the size of the election which is run onchain. Chose wisely, and"]
@@ -13463,13 +13506,17 @@ pub mod api {
 				pub fn max_candidates(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Elections", "MaxCandidates", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"MaxCandidates",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum number of voters to allow in a phragmen election."]
 				#[doc = ""]
 				#[doc = " Warning: This impacts the size of the election which is run onchain. Chose wisely, and"]
@@ -13477,13 +13524,17 @@ pub mod api {
 				#[doc = ""]
 				#[doc = " When the limit is reached the new voters are ignored."]
 				pub fn max_voters(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Elections", "MaxVoters", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"MaxVoters",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " Maximum numbers of votes per voter."]
 				#[doc = ""]
 				#[doc = " Warning: This impacts the size of the election which is run onchain. Chose wisely, and"]
@@ -13491,23 +13542,30 @@ pub mod api {
 				pub fn max_votes_per_voter(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Elections", "MaxVotesPerVoter", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Elections",
+						"MaxVotesPerVoter",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod technical_membership {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_membership::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_membership::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -13531,8 +13589,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for AddMember {
-					const CALL: &'static str = "add_member";
 					const PALLET: &'static str = "TechnicalMembership";
+					const CALL: &'static str = "add_member";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -13554,8 +13612,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for RemoveMember {
-					const CALL: &'static str = "remove_member";
 					const PALLET: &'static str = "TechnicalMembership";
+					const CALL: &'static str = "remove_member";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -13581,8 +13639,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SwapMember {
-					const CALL: &'static str = "swap_member";
 					const PALLET: &'static str = "TechnicalMembership";
+					const CALL: &'static str = "swap_member";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -13601,8 +13659,8 @@ pub mod api {
 					pub members: ::std::vec::Vec<::subxt::utils::AccountId32>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ResetMembers {
-					const CALL: &'static str = "reset_members";
 					const PALLET: &'static str = "TechnicalMembership";
+					const CALL: &'static str = "reset_members";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -13624,8 +13682,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ChangeKey {
-					const CALL: &'static str = "change_key";
 					const PALLET: &'static str = "TechnicalMembership";
+					const CALL: &'static str = "change_key";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -13647,8 +13705,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetPrime {
-					const CALL: &'static str = "set_prime";
 					const PALLET: &'static str = "TechnicalMembership";
+					const CALL: &'static str = "set_prime";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -13665,8 +13723,8 @@ pub mod api {
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				pub struct ClearPrime;
 				impl ::subxt::blocks::StaticExtrinsic for ClearPrime {
-					const CALL: &'static str = "clear_prime";
 					const PALLET: &'static str = "TechnicalMembership";
+					const CALL: &'static str = "clear_prime";
 				}
 			}
 			pub struct TransactionApi;
@@ -13690,7 +13748,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::remove_member`]."]
 				pub fn remove_member(
 					&self,
@@ -13711,7 +13768,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::swap_member`]."]
 				pub fn swap_member(
 					&self,
@@ -13736,7 +13792,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::reset_members`]."]
 				pub fn reset_members(
 					&self,
@@ -13753,7 +13808,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::change_key`]."]
 				pub fn change_key(
 					&self,
@@ -13774,7 +13828,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_prime`]."]
 				pub fn set_prime(
 					&self,
@@ -13795,7 +13848,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::clear_prime`]."]
 				pub fn clear_prime(&self) -> ::subxt::tx::Payload<types::ClearPrime> {
 					::subxt::tx::Payload::new_static(
@@ -13831,8 +13883,8 @@ pub mod api {
 			#[doc = "The given member was added; see the transaction for who."]
 			pub struct MemberAdded;
 			impl ::subxt::events::StaticEvent for MemberAdded {
-				const EVENT: &'static str = "MemberAdded";
 				const PALLET: &'static str = "TechnicalMembership";
+				const EVENT: &'static str = "MemberAdded";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -13850,8 +13902,8 @@ pub mod api {
 			#[doc = "The given member was removed; see the transaction for who."]
 			pub struct MemberRemoved;
 			impl ::subxt::events::StaticEvent for MemberRemoved {
-				const EVENT: &'static str = "MemberRemoved";
 				const PALLET: &'static str = "TechnicalMembership";
+				const EVENT: &'static str = "MemberRemoved";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -13869,8 +13921,8 @@ pub mod api {
 			#[doc = "Two members were swapped; see the transaction for who."]
 			pub struct MembersSwapped;
 			impl ::subxt::events::StaticEvent for MembersSwapped {
-				const EVENT: &'static str = "MembersSwapped";
 				const PALLET: &'static str = "TechnicalMembership";
+				const EVENT: &'static str = "MembersSwapped";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -13888,8 +13940,8 @@ pub mod api {
 			#[doc = "The membership was reset; see the transaction for who the new set is."]
 			pub struct MembersReset;
 			impl ::subxt::events::StaticEvent for MembersReset {
-				const EVENT: &'static str = "MembersReset";
 				const PALLET: &'static str = "TechnicalMembership";
+				const EVENT: &'static str = "MembersReset";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -13907,8 +13959,8 @@ pub mod api {
 			#[doc = "One of the members' keys changed."]
 			pub struct KeyChanged;
 			impl ::subxt::events::StaticEvent for KeyChanged {
-				const EVENT: &'static str = "KeyChanged";
 				const PALLET: &'static str = "TechnicalMembership";
+				const EVENT: &'static str = "KeyChanged";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -13926,8 +13978,8 @@ pub mod api {
 			#[doc = "Phantom member, never used."]
 			pub struct Dummy;
 			impl ::subxt::events::StaticEvent for Dummy {
-				const EVENT: &'static str = "Dummy";
 				const PALLET: &'static str = "TechnicalMembership";
+				const EVENT: &'static str = "Dummy";
 			}
 		}
 		pub mod storage {
@@ -13958,7 +14010,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The current prime member, if one exists."]
 				pub fn prime(
 					&self,
@@ -13984,13 +14035,15 @@ pub mod api {
 		}
 	}
 	pub mod grandpa {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_grandpa::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_grandpa::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -14017,8 +14070,8 @@ pub mod api {
 					pub key_owner_proof: runtime_types::sp_session::MembershipProof,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ReportEquivocation {
-					const CALL: &'static str = "report_equivocation";
 					const PALLET: &'static str = "Grandpa";
+					const CALL: &'static str = "report_equivocation";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -14043,8 +14096,8 @@ pub mod api {
 					pub key_owner_proof: runtime_types::sp_session::MembershipProof,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ReportEquivocationUnsigned {
-					const CALL: &'static str = "report_equivocation_unsigned";
 					const PALLET: &'static str = "Grandpa";
+					const CALL: &'static str = "report_equivocation_unsigned";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -14064,8 +14117,8 @@ pub mod api {
 					pub best_finalized_block_number: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for NoteStalled {
-					const CALL: &'static str = "note_stalled";
 					const PALLET: &'static str = "Grandpa";
+					const CALL: &'static str = "note_stalled";
 				}
 			}
 			pub struct TransactionApi;
@@ -14094,7 +14147,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::report_equivocation_unsigned`]."]
 				pub fn report_equivocation_unsigned(
 					&self,
@@ -14118,7 +14170,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::note_stalled`]."]
 				pub fn note_stalled(
 					&self,
@@ -14167,8 +14218,8 @@ pub mod api {
 				)>,
 			}
 			impl ::subxt::events::StaticEvent for NewAuthorities {
-				const EVENT: &'static str = "NewAuthorities";
 				const PALLET: &'static str = "Grandpa";
+				const EVENT: &'static str = "NewAuthorities";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -14186,8 +14237,8 @@ pub mod api {
 			#[doc = "Current authority set has been paused."]
 			pub struct Paused;
 			impl ::subxt::events::StaticEvent for Paused {
-				const EVENT: &'static str = "Paused";
 				const PALLET: &'static str = "Grandpa";
+				const EVENT: &'static str = "Paused";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -14205,8 +14256,8 @@ pub mod api {
 			#[doc = "Current authority set has been resumed."]
 			pub struct Resumed;
 			impl ::subxt::events::StaticEvent for Resumed {
-				const EVENT: &'static str = "Resumed";
 				const PALLET: &'static str = "Grandpa";
+				const EVENT: &'static str = "Resumed";
 			}
 		}
 		pub mod storage {
@@ -14223,13 +14274,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Grandpa", "State", vec![], [
-						254u8, 81u8, 54u8, 203u8, 26u8, 74u8, 162u8, 215u8, 165u8, 247u8, 143u8,
-						139u8, 242u8, 164u8, 67u8, 27u8, 97u8, 172u8, 66u8, 98u8, 28u8, 151u8,
-						32u8, 38u8, 209u8, 82u8, 41u8, 209u8, 72u8, 3u8, 167u8, 42u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Grandpa",
+						"State",
+						vec![],
+						[
+							254u8, 81u8, 54u8, 203u8, 26u8, 74u8, 162u8, 215u8, 165u8, 247u8,
+							143u8, 139u8, 242u8, 164u8, 67u8, 27u8, 97u8, 172u8, 66u8, 98u8, 28u8,
+							151u8, 32u8, 38u8, 209u8, 82u8, 41u8, 209u8, 72u8, 3u8, 167u8, 42u8,
+						],
+					)
 				}
-
 				#[doc = " Pending change: (signaled at, scheduled change)."]
 				pub fn pending_change(
 					&self,
@@ -14251,7 +14306,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " next block number where we can force a change."]
 				pub fn next_forced(
 					&self,
@@ -14273,7 +14327,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " `true` if we are currently stalled."]
 				pub fn stalled(
 					&self,
@@ -14284,13 +14337,17 @@ pub mod api {
 					(),
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Grandpa", "Stalled", vec![], [
-						146u8, 18u8, 59u8, 59u8, 21u8, 246u8, 5u8, 167u8, 221u8, 8u8, 230u8, 74u8,
-						81u8, 217u8, 67u8, 158u8, 136u8, 36u8, 23u8, 106u8, 136u8, 89u8, 110u8,
-						217u8, 31u8, 138u8, 107u8, 251u8, 164u8, 10u8, 119u8, 18u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Grandpa",
+						"Stalled",
+						vec![],
+						[
+							146u8, 18u8, 59u8, 59u8, 21u8, 246u8, 5u8, 167u8, 221u8, 8u8, 230u8,
+							74u8, 81u8, 217u8, 67u8, 158u8, 136u8, 36u8, 23u8, 106u8, 136u8, 89u8,
+							110u8, 217u8, 31u8, 138u8, 107u8, 251u8, 164u8, 10u8, 119u8, 18u8,
+						],
+					)
 				}
-
 				#[doc = " The number of changes (both in terms of keys and underlying economic responsibilities)"]
 				#[doc = " in the \"set\" of Grandpa validators from genesis."]
 				pub fn current_set_id(
@@ -14314,7 +14371,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " A mapping from grandpa set ID to the index of the *most recent* session for which its"]
 				#[doc = " members were responsible."]
 				#[doc = ""]
@@ -14348,7 +14404,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " A mapping from grandpa set ID to the index of the *most recent* session for which its"]
 				#[doc = " members were responsible."]
 				#[doc = ""]
@@ -14389,13 +14444,17 @@ pub mod api {
 				pub fn max_authorities(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Grandpa", "MaxAuthorities", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Grandpa",
+						"MaxAuthorities",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum number of entries to keep in the set id to session index mapping."]
 				#[doc = ""]
 				#[doc = " Since the `SetIdSession` map is only used for validating equivocations this"]
@@ -14405,23 +14464,30 @@ pub mod api {
 				pub fn max_set_id_session_entries(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u64> {
-					::subxt::constants::Address::new_static("Grandpa", "MaxSetIdSessionEntries", [
-						128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8, 59u8,
-						226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8, 103u8, 119u8,
-						53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8, 246u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Grandpa",
+						"MaxSetIdSessionEntries",
+						[
+							128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8,
+							59u8, 226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8,
+							103u8, 119u8, 53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8,
+							246u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod treasury {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "Error for the treasury pallet."]
 		pub type Error = runtime_types::pallet_treasury::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_treasury::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -14447,8 +14513,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ProposeSpend {
-					const CALL: &'static str = "propose_spend";
 					const PALLET: &'static str = "Treasury";
+					const CALL: &'static str = "propose_spend";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -14468,8 +14534,8 @@ pub mod api {
 					pub proposal_id: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for RejectProposal {
-					const CALL: &'static str = "reject_proposal";
 					const PALLET: &'static str = "Treasury";
+					const CALL: &'static str = "reject_proposal";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -14489,8 +14555,8 @@ pub mod api {
 					pub proposal_id: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ApproveProposal {
-					const CALL: &'static str = "approve_proposal";
 					const PALLET: &'static str = "Treasury";
+					const CALL: &'static str = "approve_proposal";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -14514,8 +14580,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Spend {
-					const CALL: &'static str = "spend";
 					const PALLET: &'static str = "Treasury";
+					const CALL: &'static str = "spend";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -14535,8 +14601,8 @@ pub mod api {
 					pub proposal_id: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for RemoveApproval {
-					const CALL: &'static str = "remove_approval";
 					const PALLET: &'static str = "Treasury";
+					const CALL: &'static str = "remove_approval";
 				}
 			}
 			pub struct TransactionApi;
@@ -14562,7 +14628,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::reject_proposal`]."]
 				pub fn reject_proposal(
 					&self,
@@ -14579,7 +14644,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::approve_proposal`]."]
 				pub fn approve_proposal(
 					&self,
@@ -14596,7 +14660,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::spend`]."]
 				pub fn spend(
 					&self,
@@ -14620,7 +14683,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::remove_approval`]."]
 				pub fn remove_approval(
 					&self,
@@ -14663,8 +14725,8 @@ pub mod api {
 				pub proposal_index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Proposed {
-				const EVENT: &'static str = "Proposed";
 				const PALLET: &'static str = "Treasury";
+				const EVENT: &'static str = "Proposed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -14685,8 +14747,8 @@ pub mod api {
 				pub budget_remaining: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Spending {
-				const EVENT: &'static str = "Spending";
 				const PALLET: &'static str = "Treasury";
+				const EVENT: &'static str = "Spending";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -14708,8 +14770,8 @@ pub mod api {
 				pub account: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for Awarded {
-				const EVENT: &'static str = "Awarded";
 				const PALLET: &'static str = "Treasury";
+				const EVENT: &'static str = "Awarded";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -14730,8 +14792,8 @@ pub mod api {
 				pub slashed: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Rejected {
-				const EVENT: &'static str = "Rejected";
 				const PALLET: &'static str = "Treasury";
+				const EVENT: &'static str = "Rejected";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -14752,8 +14814,8 @@ pub mod api {
 				pub burnt_funds: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Burnt {
-				const EVENT: &'static str = "Burnt";
 				const PALLET: &'static str = "Treasury";
+				const EVENT: &'static str = "Burnt";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -14774,8 +14836,8 @@ pub mod api {
 				pub rollover_balance: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Rollover {
-				const EVENT: &'static str = "Rollover";
 				const PALLET: &'static str = "Treasury";
+				const EVENT: &'static str = "Rollover";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -14796,8 +14858,8 @@ pub mod api {
 				pub value: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Deposit {
-				const EVENT: &'static str = "Deposit";
 				const PALLET: &'static str = "Treasury";
+				const EVENT: &'static str = "Deposit";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -14819,8 +14881,8 @@ pub mod api {
 				pub beneficiary: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for SpendApproved {
-				const EVENT: &'static str = "SpendApproved";
 				const PALLET: &'static str = "Treasury";
+				const EVENT: &'static str = "SpendApproved";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -14841,8 +14903,8 @@ pub mod api {
 				pub deactivated: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for UpdatedInactive {
-				const EVENT: &'static str = "UpdatedInactive";
 				const PALLET: &'static str = "Treasury";
+				const EVENT: &'static str = "UpdatedInactive";
 			}
 		}
 		pub mod storage {
@@ -14870,7 +14932,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Proposals that have been made."]
 				pub fn proposals(
 					&self,
@@ -14898,7 +14959,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Proposals that have been made."]
 				pub fn proposals_root(
 					&self,
@@ -14923,7 +14983,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The amount which has been reported as inactive to Currency."]
 				pub fn deactivated(
 					&self,
@@ -14946,7 +15005,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Proposal indices that have been approved but not yet awarded."]
 				pub fn approvals(
 					&self,
@@ -14982,88 +15040,115 @@ pub mod api {
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::sp_arithmetic::per_things::Permill>
 				{
-					::subxt::constants::Address::new_static("Treasury", "ProposalBond", [
-						65u8, 93u8, 120u8, 165u8, 204u8, 81u8, 159u8, 163u8, 93u8, 135u8, 114u8,
-						121u8, 147u8, 35u8, 215u8, 213u8, 4u8, 223u8, 83u8, 37u8, 225u8, 200u8,
-						189u8, 156u8, 140u8, 36u8, 58u8, 46u8, 42u8, 232u8, 155u8, 0u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Treasury",
+						"ProposalBond",
+						[
+							65u8, 93u8, 120u8, 165u8, 204u8, 81u8, 159u8, 163u8, 93u8, 135u8,
+							114u8, 121u8, 147u8, 35u8, 215u8, 213u8, 4u8, 223u8, 83u8, 37u8, 225u8,
+							200u8, 189u8, 156u8, 140u8, 36u8, 58u8, 46u8, 42u8, 232u8, 155u8, 0u8,
+						],
+					)
 				}
-
 				#[doc = " Minimum amount of funds that should be placed in a deposit for making a proposal."]
 				pub fn proposal_bond_minimum(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Treasury", "ProposalBondMinimum", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Treasury",
+						"ProposalBondMinimum",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
-
 				#[doc = " Maximum amount of funds that should be placed in a deposit for making a proposal."]
 				pub fn proposal_bond_maximum(
 					&self,
 				) -> ::subxt::constants::Address<::core::option::Option<::core::primitive::u128>> {
-					::subxt::constants::Address::new_static("Treasury", "ProposalBondMaximum", [
-						198u8, 51u8, 89u8, 159u8, 124u8, 251u8, 51u8, 80u8, 167u8, 193u8, 44u8,
-						199u8, 80u8, 36u8, 41u8, 130u8, 137u8, 229u8, 178u8, 208u8, 37u8, 215u8,
-						169u8, 183u8, 180u8, 191u8, 140u8, 240u8, 250u8, 61u8, 42u8, 147u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Treasury",
+						"ProposalBondMaximum",
+						[
+							198u8, 51u8, 89u8, 159u8, 124u8, 251u8, 51u8, 80u8, 167u8, 193u8, 44u8,
+							199u8, 80u8, 36u8, 41u8, 130u8, 137u8, 229u8, 178u8, 208u8, 37u8,
+							215u8, 169u8, 183u8, 180u8, 191u8, 140u8, 240u8, 250u8, 61u8, 42u8,
+							147u8,
+						],
+					)
 				}
-
 				#[doc = " Period between successive spends."]
 				pub fn spend_period(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Treasury", "SpendPeriod", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Treasury",
+						"SpendPeriod",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " Percentage of spare funds (if any) that are burnt per spend period."]
 				pub fn burn(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::sp_arithmetic::per_things::Permill>
 				{
-					::subxt::constants::Address::new_static("Treasury", "Burn", [
-						65u8, 93u8, 120u8, 165u8, 204u8, 81u8, 159u8, 163u8, 93u8, 135u8, 114u8,
-						121u8, 147u8, 35u8, 215u8, 213u8, 4u8, 223u8, 83u8, 37u8, 225u8, 200u8,
-						189u8, 156u8, 140u8, 36u8, 58u8, 46u8, 42u8, 232u8, 155u8, 0u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Treasury",
+						"Burn",
+						[
+							65u8, 93u8, 120u8, 165u8, 204u8, 81u8, 159u8, 163u8, 93u8, 135u8,
+							114u8, 121u8, 147u8, 35u8, 215u8, 213u8, 4u8, 223u8, 83u8, 37u8, 225u8,
+							200u8, 189u8, 156u8, 140u8, 36u8, 58u8, 46u8, 42u8, 232u8, 155u8, 0u8,
+						],
+					)
 				}
-
 				#[doc = " The treasury's pallet id, used for deriving its sovereign account ID."]
 				pub fn pallet_id(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::frame_support::PalletId> {
-					::subxt::constants::Address::new_static("Treasury", "PalletId", [
-						56u8, 243u8, 53u8, 83u8, 154u8, 179u8, 170u8, 80u8, 133u8, 173u8, 61u8,
-						161u8, 47u8, 225u8, 146u8, 21u8, 50u8, 229u8, 248u8, 27u8, 104u8, 58u8,
-						129u8, 197u8, 102u8, 160u8, 168u8, 205u8, 154u8, 42u8, 217u8, 53u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Treasury",
+						"PalletId",
+						[
+							56u8, 243u8, 53u8, 83u8, 154u8, 179u8, 170u8, 80u8, 133u8, 173u8, 61u8,
+							161u8, 47u8, 225u8, 146u8, 21u8, 50u8, 229u8, 248u8, 27u8, 104u8, 58u8,
+							129u8, 197u8, 102u8, 160u8, 168u8, 205u8, 154u8, 42u8, 217u8, 53u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum number of approvals that can wait in the spending queue."]
 				#[doc = ""]
 				#[doc = " NOTE: This parameter is also used within the Bounties Pallet extension if enabled."]
 				pub fn max_approvals(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Treasury", "MaxApprovals", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Treasury",
+						"MaxApprovals",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod sudo {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "Error for the Sudo pallet"]
 		pub type Error = runtime_types::pallet_sudo::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_sudo::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -15084,8 +15169,8 @@ pub mod api {
 					pub call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Sudo {
-					const CALL: &'static str = "sudo";
 					const PALLET: &'static str = "Sudo";
+					const CALL: &'static str = "sudo";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -15105,8 +15190,8 @@ pub mod api {
 					pub weight: runtime_types::sp_weights::weight_v2::Weight,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SudoUncheckedWeight {
-					const CALL: &'static str = "sudo_unchecked_weight";
 					const PALLET: &'static str = "Sudo";
+					const CALL: &'static str = "sudo_unchecked_weight";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -15128,8 +15213,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetKey {
-					const CALL: &'static str = "set_key";
 					const PALLET: &'static str = "Sudo";
+					const CALL: &'static str = "set_key";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -15152,8 +15237,8 @@ pub mod api {
 					pub call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SudoAs {
-					const CALL: &'static str = "sudo_as";
 					const PALLET: &'static str = "Sudo";
+					const CALL: &'static str = "sudo_as";
 				}
 			}
 			pub struct TransactionApi;
@@ -15176,7 +15261,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::sudo_unchecked_weight`]."]
 				pub fn sudo_unchecked_weight(
 					&self,
@@ -15198,7 +15282,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_key`]."]
 				pub fn set_key(
 					&self,
@@ -15207,13 +15290,18 @@ pub mod api {
 						::core::primitive::u32,
 					>,
 				) -> ::subxt::tx::Payload<types::SetKey> {
-					::subxt::tx::Payload::new_static("Sudo", "set_key", types::SetKey { new }, [
-						46u8, 208u8, 84u8, 223u8, 141u8, 188u8, 184u8, 156u8, 101u8, 97u8, 255u8,
-						166u8, 168u8, 102u8, 75u8, 3u8, 149u8, 105u8, 202u8, 220u8, 187u8, 117u8,
-						156u8, 83u8, 159u8, 115u8, 231u8, 201u8, 171u8, 47u8, 170u8, 36u8,
-					])
+					::subxt::tx::Payload::new_static(
+						"Sudo",
+						"set_key",
+						types::SetKey { new },
+						[
+							46u8, 208u8, 84u8, 223u8, 141u8, 188u8, 184u8, 156u8, 101u8, 97u8,
+							255u8, 166u8, 168u8, 102u8, 75u8, 3u8, 149u8, 105u8, 202u8, 220u8,
+							187u8, 117u8, 156u8, 83u8, 159u8, 115u8, 231u8, 201u8, 171u8, 47u8,
+							170u8, 36u8,
+						],
+					)
 				}
-
 				#[doc = "See [`Pallet::sudo_as`]."]
 				pub fn sudo_as(
 					&self,
@@ -15263,8 +15351,8 @@ pub mod api {
 					::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
 			}
 			impl ::subxt::events::StaticEvent for Sudid {
-				const EVENT: &'static str = "Sudid";
 				const PALLET: &'static str = "Sudo";
+				const EVENT: &'static str = "Sudid";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -15284,8 +15372,8 @@ pub mod api {
 				pub old_sudoer: ::core::option::Option<::subxt::utils::AccountId32>,
 			}
 			impl ::subxt::events::StaticEvent for KeyChanged {
-				const EVENT: &'static str = "KeyChanged";
 				const PALLET: &'static str = "Sudo";
+				const EVENT: &'static str = "KeyChanged";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -15306,8 +15394,8 @@ pub mod api {
 					::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
 			}
 			impl ::subxt::events::StaticEvent for SudoAsDone {
-				const EVENT: &'static str = "SudoAsDone";
 				const PALLET: &'static str = "Sudo";
+				const EVENT: &'static str = "SudoAsDone";
 			}
 		}
 		pub mod storage {
@@ -15324,23 +15412,30 @@ pub mod api {
 					(),
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Sudo", "Key", vec![], [
-						72u8, 14u8, 225u8, 162u8, 205u8, 247u8, 227u8, 105u8, 116u8, 57u8, 4u8,
-						31u8, 84u8, 137u8, 227u8, 228u8, 133u8, 245u8, 206u8, 227u8, 117u8, 36u8,
-						252u8, 151u8, 107u8, 15u8, 180u8, 4u8, 4u8, 152u8, 195u8, 144u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Sudo",
+						"Key",
+						vec![],
+						[
+							72u8, 14u8, 225u8, 162u8, 205u8, 247u8, 227u8, 105u8, 116u8, 57u8, 4u8,
+							31u8, 84u8, 137u8, 227u8, 228u8, 133u8, 245u8, 206u8, 227u8, 117u8,
+							36u8, 252u8, 151u8, 107u8, 15u8, 180u8, 4u8, 4u8, 152u8, 195u8, 144u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod im_online {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_im_online::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_im_online::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -15363,8 +15458,8 @@ pub mod api {
 					pub signature: runtime_types::pallet_im_online::sr25519::app_sr25519::Signature,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Heartbeat {
-					const CALL: &'static str = "heartbeat";
 					const PALLET: &'static str = "ImOnline";
+					const CALL: &'static str = "heartbeat";
 				}
 			}
 			pub struct TransactionApi;
@@ -15414,8 +15509,8 @@ pub mod api {
 				pub authority_id: runtime_types::pallet_im_online::sr25519::app_sr25519::Public,
 			}
 			impl ::subxt::events::StaticEvent for HeartbeatReceived {
-				const EVENT: &'static str = "HeartbeatReceived";
 				const PALLET: &'static str = "ImOnline";
+				const EVENT: &'static str = "HeartbeatReceived";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -15433,8 +15528,8 @@ pub mod api {
 			#[doc = "At the end of the session, no offence was committed."]
 			pub struct AllGood;
 			impl ::subxt::events::StaticEvent for AllGood {
-				const EVENT: &'static str = "AllGood";
 				const PALLET: &'static str = "ImOnline";
+				const EVENT: &'static str = "AllGood";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -15460,8 +15555,8 @@ pub mod api {
 				)>,
 			}
 			impl ::subxt::events::StaticEvent for SomeOffline {
-				const EVENT: &'static str = "SomeOffline";
 				const PALLET: &'static str = "ImOnline";
+				const EVENT: &'static str = "SomeOffline";
 			}
 		}
 		pub mod storage {
@@ -15499,7 +15594,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The current set of keys that may issue a heartbeat."]
 				pub fn keys(
 					&self,
@@ -15512,13 +15606,18 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("ImOnline", "Keys", vec![], [
-						111u8, 104u8, 188u8, 46u8, 152u8, 140u8, 137u8, 244u8, 52u8, 214u8, 115u8,
-						156u8, 39u8, 239u8, 15u8, 168u8, 193u8, 125u8, 57u8, 195u8, 250u8, 156u8,
-						234u8, 222u8, 222u8, 253u8, 135u8, 232u8, 196u8, 163u8, 29u8, 218u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"ImOnline",
+						"Keys",
+						vec![],
+						[
+							111u8, 104u8, 188u8, 46u8, 152u8, 140u8, 137u8, 244u8, 52u8, 214u8,
+							115u8, 156u8, 39u8, 239u8, 15u8, 168u8, 193u8, 125u8, 57u8, 195u8,
+							250u8, 156u8, 234u8, 222u8, 222u8, 253u8, 135u8, 232u8, 196u8, 163u8,
+							29u8, 218u8,
+						],
+					)
 				}
-
 				#[doc = " For each session index, we keep a mapping of `SessionIndex` and `AuthIndex`."]
 				pub fn received_heartbeats(
 					&self,
@@ -15545,7 +15644,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " For each session index, we keep a mapping of `SessionIndex` and `AuthIndex`."]
 				pub fn received_heartbeats_root(
 					&self,
@@ -15567,7 +15665,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " For each session index, we keep a mapping of `ValidatorId<T>` to the"]
 				#[doc = " number of blocks authored by the given authority."]
 				pub fn authored_blocks(
@@ -15596,7 +15693,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " For each session index, we keep a mapping of `ValidatorId<T>` to the"]
 				#[doc = " number of blocks authored by the given authority."]
 				pub fn authored_blocks_root(
@@ -15633,17 +15729,23 @@ pub mod api {
 				pub fn unsigned_priority(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u64> {
-					::subxt::constants::Address::new_static("ImOnline", "UnsignedPriority", [
-						128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8, 59u8,
-						226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8, 103u8, 119u8,
-						53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8, 246u8,
-					])
+					::subxt::constants::Address::new_static(
+						"ImOnline",
+						"UnsignedPriority",
+						[
+							128u8, 214u8, 205u8, 242u8, 181u8, 142u8, 124u8, 231u8, 190u8, 146u8,
+							59u8, 226u8, 157u8, 101u8, 103u8, 117u8, 249u8, 65u8, 18u8, 191u8,
+							103u8, 119u8, 53u8, 85u8, 81u8, 96u8, 220u8, 42u8, 184u8, 239u8, 42u8,
+							246u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod authority_discovery {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		pub mod storage {
 			use super::runtime_types;
 			pub struct StorageApi;
@@ -15672,7 +15774,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Keys of the next authority set."]
 				pub fn next_keys(
 					&self,
@@ -15700,7 +15801,8 @@ pub mod api {
 		}
 	}
 	pub mod offences {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "Events type."]
 		pub type Event = runtime_types::pallet_offences::pallet::Event;
 		pub mod events {
@@ -15726,8 +15828,8 @@ pub mod api {
 				pub timeslot: ::std::vec::Vec<::core::primitive::u8>,
 			}
 			impl ::subxt::events::StaticEvent for Offence {
-				const EVENT: &'static str = "Offence";
 				const PALLET: &'static str = "Offences";
+				const EVENT: &'static str = "Offence";
 			}
 		}
 		pub mod storage {
@@ -15768,7 +15870,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The primary structure that holds all offence records keyed by report identifiers."]
 				pub fn reports_root(
 					&self,
@@ -15800,7 +15901,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " A vector of reports of the same kind that happened at the same time slot."]
 				pub fn concurrent_reports_index(
 					&self,
@@ -15828,7 +15928,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " A vector of reports of the same kind that happened at the same time slot."]
 				pub fn concurrent_reports_index_root(
 					&self,
@@ -15855,7 +15954,8 @@ pub mod api {
 		}
 	}
 	pub mod historical {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		pub mod storage {
 			use super::runtime_types;
 			pub struct StorageApi;
@@ -15885,7 +15985,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Mapping from historical session indices to session-data root hash and validator count."]
 				pub fn historical_sessions_root(
 					&self,
@@ -15908,7 +16007,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The range of historical sessions we store. [first, last)"]
 				pub fn stored_range(
 					&self,
@@ -15935,13 +16033,15 @@ pub mod api {
 		}
 	}
 	pub mod scheduler {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_scheduler::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_scheduler::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -15966,8 +16066,8 @@ pub mod api {
 					pub call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Schedule {
-					const CALL: &'static str = "schedule";
 					const PALLET: &'static str = "Scheduler";
+					const CALL: &'static str = "schedule";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -15987,8 +16087,8 @@ pub mod api {
 					pub index: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Cancel {
-					const CALL: &'static str = "cancel";
 					const PALLET: &'static str = "Scheduler";
+					const CALL: &'static str = "cancel";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -16012,8 +16112,8 @@ pub mod api {
 					pub call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ScheduleNamed {
-					const CALL: &'static str = "schedule_named";
 					const PALLET: &'static str = "Scheduler";
+					const CALL: &'static str = "schedule_named";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -16032,8 +16132,8 @@ pub mod api {
 					pub id: [::core::primitive::u8; 32usize],
 				}
 				impl ::subxt::blocks::StaticExtrinsic for CancelNamed {
-					const CALL: &'static str = "cancel_named";
 					const PALLET: &'static str = "Scheduler";
+					const CALL: &'static str = "cancel_named";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -16056,8 +16156,8 @@ pub mod api {
 					pub call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ScheduleAfter {
-					const CALL: &'static str = "schedule_after";
 					const PALLET: &'static str = "Scheduler";
+					const CALL: &'static str = "schedule_after";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -16081,8 +16181,8 @@ pub mod api {
 					pub call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ScheduleNamedAfter {
-					const CALL: &'static str = "schedule_named_after";
 					const PALLET: &'static str = "Scheduler";
+					const CALL: &'static str = "schedule_named_after";
 				}
 			}
 			pub struct TransactionApi;
@@ -16115,7 +16215,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::cancel`]."]
 				pub fn cancel(
 					&self,
@@ -16134,7 +16233,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::schedule_named`]."]
 				pub fn schedule_named(
 					&self,
@@ -16164,7 +16262,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::cancel_named`]."]
 				pub fn cancel_named(
 					&self,
@@ -16181,7 +16278,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::schedule_after`]."]
 				pub fn schedule_after(
 					&self,
@@ -16210,7 +16306,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::schedule_named_after`]."]
 				pub fn schedule_named_after(
 					&self,
@@ -16265,8 +16360,8 @@ pub mod api {
 				pub index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Scheduled {
-				const EVENT: &'static str = "Scheduled";
 				const PALLET: &'static str = "Scheduler";
+				const EVENT: &'static str = "Scheduled";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -16287,8 +16382,8 @@ pub mod api {
 				pub index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Canceled {
-				const EVENT: &'static str = "Canceled";
 				const PALLET: &'static str = "Scheduler";
+				const EVENT: &'static str = "Canceled";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -16310,8 +16405,8 @@ pub mod api {
 				pub result: ::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
 			}
 			impl ::subxt::events::StaticEvent for Dispatched {
-				const EVENT: &'static str = "Dispatched";
 				const PALLET: &'static str = "Scheduler";
+				const EVENT: &'static str = "Dispatched";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -16332,8 +16427,8 @@ pub mod api {
 				pub id: ::core::option::Option<[::core::primitive::u8; 32usize]>,
 			}
 			impl ::subxt::events::StaticEvent for CallUnavailable {
-				const EVENT: &'static str = "CallUnavailable";
 				const PALLET: &'static str = "Scheduler";
+				const EVENT: &'static str = "CallUnavailable";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -16354,8 +16449,8 @@ pub mod api {
 				pub id: ::core::option::Option<[::core::primitive::u8; 32usize]>,
 			}
 			impl ::subxt::events::StaticEvent for PeriodicFailed {
-				const EVENT: &'static str = "PeriodicFailed";
 				const PALLET: &'static str = "Scheduler";
+				const EVENT: &'static str = "PeriodicFailed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -16376,8 +16471,8 @@ pub mod api {
 				pub id: ::core::option::Option<[::core::primitive::u8; 32usize]>,
 			}
 			impl ::subxt::events::StaticEvent for PermanentlyOverweight {
-				const EVENT: &'static str = "PermanentlyOverweight";
 				const PALLET: &'static str = "Scheduler";
+				const EVENT: &'static str = "PermanentlyOverweight";
 			}
 		}
 		pub mod storage {
@@ -16404,7 +16499,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Items to be executed, indexed by the block number that they should be executed on."]
 				pub fn agenda(
 					&self,
@@ -16442,7 +16536,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Items to be executed, indexed by the block number that they should be executed on."]
 				pub fn agenda_root(
 					&self,
@@ -16477,7 +16570,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Lookup from a name to the block number and index of the task."]
 				#[doc = ""]
 				#[doc = " For v3 -> v4 the previously unbounded identities are Blake2-256 hashed to form the v4"]
@@ -16506,7 +16598,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Lookup from a name to the block number and index of the task."]
 				#[doc = ""]
 				#[doc = " For v3 -> v4 the previously unbounded identities are Blake2-256 hashed to form the v4"]
@@ -16542,13 +16633,16 @@ pub mod api {
 				pub fn maximum_weight(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::sp_weights::weight_v2::Weight> {
-					::subxt::constants::Address::new_static("Scheduler", "MaximumWeight", [
-						222u8, 183u8, 203u8, 169u8, 31u8, 134u8, 28u8, 12u8, 47u8, 140u8, 71u8,
-						74u8, 61u8, 55u8, 71u8, 236u8, 215u8, 83u8, 28u8, 70u8, 45u8, 128u8, 184u8,
-						57u8, 101u8, 83u8, 42u8, 165u8, 34u8, 155u8, 64u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Scheduler",
+						"MaximumWeight",
+						[
+							222u8, 183u8, 203u8, 169u8, 31u8, 134u8, 28u8, 12u8, 47u8, 140u8, 71u8,
+							74u8, 61u8, 55u8, 71u8, 236u8, 215u8, 83u8, 28u8, 70u8, 45u8, 128u8,
+							184u8, 57u8, 101u8, 83u8, 42u8, 165u8, 34u8, 155u8, 64u8, 145u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum number of scheduled calls in the queue for a single block."]
 				#[doc = ""]
 				#[doc = " NOTE:"]
@@ -16557,23 +16651,30 @@ pub mod api {
 				pub fn max_scheduled_per_block(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Scheduler", "MaxScheduledPerBlock", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Scheduler",
+						"MaxScheduledPerBlock",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod bounties {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_bounties::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_bounties::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -16596,8 +16697,8 @@ pub mod api {
 					pub description: ::std::vec::Vec<::core::primitive::u8>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ProposeBounty {
-					const CALL: &'static str = "propose_bounty";
 					const PALLET: &'static str = "Bounties";
+					const CALL: &'static str = "propose_bounty";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -16617,8 +16718,8 @@ pub mod api {
 					pub bounty_id: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ApproveBounty {
-					const CALL: &'static str = "approve_bounty";
 					const PALLET: &'static str = "Bounties";
+					const CALL: &'static str = "approve_bounty";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -16644,8 +16745,8 @@ pub mod api {
 					pub fee: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ProposeCurator {
-					const CALL: &'static str = "propose_curator";
 					const PALLET: &'static str = "Bounties";
+					const CALL: &'static str = "propose_curator";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -16665,8 +16766,8 @@ pub mod api {
 					pub bounty_id: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for UnassignCurator {
-					const CALL: &'static str = "unassign_curator";
 					const PALLET: &'static str = "Bounties";
+					const CALL: &'static str = "unassign_curator";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -16686,8 +16787,8 @@ pub mod api {
 					pub bounty_id: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for AcceptCurator {
-					const CALL: &'static str = "accept_curator";
 					const PALLET: &'static str = "Bounties";
+					const CALL: &'static str = "accept_curator";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -16711,8 +16812,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for AwardBounty {
-					const CALL: &'static str = "award_bounty";
 					const PALLET: &'static str = "Bounties";
+					const CALL: &'static str = "award_bounty";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -16732,8 +16833,8 @@ pub mod api {
 					pub bounty_id: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ClaimBounty {
-					const CALL: &'static str = "claim_bounty";
 					const PALLET: &'static str = "Bounties";
+					const CALL: &'static str = "claim_bounty";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -16753,8 +16854,8 @@ pub mod api {
 					pub bounty_id: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for CloseBounty {
-					const CALL: &'static str = "close_bounty";
 					const PALLET: &'static str = "Bounties";
+					const CALL: &'static str = "close_bounty";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -16775,8 +16876,8 @@ pub mod api {
 					pub remark: ::std::vec::Vec<::core::primitive::u8>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ExtendBountyExpiry {
-					const CALL: &'static str = "extend_bounty_expiry";
 					const PALLET: &'static str = "Bounties";
+					const CALL: &'static str = "extend_bounty_expiry";
 				}
 			}
 			pub struct TransactionApi;
@@ -16798,7 +16899,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::approve_bounty`]."]
 				pub fn approve_bounty(
 					&self,
@@ -16816,7 +16916,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::propose_curator`]."]
 				pub fn propose_curator(
 					&self,
@@ -16843,7 +16942,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::unassign_curator`]."]
 				pub fn unassign_curator(
 					&self,
@@ -16861,7 +16959,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::accept_curator`]."]
 				pub fn accept_curator(
 					&self,
@@ -16878,7 +16975,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::award_bounty`]."]
 				pub fn award_bounty(
 					&self,
@@ -16903,7 +16999,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::claim_bounty`]."]
 				pub fn claim_bounty(
 					&self,
@@ -16921,7 +17016,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::close_bounty`]."]
 				pub fn close_bounty(
 					&self,
@@ -16939,7 +17033,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::extend_bounty_expiry`]."]
 				pub fn extend_bounty_expiry(
 					&self,
@@ -16983,8 +17076,8 @@ pub mod api {
 				pub index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for BountyProposed {
-				const EVENT: &'static str = "BountyProposed";
 				const PALLET: &'static str = "Bounties";
+				const EVENT: &'static str = "BountyProposed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -17005,8 +17098,8 @@ pub mod api {
 				pub bond: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for BountyRejected {
-				const EVENT: &'static str = "BountyRejected";
 				const PALLET: &'static str = "Bounties";
+				const EVENT: &'static str = "BountyRejected";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -17027,8 +17120,8 @@ pub mod api {
 				pub index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for BountyBecameActive {
-				const EVENT: &'static str = "BountyBecameActive";
 				const PALLET: &'static str = "Bounties";
+				const EVENT: &'static str = "BountyBecameActive";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -17049,8 +17142,8 @@ pub mod api {
 				pub beneficiary: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for BountyAwarded {
-				const EVENT: &'static str = "BountyAwarded";
 				const PALLET: &'static str = "Bounties";
+				const EVENT: &'static str = "BountyAwarded";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -17072,8 +17165,8 @@ pub mod api {
 				pub beneficiary: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for BountyClaimed {
-				const EVENT: &'static str = "BountyClaimed";
 				const PALLET: &'static str = "Bounties";
+				const EVENT: &'static str = "BountyClaimed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -17094,8 +17187,8 @@ pub mod api {
 				pub index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for BountyCanceled {
-				const EVENT: &'static str = "BountyCanceled";
 				const PALLET: &'static str = "Bounties";
+				const EVENT: &'static str = "BountyCanceled";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -17116,8 +17209,8 @@ pub mod api {
 				pub index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for BountyExtended {
-				const EVENT: &'static str = "BountyExtended";
 				const PALLET: &'static str = "Bounties";
+				const EVENT: &'static str = "BountyExtended";
 			}
 		}
 		pub mod storage {
@@ -17146,7 +17239,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Bounties that have been made."]
 				pub fn bounties(
 					&self,
@@ -17176,7 +17268,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Bounties that have been made."]
 				pub fn bounties_root(
 					&self,
@@ -17203,7 +17294,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The description of each bounty."]
 				pub fn bounty_descriptions(
 					&self,
@@ -17230,7 +17320,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The description of each bounty."]
 				pub fn bounty_descriptions_root(
 					&self,
@@ -17254,7 +17343,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Bounty indices that have been approved but not yet funded."]
 				pub fn bounty_approvals(
 					&self,
@@ -17288,13 +17376,16 @@ pub mod api {
 				pub fn bounty_deposit_base(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Bounties", "BountyDepositBase", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Bounties",
+						"BountyDepositBase",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
-
 				#[doc = " The delay period for which a bounty beneficiary need to wait before claim the payout."]
 				pub fn bounty_deposit_payout_delay(
 					&self,
@@ -17310,18 +17401,21 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Bounty duration in blocks."]
 				pub fn bounty_update_period(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Bounties", "BountyUpdatePeriod", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Bounties",
+						"BountyUpdatePeriod",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The curator deposit is calculated as a percentage of the curator fee."]
 				#[doc = ""]
 				#[doc = " This deposit has optional upper and lower bounds with `CuratorDepositMax` and"]
@@ -17340,74 +17434,94 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Maximum amount of funds that should be placed in a deposit for making a proposal."]
 				pub fn curator_deposit_max(
 					&self,
 				) -> ::subxt::constants::Address<::core::option::Option<::core::primitive::u128>> {
-					::subxt::constants::Address::new_static("Bounties", "CuratorDepositMax", [
-						198u8, 51u8, 89u8, 159u8, 124u8, 251u8, 51u8, 80u8, 167u8, 193u8, 44u8,
-						199u8, 80u8, 36u8, 41u8, 130u8, 137u8, 229u8, 178u8, 208u8, 37u8, 215u8,
-						169u8, 183u8, 180u8, 191u8, 140u8, 240u8, 250u8, 61u8, 42u8, 147u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Bounties",
+						"CuratorDepositMax",
+						[
+							198u8, 51u8, 89u8, 159u8, 124u8, 251u8, 51u8, 80u8, 167u8, 193u8, 44u8,
+							199u8, 80u8, 36u8, 41u8, 130u8, 137u8, 229u8, 178u8, 208u8, 37u8,
+							215u8, 169u8, 183u8, 180u8, 191u8, 140u8, 240u8, 250u8, 61u8, 42u8,
+							147u8,
+						],
+					)
 				}
-
 				#[doc = " Minimum amount of funds that should be placed in a deposit for making a proposal."]
 				pub fn curator_deposit_min(
 					&self,
 				) -> ::subxt::constants::Address<::core::option::Option<::core::primitive::u128>> {
-					::subxt::constants::Address::new_static("Bounties", "CuratorDepositMin", [
-						198u8, 51u8, 89u8, 159u8, 124u8, 251u8, 51u8, 80u8, 167u8, 193u8, 44u8,
-						199u8, 80u8, 36u8, 41u8, 130u8, 137u8, 229u8, 178u8, 208u8, 37u8, 215u8,
-						169u8, 183u8, 180u8, 191u8, 140u8, 240u8, 250u8, 61u8, 42u8, 147u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Bounties",
+						"CuratorDepositMin",
+						[
+							198u8, 51u8, 89u8, 159u8, 124u8, 251u8, 51u8, 80u8, 167u8, 193u8, 44u8,
+							199u8, 80u8, 36u8, 41u8, 130u8, 137u8, 229u8, 178u8, 208u8, 37u8,
+							215u8, 169u8, 183u8, 180u8, 191u8, 140u8, 240u8, 250u8, 61u8, 42u8,
+							147u8,
+						],
+					)
 				}
-
 				#[doc = " Minimum value for a bounty."]
 				pub fn bounty_value_minimum(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Bounties", "BountyValueMinimum", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Bounties",
+						"BountyValueMinimum",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
-
 				#[doc = " The amount held on deposit per byte within the tip report reason or bounty description."]
 				pub fn data_deposit_per_byte(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Bounties", "DataDepositPerByte", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Bounties",
+						"DataDepositPerByte",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
-
 				#[doc = " Maximum acceptable reason length."]
 				#[doc = ""]
 				#[doc = " Benchmarks depend on this value, be sure to update weights file when changing this value"]
 				pub fn maximum_reason_length(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Bounties", "MaximumReasonLength", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Bounties",
+						"MaximumReasonLength",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod tips {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_tips::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_tips::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -17432,8 +17546,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ReportAwesome {
-					const CALL: &'static str = "report_awesome";
 					const PALLET: &'static str = "Tips";
+					const CALL: &'static str = "report_awesome";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -17452,8 +17566,8 @@ pub mod api {
 					pub hash: ::subxt::utils::H256,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for RetractTip {
-					const CALL: &'static str = "retract_tip";
 					const PALLET: &'static str = "Tips";
+					const CALL: &'static str = "retract_tip";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -17478,8 +17592,8 @@ pub mod api {
 					pub tip_value: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for TipNew {
-					const CALL: &'static str = "tip_new";
 					const PALLET: &'static str = "Tips";
+					const CALL: &'static str = "tip_new";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -17500,8 +17614,8 @@ pub mod api {
 					pub tip_value: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Tip {
-					const CALL: &'static str = "tip";
 					const PALLET: &'static str = "Tips";
+					const CALL: &'static str = "tip";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -17520,8 +17634,8 @@ pub mod api {
 					pub hash: ::subxt::utils::H256,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for CloseTip {
-					const CALL: &'static str = "close_tip";
 					const PALLET: &'static str = "Tips";
+					const CALL: &'static str = "close_tip";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -17540,8 +17654,8 @@ pub mod api {
 					pub hash: ::subxt::utils::H256,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SlashTip {
-					const CALL: &'static str = "slash_tip";
 					const PALLET: &'static str = "Tips";
+					const CALL: &'static str = "slash_tip";
 				}
 			}
 			pub struct TransactionApi;
@@ -17567,7 +17681,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::retract_tip`]."]
 				pub fn retract_tip(
 					&self,
@@ -17585,7 +17698,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::tip_new`]."]
 				pub fn tip_new(
 					&self,
@@ -17612,7 +17724,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::tip`]."]
 				pub fn tip(
 					&self,
@@ -17631,7 +17742,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::close_tip`]."]
 				pub fn close_tip(
 					&self,
@@ -17649,7 +17759,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::slash_tip`]."]
 				pub fn slash_tip(
 					&self,
@@ -17691,8 +17800,8 @@ pub mod api {
 				pub tip_hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for NewTip {
-				const EVENT: &'static str = "NewTip";
 				const PALLET: &'static str = "Tips";
+				const EVENT: &'static str = "NewTip";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -17712,8 +17821,8 @@ pub mod api {
 				pub tip_hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for TipClosing {
-				const EVENT: &'static str = "TipClosing";
 				const PALLET: &'static str = "Tips";
+				const EVENT: &'static str = "TipClosing";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -17735,8 +17844,8 @@ pub mod api {
 				pub payout: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for TipClosed {
-				const EVENT: &'static str = "TipClosed";
 				const PALLET: &'static str = "Tips";
+				const EVENT: &'static str = "TipClosed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -17756,8 +17865,8 @@ pub mod api {
 				pub tip_hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for TipRetracted {
-				const EVENT: &'static str = "TipRetracted";
 				const PALLET: &'static str = "Tips";
+				const EVENT: &'static str = "TipRetracted";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -17779,8 +17888,8 @@ pub mod api {
 				pub deposit: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for TipSlashed {
-				const EVENT: &'static str = "TipSlashed";
 				const PALLET: &'static str = "Tips";
+				const EVENT: &'static str = "TipSlashed";
 			}
 		}
 		pub mod storage {
@@ -17818,7 +17927,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " TipsMap that are not yet completed. Keyed by the hash of `(reason, who)` from the value."]
 				#[doc = " This has the insecure enumerable hash function since the key itself is already"]
 				#[doc = " guaranteed to be a secure hash."]
@@ -17836,13 +17944,17 @@ pub mod api {
 					(),
 					::subxt::storage::address::Yes,
 				> {
-					::subxt::storage::address::Address::new_static("Tips", "Tips", Vec::new(), [
-						173u8, 172u8, 116u8, 247u8, 202u8, 228u8, 47u8, 222u8, 67u8, 146u8, 225u8,
-						0u8, 74u8, 189u8, 226u8, 206u8, 245u8, 209u8, 26u8, 49u8, 189u8, 73u8,
-						20u8, 117u8, 30u8, 41u8, 129u8, 170u8, 5u8, 226u8, 92u8, 140u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Tips",
+						"Tips",
+						Vec::new(),
+						[
+							173u8, 172u8, 116u8, 247u8, 202u8, 228u8, 47u8, 222u8, 67u8, 146u8,
+							225u8, 0u8, 74u8, 189u8, 226u8, 206u8, 245u8, 209u8, 26u8, 49u8, 189u8,
+							73u8, 20u8, 117u8, 30u8, 41u8, 129u8, 170u8, 5u8, 226u8, 92u8, 140u8,
+						],
+					)
 				}
-
 				#[doc = " Simple preimage lookup from the reason's hash to the original data. Again, has an"]
 				#[doc = " insecure enumerable hash since the key is guaranteed to be the result of a secure hash."]
 				pub fn reasons(
@@ -17869,7 +17981,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Simple preimage lookup from the reason's hash to the original data. Again, has an"]
 				#[doc = " insecure enumerable hash since the key is guaranteed to be the result of a secure hash."]
 				pub fn reasons_root(
@@ -17881,11 +17992,17 @@ pub mod api {
 					(),
 					::subxt::storage::address::Yes,
 				> {
-					::subxt::storage::address::Address::new_static("Tips", "Reasons", Vec::new(), [
-						212u8, 224u8, 153u8, 133u8, 234u8, 213u8, 134u8, 255u8, 59u8, 61u8, 200u8,
-						47u8, 186u8, 177u8, 35u8, 108u8, 85u8, 144u8, 185u8, 69u8, 159u8, 38u8,
-						83u8, 166u8, 200u8, 20u8, 220u8, 234u8, 59u8, 61u8, 223u8, 167u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Tips",
+						"Reasons",
+						Vec::new(),
+						[
+							212u8, 224u8, 153u8, 133u8, 234u8, 213u8, 134u8, 255u8, 59u8, 61u8,
+							200u8, 47u8, 186u8, 177u8, 35u8, 108u8, 85u8, 144u8, 185u8, 69u8,
+							159u8, 38u8, 83u8, 166u8, 200u8, 20u8, 220u8, 234u8, 59u8, 61u8, 223u8,
+							167u8,
+						],
+					)
 				}
 			}
 		}
@@ -17899,60 +18016,80 @@ pub mod api {
 				pub fn maximum_reason_length(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Tips", "MaximumReasonLength", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Tips",
+						"MaximumReasonLength",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The amount held on deposit per byte within the tip report reason or bounty description."]
 				pub fn data_deposit_per_byte(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Tips", "DataDepositPerByte", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Tips",
+						"DataDepositPerByte",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
-
 				#[doc = " The period for which a tip remains open after is has achieved threshold tippers."]
 				pub fn tip_countdown(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Tips", "TipCountdown", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Tips",
+						"TipCountdown",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " The percent of the final tip which goes to the original reporter of the tip."]
 				pub fn tip_finders_fee(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::sp_arithmetic::per_things::Percent>
 				{
-					::subxt::constants::Address::new_static("Tips", "TipFindersFee", [
-						40u8, 171u8, 69u8, 196u8, 34u8, 184u8, 50u8, 128u8, 139u8, 192u8, 63u8,
-						231u8, 249u8, 200u8, 252u8, 73u8, 244u8, 170u8, 51u8, 177u8, 106u8, 47u8,
-						114u8, 234u8, 84u8, 104u8, 62u8, 118u8, 227u8, 50u8, 225u8, 122u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Tips",
+						"TipFindersFee",
+						[
+							40u8, 171u8, 69u8, 196u8, 34u8, 184u8, 50u8, 128u8, 139u8, 192u8, 63u8,
+							231u8, 249u8, 200u8, 252u8, 73u8, 244u8, 170u8, 51u8, 177u8, 106u8,
+							47u8, 114u8, 234u8, 84u8, 104u8, 62u8, 118u8, 227u8, 50u8, 225u8,
+							122u8,
+						],
+					)
 				}
-
 				#[doc = " The amount held on deposit for placing a tip report."]
 				pub fn tip_report_deposit_base(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Tips", "TipReportDepositBase", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Tips",
+						"TipReportDepositBase",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod mmr {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		pub mod storage {
 			use super::runtime_types;
 			pub struct StorageApi;
@@ -17967,13 +18104,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("Mmr", "RootHash", vec![], [
-						111u8, 206u8, 173u8, 92u8, 67u8, 49u8, 150u8, 113u8, 90u8, 245u8, 38u8,
-						254u8, 76u8, 250u8, 167u8, 66u8, 130u8, 129u8, 251u8, 220u8, 172u8, 229u8,
-						162u8, 251u8, 36u8, 227u8, 43u8, 189u8, 7u8, 106u8, 23u8, 13u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Mmr",
+						"RootHash",
+						vec![],
+						[
+							111u8, 206u8, 173u8, 92u8, 67u8, 49u8, 150u8, 113u8, 90u8, 245u8, 38u8,
+							254u8, 76u8, 250u8, 167u8, 66u8, 130u8, 129u8, 251u8, 220u8, 172u8,
+							229u8, 162u8, 251u8, 36u8, 227u8, 43u8, 189u8, 7u8, 106u8, 23u8, 13u8,
+						],
+					)
 				}
-
 				#[doc = " Current size of the MMR (number of leaves)."]
 				pub fn number_of_leaves(
 					&self,
@@ -17995,7 +18136,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Hashes of the nodes in the MMR."]
 				#[doc = ""]
 				#[doc = " Note this collection only contains MMR peaks, the inner nodes (and leaves)"]
@@ -18023,7 +18163,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Hashes of the nodes in the MMR."]
 				#[doc = ""]
 				#[doc = " Note this collection only contains MMR peaks, the inner nodes (and leaves)"]
@@ -18037,23 +18176,30 @@ pub mod api {
 					(),
 					::subxt::storage::address::Yes,
 				> {
-					::subxt::storage::address::Address::new_static("Mmr", "Nodes", Vec::new(), [
-						27u8, 84u8, 41u8, 195u8, 146u8, 81u8, 211u8, 189u8, 63u8, 125u8, 173u8,
-						206u8, 69u8, 198u8, 202u8, 213u8, 89u8, 31u8, 89u8, 177u8, 76u8, 154u8,
-						249u8, 197u8, 133u8, 78u8, 142u8, 71u8, 183u8, 3u8, 132u8, 25u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"Mmr",
+						"Nodes",
+						Vec::new(),
+						[
+							27u8, 84u8, 41u8, 195u8, 146u8, 81u8, 211u8, 189u8, 63u8, 125u8, 173u8,
+							206u8, 69u8, 198u8, 202u8, 213u8, 89u8, 31u8, 89u8, 177u8, 76u8, 154u8,
+							249u8, 197u8, 133u8, 78u8, 142u8, 71u8, 183u8, 3u8, 132u8, 25u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod data_availability {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "Error for the System pallet"]
 		pub type Error = runtime_types::da_control::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::da_control::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -18076,8 +18222,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for CreateApplicationKey {
-					const CALL: &'static str = "create_application_key";
 					const PALLET: &'static str = "DataAvailability";
+					const CALL: &'static str = "create_application_key";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -18098,8 +18244,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SubmitData {
-					const CALL: &'static str = "submit_data";
 					const PALLET: &'static str = "DataAvailability";
+					const CALL: &'static str = "submit_data";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -18119,8 +18265,8 @@ pub mod api {
 					pub cols: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SubmitBlockLengthProposal {
-					const CALL: &'static str = "submit_block_length_proposal";
 					const PALLET: &'static str = "DataAvailability";
+					const CALL: &'static str = "submit_block_length_proposal";
 				}
 			}
 			pub struct TransactionApi;
@@ -18144,7 +18290,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::submit_data`]."]
 				pub fn submit_data(
 					&self,
@@ -18164,7 +18309,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::submit_block_length_proposal`]."]
 				pub fn submit_block_length_proposal(
 					&self,
@@ -18210,8 +18354,8 @@ pub mod api {
 				pub id: runtime_types::avail_core::AppId,
 			}
 			impl ::subxt::events::StaticEvent for ApplicationKeyCreated {
-				const EVENT: &'static str = "ApplicationKeyCreated";
 				const PALLET: &'static str = "DataAvailability";
+				const EVENT: &'static str = "ApplicationKeyCreated";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -18233,8 +18377,8 @@ pub mod api {
 				>,
 			}
 			impl ::subxt::events::StaticEvent for DataSubmitted {
-				const EVENT: &'static str = "DataSubmitted";
 				const PALLET: &'static str = "DataAvailability";
+				const EVENT: &'static str = "DataSubmitted";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -18254,8 +18398,8 @@ pub mod api {
 				pub cols: runtime_types::avail_core::BlockLengthColumns,
 			}
 			impl ::subxt::events::StaticEvent for BlockLengthProposalSubmitted {
-				const EVENT: &'static str = "BlockLengthProposalSubmitted";
 				const PALLET: &'static str = "DataAvailability";
+				const EVENT: &'static str = "BlockLengthProposalSubmitted";
 			}
 		}
 		pub mod storage {
@@ -18283,7 +18427,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Store all application keys."]
 				pub fn app_keys(
 					&self,
@@ -18313,7 +18456,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Store all application keys."]
 				pub fn app_keys_root(
 					&self,
@@ -18357,7 +18499,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The max length of app data."]
 				pub fn max_app_data_length(
 					&self,
@@ -18373,61 +18514,75 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Minimum number of rows in a block."]
 				pub fn min_block_rows(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::avail_core::BlockLengthRows> {
-					::subxt::constants::Address::new_static("DataAvailability", "MinBlockRows", [
-						65u8, 68u8, 180u8, 146u8, 16u8, 133u8, 230u8, 51u8, 17u8, 170u8, 88u8,
-						49u8, 171u8, 96u8, 82u8, 152u8, 101u8, 63u8, 46u8, 141u8, 161u8, 104u8,
-						204u8, 24u8, 1u8, 20u8, 116u8, 46u8, 232u8, 62u8, 223u8, 15u8,
-					])
+					::subxt::constants::Address::new_static(
+						"DataAvailability",
+						"MinBlockRows",
+						[
+							65u8, 68u8, 180u8, 146u8, 16u8, 133u8, 230u8, 51u8, 17u8, 170u8, 88u8,
+							49u8, 171u8, 96u8, 82u8, 152u8, 101u8, 63u8, 46u8, 141u8, 161u8, 104u8,
+							204u8, 24u8, 1u8, 20u8, 116u8, 46u8, 232u8, 62u8, 223u8, 15u8,
+						],
+					)
 				}
-
 				#[doc = " Maximum number of rows in a block."]
 				pub fn max_block_rows(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::avail_core::BlockLengthRows> {
-					::subxt::constants::Address::new_static("DataAvailability", "MaxBlockRows", [
-						65u8, 68u8, 180u8, 146u8, 16u8, 133u8, 230u8, 51u8, 17u8, 170u8, 88u8,
-						49u8, 171u8, 96u8, 82u8, 152u8, 101u8, 63u8, 46u8, 141u8, 161u8, 104u8,
-						204u8, 24u8, 1u8, 20u8, 116u8, 46u8, 232u8, 62u8, 223u8, 15u8,
-					])
+					::subxt::constants::Address::new_static(
+						"DataAvailability",
+						"MaxBlockRows",
+						[
+							65u8, 68u8, 180u8, 146u8, 16u8, 133u8, 230u8, 51u8, 17u8, 170u8, 88u8,
+							49u8, 171u8, 96u8, 82u8, 152u8, 101u8, 63u8, 46u8, 141u8, 161u8, 104u8,
+							204u8, 24u8, 1u8, 20u8, 116u8, 46u8, 232u8, 62u8, 223u8, 15u8,
+						],
+					)
 				}
-
 				#[doc = " Minimum number of cols in a block."]
 				pub fn min_block_cols(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::avail_core::BlockLengthColumns> {
-					::subxt::constants::Address::new_static("DataAvailability", "MinBlockCols", [
-						65u8, 68u8, 180u8, 146u8, 16u8, 133u8, 230u8, 51u8, 17u8, 170u8, 88u8,
-						49u8, 171u8, 96u8, 82u8, 152u8, 101u8, 63u8, 46u8, 141u8, 161u8, 104u8,
-						204u8, 24u8, 1u8, 20u8, 116u8, 46u8, 232u8, 62u8, 223u8, 15u8,
-					])
+					::subxt::constants::Address::new_static(
+						"DataAvailability",
+						"MinBlockCols",
+						[
+							65u8, 68u8, 180u8, 146u8, 16u8, 133u8, 230u8, 51u8, 17u8, 170u8, 88u8,
+							49u8, 171u8, 96u8, 82u8, 152u8, 101u8, 63u8, 46u8, 141u8, 161u8, 104u8,
+							204u8, 24u8, 1u8, 20u8, 116u8, 46u8, 232u8, 62u8, 223u8, 15u8,
+						],
+					)
 				}
-
 				#[doc = " Maximum number of cols in a block."]
 				pub fn max_block_cols(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::avail_core::BlockLengthColumns> {
-					::subxt::constants::Address::new_static("DataAvailability", "MaxBlockCols", [
-						65u8, 68u8, 180u8, 146u8, 16u8, 133u8, 230u8, 51u8, 17u8, 170u8, 88u8,
-						49u8, 171u8, 96u8, 82u8, 152u8, 101u8, 63u8, 46u8, 141u8, 161u8, 104u8,
-						204u8, 24u8, 1u8, 20u8, 116u8, 46u8, 232u8, 62u8, 223u8, 15u8,
-					])
+					::subxt::constants::Address::new_static(
+						"DataAvailability",
+						"MaxBlockCols",
+						[
+							65u8, 68u8, 180u8, 146u8, 16u8, 133u8, 230u8, 51u8, 17u8, 170u8, 88u8,
+							49u8, 171u8, 96u8, 82u8, 152u8, 101u8, 63u8, 46u8, 141u8, 161u8, 104u8,
+							204u8, 24u8, 1u8, 20u8, 116u8, 46u8, 232u8, 62u8, 223u8, 15u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod nomad_updater_manager {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::nomad_updater_manager::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::nomad_updater_manager::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -18457,8 +18612,8 @@ pub mod api {
 				pub new_updater: ::subxt::utils::H160,
 			}
 			impl ::subxt::events::StaticEvent for NewUpdater {
-				const EVENT: &'static str = "NewUpdater";
 				const PALLET: &'static str = "NomadUpdaterManager";
+				const EVENT: &'static str = "NewUpdater";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -18477,8 +18632,8 @@ pub mod api {
 				pub reporter: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for FakeSlashed {
-				const EVENT: &'static str = "FakeSlashed";
 				const PALLET: &'static str = "NomadUpdaterManager";
+				const EVENT: &'static str = "FakeSlashed";
 			}
 		}
 		pub mod storage {
@@ -18510,13 +18665,15 @@ pub mod api {
 		}
 	}
 	pub mod nomad_home {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::nomad_home::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::nomad_home::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -18542,8 +18699,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Dispatch {
-					const CALL: &'static str = "dispatch";
 					const PALLET: &'static str = "NomadHome";
+					const CALL: &'static str = "dispatch";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -18564,8 +18721,8 @@ pub mod api {
 					pub max_index: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Update {
-					const CALL: &'static str = "update";
 					const PALLET: &'static str = "NomadHome";
+					const CALL: &'static str = "update";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -18584,8 +18741,8 @@ pub mod api {
 					pub signed_update: runtime_types::nomad_core::update::SignedUpdate,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ImproperUpdate {
-					const CALL: &'static str = "improper_update";
 					const PALLET: &'static str = "NomadHome";
+					const CALL: &'static str = "improper_update";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -18604,8 +18761,8 @@ pub mod api {
 					pub new_updater: ::subxt::utils::H160,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetUpdater {
-					const CALL: &'static str = "set_updater";
 					const PALLET: &'static str = "NomadHome";
+					const CALL: &'static str = "set_updater";
 				}
 			}
 			pub struct TransactionApi;
@@ -18634,7 +18791,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::update`]."]
 				pub fn update(
 					&self,
@@ -18655,7 +18811,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::improper_update`]."]
 				pub fn improper_update(
 					&self,
@@ -18672,7 +18827,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_updater`]."]
 				pub fn set_updater(
 					&self,
@@ -18717,8 +18871,8 @@ pub mod api {
 				pub message: ::std::vec::Vec<::core::primitive::u8>,
 			}
 			impl ::subxt::events::StaticEvent for Dispatch {
-				const EVENT: &'static str = "Dispatch";
 				const PALLET: &'static str = "NomadHome";
+				const EVENT: &'static str = "Dispatch";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -18740,8 +18894,8 @@ pub mod api {
 				pub signature: ::std::vec::Vec<::core::primitive::u8>,
 			}
 			impl ::subxt::events::StaticEvent for Update {
-				const EVENT: &'static str = "Update";
 				const PALLET: &'static str = "NomadHome";
+				const EVENT: &'static str = "Update";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -18762,8 +18916,8 @@ pub mod api {
 				pub signature: ::std::vec::Vec<::core::primitive::u8>,
 			}
 			impl ::subxt::events::StaticEvent for ImproperUpdate {
-				const EVENT: &'static str = "ImproperUpdate";
 				const PALLET: &'static str = "NomadHome";
+				const EVENT: &'static str = "ImproperUpdate";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -18783,8 +18937,8 @@ pub mod api {
 				pub reporter: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for UpdaterSlashed {
-				const EVENT: &'static str = "UpdaterSlashed";
 				const PALLET: &'static str = "NomadHome";
+				const EVENT: &'static str = "UpdaterSlashed";
 			}
 		}
 		pub mod storage {
@@ -18800,13 +18954,17 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("NomadHome", "Base", vec![], [
-						254u8, 56u8, 220u8, 109u8, 51u8, 237u8, 70u8, 31u8, 134u8, 49u8, 145u8,
-						104u8, 204u8, 243u8, 216u8, 242u8, 57u8, 113u8, 132u8, 190u8, 170u8, 80u8,
-						232u8, 190u8, 37u8, 91u8, 20u8, 188u8, 41u8, 41u8, 187u8, 107u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"NomadHome",
+						"Base",
+						vec![],
+						[
+							254u8, 56u8, 220u8, 109u8, 51u8, 237u8, 70u8, 31u8, 134u8, 49u8, 145u8,
+							104u8, 204u8, 243u8, 216u8, 242u8, 57u8, 113u8, 132u8, 190u8, 170u8,
+							80u8, 232u8, 190u8, 37u8, 91u8, 20u8, 188u8, 41u8, 41u8, 187u8, 107u8,
+						],
+					)
 				}
-
 				pub fn tree(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -18816,13 +18974,18 @@ pub mod api {
 					::subxt::storage::address::Yes,
 					(),
 				> {
-					::subxt::storage::address::Address::new_static("NomadHome", "Tree", vec![], [
-						22u8, 211u8, 114u8, 109u8, 20u8, 79u8, 40u8, 238u8, 244u8, 223u8, 95u8,
-						97u8, 85u8, 113u8, 201u8, 242u8, 23u8, 140u8, 106u8, 222u8, 130u8, 29u8,
-						218u8, 108u8, 210u8, 13u8, 115u8, 231u8, 22u8, 137u8, 227u8, 175u8,
-					])
+					::subxt::storage::address::Address::new_static(
+						"NomadHome",
+						"Tree",
+						vec![],
+						[
+							22u8, 211u8, 114u8, 109u8, 20u8, 79u8, 40u8, 238u8, 244u8, 223u8, 95u8,
+							97u8, 85u8, 113u8, 201u8, 242u8, 23u8, 140u8, 106u8, 222u8, 130u8,
+							29u8, 218u8, 108u8, 210u8, 13u8, 115u8, 231u8, 22u8, 137u8, 227u8,
+							175u8,
+						],
+					)
 				}
-
 				pub fn nonces(
 					&self,
 					_0: impl ::std::borrow::Borrow<::core::primitive::u32>,
@@ -18846,7 +19009,6 @@ pub mod api {
 						],
 					)
 				}
-
 				pub fn nonces_root(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -18867,7 +19029,6 @@ pub mod api {
 						],
 					)
 				}
-
 				pub fn index_to_root(
 					&self,
 					_0: impl ::std::borrow::Borrow<::core::primitive::u32>,
@@ -18891,7 +19052,6 @@ pub mod api {
 						],
 					)
 				}
-
 				pub fn index_to_root_root(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -18912,7 +19072,6 @@ pub mod api {
 						],
 					)
 				}
-
 				pub fn root_to_index(
 					&self,
 					_0: impl ::std::borrow::Borrow<::subxt::utils::H256>,
@@ -18936,7 +19095,6 @@ pub mod api {
 						],
 					)
 				}
-
 				pub fn root_to_index_root(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -18967,23 +19125,30 @@ pub mod api {
 				pub fn max_message_body_bytes(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("NomadHome", "MaxMessageBodyBytes", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"NomadHome",
+						"MaxMessageBodyBytes",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod nomad_da_bridge {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::nomad_da_bridge::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::nomad_da_bridge::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -19012,8 +19177,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for TryDispatchDataRoot {
-					const CALL: &'static str = "try_dispatch_data_root";
 					const PALLET: &'static str = "NomadDABridge";
+					const CALL: &'static str = "try_dispatch_data_root";
 				}
 			}
 			pub struct TransactionApi;
@@ -19069,8 +19234,8 @@ pub mod api {
 				pub data_root: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for DataRootDispatched {
-				const EVENT: &'static str = "DataRootDispatched";
 				const PALLET: &'static str = "NomadDABridge";
+				const EVENT: &'static str = "DataRootDispatched";
 			}
 		}
 		pub mod constants {
@@ -19080,23 +19245,30 @@ pub mod api {
 				pub fn da_bridge_pallet_id(
 					&self,
 				) -> ::subxt::constants::Address<::subxt::utils::H256> {
-					::subxt::constants::Address::new_static("NomadDABridge", "DABridgePalletId", [
-						115u8, 233u8, 13u8, 223u8, 88u8, 20u8, 202u8, 139u8, 153u8, 28u8, 155u8,
-						157u8, 224u8, 66u8, 3u8, 250u8, 23u8, 53u8, 88u8, 168u8, 211u8, 204u8,
-						122u8, 166u8, 248u8, 23u8, 174u8, 225u8, 99u8, 108u8, 89u8, 135u8,
-					])
+					::subxt::constants::Address::new_static(
+						"NomadDABridge",
+						"DABridgePalletId",
+						[
+							115u8, 233u8, 13u8, 223u8, 88u8, 20u8, 202u8, 139u8, 153u8, 28u8,
+							155u8, 157u8, 224u8, 66u8, 3u8, 250u8, 23u8, 53u8, 88u8, 168u8, 211u8,
+							204u8, 122u8, 166u8, 248u8, 23u8, 174u8, 225u8, 99u8, 108u8, 89u8,
+							135u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod preimage {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_preimage::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_preimage::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -19117,8 +19289,8 @@ pub mod api {
 					pub bytes: ::std::vec::Vec<::core::primitive::u8>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for NotePreimage {
-					const CALL: &'static str = "note_preimage";
 					const PALLET: &'static str = "Preimage";
+					const CALL: &'static str = "note_preimage";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -19137,8 +19309,8 @@ pub mod api {
 					pub hash: ::subxt::utils::H256,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for UnnotePreimage {
-					const CALL: &'static str = "unnote_preimage";
 					const PALLET: &'static str = "Preimage";
+					const CALL: &'static str = "unnote_preimage";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -19157,8 +19329,8 @@ pub mod api {
 					pub hash: ::subxt::utils::H256,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for RequestPreimage {
-					const CALL: &'static str = "request_preimage";
 					const PALLET: &'static str = "Preimage";
+					const CALL: &'static str = "request_preimage";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -19177,8 +19349,8 @@ pub mod api {
 					pub hash: ::subxt::utils::H256,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for UnrequestPreimage {
-					const CALL: &'static str = "unrequest_preimage";
 					const PALLET: &'static str = "Preimage";
+					const CALL: &'static str = "unrequest_preimage";
 				}
 			}
 			pub struct TransactionApi;
@@ -19199,7 +19371,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::unnote_preimage`]."]
 				pub fn unnote_preimage(
 					&self,
@@ -19217,7 +19388,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::request_preimage`]."]
 				pub fn request_preimage(
 					&self,
@@ -19234,7 +19404,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::unrequest_preimage`]."]
 				pub fn unrequest_preimage(
 					&self,
@@ -19276,8 +19445,8 @@ pub mod api {
 				pub hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for Noted {
-				const EVENT: &'static str = "Noted";
 				const PALLET: &'static str = "Preimage";
+				const EVENT: &'static str = "Noted";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -19297,8 +19466,8 @@ pub mod api {
 				pub hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for Requested {
-				const EVENT: &'static str = "Requested";
 				const PALLET: &'static str = "Preimage";
+				const EVENT: &'static str = "Requested";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -19318,8 +19487,8 @@ pub mod api {
 				pub hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for Cleared {
-				const EVENT: &'static str = "Cleared";
 				const PALLET: &'static str = "Preimage";
+				const EVENT: &'static str = "Cleared";
 			}
 		}
 		pub mod storage {
@@ -19354,7 +19523,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The request status of a given hash."]
 				pub fn status_for_root(
 					&self,
@@ -19380,7 +19548,6 @@ pub mod api {
 						],
 					)
 				}
-
 				pub fn preimage_for(
 					&self,
 					_0: impl ::std::borrow::Borrow<::subxt::utils::H256>,
@@ -19408,7 +19575,6 @@ pub mod api {
 						],
 					)
 				}
-
 				pub fn preimage_for_root(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -19435,13 +19601,15 @@ pub mod api {
 		}
 	}
 	pub mod multisig {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_multisig::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_multisig::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -19463,8 +19631,8 @@ pub mod api {
 					pub call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for AsMultiThreshold1 {
-					const CALL: &'static str = "as_multi_threshold_1";
 					const PALLET: &'static str = "Multisig";
+					const CALL: &'static str = "as_multi_threshold_1";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -19489,8 +19657,8 @@ pub mod api {
 					pub max_weight: runtime_types::sp_weights::weight_v2::Weight,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for AsMulti {
-					const CALL: &'static str = "as_multi";
 					const PALLET: &'static str = "Multisig";
+					const CALL: &'static str = "as_multi";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -19515,8 +19683,8 @@ pub mod api {
 					pub max_weight: runtime_types::sp_weights::weight_v2::Weight,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ApproveAsMulti {
-					const CALL: &'static str = "approve_as_multi";
 					const PALLET: &'static str = "Multisig";
+					const CALL: &'static str = "approve_as_multi";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -19539,8 +19707,8 @@ pub mod api {
 					pub call_hash: [::core::primitive::u8; 32usize],
 				}
 				impl ::subxt::blocks::StaticExtrinsic for CancelAsMulti {
-					const CALL: &'static str = "cancel_as_multi";
 					const PALLET: &'static str = "Multisig";
+					const CALL: &'static str = "cancel_as_multi";
 				}
 			}
 			pub struct TransactionApi;
@@ -19566,7 +19734,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::as_multi`]."]
 				pub fn as_multi(
 					&self,
@@ -19596,7 +19763,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::approve_as_multi`]."]
 				pub fn approve_as_multi(
 					&self,
@@ -19625,7 +19791,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::cancel_as_multi`]."]
 				pub fn cancel_as_multi(
 					&self,
@@ -19677,8 +19842,8 @@ pub mod api {
 				pub call_hash: [::core::primitive::u8; 32usize],
 			}
 			impl ::subxt::events::StaticEvent for NewMultisig {
-				const EVENT: &'static str = "NewMultisig";
 				const PALLET: &'static str = "Multisig";
+				const EVENT: &'static str = "NewMultisig";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -19701,8 +19866,8 @@ pub mod api {
 				pub call_hash: [::core::primitive::u8; 32usize],
 			}
 			impl ::subxt::events::StaticEvent for MultisigApproval {
-				const EVENT: &'static str = "MultisigApproval";
 				const PALLET: &'static str = "Multisig";
+				const EVENT: &'static str = "MultisigApproval";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -19726,8 +19891,8 @@ pub mod api {
 				pub result: ::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
 			}
 			impl ::subxt::events::StaticEvent for MultisigExecuted {
-				const EVENT: &'static str = "MultisigExecuted";
 				const PALLET: &'static str = "Multisig";
+				const EVENT: &'static str = "MultisigExecuted";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -19750,8 +19915,8 @@ pub mod api {
 				pub call_hash: [::core::primitive::u8; 32usize],
 			}
 			impl ::subxt::events::StaticEvent for MultisigCancelled {
-				const EVENT: &'static str = "MultisigCancelled";
 				const PALLET: &'static str = "Multisig";
+				const EVENT: &'static str = "MultisigCancelled";
 			}
 		}
 		pub mod storage {
@@ -19788,7 +19953,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The set of open multisig operations."]
 				pub fn multisigs_root(
 					&self,
@@ -19827,47 +19991,60 @@ pub mod api {
 				#[doc = " `4 + sizeof((BlockNumber, Balance, AccountId))` bytes and whose key size is"]
 				#[doc = " `32 + sizeof(AccountId)` bytes."]
 				pub fn deposit_base(&self) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Multisig", "DepositBase", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Multisig",
+						"DepositBase",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
-
 				#[doc = " The amount of currency needed per unit threshold when creating a multisig execution."]
 				#[doc = ""]
 				#[doc = " This is held for adding 32 bytes more into a pre-existing storage value."]
 				pub fn deposit_factor(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Multisig", "DepositFactor", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Multisig",
+						"DepositFactor",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum amount of signatories allowed in the multisig."]
 				pub fn max_signatories(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Multisig", "MaxSignatories", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Multisig",
+						"MaxSignatories",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod voter_list {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_bags_list::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_bags_list::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -19891,8 +20068,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Rebag {
-					const CALL: &'static str = "rebag";
 					const PALLET: &'static str = "VoterList";
+					const CALL: &'static str = "rebag";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -19914,8 +20091,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for PutInFrontOf {
-					const CALL: &'static str = "put_in_front_of";
 					const PALLET: &'static str = "VoterList";
+					const CALL: &'static str = "put_in_front_of";
 				}
 			}
 			pub struct TransactionApi;
@@ -19939,7 +20116,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::put_in_front_of`]."]
 				pub fn put_in_front_of(
 					&self,
@@ -19986,8 +20162,8 @@ pub mod api {
 				pub to: ::core::primitive::u64,
 			}
 			impl ::subxt::events::StaticEvent for Rebagged {
-				const EVENT: &'static str = "Rebagged";
 				const PALLET: &'static str = "VoterList";
+				const EVENT: &'static str = "Rebagged";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -20008,8 +20184,8 @@ pub mod api {
 				pub new_score: ::core::primitive::u64,
 			}
 			impl ::subxt::events::StaticEvent for ScoreUpdated {
-				const EVENT: &'static str = "ScoreUpdated";
 				const PALLET: &'static str = "VoterList";
+				const EVENT: &'static str = "ScoreUpdated";
 			}
 		}
 		pub mod storage {
@@ -20043,7 +20219,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " A single node, within some bag."]
 				#[doc = ""]
 				#[doc = " Nodes store links forward and back within their respective bags."]
@@ -20068,7 +20243,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "Counter for the related counted storage map"]
 				pub fn counter_for_list_nodes(
 					&self,
@@ -20091,7 +20265,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " A bag stored in storage."]
 				#[doc = ""]
 				#[doc = " Stores a `Bag` struct, which stores head and tail pointers to itself."]
@@ -20118,7 +20291,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " A bag stored in storage."]
 				#[doc = ""]
 				#[doc = " Stores a `Bag` struct, which stores head and tail pointers to itself."]
@@ -20194,23 +20366,29 @@ pub mod api {
 				pub fn bag_thresholds(
 					&self,
 				) -> ::subxt::constants::Address<::std::vec::Vec<::core::primitive::u64>> {
-					::subxt::constants::Address::new_static("VoterList", "BagThresholds", [
-						215u8, 118u8, 183u8, 172u8, 4u8, 42u8, 248u8, 108u8, 4u8, 110u8, 43u8,
-						165u8, 228u8, 7u8, 36u8, 30u8, 135u8, 184u8, 56u8, 201u8, 107u8, 68u8,
-						25u8, 164u8, 134u8, 32u8, 82u8, 107u8, 200u8, 219u8, 212u8, 198u8,
-					])
+					::subxt::constants::Address::new_static(
+						"VoterList",
+						"BagThresholds",
+						[
+							215u8, 118u8, 183u8, 172u8, 4u8, 42u8, 248u8, 108u8, 4u8, 110u8, 43u8,
+							165u8, 228u8, 7u8, 36u8, 30u8, 135u8, 184u8, 56u8, 201u8, 107u8, 68u8,
+							25u8, 164u8, 134u8, 32u8, 82u8, 107u8, 200u8, 219u8, 212u8, 198u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod nomination_pools {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_nomination_pools::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_nomination_pools::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -20233,8 +20411,8 @@ pub mod api {
 					pub pool_id: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Join {
-					const CALL: &'static str = "join";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "join";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20254,8 +20432,8 @@ pub mod api {
 						runtime_types::pallet_nomination_pools::BondExtra<::core::primitive::u128>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for BondExtra {
-					const CALL: &'static str = "bond_extra";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "bond_extra";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20272,8 +20450,8 @@ pub mod api {
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				pub struct ClaimPayout;
 				impl ::subxt::blocks::StaticExtrinsic for ClaimPayout {
-					const CALL: &'static str = "claim_payout";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "claim_payout";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20297,8 +20475,8 @@ pub mod api {
 					pub unbonding_points: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Unbond {
-					const CALL: &'static str = "unbond";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "unbond";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20318,8 +20496,8 @@ pub mod api {
 					pub num_slashing_spans: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for PoolWithdrawUnbonded {
-					const CALL: &'static str = "pool_withdraw_unbonded";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "pool_withdraw_unbonded";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20342,8 +20520,8 @@ pub mod api {
 					pub num_slashing_spans: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for WithdrawUnbonded {
-					const CALL: &'static str = "withdraw_unbonded";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "withdraw_unbonded";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20375,8 +20553,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Create {
-					const CALL: &'static str = "create";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "create";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20409,8 +20587,8 @@ pub mod api {
 					pub pool_id: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for CreateWithPoolId {
-					const CALL: &'static str = "create_with_pool_id";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "create_with_pool_id";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20430,8 +20608,8 @@ pub mod api {
 					pub validators: ::std::vec::Vec<::subxt::utils::AccountId32>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Nominate {
-					const CALL: &'static str = "nominate";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "nominate";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20451,8 +20629,8 @@ pub mod api {
 					pub state: runtime_types::pallet_nomination_pools::PoolState,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetState {
-					const CALL: &'static str = "set_state";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "set_state";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20472,8 +20650,8 @@ pub mod api {
 					pub metadata: ::std::vec::Vec<::core::primitive::u8>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetMetadata {
-					const CALL: &'static str = "set_metadata";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "set_metadata";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20504,8 +20682,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetConfigs {
-					const CALL: &'static str = "set_configs";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "set_configs";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20533,8 +20711,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for UpdateRoles {
-					const CALL: &'static str = "update_roles";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "update_roles";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: CompactAs,
@@ -20554,8 +20732,8 @@ pub mod api {
 					pub pool_id: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Chill {
-					const CALL: &'static str = "chill";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "chill";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20579,8 +20757,8 @@ pub mod api {
 						runtime_types::pallet_nomination_pools::BondExtra<::core::primitive::u128>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for BondExtraOther {
-					const CALL: &'static str = "bond_extra_other";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "bond_extra_other";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20599,8 +20777,8 @@ pub mod api {
 					pub permission: runtime_types::pallet_nomination_pools::ClaimPermission,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetClaimPermission {
-					const CALL: &'static str = "set_claim_permission";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "set_claim_permission";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20619,8 +20797,8 @@ pub mod api {
 					pub other: ::subxt::utils::AccountId32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ClaimPayoutOther {
-					const CALL: &'static str = "claim_payout_other";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "claim_payout_other";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20643,8 +20821,8 @@ pub mod api {
 					)>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetCommission {
-					const CALL: &'static str = "set_commission";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "set_commission";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20664,8 +20842,8 @@ pub mod api {
 					pub max_commission: runtime_types::sp_arithmetic::per_things::Perbill,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetCommissionMax {
-					const CALL: &'static str = "set_commission_max";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "set_commission_max";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20687,8 +20865,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetCommissionChangeRate {
-					const CALL: &'static str = "set_commission_change_rate";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "set_commission_change_rate";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: CompactAs,
@@ -20708,8 +20886,8 @@ pub mod api {
 					pub pool_id: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ClaimCommission {
-					const CALL: &'static str = "claim_commission";
 					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "claim_commission";
 				}
 			}
 			pub struct TransactionApi;
@@ -20731,7 +20909,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::bond_extra`]."]
 				pub fn bond_extra(
 					&self,
@@ -20751,7 +20928,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::claim_payout`]."]
 				pub fn claim_payout(&self) -> ::subxt::tx::Payload<types::ClaimPayout> {
 					::subxt::tx::Payload::new_static(
@@ -20765,7 +20941,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::unbond`]."]
 				pub fn unbond(
 					&self,
@@ -20789,7 +20964,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::pool_withdraw_unbonded`]."]
 				pub fn pool_withdraw_unbonded(
 					&self,
@@ -20810,7 +20984,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::withdraw_unbonded`]."]
 				pub fn withdraw_unbonded(
 					&self,
@@ -20834,7 +21007,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::create`]."]
 				pub fn create(
 					&self,
@@ -20869,7 +21041,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::create_with_pool_id`]."]
 				pub fn create_with_pool_id(
 					&self,
@@ -20905,7 +21076,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::nominate`]."]
 				pub fn nominate(
 					&self,
@@ -20926,7 +21096,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_state`]."]
 				pub fn set_state(
 					&self,
@@ -20944,7 +21113,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_metadata`]."]
 				pub fn set_metadata(
 					&self,
@@ -20962,7 +21130,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_configs`]."]
 				pub fn set_configs(
 					&self,
@@ -21003,7 +21170,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::update_roles`]."]
 				pub fn update_roles(
 					&self,
@@ -21034,7 +21200,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::chill`]."]
 				pub fn chill(
 					&self,
@@ -21051,7 +21216,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::bond_extra_other`]."]
 				pub fn bond_extra_other(
 					&self,
@@ -21075,7 +21239,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_claim_permission`]."]
 				pub fn set_claim_permission(
 					&self,
@@ -21092,7 +21255,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::claim_payout_other`]."]
 				pub fn claim_payout_other(
 					&self,
@@ -21110,7 +21272,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_commission`]."]
 				pub fn set_commission(
 					&self,
@@ -21135,7 +21296,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_commission_max`]."]
 				pub fn set_commission_max(
 					&self,
@@ -21156,7 +21316,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_commission_change_rate`]."]
 				pub fn set_commission_change_rate(
 					&self,
@@ -21180,7 +21339,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::claim_commission`]."]
 				pub fn claim_commission(
 					&self,
@@ -21222,8 +21380,8 @@ pub mod api {
 				pub pool_id: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Created {
-				const EVENT: &'static str = "Created";
 				const PALLET: &'static str = "NominationPools";
+				const EVENT: &'static str = "Created";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -21246,8 +21404,8 @@ pub mod api {
 				pub joined: ::core::primitive::bool,
 			}
 			impl ::subxt::events::StaticEvent for Bonded {
-				const EVENT: &'static str = "Bonded";
 				const PALLET: &'static str = "NominationPools";
+				const EVENT: &'static str = "Bonded";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -21269,8 +21427,8 @@ pub mod api {
 				pub payout: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for PaidOut {
-				const EVENT: &'static str = "PaidOut";
 				const PALLET: &'static str = "NominationPools";
+				const EVENT: &'static str = "PaidOut";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -21304,8 +21462,8 @@ pub mod api {
 				pub era: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Unbonded {
-				const EVENT: &'static str = "Unbonded";
 				const PALLET: &'static str = "NominationPools";
+				const EVENT: &'static str = "Unbonded";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -21333,8 +21491,8 @@ pub mod api {
 				pub points: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for Withdrawn {
-				const EVENT: &'static str = "Withdrawn";
 				const PALLET: &'static str = "NominationPools";
+				const EVENT: &'static str = "Withdrawn";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -21355,8 +21513,8 @@ pub mod api {
 				pub pool_id: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Destroyed {
-				const EVENT: &'static str = "Destroyed";
 				const PALLET: &'static str = "NominationPools";
+				const EVENT: &'static str = "Destroyed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -21377,8 +21535,8 @@ pub mod api {
 				pub new_state: runtime_types::pallet_nomination_pools::PoolState,
 			}
 			impl ::subxt::events::StaticEvent for StateChanged {
-				const EVENT: &'static str = "StateChanged";
 				const PALLET: &'static str = "NominationPools";
+				const EVENT: &'static str = "StateChanged";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -21401,8 +21559,8 @@ pub mod api {
 				pub member: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for MemberRemoved {
-				const EVENT: &'static str = "MemberRemoved";
 				const PALLET: &'static str = "NominationPools";
+				const EVENT: &'static str = "MemberRemoved";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -21425,8 +21583,8 @@ pub mod api {
 				pub nominator: ::core::option::Option<::subxt::utils::AccountId32>,
 			}
 			impl ::subxt::events::StaticEvent for RolesUpdated {
-				const EVENT: &'static str = "RolesUpdated";
 				const PALLET: &'static str = "NominationPools";
+				const EVENT: &'static str = "RolesUpdated";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -21447,8 +21605,8 @@ pub mod api {
 				pub balance: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for PoolSlashed {
-				const EVENT: &'static str = "PoolSlashed";
 				const PALLET: &'static str = "NominationPools";
+				const EVENT: &'static str = "PoolSlashed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -21470,8 +21628,8 @@ pub mod api {
 				pub balance: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for UnbondingPoolSlashed {
-				const EVENT: &'static str = "UnbondingPoolSlashed";
 				const PALLET: &'static str = "NominationPools";
+				const EVENT: &'static str = "UnbondingPoolSlashed";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -21495,8 +21653,8 @@ pub mod api {
 				)>,
 			}
 			impl ::subxt::events::StaticEvent for PoolCommissionUpdated {
-				const EVENT: &'static str = "PoolCommissionUpdated";
 				const PALLET: &'static str = "NominationPools";
+				const EVENT: &'static str = "PoolCommissionUpdated";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -21517,8 +21675,8 @@ pub mod api {
 				pub max_commission: runtime_types::sp_arithmetic::per_things::Perbill,
 			}
 			impl ::subxt::events::StaticEvent for PoolMaxCommissionUpdated {
-				const EVENT: &'static str = "PoolMaxCommissionUpdated";
 				const PALLET: &'static str = "NominationPools";
+				const EVENT: &'static str = "PoolMaxCommissionUpdated";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -21541,8 +21699,8 @@ pub mod api {
 				>,
 			}
 			impl ::subxt::events::StaticEvent for PoolCommissionChangeRateUpdated {
-				const EVENT: &'static str = "PoolCommissionChangeRateUpdated";
 				const PALLET: &'static str = "NominationPools";
+				const EVENT: &'static str = "PoolCommissionChangeRateUpdated";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -21563,8 +21721,8 @@ pub mod api {
 				pub commission: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for PoolCommissionClaimed {
-				const EVENT: &'static str = "PoolCommissionClaimed";
 				const PALLET: &'static str = "NominationPools";
+				const EVENT: &'static str = "PoolCommissionClaimed";
 			}
 		}
 		pub mod storage {
@@ -21592,7 +21750,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Minimum bond required to create a pool."]
 				#[doc = ""]
 				#[doc = " This is the amount that the depositor must put as their initial stake in the pool, as an"]
@@ -21621,7 +21778,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Maximum number of nomination pools that can exist. If `None`, then an unbounded number of"]
 				#[doc = " pools can exist."]
 				pub fn max_pools(
@@ -21645,7 +21801,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Maximum number of members that can exist in the system. If `None`, then the count"]
 				#[doc = " members are not bound on a system wide basis."]
 				pub fn max_pool_members(
@@ -21669,7 +21824,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Maximum number of members that may belong to pool. If `None`, then the count of"]
 				#[doc = " members is not bound on a per pool basis."]
 				pub fn max_pool_members_per_pool(
@@ -21692,7 +21846,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The maximum commission that can be charged by a pool. Used on commission payouts to bound"]
 				#[doc = " pool commissions that are > `GlobalMaxCommission`, necessary if a future"]
 				#[doc = " `GlobalMaxCommission` is lower than some current pool commissions."]
@@ -21717,7 +21870,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Active members."]
 				#[doc = ""]
 				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
@@ -21744,7 +21896,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Active members."]
 				#[doc = ""]
 				#[doc = " TWOX-NOTE: SAFE since `AccountId` is a secure hash."]
@@ -21768,7 +21919,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "Counter for the related counted storage map"]
 				pub fn counter_for_pool_members(
 					&self,
@@ -21791,7 +21941,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Storage for bonded pools."]
 				pub fn bonded_pools(
 					&self,
@@ -21817,7 +21966,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Storage for bonded pools."]
 				pub fn bonded_pools_root(
 					&self,
@@ -21840,7 +21988,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "Counter for the related counted storage map"]
 				pub fn counter_for_bonded_pools(
 					&self,
@@ -21862,7 +22009,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Reward pools. This is where there rewards for each pool accumulate. When a members payout is"]
 				#[doc = " claimed, the balance comes out fo the reward pool. Keyed by the bonded pools account."]
 				pub fn reward_pools(
@@ -21889,7 +22035,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Reward pools. This is where there rewards for each pool accumulate. When a members payout is"]
 				#[doc = " claimed, the balance comes out fo the reward pool. Keyed by the bonded pools account."]
 				pub fn reward_pools_root(
@@ -21913,7 +22058,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "Counter for the related counted storage map"]
 				pub fn counter_for_reward_pools(
 					&self,
@@ -21936,7 +22080,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Groups of unbonding pools. Each group of unbonding pools belongs to a"]
 				#[doc = " bonded pool, hence the name sub-pools. Keyed by the bonded pools account."]
 				pub fn sub_pools_storage(
@@ -21962,7 +22105,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Groups of unbonding pools. Each group of unbonding pools belongs to a"]
 				#[doc = " bonded pool, hence the name sub-pools. Keyed by the bonded pools account."]
 				pub fn sub_pools_storage_root(
@@ -21985,7 +22127,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "Counter for the related counted storage map"]
 				pub fn counter_for_sub_pools_storage(
 					&self,
@@ -22008,7 +22149,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Metadata for the pool."]
 				pub fn metadata(
 					&self,
@@ -22035,7 +22175,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Metadata for the pool."]
 				pub fn metadata_root(
 					&self,
@@ -22059,7 +22198,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "Counter for the related counted storage map"]
 				pub fn counter_for_metadata(
 					&self,
@@ -22082,7 +22220,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Ever increasing number of all pools created so far."]
 				pub fn last_pool_id(
 					&self,
@@ -22105,7 +22242,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " A reverse lookup from the pool's account id to its id."]
 				#[doc = ""]
 				#[doc = " This is only used for slashing. In all other instances, the pool id is used, and the"]
@@ -22133,7 +22269,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " A reverse lookup from the pool's account id to its id."]
 				#[doc = ""]
 				#[doc = " This is only used for slashing. In all other instances, the pool id is used, and the"]
@@ -22158,7 +22293,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "Counter for the related counted storage map"]
 				pub fn counter_for_reverse_pool_id_lookup(
 					&self,
@@ -22181,7 +22315,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Map from a pool member account to their opted claim permission."]
 				pub fn claim_permissions(
 					&self,
@@ -22206,7 +22339,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Map from a pool member account to their opted claim permission."]
 				pub fn claim_permissions_root(
 					&self,
@@ -22238,13 +22370,16 @@ pub mod api {
 				pub fn pallet_id(
 					&self,
 				) -> ::subxt::constants::Address<runtime_types::frame_support::PalletId> {
-					::subxt::constants::Address::new_static("NominationPools", "PalletId", [
-						56u8, 243u8, 53u8, 83u8, 154u8, 179u8, 170u8, 80u8, 133u8, 173u8, 61u8,
-						161u8, 47u8, 225u8, 146u8, 21u8, 50u8, 229u8, 248u8, 27u8, 104u8, 58u8,
-						129u8, 197u8, 102u8, 160u8, 168u8, 205u8, 154u8, 42u8, 217u8, 53u8,
-					])
+					::subxt::constants::Address::new_static(
+						"NominationPools",
+						"PalletId",
+						[
+							56u8, 243u8, 53u8, 83u8, 154u8, 179u8, 170u8, 80u8, 133u8, 173u8, 61u8,
+							161u8, 47u8, 225u8, 146u8, 21u8, 50u8, 229u8, 248u8, 27u8, 104u8, 58u8,
+							129u8, 197u8, 102u8, 160u8, 168u8, 205u8, 154u8, 42u8, 217u8, 53u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum pool points-to-balance ratio that an `open` pool can have."]
 				#[doc = ""]
 				#[doc = " This is important in the event slashing takes place and the pool's points-to-balance"]
@@ -22275,13 +22410,15 @@ pub mod api {
 		}
 	}
 	pub mod identity {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
 		pub type Error = runtime_types::pallet_identity::pallet::Error;
 		#[doc = "Identity pallet declaration."]
 		pub type Call = runtime_types::pallet_identity::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -22305,8 +22442,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for AddRegistrar {
-					const CALL: &'static str = "add_registrar";
 					const PALLET: &'static str = "Identity";
+					const CALL: &'static str = "add_registrar";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -22326,8 +22463,8 @@ pub mod api {
 						::std::boxed::Box<runtime_types::pallet_identity::types::IdentityInfo>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetIdentity {
-					const CALL: &'static str = "set_identity";
 					const PALLET: &'static str = "Identity";
+					const CALL: &'static str = "set_identity";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -22349,8 +22486,8 @@ pub mod api {
 					)>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetSubs {
-					const CALL: &'static str = "set_subs";
 					const PALLET: &'static str = "Identity";
+					const CALL: &'static str = "set_subs";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -22367,8 +22504,8 @@ pub mod api {
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				pub struct ClearIdentity;
 				impl ::subxt::blocks::StaticExtrinsic for ClearIdentity {
-					const CALL: &'static str = "clear_identity";
 					const PALLET: &'static str = "Identity";
+					const CALL: &'static str = "clear_identity";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -22390,8 +22527,8 @@ pub mod api {
 					pub max_fee: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for RequestJudgement {
-					const CALL: &'static str = "request_judgement";
 					const PALLET: &'static str = "Identity";
+					const CALL: &'static str = "request_judgement";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: CompactAs,
@@ -22411,8 +22548,8 @@ pub mod api {
 					pub reg_index: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for CancelRequest {
-					const CALL: &'static str = "cancel_request";
 					const PALLET: &'static str = "Identity";
+					const CALL: &'static str = "cancel_request";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -22434,8 +22571,8 @@ pub mod api {
 					pub fee: ::core::primitive::u128,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetFee {
-					const CALL: &'static str = "set_fee";
 					const PALLET: &'static str = "Identity";
+					const CALL: &'static str = "set_fee";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -22459,8 +22596,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetAccountId {
-					const CALL: &'static str = "set_account_id";
 					const PALLET: &'static str = "Identity";
+					const CALL: &'static str = "set_account_id";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -22483,8 +22620,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetFields {
-					const CALL: &'static str = "set_fields";
 					const PALLET: &'static str = "Identity";
+					const CALL: &'static str = "set_fields";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -22511,8 +22648,8 @@ pub mod api {
 					pub identity: ::subxt::utils::H256,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for ProvideJudgement {
-					const CALL: &'static str = "provide_judgement";
 					const PALLET: &'static str = "Identity";
+					const CALL: &'static str = "provide_judgement";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -22534,8 +22671,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for KillIdentity {
-					const CALL: &'static str = "kill_identity";
 					const PALLET: &'static str = "Identity";
+					const CALL: &'static str = "kill_identity";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -22558,8 +22695,8 @@ pub mod api {
 					pub data: runtime_types::pallet_identity::types::Data,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for AddSub {
-					const CALL: &'static str = "add_sub";
 					const PALLET: &'static str = "Identity";
+					const CALL: &'static str = "add_sub";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -22582,8 +22719,8 @@ pub mod api {
 					pub data: runtime_types::pallet_identity::types::Data,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for RenameSub {
-					const CALL: &'static str = "rename_sub";
 					const PALLET: &'static str = "Identity";
+					const CALL: &'static str = "rename_sub";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -22605,8 +22742,8 @@ pub mod api {
 					>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for RemoveSub {
-					const CALL: &'static str = "remove_sub";
 					const PALLET: &'static str = "Identity";
+					const CALL: &'static str = "remove_sub";
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -22623,8 +22760,8 @@ pub mod api {
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				pub struct QuitSub;
 				impl ::subxt::blocks::StaticExtrinsic for QuitSub {
-					const CALL: &'static str = "quit_sub";
 					const PALLET: &'static str = "Identity";
+					const CALL: &'static str = "quit_sub";
 				}
 			}
 			pub struct TransactionApi;
@@ -22648,7 +22785,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_identity`]."]
 				pub fn set_identity(
 					&self,
@@ -22667,7 +22803,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_subs`]."]
 				pub fn set_subs(
 					&self,
@@ -22688,7 +22823,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::clear_identity`]."]
 				pub fn clear_identity(&self) -> ::subxt::tx::Payload<types::ClearIdentity> {
 					::subxt::tx::Payload::new_static(
@@ -22703,7 +22837,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::request_judgement`]."]
 				pub fn request_judgement(
 					&self,
@@ -22721,7 +22854,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::cancel_request`]."]
 				pub fn cancel_request(
 					&self,
@@ -22739,7 +22871,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_fee`]."]
 				pub fn set_fee(
 					&self,
@@ -22758,7 +22889,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_account_id`]."]
 				pub fn set_account_id(
 					&self,
@@ -22779,7 +22909,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::set_fields`]."]
 				pub fn set_fields(
 					&self,
@@ -22799,7 +22928,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::provide_judgement`]."]
 				pub fn provide_judgement(
 					&self,
@@ -22829,7 +22957,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::kill_identity`]."]
 				pub fn kill_identity(
 					&self,
@@ -22849,7 +22976,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::add_sub`]."]
 				pub fn add_sub(
 					&self,
@@ -22871,7 +22997,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::rename_sub`]."]
 				pub fn rename_sub(
 					&self,
@@ -22893,7 +23018,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::remove_sub`]."]
 				pub fn remove_sub(
 					&self,
@@ -22913,14 +23037,19 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = "See [`Pallet::quit_sub`]."]
 				pub fn quit_sub(&self) -> ::subxt::tx::Payload<types::QuitSub> {
-					::subxt::tx::Payload::new_static("Identity", "quit_sub", types::QuitSub {}, [
-						147u8, 131u8, 175u8, 171u8, 187u8, 201u8, 240u8, 26u8, 146u8, 224u8, 74u8,
-						166u8, 242u8, 193u8, 204u8, 247u8, 168u8, 93u8, 18u8, 32u8, 27u8, 208u8,
-						149u8, 146u8, 179u8, 172u8, 75u8, 112u8, 84u8, 141u8, 233u8, 223u8,
-					])
+					::subxt::tx::Payload::new_static(
+						"Identity",
+						"quit_sub",
+						types::QuitSub {},
+						[
+							147u8, 131u8, 175u8, 171u8, 187u8, 201u8, 240u8, 26u8, 146u8, 224u8,
+							74u8, 166u8, 242u8, 193u8, 204u8, 247u8, 168u8, 93u8, 18u8, 32u8, 27u8,
+							208u8, 149u8, 146u8, 179u8, 172u8, 75u8, 112u8, 84u8, 141u8, 233u8,
+							223u8,
+						],
+					)
 				}
 			}
 		}
@@ -22946,8 +23075,8 @@ pub mod api {
 				pub who: ::subxt::utils::AccountId32,
 			}
 			impl ::subxt::events::StaticEvent for IdentitySet {
-				const EVENT: &'static str = "IdentitySet";
 				const PALLET: &'static str = "Identity";
+				const EVENT: &'static str = "IdentitySet";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -22968,8 +23097,8 @@ pub mod api {
 				pub deposit: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for IdentityCleared {
-				const EVENT: &'static str = "IdentityCleared";
 				const PALLET: &'static str = "Identity";
+				const EVENT: &'static str = "IdentityCleared";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -22990,8 +23119,8 @@ pub mod api {
 				pub deposit: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for IdentityKilled {
-				const EVENT: &'static str = "IdentityKilled";
 				const PALLET: &'static str = "Identity";
+				const EVENT: &'static str = "IdentityKilled";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -23012,8 +23141,8 @@ pub mod api {
 				pub registrar_index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for JudgementRequested {
-				const EVENT: &'static str = "JudgementRequested";
 				const PALLET: &'static str = "Identity";
+				const EVENT: &'static str = "JudgementRequested";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -23034,8 +23163,8 @@ pub mod api {
 				pub registrar_index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for JudgementUnrequested {
-				const EVENT: &'static str = "JudgementUnrequested";
 				const PALLET: &'static str = "Identity";
+				const EVENT: &'static str = "JudgementUnrequested";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -23056,8 +23185,8 @@ pub mod api {
 				pub registrar_index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for JudgementGiven {
-				const EVENT: &'static str = "JudgementGiven";
 				const PALLET: &'static str = "Identity";
+				const EVENT: &'static str = "JudgementGiven";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: CompactAs,
@@ -23078,8 +23207,8 @@ pub mod api {
 				pub registrar_index: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for RegistrarAdded {
-				const EVENT: &'static str = "RegistrarAdded";
 				const PALLET: &'static str = "Identity";
+				const EVENT: &'static str = "RegistrarAdded";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -23101,8 +23230,8 @@ pub mod api {
 				pub deposit: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for SubIdentityAdded {
-				const EVENT: &'static str = "SubIdentityAdded";
 				const PALLET: &'static str = "Identity";
+				const EVENT: &'static str = "SubIdentityAdded";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -23124,8 +23253,8 @@ pub mod api {
 				pub deposit: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for SubIdentityRemoved {
-				const EVENT: &'static str = "SubIdentityRemoved";
 				const PALLET: &'static str = "Identity";
+				const EVENT: &'static str = "SubIdentityRemoved";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -23148,8 +23277,8 @@ pub mod api {
 				pub deposit: ::core::primitive::u128,
 			}
 			impl ::subxt::events::StaticEvent for SubIdentityRevoked {
-				const EVENT: &'static str = "SubIdentityRevoked";
 				const PALLET: &'static str = "Identity";
+				const EVENT: &'static str = "SubIdentityRevoked";
 			}
 		}
 		pub mod storage {
@@ -23182,7 +23311,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Information that is pertinent to identify the entity behind an account."]
 				#[doc = ""]
 				#[doc = " TWOX-NOTE: OK ― `AccountId` is a secure hash."]
@@ -23206,7 +23334,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The super-identity of an alternative \"sub\" identity together with its name, within that"]
 				#[doc = " context. If the account is not some other account's sub-identity, then just `None`."]
 				pub fn super_of(
@@ -23235,7 +23362,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The super-identity of an alternative \"sub\" identity together with its name, within that"]
 				#[doc = " context. If the account is not some other account's sub-identity, then just `None`."]
 				pub fn super_of_root(
@@ -23261,7 +23387,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Alternative \"sub\" identities of this account."]
 				#[doc = ""]
 				#[doc = " The first item is the deposit, the second is a vector of the accounts."]
@@ -23296,7 +23421,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " Alternative \"sub\" identities of this account."]
 				#[doc = ""]
 				#[doc = " The first item is the deposit, the second is a vector of the accounts."]
@@ -23328,7 +23452,6 @@ pub mod api {
 						],
 					)
 				}
-
 				#[doc = " The set of registrars. Not expected to get very big as can only be added through a"]
 				#[doc = " special origin (likely a council motion)."]
 				#[doc = ""]
@@ -23371,80 +23494,104 @@ pub mod api {
 				pub fn basic_deposit(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Identity", "BasicDeposit", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Identity",
+						"BasicDeposit",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
-
 				#[doc = " The amount held on deposit per additional field for a registered identity."]
 				pub fn field_deposit(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Identity", "FieldDeposit", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Identity",
+						"FieldDeposit",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
-
 				#[doc = " The amount held on deposit for a registered subaccount. This should account for the fact"]
 				#[doc = " that one storage item's value will increase by the size of an account ID, and there will"]
 				#[doc = " be another trie item whose value is the size of an account ID plus 32 bytes."]
 				pub fn sub_account_deposit(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static("Identity", "SubAccountDeposit", [
-						84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-						27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8, 136u8,
-						71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Identity",
+						"SubAccountDeposit",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
 				}
-
 				#[doc = " The maximum number of sub-accounts allowed per identified account."]
 				pub fn max_sub_accounts(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Identity", "MaxSubAccounts", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Identity",
+						"MaxSubAccounts",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " Maximum number of additional fields that may be stored in an ID. Needed to bound the I/O"]
 				#[doc = " required to access an identity, but can be pretty high."]
 				pub fn max_additional_fields(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Identity", "MaxAdditionalFields", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Identity",
+						"MaxAdditionalFields",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
-
 				#[doc = " Maxmimum number of registrars allowed in the system. Needed to bound the complexity"]
 				#[doc = " of, e.g., updating judgements."]
 				pub fn max_registrars(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static("Identity", "MaxRegistrars", [
-						98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8, 125u8,
-						151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8, 178u8, 197u8,
-						113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8, 145u8,
-					])
+					::subxt::constants::Address::new_static(
+						"Identity",
+						"MaxRegistrars",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
 				}
 			}
 		}
 	}
 	pub mod mandate {
-		use super::{root_mod, runtime_types};
+		use super::root_mod;
+		use super::runtime_types;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 		pub type Call = runtime_types::pallet_mandate::pallet::Call;
 		pub mod calls {
-			use super::{root_mod, runtime_types};
+			use super::root_mod;
+			use super::runtime_types;
 			type DispatchError = runtime_types::sp_runtime::DispatchError;
 			pub mod types {
 				use super::runtime_types;
@@ -23465,8 +23612,8 @@ pub mod api {
 					pub call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Mandate {
-					const CALL: &'static str = "mandate";
 					const PALLET: &'static str = "Mandate";
+					const CALL: &'static str = "mandate";
 				}
 			}
 			pub struct TransactionApi;
@@ -23513,8 +23660,8 @@ pub mod api {
 				pub result: ::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
 			}
 			impl ::subxt::events::StaticEvent for RootOp {
-				const EVENT: &'static str = "RootOp";
 				const PALLET: &'static str = "Mandate";
+				const EVENT: &'static str = "RootOp";
 			}
 		}
 	}

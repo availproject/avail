@@ -1,5 +1,3 @@
-#![feature(async_closure)]
-
 use std::{process::Stdio, str, time::Duration};
 
 use anyhow::{anyhow, ensure, Result};
