@@ -82,13 +82,27 @@ running the benchmarks from `da-control` pallet, and the generated file is
         --steps=30 \
         --repeat=20 \
         --log=warn \
-        --execution=wasm \
-        --wasm-execution=compiled \
         --template=./.maintain/frame-weight-template.hbs \
         --header=./HEADER-APACHE2 \
         --pallet=da-control \
         --extrinsic=* \
-        --output=./pallets/dactr/src/weights.rs
+        --output=./output/weights.rs
+
+To benchmark all extrinsics for all pallets:
+    $> cargo run --release -p data-avail --features runtime-benchmarks -- \
+        benchmark \
+        pallet \
+        --chain=dev \
+        --steps=30 \
+        --repeat=20 \
+        --log=warn \
+        --template=./.maintain/frame-weight-template.hbs \
+        --header=./HEADER-APACHE2 \
+        --pallet=* \
+        --extrinsic=* \
+        --output=./output/weights.rs
+
+To benchmark long running features like the `kate commitment generation`, you can specify `--extra` as additional flag.
 
 ### Via Script
 To run all benchmarks from all pallets:
@@ -116,6 +130,20 @@ command:
 ```bash
 PALLETS="frame_system mocked_runtime" ./run_benchmarks.sh
 ```
+
+To benchmark long running features like the `kate commitment generation`, 
+you can specify `EXTRA=1` as additional environment variable.
+
+```bash
+EXTRA=1 ./run_benchmarks.sh
+```
+
+### Additional info
+When computing benchmarks, additionally to `weights`, `PoV` proof of validity (proof size) will be computed based on storage usage.
+If no storage is used, `PoV` will be 0. 
+By default the benchmark PoV is `#[pov_mode = MaxEncodedLen]` this should always be the case.
+For rare cases, `MaxEncodedLen` won't be specified for a storage then for benchmarks that use this storage, `#[pov_mode = Measured]` should explicitely be specified.
+
 
 ## Transaction Custom IDs
 

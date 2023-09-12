@@ -270,7 +270,7 @@ impl frame_system::Config for Runtime {
 	/// Data Root
 	type SubmittedDataExtractor = Runtime;
 	/// Weight information for the extrinsics of this pallet.
-	type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
+	type SystemWeightInfo = weights::frame_system::SubstrateWeight<Runtime>;
 	type UncheckedExtrinsic = UncheckedExtrinsic;
 	/// Version of the runtime.
 	type Version = Version;
@@ -945,7 +945,7 @@ impl da_control::Config for Runtime {
 	type MinBlockCols = constants::da::MinBlockCols;
 	type MinBlockRows = constants::da::MinBlockRows;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = da_control::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_dactr::SubstrateWeight<Runtime>;
 }
 
 impl nomad_updater_manager::Config for Runtime {
@@ -955,13 +955,13 @@ impl nomad_updater_manager::Config for Runtime {
 impl nomad_home::Config for Runtime {
 	type MaxMessageBodyBytes = constants::nomad::MaxMessageBodyBytes;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = nomad_home::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::nomad_home::SubstrateWeight<Runtime>;
 }
 
 impl nomad_da_bridge::Config for Runtime {
 	type DABridgePalletId = constants::nomad::DABridgePalletId;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = nomad_da_bridge::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::nomad_da_bridge::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {

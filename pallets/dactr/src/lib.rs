@@ -14,13 +14,13 @@ use sp_std::{mem::replace, vec, vec::Vec};
 
 pub use crate::{pallet::*, weights::WeightInfo};
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+mod extensions;
 #[cfg(feature = "std")]
 pub mod mock;
 #[cfg(test)]
 mod tests;
-
-mod benchmarking;
-mod extensions;
 pub use extensions::check_app_id::CheckAppId;
 pub mod weights;
 
