@@ -249,7 +249,7 @@ pub mod staking {
 		ideal_stake: 0_500_000, // target_staking_rate = 50%
 		falloff: 0_010_000,  // inflation_decay = 1%
 		max_piece_count: 40,
-		test_precision: 0_005_500,
+		test_precision: 0_005_000,
 	);
 	}
 
