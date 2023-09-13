@@ -75,7 +75,7 @@ pub fn run() -> Result<()> {
 		None => {
 			let runner = cli.create_runner(&cli.run)?;
 			runner.run_node_until_exit(|config| async move {
-				service::new_full(config, cli.no_hardware_benchmarks)
+				service::new_full(config, cli.no_hardware_benchmarks, cli.unsafe_da_sync)
 					.map_err(sc_cli::Error::Service)
 			})
 		},
@@ -106,7 +106,7 @@ pub fn run() -> Result<()> {
 						unimplemented!();
 						/*
 						// ensure that we keep the task manager alive
-						let partial = new_partial(&config)?;
+						let partial = new_partial(&config, cli.unsafe_da_sync)?;
 						cmd.run(partial.client)
 						*/
 					},
@@ -120,7 +120,7 @@ pub fn run() -> Result<()> {
 						unimplemented!();
 						/*
 						// ensure that we keep the task manager alive
-						let partial = new_partial(&config)?;
+						let partial = new_partial(&config, cli.unsafe_da_sync)?;
 						let db = partial.backend.expose_db();
 						let storage = partial.backend.expose_storage();
 
@@ -131,7 +131,7 @@ pub fn run() -> Result<()> {
 						unimplemented!();
 						/*
 						// ensure that we keep the task manager alive
-						let partial = new_partial(&config)?;
+						let partial = new_partial(&config, cli.unsafe_da_sync)?;
 						let ext_builder = RemarkBuilder::new(partial.client.clone());
 
 						cmd.run(
@@ -147,7 +147,7 @@ pub fn run() -> Result<()> {
 						unimplemented!();
 						/*
 						// ensure that we keep the task manager alive
-						let partial = service::new_partial(&config)?;
+						let partial = service::new_partial(&config, cli.unsafe_da_sync)?;
 						// Register the *Remark* and *TKA* builders.
 						let ext_factory = ExtrinsicFactory(vec![
 							Box::new(RemarkBuilder::new(partial.client.clone())),
@@ -187,7 +187,7 @@ pub fn run() -> Result<()> {
 					task_manager,
 					import_queue,
 					..
-				} = new_partial(&config)?;
+				} = new_partial(&config, cli.unsafe_da_sync)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
@@ -198,7 +198,7 @@ pub fn run() -> Result<()> {
 					client,
 					task_manager,
 					..
-				} = new_partial(&config)?;
+				} = new_partial(&config, cli.unsafe_da_sync)?;
 				Ok((cmd.run(client, config.database), task_manager))
 			})
 		},
@@ -209,7 +209,7 @@ pub fn run() -> Result<()> {
 					client,
 					task_manager,
 					..
-				} = new_partial(&config)?;
+				} = new_partial(&config, cli.unsafe_da_sync)?;
 				Ok((cmd.run(client, config.chain_spec), task_manager))
 			})
 		},
@@ -221,7 +221,7 @@ pub fn run() -> Result<()> {
 					task_manager,
 					import_queue,
 					..
-				} = new_partial(&config)?;
+				} = new_partial(&config, cli.unsafe_da_sync)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
@@ -237,7 +237,7 @@ pub fn run() -> Result<()> {
 					task_manager,
 					backend,
 					..
-				} = new_partial(&config)?;
+				} = new_partial(&config, cli.unsafe_da_sync)?;
 				let aux_revert = Box::new(|client: Arc<FullClient>, backend, blocks| {
 					sc_consensus_babe::revert(client.clone(), backend, blocks)?;
 					sc_finality_grandpa::revert(client, blocks)?;
