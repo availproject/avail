@@ -16,12 +16,11 @@ type Block = frame_system::mocking::MockDaBlock<Test>;
 // TODO: add proper config once frame executive mocking has been demonstrated
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-	pub struct Test
-	{
-		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
-		UpdaterManager: nomad_updater_manager::{Pallet, Call, Storage, Event<T>},
-		Home: nomad_home::{Pallet, Call, Storage, Event<T>},
-		DABridge: da_bridge::{Pallet, Call, Storage, Event<T>},
+	pub struct Test {
+		System: frame_system,
+		UpdaterManager: nomad_updater_manager,
+		Home: nomad_home,
+		DABridge: da_bridge,
 	}
 );
 

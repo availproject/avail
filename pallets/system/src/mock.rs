@@ -24,9 +24,8 @@ type UncheckedExtrinsic = mocking::MockUncheckedExtrinsic<Test>;
 type Block = mocking::MockDaBlock<Test>;
 
 frame_support::construct_runtime!(
-	pub struct Test
-	{
-		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
+	pub struct Test {
+		System: frame_system,
 	}
 );
 
