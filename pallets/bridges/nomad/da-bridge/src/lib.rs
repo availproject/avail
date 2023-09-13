@@ -8,6 +8,8 @@ pub use pallet::*;
 mod message;
 pub mod weights;
 
+pub use weights::WeightInfo;
+
 #[cfg(test)]
 mod mock;
 

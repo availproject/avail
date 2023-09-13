@@ -281,7 +281,7 @@ where
 	let leaf = Leaf::Hash(data_hash);
 	verify_proof::<Keccak256, _, _>(
 		&root,
-		proof.into_iter(),
+		proof,
 		number_of_submitted_data as usize,
 		data_index as usize,
 		leaf,
