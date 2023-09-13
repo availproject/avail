@@ -125,6 +125,7 @@ pallet-child-bounties = { git = "https://github.com/paritytech/substrate.git", b
 pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 pallet-nomination-pools = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 pallet-election-provider-support-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 pallet-identity = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
 
