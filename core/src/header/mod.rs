@@ -17,10 +17,11 @@
 
 //! Data-Avail implementation of a block header.
 
-use codec::{Codec, Decode, Encode};
+use codec::{Codec, Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
 use scale_info::TypeInfo;
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+use sp_arithmetic::{traits::Saturating, MultiplyRational};
 use sp_core::{hexdisplay::HexDisplay, U256};
 use sp_runtime::{
 	traits::{
@@ -42,13 +43,16 @@ pub use extension::HeaderExtension;
 
 /// Abstraction over a block header for a substrate chain.
 #[derive(PartialEq, Eq, Clone, TypeInfo, Encode, Decode)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "std", serde(deny_unknown_fields, rename_all = "camelCase"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(
+	feature = "serde",
+	serde(deny_unknown_fields, rename_all = "camelCase")
+)]
 pub struct Header<Number: HeaderBlockNumber, Hash: HeaderHash> {
 	/// The parent hash.
 	pub parent_hash: Hash::Output,
 	/// The block number.
-	#[cfg_attr(feature = "std", serde(with = "number_serde"))]
+	#[cfg_attr(feature = "serde", serde(with = "number_serde"))]
 	#[codec(compact)]
 	pub number: Number,
 	/// The state trie merkle root
@@ -79,7 +83,7 @@ impl<N: HeaderBlockNumber, H: HeaderHash> fmt::Debug for Header<N, H> {
 }
 
 /// This module adds serialization support to `Header::number` field.
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 mod number_serde {
 	use serde::{Deserializer, Serializer};
 
@@ -166,8 +170,15 @@ where
 		+ Copy
 		+ Into<U256>
 		+ TryFrom<U256>
-		+ sp_std::str::FromStr,
-	Hash: HashT,
+		+ sp_std::str::FromStr
+		+ MultiplyRational
+		+ Saturating
+		+ TypeInfo
+		+ EncodeLike
+		+ MaxEncodedLen
+		+ FullCodec
+		+ Default,
+	Hash: HashT + TypeInfo,
 	Hash::Output: Default
 		+ sp_std::hash::Hash
 		+ Copy
@@ -178,6 +189,7 @@ where
 		+ MaybeDisplay
 		+ SimpleBitOps
 		+ Codec,
+	Header<Number, Hash>: Encode + Decode,
 {
 	type Hash = <Hash as HashT>::Output;
 	type Hashing = Hash;

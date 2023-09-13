@@ -5,7 +5,7 @@ use sp_core::RuntimeDebug;
 use sp_std::{ops::Range, vec::Vec};
 use thiserror_no_std::Error;
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::{ensure, AppId};
@@ -26,9 +26,9 @@ pub enum Error {
 }
 
 #[derive(PartialEq, Eq, Clone, Default, RuntimeDebug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(
-	feature = "std",
+	feature = "serde",
 	serde(try_from = "CompactDataLookup", into = "CompactDataLookup")
 )]
 pub struct DataLookup {

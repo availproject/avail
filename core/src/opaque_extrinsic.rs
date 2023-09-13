@@ -1,4 +1,5 @@
 use codec::{Decode, Encode};
+use scale_info::prelude::format;
 use scale_info::TypeInfo;
 use sp_std::vec::Vec;
 
@@ -28,7 +29,7 @@ impl sp_std::fmt::Debug for OpaqueExtrinsic {
 	}
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 impl ::serde::Serialize for OpaqueExtrinsic {
 	fn serialize<S>(&self, seq: S) -> Result<S::Ok, S::Error>
 	where
@@ -38,7 +39,7 @@ impl ::serde::Serialize for OpaqueExtrinsic {
 	}
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 impl<'a> ::serde::Deserialize<'a> for OpaqueExtrinsic {
 	fn deserialize<D>(de: D) -> Result<Self, D::Error>
 	where

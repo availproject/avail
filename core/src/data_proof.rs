@@ -1,15 +1,15 @@
 #[cfg(feature = "runtime")]
-use beefy_merkle_tree::MerkleProof;
+use binary_merkle_tree::MerkleProof;
 use codec::{Decode, Encode};
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
 use sp_std::vec::Vec;
 use thiserror_no_std::Error;
-/// Wrapper of `beefy-merkle-tree::MerkleProof` with codec support.
+/// Wrapper of `binary-merkle-tree::MerkleProof` with codec support.
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, Default)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct DataProof {
 	/// Root hash of generated merkle tree.
 	pub root: H256,
@@ -31,7 +31,7 @@ pub struct DataProof {
 	pub leaf: H256,
 }
 
-/// Conversion error from `beefy-merkle-tree::MerkleProof`.
+/// Conversion error from `binary-merkle-tree::MerkleProof`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Error)]
 pub enum DataProofTryFromError {
 	/// Root cannot be converted into `H256`.
@@ -126,7 +126,7 @@ mod test {
 		let leaves = leaves();
 		let index = min(leaf_index, leaves.len() - 1);
 
-		let mut proof = beefy_merkle_tree::merkle_proof::<Keccak256, _, _>(leaves, index);
+		let mut proof = binary_merkle_tree::merkle_proof::<Keccak256, _, _>(leaves, index);
 		proof.leaf_index = leaf_index;
 
 		proof
@@ -188,10 +188,10 @@ mod test {
 	#[test_case(merkle_proof_idx(6) => expected_data_proof_6(); "From merkle proof 6")]
 	#[test_case(merkle_proof_idx(7) => Err(DataProofTryFromError::InvalidLeafIndex); "From invalid leaf index")]
 	#[test_case(invalid_merkle_proof_zero_leaves() => Err(DataProofTryFromError::InvalidNumberOfLeaves); "From invalid number of leaves")]
-	fn from_beefy(
-		beefy_proof: MerkleProof<H256, Vec<u8>>,
+	fn from_binary(
+		binary_proof: MerkleProof<H256, Vec<u8>>,
 	) -> Result<DataProof, DataProofTryFromError> {
-		let data_proof = DataProof::try_from(&beefy_proof)?;
+		let data_proof = DataProof::try_from(&binary_proof)?;
 		Ok(data_proof)
 	}
 }

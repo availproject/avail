@@ -173,7 +173,7 @@ pub fn flatten_and_pad_block(
 		assert_eq!(rem, 0);
 	}
 
-	#[allow(clippy::integer_arithmetic)]
+	#[allow(clippy::arithmetic_side_effects)]
 	// SAFETY: `chunk_size` comes from `NonZeroU32::get(...)` so we can safetly use `/`.
 	let last = block_dims_size.saturating_sub(padded_block.len()) / chunk_size;
 	for _ in 0..last {
@@ -214,6 +214,7 @@ pub fn get_block_dimensions(
 	// we must minimize number of rows, to minimize header size
 	// (performance wise it doesn't matter)
 	let nz_max_cols = NonZeroU32::new(max_cols.0).ok_or(Error::ZeroDimension)?;
+	#[allow(clippy::arithmetic_side_effects)]
 	let (cols, rows) = if total_cells > max_cols.0 {
 		(max_cols, BlockLengthRows(total_cells / nz_max_cols))
 	} else {

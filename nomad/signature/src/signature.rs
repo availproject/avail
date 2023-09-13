@@ -15,8 +15,11 @@ use k256::{
 	PublicKey as K256PublicKey,
 };
 use scale_info::TypeInfo;
-use sp_core::{Hasher as _, H160, H256, U256};
-use sp_runtime::{traits::Keccak256, RuntimeDebug};
+use sp_core::{H160, H256, U256};
+use sp_runtime::{
+	traits::{Hash, Keccak256},
+	RuntimeDebug,
+};
 use thiserror_no_std::Error;
 
 #[cfg(feature = "std")]

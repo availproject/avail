@@ -14,7 +14,8 @@ codec = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2", default-features = false, features = ["derive"] }
 sp-core = { version = "*", default-features = false }
 
-sp-runtime = { version = "7", default-features = false, optional = true }
+# Substrate runtime
+sp-runtime = { version = "24", default-features = false, optional = true }
 
 # Eth
 ethers-signers = { version = "1", optional = true }
