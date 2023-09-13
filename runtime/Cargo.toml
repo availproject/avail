@@ -1,6 +1,6 @@
 [package]
 name = "da-runtime"
-version = "6.0.0"
+version = "7.0.0"
 authors = ["Anonymous"]
 description = "Avail Runtime"
 edition = "2021"
