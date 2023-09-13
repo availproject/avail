@@ -103,6 +103,11 @@ where
 			r => Err(OuterOrigin::from(r)),
 		})
 	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn try_successful_origin() -> Result<OuterOrigin, ()> {
+		unimplemented!()
+	}
 }
 
 /// Create new externalities for `Mandate` module tests.

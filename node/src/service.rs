@@ -161,6 +161,7 @@ pub fn create_extrinsic(
 #[allow(clippy::type_complexity)]
 pub fn new_partial(
 	config: &Configuration,
+	unsafe_da_sync: bool,
 ) -> Result<
 	sc_service::PartialComponents<
 		FullClient,
@@ -235,7 +236,8 @@ pub fn new_partial(
 		grandpa_block_import,
 		client.clone(),
 	)?;
-	let da_block_import = BlockImport::new(client.clone(), block_import);
+
+	let da_block_import = BlockImport::new(client.clone(), block_import, unsafe_da_sync);
 
 	let slot_duration = babe_link.config().slot_duration();
 	let (import_queue, babe_worker_handle) =
@@ -343,6 +345,7 @@ pub fn new_full_base(
 	config: Configuration,
 	disable_hardware_benchmarks: bool,
 	with_startup_data: impl FnOnce(&BlockImport, &sc_consensus_babe::BabeLink<Block>),
+	unsafe_da_sync: bool,
 ) -> Result<NewFullBase, ServiceError> {
 	let hwbench = if !disable_hardware_benchmarks {
 		config.database.path().map(|database_path| {
@@ -362,7 +365,7 @@ pub fn new_full_base(
 		select_chain,
 		transaction_pool,
 		other: (rpc_builder, import_setup, rpc_setup, mut telemetry),
-	} = new_partial(&config)?;
+	} = new_partial(&config, unsafe_da_sync)?;
 
 	let shared_voter_state = rpc_setup;
 	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
@@ -591,9 +594,15 @@ pub fn new_full_base(
 pub fn new_full(
 	config: Configuration,
 	disable_hardware_benchmarks: bool,
+	unsafe_da_sync: bool,
 ) -> Result<TaskManager, ServiceError> {
-	new_full_base(config, disable_hardware_benchmarks, |_, _| ())
-		.map(|NewFullBase { task_manager, .. }| task_manager)
+	new_full_base(
+		config,
+		disable_hardware_benchmarks,
+		|_, _| (),
+		unsafe_da_sync,
+	)
+	.map(|NewFullBase { task_manager, .. }| task_manager)
 }
 
 fn extend_metrics(prometheus: &Registry) -> Result<(), PrometheusError> {
@@ -676,6 +685,7 @@ mod tests {
 					 babe_link: &sc_consensus_babe::BabeLink<Block>| {
 						setup_handles = Some((block_import.clone(), babe_link.clone()));
 					},
+					false,
 				)?;
 
 				let node = sc_service_test::TestNetComponents::new(
@@ -869,7 +879,7 @@ mod tests {
 					network,
 					transaction_pool,
 					..
-				} = new_full_base(config, |_, _| ())?;
+				} = new_full_base(config, |_, _| (), false)?;
 				Ok(sc_service_test::TestNetComponents::new(
 					task_manager,
 					client,

@@ -27,6 +27,8 @@ use sp_runtime::traits::Block as BlockT;
 pub struct BlockImport<C, I> {
 	pub client: Arc<C>,
 	pub inner: I,
+	// If true, it skips the DA block import check during sync only.
+	pub unsafe_da_sync: bool,
 }
 
 impl<C, I: Clone> Clone for BlockImport<C, I> {
@@ -34,6 +36,7 @@ impl<C, I: Clone> Clone for BlockImport<C, I> {
 		Self {
 			client: self.client.clone(),
 			inner: self.inner.clone(),
+			unsafe_da_sync: self.unsafe_da_sync,
 		}
 	}
 }
@@ -57,7 +60,18 @@ where
 		block: BlockImportParams<B, Self::Transaction>,
 	) -> Result<ImportResult, Self::Error> {
 		// We only want to check for blocks that are not from "Own"
-		if !matches!(block.origin, BlockOrigin::Own) {
+		let is_own = matches!(block.origin, BlockOrigin::Own);
+
+		// We skip checks if we're syncing and unsafe_da_sync is true
+		let is_sync = matches!(
+			block.origin,
+			BlockOrigin::NetworkInitialSync | BlockOrigin::File
+		);
+		let skip_sync = self.unsafe_da_sync && is_sync;
+
+		let should_verify = !is_own && !skip_sync;
+		println!("Should verify: {should_verify}");
+		if should_verify {
 			let no_extrinsics = vec![];
 			let extrinsics = block.body.as_ref().unwrap_or(&no_extrinsics);
 			let best_hash = self.client.info().best_hash;

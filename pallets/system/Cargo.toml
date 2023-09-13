@@ -39,6 +39,8 @@ sp-weights = { version = "20.0.0", default-features = false, features = ["serde"
 sp-runtime-interface = { version = "17", default-features = false }
 binary-merkle-tree = { version = "4.0.0-dev", default-features = false }
 
+once_cell = { version = "1.18", optional = true }
+
 [dev-dependencies]
 hex-literal = "0.3.1"
 test-case = "1.2.3"
@@ -64,6 +66,7 @@ std = [
 	"sp-version/std",
 	"sp-weights/std",
 	"binary-merkle-tree/std",
+	"once_cell"
 ]
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",

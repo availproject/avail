@@ -25,16 +25,15 @@ frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 
 # DA Primitives
-# TODO: Once the companion PR 'substrate/upgrade-v1.0.0' is merged, change reference to tag
-avail-core = { version = "0.5", git="https://github.com/availproject/avail-core", branch = "substrate/upgrade-v1.0.0" }
-kate = { version = "0.8", git="https://github.com/availproject/avail-core", branch = "substrate/upgrade-v1.0.0" }
-kate-recovery = { version = "0.9", git="https://github.com/availproject/avail-core", branch = "substrate/upgrade-v1.0.0" }
+avail-core = { version = "0.5", git="https://github.com/availproject/avail-core", branch = "main" }
+kate = { version = "0.8", git="https://github.com/availproject/avail-core", branch = "main" }
+kate-recovery = { version = "0.9", git="https://github.com/availproject/avail-core", branch = "main" }
 
 # Nomad
-nomad-signature = { version = "0.1", git="https://github.com/availproject/avail-core", branch = "substrate/upgrade-v1.0.0" }
-nomad-merkle = { version = "0.1", git="https://github.com/availproject/avail-core", branch = "substrate/upgrade-v1.0.0" }
-nomad-base = { version = "0.1", git="https://github.com/availproject/avail-core", branch = "substrate/upgrade-v1.0.0" }
-nomad-core = { version = "0.1", git="https://github.com/availproject/avail-core", branch = "substrate/upgrade-v1.0.0" }
+nomad-signature = { version = "0.1", git="https://github.com/availproject/avail-core", branch = "main" }
+nomad-merkle = { version = "0.1", git="https://github.com/availproject/avail-core", branch = "main" }
+nomad-base = { version = "0.1", git="https://github.com/availproject/avail-core", branch = "main" }
+nomad-core = { version = "0.1", git="https://github.com/availproject/avail-core", branch = "main" }
 
 # Other stuff
 uint = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }

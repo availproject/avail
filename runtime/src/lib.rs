@@ -1183,7 +1183,8 @@ mod tests {
 		>>::try_state(block, All)?;
 		<pallet_identity::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_mandate::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
-		<pallet_nomination_pools::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)
+		<pallet_nomination_pools::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		Ok(())
 	}
 
 	#[test]
