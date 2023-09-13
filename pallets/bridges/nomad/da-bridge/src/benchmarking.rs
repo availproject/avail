@@ -1,6 +1,6 @@
-use avail_core::{header::HeaderExtension, traits::ExtendedHeader};
+use avail_core::traits::{ExtendedBlock, ExtendedHeader};
 use frame_benchmarking::{benchmarks, whitelisted_caller};
-use frame_system::{BlockHash, RawOrigin};
+use frame_system::{pallet_prelude::BlockNumberFor, BlockHash, RawOrigin};
 use hex_literal::hex;
 use nomad_home::Nonces;
 use sp_core::H256;
@@ -15,12 +15,6 @@ benchmarks! {
 			[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 			H256: From<<T as frame_system::Config>::Hash>,
 			H256: Into<<T as frame_system::Config>::Hash>,
-			u32: From<<T as frame_system::Config>::BlockNumber>,
-			T::Header: ExtendedHeader<
-				<T as frame_system::Config>::BlockNumber,
-				<T as frame_system::Config>::Hash,
-				sp_runtime::generic::Digest,
-				HeaderExtension>,
 			<T as frame_system::Config>::Hash: From<H256>,
 	}
 
@@ -29,20 +23,20 @@ benchmarks! {
 		let extrinsics_root :H256 = hex!("03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314").into();
 
 		// Create block header for block 10
-		let block_number :T::BlockNumber = 10u32.into();
+		let block_number: BlockNumberFor<T> = 10u32.into();
 		let state_root = H256::repeat_byte(2u8).into();
 		let parent_hash = H256::repeat_byte(1u8).into();
 		let extension = Default::default();
 		let digest = Default::default();
 
-		let header = Box::new(<T::Header as ExtendedHeader<_,_,_,_>>::new(
-			block_number.clone(),
+		let header = Box::new(<<<T as frame_system::Config>::Block as ExtendedBlock<_>>::DaHeader as ExtendedHeader<_,_,_,_>>::new(
+			block_number,
 			extrinsics_root.into(),
 			state_root,
 			parent_hash,
 			digest,
 			extension));
-		let header_hash :T::Hash = header.hash();
+		let header_hash: T::Hash = header.hash();
 
 		// Insert 10th block's hash into block number --> hash mapping so
 		// submitting 10th block's header is accepted by pallet

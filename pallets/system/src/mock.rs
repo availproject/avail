@@ -19,27 +19,24 @@ use frame_support::{parameter_types, traits::ConstU32};
 use sp_core::H256;
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
-	Perbill,
+	BuildStorage, Perbill,
 };
 
 use crate::{self as frame_system, test_utils::TestRandomness, *};
 
 type UncheckedExtrinsic = mocking::MockUncheckedExtrinsic<Test>;
-type Block = mocking::MockBlock<Test>;
-type BlockNumber = u32;
+type Block = mocking::MockDaBlock<Test>;
+// type BlockNumber = u32;
 
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub struct Test
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 	}
 );
 
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-const MAX_BLOCK_WEIGHT: Weight = Weight::from_ref_time(1024).set_proof_size(u64::MAX);
+const MAX_BLOCK_WEIGHT: Weight = Weight::from_parts(1024, u64::MAX);
 
 parameter_types! {
 	pub Version: RuntimeVersion = RuntimeVersion {
@@ -57,15 +54,15 @@ parameter_types! {
 		write: 100,
 	};
 	pub RuntimeBlockWeights: limits::BlockWeights = limits::BlockWeights::builder()
-		.base_block(Weight::from_ref_time(10))
+		.base_block(Weight::from_parts(10, 0))
 		.for_class(DispatchClass::all(), |weights| {
-			weights.base_extrinsic = Weight::from_ref_time(5);
+			weights.base_extrinsic = Weight::from_parts(5, 0);
 		})
 		.for_class(DispatchClass::Normal, |weights| {
 			weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAX_BLOCK_WEIGHT);
 		})
 		.for_class(DispatchClass::Operational, |weights| {
-			weights.base_extrinsic = Weight::from_ref_time(10);
+			weights.base_extrinsic = Weight::from_parts(10, 0);
 			weights.max_total = Some(MAX_BLOCK_WEIGHT);
 			weights.reserved = Some(
 				MAX_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAX_BLOCK_WEIGHT
@@ -83,25 +80,26 @@ parameter_types! {
 
 pub struct RecordKilled;
 impl OnKilledAccount<u64> for RecordKilled {
-	fn on_killed_account(who: &u64) { Killed::mutate(|r| r.push(*who)) }
+	fn on_killed_account(who: &u64) {
+		Killed::mutate(|r| r.push(*who))
+	}
 }
 
 impl Config for Test {
 	type AccountData = u32;
 	type AccountId = u64;
 	type BaseCallFilter = frame_support::traits::Everything;
+	type Block = Block;
 	type BlockHashCount = ConstU32<10>;
 	type BlockLength = RuntimeBlockLength;
-	type BlockNumber = u32;
 	type BlockWeights = RuntimeBlockWeights;
 	type DbWeight = DbWeight;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type Header = avail_core::header::Header<BlockNumber, BlakeTwo256>;
 	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
-	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type MaxConsumers = ConstU32<16>;
+	type Nonce = u64;
 	type OnKilledAccount = RecordKilled;
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -128,10 +126,10 @@ pub const CALL: &<Test as Config>::RuntimeCall =
 /// Create new externalities for `System` module tests.
 #[allow(dead_code)]
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut ext: sp_io::TestExternalities = GenesisConfig::default()
+	let mut ext: sp_io::TestExternalities = RuntimeGenesisConfig::default()
 		.system
-		.build_storage::<Test>()
-		.unwrap()
+		.build_storage()
+		.expect("Genesis build should work")
 		.into();
 	// Add to each test the initial weight of a block
 	ext.execute_with(|| {

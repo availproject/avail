@@ -1,6 +1,8 @@
 use std::{collections::HashMap, iter::once};
 
-use da_runtime::{constants::elections::InitialMemberBond, AccountId, Balance, GenesisConfig, AVL};
+use da_runtime::{
+	constants::elections::InitialMemberBond, AccountId, Balance, RuntimeGenesisConfig, AVL,
+};
 use hex_literal::hex;
 use sc_service::ChainType;
 use sp_core::crypto::UncheckedInto;
@@ -112,7 +114,7 @@ pub fn chain_spec() -> ChainSpec {
 	)
 }
 
-fn config_genesis() -> GenesisConfig {
+fn config_genesis() -> RuntimeGenesisConfig {
 	let authorities = authorities();
 	let tc_members = technical_committee();
 	let council = council_members();

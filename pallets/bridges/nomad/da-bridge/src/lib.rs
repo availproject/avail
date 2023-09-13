@@ -25,7 +25,7 @@ pub mod pallet {
 	use nomad_core::TypedMessage;
 	use nomad_home::Pallet as Home;
 	use sp_core::{bounded::BoundedVec, Get, H256};
-	use sp_runtime::traits::Header as _;
+	use sp_runtime::{traits::Header as _, SaturatedConversion};
 	use sp_std::boxed::Box;
 
 	use super::weights::WeightInfo;
@@ -43,18 +43,7 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
-
-	// Genesis config
-	#[pallet::genesis_config]
-	#[cfg_attr(feature = "std", derive(Default))]
-	pub struct GenesisConfig {}
-
-	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
-		fn build(&self) {}
-	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -62,7 +51,7 @@ pub mod pallet {
 		DataRootDispatched {
 			destination_domain: u32,
 			recipient_address: H256,
-			block_number: T::BlockNumber,
+			block_number: BlockNumberFor<T>,
 			data_root: H256,
 		},
 	}
@@ -79,7 +68,6 @@ pub mod pallet {
 	where
 		[u8; 32]: From<T::AccountId>,
 		H256: From<T::Hash>,
-		u32: From<T::BlockNumber>,
 	{
 		/// Dispatch a data root message to the home if the header is valid.
 		#[pallet::call_index(0)]
@@ -88,7 +76,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			#[pallet::compact] destination_domain: u32,
 			recipient_address: H256,
-			header: Box<T::Header>,
+			header: Box<DaHeaderFor<T>>,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			Self::ensure_valid_header(&header)?;
@@ -100,19 +88,19 @@ pub mod pallet {
 	where
 		[u8; 32]: From<T::AccountId>,
 		H256: From<T::Hash>,
-		u32: From<T::BlockNumber>,
 	{
 		/// Dispatch a data root message for a valid header.
 		fn do_dispatch_data_root(
 			destination_domain: u32,
 			recipient_address: H256,
-			header: &T::Header,
+			header: &DaHeaderFor<T>,
 		) -> DispatchResultWithPostInfo {
-			let block_number = *header.number();
+			// Safety: Even if a BlockNumber type is larger than u32, it won't pose any issues for the next 2000+ years
+			let block_number: u32 = (*header.number()).saturated_into();
 			let data_root = header.extension().data_root();
 
 			let message: DABridgeMessages = DataRootMessage {
-				block_number: block_number.into(),
+				block_number,
 				data_root,
 			}
 			.into();
@@ -132,7 +120,7 @@ pub mod pallet {
 			Self::deposit_event(Event::<T>::DataRootDispatched {
 				destination_domain,
 				recipient_address,
-				block_number,
+				block_number: block_number.into(),
 				data_root,
 			});
 
@@ -141,10 +129,11 @@ pub mod pallet {
 
 		/// Ensure a given header's hash has been recorded in the block hash
 		/// mapping.
-		fn ensure_valid_header(header: &T::Header) -> DispatchResultWithPostInfo {
+		fn ensure_valid_header(header: &DaHeaderFor<T>) -> DispatchResultWithPostInfo {
 			// Ensure header's block number is in the mapping
-			let number = header.number();
-			let stored_hash = frame_system::Pallet::<T>::block_hash(number);
+			let number: u32 = (*header.number()).saturated_into();
+			let stored_hash =
+				frame_system::Pallet::<T>::block_hash::<BlockNumberFor<T>>(number.into());
 
 			// Ensure header's hash matches that in the block number to hash
 			// mapping

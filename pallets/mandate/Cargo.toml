@@ -9,18 +9,18 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 # Substrate
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 frame-support = { version = "4.0.0-dev", default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false, path = "../system" }
-sp-io = { version = "7.0.0", default-features = false }
-sp-runtime = { version = "7.0.0", default-features = false }
-sp-std = { version = "5.0.0", default-features = false }
+sp-io = { version = "23.0.0", default-features = false }
+sp-runtime = { version = "24.0.0", default-features = false }
+sp-std = { version = "8.0.0", default-features = false }
 
 # Benchmarking
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 
 [dev-dependencies]
-sp-core = { version = "7.0.0", default-features = false }
+sp-core = { version = "21.0.0", default-features = false }
 pallet-collective = { version = "4.0.0-dev", default-features = false }
 avail-core = { version = "0.5", features = ["runtime"] }
 

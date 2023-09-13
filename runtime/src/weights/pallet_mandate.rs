@@ -51,6 +51,6 @@ pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_mandate::WeightInfo for WeightInfo<T> {
 	fn mandate() -> Weight {
 		// Minimum execution time: 9_919 nanoseconds.
-		Weight::from_ref_time(10_437_000)
+		Weight::from_parts(10_437_000, 0)
 	}
 }

@@ -20,28 +20,44 @@ use std::sync::Arc;
 
 use da_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-use sc_cli::{ChainSpec, Result, RuntimeVersion, SubstrateCli};
+use sc_cli::{Result, SubstrateCli};
 use sc_service::PartialComponents;
+#[cfg(feature = "try-runtime")]
+use {
+	crate::service::ExecutorDispatch, da_runtime::constants::time::SLOT_DURATION,
+	try_runtime_cli::block_building_info::substrate_info,
+};
 
 use crate::{
 	chain_spec,
 	cli::{Cli, Subcommand},
-	service::{self, new_partial, ExecutorDispatch, FullClient},
-	// benchmarking::{RemarkBuilder, inherent_benchmark_data, TransferKeepAliveBuilder},
+	service::{self, new_partial, FullClient},
 };
 
 impl SubstrateCli for Cli {
-	fn impl_name() -> String { "Avail Node".into() }
+	fn impl_name() -> String {
+		"Avail Node".into()
+	}
 
-	fn impl_version() -> String { env!("SUBSTRATE_CLI_IMPL_VERSION").into() }
+	fn impl_version() -> String {
+		env!("SUBSTRATE_CLI_IMPL_VERSION").into()
+	}
 
-	fn description() -> String { env!("CARGO_PKG_DESCRIPTION").into() }
+	fn description() -> String {
+		env!("CARGO_PKG_DESCRIPTION").into()
+	}
 
-	fn author() -> String { env!("CARGO_PKG_AUTHORS").into() }
+	fn author() -> String {
+		env!("CARGO_PKG_AUTHORS").into()
+	}
 
-	fn support_url() -> String { "support.anonymous.an".into() }
+	fn support_url() -> String {
+		"support.anonymous.an".into()
+	}
 
-	fn copyright_start_year() -> i32 { 2017 }
+	fn copyright_start_year() -> i32 {
+		2017
+	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 		let spec = match id {
@@ -60,10 +76,6 @@ impl SubstrateCli for Cli {
 			)?),
 		};
 		Ok(spec)
-	}
-
-	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		da_runtime::apis::NATIVE_VERSION
 	}
 }
 
@@ -99,8 +111,7 @@ pub fn run() -> Result<()> {
 									.into(),
 							);
 						}
-
-						cmd.run::<Block, ExecutorDispatch>(config)
+						cmd.run::<Block, frame_system::header_builder::hosted_header_builder::HostFunctions>(config)
 					},
 					BenchmarkCmd::Block(_cmd) => {
 						unimplemented!();
@@ -240,7 +251,7 @@ pub fn run() -> Result<()> {
 				} = new_partial(&config, cli.unsafe_da_sync)?;
 				let aux_revert = Box::new(|client: Arc<FullClient>, backend, blocks| {
 					sc_consensus_babe::revert(client.clone(), backend, blocks)?;
-					sc_finality_grandpa::revert(client, blocks)?;
+					sc_consensus_grandpa::revert(client, blocks)?;
 					Ok(())
 				});
 				Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
@@ -257,12 +268,12 @@ pub fn run() -> Result<()> {
 				let task_manager =
 					sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
 						.map_err(|e| sc_cli::Error::Service(sc_service::Error::Prometheus(e)))?;
-
+				let info_provider = substrate_info(SLOT_DURATION);
 				Ok((
 					cmd.run::<Block, ExtendedHostFunctions<
 						sp_io::SubstrateHostFunctions,
 						<ExecutorDispatch as NativeExecutionDispatch>::ExtendHostFunctions,
-					>>(),
+					>, _>(Some(info_provider)),
 					task_manager,
 				))
 			})

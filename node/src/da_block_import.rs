@@ -4,7 +4,7 @@
 /// to Babe and Grandpa.
 /// It double-checks the **extension header** which contains the `Kate Commitment` and `Data
 /// Root`.
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use avail_core::{BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE};
 use da_runtime::{
@@ -20,8 +20,8 @@ use sc_consensus::{
 };
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_consensus::{BlockOrigin, CacheKeyId, Error as ConsensusError};
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_consensus::{BlockOrigin, Error as ConsensusError};
+use sp_runtime::traits::Block as BlockT;
 
 #[derive(Constructor)]
 pub struct BlockImport<C, I> {
@@ -58,7 +58,6 @@ where
 	async fn import_block(
 		&mut self,
 		block: BlockImportParams<B, Self::Transaction>,
-		new_cache: HashMap<CacheKeyId, Vec<u8>>,
 	) -> Result<ImportResult, Self::Error> {
 		// We only want to check for blocks that are not from "Own"
 		let is_own = matches!(block.origin, BlockOrigin::Own);
@@ -76,12 +75,11 @@ where
 			let no_extrinsics = vec![];
 			let extrinsics = block.body.as_ref().unwrap_or(&no_extrinsics);
 			let best_hash = self.client.info().best_hash;
-			let block_id = BlockId::Hash(best_hash);
 
 			let data_root = self
 				.client
 				.runtime_api()
-				.build_data_root(&block_id, extrinsics.clone())
+				.build_data_root(best_hash, extrinsics.clone())
 				.map_err(|e| {
 					ConsensusError::ClientImport(format!("Data root cannot be calculated: {e:?}"))
 				})?;
@@ -99,7 +97,7 @@ where
 				.client
 				.runtime_api()
 				.build_extension(
-					&block_id,
+					best_hash,
 					extrinsics.clone(),
 					data_root,
 					block_len,
@@ -115,10 +113,7 @@ where
 					format!("DA Extension does NOT match\nExpected: {extension:#?}\nGenerated:{generated_ext:#?}"))
 			);
 		}
-		self.inner
-			.import_block(block, new_cache)
-			.await
-			.map_err(Into::into)
+		self.inner.import_block(block).await.map_err(Into::into)
 	}
 
 	/// # TODO

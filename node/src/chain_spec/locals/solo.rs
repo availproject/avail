@@ -1,4 +1,4 @@
-use da_runtime::GenesisConfig;
+use da_runtime::RuntimeGenesisConfig;
 use sp_core::sr25519::Public;
 
 use crate::chain_spec::{
@@ -30,7 +30,7 @@ pub fn chain_spec() -> ChainSpec {
 /// - `Alice` as `sudo` account.
 /// - All devs account are endowed.
 ///
-fn config_genesis() -> GenesisConfig {
+fn config_genesis() -> RuntimeGenesisConfig {
 	let sudo = get_account_id_from_seed::<Public>("Alice");
 	let authorities = vec![AuthorityKeys::from_seed("Alice")];
 	let endowed_accs = dev_endowed_accounts();

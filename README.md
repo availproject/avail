@@ -201,7 +201,7 @@ Since we have block size limits, runtime upgrade is a three step process. Prefer
 For development purposes, its possible to use sudo calls with unchecked weight to increase block size limits and upload new runtime. In that case, steps are:
 
 1. Use `sudo/sudoCall` to invoke `dataAvailability/submit_block_length_proposal` with increased block limits (eg. 512 rows x 256 columns)
-2. Use `sudo/sudoUncheckedWeight(call, weight)` with 0 weight to invoke `system/set_code` and upload `da_runtime.compact.wasm`
+2. Use `sudo/sudoUncheckedWeight(call, weight)` with 0 weight to invoke `system/set_code` and upload `da_runtime.compact.compressed.wasm`
 3. Use `sudo/sudoCall` to invoke `dataAvailability/submit_block_length_proposal` and revert block limits to initial setting
 
 ### Verify upgrade

@@ -1,4 +1,4 @@
-use da_runtime::GenesisConfig;
+use da_runtime::RuntimeGenesisConfig;
 
 use crate::chain_spec::{
 	chain_properties,
@@ -30,7 +30,7 @@ pub fn chain_spec() -> ChainSpec {
 /// - `Alice` as `sudo` account.
 /// - All devs account are endowed.
 ///
-fn config_genesis() -> GenesisConfig {
+fn config_genesis() -> RuntimeGenesisConfig {
 	let mut authorities = ["Alice", "Bob", "Charlie"]
 		.into_iter()
 		.map(AuthorityKeys::from_seed)

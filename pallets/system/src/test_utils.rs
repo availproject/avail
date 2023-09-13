@@ -8,12 +8,12 @@ use crate::*;
 /// tests!
 pub struct TestRandomness<T>(sp_std::marker::PhantomData<T>);
 
-impl<Output, T> Randomness<Output, <T as Config>::BlockNumber> for TestRandomness<T>
+impl<Output, T> Randomness<Output, BlockNumberFor<T>> for TestRandomness<T>
 where
 	Output: Decode + Default,
 	T: Config,
 {
-	fn random(subject: &[u8]) -> (Output, T::BlockNumber) {
+	fn random(subject: &[u8]) -> (Output, BlockNumberFor<T>) {
 		(
 			Output::decode(&mut TrailingZeroInput::new(subject)).unwrap_or_default(),
 			crate::Pallet::<T>::block_number(),

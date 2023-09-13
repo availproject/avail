@@ -104,7 +104,7 @@ mod tests {
 
 		let previous_root = H256::repeat_byte(0);
 		let new_root = H256::repeat_byte(1);
-		let signed_update = updater.sign_update(previous_root.clone(), new_root.clone());
+		let signed_update = updater.sign_update(previous_root, new_root);
 
 		assert_eq!(signed_update, expected_signed_update());
 	}

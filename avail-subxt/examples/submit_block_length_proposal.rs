@@ -4,8 +4,8 @@ use avail_subxt::{
 		self,
 		data_availability::events as DaEvent,
 		runtime_types::{
-			da_control::pallet::Call as DaCall, pallet_sudo::pallet::Call as SudoCall,
-			sp_core::bounded::bounded_vec::BoundedVec,
+			bounded_collections::bounded_vec::BoundedVec, da_control::pallet::Call as DaCall,
+			pallet_sudo::pallet::Call as SudoCall,
 		},
 		sudo::events as SudoEvent,
 	},

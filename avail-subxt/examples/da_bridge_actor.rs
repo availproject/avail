@@ -2,7 +2,7 @@ use anyhow::Result;
 use avail_subxt::{
 	api::{
 		self, data_availability::calls::types::SubmitData,
-		runtime_types::sp_core::bounded::bounded_vec::BoundedVec,
+		runtime_types::bounded_collections::bounded_vec::BoundedVec,
 	},
 	build_client, Opts,
 };

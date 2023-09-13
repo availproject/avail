@@ -58,7 +58,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn mandate() -> Weight {
 		// Minimum execution time: 10_211 nanoseconds.
-		Weight::from_ref_time(10_586_000_u64)
+		Weight::from_parts(10_586_000, 0)
 	}
 }
 
@@ -66,6 +66,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 impl WeightInfo for () {
 	fn mandate() -> Weight {
 		// Minimum execution time: 10_211 nanoseconds.
-		Weight::from_ref_time(10_586_000_u64)
+		Weight::from_parts(10_586_000, 0)
 	}
 }

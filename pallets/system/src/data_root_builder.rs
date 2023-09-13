@@ -50,7 +50,7 @@ pub trait DataRootBuilder<F: DataRootFilter> {
 			.filter_map(|app_unchecked_extrinsic| {
 				// Filter calls and traces removed calls
 				// @TODO: We could avoid the the copy of data from filter
-				// once `beefy_merkle_tree::merkelize` becomes public. In that case,
+				// once `binary_merkle_tree::merkelize` becomes public. In that case,
 				// we could work with iterator and lifescopes, having something like:
 				//
 				// ```Rust
@@ -84,7 +84,7 @@ pub trait DataRootBuilder<F: DataRootFilter> {
 	where
 		I: Iterator<Item = Vec<u8>>,
 	{
-		use beefy_merkle_tree::{merkle_root, Hash, Hasher};
+		use binary_merkle_tree::{merkle_root, Hash, Hasher};
 		use sp_io::hashing::sha2_256;
 
 		#[derive(Copy, Clone)]

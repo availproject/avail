@@ -1,14 +1,13 @@
 use avail_core::{header::HeaderExtension, well_known_keys::KATE_PUBLIC_PARAMS, OpaqueExtrinsic};
-use frame_support::traits::{KeyOwnerProofSystem, Randomness};
-#[cfg(feature = "try-runtime")]
-use frame_support::weights::Weight;
-use frame_system::limits::BlockLength;
-use pallet_grandpa::{
-	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
+use frame_support::{
+	traits::{KeyOwnerProofSystem, Randomness},
+	weights::Weight,
 };
+use frame_system::limits::BlockLength;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
+use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::H256;
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
@@ -71,6 +70,14 @@ impl_runtime_apis! {
 		fn metadata() -> OpaqueMetadata {
 			OpaqueMetadata::new(Runtime::metadata().into())
 		}
+
+		fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+			Runtime::metadata_at_version(version)
+		}
+
+		fn metadata_versions() -> sp_std::vec::Vec<u32> {
+			Runtime::metadata_versions()
+		}
 	}
 
 	impl sp_block_builder::BlockBuilder<Block> for Runtime {
@@ -107,21 +114,21 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl fg_primitives::GrandpaApi<Block> for Runtime {
-		fn grandpa_authorities() -> GrandpaAuthorityList {
+	impl sp_consensus_grandpa::GrandpaApi<Block> for Runtime {
+		fn grandpa_authorities() -> sp_consensus_grandpa::AuthorityList {
 			Grandpa::grandpa_authorities()
 		}
 
-		fn current_set_id() -> fg_primitives::SetId {
+		fn current_set_id() -> sp_consensus_grandpa::SetId {
 			Grandpa::current_set_id()
 		}
 
 		fn submit_report_equivocation_unsigned_extrinsic(
-			equivocation_proof: fg_primitives::EquivocationProof<
+			equivocation_proof: sp_consensus_grandpa::EquivocationProof<
 				<Block as BlockT>::Hash,
 				NumberFor<Block>,
 			>,
-			key_owner_proof: fg_primitives::OpaqueKeyOwnershipProof,
+			key_owner_proof: sp_consensus_grandpa::OpaqueKeyOwnershipProof,
 		) -> Option<()> {
 			let key_owner_proof = key_owner_proof.decode()?;
 
@@ -132,14 +139,14 @@ impl_runtime_apis! {
 		}
 
 		fn generate_key_ownership_proof(
-			_set_id: fg_primitives::SetId,
+			_set_id: sp_consensus_grandpa::SetId,
 			authority_id: GrandpaId,
-		) -> Option<fg_primitives::OpaqueKeyOwnershipProof> {
+		) -> Option<sp_consensus_grandpa::OpaqueKeyOwnershipProof> {
 			use codec::Encode;
 
-			Historical::prove((fg_primitives::KEY_TYPE, authority_id))
+			Historical::prove((sp_consensus_grandpa::KEY_TYPE, authority_id))
 				.map(|p| p.encode())
-				.map(fg_primitives::OpaqueKeyOwnershipProof::new)
+				.map(sp_consensus_grandpa::OpaqueKeyOwnershipProof::new)
 		}
 	}
 
@@ -215,6 +222,14 @@ impl_runtime_apis! {
 		fn query_fee_details(uxt: <Block as BlockT>::Extrinsic, len: u32) -> FeeDetails<Balance> {
 			TransactionPayment::query_fee_details(uxt, len)
 		}
+
+		fn query_weight_to_fee(weight: Weight) -> Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+
+		fn query_length_to_fee(length: u32) -> Balance {
+			TransactionPayment::length_to_fee(length)
+		}
 	}
 
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
@@ -225,6 +240,14 @@ impl_runtime_apis! {
 		}
 		fn query_call_fee_details(call: RuntimeCall, len: u32) -> FeeDetails<Balance> {
 			TransactionPayment::query_call_fee_details(call, len)
+		}
+
+		fn query_weight_to_fee(weight: Weight) -> Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+
+		fn query_length_to_fee(length: u32) -> Balance {
+			TransactionPayment::length_to_fee(length)
 		}
 	}
 

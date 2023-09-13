@@ -2,8 +2,8 @@
 use std::collections::HashMap;
 
 use da_runtime::{
-	constants::elections::InitialMemberBond, AccountId, Balance, Block, GenesisConfig, SessionKeys,
-	Signature, AVL,
+	constants::elections::InitialMemberBond, AccountId, Balance, Block, RuntimeGenesisConfig,
+	SessionKeys, Signature, AVL,
 };
 use hex_literal::hex;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
@@ -13,8 +13,8 @@ use sc_service::{ChainType, Properties};
 use serde::{Deserialize, Serialize};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
+use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
-use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 pub const NOMAD_LOCAL_DOMAIN: u32 = 2000;
@@ -46,7 +46,7 @@ pub struct Extensions {
 }
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
-pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig, Extensions>;
 
 /// Generate a crypto pair from seed.
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -118,7 +118,7 @@ fn session_keys(common: AccountId, grandpa: GrandpaId) -> SessionKeys {
 	}
 }
 
-/// Helper function to create GenesisConfig for testing
+/// Helper function to create RuntimeGenesisConfig for testing
 pub(crate) fn make_genesis(
 	sudo: AccountId,
 	authorities: Vec<AuthorityKeys>,
@@ -127,7 +127,7 @@ pub(crate) fn make_genesis(
 	mut endowed_accounts: HashMap<AccountId, Balance>,
 	min_validator_bond: Balance,
 	min_nominator_bond: Balance,
-) -> GenesisConfig {
+) -> RuntimeGenesisConfig {
 	// Extends endowed accounts with council members, authorities and TC members
 	for acc in council.iter().cloned() {
 		*endowed_accounts.entry(acc).or_default() += InitialMemberBond::get();
@@ -139,7 +139,7 @@ pub(crate) fn make_genesis(
 		*endowed_accounts.entry(acc).or_default() += 10 * AVL;
 	}
 
-	GenesisConfig {
+	RuntimeGenesisConfig {
 		// General
 		system: config::make_system_config(),
 		babe: config::make_babe_config(),
@@ -172,8 +172,7 @@ pub(crate) fn make_genesis(
 		// Nomad
 		nomad_home: config::nomad::make_home_config(NOMAD_LOCAL_DOMAIN, NOMAD_UPDATER),
 		nomad_updater_manager: config::nomad::make_update_manager_config(NOMAD_UPDATER),
-		nomad_da_bridge: Default::default(),
-
+		// nomad_da_bridge: Default::default(),
 		nomination_pools: config::make_nomination_pools_config(),
 		// `technical_membership`'s members were initialized on `technical_committee`
 		technical_membership: Default::default(),
@@ -188,7 +187,7 @@ pub(crate) mod tests {
 	// use crate::service::{new_full_base, NewFullBase};
 
 	/*
-	   fn local_testnet_genesis_instant_single() -> GenesisConfig {
+	   fn local_testnet_genesis_instant_single() -> RuntimeGenesisConfig {
 		   testnet_genesis(
 			   vec![authority_keys_from_seed("Alice")],
 			   vec![],
@@ -252,7 +251,9 @@ pub(crate) mod tests {
 	   */
 
 	#[test]
-	fn test_create_development_chain_spec() { locals::solo::chain_spec().build_storage().unwrap(); }
+	fn test_create_development_chain_spec() {
+		locals::solo::chain_spec().build_storage().unwrap();
+	}
 
 	#[test]
 	fn test_create_development_tri_chain_spec() {

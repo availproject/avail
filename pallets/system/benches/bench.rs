@@ -15,21 +15,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use avail_core::header::Header as DaHeader;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use frame_support::{
-	traits::{ConstU32, ConstU64},
-	weights::Weight,
-};
+use frame_support::{traits::ConstU32, weights::Weight};
 use frame_system::{
 	header_builder::da::HeaderExtensionBuilder,
-	mocking::{MockBlock, MockUncheckedExtrinsic},
+	mocking::{MockDaBlock, MockUncheckedExtrinsic},
 	test_utils::TestRandomness,
 };
 use sp_core::H256;
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
-	Perbill,
+	BuildStorage, Perbill,
 };
 
 #[frame_support::pallet]
@@ -37,7 +33,6 @@ mod module {
 	use frame_support::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
@@ -53,15 +48,12 @@ mod module {
 }
 
 type UncheckedExtrinsic = MockUncheckedExtrinsic<Runtime>;
-type Block = MockBlock<Runtime>;
+type Block = MockDaBlock<Runtime>;
 
 frame_support::construct_runtime!(
-	pub enum Runtime where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub struct Runtime
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Module: module::{Pallet, Event},
 	}
 );
@@ -70,7 +62,7 @@ frame_support::parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::with_sensible_defaults(
-			Weight::from_ref_time(4 * 1024 * 1024), Perbill::from_percent(75),
+			Weight::from_parts(4 * 1024 * 1024, 0), Perbill::from_percent(75),
 		);
 	pub BlockLength: frame_system::limits::BlockLength =
 		frame_system::limits::BlockLength::max_with_normal_ratio(
@@ -81,18 +73,17 @@ impl frame_system::Config for Runtime {
 	type AccountData = ();
 	type AccountId = u64;
 	type BaseCallFilter = frame_support::traits::Everything;
-	type BlockHashCount = ConstU64<250>;
+	type Block = Block;
+	type BlockHashCount = ConstU32<250>;
 	type BlockLength = BlockLength;
-	type BlockNumber = u64;
 	type BlockWeights = ();
 	type DbWeight = ();
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type Header = DaHeader<u64, BlakeTwo256>;
 	type HeaderExtensionBuilder = HeaderExtensionBuilder<Runtime>;
-	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type MaxConsumers = ConstU32<16>;
+	type Nonce = u64;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -113,9 +104,10 @@ impl module::Config for Runtime {
 }
 
 fn new_test_ext() -> sp_io::TestExternalities {
-	frame_system::GenesisConfig::default()
-		.build_storage::<Runtime>()
-		.unwrap()
+	RuntimeGenesisConfig::default()
+		.system
+		.build_storage()
+		.expect("Genesis build should work")
 		.into()
 }
 

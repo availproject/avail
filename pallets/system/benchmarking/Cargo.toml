@@ -17,18 +17,18 @@ avail-core = { version = "0.5", default-features = false, features = ["runtime"]
 
 # Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 frame-benchmarking = { version = "4.0.0-dev", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 frame-system = { path = "../", default-features = false }
-sp-core = { version = "7.0.0", default-features = false }
-sp-runtime = { version = "7.0.0", default-features = false }
-sp-std = { version = "5.0.0", default-features = false }
+sp-core = { version = "21.0.0", default-features = false }
+sp-runtime = { version = "24.0.0", default-features = false }
+sp-std = { version = "8.0.0", default-features = false }
 
 [dev-dependencies]
-sp-io = "7.0.0" 
-sp-version = "5"
-sp-externalities = "0.13"
+sp-io = "23.0.0" 
+sp-version = "22.0.0"
+sp-externalities = "0.19.0"
 
 [features]
 default = ["std"]

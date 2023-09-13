@@ -36,18 +36,59 @@ fn origin_works() {
 }
 
 #[test]
+fn unique_datum_works() {
+	new_test_ext().execute_with(|| {
+		System::initialize(&1, &[0u8; 32].into(), &Default::default());
+		assert!(sp_io::storage::exists(well_known_keys::INTRABLOCK_ENTROPY));
+
+		let h1 = unique(b"");
+		assert_eq!(
+			32,
+			sp_io::storage::read(well_known_keys::INTRABLOCK_ENTROPY, &mut [], 0).unwrap()
+		);
+		let h2 = unique(b"");
+		assert_eq!(
+			32,
+			sp_io::storage::read(well_known_keys::INTRABLOCK_ENTROPY, &mut [], 0).unwrap()
+		);
+		assert_ne!(h1, h2);
+
+		let h3 = unique(b"Hello");
+		assert_eq!(
+			32,
+			sp_io::storage::read(well_known_keys::INTRABLOCK_ENTROPY, &mut [], 0).unwrap()
+		);
+		assert_ne!(h2, h3);
+
+		let h4 = unique(b"Hello");
+		assert_eq!(
+			32,
+			sp_io::storage::read(well_known_keys::INTRABLOCK_ENTROPY, &mut [], 0).unwrap()
+		);
+		assert_ne!(h3, h4);
+
+		System::finalize();
+		assert!(!sp_io::storage::exists(well_known_keys::INTRABLOCK_ENTROPY));
+	});
+}
+
+#[test]
 fn stored_map_works() {
 	new_test_ext().execute_with(|| {
+		assert_eq!(System::inc_providers(&0), IncRefStatus::Created);
 		assert_ok!(System::insert(&0, 42));
 		assert!(!System::is_provider_required(&0));
 
-		assert_eq!(Account::<Test>::get(0), AccountInfo {
-			nonce: 0,
-			providers: 1,
-			consumers: 0,
-			sufficients: 0,
-			data: 42
-		});
+		assert_eq!(
+			Account::<Test>::get(0),
+			AccountInfo {
+				nonce: 0,
+				providers: 1,
+				consumers: 0,
+				sufficients: 0,
+				data: 42
+			}
+		);
 
 		assert_ok!(System::inc_consumers(&0));
 		assert!(System::is_provider_required(&0));
@@ -60,6 +101,7 @@ fn stored_map_works() {
 
 		assert!(Killed::get().is_empty());
 		assert_ok!(System::remove(&0));
+		assert_ok!(System::dec_providers(&0));
 		assert_eq!(Killed::get(), vec![0u64]);
 	});
 }
@@ -164,11 +206,14 @@ fn deposit_event_should_work() {
 		System::note_finished_extrinsics();
 		System::deposit_event(SysEvent::CodeUpdated);
 		System::finalize();
-		assert_eq!(System::events(), vec![EventRecord {
-			phase: Phase::Finalization,
-			event: SysEvent::CodeUpdated.into(),
-			topics: vec![],
-		}]);
+		assert_eq!(
+			System::events(),
+			vec![EventRecord {
+				phase: Phase::Finalization,
+				event: SysEvent::CodeUpdated.into(),
+				topics: vec![],
+			}]
+		);
 
 		let normal_base = <Test as crate::Config>::BlockWeights::get()
 			.get(DispatchClass::Normal)
@@ -184,46 +229,49 @@ fn deposit_event_should_work() {
 		System::note_finished_extrinsics();
 		System::deposit_event(SysEvent::NewAccount { account: 3 });
 		System::finalize();
-		assert_eq!(System::events(), vec![
-			EventRecord {
-				phase: Phase::Initialization,
-				event: SysEvent::NewAccount { account: 32 }.into(),
-				topics: vec![],
-			},
-			EventRecord {
-				phase: Phase::ApplyExtrinsic(0),
-				event: SysEvent::KilledAccount { account: 42 }.into(),
-				topics: vec![]
-			},
-			EventRecord {
-				phase: Phase::ApplyExtrinsic(0),
-				event: SysEvent::ExtrinsicSuccess {
-					dispatch_info: DispatchInfo {
-						weight: normal_base,
-						..Default::default()
+		assert_eq!(
+			System::events(),
+			vec![
+				EventRecord {
+					phase: Phase::Initialization,
+					event: SysEvent::NewAccount { account: 32 }.into(),
+					topics: vec![],
+				},
+				EventRecord {
+					phase: Phase::ApplyExtrinsic(0),
+					event: SysEvent::KilledAccount { account: 42 }.into(),
+					topics: vec![]
+				},
+				EventRecord {
+					phase: Phase::ApplyExtrinsic(0),
+					event: SysEvent::ExtrinsicSuccess {
+						dispatch_info: DispatchInfo {
+							weight: normal_base,
+							..Default::default()
+						}
 					}
-				}
-				.into(),
-				topics: vec![]
-			},
-			EventRecord {
-				phase: Phase::ApplyExtrinsic(1),
-				event: SysEvent::ExtrinsicFailed {
-					dispatch_error: DispatchError::BadOrigin.into(),
-					dispatch_info: DispatchInfo {
-						weight: normal_base,
-						..Default::default()
+					.into(),
+					topics: vec![]
+				},
+				EventRecord {
+					phase: Phase::ApplyExtrinsic(1),
+					event: SysEvent::ExtrinsicFailed {
+						dispatch_error: DispatchError::BadOrigin.into(),
+						dispatch_info: DispatchInfo {
+							weight: normal_base,
+							..Default::default()
+						}
 					}
-				}
-				.into(),
-				topics: vec![]
-			},
-			EventRecord {
-				phase: Phase::Finalization,
-				event: SysEvent::NewAccount { account: 3 }.into(),
-				topics: vec![]
-			},
-		]);
+					.into(),
+					topics: vec![]
+				},
+				EventRecord {
+					phase: Phase::Finalization,
+					event: SysEvent::NewAccount { account: 3 }.into(),
+					topics: vec![]
+				},
+			]
+		);
 	});
 }
 
@@ -238,22 +286,28 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 			.get(DispatchClass::Normal)
 			.base_extrinsic;
 		let pre_info = DispatchInfo {
-			weight: Weight::from_ref_time(1000),
+			weight: Weight::from_parts(1000, 0),
 			..Default::default()
 		};
-		System::note_applied_extrinsic(&Ok(Some(300).into()), pre_info);
-		System::note_applied_extrinsic(&Ok(Some(1000).into()), pre_info);
+		System::note_applied_extrinsic(&Ok(from_actual_ref_time(Some(300))), pre_info);
+		System::note_applied_extrinsic(&Ok(from_actual_ref_time(Some(1000))), pre_info);
 		System::note_applied_extrinsic(
 			// values over the pre info should be capped at pre dispatch value
-			&Ok(Some(1200).into()),
+			&Ok(from_actual_ref_time(Some(1200))),
 			pre_info,
 		);
-		System::note_applied_extrinsic(&Ok((Some(2_500_000), Pays::Yes).into()), pre_info);
-		System::note_applied_extrinsic(&Ok(Pays::No.into()), pre_info);
-		System::note_applied_extrinsic(&Ok((Some(2_500_000), Pays::No).into()), pre_info);
-		System::note_applied_extrinsic(&Ok((Some(500), Pays::No).into()), pre_info);
 		System::note_applied_extrinsic(
-			&Err(DispatchError::BadOrigin.with_weight(Weight::from_ref_time(999))),
+			&Ok(from_post_weight_info(Some(2_500_000), Pays::Yes)),
+			pre_info,
+		);
+		System::note_applied_extrinsic(&Ok(Pays::No.into()), pre_info);
+		System::note_applied_extrinsic(
+			&Ok(from_post_weight_info(Some(2_500_000), Pays::No)),
+			pre_info,
+		);
+		System::note_applied_extrinsic(&Ok(from_post_weight_info(Some(500), Pays::No)), pre_info);
+		System::note_applied_extrinsic(
+			&Err(DispatchError::BadOrigin.with_weight(Weight::from_parts(999, 0))),
 			pre_info,
 		);
 
@@ -270,7 +324,7 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 		System::note_applied_extrinsic(
 			&Err(DispatchErrorWithPostInfo {
 				post_info: PostDispatchInfo {
-					actual_weight: Some(Weight::from_ref_time(800)),
+					actual_weight: Some(Weight::from_parts(800, 0)),
 					pays_fee: Pays::Yes,
 				},
 				error: DispatchError::BadOrigin,
@@ -280,7 +334,7 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 		System::note_applied_extrinsic(
 			&Err(DispatchErrorWithPostInfo {
 				post_info: PostDispatchInfo {
-					actual_weight: Some(Weight::from_ref_time(800)),
+					actual_weight: Some(Weight::from_parts(800, 0)),
 					pays_fee: Pays::No,
 				},
 				error: DispatchError::BadOrigin,
@@ -296,11 +350,11 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 			"Test pre-condition violated"
 		);
 		let pre_info = DispatchInfo {
-			weight: Weight::from_ref_time(1000),
+			weight: Weight::from_parts(1000, 0),
 			class: DispatchClass::Operational,
 			..Default::default()
 		};
-		System::note_applied_extrinsic(&Ok(Some(300).into()), pre_info);
+		System::note_applied_extrinsic(&Ok(from_actual_ref_time(Some(300))), pre_info);
 
 		let got = System::events();
 		let want = vec![
@@ -308,7 +362,7 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 				phase: Phase::ApplyExtrinsic(0),
 				event: SysEvent::ExtrinsicSuccess {
 					dispatch_info: DispatchInfo {
-						weight: Weight::from_ref_time(300).saturating_add(normal_base),
+						weight: Weight::from_parts(300, 0).saturating_add(normal_base),
 						..Default::default()
 					},
 				}
@@ -319,7 +373,7 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 				phase: Phase::ApplyExtrinsic(1),
 				event: SysEvent::ExtrinsicSuccess {
 					dispatch_info: DispatchInfo {
-						weight: Weight::from_ref_time(1000).saturating_add(normal_base),
+						weight: Weight::from_parts(1000, 0).saturating_add(normal_base),
 						..Default::default()
 					},
 				}
@@ -330,7 +384,7 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 				phase: Phase::ApplyExtrinsic(2),
 				event: SysEvent::ExtrinsicSuccess {
 					dispatch_info: DispatchInfo {
-						weight: Weight::from_ref_time(1000).saturating_add(normal_base),
+						weight: Weight::from_parts(1000, 0).saturating_add(normal_base),
 						..Default::default()
 					},
 				}
@@ -341,7 +395,7 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 				phase: Phase::ApplyExtrinsic(3),
 				event: SysEvent::ExtrinsicSuccess {
 					dispatch_info: DispatchInfo {
-						weight: Weight::from_ref_time(1000).saturating_add(normal_base),
+						weight: Weight::from_parts(1000, 0).saturating_add(normal_base),
 						pays_fee: Pays::Yes,
 						..Default::default()
 					},
@@ -353,7 +407,7 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 				phase: Phase::ApplyExtrinsic(4),
 				event: SysEvent::ExtrinsicSuccess {
 					dispatch_info: DispatchInfo {
-						weight: Weight::from_ref_time(1000).saturating_add(normal_base),
+						weight: Weight::from_parts(1000, 0).saturating_add(normal_base),
 						pays_fee: Pays::No,
 						..Default::default()
 					},
@@ -365,7 +419,7 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 				phase: Phase::ApplyExtrinsic(5),
 				event: SysEvent::ExtrinsicSuccess {
 					dispatch_info: DispatchInfo {
-						weight: Weight::from_ref_time(1000).saturating_add(normal_base),
+						weight: Weight::from_parts(1000, 0).saturating_add(normal_base),
 						pays_fee: Pays::No,
 						..Default::default()
 					},
@@ -377,7 +431,7 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 				phase: Phase::ApplyExtrinsic(6),
 				event: SysEvent::ExtrinsicSuccess {
 					dispatch_info: DispatchInfo {
-						weight: Weight::from_ref_time(500).saturating_add(normal_base),
+						weight: Weight::from_parts(500, 0).saturating_add(normal_base),
 						pays_fee: Pays::No,
 						..Default::default()
 					},
@@ -390,7 +444,7 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 				event: SysEvent::ExtrinsicFailed {
 					dispatch_error: DispatchError::BadOrigin.into(),
 					dispatch_info: DispatchInfo {
-						weight: Weight::from_ref_time(999).saturating_add(normal_base),
+						weight: Weight::from_parts(999, 0).saturating_add(normal_base),
 						..Default::default()
 					},
 				}
@@ -402,7 +456,7 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 				event: SysEvent::ExtrinsicFailed {
 					dispatch_error: DispatchError::BadOrigin.into(),
 					dispatch_info: DispatchInfo {
-						weight: Weight::from_ref_time(1000).saturating_add(normal_base),
+						weight: Weight::from_parts(1000, 0).saturating_add(normal_base),
 						pays_fee: Pays::Yes,
 						..Default::default()
 					},
@@ -415,7 +469,7 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 				event: SysEvent::ExtrinsicFailed {
 					dispatch_error: DispatchError::BadOrigin.into(),
 					dispatch_info: DispatchInfo {
-						weight: Weight::from_ref_time(800).saturating_add(normal_base),
+						weight: Weight::from_parts(800, 0).saturating_add(normal_base),
 						pays_fee: Pays::Yes,
 						..Default::default()
 					},
@@ -428,7 +482,7 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 				event: SysEvent::ExtrinsicFailed {
 					dispatch_error: DispatchError::BadOrigin.into(),
 					dispatch_info: DispatchInfo {
-						weight: Weight::from_ref_time(800).saturating_add(normal_base),
+						weight: Weight::from_parts(800, 0).saturating_add(normal_base),
 						pays_fee: Pays::No,
 						..Default::default()
 					},
@@ -440,7 +494,7 @@ fn deposit_event_uses_actual_weight_and_pays_fee() {
 				phase: Phase::ApplyExtrinsic(11),
 				event: SysEvent::ExtrinsicSuccess {
 					dispatch_info: DispatchInfo {
-						weight: Weight::from_ref_time(300).saturating_add(operational_base),
+						weight: Weight::from_parts(300, 0).saturating_add(operational_base),
 						class: DispatchClass::Operational,
 						..Default::default()
 					},
@@ -478,34 +532,37 @@ fn deposit_event_topics() {
 		System::finalize();
 
 		// Check that topics are reflected in the event record.
-		assert_eq!(System::events(), vec![
-			EventRecord {
-				phase: Phase::Finalization,
-				event: SysEvent::NewAccount { account: 1 }.into(),
-				topics: topics[0..3].to_vec(),
-			},
-			EventRecord {
-				phase: Phase::Finalization,
-				event: SysEvent::NewAccount { account: 2 }.into(),
-				topics: topics[0..1].to_vec(),
-			},
-			EventRecord {
-				phase: Phase::Finalization,
-				event: SysEvent::NewAccount { account: 3 }.into(),
-				topics: topics[1..2].to_vec(),
-			}
-		]);
+		assert_eq!(
+			System::events(),
+			vec![
+				EventRecord {
+					phase: Phase::Finalization,
+					event: SysEvent::NewAccount { account: 1 }.into(),
+					topics: topics[0..3].to_vec(),
+				},
+				EventRecord {
+					phase: Phase::Finalization,
+					event: SysEvent::NewAccount { account: 2 }.into(),
+					topics: topics[0..1].to_vec(),
+				},
+				EventRecord {
+					phase: Phase::Finalization,
+					event: SysEvent::NewAccount { account: 3 }.into(),
+					topics: topics[1..2].to_vec(),
+				}
+			]
+		);
 
 		// Check that the topic-events mapping reflects the deposited topics.
 		// Note that these are indexes of the events.
-		assert_eq!(System::event_topics(&topics[0]), vec![
-			(BLOCK_NUMBER, 0),
-			(BLOCK_NUMBER, 1)
-		]);
-		assert_eq!(System::event_topics(&topics[1]), vec![
-			(BLOCK_NUMBER, 0),
-			(BLOCK_NUMBER, 2)
-		]);
+		assert_eq!(
+			System::event_topics(&topics[0]),
+			vec![(BLOCK_NUMBER, 0), (BLOCK_NUMBER, 1)]
+		);
+		assert_eq!(
+			System::event_topics(&topics[1]),
+			vec![(BLOCK_NUMBER, 0), (BLOCK_NUMBER, 2)]
+		);
 		assert_eq!(System::event_topics(&topics[2]), vec![(BLOCK_NUMBER, 0)]);
 	});
 }
@@ -562,7 +619,12 @@ fn set_code_checks_works() {
 		("test", 1, 2, Err(Error::<Test>::SpecVersionNeedsToIncrease)),
 		("test", 1, 1, Err(Error::<Test>::SpecVersionNeedsToIncrease)),
 		("test2", 1, 1, Err(Error::<Test>::InvalidSpecName)),
-		("test", 2, 1, Ok(PostDispatchInfo::default())),
+		(
+			"test",
+			2,
+			1,
+			Ok(Some(<mock::Test as pallet::Config>::BlockWeights::get().max_block).into()),
+		),
 		("test", 0, 1, Err(Error::<Test>::SpecVersionNeedsToIncrease)),
 		("test", 1, 0, Err(Error::<Test>::SpecVersionNeedsToIncrease)),
 	];
@@ -644,7 +706,8 @@ fn events_not_emitted_during_genesis() {
 		assert!(System::block_number().is_zero());
 		let mut account_data = AccountInfo::default();
 		System::on_created_account(Default::default(), &mut account_data);
-		assert!(System::events().is_empty());
+		// No events registered at the genesis block
+		assert!(!System::read_events_no_consensus().any(|_| true));
 		// Events will be emitted starting on block 1
 		System::set_block_number(1);
 		System::on_created_account(Default::default(), &mut account_data);
@@ -687,19 +750,47 @@ fn runtime_updated_digest_emitted_when_heap_pages_changed() {
 fn ensure_signed_stuff_works() {
 	struct Members;
 	impl SortedMembers<u64> for Members {
-		fn sorted_members() -> Vec<u64> { (0..10).collect() }
+		fn sorted_members() -> Vec<u64> {
+			(0..10).collect()
+		}
 	}
 
 	let signed_origin = RuntimeOrigin::signed(0u64);
-	assert_ok!(EnsureSigned::try_origin(signed_origin.clone()));
-	assert_ok!(EnsureSignedBy::<Members, _>::try_origin(signed_origin));
+	assert_ok!(<EnsureSigned<_> as EnsureOrigin<_>>::try_origin(
+		signed_origin.clone()
+	));
+	assert_ok!(<EnsureSignedBy<Members, _> as EnsureOrigin<_>>::try_origin(
+		signed_origin
+	));
 
 	#[cfg(feature = "runtime-benchmarks")]
 	{
-		let successful_origin: RuntimeOrigin = EnsureSigned::successful_origin();
-		assert_ok!(EnsureSigned::try_origin(successful_origin));
+		let successful_origin: RuntimeOrigin =
+			<EnsureSigned<_> as EnsureOrigin<_>>::try_successful_origin()
+				.expect("EnsureSigned has no successful origin required for the test");
+		assert_ok!(<EnsureSigned<_> as EnsureOrigin<_>>::try_origin(
+			successful_origin
+		));
 
-		let successful_origin: RuntimeOrigin = EnsureSignedBy::<Members, _>::successful_origin();
-		assert_ok!(EnsureSignedBy::<Members, _>::try_origin(successful_origin));
+		let successful_origin: RuntimeOrigin =
+			<EnsureSignedBy<Members, _> as EnsureOrigin<_>>::try_successful_origin()
+				.expect("EnsureSignedBy has no successful origin required for the test");
+		assert_ok!(<EnsureSignedBy<Members, _> as EnsureOrigin<_>>::try_origin(
+			successful_origin
+		));
+	}
+}
+
+pub fn from_actual_ref_time(ref_time: Option<u64>) -> PostDispatchInfo {
+	PostDispatchInfo {
+		actual_weight: ref_time.map(|t| Weight::from_all(t)),
+		pays_fee: Default::default(),
+	}
+}
+
+pub fn from_post_weight_info(ref_time: Option<u64>, pays_fee: Pays) -> PostDispatchInfo {
+	PostDispatchInfo {
+		actual_weight: ref_time.map(|t| Weight::from_all(t)),
+		pays_fee,
 	}
 }

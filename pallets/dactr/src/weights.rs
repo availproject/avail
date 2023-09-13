@@ -65,65 +65,65 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: DataAvailability NextAppId (r:1 w:1)
 	fn create_application_key() -> Weight {
 		// Minimum execution time: 26_706 nanoseconds.
-		Weight::from_ref_time(27_653_000_u64)
+		Weight::from_parts(27_653_000, 0)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	// Storage: System DynamicBlockLength (r:1 w:1)
 	fn submit_block_length_proposal() -> Weight {
 		// Minimum execution time: 22_841 nanoseconds.
-		Weight::from_ref_time(23_486_000_u64)
+		Weight::from_parts(23_486_000, 0)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// The range of component `i` is `[1, 524288]`.
 	fn submit_data(i: u32, ) -> Weight {
 		// Minimum execution time: 17_107 nanoseconds.
-		Weight::from_ref_time(9_816_023_u64)
+		Weight::from_parts(9_816_023, 0)
 			// Standard Error: 1
-			.saturating_add(Weight::from_ref_time(287_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(287, 0).saturating_mul(i as u64))
 	}
 	/// The range of component `i` is `[0, 524288]`.
 	fn data_root(i: u32, ) -> Weight {
 		// Minimum execution time: 1_457 nanoseconds.
-		Weight::from_ref_time(1_487_000_u64)
+		Weight::from_parts(1_487_000, 0)
 			// Standard Error: 21
-			.saturating_add(Weight::from_ref_time(5_251_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(5_251, 0).saturating_mul(i as u64))
 	}
 	/// The range of component `i` is `[0, 2097152]`.
 	fn data_root_batch(i: u32, ) -> Weight {
 		// Minimum execution time: 778 nanoseconds.
-		Weight::from_ref_time(825_000_u64)
+		Weight::from_parts(825_000, 0)
 			// Standard Error: 5
-			.saturating_add(Weight::from_ref_time(4_931_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(4_931, 0).saturating_mul(i as u64))
 	}
 	/// The range of component `i` is `[32, 1024]`.
 	fn commitment_builder_32(i: u32, ) -> Weight {
 		// Minimum execution time: 1_674_133 nanoseconds.
-		Weight::from_ref_time(1_782_369_000_u64)
+		Weight::from_parts(1_782_369_000, 0)
 			// Standard Error: 33_902_431
-			.saturating_add(Weight::from_ref_time(214_276_156_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(214_276_156, 0).saturating_mul(i as u64))
 	}
 	/// The range of component `i` is `[32, 1024]`.
 	fn commitment_builder_64(i: u32, ) -> Weight {
 		// Minimum execution time: 1_669_019 nanoseconds.
-		Weight::from_ref_time(1_742_205_000_u64)
+		Weight::from_parts(1_742_205_000, 0)
 			// Standard Error: 46_184_424
-			.saturating_add(Weight::from_ref_time(2_679_720_641_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(2_679_720_641, 0).saturating_mul(i as u64))
 	}
 	/// The range of component `i` is `[32, 1024]`.
 	fn commitment_builder_128(i: u32, ) -> Weight {
 		// Minimum execution time: 1_843_601 nanoseconds.
-		Weight::from_ref_time(1_942_890_000_u64)
+		Weight::from_parts(1_942_890_000, 0)
 			// Standard Error: 43_871_963
-			.saturating_add(Weight::from_ref_time(4_222_032_369_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(4_222_032_369, 0).saturating_mul(i as u64))
 	}
 	/// The range of component `i` is `[32, 1024]`.
 	fn commitment_builder_256(i: u32, ) -> Weight {
 		// Minimum execution time: 1_864_952 nanoseconds.
-		Weight::from_ref_time(459_958_961_086_u64)
+		Weight::from_parts(459_958_961_086, 0)
 			// Standard Error: 102_554_927
-			.saturating_add(Weight::from_ref_time(5_707_004_205_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(5_707_004_205, 0).saturating_mul(i as u64))
 	}
 }
 
@@ -133,64 +133,64 @@ impl WeightInfo for () {
 	// Storage: DataAvailability NextAppId (r:1 w:1)
 	fn create_application_key() -> Weight {
 		// Minimum execution time: 26_706 nanoseconds.
-		Weight::from_ref_time(27_653_000_u64)
+		Weight::from_parts(27_653_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
 	// Storage: System DynamicBlockLength (r:1 w:1)
 	fn submit_block_length_proposal() -> Weight {
 		// Minimum execution time: 22_841 nanoseconds.
-		Weight::from_ref_time(23_486_000_u64)
+		Weight::from_parts(23_486_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// The range of component `i` is `[1, 524288]`.
 	fn submit_data(i: u32, ) -> Weight {
 		// Minimum execution time: 17_107 nanoseconds.
-		Weight::from_ref_time(9_816_023_u64)
+		Weight::from_parts(9_816_023, 0)
 			// Standard Error: 1
-			.saturating_add(Weight::from_ref_time(287_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(287, 0).saturating_mul(i as u64))
 	}
 	/// The range of component `i` is `[0, 524288]`.
 	fn data_root(i: u32, ) -> Weight {
 		// Minimum execution time: 1_457 nanoseconds.
-		Weight::from_ref_time(1_487_000_u64)
+		Weight::from_parts(1_487_000, 0)
 			// Standard Error: 21
-			.saturating_add(Weight::from_ref_time(5_251_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(5_251, 0).saturating_mul(i as u64))
 	}
 	/// The range of component `i` is `[0, 2097152]`.
 	fn data_root_batch(i: u32, ) -> Weight {
 		// Minimum execution time: 778 nanoseconds.
-		Weight::from_ref_time(825_000_u64)
+		Weight::from_parts(825_000, 0)
 			// Standard Error: 5
-			.saturating_add(Weight::from_ref_time(4_931_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(4_931, 0).saturating_mul(i as u64))
 	}
 	/// The range of component `i` is `[32, 1024]`.
 	fn commitment_builder_32(i: u32, ) -> Weight {
 		// Minimum execution time: 1_674_133 nanoseconds.
-		Weight::from_ref_time(1_782_369_000_u64)
+		Weight::from_parts(1_782_369_000, 0)
 			// Standard Error: 33_902_431
-			.saturating_add(Weight::from_ref_time(214_276_156_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(214_276_156, 0).saturating_mul(i as u64))
 	}
 	/// The range of component `i` is `[32, 1024]`.
 	fn commitment_builder_64(i: u32, ) -> Weight {
 		// Minimum execution time: 1_669_019 nanoseconds.
-		Weight::from_ref_time(1_742_205_000_u64)
+		Weight::from_parts(1_742_205_000, 0)
 			// Standard Error: 46_184_424
-			.saturating_add(Weight::from_ref_time(2_679_720_641_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(2_679_720_641, 0).saturating_mul(i as u64))
 	}
 	/// The range of component `i` is `[32, 1024]`.
 	fn commitment_builder_128(i: u32, ) -> Weight {
 		// Minimum execution time: 1_843_601 nanoseconds.
-		Weight::from_ref_time(1_942_890_000_u64)
+		Weight::from_parts(1_942_890_000, 0)
 			// Standard Error: 43_871_963
-			.saturating_add(Weight::from_ref_time(4_222_032_369_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(4_222_032_369, 0).saturating_mul(i as u64))
 	}
 	/// The range of component `i` is `[32, 1024]`.
 	fn commitment_builder_256(i: u32, ) -> Weight {
 		// Minimum execution time: 1_864_952 nanoseconds.
-		Weight::from_ref_time(459_958_961_086_u64)
+		Weight::from_parts(459_958_961_086, 0)
 			// Standard Error: 102_554_927
-			.saturating_add(Weight::from_ref_time(5_707_004_205_u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(5_707_004_205, 0).saturating_mul(i as u64))
 	}
 }
