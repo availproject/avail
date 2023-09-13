@@ -65,7 +65,9 @@ pub enum DABridgeMessages {
 }
 
 impl From<DataRootMessage> for DABridgeMessages {
-	fn from(data_root_msg: DataRootMessage) -> Self { Self::DataRootMessage(data_root_msg) }
+	fn from(data_root_msg: DataRootMessage) -> Self {
+		Self::DataRootMessage(data_root_msg)
+	}
 }
 
 impl TypedMessage for DABridgeMessages {

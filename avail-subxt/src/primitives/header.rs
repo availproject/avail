@@ -41,9 +41,13 @@ impl SPHeader for Header {
 	type Hasher = BlakeTwo256;
 	type Number = u32;
 
-	fn number(&self) -> Self::Number { self.number }
+	fn number(&self) -> Self::Number {
+		self.number
+	}
 
-	fn hash(&self) -> <Self::Hasher as Hasher>::Output { Self::Hasher::hash_of(self) }
+	fn hash(&self) -> <Self::Hasher as Hasher>::Output {
+		Self::Hasher::hash_of(self)
+	}
 }
 
 fn number_from_hex<'de, D>(deserializer: D) -> Result<u32, D::Error>

@@ -131,10 +131,14 @@ impl<T: SigningTypes, C: AppCrypto<T::Public, T::Signature>, X> Default for Sign
 
 impl<T: SigningTypes, C: AppCrypto<T::Public, T::Signature>, X> Signer<T, C, X> {
 	/// Use all available keys for signing.
-	pub fn all_accounts() -> Signer<T, C, ForAll> { Default::default() }
+	pub fn all_accounts() -> Signer<T, C, ForAll> {
+		Default::default()
+	}
 
 	/// Use any of the available keys for signing.
-	pub fn any_account() -> Signer<T, C, ForAny> { Default::default() }
+	pub fn any_account() -> Signer<T, C, ForAny> {
+		Default::default()
+	}
 
 	/// Use provided `accounts` for signing.
 	///
@@ -147,7 +151,9 @@ impl<T: SigningTypes, C: AppCrypto<T::Public, T::Signature>, X> Signer<T, C, X> 
 	}
 
 	/// Check if there are any keys that could be used for signing.
-	pub fn can_sign(&self) -> bool { self.accounts_from_keys().count() > 0 }
+	pub fn can_sign(&self) -> bool {
+		self.accounts_from_keys().count() > 0
+	}
 
 	/// Return a vector of the intersection between
 	/// all available accounts and the provided accounts
@@ -492,7 +498,7 @@ pub trait CreateSignedTransaction<LocalCall>:
 		call: Self::OverarchingCall,
 		public: Self::Public,
 		account: Self::AccountId,
-		nonce: Self::Index,
+		nonce: Self::Nonce,
 	) -> Option<(
 		Self::OverarchingCall,
 		<Self::Extrinsic as ExtrinsicT>::SignaturePayload,
@@ -651,7 +657,9 @@ mod tests {
 	}
 
 	impl SignedPayload<TestRuntime> for SimplePayload {
-		fn public(&self) -> UintAuthorityId { self.public.clone() }
+		fn public(&self) -> UintAuthorityId {
+			self.public.clone()
+		}
 	}
 
 	struct DummyAppCrypto;

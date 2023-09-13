@@ -2,6 +2,11 @@
 
 [![Build status](https://github.com/availproject/avail/actions/workflows/default.yml/badge.svg)](https://github.com/availproject/avail/actions/workflows/default.yml) [![Code coverage](https://codecov.io/gh/availproject/avail/branch/main/graph/badge.svg?token=OBX2NEE31T)](https://codecov.io/gh/availproject/avail)
 
+## Relative documentation
+- [Changelog](/CHANGELOG.md)
+- [Contributing guide](/CONTRIBUTING.md)
+- [Code of conduct](/CODE_OF_CONDUCT.md)
+
 ## Compile
 
     $> cargo build --release -p data-avail
@@ -77,13 +82,27 @@ running the benchmarks from `da-control` pallet, and the generated file is
         --steps=30 \
         --repeat=20 \
         --log=warn \
-        --execution=wasm \
-        --wasm-execution=compiled \
         --template=./.maintain/frame-weight-template.hbs \
         --header=./HEADER-APACHE2 \
         --pallet=da-control \
         --extrinsic=* \
-        --output=./pallets/dactr/src/weights.rs
+        --output=./output/weights.rs
+
+To benchmark all extrinsics for all pallets:
+    $> cargo run --release -p data-avail --features runtime-benchmarks -- \
+        benchmark \
+        pallet \
+        --chain=dev \
+        --steps=30 \
+        --repeat=20 \
+        --log=warn \
+        --template=./.maintain/frame-weight-template.hbs \
+        --header=./HEADER-APACHE2 \
+        --pallet=* \
+        --extrinsic=* \
+        --output=./output/weights.rs
+
+To benchmark long running features like the `kate commitment generation`, you can specify `--extra` as additional flag.
 
 ### Via Script
 To run all benchmarks from all pallets:
@@ -112,6 +131,20 @@ command:
 PALLETS="frame_system mocked_runtime" ./run_benchmarks.sh
 ```
 
+To benchmark long running features like the `kate commitment generation`, 
+you can specify `EXTRA=1` as additional environment variable.
+
+```bash
+EXTRA=1 ./run_benchmarks.sh
+```
+
+### Additional info
+When computing benchmarks, additionally to `weights`, `PoV` proof of validity (proof size) will be computed based on storage usage.
+If no storage is used, `PoV` will be 0. 
+By default the benchmark PoV is `#[pov_mode = MaxEncodedLen]` this should always be the case.
+For rare cases, `MaxEncodedLen` won't be specified for a storage then for benchmarks that use this storage, `#[pov_mode = Measured]` should explicitely be specified.
+
+
 ## Transaction Custom IDs
 
 Here is the table of custom IDs for invalid transaction errors:
@@ -133,6 +166,11 @@ You can sync to the chain using:
 - Full mode: This is the default if nothing is specified and will download all the blocks data, you can also use `--sync full`
 - Warp mode: This is will download the latest state then all the blocks data. It's the fastest and recommended way to have a running node. Use `--sync warp`
 - Fast / Fast Unsafe: This is currently not supported since it does not download data needed for Avail specific computation.
+
+### Unsafe sync
+When importing blocks, their content go through an additional check to make sure that the DA commitments are valid.
+During initial sync, you can chose to ignore this check to increase the sync speed. This command is compatible with any `sync` mode.
+- `--unsafe-da-sync`
 
 
 ## Generate test code coverage report
@@ -191,7 +229,7 @@ Since we have block size limits, runtime upgrade is a three step process. Prefer
 For development purposes, its possible to use sudo calls with unchecked weight to increase block size limits and upload new runtime. In that case, steps are:
 
 1. Use `sudo/sudoCall` to invoke `dataAvailability/submit_block_length_proposal` with increased block limits (eg. 512 rows x 256 columns)
-2. Use `sudo/sudoUncheckedWeight(call, weight)` with 0 weight to invoke `system/set_code` and upload `da_runtime.compact.wasm`
+2. Use `sudo/sudoUncheckedWeight(call, weight)` with 0 weight to invoke `system/set_code` and upload `da_runtime.compact.compressed.wasm`
 3. Use `sudo/sudoCall` to invoke `dataAvailability/submit_block_length_proposal` and revert block limits to initial setting
 
 ### Verify upgrade

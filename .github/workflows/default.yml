@@ -9,7 +9,7 @@ on:
       - main
       - develop
 env:
-  BUILD_TOOLCHAIN: nightly-2022-11-15
+  BUILD_TOOLCHAIN: stable-2023-08-24
   CARGO_SCCACHE_COMMIT: bed5571c
   SCCACHE_DIR: /home/runner/.cache/cargo-sccache-bed5571c
   SCCACHE_BIN: /home/runner/.cache/cargo-sccache-bed5571c/bin/sccache
@@ -23,13 +23,13 @@ jobs:
       - name: Install nightly ${{ env.BUILD_TOOLCHAIN }}
         uses: actions-rs/toolchain@v1
         with:
-            # NOTE: Until https://github.com/actions-rs/toolchain/pull/209 is merged,
-            # this should be synced with rust-toolchain.toml file.
-            # After merge, this section should be removed.
-            # toolchain: nightly-2022-11-25
-            toolchain: ${{ env.BUILD_TOOLCHAIN }}
-            components: rustfmt
-            profile: minimal
+          # NOTE: Until https://github.com/actions-rs/toolchain/pull/209 is merged,
+          # this should be synced with rust-toolchain.toml file.
+          # After merge, this section should be removed.
+          # toolchain: stable-2023-08-24
+          toolchain: ${{ env.BUILD_TOOLCHAIN }}
+          components: rustfmt
+          profile: minimal
 
       - name: Check Avail code formatting
         uses: actions-rs/cargo@v1
@@ -55,20 +55,20 @@ jobs:
         with:
           path: ${{ env.SCCACHE_DIR }}
           key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
-     
+
       - name: Install Protoc
         uses: arduino/setup-protoc@v1
         with:
-          version: '3.x'
+          version: "3.x"
 
       # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
       # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
       - name: Setup Rust toolchain
         run: |
-            curl https://sh.rustup.rs -sSf | sh -s -- -y
-            source "$HOME/.cargo/env"
-            rustup default ${{ env.BUILD_TOOLCHAIN }} 
-            rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }} 
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source "$HOME/.cargo/env"
+          rustup default ${{ env.BUILD_TOOLCHAIN }} 
+          rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }}
 
       - name: SCCache
         run: |
@@ -85,7 +85,7 @@ jobs:
           $SCCACHE_BIN -s
           echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
 
-      - name: Build node 
+      - name: Build node
         run: cargo build --release -p data-avail
 
       - name: Upload data-avail binary
@@ -98,7 +98,7 @@ jobs:
         run: ${{ env.SCCACHE_BIN }} --show-stats
 
       - name: Check other features
-        run: cargo check --release --workspace --features "runtime-benchmarks try-runtime" -p data-avail 
+        run: cargo check --release --workspace --features "runtime-benchmarks try-runtime" -p data-avail
 
   unit_tests:
     runs-on: ubuntu-latest
@@ -117,26 +117,26 @@ jobs:
           sudo apt update
           sudo apt install -y build-essential
           sudo apt install -y git clang curl libssl-dev protobuf-compiler
-     
+
       # Restore cache from `build`
       - uses: actions/cache/restore@v3
         with:
-          path: ${{ env.SCCACHE_DIR }} 
+          path: ${{ env.SCCACHE_DIR }}
           key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v1
         with:
-          version: '3.x'
+          version: "3.x"
 
       # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
       # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
       - name: Setup Rust toolchain
         run: |
-            curl https://sh.rustup.rs -sSf | sh -s -- -y
-            source "$HOME/.cargo/env"
-            rustup default ${{ env.BUILD_TOOLCHAIN }} 
-            rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }}
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source "$HOME/.cargo/env"
+          rustup default ${{ env.BUILD_TOOLCHAIN }} 
+          rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }}
 
       - name: SCCache
         run: |
@@ -195,10 +195,10 @@ jobs:
       # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
       - name: Setup Rust toolchain
         run: |
-            curl https://sh.rustup.rs -sSf | sh -s -- -y
-            source "$HOME/.cargo/env"
-            rustup default ${{ env.BUILD_TOOLCHAIN }} 
-            rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }} 
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source "$HOME/.cargo/env"
+          rustup default ${{ env.BUILD_TOOLCHAIN }} 
+          rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }}
 
       - name: SCCache
         run: |
@@ -237,8 +237,5 @@ jobs:
           # cargo run --release  --manifest-path avail-subxt/Cargo.toml --example democracy_external 
           # cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal_democracy
 
-
-
       - name: Display SCCache Stats
         run: ${{ env.SCCACHE_BIN }} --show-stats
-

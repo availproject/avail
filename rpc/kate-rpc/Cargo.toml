@@ -27,7 +27,7 @@ sc-client-db = "0.10.0-dev"
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 sc-client-api = "4.0.0-dev"
 sp-blockchain = "4.0.0-dev"
-sp-runtime = { version = "7.0.0", default-features = false }
+sp-runtime = { version = "24.0.0", default-features = false }
 
 [features]
 default = ["std"]

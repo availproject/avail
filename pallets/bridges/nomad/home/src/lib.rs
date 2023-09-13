@@ -16,12 +16,14 @@ mod benchmarking;
 
 pub mod weights;
 
+pub use weights::WeightInfo;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::{
 		pallet_prelude::{ValueQuery, *},
 		sp_runtime::ArithmeticError::Overflow,
-		transactional,
+		transactional, DefaultNoBound,
 	};
 	use frame_system::pallet_prelude::{OriginFor, *};
 	use nomad_base::NomadBase;
@@ -45,7 +47,6 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub (super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	// Nomad base
@@ -75,6 +76,7 @@ pub mod pallet {
 
 	// Genesis config
 	#[pallet::genesis_config]
+	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
 		pub local_domain: u32,
 		pub committed_root: H256,
@@ -82,20 +84,8 @@ pub mod pallet {
 		pub _phantom: PhantomData<T>,
 	}
 
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self {
-			Self {
-				local_domain: Default::default(),
-				committed_root: Default::default(),
-				updater: Default::default(),
-				_phantom: Default::default(),
-			}
-		}
-	}
-
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			<Base<T>>::put(NomadBase::new(
 				self.local_domain,

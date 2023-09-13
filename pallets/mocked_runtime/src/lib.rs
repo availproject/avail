@@ -10,7 +10,6 @@ use frame_support::{
 use frame_system::{CheckEra, CheckNonce, CheckWeight};
 use pallet_transaction_payment::CurrencyAdapter;
 use sp_runtime::{
-	generic::Block as SPBlock,
 	traits::{BlakeTwo256, ConstU32, IdentityLookup, TrailingZeroInput},
 };
 use sp_std::marker::PhantomData;
@@ -29,7 +28,7 @@ pub type Header = avail_core::header::Header<BlockNumber, BlakeTwo256>;
 pub type Signature = sp_runtime::testing::sr25519::Signature;
 pub type TestXt = test_xt::TestXt<RuntimeCall, SignedExtra>;
 pub type UncheckedExtrinsic = TestXt;
-pub type Block = SPBlock<Header, UncheckedExtrinsic>;
+type Block = frame_system::mocking::MockDaBlock<Test>;
 pub type SignedExtra = (
 	CheckEra<Runtime>,
 	CheckNonce<Runtime>,
@@ -135,14 +134,13 @@ impl frame_system::Config for Runtime {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
-	type BlockNumber = BlockNumber;
+	type Block = Block;
 	type BlockWeights = BlockWeights;
 	type DbWeight = ();
 	type Hash = sp_core::H256;
 	type Hashing = BlakeTwo256;
-	type Header = avail_core::header::Header<Self::BlockNumber, Self::Hashing>;
 	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Runtime>;
-	type Index = u64;
+	type Nonce = u64;
 	type Lookup = IdentityLookup<u64>;
 	type MaxConsumers = ConstU32<16>;
 	type OnKilledAccount = ();
@@ -195,10 +193,7 @@ impl da_control::Config for Runtime {
 impl custom::custom::Config for Runtime {}
 
 construct_runtime!(
-	pub enum Runtime where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic
+	pub struct Runtime
 	{
 		System: frame_system,
 		Balances: pallet_balances,

@@ -1,39 +1,34 @@
-use avail_core::header::Header;
-use frame_support::{traits::GenesisBuild, weights::Weight};
+use frame_support::{parameter_types, traits::ConstU32, weights::Weight};
 use frame_system::{self as system, header_builder::da, test_utils::TestRandomness};
 use nomad_base::NomadBase;
 use sp_core::{H160, H256};
 use sp_runtime::{
-	traits::{BlakeTwo256, ConstU32, IdentityLookup},
-	AccountId32,
+	traits::{BlakeTwo256, IdentityLookup},
+	AccountId32, BuildStorage,
 };
 
 use crate::{self as da_bridge};
 
 // type TestXt = sp_runtime::testing::TestXt<Call, SignedExtra>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-pub type Block = frame_system::mocking::MockBlock<Test>;
-pub type BlockNumber = u32;
+type Block = frame_system::mocking::MockDaBlock<Test>;
 
 // TODO: add proper config once frame executive mocking has been demonstrated
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub struct Test
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		UpdaterManager: nomad_updater_manager::{Pallet, Call, Storage, Event<T>},
 		Home: nomad_home::{Pallet, Call, Storage, Event<T>},
 		DABridge: da_bridge::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
-frame_support::parameter_types! {
+parameter_types! {
 	pub const BlockHashCount: u32 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1_024));
+		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1_024, 0));
 	pub static ExistentialDeposit: u64 = 0;
 }
 
@@ -41,18 +36,17 @@ impl system::Config for Test {
 	type AccountData = ();
 	type AccountId = AccountId32;
 	type BaseCallFilter = frame_support::traits::Everything;
+	type Block = Block;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
-	type BlockNumber = BlockNumber;
 	type BlockWeights = ();
 	type DbWeight = ();
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type Header = Header<Self::BlockNumber, BlakeTwo256>;
 	type HeaderExtensionBuilder = da::HeaderExtensionBuilder<Test>;
-	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type MaxConsumers = ConstU32<16>;
+	type Nonce = u64;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -72,7 +66,7 @@ impl nomad_updater_manager::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 }
 
-frame_support::parameter_types! {
+parameter_types! {
 	pub const MaxMessageBodyBytes: u32 = 2048;
 }
 
@@ -82,7 +76,7 @@ impl nomad_home::Config for Test {
 	type WeightInfo = ();
 }
 
-frame_support::parameter_types! {
+parameter_types! {
 	pub const DABridgePalletId: H256 = H256::zero();
 }
 
@@ -92,20 +86,11 @@ impl da_bridge::Config for Test {
 	type WeightInfo = ();
 }
 
+#[derive(Default)]
 pub(crate) struct ExtBuilder {
 	updater: H160,
 	local_domain: u32,
 	committed_root: H256,
-}
-
-impl Default for ExtBuilder {
-	fn default() -> ExtBuilder {
-		ExtBuilder {
-			updater: Default::default(),
-			local_domain: Default::default(),
-			committed_root: Default::default(),
-		}
-	}
 }
 
 impl ExtBuilder {
@@ -117,9 +102,10 @@ impl ExtBuilder {
 	}
 
 	pub(crate) fn build(self) -> sp_io::TestExternalities {
-		let mut t = frame_system::GenesisConfig::default()
-			.build_storage::<Test>()
-			.expect("Frame system builds valid default genesis config");
+		let mut t = RuntimeGenesisConfig::default()
+			.system
+			.build_storage()
+			.expect("Genesis build should work");
 
 		nomad_home::GenesisConfig::<Test> {
 			updater: self.updater,
@@ -159,8 +145,8 @@ pub(crate) fn _events() -> Vec<super::Event<Test>> {
 pub(crate) fn fill_block_hash_mapping_up_to_n(n: u8) {
 	for i in 0..=n {
 		frame_system::BlockHash::<Test>::insert::<u32, <Test as system::Config>::Hash>(
-			(n as u32).into(),
-			H256::repeat_byte(i).into(),
+			n as u32,
+			H256::repeat_byte(i),
 		);
 	}
 }

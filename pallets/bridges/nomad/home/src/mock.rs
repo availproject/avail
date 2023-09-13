@@ -1,29 +1,20 @@
-use avail_core::header::Header;
-use frame_support::{
-	parameter_types,
-	traits::{ConstU32, GenesisBuild},
-	weights::Weight,
-};
+use frame_support::{parameter_types, traits::ConstU32, weights::Weight};
 use frame_system::{self as system, header_builder::da, test_utils::TestRandomness};
 use nomad_base::NomadBase;
 use sp_core::{H160, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
-	AccountId32,
+	AccountId32, BuildStorage,
 };
 
 use crate as home;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = frame_system::mocking::MockDaBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
-	{
+	pub struct Test {
 		System: frame_system,
 		Home: home,
 		UpdaterManager: nomad_updater_manager,
@@ -33,7 +24,7 @@ frame_support::construct_runtime!(
 parameter_types! {
 	pub const BlockHashCount: u32 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1_024));
+		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1_024, 0));
 	pub static ExistentialDeposit: u64 = 0;
 }
 
@@ -41,18 +32,17 @@ impl system::Config for Test {
 	type AccountData = ();
 	type AccountId = AccountId32;
 	type BaseCallFilter = frame_support::traits::Everything;
+	type Block = Block;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
-	type BlockNumber = u32;
 	type BlockWeights = ();
 	type DbWeight = ();
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type Header = Header<Self::BlockNumber, BlakeTwo256>;
 	type HeaderExtensionBuilder = da::HeaderExtensionBuilder<Test>;
-	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type MaxConsumers = ConstU32<16>;
+	type Nonce = u64;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -82,20 +72,11 @@ impl nomad_updater_manager::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 }
 
+#[derive(Default)]
 pub(crate) struct ExtBuilder {
 	updater: H160,
 	local_domain: u32,
 	committed_root: H256,
-}
-
-impl Default for ExtBuilder {
-	fn default() -> ExtBuilder {
-		ExtBuilder {
-			updater: Default::default(),
-			local_domain: Default::default(),
-			committed_root: Default::default(),
-		}
-	}
 }
 
 impl ExtBuilder {
@@ -107,9 +88,10 @@ impl ExtBuilder {
 	}
 
 	pub(crate) fn build(self) -> sp_io::TestExternalities {
-		let mut t = frame_system::GenesisConfig::default()
-			.build_storage::<Test>()
-			.expect("Frame system builds valid default genesis config");
+		let mut t = RuntimeGenesisConfig::default()
+			.system
+			.build_storage()
+			.expect("Genesis build should work");
 
 		home::GenesisConfig::<Test> {
 			updater: self.updater,

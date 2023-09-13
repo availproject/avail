@@ -11,4 +11,6 @@ mod command;
 mod da_block_import;
 mod rpc;
 
-fn main() -> sc_cli::Result<()> { command::run() }
+fn main() -> sc_cli::Result<()> {
+	command::run()
+}
