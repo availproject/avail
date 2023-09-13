@@ -15,18 +15,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use frame_support::{parameter_types, traits::ConstU32};
-use sp_core::H256;
-use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
-	BuildStorage, Perbill,
-};
+use frame_support::{derive_impl, parameter_types, traits::ConstU32};
+use sp_runtime::{BuildStorage, Perbill};
 
 use crate::{self as frame_system, test_utils::TestRandomness, *};
 
 type UncheckedExtrinsic = mocking::MockUncheckedExtrinsic<Test>;
 type Block = mocking::MockDaBlock<Test>;
-// type BlockNumber = u32;
 
 frame_support::construct_runtime!(
 	pub struct Test
@@ -85,32 +80,23 @@ impl OnKilledAccount<u64> for RecordKilled {
 	}
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl Config for Test {
-	type AccountData = u32;
-	type AccountId = u64;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type Block = Block;
 	type BlockHashCount = ConstU32<10>;
 	type BlockLength = RuntimeBlockLength;
 	type BlockWeights = RuntimeBlockWeights;
 	type DbWeight = DbWeight;
-	type Hash = H256;
-	type Hashing = BlakeTwo256;
 	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
-	type Lookup = IdentityLookup<Self::AccountId>;
-	type MaxConsumers = ConstU32<16>;
-	type Nonce = u64;
 	type OnKilledAccount = RecordKilled;
-	type OnNewAccount = ();
 	type OnSetCode = ();
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Test>;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
-	type SS58Prefix = ();
 	type SubmittedDataExtractor = ();
-	type SystemWeightInfo = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;
 	type Version = Version;
 }

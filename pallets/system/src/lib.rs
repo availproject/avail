@@ -230,6 +230,38 @@ pub mod pallet {
 
 	use crate::{self as frame_system, pallet_prelude::*, *};
 
+	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
+	pub mod config_preludes {
+		use super::DefaultConfig;
+
+		/// Provides a viable default config that can be used with
+		/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
+		/// based on this one.
+		///
+		/// See `Test` in the `default-config` example pallet's `test.rs` for an example of
+		/// a downstream user of this particular `TestDefaultConfig`
+		pub struct TestDefaultConfig;
+
+		#[frame_support::register_default_impl(TestDefaultConfig)]
+		impl DefaultConfig for TestDefaultConfig {
+			type Nonce = u32;
+			type Hash = sp_core::hash::H256;
+			type Hashing = sp_runtime::traits::BlakeTwo256;
+			type AccountId = u64;
+			type Lookup = sp_runtime::traits::IdentityLookup<u64>;
+			type MaxConsumers = frame_support::traits::ConstU32<16>;
+			type AccountData = u32;
+			type OnNewAccount = ();
+			type OnKilledAccount = ();
+			type SystemWeightInfo = ();
+			type SS58Prefix = ();
+			type Version = ();
+			type BlockWeights = ();
+			type BlockLength = ();
+			type DbWeight = ();
+		}
+	}
+
 	/// System configuration trait. Implemented by runtime.
 	#[pallet::config(with_default)]
 	#[pallet::disable_frame_system_supertrait_check]
@@ -310,6 +342,7 @@ pub mod pallet {
 		type Lookup: StaticLookup<Target = Self::AccountId>;
 
 		/// Header builder
+		#[pallet::no_default]
 		type HeaderExtensionBuilder: header_builder::HeaderExtensionBuilder;
 
 		/// Source of random seeds.
