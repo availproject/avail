@@ -1,11 +1,8 @@
-use frame_support::{parameter_types, traits::ConstU32, weights::Weight};
+use frame_support::{derive_impl, parameter_types};
 use frame_system::{self as system, header_builder::da, test_utils::TestRandomness};
 use nomad_base::NomadBase;
 use sp_core::{H160, H256};
-use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
-	AccountId32, BuildStorage,
-};
+use sp_runtime::{traits::IdentityLookup, AccountId32, BuildStorage};
 
 use crate as home;
 
@@ -23,39 +20,24 @@ frame_support::construct_runtime!(
 
 parameter_types! {
 	pub const BlockHashCount: u32 = 250;
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1_024, 0));
-	pub static ExistentialDeposit: u64 = 0;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl system::Config for Test {
-	type AccountData = ();
 	type AccountId = AccountId32;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type Block = Block;
 	type BlockHashCount = BlockHashCount;
-	type BlockLength = ();
-	type BlockWeights = ();
-	type DbWeight = ();
-	type Hash = H256;
-	type Hashing = BlakeTwo256;
 	type HeaderExtensionBuilder = da::HeaderExtensionBuilder<Test>;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type MaxConsumers = ConstU32<16>;
-	type Nonce = u64;
-	type OnKilledAccount = ();
-	type OnNewAccount = ();
 	type OnSetCode = ();
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Test>;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
-	type SS58Prefix = ();
 	type SubmittedDataExtractor = ();
-	type SystemWeightInfo = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;
-	type Version = ();
 }
 
 parameter_types! {
