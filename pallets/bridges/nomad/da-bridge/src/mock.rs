@@ -52,14 +52,9 @@ impl nomad_home::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 }
 
-parameter_types! {
-	pub const DABridgePalletId: H256 = H256::zero();
-}
-
+#[derive_impl(da_bridge::config_preludes::TestDefaultConfig as da_bridge::DefaultConfig)]
 impl da_bridge::Config for Test {
-	type DABridgePalletId = DABridgePalletId;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
 }
 
 #[derive(Default)]
