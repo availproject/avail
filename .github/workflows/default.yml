@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install nightly ${{ env.BUILD_TOOLCHAIN }}
+      - name: Install rust ${{ env.BUILD_TOOLCHAIN }}
         uses: actions-rs/toolchain@v1
         with:
           # NOTE: Until https://github.com/actions-rs/toolchain/pull/209 is merged,

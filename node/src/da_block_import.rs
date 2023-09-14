@@ -70,7 +70,6 @@ where
 		let skip_sync = self.unsafe_da_sync && is_sync;
 
 		let should_verify = !is_own && !skip_sync;
-		println!("Should verify: {should_verify}");
 		if should_verify {
 			let no_extrinsics = vec![];
 			let extrinsics = block.body.as_ref().unwrap_or(&no_extrinsics);

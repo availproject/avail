@@ -172,6 +172,18 @@ When importing blocks, their content go through an additional check to make sure
 During initial sync, you can chose to ignore this check to increase the sync speed. This command is compatible with any `sync` mode.
 - `--unsafe-da-sync`
 
+### Chain Sync Modes and Compatibility
+
+This describes the different sync modes available for the substrate chain and their compatibility with the `--unsafe-da-sync` flag.
+#### Compatibility Table
+
+| Sync Mode          | Without `--unsafe-da-sync` | With `--unsafe-da-sync` |
+|--------------------|----------------------------|-------------------------|
+| full               | compatible                 | compatible              |
+| warp               | compatible                 | compatible              |
+| fast / fast unsafe | not compatible             | not compatible          |
+
+
 
 ## Generate test code coverage report
 
