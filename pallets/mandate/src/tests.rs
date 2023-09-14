@@ -6,9 +6,9 @@ use crate::{
 	*,
 };
 
-const ALICE: u32 = 1u32;
-const BOB: u32 = 2u32;
-const DAVID: u32 = 3u32;
+const ALICE: u64 = 1u64;
+const BOB: u64 = 2u64;
+const DAVID: u64 = 3u64;
 
 #[test]
 fn mandate_can_be_called_with_sudo() {

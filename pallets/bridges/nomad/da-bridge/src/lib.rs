@@ -33,7 +33,23 @@ pub mod pallet {
 	use super::weights::WeightInfo;
 	use crate::message::{DABridgeMessages, DataRootMessage};
 
-	#[pallet::config]
+	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
+	pub mod config_preludes {
+		use super::DefaultConfig;
+
+		/// Provides a viable default config that can be used with
+		/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
+		/// based on this one.
+		pub struct TestDefaultConfig;
+
+		#[frame_support::register_default_impl(TestDefaultConfig)]
+		impl DefaultConfig for TestDefaultConfig {
+			type DABridgePalletId = ();
+			type WeightInfo = ();
+		}
+	}
+
+	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config + nomad_home::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 

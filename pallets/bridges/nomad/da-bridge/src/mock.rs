@@ -1,11 +1,8 @@
-use frame_support::{parameter_types, traits::ConstU32, weights::Weight};
+use frame_support::{derive_impl, parameter_types};
 use frame_system::{self as system, header_builder::da, test_utils::TestRandomness};
 use nomad_base::NomadBase;
 use sp_core::{H160, H256};
-use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
-	AccountId32, BuildStorage,
-};
+use sp_runtime::{traits::IdentityLookup, AccountId32, BuildStorage};
 
 use crate::{self as da_bridge};
 
@@ -16,74 +13,48 @@ type Block = frame_system::mocking::MockDaBlock<Test>;
 // TODO: add proper config once frame executive mocking has been demonstrated
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-	pub struct Test
-	{
-		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
-		UpdaterManager: nomad_updater_manager::{Pallet, Call, Storage, Event<T>},
-		Home: nomad_home::{Pallet, Call, Storage, Event<T>},
-		DABridge: da_bridge::{Pallet, Call, Storage, Event<T>},
+	pub struct Test {
+		System: frame_system,
+		UpdaterManager: nomad_updater_manager,
+		Home: nomad_home,
+		DABridge: da_bridge,
 	}
 );
 
 parameter_types! {
 	pub const BlockHashCount: u32 = 250;
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1_024, 0));
-	pub static ExistentialDeposit: u64 = 0;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl system::Config for Test {
-	type AccountData = ();
 	type AccountId = AccountId32;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type Block = Block;
 	type BlockHashCount = BlockHashCount;
-	type BlockLength = ();
-	type BlockWeights = ();
-	type DbWeight = ();
-	type Hash = H256;
-	type Hashing = BlakeTwo256;
 	type HeaderExtensionBuilder = da::HeaderExtensionBuilder<Test>;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type MaxConsumers = ConstU32<16>;
-	type Nonce = u64;
-	type OnKilledAccount = ();
-	type OnNewAccount = ();
 	type OnSetCode = ();
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Test>;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
-	type SS58Prefix = ();
 	type SubmittedDataExtractor = ();
-	type SystemWeightInfo = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;
-	type Version = ();
 }
 
 impl nomad_updater_manager::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 }
 
-parameter_types! {
-	pub const MaxMessageBodyBytes: u32 = 2048;
-}
-
+#[derive_impl(nomad_home::config_preludes::TestDefaultConfig as nomad_home::DefaultConfig)]
 impl nomad_home::Config for Test {
-	type MaxMessageBodyBytes = MaxMessageBodyBytes;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
 }
 
-parameter_types! {
-	pub const DABridgePalletId: H256 = H256::zero();
-}
-
+#[derive_impl(da_bridge::config_preludes::TestDefaultConfig as da_bridge::DefaultConfig)]
 impl da_bridge::Config for Test {
-	type DABridgePalletId = DABridgePalletId;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
 }
 
 #[derive(Default)]

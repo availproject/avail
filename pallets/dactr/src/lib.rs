@@ -45,7 +45,29 @@ pub mod pallet {
 
 	pub type AppKeyInfoFor<T> = AppKeyInfo<<T as frame_system::Config>::AccountId>;
 
-	#[pallet::config]
+	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
+	pub mod config_preludes {
+		use super::DefaultConfig;
+
+		/// Provides a viable default config that can be used with
+		/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
+		/// based on this one.
+		pub struct TestDefaultConfig;
+
+		#[frame_support::register_default_impl(TestDefaultConfig)]
+		impl DefaultConfig for TestDefaultConfig {
+			type BlockLenProposalId = u32;
+			type MaxAppDataLength = ();
+			type MaxAppKeyLength = ();
+			type MaxBlockCols = ();
+			type MaxBlockRows = ();
+			type MinBlockCols = ();
+			type MinBlockRows = ();
+			type WeightInfo = ();
+		}
+	}
+
+	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config {
 		/// Pallet Event
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;

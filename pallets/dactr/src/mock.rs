@@ -5,19 +5,15 @@ use avail_core::{
 	AppId,
 };
 use frame_support::{
-	parameter_types,
-	weights::{ConstantMultiplier, IdentityFee, Weight},
+	derive_impl, parameter_types,
+	weights::{ConstantMultiplier, IdentityFee},
 };
 use frame_system::{
 	header_builder::da::HeaderExtensionBuilder, mocking::MockUncheckedExtrinsic,
 	test_utils::TestRandomness,
 };
 use pallet_transaction_payment::CurrencyAdapter;
-use sp_core::H256;
-use sp_runtime::{
-	traits::{BlakeTwo256, ConstU32, IdentityLookup},
-	BuildStorage,
-};
+use sp_runtime::{traits::ConstU32, BuildStorage};
 
 use crate::{self as da_control, *};
 
@@ -41,39 +37,24 @@ frame_support::construct_runtime!(
 
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 250;
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1_024, 0));
 	pub static ExistentialDeposit: u64 = 1;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
 	type AccountData = pallet_balances::AccountData<Balance>;
-	type AccountId = u64;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type Block = Block;
 	type BlockHashCount = BlockHashCount;
-	type BlockLength = ();
-	type BlockWeights = ();
-	type DbWeight = ();
-	type Hash = H256;
-	type Hashing = BlakeTwo256;
 	type HeaderExtensionBuilder = HeaderExtensionBuilder<Test>;
-	type Lookup = IdentityLookup<Self::AccountId>;
-	type MaxConsumers = ConstU32<16>;
-	type Nonce = u64;
-	type OnKilledAccount = ();
-	type OnNewAccount = ();
 	type OnSetCode = ();
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Test>;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
-	type SS58Prefix = ();
 	type SubmittedDataExtractor = ();
-	type SystemWeightInfo = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;
-	type Version = ();
 }
 
 parameter_types! {
@@ -94,7 +75,7 @@ parameter_types! {
 }
 
 impl pallet_balances::Config for Test {
-	type AccountStore = frame_system::Pallet<Test>;
+	type AccountStore = System;
 	type Balance = Balance;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
@@ -125,8 +106,8 @@ parameter_types! {
 	pub const MaxBlockCols: BlockLengthColumns = kate::config::MAX_BLOCK_COLUMNS;
 }
 
+#[derive_impl(da_control::config_preludes::TestDefaultConfig)]
 impl da_control::Config for Test {
-	type BlockLenProposalId = u32;
 	type MaxAppDataLength = MaxAppDataLength;
 	type MaxAppKeyLength = MaxAppKeyLength;
 	type MaxBlockCols = MaxBlockCols;
@@ -134,7 +115,6 @@ impl da_control::Config for Test {
 	type MinBlockCols = MinBlockCols;
 	type MinBlockRows = MinBlockRows;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
 }
 
 /// Create new externalities for `System` module tests.
