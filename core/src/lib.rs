@@ -113,6 +113,7 @@ impl Zero for AppId {
 	Constructor,
 	MaxEncodedLen,
 	Display,
+	Default,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, Debug))]
 #[mul(forward)]
@@ -136,6 +137,7 @@ pub struct BlockLengthColumns(#[codec(compact)] pub u32);
 	Into,
 	Constructor,
 	Display,
+	Default,
 )]
 #[mul(forward)]
 pub struct BlockLengthRows(#[codec(compact)] pub u32);
