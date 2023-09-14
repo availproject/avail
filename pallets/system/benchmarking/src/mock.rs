@@ -20,6 +20,7 @@
 #![cfg(test)]
 
 use codec::Encode;
+use frame_support::derive_impl;
 use frame_system::{
 	header_builder::da::HeaderExtensionBuilder, mocking::MockUncheckedExtrinsic,
 	test_utils::TestRandomness,
@@ -42,34 +43,20 @@ frame_support::construct_runtime!(
 	}
 );
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
-	type AccountData = ();
-	type AccountId = AccountId;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type Block = Block;
-	type BlockHashCount = ();
-	type BlockLength = ();
-	type BlockWeights = ();
-	type DbWeight = ();
-	type Hash = H256;
-	type Hashing = BlakeTwo256;
+	type BlockHashCount = BlockHashCount;
 	type HeaderExtensionBuilder = HeaderExtensionBuilder<Test>;
-	type Lookup = IdentityLookup<Self::AccountId>;
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
-	type Nonce = AccountIndex;
-	type OnKilledAccount = ();
-	type OnNewAccount = ();
 	type OnSetCode = ();
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Test>;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
-	type SS58Prefix = ();
 	type SubmittedDataExtractor = ();
-	type SystemWeightInfo = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;
-	type Version = ();
 }
 
 impl crate::Config for Test {}
