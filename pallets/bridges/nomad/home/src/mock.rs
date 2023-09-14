@@ -40,14 +40,9 @@ impl system::Config for Test {
 	type UncheckedExtrinsic = UncheckedExtrinsic;
 }
 
-parameter_types! {
-	pub const MaxMessageBodyBytes: u32 = 2048;
-}
-
+#[derive_impl(home::config_preludes::TestDefaultConfig as home::DefaultConfig)]
 impl home::Config for Test {
-	type MaxMessageBodyBytes = MaxMessageBodyBytes;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
 }
 
 impl nomad_updater_manager::Config for Test {

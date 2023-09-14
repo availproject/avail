@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 
 use frame_benchmarking::whitelisted_caller;
-use frame_support::{assert_err, assert_ok, BoundedVec};
+use frame_support::{assert_err, assert_ok, pallet_prelude::Get, BoundedVec};
 use nomad_base::testing::*;
 use nomad_core::{destination_and_nonce, NomadMessage, NomadState};
 use nomad_merkle::Merkle;
@@ -257,7 +257,7 @@ fn it_longest_tree() {
 
 			let committed_root = Home::base().committed_root;
 
-			let body_len = <Test as Config>::MaxMessageBodyBytes::get() as usize;
+			let body_len = <<Test as Config>::MaxMessageBodyBytes as Get<u32>>::get() as usize;
 			let body: BoundedVec<u8, _> = sp_std::iter::repeat(3u8)
 				.take(body_len)
 				.collect::<Vec<_>>()

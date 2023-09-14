@@ -47,14 +47,9 @@ impl nomad_updater_manager::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 }
 
-parameter_types! {
-	pub const MaxMessageBodyBytes: u32 = 2048;
-}
-
+#[derive_impl(nomad_home::config_preludes::TestDefaultConfig as nomad_home::DefaultConfig)]
 impl nomad_home::Config for Test {
-	type MaxMessageBodyBytes = MaxMessageBodyBytes;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
 }
 
 parameter_types! {
