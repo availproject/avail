@@ -106,8 +106,8 @@ parameter_types! {
 	pub const MaxBlockCols: BlockLengthColumns = kate::config::MAX_BLOCK_COLUMNS;
 }
 
+#[derive_impl(da_control::config_preludes::TestDefaultConfig)]
 impl da_control::Config for Test {
-	type BlockLenProposalId = u32;
 	type MaxAppDataLength = MaxAppDataLength;
 	type MaxAppKeyLength = MaxAppKeyLength;
 	type MaxBlockCols = MaxBlockCols;
@@ -115,7 +115,6 @@ impl da_control::Config for Test {
 	type MinBlockCols = MinBlockCols;
 	type MinBlockRows = MinBlockRows;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
 }
 
 /// Create new externalities for `System` module tests.
