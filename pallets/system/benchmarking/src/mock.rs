@@ -27,8 +27,6 @@ use frame_system::{
 };
 use sp_runtime::BuildStorage;
 
-type AccountId = u64;
-
 type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockDaBlock<Test>;
 
