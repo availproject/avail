@@ -270,7 +270,7 @@ impl frame_system::Config for Runtime {
 	/// Data Root
 	type SubmittedDataExtractor = Runtime;
 	/// Weight information for the extrinsics of this pallet.
-	type SystemWeightInfo = weights::frame_system::SubstrateWeight<Runtime>;
+	type SystemWeightInfo = weights::frame_system::WeightInfo<Runtime>;
 	type UncheckedExtrinsic = UncheckedExtrinsic;
 	/// Version of the runtime.
 	type Version = Version;
@@ -280,7 +280,7 @@ impl pallet_utility::Config for Runtime {
 	type PalletsOrigin = OriginCaller;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_utility::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -316,7 +316,7 @@ impl pallet_scheduler::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type ScheduleOrigin = EnsureRoot<AccountId>;
-	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_scheduler::WeightInfo<Runtime>;
 }
 
 impl pallet_preimage::Config for Runtime {
@@ -350,7 +350,7 @@ impl pallet_indices::Config for Runtime {
 	type Currency = Balances;
 	type Deposit = constants::indices::IndexDeposit;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_indices::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_indices::WeightInfo<Runtime>;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -367,7 +367,7 @@ impl pallet_balances::Config for Runtime {
 	type ReserveIdentifier = ReserveIdentifier;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeHoldReason = RuntimeHoldReason;
-	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_balances::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -403,7 +403,7 @@ impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = Moment;
 	type OnTimestampSet = Babe;
-	type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_timestamp::WeightInfo<Runtime>;
 }
 
 impl pallet_authorship::Config for Runtime {
@@ -681,7 +681,7 @@ impl pallet_democracy::Config for Runtime {
 	type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCollective>;
 	type VoteLockingPeriod = constants::democracy::EnactmentPeriod;
 	type VotingPeriod = constants::democracy::VotingPeriod;
-	type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_democracy::WeightInfo<Runtime>;
 }
 
 type CouncilCollective = pallet_collective::Instance1;
@@ -788,7 +788,7 @@ impl pallet_treasury::Config for Runtime {
 	type SpendFunds = Bounties;
 	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
 	type SpendPeriod = SpendPeriod;
-	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_treasury::WeightInfo<Runtime>;
 }
 
 impl pallet_bounties::Config for Runtime {
@@ -803,7 +803,7 @@ impl pallet_bounties::Config for Runtime {
 	type DataDepositPerByte = DataDepositPerByte;
 	type MaximumReasonLength = MaximumReasonLength;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_bounties::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_bounties::WeightInfo<Runtime>;
 }
 
 impl pallet_tips::Config for Runtime {
@@ -814,7 +814,7 @@ impl pallet_tips::Config for Runtime {
 	type TipFindersFee = TipFindersFee;
 	type TipReportDepositBase = TipReportDepositBase;
 	type Tippers = Elections;
-	type WeightInfo = pallet_tips::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_tips::WeightInfo<Runtime>;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -945,7 +945,7 @@ impl da_control::Config for Runtime {
 	type MinBlockCols = constants::da::MinBlockCols;
 	type MinBlockRows = constants::da::MinBlockRows;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = weights::pallet_dactr::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_dactr::WeightInfo<Runtime>;
 }
 
 impl nomad_updater_manager::Config for Runtime {
@@ -955,13 +955,13 @@ impl nomad_updater_manager::Config for Runtime {
 impl nomad_home::Config for Runtime {
 	type MaxMessageBodyBytes = constants::nomad::MaxMessageBodyBytes;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = weights::nomad_home::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::nomad_home::WeightInfo<Runtime>;
 }
 
 impl nomad_da_bridge::Config for Runtime {
 	type DABridgePalletId = constants::nomad::DABridgePalletId;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = weights::nomad_da_bridge::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::nomad_da_bridge::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -993,7 +993,7 @@ impl pallet_identity::Config for Runtime {
 	type Slashed = Treasury;
 	/// The amount held on deposit for a registered subaccount.
 	type SubAccountDeposit = SubAccountDeposit;
-	type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_identity::WeightInfo<Runtime>;
 }
 
 impl pallet_mandate::Config for Runtime {
