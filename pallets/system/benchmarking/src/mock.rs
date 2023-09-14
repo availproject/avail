@@ -25,14 +25,9 @@ use frame_system::{
 	header_builder::da::HeaderExtensionBuilder, mocking::MockUncheckedExtrinsic,
 	test_utils::TestRandomness,
 };
-use sp_core::H256;
-use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
-	BuildStorage,
-};
+use sp_runtime::BuildStorage;
 
 type AccountId = u64;
-type AccountIndex = u32;
 
 type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockDaBlock<Test>;
@@ -47,7 +42,7 @@ frame_support::construct_runtime!(
 impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type Block = Block;
-	type BlockHashCount = BlockHashCount;
+	type BlockHashCount = ();
 	type HeaderExtensionBuilder = HeaderExtensionBuilder<Test>;
 	type OnSetCode = ();
 	type PalletInfo = PalletInfo;
