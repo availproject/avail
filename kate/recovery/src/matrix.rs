@@ -9,13 +9,13 @@ use derive_more::Constructor;
 use sp_std::prelude::*;
 use sp_std::vec;
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 const EXTENSION_FACTOR_U32: u32 = config::EXTENSION_FACTOR as u32;
 
 /// Position of a cell in the the matrix.
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Default, Debug, Clone, Copy, Hash, Eq, PartialEq, Constructor)]
 pub struct Position {
 	pub row: u32,
@@ -66,7 +66,7 @@ impl Position {
 
 /// Matrix partition (column-wise)
 #[derive(Clone, Copy, Debug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Partition {
 	pub number: u8,
 	pub fraction: u8,

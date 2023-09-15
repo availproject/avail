@@ -60,7 +60,7 @@ std = [
 	"hex-literal",
 	"hex",
 	"codec/std",
-	"serde/std",
+	"serde",
 	"serde_json",
 	"rand_chacha/std",
 	"rand/std",
