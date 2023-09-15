@@ -24,7 +24,7 @@ use thiserror_no_std::Error;
 
 #[cfg(feature = "std")]
 use core::{fmt, str::FromStr};
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 type Address = H160;
@@ -65,7 +65,7 @@ pub enum RecoveryMessage {
 
 /// An ECDSA signature
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Signature {
 	/// R value
 	pub r: U256,
