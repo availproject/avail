@@ -27,7 +27,7 @@ use rand_chacha::{
 	ChaChaRng,
 };
 use rayon::prelude::*;
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sp_arithmetic::traits::SaturatedConversion;
 use static_assertions::const_assert_eq;
@@ -46,7 +46,7 @@ use crate::{
 #[cfg(feature = "std")]
 use kate_recovery::testnet;
 
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Constructor, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Cell {
 	pub row: BlockLengthRows,

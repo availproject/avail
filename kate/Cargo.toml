@@ -36,7 +36,7 @@ once_cell = { version = "1.8.0", optional = true }
 rand = { version = "0.8", default-features = false, features = ["alloc", "small_rng"], optional = true }
 rand_chacha = { version = "0.3", default-features = false, optional = true }
 rayon = { version = "1.5.2", optional = true }
-serde = { version = "1", optional = true, features = ["derive"] }
+serde = { version = "1.0.188", default-features = false, features = ["derive", "alloc"], optional = true }
 serde_json = { version = "1", optional = true }
 
 [dev-dependencies]
@@ -60,7 +60,7 @@ std = [
 	"hex-literal",
 	"hex",
 	"codec/std",
-	"serde",
+	"serde/std",
 	"serde_json",
 	"rand_chacha/std",
 	"rand/std",
@@ -72,6 +72,10 @@ std = [
 	"sp-core/std",
 	"poly-multiproof/blst",
 	"nalgebra/std",
+]
+
+serde = [
+	"dep:serde",
 ]
 
 extended-columns = []
