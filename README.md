@@ -163,25 +163,28 @@ To synchronize your node the chain, you have access to the [chainspec](https://k
 
 ### Sync mode
 You can sync to the chain using:
-- Full mode: This is the default if nothing is specified and will download all the blocks data, you can also use `--sync full`
-- Warp mode: This is will download the latest state then all the blocks data. It's the fastest and recommended way to have a running node. Use `--sync warp`
+- Full mode: This is the default if nothing is specified and will download all the blocks data, you can also use `--sync full`.
+- Warp mode: This is will download the latest state then all the blocks data. It's the fastest way to have a running node. Use `--sync warp`.
+  - This is theoritically handled but is not supported and can fail after drastic updates.
 - Fast / Fast Unsafe: This is currently not supported since it does not download data needed for Avail specific computation.
 
 ### Unsafe sync
 When importing blocks, their content go through an additional check to make sure that the DA commitments are valid.
 During initial sync, you can chose to ignore this check to increase the sync speed. This command is compatible with any `sync` mode.
 - `--unsafe-da-sync`
+Using this flag, Warp / Fast / Fast unsafe become compatible with syncing. 
+You can then remove this flag node and restart it.
 
 ### Chain Sync Modes and Compatibility
 
 This describes the different sync modes available for the substrate chain and their compatibility with the `--unsafe-da-sync` flag.
 #### Compatibility Table
 
-| Sync Mode          | Without `--unsafe-da-sync` | With `--unsafe-da-sync` |
-|--------------------|----------------------------|-------------------------|
-| full               | compatible                 | compatible              |
-| warp               | compatible                 | compatible              |
-| fast / fast unsafe | not compatible             | not compatible          |
+| Sync Mode          | Without `--unsafe-da-sync` | With `--unsafe-da-sync`                                                            |
+|--------------------|----------------------------|------------------------------------------------------------------------------------|
+| full               | compatible                 | compatible                                                                         |
+| warp               | partially compatible       | compatible                                                                         |
+| fast / fast unsafe | not compatible             | compatible (with [warnings](https://github.com/paritytech/polkadot-sdk/issues/19)) |
 
 
 
