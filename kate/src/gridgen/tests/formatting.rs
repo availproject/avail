@@ -87,7 +87,7 @@ fn newapi_test_extend_data_matrix() {
 
 	let grid = EvaluationGrid {
 		lookup: DataLookup::default(),
-		evals: DMatrix::from_row_iterator(2, 4, scalars.into_iter()),
+		evals: DMatrix::from_row_iterator(2, 4, scalars),
 	};
 	let extend = grid
 		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
@@ -123,7 +123,7 @@ get erasure coded to ensure redundancy."#;
 		let cells = positions
 			.iter()
 			.map(|pos| DataCell {
-				position: pos.clone(),
+				position: *pos,
 				data: grid
 					.evals
 					.get((pos.row as usize, pos.col as usize))

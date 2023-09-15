@@ -96,7 +96,7 @@ proptest! {
 				app_rows[row_i] = Some(row.iter().flat_map(|s| s.to_bytes().unwrap()).collect());
 			}
 			// Need to provide the original dimensions here too
-			let extended_dims = orig_dims.clone();
+			let extended_dims = orig_dims;
 			let (_, missing) = verify_equality(&public_params, &commits, &app_rows, &grid.lookup, extended_dims, xt.app_id).unwrap();
 			prop_assert!(missing.is_empty());
 		}
@@ -140,13 +140,13 @@ fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 	let len = row_values.len();
 	let row = row_values
 		.iter()
-		.map(|val| pad_to_bls_scalar(&[*val]).unwrap())
+		.map(|val| pad_to_bls_scalar([*val]).unwrap())
 		.collect::<Vec<_>>();
 
 	//let ae = AppExtrinsic { 0.into(), vec![}
 	let ev = EvaluationGrid {
 		lookup: Default::default(), // Shouldn't need to care about this
-		evals: DMatrix::from_row_iterator(len, 1, row.into_iter()).transpose(),
+		evals: DMatrix::from_row_iterator(len, 1, row).transpose(),
 	};
 
 	println!("Row: {:?}", ev.evals);
@@ -162,7 +162,7 @@ fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 			row: BlockLengthRows(0),
 		};
 
-		let proof = pg.proof(&*PMP, &cell).unwrap();
+		let proof = pg.proof(&PMP, &cell).unwrap();
 
 		let proof_bytes = proof.to_bytes().unwrap();
 		let cell_bytes = ev.get(0usize, x).unwrap().to_bytes().unwrap();

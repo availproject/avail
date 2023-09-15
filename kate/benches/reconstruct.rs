@@ -49,7 +49,7 @@ fn sample_cells_from_matrix(matrix: &DMatrix<BlsScalar>, columns: Option<&[u16]>
 	(0u16..cols)
 		.filter(|col_idx| match &columns {
 			None => true,
-			Some(allowed) => allowed.contains(&col_idx),
+			Some(allowed) => allowed.contains(col_idx),
 		})
 		.flat_map(|col_idx| {
 			let col_view = matrix.column(col_idx.into()).data.into_slice();

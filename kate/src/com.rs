@@ -316,7 +316,7 @@ pub fn par_extend_data_matrix<M: Metrics>(
 	let column_eval_domain = EvaluationDomain::new(rows)?; // rows_num = column_length
 
 	// The data is currently row-major, so we need to put it into column-major
-	let col_wise_scalars = DMatrix::from_row_iterator(rows, cols, scalars.into_iter());
+	let col_wise_scalars = DMatrix::from_row_iterator(rows, cols, scalars);
 
 	let ext_columns_wise = (0..cols)
 		.into_par_iter()
@@ -333,7 +333,7 @@ pub fn par_extend_data_matrix<M: Metrics>(
 		.collect::<Vec<_>>();
 	debug_assert_eq!(Some(ext_columns_wise.len()), cols.checked_mul(ext_rows));
 
-	let ext_matrix = DMatrix::from_iterator(ext_rows, cols, ext_columns_wise.into_iter());
+	let ext_matrix = DMatrix::from_iterator(ext_rows, cols, ext_columns_wise);
 
 	metrics.extended_block_time(start.elapsed());
 
@@ -620,7 +620,7 @@ mod tests {
 		.map(BlsScalar::from_bytes)
 		.collect::<Result<Vec<_>, _>>()
 		.expect("Invalid Expected result");
-		let expected = DMatrix::from_iterator(4, 4, expected.into_iter());
+		let expected = DMatrix::from_iterator(4, 4, expected);
 
 		let block_dims =
 			BlockDimensions::new(BlockLengthRows(2), BlockLengthColumns(4), TCHUNK).unwrap();
@@ -721,7 +721,7 @@ mod tests {
 		(0u16..cols)
 			.filter(|col_idx| match &columns {
 				None => true,
-				Some(allowed) => allowed.contains(&col_idx),
+				Some(allowed) => allowed.contains(col_idx),
 			})
 			.flat_map(|col_idx| {
 				let col_view = matrix.column(col_idx.into()).data.into_slice();
