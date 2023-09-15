@@ -24,7 +24,7 @@ dusk-bytes = { version = "0.1.6", default-features = false, optional = true }
 once_cell = { version = "1.9.0", optional = true }
 rand = { version = "0.8", default-features = false, features = ["alloc", "small_rng"], optional = true }
 rand_chacha = { version = "0.3", default-features = false, optional = true }
-serde = { version = "1.0.188", default-features = false, features = ["derive", "alloc"], optional = true }
+serde = { version = "1.0.188", default-features = false, features = ["derive"], optional = true }
 
 [dev-dependencies]
 hex = "0.4"
