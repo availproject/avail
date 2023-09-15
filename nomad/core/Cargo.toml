@@ -22,7 +22,7 @@ ethers-core = { version = "1", optional = true }
 ethers-signers = { version = "1", optional = true }
 
 # Others
-serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
+serde = { version = "1.0.188", default-features = false, features = ["derive"], optional = true }
 tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
 
 [dev-dependencies]
@@ -41,5 +41,7 @@ std = [
 	"sp-runtime/std",
 	"sp-std/std",
 ]
-
+serde = [
+	"dep:serde",
+]
 runtime-benchmarks = []
