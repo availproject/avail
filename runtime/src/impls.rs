@@ -119,7 +119,7 @@ mod multiplier_tests {
 	use sp_runtime::{
 		assert_eq_error_rate,
 		traits::{Convert, One, Zero},
-		FixedPointNumber,
+		BuildStorage, FixedPointNumber,
 	};
 
 	use crate::{
@@ -135,9 +135,13 @@ mod multiplier_tests {
 			.unwrap_or_else(|| BlockWeights::get().max_block)
 	}
 
-	fn min_multiplier() -> Multiplier { MinimumMultiplier::get() }
+	fn min_multiplier() -> Multiplier {
+		MinimumMultiplier::get()
+	}
 
-	fn target() -> Weight { TargetBlockFullness::get() * max_normal() }
+	fn target() -> Weight {
+		TargetBlockFullness::get() * max_normal()
+	}
 
 	// update based on runtime impl.
 	fn runtime_multiplier_update(fm: Multiplier) -> Multiplier {
@@ -178,8 +182,8 @@ mod multiplier_tests {
 	where
 		F: Fn() -> (),
 	{
-		let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
-			.build_storage::<Runtime>()
+		let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::<Runtime>::default()
+			.build_storage()
 			.unwrap()
 			.into();
 		t.execute_with(|| {
@@ -193,8 +197,8 @@ mod multiplier_tests {
 		let fm = Multiplier::saturating_from_rational(1, 2);
 		let test_set = vec![
 			(Weight::zero(), fm),
-			(Weight::from_ref_time(100), fm),
-			(Weight::from_ref_time(1000), fm),
+			(Weight::from_parts(100, 0), fm),
+			(Weight::from_parts(1000, 0), fm),
 			(target(), fm),
 			(max_normal() / 2, fm),
 			(max_normal(), fm),
@@ -300,7 +304,7 @@ mod multiplier_tests {
 		let block_weight = BlockWeights::get()
 			.get(DispatchClass::Normal)
 			.max_total
-			.unwrap() - Weight::from_ref_time(100);
+			.unwrap() - Weight::from_parts(100, 0);
 
 		// Default substrate weight.
 		let tx_weight = frame_support::weights::constants::ExtrinsicBaseWeight::get();
@@ -424,23 +428,23 @@ mod multiplier_tests {
 
 	#[test]
 	fn weight_to_fee_should_not_overflow_on_large_weights() {
-		let kb = Weight::from_ref_time(1024);
+		let kb = Weight::from_parts(1024, 0);
 		let mb = 1024u64 * kb;
 		let max_fm = Multiplier::saturating_from_integer(i128::MAX);
 
 		// check that for all values it can compute, correctly.
 		vec![
 			Weight::zero(),
-			Weight::from_ref_time(1),
-			Weight::from_ref_time(10),
-			Weight::from_ref_time(1000),
+			Weight::from_parts(1, 0),
+			Weight::from_parts(10, 0),
+			Weight::from_parts(1000, 0),
 			kb,
 			10u64 * kb,
 			100u64 * kb,
 			mb,
 			10u64 * mb,
-			Weight::from_ref_time(2147483647),
-			Weight::from_ref_time(4294967295),
+			Weight::from_parts(2147483647, 0),
+			Weight::from_parts(4294967295, 0),
 			BlockWeights::get().max_block / 2,
 			BlockWeights::get().max_block,
 			Weight::MAX / 2,
@@ -457,7 +461,7 @@ mod multiplier_tests {
 
 		// Some values that are all above the target and will cause an increase.
 		let t = target();
-		vec![t + Weight::from_ref_time(100), t * 2, t * 4]
+		vec![t + Weight::from_parts(100, 0), t * 2, t * 4]
 			.into_iter()
 			.for_each(|i| {
 				run_with_system_weight(i, || {

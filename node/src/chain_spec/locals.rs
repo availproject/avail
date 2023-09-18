@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use avail_core::currency::AVL;
-use da_runtime::{AccountId, Balance, GenesisConfig};
+use da_runtime::{AccountId, Balance, RuntimeGenesisConfig};
 use sp_core::sr25519::Public;
 
 use crate::chain_spec::{get_account_id_from_seed, AuthorityKeys};
@@ -24,13 +24,15 @@ fn dev_endowed_accounts() -> HashMap<AccountId, Balance> {
 }
 
 /// `Alice` is the sudo key in `dev`.
-fn dev_sudo() -> AccountId { get_account_id_from_seed::<Public>("Alice") }
+fn dev_sudo() -> AccountId {
+	get_account_id_from_seed::<Public>("Alice")
+}
 
 fn make_genesis(
 	sudo: AccountId,
 	authorities: Vec<AuthorityKeys>,
 	endowed_accounts: HashMap<AccountId, Balance>,
-) -> GenesisConfig {
+) -> RuntimeGenesisConfig {
 	let council = DEFAULT_ENDOWED_SEEDS[..5]
 		.iter()
 		.map(|seed| get_account_id_from_seed::<Public>(seed))

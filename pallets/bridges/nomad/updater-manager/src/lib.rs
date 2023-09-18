@@ -4,7 +4,6 @@
 /// Learn more about FRAME and the core library of Substrate FRAME pallets:
 /// <https://docs.substrate.io/v3/runtime/frame>
 pub use pallet::*;
-
 #[cfg(test)]
 mod mock;
 
@@ -16,16 +15,17 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::pallet_prelude::{ValueQuery, *};
+	use frame_support::{
+		pallet_prelude::{ValueQuery, *},
+		DefaultNoBound,
+	};
 	use sp_core::H160;
-
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	// Updater
@@ -35,24 +35,17 @@ pub mod pallet {
 
 	// Genesis config
 	#[pallet::genesis_config]
+	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
 		pub updater: H160,
 		pub _phantom: PhantomData<T>,
 	}
 
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self {
-			Self {
-				updater: Default::default(),
-				_phantom: Default::default(),
-			}
-		}
-	}
-
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-		fn build(&self) { <Updater<T>>::put(self.updater); }
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+		fn build(&self) {
+			<Updater<T>>::put(self.updater);
+		}
 	}
 
 	#[pallet::event]
@@ -78,7 +71,9 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {}
 
 	impl<T: Config> Pallet<T> {
-		pub fn get_updater() -> H160 { Updater::<T>::get() }
+		pub fn get_updater() -> H160 {
+			Updater::<T>::get()
+		}
 
 		pub fn set_updater(new_updater: H160) -> DispatchResult {
 			let old_updater = Updater::<T>::get();

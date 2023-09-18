@@ -1,6 +1,6 @@
 [package]
 name = "da-runtime"
-version = "6.0.0"
+version = "7.0.0"
 authors = ["Anonymous"]
 description = "Avail Runtime"
 edition = "2021"
@@ -31,17 +31,18 @@ log = { version = "0.4.17", default-features = false }
 hex-literal = { version = "0.3.4", optional = true }
 
 # Substrate
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 parity-util-mem = { version = "0.12.0", default-features = false, features = ["primitive-types"] }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 
 ## primitives
-sp-io = { version = "7.0.0", default-features = false }
-sp-core = { version = "7.0.0", default-features = false }
+sp-consensus-grandpa = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
+sp-io = { version = "23.0.0", default-features = false }
+sp-core = { version = "21.0.0", default-features = false }
 sp-api = { version = "4.0.0-dev", default-features = false }
-sp-runtime = { version = "7.0.0", default-features = false }
+sp-runtime = { version = "24.0.0", default-features = false }
 sp-authority-discovery = { version = "4.0.0-dev", default-features = false }
-sp-version = { version = "5", default-features = false }
+sp-version = { version = "22.0.0", default-features = false }
 sp-consensus-babe = { version = "0.10.0-dev", default-features = false }
 sp-staking = {version = "4.0.0-dev", default-features = false }
 sp-transaction-pool = { version = "4.0.0-dev", default-features = false }
@@ -50,12 +51,12 @@ sp-session = { version = "4.0.0-dev", default-features = false }
 sp-block-builder = { version = "4.0.0-dev", default-features = false }
 sp-inherents = { version = "4.0.0-dev", default-features = false }
 sp-npos-elections = { version = "4.0.0-dev", default-features = false }
-sp-std = { version = "5.0.0", default-features = false }
+sp-std = { version = "8.0.0", default-features = false }
 
 ## frame dependencies
 frame-support = { version = "4.0.0-dev", default-features = false }
-frame-system = { path = "../pallets/system", default-features = false }
-frame-executive = { version = "4.0.0-dev", default-features = false }
+frame-system = { path = "../pallets/system", default-features = false, features = ["serde"] }
+frame-executive = { path = "../pallets/executive", default-features = false }
 frame-try-runtime = { version = "0.10.0-dev", default-features = false, optional = true }
 
 pallet-balances = { version = "4.0.0-dev", default-features = false }
@@ -89,6 +90,9 @@ pallet-multisig = { version = "4.0.0-dev", default-features = false }
 pallet-child-bounties = { version = "4.0.0-dev", default-features = false }
 pallet-preimage = { version = "4.0.0-dev", default-features = false }
 pallet-nomination-pools = { version = "1", default-features = false }
+pallet-identity = { version = "4.0.0-dev", default-features = false }
+
+pallet-mandate = { path = "../pallets/mandate", default-features = false }
 
 ## RPCs
 pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", default-features = false }
@@ -109,7 +113,7 @@ test-case = "1.2.3"
 hex = "0.4"
 hex-literal = "0.3.4"
 serde_json = "1.0"
-sp-keyring = "7.0.0"
+sp-keyring = "24.0.0"
 env_logger = "0.9.1"
 pallet-staking-reward-fn = "4.0.0-dev"
 
@@ -175,14 +179,18 @@ std = [
 	"sp-version/std",
 	"log/std",
 	"frame-try-runtime?/std",
+	"sp-consensus-grandpa/std",
 	"sp-io/std",
 	"pallet-child-bounties/std",
+	"pallet-identity/std",
 
 	"da-control/std",
 	"kate/std",
 	"nomad-updater-manager/std",
 	"nomad-home/std",
 	"nomad-da-bridge/std",
+	"pallet-mandate/std",
+	"sp-npos-elections/std"
 ]
 
 runtime-benchmarks = [
@@ -195,7 +203,6 @@ runtime-benchmarks = [
 	"nomad-home/runtime-benchmarks",
 	"nomad-da-bridge/runtime-benchmarks",
 	"hex-literal",
-
 	"pallet-babe/runtime-benchmarks",
 	"pallet-bags-list/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
@@ -219,6 +226,9 @@ runtime-benchmarks = [
 	"pallet-treasury/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
+	"pallet-identity/runtime-benchmarks",
+	"pallet-mandate/runtime-benchmarks",
+	"nomad-updater-manager/runtime-benchmarks"
 ]
 
 try-runtime = [
@@ -258,5 +268,8 @@ try-runtime = [
 	"pallet-nomination-pools/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-tips/try-runtime",
+	"pallet-identity/try-runtime",
 	"avail-core/try-runtime",
+	"pallet-mandate/try-runtime",
+	"sp-runtime/try-runtime",
 ]

@@ -10,23 +10,23 @@ use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_arithmetic::traits::{CheckedAdd, One, SaturatedConversion};
-use sp_std::mem::replace;
+use sp_std::{mem::replace, vec, vec::Vec};
 
 pub use crate::{pallet::*, weights::WeightInfo};
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+mod extensions;
 #[cfg(feature = "std")]
 pub mod mock;
 #[cfg(test)]
 mod tests;
-
-mod benchmarking;
-mod extensions;
 pub use extensions::check_app_id::CheckAppId;
 pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::pallet_prelude::*;
+	use frame_support::{pallet_prelude::*, DefaultNoBound};
 	use frame_system::pallet_prelude::*;
 
 	use super::*;
@@ -45,7 +45,29 @@ pub mod pallet {
 
 	pub type AppKeyInfoFor<T> = AppKeyInfo<<T as frame_system::Config>::AccountId>;
 
-	#[pallet::config]
+	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
+	pub mod config_preludes {
+		use super::DefaultConfig;
+
+		/// Provides a viable default config that can be used with
+		/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
+		/// based on this one.
+		pub struct TestDefaultConfig;
+
+		#[frame_support::register_default_impl(TestDefaultConfig)]
+		impl DefaultConfig for TestDefaultConfig {
+			type BlockLenProposalId = u32;
+			type MaxAppDataLength = ();
+			type MaxAppKeyLength = ();
+			type MaxBlockCols = ();
+			type MaxBlockRows = ();
+			type MinBlockCols = ();
+			type MinBlockRows = ();
+			type WeightInfo = ();
+		}
+	}
+
+	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config {
 		/// Pallet Event
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -82,7 +104,6 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub (super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	/// Last application ID
@@ -225,17 +246,16 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_config]
+	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
+		#[serde(skip)]
+		pub _config: sp_std::marker::PhantomData<T>,
+		#[serde(skip)]
 		pub app_keys: Vec<(Vec<u8>, AppKeyInfoFor<T>)>,
 	}
 
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self { Self { app_keys: vec![] } }
-	}
-
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			// Ensure app ids are unique.
 			let mut ids = self
@@ -272,23 +292,6 @@ pub mod pallet {
 			NextAppId::<T>::put::<AppId>(AppId(last_id));
 		}
 	}
-
-	#[cfg(feature = "std")]
-	impl<T: Config> GenesisConfig<T> {
-		/// Direct implementation of `GenesisBuild::build_storage`.
-		///
-		/// Kept in order not to break dependency.
-		pub fn build_storage(&self) -> Result<sp_runtime::Storage, String> {
-			<Self as GenesisBuild<T>>::build_storage(self)
-		}
-
-		/// Direct implementation of `GenesisBuild::assimilate_storage`.
-		///
-		/// Kept in order not to break dependency.
-		pub fn assimilate_storage(&self, storage: &mut sp_runtime::Storage) -> Result<(), String> {
-			<Self as GenesisBuild<T>>::assimilate_storage(self, storage)
-		}
-	}
 }
 
 impl<T: Config> Pallet<T> {
@@ -305,9 +308,9 @@ impl<T: Config> Pallet<T> {
 	pub fn is_block_weight_acceptable() -> bool {
 		let current_weight = <frame_system::Pallet<T>>::block_weight();
 		let current_normal_weight = current_weight.get(DispatchClass::Normal);
-		let acceptable_limit = T::WeightInfo::submit_block_length_proposal().saturating_mul(2);
-
-		current_normal_weight.all_lte(acceptable_limit)
+		// TODO: Recaliberate the mutiplier after updating v2 weights
+		let acceptable_limit = T::WeightInfo::submit_block_length_proposal().saturating_mul(3);
+		current_normal_weight.ref_time() <= acceptable_limit.ref_time()
 	}
 }
 

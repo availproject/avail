@@ -1,6 +1,6 @@
 use anyhow::Result;
 use avail_subxt::{
-	api, api::runtime_types::sp_core::bounded::bounded_vec::BoundedVec, build_client,
+	api, api::runtime_types::bounded_collections::bounded_vec::BoundedVec, build_client,
 	primitives::AvailExtrinsicParams, AvailConfig, Opts,
 };
 use sp_core::crypto::Pair as _;

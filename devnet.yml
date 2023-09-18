@@ -1,0 +1,48 @@
+name: Devnet
+
+on:
+  pull_request:
+    types: [ labeled ]
+
+jobs:
+  devnet:
+    if: ${{ github.event.label.name == 'deploy-devnet' }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Copy scripts folder to remote server
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: ${{ secrets.PORT }}
+        source: "scripts/"
+        target: "~/"
+        overwrite: true
+
+    - name: Clear previous deployment
+      uses: appleboy/ssh-action@master 
+      with: 
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: ${{ secrets.PORT }}
+        command_timeout: "30m"
+        script: |
+          cd ~/scripts
+          bash purge.sh  
+
+
+    - name: Execute deployment script
+      uses: appleboy/ssh-action@master 
+      with: 
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: ${{ secrets.PORT }}
+        command_timeout: "60m"
+        script: |
+          cd ~/scripts
+          bash setup.sh ${{ github.event.pull_request.head.sha }} ${{ vars.LC_TAG }} ${{ vars.VAL_COUNT }} ${{ vars.NODE_COUNT }} ${{ vars.LC_COUNT }}
