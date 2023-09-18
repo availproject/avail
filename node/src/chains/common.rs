@@ -7,9 +7,9 @@ use avail_core_kate::{
 use da_control::AppKeyInfo;
 use da_runtime::{
 	constants, wasm_binary_unwrap, AccountId, BabeConfig, Balance, BalancesConfig,
-	DataAvailabilityConfig, ElectionsConfig, NomadHomeConfig, NomadUpdaterManagerConfig,
-	NominationPoolsConfig, RuntimeGenesisConfig, SessionConfig, StakerStatus, StakingConfig,
-	SudoConfig, SystemConfig, TechnicalCommitteeConfig, AVL,
+	DataAvailabilityConfig, NomadHomeConfig, NomadUpdaterManagerConfig, NominationPoolsConfig,
+	RuntimeGenesisConfig, SessionConfig, StakerStatus, StakingConfig, SudoConfig, SystemConfig,
+	TechnicalCommitteeConfig, AVL,
 };
 use frame_system::limits::BlockLength;
 use hex_literal::hex;
@@ -90,10 +90,6 @@ pub fn runtime_genesis_config(
 	session_keys: Vec<AuthorityKeys>,
 ) -> RuntimeGenesisConfig {
 	let balances = dev_endowed_accounts();
-	let elections = session_keys
-		.iter()
-		.map(|k| (k.controller.clone(), ENDOWMENT))
-		.collect();
 	let stakers = session_keys
 		.iter()
 		.map(|k| {
@@ -121,7 +117,6 @@ pub fn runtime_genesis_config(
 			..Default::default()
 		},
 		balances: BalancesConfig { balances },
-		elections: ElectionsConfig { members: elections },
 		staking: StakingConfig {
 			stakers,
 			..Default::default()
@@ -151,8 +146,6 @@ pub fn runtime_genesis_config(
 			max_members: Some(constants::nomination_pools::MAX_MEMBERS),
 			..Default::default()
 		},
-		democracy: Default::default(),
-		council: Default::default(),
 		grandpa: Default::default(),
 		treasury: Default::default(),
 		im_online: Default::default(),
