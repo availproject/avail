@@ -35,7 +35,7 @@ jobs:
           rustup show 
 
       - name: Build node and run benchmarks
-        run: EXTRA=${{ github.event.inputs.extra }} OUR_PALLETS=${{ github.event.inputs.ourpallets }} ./scripts/run-benchmarks.sh
+        run: EXTRA=${{ github.event.inputs.extra }} OUR_PALLETS=${{ github.event.inputs.ourpallets }} ./scripts/run_benchmarks.sh
 
       - name: Upload output as artifact
         uses: actions/upload-artifact@v2
