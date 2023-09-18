@@ -101,6 +101,7 @@ pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", branch
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 pallet-staking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 pallet-staking-reward-curve = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-staking-reward-fn = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 pallet-utility = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 pallet-babe = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }

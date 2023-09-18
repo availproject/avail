@@ -1194,6 +1194,42 @@ mod tests {
 	}
 
 	#[test]
+	fn compute_inflation_should_give_sensible_results() {
+		assert_eq!(
+			pallet_staking_reward_fn::compute_inflation(
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(1),
+			),
+			Perquintill::one()
+		);
+		assert_eq!(
+			pallet_staking_reward_fn::compute_inflation(
+				Perquintill::from_percent(25),
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(1),
+			),
+			Perquintill::from_rational(1u64, 2u64)
+		);
+		assert_eq!(
+			pallet_staking_reward_fn::compute_inflation(
+				Perquintill::from_percent(51),
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(1),
+			),
+			Perquintill::from_rational(1u64, 2u64)
+		);
+		assert_eq!(
+			pallet_staking_reward_fn::compute_inflation(
+				Perquintill::from_percent(52),
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(1),
+			),
+			Perquintill::from_rational(1u64, 4u64)
+		);
+	}
+
+	#[test]
 	fn check_whitelist() {
 		let whitelist: HashSet<String> = AllPalletsWithSystem::whitelisted_storage_keys()
 			.iter()
