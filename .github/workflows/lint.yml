@@ -1,0 +1,36 @@
+name: Lint Workflow
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+env:
+  CARGO_SCCACHE_COMMIT: bed5571c
+  SCCACHE_DIR: /home/runner/.cache/cargo-sccache-bed5571c
+  SCCACHE_BIN: /home/runner/.cache/cargo-sccache-bed5571c/bin/sccache
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+
+      - name: Check Avail code formatting
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --check
+
+      - name: Check Avail-SubXt code formatting
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --manifest-path avail-subxt/Cargo.toml --check

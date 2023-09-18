@@ -15,39 +15,8 @@ env:
   SCCACHE_BIN: /home/runner/.cache/cargo-sccache-bed5571c/bin/sccache
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Install rust ${{ env.BUILD_TOOLCHAIN }}
-        uses: actions-rs/toolchain@v1
-        with:
-          # NOTE: Until https://github.com/actions-rs/toolchain/pull/209 is merged,
-          # this should be synced with rust-toolchain.toml file.
-          # After merge, this section should be removed.
-          # toolchain: stable-2023-08-24
-          toolchain: ${{ env.BUILD_TOOLCHAIN }}
-          components: rustfmt
-          profile: minimal
-
-      - name: Check Avail code formatting
-        uses: actions-rs/cargo@v1
-        with:
-          toolchain: ${{ env.BUILD_TOOLCHAIN }}
-          command: fmt
-          args: --check
-
-      - name: Check Avail-SubXt code formatting
-        uses: actions-rs/cargo@v1
-        with:
-          toolchain: ${{ env.BUILD_TOOLCHAIN }}
-          command: fmt
-          args: --manifest-path avail-subxt/Cargo.toml --check
-
   build:
     runs-on: ubuntu-latest
-    needs: [lint]
     steps:
       - uses: actions/checkout@v2
 
