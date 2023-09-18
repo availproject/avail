@@ -1,4 +1,4 @@
-pub mod chain_spec;
+pub mod chains;
 
 pub mod da_block_import;
 pub use da_block_import::BlockImport;

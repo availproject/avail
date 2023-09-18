@@ -1,4 +1,4 @@
-use std::{collections::HashMap, iter::once};
+/* use std::{collections::HashMap, iter::once};
 
 use da_runtime::{
 	constants::elections::InitialMemberBond, AccountId, Balance, RuntimeGenesisConfig, AVL,
@@ -8,7 +8,7 @@ use sc_service::ChainType;
 use sp_core::crypto::UncheckedInto;
 
 use crate::chain_spec::{
-	chain_properties, testnets::make_genesis, AuthorityKeys, ChainSpec, FORK_ID, PROTOCOL_ID,
+	chain_properties, testnets::make_genesis, AuthorityKeys, ChainSpec, PROTOCOL_ID,
 };
 
 fn authorities() -> Vec<AuthorityKeys> {
@@ -108,7 +108,7 @@ pub fn chain_spec() -> ChainSpec {
 		vec![],
 		None,
 		PROTOCOL_ID,
-		FORK_ID,
+		None,
 		chain_properties(),
 		Default::default(),
 	)
@@ -122,3 +122,8 @@ fn config_genesis() -> RuntimeGenesisConfig {
 
 	make_genesis(SUDO, authorities, council, tc_members, endowed_accs)
 }
+const MIN_VALIDATOR_BOND: Balance = 10 * AVL;
+const MIN_NOMINATOR_BOND: Balance = 1 * AVL;
+
+
+ */
