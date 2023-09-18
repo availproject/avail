@@ -234,6 +234,7 @@ pub mod elections {
 }
 
 pub mod staking {
+	use crate::impls::RuntimeBlockLength;
 	use sp_runtime::curve::PiecewiseLinear;
 	use sp_std::vec;
 
@@ -299,7 +300,7 @@ pub mod staking {
 			.saturating_sub(BlockExecutionWeight::get());
 		// Solution can occupy 90% of normal block size
 		pub MinerMaxLength: u32 = Perbill::from_rational(9u32, 10) *
-			*crate::RuntimeBlockLength::get()
+			*RuntimeBlockLength::get()
 			.max
 			.get(DispatchClass::Normal);
 		pub const OffchainRepeat: BlockNumber = 5;
