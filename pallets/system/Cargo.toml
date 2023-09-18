@@ -80,7 +80,6 @@ try-runtime = [
 serde = [
 	"dep:serde",
 ]
-force-rs-merkle = [ "rs_merkle" ]
 
 # For testing backward/forward header compatibility.
 header-compatibility-test = [
