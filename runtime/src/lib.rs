@@ -23,6 +23,7 @@
 #![recursion_limit = "512"]
 #![allow(macro_expanded_macro_exports_accessed_by_absolute_paths)]
 
+mod version;
 mod weights;
 
 use codec::Decode;
@@ -51,7 +52,6 @@ use pallet_election_provider_multi_phase::SolutionAccuracyOf;
 use pallet_session::historical as pallet_session_historical;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
-	create_runtime_str,
 	traits::{self, BlakeTwo256, Bounded, OpaqueKeys},
 	FixedPointNumber, FixedU128,
 };
@@ -59,6 +59,7 @@ pub use sp_runtime::{Perbill, Percent, Permill, Perquintill};
 use sp_std::{prelude::*, rc::Rc};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
+pub use version::VERSION;
 
 #[cfg(test)]
 mod data_root_tests;
@@ -116,23 +117,6 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 		 the flag disabled.",
 	)
 }
-
-/// Runtime version.
-#[sp_version::runtime_version]
-pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("data-avail"),
-	impl_name: create_runtime_str!("data-avail"),
-	authoring_version: 11,
-	// Per convention: if the runtime behavior changes, increment spec_version
-	// and set impl_version to 0. If only runtime
-	// implementation changes and behavior does not, then leave spec_version as
-	// is and increment impl_version.
-	spec_version: 12,
-	impl_version: 0,
-	apis: apis::runtime_api_versions(),
-	transaction_version: 1,
-	state_version: 1,
-};
 
 pub mod voter_bags;
 

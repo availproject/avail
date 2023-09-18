@@ -1,3 +1,4 @@
+use crate::version::VERSION;
 use avail_core::{header::HeaderExtension, well_known_keys::KATE_PUBLIC_PARAMS, OpaqueExtrinsic};
 use frame_support::{
 	traits::{KeyOwnerProofSystem, Randomness},
@@ -23,7 +24,7 @@ use crate::Identity;
 use crate::{
 	constants, mmr, AccountId, AuthorityDiscovery, Babe, Balance, Block, BlockNumber,
 	EpochDuration, Executive, Grandpa, Historical, Index, InherentDataExt, KeyTypeId, Mmr,
-	OpaqueMetadata, Runtime, RuntimeCall, Seed, SessionKeys, System, TransactionPayment, VERSION,
+	OpaqueMetadata, Runtime, RuntimeCall, Seed, SessionKeys, System, TransactionPayment,
 };
 
 decl_runtime_apis! {
