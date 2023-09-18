@@ -7,9 +7,9 @@ pub mod well_known_keys {
 	pub const KATE_PUBLIC_PARAMS: &[u8] = b":kate_public_params:";
 }
 
-/// We allow `Normal` extrinsics to fill up the block up to 90%, the rest can be used
+/// We allow `Normal` extrinsics to fill up the block up to 85%, the rest can be used
 /// by  Operational  extrinsics.
-pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(90);
+pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(85);
 
 const_assert!(BLOCK_CHUNK_SIZE.get() > 0);
 pub const BLOCK_CHUNK_SIZE: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(32) };
