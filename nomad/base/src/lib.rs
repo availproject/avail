@@ -8,11 +8,11 @@ use sp_core::{H160, H256};
 
 #[cfg(feature = "std")]
 pub mod testing;
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct NomadBase {
 	pub state: NomadState,
 	pub local_domain: u32,

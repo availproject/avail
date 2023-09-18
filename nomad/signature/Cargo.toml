@@ -32,7 +32,7 @@ elliptic-curve = { version = "0.12.3", default-features = false, features = ["se
 generic-array = { version = "0.14", default-features = false }
 hex = { version = "0.4.3", default-features = false }
 k256 = { version = "0.11.5", default-features = false, features = ["keccak256", "ecdsa"] }
-serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
+serde = { version = "1.0.188", default-features = false, optional = true, features = ["derive"] }
 thiserror-no-std = "2.0.2"
 tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
 
@@ -50,4 +50,7 @@ std = [
 	"sp-runtime/std",
 	"frame-support/std",
 	"ethers-core",
+]
+serde = [
+	"dep:serde",
 ]

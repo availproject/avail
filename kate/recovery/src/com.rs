@@ -775,7 +775,7 @@ mod tests {
 		let src = input_wide
 			.iter()
 			.map(|e| BlsScalar::from_bytes(e).unwrap())
-			.chain(vec![BlsScalar::zero(); domain_size].into_iter())
+			.chain(vec![BlsScalar::zero(); domain_size])
 			.collect::<Vec<_>>();
 
 		// erasure code it

@@ -3,7 +3,7 @@
 use codec::{Decode, Encode};
 use nomad_signature::{hash_message, Signature, SignatureError};
 use scale_info::TypeInfo;
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sp_core::{H160, H256};
 
@@ -11,7 +11,7 @@ use crate::utils::home_domain_hash;
 
 /// Nomad update
 #[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct UpdateV2 {
 	/// The home chain
 	pub home_domain: u32,
@@ -32,7 +32,7 @@ impl UpdateV2 {
 
 /// A Signed Nomad Update
 #[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SignedUpdateV2 {
 	/// The update
 	pub update: UpdateV2,

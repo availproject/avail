@@ -69,12 +69,12 @@ mod test {
 
 		// Single
 		let output = keccak256_concat!(a);
-		let expected = Keccak256::hash(&a[..]).into();
+		let expected = Keccak256::hash(&a[..]);
 		assert_eq!(output, expected);
 
 		// Variadic
 		let output = keccak256_concat!(a, b, c);
-		let expected = Keccak256::hash(abc.as_slice()).into();
+		let expected = Keccak256::hash(abc.as_slice());
 		assert_eq!(output, expected);
 
 		// Test `as_ref()`.
@@ -84,7 +84,7 @@ mod test {
 			.flatten()
 			.copied()
 			.collect::<Vec<_>>();
-		let expected = Keccak256::hash(concat.as_slice()).into();
+		let expected = Keccak256::hash(concat.as_slice());
 		assert_eq!(output, expected);
 	}
 }

@@ -491,7 +491,7 @@ mod unit_tests {
 	#[test_case(64, 0 => None)]
 	#[test_case(0, 16 => None)]
 	fn multiproof_max_grid_size(x: usize, y: usize) -> Option<CellBlock> {
-		multiproof_block(x, y, GRID.clone(), TARGET)
+		multiproof_block(x, y, GRID, TARGET)
 	}
 
 	#[test_case(256, 256,  64,  16 => Some((64, 16)))]
