@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade};
+use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade, weights::Weight};
 use pallet_nomination_pools::{
 	MaxPoolMembers, MaxPoolMembersPerPool, MaxPools, MinCreateBond, MinJoinBond, Pallet,
 };
@@ -25,7 +25,7 @@ use sp_runtime::TryRuntimeError;
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
 
-use crate::{Bounties, NominationPools, Runtime, Weight};
+use crate::{Bounties, NominationPools, Runtime};
 
 struct NominationPoolsMigrationV4OldPallet;
 impl Get<Perbill> for NominationPoolsMigrationV4OldPallet {
