@@ -28,11 +28,15 @@ jobs:
         with:
           version: "3.x"
 
-      - name: Setup Rust toolchain
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source "$HOME/.cargo/env"
-          rustup show
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      
+      - name: Set PATH for cargo
+        run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Build node and run benchmarks
         run: EXTRA=${{ github.event.inputs.extra }} OUR_PALLETS=${{ github.event.inputs.ourpallets }} ./scripts/run_benchmarks.sh
