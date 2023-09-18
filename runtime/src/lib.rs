@@ -1199,7 +1199,7 @@ mod tests {
 			pallet_staking_reward_fn::compute_inflation(
 				Perquintill::from_percent(50),
 				Perquintill::from_percent(50),
-				Perquintill::from_percent(1),
+				Perquintill::from_percent(5),
 			),
 			Perquintill::one()
 		);
@@ -1207,25 +1207,33 @@ mod tests {
 			pallet_staking_reward_fn::compute_inflation(
 				Perquintill::from_percent(25),
 				Perquintill::from_percent(50),
-				Perquintill::from_percent(1),
+				Perquintill::from_percent(5),
 			),
 			Perquintill::from_rational(1u64, 2u64)
 		);
 		assert_eq!(
 			pallet_staking_reward_fn::compute_inflation(
-				Perquintill::from_percent(51),
+				Perquintill::from_percent(55),
 				Perquintill::from_percent(50),
-				Perquintill::from_percent(1),
+				Perquintill::from_percent(5),
 			),
 			Perquintill::from_rational(1u64, 2u64)
 		);
 		assert_eq!(
 			pallet_staking_reward_fn::compute_inflation(
-				Perquintill::from_percent(52),
+				Perquintill::from_percent(60),
 				Perquintill::from_percent(50),
-				Perquintill::from_percent(1),
+				Perquintill::from_percent(5),
 			),
 			Perquintill::from_rational(1u64, 4u64)
+		);
+		assert_eq!(
+			pallet_staking_reward_fn::compute_inflation(
+				Perquintill::from_percent(75),
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(5),
+			),
+			Perquintill::from_rational(1u64, 32u64)
 		);
 	}
 
