@@ -124,25 +124,26 @@ pub mod system {
 		Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(5), u64::MAX);
 
 	parameter_types! {
-	pub RuntimeBlockWeights: SystemBlockWeights = SystemBlockWeights::builder()
-		.base_block(BlockExecutionWeight::get())
-		.for_class(DispatchClass::all(), |weights| {
-			weights.base_extrinsic = ExtrinsicBaseWeight::get();
-		})
-		.for_class(DispatchClass::Normal, |weights| {
-			weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
-		})
-		.for_class(DispatchClass::Operational, |weights| {
-			weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
-			// Operational transactions have some extra reserved space, so that they
-			// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
-			weights.reserved = Some(
-				MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
-			);
-		})
-		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
-		.build_or_panic();
+		pub RuntimeBlockWeights: SystemBlockWeights = SystemBlockWeights::builder()
+			.base_block(BlockExecutionWeight::get())
+			.for_class(DispatchClass::all(), |weights| {
+				weights.base_extrinsic = ExtrinsicBaseWeight::get();
+			})
+			.for_class(DispatchClass::Normal, |weights| {
+				weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+			})
+			.for_class(DispatchClass::Operational, |weights| {
+				weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
+				// Operational transactions have some extra reserved space, so that they
+				// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
+				weights.reserved = Some(
+					MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
+				);
+			})
+			.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
+			.build_or_panic();
 	}
+	const_assert!(NORMAL_DISPATCH_RATIO.deconstruct() >= AVERAGE_ON_INITIALIZE_RATIO.deconstruct());
 }
 
 pub mod indices {
