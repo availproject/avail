@@ -47,6 +47,7 @@ impl OnRuntimeUpgrade for Migration {
 		>::on_runtime_upgrade();
 		let weight5 = scheduler::remove_corrupt_agenda_and_v3_to_v4::on_runtime_upgrade();
 		let weight6 = bounties::v1_to_v4::on_runtime_upgrade();
+		let weight7 = staking::on_runtime_upgrade();
 
 		weight1
 			.saturating_add(weight2)
@@ -54,6 +55,7 @@ impl OnRuntimeUpgrade for Migration {
 			.saturating_add(weight4)
 			.saturating_add(weight5)
 			.saturating_add(weight6)
+			.saturating_add(weight7)
 	}
 
 	#[cfg(feature = "try-runtime")]
@@ -304,5 +306,26 @@ mod nomination_pools {
 			);
 			Ok(())
 		}
+	}
+}
+
+pub mod staking {
+	use super::*;
+
+	pub fn on_runtime_upgrade() -> Weight {
+		let current_state = pallet_staking::MinimumValidatorCount::<Runtime>::get();
+		let target_state = 1;
+		if current_state > 1 {
+			log::info!(
+				"Changing minimum validator count from {} to {}",
+				current_state,
+				target_state
+			);
+			pallet_staking::MinimumValidatorCount::<Runtime>::set(target_state);
+		} else {
+			log::info!("No change was applied to MinimumValidatorCount storage.")
+		}
+
+		<Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 1)
 	}
 }
