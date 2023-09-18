@@ -18,10 +18,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install unzip (for Ubuntu/Debian)
+      - name: Install deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y unzip
+          sudo apt-get install -y git clang curl libssl-dev protobuf-compiler unzip
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v1
@@ -32,7 +32,7 @@ jobs:
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source "$HOME/.cargo/env"
-          rustup show 
+          rustup show
 
       - name: Build node and run benchmarks
         run: EXTRA=${{ github.event.inputs.extra }} OUR_PALLETS=${{ github.event.inputs.ourpallets }} ./scripts/run_benchmarks.sh
