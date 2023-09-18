@@ -1,0 +1,39 @@
+name: Run benchmarks
+
+on:
+  workflow_dispatch:
+    inputs:
+      extra:
+        description: Run extra benchmark (commitment / dataroot)
+        required: false
+        default: 0
+      ourpallets:
+        description: Benchmark only our pallet
+        required: false
+        default: 0
+
+jobs:
+  benchmark:
+    runs-on: [self-hosted, reference]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: "3.x"
+
+      - name: Setup Rust toolchain
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source "$HOME/.cargo/env"
+          rustup show 
+
+      - name: Build node and run benchmarks
+        run: EXTRA=${{ github.event.inputs.extra }} OUR_PALLETS=${{ github.event.inputs.ourpallets }} ./scripts/run-benchmarks.sh
+
+      - name: Upload output as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: weights-result
+          path: ./output/
