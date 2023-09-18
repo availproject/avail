@@ -72,13 +72,9 @@ impl SubstrateCli for Cli {
 			"biryani" => Box::new(chains::biryani::chain_spec()?),
 			"dymension" => Box::new(chains::dymension::chain_spec()?),
 			"kate" => Box::new(chains::kate::chain_spec()?),
-			path => {
-				let a = Box::new(chains::ChainSpec::from_json_file(
-					std::path::PathBuf::from(path),
-				)?);
-
-				a
-			},
+			path => Box::new(chains::ChainSpec::from_json_file(
+				std::path::PathBuf::from(path),
+			)?),
 		};
 		Ok(spec)
 	}
