@@ -48,6 +48,7 @@ impl OnRuntimeUpgrade for Migration {
 		let weight5 = scheduler::remove_corrupt_agenda_and_v3_to_v4::on_runtime_upgrade();
 		let weight6 = bounties::v1_to_v4::on_runtime_upgrade();
 		let weight7 = staking::on_runtime_upgrade();
+		let weight8 = democracy::on_runtime_upgrade();
 
 		weight1
 			.saturating_add(weight2)
@@ -56,6 +57,7 @@ impl OnRuntimeUpgrade for Migration {
 			.saturating_add(weight5)
 			.saturating_add(weight6)
 			.saturating_add(weight7)
+			.saturating_add(weight8)
 	}
 
 	#[cfg(feature = "try-runtime")]
@@ -327,5 +329,88 @@ pub mod staking {
 		}
 
 		<Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 1)
+	}
+}
+
+pub mod democracy {
+	use super::*;
+	#[allow(deprecated)]
+	use frame_support::storage::unhashed::kill_prefix;
+	use sp_io::KillStorageResult;
+
+	/// It sets `min_create_bond = 10 AVL` and
+	pub fn on_runtime_upgrade() -> Weight {
+		#[allow(deprecated)]
+		let res1 = kill_prefix(&sp_io::hashing::twox_128(b"Elections"), None);
+		#[allow(deprecated)]
+		let res2 = kill_prefix(&sp_io::hashing::twox_128(b"Democracy"), None);
+		#[allow(deprecated)]
+		let res3 = kill_prefix(&sp_io::hashing::twox_128(b"Council"), None);
+
+		match res1 {
+			KillStorageResult::AllRemoved(_) => {
+				log::info!("Successfully removed Elections storage")
+			},
+			KillStorageResult::SomeRemaining(_) => {
+				log::info!("Failed to remove Elections storage")
+			},
+		}
+
+		match res2 {
+			KillStorageResult::AllRemoved(_) => {
+				log::info!("Successfully removed Democracy storage")
+			},
+			KillStorageResult::SomeRemaining(_) => {
+				log::info!("Failed to remove Democracy storage")
+			},
+		}
+
+		match res3 {
+			KillStorageResult::AllRemoved(_) => {
+				log::info!("Successfully removed Council storage")
+			},
+			KillStorageResult::SomeRemaining(_) => {
+				log::info!("Failed to remove Council storage")
+			},
+		}
+
+		<Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 1)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use frame_support::migration::{get_storage_value, put_storage_value};
+	use sp_runtime::BuildStorage;
+
+	use crate::{Runtime, System};
+
+	pub fn new_test_ext() -> sp_io::TestExternalities {
+		let t = frame_system::GenesisConfig::<Runtime>::default()
+			.build_storage()
+			.unwrap();
+
+		let mut ext = sp_io::TestExternalities::new(t);
+		ext.execute_with(|| System::set_block_number(1));
+		ext
+	}
+
+	#[test]
+	fn democracy_test() {
+		new_test_ext().execute_with(|| {
+			put_storage_value(b"Elections", b"Item", b"", 100u32);
+			put_storage_value(b"Democracy", b"Item", b"", 100u32);
+			put_storage_value(b"Council", b"Item", b"", 100u32);
+
+			assert!(get_storage_value::<u32>(b"Elections", b"Item", b"").is_some());
+			assert!(get_storage_value::<u32>(b"Democracy", b"Item", b"").is_some());
+			assert!(get_storage_value::<u32>(b"Council", b"Item", b"").is_some());
+
+			super::democracy::on_runtime_upgrade();
+
+			assert!(get_storage_value::<u32>(b"Elections", b"Item", b"").is_none());
+			assert!(get_storage_value::<u32>(b"Democracy", b"Item", b"").is_none());
+			assert!(get_storage_value::<u32>(b"Council", b"Item", b"").is_none());
+		});
 	}
 }
