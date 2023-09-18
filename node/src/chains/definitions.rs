@@ -85,9 +85,9 @@ impl AuthorityKeys {
 	}
 }
 
-impl Into<(AccountId, AccountId, SessionKeys)> for AuthorityKeys {
-	fn into(self) -> (AccountId, AccountId, SessionKeys) {
-		(self.controller, self.stash, self.session_keys)
+impl From<AuthorityKeys> for (AccountId, AccountId, SessionKeys) {
+	fn from(val: AuthorityKeys) -> (AccountId, AccountId, SessionKeys) {
+		(val.controller, val.stash, val.session_keys)
 	}
 }
 
