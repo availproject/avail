@@ -17,10 +17,9 @@ use primitive_types::H160;
 use sc_telemetry::TelemetryEndpoints;
 use sp_core::sr25519::Public;
 use sp_runtime::{AccountId32, Perbill};
-use std::collections::HashMap;
 
 pub const PROTOCOL_ID: Option<&str> = Some("Avail");
-pub const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
+pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
 const NOMAD_LOCAL_DOMAIN: u32 = 2000;
 const NOMAD_UPDATER: H160 = H160(hex!("695dFcFc604F9b2992642BDC5b173d1a1ed60b03"));
 const ENDOWMENT: Balance = 1_000_000 * AVL;
@@ -39,7 +38,7 @@ const DEFAULT_ENDOWED_SEEDS: [&str; 12] = [
 	"Eve//stash",
 	"Ferdie//stash",
 ];
-const INIT_APP_IDS: [&str; 3] = ["Data Avail", "Ethereum", "Polygon"];
+const INIT_APP_IDS: [(u32, &str); 3] = [(0, "Data Avail"), (1, "Ethereum"), (2, "Polygon")];
 
 fn standard_system_configuration() -> (Vec<u8>, Vec<u8>, BlockLength) {
 	let code = wasm_binary_unwrap().to_vec();
@@ -61,23 +60,21 @@ pub fn to_telemetry_endpoint(s: String) -> TelemetryEndpoints {
 }
 
 /// Generates a default endowed accounts.
-fn dev_endowed_accounts() -> HashMap<AccountId, Balance> {
+fn dev_endowed_accounts() -> Vec<(AccountId, Balance)> {
 	DEFAULT_ENDOWED_SEEDS
 		.iter()
 		.map(|seed| (get_account_id_from_seed::<Public>(seed), ENDOWMENT))
-		.collect::<HashMap<_, _>>()
+		.collect()
 }
 
 fn make_data_avail_config(owner: AccountId) -> DataAvailabilityConfig {
 	let app_keys = INIT_APP_IDS
 		.iter()
-		.enumerate()
 		.map(|(id, app)| {
-			let info = AppKeyInfo {
-				owner: owner.clone(),
-				id: AppId(id as u32),
-			};
-			(app.as_bytes().to_vec(), info)
+			(
+				app.as_bytes().to_vec(),
+				AppKeyInfo::new(owner.clone(), AppId(*id)),
+			)
 		})
 		.collect();
 
@@ -92,7 +89,7 @@ pub fn runtime_genesis_config(
 	technical_committee: Vec<AccountId32>,
 	session_keys: Vec<AuthorityKeys>,
 ) -> RuntimeGenesisConfig {
-	let balances = dev_endowed_accounts().into_iter().collect();
+	let balances = dev_endowed_accounts();
 	let elections = session_keys
 		.iter()
 		.map(|k| (k.controller.clone(), ENDOWMENT))

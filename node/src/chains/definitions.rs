@@ -100,24 +100,3 @@ fn session_keys(common: AccountId, grandpa: GrandpaId) -> SessionKeys {
 		authority_discovery: raw.unchecked_into(),
 	}
 }
-
-/* #[cfg(test)]
-pub(crate) mod tests {
-	use super::*;
-
-	#[test]
-	fn test_create_development_chain_spec() {
-		locals::solo::chain_spec().build_storage().unwrap();
-	}
-
-	#[test]
-	fn test_create_development_tri_chain_spec() {
-		locals::tri::chain_spec().build_storage().unwrap();
-	}
-
-	#[test]
-	fn test_create_local_testnet_chain_spec() {
-		testnets::kate::chain_spec().build_storage().unwrap();
-	}
-}
- */
