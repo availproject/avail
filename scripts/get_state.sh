@@ -15,6 +15,10 @@ if ! [ -z "$SKIP_DEP" ]; then
 fi
 
 CONFIG="${CONFIG:-./scripts/networks/biryani.yaml}"
-python3 ./scripts/get_state.py --config "${CONFIG}"
+if ! [ -z "$BINARY" ]; then
+    BINARY="-b ${BINARY}"
+fi
+
+python3 ./scripts/get_state.py --config "${CONFIG}" $BINARY
 
 cp ./target/release/data-avail ./output/binary

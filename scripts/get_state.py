@@ -152,15 +152,15 @@ def populate_dev_chain(substrate, forked_storage, chain_name):
         json.dump(base_chain, outfile, indent=2)
 
 
-def read_configuration_file():
+def read_command_line_params():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', '-c')
+    parser.add_argument('--binary', '-b')
     args = parser.parse_args()
 
     f = open(args.config, "r")
     configuration = yaml.safe_load(f)
-
-    return configuration
+    return (configuration, args.binary)
 
 
 def connect_to_remote_chain(url) -> SubstrateInterface:
@@ -172,7 +172,7 @@ def connect_to_remote_chain(url) -> SubstrateInterface:
 
 
 def main():
-    configuration = read_configuration_file()
+    (configuration, binary_file) = read_command_line_params()
     url = configuration['endpoint']
 
     (substrate, chain_name) = connect_to_remote_chain(url)
@@ -193,9 +193,10 @@ def main():
     forked_storage = fetch_storage_values(hash, keys, url)
     print(f"Fetched {len(forked_storage)} values")
 
-    print('Building node')
-    cmd = 'cargo build --release --locked --features try-runtime'
-    subprocess.run(cmd, shell=True, text=True, check=True)
+    if (not binary_file):
+        print('Building node')
+        cmd = 'cargo build --release --locked --features try-runtime'
+        subprocess.run(cmd, shell=True, text=True, check=True)
 
     # Create Chain Snapshot
     # print('Creating Chain Snapshot')
@@ -204,6 +205,9 @@ def main():
 
     print('Creating Dev Chain Specification. location: ./output/fork.json')
     cmd = f'./target/release/data-avail build-spec --chain dev --raw --disable-default-bootnode > {FORK_SPEC}'
+    if (binary_file):
+        cmd = f'{binary_file} build-spec --chain dev --raw --disable-default-bootnode > {FORK_SPEC}'
+
     subprocess.run(cmd, shell=True, text=True, check=True)
 
     print('Populating Dev Specification. location: ./output/fork.json')

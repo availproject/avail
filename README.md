@@ -186,8 +186,44 @@ This describes the different sync modes available for the substrate chain and th
 | warp               | partially compatible       | compatible                                                                         |
 | fast / fast unsafe | not compatible             | compatible (with [warnings](https://github.com/paritytech/polkadot-sdk/issues/19)) |
 
+## Forking Kate/Biryani/Dymension
 
+### Overview
+The following script can be used to fork our live networks:
 
+```bash
+# kate
+CONFIG=./scripts/networks/kate.yaml ./get_state.sh
+
+# Biryani
+CONFIG=./scripts/networks/biryani.yaml ./get_state.sh
+
+# Dymension
+CONFIG=./scripts/networks/dymension.yaml ./get_state.sh
+```
+
+Once the script is done, the forked chain (together with raw data) can be found
+inside the output folder. To use the forked chain run the following command:
+
+```bash
+cargo run -- --chain ./output/fork.json --alice --tmp
+```
+
+### Custom Binary
+To get the best results you should fork our networks with the correct binary
+version. The script accepts custom binary paths.
+
+```bash
+CONFIG=./scripts/networks/kate.yaml BINARY=./target/release/data-avail ./get_state.sh
+```
+
+## Compare two running chains
+You can compare two chains by executing the following scripts:
+```bash
+deno run --allow-net --allow-write  ./scripts/compare.ts ws://127.0.0.1:9944  wss://kate.avail.tools/ws
+```
+The two arguments are the URLs of the chains that you want to compare. The script treats the first URL as the "newer" one.
+ 
 ## Generate test code coverage report
 
 We are using [grcov](https://github.com/mozilla/grcov) to aggregate code coverage information and generate reports.
