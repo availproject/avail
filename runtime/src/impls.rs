@@ -242,7 +242,7 @@ mod multiplier_tests {
 		})
 	}
 
-	// TODO: This test needs to be updated as per avail's system configuration
+	// Note: With sensitivity = 0.000001, this test is going to take a long time. so commenting out.
 	// #[test]
 	// fn time_to_reach_zero() {
 	// 	// blocks per 24h in substrate-node: 28,800 (k)
@@ -275,20 +275,14 @@ mod multiplier_tests {
 	fn min_change_per_day() {
 		run_with_system_weight(max_normal(), || {
 			let mut fm = Multiplier::one();
-			// See the example in the doc of `TargetedFeeAdjustment`. are at least 0.234, hence
-			// `fm > 1.234`.
-			// NOTE DataAvailability:
-			// We use 20 seconds per block (having 4320 blocks per day), `v` should be greater:
-			// `v >= p / k * (1 - s_p)` =>
-			// `AdjustmentVariable >= 0.234 / Blocks_per_day * ( 1 - Ideal Block Weight) =>`
-			// `AdjustmentVariable >= 0.234 / (4320 * (1 - 0.1875)) >= 0.00006`
+			// We expect a daily multiplier increase of 0.2% if we sustain the congested network on Avail
 			for _ in 0..DAYS {
 				let next = runtime_multiplier_update(fm);
 				fm = next;
 			}
 			assert!(
-				fm > Multiplier::saturating_from_rational(1234, 1000),
-				"Invalid fm (={})",
+				fm > Multiplier::saturating_from_rational(1002, 1000),
+				"Invalid fm ={}",
 				fm
 			);
 		})
