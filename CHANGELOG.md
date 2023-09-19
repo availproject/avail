@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## Next release
-[Compare](https://github.com/availproject/avail/compare/v1.6.3...HEAD)
+[Compare](https://github.com/availproject/avail/compare/v1.6.4...HEAD)
 
 #### Added
 #### Changed
