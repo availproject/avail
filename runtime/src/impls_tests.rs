@@ -133,7 +133,7 @@ mod multiplier_tests {
 		})
 	}
 
-	// Note: With sensitivity = 0.000001, this test is going to take a long time. We may consider comment this out
+	// Note: With sensitivity = 0.000001, this test is going to take a long time. We may consider commenting this out
 	#[test]
 	fn time_to_reach_zero() {
 		// blocks per 24h in substrate-node: 28,800 (k)

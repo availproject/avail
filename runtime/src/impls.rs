@@ -205,13 +205,9 @@ impl pallet_tips::Config for Runtime {
 	type WeightInfo = weights::pallet_tips::WeightInfo<Runtime>;
 }
 
-// TODO: Move to constants
-pub const PICO: Balance = 1_000_000;
-pub const NANO: Balance = 1_000_000_000;
-
 parameter_types! {
-	pub const WeightFee: Balance = PICO;
-	pub const TransactionByteFee: Balance = 100 * NANO; // 0.0000001 AVL
+	pub const WeightFee: Balance = constants::currency::PICO_AVL;
+	pub const TransactionByteFee: Balance = 100 * constants::currency::NANO_AVL; // 0.0000001 AVL
 	pub const OperationalFeeMultiplier: u8 = 5u8;
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(50);
 	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000); // 0.000001
