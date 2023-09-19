@@ -29,12 +29,12 @@ jobs:
         with:
           version: "3.x"
 
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
+      - name: Setup Rust toolchain
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source "$HOME/.cargo/env"
+          rustup target add wasm32-unknown-unknown
+          rustup show
       
       - name: Set PATH for cargo
         run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
