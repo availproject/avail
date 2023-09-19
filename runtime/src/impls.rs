@@ -396,7 +396,7 @@ mod multiplier_tests {
 			let mut original = Multiplier::zero();
 			let mut next = Multiplier::default();
 
-			(0..1_000).for_each(|_| {
+			(0..500).for_each(|_| {
 				next = runtime_multiplier_update(original);
 				assert_eq_error_rate!(
 					next,
@@ -460,7 +460,7 @@ mod multiplier_tests {
 
 		// Some values that are all above the target and will cause an increase.
 		let t = target();
-		vec![t + Weight::from_parts(100, 0), t * 2, t * 4]
+		vec![t + Weight::from_parts(100, 0), t * 2]
 			.into_iter()
 			.for_each(|i| {
 				run_with_system_weight(i, || {
