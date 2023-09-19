@@ -1,4 +1,8 @@
-use avail_core::{header::HeaderExtension, well_known_keys::KATE_PUBLIC_PARAMS, OpaqueExtrinsic};
+use crate::version::VERSION;
+use avail_core::{
+	currency::Balance, header::HeaderExtension, well_known_keys::KATE_PUBLIC_PARAMS,
+	OpaqueExtrinsic,
+};
 use frame_support::{
 	traits::{KeyOwnerProofSystem, Randomness},
 	weights::Weight,
@@ -8,6 +12,7 @@ use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
+use sp_core::crypto::KeyTypeId;
 use sp_core::H256;
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
@@ -21,9 +26,9 @@ use sp_version::RuntimeVersion;
 #[allow(unused)]
 use crate::Identity;
 use crate::{
-	constants, mmr, AccountId, AuthorityDiscovery, Babe, Balance, Block, BlockNumber,
-	EpochDuration, Executive, Grandpa, Historical, Index, InherentDataExt, KeyTypeId, Mmr,
-	OpaqueMetadata, Runtime, RuntimeCall, Seed, SessionKeys, System, TransactionPayment, VERSION,
+	constants, mmr, AccountId, AuthorityDiscovery, Babe, Block, BlockNumber, EpochDuration,
+	Executive, Grandpa, Historical, Index, InherentDataExt, Mmr, OpaqueMetadata, Runtime,
+	RuntimeCall, Seed, SessionKeys, System, TransactionPayment,
 };
 
 decl_runtime_apis! {

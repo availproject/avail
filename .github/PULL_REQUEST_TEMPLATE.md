@@ -1,10 +1,10 @@
 ---
-name: Pull Request
-about: Provide information about the proposed changes
+Name: Pull Request
+About: Provide information about the proposed changes
 ---
 # Pull Request type
 
-Check the [contributing guide](../../CONTRIBUTING.md)
+<!-- Check the [contributing guide](../../CONTRIBUTING.md) -->
 
 <!-- Please try to limit your pull request to one type; submit multiple pull requests if needed. -->
 

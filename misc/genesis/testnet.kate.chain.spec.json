@@ -7,7 +7,12 @@
       "/dns/gateway-fullnode-002.kate.avail.tools/tcp/30333/p2p/12D3KooWFzLz2vw8gBUgxNWUKDr5AvjosPe5wz9hmqmdcTsUwvhs",
       "/dns/gateway-fullnode-003.kate.avail.tools/tcp/30333/p2p/12D3KooWS1ShBPcFSn3UCm1UH8UiYh5k1FNMqqZA13pVj3uR9oyp"
   ],
-  "telemetryEndpoints": null,
+  "telemetryEndpoints": [
+    [
+        "ws://telemetry.avail.tools:8001/submit", 
+        0
+    ]
+  ],
   "protocolId": "Avail",
   "properties": {
       "tokenDecimals": 18,

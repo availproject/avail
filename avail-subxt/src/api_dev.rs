@@ -6,7 +6,7 @@ pub mod api {
 	mod root_mod {
 		pub use super::*;
 	}
-	pub static PALLETS: [&str; 37usize] = [
+	pub static PALLETS: [&str; 34usize] = [
 		"System",
 		"Utility",
 		"Babe",
@@ -18,10 +18,7 @@ pub mod api {
 		"ElectionProviderMultiPhase",
 		"Staking",
 		"Session",
-		"Democracy",
-		"Council",
 		"TechnicalCommittee",
-		"Elections",
 		"TechnicalMembership",
 		"Grandpa",
 		"Treasury",
@@ -77,14 +74,8 @@ pub mod api {
 		Staking(staking::Event),
 		#[codec(index = 11)]
 		Session(session::Event),
-		#[codec(index = 12)]
-		Democracy(democracy::Event),
-		#[codec(index = 13)]
-		Council(council::Event),
 		#[codec(index = 14)]
 		TechnicalCommittee(technical_committee::Event),
-		#[codec(index = 15)]
-		Elections(elections::Event),
 		#[codec(index = 16)]
 		TechnicalMembership(technical_membership::Event),
 		#[codec(index = 17)]
@@ -192,20 +183,6 @@ pub mod api {
 					metadata,
 				)?));
 			}
-			if pallet_name == "Democracy" {
-				return Ok(Event::Democracy(democracy::Event::decode_with_metadata(
-					&mut &*pallet_bytes,
-					pallet_ty,
-					metadata,
-				)?));
-			}
-			if pallet_name == "Council" {
-				return Ok(Event::Council(council::Event::decode_with_metadata(
-					&mut &*pallet_bytes,
-					pallet_ty,
-					metadata,
-				)?));
-			}
 			if pallet_name == "TechnicalCommittee" {
 				return Ok(Event::TechnicalCommittee(
 					technical_committee::Event::decode_with_metadata(
@@ -214,13 +191,6 @@ pub mod api {
 						metadata,
 					)?,
 				));
-			}
-			if pallet_name == "Elections" {
-				return Ok(Event::Elections(elections::Event::decode_with_metadata(
-					&mut &*pallet_bytes,
-					pallet_ty,
-					metadata,
-				)?));
 			}
 			if pallet_name == "TechnicalMembership" {
 				return Ok(Event::TechnicalMembership(
@@ -404,14 +374,8 @@ pub mod api {
 		Staking(staking::Call),
 		#[codec(index = 11)]
 		Session(session::Call),
-		#[codec(index = 12)]
-		Democracy(democracy::Call),
-		#[codec(index = 13)]
-		Council(council::Call),
 		#[codec(index = 14)]
 		TechnicalCommittee(technical_committee::Call),
-		#[codec(index = 15)]
-		Elections(elections::Call),
 		#[codec(index = 16)]
 		TechnicalMembership(technical_membership::Call),
 		#[codec(index = 17)]
@@ -522,20 +486,6 @@ pub mod api {
 					metadata,
 				)?));
 			}
-			if pallet_name == "Democracy" {
-				return Ok(Call::Democracy(democracy::Call::decode_with_metadata(
-					&mut &*pallet_bytes,
-					pallet_ty,
-					metadata,
-				)?));
-			}
-			if pallet_name == "Council" {
-				return Ok(Call::Council(council::Call::decode_with_metadata(
-					&mut &*pallet_bytes,
-					pallet_ty,
-					metadata,
-				)?));
-			}
 			if pallet_name == "TechnicalCommittee" {
 				return Ok(Call::TechnicalCommittee(
 					technical_committee::Call::decode_with_metadata(
@@ -544,13 +494,6 @@ pub mod api {
 						metadata,
 					)?,
 				));
-			}
-			if pallet_name == "Elections" {
-				return Ok(Call::Elections(elections::Call::decode_with_metadata(
-					&mut &*pallet_bytes,
-					pallet_ty,
-					metadata,
-				)?));
 			}
 			if pallet_name == "TechnicalMembership" {
 				return Ok(Call::TechnicalMembership(
@@ -725,14 +668,8 @@ pub mod api {
 		Staking(staking::Error),
 		#[codec(index = 11)]
 		Session(session::Error),
-		#[codec(index = 12)]
-		Democracy(democracy::Error),
-		#[codec(index = 13)]
-		Council(council::Error),
 		#[codec(index = 14)]
 		TechnicalCommittee(technical_committee::Error),
-		#[codec(index = 15)]
-		Elections(elections::Error),
 		#[codec(index = 16)]
 		TechnicalMembership(technical_membership::Error),
 		#[codec(index = 17)]
@@ -777,139 +714,125 @@ pub mod api {
 			use ::subxt::metadata::DecodeWithMetadata;
 			let cursor = &mut &pallet_bytes[..];
 			if pallet_name == "System" {
-				let variant_error = system::Error::decode_with_metadata(cursor, 130u32, metadata)?;
+				let variant_error = system::Error::decode_with_metadata(cursor, 121u32, metadata)?;
 				return Ok(Error::System(variant_error));
 			}
 			if pallet_name == "Utility" {
-				let variant_error = utility::Error::decode_with_metadata(cursor, 327u32, metadata)?;
+				let variant_error = utility::Error::decode_with_metadata(cursor, 312u32, metadata)?;
 				return Ok(Error::Utility(variant_error));
 			}
 			if pallet_name == "Babe" {
-				let variant_error = babe::Error::decode_with_metadata(cursor, 343u32, metadata)?;
+				let variant_error = babe::Error::decode_with_metadata(cursor, 328u32, metadata)?;
 				return Ok(Error::Babe(variant_error));
 			}
 			if pallet_name == "Indices" {
-				let variant_error = indices::Error::decode_with_metadata(cursor, 345u32, metadata)?;
+				let variant_error = indices::Error::decode_with_metadata(cursor, 330u32, metadata)?;
 				return Ok(Error::Indices(variant_error));
 			}
 			if pallet_name == "Balances" {
 				let variant_error =
-					balances::Error::decode_with_metadata(cursor, 360u32, metadata)?;
+					balances::Error::decode_with_metadata(cursor, 345u32, metadata)?;
 				return Ok(Error::Balances(variant_error));
 			}
 			if pallet_name == "ElectionProviderMultiPhase" {
 				let variant_error = election_provider_multi_phase::Error::decode_with_metadata(
-					cursor, 373u32, metadata,
+					cursor, 358u32, metadata,
 				)?;
 				return Ok(Error::ElectionProviderMultiPhase(variant_error));
 			}
 			if pallet_name == "Staking" {
-				let variant_error = staking::Error::decode_with_metadata(cursor, 394u32, metadata)?;
+				let variant_error = staking::Error::decode_with_metadata(cursor, 379u32, metadata)?;
 				return Ok(Error::Staking(variant_error));
 			}
 			if pallet_name == "Session" {
-				let variant_error = session::Error::decode_with_metadata(cursor, 399u32, metadata)?;
+				let variant_error = session::Error::decode_with_metadata(cursor, 384u32, metadata)?;
 				return Ok(Error::Session(variant_error));
-			}
-			if pallet_name == "Democracy" {
-				let variant_error =
-					democracy::Error::decode_with_metadata(cursor, 417u32, metadata)?;
-				return Ok(Error::Democracy(variant_error));
-			}
-			if pallet_name == "Council" {
-				let variant_error = council::Error::decode_with_metadata(cursor, 420u32, metadata)?;
-				return Ok(Error::Council(variant_error));
 			}
 			if pallet_name == "TechnicalCommittee" {
 				let variant_error =
-					technical_committee::Error::decode_with_metadata(cursor, 422u32, metadata)?;
+					technical_committee::Error::decode_with_metadata(cursor, 387u32, metadata)?;
 				return Ok(Error::TechnicalCommittee(variant_error));
-			}
-			if pallet_name == "Elections" {
-				let variant_error =
-					elections::Error::decode_with_metadata(cursor, 426u32, metadata)?;
-				return Ok(Error::Elections(variant_error));
 			}
 			if pallet_name == "TechnicalMembership" {
 				let variant_error =
-					technical_membership::Error::decode_with_metadata(cursor, 428u32, metadata)?;
+					technical_membership::Error::decode_with_metadata(cursor, 389u32, metadata)?;
 				return Ok(Error::TechnicalMembership(variant_error));
 			}
 			if pallet_name == "Grandpa" {
-				let variant_error = grandpa::Error::decode_with_metadata(cursor, 432u32, metadata)?;
+				let variant_error = grandpa::Error::decode_with_metadata(cursor, 393u32, metadata)?;
 				return Ok(Error::Grandpa(variant_error));
 			}
 			if pallet_name == "Treasury" {
 				let variant_error =
-					treasury::Error::decode_with_metadata(cursor, 438u32, metadata)?;
+					treasury::Error::decode_with_metadata(cursor, 399u32, metadata)?;
 				return Ok(Error::Treasury(variant_error));
 			}
 			if pallet_name == "Sudo" {
-				let variant_error = sudo::Error::decode_with_metadata(cursor, 439u32, metadata)?;
+				let variant_error = sudo::Error::decode_with_metadata(cursor, 400u32, metadata)?;
 				return Ok(Error::Sudo(variant_error));
 			}
 			if pallet_name == "ImOnline" {
 				let variant_error =
-					im_online::Error::decode_with_metadata(cursor, 442u32, metadata)?;
+					im_online::Error::decode_with_metadata(cursor, 403u32, metadata)?;
 				return Ok(Error::ImOnline(variant_error));
 			}
 			if pallet_name == "Scheduler" {
 				let variant_error =
-					scheduler::Error::decode_with_metadata(cursor, 452u32, metadata)?;
+					scheduler::Error::decode_with_metadata(cursor, 415u32, metadata)?;
 				return Ok(Error::Scheduler(variant_error));
 			}
 			if pallet_name == "Bounties" {
 				let variant_error =
-					bounties::Error::decode_with_metadata(cursor, 456u32, metadata)?;
+					bounties::Error::decode_with_metadata(cursor, 419u32, metadata)?;
 				return Ok(Error::Bounties(variant_error));
 			}
 			if pallet_name == "Tips" {
-				let variant_error = tips::Error::decode_with_metadata(cursor, 458u32, metadata)?;
+				let variant_error = tips::Error::decode_with_metadata(cursor, 421u32, metadata)?;
 				return Ok(Error::Tips(variant_error));
 			}
 			if pallet_name == "DataAvailability" {
 				let variant_error =
-					data_availability::Error::decode_with_metadata(cursor, 460u32, metadata)?;
+					data_availability::Error::decode_with_metadata(cursor, 423u32, metadata)?;
 				return Ok(Error::DataAvailability(variant_error));
 			}
 			if pallet_name == "NomadUpdaterManager" {
 				let variant_error =
-					nomad_updater_manager::Error::decode_with_metadata(cursor, 461u32, metadata)?;
+					nomad_updater_manager::Error::decode_with_metadata(cursor, 424u32, metadata)?;
 				return Ok(Error::NomadUpdaterManager(variant_error));
 			}
 			if pallet_name == "NomadHome" {
 				let variant_error =
-					nomad_home::Error::decode_with_metadata(cursor, 466u32, metadata)?;
+					nomad_home::Error::decode_with_metadata(cursor, 429u32, metadata)?;
 				return Ok(Error::NomadHome(variant_error));
 			}
 			if pallet_name == "NomadDABridge" {
 				let variant_error =
-					nomad_da_bridge::Error::decode_with_metadata(cursor, 467u32, metadata)?;
+					nomad_da_bridge::Error::decode_with_metadata(cursor, 430u32, metadata)?;
 				return Ok(Error::NomadDABridge(variant_error));
 			}
 			if pallet_name == "Preimage" {
 				let variant_error =
-					preimage::Error::decode_with_metadata(cursor, 471u32, metadata)?;
+					preimage::Error::decode_with_metadata(cursor, 434u32, metadata)?;
 				return Ok(Error::Preimage(variant_error));
 			}
 			if pallet_name == "Multisig" {
 				let variant_error =
-					multisig::Error::decode_with_metadata(cursor, 475u32, metadata)?;
+					multisig::Error::decode_with_metadata(cursor, 438u32, metadata)?;
 				return Ok(Error::Multisig(variant_error));
 			}
 			if pallet_name == "VoterList" {
 				let variant_error =
-					voter_list::Error::decode_with_metadata(cursor, 479u32, metadata)?;
+					voter_list::Error::decode_with_metadata(cursor, 442u32, metadata)?;
 				return Ok(Error::VoterList(variant_error));
 			}
 			if pallet_name == "NominationPools" {
 				let variant_error =
-					nomination_pools::Error::decode_with_metadata(cursor, 499u32, metadata)?;
+					nomination_pools::Error::decode_with_metadata(cursor, 462u32, metadata)?;
 				return Ok(Error::NominationPools(variant_error));
 			}
 			if pallet_name == "Identity" {
 				let variant_error =
-					identity::Error::decode_with_metadata(cursor, 511u32, metadata)?;
+					identity::Error::decode_with_metadata(cursor, 474u32, metadata)?;
 				return Ok(Error::Identity(variant_error));
 			}
 			Err(::subxt::ext::scale_decode::Error::custom(format!(
@@ -969,17 +892,8 @@ pub mod api {
 		pub fn staking(&self) -> staking::constants::ConstantsApi {
 			staking::constants::ConstantsApi
 		}
-		pub fn democracy(&self) -> democracy::constants::ConstantsApi {
-			democracy::constants::ConstantsApi
-		}
-		pub fn council(&self) -> council::constants::ConstantsApi {
-			council::constants::ConstantsApi
-		}
 		pub fn technical_committee(&self) -> technical_committee::constants::ConstantsApi {
 			technical_committee::constants::ConstantsApi
-		}
-		pub fn elections(&self) -> elections::constants::ConstantsApi {
-			elections::constants::ConstantsApi
 		}
 		pub fn grandpa(&self) -> grandpa::constants::ConstantsApi {
 			grandpa::constants::ConstantsApi
@@ -1055,17 +969,8 @@ pub mod api {
 		pub fn session(&self) -> session::storage::StorageApi {
 			session::storage::StorageApi
 		}
-		pub fn democracy(&self) -> democracy::storage::StorageApi {
-			democracy::storage::StorageApi
-		}
-		pub fn council(&self) -> council::storage::StorageApi {
-			council::storage::StorageApi
-		}
 		pub fn technical_committee(&self) -> technical_committee::storage::StorageApi {
 			technical_committee::storage::StorageApi
-		}
-		pub fn elections(&self) -> elections::storage::StorageApi {
-			elections::storage::StorageApi
 		}
 		pub fn technical_membership(&self) -> technical_membership::storage::StorageApi {
 			technical_membership::storage::StorageApi
@@ -1159,17 +1064,8 @@ pub mod api {
 		pub fn session(&self) -> session::calls::TransactionApi {
 			session::calls::TransactionApi
 		}
-		pub fn democracy(&self) -> democracy::calls::TransactionApi {
-			democracy::calls::TransactionApi
-		}
-		pub fn council(&self) -> council::calls::TransactionApi {
-			council::calls::TransactionApi
-		}
 		pub fn technical_committee(&self) -> technical_committee::calls::TransactionApi {
 			technical_committee::calls::TransactionApi
-		}
-		pub fn elections(&self) -> elections::calls::TransactionApi {
-			elections::calls::TransactionApi
 		}
 		pub fn technical_membership(&self) -> technical_membership::calls::TransactionApi {
 			technical_membership::calls::TransactionApi
@@ -1237,9 +1133,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				74u8, 73u8, 11u8, 210u8, 139u8, 115u8, 23u8, 22u8, 120u8, 16u8, 98u8, 176u8, 185u8,
-				72u8, 71u8, 93u8, 31u8, 12u8, 216u8, 219u8, 172u8, 152u8, 112u8, 50u8, 137u8,
-				133u8, 239u8, 237u8, 229u8, 228u8, 61u8, 74u8,
+				135u8, 35u8, 45u8, 155u8, 129u8, 66u8, 188u8, 135u8, 6u8, 223u8, 243u8, 8u8, 250u8,
+				8u8, 159u8, 223u8, 184u8, 182u8, 160u8, 76u8, 212u8, 156u8, 23u8, 138u8, 167u8,
+				166u8, 85u8, 81u8, 119u8, 8u8, 24u8, 80u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -2023,10 +1919,10 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							135u8, 70u8, 188u8, 138u8, 189u8, 89u8, 46u8, 4u8, 225u8, 244u8, 212u8,
-							189u8, 221u8, 105u8, 161u8, 239u8, 176u8, 2u8, 188u8, 39u8, 88u8,
-							209u8, 24u8, 183u8, 165u8, 251u8, 104u8, 239u8, 253u8, 88u8, 150u8,
-							34u8,
+							205u8, 202u8, 63u8, 225u8, 122u8, 228u8, 60u8, 33u8, 49u8, 223u8,
+							134u8, 8u8, 49u8, 181u8, 238u8, 76u8, 200u8, 163u8, 194u8, 209u8,
+							218u8, 165u8, 232u8, 103u8, 29u8, 165u8, 125u8, 15u8, 215u8, 205u8,
+							141u8, 31u8,
 						],
 					)
 				}
@@ -2469,9 +2365,9 @@ pub mod api {
 						"batch",
 						types::Batch { calls },
 						[
-							220u8, 133u8, 43u8, 120u8, 158u8, 223u8, 27u8, 148u8, 207u8, 167u8,
-							54u8, 93u8, 208u8, 199u8, 29u8, 110u8, 176u8, 77u8, 51u8, 216u8, 24u8,
-							86u8, 103u8, 71u8, 108u8, 82u8, 226u8, 22u8, 10u8, 20u8, 117u8, 152u8,
+							108u8, 14u8, 12u8, 71u8, 145u8, 118u8, 196u8, 13u8, 238u8, 185u8, 16u8,
+							196u8, 207u8, 223u8, 98u8, 3u8, 242u8, 232u8, 190u8, 199u8, 28u8,
+							170u8, 251u8, 8u8, 7u8, 27u8, 167u8, 27u8, 233u8, 189u8, 105u8, 69u8,
 						],
 					)
 				}
@@ -2489,10 +2385,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							239u8, 156u8, 200u8, 232u8, 225u8, 151u8, 177u8, 64u8, 199u8, 123u8,
-							24u8, 52u8, 146u8, 2u8, 241u8, 222u8, 167u8, 163u8, 114u8, 219u8,
-							189u8, 191u8, 40u8, 46u8, 202u8, 193u8, 199u8, 56u8, 174u8, 208u8,
-							222u8, 75u8,
+							251u8, 38u8, 215u8, 126u8, 215u8, 181u8, 174u8, 254u8, 8u8, 73u8,
+							164u8, 100u8, 131u8, 180u8, 42u8, 152u8, 55u8, 78u8, 92u8, 165u8,
+							170u8, 154u8, 191u8, 35u8, 116u8, 159u8, 103u8, 168u8, 109u8, 156u8,
+							49u8, 143u8,
 						],
 					)
 				}
@@ -2506,10 +2402,9 @@ pub mod api {
 						"batch_all",
 						types::BatchAll { calls },
 						[
-							185u8, 233u8, 231u8, 241u8, 193u8, 136u8, 5u8, 61u8, 231u8, 118u8,
-							125u8, 171u8, 22u8, 38u8, 232u8, 111u8, 246u8, 100u8, 180u8, 49u8,
-							91u8, 152u8, 164u8, 72u8, 11u8, 18u8, 158u8, 169u8, 127u8, 166u8,
-							110u8, 103u8,
+							59u8, 2u8, 120u8, 192u8, 146u8, 68u8, 230u8, 224u8, 73u8, 142u8, 61u8,
+							39u8, 211u8, 172u8, 143u8, 76u8, 9u8, 126u8, 161u8, 211u8, 254u8, 95u8,
+							185u8, 222u8, 84u8, 47u8, 32u8, 140u8, 184u8, 202u8, 195u8, 209u8,
 						],
 					)
 				}
@@ -2527,9 +2422,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							226u8, 139u8, 100u8, 52u8, 85u8, 42u8, 128u8, 91u8, 168u8, 35u8, 121u8,
-							33u8, 1u8, 31u8, 236u8, 163u8, 103u8, 101u8, 221u8, 247u8, 145u8,
-							227u8, 89u8, 27u8, 77u8, 8u8, 241u8, 118u8, 201u8, 230u8, 233u8, 174u8,
+							71u8, 56u8, 157u8, 250u8, 235u8, 106u8, 157u8, 164u8, 190u8, 118u8,
+							124u8, 157u8, 170u8, 0u8, 231u8, 230u8, 226u8, 174u8, 10u8, 100u8,
+							152u8, 36u8, 239u8, 247u8, 7u8, 112u8, 212u8, 102u8, 221u8, 94u8,
+							139u8, 112u8,
 						],
 					)
 				}
@@ -2543,9 +2439,9 @@ pub mod api {
 						"force_batch",
 						types::ForceBatch { calls },
 						[
-							155u8, 173u8, 143u8, 165u8, 78u8, 137u8, 69u8, 108u8, 80u8, 119u8,
-							86u8, 60u8, 4u8, 197u8, 39u8, 23u8, 193u8, 48u8, 98u8, 84u8, 63u8,
-							135u8, 66u8, 165u8, 228u8, 8u8, 16u8, 212u8, 45u8, 6u8, 107u8, 129u8,
+							108u8, 45u8, 123u8, 223u8, 121u8, 89u8, 102u8, 62u8, 58u8, 23u8, 18u8,
+							41u8, 79u8, 42u8, 150u8, 141u8, 199u8, 169u8, 104u8, 193u8, 50u8,
+							184u8, 134u8, 193u8, 97u8, 113u8, 66u8, 21u8, 157u8, 77u8, 50u8, 196u8,
 						],
 					)
 				}
@@ -2563,10 +2459,9 @@ pub mod api {
 							weight,
 						},
 						[
-							212u8, 227u8, 1u8, 152u8, 56u8, 137u8, 254u8, 209u8, 221u8, 124u8,
-							89u8, 1u8, 218u8, 114u8, 133u8, 15u8, 166u8, 228u8, 234u8, 59u8, 72u8,
-							122u8, 173u8, 118u8, 105u8, 108u8, 226u8, 26u8, 203u8, 91u8, 209u8,
-							39u8,
+							97u8, 121u8, 88u8, 83u8, 41u8, 91u8, 180u8, 148u8, 177u8, 78u8, 33u8,
+							193u8, 6u8, 170u8, 126u8, 117u8, 37u8, 180u8, 133u8, 77u8, 138u8, 33u8,
+							91u8, 0u8, 5u8, 185u8, 195u8, 253u8, 40u8, 81u8, 218u8, 29u8,
 						],
 					)
 				}
@@ -9644,1850 +9539,7 @@ pub mod api {
 			}
 		}
 	}
-	pub mod democracy {
-		use super::root_mod;
-		use super::runtime_types;
-		#[doc = "The `Error` enum of this pallet."]
-		pub type Error = runtime_types::pallet_democracy::pallet::Error;
-		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-		pub type Call = runtime_types::pallet_democracy::pallet::Call;
-		pub mod calls {
-			use super::root_mod;
-			use super::runtime_types;
-			type DispatchError = runtime_types::sp_runtime::DispatchError;
-			pub mod types {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Propose {
-					pub proposal: runtime_types::frame_support::traits::preimages::Bounded<
-						runtime_types::da_runtime::RuntimeCall,
-					>,
-					#[codec(compact)]
-					pub value: ::core::primitive::u128,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for Propose {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "propose";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Second {
-					#[codec(compact)]
-					pub proposal: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for Second {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "second";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Vote {
-					#[codec(compact)]
-					pub ref_index: ::core::primitive::u32,
-					pub vote:
-						runtime_types::pallet_democracy::vote::AccountVote<::core::primitive::u128>,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for Vote {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "vote";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: CompactAs,
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct EmergencyCancel {
-					pub ref_index: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for EmergencyCancel {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "emergency_cancel";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct ExternalPropose {
-					pub proposal: runtime_types::frame_support::traits::preimages::Bounded<
-						runtime_types::da_runtime::RuntimeCall,
-					>,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for ExternalPropose {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "external_propose";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct ExternalProposeMajority {
-					pub proposal: runtime_types::frame_support::traits::preimages::Bounded<
-						runtime_types::da_runtime::RuntimeCall,
-					>,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for ExternalProposeMajority {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "external_propose_majority";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct ExternalProposeDefault {
-					pub proposal: runtime_types::frame_support::traits::preimages::Bounded<
-						runtime_types::da_runtime::RuntimeCall,
-					>,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for ExternalProposeDefault {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "external_propose_default";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct FastTrack {
-					pub proposal_hash: ::subxt::utils::H256,
-					pub voting_period: ::core::primitive::u32,
-					pub delay: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for FastTrack {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "fast_track";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct VetoExternal {
-					pub proposal_hash: ::subxt::utils::H256,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for VetoExternal {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "veto_external";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct CancelReferendum {
-					#[codec(compact)]
-					pub ref_index: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for CancelReferendum {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "cancel_referendum";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Delegate {
-					pub to: ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-					pub conviction: runtime_types::pallet_democracy::conviction::Conviction,
-					pub balance: ::core::primitive::u128,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for Delegate {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "delegate";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Undelegate;
-				impl ::subxt::blocks::StaticExtrinsic for Undelegate {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "undelegate";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct ClearPublicProposals;
-				impl ::subxt::blocks::StaticExtrinsic for ClearPublicProposals {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "clear_public_proposals";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Unlock {
-					pub target: ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for Unlock {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "unlock";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: CompactAs,
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct RemoveVote {
-					pub index: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for RemoveVote {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "remove_vote";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct RemoveOtherVote {
-					pub target: ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-					pub index: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for RemoveOtherVote {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "remove_other_vote";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Blacklist {
-					pub proposal_hash: ::subxt::utils::H256,
-					pub maybe_ref_index: ::core::option::Option<::core::primitive::u32>,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for Blacklist {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "blacklist";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct CancelProposal {
-					#[codec(compact)]
-					pub prop_index: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for CancelProposal {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "cancel_proposal";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct SetMetadata {
-					pub owner: runtime_types::pallet_democracy::types::MetadataOwner,
-					pub maybe_hash: ::core::option::Option<::subxt::utils::H256>,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for SetMetadata {
-					const PALLET: &'static str = "Democracy";
-					const CALL: &'static str = "set_metadata";
-				}
-			}
-			pub struct TransactionApi;
-			impl TransactionApi {
-				#[doc = "See [`Pallet::propose`]."]
-				pub fn propose(
-					&self,
-					proposal: runtime_types::frame_support::traits::preimages::Bounded<
-						runtime_types::da_runtime::RuntimeCall,
-					>,
-					value: ::core::primitive::u128,
-				) -> ::subxt::tx::Payload<types::Propose> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"propose",
-						types::Propose { proposal, value },
-						[
-							230u8, 248u8, 57u8, 131u8, 96u8, 178u8, 225u8, 150u8, 97u8, 77u8,
-							246u8, 143u8, 151u8, 204u8, 201u8, 252u8, 133u8, 53u8, 34u8, 27u8,
-							156u8, 2u8, 242u8, 170u8, 198u8, 157u8, 166u8, 84u8, 246u8, 86u8, 78u8,
-							128u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::second`]."]
-				pub fn second(
-					&self,
-					proposal: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::Second> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"second",
-						types::Second { proposal },
-						[
-							195u8, 55u8, 178u8, 55u8, 129u8, 64u8, 10u8, 131u8, 217u8, 79u8, 1u8,
-							187u8, 73u8, 126u8, 191u8, 221u8, 110u8, 10u8, 13u8, 65u8, 190u8,
-							107u8, 21u8, 236u8, 175u8, 130u8, 227u8, 179u8, 173u8, 39u8, 32u8,
-							147u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::vote`]."]
-				pub fn vote(
-					&self,
-					ref_index: ::core::primitive::u32,
-					vote: runtime_types::pallet_democracy::vote::AccountVote<
-						::core::primitive::u128,
-					>,
-				) -> ::subxt::tx::Payload<types::Vote> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"vote",
-						types::Vote { ref_index, vote },
-						[
-							39u8, 113u8, 23u8, 175u8, 197u8, 225u8, 225u8, 129u8, 66u8, 50u8,
-							236u8, 220u8, 50u8, 49u8, 98u8, 163u8, 176u8, 96u8, 17u8, 91u8, 28u8,
-							187u8, 139u8, 148u8, 108u8, 110u8, 78u8, 253u8, 229u8, 3u8, 244u8,
-							126u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::emergency_cancel`]."]
-				pub fn emergency_cancel(
-					&self,
-					ref_index: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::EmergencyCancel> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"emergency_cancel",
-						types::EmergencyCancel { ref_index },
-						[
-							82u8, 232u8, 19u8, 158u8, 88u8, 69u8, 96u8, 225u8, 106u8, 253u8, 6u8,
-							136u8, 87u8, 0u8, 68u8, 128u8, 122u8, 16u8, 107u8, 76u8, 209u8, 14u8,
-							230u8, 49u8, 228u8, 100u8, 187u8, 10u8, 76u8, 71u8, 197u8, 72u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::external_propose`]."]
-				pub fn external_propose(
-					&self,
-					proposal: runtime_types::frame_support::traits::preimages::Bounded<
-						runtime_types::da_runtime::RuntimeCall,
-					>,
-				) -> ::subxt::tx::Payload<types::ExternalPropose> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"external_propose",
-						types::ExternalPropose { proposal },
-						[
-							247u8, 47u8, 180u8, 40u8, 205u8, 53u8, 99u8, 158u8, 4u8, 45u8, 157u8,
-							247u8, 32u8, 117u8, 153u8, 170u8, 226u8, 250u8, 142u8, 38u8, 237u8,
-							238u8, 75u8, 245u8, 184u8, 27u8, 157u8, 255u8, 213u8, 163u8, 92u8,
-							251u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::external_propose_majority`]."]
-				pub fn external_propose_majority(
-					&self,
-					proposal: runtime_types::frame_support::traits::preimages::Bounded<
-						runtime_types::da_runtime::RuntimeCall,
-					>,
-				) -> ::subxt::tx::Payload<types::ExternalProposeMajority> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"external_propose_majority",
-						types::ExternalProposeMajority { proposal },
-						[
-							107u8, 81u8, 160u8, 130u8, 242u8, 208u8, 22u8, 70u8, 237u8, 235u8,
-							236u8, 60u8, 206u8, 172u8, 251u8, 138u8, 168u8, 124u8, 136u8, 95u8,
-							3u8, 184u8, 12u8, 55u8, 125u8, 233u8, 20u8, 148u8, 36u8, 189u8, 16u8,
-							245u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::external_propose_default`]."]
-				pub fn external_propose_default(
-					&self,
-					proposal: runtime_types::frame_support::traits::preimages::Bounded<
-						runtime_types::da_runtime::RuntimeCall,
-					>,
-				) -> ::subxt::tx::Payload<types::ExternalProposeDefault> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"external_propose_default",
-						types::ExternalProposeDefault { proposal },
-						[
-							238u8, 247u8, 252u8, 35u8, 78u8, 158u8, 221u8, 87u8, 252u8, 98u8, 67u8,
-							44u8, 200u8, 206u8, 28u8, 19u8, 204u8, 13u8, 253u8, 133u8, 229u8,
-							195u8, 166u8, 218u8, 114u8, 69u8, 23u8, 169u8, 67u8, 168u8, 46u8,
-							176u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::fast_track`]."]
-				pub fn fast_track(
-					&self,
-					proposal_hash: ::subxt::utils::H256,
-					voting_period: ::core::primitive::u32,
-					delay: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::FastTrack> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"fast_track",
-						types::FastTrack {
-							proposal_hash,
-							voting_period,
-							delay,
-						},
-						[
-							147u8, 226u8, 166u8, 105u8, 149u8, 171u8, 86u8, 165u8, 168u8, 78u8,
-							233u8, 182u8, 118u8, 36u8, 82u8, 155u8, 209u8, 55u8, 153u8, 141u8,
-							120u8, 223u8, 46u8, 170u8, 48u8, 94u8, 32u8, 144u8, 84u8, 203u8, 68u8,
-							62u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::veto_external`]."]
-				pub fn veto_external(
-					&self,
-					proposal_hash: ::subxt::utils::H256,
-				) -> ::subxt::tx::Payload<types::VetoExternal> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"veto_external",
-						types::VetoExternal { proposal_hash },
-						[
-							121u8, 217u8, 249u8, 134u8, 45u8, 19u8, 126u8, 166u8, 218u8, 223u8,
-							165u8, 124u8, 162u8, 59u8, 56u8, 200u8, 227u8, 125u8, 23u8, 133u8,
-							196u8, 93u8, 210u8, 15u8, 39u8, 26u8, 58u8, 236u8, 9u8, 101u8, 202u8,
-							168u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::cancel_referendum`]."]
-				pub fn cancel_referendum(
-					&self,
-					ref_index: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::CancelReferendum> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"cancel_referendum",
-						types::CancelReferendum { ref_index },
-						[
-							149u8, 120u8, 70u8, 20u8, 126u8, 21u8, 30u8, 33u8, 82u8, 124u8, 229u8,
-							179u8, 169u8, 243u8, 173u8, 146u8, 140u8, 22u8, 124u8, 154u8, 228u8,
-							117u8, 109u8, 88u8, 11u8, 100u8, 235u8, 243u8, 118u8, 99u8, 250u8,
-							140u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::delegate`]."]
-				pub fn delegate(
-					&self,
-					to: ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-					conviction: runtime_types::pallet_democracy::conviction::Conviction,
-					balance: ::core::primitive::u128,
-				) -> ::subxt::tx::Payload<types::Delegate> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"delegate",
-						types::Delegate {
-							to,
-							conviction,
-							balance,
-						},
-						[
-							252u8, 37u8, 255u8, 84u8, 153u8, 112u8, 84u8, 10u8, 131u8, 85u8, 6u8,
-							204u8, 85u8, 241u8, 104u8, 155u8, 219u8, 222u8, 30u8, 7u8, 245u8, 12u8,
-							101u8, 120u8, 9u8, 156u8, 65u8, 218u8, 110u8, 244u8, 24u8, 251u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::undelegate`]."]
-				pub fn undelegate(&self) -> ::subxt::tx::Payload<types::Undelegate> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"undelegate",
-						types::Undelegate {},
-						[
-							225u8, 156u8, 102u8, 1u8, 172u8, 145u8, 88u8, 12u8, 89u8, 32u8, 51u8,
-							83u8, 25u8, 149u8, 132u8, 203u8, 246u8, 98u8, 155u8, 36u8, 165u8,
-							206u8, 233u8, 169u8, 91u8, 85u8, 105u8, 67u8, 46u8, 134u8, 244u8,
-							250u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::clear_public_proposals`]."]
-				pub fn clear_public_proposals(
-					&self,
-				) -> ::subxt::tx::Payload<types::ClearPublicProposals> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"clear_public_proposals",
-						types::ClearPublicProposals {},
-						[
-							116u8, 160u8, 246u8, 216u8, 23u8, 188u8, 144u8, 63u8, 97u8, 198u8,
-							11u8, 243u8, 165u8, 84u8, 159u8, 153u8, 235u8, 169u8, 166u8, 15u8,
-							23u8, 116u8, 30u8, 56u8, 133u8, 31u8, 158u8, 114u8, 158u8, 86u8, 106u8,
-							93u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::unlock`]."]
-				pub fn unlock(
-					&self,
-					target: ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-				) -> ::subxt::tx::Payload<types::Unlock> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"unlock",
-						types::Unlock { target },
-						[
-							134u8, 220u8, 108u8, 243u8, 205u8, 162u8, 111u8, 77u8, 224u8, 62u8,
-							27u8, 214u8, 97u8, 83u8, 212u8, 96u8, 68u8, 123u8, 160u8, 70u8, 127u8,
-							255u8, 94u8, 57u8, 224u8, 165u8, 250u8, 65u8, 13u8, 122u8, 101u8, 56u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::remove_vote`]."]
-				pub fn remove_vote(
-					&self,
-					index: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::RemoveVote> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"remove_vote",
-						types::RemoveVote { index },
-						[
-							98u8, 146u8, 215u8, 63u8, 222u8, 70u8, 61u8, 186u8, 90u8, 34u8, 63u8,
-							25u8, 195u8, 119u8, 228u8, 189u8, 38u8, 163u8, 58u8, 210u8, 216u8,
-							156u8, 20u8, 204u8, 136u8, 192u8, 33u8, 210u8, 124u8, 65u8, 153u8,
-							105u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::remove_other_vote`]."]
-				pub fn remove_other_vote(
-					&self,
-					target: ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-					index: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::RemoveOtherVote> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"remove_other_vote",
-						types::RemoveOtherVote { target, index },
-						[
-							92u8, 152u8, 49u8, 134u8, 235u8, 186u8, 109u8, 234u8, 16u8, 129u8,
-							255u8, 88u8, 231u8, 177u8, 197u8, 125u8, 105u8, 228u8, 69u8, 38u8,
-							231u8, 178u8, 75u8, 197u8, 113u8, 213u8, 157u8, 5u8, 68u8, 75u8, 155u8,
-							47u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::blacklist`]."]
-				pub fn blacklist(
-					&self,
-					proposal_hash: ::subxt::utils::H256,
-					maybe_ref_index: ::core::option::Option<::core::primitive::u32>,
-				) -> ::subxt::tx::Payload<types::Blacklist> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"blacklist",
-						types::Blacklist {
-							proposal_hash,
-							maybe_ref_index,
-						},
-						[
-							227u8, 200u8, 88u8, 154u8, 134u8, 121u8, 131u8, 177u8, 94u8, 119u8,
-							12u8, 129u8, 150u8, 59u8, 108u8, 103u8, 109u8, 55u8, 220u8, 211u8,
-							250u8, 103u8, 160u8, 170u8, 63u8, 142u8, 112u8, 244u8, 29u8, 238u8,
-							101u8, 24u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::cancel_proposal`]."]
-				pub fn cancel_proposal(
-					&self,
-					prop_index: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::CancelProposal> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"cancel_proposal",
-						types::CancelProposal { prop_index },
-						[
-							213u8, 5u8, 215u8, 209u8, 71u8, 229u8, 66u8, 38u8, 171u8, 38u8, 14u8,
-							103u8, 248u8, 176u8, 217u8, 143u8, 234u8, 89u8, 110u8, 250u8, 3u8,
-							190u8, 151u8, 74u8, 55u8, 58u8, 249u8, 138u8, 25u8, 191u8, 55u8, 142u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::set_metadata`]."]
-				pub fn set_metadata(
-					&self,
-					owner: runtime_types::pallet_democracy::types::MetadataOwner,
-					maybe_hash: ::core::option::Option<::subxt::utils::H256>,
-				) -> ::subxt::tx::Payload<types::SetMetadata> {
-					::subxt::tx::Payload::new_static(
-						"Democracy",
-						"set_metadata",
-						types::SetMetadata { owner, maybe_hash },
-						[
-							192u8, 174u8, 122u8, 229u8, 149u8, 49u8, 155u8, 209u8, 226u8, 255u8,
-							46u8, 43u8, 77u8, 164u8, 226u8, 254u8, 207u8, 110u8, 222u8, 131u8,
-							220u8, 53u8, 95u8, 170u8, 128u8, 212u8, 236u8, 168u8, 156u8, 29u8,
-							151u8, 40u8,
-						],
-					)
-				}
-			}
-		}
-		#[doc = "The `Event` enum of this pallet"]
-		pub type Event = runtime_types::pallet_democracy::pallet::Event;
-		pub mod events {
-			use super::runtime_types;
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A motion has been proposed by a public account."]
-			pub struct Proposed {
-				pub proposal_index: ::core::primitive::u32,
-				pub deposit: ::core::primitive::u128,
-			}
-			impl ::subxt::events::StaticEvent for Proposed {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "Proposed";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A public proposal has been tabled for referendum vote."]
-			pub struct Tabled {
-				pub proposal_index: ::core::primitive::u32,
-				pub deposit: ::core::primitive::u128,
-			}
-			impl ::subxt::events::StaticEvent for Tabled {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "Tabled";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "An external proposal has been tabled."]
-			pub struct ExternalTabled;
-			impl ::subxt::events::StaticEvent for ExternalTabled {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "ExternalTabled";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A referendum has begun."]
-			pub struct Started {
-				pub ref_index: ::core::primitive::u32,
-				pub threshold: runtime_types::pallet_democracy::vote_threshold::VoteThreshold,
-			}
-			impl ::subxt::events::StaticEvent for Started {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "Started";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: CompactAs,
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A proposal has been approved by referendum."]
-			pub struct Passed {
-				pub ref_index: ::core::primitive::u32,
-			}
-			impl ::subxt::events::StaticEvent for Passed {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "Passed";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: CompactAs,
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A proposal has been rejected by referendum."]
-			pub struct NotPassed {
-				pub ref_index: ::core::primitive::u32,
-			}
-			impl ::subxt::events::StaticEvent for NotPassed {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "NotPassed";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: CompactAs,
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A referendum has been cancelled."]
-			pub struct Cancelled {
-				pub ref_index: ::core::primitive::u32,
-			}
-			impl ::subxt::events::StaticEvent for Cancelled {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "Cancelled";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "An account has delegated their vote to another account."]
-			pub struct Delegated {
-				pub who: ::subxt::utils::AccountId32,
-				pub target: ::subxt::utils::AccountId32,
-			}
-			impl ::subxt::events::StaticEvent for Delegated {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "Delegated";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "An account has cancelled a previous delegation operation."]
-			pub struct Undelegated {
-				pub account: ::subxt::utils::AccountId32,
-			}
-			impl ::subxt::events::StaticEvent for Undelegated {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "Undelegated";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "An external proposal has been vetoed."]
-			pub struct Vetoed {
-				pub who: ::subxt::utils::AccountId32,
-				pub proposal_hash: ::subxt::utils::H256,
-				pub until: ::core::primitive::u32,
-			}
-			impl ::subxt::events::StaticEvent for Vetoed {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "Vetoed";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A proposal_hash has been blacklisted permanently."]
-			pub struct Blacklisted {
-				pub proposal_hash: ::subxt::utils::H256,
-			}
-			impl ::subxt::events::StaticEvent for Blacklisted {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "Blacklisted";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "An account has voted in a referendum"]
-			pub struct Voted {
-				pub voter: ::subxt::utils::AccountId32,
-				pub ref_index: ::core::primitive::u32,
-				pub vote:
-					runtime_types::pallet_democracy::vote::AccountVote<::core::primitive::u128>,
-			}
-			impl ::subxt::events::StaticEvent for Voted {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "Voted";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "An account has secconded a proposal"]
-			pub struct Seconded {
-				pub seconder: ::subxt::utils::AccountId32,
-				pub prop_index: ::core::primitive::u32,
-			}
-			impl ::subxt::events::StaticEvent for Seconded {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "Seconded";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: CompactAs,
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A proposal got canceled."]
-			pub struct ProposalCanceled {
-				pub prop_index: ::core::primitive::u32,
-			}
-			impl ::subxt::events::StaticEvent for ProposalCanceled {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "ProposalCanceled";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "Metadata for a proposal or a referendum has been set."]
-			pub struct MetadataSet {
-				pub owner: runtime_types::pallet_democracy::types::MetadataOwner,
-				pub hash: ::subxt::utils::H256,
-			}
-			impl ::subxt::events::StaticEvent for MetadataSet {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "MetadataSet";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "Metadata for a proposal or a referendum has been cleared."]
-			pub struct MetadataCleared {
-				pub owner: runtime_types::pallet_democracy::types::MetadataOwner,
-				pub hash: ::subxt::utils::H256,
-			}
-			impl ::subxt::events::StaticEvent for MetadataCleared {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "MetadataCleared";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "Metadata has been transferred to new owner."]
-			pub struct MetadataTransferred {
-				pub prev_owner: runtime_types::pallet_democracy::types::MetadataOwner,
-				pub owner: runtime_types::pallet_democracy::types::MetadataOwner,
-				pub hash: ::subxt::utils::H256,
-			}
-			impl ::subxt::events::StaticEvent for MetadataTransferred {
-				const PALLET: &'static str = "Democracy";
-				const EVENT: &'static str = "MetadataTransferred";
-			}
-		}
-		pub mod storage {
-			use super::runtime_types;
-			pub struct StorageApi;
-			impl StorageApi {
-				#[doc = " The number of (public) proposals that have been made so far."]
-				pub fn public_prop_count(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::core::primitive::u32,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"PublicPropCount",
-						vec![],
-						[
-							51u8, 175u8, 184u8, 94u8, 91u8, 212u8, 100u8, 108u8, 127u8, 162u8,
-							233u8, 137u8, 12u8, 209u8, 29u8, 130u8, 125u8, 179u8, 208u8, 160u8,
-							173u8, 149u8, 12u8, 111u8, 1u8, 82u8, 196u8, 137u8, 51u8, 204u8, 153u8,
-							198u8,
-						],
-					)
-				}
-				#[doc = " The public proposals. Unsorted. The second item is the proposal."]
-				pub fn public_props(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::bounded_collections::bounded_vec::BoundedVec<(
-						::core::primitive::u32,
-						runtime_types::frame_support::traits::preimages::Bounded<
-							runtime_types::da_runtime::RuntimeCall,
-						>,
-						::subxt::utils::AccountId32,
-					)>,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"PublicProps",
-						vec![],
-						[
-							156u8, 21u8, 84u8, 229u8, 193u8, 34u8, 28u8, 230u8, 11u8, 108u8, 2u8,
-							84u8, 188u8, 11u8, 25u8, 55u8, 130u8, 80u8, 164u8, 239u8, 150u8, 77u8,
-							4u8, 246u8, 174u8, 16u8, 232u8, 23u8, 9u8, 194u8, 177u8, 73u8,
-						],
-					)
-				}
-				#[doc = " Those who have locked a deposit."]
-				#[doc = ""]
-				#[doc = " TWOX-NOTE: Safe, as increasing integer keys are safe."]
-				pub fn deposit_of(
-					&self,
-					_0: impl ::std::borrow::Borrow<::core::primitive::u32>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					(
-						runtime_types::bounded_collections::bounded_vec::BoundedVec<
-							::subxt::utils::AccountId32,
-						>,
-						::core::primitive::u128,
-					),
-					::subxt::storage::address::Yes,
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"DepositOf",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							115u8, 12u8, 250u8, 191u8, 201u8, 165u8, 90u8, 140u8, 101u8, 47u8,
-							46u8, 3u8, 78u8, 30u8, 180u8, 22u8, 28u8, 154u8, 36u8, 99u8, 255u8,
-							84u8, 33u8, 21u8, 65u8, 110u8, 52u8, 245u8, 19u8, 6u8, 104u8, 167u8,
-						],
-					)
-				}
-				#[doc = " Those who have locked a deposit."]
-				#[doc = ""]
-				#[doc = " TWOX-NOTE: Safe, as increasing integer keys are safe."]
-				pub fn deposit_of_root(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					(
-						runtime_types::bounded_collections::bounded_vec::BoundedVec<
-							::subxt::utils::AccountId32,
-						>,
-						::core::primitive::u128,
-					),
-					(),
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"DepositOf",
-						Vec::new(),
-						[
-							115u8, 12u8, 250u8, 191u8, 201u8, 165u8, 90u8, 140u8, 101u8, 47u8,
-							46u8, 3u8, 78u8, 30u8, 180u8, 22u8, 28u8, 154u8, 36u8, 99u8, 255u8,
-							84u8, 33u8, 21u8, 65u8, 110u8, 52u8, 245u8, 19u8, 6u8, 104u8, 167u8,
-						],
-					)
-				}
-				#[doc = " The next free referendum index, aka the number of referenda started so far."]
-				pub fn referendum_count(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::core::primitive::u32,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"ReferendumCount",
-						vec![],
-						[
-							64u8, 145u8, 232u8, 153u8, 121u8, 87u8, 128u8, 253u8, 170u8, 192u8,
-							139u8, 18u8, 0u8, 33u8, 243u8, 11u8, 238u8, 222u8, 244u8, 5u8, 247u8,
-							198u8, 149u8, 31u8, 122u8, 208u8, 86u8, 179u8, 166u8, 167u8, 93u8,
-							67u8,
-						],
-					)
-				}
-				#[doc = " The lowest referendum index representing an unbaked referendum. Equal to"]
-				#[doc = " `ReferendumCount` if there isn't a unbaked referendum."]
-				pub fn lowest_unbaked(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::core::primitive::u32,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"LowestUnbaked",
-						vec![],
-						[
-							237u8, 222u8, 144u8, 214u8, 0u8, 186u8, 81u8, 176u8, 51u8, 14u8, 204u8,
-							184u8, 147u8, 97u8, 187u8, 84u8, 40u8, 8u8, 86u8, 241u8, 16u8, 157u8,
-							202u8, 44u8, 185u8, 111u8, 70u8, 114u8, 40u8, 135u8, 1u8, 155u8,
-						],
-					)
-				}
-				#[doc = " Information concerning any given referendum."]
-				#[doc = ""]
-				#[doc = " TWOX-NOTE: SAFE as indexes are not under an attacker’s control."]
-				pub fn referendum_info_of(
-					&self,
-					_0: impl ::std::borrow::Borrow<::core::primitive::u32>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_democracy::types::ReferendumInfo<
-						::core::primitive::u32,
-						runtime_types::frame_support::traits::preimages::Bounded<
-							runtime_types::da_runtime::RuntimeCall,
-						>,
-						::core::primitive::u128,
-					>,
-					::subxt::storage::address::Yes,
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"ReferendumInfoOf",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							250u8, 201u8, 144u8, 220u8, 13u8, 14u8, 69u8, 171u8, 240u8, 119u8,
-							158u8, 200u8, 86u8, 77u8, 115u8, 156u8, 156u8, 101u8, 215u8, 233u8,
-							165u8, 96u8, 62u8, 201u8, 83u8, 203u8, 58u8, 67u8, 49u8, 174u8, 86u8,
-							242u8,
-						],
-					)
-				}
-				#[doc = " Information concerning any given referendum."]
-				#[doc = ""]
-				#[doc = " TWOX-NOTE: SAFE as indexes are not under an attacker’s control."]
-				pub fn referendum_info_of_root(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_democracy::types::ReferendumInfo<
-						::core::primitive::u32,
-						runtime_types::frame_support::traits::preimages::Bounded<
-							runtime_types::da_runtime::RuntimeCall,
-						>,
-						::core::primitive::u128,
-					>,
-					(),
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"ReferendumInfoOf",
-						Vec::new(),
-						[
-							250u8, 201u8, 144u8, 220u8, 13u8, 14u8, 69u8, 171u8, 240u8, 119u8,
-							158u8, 200u8, 86u8, 77u8, 115u8, 156u8, 156u8, 101u8, 215u8, 233u8,
-							165u8, 96u8, 62u8, 201u8, 83u8, 203u8, 58u8, 67u8, 49u8, 174u8, 86u8,
-							242u8,
-						],
-					)
-				}
-				#[doc = " All votes for a particular voter. We store the balance for the number of votes that we"]
-				#[doc = " have recorded. The second item is the total amount of delegations, that will be added."]
-				#[doc = ""]
-				#[doc = " TWOX-NOTE: SAFE as `AccountId`s are crypto hashes anyway."]
-				pub fn voting_of(
-					&self,
-					_0: impl ::std::borrow::Borrow<::subxt::utils::AccountId32>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_democracy::vote::Voting<
-						::core::primitive::u128,
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"VotingOf",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							170u8, 234u8, 179u8, 190u8, 153u8, 172u8, 83u8, 105u8, 57u8, 88u8,
-							183u8, 54u8, 172u8, 149u8, 222u8, 240u8, 128u8, 46u8, 25u8, 10u8,
-							205u8, 69u8, 164u8, 173u8, 55u8, 188u8, 196u8, 51u8, 129u8, 206u8,
-							87u8, 249u8,
-						],
-					)
-				}
-				#[doc = " All votes for a particular voter. We store the balance for the number of votes that we"]
-				#[doc = " have recorded. The second item is the total amount of delegations, that will be added."]
-				#[doc = ""]
-				#[doc = " TWOX-NOTE: SAFE as `AccountId`s are crypto hashes anyway."]
-				pub fn voting_of_root(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_democracy::vote::Voting<
-						::core::primitive::u128,
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-					(),
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"VotingOf",
-						Vec::new(),
-						[
-							170u8, 234u8, 179u8, 190u8, 153u8, 172u8, 83u8, 105u8, 57u8, 88u8,
-							183u8, 54u8, 172u8, 149u8, 222u8, 240u8, 128u8, 46u8, 25u8, 10u8,
-							205u8, 69u8, 164u8, 173u8, 55u8, 188u8, 196u8, 51u8, 129u8, 206u8,
-							87u8, 249u8,
-						],
-					)
-				}
-				#[doc = " True if the last referendum tabled was submitted externally. False if it was a public"]
-				#[doc = " proposal."]
-				pub fn last_tabled_was_external(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::core::primitive::bool,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"LastTabledWasExternal",
-						vec![],
-						[
-							162u8, 201u8, 72u8, 9u8, 78u8, 49u8, 72u8, 62u8, 240u8, 69u8, 20u8,
-							135u8, 26u8, 59u8, 71u8, 46u8, 19u8, 25u8, 195u8, 11u8, 99u8, 31u8,
-							104u8, 4u8, 24u8, 129u8, 47u8, 69u8, 219u8, 178u8, 104u8, 190u8,
-						],
-					)
-				}
-				#[doc = " The referendum to be tabled whenever it would be valid to table an external proposal."]
-				#[doc = " This happens when a referendum needs to be tabled and one of two conditions are met:"]
-				#[doc = " - `LastTabledWasExternal` is `false`; or"]
-				#[doc = " - `PublicProps` is empty."]
-				pub fn next_external(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					(
-						runtime_types::frame_support::traits::preimages::Bounded<
-							runtime_types::da_runtime::RuntimeCall,
-						>,
-						runtime_types::pallet_democracy::vote_threshold::VoteThreshold,
-					),
-					::subxt::storage::address::Yes,
-					(),
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"NextExternal",
-						vec![],
-						[
-							130u8, 253u8, 139u8, 228u8, 253u8, 181u8, 172u8, 14u8, 214u8, 128u8,
-							17u8, 195u8, 104u8, 64u8, 64u8, 132u8, 40u8, 212u8, 80u8, 47u8, 225u8,
-							224u8, 9u8, 186u8, 80u8, 118u8, 120u8, 174u8, 174u8, 20u8, 150u8, 13u8,
-						],
-					)
-				}
-				#[doc = " A record of who vetoed what. Maps proposal hash to a possible existent block number"]
-				#[doc = " (until when it may not be resubmitted) and who vetoed it."]
-				pub fn blacklist(
-					&self,
-					_0: impl ::std::borrow::Borrow<::subxt::utils::H256>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					(
-						::core::primitive::u32,
-						runtime_types::bounded_collections::bounded_vec::BoundedVec<
-							::subxt::utils::AccountId32,
-						>,
-					),
-					::subxt::storage::address::Yes,
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"Blacklist",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							238u8, 119u8, 98u8, 220u8, 11u8, 209u8, 90u8, 9u8, 69u8, 51u8, 59u8,
-							177u8, 169u8, 113u8, 138u8, 13u8, 134u8, 14u8, 184u8, 6u8, 80u8, 182u8,
-							154u8, 10u8, 100u8, 71u8, 117u8, 2u8, 150u8, 170u8, 154u8, 255u8,
-						],
-					)
-				}
-				#[doc = " A record of who vetoed what. Maps proposal hash to a possible existent block number"]
-				#[doc = " (until when it may not be resubmitted) and who vetoed it."]
-				pub fn blacklist_root(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					(
-						::core::primitive::u32,
-						runtime_types::bounded_collections::bounded_vec::BoundedVec<
-							::subxt::utils::AccountId32,
-						>,
-					),
-					(),
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"Blacklist",
-						Vec::new(),
-						[
-							238u8, 119u8, 98u8, 220u8, 11u8, 209u8, 90u8, 9u8, 69u8, 51u8, 59u8,
-							177u8, 169u8, 113u8, 138u8, 13u8, 134u8, 14u8, 184u8, 6u8, 80u8, 182u8,
-							154u8, 10u8, 100u8, 71u8, 117u8, 2u8, 150u8, 170u8, 154u8, 255u8,
-						],
-					)
-				}
-				#[doc = " Record of all proposals that have been subject to emergency cancellation."]
-				pub fn cancellations(
-					&self,
-					_0: impl ::std::borrow::Borrow<::subxt::utils::H256>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::core::primitive::bool,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"Cancellations",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							80u8, 190u8, 98u8, 105u8, 129u8, 25u8, 167u8, 180u8, 74u8, 128u8,
-							232u8, 29u8, 193u8, 209u8, 185u8, 60u8, 18u8, 180u8, 59u8, 192u8,
-							149u8, 13u8, 123u8, 232u8, 34u8, 208u8, 48u8, 104u8, 35u8, 181u8,
-							186u8, 244u8,
-						],
-					)
-				}
-				#[doc = " Record of all proposals that have been subject to emergency cancellation."]
-				pub fn cancellations_root(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::core::primitive::bool,
-					(),
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"Cancellations",
-						Vec::new(),
-						[
-							80u8, 190u8, 98u8, 105u8, 129u8, 25u8, 167u8, 180u8, 74u8, 128u8,
-							232u8, 29u8, 193u8, 209u8, 185u8, 60u8, 18u8, 180u8, 59u8, 192u8,
-							149u8, 13u8, 123u8, 232u8, 34u8, 208u8, 48u8, 104u8, 35u8, 181u8,
-							186u8, 244u8,
-						],
-					)
-				}
-				#[doc = " General information concerning any proposal or referendum."]
-				#[doc = " The `PreimageHash` refers to the preimage of the `Preimages` provider which can be a JSON"]
-				#[doc = " dump or IPFS hash of a JSON file."]
-				#[doc = ""]
-				#[doc = " Consider a garbage collection for a metadata of finished referendums to `unrequest` (remove)"]
-				#[doc = " large preimages."]
-				pub fn metadata_of(
-					&self,
-					_0: impl ::std::borrow::Borrow<
-						runtime_types::pallet_democracy::types::MetadataOwner,
-					>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::subxt::utils::H256,
-					::subxt::storage::address::Yes,
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"MetadataOf",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							241u8, 106u8, 118u8, 66u8, 219u8, 192u8, 185u8, 117u8, 144u8, 174u8,
-							171u8, 207u8, 181u8, 32u8, 133u8, 127u8, 160u8, 218u8, 113u8, 153u8,
-							160u8, 7u8, 72u8, 58u8, 187u8, 96u8, 51u8, 236u8, 64u8, 80u8, 123u8,
-							254u8,
-						],
-					)
-				}
-				#[doc = " General information concerning any proposal or referendum."]
-				#[doc = " The `PreimageHash` refers to the preimage of the `Preimages` provider which can be a JSON"]
-				#[doc = " dump or IPFS hash of a JSON file."]
-				#[doc = ""]
-				#[doc = " Consider a garbage collection for a metadata of finished referendums to `unrequest` (remove)"]
-				#[doc = " large preimages."]
-				pub fn metadata_of_root(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::subxt::utils::H256,
-					(),
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Democracy",
-						"MetadataOf",
-						Vec::new(),
-						[
-							241u8, 106u8, 118u8, 66u8, 219u8, 192u8, 185u8, 117u8, 144u8, 174u8,
-							171u8, 207u8, 181u8, 32u8, 133u8, 127u8, 160u8, 218u8, 113u8, 153u8,
-							160u8, 7u8, 72u8, 58u8, 187u8, 96u8, 51u8, 236u8, 64u8, 80u8, 123u8,
-							254u8,
-						],
-					)
-				}
-			}
-		}
-		pub mod constants {
-			use super::runtime_types;
-			pub struct ConstantsApi;
-			impl ConstantsApi {
-				#[doc = " The period between a proposal being approved and enacted."]
-				#[doc = ""]
-				#[doc = " It should generally be a little more than the unstake period to ensure that"]
-				#[doc = " voting stakers have an opportunity to remove themselves from the system in the case"]
-				#[doc = " where they are on the losing side of a vote."]
-				pub fn enactment_period(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Democracy",
-						"EnactmentPeriod",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " How often (in blocks) new public referenda are launched."]
-				pub fn launch_period(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Democracy",
-						"LaunchPeriod",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " How often (in blocks) to check for new votes."]
-				pub fn voting_period(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Democracy",
-						"VotingPeriod",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " The minimum period of vote locking."]
-				#[doc = ""]
-				#[doc = " It should be no shorter than enactment period to ensure that in the case of an approval,"]
-				#[doc = " those successful voters are locked into the consequences that their votes entail."]
-				pub fn vote_locking_period(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Democracy",
-						"VoteLockingPeriod",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " The minimum amount to be used as a deposit for a public referendum proposal."]
-				pub fn minimum_deposit(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static(
-						"Democracy",
-						"MinimumDeposit",
-						[
-							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
-							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-						],
-					)
-				}
-				#[doc = " Indicator for whether an emergency origin is even allowed to happen. Some chains may"]
-				#[doc = " want to set this permanently to `false`, others may want to condition it on things such"]
-				#[doc = " as an upgrade having happened recently."]
-				pub fn instant_allowed(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::bool> {
-					::subxt::constants::Address::new_static(
-						"Democracy",
-						"InstantAllowed",
-						[
-							165u8, 28u8, 112u8, 190u8, 18u8, 129u8, 182u8, 206u8, 237u8, 1u8, 68u8,
-							252u8, 125u8, 234u8, 185u8, 50u8, 149u8, 164u8, 47u8, 126u8, 134u8,
-							100u8, 14u8, 86u8, 209u8, 39u8, 20u8, 4u8, 233u8, 115u8, 102u8, 131u8,
-						],
-					)
-				}
-				#[doc = " Minimum voting period allowed for a fast-track referendum."]
-				pub fn fast_track_voting_period(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Democracy",
-						"FastTrackVotingPeriod",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " Period in blocks where an external proposal may not be re-submitted after being vetoed."]
-				pub fn cooloff_period(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Democracy",
-						"CooloffPeriod",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " The maximum number of votes for an account."]
-				#[doc = ""]
-				#[doc = " Also used to compute weight, an overly big value can"]
-				#[doc = " lead to extrinsic with very big weight: see `delegate` for instance."]
-				pub fn max_votes(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Democracy",
-						"MaxVotes",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " The maximum number of public proposals that can exist at any time."]
-				pub fn max_proposals(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Democracy",
-						"MaxProposals",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " The maximum number of deposits a public proposal may have at any time."]
-				pub fn max_deposits(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Democracy",
-						"MaxDeposits",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " The maximum number of items which can be blacklisted."]
-				pub fn max_blacklisted(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Democracy",
-						"MaxBlacklisted",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-			}
-		}
-	}
-	pub mod council {
+	pub mod technical_committee {
 		use super::root_mod;
 		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
@@ -11519,7 +9571,7 @@ pub mod api {
 					pub old_count: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetMembers {
-					const PALLET: &'static str = "Council";
+					const PALLET: &'static str = "TechnicalCommittee";
 					const CALL: &'static str = "set_members";
 				}
 				#[derive(
@@ -11541,7 +9593,7 @@ pub mod api {
 					pub length_bound: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Execute {
-					const PALLET: &'static str = "Council";
+					const PALLET: &'static str = "TechnicalCommittee";
 					const CALL: &'static str = "execute";
 				}
 				#[derive(
@@ -11565,7 +9617,7 @@ pub mod api {
 					pub length_bound: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Propose {
-					const PALLET: &'static str = "Council";
+					const PALLET: &'static str = "TechnicalCommittee";
 					const CALL: &'static str = "propose";
 				}
 				#[derive(
@@ -11588,7 +9640,7 @@ pub mod api {
 					pub approve: ::core::primitive::bool,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Vote {
-					const PALLET: &'static str = "Council";
+					const PALLET: &'static str = "TechnicalCommittee";
 					const CALL: &'static str = "vote";
 				}
 				#[derive(
@@ -11608,7 +9660,7 @@ pub mod api {
 					pub proposal_hash: ::subxt::utils::H256,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for DisapproveProposal {
-					const PALLET: &'static str = "Council";
+					const PALLET: &'static str = "TechnicalCommittee";
 					const CALL: &'static str = "disapprove_proposal";
 				}
 				#[derive(
@@ -11633,7 +9685,7 @@ pub mod api {
 					pub length_bound: ::core::primitive::u32,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for Close {
-					const PALLET: &'static str = "Council";
+					const PALLET: &'static str = "TechnicalCommittee";
 					const CALL: &'static str = "close";
 				}
 			}
@@ -11647,7 +9699,7 @@ pub mod api {
 					old_count: ::core::primitive::u32,
 				) -> ::subxt::tx::Payload<types::SetMembers> {
 					::subxt::tx::Payload::new_static(
-						"Council",
+						"TechnicalCommittee",
 						"set_members",
 						types::SetMembers {
 							new_members,
@@ -11669,17 +9721,17 @@ pub mod api {
 					length_bound: ::core::primitive::u32,
 				) -> ::subxt::tx::Payload<types::Execute> {
 					::subxt::tx::Payload::new_static(
-						"Council",
+						"TechnicalCommittee",
 						"execute",
 						types::Execute {
 							proposal: ::std::boxed::Box::new(proposal),
 							length_bound,
 						},
 						[
-							1u8, 38u8, 214u8, 226u8, 97u8, 229u8, 11u8, 242u8, 214u8, 241u8, 236u8,
-							153u8, 130u8, 210u8, 175u8, 160u8, 127u8, 82u8, 98u8, 101u8, 63u8,
-							153u8, 87u8, 60u8, 224u8, 216u8, 240u8, 157u8, 184u8, 81u8, 44u8,
-							237u8,
+							147u8, 68u8, 21u8, 174u8, 67u8, 231u8, 185u8, 37u8, 221u8, 148u8,
+							149u8, 223u8, 234u8, 141u8, 90u8, 37u8, 109u8, 240u8, 103u8, 232u8,
+							215u8, 85u8, 116u8, 15u8, 1u8, 15u8, 236u8, 12u8, 77u8, 181u8, 46u8,
+							145u8,
 						],
 					)
 				}
@@ -11691,7 +9743,7 @@ pub mod api {
 					length_bound: ::core::primitive::u32,
 				) -> ::subxt::tx::Payload<types::Propose> {
 					::subxt::tx::Payload::new_static(
-						"Council",
+						"TechnicalCommittee",
 						"propose",
 						types::Propose {
 							threshold,
@@ -11699,9 +9751,10 @@ pub mod api {
 							length_bound,
 						},
 						[
-							148u8, 42u8, 1u8, 63u8, 46u8, 63u8, 176u8, 201u8, 181u8, 83u8, 197u8,
-							39u8, 100u8, 27u8, 88u8, 17u8, 58u8, 140u8, 2u8, 63u8, 211u8, 5u8,
-							250u8, 61u8, 0u8, 64u8, 99u8, 112u8, 71u8, 13u8, 32u8, 255u8,
+							201u8, 234u8, 90u8, 229u8, 124u8, 103u8, 217u8, 254u8, 204u8, 10u8,
+							14u8, 9u8, 62u8, 3u8, 30u8, 51u8, 132u8, 72u8, 141u8, 88u8, 251u8,
+							248u8, 237u8, 132u8, 194u8, 99u8, 182u8, 241u8, 97u8, 106u8, 10u8,
+							67u8,
 						],
 					)
 				}
@@ -11713,7 +9766,7 @@ pub mod api {
 					approve: ::core::primitive::bool,
 				) -> ::subxt::tx::Payload<types::Vote> {
 					::subxt::tx::Payload::new_static(
-						"Council",
+						"TechnicalCommittee",
 						"vote",
 						types::Vote {
 							proposal,
@@ -11734,7 +9787,7 @@ pub mod api {
 					proposal_hash: ::subxt::utils::H256,
 				) -> ::subxt::tx::Payload<types::DisapproveProposal> {
 					::subxt::tx::Payload::new_static(
-						"Council",
+						"TechnicalCommittee",
 						"disapprove_proposal",
 						types::DisapproveProposal { proposal_hash },
 						[
@@ -11753,7 +9806,7 @@ pub mod api {
 					length_bound: ::core::primitive::u32,
 				) -> ::subxt::tx::Payload<types::Close> {
 					::subxt::tx::Payload::new_static(
-						"Council",
+						"TechnicalCommittee",
 						"close",
 						types::Close {
 							proposal_hash,
@@ -11796,665 +9849,6 @@ pub mod api {
 				pub threshold: ::core::primitive::u32,
 			}
 			impl ::subxt::events::StaticEvent for Proposed {
-				const PALLET: &'static str = "Council";
-				const EVENT: &'static str = "Proposed";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A motion (given hash) has been voted on by given account, leaving"]
-			#[doc = "a tally (yes votes and no votes given respectively as `MemberCount`)."]
-			pub struct Voted {
-				pub account: ::subxt::utils::AccountId32,
-				pub proposal_hash: ::subxt::utils::H256,
-				pub voted: ::core::primitive::bool,
-				pub yes: ::core::primitive::u32,
-				pub no: ::core::primitive::u32,
-			}
-			impl ::subxt::events::StaticEvent for Voted {
-				const PALLET: &'static str = "Council";
-				const EVENT: &'static str = "Voted";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A motion was approved by the required threshold."]
-			pub struct Approved {
-				pub proposal_hash: ::subxt::utils::H256,
-			}
-			impl ::subxt::events::StaticEvent for Approved {
-				const PALLET: &'static str = "Council";
-				const EVENT: &'static str = "Approved";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A motion was not approved by the required threshold."]
-			pub struct Disapproved {
-				pub proposal_hash: ::subxt::utils::H256,
-			}
-			impl ::subxt::events::StaticEvent for Disapproved {
-				const PALLET: &'static str = "Council";
-				const EVENT: &'static str = "Disapproved";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A motion was executed; result will be `Ok` if it returned without error."]
-			pub struct Executed {
-				pub proposal_hash: ::subxt::utils::H256,
-				pub result: ::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
-			}
-			impl ::subxt::events::StaticEvent for Executed {
-				const PALLET: &'static str = "Council";
-				const EVENT: &'static str = "Executed";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A single member did some action; result will be `Ok` if it returned without error."]
-			pub struct MemberExecuted {
-				pub proposal_hash: ::subxt::utils::H256,
-				pub result: ::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
-			}
-			impl ::subxt::events::StaticEvent for MemberExecuted {
-				const PALLET: &'static str = "Council";
-				const EVENT: &'static str = "MemberExecuted";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A proposal was closed because its threshold was reached or after its duration was up."]
-			pub struct Closed {
-				pub proposal_hash: ::subxt::utils::H256,
-				pub yes: ::core::primitive::u32,
-				pub no: ::core::primitive::u32,
-			}
-			impl ::subxt::events::StaticEvent for Closed {
-				const PALLET: &'static str = "Council";
-				const EVENT: &'static str = "Closed";
-			}
-		}
-		pub mod storage {
-			use super::runtime_types;
-			pub struct StorageApi;
-			impl StorageApi {
-				#[doc = " The hashes of the active proposals."]
-				pub fn proposals(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::bounded_collections::bounded_vec::BoundedVec<
-						::subxt::utils::H256,
-					>,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Council",
-						"Proposals",
-						vec![],
-						[
-							210u8, 234u8, 7u8, 29u8, 231u8, 80u8, 17u8, 36u8, 189u8, 34u8, 175u8,
-							147u8, 56u8, 92u8, 201u8, 104u8, 207u8, 150u8, 58u8, 110u8, 90u8, 28u8,
-							198u8, 79u8, 236u8, 245u8, 19u8, 38u8, 68u8, 59u8, 215u8, 74u8,
-						],
-					)
-				}
-				#[doc = " Actual proposal for a given hash, if it's current."]
-				pub fn proposal_of(
-					&self,
-					_0: impl ::std::borrow::Borrow<::subxt::utils::H256>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::da_runtime::RuntimeCall,
-					::subxt::storage::address::Yes,
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Council",
-						"ProposalOf",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							211u8, 81u8, 191u8, 143u8, 109u8, 169u8, 12u8, 12u8, 190u8, 218u8,
-							108u8, 146u8, 228u8, 21u8, 63u8, 28u8, 185u8, 152u8, 226u8, 164u8,
-							169u8, 85u8, 69u8, 235u8, 226u8, 212u8, 218u8, 115u8, 19u8, 127u8,
-							138u8, 178u8,
-						],
-					)
-				}
-				#[doc = " Actual proposal for a given hash, if it's current."]
-				pub fn proposal_of_root(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::da_runtime::RuntimeCall,
-					(),
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Council",
-						"ProposalOf",
-						Vec::new(),
-						[
-							211u8, 81u8, 191u8, 143u8, 109u8, 169u8, 12u8, 12u8, 190u8, 218u8,
-							108u8, 146u8, 228u8, 21u8, 63u8, 28u8, 185u8, 152u8, 226u8, 164u8,
-							169u8, 85u8, 69u8, 235u8, 226u8, 212u8, 218u8, 115u8, 19u8, 127u8,
-							138u8, 178u8,
-						],
-					)
-				}
-				#[doc = " Votes on a given proposal, if it is ongoing."]
-				pub fn voting(
-					&self,
-					_0: impl ::std::borrow::Borrow<::subxt::utils::H256>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_collective::Votes<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-					::subxt::storage::address::Yes,
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Council",
-						"Voting",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							56u8, 192u8, 111u8, 180u8, 253u8, 5u8, 232u8, 126u8, 177u8, 48u8,
-							135u8, 39u8, 89u8, 71u8, 62u8, 239u8, 216u8, 17u8, 64u8, 82u8, 130u8,
-							236u8, 96u8, 89u8, 167u8, 2u8, 118u8, 113u8, 63u8, 176u8, 124u8, 73u8,
-						],
-					)
-				}
-				#[doc = " Votes on a given proposal, if it is ongoing."]
-				pub fn voting_root(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_collective::Votes<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-					(),
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Council",
-						"Voting",
-						Vec::new(),
-						[
-							56u8, 192u8, 111u8, 180u8, 253u8, 5u8, 232u8, 126u8, 177u8, 48u8,
-							135u8, 39u8, 89u8, 71u8, 62u8, 239u8, 216u8, 17u8, 64u8, 82u8, 130u8,
-							236u8, 96u8, 89u8, 167u8, 2u8, 118u8, 113u8, 63u8, 176u8, 124u8, 73u8,
-						],
-					)
-				}
-				#[doc = " Proposals so far."]
-				pub fn proposal_count(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::core::primitive::u32,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Council",
-						"ProposalCount",
-						vec![],
-						[
-							91u8, 238u8, 246u8, 106u8, 95u8, 66u8, 83u8, 134u8, 1u8, 225u8, 164u8,
-							216u8, 113u8, 101u8, 203u8, 200u8, 113u8, 97u8, 246u8, 228u8, 140u8,
-							29u8, 29u8, 48u8, 176u8, 137u8, 93u8, 230u8, 56u8, 75u8, 51u8, 149u8,
-						],
-					)
-				}
-				#[doc = " The current members of the collective. This is stored sorted (just by value)."]
-				pub fn members(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::std::vec::Vec<::subxt::utils::AccountId32>,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Council",
-						"Members",
-						vec![],
-						[
-							16u8, 29u8, 32u8, 222u8, 175u8, 136u8, 111u8, 101u8, 43u8, 74u8, 209u8,
-							81u8, 47u8, 97u8, 129u8, 39u8, 225u8, 243u8, 110u8, 229u8, 237u8, 21u8,
-							90u8, 127u8, 80u8, 239u8, 156u8, 32u8, 90u8, 109u8, 179u8, 0u8,
-						],
-					)
-				}
-				#[doc = " The prime member that helps determine the default vote behavior in case of absentations."]
-				pub fn prime(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::subxt::utils::AccountId32,
-					::subxt::storage::address::Yes,
-					(),
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Council",
-						"Prime",
-						vec![],
-						[
-							72u8, 128u8, 214u8, 72u8, 78u8, 80u8, 100u8, 198u8, 114u8, 215u8, 59u8,
-							3u8, 103u8, 14u8, 152u8, 202u8, 12u8, 165u8, 224u8, 10u8, 41u8, 154u8,
-							77u8, 95u8, 116u8, 143u8, 250u8, 250u8, 176u8, 92u8, 238u8, 154u8,
-						],
-					)
-				}
-			}
-		}
-		pub mod constants {
-			use super::runtime_types;
-			pub struct ConstantsApi;
-			impl ConstantsApi {
-				#[doc = " The maximum weight of a dispatch call that can be proposed and executed."]
-				pub fn max_proposal_weight(
-					&self,
-				) -> ::subxt::constants::Address<runtime_types::sp_weights::weight_v2::Weight> {
-					::subxt::constants::Address::new_static(
-						"Council",
-						"MaxProposalWeight",
-						[
-							222u8, 183u8, 203u8, 169u8, 31u8, 134u8, 28u8, 12u8, 47u8, 140u8, 71u8,
-							74u8, 61u8, 55u8, 71u8, 236u8, 215u8, 83u8, 28u8, 70u8, 45u8, 128u8,
-							184u8, 57u8, 101u8, 83u8, 42u8, 165u8, 34u8, 155u8, 64u8, 145u8,
-						],
-					)
-				}
-			}
-		}
-	}
-	pub mod technical_committee {
-		use super::root_mod;
-		use super::runtime_types;
-		#[doc = "The `Error` enum of this pallet."]
-		pub type Error = runtime_types::pallet_collective::pallet::Error2;
-		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-		pub type Call = runtime_types::pallet_collective::pallet::Call2;
-		pub mod calls {
-			use super::root_mod;
-			use super::runtime_types;
-			type DispatchError = runtime_types::sp_runtime::DispatchError;
-			pub mod types {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct SetMembers {
-					pub new_members: ::std::vec::Vec<::subxt::utils::AccountId32>,
-					pub prime: ::core::option::Option<::subxt::utils::AccountId32>,
-					pub old_count: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for SetMembers {
-					const PALLET: &'static str = "TechnicalCommittee";
-					const CALL: &'static str = "set_members";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Execute {
-					pub proposal: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
-					#[codec(compact)]
-					pub length_bound: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for Execute {
-					const PALLET: &'static str = "TechnicalCommittee";
-					const CALL: &'static str = "execute";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Propose {
-					#[codec(compact)]
-					pub threshold: ::core::primitive::u32,
-					pub proposal: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
-					#[codec(compact)]
-					pub length_bound: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for Propose {
-					const PALLET: &'static str = "TechnicalCommittee";
-					const CALL: &'static str = "propose";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Vote {
-					pub proposal: ::subxt::utils::H256,
-					#[codec(compact)]
-					pub index: ::core::primitive::u32,
-					pub approve: ::core::primitive::bool,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for Vote {
-					const PALLET: &'static str = "TechnicalCommittee";
-					const CALL: &'static str = "vote";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct DisapproveProposal {
-					pub proposal_hash: ::subxt::utils::H256,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for DisapproveProposal {
-					const PALLET: &'static str = "TechnicalCommittee";
-					const CALL: &'static str = "disapprove_proposal";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Close {
-					pub proposal_hash: ::subxt::utils::H256,
-					#[codec(compact)]
-					pub index: ::core::primitive::u32,
-					pub proposal_weight_bound: runtime_types::sp_weights::weight_v2::Weight,
-					#[codec(compact)]
-					pub length_bound: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for Close {
-					const PALLET: &'static str = "TechnicalCommittee";
-					const CALL: &'static str = "close";
-				}
-			}
-			pub struct TransactionApi;
-			impl TransactionApi {
-				#[doc = "See [`Pallet::set_members`]."]
-				pub fn set_members(
-					&self,
-					new_members: ::std::vec::Vec<::subxt::utils::AccountId32>,
-					prime: ::core::option::Option<::subxt::utils::AccountId32>,
-					old_count: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::SetMembers> {
-					::subxt::tx::Payload::new_static(
-						"TechnicalCommittee",
-						"set_members",
-						types::SetMembers {
-							new_members,
-							prime,
-							old_count,
-						},
-						[
-							141u8, 113u8, 137u8, 46u8, 75u8, 22u8, 143u8, 204u8, 50u8, 24u8, 137u8,
-							25u8, 226u8, 166u8, 121u8, 161u8, 54u8, 144u8, 12u8, 145u8, 157u8,
-							153u8, 47u8, 144u8, 94u8, 34u8, 217u8, 115u8, 125u8, 152u8, 110u8,
-							28u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::execute`]."]
-				pub fn execute(
-					&self,
-					proposal: runtime_types::da_runtime::RuntimeCall,
-					length_bound: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::Execute> {
-					::subxt::tx::Payload::new_static(
-						"TechnicalCommittee",
-						"execute",
-						types::Execute {
-							proposal: ::std::boxed::Box::new(proposal),
-							length_bound,
-						},
-						[
-							1u8, 38u8, 214u8, 226u8, 97u8, 229u8, 11u8, 242u8, 214u8, 241u8, 236u8,
-							153u8, 130u8, 210u8, 175u8, 160u8, 127u8, 82u8, 98u8, 101u8, 63u8,
-							153u8, 87u8, 60u8, 224u8, 216u8, 240u8, 157u8, 184u8, 81u8, 44u8,
-							237u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::propose`]."]
-				pub fn propose(
-					&self,
-					threshold: ::core::primitive::u32,
-					proposal: runtime_types::da_runtime::RuntimeCall,
-					length_bound: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::Propose> {
-					::subxt::tx::Payload::new_static(
-						"TechnicalCommittee",
-						"propose",
-						types::Propose {
-							threshold,
-							proposal: ::std::boxed::Box::new(proposal),
-							length_bound,
-						},
-						[
-							148u8, 42u8, 1u8, 63u8, 46u8, 63u8, 176u8, 201u8, 181u8, 83u8, 197u8,
-							39u8, 100u8, 27u8, 88u8, 17u8, 58u8, 140u8, 2u8, 63u8, 211u8, 5u8,
-							250u8, 61u8, 0u8, 64u8, 99u8, 112u8, 71u8, 13u8, 32u8, 255u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::vote`]."]
-				pub fn vote(
-					&self,
-					proposal: ::subxt::utils::H256,
-					index: ::core::primitive::u32,
-					approve: ::core::primitive::bool,
-				) -> ::subxt::tx::Payload<types::Vote> {
-					::subxt::tx::Payload::new_static(
-						"TechnicalCommittee",
-						"vote",
-						types::Vote {
-							proposal,
-							index,
-							approve,
-						},
-						[
-							110u8, 141u8, 24u8, 33u8, 91u8, 7u8, 89u8, 198u8, 54u8, 10u8, 76u8,
-							129u8, 45u8, 20u8, 216u8, 104u8, 231u8, 246u8, 174u8, 205u8, 190u8,
-							176u8, 171u8, 113u8, 33u8, 37u8, 155u8, 203u8, 251u8, 34u8, 25u8,
-							120u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::disapprove_proposal`]."]
-				pub fn disapprove_proposal(
-					&self,
-					proposal_hash: ::subxt::utils::H256,
-				) -> ::subxt::tx::Payload<types::DisapproveProposal> {
-					::subxt::tx::Payload::new_static(
-						"TechnicalCommittee",
-						"disapprove_proposal",
-						types::DisapproveProposal { proposal_hash },
-						[
-							26u8, 140u8, 111u8, 193u8, 229u8, 59u8, 53u8, 196u8, 230u8, 60u8, 7u8,
-							155u8, 168u8, 7u8, 201u8, 177u8, 70u8, 103u8, 190u8, 57u8, 244u8,
-							156u8, 67u8, 101u8, 228u8, 6u8, 213u8, 83u8, 225u8, 95u8, 148u8, 96u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::close`]."]
-				pub fn close(
-					&self,
-					proposal_hash: ::subxt::utils::H256,
-					index: ::core::primitive::u32,
-					proposal_weight_bound: runtime_types::sp_weights::weight_v2::Weight,
-					length_bound: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::Close> {
-					::subxt::tx::Payload::new_static(
-						"TechnicalCommittee",
-						"close",
-						types::Close {
-							proposal_hash,
-							index,
-							proposal_weight_bound,
-							length_bound,
-						},
-						[
-							189u8, 149u8, 125u8, 63u8, 39u8, 201u8, 247u8, 4u8, 220u8, 74u8, 78u8,
-							14u8, 113u8, 163u8, 1u8, 159u8, 81u8, 248u8, 141u8, 111u8, 34u8, 243u8,
-							67u8, 70u8, 60u8, 92u8, 47u8, 70u8, 66u8, 246u8, 236u8, 153u8,
-						],
-					)
-				}
-			}
-		}
-		#[doc = "The `Event` enum of this pallet"]
-		pub type Event = runtime_types::pallet_collective::pallet::Event2;
-		pub mod events {
-			use super::runtime_types;
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A motion (given hash) has been proposed (by given account) with a threshold (given"]
-			#[doc = "`MemberCount`)."]
-			pub struct Proposed {
-				pub account: ::subxt::utils::AccountId32,
-				pub proposal_index: ::core::primitive::u32,
-				pub proposal_hash: ::subxt::utils::H256,
-				pub threshold: ::core::primitive::u32,
-			}
-			impl ::subxt::events::StaticEvent for Proposed {
 				const PALLET: &'static str = "TechnicalCommittee";
 				const EVENT: &'static str = "Proposed";
 			}
@@ -12639,10 +10033,9 @@ pub mod api {
 							_0.borrow(),
 						)],
 						[
-							211u8, 81u8, 191u8, 143u8, 109u8, 169u8, 12u8, 12u8, 190u8, 218u8,
-							108u8, 146u8, 228u8, 21u8, 63u8, 28u8, 185u8, 152u8, 226u8, 164u8,
-							169u8, 85u8, 69u8, 235u8, 226u8, 212u8, 218u8, 115u8, 19u8, 127u8,
-							138u8, 178u8,
+							166u8, 138u8, 231u8, 52u8, 124u8, 126u8, 77u8, 69u8, 109u8, 4u8, 196u8,
+							172u8, 114u8, 174u8, 25u8, 206u8, 4u8, 246u8, 11u8, 120u8, 43u8, 7u8,
+							229u8, 101u8, 100u8, 127u8, 0u8, 175u8, 224u8, 180u8, 132u8, 196u8,
 						],
 					)
 				}
@@ -12661,10 +10054,9 @@ pub mod api {
 						"ProposalOf",
 						Vec::new(),
 						[
-							211u8, 81u8, 191u8, 143u8, 109u8, 169u8, 12u8, 12u8, 190u8, 218u8,
-							108u8, 146u8, 228u8, 21u8, 63u8, 28u8, 185u8, 152u8, 226u8, 164u8,
-							169u8, 85u8, 69u8, 235u8, 226u8, 212u8, 218u8, 115u8, 19u8, 127u8,
-							138u8, 178u8,
+							166u8, 138u8, 231u8, 52u8, 124u8, 126u8, 77u8, 69u8, 109u8, 4u8, 196u8,
+							172u8, 114u8, 174u8, 25u8, 206u8, 4u8, 246u8, 11u8, 120u8, 43u8, 7u8,
+							229u8, 101u8, 100u8, 127u8, 0u8, 175u8, 224u8, 180u8, 132u8, 196u8,
 						],
 					)
 				}
@@ -12799,757 +10191,6 @@ pub mod api {
 							222u8, 183u8, 203u8, 169u8, 31u8, 134u8, 28u8, 12u8, 47u8, 140u8, 71u8,
 							74u8, 61u8, 55u8, 71u8, 236u8, 215u8, 83u8, 28u8, 70u8, 45u8, 128u8,
 							184u8, 57u8, 101u8, 83u8, 42u8, 165u8, 34u8, 155u8, 64u8, 145u8,
-						],
-					)
-				}
-			}
-		}
-	}
-	pub mod elections {
-		use super::root_mod;
-		use super::runtime_types;
-		#[doc = "The `Error` enum of this pallet."]
-		pub type Error = runtime_types::pallet_elections_phragmen::pallet::Error;
-		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-		pub type Call = runtime_types::pallet_elections_phragmen::pallet::Call;
-		pub mod calls {
-			use super::root_mod;
-			use super::runtime_types;
-			type DispatchError = runtime_types::sp_runtime::DispatchError;
-			pub mod types {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Vote {
-					pub votes: ::std::vec::Vec<::subxt::utils::AccountId32>,
-					#[codec(compact)]
-					pub value: ::core::primitive::u128,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for Vote {
-					const PALLET: &'static str = "Elections";
-					const CALL: &'static str = "vote";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct RemoveVoter;
-				impl ::subxt::blocks::StaticExtrinsic for RemoveVoter {
-					const PALLET: &'static str = "Elections";
-					const CALL: &'static str = "remove_voter";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct SubmitCandidacy {
-					#[codec(compact)]
-					pub candidate_count: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for SubmitCandidacy {
-					const PALLET: &'static str = "Elections";
-					const CALL: &'static str = "submit_candidacy";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct RenounceCandidacy {
-					pub renouncing: runtime_types::pallet_elections_phragmen::Renouncing,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for RenounceCandidacy {
-					const PALLET: &'static str = "Elections";
-					const CALL: &'static str = "renounce_candidacy";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct RemoveMember {
-					pub who: ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-					pub slash_bond: ::core::primitive::bool,
-					pub rerun_election: ::core::primitive::bool,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for RemoveMember {
-					const PALLET: &'static str = "Elections";
-					const CALL: &'static str = "remove_member";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct CleanDefunctVoters {
-					pub num_voters: ::core::primitive::u32,
-					pub num_defunct: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for CleanDefunctVoters {
-					const PALLET: &'static str = "Elections";
-					const CALL: &'static str = "clean_defunct_voters";
-				}
-			}
-			pub struct TransactionApi;
-			impl TransactionApi {
-				#[doc = "See [`Pallet::vote`]."]
-				pub fn vote(
-					&self,
-					votes: ::std::vec::Vec<::subxt::utils::AccountId32>,
-					value: ::core::primitive::u128,
-				) -> ::subxt::tx::Payload<types::Vote> {
-					::subxt::tx::Payload::new_static(
-						"Elections",
-						"vote",
-						types::Vote { votes, value },
-						[
-							229u8, 163u8, 1u8, 49u8, 26u8, 130u8, 7u8, 228u8, 34u8, 80u8, 17u8,
-							125u8, 32u8, 180u8, 174u8, 69u8, 17u8, 171u8, 163u8, 54u8, 42u8, 139u8,
-							201u8, 205u8, 196u8, 18u8, 16u8, 211u8, 252u8, 64u8, 73u8, 5u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::remove_voter`]."]
-				pub fn remove_voter(&self) -> ::subxt::tx::Payload<types::RemoveVoter> {
-					::subxt::tx::Payload::new_static(
-						"Elections",
-						"remove_voter",
-						types::RemoveVoter {},
-						[
-							89u8, 43u8, 70u8, 117u8, 76u8, 84u8, 230u8, 114u8, 229u8, 91u8, 75u8,
-							213u8, 47u8, 143u8, 233u8, 47u8, 108u8, 120u8, 171u8, 167u8, 14u8,
-							62u8, 52u8, 20u8, 227u8, 106u8, 249u8, 239u8, 33u8, 115u8, 155u8,
-							106u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::submit_candidacy`]."]
-				pub fn submit_candidacy(
-					&self,
-					candidate_count: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::SubmitCandidacy> {
-					::subxt::tx::Payload::new_static(
-						"Elections",
-						"submit_candidacy",
-						types::SubmitCandidacy { candidate_count },
-						[
-							229u8, 169u8, 247u8, 102u8, 33u8, 7u8, 9u8, 125u8, 190u8, 179u8, 241u8,
-							220u8, 205u8, 242u8, 168u8, 112u8, 197u8, 169u8, 135u8, 133u8, 102u8,
-							173u8, 168u8, 203u8, 17u8, 135u8, 224u8, 145u8, 101u8, 204u8, 253u8,
-							4u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::renounce_candidacy`]."]
-				pub fn renounce_candidacy(
-					&self,
-					renouncing: runtime_types::pallet_elections_phragmen::Renouncing,
-				) -> ::subxt::tx::Payload<types::RenounceCandidacy> {
-					::subxt::tx::Payload::new_static(
-						"Elections",
-						"renounce_candidacy",
-						types::RenounceCandidacy { renouncing },
-						[
-							230u8, 140u8, 205u8, 240u8, 110u8, 247u8, 242u8, 185u8, 228u8, 135u8,
-							243u8, 73u8, 71u8, 200u8, 88u8, 134u8, 132u8, 174u8, 190u8, 251u8,
-							81u8, 85u8, 174u8, 230u8, 94u8, 97u8, 96u8, 230u8, 15u8, 204u8, 247u8,
-							214u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::remove_member`]."]
-				pub fn remove_member(
-					&self,
-					who: ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-					slash_bond: ::core::primitive::bool,
-					rerun_election: ::core::primitive::bool,
-				) -> ::subxt::tx::Payload<types::RemoveMember> {
-					::subxt::tx::Payload::new_static(
-						"Elections",
-						"remove_member",
-						types::RemoveMember {
-							who,
-							slash_bond,
-							rerun_election,
-						},
-						[
-							121u8, 189u8, 213u8, 154u8, 126u8, 196u8, 140u8, 208u8, 152u8, 191u8,
-							224u8, 160u8, 42u8, 2u8, 243u8, 37u8, 120u8, 73u8, 160u8, 5u8, 243u8,
-							110u8, 167u8, 242u8, 22u8, 100u8, 93u8, 197u8, 209u8, 85u8, 201u8,
-							153u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::clean_defunct_voters`]."]
-				pub fn clean_defunct_voters(
-					&self,
-					num_voters: ::core::primitive::u32,
-					num_defunct: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::CleanDefunctVoters> {
-					::subxt::tx::Payload::new_static(
-						"Elections",
-						"clean_defunct_voters",
-						types::CleanDefunctVoters {
-							num_voters,
-							num_defunct,
-						},
-						[
-							103u8, 241u8, 66u8, 156u8, 118u8, 36u8, 101u8, 148u8, 76u8, 162u8,
-							240u8, 31u8, 114u8, 10u8, 247u8, 68u8, 163u8, 187u8, 117u8, 47u8, 14u8,
-							16u8, 103u8, 211u8, 243u8, 44u8, 235u8, 200u8, 127u8, 113u8, 98u8,
-							83u8,
-						],
-					)
-				}
-			}
-		}
-		#[doc = "The `Event` enum of this pallet"]
-		pub type Event = runtime_types::pallet_elections_phragmen::pallet::Event;
-		pub mod events {
-			use super::runtime_types;
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A new term with new_members. This indicates that enough candidates existed to run"]
-			#[doc = "the election, not that enough have has been elected. The inner value must be examined"]
-			#[doc = "for this purpose. A `NewTerm(\\[\\])` indicates that some candidates got their bond"]
-			#[doc = "slashed and none were elected, whilst `EmptyTerm` means that no candidates existed to"]
-			#[doc = "begin with."]
-			pub struct NewTerm {
-				pub new_members:
-					::std::vec::Vec<(::subxt::utils::AccountId32, ::core::primitive::u128)>,
-			}
-			impl ::subxt::events::StaticEvent for NewTerm {
-				const PALLET: &'static str = "Elections";
-				const EVENT: &'static str = "NewTerm";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "No (or not enough) candidates existed for this round. This is different from"]
-			#[doc = "`NewTerm(\\[\\])`. See the description of `NewTerm`."]
-			pub struct EmptyTerm;
-			impl ::subxt::events::StaticEvent for EmptyTerm {
-				const PALLET: &'static str = "Elections";
-				const EVENT: &'static str = "EmptyTerm";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "Internal error happened while trying to perform election."]
-			pub struct ElectionError;
-			impl ::subxt::events::StaticEvent for ElectionError {
-				const PALLET: &'static str = "Elections";
-				const EVENT: &'static str = "ElectionError";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A member has been removed. This should always be followed by either `NewTerm` or"]
-			#[doc = "`EmptyTerm`."]
-			pub struct MemberKicked {
-				pub member: ::subxt::utils::AccountId32,
-			}
-			impl ::subxt::events::StaticEvent for MemberKicked {
-				const PALLET: &'static str = "Elections";
-				const EVENT: &'static str = "MemberKicked";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "Someone has renounced their candidacy."]
-			pub struct Renounced {
-				pub candidate: ::subxt::utils::AccountId32,
-			}
-			impl ::subxt::events::StaticEvent for Renounced {
-				const PALLET: &'static str = "Elections";
-				const EVENT: &'static str = "Renounced";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A candidate was slashed by amount due to failing to obtain a seat as member or"]
-			#[doc = "runner-up."]
-			#[doc = ""]
-			#[doc = "Note that old members and runners-up are also candidates."]
-			pub struct CandidateSlashed {
-				pub candidate: ::subxt::utils::AccountId32,
-				pub amount: ::core::primitive::u128,
-			}
-			impl ::subxt::events::StaticEvent for CandidateSlashed {
-				const PALLET: &'static str = "Elections";
-				const EVENT: &'static str = "CandidateSlashed";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A seat holder was slashed by amount by being forcefully removed from the set."]
-			pub struct SeatHolderSlashed {
-				pub seat_holder: ::subxt::utils::AccountId32,
-				pub amount: ::core::primitive::u128,
-			}
-			impl ::subxt::events::StaticEvent for SeatHolderSlashed {
-				const PALLET: &'static str = "Elections";
-				const EVENT: &'static str = "SeatHolderSlashed";
-			}
-		}
-		pub mod storage {
-			use super::runtime_types;
-			pub struct StorageApi;
-			impl StorageApi {
-				#[doc = " The current elected members."]
-				#[doc = ""]
-				#[doc = " Invariant: Always sorted based on account id."]
-				pub fn members(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::std::vec::Vec<
-						runtime_types::pallet_elections_phragmen::SeatHolder<
-							::subxt::utils::AccountId32,
-							::core::primitive::u128,
-						>,
-					>,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Elections",
-						"Members",
-						vec![],
-						[
-							210u8, 86u8, 209u8, 114u8, 170u8, 238u8, 106u8, 102u8, 0u8, 140u8,
-							113u8, 238u8, 36u8, 115u8, 162u8, 167u8, 194u8, 3u8, 57u8, 171u8, 41u8,
-							219u8, 39u8, 120u8, 192u8, 208u8, 155u8, 163u8, 26u8, 209u8, 42u8,
-							73u8,
-						],
-					)
-				}
-				#[doc = " The current reserved runners-up."]
-				#[doc = ""]
-				#[doc = " Invariant: Always sorted based on rank (worse to best). Upon removal of a member, the"]
-				#[doc = " last (i.e. _best_) runner-up will be replaced."]
-				pub fn runners_up(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::std::vec::Vec<
-						runtime_types::pallet_elections_phragmen::SeatHolder<
-							::subxt::utils::AccountId32,
-							::core::primitive::u128,
-						>,
-					>,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Elections",
-						"RunnersUp",
-						vec![],
-						[
-							102u8, 255u8, 105u8, 141u8, 24u8, 140u8, 180u8, 249u8, 19u8, 52u8,
-							144u8, 157u8, 139u8, 156u8, 5u8, 30u8, 148u8, 36u8, 67u8, 25u8, 238u8,
-							196u8, 163u8, 165u8, 11u8, 1u8, 162u8, 131u8, 65u8, 207u8, 140u8,
-							171u8,
-						],
-					)
-				}
-				#[doc = " The present candidate list. A current member or runner-up can never enter this vector"]
-				#[doc = " and is always implicitly assumed to be a candidate."]
-				#[doc = ""]
-				#[doc = " Second element is the deposit."]
-				#[doc = ""]
-				#[doc = " Invariant: Always sorted based on account id."]
-				pub fn candidates(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::std::vec::Vec<(::subxt::utils::AccountId32, ::core::primitive::u128)>,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Elections",
-						"Candidates",
-						vec![],
-						[
-							220u8, 219u8, 115u8, 204u8, 15u8, 0u8, 135u8, 72u8, 241u8, 89u8, 10u8,
-							105u8, 106u8, 93u8, 18u8, 63u8, 43u8, 117u8, 120u8, 73u8, 8u8, 143u8,
-							244u8, 144u8, 223u8, 155u8, 217u8, 132u8, 246u8, 228u8, 210u8, 53u8,
-						],
-					)
-				}
-				#[doc = " The total number of vote rounds that have happened, excluding the upcoming one."]
-				pub fn election_rounds(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::core::primitive::u32,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Elections",
-						"ElectionRounds",
-						vec![],
-						[
-							97u8, 151u8, 159u8, 133u8, 59u8, 215u8, 12u8, 178u8, 203u8, 24u8,
-							138u8, 36u8, 108u8, 134u8, 217u8, 137u8, 24u8, 6u8, 126u8, 87u8, 49u8,
-							90u8, 198u8, 16u8, 36u8, 109u8, 223u8, 190u8, 81u8, 7u8, 239u8, 243u8,
-						],
-					)
-				}
-				#[doc = " Votes and locked stake of a particular voter."]
-				#[doc = ""]
-				#[doc = " TWOX-NOTE: SAFE as `AccountId` is a crypto hash."]
-				pub fn voting(
-					&self,
-					_0: impl ::std::borrow::Borrow<::subxt::utils::AccountId32>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_elections_phragmen::Voter<
-						::subxt::utils::AccountId32,
-						::core::primitive::u128,
-					>,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Elections",
-						"Voting",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							18u8, 65u8, 68u8, 10u8, 123u8, 174u8, 185u8, 95u8, 75u8, 37u8, 201u8,
-							31u8, 93u8, 189u8, 184u8, 76u8, 199u8, 168u8, 74u8, 199u8, 75u8, 78u8,
-							55u8, 222u8, 234u8, 48u8, 81u8, 52u8, 187u8, 64u8, 41u8, 93u8,
-						],
-					)
-				}
-				#[doc = " Votes and locked stake of a particular voter."]
-				#[doc = ""]
-				#[doc = " TWOX-NOTE: SAFE as `AccountId` is a crypto hash."]
-				pub fn voting_root(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_elections_phragmen::Voter<
-						::subxt::utils::AccountId32,
-						::core::primitive::u128,
-					>,
-					(),
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Elections",
-						"Voting",
-						Vec::new(),
-						[
-							18u8, 65u8, 68u8, 10u8, 123u8, 174u8, 185u8, 95u8, 75u8, 37u8, 201u8,
-							31u8, 93u8, 189u8, 184u8, 76u8, 199u8, 168u8, 74u8, 199u8, 75u8, 78u8,
-							55u8, 222u8, 234u8, 48u8, 81u8, 52u8, 187u8, 64u8, 41u8, 93u8,
-						],
-					)
-				}
-			}
-		}
-		pub mod constants {
-			use super::runtime_types;
-			pub struct ConstantsApi;
-			impl ConstantsApi {
-				#[doc = " Identifier for the elections-phragmen pallet's lock"]
-				pub fn pallet_id(
-					&self,
-				) -> ::subxt::constants::Address<[::core::primitive::u8; 8usize]> {
-					::subxt::constants::Address::new_static(
-						"Elections",
-						"PalletId",
-						[
-							157u8, 118u8, 79u8, 88u8, 241u8, 22u8, 185u8, 37u8, 42u8, 20u8, 133u8,
-							240u8, 11u8, 25u8, 66u8, 154u8, 84u8, 163u8, 78u8, 92u8, 171u8, 82u8,
-							248u8, 76u8, 189u8, 70u8, 142u8, 249u8, 153u8, 84u8, 180u8, 60u8,
-						],
-					)
-				}
-				#[doc = " How much should be locked up in order to submit one's candidacy."]
-				pub fn candidacy_bond(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static(
-						"Elections",
-						"CandidacyBond",
-						[
-							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
-							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-						],
-					)
-				}
-				#[doc = " Base deposit associated with voting."]
-				#[doc = ""]
-				#[doc = " This should be sensibly high to economically ensure the pallet cannot be attacked by"]
-				#[doc = " creating a gigantic number of votes."]
-				pub fn voting_bond_base(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static(
-						"Elections",
-						"VotingBondBase",
-						[
-							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
-							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-						],
-					)
-				}
-				#[doc = " The amount of bond that need to be locked for each vote (32 bytes)."]
-				pub fn voting_bond_factor(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static(
-						"Elections",
-						"VotingBondFactor",
-						[
-							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
-							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-						],
-					)
-				}
-				#[doc = " Number of members to elect."]
-				pub fn desired_members(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Elections",
-						"DesiredMembers",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " Number of runners_up to keep."]
-				pub fn desired_runners_up(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Elections",
-						"DesiredRunnersUp",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " How long each seat is kept. This defines the next block number at which an election"]
-				#[doc = " round will happen. If set to zero, no elections are ever triggered and the module will"]
-				#[doc = " be in passive mode."]
-				pub fn term_duration(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Elections",
-						"TermDuration",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " The maximum number of candidates in a phragmen election."]
-				#[doc = ""]
-				#[doc = " Warning: This impacts the size of the election which is run onchain. Chose wisely, and"]
-				#[doc = " consider how it will impact `T::WeightInfo::election_phragmen`."]
-				#[doc = ""]
-				#[doc = " When this limit is reached no more candidates are accepted in the election."]
-				pub fn max_candidates(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Elections",
-						"MaxCandidates",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " The maximum number of voters to allow in a phragmen election."]
-				#[doc = ""]
-				#[doc = " Warning: This impacts the size of the election which is run onchain. Chose wisely, and"]
-				#[doc = " consider how it will impact `T::WeightInfo::election_phragmen`."]
-				#[doc = ""]
-				#[doc = " When the limit is reached the new voters are ignored."]
-				pub fn max_voters(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Elections",
-						"MaxVoters",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " Maximum numbers of votes per voter."]
-				#[doc = ""]
-				#[doc = " Warning: This impacts the size of the election which is run onchain. Chose wisely, and"]
-				#[doc = " consider how it will impact `T::WeightInfo::election_phragmen`."]
-				pub fn max_votes_per_voter(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Elections",
-						"MaxVotesPerVoter",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
 						],
 					)
 				}
@@ -15255,9 +11896,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							115u8, 211u8, 9u8, 14u8, 126u8, 94u8, 205u8, 184u8, 36u8, 23u8, 96u8,
-							244u8, 87u8, 102u8, 70u8, 124u8, 96u8, 70u8, 60u8, 202u8, 38u8, 47u8,
-							123u8, 55u8, 24u8, 93u8, 169u8, 85u8, 247u8, 45u8, 112u8, 230u8,
+							132u8, 69u8, 16u8, 63u8, 28u8, 117u8, 158u8, 165u8, 163u8, 82u8, 42u8,
+							99u8, 115u8, 140u8, 111u8, 108u8, 190u8, 182u8, 55u8, 15u8, 173u8,
+							220u8, 191u8, 110u8, 227u8, 201u8, 4u8, 82u8, 165u8, 177u8, 11u8,
+							255u8,
 						],
 					)
 				}
@@ -15275,10 +11917,9 @@ pub mod api {
 							weight,
 						},
 						[
-							49u8, 133u8, 238u8, 204u8, 210u8, 155u8, 88u8, 95u8, 201u8, 135u8,
-							189u8, 255u8, 81u8, 67u8, 155u8, 238u8, 79u8, 240u8, 148u8, 174u8,
-							32u8, 120u8, 143u8, 123u8, 22u8, 232u8, 100u8, 83u8, 79u8, 84u8, 118u8,
-							42u8,
+							242u8, 34u8, 43u8, 180u8, 59u8, 18u8, 23u8, 108u8, 145u8, 91u8, 187u8,
+							102u8, 250u8, 90u8, 180u8, 14u8, 15u8, 52u8, 173u8, 12u8, 49u8, 254u8,
+							51u8, 211u8, 253u8, 162u8, 235u8, 123u8, 167u8, 48u8, 162u8, 98u8,
 						],
 					)
 				}
@@ -15319,10 +11960,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							171u8, 1u8, 142u8, 53u8, 76u8, 179u8, 179u8, 181u8, 77u8, 118u8, 240u8,
-							228u8, 12u8, 121u8, 254u8, 104u8, 40u8, 217u8, 143u8, 138u8, 147u8,
-							212u8, 102u8, 69u8, 137u8, 125u8, 201u8, 32u8, 168u8, 31u8, 94u8,
-							150u8,
+							198u8, 27u8, 114u8, 245u8, 101u8, 109u8, 97u8, 222u8, 9u8, 252u8,
+							236u8, 254u8, 118u8, 42u8, 216u8, 165u8, 101u8, 14u8, 130u8, 97u8,
+							38u8, 67u8, 226u8, 138u8, 8u8, 123u8, 120u8, 215u8, 10u8, 244u8, 187u8,
+							195u8,
 						],
 					)
 				}
@@ -16208,10 +12849,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							105u8, 180u8, 206u8, 231u8, 176u8, 22u8, 221u8, 120u8, 43u8, 150u8,
-							44u8, 204u8, 152u8, 22u8, 118u8, 101u8, 165u8, 245u8, 183u8, 228u8,
-							129u8, 166u8, 134u8, 12u8, 174u8, 212u8, 77u8, 239u8, 31u8, 127u8,
-							111u8, 133u8,
+							18u8, 49u8, 145u8, 211u8, 200u8, 186u8, 238u8, 185u8, 154u8, 111u8,
+							96u8, 56u8, 156u8, 38u8, 252u8, 152u8, 123u8, 108u8, 176u8, 175u8,
+							28u8, 38u8, 203u8, 218u8, 141u8, 161u8, 244u8, 115u8, 93u8, 154u8,
+							245u8, 112u8,
 						],
 					)
 				}
@@ -16256,9 +12897,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							43u8, 11u8, 8u8, 156u8, 239u8, 243u8, 176u8, 94u8, 154u8, 37u8, 78u8,
-							176u8, 83u8, 12u8, 138u8, 79u8, 150u8, 238u8, 29u8, 116u8, 214u8, 57u8,
-							211u8, 168u8, 121u8, 77u8, 134u8, 43u8, 72u8, 95u8, 225u8, 222u8,
+							121u8, 7u8, 233u8, 108u8, 196u8, 170u8, 148u8, 225u8, 27u8, 116u8,
+							51u8, 86u8, 99u8, 63u8, 244u8, 179u8, 125u8, 218u8, 210u8, 156u8,
+							245u8, 75u8, 207u8, 191u8, 210u8, 150u8, 23u8, 111u8, 14u8, 4u8, 156u8,
+							151u8,
 						],
 					)
 				}
@@ -16299,10 +12941,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							86u8, 137u8, 116u8, 38u8, 238u8, 121u8, 182u8, 136u8, 166u8, 41u8,
-							25u8, 157u8, 160u8, 43u8, 48u8, 98u8, 142u8, 89u8, 252u8, 50u8, 103u8,
-							214u8, 227u8, 189u8, 37u8, 37u8, 242u8, 199u8, 147u8, 236u8, 92u8,
-							39u8,
+							161u8, 122u8, 162u8, 47u8, 124u8, 5u8, 98u8, 177u8, 59u8, 69u8, 98u8,
+							168u8, 196u8, 221u8, 210u8, 53u8, 39u8, 31u8, 228u8, 107u8, 14u8, 27u8,
+							178u8, 16u8, 193u8, 8u8, 24u8, 229u8, 24u8, 168u8, 242u8, 30u8,
 						],
 					)
 				}
@@ -16329,9 +12970,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							11u8, 176u8, 139u8, 184u8, 50u8, 135u8, 66u8, 173u8, 89u8, 244u8, 31u8,
-							35u8, 245u8, 198u8, 98u8, 28u8, 193u8, 14u8, 206u8, 74u8, 221u8, 140u8,
-							47u8, 94u8, 190u8, 2u8, 152u8, 21u8, 0u8, 192u8, 121u8, 105u8,
+							80u8, 204u8, 70u8, 103u8, 72u8, 3u8, 206u8, 49u8, 76u8, 36u8, 84u8,
+							142u8, 173u8, 109u8, 102u8, 65u8, 90u8, 13u8, 209u8, 126u8, 178u8,
+							15u8, 224u8, 223u8, 41u8, 39u8, 240u8, 120u8, 187u8, 44u8, 50u8, 73u8,
 						],
 					)
 				}
@@ -16529,10 +13170,9 @@ pub mod api {
 							_0.borrow(),
 						)],
 						[
-							197u8, 7u8, 91u8, 13u8, 123u8, 168u8, 206u8, 127u8, 112u8, 147u8,
-							206u8, 4u8, 237u8, 18u8, 133u8, 209u8, 100u8, 73u8, 1u8, 11u8, 57u8,
-							57u8, 204u8, 79u8, 236u8, 125u8, 89u8, 44u8, 177u8, 153u8, 196u8,
-							138u8,
+							23u8, 81u8, 39u8, 5u8, 225u8, 208u8, 146u8, 192u8, 11u8, 82u8, 106u8,
+							66u8, 228u8, 103u8, 246u8, 7u8, 227u8, 101u8, 213u8, 112u8, 244u8,
+							69u8, 24u8, 166u8, 1u8, 164u8, 247u8, 131u8, 228u8, 224u8, 13u8, 215u8,
 						],
 					)
 				}
@@ -16563,10 +13203,9 @@ pub mod api {
 						"Agenda",
 						Vec::new(),
 						[
-							197u8, 7u8, 91u8, 13u8, 123u8, 168u8, 206u8, 127u8, 112u8, 147u8,
-							206u8, 4u8, 237u8, 18u8, 133u8, 209u8, 100u8, 73u8, 1u8, 11u8, 57u8,
-							57u8, 204u8, 79u8, 236u8, 125u8, 89u8, 44u8, 177u8, 153u8, 196u8,
-							138u8,
+							23u8, 81u8, 39u8, 5u8, 225u8, 208u8, 146u8, 192u8, 11u8, 82u8, 106u8,
+							66u8, 228u8, 103u8, 246u8, 7u8, 227u8, 101u8, 213u8, 112u8, 244u8,
+							69u8, 24u8, 166u8, 1u8, 164u8, 247u8, 131u8, 228u8, 224u8, 13u8, 215u8,
 						],
 					)
 				}
@@ -19727,10 +16366,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							27u8, 55u8, 124u8, 217u8, 104u8, 143u8, 19u8, 237u8, 35u8, 3u8, 224u8,
-							74u8, 236u8, 148u8, 238u8, 153u8, 30u8, 114u8, 140u8, 25u8, 212u8,
-							99u8, 63u8, 16u8, 122u8, 180u8, 247u8, 104u8, 147u8, 28u8, 202u8,
-							114u8,
+							179u8, 118u8, 81u8, 158u8, 194u8, 170u8, 17u8, 78u8, 113u8, 164u8,
+							102u8, 0u8, 175u8, 8u8, 206u8, 132u8, 228u8, 77u8, 111u8, 99u8, 126u8,
+							12u8, 210u8, 193u8, 173u8, 29u8, 0u8, 129u8, 233u8, 16u8, 11u8, 226u8,
 						],
 					)
 				}
@@ -19756,10 +16394,10 @@ pub mod api {
 							max_weight,
 						},
 						[
-							161u8, 78u8, 65u8, 172u8, 140u8, 82u8, 98u8, 186u8, 176u8, 164u8,
-							226u8, 67u8, 10u8, 126u8, 182u8, 129u8, 173u8, 92u8, 224u8, 8u8, 140u8,
-							227u8, 111u8, 61u8, 85u8, 239u8, 65u8, 62u8, 159u8, 251u8, 218u8,
-							134u8,
+							237u8, 210u8, 18u8, 200u8, 161u8, 23u8, 250u8, 101u8, 101u8, 161u8,
+							73u8, 123u8, 193u8, 112u8, 154u8, 211u8, 190u8, 168u8, 250u8, 232u8,
+							189u8, 225u8, 199u8, 38u8, 87u8, 64u8, 232u8, 95u8, 31u8, 248u8, 178u8,
+							44u8,
 						],
 					)
 				}
@@ -23630,9 +20268,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							255u8, 84u8, 185u8, 34u8, 76u8, 12u8, 184u8, 13u8, 57u8, 225u8, 52u8,
-							20u8, 140u8, 32u8, 20u8, 134u8, 12u8, 84u8, 88u8, 239u8, 214u8, 203u8,
-							68u8, 220u8, 186u8, 174u8, 14u8, 225u8, 155u8, 133u8, 160u8, 183u8,
+							101u8, 107u8, 216u8, 70u8, 143u8, 185u8, 154u8, 128u8, 127u8, 61u8,
+							82u8, 133u8, 217u8, 231u8, 97u8, 86u8, 197u8, 246u8, 136u8, 216u8,
+							194u8, 241u8, 82u8, 99u8, 154u8, 205u8, 57u8, 21u8, 153u8, 217u8,
+							185u8, 152u8,
 						],
 					)
 				}
@@ -24374,13 +21013,11 @@ pub mod api {
 				system(
 					runtime_types::frame_support::dispatch::RawOrigin<::subxt::utils::AccountId32>,
 				),
-				#[codec(index = 13)]
-				Council(runtime_types::pallet_collective::RawOrigin<::subxt::utils::AccountId32>),
 				#[codec(index = 14)]
 				TechnicalCommittee(
 					runtime_types::pallet_collective::RawOrigin<::subxt::utils::AccountId32>,
 				),
-				#[codec(index = 3)]
+				#[codec(index = 2)]
 				Void(runtime_types::sp_core::Void),
 			}
 			#[derive(
@@ -24431,14 +21068,8 @@ pub mod api {
 				Staking(runtime_types::pallet_staking::pallet::pallet::Call),
 				#[codec(index = 11)]
 				Session(runtime_types::pallet_session::pallet::Call),
-				#[codec(index = 12)]
-				Democracy(runtime_types::pallet_democracy::pallet::Call),
-				#[codec(index = 13)]
-				Council(runtime_types::pallet_collective::pallet::Call),
 				#[codec(index = 14)]
-				TechnicalCommittee(runtime_types::pallet_collective::pallet::Call2),
-				#[codec(index = 15)]
-				Elections(runtime_types::pallet_elections_phragmen::pallet::Call),
+				TechnicalCommittee(runtime_types::pallet_collective::pallet::Call),
 				#[codec(index = 16)]
 				TechnicalMembership(runtime_types::pallet_membership::pallet::Call),
 				#[codec(index = 17)]
@@ -24508,14 +21139,8 @@ pub mod api {
 				Staking(runtime_types::pallet_staking::pallet::pallet::Event),
 				#[codec(index = 11)]
 				Session(runtime_types::pallet_session::pallet::Event),
-				#[codec(index = 12)]
-				Democracy(runtime_types::pallet_democracy::pallet::Event),
-				#[codec(index = 13)]
-				Council(runtime_types::pallet_collective::pallet::Event),
 				#[codec(index = 14)]
-				TechnicalCommittee(runtime_types::pallet_collective::pallet::Event2),
-				#[codec(index = 15)]
-				Elections(runtime_types::pallet_elections_phragmen::pallet::Event),
+				TechnicalCommittee(runtime_types::pallet_collective::pallet::Event),
 				#[codec(index = 16)]
 				TechnicalMembership(runtime_types::pallet_membership::pallet::Event),
 				#[codec(index = 17)]
@@ -26592,66 +23217,6 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-				pub enum Call2 {
-					#[codec(index = 0)]
-					#[doc = "See [`Pallet::set_members`]."]
-					set_members {
-						new_members: ::std::vec::Vec<::subxt::utils::AccountId32>,
-						prime: ::core::option::Option<::subxt::utils::AccountId32>,
-						old_count: ::core::primitive::u32,
-					},
-					#[codec(index = 1)]
-					#[doc = "See [`Pallet::execute`]."]
-					execute {
-						proposal: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
-						#[codec(compact)]
-						length_bound: ::core::primitive::u32,
-					},
-					#[codec(index = 2)]
-					#[doc = "See [`Pallet::propose`]."]
-					propose {
-						#[codec(compact)]
-						threshold: ::core::primitive::u32,
-						proposal: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
-						#[codec(compact)]
-						length_bound: ::core::primitive::u32,
-					},
-					#[codec(index = 3)]
-					#[doc = "See [`Pallet::vote`]."]
-					vote {
-						proposal: ::subxt::utils::H256,
-						#[codec(compact)]
-						index: ::core::primitive::u32,
-						approve: ::core::primitive::bool,
-					},
-					#[codec(index = 5)]
-					#[doc = "See [`Pallet::disapprove_proposal`]."]
-					disapprove_proposal { proposal_hash: ::subxt::utils::H256 },
-					#[codec(index = 6)]
-					#[doc = "See [`Pallet::close`]."]
-					close {
-						proposal_hash: ::subxt::utils::H256,
-						#[codec(compact)]
-						index: ::core::primitive::u32,
-						proposal_weight_bound: runtime_types::sp_weights::weight_v2::Weight,
-						#[codec(compact)]
-						length_bound: ::core::primitive::u32,
-					},
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				#[doc = "The `Error` enum of this pallet."]
 				pub enum Error {
 					#[codec(index = 0)]
@@ -26698,116 +23263,8 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "The `Error` enum of this pallet."]
-				pub enum Error2 {
-					#[codec(index = 0)]
-					#[doc = "Account is not a member"]
-					NotMember,
-					#[codec(index = 1)]
-					#[doc = "Duplicate proposals not allowed"]
-					DuplicateProposal,
-					#[codec(index = 2)]
-					#[doc = "Proposal must exist"]
-					ProposalMissing,
-					#[codec(index = 3)]
-					#[doc = "Mismatched index"]
-					WrongIndex,
-					#[codec(index = 4)]
-					#[doc = "Duplicate vote ignored"]
-					DuplicateVote,
-					#[codec(index = 5)]
-					#[doc = "Members are already initialized!"]
-					AlreadyInitialized,
-					#[codec(index = 6)]
-					#[doc = "The close call was made too early, before the end of the voting."]
-					TooEarly,
-					#[codec(index = 7)]
-					#[doc = "There can only be a maximum of `MaxProposals` active proposals."]
-					TooManyProposals,
-					#[codec(index = 8)]
-					#[doc = "The given weight bound for the proposal was too low."]
-					WrongProposalWeight,
-					#[codec(index = 9)]
-					#[doc = "The given length bound for the proposal was too low."]
-					WrongProposalLength,
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				#[doc = "The `Event` enum of this pallet"]
 				pub enum Event {
-					#[codec(index = 0)]
-					#[doc = "A motion (given hash) has been proposed (by given account) with a threshold (given"]
-					#[doc = "`MemberCount`)."]
-					Proposed {
-						account: ::subxt::utils::AccountId32,
-						proposal_index: ::core::primitive::u32,
-						proposal_hash: ::subxt::utils::H256,
-						threshold: ::core::primitive::u32,
-					},
-					#[codec(index = 1)]
-					#[doc = "A motion (given hash) has been voted on by given account, leaving"]
-					#[doc = "a tally (yes votes and no votes given respectively as `MemberCount`)."]
-					Voted {
-						account: ::subxt::utils::AccountId32,
-						proposal_hash: ::subxt::utils::H256,
-						voted: ::core::primitive::bool,
-						yes: ::core::primitive::u32,
-						no: ::core::primitive::u32,
-					},
-					#[codec(index = 2)]
-					#[doc = "A motion was approved by the required threshold."]
-					Approved { proposal_hash: ::subxt::utils::H256 },
-					#[codec(index = 3)]
-					#[doc = "A motion was not approved by the required threshold."]
-					Disapproved { proposal_hash: ::subxt::utils::H256 },
-					#[codec(index = 4)]
-					#[doc = "A motion was executed; result will be `Ok` if it returned without error."]
-					Executed {
-						proposal_hash: ::subxt::utils::H256,
-						result:
-							::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
-					},
-					#[codec(index = 5)]
-					#[doc = "A single member did some action; result will be `Ok` if it returned without error."]
-					MemberExecuted {
-						proposal_hash: ::subxt::utils::H256,
-						result:
-							::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
-					},
-					#[codec(index = 6)]
-					#[doc = "A proposal was closed because its threshold was reached or after its duration was up."]
-					Closed {
-						proposal_hash: ::subxt::utils::H256,
-						yes: ::core::primitive::u32,
-						no: ::core::primitive::u32,
-					},
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "The `Event` enum of this pallet"]
-				pub enum Event2 {
 					#[codec(index = 0)]
 					#[doc = "A motion (given hash) has been proposed (by given account) with a threshold (given"]
 					#[doc = "`MemberCount`)."]
@@ -26896,582 +23353,6 @@ pub mod api {
 				pub ayes: ::std::vec::Vec<_0>,
 				pub nays: ::std::vec::Vec<_0>,
 				pub end: _1,
-			}
-		}
-		pub mod pallet_democracy {
-			use super::runtime_types;
-			pub mod conviction {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub enum Conviction {
-					#[codec(index = 0)]
-					None,
-					#[codec(index = 1)]
-					Locked1x,
-					#[codec(index = 2)]
-					Locked2x,
-					#[codec(index = 3)]
-					Locked3x,
-					#[codec(index = 4)]
-					Locked4x,
-					#[codec(index = 5)]
-					Locked5x,
-					#[codec(index = 6)]
-					Locked6x,
-				}
-			}
-			pub mod pallet {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-				pub enum Call {
-					#[codec(index = 0)]
-					#[doc = "See [`Pallet::propose`]."]
-					propose {
-						proposal: runtime_types::frame_support::traits::preimages::Bounded<
-							runtime_types::da_runtime::RuntimeCall,
-						>,
-						#[codec(compact)]
-						value: ::core::primitive::u128,
-					},
-					#[codec(index = 1)]
-					#[doc = "See [`Pallet::second`]."]
-					second {
-						#[codec(compact)]
-						proposal: ::core::primitive::u32,
-					},
-					#[codec(index = 2)]
-					#[doc = "See [`Pallet::vote`]."]
-					vote {
-						#[codec(compact)]
-						ref_index: ::core::primitive::u32,
-						vote: runtime_types::pallet_democracy::vote::AccountVote<
-							::core::primitive::u128,
-						>,
-					},
-					#[codec(index = 3)]
-					#[doc = "See [`Pallet::emergency_cancel`]."]
-					emergency_cancel { ref_index: ::core::primitive::u32 },
-					#[codec(index = 4)]
-					#[doc = "See [`Pallet::external_propose`]."]
-					external_propose {
-						proposal: runtime_types::frame_support::traits::preimages::Bounded<
-							runtime_types::da_runtime::RuntimeCall,
-						>,
-					},
-					#[codec(index = 5)]
-					#[doc = "See [`Pallet::external_propose_majority`]."]
-					external_propose_majority {
-						proposal: runtime_types::frame_support::traits::preimages::Bounded<
-							runtime_types::da_runtime::RuntimeCall,
-						>,
-					},
-					#[codec(index = 6)]
-					#[doc = "See [`Pallet::external_propose_default`]."]
-					external_propose_default {
-						proposal: runtime_types::frame_support::traits::preimages::Bounded<
-							runtime_types::da_runtime::RuntimeCall,
-						>,
-					},
-					#[codec(index = 7)]
-					#[doc = "See [`Pallet::fast_track`]."]
-					fast_track {
-						proposal_hash: ::subxt::utils::H256,
-						voting_period: ::core::primitive::u32,
-						delay: ::core::primitive::u32,
-					},
-					#[codec(index = 8)]
-					#[doc = "See [`Pallet::veto_external`]."]
-					veto_external { proposal_hash: ::subxt::utils::H256 },
-					#[codec(index = 9)]
-					#[doc = "See [`Pallet::cancel_referendum`]."]
-					cancel_referendum {
-						#[codec(compact)]
-						ref_index: ::core::primitive::u32,
-					},
-					#[codec(index = 10)]
-					#[doc = "See [`Pallet::delegate`]."]
-					delegate {
-						to: ::subxt::utils::MultiAddress<
-							::subxt::utils::AccountId32,
-							::core::primitive::u32,
-						>,
-						conviction: runtime_types::pallet_democracy::conviction::Conviction,
-						balance: ::core::primitive::u128,
-					},
-					#[codec(index = 11)]
-					#[doc = "See [`Pallet::undelegate`]."]
-					undelegate,
-					#[codec(index = 12)]
-					#[doc = "See [`Pallet::clear_public_proposals`]."]
-					clear_public_proposals,
-					#[codec(index = 13)]
-					#[doc = "See [`Pallet::unlock`]."]
-					unlock {
-						target: ::subxt::utils::MultiAddress<
-							::subxt::utils::AccountId32,
-							::core::primitive::u32,
-						>,
-					},
-					#[codec(index = 14)]
-					#[doc = "See [`Pallet::remove_vote`]."]
-					remove_vote { index: ::core::primitive::u32 },
-					#[codec(index = 15)]
-					#[doc = "See [`Pallet::remove_other_vote`]."]
-					remove_other_vote {
-						target: ::subxt::utils::MultiAddress<
-							::subxt::utils::AccountId32,
-							::core::primitive::u32,
-						>,
-						index: ::core::primitive::u32,
-					},
-					#[codec(index = 16)]
-					#[doc = "See [`Pallet::blacklist`]."]
-					blacklist {
-						proposal_hash: ::subxt::utils::H256,
-						maybe_ref_index: ::core::option::Option<::core::primitive::u32>,
-					},
-					#[codec(index = 17)]
-					#[doc = "See [`Pallet::cancel_proposal`]."]
-					cancel_proposal {
-						#[codec(compact)]
-						prop_index: ::core::primitive::u32,
-					},
-					#[codec(index = 18)]
-					#[doc = "See [`Pallet::set_metadata`]."]
-					set_metadata {
-						owner: runtime_types::pallet_democracy::types::MetadataOwner,
-						maybe_hash: ::core::option::Option<::subxt::utils::H256>,
-					},
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "The `Error` enum of this pallet."]
-				pub enum Error {
-					#[codec(index = 0)]
-					#[doc = "Value too low"]
-					ValueLow,
-					#[codec(index = 1)]
-					#[doc = "Proposal does not exist"]
-					ProposalMissing,
-					#[codec(index = 2)]
-					#[doc = "Cannot cancel the same proposal twice"]
-					AlreadyCanceled,
-					#[codec(index = 3)]
-					#[doc = "Proposal already made"]
-					DuplicateProposal,
-					#[codec(index = 4)]
-					#[doc = "Proposal still blacklisted"]
-					ProposalBlacklisted,
-					#[codec(index = 5)]
-					#[doc = "Next external proposal not simple majority"]
-					NotSimpleMajority,
-					#[codec(index = 6)]
-					#[doc = "Invalid hash"]
-					InvalidHash,
-					#[codec(index = 7)]
-					#[doc = "No external proposal"]
-					NoProposal,
-					#[codec(index = 8)]
-					#[doc = "Identity may not veto a proposal twice"]
-					AlreadyVetoed,
-					#[codec(index = 9)]
-					#[doc = "Vote given for invalid referendum"]
-					ReferendumInvalid,
-					#[codec(index = 10)]
-					#[doc = "No proposals waiting"]
-					NoneWaiting,
-					#[codec(index = 11)]
-					#[doc = "The given account did not vote on the referendum."]
-					NotVoter,
-					#[codec(index = 12)]
-					#[doc = "The actor has no permission to conduct the action."]
-					NoPermission,
-					#[codec(index = 13)]
-					#[doc = "The account is already delegating."]
-					AlreadyDelegating,
-					#[codec(index = 14)]
-					#[doc = "Too high a balance was provided that the account cannot afford."]
-					InsufficientFunds,
-					#[codec(index = 15)]
-					#[doc = "The account is not currently delegating."]
-					NotDelegating,
-					#[codec(index = 16)]
-					#[doc = "The account currently has votes attached to it and the operation cannot succeed until"]
-					#[doc = "these are removed, either through `unvote` or `reap_vote`."]
-					VotesExist,
-					#[codec(index = 17)]
-					#[doc = "The instant referendum origin is currently disallowed."]
-					InstantNotAllowed,
-					#[codec(index = 18)]
-					#[doc = "Delegation to oneself makes no sense."]
-					Nonsense,
-					#[codec(index = 19)]
-					#[doc = "Invalid upper bound."]
-					WrongUpperBound,
-					#[codec(index = 20)]
-					#[doc = "Maximum number of votes reached."]
-					MaxVotesReached,
-					#[codec(index = 21)]
-					#[doc = "Maximum number of items reached."]
-					TooMany,
-					#[codec(index = 22)]
-					#[doc = "Voting period too low"]
-					VotingPeriodLow,
-					#[codec(index = 23)]
-					#[doc = "The preimage does not exist."]
-					PreimageNotExist,
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "The `Event` enum of this pallet"]
-				pub enum Event {
-					#[codec(index = 0)]
-					#[doc = "A motion has been proposed by a public account."]
-					Proposed {
-						proposal_index: ::core::primitive::u32,
-						deposit: ::core::primitive::u128,
-					},
-					#[codec(index = 1)]
-					#[doc = "A public proposal has been tabled for referendum vote."]
-					Tabled {
-						proposal_index: ::core::primitive::u32,
-						deposit: ::core::primitive::u128,
-					},
-					#[codec(index = 2)]
-					#[doc = "An external proposal has been tabled."]
-					ExternalTabled,
-					#[codec(index = 3)]
-					#[doc = "A referendum has begun."]
-					Started {
-						ref_index: ::core::primitive::u32,
-						threshold: runtime_types::pallet_democracy::vote_threshold::VoteThreshold,
-					},
-					#[codec(index = 4)]
-					#[doc = "A proposal has been approved by referendum."]
-					Passed { ref_index: ::core::primitive::u32 },
-					#[codec(index = 5)]
-					#[doc = "A proposal has been rejected by referendum."]
-					NotPassed { ref_index: ::core::primitive::u32 },
-					#[codec(index = 6)]
-					#[doc = "A referendum has been cancelled."]
-					Cancelled { ref_index: ::core::primitive::u32 },
-					#[codec(index = 7)]
-					#[doc = "An account has delegated their vote to another account."]
-					Delegated {
-						who: ::subxt::utils::AccountId32,
-						target: ::subxt::utils::AccountId32,
-					},
-					#[codec(index = 8)]
-					#[doc = "An account has cancelled a previous delegation operation."]
-					Undelegated {
-						account: ::subxt::utils::AccountId32,
-					},
-					#[codec(index = 9)]
-					#[doc = "An external proposal has been vetoed."]
-					Vetoed {
-						who: ::subxt::utils::AccountId32,
-						proposal_hash: ::subxt::utils::H256,
-						until: ::core::primitive::u32,
-					},
-					#[codec(index = 10)]
-					#[doc = "A proposal_hash has been blacklisted permanently."]
-					Blacklisted { proposal_hash: ::subxt::utils::H256 },
-					#[codec(index = 11)]
-					#[doc = "An account has voted in a referendum"]
-					Voted {
-						voter: ::subxt::utils::AccountId32,
-						ref_index: ::core::primitive::u32,
-						vote: runtime_types::pallet_democracy::vote::AccountVote<
-							::core::primitive::u128,
-						>,
-					},
-					#[codec(index = 12)]
-					#[doc = "An account has secconded a proposal"]
-					Seconded {
-						seconder: ::subxt::utils::AccountId32,
-						prop_index: ::core::primitive::u32,
-					},
-					#[codec(index = 13)]
-					#[doc = "A proposal got canceled."]
-					ProposalCanceled { prop_index: ::core::primitive::u32 },
-					#[codec(index = 14)]
-					#[doc = "Metadata for a proposal or a referendum has been set."]
-					MetadataSet {
-						owner: runtime_types::pallet_democracy::types::MetadataOwner,
-						hash: ::subxt::utils::H256,
-					},
-					#[codec(index = 15)]
-					#[doc = "Metadata for a proposal or a referendum has been cleared."]
-					MetadataCleared {
-						owner: runtime_types::pallet_democracy::types::MetadataOwner,
-						hash: ::subxt::utils::H256,
-					},
-					#[codec(index = 16)]
-					#[doc = "Metadata has been transferred to new owner."]
-					MetadataTransferred {
-						prev_owner: runtime_types::pallet_democracy::types::MetadataOwner,
-						owner: runtime_types::pallet_democracy::types::MetadataOwner,
-						hash: ::subxt::utils::H256,
-					},
-				}
-			}
-			pub mod types {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Delegations<_0> {
-					pub votes: _0,
-					pub capital: _0,
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub enum MetadataOwner {
-					#[codec(index = 0)]
-					External,
-					#[codec(index = 1)]
-					Proposal(::core::primitive::u32),
-					#[codec(index = 2)]
-					Referendum(::core::primitive::u32),
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub enum ReferendumInfo<_0, _1, _2> {
-					#[codec(index = 0)]
-					Ongoing(runtime_types::pallet_democracy::types::ReferendumStatus<_0, _1, _2>),
-					#[codec(index = 1)]
-					Finished {
-						approved: ::core::primitive::bool,
-						end: _0,
-					},
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct ReferendumStatus<_0, _1, _2> {
-					pub end: _0,
-					pub proposal: _1,
-					pub threshold: runtime_types::pallet_democracy::vote_threshold::VoteThreshold,
-					pub delay: _0,
-					pub tally: runtime_types::pallet_democracy::types::Tally<_2>,
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Tally<_0> {
-					pub ayes: _0,
-					pub nays: _0,
-					pub turnout: _0,
-				}
-			}
-			pub mod vote {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub enum AccountVote<_0> {
-					#[codec(index = 0)]
-					Standard {
-						vote: runtime_types::pallet_democracy::vote::Vote,
-						balance: _0,
-					},
-					#[codec(index = 1)]
-					Split { aye: _0, nay: _0 },
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct PriorLock<_0, _1>(pub _0, pub _1);
-				#[derive(
-					:: subxt :: ext :: codec :: CompactAs,
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Vote(pub ::core::primitive::u8);
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub enum Voting<_0, _1, _2> {
-					#[codec(index = 0)]
-					Direct {
-						votes: runtime_types::bounded_collections::bounded_vec::BoundedVec<(
-							_2,
-							runtime_types::pallet_democracy::vote::AccountVote<_0>,
-						)>,
-						delegations: runtime_types::pallet_democracy::types::Delegations<_0>,
-						prior: runtime_types::pallet_democracy::vote::PriorLock<_2, _0>,
-					},
-					#[codec(index = 1)]
-					Delegating {
-						balance: _0,
-						target: _1,
-						conviction: runtime_types::pallet_democracy::conviction::Conviction,
-						delegations: runtime_types::pallet_democracy::types::Delegations<_0>,
-						prior: runtime_types::pallet_democracy::vote::PriorLock<_2, _0>,
-					},
-				}
-			}
-			pub mod vote_threshold {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub enum VoteThreshold {
-					#[codec(index = 0)]
-					SuperMajorityApprove,
-					#[codec(index = 1)]
-					SuperMajorityAgainst,
-					#[codec(index = 2)]
-					SimpleMajority,
-				}
 			}
 		}
 		pub mod pallet_election_provider_multi_phase {
@@ -27763,246 +23644,6 @@ pub mod api {
 				pub voters: ::core::primitive::u32,
 				#[codec(compact)]
 				pub targets: ::core::primitive::u32,
-			}
-		}
-		pub mod pallet_elections_phragmen {
-			use super::runtime_types;
-			pub mod pallet {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-				pub enum Call {
-					#[codec(index = 0)]
-					#[doc = "See [`Pallet::vote`]."]
-					vote {
-						votes: ::std::vec::Vec<::subxt::utils::AccountId32>,
-						#[codec(compact)]
-						value: ::core::primitive::u128,
-					},
-					#[codec(index = 1)]
-					#[doc = "See [`Pallet::remove_voter`]."]
-					remove_voter,
-					#[codec(index = 2)]
-					#[doc = "See [`Pallet::submit_candidacy`]."]
-					submit_candidacy {
-						#[codec(compact)]
-						candidate_count: ::core::primitive::u32,
-					},
-					#[codec(index = 3)]
-					#[doc = "See [`Pallet::renounce_candidacy`]."]
-					renounce_candidacy {
-						renouncing: runtime_types::pallet_elections_phragmen::Renouncing,
-					},
-					#[codec(index = 4)]
-					#[doc = "See [`Pallet::remove_member`]."]
-					remove_member {
-						who: ::subxt::utils::MultiAddress<
-							::subxt::utils::AccountId32,
-							::core::primitive::u32,
-						>,
-						slash_bond: ::core::primitive::bool,
-						rerun_election: ::core::primitive::bool,
-					},
-					#[codec(index = 5)]
-					#[doc = "See [`Pallet::clean_defunct_voters`]."]
-					clean_defunct_voters {
-						num_voters: ::core::primitive::u32,
-						num_defunct: ::core::primitive::u32,
-					},
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "The `Error` enum of this pallet."]
-				pub enum Error {
-					#[codec(index = 0)]
-					#[doc = "Cannot vote when no candidates or members exist."]
-					UnableToVote,
-					#[codec(index = 1)]
-					#[doc = "Must vote for at least one candidate."]
-					NoVotes,
-					#[codec(index = 2)]
-					#[doc = "Cannot vote more than candidates."]
-					TooManyVotes,
-					#[codec(index = 3)]
-					#[doc = "Cannot vote more than maximum allowed."]
-					MaximumVotesExceeded,
-					#[codec(index = 4)]
-					#[doc = "Cannot vote with stake less than minimum balance."]
-					LowBalance,
-					#[codec(index = 5)]
-					#[doc = "Voter can not pay voting bond."]
-					UnableToPayBond,
-					#[codec(index = 6)]
-					#[doc = "Must be a voter."]
-					MustBeVoter,
-					#[codec(index = 7)]
-					#[doc = "Duplicated candidate submission."]
-					DuplicatedCandidate,
-					#[codec(index = 8)]
-					#[doc = "Too many candidates have been created."]
-					TooManyCandidates,
-					#[codec(index = 9)]
-					#[doc = "Member cannot re-submit candidacy."]
-					MemberSubmit,
-					#[codec(index = 10)]
-					#[doc = "Runner cannot re-submit candidacy."]
-					RunnerUpSubmit,
-					#[codec(index = 11)]
-					#[doc = "Candidate does not have enough funds."]
-					InsufficientCandidateFunds,
-					#[codec(index = 12)]
-					#[doc = "Not a member."]
-					NotMember,
-					#[codec(index = 13)]
-					#[doc = "The provided count of number of candidates is incorrect."]
-					InvalidWitnessData,
-					#[codec(index = 14)]
-					#[doc = "The provided count of number of votes is incorrect."]
-					InvalidVoteCount,
-					#[codec(index = 15)]
-					#[doc = "The renouncing origin presented a wrong `Renouncing` parameter."]
-					InvalidRenouncing,
-					#[codec(index = 16)]
-					#[doc = "Prediction regarding replacement after member removal is wrong."]
-					InvalidReplacement,
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "The `Event` enum of this pallet"]
-				pub enum Event {
-					#[codec(index = 0)]
-					#[doc = "A new term with new_members. This indicates that enough candidates existed to run"]
-					#[doc = "the election, not that enough have has been elected. The inner value must be examined"]
-					#[doc = "for this purpose. A `NewTerm(\\[\\])` indicates that some candidates got their bond"]
-					#[doc = "slashed and none were elected, whilst `EmptyTerm` means that no candidates existed to"]
-					#[doc = "begin with."]
-					NewTerm {
-						new_members:
-							::std::vec::Vec<(::subxt::utils::AccountId32, ::core::primitive::u128)>,
-					},
-					#[codec(index = 1)]
-					#[doc = "No (or not enough) candidates existed for this round. This is different from"]
-					#[doc = "`NewTerm(\\[\\])`. See the description of `NewTerm`."]
-					EmptyTerm,
-					#[codec(index = 2)]
-					#[doc = "Internal error happened while trying to perform election."]
-					ElectionError,
-					#[codec(index = 3)]
-					#[doc = "A member has been removed. This should always be followed by either `NewTerm` or"]
-					#[doc = "`EmptyTerm`."]
-					MemberKicked { member: ::subxt::utils::AccountId32 },
-					#[codec(index = 4)]
-					#[doc = "Someone has renounced their candidacy."]
-					Renounced {
-						candidate: ::subxt::utils::AccountId32,
-					},
-					#[codec(index = 5)]
-					#[doc = "A candidate was slashed by amount due to failing to obtain a seat as member or"]
-					#[doc = "runner-up."]
-					#[doc = ""]
-					#[doc = "Note that old members and runners-up are also candidates."]
-					CandidateSlashed {
-						candidate: ::subxt::utils::AccountId32,
-						amount: ::core::primitive::u128,
-					},
-					#[codec(index = 6)]
-					#[doc = "A seat holder was slashed by amount by being forcefully removed from the set."]
-					SeatHolderSlashed {
-						seat_holder: ::subxt::utils::AccountId32,
-						amount: ::core::primitive::u128,
-					},
-				}
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			pub enum Renouncing {
-				#[codec(index = 0)]
-				Member,
-				#[codec(index = 1)]
-				RunnerUp,
-				#[codec(index = 2)]
-				Candidate(#[codec(compact)] ::core::primitive::u32),
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			pub struct SeatHolder<_0, _1> {
-				pub who: _0,
-				pub stake: _1,
-				pub deposit: _1,
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			pub struct Voter<_0, _1> {
-				pub votes: ::std::vec::Vec<_0>,
-				pub stake: _1,
-				pub deposit: _1,
 			}
 		}
 		pub mod pallet_grandpa {

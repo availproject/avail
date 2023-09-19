@@ -319,3 +319,12 @@ mod weight_helper {
 		(total_weight, DispatchClass::Normal)
 	}
 }
+
+impl<Acc> AppKeyInfo<Acc>
+where
+	Acc: PartialEq,
+{
+	pub fn new(owner: Acc, id: AppId) -> Self {
+		Self { owner, id }
+	}
+}

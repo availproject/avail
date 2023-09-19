@@ -1,6 +1,6 @@
 [package]
 name = "data-avail"
-version = "1.6.4"
+version = "1.7.0"
 description = "Avail Node"
 authors = ["Anonymous"]
 homepage = "https://www.availproject.org/"
@@ -21,7 +21,7 @@ avail-base = { path = "../base" }
 
 # Internals
 avail-core = { version = "0.5", default-features = false, features = ["runtime"] }
-kate = { version = "0.8", default-features = false }
+avail-core-kate = { package = "kate", version = "0.8", default-features = false }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }

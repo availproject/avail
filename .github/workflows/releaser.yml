@@ -21,9 +21,8 @@ jobs:
            run: |
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             source "$HOME/.cargo/env"
-            rustup toolchain install nightly
-            rustup default nightly
-            rustup target add wasm32-unknown-unknown --toolchain nightly
+            rustup target add wasm32-unknown-unknown
+            rustup show
 
             cargo build --release -p data-avail
             mv target/release/data-avail target/release/data-avail-linux-amd64
@@ -56,9 +55,8 @@ jobs:
            run: |
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             source "$HOME/.cargo/env"
-            rustup toolchain install nightly
-            rustup default nightly
-            rustup target add wasm32-unknown-unknown --toolchain nightly
+            rustup target add wasm32-unknown-unknown
+            rustup show 
 
             rustup target add aarch64-unknown-linux-gnu
             sudo apt-get update && sudo apt-get install -y musl-tools clang gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev libc6-dev-arm64-cross

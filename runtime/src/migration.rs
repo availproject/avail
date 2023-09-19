@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade};
+use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade, weights::Weight};
 use pallet_nomination_pools::{
 	MaxPoolMembers, MaxPoolMembersPerPool, MaxPools, MinCreateBond, MinJoinBond, Pallet,
 };
@@ -25,7 +25,7 @@ use sp_runtime::TryRuntimeError;
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
 
-use crate::{Bounties, NominationPools, Runtime, Weight};
+use crate::{Bounties, NominationPools, Runtime};
 
 struct NominationPoolsMigrationV4OldPallet;
 impl Get<Perbill> for NominationPoolsMigrationV4OldPallet {
@@ -47,6 +47,8 @@ impl OnRuntimeUpgrade for Migration {
 		>::on_runtime_upgrade();
 		let weight5 = scheduler::remove_corrupt_agenda_and_v3_to_v4::on_runtime_upgrade();
 		let weight6 = bounties::v1_to_v4::on_runtime_upgrade();
+		let weight7 = staking::on_runtime_upgrade();
+		let weight8 = democracy::on_runtime_upgrade();
 
 		weight1
 			.saturating_add(weight2)
@@ -54,6 +56,8 @@ impl OnRuntimeUpgrade for Migration {
 			.saturating_add(weight4)
 			.saturating_add(weight5)
 			.saturating_add(weight6)
+			.saturating_add(weight7)
+			.saturating_add(weight8)
 	}
 
 	#[cfg(feature = "try-runtime")]
@@ -304,5 +308,109 @@ mod nomination_pools {
 			);
 			Ok(())
 		}
+	}
+}
+
+pub mod staking {
+	use super::*;
+
+	pub fn on_runtime_upgrade() -> Weight {
+		let current_state = pallet_staking::MinimumValidatorCount::<Runtime>::get();
+		let target_state = 1;
+		if current_state > 1 {
+			log::info!(
+				"Changing minimum validator count from {} to {}",
+				current_state,
+				target_state
+			);
+			pallet_staking::MinimumValidatorCount::<Runtime>::set(target_state);
+		} else {
+			log::info!("No change was applied to MinimumValidatorCount storage.")
+		}
+
+		<Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 1)
+	}
+}
+
+pub mod democracy {
+	use super::*;
+	#[allow(deprecated)]
+	use frame_support::storage::unhashed::kill_prefix;
+	use sp_io::KillStorageResult;
+
+	/// It sets `min_create_bond = 10 AVL` and
+	pub fn on_runtime_upgrade() -> Weight {
+		#[allow(deprecated)]
+		let res1 = kill_prefix(&sp_io::hashing::twox_128(b"Elections"), None);
+		#[allow(deprecated)]
+		let res2 = kill_prefix(&sp_io::hashing::twox_128(b"Democracy"), None);
+		#[allow(deprecated)]
+		let res3 = kill_prefix(&sp_io::hashing::twox_128(b"Council"), None);
+
+		match res1 {
+			KillStorageResult::AllRemoved(_) => {
+				log::info!("Successfully removed Elections storage")
+			},
+			KillStorageResult::SomeRemaining(_) => {
+				log::info!("Failed to remove Elections storage")
+			},
+		}
+
+		match res2 {
+			KillStorageResult::AllRemoved(_) => {
+				log::info!("Successfully removed Democracy storage")
+			},
+			KillStorageResult::SomeRemaining(_) => {
+				log::info!("Failed to remove Democracy storage")
+			},
+		}
+
+		match res3 {
+			KillStorageResult::AllRemoved(_) => {
+				log::info!("Successfully removed Council storage")
+			},
+			KillStorageResult::SomeRemaining(_) => {
+				log::info!("Failed to remove Council storage")
+			},
+		}
+
+		<Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 1)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use frame_support::migration::{get_storage_value, put_storage_value};
+	use sp_runtime::BuildStorage;
+
+	use crate::{Runtime, System};
+
+	pub fn new_test_ext() -> sp_io::TestExternalities {
+		let t = frame_system::GenesisConfig::<Runtime>::default()
+			.build_storage()
+			.unwrap();
+
+		let mut ext = sp_io::TestExternalities::new(t);
+		ext.execute_with(|| System::set_block_number(1));
+		ext
+	}
+
+	#[test]
+	fn democracy_test() {
+		new_test_ext().execute_with(|| {
+			put_storage_value(b"Elections", b"Item", b"", 100u32);
+			put_storage_value(b"Democracy", b"Item", b"", 100u32);
+			put_storage_value(b"Council", b"Item", b"", 100u32);
+
+			assert!(get_storage_value::<u32>(b"Elections", b"Item", b"").is_some());
+			assert!(get_storage_value::<u32>(b"Democracy", b"Item", b"").is_some());
+			assert!(get_storage_value::<u32>(b"Council", b"Item", b"").is_some());
+
+			super::democracy::on_runtime_upgrade();
+
+			assert!(get_storage_value::<u32>(b"Elections", b"Item", b"").is_none());
+			assert!(get_storage_value::<u32>(b"Democracy", b"Item", b"").is_none());
+			assert!(get_storage_value::<u32>(b"Council", b"Item", b"").is_none());
+		});
 	}
 }

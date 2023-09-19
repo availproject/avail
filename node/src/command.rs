@@ -19,6 +19,7 @@
 use std::sync::Arc;
 
 use da_runtime::Block;
+use data_avail::chains;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use sc_cli::{Result, SubstrateCli};
 use sc_service::PartialComponents;
@@ -29,7 +30,6 @@ use {
 };
 
 use crate::{
-	chain_spec,
 	cli::{Cli, Subcommand},
 	service::{self, new_partial, FullClient},
 };
@@ -63,15 +63,16 @@ impl SubstrateCli for Cli {
 		let spec = match id {
 			"" => {
 				return Err(
-					"Please specify which chain you want to run, e.g. --dev or --chain=local"
+					"Please specify which chain you want to run, e.g. --dev, --dev.tri, --kate"
 						.into(),
 				)
 			},
-			"dev" | "local" | "local.solo" => Box::new(chain_spec::locals::solo::chain_spec()),
-			"local.tri" => Box::new(chain_spec::locals::tri::chain_spec()),
-			"testnet" | "testnet.kate" => Box::new(chain_spec::testnets::kate::chain_spec()),
-			// "mainnet" => Box::new(chain_spec::mainnet::chain_spec()),
-			path => Box::new(chain_spec::ChainSpec::from_json_file(
+			"dev" => Box::new(chains::dev::chain_spec()),
+			"dev.tri" => Box::new(chains::dev_tri::chain_spec()),
+			"biryani" => Box::new(chains::biryani::chain_spec()?),
+			"dymension" => Box::new(chains::dymension::chain_spec()?),
+			"kate" => Box::new(chains::kate::chain_spec()?),
+			path => Box::new(chains::ChainSpec::from_json_file(
 				std::path::PathBuf::from(path),
 			)?),
 		};
