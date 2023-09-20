@@ -356,3 +356,194 @@ mod multiplier_tests {
 			});
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use crate::impls::DealWithFees;
+	use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::Currency;
+	use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::OnUnbalanced;
+	use crate::AccountId;
+	use crate::Balance;
+	use crate::BlockNumber;
+	use frame_support::{
+		derive_impl, parameter_types,
+		traits::{ConstU32, FindAuthor},
+		PalletId,
+	};
+	use frame_system::{
+		header_builder::da::HeaderExtensionBuilder, mocking::MockUncheckedExtrinsic,
+		test_utils::TestRandomness,
+	};
+	use sp_runtime::{traits::IdentityLookup, BuildStorage, Perquintill};
+
+	/// An unchecked extrinsic type to be used in tests.
+	type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
+
+	/// An implementation of `sp_runtime::traits::Block` to be used in tests.
+	type Block = frame_system::mocking::MockDaBlock<Test>;
+	const TEST_ACCOUNT: AccountId = AccountId::new([1; 32]);
+
+	frame_support::construct_runtime!(
+		pub struct Test {
+			System: frame_system,
+			Authorship: pallet_authorship,
+			Balances: pallet_balances,
+			Treasury: pallet_treasury,
+		}
+	);
+
+	parameter_types! {
+		pub const BlockHashCount: BlockNumber = 250;
+		pub static ExistentialDeposit: u64 = 1;
+	}
+
+	#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
+	impl frame_system::Config for Test {
+		type AccountId = AccountId;
+		type Lookup = IdentityLookup<Self::AccountId>;
+		type AccountData = pallet_balances::AccountData<Balance>;
+		type BaseCallFilter = frame_support::traits::Everything;
+		type Block = Block;
+		type BlockHashCount = BlockHashCount;
+		type HeaderExtensionBuilder = HeaderExtensionBuilder<Test>;
+		type OnSetCode = ();
+		type PalletInfo = PalletInfo;
+		type Randomness = TestRandomness<Test>;
+		type RuntimeCall = RuntimeCall;
+		type RuntimeEvent = RuntimeEvent;
+		type RuntimeOrigin = RuntimeOrigin;
+		type SubmittedDataExtractor = ();
+		type UncheckedExtrinsic = UncheckedExtrinsic;
+	}
+
+	parameter_types! {
+		pub const MaxReserves: u32 = 2;
+	}
+
+	impl pallet_balances::Config for Test {
+		type AccountStore = System;
+		type Balance = Balance;
+		type DustRemoval = ();
+		type ExistentialDeposit = ExistentialDeposit;
+		type FreezeIdentifier = [u8; 8];
+		type MaxFreezes = ConstU32<2>;
+		type MaxHolds = ConstU32<2>;
+		type MaxLocks = ();
+		type MaxReserves = MaxReserves;
+		type ReserveIdentifier = [u8; 8];
+		type RuntimeEvent = RuntimeEvent;
+		type RuntimeHoldReason = [u8; 8];
+		type WeightInfo = ();
+	}
+
+	parameter_types! {
+		pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+		pub const MaxApprovals: u32 = 100;
+	}
+
+	impl pallet_treasury::Config for Test {
+		type Currency = pallet_balances::Pallet<Test>;
+		type ApproveOrigin = frame_system::EnsureRoot<AccountId>;
+		type RejectOrigin = frame_system::EnsureRoot<AccountId>;
+		type RuntimeEvent = RuntimeEvent;
+		type OnSlash = ();
+		type ProposalBond = ();
+		type ProposalBondMinimum = ();
+		type ProposalBondMaximum = ();
+		type SpendPeriod = ();
+		type Burn = ();
+		type BurnDestination = ();
+		type PalletId = TreasuryPalletId;
+		type SpendFunds = ();
+		type MaxApprovals = MaxApprovals;
+		type WeightInfo = ();
+		type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
+	}
+
+	pub struct OneAuthor;
+	impl FindAuthor<AccountId> for OneAuthor {
+		fn find_author<'a, I>(_: I) -> Option<AccountId>
+		where
+			I: 'a,
+		{
+			Some(TEST_ACCOUNT)
+		}
+	}
+	impl pallet_authorship::Config for Test {
+		type FindAuthor = OneAuthor;
+		type EventHandler = ();
+	}
+
+	pub fn new_test_ext() -> sp_io::TestExternalities {
+		let mut t = frame_system::GenesisConfig::<Test>::default()
+			.build_storage()
+			.unwrap();
+		// We use default for brevity, but you can configure as desired if needed.
+		pallet_balances::GenesisConfig::<Test>::default()
+			.assimilate_storage(&mut t)
+			.unwrap();
+		t.into()
+	}
+
+	#[test]
+	fn test_fees_and_tip_split() {
+		new_test_ext().execute_with(|| {
+			let fee = Balances::issue(10);
+			let tip = Balances::issue(20);
+
+			assert_eq!(Balances::free_balance(Treasury::account_id()), 0);
+			assert_eq!(Balances::free_balance(TEST_ACCOUNT), 0);
+
+			DealWithFees::on_unbalanceds(vec![fee, tip].into_iter());
+
+			// Author gets 100% of tip and 80% of fee = 28
+			assert_eq!(Balances::free_balance(TEST_ACCOUNT), 28);
+			// Treasury gets 20% of fee = 2
+			assert_eq!(Balances::free_balance(Treasury::account_id()), 2);
+		});
+	}
+
+	#[test]
+	fn compute_inflation_should_give_sensible_results() {
+		assert_eq!(
+			pallet_staking_reward_fn::compute_inflation(
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(5),
+			),
+			Perquintill::one()
+		);
+		assert_eq!(
+			pallet_staking_reward_fn::compute_inflation(
+				Perquintill::from_percent(25),
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(5),
+			),
+			Perquintill::from_rational(1u64, 2u64)
+		);
+		assert_eq!(
+			pallet_staking_reward_fn::compute_inflation(
+				Perquintill::from_percent(55),
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(5),
+			),
+			Perquintill::from_rational(1u64, 2u64)
+		);
+		assert_eq!(
+			pallet_staking_reward_fn::compute_inflation(
+				Perquintill::from_percent(60),
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(5),
+			),
+			Perquintill::from_rational(1u64, 4u64)
+		);
+		assert_eq!(
+			pallet_staking_reward_fn::compute_inflation(
+				Perquintill::from_percent(75),
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(5),
+			),
+			Perquintill::from_rational(1u64, 32u64)
+		);
+	}
+}

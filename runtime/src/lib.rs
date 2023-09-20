@@ -65,7 +65,7 @@ pub use pallet_staking::StakerStatus;
 pub use primitives::*;
 use sp_core::OpaqueMetadata;
 
-pub use sp_runtime::{Perbill, Percent, Permill, Perquintill};
+pub use sp_runtime::{Perbill, Percent, Permill};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -269,50 +269,6 @@ mod tests {
 		<pallet_mandate::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_nomination_pools::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		Ok(())
-	}
-
-	#[test]
-	fn compute_inflation_should_give_sensible_results() {
-		assert_eq!(
-			pallet_staking_reward_fn::compute_inflation(
-				Perquintill::from_percent(50),
-				Perquintill::from_percent(50),
-				Perquintill::from_percent(5),
-			),
-			Perquintill::one()
-		);
-		assert_eq!(
-			pallet_staking_reward_fn::compute_inflation(
-				Perquintill::from_percent(25),
-				Perquintill::from_percent(50),
-				Perquintill::from_percent(5),
-			),
-			Perquintill::from_rational(1u64, 2u64)
-		);
-		assert_eq!(
-			pallet_staking_reward_fn::compute_inflation(
-				Perquintill::from_percent(55),
-				Perquintill::from_percent(50),
-				Perquintill::from_percent(5),
-			),
-			Perquintill::from_rational(1u64, 2u64)
-		);
-		assert_eq!(
-			pallet_staking_reward_fn::compute_inflation(
-				Perquintill::from_percent(60),
-				Perquintill::from_percent(50),
-				Perquintill::from_percent(5),
-			),
-			Perquintill::from_rational(1u64, 4u64)
-		);
-		assert_eq!(
-			pallet_staking_reward_fn::compute_inflation(
-				Perquintill::from_percent(75),
-				Perquintill::from_percent(50),
-				Perquintill::from_percent(5),
-			),
-			Perquintill::from_rational(1u64, 32u64)
-		);
 	}
 
 	#[test]

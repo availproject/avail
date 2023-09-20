@@ -2,13 +2,12 @@ use crate::voter_bags;
 use crate::SessionKeys;
 use crate::SLOT_DURATION;
 use crate::{
-	constants, deposit, weights, AccountId, AccountIndex, Authorship, Babe, Balances, Block,
-	BlockNumber, Bounties, ElectionProviderMultiPhase, GrandpaId, Hash, Historical, ImOnline,
-	ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo,
-	Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeHoldReason,
-	RuntimeOrigin, RuntimeVersion, Session, Signature, SignedPayload, Staking, System,
-	TechnicalCommittee, Timestamp, TransactionPayment, Treasury, UncheckedExtrinsic, VoterList,
-	VERSION,
+	constants, deposit, weights, AccountId, AccountIndex, Babe, Balances, Block, BlockNumber,
+	Bounties, ElectionProviderMultiPhase, GrandpaId, Hash, Historical, ImOnline, ImOnlineId, Index,
+	Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo, Preimage,
+	ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeHoldReason, RuntimeOrigin,
+	RuntimeVersion, Session, Signature, SignedPayload, Staking, System, TechnicalCommittee,
+	Timestamp, TransactionPayment, Treasury, UncheckedExtrinsic, VoterList, VERSION,
 };
 use avail_core::currency::{Balance, AVL, CENTS};
 use avail_core::AppId;
@@ -56,7 +55,9 @@ use sp_std::rc::Rc;
 use sp_std::vec;
 use sp_std::vec::Vec;
 
-type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
+pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
+	<T as frame_system::Config>::AccountId,
+>>::NegativeImbalance;
 
 impl pallet_sudo::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
@@ -224,7 +225,7 @@ impl pallet_transaction_payment::Config for Runtime {
 		MaximumMultiplier,
 	>;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
-	type OnChargeTransaction = CurrencyAdapter<Balances, DealWithFees>;
+	type OnChargeTransaction = CurrencyAdapter<Balances, DealWithFees<Runtime>>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightToFee = ConstantMultiplier<Balance, WeightFee>; // 1 weight = 1 PICO AVL
@@ -264,18 +265,40 @@ impl pallet_session::historical::Config for Runtime {
 	type FullIdentificationOf = pallet_staking::ExposureOf<Runtime>;
 }
 
-pub struct DealWithFees;
-impl OnUnbalanced<NegativeImbalance> for DealWithFees {
-	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+/// Logic for the author to get a portion of fees.
+pub struct Author<R>(sp_std::marker::PhantomData<R>);
+impl<R> OnUnbalanced<NegativeImbalance<R>> for Author<R>
+where
+	R: pallet_balances::Config + pallet_authorship::Config,
+	<R as frame_system::Config>::AccountId: From<AccountId>,
+	<R as frame_system::Config>::AccountId: Into<AccountId>,
+{
+	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
+		if let Some(author) = <pallet_authorship::Pallet<R>>::author() {
+			<pallet_balances::Pallet<R>>::resolve_creating(&author, amount);
+		}
+	}
+}
+
+pub struct DealWithFees<R>(sp_std::marker::PhantomData<R>);
+impl<R> OnUnbalanced<NegativeImbalance<R>> for DealWithFees<R>
+where
+	R: pallet_balances::Config + pallet_treasury::Config + pallet_authorship::Config,
+	pallet_treasury::Pallet<R>: OnUnbalanced<NegativeImbalance<R>>,
+	<R as frame_system::Config>::AccountId: From<AccountId>,
+	<R as frame_system::Config>::AccountId: Into<AccountId>,
+{
+	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance<R>>) {
 		if let Some(fees) = fees_then_tips.next() {
-			// for fees, 80% to treasury, 20% to author
-			let mut split = fees.ration(80, 20);
+			// for fees, 20% to treasury, 80% to author
+			let mut split = fees.ration(20, 80);
 			if let Some(tips) = fees_then_tips.next() {
-				// for tips, if any, 80% to treasury, 20% to author (though this can be anything)
-				tips.ration_merge_into(80, 20, &mut split);
+				// for tips, if any, 100% to author
+				tips.merge_into(&mut split.1);
 			}
-			Treasury::on_unbalanced(split.0);
-			Author::on_unbalanced(split.1);
+			use pallet_treasury::Pallet as Treasury;
+			<Treasury<R> as OnUnbalanced<_>>::on_unbalanced(split.0);
+			<Author<R> as OnUnbalanced<_>>::on_unbalanced(split.1);
 		}
 	}
 }
@@ -834,13 +857,4 @@ where
 {
 	type Extrinsic = UncheckedExtrinsic;
 	type OverarchingCall = RuntimeCall;
-}
-
-pub struct Author;
-impl OnUnbalanced<NegativeImbalance> for Author {
-	fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-		if let Some(author) = Authorship::author() {
-			Balances::resolve_creating(&author, amount);
-		}
-	}
 }
