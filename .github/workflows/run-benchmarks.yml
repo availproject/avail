@@ -40,7 +40,22 @@ jobs:
         run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Build node and run benchmarks
-        run: EXTRA=${{ github.event.inputs.extra }} OUR_PALLETS=${{ github.event.inputs.ourpallets }} ./scripts/run_benchmarks.sh
+        run: |
+          if [ "${{ github.event.inputs.extra }}" != "0" ]; then
+            EXTRA="EXTRA=${{ github.event.inputs.extra }}"
+          else
+            EXTRA=""
+          fi
+
+          if [ "${{ github.event.inputs.ourpallets }}" != "0" ]; then
+            OUR_PALLETS="OUR_PALLETS=${{ github.event.inputs.ourpallets }}"
+          else
+            OUR_PALLETS=""
+          fi
+
+          echo "Command to be executed: $EXTRA $OUR_PALLETS ./scripts/run_benchmarks.sh"
+
+          $EXTRA $OUR_PALLETS ./scripts/run_benchmarks.sh
 
       - name: Upload output as artifact
         uses: actions/upload-artifact@v2
