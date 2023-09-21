@@ -41,7 +41,6 @@ use crate::{
 		COL_EXTENSION, DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE, MINIMUM_BLOCK_SIZE,
 		PROOF_SIZE, ROW_EXTENSION, SCALAR_SIZE,
 	},
-	gridgen::pad_to_bls_scalar,
 	metrics::Metrics,
 	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed, TryFromBlockDimensionsError, LOG_TARGET,
 	U32_USIZE_ERR,
@@ -181,7 +180,6 @@ pub fn flatten_and_pad_block(
 	let last = block_dims_size.saturating_sub(padded_block.len()) / chunk_size;
 	for _ in 0..last {
 		let rnd_values: [u8; SCALAR_SIZE - 1] = rng.gen();
-		pad_to_bls_scalar(rnd_values).expect("less than SCALAR_SIZE values, can't fail");
 		padded_block.append(&mut pad_with_zeroes(rnd_values.to_vec(), chunk_size));
 	}
 
