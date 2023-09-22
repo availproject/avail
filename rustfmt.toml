@@ -1,10 +1,13 @@
-binop_separator = "Back"
-comment_width = 120
-imports_granularity = "Crate"
-max_width = 120
-reorder_imports = true
-tab_spaces = 4
-trailing_semicolon = true
-use_small_heuristics = "Max"
+match_block_trailing_comma = true
 use_field_init_shorthand = true
-wrap_comments = true
+edition = "2021"
+hard_tabs = true
+
+# Disabled on Stable
+#
+# fn_single_line = true
+# match_arm_blocks = true
+# imports_granularity = "Crate"
+# overflow_delimited_expr = true
+# reorder_impl_items = true
+# group_imports = "StdExternalCrate"

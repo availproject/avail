@@ -1,11 +1,15 @@
 #![cfg(feature = "runtime-benchmarks")]
 
+use super::*;
+use crate::Pallet;
 use avail_core::{
 	asdr::AppUncheckedExtrinsic, AppExtrinsic, BlockLengthColumns, BlockLengthRows,
 	OpaqueExtrinsic, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
 };
 use codec::{Decode, Encode};
-use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
+use frame_benchmarking::{
+	impl_benchmark_test_suite, v1::BenchmarkError, v2::*, vec, whitelisted_caller,
+};
 use frame_support::{log::info, traits::Get};
 use frame_system::{
 	header_builder::hosted_header_builder, limits::BlockLength, submitted_data, RawOrigin,
@@ -22,9 +26,13 @@ use sp_std::{
 	vec::Vec,
 };
 
-use crate::{pallet::Call as DACall, *};
+use crate::pallet::Call as DACall;
 
 type RuntimeCallOf<T> = <T as frame_system::Config>::RuntimeCall;
+
+fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
+}
 
 #[derive(PartialEq, Eq, Clone, Debug, Encode, Decode, TypeInfo)]
 pub struct SignedExtensionUnused<
@@ -159,76 +167,166 @@ where
 	(txs, root, block_length, block_number, seed)
 }
 
-benchmarks! {
-	where_clause {
-		where <T as frame_system::Config>::RuntimeCall: From<DACall<T>>,
-			  T: Send + Sync + Debug + StaticTypeInfo
-	}
+#[benchmarks(
+	where <T as frame_system::Config>::RuntimeCall: From<DACall<T>>, T: Send + Sync + Debug + StaticTypeInfo
+)]
+mod benchmarks {
+	use super::*;
 
-	create_application_key {
+	#[benchmark]
+	fn create_application_key() -> Result<(), BenchmarkError> {
+		let caller = whitelisted_caller::<T::AccountId>();
+		let origin = RawOrigin::Signed(caller.clone());
 		let max_key_len = T::MaxAppKeyLength::get();
-
 		let key = generate_bounded::<AppKeyFor<T>>(max_key_len);
 		let key_verify = key.clone();
 
-		let caller = whitelisted_caller::<T::AccountId>();
-		let origin = RawOrigin::Signed(caller.clone());
+		#[extrinsic_call]
+		_(origin, key);
 
-	}: create_application_key(origin, key)
-	verify {
 		let info = Pallet::<T>::application_key(&key_verify);
-		assert_eq!( info, Some(AppKeyInfoFor::<T> { owner: caller, id: AppId(3)}));
+		assert_eq!(
+			info,
+			Some(AppKeyInfoFor::<T> {
+				owner: caller,
+				id: AppId(3)
+			})
+		);
+
+		Ok(())
 	}
 
-	submit_block_length_proposal {
+	#[benchmark]
+	fn submit_block_length_proposal() -> Result<(), BenchmarkError> {
+		let origin = RawOrigin::Root;
 		let rows = T::MaxBlockRows::get().0;
 		let cols = T::MaxBlockCols::get().0;
-		let origin = RawOrigin::Root;
-	}: submit_block_length_proposal(origin, rows, cols)
 
-	submit_data {
-		let i in 1..T::MaxAppDataLength::get();
+		#[extrinsic_call]
+		_(origin, rows, cols);
 
+		Ok(())
+	}
+
+	#[benchmark]
+	fn submit_data(i: Linear<1, { T::MaxAppDataLength::get() }>) -> Result<(), BenchmarkError> {
+		let caller = whitelisted_caller::<T::AccountId>();
+		let origin = RawOrigin::Signed(caller.clone());
 		let data = generate_bounded::<AppDataFor<T>>(i);
-		let origin = RawOrigin::Signed(whitelisted_caller::<T::AccountId>());
+		let data_verif = data.clone();
 
-	}: submit_data(origin, data)
+		#[extrinsic_call]
+		_(origin, data);
 
-	data_root {
-		let i in 0..T::MaxAppDataLength::get();
+		assert_last_event::<T>(
+			Event::DataSubmitted {
+				who: caller,
+				data: data_verif,
+			}
+			.into(),
+		);
+		Ok(())
+	}
 
+	#[benchmark]
+	fn data_root(i: Linear<0, { T::MaxAppDataLength::get() }>) -> Result<(), BenchmarkError> {
 		let data = generate_bounded::<AppDataFor<T>>(i);
 		let opaque = submit_data_ext::<T>(data);
 
-	}:{
-		let _data_root =submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(once(&opaque));
+		#[block]
+		{
+			submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(once(&opaque));
+		}
+
+		Ok(())
 	}
 
-	commitment_builder_32{
-		let i in 32..T::MaxBlockRows::get().0;
+	// This benchmark is not directly used by extrinsic.
+	// It is mostly used to check that the weight is lower or approximately equal the `data_root` benchmark
+	#[benchmark]
+	fn data_root_batch(i: Linear<0, { 2 * 1024 * 1024 }>) -> Result<(), BenchmarkError> {
+		let max_tx_size = T::MaxAppDataLength::get();
+		let nb_full_tx = i / max_tx_size;
+		let remaining_size = i % max_tx_size;
+		let mut calls = Vec::with_capacity(nb_full_tx as usize + 1usize);
+
+		// Create the full-sized transactions
+		for _ in 0..nb_full_tx {
+			let data = generate_bounded::<AppDataFor<T>>(max_tx_size);
+			let opaque = submit_data_ext::<T>(data);
+			calls.push(opaque);
+		}
+
+		// If there is a remaining size, create one more transaction
+		if remaining_size > 0 {
+			let data = generate_bounded::<AppDataFor<T>>(remaining_size);
+			let opaque = submit_data_ext::<T>(data);
+			calls.push(opaque);
+		}
+
+		#[block]
+		{
+			submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(calls.iter());
+		}
+
+		Ok(())
+	}
+
+	#[benchmark(extra)]
+	fn commitment_builder_32(
+		i: Linear<32, { T::MaxBlockRows::get().0 }>,
+	) -> Result<(), BenchmarkError> {
 		let (txs, root, block_length, block_number, seed) = commitment_parameters::<T>(i, 32);
-	}: {
-		let _ = hosted_header_builder::build(txs, root, block_length, block_number, seed);
+
+		#[block]
+		{
+			hosted_header_builder::build(txs, root, block_length, block_number, seed);
+		}
+
+		Ok(())
 	}
 
-	commitment_builder_64{
-		let i in 32..T::MaxBlockRows::get().0;
+	#[benchmark(extra)]
+	fn commitment_builder_64(
+		i: Linear<32, { T::MaxBlockRows::get().0 }>,
+	) -> Result<(), BenchmarkError> {
 		let (txs, root, block_length, block_number, seed) = commitment_parameters::<T>(i, 64);
-	}: {
-		let _ = hosted_header_builder::build(txs, root, block_length, block_number, seed);
+
+		#[block]
+		{
+			hosted_header_builder::build(txs, root, block_length, block_number, seed);
+		}
+
+		Ok(())
 	}
 
-	commitment_builder_128{
-		let i in 32..T::MaxBlockRows::get().0;
+	#[benchmark(extra)]
+	fn commitment_builder_128(
+		i: Linear<32, { T::MaxBlockRows::get().0 }>,
+	) -> Result<(), BenchmarkError> {
 		let (txs, root, block_length, block_number, seed) = commitment_parameters::<T>(i, 128);
-	}: {
-		let _ = hosted_header_builder::build(txs, root, block_length, block_number, seed);
+
+		#[block]
+		{
+			hosted_header_builder::build(txs, root, block_length, block_number, seed);
+		}
+
+		Ok(())
 	}
 
-	commitment_builder_256{
-		let i in 32..T::MaxBlockRows::get().0;
+	#[benchmark(extra)]
+	fn commitment_builder_256(
+		i: Linear<32, { T::MaxBlockRows::get().0 }>,
+	) -> Result<(), BenchmarkError> {
 		let (txs, root, block_length, block_number, seed) = commitment_parameters::<T>(i, 256);
-	}: {
-		let _ = hosted_header_builder::build(txs, root, block_length, block_number, seed);
+
+		#[block]
+		{
+			hosted_header_builder::build(txs, root, block_length, block_number, seed);
+		}
+
+		Ok(())
 	}
+
+	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
 }

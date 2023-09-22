@@ -21,14 +21,13 @@ jobs:
            run: |
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             source "$HOME/.cargo/env"
-            rustup toolchain install nightly
-            rustup default nightly
-            rustup target add wasm32-unknown-unknown --toolchain nightly
+            rustup target add wasm32-unknown-unknown
+            rustup show
 
             cargo build --release -p data-avail
             mv target/release/data-avail target/release/data-avail-linux-amd64
             chmod 777 runtime
-            docker run --name srtool --rm -e PACKAGE=da-runtime -e RUNTIME_DIR=runtime/ -e PROFILE=release -v $(pwd):/build:rw -v /tmp/cargo:/cargo-home docker.io/paritytech/srtool:1.66.1 build
+            docker run --name srtool --rm -e PACKAGE=da-runtime -e RUNTIME_DIR=runtime/ -e PROFILE=release -v $(pwd):/build:rw -v /tmp/cargo:/cargo-home docker.io/paritytech/srtool:1.70.0 build
             mv runtime/target/srtool/release/wbuild/da-runtime/da_runtime.compact.compressed.wasm target/release/wbuild/da-runtime/data-avail-runtime.compact.compressed.wasm
             pushd target/release/
             tar czf data-avail-linux-amd64.tar.gz data-avail-linux-amd64
@@ -56,9 +55,8 @@ jobs:
            run: |
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             source "$HOME/.cargo/env"
-            rustup toolchain install nightly
-            rustup default nightly
-            rustup target add wasm32-unknown-unknown --toolchain nightly
+            rustup target add wasm32-unknown-unknown
+            rustup show 
 
             rustup target add aarch64-unknown-linux-gnu
             sudo apt-get update && sudo apt-get install -y musl-tools clang gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev libc6-dev-arm64-cross
@@ -129,7 +127,7 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
           tags: availj/avail:${{ steps.prepare.outputs.tag_name }}
           build-args: |

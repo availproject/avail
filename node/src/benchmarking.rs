@@ -43,13 +43,19 @@ pub struct RemarkBuilder {
 impl RemarkBuilder {
 	/// Creates a new [`Self`] from the given client.
 	#[allow(dead_code)]
-	pub fn new(client: Arc<FullClient>) -> Self { Self { client } }
+	pub fn new(client: Arc<FullClient>) -> Self {
+		Self { client }
+	}
 }
 
 impl frame_benchmarking_cli::ExtrinsicBuilder for RemarkBuilder {
-	fn pallet(&self) -> &str { "system" }
+	fn pallet(&self) -> &str {
+		"system"
+	}
 
-	fn extrinsic(&self) -> &str { "remark" }
+	fn extrinsic(&self) -> &str {
+		"remark"
+	}
 
 	fn build(&self, nonce: u32) -> std::result::Result<OpaqueExtrinsic, &'static str> {
 		let acc = Sr25519Keyring::Bob.pair();
@@ -87,9 +93,13 @@ impl TransferKeepAliveBuilder {
 }
 
 impl frame_benchmarking_cli::ExtrinsicBuilder for TransferKeepAliveBuilder {
-	fn pallet(&self) -> &str { "balances" }
+	fn pallet(&self) -> &str {
+		"balances"
+	}
 
-	fn extrinsic(&self) -> &str { "transfer_keep_alive" }
+	fn extrinsic(&self) -> &str {
+		"transfer_keep_alive"
+	}
 
 	fn build(&self, nonce: u32) -> std::result::Result<OpaqueExtrinsic, &'static str> {
 		let acc = Sr25519Keyring::Bob.pair();

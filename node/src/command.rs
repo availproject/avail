@@ -19,51 +19,64 @@
 use std::sync::Arc;
 
 use da_runtime::Block;
+use data_avail::chains;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-use sc_cli::{ChainSpec, Result, RuntimeVersion, SubstrateCli};
+use sc_cli::{Result, SubstrateCli};
 use sc_service::PartialComponents;
+#[cfg(feature = "try-runtime")]
+use {
+	crate::service::ExecutorDispatch, da_runtime::constants::time::SLOT_DURATION,
+	try_runtime_cli::block_building_info::substrate_info,
+};
 
 use crate::{
-	chain_spec,
 	cli::{Cli, Subcommand},
-	service::{self, new_partial, ExecutorDispatch, FullClient},
-	// benchmarking::{RemarkBuilder, inherent_benchmark_data, TransferKeepAliveBuilder},
+	service::{self, new_partial, FullClient},
 };
 
 impl SubstrateCli for Cli {
-	fn impl_name() -> String { "Avail Node".into() }
+	fn impl_name() -> String {
+		"Avail Node".into()
+	}
 
-	fn impl_version() -> String { env!("SUBSTRATE_CLI_IMPL_VERSION").into() }
+	fn impl_version() -> String {
+		env!("SUBSTRATE_CLI_IMPL_VERSION").into()
+	}
 
-	fn description() -> String { env!("CARGO_PKG_DESCRIPTION").into() }
+	fn description() -> String {
+		env!("CARGO_PKG_DESCRIPTION").into()
+	}
 
-	fn author() -> String { env!("CARGO_PKG_AUTHORS").into() }
+	fn author() -> String {
+		env!("CARGO_PKG_AUTHORS").into()
+	}
 
-	fn support_url() -> String { "support.anonymous.an".into() }
+	fn support_url() -> String {
+		"support.anonymous.an".into()
+	}
 
-	fn copyright_start_year() -> i32 { 2017 }
+	fn copyright_start_year() -> i32 {
+		2017
+	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 		let spec = match id {
 			"" => {
 				return Err(
-					"Please specify which chain you want to run, e.g. --dev or --chain=local"
+					"Please specify which chain you want to run, e.g. --dev, --dev.tri, --kate"
 						.into(),
 				)
 			},
-			"dev" | "local" | "local.solo" => Box::new(chain_spec::locals::solo::chain_spec()),
-			"local.tri" => Box::new(chain_spec::locals::tri::chain_spec()),
-			"testnet" | "testnet.kate" => Box::new(chain_spec::testnets::kate::chain_spec()),
-			// "mainnet" => Box::new(chain_spec::mainnet::chain_spec()),
-			path => Box::new(chain_spec::ChainSpec::from_json_file(
+			"dev" => Box::new(chains::dev::chain_spec()),
+			"dev.tri" => Box::new(chains::dev_tri::chain_spec()),
+			"biryani" => Box::new(chains::biryani::chain_spec()?),
+			"dymension" => Box::new(chains::dymension::chain_spec()?),
+			"kate" => Box::new(chains::kate::chain_spec()?),
+			path => Box::new(chains::ChainSpec::from_json_file(
 				std::path::PathBuf::from(path),
 			)?),
 		};
 		Ok(spec)
-	}
-
-	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		da_runtime::apis::NATIVE_VERSION
 	}
 }
 
@@ -75,7 +88,7 @@ pub fn run() -> Result<()> {
 		None => {
 			let runner = cli.create_runner(&cli.run)?;
 			runner.run_node_until_exit(|config| async move {
-				service::new_full(config, cli.no_hardware_benchmarks)
+				service::new_full(config, cli.no_hardware_benchmarks, cli.unsafe_da_sync)
 					.map_err(sc_cli::Error::Service)
 			})
 		},
@@ -99,14 +112,13 @@ pub fn run() -> Result<()> {
 									.into(),
 							);
 						}
-
-						cmd.run::<Block, ExecutorDispatch>(config)
+						cmd.run::<Block, frame_system::header_builder::hosted_header_builder::HostFunctions>(config)
 					},
 					BenchmarkCmd::Block(_cmd) => {
 						unimplemented!();
 						/*
 						// ensure that we keep the task manager alive
-						let partial = new_partial(&config)?;
+						let partial = new_partial(&config, cli.unsafe_da_sync)?;
 						cmd.run(partial.client)
 						*/
 					},
@@ -120,7 +132,7 @@ pub fn run() -> Result<()> {
 						unimplemented!();
 						/*
 						// ensure that we keep the task manager alive
-						let partial = new_partial(&config)?;
+						let partial = new_partial(&config, cli.unsafe_da_sync)?;
 						let db = partial.backend.expose_db();
 						let storage = partial.backend.expose_storage();
 
@@ -131,7 +143,7 @@ pub fn run() -> Result<()> {
 						unimplemented!();
 						/*
 						// ensure that we keep the task manager alive
-						let partial = new_partial(&config)?;
+						let partial = new_partial(&config, cli.unsafe_da_sync)?;
 						let ext_builder = RemarkBuilder::new(partial.client.clone());
 
 						cmd.run(
@@ -147,7 +159,7 @@ pub fn run() -> Result<()> {
 						unimplemented!();
 						/*
 						// ensure that we keep the task manager alive
-						let partial = service::new_partial(&config)?;
+						let partial = service::new_partial(&config, cli.unsafe_da_sync)?;
 						// Register the *Remark* and *TKA* builders.
 						let ext_factory = ExtrinsicFactory(vec![
 							Box::new(RemarkBuilder::new(partial.client.clone())),
@@ -187,7 +199,7 @@ pub fn run() -> Result<()> {
 					task_manager,
 					import_queue,
 					..
-				} = new_partial(&config)?;
+				} = new_partial(&config, cli.unsafe_da_sync)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
@@ -198,7 +210,7 @@ pub fn run() -> Result<()> {
 					client,
 					task_manager,
 					..
-				} = new_partial(&config)?;
+				} = new_partial(&config, cli.unsafe_da_sync)?;
 				Ok((cmd.run(client, config.database), task_manager))
 			})
 		},
@@ -209,7 +221,7 @@ pub fn run() -> Result<()> {
 					client,
 					task_manager,
 					..
-				} = new_partial(&config)?;
+				} = new_partial(&config, cli.unsafe_da_sync)?;
 				Ok((cmd.run(client, config.chain_spec), task_manager))
 			})
 		},
@@ -221,7 +233,7 @@ pub fn run() -> Result<()> {
 					task_manager,
 					import_queue,
 					..
-				} = new_partial(&config)?;
+				} = new_partial(&config, cli.unsafe_da_sync)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
@@ -237,10 +249,10 @@ pub fn run() -> Result<()> {
 					task_manager,
 					backend,
 					..
-				} = new_partial(&config)?;
+				} = new_partial(&config, cli.unsafe_da_sync)?;
 				let aux_revert = Box::new(|client: Arc<FullClient>, backend, blocks| {
 					sc_consensus_babe::revert(client.clone(), backend, blocks)?;
-					sc_finality_grandpa::revert(client, blocks)?;
+					sc_consensus_grandpa::revert(client, blocks)?;
 					Ok(())
 				});
 				Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
@@ -257,12 +269,12 @@ pub fn run() -> Result<()> {
 				let task_manager =
 					sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
 						.map_err(|e| sc_cli::Error::Service(sc_service::Error::Prometheus(e)))?;
-
+				let info_provider = substrate_info(SLOT_DURATION);
 				Ok((
 					cmd.run::<Block, ExtendedHostFunctions<
 						sp_io::SubstrateHostFunctions,
 						<ExecutorDispatch as NativeExecutionDispatch>::ExtendHostFunctions,
-					>>(),
+					>, _>(Some(info_provider)),
 					task_manager,
 				))
 			})

@@ -43,7 +43,9 @@ where
 	<T as SystemConfig>::RuntimeCall: IsSubType<DACall<T>> + IsSubType<UtilityCall<T>>,
 {
 	/// utility constructor. Used only in client/factory code.
-	pub fn from(app_id: AppId) -> Self { Self(app_id, sp_std::marker::PhantomData) }
+	pub fn from(app_id: AppId) -> Self {
+		Self(app_id, sp_std::marker::PhantomData)
+	}
 
 	/// It validates that `AppId` is correct and already registered for the call and potential nested calls.
 	/// Transaction validation:
@@ -100,7 +102,9 @@ where
 }
 
 impl<T: DAConfig + UtilityConfig + Send + Sync> Default for CheckAppId<T> {
-	fn default() -> Self { Self(AppId::default(), PhantomData) }
+	fn default() -> Self {
+		Self(AppId::default(), PhantomData)
+	}
 }
 
 impl<T> Debug for CheckAppId<T>
@@ -108,10 +112,14 @@ where
 	T: DAConfig + UtilityConfig + Send + Sync,
 {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "CheckAppId: {}", self.0) }
+	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+		write!(f, "CheckAppId: {}", self.0)
+	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut Formatter) -> fmt::Result { Ok(()) }
+	fn fmt(&self, _: &mut Formatter) -> fmt::Result {
+		Ok(())
+	}
 }
 
 impl<T> SignedExtension for CheckAppId<T>
@@ -158,7 +166,9 @@ where
 	T: DAConfig + UtilityConfig + Send + Sync,
 {
 	#[inline]
-	fn app_id(&self) -> AppId { self.0 }
+	fn app_id(&self) -> AppId {
+		self.0
+	}
 }
 
 #[cfg(test)]
@@ -175,7 +185,9 @@ mod tests {
 		pallet::Call as DACall,
 	};
 
-	fn remark_call() -> RuntimeCall { RuntimeCall::System(SysCall::remark { remark: vec![] }) }
+	fn remark_call() -> RuntimeCall {
+		RuntimeCall::System(SysCall::remark { remark: vec![] })
+	}
 
 	fn submit_data_call() -> RuntimeCall {
 		RuntimeCall::DataAvailability(DACall::submit_data {

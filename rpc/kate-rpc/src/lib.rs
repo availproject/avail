@@ -27,7 +27,7 @@ use sc_client_api::BlockBackend;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
-	generic::{BlockId, Digest},
+	generic::Digest,
 	traits::{Block as BlockT, Header},
 };
 
@@ -106,7 +106,7 @@ macro_rules! internal_err {
 
 /// If feature `secure_padding_fill` is enabled then the returned seed is generated using Babe VRF.
 /// Otherwise, it will use the default `Seed` value.
-fn get_seed<B, C>(client: &C, block_id: &BlockId<B>) -> Option<Seed>
+fn get_seed<B, C>(client: &C, at: <B as BlockT>::Hash) -> Option<Seed>
 where
 	B: BlockT,
 	<B as BlockT>::Header: ExtendedHeader<
@@ -119,7 +119,7 @@ where
 	C::Api: DataAvailApi<B>,
 {
 	if cfg!(feature = "secure_padding_fill") {
-		client.runtime_api().babe_vrf(block_id).ok()
+		client.runtime_api().babe_vrf(at).ok()
 	} else {
 		Some(Seed::default())
 	}
@@ -134,11 +134,6 @@ where
 {
 	fn at_or_best(&self, at: Option<<Block as BlockT>::Hash>) -> <Block as BlockT>::Hash {
 		at.unwrap_or_else(|| self.client.info().best_hash)
-	}
-
-	#[inline]
-	fn block_id(&self, at: Option<<Block as BlockT>::Hash>) -> BlockId<Block> {
-		BlockId::Hash(self.at_or_best(at))
 	}
 }
 
@@ -162,13 +157,12 @@ where
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Vec<u8>>> {
 		let at = self.at_or_best(at);
-		let block_id = BlockId::Hash(at);
 
 		let signed_block = self
 			.client
 			.block(at)
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
-			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
+			.ok_or_else(|| internal_err!("Missing block {}", at))?;
 
 		let block_hash = signed_block.block.header().hash();
 
@@ -193,13 +187,13 @@ where
 				.map(AppExtrinsic::from)
 				.collect();
 
-			let seed = get_seed::<Block, Client>(&self.client, &block_id)
-				.ok_or_else(|| internal_err!("Babe VRF not found for block {}", block_id))?;
+			let seed = get_seed::<Block, Client>(&self.client, at)
+				.ok_or_else(|| internal_err!("Babe VRF not found for block {}", at))?;
 
 			let block_length: BlockLength = self
 				.client
 				.runtime_api()
-				.block_length(&block_id)
+				.block_length(at)
 				.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
 			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
@@ -231,13 +225,12 @@ where
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<Vec<u8>>>> {
 		let at = self.at_or_best(at);
-		let block_id = BlockId::Hash(at);
 
 		let signed_block = self
 			.client
 			.block(at)
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
-			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
+			.ok_or_else(|| internal_err!("Missing block {}", at))?;
 
 		let block_hash = signed_block.block.header().hash();
 
@@ -265,11 +258,11 @@ where
 			let block_length: BlockLength = self
 				.client
 				.runtime_api()
-				.block_length(&block_id)
+				.block_length(at)
 				.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
-			let seed = get_seed::<Block, Client>(&self.client, &block_id)
-				.ok_or_else(|| internal_err!("Babe VRF not found for block {block_id}"))?;
+			let seed = get_seed::<Block, Client>(&self.client, at)
+				.ok_or_else(|| internal_err!("Babe VRF not found for block {at}"))?;
 
 			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
 				block_length.rows,
@@ -305,13 +298,12 @@ where
 	//TODO allocate static thread pool, just for RPC related work, to free up resources, for the block producing processes.
 	async fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
 		let at = self.at_or_best(at);
-		let block_id = BlockId::Hash(at);
 
 		let signed_block = self
 			.client
 			.block(at)
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
-			.ok_or_else(|| internal_err!("Missing block {}", block_id))?;
+			.ok_or_else(|| internal_err!("Missing block {}", at))?;
 
 		let block_hash = signed_block.block.header().hash();
 
@@ -340,11 +332,11 @@ where
 			let block_length: BlockLength = self
 				.client
 				.runtime_api()
-				.block_length(&block_id)
+				.block_length(at)
 				.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
-			let seed = get_seed::<Block, Client>(&self.client, &block_id)
-				.ok_or_else(|| internal_err!("Babe VRF not found for block {block_id}"))?;
+			let seed = get_seed::<Block, Client>(&self.client, at)
+				.ok_or_else(|| internal_err!("Babe VRF not found for block {at}"))?;
 
 			let (_, block, block_dims) = kate::com::flatten_and_pad_block(
 				block_length.rows,
@@ -371,17 +363,13 @@ where
 		)
 		.ok_or_else(|| internal_err!("Block dimensions are invalid"))?;
 
-		let kc_public_params_raw =
-			self.client
-				.runtime_api()
-				.public_params(&block_id)
-				.map_err(|e| {
-					internal_err!(
-						"Public params cannot be fetched on block {}: {:?}",
-						block_hash,
-						e
-					)
-				})?;
+		let kc_public_params_raw = self.client.runtime_api().public_params(at).map_err(|e| {
+			internal_err!(
+				"Public params cannot be fetched on block {}: {:?}",
+				block_hash,
+				e
+			)
+		})?;
 		let kc_public_params =
 			unsafe { PublicParameters::from_slice_unchecked(&kc_public_params_raw) };
 
@@ -393,12 +381,12 @@ where
 	}
 
 	async fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength> {
-		let block_id = self.block_id(at);
+		let at = self.at_or_best(at);
 		let block_length = self
 			.client
 			.runtime_api()
-			.block_length(&block_id)
-			.map_err(|e| internal_err!("Length of best block({:?}): {:?}", block_id, e))?;
+			.block_length(at)
+			.map_err(|e| internal_err!("Length of best block({:?}): {:?}", at, e))?;
 
 		Ok(block_length)
 	}

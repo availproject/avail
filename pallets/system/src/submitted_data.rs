@@ -1,7 +1,7 @@
 use core::fmt::Debug;
 
 use avail_core::OpaqueExtrinsic;
-use beefy_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
+use binary_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
 use sp_core::H256;
 use sp_runtime::traits::Keccak256;
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
@@ -23,7 +23,9 @@ pub type RcMetrics = Rc<RefCell<Metrics>>;
 
 impl Metrics {
 	/// Creates a shared metric with internal mutability.
-	fn new_shared() -> RcMetrics { Rc::new(RefCell::new(Self::default())) }
+	fn new_shared() -> RcMetrics {
+		Rc::new(RefCell::new(Self::default()))
+	}
 }
 
 /// Extracts the `data` field from some types of extrinsics.
@@ -43,7 +45,9 @@ pub trait Extractor {
 impl Extractor for () {
 	type Error = ();
 
-	fn extract(_: &OpaqueExtrinsic, _: RcMetrics) -> Result<Vec<Vec<u8>>, ()> { Ok(vec![]) }
+	fn extract(_: &OpaqueExtrinsic, _: RcMetrics) -> Result<Vec<Vec<u8>>, ()> {
+		Ok(vec![])
+	}
 }
 
 /// It is similar to `Extractor` but it uses `C` type for calls, instead of `AppExtrinsic`.
@@ -57,9 +61,13 @@ pub trait Filter<C> {
 
 #[cfg(any(feature = "std", test))]
 impl<C> Filter<C> for () {
-	fn filter(_: C, _: RcMetrics) -> Vec<Vec<u8>> { vec![] }
+	fn filter(_: C, _: RcMetrics) -> Vec<Vec<u8>> {
+		vec![]
+	}
 
-	fn process_calls(_: Vec<C>, _: &RcMetrics) -> Vec<Vec<u8>> { vec![] }
+	fn process_calls(_: Vec<C>, _: &RcMetrics) -> Vec<Vec<u8>> {
+		vec![]
+	}
 }
 
 fn extract_and_inspect<E>(opaque: &OpaqueExtrinsic, metrics: RcMetrics) -> Vec<Vec<u8>>
@@ -67,8 +75,11 @@ where
 	E: Extractor,
 	E::Error: Debug,
 {
-	E::extract(opaque, metrics)
-		.inspect_err(|e| log::error!("Extractor cannot decode opaque: {e:?}"))
+	let extracted = E::extract(opaque, metrics);
+	if let Err(e) = extracted.as_ref() {
+		log::error!("Extractor cannot decode opaque: {e:?}");
+	}
+	extracted
 		.unwrap_or_default()
 		.into_iter()
 		.filter(|data| !data.is_empty())
@@ -105,10 +116,7 @@ where
 ///
 /// In case an empty list of leaves is passed the function returns a 0-filled hash.
 fn root<I: Iterator<Item = Vec<u8>>>(submitted_data: I, metrics: RcMetrics) -> H256 {
-	#[cfg(not(feature = "force-rs-merkle"))]
 	let root = merkle_root::<Keccak256, _>(submitted_data);
-	#[cfg(feature = "force-rs-merkle")]
-	let root = rs_merkle_root(submitted_data).into();
 	log::debug!(
 		target: LOG_TARGET,
 		"Build submitted data root: {:?}, metrics: {:?}",
@@ -117,33 +125,6 @@ fn root<I: Iterator<Item = Vec<u8>>>(submitted_data: I, metrics: RcMetrics) -> H
 	);
 
 	root
-}
-
-/// Calculates the merkle root using `Keccak256` and `rs_merkle` crate.
-#[cfg(feature = "force-rs-merkle")]
-fn rs_merkle_root<I>(leaves: I) -> H256
-where
-	I: Iterator<Item = Vec<u8>>,
-{
-	use rs_merkle::{Hasher, MerkleTree};
-
-	#[derive(Clone)]
-	pub struct Keccak256Algorithm {}
-
-	impl Hasher for Keccak256Algorithm {
-		type Hash = [u8; 32];
-
-		fn hash(data: &[u8]) -> [u8; 32] { sp_io::hashing::keccak_256(data).into() }
-	}
-
-	let mut tree = MerkleTree::<Keccak256Algorithm>::new();
-	leaves.for_each(|leave| {
-		let leave_hash = Keccak256Algorithm::hash(leave.as_slice());
-		tree.insert(leave_hash);
-	});
-
-	tree.commit();
-	tree.root().unwrap_or_default().into()
 }
 
 /// Creates the Merkle Proof of the submitted data items in `app_extrinsics` filtered and
@@ -268,7 +249,7 @@ where
 	let leaf = Leaf::Hash(data_hash);
 	verify_proof::<Keccak256, _, _>(
 		&root,
-		proof.into_iter(),
+		proof,
 		number_of_submitted_data as usize,
 		data_index as usize,
 		leaf,
@@ -295,7 +276,9 @@ mod test {
 			}
 		}
 
-		fn process_calls(_: Vec<C>, _: &RcMetrics) -> Vec<Vec<u8>> { vec![] }
+		fn process_calls(_: Vec<C>, _: &RcMetrics) -> Vec<Vec<u8>> {
+			vec![]
+		}
 	}
 
 	#[test]
@@ -383,241 +366,112 @@ mod test {
 	}
 }
 
-#[cfg(all(test, feature = "force-rs-merkle"))]
+#[cfg(test)]
 mod test {
-	use avail_core::AppId;
-	use hex_literal::hex;
-	use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
-	use test_case::test_case;
+	use std::vec;
 
-	use super::*;
+	use crate::submitted_data::{calls_proof, Filter, RcMetrics};
 
-	mod nomad {
-		use codec::{Compact, Error as DecodeError, Input};
-		use sp_runtime::{AccountId32, MultiAddress, MultiSignature};
-
-		use super::*;
-
-		#[derive(Debug, Clone, PartialEq, Eq, Default)]
-		pub struct AvailExtrinsic {
-			pub app_id: u32,
-			pub signature: Option<MultiSignature>,
-			pub data: Vec<u8>,
-		}
-
-		pub type AvailSignedExtra = ((), (), (), AvailMortality, Nonce, (), Balance, u32);
-
-		#[derive(Decode)]
-		pub struct Balance(#[codec(compact)] u128);
-
-		#[derive(Decode)]
-		pub struct Nonce(#[codec(compact)] u32);
-
-		pub enum AvailMortality {
-			Immortal,
-			Mortal(u64, u64),
-		}
-
-		impl Decode for AvailMortality {
-			fn decode<I: Input>(input: &mut I) -> Result<Self, DecodeError> {
-				let first = input.read_byte()?;
-				if first == 0 {
-					Ok(Self::Immortal)
-				} else {
-					let encoded = first as u64 + ((input.read_byte()? as u64) << 8);
-					let period = 2 << (encoded % (1 << 4));
-					let quantize_factor = (period >> 12).max(1);
-					let phase = (encoded >> 4) * quantize_factor;
-					if period >= 4 && phase < period {
-						Ok(Self::Mortal(period, phase))
-					} else {
-						Err("Invalid period and phase".into())
-					}
-				}
+	// dummy filter implementation that skips empty strings in vector
+	impl<C> Filter<C> for String
+	where
+		String: From<C>,
+	{
+		fn filter(d: C, _: RcMetrics) -> Vec<Vec<u8>> {
+			let s = String::try_from(d).unwrap();
+			if s.is_empty() {
+				vec![]
+			} else {
+				vec![s.into_bytes()]
 			}
 		}
 
-		const EXTRINSIC_VERSION: u8 = 4;
-
-		impl Decode for AvailExtrinsic {
-			fn decode<I: Input>(input: &mut I) -> Result<AvailExtrinsic, DecodeError> {
-				// This is a little more complicated than usual since the binary format must be compatible
-				// with substrate's generic `Vec<u8>` type. Basically this just means accepting that there
-				// will be a prefix of vector length (we don't need
-				// to use this).
-				let _length_do_not_remove_me_see_above: Compact<u32> = Decode::decode(input)?;
-
-				let version = input.read_byte()?;
-
-				let is_signed = version & 0b1000_0000 != 0;
-				let version = version & 0b0111_1111;
-				if version != EXTRINSIC_VERSION {
-					return Err("Invalid transaction version".into());
-				}
-				let (app_id, signature) = if is_signed {
-					let _address = <MultiAddress<AccountId32, u32>>::decode(input)?;
-					let sig = MultiSignature::decode(input)?;
-					let extra = <AvailSignedExtra>::decode(input)?;
-					let app_id = extra.7;
-
-					(app_id, Some(sig))
-				} else {
-					return Err("Not signed".into());
-				};
-
-				let section: u8 = Decode::decode(input)?;
-				let method: u8 = Decode::decode(input)?;
-
-				let data: Vec<u8> = match (section, method) {
-					// TODO: Define these pairs as enums or better yet - make a dependency on substrate enums if possible
-					(29, 1) => Decode::decode(input)?,
-					_ => return Err("Not Avail Extrinsic".into()),
-				};
-
-				Ok(Self {
-					app_id,
-					signature,
-					data,
-				})
-			}
+		fn process_calls(_: Vec<C>, _: &RcMetrics) -> Vec<Vec<u8>> {
+			vec![]
 		}
 	}
 
-	fn encoded_timestamp_call() -> AppExtrinsic {
-		AppExtrinsic {
-			app_id: 0.into(),
-			data: hex!("280403000BC26208378301").into(),
-		}
-	}
-
-	fn encoded_fillblock_call<A: Into<AppId>>(app_id: A) -> AppExtrinsic {
-		let data = hex!("5D0284001CBD2D43530A44705AD088AF313E18F80B53EF16B36177CD4B77B846F2A5F07C01C44755794EA949E9410390CB4CE07FE2D8068656185B5AB9B43EEF934C3680478968C1F83E360A5D942FE75E9D58E49106A8E8B23601CBC6A633D80E5D089D83A4000400030000001D01A46868616A6B616E636B61206C61682069616B6A206361697568206162206169616A6820612067616861").to_vec();
-		AppExtrinsic {
-			app_id: app_id.into(),
-			data,
-		}
-	}
-
-	fn encoded_tx_bob() -> AppExtrinsic {
-		let data = hex!("490284001cbd2d43530a44705ad088af313e18f80b53ef16b36177cd4b77b846f2a5f07c0166de9fcb3903fa119cb6d23dd903b93a67719f76922b2b4c15a2539d11021102b75f4c452595b65b3bacef0e852430bbfa44bd38133b16cd5d48edb45962568204010000000000000600008eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a4802093d00").to_vec();
-		AppExtrinsic {
-			app_id: 0.into(),
-			data,
-		}
-	}
-
-	fn dr_input_1() -> Vec<AppExtrinsic> {
-		vec![encoded_timestamp_call(), encoded_fillblock_call(3)]
-	}
-
-	fn dr_output_1() -> H256 {
-		hex!("DDF368647A902A6F6AB9F53B32245BE28EDC99E92F43F0004BBC2CB359814B2A").into()
-	}
-
-	/*
-	#[test_case( dr_input_1() => dr_output_1())]
-	#[test_case( vec![encoded_timestamp_call()] => H256::zero(); "Empty block")]
-	#[test_case( vec![encoded_tx_bob()] => H256::zero(); "Signed Native Tx")]
-	fn it_build_data_root(app_extrinsics: Vec<AppExtrinsic>) -> H256 {
-		build_data_root(&app_extrinsics)
-	}*/
-
 	#[test]
-	fn test_merkle_proof() {
-		let avail_data: Vec<Vec<u8>> = vec![
-			hex!("3033333166613733656565636362653465323235").into(),
-			hex!("3630646564316635616236373261373132376261").into(),
-			hex!("3262313166316464333935353666623261623432").into(),
-		];
+	fn test_data_proof_with_skipped_tx() {
+		let tx1_data: String = String::from("0");
+		let tx2_data: String = String::new(); // tx should be skipped
+		let tx3_data: String = String::from("1");
+		let tx4_data: String = String::from("2");
 
-		let leaves = avail_data
-			.iter()
-			.map(|xt| Sha256::hash(&xt))
-			.collect::<Vec<[u8; 32]>>();
+		let submitted_data = vec![tx1_data, tx2_data, tx3_data, tx4_data];
 
-		let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
-		let proof = data_tree.proof(&[1usize]);
-		let root_proof = proof.proof_hashes().to_vec();
-		assert_eq!(root_proof, vec![
-			hex!("754B9412E0ED7907BDF4B7CA5D2A22F5E129A03DEB1F4E1C1FE42D322FDEE90E"),
-			hex!("8D6E30E494D17D7675A94C3C614467FF8CCE35201C1056751A6E9A100515DAF9"),
-		]);
-	}
+		// leaf 0 044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d
+		// leaf 1 c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6
+		// leaf 2 ad7c5bef027816a800da1736444fb58a807ef4c9603b7848673f7e3a68eb14a5
+		// intermediate root (leaf[0], leaf[1])  0b4aa17bff8fc189efb37609ac5ea9fca0df4c834a6fbac74b24c8119c40fef2
+		// data_root 0f1d00f4d84258b8d99bfc4748ff45b8039f108f43ca47e22ac5a1eab2e8c02d
 
-	#[test]
-	fn test_single_merkle_proof() {
-		let empty_vec: Vec<[u8; 32]> = vec![];
-
-		let avail_data: Vec<Vec<u8>> =
-			vec![hex!("3435346666383063303838616137666162396531").to_vec()];
-
-		let leaves = avail_data
-			.iter()
-			.map(|xt| Sha256::hash(&xt))
-			.collect::<Vec<[u8; 32]>>();
-
-		let data_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
-		let proof = data_tree.proof(&[0usize]);
-		let root_proof = proof.proof_hashes().to_vec();
-		// here the proof is shown empty because the root itself is the proof as there is only one appdata extrinsic
-		assert_eq!(root_proof, empty_vec);
-	}
-
-	///using rs-merkle proof verify function
-	#[test]
-	fn verify_merkle_proof() {
-		let avail_data: Vec<Vec<u8>> = vec![
-			hex!("3033333166613733656565636362653465323235").into(),
-			hex!("3630646564316635616236373261373132376261").into(),
-			hex!("3262313166316464333935353666623261623432").into(),
-			hex!("6433326630643762346634306264346563323665").into(),
-		];
-		let leaves = avail_data
-			.iter()
-			.map(|xt| Sha256::hash(&xt))
-			.collect::<Vec<[u8; 32]>>();
-
-		let merkle_tree = MerkleTree::<Sha256>::from_leaves(&leaves);
-		let indices_to_prove = vec![3];
-		let leaves_to_prove = leaves.get(3..4).ok_or("can't get leaves to prove").unwrap();
-
-		let proof = merkle_tree.proof(&indices_to_prove);
-		let root = merkle_tree
-			.root()
-			.ok_or("couldn't get the merkle root")
-			.unwrap();
-
-		assert!(proof.verify(root, &indices_to_prove, leaves_to_prove, leaves.len()));
-	}
-
-	#[test]
-	fn verify_nodata_merkle_proof() {
-		let avail_data: Vec<Vec<u8>> = vec![];
-
-		let leaves = avail_data
-			.iter()
-			.map(|xt| Sha256::hash(&xt))
-			.collect::<Vec<[u8; 32]>>();
-		let leaves_to_prove = if let Ok(leaves) = leaves.get(0).ok_or("can't get leaves to prove") {
-			leaves
+		if let Some(da_proof) = calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 0) {
+			assert_eq!(da_proof.leaf_index, 0);
+			assert_eq!(
+				format!("{:#x}", da_proof.root),
+				"0x0f1d00f4d84258b8d99bfc4748ff45b8039f108f43ca47e22ac5a1eab2e8c02d"
+			);
+			assert_eq!(da_proof.proof.len(), 2);
+			assert_eq!(
+				format!("{:#x}", da_proof.proof[0]),
+				"0xc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6"
+			);
+			assert_eq!(
+				format!("{:#x}", da_proof.proof[1]),
+				"0xad7c5bef027816a800da1736444fb58a807ef4c9603b7848673f7e3a68eb14a5"
+			);
+			assert_eq!(da_proof.number_of_leaves, 3);
 		} else {
-			&[0u8; 32]
-		};
-		assert_eq!(leaves_to_prove, &[0u8; 32]);
-	}
-
-	fn encoded_submit_call<A: Into<AppId>>(app_id: A) -> AppExtrinsic {
-		let data = hex!("5D0284001CBD2D43530A44705AD088AF313E18F80B53EF16B36177CD4B77B846F2A5F07C01C44755794EA949E9410390CB4CE07FE2D8068656185B5AB9B43EEF934C3680478968C1F83E360A5D942FE75E9D58E49106A8E8B23601CBC6A633D80E5D089D83A4000400030000001D01A46868616A6B616E636B61206C61682069616B6A206361697568206162206169616A6820612067616861").to_vec();
-		AppExtrinsic {
-			app_id: app_id.into(),
-			data,
+			panic!("Proof not generated for the transaction index 0!");
 		}
-	}
 
-	/*
-	#[test_case( encoded_submit_call(0) => H256(hex!("ddf368647a902a6f6ab9f53b32245be28edc99e92f43f0004bbc2cb359814b2a")); "Submit data 0")]
-	#[test_case( encoded_submit_call(1) => H256(hex!("ddf368647a902a6f6ab9f53b32245be28edc99e92f43f0004bbc2cb359814b2a")); "Submit data 1")]
-	fn nomad_merkle_root_compatibility(extrinsic: AppExtrinsic) -> H256 {
-		build_data_root(&[extrinsic])
-	}*/
+		// proof should not be generated when there is not data
+		assert_eq!(
+			None,
+			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 1)
+		);
+
+		if let Some(da_proof) = calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 2) {
+			assert_eq!(da_proof.leaf_index, 1);
+			assert_eq!(
+				format!("{:#x}", da_proof.root),
+				"0x0f1d00f4d84258b8d99bfc4748ff45b8039f108f43ca47e22ac5a1eab2e8c02d"
+			);
+			assert_eq!(da_proof.proof.len(), 2);
+			assert_eq!(
+				format!("{:#x}", da_proof.proof[0]),
+				"0x044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d"
+			);
+			assert_eq!(
+				format!("{:#x}", da_proof.proof[1]),
+				"0xad7c5bef027816a800da1736444fb58a807ef4c9603b7848673f7e3a68eb14a5"
+			);
+			assert_eq!(da_proof.number_of_leaves, 3);
+		} else {
+			panic!("Proof not generated for the transaction index 2!");
+		}
+
+		if let Some(da_proof) = calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 3) {
+			assert_eq!(da_proof.leaf_index, 2);
+			assert_eq!(
+				format!("{:#x}", da_proof.root),
+				"0x0f1d00f4d84258b8d99bfc4748ff45b8039f108f43ca47e22ac5a1eab2e8c02d"
+			);
+			assert_eq!(da_proof.proof.len(), 1);
+			assert_eq!(
+				format!("{:#x}", da_proof.proof[0]),
+				"0x0b4aa17bff8fc189efb37609ac5ea9fca0df4c834a6fbac74b24c8119c40fef2"
+			);
+			assert_eq!(da_proof.number_of_leaves, 3);
+		} else {
+			panic!("Proof not generated for the transaction index 3!");
+		}
+
+		// submit index that does not exists and proof should not be generated
+		assert_eq!(
+			None,
+			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 15)
+		);
+	}
 }

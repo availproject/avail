@@ -1,6 +1,6 @@
 [package]
 name = "data-avail"
-version = "1.6.3"
+version = "1.7.0"
 description = "Avail Node"
 authors = ["Anonymous"]
 homepage = "https://www.availproject.org/"
@@ -21,7 +21,7 @@ avail-base = { path = "../base" }
 
 # Internals
 avail-core = { version = "0.5", default-features = false, features = ["runtime"] }
-kate = { version = "0.8", default-features = false }
+avail-core-kate = { package = "kate", version = "0.8", default-features = false }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }
@@ -47,14 +47,15 @@ async-trait = "0.1.60"
 # Substrate
 ## Primitives
 sc-cli = "0.10.0-dev"
-sp-io = "7.0.0"
-sp-core = "7.0.0"
+sp-io = "23.0.0"
+sp-statement-store = "4.0.0-dev"
+sp-core = "21.0.0"
 sc-executor = "0.10.0-dev"
 sc-service = "0.10.0-dev"
 sc-telemetry = "4.0.0-dev"
 sc-keystore = "4.0.0-dev"
-sp-keystore = "0.13.0"
-sp-keyring = "7.0.0"
+sp-keystore = "0.27.0"
+sp-keyring = "24.0.0"
 sc-transaction-pool = "4.0.0-dev"
 sp-transaction-pool = "4.0.0-dev"
 sp-inherents = "4.0.0-dev"
@@ -64,18 +65,16 @@ sc-consensus-babe-rpc = "0.10.0-dev"
 sp-consensus-babe = "0.10.0-dev"
 sp-consensus = "0.10.0-dev"
 sc-consensus = "0.10.0-dev"
-sc-finality-grandpa = "0.10.0-dev"
-sc-finality-grandpa-rpc = "0.10.0-dev"
-sp-finality-grandpa = "4.0.0-dev"
+# Renamed: (https://github.com/paritytech/substrate/pull/13458)
+sc-consensus-grandpa-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sc-consensus-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sp-consensus-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 sc-client-api = "4.0.0-dev"
-sp-runtime = "7.0.0"
+sp-runtime = "24.0.0"
 sp-timestamp = "4.0.0-dev"
 sc-consensus-babe = "0.10.0-dev"
-sc-consensus-epochs = "0.10.0-dev"
 sc-consensus-slots = "0.10.0-dev"
-sc-consensus-uncles = "0.10.0-dev"
 sc-network = "0.10.0-dev"
-sp-authorship = "4.0.0-dev" 
 sp-authority-discovery = "4.0.0-dev"
 sc-authority-discovery = "0.10.0-dev"
 sc-chain-spec = "4.0.0-dev"
@@ -87,6 +86,7 @@ sc-sync-state-rpc = "0.10.0-dev"
 sp-api = "4.0.0-dev"
 sc-sysinfo = "6.0.0-dev"
 sc-network-common = "0.10.0-dev"
+sc-network-sync = "0.10.0-dev"
 primitive-types = "0.12.0"
 
 # FRAME
@@ -121,7 +121,7 @@ clap_complete = { version = "4.0.2", optional = true }
 frame-benchmarking-cli = { version = "4.0.0-dev", optional = true }
 
 [dev-dependencies]
-sp-tracing = "6.0.0"
+sp-tracing = "10.0.0"
 tempfile = "3.1.0"
 
 [features]
@@ -136,13 +136,22 @@ cli = [
 runtime-benchmarks = [
 	"da-runtime/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
+	"da-control/runtime-benchmarks",
+	"nomad-da-bridge/runtime-benchmarks",
+	"nomad-home/runtime-benchmarks",
+	"nomad-updater-manager/runtime-benchmarks"
 ]
 # Enable features that allow the runtime to be tried and debugged. Name might be subject to change
 # in the near future.
 try-runtime = [
-	"da-runtime/try-runtime", 
+	"da-runtime/try-runtime",
 	"try-runtime-cli/try-runtime",
-	"avail-core/try-runtime"
+	"avail-core/try-runtime",
+	"da-control/try-runtime",
+	"frame-system/try-runtime",
+	"nomad-da-bridge/try-runtime",
+	"nomad-home/try-runtime",
+	"nomad-updater-manager/try-runtime"
 ]
 
 

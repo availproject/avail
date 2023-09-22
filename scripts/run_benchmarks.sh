@@ -13,6 +13,7 @@ echo "TEMPLATE_PATH: $TEMPLATE_PATH"
 echo "OUTPUT_PATH: $OUTPUT_PATH"
 echo "OUR_PALLETS: $OUR_PALLETS"
 echo "BINARY_LOCATION: $BINARY_LOCATION"
+echo "EXTRA: $EXTRA"
 
 run_benchmark() {
     echo "Pallets: ${PALLETS[@]}"
@@ -41,7 +42,13 @@ run_benchmark() {
 benchmark() {
     echo "[+] Benchmarking $PALLET"
     
-    OUTPUT=$($BINARY_LOCATION benchmark pallet --chain=dev --steps=$STEPS --repeat=$REPEAT --pallet="$PALLET" --extrinsic="*" --execution=wasm --wasm-execution=compiled --heap-pages=4096 --header=./HEADER-APACHE2 --log=warn --output "$OUTPUT_PATH/$2" $1 2>&1)
+    if ! [ -z "$EXTRA" ]; then
+        EXTRA="--extra"
+    else
+        unset EXTRA
+    fi
+
+    OUTPUT=$($BINARY_LOCATION benchmark pallet --chain=dev --steps=$STEPS --repeat=$REPEAT --pallet="$PALLET" $EXTRA --extrinsic="*"  --heap-pages=4096 --header=./HEADER-APACHE2 --log=warn --output "$OUTPUT_PATH/$2" $1 2>&1)
     if [ $? -ne 0 ]; then
         echo "$OUTPUT" >>"$ERR_FILE"
         echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."

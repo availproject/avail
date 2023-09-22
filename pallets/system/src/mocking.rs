@@ -26,7 +26,7 @@ use sp_runtime::{
 	transaction_validity::TransactionValidityError,
 };
 
-use crate::Config;
+use crate::{header_builder::da::BlockNumber, Config};
 
 #[derive(Clone, Copy, Default, Debug, Encode, Decode, PartialEq, Eq, TypeInfo)]
 pub struct DefaultGetAppId {}
@@ -121,11 +121,19 @@ impl<T: Config> TryFrom<&OpaqueExtrinsic> for MockUncheckedExtrinsic<T> {
 }
 
 impl<T: Config> From<MockUncheckedExtrinsic<T>> for AppExtrinsic {
-	fn from(xt: MockUncheckedExtrinsic<T>) -> Self { AppExtrinsic::from(xt.0) }
+	fn from(xt: MockUncheckedExtrinsic<T>) -> Self {
+		AppExtrinsic::from(xt.0)
+	}
 }
 
 /// An implementation of `sp_runtime::traits::Block` to be used in tests.
 pub type MockBlock<T> = generic::Block<
-	generic::Header<<T as Config>::BlockNumber, sp_runtime::traits::BlakeTwo256>,
+	generic::Header<u32, sp_runtime::traits::BlakeTwo256>,
+	MockUncheckedExtrinsic<T>,
+>;
+
+/// An implementation of `sp_runtime::traits::Block` with DA header to be used in tests
+pub type MockDaBlock<T> = avail_core::DaBlock<
+	avail_core::header::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>,
 	MockUncheckedExtrinsic<T>,
 >;

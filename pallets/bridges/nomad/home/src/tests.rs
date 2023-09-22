@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 
 use frame_benchmarking::whitelisted_caller;
-use frame_support::{assert_err, assert_ok, BoundedVec};
+use frame_support::{assert_err, assert_ok, pallet_prelude::Get, BoundedVec};
 use nomad_base::testing::*;
 use nomad_core::{destination_and_nonce, NomadMessage, NomadState};
 use nomad_merkle::Merkle;
@@ -148,7 +148,7 @@ fn it_update_max_index_witness(dispatch_messages: usize, max_index: u32) -> Disp
 				.take(dispatch_messages)
 				.map(|_| dispatch_random_message(sender.clone()))
 				.last()
-				.unwrap_or(committed_root.clone());
+				.unwrap_or(committed_root);
 
 			let signed_update = TEST_UPDATER.sign_update(committed_root, last_root);
 			Home::update(sender, signed_update, max_index)
@@ -169,7 +169,7 @@ fn it_dispatches_messages_and_accepts_updates() {
 			let roots = (0..2)
 				.map(|_| dispatch_random_message(origin.clone()))
 				.collect::<Vec<_>>();
-			let last_root = roots.last().unwrap().clone();
+			let last_root = *roots.last().unwrap();
 
 			// Get updater signature
 			let signed_update = TEST_UPDATER.sign_update(committed_root, last_root);
@@ -232,7 +232,7 @@ fn it_rejects_invalid_signature() {
 				origin.clone(),
 				TEST_REMOTE_DOMAIN,
 				TEST_RECIPIENT,
-				body.clone()
+				body
 			));
 
 			// Get fake updater signature
@@ -241,7 +241,7 @@ fn it_rejects_invalid_signature() {
 
 			// Assert err returned from submitting signed update
 			assert_err!(
-				Home::update(origin, signed_update.clone(), 10),
+				Home::update(origin, signed_update, 10),
 				Error::<Test>::InvalidUpdaterSignature
 			);
 		})
@@ -257,7 +257,7 @@ fn it_longest_tree() {
 
 			let committed_root = Home::base().committed_root;
 
-			let body_len = <Test as Config>::MaxMessageBodyBytes::get() as usize;
+			let body_len = <<Test as Config>::MaxMessageBodyBytes as Get<u32>>::get() as usize;
 			let body: BoundedVec<u8, _> = sp_std::iter::repeat(3u8)
 				.take(body_len)
 				.collect::<Vec<_>>()

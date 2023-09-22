@@ -1,0 +1,38 @@
+name: Try Runtime Checks
+
+on:
+  workflow_dispatch:
+    inputs:
+      wsendpoint:
+        description: 'ws/wss endpoint'
+        required: false
+        default: 'ws://13.53.140.189:9944'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: "3.x"
+
+      - name: Setup Rust toolchain
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source "$HOME/.cargo/env"
+          rustup target add wasm32-unknown-unknown
+          rustup show 
+
+      - name: Build node with Try-runtime
+        run: cargo build --release --features try-runtime
+
+      - name: Test try-runtime on-runtime-upgrade
+        run: |
+          ./target/release/data-avail try-runtime \
+          --runtime ./target/release/wbuild/da-runtime/da_runtime.compact.compressed.wasm \
+          --chain ./misc/genesis/testnet.kate.chain.spec.raw.json \
+          on-runtime-upgrade live \
+          -u ${{ github.event.inputs.wsendpoint }}

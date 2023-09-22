@@ -6,27 +6,27 @@ edition = "2021"
 license = "Apache-2.0"
 homepage = ""
 repository = ""
-description = "Mokend Runtime for Testing"
+description = "Mokcked Runtime for Testing"
 
 [dependencies]
 avail-core = { version = "0.5", default-features = false, features = ["runtime"] }
 kate = { version = "0.8", default-features = false }
 da-control = { path = "../dactr" }
 
-scale-info = { version = "2.1.1", features = ["derive"] }
+scale-info = { version = "2.5.0", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3", features = ["derive"] }
 parity-util-mem = { version = "0.12.0", features = ["primitive-types"] }
 derive_more = "0.99.17" 
 serde = { version = "1.0.121", features = ["derive"] }
 
 frame-support = "4.0.0-dev"
-sp-runtime = "7.0.0"
-sp-core = "7.0.0"
+sp-runtime = "24.0.0"
+sp-core = "21.0.0"
 sp-staking = "4.0.0-dev"
-sp-io = "7.0.0"
-sp-version = "5"
+sp-io = "23.0.0"
+sp-version = "22.0.0"
 sp-inherents = "4.0.0-dev"
-sp-std = "5.0.0"
+sp-std = "8.0.0"
 
 # Pallets
 frame-system = { path = "../system" }

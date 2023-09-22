@@ -16,7 +16,7 @@
 // limitations under the License.
 
 use codec::{Decode, Encode};
-use frame_support::dispatch::DispatchInfo;
+use frame_support::{dispatch::DispatchInfo, DefaultNoBound};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, SignedExtension},
@@ -29,9 +29,9 @@ use sp_std::{marker::PhantomData, prelude::*};
 use crate::Config;
 
 /// Check to ensure that the sender is not the zero address.
-#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[derive(Encode, Decode, DefaultNoBound, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct CheckNonZeroSender<T: Config + Send + Sync>(PhantomData<T>);
+pub struct CheckNonZeroSender<T>(PhantomData<T>);
 
 impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckNonZeroSender<T> {
 	#[cfg(feature = "std")]
@@ -40,13 +40,17 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckNonZeroSender<T> {
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result { Ok(()) }
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
 }
 
 impl<T: Config + Send + Sync> CheckNonZeroSender<T> {
 	/// Create new `SignedExtension` to check runtime version.
 	#[allow(clippy::new_without_default)]
-	pub fn new() -> Self { Self(sp_std::marker::PhantomData) }
+	pub fn new() -> Self {
+		Self(sp_std::marker::PhantomData)
+	}
 }
 
 impl<T: Config + Send + Sync> SignedExtension for CheckNonZeroSender<T>
@@ -60,7 +64,9 @@ where
 
 	const IDENTIFIER: &'static str = "CheckNonZeroSender";
 
-	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> { Ok(()) }
+	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+		Ok(())
+	}
 
 	fn pre_dispatch(
 		self,

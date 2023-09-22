@@ -2,20 +2,18 @@
 
 use avail_core::{
 	currency::{Balance, AVL},
-	header::Header,
 	AppId,
 };
 use frame_support::{
-	parameter_types,
-	weights::{ConstantMultiplier, IdentityFee, Weight},
+	derive_impl, parameter_types,
+	weights::{ConstantMultiplier, IdentityFee},
 };
 use frame_system::{
 	header_builder::da::HeaderExtensionBuilder, mocking::MockUncheckedExtrinsic,
 	test_utils::TestRandomness,
 };
 use pallet_transaction_payment::CurrencyAdapter;
-use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, ConstU32, IdentityLookup};
+use sp_runtime::{traits::ConstU32, BuildStorage};
 
 use crate::{self as da_control, *};
 
@@ -23,16 +21,12 @@ use crate::{self as da_control, *};
 type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
 
 /// An implementation of `sp_runtime::traits::Block` to be used in tests.
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = frame_system::mocking::MockDaBlock<Test>;
 
 type BlockNumber = u32;
 
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
-	{
+	pub struct Test {
 		System: frame_system,
 		Utility: pallet_utility,
 		Balances: pallet_balances,
@@ -43,40 +37,24 @@ frame_support::construct_runtime!(
 
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 250;
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1_024));
-	pub static ExistentialDeposit: u64 = 0;
+	pub static ExistentialDeposit: u64 = 1;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
 	type AccountData = pallet_balances::AccountData<Balance>;
-	type AccountId = u64;
 	type BaseCallFilter = frame_support::traits::Everything;
+	type Block = Block;
 	type BlockHashCount = BlockHashCount;
-	type BlockLength = ();
-	type BlockNumber = BlockNumber;
-	type BlockWeights = ();
-	type DbWeight = ();
-	type Hash = H256;
-	type Hashing = BlakeTwo256;
-	type Header = Header<Self::BlockNumber, BlakeTwo256>;
 	type HeaderExtensionBuilder = HeaderExtensionBuilder<Test>;
-	type Index = u64;
-	type Lookup = IdentityLookup<Self::AccountId>;
-	type MaxConsumers = ConstU32<16>;
-	type OnKilledAccount = ();
-	type OnNewAccount = ();
 	type OnSetCode = ();
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Test>;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
-	type SS58Prefix = ();
 	type SubmittedDataExtractor = ();
-	type SystemWeightInfo = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;
-	type Version = ();
 }
 
 parameter_types! {
@@ -97,14 +75,18 @@ parameter_types! {
 }
 
 impl pallet_balances::Config for Test {
-	type AccountStore = frame_system::Pallet<Test>;
+	type AccountStore = System;
 	type Balance = Balance;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
+	type FreezeIdentifier = [u8; 8];
+	type MaxFreezes = ConstU32<2>;
+	type MaxHolds = ConstU32<2>;
 	type MaxLocks = ();
 	type MaxReserves = MaxReserves;
 	type ReserveIdentifier = [u8; 8];
 	type RuntimeEvent = RuntimeEvent;
+	type RuntimeHoldReason = [u8; 8];
 	type WeightInfo = ();
 }
 
@@ -124,8 +106,8 @@ parameter_types! {
 	pub const MaxBlockCols: BlockLengthColumns = kate::config::MAX_BLOCK_COLUMNS;
 }
 
+#[derive_impl(da_control::config_preludes::TestDefaultConfig)]
 impl da_control::Config for Test {
-	type BlockLenProposalId = u32;
 	type MaxAppDataLength = MaxAppDataLength;
 	type MaxAppKeyLength = MaxAppKeyLength;
 	type MaxBlockCols = MaxBlockCols;
@@ -133,13 +115,12 @@ impl da_control::Config for Test {
 	type MinBlockCols = MinBlockCols;
 	type MinBlockRows = MinBlockRows;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
 }
 
 /// Create new externalities for `System` module tests.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut storage = frame_system::GenesisConfig::default()
-		.build_storage::<Test>()
+	let mut storage = frame_system::GenesisConfig::<Test>::default()
+		.build_storage()
 		.unwrap();
 
 	pallet_balances::GenesisConfig::<Test> {
@@ -149,19 +130,29 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.unwrap();
 
 	da_control::GenesisConfig::<Test> {
+		_config: Default::default(),
 		app_keys: vec![
-			(b"Data Avail".to_vec(), AppKeyInfo {
-				owner: 1,
-				id: AppId(0),
-			}),
-			(b"Ethereum".to_vec(), AppKeyInfo {
-				owner: 2,
-				id: AppId(1),
-			}),
-			(b"Polygon".to_vec(), AppKeyInfo {
-				owner: 2,
-				id: AppId(2),
-			}),
+			(
+				b"Data Avail".to_vec(),
+				AppKeyInfo {
+					owner: 1,
+					id: AppId(0),
+				},
+			),
+			(
+				b"Ethereum".to_vec(),
+				AppKeyInfo {
+					owner: 2,
+					id: AppId(1),
+				},
+			),
+			(
+				b"Polygon".to_vec(),
+				AppKeyInfo {
+					owner: 2,
+					id: AppId(2),
+				},
+			),
 		],
 	}
 	.assimilate_storage(&mut storage)

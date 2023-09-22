@@ -35,7 +35,7 @@ use frame_support::{
 };
 use kate::config::{DATA_CHUNK_SIZE, MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 use scale_info::{build::Fields, Path, Type, TypeInfo};
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Bounded, Perbill, RuntimeDebug};
 use sp_runtime_interface::pass_by::PassByCodec;
@@ -43,14 +43,18 @@ use sp_std::vec::Vec;
 use static_assertions::const_assert;
 
 /// Block length limit configuration.
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(
+	feature = "serde",
+	derive(Serialize, Deserialize),
+	serde(rename_all = "camelCase")
+)]
 #[derive(RuntimeDebug, PartialEq, Clone, PassByCodec, MaxEncodedLen)]
 pub struct BlockLength {
 	/// Maximal total length in bytes for each extrinsic class.
 	///
 	/// In the worst case, the total block length is going to be:
 	/// `MAX(max)`
-	#[cfg_attr(feature = "std", serde(with = "per_dispatch_class_serde"))]
+	#[cfg_attr(feature = "serde", serde(with = "per_dispatch_class_serde"))]
 	pub max: PerDispatchClass<u32>,
 	pub cols: BlockLengthColumns,
 	pub rows: BlockLengthRows,
@@ -71,7 +75,9 @@ const fn is_chunk_size_valid(new_size: NonZeroU32) -> bool {
 
 impl BlockLength {
 	#[inline]
-	pub fn chunk_size(&self) -> NonZeroU32 { self.chunk_size }
+	pub fn chunk_size(&self) -> NonZeroU32 {
+		self.chunk_size
+	}
 
 	pub fn set_chunk_size(&mut self, new_size: NonZeroU32) -> Result<(), BlockLengthError> {
 		ensure!(
@@ -155,7 +161,7 @@ impl Decode for BlockLength {
 }
 
 /// This module adds serialization support to `BlockLength::max` field.
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 mod per_dispatch_class_serde {
 	use serde::{Deserializer, Serializer};
 
@@ -408,11 +414,15 @@ impl Default for BlockWeights {
 
 impl BlockWeights {
 	/// Get per-class weight settings.
-	pub fn get(&self, class: DispatchClass) -> &WeightsPerClass { self.per_class.get(class) }
+	pub fn get(&self, class: DispatchClass) -> &WeightsPerClass {
+		self.per_class.get(class)
+	}
 
 	/// Verifies correctness of this `BlockWeights` object.
 	pub fn validate(self) -> ValidationResult {
-		fn or_max(w: Option<Weight>) -> Weight { w.unwrap_or_else(Weight::max_value) }
+		fn or_max(w: Option<Weight>) -> Weight {
+			w.unwrap_or_else(Weight::max_value)
+		}
 		let mut error = ValidationErrors::default();
 
 		for class in DispatchClass::all() {
@@ -639,5 +649,7 @@ mod tests {
 	use super::*;
 
 	#[test]
-	fn default_weights_are_valid() { BlockWeights::default().validate().unwrap(); }
+	fn default_weights_are_valid() {
+		BlockWeights::default().validate().unwrap();
+	}
 }

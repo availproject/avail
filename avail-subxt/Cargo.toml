@@ -1,6 +1,6 @@
 [package]
 name = "avail-subxt"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Luka Borkovic <luka.borkovic@ethernal.tech>"]
 edition = "2021"
 license = "Apache-2.0"
@@ -32,7 +32,7 @@ sp-core = { version = "21", default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "full", "bit-vec"] }
 serde = { version = "1", features = ["derive"] }
 serde-hex = "0.1"
-scale-info = { version = "2", features = ["bit-vec"] }
+scale-info = { version = "2.5.0", features = ["bit-vec"] }
 
 
 [dev-dependencies]

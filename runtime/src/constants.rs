@@ -100,9 +100,7 @@ pub mod time {
 
 pub mod system {
 	use avail_core::NORMAL_DISPATCH_RATIO;
-	use frame_support::weights::constants::{
-		ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_MILLIS, WEIGHT_REF_TIME_PER_SECOND,
-	};
+	use frame_support::weights::constants::{ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND};
 	use frame_system::limits::BlockWeights as SystemBlockWeights;
 
 	use super::*;
@@ -115,41 +113,37 @@ pub mod system {
 	/// This is used to limit the maximal weight of a single extrinsic.
 	const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 
-	/// Proof size allowed up to 500ms.
-	const MAX_POV_SIZE: u64 = WEIGHT_REF_TIME_PER_MILLIS.saturating_mul(500);
-
 	/// We allow for 2 seconds of compute with a 6 second average block time, with maximum proof size.
 	#[cfg(feature = "fast-runtime")]
 	const MAXIMUM_BLOCK_WEIGHT: Weight =
-		Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2))
-			.set_proof_size(MAX_POV_SIZE);
+		Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2), u64::MAX);
 
 	/// We allow for 5 seconds of compute with a 20 second average block time, with maximum proof size.
 	#[cfg(not(feature = "fast-runtime"))]
 	const MAXIMUM_BLOCK_WEIGHT: Weight =
-		Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(5))
-			.set_proof_size(MAX_POV_SIZE);
+		Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(5), u64::MAX);
 
 	parameter_types! {
-	pub RuntimeBlockWeights: SystemBlockWeights = SystemBlockWeights::builder()
-		.base_block(BlockExecutionWeight::get())
-		.for_class(DispatchClass::all(), |weights| {
-			weights.base_extrinsic = ExtrinsicBaseWeight::get();
-		})
-		.for_class(DispatchClass::Normal, |weights| {
-			weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
-		})
-		.for_class(DispatchClass::Operational, |weights| {
-			weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
-			// Operational transactions have some extra reserved space, so that they
-			// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
-			weights.reserved = Some(
-				MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
-			);
-		})
-		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
-		.build_or_panic();
+		pub RuntimeBlockWeights: SystemBlockWeights = SystemBlockWeights::builder()
+			.base_block(BlockExecutionWeight::get())
+			.for_class(DispatchClass::all(), |weights| {
+				weights.base_extrinsic = ExtrinsicBaseWeight::get();
+			})
+			.for_class(DispatchClass::Normal, |weights| {
+				weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+			})
+			.for_class(DispatchClass::Operational, |weights| {
+				weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
+				// Operational transactions have some extra reserved space, so that they
+				// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
+				weights.reserved = Some(
+					MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
+				);
+			})
+			.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
+			.build_or_panic();
 	}
+	const_assert!(NORMAL_DISPATCH_RATIO.deconstruct() >= AVERAGE_ON_INITIALIZE_RATIO.deconstruct());
 }
 
 pub mod indices {
@@ -174,6 +168,7 @@ pub mod balances {
 pub mod council {
 
 	use super::*;
+	use crate::constants::system::RuntimeBlockWeights;
 
 	#[cfg(not(feature = "fast-runtime"))]
 	parameter_types! {
@@ -188,6 +183,7 @@ pub mod council {
 	pub type MaxProposals = ConstU32<128>;
 
 	parameter_types! {
+		pub MaxProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 		pub const MaxMembers: u32 = 32;
 	}
 }
@@ -226,6 +222,7 @@ pub mod elections {
 		// additional data per vote is 32 bytes (account id).
 		pub const VotingBondFactor: Balance = deposit(0, 32);
 		pub const DesiredMembers :u32 = 3;
+		pub const MaxVotesPerVoter: u32 = 16;
 	}
 
 	pub type DesiredRunnersUp = ConstU32<3>;
@@ -237,6 +234,7 @@ pub mod elections {
 }
 
 pub mod staking {
+	use crate::impls::RuntimeBlockLength;
 	use sp_runtime::curve::PiecewiseLinear;
 	use sp_std::vec;
 
@@ -302,7 +300,7 @@ pub mod staking {
 			.saturating_sub(BlockExecutionWeight::get());
 		// Solution can occupy 90% of normal block size
 		pub MinerMaxLength: u32 = Perbill::from_rational(9u32, 10) *
-			*crate::RuntimeBlockLength::get()
+			*RuntimeBlockLength::get()
 			.max
 			.get(DispatchClass::Normal);
 		pub const OffchainRepeat: BlockNumber = 5;

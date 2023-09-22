@@ -36,9 +36,14 @@ pub struct Cli {
 	/// telemetry, if telemetry is enabled.
 	#[arg(long)]
 	pub no_hardware_benchmarks: bool,
+
+	/// Disable checking commitment on imported block during sync
+	#[arg(long, conflicts_with_all = &["validator"])]
+	pub unsafe_da_sync: bool,
 }
 
 /// Possible subcommands of the main binary.
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
 	/*
