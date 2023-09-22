@@ -36,8 +36,12 @@ sp-io = { version = "23.0.0" }
 sp-version = { version = "22.0.0" }
 
 [features]
-default = ["std"]
-with-tracing = ["sp-tracing/with-tracing"]
+default = [
+	"std",
+]
+with-tracing = [
+	"sp-tracing/with-tracing",
+]
 std = [
 	"codec/std",
 	"frame-support/std",
@@ -52,9 +56,9 @@ std = [
 ]
 try-runtime = [
 	"frame-support/try-runtime",
-	"frame-try-runtime/try-runtime",
-	"sp-runtime/try-runtime",
 	"frame-system/try-runtime",
+	"frame-try-runtime/try-runtime",
 	"pallet-balances/try-runtime",
-	"pallet-transaction-payment/try-runtime"
+	"pallet-transaction-payment/try-runtime",
+	"sp-runtime/try-runtime",
 ]
