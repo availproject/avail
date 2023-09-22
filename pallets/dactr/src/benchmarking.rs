@@ -213,7 +213,7 @@ mod benchmarks {
 		let caller = whitelisted_caller::<T::AccountId>();
 		let origin = RawOrigin::Signed(caller.clone());
 		let data = generate_bounded::<AppDataFor<T>>(i);
-		let data_verif = data.clone();
+		let data_hash = H256(blake2_256(&data));
 
 		#[extrinsic_call]
 		_(origin, data);
@@ -221,7 +221,7 @@ mod benchmarks {
 		assert_last_event::<T>(
 			Event::DataSubmitted {
 				who: caller,
-				data: data_verif,
+				data_hash,
 			}
 			.into(),
 		);
