@@ -51,9 +51,9 @@ indicatif = "0.17"
 sp-keyring = "24"
 
 [features]
-default = ["api-dev", "std"]
+default = [ "api-dev", "std" ]
 api-dev = []
 api-main = []
-std = [ "sp-core/std", "codec/std"]
+std = [ "codec/std", "sp-core/std" ]
 
 [workspace]
