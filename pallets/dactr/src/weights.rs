@@ -90,10 +90,13 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// The range of component `i` is `[1, 524288]`.
 	fn submit_data(i: u32, ) -> Weight {
-		// Minimum execution time: 11_832 nanoseconds.
-		Weight::from_ref_time(10_003_835_u64)
-			// Standard Error: 3
-			.saturating_add(Weight::from_ref_time(944_u64).saturating_mul(i as u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 14_847_000 picoseconds.
+		Weight::from_parts(9_725_789, 0)
+			// Standard Error: 1
+			.saturating_add(Weight::from_parts(1_150, 0).saturating_mul(i.into()))
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 	}
 	/// The range of component `i` is `[0, 524288]`.
@@ -186,10 +189,13 @@ impl WeightInfo for () {
 	}
 	/// The range of component `i` is `[1, 524288]`.
 	fn submit_data(i: u32, ) -> Weight {
-		// Minimum execution time: 11_832 nanoseconds.
-		Weight::from_ref_time(10_003_835_u64)
-			// Standard Error: 3
-			.saturating_add(Weight::from_ref_time(944_u64).saturating_mul(i as u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 14_847_000 picoseconds.
+		Weight::from_parts(9_725_789, 0)
+			// Standard Error: 1
+			.saturating_add(Weight::from_parts(1_150, 0).saturating_mul(i.into()))
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 	}
 	/// The range of component `i` is `[0, 524288]`.
