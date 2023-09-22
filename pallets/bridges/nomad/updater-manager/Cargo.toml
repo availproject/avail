@@ -27,9 +27,7 @@ frame-system = { version = "4.0.0-dev", default-features = false }
 avail-core = { version = "0.5", features = ["runtime"] }
 
 [features]
-default = [
-	"std",
-]
+default = [ "std" ]
 std = [
 	"codec/std",
 	"frame-support/std",

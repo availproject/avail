@@ -38,9 +38,7 @@ pallet-balances = "4.0.0-dev"
 test-case = "1.2.3"
 
 [features]
-default = [
-	"std",
-]
+default = [ "std" ]
 std = [
 	"avail-core/std",
 	"codec/std",

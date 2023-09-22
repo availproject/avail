@@ -20,9 +20,7 @@ once_cell = { version = "1.17.1", optional = true }
 
 
 [features]
-default = [
-	"std",
-]
+default = [ "std" ]
 std = [
 	"avail-core/std",
 	"kate/std",

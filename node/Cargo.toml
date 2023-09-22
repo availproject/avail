@@ -125,20 +125,10 @@ sp-tracing = "10.0.0"
 tempfile = "3.1.0"
 
 [features]
-default = [
-	"cli",
-]
-header_commitment_corruption = [
-	"da-runtime/header_commitment_corruption",
-]
-fast-runtime = [
-	"da-runtime/fast-runtime",
-]
-cli = [
-	"clap",
-	"clap_complete",
-	"frame-benchmarking-cli",
-]
+default = [ "cli" ]
+header_commitment_corruption = [ "da-runtime/header_commitment_corruption" ]
+fast-runtime = [ "da-runtime/fast-runtime" ]
+cli = [ "clap", "clap_complete", "frame-benchmarking-cli" ]
 runtime-benchmarks = [
 	"da-control/runtime-benchmarks",
 	"da-runtime/runtime-benchmarks",

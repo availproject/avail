@@ -31,9 +31,7 @@ sp-version = "22.0.0"
 sp-externalities = "0.19.0"
 
 [features]
-default = [
-	"std",
-]
+default = [ "std" ]
 std = [
 	"avail-core/std",
 	"codec/std",

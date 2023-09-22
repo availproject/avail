@@ -38,9 +38,7 @@ nomad-updater-manager = { path = "../updater-manager" }
 sp-io = { version = "23.0.0" }
 
 [features]
-default = [
-	"std",
-]
+default = [ "std" ]
 std = [
 	"avail-core/std",
 	"codec/std",
