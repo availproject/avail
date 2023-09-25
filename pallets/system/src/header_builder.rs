@@ -89,9 +89,11 @@ fn build_extension_v_test(
 	block_length: BlockLength,
 	seed: Seed,
 ) -> HeaderExtension {
-	let extension_v1 = build_extension_v1(app_extrinsics, data_root, block_length, seed);
+	let metrics = avail_base::metrics::MetricAdapter {};
+	let extension_v1 = build_extension(app_extrinsics, data_root, block_length, 0, seed, &metrics);
 	match extension_v1 {
 		HeaderExtension::V1(extension) => HeaderExtension::VTest(extension.into()),
+		HeaderExtension::V2(_) => unimplemented!(),
 		r @ HeaderExtension::VTest(_) => r,
 	}
 }
@@ -219,26 +221,4 @@ pub trait HostedHeaderBuilder {
 			&metrics,
 		)
 	}
-
-	/*
-	// @TODO Miguel: Substrate v0.9.29 supports deactivated new version of hosted functions.
-	// NOTE: It is just for testing the forward compatibility in header extension.
-	#[cfg(feature = "header-compatibility-test")]
-	#[version(2)]
-	fn build(
-		app_extrinsics: Vec<AppExtrinsic>,
-		data_root: H256,
-		block_length: BlockLength,
-		block_number: u32,
-		seed: Seed,
-	) -> HeaderExtension {
-		// Genesis HAS TO use the legacy header extension
-		let build_extension_fn = if block_number > 1 {
-			build_extension_v_test
-		} else {
-			build_extension_v1
-		};
-
-		build_extension_fn(app_extrinsics.as_slice(), data_root, block_length, seed)
-	}*/
 }
