@@ -43,3 +43,13 @@ impl From<v1::HeaderExtension> for HeaderExtension {
 		}
 	}
 }
+
+impl From<v2::HeaderExtension> for HeaderExtension {
+	fn from(ext: v2::HeaderExtension) -> Self {
+		Self {
+			commitment: ext.commitment,
+			app_lookup: ext.app_lookup,
+			new_field: [1, 1, 2, 3, 5, 8, 13, 21, 34, 55].into(),
+		}
+	}
+}
