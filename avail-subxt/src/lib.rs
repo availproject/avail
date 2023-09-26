@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{ensure, Result};
 use structopt::StructOpt;
 // Re-export some tools from `subxt`
 pub use subxt::{config, rpc, utils};
@@ -29,7 +29,6 @@ impl Config for AvailConfig {
 	type Hash = H256;
 	type Hasher = BlakeTwo256;
 	type Header = Header;
-	type Index = u32;
 	type Signature = Signature;
 }
 
@@ -40,8 +39,9 @@ pub mod avail {
 	pub type TxProgress = subxt::tx::TxProgress<AvailConfig, Client>;
 	pub type AppUncheckedExtrinsic =
 		crate::primitives::app_unchecked_extrinsic::AppUncheckedExtrinsic;
-	pub type Pair = sp_core::sr25519::Pair;
-	pub type PairSigner = subxt::tx::PairSigner<AvailConfig, Pair>;
+	// pub type Pair = sp_core::sr25519::Pair;
+	// #[cfg(feature = "substrate-compat")]
+	// pub type PairSigner = subxt::tx::PairSigner<AvailConfig, Pair>;
 
 	pub type RuntimeCall = api::runtime_types::da_runtime::RuntimeCall;
 	pub type Bounded = api::runtime_types::frame_support::traits::preimages::Bounded<RuntimeCall>;
@@ -75,7 +75,10 @@ pub async fn build_client<U: AsRef<str>>(
 ) -> Result<OnlineClient<AvailConfig>> {
 	let api = OnlineClient::<AvailConfig>::from_url(url).await?;
 	if validate_codegen {
-		api::validate_codegen(&api)?;
+		ensure!(
+			api::is_codegen_valid_for(&api.metadata()),
+			subxt::error::MetadataError::IncompatibleCodegen
+		);
 	}
 	Ok(api)
 }
