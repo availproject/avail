@@ -11,20 +11,20 @@ use crate::api::runtime_types::avail_core::AppId;
 pub struct AvailExtrinsicParams {
 	pub spec_version: u32,
 	pub tx_version: u32,
-	pub nonce: Compact<u32>,
+	pub nonce: Compact<u64>,
 	pub mortality: Era,
 	pub genesis_hash: H256,
 	pub tip: Compact<u128>,
 	pub app_id: AppId,
 }
 
-impl ExtrinsicParams<u32, H256> for AvailExtrinsicParams {
+impl ExtrinsicParams<H256> for AvailExtrinsicParams {
 	type OtherParams = AvailExtrinsicParams;
 
 	fn new(
 		spec_version: u32,
 		tx_version: u32,
-		nonce: u32,
+		nonce: u64,
 		genesis_hash: H256,
 		other_params: Self::OtherParams,
 	) -> Self {
@@ -59,7 +59,7 @@ impl Default for AvailExtrinsicParams {
 		Self {
 			spec_version: Default::default(),
 			tx_version: Default::default(),
-			nonce: 0u32.into(),
+			nonce: 0u64.into(),
 			mortality: Era::Immortal,
 			genesis_hash: Default::default(),
 			tip: 0u128.into(),
@@ -96,7 +96,7 @@ impl Encode for AvailExtrinsicParams {
 impl Decode for AvailExtrinsicParams {
 	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
 		let (mortality, nonce, tip, app_id) =
-			<(Era, Compact<u32>, Compact<u128>, AppId)>::decode(input)?;
+			<(Era, Compact<u64>, Compact<u128>, AppId)>::decode(input)?;
 		Ok(Self {
 			mortality,
 			nonce,
