@@ -63,7 +63,6 @@ runtime = [
 	"binary-merkle-tree",
 ]
 
-header-backward-compatibility-test = []
 try-runtime = [
 	"runtime",
 	"sp-runtime/try-runtime",

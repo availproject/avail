@@ -418,26 +418,8 @@ mod tests {
 		(encoded, error)
 	}
 
-	#[cfg(not(feature = "header-backward-compatibility-test"))]
-	fn header_test() -> THeader {
-		header_v1()
-	}
-
-	#[cfg(feature = "header-backward-compatibility-test")]
-	fn header_test() -> THeader {
-		let mut header = header_v1();
-		header.extension = extension::v_test::HeaderExtension {
-			new_field: b"New field for testing".to_vec(),
-			..Default::default()
-		}
-		.into();
-
-		header
-	}
-
 	#[test_case( header_v1().encode().as_ref() => Ok(header_v1()) ; "Decode V1 header")]
 	#[test_case( header_v2().encode().as_ref() => Ok(header_v2()) ; "Decode V2 header")]
-	#[test_case( header_test().encode().as_ref() => Ok(header_test()) ; "Decode test header")]
 	#[test_case( corrupted_header().0.as_ref() => Err(corrupted_header().1) ; "Decode corrupted header")]
 	fn header_decoding(mut encoded_header: &[u8]) -> Result<THeader, Error> {
 		Header::decode(&mut encoded_header)
@@ -448,7 +430,6 @@ mod tests {
 	}
 
 	#[test_case( header_serde_encode(header_v1()) => Ok(header_v1()) ; "Serde V1 header")]
-	#[test_case( header_serde_encode(header_test()) => Ok(header_test()) ; "Serde test header")]
 	fn header_serde(json_header: String) -> Result<THeader, String> {
 		serde_json::from_str(&json_header).map_err(|serde_err| format!("{}", serde_err))
 	}
@@ -514,8 +495,6 @@ mod tests {
 			extension::HeaderExtension::V2(ref mut ext) => {
 				ext.commitment.commitment = b"invalid commitment v2".to_vec();
 			},
-			#[cfg(feature = "header-backward-compatibility-test")]
-			_ => unreachable!(),
 		};
 
 		(header, hash)
@@ -531,8 +510,6 @@ mod tests {
 			extension::HeaderExtension::V2(ref mut ext) => {
 				ext.commitment.data_root = Some(H256::repeat_byte(2u8));
 			},
-			#[cfg(feature = "header-backward-compatibility-test")]
-			_ => unreachable!(),
 		};
 
 		(header, hash)
@@ -548,8 +525,6 @@ mod tests {
 			extension::HeaderExtension::V2(ref mut ext) => {
 				ext.commitment.cols += 2;
 			},
-			#[cfg(feature = "header-backward-compatibility-test")]
-			_ => unreachable!(),
 		};
 
 		(header, hash)
@@ -565,8 +540,6 @@ mod tests {
 			extension::HeaderExtension::V2(ref mut ext) => {
 				ext.commitment.rows += 2;
 			},
-			#[cfg(feature = "header-backward-compatibility-test")]
-			_ => unreachable!(),
 		};
 
 		(header, hash)
