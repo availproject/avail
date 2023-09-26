@@ -12,9 +12,11 @@ mod tests;
 mod verify;
 mod weights;
 
+use frame_support::error::BadOrigin;
 use frame_support::{
 	dispatch::{GetDispatchInfo, UnfilteredDispatchable},
 	pallet_prelude::*,
+	parameter_types,
 };
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
@@ -25,14 +27,27 @@ type PublicInputsDef<T> = BoundedVec<u8, <T as Config>::MaxPublicInputsLength>;
 type ProofDef<T> = BoundedVec<u8, <T as Config>::MaxProofLength>;
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
 
+// TODO do we need to store constants in the storage?
+parameter_types! {
+	pub const  MinSyncCommitteeParticipants: u32=10;
+	pub const  SyncCommitteeSize: u32=512;
+	pub const  FinalizedRootIndex: u32=105;
+	pub const  NextSyncCommitteeIndex: u32= 55;
+	pub const  ExecutionStateRootIndex: u32= 402;
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 	use frame_support::traits::Hash;
+	use frame_support::{
+		pallet_prelude::{ValueQuery, *},
+		transactional, DefaultNoBound,
+	};
 	use serde::Serialize;
 	use sp_core::H256;
 
-	use crate::messages::LightClientStep;
+	use crate::messages::{LightClientStep, SuccinctConfig};
 	use crate::{
 		common::prepare_verification_key,
 		deserialization::{deserialize_public_inputs, Proof, VKey},
@@ -44,6 +59,7 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
+		UpdaterMisMatch,
 		PublicInputsMismatch,
 		TooLongPublicInputs,
 		TooLongVerificationKey,
@@ -67,6 +83,9 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type VerificationKeyStorage<T: Config> = StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
 
+	#[pallet::storage]
+	pub type SuccinctCfg<T: Config> = StorageValue<_, SuccinctConfig, ValueQuery>;
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
@@ -78,6 +97,14 @@ pub mod pallet {
 		type MaxProofLength: Get<u32>;
 		#[pallet::constant]
 		type MaxVerificationKeyLength: Get<u32>;
+
+		// =========== Constants ============
+
+		type MinSyncCommitteeParticipants: Get<u32>;
+		type SyncCommitteeSize: Get<u32>;
+		type FinalizedRootIndex: Get<u32>;
+		type NextSyncCommitteeIndex: Get<u32>;
+		type ExecutionStateRootIndex: Get<u32>;
 
 		/// A sudo-able call.
 		type RuntimeCall: Parameter
@@ -116,11 +143,39 @@ pub mod pallet {
 	#[pallet::getter(fn get_poseidon)]
 	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, Hash, ValueQuery>;
 
-	#[pallet::storage]
-	#[pallet::getter(fn get_updater)]
-	pub type Updater<T: Config> =
-		StorageValue<_, <T as frame_system::Config>::AccountId, OptionQuery>;
+	// #[pallet::storage]
+	// pub type Updater<T: Config> = StorageValue<_, <T as frame_system::Config>::AccountId, OptionQuery>;
+
 	// ======================================================================
+
+	//  ====== Genesis config ==========
+	#[pallet::genesis_config]
+	#[derive(DefaultNoBound)]
+	pub struct GenesisConfig<T: Config> {
+		pub updater: Hash,
+		pub genesis_validators_root: Hash,
+		pub genesis_time: u64,
+		pub seconds_per_slot: u64,
+		pub slots_per_period: u64,
+		pub source_chain_id: u32,
+		pub finality_threshold: u16,
+		pub _phantom: PhantomData<T>,
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+		fn build(&self) {
+			<SuccinctCfg<T>>::put(SuccinctConfig {
+				updater: self.updater.into(),
+				genesis_validators_root: self.genesis_validators_root,
+				genesis_time: self.genesis_time,
+				seconds_per_slot: self.seconds_per_slot,
+				slots_per_period: self.slots_per_period,
+				source_chain_id: self.source_chain_id,
+				finality_threshold: self.finality_threshold,
+			});
+		}
+	}
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
@@ -134,10 +189,13 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::rotate())]
 		pub fn rotate(origin: OriginFor<T>, update: messages::LightClientRotate) -> DispatchResult {
-			// TODO updater is valid
-			let _sender: <T>::AccountId = ensure_signed(origin)?.into();
+			let sender: [u8; 32] = ensure_signed(origin)?.into();
+			let config = SuccinctCfg::<T>::get();
+			ensure_valid_sender::<T>(sender, config.updater)?;
 
 			log::info!("Update: {:?}", update);
+
+			log::info!("Succinct configuration: {:?}", config);
 
 			// TODO dummy period
 			let current_period: u64 = update.step.finalized_slot / 10;
@@ -154,11 +212,12 @@ pub mod pallet {
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn step(origin: OriginFor<T>, update: LightClientStep) -> DispatchResult {
-			// TODO ensure updater is valid
-			let sender: <T>::AccountId = ensure_signed(origin)?.into();
+			let sender: [u8; 32] = ensure_signed(origin)?.into();
+			let config = SuccinctCfg::<T>::get();
+			ensure_valid_sender::<T>(sender, config.updater)?;
+
 			log::info!("Update: {:?}", update);
 
-			Self::deposit_event(Event::VerificationSuccess { who: sender });
 			Self::deposit_event(Event::HeadUpdate {
 				slot: update.finalized_slot,
 				finalization_root: update.finalized_header_root,
@@ -310,5 +369,15 @@ pub mod pallet {
 		.map_err(|_| Error::<T>::ProofCreationError)?;
 
 		Ok(proof)
+	}
+
+	pub fn ensure_valid_sender<T: Config>(
+		sender: [u8; 32],
+		updater: H256,
+	) -> Result<(), DispatchError> {
+		if H256(sender) != updater {
+			return Err(Error::<T>::UpdaterMisMatch.into());
+		}
+		Ok(())
 	}
 }

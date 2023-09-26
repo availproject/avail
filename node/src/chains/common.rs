@@ -8,8 +8,8 @@ use da_control::AppKeyInfo;
 use da_runtime::{
 	constants, wasm_binary_unwrap, AccountId, BabeConfig, Balance, BalancesConfig,
 	DataAvailabilityConfig, NomadHomeConfig, NomadUpdaterManagerConfig, NominationPoolsConfig,
-	RuntimeGenesisConfig, SessionConfig, StakerStatus, StakingConfig, SudoConfig, SystemConfig,
-	TechnicalCommitteeConfig, AVL,
+	RuntimeGenesisConfig, SessionConfig, StakerStatus, StakingConfig, SuccinctConfig, SudoConfig,
+	SystemConfig, TechnicalCommitteeConfig, AVL,
 };
 use frame_system::limits::BlockLength;
 use hex_literal::hex;
@@ -22,7 +22,9 @@ pub const PROTOCOL_ID: Option<&str> = Some("Avail");
 pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
 const NOMAD_LOCAL_DOMAIN: u32 = 2000;
 const NOMAD_UPDATER: H160 = H160(hex!("695dFcFc604F9b2992642BDC5b173d1a1ed60b03"));
-const SUCCINCT_UPDATER: H256 = H256([0u8; 32]);
+const SUCCINCT_UPDATER: H256 = H256(hex!(
+	"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+));
 const ENDOWMENT: Balance = 1_000_000 * AVL;
 const STASH_BOND: Balance = ENDOWMENT / 100;
 const DEFAULT_ENDOWED_SEEDS: [&str; 12] = [
@@ -137,6 +139,11 @@ pub fn runtime_genesis_config(
 		},
 		nomad_updater_manager: NomadUpdaterManagerConfig {
 			updater: NOMAD_UPDATER,
+			..Default::default()
+		},
+		succinct: SuccinctConfig {
+			slots_per_period: 943,
+			updater: SUCCINCT_UPDATER,
 			..Default::default()
 		},
 		nomination_pools: NominationPoolsConfig {

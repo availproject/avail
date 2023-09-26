@@ -90,6 +90,13 @@ impl pallet_succinct::Config for Runtime {
 	type MaxPublicInputsLength = MaxPublicInputsLength;
 	type MaxProofLength = MaxProofLength;
 	type MaxVerificationKeyLength = MaxVerificationKeyLength;
+
+	type MinSyncCommitteeParticipants = MinSyncCommitteeParticipants;
+	type SyncCommitteeSize = SyncCommitteeSize;
+	type FinalizedRootIndex = FinalizedRootIndex;
+	type NextSyncCommitteeIndex = NextSyncCommitteeIndex;
+	type ExecutionStateRootIndex = ExecutionStateRootIndex;
+
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_succinct::WeightInfo<Runtime>;
@@ -630,6 +637,10 @@ parameter_types! {
 	pub const MaxPointsToBalance: u8 = 10;
 }
 
+use pallet_succinct::{
+	ExecutionStateRootIndex, FinalizedRootIndex, MinSyncCommitteeParticipants,
+	NextSyncCommitteeIndex, SyncCommitteeSize,
+};
 use sp_runtime::traits::Convert;
 
 pub struct BalanceToU256;
