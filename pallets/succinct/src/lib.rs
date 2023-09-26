@@ -191,7 +191,7 @@ pub mod pallet {
 		pub fn rotate(origin: OriginFor<T>, update: messages::LightClientRotate) -> DispatchResult {
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let config = SuccinctCfg::<T>::get();
-			ensure_valid_sender::<T>(sender, config.updater)?;
+			ensure!(H256(sender) == config.updater, Error::<T>::UpdaterMisMatch);
 
 			log::info!("Update: {:?}", update);
 
@@ -214,7 +214,7 @@ pub mod pallet {
 		pub fn step(origin: OriginFor<T>, update: LightClientStep) -> DispatchResult {
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let config = SuccinctCfg::<T>::get();
-			ensure_valid_sender::<T>(sender, config.updater)?;
+			ensure!(H256(sender) == config.updater, Error::<T>::UpdaterMisMatch);
 
 			log::info!("Update: {:?}", update);
 
@@ -369,15 +369,5 @@ pub mod pallet {
 		.map_err(|_| Error::<T>::ProofCreationError)?;
 
 		Ok(proof)
-	}
-
-	pub fn ensure_valid_sender<T: Config>(
-		sender: [u8; 32],
-		updater: H256,
-	) -> Result<(), DispatchError> {
-		if H256(sender) != updater {
-			return Err(Error::<T>::UpdaterMisMatch.into());
-		}
-		Ok(())
 	}
 }
