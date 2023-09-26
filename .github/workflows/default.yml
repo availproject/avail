@@ -45,6 +45,18 @@ jobs:
           command: fmt
           args: --manifest-path avail-subxt/Cargo.toml --check
 
+      - name: Install zepter
+        run: |
+          cargo install zepter --locked --version 0.11.0 -q -f --no-default-features && zepter --version
+
+      - name: Check Avail toml formatting
+        run: |
+          zepter format features --check
+
+      - name: Check Avail-SubXt toml formatting
+        run: |
+          zepter format features --manifest-path avail-subxt/Cargo.toml --check
+
   build:
     runs-on: ubuntu-latest
     needs: [lint]
