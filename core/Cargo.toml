@@ -63,6 +63,5 @@ runtime = [
 	"sp-runtime-interface",
 ]
 
-header-backward-compatibility-test = []
 try-runtime = [ "runtime", "sp-runtime/try-runtime" ]
 serde = [ "dep:serde", "hex/serde", "log/serde" ]

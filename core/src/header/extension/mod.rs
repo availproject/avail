@@ -11,9 +11,6 @@ use crate::DataLookup;
 pub mod v1;
 pub mod v2;
 
-#[cfg(feature = "header-backward-compatibility-test")]
-pub mod v_test;
-
 /// Header extension data.
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, TypeInfo, Encode, Decode)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -21,8 +18,6 @@ pub mod v_test;
 pub enum HeaderExtension {
 	V1(v1::HeaderExtension),
 	V2(v2::HeaderExtension),
-	#[cfg(feature = "header-backward-compatibility-test")]
-	VTest(v_test::HeaderExtension),
 }
 
 /// It forwards the call to the inner version of the header. Any invalid version will return the
@@ -32,8 +27,6 @@ macro_rules! forward_to_version {
 		match $self {
 			HeaderExtension::V1(ext) => ext.$function(),
 			HeaderExtension::V2(ext) => ext.$function(),
-			#[cfg(feature = "header-backward-compatibility-test")]
-			HeaderExtension::VTest(ext) => ext.$function(),
 		}
 	}};
 
@@ -41,8 +34,6 @@ macro_rules! forward_to_version {
 		match $self {
 			HeaderExtension::V1(ext) => ext.$function($arg),
 			HeaderExtension::V2(ext) => ext.$function($arg),
-			#[cfg(feature = "header-backward-compatibility-test")]
-			HeaderExtension::VTest(ext) => ext.$function($arg),
 		}
 	}};
 }
@@ -82,13 +73,5 @@ impl From<v2::HeaderExtension> for HeaderExtension {
 	#[inline]
 	fn from(ext: v2::HeaderExtension) -> Self {
 		Self::V2(ext)
-	}
-}
-
-#[cfg(feature = "header-backward-compatibility-test")]
-impl From<v_test::HeaderExtension> for HeaderExtension {
-	#[inline]
-	fn from(ext: v_test::HeaderExtension) -> Self {
-		Self::VTest(ext)
 	}
 }
