@@ -40,17 +40,15 @@ tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak
 byte-slice-cast = "1.2.1"
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-	"serde",
+	"codec/std",
+	"ethers-core",
+	"frame-support/std",
 	"hex/std",
 	"scale-info/std",
-	"codec/std",
+	"serde",
 	"sp-core/std",
 	"sp-runtime/std",
-	"frame-support/std",
-	"ethers-core",
 ]
-serde = [
-	"dep:serde",
-]
+serde = [ "dep:serde" ]

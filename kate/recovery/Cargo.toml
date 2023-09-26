@@ -31,19 +31,17 @@ hex = "0.4"
 test-case = "1.2.3"
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
+	"avail-core/std",
+	"dusk-bytes",
+	"dusk-plonk/std",
 	"once_cell",
+	"rand/std",
+	"rand_chacha/std",
 	"serde",
 	"sp-arithmetic/std",
 	"sp-std/std",
-	"avail-core/std",
-	"rand/std",
-	"rand_chacha/std",
-	"dusk-bytes",
-	"dusk-plonk/std",
 ]
 
-serde = [
-	"dep:serde",
-]
+serde = [ "dep:serde" ]

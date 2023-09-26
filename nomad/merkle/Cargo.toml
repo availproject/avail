@@ -35,13 +35,13 @@ optional = true
 features = ["derive"]
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-	"serde",
-	"nomad-core/std",
 	"avail-core/std",
 	"codec/std",
-	"scale-info/std",
-	"sp-core/std",
 	"frame-support/std",
+	"nomad-core/std",
+	"scale-info/std",
+	"serde",
+	"sp-core/std",
 ]

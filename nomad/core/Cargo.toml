@@ -29,19 +29,17 @@ tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak
 async-trait = "0.1.42"
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-	"serde",
+	"codec/std",
 	"ethers-core",
 	"ethers-signers",
-	"primitive-types/serde",
 	"nomad-signature/std",
-	"codec/std",
+	"primitive-types/serde",
 	"scale-info/std",
+	"serde",
 	"sp-runtime/std",
 	"sp-std/std",
 ]
-serde = [
-	"dep:serde",
-]
+serde = [ "dep:serde" ]
 runtime-benchmarks = []
