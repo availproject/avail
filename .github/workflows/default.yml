@@ -38,8 +38,10 @@ jobs:
             default: true
             profile: minimal
 
-      - name: Check `TOML`, `JSON`, and `MarkDown` formatting
-        uses: dprint/check@v2.1
+      - name: Check TOML formatting
+        run: |
+          cargo install zepter --locked --version 0.11.0 -q -f --no-default-features && zepter --version
+          zepter format features --check
 
       - name: Check code formatting
         uses: actions-rs/cargo@v1
