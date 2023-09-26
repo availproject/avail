@@ -11,9 +11,8 @@ use avail_subxt::{
 	primitives::AvailExtrinsicParams,
 	Call, Opts,
 };
-use sp_keyring::AccountKeyring;
+use subxt_signer::sr25519::dev;
 use structopt::StructOpt;
-use subxt::tx::PairSigner;
 
 /// This example submits an Avail data extrinsic, then retrieves the block containing the
 /// extrinsic and matches the data.
@@ -22,7 +21,7 @@ async fn main() -> Result<()> {
 	let args = Opts::from_args();
 	let client = build_client(args.ws, args.validate_codegen).await?;
 
-	let signer = PairSigner::new(AccountKeyring::Alice.pair());
+	let signer = dev::alice();
 	let example_data = b"example".to_vec();
 	let data_transfer = api::tx()
 		.data_availability()

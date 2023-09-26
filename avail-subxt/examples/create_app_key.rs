@@ -3,14 +3,8 @@ use avail_subxt::{
 	api, api::runtime_types::bounded_collections::bounded_vec::BoundedVec, build_client,
 	primitives::AvailExtrinsicParams, AvailConfig, Opts,
 };
-use sp_core::crypto::Pair as _;
-use sp_keyring::sr25519::sr25519::{self, Pair};
 use structopt::StructOpt;
-use subxt::tx::PairSigner;
-
-/// This example demonstrates creation of application key.
-const ALICE_SEED: &str =
-	"bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice";
+use subxt_signer::sr25519::dev;
 
 #[async_std::main]
 async fn main() -> Result<()> {
@@ -18,8 +12,7 @@ async fn main() -> Result<()> {
 	let client = build_client(args.ws, args.validate_codegen).await?;
 
 	// Account
-	let pair_a = Pair::from_string_with_seed(ALICE_SEED, None).unwrap();
-	let signer_a = PairSigner::<AvailConfig, sr25519::Pair>::new(pair_a.0);
+	let signer_a = dev::alice();
 
 	let app_id = b"my_app_name".to_vec();
 	let create_application_key = api::tx()

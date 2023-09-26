@@ -7,9 +7,8 @@ use avail_subxt::{
 	primitives::AvailExtrinsicParams,
 	Opts,
 };
-use sp_keyring::AccountKeyring;
 use structopt::StructOpt;
-use subxt::tx::PairSigner;
+use subxt_signer::sr25519::dev;
 
 /// This example attempts to submit data to fill the entire block. Note that this doesn't guarantee
 /// that the block will be filled, but if you submit more than a full block, then it will spill over
@@ -22,7 +21,7 @@ async fn main() -> Result<()> {
 	let args = Opts::from_args();
 	let client = build_client(args.ws, args.validate_codegen).await?;
 
-	let signer = PairSigner::new(AccountKeyring::Alice.pair());
+	let signer = dev::alice();
 	let size: usize = 2 * 1024 * 1024;
 	let max_size: usize = 512 * 1024;
 	let num_chunks = size / max_size;

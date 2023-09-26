@@ -5,9 +5,9 @@ use avail_subxt::{
 	primitives::AvailExtrinsicParams,
 	Opts,
 };
-use sp_keyring::AccountKeyring;
+use subxt_signer::sr25519::dev;
 use structopt::StructOpt;
-use subxt::{tx::PairSigner, utils::H160};
+use subxt::utils::H160;
 
 const DESTINATION_DOMAIN: u32 = 1000;
 const DA_BRIDGE_ROUTER_ADDRESS: &str = "0x3f28a3e66326c3aa494d4f8e9477d1397ee94432";
@@ -19,7 +19,7 @@ async fn main() -> Result<()> {
 	let args = Opts::from_args();
 	let client = build_client(args.ws, args.validate_codegen).await?;
 
-	let signer = PairSigner::new(AccountKeyring::Alice.pair());
+	let signer = dev::alice();
 	let example_data = b"example".to_vec();
 	let data_transfer = api::tx()
 		.data_availability()

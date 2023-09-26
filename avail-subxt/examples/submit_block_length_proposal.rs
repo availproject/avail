@@ -9,16 +9,16 @@ use avail_subxt::{
 		},
 		sudo::events as SudoEvent,
 	},
-	avail::{Client, PairSigner},
+	avail::Client,
 	build_client, tx_asend, tx_send, Call, Opts,
 };
-use sp_keyring::AccountKeyring;
+use subxt_signer::sr25519::{dev, Keypair};
 use structopt::StructOpt;
 
 const BLOCK_DIM_VALUE: u32 = 32;
 
 /// Sets the block dimensions to default
-async fn reset(client: &Client, signer: &PairSigner) -> Result<()> {
+async fn reset(client: &Client, signer: &Keypair) -> Result<()> {
 	log::info!("Resetting block dimensions for further tests");
 	let block_length_update = Call::DataAvailability(DaCall::submit_block_length_proposal {
 		rows: 256,
@@ -30,7 +30,7 @@ async fn reset(client: &Client, signer: &PairSigner) -> Result<()> {
 }
 
 /// Make `n` data submission transaction
-async fn submit_data(client: &Client, signer: &PairSigner, n: u8) -> Result<()> {
+async fn submit_data(client: &Client, signer: &Keypair, n: u8) -> Result<()> {
 	let example_data = b"X".repeat(1000).to_vec();
 	let data_submission = api::tx()
 		.data_availability()
@@ -51,7 +51,7 @@ async fn main() -> Result<()> {
 	pretty_env_logger::init();
 	let args = Opts::from_args();
 	let client = build_client(args.ws, args.validate_codegen).await?;
-	let signer = PairSigner::new(AccountKeyring::Alice.pair());
+	let signer = dev::alice();
 
 	reset(&client, &signer).await?;
 
@@ -67,7 +67,7 @@ async fn main() -> Result<()> {
 }
 
 /** Success cases **/
-pub async fn simple_tx(client: &Client, signer: &PairSigner) -> Result<()> {
+pub async fn simple_tx(client: &Client, signer: &Keypair) -> Result<()> {
 	log::info!("1 - Sudo call to reduce the dimensions of the block.");
 	let block_length_update = Call::DataAvailability(DaCall::submit_block_length_proposal {
 		rows: BLOCK_DIM_VALUE,
@@ -82,7 +82,7 @@ pub async fn simple_tx(client: &Client, signer: &PairSigner) -> Result<()> {
 	Ok(())
 }
 
-pub async fn batch_tx(client: &Client, signer: &PairSigner) -> Result<()> {
+pub async fn batch_tx(client: &Client, signer: &Keypair) -> Result<()> {
 	log::info!("2 - Sudo call in a batch to reduce the dimensions of the block.");
 	let block_length_update = Call::DataAvailability(DaCall::submit_block_length_proposal {
 		rows: BLOCK_DIM_VALUE,
@@ -101,7 +101,7 @@ pub async fn batch_tx(client: &Client, signer: &PairSigner) -> Result<()> {
 }
 
 /** Fail cases **/
-pub async fn fail_simple_tx(client: &Client, signer: &PairSigner) -> Result<()> {
+pub async fn fail_simple_tx(client: &Client, signer: &Keypair) -> Result<()> {
 	log::info!("1-Fail - Should fail: Sudo call to reduce the dimensions of the block, after data transmission.");
 	submit_data(client, signer, 2).await?;
 
@@ -130,7 +130,7 @@ pub async fn fail_simple_tx(client: &Client, signer: &PairSigner) -> Result<()> 
 	Ok(())
 }
 
-pub async fn fail_batch_tx(client: &Client, signer: &PairSigner) -> Result<()> {
+pub async fn fail_batch_tx(client: &Client, signer: &Keypair) -> Result<()> {
 	log::info!("2-Fail - Should fail: Batch call to reduce the dimensions of the block, after data transmission.");
 	submit_data(client, signer, 2).await?;
 

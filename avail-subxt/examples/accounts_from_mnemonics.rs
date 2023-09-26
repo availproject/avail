@@ -1,17 +1,12 @@
 use anyhow::Result;
-use avail_subxt::{api, build_client, primitives::AvailExtrinsicParams, AvailConfig, Opts};
+use avail_subxt::{api, build_client, primitives::AvailExtrinsicParams, Opts};
 use structopt::StructOpt;
-use subxt::{
-	ext::sp_core::{sr25519::Pair, Pair as _},
-	tx::PairSigner,
-	utils::MultiAddress,
-};
+use subxt::utils::MultiAddress;
+use subxt_signer::{bip39, sr25519::Keypair, DeriveJunction};
 
 /// This example demonstrates using mnemonic seed for generating signer pairs. It creates Alice and Bob
 /// from seeds, but could also be used for an arbitrary account.
-const ALICE_SEED: &str =
-	"bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice";
-const BOB_SEED: &str = "bottom drive obey lake curtain smoke basket hold race lonely fit walk//Bob";
+const DEV_SEED: &str = "bottom drive obey lake curtain smoke basket hold race lonely fit walk";
 
 #[async_std::main]
 async fn main() -> Result<()> {
@@ -19,15 +14,15 @@ async fn main() -> Result<()> {
 	let client = build_client(args.ws, args.validate_codegen).await?;
 
 	// Accounts
-	let pair_a = Pair::from_string_with_seed(ALICE_SEED, None).unwrap();
-	let signer_a = PairSigner::<AvailConfig, Pair>::new(pair_a.0);
-	let pair_b = Pair::from_string_with_seed(BOB_SEED, None).unwrap();
-	let signer_b = PairSigner::<AvailConfig, Pair>::new(pair_b.0);
+	let phrase = bip39::Mnemonic::parse(DEV_SEED).unwrap();
+	let keypair = Keypair::from_phrase(&phrase, None).unwrap();
+	let signer_a = keypair.derive([DeriveJunction::hard("Alice")]);
+	let signer_b = keypair.derive([DeriveJunction::hard("Bob")]);
 
 	// Transfer and wait finalized
 	let balance_transfer = api::tx()
 		.balances()
-		.transfer(MultiAddress::Id(signer_b.account_id().clone()), 2);
+		.transfer(MultiAddress::Id(signer_b.public_key().into()), 2);
 	let _ = client
 		.tx()
 		.sign_and_submit_then_watch(

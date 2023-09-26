@@ -28,6 +28,7 @@ schnorrkel = "0.9.1"
 
 # Substrate
 subxt = { version = "0.31", default-features = false, features = ["native", "jsonrpsee"] }
+subxt-signer = { version = "0.31", features = ["subxt"] }
 sp-core = { version = "21", default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "full", "bit-vec"] }
 serde = { version = "1", features = ["derive"] }

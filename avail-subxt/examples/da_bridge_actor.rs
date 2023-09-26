@@ -6,10 +6,10 @@ use avail_subxt::{
 	},
 	build_client, Opts,
 };
-use sp_keyring::AccountKeyring::Alice;
+use subxt_signer::sr25519::dev;
 use structopt::StructOpt;
 use subxt::{
-	tx::{PairSigner, Payload},
+	tx::Payload,
 	utils::H160,
 };
 
@@ -27,7 +27,7 @@ async fn main() -> Result<()> {
 	let args = Opts::from_args();
 	let client = build_client(args.ws, args.validate_codegen).await?;
 
-	let signer = PairSigner::new(Alice.pair());
+	let signer = dev::alice();
 	let mut finalized_headers_subscription =
 		client.rpc().subscribe_finalized_block_headers().await?;
 
