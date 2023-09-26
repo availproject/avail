@@ -160,8 +160,8 @@ pub mod pallet {
 
 			// Index Tx in DB block.
 			let data_hash = blake2_256(&data);
-			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
-				.ok_or_else(|| Error::<T>::BadContext)?;
+			let extrinsic_index =
+				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::BadContext)?;
 			transaction_index::index(extrinsic_index, len, data_hash);
 
 			Self::deposit_event(Event::DataSubmitted {

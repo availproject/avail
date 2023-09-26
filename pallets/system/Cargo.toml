@@ -76,9 +76,6 @@ runtime-benchmarks = [
 try-runtime = [ "avail-core/try-runtime", "frame-support/try-runtime" ]
 serde = [ "dep:serde" ]
 
-# For testing backward/forward header compatibility.
-header-compatibility-test = [ "avail-core/header-backward-compatibility-test" ]
-
 # It enables the use of header extension V2
 header_extension_v2 = []
 
