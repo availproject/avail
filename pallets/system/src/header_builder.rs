@@ -81,23 +81,6 @@ pub trait HeaderExtensionBuilder {
 	}
 }
 
-#[allow(dead_code)]
-#[cfg(all(feature = "std", feature = "header-compatibility-test"))]
-fn build_extension_v_test(
-	app_extrinsics: &[AppExtrinsic],
-	data_root: H256,
-	block_length: BlockLength,
-	seed: Seed,
-) -> HeaderExtension {
-	let metrics = avail_base::metrics::MetricAdapter {};
-	let extension_v1 = build_extension(app_extrinsics, data_root, block_length, 0, seed, &metrics);
-	match extension_v1 {
-		HeaderExtension::V1(extension) => HeaderExtension::VTest(extension.into()),
-		HeaderExtension::V2(_) => unimplemented!(),
-		r @ HeaderExtension::VTest(_) => r,
-	}
-}
-
 #[cfg(feature = "header_commitment_corruption")]
 fn corrupt_commitment(block_number: u32, commitment: &mut Vec<u8>) {
 	if let Some(ref_byte) = commitment.get_mut(0) {
