@@ -6421,15 +6421,14 @@ dependencies = [
 name = "pallet-succinct"
 version = "1.0.0"
 dependencies = [
- "avail-core",
  "bls12_381",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "group 0.12.1",
+ "hex-literal",
  "log",
  "pairing",
- "pallet-collective",
  "parity-scale-codec",
  "scale-info",
  "serde",

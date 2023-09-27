@@ -60,6 +60,7 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T> {
 		UpdaterMisMatch,
+		CannotChangeUpdater,
 		PublicInputsMismatch,
 		TooLongPublicInputs,
 		TooLongVerificationKey,
@@ -184,7 +185,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T>
 	where
 		[u8; 32]: From<T::AccountId>,
-		H256: From<T::Hash>,
+		// H256: From<T::Hash>,
 	{
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::rotate())]
@@ -226,8 +227,25 @@ pub mod pallet {
 			Ok(())
 		}
 
-		// POC verification zk-SNARK
 		#[pallet::call_index(2)]
+		#[pallet::weight(T::WeightInfo::step())]
+		pub fn set_updater(origin: OriginFor<T>, updater: H256) -> DispatchResult {
+			ensure_root(origin)?;
+			let old = SuccinctCfg::<T>::get();
+			SuccinctCfg::<T>::try_mutate(|cfg| -> Result<(), ()> {
+				cfg.updater = updater;
+				Ok(())
+			}); //.or_else(DispatchError::from(<Error<T>>::CannotChangeUpdater))?;
+
+			Self::deposit_event(Event::<T>::NewUpdater {
+				old: old.updater,
+				new: updater,
+			});
+			Ok(())
+		}
+
+		// POC verification zk-SNARK
+		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn verify(origin: OriginFor<T>, vec_proof: Vec<u8>) -> DispatchResult {
 			let proof = store_proof::<T>(vec_proof)?;
@@ -249,7 +267,7 @@ pub mod pallet {
 			}
 		}
 
-		#[pallet::call_index(3)]
+		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn setup_verification(
 			_origin: OriginFor<T>,
@@ -287,8 +305,8 @@ pub mod pallet {
 			who: T::AccountId,
 		},
 		NewUpdater {
-			old: <T as frame_system::Config>::AccountId,
-			new: <T as frame_system::Config>::AccountId,
+			old: H256,
+			new: H256,
 		},
 		VerificationFailed,
 	}

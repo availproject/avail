@@ -27,14 +27,12 @@ serde_json = { version = "1.0.89", default-features = false, features = ["alloc"
 uint = { version = "0.8", default-features = false }
 
 
-# Benchmarking
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 log = "0.4.20"
+hex-literal = { version = "0.3.4", optional = true }
 
 [dev-dependencies]
 sp-core = { version = "21.0.0", default-features = false }
-pallet-collective = { version = "4.0.0-dev", default-features = false }
-avail-core = { version = "0.5", features = ["runtime"] }
 
 [features]
 default = ["std"]
@@ -50,10 +48,12 @@ std = [
     "sp-std/std",
 ]
 runtime-benchmarks = [
+    "frame-benchmarking",
     "frame-benchmarking/runtime-benchmarks",
     "frame-support/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
     "sp-runtime/runtime-benchmarks",
+    "hex-literal",
 ]
 try-runtime = [
     "frame-support/try-runtime",
