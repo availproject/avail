@@ -6,12 +6,9 @@ use avail_subxt::{
 	},
 	build_client, Opts,
 };
-use subxt_signer::sr25519::dev;
 use structopt::StructOpt;
-use subxt::{
-	tx::Payload,
-	utils::H160,
-};
+use subxt::{tx::Payload, utils::H160};
+use subxt_signer::sr25519::dev;
 
 const DESTINATION_DOMAIN: u32 = 1000;
 const DA_BRIDGE_ROUTER_ADDRESS: &str = "0x3f28a3e66326c3aa494d4f8e9477d1397ee94432";

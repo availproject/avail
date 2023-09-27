@@ -12,8 +12,8 @@ use avail_subxt::{
 	avail::Client,
 	build_client, tx_asend, tx_send, Call, Opts,
 };
-use subxt_signer::sr25519::{dev, Keypair};
 use structopt::StructOpt;
+use subxt_signer::sr25519::{dev, Keypair};
 
 const BLOCK_DIM_VALUE: u32 = 32;
 

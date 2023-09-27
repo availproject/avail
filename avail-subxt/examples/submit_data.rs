@@ -11,8 +11,8 @@ use avail_subxt::{
 	primitives::AvailExtrinsicParams,
 	Call, Opts,
 };
-use subxt_signer::sr25519::dev;
 use structopt::StructOpt;
+use subxt_signer::sr25519::dev;
 
 /// This example submits an Avail data extrinsic, then retrieves the block containing the
 /// extrinsic and matches the data.
