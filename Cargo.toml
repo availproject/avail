@@ -26,9 +26,9 @@ frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 
 # DA Primitives
-avail-core = { version = "0.5", git = "https://github.com/availproject/avail-core", branch = "main" }
-kate = { version = "0.8", git = "https://github.com/availproject/avail-core", branch = "main" }
-kate-recovery = { version = "0.9", git = "https://github.com/availproject/avail-core", branch = "main" }
+avail-core = { version = "0.5", git = "https://github.com/availproject/avail-core", branch = "succint-header_new" }
+kate = { version = "0.8", git = "https://github.com/availproject/avail-core", branch = "succint-header_new" }
+kate-recovery = { version = "0.9", git = "https://github.com/availproject/avail-core", branch = "succint-header_new" }
 
 # Nomad
 nomad-signature = { version = "0.1", git = "https://github.com/availproject/avail-core", branch = "main" }

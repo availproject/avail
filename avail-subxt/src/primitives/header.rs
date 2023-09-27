@@ -1,5 +1,4 @@
 use core::marker::PhantomData;
-
 use codec::{Decode, Encode};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use subxt::{
@@ -32,7 +31,7 @@ impl Header {
 	pub fn data_root(&self) -> H256 {
 		match &self.extension {
 			HeaderExtension::V1(ext) => ext.commitment.data_root,
-			HeaderExtension::V2(ext) => ext.commitment.data_root.unwrap_or_default(),
+			HeaderExtension::V2(ext) => ext.commitment.data_root,
 		}
 	}
 }

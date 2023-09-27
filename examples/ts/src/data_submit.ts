@@ -36,7 +36,7 @@ async function main() {
     // add Alice to our keyring with a hard-derivation path (empty phrase, so uses dev)
     const alice = keyring.addFromUri(config.mnemonic);
     // data to submit
-    const data = "";
+    const data = "this is a test data";
 
     // submit data transaction
     api.tx.dataAvailability.submitData(data)
@@ -53,7 +53,7 @@ async function main() {
                 const blockHash: H256 = result.status.asFinalized;
                 const exHash: H256 = result.txHash;
                 console.log(`Finalized block hash ${blockHash}`);
-                // get data from finalized block
+               // get data from finalized block
                 await extractData(api, blockHash, exHash);
             }
         });
