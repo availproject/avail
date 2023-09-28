@@ -137,3 +137,9 @@ pub type MockDaBlock<T> = avail_core::DaBlock<
 	avail_core::header::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>,
 	MockUncheckedExtrinsic<T>,
 >;
+
+impl <T: Config> frame_support::traits::ExtrinsicCall for MockUncheckedExtrinsic<T> {
+	fn call(&self) -> &Self::Call {
+		&self.0.function
+	}
+}

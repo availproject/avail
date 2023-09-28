@@ -93,6 +93,8 @@ pallet-nomination-pools = { version = "1", default-features = false }
 pallet-identity = { version = "4.0.0-dev", default-features = false }
 
 pallet-mandate = { path = "../pallets/mandate", default-features = false }
+pallet-staking-test = { path = "../pallets/staking", default-features = false }
+
 
 ## RPCs
 pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", default-features = false }
@@ -190,7 +192,8 @@ std = [
 	"nomad-home/std",
 	"nomad-da-bridge/std",
 	"pallet-mandate/std",
-	"sp-npos-elections/std"
+	"sp-npos-elections/std",
+	"pallet-staking-test/std"
 ]
 
 runtime-benchmarks = [
@@ -228,7 +231,8 @@ runtime-benchmarks = [
 	"frame-system-benchmarking/runtime-benchmarks",
 	"pallet-identity/runtime-benchmarks",
 	"pallet-mandate/runtime-benchmarks",
-	"nomad-updater-manager/runtime-benchmarks"
+	"nomad-updater-manager/runtime-benchmarks",
+	"pallet-staking-test/runtime-benchmarks"
 ]
 
 try-runtime = [
@@ -272,4 +276,5 @@ try-runtime = [
 	"avail-core/try-runtime",
 	"pallet-mandate/try-runtime",
 	"sp-runtime/try-runtime",
+	"pallet-staking-test/try-runtime",
 ]

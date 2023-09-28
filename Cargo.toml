@@ -7,6 +7,8 @@ members = [
     "pallets/bridges/nomad/updater-manager",
     "pallets/bridges/nomad/home",
     "pallets/bridges/nomad/da-bridge",
+    "pallets/staking",
+    "pallets/staking/reward-curve",
     "runtime",
     "node",
 ]
@@ -128,6 +130,9 @@ pallet-nomination-pools = { git = "https://github.com/paritytech/substrate.git",
 pallet-election-provider-support-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 pallet-identity = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+
+sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
 
 ## RPCs

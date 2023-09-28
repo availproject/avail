@@ -1,0 +1,79 @@
+[package]
+name = "pallet-staking-test"
+version = "4.0.0-dev"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2021"
+license = "Apache-2.0"
+homepage = "https://substrate.io"
+repository = "https://github.com/paritytech/substrate/"
+description = "FRAME pallet staking"
+readme = "README.md"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+serde = { version = "1.0.163", default-features = false, features = ["alloc", "derive"]}
+codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
+	"derive",
+] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive", "serde"] }
+sp-io = { version = "23.0.0", default-features = false }
+sp-runtime = { version = "24.0.0", default-features = false, features = ["serde"] }
+sp-staking = { version = "4.0.0-dev", default-features = false, features = ["serde"] }
+sp-std = { version = "8.0.0", default-features = false }
+frame-support = { version = "4.0.0-dev", default-features = false }
+frame-system = { path = "../system", default-features = false }
+pallet-session = { version = "4.0.0-dev", default-features = false, features = [
+	"historical",
+] }
+pallet-authorship = { version = "4.0.0-dev", default-features = false }
+sp-application-crypto = { version = "23.0.0", default-features = false, features = ["serde"] }
+frame-election-provider-support = { version = "4.0.0-dev", default-features = false }
+log = { version = "0.4.17", default-features = false }
+
+avail-core = { version = "0.5", default-features = false, features = ["runtime"] }
+
+# Optional imports for benchmarking
+frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
+rand_chacha = { version = "0.2", default-features = false, optional = true }
+
+[dev-dependencies]
+sp-tracing = { version = "10.0.0" }
+sp-core = { version = "21.0.0" }
+sp-npos-elections = { version = "4.0.0-dev" }
+pallet-balances = { version = "4.0.0-dev" }
+pallet-timestamp = { version = "4.0.0-dev" }
+pallet-staking-reward-curve = { version = "4.0.0-dev", path = "../staking/reward-curve" }
+pallet-bags-list = { version = "4.0.0-dev" }
+substrate-test-utils = { version = "4.0.0-dev" }
+frame-benchmarking = { version = "4.0.0-dev" }
+frame-election-provider-support = { version = "4.0.0-dev" }
+rand_chacha = { version = "0.2" }
+
+[features]
+default = ["std"]
+std = [
+	"frame-benchmarking?/std",
+	"serde/std",
+	"codec/std",
+	"scale-info/std",
+	"sp-std/std",
+	"sp-io/std",
+	"frame-support/std",
+	"sp-runtime/std",
+	"sp-staking/std",
+	"pallet-session/std",
+	"frame-system/std",
+	"pallet-authorship/std",
+	"sp-application-crypto/std",
+	"log/std",
+	"frame-election-provider-support/std",
+]
+runtime-benchmarks = [
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-election-provider-support/runtime-benchmarks",
+	"rand_chacha",
+	"sp-staking/runtime-benchmarks",
+]
+try-runtime = ["frame-support/try-runtime", "frame-election-provider-support/try-runtime"]
