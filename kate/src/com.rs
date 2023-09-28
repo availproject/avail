@@ -527,15 +527,39 @@ pub fn scalars_to_app_rows(
 }
 
 #[cfg(feature = "std")]
-pub fn scalars_to_rows(rows: &[u32], data: &DMatrix<BlsScalar>) -> Vec<Vec<u8>> {
-	rows.iter()
+fn row(
+	data: &DMatrix<BlsScalar>,
+	i: usize,
+	cols: BlockLengthColumns,
+	extended_rows: BlockLengthRows,
+) -> Vec<BlsScalar> {
+	let mut row = Vec::with_capacity(cols.0 as usize);
+	(0..(cols.0 as usize).saturating_mul(extended_rows.0 as usize))
+		.step_by(extended_rows.0 as usize)
+		.for_each(|idx| row.push(data[i.saturating_add(idx)]));
+
+	row
+}
+
+#[cfg(feature = "std")]
+pub fn scalars_to_rows(
+	rows: &[u32],
+	dimensions: &Dimensions,
+	data: &DMatrix<BlsScalar>,
+) -> Vec<Option<Vec<u8>>> {
+	let extended_rows = BlockLengthRows(dimensions.extended_rows());
+	let cols = BlockLengthColumns(dimensions.cols().get() as u32);
+	dimensions
+		.iter_extended_rows()
 		.map(|i| {
-			let row = get_row(data, *i as usize);
-			row.iter()
-				.flat_map(BlsScalar::to_bytes)
-				.collect::<Vec<u8>>()
+			rows.contains(&i).then(|| {
+				row(data, i as usize, cols, extended_rows)
+					.iter()
+					.flat_map(BlsScalar::to_bytes)
+					.collect::<Vec<u8>>()
+			})
 		})
-		.collect::<Vec<Vec<u8>>>()
+		.collect::<Vec<Option<Vec<u8>>>>()
 }
 
 #[cfg(test)]
