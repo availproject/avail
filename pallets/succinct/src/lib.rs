@@ -80,6 +80,20 @@ pub mod pallet {
 		VerificationKeyCreationError,
 	}
 
+	#[pallet::event]
+	#[pallet::generate_deposit(pub (super) fn deposit_event)]
+	pub enum Event<T: Config> {
+		// emit event once the head is updated
+		HeadUpdate { slot: u64, finalization_root: Hash },
+		SyncCommitteeUpdate { period: u64, root: Hash },
+		VerificationSetupCompleted,
+		VerificationProofSet,
+		VerificationSuccess { who: H256 },
+		NewUpdater { old: H256, new: H256 },
+		VerificationFailed,
+	}
+
+	// Storage definitions
 	#[pallet::storage]
 	pub type PublicInputStorage<T: Config> = StorageValue<_, PublicInputsDef<T>, ValueQuery>;
 	#[pallet::storage]
@@ -89,40 +103,6 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type SuccinctCfg<T: Config> = StorageValue<_, SuccinctConfig, ValueQuery>;
-
-	#[pallet::config]
-	pub trait Config: frame_system::Config {
-		/// The overarching event type.
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
-		type TimeProvider: UnixTime;
-
-		#[pallet::constant]
-		type MaxPublicInputsLength: Get<u32>;
-		#[pallet::constant]
-		type MaxProofLength: Get<u32>;
-		#[pallet::constant]
-		type MaxVerificationKeyLength: Get<u32>;
-
-		// =========== Constants ============
-
-		type MinSyncCommitteeParticipants: Get<u32>;
-		type SyncCommitteeSize: Get<u32>;
-		type FinalizedRootIndex: Get<u32>;
-		type NextSyncCommitteeIndex: Get<u32>;
-		type ExecutionStateRootIndex: Get<u32>;
-
-		/// A sudo-able call.
-		type RuntimeCall: Parameter
-			+ UnfilteredDispatchable<RuntimeOrigin = Self::RuntimeOrigin>
-			+ GetDispatchInfo;
-
-		type WeightInfo: WeightInfo;
-
-		type ApprovedOrigin: EnsureOrigin<Self::RuntimeOrigin>;
-	}
-
-	// ====================== Storage =============================
 
 	#[pallet::storage]
 	pub type Consistent<T> = StorageValue<_, bool, ValueQuery>;
@@ -152,9 +132,38 @@ pub mod pallet {
 	#[pallet::getter(fn get_poseidon)]
 	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, Hash, ValueQuery>;
 
-	// ======================================================================
+	#[pallet::config]
+	pub trait Config: frame_system::Config {
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type TimeProvider: UnixTime;
+		#[pallet::constant]
+		type MaxPublicInputsLength: Get<u32>;
+		#[pallet::constant]
+		type MaxProofLength: Get<u32>;
+		#[pallet::constant]
+		type MaxVerificationKeyLength: Get<u32>;
+		#[pallet::constant]
+		type MinSyncCommitteeParticipants: Get<u32>;
+		#[pallet::constant]
+		type SyncCommitteeSize: Get<u32>;
+		#[pallet::constant]
+		type FinalizedRootIndex: Get<u32>;
+		#[pallet::constant]
+		type NextSyncCommitteeIndex: Get<u32>;
+		#[pallet::constant]
+		type ExecutionStateRootIndex: Get<u32>;
 
-	//  ====== Genesis config ==========
+		type RuntimeCall: Parameter
+			+ UnfilteredDispatchable<RuntimeOrigin = Self::RuntimeOrigin>
+			+ GetDispatchInfo;
+
+		type WeightInfo: WeightInfo;
+
+		type ApprovedOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+	}
+
+	//  pallet initialization data
+	// TODO check if genesis is a good place for this
 	#[pallet::genesis_config]
 	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
@@ -174,7 +183,7 @@ pub mod pallet {
 			// TODO time cannot be called at Genesis
 			// T::TimeProvider::now().as_secs()
 			<SuccinctCfg<T>>::put(SuccinctConfig {
-				updater: self.updater.into(),
+				updater: self.updater,
 				genesis_validators_root: H256([0u8; 32]),
 				genesis_time: 1695897840,
 				seconds_per_slot: 12,
@@ -196,6 +205,8 @@ pub mod pallet {
 		[u8; 32]: From<T::AccountId>,
 		T::AccountId: From<[u8; 32]>,
 	{
+		/// Sets the sync committee for the next sync committee period.
+		/// A commitment to the the next sync committee is signed by the current sync committee.
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::rotate())]
 		pub fn rotate(origin: OriginFor<T>, update: messages::LightClientRotate) -> DispatchResult {
@@ -203,17 +214,12 @@ pub mod pallet {
 			let config = SuccinctCfg::<T>::get();
 			ensure!(H256(sender) == config.updater, Error::<T>::UpdaterMisMatch);
 
-			log::info!("Update: {:?}", update);
-
-			// log::info!("Succinct configuration: {:?}", config);
-
 			let light_client_step = update.step.clone();
 
 			let finalized = process_step::<T>(light_client_step.clone())?;
 			let current_period = get_sync_committee_period::<T>(light_client_step.finalized_slot);
 			let next_period = current_period + 1;
 
-			// TODO handle error
 			let vk = get_verification_key::<T>()?;
 			let proof = get_proof::<T>(update.proof)?;
 			let inputs = get_public_inputs::<T>()?;
@@ -243,6 +249,11 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Updates the head of the light client to the provided slot.
+		/// The conditions for updating the head of the light client involve checking:
+		///      1) Enough signatures from the current sync committee for n=512
+		///      2) A valid finality proof
+		///      3) A valid execution state root proof
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn step(origin: OriginFor<T>, update: LightClientStep) -> DispatchResult {
@@ -250,13 +261,9 @@ pub mod pallet {
 			let config = SuccinctCfg::<T>::get();
 			ensure!(H256(sender) == config.updater, Error::<T>::UpdaterMisMatch);
 
-			log::info!("Update: {:?}", update);
-			// ====================================================================
 			let finalized = process_step::<T>(update.clone())?;
 
 			let current_slot = get_current_slot::<T>(config.genesis_time, config.slots_per_period);
-
-			log::info!("Current slot: {}", current_slot);
 
 			// ensure!(current_slot > update.attested_slot,  Error::<T>::UpdateSlotIsFarInTheFuture);
 			if current_slot < update.attested_slot {
@@ -264,9 +271,6 @@ pub mod pallet {
 			}
 
 			let head = Head::<T>::get();
-			log::info!("Current head: {}", current_slot);
-			log::info!("Current finalized slot: {}", update.finalized_slot);
-
 			// ensure!(update.finalized_slot > head,  Error::<T>::UpdateSlotLessThanCurrentHead);
 			if update.finalized_slot < head {
 				return Err(Error::<T>::UpdateSlotLessThanCurrentHead.into());
@@ -285,11 +289,11 @@ pub mod pallet {
 					finalization_root: update.finalized_header_root,
 				});
 			}
-			// ====================================================================
 
 			Ok(())
 		}
 
+		// sets updater that can call step and rotate functions
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn set_updater(origin: OriginFor<T>, updater: H256) -> DispatchResult {
@@ -307,19 +311,22 @@ pub mod pallet {
 			Ok(())
 		}
 
-		// POC verification zk-SNARK
+		// TODO this is a POC of simple verification that gets public inputs and tries to verify the proof
+		// this uses bls12_381
 		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn verify(origin: OriginFor<T>, vec_proof: Vec<u8>) -> DispatchResult {
+			let sender: [u8; 32] = ensure_signed(origin)?.into();
+
 			let proof = store_proof::<T>(vec_proof)?;
 			let vk = get_verification_key::<T>()?;
 			let inputs = get_public_inputs::<T>()?;
-			let sender = ensure_signed(origin)?;
+
 			Self::deposit_event(Event::<T>::VerificationProofSet);
 
 			match verify(vk, proof, prepare_public_inputs(inputs)) {
 				Ok(true) => {
-					Self::deposit_event(Event::<T>::VerificationSuccess { who: sender });
+					Self::deposit_event(Event::<T>::VerificationSuccess { who: sender.into() });
 					Ok(())
 				},
 				Ok(false) => {
@@ -330,13 +337,15 @@ pub mod pallet {
 			}
 		}
 
+		/// Sets the public input params into storage
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn setup_verification(
-			_origin: OriginFor<T>,
+			origin: OriginFor<T>,
 			pub_input: Vec<u8>,
 			vec_vk: Vec<u8>,
 		) -> DispatchResult {
+			ensure_root(origin)?;
 			let inputs = store_public_inputs::<T>(pub_input)?;
 			let vk = store_verification_key::<T>(vec_vk)?;
 			ensure!(
@@ -348,33 +357,6 @@ pub mod pallet {
 		}
 	}
 
-	#[pallet::event]
-	#[pallet::generate_deposit(pub (super) fn deposit_event)]
-	pub enum Event<T: Config> {
-		// emit event once the head is updated
-		HeadUpdate {
-			slot: u64,
-			finalization_root: Hash,
-		},
-		SyncCommitteeUpdate {
-			period: u64,
-			root: Hash,
-		},
-
-		/// A root operation was executed, show result
-		VerificationSetupCompleted,
-		VerificationProofSet,
-		VerificationSuccess {
-			who: T::AccountId,
-		},
-		NewUpdater {
-			old: H256,
-			new: H256,
-		},
-		VerificationFailed,
-	}
-
-	// ============ Helper fn ===============
 	fn get_current_slot<T: Config>(genesis_time: u64, slots_per_period: u64) -> u64 {
 		//  TODO check block time provider
 		let block_time: u64 = T::TimeProvider::now().as_secs();
@@ -386,7 +368,7 @@ pub mod pallet {
 			slots_per_period
 		);
 
-		return (block_time - genesis_time) / slots_per_period;
+		(block_time - genesis_time) / slots_per_period
 	}
 
 	fn set_slot_roots<T: Config>(
@@ -396,26 +378,23 @@ pub mod pallet {
 	) -> bool {
 		let header = Headers::<T>::get(slot);
 
-		if header != H256::zero() {
-			if header != finalized_header_root {
-				Consistent::<T>::put(false);
-				return false;
-			}
+		if header != H256::zero() && header != finalized_header_root {
+			Consistent::<T>::put(false);
+			return false;
 		}
 		let state_root = ExecutionStateRoots::<T>::get(slot);
 
-		if state_root != H256::zero() {
-			if execution_state_root != execution_state_root {
-				Consistent::<T>::put(false);
-				return false;
-			}
+		if state_root != H256::zero() && state_root != execution_state_root {
+			Consistent::<T>::put(false);
+			return false;
 		}
 
 		Head::<T>::put(slot);
 		Headers::<T>::insert(slot, finalized_header_root);
 		// TODO can this time be used as block time?
 		Timestamps::<T>::insert(slot, T::TimeProvider::now().as_secs());
-		return true;
+
+		true
 	}
 
 	fn set_sync_committee_poseidon<T: Config>(period: u64, poseidon: H256) -> bool {
@@ -433,14 +412,13 @@ pub mod pallet {
 		}
 		SyncCommitteePoseidons::<T>::set(period, poseidon);
 
-		log::info!("Return true");
-		return true;
+		true
 	}
 
 	fn get_sync_committee_period<T: Config>(slot: u64) -> u64 {
 		// TODO this read can be avoided
 		let cfg = SuccinctCfg::<T>::get();
-		return slot / cfg.slots_per_period;
+		slot / cfg.slots_per_period
 	}
 
 	fn process_step<T: Config>(update: LightClientStep) -> Result<bool, Error<T>> {
@@ -459,7 +437,7 @@ pub mod pallet {
 			Error::<T>::SyncCommitteeNotInitialized
 		);
 
-		return Ok(update.participation > cfg.finality_threshold);
+		Ok(update.participation > cfg.finality_threshold)
 	}
 
 	fn get_public_inputs<T: Config>() -> Result<Vec<u64>, DispatchError> {
