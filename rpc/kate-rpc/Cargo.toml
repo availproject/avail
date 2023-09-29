@@ -30,18 +30,18 @@ sp-blockchain = "4.0.0-dev"
 sp-runtime = { version = "24.0.0", default-features = false }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-    "avail-base/std",
-    "da-runtime/std",
-    "avail-core/std",
-    "kate/std",
-    "kate-recovery/std",
-    "frame-support/std",
-    "frame-system/std",
-    "codec/std",
-    "sp-api/std",
-    "sp-runtime/std",
+	"avail-base/std",
+	"avail-core/std",
+	"codec/std",
+	"da-runtime/std",
+	"frame-support/std",
+	"frame-system/std",
+	"kate-recovery/std",
+	"kate/std",
+	"sp-api/std",
+	"sp-runtime/std",
 ]
 
 # Enables secure seed generation using for padding fill during the matrix 
