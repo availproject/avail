@@ -28,7 +28,7 @@ type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLen
 
 // TODO do we need to store constants in the storage?
 parameter_types! {
-	pub const  MinSyncCommitteeParticipants: u32=10;
+	pub const  MinSyncCommitteeParticipants: u16=10;
 	pub const  SyncCommitteeSize: u32=512;
 	pub const  FinalizedRootIndex: u32=105;
 	pub const  NextSyncCommitteeIndex: u32= 55;
@@ -60,6 +60,8 @@ pub mod pallet {
 		UpdateSlotLessThanCurrentHead,
 		NotEnoughParticipants,
 		VerificationError,
+		SyncCommitteeNotInitialized,
+		MinSCNotSigned,
 		// verification
 		ProofNotValid,
 		PublicInputsMismatch,
@@ -150,9 +152,6 @@ pub mod pallet {
 	#[pallet::getter(fn get_poseidon)]
 	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, Hash, ValueQuery>;
 
-	// #[pallet::storage]
-	// pub type Updater<T: Config> = StorageValue<_, <T as frame_system::Config>::AccountId, OptionQuery>;
-
 	// ======================================================================
 
 	//  ====== Genesis config ==========
@@ -210,14 +209,14 @@ pub mod pallet {
 
 			let light_client_step = update.step.clone();
 
-			let finalized = process_step(light_client_step.clone());
+			let finalized = process_step::<T>(light_client_step.clone())?;
 			let current_period = get_sync_committee_period::<T>(light_client_step.finalized_slot);
 			let next_period = current_period + 1;
 
 			// TODO handle error
-			let vk = get_verification_key::<T>().unwrap();
-			let proof = get_proof::<T>(update.proof).unwrap();
-			let inputs = get_public_inputs::<T>().unwrap();
+			let vk = get_verification_key::<T>()?;
+			let proof = get_proof::<T>(update.proof)?;
+			let inputs = get_public_inputs::<T>()?;
 
 			// proof verification
 			let success = verify(vk, proof, prepare_public_inputs(inputs))
@@ -253,7 +252,7 @@ pub mod pallet {
 
 			log::info!("Update: {:?}", update);
 			// ====================================================================
-			let finalized = process_step(update.clone());
+			let finalized = process_step::<T>(update.clone())?;
 
 			let current_slot = get_current_slot::<T>(config.genesis_time, config.slots_per_period);
 
@@ -444,9 +443,23 @@ pub mod pallet {
 		return slot / cfg.slots_per_period;
 	}
 
-	fn process_step(_update: LightClientStep) -> bool {
-		// TODO implement me
-		return true;
+	fn process_step<T: Config>(update: LightClientStep) -> Result<bool, Error<T>> {
+		let current_period = get_sync_committee_period::<T>(update.attested_slot);
+
+		let sc_poseidons = SyncCommitteePoseidons::<T>::get(current_period);
+
+		let cfg = SuccinctCfg::<T>::get();
+
+		ensure!(
+			sc_poseidons == H256::zero(),
+			Error::<T>::SyncCommitteeNotInitialized
+		);
+		ensure!(
+			update.participation < MinSyncCommitteeParticipants::get(),
+			Error::<T>::SyncCommitteeNotInitialized
+		);
+
+		return Ok(update.participation > cfg.finality_threshold);
 	}
 
 	fn get_public_inputs<T: Config>() -> Result<Vec<u64>, DispatchError> {
@@ -466,7 +479,7 @@ pub mod pallet {
 		Ok(deserialized_public_inputs)
 	}
 
-	fn get_verification_key<T: Config>() -> Result<VerificationKey, DispatchError> {
+	fn get_verification_key<T: Config>() -> Result<VerificationKey, Error<T>> {
 		let vk = VerificationKeyStorage::<T>::get();
 
 		ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
@@ -477,7 +490,7 @@ pub mod pallet {
 		Ok(vk)
 	}
 
-	fn store_verification_key<T: Config>(vec_vk: Vec<u8>) -> Result<VKey, DispatchError> {
+	fn store_verification_key<T: Config>(vec_vk: Vec<u8>) -> Result<VKey, Error<T>> {
 		let vk: VerificationKeyDef<T> = vec_vk
 			.try_into()
 			.map_err(|_| Error::<T>::TooLongVerificationKey)?;
@@ -496,7 +509,7 @@ pub mod pallet {
 		Ok(deserialized_vk)
 	}
 
-	fn get_proof<T: Config>(vec_proof: Vec<u8>) -> Result<GProof, sp_runtime::DispatchError> {
+	fn get_proof<T: Config>(vec_proof: Vec<u8>) -> Result<GProof, Error<T>> {
 		ensure!(!vec_proof.is_empty(), Error::<T>::ProofIsEmpty);
 		let proof: ProofDef<T> = vec_proof.try_into().map_err(|_| Error::<T>::TooLongProof)?;
 		let deserialized_proof =

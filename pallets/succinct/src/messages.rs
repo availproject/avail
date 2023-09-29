@@ -8,7 +8,7 @@ use sp_std::prelude::*;
 pub struct LightClientStep {
 	pub attested_slot: u64,
 	pub finalized_slot: u64,
-	pub participation: u64,
+	pub participation: u16,
 	pub finalized_header_root: H256,
 	pub execution_state_root: H256,
 	pub proof: Vec<u8>,
