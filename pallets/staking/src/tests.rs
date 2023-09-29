@@ -17,6 +17,8 @@
 
 //! Tests for the module.
 
+use crate::inflation::compute_total_payout;
+
 use super::{ConfigOp, Event, *};
 use frame_election_provider_support::{ElectionProvider, SortedListProvider, Support};
 use frame_support::{
@@ -39,10 +41,25 @@ use sp_staking::{
 use sp_std::prelude::*;
 use substrate_test_utils::assert_eq_uvec;
 
+const DAY: u64 = 24 * 60 * 60 * 1000;
+const YEAR: u64 = 365 * DAY;
+
+pallet_staking_reward_curve::build! {
+	const I_NPOS: PiecewiseLinear<'static> = curve!(
+		min_inflation: 0_010_000, // minimum_inflation_rate = 1%
+		max_inflation: 0_100_000, // maximum_inflation_rate = 10%
+		ideal_stake: 0_500_000, // target_staking_rate = 50%
+		falloff: 0_050_000,  // inflation_decay = 5%
+		max_piece_count: 40,
+		test_precision: 0_005_000,
+	);
+}
+
 /* AVAIL TESTS */
 #[test]
 fn random_test() {
 	ExtBuilder::default().build_and_execute(|| {
+		/* Random stuff to improve */
 		let block = System::block_number();
 		let balance = Balances::total_issuance();
 		let validators = <Validators<Test>>::iter().collect::<Vec<_>>();
@@ -57,6 +74,24 @@ fn random_test() {
 		let balance = Balances::total_issuance();
 		assert_eq!(block, 1000);
 		assert_eq!(balance, 1000000019738);
+
+
+		/* Test total rewards distributed in a period */
+		// 0% staked
+		let (payout, max) = compute_total_payout(&I_NPOS, 0, 100_000u64, YEAR);
+		assert_eq!((payout, max), (999, 9_993));
+
+		// 100% staked
+		let (payout, max) = compute_total_payout(&I_NPOS, 100_000u64, 100_000u64, YEAR);
+		assert_eq!((payout, max), (1_008, 9_993));
+
+		// 50% staked
+		let (payout, max) = compute_total_payout(&I_NPOS, 50_000u64, 100_000u64, YEAR);
+		assert_eq!((payout, max), (9_993, 9_993));
+
+		// 25% staked
+		let (payout, max) = compute_total_payout(&I_NPOS, 25_000u64, 100_000u64, YEAR);
+		assert_eq!((payout, max), (5_496, 9_993));
 	});
 }
 
