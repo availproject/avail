@@ -106,7 +106,6 @@ do
     INC=$(($DIFF * 2))
     RPC=$((26657 + $INC))
     P2P=$((30335 + $INC))
-    WS=$((9045 + $INC))
     PROM=$((6000 + $INC))
     echo "[Unit]
     Description=Avail val ${i} daemon
@@ -114,7 +113,7 @@ do
     [Service]
     Type=simple
     User=$USER
-    ExecStart=$(which data-avail) --ws-port $WS --validator --allow-private-ipv4 --base-path $HOME/avail-home/avail-validators/validator-$i --rpc-port $RPC --port $P2P --prometheus-port $PROM --no-mdns --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json $(cat $HOME/avail-keys/bootnode.txt) 
+    ExecStart=$(which data-avail) --validator --allow-private-ipv4 --base-path $HOME/avail-home/avail-validators/validator-$i --rpc-port $RPC --port $P2P --prometheus-port $PROM --no-mdns --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json $(cat $HOME/avail-keys/bootnode.txt) 
     Restart=on-failure
     RuntimeMaxSec=1d
     RestartSec=3
@@ -125,7 +124,7 @@ do
     sudo systemctl enable avail-val-${i}.service
     sudo systemctl start avail-val-${i}.service
     echo "Validator $i RPC endpoint is: http://$IP:$RPC" >> $HOME/endpoints.txt
-    echo "Validator $i WS endpoint is : ws://$IP:$WS" >> $HOME/endpoints.txt
+    echo "Validator $i WS endpoint is : ws://$IP:$RPC" >> $HOME/endpoints.txt
 done
 
 ## Generating systemd service files for full nodes and starting the service.
@@ -137,7 +136,6 @@ do
     INC=$(($DIFF * 2))
     RPC=$((9933 + $INC))
     P2P=$((30135 + $INC))
-    WS=$((9944 + $INC))
     PROM=$((6100 + $INC))
     echo "[Unit]
     Description=Avail full node daemon
@@ -145,7 +143,7 @@ do
     [Service]
     Type=simple
     User=$USER
-    ExecStart=$(which data-avail) --rpc-cors=all --rpc-port $RPC --port $P2P --ws-port $WS --prometheus-port $PROM --ws-external --rpc-external --unsafe-ws-external --unsafe-rpc-external --no-mdns --allow-private-ipv4 --base-path $HOME/avail-home/avail-fullnodes/node-$i --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json $(cat $HOME/avail-keys/bootnode.txt) 
+    ExecStart=$(which data-avail) --rpc-cors=all --rpc-port $RPC --port $P2P --prometheus-port $PROM --ws-external --rpc-external --unsafe-ws-external --unsafe-rpc-external --no-mdns --allow-private-ipv4 --base-path $HOME/avail-home/avail-fullnodes/node-$i --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json $(cat $HOME/avail-keys/bootnode.txt) 
     Restart=on-failure
     RuntimeMaxSec=1d
     RestartSec=3
@@ -156,7 +154,7 @@ do
     sudo systemctl enable avail-full-${i}.service
     sudo systemctl start avail-full-${i}.service
     echo "Fullnode ${i} RPC endpoint is: http://$IP:$RPC" >> $HOME/endpoints.txt
-    echo "Fullnode ${i} WS endpoint is: ws://$IP:$WS" >> $HOME/endpoints.txt
+    echo "Fullnode ${i} WS endpoint is: ws://$IP:$RPC" >> $HOME/endpoints.txt
 done
 
 ## Generate node key and config for light client bootstrap.
@@ -190,7 +188,7 @@ do
     libp2p_seed = 1
     libp2p_port = \"$P2P\"
     bootstraps = [[\"$(cat $HOME/avail-keys/light-client-boot.public.key)\", \"/ip4/127.0.0.1/tcp/3700\"]]
-    full_node_ws = [\"ws://127.0.0.1:9944\"]
+    full_node_ws = [\"ws://127.0.0.1:9933\"]
     app_id = 0
     confidence = 92.0
     prometheus_port = $PROM
@@ -244,7 +242,7 @@ cd ~/
 wget https://github.com/availproject/avail-apps/releases/download/v1.6-rc2/avail-explorer.tar.gz
 tar -xvf avail-explorer.tar.gz
 rm avail-explorer.tar.gz
-echo "window.process_env = {"\"WS_URL"\": "\"ws://$IP:9944"\"};" >> build/env-config.js
+echo "window.process_env = {"\"WS_URL"\": "\"ws://$IP:9933"\"};" >> build/env-config.js
 sudo cp -r build/* /var/www/html/
 sudo systemctl restart apache2
 echo "Explorer url is http://$IP" >> $HOME/endpoints.txt

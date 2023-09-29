@@ -11,12 +11,12 @@ for (( i=1; i<=$VAL_COUNT; i++ ))
 do
     DIFF=$(($i - 1))
     INC=$(($DIFF * 2))
-    WS=$((9045 + $INC))
+    RPC=$((26657 + $INC))
     if [[ $i -eq 1 ]]
     then
-        NODE_URLS="\"ws://localhost:$WS\""
+        NODE_URLS="\"ws://localhost:$RPC\""
     else
-        NODE_URLS+=", \"ws://localhost:$WS\""
+        NODE_URLS+=", \"ws://localhost:$RPC\""
     fi
 done
 
@@ -24,8 +24,8 @@ for (( i=1; i<=$NODE_COUNT; i++ ))
 do
     DIFF=$(($i - 1))
     INC=$(($DIFF * 2))
-    WS=$((9944 + $INC))
-    NODE_URLS+=", \"ws://localhost:$WS\""
+    RPC=$((9933 + $INC))
+    NODE_URLS+=", \"ws://localhost:$RPC\""
 done
 
 # Creating an array of light client endpoints
