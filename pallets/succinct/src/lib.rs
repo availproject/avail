@@ -12,7 +12,6 @@ mod tests;
 mod verify;
 mod weights;
 
-use frame_support::error::BadOrigin;
 use frame_support::{
 	dispatch::{GetDispatchInfo, UnfilteredDispatchable},
 	pallet_prelude::*,
@@ -39,12 +38,8 @@ parameter_types! {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::traits::Hash;
-	use frame_support::{
-		pallet_prelude::{ValueQuery, *},
-		transactional, DefaultNoBound,
-	};
-	use serde::Serialize;
+	use frame_support::traits::{Hash, UnixTime};
+	use frame_support::{pallet_prelude::ValueQuery, DefaultNoBound};
 	use sp_core::H256;
 
 	use crate::messages::{LightClientStep, SuccinctConfig};
@@ -61,6 +56,12 @@ pub mod pallet {
 	pub enum Error<T> {
 		UpdaterMisMatch,
 		CannotChangeUpdater,
+		UpdateSlotIsFarInTheFuture,
+		UpdateSlotLessThanCurrentHead,
+		NotEnoughParticipants,
+		VerificationError,
+		// verification
+		ProofNotValid,
 		PublicInputsMismatch,
 		TooLongPublicInputs,
 		TooLongVerificationKey,
@@ -92,6 +93,8 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
+		type TimeProvider: UnixTime;
+
 		#[pallet::constant]
 		type MaxPublicInputsLength: Get<u32>;
 		#[pallet::constant]
@@ -119,6 +122,9 @@ pub mod pallet {
 
 	// ====================== Storage =============================
 
+	#[pallet::storage]
+	pub type Consistent<T> = StorageValue<_, bool, ValueQuery>;
+
 	//The latest slot the light client has a finalized header for.
 	#[pallet::storage]
 	#[pallet::getter(fn get_head)]
@@ -132,7 +138,7 @@ pub mod pallet {
 	// Maps from a slot to the timestamp of when the headers mapping was updated with slot as a key
 	#[pallet::storage]
 	#[pallet::getter(fn get_timestamp)]
-	pub type Timestamps<T> = StorageMap<_, Identity, u64, Hash, ValueQuery>;
+	pub type Timestamps<T> = StorageMap<_, Identity, u64, u64, ValueQuery>;
 
 	// Maps from a slot to the current finalized ethereum1 execution state root.
 	#[pallet::storage]
@@ -166,15 +172,19 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
+			// TODO time cannot be called at Genesis
+			// T::TimeProvider::now().as_secs()
 			<SuccinctCfg<T>>::put(SuccinctConfig {
 				updater: self.updater.into(),
-				genesis_validators_root: self.genesis_validators_root,
-				genesis_time: self.genesis_time,
-				seconds_per_slot: self.seconds_per_slot,
-				slots_per_period: self.slots_per_period,
-				source_chain_id: self.source_chain_id,
-				finality_threshold: self.finality_threshold,
+				genesis_validators_root: H256([0u8; 32]),
+				genesis_time: 1695897840,
+				seconds_per_slot: 12,
+				slots_per_period: 8192,
+				source_chain_id: 1,
+				finality_threshold: 461,
 			});
+
+			<Consistent<T>>::put(true);
 		}
 	}
 
@@ -185,7 +195,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T>
 	where
 		[u8; 32]: From<T::AccountId>,
-		// H256: From<T::Hash>,
+		T::AccountId: From<[u8; 32]>,
 	{
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::rotate())]
@@ -196,16 +206,40 @@ pub mod pallet {
 
 			log::info!("Update: {:?}", update);
 
-			log::info!("Succinct configuration: {:?}", config);
+			// log::info!("Succinct configuration: {:?}", config);
 
-			// TODO dummy period
-			let current_period: u64 = update.step.finalized_slot / 10;
-			let next_period: u64 = current_period + 1;
+			let light_client_step = update.step.clone();
 
-			Self::deposit_event(Event::SyncCommitteeUpdate {
-				period: next_period,
-				root: update.sync_committee_poseidon,
-			});
+			let finalized = process_step(light_client_step.clone());
+			let current_period = get_sync_committee_period::<T>(light_client_step.finalized_slot);
+			let next_period = current_period + 1;
+
+			// TODO handle error
+			let vk = get_verification_key::<T>().unwrap();
+			let proof = get_proof::<T>(update.proof).unwrap();
+			let inputs = get_public_inputs::<T>().unwrap();
+
+			// proof verification
+			let success = verify(vk, proof, prepare_public_inputs(inputs))
+				.map_err(|_| Error::<T>::VerificationError)?;
+
+			if success {
+				Self::deposit_event(Event::VerificationSuccess { who: sender.into() });
+				if finalized {
+					let is_set = set_sync_committee_poseidon::<T>(
+						next_period,
+						update.sync_committee_poseidon,
+					);
+					if is_set {
+						Self::deposit_event(Event::SyncCommitteeUpdate {
+							period: next_period,
+							root: update.sync_committee_poseidon,
+						});
+					}
+				}
+			} else {
+				Self::deposit_event(Event::VerificationFailed);
+			}
 
 			Ok(())
 		}
@@ -218,11 +252,41 @@ pub mod pallet {
 			ensure!(H256(sender) == config.updater, Error::<T>::UpdaterMisMatch);
 
 			log::info!("Update: {:?}", update);
+			// ====================================================================
+			let finalized = process_step(update.clone());
 
-			Self::deposit_event(Event::HeadUpdate {
-				slot: update.finalized_slot,
-				finalization_root: update.finalized_header_root,
-			});
+			let current_slot = get_current_slot::<T>(config.genesis_time, config.slots_per_period);
+
+			log::info!("Current slot: {}", current_slot);
+
+			// ensure!(current_slot > update.attested_slot,  Error::<T>::UpdateSlotIsFarInTheFuture);
+			if current_slot < update.attested_slot {
+				return Err(Error::<T>::UpdateSlotIsFarInTheFuture.into());
+			}
+
+			let head = Head::<T>::get();
+			log::info!("Current head: {}", current_slot);
+			log::info!("Current finalized slot: {}", update.finalized_slot);
+
+			// ensure!(update.finalized_slot > head,  Error::<T>::UpdateSlotLessThanCurrentHead);
+			if update.finalized_slot < head {
+				return Err(Error::<T>::UpdateSlotLessThanCurrentHead.into());
+			}
+
+			ensure!(finalized, Error::<T>::NotEnoughParticipants);
+
+			let updated = set_slot_roots::<T>(
+				update.finalized_slot,
+				update.finalized_header_root,
+				update.execution_state_root,
+			);
+			if updated {
+				Self::deposit_event(Event::HeadUpdate {
+					slot: update.finalized_slot,
+					finalization_root: update.finalized_header_root,
+				});
+			}
+			// ====================================================================
 
 			Ok(())
 		}
@@ -232,10 +296,10 @@ pub mod pallet {
 		pub fn set_updater(origin: OriginFor<T>, updater: H256) -> DispatchResult {
 			ensure_root(origin)?;
 			let old = SuccinctCfg::<T>::get();
-			SuccinctCfg::<T>::try_mutate(|cfg| -> Result<(), ()> {
+			SuccinctCfg::<T>::try_mutate(|cfg| -> Result<(), DispatchError> {
 				cfg.updater = updater;
 				Ok(())
-			}); //.or_else(DispatchError::from(<Error<T>>::CannotChangeUpdater))?;
+			})?;
 
 			Self::deposit_event(Event::<T>::NewUpdater {
 				old: old.updater,
@@ -311,6 +375,80 @@ pub mod pallet {
 		VerificationFailed,
 	}
 
+	// ============ Helper fn ===============
+	fn get_current_slot<T: Config>(genesis_time: u64, slots_per_period: u64) -> u64 {
+		//  TODO check block time provider
+		let block_time: u64 = T::TimeProvider::now().as_secs();
+
+		log::info!(
+			"Genesis time: {}, block time: {}, slot per period: {}",
+			genesis_time,
+			block_time,
+			slots_per_period
+		);
+
+		return (block_time - genesis_time) / slots_per_period;
+	}
+
+	fn set_slot_roots<T: Config>(
+		slot: u64,
+		finalized_header_root: H256,
+		execution_state_root: H256,
+	) -> bool {
+		let header = Headers::<T>::get(slot);
+
+		if header != H256::zero() {
+			if header != finalized_header_root {
+				Consistent::<T>::put(false);
+				return false;
+			}
+		}
+		let state_root = ExecutionStateRoots::<T>::get(slot);
+
+		if state_root != H256::zero() {
+			if execution_state_root != execution_state_root {
+				Consistent::<T>::put(false);
+				return false;
+			}
+		}
+
+		Head::<T>::put(slot);
+		Headers::<T>::insert(slot, finalized_header_root);
+		// TODO can this time be used as block time?
+		Timestamps::<T>::insert(slot, T::TimeProvider::now().as_secs());
+		return true;
+	}
+
+	fn set_sync_committee_poseidon<T: Config>(period: u64, poseidon: H256) -> bool {
+		let sync_committee_poseidons = SyncCommitteePoseidons::<T>::get(period);
+
+		log::info!(
+			"Check: poseidon != H256::zero() {}, poseidon {} ",
+			poseidon != H256::zero(),
+			poseidon
+		);
+
+		if poseidon != H256::zero() && sync_committee_poseidons != poseidon {
+			Consistent::<T>::put(false);
+			return false;
+		}
+		SyncCommitteePoseidons::<T>::set(period, poseidon);
+
+		log::info!("Return true");
+		return true;
+	}
+
+	fn get_sync_committee_period<T: Config>(slot: u64) -> u64 {
+		// TODO this read can be avoided
+		let cfg = SuccinctCfg::<T>::get();
+		return slot / cfg.slots_per_period;
+	}
+
+	fn process_step(_update: LightClientStep) -> bool {
+		// TODO implement me
+		return true;
+	}
+
 	fn get_public_inputs<T: Config>() -> Result<Vec<u64>, DispatchError> {
 		let public_inputs = PublicInputStorage::<T>::get();
 		let deserialized_public_inputs = deserialize_public_inputs(public_inputs.as_slice())
@@ -356,6 +494,35 @@ pub mod pallet {
 
 		VerificationKeyStorage::<T>::put(vk);
 		Ok(deserialized_vk)
+	}
+
+	fn get_proof<T: Config>(vec_proof: Vec<u8>) -> Result<GProof, sp_runtime::DispatchError> {
+		ensure!(!vec_proof.is_empty(), Error::<T>::ProofIsEmpty);
+		let proof: ProofDef<T> = vec_proof.try_into().map_err(|_| Error::<T>::TooLongProof)?;
+		let deserialized_proof =
+			Proof::from_json_u8_slice(proof.as_slice()).map_err(|_| Error::<T>::MalformedProof)?;
+		ensure!(
+			deserialized_proof.curve == SUPPORTED_CURVE.as_bytes(),
+			Error::<T>::NotSupportedCurve
+		);
+		ensure!(
+			deserialized_proof.protocol == SUPPORTED_PROTOCOL.as_bytes(),
+			Error::<T>::NotSupportedProtocol
+		);
+
+		let proof = GProof::from_uncompressed(
+			&G1UncompressedBytes::new(deserialized_proof.a[0], deserialized_proof.a[1]),
+			&G2UncompressedBytes::new(
+				deserialized_proof.b[0][0],
+				deserialized_proof.b[0][1],
+				deserialized_proof.b[1][0],
+				deserialized_proof.b[1][1],
+			),
+			&G1UncompressedBytes::new(deserialized_proof.c[0], deserialized_proof.c[1]),
+		)
+		.map_err(|_| Error::<T>::ProofCreationError)?;
+
+		Ok(proof)
 	}
 
 	fn store_proof<T: Config>(vec_proof: Vec<u8>) -> Result<GProof, sp_runtime::DispatchError> {
