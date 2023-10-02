@@ -3,6 +3,7 @@ use std::{
 	convert::{TryFrom, TryInto},
 	mem::size_of,
 	num::TryFromIntError,
+	sync::Mutex,
 	time::Instant,
 };
 
@@ -75,6 +76,7 @@ pub enum Error {
 	/// The extended grid width does not fit cleanly into a domain for FFTs
 	ExtendedGridDomianSizeInvalid(usize),
 	IndexOutOfRange,
+	ConversionFailed,
 }
 
 impl From<TryFromIntError> for Error {
@@ -370,7 +372,6 @@ pub fn build_proof<M: Metrics>(
 	let prover_key = &prover_key;
 	let row_dom_x_pts = &row_dom_x_pts;
 
-	// generate proof only for requested cells
 	let total_start = Instant::now();
 
 	// attempt to parallelly compute proof for all requested cells
@@ -378,18 +379,25 @@ pub fn build_proof<M: Metrics>(
 		.into_par_iter()
 		.zip(result_bytes.par_chunks_exact_mut(SPROOF_SIZE));
 
+	let locked_errors = Mutex::new(Vec::<Error>::new());
 	cell_iter.for_each(|(cell, res)| {
 		let Ok(r_index) = usize::try_from(cell.row.0) else {
-			res.fill(0);
+			if let Ok(mut errors) = locked_errors.lock() {
+				errors.push(Error::ConversionFailed)
+			}
 			return;
 		};
 		if r_index >= ext_rows || cell.col >= block_dims.cols {
-			res.fill(0);
+			if let Ok(mut errors) = locked_errors.lock() {
+				errors.push(Error::IndexOutOfRange)
+			}
 			return;
 		}
 
 		let Ok(c_index) = usize::try_from(cell.col.0) else {
-			res.fill(0);
+			if let Ok(mut errors) = locked_errors.lock() {
+				errors.push(Error::ConversionFailed)
+			}
 			return;
 		};
 
@@ -400,7 +408,9 @@ pub fn build_proof<M: Metrics>(
 		#[cfg(feature = "parallel")]
 		let row: Vec<BlsScalar> = {
 			let Some(capacity) = ext_cols.checked_add(1) else {
-				res.fill(0);
+				if let Ok(mut errors) = locked_errors.lock() {
+					errors.push(Error::BlockTooBig)
+				};
 				return;
 			};
 			let mut row = Vec::with_capacity(capacity);
@@ -427,11 +437,21 @@ pub fn build_proof<M: Metrics>(
 				res[0..PROOF_SIZE].copy_from_slice(&commitment_to_witness.to_bytes());
 				res[PROOF_SIZE..].copy_from_slice(&evaluated_point.to_bytes());
 			},
-			Err(_) => res.fill(0),
+			Err(e) => {
+				if let Ok(mut errors) = locked_errors.lock() {
+					errors.push(Error::PlonkError(e))
+				}
+			},
 		};
 	});
 
 	metrics.proof_build_time(total_start.elapsed(), cells.len().saturated_into());
+
+	if let Ok(mut errors) = locked_errors.lock() {
+		if let Some(error) = errors.pop() {
+			return Err(error);
+		}
+	}
 
 	Ok(result_bytes)
 }
