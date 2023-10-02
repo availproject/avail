@@ -380,26 +380,13 @@ pub fn build_proof<M: Metrics>(
 		.zip(result_bytes.par_chunks_exact_mut(SPROOF_SIZE));
 
 	let locked_errors = Mutex::new(Vec::<Error>::new());
-	cell_iter.for_each(|(cell, res)| {
-		let Ok(r_index) = usize::try_from(cell.row.0) else {
-			if let Ok(mut errors) = locked_errors.lock() {
-				errors.push(Error::ConversionFailed)
-			}
-			return;
-		};
-		if r_index >= ext_rows || cell.col >= block_dims.cols {
-			if let Ok(mut errors) = locked_errors.lock() {
-				errors.push(Error::IndexOutOfRange)
-			}
-			return;
-		}
 
-		let Ok(c_index) = usize::try_from(cell.col.0) else {
-			if let Ok(mut errors) = locked_errors.lock() {
-				errors.push(Error::ConversionFailed)
-			}
-			return;
-		};
+	let get_cell_row = |cell: &Cell| -> Result<(Vec<BlsScalar>, usize, usize), Error> {
+		let r_index = usize::try_from(cell.row.0)?;
+		if r_index >= ext_rows || cell.col >= block_dims.cols {
+			return Err(Error::IndexOutOfRange);
+		}
+		let c_index = usize::try_from(cell.col.0)?;
 
 		let get_ext_data_matrix =
 			|j: usize| ext_data_matrix[r_index.saturating_add(j.saturating_mul(ext_rows))];
@@ -407,13 +394,7 @@ pub fn build_proof<M: Metrics>(
 		// construct polynomial per extended matrix row
 		#[cfg(feature = "parallel")]
 		let row: Vec<BlsScalar> = {
-			let Some(capacity) = ext_cols.checked_add(1) else {
-				if let Ok(mut errors) = locked_errors.lock() {
-					errors.push(Error::BlockTooBig)
-				};
-				return;
-			};
-			let mut row = Vec::with_capacity(capacity);
+			let mut row = Vec::with_capacity(ext_cols.checked_add(1).ok_or(Error::BlockTooBig)?);
 			(0..ext_cols)
 				.into_par_iter()
 				.map(get_ext_data_matrix)
@@ -424,6 +405,18 @@ pub fn build_proof<M: Metrics>(
 		let row = (0..ext_cols)
 			.map(get_ext_data_matrix)
 			.collect::<Vec<BlsScalar>>();
+
+		Ok((row, r_index, c_index))
+	};
+
+	cell_iter.for_each(|(cell, res)| {
+		let result = get_cell_row(cell);
+		let Ok((row, r_index, c_index)) = result else {
+			if let Ok(mut errors) = locked_errors.lock() {
+				errors.push(result.err().expect("We checked before that this is OK. "))
+			}
+			return;
+		};
 
 		// row has to be a power of 2, otherwise interpolate() function panics TODO: cache evaluations
 		let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
