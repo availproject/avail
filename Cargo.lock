@@ -297,6 +297,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "ark-crypto-primitives"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f3a13b34da09176a8baba701233fdffbaa7c1b1192ce031a3da4e55ce1f1a56"
+dependencies = [
+ "ark-ec",
+ "ark-ff",
+ "ark-relations",
+ "ark-serialize",
+ "ark-snark",
+ "ark-std",
+ "blake2",
+ "derivative",
+ "digest 0.10.7",
+ "sha2 0.10.7",
+]
+
+[[package]]
 name = "ark-ec"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -357,6 +375,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ark-groth16"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "20ceafa83848c3e390f1cbf124bc3193b3e639b3f02009e0e290809a501b95fc"
+dependencies = [
+ "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ff",
+ "ark-poly",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
+]
+
+[[package]]
 name = "ark-poly"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -367,6 +400,17 @@ dependencies = [
  "ark-std",
  "derivative",
  "hashbrown 0.13.2",
+]
+
+[[package]]
+name = "ark-relations"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "00796b6efc05a3f48225e59cb6a2cda78881e7c390872d5786aaf112f31fb4f0"
+dependencies = [
+ "ark-ff",
+ "ark-std",
+ "tracing",
 ]
 
 [[package]]
@@ -390,6 +434,18 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "ark-snark"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84d3cc6833a335bb8a600241889ead68ee89a3cf8448081fb7694c0fe503da63"
+dependencies = [
+ "ark-ff",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
 ]
 
 [[package]]
@@ -1922,7 +1978,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "hex",
- "hex-literal",
+ "hex-literal 0.3.4",
  "kate",
  "log",
  "nomad-da-bridge",
@@ -2042,7 +2098,7 @@ dependencies = [
  "frame-system",
  "frame-system-rpc-runtime-api",
  "futures",
- "hex-literal",
+ "hex-literal 0.3.4",
  "jsonrpsee",
  "kate",
  "kate-rpc",
@@ -3230,7 +3286,7 @@ dependencies = [
  "criterion",
  "derive_more",
  "frame-support",
- "hex-literal",
+ "hex-literal 0.3.4",
  "impl-trait-for-tuples",
  "kate",
  "log",
@@ -3745,6 +3801,12 @@ name = "hex-literal"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ebdb29d2ea9ed0083cd8cece49bbd968021bd99b0849edb4a9a7ee0fdf6a4e0"
+
+[[package]]
+name = "hex-literal"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
 
 [[package]]
 name = "hkdf"
@@ -4376,7 +4438,7 @@ dependencies = [
  "dusk-bytes",
  "dusk-plonk",
  "hex",
- "hex-literal",
+ "hex-literal 0.3.4",
  "kate-recovery",
  "log",
  "nalgebra",
@@ -5632,7 +5694,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "hex-literal",
+ "hex-literal 0.3.4",
  "nomad-base",
  "nomad-core",
  "nomad-home",
@@ -5654,7 +5716,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "hex-literal",
+ "hex-literal 0.3.4",
  "nomad-base",
  "nomad-core",
  "nomad-merkle",
@@ -5676,7 +5738,7 @@ source = "git+https://github.com/availproject/avail-core?branch=main#948797c3bf9
 dependencies = [
  "avail-core",
  "frame-support",
- "hex-literal",
+ "hex-literal 0.3.4",
  "nomad-core",
  "parity-scale-codec",
  "scale-info",
@@ -6421,12 +6483,20 @@ dependencies = [
 name = "pallet-succinct"
 version = "1.0.0"
 dependencies = [
+ "ark-bls12-381",
+ "ark-ec",
+ "ark-ff",
+ "ark-groth16",
+ "ark-serialize",
+ "ark-snark",
+ "ark-std",
  "bls12_381",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "group 0.12.1",
- "hex-literal",
+ "hex-literal 0.3.4",
+ "hex-literal 0.4.1",
  "log",
  "pairing",
  "parity-scale-codec",
