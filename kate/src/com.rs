@@ -374,49 +374,62 @@ pub fn build_proof<M: Metrics>(
 	let total_start = Instant::now();
 
 	// attempt to parallelly compute proof for all requested cells
-	let cell_iter = cells.iter().zip(result_bytes.chunks_exact_mut(SPROOF_SIZE));
+	let cell_iter = cells
+		.into_par_iter()
+		.zip(result_bytes.par_chunks_exact_mut(SPROOF_SIZE));
 
-	for (cell, res) in cell_iter {
-		let r_index = usize::try_from(cell.row.0)?;
+	cell_iter.for_each(|(cell, res)| {
+		let Ok(r_index) = usize::try_from(cell.row.0) else {
+			res.fill(0);
+			return;
+		};
 		if r_index >= ext_rows || cell.col >= block_dims.cols {
-			return Err(Error::IndexOutOfRange);
-		} else {
-			let c_index = usize::try_from(cell.col.0)?;
-			let get_ext_data_matrix =
-				|j: usize| ext_data_matrix[r_index.saturating_add(j.saturating_mul(ext_rows))];
-
-			// construct polynomial per extended matrix row
-			#[cfg(feature = "parallel")]
-			let row = {
-				let mut row =
-					Vec::with_capacity(ext_cols.checked_add(1).ok_or(Error::BlockTooBig)?);
-				(0..ext_cols)
-					.into_par_iter()
-					.map(get_ext_data_matrix)
-					.collect_into_vec(&mut row);
-				row
-			};
-			#[cfg(not(feature = "parallel"))]
-			let row = (0..ext_cols)
-				.map(get_ext_data_matrix)
-				.collect::<Vec<BlsScalar>>();
-
-			// row has to be a power of 2, otherwise interpolate() function panics TODO: cache evaluations
-			let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
-			let witness = prover_key.compute_single_witness(&poly, &row_dom_x_pts[c_index]);
-
-			match prover_key.commit(&witness) {
-				Ok(commitment_to_witness) => {
-					let evaluated_point =
-						ext_data_matrix[r_index.saturating_add(c_index.saturating_mul(ext_rows))];
-
-					res[0..PROOF_SIZE].copy_from_slice(&commitment_to_witness.to_bytes());
-					res[PROOF_SIZE..].copy_from_slice(&evaluated_point.to_bytes());
-				},
-				Err(e) => return Err(Error::PlonkError(e)),
-			};
+			res.fill(0);
+			return;
 		}
-	}
+
+		let Ok(c_index) = usize::try_from(cell.col.0) else {
+			res.fill(0);
+			return;
+		};
+
+		let get_ext_data_matrix =
+			|j: usize| ext_data_matrix[r_index.saturating_add(j.saturating_mul(ext_rows))];
+
+		// construct polynomial per extended matrix row
+		#[cfg(feature = "parallel")]
+		let row: Vec<BlsScalar> = {
+			let Some(capacity) = ext_cols.checked_add(1) else {
+				res.fill(0);
+				return;
+			};
+			let mut row = Vec::with_capacity(capacity);
+			(0..ext_cols)
+				.into_par_iter()
+				.map(get_ext_data_matrix)
+				.collect_into_vec(&mut row);
+			row
+		};
+		#[cfg(not(feature = "parallel"))]
+		let row = (0..ext_cols)
+			.map(get_ext_data_matrix)
+			.collect::<Vec<BlsScalar>>();
+
+		// row has to be a power of 2, otherwise interpolate() function panics TODO: cache evaluations
+		let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
+		let witness = prover_key.compute_single_witness(&poly, &row_dom_x_pts[c_index]);
+
+		match prover_key.commit(&witness) {
+			Ok(commitment_to_witness) => {
+				let evaluated_point =
+					ext_data_matrix[r_index.saturating_add(c_index.saturating_mul(ext_rows))];
+
+				res[0..PROOF_SIZE].copy_from_slice(&commitment_to_witness.to_bytes());
+				res[PROOF_SIZE..].copy_from_slice(&evaluated_point.to_bytes());
+			},
+			Err(_) => res.fill(0),
+		};
+	});
 
 	metrics.proof_build_time(total_start.elapsed(), cells.len().saturated_into());
 
