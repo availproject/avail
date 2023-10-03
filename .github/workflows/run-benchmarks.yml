@@ -58,7 +58,7 @@ jobs:
 
       # Run benchmarks & run action benchmark
       - name: Run Header Generation Benchmark
-        run: cargo bench --release -p da-runtime | tee header_gen_bench.txt
+        run: cargo bench -p da-runtime | tee header_gen_bench.txt
       - name: Download previous Header Generation Benchmark 
         uses: actions/cache@v1
         with:
