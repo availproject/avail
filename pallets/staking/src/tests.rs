@@ -92,6 +92,15 @@ fn random_test() {
 		// 25% staked
 		let (payout, max) = compute_total_payout(&I_NPOS, 25_000u64, 100_000u64, YEAR);
 		assert_eq!((payout, max), (5_496, 9_993));
+
+		// 75% staked
+		let (payout, max) = compute_total_payout(&I_NPOS, 75_000u64, 100_000u64, YEAR);
+		assert_eq!((payout, max), (1_282, 9_993));
+
+		// for i in (0..=100_000).step_by(1000) {
+		// 	let (payout, _) = compute_total_payout(&I_NPOS, i, 100_000u64, YEAR);
+		// 	println!("tokenStaked: {i}, yearly_payout: {payout}");
+		// }
 	});
 }
 
