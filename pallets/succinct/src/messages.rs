@@ -1,3 +1,4 @@
+use ark_std::string::String;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{Deserialize, Serialize};
 use scale_info::TypeInfo;
@@ -6,13 +7,23 @@ use sp_std::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
 pub struct LightClientStep {
+	// TODO U256?
 	pub attested_slot: u64,
 	pub finalized_slot: u64,
 	pub participation: u16,
 	pub finalized_header_root: H256,
 	pub execution_state_root: H256,
-	pub proof: Vec<u8>,
+	pub proof: Groth16Proof,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
+pub struct Groth16Proof {
+	pub a: Vec<String>,
+	pub b: Vec<Vec<String>>,
+	pub c: Vec<String>,
+}
+
+// =========
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
 pub struct LightClientRotate {
@@ -32,6 +43,8 @@ pub struct SuccinctConfig {
 	pub slots_per_period: u64,
 	pub source_chain_id: u32,
 	pub finality_threshold: u16,
+	pub head: u64,
+	pub consistent: bool,
 }
 
 impl Default for SuccinctConfig {
@@ -44,6 +57,8 @@ impl Default for SuccinctConfig {
 			slots_per_period: Default::default(),
 			source_chain_id: Default::default(),
 			finality_threshold: Default::default(),
+			head: Default::default(),
+			consistent: Default::default(),
 		}
 	}
 }
