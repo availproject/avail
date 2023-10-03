@@ -3,14 +3,14 @@
 All notable changes to this project will be documented in this file.
 
 # Next release
-- [Compare](https://github.com/availproject/avail/compare/v1.7.0...HEAD)
+- [Compare](https://github.com/availproject/avail/compare/v1.7.1...HEAD)
 
 ## Added
 ## Changed
 ## Fixed
 
-# v1.7.0
-- [Compare](https://github.com/availproject/avail/compare/v1.7.0...v1.6.3)
+# v1.7.1
+- [Compare](https://github.com/availproject/avail/compare/v1.7.1...v1.6.3)
 ### Binary Upgrade Priority 
 ❗️❗️High: This is a **high-priority** release, and you must upgrade **as soon as possible**.
 
