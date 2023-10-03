@@ -1,4 +1,4 @@
-use ark_groth16::{prepare_verifying_key, Proof, VerifyingKey};
+use ark_groth16::{prepare_verifying_key, verify_proof, Proof, VerifyingKey};
 
 use ark_std::string::String;
 use ark_std::vec::Vec;
@@ -111,6 +111,19 @@ impl Verifier {
                 protocol: "groth16".to_string(),
             },
         }
+	}
+
+	pub fn verify_proof(self, proof: Proof<Bn254>, inputs: &[Fr]) -> Result<bool, String> {
+		let vk = self.vk_json.to_verifying_key();
+		let pvk = prepare_verifying_key(&vk);
+
+		return match verify_proof(&pvk, &proof, inputs) {
+			Ok(r) => Ok(r),
+			Err(e) => {
+				// TOOD wrap error
+				Err(e.to_string())
+			},
+		};
 	}
 }
 

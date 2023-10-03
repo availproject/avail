@@ -18,15 +18,15 @@ sp-std = { version = "8.0.0", default-features = false }
 sp-core = { version = "21.0.0", default-features = false }
 
 bls12_381 = "0.7.0"
-ark-bn254 = { version = "0.4.0", default-features = false, features = ["curve"] }
+ark-bn254 = { version = "0.3.0", default-features = false, features = ["curve"] }
 #sp-bls12-381 = { git = "https://github.com/paritytech/sp-curves.git", features = ["curve"], default-features = false }
 ark-bls12-381 = { version = "0.4.0", features = ["curve"], default-features = false }
 
-ark-groth16 = { version = "0.4.0", default-features = false }
+ark-groth16 = { version = "0.3.0", default-features = false }
 ark-ec = "0.4.2"
 ark-std = { version = "0.4.0", default-features = false }
 ark-serialize = { version = "0.4.0", features = ["derive"], default-features = false }
-ark-ff = { version = "0.4.0", default-features = false }
+ark-ff = { version = "0.3.0", default-features = false }
 ark-snark = "0.4.0"
 pairing = "0.22.0"
 group = "0.12.1"

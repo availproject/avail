@@ -50,11 +50,10 @@ pub mod pallet {
 	use sp_core::H256;
 
 	use crate::deserialization::{deserialize_public_inputs, Proof, VKey};
-	use crate::messages::{LightClientStep, SuccinctConfig};
+	use crate::messages::{CircomProof, LightClientStep, PublicSignals, SuccinctConfig};
 
 	// use ark_bn254::{Bn254, Fr};
 	use ark_bls12_381::{Bls12_381, Fr as BlsFr};
-	use ark_ff::{Fp, MontBackend};
 	use ark_groth16::{Groth16, PreparedVerifyingKey, VerifyingKey};
 	use ark_serialize::CanonicalSerialize;
 	use ark_snark::SNARK;
@@ -446,7 +445,7 @@ pub mod pallet {
 	fn process_step<T: Config>(
 		state: SuccinctConfig,
 		update: LightClientStep,
-	) -> Result<bool, Error<T>> {
+	) -> Result<bool, DispatchError> {
 		let current_period = get_sync_committee_period::<T>(state, update.attested_slot);
 		let sc_poseidons = SyncCommitteePoseidons::<T>::get(current_period);
 
@@ -459,10 +458,9 @@ pub mod pallet {
 			Error::<T>::NotEnoughSyncCommitteeParticipants
 		);
 
-		let result = zk_light_client_step::<T>(state, &update);
-		if result.is_err() {
-			return Err(Error::ProofVerificationError);
-		}
+		let result = zk_light_client_step::<T>(state, &update)?;
+		// TODO double check result
+		ensure!(result, Error::<T>::ProofNotValid);
 
 		Ok(update.participation > state.finality_threshold)
 	}
@@ -470,7 +468,7 @@ pub mod pallet {
 	fn zk_light_client_step<T: Config>(
 		state: SuccinctConfig,
 		update: &LightClientStep,
-	) -> Result<(), DispatchError> {
+	) -> Result<bool, DispatchError> {
 		let finalized_slot_le = update.finalized_slot.to_le_bytes();
 		let participation_le = update.participation.to_le_bytes();
 		let current_period = get_sync_committee_period::<T>(state, update.finalized_slot);
@@ -509,7 +507,27 @@ pub mod pallet {
 		let inputs = vec![inputs_string; 1];
 		let verifier = Verifier::new_step_verifier();
 
-		Ok(())
+		let groth_16_proof = update.proof.clone();
+
+		let circom_proof = CircomProof {
+			pi_a: groth_16_proof.a,
+			pi_b: groth_16_proof.b,
+			pi_c: groth_16_proof.c,
+			protocol: "groth16".to_string(),
+			curve: "bn128".to_string(),
+		};
+
+		let proof = circom_proof.to_proof();
+		let public_signals = PublicSignals::from(inputs);
+		// TODO handle better errors
+
+		let result = verifier
+			.verify_proof(proof, &public_signals.get())
+			.map_err(|_| Error::<T>::ProofVerificationError)?;
+
+		ensure!(result, Error::<T>::ProofNotValid);
+
+		Ok(result)
 	}
 
 	fn get_public_inputs<T: Config>() -> Result<Vec<u64>, DispatchError> {
