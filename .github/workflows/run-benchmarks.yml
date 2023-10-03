@@ -65,7 +65,7 @@ jobs:
           path: ./cache
           key: ${{ runner.os }}-header-gen-benchmark
       - name: Store Header Generation Benchmark 
-        uses: fmiguelgarcia/github-action-benchmark@v0.1.0
+        uses: fmiguelgarcia/github-action-benchmark@v1
         with:
           # What benchmark tool the output.txt came from
           tool: 'rustIai'
