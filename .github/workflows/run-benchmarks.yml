@@ -21,8 +21,7 @@ jobs:
       - name: Install deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential
-          sudo apt-get install -y git clang curl libssl-dev protobuf-compiler unzip
+          sudo apt-get install -y build-essential valgrind git clang curl libssl-dev protobuf-compiler unzip
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v1
@@ -56,6 +55,28 @@ jobs:
           echo "Command to be executed: $EXTRA $OUR_PALLETS ./scripts/run_benchmarks.sh"
 
           $EXTRA $OUR_PALLETS ./scripts/run_benchmarks.sh
+
+      # Run benchmarks & run action benchmark
+      - name: Run Header Generation Benchmark
+        run: cargo bench --release -p da-runtime | tee header_gen_bench.txt
+      - name: Download previous Header Generation Benchmark 
+        uses: actions/cache@v1
+        with:
+          path: ./cache
+          key: ${{ runner.os }}-header-gen-benchmark
+      - name: Store Header Generation Benchmark 
+        uses: fmiguelgarcia/github-action-benchmark@v0.1.0
+        with:
+          # What benchmark tool the output.txt came from
+          tool: 'rustIai'
+          # Where the output from the benchmark tool is stored
+          output-file-path: header_gen_bench.txt
+          # Where the previous data file is stored
+          external-data-json-path: ./cache/benchmark-data.json
+          # Workflow will fail when an alert happens
+          fail-on-alert: true
+          # Upload the updated cache file for the next job by actions/cache
+
 
       - name: Upload output as artifact
         uses: actions/upload-artifact@v2

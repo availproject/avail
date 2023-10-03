@@ -115,6 +115,11 @@ hex-literal = "0.3.4"
 serde_json = "1.0"
 sp-keyring = "24.0.0"
 env_logger = "0.9.1"
+iai = "0.1.1"
+
+[[bench]]
+name = "header_kate_commitment"
+harness = false
 
 [features]
 default = [ "std" ]
