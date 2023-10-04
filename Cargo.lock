@@ -2120,7 +2120,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "hex",
- "hex-literal 0.3.4",
+ "hex-literal",
  "kate",
  "log",
  "nomad-da-bridge",
@@ -2240,7 +2240,7 @@ dependencies = [
  "frame-system",
  "frame-system-rpc-runtime-api",
  "futures",
- "hex-literal 0.3.4",
+ "hex-literal",
  "jsonrpsee",
  "kate",
  "kate-rpc",
@@ -3428,7 +3428,7 @@ dependencies = [
  "criterion",
  "derive_more",
  "frame-support",
- "hex-literal 0.3.4",
+ "hex-literal",
  "impl-trait-for-tuples",
  "kate",
  "log",
@@ -3952,12 +3952,6 @@ name = "hex-literal"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ebdb29d2ea9ed0083cd8cece49bbd968021bd99b0849edb4a9a7ee0fdf6a4e0"
-
-[[package]]
-name = "hex-literal"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
 
 [[package]]
 name = "hkdf"
@@ -4589,7 +4583,7 @@ dependencies = [
  "dusk-bytes",
  "dusk-plonk",
  "hex",
- "hex-literal 0.3.4",
+ "hex-literal",
  "kate-recovery",
  "log",
  "nalgebra",
@@ -5845,7 +5839,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "hex-literal 0.3.4",
+ "hex-literal",
  "nomad-base",
  "nomad-core",
  "nomad-home",
@@ -5867,7 +5861,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "hex-literal 0.3.4",
+ "hex-literal",
  "nomad-base",
  "nomad-core",
  "nomad-merkle",
@@ -5889,7 +5883,7 @@ source = "git+https://github.com/availproject/avail-core?branch=main#948797c3bf9
 dependencies = [
  "avail-core",
  "frame-support",
- "hex-literal 0.3.4",
+ "hex-literal",
  "nomad-core",
  "parity-scale-codec",
  "scale-info",
@@ -6647,8 +6641,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "group 0.12.1",
- "hex-literal 0.3.4",
- "hex-literal 0.4.1",
+ "hex-literal",
  "log",
  "pairing",
  "parity-scale-codec",

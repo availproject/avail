@@ -97,7 +97,7 @@ pub struct LightClientRotate {
 
 #[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct SuccinctConfig {
+pub struct State {
 	pub updater: H256,
 	pub genesis_validators_root: H256,
 	pub genesis_time: u64,
@@ -109,7 +109,7 @@ pub struct SuccinctConfig {
 	pub consistent: bool,
 }
 
-impl Default for SuccinctConfig {
+impl Default for State {
 	fn default() -> Self {
 		Self {
 			updater: H256([0u8; 32]),

@@ -7,6 +7,7 @@ use ark_bn254::{Bn254, Fq, Fq2, Fr, G1Affine, G1Projective, G2Affine, G2Projecti
 use ark_std::string::ToString;
 use serde::{Deserialize, Serialize};
 
+use crate::contract::ContractError;
 use ark_std::str::FromStr;
 use ark_std::vec;
 
@@ -113,17 +114,12 @@ impl Verifier {
         }
 	}
 
-	pub fn verify_proof(self, proof: Proof<Bn254>, inputs: &[Fr]) -> Result<bool, String> {
+	pub fn verify_proof(self, proof: Proof<Bn254>, inputs: &[Fr]) -> Result<bool, ContractError> {
 		let vk = self.vk_json.to_verifying_key();
 		let pvk = prepare_verifying_key(&vk);
 
-		return match verify_proof(&pvk, &proof, inputs) {
-			Ok(r) => Ok(r),
-			Err(e) => {
-				// TOOD wrap error
-				Err(e.to_string())
-			},
-		};
+		let result = verify_proof(&pvk, &proof, inputs);
+		result.map_err(|_| ContractError::InvalidStepProof)
 	}
 }
 

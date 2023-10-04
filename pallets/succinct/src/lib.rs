@@ -12,18 +12,25 @@ mod tests;
 // mod verify;
 mod weights;
 // mod contract;
+mod contract;
 mod verifier;
 
+// use std::str::FromStr;
+use crate::messages::{Groth16Proof, LightClientStep, State};
 use crate::verifier::Verifier;
 use ark_serialize::{CanonicalDeserialize, Compress, Validate};
 use ark_std::{io::Cursor, vec, vec::Vec};
 use frame_support::{
+	assert_ok,
 	dispatch::{GetDispatchInfo, UnfilteredDispatchable},
 	pallet_prelude::*,
 	parameter_types,
 };
 use frame_system::pallet_prelude::*;
+use hex_literal::hex;
 pub use pallet::*;
+use sp_core::H256;
+use sp_core::U256;
 use sp_std::prelude::*;
 pub use weights::WeightInfo;
 
@@ -50,9 +57,10 @@ pub mod pallet {
 	use sp_core::H256;
 
 	use crate::deserialization::{deserialize_public_inputs, Proof, VKey};
-	use crate::messages::{CircomProof, LightClientStep, PublicSignals, SuccinctConfig};
+	use crate::messages::{CircomProof, LightClientStep, PublicSignals, State};
 
 	// use ark_bn254::{Bn254, Fr};
+	use crate::contract::ContractError;
 	use ark_bls12_381::{Bls12_381, Fr as BlsFr};
 	use ark_groth16::{Groth16, PreparedVerifyingKey, VerifyingKey};
 	use ark_serialize::CanonicalSerialize;
@@ -65,10 +73,12 @@ pub mod pallet {
 	pub enum Error<T> {
 		UpdaterMisMatch,
 		CannotChangeUpdater,
+		VerificationError,
+		CannotUpdateStateStorage,
+
 		UpdateSlotIsFarInTheFuture,
 		UpdateSlotLessThanCurrentHead,
 		NotEnoughParticipants,
-		VerificationError,
 		SyncCommitteeNotInitialized,
 		NotEnoughSyncCommitteeParticipants,
 		MinSCNotSigned,
@@ -112,15 +122,15 @@ pub mod pallet {
 	pub type VerificationKeyStorage<T: Config> = StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
 
 	#[pallet::storage]
-	pub type State<T: Config> = StorageValue<_, SuccinctConfig, ValueQuery>;
+	pub type StateStorage<T: Config> = StorageValue<_, State, ValueQuery>;
 
 	#[pallet::storage]
 	pub type Consistent<T> = StorageValue<_, bool, ValueQuery>;
 
 	//The latest slot the light client has a finalized header for.
-	#[pallet::storage]
-	#[pallet::getter(fn get_head)]
-	pub type Head<T> = StorageValue<_, u64, ValueQuery>;
+	// #[pallet::storage]
+	// #[pallet::getter(fn get_head)]
+	// pub type Head<T> = StorageValue<_, u64, ValueQuery>;
 
 	// @notice Maps from a slot to a beacon block header root.
 	#[pallet::storage]
@@ -140,7 +150,7 @@ pub mod pallet {
 	// Maps from a period to the poseidon commitment for the sync committee.
 	#[pallet::storage]
 	#[pallet::getter(fn get_poseidon)]
-	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, Hash, ValueQuery>;
+	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -194,19 +204,23 @@ pub mod pallet {
 		fn build(&self) {
 			// TODO time cannot be called at Genesis
 			// T::TimeProvider::now().as_secs()
-			<State<T>>::put(SuccinctConfig {
+			<StateStorage<T>>::put(State {
 				updater: self.updater,
 				genesis_validators_root: H256([0u8; 32]),
-				genesis_time: 1695897840,
-				seconds_per_slot: 12,
+				genesis_time: 1696404640,
+				seconds_per_slot: 12000,
 				slots_per_period: 8192,
 				source_chain_id: 1,
-				finality_threshold: 461,
+				finality_threshold: 290,
 				head: 0,
 				consistent: true,
 			});
 
-			<Consistent<T>>::put(true);
+			let s = U256::from_dec_str(
+				"7032059424740925146199071046477651269705772793323287102921912953216115444414",
+			)
+			.unwrap();
+			<SyncCommitteePoseidons<T>>::insert(0u64, s);
 		}
 	}
 
@@ -272,10 +286,12 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn step(origin: OriginFor<T>, update: LightClientStep) -> DispatchResult {
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
-			let state = State::<T>::get();
+			let state = StateStorage::<T>::get();
 			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
 
+			// TODO more descriptive error?
 			let finalized = process_step::<T>(state, update.clone())?;
+
 			let current_slot = get_current_slot::<T>(state.genesis_time, state.seconds_per_slot);
 
 			ensure!(
@@ -283,9 +299,8 @@ pub mod pallet {
 				Error::<T>::UpdateSlotIsFarInTheFuture
 			);
 
-			let head = Head::<T>::get();
 			ensure!(
-				update.finalized_slot >= head,
+				update.finalized_slot >= state.head,
 				Error::<T>::UpdateSlotLessThanCurrentHead
 			);
 
@@ -295,7 +310,7 @@ pub mod pallet {
 				update.finalized_slot,
 				update.finalized_header_root,
 				update.execution_state_root,
-			);
+			)?;
 			if updated {
 				Self::deposit_event(Event::HeadUpdate {
 					slot: update.finalized_slot,
@@ -311,8 +326,8 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn set_updater(origin: OriginFor<T>, updater: H256) -> DispatchResult {
 			ensure_root(origin)?;
-			let old = State::<T>::get();
-			State::<T>::try_mutate(|cfg| -> Result<(), DispatchError> {
+			let old = StateStorage::<T>::get();
+			StateStorage::<T>::try_mutate(|cfg| -> Result<(), DispatchError> {
 				cfg.updater = updater;
 				Ok(())
 			})?;
@@ -398,92 +413,114 @@ pub mod pallet {
 		slot: u64,
 		finalized_header_root: H256,
 		execution_state_root: H256,
-	) -> bool {
+	) -> Result<bool, DispatchError> {
 		let header = Headers::<T>::get(slot);
 
 		if header != H256::zero() && header != finalized_header_root {
-			Consistent::<T>::put(false);
-			return false;
+			StateStorage::<T>::try_mutate(|m| -> Result<(), DispatchError> {
+				m.consistent = false;
+				Ok(())
+			})
+			.map_err(|_| Error::<T>::CannotUpdateStateStorage)?;
+			return Ok(false);
 		}
 		let state_root = ExecutionStateRoots::<T>::get(slot);
 
 		if state_root != H256::zero() && state_root != execution_state_root {
-			Consistent::<T>::put(false);
-			return false;
+			StateStorage::<T>::try_mutate(|m| -> Result<(), DispatchError> {
+				m.consistent = false;
+				Ok(())
+			})
+			.map_err(|_| Error::<T>::CannotUpdateStateStorage)?;
+			return Ok(false);
 		}
 
-		Head::<T>::put(slot);
+		StateStorage::<T>::try_mutate(|m| -> Result<(), DispatchError> {
+			m.head = slot;
+			Ok(())
+		})
+		.map_err(|_| Error::<T>::CannotUpdateStateStorage)?;
+
 		Headers::<T>::insert(slot, finalized_header_root);
 		// TODO can this time be used as block time?
 		Timestamps::<T>::insert(slot, T::TimeProvider::now().as_secs());
 
-		true
+		Ok(true)
 	}
 
-	fn set_sync_committee_poseidon<T: Config>(period: u64, poseidon: H256) -> bool {
+	fn set_sync_committee_poseidon<T: Config>(
+		period: u64,
+		poseidon: U256,
+	) -> Result<bool, DispatchError> {
 		let sync_committee_poseidons = SyncCommitteePoseidons::<T>::get(period);
 
 		log::info!(
-			"Check: poseidon != H256::zero() {}, poseidon {} ",
-			poseidon != H256::zero(),
+			"Check: poseidon != U256::zero() {}, poseidon {} ",
+			poseidon != U256::zero(),
 			poseidon
 		);
 
-		if poseidon != H256::zero() && sync_committee_poseidons != poseidon {
-			Consistent::<T>::put(false);
-			return false;
+		if poseidon != U256::zero() && sync_committee_poseidons != poseidon {
+			StateStorage::<T>::try_mutate(|m| -> Result<(), DispatchError> {
+				m.consistent = false;
+				Ok(())
+			})
+			.map_err(|_| Error::<T>::CannotUpdateStateStorage)?;
+			return Ok(false);
 		}
 		SyncCommitteePoseidons::<T>::set(period, poseidon);
 
-		true
+		Ok(true)
 	}
 
-	fn get_sync_committee_period<T: Config>(state: SuccinctConfig, slot: u64) -> u64 {
+	fn get_sync_committee_period(state: State, slot: u64) -> u64 {
 		slot / state.slots_per_period
 	}
 
 	fn process_step<T: Config>(
-		state: SuccinctConfig,
+		state: State,
 		update: LightClientStep,
 	) -> Result<bool, DispatchError> {
-		let current_period = get_sync_committee_period::<T>(state, update.attested_slot);
-		let sc_poseidons = SyncCommitteePoseidons::<T>::get(current_period);
+		let current_period = get_sync_committee_period(state, update.attested_slot);
+		let sc_poseidon = SyncCommitteePoseidons::<T>::get(current_period);
 
 		ensure!(
-			sc_poseidons == H256::zero(),
+			sc_poseidon != U256::zero(),
 			Error::<T>::SyncCommitteeNotInitialized
 		);
 		ensure!(
-			update.participation < MinSyncCommitteeParticipants::get(),
+			update.participation >= MinSyncCommitteeParticipants::get(),
 			Error::<T>::NotEnoughSyncCommitteeParticipants
 		);
 
-		let result = zk_light_client_step::<T>(state, &update)?;
-		// TODO double check result
-		ensure!(result, Error::<T>::ProofNotValid);
+		let success =
+			zk_light_client_step(&update, sc_poseidon).map_err(|e| Error::<T>::from(e))?;
 
+		ensure!(success, Error::<T>::ProofNotValid);
 		Ok(update.participation > state.finality_threshold)
 	}
 
-	fn zk_light_client_step<T: Config>(
-		state: SuccinctConfig,
+	pub fn zk_light_client_step(
 		update: &LightClientStep,
-	) -> Result<bool, DispatchError> {
-		let finalized_slot_le = update.finalized_slot.to_le_bytes();
-		let participation_le = update.participation.to_le_bytes();
-		let current_period = get_sync_committee_period::<T>(state, update.finalized_slot);
+		sync_committee_poseidon: U256,
+	) -> Result<bool, ContractError> {
+		let mut fs: [u8; 32] = [0u8; 32];
+		let mut pc: [u8; 32] = [0u8; 32];
 
-		let sync_committee_poseidon = SyncCommitteePoseidons::<T>::get(current_period);
+		let finalized_slot_le: [u8; 8] = update.finalized_slot.to_le_bytes();
+		let participation_le: [u8; 2] = update.participation.to_le_bytes();
+		fs[..finalized_slot_le.len()].copy_from_slice(&finalized_slot_le);
+		pc[..participation_le.len()].copy_from_slice(&participation_le);
 
 		let mut h = [0u8; 32];
 		let mut temp = [0u8; 64];
 		// sha256 & combine inputs
-		temp[..32].copy_from_slice(&finalized_slot_le);
+		temp[..32].copy_from_slice(&fs);
 		temp[32..].copy_from_slice(&update.finalized_header_root.as_bytes());
 		h.copy_from_slice(&Sha256::digest(temp));
 
 		temp[..32].copy_from_slice(&h);
-		temp[32..].copy_from_slice(&participation_le);
+		temp[32..].copy_from_slice(&pc);
 		h.copy_from_slice(&Sha256::digest(temp));
 
 		temp[..32].copy_from_slice(&h);
@@ -491,7 +528,7 @@ pub mod pallet {
 		h.copy_from_slice(&Sha256::digest(temp));
 
 		temp[..32].copy_from_slice(&h);
-		temp[32..].copy_from_slice(&sync_committee_poseidon.as_bytes());
+		temp[32..].copy_from_slice(&sync_committee_poseidon.encode());
 		h.copy_from_slice(&Sha256::digest(temp));
 
 		// TODO: Confirm this is the correct math!
@@ -503,7 +540,8 @@ pub mod pallet {
 		}
 
 		// Set proof
-		let inputs_string = sp_core::U256::from(t).to_string();
+		let inputs_string = U256::from_little_endian(t.as_slice()).to_string();
+
 		let inputs = vec![inputs_string; 1];
 		let verifier = Verifier::new_step_verifier();
 
@@ -519,15 +557,8 @@ pub mod pallet {
 
 		let proof = circom_proof.to_proof();
 		let public_signals = PublicSignals::from(inputs);
-		// TODO handle better errors
 
-		let result = verifier
-			.verify_proof(proof, &public_signals.get())
-			.map_err(|_| Error::<T>::ProofVerificationError)?;
-
-		ensure!(result, Error::<T>::ProofNotValid);
-
-		Ok(result)
+		verifier.verify_proof(proof, &public_signals.get())
 	}
 
 	fn get_public_inputs<T: Config>() -> Result<Vec<u64>, DispatchError> {
@@ -643,4 +674,71 @@ pub mod pallet {
 		argument.serialize_uncompressed(&mut cursor).unwrap();
 		serialized_argument
 	}
+}
+
+#[test]
+fn test_zk_step() {
+	let state: State = State {
+		updater: H256([0u8; 32]),
+		genesis_validators_root: H256([0u8; 32]),
+		genesis_time: 1696404557,
+		seconds_per_slot: 12000,
+		slots_per_period: 8192,
+		source_chain_id: 0,
+		finality_threshold: 1,
+		head: 0,
+		consistent: true,
+	};
+
+	let finalized_header_root = H256(hex!(
+		"70d0a7f53a459dd88eb37c6cfdfb8c48f120e504c96b182357498f2691aa5653"
+	));
+	let execution_state_root = H256(hex!(
+		"69d746cb81cd1fb4c11f4dcc04b6114596859b518614da0dd3b4192ff66c3a58"
+	));
+	let sync_committee_poseidon = U256::from_dec_str(
+		"7032059424740925146199071046477651269705772793323287102921912953216115444414",
+	)
+	.unwrap();
+
+	let lcs = LightClientStep {
+		attested_slot: 0,
+		finalized_slot: 4359840,
+		participation: 432,
+		finalized_header_root,
+		execution_state_root,
+		proof: Groth16Proof {
+			a: vec![
+				"14717729948616455402271823418418032272798439132063966868750456734930753033999"
+					.to_string(),
+				"10284862272179454279380723177303354589165265724768792869172425850641532396958"
+					.to_string(),
+			],
+			b: vec![
+				vec![
+					"11269943315518713067124801671029240901063146909738584854987772776806315890545"
+						.to_string(),
+					"20094085308485991030092338753416508135313449543456147939097124612984047201335"
+						.to_string(),
+				],
+				vec![
+					"8122139689435793554974799663854817979475528090524378333920791336987132768041"
+						.to_string(),
+					"5111528818556913201486596055325815760919897402988418362773344272232635103877"
+						.to_string(),
+				],
+			],
+			c: vec![
+				"6410073677012431469384941862462268198904303371106734783574715889381934207004"
+					.to_string(),
+				"11977981471972649035068934866969447415783144961145315609294880087827694234248"
+					.to_string(),
+			],
+		},
+	};
+
+	let res = zk_light_client_step(&lcs, sync_committee_poseidon);
+
+	assert_ok!(res.clone());
+	assert_eq!(true, res.unwrap());
 }
