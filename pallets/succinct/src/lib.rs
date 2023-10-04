@@ -15,31 +15,18 @@ mod weights;
 mod contract;
 mod verifier;
 
-// use std::str::FromStr;
-use crate::contract::zk_light_client_step;
-use crate::messages::{Groth16Proof, LightClientStep, State};
 use crate::verifier::Verifier;
-use ark_serialize::{CanonicalDeserialize, Compress, Validate};
-use ark_std::{io::Cursor, vec, vec::Vec};
 use frame_support::{
-	assert_ok,
 	dispatch::{GetDispatchInfo, UnfilteredDispatchable},
 	pallet_prelude::*,
 	parameter_types,
 };
-use frame_system::pallet_prelude::*;
-use hex_literal::hex;
 pub use pallet::*;
-use sp_core::H256;
 use sp_core::U256;
-use sp_std::prelude::*;
 pub use weights::WeightInfo;
 
 type PublicInputsDef<T> = BoundedVec<u8, <T as Config>::MaxPublicInputsLength>;
-type ProofDef<T> = BoundedVec<u8, <T as Config>::MaxProofLength>;
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
-
-// use ark_snark::SNARK;
 
 // TODO do we need to store constants in the storage?
 parameter_types! {
@@ -55,21 +42,15 @@ pub mod pallet {
 	use super::*;
 	use frame_support::traits::{Hash, UnixTime};
 	use frame_support::{pallet_prelude::ValueQuery, DefaultNoBound};
+	use frame_system::pallet_prelude::*;
 	use sp_core::H256;
 
-	use crate::deserialization::{deserialize_public_inputs, Proof, VKey};
-	use crate::messages::{CircomProof, LightClientStep, PublicSignals, State};
+	use crate::messages::{LightClientStep, State};
 
-	// use ark_bn254::{Bn254, Fr};
-	use crate::contract::{zk_light_client_step, ContractError};
-	use ark_bls12_381::{Bls12_381, Fr as BlsFr};
-	use ark_groth16::{Groth16, PreparedVerifyingKey, VerifyingKey};
-	use ark_serialize::CanonicalSerialize;
-	use ark_snark::SNARK;
+	use crate::contract::zk_light_client_step;
 	use ark_std::string::String;
 	use ark_std::string::ToString;
-	use ark_std::{io::Cursor, vec, vec::Vec};
-	use sha2::{Digest, Sha256};
+	use ark_std::{vec, vec::Vec};
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -118,8 +99,6 @@ pub mod pallet {
 	// Storage definitions
 	#[pallet::storage]
 	pub type PublicInputStorage<T: Config> = StorageValue<_, PublicInputsDef<T>, ValueQuery>;
-	#[pallet::storage]
-	pub type ProofStorage<T: Config> = StorageValue<_, ProofDef<T>, ValueQuery>;
 	#[pallet::storage]
 	pub type VerificationKeyStorage<T: Config> = StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
 
@@ -195,13 +174,14 @@ pub mod pallet {
 
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+		// TODO init state
 		fn build(&self) {
 			// TODO time cannot be called at Genesis
 			// T::TimeProvider::now().as_secs()
 			<StateStorage<T>>::put(State {
 				updater: self.updater,
 				genesis_validators_root: H256([0u8; 32]),
-				genesis_time: 1696404640,
+				genesis_time: 1696440023,
 				seconds_per_slot: 12000,
 				slots_per_period: 8192,
 				source_chain_id: 1,
@@ -281,10 +261,10 @@ pub mod pallet {
 		pub fn step(origin: OriginFor<T>, update: LightClientStep) -> DispatchResult {
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let state = StateStorage::<T>::get();
+			// ensure sender is preconfigured
 			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
 
-			// TODO more descriptive error?
-			let finalized = process_step::<T>(state, update.clone())?;
+			let finalized = process_step::<T>(state, &update)?;
 
 			let current_slot = get_current_slot::<T>(state.genesis_time, state.seconds_per_slot);
 
@@ -333,64 +313,16 @@ pub mod pallet {
 			Ok(())
 		}
 
-		// TODO this is a POC of simple verification that gets public inputs and tries to verify the proof
-		// this uses bls12_381
-		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::step())]
-		pub fn verify(
-			origin: OriginFor<T>,
-			vec_proof: vec::Vec<u8>,
-			c: vec::Vec<u8>,
-			vk: vec::Vec<u8>,
-		) -> DispatchResult {
-			let sender: [u8; 32] = ensure_signed(origin)?.into();
-
-			// let s = do_verify_groth16::<T>(vec_proof, c, vk).unwrap();
-
-			// log::info!("Result: {}", s);
-
-			Ok(())
-			// let proof = store_proof::<T>(vec_proof)?;
-			// let vk = get_verification_key::<T>()?;
-			// let inputs = get_public_inputs::<T>()?;
-			//
-			// Self::deposit_event(Event::<T>::VerificationProofSet);
-			//
-			// match verify(vk, proof, prepare_public_inputs(inputs)) {
-			// 	Ok(true) => {
-			// 		Self::deposit_event(Event::<T>::VerificationSuccess { who: sender.into() });
-			// 		Ok(())
-			// 	},
-			// 	Ok(false) => {
-			// 		Self::deposit_event(Event::<T>::VerificationFailed);
-			// 		Ok(())
-			// 	},
-			// 	Err(_) => Err(Error::<T>::ProofVerificationError.into()),
-			// }
-		}
-
 		/// Sets the public input params into storage
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn setup_verification(origin: OriginFor<T>, verification: String) -> DispatchResult {
 			ensure_root(origin)?;
-
-			let res: Verifier = serde_json::from_slice(verification.as_bytes()).unwrap();
-
-			log::info!("{:?}", res);
-
-			// let inputs = store_public_inputs::<T>(pub_input)?;
-			let vk = store_verification_key::<T>(verification.as_bytes().to_vec())?;
-			// ensure!(
-			// 	vk.public_inputs_len == inputs.len() as u8,
-			// 	Error::<T>::PublicInputsMismatch
-			// );
-
-			let get_vk = get_verification_key::<T>()?;
-			// let res_after: Verifier = Verifier::from_json_u8_slice(get_vk.as_bytes()).unwrap();
-
-			log::info!("==================================");
-			log::info!("{:?}", get_vk);
+			// try from json to Verifier struct
+			Verifier::from_json_u8_slice(verification.as_bytes())
+				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+			// store verification to storage
+			store_verification_key::<T>(verification.as_bytes().to_vec())?;
 
 			Self::deposit_event(Event::<T>::VerificationSetupCompleted);
 			Ok(())
@@ -444,7 +376,9 @@ pub mod pallet {
 		.map_err(|_| Error::<T>::CannotUpdateStateStorage)?;
 
 		Headers::<T>::insert(slot, finalized_header_root);
+
 		// TODO can this time be used as block time?
+		// IS this really needed
 		Timestamps::<T>::insert(slot, T::TimeProvider::now().as_secs());
 
 		Ok(true)
@@ -455,12 +389,6 @@ pub mod pallet {
 		poseidon: U256,
 	) -> Result<bool, DispatchError> {
 		let sync_committee_poseidons = SyncCommitteePoseidons::<T>::get(period);
-
-		log::info!(
-			"Check: poseidon != U256::zero() {}, poseidon {} ",
-			poseidon != U256::zero(),
-			poseidon
-		);
 
 		if poseidon != U256::zero() && sync_committee_poseidons != poseidon {
 			StateStorage::<T>::try_mutate(|m| -> Result<(), DispatchError> {
@@ -481,7 +409,7 @@ pub mod pallet {
 
 	fn process_step<T: Config>(
 		state: State,
-		update: LightClientStep,
+		update: &LightClientStep,
 	) -> Result<bool, DispatchError> {
 		let current_period = get_sync_committee_period(state, update.attested_slot);
 		let sc_poseidon = SyncCommitteePoseidons::<T>::get(current_period);
@@ -495,38 +423,20 @@ pub mod pallet {
 			Error::<T>::NotEnoughSyncCommitteeParticipants
 		);
 
-		let success =
-			zk_light_client_step(&update, sc_poseidon).map_err(|e| Error::<T>::from(e))?;
+		let verifier = get_verifier::<T>()?;
+
+		let success = zk_light_client_step(&update, sc_poseidon, verifier)
+			.map_err(|e| Error::<T>::from(e))?;
 
 		ensure!(success, Error::<T>::ProofNotValid);
 		Ok(update.participation > state.finality_threshold)
 	}
 
-	fn get_public_inputs<T: Config>() -> Result<Vec<u64>, DispatchError> {
-		let public_inputs = PublicInputStorage::<T>::get();
-		let deserialized_public_inputs = deserialize_public_inputs(public_inputs.as_slice())
-			.map_err(|_| Error::<T>::MalformedPublicInputs)?;
-		Ok(deserialized_public_inputs)
-	}
-
-	fn store_public_inputs<T: Config>(pub_input: Vec<u8>) -> Result<Vec<u64>, DispatchError> {
-		let public_inputs: PublicInputsDef<T> = pub_input
-			.try_into()
-			.map_err(|_| Error::<T>::TooLongPublicInputs)?;
-		let deserialized_public_inputs = deserialize_public_inputs(public_inputs.as_slice())
-			.map_err(|_| Error::<T>::MalformedPublicInputs)?;
-		PublicInputStorage::<T>::put(public_inputs);
-		Ok(deserialized_public_inputs)
-	}
-
-	fn get_verification_key<T: Config>() -> Result<Verifier, Error<T>> {
+	fn get_verifier<T: Config>() -> Result<Verifier, Error<T>> {
 		let vk = VerificationKeyStorage::<T>::get();
-
 		ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
 		let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
 			.map_err(|_| Error::<T>::MalformedVerificationKey)?;
-		// let vk = prepare_verification_key(deserialized_vk)
-		//     .map_err(|_| Error::<T>::VerificationKeyCreationError)?;
 		Ok(deserialized_vk)
 	}
 
@@ -609,10 +519,10 @@ pub mod pallet {
 	//     Ok(proof)
 	// }
 
-	pub fn serialize_argument(argument: impl CanonicalSerialize) -> Vec<u8> {
-		let mut serialized_argument = vec![0u8; argument.serialized_size(Compress::No)];
-		let mut cursor = Cursor::new(&mut serialized_argument[..]);
-		argument.serialize_uncompressed(&mut cursor).unwrap();
-		serialized_argument
-	}
+	// pub fn serialize_argument(argument: impl CanonicalSerialize) -> Vec<u8> {
+	//     let mut serialized_argument = vec![0u8; argument.serialized_size(Compress::No)];
+	//     let mut cursor = Cursor::new(&mut serialized_argument[..]);
+	//     argument.serialize_uncompressed(&mut cursor).unwrap();
+	//     serialized_argument
+	// }
 }

@@ -3,7 +3,6 @@ use ark_ff::{Fp256, QuadExtField};
 use ark_groth16::Proof;
 use ark_std::str::FromStr;
 use ark_std::string::String;
-use ark_std::vec;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{Deserialize, Serialize};
 use scale_info::TypeInfo;
