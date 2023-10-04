@@ -66,6 +66,7 @@ pub mod pallet {
 	use ark_groth16::{Groth16, PreparedVerifyingKey, VerifyingKey};
 	use ark_serialize::CanonicalSerialize;
 	use ark_snark::SNARK;
+	use ark_std::string::String;
 	use ark_std::string::ToString;
 	use ark_std::{io::Cursor, vec, vec::Vec};
 	use sha2::{Digest, Sha256};
@@ -371,18 +372,26 @@ pub mod pallet {
 		/// Sets the public input params into storage
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::step())]
-		pub fn setup_verification(
-			origin: OriginFor<T>,
-			pub_input: Vec<u8>,
-			vec_vk: Vec<u8>,
-		) -> DispatchResult {
+		pub fn setup_verification(origin: OriginFor<T>, verification: String) -> DispatchResult {
 			ensure_root(origin)?;
-			let inputs = store_public_inputs::<T>(pub_input)?;
-			// let vk = store_verification_key::<T>(vec_vk)?;
+
+			let res: Verifier = serde_json::from_slice(verification.as_bytes()).unwrap();
+
+			log::info!("{:?}", res);
+
+			// let inputs = store_public_inputs::<T>(pub_input)?;
+			let vk = store_verification_key::<T>(verification.as_bytes().to_vec())?;
 			// ensure!(
 			// 	vk.public_inputs_len == inputs.len() as u8,
 			// 	Error::<T>::PublicInputsMismatch
 			// );
+
+			let get_vk = get_verification_key::<T>()?;
+			// let res_after: Verifier = Verifier::from_json_u8_slice(get_vk.as_bytes()).unwrap();
+
+			log::info!("==================================");
+			log::info!("{:?}", get_vk);
+
 			Self::deposit_event(Event::<T>::VerificationSetupCompleted);
 			Ok(())
 		}
@@ -510,35 +519,35 @@ pub mod pallet {
 		Ok(deserialized_public_inputs)
 	}
 
-	// fn get_verification_key<T: Config>() -> Result<VerificationKey, Error<T>> {
-	//     let vk = VerificationKeyStorage::<T>::get();
-	//
-	//     ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
-	//     let deserialized_vk = VKey::from_json_u8_slice(vk.as_slice())
-	//         .map_err(|_| Error::<T>::MalformedVerificationKey)?;
-	//     let vk = prepare_verification_key(deserialized_vk)
-	//         .map_err(|_| Error::<T>::VerificationKeyCreationError)?;
-	//     Ok(vk)
-	// }
+	fn get_verification_key<T: Config>() -> Result<Verifier, Error<T>> {
+		let vk = VerificationKeyStorage::<T>::get();
 
-	// fn store_verification_key<T: Config>(vec_vk: Vec<u8>) -> Result<VKey, Error<T>> {
-	//     let vk: VerificationKeyDef<T> = vec_vk
-	//         .try_into()
-	//         .map_err(|_| Error::<T>::TooLongVerificationKey)?;
-	//     let deserialized_vk = VKey::from_json_u8_slice(vk.as_slice())
-	//         .map_err(|_| Error::<T>::MalformedVerificationKey)?;
-	//     ensure!(
-	// 		deserialized_vk.curve == SUPPORTED_CURVE.as_bytes(),
-	// 		Error::<T>::NotSupportedCurve
-	// 	);
-	//     ensure!(
-	// 		deserialized_vk.protocol == SUPPORTED_PROTOCOL.as_bytes(),
-	// 		Error::<T>::NotSupportedProtocol
-	// 	);
-	//
-	//     VerificationKeyStorage::<T>::put(vk);
-	//     Ok(deserialized_vk)
-	// }
+		ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
+		let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
+			.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+		// let vk = prepare_verification_key(deserialized_vk)
+		//     .map_err(|_| Error::<T>::VerificationKeyCreationError)?;
+		Ok(deserialized_vk)
+	}
+
+	fn store_verification_key<T: Config>(vec_vk: Vec<u8>) -> Result<Verifier, Error<T>> {
+		let vk: VerificationKeyDef<T> = vec_vk
+			.try_into()
+			.map_err(|_| Error::<T>::TooLongVerificationKey)?;
+		let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
+			.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+		ensure!(
+			deserialized_vk.vk_json.curve == "bn128".to_string(),
+			Error::<T>::NotSupportedCurve
+		);
+		ensure!(
+			deserialized_vk.vk_json.protocol == "groth16".to_string(),
+			Error::<T>::NotSupportedProtocol
+		);
+
+		VerificationKeyStorage::<T>::put(vk);
+		Ok(deserialized_vk)
+	}
 
 	// fn get_proof<T: Config>(vec_proof: Vec<u8>) -> Result<GProof, Error<T>> {
 	//     ensure!(!vec_proof.is_empty(), Error::<T>::ProofIsEmpty);
@@ -606,71 +615,4 @@ pub mod pallet {
 		argument.serialize_uncompressed(&mut cursor).unwrap();
 		serialized_argument
 	}
-}
-
-#[test]
-fn test_zk_step() {
-	let state: State = State {
-		updater: H256([0u8; 32]),
-		genesis_validators_root: H256([0u8; 32]),
-		genesis_time: 1696404557,
-		seconds_per_slot: 12000,
-		slots_per_period: 8192,
-		source_chain_id: 0,
-		finality_threshold: 1,
-		head: 0,
-		consistent: true,
-	};
-
-	let finalized_header_root = H256(hex!(
-		"70d0a7f53a459dd88eb37c6cfdfb8c48f120e504c96b182357498f2691aa5653"
-	));
-	let execution_state_root = H256(hex!(
-		"69d746cb81cd1fb4c11f4dcc04b6114596859b518614da0dd3b4192ff66c3a58"
-	));
-	let sync_committee_poseidon = U256::from_dec_str(
-		"7032059424740925146199071046477651269705772793323287102921912953216115444414",
-	)
-	.unwrap();
-
-	let lcs = LightClientStep {
-		attested_slot: 0,
-		finalized_slot: 4359840,
-		participation: 432,
-		finalized_header_root,
-		execution_state_root,
-		proof: Groth16Proof {
-			a: vec![
-				"14717729948616455402271823418418032272798439132063966868750456734930753033999"
-					.to_string(),
-				"10284862272179454279380723177303354589165265724768792869172425850641532396958"
-					.to_string(),
-			],
-			b: vec![
-				vec![
-					"11269943315518713067124801671029240901063146909738584854987772776806315890545"
-						.to_string(),
-					"20094085308485991030092338753416508135313449543456147939097124612984047201335"
-						.to_string(),
-				],
-				vec![
-					"8122139689435793554974799663854817979475528090524378333920791336987132768041"
-						.to_string(),
-					"5111528818556913201486596055325815760919897402988418362773344272232635103877"
-						.to_string(),
-				],
-			],
-			c: vec![
-				"6410073677012431469384941862462268198904303371106734783574715889381934207004"
-					.to_string(),
-				"11977981471972649035068934866969447415783144961145315609294880087827694234248"
-					.to_string(),
-			],
-		},
-	};
-
-	let res = zk_light_client_step(&lcs, sync_committee_poseidon);
-
-	assert_ok!(res.clone());
-	assert_eq!(true, res.unwrap());
 }

@@ -39,6 +39,19 @@ type Number = [u8; 48];
 type G1 = [Number; 3];
 type G2 = [[Number; 2]; 3];
 
+// #[serde(rename = "IC")]
+// pub ic: Vec<Vec<String>>,
+//
+// #[serde(rename = "nPublic")]
+// pub inputs_count: u32,
+// pub vk_alpha_1: Vec<String>,
+// pub vk_beta_2: Vec<Vec<String>>,
+// pub vk_gamma_2: Vec<Vec<String>>,
+// pub vk_delta_2: Vec<Vec<String>>,
+// pub vk_alphabeta_12: Vec<Vec<Vec<String>>>,
+// pub curve: String,
+// pub protocol: String,
+
 /// Struct representing snarkjs generated verification key
 #[derive(Deserialize)]
 pub struct VKey {
