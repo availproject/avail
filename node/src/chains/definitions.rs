@@ -87,7 +87,7 @@ impl AuthorityKeys {
 
 impl From<AuthorityKeys> for (AccountId, AccountId, SessionKeys) {
 	fn from(val: AuthorityKeys) -> (AccountId, AccountId, SessionKeys) {
-		(val.controller, val.stash, val.session_keys)
+		(val.stash.clone(), val.stash, val.session_keys)
 	}
 }
 
