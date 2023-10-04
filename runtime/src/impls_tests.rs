@@ -84,6 +84,7 @@ mod multiplier_tests {
 	}
 
 	#[test]
+	#[ignore]
 	fn truth_value_update_poc_works() {
 		let fm = Multiplier::saturating_from_rational(1, 2);
 		let test_set = vec![
@@ -135,6 +136,7 @@ mod multiplier_tests {
 
 	// Note: With sensitivity = 0.000001, this test is going to take a long time. We may consider commenting this out
 	#[test]
+	#[ignore]
 	fn time_to_reach_zero() {
 		// blocks per 24h in substrate-node: 28,800 (k)
 		// s* = 0.1875

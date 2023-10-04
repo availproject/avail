@@ -210,7 +210,7 @@ parameter_types! {
 	pub const WeightFee: Balance = constants::currency::PICO_AVL;
 	pub const TransactionByteFee: Balance = 100 * constants::currency::NANO_AVL; // 0.0000001 AVL
 	pub const OperationalFeeMultiplier: u8 = 5u8;
-	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(50);
+	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25); // target_utilization 25%
 	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000); // 0.000001
 	pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
 	pub MaximumMultiplier: Multiplier = Bounded::max_value();
