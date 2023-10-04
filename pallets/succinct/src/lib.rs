@@ -16,6 +16,7 @@ mod contract;
 mod verifier;
 
 // use std::str::FromStr;
+use crate::contract::zk_light_client_step;
 use crate::messages::{Groth16Proof, LightClientStep, State};
 use crate::verifier::Verifier;
 use ark_serialize::{CanonicalDeserialize, Compress, Validate};
@@ -60,7 +61,7 @@ pub mod pallet {
 	use crate::messages::{CircomProof, LightClientStep, PublicSignals, State};
 
 	// use ark_bn254::{Bn254, Fr};
-	use crate::contract::ContractError;
+	use crate::contract::{zk_light_client_step, ContractError};
 	use ark_bls12_381::{Bls12_381, Fr as BlsFr};
 	use ark_groth16::{Groth16, PreparedVerifyingKey, VerifyingKey};
 	use ark_serialize::CanonicalSerialize;
@@ -123,14 +124,6 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type StateStorage<T: Config> = StorageValue<_, State, ValueQuery>;
-
-	#[pallet::storage]
-	pub type Consistent<T> = StorageValue<_, bool, ValueQuery>;
-
-	//The latest slot the light client has a finalized header for.
-	// #[pallet::storage]
-	// #[pallet::getter(fn get_head)]
-	// pub type Head<T> = StorageValue<_, u64, ValueQuery>;
 
 	// @notice Maps from a slot to a beacon block header root.
 	#[pallet::storage]
@@ -498,67 +491,6 @@ pub mod pallet {
 
 		ensure!(success, Error::<T>::ProofNotValid);
 		Ok(update.participation > state.finality_threshold)
-	}
-
-	pub fn zk_light_client_step(
-		update: &LightClientStep,
-		sync_committee_poseidon: U256,
-	) -> Result<bool, ContractError> {
-		let mut fs: [u8; 32] = [0u8; 32];
-		let mut pc: [u8; 32] = [0u8; 32];
-
-		let finalized_slot_le: [u8; 8] = update.finalized_slot.to_le_bytes();
-		let participation_le: [u8; 2] = update.participation.to_le_bytes();
-		fs[..finalized_slot_le.len()].copy_from_slice(&finalized_slot_le);
-		pc[..participation_le.len()].copy_from_slice(&participation_le);
-
-		let mut h = [0u8; 32];
-		let mut temp = [0u8; 64];
-		// sha256 & combine inputs
-		temp[..32].copy_from_slice(&fs);
-		temp[32..].copy_from_slice(&update.finalized_header_root.as_bytes());
-		h.copy_from_slice(&Sha256::digest(temp));
-
-		temp[..32].copy_from_slice(&h);
-		temp[32..].copy_from_slice(&pc);
-		h.copy_from_slice(&Sha256::digest(temp));
-
-		temp[..32].copy_from_slice(&h);
-		temp[32..].copy_from_slice(&update.execution_state_root.as_bytes());
-		h.copy_from_slice(&Sha256::digest(temp));
-
-		temp[..32].copy_from_slice(&h);
-		temp[32..].copy_from_slice(&sync_committee_poseidon.encode());
-		h.copy_from_slice(&Sha256::digest(temp));
-
-		// TODO: Confirm this is the correct math!
-		let mut t = [255u8; 32];
-		t[31] = 0b00011111;
-
-		for i in 0..32 {
-			t[i] &= h[i];
-		}
-
-		// Set proof
-		let inputs_string = U256::from_little_endian(t.as_slice()).to_string();
-
-		let inputs = vec![inputs_string; 1];
-		let verifier = Verifier::new_step_verifier();
-
-		let groth_16_proof = update.proof.clone();
-
-		let circom_proof = CircomProof {
-			pi_a: groth_16_proof.a,
-			pi_b: groth_16_proof.b,
-			pi_c: groth_16_proof.c,
-			protocol: "groth16".to_string(),
-			curve: "bn128".to_string(),
-		};
-
-		let proof = circom_proof.to_proof();
-		let public_signals = PublicSignals::from(inputs);
-
-		verifier.verify_proof(proof, &public_signals.get())
 	}
 
 	fn get_public_inputs<T: Config>() -> Result<Vec<u64>, DispatchError> {
