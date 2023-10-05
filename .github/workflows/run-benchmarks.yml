@@ -58,19 +58,21 @@ jobs:
 
       # Run benchmarks & run action benchmark
       - name: Run Header Generation Benchmark
-        run: cargo bench -p da-runtime | tee header_gen_bench.txt
+        run: cargo bench -p da-runtime | tee /home/runner/work/avail/avail/header_gen_bench.txt
+
       - name: Download previous Header Generation Benchmark 
         uses: actions/cache@v1
         with:
           path: ./cache
           key: ${{ runner.os }}-header-gen-benchmark
+
       - name: Store Header Generation Benchmark 
         uses: fmiguelgarcia/github-action-benchmark@v1
         with:
           # What benchmark tool the output.txt came from
           tool: 'rustIai'
           # Where the output from the benchmark tool is stored
-          output-file-path: header_gen_bench.txt
+          output-file-path: /home/runner/work/avail/avail/header_gen_bench.txt
           # Where the previous data file is stored
           external-data-json-path: ./cache/benchmark-data.json
           # Workflow will fail when an alert happens at 15% degradation
