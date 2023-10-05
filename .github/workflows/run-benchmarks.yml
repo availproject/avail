@@ -68,6 +68,7 @@ jobs:
         with:
           path: |
             ./cache
+            ./target/release/
             ./runtime/target/iai
           key: ${{ runner.os }}-header-gen-benchmark
 
@@ -77,9 +78,11 @@ jobs:
       - name: find_1 
         run: find -type f
 
-
       - name: Run Header Generation Benchmark
         run: cargo bench -p da-runtime | tee ./header_gen_bench.txt
+
+      - name: Cat output
+        run: cat ./header_gen_bench.txt
 
       - name: find_2 
         run: find -type f
@@ -90,7 +93,7 @@ jobs:
           # What benchmark tool the output.txt came from
           tool: 'rustIai'
           # Where the output from the benchmark tool is stored
-          output-file-path: ./header_gen_bench.txt
+          output-file-path: /home/ubuntu/actions-runner/_work/avail/avail/header_gen_bench.txt
           # Where the previous data file is stored
           external-data-json-path: ./cache/benchmark-data.json
           # Workflow will fail when an alert happens at 15% degradation
