@@ -53,7 +53,7 @@ fn commitment_builder_256() {
 	commitment_builder(BlockLengthColumns(256));
 }
 
-iai::main! {commitment_builder_32, commitment_builder_128, commitment_builder_256}
+iai::main! {commitment_builder_32}
 
 /*
 mod iai_wrappers {

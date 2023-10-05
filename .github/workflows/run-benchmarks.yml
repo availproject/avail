@@ -56,23 +56,41 @@ jobs:
 
 #          $EXTRA $OUR_PALLETS ./scripts/run_benchmarks.sh
 
-      # Run benchmarks & run action benchmark
-      - name: Run Header Generation Benchmark
-        run: cargo bench -p da-runtime | tee /home/runner/work/avail/avail/header_gen_bench.txt
+#    - name: Upload output as artifact
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: weights-result
+#          path: ./output/
 
+      # Run Header Generation benchmarks
       - name: Download previous Header Generation Benchmark 
         uses: actions/cache@v1
         with:
-          path: ./cache
+          path: |
+            ./cache
+            ./runtime/target/iai
           key: ${{ runner.os }}-header-gen-benchmark
 
-      - name: Store Header Generation Benchmark 
+      - name: Pwd 
+        run: pwd
+
+      - name: find_1 
+        run: find -type f
+
+
+      - name: Run Header Generation Benchmark
+        run: cargo bench -p da-runtime | tee ./header_gen_bench.txt
+
+      - name: find_2 
+        run: find -type f
+
+      - name: Header Generation Regression Checks
         uses: fmiguelgarcia/github-action-benchmark@v1
         with:
           # What benchmark tool the output.txt came from
           tool: 'rustIai'
           # Where the output from the benchmark tool is stored
-          output-file-path: /home/runner/work/avail/avail/header_gen_bench.txt
+          output-file-path: ./header_gen_bench.txt
           # Where the previous data file is stored
           external-data-json-path: ./cache/benchmark-data.json
           # Workflow will fail when an alert happens at 15% degradation
@@ -85,9 +103,3 @@ jobs:
           # Mention @rhysd in the commit comment
           alert-comment-cc-users: '@fmiguelgarcia,@prabal-banerjee,@jakubcech,@vthunder,@kroos47,@Leouarz'
 
-
-      - name: Upload output as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: weights-result
-          path: ./output/
