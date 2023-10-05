@@ -73,9 +73,15 @@ jobs:
           output-file-path: header_gen_bench.txt
           # Where the previous data file is stored
           external-data-json-path: ./cache/benchmark-data.json
-          # Workflow will fail when an alert happens
+          # Workflow will fail when an alert happens at 15% degradation
           fail-on-alert: true
+          alert-threshold: '15%'
           # Upload the updated cache file for the next job by actions/cache
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Enable alert commit comment
+          comment-on-alert: true
+          # Mention @rhysd in the commit comment
+          alert-comment-cc-users: '@fmiguelgarcia,@prabal-banerjee,@jakubcech,@vthunder,@kroos47,@Leouarz'
 
 
       - name: Upload output as artifact
