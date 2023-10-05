@@ -79,7 +79,7 @@ jobs:
         run: find -type f
 
       - name: Header Generation Regression Checks
-        uses: fmiguelgarcia/github-action-benchmark@v1.18.1
+        uses: fmiguelgarcia/github-action-benchmark@v1
         with:
           # What benchmark tool the output.txt came from
           tool: 'rustIai'
