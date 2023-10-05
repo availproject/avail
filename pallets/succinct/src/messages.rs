@@ -6,7 +6,7 @@ use ark_std::string::String;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{Deserialize, Serialize};
 use scale_info::TypeInfo;
-use sp_core::H256;
+use sp_core::{H256, U256};
 use sp_std::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
@@ -25,6 +25,14 @@ pub struct Groth16Proof {
 	pub a: Vec<String>,
 	pub b: Vec<Vec<String>>,
 	pub c: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
+pub struct LightClientRotate {
+	pub step: LightClientStep,
+	pub sync_committee_ssz: U256,
+	pub sync_committee_poseidon: U256,
+	pub proof: Groth16Proof,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -86,13 +94,13 @@ impl PublicSignals {
 
 // =========
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
-pub struct LightClientRotate {
-	pub step: LightClientStep,
-	pub sync_committee_ssz: u64,
-	pub sync_committee_poseidon: H256,
-	pub proof: Vec<u8>,
-}
+// #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
+// pub struct LightClientRotate {
+// 	pub step: LightClientStep,
+// 	pub sync_committee_ssz: u64,
+// 	pub sync_committee_poseidon: H256,
+// 	pub proof: Vec<u8>,
+// }
 
 #[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

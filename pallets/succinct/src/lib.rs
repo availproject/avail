@@ -47,7 +47,7 @@ pub mod pallet {
 
 	use crate::messages::{LightClientStep, State};
 
-	use crate::contract::zk_light_client_step;
+	use crate::contract::{zk_light_client_rotate, zk_light_client_step};
 	use ark_std::string::String;
 	use ark_std::string::ToString;
 	use ark_std::{vec, vec::Vec};
@@ -88,7 +88,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		// emit event once the head is updated
 		HeadUpdate { slot: u64, finalization_root: Hash },
-		SyncCommitteeUpdate { period: u64, root: Hash },
+		SyncCommitteeUpdate { period: u64, root: U256 },
 		VerificationSetupCompleted,
 		VerificationProofSet,
 		VerificationSuccess { who: H256 },
@@ -101,6 +101,10 @@ pub mod pallet {
 	pub type PublicInputStorage<T: Config> = StorageValue<_, PublicInputsDef<T>, ValueQuery>;
 	#[pallet::storage]
 	pub type VerificationKeyStorage<T: Config> = StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
+
+	#[pallet::storage]
+	pub type RotateVerificationKeyStorage<T: Config> =
+		StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
 
 	#[pallet::storage]
 	pub type StateStorage<T: Config> = StorageValue<_, State, ValueQuery>;
@@ -212,41 +216,40 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::rotate())]
 		pub fn rotate(origin: OriginFor<T>, update: messages::LightClientRotate) -> DispatchResult {
-			// let sender: [u8; 32] = ensure_signed(origin)?.into();
-			// let state = State::<T>::get();
-			// ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
-			//
-			// let light_client_step = update.step.clone();
-			//
-			// let finalized = process_step::<T>(state, light_client_step.clone())?;
-			// let current_period = get_sync_committee_period::<T>(state, light_client_step.finalized_slot);
-			// let next_period = current_period + 1;
-			//
-			// let vk = get_verification_key::<T>()?;
-			// let proof = get_proof::<T>(update.proof)?;
-			// let inputs = get_public_inputs::<T>()?;
-			//
-			// // proof verification
-			// let success = false; //verify(vk, proof, prepare_public_inputs(inputs))
-			// //.map_err(|_| Error::<T>::VerificationError)?;
-			//
-			// if success {
-			//     Self::deposit_event(Event::VerificationSuccess { who: sender.into() });
-			//     if finalized {
-			//         let is_set = set_sync_committee_poseidon::<T>(
-			//             next_period,
-			//             update.sync_committee_poseidon,
-			//         );
-			//         if is_set {
-			//             Self::deposit_event(Event::SyncCommitteeUpdate {
-			//                 period: next_period,
-			//                 root: update.sync_committee_poseidon,
-			//             });
-			//         }
-			//     }
-			// } else {
-			//     Self::deposit_event(Event::VerificationFailed);
-			// }
+			let sender: [u8; 32] = ensure_signed(origin)?.into();
+			let state = StateStorage::<T>::get();
+			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
+
+			let step = &update.step;
+
+			let finalized = process_step::<T>(state, step)?;
+			let current_period = get_sync_committee_period(state, step.finalized_slot);
+			let next_period = current_period + 1;
+
+			// TODO get rotate verifier
+			let verifier = get_rotate_verifier::<T>()?;
+
+			// proof verification
+			let success = zk_light_client_rotate(&update, verifier)
+				.map_err(|_| Error::<T>::VerificationError)?;
+
+			if success {
+				Self::deposit_event(Event::VerificationSuccess { who: sender.into() });
+				if finalized {
+					let is_set = set_sync_committee_poseidon::<T>(
+						next_period,
+						update.sync_committee_poseidon,
+					)?;
+					if is_set {
+						Self::deposit_event(Event::SyncCommitteeUpdate {
+							period: next_period,
+							root: update.sync_committee_poseidon,
+						});
+					}
+				}
+			} else {
+				Self::deposit_event(Event::VerificationFailed);
+			}
 
 			Ok(())
 		}
@@ -316,13 +319,34 @@ pub mod pallet {
 		/// Sets the public input params into storage
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::step())]
-		pub fn setup_verification(origin: OriginFor<T>, verification: String) -> DispatchResult {
+		pub fn setup_step_verification(
+			origin: OriginFor<T>,
+			verification: String,
+		) -> DispatchResult {
 			ensure_root(origin)?;
 			// try from json to Verifier struct
 			Verifier::from_json_u8_slice(verification.as_bytes())
 				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
 			// store verification to storage
-			store_verification_key::<T>(verification.as_bytes().to_vec())?;
+			store_step_verification_key::<T>(verification.as_bytes().to_vec())?;
+
+			Self::deposit_event(Event::<T>::VerificationSetupCompleted);
+			Ok(())
+		}
+
+		/// Sets the public input params into storage
+		#[pallet::call_index(5)]
+		#[pallet::weight(T::WeightInfo::step())]
+		pub fn setup_rotate_verification(
+			origin: OriginFor<T>,
+			verification: String,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			// try from json to Verifier struct
+			Verifier::from_json_u8_slice(verification.as_bytes())
+				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+			// store verification to storage
+			store_rotate_verification_key::<T>(verification.as_bytes().to_vec())?;
 
 			Self::deposit_event(Event::<T>::VerificationSetupCompleted);
 			Ok(())
@@ -423,7 +447,7 @@ pub mod pallet {
 			Error::<T>::NotEnoughSyncCommitteeParticipants
 		);
 
-		let verifier = get_verifier::<T>()?;
+		let verifier = get_step_verifier::<T>()?;
 
 		let success = zk_light_client_step(&update, sc_poseidon, verifier)
 			.map_err(|e| Error::<T>::from(e))?;
@@ -432,7 +456,7 @@ pub mod pallet {
 		Ok(update.participation > state.finality_threshold)
 	}
 
-	fn get_verifier<T: Config>() -> Result<Verifier, Error<T>> {
+	fn get_step_verifier<T: Config>() -> Result<Verifier, Error<T>> {
 		let vk = VerificationKeyStorage::<T>::get();
 		ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
 		let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
@@ -440,7 +464,15 @@ pub mod pallet {
 		Ok(deserialized_vk)
 	}
 
-	fn store_verification_key<T: Config>(vec_vk: Vec<u8>) -> Result<Verifier, Error<T>> {
+	fn get_rotate_verifier<T: Config>() -> Result<Verifier, Error<T>> {
+		let vk = RotateVerificationKeyStorage::<T>::get();
+		ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
+		let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
+			.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+		Ok(deserialized_vk)
+	}
+
+	fn store_step_verification_key<T: Config>(vec_vk: Vec<u8>) -> Result<Verifier, Error<T>> {
 		let vk: VerificationKeyDef<T> = vec_vk
 			.try_into()
 			.map_err(|_| Error::<T>::TooLongVerificationKey)?;
@@ -456,6 +488,25 @@ pub mod pallet {
 		);
 
 		VerificationKeyStorage::<T>::put(vk);
+		Ok(deserialized_vk)
+	}
+
+	fn store_rotate_verification_key<T: Config>(vec_vk: Vec<u8>) -> Result<Verifier, Error<T>> {
+		let vk: VerificationKeyDef<T> = vec_vk
+			.try_into()
+			.map_err(|_| Error::<T>::TooLongVerificationKey)?;
+		let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
+			.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+		ensure!(
+			deserialized_vk.vk_json.curve == "bn128".to_string(),
+			Error::<T>::NotSupportedCurve
+		);
+		ensure!(
+			deserialized_vk.vk_json.protocol == "groth16".to_string(),
+			Error::<T>::NotSupportedProtocol
+		);
+
+		RotateVerificationKeyStorage::<T>::put(vk);
 		Ok(deserialized_vk)
 	}
 
