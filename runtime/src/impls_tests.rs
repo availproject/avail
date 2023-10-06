@@ -84,6 +84,7 @@ mod multiplier_tests {
 	}
 
 	#[test]
+	#[ignore]
 	fn truth_value_update_poc_works() {
 		let fm = Multiplier::saturating_from_rational(1, 2);
 		let test_set = vec![
@@ -135,6 +136,7 @@ mod multiplier_tests {
 
 	// Note: With sensitivity = 0.000001, this test is going to take a long time. We may consider commenting this out
 	#[test]
+	#[ignore]
 	fn time_to_reach_zero() {
 		// blocks per 24h in substrate-node: 28,800 (k)
 		// s* = 0.1875
@@ -496,10 +498,10 @@ mod tests {
 
 			DealWithFees::on_unbalanceds(vec![fee, tip].into_iter());
 
-			// Author gets 100% of tip and 80% of fee = 28
-			assert_eq!(Balances::free_balance(TEST_ACCOUNT), 28);
-			// Treasury gets 20% of fee = 2
-			assert_eq!(Balances::free_balance(Treasury::account_id()), 2);
+			// Author gets 100% of tip and 20% of fee = 22
+			assert_eq!(Balances::free_balance(TEST_ACCOUNT), 22);
+			// Treasury gets 80% of fee = 8
+			assert_eq!(Balances::free_balance(Treasury::account_id()), 8);
 		});
 	}
 

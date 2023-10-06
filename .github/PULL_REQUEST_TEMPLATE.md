@@ -1,7 +1,3 @@
----
-Name: Pull Request
-About: Provide information about the proposed changes
----
 # Pull Request type
 
 <!-- Check the [contributing guide](../../CONTRIBUTING.md) -->

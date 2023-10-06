@@ -27,7 +27,7 @@ jobs:
             cargo build --release -p data-avail
             mv target/release/data-avail target/release/data-avail-linux-amd64
             chmod 777 runtime
-            docker run --name srtool --rm -e PACKAGE=da-runtime -e RUNTIME_DIR=runtime/ -e PROFILE=release -v $(pwd):/build:rw -v /tmp/cargo:/cargo-home docker.io/paritytech/srtool:1.66.1 build
+            docker run --name srtool --rm -e PACKAGE=da-runtime -e RUNTIME_DIR=runtime/ -e PROFILE=release -v $(pwd):/build:rw -v /tmp/cargo:/cargo-home docker.io/paritytech/srtool:1.70.0 build
             mv runtime/target/srtool/release/wbuild/da-runtime/da_runtime.compact.compressed.wasm target/release/wbuild/da-runtime/data-avail-runtime.compact.compressed.wasm
             pushd target/release/
             tar czf data-avail-linux-amd64.tar.gz data-avail-linux-amd64

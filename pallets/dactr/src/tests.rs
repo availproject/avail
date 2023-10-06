@@ -1,6 +1,7 @@
 use avail_core::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO};
 use frame_support::{assert_noop, assert_ok, error::BadOrigin};
 use frame_system::{limits::BlockLength, RawOrigin};
+use sp_core::H256;
 
 use crate::{
 	mock::{
@@ -83,10 +84,14 @@ mod submit_data {
 			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
 			let max_app_key_length: usize = MaxAppDataLength::get().try_into().unwrap();
 			let data = AppDataFor::<Test>::try_from(vec![b'X'; max_app_key_length]).unwrap();
+			let data_hash = H256(sp_io::hashing::blake2_256(&data));
 
-			assert_ok!(DataAvailability::submit_data(alice, data.clone()));
+			assert_ok!(DataAvailability::submit_data(alice, data));
 
-			let event = RuntimeEvent::DataAvailability(Event::DataSubmitted { who: ALICE, data });
+			let event = RuntimeEvent::DataAvailability(Event::DataSubmitted {
+				who: ALICE,
+				data_hash,
+			});
 			System::assert_last_event(event);
 		})
 	}

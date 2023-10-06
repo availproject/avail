@@ -48,14 +48,16 @@ criterion = "0.4.0"
 sp-externalities = "0.19.0"
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
 	"avail-base/std",
-	"kate/std",
 	"avail-core/std",
+	"binary-merkle-tree/std",
 	"codec/std",
 	"frame-support/std",
+	"kate/std",
 	"log/std",
+	"once_cell",
 	"scale-info/std",
 	"serde/std",
 	"sp-core/std",
@@ -65,25 +67,14 @@ std = [
 	"sp-std/std",
 	"sp-version/std",
 	"sp-weights/std",
-	"binary-merkle-tree/std",
-	"once_cell"
 ]
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
-	"sp-runtime/runtime-benchmarks",
 	"serde",
+	"sp-runtime/runtime-benchmarks",
 ]
-try-runtime = [
-	"frame-support/try-runtime",
-	"avail-core/try-runtime"
-]
-serde = [
-	"dep:serde",
-]
-
-# For testing backward/forward header compatibility.
-header-compatibility-test = [
-	"avail-core/header-backward-compatibility-test" ]
+try-runtime = [ "avail-core/try-runtime", "frame-support/try-runtime" ]
+serde = [ "dep:serde" ]
 
 # It enables the use of header extension V2
 header_extension_v2 = []
