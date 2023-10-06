@@ -43,6 +43,7 @@ use substrate_test_utils::assert_eq_uvec;
 
 const DAY: u64 = 24 * 60 * 60 * 1000;
 const YEAR: u64 = 365 * DAY;
+const MONTH: u64 = YEAR / 12;
 
 pallet_staking_reward_curve::build! {
 	const I_NPOS: PiecewiseLinear<'static> = curve!(
@@ -97,9 +98,29 @@ fn random_test() {
 		let (payout, max) = compute_total_payout(&I_NPOS, 75_000u64, 100_000u64, YEAR);
 		assert_eq!((payout, max), (1_282, 9_993));
 
-		// for i in (0..=100_000).step_by(1000) {
-		// 	let (payout, _) = compute_total_payout(&I_NPOS, i, 100_000u64, YEAR);
-		// 	println!("tokenStaked: {i}, yearly_payout: {payout}");
+		// for i in (0..=1_000_000_000).step_by(10_000_000) {
+		// 	let (payout, _) = compute_total_payout(&I_NPOS, i, 1_000_000_000u64, DAY);
+		// 	println!("{payout}");
+		// }
+
+		let (_, max1) = compute_total_payout(&I_NPOS, 0u64, 1_000_000_000u64, YEAR);
+		let (_, max2) = compute_total_payout(&I_NPOS, 0u64, 1_000_000_000u64, MONTH);
+		let (_, max3) = compute_total_payout(&I_NPOS, 0u64, 1_000_000_000u64, DAY);
+		println!("MAX1 - {}", max1);
+		println!("MAX2 - {}", max2);
+		println!("MAX3 - {}", max3);
+
+		for i in (0..=1_000_000_000).step_by(10_000_000) {
+			let (payout, _) = compute_total_payout(&I_NPOS, i, 1_000_000_000u64, YEAR);
+			println!("YEARLY : tokenStaked: {i}, payout: {payout}");
+		}
+		// for i in (0..=1_000_000_000).step_by(10_000_000) {
+		// 	let (payout, _) = compute_total_payout(&I_NPOS, i, 1_000_000_000u64, MONTH);
+		// 	println!("MONTLY : tokenStaked: {i}, payout: {payout}");
+		// }
+		// for i in (0..=1_000_000_000).step_by(10_000_000) {
+		// 	let (payout, _) = compute_total_payout(&I_NPOS, i, 1_000_000_000u64, DAY);
+		// 	println!("DAILY : tokenStaked: {i}, payout: {payout}");
 		// }
 	});
 }
