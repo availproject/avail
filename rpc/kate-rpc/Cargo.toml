@@ -15,28 +15,22 @@ kate-recovery = { version = "0.9", default-features = false }
 
 # 3rd party
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
-lru = "0.7.2"
-nalgebra = "0.32.2"
-static_assertions = "1.1.0"
 
 # Substrate
 sp-api = { version = "4.0.0-dev", default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false }
-frame-support = { version = "4.0.0-dev", default-features = false }
-sc-client-db = "0.10.0-dev"
-codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 sc-client-api = "4.0.0-dev"
 sp-blockchain = "4.0.0-dev"
 sp-runtime = { version = "24.0.0", default-features = false }
+moka = { version = "0.12.1", features = [ "future" ] }
+serde = { version = "1", features = ["derive"] }
 
 [features]
 default = [ "std" ]
 std = [
 	"avail-base/std",
 	"avail-core/std",
-	"codec/std",
 	"da-runtime/std",
-	"frame-support/std",
 	"frame-system/std",
 	"kate-recovery/std",
 	"kate/std",
