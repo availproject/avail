@@ -223,7 +223,7 @@ where
 					4,
 					block_length.cols.0.try_into().expect("TODO"), // 'cols' is the # of cols, so width
 					block_length.rows.0.try_into().expect("TODO"), // 'rows' is the # of rows, so height
-					seed.clone(),
+					seed,
 				)
 				.map_err(|e| internal_err!("Building evals grid failed: {:?}", e))?;
 
@@ -489,7 +489,7 @@ where
 				let evals = mp
 					.evals
 					.iter()
-					.flat_map(|s| s)
+					.flatten()
 					.flat_map(|c| c.to_bytes().unwrap())
 					.collect::<Vec<u8>>();
 				let proof: Vec<u8> = mp.proof.to_bytes().unwrap().into();
@@ -504,12 +504,12 @@ fn non_extended_dimensions(ext_dims: Dimensions) -> RpcResult<Dimensions> {
 	let rows = ext_dims
 		.rows()
 		.get()
-		.checked_div(NonZeroU16::get(ROW_EXTENSION).into())
+		.checked_div(NonZeroU16::get(ROW_EXTENSION))
 		.ok_or_else(|| internal_err!("Invalid row extension"))?;
 	let cols = ext_dims
 		.cols()
 		.get()
-		.checked_div(NonZeroU16::get(COL_EXTENSION).into())
+		.checked_div(NonZeroU16::get(COL_EXTENSION))
 		.ok_or_else(|| internal_err!("Invalid col extension"))?;
 	let dimensions =
 		Dimensions::new_from(rows, cols).ok_or_else(|| internal_err!("Invalid dimensions"))?;
