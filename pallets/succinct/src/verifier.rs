@@ -268,23 +268,11 @@ mod tests {
 	use hex_literal::hex;
 	use sp_core::{H256, U256};
 
-	use crate::state::{Groth16Proof, LightClientRotate, LightClientStep, State};
+	use crate::state::{Groth16Proof, LightClientRotate, LightClientStep};
 	use crate::verifier::{zk_light_client_rotate, zk_light_client_step, Verifier};
 
 	#[test]
-	fn test_zk_step() {
-		let state: State = State {
-			updater: H256([0u8; 32]),
-			genesis_validators_root: H256([0u8; 32]),
-			genesis_time: 1696404557,
-			seconds_per_slot: 12000,
-			slots_per_period: 8192,
-			source_chain_id: 0,
-			finality_threshold: 1,
-			head: 0,
-			consistent: true,
-		};
-
+	fn test_zk_step_with_serde() {
 		let finalized_header_root = H256(hex!(
 			"70d0a7f53a459dd88eb37c6cfdfb8c48f120e504c96b182357498f2691aa5653"
 		));
@@ -460,18 +448,6 @@ mod tests {
 
 	#[test]
 	fn test_zk_rotate_with_serde() {
-		let state: State = State {
-			updater: H256::zero(),
-			genesis_validators_root: H256::zero(),
-			genesis_time: 1696404557,
-			seconds_per_slot: 12000,
-			slots_per_period: 8192,
-			source_chain_id: 0,
-			finality_threshold: 1,
-			head: 0,
-			consistent: true,
-		};
-
 		let finalized_header_root = H256(hex!(
 			"b6c60352d13b5a1028a99f11ec314004da83c9dbc58b7eba72ae71b3f3373c30"
 		));
