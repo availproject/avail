@@ -15,11 +15,9 @@ mod mock;
 #[cfg(test)]
 mod tests;
 // mod verify;
-mod weights;
-// mod contract;
-mod contract;
 mod state;
 mod verifier;
+mod weights;
 
 type PublicInputsDef<T> = BoundedVec<u8, <T as Config>::MaxPublicInputsLength>;
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
@@ -45,8 +43,9 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	pub use weights::WeightInfo;
 
-	use crate::contract::{zk_light_client_rotate, zk_light_client_step};
 	use crate::state::{LightClientStep, State};
+	use crate::verifier::zk_light_client_rotate;
+	use crate::verifier::zk_light_client_step;
 
 	use super::*;
 

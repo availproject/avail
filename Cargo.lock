@@ -2107,7 +2107,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "hex",
- "hex-literal",
+    "hex-literal 0.3.4",
  "kate",
  "log",
  "nomad-da-bridge",
@@ -2227,7 +2227,7 @@ dependencies = [
  "frame-system",
  "frame-system-rpc-runtime-api",
  "futures",
- "hex-literal",
+    "hex-literal 0.3.4",
  "jsonrpsee",
  "kate",
  "kate-rpc",
@@ -2898,7 +2898,7 @@ dependencies = [
  "serde_json",
  "sha3",
  "thiserror",
- "uint 0.9.5",
+    "uint",
 ]
 
 [[package]]
@@ -2929,7 +2929,7 @@ dependencies = [
  "impl-serde",
  "primitive-types",
  "scale-info",
- "uint 0.9.5",
+    "uint",
 ]
 
 [[package]]
@@ -3414,7 +3414,7 @@ dependencies = [
  "criterion",
  "derive_more",
  "frame-support",
- "hex-literal",
+    "hex-literal 0.3.4",
  "impl-trait-for-tuples",
  "kate",
  "log",
@@ -3938,6 +3938,12 @@ name = "hex-literal"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ebdb29d2ea9ed0083cd8cece49bbd968021bd99b0849edb4a9a7ee0fdf6a4e0"
+
+[[package]]
+name = "hex-literal"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
 
 [[package]]
 name = "hkdf"
@@ -4569,7 +4575,7 @@ dependencies = [
  "dusk-bytes",
  "dusk-plonk",
  "hex",
- "hex-literal",
+    "hex-literal 0.3.4",
  "kate-recovery",
  "log",
  "nalgebra",
@@ -4863,7 +4869,7 @@ dependencies = [
  "sha2 0.10.8",
  "smallvec",
  "thiserror",
- "uint 0.9.5",
+    "uint",
  "unsigned-varint",
  "void",
 ]
@@ -5825,7 +5831,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "hex-literal",
+    "hex-literal 0.3.4",
  "nomad-base",
  "nomad-core",
  "nomad-home",
@@ -5847,7 +5853,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "hex-literal",
+    "hex-literal 0.3.4",
  "nomad-base",
  "nomad-core",
  "nomad-merkle",
@@ -5869,7 +5875,7 @@ source = "git+https://github.com/availproject/avail-core?branch=main#948797c3bf9
 dependencies = [
  "avail-core",
  "frame-support",
- "hex-literal",
+    "hex-literal 0.3.4",
  "nomad-core",
  "parity-scale-codec",
  "scale-info",
@@ -6117,15 +6123,6 @@ dependencies = [
  "ecdsa 0.14.8",
  "elliptic-curve 0.12.3",
  "sha2 0.10.8",
-]
-
-[[package]]
-name = "pairing"
-version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "135590d8bdba2b31346f9cd1fb2a912329f5135e832a4f422942eb6ead8b6b3b"
-dependencies = [
- "group 0.12.1",
 ]
 
 [[package]]
@@ -6624,10 +6621,8 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "group 0.12.1",
- "hex-literal",
+    "hex-literal 0.4.1",
  "log",
- "pairing",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -6637,7 +6632,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "uint 0.8.5",
 ]
 
 [[package]]
@@ -7272,7 +7266,7 @@ dependencies = [
  "impl-rlp",
  "impl-serde",
  "scale-info",
- "uint 0.9.5",
+    "uint",
 ]
 
 [[package]]
@@ -11223,18 +11217,6 @@ name = "ucd-trie"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed646292ffc8188ef8ea4d1e0e0150fb15a5c2e12ad9b8fc191ae7a8a7f3c4b9"
-
-[[package]]
-name = "uint"
-version = "0.8.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9db035e67dfaf7edd9aebfe8676afcd63eed53c8a4044fed514c8cccf1835177"
-dependencies = [
- "byteorder",
- "crunchy",
- "rustc-hex",
- "static_assertions",
-]
 
 [[package]]
 name = "uint"
