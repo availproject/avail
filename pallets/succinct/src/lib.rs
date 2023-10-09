@@ -9,7 +9,6 @@ use crate::verifier::Verifier;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-mod common;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
@@ -445,7 +444,7 @@ pub mod pallet {
 		let verifier = get_step_verifier::<T>()?;
 
 		let success = zk_light_client_step(&update, sc_poseidon, verifier)
-			.map_err(|e| Error::<T>::from(e))?;
+			.map_err(|_| Error::<T>::VerificationError)?;
 
 		ensure!(success, Error::<T>::ProofNotValid);
 		Ok(update.participation > state.finality_threshold)

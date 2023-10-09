@@ -20,23 +20,6 @@ use crate::Error;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
 pub enum VerificationError {
 	InvalidProof,
-	SyncCommitteeNotInitialized,
-	NotEnoughSyncCommitteeParticipants,
-	ProofNotValid,
-	VerificationError,
-}
-
-impl<T: Config> From<VerificationError> for Error<T> {
-	fn from(e: VerificationError) -> Error<T> {
-		match e {
-			VerificationError::InvalidProof => Error::<T>::VerificationError,
-			// ContractError::SyncCommitteeNotInitialized => {}
-			// ContractError::NotEnoughSyncCommitteeParticipants => {}
-			// ContractError::ProofNotValid => {}
-			// ContractError::VerificationError => {}
-			_ => Error::<T>::VerificationError,
-		}
-	}
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]

@@ -84,11 +84,6 @@ impl pallet_mandate::Config for Runtime {
 }
 
 impl pallet_succinct::Config for Runtime {
-	type ApprovedOrigin = EitherOfDiverse<
-		EnsureRoot<AccountId>,
-		pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 1, 2>,
-	>;
-
 	type MaxPublicInputsLength = MaxPublicInputsLength;
 	type MaxProofLength = MaxProofLength;
 	type MaxVerificationKeyLength = MaxVerificationKeyLength;
