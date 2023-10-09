@@ -24,7 +24,6 @@ mod verifier;
 type PublicInputsDef<T> = BoundedVec<u8, <T as Config>::MaxPublicInputsLength>;
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
 
-// TODO do we need to store constants in the storage?
 parameter_types! {
 	pub const  MinSyncCommitteeParticipants: u16=10;
 	pub const  SyncCommitteeSize: u32=512;

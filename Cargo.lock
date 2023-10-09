@@ -1099,19 +1099,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae"
 
 [[package]]
-name = "bls12_381"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3c196a77437e7cc2fb515ce413a6401291578b5afc8ecb29a3c7ab957f05941"
-dependencies = [
- "ff 0.12.1",
- "group 0.12.1",
- "pairing",
- "rand_core 0.6.4",
- "subtle",
-]
-
-[[package]]
 name = "blst"
 version = "0.3.10"
 source = "git+https://github.com/availproject/blst?tag=v0.3.10#556e037926d9c526c2eb6cb1522bea39690416ea"
@@ -3062,7 +3049,6 @@ version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d013fc25338cc558c5c2cfbad646908fb23591e2404481826742b651c9af7160"
 dependencies = [
- "bitvec 1.0.1",
  "rand_core 0.6.4",
  "subtle",
 ]
@@ -6628,7 +6614,6 @@ dependencies = [
 name = "pallet-succinct"
 version = "1.0.0"
 dependencies = [
- "ark-bls12-381",
  "ark-bn254",
  "ark-ec 0.4.2",
  "ark-ff 0.3.0",
@@ -6636,7 +6621,6 @@ dependencies = [
  "ark-serialize 0.4.2",
  "ark-snark 0.4.0",
  "ark-std 0.4.0",
- "bls12_381",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
