@@ -20,7 +20,7 @@ mod weights;
 
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
 
-// TODO define correct values for constants
+// TODO remove unused and define correct values
 parameter_types! {
 	pub const MinSyncCommitteeParticipants: u16=10;
 	pub const SyncCommitteeSize: u32=512;
