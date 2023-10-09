@@ -19,15 +19,18 @@ mod state;
 mod verifier;
 mod weights;
 
-type PublicInputsDef<T> = BoundedVec<u8, <T as Config>::MaxPublicInputsLength>;
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
 
+// TODO define correct values for constants
 parameter_types! {
-	pub const  MinSyncCommitteeParticipants: u16=10;
-	pub const  SyncCommitteeSize: u32=512;
-	pub const  FinalizedRootIndex: u32=105;
-	pub const  NextSyncCommitteeIndex: u32= 55;
-	pub const  ExecutionStateRootIndex: u32= 402;
+	pub const MinSyncCommitteeParticipants: u16=10;
+	pub const SyncCommitteeSize: u32=512;
+	pub const FinalizedRootIndex: u32=105;
+	pub const NextSyncCommitteeIndex: u32= 55;
+	pub const ExecutionStateRootIndex: u32= 402;
+	pub const MaxPublicInputsLength: u32 = 9;
+	pub const MaxVerificationKeyLength: u32 = 4143;
+	pub const MaxProofLength: u32 = 1133;
 }
 
 #[frame_support::pallet]
@@ -52,19 +55,16 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T> {
 		UpdaterMisMatch,
-		CannotChangeUpdater,
 		VerificationError,
 		CannotUpdateStateStorage,
-
 		UpdateSlotIsFarInTheFuture,
 		UpdateSlotLessThanCurrentHead,
 		NotEnoughParticipants,
 		SyncCommitteeNotInitialized,
 		NotEnoughSyncCommitteeParticipants,
-		MinSCNotSigned,
+
 		// verification
 		ProofNotValid,
-		PublicInputsMismatch,
 		TooLongPublicInputs,
 		TooLongVerificationKey,
 		TooLongProof,
@@ -78,24 +78,38 @@ pub mod pallet {
 		ProofVerificationError,
 		ProofCreationError,
 		VerificationKeyCreationError,
+		InvalidRotateProof,
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		// emit event once the head is updated
-		HeadUpdate { slot: u64, finalization_root: Hash },
-		SyncCommitteeUpdate { period: u64, root: U256 },
+		// emit event once the head is updateds
+		HeadUpdate {
+			slot: u64,
+			finalization_root: H256,
+		},
+		// emit event once the sync committee updates
+		SyncCommitteeUpdate {
+			period: u64,
+			root: U256,
+		},
+		// emit event when verification setup is completed
 		VerificationSetupCompleted,
-		VerificationProofSet,
-		VerificationSuccess { who: H256 },
-		NewUpdater { old: H256, new: H256 },
-		VerificationFailed,
+		// emit event if verification is success
+		VerificationSuccess {
+			who: H256,
+			attested_slot: u64,
+			finalized_slot: u64,
+		},
+		// emit when new updater is set
+		NewUpdater {
+			old: H256,
+			new: H256,
+		},
 	}
 
 	// Storage definitions
-	#[pallet::storage]
-	pub type PublicInputStorage<T: Config> = StorageValue<_, PublicInputsDef<T>, ValueQuery>;
 	#[pallet::storage]
 	pub type VerificationKeyStorage<T: Config> = StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
 
@@ -103,23 +117,24 @@ pub mod pallet {
 	pub type RotateVerificationKeyStorage<T: Config> =
 		StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
 
+	// Storage for a general state.
 	#[pallet::storage]
 	pub type StateStorage<T: Config> = StorageValue<_, State, ValueQuery>;
 
-	// @notice Maps from a slot to a beacon block header root.
+	// Maps from a slot to a block header root.
 	#[pallet::storage]
 	#[pallet::getter(fn get_header)]
-	pub type Headers<T> = StorageMap<_, Identity, u64, Hash, ValueQuery>;
+	pub type Headers<T> = StorageMap<_, Identity, u64, H256, ValueQuery>;
 
-	// Maps from a slot to the timestamp of when the headers mapping was updated with slot as a key
+	// Maps slot to the timestamp of when the headers mapping was updated with slot as a key
 	#[pallet::storage]
 	#[pallet::getter(fn get_timestamp)]
 	pub type Timestamps<T> = StorageMap<_, Identity, u64, u64, ValueQuery>;
 
-	// Maps from a slot to the current finalized ethereum1 execution state root.
+	// Maps from a slot to the current finalized ethereum execution state root.
 	#[pallet::storage]
 	#[pallet::getter(fn get_state_root)]
-	pub type ExecutionStateRoots<T> = StorageMap<_, Identity, u64, Hash, ValueQuery>;
+	pub type ExecutionStateRoots<T> = StorageMap<_, Identity, u64, H256, ValueQuery>;
 
 	// Maps from a period to the poseidon commitment for the sync committee.
 	#[pallet::storage]
@@ -132,10 +147,13 @@ pub mod pallet {
 		type TimeProvider: UnixTime;
 		#[pallet::constant]
 		type MaxPublicInputsLength: Get<u32>;
+		// 9
 		#[pallet::constant]
 		type MaxProofLength: Get<u32>;
+		// 1133
 		#[pallet::constant]
 		type MaxVerificationKeyLength: Get<u32>;
+		// 4143
 		#[pallet::constant]
 		type MinSyncCommitteeParticipants: Get<u32>;
 		#[pallet::constant]
@@ -220,7 +238,7 @@ pub mod pallet {
 			let step = &update.step;
 
 			let finalized = process_step::<T>(state, step)?;
-			let current_period = get_sync_committee_period(state, step.finalized_slot);
+			let current_period = step.finalized_slot / state.slots_per_period;
 			let next_period = current_period + 1;
 
 			let verifier = get_rotate_verifier::<T>()?;
@@ -229,22 +247,22 @@ pub mod pallet {
 			let success = zk_light_client_rotate(&update, verifier)
 				.map_err(|_| Error::<T>::VerificationError)?;
 
-			if success {
-				Self::deposit_event(Event::VerificationSuccess { who: sender.into() });
-				if finalized {
-					let is_set = set_sync_committee_poseidon::<T>(
-						next_period,
-						update.sync_committee_poseidon,
-					)?;
-					if is_set {
-						Self::deposit_event(Event::SyncCommitteeUpdate {
-							period: next_period,
-							root: update.sync_committee_poseidon,
-						});
-					}
+			ensure!(success, Error::<T>::InvalidRotateProof);
+
+			Self::deposit_event(Event::VerificationSuccess {
+				who: sender.into(),
+				attested_slot: step.attested_slot,
+				finalized_slot: step.finalized_slot,
+			});
+			if finalized {
+				let is_set =
+					set_sync_committee_poseidon::<T>(next_period, update.sync_committee_poseidon)?;
+				if is_set {
+					Self::deposit_event(Event::SyncCommitteeUpdate {
+						period: next_period,
+						root: update.sync_committee_poseidon,
+					});
 				}
-			} else {
-				Self::deposit_event(Event::VerificationFailed);
 			}
 
 			Ok(())
@@ -265,10 +283,11 @@ pub mod pallet {
 
 			let finalized = process_step::<T>(state, &update)?;
 
-			let current_slot = get_current_slot::<T>(state.genesis_time, state.seconds_per_slot);
+			let block_time: u64 = T::TimeProvider::now().as_secs();
+			let current_slot = (block_time - state.genesis_time) / state.seconds_per_slot;
 
 			ensure!(
-				current_slot <= update.attested_slot,
+				current_slot >= update.attested_slot,
 				Error::<T>::UpdateSlotIsFarInTheFuture
 			);
 
@@ -294,7 +313,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		// sets updater that can call step and rotate functions
+		/// Sets updater that can call step and rotate functions
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn set_updater(origin: OriginFor<T>, updater: H256) -> DispatchResult {
@@ -312,7 +331,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Sets the public input params into storage
+		/// Sets verification public inputs for step function.
 		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn setup_step_verification(
@@ -330,7 +349,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Sets the public input params into storage
+		/// Sets verification public inputs for rotate function.
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn setup_rotate_verification(
@@ -347,20 +366,6 @@ pub mod pallet {
 			Self::deposit_event(Event::<T>::VerificationSetupCompleted);
 			Ok(())
 		}
-	}
-
-	fn get_current_slot<T: Config>(genesis_time: u64, seconds_per_slot: u64) -> u64 {
-		//  TODO check block time provider
-		let block_time: u64 = T::TimeProvider::now().as_secs();
-
-		log::info!(
-			"Genesis time: {}, block time: {}, slot per period: {}",
-			genesis_time,
-			block_time,
-			seconds_per_slot
-		);
-
-		(block_time - genesis_time) / seconds_per_slot
 	}
 
 	fn set_slot_roots<T: Config>(
@@ -398,7 +403,6 @@ pub mod pallet {
 		Headers::<T>::insert(slot, finalized_header_root);
 
 		// TODO can this time be used as block time?
-		// IS this really needed
 		Timestamps::<T>::insert(slot, T::TimeProvider::now().as_secs());
 
 		Ok(true)
@@ -423,15 +427,11 @@ pub mod pallet {
 		Ok(true)
 	}
 
-	fn get_sync_committee_period(state: State, slot: u64) -> u64 {
-		slot / state.slots_per_period
-	}
-
 	fn process_step<T: Config>(
 		state: State,
 		update: &LightClientStep,
 	) -> Result<bool, DispatchError> {
-		let current_period = get_sync_committee_period(state, update.attested_slot);
+		let current_period = update.finalized_slot / state.slots_per_period; //get_sync_committee_period(state, update.attested_slot);
 		let sc_poseidon = SyncCommitteePoseidons::<T>::get(current_period);
 
 		ensure!(

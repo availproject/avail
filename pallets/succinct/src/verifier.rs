@@ -262,8 +262,6 @@ pub fn zk_light_client_step(
 
 #[cfg(test)]
 mod tests {
-	use std::time::{SystemTime, UNIX_EPOCH};
-
 	use ark_std::string::ToString;
 	use ark_std::vec;
 	use frame_support::assert_ok;
@@ -462,15 +460,10 @@ mod tests {
 
 	#[test]
 	fn test_zk_rotate_with_serde() {
-		let mut gen_time = 0;
-		if let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) {
-			gen_time = now.as_secs();
-		}
-
 		let state: State = State {
-			updater: H256([0u8; 32]),
-			genesis_validators_root: H256([0u8; 32]),
-			genesis_time: gen_time,
+			updater: H256::zero(),
+			genesis_validators_root: H256::zero(),
+			genesis_time: 1696404557,
 			seconds_per_slot: 12000,
 			slots_per_period: 8192,
 			source_chain_id: 0,

@@ -1,21 +1,8 @@
-use crate::voter_bags;
-use crate::SessionKeys;
-use crate::SLOT_DURATION;
-use crate::{
-	constants, deposit, weights, AccountId, AccountIndex, Authorship, Babe, Balances, Block,
-	BlockNumber, Bounties, ElectionProviderMultiPhase, GrandpaId, Hash, Historical, ImOnline,
-	ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo,
-	Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeHoldReason,
-	RuntimeOrigin, RuntimeVersion, Session, Signature, SignedPayload, Staking, System,
-	TechnicalCommittee, Timestamp, TransactionPayment, Treasury, UncheckedExtrinsic, VoterList,
-	VERSION,
-};
 use avail_core::currency::{Balance, AVL, CENTS, MILLICENTS};
 use avail_core::AppId;
 use avail_core::OpaqueExtrinsic;
 use avail_core::NORMAL_DISPATCH_RATIO;
 use codec::Decode;
-use constants::time::DAYS;
 use frame_election_provider_support::onchain;
 use frame_election_provider_support::BalancingConfig;
 use frame_election_provider_support::ElectionDataProvider;
@@ -35,9 +22,6 @@ use frame_support::weights::constants::RocksDbWeight;
 use frame_support::weights::ConstantMultiplier;
 use frame_support::weights::IdentityFee;
 use frame_support::{parameter_types, traits::EitherOfDiverse, PalletId};
-use frame_system::limits::BlockLength;
-use frame_system::submitted_data;
-use frame_system::EnsureRoot;
 use pallet_election_provider_multi_phase::SolutionAccuracyOf;
 use pallet_transaction_payment::CurrencyAdapter;
 use pallet_transaction_payment::Multiplier;
@@ -47,6 +31,7 @@ use sp_runtime::generic::Era;
 use sp_runtime::traits;
 use sp_runtime::traits::BlakeTwo256;
 use sp_runtime::traits::Bounded;
+use sp_runtime::traits::Convert;
 use sp_runtime::traits::OpaqueKeys;
 use sp_runtime::FixedPointNumber;
 use sp_runtime::FixedU128;
@@ -56,6 +41,29 @@ use sp_runtime::{Percent, Permill};
 use sp_std::rc::Rc;
 use sp_std::vec;
 use sp_std::vec::Vec;
+
+use constants::time::DAYS;
+use frame_system::limits::BlockLength;
+use frame_system::submitted_data;
+use frame_system::EnsureRoot;
+use pallet_succinct::{
+	ExecutionStateRootIndex, FinalizedRootIndex, MaxProofLength, MaxPublicInputsLength,
+	MaxVerificationKeyLength, MinSyncCommitteeParticipants, NextSyncCommitteeIndex,
+	SyncCommitteeSize,
+};
+
+use crate::voter_bags;
+use crate::SessionKeys;
+use crate::SLOT_DURATION;
+use crate::{
+	constants, deposit, weights, AccountId, AccountIndex, Authorship, Babe, Balances, Block,
+	BlockNumber, Bounties, ElectionProviderMultiPhase, GrandpaId, Hash, Historical, ImOnline,
+	ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo,
+	Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeHoldReason,
+	RuntimeOrigin, RuntimeVersion, Session, Signature, SignedPayload, Staking, System,
+	TechnicalCommittee, Timestamp, TransactionPayment, Treasury, UncheckedExtrinsic, VoterList,
+	VERSION,
+};
 
 type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -73,12 +81,6 @@ impl pallet_mandate::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_mandate::WeightInfo<Runtime>;
-}
-
-parameter_types! {
-	pub const MaxPublicInputsLength: u32 = 9;
-	pub const MaxVerificationKeyLength: u32 = 4143;
-	pub const MaxProofLength: u32 = 1133;
 }
 
 impl pallet_succinct::Config for Runtime {
@@ -638,12 +640,6 @@ parameter_types! {
 	pub const NominationPoolsPalletId: PalletId = PalletId(*b"py/nopls");
 	pub const MaxPointsToBalance: u8 = 10;
 }
-
-use pallet_succinct::{
-	ExecutionStateRootIndex, FinalizedRootIndex, MinSyncCommitteeParticipants,
-	NextSyncCommitteeIndex, SyncCommitteeSize,
-};
-use sp_runtime::traits::Convert;
 
 pub struct BalanceToU256;
 
