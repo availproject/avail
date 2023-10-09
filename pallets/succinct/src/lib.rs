@@ -111,7 +111,8 @@ pub mod pallet {
 
 	// Storage definitions
 	#[pallet::storage]
-	pub type VerificationKeyStorage<T: Config> = StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
+	pub type StepVerificationKeyStorage<T: Config> =
+		StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
 
 	#[pallet::storage]
 	pub type RotateVerificationKeyStorage<T: Config> =
@@ -170,8 +171,6 @@ pub mod pallet {
 			+ GetDispatchInfo;
 
 		type WeightInfo: WeightInfo;
-
-		type ApprovedOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
 	//  pallet initialization data
@@ -453,7 +452,7 @@ pub mod pallet {
 	}
 
 	fn get_step_verifier<T: Config>() -> Result<Verifier, Error<T>> {
-		let vk = VerificationKeyStorage::<T>::get();
+		let vk = StepVerificationKeyStorage::<T>::get();
 		ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
 		let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
 			.map_err(|_| Error::<T>::MalformedVerificationKey)?;
@@ -483,7 +482,7 @@ pub mod pallet {
 			Error::<T>::NotSupportedProtocol
 		);
 
-		VerificationKeyStorage::<T>::put(vk);
+		StepVerificationKeyStorage::<T>::put(vk);
 		Ok(deserialized_vk)
 	}
 
