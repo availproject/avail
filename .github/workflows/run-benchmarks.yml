@@ -87,7 +87,7 @@ jobs:
           # output-file-path: /home/ubuntu/actions-runner/_work/avail/avail/header_gen_bench.txt
           output-file-path: ./header_gen_bench.txt
           # Where the previous data file is stored
-          # external-data-json-path: ./cache/benchmark-data.json
+          external-data-json-path: ./cache/benchmark-data.json
           # Workflow will fail when an alert happens at 15% degradation
           fail-on-alert: true
           alert-threshold: '15%'
@@ -99,4 +99,3 @@ jobs:
           alert-comment-cc-users: '@fmiguelgarcia,@prabal-banerjee,@jakubcech,@vthunder,@kroos47,@Leouarz'
           comment-always: true
           summary-always: true
-          auto-push: true
