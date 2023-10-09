@@ -1,10 +1,15 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use frame_support::{pallet_prelude::*, parameter_types};
+use sp_core::U256;
+
+pub use pallet::*;
+
+use crate::verifier::Verifier;
+
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 mod common;
-mod deserialization;
-mod messages;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
@@ -13,17 +18,8 @@ mod tests;
 mod weights;
 // mod contract;
 mod contract;
+mod state;
 mod verifier;
-
-use crate::verifier::Verifier;
-use frame_support::{
-	dispatch::{GetDispatchInfo, UnfilteredDispatchable},
-	pallet_prelude::*,
-	parameter_types,
-};
-pub use pallet::*;
-use sp_core::U256;
-pub use weights::WeightInfo;
 
 type PublicInputsDef<T> = BoundedVec<u8, <T as Config>::MaxPublicInputsLength>;
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
@@ -39,18 +35,21 @@ parameter_types! {
 
 #[frame_support::pallet]
 pub mod pallet {
-	use super::*;
-	use frame_support::traits::{Hash, UnixTime};
-	use frame_support::{pallet_prelude::ValueQuery, DefaultNoBound};
-	use frame_system::pallet_prelude::*;
-	use sp_core::H256;
-
-	use crate::messages::{LightClientStep, State};
-
-	use crate::contract::{zk_light_client_rotate, zk_light_client_step};
 	use ark_std::string::String;
 	use ark_std::string::ToString;
 	use ark_std::{vec, vec::Vec};
+	use frame_support::dispatch::{GetDispatchInfo, UnfilteredDispatchable};
+	use frame_support::traits::{Hash, UnixTime};
+	use frame_support::{pallet_prelude::ValueQuery, DefaultNoBound};
+	use sp_core::H256;
+
+	use frame_system::pallet_prelude::*;
+	pub use weights::WeightInfo;
+
+	use crate::contract::{zk_light_client_rotate, zk_light_client_step};
+	use crate::state::{LightClientStep, State};
+
+	use super::*;
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -182,9 +181,10 @@ pub mod pallet {
 		fn build(&self) {
 			// TODO time cannot be called at Genesis
 			// T::TimeProvider::now().as_secs()
+			// Preconfigure init data
 			<StateStorage<T>>::put(State {
 				updater: self.updater,
-				genesis_validators_root: H256([0u8; 32]),
+				genesis_validators_root: H256::zero(),
 				genesis_time: 1696440023,
 				seconds_per_slot: 12000,
 				slots_per_period: 8192,
@@ -209,13 +209,12 @@ pub mod pallet {
 	impl<T: Config> Pallet<T>
 	where
 		[u8; 32]: From<T::AccountId>,
-		T::AccountId: From<[u8; 32]>,
 	{
 		/// Sets the sync committee for the next sync committee period.
 		/// A commitment to the the next sync committee is signed by the current sync committee.
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::rotate())]
-		pub fn rotate(origin: OriginFor<T>, update: messages::LightClientRotate) -> DispatchResult {
+		pub fn rotate(origin: OriginFor<T>, update: state::LightClientRotate) -> DispatchResult {
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let state = StateStorage::<T>::get();
 			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
@@ -226,7 +225,6 @@ pub mod pallet {
 			let current_period = get_sync_committee_period(state, step.finalized_slot);
 			let next_period = current_period + 1;
 
-			// TODO get rotate verifier
 			let verifier = get_rotate_verifier::<T>()?;
 
 			// proof verification
@@ -317,7 +315,7 @@ pub mod pallet {
 		}
 
 		/// Sets the public input params into storage
-		#[pallet::call_index(4)]
+		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn setup_step_verification(
 			origin: OriginFor<T>,
@@ -335,7 +333,7 @@ pub mod pallet {
 		}
 
 		/// Sets the public input params into storage
-		#[pallet::call_index(5)]
+		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn setup_rotate_verification(
 			origin: OriginFor<T>,
@@ -509,71 +507,4 @@ pub mod pallet {
 		RotateVerificationKeyStorage::<T>::put(vk);
 		Ok(deserialized_vk)
 	}
-
-	// fn get_proof<T: Config>(vec_proof: Vec<u8>) -> Result<GProof, Error<T>> {
-	//     ensure!(!vec_proof.is_empty(), Error::<T>::ProofIsEmpty);
-	//     let proof: ProofDef<T> = vec_proof.try_into().map_err(|_| Error::<T>::TooLongProof)?;
-	//     let deserialized_proof =
-	//         Proof::from_json_u8_slice(proof.as_slice()).map_err(|_| Error::<T>::MalformedProof)?;
-	//     ensure!(
-	// 		deserialized_proof.curve == SUPPORTED_CURVE.as_bytes(),
-	// 		Error::<T>::NotSupportedCurve
-	// 	);
-	//     ensure!(
-	// 		deserialized_proof.protocol == SUPPORTED_PROTOCOL.as_bytes(),
-	// 		Error::<T>::NotSupportedProtocol
-	// 	);
-	//
-	//     let proof = GProof::from_uncompressed(
-	//         &G1UncompressedBytes::new(deserialized_proof.a[0], deserialized_proof.a[1]),
-	//         &G2UncompressedBytes::new(
-	//             deserialized_proof.b[0][0],
-	//             deserialized_proof.b[0][1],
-	//             deserialized_proof.b[1][0],
-	//             deserialized_proof.b[1][1],
-	//         ),
-	//         &G1UncompressedBytes::new(deserialized_proof.c[0], deserialized_proof.c[1]),
-	//     )
-	//         .map_err(|_| Error::<T>::ProofCreationError)?;
-	//
-	//     Ok(proof)
-	// }
-
-	// fn store_proof<T: Config>(vec_proof: Vec<u8>) -> Result<GProof, sp_runtime::DispatchError> {
-	//     ensure!(!vec_proof.is_empty(), Error::<T>::ProofIsEmpty);
-	//     let proof: ProofDef<T> = vec_proof.try_into().map_err(|_| Error::<T>::TooLongProof)?;
-	//     let deserialized_proof =
-	//         Proof::from_json_u8_slice(proof.as_slice()).map_err(|_| Error::<T>::MalformedProof)?;
-	//     ensure!(
-	// 		deserialized_proof.curve == SUPPORTED_CURVE.as_bytes(),
-	// 		Error::<T>::NotSupportedCurve
-	// 	);
-	//     ensure!(
-	// 		deserialized_proof.protocol == SUPPORTED_PROTOCOL.as_bytes(),
-	// 		Error::<T>::NotSupportedProtocol
-	// 	);
-	//
-	//     ProofStorage::<T>::put(proof);
-	//
-	//     let proof = GProof::from_uncompressed(
-	//         &G1UncompressedBytes::new(deserialized_proof.a[0], deserialized_proof.a[1]),
-	//         &G2UncompressedBytes::new(
-	//             deserialized_proof.b[0][0],
-	//             deserialized_proof.b[0][1],
-	//             deserialized_proof.b[1][0],
-	//             deserialized_proof.b[1][1],
-	//         ),
-	//         &G1UncompressedBytes::new(deserialized_proof.c[0], deserialized_proof.c[1]),
-	//     )
-	//         .map_err(|_| Error::<T>::ProofCreationError)?;
-	//
-	//     Ok(proof)
-	// }
-
-	// pub fn serialize_argument(argument: impl CanonicalSerialize) -> Vec<u8> {
-	//     let mut serialized_argument = vec![0u8; argument.serialized_size(Compress::No)];
-	//     let mut cursor = Cursor::new(&mut serialized_argument[..]);
-	//     argument.serialize_uncompressed(&mut cursor).unwrap();
-	//     serialized_argument
-	// }
 }

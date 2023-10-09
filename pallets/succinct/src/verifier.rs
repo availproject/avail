@@ -1,17 +1,15 @@
-use ark_groth16::{prepare_verifying_key, verify_proof, Proof, VerifyingKey};
-
-use ark_std::string::String;
-use ark_std::vec::Vec;
-
 use ark_bn254::{Bn254, Fq, Fq2, Fr, G1Affine, G1Projective, G2Affine, G2Projective};
+use ark_groth16::{prepare_verifying_key, verify_proof, Proof, VerifyingKey};
+use ark_std::str::FromStr;
+use ark_std::string::String;
+use ark_std::string::ToString;
+use ark_std::vec;
+use ark_std::vec::Vec;
+use codec::{Decode, Encode};
+use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 
 use crate::contract::ContractError;
-use ark_std::str::FromStr;
-use ark_std::string::ToString;
-use ark_std::vec;
-use codec::{Decode, Encode};
-use scale_info::TypeInfo;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
 pub struct Verifier {

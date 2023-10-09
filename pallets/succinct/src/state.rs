@@ -3,6 +3,7 @@ use ark_ff::{Fp256, QuadExtField};
 use ark_groth16::Proof;
 use ark_std::str::FromStr;
 use ark_std::string::String;
+use ark_std::string::ToString;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{Deserialize, Serialize};
 use scale_info::TypeInfo;
@@ -11,7 +12,6 @@ use sp_std::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
 pub struct LightClientStep {
-	// TODO U256?
 	pub attested_slot: u64,
 	pub finalized_slot: u64,
 	pub participation: u16,
@@ -48,6 +48,16 @@ pub struct CircomProof {
 }
 
 impl CircomProof {
+	pub fn new(a: Vec<String>, b: Vec<Vec<String>>, c: Vec<String>) -> Self {
+		CircomProof {
+			pi_a: a,
+			pi_b: b,
+			pi_c: c,
+			protocol: "groth16".to_string(),
+			curve: "bn128".to_string(),
+		}
+	}
+
 	pub fn to_proof(self) -> Proof<Bn254> {
 		let a = G1Affine::new(
 			Fp256::from_str(&self.pi_a[0]).unwrap(),
@@ -92,16 +102,6 @@ impl PublicSignals {
 	}
 }
 
-// =========
-
-// #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
-// pub struct LightClientRotate {
-// 	pub step: LightClientStep,
-// 	pub sync_committee_ssz: u64,
-// 	pub sync_committee_poseidon: H256,
-// 	pub proof: Vec<u8>,
-// }
-
 #[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct State {
@@ -119,8 +119,8 @@ pub struct State {
 impl Default for State {
 	fn default() -> Self {
 		Self {
-			updater: H256([0u8; 32]),
-			genesis_validators_root: H256([0u8; 32]),
+			updater: H256::zero(),
+			genesis_validators_root: H256::zero(),
 			genesis_time: Default::default(),
 			seconds_per_slot: Default::default(),
 			slots_per_period: Default::default(),

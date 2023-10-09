@@ -1,16 +1,16 @@
-use crate::messages::{CircomProof, LightClientRotate, LightClientStep, PublicSignals};
-use crate::verifier::Verifier;
-use crate::Error;
-
 use ark_std::string::ToString;
 use ark_std::vec;
 use codec::{Decode, Encode};
 use frame_support::dispatch::TypeInfo;
 use frame_support::{Deserialize, Serialize};
-use frame_system::Config;
-
 use sha2::{Digest, Sha256};
 use sp_core::U256;
+
+use frame_system::Config;
+
+use crate::state::{CircomProof, LightClientRotate, LightClientStep, PublicSignals};
+use crate::verifier::Verifier;
+use crate::Error;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
 pub enum ContractError {
@@ -61,13 +61,7 @@ pub fn zk_light_client_rotate(
 
 	let groth_16_proof = update.proof.clone();
 
-	let circom_proof = CircomProof {
-		pi_a: groth_16_proof.a,
-		pi_b: groth_16_proof.b,
-		pi_c: groth_16_proof.c,
-		protocol: "groth16".to_string(),
-		curve: "bn128".to_string(),
-	};
+	let circom_proof = CircomProof::new(groth_16_proof.a, groth_16_proof.b, groth_16_proof.c);
 
 	let proof = circom_proof.to_proof();
 
@@ -78,12 +72,6 @@ pub fn zk_light_client_rotate(
 	res
 }
 
-fn vec_to_bytes(vec: &[u8]) -> [u8; 32] {
-	let mut bytes = [0u8; 32];
-	bytes.copy_from_slice(vec);
-	bytes
-}
-
 pub fn zk_light_client_step(
 	update: &LightClientStep,
 	sync_committee_poseidon: U256,
@@ -92,8 +80,8 @@ pub fn zk_light_client_step(
 	let mut fs: [u8; 32] = [0u8; 32];
 	let mut pc: [u8; 32] = [0u8; 32];
 
-	let finalized_slot_le: [u8; 8] = update.finalized_slot.to_le_bytes();
-	let participation_le: [u8; 2] = update.participation.to_le_bytes();
+	let finalized_slot_le = update.finalized_slot.to_le_bytes();
+	let participation_le = update.participation.to_le_bytes();
 	fs[..finalized_slot_le.len()].copy_from_slice(&finalized_slot_le);
 	pc[..participation_le.len()].copy_from_slice(&participation_le);
 
@@ -130,14 +118,7 @@ pub fn zk_light_client_step(
 
 	let groth_16_proof = update.proof.clone();
 
-	let circom_proof = CircomProof {
-		pi_a: groth_16_proof.a,
-		pi_b: groth_16_proof.b,
-		pi_c: groth_16_proof.c,
-		protocol: "groth16".to_string(),
-		curve: "bn128".to_string(),
-	};
-
+	let circom_proof = CircomProof::new(groth_16_proof.a, groth_16_proof.b, groth_16_proof.c);
 	let proof = circom_proof.to_proof();
 	let public_signals = PublicSignals::from(inputs);
 
@@ -146,16 +127,15 @@ pub fn zk_light_client_step(
 
 #[cfg(test)]
 mod tests {
-	use crate::messages::{Groth16Proof, LightClientRotate, LightClientStep, State};
-	use crate::verifier::Verifier;
-
-	use crate::contract::{zk_light_client_rotate, zk_light_client_step};
 	use ark_std::string::ToString;
 	use ark_std::vec;
-	use codec::Encode;
 	use frame_support::assert_ok;
 	use hex_literal::hex;
 	use sp_core::{H256, U256};
+
+	use crate::contract::{zk_light_client_rotate, zk_light_client_step};
+	use crate::state::{Groth16Proof, LightClientRotate, LightClientStep, State};
+	use crate::verifier::Verifier;
 
 	#[test]
 	fn test_zk_step() {
