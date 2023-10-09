@@ -11,6 +11,9 @@ on:
         description: Benchmark only our pallet
         required: false
         default: 0
+env: 
+  ACTIONS_RUNNER_DEBUG: true
+  ACTIONS_STEP_DEBUG: true
 
 jobs:
   benchmark:
@@ -75,9 +78,6 @@ jobs:
       - name: Run Header Generation Benchmark
         run: cargo bench -p da-runtime | tee ./header_gen_bench.txt
 
-      - name: find_2 
-        run: find -type f
-
       - name: Header Generation Regression Checks
         uses: fmiguelgarcia/github-action-benchmark@v1
         with:
@@ -100,4 +100,3 @@ jobs:
           comment-always: true
           summary-always: true
           auto-push: true
-
