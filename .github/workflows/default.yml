@@ -119,12 +119,18 @@ jobs:
     needs: [build]
     steps:
       - uses: actions/checkout@v2
+
       - uses: actions/cache@v3
         with:
           path: |
             ${{ env.SCCACHE_DIR }}
             ./runtime/target/iai
           key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential valgrind git clang curl libssl-dev protobuf-compiler unzip
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v1
@@ -139,6 +145,9 @@ jobs:
           source "$HOME/.cargo/env"
           rustup default ${{ env.BUILD_TOOLCHAIN }} 
           rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }}
+
+      - name: Set PATH for cargo
+        run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: SCCache
         run: |
