@@ -63,21 +63,15 @@ pub mod pallet {
 		NotEnoughSyncCommitteeParticipants,
 
 		// verification
-		ProofNotValid,
-		TooLongPublicInputs,
 		TooLongVerificationKey,
-		TooLongProof,
 		ProofIsEmpty,
 		VerificationKeyIsNotSet,
 		MalformedVerificationKey,
-		MalformedProof,
-		MalformedPublicInputs,
 		NotSupportedCurve,
 		NotSupportedProtocol,
-		ProofVerificationError,
 		ProofCreationError,
-		VerificationKeyCreationError,
 		InvalidRotateProof,
+		InvalidStepProof,
 	}
 
 	#[pallet::event]
@@ -446,7 +440,7 @@ pub mod pallet {
 		let success = zk_light_client_step(&update, sc_poseidon, verifier)
 			.map_err(|_| Error::<T>::VerificationError)?;
 
-		ensure!(success, Error::<T>::ProofNotValid);
+		ensure!(success, Error::<T>::InvalidStepProof);
 		Ok(update.participation > state.finality_threshold)
 	}
 
