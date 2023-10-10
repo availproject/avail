@@ -13,6 +13,10 @@ env:
   CARGO_SCCACHE_COMMIT: bed5571c
   SCCACHE_DIR: /home/runner/.cache/cargo-sccache-bed5571c
   SCCACHE_BIN: /home/runner/.cache/cargo-sccache-bed5571c/bin/sccache
+  BENCH_SCCACHE_DIR: ./.cache/cargo-sccache-bed5571c
+  BENCH_SCCACHE_BIN: ./.cache/cargo-sccache-bed5571c/bin/sccache
+
+
 
 jobs:
   lint:
@@ -121,7 +125,7 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: |
-            ${{ env.SCCACHE_DIR }}
+            ${{ env.BENCH_SCCACHE_DIR }}
             ./runtime/target/iai
           key: ${{ runner.OS }}-sccache-bin-bench-${{ env.CARGO_SCCACHE_COMMIT }}-v1
 
@@ -150,17 +154,17 @@ jobs:
       - name: SCCache
         run: |
           # We altered the path to avoid old actions to overwrite it
-          if [ ! -f $SCCACHE_BIN ]; then
-            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_DIR
+          if [ ! -f $BENCH_SCCACHE_BIN ]; then
+            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $BENCH_SCCACHE_DIR
           fi
-          ls -la $SCCACHE_BIN
+          ls -la $BENCH_SCCACHE_BIN
           ps aux | grep sccache
           if [[ -z `pgrep sccache` ]]; then
-            chmod +x $SCCACHE_BIN
-            $SCCACHE_BIN --start-server
+            chmod +x $BENCH_SCCACHE_BIN
+            $BENCH_SCCACHE_BIN --start-server
           fi
-          $SCCACHE_BIN -s
-          echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
+          $BENCH_SCCACHE_BIN -s
+          echo "RUSTC_WRAPPER=$BENCH_SCCACHE_BIN" >> $GITHUB_ENV
 
       - name: Run Header Generation Benchmarks
         run: cargo bench -p da-runtime | tee ./header_gen_bench.txt
@@ -189,7 +193,7 @@ jobs:
           summary-always: true
 
       - name: Display SCCache Stats
-        run: ${{ env.SCCACHE_BIN }} --show-stats
+        run: ${{ env.BENCH_SCCACHE_BIN }} --show-stats
 
 
   unit_tests:
