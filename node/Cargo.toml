@@ -65,6 +65,7 @@ sc-consensus-babe-rpc = "0.10.0-dev"
 sp-consensus-babe = "0.10.0-dev"
 sp-consensus = "0.10.0-dev"
 sc-consensus = "0.10.0-dev"
+sc-offchain = "4.0.0-dev"
 # Renamed: (https://github.com/paritytech/substrate/pull/13458)
 sc-consensus-grandpa-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 sc-consensus-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
