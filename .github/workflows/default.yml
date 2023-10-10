@@ -13,9 +13,9 @@ env:
   CARGO_SCCACHE_COMMIT: bed5571c
   SCCACHE_DIR: /home/runner/.cache/cargo-sccache-bed5571c
   SCCACHE_BIN: /home/runner/.cache/cargo-sccache-bed5571c/bin/sccache
-  BENCH_SCCACHE_DIR: ./.cache/cargo-sccache-bed5571c
-  BENCH_SCCACHE_BIN: ./.cache/cargo-sccache-bed5571c/bin/sccache
-
+  BENCH_SCCACHE_DIR: /home/ubuntu/actions-runner/_work/.cache/cargo-sccache-bed5571c
+  BENCH_SCCACHE_BIN: /home/ubuntu/actions-runner/_work/.cache/cargo-sccache-bed5571c/bin/sccache
+  BENCH_IAI: /home/ubuntu/actions-runner/_work/.iai
 
 
 jobs:
@@ -126,18 +126,13 @@ jobs:
         with:
           path: |
             ${{ env.BENCH_SCCACHE_DIR }}
-            ./runtime/target/iai
+            ${{ env.BENCH_IAI }}
           key: ${{ runner.OS }}-sccache-bin-bench-${{ env.CARGO_SCCACHE_COMMIT }}-v1
 
       - name: Install deps
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: "3.x"
 
       # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
       # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
@@ -178,11 +173,11 @@ jobs:
           # output-file-path: /home/ubuntu/actions-runner/_work/avail/avail/header_gen_bench.txt
           output-file-path: ./header_gen_bench.txt
           # Where the previous data file is stored
-          external-data-json-path: ./runtime/target/iai/benchmark-data.json
+          external-data-json-path: ${{ env.BENCH_IAI }}/benchmark-data.json
           save-data-file: true
           # Workflow will fail when an alert happens at 15% degradation
           fail-on-alert: true
-          alert-threshold: '15%'
+          alert-threshold: '1%'
           # Upload the updated cache file for the next job by actions/cache
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # Enable alert commit comment
@@ -194,6 +189,14 @@ jobs:
 
       - name: Display SCCache Stats
         run: ${{ env.BENCH_SCCACHE_BIN }} --show-stats
+
+      - name: Print caches
+        run: |
+          find ./runtime/target/iai -type f
+          find ${{ env.BENCH_SCCACHE_DIR }} -type f
+          find ${{ env.BENCH_IAI }} -type f
+          pwd
+
 
 
   unit_tests:
