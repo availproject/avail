@@ -48,6 +48,7 @@ sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkado
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sc-executor = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sc-storage-monitor = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sc-telemetry = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sc-keystore = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
