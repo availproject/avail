@@ -61,7 +61,6 @@ pub mod pallet {
 		NotEnoughParticipants,
 		SyncCommitteeNotInitialized,
 		NotEnoughSyncCommitteeParticipants,
-
 		// verification
 		TooLongVerificationKey,
 		ProofIsEmpty,
@@ -103,6 +102,8 @@ pub mod pallet {
 	}
 
 	// Storage definitions
+
+	//TODO step and rotate verification keys can be stored as constants and not in the storage which can simplify implementation.
 	#[pallet::storage]
 	pub type StepVerificationKeyStorage<T: Config> =
 		StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
