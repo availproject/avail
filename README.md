@@ -1,147 +1,70 @@
-# Data Availability Node
+<div align="Center">
+<h1>Avail Node</h1>
+<h3>Official Client for the Avail blockchain</h3>
+</div>
 
-[![Build status](https://github.com/availproject/avail/actions/workflows/default.yml/badge.svg)](https://github.com/availproject/avail/actions/workflows/default.yml) [![Code coverage](https://codecov.io/gh/availproject/avail/branch/main/graph/badge.svg?token=OBX2NEE31T)](https://codecov.io/gh/availproject/avail)
+<br>
+
+[![Build status](https://github.com/availproject/avail/actions/workflows/default.yml/badge.svg)](https://github.com/availproject/avail/actions/workflows/default.yml)
+
+
+![demo](./.github/img/terminal.jpg)
+
+## Running Avail Node
+> Before running make sure that you have the following dependencies installed:
+> - [Rust](https://www.rust-lang.org/learn/get-started)
+> - [Substrate dependencies](https://docs.substrate.io/install/)
+
+
+Command for compiling and running Avail Node:
+```bash
+cargo run --release -- --dev
+```
+
+```bash
+2023-10-11 10:11:40 Avail Node    
+2023-10-11 10:11:40 ✌️  version 1.7.0-56c3d20e255    
+2023-10-11 10:11:40 ❤️  by Anonymous, 2017-2023    
+2023-10-11 10:11:40 📋 Chain specification: Avail Development Network    
+2023-10-11 10:11:40 🏷  Node name: impartial-size-5902    
+2023-10-11 10:11:40 👤 Role: AUTHORITY    
+2023-10-11 10:11:40 💾 Database: RocksDb at /tmp/substrateV7xYbu/chains/avail_development_network/db/full    
+2023-10-11 10:11:41 [0] 💸 generated 1 npos voters, 1 from validators and 0 nominators    
+2023-10-11 10:11:41 [0] 💸 generated 1 npos targets    
+2023-10-11 10:11:41 🔨 Initializing Genesis block/state (state: 0xd56d…4fdb, header-hash: 0xf69a…6fae)    
+2023-10-11 10:11:41 👴 Loading GRANDPA authority set from genesis on what appears to be first startup.    
+2023-10-11 10:11:41 👶 Creating empty BABE epoch changes on what appears to be first startup.    
+2023-10-11 10:11:41 🏷  Local node identity is: 12D3KooWBDYA3aovETHf2xRM9qkp6XjTceuXNcj6MF6hyyfsW4Pc    
+2023-10-11 10:11:41 Prometheus metrics extended with avail metrics    
+2023-10-11 10:11:41 💻 Operating system: linux    
+2023-10-11 10:11:41 💻 CPU architecture: x86_64    
+2023-10-11 10:11:41 💻 Target environment: gnu    
+2023-10-11 10:11:41 💻 CPU: 13th Gen Intel(R) Core(TM) i7-13700K    
+2023-10-11 10:11:41 💻 CPU cores: 16    
+2023-10-11 10:11:41 💻 Memory: 31863MB    
+2023-10-11 10:11:41 💻 Kernel: 6.5.5-100.fc37.x86_64    
+2023-10-11 10:11:41 💻 Linux distribution: Fedora Linux 37 (Workstation Edition)    
+2023-10-11 10:11:41 💻 Virtual machine: no    
+2023-10-11 10:11:41 📦 Highest known block at #0    
+2023-10-11 10:11:41 Running JSON-RPC server: addr=127.0.0.1:9944, allowed origins=["*"]    
+2023-10-11 10:11:41 🏁 CPU score: 1.64 GiBs    
+2023-10-11 10:11:41 〽️ Prometheus exporter started at 127.0.0.1:9615    
+2023-10-11 10:11:41 🏁 Memory score: 22.75 GiBs    
+2023-10-11 10:11:41 🏁 Disk score (seq. writes): 6.84 GiBs    
+2023-10-11 10:11:41 🏁 Disk score (rand. writes): 2.74 GiBs    
+2023-10-11 10:11:41 👶 Starting BABE Authorship worker    
+2023-10-11 10:11:46 💤 Idle (0 peers), best: #0 (0xf69a…6fae), finalized #0 (0xf69a…6fae), ⬇ 0 ⬆ 0    
+2023-10-11 10:11:51 💤 Idle (0 peers), best: #0 (0xf69a…6fae), finalized #0 (0xf69a…6fae), ⬇ 0 ⬆ 0    
+2023-10-11 10:11:56 💤 Idle (0 peers), best: #0 (0xf69a…6fae), finalized #0 (0xf69a…6fae), ⬇ 0 ⬆ 0    
+2023-10-11 10:12:00 🙌 Starting consensus session on top of parent 0xf69adf40a4fb0b7545a0ef18d9e9de0526025d7df3b92c27c6782e22f8016fae    
+2023-10-11 10:12:00 🎁 Prepared block for proposing at 1 (25 ms) [hash: 0x1e21edfa830cfd74a84a71b66499d940acc36b3f0842c54900e00122f4ba746e; parent_hash: 0xf69a…6fae; extrinsics (1): [0x8e09…8593]
+```
+
 
 ## Relative documentation
 - [Changelog](/CHANGELOG.md)
 - [Contributing guide](/CONTRIBUTING.md)
 - [Code of conduct](/CODE_OF_CONDUCT.md)
-
-## Compile
-
-    $> cargo build --release -p data-avail
-
-## Run Node for Development
-
-In **development mode** the node will run as a validator on a network which requires just one
-validator to finalize blocks. When using `--dev`, the state will be deleted at the end of the process.
-
-    $> cargo run --release -p data-avail -- --dev
-    Finished release [optimized] target(s) in 0.41s
-     Running `target/release/data-avail --dev`
-    2022-02-14 11:13:35 Running in --dev mode, RPC CORS has been disabled.    
-    2022-02-14 11:13:35 Avail Node    
-    2022-02-14 11:13:35 ✌️  version 3.0.0-8983b6b-x86_64-linux-gnu    
-    2022-02-14 11:13:35 ❤️  by Anonymous, 2017-2022    
-    2022-02-14 11:13:35 📋 Chain specification: Avail-Dev    
-    2022-02-14 11:13:35 🏷 Node name: mature-cub-8175    
-    2022-02-14 11:13:35 👤 Role: AUTHORITY    
-    2022-02-14 11:13:35 💾 Database: RocksDb at /tmp/substrateMHOPAE/chains/Dev/db/full    
-    2022-02-14 11:13:35 ⛓  Native runtime: data-avail-1 (data-avail-1.tx1.au10)    
-    2022-02-14 11:13:36 [#0] 🗳  Entering emergency mode: ElectionError::Fallback("NoFallback.")    
-    2022-02-14 11:13:36 [0] 💸 genesis election provider failed due to ElectionError::Fallback("NoFallback.")    
-    2022-02-14 11:13:36 [#0] 🗳  Entering emergency mode: ElectionError::Fallback("NoFallback.")    
-    2022-02-14 11:13:36 [0] 💸 genesis election provider failed due to ElectionError::Fallback("NoFallback.")    
-    2022-02-14 11:13:36 🔨 Initializing Genesis block/state (state: 0x1037…66da, header-hash: 0xc8fb…adad)    
-    2022-02-14 11:13:36 👴 Loading GRANDPA authority set from genesis on what appears to be first startup.    
-    2022-02-14 11:13:36 ⏱  Loaded block-time = 20s from block 0xc8fb86cbd158e7f70c64bacfcff6436fa998e7270120db0436ee5d5cf560adad    
-    2022-02-14 11:13:36 👶 Creating empty BABE epoch changes on what appears to be first startup.    
-    2022-02-14 11:13:36 Using default protocol ID "sup" because none is configured in the chain specs    
-    2022-02-14 11:13:36 🏷 Local node identity is: 12D3KooWHwN7qigNMETeDKkpEasGp2zDKmzHzVJdpJEQWjaoGDiW    
-    2022-02-14 11:13:36 📦 Highest known block at #0    
-    2022-02-14 11:13:36 〽️ Prometheus exporter started at 127.0.0.1:9615    
-    2022-02-14 11:13:36 Listening for new connections on 127.0.0.1:9944.    
-    2022-02-14 11:13:36 👶 Starting BABE Authorship worker    
-    2022-02-14 11:13:40 🙌 Starting consensus session on top of parent 0xc8fb86cbd158e7f70c64bacfcff6436fa998e7270120db0436ee5d5cf560adad    
-    2022-02-14 11:13:40 Rows: 1 Cols: 4 Size: 256    
-    2022-02-14 11:13:40 Time to extend block 146.101µs    
-    2022-02-14 11:13:40 Time to prepare 178.772µs    
-    2022-02-14 11:13:40 Number of CPU cores: 16    
-    2022-02-14 11:13:40 Time to build a commitment 1.290286ms    
-    2022-02-14 11:13:40 🎁 Prepared block for proposing at 1 (9 ms) [hash: 0x285b0ebcac3f335957dd85cc1e61a0b59334c8b98348d3f714cf76d58e517463; parent_hash: 0xc8fb…adad; extrinsics (1): [0xa017…6bae]]    
-    2022-02-14 11:13:40 🔖 Pre-sealed block for proposal at 1. Hash now 0x6edbe749ee150f18ee1ce4e89334d2ea45e2baed9b7cb5ae93104175e9408dbc, previously 0x285b0ebcac3f335957dd85cc1e61a0b59334c8b98348d3f714cf76d58e517463.    
-    2022-02-14 11:13:40 👶 New epoch 0 launching at block 0x6edb…8dbc (block slot 82241681 >= start slot 82241681).    
-    2022-02-14 11:13:40 👶 Next epoch starts at slot 82241711    
-    2022-02-14 11:13:40 ✨ Imported #1 (0x6edb…8dbc)    
-    2022-02-14 11:13:41 💤 Idle (0 peers), best: #1 (0x6edb…8dbc), finalized #0 (0xc8fb…adad), ⬇ 0 ⬆ 0    
-    2022-02-14 11:13:46 💤 Idle (0 peers), best: #1 (0x6edb…8dbc), finalized #0 (0xc8fb…adad), ⬇ 0 ⬆ 0    
-    2022-02-14 11:13:51 💤 Idle (0 peers), best: #1 (0x6edb…8dbc), finalized #0 (0xc8fb…adad), ⬇ 0 ⬆ 0    
-    2022-02-14 11:13:56 💤 Idle (0 peers), best: #1 (0x6edb…8dbc), finalized #0 (0xc8fb…adad), ⬇ 0 ⬆ 0    
-    2022-02-14 11:14:00 🙌 Starting consensus session on top of parent 0x6edbe749ee150f18ee1ce4e89334d2ea45e2baed9b7cb5ae93104175e9408dbc    
-    2022-02-14 11:14:00 Rows: 1 Cols: 4 Size: 256    
-    2022-02-14 11:14:00 Time to extend block 182.71µs    
-    2022-02-14 11:14:00 Time to prepare 222.653µs    
-    2022-02-14 11:14:00 Number of CPU cores: 16    
-    2022-02-14 11:14:00 Time to build a commitment 2.064504ms    
-    2022-02-14 11:14:00 🎁 Prepared block for proposing at 2 (2 ms) [hash: 0x6c4cfdf28ceeb07599f6abc2358e81afc770c3edd6b90cced5f1a370972bab42; parent_hash: 0x6edb…8dbc; extrinsics (1): [0x4c7c…b8ef]]    
-    2022-02-14 11:14:00 🔖 Pre-sealed block for proposal at 2. Hash now 0x66c23089eeee13e71a4a970a318b1f921f9ca6501a36a31d20840adc5979848e, previously 0x6c4cfdf28ceeb07599f6abc2358e81afc770c3edd6b90cced5f1a370972bab42.    
-    2022-02-14 11:14:00 ✨ Imported #2 (0x66c2…848e)   
-    ...
-
-## Run benchmarks
-
-### Manually
-You can run any benchmark and generate the proper `weight.rs` file. In the following command, we are
-running the benchmarks from `da-control` pallet, and the generated file is 
-
-    $> cargo run --release -p data-avail --features runtime-benchmarks -- \
-        benchmark \
-        pallet \
-        --chain=dev \
-        --steps=30 \
-        --repeat=20 \
-        --log=warn \
-        --template=./.maintain/frame-weight-template.hbs \
-        --header=./HEADER-APACHE2 \
-        --pallet=da-control \
-        --extrinsic=* \
-        --output=./output/weights.rs
-
-To benchmark all extrinsics for all pallets:
-    $> cargo run --release -p data-avail --features runtime-benchmarks -- \
-        benchmark \
-        pallet \
-        --chain=dev \
-        --steps=30 \
-        --repeat=20 \
-        --log=warn \
-        --template=./.maintain/frame-weight-template.hbs \
-        --header=./HEADER-APACHE2 \
-        --pallet=* \
-        --extrinsic=* \
-        --output=./output/weights.rs
-
-To benchmark long running features like the `kate commitment generation`, you can specify `--extra` as additional flag.
-
-### Via Script
-To run all benchmarks from all pallets:
-```bash
-./run_benchmarks.sh
-```
-
-You can customize the number of steps and repeats for the benchmarks using
-environment variables. For example, to set the number of steps to 4 and the
-number of repeats to 20, use the following command:
-```bash
-STEPS=4 REPEAT=20 ./run_benchmarks.sh
-```
-
-If you only want to run benchmarks just for our own custom pallets, you can set the
-OUR_PALLETS environment variable:
-```bash
-OUR_PALLETS=1 ./run_benchmarks.sh
-```
-
-To run benchmarks for specific pallets, you need to set the PALLETS environment
-variable and provide a space-separated list of pallet names. For example, to run
-benchmarks for the frame_system and mocked_runtime pallets, use the following
-command:
-```bash
-PALLETS="frame_system mocked_runtime" ./run_benchmarks.sh
-```
-
-To benchmark long running features like the `kate commitment generation`, 
-you can specify `EXTRA=1` as additional environment variable.
-
-```bash
-EXTRA=1 ./run_benchmarks.sh
-```
-
-### Additional info
-When computing benchmarks, additionally to `weights`, `PoV` proof of validity (proof size) will be computed based on storage usage.
-If no storage is used, `PoV` will be 0. 
-By default the benchmark PoV is `#[pov_mode = MaxEncodedLen]` this should always be the case.
-For rare cases, `MaxEncodedLen` won't be specified for a storage then for benchmarks that use this storage, `#[pov_mode = Measured]` should explicitely be specified.
 
 
 ## Transaction Custom IDs
