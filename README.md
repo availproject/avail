@@ -130,3 +130,10 @@ podman run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output availnode --dev 
 # For SELinux
 podman run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output:z availnode --dev --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all
 ```
+
+## Additional Documentation
+For additional documentation check our [wiki page](https://github.com/availproject/avail/wiki).
+There you can learn how to:
+- Run Avail Node together with Avail Light Clients
+- Build Avail Node for different Linux flavours
+- Find out what node synchronization options are available
