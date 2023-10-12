@@ -17,7 +17,6 @@ echo "Selected docker file: $DOCKER_FILE"
 # Build the image
 "$SYSTEM" build -t availnode -f $DOCKER_FILE .
 
-# Run the image
 mkdir -p output/$FLAVOUR
 
 selinuxenabled
