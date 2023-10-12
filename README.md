@@ -13,13 +13,12 @@
 
 ## Run Node for Development
 
-In **development mode** the node will run as a collator on a network which requires just one
-collator to finalize blocks.
-We also add `--tmp`, therefore the state will be deleted at the end of the process.
+In **development mode** the node will run as a validator on a network which requires just one
+validator to finalize blocks. When using `--dev`, the state will be deleted at the end of the process.
 
-    $> cargo run --release -p data-avail -- --dev --tmp
+    $> cargo run --release -p data-avail -- --dev
     Finished release [optimized] target(s) in 0.41s
-     Running `target/release/data-avail --dev --tmp`
+     Running `target/release/data-avail --dev`
     2022-02-14 11:13:35 Running in --dev mode, RPC CORS has been disabled.    
     2022-02-14 11:13:35 Avail Node    
     2022-02-14 11:13:35 ✌️  version 3.0.0-8983b6b-x86_64-linux-gnu    
