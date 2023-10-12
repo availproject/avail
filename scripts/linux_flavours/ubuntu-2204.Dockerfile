@@ -1,4 +1,3 @@
-# This is the first stage. Here we install all the dependencies that we need in order to build the Ternoa binary.
 FROM ubuntu:22.04 as builder
 
 ADD . ./workdir

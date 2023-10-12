@@ -6,7 +6,7 @@ FLAVOUR="${FLAVOUR:-ubuntu-2204}"
 SYSTEM="${SYSTEM:-docker}"
 
 if [ -z "$FLAVOUR" ]; then
-    select FLAVOUR in ubuntu-2204 ubuntu-2304 fedora-36 fedora-37 debian-11 debian-12 arch
+    select FLAVOUR in ubuntu-2204 ubuntu-2304 fedora-37 fedora-38 debian-11 debian-12 arch
     do
         break;
     done
@@ -17,10 +17,10 @@ if [ "$FLAVOUR" = "ubuntu-2204" ]; then
     imageName="ubuntu-2204.Dockerfile"
     elif [ "$FLAVOUR" = "ubuntu-2304" ]; then
     imageName="ubuntu-2304.Dockerfile"
-    elif [ "$FLAVOUR" = "fedora-36" ]; then
-    imageName="fedora-36.Dockerfile"
     elif [ "$FLAVOUR" = "fedora-37" ]; then
     imageName="fedora-37.Dockerfile"
+    elif [ "$FLAVOUR" = "fedora-38" ]; then
+    imageName="fedora-38.Dockerfile"
     elif [ "$FLAVOUR" = "debian-11" ]; then
     imageName="debian-11.Dockerfile"
     elif [ "$FLAVOUR" = "debian-12" ]; then
@@ -28,7 +28,7 @@ if [ "$FLAVOUR" = "ubuntu-2204" ]; then
     elif [ "$FLAVOUR" = "arch" ]; then
     imageName="arch.Dockerfile"
 else
-    echo "Unknown option: $FLAVOUR. Use one of these: ubuntu-2204 ubuntu-2304 fedora-36 fedora-37 debian-11 debian-12 arc"
+    echo "Unknown option: $FLAVOUR. Use one of these: ubuntu-2204 ubuntu-2304 fedora-37 fedora-38 debian-11 debian-12 arc"
     exit 0
 fi
 

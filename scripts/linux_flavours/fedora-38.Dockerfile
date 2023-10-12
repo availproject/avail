@@ -1,5 +1,4 @@
-# This is the first stage. Here we install all the dependencies that we need in order to build the Ternoa binary.
-FROM fedora:36 as builder
+FROM fedora:38 as builder
 
 ADD . ./workdir
 WORKDIR "/workdir"
