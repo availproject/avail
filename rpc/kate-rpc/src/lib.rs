@@ -281,13 +281,7 @@ where
 		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<Vec<u8>>>> {
-		let at = self.at_or_best(at);
-
-		let signed_block = self
-			.client
-			.block(at)
-			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
-			.ok_or_else(|| internal_err!("Missing block {}", at))?;
+		let signed_block = self.get_signed_block(at)?;
 
 		let block_hash = signed_block.block.header().hash();
 
@@ -317,13 +311,7 @@ where
 		app_id: AppId,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<Vec<u8>>>> {
-		let at = self.at_or_best(at);
-
-		let signed_block = self
-			.client
-			.block(at)
-			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
-			.ok_or_else(|| internal_err!("Missing block {}", at))?;
+		let signed_block = self.get_signed_block(at)?;
 
 		let block_hash = signed_block.block.header().hash();
 
@@ -353,13 +341,7 @@ where
 
 	//TODO allocate static thread pool, just for RPC related work, to free up resources, for the block producing processes.
 	async fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
-		let at = self.at_or_best(at);
-
-		let signed_block = self
-			.client
-			.block(at)
-			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
-			.ok_or_else(|| internal_err!("Missing block {}", at))?;
+		let signed_block = self.get_signed_block(at)?;
 
 		let block_hash = signed_block.block.header().hash();
 
@@ -430,15 +412,7 @@ where
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<DataProof> {
-		// Fetch block
-		let at = self.at_or_best(at);
-
-		let block = self
-			.client
-			.block(at)
-			.map_err(|e| internal_err!("Invalid block hash: {:?}", e))?
-			.ok_or_else(|| internal_err!("Missing block hash {:?}", at))?
-			.block;
+		let block = self.get_signed_block(at)?.block;
 
 		let calls = block
 			.extrinsics()
