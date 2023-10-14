@@ -1,5 +1,4 @@
 use anyhow::Result;
-use avail_core::{BlockLengthColumns, BlockLengthRows};
 use avail_subxt::{
 	api::{
 		self,
@@ -14,10 +13,6 @@ use avail_subxt::{
 	primitives::AvailExtrinsicParams,
 	rpc::RpcParams,
 	Call, Opts,
-};
-use kate::{
-	gridgen::{ArkScalar, AsBytes},
-	pmp::{merlin::Transcript, traits::PolyMultiProofNoPrecomp},
 };
 use kate_recovery::matrix::Dimensions;
 use sp_keyring::AccountKeyring;
@@ -107,86 +102,6 @@ async fn main() -> Result<()> {
 	)
 	.unwrap();
 	assert!(res);
-
-	let kdims = Dimensions::new(2 * ext.commitment.rows, ext.commitment.cols).unwrap();
-	let target_dims = Dimensions::new(16, 64).unwrap();
-
-	let mp_grid_dims = kate::gridgen::multiproof_dims(kdims, target_dims).unwrap();
-
-	// Take every cell in `mp_grid_dims` for verification
-	let cells = (0..mp_grid_dims.width() as u32)
-		.flat_map(|col| {
-			(0..mp_grid_dims.height() as u32).map(move |row| kate::com::Cell {
-				row: BlockLengthRows(row),
-				col: BlockLengthColumns(col),
-			})
-		})
-		.collect::<Vec<_>>();
-
-	let mut params = RpcParams::new();
-	params.push(cells.clone()).unwrap();
-	params
-		.push(Some(submitted_block.block.header.hash()))
-		.unwrap();
-
-	let res = client
-		.rpc()
-		.request::<Vec<MultiproofSer>>("kate_queryMultiproof", params)
-		.await
-		.unwrap();
-
-	let commits = ext
-		.commitment
-		.commitment
-		.chunks_exact(48)
-		.map(|c| kate::pmp::Commitment::from_bytes(c.try_into().unwrap()).unwrap())
-		.collect::<Vec<_>>();
-
-	let pmp = kate::testnet::multiproof_params(256, 256);
-	let points = kate::gridgen::domain_points(kdims.width())
-		.unwrap()
-		.into_iter()
-		.collect::<Vec<_>>();
-
-	for (mp, cell) in res.iter().zip(cells) {
-		let mp_block = kate::gridgen::multiproof_block(
-			cell.col.0.try_into().unwrap(),
-			cell.row.0.try_into().unwrap(),
-			kdims,
-			target_dims,
-		)
-		.unwrap();
-
-		println!("Verifying multiproof of cells: {:?}", &mp_block);
-
-		let evals: Vec<ArkScalar> = mp
-			.evals
-			.chunks_exact(32)
-			.map(|c| {
-				let mut arr = [0u8; 32];
-				arr.copy_from_slice(c);
-				kate::gridgen::ArkScalar::from_bytes(&arr).unwrap()
-			})
-			.collect::<Vec<_>>();
-
-		let evals_grid = evals
-			.chunks_exact(mp_block.end_x - mp_block.start_x)
-			.collect::<Vec<_>>();
-
-		let proof =
-			kate::pmp::m1_blst::Proof::from_bytes(&mp.proof[..48].try_into().unwrap()).unwrap();
-
-		let mut transcript = Transcript::new(b"avail-mp");
-		assert!(pmp
-			.verify(
-				&mut transcript,
-				&commits[mp_block.start_y..mp_block.end_y],
-				&points[mp_block.start_x..mp_block.end_x],
-				&evals_grid,
-				&proof,
-			)
-			.unwrap());
-	}
 
 	Ok(())
 }
