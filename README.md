@@ -1,319 +1,139 @@
-# Data Availability Node
+<div align="Center">
+<h1>Avail Node</h1>
+<h3>Official Client for the Avail blockchain</h3>
+</div>
 
-[![Build status](https://github.com/availproject/avail/actions/workflows/default.yml/badge.svg)](https://github.com/availproject/avail/actions/workflows/default.yml) [![Code coverage](https://codecov.io/gh/availproject/avail/branch/main/graph/badge.svg?token=OBX2NEE31T)](https://codecov.io/gh/availproject/avail)
+<br>
 
-## Relative documentation
-- [Changelog](/CHANGELOG.md)
-- [Contributing guide](/CONTRIBUTING.md)
-- [Code of conduct](/CODE_OF_CONDUCT.md)
+[![Build status](https://github.com/availproject/avail/actions/workflows/default.yml/badge.svg)](https://github.com/availproject/avail/actions/workflows/default.yml)
 
-## Compile
 
-    $> cargo build --release -p data-avail
+![demo](./.github/img/terminal.jpg)
 
-## Run Node for Development
-
-In **development mode** the node will run as a collator on a network which requires just one
-collator to finalize blocks.
-We also add `--tmp`, therefore the state will be deleted at the end of the process.
-
-    $> cargo run --release -p data-avail -- --dev --tmp
-    Finished release [optimized] target(s) in 0.41s
-     Running `target/release/data-avail --dev --tmp`
-    2022-02-14 11:13:35 Running in --dev mode, RPC CORS has been disabled.    
-    2022-02-14 11:13:35 Avail Node    
-    2022-02-14 11:13:35 ✌️  version 3.0.0-8983b6b-x86_64-linux-gnu    
-    2022-02-14 11:13:35 ❤️  by Anonymous, 2017-2022    
-    2022-02-14 11:13:35 📋 Chain specification: Avail-Dev    
-    2022-02-14 11:13:35 🏷 Node name: mature-cub-8175    
-    2022-02-14 11:13:35 👤 Role: AUTHORITY    
-    2022-02-14 11:13:35 💾 Database: RocksDb at /tmp/substrateMHOPAE/chains/Dev/db/full    
-    2022-02-14 11:13:35 ⛓  Native runtime: data-avail-1 (data-avail-1.tx1.au10)    
-    2022-02-14 11:13:36 [#0] 🗳  Entering emergency mode: ElectionError::Fallback("NoFallback.")    
-    2022-02-14 11:13:36 [0] 💸 genesis election provider failed due to ElectionError::Fallback("NoFallback.")    
-    2022-02-14 11:13:36 [#0] 🗳  Entering emergency mode: ElectionError::Fallback("NoFallback.")    
-    2022-02-14 11:13:36 [0] 💸 genesis election provider failed due to ElectionError::Fallback("NoFallback.")    
-    2022-02-14 11:13:36 🔨 Initializing Genesis block/state (state: 0x1037…66da, header-hash: 0xc8fb…adad)    
-    2022-02-14 11:13:36 👴 Loading GRANDPA authority set from genesis on what appears to be first startup.    
-    2022-02-14 11:13:36 ⏱  Loaded block-time = 20s from block 0xc8fb86cbd158e7f70c64bacfcff6436fa998e7270120db0436ee5d5cf560adad    
-    2022-02-14 11:13:36 👶 Creating empty BABE epoch changes on what appears to be first startup.    
-    2022-02-14 11:13:36 Using default protocol ID "sup" because none is configured in the chain specs    
-    2022-02-14 11:13:36 🏷 Local node identity is: 12D3KooWHwN7qigNMETeDKkpEasGp2zDKmzHzVJdpJEQWjaoGDiW    
-    2022-02-14 11:13:36 📦 Highest known block at #0    
-    2022-02-14 11:13:36 〽️ Prometheus exporter started at 127.0.0.1:9615    
-    2022-02-14 11:13:36 Listening for new connections on 127.0.0.1:9944.    
-    2022-02-14 11:13:36 👶 Starting BABE Authorship worker    
-    2022-02-14 11:13:40 🙌 Starting consensus session on top of parent 0xc8fb86cbd158e7f70c64bacfcff6436fa998e7270120db0436ee5d5cf560adad    
-    2022-02-14 11:13:40 Rows: 1 Cols: 4 Size: 256    
-    2022-02-14 11:13:40 Time to extend block 146.101µs    
-    2022-02-14 11:13:40 Time to prepare 178.772µs    
-    2022-02-14 11:13:40 Number of CPU cores: 16    
-    2022-02-14 11:13:40 Time to build a commitment 1.290286ms    
-    2022-02-14 11:13:40 🎁 Prepared block for proposing at 1 (9 ms) [hash: 0x285b0ebcac3f335957dd85cc1e61a0b59334c8b98348d3f714cf76d58e517463; parent_hash: 0xc8fb…adad; extrinsics (1): [0xa017…6bae]]    
-    2022-02-14 11:13:40 🔖 Pre-sealed block for proposal at 1. Hash now 0x6edbe749ee150f18ee1ce4e89334d2ea45e2baed9b7cb5ae93104175e9408dbc, previously 0x285b0ebcac3f335957dd85cc1e61a0b59334c8b98348d3f714cf76d58e517463.    
-    2022-02-14 11:13:40 👶 New epoch 0 launching at block 0x6edb…8dbc (block slot 82241681 >= start slot 82241681).    
-    2022-02-14 11:13:40 👶 Next epoch starts at slot 82241711    
-    2022-02-14 11:13:40 ✨ Imported #1 (0x6edb…8dbc)    
-    2022-02-14 11:13:41 💤 Idle (0 peers), best: #1 (0x6edb…8dbc), finalized #0 (0xc8fb…adad), ⬇ 0 ⬆ 0    
-    2022-02-14 11:13:46 💤 Idle (0 peers), best: #1 (0x6edb…8dbc), finalized #0 (0xc8fb…adad), ⬇ 0 ⬆ 0    
-    2022-02-14 11:13:51 💤 Idle (0 peers), best: #1 (0x6edb…8dbc), finalized #0 (0xc8fb…adad), ⬇ 0 ⬆ 0    
-    2022-02-14 11:13:56 💤 Idle (0 peers), best: #1 (0x6edb…8dbc), finalized #0 (0xc8fb…adad), ⬇ 0 ⬆ 0    
-    2022-02-14 11:14:00 🙌 Starting consensus session on top of parent 0x6edbe749ee150f18ee1ce4e89334d2ea45e2baed9b7cb5ae93104175e9408dbc    
-    2022-02-14 11:14:00 Rows: 1 Cols: 4 Size: 256    
-    2022-02-14 11:14:00 Time to extend block 182.71µs    
-    2022-02-14 11:14:00 Time to prepare 222.653µs    
-    2022-02-14 11:14:00 Number of CPU cores: 16    
-    2022-02-14 11:14:00 Time to build a commitment 2.064504ms    
-    2022-02-14 11:14:00 🎁 Prepared block for proposing at 2 (2 ms) [hash: 0x6c4cfdf28ceeb07599f6abc2358e81afc770c3edd6b90cced5f1a370972bab42; parent_hash: 0x6edb…8dbc; extrinsics (1): [0x4c7c…b8ef]]    
-    2022-02-14 11:14:00 🔖 Pre-sealed block for proposal at 2. Hash now 0x66c23089eeee13e71a4a970a318b1f921f9ca6501a36a31d20840adc5979848e, previously 0x6c4cfdf28ceeb07599f6abc2358e81afc770c3edd6b90cced5f1a370972bab42.    
-    2022-02-14 11:14:00 ✨ Imported #2 (0x66c2…848e)   
-    ...
-
-## Run benchmarks
-
+## Running Avail Node
 ### Manually
-You can run any benchmark and generate the proper `weight.rs` file. In the following command, we are
-running the benchmarks from `da-control` pallet, and the generated file is 
 
-    $> cargo run --release -p data-avail --features runtime-benchmarks -- \
-        benchmark \
-        pallet \
-        --chain=dev \
-        --steps=30 \
-        --repeat=20 \
-        --log=warn \
-        --template=./.maintain/frame-weight-template.hbs \
-        --header=./HEADER-APACHE2 \
-        --pallet=da-control \
-        --extrinsic=* \
-        --output=./output/weights.rs
+> To manually run the Avail Node, you'll need to have the following dependencies installed:
+> - [Rust](https://www.rust-lang.org/learn/get-started)
+> - [Substrate dependencies](https://docs.substrate.io/install/)
 
-To benchmark all extrinsics for all pallets:
-    $> cargo run --release -p data-avail --features runtime-benchmarks -- \
-        benchmark \
-        pallet \
-        --chain=dev \
-        --steps=30 \
-        --repeat=20 \
-        --log=warn \
-        --template=./.maintain/frame-weight-template.hbs \
-        --header=./HEADER-APACHE2 \
-        --pallet=* \
-        --extrinsic=* \
-        --output=./output/weights.rs
 
-To benchmark long running features like the `kate commitment generation`, you can specify `--extra` as additional flag.
-
-### Via Script
-To run all benchmarks from all pallets:
+After ensuring you have the dependencies installed, you can run the Avail Node using the following command:
 ```bash
-./run_benchmarks.sh
+mkdir -p output
+cargo run --locked --release -- --chain kate -d ./output
+```
+This command complies and runs the Avail Node connected to the Kate Network.
+
+```
+2023-10-11 16:11:31 Avail Node    
+2023-10-11 16:11:31 ✌️  version 1.7.0-ad024ff050e    
+2023-10-11 16:11:31 ❤️  by Anonymous, 2017-2023    
+2023-10-11 16:11:31 📋 Chain specification: Avail Kate Testnet    
+2023-10-11 16:11:31 🏷  Node name: decorous-trade-0251    
+2023-10-11 16:11:31 👤 Role: FULL    
+2023-10-11 16:11:31 💾 Database: RocksDb at /tmp/substrateJwM8xd/chains/Avail Testnet_116d7474-0481-11ee-bc2a-7bfc086be54e/db/full    
+2023-10-11 16:11:32 🔨 Initializing Genesis block/state (state: 0x6bc8…8ac6, header-hash: 0xd120…50c6)    
+2023-10-11 16:11:32 👴 Loading GRANDPA authority set from genesis on what appears to be first startup.    
+2023-10-11 16:11:33 👶 Creating empty BABE epoch changes on what appears to be first startup.    
+2023-10-11 16:11:33 🏷  Local node identity is: 12D3KooWMmY2QLodvBGSiP1Cg9ysWrPSMN19qK3w35mRnUhq6pMX    
+2023-10-11 16:11:33 Prometheus metrics extended with avail metrics    
+2023-10-11 16:11:33 💻 Operating system: linux    
+2023-10-11 16:11:33 💻 CPU architecture: x86_64    
+2023-10-11 16:11:33 💻 Target environment: gnu    
+2023-10-11 16:11:33 💻 CPU: 13th Gen Intel(R) Core(TM) i7-13700K    
+2023-10-11 16:11:33 💻 CPU cores: 16    
+2023-10-11 16:11:33 💻 Memory: 31863MB    
+2023-10-11 16:11:33 💻 Kernel: 6.5.5-100.fc37.x86_64    
+2023-10-11 16:11:33 💻 Linux distribution: Fedora Linux 37 (Workstation Edition)    
+2023-10-11 16:11:33 💻 Virtual machine: no    
+2023-10-11 16:11:33 📦 Highest known block at #0    
+2023-10-11 16:11:33 〽️ Prometheus exporter started at 127.0.0.1:9615    
+2023-10-11 16:11:33 Running JSON-RPC server: addr=127.0.0.1:9944, allowed origins=["http://localhost:*", "http://127.0.0.1:*", "https://localhost:*", "https://127.0.0.1:*", "https://polkadot.js.org"]    
+2023-10-11 16:11:33 🏁 CPU score: 1.65 GiBs    
+2023-10-11 16:11:33 🏁 Memory score: 19.49 GiBs    
+2023-10-11 16:11:33 🏁 Disk score (seq. writes): 6.74 GiBs    
+2023-10-11 16:11:33 🏁 Disk score (rand. writes): 2.65 GiBs    
+2023-10-11 16:11:33 🔍 Discovered new external address for our node: /ip4/176.61.156.176/tcp/30333/ws/p2p/12D3KooWMmY2QLodvBGSiP1Cg9ysWrPSMN19qK3w35mRnUhq6pMX    
+2023-10-11 16:11:34 [811] 💸 generated 9 npos targets    
+2023-10-11 16:11:34 [811] 💸 generated 9 npos voters, 9 from validators and 0 nominators    
+2023-10-11 16:11:34 [#811] 🗳  creating a snapshot with metadata SolutionOrSnapshotSize { voters: 9, targets: 9 }    
+2023-10-11 16:11:34 [#811] 🗳  Starting phase Signed, round 1.
 ```
 
-You can customize the number of steps and repeats for the benchmarks using
-environment variables. For example, to set the number of steps to 4 and the
-number of repeats to 20, use the following command:
+#### Running Dev Chain
+A development chain is typically used for testing and development purposes.
 ```bash
-STEPS=4 REPEAT=20 ./run_benchmarks.sh
+cargo run --locked --release -- --chain dev
 ```
 
-If you only want to run benchmarks just for our own custom pallets, you can set the
-OUR_PALLETS environment variable:
-```bash
-OUR_PALLETS=1 ./run_benchmarks.sh
-```
-
-To run benchmarks for specific pallets, you need to set the PALLETS environment
-variable and provide a space-separated list of pallet names. For example, to run
-benchmarks for the frame_system and mocked_runtime pallets, use the following
-command:
-```bash
-PALLETS="frame_system mocked_runtime" ./run_benchmarks.sh
-```
-
-To benchmark long running features like the `kate commitment generation`, 
-you can specify `EXTRA=1` as additional environment variable.
+### Docker
+To run the Avail Node using Docker, follow these steps:
 
 ```bash
-EXTRA=1 ./run_benchmarks.sh
+# Build the Docker image for the Avail Node:
+docker build -t availnode -f ./dockerfiles/avail-node.Dockerfile .
+
+# Create an output directory. Here the node's data will be stored.
+mkdir output
+
+# Run the Avail Node container:
+docker run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output availnode
+# For SELinux
+docker run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output:z availnode
 ```
 
-### Additional info
-When computing benchmarks, additionally to `weights`, `PoV` proof of validity (proof size) will be computed based on storage usage.
-If no storage is used, `PoV` will be 0. 
-By default the benchmark PoV is `#[pov_mode = MaxEncodedLen]` this should always be the case.
-For rare cases, `MaxEncodedLen` won't be specified for a storage then for benchmarks that use this storage, `#[pov_mode = Measured]` should explicitely be specified.
-
-
-## Transaction Custom IDs
-
-Here is the table of custom IDs for invalid transaction errors:
-
-| Custom ID | Name                 | Description |
-| --------- | -------------------- | ----------- |
-| 137       | InvalidAppId         | The given `AppId` is not yet registered |
-| 138       | ForbiddenAppId       | The extrinsic is not available for the given `AppId` |
-| 139       | MaxPaddedLenExceeded | The maximum padded length for a block was exceeded |
-| 140       | MaxRecursionExceeded | The maximum recursion was reached for a call with `AppId != 0` |
-
-
-## Sychronize the chain
-### Chainspec
-To synchronize your node the chain, you have access to the [chainspec](https://kate.avail.tools/chainspec.json) and most importantly the [raw chainspec](https://kate.avail.tools/chainspec.raw.json).
-
-### Sync mode
-You can sync to the chain using:
-- Full mode: This is the default if nothing is specified and will download all the blocks data, you can also use `--sync full`.
-- Warp mode: This is will download the latest state then all the blocks data. It's the fastest way to have a running node. Use `--sync warp`.
-  - This is theoritically handled but is not supported and can fail after drastic updates.
-- Fast / Fast Unsafe: This is currently not supported since it does not download data needed for Avail specific computation.
-
-### Unsafe sync
-When importing blocks, their content go through an additional check to make sure that the DA commitments are valid.
-During initial sync, you can chose to ignore this check to increase the sync speed. This command is compatible with any `sync` mode.
-- `--unsafe-da-sync`
-Using this flag, Warp / Fast / Fast unsafe become compatible with syncing. 
-You can then remove this flag node and restart it.
-
-### Chain Sync Modes and Compatibility
-
-This describes the different sync modes available for the substrate chain and their compatibility with the `--unsafe-da-sync` flag.
-#### Compatibility Table
-
-| Sync Mode          | Without `--unsafe-da-sync` | With `--unsafe-da-sync`                                                            |
-|--------------------|----------------------------|------------------------------------------------------------------------------------|
-| full               | compatible                 | compatible                                                                         |
-| warp               | partially compatible       | compatible                                                                         |
-| fast / fast unsafe | not compatible             | compatible (with [warnings](https://github.com/paritytech/polkadot-sdk/issues/19)) |
-
-
-
-## Generate test code coverage report
-
-We are using [grcov](https://github.com/mozilla/grcov) to aggregate code coverage information and generate reports.
-
-To install grcov run
-
-	$> cargo install grcov
-
-Source code coverage data is generated when running tests with
-
-	$> env RUSTFLAGS="-Zinstrument-coverage" \
-		SKIP_WASM_BUILD=true \
-		LLVM_PROFILE_FILE="tests-coverage-%p-%m.profraw" \
-		cargo test
-
-To generate report, run
-
-	$> grcov . -s . \
-		--binary-path ./target/debug/ \
-		-t html \
-		--branch \
-		--ignore-not-existing -o \
-		./target/debug/coverage/
-
-To clean up generate coverage information files, run
-
-	$> find . -name \*.profraw -type f -exec rm -f {} +
-
-Open `index.html` from `./target/debug/coverage/` folder to review coverage data. Since WASM build is not possible yet, SKIP_WASM_BUILD is required when running tests.
-
-## Runtime upgrades
-
-Substrate development framework supports forkless upgrades of the runtime. Update is triggered when `spec_version` field of `RuntimeVersion` in `runtimeime/src/lib.rs` is incremented.
-
-### Build and optimize WASM runtime
-
-Use [srtool cli](https://github.com/chevdor/srtool-cli) to compile WASM runtime:
-
-	$> srtool build -r runtime/ --package da-runtime
-
-WASM runtime is already optimized by `srtool` with `wasm-opt` from [Binaryen](https://github.com/WebAssembly/binaryen). If needed, WASM runtime can be further optimized by using:
-
-	$> wasm-opt -Oz -o ./da_runtime.compact.wasm \
-		./runtime/target/srtool/release/wbuild/da-runtime/da_runtime.compact.wasm
-
-### Upgrade process
-
-Since we have block size limits, runtime upgrade is a three step process. Preferred way to upgrade runtime is through governance/democracy feature. For each step, submit preimage with changes, and use preimage hash to submit proposal. Steps are:
-
-1. Submit `dataAvailability/submit_block_length_proposal` proposal with increased block size limits (eg. 512 rows x 256 columns)
-2. Submit `system/set_code` proposal with uploaded `da_runtime.compact.wasm`
-3. Submit `dataAvailability/submit_block_length_proposal` proposal with block limits reverted to initial setting
-
-For development purposes, its possible to use sudo calls with unchecked weight to increase block size limits and upload new runtime. In that case, steps are:
-
-1. Use `sudo/sudoCall` to invoke `dataAvailability/submit_block_length_proposal` with increased block limits (eg. 512 rows x 256 columns)
-2. Use `sudo/sudoUncheckedWeight(call, weight)` with 0 weight to invoke `system/set_code` and upload `da_runtime.compact.compressed.wasm`
-3. Use `sudo/sudoCall` to invoke `dataAvailability/submit_block_length_proposal` and revert block limits to initial setting
-
-### Verify upgrade
-
-To check if runtime is upgraded, query `system/version:SpVersionRuntimeVersion` constant. This should return latest version values.
-
-## Testing
-
-### Generating blocks of maximum size
-
-Some load testing cases requires blocks of maximum size. To compile node which will always pad block with random data up to maximum block size, compile node with:
-
-	$> cargo build -p data-avail --features "kate/maximum-block-size"
-
-## Docker build
-
-The easiest way to build and deploy your own node is using docker.
-
-### Build the docker image
-
-We recommend the use of `BuildKit`, and specify the branch/tag you want to build. The following
-example shows the latest tag for devnet:
-
-	$> export DOCKER_BUILDKIT=1
-	$> docker build --build-arg AVAIL_TAG=v1.3.0-rc3 -t avail:v1.3.0-rc3 .
-
-### How to use this image
-
-#### Run an Avail Node
-
-	$> docker run avail:v1.3.0-rc3
-
-### Where to Store Data
-
-There are two main volumes:
-  - `/da/state`, where the state of the blockchain is stored.
-  - `/da/keystore`, where the keystore is stored.
-
-You can bind to a host folder if you want to persist them even after remove the container:
-
-	$> docker run -v (pwd)/state:/da/state avail:v1.3.0-rc3
-
-
-### How to customize the node
-
-This image uses several environmental variables to customize the node:
-
-#### DA_CHAIN
-
-It sets the chainspec file used by the node. The default value is `/da/genesis/chainspec.raw.json`,
-which allows connection to `devnet06`. You can also customize it by the build argument `CHAIN_SPEC`.
-
-#### DA_NAME
-
-The human-readable name for this node. By default, "AvailNode" is used.
-
-#### DA_MAX_IN_PEERS
-
-The maximum number of incoming connections we're accepting. The default value is `50`.
-
-#### DA_MAX_OUT_PEERS
-
-The number of outgoing connections we're trying to maintain. Default value is `50`.
-
-#### DA_P2P_PORT
-
-Specify p2p protocol TCP port. Default value is `30333`.
-
-#### BOOTNODE_1, BOOTNODE_2, and BOOTNODE_3
-
-Defines 3 bootnodes. By default, `devnet06`'s bootnodes are loaded.
-
+#### Running Dev Chain
+There are instructions for running a development chain using Docker. A development chain is typically used for testing and development purposes.
+
+```bash
+# Build the Docker image for the Avail Node:
+docker build -t availnode -f ./dockerfiles/avail-node.Dockerfile .
+
+# Create an output directory. Here the node's data will be stored.
+mkdir output
+
+# Run the Avail Node container:
+docker run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output availnode --dev --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all
+# For SELinux
+docker run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output:z availnode --dev --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all
+```
+
+### Podman
+To run the Avail Node using Docker, follow these steps:
+
+```bash
+# Build the Docker image for the Avail Node:
+podman build -t availnode -f ./dockerfiles/avail-node.Dockerfile .
+
+# Create an output directory. Here the node's data will be stored.
+mkdir output
+
+# Run the Avail Node container:
+podman run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output availnode
+# For SELinux
+podman run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output:z availnode
+```
+
+#### Running Dev Chain
+There are instructions for running a development chain using Podman. A development chain is typically used for testing and development purposes.
+
+```bash
+# Build the Docker image for the Avail Node:
+podman build -t availnode -f ./dockerfiles/avail-node.Dockerfile .
+
+# Create an output directory. Here the node's data will be stored.
+mkdir output
+
+# Run the Avail Node container:
+podman run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output availnode --dev --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all
+# For SELinux
+podman run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output:z availnode --dev --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all
+```
+
+## Additional Documentation
+For additional documentation check our [wiki page](https://github.com/availproject/avail/wiki).
+There you can learn how to:
+- Run Avail Node together with Avail Light Clients
+- Build Avail Node for different Linux flavours
+- Find out what node synchronization options are available

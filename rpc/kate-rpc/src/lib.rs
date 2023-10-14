@@ -48,7 +48,7 @@ where
 		&self,
 		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<Vec<u8>>>;
+	) -> RpcResult<Vec<Option<Vec<u8>>>>;
 
 	#[method(name = "kate_queryAppData")]
 	async fn query_app_data(
@@ -280,7 +280,7 @@ where
 		&self,
 		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<Vec<u8>>> {
+	) -> RpcResult<Vec<Option<Vec<u8>>>> {
 		let at = self.at_or_best(at);
 
 		let signed_block = self
@@ -299,19 +299,17 @@ where
 
 		let evals = self.get_eval_grid(&signed_block).await?;
 
-		rows.iter()
+		Ok(rows
+			.iter()
 			.map(|i| match evals.row(*i as usize) {
-				Some(row) => Ok(row
-					.iter()
-					.flat_map(|a| a.to_bytes().expect("Ser cannot fail"))
-					.collect::<Vec<u8>>()),
-				None => Err(internal_err!(
-					"Invalid row {:?} index for dims {:?}",
-					i,
-					evals.dims()
-				)),
+				Some(row) => Some(
+					row.iter()
+						.flat_map(|a| a.to_bytes().expect("Ser cannot fail"))
+						.collect::<Vec<u8>>(),
+				),
+				None => None,
 			})
-			.collect::<Result<Vec<Vec<u8>>, _>>()
+			.collect::<Vec<Option<Vec<u8>>>>())
 	}
 
 	async fn query_app_data(
@@ -413,7 +411,6 @@ where
 			.flat_map(|(data, proof)| [proof.to_vec(), data.to_vec()])
 			.collect::<Vec<_>>()
 			.concat();
-
 		Ok(proof)
 	}
 
