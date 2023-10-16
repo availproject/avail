@@ -15,6 +15,7 @@ mod mock;
 mod tests;
 // mod verify;
 mod state;
+mod target_amb;
 mod verifier;
 mod weights;
 
@@ -30,6 +31,9 @@ parameter_types! {
 	pub const MaxPublicInputsLength: u32 = 9;
 	pub const MaxVerificationKeyLength: u32 = 4143;
 	pub const MaxProofLength: u32 = 1133;
+
+	pub const MessageVersion: u8 = 1;
+	pub const MinLightClientDelay: u64 = 120;
 }
 
 #[frame_support::pallet]
@@ -38,14 +42,22 @@ pub mod pallet {
 	use ark_std::string::ToString;
 	use ark_std::{vec, vec::Vec};
 	use frame_support::dispatch::{GetDispatchInfo, UnfilteredDispatchable};
+	use frame_support::sp_core_hashing_proc_macro::keccak_256;
 	use frame_support::traits::{Hash, UnixTime};
 	use frame_support::{pallet_prelude::ValueQuery, DefaultNoBound};
-	use sp_core::H256;
+	use patricia_merkle_trie::{EIP1186Layout, StorageProof};
+	use primitive_types::H160;
+	use primitive_types::{H256, U256};
+	use rlp::{Decodable, Rlp};
+	use sp_io::hashing::keccak_256;
+	use sp_runtime::TokenError::Frozen;
+	use trie_db::{DBValue, Trie, TrieDBBuilder};
 
 	use frame_system::pallet_prelude::*;
 	pub use weights::WeightInfo;
 
 	use crate::state::{LightClientStep, State};
+	use crate::target_amb::{decode_message, Message};
 	use crate::verifier::zk_light_client_rotate;
 	use crate::verifier::zk_light_client_step;
 
@@ -71,6 +83,19 @@ pub mod pallet {
 		ProofCreationError,
 		InvalidRotateProof,
 		InvalidStepProof,
+		//     Message execution
+		MessageAlreadyExecuted,
+		WrongChain,
+		WrongVersion,
+		BroadcasterSourceChainNotSet,
+		LightClientInconsistent,
+		LightClientNotSet,
+		SourceChainFrozen,
+		TimestampNotSet,
+		MustWaitLongerForSlot,
+		CannotDecodeRlpItems,
+		AccountNotFound,
+		CannotGetStorageRoot,
 	}
 
 	#[pallet::event]
@@ -99,6 +124,16 @@ pub mod pallet {
 			old: H256,
 			new: H256,
 		},
+	}
+
+	#[derive(
+		Clone, Copy, Default, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen,
+	)]
+	pub enum MessageStatusEnum {
+		#[default]
+		NotExecuted,
+		ExecutionFailed,
+		ExecutionSucceeded,
 	}
 
 	// Storage definitions
@@ -136,6 +171,25 @@ pub mod pallet {
 	#[pallet::getter(fn get_poseidon)]
 	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn get_message_status)]
+	pub type MessageStatus<T> = StorageMap<_, Identity, H256, MessageStatusEnum, ValueQuery>;
+
+	// Mapping between source chainId and the address of the Telepathy broadcaster on that chain.
+	#[pallet::storage]
+	#[pallet::getter(fn get_broadcaster)]
+	pub type Broadcasters<T> = StorageMap<_, Identity, u32, H160, ValueQuery>;
+
+	// Mapping between source chainId and the corresponding light client.
+	#[pallet::storage]
+	#[pallet::getter(fn get_light_client)]
+	pub type LightClients<T> = StorageMap<_, Identity, u32, H160, ValueQuery>;
+
+	// Ability to froze source, must support possibility to update value
+	#[pallet::storage]
+	#[pallet::getter(fn is_frozen)]
+	pub type SourceChainFrozen<T> = StorageMap<_, Identity, H256, bool, ValueQuery>;
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -159,6 +213,12 @@ pub mod pallet {
 		type NextSyncCommitteeIndex: Get<u32>;
 		#[pallet::constant]
 		type ExecutionStateRootIndex: Get<u32>;
+
+		#[pallet::constant]
+		type MessageVersion: Get<u8>;
+
+		#[pallet::constant]
+		type MinLightClientDelay: Get<u64>;
 
 		type RuntimeCall: Parameter
 			+ UnfilteredDispatchable<RuntimeOrigin = Self::RuntimeOrigin>
@@ -359,6 +419,118 @@ pub mod pallet {
 			Self::deposit_event(Event::<T>::VerificationSetupCompleted);
 			Ok(())
 		}
+
+		#[pallet::call_index(5)]
+		#[pallet::weight(T::WeightInfo::step())]
+		pub fn execute(
+			origin: OriginFor<T>,
+			slot: u64,
+			message_bytes: Vec<u8>,
+			account_proof: Vec<Vec<u8>>,
+			storage_proof: Vec<u8>,
+		) -> DispatchResult {
+			let message = decode_message(message_bytes);
+			let message_root = keccak_256!(message_bytes);
+			check_preconditions::<T>(&message, H256(message_root))?;
+
+			let state = StateStorage::<T>::get();
+			ensure!(state.consistent, Error::<T>::LightClientInconsistent);
+
+			ensure!(
+				SourceChainFrozen::<T>::get(message.source_address) == false,
+				Error::<T>::SourceChainFrozen
+			);
+			// TODO require delay, why?
+			require_lc_delay::<T>(slot, message.source_chain_id)?;
+
+			let storage_root = get_storage_root::<T>(slot, message.source_chain_id, account_proof);
+
+			Ok(())
+		}
+	}
+
+	pub fn get_storage_root<T: Config>(
+		slot: u64,
+		source_chain_id: u32,
+		proof: Vec<Vec<u8>>,
+	) -> Result<H256, DispatchError> {
+		let address = Broadcasters::<T>::get(source_chain_id);
+		let state_root = ExecutionStateRoots::<T>::get(slot);
+
+		let key = keccak_256(address.as_bytes());
+		let db = StorageProof::new(proof).into_memory_db::<target_amb::keccak256::KeccakHasher>();
+		let trie = TrieDBBuilder::<EIP1186Layout<target_amb::keccak256::KeccakHasher>>::new(
+			&db,
+			&state_root,
+		)
+		.build();
+
+		let result: DBValue = trie.get(&key.as_slice()).unwrap().unwrap();
+		let byte_slice = result.as_slice();
+		let r = Rlp::new(byte_slice);
+
+		let item_count = r
+			.item_count()
+			.map_err(|_| Error::<T>::CannotDecodeRlpItems)?;
+
+		ensure!(item_count == 4, Error::<T>::AccountNotFound);
+
+		let item = r
+			.at(2)
+			.map_err(|_| Error::<T>::CannotDecodeRlpItems)?
+			.data()
+			.map_err(|_| Error::<T>::CannotDecodeRlpItems)?;
+
+		// let storage_root = H256::from_slice(item);
+
+		// Ok(storage_root)
+		Ok(H256::zero())
+	}
+
+	pub fn require_lc_delay<T: Config>(slot: u64, chain_id: u32) -> Result<(), DispatchError> {
+		ensure!(
+			LightClients::<T>::get(chain_id) != H160::zero(),
+			Error::<T>::LightClientNotSet
+		);
+		let ts = Timestamps::<T>::get(slot);
+		ensure!(ts != 0, Error::<T>::TimestampNotSet);
+		let elapsed_time = T::TimeProvider::now().as_secs() - ts;
+
+		ensure!(
+			elapsed_time >= MinLightClientDelay::get(),
+			Error::<T>::MustWaitLongerForSlot
+		);
+
+		Ok(())
+	}
+
+	pub fn check_preconditions<T: Config>(
+		message: &Message,
+		message_root: H256,
+	) -> Result<(), DispatchError> {
+		let message_status = MessageStatus::<T>::get(message_root);
+		// Message must not be executed
+		ensure!(
+			message_status == MessageStatusEnum::NotExecuted,
+			Error::<T>::MessageAlreadyExecuted
+		);
+
+		// TODO check chainID?
+		let source_chain_id: u32 = 1001;
+		// Version must match for storage
+		ensure!(
+			message.version == MessageVersion::get(),
+			Error::<T>::WrongVersion
+		);
+		// TODO check chainID?
+		// only H160 address
+		let source_chain = Broadcasters::<T>::get(source_chain_id);
+		ensure!(
+			source_chain != H160::zero(),
+			Error::<T>::BroadcasterSourceChainNotSet
+		);
+
+		Ok(())
 	}
 
 	fn set_slot_roots<T: Config>(
