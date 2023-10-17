@@ -230,7 +230,6 @@ pub mod elections {
 	pub type MaxVoters = ConstU32<1_024>;
 
 	pub type MaxElectableTargets = MaxCandidates;
-	// @TODO const_assert!(MaxOnChainElectableTargets::get() <= MaxCandidates::get());
 }
 
 pub mod staking {
@@ -408,7 +407,6 @@ pub mod im {
 	pub type MaxKeys = ConstU32<256>;
 	pub type MaxPeerInHeartbeats = ConstU32<1_024>;
 	pub type MaxPeerDataEncodingSize = ConstU32<1_024>;
-	// @TODO const_assert!(system::MaxAuthorities::get() <= MaxKeys::get());
 }
 
 pub mod preimage {

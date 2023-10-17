@@ -97,7 +97,6 @@ pub fn native_version() -> NativeVersion {
 	}
 }
 
-// TODO @miguel Aline this with previous order and ID to keep the compatibility.
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime

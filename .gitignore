@@ -3,7 +3,6 @@ target
 .DS_Store
 node_modules
 dist
-fuzzing/testing/out
 tests/rust_scripts/target
 .vscode
 output
