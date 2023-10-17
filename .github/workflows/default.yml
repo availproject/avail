@@ -164,7 +164,9 @@ jobs:
           echo "RUSTC_WRAPPER=$BENCH_SCCACHE_BIN" >> $GITHUB_ENV
 
       - name: Build codspeed benchmark 
-        run: cargo codspeed build -p da-runtime -- --bench header_kate_commitment_cri
+        run: |
+          cargo install --locked cargo-codspeed
+          cargo codspeed build -p da-runtime -- --bench header_kate_commitment_cri
         env:
           SKIP_WASM_BUILD: true
 
