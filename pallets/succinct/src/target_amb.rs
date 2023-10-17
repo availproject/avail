@@ -1,6 +1,5 @@
 use ark_std::iterable::Iterable;
-use ark_std::vec;
-use primitive_types::H256;
+use primitive_types::{H160, H256};
 use scale_info::prelude::vec::Vec;
 use trie_db::Trie;
 
@@ -24,27 +23,56 @@ use crate::{Config, Error, MessageStatus};
 //     pub code_hash: H256,
 // }
 
+#[derive(Debug)]
 pub struct Message {
 	pub version: u8,
 	pub nonce: u64,
 	pub source_chain_id: u32,
-	pub source_address: H256,
+	pub source_address: H160,
 	pub destination_chain_id: u32,
 	pub destination_address: H256,
 	pub data: Vec<u8>,
 }
 
-// TODO add message decoding
-
 pub fn decode_message(message: Vec<u8>) -> Message {
+	let version: u8;
+	let nonce: u64;
+	let source_chain_id: u32;
+	let destination_chain_id: u32;
+	let source_address: H160;
+	let destination_address: H256;
+
+	version = message[0];
+	let mut buf = [0u8; 8];
+	buf[..8].copy_from_slice(&message[1..9]);
+	nonce = u64::from_be_bytes(buf);
+
+	let mut buf_source_chain = [0u8; 4];
+	buf_source_chain[..4].copy_from_slice(&message[9..13]);
+	source_chain_id = u32::from_be_bytes(buf_source_chain);
+
+	let mut buf_source_address = [0u8; 20];
+	buf_source_address[..20].copy_from_slice(&message[13..33]);
+	source_address = H160(buf_source_address);
+
+	let mut buf_dest_chain = [0u8; 4];
+	buf_dest_chain[..4].copy_from_slice(&message[33..37]);
+	destination_chain_id = u32::from_be_bytes(buf_dest_chain);
+
+	let mut buf_dest_address = [0u8; 32];
+	buf_dest_address[..32].copy_from_slice(&message[37..69]);
+	destination_address = H256(buf_dest_address);
+
+	let data = message[69..].to_vec();
+
 	return Message {
-		version: 0,
-		nonce: 0,
-		source_chain_id: 0,
-		source_address: Default::default(),
-		destination_chain_id: 0,
-		destination_address: Default::default(),
-		data: vec![],
+		version,
+		nonce,
+		source_chain_id,
+		source_address,
+		destination_chain_id,
+		destination_address,
+		data,
 	};
 }
 
@@ -72,34 +100,39 @@ pub mod keccak256 {
 #[cfg(test)]
 mod test {
 	use ark_std::vec;
-	use ethabi::Token::Uint;
 	use hex_literal::hex;
 	use patricia_merkle_trie::{EIP1186Layout, StorageProof};
-	use primitive_types::{H256, U256};
+	use primitive_types::{H160, H256, U256};
 	use rlp::{Decodable, Rlp};
 	use sp_core::keccak_256;
 	use trie_db::Trie;
 	use trie_db::{DBValue, TrieDBBuilder};
 
+	use crate::target_amb::decode_message;
 	use crate::target_amb::keccak256::KeccakHasher;
 
 	#[test]
+	fn test_message_decoding() {
+		let message_encoded = hex!("01000000000000007b00000005e2b19845fe2b7bb353f377d12dd51af012fbba20000000640000000000000000000000000000000000000000000000000000000000bc614e6789");
+
+		let message_decoded = decode_message(message_encoded.to_vec());
+		assert_eq!(123, message_decoded.nonce);
+		assert_eq!(1, message_decoded.version);
+		assert_eq!(5, message_decoded.source_chain_id);
+		assert_eq!(
+			H160(hex!("e2B19845Fe2B7Bb353f377d12dD51af012fbba20")),
+			message_decoded.source_address
+		);
+		assert_eq!(100, message_decoded.destination_chain_id);
+		assert_eq!(
+			U256::from(12345678u64),
+			U256::from(message_decoded.destination_address.as_bytes())
+		);
+		assert_eq!(vec![103, 137], message_decoded.data);
+	}
+
+	#[test]
 	fn test_account_proof() {
-		let nonce = 1_u64;
-		let test = 1_u64;
-
-		let vec = vec![0u64; 2];
-
-		let nonce = Uint(U256::from(1u64));
-		let idx = Uint(U256::from(1u64));
-
-		let enc = ethabi::encode(&[nonce, idx]);
-
-		let hash = keccak_256(enc.as_slice());
-
-		println!("encoded: {:?}", enc);
-		println!("hash: {:02X?}", hash);
-
 		let key = keccak_256(&hex!("43f0222552e8114ad8F224DEA89976d3bf41659D"));
 		let proof = vec![
             hex!("f90211a050da92c339db0b71cd6a8ac7893a6b8689ec5a3a46a0231b3ee2bd1baee75e1da045a3d973eb74a02b762d8b1ba683f39bca3965806276c8ceffe2d2ebc6cce233a0e88ad29ca98fa08f59f2a7f0110d63505d99a173628643290df869c4d1fa312ba00bb4cc9dc0b1de6ae0d80424b1fa992efb400a07a0e84615c91762fe734b2d0ca0a07e495d39bf2b779405790c6c7e7eb1cc3c803a88db36d1ec600fb0e555b5bba09a1c776e89c8be75d0a9ea022c05fd2ff095869d549e74a8fff7f2fb2deaf738a073b874e49e77dfd9312d7b1afd1ac10e02021a1ba2ab7c97ecaeaa0e26a34027a07e3424405c13aa33a2eb9ec6d8640aa1f67fdd8c8e9e4276334515b1cf1df65ca0246b93b2e3cc625a5e75b40165c6cb95ae8ffb9406563d34092d6359c7616aeea04d2fd8fdb1ab7d8f8fc6079400396fec828914230fade3794f13dc5ae7f6bbb8a04811b9efbfa8d495c5be91be78372b4a29140bd1e092e793db50ed9c495a6d54a02e1b3a417e8341dc8e1ade6ca527778192d33c7c827cfa63a366d007f2884e24a0845f4f33a4993d85766a14222cde1d124bd0f15523d239572883258a7bbcccd9a0ed2021cc2206fcfd9f80d592890b1b4eb615fae4f11d4e4a66d54a6767908901a07d46bf6e9dc9599eb7ca036aa976ef9cc63f02e9097252799f5d3a8792c49620a00b58d1d2cc72401c7cb978d34e15f74038ac63355e415d53b894179b8938dbb780").to_vec(),

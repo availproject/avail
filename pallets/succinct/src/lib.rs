@@ -195,7 +195,7 @@ pub mod pallet {
 	// Ability to froze source, must support possibility to update value
 	#[pallet::storage]
 	#[pallet::getter(fn is_frozen)]
-	pub type SourceChainFrozen<T> = StorageMap<_, Identity, H256, bool, ValueQuery>;
+	pub type SourceChainFrozen<T> = StorageMap<_, Identity, u32, bool, ValueQuery>;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -447,7 +447,7 @@ pub mod pallet {
 			ensure!(state.consistent, Error::<T>::LightClientInconsistent);
 
 			ensure!(
-				SourceChainFrozen::<T>::get(message.source_address) == false,
+				SourceChainFrozen::<T>::get(message.source_chain_id) == false,
 				Error::<T>::SourceChainFrozen
 			);
 			// TODO require delay, why?

@@ -33,12 +33,11 @@ log = "0.4.20"
 hex-literal = "0.4.1"
 trie-db = { version = "0.24.0", default-features = false }
 hash-db = { version = "0.15.2", default-features = false }
-rlp = { version = "0.5.1", default-features = false }
 memory-db = { version = "0.30.0", default-features = false }
-
 tiny-keccak = { version = "2.0.2", features = ["keccak"], optional = true }
 patricia-merkle-trie = { git = "https://github.com/ComposableFi/patricia-merkle-trie.git", default-features = false, branch = "main" }
-rlp-derive = "0.1.0"
+rlp = { version = "0.5.2", default-features = false }
+
 hash256-std-hasher = { version = "0.15.2", default-features = false }
 
 #hex = "0.4.3"
