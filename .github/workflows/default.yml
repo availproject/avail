@@ -163,6 +163,31 @@ jobs:
           $BENCH_SCCACHE_BIN -s
           echo "RUSTC_WRAPPER=$BENCH_SCCACHE_BIN" >> $GITHUB_ENV
 
+      - name: Run Header Generation Benchmarks on Criterion 
+        run: cargo bench -p da-runtime --bench header_kate_commitment_cri | tee ${{ env.BENCH_IAI }}/header_gen_bench_cri.txt
+
+      - name: Header Generation Regression Checks on Criterion 
+        uses: fmiguelgarcia/github-action-benchmark@v1
+        with:
+          # What benchmark tool the output.txt came from
+          tool: 'cargo'
+          # Where the output from the benchmark tool is stored
+          output-file-path: ${{ env.BENCH_IAI }}/header_gen_bench_cri.txt
+          # Where the previous data file is stored
+          external-data-json-path: ${{ env.BENCH_IAI }}/benchmark-data-cri.json
+          save-data-file: true
+          # Workflow will fail when an alert happens at 15% degradation
+          fail-on-alert: true
+          alert-threshold: '115%'
+          # Upload the updated cache file for the next job by actions/cache
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Enable alert commit comment
+          comment-on-alert: true
+          # Mention @rhysd in the commit comment
+          alert-comment-cc-users: '@prabal-banerjee,@jakubcech,@vthunder,@kroos47,@Leouarz,@markopoloparadox'
+          comment-always: true
+          summary-always: true
+
       - name: Run Header Generation Benchmarks on IAI
         run: cargo bench -p da-runtime --bench header_kate_commitment_iai | tee ./header_gen_bench_iai.txt
 
@@ -178,32 +203,7 @@ jobs:
           save-data-file: true
           # Workflow will fail when an alert happens at 15% degradation
           fail-on-alert: true
-          alert-threshold: '10%'
-          # Upload the updated cache file for the next job by actions/cache
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          # Enable alert commit comment
-          comment-on-alert: true
-          # Mention @rhysd in the commit comment
-          alert-comment-cc-users: '@prabal-banerjee,@jakubcech,@vthunder,@kroos47,@Leouarz,@markopoloparadox'
-          comment-always: true
-          summary-always: true
-
-      - name: Run Header Generation Benchmarks on Criterion 
-        run: cargo bench -p da-runtime --bench header_kate_commitment_cri | tee ./header_gen_bench_cri.txt
-
-      - name: Header Generation Regression Checks on Criterion 
-        uses: fmiguelgarcia/github-action-benchmark@v1
-        with:
-          # What benchmark tool the output.txt came from
-          tool: 'cargo'
-          # Where the output from the benchmark tool is stored
-          output-file-path: ./header_gen_bench_cri.txt
-          # Where the previous data file is stored
-          external-data-json-path: ${{ env.BENCH_IAI }}/benchmark-data-cri.json
-          save-data-file: true
-          # Workflow will fail when an alert happens at 15% degradation
-          fail-on-alert: true
-          alert-threshold: '10%'
+          alert-threshold: '115%'
           # Upload the updated cache file for the next job by actions/cache
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # Enable alert commit comment
