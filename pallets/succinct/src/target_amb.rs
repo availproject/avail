@@ -3,7 +3,7 @@ use primitive_types::{H160, H256};
 use scale_info::prelude::vec::Vec;
 use trie_db::Trie;
 
-use crate::{Config, Error, MessageStatus};
+use crate::Config;
 
 // struct Message {
 //     uint8 version;
@@ -156,18 +156,25 @@ mod test {
 
 		let byte_slice = result.as_slice();
 
-		let mut r = Rlp::new(byte_slice);
+		let mut rlp_value = Rlp::new(byte_slice);
 
 		// let acc = Account::decode(&mut r).unwrap();
 		// println!("{:?}", acc);
 
-		println!("{:?}", r.item_count());
-		println!("{:?}", r.at(2));
+		let expected_value =
+			hex!("a03e10dfba89f79567f7c9a238ee7fe66ed32e711be4db6e73d7211601dec360");
+		assert_eq!(4, rlp_value.item_count().unwrap());
+		assert_eq!(expected_value, rlp_value.at(2).unwrap().data().unwrap());
+		// assert_eq!(4, r.item_count());
+		// assert_eq!(4, r.item_count());
+		// TODO cleanup this
+		println!("{:?}", rlp_value.item_count());
+		println!("{:02x?}", rlp_value.at(2).unwrap().data());
 		println!("==========================");
-		println!("{:?}", r.at(0).unwrap().data());
-		println!("{:?}", r.at(1).unwrap().data());
-		println!("{:?}", r.at(2).unwrap().data());
-		println!("{:?}", r.at(3).unwrap().data());
+		println!("{:?}", rlp_value.at(0).unwrap().data());
+		println!("{:?}", rlp_value.at(1).unwrap().data());
+		println!("{:?}", rlp_value.at(2).unwrap().data());
+		println!("{:?}", rlp_value.at(3).unwrap().data());
 		println!("==========================");
 
 		// let account = Account::decode(&rlp::Rlp::new(&result)).unwrap();
