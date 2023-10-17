@@ -117,6 +117,7 @@ sp-keyring = "24.0.0"
 env_logger = "0.9.1"
 iai = "0.1.1"
 criterion = "0.5.1"
+codspeed-criterion-compat = "2.2.0"
 
 [[bench]]
 name = "header_kate_commitment_iai"
