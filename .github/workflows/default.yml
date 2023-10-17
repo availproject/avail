@@ -163,6 +163,18 @@ jobs:
           $BENCH_SCCACHE_BIN -s
           echo "RUSTC_WRAPPER=$BENCH_SCCACHE_BIN" >> $GITHUB_ENV
 
+      - name: Build codspeed benchmark 
+        run: cargo codspeed build -p da-runtime -- --bench header_kate_commitment_cri
+        env:
+          SKIP_WASM_BUILD: true
+
+      - name: Run the benchmarks
+        uses: CodSpeedHQ/action@v1
+        with:
+          run: cargo codspeed run -p da-runtime
+        env:
+          SKIP_WASM_BUILD: true
+
       - name: Run Header Generation Benchmarks on IAI
         run: cargo bench -p da-runtime --bench header_kate_commitment_iai | tee ./header_gen_bench_iai.txt
         env:
@@ -180,7 +192,7 @@ jobs:
           save-data-file: true
           # Workflow will fail when an alert happens at 15% degradation
           fail-on-alert: true
-          alert-threshold: '10%'
+          alert-threshold: '115%'
           # Upload the updated cache file for the next job by actions/cache
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # Enable alert commit comment
@@ -189,18 +201,6 @@ jobs:
           alert-comment-cc-users: '@prabal-banerjee,@jakubcech,@vthunder,@kroos47,@Leouarz,@markopoloparadox'
           comment-always: true
           summary-always: true
-
-      - name: Build codspeed benchmark 
-        run: cargo codspeed build -p da-runtime -- --bench header_kate_commitment_cri
-        env:
-          SKIP_WASM_BUILD: true
-
-      - name: Run the benchmarks
-        uses: CodSpeedHQ/action@v1
-        with:
-          run: cargo codspeed run -p da-runtime
-        env:
-          SKIP_WASM_BUILD: true
 
       - name: Display SCCache Stats
         run: ${{ env.BENCH_SCCACHE_BIN }} --show-stats
