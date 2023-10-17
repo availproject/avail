@@ -6,6 +6,7 @@ use frame_system::{header_builder::hosted_header_builder, limits::BlockLength};
 use sp_core::H256;
 use sp_std::iter::repeat;
 
+#[allow(dead_code)]
 fn make_txs(cols: BlockLengthColumns) -> Vec<AppExtrinsic> {
 	let data_length: u32 = <Runtime as DAConfig>::MaxAppDataLength::get();
 	let rows = <Runtime as DAConfig>::MaxBlockRows::get().0;
@@ -23,11 +24,13 @@ fn make_txs(cols: BlockLengthColumns) -> Vec<AppExtrinsic> {
 	vec![AppExtrinsic::from(data); nb_tx as usize]
 }
 
+#[allow(dead_code)]
 fn block_length(cols: BlockLengthColumns) -> BlockLength {
 	let rows = <Runtime as DAConfig>::MaxBlockRows::get();
 	BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO).unwrap()
 }
 
+#[allow(dead_code)]
 fn commitment_builder_with(txs: Vec<AppExtrinsic>, block_length: BlockLength) {
 	let seed = [0u8; 32];
 	let root = H256::zero();
@@ -35,38 +38,3 @@ fn commitment_builder_with(txs: Vec<AppExtrinsic>, block_length: BlockLength) {
 
 	let _ = hosted_header_builder::build(txs, root, block_length, block_number, seed);
 }
-
-fn commitment_builder(cols: BlockLengthColumns) {
-	let txs = make_txs(cols);
-	let block_length = block_length(cols);
-
-	commitment_builder_with(txs, block_length);
-}
-
-fn commitment_builder_32() {
-	commitment_builder(BlockLengthColumns(32));
-}
-fn commitment_builder_128() {
-	commitment_builder(BlockLengthColumns(128));
-}
-fn commitment_builder_256() {
-	commitment_builder(BlockLengthColumns(256));
-}
-
-iai::main! {commitment_builder_32}
-
-/*
-mod iai_wrappers {
-	pub fn commitment_builder_32() {
-		let _ = $crate::black_box(super::commitment_builder_32());
-	}
-}
-fn main() {
-	z`
-
-	let benchmarks: &[&(&'static str, fn())] =
-		&[&("commitment_builder_32", iai_wrappers::commitment_builder_32)];
-
-	iai::runner(benchmarks);
-}
-*/
