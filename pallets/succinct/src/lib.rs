@@ -34,6 +34,7 @@ parameter_types! {
 
 	pub const MessageVersion: u8 = 1;
 	pub const MinLightClientDelay: u64 = 120;
+	pub const MessageMappingStorageIndex:u64 = 1;
 }
 
 #[frame_support::pallet]
@@ -41,9 +42,11 @@ pub mod pallet {
 	use ark_std::string::String;
 	use ark_std::string::ToString;
 	use ark_std::{vec, vec::Vec};
+	use codec::KeyedVec;
+	use ethabi::Token::Uint;
 	use frame_support::dispatch::{GetDispatchInfo, UnfilteredDispatchable};
 	use frame_support::sp_core_hashing_proc_macro::keccak_256;
-	use frame_support::traits::{Hash, UnixTime};
+	use frame_support::traits::{Hash, Len, UnixTime};
 	use frame_support::{pallet_prelude::ValueQuery, DefaultNoBound};
 	use patricia_merkle_trie::{EIP1186Layout, StorageProof};
 	use primitive_types::H160;
@@ -96,6 +99,10 @@ pub mod pallet {
 		CannotDecodeRlpItems,
 		AccountNotFound,
 		CannotGetStorageRoot,
+		TrieError,
+		StorageValueNotFount,
+		StorageRootNotFount,
+		InvalidMessageHash,
 	}
 
 	#[pallet::event]
@@ -219,6 +226,9 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type MinLightClientDelay: Get<u64>;
+
+		#[pallet::constant]
+		type MessageMappingStorageIndex: Get<u64>;
 
 		type RuntimeCall: Parameter
 			+ UnfilteredDispatchable<RuntimeOrigin = Self::RuntimeOrigin>
@@ -427,11 +437,11 @@ pub mod pallet {
 			slot: u64,
 			message_bytes: Vec<u8>,
 			account_proof: Vec<Vec<u8>>,
-			storage_proof: Vec<u8>,
+			storage_proof: Vec<Vec<u8>>,
 		) -> DispatchResult {
 			let message = decode_message(message_bytes);
-			let message_root = keccak_256!(message_bytes);
-			check_preconditions::<T>(&message, H256(message_root))?;
+			let message_root = H256(keccak_256!(message_bytes));
+			check_preconditions::<T>(&message, message_root)?;
 
 			let state = StateStorage::<T>::get();
 			ensure!(state.consistent, Error::<T>::LightClientInconsistent);
@@ -443,9 +453,44 @@ pub mod pallet {
 			// TODO require delay, why?
 			require_lc_delay::<T>(slot, message.source_chain_id)?;
 
-			let storage_root = get_storage_root::<T>(slot, message.source_chain_id, account_proof);
+			let storage_root = get_storage_root::<T>(slot, message.source_chain_id, account_proof)?;
+
+			let nonce = Uint(U256::from(message.nonce));
+			let mm_idx = Uint(U256::from(MessageMappingStorageIndex::get()));
+			let slot_key = keccak_256(ethabi::encode(&[nonce, mm_idx]).as_slice());
+
+			let slot_value = get_storage_value::<T>(H256(slot_key), storage_root, storage_proof)?;
+
+			ensure!(slot_value == message_root, Error::<T>::InvalidMessageHash);
+
+			// TODO message is valid can be executed
 
 			Ok(())
+		}
+	}
+
+	pub fn get_storage_value<T: Config>(
+		slot_hash: H256,
+		storage_root: H256,
+		proof: Vec<Vec<u8>>,
+	) -> Result<H256, DispatchError> {
+		let db = StorageProof::new(proof).into_memory_db::<target_amb::keccak256::KeccakHasher>();
+		let trie = TrieDBBuilder::<EIP1186Layout<target_amb::keccak256::KeccakHasher>>::new(
+			&db,
+			&storage_root,
+		)
+		.build();
+
+		if let Some(storage_root) = trie
+			.get(&slot_hash.as_bytes())
+			.map_err(|_| Error::<T>::TrieError)?
+		{
+			let r = Rlp::new(storage_root.as_slice());
+			ensure!(r.data().len() > 0, Error::<T>::CannotDecodeRlpItems);
+			let storage_value = r.data().map_err(|_| Error::<T>::CannotDecodeRlpItems)?;
+			Ok(H256::from_slice(storage_value))
+		} else {
+			Err(Error::<T>::StorageValueNotFount.into())
 		}
 	}
 
@@ -481,10 +526,9 @@ pub mod pallet {
 			.data()
 			.map_err(|_| Error::<T>::CannotDecodeRlpItems)?;
 
-		// let storage_root = H256::from_slice(item);
+		let storage_root = H256::from_slice(item);
 
-		// Ok(storage_root)
-		Ok(H256::zero())
+		Ok(storage_root)
 	}
 
 	pub fn require_lc_delay<T: Config>(slot: u64, chain_id: u32) -> Result<(), DispatchError> {

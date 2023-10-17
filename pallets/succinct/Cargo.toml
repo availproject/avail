@@ -43,7 +43,7 @@ hash256-std-hasher = { version = "0.15.2", default-features = false }
 
 #hex = "0.4.3"
 primitive-types = { version = "0.12.0", default-features = false }
-
+ethabi = { version = "18.0.0", default-features = false }
 
 
 [features]

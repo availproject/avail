@@ -48,8 +48,8 @@ use frame_system::submitted_data;
 use frame_system::EnsureRoot;
 use pallet_succinct::{
 	ExecutionStateRootIndex, FinalizedRootIndex, MaxProofLength, MaxPublicInputsLength,
-	MaxVerificationKeyLength, MessageVersion, MinLightClientDelay, MinSyncCommitteeParticipants,
-	NextSyncCommitteeIndex, SyncCommitteeSize,
+	MaxVerificationKeyLength, MessageMappingStorageIndex, MessageVersion, MinLightClientDelay,
+	MinSyncCommitteeParticipants, NextSyncCommitteeIndex, SyncCommitteeSize,
 };
 
 use crate::voter_bags;
@@ -96,7 +96,7 @@ impl pallet_succinct::Config for Runtime {
 
 	type MessageVersion = MessageVersion;
 	type MinLightClientDelay = MinLightClientDelay;
-
+	type MessageMappingStorageIndex = MessageMappingStorageIndex;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_succinct::WeightInfo<Runtime>;
