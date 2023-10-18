@@ -15,7 +15,7 @@ env:
   SCCACHE_BIN: /home/runner/.cache/cargo-sccache-bed5571c/bin/sccache
   BENCH_SCCACHE_DIR: /home/ubuntu/actions-runner/_work/.cache/cargo-sccache-bed5571c
   BENCH_SCCACHE_BIN: /home/ubuntu/actions-runner/_work/.cache/cargo-sccache-bed5571c/bin/sccache
-  BENCH_IAI: /home/ubuntu/actions-runner/_work/.iai
+  BENCH_OUTPUT_DIR: /home/ubuntu/actions-runner/_work/.bench
 
 
 jobs:
@@ -127,7 +127,7 @@ jobs:
           path: |
             ${{ env.SCCACHE_DIR }}
             ${{ env.BENCH_SCCACHE_DIR }}
-            ${{ env.BENCH_IAI }}
+            ${{ env.BENCH_OUTPUT_DIR }}
             ./runtime/target/iai
           key: ${{ runner.OS }}-sccache-bin-bench-${{ env.CARGO_SCCACHE_COMMIT }}-v1
 
@@ -174,46 +174,18 @@ jobs:
         uses: CodSpeedHQ/action@v1
         with:
           run: cargo codspeed run -p da-runtime
+          token: $${ secrets.CODSPEED_TOKEN }}
         env:
           SKIP_WASM_BUILD: true
-
-      - name: Run Header Generation Benchmarks on IAI
-        run: cargo bench -p da-runtime --bench header_kate_commitment_iai | tee ./header_gen_bench_iai.txt
-        env:
-          SKIP_WASM_BUILD: true
-
-      - name: Header Generation Regression Checks on IAI
-        uses: fmiguelgarcia/github-action-benchmark@v1
-        with:
-          # What benchmark tool the output.txt came from
-          tool: 'rustIai'
-          # Where the output from the benchmark tool is stored
-          output-file-path: ./header_gen_bench_iai.txt
-          # Where the previous data file is stored
-          external-data-json-path: ${{ env.BENCH_IAI }}/benchmark-data-iai.json
-          save-data-file: true
-          # Workflow will fail when an alert happens at 15% degradation
-          fail-on-alert: true
-          alert-threshold: '115%'
-          # Upload the updated cache file for the next job by actions/cache
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          # Enable alert commit comment
-          comment-on-alert: true
-          # Mention @rhysd in the commit comment
-          alert-comment-cc-users: '@prabal-banerjee,@jakubcech,@vthunder,@kroos47,@Leouarz,@markopoloparadox'
-          comment-always: true
-          summary-always: true
 
       - name: Display SCCache Stats
         run: ${{ env.BENCH_SCCACHE_BIN }} --show-stats
 
       - name: Print caches
         run: |
+          find ${{ env.BENCH_OUTPUT_DIR }} -type f
           find ./runtime/target/iai -type f
-          find ${{ env.BENCH_SCCACHE_DIR }} -type f
-          find ${{ env.BENCH_IAI }} -type f
           pwd
-
 
 
   unit_tests:
