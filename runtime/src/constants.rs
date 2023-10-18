@@ -22,7 +22,7 @@ use avail_core::currency::{Balance, AVL};
 use frame_support::{
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{ConstBool, ConstU16, ConstU32},
+	traits::{ConstU16, ConstU32},
 	weights::{constants::BlockExecutionWeight, Weight},
 };
 use sp_runtime::{transaction_validity::TransactionPriority, Perbill, Permill};
@@ -197,40 +197,6 @@ pub mod nomination_pools {
 	pub const MAX_MEMBERS: u32 = MAX_POOLS * MAX_MEMBERS_PER_POOL;
 }
 
-pub mod elections {
-	use frame_support::traits::LockIdentifier;
-
-	use super::{currency::*, *};
-
-	#[cfg(not(feature = "fast-runtime"))]
-	parameter_types! {
-		pub const TermDuration: BlockNumber = 7 * super::time::DAYS;
-	}
-
-	#[cfg(feature = "fast-runtime")]
-	parameter_types! {
-		pub const TermDuration: BlockNumber = 10 * super::time::MINUTES;
-	}
-
-	parameter_types! {
-		pub const CandidacyBond: Balance = 1_000_000_000 * AVL;
-		pub const InitialMemberBond: Balance = 1 * AVL;
-		pub const PalletId: LockIdentifier = *b"phrelect";
-		// 1 storage item created, key size is 32 bytes, value size is 16+16.
-		pub const VotingBondBase: Balance = 1 * AVL + deposit(1, 64);
-		// additional data per vote is 32 bytes (account id).
-		pub const VotingBondFactor: Balance = deposit(0, 32);
-		pub const DesiredMembers :u32 = 3;
-		pub const MaxVotesPerVoter: u32 = 16;
-	}
-
-	pub type DesiredRunnersUp = ConstU32<3>;
-	pub type MaxCandidates = ConstU32<6>;
-	pub type MaxVoters = ConstU32<1_024>;
-
-	pub type MaxElectableTargets = MaxCandidates;
-}
-
 pub mod staking {
 	use crate::impls::RuntimeBlockLength;
 	use sp_runtime::curve::PiecewiseLinear;
@@ -312,7 +278,7 @@ pub mod staking {
 	pub type MaxValidators = ConstU32<32>;
 
 	// OnChain values are lower.
-	pub type MaxOnChainElectingVoters = elections::MaxVoters;
+	pub type MaxOnChainElectingVoters = ConstU32<1_024>;
 	pub type MaxOnChainElectableTargets = ConstU16<512>;
 	// The maximum winners that can be elected by the Election pallet which is equivalent to the
 	// maximum active validators the staking pallet can have.
@@ -338,44 +304,6 @@ pub mod babe {
 		pub const ReportLongevity: BlockNumber =
 			staking::BondingDuration::get() * staking::SessionsPerEra::get() * time::EpochDuration::get();
 	}
-}
-
-pub mod democracy {
-	use time::*;
-
-	use super::*;
-
-	#[cfg(not(feature = "fast-runtime"))]
-	parameter_types! {
-		pub const CooloffPeriod: BlockNumber = 5 * DAYS;
-		pub const EnactmentPeriod: BlockNumber = 7 * DAYS;
-		pub const FastTrackVotingPeriod: BlockNumber = 3 * HOURS;
-		pub const LaunchPeriod: BlockNumber = 1 * DAYS;
-		pub const VotingPeriod: BlockNumber = 7 * DAYS;
-	}
-
-	#[cfg(feature = "fast-runtime")]
-	parameter_types! {
-		pub const CooloffPeriod: BlockNumber = 2 * MINUTES;
-		pub const EnactmentPeriod: BlockNumber = 3 * MINUTES;
-		pub const FastTrackVotingPeriod: BlockNumber = 1 * MINUTES;
-		pub const LaunchPeriod: BlockNumber = 1 * MINUTES;
-		pub const VotingPeriod: BlockNumber = 5 * MINUTES;
-	}
-
-	parameter_types! {
-		pub const MinimumDeposit: Balance = 150 * AVL;
-	}
-
-	#[cfg(feature = "fast-runtime")]
-	pub type InstantAllowed = ConstBool<true>;
-	#[cfg(not(feature = "fast-runtime"))]
-	pub type InstantAllowed = ConstBool<false>;
-
-	pub type MaxBlacklisted = ConstU32<1_024>;
-	pub type MaxDeposits = ConstU32<128>;
-	pub type MaxProposals = ConstU32<256>;
-	pub type MaxVotes = ConstU32<64>;
 }
 
 pub mod technical {
@@ -467,6 +395,3 @@ pub mod nomad {
 	}
 	pub type MaxMessageBodyBytes = ConstU32<2048>;
 }
-
-// Make sure that there are no more than `MaxMembers` members elected via elections-phragmen.
-const_assert!(elections::DesiredMembers::get() <= council::MaxMembers::get());
