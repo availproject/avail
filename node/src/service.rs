@@ -19,6 +19,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 #![allow(dead_code)]
 
+use crate::cli::Cli;
 use avail_core::AppId;
 use codec::Encode;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
@@ -612,18 +613,24 @@ pub fn new_full_base(
 }
 
 /// Builds a new service for a full client.
-pub fn new_full(
-	config: Configuration,
-	disable_hardware_benchmarks: bool,
-	unsafe_da_sync: bool,
-) -> Result<TaskManager, ServiceError> {
-	new_full_base(
+pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceError> {
+	let database_source = config.database.clone();
+	let task_manager = new_full_base(
 		config,
-		disable_hardware_benchmarks,
+		cli.no_hardware_benchmarks,
 		|_, _| (),
-		unsafe_da_sync,
+		cli.unsafe_da_sync,
 	)
-	.map(|NewFullBase { task_manager, .. }| task_manager)
+	.map(|NewFullBase { task_manager, .. }| task_manager)?;
+
+	sc_storage_monitor::StorageMonitorService::try_spawn(
+		cli.storage_monitor,
+		database_source,
+		&task_manager.spawn_essential_handle(),
+	)
+	.map_err(|e| ServiceError::Application(e.into()))?;
+
+	Ok(task_manager)
 }
 
 fn extend_metrics(prometheus: &Registry) -> Result<(), PrometheusError> {

@@ -2066,6 +2066,7 @@ dependencies = [
  "sc-rpc-api",
  "sc-rpc-spec-v2",
  "sc-service",
+ "sc-storage-monitor",
  "sc-sync-state-rpc",
  "sc-sysinfo",
  "sc-telemetry",
@@ -3289,6 +3290,16 @@ checksum = "9564fc758e15025b46aa6643b1b77d047d1a56a1aea6e01002ac0c7026876213"
 dependencies = [
  "libc",
  "winapi",
+]
+
+[[package]]
+name = "fs4"
+version = "0.6.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2eeb4ed9e12f43b7fa0baae3f9cdda28352770132ef2e09a23760c29cae8bd47"
+dependencies = [
+ "rustix 0.38.10",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -8700,6 +8711,20 @@ dependencies = [
  "parity-scale-codec",
  "parking_lot 0.12.1",
  "sp-core",
+]
+
+[[package]]
+name = "sc-storage-monitor"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/substrate.git/?branch=polkadot-v1.0.0#948fbd2fd1233dc26dbb9f9bbc1d2cca2c03945d"
+dependencies = [
+ "clap 4.4.1",
+ "fs4",
+ "log",
+ "sc-client-db",
+ "sp-core",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]
