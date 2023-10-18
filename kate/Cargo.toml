@@ -46,37 +46,32 @@ serde_json = "1"
 test-case = "1.2.3"
 
 [features]
-default = ["std"]
-alloc = ["dusk-plonk/alloc", "nalgebra/alloc"]
-parallel = [
-	"rayon",
-	"criterion/rayon",
-]
+default = [ "std" ]
+alloc = [ "dusk-plonk/alloc", "nalgebra/alloc" ]
+parallel = [ "criterion/rayon", "rayon" ]
 
 std = [
-	"parallel",
-	"kate-recovery/std",
-	"once_cell",
-	"hex-literal",
-	"hex",
+	"avail-core/std",
 	"codec/std",
+	"dusk-bytes",
+	"dusk-plonk/std",
+	"hex",
+	"hex-literal",
+	"kate-recovery/std",
+	"log",
+	"nalgebra/std",
+	"once_cell",
+	"parallel",
+	"poly-multiproof/blst",
+	"rand/std",
+	"rand_chacha/std",
 	"serde",
 	"serde_json",
-	"rand_chacha/std",
-	"rand/std",
-	"log",
-	"dusk-plonk/std",
-	"dusk-bytes",
-	"avail-core/std",
 	"sp-arithmetic/std",
 	"sp-core/std",
-	"poly-multiproof/blst",
-	"nalgebra/std",
 ]
 
-serde = [
-	"dep:serde",
-]
+serde = [ "dep:serde" ]
 
 extended-columns = []
 maximum-block-size = []

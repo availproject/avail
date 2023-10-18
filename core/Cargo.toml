@@ -36,39 +36,32 @@ serde_json = "1"
 test-case = "1.2.3"
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-	"serde/std",
-	"hex",
+	"binary-merkle-tree?/std",
 	"codec/std",
-	"scale-info/std",
+	"derive_more/display",
+	"frame-support?/std",
+	"hash256-std-hasher/std",
+	"hex",
 	"log/std",
+	"scale-info/std",
+	"serde/std",
+	"sp-arithmetic/std",
 	"sp-core/std",
 	"sp-io/std",
-	"sp-std/std",
-	"sp-trie/std",
-	"sp-arithmetic/std",
-	"hash256-std-hasher/std",
-	"binary-merkle-tree?/std",
-	"derive_more/display",
 	"sp-runtime-interface?/std",
 	"sp-runtime?/std",
-	"frame-support?/std",
+	"sp-std/std",
+	"sp-trie/std",
 ]
 runtime = [
-	"serde",
-	"sp-runtime-interface",
-	"sp-runtime",
-	"frame-support",
 	"binary-merkle-tree",
+	"frame-support",
+	"serde",
+	"sp-runtime",
+	"sp-runtime-interface",
 ]
 
-try-runtime = [
-	"runtime",
-	"sp-runtime/try-runtime",
-]
-serde = [
-	"dep:serde",
-	"hex/serde",
-	"log/serde",
-]
+try-runtime = [ "runtime", "sp-runtime/try-runtime" ]
+serde = [ "dep:serde", "hex/serde", "log/serde" ]

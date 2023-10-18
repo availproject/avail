@@ -25,18 +25,16 @@ once_cell = { version = "1.8.0", optional = true }
 serde = { version = "1.0.188", default-features = false, features = ["derive"], optional = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-	"serde",
-	"ethers-signers",
-	"once_cell",
 	"codec/std",
-	"nomad-signature/std",
-	"scale-info/std",
+	"ethers-signers",
 	"nomad-core/std",
+	"nomad-signature/std",
+	"once_cell",
+	"scale-info/std",
+	"serde",
 	"sp-core/std",
 	"sp-runtime/std",
 ]
-serde = [
-	"dep:serde",
-]
+serde = [ "dep:serde" ]
