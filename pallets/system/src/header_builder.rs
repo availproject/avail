@@ -22,7 +22,6 @@ pub mod da {
 	use super::*;
 
 	pub type Hash = sp_core::H256;
-	// @todo Miguel: Link this type with `Config::BlockNumber`.
 	pub type BlockNumber = u32;
 
 	/// Data-Avail Header builder.
