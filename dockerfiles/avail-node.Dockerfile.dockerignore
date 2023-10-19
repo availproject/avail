@@ -1,7 +1,5 @@
 target
-.git
 .github
 .maintain
-misc
 avail-subxt
 tests

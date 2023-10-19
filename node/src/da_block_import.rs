@@ -115,8 +115,6 @@ where
 		self.inner.import_block(block).await.map_err(Into::into)
 	}
 
-	/// # TODO
-	/// - Check that `Runtime::System::BlockLenght` was not changed inside the block;
 	async fn check_block(
 		&mut self,
 		block: BlockCheckParams<B>,

@@ -447,8 +447,6 @@ impl_runtime_apis! {
 			let mut whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 
 			// Treasury Account
-			// TODO: this is manual for now, someday we might be able to use a
-			// macro for this particular key
 			let treasury_key = frame_system::Account::<Runtime>::hashed_key_for(Treasury::account_id());
 			whitelist.push(treasury_key.to_vec().into());
 
