@@ -207,8 +207,8 @@ impl pallet_tips::Config for Runtime {
 }
 
 parameter_types! {
-	pub const WeightFee: Balance = constants::currency::PICO_AVL / 100u128;
-	pub const TransactionByteFee: Balance = 100 * constants::currency::NANO_AVL; // 0.0000001 AVL
+	pub const WeightFee: Balance = constants::currency::PICO_AVL;
+	pub const TransactionByteFee: Balance = 100 * constants::currency::NANO_AVL; // 100 nanoAVL
 	pub const OperationalFeeMultiplier: u8 = 5u8;
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(50); // target_utilization 50%
 	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000); // 0.000001
@@ -228,7 +228,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = CurrencyAdapter<Balances, DealWithFees<Runtime>>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightToFee = ConstantMultiplier<Balance, WeightFee>; // 1 weight = 0.01 PICO AVL -> second_price = 0.01 AVL
+	type WeightToFee = ConstantMultiplier<Balance, WeightFee>; // 1 weight = 1 picoAVL -> second_price = 1 AVL
 }
 
 parameter_types! {
@@ -290,8 +290,8 @@ where
 {
 	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance<R>>) {
 		if let Some(fees) = fees_then_tips.next() {
-			// for fees, 80% to author, 20% to treasury
-			let mut split = fees.ration(20, 80);
+			// for fees, 20% to author, 80% to treasury
+			let mut split = fees.ration(80, 20);
 			if let Some(tips) = fees_then_tips.next() {
 				// for tips, if any, 100% to author
 				tips.merge_into(&mut split.1);
