@@ -341,8 +341,9 @@ where
 
 	//TODO allocate static thread pool, just for RPC related work, to free up resources, for the block producing processes.
 	async fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
-		let signed_block = self.get_signed_block(at)?;
+		use rayon::prelude::*;
 
+		let signed_block = self.get_signed_block(at)?;
 		let block_hash = signed_block.block.header().hash();
 
 		if self.client.info().finalized_number < *signed_block.block.header().number() {
@@ -355,44 +356,32 @@ where
 		let polys = self.get_poly_grid(&signed_block).await?;
 
 		let proof = cells
-			.iter()
+			.par_iter()
 			.map(|cell| {
-				// TODO: this is super annoying. reviewers, any ideas?
-				let row: usize = cell
-					.row
-					.0
-					.try_into()
-					.map_err(|_| internal_err!("cell row did not fit in usize"))?;
-				let col: usize = cell
-					.col
-					.0
-					.try_into()
-					.map_err(|_| internal_err!("cell row did not fit in usize"))?;
-				evals
-					.get::<usize, usize>(row, col)
-					.ok_or(internal_err!(
-						"Invalid cell {:?} for dims {:?}",
-						cell,
-						evals.dims()
-					))
-					.and_then(|data| {
-						polys
-							.1
-							.proof(&self.multiproof_srs, cell)
-							.map_err(|e| internal_err!("Unable to make proof: {:?}", e))
-							.map(|proof| {
-								(
-									data.to_bytes().expect("Ser cannot fail"),
-									proof.to_bytes().expect("Ser cannot fail"),
-								)
-							})
-					})
+				let Ok(row) = usize::try_from(cell.row.0) else {
+					return Err(internal_err!("cell row did not fit in usize"));
+				};
+				let Ok(col) = usize::try_from(cell.col.0) else {
+					return Err(internal_err!("cell row did not fit in usize"));
+				};
+				let Some(data) = evals.get::<usize, usize>(row, col) else {
+					let e = internal_err!("Invalid cell {:?} for dims {:?}", cell, evals.dims());
+					return Err(e);
+				};
+				let proof = match polys.1.proof(&self.multiproof_srs, cell) {
+					Ok(x) => x,
+					Err(e) => return Err(internal_err!("Unable to make proof: {:?}", e)),
+				};
+
+				let data = data.to_bytes().expect("Ser cannot fail").to_vec();
+				let proof = proof.to_bytes().expect("Ser cannot fail").to_vec();
+				return Ok([proof, data]
+					.into_iter()
+					.flat_map(|x| x)
+					.collect::<Vec<_>>());
 			})
-			.collect::<Result<Vec<_>, _>>()?
-			.into_iter()
-			.flat_map(|(data, proof)| [proof.to_vec(), data.to_vec()])
-			.collect::<Vec<_>>()
-			.concat();
+			.collect::<Result<Vec<_>, _>>()?;
+		let proof: Vec<u8> = proof.into_iter().flat_map(|x| x).collect();
 		Ok(proof)
 	}
 

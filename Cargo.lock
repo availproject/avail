@@ -4451,6 +4451,7 @@ dependencies = [
  "kate",
  "kate-recovery",
  "moka",
+ "rayon",
  "sc-client-api",
  "serde",
  "sp-api",

@@ -15,6 +15,8 @@ kate-recovery = { version = "0.9", default-features = false }
 
 # 3rd party
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
+rayon = { version = "1.5.2" }
+
 
 # Substrate
 sp-api = { version = "4.0.0-dev", default-features = false }
