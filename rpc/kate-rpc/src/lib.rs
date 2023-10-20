@@ -322,13 +322,21 @@ where
 		}
 
 		let evals = self.get_eval_grid(&signed_block).await?;
-		let orig_dims = non_extended_dimensions(evals.dims())?;
+		let extended_dims = evals.dims();
+		let orig_dims = non_extended_dimensions(extended_dims)?;
 
 		let rows = evals
 			.app_rows(app_id, Some(orig_dims))
 			.map_err(|e| internal_err!("Failed to get app rows: {:?}", e))?;
 		let mut all_rows = vec![None; orig_dims.height()];
-		for (row_y, row) in rows.ok_or_else(|| internal_err!("No rows found"))? {
+
+		let mut div = 1;
+		if extended_dims.height() == 2 * orig_dims.height() {
+			div = 2;
+		}
+
+		for (mut row_y, row) in rows.ok_or_else(|| internal_err!("No rows found"))? {
+			row_y /= div;
 			all_rows[row_y] = Some(
 				row.into_iter()
 					.flat_map(|s| s.to_bytes().expect("Ser cannot fail"))
