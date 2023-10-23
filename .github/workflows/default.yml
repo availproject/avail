@@ -11,11 +11,6 @@ on:
 env:
   BUILD_TOOLCHAIN: stable-2023-08-24
   CARGO_SCCACHE_COMMIT: bed5571c
-  SCCACHE_DIR: /home/runner/.cache/cargo-sccache-bed5571c
-  SCCACHE_BIN: /home/runner/.cache/cargo-sccache-bed5571c/bin/sccache
-  BENCH_SCCACHE_DIR: /home/ubuntu/actions-runner/_work/.cache/cargo-sccache-bed5571c
-  BENCH_SCCACHE_BIN: /home/ubuntu/actions-runner/_work/.cache/cargo-sccache-bed5571c/bin/sccache
-
 
 jobs:
   lint:
@@ -142,8 +137,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip python3-pip
 
-      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
-      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
+          # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
+          # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
       - name: Setup Rust toolchain
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
@@ -253,33 +248,33 @@ jobs:
           sccache -s
           echo "RUSTC_WRAPPER=${HOME}/.cargo/bin/sccache" >> $GITHUB_ENV
 
-       - name: Run Header Generation Benchmarks on Criterion 
-         run: cargo bench -p da-runtime --bench header_kate_commitment_cri -- --color never --noplot --output-format bencher | tee ~/.cache/cri/header_gen_bench_cri.txt
+      - name: Run Header Generation Benchmarks on Criterion 
+        run: cargo bench -p da-runtime --bench header_kate_commitment_cri -- --color never --noplot --output-format bencher | tee ~/.cache/cri/header_gen_bench_cri.txt
 
-       - name: Header Generation Regression Checks on Criterion 
-         uses: fmiguelgarcia/github-action-benchmark@v1
-         with:
-           # What benchmark tool the output.txt came from
-           tool: 'cargo'
-           # Where the output from the benchmark tool is stored
-           output-file-path: ~/.cache/cri/header_gen_bench_cri.txt
-           # Where the previous data file is stored
-           external-data-json-path: ~/.cache/cri/benchmark-data-cri.json
-           save-data-file: true
-           # Workflow will fail when an alert happens at 15% degradation
-           fail-on-alert: true
-           alert-threshold: '115%'
-           # Upload the updated cache file for the next job by actions/cache
-           github-token: ${{ secrets.GITHUB_TOKEN }}
-           # Enable alert commit comment
-           comment-on-alert: true
-           # Mention @rhysd in the commit comment
-           alert-comment-cc-users: '@prabal-banerjee,@jakubcech,@vthunder,@kroos47,@Leouarz,@markopoloparadox'
-           comment-always: true
-           summary-always: true
+      - name: Header Generation Regression Checks on Criterion 
+        uses: fmiguelgarcia/github-action-benchmark@v1
+        with:
+          # What benchmark tool the output.txt came from
+          tool: 'cargo'
+          # Where the output from the benchmark tool is stored
+          output-file-path: ~/.cache/cri/header_gen_bench_cri.txt
+          # Where the previous data file is stored
+          external-data-json-path: ~/.cache/cri/benchmark-data-cri.json
+          save-data-file: true
+          # Workflow will fail when an alert happens at 15% degradation
+          fail-on-alert: true
+          alert-threshold: '115%'
+          # Upload the updated cache file for the next job by actions/cache
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Enable alert commit comment
+          comment-on-alert: true
+          # Mention @rhysd in the commit comment
+          alert-comment-cc-users: '@prabal-banerjee,@jakubcech,@vthunder,@kroos47,@Leouarz,@markopoloparadox'
+          comment-always: true
+          summary-always: true
 
-       - name: Display SCCache Stats
-         run: sccache --show-stats
+      - name: Display SCCache Stats
+        run: sccache --show-stats
 
   unit_tests:
     runs-on: ubuntu-latest
@@ -379,8 +374,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip python3-pip
 
-          # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
-          # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
+      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
+      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
       - name: Setup Rust toolchain
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
