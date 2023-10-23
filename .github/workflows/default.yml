@@ -135,6 +135,9 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
+          which valgrind
+          sudo dpkg -S `which valgrind`
+          sudo apt remove valgrind
           sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip python3-pip
 
           # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
