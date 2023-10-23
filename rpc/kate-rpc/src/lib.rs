@@ -22,6 +22,7 @@ use kate::{
 };
 use kate_recovery::matrix::Dimensions;
 use moka::future::Cache;
+use rayon::prelude::*;
 use sc_client_api::BlockBackend;
 use serde::{Deserialize, Serialize};
 use sp_api::ProvideRuntimeApi;
@@ -172,7 +173,8 @@ where
 				"Requested block {block_hash} is not finalized"
 			));
 		}
-		return Ok(());
+
+		Ok(())
 	}
 
 	fn get_signed_block(&self, at: Option<Block::Hash>) -> RpcResult<SignedBlock<Block>> {
@@ -205,11 +207,11 @@ where
 		}
 	}
 
+	/// The signed_block needs to be finalized.
 	async fn get_eval_grid(
 		&self,
 		signed_block: &SignedBlock<Block>,
 	) -> RpcResult<Arc<EvaluationGrid>> {
-		self.is_block_finalized(&signed_block)?;
 		let block_hash = signed_block.block.header().hash();
 
 		self.eval_grid_cache
@@ -299,20 +301,20 @@ where
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<Vec<u8>>>> {
 		let signed_block = self.get_signed_and_finalized_block(at)?;
-
 		let evals = self.get_eval_grid(&signed_block).await?;
 
-		Ok(rows
+		let rows: Vec<Option<Vec<u8>>> = rows
 			.iter()
-			.map(|i| match evals.row(*i as usize) {
-				Some(row) => Some(
+			.map(|i| {
+				evals.row(*i as usize).map(|row| {
 					row.iter()
 						.flat_map(|a| a.to_bytes().expect("Ser cannot fail"))
-						.collect::<Vec<u8>>(),
-				),
-				None => None,
+						.collect::<Vec<u8>>()
+				})
 			})
-			.collect::<Vec<Option<Vec<u8>>>>())
+			.collect();
+
+		Ok(rows)
 	}
 
 	async fn query_app_data(
@@ -321,22 +323,25 @@ where
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<Vec<u8>>>> {
 		let signed_block = self.get_signed_and_finalized_block(at)?;
-
 		let evals = self.get_eval_grid(&signed_block).await?;
+
 		let extended_dims = evals.dims();
 		let orig_dims = non_extended_dimensions(extended_dims)?;
 
 		let rows = evals
 			.app_rows(app_id, Some(orig_dims))
 			.map_err(|e| internal_err!("Failed to get app rows: {:?}", e))?;
-		let mut all_rows = vec![None; orig_dims.height()];
+		let Some(rows) = rows else {
+			return Err(internal_err!("No rows found"));
+		};
 
 		let mut div = 1;
 		if extended_dims.height() == 2 * orig_dims.height() {
 			div = 2;
 		}
 
-		for (mut row_y, row) in rows.ok_or_else(|| internal_err!("No rows found"))? {
+		let mut all_rows = vec![None; orig_dims.height()];
+		for (mut row_y, row) in rows {
 			row_y /= div;
 			all_rows[row_y] = Some(
 				row.into_iter()
@@ -350,10 +355,7 @@ where
 
 	//TODO allocate static thread pool, just for RPC related work, to free up resources, for the block producing processes.
 	async fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
-		use rayon::prelude::*;
-
 		let signed_block = self.get_signed_and_finalized_block(at)?;
-
 		let evals = self.get_eval_grid(&signed_block).await?;
 		let polys = self.get_poly_grid(&signed_block).await?;
 
@@ -377,21 +379,18 @@ where
 
 				let data = data.to_bytes().expect("Ser cannot fail").to_vec();
 				let proof = proof.to_bytes().expect("Ser cannot fail").to_vec();
-				return Ok([proof, data]
-					.into_iter()
-					.flat_map(|x| x)
-					.collect::<Vec<_>>());
+
+				Ok([proof, data].into_iter().flatten().collect::<Vec<_>>())
 			})
 			.collect::<Result<Vec<_>, _>>()?;
-		let proof: Vec<u8> = proof.into_iter().flat_map(|x| x).collect();
+		let proof: Vec<u8> = proof.into_iter().flatten().collect();
 		Ok(proof)
 	}
 
 	async fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength> {
 		let at = self.at_or_best(at);
-		let block_length = self
-			.client
-			.runtime_api()
+		let api = self.client.runtime_api();
+		let block_length = api
 			.block_length(at)
 			.map_err(|e| internal_err!("Length of best block({:?}): {:?}", at, e))?;
 
@@ -430,7 +429,7 @@ where
 		cells: Vec<Cell>,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<MultiproofSer>> {
-		let block = self.get_signed_block(at)?;
+		let block = self.get_signed_and_finalized_block(at)?;
 		let evals = self.get_eval_grid(&block).await?;
 		let polys = self.get_poly_grid(&block).await?;
 
@@ -445,19 +444,17 @@ where
 			})
 			.collect::<Result<Vec<_>, _>>()?;
 
-		Ok(multiproofs
+		let multiproof = multiproofs
 			.iter()
 			.map(|mp| {
-				let evals = mp
-					.evals
-					.iter()
-					.flatten()
-					.flat_map(|c| c.to_bytes().unwrap())
-					.collect::<Vec<u8>>();
+				let evals_flatten = mp.evals.iter().flatten();
+				let evals: Vec<u8> = evals_flatten.flat_map(|c| c.to_bytes().unwrap()).collect();
 				let proof: Vec<u8> = mp.proof.to_bytes().unwrap().into();
 				MultiproofSer { proof, evals }
 			})
-			.collect::<Vec<_>>())
+			.collect::<Vec<_>>();
+
+		Ok(multiproof)
 	}
 }
 
