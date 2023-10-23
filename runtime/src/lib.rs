@@ -65,7 +65,7 @@ pub use pallet_staking::StakerStatus;
 pub use primitives::*;
 use sp_core::OpaqueMetadata;
 
-pub use sp_runtime::{Perbill, Percent, Permill, Perquintill};
+pub use sp_runtime::{Perbill, Percent, Permill};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
