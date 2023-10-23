@@ -172,6 +172,7 @@ jobs:
       - name: Run Header Generation Benchmarks on IAI
         run: |
           valgrind --version
+          cargo uninstall cargo-codspeed
           cargo bench -p da-runtime --bench header_kate_commitment_iai | tee ~/.cache/iai/header_gen_bench_iai.txt
           find ./runtime/target/iai -type f
 
@@ -249,7 +250,9 @@ jobs:
           echo "RUSTC_WRAPPER=${HOME}/.cargo/bin/sccache" >> $GITHUB_ENV
 
       - name: Run Header Generation Benchmarks on Criterion 
-        run: cargo bench -p da-runtime --bench header_kate_commitment_cri -- --color never --noplot --output-format bencher | tee ~/.cache/cri/header_gen_bench_cri.txt
+        run: |
+          cargo uninstall cargo-codspeed
+          cargo bench -p da-runtime --bench header_kate_commitment_cri -- --color never --noplot --output-format bencher | tee ~/.cache/cri/header_gen_bench_cri.txt
 
       - name: Header Generation Regression Checks on Criterion 
         uses: fmiguelgarcia/github-action-benchmark@v1
