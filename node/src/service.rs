@@ -19,14 +19,14 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 #![allow(dead_code)]
 
-use std::sync::Arc;
-
+use crate::cli::Cli;
 use avail_core::AppId;
 use codec::Encode;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use futures::prelude::*;
 use pallet_transaction_payment::ChargeTransactionPayment;
+use sc_client_api::Backend;
 use sc_client_api::BlockBackend;
 use sc_consensus_babe::{self, SlotProportion};
 pub use sc_executor::NativeElseWasmExecutor;
@@ -39,6 +39,7 @@ use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_api::ProvideRuntimeApi;
 use sp_core::crypto::Pair;
 use sp_runtime::{generic::Era, traits::Block as BlockT, SaturatedConversion};
+use std::sync::Arc;
 use substrate_prometheus_endpoint::{PrometheusError, Registry};
 
 use crate::rpc as node_rpc;
@@ -406,14 +407,14 @@ pub fn new_full_base(
 	let name = config.network.node_name.clone();
 	let enable_grandpa = !config.disable_grandpa;
 	let prometheus_registry = config.prometheus_registry().cloned();
-	let _enable_offchain_worker = config.offchain_worker.enabled;
+	let enable_offchain_worker = config.offchain_worker.enabled;
 	if let Some(reg) = prometheus_registry.as_ref() {
 		extend_metrics(reg)?;
 	}
 
 	let rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		config,
-		backend,
+		backend: backend.clone(),
 		client: client.clone(),
 		keystore: keystore_container.keystore(),
 		network: network.clone(),
@@ -540,13 +541,12 @@ pub fn new_full_base(
 	};
 
 	let grandpa_config = sc_consensus_grandpa::Config {
-		// FIXME #1578 make this available through chainspec
 		gossip_duration: std::time::Duration::from_millis(333),
 		justification_period: 512,
 		name: Some(name),
 		observer_enabled: false,
 		keystore,
-		local_role: role,
+		local_role: role.clone(),
 		telemetry: telemetry.as_ref().map(|x| x.handle()),
 		protocol_name: grandpa_protocol_name,
 	};
@@ -579,6 +579,27 @@ pub fn new_full_base(
 		);
 	}
 
+	if enable_offchain_worker {
+		task_manager.spawn_handle().spawn(
+			"offchain-workers-runner",
+			"offchain-work",
+			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
+				runtime_api_provider: client.clone(),
+				keystore: Some(keystore_container.keystore()),
+				offchain_db: backend.offchain_storage(),
+				transaction_pool: Some(OffchainTransactionPoolFactory::new(
+					transaction_pool.clone(),
+				)),
+				network_provider: network.clone(),
+				is_validator: role.is_authority(),
+				enable_http_requests: true,
+				custom_extensions: move |_| vec![],
+			})
+			.run(client.clone(), task_manager.spawn_handle())
+			.boxed(),
+		);
+	}
+
 	network_starter.start_network();
 	Ok(NewFullBase {
 		task_manager,
@@ -591,18 +612,24 @@ pub fn new_full_base(
 }
 
 /// Builds a new service for a full client.
-pub fn new_full(
-	config: Configuration,
-	disable_hardware_benchmarks: bool,
-	unsafe_da_sync: bool,
-) -> Result<TaskManager, ServiceError> {
-	new_full_base(
+pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceError> {
+	let database_source = config.database.clone();
+	let task_manager = new_full_base(
 		config,
-		disable_hardware_benchmarks,
+		cli.no_hardware_benchmarks,
 		|_, _| (),
-		unsafe_da_sync,
+		cli.unsafe_da_sync,
 	)
-	.map(|NewFullBase { task_manager, .. }| task_manager)
+	.map(|NewFullBase { task_manager, .. }| task_manager)?;
+
+	sc_storage_monitor::StorageMonitorService::try_spawn(
+		cli.storage_monitor,
+		database_source,
+		&task_manager.spawn_essential_handle(),
+	)
+	.map_err(|e| ServiceError::Application(e.into()))?;
+
+	Ok(task_manager)
 }
 
 fn extend_metrics(prometheus: &Registry) -> Result<(), PrometheusError> {

@@ -288,17 +288,6 @@ jobs:
       - name: Display SCCache Stats
         run: ${{ env.SCCACHE_BIN }} --show-stats
 
-      - name: Generate test code coverage report
-        run: |
-          df -h
-          cargo +stable install --force grcov
-          grcov . -s . --binary-path ./target/release/ -t lcov --branch --ignore-not-existing -o lcov.info
-
-      - name: Upload test code coverage report to codecov.io
-        uses: codecov/codecov-action@v2
-        with:
-          files: lcov.info
-
       - name: Cleanup
         run: find . -name \*.profraw -type f -exec rm -f {} +
 

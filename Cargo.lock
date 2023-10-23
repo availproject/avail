@@ -619,7 +619,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.5.1"
-source = "git+https://github.com/availproject/avail-core?branch=main#ca29cf0f5320d89f58c1e47b25b7f39ccd4c982e"
+source = "git+https://github.com/availproject/avail-core?tag=v1.7.1#1199298303b03e33fc51d85a076ce54c7dc3876d"
 dependencies = [
  "binary-merkle-tree",
  "derive_more",
@@ -1976,7 +1976,7 @@ dependencies = [
 
 [[package]]
 name = "data-avail"
-version = "1.7.0"
+version = "1.7.2"
 dependencies = [
  "async-trait",
  "avail-base",
@@ -2025,10 +2025,12 @@ dependencies = [
  "sc-network",
  "sc-network-common",
  "sc-network-sync",
+ "sc-offchain",
  "sc-rpc",
  "sc-rpc-api",
  "sc-rpc-spec-v2",
  "sc-service",
+ "sc-storage-monitor",
  "sc-sync-state-rpc",
  "sc-sysinfo",
  "sc-telemetry",
@@ -3247,6 +3249,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "fs4"
+version = "0.6.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2eeb4ed9e12f43b7fa0baae3f9cdda28352770132ef2e09a23760c29cae8bd47"
+dependencies = [
+ "rustix 0.38.20",
+ "windows-sys 0.48.0",
+]
+
+[[package]]
 name = "funty"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4325,7 +4337,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.8.1"
-source = "git+https://github.com/availproject/avail-core?branch=main#ca29cf0f5320d89f58c1e47b25b7f39ccd4c982e"
+source = "git+https://github.com/availproject/avail-core?tag=v1.7.1#1199298303b03e33fc51d85a076ce54c7dc3876d"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -4353,7 +4365,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.9.1"
-source = "git+https://github.com/availproject/avail-core?branch=main#ca29cf0f5320d89f58c1e47b25b7f39ccd4c982e"
+source = "git+https://github.com/availproject/avail-core?tag=v1.7.1#1199298303b03e33fc51d85a076ce54c7dc3876d"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -5550,7 +5562,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.5"
-source = "git+https://github.com/availproject/avail-core?branch=main#ca29cf0f5320d89f58c1e47b25b7f39ccd4c982e"
+source = "git+https://github.com/availproject/avail-core?tag=v1.7.1#1199298303b03e33fc51d85a076ce54c7dc3876d"
 dependencies = [
  "ethers-signers",
  "nomad-core",
@@ -5566,7 +5578,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.5"
-source = "git+https://github.com/availproject/avail-core?branch=main#ca29cf0f5320d89f58c1e47b25b7f39ccd4c982e"
+source = "git+https://github.com/availproject/avail-core?tag=v1.7.1#1199298303b03e33fc51d85a076ce54c7dc3876d"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -5629,7 +5641,7 @@ dependencies = [
 [[package]]
 name = "nomad-merkle"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?branch=main#ca29cf0f5320d89f58c1e47b25b7f39ccd4c982e"
+source = "git+https://github.com/availproject/avail-core?tag=v1.7.1#1199298303b03e33fc51d85a076ce54c7dc3876d"
 dependencies = [
  "avail-core",
  "frame-support",
@@ -5647,7 +5659,7 @@ dependencies = [
 [[package]]
 name = "nomad-signature"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?branch=main#ca29cf0f5320d89f58c1e47b25b7f39ccd4c982e"
+source = "git+https://github.com/availproject/avail-core?tag=v1.7.1#1199298303b03e33fc51d85a076ce54c7dc3876d"
 dependencies = [
  "elliptic-curve 0.12.3",
  "ethers-core",
@@ -8486,6 +8498,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "sc-offchain"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate.git/?branch=polkadot-v1.0.0#948fbd2fd1233dc26dbb9f9bbc1d2cca2c03945d"
+dependencies = [
+ "array-bytes",
+ "bytes",
+ "fnv",
+ "futures",
+ "futures-timer",
+ "hyper",
+ "hyper-rustls",
+ "libp2p",
+ "log",
+ "num_cpus",
+ "once_cell",
+ "parity-scale-codec",
+ "parking_lot 0.12.1",
+ "rand 0.8.5",
+ "sc-client-api",
+ "sc-network",
+ "sc-network-common",
+ "sc-transaction-pool-api",
+ "sc-utils",
+ "sp-api",
+ "sp-core",
+ "sp-externalities",
+ "sp-keystore",
+ "sp-offchain",
+ "sp-runtime",
+ "threadpool",
+ "tracing",
+]
+
+[[package]]
 name = "sc-proposer-metrics"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate.git/?branch=polkadot-v1.0.0#948fbd2fd1233dc26dbb9f9bbc1d2cca2c03945d"
@@ -8658,6 +8704,20 @@ dependencies = [
  "parity-scale-codec",
  "parking_lot 0.12.1",
  "sp-core",
+]
+
+[[package]]
+name = "sc-storage-monitor"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/substrate.git/?branch=polkadot-v1.0.0#948fbd2fd1233dc26dbb9f9bbc1d2cca2c03945d"
+dependencies = [
+ "clap",
+ "fs4",
+ "log",
+ "sc-client-db",
+ "sp-core",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]

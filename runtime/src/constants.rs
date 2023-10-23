@@ -22,13 +22,26 @@ use avail_core::currency::{Balance, AVL};
 use frame_support::{
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{ConstBool, ConstU16, ConstU32},
+	traits::{ConstU16, ConstU32},
 	weights::{constants::BlockExecutionWeight, Weight},
 };
 use sp_runtime::{transaction_validity::TransactionPriority, Perbill, Permill};
 use static_assertions::const_assert;
 
 use crate::BlockNumber;
+
+/// cannot have validators higher than this count.
+pub type MaxAuthorities = ConstU32<100_000>;
+/// cannot have active validators higher than this count.
+pub type MaxActiveValidators = ConstU32<1200>;
+
+parameter_types! {
+	/// We take the top 12500 nominators as electing voters..
+	pub const MaxElectingVoters: u32 = 22_500;
+	/// ... and all of the validators as electable targets. Whilst this is the case, we cannot and
+	/// shall not increase the size of the validator intentions.
+	pub const MaxElectableTargets: u16 = u16::MAX;
+}
 
 /// Money matters.
 pub mod currency {
@@ -81,9 +94,8 @@ pub mod time {
 
 	// NOTE: Currently it is not possible to change the epoch duration after the chain has started.
 	//       Attempting to do so will brick block production.
-	// pub const EPOCH_DURATION_IN_BLOCKS: BlockNumber = 10 * MINUTES;
 	#[cfg(not(feature = "fast-runtime"))]
-	pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 1 * HOURS;
+	pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 4 * HOURS;
 	#[cfg(feature = "fast-runtime")]
 	pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 5 * MINUTES;
 
@@ -107,7 +119,6 @@ pub mod system {
 
 	pub type MaxConsumers = ConstU32<16>;
 	pub type SS58Prefix = ConstU16<42>;
-	pub type MaxAuthorities = ConstU32<128>;
 
 	/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
 	/// This is used to limit the maximal weight of a single extrinsic.
@@ -160,9 +171,6 @@ pub mod balances {
 	parameter_types! {
 		pub const ExistentialDeposit :Balance =  10 * CENTS; // 0.1 AVLs
 	}
-
-	pub type MaxLocks = ConstU32<32>;
-	pub type MaxReserves = ConstU32<32>;
 }
 
 pub mod council {
@@ -198,41 +206,6 @@ pub mod nomination_pools {
 	pub const MAX_MEMBERS: u32 = MAX_POOLS * MAX_MEMBERS_PER_POOL;
 }
 
-pub mod elections {
-	use frame_support::traits::LockIdentifier;
-
-	use super::{currency::*, *};
-
-	#[cfg(not(feature = "fast-runtime"))]
-	parameter_types! {
-		pub const TermDuration: BlockNumber = 7 * super::time::DAYS;
-	}
-
-	#[cfg(feature = "fast-runtime")]
-	parameter_types! {
-		pub const TermDuration: BlockNumber = 10 * super::time::MINUTES;
-	}
-
-	parameter_types! {
-		pub const CandidacyBond: Balance = 1_000_000_000 * AVL;
-		pub const InitialMemberBond: Balance = 1 * AVL;
-		pub const PalletId: LockIdentifier = *b"phrelect";
-		// 1 storage item created, key size is 32 bytes, value size is 16+16.
-		pub const VotingBondBase: Balance = 1 * AVL + deposit(1, 64);
-		// additional data per vote is 32 bytes (account id).
-		pub const VotingBondFactor: Balance = deposit(0, 32);
-		pub const DesiredMembers :u32 = 3;
-		pub const MaxVotesPerVoter: u32 = 16;
-	}
-
-	pub type DesiredRunnersUp = ConstU32<3>;
-	pub type MaxCandidates = ConstU32<6>;
-	pub type MaxVoters = ConstU32<1_024>;
-
-	pub type MaxElectableTargets = MaxCandidates;
-	// @TODO const_assert!(MaxOnChainElectableTargets::get() <= MaxCandidates::get());
-}
-
 pub mod staking {
 	use crate::impls::RuntimeBlockLength;
 	use sp_runtime::curve::PiecewiseLinear;
@@ -257,7 +230,7 @@ pub mod staking {
 			VoterIndex = u32,
 			TargetIndex = u16,
 			Accuracy = sp_runtime::PerU16,
-			MaxVoters = staking::MaxElectingVoters,
+			MaxVoters = MaxElectingVoters,
 		>(16)
 	);
 
@@ -265,14 +238,14 @@ pub mod staking {
 	parameter_types! {
 		pub const SessionsPerEra: sp_staking::SessionIndex = 1;
 		pub const BondingDuration: sp_staking::EraIndex = 2; // 2 eras
-		pub const SlashDeferDuration: sp_staking::EraIndex = 1; // 1/2 the bonding duration.
+		pub const SlashDeferDuration: sp_staking::EraIndex = BondingDuration::get() - 1;
 	}
 
 	#[cfg(not(feature = "fast-runtime"))]
 	parameter_types! {
 		pub const SessionsPerEra: sp_staking::SessionIndex = 6;
-		pub const BondingDuration: sp_staking::EraIndex = 112; // 28 days
-		pub const SlashDeferDuration: sp_staking::EraIndex = BondingDuration::get() / 4; // 1/4 the bonding duration.
+		pub const BondingDuration: sp_staking::EraIndex = 28; // 28 days
+		pub const SlashDeferDuration: sp_staking::EraIndex = BondingDuration::get() - 1; // 27 Days
 	}
 
 	parameter_types! {
@@ -306,7 +279,6 @@ pub mod staking {
 		pub const OffchainRepeat: BlockNumber = 5;
 	}
 
-	pub type MaxElectingVoters = ConstU32<512>;
 	pub type MaxNominatorRewardedPerValidator = ConstU32<256>;
 	pub type MaxUnlockingChunks = ConstU32<32>;
 	pub type HistoryDepth = ConstU32<84>;
@@ -314,14 +286,14 @@ pub mod staking {
 	pub type MaxValidators = ConstU32<32>;
 
 	// OnChain values are lower.
-	pub type MaxOnChainElectingVoters = elections::MaxVoters;
+	pub type MaxOnChainElectingVoters = ConstU32<1_024>;
 	pub type MaxOnChainElectableTargets = ConstU16<512>;
 	// The maximum winners that can be elected by the Election pallet which is equivalent to the
 	// maximum active validators the staking pallet can have.
-	pub type MaxActiveValidators = system::MaxAuthorities;
+	pub type MaxActiveValidators = MaxAuthorities;
 
 	// signed config
-	pub type SignedMaxSubmissions = ConstU32<32>;
+	pub type SignedMaxSubmissions = ConstU32<16>;
 	pub type SignedMaxRefunds = ConstU32<4>;
 }
 
@@ -342,60 +314,6 @@ pub mod babe {
 	}
 }
 
-pub mod democracy {
-	use time::*;
-
-	use super::*;
-
-	#[cfg(not(feature = "fast-runtime"))]
-	parameter_types! {
-		pub const CooloffPeriod: BlockNumber = 5 * DAYS;
-		pub const EnactmentPeriod: BlockNumber = 7 * DAYS;
-		pub const FastTrackVotingPeriod: BlockNumber = 3 * HOURS;
-		pub const LaunchPeriod: BlockNumber = 1 * DAYS;
-		pub const VotingPeriod: BlockNumber = 7 * DAYS;
-	}
-
-	#[cfg(feature = "fast-runtime")]
-	parameter_types! {
-		pub const CooloffPeriod: BlockNumber = 2 * MINUTES;
-		pub const EnactmentPeriod: BlockNumber = 3 * MINUTES;
-		pub const FastTrackVotingPeriod: BlockNumber = 1 * MINUTES;
-		pub const LaunchPeriod: BlockNumber = 1 * MINUTES;
-		pub const VotingPeriod: BlockNumber = 5 * MINUTES;
-	}
-
-	parameter_types! {
-		pub const MinimumDeposit: Balance = 150 * AVL;
-	}
-
-	#[cfg(feature = "fast-runtime")]
-	pub type InstantAllowed = ConstBool<true>;
-	#[cfg(not(feature = "fast-runtime"))]
-	pub type InstantAllowed = ConstBool<false>;
-
-	pub type MaxBlacklisted = ConstU32<1_024>;
-	pub type MaxDeposits = ConstU32<128>;
-	pub type MaxProposals = ConstU32<256>;
-	pub type MaxVotes = ConstU32<64>;
-}
-
-pub mod technical {
-	use super::{time::*, *};
-
-	#[cfg(feature = "fast-runtime")]
-	parameter_types! {
-		pub const TechnicalMotionDuration: BlockNumber = 2 * MINUTES;
-	}
-	#[cfg(not(feature = "fast-runtime"))]
-	parameter_types! {
-		pub const TechnicalMotionDuration: BlockNumber = 2 * DAYS;
-	}
-
-	pub type TechnicalMaxProposals = ConstU32<32>;
-	pub type TechnicalMaxMembers = ConstU32<16>;
-}
-
 pub mod im {
 
 	use super::*;
@@ -405,10 +323,7 @@ pub mod im {
 
 	}
 
-	pub type MaxKeys = ConstU32<256>;
-	pub type MaxPeerInHeartbeats = ConstU32<1_024>;
 	pub type MaxPeerDataEncodingSize = ConstU32<1_024>;
-	// @TODO const_assert!(system::MaxAuthorities::get() <= MaxKeys::get());
 }
 
 pub mod preimage {
@@ -426,8 +341,8 @@ pub mod bounty {
 
 	#[cfg(not(feature = "fast-runtime"))]
 	parameter_types! {
-		pub const DepositPayoutDelay: BlockNumber = DAYS;
-		pub const UpdatePeriod: BlockNumber = 14 * DAYS;
+		pub const DepositPayoutDelay: BlockNumber = 8 * DAYS;
+		pub const UpdatePeriod: BlockNumber = 90 * DAYS;
 	}
 
 	#[cfg(feature = "fast-runtime")]
@@ -471,5 +386,25 @@ pub mod nomad {
 	pub type MaxMessageBodyBytes = ConstU32<2048>;
 }
 
-// Make sure that there are no more than `MaxMembers` members elected via elections-phragmen.
-const_assert!(elections::DesiredMembers::get() <= council::MaxMembers::get());
+/// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value
+/// or to an environment variable or testing value (in case the `fast-runtime` feature is selected).
+/// Note that the environment variable is evaluated _at compile time_.
+///
+/// Usage:
+/// ```Rust
+/// parameter_types! {
+/// 	// Note that the env variable version parameter cannot be const.
+/// 	pub LaunchPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 1, "KSM_LAUNCH_PERIOD");
+/// 	pub const VotingPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 1 * MINUTES);
+/// }
+/// ```
+#[macro_export]
+macro_rules! prod_or_fast {
+	($prod:expr, $test:expr) => {
+		if cfg!(feature = "fast-runtime") {
+			$test
+		} else {
+			$prod
+		}
+	};
+}

@@ -1,46 +1,38 @@
-//SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.19;
+// SPDX-License-Identifier: Apache-2.0
+// Modified from https://github.com/QEDK/solidity-misc/blob/master/contracts/Merkle.sol
+pragma solidity ^0.8.21;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+// or for foundry:
+// import "openzeppelin-contracts/contracts/access/Ownable.sol";
 
-contract DataAvailabilityRouter {
-    mapping(uint32 => bytes32) public roots;
+interface IDataAvailabilityRouter {
+    function roots(uint32 blockNumber) external view returns (bytes32 root);
 }
 
 contract ValidiumContract is Ownable {
-    DataAvailabilityRouter private router;
+    IDataAvailabilityRouter private router;
 
     function setRouter(
-        address _router
-    ) public onlyOwner {
-        router = DataAvailabilityRouter(_router);
-    }
-
-    function getDataRoot(
-        uint32 blockNumber
-    ) public view returns (bytes32) {
-        return router.roots(blockNumber);
+        IDataAvailabilityRouter _router
+    ) public virtual onlyOwner {
+        router = _router;
     }
 
     function checkDataRootMembership(
         uint32 blockNumber,
         bytes32[] calldata proof,
-        uint256 numberOfLeaves,
+        uint256 width, // number of leaves
         uint256 index,
         bytes32 leaf
-    ) public view returns (bool isMember) {
-        // if the proof is of size n, the tree height will be n+1
-        // in a tree of height n+1, max possible leaves are 2^n
-        require(index < numberOfLeaves, "INVALID_LEAF_INDEX");
-        // refuse to accept padded leaves as proof
-        require(leaf != bytes32(0), "INVALID_LEAF");
-
-        bytes32 rootHash = getDataRoot(blockNumber);
+    ) public view virtual returns (bool isMember) {
+        bytes32 rootHash = router.roots(blockNumber);
+        // if root hash is 0, block does not have a root (yet)
+        require(rootHash != bytes32(0), "INVALID_ROOT");
         assembly ("memory-safe") {
             if proof.length {
                 let end := add(proof.offset, shl(5, proof.length))
                 let i := proof.offset
-                let width := numberOfLeaves
 
                 for {} 1 {} {
                     let leafSlot := shl(5, and(0x1, index))
@@ -58,10 +50,9 @@ contract ValidiumContract is Ownable {
                     }
                 }
             }
-            isMember := eq(leaf, rootHash)
-
+            // checks if the calculated root matches the expected root
+            // then, check if index was zeroed while calculating proof, else an invalid index was provided
+            isMember := and(eq(leaf, rootHash), iszero(index))
         }
-        return isMember;
     }
 }
-

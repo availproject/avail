@@ -29,6 +29,8 @@ rm -rf $HOME/data-avail
 
 rm -rf $HOME/light-bootstrap
 
+rm $HOME/avail-test/load-test-config.yaml
+
 rm $HOME/endpoints.txt
 
 sudo rm -rf /var/www/html/*

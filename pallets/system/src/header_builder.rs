@@ -22,7 +22,6 @@ pub mod da {
 	use super::*;
 
 	pub type Hash = sp_core::H256;
-	// @todo Miguel: Link this type with `Config::BlockNumber`.
 	pub type BlockNumber = u32;
 
 	/// Data-Avail Header builder.
@@ -110,15 +109,15 @@ pub fn build_extension<M: Metrics>(
 	metrics: &M,
 ) -> HeaderExtension {
 	use avail_core::header::extension::{v1, v2};
-	// TODO Marko Move to OnceLock  https://doc.rust-lang.org/stable/std/sync/struct.OnceLock.html on sub-upgrade v1 branch
 	use once_cell::sync::Lazy;
 	static PMP: Lazy<kate::pmp::m1_blst::M1NoPrecomp> =
 		once_cell::sync::Lazy::new(|| kate::testnet::multiproof_params(256, 256));
 
+	const MIN_WIDTH: usize = 4;
 	let timer = std::time::Instant::now();
 	let grid = kate::gridgen::EvaluationGrid::from_extrinsics(
 		app_extrinsics.to_vec(),
-		4,                                    //TODO: where should this minimum grid width be specified
+		MIN_WIDTH,
 		block_length.cols.0.saturated_into(), // even if we run on a u16 target this is fine
 		block_length.rows.0.saturated_into(),
 		seed,

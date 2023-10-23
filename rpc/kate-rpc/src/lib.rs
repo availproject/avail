@@ -43,7 +43,7 @@ where
 		&self,
 		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<Vec<u8>>>;
+	) -> RpcResult<Vec<Option<Vec<u8>>>>;
 
 	#[method(name = "kate_queryAppData")]
 	async fn query_app_data(
@@ -69,7 +69,7 @@ where
 #[allow(clippy::type_complexity)]
 pub struct Kate<Client, Block: BlockT> {
 	client: Arc<Client>,
-	block_ext_cache: RwLock<LruCache<Block::Hash, DMatrix<BlsScalar>>>,
+	block_ext_cache: RwLock<LruCache<Block::Hash, (DMatrix<BlsScalar>, BlockDimensions)>>,
 }
 
 impl<Client, Block: BlockT> Kate<Client, Block> {
@@ -155,7 +155,7 @@ where
 		&self,
 		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<Vec<u8>>> {
+	) -> RpcResult<Vec<Option<Vec<u8>>>> {
 		let at = self.at_or_best(at);
 
 		let signed_block = self
@@ -209,14 +209,18 @@ where
 			let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
 
-			block_ext_cache.put(block_hash, data);
+			block_ext_cache.put(block_hash, (data, block_dims));
 		}
 
-		let ext_data = block_ext_cache
+		let (ext_data, block_dims) = block_ext_cache
 			.get(&block_hash)
 			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
 
-		Ok(kate::com::scalars_to_rows(&rows, ext_data))
+		let dimensions: Dimensions = (*block_dims)
+			.try_into()
+			.map_err(|e| internal_err!("Invalid dimensions: {:?}", e))?;
+
+		Ok(kate::com::scalars_to_rows(&rows, &dimensions, ext_data))
 	}
 
 	async fn query_app_data(
@@ -277,10 +281,10 @@ where
 			let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
 
-			block_ext_cache.put(block_hash, data);
+			block_ext_cache.put(block_hash, (data, block_dims));
 		}
 
-		let ext_data = block_ext_cache
+		let (ext_data, _block_dims) = block_ext_cache
 			.get(&block_hash)
 			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
 
@@ -349,10 +353,10 @@ where
 
 			let data = kate::com::par_extend_data_matrix(block_dims, &block, &metrics)
 				.map_err(|e| internal_err!("Matrix cannot be extended: {:?}", e))?;
-			block_ext_cache.put(block_hash, data);
+			block_ext_cache.put(block_hash, (data, block_dims));
 		}
 
-		let ext_data = block_ext_cache
+		let (ext_data, _block_dims) = block_ext_cache
 			.get(&block_hash)
 			.ok_or_else(|| internal_err!("Block hash {} cannot be fetched", block_hash))?;
 		let dimensions = non_extended_dimensions(ext_data)?;

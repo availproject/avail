@@ -94,13 +94,14 @@ pub fn runtime_genesis_config(
 		.iter()
 		.map(|k| {
 			(
-				k.controller.clone(),
 				k.stash.clone(),
+				k.controller.clone(),
 				STASH_BOND,
 				StakerStatus::Validator,
 			)
 		})
 		.collect();
+	let validator_count = session_keys.len() as u32;
 	let session_keys = session_keys.into_iter().map(|k| k.into()).collect();
 
 	let (code, kc_public_params, block_length) = standard_system_configuration();
@@ -119,6 +120,8 @@ pub fn runtime_genesis_config(
 		balances: BalancesConfig { balances },
 		staking: StakingConfig {
 			stakers,
+			validator_count,
+			minimum_validator_count: 1,
 			..Default::default()
 		},
 		session: SessionConfig { keys: session_keys },

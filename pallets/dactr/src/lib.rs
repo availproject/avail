@@ -314,13 +314,13 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Check if the block weight is acceptable to execute the extrinsic
-	/// We check the current normal ratio weight of the block and compare it with the extrinsic weight
+	/// We check the current normal ratio weight, if it's too high, it means we won't reduce the block size
 	pub fn is_block_weight_acceptable() -> bool {
 		let current_weight = <frame_system::Pallet<T>>::block_weight();
 		let current_normal_weight = current_weight.get(DispatchClass::Normal);
-		// TODO: Recaliberate the mutiplier after updating v2 weights
 		let acceptable_limit = T::WeightInfo::submit_block_length_proposal().saturating_mul(3);
 		current_normal_weight.ref_time() <= acceptable_limit.ref_time()
+			&& current_normal_weight.proof_size() < acceptable_limit.proof_size()
 	}
 }
 
