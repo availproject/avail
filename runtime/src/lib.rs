@@ -37,7 +37,7 @@ mod weights;
 
 pub use avail_core::currency::{Balance, AVL, CENTS, MILLICENTS};
 pub use avail_core::{header::Header as DaHeader, AppId};
-use constants::{currency::*, time::*};
+use constants::time::*;
 pub use frame_support::{
 	construct_runtime, debug,
 	dispatch::DispatchClass,
@@ -65,7 +65,7 @@ pub use pallet_staking::StakerStatus;
 pub use primitives::*;
 use sp_core::OpaqueMetadata;
 
-pub use sp_runtime::{Perbill, Percent, Permill, Perquintill};
+pub use sp_runtime::{Perbill, Percent, Permill};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;

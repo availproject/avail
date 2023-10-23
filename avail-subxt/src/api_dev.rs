@@ -714,7 +714,7 @@ pub mod api {
 			use ::subxt::metadata::DecodeWithMetadata;
 			let cursor = &mut &pallet_bytes[..];
 			if pallet_name == "System" {
-				let variant_error = system::Error::decode_with_metadata(cursor, 121u32, metadata)?;
+				let variant_error = system::Error::decode_with_metadata(cursor, 120u32, metadata)?;
 				return Ok(Error::System(variant_error));
 			}
 			if pallet_name == "Utility" {
@@ -817,22 +817,22 @@ pub mod api {
 			}
 			if pallet_name == "Multisig" {
 				let variant_error =
-					multisig::Error::decode_with_metadata(cursor, 438u32, metadata)?;
+					multisig::Error::decode_with_metadata(cursor, 437u32, metadata)?;
 				return Ok(Error::Multisig(variant_error));
 			}
 			if pallet_name == "VoterList" {
 				let variant_error =
-					voter_list::Error::decode_with_metadata(cursor, 442u32, metadata)?;
+					voter_list::Error::decode_with_metadata(cursor, 441u32, metadata)?;
 				return Ok(Error::VoterList(variant_error));
 			}
 			if pallet_name == "NominationPools" {
 				let variant_error =
-					nomination_pools::Error::decode_with_metadata(cursor, 462u32, metadata)?;
+					nomination_pools::Error::decode_with_metadata(cursor, 461u32, metadata)?;
 				return Ok(Error::NominationPools(variant_error));
 			}
 			if pallet_name == "Identity" {
 				let variant_error =
-					identity::Error::decode_with_metadata(cursor, 474u32, metadata)?;
+					identity::Error::decode_with_metadata(cursor, 473u32, metadata)?;
 				return Ok(Error::Identity(variant_error));
 			}
 			Err(::subxt::ext::scale_decode::Error::custom(format!(
@@ -1133,9 +1133,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				135u8, 35u8, 45u8, 155u8, 129u8, 66u8, 188u8, 135u8, 6u8, 223u8, 243u8, 8u8, 250u8,
-				8u8, 159u8, 223u8, 184u8, 182u8, 160u8, 76u8, 212u8, 156u8, 23u8, 138u8, 167u8,
-				166u8, 85u8, 81u8, 119u8, 8u8, 24u8, 80u8,
+				31u8, 33u8, 205u8, 190u8, 10u8, 202u8, 108u8, 42u8, 98u8, 6u8, 187u8, 205u8, 146u8,
+				66u8, 136u8, 163u8, 140u8, 204u8, 239u8, 167u8, 47u8, 163u8, 47u8, 84u8, 172u8,
+				244u8, 96u8, 51u8, 83u8, 57u8, 234u8, 213u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -1919,10 +1919,10 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							205u8, 202u8, 63u8, 225u8, 122u8, 228u8, 60u8, 33u8, 49u8, 223u8,
-							134u8, 8u8, 49u8, 181u8, 238u8, 76u8, 200u8, 163u8, 194u8, 209u8,
-							218u8, 165u8, 232u8, 103u8, 29u8, 165u8, 125u8, 15u8, 215u8, 205u8,
-							141u8, 31u8,
+							60u8, 162u8, 175u8, 153u8, 33u8, 61u8, 149u8, 182u8, 182u8, 30u8,
+							192u8, 213u8, 200u8, 85u8, 103u8, 81u8, 43u8, 74u8, 242u8, 174u8, 56u8,
+							179u8, 254u8, 135u8, 4u8, 240u8, 101u8, 169u8, 140u8, 11u8, 146u8,
+							197u8,
 						],
 					)
 				}
@@ -15011,9 +15011,7 @@ pub mod api {
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 			pub struct DataSubmitted {
 				pub who: ::subxt::utils::AccountId32,
-				pub data: runtime_types::bounded_collections::bounded_vec::BoundedVec<
-					::core::primitive::u8,
-				>,
+				pub data_hash: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for DataSubmitted {
 				const PALLET: &'static str = "DataAvailability";
@@ -20756,6 +20754,9 @@ pub mod api {
 					#[codec(index = 7)]
 					#[doc = "The request to reduce block dimensions was made in a non-empty block"]
 					InvalidBlockWeightReduction,
+					#[codec(index = 8)]
+					#[doc = "Submit data call outside of block execution context."]
+					BadContext,
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -20784,9 +20785,7 @@ pub mod api {
 					#[codec(index = 1)]
 					DataSubmitted {
 						who: ::subxt::utils::AccountId32,
-						data: runtime_types::bounded_collections::bounded_vec::BoundedVec<
-							::core::primitive::u8,
-						>,
+						data_hash: ::subxt::utils::H256,
 					},
 					#[codec(index = 2)]
 					BlockLengthProposalSubmitted {
