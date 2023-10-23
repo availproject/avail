@@ -187,7 +187,11 @@ jobs:
 #         summary-always: true
 
       - name: Run Header Generation Benchmarks on IAI
-        run: cargo bench -p da-runtime --bench header_kate_commitment_iai | tee ${{ env.BENCH_SCCACHE_DIR }}/header_gen_bench_iai.txt
+        env:
+          RUST_BACKTRACE: 1
+        run: |
+          mkdir -p ${{ env.BENCH_SCCACHE_DIR }}
+          cargo bench -p da-runtime --bench header_kate_commitment_iai | tee ${{ env.BENCH_SCCACHE_DIR }}/header_gen_bench_iai.txt
 
       - name: Header Generation Regression Checks on IAI
         uses: fmiguelgarcia/github-action-benchmark@v1
