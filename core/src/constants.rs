@@ -15,6 +15,7 @@ const_assert!(BLOCK_CHUNK_SIZE.get() > 0);
 pub const BLOCK_CHUNK_SIZE: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(32) };
 
 /// Money matters.
+// TODO: evaluate whether we should consider moving this into avail
 pub mod currency {
 
 	pub type Balance = u128;
@@ -28,4 +29,16 @@ pub mod currency {
 
 	/// Millicent of AVL has 13 decimal positions( 100 mCents = 1 cent).
 	pub const MILLICENTS: Balance = CENTS / 1_000;
+
+	/// MILLI_AVL has 15 decimal positions
+	pub const MILLI_AVL: Balance = AVL / 1_000;
+
+	/// MICRO_AVL has 12 decimal positions
+	pub const MICRO_AVL: Balance = MILLI_AVL / 1_000;
+
+	/// NANO_AVL has 9 decimal positions
+	pub const NANO_AVL: Balance = MICRO_AVL / 1_000;
+
+	/// PICO_AVL has 6 decimal positions
+	pub const PICO_AVL: Balance = NANO_AVL / 1_000;
 }
