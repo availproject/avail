@@ -238,7 +238,7 @@ pub mod staking {
 	parameter_types! {
 		pub const SessionsPerEra: sp_staking::SessionIndex = 1;
 		pub const BondingDuration: sp_staking::EraIndex = 2; // 2 eras
-		pub const SlashDeferDuration: sp_staking::EraIndex = BondingDuration::get() - 1; // 27 Days
+		pub const SlashDeferDuration: sp_staking::EraIndex = BondingDuration::get() - 1;
 	}
 
 	#[cfg(not(feature = "fast-runtime"))]
