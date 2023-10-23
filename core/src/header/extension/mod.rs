@@ -58,7 +58,7 @@ impl HeaderExtension {
 
 impl Default for HeaderExtension {
 	fn default() -> Self {
-		v2::HeaderExtension::default().into()
+		v1::HeaderExtension::default().into()
 	}
 }
 
