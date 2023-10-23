@@ -2,13 +2,13 @@ use crate::voter_bags;
 use crate::SessionKeys;
 use crate::SLOT_DURATION;
 use crate::{
-	constants, deposit, weights, AccountId, AccountIndex, Authorship, Babe, Balances, Block,
+	constants, prod_or_fast, weights, AccountId, AccountIndex, Authorship, Babe, Balances, Block,
 	BlockNumber, Bounties, ElectionProviderMultiPhase, GrandpaId, Hash, Historical, ImOnline,
 	ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo,
 	Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeHoldReason,
 	RuntimeOrigin, RuntimeVersion, Session, Signature, SignedPayload, Staking, System,
 	TechnicalCommittee, Timestamp, TransactionPayment, Treasury, UncheckedExtrinsic, VoterList,
-	VERSION,
+	MINUTES, VERSION,
 };
 use avail_core::currency::{Balance, AVL, CENTS, MILLICENTS};
 use avail_core::AppId;
@@ -21,10 +21,10 @@ use frame_election_provider_support::BalancingConfig;
 use frame_election_provider_support::ElectionDataProvider;
 use frame_election_provider_support::SequentialPhragmen;
 use frame_election_provider_support::VoteWeight;
-use frame_support::pallet_prelude::ConstU32;
 use frame_support::pallet_prelude::Get;
 use frame_support::pallet_prelude::Weight;
 use frame_support::traits::tokens::Imbalance;
+use frame_support::traits::ConstU32;
 use frame_support::traits::ContainsLengthBound;
 use frame_support::traits::EqualPrivilegeOnly;
 use frame_support::traits::Everything;
@@ -142,7 +142,7 @@ impl pallet_offences::Config for Runtime {
 }
 
 impl pallet_authority_discovery::Config for Runtime {
-	type MaxAuthorities = constants::system::MaxAuthorities;
+	type MaxAuthorities = constants::MaxAuthorities;
 }
 
 parameter_types! {
@@ -288,10 +288,9 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-	// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
-	pub const DepositBase: Balance = deposit(1, 88);
+	pub const DepositBase: Balance = 2 * AVL;
 	// Additional storage item size of 32 bytes.
-	pub const DepositFactor: Balance = deposit(0, 32);
+	pub const DepositFactor: Balance = 5 * CENTS;
 }
 
 impl pallet_multisig::Config for Runtime {
@@ -345,7 +344,7 @@ impl pallet_babe::Config for Runtime {
 	type ExpectedBlockTime = constants::time::ExpectedBlockTime;
 	type KeyOwnerProof =
 		<Historical as KeyOwnerProofSystem<(KeyTypeId, pallet_babe::AuthorityId)>>::Proof;
-	type MaxAuthorities = constants::system::MaxAuthorities;
+	type MaxAuthorities = constants::MaxAuthorities;
 	type WeightInfo = ();
 }
 
@@ -365,9 +364,9 @@ impl pallet_balances::Config for Runtime {
 	type ExistentialDeposit = constants::balances::ExistentialDeposit;
 	type FreezeIdentifier = ();
 	type MaxFreezes = ();
-	type MaxHolds = constants::balances::MaxReserves;
-	type MaxLocks = constants::balances::MaxLocks;
-	type MaxReserves = constants::balances::MaxReserves;
+	type MaxHolds = ConstU32<2>;
+	type MaxLocks = ConstU32<50>;
+	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = ReserveIdentifier;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeHoldReason = RuntimeHoldReason;
@@ -376,8 +375,8 @@ impl pallet_balances::Config for Runtime {
 
 impl pallet_im_online::Config for Runtime {
 	type AuthorityId = ImOnlineId;
-	type MaxKeys = constants::im::MaxKeys;
-	type MaxPeerInHeartbeats = constants::im::MaxPeerInHeartbeats;
+	type MaxKeys = ConstU32<10_000>;
+	type MaxPeerInHeartbeats = ConstU32<10_000>;
 	type NextSessionRotation = Babe;
 	type ReportUnresponsiveness = Offences;
 	type RuntimeEvent = RuntimeEvent;
@@ -398,19 +397,24 @@ impl pallet_grandpa::Config for Runtime {
 		constants::babe::ReportLongevity,
 	>;
 	type KeyOwnerProof = <Historical as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
-	type MaxAuthorities = constants::system::MaxAuthorities;
+	type MaxAuthorities = constants::MaxAuthorities;
 	type MaxSetIdSessionEntries = MaxSetIdSessionEntries;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	pub const TechnicalMotionDuration: BlockNumber = prod_or_fast!(5 * DAYS, 5 * MINUTES);
+}
+pub type TechnicalMaxMembers = ConstU32<100>;
+
 pub type TechnicalCollective = pallet_collective::Instance2;
 impl pallet_collective::Config<TechnicalCollective> for Runtime {
 	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
-	type MaxMembers = constants::technical::TechnicalMaxMembers;
+	type MaxMembers = TechnicalMaxMembers;
 	type MaxProposalWeight = constants::council::MaxProposalWeight;
-	type MaxProposals = constants::technical::TechnicalMaxProposals;
-	type MotionDuration = constants::technical::TechnicalMotionDuration;
+	type MaxProposals = ConstU32<100>;
+	type MotionDuration = TechnicalMotionDuration;
 	type Proposal = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
@@ -420,7 +424,7 @@ impl pallet_collective::Config<TechnicalCollective> for Runtime {
 
 impl pallet_membership::Config<pallet_membership::Instance1> for Runtime {
 	type AddOrigin = EnsureRoot<AccountId>;
-	type MaxMembers = constants::technical::TechnicalMaxMembers;
+	type MaxMembers = TechnicalMaxMembers;
 	type MembershipChanged = TechnicalCommittee;
 	type MembershipInitialized = TechnicalCommittee;
 	type PrimeOrigin = EnsureRoot<AccountId>;
@@ -462,9 +466,9 @@ impl pallet_election_provider_multi_phase::Config for Runtime {
 	type Fallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
 	type ForceOrigin = EnsureRoot<AccountId>;
 	type GovernanceFallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
-	type MaxElectableTargets = constants::staking::MaxOnChainElectableTargets;
-	type MaxElectingVoters = constants::staking::MaxElectingVoters;
-	type MaxWinners = constants::staking::MaxActiveValidators;
+	type MaxElectableTargets = constants::MaxElectableTargets;
+	type MaxElectingVoters = constants::MaxElectingVoters;
+	type MaxWinners = constants::MaxActiveValidators;
 	type MinerConfig = Self;
 	type MinerTxPriority = constants::staking::MultiPhaseUnsignedPriority;
 	type OffchainRepeat = constants::staking::OffchainRepeat;
@@ -576,8 +580,8 @@ impl onchain::Config for OnChainSeqPhragmen {
 		pallet_election_provider_multi_phase::SolutionAccuracyOf<Runtime>,
 	>;
 	type System = Runtime;
-	type TargetsBound = constants::staking::MaxValidators;
-	type VotersBound = constants::staking::MaxOnChainElectingVoters;
+	type TargetsBound = constants::MaxElectableTargets;
+	type VotersBound = constants::MaxElectingVoters;
 	type WeightInfo = frame_election_provider_support::weights::SubstrateWeight<Runtime>;
 }
 

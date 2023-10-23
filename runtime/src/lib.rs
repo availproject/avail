@@ -37,7 +37,7 @@ mod weights;
 
 pub use avail_core::currency::{Balance, AVL, CENTS, MILLICENTS};
 pub use avail_core::{header::Header as DaHeader, AppId};
-use constants::{currency::*, time::*};
+use constants::time::*;
 pub use frame_support::{
 	construct_runtime, debug,
 	dispatch::DispatchClass,
