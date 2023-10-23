@@ -171,7 +171,7 @@ jobs:
 
       - name: Run Header Generation Benchmarks on IAI
         run: |
-          cargo uninstall --locked cargo-codspeed
+          cargo uninstall --locked cargo-codspeed | true
           valgrind --version
           cargo bench -p da-runtime --bench header_kate_commitment_iai | tee ~/.cache/iai/header_gen_bench_iai.txt
           find ./runtime/target/iai -type f
