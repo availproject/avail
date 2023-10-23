@@ -163,12 +163,33 @@ where
 		at.unwrap_or_else(|| self.client.info().best_hash)
 	}
 
+	fn is_block_finalized(&self, block: &SignedBlock<Block>) -> Result<(), JsonRpseeError> {
+		let block_header = block.block.header();
+		let (block_hash, block_number) = (block_header.hash(), *block_header.number());
+
+		if self.client.info().finalized_number < block_number {
+			return Err(internal_err!(
+				"Requested block {block_hash} is not finalized"
+			));
+		}
+		return Ok(());
+	}
+
 	fn get_signed_block(&self, at: Option<Block::Hash>) -> RpcResult<SignedBlock<Block>> {
 		let at = self.at_or_best(at);
 		self.client
 			.block(at)
 			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
 			.ok_or_else(|| internal_err!("Missing block {}", at))
+	}
+
+	fn get_signed_and_finalized_block(
+		&self,
+		at: Option<Block::Hash>,
+	) -> RpcResult<SignedBlock<Block>> {
+		let signed_block = self.get_signed_block(at)?;
+		self.is_block_finalized(&signed_block)?;
+		Ok(signed_block)
 	}
 
 	/// If feature `secure_padding_fill` is enabled then the returned seed is generated using Babe VRF.
@@ -188,13 +209,9 @@ where
 		&self,
 		signed_block: &SignedBlock<Block>,
 	) -> RpcResult<Arc<EvaluationGrid>> {
+		self.is_block_finalized(&signed_block)?;
 		let block_hash = signed_block.block.header().hash();
 
-		if self.client.info().finalized_number < *signed_block.block.header().number() {
-			return Err(internal_err!(
-				"Requested block {block_hash} is not finalized"
-			));
-		}
 		self.eval_grid_cache
 			.try_get_with(block_hash, async move {
 				use kate::metrics::Metrics; // TODO: Rework this for the correct metrics
@@ -281,15 +298,7 @@ where
 		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<Vec<u8>>>> {
-		let signed_block = self.get_signed_block(at)?;
-
-		let block_hash = signed_block.block.header().hash();
-
-		if self.client.info().finalized_number < *signed_block.block.header().number() {
-			return Err(internal_err!(
-				"Requested block {block_hash} is not finalized"
-			));
-		}
+		let signed_block = self.get_signed_and_finalized_block(at)?;
 
 		let evals = self.get_eval_grid(&signed_block).await?;
 
@@ -311,15 +320,7 @@ where
 		app_id: AppId,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<Vec<u8>>>> {
-		let signed_block = self.get_signed_block(at)?;
-
-		let block_hash = signed_block.block.header().hash();
-
-		if self.client.info().finalized_number < *signed_block.block.header().number() {
-			return Err(internal_err!(
-				"Requested block {block_hash} is not finalized"
-			));
-		}
+		let signed_block = self.get_signed_and_finalized_block(at)?;
 
 		let evals = self.get_eval_grid(&signed_block).await?;
 		let extended_dims = evals.dims();
@@ -351,14 +352,7 @@ where
 	async fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
 		use rayon::prelude::*;
 
-		let signed_block = self.get_signed_block(at)?;
-		let block_hash = signed_block.block.header().hash();
-
-		if self.client.info().finalized_number < *signed_block.block.header().number() {
-			return Err(internal_err!(
-				"Requested block {block_hash} is not finalized"
-			));
-		}
+		let signed_block = self.get_signed_and_finalized_block(at)?;
 
 		let evals = self.get_eval_grid(&signed_block).await?;
 		let polys = self.get_poly_grid(&signed_block).await?;
