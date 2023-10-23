@@ -2,13 +2,12 @@ use crate::voter_bags;
 use crate::SessionKeys;
 use crate::SLOT_DURATION;
 use crate::{
-	constants, prod_or_fast, weights, AccountId, AccountIndex, Babe, Balances, Block,
-	BlockNumber, Bounties, ElectionProviderMultiPhase, GrandpaId, Hash, Historical, ImOnline,
-	ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo,
-	Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeHoldReason,
-	RuntimeOrigin, RuntimeVersion, Session, Signature, SignedPayload, Staking, System,
-	TechnicalCommittee, Timestamp, TransactionPayment, Treasury, UncheckedExtrinsic, VoterList,
-	MINUTES, VERSION,
+	constants, prod_or_fast, weights, AccountId, AccountIndex, Babe, Balances, Block, BlockNumber,
+	Bounties, ElectionProviderMultiPhase, GrandpaId, Hash, Historical, ImOnline, ImOnlineId, Index,
+	Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo, Preimage,
+	ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeHoldReason, RuntimeOrigin,
+	RuntimeVersion, Session, Signature, SignedPayload, Staking, System, TechnicalCommittee,
+	Timestamp, TransactionPayment, Treasury, UncheckedExtrinsic, VoterList, MINUTES, VERSION,
 };
 use avail_core::currency::{Balance, AVL, CENTS, NANO_AVL, PICO_AVL};
 use avail_core::AppId;
