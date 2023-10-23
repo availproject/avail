@@ -10,7 +10,7 @@ use crate::{
 	TechnicalCommittee, Timestamp, TransactionPayment, Treasury, UncheckedExtrinsic, VoterList,
 	MINUTES, VERSION,
 };
-use avail_core::currency::{Balance, AVL, CENTS};
+use avail_core::currency::{Balance, AVL, CENTS, NANO_AVL, PICO_AVL};
 use avail_core::AppId;
 use avail_core::OpaqueExtrinsic;
 use avail_core::NORMAL_DISPATCH_RATIO;
@@ -208,8 +208,8 @@ impl pallet_tips::Config for Runtime {
 }
 
 parameter_types! {
-	pub const WeightFee: Balance = constants::currency::PICO_AVL;
-	pub const TransactionByteFee: Balance = 100 * constants::currency::NANO_AVL; // 100 nanoAVL
+	pub const WeightFee: Balance = PICO_AVL;
+	pub const TransactionByteFee: Balance = NANO_AVL; // 100 nanoAVL
 	pub const OperationalFeeMultiplier: u8 = 5u8;
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(50); // target_utilization 50%
 	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000); // 0.000001
