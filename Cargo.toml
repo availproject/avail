@@ -1,6 +1,5 @@
 [workspace]
 members = [
-	"fuzzing",
 	"pallets/executive",
 	"pallets/system",
 	"pallets/dactr",

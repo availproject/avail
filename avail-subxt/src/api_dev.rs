@@ -17199,6 +17199,7 @@ pub mod api {
 						serde :: Deserialize,
 						serde :: Serialize,
 					)]
+					#[serde(rename_all = "camelCase")]
 					pub struct DataLookup {
 						#[codec(compact)]
 						pub size: ::core::primitive::u32,
@@ -17216,6 +17217,7 @@ pub mod api {
 						serde :: Deserialize,
 						serde :: Serialize,
 					)]
+					#[serde(rename_all = "camelCase")]
 					pub struct DataLookupIndexItem {
 						pub app_id: runtime_types::da_primitives::asdr::AppId,
 						#[codec(compact)]
@@ -17266,6 +17268,7 @@ pub mod api {
 							serde :: Deserialize,
 							serde :: Serialize,
 						)]
+						#[serde(rename_all = "camelCase")]
 						pub struct HeaderExtension {
 							pub commitment:
 								runtime_types::da_primitives::kate_commitment::KateCommitment,

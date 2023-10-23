@@ -29,10 +29,10 @@ primitive-types = { git = "https://github.com/paritytech/parity-common.git", tag
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 
 # Nomad
-nomad-core = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.3.0", default-features = false }
+nomad-core = { git = "https://github.com/availproject/avail-core.git", branch = "ghali/camel-case-nomad", default-features = false }
 
 [dev-dependencies]
-da-primitives = { git = "https://github.com/maticnetwork/avail-core.git", tag = "v0.3.0", default-features = false }
+da-primitives = { git = "https://github.com/availproject/avail-core.git", branch = "ghali/camel-case-nomad", default-features = false }
 
 [features]
 default = ["std"]
