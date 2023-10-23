@@ -66,39 +66,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: actions/cache@v3
+      - name: Rust & SCCache
+        uses: ./.github/Workflows/sccache.yml
         with:
-          path: ${{ env.SCCACHE_DIR }}
-          key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: "3.x"
-
-      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
-      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
-      - name: Setup Rust toolchain
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source "$HOME/.cargo/env"
-          rustup default ${{ env.BUILD_TOOLCHAIN }} 
-          rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }}
-
-      - name: SCCache
-        run: |
-          # We altered the path to avoid old actions to overwrite it
-          if [ ! -f $SCCACHE_BIN ]; then
-            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_DIR
-          fi
-          ls -la $SCCACHE_BIN
-          ps aux | grep sccache
-          if [[ -z `pgrep sccache` ]]; then
-            chmod +x $SCCACHE_BIN
-            $SCCACHE_BIN --start-server
-          fi
-          $SCCACHE_BIN -s
-          echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
+          sccache_id: "build"
 
       - name: Build node
         run: cargo build --release -p data-avail
@@ -110,89 +81,29 @@ jobs:
           path: target/release/data-avail
 
       - name: Display SCCache Stats
-        run: ${{ env.SCCACHE_BIN }} --show-stats
+        run: sccache --show-stats
 
       - name: Check other features
         run: cargo check --release --workspace --features "runtime-benchmarks try-runtime" -p data-avail
 
-  benchmarks:
+  benchmarks_iai:
     runs-on: [self-hosted, reference]
     needs: [lint]
     steps:
       - uses: actions/checkout@v2
 
-      - uses: actions/cache@v3
+      - name: Rust & SCCache
+        uses: ./.github/Workflows/sccache.yml
         with:
-          path: |
-            ${{ env.SCCACHE_DIR }}
-            ${{ env.BENCH_SCCACHE_DIR }}
-            ./runtime/target/iai
-          key: ${{ runner.OS }}-sccache-bin-bench-${{ env.CARGO_SCCACHE_COMMIT }}-v1
-
-      - name: Install deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip
-
-      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
-      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
-      - name: Setup Rust toolchain
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source "$HOME/.cargo/env"
-          rustup default ${{ env.BUILD_TOOLCHAIN }} 
-          rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }}
-
-      - name: Set PATH for cargo
-        run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
-      - name: SCCache
-        run: |
-          # We altered the path to avoid old actions to overwrite it
-          if [ ! -f $BENCH_SCCACHE_BIN ]; then
-            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $BENCH_SCCACHE_DIR
-          fi
-          ls -la $BENCH_SCCACHE_BIN
-          ps aux | grep sccache
-          if [[ -z `pgrep sccache` ]]; then
-            chmod +x $BENCH_SCCACHE_BIN
-            $BENCH_SCCACHE_BIN --start-server
-          fi
-          $BENCH_SCCACHE_BIN -s
-          echo "RUSTC_WRAPPER=$BENCH_SCCACHE_BIN" >> $GITHUB_ENV
-
-#      - name: Run Header Generation Benchmarks on Criterion 
-#        run: cargo bench -p da-runtime --bench header_kate_commitment_cri -- --color never --noplot --output-format bencher | tee ${{ env.BENCH_SCCACHE_DIR }}/header_gen_bench_cri.txt
-
-#      - name: Header Generation Regression Checks on Criterion 
-#       uses: fmiguelgarcia/github-action-benchmark@v1
-#       with:
-#         # What benchmark tool the output.txt came from
-#         tool: 'cargo'
-#         # Where the output from the benchmark tool is stored
-#         output-file-path: ${{ env.BENCH_SCCACHE_DIR }}/header_gen_bench_cri.txt
-#         # Where the previous data file is stored
-#         external-data-json-path: ${{ env.BENCH_SCCACHE_DIR }}/benchmark-data-cri.json
-#         save-data-file: true
-#         # Workflow will fail when an alert happens at 15% degradation
-#         fail-on-alert: true
-#         alert-threshold: '115%'
-#         # Upload the updated cache file for the next job by actions/cache
-#         github-token: ${{ secrets.GITHUB_TOKEN }}
-#         # Enable alert commit comment
-#         comment-on-alert: true
-#         # Mention @rhysd in the commit comment
-#         alert-comment-cc-users: '@prabal-banerjee,@jakubcech,@vthunder,@kroos47,@Leouarz,@markopoloparadox'
-#         comment-always: true
-#         summary-always: true
+          sccache_id: "biai"
 
       - name: Run Header Generation Benchmarks on IAI
         env:
           RUST_BACKTRACE: full
+          SKIP_WASM_BUILD: true
         run: |
           valgrind --version
-          mkdir -p ${{ env.BENCH_SCCACHE_DIR }}
-          cargo bench -p da-runtime --bench header_kate_commitment_iai | tee ${{ env.BENCH_SCCACHE_DIR }}/header_gen_bench_iai.txt
+          cargo bench -p da-runtime --bench header_kate_commitment_iai | tee ~/.cache/iai/header_gen_bench_iai.txt
           find ./runtime/target/iai -type f
 
       - name: Header Generation Regression Checks on IAI
@@ -201,9 +112,47 @@ jobs:
           # What benchmark tool the output.txt came from
           tool: 'rustIai'
           # Where the output from the benchmark tool is stored
-          output-file-path: ${{ env.BENCH_SCCACHE_DIR }}/header_gen_bench_iai.txt
+          output-file-path: ~/.cache/iai/header_gen_bench_iai.txt
           # Where the previous data file is stored
-          external-data-json-path: ${{ env.BENCH_SCCACHE_DIR }}/benchmark-data-iai.json
+          external-data-json-path: ~/.cache/iai/benchmark-data-iai.json
+          save-data-file: true
+          # Workflow will fail when an alert happens at 15% degradation
+          fail-on-alert: true
+          alert-threshold: '115%'
+          # Upload the updated cache file for the next job by actions/cache
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Enable alert commit comment
+          comment-on-alert: true
+          # Mention @rhysd in the commit comment
+          alert-comment-cc-users: '@prabal-banerjee,@jakubcech,@vthunder,@kroos47,@Leouarz,@markopoloparadox'
+          comment-always: true
+          summary-always: true
+
+  benchmarks_cri:
+    runs-on: [self-hosted, reference]
+    needs: [lint]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Rust & SCCache
+        uses: ./.github/Workflows/sccache.yml
+        with:
+          sccache_id: "bcri"
+
+      - name: Run Header Generation Benchmarks on Criterion 
+        env:
+          SKIP_WASM_BUILD: true
+        run: cargo bench -p da-runtime --bench header_kate_commitment_cri -- --color never --noplot --output-format bencher | tee ~/.cache/cri/header_gen_bench_cri.txt
+
+      - name: Header Generation Regression Checks on Criterion 
+        uses: fmiguelgarcia/github-action-benchmark@v1
+        with:
+          # What benchmark tool the output.txt came from
+          tool: 'cargo'
+          # Where the output from the benchmark tool is stored
+          output-file-path: ~/.cache/cri/header_gen_bench_cri.txt
+          # Where the previous data file is stored
+          external-data-json-path: ~/.cache/cri/benchmark-data-cri.json
           save-data-file: true
           # Workflow will fail when an alert happens at 15% degradation
           fail-on-alert: true
@@ -218,13 +167,7 @@ jobs:
           summary-always: true
 
       - name: Display SCCache Stats
-        run: ${{ env.BENCH_SCCACHE_BIN }} --show-stats
-
-      - name: Print caches
-        run: |
-          find ./runtime/target/iai -type f
-          find ${{ env.BENCH_SCCACHE_DIR }} -type f
-          pwd
+        run: sccache --show-stats
 
 
   unit_tests:
@@ -238,45 +181,10 @@ jobs:
         with:
           tool-cache: true
 
-      - name: Install build-essential
-        run: |
-          sudo apt update
-          sudo apt install -y build-essential git clang curl libssl-dev protobuf-compiler
-
-      # Restore cache from `build`
-      - uses: actions/cache/restore@v3
+      - name: Rust & SCCache
+        uses: ./.github/Workflows/sccache.yml
         with:
-          path: ${{ env.SCCACHE_DIR }}
-          key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: "3.x"
-
-      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
-      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
-      - name: Setup Rust toolchain
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source "$HOME/.cargo/env"
-          rustup default ${{ env.BUILD_TOOLCHAIN }} 
-          rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }}
-
-      - name: SCCache
-        run: |
-          # We altered the path to avoid old actions to overwrite it
-          if [ ! -f $SCCACHE_BIN ]; then
-            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_DIR
-          fi
-          ls -la $SCCACHE_BIN
-          ps aux | grep sccache
-          if [[ -z `pgrep sccache` ]]; then
-            chmod +x $SCCACHE_BIN
-            $SCCACHE_BIN --start-server
-          fi
-          $SCCACHE_BIN -s
-          echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
+          sccache_id: "ut"
 
       - name: Run tests
         run: |
@@ -286,9 +194,10 @@ jobs:
         env:
           RUSTFLAGS: "-C instrument-coverage"
           LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
+          SKIP_WASM_BUILD: true
 
       - name: Display SCCache Stats
-        run: ${{ env.SCCACHE_BIN }} --show-stats
+        run: sccache --show-stats
 
       - name: Generate test code coverage report
         run: |
@@ -310,37 +219,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      # Restore cache from `build`
-      - uses: actions/cache/restore@v3
+      - name: Rust & SCCache
+        uses: ./.github/Workflows/sccache.yml
         with:
-          path: ${{ env.SCCACHE_DIR }}
-          key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
-
-      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
-      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
-      - name: Setup Rust toolchain
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source "$HOME/.cargo/env"
-          rustup default ${{ env.BUILD_TOOLCHAIN }} 
-          rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }}
-
-      - name: SCCache
-        run: |
-          # We altered the path to avoid old actions to overwrite it
-          # SCCACHE_DIR=${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
-          # SCCACHE_BIN=${SCCACHE_DIR}/bin/sccache
-          if [ ! -f $SCCACHE_BIN ]; then
-            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_DIR
-          fi
-          ls -la $SCCACHE_BIN
-          ps aux | grep sccache
-          if [[ -z `pgrep sccache` ]]; then
-            chmod +x $SCCACHE_BIN
-            $SCCACHE_BIN --start-server
-          fi
-          $SCCACHE_BIN -s
-          echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
+          sccache_id: "build"
 
       - uses: actions/download-artifact@v2
         with:
@@ -363,4 +245,4 @@ jobs:
           # cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal_democracy
 
       - name: Display SCCache Stats
-        run: ${{ env.SCCACHE_BIN }} --show-stats
+        run: sccache --show-stats

@@ -1,0 +1,57 @@
+name: Rust and SCCache
+
+on:
+  workflow_call:
+    inputs:
+      sccache_id:
+        required: true
+        type: string
+    secrets:
+
+env:
+  CARGO_SCCACHE_COMMIT: bed5571c
+  BUILD_TOOLCHAIN: stable-2023-08-24
+
+jobs:
+  - uses: actions/cache@v3
+    with:
+      path: ~/.cache/
+      key: ${{ runner.OS }}-cache-${{ inputs.sccache_id }}-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+
+   - name: Install system dependencies
+     run: |
+       sudo apt-get update
+       sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip python3-pip
+
+   # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
+   # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
+   - name: Setup Rust toolchain
+     run: |
+       curl https://sh.rustup.rs -sSf | sh -s -- -y
+       source "$HOME/.cargo/env"
+       rustup default ${{ env.BUILD_TOOLCHAIN }} 
+       rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }}
+
+   - name: Set PATH for cargo
+     run: |
+       echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+       echo "SCCACHE_DIR=${HOME}/.cache/sccache-${{ inputs.sccache_id }}" >> $GITHUB_ENV
+   - name: SCCache
+     run: |
+          # We altered the path to avoid old actions to overwrite it
+          if [ ! -f ~/.cargo/bin/sccache ]; then
+            cargo install sccache \
+              --git https://github.com/purestake/sccache.git \
+              --rev $CARGO_SCCACHE_COMMIT \
+              --force --no-default-features --features=dist-client
+          fi
+
+          ls -la ~/.cargo/bin/
+
+          if [[ -z `pgrep sccache` ]]; then
+            chmod +x ~/.cargo/bin/sccache
+            sccache --start-server
+          fi
+          sccache -s
+          echo "RUSTC_WRAPPER=${HOME}/.cargo/bin/sccache" >> $GITHUB_ENV
+
