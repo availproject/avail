@@ -2,7 +2,7 @@ use da_control::AppKeyInfo;
 use da_primitives::currency::AVL;
 use da_runtime::{
 	wasm_binary_unwrap, AccountId, AuthorityDiscoveryConfig, BabeConfig, Balance, BalancesConfig,
-	Block, CouncilConfig, DataAvailabilityConfig, DemocracyConfig, DesiredMembers, ElectionsConfig,
+	Block, DataAvailabilityConfig, DesiredMembers,
 	GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig, NomadHomeConfig, SessionConfig,
 	SessionKeys, Signature, StakerStatus, StakingConfig, SudoConfig, SystemConfig,
 	TechnicalCommitteeConfig, UpdaterManagerConfig, MAX_NOMINATIONS,
@@ -270,16 +270,6 @@ pub fn testnet_genesis(
 			stakers,
 			..Default::default()
 		},
-		democracy: DemocracyConfig::default(),
-		elections: ElectionsConfig {
-			members: endowed_accounts
-				.iter()
-				.take(DesiredMembers::get().saturated_into())
-				.cloned()
-				.map(|member| (member, STASH))
-				.collect(),
-		},
-		council: CouncilConfig::default(),
 		technical_committee: TechnicalCommitteeConfig {
 			members: endowed_accounts
 				.iter()
@@ -444,15 +434,6 @@ fn genesis_builder(
 			min_validator_bond: stake_amount,
 			..Default::default()
 		},
-		democracy: DemocracyConfig::default(),
-		elections: ElectionsConfig {
-			members: user_accounts
-				.into_iter()
-				.take(DesiredMembers::get().saturated_into())
-				.map(|member| (member.0, ELECTION_STASH))
-				.collect(),
-		},
-		council: CouncilConfig::default(),
 		technical_committee: TechnicalCommitteeConfig {
 			members: technical_committee,
 			phantom: Default::default(),
