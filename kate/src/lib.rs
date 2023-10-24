@@ -61,10 +61,10 @@ pub mod testnet {
 	use super::*;
 	use hex_literal::hex;
 	use once_cell::sync::Lazy;
-	use poly_multiproof::ark_ff::{BigInt, Fp};
+	// use poly_multiproof::ark_ff::{BigInt, Fp};
 	use poly_multiproof::ark_serialize::CanonicalDeserialize;
 	use poly_multiproof::m1_blst;
-	use poly_multiproof::m1_blst::{Fr, G1, G2};
+	use poly_multiproof::m1_blst::{G1, G2};
 	use rand_chacha::{rand_core::SeedableRng, ChaChaRng};
 	use std::{collections::HashMap, sync::Mutex};
 
@@ -91,29 +91,29 @@ pub mod testnet {
 		let mut lines = contents.lines();
 		let g1_len: usize = lines.next().unwrap().parse().unwrap();
 		let g2_len: usize = lines.next().unwrap().parse().unwrap();
-	
+
 		let g1_bytes: Vec<[u8; 48]> = lines
-        .by_ref()
-        .take(g1_len)
-        .map(|line| hex::decode(line).unwrap().try_into().unwrap())
-        .collect();
+			.by_ref()
+			.take(g1_len)
+			.map(|line| hex::decode(line).unwrap().try_into().unwrap())
+			.collect();
 
-    let g2_bytes: Vec<[u8; 96]> = lines
-        .take(g2_len)
-        .map(|line| hex::decode(line).unwrap().try_into().unwrap())
-        .collect();
+		let g2_bytes: Vec<[u8; 96]> = lines
+			.take(g2_len)
+			.map(|line| hex::decode(line).unwrap().try_into().unwrap())
+			.collect();
 
-    let g1: Vec<G1> = g1_bytes
-        .iter()
-        .map(|bytes| G1::deserialize_compressed(&bytes[..]).unwrap())
-        .collect();
+		let g1: Vec<G1> = g1_bytes
+			.iter()
+			.map(|bytes| G1::deserialize_compressed(&bytes[..]).unwrap())
+			.collect();
 
-    let g2: Vec<G2> = g2_bytes
-        .iter()
-        .map(|bytes| G2::deserialize_compressed(&bytes[..]).unwrap())
-        .collect();
+		let g2: Vec<G2> = g2_bytes
+			.iter()
+			.map(|bytes| G2::deserialize_compressed(&bytes[..]).unwrap())
+			.collect();
 
-    (g1, g2)
+		(g1, g2)
 	}
 
 	const SEC_LIMBS: [u64; 4] = [
