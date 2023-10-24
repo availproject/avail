@@ -15,17 +15,17 @@ subxt codegen \
 	--derive-for-type da_primitives::asdr::data_lookup::DataLookup=serde::Serialize \
 	--derive-for-type da_primitives::asdr::data_lookup::DataLookup=serde::Deserialize \
 	--derive-for-type da_primitives::asdr::data_lookup::DataLookup=Default \
-	--derive-for-type da_primitives::asdr::data_lookup::DataLookupIndexItem=serde::Serialize \
-	--derive-for-type da_primitives::asdr::data_lookup::DataLookupIndexItem=serde::Deserialize \
+	--derive-for-type da_primitives::asdr::data_lookup::DataLookupItem=serde::Serialize \
+	--derive-for-type da_primitives::asdr::data_lookup::DataLookupItem=serde::Deserialize \
 	--derive-for-type da_primitives::asdr::AppId=serde::Serialize \
 	--derive-for-type da_primitives::asdr::AppId=serde::Deserialize \
 	--derive-for-type da_primitives::asdr::AppId=Default \
 	--derive-for-type da_primitives::asdr::AppId=Copy \
 	--derive-for-type da_primitives::asdr::AppId=derive_more::From \
-	--url http://localhost:9933 \
+	--url http://localhost:9944 \
 	| sed -En "s/pub struct KateCommitment/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
 	| sed -En "s/pub struct HeaderExtension/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
 	| sed -En "s/pub struct DataLookup/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
-	| sed -En "s/pub struct DataLookupIndexItem/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
+	| sed -En "s/pub struct DataLookupItem/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
 	| sed '1i \#\[allow(clippy::all)]' \
 	| rustfmt --edition=2021 --emit=stdout > src/api_dev.rs
