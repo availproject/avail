@@ -64,7 +64,7 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: ~/.cache/
-          key: ${{ runner.OS }}-cache-build-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+          key: ${{ runner.OS }}-cache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
 
       - name: Install system dependencies
         run: |
@@ -376,12 +376,12 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: ~/.cache/
-          key: ${{ runner.OS }}-cache-build-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+          key: ${{ runner.OS }}-cache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip python3-pip
+          sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip python3-pip time wait-for-it
 
       # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
       # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
@@ -419,21 +419,26 @@ jobs:
         with:
           name: data-avail
 
+      - name: Build E2E examples
+        run: cargo build --release --manifest-path avail-subxt/Cargo.toml --examples
+
       - name: Run E2E SubXt tests
         run: |
           chmod uog+x data-avail
-          ./data-avail --dev --tmp &
-          sleep 5
-          cargo run --release --manifest-path avail-subxt/Cargo.toml --example accounts_from_mnemonics
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example da_bridge_actor 
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example headers
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example max_block_submit
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data_and_dispatch_data_root
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal
+          ./data-avail --dev --tmp & da_pid=$!
+          echo "Wait until DA is ready ..."
+          wait-for-it 127.0.0.1:9944 -s -t 30 -- echo "DA Dev Node is ready (pid=${da_pid})"
           # Democracy calls are executable only with fast runtime (with democracy InstantAllowed set to true)
-          # cargo run --release  --manifest-path avail-subxt/Cargo.toml --example democracy_external 
-          # cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal_democracy
+          # `democracy_external`, `submit_block_length_proposal_democracy`
+          for e2e_test in accounts_from_mnemonics da_bridge_actor headers max_block_submit submit_data submit_data_and_dispatch_data_root submit_block_length_proposal
+          do
+            echo ">> Start E2E test '${e2e_test}'"
+            time cargo run --release  --manifest-path avail-subxt/Cargo.toml --example ${e2e_test}
+            echo ">> End E2E test '${e2e_test}'"
+          done
+          echo ">> Killing DA ..."
+          kill -9 ${da_pid}
+          echo ">> E2E phase done"
 
       - name: Display SCCache Stats
         run: sccache --show-stats
