@@ -123,7 +123,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: actions/restore@v3
+      - uses: actions/cache/restore@v3
         with:
           path: |
             ~/.cache/
@@ -346,8 +346,6 @@ jobs:
   unit_tests:
     runs-on: ubuntu-latest
     needs: [build]
-    env:
-      SKIP_WASM_BUILD: true
     steps:
       - uses: actions/checkout@v2
 
@@ -356,12 +354,12 @@ jobs:
         with:
           tool-cache: true
 
-      - uses: actions/cache@v3
+      - uses: actions/cache/restore@v3
         with:
           path: |
             ~/.cache/
             ~/.cargo/bin/sccache*
-          key: ${{ runner.OS }}-cache-ut-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+          key: ${{ runner.OS }}-cache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
 
       - name: Install system dependencies
         run: |
