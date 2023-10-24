@@ -84,6 +84,38 @@ pub mod testnet {
 			.clone()
 	}
 
+	// Loads the pre-generated trusted g1 & g2 from the file
+	fn load_trusted_g1_g2() -> (Vec<G1>, Vec<G2>) {
+		// for degree = 256
+		let contents = include_str!("g1_g2_256.txt");
+		let mut lines = contents.lines();
+		let g1_len: usize = lines.next().unwrap().parse().unwrap();
+		let g2_len: usize = lines.next().unwrap().parse().unwrap();
+	
+		let g1_bytes: Vec<[u8; 48]> = lines
+        .by_ref()
+        .take(g1_len)
+        .map(|line| hex::decode(line).unwrap().try_into().unwrap())
+        .collect();
+
+    let g2_bytes: Vec<[u8; 96]> = lines
+        .take(g2_len)
+        .map(|line| hex::decode(line).unwrap().try_into().unwrap())
+        .collect();
+
+    let g1: Vec<G1> = g1_bytes
+        .iter()
+        .map(|bytes| G1::deserialize_compressed(&bytes[..]).unwrap())
+        .collect();
+
+    let g2: Vec<G2> = g2_bytes
+        .iter()
+        .map(|bytes| G2::deserialize_compressed(&bytes[..]).unwrap())
+        .collect();
+
+    (g1, g2)
+	}
+
 	const SEC_LIMBS: [u64; 4] = [
 		16526363067508752668,
 		17870878028964021343,
@@ -93,13 +125,14 @@ pub mod testnet {
 	const G1_BYTES: [u8; 48] = hex!("a45f754a9e94cccbb2cbe9d7c441b8b527026ef05e2a3aff4aa4bb1c57df3767fb669cc4c7639bd37e683653bdc50b5a");
 	const G2_BYTES: [u8; 96] = hex!("b845ac5e7b4ec8541d012660276772e001c1e0475e60971884481d43fcbd44de2a02e9862dbf9f536c211814f6cc5448100bcda5dc707854af8e3829750d1fb18b127286aaa4fc959e732e2128a8a315f2f8f419bf5774fe043af46fbbeb4b27");
 
-	pub fn multiproof_params(max_degree: usize, max_pts: usize) -> m1_blst::M1NoPrecomp {
-		let x: Fr = Fp(BigInt(SEC_LIMBS), core::marker::PhantomData);
+	pub fn multiproof_params(_max_degree: usize, _max_pts: usize) -> m1_blst::M1NoPrecomp {
+		// let x: Fr = Fp(BigInt(SEC_LIMBS), core::marker::PhantomData);
+		// let g1 = G1::deserialize_compressed(&G1_BYTES[..]).unwrap();
+		// let g2 = G2::deserialize_compressed(&G2_BYTES[..]).unwrap();
 
-		let g1 = G1::deserialize_compressed(&G1_BYTES[..]).unwrap();
-		let g2 = G2::deserialize_compressed(&G2_BYTES[..]).unwrap();
-
-		m1_blst::M1NoPrecomp::new_from_scalar(x, g1, g2, max_degree.saturating_add(1), max_pts)
+		// m1_blst::M1NoPrecomp::new_from_scalar(x, g1, g2, max_degree.saturating_add(1), max_pts)
+		let (g1, g2) = load_trusted_g1_g2();
+		m1_blst::M1NoPrecomp::new_from_powers(g1, g2)
 	}
 
 	#[cfg(test)]
@@ -173,7 +206,7 @@ pub mod com;
 #[cfg(feature = "std")]
 pub mod gridgen;
 
-/// Precalculate the length of padding IEC 9797 1.
+/// Precalculate the g1_len of padding IEC 9797 1.
 ///
 /// # NOTE
 /// There is a unit test to ensure this formula match with the current
