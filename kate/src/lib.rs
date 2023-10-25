@@ -73,7 +73,7 @@ pub mod testnet {
 
 	pub fn public_params(max_degree: BlockLengthColumns) -> PublicParameters {
 		// We can also use the raw data to make deserilization faster at the cost of size of the data
-		let pp_bytes = include_bytes!("pp_256.data");
+		let pp_bytes = include_bytes!("pp_1024.data");
 		PublicParameters::from_slice(pp_bytes).expect("Error is deserialising public parameters")
 		// let max_degree: u32 = max_degree.into();
 		// let mut srs_data_locked = SRS_DATA.lock().unwrap();
@@ -90,7 +90,7 @@ pub mod testnet {
 	// Loads the pre-generated trusted g1 & g2 from the file
 	fn load_trusted_g1_g2() -> (Vec<G1>, Vec<G2>) {
 		// for degree = 256
-		let contents = include_str!("g1_g2_256.txt");
+		let contents = include_str!("g1_g2_1024.txt");
 		let mut lines = contents.lines();
 		let g1_len: usize = lines.next().unwrap().parse().unwrap();
 		let g2_len: usize = lines.next().unwrap().parse().unwrap();
@@ -172,7 +172,7 @@ pub mod testnet {
 
 			// let pmp = poly_multiproof::m1_blst::M1NoPrecomp::new_from_scalar(x, g1, g2, 256, 256);
 
-			let pmp = multiproof_params(256, 256);
+			let pmp = multiproof_params(1024, 256);
 			let dp_evals = (0..30)
 				.map(|_| BlsScalar::random(&mut thread_rng()))
 				.collect::<Vec<_>>();
@@ -183,11 +183,11 @@ pub mod testnet {
 				.collect::<Vec<Fr>>();
 
 			let dp_poly =
-				PlonkEV::from_vec_and_domain(dp_evals, PlonkED::new(256).unwrap()).interpolate();
-			let pmp_ev = GeneralEvaluationDomain::<Fr>::new(256).unwrap();
+				PlonkEV::from_vec_and_domain(dp_evals, PlonkED::new(1024).unwrap()).interpolate();
+			let pmp_ev = GeneralEvaluationDomain::<Fr>::new(1024).unwrap();
 			let pmp_poly = pmp_ev.ifft(&pmp_evals);
 
-			let pubs = testnet::public_params(BlockLengthColumns(256));
+			let pubs = testnet::public_params(BlockLengthColumns(1024));
 
 			let dp_commit = pubs.commit_key().commit(&dp_poly).unwrap().0.to_bytes();
 			let mut pmp_commit = [0u8; 48];
