@@ -186,9 +186,10 @@ jobs:
             ~/.cargo/bin/sccache*
           key: ${{ runner.OS }}-cache-iai-${{ env.CARGO_SCCACHE_COMMIT }}-v1
 
-      # We force to reinstall `valgrind` because `codspeed` replaces that binary and the output
-      # of `valgrind.codspeed` generates a 
-     - name: Install system dependencies
+      - name: Install system dependencies
+        # We force to reinstall `valgrind` because `codspeed` replaces that binary and the output
+        # of `valgrind.codspeed` generates a 
+
         run: |
           sudo apt-get update
           sudo apt remove -y valgrind
