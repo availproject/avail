@@ -26,15 +26,16 @@ frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 
 # DA Primitives
-avail-core = { version = "0.5", git = "https://github.com/availproject/avail-core", branch = "main" }
-kate = { version = "0.8", git = "https://github.com/availproject/avail-core", branch = "main" }
-kate-recovery = { version = "0.9", git = "https://github.com/availproject/avail-core", branch = "main" }
+# TODO: switch to main / release tag after merging the companion PR
+avail-core = { version = "0.5", git = "https://github.com/availproject/avail-core", branch = "toufeeq/srs" }
+kate = { version = "0.8", git = "https://github.com/availproject/avail-core", branch = "toufeeq/srs" }
+kate-recovery = { version = "0.9", git = "https://github.com/availproject/avail-core", branch = "toufeeq/srs" }
 
 # Nomad
-nomad-signature = { version = "0.1", git = "https://github.com/availproject/avail-core", branch = "main" }
-nomad-merkle = { version = "0.1", git = "https://github.com/availproject/avail-core", branch = "main" }
-nomad-base = { version = "0.1", git = "https://github.com/availproject/avail-core", branch = "main" }
-nomad-core = { version = "0.1", git = "https://github.com/availproject/avail-core", branch = "main" }
+nomad-signature = { version = "0.1", git = "https://github.com/availproject/avail-core", branch = "toufeeq/srs" }
+nomad-merkle = { version = "0.1", git = "https://github.com/availproject/avail-core", branch = "toufeeq/srs" }
+nomad-base = { version = "0.1", git = "https://github.com/availproject/avail-core", branch = "toufeeq/srs" }
+nomad-core = { version = "0.1", git = "https://github.com/availproject/avail-core", branch = "toufeeq/srs" }
 
 # Other stuff
 uint = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }

@@ -2,7 +2,7 @@ use super::{get_account_id_from_seed, AuthorityKeys};
 use avail_core::{AppId, BLOCK_CHUNK_SIZE};
 use avail_core_kate::{
 	config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS},
-	testnet::public_params,
+	testnet_v2::public_params,
 };
 use da_control::AppKeyInfo;
 use da_runtime::{
@@ -42,7 +42,7 @@ const INIT_APP_IDS: [(u32, &str); 3] = [(0, "Data Avail"), (1, "Ethereum"), (2, 
 
 fn standard_system_configuration() -> (Vec<u8>, Vec<u8>, BlockLength) {
 	let code = wasm_binary_unwrap().to_vec();
-	let kc_public_params = public_params(MAX_BLOCK_COLUMNS).to_raw_var_bytes();
+	let kc_public_params = public_params().to_raw_var_bytes();
 
 	let block_length = BlockLength::with_normal_ratio(
 		MAX_BLOCK_ROWS,
