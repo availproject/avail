@@ -22,7 +22,7 @@ subxt codegen \
 	--derive-for-type da_primitives::asdr::AppId=Default \
 	--derive-for-type da_primitives::asdr::AppId=Copy \
 	--derive-for-type da_primitives::asdr::AppId=derive_more::From \
-	--url http://localhost:9944 \
+	--url http://localhost:9933 \
 	| sed -En "s/pub struct KateCommitment/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
 	| sed -En "s/pub struct HeaderExtension/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
 	| sed -En "s/pub struct DataLookup/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
