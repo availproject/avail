@@ -1275,6 +1275,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "codspeed"
+version = "2.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "918b13a0f1a32460ab3bd5debd56b5a27a7071fa5ff5dfeb3a5cf291a85b174b"
+dependencies = [
+ "colored",
+ "libc",
+ "serde_json",
+]
+
+[[package]]
+name = "codspeed-criterion-compat"
+version = "2.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c683c7fef2b873fbbdf4062782914c652309951244bf0bd362fe608b7d6f901c"
+dependencies = [
+ "codspeed",
+ "colored",
+ "criterion",
+]
+
+[[package]]
 name = "coins-bip32"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1336,6 +1358,17 @@ name = "colorchoice"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "acbf1af155f9b9ef647e42cdc158db4b64a1b61f743629225fde6f3e0be2a7c7"
+
+[[package]]
+name = "colored"
+version = "2.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2674ec482fbc38012cf31e6c42ba0177b431a0cb6f15fe40efa5aab1bda516f6"
+dependencies = [
+ "is-terminal",
+ "lazy_static",
+ "windows-sys 0.48.0",
+]
 
 [[package]]
 name = "comfy-table"
@@ -1860,6 +1893,7 @@ name = "da-runtime"
 version = "7.0.0"
 dependencies = [
  "avail-core",
+ "codspeed-criterion-compat",
  "criterion",
  "da-control",
  "env_logger 0.9.3",

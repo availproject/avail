@@ -1,4 +1,10 @@
 use core::time::Duration;
+
+#[cfg(feature = "codspeed")]
+use codspeed_criterion_compat::{
+	criterion_group, criterion_main, BenchmarkId, Criterion, Throughput,
+};
+#[cfg(not(feature = "codspeed"))]
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 
 include!("header_kate_commitment.rs");
