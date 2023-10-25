@@ -86,7 +86,7 @@ proptest! {
 			.map(|c| c.to_bytes().unwrap())
 			.collect::<Vec<_>>();
 
-		let public_params = testnet::public_params(BlockLengthColumns(g_cols as u32));
+		let public_params = testnet::public_params( BlockLengthColumns(g_cols.into()));
 
 		for xt in exts.iter() {
 			let rows = grid.app_rows(xt.app_id, Some(orig_dims)).unwrap().unwrap();

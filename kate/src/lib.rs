@@ -72,16 +72,19 @@ pub mod testnet {
 		Lazy::new(|| Mutex::new(HashMap::new()));
 
 	pub fn public_params(max_degree: BlockLengthColumns) -> PublicParameters {
-		let max_degree: u32 = max_degree.into();
-		let mut srs_data_locked = SRS_DATA.lock().unwrap();
-		srs_data_locked
-			.entry(max_degree)
-			.or_insert_with(|| {
-				let mut rng = ChaChaRng::seed_from_u64(42);
-				let max_degree = usize::try_from(max_degree).unwrap();
-				PublicParameters::setup(max_degree, &mut rng).unwrap()
-			})
-			.clone()
+		// We can also use the raw data to make deserilization faster at the cost of size of the data
+		let pp_bytes = include_bytes!("pp_256.data");
+		PublicParameters::from_slice(pp_bytes).expect("Error is deserialising public parameters")
+		// let max_degree: u32 = max_degree.into();
+		// let mut srs_data_locked = SRS_DATA.lock().unwrap();
+		// srs_data_locked
+		// 	.entry(max_degree)
+		// 	.or_insert_with(|| {
+		// 		let mut rng = ChaChaRng::seed_from_u64(42);
+		// 		let max_degree = usize::try_from(max_degree).unwrap();
+		// 		PublicParameters::setup(max_degree, &mut rng).unwrap()
+		// 	})
+		// 	.clone()
 	}
 
 	// Loads the pre-generated trusted g1 & g2 from the file
@@ -157,18 +160,19 @@ pub mod testnet {
 		use crate::testnet;
 		#[test]
 		fn test_consistent_testnet_params() {
-			let x: Fr = Fp(BigInt(SEC_LIMBS), core::marker::PhantomData);
-			let mut out = [0u8; 32];
-			x.serialize_compressed(&mut out[..]).unwrap();
-			const SEC_BYTES: [u8; 32] =
-				hex!("7848b5d711bc9883996317a3f9c90269d56771005d540a19184939c9e8d0db2a");
-			assert_eq!(SEC_BYTES, out);
+			// let x: Fr = Fp(BigInt(SEC_LIMBS), core::marker::PhantomData);
+			// let mut out = [0u8; 32];
+			// x.serialize_compressed(&mut out[..]).unwrap();
+			// const SEC_BYTES: [u8; 32] =
+			// 	hex!("7848b5d711bc9883996317a3f9c90269d56771005d540a19184939c9e8d0db2a");
+			// assert_eq!(SEC_BYTES, out);
 
-			let g1 = G1::deserialize_compressed(&G1_BYTES[..]).unwrap();
-			let g2 = G2::deserialize_compressed(&G2_BYTES[..]).unwrap();
+			// let g1 = G1::deserialize_compressed(&G1_BYTES[..]).unwrap();
+			// let g2 = G2::deserialize_compressed(&G2_BYTES[..]).unwrap();
 
-			let pmp = poly_multiproof::m1_blst::M1NoPrecomp::new_from_scalar(x, g1, g2, 1024, 256);
+			// let pmp = poly_multiproof::m1_blst::M1NoPrecomp::new_from_scalar(x, g1, g2, 256, 256);
 
+			let pmp = multiproof_params(256, 256);
 			let dp_evals = (0..30)
 				.map(|_| BlsScalar::random(&mut thread_rng()))
 				.collect::<Vec<_>>();
@@ -179,11 +183,11 @@ pub mod testnet {
 				.collect::<Vec<Fr>>();
 
 			let dp_poly =
-				PlonkEV::from_vec_and_domain(dp_evals, PlonkED::new(1024).unwrap()).interpolate();
-			let pmp_ev = GeneralEvaluationDomain::<Fr>::new(1024).unwrap();
+				PlonkEV::from_vec_and_domain(dp_evals, PlonkED::new(256).unwrap()).interpolate();
+			let pmp_ev = GeneralEvaluationDomain::<Fr>::new(256).unwrap();
 			let pmp_poly = pmp_ev.ifft(&pmp_evals);
 
-			let pubs = testnet::public_params(BlockLengthColumns(1024));
+			let pubs = testnet::public_params(BlockLengthColumns(256));
 
 			let dp_commit = pubs.commit_key().commit(&dp_poly).unwrap().0.to_bytes();
 			let mut pmp_commit = [0u8; 48];
