@@ -258,48 +258,33 @@ pub mod pallet {
 	#[pallet::genesis_config]
 	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
-		#[serde(skip)]
-		pub _config: sp_std::marker::PhantomData<T>,
-		#[serde(skip)]
-		pub app_keys: Vec<(Vec<u8>, AppKeyInfoFor<T>)>,
+		#[allow(clippy::type_complexity)]
+		pub app_keys: Vec<(Vec<u8>, (T::AccountId, u32))>,
 	}
 
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			// Ensure app ids are unique.
-			let mut ids = self
-				.app_keys
-				.iter()
-				.map(|(_, info)| info.id)
-				.collect::<Vec<_>>();
-			ids.sort_unstable();
-			ids.dedup();
-			if ids.len() != self.app_keys.len() {
-				panic!("DA Control Genesis contains duplicated application ID");
-			}
+			let mut app_keys = self.app_keys.clone();
+			app_keys.sort_by(|a, b| a.1 .1.cmp(&b.1 .1));
+
+			// With a sorted array, we can just use the id of the last element :)
+			let last_key = app_keys.last();
+			let last_id = last_key.map(|x| x.1 .1).unwrap_or(0);
+			let next_app_id = AppId(last_id.saturating_add(1));
+			NextAppId::<T>::put::<AppId>(next_app_id);
 
 			// Insert app keys. It verifies the length limitation of each key.
-			self.app_keys
-				.iter()
-				.cloned()
-				.try_for_each(|(key, info)| -> Result<(), Vec<u8>> {
-					let key = AppKeyFor::<T>::try_from(key)?;
-					AppKeys::<T>::insert(key, info);
-					Ok(())
-				})
-				.expect("DA Control Genesis contains invalid keys");
-
-			// Last app Id will be the greater one.
-			let last_id = ids
-				.iter()
-				.max()
-				.cloned()
-				.map(Into::into)
-				.unwrap_or(0u32)
-				.checked_add(1u32)
-				.expect("DA Control Genesis overflows the last application id");
-			NextAppId::<T>::put::<AppId>(AppId(last_id));
+			for (key, (owner, id)) in app_keys {
+				let key = AppKeyFor::<T>::try_from(key)
+					.expect("DA Control Genesis contains invalid keys");
+				let value = AppKeyInfo {
+					id: AppId(id),
+					owner,
+				};
+				AppKeys::<T>::insert(key, value);
+			}
 		}
 	}
 }

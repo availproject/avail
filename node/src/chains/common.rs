@@ -1,10 +1,9 @@
 use super::{get_account_id_from_seed, AuthorityKeys};
-use avail_core::{AppId, BLOCK_CHUNK_SIZE};
+use avail_core::BLOCK_CHUNK_SIZE;
 use avail_core_kate::{
 	config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS},
 	testnet::public_params,
 };
-use da_control::AppKeyInfo;
 use da_runtime::{
 	constants, wasm_binary_unwrap, AccountId, BabeConfig, Balance, BalancesConfig,
 	DataAvailabilityConfig, NomadHomeConfig, NomadUpdaterManagerConfig, NominationPoolsConfig,
@@ -70,18 +69,10 @@ fn dev_endowed_accounts() -> Vec<(AccountId, Balance)> {
 fn make_data_avail_config(owner: AccountId) -> DataAvailabilityConfig {
 	let app_keys = INIT_APP_IDS
 		.iter()
-		.map(|(id, app)| {
-			(
-				app.as_bytes().to_vec(),
-				AppKeyInfo::new(owner.clone(), AppId(*id)),
-			)
-		})
+		.map(|(id, app)| (app.as_bytes().to_vec(), (owner.clone(), *id)))
 		.collect();
 
-	DataAvailabilityConfig {
-		app_keys,
-		..Default::default()
-	}
+	DataAvailabilityConfig { app_keys }
 }
 
 pub fn runtime_genesis_config(
