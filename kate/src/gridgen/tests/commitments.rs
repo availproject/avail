@@ -1,5 +1,5 @@
 use super::*;
-use crate::{gridgen::*, testnet, Seed, testnet_v2};
+use crate::{gridgen::*, testnet, testnet_v2, Seed};
 use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 use hex_literal::hex;
 use kate_recovery::{
@@ -176,12 +176,8 @@ fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 			},
 			content: content.try_into().unwrap(),
 		};
-		let verification = kate_recovery::proof::verify(
-			&testnet_v2::public_params(),
-			dims,
-			&commitment,
-			&cell,
-		);
+		let verification =
+			kate_recovery::proof::verify(&testnet_v2::public_params(), dims, &commitment, &cell);
 		assert!(verification.is_ok());
 		assert!(verification.unwrap())
 	}
