@@ -122,7 +122,9 @@ pub mod devnet0 {
 	use super::*;
 
 	pub fn chain_spec() -> Result<ChainSpec, String> {
-		ChainSpec::from_json_bytes(&include_bytes!("./../../../misc/genesis/devnet.chain.raw.json",)[..])
+		ChainSpec::from_json_bytes(
+			&include_bytes!("./../../../misc/genesis/devnet.chain.raw.json",)[..],
+		)
 	}
 
 	#[test]
