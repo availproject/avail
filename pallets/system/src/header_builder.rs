@@ -109,9 +109,8 @@ pub fn build_extension<M: Metrics>(
 	metrics: &M,
 ) -> HeaderExtension {
 	use avail_core::header::extension::{v1, v2};
-	use once_cell::sync::Lazy;
-	static PMP: Lazy<kate::pmp::m1_blst::M1NoPrecomp> =
-		once_cell::sync::Lazy::new(|| kate::testnet::multiproof_params(256, 256));
+	// testnet_v2 has pp for degree upto 1024
+	let pmp: kate::pmp::m1_blst::M1NoPrecomp = kate::testnet_v2::multiproof_params();
 
 	const MIN_WIDTH: usize = 4;
 	let timer = std::time::Instant::now();
@@ -130,7 +129,7 @@ pub fn build_extension<M: Metrics>(
 	let commitment = grid
 		.make_polynomial_grid()
 		.expect("Make polynomials cannot fail")
-		.extended_commitments(&*PMP, 2)
+		.extended_commitments(&pmp, 2)
 		.expect("Extended commitments cannot fail")
 		.iter()
 		.flat_map(|c| c.to_bytes().expect("Commitment serialization cannot fail"))
