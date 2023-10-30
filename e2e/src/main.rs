@@ -12,6 +12,7 @@ pub mod tests {
 		api::{
 			self,
 			runtime_types::{
+				avail_core::header::extension::HeaderExtension,
 				bounded_collections::bounded_vec::BoundedVec, frame_system::limits::BlockLength,
 			},
 		},
@@ -25,7 +26,9 @@ pub mod tests {
 	use kate::com::Cell;
 	use kate::gridgen::{AsBytes, EvaluationGrid};
 	use kate_recovery::matrix::Dimensions;
+	use kate_recovery::proof::verify;
 	use sp_keyring::AccountKeyring;
+	use subxt::tx::TxClient;
 	use subxt::{
 		ext::sp_core::H256,
 		rpc::{types::ChainBlockResponse, Rpc, RpcParams},
@@ -41,24 +44,22 @@ pub mod tests {
 	}
 
 	async fn send_da_example_data(
-		client: &OnlineClient<AvailConfig>,
-	) -> anyhow::Result<(H256, Vec<u8>)> {
+		txc: &TxClient<AvailConfig, OnlineClient<AvailConfig>>,
+		data: &[u8],
+	) -> anyhow::Result<H256> {
 		let signer = PairSigner::new(AccountKeyring::Alice.pair());
-		let example_data = "ExampleData".as_bytes();
-		assert_eq!(example_data.len(), 11);
 
 		let call = api::tx()
 			.data_availability()
-			.submit_data(BoundedVec(example_data.to_vec().clone()));
+			.submit_data(BoundedVec(data.to_vec().clone()));
 		let extrinsic_params = AvailExtrinsicParams::new_with_app_id(0.into());
 
-		let tx_progress = client
-			.tx()
+		let tx_progress = txc
 			.sign_and_submit_then_watch(&call, &signer, extrinsic_params)
 			.await?;
 		let events = tx_progress.wait_for_finalized_success().await?;
 
-		Ok((events.block_hash(), example_data.to_vec()))
+		Ok(events.block_hash())
 	}
 
 	async fn get_submitted_block(
@@ -67,6 +68,7 @@ pub mod tests {
 	) -> anyhow::Result<ChainBlockResponse<AvailConfig>> {
 		let maybe_block = rpc.block(Some(block_hash)).await;
 		let maybe_block = maybe_block?;
+
 		Ok(maybe_block.unwrap())
 	}
 
@@ -88,6 +90,7 @@ pub mod tests {
 			.into_iter()
 			.map(|d| AppExtrinsic::new(d.0, d.1))
 			.collect();
+
 		Ok(app_extrinsics)
 	}
 
@@ -160,9 +163,13 @@ pub mod tests {
 	#[async_std::test]
 	pub async fn rpc_query_rows_test() {
 		let client = establish_a_connection().await.unwrap();
+		let (txc, rpc) = (client.tx(), client.rpc());
 
-		let (block_hash, _) = send_da_example_data(&client).await.unwrap();
-		let submitted_block = get_submitted_block(client.rpc(), block_hash).await.unwrap();
+		let example_data = "ExampleData".as_bytes();
+		assert_eq!(example_data.len(), 11);
+
+		let block_hash = send_da_example_data(&txc, example_data).await.unwrap();
+		let submitted_block = get_submitted_block(rpc, block_hash).await.unwrap();
 		let app_extrinsics = get_block_app_extrinsics(&submitted_block).unwrap();
 
 		// Grid Creation
@@ -175,9 +182,7 @@ pub mod tests {
 		assert_eq!(grid.row(0), extended_grid.row(1));
 
 		// RPC call
-		let actual_rows = query_row(client.rpc(), &[0, 1, 2], block_hash)
-			.await
-			.unwrap();
+		let actual_rows = query_row(rpc, &[0, 1, 2], block_hash).await.unwrap();
 
 		let mut expected_rows: Vec<Option<Vec<u8>>> = Vec::new();
 		let iter = [
@@ -203,9 +208,13 @@ pub mod tests {
 	#[async_std::test]
 	pub async fn rpc_query_app_data_test() {
 		let client = establish_a_connection().await.unwrap();
+		let (txc, rpc) = (client.tx(), client.rpc());
 
-		let (block_hash, _) = send_da_example_data(&client).await.unwrap();
-		let submitted_block = get_submitted_block(client.rpc(), block_hash).await.unwrap();
+		let example_data = "ExampleData".as_bytes();
+		assert_eq!(example_data.len(), 11);
+
+		let block_hash = send_da_example_data(&txc, example_data).await.unwrap();
+		let submitted_block = get_submitted_block(rpc, block_hash).await.unwrap();
 		let app_extrinsics = get_block_app_extrinsics(&submitted_block).unwrap();
 
 		// Grid Creation
@@ -213,9 +222,7 @@ pub mod tests {
 		assert_eq!(grid.dims(), Dimensions::new(1, 8).unwrap());
 
 		// RPC call
-		let actual_rows = query_app_data(client.rpc(), AppId(0), block_hash)
-			.await
-			.unwrap();
+		let actual_rows = query_app_data(rpc, AppId(0), block_hash).await.unwrap();
 
 		let row = grid.row(0).unwrap();
 		let flat_row: Vec<u8> = row.iter().flat_map(|r| r.to_bytes().unwrap()).collect();
@@ -230,9 +237,13 @@ pub mod tests {
 	#[async_std::test]
 	pub async fn rpc_query_proof_test() {
 		let client = establish_a_connection().await.unwrap();
+		let (txc, rpc) = (client.tx(), client.rpc());
 
-		let (block_hash, _) = send_da_example_data(&client).await.unwrap();
-		let submitted_block = get_submitted_block(client.rpc(), block_hash).await.unwrap();
+		let example_data = "ExampleData".as_bytes();
+		assert_eq!(example_data.len(), 11);
+
+		let block_hash = send_da_example_data(&txc, example_data).await.unwrap();
+		let submitted_block = get_submitted_block(rpc, block_hash).await.unwrap();
 		let app_extrinsics = get_block_app_extrinsics(&submitted_block).unwrap();
 
 		// Grid Creation
@@ -274,30 +285,80 @@ pub mod tests {
 		let expected_proof: Vec<u8> = expected_proof.into_iter().flatten().collect();
 
 		// RPC call
-		let actual_proof = query_proof(client.rpc(), cells, block_hash).await.unwrap();
+		let actual_proof = query_proof(rpc, cells, block_hash).await.unwrap();
 		assert_eq!(actual_proof, expected_proof);
 		dbg!(&actual_proof);
 		dbg!(&expected_proof);
 	}
 
 	#[async_std::test]
-	pub async fn rpc_query_block_length_test() {
+	pub async fn rpc_query_proof_test_2() {
 		let client = establish_a_connection().await.unwrap();
+		let (txc, rpc) = (client.tx(), client.rpc());
 
-		let (block_hash, _) = send_da_example_data(&client).await.unwrap();
+		let mut example_data = [0u8; 12_500];
+		example_data[..7].copy_from_slice(b"example");
+		assert_eq!(example_data.len(), 12_500);
+
+		let block_hash = send_da_example_data(&txc, &example_data).await.unwrap();
+
+		let cell = Cell {
+			row: BlockLengthRows(0),
+			col: BlockLengthColumns(0),
+		};
+		let cells = vec![cell.clone()];
 
 		// RPC call
-		let length = query_block_length(client.rpc(), block_hash).await.unwrap();
+		let actual_proof = query_proof(client.rpc(), cells, block_hash).await.unwrap();
+		assert_eq!(actual_proof.len(), 80);
+
+		let pp = kate::testnet::public_params(avail_core::BlockLengthColumns(256));
+
+		let submitted_block = get_submitted_block(rpc, block_hash).await.unwrap();
+		let ext = if let HeaderExtension::V1(ref ext) = submitted_block.block.header.extension {
+			ext
+		} else {
+			panic!("Unsupported header extension version")
+		};
+
+		let mut content = [0u8; 80];
+		content.copy_from_slice(&actual_proof);
+		let commitment: [u8; 48] = ext.commitment.commitment[..48].try_into().unwrap();
+		let dcell = kate_recovery::data::Cell {
+			position: kate_recovery::matrix::Position { row: 0, col: 0 },
+			content,
+		};
+		let dim = Dimensions::new(ext.commitment.rows, ext.commitment.cols).unwrap();
+		let res = verify(&pp, dim, &commitment, &dcell).unwrap();
+		assert!(res);
+	}
+
+	#[async_std::test]
+	pub async fn rpc_query_block_length_test() {
+		let client = establish_a_connection().await.unwrap();
+		let (txc, rpc) = (client.tx(), client.rpc());
+
+		let example_data = "ExampleData".as_bytes();
+		assert_eq!(example_data.len(), 11);
+
+		let block_hash = send_da_example_data(&txc, example_data).await.unwrap();
+
+		// RPC call
+		let length = query_block_length(rpc, block_hash).await.unwrap();
 		dbg!(length);
 	}
 
 	#[async_std::test]
 	pub async fn rpc_query_data_proof_test() {
 		let client = establish_a_connection().await.unwrap();
-		let (block_hash, ab) = send_da_example_data(&client).await.unwrap();
+		let (txc, rpc) = (client.tx(), client.rpc());
 
-		let expected_proof_root = merkle_proof::<Keccak256, _, _>(vec![ab], 0);
-		let actual_proof = query_data_proof(client.rpc(), 1, block_hash).await.unwrap();
+		let example_data = "ExampleData".as_bytes();
+		assert_eq!(example_data.len(), 11);
+		let block_hash = send_da_example_data(&txc, example_data).await.unwrap();
+
+		let expected_proof_root = merkle_proof::<Keccak256, _, _>(vec![example_data.to_vec()], 0);
+		let actual_proof = query_data_proof(rpc, 1, block_hash).await.unwrap();
 		assert_eq!(actual_proof.root, expected_proof_root.root);
 	}
 }
