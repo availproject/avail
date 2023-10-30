@@ -126,10 +126,7 @@ pub mod tests {
 	) -> anyhow::Result<BlockLength> {
 		let mut params = RpcParams::new();
 		params.push(Some(block_hash))?;
-		let block_length_raw: Vec<u8> = rpc.request("kate_blockLength", params).await?;
-
-		// It just works, deal with it.
-		let block_length = unsafe { std::mem::transmute::<Vec<u8>, BlockLength>(block_length_raw) };
+		let block_length: BlockLength = rpc.request("kate_blockLength", params).await?;
 
 		Ok(block_length)
 	}
@@ -335,6 +332,8 @@ pub mod tests {
 
 	#[async_std::test]
 	pub async fn rpc_query_block_length_test() {
+		use avail_subxt::api::runtime_types::avail_core::{BlockLengthColumns, BlockLengthRows};
+
 		let client = establish_a_connection().await.unwrap();
 		let (txc, rpc) = (client.tx(), client.rpc());
 
@@ -345,7 +344,9 @@ pub mod tests {
 
 		// RPC call
 		let length = query_block_length(rpc, block_hash).await.unwrap();
-		dbg!(length);
+		assert_eq!(length.cols, BlockLengthColumns(256));
+		assert_eq!(length.rows, BlockLengthRows(256));
+		assert_eq!(length.chunk_size, 32);
 	}
 
 	#[async_std::test]
