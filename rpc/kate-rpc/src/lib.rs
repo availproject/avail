@@ -24,7 +24,6 @@ use kate_recovery::matrix::Dimensions;
 use moka::future::Cache;
 use rayon::prelude::*;
 use sc_client_api::BlockBackend;
-use serde::{Deserialize, Serialize};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
@@ -33,11 +32,6 @@ use sp_runtime::{
 };
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
-#[derive(Serialize, Deserialize)]
-pub struct MultiproofSer {
-	pub proof: Vec<u8>,
-	pub evals: Vec<u8>,
-}
 
 #[rpc(client, server)]
 pub trait KateApi<Block>
@@ -63,27 +57,6 @@ where
 
 	#[method(name = "kate_blockLength")]
 	async fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength>;
-
-	/// Query the multiproof for a given cell. The cells must be within the multiproof grid given
-	/// by `kate::gridgen::multiproof_dims`. This returns a JSON of the following format:
-	/// ```json
-	/// [{
-	///    "proof": "0x...",
-	///    "evals": "0x...",
-	/// }..]
-	/// ```
-	///
-	/// The `proof` key contains the serialized multiproof, and the `evals` key contains the
-	/// scalars in the chunk of the base grid for the given cell of the multiproof grid, stored in
-	/// row-wise order.
-	///
-	/// The size of `evals` will correspond to the result of `kate::gridgen::multiproof_block`.
-	#[method(name = "kate_queryMultiproof")]
-	async fn query_multiproof(
-		&self,
-		cells: Vec<Cell>,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<MultiproofSer>>;
 
 	#[method(name = "kate_queryDataProof")]
 	async fn query_data_proof(
@@ -422,39 +395,6 @@ where
 
 		DataProof::try_from(&merkle_proof)
 			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e))
-	}
-
-	async fn query_multiproof(
-		&self,
-		cells: Vec<Cell>,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<MultiproofSer>> {
-		let block = self.get_signed_and_finalized_block(at)?;
-		let evals = self.get_eval_grid(&block).await?;
-		let polys = self.get_poly_grid(&block).await?;
-
-		let target_dims = Dimensions::new(16, 64).expect("16,64>0"); // TODO: make configurable
-		let multiproofs = cells
-			.iter()
-			.map(|cell| {
-				polys
-					.1
-					.multiproof(&self.multiproof_srs, cell, &evals, target_dims)
-					.map_err(|e| internal_err!("Error building multiproof {:?}", e))
-			})
-			.collect::<Result<Vec<_>, _>>()?;
-
-		let multiproof = multiproofs
-			.iter()
-			.map(|mp| {
-				let evals_flatten = mp.evals.iter().flatten();
-				let evals: Vec<u8> = evals_flatten.flat_map(|c| c.to_bytes().unwrap()).collect();
-				let proof: Vec<u8> = mp.proof.to_bytes().unwrap().into();
-				MultiproofSer { proof, evals }
-			})
-			.collect::<Vec<_>>();
-
-		Ok(multiproof)
 	}
 }
 

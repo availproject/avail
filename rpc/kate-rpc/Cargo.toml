@@ -25,7 +25,6 @@ sc-client-api = "4.0.0-dev"
 sp-blockchain = "4.0.0-dev"
 sp-runtime = { version = "24.0.0", default-features = false }
 moka = { version = "0.12.1", features = [ "future" ] }
-serde = { version = "1", features = ["derive"] }
 
 [features]
 default = [ "std" ]

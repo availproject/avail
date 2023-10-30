@@ -4455,7 +4455,6 @@ dependencies = [
  "moka",
  "rayon",
  "sc-client-api",
- "serde",
  "sp-api",
  "sp-blockchain",
  "sp-runtime",
