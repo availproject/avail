@@ -1,5 +1,5 @@
 use super::*;
-use crate::{gridgen::*, testnet, Seed};
+use crate::{gridgen::*, testnet, testnet_v2, Seed};
 use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 use hex_literal::hex;
 use kate_recovery::{
@@ -86,7 +86,7 @@ proptest! {
 			.map(|c| c.to_bytes().unwrap())
 			.collect::<Vec<_>>();
 
-		let public_params = testnet::public_params(BlockLengthColumns(g_cols as u32));
+		let public_params = testnet::public_params( BlockLengthColumns(g_cols.into()));
 
 		for xt in exts.iter() {
 			let rows = grid.app_rows(xt.app_id, Some(orig_dims)).unwrap().unwrap();
@@ -152,8 +152,9 @@ fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 	println!("Row: {:?}", ev.evals);
 
 	let pg = ev.make_polynomial_grid().unwrap();
+	let pmp = testnet_v2::multiproof_params();
 	println!("Poly: {:?}", pg.inner[0]);
-	let commitment = pg.commitment(&*PMP, 0).unwrap().to_bytes().unwrap();
+	let commitment = pg.commitment(&pmp, 0).unwrap().to_bytes().unwrap();
 
 	for x in 0..len {
 		// Randomly chosen cell to prove, probably should test all of them
@@ -162,7 +163,7 @@ fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 			row: BlockLengthRows(0),
 		};
 
-		let proof = pg.proof(&PMP, &cell).unwrap();
+		let proof = pg.proof(&pmp, &cell).unwrap();
 
 		let proof_bytes = proof.to_bytes().unwrap();
 		let cell_bytes = ev.get(0usize, x).unwrap().to_bytes().unwrap();
@@ -175,12 +176,8 @@ fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 			},
 			content: content.try_into().unwrap(),
 		};
-		let verification = kate_recovery::proof::verify(
-			&kate_recovery::testnet::public_params(256),
-			dims,
-			&commitment,
-			&cell,
-		);
+		let verification =
+			kate_recovery::proof::verify(&testnet_v2::public_params(), dims, &commitment, &cell);
 		assert!(verification.is_ok());
 		assert!(verification.unwrap())
 	}

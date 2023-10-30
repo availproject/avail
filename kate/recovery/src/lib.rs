@@ -11,3 +11,6 @@ pub mod sparse_slice_read;
 
 #[cfg(feature = "std")]
 pub mod testnet;
+
+#[cfg(feature = "std")]
+pub mod testnet_v2;

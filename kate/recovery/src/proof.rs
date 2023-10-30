@@ -60,8 +60,5 @@ pub fn verify(
 		.nth(cell.position.col.into())
 		.ok_or(Error::InvalidPositionInDomain)?;
 
-	public_parameters
-		.trim(cols)
-		.map(|(_, verifier_key)| verifier_key.check(point, proof))
-		.map_err(|_| Error::InvalidDegree)
+	Ok(public_parameters.opening_key().check(point, proof))
 }
