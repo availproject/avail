@@ -644,7 +644,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.5.1"
-source = "git+https://github.com/availproject/avail-core?branch=succint-header_new#bc55454ba9cef01a0bc1584a4a6a6c6e11460e69"
+source = "git+https://github.com/availproject/avail-core?branch=succint-header_new#aadc2a394ecd204e3fc31fd34dcfcb66e369b553"
 dependencies = [
  "binary-merkle-tree",
  "derive_more",
@@ -4412,7 +4412,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.8.1"
-source = "git+https://github.com/availproject/avail-core?branch=succint-header_new#bc55454ba9cef01a0bc1584a4a6a6c6e11460e69"
+source = "git+https://github.com/availproject/avail-core?branch=succint-header_new#aadc2a394ecd204e3fc31fd34dcfcb66e369b553"
 dependencies = [
  "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=succint-header_new)",
  "derive_more",
@@ -4440,7 +4440,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.9.1"
-source = "git+https://github.com/availproject/avail-core?branch=succint-header_new#bc55454ba9cef01a0bc1584a4a6a6c6e11460e69"
+source = "git+https://github.com/availproject/avail-core?branch=succint-header_new#aadc2a394ecd204e3fc31fd34dcfcb66e369b553"
 dependencies = [
  "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=succint-header_new)",
  "derive_more",
