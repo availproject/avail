@@ -366,13 +366,13 @@ mod tests {
 		};
 
 		let encoded = header.encode();
-		assert_eq!(encoded, hex!("92cdf578c47085a5992256f0dcf97d0b19f1f1c9de4d5fe30c3ace6191b6e5db08581348337b0f3e148620173daaa5f94d00d881705dcbf0aa83efdaba61d2ede1eb8649214997574e20c464388a172420d25403682bbbb80c496831c8cc1f8f0d040004350004103fbf3227926cfa3f4167771e5ad91cfa2c2d7090667ce01e911ca90b4f315b11810180e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e975980e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e97590000").to_vec());
+		assert_eq!(encoded, hex!("92cdf578c47085a5992256f0dcf97d0b19f1f1c9de4d5fe30c3ace6191b6e5db08581348337b0f3e148620173daaa5f94d00d881705dcbf0aa83efdaba61d2ede1eb8649214997574e20c464388a172420d25403682bbbb80c496831c8cc1f8f0d040004350000000410810180e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e975980e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e97593fbf3227926cfa3f4167771e5ad91cfa2c2d7090667ce01e911ca90b4f315b11").to_vec());
 	}
 
 	fn header_v1() -> THeader {
 		let commitment = v1::KateCommitment {
-				commitment: hex!("80e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e975980e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e9759").to_vec(),
 				data_root: hex!("3fbf3227926cfa3f4167771e5ad91cfa2c2d7090667ce01e911ca90b4f315b11").into(),
+				commitment: hex!("80e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e975980e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e9759").to_vec(),
 				..Default::default()
 			};
 		let extension = extension::v1::HeaderExtension {
@@ -405,13 +405,8 @@ mod tests {
 
 	/// It creates a corrupted V2 header and the associated error on decodification.
 	fn corrupted_header() -> (Vec<u8>, Error) {
-		let mut encoded = header_v2().encode();
-
-		// Change the discriminator
-		let discriminator = encoded.get_mut(98).expect("Discriminator at position 98");
-		assert_eq!(*discriminator, 1u8);
-		*discriminator = 0u8;
-		assert_eq!(*discriminator, 0u8);
+		let mut encoded = header_v1().encode();
+		encoded.remove(110);
 
 		let error = THeader::decode(&mut encoded.as_slice()).unwrap_err();
 
@@ -478,7 +473,7 @@ mod tests {
 		assert_eq!(
 			hash,
 			H256(hex!(
-				"21bbb83a624df177036ec0f5b03db7a5fcf47ce661138853743c72fef339b30b"
+				"2658abca4272bbd01abe73b29b0396dd03eb6af104a1d9b9e601d13d933a88b5"
 			))
 		);
 
@@ -508,7 +503,7 @@ mod tests {
 				ext.commitment.data_root = H256::repeat_byte(1u8);
 			},
 			extension::HeaderExtension::V2(ref mut ext) => {
-				ext.commitment.data_root = Some(H256::repeat_byte(2u8));
+				ext.commitment.data_root = H256::repeat_byte(2u8);
 			},
 		};
 

@@ -25,10 +25,10 @@ pub mod v1 {
 		/// Cols
 		#[codec(compact)]
 		pub cols: u16,
-		/// The merkle root of the data submitted
-		pub data_root: H256,
 		/// Plonk commitment.
 		pub commitment: Vec<u8>,
+		/// The merkle root of the data submitted
+		pub data_root: H256,
 	}
 
 	#[cfg(feature = "serde")]
@@ -59,20 +59,19 @@ pub mod v2 {
 		/// Cols
 		#[codec(compact)]
 		pub cols: u16,
-		/// The merkle root of the data submitted
-		pub data_root: Option<H256>,
 		/// Plonk commitment.
 		pub commitment: Vec<u8>,
+		/// The merkle root of the data submitted
+		pub data_root: H256,
 	}
 
 	impl KateCommitment {
 		pub fn new(rows: u16, cols: u16, data_root: H256, commitment: Vec<u8>) -> Self {
-			let data_root = (!data_root.is_zero()).then_some(data_root);
 			Self {
 				rows,
 				cols,
-				data_root,
 				commitment,
+				data_root,
 			}
 		}
 	}
@@ -81,11 +80,7 @@ pub mod v2 {
 	impl fmt::Debug for KateCommitment {
 		fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 			let commitment = self.commitment.as_slice();
-			let data_root = self
-				.data_root
-				.as_ref()
-				.map(AsRef::as_ref)
-				.unwrap_or_default();
+			let data_root = self.data_root.as_ref();
 
 			f.debug_struct("KateCommitment(v2)")
 				.field("rows", &self.rows)
@@ -93,20 +88,6 @@ pub mod v2 {
 				.field("commitment", &HexDisplay::from(&commitment))
 				.field("data_root", &HexDisplay::from(&data_root))
 				.finish()
-		}
-	}
-
-	#[cfg(test)]
-	mod tests {
-		use super::*;
-		use test_case::test_case;
-
-		/// Double check that zero data root is compressed to `None`.
-		#[test_case( H256([0u8;32]) => None; "Zero data root")]
-		#[test_case( H256([1u8;32]) => Some(H256([1u8;32])); "NonZero data root")]
-		fn compression_on_new(data_root: H256) -> Option<H256> {
-			let kate = KateCommitment::new(1, 1, data_root, vec![]);
-			kate.data_root
 		}
 	}
 }
