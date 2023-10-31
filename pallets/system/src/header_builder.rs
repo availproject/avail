@@ -153,8 +153,8 @@ pub fn build_extension<M: Metrics>(
 		}
 
 		v2::HeaderExtension {
-			commitment: kate,
 			app_lookup,
+			commitment: kate,
 		}
 		.into()
 	} else {
@@ -172,8 +172,8 @@ pub fn build_extension<M: Metrics>(
 		}
 
 		v1::HeaderExtension {
-			commitment: kate,
 			app_lookup,
+			commitment: kate,
 		}
 		.into()
 	}

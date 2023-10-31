@@ -101,8 +101,7 @@ export const API_TYPES = {
     },
     HeaderExtension: {
         _enum: {
-            V1: 'V1HeaderExtension',
-            VTest: 'VTHeaderExtension'
+            V1: 'V1HeaderExtension'
         }
     },
     DaHeader: {

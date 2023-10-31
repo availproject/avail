@@ -1,8 +1,8 @@
-import {Keyring} from '@polkadot/api';
-import {createApi} from './api';
+import { Keyring } from '@polkadot/api';
+import { createApi } from './api';
 import config from "./config";
-import {H256} from "@polkadot/types/interfaces";
-import {ISubmittableResult} from "@polkadot/types/types";
+import { H256 } from "@polkadot/types/interfaces";
+import { ISubmittableResult } from "@polkadot/types/types";
 
 /**
  * Extracts data from the block.
@@ -14,7 +14,7 @@ async function extractData(api: any, blockHash: H256, exHash: H256) {
         if (ex.hash == exHash.toHex()) {
             const index: number = extrinsics.indexOf(ex);
             console.log(index, ex.toHuman());
-            const {method: {args, method, section}} = ex;
+            const { method: { args, method, section } } = ex;
             let dataHex = args.map((a: any) => a.toString()).join(', ');
             //data retrieved from the extrinsic data
             let str = ''
@@ -32,11 +32,11 @@ async function main() {
     // instantiate the API
     const api = await createApi()
     // construct the keyring after the API
-    const keyring = new Keyring({type: 'sr25519'});
+    const keyring = new Keyring({ type: 'sr25519' });
     // add Alice to our keyring with a hard-derivation path (empty phrase, so uses dev)
     const alice = keyring.addFromUri(config.mnemonic);
     // data to submit
-    const data = "";
+    const data = "this is a test data";
 
     // submit data transaction
     api.tx.dataAvailability.submitData(data)
