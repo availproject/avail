@@ -2,7 +2,7 @@ use super::{get_account_id_from_seed, AuthorityKeys};
 use avail_core::BLOCK_CHUNK_SIZE;
 use avail_core_kate::{
 	config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS},
-	testnet_v2::public_params,
+	couscous::public_params,
 };
 use da_runtime::{
 	constants, wasm_binary_unwrap, AccountId, BabeConfig, Balance, BalancesConfig,
