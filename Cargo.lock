@@ -608,7 +608,7 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 name = "avail-base"
 version = "0.1.0"
 dependencies = [
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=succint-header_new)",
+ "avail-core",
  "kate",
  "log",
  "once_cell",
@@ -619,32 +619,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.5.1"
-source = "git+https://github.com/availproject/avail-core?branch=main#4ab4fbccec027ec9b2e930d6d6c96117c6460a16"
-dependencies = [
- "binary-merkle-tree",
- "derive_more",
- "frame-support",
- "hash256-std-hasher",
- "hex",
- "log",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-arithmetic",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-runtime-interface",
- "sp-std",
- "sp-trie",
- "static_assertions",
- "thiserror-no-std",
-]
-
-[[package]]
-name = "avail-core"
-version = "0.5.1"
-source = "git+https://github.com/availproject/avail-core?branch=succint-header_new#aadc2a394ecd204e3fc31fd34dcfcb66e369b553"
+source = "git+https://github.com/availproject/avail-core?branch=main#8ec83d7415c89834948f38a3fdc66d274180a732"
 dependencies = [
  "binary-merkle-tree",
  "derive_more",
@@ -1907,7 +1882,7 @@ dependencies = [
 name = "da-control"
 version = "1.0.1"
 dependencies = [
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=succint-header_new)",
+ "avail-core",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -1932,7 +1907,7 @@ dependencies = [
 name = "da-runtime"
 version = "7.0.0"
 dependencies = [
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=succint-header_new)",
+ "avail-core",
  "da-control",
  "env_logger 0.9.3",
  "frame-benchmarking",
@@ -2052,7 +2027,7 @@ version = "1.8.0"
 dependencies = [
  "async-trait",
  "avail-base",
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=succint-header_new)",
+ "avail-core",
  "clap 4.4.7",
  "clap_complete",
  "da-control",
@@ -3248,7 +3223,7 @@ name = "frame-system"
 version = "4.0.0-dev"
 dependencies = [
  "avail-base",
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=succint-header_new)",
+ "avail-core",
  "binary-merkle-tree",
  "cfg-if",
  "criterion",
@@ -3279,7 +3254,7 @@ dependencies = [
 name = "frame-system-benchmarking"
 version = "4.0.0-dev"
 dependencies = [
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=succint-header_new)",
+ "avail-core",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -4412,9 +4387,9 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.8.1"
-source = "git+https://github.com/availproject/avail-core?branch=succint-header_new#aadc2a394ecd204e3fc31fd34dcfcb66e369b553"
+source = "git+https://github.com/availproject/avail-core?branch=main#8ec83d7415c89834948f38a3fdc66d274180a732"
 dependencies = [
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=succint-header_new)",
+ "avail-core",
  "derive_more",
  "dusk-bytes",
  "dusk-plonk",
@@ -4440,9 +4415,9 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.9.1"
-source = "git+https://github.com/availproject/avail-core?branch=succint-header_new#aadc2a394ecd204e3fc31fd34dcfcb66e369b553"
+source = "git+https://github.com/availproject/avail-core?branch=main#8ec83d7415c89834948f38a3fdc66d274180a732"
 dependencies = [
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=succint-header_new)",
+ "avail-core",
  "derive_more",
  "dusk-bytes",
  "dusk-plonk",
@@ -4462,7 +4437,7 @@ name = "kate-rpc"
 version = "0.3.0"
 dependencies = [
  "avail-base",
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=succint-header_new)",
+ "avail-core",
  "da-runtime",
  "frame-system",
  "jsonrpsee",
@@ -5666,7 +5641,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.5"
-source = "git+https://github.com/availproject/avail-core?branch=main#4ab4fbccec027ec9b2e930d6d6c96117c6460a16"
+source = "git+https://github.com/availproject/avail-core?branch=main#8ec83d7415c89834948f38a3fdc66d274180a732"
 dependencies = [
  "ethers-signers",
  "nomad-core",
@@ -5682,7 +5657,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.5"
-source = "git+https://github.com/availproject/avail-core?branch=main#4ab4fbccec027ec9b2e930d6d6c96117c6460a16"
+source = "git+https://github.com/availproject/avail-core?branch=main#8ec83d7415c89834948f38a3fdc66d274180a732"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -5701,7 +5676,7 @@ dependencies = [
 name = "nomad-da-bridge"
 version = "1.0.1"
 dependencies = [
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=succint-header_new)",
+ "avail-core",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5723,7 +5698,7 @@ dependencies = [
 name = "nomad-home"
 version = "4.0.0-dev"
 dependencies = [
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=succint-header_new)",
+ "avail-core",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5745,9 +5720,9 @@ dependencies = [
 [[package]]
 name = "nomad-merkle"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?branch=main#4ab4fbccec027ec9b2e930d6d6c96117c6460a16"
+source = "git+https://github.com/availproject/avail-core?branch=main#8ec83d7415c89834948f38a3fdc66d274180a732"
 dependencies = [
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=main)",
+ "avail-core",
  "frame-support",
  "hex-literal",
  "nomad-core",
@@ -5763,7 +5738,7 @@ dependencies = [
 [[package]]
 name = "nomad-signature"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?branch=main#4ab4fbccec027ec9b2e930d6d6c96117c6460a16"
+source = "git+https://github.com/availproject/avail-core?branch=main#8ec83d7415c89834948f38a3fdc66d274180a732"
 dependencies = [
  "elliptic-curve 0.12.3",
  "ethers-core",
@@ -5784,7 +5759,7 @@ dependencies = [
 name = "nomad-updater-manager"
 version = "1.0.1"
 dependencies = [
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=succint-header_new)",
+ "avail-core",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -6295,7 +6270,7 @@ dependencies = [
 name = "pallet-mandate"
 version = "1.0.0"
 dependencies = [
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=succint-header_new)",
+ "avail-core",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
