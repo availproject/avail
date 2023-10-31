@@ -20564,6 +20564,8 @@ pub mod api {
 				Debug,
 				Eq,
 				PartialEq,
+				serde :: Deserialize,
+				serde :: Serialize,
 			)]
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
@@ -20578,6 +20580,8 @@ pub mod api {
 				Debug,
 				Eq,
 				PartialEq,
+				serde :: Deserialize,
+				serde :: Serialize,
 			)]
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
@@ -21321,6 +21325,8 @@ pub mod api {
 					Debug,
 					Eq,
 					PartialEq,
+					serde :: Deserialize,
+					serde :: Serialize,
 				)]
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
@@ -21564,10 +21570,13 @@ pub mod api {
 					Debug,
 					Eq,
 					PartialEq,
+					serde :: Deserialize,
+					serde :: Serialize,
 				)]
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[serde(rename_all = "camelCase")]
 				pub struct BlockLength {
 					pub max: runtime_types::frame_support::dispatch::PerDispatchClass<
 						::core::primitive::u32,

@@ -58,7 +58,7 @@ where
 // Will contain `true` when the custom runtime logic was called.
 pub const CUSTOM_ON_RUNTIME_KEY: &[u8] = b":custom:on_runtime";
 
-/// This determines the average expected block time that we are targetting.
+/// This determines the average expected block time that we are targeting.
 /// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
 /// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked
 /// up by `pallet_babe` to implement `fn slot_duration()`.

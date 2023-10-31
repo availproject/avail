@@ -73,7 +73,7 @@ type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 type FullGrandpaBlockImport =
 	sc_consensus_grandpa::GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>;
 
-/// The transaction pool type defintion.
+/// The transaction pool type definition.
 pub type TransactionPool = sc_transaction_pool::FullPool<Block, FullClient>;
 
 pub type BlockImport = crate::da_block_import::BlockImport<

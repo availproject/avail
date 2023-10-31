@@ -619,7 +619,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.5.1"
-source = "git+https://github.com/availproject/avail-core?branch=main#b19a8bbfc580463d1cddced44028cb0a9fb180fc"
+source = "git+https://github.com/availproject/avail-core?branch=main#b7097dad21ad913c2785b17e4fcd8589b9fa3427"
 dependencies = [
  "binary-merkle-tree",
  "derive_more",
@@ -968,6 +968,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3b5ca7a04898ad4bcd41c90c5285445ff5b791899bb1b0abdd2a2aa791211d7"
 
 [[package]]
+name = "bytecount"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad152d03a2c813c80bb94fedbf3a3f02b28f793e39e7c214c8a0bcc196343de7"
+
+[[package]]
 name = "bytemuck"
 version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1015,6 +1021,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "12024c4645c97566567129c204f65d5815a8c9aecf30fcbe682b2fe034996d36"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "cargo_metadata"
+version = "0.14.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4acbb09d9ee8e23699b9634375c72795d095bf268439da88562cf9b501f181fa"
+dependencies = [
+ "camino",
+ "cargo-platform",
+ "semver 1.0.18",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -2011,7 +2030,7 @@ dependencies = [
 
 [[package]]
 name = "data-avail"
-version = "1.7.2"
+version = "1.8.0"
 dependencies = [
  "async-trait",
  "avail-base",
@@ -2654,6 +2673,15 @@ checksum = "ac3e13f66a2f95e32a39eaa81f6b95d42878ca0e1db0c7543723dfe12557e860"
 dependencies = [
  "libc",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "error-chain"
+version = "0.12.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d2f06b9cac1506ece98fe3231e3cc9c4410ec3d5b1f24ae1c8946f0742cdefc"
+dependencies = [
+ "version_check",
 ]
 
 [[package]]
@@ -4372,7 +4400,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.8.1"
-source = "git+https://github.com/availproject/avail-core?branch=main#b19a8bbfc580463d1cddced44028cb0a9fb180fc"
+source = "git+https://github.com/availproject/avail-core?branch=main#b7097dad21ad913c2785b17e4fcd8589b9fa3427"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -4400,7 +4428,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.9.1"
-source = "git+https://github.com/availproject/avail-core?branch=main#b19a8bbfc580463d1cddced44028cb0a9fb180fc"
+source = "git+https://github.com/availproject/avail-core?branch=main#b7097dad21ad913c2785b17e4fcd8589b9fa3427"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -4424,20 +4452,16 @@ dependencies = [
  "avail-base",
  "avail-core",
  "da-runtime",
- "frame-support",
  "frame-system",
  "jsonrpsee",
  "kate",
  "kate-recovery",
- "lru 0.7.8",
- "nalgebra",
- "parity-scale-codec",
+ "moka",
+ "rayon",
  "sc-client-api",
- "sc-client-db",
  "sp-api",
  "sp-blockchain",
  "sp-runtime",
- "static_assertions",
 ]
 
 [[package]]
@@ -5136,6 +5160,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "mach2"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d0d1830bcd151a6fc4aea1369af235b36c1528fe976b8ff678683c9995eade8"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "macro_magic"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5384,6 +5417,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "moka"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8017ec3548ffe7d4cef7ac0e12b044c01164a74c0f3119420faeaf13490ad8b"
+dependencies = [
+ "async-lock",
+ "async-trait",
+ "crossbeam-channel",
+ "crossbeam-epoch",
+ "crossbeam-utils",
+ "futures-util",
+ "once_cell",
+ "parking_lot 0.12.1",
+ "quanta",
+ "rustc_version",
+ "skeptic",
+ "smallvec",
+ "tagptr",
+ "thiserror",
+ "triomphe",
+ "uuid 1.4.1",
+]
+
+[[package]]
 name = "multiaddr"
 version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5597,7 +5654,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.5"
-source = "git+https://github.com/availproject/avail-core?branch=main#b19a8bbfc580463d1cddced44028cb0a9fb180fc"
+source = "git+https://github.com/availproject/avail-core?branch=main#b7097dad21ad913c2785b17e4fcd8589b9fa3427"
 dependencies = [
  "ethers-signers",
  "nomad-core",
@@ -5613,7 +5670,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.5"
-source = "git+https://github.com/availproject/avail-core?branch=main#b19a8bbfc580463d1cddced44028cb0a9fb180fc"
+source = "git+https://github.com/availproject/avail-core?branch=main#b7097dad21ad913c2785b17e4fcd8589b9fa3427"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -5676,7 +5733,7 @@ dependencies = [
 [[package]]
 name = "nomad-merkle"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?branch=main#b19a8bbfc580463d1cddced44028cb0a9fb180fc"
+source = "git+https://github.com/availproject/avail-core?branch=main#b7097dad21ad913c2785b17e4fcd8589b9fa3427"
 dependencies = [
  "avail-core",
  "frame-support",
@@ -5694,7 +5751,7 @@ dependencies = [
 [[package]]
 name = "nomad-signature"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?branch=main#b19a8bbfc580463d1cddced44028cb0a9fb180fc"
+source = "git+https://github.com/availproject/avail-core?branch=main#b7097dad21ad913c2785b17e4fcd8589b9fa3427"
 dependencies = [
  "elliptic-curve 0.12.3",
  "ethers-core",
@@ -7217,6 +7274,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "pulldown-cmark"
+version = "0.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77a1a2f1f0a7ecff9c31abbe177637be0e97a0aef46cf8738ece09327985d998"
+dependencies = [
+ "bitflags 1.3.2",
+ "memchr",
+ "unicase",
+]
+
+[[package]]
+name = "quanta"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a17e662a7a8291a865152364c20c7abc5e60486ab2001e8ec10b24862de0b9ab"
+dependencies = [
+ "crossbeam-utils",
+ "libc",
+ "mach2",
+ "once_cell",
+ "raw-cpuid",
+ "wasi 0.11.0+wasi-snapshot-preview1",
+ "web-sys",
+ "winapi",
+]
+
+[[package]]
 name = "quick-error"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7372,6 +7456,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59cad018caf63deb318e5a4586d99a24424a364f40f1e5778c29aca23f4fc73e"
 dependencies = [
  "rand_core 0.6.4",
+]
+
+[[package]]
+name = "raw-cpuid"
+version = "10.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c297679cb867470fa8c9f67dbba74a78d78e3e98d7cf2b08d6d71540f797332"
+dependencies = [
+ "bitflags 1.3.2",
 ]
 
 [[package]]
@@ -9320,6 +9413,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "38b58827f4464d87d377d175e90bf58eb00fd8716ff0a62f80356b5e61555d0d"
 
 [[package]]
+name = "skeptic"
+version = "0.13.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "16d23b015676c90a0f01c197bfdc786c20342c73a0afdda9025adb0bc42940a8"
+dependencies = [
+ "bytecount",
+ "cargo_metadata 0.14.2",
+ "error-chain",
+ "glob",
+ "pulldown-cmark",
+ "tempfile",
+ "walkdir",
+]
+
+[[package]]
 name = "slab"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10356,7 +10464,7 @@ source = "git+https://github.com/paritytech/substrate.git/?branch=polkadot-v1.0.
 dependencies = [
  "ansi_term",
  "build-helper",
- "cargo_metadata",
+ "cargo_metadata 0.15.4",
  "filetime",
  "parity-wasm",
  "sp-maybe-compressed-blob",
@@ -10436,6 +10544,12 @@ dependencies = [
  "core-foundation-sys",
  "libc",
 ]
+
+[[package]]
+name = "tagptr"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b2093cf4c8eb1e67749a6762251bc9cd836b6fc171623bd0a9d324d37af2417"
 
 [[package]]
 name = "tap"
@@ -10919,6 +11033,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "triomphe"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0eee8098afad3fb0c54a9007aab6804558410503ad676d4633f9c2559a00ac0f"
+
+[[package]]
 name = "trust-dns-proto"
 version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11065,6 +11185,15 @@ dependencies = [
  "crunchy",
  "hex",
  "static_assertions",
+]
+
+[[package]]
+name = "unicase"
+version = "2.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7d2d4dafb69621809a81864c9c1b864479e1235c0dd4e199924b9742439ed89"
+dependencies = [
+ "version_check",
 ]
 
 [[package]]
