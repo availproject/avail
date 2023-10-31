@@ -1,5 +1,5 @@
 use super::*;
-use crate::{gridgen::*, testnet, couscous, Seed};
+use crate::{couscous, gridgen::*, testnet, Seed};
 use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 use hex_literal::hex;
 use kate_recovery::{
