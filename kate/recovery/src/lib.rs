@@ -13,4 +13,4 @@ pub mod sparse_slice_read;
 pub mod testnet;
 
 #[cfg(feature = "std")]
-pub mod testnet_v2;
+pub mod couscous;

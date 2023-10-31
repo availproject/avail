@@ -1,5 +1,5 @@
 use super::*;
-use crate::{gridgen::*, testnet, testnet_v2, Seed};
+use crate::{couscous, gridgen::*, testnet, Seed};
 use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 use hex_literal::hex;
 use kate_recovery::{
@@ -152,7 +152,7 @@ fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 	println!("Row: {:?}", ev.evals);
 
 	let pg = ev.make_polynomial_grid().unwrap();
-	let pmp = testnet_v2::multiproof_params();
+	let pmp = couscous::multiproof_params();
 	println!("Poly: {:?}", pg.inner[0]);
 	let commitment = pg.commitment(&pmp, 0).unwrap().to_bytes().unwrap();
 
@@ -177,7 +177,7 @@ fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 			content: content.try_into().unwrap(),
 		};
 		let verification =
-			kate_recovery::proof::verify(&testnet_v2::public_params(), dims, &commitment, &cell);
+			kate_recovery::proof::verify(&couscous::public_params(), dims, &commitment, &cell);
 		assert!(verification.is_ok());
 		assert!(verification.unwrap())
 	}

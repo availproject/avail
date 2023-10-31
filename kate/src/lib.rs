@@ -169,7 +169,7 @@ pub mod testnet {
 // TODO: load pp for both dusk & arkworks from same file
 // To be used for incentivised testnet
 #[cfg(feature = "std")]
-pub mod testnet_v2 {
+pub mod couscous {
 	use super::*;
 	use poly_multiproof::ark_serialize::CanonicalDeserialize;
 	use poly_multiproof::m1_blst;
@@ -243,8 +243,8 @@ pub mod testnet_v2 {
 
 		#[test]
 		fn test_consistent_testnet_params() {
-			let pmp = testnet_v2::multiproof_params();
-			let pmp2 = testnet_v2::public_params();
+			let pmp = couscous::multiproof_params();
+			let pmp2 = couscous::public_params();
 
 			let points = DensePolynomial::<Fr>::rand(1023, &mut thread_rng()).coeffs;
 			let points2: Vec<_> = points
