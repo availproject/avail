@@ -95,7 +95,6 @@ export async function createApi(): Promise<ApiPromise> {
             HeaderExtension: {
                 _enum: {
                     V1: 'V1HeaderExtension',
-                    VTest: 'VTHeaderExtension'
                 }
             },
             DaHeader: {
