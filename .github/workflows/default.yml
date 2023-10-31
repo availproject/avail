@@ -11,8 +11,6 @@ on:
 env:
   BUILD_TOOLCHAIN: stable-2023-08-24
   CARGO_SCCACHE_COMMIT: bed5571c
-  SCCACHE_DIR: /home/runner/.cache/cargo-sccache-bed5571c
-  SCCACHE_BIN: /home/runner/.cache/cargo-sccache-bed5571c/bin/sccache
 
 jobs:
   lint:
@@ -65,13 +63,15 @@ jobs:
 
       - uses: actions/cache@v3
         with:
-          path: ${{ env.SCCACHE_DIR }}
-          key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+          path: |
+            ~/.cache/
+            ~/.cargo/bin/sccache*
+          key: ${{ runner.OS }}-cache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
 
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: "3.x"
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip python3-pip
 
       # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
       # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
@@ -82,20 +82,27 @@ jobs:
           rustup default ${{ env.BUILD_TOOLCHAIN }} 
           rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }}
 
+      - name: Set PATH for cargo
+        run: |
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          echo "SCCACHE_DIR=${HOME}/.cache/sccache" >> $GITHUB_ENV
+
       - name: SCCache
         run: |
           # We altered the path to avoid old actions to overwrite it
-          if [ ! -f $SCCACHE_BIN ]; then
-            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_DIR
+          if [ ! -f ~/.cargo/bin/sccache ]; then
+            cargo install sccache \
+              --git https://github.com/purestake/sccache.git \
+              --rev $CARGO_SCCACHE_COMMIT \
+              --force --no-default-features --features=dist-client
           fi
-          ls -la $SCCACHE_BIN
-          ps aux | grep sccache
+
           if [[ -z `pgrep sccache` ]]; then
-            chmod +x $SCCACHE_BIN
-            $SCCACHE_BIN --start-server
+            chmod +x ~/.cargo/bin/sccache
+            sccache --start-server
           fi
-          $SCCACHE_BIN -s
-          echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
+          sccache -s
+          echo "RUSTC_WRAPPER=${HOME}/.cargo/bin/sccache" >> $GITHUB_ENV
 
       - name: Build node
         run: cargo build --release -p data-avail
@@ -107,10 +114,229 @@ jobs:
           path: target/release/data-avail
 
       - name: Display SCCache Stats
-        run: ${{ env.SCCACHE_BIN }} --show-stats
+        run: sccache --show-stats
+
+  check_features:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/cache/restore@v3
+        with:
+          path: |
+            ~/.cache/
+            ~/.cargo/bin/sccache*
+          key: ${{ runner.OS }}-cache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip python3-pip
+
+      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
+      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
+      - name: Setup Rust toolchain
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source "$HOME/.cargo/env"
+          rustup default ${{ env.BUILD_TOOLCHAIN }} 
+          rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }}
+
+      - name: Set PATH for cargo
+        run: |
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          echo "SCCACHE_DIR=${HOME}/.cache/sccache" >> $GITHUB_ENV
+
+      - name: SCCache
+        run: |
+          # We altered the path to avoid old actions to overwrite it
+          if [ ! -f ~/.cargo/bin/sccache ]; then
+            cargo install sccache \
+              --git https://github.com/purestake/sccache.git \
+              --rev $CARGO_SCCACHE_COMMIT \
+              --force --no-default-features --features=dist-client
+          fi
+
+          if [[ -z `pgrep sccache` ]]; then
+            chmod +x ~/.cargo/bin/sccache
+            sccache --start-server
+          fi
+          sccache -s
+          echo "RUSTC_WRAPPER=${HOME}/.cargo/bin/sccache" >> $GITHUB_ENV
 
       - name: Check other features
+        env:
+          SKIP_WASM_BUILD: true
         run: cargo check --release --workspace --features "runtime-benchmarks try-runtime" -p data-avail
+
+  benchmarks_iai:
+    runs-on: [self-hosted, reference]
+    needs: [lint]
+    env:
+      SKIP_WASM_BUILD: true
+      RUST_BACKTRACE: full
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/
+            ~/.cargo/bin/sccache*
+          key: ${{ runner.OS }}-cache-iai-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+
+      - name: Install system dependencies
+        # We force to reinstall `valgrind` because `codspeed` replaces that binary and the output
+        # of `valgrind.codspeed` generates a 
+
+        run: |
+          sudo apt-get update
+          sudo apt remove -y valgrind
+          sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip python3-pip
+
+      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
+      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
+      - name: Setup Rust toolchain
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source "$HOME/.cargo/env"
+          rustup default ${{ env.BUILD_TOOLCHAIN }} 
+
+      - name: Set PATH for cargo
+        run: |
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          echo "SCCACHE_DIR=${HOME}/.cache/sccache" >> $GITHUB_ENV
+
+      - name: SCCache
+        run: |
+          # We altered the path to avoid old actions to overwrite it
+          if [ ! -f ~/.cargo/bin/sccache ]; then
+            cargo install sccache \
+              --git https://github.com/purestake/sccache.git \
+              --rev $CARGO_SCCACHE_COMMIT \
+              --force --no-default-features --features=dist-client
+          fi
+
+          if [[ -z `pgrep sccache` ]]; then
+            chmod +x ~/.cargo/bin/sccache
+            sccache --start-server
+          fi
+          sccache -s
+          echo "RUSTC_WRAPPER=${HOME}/.cargo/bin/sccache" >> $GITHUB_ENV
+
+      - name: Run Header Generation Benchmarks on IAI
+        run: |
+          cargo uninstall --locked cargo-codspeed | true
+          which valgrind
+          sudo dpkg -S `which valgrind`
+          valgrind --version
+          mkdir -p ~/.cache/iai/
+          cargo bench -p da-runtime --bench header_kate_commitment_iai | tee ~/.cache/iai/header_gen_bench_iai.txt || true
+          find ./runtime/target/iai -type f
+
+      - name: Header Generation Regression Checks on IAI
+        uses: fmiguelgarcia/github-action-benchmark@v1
+        with:
+          # What benchmark tool the output.txt came from
+          tool: 'rustIai'
+          # Where the output from the benchmark tool is stored
+          output-file-path: ~/.cache/iai/header_gen_bench_iai.txt
+          # Where the previous data file is stored
+          external-data-json-path: ~/.cache/iai/benchmark-data-iai.json
+          save-data-file: true
+          # Workflow will fail when an alert happens at 15% degradation
+          fail-on-alert: true
+          alert-threshold: '115%'
+          # Upload the updated cache file for the next job by actions/cache
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Enable alert commit comment
+          comment-on-alert: true
+          # Mention @rhysd in the commit comment
+          alert-comment-cc-users: '@prabal-banerjee,@jakubcech,@vthunder,@kroos47,@Leouarz,@markopoloparadox'
+          comment-always: true
+          summary-always: true
+
+  benchmarks_cri:
+    runs-on: [self-hosted, reference]
+    needs: [lint]
+    env:
+      SKIP_WASM_BUILD: true
+      RUST_BACKTRACE: full
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/
+            ~/.cargo/bin/sccache*
+          key: ${{ runner.OS }}-cache-cri-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip python3-pip
+
+      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
+      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
+      - name: Setup Rust toolchain
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source "$HOME/.cargo/env"
+          rustup default ${{ env.BUILD_TOOLCHAIN }} 
+
+      - name: Set PATH for cargo
+        run: |
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          echo "SCCACHE_DIR=${HOME}/.cache/sccache" >> $GITHUB_ENV
+
+      - name: SCCache
+        run: |
+          # We altered the path to avoid old actions to overwrite it
+          if [ ! -f ~/.cargo/bin/sccache ]; then
+            cargo install sccache \
+              --git https://github.com/purestake/sccache.git \
+              --rev $CARGO_SCCACHE_COMMIT \
+              --force --no-default-features --features=dist-client
+          fi
+
+          if [[ -z `pgrep sccache` ]]; then
+            chmod +x ~/.cargo/bin/sccache
+            sccache --start-server
+          fi
+          sccache -s
+          echo "RUSTC_WRAPPER=${HOME}/.cargo/bin/sccache" >> $GITHUB_ENV
+
+      - name: Run Header Generation Benchmarks on Criterion 
+        run: |
+          mkdir -p ~/.cache/cri/
+          cargo bench -p da-runtime --bench header_kate_commitment_cri -- --color never --noplot --output-format bencher | tee ~/.cache/cri/header_gen_bench_cri.txt || true
+
+      - name: Header Generation Regression Checks on Criterion 
+        uses: fmiguelgarcia/github-action-benchmark@v1
+        with:
+          # What benchmark tool the output.txt came from
+          tool: 'cargo'
+          # Where the output from the benchmark tool is stored
+          output-file-path: ~/.cache/cri/header_gen_bench_cri.txt
+          # Where the previous data file is stored
+          external-data-json-path: ~/.cache/cri/benchmark-data-cri.json
+          save-data-file: true
+          # Workflow will fail when an alert happens at 15% degradation
+          fail-on-alert: true
+          alert-threshold: '115%'
+          # Upload the updated cache file for the next job by actions/cache
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Enable alert commit comment
+          comment-on-alert: true
+          # Mention @rhysd in the commit comment
+          alert-comment-cc-users: '@prabal-banerjee,@jakubcech,@vthunder,@kroos47,@Leouarz,@markopoloparadox'
+          comment-always: true
+          summary-always: true
+
+      - name: Display SCCache Stats
+        run: sccache --show-stats
 
   unit_tests:
     runs-on: ubuntu-latest
@@ -123,46 +349,47 @@ jobs:
         with:
           tool-cache: true
 
-      - name: Install build-essential
-        run: |
-          sudo apt update
-          sudo apt install -y build-essential
-          sudo apt install -y git clang curl libssl-dev protobuf-compiler
-
-      # Restore cache from `build`
       - uses: actions/cache/restore@v3
         with:
-          path: ${{ env.SCCACHE_DIR }}
-          key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+          path: |
+            ~/.cache/
+            ~/.cargo/bin/sccache*
+          key: ${{ runner.OS }}-cache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
 
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: "3.x"
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip python3-pip
 
-      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
-      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
+          # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
+          # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
       - name: Setup Rust toolchain
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source "$HOME/.cargo/env"
           rustup default ${{ env.BUILD_TOOLCHAIN }} 
-          rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }}
+
+      - name: Set PATH for cargo
+        run: |
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          echo "SCCACHE_DIR=${HOME}/.cache/sccache" >> $GITHUB_ENV
 
       - name: SCCache
         run: |
           # We altered the path to avoid old actions to overwrite it
-          if [ ! -f $SCCACHE_BIN ]; then
-            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_DIR
+          if [ ! -f ~/.cargo/bin/sccache ]; then
+            cargo install sccache \
+              --git https://github.com/purestake/sccache.git \
+              --rev $CARGO_SCCACHE_COMMIT \
+              --force --no-default-features --features=dist-client
           fi
-          ls -la $SCCACHE_BIN
-          ps aux | grep sccache
+
           if [[ -z `pgrep sccache` ]]; then
-            chmod +x $SCCACHE_BIN
-            $SCCACHE_BIN --start-server
+            chmod +x ~/.cargo/bin/sccache
+            sccache --start-server
           fi
-          $SCCACHE_BIN -s
-          echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
+          sccache -s
+          echo "RUSTC_WRAPPER=${HOME}/.cargo/bin/sccache" >> $GITHUB_ENV
 
       - name: Run tests
         run: |
@@ -174,7 +401,18 @@ jobs:
           LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
 
       - name: Display SCCache Stats
-        run: ${{ env.SCCACHE_BIN }} --show-stats
+        run: sccache --show-stats
+
+      - name: Generate test code coverage report
+        run: |
+          df -h
+          cargo +stable install --force grcov
+          grcov . -s . --binary-path ./target/release/ -t lcov --branch --ignore-not-existing -o lcov.info
+
+      - name: Upload test code coverage report to codecov.io
+        uses: codecov/codecov-action@v2
+        with:
+          files: lcov.info
 
       - name: Cleanup
         run: find . -name \*.profraw -type f -exec rm -f {} +
@@ -185,11 +423,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      # Restore cache from `build`
-      - uses: actions/cache/restore@v3
+      - uses: actions/cache@v3
         with:
-          path: ${{ env.SCCACHE_DIR }}
-          key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+          path: |
+            ~/.cache/
+            ~/.cargo/bin/sccache*
+          key: ${{ runner.OS }}-cache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip python3-pip time wait-for-it
 
       # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
       # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
@@ -198,44 +442,53 @@ jobs:
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source "$HOME/.cargo/env"
           rustup default ${{ env.BUILD_TOOLCHAIN }} 
-          rustup target add wasm32-unknown-unknown --toolchain ${{ env.BUILD_TOOLCHAIN }}
+
+      - name: Set PATH for cargo
+        run: |
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          echo "SCCACHE_DIR=${HOME}/.cache/sccache" >> $GITHUB_ENV
 
       - name: SCCache
         run: |
           # We altered the path to avoid old actions to overwrite it
-          # SCCACHE_DIR=${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
-          # SCCACHE_BIN=${SCCACHE_DIR}/bin/sccache
-          if [ ! -f $SCCACHE_BIN ]; then
-            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_DIR
+          if [ ! -f ~/.cargo/bin/sccache ]; then
+            cargo install sccache \
+              --git https://github.com/purestake/sccache.git \
+              --rev $CARGO_SCCACHE_COMMIT \
+              --force --no-default-features --features=dist-client
           fi
-          ls -la $SCCACHE_BIN
-          ps aux | grep sccache
+
           if [[ -z `pgrep sccache` ]]; then
-            chmod +x $SCCACHE_BIN
-            $SCCACHE_BIN --start-server
+            chmod +x ~/.cargo/bin/sccache
+            sccache --start-server
           fi
-          $SCCACHE_BIN -s
-          echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
+          sccache -s
+          echo "RUSTC_WRAPPER=${HOME}/.cargo/bin/sccache" >> $GITHUB_ENV
 
       - uses: actions/download-artifact@v2
         with:
           name: data-avail
 
+      - name: Build E2E examples
+        run: cargo build --release --manifest-path avail-subxt/Cargo.toml --examples
+
       - name: Run E2E SubXt tests
         run: |
           chmod uog+x data-avail
-          ./data-avail --dev --tmp &
-          sleep 5
-          cargo run --release --manifest-path avail-subxt/Cargo.toml --example accounts_from_mnemonics
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example da_bridge_actor 
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example headers
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example max_block_submit
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data_and_dispatch_data_root
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal
+          ./data-avail --dev --tmp & da_pid=$!
+          echo "Wait until DA is ready ..."
+          wait-for-it 127.0.0.1:9944 -s -t 30 -- echo "DA Dev Node is ready (pid=${da_pid})"
           # Democracy calls are executable only with fast runtime (with democracy InstantAllowed set to true)
-          # cargo run --release  --manifest-path avail-subxt/Cargo.toml --example democracy_external 
-          # cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal_democracy
+          # `democracy_external`, `submit_block_length_proposal_democracy`
+          for e2e_test in accounts_from_mnemonics da_bridge_actor headers max_block_submit submit_data submit_data_and_dispatch_data_root submit_block_length_proposal
+          do
+            echo ">> Start E2E test '${e2e_test}'"
+            time cargo run --release  --manifest-path avail-subxt/Cargo.toml --example ${e2e_test}
+            echo ">> End E2E test '${e2e_test}'"
+          done
+          echo ">> Killing DA ..."
+          kill -9 ${da_pid}
+          echo ">> E2E phase done"
 
       - name: Display SCCache Stats
-        run: ${{ env.SCCACHE_BIN }} --show-stats
+        run: sccache --show-stats
