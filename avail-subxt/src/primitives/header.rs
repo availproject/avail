@@ -1,5 +1,5 @@
-use core::marker::PhantomData;
 use codec::{Decode, Encode};
+use core::marker::PhantomData;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use subxt::{
 	config::{
