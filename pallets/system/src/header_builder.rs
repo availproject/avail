@@ -109,8 +109,8 @@ pub fn build_extension<M: Metrics>(
 	metrics: &M,
 ) -> HeaderExtension {
 	use avail_core::header::extension::{v1, v2};
-	// testnet_v2 has pp for degree upto 1024
-	let pmp: kate::pmp::m1_blst::M1NoPrecomp = kate::testnet_v2::multiproof_params();
+	// couscous has pp for degree upto 1024
+	let pmp: kate::pmp::m1_blst::M1NoPrecomp = kate::couscous::multiproof_params();
 
 	const MIN_WIDTH: usize = 4;
 	let timer = std::time::Instant::now();
@@ -153,8 +153,8 @@ pub fn build_extension<M: Metrics>(
 		}
 
 		v2::HeaderExtension {
-			commitment: kate,
 			app_lookup,
+			commitment: kate,
 		}
 		.into()
 	} else {
@@ -172,8 +172,8 @@ pub fn build_extension<M: Metrics>(
 		}
 
 		v1::HeaderExtension {
-			commitment: kate,
 			app_lookup,
+			commitment: kate,
 		}
 		.into()
 	}

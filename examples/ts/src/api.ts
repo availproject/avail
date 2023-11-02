@@ -80,12 +80,12 @@ export async function createApi(): Promise<ApiPromise> {
             KateCommitment: {
                 rows: 'Compact<u16>',
                 cols: 'Compact<u16>',
-                dataRoot: 'H256',
-                commitment: 'Vec<u8>'
+                commitment: 'Vec<u8>',
+                dataRoot: 'H256'
             },
             V1HeaderExtension: {
-                commitment: 'KateCommitment',
-                appLookup: 'DataLookup'
+                appLookup: 'DataLookup',
+                commitment: 'KateCommitment'
             },
             VTHeaderExtension: {
                 newField: 'Vec<u8>',
@@ -95,7 +95,6 @@ export async function createApi(): Promise<ApiPromise> {
             HeaderExtension: {
                 _enum: {
                     V1: 'V1HeaderExtension',
-                    VTest: 'VTHeaderExtension'
                 }
             },
             DaHeader: {
