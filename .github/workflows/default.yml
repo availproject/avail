@@ -1,4 +1,4 @@
-name: Avail CI
+name: Lint and Unit Tests
 on:
   push:
     branches:
@@ -8,6 +8,8 @@ on:
     branches:
       - main
       - develop
+  workflow_dispatch:
+  
 env:
   BUILD_TOOLCHAIN: stable-2023-08-24
   CARGO_SCCACHE_COMMIT: bed5571c
