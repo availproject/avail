@@ -96,8 +96,7 @@ impl<Client, Block: BlockT> Kate<Client, Block> {
 				})
 				.max_capacity(GB)
 				.build(),
-			multiproof_srs: kate::testnet::multiproof_params(256, 256), // TODO: pull this from the
-			                                                            // system
+			multiproof_srs: kate::couscous::multiproof_params(),
 		}
 	}
 }
