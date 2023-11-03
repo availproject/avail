@@ -6,8 +6,8 @@ fn main() {}
 pub mod tests {
 	use std::num::NonZeroU16;
 
+	use avail_core::DataProof;
 	use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
-	use avail_core::{DataProof, Keccak256};
 	use avail_subxt::{
 		api::{
 			self,
@@ -28,6 +28,7 @@ pub mod tests {
 	use kate_recovery::matrix::Dimensions;
 	use kate_recovery::proof::verify;
 	use sp_keyring::AccountKeyring;
+	use subxt::ext::sp_runtime::traits::Keccak256;
 	use subxt::tx::TxClient;
 	use subxt::{
 		ext::sp_core::H256,
@@ -264,7 +265,7 @@ pub mod tests {
 			Cell::new(BlockLengthRows(0), BlockLengthColumns(7)),
 		];
 
-		let multiproof_srs = kate::testnet::multiproof_params(256, 256);
+		let multiproof_srs = kate::couscous::multiproof_params();
 		let expected_proof: Vec<Vec<u8>> = cells
 			.iter()
 			.map(|cell| {
@@ -309,7 +310,7 @@ pub mod tests {
 		let actual_proof = query_proof(client.rpc(), cells, block_hash).await.unwrap();
 		assert_eq!(actual_proof.len(), 80);
 
-		let pp = kate::testnet::public_params(avail_core::BlockLengthColumns(256));
+		let pp = kate::couscous::public_params();
 
 		let submitted_block = get_submitted_block(rpc, block_hash).await.unwrap();
 		let ext = if let HeaderExtension::V1(ref ext) = submitted_block.block.header.extension {
