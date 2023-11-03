@@ -9,8 +9,8 @@ repository = ""
 description = "Mokend Runtime for Testing"
 
 [dependencies]
-da-primitives = { git = "https://github.com/availproject/avail-core.git", branch = "ghali/camel-case-nomad", default-features = false }
-kate  = { git = "https://github.com/availproject/avail-core.git", branch = "ghali/camel-case-nomad", default-features = false }
+da-primitives = { git = "https://github.com/availproject/avail-core.git", branch = "ghali/update-header", default-features = false }
+kate  = { git = "https://github.com/availproject/avail-core.git", branch = "ghali/update-header", default-features = false }
 da-control = { path = "../dactr" }
 
 scale-info = { version = "1.0", features = ["derive"] }

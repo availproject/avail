@@ -12,8 +12,8 @@ description = "Data Avail Control Module"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-da-primitives = { git = "https://github.com/availproject/avail-core.git", branch = "ghali/camel-case-nomad", default-features = false }
-kate  = { git = "https://github.com/availproject/avail-core.git", branch = "ghali/camel-case-nomad", default-features = false }
+da-primitives = { git = "https://github.com/availproject/avail-core.git", branch = "ghali/update-header", default-features = false }
+kate  = { git = "https://github.com/availproject/avail-core.git", branch = "ghali/update-header", default-features = false }
 
 # Substrate
 serde = { version = "1.0.126", optional = true, features = ["derive"] }

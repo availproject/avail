@@ -121,8 +121,8 @@ fn build_extension_v1(
 	};
 
 	HeaderExtension::V1(v1::HeaderExtension {
-		commitment,
 		app_lookup,
+		commitment,
 	})
 }
 

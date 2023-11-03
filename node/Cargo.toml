@@ -18,8 +18,8 @@ name = "data-avail"
 
 [dependencies]
 # Internals
-da-primitives = { git = "https://github.com/availproject/avail-core.git", branch = "ghali/camel-case-nomad", default-features = false }
-kate  = { git = "https://github.com/availproject/avail-core.git", branch = "ghali/camel-case-nomad", default-features = false }
+da-primitives = { git = "https://github.com/availproject/avail-core.git", branch = "ghali/update-header", default-features = false }
+kate  = { git = "https://github.com/availproject/avail-core.git", branch = "ghali/update-header", default-features = false }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }
