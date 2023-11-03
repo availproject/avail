@@ -99,11 +99,11 @@ pub mod tests {
 		rpc: &Rpc<AvailConfig>,
 		rows: &[usize],
 		block_hash: H256,
-	) -> anyhow::Result<Vec<Option<Vec<u8>>>> {
+	) -> anyhow::Result<Vec<Vec<u8>>> {
 		let mut params = RpcParams::new();
 		params.push(rows)?;
 		params.push(Some(block_hash))?;
-		let rows: Vec<Option<Vec<u8>>> = rpc.request("kate_queryRows", params).await?;
+		let rows: Vec<Vec<u8>> = rpc.request("kate_queryRows", params).await?;
 
 		Ok(rows)
 	}
@@ -179,21 +179,17 @@ pub mod tests {
 		assert_eq!(grid.row(0), extended_grid.row(0));
 		assert_eq!(grid.row(0), extended_grid.row(1));
 
-		// RPC call
-		let actual_rows = query_row(rpc, &[0, 1, 2], block_hash).await.unwrap();
+		// RPC call: Querying non existing rows should fail
+		assert!(query_row(rpc, &[2], block_hash).await.is_err());
 
-		let mut expected_rows: Vec<Option<Vec<u8>>> = Vec::new();
-		let iter = [
-			extended_grid.row(0),
-			extended_grid.row(1),
-			extended_grid.row(2),
-		];
-		for row in iter {
+		// RPC call: Querying existing rows should NOT fail
+		let actual_rows = query_row(rpc, &[0, 1], block_hash).await.unwrap();
+
+		let mut expected_rows: Vec<Vec<u8>> = Vec::new();
+		for row in [extended_grid.row(0), extended_grid.row(1)] {
 			if let Some(row) = row {
 				let flat_row: Vec<u8> = row.iter().flat_map(|r| r.to_bytes().unwrap()).collect();
-				expected_rows.push(Some(flat_row))
-			} else {
-				expected_rows.push(None);
+				expected_rows.push(flat_row);
 			}
 		}
 

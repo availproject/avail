@@ -43,7 +43,7 @@ where
 		&self,
 		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<Option<Vec<u8>>>>;
+	) -> RpcResult<Vec<Vec<u8>>>;
 
 	#[method(name = "kate_queryAppData")]
 	async fn query_app_data(
@@ -271,26 +271,24 @@ where
 		&self,
 		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<Option<Vec<u8>>>> {
+	) -> RpcResult<Vec<Vec<u8>>> {
 		let signed_block = self.get_signed_and_finalized_block(at)?;
 		let evals = self.get_eval_grid(&signed_block).await?;
 
-		let extended_rows: u16 = evals.dims().rows().into();
+		let mut data_rows = Vec::with_capacity(rows.len());
+		for index in rows {
+			let Some(data) = evals.row(index as usize) else {
+				return Err(internal_err!("Non existing row: {:?}", index));
+			};
+			let data: Vec<u8> = data
+				.iter()
+				.flat_map(|a| a.to_bytes().expect("Ser cannot fail"))
+				.collect();
 
-		let rows = (0..extended_rows as u32)
-			.map(|i| (rows.contains(&i), evals.row(i as usize)))
-			.map(|(is_requested, row)| {
-				row.and_then(|row| {
-					is_requested.then_some(
-						row.iter()
-							.flat_map(|a| a.to_bytes().expect("Ser cannot fail"))
-							.collect::<Vec<u8>>(),
-					)
-				})
-			})
-			.collect::<Vec<Option<Vec<u8>>>>();
+			data_rows.push(data);
+		}
 
-		Ok(rows)
+		Ok(data_rows)
 	}
 
 	async fn query_app_data(

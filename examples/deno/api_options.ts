@@ -69,7 +69,7 @@ export const API_RPC = {
                     isOptional: true
                 }
             ],
-            type: 'Vec<Option<Vec<u8>>>',
+            type: 'Vec<Vec<u8>>',
         }
     }
 }
