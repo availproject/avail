@@ -28,4 +28,5 @@ subxt codegen \
 	| sed -En "s/pub struct DataLookup/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
 	| sed -En "s/pub struct DataLookupIndexItem/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
 	| sed '1i \#\[allow(clippy::all)]' \
-	| rustfmt --edition=2021 --emit=stdout > src/api_dev.rs
+	| rustfmt --edition=2021 --emit=stdout > ./avail/avail-subxt/src/api_dev.rs
+	# | rustfmt --edition=2021 --emit=stdout > src/api_dev.rs
