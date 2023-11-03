@@ -1,4 +1,4 @@
-name: E2E Tests. Avail-SubXT and Kate RPC
+name: E2E Tests
 on:
   push:
     branches:
