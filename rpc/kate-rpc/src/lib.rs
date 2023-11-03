@@ -275,16 +275,20 @@ where
 		let signed_block = self.get_signed_and_finalized_block(at)?;
 		let evals = self.get_eval_grid(&signed_block).await?;
 
-		let rows: Vec<Option<Vec<u8>>> = rows
-			.iter()
-			.map(|i| {
-				evals.row(*i as usize).map(|row| {
-					row.iter()
-						.flat_map(|a| a.to_bytes().expect("Ser cannot fail"))
-						.collect::<Vec<u8>>()
+		let extended_rows: u16 = evals.dims().rows().into();
+
+		let rows = (0..extended_rows as u32)
+			.map(|i| (rows.contains(&i), evals.row(i as usize)))
+			.map(|(is_requested, row)| {
+				row.and_then(|row| {
+					is_requested.then_some(
+						row.iter()
+							.flat_map(|a| a.to_bytes().expect("Ser cannot fail"))
+							.collect::<Vec<u8>>(),
+					)
 				})
 			})
-			.collect();
+			.collect::<Vec<Option<Vec<u8>>>>();
 
 		Ok(rows)
 	}
