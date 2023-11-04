@@ -43,7 +43,7 @@ where
 		&self,
 		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<Option<Vec<u8>>>>;
+	) -> RpcResult<Vec<Vec<u8>>>;
 
 	#[method(name = "kate_queryAppData")]
 	async fn query_app_data(
@@ -96,8 +96,7 @@ impl<Client, Block: BlockT> Kate<Client, Block> {
 				})
 				.max_capacity(GB)
 				.build(),
-			multiproof_srs: kate::testnet::multiproof_params(256, 256), // TODO: pull this from the
-			                                                            // system
+			multiproof_srs: kate::couscous::multiproof_params(),
 		}
 	}
 }
@@ -272,22 +271,24 @@ where
 		&self,
 		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<Option<Vec<u8>>>> {
+	) -> RpcResult<Vec<Vec<u8>>> {
 		let signed_block = self.get_signed_and_finalized_block(at)?;
 		let evals = self.get_eval_grid(&signed_block).await?;
 
-		let rows: Vec<Option<Vec<u8>>> = rows
-			.iter()
-			.map(|i| {
-				evals.row(*i as usize).map(|row| {
-					row.iter()
-						.flat_map(|a| a.to_bytes().expect("Ser cannot fail"))
-						.collect::<Vec<u8>>()
-				})
-			})
-			.collect();
+		let mut data_rows = Vec::with_capacity(rows.len());
+		for index in rows {
+			let Some(data) = evals.row(index as usize) else {
+				return Err(internal_err!("Non existing row: {:?}", index));
+			};
+			let data: Vec<u8> = data
+				.iter()
+				.flat_map(|a| a.to_bytes().expect("Ser cannot fail"))
+				.collect();
 
-		Ok(rows)
+			data_rows.push(data);
+		}
+
+		Ok(data_rows)
 	}
 
 	async fn query_app_data(

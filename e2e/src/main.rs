@@ -6,8 +6,8 @@ fn main() {}
 pub mod tests {
 	use std::num::NonZeroU16;
 
+	use avail_core::DataProof;
 	use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
-	use avail_core::{DataProof, Keccak256};
 	use avail_subxt::{
 		api::{
 			self,
@@ -28,6 +28,7 @@ pub mod tests {
 	use kate_recovery::matrix::Dimensions;
 	use kate_recovery::proof::verify;
 	use sp_keyring::AccountKeyring;
+	use subxt::ext::sp_runtime::traits::Keccak256;
 	use subxt::tx::TxClient;
 	use subxt::{
 		ext::sp_core::H256,
@@ -94,15 +95,15 @@ pub mod tests {
 		Ok(app_extrinsics)
 	}
 
-	async fn query_row(
+	async fn query_rows(
 		rpc: &Rpc<AvailConfig>,
 		rows: &[usize],
 		block_hash: H256,
-	) -> anyhow::Result<Vec<Option<Vec<u8>>>> {
+	) -> anyhow::Result<Vec<Vec<u8>>> {
 		let mut params = RpcParams::new();
 		params.push(rows)?;
 		params.push(Some(block_hash))?;
-		let rows: Vec<Option<Vec<u8>>> = rpc.request("kate_queryRows", params).await?;
+		let rows: Vec<Vec<u8>> = rpc.request("kate_queryRows", params).await?;
 
 		Ok(rows)
 	}
@@ -178,21 +179,17 @@ pub mod tests {
 		assert_eq!(grid.row(0), extended_grid.row(0));
 		assert_eq!(grid.row(0), extended_grid.row(1));
 
-		// RPC call
-		let actual_rows = query_row(rpc, &[0, 1, 2], block_hash).await.unwrap();
+		// RPC call: Querying non existing rows should fail
+		assert!(query_rows(rpc, &[2], block_hash).await.is_err());
 
-		let mut expected_rows: Vec<Option<Vec<u8>>> = Vec::new();
-		let iter = [
-			extended_grid.row(0),
-			extended_grid.row(1),
-			extended_grid.row(2),
-		];
-		for row in iter {
+		// RPC call: Querying existing rows should NOT fail
+		let actual_rows = query_rows(rpc, &[0, 1], block_hash).await.unwrap();
+
+		let mut expected_rows: Vec<Vec<u8>> = Vec::new();
+		for row in [extended_grid.row(0), extended_grid.row(1)] {
 			if let Some(row) = row {
 				let flat_row: Vec<u8> = row.iter().flat_map(|r| r.to_bytes().unwrap()).collect();
-				expected_rows.push(Some(flat_row))
-			} else {
-				expected_rows.push(None);
+				expected_rows.push(flat_row);
 			}
 		}
 
@@ -264,7 +261,7 @@ pub mod tests {
 			Cell::new(BlockLengthRows(0), BlockLengthColumns(7)),
 		];
 
-		let multiproof_srs = kate::testnet::multiproof_params(256, 256);
+		let multiproof_srs = kate::couscous::multiproof_params();
 		let expected_proof: Vec<Vec<u8>> = cells
 			.iter()
 			.map(|cell| {
@@ -309,7 +306,7 @@ pub mod tests {
 		let actual_proof = query_proof(client.rpc(), cells, block_hash).await.unwrap();
 		assert_eq!(actual_proof.len(), 80);
 
-		let pp = kate::testnet::public_params(avail_core::BlockLengthColumns(256));
+		let pp = kate::couscous::public_params();
 
 		let submitted_block = get_submitted_block(rpc, block_hash).await.unwrap();
 		let ext = if let HeaderExtension::V1(ref ext) = submitted_block.block.header.extension {
