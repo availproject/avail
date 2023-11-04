@@ -69,7 +69,7 @@ export default {
     ```
 - Query application data returns data fot the given application id and block hash.
     ```
-    ts-node ts-node query_app_data.ts
+    ts-node query_app_data.ts
     ```
 - Creation of app_id
     ```
@@ -78,7 +78,7 @@ export default {
   Here `i` is the app_id that we would like to create(default is 1).
 - Submit a proposal using the council.
     ```
-    ts-node ts-node submit_proposal.ts
+    ts-node submit_proposal.ts
     ```
 You can also use yarn commands to run the scripts. For example 
 - Start by building the project:

@@ -95,7 +95,7 @@ pub mod tests {
 		Ok(app_extrinsics)
 	}
 
-	async fn query_row(
+	async fn query_rows(
 		rpc: &Rpc<AvailConfig>,
 		rows: &[usize],
 		block_hash: H256,
@@ -180,10 +180,10 @@ pub mod tests {
 		assert_eq!(grid.row(0), extended_grid.row(1));
 
 		// RPC call: Querying non existing rows should fail
-		assert!(query_row(rpc, &[2], block_hash).await.is_err());
+		assert!(query_rows(rpc, &[2], block_hash).await.is_err());
 
 		// RPC call: Querying existing rows should NOT fail
-		let actual_rows = query_row(rpc, &[0, 1], block_hash).await.unwrap();
+		let actual_rows = query_rows(rpc, &[0, 1], block_hash).await.unwrap();
 
 		let mut expected_rows: Vec<Vec<u8>> = Vec::new();
 		for row in [extended_grid.row(0), extended_grid.row(1)] {
