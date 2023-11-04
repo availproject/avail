@@ -1,4 +1,4 @@
-name: Lint and Unit Tests
+name: Lint, Features and Unit Tests
 on:
   push:
     branches:
