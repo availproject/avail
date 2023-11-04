@@ -103,7 +103,7 @@ jobs:
           with:
             name: data-avail
   
-        - name: Run E2E SubXt tests
+        - name: Run Kate RPC E2E tests
           run: |
             chmod uog+x data-avail
             ./data-avail --dev &
@@ -153,7 +153,7 @@ jobs:
         with:
           name: data-avail
 
-      - name: Run E2E SubXt tests
+      - name: Run SubXt E2E tests
         run: |
           chmod uog+x data-avail
           ./data-avail --dev &

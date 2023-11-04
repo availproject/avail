@@ -116,11 +116,33 @@ serde_json = "1.0"
 sp-keyring = "24.0.0"
 env_logger = "0.9.1"
 pallet-staking-reward-fn = "4.0.0-dev"
+iai = "0.1.1"
+iai-callgrind = { version = "0.7.3" }
+criterion = "0.5.1"
+codspeed-criterion-compat = "2.2.0"
+divan = "0.1.2"
+
+[[bench]]
+name = "header_kate_commitment_iai_callgrind"
+harness = false
+
+[[bench]]
+name = "header_kate_commitment_iai"
+harness = false
+
+[[bench]]
+name = "header_kate_commitment_cri"
+harness = false
+
+[[bench]]
+name = "header_kate_commitment_divan"
+harness = false
 
 [features]
 default = [ "std" ]
 with-tracing = [ "frame-executive/with-tracing" ]
 fast-runtime = []
+codspeed = []
 header_commitment_corruption = [ "frame-system/header_commitment_corruption" ]
 std = [
 	"avail-core/std",

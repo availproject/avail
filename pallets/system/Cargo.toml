@@ -44,7 +44,7 @@ once_cell = { version = "1.18", optional = true }
 [dev-dependencies]
 hex-literal = "0.3.1"
 test-case = "1.2.3"
-criterion = "0.4.0"
+criterion = "0.5.1"
 sp-externalities = "0.19.0"
 
 [features]
