@@ -34,6 +34,6 @@ fn commitment_builder(c: &mut Criterion) {
 
 criterion_group!(
 	name = benches;
-	config = Criterion::default().sample_size(10).measurement_time( Duration::from_secs(30) );
+	config = Criterion::default().sample_size(10).measurement_time( Duration::from_secs(60) );
 	targets = commitment_builder);
 criterion_main!(benches);
