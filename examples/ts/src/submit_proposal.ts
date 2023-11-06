@@ -26,7 +26,7 @@ async function main() {
         length_bound: api.registry.createType('Compact<u32>', 36),
     };
     // create the council proposal transaction
-    const tx = api.tx.council.propose(motion.threshold, motion.proposal, motion.length_bound)
+    const tx = api.tx.technicalCommittee.propose(motion.threshold, motion.proposal, motion.length_bound)
     // submit the transaction
     const unsub = await tx.signAndSend(sender, ({ events = [], status }) => {
         console.log('Transaction status:', status.type);
