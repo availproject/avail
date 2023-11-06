@@ -365,3 +365,41 @@ mod test {
 		);
 	}
 }
+
+#[test]
+fn test_data_proof_with_skipped_tx() {
+	let tx1_data: String = String::from("0");
+	let tx2_data: String = String::from("1");
+	let tx3_data: String = String::from("2");
+	let tx4_data: String = String::from("3");
+	let tx5_data: String = String::from("4");
+	let tx6_data: String = String::from("5");
+	let tx7_data: String = String::from("6");
+
+	let submitted_data = vec![
+		tx1_data, tx2_data, tx3_data, tx4_data, tx5_data, tx6_data, tx7_data,
+	];
+
+	// print for leaf 0
+	if let Some(da_proof) = calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 0) {
+		println!("{:?}", da_proof)
+	}
+	// print for leaf 6
+	if let Some(da_proof) = calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 6) {
+		println!("{:?}", da_proof)
+	}
+	// leaf index 0
+	// leaf hash
+	// root 0x500cfc4e0e205ebc2d71c91805fc319085f599fa21289ee20cf9c51ddd020aa6
+	// proof:
+	// 0xc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6
+	// 0x27c2feed9df4c4903bfc9f1bda886662bebc8ba175ccdb3d1da20ce3a32441ba
+	// 0xc85aa7dc4cab39a959ac4ac67f8d78f8b7cf3ece5e049fed1ad9fa837b3ab902
+
+	// leaf index 6
+	// leaf hash 0xe455bf8ea6e7463a1046a0b52804526e119b4bf5136279614e0b1e8e296a4e2d
+	// root: 0x500cfc4e0e205ebc2d71c91805fc319085f599fa21289ee20cf9c51ddd020aa6
+	// proof:
+	// 0xf72583988683f14adebd6eed8914c8b5a29217104a476f4b87d6e3716def3116
+	// 0x9e031569905bf7098e9e3b14d5c8e2ed05f6e8dc1acaaad6a221cd6603e01d3b
+}
