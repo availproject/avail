@@ -51,8 +51,7 @@ contract ValidiumContract is Ownable {
                 }
             }
             // checks if the calculated root matches the expected root
-            // then, check if index was zeroed while calculating proof, else an invalid index was provided
-            isMember := and(eq(leaf, rootHash), iszero(index))
+            isMember := eq(leaf, rootHash)
         }
     }
 }
