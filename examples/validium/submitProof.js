@@ -47,10 +47,10 @@ async function checkProof(sepoliaApi, blockNumber, proof, numberOfLeaves, leafIn
     console.log(`Data Root: ${hexlify(daHeader.root)}`);
     console.log(`Proof: ${daHeader.proof}`);
     console.log(`Leaf to prove: ${hexlify(daHeader.leaf)}`);
-    console.log(`Leaf index : ${daHeader.leaf_index}`);
+    console.log(`Leaf index : ${daHeader.leafIndex}`);
     console.log(`Number of leaves: ${daHeader.numberOfLeaves}`);
 
-    const isDataAccepted = await checkProof(sepoliaApi, process.env.BLOCK_NUMBER, daHeader.proof, daHeader.numberOfLeaves, daHeader.leaf_index, daHeader.leaf);
+    const isDataAccepted = await checkProof(sepoliaApi, process.env.BLOCK_NUMBER, daHeader.proof, daHeader.numberOfLeaves, daHeader.leafIndex, daHeader.leaf);
     console.log("Data is: " + (isDataAccepted ? "available" : "not available"));
 
     await availApi.disconnect();
