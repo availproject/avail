@@ -62,8 +62,8 @@ func main() {
 		fmt.Printf("%v\n", p.Hex())
 	}
 
-	fmt.Printf("Number of leaves: %v\n", data.Number_Of_Leaves)
-	fmt.Printf("Leaf index: %v\n", data.Leaf_index)
+	fmt.Printf("Number of leaves: %v\n", data.NumberOfLeaves)
+	fmt.Printf("Leaf index: %v\n", data.LeafIndex)
 	fmt.Printf("Leaf: %v\n", data.Leaf.Hex())
 }
 
@@ -71,7 +71,7 @@ func main() {
 type HeaderF struct {
 	Root             types.Hash
 	Proof            []types.Hash
-	Number_Of_Leaves int
-	Leaf_index       int
+	NumberOfLeaves	 int
+	LeafIndex		 int
 	Leaf             types.Hash
 }
