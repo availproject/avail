@@ -34,7 +34,7 @@ async function main() {
     console.log(`Root: ${daHeader.root}`);
     console.log(`Proof: ${daHeader.proof}`);
     console.log(`NumberOfLeaves: ${daHeader.numberOfLeaves}`);
-    console.log(`Leaf_index: ${daHeader.leaf_index}`);
+    console.log(`LeafIndex: ${daHeader.leafIndex}`);
     console.log(`Leaf: ${daHeader.leaf}`);
     return daHeader;
 }
