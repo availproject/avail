@@ -69,9 +69,6 @@ impl SubstrateCli for Cli {
 			},
 			"dev" => Box::new(chains::dev::chain_spec()),
 			"dev.tri" => Box::new(chains::dev_tri::chain_spec()),
-			"biryani" => Box::new(chains::biryani::chain_spec()?),
-			"dymension" => Box::new(chains::dymension::chain_spec()?),
-			"kate" => Box::new(chains::kate::chain_spec()?),
 			"goldberg" => Box::new(chains::goldberg::chain_spec()?),
 			"devnet0" => Box::new(chains::devnet0::chain_spec()?),
 			path => Box::new(chains::ChainSpec::from_json_file(
