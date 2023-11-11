@@ -17,6 +17,7 @@ mod commitment_builder {
 	#[divan::bench(max_time = 120.0, consts = [ 32, 64, 128, 256 ])]
 	fn columns_count<const N: u32>(bencher: divan::Bencher) {
 		bencher
+			.counter(N)
 			.with_inputs(|| setup(BlockLengthColumns(N)))
 			.bench_values(|input| {
 				commitment_builder_with(input.0, input.1);
