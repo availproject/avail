@@ -6,6 +6,7 @@ use ark_std::string::String;
 use ark_std::string::ToString;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{Deserialize, Serialize};
+use hex_literal::hex;
 use scale_info::TypeInfo;
 use sp_core::{H256, U256};
 use sp_std::prelude::*;
@@ -130,4 +131,100 @@ impl Default for State {
 			consistent: Default::default(),
 		}
 	}
+}
+
+#[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct VerifiedCallStore {
+	pub verified_function_id: H256,
+	pub verified_input_hash: H256,
+	pub verified_output: VerifiedStepOutput,
+}
+
+#[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct VerifiedStepOutput {
+	pub finalized_header_root: H256,
+	pub execution_state_root: H256,
+	pub finalized_slot: u64,
+	pub participation: u16,
+}
+
+#[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct VerifiedRotateOutput {
+	pub sync_committee_poseidon: U256,
+}
+
+impl Default for VerifiedCallStore {
+	fn default() -> Self {
+		Self {
+			verified_function_id: Default::default(),
+			verified_input_hash: Default::default(),
+			verified_output: Default::default(),
+		}
+	}
+}
+
+impl Default for VerifiedStepOutput {
+	fn default() -> Self {
+		Self {
+			finalized_header_root: Default::default(),
+			execution_state_root: Default::default(),
+			finalized_slot: 0,
+			participation: 0,
+		}
+	}
+}
+
+pub fn parse_rotate_output(output: Vec<u8>) -> VerifiedRotateOutput {
+	let sync_committee_poseidon: U256 = U256::from_big_endian(output.as_slice());
+
+	VerifiedRotateOutput {
+		sync_committee_poseidon,
+	}
+}
+
+pub fn parse_step_output(output: Vec<u8>) -> VerifiedStepOutput {
+	let mut finalized_header_root: [u8; 32] = [0; 32];
+	let mut execution_state_root: [u8; 32] = [0; 32];
+	let mut finalized_slot: [u8; 8] = [0; 8];
+	let mut participation: [u8; 2] = [0; 2];
+
+	finalized_header_root[..32].copy_from_slice(&output[..32]);
+	execution_state_root[..32].copy_from_slice(&output[32..64]);
+
+	finalized_slot[..8].copy_from_slice(&output[64..72]);
+	participation[..2].copy_from_slice(&output[72..74]);
+
+	return VerifiedStepOutput {
+		finalized_header_root: H256(finalized_header_root),
+		execution_state_root: H256(execution_state_root),
+		finalized_slot: u64::from_be_bytes(finalized_slot),
+		participation: u16::from_be_bytes(participation),
+		// TODO add this
+	};
+}
+
+#[test]
+fn test() {
+	let input = hex!("e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b90000000000747fa001fd");
+	let pars = parse_step_output(input.to_vec());
+
+	assert_eq!(509, pars.participation);
+	assert_eq!(7634848, pars.finalized_slot);
+	assert_eq!(
+		H256(hex!(
+			"e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec"
+		)),
+		pars.finalized_header_root
+	);
+	assert_eq!(
+		H256(hex!(
+			"51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b9"
+		)),
+		pars.execution_state_root
+	);
+	// TODO this must be added
+	// assert_eq!("", pars.sync_committee_poseidon.to_string());
 }
