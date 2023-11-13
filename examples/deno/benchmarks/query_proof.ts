@@ -26,13 +26,14 @@ console.log("Waiting for a new block to appear (this might take a while)...")
 const currentBlockNumber = (await api.rpc.chain.getHeader()).number.toNumber();
 await waitForBlockInclusion(api, currentBlockNumber + 1);
 
-
 console.log("Submitting Data...")
 let nonce = (await api.rpc.system.accountNextIndex(alice.address)).toNumber();
+const txs = [];
 for (let i = 0; i < txCount; ++i) {
-    await api.tx.dataAvailability.submitData(data[i].toString()).signAndSend(alice, {nonce: nonce});
+    txs.push(api.tx.dataAvailability.submitData(data[i].toString()).signAndSend(alice, {nonce: nonce}));
     nonce += 1;
 }
+await Promise.all(txs);
 
 console.log("Waiting for txs to be finalized (this might take a while)...")
 const targetBlockHash = await waitForBlockFinalization(api, currentBlockNumber + 2);
