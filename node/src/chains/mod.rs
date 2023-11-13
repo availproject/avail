@@ -7,49 +7,6 @@ pub use definitions::*;
 #[cfg(test)]
 use sp_runtime::BuildStorage;
 
-pub mod biryani {
-	use super::*;
-
-	pub fn chain_spec() -> Result<ChainSpec, String> {
-		ChainSpec::from_json_bytes(&include_bytes!("./../../../misc/genesis/biryani.raw.json",)[..])
-	}
-
-	#[test]
-	fn test_chain_spec_creation() {
-		chain_spec().unwrap().build_storage().unwrap();
-	}
-}
-
-pub mod dymension {
-	use super::*;
-
-	pub fn chain_spec() -> Result<ChainSpec, String> {
-		ChainSpec::from_json_bytes(
-			&include_bytes!("./../../../misc/genesis/dymension.raw.json",)[..],
-		)
-	}
-
-	#[test]
-	fn test_chain_spec_creation() {
-		chain_spec().unwrap().build_storage().unwrap();
-	}
-}
-
-pub mod kate {
-	use super::*;
-
-	pub fn chain_spec() -> Result<ChainSpec, String> {
-		ChainSpec::from_json_bytes(
-			&include_bytes!("./../../../misc/genesis/testnet.kate.chain.spec.raw.json",)[..],
-		)
-	}
-
-	#[test]
-	fn test_chain_spec_creation() {
-		chain_spec().unwrap().build_storage().unwrap();
-	}
-}
-
 pub mod goldberg {
 	use super::*;
 
