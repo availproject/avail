@@ -472,7 +472,9 @@ pub mod pallet {
 			return Ok(false);
 		}
 
-		Head::<T>::set(slot);
+		if slot > Head::<T>::get() {
+			Head::<T>::set(slot);
+		}
 
 		Headers::<T>::insert(slot, finalized_header_root);
 
