@@ -196,10 +196,10 @@ mod tests {
 	use hex_literal::hex;
 	use sp_core::H256;
 
-	use crate::state::parse_step_output;
+	use crate::state::{parse_rotate_output, parse_step_output};
 
 	#[test]
-	fn test() {
+	fn test_step_input() {
 		let input = hex!("e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b90000000000747fa001fd");
 		let pars = parse_step_output(input.to_vec());
 
@@ -216,6 +216,17 @@ mod tests {
 				"51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b9"
 			)),
 			pars.execution_state_root
+		);
+	}
+
+	#[test]
+	fn test_rotate_input() {
+		let input = hex!("7797dbd1eecad8fe38dd849c43b7ea9a6e9e656c968056415132be4e3bfcd4ed");
+		let poseidon = parse_rotate_output(input.to_vec());
+
+		assert_eq!(
+			"54093540030416808909802883566252424299549864556922470137474442232175269827821",
+			poseidon.to_string()
 		);
 	}
 }
