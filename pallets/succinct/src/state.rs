@@ -6,6 +6,7 @@ use ark_std::string::String;
 use ark_std::string::ToString;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{Deserialize, Serialize};
+use hex_literal::hex;
 use scale_info::TypeInfo;
 use sp_core::{H256, U256};
 use sp_std::prelude::*;
