@@ -29,130 +29,6 @@ pub enum VKeyDeserializationError {
 	SerdeError,
 }
 
-impl Verifier {
-	/// Creates `Verifier` from json representation
-	pub fn from_json_u8_slice(slice: &[u8]) -> Result<Self, VKeyDeserializationError> {
-		serde_json::from_slice(slice).map_err(|_| VKeyDeserializationError::SerdeError)
-	}
-
-	pub fn verify_proof_refactor(
-		self,
-		input_hash: H256,
-		output_hash: H256,
-		proof: Vec<u8>,
-	) -> Result<bool, VerificationError> {
-		// remove first 3 bits from input_hash and output_hash
-		let bits_mask = 0b00011111;
-		let mut input_swap = input_hash.to_fixed_bytes();
-		let input_hash_byte_swap = input_hash[0] & bits_mask;
-		input_swap[0] = input_hash_byte_swap;
-
-		let mut output_swap = output_hash.to_fixed_bytes();
-		let output_hash_byte_swap = output_hash[0] & bits_mask;
-		output_swap[0] = output_hash_byte_swap;
-
-		let decoded: (Vec<String>, Vec<Vec<String>>, Vec<String>) = decode_proof(proof);
-
-		let circom_proof = CircomProof::new(decoded.0, decoded.1, decoded.2);
-		let proof = circom_proof.to_proof();
-
-		let mut input = vec!["0".to_string(); 2];
-		input[0] = U256::from_big_endian(output_swap.as_slice()).to_string();
-		input[1] = U256::from_big_endian(input_swap.as_slice()).to_string();
-
-		let public_signals = PublicSignals::from(input);
-
-		let result = self.verify_proof(proof.clone(), &public_signals.get());
-
-		result.map_err(|_| VerificationError::InvalidProof)
-	}
-	pub fn verify_proof(
-		self,
-		proof: Proof<Bn254>,
-		inputs: &[Fr],
-	) -> Result<bool, VerificationError> {
-		let vk = self.vk_json.to_verifying_key();
-		let pvk = prepare_verifying_key(&vk);
-
-		let result = verify_proof(&pvk, &proof, inputs);
-		result.map_err(|_| VerificationError::InvalidProof)
-	}
-}
-
-pub fn decode_proof(proof: Vec<u8>) -> (Vec<String>, Vec<Vec<String>>, Vec<String>) {
-	let decoded = ethabi::decode(
-		&[ParamType::Tuple(vec![
-			ParamType::FixedArray(Box::new(ParamType::Uint(256)), 2),
-			ParamType::FixedArray(
-				Box::new(ParamType::FixedArray(Box::new(ParamType::Uint(256)), 2)),
-				2,
-			),
-			ParamType::FixedArray(Box::new(ParamType::Uint(256)), 2),
-		])],
-		&proof,
-	)
-	.expect("Proof must be decodable .qed");
-
-	let mut a0: String = String::new();
-	let mut a1: String = String::new();
-
-	let mut b00: String = String::new();
-	let mut b01: String = String::new();
-	let mut b10: String = String::new();
-	let mut b11: String = String::new();
-
-	let mut c0: String = String::new();
-	let mut c1: String = String::new();
-
-	if let Some(ethabi::Token::Tuple(t)) = decoded.get(0) {
-		if let ethabi::Token::FixedArray(ar) = &t[0] {
-			if let ethabi::Token::Uint(u) = &ar[0] {
-				a0 = u.to_string();
-			}
-			if let ethabi::Token::Uint(u) = &ar[1] {
-				a1 = u.to_string();
-			}
-		}
-
-		if let ethabi::Token::FixedArray(ar) = &t[1] {
-			if let ethabi::Token::FixedArray(arr) = &ar[0] {
-				if let ethabi::Token::Uint(u) = &arr[0] {
-					b00 = u.to_string();
-				}
-				if let ethabi::Token::Uint(u) = &arr[1] {
-					b01 = u.to_string();
-				}
-			}
-
-			if let ethabi::Token::FixedArray(ar) = &t[1] {
-				if let ethabi::Token::FixedArray(arr) = &ar[1] {
-					if let ethabi::Token::Uint(u) = &arr[0] {
-						b10 = u.to_string();
-					}
-					if let ethabi::Token::Uint(u) = &arr[1] {
-						b11 = u.to_string();
-					}
-				}
-			}
-		}
-
-		if let ethabi::Token::FixedArray(ar) = &t[2] {
-			if let ethabi::Token::Uint(u) = &ar[0] {
-				c0 = u.to_string();
-			}
-			if let ethabi::Token::Uint(u) = &ar[1] {
-				c1 = u.to_string();
-			}
-		}
-	}
-
-	return (
-		vec![a0, a1],
-		vec![vec![b00, b01], vec![b10, b11]],
-		vec![c0, c1],
-	);
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
 pub struct VerifyingKeyJson {
 	#[serde(rename = "IC")]
@@ -256,6 +132,127 @@ pub fn str_to_fq(s: &str) -> Fq {
 	Fq::from_str(s).unwrap()
 }
 
+impl Verifier {
+	/// Creates `Verifier` from json representation
+	pub fn from_json_u8_slice(slice: &[u8]) -> Result<Self, VKeyDeserializationError> {
+		serde_json::from_slice(slice).map_err(|_| VKeyDeserializationError::SerdeError)
+	}
+
+	// Verifies input based on the supplied proof and hashes
+	pub fn verify(
+		self,
+		input_hash: H256,
+		output_hash: H256,
+		proof: Vec<u8>,
+	) -> Result<bool, VerificationError> {
+		// remove first 3 bits from input_hash and output_hash
+		let bits_mask = 0b00011111;
+		let mut input_swap = input_hash.to_fixed_bytes();
+		let input_hash_byte_swap = input_hash[0] & bits_mask;
+		input_swap[0] = input_hash_byte_swap;
+
+		let mut output_swap = output_hash.to_fixed_bytes();
+		let output_hash_byte_swap = output_hash[0] & bits_mask;
+		output_swap[0] = output_hash_byte_swap;
+
+		let decoded: (Vec<String>, Vec<Vec<String>>, Vec<String>) = decode_proof(proof);
+
+		let circom_proof = CircomProof::new(decoded.0, decoded.1, decoded.2);
+		let proof = circom_proof.to_proof();
+
+		let mut input = vec!["0".to_string(); 2];
+		input[0] = U256::from_big_endian(output_swap.as_slice()).to_string();
+		input[1] = U256::from_big_endian(input_swap.as_slice()).to_string();
+
+		let public_signals = PublicSignals::from(input);
+
+		let result = self.verify_proof(proof.clone(), &public_signals.get());
+
+		result.map_err(|_| VerificationError::InvalidProof)
+	}
+	fn verify_proof(self, proof: Proof<Bn254>, inputs: &[Fr]) -> Result<bool, VerificationError> {
+		let vk = self.vk_json.to_verifying_key();
+		let pvk = prepare_verifying_key(&vk);
+
+		let result = verify_proof(&pvk, &proof, inputs);
+		result.map_err(|_| VerificationError::InvalidProof)
+	}
+}
+
+pub fn decode_proof(proof: Vec<u8>) -> (Vec<String>, Vec<Vec<String>>, Vec<String>) {
+	let decoded = ethabi::decode(
+		&[ParamType::Tuple(vec![
+			ParamType::FixedArray(Box::new(ParamType::Uint(256)), 2),
+			ParamType::FixedArray(
+				Box::new(ParamType::FixedArray(Box::new(ParamType::Uint(256)), 2)),
+				2,
+			),
+			ParamType::FixedArray(Box::new(ParamType::Uint(256)), 2),
+		])],
+		&proof,
+	)
+	.expect("Proof must be decodable .qed");
+
+	let mut a0: String = String::new();
+	let mut a1: String = String::new();
+
+	let mut b00: String = String::new();
+	let mut b01: String = String::new();
+	let mut b10: String = String::new();
+	let mut b11: String = String::new();
+
+	let mut c0: String = String::new();
+	let mut c1: String = String::new();
+
+	if let Some(ethabi::Token::Tuple(t)) = decoded.get(0) {
+		if let ethabi::Token::FixedArray(ar) = &t[0] {
+			if let ethabi::Token::Uint(u) = &ar[0] {
+				a0 = u.to_string();
+			}
+			if let ethabi::Token::Uint(u) = &ar[1] {
+				a1 = u.to_string();
+			}
+		}
+
+		if let ethabi::Token::FixedArray(ar) = &t[1] {
+			if let ethabi::Token::FixedArray(arr) = &ar[0] {
+				if let ethabi::Token::Uint(u) = &arr[0] {
+					b00 = u.to_string();
+				}
+				if let ethabi::Token::Uint(u) = &arr[1] {
+					b01 = u.to_string();
+				}
+			}
+
+			if let ethabi::Token::FixedArray(ar) = &t[1] {
+				if let ethabi::Token::FixedArray(arr) = &ar[1] {
+					if let ethabi::Token::Uint(u) = &arr[0] {
+						b10 = u.to_string();
+					}
+					if let ethabi::Token::Uint(u) = &arr[1] {
+						b11 = u.to_string();
+					}
+				}
+			}
+		}
+
+		if let ethabi::Token::FixedArray(ar) = &t[2] {
+			if let ethabi::Token::Uint(u) = &ar[0] {
+				c0 = u.to_string();
+			}
+			if let ethabi::Token::Uint(u) = &ar[1] {
+				c1 = u.to_string();
+			}
+		}
+	}
+
+	return (
+		vec![a0, a1],
+		vec![vec![b00, b01], vec![b10, b11]],
+		vec![c0, c1],
+	);
+}
+
 #[cfg(test)]
 mod tests {
 	use frame_support::assert_ok;
@@ -353,7 +350,7 @@ mod tests {
 
 		let proof = hex!("10344e73ac87a69d9faece1099a4c1194d922a6d5eb24408508d426d699589f625a2326df0cd67d15a41c8d69da4faa766cac27f0d204e0eb2043d7083be90c12b011afc70277abd7e81aad605d6819cff24a36c8c1e47c4ce8e0eb6ce7c80910f4e62def9ed381d5d5ddd32b6e6255d0a6741ee3a446a0f6b5dd413be44bc261183316749a6483965dc3aac1c512d0f6fc485ef457cfd98343c92262447b4b62960747f517610464e2a896cb8153e9dcda32fa7c21176a5f6fe0707520a4d212e262c0c32f250ca50eba6c4495eb888f220551ff96cdf75a7310a5b11c223e4178daea92bacbe1ec3796115e41f47a33e1658e8620c33bf134f055fd645c4ce");
 
-		let result = v.verify_proof_refactor(inp_hash, out_hash, proof.to_vec());
+		let result = v.verify(inp_hash, out_hash, proof.to_vec());
 
 		assert_ok!(result.clone());
 		assert_eq!(true, result.unwrap());

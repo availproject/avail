@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{pallet_prelude::*, parameter_types};
+use hex_literal::hex;
 use sp_core::{H256, U256};
 
 pub use pallet::*;
@@ -25,9 +26,9 @@ parameter_types! {
 	pub const MaxVerificationKeyLength: u32 = 4143;
 	pub const MaxProofLength: u32 = 1133;
 
-	// function verifiers
-	pub const StepFunctionId: H256 = H256([0u8; 32]);
-	pub const RotateFunctionId: H256 = H256([0u8; 32]);
+	// TODO set function verifiers
+	pub const StepFunctionId: H256 = H256(hex!("af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"));
+	pub const RotateFunctionId: H256 = H256(hex!("9aed23f9e6e8f8b98751cf508069b5b7f015d4d510b6a4820d41ba1ce88190d9"));
 
 	// Constants
 	pub const MinSyncCommitteeParticipants: u16=10;
@@ -86,6 +87,9 @@ pub mod pallet {
 		HeaderRootNotSet,
 		VerificationFailed,
 		FunctionIdNotRecognised,
+		HeaderRootAlreadySet,
+		StateRootAlreadySet,
+		SyncCommitteeAlreadySet,
 	}
 
 	#[pallet::event]
@@ -115,10 +119,6 @@ pub mod pallet {
 			new: H256,
 		},
 	}
-
-	// Whether the light client has had conflicting variables for the same slot.
-	#[pallet::storage]
-	pub type Consistent<T: Config> = StorageValue<_, bool, ValueQuery>;
 
 	// The latest slot the light client has a finalized header for.
 	#[pallet::storage]
@@ -234,7 +234,6 @@ pub mod pallet {
 			});
 
 			Head::<T>::set(0);
-			Consistent::<T>::set(true);
 			<SyncCommitteePoseidons<T>>::insert(self.period, self.sync_committee_poseidon);
 		}
 	}
@@ -264,14 +263,14 @@ pub mod pallet {
 			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
 			let input_hash = H256(sha2_256(input.as_slice()));
 			let output_hash = H256(sha2_256(output.as_slice()));
-
 			let verifier = get_verifier::<T>(function_id)?;
 
 			let success = verifier
-				.verify_proof_refactor(input_hash, output_hash, proof)
+				.verify(input_hash, output_hash, proof)
 				.map_err(|_| Error::<T>::VerificationError)?;
 
 			ensure!(success, Error::<T>::VerificationFailed);
+			// TODO how to parse this data?
 			let slot = U256::from_big_endian(&callback_data.as_slice()).as_u64();
 
 			if function_id == StepFunctionId::get() {
@@ -450,24 +449,22 @@ pub mod pallet {
 	fn set_slot_roots<T: Config>(step_output: VerifiedStepOutput) -> Result<bool, DispatchError> {
 		let header = Headers::<T>::get(step_output.finalized_slot);
 
-		if header != H256::zero() && header != step_output.finalized_header_root {
-			Consistent::<T>::set(false);
-			return Ok(false);
-		}
+		ensure!(header == H256::zero(), Error::<T>::HeaderRootAlreadySet);
+
 		let state_root = ExecutionStateRoots::<T>::get(step_output.finalized_slot);
 
-		if state_root != H256::zero() && state_root != step_output.execution_state_root {
-			Consistent::<T>::set(false);
-			return Ok(false);
-		}
+		ensure!(state_root == H256::zero(), Error::<T>::StateRootAlreadySet);
 
-		if step_output.finalized_slot > Head::<T>::get() {
-			Head::<T>::set(step_output.finalized_slot);
-		}
+		Head::<T>::set(step_output.finalized_slot);
 
 		Headers::<T>::insert(
 			step_output.finalized_slot,
 			step_output.finalized_header_root,
+		);
+
+		ExecutionStateRoots::<T>::insert(
+			step_output.finalized_slot,
+			step_output.execution_state_root,
 		);
 
 		// TODO can this time be used as block time?
@@ -482,11 +479,11 @@ pub mod pallet {
 	) -> Result<bool, DispatchError> {
 		let sync_committee_poseidons = SyncCommitteePoseidons::<T>::get(period);
 
-		if poseidon != U256::zero() && sync_committee_poseidons != poseidon {
-			Consistent::<T>::set(false);
+		ensure!(
+			sync_committee_poseidons == U256::zero(),
+			Error::<T>::SyncCommitteeAlreadySet
+		);
 
-			return Ok(false);
-		}
 		SyncCommitteePoseidons::<T>::set(period, poseidon);
 
 		Ok(true)
