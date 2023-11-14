@@ -157,7 +157,7 @@ impl Verifier {
 
 		let decoded: (Vec<String>, Vec<Vec<String>>, Vec<String>) = decode_proof(proof);
 		// TODO remove printlns
-		// println!("decoded proof: {:?}", decoded);
+		println!("decoded proof: {:?}", decoded);
 
 		let circom_proof = CircomProof::new(decoded.0, decoded.1, decoded.2);
 		let proof = circom_proof.to_proof();
@@ -168,7 +168,7 @@ impl Verifier {
 
 		let public_signals = PublicSignals::from(input);
 
-		// println!("public signals: {:?}", public_signals);
+		println!("public signals: {:?}", public_signals);
 
 		let result = self.verify_proof(proof.clone(), &public_signals.get());
 
@@ -343,7 +343,7 @@ mod tests {
 
 		assert_eq!("bn128", v.vk_json.curve);
 		assert_eq!("groth16", v.vk_json.protocol);
-
+		// https://platform.succinct.xyz/explorer/426c9f2d-0b72-499a-83c0-f258d7d8c84d
 		// TODO assert all points
 		let inp = hex!(
 			"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df0000000000747ffe"
@@ -353,9 +353,9 @@ mod tests {
 		let out_hash = H256(sha2_256(out.as_slice()));
 
 		// TODO remove println
-		println!("{}", inp_hash);
-		println!("{}", out_hash);
-		let proof = hex!("10344e73ac87a69d9faece1099a4c1194d922a6d5eb24408508d426d699589f625a2326df0cd67d15a41c8d69da4faa766cac27f0d204e0eb2043d7083be90c12b011afc70277abd7e81aad605d6819cff24a36c8c1e47c4ce8e0eb6ce7c80910f4e62def9ed381d5d5ddd32b6e6255d0a6741ee3a446a0f6b5dd413be44bc261183316749a6483965dc3aac1c512d0f6fc485ef457cfd98343c92262447b4b62960747f517610464e2a896cb8153e9dcda32fa7c21176a5f6fe0707520a4d212e262c0c32f250ca50eba6c4495eb888f220551ff96cdf75a7310a5b11c223e4178daea92bacbe1ec3796115e41f47a33e1658e8620c33bf134f055fd645c4ce");
+		println!("{:?}", inp_hash);
+		println!("{:?}", out_hash);
+		let proof = hex!("1332c772a8f9a02f304b5472d3b6b75f1a494bd9b137fc663fd5b9b475992bc829ba08f7cfa745e340938e356b139224d0288b9511a5cec83235f969f61a94ed16a14579fa0adcc3bf8da36209f64547fd5ff4e1c7e8b5b151335b5b4a471de3115f83b696517ac68ae7620f7d3840e44aff4781c0a4d265a2905ef9bcaa04432a660197790e60d1135946ae0603ef69a5ecb45b6f8046167f902dc6d8a35cf716bce116484dfa4fcd5d8f4c2fda26d68754b56e68f1a877d95dc171accc34d71285068693fe3d8d28e66342c31292ceee5c6d87fcb8ad8c132363565f2aeff905726b2d35def5c9636dd5ec402d8d6f6c9a7be7977e7e5727da327ea5b079ad");
 
 		let result = v.verify(inp_hash, out_hash, proof.to_vec());
 
