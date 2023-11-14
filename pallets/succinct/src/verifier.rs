@@ -264,6 +264,7 @@ mod tests {
 	use sp_core::H256;
 	use sp_io::hashing::sha2_256;
 
+	use crate::parse_slot;
 	use crate::verifier::{decode_proof, Verifier};
 
 	#[test]
@@ -403,5 +404,14 @@ mod tests {
 			"2463724514031046292864306191243943409912346551164607808423034641717054699949",
 			decoded.2[1]
 		);
+	}
+
+	#[test]
+	fn test_pars_callback_data() {
+		let callback_data =
+			hex!("3a1cde750000000000000000000000000000000000000000000000000000000000747ffe");
+		let slot = parse_slot(callback_data.to_vec());
+
+		assert_eq!(7634942, slot);
 	}
 }

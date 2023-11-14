@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use frame_support::traits::Len;
 use frame_support::{pallet_prelude::*, parameter_types};
 use hex_literal::hex;
 use sp_core::{H256, U256};
@@ -255,8 +256,8 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::VerificationError)?;
 
 			ensure!(success, Error::<T>::VerificationFailed);
-			// TODO how to parse this data?
-			let slot = U256::from_big_endian(&callback_data.as_slice()).as_u64();
+
+			let slot = U256::from_big_endian(&callback_data[callback_data.len() - 32..]).as_u64();
 
 			if function_id == StepFunctionId::get() {
 				let vs =
@@ -561,5 +562,10 @@ pub mod pallet {
 		} else {
 			return Err(Error::<T>::StepVerificationError.into());
 		}
+	}
+
+	pub fn parse_slot(callback_data: Vec<u8>) -> u64 {
+		let sub = &callback_data[callback_data.len() - 32..];
+		U256::from_big_endian(sub).as_u64()
 	}
 }
