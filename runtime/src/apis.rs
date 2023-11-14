@@ -1,8 +1,5 @@
 use crate::version::VERSION;
-use avail_core::{
-	currency::Balance, header::HeaderExtension, well_known_keys::KATE_PUBLIC_PARAMS,
-	OpaqueExtrinsic,
-};
+use avail_core::{currency::Balance, header::HeaderExtension, OpaqueExtrinsic};
 use frame_support::{
 	traits::{KeyOwnerProofSystem, Randomness},
 	weights::Weight,
@@ -33,7 +30,6 @@ use crate::{
 
 decl_runtime_apis! {
 	pub trait DataAvailApi {
-		fn public_params() -> Vec<u8>;
 		fn block_length() -> BlockLength;
 		fn babe_vrf() -> Seed;
 	}
@@ -307,12 +303,6 @@ impl_runtime_apis! {
 	}
 
 	impl crate::apis::DataAvailApi<Block> for Runtime {
-		fn public_params() -> Vec<u8> {
-			sp_io::storage::get(KATE_PUBLIC_PARAMS)
-				.map(|bytes| bytes.to_vec())
-				.unwrap_or_default()
-		}
-
 		fn block_length() -> frame_system::limits::BlockLength {
 			frame_system::Pallet::<Runtime>::block_length()
 		}
