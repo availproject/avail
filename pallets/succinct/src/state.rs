@@ -6,7 +6,6 @@ use ark_std::string::String;
 use ark_std::string::ToString;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{Deserialize, Serialize};
-use hex_literal::hex;
 use scale_info::TypeInfo;
 use sp_core::{H256, U256};
 use sp_std::prelude::*;
@@ -192,23 +191,31 @@ pub fn parse_step_output(output: Vec<u8>) -> VerifiedStepOutput {
 	};
 }
 
-#[test]
-fn test() {
-	let input = hex!("e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b90000000000747fa001fd");
-	let pars = parse_step_output(input.to_vec());
+#[cfg(test)]
+mod tests {
+	use hex_literal::hex;
+	use sp_core::H256;
 
-	assert_eq!(509, pars.participation);
-	assert_eq!(7634848, pars.finalized_slot);
-	assert_eq!(
-		H256(hex!(
-			"e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec"
-		)),
-		pars.finalized_header_root
-	);
-	assert_eq!(
-		H256(hex!(
-			"51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b9"
-		)),
-		pars.execution_state_root
-	);
+	use crate::state::parse_step_output;
+
+	#[test]
+	fn test() {
+		let input = hex!("e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b90000000000747fa001fd");
+		let pars = parse_step_output(input.to_vec());
+
+		assert_eq!(509, pars.participation);
+		assert_eq!(7634848, pars.finalized_slot);
+		assert_eq!(
+			H256(hex!(
+				"e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec"
+			)),
+			pars.finalized_header_root
+		);
+		assert_eq!(
+			H256(hex!(
+				"51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b9"
+			)),
+			pars.execution_state_root
+		);
+	}
 }

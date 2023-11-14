@@ -247,28 +247,7 @@ pub mod pallet {
 	where
 		[u8; 32]: From<T::AccountId>,
 	{
-		/// Sets the sync committee for the next sync committee period.
-		/// A commitment to the the next sync committee is signed by the current sync committee.
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::step())]
-		pub fn step(origin: OriginFor<T>, attested_slot: u64) -> DispatchResult {
-			let sender: [u8; 32] = ensure_signed(origin)?.into();
-			let state = StateStorage::<T>::get();
-			// ensure sender is preconfigured
-			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
-
-			let res = step_into::<T>(attested_slot, state)?;
-			if res {
-				let vs = VerifiedStepCall::<T>::get();
-				Self::deposit_event(Event::HeaderUpdate {
-					slot: attested_slot,
-					finalization_root: vs.verified_output.finalized_header_root,
-				});
-			}
-			Ok(())
-		}
-
-		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
@@ -330,9 +309,35 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::call_index(7)]
+		/// Updates the head of the light client to the provided slot.
+		/// The conditions for updating the head of the light client involve checking:
+		///      1) Enough signatures from the current sync committee for n=512
+		///      2) A valid finality proof
+		///      3) A valid execution state root proof
+		#[pallet::call_index(1)]
+		#[pallet::weight(T::WeightInfo::step())]
+		pub fn step(origin: OriginFor<T>, attested_slot: u64) -> DispatchResult {
+			let sender: [u8; 32] = ensure_signed(origin)?.into();
+			let state = StateStorage::<T>::get();
+			// ensure sender is preconfigured
+			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
+
+			let res = step_into::<T>(attested_slot, state)?;
+			if res {
+				let vs = VerifiedStepCall::<T>::get();
+				Self::deposit_event(Event::HeaderUpdate {
+					slot: attested_slot,
+					finalization_root: vs.verified_output.finalized_header_root,
+				});
+			}
+			Ok(())
+		}
+
+		/// Sets the sync committee for the next sync committee period.
+		/// A commitment to the the next sync committee is signed by the current sync committee.
+		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::rotate())]
-		pub fn rotate_refactor(origin: OriginFor<T>, finalized_slot: u64) -> DispatchResult {
+		pub fn rotate(origin: OriginFor<T>, finalized_slot: u64) -> DispatchResult {
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let state = StateStorage::<T>::get();
 			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
@@ -348,14 +353,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Updates the head of the light client to the provided slot.
-		/// The conditions for updating the head of the light client involve checking:
-		///      1) Enough signatures from the current sync committee for n=512
-		///      2) A valid finality proof
-		///      3) A valid execution state root proof
-
 		/// Sets updater that can call step and rotate functions
-		#[pallet::call_index(2)]
+		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn set_updater(origin: OriginFor<T>, updater: H256) -> DispatchResult {
 			ensure_root(origin)?;
@@ -373,7 +372,7 @@ pub mod pallet {
 		}
 
 		/// Sets verification public inputs for step function.
-		#[pallet::call_index(3)]
+		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn setup_step_verification(
 			origin: OriginFor<T>,
@@ -391,7 +390,7 @@ pub mod pallet {
 		}
 
 		/// Sets verification public inputs for rotate function.
-		#[pallet::call_index(4)]
+		#[pallet::call_index(5)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn setup_rotate_verification(
 			origin: OriginFor<T>,
@@ -437,49 +436,42 @@ pub mod pallet {
 			Token::Uint(Uint::from(attested_slot)),
 		]);
 		let result = verified_step_call::<T>(StepFunctionId::get(), input)?;
-		// //
-		let finalized_header_root = result.finalized_header_root;
-		let execution_state_root = result.execution_state_root;
-		let finalized_slot = result.finalized_slot;
-		let participation = result.participation;
-		// //
+
 		ensure!(
-			participation >= state.finality_threshold,
+			result.participation >= state.finality_threshold,
 			Error::<T>::NotEnoughParticipants
 		);
-		// //
-		let updated =
-			set_slot_roots::<T>(finalized_slot, finalized_header_root, execution_state_root)?;
+
+		let updated = set_slot_roots::<T>(result)?;
 
 		Ok(updated)
 	}
 
-	fn set_slot_roots<T: Config>(
-		slot: u64,
-		finalized_header_root: H256,
-		execution_state_root: H256,
-	) -> Result<bool, DispatchError> {
-		let header = Headers::<T>::get(slot);
+	fn set_slot_roots<T: Config>(step_output: VerifiedStepOutput) -> Result<bool, DispatchError> {
+		let header = Headers::<T>::get(step_output.finalized_slot);
 
-		if header != H256::zero() && header != finalized_header_root {
+		if header != H256::zero() && header != step_output.finalized_header_root {
 			Consistent::<T>::set(false);
 			return Ok(false);
 		}
-		let state_root = ExecutionStateRoots::<T>::get(slot);
+		let state_root = ExecutionStateRoots::<T>::get(step_output.finalized_slot);
 
-		if state_root != H256::zero() && state_root != execution_state_root {
+		if state_root != H256::zero() && state_root != step_output.execution_state_root {
 			Consistent::<T>::set(false);
 			return Ok(false);
 		}
 
-		if slot > Head::<T>::get() {
-			Head::<T>::set(slot);
+		if step_output.finalized_slot > Head::<T>::get() {
+			Head::<T>::set(step_output.finalized_slot);
 		}
 
-		Headers::<T>::insert(slot, finalized_header_root);
+		Headers::<T>::insert(
+			step_output.finalized_slot,
+			step_output.finalized_header_root,
+		);
 
 		// TODO can this time be used as block time?
-		Timestamps::<T>::insert(slot, T::TimeProvider::now().as_secs());
+		Timestamps::<T>::insert(step_output.finalized_slot, T::TimeProvider::now().as_secs());
 
 		Ok(true)
 	}
