@@ -271,7 +271,7 @@ mod tests {
 		let vk = r#"{"vk_json":{
  "protocol": "groth16",
  "curve": "bn128",
- "nPublic": 1,
+ "nPublic": 2,
  "vk_alpha_1": [
   "20491192805390485299153009773594534940189261866228447918068658471970481763042",
   "9383485363053290200918347156157836566562967994039712273449902621266178545958",
@@ -340,6 +340,8 @@ mod tests {
 }}"#;
 
 		let v = Verifier::from_json_u8_slice(vk.as_bytes()).unwrap();
+
+		println!("{:?}", v);
 
 		assert_eq!("bn128", v.vk_json.curve);
 		assert_eq!("groth16", v.vk_json.protocol);
