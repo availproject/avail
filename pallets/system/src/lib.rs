@@ -729,15 +729,12 @@ pub mod pallet {
 		pub code: Vec<u8>,
 		#[serde(skip)]
 		pub _config: sp_std::marker::PhantomData<T>,
-		#[serde(with = "sp_core::bytes")]
-		pub kc_public_params: Vec<u8>,
 		pub block_length: limits::BlockLength,
 	}
 
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
-			use avail_core::well_known_keys::KATE_PUBLIC_PARAMS;
 			use frame_support::traits::StorageVersion;
 
 			<BlockHash<T>>::insert::<_, T::Hash>(BlockNumberFor::<T>::zero(), hash69());
@@ -748,7 +745,6 @@ pub mod pallet {
 
 			sp_io::storage::set(well_known_keys::CODE, &self.code);
 			sp_io::storage::set(well_known_keys::EXTRINSIC_INDEX, &0u32.encode());
-			sp_io::storage::set(KATE_PUBLIC_PARAMS, &self.kc_public_params);
 			<DynamicBlockLength<T>>::put(&self.block_length);
 
 			StorageVersion::new(1).put::<Pallet<T>>();

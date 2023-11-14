@@ -1,9 +1,6 @@
 use super::{get_account_id_from_seed, AuthorityKeys};
 use avail_core::BLOCK_CHUNK_SIZE;
-use avail_core_kate::{
-	config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS},
-	couscous::public_params,
-};
+use avail_core_kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 use da_runtime::{
 	constants, wasm_binary_unwrap, AccountId, BabeConfig, Balance, BalancesConfig,
 	DataAvailabilityConfig, NomadHomeConfig, NomadUpdaterManagerConfig, NominationPoolsConfig,
@@ -39,9 +36,8 @@ const DEFAULT_ENDOWED_SEEDS: [&str; 12] = [
 ];
 const INIT_APP_IDS: [(u32, &str); 3] = [(0, "Data Avail"), (1, "Ethereum"), (2, "Polygon")];
 
-fn standard_system_configuration() -> (Vec<u8>, Vec<u8>, BlockLength) {
+fn standard_system_configuration() -> (Vec<u8>, BlockLength) {
 	let code = wasm_binary_unwrap().to_vec();
-	let kc_public_params = public_params().to_raw_var_bytes();
 
 	let block_length = BlockLength::with_normal_ratio(
 		MAX_BLOCK_ROWS,
@@ -51,7 +47,7 @@ fn standard_system_configuration() -> (Vec<u8>, Vec<u8>, BlockLength) {
 	)
 	.expect("Valid `BlockLength` genesis definition .qed");
 
-	(code, kc_public_params, block_length)
+	(code, block_length)
 }
 
 pub fn to_telemetry_endpoint(s: String) -> TelemetryEndpoints {
@@ -95,12 +91,11 @@ pub fn runtime_genesis_config(
 	let validator_count = session_keys.len() as u32;
 	let session_keys = session_keys.into_iter().map(|k| k.into()).collect();
 
-	let (code, kc_public_params, block_length) = standard_system_configuration();
+	let (code, block_length) = standard_system_configuration();
 	RuntimeGenesisConfig {
 		// General
 		system: SystemConfig {
 			code,
-			kc_public_params,
 			block_length,
 			..Default::default()
 		},
