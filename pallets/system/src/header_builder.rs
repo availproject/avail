@@ -109,8 +109,10 @@ pub fn build_extension<M: Metrics>(
 	metrics: &M,
 ) -> HeaderExtension {
 	use avail_core::header::extension::{v1, v2};
+	use once_cell::sync::Lazy;
 	// couscous has pp for degree upto 1024
-	let pmp: kate::pmp::m1_blst::M1NoPrecomp = kate::couscous::multiproof_params();
+	static PMP: Lazy<kate::pmp::m1_blst::M1NoPrecomp> =
+		Lazy::new(|| kate::couscous::multiproof_params());
 
 	const MIN_WIDTH: usize = 4;
 	let timer = std::time::Instant::now();
@@ -129,7 +131,7 @@ pub fn build_extension<M: Metrics>(
 	let commitment = grid
 		.make_polynomial_grid()
 		.expect("Make polynomials cannot fail")
-		.extended_commitments(&pmp, 2)
+		.extended_commitments(&*PMP, 2)
 		.expect("Extended commitments cannot fail")
 		.iter()
 		.flat_map(|c| c.to_bytes().expect("Commitment serialization cannot fail"))
