@@ -64,24 +64,12 @@ pub mod pallet {
 	pub enum Error<T> {
 		UpdaterMisMatch,
 		VerificationError,
-		CannotUpdateStateStorage,
-		UpdateSlotIsFarInTheFuture,
-		UpdateSlotLessThanCurrentHead,
 		NotEnoughParticipants,
-		SyncCommitteeNotInitialized,
-		NotEnoughSyncCommitteeParticipants,
-		// verification
 		TooLongVerificationKey,
-		ProofIsEmpty,
 		VerificationKeyIsNotSet,
 		MalformedVerificationKey,
 		NotSupportedCurve,
 		NotSupportedProtocol,
-		ProofCreationError,
-		InvalidRotateProof,
-		InvalidStepProof,
-
-		//
 		StepVerificationError,
 		RotateVerificationError,
 		HeaderRootNotSet,
@@ -130,17 +118,14 @@ pub mod pallet {
 
 	// Maps slot to the timestamp of when the headers mapping was updated with slot as a key
 	#[pallet::storage]
-	#[pallet::getter(fn get_timestamp)]
 	pub type Timestamps<T> = StorageMap<_, Identity, u64, u64, ValueQuery>;
 
 	// Maps from a slot to the current finalized ethereum execution state root.
 	#[pallet::storage]
-	#[pallet::getter(fn get_state_root)]
 	pub type ExecutionStateRoots<T> = StorageMap<_, Identity, u64, H256, ValueQuery>;
 
 	// Maps from a period to the poseidon commitment for the sync committee.
 	#[pallet::storage]
-	#[pallet::getter(fn get_poseidon)]
 	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
 
 	//TODO step and rotate verification keys can be stored as constants and not in the storage which can simplify implementation.
@@ -274,12 +259,8 @@ pub mod pallet {
 			let slot = U256::from_big_endian(&callback_data.as_slice()).as_u64();
 
 			if function_id == StepFunctionId::get() {
-				let vs = VerifiedStepCallStore {
-					verified_function_id: function_id,
-					verified_input_hash: input_hash,
-					verified_output: parse_step_output(output),
-				};
-
+				let vs =
+					VerifiedStepCallStore::new(function_id, input_hash, parse_step_output(output));
 				VerifiedStepCall::<T>::set(vs);
 				if step_into::<T>(slot, state)? {
 					Self::deposit_event(Event::HeaderUpdate {
@@ -288,11 +269,11 @@ pub mod pallet {
 					});
 				}
 			} else if function_id == RotateFunctionId::get() {
-				let vr = VerifiedRotateCallStore {
-					verified_function_id: function_id,
-					verified_input_hash: input_hash,
-					sync_committee_poseidon: parse_rotate_output(output),
-				};
+				let vr = VerifiedRotateCallStore::new(
+					function_id,
+					input_hash,
+					parse_rotate_output(output),
+				);
 
 				VerifiedRotateCall::<T>::set(vr);
 				if rotate_into::<T>(slot, state)? {

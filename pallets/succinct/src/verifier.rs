@@ -156,6 +156,8 @@ impl Verifier {
 		output_swap[0] = output_hash_byte_swap;
 
 		let decoded: (Vec<String>, Vec<Vec<String>>, Vec<String>) = decode_proof(proof);
+		// TODO remove printlns
+		// println!("decoded proof: {:?}", decoded);
 
 		let circom_proof = CircomProof::new(decoded.0, decoded.1, decoded.2);
 		let proof = circom_proof.to_proof();
@@ -165,6 +167,8 @@ impl Verifier {
 		input[1] = U256::from_big_endian(input_swap.as_slice()).to_string();
 
 		let public_signals = PublicSignals::from(input);
+
+		// println!("public signals: {:?}", public_signals);
 
 		let result = self.verify_proof(proof.clone(), &public_signals.get());
 
@@ -348,6 +352,9 @@ mod tests {
 		let inp_hash = H256(sha2_256(inp.as_slice()));
 		let out_hash = H256(sha2_256(out.as_slice()));
 
+		// TODO remove println
+		println!("{}", inp_hash);
+		println!("{}", out_hash);
 		let proof = hex!("10344e73ac87a69d9faece1099a4c1194d922a6d5eb24408508d426d699589f625a2326df0cd67d15a41c8d69da4faa766cac27f0d204e0eb2043d7083be90c12b011afc70277abd7e81aad605d6819cff24a36c8c1e47c4ce8e0eb6ce7c80910f4e62def9ed381d5d5ddd32b6e6255d0a6741ee3a446a0f6b5dd413be44bc261183316749a6483965dc3aac1c512d0f6fc485ef457cfd98343c92262447b4b62960747f517610464e2a896cb8153e9dcda32fa7c21176a5f6fe0707520a4d212e262c0c32f250ca50eba6c4495eb888f220551ff96cdf75a7310a5b11c223e4178daea92bacbe1ec3796115e41f47a33e1658e8620c33bf134f055fd645c4ce");
 
 		let result = v.verify(inp_hash, out_hash, proof.to_vec());

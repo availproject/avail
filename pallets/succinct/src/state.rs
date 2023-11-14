@@ -119,12 +119,40 @@ pub struct VerifiedStepCallStore {
 	pub verified_output: VerifiedStepOutput,
 }
 
+impl VerifiedStepCallStore {
+	pub(crate) const fn new(
+		verified_function_id: H256,
+		verified_input_hash: H256,
+		verified_output: VerifiedStepOutput,
+	) -> VerifiedStepCallStore {
+		VerifiedStepCallStore {
+			verified_function_id,
+			verified_input_hash,
+			verified_output,
+		}
+	}
+}
+
 #[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct VerifiedRotateCallStore {
 	pub verified_function_id: H256,
 	pub verified_input_hash: H256,
 	pub sync_committee_poseidon: U256,
+}
+
+impl VerifiedRotateCallStore {
+	pub(crate) const fn new(
+		verified_function_id: H256,
+		verified_input_hash: H256,
+		sync_committee_poseidon: U256,
+	) -> VerifiedRotateCallStore {
+		VerifiedRotateCallStore {
+			verified_function_id,
+			verified_input_hash,
+			sync_committee_poseidon,
+		}
+	}
 }
 
 #[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
