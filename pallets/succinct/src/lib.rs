@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{pallet_prelude::*, parameter_types, Deserialize, Serialize};
+use frame_support::{pallet_prelude::*, parameter_types};
 use sp_core::{H256, U256};
 
 pub use pallet::*;
@@ -20,18 +20,21 @@ mod weights;
 
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
 
-// TODO remove unused and define correct values
 parameter_types! {
+	pub const MaxPublicInputsLength: u32 = 9;
+	pub const MaxVerificationKeyLength: u32 = 4143;
+	pub const MaxProofLength: u32 = 1133;
+
+	// function verifiers
+	pub const StepFunctionId: H256 = H256([0u8; 32]);
+	pub const RotateFunctionId: H256 = H256([0u8; 32]);
+
+	// Constants
 	pub const MinSyncCommitteeParticipants: u16=10;
 	pub const SyncCommitteeSize: u32=512;
 	pub const FinalizedRootIndex: u32=105;
 	pub const NextSyncCommitteeIndex: u32= 55;
 	pub const ExecutionStateRootIndex: u32= 402;
-	pub const MaxPublicInputsLength: u32 = 9;
-	pub const MaxVerificationKeyLength: u32 = 4143;
-	pub const MaxProofLength: u32 = 1133;
-	pub const StepFunctionId: H256 = H256([0u8; 32]);
-	pub const RotateFunctionId: H256 = H256([0u8; 32]);
 }
 
 #[frame_support::pallet]
@@ -39,7 +42,7 @@ pub mod pallet {
 	use ark_std::string::String;
 	use ark_std::string::ToString;
 	use ark_std::{vec, vec::Vec};
-	use ethabi::{Bytes, ParamType, Token, Uint};
+	use ethabi::{Token, Uint};
 	use frame_support::dispatch::{GetDispatchInfo, UnfilteredDispatchable};
 	use frame_support::traits::{Hash, UnixTime};
 	use frame_support::{pallet_prelude::ValueQuery, DefaultNoBound};
@@ -49,9 +52,10 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	pub use weights::WeightInfo;
 
-	use crate::state::{parse_step_output, LightClientStep, State, VerifiedCallStore};
-	use crate::verifier::zk_light_client_rotate;
-	use crate::verifier::zk_light_client_step;
+	use crate::state::{
+		parse_rotate_output, parse_step_output, State, VerifiedRotateCallStore,
+		VerifiedStepCallStore, VerifiedStepOutput,
+	};
 
 	use super::*;
 
@@ -78,15 +82,17 @@ pub mod pallet {
 
 		//
 		StepVerificationError,
+		RotateVerificationError,
 		HeaderRootNotSet,
 		VerificationFailed,
+		FunctionIdNotRecognised,
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		// emit event once the head is updated
-		HeadUpdate {
+		HeaderUpdate {
 			slot: u64,
 			finalization_root: H256,
 		},
@@ -110,24 +116,16 @@ pub mod pallet {
 		},
 	}
 
-	// Storage definitions
-
-	//TODO step and rotate verification keys can be stored as constants and not in the storage which can simplify implementation.
+	// Whether the light client has had conflicting variables for the same slot.
 	#[pallet::storage]
-	pub type StepVerificationKeyStorage<T: Config> =
-		StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
+	pub type Consistent<T: Config> = StorageValue<_, bool, ValueQuery>;
 
+	// The latest slot the light client has a finalized header for.
 	#[pallet::storage]
-	pub type RotateVerificationKeyStorage<T: Config> =
-		StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
-
-	// Storage for a general state.
-	#[pallet::storage]
-	pub type StateStorage<T: Config> = StorageValue<_, State, ValueQuery>;
+	pub type Head<T: Config> = StorageValue<_, u64, ValueQuery>;
 
 	// Maps from a slot to a block header root.
 	#[pallet::storage]
-	#[pallet::getter(fn get_header)]
 	pub type Headers<T> = StorageMap<_, Identity, u64, H256, ValueQuery>;
 
 	// Maps slot to the timestamp of when the headers mapping was updated with slot as a key
@@ -145,8 +143,24 @@ pub mod pallet {
 	#[pallet::getter(fn get_poseidon)]
 	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
 
+	//TODO step and rotate verification keys can be stored as constants and not in the storage which can simplify implementation.
 	#[pallet::storage]
-	pub type VerifiedCall<T> = StorageValue<_, VerifiedCallStore, ValueQuery>;
+	pub type StepVerificationKeyStorage<T: Config> =
+		StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
+
+	#[pallet::storage]
+	pub type RotateVerificationKeyStorage<T: Config> =
+		StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
+
+	// Storage for a general state.
+	#[pallet::storage]
+	pub type StateStorage<T: Config> = StorageValue<_, State, ValueQuery>;
+
+	#[pallet::storage]
+	pub type VerifiedStepCall<T> = StorageValue<_, VerifiedStepCallStore, ValueQuery>;
+
+	#[pallet::storage]
+	pub type VerifiedRotateCall<T> = StorageValue<_, VerifiedRotateCallStore, ValueQuery>;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -197,8 +211,8 @@ pub mod pallet {
 		pub slots_per_period: u64,
 		pub source_chain_id: u32,
 		pub finality_threshold: u16,
-		pub consistent: bool,
-		pub head: u64,
+		pub sync_committee_poseidon: U256,
+		pub period: u64,
 		pub _phantom: PhantomData<T>,
 	}
 
@@ -211,21 +225,17 @@ pub mod pallet {
 			// Preconfigure init data
 			<StateStorage<T>>::put(State {
 				updater: self.updater,
-				genesis_validators_root: H256::zero(),
-				genesis_time: 1696440023,
-				seconds_per_slot: 12000,
-				slots_per_period: 8192,
-				source_chain_id: 1,
-				finality_threshold: 290,
-				head: 0,
-				consistent: true,
+				genesis_validators_root: H256::zero(), //self.genesis_validators_root,
+				genesis_time: self.genesis_time,
+				seconds_per_slot: self.seconds_per_slot,
+				slots_per_period: self.slots_per_period,
+				source_chain_id: self.source_chain_id,
+				finality_threshold: self.finality_threshold,
 			});
 
-			let s = U256::from_dec_str(
-				"7032059424740925146199071046477651269705772793323287102921912953216115444414",
-			)
-			.unwrap();
-			<SyncCommitteePoseidons<T>>::insert(0u64, s);
+			Head::<T>::set(0);
+			Consistent::<T>::set(true);
+			<SyncCommitteePoseidons<T>>::insert(self.period, self.sync_committee_poseidon);
 		}
 	}
 
@@ -240,80 +250,25 @@ pub mod pallet {
 		/// Sets the sync committee for the next sync committee period.
 		/// A commitment to the the next sync committee is signed by the current sync committee.
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::rotate())]
-		pub fn rotate(origin: OriginFor<T>, update: state::LightClientRotate) -> DispatchResult {
-			let sender: [u8; 32] = ensure_signed(origin)?.into();
-			let state = StateStorage::<T>::get();
-			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
-
-			let step = &update.step;
-
-			let finalized = process_step::<T>(state, step)?;
-			let current_period = step.finalized_slot / state.slots_per_period;
-			let next_period = current_period + 1;
-
-			let verifier = get_rotate_verifier::<T>()?;
-
-			// proof verification
-			let success = zk_light_client_rotate(&update, verifier)
-				.map_err(|_| Error::<T>::VerificationError)?;
-
-			ensure!(success, Error::<T>::InvalidRotateProof);
-
-			Self::deposit_event(Event::VerificationSuccess {
-				who: sender.into(),
-				attested_slot: step.attested_slot,
-				finalized_slot: step.finalized_slot,
-			});
-			if finalized {
-				let is_set =
-					set_sync_committee_poseidon::<T>(next_period, update.sync_committee_poseidon)?;
-				if is_set {
-					Self::deposit_event(Event::SyncCommitteeUpdate {
-						period: next_period,
-						root: update.sync_committee_poseidon,
-					});
-				}
-			}
-
-			Ok(())
-		}
-
-		#[pallet::call_index(5)]
 		#[pallet::weight(T::WeightInfo::step())]
-		pub fn step_refactor(origin: OriginFor<T>, attested_slot: u64) -> DispatchResult {
+		pub fn step(origin: OriginFor<T>, attested_slot: u64) -> DispatchResult {
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let state = StateStorage::<T>::get();
 			// ensure sender is preconfigured
 			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
 
-			let current_period = attested_slot / state.slots_per_period;
-			let sc_poseidon = SyncCommitteePoseidons::<T>::get(current_period);
-
-			let input = ethabi::encode(&[
-				Token::Uint(sc_poseidon),
-				Token::Uint(Uint::from(attested_slot)),
-			]);
-			// let result = verified_call::<T>(attested_slot, StepFunctionId::get(), input)?;
-			//
-			// let finalized_header_root = result.finalized_header_root;
-			// let execution_state_root = result.execution_state_root;
-			// let finalized_slot = result.finalized_slot;
-			// let participation = result.participation;
-			//
-			// ensure!(participation >= state.finality_threshold, Error::<T>::NotEnoughParticipants);
-			//
-			// let updated = set_slot_roots::<T>(
-			//     finalized_slot,
-			//     finalized_header_root,
-			//     execution_state_root,
-			// )?;
-
-			// TODO true false or error?
+			let res = step_into::<T>(attested_slot, state)?;
+			if res {
+				let vs = VerifiedStepCall::<T>::get();
+				Self::deposit_event(Event::HeaderUpdate {
+					slot: attested_slot,
+					finalization_root: vs.verified_output.finalized_header_root,
+				});
+			}
 			Ok(())
 		}
 
-		#[pallet::call_index(6)]
+		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
@@ -321,8 +276,8 @@ pub mod pallet {
 			input: Vec<u8>,
 			output: Vec<u8>,
 			proof: Vec<u8>,
-			//                         callback contract
-			//                         callback data
+			_callback: Vec<u8>, // callback address not in use
+			callback_data: Vec<u8>,
 		) -> DispatchResult {
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let state = StateStorage::<T>::get();
@@ -338,123 +293,66 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::VerificationError)?;
 
 			ensure!(success, Error::<T>::VerificationFailed);
+			let slot = U256::from_big_endian(&callback_data.as_slice()).as_u64();
 
-			let v = VerifiedCallStore {
-				verified_function_id: function_id,
-				verified_input_hash: input_hash,
-				verified_output: parse_step_output(output),
-			};
+			if function_id == StepFunctionId::get() {
+				let vs = VerifiedStepCallStore {
+					verified_function_id: function_id,
+					verified_input_hash: input_hash,
+					verified_output: parse_step_output(output),
+				};
 
-			// VerifiedCall::<T>::set(v);
+				VerifiedStepCall::<T>::set(vs);
+				if step_into::<T>(slot, state)? {
+					Self::deposit_event(Event::HeaderUpdate {
+						slot,
+						finalization_root: vs.verified_output.finalized_header_root,
+					});
+				}
+			} else if function_id == RotateFunctionId::get() {
+				let vr = VerifiedRotateCallStore {
+					verified_function_id: function_id,
+					verified_input_hash: input_hash,
+					sync_committee_poseidon: parse_rotate_output(output),
+				};
+
+				VerifiedRotateCall::<T>::set(vr);
+				if rotate_into::<T>(slot, state)? {
+					Self::deposit_event(Event::SyncCommitteeUpdate {
+						period: slot,
+						root: vr.sync_committee_poseidon,
+					});
+				}
+			} else {
+				return Err(Error::<T>::FunctionIdNotRecognised.into());
+			}
 
 			Ok(())
 		}
 
-		// #[pallet::call_index(7)]
-		// #[pallet::weight(T::WeightInfo::rotate())]
-		// pub fn rotate_refactor(origin: OriginFor<T>, finalized_slot: u64) -> DispatchResult {
-		//     let sender: [u8; 32] = ensure_signed(origin)?.into();
-		//     let state = StateStorage::<T>::get();
-		//     ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
-		//
-		//     let finalized_header_root = Headers::<T>::get(finalized_slot);
-		//     ensure!(finalized_header_root != H256::zero(), Error::<T>::HeaderRootNotSet);
-		//
-		//     let input = ethabi::encode(&[Token::FixedBytes(finalized_header_root.0.to_vec())]);
-		//     let result: VerifiedOutput = verified_call::<T>(finalized_slot, RotateFunctionId::get(), input)?;
-		//
-		//     let sync_committee_poseidon = result.sync_committee_poseidon;
-		//
-		//     let current_period = finalized_slot / state.slots_per_period;
-		//     let next_period = current_period + 1;
-		//
-		//     let is_set =
-		//         set_sync_committee_poseidon::<T>(next_period, sync_committee_poseidon)?;
-		//     if is_set {
-		//         Self::deposit_event(Event::SyncCommitteeUpdate {
-		//             period: next_period,
-		//             root: update.sync_committee_poseidon,
-		//         });
-		//     }
-		//
-		//     //
-		//     // let step = &update.step;
-		//     //
-		//     // let finalized = process_step::<T>(state, step)?;
-		//     // let current_period = step.finalized_slot / state.slots_per_period;
-		//     // let next_period = current_period + 1;
-		//     //
-		//     // let verifier = get_rotate_verifier::<T>()?;
-		//     //
-		//     // // proof verification
-		//     // let success = zk_light_client_rotate(&update, verifier)
-		//     //     .map_err(|_| Error::<T>::VerificationError)?;
-		//     //
-		//     // ensure!(success, Error::<T>::InvalidRotateProof);
-		//
-		//     // Self::deposit_event(Event::VerificationSuccess {
-		//     //     who: sender.into(),
-		//     //     attested_slot: step.attested_slot,
-		//     //     finalized_slot: step.finalized_slot,
-		//     // });
-		//     // if finalized {
-		//     //     let is_set =
-		//     //         set_sync_committee_poseidon::<T>(next_period, update.sync_committee_poseidon)?;
-		//     //     if is_set {
-		//     //         Self::deposit_event(Event::SyncCommitteeUpdate {
-		//     //             period: next_period,
-		//     //             root: update.sync_committee_poseidon,
-		//     //         });
-		//     //     }
-		//     // }
-		//
-		//     Ok(())
-		// }
+		#[pallet::call_index(7)]
+		#[pallet::weight(T::WeightInfo::rotate())]
+		pub fn rotate_refactor(origin: OriginFor<T>, finalized_slot: u64) -> DispatchResult {
+			let sender: [u8; 32] = ensure_signed(origin)?.into();
+			let state = StateStorage::<T>::get();
+			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
+
+			if rotate_into::<T>(finalized_slot, state)? {
+				let vr = VerifiedRotateCall::<T>::get();
+				Self::deposit_event(Event::SyncCommitteeUpdate {
+					period: finalized_slot,
+					root: vr.sync_committee_poseidon,
+				});
+			}
+
+			Ok(())
+		}
 
 		/// Updates the head of the light client to the provided slot.
 		/// The conditions for updating the head of the light client involve checking:
 		///      1) Enough signatures from the current sync committee for n=512
 		///      2) A valid finality proof
 		///      3) A valid execution state root proof
-		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::step())]
-		pub fn step(origin: OriginFor<T>, update: LightClientStep) -> DispatchResult {
-			let sender: [u8; 32] = ensure_signed(origin)?.into();
-			let state = StateStorage::<T>::get();
-			// ensure sender is preconfigured
-			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
-
-			let finalized = process_step::<T>(state, &update)?;
-
-			let block_time: u64 = T::TimeProvider::now().as_secs();
-			let current_slot = (block_time - state.genesis_time) / state.seconds_per_slot;
-
-			ensure!(
-				current_slot >= update.attested_slot,
-				Error::<T>::UpdateSlotIsFarInTheFuture
-			);
-
-			ensure!(
-				update.finalized_slot >= state.head,
-				Error::<T>::UpdateSlotLessThanCurrentHead
-			);
-
-			ensure!(finalized, Error::<T>::NotEnoughParticipants);
-
-			let updated = set_slot_roots::<T>(
-				update.finalized_slot,
-				update.finalized_header_root,
-				update.execution_state_root,
-			)?;
-			if updated {
-				Self::deposit_event(Event::HeadUpdate {
-					slot: update.finalized_slot,
-					finalization_root: update.finalized_header_root,
-				});
-			}
-
-			Ok(())
-		}
 
 		/// Sets updater that can call step and rotate functions
 		#[pallet::call_index(2)]
@@ -511,6 +409,51 @@ pub mod pallet {
 		}
 	}
 
+	fn rotate_into<T: Config>(finalized_slot: u64, state: State) -> Result<bool, DispatchError> {
+		let finalized_header_root = Headers::<T>::get(finalized_slot);
+		ensure!(
+			finalized_header_root != H256::zero(),
+			Error::<T>::HeaderRootNotSet
+		);
+
+		let input = ethabi::encode(&[Token::FixedBytes(finalized_header_root.0.to_vec())]);
+		let sync_committee_poseidon: U256 =
+			verified_rotate_call::<T>(RotateFunctionId::get(), input)?;
+
+		let current_period = finalized_slot / state.slots_per_period;
+		let next_period = current_period + 1;
+
+		let is_set = set_sync_committee_poseidon::<T>(next_period, sync_committee_poseidon)?;
+
+		Ok(is_set)
+	}
+
+	fn step_into<T: Config>(attested_slot: u64, state: State) -> Result<bool, DispatchError> {
+		let current_period = attested_slot / state.slots_per_period;
+		let sc_poseidon = SyncCommitteePoseidons::<T>::get(current_period);
+
+		let input = ethabi::encode(&[
+			Token::Uint(sc_poseidon),
+			Token::Uint(Uint::from(attested_slot)),
+		]);
+		let result = verified_step_call::<T>(StepFunctionId::get(), input)?;
+		// //
+		let finalized_header_root = result.finalized_header_root;
+		let execution_state_root = result.execution_state_root;
+		let finalized_slot = result.finalized_slot;
+		let participation = result.participation;
+		// //
+		ensure!(
+			participation >= state.finality_threshold,
+			Error::<T>::NotEnoughParticipants
+		);
+		// //
+		let updated =
+			set_slot_roots::<T>(finalized_slot, finalized_header_root, execution_state_root)?;
+
+		Ok(updated)
+	}
+
 	fn set_slot_roots<T: Config>(
 		slot: u64,
 		finalized_header_root: H256,
@@ -519,29 +462,17 @@ pub mod pallet {
 		let header = Headers::<T>::get(slot);
 
 		if header != H256::zero() && header != finalized_header_root {
-			StateStorage::<T>::try_mutate(|m| -> Result<(), DispatchError> {
-				m.consistent = false;
-				Ok(())
-			})
-			.map_err(|_| Error::<T>::CannotUpdateStateStorage)?;
+			Consistent::<T>::set(false);
 			return Ok(false);
 		}
 		let state_root = ExecutionStateRoots::<T>::get(slot);
 
 		if state_root != H256::zero() && state_root != execution_state_root {
-			StateStorage::<T>::try_mutate(|m| -> Result<(), DispatchError> {
-				m.consistent = false;
-				Ok(())
-			})
-			.map_err(|_| Error::<T>::CannotUpdateStateStorage)?;
+			Consistent::<T>::set(false);
 			return Ok(false);
 		}
 
-		StateStorage::<T>::try_mutate(|m| -> Result<(), DispatchError> {
-			m.head = slot;
-			Ok(())
-		})
-		.map_err(|_| Error::<T>::CannotUpdateStateStorage)?;
+		Head::<T>::set(slot);
 
 		Headers::<T>::insert(slot, finalized_header_root);
 
@@ -558,41 +489,13 @@ pub mod pallet {
 		let sync_committee_poseidons = SyncCommitteePoseidons::<T>::get(period);
 
 		if poseidon != U256::zero() && sync_committee_poseidons != poseidon {
-			StateStorage::<T>::try_mutate(|m| -> Result<(), DispatchError> {
-				m.consistent = false;
-				Ok(())
-			})
-			.map_err(|_| Error::<T>::CannotUpdateStateStorage)?;
+			Consistent::<T>::set(false);
+
 			return Ok(false);
 		}
 		SyncCommitteePoseidons::<T>::set(period, poseidon);
 
 		Ok(true)
-	}
-
-	fn process_step<T: Config>(
-		state: State,
-		update: &LightClientStep,
-	) -> Result<bool, DispatchError> {
-		let current_period = update.finalized_slot / state.slots_per_period; //get_sync_committee_period(state, update.attested_slot);
-		let sc_poseidon = SyncCommitteePoseidons::<T>::get(current_period);
-
-		ensure!(
-			sc_poseidon != U256::zero(),
-			Error::<T>::SyncCommitteeNotInitialized
-		);
-		ensure!(
-			update.participation >= MinSyncCommitteeParticipants::get(),
-			Error::<T>::NotEnoughSyncCommitteeParticipants
-		);
-
-		let verifier = get_step_verifier::<T>()?;
-
-		let success = zk_light_client_step(&update, sc_poseidon, verifier)
-			.map_err(|_| Error::<T>::VerificationError)?;
-
-		ensure!(success, Error::<T>::InvalidStepProof);
-		Ok(update.participation > state.finality_threshold)
 	}
 
 	fn get_verifier<T: Config>(function_id: H256) -> Result<Verifier, Error<T>> {
@@ -657,14 +560,34 @@ pub mod pallet {
 		Ok(deserialized_vk)
 	}
 
-	// fn verified_call<T: Config>(attested_slot: u64, function_id: H256, input: Bytes) -> Result<dyn VerifiedOutput, DispatchError> {
-	//     let input_hash = sha2_256(input.as_slice());
-	//     let verified_call = VerifiedCall::<T>::get();
-	//     if verified_call.verified_function_id == function_id && verified_call.verified_input_hash == H256(input_hash) {
-	//         let trait_object: &dyn VerifiedOutput = &verified_call.verified_output;
-	//         Ok(trait_object)
-	//     } else {
-	//         return Err(Error::<T>::StepVerificationError.into());
-	//     }
-	// }
+	fn verified_step_call<T: Config>(
+		function_id: H256,
+		input: ethabi::Bytes,
+	) -> Result<VerifiedStepOutput, DispatchError> {
+		let input_hash = sha2_256(input.as_slice());
+		let verified_call = VerifiedStepCall::<T>::get();
+		if verified_call.verified_function_id == function_id
+			&& verified_call.verified_input_hash == H256(input_hash)
+		{
+			let trait_object: VerifiedStepOutput = verified_call.verified_output;
+			Ok(trait_object)
+		} else {
+			return Err(Error::<T>::StepVerificationError.into());
+		}
+	}
+
+	fn verified_rotate_call<T: Config>(
+		function_id: H256,
+		input: ethabi::Bytes,
+	) -> Result<U256, DispatchError> {
+		let input_hash = sha2_256(input.as_slice());
+		let verified_call = VerifiedRotateCall::<T>::get();
+		if verified_call.verified_function_id == function_id
+			&& verified_call.verified_input_hash == H256(input_hash)
+		{
+			Ok(verified_call.sync_committee_poseidon)
+		} else {
+			return Err(Error::<T>::StepVerificationError.into());
+		}
+	}
 }

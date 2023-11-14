@@ -6,34 +6,15 @@ use ark_std::string::String;
 use ark_std::string::ToString;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{Deserialize, Serialize};
-use hex_literal::hex;
 use scale_info::TypeInfo;
 use sp_core::{H256, U256};
 use sp_std::prelude::*;
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
-pub struct LightClientStep {
-	pub attested_slot: u64,
-	pub finalized_slot: u64,
-	pub participation: u16,
-	pub finalized_header_root: H256,
-	pub execution_state_root: H256,
-	pub proof: Groth16Proof,
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
 pub struct Groth16Proof {
 	pub a: Vec<String>,
 	pub b: Vec<Vec<String>>,
 	pub c: Vec<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
-pub struct LightClientRotate {
-	pub step: LightClientStep,
-	pub sync_committee_ssz: U256,
-	pub sync_committee_poseidon: U256,
-	pub proof: Groth16Proof,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -107,14 +88,13 @@ impl PublicSignals {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct State {
 	pub updater: H256,
+
 	pub genesis_validators_root: H256,
 	pub genesis_time: u64,
 	pub seconds_per_slot: u64,
 	pub slots_per_period: u64,
 	pub source_chain_id: u32,
 	pub finality_threshold: u16,
-	pub head: u64,
-	pub consistent: bool,
 }
 
 impl Default for State {
@@ -127,18 +107,24 @@ impl Default for State {
 			slots_per_period: Default::default(),
 			source_chain_id: Default::default(),
 			finality_threshold: Default::default(),
-			head: Default::default(),
-			consistent: Default::default(),
 		}
 	}
 }
 
 #[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct VerifiedCallStore {
+pub struct VerifiedStepCallStore {
 	pub verified_function_id: H256,
 	pub verified_input_hash: H256,
 	pub verified_output: VerifiedStepOutput,
+}
+
+#[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct VerifiedRotateCallStore {
+	pub verified_function_id: H256,
+	pub verified_input_hash: H256,
+	pub sync_committee_poseidon: U256,
 }
 
 #[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
@@ -150,18 +136,22 @@ pub struct VerifiedStepOutput {
 	pub participation: u16,
 }
 
-#[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct VerifiedRotateOutput {
-	pub sync_committee_poseidon: U256,
-}
-
-impl Default for VerifiedCallStore {
+impl Default for VerifiedStepCallStore {
 	fn default() -> Self {
 		Self {
 			verified_function_id: Default::default(),
 			verified_input_hash: Default::default(),
 			verified_output: Default::default(),
+		}
+	}
+}
+
+impl Default for VerifiedRotateCallStore {
+	fn default() -> Self {
+		Self {
+			verified_function_id: Default::default(),
+			verified_input_hash: Default::default(),
+			sync_committee_poseidon: Default::default(),
 		}
 	}
 }
@@ -177,12 +167,8 @@ impl Default for VerifiedStepOutput {
 	}
 }
 
-pub fn parse_rotate_output(output: Vec<u8>) -> VerifiedRotateOutput {
-	let sync_committee_poseidon: U256 = U256::from_big_endian(output.as_slice());
-
-	VerifiedRotateOutput {
-		sync_committee_poseidon,
-	}
+pub fn parse_rotate_output(output: Vec<u8>) -> U256 {
+	U256::from_big_endian(output.as_slice())
 }
 
 pub fn parse_step_output(output: Vec<u8>) -> VerifiedStepOutput {
@@ -202,7 +188,6 @@ pub fn parse_step_output(output: Vec<u8>) -> VerifiedStepOutput {
 		execution_state_root: H256(execution_state_root),
 		finalized_slot: u64::from_be_bytes(finalized_slot),
 		participation: u16::from_be_bytes(participation),
-		// TODO add this
 	};
 }
 
@@ -225,6 +210,4 @@ fn test() {
 		)),
 		pars.execution_state_root
 	);
-	// TODO this must be added
-	// assert_eq!("", pars.sync_committee_poseidon.to_string());
 }

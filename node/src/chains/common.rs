@@ -1,9 +1,15 @@
-use super::{get_account_id_from_seed, AuthorityKeys};
 use avail_core::{AppId, BLOCK_CHUNK_SIZE};
 use avail_core_kate::{
 	config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS},
 	testnet::public_params,
 };
+use hex_literal::hex;
+use primitive_types::{H160, H256};
+use sc_telemetry::TelemetryEndpoints;
+use sp_core::sr25519::Public;
+use sp_core::U256;
+use sp_runtime::{AccountId32, Perbill};
+
 use da_control::AppKeyInfo;
 use da_runtime::{
 	constants, wasm_binary_unwrap, AccountId, BabeConfig, Balance, BalancesConfig,
@@ -12,11 +18,8 @@ use da_runtime::{
 	SystemConfig, TechnicalCommitteeConfig, AVL,
 };
 use frame_system::limits::BlockLength;
-use hex_literal::hex;
-use primitive_types::{H160, H256};
-use sc_telemetry::TelemetryEndpoints;
-use sp_core::sr25519::Public;
-use sp_runtime::{AccountId32, Perbill};
+
+use super::{get_account_id_from_seed, AuthorityKeys};
 
 pub const PROTOCOL_ID: Option<&str> = Some("Avail");
 pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
@@ -25,6 +28,7 @@ const NOMAD_UPDATER: H160 = H160(hex!("695dFcFc604F9b2992642BDC5b173d1a1ed60b03"
 const SUCCINCT_UPDATER: H256 = H256(hex!(
 	"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
 ));
+
 const ENDOWMENT: Balance = 1_000_000 * AVL;
 const STASH_BOND: Balance = ENDOWMENT / 100;
 const DEFAULT_ENDOWED_SEEDS: [&str; 12] = [
@@ -87,6 +91,10 @@ fn make_data_avail_config(owner: AccountId) -> DataAvailabilityConfig {
 	}
 }
 
+fn parse_lc_poseidon() -> U256 {
+	U256::from_dec_str("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df").unwrap()
+}
+
 pub fn runtime_genesis_config(
 	sudo: AccountId32,
 	technical_committee: Vec<AccountId32>,
@@ -142,8 +150,18 @@ pub fn runtime_genesis_config(
 			..Default::default()
 		},
 		succinct: SuccinctConfig {
-			slots_per_period: 943,
+			//TODO check all values
+			slots_per_period: 8192,
 			updater: SUCCINCT_UPDATER,
+			genesis_validators_root: H256(hex!(
+				"4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95"
+			)),
+			genesis_time: 1699963352,
+			seconds_per_slot: 12,
+			source_chain_id: 1,
+			finality_threshold: 461,
+			period: 931,
+			sync_committee_poseidon: parse_lc_poseidon(),
 			..Default::default()
 		},
 		nomination_pools: NominationPoolsConfig {
