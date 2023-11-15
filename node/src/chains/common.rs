@@ -81,10 +81,6 @@ fn make_data_avail_config(owner: AccountId) -> DataAvailabilityConfig {
 	DataAvailabilityConfig { app_keys }
 }
 
-fn parse_lc_poseidon() -> U256 {
-	U256::from_dec_str("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df").unwrap()
-}
-
 pub fn runtime_genesis_config(
 	sudo: AccountId32,
 	technical_committee: Vec<AccountId32>,
@@ -154,7 +150,9 @@ pub fn runtime_genesis_config(
 			source_chain_id: 1,
 			finality_threshold: 461,
 			period: 931,
-			sync_committee_poseidon: parse_lc_poseidon(),
+			sync_committee_poseidon: U256::from(hex!(
+				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
+			)),
 			..Default::default()
 		},
 		nomination_pools: NominationPoolsConfig {
