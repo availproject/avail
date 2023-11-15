@@ -4,8 +4,9 @@ use frame_support::{pallet_prelude::*, parameter_types};
 use hex_literal::hex;
 use sp_core::{H256, U256};
 
-use crate::verifier::Verifier;
 pub use pallet::*;
+
+use crate::verifier::Verifier;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -41,7 +42,7 @@ parameter_types! {
 pub mod pallet {
 	use ark_std::string::String;
 	use ark_std::{vec, vec::Vec};
-	use ethabi::{Token, Uint};
+	use ethabi::Token;
 	use frame_support::dispatch::{GetDispatchInfo, UnfilteredDispatchable};
 	use frame_support::traits::{Hash, UnixTime};
 	use frame_support::{pallet_prelude::ValueQuery, DefaultNoBound};
@@ -55,6 +56,7 @@ pub mod pallet {
 		parse_rotate_output, parse_step_output, State, VerifiedRotateCallStore,
 		VerifiedStepCallStore, VerifiedStepOutput,
 	};
+	use crate::verifier::encode_packed;
 
 	use super::*;
 
@@ -254,7 +256,7 @@ pub mod pallet {
 
 			ensure!(success, Error::<T>::VerificationFailed);
 
-			let slot = U256::from_big_endian(&callback_data[callback_data.len() - 32..]).as_u64();
+			let slot = parse_slot(callback_data);
 
 			if function_id == StepFunctionId::get() {
 				let vs =
@@ -409,10 +411,7 @@ pub mod pallet {
 		let current_period = attested_slot / state.slots_per_period;
 		let sc_poseidon = SyncCommitteePoseidons::<T>::get(current_period);
 
-		let input = ethabi::encode(&[
-			Token::Uint(sc_poseidon),
-			Token::Uint(Uint::from(attested_slot)),
-		]);
+		let input = encode_packed(sc_poseidon, attested_slot);
 		let result = verified_step_call::<T>(StepFunctionId::get(), input)?;
 
 		ensure!(
@@ -562,7 +561,8 @@ pub mod pallet {
 	}
 
 	pub fn parse_slot(callback_data: Vec<u8>) -> u64 {
-		let sub = &callback_data[callback_data.len() - 32..];
-		U256::from_big_endian(sub).as_u64()
+		let mut slot_data: [u8; 8] = [0; 8];
+		slot_data[..8].copy_from_slice(&callback_data[callback_data.len() - 8..]);
+		u64::from_be_bytes(slot_data)
 	}
 }

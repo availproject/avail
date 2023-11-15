@@ -257,15 +257,25 @@ pub fn decode_proof(proof: Vec<u8>) -> (Vec<String>, Vec<Vec<String>>, Vec<Strin
 	)
 }
 
+// implements abi.encodePacked
+pub fn encode_packed(poseidon: U256, slot: u64) -> Vec<u8> {
+	let bytes: &mut [u8; 32] = &mut [0u8; 32];
+	poseidon.to_big_endian(bytes);
+	let slot_bytes = slot.to_be_bytes();
+	let mut result = bytes.to_vec();
+	result.extend_from_slice(slot_bytes.as_slice());
+	result
+}
+
 #[cfg(test)]
 mod tests {
 	use frame_support::assert_ok;
 	use hex_literal::hex;
-	use sp_core::H256;
+	use sp_core::{H256, U256};
 	use sp_io::hashing::sha2_256;
 
 	use crate::parse_slot;
-	use crate::verifier::{decode_proof, Verifier};
+	use crate::verifier::{decode_proof, encode_packed, Verifier};
 
 	#[test]
 	fn test_zk_step_with_serde() {
@@ -413,5 +423,21 @@ mod tests {
 		let slot = parse_slot(callback_data.to_vec());
 
 		assert_eq!(7634942, slot);
+	}
+
+	#[test]
+	fn test_input_hashing_encode_packed() {
+		let requested_input = hex!(
+			"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df0000000000747ffe"
+		);
+		let requested_input_hash = sha2_256(requested_input.as_slice());
+		let stored_poseidon =
+			U256::from("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df");
+		let stored_slot = 7634942u64;
+		let res = encode_packed(stored_poseidon, stored_slot);
+		assert_eq!(
+			sha2_256(requested_input.as_slice()),
+			sha2_256(res.as_slice())
+		)
 	}
 }
