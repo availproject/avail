@@ -167,12 +167,6 @@ pub struct VerifiedStepOutput {
 	pub participation: u16,
 }
 
-
-
-
-
-
-
 pub fn parse_rotate_output(output: Vec<u8>) -> U256 {
 	U256::from_big_endian(output.as_slice())
 }
