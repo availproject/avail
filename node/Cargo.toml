@@ -1,6 +1,6 @@
 [package]
 name = "data-avail"
-version = "1.7.0"
+version = "1.8.2"
 description = "Avail Node"
 authors = ["Anonymous"]
 homepage = "https://www.availproject.org/"
@@ -52,6 +52,7 @@ sp-statement-store = "4.0.0-dev"
 sp-core = "21.0.0"
 sc-executor = "0.10.0-dev"
 sc-service = "0.10.0-dev"
+sc-storage-monitor = "0.1.0"
 sc-telemetry = "4.0.0-dev"
 sc-keystore = "4.0.0-dev"
 sp-keystore = "0.27.0"
@@ -65,6 +66,7 @@ sc-consensus-babe-rpc = "0.10.0-dev"
 sp-consensus-babe = "0.10.0-dev"
 sp-consensus = "0.10.0-dev"
 sc-consensus = "0.10.0-dev"
+sc-offchain = "4.0.0-dev"
 # Renamed: (https://github.com/paritytech/substrate/pull/13458)
 sc-consensus-grandpa-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 sc-consensus-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
@@ -125,33 +127,29 @@ sp-tracing = "10.0.0"
 tempfile = "3.1.0"
 
 [features]
-default = ["cli"]
-header_commitment_corruption = [ "da-runtime/header_commitment_corruption"]
+default = [ "cli" ]
+header_commitment_corruption = [ "da-runtime/header_commitment_corruption" ]
 fast-runtime = [ "da-runtime/fast-runtime" ]
-cli = [
-	"clap",
-	"clap_complete",
-	"frame-benchmarking-cli",
-]
+cli = [ "clap", "clap_complete", "frame-benchmarking-cli" ]
 runtime-benchmarks = [
+	"da-control/runtime-benchmarks",
 	"da-runtime/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
-	"da-control/runtime-benchmarks",
 	"nomad-da-bridge/runtime-benchmarks",
 	"nomad-home/runtime-benchmarks",
-	"nomad-updater-manager/runtime-benchmarks"
+	"nomad-updater-manager/runtime-benchmarks",
 ]
 # Enable features that allow the runtime to be tried and debugged. Name might be subject to change
 # in the near future.
 try-runtime = [
-	"da-runtime/try-runtime",
-	"try-runtime-cli/try-runtime",
 	"avail-core/try-runtime",
 	"da-control/try-runtime",
+	"da-runtime/try-runtime",
 	"frame-system/try-runtime",
 	"nomad-da-bridge/try-runtime",
 	"nomad-home/try-runtime",
-	"nomad-updater-manager/try-runtime"
+	"nomad-updater-manager/try-runtime",
+	"try-runtime-cli/try-runtime",
 ]
 
 

@@ -1,7 +1,6 @@
-use core::marker::PhantomData;
-
 use codec::{Decode, Encode};
-use serde::{Deserialize, Deserializer, Serialize};
+use core::marker::PhantomData;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use subxt::{
 	config::{
 		substrate::{BlakeTwo256, Digest, DigestItem},
@@ -19,7 +18,7 @@ use crate::api::runtime_types::{
 #[serde(rename_all = "camelCase")]
 pub struct Header {
 	pub parent_hash: H256,
-	#[serde(deserialize_with = "number_from_hex")]
+	#[serde(serialize_with = "number_to_hex", deserialize_with = "number_from_hex")]
 	#[codec(compact)]
 	pub number: u32,
 	pub state_root: H256,
@@ -32,7 +31,7 @@ impl Header {
 	pub fn data_root(&self) -> H256 {
 		match &self.extension {
 			HeaderExtension::V1(ext) => ext.commitment.data_root,
-			HeaderExtension::V2(ext) => ext.commitment.data_root.unwrap_or_default(),
+			HeaderExtension::V2(ext) => ext.commitment.data_root,
 		}
 	}
 }
@@ -48,6 +47,14 @@ impl SPHeader for Header {
 	fn hash(&self) -> <Self::Hasher as Hasher>::Output {
 		Self::Hasher::hash_of(self)
 	}
+}
+
+fn number_to_hex<S>(value: &u32, serializer: S) -> Result<S::Ok, S::Error>
+where
+	S: Serializer,
+{
+	let hex_string = format!("{:X}", value);
+	serializer.serialize_str(&hex_string)
 }
 
 fn number_from_hex<'de, D>(deserializer: D) -> Result<u32, D::Error>

@@ -1,7 +1,3 @@
----
-Name: Pull Request
-About: Provide information about the proposed changes
----
 # Pull Request type
 
 <!-- Check the [contributing guide](../../CONTRIBUTING.md) -->
@@ -29,7 +25,7 @@ Please add the labels corresponding to the type of changes your PR introduces:
 
 ## Checklist
 - [ ] I have performed a self-review of my own code.
-- [ ] The tests pass succesfully with `cargo test`.
+- [ ] The tests pass successfully with `cargo test`.
 - [ ] The code was formatted with `cargo fmt`.
 - [ ] The code compiles with no new warnings with `cargo build --release` and `cargo build --release --features runtime-benchmarks`.
 - [ ] The code has no new warnings when using `cargo clippy`.

@@ -93,10 +93,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 14_847_000 picoseconds.
-		Weight::from_parts(9_725_789, 0)
+		// Minimum execution time: 11_812_000 picoseconds.
+		Weight::from_parts(20_989_562, 0)
 			// Standard Error: 1
-			.saturating_add(Weight::from_parts(1_150, 0).saturating_mul(i.into()))
+			.saturating_add(Weight::from_parts(940, 0).saturating_mul(i.into()))
 	}
 	/// The range of component `i` is `[0, 524288]`.
 	fn data_root(i: u32, ) -> Weight {
@@ -191,10 +191,10 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 14_847_000 picoseconds.
-		Weight::from_parts(9_725_789, 0)
+		// Minimum execution time: 11_812_000 picoseconds.
+		Weight::from_parts(20_989_562, 0)
 			// Standard Error: 1
-			.saturating_add(Weight::from_parts(1_150, 0).saturating_mul(i.into()))
+			.saturating_add(Weight::from_parts(940, 0).saturating_mul(i.into()))
 	}
 	/// The range of component `i` is `[0, 524288]`.
 	fn data_root(i: u32, ) -> Weight {

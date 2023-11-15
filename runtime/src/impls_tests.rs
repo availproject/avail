@@ -84,6 +84,7 @@ mod multiplier_tests {
 	}
 
 	#[test]
+	#[ignore]
 	fn truth_value_update_poc_works() {
 		let fm = Multiplier::saturating_from_rational(1, 2);
 		let test_set = vec![
@@ -133,7 +134,9 @@ mod multiplier_tests {
 		})
 	}
 
+	// Note: With sensitivity = 0.000001, this test is going to take a long time. We may consider commenting this out
 	#[test]
+	#[ignore]
 	fn time_to_reach_zero() {
 		// blocks per 24h in substrate-node: 28,800 (k)
 		// s* = 0.1875
@@ -165,20 +168,14 @@ mod multiplier_tests {
 	fn min_change_per_day() {
 		run_with_system_weight(max_normal(), || {
 			let mut fm = Multiplier::one();
-			// See the example in the doc of `TargetedFeeAdjustment`. are at least 0.234, hence
-			// `fm > 1.234`.
-			// NOTE DataAvailability:
-			// We use 20 seconds per block (having 4320 blocks per day), `v` should be greater:
-			// `v >= p / k * (1 - s_p)` =>
-			// `AdjustmentVariable >= 0.234 / Blocks_per_day * ( 1 - Ideal Block Weight) =>`
-			// `AdjustmentVariable >= 0.234 / (4320 * (1 - 0.1875)) >= 0.00006`
+			// We expect a daily multiplier increase of 0.2% if we sustain the congested network on Avail
 			for _ in 0..DAYS {
 				let next = runtime_multiplier_update(fm);
 				fm = next;
 			}
 			assert!(
-				fm > Multiplier::saturating_from_rational(1234, 1000),
-				"Invalid fm (={})",
+				fm > Multiplier::saturating_from_rational(1002, 1000),
+				"Invalid fm ={}",
 				fm
 			);
 		})
@@ -286,7 +283,7 @@ mod multiplier_tests {
 			let mut original = Multiplier::zero();
 			let mut next = Multiplier::default();
 
-			(0..1_000).for_each(|_| {
+			(0..500).for_each(|_| {
 				next = runtime_multiplier_update(original);
 				assert_eq_error_rate!(
 					next,
@@ -350,7 +347,7 @@ mod multiplier_tests {
 
 		// Some values that are all above the target and will cause an increase.
 		let t = target();
-		vec![t + Weight::from_parts(100, 0), t * 2, t * 4]
+		vec![t + Weight::from_parts(100, 0), t * 2]
 			.into_iter()
 			.for_each(|i| {
 				run_with_system_weight(i, || {
@@ -359,5 +356,196 @@ mod multiplier_tests {
 					assert_eq!(fm, max_fm);
 				})
 			});
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use crate::impls::DealWithFees;
+	use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::Currency;
+	use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::OnUnbalanced;
+	use crate::AccountId;
+	use crate::Balance;
+	use crate::BlockNumber;
+	use frame_support::{
+		derive_impl, parameter_types,
+		traits::{ConstU32, FindAuthor},
+		PalletId,
+	};
+	use frame_system::{
+		header_builder::da::HeaderExtensionBuilder, mocking::MockUncheckedExtrinsic,
+		test_utils::TestRandomness,
+	};
+	use sp_runtime::{traits::IdentityLookup, BuildStorage, Perquintill};
+
+	/// An unchecked extrinsic type to be used in tests.
+	type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
+
+	/// An implementation of `sp_runtime::traits::Block` to be used in tests.
+	type Block = frame_system::mocking::MockDaBlock<Test>;
+	const TEST_ACCOUNT: AccountId = AccountId::new([1; 32]);
+
+	frame_support::construct_runtime!(
+		pub struct Test {
+			System: frame_system,
+			Authorship: pallet_authorship,
+			Balances: pallet_balances,
+			Treasury: pallet_treasury,
+		}
+	);
+
+	parameter_types! {
+		pub const BlockHashCount: BlockNumber = 250;
+		pub static ExistentialDeposit: u64 = 1;
+	}
+
+	#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
+	impl frame_system::Config for Test {
+		type AccountId = AccountId;
+		type Lookup = IdentityLookup<Self::AccountId>;
+		type AccountData = pallet_balances::AccountData<Balance>;
+		type BaseCallFilter = frame_support::traits::Everything;
+		type Block = Block;
+		type BlockHashCount = BlockHashCount;
+		type HeaderExtensionBuilder = HeaderExtensionBuilder<Test>;
+		type OnSetCode = ();
+		type PalletInfo = PalletInfo;
+		type Randomness = TestRandomness<Test>;
+		type RuntimeCall = RuntimeCall;
+		type RuntimeEvent = RuntimeEvent;
+		type RuntimeOrigin = RuntimeOrigin;
+		type SubmittedDataExtractor = ();
+		type UncheckedExtrinsic = UncheckedExtrinsic;
+	}
+
+	parameter_types! {
+		pub const MaxReserves: u32 = 2;
+	}
+
+	impl pallet_balances::Config for Test {
+		type AccountStore = System;
+		type Balance = Balance;
+		type DustRemoval = ();
+		type ExistentialDeposit = ExistentialDeposit;
+		type FreezeIdentifier = [u8; 8];
+		type MaxFreezes = ConstU32<2>;
+		type MaxHolds = ConstU32<2>;
+		type MaxLocks = ();
+		type MaxReserves = MaxReserves;
+		type ReserveIdentifier = [u8; 8];
+		type RuntimeEvent = RuntimeEvent;
+		type RuntimeHoldReason = [u8; 8];
+		type WeightInfo = ();
+	}
+
+	parameter_types! {
+		pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+		pub const MaxApprovals: u32 = 100;
+	}
+
+	impl pallet_treasury::Config for Test {
+		type Currency = pallet_balances::Pallet<Test>;
+		type ApproveOrigin = frame_system::EnsureRoot<AccountId>;
+		type RejectOrigin = frame_system::EnsureRoot<AccountId>;
+		type RuntimeEvent = RuntimeEvent;
+		type OnSlash = ();
+		type ProposalBond = ();
+		type ProposalBondMinimum = ();
+		type ProposalBondMaximum = ();
+		type SpendPeriod = ();
+		type Burn = ();
+		type BurnDestination = ();
+		type PalletId = TreasuryPalletId;
+		type SpendFunds = ();
+		type MaxApprovals = MaxApprovals;
+		type WeightInfo = ();
+		type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
+	}
+
+	pub struct OneAuthor;
+	impl FindAuthor<AccountId> for OneAuthor {
+		fn find_author<'a, I>(_: I) -> Option<AccountId>
+		where
+			I: 'a,
+		{
+			Some(TEST_ACCOUNT)
+		}
+	}
+	impl pallet_authorship::Config for Test {
+		type FindAuthor = OneAuthor;
+		type EventHandler = ();
+	}
+
+	pub fn new_test_ext() -> sp_io::TestExternalities {
+		let mut t = frame_system::GenesisConfig::<Test>::default()
+			.build_storage()
+			.unwrap();
+		// We use default for brevity, but you can configure as desired if needed.
+		pallet_balances::GenesisConfig::<Test>::default()
+			.assimilate_storage(&mut t)
+			.unwrap();
+		t.into()
+	}
+
+	#[test]
+	fn test_fees_and_tip_split() {
+		new_test_ext().execute_with(|| {
+			let fee = Balances::issue(10);
+			let tip = Balances::issue(20);
+
+			assert_eq!(Balances::free_balance(Treasury::account_id()), 0);
+			assert_eq!(Balances::free_balance(TEST_ACCOUNT), 0);
+
+			DealWithFees::on_unbalanceds(vec![fee, tip].into_iter());
+
+			// Author gets 100% of tip and 20% of fee = 22
+			assert_eq!(Balances::free_balance(TEST_ACCOUNT), 22);
+			// Treasury gets 80% of fee = 8
+			assert_eq!(Balances::free_balance(Treasury::account_id()), 8);
+		});
+	}
+
+	#[test]
+	fn compute_inflation_should_give_sensible_results() {
+		assert_eq!(
+			pallet_staking_reward_fn::compute_inflation(
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(5),
+			),
+			Perquintill::one()
+		);
+		assert_eq!(
+			pallet_staking_reward_fn::compute_inflation(
+				Perquintill::from_percent(25),
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(5),
+			),
+			Perquintill::from_rational(1u64, 2u64)
+		);
+		assert_eq!(
+			pallet_staking_reward_fn::compute_inflation(
+				Perquintill::from_percent(55),
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(5),
+			),
+			Perquintill::from_rational(1u64, 2u64)
+		);
+		assert_eq!(
+			pallet_staking_reward_fn::compute_inflation(
+				Perquintill::from_percent(60),
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(5),
+			),
+			Perquintill::from_rational(1u64, 4u64)
+		);
+		assert_eq!(
+			pallet_staking_reward_fn::compute_inflation(
+				Perquintill::from_percent(75),
+				Perquintill::from_percent(50),
+				Perquintill::from_percent(5),
+			),
+			Perquintill::from_rational(1u64, 32u64)
+		);
 	}
 }

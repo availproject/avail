@@ -33,10 +33,19 @@ subxt codegen --version 14 \
 	--derive-for-type avail_core::AppId=Default \
 	--derive-for-type avail_core::AppId=Copy \
 	--derive-for-type avail_core::AppId=derive_more::From \
+	--derive-for-type avail_core::BlockLengthColumns=serde::Serialize \
+	--derive-for-type avail_core::BlockLengthColumns=serde::Deserialize \
+	--derive-for-type avail_core::BlockLengthRows=serde::Serialize \
+	--derive-for-type avail_core::BlockLengthRows=serde::Deserialize \
+	--derive-for-type frame_system::limits::BlockLength=serde::Serialize \
+	--derive-for-type frame_system::limits::BlockLength=serde::Deserialize \
+	--derive-for-type frame_support::dispatch::PerDispatchClass=serde::Serialize \
+	--derive-for-type frame_support::dispatch::PerDispatchClass=serde::Deserialize \
 	--url http://localhost:9944 \
 	| sed -En "s/pub struct KateCommitment/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
 	| sed -En "s/pub struct HeaderExtension/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
 	| sed -En "s/pub struct DataLookupItem/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
+	| sed -En "s/pub struct BlockLength\b/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
 	| sed -E '1i \#\[allow(clippy::all)]' \
 	| rustfmt --edition=2021 --emit=stdout > src/api_dev.rs
 echo "🎁 Avail-SubXt API generated in 'src/api_dev.rs'"

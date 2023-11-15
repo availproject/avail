@@ -10,6 +10,8 @@ use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_arithmetic::traits::{CheckedAdd, One, SaturatedConversion};
+use sp_core::H256;
+use sp_io::{hashing::blake2_256, transaction_index};
 use sp_std::{mem::replace, vec, vec::Vec};
 
 pub use crate::{pallet::*, weights::WeightInfo};
@@ -151,7 +153,21 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(!data.is_empty(), Error::<T>::DataCannotBeEmpty);
-			Self::deposit_event(Event::DataSubmitted { who, data });
+
+			// SAFETY: `data.len()` is always less than `u32::MAX` because it is bounded by
+			// `BoundedVec`
+			let len = data.len() as u32;
+
+			// Index Tx in DB block.
+			let data_hash = blake2_256(&data);
+			let extrinsic_index =
+				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::BadContext)?;
+			transaction_index::index(extrinsic_index, len, data_hash);
+
+			Self::deposit_event(Event::DataSubmitted {
+				who,
+				data_hash: H256(data_hash),
+			});
 
 			Ok(().into())
 		}
@@ -208,7 +224,7 @@ pub mod pallet {
 		},
 		DataSubmitted {
 			who: T::AccountId,
-			data: AppDataFor<T>,
+			data_hash: H256,
 		},
 		BlockLengthProposalSubmitted {
 			rows: BlockLengthRows,
@@ -235,53 +251,40 @@ pub mod pallet {
 		BlockDimensionsTooSmall,
 		/// The request to reduce block dimensions was made in a non-empty block
 		InvalidBlockWeightReduction,
+		/// Submit data call outside of block execution context.
+		BadContext,
 	}
 
 	#[pallet::genesis_config]
 	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
-		#[serde(skip)]
-		pub _config: sp_std::marker::PhantomData<T>,
-		#[serde(skip)]
-		pub app_keys: Vec<(Vec<u8>, AppKeyInfoFor<T>)>,
+		#[allow(clippy::type_complexity)]
+		pub app_keys: Vec<(Vec<u8>, (T::AccountId, u32))>,
 	}
 
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			// Ensure app ids are unique.
-			let mut ids = self
-				.app_keys
-				.iter()
-				.map(|(_, info)| info.id)
-				.collect::<Vec<_>>();
-			ids.sort_unstable();
-			ids.dedup();
-			if ids.len() != self.app_keys.len() {
-				panic!("DA Control Genesis contains duplicated application ID");
-			}
+			let mut app_keys = self.app_keys.clone();
+			app_keys.sort_by(|a, b| a.1 .1.cmp(&b.1 .1));
+
+			// With a sorted array, we can just use the id of the last element :)
+			let last_key = app_keys.last();
+			let last_id = last_key.map(|x| x.1 .1).unwrap_or(0);
+			let next_app_id = AppId(last_id.saturating_add(1));
+			NextAppId::<T>::put::<AppId>(next_app_id);
 
 			// Insert app keys. It verifies the length limitation of each key.
-			self.app_keys
-				.iter()
-				.cloned()
-				.try_for_each(|(key, info)| -> Result<(), Vec<u8>> {
-					let key = AppKeyFor::<T>::try_from(key)?;
-					AppKeys::<T>::insert(key, info);
-					Ok(())
-				})
-				.expect("DA Control Genesis contains invalid keys");
-
-			// Last app Id will be the greater one.
-			let last_id = ids
-				.iter()
-				.max()
-				.cloned()
-				.map(Into::into)
-				.unwrap_or(0u32)
-				.checked_add(1u32)
-				.expect("DA Control Genesis overflows the last application id");
-			NextAppId::<T>::put::<AppId>(AppId(last_id));
+			for (key, (owner, id)) in app_keys {
+				let key = AppKeyFor::<T>::try_from(key)
+					.expect("DA Control Genesis contains invalid keys");
+				let value = AppKeyInfo {
+					id: AppId(id),
+					owner,
+				};
+				AppKeys::<T>::insert(key, value);
+			}
 		}
 	}
 }
@@ -296,13 +299,13 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Check if the block weight is acceptable to execute the extrinsic
-	/// We check the current normal ratio weight of the block and compare it with the extrinsic weight
+	/// We check the current normal ratio weight, if it's too high, it means we won't reduce the block size
 	pub fn is_block_weight_acceptable() -> bool {
 		let current_weight = <frame_system::Pallet<T>>::block_weight();
 		let current_normal_weight = current_weight.get(DispatchClass::Normal);
-		// TODO: Recaliberate the mutiplier after updating v2 weights
 		let acceptable_limit = T::WeightInfo::submit_block_length_proposal().saturating_mul(3);
 		current_normal_weight.ref_time() <= acceptable_limit.ref_time()
+			&& current_normal_weight.proof_size() < acceptable_limit.proof_size()
 	}
 }
 

@@ -1,7 +1,8 @@
-use avail_core::{AppId, BLOCK_CHUNK_SIZE};
+use super::{get_account_id_from_seed, AuthorityKeys};
+use avail_core::BLOCK_CHUNK_SIZE;
 use avail_core_kate::{
 	config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS},
-	testnet::public_params,
+	couscous::public_params,
 };
 use hex_literal::hex;
 use primitive_types::{H160, H256};
@@ -10,7 +11,6 @@ use sp_core::sr25519::Public;
 use sp_core::U256;
 use sp_runtime::{AccountId32, Perbill};
 
-use da_control::AppKeyInfo;
 use da_runtime::{
 	constants, wasm_binary_unwrap, AccountId, BabeConfig, Balance, BalancesConfig,
 	DataAvailabilityConfig, NomadHomeConfig, NomadUpdaterManagerConfig, NominationPoolsConfig,
@@ -18,8 +18,6 @@ use da_runtime::{
 	SystemConfig, TechnicalCommitteeConfig, AVL,
 };
 use frame_system::limits::BlockLength;
-
-use super::{get_account_id_from_seed, AuthorityKeys};
 
 pub const PROTOCOL_ID: Option<&str> = Some("Avail");
 pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
@@ -49,7 +47,7 @@ const INIT_APP_IDS: [(u32, &str); 3] = [(0, "Data Avail"), (1, "Ethereum"), (2, 
 
 fn standard_system_configuration() -> (Vec<u8>, Vec<u8>, BlockLength) {
 	let code = wasm_binary_unwrap().to_vec();
-	let kc_public_params = public_params(MAX_BLOCK_COLUMNS).to_raw_var_bytes();
+	let kc_public_params = public_params().to_raw_var_bytes();
 
 	let block_length = BlockLength::with_normal_ratio(
 		MAX_BLOCK_ROWS,
@@ -77,18 +75,10 @@ fn dev_endowed_accounts() -> Vec<(AccountId, Balance)> {
 fn make_data_avail_config(owner: AccountId) -> DataAvailabilityConfig {
 	let app_keys = INIT_APP_IDS
 		.iter()
-		.map(|(id, app)| {
-			(
-				app.as_bytes().to_vec(),
-				AppKeyInfo::new(owner.clone(), AppId(*id)),
-			)
-		})
+		.map(|(id, app)| (app.as_bytes().to_vec(), (owner.clone(), *id)))
 		.collect();
 
-	DataAvailabilityConfig {
-		app_keys,
-		..Default::default()
-	}
+	DataAvailabilityConfig { app_keys }
 }
 
 fn parse_lc_poseidon() -> U256 {
@@ -105,13 +95,14 @@ pub fn runtime_genesis_config(
 		.iter()
 		.map(|k| {
 			(
-				k.controller.clone(),
 				k.stash.clone(),
+				k.controller.clone(),
 				STASH_BOND,
 				StakerStatus::Validator,
 			)
 		})
 		.collect();
+	let validator_count = session_keys.len() as u32;
 	let session_keys = session_keys.into_iter().map(|k| k.into()).collect();
 
 	let (code, kc_public_params, block_length) = standard_system_configuration();
@@ -130,6 +121,8 @@ pub fn runtime_genesis_config(
 		balances: BalancesConfig { balances },
 		staking: StakingConfig {
 			stakers,
+			validator_count,
+			minimum_validator_count: 1,
 			..Default::default()
 		},
 		session: SessionConfig { keys: session_keys },

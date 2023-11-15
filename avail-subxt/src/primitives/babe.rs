@@ -99,7 +99,7 @@ pub const PUBLIC_KEY_LENGTH: usize = 32;
 /// We'd actually love to statically distinguish here between inputs
 /// and outputs, as well as whether outputs were verified, but doing
 /// so would disrupt our general purpose DLEQ proof mechanism, so
-/// users must be responcible for this themselves.  We do however
+/// users must be responsible for this themselves.  We do however
 /// consume by value in actual output methods, and do not implement
 /// `Copy`, as a reminder that VRF outputs should only be used once
 /// and should be checked before usage.

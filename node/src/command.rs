@@ -69,9 +69,8 @@ impl SubstrateCli for Cli {
 			},
 			"dev" => Box::new(chains::dev::chain_spec()),
 			"dev.tri" => Box::new(chains::dev_tri::chain_spec()),
-			"biryani" => Box::new(chains::biryani::chain_spec()?),
-			"dymension" => Box::new(chains::dymension::chain_spec()?),
-			"kate" => Box::new(chains::kate::chain_spec()?),
+			"goldberg" => Box::new(chains::goldberg::chain_spec()?),
+			"devnet0" => Box::new(chains::devnet0::chain_spec()?),
 			path => Box::new(chains::ChainSpec::from_json_file(
 				std::path::PathBuf::from(path),
 			)?),
@@ -88,8 +87,7 @@ pub fn run() -> Result<()> {
 		None => {
 			let runner = cli.create_runner(&cli.run)?;
 			runner.run_node_until_exit(|config| async move {
-				service::new_full(config, cli.no_hardware_benchmarks, cli.unsafe_da_sync)
-					.map_err(sc_cli::Error::Service)
+				service::new_full(config, cli).map_err(sc_cli::Error::Service)
 			})
 		},
 		/*Some(Subcommand::Inspect(cmd)) => {
