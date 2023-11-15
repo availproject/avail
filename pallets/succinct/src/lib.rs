@@ -551,12 +551,13 @@ pub mod pallet {
 	) -> Result<U256, DispatchError> {
 		let input_hash = sha2_256(input.as_slice());
 		let verified_call = VerifiedRotateCall::<T>::get();
+
 		if verified_call.verified_function_id == function_id
 			&& verified_call.verified_input_hash == H256(input_hash)
 		{
 			Ok(verified_call.sync_committee_poseidon)
 		} else {
-			Err(Error::<T>::StepVerificationError.into())
+			Err(Error::<T>::RotateVerificationError.into())
 		}
 	}
 
