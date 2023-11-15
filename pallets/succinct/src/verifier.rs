@@ -250,11 +250,11 @@ pub fn decode_proof(proof: Vec<u8>) -> (Vec<String>, Vec<Vec<String>>, Vec<Strin
 		}
 	}
 
-	return (
+	(
 		vec![a0, a1],
 		vec![vec![b00, b01], vec![b10, b11]],
 		vec![c0, c1],
-	);
+	)
 }
 
 #[cfg(test)]

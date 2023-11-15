@@ -1,13 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::traits::Len;
 use frame_support::{pallet_prelude::*, parameter_types};
 use hex_literal::hex;
 use sp_core::{H256, U256};
 
-pub use pallet::*;
-
 use crate::verifier::Verifier;
+pub use pallet::*;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -42,7 +40,6 @@ parameter_types! {
 #[frame_support::pallet]
 pub mod pallet {
 	use ark_std::string::String;
-	use ark_std::string::ToString;
 	use ark_std::{vec, vec::Vec};
 	use ethabi::{Token, Uint};
 	use frame_support::dispatch::{GetDispatchInfo, UnfilteredDispatchable};
@@ -472,11 +469,11 @@ pub mod pallet {
 	}
 
 	fn get_verifier<T: Config>(function_id: H256) -> Result<Verifier, Error<T>> {
-		return if function_id == StepFunctionId::get() {
+		if function_id == StepFunctionId::get() {
 			get_step_verifier()
 		} else {
 			get_rotate_verifier()
-		};
+		}
 	}
 
 	fn get_step_verifier<T: Config>() -> Result<Verifier, Error<T>> {
@@ -502,11 +499,11 @@ pub mod pallet {
 		let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
 			.map_err(|_| Error::<T>::MalformedVerificationKey)?;
 		ensure!(
-			deserialized_vk.vk_json.curve == "bn128".to_string(),
+			deserialized_vk.vk_json.curve == *"bn128",
 			Error::<T>::NotSupportedCurve
 		);
 		ensure!(
-			deserialized_vk.vk_json.protocol == "groth16".to_string(),
+			deserialized_vk.vk_json.protocol == *"groth16",
 			Error::<T>::NotSupportedProtocol
 		);
 
@@ -521,11 +518,11 @@ pub mod pallet {
 		let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
 			.map_err(|_| Error::<T>::MalformedVerificationKey)?;
 		ensure!(
-			deserialized_vk.vk_json.curve == "bn128".to_string(),
+			deserialized_vk.vk_json.curve == *"bn128",
 			Error::<T>::NotSupportedCurve
 		);
 		ensure!(
-			deserialized_vk.vk_json.protocol == "groth16".to_string(),
+			deserialized_vk.vk_json.protocol == *"groth16",
 			Error::<T>::NotSupportedProtocol
 		);
 
@@ -545,7 +542,7 @@ pub mod pallet {
 			let trait_object: VerifiedStepOutput = verified_call.verified_output;
 			Ok(trait_object)
 		} else {
-			return Err(Error::<T>::StepVerificationError.into());
+			Err(Error::<T>::StepVerificationError.into())
 		}
 	}
 
@@ -560,7 +557,7 @@ pub mod pallet {
 		{
 			Ok(verified_call.sync_committee_poseidon)
 		} else {
-			return Err(Error::<T>::StepVerificationError.into());
+			Err(Error::<T>::StepVerificationError.into())
 		}
 	}
 

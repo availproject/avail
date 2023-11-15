@@ -113,6 +113,7 @@ impl Default for State {
 
 #[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Default)]
 pub struct VerifiedStepCallStore {
 	pub verified_function_id: H256,
 	pub verified_input_hash: H256,
@@ -135,6 +136,7 @@ impl VerifiedStepCallStore {
 
 #[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Default)]
 pub struct VerifiedRotateCallStore {
 	pub verified_function_id: H256,
 	pub verified_input_hash: H256,
@@ -157,6 +159,7 @@ impl VerifiedRotateCallStore {
 
 #[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Default)]
 pub struct VerifiedStepOutput {
 	pub finalized_header_root: H256,
 	pub execution_state_root: H256,
@@ -164,36 +167,11 @@ pub struct VerifiedStepOutput {
 	pub participation: u16,
 }
 
-impl Default for VerifiedStepCallStore {
-	fn default() -> Self {
-		Self {
-			verified_function_id: Default::default(),
-			verified_input_hash: Default::default(),
-			verified_output: Default::default(),
-		}
-	}
-}
 
-impl Default for VerifiedRotateCallStore {
-	fn default() -> Self {
-		Self {
-			verified_function_id: Default::default(),
-			verified_input_hash: Default::default(),
-			sync_committee_poseidon: Default::default(),
-		}
-	}
-}
 
-impl Default for VerifiedStepOutput {
-	fn default() -> Self {
-		Self {
-			finalized_header_root: Default::default(),
-			execution_state_root: Default::default(),
-			finalized_slot: 0,
-			participation: 0,
-		}
-	}
-}
+
+
+
 
 pub fn parse_rotate_output(output: Vec<u8>) -> U256 {
 	U256::from_big_endian(output.as_slice())
@@ -211,12 +189,12 @@ pub fn parse_step_output(output: Vec<u8>) -> VerifiedStepOutput {
 	finalized_slot[..8].copy_from_slice(&output[64..72]);
 	participation[..2].copy_from_slice(&output[72..74]);
 
-	return VerifiedStepOutput {
+	VerifiedStepOutput {
 		finalized_header_root: H256(finalized_header_root),
 		execution_state_root: H256(execution_state_root),
 		finalized_slot: u64::from_be_bytes(finalized_slot),
 		participation: u16::from_be_bytes(participation),
-	};
+	}
 }
 
 #[cfg(test)]
