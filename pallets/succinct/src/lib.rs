@@ -248,7 +248,7 @@ pub mod pallet {
 			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
 			let input_hash = H256(sha2_256(input.as_slice()));
 			let output_hash = H256(sha2_256(output.as_slice()));
-			let verifier = get_verifier::<T>(function_id)?;
+			let verifier = Self::get_verifier(function_id)?;
 
 			let success = verifier
 				.verify(input_hash, output_hash, proof)
@@ -262,7 +262,7 @@ pub mod pallet {
 				let vs =
 					VerifiedStepCallStore::new(function_id, input_hash, parse_step_output(output));
 				VerifiedStepCall::<T>::set(vs);
-				if step_into::<T>(slot, state)? {
+				if Self::step_into(slot, state)? {
 					Self::deposit_event(Event::HeaderUpdate {
 						slot,
 						finalization_root: vs.verified_output.finalized_header_root,
@@ -276,7 +276,7 @@ pub mod pallet {
 				);
 
 				VerifiedRotateCall::<T>::set(vr);
-				if rotate_into::<T>(slot, state)? {
+				if Self::rotate_into(slot, state)? {
 					Self::deposit_event(Event::SyncCommitteeUpdate {
 						period: slot,
 						root: vr.sync_committee_poseidon,
@@ -302,7 +302,7 @@ pub mod pallet {
 			// ensure sender is preconfigured
 			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
 
-			let res = step_into::<T>(attested_slot, state)?;
+			let res = Self::step_into(attested_slot, state)?;
 			if res {
 				let vs = VerifiedStepCall::<T>::get();
 				Self::deposit_event(Event::HeaderUpdate {
@@ -322,7 +322,7 @@ pub mod pallet {
 			let state = StateStorage::<T>::get();
 			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
 
-			if rotate_into::<T>(finalized_slot, state)? {
+			if Self::rotate_into(finalized_slot, state)? {
 				let vr = VerifiedRotateCall::<T>::get();
 				Self::deposit_event(Event::SyncCommitteeUpdate {
 					period: finalized_slot,
@@ -363,7 +363,7 @@ pub mod pallet {
 			Verifier::from_json_u8_slice(verification.as_bytes())
 				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
 			// store verification to storage
-			store_step_verification_key::<T>(verification.as_bytes().to_vec())?;
+			Self::store_step_verification_key(verification.as_bytes().to_vec())?;
 
 			Self::deposit_event(Event::<T>::VerificationSetupCompleted);
 			Ok(())
@@ -381,183 +381,182 @@ pub mod pallet {
 			Verifier::from_json_u8_slice(verification.as_bytes())
 				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
 			// store verification to storage
-			store_rotate_verification_key::<T>(verification.as_bytes().to_vec())?;
+			Self::store_rotate_verification_key(verification.as_bytes().to_vec())?;
 
 			Self::deposit_event(Event::<T>::VerificationSetupCompleted);
 			Ok(())
 		}
 	}
 
-	fn rotate_into<T: Config>(finalized_slot: u64, state: State) -> Result<bool, DispatchError> {
-		let finalized_header_root = Headers::<T>::get(finalized_slot);
-		ensure!(
-			finalized_header_root != H256::zero(),
-			Error::<T>::HeaderRootNotSet
-		);
+	impl<T: Config> Pallet<T> {
+		fn rotate_into(finalized_slot: u64, state: State) -> Result<bool, DispatchError> {
+			let finalized_header_root = Headers::<T>::get(finalized_slot);
+			ensure!(
+				finalized_header_root != H256::zero(),
+				Error::<T>::HeaderRootNotSet
+			);
 
-		let input = ethabi::encode(&[Token::FixedBytes(finalized_header_root.0.to_vec())]);
-		let sync_committee_poseidon: U256 =
-			verified_rotate_call::<T>(RotateFunctionId::get(), input)?;
+			let input = ethabi::encode(&[Token::FixedBytes(finalized_header_root.0.to_vec())]);
+			let sync_committee_poseidon: U256 =
+				Self::verified_rotate_call(RotateFunctionId::get(), input)?;
 
-		let current_period = finalized_slot / state.slots_per_period;
-		let next_period = current_period + 1;
+			let current_period = finalized_slot / state.slots_per_period;
+			let next_period = current_period + 1;
 
-		let is_set = set_sync_committee_poseidon::<T>(next_period, sync_committee_poseidon)?;
+			let is_set = Self::set_sync_committee_poseidon(next_period, sync_committee_poseidon)?;
 
-		Ok(is_set)
-	}
-
-	fn step_into<T: Config>(attested_slot: u64, state: State) -> Result<bool, DispatchError> {
-		let current_period = attested_slot / state.slots_per_period;
-		let sc_poseidon = SyncCommitteePoseidons::<T>::get(current_period);
-
-		let input = encode_packed(sc_poseidon, attested_slot);
-		let result = verified_step_call::<T>(StepFunctionId::get(), input)?;
-
-		ensure!(
-			result.participation >= state.finality_threshold,
-			Error::<T>::NotEnoughParticipants
-		);
-
-		let updated = set_slot_roots::<T>(result)?;
-
-		Ok(updated)
-	}
-
-	fn set_slot_roots<T: Config>(step_output: VerifiedStepOutput) -> Result<bool, DispatchError> {
-		let header = Headers::<T>::get(step_output.finalized_slot);
-
-		ensure!(header == H256::zero(), Error::<T>::HeaderRootAlreadySet);
-
-		let state_root = ExecutionStateRoots::<T>::get(step_output.finalized_slot);
-
-		ensure!(state_root == H256::zero(), Error::<T>::StateRootAlreadySet);
-
-		Head::<T>::set(step_output.finalized_slot);
-
-		Headers::<T>::insert(
-			step_output.finalized_slot,
-			step_output.finalized_header_root,
-		);
-
-		ExecutionStateRoots::<T>::insert(
-			step_output.finalized_slot,
-			step_output.execution_state_root,
-		);
-
-		// TODO can this time be used as block time?
-		Timestamps::<T>::insert(step_output.finalized_slot, T::TimeProvider::now().as_secs());
-
-		Ok(true)
-	}
-
-	fn set_sync_committee_poseidon<T: Config>(
-		period: u64,
-		poseidon: U256,
-	) -> Result<bool, DispatchError> {
-		let sync_committee_poseidons = SyncCommitteePoseidons::<T>::get(period);
-
-		ensure!(
-			sync_committee_poseidons == U256::zero(),
-			Error::<T>::SyncCommitteeAlreadySet
-		);
-
-		SyncCommitteePoseidons::<T>::set(period, poseidon);
-
-		Ok(true)
-	}
-
-	fn get_verifier<T: Config>(function_id: H256) -> Result<Verifier, Error<T>> {
-		if function_id == StepFunctionId::get() {
-			get_step_verifier()
-		} else {
-			get_rotate_verifier()
+			Ok(is_set)
 		}
-	}
 
-	fn get_step_verifier<T: Config>() -> Result<Verifier, Error<T>> {
-		let vk = StepVerificationKeyStorage::<T>::get();
-		ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
-		let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
-			.map_err(|_| Error::<T>::MalformedVerificationKey)?;
-		Ok(deserialized_vk)
-	}
+		fn step_into(attested_slot: u64, state: State) -> Result<bool, DispatchError> {
+			let current_period = attested_slot / state.slots_per_period;
+			let sc_poseidon = SyncCommitteePoseidons::<T>::get(current_period);
 
-	fn get_rotate_verifier<T: Config>() -> Result<Verifier, Error<T>> {
-		let vk = RotateVerificationKeyStorage::<T>::get();
-		ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
-		let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
-			.map_err(|_| Error::<T>::MalformedVerificationKey)?;
-		Ok(deserialized_vk)
-	}
+			let input = encode_packed(sc_poseidon, attested_slot);
+			let result = Self::verified_step_call(StepFunctionId::get(), input)?;
 
-	fn store_step_verification_key<T: Config>(vec_vk: Vec<u8>) -> Result<Verifier, Error<T>> {
-		let vk: VerificationKeyDef<T> = vec_vk
-			.try_into()
-			.map_err(|_| Error::<T>::TooLongVerificationKey)?;
-		let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
-			.map_err(|_| Error::<T>::MalformedVerificationKey)?;
-		ensure!(
-			deserialized_vk.vk_json.curve == *"bn128",
-			Error::<T>::NotSupportedCurve
-		);
-		ensure!(
-			deserialized_vk.vk_json.protocol == *"groth16",
-			Error::<T>::NotSupportedProtocol
-		);
+			ensure!(
+				result.participation >= state.finality_threshold,
+				Error::<T>::NotEnoughParticipants
+			);
 
-		StepVerificationKeyStorage::<T>::put(vk);
-		Ok(deserialized_vk)
-	}
+			let updated = Self::set_slot_roots(result)?;
 
-	fn store_rotate_verification_key<T: Config>(vec_vk: Vec<u8>) -> Result<Verifier, Error<T>> {
-		let vk: VerificationKeyDef<T> = vec_vk
-			.try_into()
-			.map_err(|_| Error::<T>::TooLongVerificationKey)?;
-		let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
-			.map_err(|_| Error::<T>::MalformedVerificationKey)?;
-		ensure!(
-			deserialized_vk.vk_json.curve == *"bn128",
-			Error::<T>::NotSupportedCurve
-		);
-		ensure!(
-			deserialized_vk.vk_json.protocol == *"groth16",
-			Error::<T>::NotSupportedProtocol
-		);
-
-		RotateVerificationKeyStorage::<T>::put(vk);
-		Ok(deserialized_vk)
-	}
-
-	fn verified_step_call<T: Config>(
-		function_id: H256,
-		input: ethabi::Bytes,
-	) -> Result<VerifiedStepOutput, DispatchError> {
-		let input_hash = sha2_256(input.as_slice());
-		let verified_call = VerifiedStepCall::<T>::get();
-		if verified_call.verified_function_id == function_id
-			&& verified_call.verified_input_hash == H256(input_hash)
-		{
-			let trait_object: VerifiedStepOutput = verified_call.verified_output;
-			Ok(trait_object)
-		} else {
-			Err(Error::<T>::StepVerificationError.into())
+			Ok(updated)
 		}
-	}
 
-	fn verified_rotate_call<T: Config>(
-		function_id: H256,
-		input: ethabi::Bytes,
-	) -> Result<U256, DispatchError> {
-		let input_hash = sha2_256(input.as_slice());
-		let verified_call = VerifiedRotateCall::<T>::get();
+		fn set_slot_roots(step_output: VerifiedStepOutput) -> Result<bool, DispatchError> {
+			let header = Headers::<T>::get(step_output.finalized_slot);
 
-		if verified_call.verified_function_id == function_id
-			&& verified_call.verified_input_hash == H256(input_hash)
-		{
-			Ok(verified_call.sync_committee_poseidon)
-		} else {
-			Err(Error::<T>::RotateVerificationError.into())
+			ensure!(header == H256::zero(), Error::<T>::HeaderRootAlreadySet);
+
+			let state_root = ExecutionStateRoots::<T>::get(step_output.finalized_slot);
+
+			ensure!(state_root == H256::zero(), Error::<T>::StateRootAlreadySet);
+
+			Head::<T>::set(step_output.finalized_slot);
+
+			Headers::<T>::insert(
+				step_output.finalized_slot,
+				step_output.finalized_header_root,
+			);
+
+			ExecutionStateRoots::<T>::insert(
+				step_output.finalized_slot,
+				step_output.execution_state_root,
+			);
+
+			// TODO can this time be used as block time?
+			Timestamps::<T>::insert(step_output.finalized_slot, T::TimeProvider::now().as_secs());
+
+			Ok(true)
+		}
+
+		fn set_sync_committee_poseidon(period: u64, poseidon: U256) -> Result<bool, DispatchError> {
+			let sync_committee_poseidons = SyncCommitteePoseidons::<T>::get(period);
+
+			ensure!(
+				sync_committee_poseidons == U256::zero(),
+				Error::<T>::SyncCommitteeAlreadySet
+			);
+
+			SyncCommitteePoseidons::<T>::set(period, poseidon);
+
+			Ok(true)
+		}
+
+		fn get_verifier(function_id: H256) -> Result<Verifier, Error<T>> {
+			if function_id == StepFunctionId::get() {
+				Self::get_step_verifier()
+			} else {
+				Self::get_rotate_verifier()
+			}
+		}
+
+		fn get_step_verifier() -> Result<Verifier, Error<T>> {
+			let vk = StepVerificationKeyStorage::<T>::get();
+			ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
+			let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
+				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+			Ok(deserialized_vk)
+		}
+
+		fn get_rotate_verifier() -> Result<Verifier, Error<T>> {
+			let vk = RotateVerificationKeyStorage::<T>::get();
+			ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
+			let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
+				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+			Ok(deserialized_vk)
+		}
+
+		fn store_step_verification_key(vec_vk: Vec<u8>) -> Result<Verifier, Error<T>> {
+			let vk: VerificationKeyDef<T> = vec_vk
+				.try_into()
+				.map_err(|_| Error::<T>::TooLongVerificationKey)?;
+			let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
+				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+			ensure!(
+				deserialized_vk.vk_json.curve == *"bn128",
+				Error::<T>::NotSupportedCurve
+			);
+			ensure!(
+				deserialized_vk.vk_json.protocol == *"groth16",
+				Error::<T>::NotSupportedProtocol
+			);
+
+			StepVerificationKeyStorage::<T>::put(vk);
+			Ok(deserialized_vk)
+		}
+
+		fn store_rotate_verification_key(vec_vk: Vec<u8>) -> Result<Verifier, Error<T>> {
+			let vk: VerificationKeyDef<T> = vec_vk
+				.try_into()
+				.map_err(|_| Error::<T>::TooLongVerificationKey)?;
+			let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
+				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+			ensure!(
+				deserialized_vk.vk_json.curve == *"bn128",
+				Error::<T>::NotSupportedCurve
+			);
+			ensure!(
+				deserialized_vk.vk_json.protocol == *"groth16",
+				Error::<T>::NotSupportedProtocol
+			);
+
+			RotateVerificationKeyStorage::<T>::put(vk);
+			Ok(deserialized_vk)
+		}
+
+		fn verified_step_call(
+			function_id: H256,
+			input: ethabi::Bytes,
+		) -> Result<VerifiedStepOutput, DispatchError> {
+			let input_hash = sha2_256(input.as_slice());
+			let verified_call = VerifiedStepCall::<T>::get();
+			if verified_call.verified_function_id == function_id
+				&& verified_call.verified_input_hash == H256(input_hash)
+			{
+				let trait_object: VerifiedStepOutput = verified_call.verified_output;
+				Ok(trait_object)
+			} else {
+				Err(Error::<T>::StepVerificationError.into())
+			}
+		}
+
+		fn verified_rotate_call(
+			function_id: H256,
+			input: ethabi::Bytes,
+		) -> Result<U256, DispatchError> {
+			let input_hash = sha2_256(input.as_slice());
+			let verified_call = VerifiedRotateCall::<T>::get();
+
+			if verified_call.verified_function_id == function_id
+				&& verified_call.verified_input_hash == H256(input_hash)
+			{
+				Ok(verified_call.sync_committee_poseidon)
+			} else {
+				Err(Error::<T>::RotateVerificationError.into())
+			}
 		}
 	}
 
