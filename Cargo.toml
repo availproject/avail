@@ -37,7 +37,7 @@ nomad-base = { version = "0.1", git = "https://github.com/availproject/avail-cor
 nomad-core = { version = "0.1", git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.0" }
 
 # Other stuff
-uint = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }
+uint = { git = "https://github.com/paritytech/parity-common.git", tag = "uint-v0.9.5" }
 rlp = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }
 
 # Substrate  (polkadot-v1.0.0).

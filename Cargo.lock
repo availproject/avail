@@ -6803,6 +6803,7 @@ dependencies = [
  "frame-system",
  "hex-literal 0.4.1",
  "log",
+ "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -11522,8 +11523,7 @@ checksum = "ed646292ffc8188ef8ea4d1e0e0150fb15a5c2e12ad9b8fc191ae7a8a7f3c4b9"
 [[package]]
 name = "uint"
 version = "0.9.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76f64bba2c53b04fcab63c01a7d7427eadc821e3bc48c34dc9ba29c501164b52"
+source = "git+https://github.com/paritytech/parity-common.git?tag=uint-v0.9.5#c41d51df8a314150c46cbbff31f8140a35dfb02c"
 dependencies = [
  "byteorder",
  "crunchy",
@@ -12747,8 +12747,3 @@ dependencies = [
  "libc",
  "pkg-config",
 ]
-
-[[patch.unused]]
-name = "uint"
-version = "0.9.4"
-source = "git+https://github.com/paritytech/parity-common.git?tag=rlp-v0.5.2#86676b08e89cb99fdff0c882453ad0746dd070cf"

@@ -1,80 +1,110 @@
-// use frame_support::{
-//     derive_impl,
-//     pallet_prelude::Weight,
-//     parameter_types,
-// };
-// use frame_system::EnsureRoot;
-// use sp_runtime::BuildStorage;
-//
-// type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-// type Block = frame_system::mocking::MockDaBlock<Test>;
-// type BlockNumber = u32;
-// type AccountId = u64;
-//
-// use crate as pallet_succinct;
-//
-//
-// parameter_types! {
-// 	pub const BlockHashCount: u32 = 250;
-// 	pub static ExistentialDeposit: u64 = 0;
-// }
-//
-// #[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
-// impl frame_system::Config for Test {
-//     type BaseCallFilter = frame_support::traits::Everything;
-//     type Block = Block;
-//     type BlockHashCount = BlockHashCount;
-//     type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
-//     type OnSetCode = ();
-//     type PalletInfo = PalletInfo;
-//     type Randomness = frame_system::test_utils::TestRandomness<Test>;
-//     type RuntimeCall = RuntimeCall;
-//     type RuntimeEvent = RuntimeEvent;
-//     type RuntimeOrigin = RuntimeOrigin;
-// }
-//
-// parameter_types! {
-// 	pub const MinSyncCommitteeParticipants: u16=10;
-// 	pub const SyncCommitteeSize: u32=512;
-// 	pub const FinalizedRootIndex: u32=105;
-// 	pub const NextSyncCommitteeIndex: u32= 55;
-// 	pub const ExecutionStateRootIndex: u32= 402;
-// 	pub const MaxPublicInputsLength: u32 = 9;
-// 	pub const MaxVerificationKeyLength: u32 = 4143;
-// 	pub const MaxProofLength: u32 = 1133;
-// }
-//
-//
-// frame_support::construct_runtime!(
-// 	pub struct Test {
-//         System: frame_system,
-//         bridge: pallet_succinct
-// 	}
-// );
-//
-//
-// impl pallet_succinct::Config for Test {
-//     type RuntimeCall = RuntimeCall;
-//     type RuntimeEvent = RuntimeEvent;
-//     type WeightInfo = ();
-//     type TimeProvider = ();
-//     type MaxPublicInputsLength = MaxPublicInputsLength;
-//     type MaxProofLength = MaxProofLength;
-//     type MaxVerificationKeyLength = MaxVerificationKeyLength;
-//     type MinSyncCommitteeParticipants = MinSyncCommitteeParticipants;
-//     type SyncCommitteeSize = SyncCommitteeSize;
-//     type FinalizedRootIndex = FinalizedRootIndex;
-//     type NextSyncCommitteeIndex = NextSyncCommitteeIndex;
-//     type ExecutionStateRootIndex = ExecutionStateRootIndex;
-// }
-//
-//
-// /// Create new externalities for `Succinct` module tests.
-// pub fn new_test_ext() -> sp_io::TestExternalities {
-//     let t = frame_system::GenesisConfig::<Test>::default()
-//         .build_storage()
-//         .unwrap();
-//     let mut ext = sp_io::TestExternalities::new(t);
-//     ext.execute_with(|| System::set_block_number(1));
-//     ext
-// }
+use frame_support::traits::ConstU64;
+use frame_support::{derive_impl, parameter_types};
+use frame_system::header_builder::da;
+use frame_system::test_utils::TestRandomness;
+use hex_literal::hex;
+use sp_core::{H256, U256};
+use sp_runtime::{traits::IdentityLookup, AccountId32, BuildStorage};
+
+use crate as succinct_bridge;
+
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = frame_system::mocking::MockDaBlock<Test>;
+
+frame_support::construct_runtime!(
+	pub struct Test {
+		System: frame_system,
+		Timestamp: pallet_timestamp,
+		Bridge: succinct_bridge,
+	}
+);
+
+parameter_types! {
+	pub const BlockHashCount: u32 = 250;
+}
+
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
+impl frame_system::Config for Test {
+	type AccountId = AccountId32;
+	type BaseCallFilter = frame_support::traits::Everything;
+	type Block = Block;
+	type BlockHashCount = BlockHashCount;
+	type HeaderExtensionBuilder = da::HeaderExtensionBuilder<Test>;
+	type Lookup = IdentityLookup<Self::AccountId>;
+	type OnSetCode = ();
+	type PalletInfo = PalletInfo;
+	type Randomness = TestRandomness<Test>;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeOrigin = RuntimeOrigin;
+	type SubmittedDataExtractor = ();
+	type UncheckedExtrinsic = UncheckedExtrinsic;
+}
+
+impl pallet_timestamp::Config for Test {
+	type Moment = u64;
+	type OnTimestampSet = ();
+	type MinimumPeriod = ConstU64<5>;
+	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const MinSyncCommitteeParticipants: u16 = 10;
+	pub const SyncCommitteeSize: u32 = 512;
+	pub const FinalizedRootIndex: u32 = 105;
+	pub const NextSyncCommitteeIndex: u32 = 55;
+	pub const ExecutionStateRootIndex: u32 = 402;
+	pub const MaxPublicInputsLength: u32 = 9;
+	pub const MaxVerificationKeyLength: u32 = 4143;
+	pub const MaxProofLength: u32 = 1133;
+	pub const StepFunctionId: H256 = H256(hex!("af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"));
+	pub const RotateFunctionId: H256 = H256(hex!("9aed23f9e6e8f8b98751cf508069b5b7f015d4d510b6a4820d41ba1ce88190d9"));
+}
+
+impl succinct_bridge::Config for Test {
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
+	type TimeProvider = Timestamp;
+	type MaxPublicInputsLength = MaxPublicInputsLength;
+	type MaxProofLength = MaxProofLength;
+	type MaxVerificationKeyLength = MaxVerificationKeyLength;
+	type MinSyncCommitteeParticipants = MinSyncCommitteeParticipants;
+	type SyncCommitteeSize = SyncCommitteeSize;
+	type FinalizedRootIndex = FinalizedRootIndex;
+	type NextSyncCommitteeIndex = NextSyncCommitteeIndex;
+	type ExecutionStateRootIndex = ExecutionStateRootIndex;
+	type RotateFunctionId = RotateFunctionId;
+	type StepFunctionId = StepFunctionId;
+}
+
+/// Create new externalities for `Succinct` module tests.
+pub fn new_test_ext() -> sp_io::TestExternalities {
+	let mut t = RuntimeGenesisConfig::default()
+		.system
+		.build_storage()
+		.expect("Genesis build should work");
+	succinct_bridge::GenesisConfig::<Test> {
+		slots_per_period: 8192,
+		updater: H256(hex!(
+			"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+		)),
+		genesis_validators_root: H256(hex!(
+			"4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95"
+		)),
+		genesis_time: 1699963352,
+		seconds_per_slot: 12,
+		source_chain_id: 1,
+		finality_threshold: 461,
+		period: 931,
+		sync_committee_poseidon: U256::from(hex!(
+			"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
+		)),
+		..Default::default()
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+	let mut ext = sp_io::TestExternalities::new(t);
+	ext.execute_with(|| System::set_block_number(1));
+	ext
+}
