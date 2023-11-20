@@ -12,10 +12,10 @@ nomad-signature = { path = "../signature", default-features = false }
 # Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"] }
-sp-core = { version = "*", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 
 # Substrate runtime
-sp-runtime = { version = "24", default-features = false, optional = true }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
 
 # Eth
 ethers-signers = { version = "1", optional = true }
