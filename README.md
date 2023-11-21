@@ -62,7 +62,7 @@ This command complies and runs the Avail Node connected to the Goldberg Network.
 #### Running Dev Chain
 A development chain is typically used for testing and development purposes.
 ```bash
-cargo run --locked --release -- --chain dev
+cargo run --locked --release -- --dev
 ```
 
 ### Docker
