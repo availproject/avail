@@ -57,7 +57,7 @@ sp-std = { version = "8.0.0", default-features = false }
 frame-support = { version = "4.0.0-dev", default-features = false }
 frame-system = { path = "../pallets/system", default-features = false, features = ["serde"] }
 frame-executive = { path = "../pallets/executive", default-features = false }
-frame-try-runtime = { version = "0.10.0-dev", default-features = false, optional = true }
+frame-try-runtime = { version = "0.10.0-dev", default-features = false }
 
 pallet-balances = { version = "4.0.0-dev", default-features = false }
 pallet-session = { version = "4.0.0-dev", features = ['historical'], default-features = false }
@@ -92,6 +92,9 @@ pallet-preimage = { version = "4.0.0-dev", default-features = false }
 pallet-nomination-pools = { version = "1", default-features = false }
 pallet-identity = { version = "4.0.0-dev", default-features = false }
 
+# frame-try-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+
+tokio = { version = "1.24.2", features = ["macros"] }
 pallet-mandate = { path = "../pallets/mandate", default-features = false }
 
 ## RPCs
@@ -121,6 +124,7 @@ iai-callgrind = { version = "0.7.3" }
 criterion = "0.5.1"
 codspeed-criterion-compat = "2.2.0"
 divan = "0.1.2"
+frame-remote-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
 [[bench]]
 name = "header_kate_commitment_iai_callgrind"
@@ -156,7 +160,7 @@ std = [
 	"frame-system-benchmarking?/std",
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
-	"frame-try-runtime?/std",
+	"frame-try-runtime/std",
 	"kate/std",
 	"log/std",
 	"nomad-da-bridge/std",

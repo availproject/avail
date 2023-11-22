@@ -1935,6 +1935,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
  "frame-executive",
+ "frame-remote-externalities",
  "frame-support",
  "frame-system",
  "frame-system-benchmarking",
@@ -2008,6 +2009,7 @@ dependencies = [
  "static_assertions",
  "substrate-wasm-builder",
  "test-case",
+ "tokio",
 ]
 
 [[package]]

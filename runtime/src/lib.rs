@@ -378,3 +378,94 @@ mod tests {
 		app_ext.function
 	}
 }
+
+#[cfg(test)]
+mod remote_tests {
+	use crate::impls::BalanceToU256;
+	use crate::impls::U256ToBalance;
+	use sp_runtime::traits::Convert;
+	use std::ops::Div;
+
+	use super::*;
+	// use frame_try_runtime::UpgradeCheckSelect;
+	use frame_remote_externalities::{
+		Builder, Mode, OfflineConfig, OnlineConfig, SnapshotConfig, Transport,
+	};
+	use frame_system::RawOrigin;
+	use sp_runtime::MultiAddress;
+	use std::env::var;
+
+	#[tokio::test]
+	async fn external_tests_yoohoo() {
+		let transport: Transport = var("WS")
+			.unwrap_or("ws://127.0.0.1:9944".to_string())
+			.into();
+		let maybe_state_snapshot: Option<SnapshotConfig> = var("SNAP").map(|s| s.into()).ok();
+		let mut ext = Builder::<Block>::default()
+			.mode(if let Some(state_snapshot) = maybe_state_snapshot {
+				Mode::OfflineOrElseOnline(
+					OfflineConfig {
+						state_snapshot: state_snapshot.clone(),
+					},
+					OnlineConfig {
+						transport,
+						state_snapshot: Some(state_snapshot),
+						..Default::default()
+					},
+				)
+			} else {
+				Mode::Online(OnlineConfig {
+					transport,
+					..Default::default()
+				})
+			})
+			.build()
+			.await
+			.unwrap();
+		ext.execute_with(|| {
+			/* 			let u256 = BalanceToU256::convert;
+			let balance = U256ToBalance::convert;
+
+			let current_balance = 2000000000000000000000u128;
+			let points = 985000000000000000000u128;
+			let current_points = 2000000000000000000000u128;
+
+			let a = u256(current_balance);
+			let b = u256(points);
+			let c = a.saturating_mul(b);
+			let d = balance(c);
+			let e = d.div(current_points);
+
+			let somsom = // Equivalent of (current_balance / current_points) * points
+			balance(u256(current_balance).saturating_mul(u256(points)))
+				// We check for zero above
+				.div(current_points);
+
+			let end = somsom / 2; */
+
+			use crate::Runtime;
+			let last = pallet_nomination_pools::PoolMembers::<Runtime>::iter()
+				.last()
+				.unwrap();
+
+			let m = MultiAddress::Id(last.0.clone());
+			dbg!(&m);
+			println!("{}", m.to_string());
+
+			let ac = pallet_nomination_pools::Call::<Runtime>::unbond {
+				member_account: m.clone(),
+				unbonding_points: 15_000_000_000_000_000_000u128,
+			};
+
+			let origin = RawOrigin::Signed(last.0.clone());
+
+			let res = pallet_nomination_pools::Pallet::<Runtime>::unbond(
+				origin.into(),
+				m.into(),
+				15_000_000_000_000_000_000u128,
+			);
+
+			dbg!(&res);
+		});
+	}
+}
