@@ -1969,6 +1969,7 @@ dependencies = [
  "pallet-mmr",
  "pallet-multisig",
  "pallet-nomination-pools",
+ "pallet-nomination-pools-runtime-api",
  "pallet-offences",
  "pallet-preimage",
  "pallet-scheduler",
@@ -6447,6 +6448,17 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-nomination-pools-runtime-api"
+version = "1.0.0-dev"
+source = "git+https://github.com/paritytech/substrate.git/?branch=polkadot-v1.0.0#948fbd2fd1233dc26dbb9f9bbc1d2cca2c03945d"
+dependencies = [
+ "pallet-nomination-pools",
+ "parity-scale-codec",
+ "sp-api",
  "sp-std",
 ]
 
