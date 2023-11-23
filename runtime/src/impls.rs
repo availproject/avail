@@ -47,7 +47,7 @@ use frame_system::submitted_data;
 use frame_system::EnsureRoot;
 use pallet_succinct::{
 	ExecutionStateRootIndex, FinalizedRootIndex, MaxProofLength, MaxPublicInputsLength,
-	MaxVerificationKeyLength, MessageVersion, MinSyncCommitteeParticipants, NextSyncCommitteeIndex,
+	MaxVerificationKeyLength, MinSyncCommitteeParticipants, NextSyncCommitteeIndex,
 	RotateFunctionId, StepFunctionId, SyncCommitteeSize,
 };
 

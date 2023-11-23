@@ -80,9 +80,8 @@ pub mod pallet {
 
 	use crate::state::{
 		parse_rotate_output, parse_step_output, State, VerifiedRotateCallStore,
-		VerifiedStepCallStore, VerifiedStepOutput,
+		VerifiedStepCallStore,
 	};
-	use crate::verifier::encode_packed;
 
 	use super::*;
 
@@ -537,10 +536,8 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::BroadcasterSourceChainNotSet
 		);
 
-		ensure!(
-			LightClients::get(source_chain) != H160::zero(),
-			Error::<T>::BroadcasterSourceChainNotSet
-		);
+		let lc = LightClients::<T>::get(message.source_chain_id);
+		ensure!(lc != H160::zero(), Error::<T>::BroadcasterSourceChainNotSet);
 
 		Ok(())
 	}
@@ -739,10 +736,6 @@ pub fn parse_slot(callback_data: Vec<u8>) -> u64 {
 }
 
 fn restore_merkle_root(leaf: H256, mut index: u64, branch: Vec<H256>) -> H256 {
-	// println!("{}", index);
-	// println!("{:?}", leaf);
-
-	// println!("{}", 2u64.pow(branch.len() as u32));
 	// TODO add check
 	((2u64.pow(branch.len() as u32) + 1) > index); // handle safe cast
 
@@ -830,15 +823,6 @@ fn get_event_topic(
 
 	let list = logs.at(1).unwrap().data().unwrap();
 	let list2 = logs.at(2).unwrap().data().unwrap();
-
-	// println!(
-	//     "event signature from bytes : {:?}",
-	//     U256::from(event_signature_input.as_bytes())
-	// );
-	// println!(
-	//     "event signature from bytes : {:?}",
-	//     U256::from(event_signature_hash)
-	// );
 
 	H256([0u8; 32])
 }
