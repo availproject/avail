@@ -24,8 +24,8 @@ use sp_version::RuntimeVersion;
 use crate::Identity;
 use crate::{
 	constants, mmr, AccountId, AuthorityDiscovery, Babe, Block, BlockNumber, EpochDuration,
-	Executive, Grandpa, Historical, Index, InherentDataExt, Mmr, NominationPools, OpaqueMetadata, Runtime,
-	RuntimeCall, Seed, SessionKeys, System, TransactionPayment,
+	Executive, Grandpa, Historical, Index, InherentDataExt, Mmr, NominationPools, OpaqueMetadata,
+	Runtime, RuntimeCall, Seed, SessionKeys, System, TransactionPayment,
 };
 
 decl_runtime_apis! {

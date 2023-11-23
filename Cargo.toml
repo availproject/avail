@@ -126,8 +126,8 @@ pallet-mmr = { git = "https://github.com/paritytech/substrate.git", branch = "po
 pallet-multisig = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 pallet-child-bounties = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-pallet-nomination-pools = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-pallet-nomination-pools-runtime-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-nomination-pools = { path = "pallets/nomination-pools" }
+pallet-nomination-pools-runtime-api = { path = "pallets/nomination-pools/runtime-api" }
 pallet-election-provider-support-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 pallet-identity = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }

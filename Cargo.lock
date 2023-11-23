@@ -1924,7 +1924,7 @@ dependencies = [
 
 [[package]]
 name = "da-runtime"
-version = "7.0.0"
+version = "7.0.1"
 dependencies = [
  "avail-core",
  "codspeed-criterion-compat",
@@ -2048,7 +2048,7 @@ dependencies = [
 
 [[package]]
 name = "data-avail"
-version = "1.8.2"
+version = "1.8.3"
 dependencies = [
  "async-trait",
  "avail-base",
@@ -6436,8 +6436,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-nomination-pools"
-version = "1.0.0"
-source = "git+https://github.com/paritytech/substrate.git/?branch=polkadot-v1.0.0#948fbd2fd1233dc26dbb9f9bbc1d2cca2c03945d"
+version = "1.0.1"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6454,7 +6453,6 @@ dependencies = [
 [[package]]
 name = "pallet-nomination-pools-runtime-api"
 version = "1.0.0-dev"
-source = "git+https://github.com/paritytech/substrate.git/?branch=polkadot-v1.0.0#948fbd2fd1233dc26dbb9f9bbc1d2cca2c03945d"
 dependencies = [
  "pallet-nomination-pools",
  "parity-scale-codec",
