@@ -1,20 +1,8 @@
-use crate::voter_bags;
-use crate::SessionKeys;
-use crate::SLOT_DURATION;
-use crate::{
-	constants, prod_or_fast, weights, AccountId, AccountIndex, Babe, Balances, Block, BlockNumber,
-	Bounties, ElectionProviderMultiPhase, GrandpaId, Hash, Historical, ImOnline, ImOnlineId, Index,
-	Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo, Preimage,
-	ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeHoldReason, RuntimeOrigin,
-	RuntimeVersion, Session, Signature, SignedPayload, Staking, System, TechnicalCommittee,
-	Timestamp, TransactionPayment, Treasury, UncheckedExtrinsic, VoterList, MINUTES, VERSION,
-};
 use avail_core::currency::{Balance, AVL, CENTS, NANO_AVL, PICO_AVL};
 use avail_core::AppId;
 use avail_core::OpaqueExtrinsic;
 use avail_core::NORMAL_DISPATCH_RATIO;
 use codec::Decode;
-use constants::time::DAYS;
 use frame_election_provider_support::onchain;
 use frame_election_provider_support::BalancingConfig;
 use frame_election_provider_support::ElectionDataProvider;
@@ -33,15 +21,7 @@ use frame_support::traits::{Currency, OnUnbalanced};
 use frame_support::weights::constants::RocksDbWeight;
 use frame_support::weights::ConstantMultiplier;
 use frame_support::{parameter_types, traits::EitherOfDiverse, PalletId};
-use frame_system::limits::BlockLength;
-use frame_system::submitted_data;
-use frame_system::EnsureRoot;
 use pallet_election_provider_multi_phase::SolutionAccuracyOf;
-use pallet_succinct::{
-	ExecutionStateRootIndex, FinalizedRootIndex, MaxProofLength, MaxPublicInputsLength,
-	MaxVerificationKeyLength, MinSyncCommitteeParticipants, NextSyncCommitteeIndex,
-	RotateFunctionId, StepFunctionId, SyncCommitteeSize,
-};
 use pallet_transaction_payment::CurrencyAdapter;
 use pallet_transaction_payment::Multiplier;
 use pallet_transaction_payment::TargetedFeeAdjustment;
@@ -60,6 +40,28 @@ use sp_runtime::{Percent, Permill};
 use sp_std::rc::Rc;
 use sp_std::vec;
 use sp_std::vec::Vec;
+
+use constants::time::DAYS;
+use frame_system::limits::BlockLength;
+use frame_system::submitted_data;
+use frame_system::EnsureRoot;
+use pallet_succinct::{
+	ExecutionStateRootIndex, FinalizedRootIndex, MaxProofLength, MaxPublicInputsLength,
+	MaxVerificationKeyLength, MessageVersion, MinSyncCommitteeParticipants, NextSyncCommitteeIndex,
+	RotateFunctionId, StepFunctionId, SyncCommitteeSize,
+};
+
+use crate::voter_bags;
+use crate::SessionKeys;
+use crate::SLOT_DURATION;
+use crate::{
+	constants, prod_or_fast, weights, AccountId, AccountIndex, Babe, Balances, Block, BlockNumber,
+	Bounties, ElectionProviderMultiPhase, GrandpaId, Hash, Historical, ImOnline, ImOnlineId, Index,
+	Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo, Preimage,
+	ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeHoldReason, RuntimeOrigin,
+	RuntimeVersion, Session, Signature, SignedPayload, Staking, System, TechnicalCommittee,
+	Timestamp, TransactionPayment, Treasury, UncheckedExtrinsic, VoterList, MINUTES, VERSION,
+};
 
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
 	<T as frame_system::Config>::AccountId,
@@ -295,6 +297,7 @@ impl pallet_session::historical::Config for Runtime {
 
 /// Logic for the author to get a portion of fees.
 pub struct Author<R>(sp_std::marker::PhantomData<R>);
+
 impl<R> OnUnbalanced<NegativeImbalance<R>> for Author<R>
 where
 	R: pallet_balances::Config + pallet_authorship::Config,
@@ -309,6 +312,7 @@ where
 }
 
 pub struct DealWithFees<R>(sp_std::marker::PhantomData<R>);
+
 impl<R> OnUnbalanced<NegativeImbalance<R>> for DealWithFees<R>
 where
 	R: pallet_balances::Config + pallet_treasury::Config + pallet_authorship::Config,
