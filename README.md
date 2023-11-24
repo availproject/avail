@@ -23,7 +23,7 @@ After ensuring you have the dependencies installed, you can run the Avail Node u
 mkdir -p output
 cargo run --locked --release -- --chain goldberg -d ./output
 ```
-This command complies and runs the Avail Node connected to the Goldberg Network.
+This command compiles and runs the Avail Node connected to the Goldberg Network.
 
 ```
 2023-11-17 11:31:35 Avail Node    
