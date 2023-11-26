@@ -67,7 +67,7 @@ export default {
     ```
     ts-node query_proof.ts
     ```
-- Query application data returns data fot the given application id and block hash.
+- Query application data returns data for the given application id and block hash.
     ```
     ts-node query_app_data.ts
     ```
