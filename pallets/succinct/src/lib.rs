@@ -583,7 +583,7 @@ impl<T: Config> Pallet<T> {
 
 		// ensure that LC is enabled for the desired source chain that message comes from
 		let lc = LightClients::<T>::get(message.source_chain_id);
-		ensure!(lc != H160::zero(), Error::<T>::BroadcasterSourceChainNotSet);
+		ensure!(lc != H160::zero(), Error::<T>::LightClientNotSet);
 
 		Ok((message, message_root))
 	}
