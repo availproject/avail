@@ -619,7 +619,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.5.1"
-source = "git+https://github.com/availproject/avail-core?tag=markotest#9628a45f8a53f08849010ad010f9650f44b44e88"
+source = "git+https://github.com/availproject/avail-core?tag=node-v1.8.0.3#8f58e5f1520fb1f6c1ef3e2b5a0ebf782722b964"
 dependencies = [
  "binary-merkle-tree",
  "derive_more",
@@ -4474,7 +4474,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.8.1"
-source = "git+https://github.com/availproject/avail-core?tag=markotest#9628a45f8a53f08849010ad010f9650f44b44e88"
+source = "git+https://github.com/availproject/avail-core?tag=node-v1.8.0.3#8f58e5f1520fb1f6c1ef3e2b5a0ebf782722b964"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -4502,7 +4502,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.9.1"
-source = "git+https://github.com/availproject/avail-core?tag=markotest#9628a45f8a53f08849010ad010f9650f44b44e88"
+source = "git+https://github.com/availproject/avail-core?tag=node-v1.8.0.3#8f58e5f1520fb1f6c1ef3e2b5a0ebf782722b964"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -5748,7 +5748,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.5"
-source = "git+https://github.com/availproject/avail-core?tag=markotest#9628a45f8a53f08849010ad010f9650f44b44e88"
+source = "git+https://github.com/availproject/avail-core?tag=node-v1.8.0.3#8f58e5f1520fb1f6c1ef3e2b5a0ebf782722b964"
 dependencies = [
  "ethers-signers",
  "nomad-core",
@@ -5764,7 +5764,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.5"
-source = "git+https://github.com/availproject/avail-core?tag=markotest#9628a45f8a53f08849010ad010f9650f44b44e88"
+source = "git+https://github.com/availproject/avail-core?tag=node-v1.8.0.3#8f58e5f1520fb1f6c1ef3e2b5a0ebf782722b964"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -5827,7 +5827,7 @@ dependencies = [
 [[package]]
 name = "nomad-merkle"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?tag=markotest#9628a45f8a53f08849010ad010f9650f44b44e88"
+source = "git+https://github.com/availproject/avail-core?tag=node-v1.8.0.3#8f58e5f1520fb1f6c1ef3e2b5a0ebf782722b964"
 dependencies = [
  "avail-core",
  "frame-support",
@@ -5845,7 +5845,7 @@ dependencies = [
 [[package]]
 name = "nomad-signature"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?tag=markotest#9628a45f8a53f08849010ad010f9650f44b44e88"
+source = "git+https://github.com/availproject/avail-core?tag=node-v1.8.0.3#8f58e5f1520fb1f6c1ef3e2b5a0ebf782722b964"
 dependencies = [
  "elliptic-curve 0.12.3",
  "ethers-core",
@@ -6437,7 +6437,6 @@ dependencies = [
 [[package]]
 name = "pallet-nomination-pools"
 version = "1.0.0"
-source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v1.0.0#948fbd2fd1233dc26dbb9f9bbc1d2cca2c03945d"
 dependencies = [
  "frame-support",
  "frame-system",

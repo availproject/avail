@@ -7,8 +7,8 @@ edition = "2021"
 
 [dependencies]
 # Our crates
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "markotest", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", tag = "markotest", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false }
 
 # Substrate related
 substrate-prometheus-endpoint = {  version = "0.10.0-dev", optional = true }
