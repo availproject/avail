@@ -445,7 +445,7 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 [[package]]
 name = "avail-core"
 version = "0.5.1"
-source = "git+https://github.com/availproject/avail-core?tag=v1.8.0.3#9628a45f8a53f08849010ad010f9650f44b44e88"
+source = "git+https://github.com/availproject/avail-core?tag=node-v1.8.0.3#8f58e5f1520fb1f6c1ef3e2b5a0ebf782722b964"
 dependencies = [
  "binary-merkle-tree",
  "derive_more",
@@ -2325,7 +2325,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.8.1"
-source = "git+https://github.com/availproject/avail-core?tag=v1.8.0.3#9628a45f8a53f08849010ad010f9650f44b44e88"
+source = "git+https://github.com/availproject/avail-core?tag=node-v1.8.0.3#8f58e5f1520fb1f6c1ef3e2b5a0ebf782722b964"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -2353,7 +2353,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.9.1"
-source = "git+https://github.com/availproject/avail-core?tag=v1.8.0.3#9628a45f8a53f08849010ad010f9650f44b44e88"
+source = "git+https://github.com/availproject/avail-core?tag=node-v1.8.0.3#8f58e5f1520fb1f6c1ef3e2b5a0ebf782722b964"
 dependencies = [
  "avail-core",
  "derive_more",
