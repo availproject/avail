@@ -13,29 +13,29 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 # Our crates
-avail-core = { version = "0.5", default-features = false, features = ["runtime"] }
-nomad-core = { version = "0.1", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "markotest", default-features = false, features = ["runtime"] }
+nomad-core = { git = "https://github.com/availproject/avail-core", tag = "markotest", default-features = false }
 nomad-home = { path = "../home", default-features = false }
 
 #  Substrate 
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
-sp-core = { version = "21.0.0", default-features = false }
-sp-std = { version = "8.0.0", default-features = false }
-sp-runtime = { version = "24.0.0", default-features = false }
-frame-support = { version = "4.0.0-dev", default-features = false }
-frame-system = { version = "4.0.0-dev", default-features = false }
-frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+frame-system = { path = "../../../../pallets/system", default-features = false }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
 
 # 3rd party
 hex-literal = { version = "0.3.4", optional = true }
 
 [dev-dependencies]
-nomad-base = "0.1" 
-nomad-merkle  = "0.1" 
+nomad-base = { git = "https://github.com/availproject/avail-core", tag = "markotest" }
+nomad-merkle = { git = "https://github.com/availproject/avail-core", tag = "markotest" }
 nomad-updater-manager = { path = "../updater-manager" }
 
-sp-io = { version = "23.0.0" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
 [features]
 default = [ "std" ]

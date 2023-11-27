@@ -7,12 +7,12 @@ edition = "2021"
 
 [dependencies]
 # Our crates
-avail-core = { version = "0.5", default-features = false, features = ["runtime"] }
-kate = { version = "0.8", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "markotest", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", tag = "markotest", default-features = false }
 
 # Substrate related
 substrate-prometheus-endpoint = {  version = "0.10.0-dev", optional = true }
-sp-std = { version = "8.0.0", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 
 # 3rd-party
 log = "0.4.17"
