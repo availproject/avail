@@ -17,8 +17,5 @@ sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkad
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
 
 [features]
-default = ["std"]
-std = [
-	"sp-api/std",
-	"codec/std",
-]
+default = [ "std" ]
+std = [ "codec/std", "sp-api/std" ]
