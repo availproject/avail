@@ -26,17 +26,17 @@ jobs:
             rustup show
 
             cargo build --release -p data-avail
-            mv target/release/data-avail target/release/data-avail-linux-amd64
+            mv target/release/data-avail target/release/x64-generic-linux-data-avail
             chmod 777 runtime
             docker run --name srtool --rm -e PACKAGE=da-runtime -e RUNTIME_DIR=runtime/ -e PROFILE=release -v $(pwd):/build:rw -v /tmp/cargo:/cargo-home docker.io/paritytech/srtool:1.70.0 build
             mv runtime/target/srtool/release/wbuild/da-runtime/da_runtime.compact.compressed.wasm target/release/wbuild/da-runtime/data-avail-runtime.compact.compressed.wasm
             pushd target/release/
-            tar czf data-avail-linux-amd64.tar.gz data-avail-linux-amd64
+            tar czf x64-generic-linux-data-avail.tar.gz x64-generic-linux-data-avail
             popd
          - uses: actions/upload-artifact@v2
            with:
-             name: data-avail-linux-amd64-tar
-             path: target/release/data-avail-linux-amd64.tar.gz
+             name: x64-generic-linux-data-avail-tar
+             path: target/release/x64-generic-linux-data-avail.tar.gz
          - uses: actions/upload-artifact@v2
            with:
              name: avail-runtime-compressed-wasm
@@ -62,14 +62,14 @@ jobs:
             rustup target add aarch64-unknown-linux-gnu
             sudo apt-get update && sudo apt-get install -y musl-tools clang gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev libc6-dev-arm64-cross
             env  BINDGEN_EXTRA_CLANG_ARGS='--sysroot /usr/aarch64-linux-gnu' CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=/usr/bin/aarch64-linux-gnu-gcc cargo build --release --target=aarch64-unknown-linux-gnu -p data-avail
-            mv target/aarch64-unknown-linux-gnu/release/data-avail target/aarch64-unknown-linux-gnu/release/data-avail-linux-aarch64
+            mv target/aarch64-unknown-linux-gnu/release/data-avail target/aarch64-unknown-linux-gnu/release/aarch64-generic-linux-data-avail
             pushd target/aarch64-unknown-linux-gnu/release/
-            tar czf data-avail-linux-aarch64.tar.gz data-avail-linux-aarch64
+            tar czf arm64-generic-linux-data-avail.tar.gz arm64-generic-linux-data-avail
             popd
          - uses: actions/upload-artifact@v2
            with:
-             name: data-avail-linux-aarch64-tar
-             path: target/aarch64-unknown-linux-gnu/release/data-avail-linux-aarch64.tar.gz
+             name: arm64-generic-linux-data-avail-tar
+             path: target/aarch64-unknown-linux-gnu/release/arm64-generic-linux-data-avail.tar.gz
 
 
   # compile all binaries from previous jobs into single release

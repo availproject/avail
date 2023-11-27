@@ -6,7 +6,7 @@ IMAGE="${FLAVOUR}.Dockerfile"
 DOCKER_FILE="./scripts/linux_flavours/$IMAGE"
 
 if ! test -f "$DOCKER_FILE"; then
-    echo "Unknown option: $FLAVOUR. Use one of these: ubuntu-2004 ubuntu-2204 ubuntu-2304 fedora-38 fedora-39 debian-11 debian-12 arch"
+    echo "Unknown option: $FLAVOUR. Use one of these: ubuntu-2004 ubuntu-2204 ubuntu-2304 ubuntu-2310 fedora-38 fedora-39 debian-11 debian-12 arch"
     exit 0
 fi
 
