@@ -38,6 +38,7 @@ std = [
 	"sp-api/std",
 	"sp-runtime/std",
 ]
+metrics = []
 
 # Enables secure seed generation using for padding fill during the matrix 
 # generation for Kate commitment.
