@@ -89,6 +89,7 @@ where
 		let added_len = len as u32;
 		all_extrinsics_len.raw = all_extrinsics_len.raw.saturating_add(added_len);
 		let max_raw_len = *length_limit.max.get(info.class);
+		log::debug!(target: LOG_TARGET, "max_raw_len: {max_raw_len}, current_len: {added_len}, total_len: {}", all_extrinsics_len.raw);
 		if all_extrinsics_len.raw > max_raw_len {
 			log::debug!(
 				target: LOG_TARGET,
@@ -114,7 +115,7 @@ where
 
 		let max_padded_len = u32::try_from(max_padded_len)
 			.map_err(|_| InvalidTransaction::Custom(MaxPaddedLenExceeded as u8))?;
-
+		log::debug!(target: LOG_TARGET, "max_padded_len: {max_padded_len}, current_padded_len: {padded_added_len}, total_padded_len: {}", all_extrinsics_len.padded);
 		if all_extrinsics_len.padded > max_padded_len {
 			log::warn!(
 				target: LOG_TARGET,
@@ -140,6 +141,7 @@ where
 		info: &DispatchInfoOf<T::RuntimeCall>,
 		len: usize,
 	) -> Result<(), TransactionValidityError> {
+		log::debug!(target: LOG_TARGET, "do_pre_dispatch");
 		let next_len = Self::check_block_length(info, len)?;
 		let next_weight = Self::check_block_weight(info)?;
 		Self::check_extrinsic_weight(info)?;
@@ -154,6 +156,7 @@ where
 	/// It only checks that the block weight and length limit will not exceed.
 	pub fn do_validate(info: &DispatchInfoOf<T::RuntimeCall>, len: usize) -> TransactionValidity {
 		// ignore the next length. If they return `Ok`, then it is below the limit.
+		log::debug!(target: LOG_TARGET, "do_validate");
 		let _ = Self::check_block_length(info, len)?;
 		// during validation we skip block limit check. Since the `validate_transaction`
 		// call runs on an empty block anyway, by this we prevent `on_initialize` weight
