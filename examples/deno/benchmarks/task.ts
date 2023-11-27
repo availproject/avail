@@ -8,14 +8,15 @@ export class Task {
     public name: string
     public txCount: number
     public finalizedBlockHash = "Error"
-    public measure: PerformanceMeasure
+    public e2e_measure: PerformanceMeasure
+    public internal_measure = 0
 
     constructor(name: string, api: ApiPromise, data: string[], txCount: number) {
         this.name = name;
         this.api = api;
         this.data = data;
         this.txCount = txCount;
-        this.measure = performance.measure("a");
+        this.e2e_measure = performance.measure("a");
     }
 
     async run(stages: Stage[]) {
@@ -86,7 +87,7 @@ export class PerformanceMeasureStage implements Stage {
         performance.mark(start);
         await this.operation(task);
         performance.mark(end);
-        task.measure = performance.measure(this.stageName, start, end);
+        task.e2e_measure = performance.measure(this.stageName, start, end);
     }
 }
 

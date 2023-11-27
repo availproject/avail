@@ -1,5 +1,6 @@
 import { ApiPromise, Keyring, WsProvider } from 'https://deno.land/x/polkadot@0.2.42/api/mod.ts';
-import { API_RPC, API_TYPES, API_EXTENSIONS } from './../api_options.ts'
+import { API_TYPES, API_EXTENSIONS } from './../api_options.ts'
+import { API_RPC } from './api_options.ts'
 import { prepareData } from './misc.ts';
 import { BlockFinalizationStage, BlockInclusionStage, PerformanceMeasureStage, DataSubmissionStage, DoneStage, Task } from './task.ts';
 
@@ -22,19 +23,27 @@ const jobCount = 10;
 
 for(let i = 0; i < jobCount; ++i) {
     const task = new Task(`${i}`, api, data, txCount);
+    const customStage = new PerformanceMeasureStage(async (task) => {
+        const res = await task.api.rpc.kate.queryRowsMetrics(rows, task.finalizedBlockHash);
+        task.internal_measure = res[1].toNumber() / 1000;
+    }, "Querying Rows");
+    const stages = [new BlockInclusionStage(targetBlockNumber + i), new DataSubmissionStage(alice), new BlockFinalizationStage(targetBlockNumber + i + 1), customStage, new DoneStage()];
 
-    const customStage = new PerformanceMeasureStage(async (task) => await task.api.rpc.kate.queryRows(rows, task.finalizedBlockHash), "Querying Rows");
-    const stages = [new BlockInclusionStage(targetBlockNumber + i), new DataSubmissionStage(alice), new BlockFinalizationStage(targetBlockNumber + 1 + i), customStage, new DoneStage()];
     jobs.push(task.run(stages));
     tasks.push(task);
 }
 
 await Promise.all(jobs);
 
-const durations = tasks.map((t) => t.measure?.duration);
-const totalTime = durations.reduce((pv, cv) => pv += cv);
-console.log(durations);
-console.log(`Total time: ${totalTime}; Average time: ${totalTime / jobCount}`);
+const e2eDurations = tasks.map((t) => t.e2e_measure?.duration);
+const e2eTotalTime = e2eDurations.reduce((pv, cv) => pv += cv);
+const internalDurations = tasks.map((t) => t.internal_measure);
+const internalTotalTime = internalDurations.reduce((pv, cv) => pv += cv);
 
+const zip = e2eDurations.map((v, i) => [v, internalDurations[i]]);
+console.log(zip);
+
+console.log(`Total E2E time: ${e2eDurations}; Average E2E time: ${e2eTotalTime / jobCount}`);
+console.log(`Total Internal time: ${internalTotalTime}; Average Internal time: ${internalTotalTime / jobCount}`);
 
 Deno.exit(0);
