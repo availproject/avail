@@ -91,7 +91,7 @@ pub fn decode_message(message: Vec<u8>) -> Message {
 
 	let data = message[69..].to_vec();
 
-	Message {
+	let m = Message {
 		version,
 		nonce,
 		source_chain_id,
@@ -99,7 +99,11 @@ pub fn decode_message(message: Vec<u8>) -> Message {
 		destination_id,
 		destination_address,
 		data,
-	}
+	};
+
+	log::info!("{:?}", m);
+
+	return m;
 }
 
 // TODO should this be from some lib?
@@ -303,7 +307,6 @@ mod test {
 	use ark_std::vec;
 	use hex_literal::hex;
 	use primitive_types::{H160, H256, U256};
-	use rlp::Decodable;
 	use serde::Deserialize;
 	use sp_core::hexdisplay::ascii_format;
 	use sp_io::hashing::keccak_256;
@@ -404,12 +407,13 @@ mod test {
 			// ascii A-J
 			for j in 1u8..5u8 {
 				// 1-5
-				let mut path = format!(
-					"src/test/capella/receiptsRootProof_ {}{}.json",
+				let path = format!(
+					"src/test/capella/receiptsRootProof_{}{}.json",
 					ascii_format(i.to_be_bytes().as_slice()),
 					j
 				);
-				let file = File::open("src/test/capella/receiptsRootProof_A1.json").unwrap();
+
+				let file = File::open(path).unwrap();
 				let json: RootProof =
 					serde_json::from_reader(file).expect("JSON was not well-formatted");
 

@@ -8,6 +8,7 @@ use frame_support::{pallet_prelude::*, parameter_types};
 use hex_literal::hex;
 use sp_core::H160;
 use sp_core::{H256, U256};
+use sp_io::hashing::keccak_256 as keccak256;
 use sp_io::hashing::sha2_256;
 
 pub use pallet::*;
@@ -54,12 +55,19 @@ parameter_types! {
 	pub const MessageMappingStorageIndex:u64 = 1;
 
 	// TODO this constant represents destination chain id check if network id which is a string can be used instead
-	pub const DestinationID:u32 = 1;
+	pub const DestinationID:u32 = 100;
 
 	pub const SlotsPerHisotricalRoot:u64 = 8192;
 	pub const HistoricalRootLimit:u64 = 16777216;
 	pub const SentMessageEventSig: H256 = H256(keccak_256!(b"SentMessage(uint64,bytes32,bytes)"));
 	pub const MsgHashTopicIndex:u32 = 2;
+
+	// TODO length constant redefine
+	pub const MaxMessageBodyByte:u32 = 1024;
+	pub const MaxReceiptsRootProof:u32 = 256;
+	pub const MaxReceiptProof:u32 = 8;
+	pub const MaxTxIndexRLPEncoded:u8 = 8;
+	pub const MaxProofHashSize:u32 = 4096;
 }
 
 #[frame_support::pallet]
@@ -224,6 +232,18 @@ pub mod pallet {
 		type TimeProvider: UnixTime;
 		#[pallet::constant]
 		type MaxPublicInputsLength: Get<u32>;
+
+		#[pallet::constant]
+		type MaxMessageBodyByte: Get<u32>;
+
+		#[pallet::constant]
+		type MaxReceiptsRootProof: Get<u32>;
+		#[pallet::constant]
+		type MaxReceiptProof: Get<u32>;
+
+		#[pallet::constant]
+		type MaxTxIndexRLPEncoded: Get<u8>;
+
 		// 9
 		#[pallet::constant]
 		type MaxProofLength: Get<u32>;
@@ -291,6 +311,19 @@ pub mod pallet {
 
 			Head::<T>::set(0);
 			<SyncCommitteePoseidons<T>>::insert(self.period, self.sync_committee_poseidon);
+
+			// todo init configuration for a source chain/dest chain
+			SourceChainFrozen::<T>::set(1, false);
+			LightClients::<T>::set(5, H160(hex!("43f0222552e8114ad8F224DEA89976d3bf41659D")));
+			Broadcasters::<T>::set(5, H160(hex!("43f0222552e8114ad8F224DEA89976d3bf41659D")));
+			// ONLY for testing purpose should be in LC updated for a slot
+			Headers::<T>::insert(
+				5034986,
+				H256(hex!(
+					"bc4f02192cbf88d90c697de30dfa83bdfd2ecbde9049b81fa4c2a3b27b463c53"
+				)),
+			);
+			Timestamps::<T>::insert(5034986, 1701093649);
 		}
 	}
 
@@ -473,16 +506,16 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			src_slot: u64,
 			tx_slot: u64,
-			message_bytes: Vec<u8>,
-			receipts_root_proof: Vec<H256>,
+			message_bytes: BoundedVec<u8, MaxMessageBodyByte>,
+			receipts_root_proof: BoundedVec<H256, MaxReceiptsRootProof>,
 			receipts_root: H256,
-			receipt_proof: Vec<Vec<u8>>,
-			tx_index_rlp_encoded: Vec<u8>,
+			receipt_proof: BoundedVec<BoundedVec<u8, MaxProofHashSize>, MaxReceiptProof>,
+			tx_index_rlp_encoded: BoundedVec<u8, MaxTxIndexRLPEncoded>,
 			log_index: u64,
 		) -> DispatchResult {
 			let _sender: [u8; 32] = ensure_signed(origin)?.into();
 
-			let (message, message_root) = Self::check_preconditions(message_bytes)?;
+			let (message, message_root) = Self::check_preconditions(message_bytes.to_vec())?;
 
 			// ensure that source chain is not frozen
 			ensure!(
@@ -498,7 +531,7 @@ pub mod pallet {
 			// verify that receipts root is correct against the header root
 			let result = verify_receipts_root(
 				receipts_root,
-				receipts_root_proof,
+				receipts_root_proof.to_vec(),
 				header_root,
 				src_slot,
 				tx_slot,
@@ -516,16 +549,32 @@ pub mod pallet {
 			// ensure that proof is valid
 			ensure!(is_valid, Error::<T>::InvalidReceiptsProof);
 
+			// map to a regular vec
+			let receipt_proof_vec = receipt_proof
+				.iter()
+				.map(|inner_bounded_vec| {
+					inner_bounded_vec
+						.iter()
+						.map(|element| element.clone())
+						.collect()
+				})
+				.collect();
+
 			let et = get_event_topic(
-				receipt_proof,
-				tx_index_rlp_encoded,
+				receipt_proof_vec,
+				tx_index_rlp_encoded.to_vec(),
 				receipts_root,
 				log_index,
 				Broadcasters::<T>::get(message.source_chain_id),
 				SentMessageEventSig::get(),
 				MsgHashTopicIndex::get(),
 			)
-			.map_err(|_| Error::<T>::CannotExecute)?; // TODO better error or convert amb error
+			.map_err(|e| {
+				log::warn!("Could not get get_event_topic a message: {:?}", e);
+				Error::<T>::CannotExecute
+			})?;
+
+			log::warn!("root {:?} ----- {:?}", et, message_root);
 
 			ensure!(et == message_root, Error::<T>::InvalidMessageHash);
 
@@ -549,11 +598,12 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	// check_preconditions checks conditions before message execution
-	pub fn check_preconditions(message: Vec<u8>) -> Result<(Message, H256), DispatchError> {
+	pub fn check_preconditions(message_bytes: Vec<u8>) -> Result<(Message, H256), DispatchError> {
 		// extract message
-		let message = decode_message(message);
+		// log::warn!("{:?}", message_bytes);
 		// calculate root in order to compare with the expected message root
-		let message_root = H256(keccak_256!(message_bytes));
+		let message_root = H256(keccak256(message_bytes.as_slice()));
+		let message = decode_message(message_bytes.to_vec());
 		// check if message is not yet executed
 		let message_status = MessageStatus::<T>::get(message_root);
 		ensure!(
@@ -562,6 +612,13 @@ impl<T: Config> Pallet<T> {
 		);
 
 		// TODO destination id is in this case only Avail
+
+		log::info!(
+			"message destination {} configured value {}",
+			message.destination_id,
+			DestinationID::get()
+		);
+
 		ensure!(
 			message.destination_id == DestinationID::get(),
 			Error::<T>::WrongChain

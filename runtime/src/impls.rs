@@ -46,7 +46,8 @@ use frame_system::limits::BlockLength;
 use frame_system::submitted_data;
 use frame_system::EnsureRoot;
 use pallet_succinct::{
-	ExecutionStateRootIndex, FinalizedRootIndex, MaxProofLength, MaxPublicInputsLength,
+	ExecutionStateRootIndex, FinalizedRootIndex, MaxMessageBodyByte, MaxProofLength,
+	MaxPublicInputsLength, MaxReceiptProof, MaxReceiptsRootProof, MaxTxIndexRLPEncoded,
 	MaxVerificationKeyLength, MinSyncCommitteeParticipants, NextSyncCommitteeIndex,
 	RotateFunctionId, StepFunctionId, SyncCommitteeSize,
 };
@@ -87,6 +88,11 @@ impl pallet_succinct::Config for Runtime {
 	type MaxPublicInputsLength = MaxPublicInputsLength;
 	type MaxProofLength = MaxProofLength;
 	type MaxVerificationKeyLength = MaxVerificationKeyLength;
+
+	type MaxMessageBodyByte = MaxMessageBodyByte;
+	type MaxReceiptsRootProof = MaxReceiptsRootProof;
+	type MaxReceiptProof = MaxReceiptProof;
+	type MaxTxIndexRLPEncoded = MaxTxIndexRLPEncoded;
 
 	type MinSyncCommitteeParticipants = MinSyncCommitteeParticipants;
 	type SyncCommitteeSize = SyncCommitteeSize;

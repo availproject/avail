@@ -1,12 +1,11 @@
 use frame_support::traits::ConstU64;
 use frame_support::{derive_impl, parameter_types};
-use frame_system::header_builder::da;
-use frame_system::test_utils::TestRandomness;
 use hex_literal::hex;
 use sp_core::{H256, U256};
-use sp_runtime::{traits::IdentityLookup, AccountId32, BuildStorage};
+use sp_runtime::BuildStorage;
 
 use crate as succinct_bridge;
+use crate::{MaxMessageBodyByte, MaxReceiptProof, MaxReceiptsRootProof, MaxTxIndexRLPEncoded};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockDaBlock<Test>;
@@ -70,6 +69,11 @@ impl succinct_bridge::Config for Test {
 	type MaxProofLength = MaxProofLength;
 	type MaxVerificationKeyLength = MaxVerificationKeyLength;
 	type MinSyncCommitteeParticipants = MinSyncCommitteeParticipants;
+
+	type MaxMessageBodyByte = MaxMessageBodyByte;
+	type MaxReceiptsRootProof = MaxReceiptsRootProof;
+	type MaxReceiptProof = MaxReceiptProof;
+	type MaxTxIndexRLPEncoded = MaxTxIndexRLPEncoded;
 	type SyncCommitteeSize = SyncCommitteeSize;
 	type FinalizedRootIndex = FinalizedRootIndex;
 	type NextSyncCommitteeIndex = NextSyncCommitteeIndex;

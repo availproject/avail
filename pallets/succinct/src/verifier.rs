@@ -430,7 +430,6 @@ mod tests {
 		let requested_input = hex!(
 			"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df0000000000747ffe"
 		);
-		let requested_input_hash = sha2_256(requested_input.as_slice());
 		let stored_poseidon =
 			U256::from("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df");
 		let stored_slot = 7634942u64;
