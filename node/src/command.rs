@@ -61,12 +61,7 @@ impl SubstrateCli for Cli {
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 		let spec = match id {
-			"" => {
-				return Err(
-					"Please specify which chain you want to run, e.g. --dev, --dev.tri, --kate"
-						.into(),
-				)
-			},
+			"" => return Err("Please specify which chain you want to run, e.g. --goldberg".into()),
 			"dev" => Box::new(chains::dev::chain_spec()),
 			"dev.tri" => Box::new(chains::dev_tri::chain_spec()),
 			"goldberg" => Box::new(chains::goldberg::chain_spec()?),
