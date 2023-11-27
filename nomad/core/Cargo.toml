@@ -12,10 +12,10 @@ nomad-signature = { path = "../signature", default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 primitive-types = { version = "0.12", default-features = false, features = ["scale-info", "codec"] }
 scale-info = { version = "2", default-features = false, features = ["derive"] }
-sp-core = { version = "*", default-features = false }
-sp-std = { version = "*", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 
-sp-runtime = { version = "24", default-features = false, optional = true }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
 
 # Eth
 ethers-core = { version = "1", optional = true }
@@ -26,7 +26,7 @@ serde = { version = "1.0.188", default-features = false, features = ["derive"], 
 tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
 
 [dev-dependencies]
-async-trait = "0.1.42"
+async-trait = { version = "0.1.42" }
 
 [features]
 default = [ "std" ]

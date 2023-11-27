@@ -13,18 +13,18 @@ nomad-core = { path = "../core", default-features = false }
 # Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"] }
-sp-core = { version = "*", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 
-frame-support = { version = "4.0.0-dev", default-features = false, optional = true }
+frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
 
 # 3rd-party
-hex-literal = "0.3.4"
-static_assertions = "1.1.0"
-thiserror-no-std = "2.0.2"
+hex-literal = { version = "0.3.4" }
+static_assertions = { version = "1.1.0" }
+thiserror-no-std = { version = "2.0.2" }
 tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
 
 [dev-dependencies]
-ethers-core = "1"
+ethers-core = { version = "1" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0" }
 

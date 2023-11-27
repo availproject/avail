@@ -19,13 +19,13 @@ dusk-plonk = { git = "https://github.com/availproject/plonk.git", tag = "v0.12.0
 
 # Parity & Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-sp-arithmetic = { version = "*", default-features = false }
-sp-core = { version = "*", default-features = false }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 
 # 3rd-party
 derive_more = { version = "0.99.17", default-features = false, features = ["constructor"] }
-static_assertions = "1.1.0"
-thiserror-no-std = "2.0.2"
+static_assertions = { version = "1.1.0" }
+thiserror-no-std = { version = "2.0.2" }
 
 dusk-bytes = { version = "0.1.6", default-features = false, optional = true }
 hex = { version = "0.4", optional = true, default-features = false, features = ["alloc", "serde"] }
@@ -41,9 +41,9 @@ serde_json = { version = "1", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5.1", default-features = false }
-proptest = "1"
-serde_json = "1"
-test-case = "1.2.3"
+proptest = { version = "1" }
+serde_json = { version = "1" }
+test-case = { version = "1.2.3" }
 
 [features]
 default = [ "std" ]
