@@ -17,6 +17,8 @@ do
     sudo rm /etc/systemd/system/avail-light-${i}.service
 done
 
+sudo systemctl stop prometheus.service
+
 rm -rf $HOME/avail-home
 
 rm -rf $HOME/avail-keys
@@ -32,6 +34,10 @@ rm -rf $HOME/light-bootstrap
 rm $HOME/avail-test/load-test-config.yaml
 
 rm $HOME/endpoints.txt
+
+rm $HOME/prometheus.yaml
+
+rm $HOME/promtail.yaml
 
 sudo rm -rf /var/www/html/*
 

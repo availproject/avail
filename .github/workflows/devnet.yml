@@ -1,15 +1,22 @@
 name: Devnet
 
 on:
-  pull_request:
-    types: [ labeled ]
+  issue_comment:
+    types: [ created ]
 
 jobs:
   devnet:
-    if: ${{ github.event.label.name == 'deploy-devnet' }}
+    if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '/deploy') }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+
+    - name: Set latest commit status as pending
+      uses: myrotvorets/set-commit-status-action@master
+      with:
+        sha: ${{ steps.comment-branch.outputs.head_sha }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        status: pending
 
     - name: Copy scripts folder to remote server
       uses: appleboy/scp-action@v0.1.4
@@ -46,3 +53,11 @@ jobs:
         script: |
           cd ~/scripts
           bash setup.sh ${{ github.event.pull_request.head.sha }} ${{ vars.LC_TAG }} ${{ vars.VAL_COUNT }} ${{ vars.NODE_COUNT }} ${{ vars.LC_COUNT }}
+
+    - name: Set latest commit status as ${{ job.status }}
+      uses: myrotvorets/set-commit-status-action@master
+      if: always()
+      with:
+        sha: ${{ steps.comment-branch.outputs.head_sha }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        status: ${{ job.status }}

@@ -124,7 +124,7 @@ do
     sudo systemctl enable avail-val-${i}.service
     sudo systemctl start avail-val-${i}.service
     echo "Validator $i RPC endpoint is: http://$IP:$RPC" >> $HOME/endpoints.txt
-    echo "Validator $i WS endpoint is : ws://$IP:$RPC" >> $HOME/endpoints.txt
+    echo "Validator $i WS endpoint is : ws://$IP:$WS" >> $HOME/endpoints.txt
 done
 
 ## Generating systemd service files for full nodes and starting the service.
@@ -154,7 +154,7 @@ do
     sudo systemctl enable avail-full-${i}.service
     sudo systemctl start avail-full-${i}.service
     echo "Fullnode ${i} RPC endpoint is: http://$IP:$RPC" >> $HOME/endpoints.txt
-    echo "Fullnode ${i} WS endpoint is: ws://$IP:$RPC" >> $HOME/endpoints.txt
+    echo "Fullnode ${i} WS endpoint is: ws://$IP:$WS" >> $HOME/endpoints.txt
 done
 
 ## Generate node key and config for light client bootstrap.
@@ -246,3 +246,74 @@ echo "window.process_env = {"\"WS_URL"\": "\"ws://$IP:9933"\"};" >> build/env-co
 sudo cp -r build/* /var/www/html/
 sudo systemctl restart apache2
 echo "Explorer url is http://$IP" >> $HOME/endpoints.txt
+
+# Setting up observability components
+
+# Setting up Prometheus job for collecting metrics
+cd ~/
+cp prometheus-example.yaml prometheus.yaml
+for (( i=1; i<=$VAL_COUNT; i++ ))
+do
+    DIFF=$(($i - 1))
+    INC=$(($DIFF * 2))
+    PROM=$((6000 + $INC))
+    echo "  - job_name: \"validator-$1\"
+    static_configs:
+      - targets: [\"localhost:$PROM\"]" >>  prometheus.yaml
+done
+
+for (( i=1; i<=$NODE_COUNT; i++ ))
+do
+    DIFF=$(($i - 1))
+    INC=$(($DIFF * 2))
+    PROM=$((6100 + $INC))
+    echo "  - job_name: \"full-node-$1\"
+    static_configs:
+      - targets: [\"localhost:$PROM\"]
+      " >>  prometheus.yaml
+done
+
+sudo systemctl restart prometheus.service
+
+# Setting up Promtail job for collecting logs
+
+cd ~/
+cp promtail-example.yaml promtail.yaml
+
+for (( i=1; i<=$VAL_COUNT; i++ ))
+do
+    echo "  - job_name: val-$i-log
+    journal:
+      json: false
+      max_age: 12h
+      path: /var/log/journal
+      labels:
+        job: val-$i-log
+    relabel_configs:
+      - action: keep
+        source_labels: ["__journal__systemd_unit"]
+        regex: avail-val-${i}.service
+      - source_labels: ["__journal__systemd_unit"]
+        target_label: "systemd_unit"
+        " >> promtail.yaml
+done
+
+for (( i=1; i<=$NODE_COUNT; i++ ))
+do
+    echo "  - job_name: full-$i-log
+    journal:
+      json: false
+      max_age: 12h
+      path: /var/log/journal
+      labels:
+        job: full-$i-log
+    relabel_configs:
+      - action: keep
+        source_labels: ["__journal__systemd_unit"]
+        regex: avail-full-${i}.service
+      - source_labels: ["__journal__systemd_unit"]
+        target_label: "systemd_unit"
+        " >> promtail.yaml
+done
+
+sudo systemctl restart promtail
