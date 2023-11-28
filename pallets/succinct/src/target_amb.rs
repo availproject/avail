@@ -1,7 +1,10 @@
 use ark_std::iterable::Iterable;
+use patricia_merkle_trie::{EIP1186Layout, StorageProof};
 use primitive_types::{H160, H256};
+use rlp::Rlp;
 use scale_info::prelude::vec::Vec;
-use trie_db::Trie;
+use sp_io::hashing::keccak_256;
+use trie_db::{DBValue, Trie, TrieDBBuilder};
 
 use crate::Config;
 
@@ -77,6 +80,62 @@ pub fn decode_message(message: Vec<u8>) -> Message {
 	};
 }
 
+#[derive(Debug)]
+pub enum StorageError {
+	StorageError,
+}
+
+pub fn get_storage_value(
+	slot_hash: H256,
+	storage_root: H256,
+	proof: Vec<Vec<u8>>,
+) -> Result<H256, StorageError> {
+	let db = StorageProof::new(proof).into_memory_db::<keccak256::KeccakHasher>();
+	let trie =
+		TrieDBBuilder::<EIP1186Layout<keccak256::KeccakHasher>>::new(&db, &storage_root).build();
+
+	if let Some(storage_root) = trie
+		.get(&slot_hash.as_bytes())
+		.map_err(|_| StorageError::StorageError)?
+	{
+		let r = Rlp::new(storage_root.as_slice());
+		// ensure!(r.data().len() > 0, Error::<T>::CannotDecodeRlpItems);
+		let storage_value = r.data().map_err(|_| StorageError::StorageError)?;
+		Ok(H256::from_slice(storage_value))
+	} else {
+		Err(StorageError::StorageError)
+	}
+}
+
+pub fn get_storage_root(
+	proof: Vec<Vec<u8>>,
+	address: H160,
+	state_root: H256,
+) -> Result<H256, StorageError> {
+	let key = keccak_256(address.as_bytes());
+	let db = StorageProof::new(proof).into_memory_db::<keccak256::KeccakHasher>();
+	let trie =
+		TrieDBBuilder::<EIP1186Layout<keccak256::KeccakHasher>>::new(&db, &state_root).build();
+
+	let result: DBValue = trie.get(&key.as_slice()).unwrap().unwrap();
+	let byte_slice = result.as_slice();
+	let r = Rlp::new(byte_slice);
+
+	let item_count = r.item_count().map_err(|_| StorageError::StorageError)?;
+
+	// ensure!(item_count == 4, Error::<T>::AccountNotFound);
+
+	let item = r
+		.at(2)
+		.map_err(|_| StorageError::StorageError)?
+		.data()
+		.map_err(|_| StorageError::StorageError)?;
+
+	let storage_root = H256::from_slice(item);
+
+	Ok(storage_root)
+}
+
 pub mod keccak256 {
 	use hash256_std_hasher::Hash256StdHasher;
 	use sp_io::hashing::keccak_256;
@@ -109,8 +168,8 @@ mod test {
 	use trie_db::Trie;
 	use trie_db::{DBValue, TrieDBBuilder};
 
-	use crate::target_amb::decode_message;
 	use crate::target_amb::keccak256::KeccakHasher;
+	use crate::target_amb::{decode_message, get_storage_root, get_storage_value};
 
 	#[test]
 	fn test_message_decoding() {
@@ -130,11 +189,13 @@ mod test {
 			U256::from(message_decoded.destination_address.as_bytes())
 		);
 		assert_eq!(vec![103, 137], message_decoded.data);
+
+		println!("{:?}", message_decoded.nonce)
 	}
 
 	#[test]
 	fn test_account_proof() {
-		let key = keccak_256(&hex!("43f0222552e8114ad8F224DEA89976d3bf41659D"));
+		let key = H160::from_slice(&hex!("43f0222552e8114ad8F224DEA89976d3bf41659D").as_slice());
 		let proof = vec![
             hex!("f90211a050da92c339db0b71cd6a8ac7893a6b8689ec5a3a46a0231b3ee2bd1baee75e1da045a3d973eb74a02b762d8b1ba683f39bca3965806276c8ceffe2d2ebc6cce233a0e88ad29ca98fa08f59f2a7f0110d63505d99a173628643290df869c4d1fa312ba00bb4cc9dc0b1de6ae0d80424b1fa992efb400a07a0e84615c91762fe734b2d0ca0a07e495d39bf2b779405790c6c7e7eb1cc3c803a88db36d1ec600fb0e555b5bba09a1c776e89c8be75d0a9ea022c05fd2ff095869d549e74a8fff7f2fb2deaf738a073b874e49e77dfd9312d7b1afd1ac10e02021a1ba2ab7c97ecaeaa0e26a34027a07e3424405c13aa33a2eb9ec6d8640aa1f67fdd8c8e9e4276334515b1cf1df65ca0246b93b2e3cc625a5e75b40165c6cb95ae8ffb9406563d34092d6359c7616aeea04d2fd8fdb1ab7d8f8fc6079400396fec828914230fade3794f13dc5ae7f6bbb8a04811b9efbfa8d495c5be91be78372b4a29140bd1e092e793db50ed9c495a6d54a02e1b3a417e8341dc8e1ade6ca527778192d33c7c827cfa63a366d007f2884e24a0845f4f33a4993d85766a14222cde1d124bd0f15523d239572883258a7bbcccd9a0ed2021cc2206fcfd9f80d592890b1b4eb615fae4f11d4e4a66d54a6767908901a07d46bf6e9dc9599eb7ca036aa976ef9cc63f02e9097252799f5d3a8792c49620a00b58d1d2cc72401c7cb978d34e15f74038ac63355e415d53b894179b8938dbb780").to_vec(),
             hex!("f90211a03e22056b0eefc94898d516b45ea579bd298291aa521c8665f3d5215da5619513a0b5f3f839320c3d63436a8f27a07bc47a5e7ace4f5d80e437ce2084a007e0fd37a0e666b7198d6b6023de9a698f4bc90a9595e57f7f4e70d07d0366c693d53994c5a05b14820b719fbb37f5e9ff55770d6ceb63ef90af46934377c0364ca72335852ea09c4a1a1d5b1e58e9be1c9b4ea4e943c514b4ae8a382be6dd16e53336354e0500a0058c24b25f97ed51ca2c44e016631753eb97197733b23aea23aef112a2323321a03347d79447b18678fbbedd01b48e52747a5301d32223c4be91f5681d2a69d7b2a04182f6e242615804a49f3a54399e285d84a6e7692cca41008d2b638be30fe00fa0c64a1e71e7512d73008d4cce2a2ba0981023c4ff5f821ba97fcf8059f4699bb5a0673bee8a446cac15221e9292a904ed44762ccb19dac57bbef085d76c6c5b9bb0a065d1ccec63163a4e5ea501f3951a384daaa9aaf4c9c976f963e3597b3e8ce4eca0fb4a788676b5a593e7db6c1149e3c89c774ef9915010846bcb53563736ccde70a0d5274ce6a4e744adab98139ed9d6b5846a449721f32d0f49e020061f5abb094ba0bbf7fd5e93a74f6d8ec4df6f2b0c7f6ff2b387a1a2cb2fd1f26545208c099443a0ddac5ec494b529e87a014e9f80869493008eba559e8ed9e9691fcf219bea14d0a06092b5dc5dd24f768b0c0bf74a6deb0e4e9a5fa3c474d06d52a63ace81d272c980").to_vec(),
@@ -151,32 +212,38 @@ mod test {
 			"cd187a0c3dddad24f1bb44211849cc55b6d2ff2713be85f727e9ab8c491c621c"
 		));
 
-		let db = StorageProof::new(proof).into_memory_db::<KeccakHasher>();
-		let trie = TrieDBBuilder::<EIP1186Layout<KeccakHasher>>::new(&db, &root).build();
-		let result: DBValue = trie.get(&key).unwrap().unwrap();
+		let expected_storage_root = H256(hex!(
+			"a03e10dfba89f79567f7c9a238ee7fe66ed32e711be4db6e73d7211601dec360"
+		));
 
-		let byte_slice = result.as_slice();
+		let storage_root_result = get_storage_root(proof, key, root);
 
-		let mut rlp_value = Rlp::new(byte_slice);
+		// assert_ok!(storage_root_result);
+		assert_eq!(expected_storage_root, storage_root_result.unwrap());
 
-		// let acc = Account::decode(&mut r).unwrap();
-		// println!("{:?}", acc);
-
-		let expected_value =
-			hex!("a03e10dfba89f79567f7c9a238ee7fe66ed32e711be4db6e73d7211601dec360");
-		assert_eq!(4, rlp_value.item_count().unwrap());
-		assert_eq!(expected_value, rlp_value.at(2).unwrap().data().unwrap());
-		// assert_eq!(4, r.item_count());
-		// assert_eq!(4, r.item_count());
-		// TODO cleanup this
-		println!("{:?}", rlp_value.item_count());
-		println!("{:02x?}", rlp_value.at(2).unwrap().data());
-		println!("==========================");
-		println!("{:?}", rlp_value.at(0).unwrap().data());
-		println!("{:?}", rlp_value.at(1).unwrap().data());
-		println!("{:?}", rlp_value.at(2).unwrap().data());
-		println!("{:?}", rlp_value.at(3).unwrap().data());
-		println!("==========================");
+		//
+		// let mut rlp_value = Rlp::new(byte_slice);
+		//
+		// // let acc = Account::decode(&mut r).unwrap();
+		// // println!("{:?}", acc);
+		//
+		// let expected_value =
+		//     hex!("a03e10dfba89f79567f7c9a238ee7fe66ed32e711be4db6e73d7211601dec360");
+		// assert_eq!(4, rlp_value.item_count().unwrap());
+		// assert_eq!(expected_value, rlp_value.at(2).unwrap().data().unwrap());
+		// // assert_eq!(4, r.item_count());
+		// // assert_eq!(4, r.item_count());
+		// // TODO cleanup this
+		// println!("{:?}", rlp_value.item_count());
+		// println!("{:02x?}", rlp_value.at(2).unwrap().data());
+		// println!("==========================");
+		// println!("to sting {:?}", rlp_value.to_string());
+		//
+		// println!("{:?}", rlp_value.at(0).unwrap().data());
+		// println!("{:?}", rlp_value.at(1).unwrap().data());
+		// println!("{:?}", rlp_value.at(2).unwrap().data());
+		// println!("{:?}", rlp_value.at(3).unwrap().data());
+		// println!("==========================");
 
 		// let account = Account::decode(&rlp::Rlp::new(&result)).unwrap();
 		// println!("account {:?}", account)
@@ -184,33 +251,34 @@ mod test {
 
 	#[test]
 	fn test_storage_value() {
-		// 000000000000000100
+		let message_bytes = hex!("01000000000000005400000005e2b19845fe2b7bb353f377d12dd51af012fbba2000000064000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064").to_vec();
+		let message_bytes1 = hex!("01000000000000005400000005e2b19845fe2b7bb353f377d12dd51af012fbba2000000064000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064").to_vec();
+		let message = decode_message(message_bytes);
+		println!("{}", message.nonce);
 
-		let abi_encoded = hex!("00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001");
-
-		let key = keccak_256(keccak_256(abi_encoded.as_slice()).as_slice());
+		// 841
+		let abi_encoded = hex!("00000000000000000000000000000000000000000000000000000000000000540000000000000000000000000000000000000000000000000000000000000001").as_slice();
+		let binding = keccak_256(abi_encoded);
+		let key = binding.as_slice();
 		// 0x66b32740ad8041bcc3b909c72d7e1afe60094ec55e3cde329b4b3a28501d826c
-		println!("{:x?}", key);
+		// println!("{:x?}", key);
 
-		let k = hex!("66b32740ad8041bcc3b909c72d7e1afe60094ec55e3cde329b4b3a28501d826c");
+		// let k = hex!("95eea00c49d14a895954837cd876ffa8cfad96cbaacc40fc31d6df2c902528a8");
 
 		let proof = vec![
             hex!("f90211a0f0a16ee9b11528f3da8796229dad134b9085ed9428d868e6988f9b2473b59d6fa0f8175015d0a3df8fc451d2bd3d64a34e0836f3203129ac567e869f1157b488dfa0f9d56e943c6962cf8e2ca51b94b54307eb45424ebb84ed079b417cf03a85e298a0408af9f1c5f64ed6c517b1dbf661b75a705ef7d78bcae67b9a54c1e8052b56b2a02157d476a9a077cfc9eb00ead5ab65dcbfe363a71e993c3602a66c0fccf13e4aa00772697ebf25f2e83830918bd52bbb9600c077ae289e740ae76c7bdfd34b7ebea0a1dd0da76aacf7c82629c55e4b956b2e9ef77d7fdcee1adeb23d022f0950d554a0695cb723c857d98ad1c96a372f7983bf771556f4608674266a0698531543217ba05c0fb347305720b81c7d39be6fd5b2083af607654098a0f1418ec111a846510aa0ecd30808bffcb164a258c332a29f3050e9e85d28e988305b7f643dcad4f32c8fa0ec5ee93a7ede0a9c641dcd7515c1408ab48f86b5295cd26b3d738e8d8ac7829fa01434a5f6054456bbce0a59ba1c182eeee8e64fd6762ff365e550ca7cd8cedad0a0b4fefcb325f044a6663c9441ec9f025718d0f2d7fc1c29ec819f4a366cafbb6fa0cc26bfb18151569b0f765335474fa3840f9093385816bd14a4a3c553fae62949a06a28c02f7b649bad24b39d9a4e9fc4c8e93b1ae2b043af4f5bbcb8238e193eaba011ef889094bf6ca740810423041169453b7daea3df98b3018523f86e96bf033580").to_vec(),
-            hex!("f8d1808080a0f79069170d9bd1640662027bb904b1f5655f346c231e6c82467dbdeea9aedc938080808080a0e74e7a66148fbbe731b2ee3c9983cee7aa421ce456e8e6d10cd7dcab71cf25d0a0b6d34e2a998dea02a986714f8b74cf215c5b3dd21ce40289dbd425a35fa07cfa8080a0e0a0199f06e921919a65252eec43991d50d664accc0e62f6ee3f8762d60757e3a08a8491cb5f3b10f33d9c227dbda2fa944fc5fddf49d81108d53dc56151b06569a0bc83eb0afdea380f55a8956b903999c79a67f8729ea067187431810e18b8993180").to_vec(),
-            hex!("f843a0206da15a1efe671ce3bd410addbe01acf66ddcc7f403dfe6617a85c318a2e5cca1a0fa4f7548b723c0a10458af299de4e7cf3ab69189c9042e38325e4e882b82e611").to_vec(),
+            hex!("f8d180808080a0053a80e0ec0645b0acdddd1650b28104de2a51e7144bc5c7f7f69d44c544587a80a0bb2d4c2215259ba0a7fba5e750be34f510fb4494a19b4fbabc8b419f6a35346e808080a01a9817fbc2f3624eb22a44d5b6643c370eac51c77ff3a8d59f42b1d9fe5ea925a09c851efdcfd1d623fd4a3e5ef7f041b1f59b6ae7d60740291cc2e25bccc0a9b38080a0ddf637c0efd4778239f93a609faa694809faf5420e462488de85b0a2ba5bcf66a0fc31bff1855e70288e2c52383e1841cebc68bbcc08da7507c6112f2d2007231680").to_vec(),
+            hex!("f843a0204effc936259a57c56ffc97bf601a6f6ee129ac5cd39809a889df1a8ad3fdc1a1a03617643cdff88aaf66c6d09fd11c1a73ce69dd905086afd692a62c4ba800fdd4").to_vec(),
         ];
 
-		// execution state root
-		// let storage_root = H256([160, 62, 16, 223, 186, 137, 247, 149, 103, 247, 201, 162, 56, 238, 127, 230, 110, 211, 46, 113, 27, 228, 219, 110, 115, 215, 33, 22, 1, 222, 195, 96]);
-		// println!("{}", storage_root);
 		let storage_root1 = H256(hex!(
 			"a03e10dfba89f79567f7c9a238ee7fe66ed32e711be4db6e73d7211601dec360"
 		));
 
-		let db = StorageProof::new(proof).into_memory_db::<KeccakHasher>();
-		let trie = TrieDBBuilder::<EIP1186Layout<KeccakHasher>>::new(&db, &storage_root1).build();
-
-		let result: DBValue = trie.get(&k).unwrap().unwrap();
+		let value = get_storage_value(H256(keccak_256(binding.as_slice())), storage_root1, proof);
+		let expected_value = keccak_256(message_bytes1.as_slice());
+		println!("{:?}", value);
+		assert_eq!(H256(expected_value), value.unwrap())
 	}
 
 	#[test]
@@ -218,6 +286,8 @@ mod test {
 		let key = keccak_256(&hex!(
 			"95eea00c49d14a895954837cd876ffa8cfad96cbaacc40fc31d6df2c902528a8"
 		));
+
+		println!("{:?}", H256(key));
 
 		let proof = vec![
             hex!("f90211a03697534056039e03300557bd69fe16e18ce4a6ccd5522db4dfa97dfe1fad3d3aa0b1bf1f230b98b9034738d599177ae817c08143b9395a47f300636b0dd2fb3c5ea0aa04a4966751d4c50063fe13a96a6c7924f665819733f556849b5eb9fa1d6839a0e162e080d1c12c59dc984fb2246d8ad61209264bee40d3fdd07c4ea4ff411b6aa0e5c3f2dde71bf303423f34674748567dcdf8379129653b8213f698468738d492a068a3e3059b6e7115a055a7874f81c5a1e84ddc1967527973f8c78cd86a1c9f8fa0d734bd63b7be8e8471091b792f5bbcbc7b0ce582f6d985b7a15a3c0155242c56a00143c06f57a65c8485dbae750aa51df5dff1bf7bdf28060129a20de9e51364eda07b416f79b3f4e39d0159efff351009d44002d9e83530fb5a5778eb55f5f4432ca036706b52196fa0b73feb2e7ff8f1379c7176d427dd44ad63c7b65e66693904a1a0fd6c8b815e2769ce379a20eaccdba1f145fb11f77c280553f15ee4f1ee135375a02f5233009f082177e5ed2bfa6e180bf1a7310e6bc3c079cb85a4ac6fee4ae379a03f07f1bb33fa26ebd772fa874914dc7a08581095e5159fdcf9221be6cbeb6648a097557eec1ac08c3bfe45ce8e34cd329164a33928ac83fef1009656536ef6907fa028196bfb31aa7f14a0a8000b00b0aa5d09450c32d537e45eebee70b14313ff1ca0126ce265ca7bbb0e0b01f068d1edef1544cbeb2f048c99829713c18d7abc049a80").to_vec(),
@@ -239,6 +309,8 @@ mod test {
 		let result: DBValue = trie.get(&key).unwrap().unwrap();
 
 		let r = Rlp::new(result.as_slice());
+
+		println!("{:?}", r.to_string());
 
 		assert_eq!(r.data().unwrap(), hex!("d647b234389e"))
 	}
