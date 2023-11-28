@@ -1,9 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use ark_ff::vec::Vec;
+use ark_std::Zero;
 use ethabi::Token;
 use frame_support::sp_core_hashing_proc_macro::keccak_256;
-use frame_support::traits::UnixTime;
+use frame_support::traits::tokens::Balance;
+use frame_support::traits::{Currency, ExistenceRequirement, UnixTime};
 use frame_support::{pallet_prelude::*, parameter_types};
 use hex_literal::hex;
 use sp_core::H160;
@@ -68,6 +70,8 @@ parameter_types! {
 	pub const MaxReceiptProof:u32 = 8;
 	pub const MaxTxIndexRLPEncoded:u8 = 8;
 	pub const MaxProofHashSize:u32 = 4096;
+
+	pub const PalletAccountId: [u8; 32]= *b"af44af6890508b3b7f6910d4a4570a0d";
 }
 
 #[frame_support::pallet]
@@ -75,7 +79,7 @@ pub mod pallet {
 	use ark_std::string::String;
 	use ark_std::{vec, vec::Vec};
 	use frame_support::dispatch::{GetDispatchInfo, UnfilteredDispatchable};
-	use frame_support::traits::{Hash, UnixTime};
+	use frame_support::traits::{Hash, LockableCurrency, UnixTime};
 	use frame_support::{pallet_prelude::ValueQuery, DefaultNoBound};
 	use sp_core::H256;
 	use sp_io::hashing::sha2_256;
@@ -229,6 +233,8 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
+
 		type TimeProvider: UnixTime;
 		#[pallet::constant]
 		type MaxPublicInputsLength: Get<u32>;
@@ -243,7 +249,6 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type MaxTxIndexRLPEncoded: Get<u8>;
-
 		// 9
 		#[pallet::constant]
 		type MaxProofLength: Get<u32>;
@@ -316,6 +321,7 @@ pub mod pallet {
 			SourceChainFrozen::<T>::set(1, false);
 			LightClients::<T>::set(5, H160(hex!("43f0222552e8114ad8F224DEA89976d3bf41659D")));
 			Broadcasters::<T>::set(5, H160(hex!("43f0222552e8114ad8F224DEA89976d3bf41659D")));
+
 			// ONLY for testing purpose should be in LC updated for a slot
 			Headers::<T>::insert(
 				5034986,
@@ -574,11 +580,11 @@ pub mod pallet {
 				Error::<T>::CannotExecute
 			})?;
 
-			log::warn!("root {:?} ----- {:?}", et, message_root);
-
 			ensure!(et == message_root, Error::<T>::InvalidMessageHash);
 
 			// TODO execute message and to the transfer
+
+			// let success = Self::transfer()?;
 
 			// if success
 			// MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
@@ -597,6 +603,23 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+	pub fn transfer(amount: u128, destination_account: H256) -> Result<bool, DispatchError> {
+		let destination_account_id =
+			T::AccountId::decode(&mut &destination_account.encode()[..]).unwrap();
+		let source_account_id: T::AccountId =
+			T::AccountId::decode(&mut &destination_account.encode()[..]).unwrap();
+
+		let am = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance::zero();
+		let res = T::Currency::transfer(
+			&source_account_id,
+			&destination_account_id,
+			am,
+			ExistenceRequirement::KeepAlive,
+		)?;
+
+		Ok(true)
+	}
+
 	// check_preconditions checks conditions before message execution
 	pub fn check_preconditions(message_bytes: Vec<u8>) -> Result<(Message, H256), DispatchError> {
 		// extract message
