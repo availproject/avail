@@ -722,6 +722,17 @@ pub mod pallet {
 	#[pallet::getter(fn block_length)]
 	pub type DynamicBlockLength<T: Config> = StorageValue<_, limits::BlockLength, ValueQuery>;
 
+	#[pallet::type_value]
+	pub fn NextLengthMultiplierOnEmpty() -> u32 {
+		u32::one()
+	}
+
+	#[pallet::storage]
+	#[pallet::whitelist_storage]
+	#[pallet::getter(fn next_length_multiplier)]
+	pub type NextLengthMultiplier<T: Config> =
+		StorageValue<_, u32, ValueQuery, NextLengthMultiplierOnEmpty>;
+
 	#[derive(DefaultNoBound)]
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
@@ -1505,8 +1516,8 @@ impl<T: Config> Pallet<T> {
 			).deconstruct(),
 		);
 		ExecutionPhase::<T>::kill();
-
 		storage::unhashed::kill(well_known_keys::INTRABLOCK_ENTROPY);
+		Self::calculate_length_multiplier();
 		// The following fields
 		//
 		// - <Events<T>>
@@ -1595,6 +1606,28 @@ impl<T: Config> Pallet<T> {
 		);
 
 		header
+	}
+
+	/// calculate and store simple length multiplier
+	pub fn calculate_length_multiplier() {
+		use sp_std::cmp::max;
+		let current_padded_length = Self::all_padded_extrinsics_len();
+		// Both Mandatory & Operational class has max block length set
+		let max_padded_length = *DynamicBlockLength::<T>::get()
+			.max
+			.get(DispatchClass::Mandatory);
+		// lets say 50% is our target utilisation upto which we will not extra length fee
+		let target_padded_length = sp_runtime::Perbill::from_percent(50) * max_padded_length;
+		let mutiplier_threshold = sp_runtime::Perbill::from_percent(5) * max_padded_length;
+		log::debug!(target: LOG_TARGET, "current_padded_length: {current_padded_length}, max_padded_length: {max_padded_length}, target_padded_length: {target_padded_length}");
+		// Ensure the utilization is at least the target_utilization
+		let adjusted_utilization = max(current_padded_length, target_padded_length);
+
+		// Calculate the number of 5% increments above the target utilization
+		let increments_above_target =
+			(adjusted_utilization - target_padded_length) / mutiplier_threshold;
+		let multiplier = 1u32 << increments_above_target;
+		NextLengthMultiplier::<T>::put(multiplier);
 	}
 
 	/// Deposits a log and ensures it matches the block's log data.

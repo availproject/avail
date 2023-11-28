@@ -6,7 +6,10 @@ use avail_core::{
 	AppId, BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
 };
 use frame_support::{dispatch::DispatchClass, weights::Weight};
-use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
+use frame_system::{
+	limits::BlockLength,
+	pallet::{DynamicBlockLength, NextLengthMultiplier},
+};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_arithmetic::traits::{CheckedAdd, One, SaturatedConversion};
@@ -315,7 +318,9 @@ mod weight_helper {
 
 	/// Weight for `dataAvailability::submit_data`.
 	pub(crate) fn submit_data<T: Config>(data_len: usize) -> (Weight, DispatchClass) {
-		let data_len: u32 = data_len.saturated_into();
+		let mut data_len: u32 = data_len.saturated_into();
+		let length_multiplier = NextLengthMultiplier::<T>::get();
+		data_len = data_len.saturating_mul(length_multiplier);
 		let basic_weight = T::WeightInfo::submit_data(data_len);
 		let data_root_weight = T::WeightInfo::data_root(data_len);
 		let total_weight = basic_weight.saturating_add(data_root_weight);
