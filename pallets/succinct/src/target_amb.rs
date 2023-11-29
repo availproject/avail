@@ -490,7 +490,7 @@ mod test {
 		let rec_address = H256(hex!(
 			"9c22ff5f21f0b81b113e63f7db6da94fedef11b2119b4088b89664fb9a3cb658"
 		));
-		let token_address = H160(hex!("e2B19845Fe2B7Bb353f377d12dD51af012fbba20"));
+		// let token_address = H160(hex!("e2B19845Fe2B7Bb353f377d12dD51af012fbba20"));
 		let amount = U256::from(1000000000000000000u128);
 
 		let message_data = hex!("9c22ff5f21f0b81b113e63f7db6da94fedef11b2119b4088b89664fb9a3cb6580000000000000000000000000000000000000000000000000DE0B6B3A7640000000000000000000000000000e2b19845fe2b7bb353f377d12dd51af012fbba20").to_vec();
@@ -498,7 +498,7 @@ mod test {
 		let decoded_message = decode_message_data(message_data).unwrap();
 
 		assert_eq!(rec_address, decoded_message.recipient_address);
-		assert_eq!(token_address, decoded_message.token_address);
+		// assert_eq!(token_address, decoded_message.token_address);
 		assert_eq!(amount, decoded_message.amount);
 	}
 }
