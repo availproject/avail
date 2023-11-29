@@ -400,7 +400,6 @@ pub mod pallet {
 				step_output.execution_state_root,
 			);
 
-			// TODO can this time be used as block time?
 			Timestamps::<T>::insert(step_output.finalized_slot, T::TimeProvider::now().as_secs());
 
 			Ok(true)
