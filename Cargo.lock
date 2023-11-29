@@ -6823,6 +6823,7 @@ dependencies = [
  "hex-literal 0.4.1",
  "log",
  "memory-db 0.30.0",
+ "pallet-balances",
  "pallet-timestamp",
  "parity-scale-codec",
  "patricia-merkle-trie",

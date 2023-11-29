@@ -1,12 +1,16 @@
-use frame_support::traits::ConstU64;
-use frame_support::{derive_impl, parameter_types};
+use frame_support::{derive_impl, parameter_types, traits::ConstU64};
+use frame_system::{header_builder::da, test_utils::TestRandomness};
 use hex_literal::hex;
 use sp_core::{H256, U256};
-use sp_runtime::BuildStorage;
+use sp_runtime::{
+	traits::{ConstU32, IdentityLookup},
+	AccountId32, BuildStorage,
+};
 
 use crate as succinct_bridge;
 use crate::{MaxMessageBodyByte, MaxReceiptProof, MaxReceiptsRootProof, MaxTxIndexRLPEncoded};
 
+type Balance = u128;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockDaBlock<Test>;
 
@@ -14,6 +18,7 @@ frame_support::construct_runtime!(
 	pub struct Test {
 		System: frame_system,
 		Timestamp: pallet_timestamp,
+		Balances: pallet_balances,
 		Bridge: succinct_bridge,
 	}
 );
@@ -24,6 +29,7 @@ parameter_types! {
 
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
+	type AccountData = pallet_balances::AccountData<Balance>;
 	type AccountId = AccountId32;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type Block = Block;
@@ -38,6 +44,27 @@ impl frame_system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type SubmittedDataExtractor = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;
+}
+
+parameter_types! {
+	pub const MaxReserves: u32 = 2;
+	pub static ExistentialDeposit: u128 = 1;
+}
+
+impl pallet_balances::Config for Test {
+	type AccountStore = System;
+	type Balance = Balance;
+	type DustRemoval = ();
+	type ExistentialDeposit = ExistentialDeposit;
+	type FreezeIdentifier = [u8; 8];
+	type MaxFreezes = ConstU32<2>;
+	type MaxHolds = ConstU32<2>;
+	type MaxLocks = ();
+	type MaxReserves = MaxReserves;
+	type ReserveIdentifier = [u8; 8];
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeHoldReason = [u8; 8];
+	type WeightInfo = ();
 }
 
 impl pallet_timestamp::Config for Test {
@@ -69,7 +96,7 @@ impl succinct_bridge::Config for Test {
 	type MaxProofLength = MaxProofLength;
 	type MaxVerificationKeyLength = MaxVerificationKeyLength;
 	type MinSyncCommitteeParticipants = MinSyncCommitteeParticipants;
-
+	type Currency = Balances;
 	type MaxMessageBodyByte = MaxMessageBodyByte;
 	type MaxReceiptsRootProof = MaxReceiptsRootProof;
 	type MaxReceiptProof = MaxReceiptProof;

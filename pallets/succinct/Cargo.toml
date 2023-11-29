@@ -48,6 +48,7 @@ hash256-std-hasher = { version = "0.15.2", default-features = false }
 
 [dev-dependencies]
 # sp-core = { version = "21.0.0", default-features = false }
+pallet-balances = "4.0.0-dev"
 pallet-timestamp = "4.0.0-dev"
 
 

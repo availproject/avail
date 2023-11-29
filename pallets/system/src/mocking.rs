@@ -19,13 +19,13 @@
 
 use avail_core::{traits::GetAppId, AppExtrinsic, OpaqueExtrinsic};
 use codec::{Decode, Encode};
+use frame_support::traits::ExtrinsicCall;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	generic,
 	traits::{DispatchInfoOf, Extrinsic, ExtrinsicMetadata, SignedExtension},
 	transaction_validity::TransactionValidityError,
 };
-use frame_support::traits::ExtrinsicCall;
 
 use crate::{header_builder::da::BlockNumber, Config};
 

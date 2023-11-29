@@ -4,7 +4,6 @@ use ark_ff::vec::Vec;
 use ark_std::Zero;
 use ethabi::Token;
 use frame_support::sp_core_hashing_proc_macro::keccak_256;
-use frame_support::traits::tokens::Balance;
 use frame_support::traits::{Currency, ExistenceRequirement, UnixTime};
 use frame_support::{pallet_prelude::*, parameter_types};
 use hex_literal::hex;
