@@ -5,12 +5,13 @@ use ark_std::Zero;
 use ethabi::Token;
 use frame_support::sp_core_hashing_proc_macro::keccak_256;
 use frame_support::traits::{Currency, ExistenceRequirement, UnixTime};
-use frame_support::{pallet_prelude::*, parameter_types};
+use frame_support::{pallet_prelude::*, parameter_types, PalletId};
 use hex_literal::hex;
 use sp_core::H160;
 use sp_core::{H256, U256};
 use sp_io::hashing::keccak_256 as keccak256;
 use sp_io::hashing::sha2_256;
+use sp_runtime::traits::AccountIdConversion;
 
 pub use pallet::*;
 
@@ -35,6 +36,7 @@ mod weights;
 
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
 
+// TODO: Move this to runtime::impls
 parameter_types! {
 	pub const MaxPublicInputsLength: u32 = 9;
 	pub const MaxVerificationKeyLength: u32 = 4143;
@@ -70,7 +72,7 @@ parameter_types! {
 	pub const MaxTxIndexRLPEncoded:u8 = 8;
 	pub const MaxProofHashSize:u32 = 4096;
 
-	pub const PalletAccountId: [u8; 32]= *b"af44af6890508b3b7f6910d4a4570a0d";
+	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
 }
 
 #[frame_support::pallet]
@@ -275,6 +277,10 @@ pub mod pallet {
 		type RuntimeCall: Parameter
 			+ UnfilteredDispatchable<RuntimeOrigin = Self::RuntimeOrigin>
 			+ GetDispatchInfo;
+
+		/// Bridge's pallet id, used for deriving its sovereign account ID.
+		#[pallet::constant]
+		type PalletId: Get<PalletId>;
 
 		type WeightInfo: WeightInfo;
 	}
@@ -557,11 +563,7 @@ pub mod pallet {
 			// map to a regular vec
 			let receipt_proof_vec = receipt_proof
 				.iter()
-				.map(|inner_bounded_vec| {
-					inner_bounded_vec
-						.iter().copied()
-						.collect()
-				})
+				.map(|inner_bounded_vec| inner_bounded_vec.iter().copied().collect())
 				.collect();
 
 			let et = get_event_topic(
@@ -601,15 +603,19 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+	/// The account ID of the bridge's pot.
+	pub fn account_id() -> T::AccountId {
+		T::PalletId::get().into_account_truncating()
+	}
+
+	// Do we really need this?
 	pub fn transfer(_amount: u128, destination_account: H256) -> Result<bool, DispatchError> {
 		let destination_account_id =
-			T::AccountId::decode(&mut &destination_account.encode()[..]).unwrap();
-		let source_account_id: T::AccountId =
 			T::AccountId::decode(&mut &destination_account.encode()[..]).unwrap();
 
 		let am = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance::zero();
 		T::Currency::transfer(
-			&source_account_id,
+			&Self::account_id(),
 			&destination_account_id,
 			am,
 			ExistenceRequirement::KeepAlive,

@@ -1,4 +1,4 @@
-use frame_support::{derive_impl, parameter_types, traits::ConstU64};
+use frame_support::{derive_impl, parameter_types, traits::ConstU64, PalletId};
 use frame_system::{header_builder::da, test_utils::TestRandomness};
 use hex_literal::hex;
 use sp_core::{H256, U256};
@@ -85,6 +85,7 @@ parameter_types! {
 	pub const MaxProofLength: u32 = 1133;
 	pub const StepFunctionId: H256 = H256(hex!("af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"));
 	pub const RotateFunctionId: H256 = H256(hex!("9aed23f9e6e8f8b98751cf508069b5b7f015d4d510b6a4820d41ba1ce88190d9"));
+	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
 }
 
 impl succinct_bridge::Config for Test {
@@ -107,6 +108,7 @@ impl succinct_bridge::Config for Test {
 	type ExecutionStateRootIndex = ExecutionStateRootIndex;
 	type RotateFunctionId = RotateFunctionId;
 	type StepFunctionId = StepFunctionId;
+	type PalletId = BridgePalletId;
 }
 
 /// Create new externalities for `Succinct` module tests.

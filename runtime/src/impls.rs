@@ -46,10 +46,10 @@ use frame_system::limits::BlockLength;
 use frame_system::submitted_data;
 use frame_system::EnsureRoot;
 use pallet_succinct::{
-	ExecutionStateRootIndex, FinalizedRootIndex, MaxMessageBodyByte, MaxProofLength,
-	MaxPublicInputsLength, MaxReceiptProof, MaxReceiptsRootProof, MaxTxIndexRLPEncoded,
-	MaxVerificationKeyLength, MinSyncCommitteeParticipants, NextSyncCommitteeIndex,
-	RotateFunctionId, StepFunctionId, SyncCommitteeSize,
+	BridgePalletId, ExecutionStateRootIndex, FinalizedRootIndex, MaxMessageBodyByte,
+	MaxProofLength, MaxPublicInputsLength, MaxReceiptProof, MaxReceiptsRootProof,
+	MaxTxIndexRLPEncoded, MaxVerificationKeyLength, MinSyncCommitteeParticipants,
+	NextSyncCommitteeIndex, RotateFunctionId, StepFunctionId, SyncCommitteeSize,
 };
 
 use crate::voter_bags;
@@ -108,6 +108,7 @@ impl pallet_succinct::Config for Runtime {
 	type WeightInfo = weights::pallet_succinct::WeightInfo<Runtime>;
 	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
 	type Currency = Balances;
+	type PalletId = BridgePalletId;
 }
 
 parameter_types! {
