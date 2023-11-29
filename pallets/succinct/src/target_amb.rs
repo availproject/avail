@@ -67,7 +67,6 @@ pub struct Message {
 pub struct MessageData {
 	pub recipient_address: H256,
 	pub amount: U256,
-	pub token_address: ethabi::Address,
 }
 
 pub fn decode_message_data(message: Vec<u8>) -> Result<MessageData, AMBError> {
@@ -91,18 +90,9 @@ pub fn decode_message_data(message: Vec<u8>) -> Result<MessageData, AMBError> {
 		.into_uint()
 		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
 
-	let token_address_token = decoded
-		.get(2)
-		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
-	let token_address = token_address_token
-		.clone()
-		.into_address()
-		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
-
 	Ok(MessageData {
 		recipient_address: H256::from_slice(receipient_address.as_slice()),
 		amount: U256::from(amount),
-		token_address: H160::from(token_address),
 	})
 }
 
@@ -344,6 +334,7 @@ mod test {
 	use primitive_types::{H160, H256, U256};
 	use serde::Deserialize;
 	use sp_core::hexdisplay::ascii_format;
+	use sp_core::ByteArray;
 	use sp_io::hashing::keccak_256;
 
 	use crate::target_amb::{
@@ -500,9 +491,9 @@ mod test {
 			"9c22ff5f21f0b81b113e63f7db6da94fedef11b2119b4088b89664fb9a3cb658"
 		));
 		let token_address = H160(hex!("e2B19845Fe2B7Bb353f377d12dD51af012fbba20"));
-		let amount = U256::from(150);
+		let amount = U256::from(1000000000000000000u128);
 
-		let message_data = hex!("9c22ff5f21f0b81b113e63f7db6da94fedef11b2119b4088b89664fb9a3cb6580000000000000000000000000000000000000000000000000000000000000096000000000000000000000000e2b19845fe2b7bb353f377d12dd51af012fbba20").to_vec();
+		let message_data = hex!("9c22ff5f21f0b81b113e63f7db6da94fedef11b2119b4088b89664fb9a3cb6580000000000000000000000000000000000000000000000000DE0B6B3A7640000000000000000000000000000e2b19845fe2b7bb353f377d12dd51af012fbba20").to_vec();
 
 		let decoded_message = decode_message_data(message_data).unwrap();
 

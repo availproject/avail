@@ -1,7 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use ark_ff::vec::Vec;
-use ark_std::Zero;
 use ethabi::Token;
 use frame_support::sp_core_hashing_proc_macro::keccak_256;
 use frame_support::traits::{Currency, ExistenceRequirement, UnixTime};
@@ -12,14 +11,16 @@ use sp_core::{H256, U256};
 use sp_io::hashing::keccak_256 as keccak256;
 use sp_io::hashing::sha2_256;
 use sp_runtime::traits::AccountIdConversion;
+use sp_runtime::SaturatedConversion;
 
 pub use pallet::*;
 
 use crate::state::{State, VerifiedStepOutput};
-use crate::target_amb::decode_message;
+use crate::target_amb::decode_message_data;
 use crate::target_amb::get_event_topic;
 use crate::target_amb::verify_receipts_root;
 use crate::target_amb::Message;
+use crate::target_amb::{decode_message, MessageData};
 use crate::verifier::{encode_packed, Verifier};
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -128,6 +129,8 @@ pub mod pallet {
 		AccountNotFound,
 		CannotGetStorageRoot,
 		InvalidMessageHash,
+		CannotDecodeMessageData,
+		CannotDecodeDestinationAccountId,
 	}
 
 	#[derive(
@@ -582,20 +585,26 @@ pub mod pallet {
 
 			ensure!(et == message_root, Error::<T>::InvalidMessageHash);
 
-			// TODO execute message and to the transfer
+			let message_data = Self::validate_transfer(message.data)?;
 
-			// let success = Self::transfer()?;
-
-			// if success
-			// MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
-			// else
-			// MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionFailed);
-			Self::deposit_event(Event::<T>::ExecutedMessage {
-				chain_id: message.source_chain_id,
-				nonce: message.nonce,
-				message_root,
-				status: true, // todo depending on the execution status
-			});
+			let success = Self::transfer(message_data.amount, message_data.recipient_address)?;
+			if success {
+				MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
+				Self::deposit_event(Event::<T>::ExecutedMessage {
+					chain_id: message.source_chain_id,
+					nonce: message.nonce,
+					message_root,
+					status: true,
+				});
+			} else {
+				MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionFailed);
+				Self::deposit_event(Event::<T>::ExecutedMessage {
+					chain_id: message.source_chain_id,
+					nonce: message.nonce,
+					message_root,
+					status: false,
+				});
+			}
 
 			Ok(())
 		}
@@ -609,25 +618,33 @@ impl<T: Config> Pallet<T> {
 	}
 
 	// Do we really need this?
-	pub fn transfer(_amount: u128, destination_account: H256) -> Result<bool, DispatchError> {
-		let destination_account_id =
-			T::AccountId::decode(&mut &destination_account.encode()[..]).unwrap();
+	pub fn transfer(amount: U256, destination_account: H256) -> Result<bool, DispatchError> {
+		let destination_account_id = T::AccountId::decode(&mut &destination_account.encode()[..])
+			.map_err(|_| Error::<T>::CannotDecodeDestinationAccountId)?;
 
-		let am = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance::zero();
+		let transferable_amount = amount.as_u128().saturated_into();
 		T::Currency::transfer(
 			&Self::account_id(),
 			&destination_account_id,
-			am,
+			transferable_amount,
 			ExistenceRequirement::KeepAlive,
 		)?;
 
 		Ok(true)
 	}
 
+	pub fn validate_transfer(message_data: Vec<u8>) -> Result<MessageData, DispatchError> {
+		let message_data =
+			decode_message_data(message_data).map_err(|_| Error::<T>::CannotDecodeMessageData)?;
+
+		// TODO add some validation if needed?
+
+		Ok(message_data)
+	}
+
 	// check_preconditions checks conditions before message execution
 	pub fn check_preconditions(message_bytes: Vec<u8>) -> Result<(Message, H256), DispatchError> {
 		// extract message
-		// log::warn!("{:?}", message_bytes);
 		// calculate root in order to compare with the expected message root
 		let message_root = H256(keccak256(message_bytes.as_slice()));
 		let message = decode_message(message_bytes.to_vec());
