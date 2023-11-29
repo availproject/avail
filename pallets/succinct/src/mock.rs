@@ -87,11 +87,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		updater: H256(hex!(
 			"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
 		)),
-		genesis_validators_root: H256(hex!(
-			"4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95"
-		)),
-		genesis_time: 1699963352,
-		seconds_per_slot: 12,
 		source_chain_id: 1,
 		finality_threshold: 461,
 		period: 931,

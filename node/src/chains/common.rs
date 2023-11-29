@@ -1,4 +1,3 @@
-use super::{get_account_id_from_seed, AuthorityKeys};
 use avail_core::BLOCK_CHUNK_SIZE;
 use avail_core_kate::{
 	config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS},
@@ -18,6 +17,8 @@ use da_runtime::{
 	SystemConfig, TechnicalCommitteeConfig, AVL,
 };
 use frame_system::limits::BlockLength;
+
+use super::{get_account_id_from_seed, AuthorityKeys};
 
 pub const PROTOCOL_ID: Option<&str> = Some("Avail");
 pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
@@ -142,11 +143,6 @@ pub fn runtime_genesis_config(
 			//TODO check all values
 			slots_per_period: 8192,
 			updater: SUCCINCT_UPDATER,
-			genesis_validators_root: H256(hex!(
-				"4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95"
-			)),
-			genesis_time: 1699963352,
-			seconds_per_slot: 12,
 			source_chain_id: 1,
 			finality_threshold: 461,
 			period: 931,

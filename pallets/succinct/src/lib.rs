@@ -194,9 +194,6 @@ pub mod pallet {
 	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
 		pub updater: Hash,
-		pub genesis_validators_root: Hash,
-		pub genesis_time: u64,
-		pub seconds_per_slot: u64,
 		pub slots_per_period: u64,
 		pub source_chain_id: u32,
 		pub finality_threshold: u16,
@@ -214,9 +211,6 @@ pub mod pallet {
 			// Preconfigure init data
 			<StateStorage<T>>::put(State {
 				updater: self.updater,
-				genesis_validators_root: H256::zero(), //self.genesis_validators_root,
-				genesis_time: self.genesis_time,
-				seconds_per_slot: self.seconds_per_slot,
 				slots_per_period: self.slots_per_period,
 				source_chain_id: self.source_chain_id,
 				finality_threshold: self.finality_threshold,

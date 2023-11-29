@@ -75,29 +75,12 @@ impl PublicSignals {
 
 #[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Default)]
 pub struct State {
 	pub updater: H256,
-
-	pub genesis_validators_root: H256,
-	pub genesis_time: u64,
-	pub seconds_per_slot: u64,
 	pub slots_per_period: u64,
 	pub source_chain_id: u32,
 	pub finality_threshold: u16,
-}
-
-impl Default for State {
-	fn default() -> Self {
-		Self {
-			updater: H256::zero(),
-			genesis_validators_root: H256::zero(),
-			genesis_time: Default::default(),
-			seconds_per_slot: Default::default(),
-			slots_per_period: Default::default(),
-			source_chain_id: Default::default(),
-			finality_threshold: Default::default(),
-		}
-	}
 }
 
 #[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
