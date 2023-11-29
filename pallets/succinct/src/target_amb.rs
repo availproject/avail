@@ -1,4 +1,6 @@
+use ethabi::ParamType::{Address, FixedBytes, Uint};
 use patricia_merkle_trie::{EIP1186Layout, StorageProof};
+use primitive_types::U256;
 use rlp::Rlp;
 use scale_info::prelude::vec::Vec;
 use sp_core::{H160, H256};
@@ -24,6 +26,8 @@ pub enum AMBError {
 	NotFoundTrieValue,
 	NotSupportedTransaction,
 	InvalidReceiptLog,
+
+	CannotDecodeMessageData,
 }
 
 pub mod keccak256 {
@@ -59,6 +63,49 @@ pub struct Message {
 	pub data: Vec<u8>,
 }
 
+#[derive(Debug)]
+pub struct MessageData {
+	pub recipient_address: H256,
+	pub amount: U256,
+	pub token_address: ethabi::Address,
+}
+
+pub fn decode_message_data(message: Vec<u8>) -> Result<MessageData, AMBError> {
+	let decoded = ethabi::decode(&[FixedBytes(32), Uint(256), Address], message.as_slice())
+		.map_err(|_| AMBError::CannotDecodeMessageData)?;
+
+	let receipient_token = decoded
+		.get(0)
+		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
+
+	let receipient_address = receipient_token
+		.clone()
+		.into_fixed_bytes()
+		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
+
+	let amount_token = decoded
+		.get(1)
+		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
+	let amount = amount_token
+		.clone()
+		.into_uint()
+		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
+
+	let token_address_token = decoded
+		.get(2)
+		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
+	let token_address = token_address_token
+		.clone()
+		.into_address()
+		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
+
+	Ok(MessageData {
+		recipient_address: H256::from_slice(receipient_address.as_slice()),
+		amount: U256::from(amount),
+		token_address: H160::from(token_address),
+	})
+}
+
 // decode_message decodes message and extracts all parameters
 pub fn decode_message(message: Vec<u8>) -> Message {
 	let version: u8 = message[0];
@@ -84,7 +131,7 @@ pub fn decode_message(message: Vec<u8>) -> Message {
 
 	let data = message[69..].to_vec();
 
-	let m = Message {
+	Message {
 		version,
 		nonce,
 		source_chain_id,
@@ -92,11 +139,7 @@ pub fn decode_message(message: Vec<u8>) -> Message {
 		destination_id,
 		destination_address,
 		data,
-	};
-
-	log::info!("{:?}", m);
-
-	m
+	}
 }
 
 // TODO should this be from some lib?
@@ -115,7 +158,6 @@ fn restore_merkle_root(leaf: H256, mut index: u64, branch: Vec<H256>) -> Result<
 			let mut result = [0; 64];
 			result[32..].copy_from_slice(value.as_bytes());
 			result[..32].copy_from_slice(branch[i].as_bytes());
-
 			value = H256(sha2_256(result.as_slice()));
 		} else {
 			let mut result = [0; 64];
@@ -305,7 +347,8 @@ mod test {
 	use sp_io::hashing::keccak_256;
 
 	use crate::target_amb::{
-		decode_message, get_capella_slot, get_event_topic, verify_receipts_root,
+		decode_message, decode_message_data, get_capella_slot, get_event_topic,
+		verify_receipts_root,
 	};
 
 	#[test]
@@ -449,5 +492,22 @@ mod test {
 			U256::from(message_decoded.destination_address.as_bytes())
 		);
 		assert_eq!(vec![103, 137], message_decoded.data);
+	}
+
+	#[test]
+	fn test_message_data_decoding() {
+		let rec_address = H256(hex!(
+			"9c22ff5f21f0b81b113e63f7db6da94fedef11b2119b4088b89664fb9a3cb658"
+		));
+		let token_address = H160(hex!("e2B19845Fe2B7Bb353f377d12dD51af012fbba20"));
+		let amount = U256::from(150);
+
+		let message_data = hex!("9c22ff5f21f0b81b113e63f7db6da94fedef11b2119b4088b89664fb9a3cb6580000000000000000000000000000000000000000000000000000000000000096000000000000000000000000e2b19845fe2b7bb353f377d12dd51af012fbba20").to_vec();
+
+		let decoded_message = decode_message_data(message_data).unwrap();
+
+		assert_eq!(rec_address, decoded_message.recipient_address);
+		assert_eq!(token_address, decoded_message.token_address);
+		assert_eq!(amount, decoded_message.amount);
 	}
 }
