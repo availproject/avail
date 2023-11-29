@@ -61,33 +61,26 @@ pub struct Message {
 
 // decode_message decodes message and extracts all parameters
 pub fn decode_message(message: Vec<u8>) -> Message {
-	let version: u8;
-	let nonce: u64;
-	let source_chain_id: u32;
-	let destination_id: u32;
-	let source_address: H160;
-	let destination_address: H256;
-
-	version = message[0];
+	let version: u8 = message[0];
 	let mut buf = [0u8; 8];
 	buf[..8].copy_from_slice(&message[1..9]);
-	nonce = u64::from_be_bytes(buf);
+	let nonce: u64 = u64::from_be_bytes(buf);
 
 	let mut buf_source_chain = [0u8; 4];
 	buf_source_chain[..4].copy_from_slice(&message[9..13]);
-	source_chain_id = u32::from_be_bytes(buf_source_chain);
+	let source_chain_id: u32 = u32::from_be_bytes(buf_source_chain);
 
 	let mut buf_source_address = [0u8; 20];
 	buf_source_address[..20].copy_from_slice(&message[13..33]);
-	source_address = H160(buf_source_address);
+	let source_address: H160 = H160(buf_source_address);
 
 	let mut buf_dest_chain = [0u8; 4];
 	buf_dest_chain[..4].copy_from_slice(&message[33..37]);
-	destination_id = u32::from_be_bytes(buf_dest_chain);
+	let destination_id: u32 = u32::from_be_bytes(buf_dest_chain);
 
 	let mut buf_dest_address = [0u8; 32];
 	buf_dest_address[..32].copy_from_slice(&message[37..69]);
-	destination_address = H256(buf_dest_address);
+	let destination_address: H256 = H256(buf_dest_address);
 
 	let data = message[69..].to_vec();
 
@@ -103,7 +96,7 @@ pub fn decode_message(message: Vec<u8>) -> Message {
 
 	log::info!("{:?}", m);
 
-	return m;
+	m
 }
 
 // TODO should this be from some lib?
@@ -120,14 +113,14 @@ fn restore_merkle_root(leaf: H256, mut index: u64, branch: Vec<H256>) -> Result<
 	while index != 1 {
 		if index % 2 == 1 {
 			let mut result = [0; 64];
-			result[32..].copy_from_slice(&value.as_bytes());
-			result[..32].copy_from_slice(&branch[i].as_bytes());
+			result[32..].copy_from_slice(value.as_bytes());
+			result[..32].copy_from_slice(branch[i].as_bytes());
 
 			value = H256(sha2_256(result.as_slice()));
 		} else {
 			let mut result = [0; 64];
-			result[32..].copy_from_slice(&branch[i].as_bytes());
-			result[..32].copy_from_slice(&value.as_bytes());
+			result[32..].copy_from_slice(branch[i].as_bytes());
+			result[..32].copy_from_slice(value.as_bytes());
 			value = H256(sha2_256(result.as_slice()));
 		}
 
@@ -151,7 +144,7 @@ pub fn get_event_topic(
 	let db = StorageProof::new(proof).into_memory_db::<KeccakHasher>();
 	let trie = TrieDBBuilder::<EIP1186Layout<KeccakHasher>>::new(&db, &root).build();
 	let result = trie
-		.get(&key.as_slice())
+		.get(key.as_slice())
 		.map_err(|_| AMBError::CannotGetTrieValue)?;
 
 	let value = result.ok_or(AMBError::NotFoundTrieValue)?;
@@ -177,7 +170,7 @@ pub fn get_event_topic(
 	let byte_slice = value.as_slice();
 
 	let slice = &byte_slice[offset..];
-	let rlp_value = Rlp::new(slice.as_ref());
+	let rlp_value = Rlp::new(slice);
 
 	let values = rlp_value
 		.item_count()

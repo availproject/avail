@@ -524,7 +524,7 @@ pub mod pallet {
 
 			// ensure that source chain is not frozen
 			ensure!(
-				SourceChainFrozen::<T>::get(message.source_chain_id) == false,
+				!SourceChainFrozen::<T>::get(message.source_chain_id),
 				Error::<T>::SourceChainFrozen
 			);
 
@@ -559,8 +559,7 @@ pub mod pallet {
 				.iter()
 				.map(|inner_bounded_vec| {
 					inner_bounded_vec
-						.iter()
-						.map(|element| element.clone())
+						.iter().copied()
 						.collect()
 				})
 				.collect();
@@ -602,14 +601,14 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	pub fn transfer(amount: u128, destination_account: H256) -> Result<bool, DispatchError> {
+	pub fn transfer(_amount: u128, destination_account: H256) -> Result<bool, DispatchError> {
 		let destination_account_id =
 			T::AccountId::decode(&mut &destination_account.encode()[..]).unwrap();
 		let source_account_id: T::AccountId =
 			T::AccountId::decode(&mut &destination_account.encode()[..]).unwrap();
 
 		let am = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance::zero();
-		let res = T::Currency::transfer(
+		T::Currency::transfer(
 			&source_account_id,
 			&destination_account_id,
 			am,
