@@ -289,52 +289,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Updates the head of the light client to the provided slot.
-		/// The conditions for updating the head of the light client involve checking:
-		///      1) Enough signatures from the current sync committee for n=512
-		///      2) A valid finality proof
-		///      3) A valid execution state root proof
-		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::step())]
-		pub fn step(origin: OriginFor<T>, attested_slot: u64) -> DispatchResult {
-			let sender: [u8; 32] = ensure_signed(origin)?.into();
-			let state = StateStorage::<T>::get();
-			// ensure sender is preconfigured
-			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
-
-			let res = Self::step_into(attested_slot, state)?;
-			if res {
-				let vs = VerifiedStepCall::<T>::get();
-				Self::deposit_event(Event::HeaderUpdate {
-					slot: attested_slot,
-					finalization_root: vs.verified_output.finalized_header_root,
-				});
-			}
-			Ok(())
-		}
-
-		/// Sets the sync committee for the next sync committee period.
-		/// A commitment to the the next sync committee is signed by the current sync committee.
-		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::rotate())]
-		pub fn rotate(origin: OriginFor<T>, finalized_slot: u64) -> DispatchResult {
-			let sender: [u8; 32] = ensure_signed(origin)?.into();
-			let state = StateStorage::<T>::get();
-			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
-
-			if Self::rotate_into(finalized_slot, state)? {
-				let vr = VerifiedRotateCall::<T>::get();
-				Self::deposit_event(Event::SyncCommitteeUpdate {
-					period: finalized_slot,
-					root: vr.sync_committee_poseidon,
-				});
-			}
-
-			Ok(())
-		}
-
 		/// Sets updater that can call step and rotate functions
-		#[pallet::call_index(3)]
+		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn set_updater(origin: OriginFor<T>, updater: H256) -> DispatchResult {
 			ensure_root(origin)?;
@@ -352,7 +308,7 @@ pub mod pallet {
 		}
 
 		/// Sets verification public inputs for step function.
-		#[pallet::call_index(4)]
+		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn setup_step_verification(
 			origin: OriginFor<T>,
@@ -370,7 +326,7 @@ pub mod pallet {
 		}
 
 		/// Sets verification public inputs for rotate function.
-		#[pallet::call_index(5)]
+		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn setup_rotate_verification(
 			origin: OriginFor<T>,
