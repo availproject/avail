@@ -107,7 +107,7 @@ impl pallet_succinct::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_succinct::WeightInfo<Runtime>;
 	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
-	type Currency = pallet_balances::Pallet<Runtime>;
+	type Currency = Balances;
 }
 
 parameter_types! {
