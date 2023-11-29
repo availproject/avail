@@ -17,6 +17,7 @@ use crate::state::{CircomProof, PublicSignals};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
 pub enum VerificationError {
 	InvalidProof,
+	InvalidVK,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
@@ -46,63 +47,63 @@ pub struct VerifyingKeyJson {
 }
 
 impl VerifyingKeyJson {
-	pub fn to_verifying_key(self) -> VerifyingKey<Bn254> {
+	pub fn to_verifying_key(&self) -> Result<VerifyingKey<Bn254>, VerificationError> {
 		let alpha_g1 = G1Affine::from(G1Projective::new(
-			str_to_fq(&self.vk_alpha_1[0]),
-			str_to_fq(&self.vk_alpha_1[1]),
-			str_to_fq(&self.vk_alpha_1[2]),
+			str_to_fq(&self.vk_alpha_1[0])?,
+			str_to_fq(&self.vk_alpha_1[1])?,
+			str_to_fq(&self.vk_alpha_1[2])?,
 		));
 		let beta_g2 = G2Affine::from(G2Projective::new(
 			// x
 			Fq2::new(
-				str_to_fq(&self.vk_beta_2[0][0]),
-				str_to_fq(&self.vk_beta_2[0][1]),
+				str_to_fq(&self.vk_beta_2[0][0])?,
+				str_to_fq(&self.vk_beta_2[0][1])?,
 			),
 			// y
 			Fq2::new(
-				str_to_fq(&self.vk_beta_2[1][0]),
-				str_to_fq(&self.vk_beta_2[1][1]),
+				str_to_fq(&self.vk_beta_2[1][0])?,
+				str_to_fq(&self.vk_beta_2[1][1])?,
 			),
 			// z,
 			Fq2::new(
-				str_to_fq(&self.vk_beta_2[2][0]),
-				str_to_fq(&self.vk_beta_2[2][1]),
+				str_to_fq(&self.vk_beta_2[2][0])?,
+				str_to_fq(&self.vk_beta_2[2][1])?,
 			),
 		));
 
 		let gamma_g2 = G2Affine::from(G2Projective::new(
 			// x
 			Fq2::new(
-				str_to_fq(&self.vk_gamma_2[0][0]),
-				str_to_fq(&self.vk_gamma_2[0][1]),
+				str_to_fq(&self.vk_gamma_2[0][0])?,
+				str_to_fq(&self.vk_gamma_2[0][1])?,
 			),
 			// y
 			Fq2::new(
-				str_to_fq(&self.vk_gamma_2[1][0]),
-				str_to_fq(&self.vk_gamma_2[1][1]),
+				str_to_fq(&self.vk_gamma_2[1][0])?,
+				str_to_fq(&self.vk_gamma_2[1][1])?,
 			),
 			// z,
 			Fq2::new(
-				str_to_fq(&self.vk_gamma_2[2][0]),
-				str_to_fq(&self.vk_gamma_2[2][1]),
+				str_to_fq(&self.vk_gamma_2[2][0])?,
+				str_to_fq(&self.vk_gamma_2[2][1])?,
 			),
 		));
 
 		let delta_g2 = G2Affine::from(G2Projective::new(
 			// x
 			Fq2::new(
-				str_to_fq(&self.vk_delta_2[0][0]),
-				str_to_fq(&self.vk_delta_2[0][1]),
+				str_to_fq(&self.vk_delta_2[0][0])?,
+				str_to_fq(&self.vk_delta_2[0][1])?,
 			),
 			// y
 			Fq2::new(
-				str_to_fq(&self.vk_delta_2[1][0]),
-				str_to_fq(&self.vk_delta_2[1][1]),
+				str_to_fq(&self.vk_delta_2[1][0])?,
+				str_to_fq(&self.vk_delta_2[1][1])?,
 			),
 			// z,
 			Fq2::new(
-				str_to_fq(&self.vk_delta_2[2][0]),
-				str_to_fq(&self.vk_delta_2[2][1]),
+				str_to_fq(&self.vk_delta_2[2][0])?,
+				str_to_fq(&self.vk_delta_2[2][1])?,
 			),
 		));
 
@@ -111,25 +112,26 @@ impl VerifyingKeyJson {
 			.iter()
 			.map(|coords| {
 				G1Affine::from(G1Projective::new(
-					str_to_fq(&coords[0]),
-					str_to_fq(&coords[1]),
-					str_to_fq(&coords[2]),
+					Fq::from_str(&coords[0]).unwrap(),
+					Fq::from_str(&coords[1]).unwrap(),
+					Fq::from_str(&coords[2]).unwrap(),
 				))
 			})
 			.collect();
 
-		VerifyingKey::<Bn254> {
+		Ok(VerifyingKey::<Bn254> {
 			alpha_g1,
 			beta_g2,
 			gamma_g2,
 			delta_g2,
 			gamma_abc_g1,
-		}
+		})
 	}
 }
 
-pub fn str_to_fq(s: &str) -> Fq {
-	Fq::from_str(s).unwrap()
+pub fn str_to_fq(s: &str) -> Result<Fq, VerificationError> {
+	let fp = Fq::from_str(s).map_err(|_| VerificationError::InvalidVK)?;
+	Ok(fp)
 }
 
 impl Verifier {
@@ -156,11 +158,10 @@ impl Verifier {
 		output_swap[0] = output_hash_byte_swap;
 
 		let decoded: (Vec<String>, Vec<Vec<String>>, Vec<String>) = decode_proof(proof);
-		// TODO remove printlns
-		// println!("decoded proof: {:?}", decoded);
+		log::info!("decoded proof: {:?}", decoded);
 
 		let circom_proof = CircomProof::new(decoded.0, decoded.1, decoded.2);
-		let proof = circom_proof.to_proof();
+		let proof = circom_proof.proof()?;
 
 		let mut input = vec!["0".to_string(); 2];
 		input[0] = U256::from_big_endian(output_swap.as_slice()).to_string();
@@ -168,14 +169,14 @@ impl Verifier {
 
 		let public_signals = PublicSignals::from(input);
 
-		// println!("public signals: {:?}", public_signals);
+		log::info!("public signals: {:?}", public_signals);
 
-		let result = self.verify_proof(proof.clone(), &public_signals.get());
+		let result = self.verify_proof(proof.clone(), &public_signals.get()?);
 
 		result.map_err(|_| VerificationError::InvalidProof)
 	}
 	fn verify_proof(self, proof: Proof<Bn254>, inputs: &[Fr]) -> Result<bool, VerificationError> {
-		let vk = self.vk_json.to_verifying_key();
+		let vk = self.vk_json.to_verifying_key()?;
 		let pvk = prepare_verifying_key(&vk);
 
 		let result = verify_proof(&pvk, &proof, inputs);
@@ -435,9 +436,6 @@ mod tests {
 			U256::from("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df");
 		let stored_slot = 7634942u64;
 		let res = encode_packed(stored_poseidon, stored_slot);
-		assert_eq!(
-			sha2_256(requested_input.as_slice()),
-			sha2_256(res.as_slice())
-		)
+		assert_eq!(requested_input_hash, sha2_256(res.as_slice()))
 	}
 }

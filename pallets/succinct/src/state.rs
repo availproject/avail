@@ -1,5 +1,5 @@
 use ark_bn254::{Bn254, Fr, G1Affine, G2Affine};
-use ark_ff::{Fp256, QuadExtField};
+use ark_ff::QuadExtField;
 use ark_groth16::Proof;
 use ark_std::str::FromStr;
 use ark_std::string::String;
@@ -9,6 +9,8 @@ use frame_support::{Deserialize, Serialize};
 use scale_info::TypeInfo;
 use sp_core::{H256, U256};
 use sp_std::prelude::*;
+
+use crate::verifier::{str_to_fq, VerificationError};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
 pub struct Groth16Proof {
@@ -40,30 +42,16 @@ impl CircomProof {
 		}
 	}
 
-	pub fn to_proof(self) -> Proof<Bn254> {
-		let a = G1Affine::new(
-			Fp256::from_str(&self.pi_a[0]).unwrap(),
-			Fp256::from_str(&self.pi_a[1]).unwrap(),
-			false,
-		);
+	pub fn proof(self) -> Result<Proof<Bn254>, VerificationError> {
+		let a = G1Affine::new(str_to_fq(&self.pi_a[0])?, str_to_fq(&self.pi_a[1])?, false);
 		let b = G2Affine::new(
-			QuadExtField::new(
-				Fp256::from_str(&self.pi_b[0][0]).unwrap(),
-				Fp256::from_str(&self.pi_b[0][1]).unwrap(),
-			),
-			QuadExtField::new(
-				Fp256::from_str(&self.pi_b[1][0]).unwrap(),
-				Fp256::from_str(&self.pi_b[1][1]).unwrap(),
-			),
+			QuadExtField::new(str_to_fq(&self.pi_b[0][0])?, str_to_fq(&self.pi_b[0][1])?),
+			QuadExtField::new(str_to_fq(&self.pi_b[1][0])?, str_to_fq(&self.pi_b[1][1])?),
 			false,
 		);
 
-		let c = G1Affine::new(
-			Fp256::from_str(&self.pi_c[0]).unwrap(),
-			Fp256::from_str(&self.pi_c[1]).unwrap(),
-			false,
-		);
-		Proof { a, b, c }
+		let c = G1Affine::new(str_to_fq(&self.pi_c[0])?, str_to_fq(&self.pi_c[1])?, false);
+		Ok(Proof { a, b, c })
 	}
 }
 
@@ -75,12 +63,13 @@ impl PublicSignals {
 		PublicSignals(public_signals)
 	}
 
-	pub fn get(self) -> Vec<Fr> {
+	pub fn get(self) -> Result<Vec<Fr>, VerificationError> {
 		let mut inputs: Vec<Fr> = Vec::new();
 		for input in self.0 {
-			inputs.push(Fr::from_str(&input).unwrap());
+			let fr = Fr::from_str(&input).map_err(|_| VerificationError::InvalidVK)?;
+			inputs.push(fr);
 		}
-		inputs
+		Ok(inputs)
 	}
 }
 
