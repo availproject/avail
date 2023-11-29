@@ -36,6 +36,10 @@ parameter_types! {
 	pub const FinalizedRootIndex: u32=105;
 	pub const NextSyncCommitteeIndex: u32= 55;
 	pub const ExecutionStateRootIndex: u32= 402;
+
+	pub const InputMaxLen: u32 = 256;
+	pub const OutputMaxLen: u32 = 512;
+	pub const ProofMaxLen: u32 = 2048;
 }
 
 #[frame_support::pallet]
@@ -236,11 +240,10 @@ pub mod pallet {
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
 			function_id: H256,
-			input: Vec<u8>,
-			output: Vec<u8>,
-			proof: Vec<u8>,
-			_callback: Vec<u8>, // callback address not in use
-			callback_data: Vec<u8>,
+			input: BoundedVec<u8, InputMaxLen>,
+			output: BoundedVec<u8, OutputMaxLen>,
+			proof: BoundedVec<u8, ProofMaxLen>,
+			slot: u64,
 		) -> DispatchResult {
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let state = StateStorage::<T>::get();
@@ -251,16 +254,17 @@ pub mod pallet {
 			let verifier = Self::get_verifier(function_id)?;
 
 			let success = verifier
-				.verify(input_hash, output_hash, proof)
+				.verify(input_hash, output_hash, proof.to_vec())
 				.map_err(|_| Error::<T>::VerificationError)?;
 
 			ensure!(success, Error::<T>::VerificationFailed);
 
-			let slot = parse_slot(callback_data);
-
 			if function_id == StepFunctionId::get() {
-				let vs =
-					VerifiedStepCallStore::new(function_id, input_hash, parse_step_output(output));
+				let vs = VerifiedStepCallStore::new(
+					function_id,
+					input_hash,
+					parse_step_output(output.to_vec()),
+				);
 				VerifiedStepCall::<T>::set(vs);
 				if Self::step_into(slot, state)? {
 					Self::deposit_event(Event::HeaderUpdate {
@@ -272,7 +276,7 @@ pub mod pallet {
 				let vr = VerifiedRotateCallStore::new(
 					function_id,
 					input_hash,
-					parse_rotate_output(output),
+					parse_rotate_output(output.to_vec()),
 				);
 
 				VerifiedRotateCall::<T>::set(vr);
