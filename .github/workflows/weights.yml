@@ -1,4 +1,4 @@
-name: Run benchmarks
+name: Run benchmarks for weights
 
 on:
   workflow_dispatch:
@@ -6,10 +6,12 @@ on:
       extra:
         description: Run extra benchmark (commitment / dataroot)
         required: false
+        type: number
         default: 0
       ourpallets:
         description: Benchmark only our pallet
         required: false
+        type: number
         default: 0
 
 jobs:

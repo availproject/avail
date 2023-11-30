@@ -1,10 +1,15 @@
-use super::{get_account_id_from_seed, AuthorityKeys};
-use avail_core::{AppId, BLOCK_CHUNK_SIZE};
+use avail_core::BLOCK_CHUNK_SIZE;
 use avail_core_kate::{
 	config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS},
-	testnet::public_params,
+	couscous::public_params,
 };
-use da_control::AppKeyInfo;
+use hex_literal::hex;
+use primitive_types::{H160, H256};
+use sc_telemetry::TelemetryEndpoints;
+use sp_core::sr25519::Public;
+use sp_core::U256;
+use sp_runtime::{AccountId32, Perbill};
+
 use da_runtime::{
 	constants, wasm_binary_unwrap, AccountId, BabeConfig, Balance, BalancesConfig,
 	DataAvailabilityConfig, NomadHomeConfig, NomadUpdaterManagerConfig, NominationPoolsConfig,
@@ -12,11 +17,8 @@ use da_runtime::{
 	SystemConfig, TechnicalCommitteeConfig, AVL,
 };
 use frame_system::limits::BlockLength;
-use hex_literal::hex;
-use primitive_types::{H160, H256};
-use sc_telemetry::TelemetryEndpoints;
-use sp_core::sr25519::Public;
-use sp_runtime::{AccountId32, Perbill};
+
+use super::{get_account_id_from_seed, AuthorityKeys};
 
 pub const PROTOCOL_ID: Option<&str> = Some("Avail");
 pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
@@ -25,6 +27,7 @@ const NOMAD_UPDATER: H160 = H160(hex!("695dFcFc604F9b2992642BDC5b173d1a1ed60b03"
 const SUCCINCT_UPDATER: H256 = H256(hex!(
 	"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
 ));
+
 const ENDOWMENT: Balance = 1_000_000 * AVL;
 const STASH_BOND: Balance = ENDOWMENT / 100;
 const DEFAULT_ENDOWED_SEEDS: [&str; 12] = [
@@ -45,7 +48,7 @@ const INIT_APP_IDS: [(u32, &str); 3] = [(0, "Data Avail"), (1, "Ethereum"), (2, 
 
 fn standard_system_configuration() -> (Vec<u8>, Vec<u8>, BlockLength) {
 	let code = wasm_binary_unwrap().to_vec();
-	let kc_public_params = public_params(MAX_BLOCK_COLUMNS).to_raw_var_bytes();
+	let kc_public_params = public_params().to_raw_var_bytes();
 
 	let block_length = BlockLength::with_normal_ratio(
 		MAX_BLOCK_ROWS,
@@ -73,18 +76,10 @@ fn dev_endowed_accounts() -> Vec<(AccountId, Balance)> {
 fn make_data_avail_config(owner: AccountId) -> DataAvailabilityConfig {
 	let app_keys = INIT_APP_IDS
 		.iter()
-		.map(|(id, app)| {
-			(
-				app.as_bytes().to_vec(),
-				AppKeyInfo::new(owner.clone(), AppId(*id)),
-			)
-		})
+		.map(|(id, app)| (app.as_bytes().to_vec(), (owner.clone(), *id)))
 		.collect();
 
-	DataAvailabilityConfig {
-		app_keys,
-		..Default::default()
-	}
+	DataAvailabilityConfig { app_keys }
 }
 
 pub fn runtime_genesis_config(
@@ -97,13 +92,14 @@ pub fn runtime_genesis_config(
 		.iter()
 		.map(|k| {
 			(
-				k.controller.clone(),
 				k.stash.clone(),
+				k.controller.clone(),
 				STASH_BOND,
 				StakerStatus::Validator,
 			)
 		})
 		.collect();
+	let validator_count = session_keys.len() as u32;
 	let session_keys = session_keys.into_iter().map(|k| k.into()).collect();
 
 	let (code, kc_public_params, block_length) = standard_system_configuration();
@@ -122,6 +118,8 @@ pub fn runtime_genesis_config(
 		balances: BalancesConfig { balances },
 		staking: StakingConfig {
 			stakers,
+			validator_count,
+			minimum_validator_count: 1,
 			..Default::default()
 		},
 		session: SessionConfig { keys: session_keys },
@@ -142,8 +140,15 @@ pub fn runtime_genesis_config(
 			..Default::default()
 		},
 		succinct: SuccinctConfig {
-			slots_per_period: 943,
+			//TODO check all values
+			slots_per_period: 8192,
 			updater: SUCCINCT_UPDATER,
+			source_chain_id: 1,
+			finality_threshold: 461,
+			period: 931,
+			sync_committee_poseidon: U256::from(hex!(
+				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
+			)),
 			..Default::default()
 		},
 		nomination_pools: NominationPoolsConfig {

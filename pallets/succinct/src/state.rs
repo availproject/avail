@@ -1,5 +1,5 @@
 use ark_bn254::{Bn254, Fr, G1Affine, G2Affine};
-use ark_ff::{Fp256, QuadExtField};
+use ark_ff::QuadExtField;
 use ark_groth16::Proof;
 use ark_std::str::FromStr;
 use ark_std::string::String;
@@ -10,29 +10,13 @@ use scale_info::TypeInfo;
 use sp_core::{H256, U256};
 use sp_std::prelude::*;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
-pub struct LightClientStep {
-	pub attested_slot: u64,
-	pub finalized_slot: u64,
-	pub participation: u16,
-	pub finalized_header_root: H256,
-	pub execution_state_root: H256,
-	pub proof: Groth16Proof,
-}
+use crate::verifier::{str_to_fq, VerificationError};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
 pub struct Groth16Proof {
 	pub a: Vec<String>,
 	pub b: Vec<Vec<String>>,
 	pub c: Vec<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
-pub struct LightClientRotate {
-	pub step: LightClientStep,
-	pub sync_committee_ssz: U256,
-	pub sync_committee_poseidon: U256,
-	pub proof: Groth16Proof,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -58,30 +42,16 @@ impl CircomProof {
 		}
 	}
 
-	pub fn to_proof(self) -> Proof<Bn254> {
-		let a = G1Affine::new(
-			Fp256::from_str(&self.pi_a[0]).unwrap(),
-			Fp256::from_str(&self.pi_a[1]).unwrap(),
-			false,
-		);
+	pub fn proof(self) -> Result<Proof<Bn254>, VerificationError> {
+		let a = G1Affine::new(str_to_fq(&self.pi_a[0])?, str_to_fq(&self.pi_a[1])?, false);
 		let b = G2Affine::new(
-			QuadExtField::new(
-				Fp256::from_str(&self.pi_b[0][0]).unwrap(),
-				Fp256::from_str(&self.pi_b[0][1]).unwrap(),
-			),
-			QuadExtField::new(
-				Fp256::from_str(&self.pi_b[1][0]).unwrap(),
-				Fp256::from_str(&self.pi_b[1][1]).unwrap(),
-			),
+			QuadExtField::new(str_to_fq(&self.pi_b[0][0])?, str_to_fq(&self.pi_b[0][1])?),
+			QuadExtField::new(str_to_fq(&self.pi_b[1][0])?, str_to_fq(&self.pi_b[1][1])?),
 			false,
 		);
 
-		let c = G1Affine::new(
-			Fp256::from_str(&self.pi_c[0]).unwrap(),
-			Fp256::from_str(&self.pi_c[1]).unwrap(),
-			false,
-		);
-		Proof { a, b, c }
+		let c = G1Affine::new(str_to_fq(&self.pi_c[0])?, str_to_fq(&self.pi_c[1])?, false);
+		Ok(Proof { a, b, c })
 	}
 }
 
@@ -93,41 +63,142 @@ impl PublicSignals {
 		PublicSignals(public_signals)
 	}
 
-	pub fn get(self) -> Vec<Fr> {
+	pub fn get(self) -> Result<Vec<Fr>, VerificationError> {
 		let mut inputs: Vec<Fr> = Vec::new();
 		for input in self.0 {
-			inputs.push(Fr::from_str(&input).unwrap());
+			let fr = Fr::from_str(&input).map_err(|_| VerificationError::InvalidVK)?;
+			inputs.push(fr);
 		}
-		inputs
+		Ok(inputs)
 	}
 }
 
 #[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Default)]
 pub struct State {
 	pub updater: H256,
-	pub genesis_validators_root: H256,
-	pub genesis_time: u64,
-	pub seconds_per_slot: u64,
 	pub slots_per_period: u64,
 	pub source_chain_id: u32,
 	pub finality_threshold: u16,
-	pub head: u64,
-	pub consistent: bool,
 }
 
-impl Default for State {
-	fn default() -> Self {
-		Self {
-			updater: H256::zero(),
-			genesis_validators_root: H256::zero(),
-			genesis_time: Default::default(),
-			seconds_per_slot: Default::default(),
-			slots_per_period: Default::default(),
-			source_chain_id: Default::default(),
-			finality_threshold: Default::default(),
-			head: Default::default(),
-			consistent: Default::default(),
+#[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Default)]
+pub struct VerifiedStepCallStore {
+	pub verified_function_id: H256,
+	pub verified_input_hash: H256,
+	pub verified_output: VerifiedStepOutput,
+}
+
+impl VerifiedStepCallStore {
+	pub(crate) const fn new(
+		verified_function_id: H256,
+		verified_input_hash: H256,
+		verified_output: VerifiedStepOutput,
+	) -> VerifiedStepCallStore {
+		VerifiedStepCallStore {
+			verified_function_id,
+			verified_input_hash,
+			verified_output,
 		}
+	}
+}
+
+#[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Default)]
+pub struct VerifiedRotateCallStore {
+	pub verified_function_id: H256,
+	pub verified_input_hash: H256,
+	pub sync_committee_poseidon: U256,
+}
+
+impl VerifiedRotateCallStore {
+	pub(crate) const fn new(
+		verified_function_id: H256,
+		verified_input_hash: H256,
+		sync_committee_poseidon: U256,
+	) -> VerifiedRotateCallStore {
+		VerifiedRotateCallStore {
+			verified_function_id,
+			verified_input_hash,
+			sync_committee_poseidon,
+		}
+	}
+}
+
+#[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Default)]
+pub struct VerifiedStepOutput {
+	pub finalized_header_root: H256,
+	pub execution_state_root: H256,
+	pub finalized_slot: u64,
+	pub participation: u16,
+}
+
+pub fn parse_rotate_output(output: Vec<u8>) -> U256 {
+	U256::from_big_endian(output.as_slice())
+}
+
+pub fn parse_step_output(output: Vec<u8>) -> VerifiedStepOutput {
+	let mut finalized_header_root: [u8; 32] = [0; 32];
+	let mut execution_state_root: [u8; 32] = [0; 32];
+	let mut finalized_slot: [u8; 8] = [0; 8];
+	let mut participation: [u8; 2] = [0; 2];
+
+	finalized_header_root[..32].copy_from_slice(&output[..32]);
+	execution_state_root[..32].copy_from_slice(&output[32..64]);
+
+	finalized_slot[..8].copy_from_slice(&output[64..72]);
+	participation[..2].copy_from_slice(&output[72..74]);
+
+	VerifiedStepOutput {
+		finalized_header_root: H256(finalized_header_root),
+		execution_state_root: H256(execution_state_root),
+		finalized_slot: u64::from_be_bytes(finalized_slot),
+		participation: u16::from_be_bytes(participation),
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use hex_literal::hex;
+	use sp_core::H256;
+
+	use crate::state::{parse_rotate_output, parse_step_output};
+
+	#[test]
+	fn test_step_input() {
+		let input = hex!("e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b90000000000747fa001fd");
+		let pars = parse_step_output(input.to_vec());
+
+		assert_eq!(509, pars.participation);
+		assert_eq!(7634848, pars.finalized_slot);
+		assert_eq!(
+			H256(hex!(
+				"e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec"
+			)),
+			pars.finalized_header_root
+		);
+		assert_eq!(
+			H256(hex!(
+				"51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b9"
+			)),
+			pars.execution_state_root
+		);
+	}
+
+	#[test]
+	fn test_rotate_input() {
+		let input = hex!("7797dbd1eecad8fe38dd849c43b7ea9a6e9e656c968056415132be4e3bfcd4ed");
+		let poseidon = parse_rotate_output(input.to_vec());
+
+		assert_eq!(
+			"54093540030416808909802883566252424299549864556922470137474442232175269827821",
+			poseidon.to_string()
+		);
 	}
 }

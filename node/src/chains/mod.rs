@@ -7,40 +7,12 @@ pub use definitions::*;
 #[cfg(test)]
 use sp_runtime::BuildStorage;
 
-pub mod biryani {
-	use super::*;
-
-	pub fn chain_spec() -> Result<ChainSpec, String> {
-		ChainSpec::from_json_bytes(&include_bytes!("./../../../misc/genesis/biryani.raw.json",)[..])
-	}
-
-	#[test]
-	fn test_chain_spec_creation() {
-		chain_spec().unwrap().build_storage().unwrap();
-	}
-}
-
-pub mod dymension {
+pub mod goldberg {
 	use super::*;
 
 	pub fn chain_spec() -> Result<ChainSpec, String> {
 		ChainSpec::from_json_bytes(
-			&include_bytes!("./../../../misc/genesis/dymension.raw.json",)[..],
-		)
-	}
-
-	#[test]
-	fn test_chain_spec_creation() {
-		chain_spec().unwrap().build_storage().unwrap();
-	}
-}
-
-pub mod kate {
-	use super::*;
-
-	pub fn chain_spec() -> Result<ChainSpec, String> {
-		ChainSpec::from_json_bytes(
-			&include_bytes!("./../../../misc/genesis/testnet.kate.chain.spec.raw.json",)[..],
+			&include_bytes!("./../../../misc/genesis/testnet.goldberg.chain.raw.json",)[..],
 		)
 	}
 
@@ -115,5 +87,20 @@ pub mod dev_tri {
 	#[test]
 	fn test_chain_spec_creation() {
 		chain_spec().build_storage().unwrap();
+	}
+}
+
+pub mod devnet0 {
+	use super::*;
+
+	pub fn chain_spec() -> Result<ChainSpec, String> {
+		ChainSpec::from_json_bytes(
+			&include_bytes!("./../../../misc/genesis/devnet.chain.raw.json",)[..],
+		)
+	}
+
+	#[test]
+	fn test_chain_spec_creation() {
+		chain_spec().unwrap().build_storage().unwrap();
 	}
 }

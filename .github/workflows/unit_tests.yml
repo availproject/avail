@@ -1,0 +1,157 @@
+name: Unit Tests
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+  
+env:
+  CARGO_SCCACHE_COMMIT: bed5571c
+
+jobs:
+  avail_unit_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+
+      - name: Install build-essential
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential
+          sudo apt install -y git clang curl libssl-dev protobuf-compiler
+
+      # Restore cache from `build`
+      - uses: actions/cache/restore@v3
+        with:
+          path: |
+            ~/.cache/
+            ~/.cargo/bin/sccache*
+          key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip python3-pip
+
+      - name: Setup Rust toolchain
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source "$HOME/.cargo/env"
+          rustup show
+
+      - name: Set PATH for cargo
+        run: |
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          echo "SCCACHE_DIR=${HOME}/.cache/sccache" >> $GITHUB_ENV
+
+      - name: SCCache
+        run: |
+          # We altered the path to avoid old actions to overwrite it
+          if [ ! -f ~/.cargo/bin/sccache ]; then
+            cargo install sccache \
+              --git https://github.com/purestake/sccache.git \
+              --rev $CARGO_SCCACHE_COMMIT \
+              --force --no-default-features --features=dist-client
+          fi
+
+          if [[ -z `pgrep sccache` ]]; then
+            chmod +x ~/.cargo/bin/sccache
+            sccache --start-server
+          fi
+          sccache -s
+          echo "RUSTC_WRAPPER=${HOME}/.cargo/bin/sccache" >> $GITHUB_ENV
+
+      - name: Run tests
+        run: |
+          env
+          cargo test --release --workspace
+        env:
+          RUSTFLAGS: "-C instrument-coverage"
+          LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
+
+      - name: Display SCCache Stats
+        run: sccache --show-stats
+
+      - name: Cleanup
+        run: find . -name \*.profraw -type f -exec rm -f {} +
+
+  subxt_unit_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+
+      - name: Install build-essential
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential
+          sudo apt install -y git clang curl libssl-dev protobuf-compiler
+
+      # Restore cache from `build`
+      - uses: actions/cache/restore@v3
+        with:
+          path: |
+            ~/.cache/
+            ~/.cargo/bin/sccache*
+          key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip python3-pip
+
+      - name: Setup Rust toolchain
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source "$HOME/.cargo/env"
+          rustup show
+
+      - name: Set PATH for cargo
+        run: |
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          echo "SCCACHE_DIR=${HOME}/.cache/sccache" >> $GITHUB_ENV
+
+      - name: SCCache
+        run: |
+          # We altered the path to avoid old actions to overwrite it
+          if [ ! -f ~/.cargo/bin/sccache ]; then
+            cargo install sccache \
+              --git https://github.com/purestake/sccache.git \
+              --rev $CARGO_SCCACHE_COMMIT \
+              --force --no-default-features --features=dist-client
+          fi
+
+          if [[ -z `pgrep sccache` ]]; then
+            chmod +x ~/.cargo/bin/sccache
+            sccache --start-server
+          fi
+          sccache -s
+          echo "RUSTC_WRAPPER=${HOME}/.cargo/bin/sccache" >> $GITHUB_ENV
+
+      - name: Run tests
+        run: |
+          env
+          cargo test --release --manifest-path avail-subxt/Cargo.toml
+        env:
+          RUSTFLAGS: "-C instrument-coverage"
+          LLVM_PROFILE_FILE: "profile-%p-%m.profraw"
+
+      - name: Display SCCache Stats
+        run: sccache --show-stats
+
+      - name: Cleanup
+        run: find . -name \*.profraw -type f -exec rm -f {} +

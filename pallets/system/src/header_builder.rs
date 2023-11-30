@@ -22,7 +22,6 @@ pub mod da {
 	use super::*;
 
 	pub type Hash = sp_core::H256;
-	// @todo Miguel: Link this type with `Config::BlockNumber`.
 	pub type BlockNumber = u32;
 
 	/// Data-Avail Header builder.
@@ -81,21 +80,6 @@ pub trait HeaderExtensionBuilder {
 	}
 }
 
-#[allow(dead_code)]
-#[cfg(all(feature = "std", feature = "header-compatibility-test"))]
-fn build_extension_v_test(
-	app_extrinsics: &[AppExtrinsic],
-	data_root: H256,
-	block_length: BlockLength,
-	seed: Seed,
-) -> HeaderExtension {
-	let extension_v1 = build_extension_v1(app_extrinsics, data_root, block_length, seed);
-	match extension_v1 {
-		HeaderExtension::V1(extension) => HeaderExtension::VTest(extension.into()),
-		r @ HeaderExtension::VTest(_) => r,
-	}
-}
-
 #[cfg(feature = "header_commitment_corruption")]
 fn corrupt_commitment(block_number: u32, commitment: &mut Vec<u8>) {
 	if let Some(ref_byte) = commitment.get_mut(0) {
@@ -125,15 +109,16 @@ pub fn build_extension<M: Metrics>(
 	metrics: &M,
 ) -> HeaderExtension {
 	use avail_core::header::extension::{v1, v2};
-	// TODO Marko Move to OnceLock  https://doc.rust-lang.org/stable/std/sync/struct.OnceLock.html on sub-upgrade v1 branch
 	use once_cell::sync::Lazy;
+	// couscous has pp for degree upto 1024
 	static PMP: Lazy<kate::pmp::m1_blst::M1NoPrecomp> =
-		once_cell::sync::Lazy::new(|| kate::testnet::multiproof_params(256, 256));
+		Lazy::new(|| kate::couscous::multiproof_params());
 
+	const MIN_WIDTH: usize = 4;
 	let timer = std::time::Instant::now();
 	let grid = kate::gridgen::EvaluationGrid::from_extrinsics(
 		app_extrinsics.to_vec(),
-		4,                                    //TODO: where should this minimum grid width be specified
+		MIN_WIDTH,
 		block_length.cols.0.saturated_into(), // even if we run on a u16 target this is fine
 		block_length.rows.0.saturated_into(),
 		seed,
@@ -170,8 +155,8 @@ pub fn build_extension<M: Metrics>(
 		}
 
 		v2::HeaderExtension {
-			commitment: kate,
 			app_lookup,
+			commitment: kate,
 		}
 		.into()
 	} else {
@@ -189,8 +174,8 @@ pub fn build_extension<M: Metrics>(
 		}
 
 		v1::HeaderExtension {
-			commitment: kate,
 			app_lookup,
+			commitment: kate,
 		}
 		.into()
 	}
@@ -219,26 +204,4 @@ pub trait HostedHeaderBuilder {
 			&metrics,
 		)
 	}
-
-	/*
-	// @TODO Miguel: Substrate v0.9.29 supports deactivated new version of hosted functions.
-	// NOTE: It is just for testing the forward compatibility in header extension.
-	#[cfg(feature = "header-compatibility-test")]
-	#[version(2)]
-	fn build(
-		app_extrinsics: Vec<AppExtrinsic>,
-		data_root: H256,
-		block_length: BlockLength,
-		block_number: u32,
-		seed: Seed,
-	) -> HeaderExtension {
-		// Genesis HAS TO use the legacy header extension
-		let build_extension_fn = if block_number > 1 {
-			build_extension_v_test
-		} else {
-			build_extension_v1
-		};
-
-		build_extension_fn(app_extrinsics.as_slice(), data_root, block_length, seed)
-	}*/
 }

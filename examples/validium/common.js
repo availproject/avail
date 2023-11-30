@@ -6,19 +6,31 @@ export async function createApi(url) {
         provider,
         rpc: {
             kate: {
-                queryAppData: {
+                blockLength: {
+                    description: "Get Block Length",
                     params: [
                         {
-                            name: "app_id",
-                            type: "AppId"
-                        },
-                        {
-                            name: "at",
+                            name: 'at',
                             type: 'Hash',
                             isOptional: true
                         }
                     ],
-                    type: 'Vec<Vec<u8>>',
+                    type: 'BlockLength'
+                },
+                queryProof: {
+                    description: 'Generate the kate proof for the given `cells`',
+                    params: [
+                        {
+                            name: 'cells',
+                            type: 'Vec<Cell>'
+                        },
+                        {
+                            name: 'at',
+                            type: 'Hash',
+                            isOptional: true
+                        },
+                    ],
+                    type: 'Vec<u8>'
                 },
                 queryDataProof: {
                     description: 'Generate the data proof for the given `index`',
@@ -34,31 +46,21 @@ export async function createApi(url) {
                         }
                     ],
                     type: 'DataProof'
-                }, queryProof: {
-                    description: 'Generate the kate proof for the given `cells`',
-                    params: [
-                        {
-                            name: 'cells',
-                            type: 'Vec<Cell>'
-                        },
-                        {
-                            name: 'at',
-                            type: 'Hash',
-                            isOptional: true
-                        },
-                    ],
-                    type: 'Vec<u8>'
                 },
-                blockLength: {
-                    description: "Get Block Length",
+                queryAppData: {
+                    description: '',
                     params: [
                         {
-                            name: 'at',
+                            name: "app_id",
+                            type: "AppId"
+                        },
+                        {
+                            name: "at",
                             type: 'Hash',
                             isOptional: true
                         }
                     ],
-                    type: 'BlockLength'
+                    type: 'Vec<Vec<u8>>',
                 }
             }
         },
@@ -75,12 +77,12 @@ export async function createApi(url) {
             KateCommitment: {
                 rows: 'Compact<u16>',
                 cols: 'Compact<u16>',
-                dataRoot: 'H256',
-                commitment: 'Vec<u8>'
+                commitment: 'Vec<u8>',
+                dataRoot: 'H256'
             },
             V1HeaderExtension: {
-                commitment: 'KateCommitment',
-                appLookup: 'DataLookup'
+                appLookup: 'DataLookup',
+                commitment: 'KateCommitment'
             },
             VTHeaderExtension: {
                 newField: 'Vec<u8>',
@@ -90,7 +92,6 @@ export async function createApi(url) {
             HeaderExtension: {
                 _enum: {
                     V1: 'V1HeaderExtension',
-                    VTest: 'VTHeaderExtension'
                 }
             },
             DaHeader: {
@@ -110,28 +111,28 @@ export async function createApi(url) {
                 extra: 'CheckAppIdExtra',
                 types: 'CheckAppIdTypes'
             },
+            BlockLength: {
+                max: 'PerDispatchClass',
+                cols: 'Compact<u32>',
+                rows: 'Compact<u32>',
+                chunkSize: 'Compact<u32>'
+            },
+            PerDispatchClass: {
+                normal: 'u32',
+                operational: 'u32',
+                mandatory: 'u32'
+            },
             DataProof: {
                 root: 'H256',
                 proof: 'Vec<H256>',
                 numberOfLeaves: 'Compact<u32>',
-                leaf_index: 'Compact<u32>',
+                leafIndex: 'Compact<u32>',
                 leaf: 'H256'
             },
             Cell: {
                 row: 'u32',
                 col: 'u32',
             }
-        },
-        BlockLength: {
-            max: 'PerDispatchClass',
-            cols: 'Compact<u32>',
-            rows: 'Compact<u32>',
-            chunkSize: 'Compact<u32>'
-        },
-        PerDispatchClass: {
-            normal: 'u32',
-            operational: 'u32',
-            mandatory: 'u32'
         },
         signedExtensions: {
             CheckAppId: {
@@ -140,7 +141,7 @@ export async function createApi(url) {
                 },
                 payload: {}
             },
-        },
+        }
     });
 }
 

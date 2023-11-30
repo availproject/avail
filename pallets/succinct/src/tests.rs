@@ -1,40 +1,35 @@
-// use hex_literal::hex;
-// use sp_runtime::testing::H256;
-// use crate::Call::set_updater;
-// use crate::mock::new_test_ext;
-//
-// #[test]
-// fn test_set_updater() {
-//     new_test_ext().execute_with(|| {
-//
-//         // Goal: Set updater.
-//
-//         let new_updater = H256(hex!("d54593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"));
-//
-//         set_updater { updater: new_updater }
-//
-//
-//         // Checking. Making sure that we actually add new members.
-//         // let old_members = TechnicalCommittee::members();
-//         // let new_members = [ALICE, BOB, DAVID].to_vec();
-//         // assert_ne!(new_members, old_members);
-//         //
-//         // // Setting up our call. `old_count` is not really important in this case.
-//         // let privileged_call = pallet_collective::Call::set_members {
-//         //     new_members: new_members.clone(),
-//         //     prime: None,
-//         //     old_count: 0,
-//         // };
-//         // let call = Box::new(RuntimeCall::TechnicalCommittee(privileged_call));
-//         //
-//         // // The Call
-//         // let o = RuntimeOrigin::from(RawOrigin::Root);
-//         // assert_ok!(Mandate::mandate(o, call));
-//         //
-//         // // Checking that the storage has changed
-//         // assert_eq!(TechnicalCommittee::members(), new_members);
-//         //
-//         // // Checking Events
-//         // System::assert_last_event(Event::RootOp { result: Ok(()) }.into());
-//     });
-// }
+use frame_support::dispatch::RawOrigin;
+use frame_support::{assert_err, assert_ok};
+use hex_literal::hex;
+use sp_runtime::testing::H256;
+use sp_runtime::DispatchError::BadOrigin;
+
+use crate::mock::{new_test_ext, Bridge, RuntimeOrigin, Test};
+use crate::StateStorage;
+
+#[test]
+fn test_set_updater() {
+	new_test_ext().execute_with(|| {
+		// Goal: Set updater - bad origin.
+		let new_updater = H256(hex!(
+			"d54593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+		));
+		let old_updater = H256(hex!(
+			"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+		));
+
+		let before = StateStorage::<Test>::get();
+		assert_eq!(before.updater, old_updater);
+		let bad_origin = RuntimeOrigin::from(RawOrigin::None);
+		let bad_result = Bridge::set_updater(bad_origin, new_updater);
+		assert_err!(bad_result, BadOrigin);
+		assert_eq!(before.updater, old_updater);
+
+		// Goal: Set updater - success.
+		let root_origin = RuntimeOrigin::from(RawOrigin::Root);
+		let success = Bridge::set_updater(root_origin, new_updater);
+		assert_ok!(success);
+		let after = StateStorage::<Test>::get();
+		assert_eq!(after.updater, new_updater);
+	});
+}

@@ -34,7 +34,6 @@ serde = { version = "1", features = ["derive"] }
 serde-hex = "0.1"
 scale-info = { version = "2.5.0", features = ["bit-vec"] }
 
-
 [dev-dependencies]
 async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
 futures = "0.3.13"
@@ -51,9 +50,9 @@ indicatif = "0.17"
 sp-keyring = "24"
 
 [features]
-default = ["api-dev", "std"]
+default = [ "api-dev", "std" ]
 api-dev = []
 api-main = []
-std = [ "sp-core/std", "codec/std"]
+std = [ "codec/std", "sp-core/std" ]
 
 [workspace]

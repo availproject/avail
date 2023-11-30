@@ -25,6 +25,7 @@ use sp_runtime::{
 	traits::{DispatchInfoOf, Extrinsic, ExtrinsicMetadata, SignedExtension},
 	transaction_validity::TransactionValidityError,
 };
+use frame_support::traits::ExtrinsicCall;
 
 use crate::{header_builder::da::BlockNumber, Config};
 
@@ -75,6 +76,12 @@ impl<T: Config> ExtrinsicMetadata for MockUncheckedExtrinsic<T> {
 	type SignedExtensions = DefaultGetAppId;
 
 	const VERSION: u8 = avail_core::asdr::EXTRINSIC_FORMAT_VERSION;
+}
+
+impl<T: Config> ExtrinsicCall for MockUncheckedExtrinsic<T> {
+	fn call(&self) -> &Self::Call {
+		&self.0.function
+	}
 }
 
 #[cfg(feature = "std")]

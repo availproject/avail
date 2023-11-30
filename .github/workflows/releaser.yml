@@ -5,6 +5,7 @@ on:
       - '**'
     tags:
       - '*'
+  workflow_dispatch:
 
 jobs:
   binary_linux_amd64:

@@ -1,0 +1,178 @@
+name: Header and RPC Benchmarks
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+env:
+  CARGO_SCCACHE_COMMIT: bed5571c
+
+jobs:
+  benchmarks_iai:
+    runs-on: [self-hosted, reference]
+    env:
+      SKIP_WASM_BUILD: true
+      RUST_BACKTRACE: full
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/
+            ~/.cargo/bin/sccache*
+          key: ${{ runner.OS }}-cache-iai-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+
+      - name: Install system dependencies
+        # We force to reinstall `valgrind` because `codspeed` replaces that binary and the output
+        # of `valgrind.codspeed` generates a 
+
+        run: |
+          sudo apt-get update
+          sudo apt remove -y valgrind
+          sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip python3-pip
+
+      - name: Setup Rust toolchain
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source "$HOME/.cargo/env"
+          rustup show
+
+      - name: Set PATH for cargo
+        run: |
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          echo "SCCACHE_DIR=${HOME}/.cache/sccache" >> $GITHUB_ENV
+
+      - name: SCCache
+        run: |
+          # We altered the path to avoid old actions to overwrite it
+          if [ ! -f ~/.cargo/bin/sccache ]; then
+            cargo install sccache \
+              --git https://github.com/purestake/sccache.git \
+              --rev $CARGO_SCCACHE_COMMIT \
+              --force --no-default-features --features=dist-client
+          fi
+
+          if [[ -z `pgrep sccache` ]]; then
+            chmod +x ~/.cargo/bin/sccache
+            sccache --start-server
+          fi
+          sccache -s
+          echo "RUSTC_WRAPPER=${HOME}/.cargo/bin/sccache" >> $GITHUB_ENV
+
+      - name: Run Header Generation Benchmarks on IAI
+        run: |
+          cargo uninstall --locked cargo-codspeed | true
+          which valgrind
+          sudo dpkg -S `which valgrind`
+          valgrind --version
+          mkdir -p ~/.cache/iai/
+          cargo bench -p da-runtime --bench header_kate_commitment_iai | tee ~/.cache/iai/header_gen_bench_iai.txt || true
+          find ./runtime/target/iai -type f
+
+      - name: Header Generation Regression Checks on IAI
+        uses: fmiguelgarcia/github-action-benchmark@v1
+        with:
+          # What benchmark tool the output.txt came from
+          tool: 'rustIai'
+          # Where the output from the benchmark tool is stored
+          output-file-path: ~/.cache/iai/header_gen_bench_iai.txt
+          # Where the previous data file is stored
+          external-data-json-path: ~/.cache/iai/benchmark-data-iai.json
+          save-data-file: true
+          # Workflow will fail when an alert happens at 15% degradation
+          fail-on-alert: true
+          alert-threshold: '115%'
+          # Upload the updated cache file for the next job by actions/cache
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Enable alert commit comment
+          comment-on-alert: true
+          # Mention @rhysd in the commit comment
+          alert-comment-cc-users: '@prabal-banerjee,@jakubcech,@vthunder,@kroos47,@Leouarz,@markopoloparadox'
+          comment-always: true
+          summary-always: true
+
+  benchmarks_cri:
+    runs-on: [self-hosted, reference]
+    env:
+      SKIP_WASM_BUILD: true
+      RUST_BACKTRACE: full
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/
+            ~/.cargo/bin/sccache*
+          key: ${{ runner.OS }}-cache-cri-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libssl-dev valgrind git clang curl libssl-dev protobuf-compiler unzip python3-pip
+
+      - name: Setup Rust toolchain
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source "$HOME/.cargo/env"
+          rustup show 
+
+      - name: Set PATH for cargo
+        run: |
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          echo "SCCACHE_DIR=${HOME}/.cache/sccache" >> $GITHUB_ENV
+
+      - name: SCCache
+        run: |
+          # We altered the path to avoid old actions to overwrite it
+          if [ ! -f ~/.cargo/bin/sccache ]; then
+            cargo install sccache \
+              --git https://github.com/purestake/sccache.git \
+              --rev $CARGO_SCCACHE_COMMIT \
+              --force --no-default-features --features=dist-client
+          fi
+
+          if [[ -z `pgrep sccache` ]]; then
+            chmod +x ~/.cargo/bin/sccache
+            sccache --start-server
+          fi
+          sccache -s
+          echo "RUSTC_WRAPPER=${HOME}/.cargo/bin/sccache" >> $GITHUB_ENV
+
+      - name: Run Header Generation Benchmarks on Criterion 
+        run: |
+          mkdir -p ~/.cache/cri/
+          cargo bench -p da-runtime --bench header_kate_commitment_cri -- --color never --noplot --output-format bencher | tee ~/.cache/cri/header_gen_bench_cri.txt || true
+
+      - name: Header Generation Regression Checks on Criterion 
+        uses: fmiguelgarcia/github-action-benchmark@v1
+        with:
+          # What benchmark tool the output.txt came from
+          tool: 'cargo'
+          # Where the output from the benchmark tool is stored
+          output-file-path: ~/.cache/cri/header_gen_bench_cri.txt
+          # Where the previous data file is stored
+          external-data-json-path: ~/.cache/cri/benchmark-data-cri.json
+          save-data-file: true
+          # Workflow will fail when an alert happens at 15% degradation
+          fail-on-alert: true
+          alert-threshold: '115%'
+          # Upload the updated cache file for the next job by actions/cache
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Enable alert commit comment
+          comment-on-alert: true
+          # Mention @rhysd in the commit comment
+          alert-comment-cc-users: '@prabal-banerjee,@jakubcech,@vthunder,@kroos47,@Leouarz,@markopoloparadox'
+          comment-always: true
+          summary-always: true
+
+      - name: Display SCCache Stats
+        run: sccache --show-stats
+

@@ -8,9 +8,6 @@ LC_COUNT=$5
 
 ## Installing prerequisites.
 
-sudo apt-get install make clang pkg-config libssl-dev llvm libudev-dev protobuf-compiler -y 
-sudo apt-get install build-essential jq -y
-sudo apt-get install apache2 -y
 curl https://sh.rustup.rs -sSf | sh -s -- -y
 source $HOME/.cargo/env
 rustup update nightly
@@ -21,11 +18,11 @@ rustup target add wasm32-unknown-unknown --toolchain nightly
 git clone https://github.com/kaustubhkapatral/avail.git ~/data-avail && cd ~/data-avail
 git checkout $BUILD_COMMIT
 cargo build --release -p data-avail
-cp target/release/data-avail /usr/bin
+sudo cp target/release/data-avail /usr/bin
 cd $HOME
 git clone https://github.com/availproject/avail-light-bootstrap.git ~/light-bootstrap && cd ~/light-bootstrap
 cargo build --release
-cp target/release/avail-light-bootstrap /usr/bin
+sudo cp target/release/avail-light-bootstrap /usr/bin
 cd $HOME
 
 ## Downloading light client binary based on system architecture.
@@ -61,6 +58,7 @@ echo "sudo-01" >> $HOME/avail-keys/nodecount.txt
 echo "tech-committee-01" >> $HOME/avail-keys/nodecount.txt
 echo "tech-committee-02" >> $HOME/avail-keys/nodecount.txt
 echo "tech-committee-03" >> $HOME/avail-keys/nodecount.txt 
+echo "load-test" >> $HOME/avail-keys/nodecount.txt
 
 cat $HOME/avail-keys/nodecount.txt | while IFS= read -r node_name; do
     printf 'Generating keys for %s\n' "$node_name"
@@ -108,23 +106,25 @@ do
     INC=$(($DIFF * 2))
     RPC=$((26657 + $INC))
     P2P=$((30335 + $INC))
-    WS=$((9045 + $INC))
+    PROM=$((6000 + $INC))
     echo "[Unit]
     Description=Avail val ${i} daemon
     After=network.target
     [Service]
     Type=simple
     User=$USER
-    ExecStart=$(which data-avail) --ws-port $WS --validator --allow-private-ipv4 --base-path $HOME/avail-home/avail-validators/validator-$i --rpc-port $RPC --port $P2P --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json $(cat $HOME/avail-keys/bootnode.txt) 
+    ExecStart=$(which data-avail) --validator --allow-private-ipv4 --base-path $HOME/avail-home/avail-validators/validator-$i --rpc-port $RPC --port $P2P --prometheus-port $PROM --no-mdns --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json $(cat $HOME/avail-keys/bootnode.txt) 
     Restart=on-failure
+    RuntimeMaxSec=1d
     RestartSec=3
     LimitNOFILE=4096
     [Install]
     WantedBy=multi-user.target" | sudo tee "/etc/systemd/system/avail-val-${i}.service"
 
+    sudo systemctl enable avail-val-${i}.service
     sudo systemctl start avail-val-${i}.service
     echo "Validator $i RPC endpoint is: http://$IP:$RPC" >> $HOME/endpoints.txt
-    echo "Validator $i WS endpoint is : http://$IP:$WS" >> $HOME/endpoints.txt
+    echo "Validator $i WS endpoint is : ws://$IP:$RPC" >> $HOME/endpoints.txt
 done
 
 ## Generating systemd service files for full nodes and starting the service.
@@ -136,23 +136,25 @@ do
     INC=$(($DIFF * 2))
     RPC=$((9933 + $INC))
     P2P=$((30135 + $INC))
-    WS=$((9944 + $INC))
+    PROM=$((6100 + $INC))
     echo "[Unit]
     Description=Avail full node daemon
     After=network.target
     [Service]
     Type=simple
     User=$USER
-    ExecStart=$(which data-avail) --rpc-cors=all --rpc-port $RPC --port $P2P --ws-port $WS --ws-external --rpc-external --unsafe-ws-external --unsafe-rpc-external --allow-private-ipv4 --base-path $HOME/avail-home/avail-fullnodes/node-$i --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json $(cat $HOME/avail-keys/bootnode.txt) 
+    ExecStart=$(which data-avail) --rpc-cors=all --rpc-port $RPC --port $P2P --prometheus-port $PROM --ws-external --rpc-external --unsafe-ws-external --unsafe-rpc-external --no-mdns --allow-private-ipv4 --base-path $HOME/avail-home/avail-fullnodes/node-$i --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json $(cat $HOME/avail-keys/bootnode.txt) 
     Restart=on-failure
+    RuntimeMaxSec=1d
     RestartSec=3
     LimitNOFILE=4096
     [Install]
     WantedBy=multi-user.target" | sudo tee "/etc/systemd/system/avail-full-${i}.service"
 
+    sudo systemctl enable avail-full-${i}.service
     sudo systemctl start avail-full-${i}.service
     echo "Fullnode ${i} RPC endpoint is: http://$IP:$RPC" >> $HOME/endpoints.txt
-    echo "Fullnode ${i} WS endpoint is: http://$IP:$WS" >> $HOME/endpoints.txt
+    echo "Fullnode ${i} WS endpoint is: ws://$IP:$RPC" >> $HOME/endpoints.txt
 done
 
 ## Generate node key and config for light client bootstrap.
@@ -186,7 +188,7 @@ do
     libp2p_seed = 1
     libp2p_port = \"$P2P\"
     bootstraps = [[\"$(cat $HOME/avail-keys/light-client-boot.public.key)\", \"/ip4/127.0.0.1/tcp/3700\"]]
-    full_node_ws = [\"ws://127.0.0.1:9944\"]
+    full_node_ws = [\"ws://127.0.0.1:9933\"]
     app_id = 0
     confidence = 92.0
     prometheus_port = $PROM
@@ -204,10 +206,12 @@ Type=simple
 User=$USER
 ExecStart=$(which avail-light-bootstrap) -C $HOME/avail-home/avail-light/light-1/config.yaml
 Restart=on-failure
+RuntimeMaxSec=1d
 RestartSec=3
 LimitNOFILE=4096
 [Install]
 WantedBy=multi-user.target" | sudo tee "/etc/systemd/system/avail-light-1.service"
+sudo systemctl enable avail-light-1.service
 sudo systemctl start avail-light-1.service
 
 ## Generating systemd service files for light clients and starting the service
@@ -223,11 +227,13 @@ do
     User=$USER
     ExecStart=$(which avail-light) -c $HOME/avail-home/avail-light/light-$i/config.yaml
     Restart=on-failure
+    RuntimeMaxSec=1d
     RestartSec=3
     LimitNOFILE=4096
     [Install]
     WantedBy=multi-user.target" | sudo tee "/etc/systemd/system/avail-light-${i}.service"
 
+    sudo systemctl enable avail-light-${i}.service
     sudo systemctl start avail-light-${i}.service
 done
 
@@ -236,7 +242,7 @@ cd ~/
 wget https://github.com/availproject/avail-apps/releases/download/v1.6-rc2/avail-explorer.tar.gz
 tar -xvf avail-explorer.tar.gz
 rm avail-explorer.tar.gz
-echo "window.process_env = {"\"WS_URL"\": "\"ws://$IP:9944"\"};" >> build/env-config.js
+echo "window.process_env = {"\"WS_URL"\": "\"ws://$IP:9933"\"};" >> build/env-config.js
 sudo cp -r build/* /var/www/html/
 sudo systemctl restart apache2
 echo "Explorer url is http://$IP" >> $HOME/endpoints.txt

@@ -24,7 +24,7 @@ const UPDATER_ADDRESS: H160 = H160(hex!("19e7e376e7c213b7e7e7e46cc70a5dd086daff2
 // Design of benchmark cases:
 // - `improper_update`. The worst case is when updater is slashed and the state change to
 // `NomdState::Failed`.
-// - `dispatch` cost is affected by the lenght of the message.
+// - `dispatch` cost is affected by the length of the message.
 // - `update`. The worst case is when `Tree` is full, having `TREE_DEPTH` as max index.
 
 #[cfg(feature = "runtime-benchmarks")]
