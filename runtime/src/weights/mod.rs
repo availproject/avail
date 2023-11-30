@@ -5,6 +5,7 @@ pub mod pallet_balances;
 pub mod pallet_bounties;
 pub mod pallet_dactr;
 pub mod pallet_democracy;
+pub mod pallet_fee_proxy;
 pub mod pallet_identity;
 pub mod pallet_indices;
 pub mod pallet_mandate;

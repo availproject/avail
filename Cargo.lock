@@ -1960,6 +1960,7 @@ dependencies = [
  "pallet-democracy",
  "pallet-election-provider-multi-phase",
  "pallet-elections-phragmen",
+ "pallet-fee-proxy",
  "pallet-grandpa",
  "pallet-identity",
  "pallet-im-online",
@@ -6288,6 +6289,24 @@ dependencies = [
  "sp-npos-elections",
  "sp-runtime",
  "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-fee-proxy"
+version = "1.0.0"
+dependencies = [
+ "avail-core",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
  "sp-std",
 ]
 

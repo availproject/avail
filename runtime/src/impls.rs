@@ -75,6 +75,14 @@ impl pallet_mandate::Config for Runtime {
 	type WeightInfo = weights::pallet_mandate::WeightInfo<Runtime>;
 }
 
+impl pallet_fee_proxy::Config for Runtime {
+	type Currency = Balances;
+	type FeesCollector = Treasury;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = weights::pallet_fee_proxy::WeightInfo<Runtime>;
+}
+
 parameter_types! {
 	pub const BasicDeposit: Balance = 10 * AVL;
 	pub const FieldDeposit: Balance = 250 * CENTS;

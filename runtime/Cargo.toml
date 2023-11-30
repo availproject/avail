@@ -92,8 +92,8 @@ pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch 
 pallet-nomination-pools = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false}
 pallet-nomination-pools-runtime-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 pallet-identity = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-
 pallet-mandate = { path = "../pallets/mandate", default-features = false }
+pallet-fee-proxy = { path = "../pallets/fee-proxy", default-features = false }
 
 ## RPCs
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
@@ -173,6 +173,7 @@ std = [
 	"pallet-democracy/std",
 	"pallet-election-provider-multi-phase/std",
 	"pallet-elections-phragmen/std",
+	"pallet-fee-proxy/std",
 	"pallet-grandpa/std",
 	"pallet-identity/std",
 	"pallet-im-online/std",
@@ -234,6 +235,7 @@ runtime-benchmarks = [
 	"pallet-democracy/runtime-benchmarks",
 	"pallet-election-provider-multi-phase/runtime-benchmarks",
 	"pallet-elections-phragmen/runtime-benchmarks",
+	"pallet-fee-proxy/runtime-benchmarks",
 	"pallet-grandpa/runtime-benchmarks",
 	"pallet-identity/runtime-benchmarks",
 	"pallet-im-online/runtime-benchmarks",
@@ -272,6 +274,7 @@ try-runtime = [
 	"pallet-democracy/try-runtime",
 	"pallet-election-provider-multi-phase/try-runtime",
 	"pallet-elections-phragmen/try-runtime",
+	"pallet-fee-proxy/try-runtime",
 	"pallet-grandpa/try-runtime",
 	"pallet-identity/try-runtime",
 	"pallet-im-online/try-runtime",
