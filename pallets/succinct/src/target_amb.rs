@@ -8,24 +8,6 @@ use trie_db::{DBValue, Trie, TrieDBBuilder};
 
 use crate::Config;
 
-// struct Message {
-//     uint8 version;
-//     uint64 nonce;
-//     uint32 sourceChainId;
-//     address sourceAddress;
-//     uint32 destinationChainId;
-//     bytes32 destinationAddress;
-//     bytes data;
-// }
-
-// #[derive(Debug, PartialEq, RlpDecodable)]
-// pub struct Account {
-//     pub nonce: U256,
-//     pub balance: U256,
-//     pub storage_root: H256,
-//     pub code_hash: H256,
-// }
-
 #[derive(Debug)]
 pub struct Message {
 	pub version: u8,
@@ -33,7 +15,9 @@ pub struct Message {
 	pub source_chain_id: u32,
 	pub source_address: H160,
 	pub destination_chain_id: u32,
+	// // TODO not in use
 	pub destination_address: H256,
+	// TODO not in use
 	// arbitrary data that we want to pass
 	pub data: Vec<u8>,
 }

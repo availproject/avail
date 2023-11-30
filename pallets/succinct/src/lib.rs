@@ -40,9 +40,17 @@ parameter_types! {
 	pub const MinLightClientDelay: u64 = 120;
 	pub const MessageMappingStorageIndex:u64 = 1;
 
+
+	// TODO bounded vec size
 	pub const InputMaxLen: u32 = 256;
 	pub const OutputMaxLen: u32 = 512;
 	pub const ProofMaxLen: u32 = 2048;
+
+	pub const MessageBytesMaxLen: u32 = 2048;
+	pub const AccountProofMaxLen: u32 = 2048;
+	pub const AccountProofLen: u32 = 2048;
+	pub const StorageProofMaxLen: u32 = 2048;
+	pub const StorageProofLen: u32 = 2048;
 }
 
 #[frame_support::pallet]
@@ -58,10 +66,10 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	use primitive_types::H160;
 	use primitive_types::{H256, U256};
-	use rlp::{Decodable, Rlp};
+	use rlp::Decodable;
 	use sp_io::hashing::keccak_256;
 	use sp_io::hashing::sha2_256;
-	use trie_db::{DBValue, Trie, TrieDBBuilder};
+	use trie_db::Trie;
 	pub use weights::WeightInfo;
 
 	use crate::state::State;
@@ -420,14 +428,14 @@ pub mod pallet {
 		pub fn execute(
 			origin: OriginFor<T>,
 			slot: u64,
-			message_bytes: Vec<u8>,
-			account_proof: Vec<Vec<u8>>,
-			storage_proof: Vec<Vec<u8>>,
+			message_bytes: BoundedVec<u8, MessageBytesMaxLen>,
+			account_proof: BoundedVec<BoundedVec<u8, AccountProofMaxLen>, AccountProofLen>,
+			storage_proof: BoundedVec<BoundedVec<u8, StorageProofMaxLen>, StorageProofLen>,
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 
 			let message_root = H256(keccak_256(message_bytes.as_slice()));
-			let message = decode_message(message_bytes);
+			let message = decode_message(message_bytes.to_vec());
 			check_preconditions::<T>(&message, message_root)?;
 
 			ensure!(
@@ -437,14 +445,25 @@ pub mod pallet {
 
 			let root = ExecutionStateRoots::<T>::get(slot);
 			let broadcaster = Broadcasters::<T>::get(message.source_chain_id);
-			let storage_root = get_storage_root(account_proof, broadcaster, root)
+
+			let account_proof_vec = account_proof
+				.iter()
+				.map(|inner_bounded_vec| inner_bounded_vec.iter().copied().collect())
+				.collect();
+
+			let storage_root = get_storage_root(account_proof_vec, broadcaster, root)
 				.map_err(|_| Error::<T>::CannotGetStorageRoot)?;
 
 			let nonce = Uint(U256::from(message.nonce));
 			let mm_idx = Uint(U256::from(MessageMappingStorageIndex::get()));
 			let slot_key = H256(keccak_256(ethabi::encode(&[nonce, mm_idx]).as_slice()));
 
-			let slot_value = get_storage_value(slot_key, storage_root, storage_proof)
+			let storage_proof_vec = storage_proof
+				.iter()
+				.map(|inner_bounded_vec| inner_bounded_vec.iter().copied().collect())
+				.collect();
+
+			let slot_value = get_storage_value(slot_key, storage_root, storage_proof_vec)
 				.map_err(|_| Error::<T>::CannotGetStorageValue)?;
 
 			ensure!(slot_value == message_root, Error::<T>::InvalidMessageHash);
