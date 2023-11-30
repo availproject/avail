@@ -4,6 +4,7 @@ use frame_support::{
 	traits::Currency,
 	weights::{ConstantMultiplier, IdentityFee},
 };
+use pallet_transaction_payment::CurrencyAdapter;
 use sp_runtime::BuildStorage;
 
 use crate::{self as pallet_fee_proxy, NegativeImbalanceOf};
@@ -62,6 +63,19 @@ impl pallet_balances::Config for Test {
 	type MaxFreezes = ();
 	type RuntimeHoldReason = ();
 	type MaxHolds = ();
+}
+
+parameter_types! {
+	pub const TransactionByteFee: Balance = 1;
+	pub const OperationalFeeMultiplier: u8 = 5;
+}
+impl pallet_transaction_payment::Config for Test {
+	type FeeMultiplierUpdate = ();
+	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
+	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+	type OperationalFeeMultiplier = OperationalFeeMultiplier;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightToFee = IdentityFee<Balance>;
 }
 
 impl pallet_fee_proxy::Config for Test {

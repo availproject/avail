@@ -30,8 +30,14 @@ pub mod pallet {
 	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
-	pub type BalanceOf<T> =
-		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+	// pub type BalanceOf<T> =
+	// 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
+	/// Type aliases used for interaction with `OnChargeTransaction`.
+	pub type OnChargeTransactionOf<T> =
+		<T as pallet_transaction_payment::Config>::OnChargeTransaction;
+	/// Balance type alias.
+	pub type BalanceOf<T> = <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::Balance;
 
 	pub type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
 		<T as frame_system::Config>::AccountId,
@@ -86,9 +92,13 @@ pub mod pallet {
 			// Check if tip -> TipIsNotAllowed
 
 			// Compute fee
-			let feeee = pallet_transaction_payment::Pallet::<T>::compute_fee_details();
-
 			let dispatch_info = call.get_dispatch_info();
+			let feeee = pallet_transaction_payment::Pallet::<T>::compute_fee_details(
+				call.encode().len() as u32,
+				&dispatch_info.into(),
+				0u32.into()
+			);
+
 			let total_weight = T::WeightInfo::wrap().saturating_add(dispatch_info.weight);
 
 			// let fee: BalanceOf<T> = 100u32.into();
