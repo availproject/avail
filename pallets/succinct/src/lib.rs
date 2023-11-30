@@ -143,6 +143,11 @@ pub mod pallet {
 			old: H256,
 			new: H256,
 		},
+		// emit if source chain gets frozen
+		SourceChainFrozen {
+			source_chain_id: u32,
+			frozen: bool,
+		},
 	}
 
 	// The latest slot the light client has a finalized header for.
@@ -205,11 +210,6 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_broadcaster)]
 	pub type Broadcasters<T> = StorageMap<_, Identity, u32, H160, ValueQuery>;
-
-	// Mapping between source chainId and the corresponding light client.
-	#[pallet::storage]
-	#[pallet::getter(fn get_light_client)]
-	pub type LightClients<T> = StorageMap<_, Identity, u32, H160, ValueQuery>;
 
 	// Ability to froze source, must support possibility to update value
 	#[pallet::storage]
@@ -453,6 +453,24 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		#[pallet::call_index(6)]
+		#[pallet::weight(T::WeightInfo::step())]
+		pub fn source_chain_froze(
+			origin: OriginFor<T>,
+			source_chain_id: u32,
+			frozen: bool,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+
+			SourceChainFrozen::<T>::set(source_chain_id, frozen);
+			Self::deposit_event(Event::<T>::SourceChainFrozen {
+				source_chain_id,
+				frozen,
+			});
+
+			Ok(())
+		}
 	}
 
 	pub fn check_preconditions<T: Config>(
@@ -466,16 +484,12 @@ pub mod pallet {
 			Error::<T>::MessageAlreadyExecuted
 		);
 
-		// TODO check chainID?
-		let source_chain_id: u32 = 5;
-		// Version must match for storage
 		ensure!(
 			message.version == MessageVersion::get(),
 			Error::<T>::WrongVersion
 		);
-		// TODO check chainID?
-		// only H160 address
-		let source_chain = Broadcasters::<T>::get(source_chain_id);
+
+		let source_chain = Broadcasters::<T>::get(message.source_chain_id);
 		ensure!(
 			source_chain != H160::zero(),
 			Error::<T>::BroadcasterSourceChainNotSet
