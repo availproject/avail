@@ -7,6 +7,7 @@ use sp_core::{H256, U256};
 use sp_runtime::{traits::IdentityLookup, AccountId32, BuildStorage};
 
 use crate as succinct_bridge;
+use crate::{MessageMappingStorageIndex, MessageVersion, MinLightClientDelay};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockDaBlock<Test>;
@@ -76,6 +77,10 @@ impl succinct_bridge::Config for Test {
 	type ExecutionStateRootIndex = ExecutionStateRootIndex;
 	type RotateFunctionId = RotateFunctionId;
 	type StepFunctionId = StepFunctionId;
+
+	type MessageVersion = MessageVersion;
+	type MinLightClientDelay = MinLightClientDelay;
+	type MessageMappingStorageIndex = MessageMappingStorageIndex;
 }
 
 /// Create new externalities for `Succinct` module tests.

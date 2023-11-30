@@ -23,11 +23,6 @@ mod weights;
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
 
 parameter_types! {
-	pub const MaxPublicInputsLength: u32 = 9;
-	pub const MaxVerificationKeyLength: u32 = 4143;
-	pub const MaxProofLength: u32 = 1133;
-
-	// TODO set function verifiers
 	pub const StepFunctionId: H256 = H256(hex!("af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"));
 	pub const RotateFunctionId: H256 = H256(hex!("9aed23f9e6e8f8b98751cf508069b5b7f015d4d510b6a4820d41ba1ce88190d9"));
 
@@ -55,34 +50,29 @@ pub mod pallet {
 	use ark_std::string::String;
 	use ark_std::{vec, vec::Vec};
 	use codec::KeyedVec;
-	use ethabi::Token::Uint;
 	use ethabi::Token;
+	use ethabi::Token::Uint;
 	use frame_support::dispatch::{GetDispatchInfo, UnfilteredDispatchable};
-	use frame_support::sp_core_hashing_proc_macro::keccak_256;
 	use frame_support::traits::{Hash, Len, UnixTime};
 	use frame_support::{pallet_prelude::ValueQuery, DefaultNoBound};
-	use patricia_merkle_trie::{EIP1186Layout, StorageProof};
+	use frame_system::pallet_prelude::*;
 	use primitive_types::H160;
 	use primitive_types::{H256, U256};
 	use rlp::{Decodable, Rlp};
 	use sp_io::hashing::keccak_256;
-	use sp_runtime::TokenError::Frozen;
-	use trie_db::{DBValue, Trie, TrieDBBuilder};
-	use sp_core::H256;
 	use sp_io::hashing::sha2_256;
-
-	use frame_system::pallet_prelude::*;
+	use trie_db::{DBValue, Trie, TrieDBBuilder};
 	pub use weights::WeightInfo;
 
+	use crate::state::State;
 	use crate::state::{
-		parse_rotate_output, parse_step_output, State, VerifiedRotateCallStore,
-		VerifiedStepCallStore, VerifiedStepOutput,
+		parse_rotate_output, parse_step_output, VerifiedRotateCallStore, VerifiedStepCallStore,
+		VerifiedStepOutput,
+	};
+	use crate::target_amb::{
+		decode_message, get_storage_root, get_storage_value, keccak256, Message,
 	};
 	use crate::verifier::encode_packed;
-	use crate::state::{LightClientStep, State};
-	use crate::target_amb::{decode_message, Message};
-	use crate::verifier::zk_light_client_rotate;
-	use crate::verifier::zk_light_client_step;
 
 	use super::*;
 
@@ -120,6 +110,7 @@ pub mod pallet {
 		CannotDecodeRlpItems,
 		AccountNotFound,
 		CannotGetStorageRoot,
+		CannotGetStorageValue,
 		TrieError,
 		StorageValueNotFount,
 		StorageRootNotFount,
@@ -195,15 +186,6 @@ pub mod pallet {
 	// Maps from a period to the poseidon commitment for the sync committee.
 	#[pallet::storage]
 	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
-
-	//TODO step and rotate verification keys can be stored as constants and not in the storage which can simplify implementation.
-	#[pallet::storage]
-	pub type StepVerificationKeyStorage<T: Config> =
-		StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
-
-	#[pallet::storage]
-	pub type RotateVerificationKeyStorage<T: Config> =
-		StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
 
 	// Storage for a general state.
 	#[pallet::storage]
@@ -442,27 +424,28 @@ pub mod pallet {
 			account_proof: Vec<Vec<u8>>,
 			storage_proof: Vec<Vec<u8>>,
 		) -> DispatchResult {
-			let message = decode_message(message_bytes);
-			let message_root = H256(keccak_256!(message_bytes));
-			check_preconditions::<T>(&message, message_root)?;
+			ensure_signed(origin)?;
 
-			let state = StateStorage::<T>::get();
-			ensure!(state.consistent, Error::<T>::LightClientInconsistent);
+			let message_root = H256(keccak_256(message_bytes.as_slice()));
+			let message = decode_message(message_bytes);
+			check_preconditions::<T>(&message, message_root)?;
 
 			ensure!(
 				SourceChainFrozen::<T>::get(message.source_chain_id) == false,
 				Error::<T>::SourceChainFrozen
 			);
-			// TODO require delay, why?
-			require_lc_delay::<T>(slot, message.source_chain_id)?;
 
-			let storage_root = get_storage_root::<T>(slot, message.source_chain_id, account_proof)?;
+			let root = ExecutionStateRoots::<T>::get(slot);
+			let broadcaster = Broadcasters::<T>::get(message.source_chain_id);
+			let storage_root = get_storage_root(account_proof, broadcaster, root)
+				.map_err(|_| Error::<T>::CannotGetStorageRoot)?;
 
 			let nonce = Uint(U256::from(message.nonce));
 			let mm_idx = Uint(U256::from(MessageMappingStorageIndex::get()));
-			let slot_key = keccak_256(ethabi::encode(&[nonce, mm_idx]).as_slice());
+			let slot_key = H256(keccak_256(ethabi::encode(&[nonce, mm_idx]).as_slice()));
 
-			let slot_value = get_storage_value::<T>(H256(slot_key), storage_root, storage_proof)?;
+			let slot_value = get_storage_value(slot_key, storage_root, storage_proof)
+				.map_err(|_| Error::<T>::CannotGetStorageValue)?;
 
 			ensure!(slot_value == message_root, Error::<T>::InvalidMessageHash);
 
@@ -470,85 +453,6 @@ pub mod pallet {
 
 			Ok(())
 		}
-	}
-
-	pub fn get_storage_value<T: Config>(
-		slot_hash: H256,
-		storage_root: H256,
-		proof: Vec<Vec<u8>>,
-	) -> Result<H256, DispatchError> {
-		let db = StorageProof::new(proof).into_memory_db::<target_amb::keccak256::KeccakHasher>();
-		let trie = TrieDBBuilder::<EIP1186Layout<target_amb::keccak256::KeccakHasher>>::new(
-			&db,
-			&storage_root,
-		)
-		.build();
-
-		if let Some(storage_root) = trie
-			.get(&slot_hash.as_bytes())
-			.map_err(|_| Error::<T>::TrieError)?
-		{
-			let r = Rlp::new(storage_root.as_slice());
-			ensure!(r.data().len() > 0, Error::<T>::CannotDecodeRlpItems);
-			let storage_value = r.data().map_err(|_| Error::<T>::CannotDecodeRlpItems)?;
-			Ok(H256::from_slice(storage_value))
-		} else {
-			Err(Error::<T>::StorageValueNotFount.into())
-		}
-	}
-
-	pub fn get_storage_root<T: Config>(
-		slot: u64,
-		source_chain_id: u32,
-		proof: Vec<Vec<u8>>,
-	) -> Result<H256, DispatchError> {
-		let address = Broadcasters::<T>::get(source_chain_id);
-		let state_root = ExecutionStateRoots::<T>::get(slot);
-
-		let key = keccak_256(address.as_bytes());
-		let db = StorageProof::new(proof).into_memory_db::<target_amb::keccak256::KeccakHasher>();
-		let trie = TrieDBBuilder::<EIP1186Layout<target_amb::keccak256::KeccakHasher>>::new(
-			&db,
-			&state_root,
-		)
-		.build();
-
-		let result: DBValue = trie.get(&key.as_slice()).unwrap().unwrap();
-		let byte_slice = result.as_slice();
-		let r = Rlp::new(byte_slice);
-
-		let item_count = r
-			.item_count()
-			.map_err(|_| Error::<T>::CannotDecodeRlpItems)?;
-
-		ensure!(item_count == 4, Error::<T>::AccountNotFound);
-
-		let item = r
-			.at(2)
-			.map_err(|_| Error::<T>::CannotDecodeRlpItems)?
-			.data()
-			.map_err(|_| Error::<T>::CannotDecodeRlpItems)?;
-
-		let storage_root = H256::from_slice(item);
-
-		Ok(storage_root)
-	}
-
-	pub fn require_lc_delay<T: Config>(slot: u64, chain_id: u32) -> Result<(), DispatchError> {
-		ensure!(
-			LightClients::<T>::get(chain_id) != H160::zero(),
-			Error::<T>::LightClientNotSet
-		);
-		let ts = Timestamps::<T>::get(slot);
-		ensure!(ts != 0, Error::<T>::TimestampNotSet);
-		let elapsed_time = T::TimeProvider::now().as_secs() - ts;
-
-		ensure!(
-			elapsed_time >= MinLightClientDelay::get(),
-			Error::<T>::MustWaitLongerForSlot
-		);
-
-		Ok(())
 	}
 
 	pub fn check_preconditions<T: Config>(
@@ -563,7 +467,7 @@ pub mod pallet {
 		);
 
 		// TODO check chainID?
-		let source_chain_id: u32 = 1001;
+		let source_chain_id: u32 = 5;
 		// Version must match for storage
 		ensure!(
 			message.version == MessageVersion::get(),

@@ -83,6 +83,8 @@ pub fn decode_message(message: Vec<u8>) -> Message {
 #[derive(Debug)]
 pub enum StorageError {
 	StorageError,
+	AccountNotFound,
+	CannotDecodeItems,
 }
 
 pub fn get_storage_value(
@@ -90,18 +92,20 @@ pub fn get_storage_value(
 	storage_root: H256,
 	proof: Vec<Vec<u8>>,
 ) -> Result<H256, StorageError> {
+	let key = keccak_256(slot_hash.as_bytes());
 	let db = StorageProof::new(proof).into_memory_db::<keccak256::KeccakHasher>();
 	let trie =
 		TrieDBBuilder::<EIP1186Layout<keccak256::KeccakHasher>>::new(&db, &storage_root).build();
 
-	if let Some(storage_root) = trie
-		.get(&slot_hash.as_bytes())
-		.map_err(|_| StorageError::StorageError)?
-	{
-		let r = Rlp::new(storage_root.as_slice());
-		// ensure!(r.data().len() > 0, Error::<T>::CannotDecodeRlpItems);
-		let storage_value = r.data().map_err(|_| StorageError::StorageError)?;
-		Ok(H256::from_slice(storage_value))
+	if let Some(storage_root) = trie.get(&key).map_err(|_| StorageError::StorageError)? {
+		let r = Rlp::new(storage_root.as_slice())
+			.data()
+			.map_err(|_| StorageError::CannotDecodeItems)?;
+		if r.len() == 0 {
+			return Err(StorageError::CannotDecodeItems);
+		}
+
+		Ok(H256::from_slice(r))
 	} else {
 		Err(StorageError::StorageError)
 	}
@@ -123,7 +127,9 @@ pub fn get_storage_root(
 
 	let item_count = r.item_count().map_err(|_| StorageError::StorageError)?;
 
-	// ensure!(item_count == 4, Error::<T>::AccountNotFound);
+	if item_count != 4 {
+		return Err(StorageError::AccountNotFound);
+	}
 
 	let item = r
 		.at(2)
@@ -254,10 +260,11 @@ mod test {
 		let message_bytes = hex!("01000000000000005400000005e2b19845fe2b7bb353f377d12dd51af012fbba2000000064000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064").to_vec();
 		let message_bytes1 = hex!("01000000000000005400000005e2b19845fe2b7bb353f377d12dd51af012fbba2000000064000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064").to_vec();
 		let message = decode_message(message_bytes);
-		println!("{}", message.nonce);
 
 		// 841
 		let abi_encoded = hex!("00000000000000000000000000000000000000000000000000000000000000540000000000000000000000000000000000000000000000000000000000000001").as_slice();
+		println!("abi_encoded {:?}", abi_encoded);
+
 		let binding = keccak_256(abi_encoded);
 		let key = binding.as_slice();
 		// 0x66b32740ad8041bcc3b909c72d7e1afe60094ec55e3cde329b4b3a28501d826c

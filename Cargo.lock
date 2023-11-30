@@ -2611,7 +2611,7 @@ checksum = "1c5d6354551e0b5c451a948814fc47fe745a14eac7835c087d60162661019db4"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.32",
+    "syn 2.0.38",
 ]
 
 [[package]]
@@ -4213,7 +4213,7 @@ dependencies = [
  "proc-macro-error",
  "proc-macro2",
  "quote",
- "syn 2.0.32",
+    "syn 2.0.38",
 ]
 
 [[package]]
@@ -5375,7 +5375,7 @@ checksum = "ba125974b109d512fccbc6c0244e7580143e460895dfd6ea7f8bbb692fd94396"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.32",
+    "syn 2.0.38",
 ]
 
 [[package]]
@@ -6814,7 +6814,6 @@ dependencies = [
  "ark-serialize 0.4.2",
  "ark-snark 0.4.0",
  "ark-std 0.4.0",
-    "ethabi",
  "ethabi",
  "frame-benchmarking",
  "frame-support",
