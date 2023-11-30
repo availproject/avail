@@ -1,8 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{pallet_prelude::*, parameter_types};
+use frame_support::traits::{Currency, ExistenceRequirement, UnixTime};
+use frame_support::{pallet_prelude::*, parameter_types, PalletId};
 use hex_literal::hex;
-use sp_core::{H256, U256};
+use sp_core::H256;
+use sp_runtime::SaturatedConversion;
 
 pub use pallet::*;
 
@@ -51,25 +53,27 @@ parameter_types! {
 	pub const AccountProofLen: u32 = 2048;
 	pub const StorageProofMaxLen: u32 = 2048;
 	pub const StorageProofLen: u32 = 2048;
+
+
+	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
+
 }
 
 #[frame_support::pallet]
 pub mod pallet {
 	use ark_std::string::String;
 	use ark_std::{vec, vec::Vec};
-	use codec::KeyedVec;
 	use ethabi::Token;
 	use ethabi::Token::Uint;
 	use frame_support::dispatch::{GetDispatchInfo, UnfilteredDispatchable};
-	use frame_support::traits::{Hash, Len, UnixTime};
+	use frame_support::traits::{Hash, LockableCurrency};
 	use frame_support::{pallet_prelude::ValueQuery, DefaultNoBound};
 	use frame_system::pallet_prelude::*;
 	use primitive_types::H160;
 	use primitive_types::{H256, U256};
-	use rlp::Decodable;
 	use sp_io::hashing::keccak_256;
 	use sp_io::hashing::sha2_256;
-	use trie_db::Trie;
+	use sp_runtime::traits::AccountIdConversion;
 	pub use weights::WeightInfo;
 
 	use crate::state::State;
@@ -78,7 +82,8 @@ pub mod pallet {
 		VerifiedStepOutput,
 	};
 	use crate::target_amb::{
-		decode_message, get_storage_root, get_storage_value, keccak256, Message,
+		decode_message, decode_message_data, get_storage_root, get_storage_value, Message,
+		MessageData,
 	};
 	use crate::verifier::encode_packed;
 
@@ -123,6 +128,8 @@ pub mod pallet {
 		StorageValueNotFount,
 		StorageRootNotFount,
 		InvalidMessageHash,
+		CannotDecodeMessageData,
+		CannotDecodeDestinationAccountId,
 	}
 
 	#[pallet::event]
@@ -151,6 +158,12 @@ pub mod pallet {
 			old: H256,
 			new: H256,
 		},
+		ExecutedMessage {
+			chain_id: u32,
+			nonce: u64,
+			message_root: H256,
+			status: bool,
+		},
 		// emit if source chain gets frozen
 		SourceChainFrozen {
 			source_chain_id: u32,
@@ -169,9 +182,6 @@ pub mod pallet {
 		ExecutionSucceeded,
 	}
 
-	// Storage definitions
-
-	//TODO step and rotate verification keys can be stored as constants and not in the storage which can simplify implementation.
 	#[pallet::storage]
 	pub type StepVerificationKeyStorage<T: Config> =
 		StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
@@ -227,6 +237,9 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
+
 		type TimeProvider: UnixTime;
 		#[pallet::constant]
 		type MaxPublicInputsLength: Get<u32>;
@@ -262,6 +275,10 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type MessageMappingStorageIndex: Get<u64>;
+
+		/// Bridge's pallet id, used for deriving its sovereign account ID.
+		#[pallet::constant]
+		type PalletId: Get<PalletId>;
 
 		type RuntimeCall: Parameter
 			+ UnfilteredDispatchable<RuntimeOrigin = Self::RuntimeOrigin>
@@ -300,6 +317,15 @@ pub mod pallet {
 
 			Head::<T>::set(0);
 			<SyncCommitteePoseidons<T>>::insert(self.period, self.sync_committee_poseidon);
+
+			// TODO TEST
+			ExecutionStateRoots::<T>::set(
+				8581263,
+				H256(hex!(
+					"cd187a0c3dddad24f1bb44211849cc55b6d2ff2713be85f727e9ab8c491c621c"
+				)),
+			);
+			Broadcasters::<T>::set(5, H160(hex!("43f0222552e8114ad8f224dea89976d3bf41659d")));
 		}
 	}
 
@@ -435,6 +461,7 @@ pub mod pallet {
 			ensure_signed(origin)?;
 
 			let message_root = H256(keccak_256(message_bytes.as_slice()));
+
 			let message = decode_message(message_bytes.to_vec());
 			check_preconditions::<T>(&message, message_root)?;
 
@@ -468,7 +495,30 @@ pub mod pallet {
 
 			ensure!(slot_value == message_root, Error::<T>::InvalidMessageHash);
 
-			// TODO message is valid can be executed
+			// TODO decode message formap
+			let message_data = MessageData {
+				recipient_address: H256([1u8; 32]),
+				amount: U256::zero(),
+			}; //Self::validate_transfer(message.data)?;
+
+			let success = Self::transfer(message_data.amount, message_data.recipient_address)?;
+			if success {
+				MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
+				Self::deposit_event(Event::<T>::ExecutedMessage {
+					chain_id: message.source_chain_id,
+					nonce: message.nonce,
+					message_root,
+					status: true,
+				});
+			} else {
+				MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionFailed);
+				Self::deposit_event(Event::<T>::ExecutedMessage {
+					chain_id: message.source_chain_id,
+					nonce: message.nonce,
+					message_root,
+					status: false,
+				});
+			}
 
 			Ok(())
 		}
@@ -518,6 +568,36 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		/// The account ID of the bridge's pot.
+		pub fn account_id() -> T::AccountId {
+			T::PalletId::get().into_account_truncating()
+		}
+
+		pub fn transfer(amount: U256, destination_account: H256) -> Result<bool, DispatchError> {
+			let destination_account_id =
+				T::AccountId::decode(&mut &destination_account.encode()[..])
+					.map_err(|_| Error::<T>::CannotDecodeDestinationAccountId)?;
+
+			let transferable_amount = amount.as_u128().saturated_into();
+			T::Currency::transfer(
+				&Self::account_id(),
+				&destination_account_id,
+				transferable_amount,
+				ExistenceRequirement::KeepAlive,
+			)?;
+
+			Ok(true)
+		}
+
+		pub fn validate_transfer(message_data: Vec<u8>) -> Result<MessageData, DispatchError> {
+			let message_data = decode_message_data(message_data)
+				.map_err(|_| Error::<T>::CannotDecodeMessageData)?;
+
+			// TODO add some validation if needed?
+
+			Ok(message_data)
+		}
+
 		fn rotate_into(finalized_slot: u64, state: State) -> Result<bool, DispatchError> {
 			let finalized_header_root = Headers::<T>::get(finalized_slot);
 			ensure!(

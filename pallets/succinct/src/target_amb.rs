@@ -1,12 +1,16 @@
-use ark_std::iterable::Iterable;
 use patricia_merkle_trie::{EIP1186Layout, StorageProof};
-use primitive_types::{H160, H256};
+use primitive_types::{H160, H256, U256};
 use rlp::Rlp;
 use scale_info::prelude::vec::Vec;
-use sp_io::hashing::keccak_256;
+
+use ethabi::ParamType::{Address, FixedBytes, Uint};
+use sp_io::hashing::keccak_256 as keccak256;
 use trie_db::{DBValue, Trie, TrieDBBuilder};
 
-use crate::Config;
+#[derive(Debug, PartialEq)]
+pub enum AMBError {
+	CannotDecodeMessageData,
+}
 
 #[derive(Debug)]
 pub struct Message {
@@ -20,6 +24,39 @@ pub struct Message {
 	// TODO not in use
 	// arbitrary data that we want to pass
 	pub data: Vec<u8>,
+}
+
+#[derive(Debug)]
+pub struct MessageData {
+	pub recipient_address: H256,
+	pub amount: U256,
+}
+
+pub fn decode_message_data(message: Vec<u8>) -> Result<MessageData, AMBError> {
+	let decoded = ethabi::decode(&[FixedBytes(32), Uint(256), Address], message.as_slice())
+		.map_err(|_| AMBError::CannotDecodeMessageData)?;
+
+	let receipient_token = decoded
+		.get(0)
+		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
+
+	let receipient_address = receipient_token
+		.clone()
+		.into_fixed_bytes()
+		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
+
+	let amount_token = decoded
+		.get(1)
+		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
+	let amount = amount_token
+		.clone()
+		.into_uint()
+		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
+
+	Ok(MessageData {
+		recipient_address: H256::from_slice(receipient_address.as_slice()),
+		amount: U256::from(amount),
+	})
 }
 
 pub fn decode_message(message: Vec<u8>) -> Message {
@@ -76,12 +113,14 @@ pub fn get_storage_value(
 	storage_root: H256,
 	proof: Vec<Vec<u8>>,
 ) -> Result<H256, StorageError> {
-	let key = keccak_256(slot_hash.as_bytes());
+	let key = keccak256(slot_hash.as_bytes());
 	let db = StorageProof::new(proof).into_memory_db::<keccak256::KeccakHasher>();
 	let trie =
 		TrieDBBuilder::<EIP1186Layout<keccak256::KeccakHasher>>::new(&db, &storage_root).build();
 
 	if let Some(storage_root) = trie.get(&key).map_err(|_| StorageError::StorageError)? {
+		println!("{:?}", Rlp::new(storage_root.as_slice()).to_string());
+
 		let r = Rlp::new(storage_root.as_slice())
 			.data()
 			.map_err(|_| StorageError::CannotDecodeItems)?;
@@ -100,7 +139,7 @@ pub fn get_storage_root(
 	address: H160,
 	state_root: H256,
 ) -> Result<H256, StorageError> {
-	let key = keccak_256(address.as_bytes());
+	let key = keccak256(address.as_bytes());
 	let db = StorageProof::new(proof).into_memory_db::<keccak256::KeccakHasher>();
 	let trie =
 		TrieDBBuilder::<EIP1186Layout<keccak256::KeccakHasher>>::new(&db, &state_root).build();
@@ -153,8 +192,8 @@ mod test {
 	use hex_literal::hex;
 	use patricia_merkle_trie::{EIP1186Layout, StorageProof};
 	use primitive_types::{H160, H256, U256};
-	use rlp::{Decodable, Rlp};
-	use sp_core::keccak_256;
+	use rlp::Rlp;
+	use sp_io::hashing::keccak_256;
 	use trie_db::Trie;
 	use trie_db::{DBValue, TrieDBBuilder};
 
@@ -242,19 +281,13 @@ mod test {
 	#[test]
 	fn test_storage_value() {
 		let message_bytes = hex!("01000000000000005400000005e2b19845fe2b7bb353f377d12dd51af012fbba2000000064000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064").to_vec();
-		let message_bytes1 = hex!("01000000000000005400000005e2b19845fe2b7bb353f377d12dd51af012fbba2000000064000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064").to_vec();
+		let message_bytes1 = hex!("01000000000000005400000005e2b19845fe2b7bb353f377d12dd51af012fbba2000000064000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064").as_slice();
 		let message = decode_message(message_bytes);
 
 		// 841
 		let abi_encoded = hex!("00000000000000000000000000000000000000000000000000000000000000540000000000000000000000000000000000000000000000000000000000000001").as_slice();
-		println!("abi_encoded {:?}", abi_encoded);
 
-		let binding = keccak_256(abi_encoded);
-		let key = binding.as_slice();
-		// 0x66b32740ad8041bcc3b909c72d7e1afe60094ec55e3cde329b4b3a28501d826c
-		// println!("{:x?}", key);
-
-		// let k = hex!("95eea00c49d14a895954837cd876ffa8cfad96cbaacc40fc31d6df2c902528a8");
+		let key = keccak_256(abi_encoded);
 
 		let proof = vec![
             hex!("f90211a0f0a16ee9b11528f3da8796229dad134b9085ed9428d868e6988f9b2473b59d6fa0f8175015d0a3df8fc451d2bd3d64a34e0836f3203129ac567e869f1157b488dfa0f9d56e943c6962cf8e2ca51b94b54307eb45424ebb84ed079b417cf03a85e298a0408af9f1c5f64ed6c517b1dbf661b75a705ef7d78bcae67b9a54c1e8052b56b2a02157d476a9a077cfc9eb00ead5ab65dcbfe363a71e993c3602a66c0fccf13e4aa00772697ebf25f2e83830918bd52bbb9600c077ae289e740ae76c7bdfd34b7ebea0a1dd0da76aacf7c82629c55e4b956b2e9ef77d7fdcee1adeb23d022f0950d554a0695cb723c857d98ad1c96a372f7983bf771556f4608674266a0698531543217ba05c0fb347305720b81c7d39be6fd5b2083af607654098a0f1418ec111a846510aa0ecd30808bffcb164a258c332a29f3050e9e85d28e988305b7f643dcad4f32c8fa0ec5ee93a7ede0a9c641dcd7515c1408ab48f86b5295cd26b3d738e8d8ac7829fa01434a5f6054456bbce0a59ba1c182eeee8e64fd6762ff365e550ca7cd8cedad0a0b4fefcb325f044a6663c9441ec9f025718d0f2d7fc1c29ec819f4a366cafbb6fa0cc26bfb18151569b0f765335474fa3840f9093385816bd14a4a3c553fae62949a06a28c02f7b649bad24b39d9a4e9fc4c8e93b1ae2b043af4f5bbcb8238e193eaba011ef889094bf6ca740810423041169453b7daea3df98b3018523f86e96bf033580").to_vec(),
@@ -266,9 +299,9 @@ mod test {
 			"a03e10dfba89f79567f7c9a238ee7fe66ed32e711be4db6e73d7211601dec360"
 		));
 
-		let value = get_storage_value(H256(keccak_256(binding.as_slice())), storage_root1, proof);
-		let expected_value = keccak_256(message_bytes1.as_slice());
-		println!("{:?}", value);
+		let value = get_storage_value(H256(key), storage_root1, proof);
+		let expected_value = keccak_256(message_bytes1);
+
 		assert_eq!(H256(expected_value), value.unwrap())
 	}
 
@@ -277,8 +310,6 @@ mod test {
 		let key = keccak_256(&hex!(
 			"95eea00c49d14a895954837cd876ffa8cfad96cbaacc40fc31d6df2c902528a8"
 		));
-
-		println!("{:?}", H256(key));
 
 		let proof = vec![
             hex!("f90211a03697534056039e03300557bd69fe16e18ce4a6ccd5522db4dfa97dfe1fad3d3aa0b1bf1f230b98b9034738d599177ae817c08143b9395a47f300636b0dd2fb3c5ea0aa04a4966751d4c50063fe13a96a6c7924f665819733f556849b5eb9fa1d6839a0e162e080d1c12c59dc984fb2246d8ad61209264bee40d3fdd07c4ea4ff411b6aa0e5c3f2dde71bf303423f34674748567dcdf8379129653b8213f698468738d492a068a3e3059b6e7115a055a7874f81c5a1e84ddc1967527973f8c78cd86a1c9f8fa0d734bd63b7be8e8471091b792f5bbcbc7b0ce582f6d985b7a15a3c0155242c56a00143c06f57a65c8485dbae750aa51df5dff1bf7bdf28060129a20de9e51364eda07b416f79b3f4e39d0159efff351009d44002d9e83530fb5a5778eb55f5f4432ca036706b52196fa0b73feb2e7ff8f1379c7176d427dd44ad63c7b65e66693904a1a0fd6c8b815e2769ce379a20eaccdba1f145fb11f77c280553f15ee4f1ee135375a02f5233009f082177e5ed2bfa6e180bf1a7310e6bc3c079cb85a4ac6fee4ae379a03f07f1bb33fa26ebd772fa874914dc7a08581095e5159fdcf9221be6cbeb6648a097557eec1ac08c3bfe45ce8e34cd329164a33928ac83fef1009656536ef6907fa028196bfb31aa7f14a0a8000b00b0aa5d09450c32d537e45eebee70b14313ff1ca0126ce265ca7bbb0e0b01f068d1edef1544cbeb2f048c99829713c18d7abc049a80").to_vec(),
@@ -300,8 +331,6 @@ mod test {
 		let result: DBValue = trie.get(&key).unwrap().unwrap();
 
 		let r = Rlp::new(result.as_slice());
-
-		println!("{:?}", r.to_string());
 
 		assert_eq!(r.data().unwrap(), hex!("d647b234389e"))
 	}

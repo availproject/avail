@@ -45,8 +45,8 @@ primitive-types = { version = "0.12.0", default-features = false }
 ethabi = { version = "18.0.0", default-features = false }
 [dev-dependencies]
 # sp-core = { version = "21.0.0", default-features = false }
+pallet-balances = "4.0.0-dev"
 pallet-timestamp = "4.0.0-dev"
-
 
 [features]
 default = [ "std" ]

@@ -38,10 +38,10 @@ use frame_system::submitted_data;
 use frame_system::EnsureRoot;
 use pallet_election_provider_multi_phase::SolutionAccuracyOf;
 use pallet_succinct::{
-	ExecutionStateRootIndex, FinalizedRootIndex, MaxProofLength, MaxPublicInputsLength,
-	MaxVerificationKeyLength, MessageMappingStorageIndex, MessageVersion, MinLightClientDelay,
-	MinSyncCommitteeParticipants, NextSyncCommitteeIndex, RotateFunctionId, StepFunctionId,
-	SyncCommitteeSize,
+	BridgePalletId, ExecutionStateRootIndex, FinalizedRootIndex, MaxProofLength,
+	MaxPublicInputsLength, MaxVerificationKeyLength, MessageMappingStorageIndex, MessageVersion,
+	MinLightClientDelay, MinSyncCommitteeParticipants, NextSyncCommitteeIndex, RotateFunctionId,
+	StepFunctionId, SyncCommitteeSize,
 };
 use pallet_transaction_payment::CurrencyAdapter;
 use pallet_transaction_payment::Multiplier;
@@ -104,6 +104,10 @@ impl pallet_succinct::Config for Runtime {
 	type WeightInfo = weights::pallet_succinct::WeightInfo<Runtime>;
 
 	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
+
+	type Currency = Balances;
+
+	type PalletId = BridgePalletId;
 }
 
 parameter_types! {
@@ -299,6 +303,7 @@ impl pallet_session::historical::Config for Runtime {
 
 /// Logic for the author to get a portion of fees.
 pub struct Author<R>(sp_std::marker::PhantomData<R>);
+
 impl<R> OnUnbalanced<NegativeImbalance<R>> for Author<R>
 where
 	R: pallet_balances::Config + pallet_authorship::Config,
@@ -313,6 +318,7 @@ where
 }
 
 pub struct DealWithFees<R>(sp_std::marker::PhantomData<R>);
+
 impl<R> OnUnbalanced<NegativeImbalance<R>> for DealWithFees<R>
 where
 	R: pallet_balances::Config + pallet_treasury::Config + pallet_authorship::Config,
