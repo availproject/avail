@@ -767,10 +767,4 @@ pub mod pallet {
 			}
 		}
 	}
-
-	pub fn parse_slot(callback_data: Vec<u8>) -> u64 {
-		let mut slot_data: [u8; 8] = [0; 8];
-		slot_data[..8].copy_from_slice(&callback_data[callback_data.len() - 8..]);
-		u64::from_be_bytes(slot_data)
-	}
 }
