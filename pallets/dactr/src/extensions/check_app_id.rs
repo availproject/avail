@@ -81,7 +81,7 @@ where
 				);
 			} else if let Some(FeeProxyCall::<T>::wrap { call }) = call.is_sub_type() {
 				let c = &**call;
-				stack.push(c);
+				stack.push(c.into_ref());
 			} else {
 				match call.is_sub_type() {
 					Some(UtilityCall::<T>::batch { calls })
@@ -225,6 +225,34 @@ mod tests {
 		})
 	}
 
+	fn wrapped_call() -> RuntimeCall {
+		let call = submit_data_call();
+		RuntimeCall::FeeProxy(FeeProxyCall::wrap {
+			call: Box::new(call),
+		})
+	}
+
+	fn wrapped_call_no_submit_data() -> RuntimeCall {
+		let call = remark_call();
+		RuntimeCall::FeeProxy(FeeProxyCall::wrap {
+			call: Box::new(call),
+		})
+	}
+
+	fn wrapped_batch_submit_call() -> RuntimeCall {
+		let call = batch_submit_call();
+		RuntimeCall::FeeProxy(FeeProxyCall::wrap {
+			call: Box::new(call),
+		})
+	}
+
+	fn wrapped_batch_mixed_call() -> RuntimeCall {
+		let call = batch_mixed_call();
+		RuntimeCall::FeeProxy(FeeProxyCall::wrap {
+			call: Box::new(call),
+		})
+	}
+
 	fn to_invalid_tx(custom_id: InvalidTransactionCustomId) -> TransactionValidity {
 		Err(TransactionValidityError::Invalid(
 			InvalidTransaction::Custom(custom_id as u8),
@@ -238,6 +266,14 @@ mod tests {
 	#[test_case(1, batch_submit_call() => Ok(ValidTransaction::default()); "utility batch filled with submit_data can be called with any valid AppId" )]
 	#[test_case(1, batch_mixed_call() => to_invalid_tx(ForbiddenAppId); "utility batch filled with submit_data and remark cannot be called if AppId != 0" )]
 	#[test_case(0, batch_mixed_call() => Ok(ValidTransaction::default()); "utility batch filled with submit_data and remark can be called if AppId == 0" )]
+	#[test_case(0, wrapped_call() => Ok(ValidTransaction::default()); "wrap with submit data can be called with AppId == 0" )]
+	#[test_case(1, wrapped_call() => Ok(ValidTransaction::default()); "wrap with submit data can be called with AppId == 1" )]
+	#[test_case(0, wrapped_call_no_submit_data() => Ok(ValidTransaction::default()); "wrap with system remark can be called with AppId == 0" )]
+	#[test_case(1, wrapped_call_no_submit_data() => to_invalid_tx(ForbiddenAppId); "wrap with system remark cannot be called with AppId == 1" )]
+	#[test_case(0, wrapped_batch_submit_call() => Ok(ValidTransaction::default()); "wrap with utility batch with submit data calls can be called with AppId == 0" )]
+	#[test_case(1, wrapped_batch_submit_call() => Ok(ValidTransaction::default()); "wrap with utility batch with submit data calls can be called with AppId == 1" )]
+	#[test_case(0, wrapped_batch_mixed_call() => Ok(ValidTransaction::default()); "wrap with utility batch with submit data and other calls can be called with AppId == 0" )]
+	#[test_case(1, wrapped_batch_mixed_call() => to_invalid_tx(ForbiddenAppId); "wrap with utility batch with submit data and other calls cannot be called with AppId == 1" )]
 	fn do_validate_test(id: u32, call: RuntimeCall) -> TransactionValidity {
 		new_test_ext().execute_with(|| CheckAppId::<Test>::from(AppId(id)).do_validate(&call))
 	}

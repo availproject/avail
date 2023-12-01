@@ -49,7 +49,8 @@ pub mod pallet {
 		/// A call to wrap and leverage fees from caller.
 		type RuntimeCall: Parameter
 			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>
-			+ GetDispatchInfo;
+			+ GetDispatchInfo
+			+ IsType<<Self as frame_system::Config>::RuntimeCall>;
 
 		/// Type representing the weight of this pallet
 		type WeightInfo: WeightInfo;
@@ -63,7 +64,7 @@ pub mod pallet {
 
 	/// The proxy account used to pay for fees.
 	#[pallet::storage]
-	#[pallet::getter(fn fee_procy_account)]
+	#[pallet::getter(fn fee_proxy_account)]
 	pub(super) type FeeProxyAccount<T: Config> = StorageValue<_, Option<T::AccountId>, ValueQuery>;
 
 	#[pallet::call]
@@ -94,7 +95,7 @@ pub mod pallet {
 			let reason = WithdrawReasons::FEE;
 			let imbalance = T::Currency::withdraw(&fee_proxy_account, fee, reason, KeepAlive)
 				.map_err(|_| Error::<T>::InsufficientBalanceInProxyAccount)?;
-			
+
 			// Take fee from proxy account
 			T::FeesCollector::on_unbalanced(imbalance);
 
@@ -150,7 +151,7 @@ mod fee_helper {
 	use super::*;
 
 	pub(crate) fn get_fee<T: Config>(
-		call: &Box<<T as Config>::RuntimeCall>,
+		call: &<T as Config>::RuntimeCall,
 	) -> Result<
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance,
 		Error<T>,
