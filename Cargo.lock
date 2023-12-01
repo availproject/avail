@@ -1908,6 +1908,7 @@ dependencies = [
  "kate",
  "log",
  "pallet-balances",
+ "pallet-fee-proxy",
  "pallet-transaction-payment",
  "pallet-utility",
  "parity-scale-codec",

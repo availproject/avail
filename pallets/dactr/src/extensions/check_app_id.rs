@@ -5,8 +5,11 @@ use frame_support::{
 	traits::{IsSubType, IsType},
 };
 use frame_system::Config as SystemConfig;
+use pallet_fee_proxy::{Call as FeeProxyCall, Config as FeeProxyConfig};
+use pallet_transaction_payment::OnChargeTransaction;
 use pallet_utility::{Call as UtilityCall, Config as UtilityConfig};
 use scale_info::TypeInfo;
+use sp_arithmetic::FixedPointOperand;
 use sp_runtime::{
 	traits::{DispatchInfoOf, SignedExtension},
 	transaction_validity::{
@@ -22,7 +25,10 @@ use sp_std::{
 
 use crate::{Call as DACall, Config as DAConfig, Pallet};
 
-const MAX_ITERATIONS: usize = 2;
+const MAX_ITERATIONS: usize = 3;
+
+/// Type aliases used for interaction with `OnChargeTransaction`.
+pub type OnChargeTransactionOf<T> = <T as pallet_transaction_payment::Config>::OnChargeTransaction;
 
 /// Check for Application Id.
 ///
@@ -32,15 +38,17 @@ const MAX_ITERATIONS: usize = 2;
 ///
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct CheckAppId<T: DAConfig + UtilityConfig + Send + Sync>(
+pub struct CheckAppId<T: DAConfig + UtilityConfig + FeeProxyConfig + Send + Sync>(
 	pub AppId,
 	sp_std::marker::PhantomData<T>,
 );
 
 impl<T> CheckAppId<T>
 where
-	T: DAConfig + UtilityConfig + Send + Sync,
-	<T as SystemConfig>::RuntimeCall: IsSubType<DACall<T>> + IsSubType<UtilityCall<T>>,
+	T: DAConfig + UtilityConfig + FeeProxyConfig + Send + Sync,
+	<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::Balance: FixedPointOperand,
+	<T as SystemConfig>::RuntimeCall:
+		IsSubType<DACall<T>> + IsSubType<UtilityCall<T>> + IsSubType<FeeProxyCall<T>>,
 {
 	/// utility constructor. Used only in client/factory code.
 	pub fn from(app_id: AppId) -> Self {
@@ -71,6 +79,9 @@ where
 					self.app_id() < *next_app_id,
 					InvalidTransaction::Custom(InvalidTransactionCustomId::InvalidAppId as u8)
 				);
+			} else if let Some(FeeProxyCall::<T>::wrap { call }) = call.is_sub_type() {
+				let c = &**call;
+				stack.push(c);
 			} else {
 				match call.is_sub_type() {
 					Some(UtilityCall::<T>::batch { calls })
@@ -101,7 +112,7 @@ where
 	}
 }
 
-impl<T: DAConfig + UtilityConfig + Send + Sync> Default for CheckAppId<T> {
+impl<T: DAConfig + UtilityConfig + FeeProxyConfig + Send + Sync> Default for CheckAppId<T> {
 	fn default() -> Self {
 		Self(AppId::default(), PhantomData)
 	}
@@ -109,7 +120,7 @@ impl<T: DAConfig + UtilityConfig + Send + Sync> Default for CheckAppId<T> {
 
 impl<T> Debug for CheckAppId<T>
 where
-	T: DAConfig + UtilityConfig + Send + Sync,
+	T: DAConfig + UtilityConfig + FeeProxyConfig + Send + Sync,
 {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -124,9 +135,11 @@ where
 
 impl<T> SignedExtension for CheckAppId<T>
 where
-	T: DAConfig + UtilityConfig + Send + Sync,
-	<T as frame_system::Config>::RuntimeCall:
-		IsSubType<DACall<T>> + IsSubType<pallet_utility::Call<T>>,
+	T: DAConfig + UtilityConfig + FeeProxyConfig + Send + Sync,
+	<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::Balance: FixedPointOperand,
+	<T as frame_system::Config>::RuntimeCall: IsSubType<DACall<T>>
+		+ IsSubType<pallet_utility::Call<T>>
+		+ IsSubType<pallet_fee_proxy::Call<T>>,
 {
 	type AccountId = T::AccountId;
 	type AdditionalSigned = ();
@@ -163,7 +176,7 @@ where
 
 impl<T> GetAppId for CheckAppId<T>
 where
-	T: DAConfig + UtilityConfig + Send + Sync,
+	T: DAConfig + UtilityConfig + FeeProxyConfig + Send + Sync,
 {
 	#[inline]
 	fn app_id(&self) -> AppId {
@@ -175,7 +188,9 @@ where
 mod tests {
 	use avail_core::InvalidTransactionCustomId::{ForbiddenAppId, InvalidAppId};
 	use frame_system::pallet::Call as SysCall;
+	use pallet_fee_proxy::Call as FeeProxyCall;
 	use pallet_utility::pallet::Call as UtilityCall;
+
 	use sp_runtime::transaction_validity::InvalidTransaction;
 	use test_case::test_case;
 

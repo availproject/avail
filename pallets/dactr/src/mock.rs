@@ -28,6 +28,7 @@ frame_support::construct_runtime!(
 		Utility: pallet_utility,
 		Balances: pallet_balances,
 		TransactionPayment: pallet_transaction_payment,
+		FeeProxy: pallet_fee_proxy,
 		DataAvailability: da_control,
 	}
 );
@@ -89,6 +90,14 @@ impl pallet_balances::Config for Test {
 
 impl pallet_utility::Config for Test {
 	type PalletsOrigin = OriginCaller;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
+}
+
+impl pallet_fee_proxy::Config for Test {
+	type Currency = Balances;
+	type FeesCollector = ();
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();

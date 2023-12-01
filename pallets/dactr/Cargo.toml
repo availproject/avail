@@ -31,6 +31,8 @@ frame-support = { git = "https://github.com/paritytech/substrate.git", branch = 
 frame-system = { path = "../../pallets/system", default-features = false }
 frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
 pallet-utility = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+pallet-fee-proxy = { path = "../../pallets/fee-proxy", default-features = false }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 
 [dev-dependencies]
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
