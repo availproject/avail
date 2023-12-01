@@ -258,9 +258,11 @@ where
 
 #[cfg(test)]
 mod test {
+	use codec::KeyedVec;
+	use sp_core::{keccak_256, H256};
 	use std::vec;
 
-	use crate::submitted_data::{calls_proof, Filter, RcMetrics};
+	use crate::submitted_data::{calls_proof, proof, Filter, Metrics, RcMetrics};
 
 	// dummy filter implementation that skips empty strings in vector
 	impl<C> Filter<C> for String
@@ -279,6 +281,32 @@ mod test {
 		fn process_calls(_: Vec<C>, _: &RcMetrics) -> Vec<Vec<u8>> {
 			vec![]
 		}
+	}
+
+	#[test]
+	fn test_() {
+		let tx1_data: String = String::from("0");
+		let tx2_data: String = String::from("1");
+		let tx3_data: String = String::from("2");
+
+		let tx1_hash = keccak_256(String::from("0").as_bytes());
+		let tx2_hash = keccak_256(String::from("1").as_bytes());
+		let tx3_hash = keccak_256(String::from("2").as_bytes());
+
+		println!("0 {:?}", H256(tx1_hash));
+		println!("1 {:?}", H256(tx2_hash));
+		println!("2 {:?}", H256(tx3_hash));
+
+		println!("hashed 0 {:?}", H256(keccak_256(tx1_hash.as_slice())));
+		println!("hashed 1 {:?}", H256(keccak_256(tx2_hash.as_slice())));
+		println!("hashed 2 {:?}", H256(keccak_256(tx3_hash.as_slice())));
+
+		let submitted_data = vec![tx1_hash.to_vec(), tx2_hash.to_vec(), tx3_hash.to_vec()];
+		let metrics = Metrics::new_shared();
+
+		let proof = proof(submitted_data, 0, metrics);
+
+		println!("{:?}", proof);
 	}
 
 	#[test]
