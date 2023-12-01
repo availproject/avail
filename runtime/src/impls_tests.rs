@@ -2,7 +2,7 @@
 mod multiplier_tests {
 	use crate::impls::*;
 	use crate::*;
-	use avail_core::currency::{CENTS, MILLICENTS};
+	use avail_core::currency::{CENTS, MICRO_AVL, MILLICENTS};
 	use frame_support::{
 		dispatch::DispatchClass,
 		weights::{Weight, WeightToFee},
@@ -79,6 +79,20 @@ mod multiplier_tests {
 			.into();
 		t.execute_with(|| {
 			System::set_block_consumed_resources(w, 0);
+			assertions()
+		});
+	}
+
+	fn run_with_system_length<F>(l: usize, assertions: F)
+	where
+		F: Fn() -> (),
+	{
+		let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::<Runtime>::default()
+			.build_storage()
+			.unwrap()
+			.into();
+		t.execute_with(|| {
+			System::set_block_consumed_resources(0.into(), l);
 			assertions()
 		});
 	}
@@ -224,6 +238,135 @@ mod multiplier_tests {
 					adjusted_fee / CENTS,
 					adjusted_fee / DOLLARS,
 				);
+			}
+		});
+	}
+
+	#[test]
+	fn weight_congested_chain_simulation() {
+		// `cargo test weight_congested_chain_simulation -- --nocapture` to get some insight.
+
+		sp_io::TestExternalities::default().execute_with(|| {
+			// almost full. The entire quota of normal transactions is taken.
+			let block_weight = BlockWeights::get()
+				.get(DispatchClass::Normal)
+				.max_total
+				.unwrap() - Weight::from_parts(100, 0);
+
+			// Default substrate weight.
+			// let tx_weight = frame_support::weights::constants::ExtrinsicBaseWeight::get();
+			let tx_len: usize = 100 * 1024; //100 Kb data
+			let da_submission_weight = da_control::weight_helper::submit_data::<Runtime>(tx_len).0;
+
+			let len_fee = TransactionPayment::length_to_fee(tx_len.try_into().unwrap());
+
+			let base_fee = TransactionPayment::weight_to_fee(
+				BlockWeights::get()
+					.get(DispatchClass::Normal)
+					.base_extrinsic,
+			);
+
+			run_with_system_weight(block_weight, || {
+				// initial value configured on module
+				let mut fm = Multiplier::one();
+				assert_eq!(fm, TransactionPayment::next_fee_multiplier());
+
+				let mut iterations: u32 = 0;
+				let mut day_count: u32 = 0;
+
+				let fee =
+					<Runtime as pallet_transaction_payment::Config>::WeightToFee::weight_to_fee(
+						&da_submission_weight,
+					);
+				let adjusted_fee = fm.saturating_mul_acc_int(fee);
+				let inclusion_fee = base_fee
+					.saturating_add(len_fee)
+					.saturating_add(adjusted_fee);
+				println!(
+					"Day {}, new fm = {:?}. Fee at this point is: {} units / {} MICRO_AVL",
+					day_count,
+					fm,
+					inclusion_fee,
+					inclusion_fee / MICRO_AVL,
+				);
+				loop {
+					let next = runtime_multiplier_update(fm);
+					// if no change, panic. This should never happen in this case.
+					if fm == next {
+						panic!("The fee should ever increase");
+					}
+					fm = next;
+					iterations += 1;
+					let fee =
+						<Runtime as pallet_transaction_payment::Config>::WeightToFee::weight_to_fee(
+							&da_submission_weight,
+						);
+					let adjusted_fee = fm.saturating_mul_acc_int(fee);
+					let inclusion_fee = base_fee
+						.saturating_add(len_fee)
+						.saturating_add(adjusted_fee);
+					if iterations % DAYS == 0 {
+						day_count += 1;
+						println!(
+							"Day {}, new fm = {:?}. Fee at this point is: {} units / {} MICRO_AVL",
+							day_count,
+							fm,
+							inclusion_fee,
+							inclusion_fee / MICRO_AVL,
+						);
+					}
+					if day_count == 365u32 {
+						break;
+					}
+				}
+			});
+		});
+	}
+
+	#[test]
+	fn length_congested_chain_simulation() {
+		// `cargo test length_congested_chain_simulation -- --nocapture` to get some insight.
+		sp_io::TestExternalities::default().execute_with(|| {
+			// By default length multiplier will be 1
+			let lm = System::next_length_multiplier();
+			assert_eq!(lm, 1);
+			let max_padded_length = *System::block_length().max.get(DispatchClass::Mandatory);
+
+			let tx_len: usize = 1024 * 1024; //1 Mb data
+			let len_fee = TransactionPayment::length_to_fee(tx_len.try_into().unwrap());
+			let base_fee = TransactionPayment::weight_to_fee(
+				BlockWeights::get()
+					.get(DispatchClass::Normal)
+					.base_extrinsic,
+			);
+
+			for utilization_percent in (0..=100).step_by(5) {
+				let target_padded_length: usize =
+					(sp_runtime::Perbill::from_percent(utilization_percent as u32)
+						* max_padded_length)
+						.try_into()
+						.unwrap();
+
+				run_with_system_length(target_padded_length, || {
+					System::calculate_length_multiplier();
+					let lm = System::next_length_multiplier();
+
+					let da_submission_weight =
+						da_control::weight_helper::submit_data::<Runtime>(tx_len).0;
+					let fee =
+						<Runtime as pallet_transaction_payment::Config>::WeightToFee::weight_to_fee(
+							&da_submission_weight,
+						);
+					let inclusion_fee = base_fee.saturating_add(len_fee).saturating_add(fee);
+
+					println!(
+						"Utilisation {}%, new lm = {:?}. Fee at this point is: {} units / {} MICRO_AVL",
+						utilization_percent,
+						lm,
+						inclusion_fee,
+						inclusion_fee / MICRO_AVL,
+					);
+				});
 			}
 		});
 	}

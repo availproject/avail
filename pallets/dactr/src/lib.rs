@@ -312,12 +312,13 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-mod weight_helper {
+// TODO: revert it to private after simulations are done
+pub mod weight_helper {
 
 	use super::*;
 
 	/// Weight for `dataAvailability::submit_data`.
-	pub(crate) fn submit_data<T: Config>(data_len: usize) -> (Weight, DispatchClass) {
+	pub fn submit_data<T: Config>(data_len: usize) -> (Weight, DispatchClass) {
 		let mut data_len: u32 = data_len.saturated_into();
 		let length_multiplier = NextLengthMultiplier::<T>::get();
 		data_len = data_len.saturating_mul(length_multiplier);
