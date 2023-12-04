@@ -438,7 +438,9 @@ pub mod pallet {
 			let message_data = MessageData {
 				recipient_address: H256([1u8; 32]),
 				amount: U256::zero(),
-			}; //Self::validate_transfer(message.data)?;
+			};
+			// let message_data = decode_message_data(message_data)
+			// 	.map_err(|_| Error::<T>::CannotDecodeMessageData)?;
 
 			let success = Self::transfer(message_data.amount, message_data.recipient_address)?;
 			if success {
@@ -526,15 +528,6 @@ pub mod pallet {
 			)?;
 
 			Ok(true)
-		}
-
-		pub fn validate_transfer(message_data: Vec<u8>) -> Result<MessageData, DispatchError> {
-			let message_data = decode_message_data(message_data)
-				.map_err(|_| Error::<T>::CannotDecodeMessageData)?;
-
-			// TODO add some validation if needed?
-
-			Ok(message_data)
 		}
 
 		fn rotate_into(
