@@ -441,9 +441,6 @@ mod tests {
 		let inp_hash = H256(sha2_256(inp.as_slice()));
 		let out_hash = H256(sha2_256(out.as_slice()));
 
-		println!("{:?}", inp_hash);
-		println!("{:?}", out_hash);
-
 		let proof = hex!("1332c772a8f9a02f304b5472d3b6b75f1a494bd9b137fc663fd5b9b475992bc829ba08f7cfa745e340938e356b139224d0288b9511a5cec83235f969f61a94ed16a14579fa0adcc3bf8da36209f64547fd5ff4e1c7e8b5b151335b5b4a471de3115f83b696517ac68ae7620f7d3840e44aff4781c0a4d265a2905ef9bcaa04432a660197790e60d1135946ae0603ef69a5ecb45b6f8046167f902dc6d8a35cf716bce116484dfa4fcd5d8f4c2fda26d68754b56e68f1a877d95dc171accc34d71285068693fe3d8d28e66342c31292ceee5c6d87fcb8ad8c132363565f2aeff905726b2d35def5c9636dd5ec402d8d6f6c9a7be7977e7e5727da327ea5b079ad");
 
 		let result = v.verify(inp_hash, out_hash, proof.to_vec());
