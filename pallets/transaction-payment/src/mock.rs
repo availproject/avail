@@ -156,4 +156,5 @@ impl Config for Runtime {
 	type WeightToFee = WeightToFee;
 	type LengthToFee = TransactionByteFee;
 	type FeeMultiplierUpdate = ();
+	type LengthMultiplierUpdate = ();
 }

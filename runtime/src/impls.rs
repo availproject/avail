@@ -39,7 +39,7 @@ use frame_system::EnsureRoot;
 use pallet_election_provider_multi_phase::SolutionAccuracyOf;
 use pallet_transaction_payment::CurrencyAdapter;
 use pallet_transaction_payment::Multiplier;
-use pallet_transaction_payment::TargetedFeeAdjustment;
+use pallet_transaction_payment::{LengthFeeAdjustment, TargetedFeeAdjustment};
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::generic::Era;
 use sp_runtime::traits;
@@ -212,7 +212,9 @@ parameter_types! {
 	pub const OperationalFeeMultiplier: u8 = 5u8;
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(50); // target_utilization 50%
 	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000); // 0.000001
+	pub LenAdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 200); // 0.005
 	pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
+	pub MinLenMultiplier: Multiplier = Multiplier::from_u32(1);
 	pub MaximumMultiplier: Multiplier = Bounded::max_value();
 }
 
@@ -222,6 +224,14 @@ impl pallet_transaction_payment::Config for Runtime {
 		TargetBlockFullness,
 		AdjustmentVariable,
 		MinimumMultiplier,
+		MaximumMultiplier,
+	>;
+	// To allow fees to change at most 50% in a day
+	type LengthMultiplierUpdate = LengthFeeAdjustment<
+		Self,
+		TargetBlockFullness,
+		LenAdjustmentVariable,
+		MinLenMultiplier,
 		MaximumMultiplier,
 	>;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
