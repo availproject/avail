@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use crate::target_amb::MessageStatusEnum;
 use frame_support::traits::{Currency, ExistenceRequirement, UnixTime};
 use frame_support::{pallet_prelude::*, parameter_types, PalletId};
 use hex_literal::hex;
@@ -43,10 +44,10 @@ parameter_types! {
 	pub const MessageMappingStorageIndex:u64 = 1;
 
 
-	// TODO bounded vec size
+	// execute function BoundedVec max size.
 	pub const InputMaxLen: u32 = 256;
 	pub const OutputMaxLen: u32 = 512;
-	pub const ProofMaxLen: u32 = 2048;
+	pub const ProofMaxLen: u32 = 1048;
 
 	pub const MessageBytesMaxLen: u32 = 2048;
 	pub const AccountProofMaxLen: u32 = 2048;
@@ -97,6 +98,7 @@ pub mod pallet {
 		TooLongVerificationKey,
 		VerificationKeyIsNotSet,
 		MalformedVerificationKey,
+		FunctionIdNotKnown,
 		NotSupportedCurve,
 		NotSupportedProtocol,
 		StepVerificationError,
@@ -135,51 +137,35 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		// emit event once the head is updated
+		// emit event once the head is updated.
 		HeaderUpdate {
 			slot: u64,
 			finalization_root: H256,
 		},
-		// emit event once the sync committee updates
+		// emit event once the sync committee updates.
 		SyncCommitteeUpdate {
 			period: u64,
 			root: U256,
 		},
-		// emit event when verification setup is completed
+		// emit event when verification setup is completed.
 		VerificationSetupCompleted,
-		// emit event if verification is success
-		VerificationSuccess {
-			who: H256,
-			attested_slot: u64,
-			finalized_slot: u64,
-		},
 		// emit when new updater is set
 		NewUpdater {
 			old: H256,
 			new: H256,
 		},
+		// emit when message gets executed.
 		ExecutedMessage {
 			chain_id: u32,
 			nonce: u64,
 			message_root: H256,
 			status: bool,
 		},
-		// emit if source chain gets frozen
+		// emit if source chain gets frozen.
 		SourceChainFrozen {
 			source_chain_id: u32,
 			frozen: bool,
 		},
-	}
-
-	// The latest slot the light client has a finalized header for.
-	#[derive(
-		Clone, Copy, Default, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen,
-	)]
-	pub enum MessageStatusEnum {
-		#[default]
-		NotExecuted,
-		ExecutionFailed,
-		ExecutionSucceeded,
 	}
 
 	#[pallet::storage]
@@ -337,6 +323,12 @@ pub mod pallet {
 	where
 		[u8; 32]: From<T::AccountId>,
 	{
+		/// The entrypoint for fulfilling a call.
+		/// function_id Function identifier.
+		/// input Function input.
+		/// output Function output.
+		/// proof  Function proof.
+		/// slot  Function input for a callback.
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn fulfill_call(
@@ -351,8 +343,10 @@ pub mod pallet {
 			let state = StateStorage::<T>::get();
 			// ensure sender is preconfigured
 			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
+			// compute hashes
 			let input_hash = H256(sha2_256(input.as_slice()));
 			let output_hash = H256(sha2_256(output.as_slice()));
+
 			let verifier = Self::get_verifier(function_id)?;
 
 			let success = verifier
@@ -495,7 +489,7 @@ pub mod pallet {
 
 			ensure!(slot_value == message_root, Error::<T>::InvalidMessageHash);
 
-			// TODO decode message formap
+			// TODO decode message format
 			let message_data = MessageData {
 				recipient_address: H256([1u8; 32]),
 				amount: U256::zero(),
@@ -673,11 +667,14 @@ pub mod pallet {
 			Ok(true)
 		}
 
+		/// get_verifier returns verifier based on the provided function id.
 		fn get_verifier(function_id: H256) -> Result<Verifier, Error<T>> {
 			if function_id == StepFunctionId::get() {
 				Self::get_step_verifier()
-			} else {
+			} else if function_id == RotateFunctionId::get() {
 				Self::get_rotate_verifier()
+			} else {
+				Err(Error::<T>::FunctionIdNotKnown)
 			}
 		}
 

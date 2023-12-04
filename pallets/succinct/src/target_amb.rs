@@ -1,3 +1,7 @@
+use crate::TypeInfo;
+use codec::Decode;
+use codec::Encode;
+use codec::MaxEncodedLen;
 use patricia_merkle_trie::{EIP1186Layout, StorageProof};
 use primitive_types::{H160, H256, U256};
 use rlp::Rlp;
@@ -10,6 +14,14 @@ use trie_db::{DBValue, Trie, TrieDBBuilder};
 #[derive(Debug, PartialEq)]
 pub enum AMBError {
 	CannotDecodeMessageData,
+}
+
+#[derive(Clone, Copy, Default, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
+pub enum MessageStatusEnum {
+	#[default]
+	NotExecuted,
+	ExecutionFailed,
+	ExecutionSucceeded,
 }
 
 #[derive(Debug)]
