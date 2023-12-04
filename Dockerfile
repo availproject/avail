@@ -9,7 +9,7 @@ RUN apt update -y && \
 WORKDIR "/da/src"
 
 # Clone repo
-ARG AVAIL_TAG=v1.8.0.2
+ARG AVAIL_TAG=v1.8.0.3
 RUN git clone -b $AVAIL_TAG --single-branch https://github.com/availproject/avail.git .
 
 # This installs Rust and updates Rust to the right version.
@@ -24,17 +24,17 @@ RUN cp ./target/release/data-avail .
 # =========================
 FROM debian:12.2-slim
 
-RUN apt update -y
+RUN apt update -y && \
+    apt install curl
 COPY --from=builder /da/src/data-avail /usr/local/bin/data-avail
 RUN chmod +x /usr/local/bin/data-avail
 
 # Opencontainers annotations
 LABEL org.opencontainers.image.authors="The Avail Project Team" \
 	org.opencontainers.image.url="https://www.availproject.org/" \
-	org.opencontainers.image.documentation="https://github.com/availproject/avail-deployment#readme" \
-	org.opencontainers.image.source="https://github.com/availproject/avail-deployment" \
-	org.opencontainers.image.version="1.0.0" \
-	org.opencontainers.image.revision="1" \
+	org.opencontainers.image.source="https://github.com/availproject/avail" \
+	org.opencontainers.image.version="1.8.0" \
+	org.opencontainers.image.revision="3" \
 	org.opencontainers.image.vendor="The Avail Project" \
 	org.opencontainers.image.licenses="MIT" \
 	org.opencontainers.image.title="Avail Node" \
