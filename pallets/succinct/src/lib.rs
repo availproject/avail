@@ -73,8 +73,7 @@ pub mod pallet {
 		parse_rotate_output, parse_step_output, VerifiedRotate, VerifiedStep, VerifiedStepOutput,
 	};
 	use crate::target_amb::{
-		decode_message, decode_message_data, get_storage_root, get_storage_value, Message,
-		MessageData,
+		decode_message, get_storage_root, get_storage_value, Message, MessageData,
 	};
 	use crate::verifier::encode_packed;
 
@@ -443,6 +442,7 @@ pub mod pallet {
 			// 	.map_err(|_| Error::<T>::CannotDecodeMessageData)?;
 
 			let success = Self::transfer(message_data.amount, message_data.recipient_address)?;
+
 			if success {
 				MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
 				Self::deposit_event(Event::<T>::ExecutedMessage {
@@ -543,7 +543,7 @@ pub mod pallet {
 
 			let input = ethabi::encode(&[Token::FixedBytes(finalized_header_root.0.to_vec())]);
 			let sync_committee_poseidon: U256 =
-				Self::verified_rotate_call(RotateFunctionId::get(), input, &rotate_store)?;
+				Self::verified_rotate_call(RotateFunctionId::get(), input, rotate_store)?;
 
 			let period = finalized_slot / state.slots_per_period;
 			let next_period = period + 1;

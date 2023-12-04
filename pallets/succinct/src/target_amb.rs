@@ -48,22 +48,18 @@ pub fn decode_message_data(message: Vec<u8>) -> Result<MessageData, AMBError> {
 	let decoded = ethabi::decode(&[FixedBytes(32), Uint(256), Address], message.as_slice())
 		.map_err(|_| AMBError::CannotDecodeMessageData)?;
 
-	let receipient_token = decoded
-		.get(0)
-		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
+	let receipient_token = decoded.get(0).ok_or(AMBError::CannotDecodeMessageData)?;
 
 	let receipient_address = receipient_token
 		.clone()
 		.into_fixed_bytes()
-		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
+		.ok_or(AMBError::CannotDecodeMessageData)?;
 
-	let amount_token = decoded
-		.get(1)
-		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
+	let amount_token = decoded.get(1).ok_or(AMBError::CannotDecodeMessageData)?;
 	let amount = amount_token
 		.clone()
 		.into_uint()
-		.ok_or_else(|| AMBError::CannotDecodeMessageData)?;
+		.ok_or(AMBError::CannotDecodeMessageData)?;
 
 	Ok(MessageData {
 		recipient_address: H256::from_slice(receipient_address.as_slice()),
