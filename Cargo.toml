@@ -7,6 +7,7 @@ members = [
     "pallets/bridges/nomad/updater-manager",
     "pallets/bridges/nomad/home",
     "pallets/bridges/nomad/da-bridge",
+    "pallets/transaction-payment",
     "runtime",
     "node",
 ]
@@ -19,6 +20,9 @@ frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 pallet-nomination-pools = { path = "pallets/nomination-pools" }
 pallet-nomination-pools-runtime-api = { path = "pallets/nomination-pools/runtime-api" }
+pallet-transaction-payment = { path = "pallets/transaction-payment" }
+pallet-transaction-payment-rpc = { path = "pallets/transaction-payment/rpc" }
+pallet-transaction-payment-rpc-runtime-api = { path = "pallets/transaction-payment/rpc/runtime-api" }
 
 [patch.crates-io]
 # Customized Local pallets
