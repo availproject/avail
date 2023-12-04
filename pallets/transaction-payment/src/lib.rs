@@ -57,6 +57,7 @@ use frame_support::{
 	traits::{Defensive, EstimateCallFee, Get},
 	weights::{Weight, WeightToFee},
 };
+use frame_system::pallet::DynamicBlockLength;
 pub use pallet::*;
 pub use payment::*;
 use sp_runtime::{
@@ -72,6 +73,7 @@ use sp_runtime::{
 use sp_std::prelude::*;
 pub use types::{FeeDetails, InclusionFee, RuntimeDispatchInfo};
 
+pub const LOG_TARGET: &str = "runtime::tx_payment";
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
@@ -138,6 +140,8 @@ type BalanceOf<T> = <<T as Config>::OnChargeTransaction as OnChargeTransaction<T
 /// More info can be found at:
 /// <https://research.web3.foundation/en/latest/polkadot/overview/2-token-economics.html>
 pub struct TargetedFeeAdjustment<T, S, V, M, X>(sp_std::marker::PhantomData<(T, S, V, M, X)>);
+
+pub struct LengthFeeAdjustment<T, S, V, M, X>(sp_std::marker::PhantomData<(T, S, V, M, X)>);
 
 /// Something that can convert the current multiplier to the next one.
 pub trait MultiplierUpdate: Convert<Multiplier, Multiplier> {
@@ -277,6 +281,96 @@ where
 	}
 }
 
+impl<T, S, V, M, X> MultiplierUpdate for LengthFeeAdjustment<T, S, V, M, X>
+where
+	T: frame_system::Config,
+	S: Get<Perquintill>,
+	V: Get<Multiplier>,
+	M: Get<Multiplier>,
+	X: Get<Multiplier>,
+{
+	fn min() -> Multiplier {
+		M::get()
+	}
+	fn max() -> Multiplier {
+		X::get()
+	}
+	fn target() -> Perquintill {
+		S::get()
+	}
+	fn variability() -> Multiplier {
+		V::get()
+	}
+}
+
+impl<T, S, V, M, X> Convert<Multiplier, Multiplier> for LengthFeeAdjustment<T, S, V, M, X>
+where
+	T: frame_system::Config,
+	S: Get<Perquintill>,
+	V: Get<Multiplier>,
+	M: Get<Multiplier>,
+	X: Get<Multiplier>,
+{
+	fn convert(previous: Multiplier) -> Multiplier {
+		// Defensive only. The multiplier in storage should always be at most positive. Nonetheless
+		// we recover here in case of errors, because any value below this would be stale and can
+		// never change.
+		let min_multiplier = M::get();
+		let max_multiplier = X::get();
+		let previous = previous.max(min_multiplier);
+
+		// Considering the padded_length as it consistently serves as a limiting factor compared to block_length and padded_block_length.
+		// Both the Mandatory and Operational classes have a maximum block length set, with no enforced limit on normal transactions.
+		let max_padded_length: u64 = (*DynamicBlockLength::<T>::get()
+			.max
+			.get(DispatchClass::Mandatory))
+		.into();
+		let current_block_length = <frame_system::Pallet<T>>::all_padded_extrinsics_len();
+
+		let target_block_fullness = S::get();
+		let adjustment_variable = V::get();
+
+		let target_length = (target_block_fullness * max_padded_length) as u128;
+		let block_length = current_block_length as u128;
+
+		log::debug!(target: LOG_TARGET,
+			"target_length: {}, block_length: {}  ",
+			target_length,
+			block_length);
+		// determines if the first_term is positive
+		let positive = block_length >= target_length;
+		let diff_abs = block_length.max(target_length) - block_length.min(target_length);
+
+		// defensive only, a test case assures that the maximum weight diff can fit in Multiplier
+		// without any saturation.
+		let diff = Multiplier::saturating_from_rational(diff_abs, max_padded_length.max(1));
+		let diff_squared = diff.saturating_mul(diff);
+
+		let v_squared_2 = adjustment_variable.saturating_mul(adjustment_variable)
+			/ Multiplier::saturating_from_integer(2);
+
+		let first_term = adjustment_variable.saturating_mul(diff);
+		let second_term = v_squared_2.saturating_mul(diff_squared);
+
+		if positive {
+			let excess = first_term
+				.saturating_add(second_term)
+				.saturating_mul(previous);
+			previous
+				.saturating_add(excess)
+				.clamp(min_multiplier, max_multiplier)
+		} else {
+			// Defensive-only: first_term > second_term. Safe subtraction.
+			let negative = first_term
+				.saturating_sub(second_term)
+				.saturating_mul(previous);
+			previous
+				.saturating_sub(negative)
+				.clamp(min_multiplier, max_multiplier)
+		}
+	}
+}
+
 /// A struct to make the fee multiplier a constant
 pub struct ConstFeeMultiplier<M: Get<Multiplier>>(sp_std::marker::PhantomData<M>);
 
@@ -378,6 +472,9 @@ pub mod pallet {
 
 		/// Update the multiplier of the next block, based on the previous block's weight.
 		type FeeMultiplierUpdate: MultiplierUpdate;
+
+		/// Update the multiplier of the next block, based on the previous block's length.
+		type LengthMultiplierUpdate: MultiplierUpdate;
 	}
 
 	#[pallet::type_value]
@@ -388,6 +485,11 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn next_fee_multiplier)]
 	pub type NextFeeMultiplier<T: Config> =
+		StorageValue<_, Multiplier, ValueQuery, NextFeeMultiplierOnEmpty>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn next_length_multiplier)]
+	pub type NextLengthMultiplier<T: Config> =
 		StorageValue<_, Multiplier, ValueQuery, NextFeeMultiplierOnEmpty>;
 
 	#[pallet::storage]
@@ -414,6 +516,7 @@ pub mod pallet {
 		fn build(&self) {
 			StorageVersion::<T>::put(Releases::V2);
 			NextFeeMultiplier::<T>::put(self.multiplier);
+			NextLengthMultiplier::<T>::put(self.multiplier);
 		}
 	}
 
@@ -434,6 +537,9 @@ pub mod pallet {
 		fn on_finalize(_: frame_system::pallet_prelude::BlockNumberFor<T>) {
 			<NextFeeMultiplier<T>>::mutate(|fm| {
 				*fm = T::FeeMultiplierUpdate::convert(*fm);
+			});
+			<NextLengthMultiplier<T>>::mutate(|lm| {
+				*lm = T::LengthMultiplierUpdate::convert(*lm);
 			});
 		}
 
@@ -657,13 +763,15 @@ where
 			let adjusted_weight_fee = multiplier.saturating_mul_int(unadjusted_weight_fee);
 
 			// length fee. this is adjusted via `LengthToFee`.
-			let len_fee = Self::length_to_fee(len);
+			let unadjusted_len_fee = Self::length_to_fee(len);
+			let length_multiplier = Self::next_length_multiplier();
+			let adjusted_length_fee = length_multiplier.saturating_mul_int(unadjusted_len_fee);
 
 			let base_fee = Self::weight_to_fee(T::BlockWeights::get().get(class).base_extrinsic);
 			FeeDetails {
 				inclusion_fee: Some(InclusionFee {
 					base_fee,
-					len_fee,
+					len_fee: adjusted_length_fee,
 					adjusted_weight_fee,
 				}),
 				tip,
@@ -691,20 +799,20 @@ where
 	}
 }
 
-impl<T> Convert<Weight, BalanceOf<T>> for Pallet<T>
-where
-	T: Config,
-	BalanceOf<T>: FixedPointOperand,
-{
-	/// Compute the fee for the specified weight.
-	///
-	/// This fee is already adjusted by the per block fee adjustment factor and is therefore the
-	/// share that the weight contributes to the overall fee of a transaction. It is mainly
-	/// for informational purposes and not used in the actual fee calculation.
-	fn convert(weight: Weight) -> BalanceOf<T> {
-		<NextFeeMultiplier<T>>::get().saturating_mul_int(Self::weight_to_fee(weight))
-	}
-}
+// impl<T> Convert<Weight, BalanceOf<T>> for Pallet<T>
+// where
+// 	T: Config,
+// 	BalanceOf<T>: FixedPointOperand,
+// {
+// 	/// Compute the fee for the specified weight.
+// 	///
+// 	/// This fee is already adjusted by the per block fee adjustment factor and is therefore the
+// 	/// share that the weight contributes to the overall fee of a transaction. It is mainly
+// 	/// for informational purposes and not used in the actual fee calculation.
+// 	fn convert(weight: Weight) -> BalanceOf<T> {
+// 		<NextFeeMultiplier<T>>::get().saturating_mul_int(Self::weight_to_fee(weight))
+// 	}
+// }
 
 /// Require the transactor pay for themselves and maybe include a tip to gain additional priority
 /// in the queue.
