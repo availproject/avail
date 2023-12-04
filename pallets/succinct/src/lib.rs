@@ -192,7 +192,6 @@ pub mod pallet {
 
 	// Ability to froze source chain
 	#[pallet::storage]
-	#[pallet::getter(fn is_frozen)]
 	pub type SourceChainFrozen<T> = StorageMap<_, Identity, u32, bool, ValueQuery>;
 
 	#[pallet::config]
