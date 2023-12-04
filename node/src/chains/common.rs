@@ -143,7 +143,6 @@ pub fn runtime_genesis_config(
 			//TODO check all values
 			slots_per_period: 8192,
 			updater: SUCCINCT_UPDATER,
-			source_chain_id: 1,
 			finality_threshold: 461,
 			period: 931,
 			sync_committee_poseidon: U256::from(hex!(

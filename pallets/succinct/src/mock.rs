@@ -8,7 +8,7 @@ use sp_runtime::{
 };
 
 use crate as succinct_bridge;
-use crate::{MessageMappingStorageIndex, MessageVersion, MinLightClientDelay};
+use crate::{MaxProofLength, MessageMappingStorageIndex, MessageVersion};
 
 type Balance = u128;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -75,14 +75,7 @@ impl pallet_timestamp::Config for Test {
 }
 
 parameter_types! {
-	pub const MinSyncCommitteeParticipants: u16 = 10;
-	pub const SyncCommitteeSize: u32 = 512;
-	pub const FinalizedRootIndex: u32 = 105;
-	pub const NextSyncCommitteeIndex: u32 = 55;
-	pub const ExecutionStateRootIndex: u32 = 402;
-	pub const MaxPublicInputsLength: u32 = 9;
 	pub const MaxVerificationKeyLength: u32 = 4143;
-	pub const MaxProofLength: u32 = 1133;
 	pub const StepFunctionId: H256 = H256(hex!("af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"));
 	pub const RotateFunctionId: H256 = H256(hex!("9aed23f9e6e8f8b98751cf508069b5b7f015d4d510b6a4820d41ba1ce88190d9"));
 	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
@@ -93,20 +86,14 @@ impl succinct_bridge::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type TimeProvider = Timestamp;
-	type MaxPublicInputsLength = MaxPublicInputsLength;
-	type MaxProofLength = MaxProofLength;
 	type MaxVerificationKeyLength = MaxVerificationKeyLength;
-	type MinSyncCommitteeParticipants = MinSyncCommitteeParticipants;
 	type Currency = Balances;
 
 	type MessageVersion = MessageVersion;
-	type MinLightClientDelay = MinLightClientDelay;
 	type MessageMappingStorageIndex = MessageMappingStorageIndex;
 
-	type SyncCommitteeSize = SyncCommitteeSize;
-	type FinalizedRootIndex = FinalizedRootIndex;
-	type NextSyncCommitteeIndex = NextSyncCommitteeIndex;
-	type ExecutionStateRootIndex = ExecutionStateRootIndex;
+	type MaxProofLength = MaxProofLength;
+
 	type RotateFunctionId = RotateFunctionId;
 	type StepFunctionId = StepFunctionId;
 	type PalletId = BridgePalletId;
@@ -123,7 +110,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		updater: H256(hex!(
 			"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
 		)),
-		source_chain_id: 1,
 		finality_threshold: 461,
 		period: 931,
 		sync_committee_poseidon: U256::from(hex!(

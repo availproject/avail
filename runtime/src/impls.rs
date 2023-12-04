@@ -38,10 +38,8 @@ use frame_system::submitted_data;
 use frame_system::EnsureRoot;
 use pallet_election_provider_multi_phase::SolutionAccuracyOf;
 use pallet_succinct::{
-	BridgePalletId, ExecutionStateRootIndex, FinalizedRootIndex, MaxProofLength,
-	MaxPublicInputsLength, MaxVerificationKeyLength, MessageMappingStorageIndex, MessageVersion,
-	MinLightClientDelay, MinSyncCommitteeParticipants, NextSyncCommitteeIndex, RotateFunctionId,
-	StepFunctionId, SyncCommitteeSize,
+	BridgePalletId, MaxProofLength, MaxVerificationKeyLength, MessageMappingStorageIndex,
+	MessageVersion, RotateFunctionId, StepFunctionId,
 };
 use pallet_transaction_payment::CurrencyAdapter;
 use pallet_transaction_payment::Multiplier;
@@ -83,18 +81,9 @@ impl pallet_mandate::Config for Runtime {
 }
 
 impl pallet_succinct::Config for Runtime {
-	type MaxPublicInputsLength = MaxPublicInputsLength;
 	type MaxProofLength = MaxProofLength;
 	type MaxVerificationKeyLength = MaxVerificationKeyLength;
-
-	type MinSyncCommitteeParticipants = MinSyncCommitteeParticipants;
-	type SyncCommitteeSize = SyncCommitteeSize;
-	type FinalizedRootIndex = FinalizedRootIndex;
-	type NextSyncCommitteeIndex = NextSyncCommitteeIndex;
-	type ExecutionStateRootIndex = ExecutionStateRootIndex;
-
 	type MessageVersion = MessageVersion;
-	type MinLightClientDelay = MinLightClientDelay;
 	type MessageMappingStorageIndex = MessageMappingStorageIndex;
 	type StepFunctionId = StepFunctionId;
 	type RotateFunctionId = RotateFunctionId;

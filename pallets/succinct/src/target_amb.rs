@@ -67,42 +67,36 @@ pub fn decode_message_data(message: Vec<u8>) -> Result<MessageData, AMBError> {
 
 	Ok(MessageData {
 		recipient_address: H256::from_slice(receipient_address.as_slice()),
-		amount: U256::from(amount),
+		amount,
 	})
 }
 
 pub fn decode_message(message: Vec<u8>) -> Message {
-	let version: u8;
-	let nonce: u64;
-	let source_chain_id: u32;
-	let destination_chain_id: u32;
-	let source_address: H160;
-	let destination_address: H256;
+	let version: u8 = message[0];
 
-	version = message[0];
 	let mut buf = [0u8; 8];
 	buf[..8].copy_from_slice(&message[1..9]);
-	nonce = u64::from_be_bytes(buf);
+	let nonce = u64::from_be_bytes(buf);
 
 	let mut buf_source_chain = [0u8; 4];
 	buf_source_chain[..4].copy_from_slice(&message[9..13]);
-	source_chain_id = u32::from_be_bytes(buf_source_chain);
+	let source_chain_id = u32::from_be_bytes(buf_source_chain);
 
 	let mut buf_source_address = [0u8; 20];
 	buf_source_address[..20].copy_from_slice(&message[13..33]);
-	source_address = H160(buf_source_address);
+	let source_address = H160(buf_source_address);
 
 	let mut buf_dest_chain = [0u8; 4];
 	buf_dest_chain[..4].copy_from_slice(&message[33..37]);
-	destination_chain_id = u32::from_be_bytes(buf_dest_chain);
+	let destination_chain_id = u32::from_be_bytes(buf_dest_chain);
 
 	let mut buf_dest_address = [0u8; 32];
 	buf_dest_address[..32].copy_from_slice(&message[37..69]);
-	destination_address = H256(buf_dest_address);
+	let destination_address = H256(buf_dest_address);
 
 	let data = message[69..].to_vec();
 
-	return Message {
+	Message {
 		version,
 		nonce,
 		source_chain_id,
@@ -110,12 +104,12 @@ pub fn decode_message(message: Vec<u8>) -> Message {
 		destination_chain_id,
 		destination_address,
 		data,
-	};
+	}
 }
 
 #[derive(Debug)]
 pub enum StorageError {
-	StorageError,
+	StorageValueError,
 	AccountNotFound,
 	CannotDecodeItems,
 }
@@ -130,17 +124,20 @@ pub fn get_storage_value(
 	let trie =
 		TrieDBBuilder::<EIP1186Layout<keccak256::KeccakHasher>>::new(&db, &storage_root).build();
 
-	if let Some(storage_root) = trie.get(&key).map_err(|_| StorageError::StorageError)? {
+	if let Some(storage_root) = trie
+		.get(&key)
+		.map_err(|_| StorageError::StorageValueError)?
+	{
 		let r = Rlp::new(storage_root.as_slice())
 			.data()
 			.map_err(|_| StorageError::CannotDecodeItems)?;
-		if r.len() == 0 {
+		if r.is_empty() {
 			return Err(StorageError::CannotDecodeItems);
 		}
 
 		Ok(H256::from_slice(r))
 	} else {
-		Err(StorageError::StorageError)
+		Err(StorageError::StorageValueError)
 	}
 }
 
@@ -154,11 +151,13 @@ pub fn get_storage_root(
 	let trie =
 		TrieDBBuilder::<EIP1186Layout<keccak256::KeccakHasher>>::new(&db, &state_root).build();
 
-	let result: DBValue = trie.get(&key.as_slice()).unwrap().unwrap();
+	let result: DBValue = trie.get(key.as_slice()).unwrap().unwrap();
 	let byte_slice = result.as_slice();
 	let r = Rlp::new(byte_slice);
 
-	let item_count = r.item_count().map_err(|_| StorageError::StorageError)?;
+	let item_count = r
+		.item_count()
+		.map_err(|_| StorageError::StorageValueError)?;
 
 	if item_count != 4 {
 		return Err(StorageError::AccountNotFound);
@@ -166,9 +165,9 @@ pub fn get_storage_root(
 
 	let item = r
 		.at(2)
-		.map_err(|_| StorageError::StorageError)?
+		.map_err(|_| StorageError::StorageValueError)?
 		.data()
-		.map_err(|_| StorageError::StorageError)?;
+		.map_err(|_| StorageError::StorageValueError)?;
 
 	let storage_root = H256::from_slice(item);
 
@@ -223,8 +222,6 @@ mod test {
 			U256::from(message_decoded.destination_address.as_bytes())
 		);
 		assert_eq!(vec![103, 137], message_decoded.data);
-
-		println!("{:?}", message_decoded.nonce)
 	}
 
 	#[test]

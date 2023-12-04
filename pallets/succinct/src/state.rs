@@ -79,26 +79,23 @@ impl PublicSignals {
 pub struct State {
 	pub updater: H256,
 	pub slots_per_period: u64,
-	pub source_chain_id: u32,
 	pub finality_threshold: u16,
 }
 
-#[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Default)]
-pub struct VerifiedStepCallStore {
+#[derive(Default, Debug)]
+pub struct VerifiedStep {
 	pub verified_function_id: H256,
 	pub verified_input_hash: H256,
 	pub verified_output: VerifiedStepOutput,
 }
 
-impl VerifiedStepCallStore {
+impl VerifiedStep {
 	pub(crate) const fn new(
 		verified_function_id: H256,
 		verified_input_hash: H256,
 		verified_output: VerifiedStepOutput,
-	) -> VerifiedStepCallStore {
-		VerifiedStepCallStore {
+	) -> VerifiedStep {
+		VerifiedStep {
 			verified_function_id,
 			verified_input_hash,
 			verified_output,
@@ -106,22 +103,20 @@ impl VerifiedStepCallStore {
 	}
 }
 
-#[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default)]
-pub struct VerifiedRotateCallStore {
+pub struct VerifiedRotate {
 	pub verified_function_id: H256,
 	pub verified_input_hash: H256,
 	pub sync_committee_poseidon: U256,
 }
 
-impl VerifiedRotateCallStore {
+impl VerifiedRotate {
 	pub(crate) const fn new(
 		verified_function_id: H256,
 		verified_input_hash: H256,
 		sync_committee_poseidon: U256,
-	) -> VerifiedRotateCallStore {
-		VerifiedRotateCallStore {
+	) -> VerifiedRotate {
+		VerifiedRotate {
 			verified_function_id,
 			verified_input_hash,
 			sync_committee_poseidon,
