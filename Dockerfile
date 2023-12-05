@@ -24,8 +24,8 @@ RUN cp ./target/release/data-avail .
 # =========================
 FROM debian:12.2-slim
 
-RUN apt update -y && \
-    apt install curl
+RUN apt update -y && apt install curl -y
+
 COPY --from=builder /da/src/data-avail /usr/local/bin/data-avail
 RUN chmod +x /usr/local/bin/data-avail
 
