@@ -8,6 +8,7 @@ use avail_core::{
 	OpaqueExtrinsic,
 };
 use da_runtime::{apis::DataAvailApi, Runtime, UncheckedExtrinsic};
+use frame_support::BoundedVec;
 use frame_system::{limits::BlockLength, submitted_data};
 use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
@@ -28,22 +29,29 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
 	generic::{Digest, SignedBlock},
-	traits::{Block as BlockT, Header},
+	traits::{Block as BlockT, ConstU32, Header},
 };
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
 
+pub type MaxRows = ConstU32<64>;
+pub type Rows = BoundedVec<u32, MaxRows>;
+
+pub type MaxCells = ConstU32<64>;
+pub type Cells = BoundedVec<Cell, MaxCells>;
+
+#[cfg(feature = "metrics")]
+pub mod metrics;
+
+/// # TODO
+/// - [ ] Update type definitions for RPCs in our subxt & explorer.
 #[rpc(client, server)]
 pub trait KateApi<Block>
 where
 	Block: BlockT,
 {
 	#[method(name = "kate_queryRows")]
-	async fn query_rows(
-		&self,
-		rows: Vec<u32>,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<Vec<u8>>>;
+	async fn query_rows(&self, rows: Rows, at: Option<HashOf<Block>>) -> RpcResult<Vec<Vec<u8>>>;
 
 	#[method(name = "kate_queryAppData")]
 	async fn query_app_data(
@@ -53,7 +61,7 @@ where
 	) -> RpcResult<Vec<Option<Vec<u8>>>>;
 
 	#[method(name = "kate_queryProof")]
-	async fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>>;
+	async fn query_proof(&self, cells: Cells, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>>;
 
 	#[method(name = "kate_blockLength")]
 	async fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength>;
@@ -64,47 +72,6 @@ where
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<DataProof>;
-}
-
-#[cfg(feature = "metrics")]
-#[rpc(client, server)]
-pub trait KateApiMetrics<Block>
-where
-	Block: BlockT,
-{
-	#[method(name = "kate_queryRowsMetrics")]
-	async fn query_rows_metrics(
-		&self,
-		rows: Vec<u32>,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<(Vec<Vec<u8>>, u128)>;
-
-	#[method(name = "kate_queryAppDataMetrics")]
-	async fn query_app_data_metrics(
-		&self,
-		app_id: AppId,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<(Vec<Option<Vec<u8>>>, u128)>;
-
-	#[method(name = "kate_queryProofMetrics")]
-	async fn query_proof_metrics(
-		&self,
-		cells: Vec<Cell>,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<(Vec<u8>, u128)>;
-
-	#[method(name = "kate_blockLengthMetrics")]
-	async fn query_block_length_metrics(
-		&self,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<(BlockLength, u128)>;
-
-	#[method(name = "kate_queryDataProofMetrics")]
-	async fn query_data_proof_metrics(
-		&self,
-		transaction_index: u32,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<(DataProof, u128)>;
 }
 
 #[allow(clippy::type_complexity)]
@@ -308,11 +275,7 @@ where
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: DataAvailApi<Block>,
 {
-	async fn query_rows(
-		&self,
-		rows: Vec<u32>,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<Vec<u8>>> {
+	async fn query_rows(&self, rows: Rows, at: Option<HashOf<Block>>) -> RpcResult<Vec<Vec<u8>>> {
 		let signed_block = self.get_signed_and_finalized_block(at)?;
 		let evals = self.get_eval_grid(&signed_block).await?;
 
@@ -368,8 +331,7 @@ where
 		Ok(all_rows)
 	}
 
-	//TODO allocate static thread pool, just for RPC related work, to free up resources, for the block producing processes.
-	async fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
+	async fn query_proof(&self, cells: Cells, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
 		let signed_block = self.get_signed_and_finalized_block(at)?;
 		let evals = self.get_eval_grid(&signed_block).await?;
 		let polys = self.get_poly_grid(&signed_block).await?;
@@ -437,81 +399,6 @@ where
 
 		DataProof::try_from(&merkle_proof)
 			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e))
-	}
-}
-
-#[cfg(feature = "metrics")]
-#[async_trait]
-impl<Client, Block> KateApiMetricsServer<Block> for Kate<Client, Block>
-where
-	Block: BlockT<Extrinsic = OpaqueExtrinsic>,
-	<Block as BlockT>::Header: ExtendedHeader<
-		<<Block as BlockT>::Header as Header>::Number,
-		<Block as BlockT>::Hash,
-		Digest,
-		HeaderExtension,
-	>,
-	Client: Send + Sync + 'static,
-	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
-	Client::Api: DataAvailApi<Block>,
-{
-	async fn query_rows_metrics(
-		&self,
-		rows: Vec<u32>,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<(Vec<Vec<u8>>, u128)> {
-		let start = std::time::Instant::now();
-		let result = self.query_rows(rows, at).await;
-		let elapsed = start.elapsed();
-
-		result.map(|r| (r, elapsed.as_micros()))
-	}
-
-	async fn query_app_data_metrics(
-		&self,
-		app_id: AppId,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<(Vec<Option<Vec<u8>>>, u128)> {
-		let start = std::time::Instant::now();
-		let result = self.query_app_data(app_id, at).await;
-		let elapsed = start.elapsed();
-
-		result.map(|r| (r, elapsed.as_micros()))
-	}
-
-	async fn query_proof_metrics(
-		&self,
-		cells: Vec<Cell>,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<(Vec<u8>, u128)> {
-		let start = std::time::Instant::now();
-		let result = self.query_proof(cells, at).await;
-		let elapsed = start.elapsed();
-
-		result.map(|r| (r, elapsed.as_micros()))
-	}
-
-	async fn query_block_length_metrics(
-		&self,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<(BlockLength, u128)> {
-		let start = std::time::Instant::now();
-		let result = self.query_block_length(at).await;
-		let elapsed = start.elapsed();
-
-		result.map(|r| (r, elapsed.as_micros()))
-	}
-
-	async fn query_data_proof_metrics(
-		&self,
-		transaction_index: u32,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<(DataProof, u128)> {
-		let start = std::time::Instant::now();
-		let result = self.query_data_proof(transaction_index, at).await;
-		let elapsed = start.elapsed();
-
-		result.map(|r| (r, elapsed.as_micros()))
 	}
 }
 

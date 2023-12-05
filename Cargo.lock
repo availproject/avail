@@ -4526,6 +4526,7 @@ dependencies = [
  "avail-base",
  "avail-core",
  "da-runtime",
+ "frame-support",
  "frame-system",
  "jsonrpsee",
  "kate",

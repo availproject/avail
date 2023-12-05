@@ -1,6 +1,7 @@
 use anyhow::Result;
 use structopt::StructOpt;
 // Re-export some tools from `subxt`
+pub use api::runtime_types::bounded_collections::bounded_vec::BoundedVec;
 pub use subxt::{config, rpc, utils};
 use subxt::{
 	config::substrate::BlakeTwo256,
@@ -20,6 +21,7 @@ pub type AccountIndex = u32;
 pub type Address = MultiAddress<AccountId, AccountIndex>;
 pub type Call = api::runtime_types::da_runtime::RuntimeCall;
 pub type SignaturePayload = (Address, Signature, AvailExtrinsicParams);
+pub type AppId = api::runtime_types::avail_core::AppId;
 
 /// Avail Blockchain configuration
 impl Config for AvailConfig {
@@ -38,6 +40,7 @@ pub mod avail {
 
 	pub type Client = subxt::OnlineClient<AvailConfig>;
 	pub type TxProgress = subxt::tx::TxProgress<AvailConfig, Client>;
+	pub type TxInBlock = subxt::tx::TxInBlock<AvailConfig, Client>;
 	pub type AppUncheckedExtrinsic =
 		crate::primitives::app_unchecked_extrinsic::AppUncheckedExtrinsic;
 	pub type Pair = sp_core::sr25519::Pair;
@@ -80,27 +83,94 @@ pub async fn build_client<U: AsRef<str>>(
 	Ok(api)
 }
 
+pub async fn submit_data<ID, D>(
+	client: &OnlineClient<AvailConfig>,
+	signer: &avail::PairSigner,
+	data: D,
+	app_id: ID,
+) -> Result<avail::TxProgress>
+where
+	ID: Into<AppId>,
+	D: Into<Vec<u8>>,
+{
+	let data = BoundedVec(data.into());
+	let call = api::tx().data_availability().submit_data(data);
+	let tx = tx_async_send!(client, &call, signer, app_id);
+	Ok(tx)
+}
+
+pub async fn submit_data_in_block<ID, D>(
+	client: &OnlineClient<AvailConfig>,
+	signer: &avail::PairSigner,
+	data: D,
+	app_id: ID,
+) -> Result<avail::TxInBlock>
+where
+	ID: Into<AppId>,
+	D: Into<Vec<u8>>,
+{
+	let tx_in_block = submit_data(client, signer, data, app_id)
+		.await?
+		.wait_for_in_block()
+		.await?;
+	Ok(tx_in_block)
+}
+
+pub async fn submit_data_finalized<ID, D>(
+	client: &OnlineClient<AvailConfig>,
+	signer: &avail::PairSigner,
+	data: D,
+	app_id: ID,
+) -> Result<avail::TxInBlock>
+where
+	ID: Into<AppId>,
+	D: Into<Vec<u8>>,
+{
+	let tx_in_block = submit_data(client, signer, data, app_id)
+		.await?
+		.wait_for_finalized()
+		.await?;
+	Ok(tx_in_block)
+}
+
 #[macro_export]
-macro_rules! tx_send {
+macro_rules! tx_async_send {
+	($client: expr, $call: expr, $signer: expr, $app_id: expr) => {{
+		let ext_params = $crate::primitives::AvailExtrinsicParams::new_with_app_id($app_id.into());
+		$client
+			.tx()
+			.sign_and_submit_then_watch($call, $signer, ext_params)
+			.await?
+	}};
 	($client: expr, $call: expr, $signer: expr) => {
 		$client
 			.tx()
 			.sign_and_submit_then_watch_default($call, $signer)
-			.await?
-			.wait_for_in_block()
-			.await?
-			.wait_for_success()
 			.await?
 	};
 }
 
 #[macro_export]
-macro_rules! tx_asend {
+macro_rules! tx_send_in_block {
+	($client: expr, $call: expr, $signer: expr, $app_id: expr) => {
+		$crate::tx_async_send!($client, $call, $signer, $app_id)
+			.wait_for_in_block()
+			.await?
+	};
 	($client: expr, $call: expr, $signer: expr) => {
-		$client
-			.tx()
-			.sign_and_submit_then_watch_default($call, $signer)
-			.await
+		$crate::tx_async_send!($client, $call, $signer)
+			.wait_for_in_block()
+			.await?
+	};
+}
+
+#[macro_export]
+macro_rules! tx_send_in_finalized {
+	($client: expr, $call: expr, $signer: expr, $app_id: expr) => {
+		$crate::tx_async_send!($client, $call, $signer, $app_id).wait_for_finalized_success()
+	};
+	($client: expr, $call: expr, $signer: expr) => {
+		$crate::tx_async_send!($client, $call, $signer).wait_for_finalized_success()
 	};
 }
 

@@ -9,7 +9,9 @@ edition = "2021"
 avail-base = { path = "../../base", default-features = false }
 da-runtime = { path = "../../runtime", default-features = false }
 
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false, features = ["runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false, features = [
+	"runtime",
+] }
 kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false }
 kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false }
 
@@ -21,13 +23,14 @@ rayon = { version = "1.5.2" }
 # Substrate
 sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 frame-system = { path = "../../pallets/system", default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-moka = { version = "0.12.1", features = [ "future" ] }
+moka = { version = "0.12.1", features = ["future"] }
 
 [features]
-default = [ "std" ]
+default = ["std", "metrics"]
 std = [
 	"avail-base/std",
 	"avail-core/std",
@@ -37,6 +40,7 @@ std = [
 	"kate/std",
 	"sp-api/std",
 	"sp-runtime/std",
+	"frame-support/std",
 ]
 metrics = []
 
