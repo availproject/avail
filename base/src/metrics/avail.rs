@@ -79,21 +79,6 @@ impl HeaderExtensionBuilderMetrics {
 			buckets.to_vec(),
 		)?;
 
-		let buckets = [32.0, 64.0, 128.0, 256.0, 512.0];
-		let block_dims_rows = custom_histogram(
-			registry,
-			"avail_header_extension_builder_block_dims_rows",
-			"Header Extension Builder - Block Dimensions Rows",
-			buckets.to_vec(),
-		)?;
-
-		let block_dims_cols = custom_histogram(
-			registry,
-			"avail_header_extension_builder_block_dims_cols",
-			"Header Extension Builder - Block Dimensions Columns",
-			buckets.to_vec(),
-		)?;
-
 		let buckets = [4.0, 6.0, 8.0, 12.0, 16.0, 32.0, 64.0, 128.0, 256.0, 512.0];
 		let grid_rows = custom_histogram(
 			registry,
