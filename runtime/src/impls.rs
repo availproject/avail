@@ -212,7 +212,7 @@ parameter_types! {
 	pub const OperationalFeeMultiplier: u8 = 5u8;
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(50); // target_utilization 50%
 	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000); // 0.000001
-	pub LenAdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 200); // 0.005
+	pub LenAdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(2, 1000); // 0.002 to double the len_multiplier in one epoch
 	pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
 	pub MinLenMultiplier: Multiplier = Multiplier::from_u32(1);
 	pub MaximumMultiplier: Multiplier = Bounded::max_value();
