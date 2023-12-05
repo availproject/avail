@@ -67,7 +67,6 @@ fn linear_buckets(start: f64, width: f64, count: usize) -> Vec<f64> {
 		.collect()
 }
 
-/// Creates an histogram using linear buckets
 fn custom_histogram(
 	registry: &Registry,
 	name: &str,
