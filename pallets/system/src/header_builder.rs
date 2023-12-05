@@ -116,7 +116,7 @@ pub fn build_extension(
 
 	// couscous has pp for degree upto 1024
 	static PMP: Lazy<kate::pmp::m1_blst::M1NoPrecomp> =
-		Lazy::new(|| kate::couscous::multiproof_params());
+		Lazy::new(kate::couscous::multiproof_params);
 
 	const MIN_WIDTH: usize = 4;
 	let timer = std::time::Instant::now();
@@ -149,6 +149,10 @@ pub fn build_extension(
 	let rows = grid.dims().rows().get();
 	let cols = grid.dims().cols().get();
 
+	// Grid Metrics
+	HeaderExtensionBuilderMetrics::observe_grid_rows(rows as f64);
+	HeaderExtensionBuilderMetrics::observe_grid_cols(cols as f64);
+
 	let app_lookup = grid.lookup().clone();
 	// **NOTE:** Header extension V2 is not yet enable by default.
 	if cfg!(feature = "header_extension_v2") {
@@ -161,7 +165,7 @@ pub fn build_extension(
 			corrupt_commitment(_block_number, &mut kate.commitment);
 		}
 
-		// Metrics
+		// Total Execution Time Metrics
 		HeaderExtensionBuilderMetrics::observe_total_execution_time(
 			build_extension_start.elapsed(),
 		);
@@ -185,7 +189,7 @@ pub fn build_extension(
 			corrupt_commitment(_block_number, &mut kate.commitment);
 		}
 
-		// Metrics
+		// Total Execution Time Metrics
 		HeaderExtensionBuilderMetrics::observe_total_execution_time(
 			build_extension_start.elapsed(),
 		);
