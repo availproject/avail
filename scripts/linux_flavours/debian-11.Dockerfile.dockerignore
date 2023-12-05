@@ -1,5 +1,9 @@
-target
 .github
 .maintain
+.vscode
 avail-subxt
-e2e/target
+dockerfiles
+e2e
+examples
+output
+scripts
