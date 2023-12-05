@@ -17,4 +17,4 @@ RUN cp target/release/data-avail /bin/
 
 VOLUME ["/output"]
 ENTRYPOINT ["/bin/data-avail"]
-CMD ["--chain=kate", "--name=MyAvailNode", "-d=/output/data", "--rpc-methods=unsafe", "--unsafe-rpc-external", "--rpc-cors=all"]
+CMD ["--chain=goldberg", "--name=MyAvailNode", "-d=/output/data", "--rpc-methods=unsafe", "--unsafe-rpc-external", "--rpc-cors=all"]
