@@ -2,7 +2,7 @@
 use core::num::NonZeroU16;
 use std::{marker::Sync, sync::Arc};
 
-use avail_base::metrics::RPCMetricAdapter;
+use avail_base::metrics::avail::KateRpcMetrics;
 use avail_core::{
 	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, DataProof,
 	OpaqueExtrinsic,
@@ -229,10 +229,7 @@ where
 
 		self.eval_grid_cache
 			.try_get_with(block_hash, async move {
-				use kate::metrics::Metrics; // TODO: Rework this for the correct metrics
-				let metrics = RPCMetricAdapter {};
 				// build block data extension and cache it
-				let t1 = std::time::Instant::now();
 				let xts_by_id: Vec<AppExtrinsic> = signed_block
 					.block
 					.extrinsics()
@@ -259,15 +256,9 @@ where
 				)
 				.map_err(|e| internal_err!("Building evals grid failed: {:?}", e))?;
 
-				let t2 = std::time::Instant::now();
-				metrics.preparation_block_time(t2 - t1);
-
 				evals = evals
 					.extend_columns(NonZeroU16::new(2).expect("2>0"))
 					.map_err(|e| internal_err!("Error extending grid {:?}", e))?;
-
-				let t3 = std::time::Instant::now();
-				metrics.extended_block_time(t3 - t2);
 
 				Ok::<_, JsonRpseeError>(Arc::new(evals))
 			})
@@ -313,6 +304,8 @@ where
 		rows: Vec<u32>,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Vec<u8>>> {
+		let execution_start = std::time::Instant::now();
+
 		let signed_block = self.get_signed_and_finalized_block(at)?;
 		let evals = self.get_eval_grid(&signed_block).await?;
 
@@ -329,6 +322,9 @@ where
 			data_rows.push(data);
 		}
 
+		// Execution Time Metric
+		KateRpcMetrics::observe_query_rows_execution_time(execution_start.elapsed());
+
 		Ok(data_rows)
 	}
 
@@ -337,6 +333,8 @@ where
 		app_id: AppId,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<Vec<u8>>>> {
+		let execution_start = std::time::Instant::now();
+
 		let signed_block = self.get_signed_and_finalized_block(at)?;
 		let evals = self.get_eval_grid(&signed_block).await?;
 
@@ -365,11 +363,16 @@ where
 			);
 		}
 
+		// Execution Time Metric
+		KateRpcMetrics::observe_query_app_data_execution_time(execution_start.elapsed());
+
 		Ok(all_rows)
 	}
 
 	//TODO allocate static thread pool, just for RPC related work, to free up resources, for the block producing processes.
 	async fn query_proof(&self, cells: Vec<Cell>, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
+		let execution_start = std::time::Instant::now();
+
 		let signed_block = self.get_signed_and_finalized_block(at)?;
 		let evals = self.get_eval_grid(&signed_block).await?;
 		let polys = self.get_poly_grid(&signed_block).await?;
@@ -399,15 +402,24 @@ where
 			})
 			.collect::<Result<Vec<_>, _>>()?;
 		let proof: Vec<u8> = proof.into_iter().flatten().collect();
+
+		// Execution Time Metric
+		KateRpcMetrics::observe_query_proof_execution_time(execution_start.elapsed());
+
 		Ok(proof)
 	}
 
 	async fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength> {
+		let execution_start = std::time::Instant::now();
+
 		let at = self.at_or_best(at);
 		let api = self.client.runtime_api();
 		let block_length = api
 			.block_length(at)
 			.map_err(|e| internal_err!("Length of best block({:?}): {:?}", at, e))?;
+
+		// Execution Time Metric
+		KateRpcMetrics::observe_query_block_length_execution_time(execution_start.elapsed());
 
 		Ok(block_length)
 	}
@@ -417,8 +429,9 @@ where
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<DataProof> {
-		let block = self.get_signed_block(at)?.block;
+		let execution_start = std::time::Instant::now();
 
+		let block = self.get_signed_block(at)?.block;
 		let calls = block
 			.extrinsics()
 			.iter()
@@ -435,8 +448,13 @@ where
 			)
 		})?;
 
-		DataProof::try_from(&merkle_proof)
-			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e))
+		let data_proof = DataProof::try_from(&merkle_proof)
+			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e));
+
+		// Execution Time Metric
+		KateRpcMetrics::observe_query_data_proof_execution_time(execution_start.elapsed());
+
+		data_proof
 	}
 }
 
