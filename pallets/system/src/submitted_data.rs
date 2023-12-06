@@ -70,7 +70,10 @@ impl<C> Filter<C> for () {
 	}
 }
 
-fn extract_and_inspect<E>(opaque: &OpaqueExtrinsic, metrics: RcMetrics) -> Vec<Vec<u8>>
+fn extract_and_inspect<E>(
+	opaque: &OpaqueExtrinsic,
+	metrics: RcMetrics,
+) -> (Vec<Vec<u8>>, Vec<Vec<u8>>)
 where
 	E: Extractor,
 	E::Error: Debug,
@@ -79,12 +82,21 @@ where
 	if let Err(e) = extracted.as_ref() {
 		log::error!("Extractor cannot decode opaque: {e:?}");
 	}
-	extracted
+
+	let blob_root = extracted
 		.unwrap_or_default()
 		.0
 		.into_iter()
 		.filter(|data| !data.is_empty())
-		.collect()
+		.collect();
+	let data_root = extracted
+		.unwrap_or_default()
+		.1
+		.into_iter()
+		.filter(|data| !data.is_empty())
+		.collect();
+
+	(blob_root, data_root)
 }
 
 /// Construct a root hash of Binary Merkle Tree created from given filtered `app_extrincs`.
@@ -95,10 +107,15 @@ where
 	I: Iterator<Item = &'a OpaqueExtrinsic>,
 {
 	let metrics = Metrics::new_shared();
-	let submitted_data =
-		opaque_itr.flat_map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)));
 
-	root(submitted_data, Rc::clone(&metrics))
+	let submitted_data = opaque_itr.flat_map(|ext| {
+		let extracted = extract_and_inspect::<E>(ext, Rc::clone(&metrics));
+		extracted
+	});
+
+	let blob_root = root(submitted_data, Rc::clone(&metrics));
+	blob_root
+	// root(vec![blob_root].into_iter(), Rc::clone(&metrics))
 }
 
 /// Construct a root hash of Binary Merkle Tree created from given filtered `calls`.
@@ -149,11 +166,20 @@ where
 	I: Iterator<Item = &'a OpaqueExtrinsic>,
 {
 	let metrics = Metrics::new_shared();
-	let submitted_data = app_extrinsics
-		.flat_map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
-		.collect::<Vec<_>>();
+	// let submitted_data = app_extrinsics
+	//     .map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
+	//     .collect::<(Vec<_>, Vec<_>)>();
 
-	proof(submitted_data, data_index, Rc::clone(&metrics))
+	let submitted_data = app_extrinsics
+		.map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
+		.map(|(l, r)| (l.iter().flatten(), r.iter().flatten()))
+		.collect::<Vec<(_, _)>>();
+
+	// todo generate proof and return
+	let blob_root = proof(submitted_data, data_index, Rc::clone(&metrics));
+	let bridge_root = proof(submitted_data, data_index, Rc::clone(&metrics));
+
+	blob_root
 }
 
 /// Creates the Merkle Proof of the submitted data items in `calls` filtered by `F` and
@@ -267,24 +293,24 @@ mod test {
 	use sp_core::{keccak_256, H256};
 	use std::vec;
 
-	use crate::submitted_data::{calls_proof, proof, Filter, Metrics, RcMetrics};
+	use crate::submitted_data::{calls_proof, proof, root, Filter, Metrics, RcMetrics};
 
 	// dummy filter implementation that skips empty strings in vector
 	impl<C> Filter<C> for String
 	where
 		String: From<C>,
 	{
-		fn filter(d: C, _: RcMetrics) -> Vec<Vec<u8>> {
+		fn filter(d: C, _: RcMetrics) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
 			let s = String::try_from(d).unwrap();
 			if s.is_empty() {
-				vec![]
+				(vec![], vec![])
 			} else {
-				vec![s.into_bytes()]
+				(vec![s.into_bytes()], vec![])
 			}
 		}
 
-		fn process_calls(_: Vec<C>, _: &RcMetrics) -> Vec<Vec<u8>> {
-			vec![]
+		fn process_calls(_: Vec<C>, _: &RcMetrics) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
+			(vec![], vec![])
 		}
 	}
 
@@ -306,12 +332,14 @@ mod test {
 		println!("hashed 1 {:?}", H256(keccak_256(tx2_hash.as_slice())));
 		println!("hashed 2 {:?}", H256(keccak_256(tx3_hash.as_slice())));
 
-		let submitted_data = vec![tx1_hash.to_vec(), tx2_hash.to_vec(), tx3_hash.to_vec()];
+		let submitted_data: Vec<u8> = vec![];
 		let metrics = Metrics::new_shared();
 
-		let proof = proof(submitted_data, 0, metrics);
+		// let proof = proof(submitted_data, 0, metrics);
 
-		println!("{:?}", proof);
+		let root = root(vec![].into_iter(), metrics);
+
+		println!("{:?}", root);
 	}
 
 	#[test]
