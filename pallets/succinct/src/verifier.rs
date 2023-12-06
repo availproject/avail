@@ -281,6 +281,8 @@ mod tests {
 
 	#[test]
 	fn test_zk_step_with_serde() {
+		// TODO: Read from step.json
+
 		let vk = r#"{"vk_json":{
 			"protocol": "groth16",
 			"curve": "bn128",
