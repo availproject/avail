@@ -325,19 +325,20 @@ mod multiplier_tests {
 					let lm = System::next_length_multiplier();
 
 					let da_submission_weight =
-						da_control::weight_helper::submit_data::<Runtime>(tx_len).0;
-					let fee =
-						<Runtime as pallet_transaction_payment::Config>::WeightToFee::weight_to_fee(
-							&da_submission_weight,
-						);
-					let inclusion_fee = base_fee.saturating_add(len_fee).saturating_add(fee);
+						da_control::weight_helper::submit_data::<Runtime>(tx_len);
+					let dispatch_info = DispatchInfo {
+						weight: da_submission_weight.0,
+						class: da_submission_weight.1,
+						pays_fee: Pays::Yes,
+					};
+					let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
 
 					println!(
-						"Utilisation {}%, new lm = {:?}. Fee at this point is: {} units / {} MICRO_AVL",
+						"Utilisation {}%, lm = {:?}. Fee at this point is: {} units / {} MICRO_AVL",
 						utilization_percent,
 						lm,
-						inclusion_fee,
-						inclusion_fee / MICRO_AVL,
+						tx_fee,
+						tx_fee / MICRO_AVL,
 					);
 				});
 			}
