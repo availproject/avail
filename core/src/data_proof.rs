@@ -58,7 +58,7 @@ pub enum DataProofTryFromError {
 }
 
 #[cfg(feature = "runtime")]
-impl<H, T> core::convert::TryFrom<&MerkleProof<H, T>> for DataProof
+impl<H, T> core::convert::TryFrom<(&MerkleProof<H, T>, H256)> for DataProof
     where
         T: AsRef<[u8]>,
         H: PartialEq + Eq + AsRef<[u8]>,
