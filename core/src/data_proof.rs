@@ -58,7 +58,7 @@ pub enum DataProofTryFromError {
 }
 
 #[cfg(feature = "runtime")]
-impl<H, T> core::convert::TryFrom<(&MerkleProof<H, T>, H256)> for DataProof
+impl<H, T> core::convert::TryFrom<(MerkleProof<H, T>, H256)> for DataProof
     where
         T: AsRef<[u8]>,
         H: PartialEq + Eq + AsRef<[u8]>,
@@ -200,7 +200,7 @@ mod test {
     #[test_case(merkle_proof_idx(7) => Err(DataProofTryFromError::InvalidLeafIndex); "From invalid leaf index")]
     #[test_case(invalid_merkle_proof_zero_leaves() => Err(DataProofTryFromError::InvalidNumberOfLeaves); "From invalid number of leaves")]
     fn from_binary(
-        binary_proof: (&MerkleProof<H256, Vec<u8>>, H256),
+        binary_proof: (MerkleProof<H256, Vec<u8>>, H256),
     ) -> Result<DataProof, DataProofTryFromError> {
         let data_proof = DataProof::try_from(binary_proof)?;
         Ok(data_proof)
