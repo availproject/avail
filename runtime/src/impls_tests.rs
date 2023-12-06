@@ -4,7 +4,8 @@ mod multiplier_tests {
 	use crate::*;
 	use avail_core::currency::{CENTS, MICRO_AVL, MILLICENTS};
 	use frame_support::{
-		dispatch::DispatchClass,
+		dispatch::{DispatchClass, DispatchInfo, Pays},
+		traits::OnFinalize,
 		weights::{Weight, WeightToFee},
 	};
 	use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
@@ -245,77 +246,49 @@ mod multiplier_tests {
 	#[test]
 	fn weight_congested_chain_simulation() {
 		// `cargo test weight_congested_chain_simulation -- --nocapture` to get some insight.
-
 		sp_io::TestExternalities::default().execute_with(|| {
-			// almost full. The entire quota of normal transactions is taken.
+			// By default weight multiplier will be 1
+			let wm = TransactionPayment::next_fee_multiplier();
+			assert_eq!(wm, Multiplier::one());
 			let block_weight = BlockWeights::get()
 				.get(DispatchClass::Normal)
 				.max_total
 				.unwrap() - Weight::from_parts(100, 0);
 
-			// Default substrate weight.
-			// let tx_weight = frame_support::weights::constants::ExtrinsicBaseWeight::get();
-			let tx_len: usize = 100 * 1024; //100 Kb data
-			let da_submission_weight = da_control::weight_helper::submit_data::<Runtime>(tx_len).0;
-
-			let len_fee = TransactionPayment::length_to_fee(tx_len.try_into().unwrap());
-
-			let base_fee = TransactionPayment::weight_to_fee(
-				BlockWeights::get()
-					.get(DispatchClass::Normal)
-					.base_extrinsic,
+			let tx_len: usize = 1024 * 1024; //1 Mb data
+			let da_submission_weight = da_control::weight_helper::submit_data::<Runtime>(tx_len);
+			let dispatch_info = DispatchInfo {
+				weight: da_submission_weight.0,
+				class: da_submission_weight.1,
+				pays_fee: Pays::Yes,
+			};
+			let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
+			println!(
+				"Iteration: {}, wm: {:?},  Fee: {} units / {} MICRO_AVL",
+				0,
+				wm,
+				tx_fee,
+				tx_fee / MICRO_AVL,
 			);
-
 			run_with_system_weight(block_weight, || {
-				// initial value configured on module
-				let mut fm = Multiplier::one();
-				assert_eq!(fm, TransactionPayment::next_fee_multiplier());
-
 				let mut iterations: u32 = 0;
 				let mut day_count: u32 = 0;
-
-				let fee =
-					<Runtime as pallet_transaction_payment::Config>::WeightToFee::weight_to_fee(
-						&da_submission_weight,
-					);
-				let adjusted_fee = fm.saturating_mul_acc_int(fee);
-				let inclusion_fee = base_fee
-					.saturating_add(len_fee)
-					.saturating_add(adjusted_fee);
-				println!(
-					"Day {}, new fm = {:?}. Fee at this point is: {} units / {} MICRO_AVL",
-					day_count,
-					fm,
-					inclusion_fee,
-					inclusion_fee / MICRO_AVL,
-				);
 				loop {
-					let next = runtime_multiplier_update(fm);
-					// if no change, panic. This should never happen in this case.
-					if fm == next {
-						panic!("The fee should ever increase");
-					}
-					fm = next;
 					iterations += 1;
-					let fee =
-						<Runtime as pallet_transaction_payment::Config>::WeightToFee::weight_to_fee(
-							&da_submission_weight,
-						);
-					let adjusted_fee = fm.saturating_mul_acc_int(fee);
-					let inclusion_fee = base_fee
-						.saturating_add(len_fee)
-						.saturating_add(adjusted_fee);
-					if iterations % DAYS == 0 {
+					TransactionPayment::on_finalize(System::block_number());
+					let wm = TransactionPayment::next_fee_multiplier();
+					let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
+					if iterations % EPOCH_DURATION_IN_SLOTS == 0 {
 						day_count += 1;
 						println!(
-							"Day {}, new fm = {:?}. Fee at this point is: {} units / {} MICRO_AVL",
+							"Iteration: {}, wm: {:?},  Fee: {} units / {} MICRO_AVL",
 							day_count,
-							fm,
-							inclusion_fee,
-							inclusion_fee / MICRO_AVL,
+							wm,
+							tx_fee,
+							tx_fee / MICRO_AVL,
 						);
 					}
-					if day_count == 365u32 {
+					if day_count == 7u32 {
 						break;
 					}
 				}
