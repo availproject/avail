@@ -275,6 +275,63 @@ mod multiplier_tests {
 	}
 
 	#[test]
+	fn weight_congested_chain_simulation() {
+		use frame_support::traits::OnFinalize;
+		use pallet_transaction_payment::NextLengthMultiplier;
+		// `cargo test weight_congested_chain_simulation -- --nocapture` to get some insight.
+		sp_io::TestExternalities::default().execute_with(|| {
+			// By default weight multiplier will be 1
+			let wm = TransactionPayment::next_fee_multiplier();
+			assert_eq!(wm, Multiplier::one());
+			let block_weight = BlockWeights::get()
+				.get(DispatchClass::Normal)
+				.max_total
+				.unwrap() - Weight::from_parts(100, 0);
+
+			let tx_len: usize = 1024 * 1024; //1 Mb data
+			let da_submission_weight = da_control::weight_helper::submit_data::<Runtime>(tx_len);
+			let dispatch_info = DispatchInfo {
+				weight: da_submission_weight.0,
+				class: da_submission_weight.1,
+				pays_fee: Pays::Yes,
+			};
+			let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
+			println!(
+				"Epoch: {}, wm: {:?},  Fee: {} units / {} MICRO_AVL",
+				0,
+				wm,
+				tx_fee,
+				tx_fee / MICRO_AVL,
+			);
+			run_with_system_weight(block_weight, || {
+				let mut iterations: u32 = 0;
+				let mut day_count: u32 = 0;
+				loop {
+					iterations += 1;
+					TransactionPayment::on_finalize(System::block_number());
+					let wm = TransactionPayment::next_fee_multiplier();
+					// Neutralise the length multiplier effect
+					NextLengthMultiplier::<Runtime>::put(Multiplier::one());
+					let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
+					if iterations % EPOCH_DURATION_IN_SLOTS == 0 {
+						day_count += 1;
+						println!(
+							"Epoch: {}, wm: {:?},  Fee: {} units / {} MICRO_AVL",
+							day_count,
+							wm,
+							tx_fee,
+							tx_fee / MICRO_AVL,
+						);
+					}
+					if day_count == 7u32 {
+						break;
+					}
+				}
+			});
+		});
+	}
+
+	#[test]
 	fn length_congested_chain_simulation() {
 		use frame_support::traits::OnFinalize;
 		use pallet_transaction_payment::NextFeeMultiplier;
