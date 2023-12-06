@@ -5,9 +5,13 @@ mod multiplier_tests {
 	use avail_core::currency::{CENTS, MICRO_AVL, MILLICENTS};
 	use frame_support::{
 		dispatch::{DispatchClass, DispatchInfo, Pays},
+		traits::OnFinalize,
 		weights::{Weight, WeightToFee},
 	};
-	use pallet_transaction_payment::{LengthFeeAdjustment, Multiplier, TargetedFeeAdjustment};
+	use pallet_transaction_payment::{
+		LengthFeeAdjustment, Multiplier, NextFeeMultiplier, NextLengthMultiplier,
+		TargetedFeeAdjustment,
+	};
 	use sp_runtime::{
 		assert_eq_error_rate,
 		traits::{Convert, One, Zero},
@@ -276,8 +280,6 @@ mod multiplier_tests {
 
 	#[test]
 	fn weight_congested_chain_simulation() {
-		use frame_support::traits::OnFinalize;
-		use pallet_transaction_payment::NextLengthMultiplier;
 		// `cargo test weight_congested_chain_simulation -- --nocapture` to get some insight.
 		sp_io::TestExternalities::default().execute_with(|| {
 			// By default weight multiplier will be 1
@@ -297,7 +299,7 @@ mod multiplier_tests {
 			};
 			let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
 			println!(
-				"Epoch: {}, wm: {:?},  Fee: {} units / {} MICRO_AVL",
+				"Iteration: {}, wm: {:?},  Fee: {} units / {} MICRO_AVL",
 				0,
 				wm,
 				tx_fee,
@@ -316,7 +318,7 @@ mod multiplier_tests {
 					if iterations % EPOCH_DURATION_IN_SLOTS == 0 {
 						day_count += 1;
 						println!(
-							"Epoch: {}, wm: {:?},  Fee: {} units / {} MICRO_AVL",
+							"Iteration: {}, wm: {:?},  Fee: {} units / {} MICRO_AVL",
 							day_count,
 							wm,
 							tx_fee,
@@ -333,8 +335,6 @@ mod multiplier_tests {
 
 	#[test]
 	fn length_congested_chain_simulation() {
-		use frame_support::traits::OnFinalize;
-		use pallet_transaction_payment::NextFeeMultiplier;
 		// `cargo test length_congested_chain_simulation -- --nocapture` to get some insight.
 		sp_io::TestExternalities::default().execute_with(|| {
 			// By default length multiplier will be 1
@@ -354,7 +354,7 @@ mod multiplier_tests {
 			};
 			let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
 			println!(
-				"Epoch: {}, lm: {:?},  Fee: {} units / {} MICRO_AVL",
+				"Iteration: {}, lm: {:?},  Fee: {} units / {} MICRO_AVL",
 				0,
 				lm,
 				tx_fee,
@@ -373,7 +373,7 @@ mod multiplier_tests {
 					if iterations % EPOCH_DURATION_IN_SLOTS == 0 {
 						day_count += 1;
 						println!(
-							"Epoch: {}, lm: {:?},  Fee: {} units / {} MICRO_AVL",
+							"Iteration: {}, lm: {:?},  Fee: {} units / {} MICRO_AVL",
 							day_count,
 							lm,
 							tx_fee,
