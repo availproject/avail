@@ -65,7 +65,7 @@ impl<H, T> core::convert::TryFrom<(&MerkleProof<H, T>, H256)> for DataProof
 {
     type Error = DataProofTryFromError;
 
-    fn try_from(merkle_proof_data: (&MerkleProof<H, T>, H256)) -> Result<Self, Self::Error> {
+    fn try_from(merkle_proof_data: (MerkleProof<H, T>, H256)) -> Result<Self, Self::Error> {
         use crate::ensure;
         use DataProofTryFromError::*;
 
@@ -130,14 +130,14 @@ mod test {
     /// If `leaf_index >= number_of_leaves`, it will create a fake proof using the latest possible
     /// index and overwriting the proof. That case is used to test transformations into
     /// `DataProof`.
-    fn merkle_proof_idx(leaf_index: usize) -> MerkleProof<H256, Vec<u8>> {
+    fn merkle_proof_idx(leaf_index: usize) -> (MerkleProof<H256, Vec<u8>>, H256) {
         let leaves = leaves();
         let index = min(leaf_index, leaves.len() - 1);
 
         let mut proof = binary_merkle_tree::merkle_proof::<Keccak256, _, _>(leaves, index);
         proof.leaf_index = leaf_index;
 
-        proof
+        (proof, H256::zero())
     }
 
     fn invalid_merkle_proof_zero_leaves() -> MerkleProof<H256, Vec<u8>> {
@@ -152,6 +152,7 @@ mod test {
 
     fn expected_data_proof_1() -> Result<DataProof, DataProofTryFromError> {
         Ok(DataProof {
+            data_root: Default::default(),
             root: hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95").into(),
             proof: vec![
                 hex!("ad3228b676f7d3cd4284a5443f17f1962b36e491b30a40b2405849e597ba5fb5").into(),
@@ -166,6 +167,7 @@ mod test {
 
     fn expected_data_proof_0() -> Result<DataProof, DataProofTryFromError> {
         Ok(DataProof {
+            data_root: Default::default(),
             root: hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95").into(),
             proof: vec![
                 hex!("401617bc4f769381f86be40df0207a0a3e31ae0839497a5ac6d4252dfc35577f").into(),
@@ -180,6 +182,7 @@ mod test {
 
     fn expected_data_proof_6() -> Result<DataProof, DataProofTryFromError> {
         Ok(DataProof {
+            data_root: Default::default(),
             root: hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95").into(),
             proof: vec![
                 hex!("8663c7e2962f98579b883bf5e2179f9200ae3615ec6fc3bd8027a0de9973606a").into(),
@@ -197,9 +200,9 @@ mod test {
     #[test_case(merkle_proof_idx(7) => Err(DataProofTryFromError::InvalidLeafIndex); "From invalid leaf index")]
     #[test_case(invalid_merkle_proof_zero_leaves() => Err(DataProofTryFromError::InvalidNumberOfLeaves); "From invalid number of leaves")]
     fn from_binary(
-        binary_proof: MerkleProof<H256, Vec<u8>>,
+        binary_proof: (&MerkleProof<H256, Vec<u8>>, H256),
     ) -> Result<DataProof, DataProofTryFromError> {
-        let data_proof = DataProof::try_from(&binary_proof)?;
+        let data_proof = DataProof::try_from(binary_proof)?;
         Ok(data_proof)
     }
 }
