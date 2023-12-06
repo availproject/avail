@@ -46,7 +46,9 @@ jobs:
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source "$HOME/.cargo/env" && rustup show && cargo build --locked --release
-          tar czf target/release/x86_64-generic-linux-data-avail.tar.gz target/release/data-avail
+          pushd target/release
+          tar czf x86_64-generic-linux-data-avail.tar.gz data-avail
+          popd
 
       - uses: actions/upload-artifact@v2
         with:
@@ -71,8 +73,9 @@ jobs:
           rustup target add aarch64-unknown-linux-gnu
           sudo apt-get update && sudo apt-get install -y musl-tools clang gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev libc6-dev-arm64-cross
           env  BINDGEN_EXTRA_CLANG_ARGS='--sysroot /usr/aarch64-linux-gnu' CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=/usr/bin/aarch64-linux-gnu-gcc cargo build --release --target=aarch64-unknown-linux-gnu -p data-avail
-          tar czf target/aarch64-unknown-linux-gnu/release/arm64-generic-linux-data-avail.tar.gz target/aarch64-unknown-linux-gnu/release/data-avail
-
+          pushd target/aarch64-unknown-linux-gnu/release/
+          tar czf arm64-generic-linux-data-avail.tar.gz data-avail
+          popd
       - uses: actions/upload-artifact@v2
         with:
           name: arm64-generic-linux-data-avail-tar
