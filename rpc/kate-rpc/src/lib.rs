@@ -1,4 +1,5 @@
 #![deny(unused_crate_dependencies)]
+
 use core::num::NonZeroU16;
 use std::{marker::Sync, sync::Arc};
 
@@ -7,8 +8,10 @@ use avail_core::{
 	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, DataProof,
 	OpaqueExtrinsic,
 };
+use da_runtime::RuntimeCall;
 use da_runtime::{apis::DataAvailApi, Runtime, UncheckedExtrinsic};
-use frame_system::{limits::BlockLength, submitted_data};
+use frame_system::{limits::BlockLength, submitted_data, Call};
+use jsonrpsee::tracing::log;
 use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
@@ -20,6 +23,7 @@ use kate::{
 	pmp::m1_blst,
 	Seed,
 };
+
 use kate_recovery::matrix::Dimensions;
 use moka::future::Cache;
 use rayon::prelude::*;
@@ -29,6 +33,7 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::{
 	generic::{Digest, SignedBlock},
 	traits::{Block as BlockT, Header},
+	SaturatedConversion,
 };
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
@@ -383,6 +388,15 @@ where
 			.iter()
 			.flat_map(|extrinsic| UncheckedExtrinsic::try_from(extrinsic).ok())
 			.map(|extrinsic| extrinsic.function);
+
+		let transaction_call = calls.clone().nth(transaction_index as usize).unwrap();
+		match transaction_call {
+			RuntimeCall::DataAvailability(da_control::Call::submit_data { data }) => {
+				log::warn!("its ");
+			},
+
+			_ => {},
+		}
 
 		// Build the proof.
 		let merkle_proof = submitted_data::calls_proof::<Runtime, _, _>(calls, transaction_index)

@@ -769,17 +769,15 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 		calls: Vec<RuntimeCall>,
 		metrics: &submitted_data::RcMetrics,
 	) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
-		let filtered_blob = calls
+		let (blob_data, bridge_data): (Vec<_>, Vec<_>) = calls
 			.into_iter()
-			.flat_map(|call| Self::filter(call, Rc::clone(metrics)).0)
-			.collect();
+			.map(|call| Self::filter(call, Rc::clone(metrics)))
+			.unzip();
 
-		// let c = calls.clone();
-		// let filtered_bridge = c
-		//     .into_iter()
-		//     .flat_map(|call| Self::filter(call, Rc::clone(metrics)).1).collect();
-
-		(filtered_blob, vec![])
+		(
+			blob_data.into_iter().flatten().collect(),
+			bridge_data.into_iter().flatten().collect(),
+		)
 	}
 }
 

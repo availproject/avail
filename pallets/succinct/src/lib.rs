@@ -507,6 +507,29 @@ pub mod pallet {
 			// Index Tx in DB block.
 			let data_hash = keccak_256(&data);
 
+			// TODO decode message format
+			let message_data = MessageData {
+				recipient_address: H256([1u8; 32]),
+				amount: U256::zero(),
+			};
+
+			// let success = Self::transfer(message_data.amount, message_data.recipient_address)?;
+			// if success {
+			// 	Self::deposit_event(Event::<T>::ExecutedMessage {
+			// 		chain_id: message.source_chain_id,
+			// 		nonce: message.nonce,
+			// 		message_root,
+			// 		status: true,
+			// 	});
+			// } else {
+			// 	Self::deposit_event(Event::<T>::ExecutedMessage {
+			// 		chain_id: message.source_chain_id,
+			// 		nonce: message.nonce,
+			// 		message_root,
+			// 		status: false,
+			// 	});
+			// }
+
 			Self::deposit_event(Event::BridgeDataSubmitted {
 				who,
 				data_hash: H256(data_hash),

@@ -2,8 +2,10 @@ use core::fmt::Debug;
 
 use avail_core::OpaqueExtrinsic;
 use binary_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
+use frame_support::Hashable;
 use sp_core::H256;
 use sp_runtime::traits::Keccak256;
+use sp_std::vec;
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
 
 const LOG_TARGET: &str = "runtime::system::submitted_data";
@@ -83,14 +85,14 @@ where
 		log::error!("Extractor cannot decode opaque: {e:?}");
 	}
 
-	let blob_root = extracted
-		.unwrap_or_default()
+	let extracted_data = extracted.unwrap_or_default();
+
+	let blob_root = extracted_data
 		.0
 		.into_iter()
 		.filter(|data| !data.is_empty())
 		.collect();
-	let data_root = extracted
-		.unwrap_or_default()
+	let data_root = extracted_data
 		.1
 		.into_iter()
 		.filter(|data| !data.is_empty())
@@ -108,14 +110,17 @@ where
 {
 	let metrics = Metrics::new_shared();
 
-	let submitted_data = opaque_itr.flat_map(|ext| {
-		let extracted = extract_and_inspect::<E>(ext, Rc::clone(&metrics));
-		extracted
-	});
+	let (blob_data, bridge_data): (Vec<_>, Vec<_>) = opaque_itr
+		.map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
+		.unzip();
 
-	let blob_root = root(submitted_data, Rc::clone(&metrics));
-	blob_root
-	// root(vec![blob_root].into_iter(), Rc::clone(&metrics))
+	let blob_data = blob_data.into_iter().flatten();
+	let bridge_data = bridge_data.into_iter().flatten();
+
+	let blob_root = root(blob_data, Rc::clone(&metrics)).as_bytes().to_vec();
+	let bridge_root = root(bridge_data, Rc::clone(&metrics)).as_bytes().to_vec();
+	let root_data = vec![blob_root, bridge_root];
+	root(root_data.into_iter(), Rc::clone(&metrics))
 }
 
 /// Construct a root hash of Binary Merkle Tree created from given filtered `calls`.
@@ -170,14 +175,12 @@ where
 	//     .map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
 	//     .collect::<(Vec<_>, Vec<_>)>();
 
-	let submitted_data = app_extrinsics
-		.map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
-		.map(|(l, r)| (l.iter().flatten(), r.iter().flatten()))
-		.collect::<Vec<(_, _)>>();
+	// let (blob_data, bridge_data) = app_extrinsics
+	//     .map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
+	//     .unzip();
 
 	// todo generate proof and return
-	let blob_root = proof(submitted_data, data_index, Rc::clone(&metrics));
-	let bridge_root = proof(submitted_data, data_index, Rc::clone(&metrics));
+	let blob_root = proof(vec![], data_index, Rc::clone(&metrics));
 
 	blob_root
 }
@@ -192,7 +195,10 @@ where
 /// - The `merkle_proof` requires `ExactSizeIterator`, forcing to load all submitted data into
 /// memory. That would increase the memory footprint of the node significantly. We could fix this
 /// adding the number of submitted data items at `System` pallet.
-pub fn calls_proof<F, I, C>(calls: I, transaction_index: u32) -> Option<MerkleProof<H256, Vec<u8>>>
+pub fn calls_proof<F, I, C>(
+	mut calls: I,
+	transaction_index: u32,
+) -> Option<MerkleProof<H256, Vec<u8>>>
 where
 	F: Filter<C>,
 	I: Iterator<Item = C>,
@@ -202,6 +208,9 @@ where
 	let transaction_index = usize::try_from(transaction_index).ok()?;
 	let tx_max = transaction_index.checked_add(1)?;
 
+	// ===========
+
+	// ===========
 	// blob data
 	let submitted_data = calls
 		.map(|c| {
@@ -218,6 +227,8 @@ where
 		Some(data) if data.is_empty() => return None,
 		_ => (),
 	};
+
+	log::info!("submitted_data tx array {:?}", submitted_data);
 
 	let data_index = submitted_data
 		.iter()
@@ -290,6 +301,7 @@ where
 #[cfg(test)]
 mod test {
 	use codec::KeyedVec;
+	use hex_literal::hex;
 	use sp_core::{keccak_256, H256};
 	use std::vec;
 
@@ -336,8 +348,13 @@ mod test {
 		let metrics = Metrics::new_shared();
 
 		// let proof = proof(submitted_data, 0, metrics);
-
-		let root = root(vec![].into_iter(), metrics);
+		let blob_root = H256(hex!(
+			"044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d"
+		))
+		.as_bytes()
+		.to_vec();
+		let bridge_root = H256::zero().as_bytes().to_vec();
+		let root = root(vec![bridge_root, blob_root].into_iter(), metrics);
 
 		println!("{:?}", root);
 	}
@@ -424,5 +441,10 @@ mod test {
 			None,
 			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 15)
 		);
+	}
+
+	#[test]
+	fn test() {
+		let v = vec![vec![], vec!["a"]];
 	}
 }
