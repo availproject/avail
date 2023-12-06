@@ -28,3 +28,21 @@ export async function waitForBlockFinalization(api: ApiPromise, blockNumber: num
 
     return (await api.rpc.chain.getBlockHash(blockNumber)).toString();
 }
+
+export function prepareData(txCount: number): string[] {
+    const data: string[] = [];
+    
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    for (let i = 0; i < txCount; ++i) {
+        let array = '';
+        let counter = 0;
+        while (counter < 16 * 1024) {
+            array += characters.charAt(Math.floor(Math.random() * charactersLength));
+            counter += 1;
+        }
+        data.push(array);
+    }
+
+    return data;
+}

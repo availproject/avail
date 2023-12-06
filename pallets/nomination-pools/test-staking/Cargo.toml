@@ -1,0 +1,37 @@
+[package]
+name = "pallet-nomination-pools-test-staking"
+version = "1.0.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2021"
+license = "Apache-2.0"
+homepage = "https://substrate.io"
+repository = "https://github.com/paritytech/substrate/"
+description = "FRAME nomination pools pallet tests with the staking pallet"
+publish = false
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dev-dependencies]
+codec = { package = "parity-scale-codec", version = "3.6.1", features = ["derive"] }
+scale-info = { version = "2.0.1", features = ["derive"] }
+
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-staking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+
+frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+frame-election-provider-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+
+pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-staking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-bags-list = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-staking-reward-curve = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-nomination-pools = { version = "1.0.0-dev", path = ".." }
+
+sp-tracing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+log = { version = "0.4.0" }

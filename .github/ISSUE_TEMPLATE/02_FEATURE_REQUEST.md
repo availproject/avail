@@ -8,7 +8,7 @@ assignees: ""
 
 # Feature Request
 
-Check the [contributing guide](../../CONTRIBUTING.md)
+Check the [contributing guide](/.github/CONTRIBUTING.md)
 
 ## Summary
 <!-- Provide a brief summary of the feature you'd like to see added or improved. -->

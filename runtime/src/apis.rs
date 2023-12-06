@@ -1,8 +1,5 @@
 use crate::version::VERSION;
-use avail_core::{
-	currency::Balance, header::HeaderExtension, well_known_keys::KATE_PUBLIC_PARAMS,
-	OpaqueExtrinsic,
-};
+use avail_core::{currency::Balance, header::HeaderExtension, OpaqueExtrinsic};
 use frame_support::{
 	traits::{KeyOwnerProofSystem, Randomness},
 	weights::Weight,
@@ -27,13 +24,12 @@ use sp_version::RuntimeVersion;
 use crate::Identity;
 use crate::{
 	constants, mmr, AccountId, AuthorityDiscovery, Babe, Block, BlockNumber, EpochDuration,
-	Executive, Grandpa, Historical, Index, InherentDataExt, Mmr, OpaqueMetadata, Runtime,
-	RuntimeCall, Seed, SessionKeys, System, TransactionPayment,
+	Executive, Grandpa, Historical, Index, InherentDataExt, Mmr, NominationPools, OpaqueMetadata,
+	Runtime, RuntimeCall, Seed, SessionKeys, System, TransactionPayment,
 };
 
 decl_runtime_apis! {
 	pub trait DataAvailApi {
-		fn public_params() -> Vec<u8>;
 		fn block_length() -> BlockLength;
 		fn babe_vrf() -> Seed;
 	}
@@ -306,13 +302,25 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl crate::apis::DataAvailApi<Block> for Runtime {
-		fn public_params() -> Vec<u8> {
-			sp_io::storage::get(KATE_PUBLIC_PARAMS)
-				.map(|bytes| bytes.to_vec())
-				.unwrap_or_default()
+	impl pallet_nomination_pools_runtime_api::NominationPoolsApi<
+		Block,
+		AccountId,
+		Balance,
+	> for Runtime {
+		fn pending_rewards(member: AccountId) -> Balance {
+			NominationPools::api_pending_rewards(member).unwrap_or_default()
 		}
 
+		fn points_to_balance(pool_id: pallet_nomination_pools::PoolId, points: Balance) -> Balance {
+			NominationPools::api_points_to_balance(pool_id, points)
+		}
+
+		fn balance_to_points(pool_id: pallet_nomination_pools::PoolId, new_funds: Balance) -> Balance {
+			NominationPools::api_balance_to_points(pool_id, new_funds)
+		}
+	}
+
+	impl crate::apis::DataAvailApi<Block> for Runtime {
 		fn block_length() -> frame_system::limits::BlockLength {
 			frame_system::Pallet::<Runtime>::block_length()
 		}

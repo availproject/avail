@@ -120,6 +120,8 @@ where
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashFor<Block>>,
 {
+	#[cfg(feature = "kate-rpc-metrics")]
+	use kate_rpc::KateApiMetricsServer;
 	use kate_rpc::{Kate, KateApiServer};
 	use mmr_rpc::{Mmr, MmrApiServer};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
@@ -209,7 +211,12 @@ where
 
 	io.merge(StateMigration::new(client.clone(), backend, deny_unsafe).into_rpc())?;
 
-	io.merge(Kate::<C, Block>::new(client).into_rpc())?;
+	#[cfg(feature = "kate-rpc-metrics")]
+	io.merge(KateApiMetricsServer::into_rpc(Kate::<C, Block>::new(
+		client.clone(),
+	)))?;
+
+	io.merge(KateApiServer::into_rpc(Kate::<C, Block>::new(client)))?;
 
 	Ok(io)
 }

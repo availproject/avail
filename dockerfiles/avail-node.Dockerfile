@@ -1,5 +1,4 @@
-# This is the first stage. Here we install all the dependencies that we need in order to build the Ternoa binary.
-FROM ubuntu:22.04 as builder
+FROM ubuntu:22.04
 
 ADD . ./workdir
 WORKDIR "/workdir"
@@ -18,4 +17,4 @@ RUN cp target/release/data-avail /bin/
 
 VOLUME ["/output"]
 ENTRYPOINT ["/bin/data-avail"]
-CMD ["--chain=kate", "--name=MyAvailNode", "-d=/output/data", "--rpc-methods=unsafe", "--unsafe-rpc-external", "--rpc-cors=all"]
+CMD ["--chain=goldberg", "--name=MyAvailNode", "-d=/output/data", "--rpc-methods=unsafe", "--unsafe-rpc-external", "--rpc-cors=all"]

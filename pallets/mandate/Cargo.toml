@@ -10,19 +10,19 @@ targets = ["x86_64-unknown-linux-gnu"]
 # Substrate
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
-frame-support = { version = "4.0.0-dev", default-features = false }
-frame-system = { version = "4.0.0-dev", default-features = false, path = "../system" }
-sp-io = { version = "23.0.0", default-features = false }
-sp-runtime = { version = "24.0.0", default-features = false }
-sp-std = { version = "8.0.0", default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+frame-system = { default-features = false, path = "../system" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 
 # Benchmarking
-frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
 
 [dev-dependencies]
-sp-core = { version = "21.0.0", default-features = false }
-pallet-collective = { version = "4.0.0-dev", default-features = false }
-avail-core = { version = "0.5", features = ["runtime"] }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+pallet-collective = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", features = ["runtime"] }
 
 [features]
 default = [ "std" ]

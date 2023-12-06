@@ -21,50 +21,48 @@
 After ensuring you have the dependencies installed, you can run the Avail Node using the following command:
 ```bash
 mkdir -p output
-cargo run --locked --release -- --chain kate -d ./output
+cargo run --locked --release -- --chain goldberg -d ./output
 ```
-This command complies and runs the Avail Node connected to the Kate Network.
+This command compiles and runs the Avail Node connected to the Goldberg Network.
 
 ```
-2023-10-11 16:11:31 Avail Node    
-2023-10-11 16:11:31 ✌️  version 1.7.0-ad024ff050e    
-2023-10-11 16:11:31 ❤️  by Anonymous, 2017-2023    
-2023-10-11 16:11:31 📋 Chain specification: Avail Kate Testnet    
-2023-10-11 16:11:31 🏷  Node name: decorous-trade-0251    
-2023-10-11 16:11:31 👤 Role: FULL    
-2023-10-11 16:11:31 💾 Database: RocksDb at /tmp/substrateJwM8xd/chains/Avail Testnet_116d7474-0481-11ee-bc2a-7bfc086be54e/db/full    
-2023-10-11 16:11:32 🔨 Initializing Genesis block/state (state: 0x6bc8…8ac6, header-hash: 0xd120…50c6)    
-2023-10-11 16:11:32 👴 Loading GRANDPA authority set from genesis on what appears to be first startup.    
-2023-10-11 16:11:33 👶 Creating empty BABE epoch changes on what appears to be first startup.    
-2023-10-11 16:11:33 🏷  Local node identity is: 12D3KooWMmY2QLodvBGSiP1Cg9ysWrPSMN19qK3w35mRnUhq6pMX    
-2023-10-11 16:11:33 Prometheus metrics extended with avail metrics    
-2023-10-11 16:11:33 💻 Operating system: linux    
-2023-10-11 16:11:33 💻 CPU architecture: x86_64    
-2023-10-11 16:11:33 💻 Target environment: gnu    
-2023-10-11 16:11:33 💻 CPU: 13th Gen Intel(R) Core(TM) i7-13700K    
-2023-10-11 16:11:33 💻 CPU cores: 16    
-2023-10-11 16:11:33 💻 Memory: 31863MB    
-2023-10-11 16:11:33 💻 Kernel: 6.5.5-100.fc37.x86_64    
-2023-10-11 16:11:33 💻 Linux distribution: Fedora Linux 37 (Workstation Edition)    
-2023-10-11 16:11:33 💻 Virtual machine: no    
-2023-10-11 16:11:33 📦 Highest known block at #0    
-2023-10-11 16:11:33 〽️ Prometheus exporter started at 127.0.0.1:9615    
-2023-10-11 16:11:33 Running JSON-RPC server: addr=127.0.0.1:9944, allowed origins=["http://localhost:*", "http://127.0.0.1:*", "https://localhost:*", "https://127.0.0.1:*", "https://polkadot.js.org"]    
-2023-10-11 16:11:33 🏁 CPU score: 1.65 GiBs    
-2023-10-11 16:11:33 🏁 Memory score: 19.49 GiBs    
-2023-10-11 16:11:33 🏁 Disk score (seq. writes): 6.74 GiBs    
-2023-10-11 16:11:33 🏁 Disk score (rand. writes): 2.65 GiBs    
-2023-10-11 16:11:33 🔍 Discovered new external address for our node: /ip4/176.61.156.176/tcp/30333/ws/p2p/12D3KooWMmY2QLodvBGSiP1Cg9ysWrPSMN19qK3w35mRnUhq6pMX    
-2023-10-11 16:11:34 [811] 💸 generated 9 npos targets    
-2023-10-11 16:11:34 [811] 💸 generated 9 npos voters, 9 from validators and 0 nominators    
-2023-10-11 16:11:34 [#811] 🗳  creating a snapshot with metadata SolutionOrSnapshotSize { voters: 9, targets: 9 }    
-2023-10-11 16:11:34 [#811] 🗳  Starting phase Signed, round 1.
+2023-11-17 11:31:35 Avail Node    
+2023-11-17 11:31:35 ✌️  version 1.8.2-3fe1bd1a835    
+2023-11-17 11:31:35 ❤️  by Anonymous, 2017-2023    
+2023-11-17 11:31:35 📋 Chain specification: Avail Goldberg Testnet    
+2023-11-17 11:31:35 🏷  Node name: exotic-shame-9524    
+2023-11-17 11:31:35 👤 Role: FULL    
+2023-11-17 11:31:35 💾 Database: RocksDb at /tmp/substrate6VCSz0/chains/avail_goldberg_testnet/db/full    
+2023-11-17 11:31:36 🔨 Initializing Genesis block/state (state: 0x6bc7…ec83, header-hash: 0x6f09…a7ae)    
+2023-11-17 11:31:36 👴 Loading GRANDPA authority set from genesis on what appears to be first startup.    
+2023-11-17 11:31:36 👶 Creating empty BABE epoch changes on what appears to be first startup.    
+2023-11-17 11:31:36 🏷  Local node identity is: 12D3KooWGhdJUhZTtqByZKpojSdT26eadVtnvQ6fdrJU8mjeTuiq    
+2023-11-17 11:31:36 Prometheus metrics extended with avail metrics    
+2023-11-17 11:31:36 💻 Operating system: linux    
+2023-11-17 11:31:36 💻 CPU architecture: x86_64    
+2023-11-17 11:31:36 💻 Target environment: gnu    
+2023-11-17 11:31:36 💻 CPU: 13th Gen Intel(R) Core(TM) i7-13700K    
+2023-11-17 11:31:36 💻 CPU cores: 16    
+2023-11-17 11:31:36 💻 Memory: 31863MB    
+2023-11-17 11:31:36 💻 Kernel: 6.5.10-200.fc38.x86_64    
+2023-11-17 11:31:36 💻 Linux distribution: Fedora Linux 38 (Workstation Edition)    
+2023-11-17 11:31:36 💻 Virtual machine: no    
+2023-11-17 11:31:36 📦 Highest known block at #0    
+2023-11-17 11:31:36 〽️ Prometheus exporter started at 127.0.0.1:9615    
+2023-11-17 11:31:36 Running JSON-RPC server: addr=127.0.0.1:9944, allowed origins=["http://localhost:*", "http://127.0.0.1:*", "https://localhost:*", "https://127.0.0.1:*", "https://polkadot.js.org"]    
+2023-11-17 11:31:36 🏁 CPU score: 1.65 GiBs    
+2023-11-17 11:31:36 🏁 Memory score: 22.56 GiBs    
+2023-11-17 11:31:36 🏁 Disk score (seq. writes): 7.25 GiBs    
+2023-11-17 11:31:36 🏁 Disk score (rand. writes): 2.81 GiBs    
+2023-11-17 11:31:37 🔍 Discovered new external address for our node: /ip4/176.61.156.176/tcp/30333/ws/p2p/12D3KooWGhdJUhZTtqByZKpojSdT26eadVtnvQ6fdrJU8mjeTuiq    
+2023-11-17 11:31:41 ⚙️  Syncing, target=#41833 (8 peers), best: #2690 (0x13c8…42fa), finalized #2560 (0x1282…a791), ⬇ 2.9MiB/s ⬆ 38.4kiB/s    
+2023-11-17 11:31:46 ⚙️  Syncing 62.8 bps, target=#41833 (8 peers), best: #3004 (0xa183…81a0), finalized #2560 (0x1282…a791), ⬇ 106.9kiB/s ⬆ 2.1kiB/s  
 ```
 
 #### Running Dev Chain
 A development chain is typically used for testing and development purposes.
 ```bash
-cargo run --locked --release -- --chain dev
+cargo run --locked --release -- --dev
 ```
 
 ### Docker
