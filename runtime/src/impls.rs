@@ -38,8 +38,8 @@ use frame_system::submitted_data;
 use frame_system::EnsureRoot;
 use pallet_election_provider_multi_phase::SolutionAccuracyOf;
 use pallet_succinct::{
-	BridgePalletId, MaxProofLength, MaxVerificationKeyLength, MessageMappingStorageIndex,
-	MessageVersion, RotateFunctionId, StepFunctionId,
+	BridgePalletId, MaxBridgeDataLength, MaxProofLength, MaxVerificationKeyLength,
+	MessageMappingStorageIndex, MessageVersion, RotateFunctionId, StepFunctionId,
 };
 use pallet_transaction_payment::CurrencyAdapter;
 use pallet_transaction_payment::Multiplier;
@@ -97,6 +97,8 @@ impl pallet_succinct::Config for Runtime {
 	type Currency = Balances;
 
 	type PalletId = BridgePalletId;
+
+	type MaxBridgeDataLength = MaxBridgeDataLength;
 }
 
 parameter_types! {
@@ -730,33 +732,54 @@ parameter_types! {
 
 /// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.
 impl submitted_data::Filter<RuntimeCall> for Runtime {
-	fn filter(call: RuntimeCall, metrics: submitted_data::RcMetrics) -> Vec<Vec<u8>> {
+	fn filter(
+		call: RuntimeCall,
+		metrics: submitted_data::RcMetrics,
+	) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
 		metrics.borrow_mut().total_extrinsics += 1;
 
 		match call {
+			RuntimeCall::Succinct(pallet_succinct::Call::submit_bridge_data { data })
+				if !data.is_empty() =>
+			{
+				let mut metrics = metrics.borrow_mut();
+				metrics.data_submit_leaves += 1;
+				metrics.data_submit_extrinsics += 1;
+				(vec![], vec![data.into_inner()])
+			},
 			RuntimeCall::DataAvailability(da_control::Call::submit_data { data })
 				if !data.is_empty() =>
 			{
 				let mut metrics = metrics.borrow_mut();
 				metrics.data_submit_leaves += 1;
 				metrics.data_submit_extrinsics += 1;
-				vec![data.into_inner()]
+				(vec![data.into_inner()], vec![])
 			},
 			RuntimeCall::Utility(pallet_utility::Call::batch { calls })
 			| RuntimeCall::Utility(pallet_utility::Call::batch_all { calls })
 			| RuntimeCall::Utility(pallet_utility::Call::force_batch { calls }) => {
 				Self::process_calls(calls, &metrics)
 			},
-			_ => vec![],
+			_ => (vec![], vec![]),
 		}
 	}
 
 	/// This function processes a list of calls and returns their data as Vec<Vec<u8>>
-	fn process_calls(calls: Vec<RuntimeCall>, metrics: &submitted_data::RcMetrics) -> Vec<Vec<u8>> {
-		calls
+	fn process_calls(
+		calls: Vec<RuntimeCall>,
+		metrics: &submitted_data::RcMetrics,
+	) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
+		let filtered_blob = calls
 			.into_iter()
-			.flat_map(|call| Self::filter(call, Rc::clone(metrics)))
-			.collect()
+			.flat_map(|call| Self::filter(call, Rc::clone(metrics)).0)
+			.collect();
+
+		// let c = calls.clone();
+		// let filtered_bridge = c
+		//     .into_iter()
+		//     .flat_map(|call| Self::filter(call, Rc::clone(metrics)).1).collect();
+
+		(filtered_blob, vec![])
 	}
 }
 
@@ -767,7 +790,7 @@ impl submitted_data::Extractor for Runtime {
 	fn extract(
 		opaque: &OpaqueExtrinsic,
 		metrics: submitted_data::RcMetrics,
-	) -> Result<Vec<Vec<u8>>, Self::Error> {
+	) -> Result<(Vec<Vec<u8>>, Vec<Vec<u8>>), Self::Error> {
 		let extrinsic = UncheckedExtrinsic::try_from(opaque)?;
 		let data =
 			<Runtime as submitted_data::Filter<RuntimeCall>>::filter(extrinsic.function, metrics);

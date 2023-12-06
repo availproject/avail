@@ -24,6 +24,7 @@ mod verifier;
 mod weights;
 
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
+pub type AppDataFor<T> = BoundedVec<u8, <T as Config>::MaxBridgeDataLength>;
 
 parameter_types! {
 	// function identifiers
@@ -49,6 +50,10 @@ parameter_types! {
 	pub const StorageProofLen: u32 = 2048;
 
 	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
+
+
+	pub const MaxBridgeDataLength: u32= 256;
+
 }
 
 #[frame_support::pallet]
@@ -111,6 +116,8 @@ pub mod pallet {
 		InvalidMessageHash,
 		CannotDecodeMessageData,
 		CannotDecodeDestinationAccountId,
+		// bridge
+		BridgeDataCannotBeEmpty,
 	}
 
 	#[pallet::event]
@@ -144,6 +151,10 @@ pub mod pallet {
 		SourceChainFrozen {
 			source_chain_id: u32,
 			frozen: bool,
+		},
+		BridgeDataSubmitted {
+			who: T::AccountId,
+			data_hash: H256,
 		},
 	}
 
@@ -205,6 +216,8 @@ pub mod pallet {
 		// 1133
 		#[pallet::constant]
 		type MaxVerificationKeyLength: Get<u32>;
+		#[pallet::constant]
+		type MaxBridgeDataLength: Get<u32>;
 		#[pallet::constant]
 		type StepFunctionId: Get<H256>;
 
@@ -480,6 +493,26 @@ pub mod pallet {
 			});
 
 			Ok(())
+		}
+
+		#[pallet::call_index(7)]
+		#[pallet::weight(T::WeightInfo::step())]
+		pub fn submit_bridge_data(
+			origin: OriginFor<T>,
+			data: AppDataFor<T>,
+		) -> DispatchResultWithPostInfo {
+			let who = ensure_signed(origin)?;
+			ensure!(!data.is_empty(), Error::<T>::BridgeDataCannotBeEmpty);
+
+			// Index Tx in DB block.
+			let data_hash = keccak_256(&data);
+
+			Self::deposit_event(Event::BridgeDataSubmitted {
+				who,
+				data_hash: H256(data_hash),
+			});
+
+			Ok(().into())
 		}
 	}
 
