@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use sp_core::H256;
 use sp_std::vec::Vec;
 use thiserror_no_std::Error;
+#[cfg(feature = "runtime")]
 use nomad_core::keccak256_concat;
 
 
