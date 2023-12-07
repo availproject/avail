@@ -1,15 +1,19 @@
 use super::{get_account_id_from_seed, AuthorityKeys};
 use avail_core::BLOCK_CHUNK_SIZE;
-use avail_core_kate::{
-	config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS},
-};
+use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
+
 use da_runtime::{
 	constants, wasm_binary_unwrap, AccountId, BabeConfig, Balance, BalancesConfig,
 	DataAvailabilityConfig, NomadHomeConfig, NomadUpdaterManagerConfig, NominationPoolsConfig,
-	RuntimeGenesisConfig, SessionConfig, StakerStatus, StakingConfig, SuccinctConfig, SudoConfig,
-	SystemConfig, TechnicalCommitteeConfig, AVL,
+	Perbill, RuntimeGenesisConfig, SessionConfig, StakerStatus, StakingConfig, SuccinctConfig,
+	SudoConfig, SystemConfig, TechnicalCommitteeConfig, AVL,
 };
 use frame_system::limits::BlockLength;
+use hex_literal::hex;
+use primitive_types::{H160, H256, U256};
+use sc_telemetry::TelemetryEndpoints;
+use sp_core::crypto::AccountId32;
+use sp_core::sr25519::Public;
 
 pub const PROTOCOL_ID: Option<&str> = Some("Avail");
 pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";

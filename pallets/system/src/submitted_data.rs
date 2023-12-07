@@ -185,12 +185,6 @@ where
 	blob_root
 }
 
-#[derive(Eq, PartialEq, Debug)]
-pub enum CallTypeEnum {
-	BlobDataCall,
-	BridgeDataCall,
-}
-
 /// Creates the Merkle Proof of the submitted data items in `calls` filtered by `F` and
 /// the given `data_index`.
 ///
@@ -204,7 +198,7 @@ pub enum CallTypeEnum {
 pub fn calls_proof<F, I, C>(
 	mut calls: I,
 	transaction_index: u32,
-	call_type: CallTypeEnum,
+	// call_type: SubTrie,
 ) -> Option<(MerkleProof<H256, Vec<u8>>, H256)>
 where
 	F: Filter<C>,
@@ -227,13 +221,13 @@ where
 
 	let mut submitted_data = vec![];
 	let mut root_data = vec![];
-	if call_type == CallTypeEnum::BlobDataCall {
-		submitted_data = blob_data;
-		root_data = bridge_data;
-	} else {
-		submitted_data = bridge_data;
-		root_data = blob_data;
-	}
+	// if call_type == SubTrie::Left {
+	submitted_data = blob_data;
+	root_data = bridge_data;
+	// } else {
+	//     submitted_data = bridge_data;
+	//     root_data = blob_data;
+	// }
 
 	match submitted_data.get(transaction_index) {
 		None => return None,

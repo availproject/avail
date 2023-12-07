@@ -10,7 +10,7 @@ use avail_core::{
 };
 use da_runtime::RuntimeCall;
 use da_runtime::{apis::DataAvailApi, Runtime, UncheckedExtrinsic};
-use frame_system::{limits::BlockLength, submitted_data, Call};
+use frame_system::{limits::BlockLength, submitted_data};
 use jsonrpsee::tracing::log;
 use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
@@ -19,24 +19,20 @@ use jsonrpsee::{
 use kate::{
 	com::Cell,
 	config::{COL_EXTENSION, ROW_EXTENSION},
-	gridgen::{AsBytes, EvaluationGrid, PolynomialGrid},
+	gridgen::{EvaluationGrid, PolynomialGrid},
 	pmp::m1_blst,
 	Seed,
 };
 
-use frame_system::submitted_data::CallTypeEnum::BridgeDataCall;
-use frame_system::submitted_data::{CallTypeEnum, Metrics};
 use kate_recovery::matrix::Dimensions;
 use moka::future::Cache;
 use rayon::prelude::*;
 use sc_client_api::BlockBackend;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::app_crypto::sp_core::keccak_256;
 use sp_runtime::{
 	generic::{Digest, SignedBlock},
 	traits::{Block as BlockT, Header},
-	SaturatedConversion,
 };
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
@@ -448,31 +444,31 @@ where
 
 		let transaction_call = calls.clone().nth(transaction_index as usize).unwrap();
 		// todo call it bridge call
-		let mut call_type: CallTypeEnum = CallTypeEnum::BridgeDataCall;
-		match transaction_call {
-			RuntimeCall::DataAvailability(da_control::Call::submit_data { .. }) => {
-				call_type = CallTypeEnum::BlobDataCall;
-			},
-			_ => {
-				return Err(internal_err!(
+		// let mut call_type: SubTrie = SubTrie::Right;
+		// match transaction_call {
+		//     RuntimeCall::DataAvailability(da_control::Call::submit_data { .. }) => {
+		//         call_type = SubTrie::Right;
+		//     }
+		//     _ => {
+		//         return Err(internal_err!(
+		// 			"Data proof cannot be generated for transaction index={} at block {:?}",
+		// 			transaction_index,
+		// 			at
+		// 		));
+		//     }
+		// }
+
+		// Build the proof.
+		let (proof, root) = submitted_data::calls_proof::<Runtime, _, _>(calls, transaction_index)
+			.ok_or_else(|| {
+				internal_err!(
 					"Data proof cannot be generated for transaction index={} at block {:?}",
 					transaction_index,
 					at
-				));
-			},
-		}
+				)
+			})?;
 
-		// Build the proof.
-		let merkle_proof = submitted_data::calls_proof::<Runtime, _, _>(calls, transaction_index)
-			.ok_or_else(|| {
-			internal_err!(
-				"Data proof cannot be generated for transaction index={} at block {:?}",
-				transaction_index,
-				at
-			)
-		})?;
-
-		let data_proof = DataProof::try_from(&merkle_proof)
+		let data_proof = DataProof::try_from((&proof, root))
 			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e));
 
 		// Execution Time Metric

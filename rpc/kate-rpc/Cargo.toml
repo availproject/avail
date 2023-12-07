@@ -8,9 +8,9 @@ edition = "2021"
 [dependencies]
 avail-base = { path = "../../base", default-features = false }
 da-runtime = { path = "../../runtime", default-features = false }
-da-control = { path = "../../pallets/dactr" }
+#da-control = { path = "../../pallets/dactr" }
 
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false, features = ["runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "add_new_proof_gen", default-features = false, features = ["runtime"] }
 kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false }
 kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false }
 
