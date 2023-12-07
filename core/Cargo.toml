@@ -15,7 +15,7 @@ serde = { version = "1.0.163", default-features = false, features = ["derive", "
 static_assertions = { version = "1.1.0" }
 thiserror-no-std = { version = "2.0.2" }
 
-nomad-core = {path = "../nomad/core"}
+nomad-core = {path = "../nomad/core", default-features = false}
 tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
 
 
@@ -58,6 +58,7 @@ std = [
 	"sp-runtime?/std",
 	"sp-std/std",
 	"sp-trie/std",
+	"nomad-core/std",
 ]
 runtime = [
 	"binary-merkle-tree",
