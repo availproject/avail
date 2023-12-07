@@ -10,7 +10,7 @@ avail-base = { path = "../../base", default-features = false }
 da-runtime = { path = "../../runtime", default-features = false }
 da-control = { path = "../../pallets/dactr" }
 
-avail-core = { version = "0.5", default-features = false, features = ["runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core.git", branch = "add_proof", default-features = false, features = ["runtime"] }
 kate = { version = "0.8", default-features = false }
 kate-recovery = { version = "0.9", default-features = false }
 

@@ -24,12 +24,15 @@ use kate::{
 	Seed,
 };
 
+use frame_system::submitted_data::CallTypeEnum::BridgeDataCall;
+use frame_system::submitted_data::{CallTypeEnum, Metrics};
 use kate_recovery::matrix::Dimensions;
 use moka::future::Cache;
 use rayon::prelude::*;
 use sc_client_api::BlockBackend;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
+use sp_runtime::app_crypto::sp_core::keccak_256;
 use sp_runtime::{
 	generic::{Digest, SignedBlock},
 	traits::{Block as BlockT, Header},
@@ -390,26 +393,41 @@ where
 			.map(|extrinsic| extrinsic.function);
 
 		let transaction_call = calls.clone().nth(transaction_index as usize).unwrap();
+		// todo call it bridge call
+		let mut call_type: CallTypeEnum = CallTypeEnum::BridgeDataCall;
 		match transaction_call {
-			RuntimeCall::DataAvailability(da_control::Call::submit_data { data }) => {
-				log::warn!("its ");
+			RuntimeCall::DataAvailability(da_control::Call::submit_data { .. }) => {
+				call_type = CallTypeEnum::BlobDataCall;
 			},
-
-			_ => {},
+			_ => {
+				return Err(internal_err!(
+					"Data proof cannot be generated for transaction index={} at block {:?}",
+					transaction_index,
+					at
+				));
+			},
 		}
 
 		// Build the proof.
-		let merkle_proof = submitted_data::calls_proof::<Runtime, _, _>(calls, transaction_index)
-			.ok_or_else(|| {
-			internal_err!(
-				"Data proof cannot be generated for transaction index={} at block {:?}",
-				transaction_index,
-				at
-			)
-		})?;
+		let (merkle_proof, root) =
+			submitted_data::calls_proof::<Runtime, _, _>(calls, transaction_index, call_type)
+				.ok_or_else(|| {
+					internal_err!(
+						"Data proof cannot be generated for transaction index={} at block {:?}",
+						transaction_index,
+						at
+					)
+				})?;
 
-		DataProof::try_from(&merkle_proof)
-			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e))
+		let mut proof = DataProof::try_from((&merkle_proof, root))
+			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e))?;
+
+		// proof.root = merkle_proof.1;
+		// if call_type == BridgeDataCall {
+		//     proof.data_root = keccak_256();
+		// }
+
+		Ok(proof)
 	}
 }
 
