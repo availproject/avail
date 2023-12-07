@@ -8,7 +8,7 @@ assignees: ""
 
 # Bug Report
 
-Check the [contributing guide](../../CONTRIBUTING.md)
+Check the [contributing guide](/.github/CONTRIBUTING.md)
 
 ## Description
 <!-- Provide a clear and concise description of the bug. -->
