@@ -1,10 +1,14 @@
-.github
-.maintain
-.vscode
-avail-subxt
-dockerfiles
-e2e
-examples
-output
-scripts
-target
+# Ignore everything
+*
+
+# Allow files and directories
+!/runtime
+!/rpc
+!/pallets
+!/node
+!/misc
+!/base
+!Cargo.toml
+!Cargo.lock
+!rust-toolchain.toml
+!rustfmt.toml
