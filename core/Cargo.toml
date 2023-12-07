@@ -15,6 +15,10 @@ serde = { version = "1.0.163", default-features = false, features = ["derive", "
 static_assertions = { version = "1.1.0" }
 thiserror-no-std = { version = "2.0.2" }
 
+nomad-core = {path = "../nomad/core"}
+tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
+
+
 # Substrate
 binary-merkle-tree = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"] }

@@ -6,6 +6,13 @@ use serde::{Deserialize, Serialize};
 use sp_core::H256;
 use sp_std::vec::Vec;
 use thiserror_no_std::Error;
+use nomad_core::keccak256_concat;
+
+
+pub enum SubTrie {
+    Left,
+    Right,
+}
 
 /// Wrapper of `binary-merkle-tree::MerkleProof` with codec support.
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, Default)]
@@ -58,23 +65,22 @@ pub enum DataProofTryFromError {
 }
 
 #[cfg(feature = "runtime")]
-impl<H, T> core::convert::TryFrom<(&MerkleProof<H, T>, H256)> for DataProof
+impl<H, T> core::convert::TryFrom<(&MerkleProof<H, T>, H256, SubTrie)> for DataProof
     where
         T: AsRef<[u8]>,
         H: PartialEq + Eq + AsRef<[u8]>,
 {
     type Error = DataProofTryFromError;
 
-    fn try_from(merkle_proof_data: (&MerkleProof<H, T>, H256)) -> Result<Self, Self::Error> {
+    fn try_from(merkle_proof_data: (&MerkleProof<H, T>, H256, SubTrie)) -> Result<Self, Self::Error> {
         use crate::ensure;
         use DataProofTryFromError::*;
 
         use sp_io::hashing::keccak_256;
 
-        let merkle_proof = merkle_proof_data.0;
-        let root = merkle_proof_data.1;
+        let (merkle_proof, sub_trie_root, sub_trie) = merkle_proof_data;
 
-        let data_root = <[u8; 32]>::try_from(merkle_proof.root.as_ref())
+        let root: H256 = <[u8; 32]>::try_from(merkle_proof.root.as_ref())
             .map_err(|_| InvalidRoot)?
             .into();
         let leaf = keccak_256(merkle_proof.leaf.as_ref()).into();
@@ -96,6 +102,15 @@ impl<H, T> core::convert::TryFrom<(&MerkleProof<H, T>, H256)> for DataProof
         let leaf_index = u32::try_from(merkle_proof.leaf_index).map_err(|_| OverflowedLeafIndex)?;
         ensure!(leaf_index < number_of_leaves, InvalidLeafIndex);
 
+        let data_root: H256;
+        match sub_trie {
+            SubTrie::Left => {
+                data_root = keccak256_concat!(root, sub_trie_root.as_bytes());
+            }
+            SubTrie::Right => {
+                data_root = keccak256_concat!(sub_trie_root.as_bytes(), root);
+            }
+        }
 
         Ok(Self {
             proof,
@@ -130,29 +145,32 @@ mod test {
     /// If `leaf_index >= number_of_leaves`, it will create a fake proof using the latest possible
     /// index and overwriting the proof. That case is used to test transformations into
     /// `DataProof`.
-    fn merkle_proof_idx(leaf_index: usize) -> (MerkleProof<H256, Vec<u8>>, H256) {
+    fn merkle_proof_idx(leaf_index: usize, root: H256, sub_trie: SubTrie) -> (MerkleProof<H256, Vec<u8>>, H256, SubTrie) {
         let leaves = leaves();
         let index = min(leaf_index, leaves.len() - 1);
-
         let mut proof = binary_merkle_tree::merkle_proof::<Keccak256, _, _>(leaves, index);
         proof.leaf_index = leaf_index;
 
-        (proof, H256::zero())
+        (proof, root, sub_trie)
     }
 
-    fn invalid_merkle_proof_zero_leaves() -> MerkleProof<H256, Vec<u8>> {
-        MerkleProof {
+    fn invalid_merkle_proof_zero_leaves() -> (MerkleProof<H256, Vec<u8>>, H256, SubTrie) {
+        (MerkleProof {
             root: H256::default(),
             proof: vec![],
             number_of_leaves: 0,
             leaf_index: 0,
             leaf: H256::default().to_fixed_bytes().to_vec(),
-        }
+        },
+         H256::zero(),
+         SubTrie::Left
+        )
     }
 
-    fn expected_data_proof_1() -> Result<DataProof, DataProofTryFromError> {
+    fn expected_data_proof_1(root: H256, sub_trie: SubTrie) -> Result<DataProof, DataProofTryFromError> {
+        let data_root = expected_root(sub_trie, root);
         Ok(DataProof {
-            data_root: Default::default(),
+            data_root: data_root,
             root: hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95").into(),
             proof: vec![
                 hex!("ad3228b676f7d3cd4284a5443f17f1962b36e491b30a40b2405849e597ba5fb5").into(),
@@ -165,9 +183,10 @@ mod test {
         })
     }
 
-    fn expected_data_proof_0() -> Result<DataProof, DataProofTryFromError> {
+    fn expected_data_proof_0(root: H256, sub_trie: SubTrie) -> Result<DataProof, DataProofTryFromError> {
+        let data_root = expected_root(sub_trie, root);
         Ok(DataProof {
-            data_root: Default::default(),
+            data_root: data_root,
             root: hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95").into(),
             proof: vec![
                 hex!("401617bc4f769381f86be40df0207a0a3e31ae0839497a5ac6d4252dfc35577f").into(),
@@ -180,9 +199,10 @@ mod test {
         })
     }
 
-    fn expected_data_proof_6() -> Result<DataProof, DataProofTryFromError> {
+    fn expected_data_proof_6(root: H256, sub_trie: SubTrie) -> Result<DataProof, DataProofTryFromError> {
+        let data_root = expected_root(sub_trie, root);
         Ok(DataProof {
-            data_root: Default::default(),
+            data_root: data_root,
             root: hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95").into(),
             proof: vec![
                 hex!("8663c7e2962f98579b883bf5e2179f9200ae3615ec6fc3bd8027a0de9973606a").into(),
@@ -194,15 +214,41 @@ mod test {
         })
     }
 
-    #[test_case(merkle_proof_idx(0) => expected_data_proof_0(); "From merkle proof 0")]
-    #[test_case(merkle_proof_idx(1) => expected_data_proof_1(); "From merkle proof 1")]
-    #[test_case(merkle_proof_idx(6) => expected_data_proof_6(); "From merkle proof 6")]
-    #[test_case(merkle_proof_idx(7) => Err(DataProofTryFromError::InvalidLeafIndex); "From invalid leaf index")]
+
+    fn expected_root(sub_trie: SubTrie, sub_trie_root: H256) -> H256 {
+        let data_root: H256;
+        let root = hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95");
+        match sub_trie {
+            SubTrie::Left => {
+                data_root = keccak256_concat!(root, sub_trie_root.as_bytes());
+            }
+            SubTrie::Right => {
+                data_root = keccak256_concat!(sub_trie_root.as_bytes(), root);
+            }
+        }
+        data_root
+    }
+
+    #[test_case(merkle_proof_idx(0, H256::zero(), SubTrie::Left) => expected_data_proof_0(H256::zero(),SubTrie::Left); "From merkle proof 0 left sub trie")]
+    #[test_case(merkle_proof_idx(1, H256::zero(), SubTrie::Left) => expected_data_proof_1(H256::zero(),SubTrie::Left); "From merkle proof 1 left sub trie")]
+    #[test_case(merkle_proof_idx(6, H256::zero(), SubTrie::Left) => expected_data_proof_6(H256::zero(),SubTrie::Left); "From merkle proof 6 left sub trie")]
+    #[test_case(merkle_proof_idx(0, H256::zero(), SubTrie::Right) => expected_data_proof_0(H256::zero(),SubTrie::Right); "From merkle proof 0 right sub trie")]
+    #[test_case(merkle_proof_idx(1, H256::zero(), SubTrie::Right) => expected_data_proof_1(H256::zero(),SubTrie::Right); "From merkle proof 1 right sub trie")]
+    #[test_case(merkle_proof_idx(6, H256::zero(), SubTrie::Right) => expected_data_proof_6(H256::zero(),SubTrie::Right); "From merkle proof 6 right sub trie")]
+    #[test_case(merkle_proof_idx(0, H256::repeat_byte(1), SubTrie::Left) => expected_data_proof_0(H256::repeat_byte(1), SubTrie::Left); "From merkle proof 0 left sub trie non zero")]
+    #[test_case(merkle_proof_idx(1, H256::repeat_byte(1), SubTrie::Left) => expected_data_proof_1(H256::repeat_byte(1), SubTrie::Left); "From merkle proof 1 left sub trie non zero")]
+    #[test_case(merkle_proof_idx(6, H256::repeat_byte(1), SubTrie::Left) => expected_data_proof_6(H256::repeat_byte(1), SubTrie::Left); "From merkle proof 6 left sub trie non zero")]
+    #[test_case(merkle_proof_idx(0, H256::repeat_byte(1), SubTrie::Right) => expected_data_proof_0(H256::repeat_byte(1), SubTrie::Right); "From merkle proof 0 right sub trie non zero")]
+    #[test_case(merkle_proof_idx(1, H256::repeat_byte(1), SubTrie::Right) => expected_data_proof_1(H256::repeat_byte(1), SubTrie::Right); "From merkle proof 1 right sub trie non zero")]
+    #[test_case(merkle_proof_idx(6, H256::repeat_byte(1), SubTrie::Right) => expected_data_proof_6(H256::repeat_byte(1), SubTrie::Right); "From merkle proof 6 right sub trie non zero")]
+    #[test_case(merkle_proof_idx(7, H256::zero(), SubTrie::Left) => Err(DataProofTryFromError::InvalidLeafIndex); "From invalid leaf index left sub trie")]
+    #[test_case(merkle_proof_idx(7, H256::zero(), SubTrie::Right) => Err(DataProofTryFromError::InvalidLeafIndex); "From invalid leaf index right sub trie")]
     #[test_case(invalid_merkle_proof_zero_leaves() => Err(DataProofTryFromError::InvalidNumberOfLeaves); "From invalid number of leaves")]
     fn from_binary(
-        binary_proof: (&MerkleProof<H256, Vec<u8>>, H256),
+        binary_proof: (MerkleProof<H256, Vec<u8>>, H256, SubTrie),
     ) -> Result<DataProof, DataProofTryFromError> {
-        let data_proof = DataProof::try_from(binary_proof)?;
+        let (proof, root, sub_trie) = binary_proof;
+        let data_proof = DataProof::try_from((&proof, root, sub_trie))?;
         Ok(data_proof)
     }
 }

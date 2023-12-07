@@ -318,6 +318,7 @@ dependencies = [
  "hex",
  "hex-literal",
  "log",
+ "nomad-core",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -332,6 +333,7 @@ dependencies = [
  "static_assertions",
  "test-case",
  "thiserror-no-std",
+ "tiny-keccak",
 ]
 
 [[package]]
