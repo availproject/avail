@@ -79,8 +79,8 @@ serde = [ "dep:serde" ]
 # It enables the use of header extension V2
 header_extension_v2 = []
 
-# It enables the corruption of header extension where block number is greater than 20.
-# NOTE: Only for testing and development purpose.
+# It enables the corruption of header extensions where block number is greater than 20.
+# NOTE: Only for testing and development purposes.
 header_commitment_corruption = []
 
 # Enables secure seed generation using for padding fill during the matrix 

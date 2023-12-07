@@ -1,6 +1,6 @@
 ## Avail Go examples
 
-Sample examples written in Go that demonstrate interaction with Avail network.
+Sample examples written in Go that demonstrate interaction with the Avail network.
 For this examples Go `1.19` is needed.
 
 - Navigate to go examples folder.

@@ -6,6 +6,7 @@
 /// Root`.
 use std::sync::Arc;
 
+use avail_base::metrics::avail::ImportBlockMetrics;
 use avail_core::{BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE};
 use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
@@ -59,6 +60,8 @@ where
 		&mut self,
 		block: BlockImportParams<B, Self::Transaction>,
 	) -> Result<ImportResult, Self::Error> {
+		let import_block_start = std::time::Instant::now();
+
 		// We only want to check for blocks that are not from "Own"
 		let is_own = matches!(block.origin, BlockOrigin::Own);
 
@@ -112,7 +115,13 @@ where
 					format!("DA Extension does NOT match\nExpected: {extension:#?}\nGenerated:{generated_ext:#?}"))
 			);
 		}
-		self.inner.import_block(block).await.map_err(Into::into)
+
+		let import_block_res = self.inner.import_block(block).await.map_err(Into::into);
+
+		// Metrics
+		ImportBlockMetrics::observe_total_execution_time(import_block_start.elapsed());
+
+		import_block_res
 	}
 
 	async fn check_block(
