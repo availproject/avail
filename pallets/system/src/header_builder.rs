@@ -100,19 +100,23 @@ fn corrupt_commitment(block_number: u32, commitment: &mut Vec<u8>) {
 }
 
 #[cfg(feature = "std")]
-pub fn build_extension<M: Metrics>(
+pub fn build_extension(
 	app_extrinsics: &[AppExtrinsic],
 	data_root: H256,
 	block_length: BlockLength,
 	_block_number: u32,
 	seed: Seed,
-	metrics: &M,
 ) -> HeaderExtension {
+	use avail_base::metrics::avail::HeaderExtensionBuilderMetrics;
 	use avail_core::header::extension::{v1, v2};
+	use kate::gridgen::AsBytes;
 	use once_cell::sync::Lazy;
+
+	let build_extension_start = std::time::Instant::now();
+
 	// couscous has pp for degree upto 1024
 	static PMP: Lazy<kate::pmp::m1_blst::M1NoPrecomp> =
-		Lazy::new(|| kate::couscous::multiproof_params());
+		Lazy::new(kate::couscous::multiproof_params);
 
 	const MIN_WIDTH: usize = 4;
 	let timer = std::time::Instant::now();
@@ -124,10 +128,11 @@ pub fn build_extension<M: Metrics>(
 		seed,
 	)
 	.expect("Grid construction cannot fail");
-	metrics.preparation_block_time(timer.elapsed());
+
+	// Evaluation Grid Build Time Metrics
+	HeaderExtensionBuilderMetrics::observe_evaluation_grid_build_time(timer.elapsed());
 
 	let timer = std::time::Instant::now();
-	use kate::gridgen::AsBytes;
 	let commitment = grid
 		.make_polynomial_grid()
 		.expect("Make polynomials cannot fail")
@@ -136,11 +141,17 @@ pub fn build_extension<M: Metrics>(
 		.iter()
 		.flat_map(|c| c.to_bytes().expect("Commitment serialization cannot fail"))
 		.collect::<Vec<u8>>();
-	metrics.commitment_build_time(timer.elapsed());
+
+	// Commitment Build Time Metrics
+	HeaderExtensionBuilderMetrics::observe_commitment_build_time(timer.elapsed());
 
 	// Note that this uses the original dims, _not the extended ones_
 	let rows = grid.dims().rows().get();
 	let cols = grid.dims().cols().get();
+
+	// Grid Metrics
+	HeaderExtensionBuilderMetrics::observe_grid_rows(rows as f64);
+	HeaderExtensionBuilderMetrics::observe_grid_cols(cols as f64);
 
 	let app_lookup = grid.lookup().clone();
 	// **NOTE:** Header extension V2 is not yet enable by default.
@@ -153,6 +164,11 @@ pub fn build_extension<M: Metrics>(
 		if _block_number > 20 {
 			corrupt_commitment(_block_number, &mut kate.commitment);
 		}
+
+		// Total Execution Time Metrics
+		HeaderExtensionBuilderMetrics::observe_total_execution_time(
+			build_extension_start.elapsed(),
+		);
 
 		v2::HeaderExtension {
 			app_lookup,
@@ -172,6 +188,11 @@ pub fn build_extension<M: Metrics>(
 		if _block_number > 20 {
 			corrupt_commitment(_block_number, &mut kate.commitment);
 		}
+
+		// Total Execution Time Metrics
+		HeaderExtensionBuilderMetrics::observe_total_execution_time(
+			build_extension_start.elapsed(),
+		);
 
 		v1::HeaderExtension {
 			app_lookup,
@@ -194,14 +215,6 @@ pub trait HostedHeaderBuilder {
 		block_number: u32,
 		seed: Seed,
 	) -> HeaderExtension {
-		let metrics = avail_base::metrics::MetricAdapter {};
-		build_extension(
-			&app_extrinsics,
-			data_root,
-			block_length,
-			block_number,
-			seed,
-			&metrics,
-		)
+		build_extension(&app_extrinsics, data_root, block_length, block_number, seed)
 	}
 }
