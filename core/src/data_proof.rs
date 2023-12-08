@@ -105,10 +105,10 @@ impl<H, T> core::convert::TryFrom<(&MerkleProof<H, T>, H256, SubTrie)> for DataP
 
         let data_root: H256;
         match sub_trie {
-            SubTrie::Left => {
+            SubTrie::Right => {
                 data_root = keccak256_concat!(root, sub_trie_root.as_bytes());
             }
-            SubTrie::Right => {
+            SubTrie::Left => {
                 data_root = keccak256_concat!(sub_trie_root.as_bytes(), root);
             }
         }
