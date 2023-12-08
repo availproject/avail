@@ -23,7 +23,9 @@ pub struct DataProof {
     /// Root hash of generated merkle tree.
     pub data_root: H256,
     /// Root hash of generated blob root.
-    pub root: H256,
+    pub blob_root: Option<H256>,
+    /// Root hash of generated bridge root.
+    pub bridge_root: Option<H256>,
     /// Proof items (does not contain the leaf hash, nor the root obviously).
     ///
     /// This vec contains all inner node hashes necessary to reconstruct the root hash given the
@@ -104,19 +106,24 @@ impl<H, T> core::convert::TryFrom<(&MerkleProof<H, T>, H256, SubTrie)> for DataP
         ensure!(leaf_index < number_of_leaves, InvalidLeafIndex);
 
         let data_root: H256;
+        let mut blob_root: Option<H256> = None;
+        let mut bridge_root: Option<H256> = None;
         match sub_trie {
             SubTrie::Right => {
                 data_root = keccak256_concat!(root, sub_trie_root.as_bytes());
+                blob_root = Some(root);
             }
             SubTrie::Left => {
                 data_root = keccak256_concat!(sub_trie_root.as_bytes(), root);
+                bridge_root = Some(root);
             }
         }
 
         Ok(Self {
             proof,
             data_root,
-            root,
+            blob_root,
+            bridge_root,
             leaf,
             number_of_leaves,
             leaf_index,
@@ -230,12 +237,12 @@ mod test {
         data_root
     }
 
-    #[test_case(merkle_proof_idx(0, H256::zero(), SubTrie::Left) => expected_data_proof_0(H256::zero(),SubTrie::Left); "From merkle proof 0 left sub trie")]
-    #[test_case(merkle_proof_idx(1, H256::zero(), SubTrie::Left) => expected_data_proof_1(H256::zero(),SubTrie::Left); "From merkle proof 1 left sub trie")]
-    #[test_case(merkle_proof_idx(6, H256::zero(), SubTrie::Left) => expected_data_proof_6(H256::zero(),SubTrie::Left); "From merkle proof 6 left sub trie")]
-    #[test_case(merkle_proof_idx(0, H256::zero(), SubTrie::Right) => expected_data_proof_0(H256::zero(),SubTrie::Right); "From merkle proof 0 right sub trie")]
-    #[test_case(merkle_proof_idx(1, H256::zero(), SubTrie::Right) => expected_data_proof_1(H256::zero(),SubTrie::Right); "From merkle proof 1 right sub trie")]
-    #[test_case(merkle_proof_idx(6, H256::zero(), SubTrie::Right) => expected_data_proof_6(H256::zero(),SubTrie::Right); "From merkle proof 6 right sub trie")]
+    #[test_case(merkle_proof_idx(0, H256::zero(), SubTrie::Left) => expected_data_proof_0(H256::zero(), SubTrie::Left); "From merkle proof 0 left sub trie")]
+    #[test_case(merkle_proof_idx(1, H256::zero(), SubTrie::Left) => expected_data_proof_1(H256::zero(), SubTrie::Left); "From merkle proof 1 left sub trie")]
+    #[test_case(merkle_proof_idx(6, H256::zero(), SubTrie::Left) => expected_data_proof_6(H256::zero(), SubTrie::Left); "From merkle proof 6 left sub trie")]
+    #[test_case(merkle_proof_idx(0, H256::zero(), SubTrie::Right) => expected_data_proof_0(H256::zero(), SubTrie::Right); "From merkle proof 0 right sub trie")]
+    #[test_case(merkle_proof_idx(1, H256::zero(), SubTrie::Right) => expected_data_proof_1(H256::zero(), SubTrie::Right); "From merkle proof 1 right sub trie")]
+    #[test_case(merkle_proof_idx(6, H256::zero(), SubTrie::Right) => expected_data_proof_6(H256::zero(), SubTrie::Right); "From merkle proof 6 right sub trie")]
     #[test_case(merkle_proof_idx(0, H256::repeat_byte(1), SubTrie::Left) => expected_data_proof_0(H256::repeat_byte(1), SubTrie::Left); "From merkle proof 0 left sub trie non zero")]
     #[test_case(merkle_proof_idx(1, H256::repeat_byte(1), SubTrie::Left) => expected_data_proof_1(H256::repeat_byte(1), SubTrie::Left); "From merkle proof 1 left sub trie non zero")]
     #[test_case(merkle_proof_idx(6, H256::repeat_byte(1), SubTrie::Left) => expected_data_proof_6(H256::repeat_byte(1), SubTrie::Left); "From merkle proof 6 left sub trie non zero")]
