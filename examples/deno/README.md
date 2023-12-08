@@ -1,3 +1,5 @@
+## Examples
+
 Before running examples or benchmarks make sure that you have a running local node.
 
 ```bash
@@ -15,6 +17,13 @@ deno run -A ./examples/deno/subscribe_to_header.ts
 
 # To run the Transfer example
 deno run -A ./examples/deno/transfer.ts
+```
+
+## Benchmarks
+Make sure that you have a running local node with `--features kate-rpc-metrics` enabled.
+
+```bash
+cargo build --release --features kate-rpc-metrics
 ```
 
 ```bash

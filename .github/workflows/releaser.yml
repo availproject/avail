@@ -33,7 +33,7 @@ jobs:
           path: target/release/wbuild/da-runtime/data-avail-runtime.compact.compressed.wasm
   
   binary_linux_amd64:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - name: Install Protoc
@@ -56,7 +56,7 @@ jobs:
           path: target/release/x86_64-generic-linux-data-avail.tar.gz
 
   binary_linux_aarch64:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - name: Install Protoc
