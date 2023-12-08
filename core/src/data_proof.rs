@@ -150,11 +150,11 @@ mod test {
             .collect::<Vec<_>>()
     }
 
-    /// Creates a merkle proof of `leaf_index`.
-    ///
-    /// If `leaf_index >= number_of_leaves`, it will create a fake proof using the latest possible
-    /// index and overwriting the proof. That case is used to test transformations into
-    /// `DataProof`.
+    // Creates a merkle proof of `leaf_index`.
+    //
+    // If `leaf_index >= number_of_leaves`, it will create a fake proof using the latest possible
+    // index and overwriting the proof. That case is used to test transformations into
+    // `DataProof`.
     // fn merkle_proof_idx(leaf_index: usize, root: H256, sub_trie: SubTrie) -> (MerkleProof<H256, Vec<u8>>, H256, SubTrie) {
     //     let leaves = leaves();
     //     let index = min(leaf_index, leaves.len() - 1);
