@@ -9,8 +9,8 @@ repository = ""
 description = "Mokcked Runtime for Testing"
 
 [dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "add_new_proof_gen", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", branch = "add_new_proof_gen", default-features = false }
 da-control = { path = "../dactr" }
 
 scale-info = { version = "2.5.0", features = ["derive"] }

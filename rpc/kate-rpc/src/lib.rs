@@ -4,6 +4,7 @@ use core::num::NonZeroU16;
 use std::{marker::Sync, sync::Arc};
 
 use avail_base::metrics::avail::KateRpcMetrics;
+use avail_core::data_proof::SubTrie;
 use avail_core::{
 	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, DataProof,
 	OpaqueExtrinsic,
@@ -16,6 +17,7 @@ use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 };
+use kate::gridgen::AsBytes;
 use kate::{
 	com::Cell,
 	config::{COL_EXTENSION, ROW_EXTENSION},
@@ -443,36 +445,45 @@ where
 			.map(|extrinsic| extrinsic.function);
 
 		let transaction_call = calls.clone().nth(transaction_index as usize).unwrap();
-		// todo call it bridge call
-		// let mut call_type: SubTrie = SubTrie::Right;
-		// match transaction_call {
-		//     RuntimeCall::DataAvailability(da_control::Call::submit_data { .. }) => {
-		//         call_type = SubTrie::Right;
-		//     }
-		//     _ => {
-		//         return Err(internal_err!(
-		// 			"Data proof cannot be generated for transaction index={} at block {:?}",
-		// 			transaction_index,
-		// 			at
-		// 		));
-		//     }
-		// }
+		let call_type: SubTrie;
+		let root_side: SubTrie;
 
-		// Build the proof.
-		let (proof, root) = submitted_data::calls_proof::<Runtime, _, _>(calls, transaction_index)
-			.ok_or_else(|| {
-				internal_err!(
+		match transaction_call {
+			RuntimeCall::DataAvailability(da_control::Call::submit_data { .. }) => {
+				call_type = SubTrie::Left;
+				root_side = SubTrie::Right;
+			},
+			RuntimeCall::Succinct(pallet_succinct::Call::submit_bridge_data { .. }) => {
+				call_type = SubTrie::Right;
+				root_side = SubTrie::Left;
+			},
+			_ => {
+				return Err(internal_err!(
 					"Data proof cannot be generated for transaction index={} at block {:?}",
 					transaction_index,
 					at
-				)
-			})?;
+				));
+			},
+		}
 
-		let data_proof = DataProof::try_from((&proof, root))
+		// Build the proof.
+		let (proof, root) =
+			submitted_data::calls_proof::<Runtime, _, _>(calls, transaction_index, call_type)
+				.ok_or_else(|| {
+					internal_err!(
+						"Data proof cannot be generated for transaction index={} at block {:?}",
+						transaction_index,
+						at
+					)
+				})?;
+
+		let data_proof = DataProof::try_from((&proof, root, root_side))
 			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e));
 
 		// Execution Time Metric
 		KateRpcMetrics::observe_query_data_proof_execution_time(execution_start.elapsed());
+
+		log::info!("data_proof {:?}", data_proof);
 
 		data_proof
 	}

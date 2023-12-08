@@ -1,9 +1,12 @@
+use avail_core::data_proof::SubTrie;
 use core::fmt::Debug;
 
 use avail_core::OpaqueExtrinsic;
 use binary_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
 use frame_support::Hashable;
 use sp_core::H256;
+use sp_io::hashing::keccak_256;
+use sp_io::trie::keccak_256_root;
 use sp_runtime::traits::Keccak256;
 use sp_std::vec;
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
@@ -117,10 +120,31 @@ where
 	let blob_data = blob_data.into_iter().flatten();
 	let bridge_data = bridge_data.into_iter().flatten();
 
-	let blob_root = root(blob_data, Rc::clone(&metrics)).as_bytes().to_vec();
-	let bridge_root = root(bridge_data, Rc::clone(&metrics)).as_bytes().to_vec();
-	let root_data = vec![blob_root, bridge_root];
-	root(root_data.into_iter(), Rc::clone(&metrics))
+	let root_blob_data = blob_data
+		.into_iter()
+		.filter(|v| !v.is_empty())
+		.map(|leaf| keccak_256(leaf.as_slice()).as_slice().to_vec())
+		.collect::<Vec<_>>();
+
+	let root_bridge_data = bridge_data
+		.into_iter()
+		.filter(|v| !v.is_empty())
+		.map(|leaf| keccak_256(leaf.as_slice()).as_slice().to_vec())
+		.collect::<Vec<_>>();
+
+	let binding = root(root_blob_data.into_iter(), Rc::clone(&metrics));
+	let blob_root = binding.as_bytes();
+
+	let binding = root(root_bridge_data.into_iter(), Rc::clone(&metrics));
+
+	let bridge_root = binding.as_bytes();
+
+	let mut concat = vec![];
+	// keccak_256(blob_root, bridge_root)
+	concat.extend_from_slice(blob_root);
+	concat.extend_from_slice(bridge_root);
+	let hash = keccak_256(concat.as_slice());
+	H256(hash)
 }
 
 /// Construct a root hash of Binary Merkle Tree created from given filtered `calls`.
@@ -140,7 +164,12 @@ where
 /// information about the process into `metrics`.
 ///
 /// In case an empty list of leaves is passed the function returns a 0-filled hash.
-pub fn root<I: Iterator<Item = Vec<u8>>>(submitted_data: I, metrics: RcMetrics) -> H256 {
+pub fn root<I: Iterator<Item = Vec<u8>> + core::fmt::Debug>(
+	submitted_data: I,
+	metrics: RcMetrics,
+) -> H256 {
+	log::info!("submitted_data for calculating root {:?}", submitted_data);
+
 	let root = merkle_root::<Keccak256, _>(submitted_data);
 	log::debug!(
 		target: LOG_TARGET,
@@ -196,9 +225,9 @@ where
 /// memory. That would increase the memory footprint of the node significantly. We could fix this
 /// adding the number of submitted data items at `System` pallet.
 pub fn calls_proof<F, I, C>(
-	mut calls: I,
+	calls: I,
 	transaction_index: u32,
-	// call_type: SubTrie,
+	call_type: SubTrie,
 ) -> Option<(MerkleProof<H256, Vec<u8>>, H256)>
 where
 	F: Filter<C>,
@@ -221,13 +250,17 @@ where
 
 	let mut submitted_data = vec![];
 	let mut root_data = vec![];
-	// if call_type == SubTrie::Left {
-	submitted_data = blob_data;
-	root_data = bridge_data;
-	// } else {
-	//     submitted_data = bridge_data;
-	//     root_data = blob_data;
-	// }
+
+	match call_type {
+		SubTrie::Left => {
+			submitted_data = blob_data;
+			root_data = bridge_data;
+		},
+		SubTrie::Right => {
+			submitted_data = bridge_data;
+			root_data = blob_data;
+		},
+	}
 
 	match submitted_data.get(transaction_index) {
 		None => return None,
@@ -241,9 +274,18 @@ where
 		.filter(|data| !data.is_empty())
 		.count() - 1;
 
+	// clean root data
 	let data = submitted_data
 		.into_iter()
 		.filter(|v| !v.is_empty())
+		.map(|leaf| keccak_256(leaf.as_slice()).as_slice().to_vec())
+		.collect::<Vec<_>>();
+
+	// clean root data
+	let root_data = root_data
+		.into_iter()
+		.filter(|v| !v.is_empty())
+		.map(|leaf| keccak_256(leaf.as_slice()).as_slice().to_vec())
 		.collect::<Vec<_>>();
 
 	let root = root(root_data.into_iter(), Rc::clone(&metrics));
@@ -363,9 +405,18 @@ mod test {
 		.as_bytes()
 		.to_vec();
 		let bridge_root = H256::zero().as_bytes().to_vec();
-		let root = root(vec![bridge_root, blob_root].into_iter(), metrics);
+		let root1 = root(
+			vec![blob_root.clone(), bridge_root.clone()].into_iter(),
+			metrics,
+		); // 0x9c6b2c1b0d0b25a008e6c882cc7b415f309965c72ad2b944ac0931048ca31cd5 which vec[vec[]] is not the same as H256::zero
+		let root2 = root(
+			vec![bridge_root.clone(), blob_root.clone()].into_iter(),
+			Metrics::new_shared(),
+		); // 0x9c6b2c1b0d0b25a008e6c882cc7b415f309965c72ad2b944ac0931048ca31cd5 which vec[vec[]] is not the same as H256::zero
+   // let root1 = root(vec![].into_iter(), metrics);
 
-		println!("{:?}", root);
+		println!("{:?}", root1);
+		println!("{:?}", root2);
 	}
 
 	// #[test]
