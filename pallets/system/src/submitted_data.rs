@@ -147,19 +147,6 @@ where
 	H256(hash)
 }
 
-/// Construct a root hash of Binary Merkle Tree created from given filtered `calls`.
-// pub fn calls_root<F, C, I>(calls: I) -> H256
-// where
-// 	F: Filter<C>,
-// 	I: Iterator<Item = C>,
-// {
-// 	let metrics = Metrics::new_shared();
-//
-// 	let submitted_data = calls.flat_map(|c| F::filter(c, Rc::clone(&metrics)));
-//
-// 	root(submitted_data, Rc::clone(&metrics))
-// }
-
 /// Construct a root hash of a Binary Merkle Tree created from given leaves and stores
 /// information about the process into `metrics`.
 ///
@@ -168,8 +155,6 @@ pub fn root<I: Iterator<Item = Vec<u8>> + core::fmt::Debug>(
 	submitted_data: I,
 	metrics: RcMetrics,
 ) -> H256 {
-	log::info!("submitted_data for calculating root {:?}", submitted_data);
-
 	let root = merkle_root::<Keccak256, _>(submitted_data);
 	log::debug!(
 		target: LOG_TARGET,
@@ -179,39 +164,6 @@ pub fn root<I: Iterator<Item = Vec<u8>> + core::fmt::Debug>(
 	);
 
 	root
-}
-
-/// Creates the Merkle Proof of the submitted data items in `app_extrinsics` filtered and
-/// extracted by `E` and the given `data_index`.
-///
-/// If `data_index` is greater than the number of Merkle leaves, it will return `None`.
-///
-/// # TODO
-/// - The `merkle_proof` requires `ExactSizeIterator`, forcing to load all submitted data into
-/// memory. That would increase the memory footprint of the node significantly. We could fix this
-/// adding the number of submitted data items at `System` pallet.
-pub fn extrinsics_proof<'a, E, I>(
-	app_extrinsics: I,
-	data_index: u32,
-) -> Option<MerkleProof<H256, Vec<u8>>>
-where
-	E: Extractor,
-	E::Error: Debug,
-	I: Iterator<Item = &'a OpaqueExtrinsic>,
-{
-	let metrics = Metrics::new_shared();
-	// let submitted_data = app_extrinsics
-	//     .map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
-	//     .collect::<(Vec<_>, Vec<_>)>();
-
-	// let (blob_data, bridge_data) = app_extrinsics
-	//     .map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)))
-	//     .unzip();
-
-	// todo generate proof and return
-	let blob_root = proof(vec![], data_index, Rc::clone(&metrics));
-
-	blob_root
 }
 
 /// Creates the Merkle Proof of the submitted data items in `calls` filtered by `F` and
