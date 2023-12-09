@@ -15,7 +15,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	/// attempt to author blocks unless this is equal to its native runtime.
 	authoring_version: 11,
 	/// Per convention: if the runtime behavior changes, increment spec_version
-	/// and set impl_version to 0. This paramenter is typically incremented when
+	/// and set impl_version to 0. This parameter is typically incremented when
 	/// there's an update to the transaction_version.
 	spec_version: 15,
 	/// The version of the implementation of the specification. Nodes can ignore this. It is only
