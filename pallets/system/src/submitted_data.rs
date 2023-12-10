@@ -6,7 +6,6 @@ use binary_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerklePr
 use frame_support::Hashable;
 use sp_core::H256;
 use sp_io::hashing::keccak_256;
-use sp_io::trie::keccak_256_root;
 use sp_runtime::traits::Keccak256;
 use sp_std::vec;
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
@@ -304,11 +303,11 @@ where
 
 #[cfg(test)]
 mod test {
-	use hex_literal::hex;
-	use sp_core::{keccak_256, H256};
+	use avail_core::data_proof::SubTrie;
+	use sp_core::H256;
 	use std::vec;
 
-	use crate::submitted_data::{calls_proof, proof, root, Filter, Metrics, RcMetrics};
+	use crate::submitted_data::{calls_proof, Filter, RcMetrics};
 
 	// dummy filter implementation that skips empty strings in vector
 	impl<C> Filter<C> for String
@@ -330,128 +329,100 @@ mod test {
 	}
 
 	#[test]
-	fn test_() {
+	fn test_data_proof_with_skipped_tx() {
 		let tx1_data: String = String::from("0");
-		let tx2_data: String = String::from("1");
-		let tx3_data: String = String::from("2");
+		let tx2_data: String = String::new(); // tx should be skipped
+		let tx3_data: String = String::from("1");
+		let tx4_data: String = String::from("2");
 
-		let tx1_hash = keccak_256(String::from("0").as_bytes());
-		let tx2_hash = keccak_256(String::from("1").as_bytes());
-		let tx3_hash = keccak_256(String::from("2").as_bytes());
+		let submitted_data = vec![tx1_data, tx2_data, tx3_data, tx4_data];
 
-		println!("0 {:?}", H256(tx1_hash));
-		println!("1 {:?}", H256(tx2_hash));
-		println!("2 {:?}", H256(tx3_hash));
+		// leaf 0 keccak256(044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d)
+		//                  40105d5bc10105c17fd72b93a8f73369e2ee6eee4d4714b7bf7bf3c2f156e601
+		// leaf 1 keccak256(c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6)
+		//                  4aeff0db81e3146828378be230d377356e57b6d599286b4b517dbf8941b3e1b2
+		// leaf 2 keccak256(ad7c5bef027816a800da1736444fb58a807ef4c9603b7848673f7e3a68eb14a5)
+		//                  1204b3dcd975ba0a68eafbf4d2ca0d13cc7b5e3709749c1dc36e6e74934270b3
+		// intermediate root (leaf[0], leaf[1]) db0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e
+		// data_root keccak256(db0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e, 1204b3dcd975ba0a68eafbf4d2ca0d13cc7b5e3709749c1dc36e6e74934270b3)
+		//                                                       47e6a27bc6c7fec523d7c8f0c1a8eb66cd00b2d49058730161b2cda6d64e81f2
 
-		println!("hashed 0 {:?}", H256(keccak_256(tx1_hash.as_slice())));
-		println!("hashed 1 {:?}", H256(keccak_256(tx2_hash.as_slice())));
-		println!("hashed 2 {:?}", H256(keccak_256(tx3_hash.as_slice())));
+		if let Some((da_proof, root)) =
+			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 0, SubTrie::Left)
+		{
+			assert_eq!(root, H256::zero());
+			assert_eq!(da_proof.leaf_index, 0);
+			assert_eq!(
+				format!("{:#x}", da_proof.root),
+				"0x47e6a27bc6c7fec523d7c8f0c1a8eb66cd00b2d49058730161b2cda6d64e81f2"
+			);
+			assert_eq!(da_proof.proof.len(), 2);
+			assert_eq!(
+				format!("{:#x}", da_proof.proof[0]),
+				"0x4aeff0db81e3146828378be230d377356e57b6d599286b4b517dbf8941b3e1b2"
+			);
+			assert_eq!(
+				format!("{:#x}", da_proof.proof[1]),
+				"0x1204b3dcd975ba0a68eafbf4d2ca0d13cc7b5e3709749c1dc36e6e74934270b3"
+			);
+			assert_eq!(da_proof.number_of_leaves, 3);
+		} else {
+			panic!("Proof not generated for the transaction index 0!");
+		}
 
-		let submitted_data: Vec<u8> = vec![];
-		let metrics = Metrics::new_shared();
+		// proof should not be generated when there is not data
+		assert_eq!(
+			None,
+			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 1, SubTrie::Left)
+		);
 
-		// let proof = proof(submitted_data, 0, metrics);
-		let blob_root = H256(hex!(
-			"044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d"
-		))
-		.as_bytes()
-		.to_vec();
-		let bridge_root = H256::zero().as_bytes().to_vec();
-		let root1 = root(
-			vec![blob_root.clone(), bridge_root.clone()].into_iter(),
-			metrics,
-		); // 0x9c6b2c1b0d0b25a008e6c882cc7b415f309965c72ad2b944ac0931048ca31cd5 which vec[vec[]] is not the same as H256::zero
-		let root2 = root(
-			vec![bridge_root.clone(), blob_root.clone()].into_iter(),
-			Metrics::new_shared(),
-		); // 0x9c6b2c1b0d0b25a008e6c882cc7b415f309965c72ad2b944ac0931048ca31cd5 which vec[vec[]] is not the same as H256::zero
-   // let root1 = root(vec![].into_iter(), metrics);
+		if let Some((da_proof, root)) =
+			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 2, SubTrie::Left)
+		{
+			assert_eq!(root, H256::zero());
+			assert_eq!(da_proof.leaf_index, 1);
+			assert_eq!(
+				format!("{:#x}", da_proof.root),
+				"0x47e6a27bc6c7fec523d7c8f0c1a8eb66cd00b2d49058730161b2cda6d64e81f2"
+			);
+			assert_eq!(da_proof.proof.len(), 2);
+			assert_eq!(
+				format!("{:#x}", da_proof.proof[0]),
+				"0x40105d5bc10105c17fd72b93a8f73369e2ee6eee4d4714b7bf7bf3c2f156e601"
+			);
+			assert_eq!(
+				format!("{:#x}", da_proof.proof[1]),
+				"0x1204b3dcd975ba0a68eafbf4d2ca0d13cc7b5e3709749c1dc36e6e74934270b3"
+			);
+			assert_eq!(da_proof.number_of_leaves, 3);
+		} else {
+			panic!("Proof not generated for the transaction index 2!");
+		}
 
-		println!("{:?}", root1);
-		println!("{:?}", root2);
+		if let Some((da_proof, root)) =
+			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 3, SubTrie::Left)
+		{
+			println!("{:?}", root);
+
+			assert_eq!(da_proof.leaf_index, 2);
+			assert_eq!(
+				format!("{:#x}", da_proof.root),
+				"0x47e6a27bc6c7fec523d7c8f0c1a8eb66cd00b2d49058730161b2cda6d64e81f2"
+			);
+			assert_eq!(da_proof.proof.len(), 1);
+			assert_eq!(
+				format!("{:#x}", da_proof.proof[0]),
+				"0xdb0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e"
+			);
+			assert_eq!(da_proof.number_of_leaves, 3);
+		} else {
+			panic!("Proof not generated for the transaction index 3!");
+		}
+
+		// submit index that does not exists and proof should not be generated
+		assert_eq!(
+			None,
+			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 15, SubTrie::Left)
+		);
 	}
-
-	// #[test]
-	// fn test_data_proof_with_skipped_tx() {
-	//     let tx1_data: String = String::from("0");
-	//     let tx2_data: String = String::new(); // tx should be skipped
-	//     let tx3_data: String = String::from("1");
-	//     let tx4_data: String = String::from("2");
-	//
-	//     let submitted_data = vec![tx1_data, tx2_data, tx3_data, tx4_data];
-	//
-	//     // leaf 0 044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d
-	//     // leaf 1 c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6
-	//     // leaf 2 ad7c5bef027816a800da1736444fb58a807ef4c9603b7848673f7e3a68eb14a5
-	//     // intermediate root (leaf[0], leaf[1])  0b4aa17bff8fc189efb37609ac5ea9fca0df4c834a6fbac74b24c8119c40fef2
-	//     // data_root 0f1d00f4d84258b8d99bfc4748ff45b8039f108f43ca47e22ac5a1eab2e8c02d
-	//
-	//     if let Some(da_proof) = calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 0) {
-	//         assert_eq!(da_proof.leaf_index, 0);
-	//         assert_eq!(
-	//             format!("{:#x}", da_proof.root),
-	//             "0x0f1d00f4d84258b8d99bfc4748ff45b8039f108f43ca47e22ac5a1eab2e8c02d"
-	//         );
-	//         assert_eq!(da_proof.proof.len(), 2);
-	//         assert_eq!(
-	//             format!("{:#x}", da_proof.proof[0]),
-	//             "0xc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6"
-	//         );
-	//         assert_eq!(
-	//             format!("{:#x}", da_proof.proof[1]),
-	//             "0xad7c5bef027816a800da1736444fb58a807ef4c9603b7848673f7e3a68eb14a5"
-	//         );
-	//         assert_eq!(da_proof.number_of_leaves, 3);
-	//     } else {
-	//         panic!("Proof not generated for the transaction index 0!");
-	//     }
-	//
-	//     // proof should not be generated when there is not data
-	//     assert_eq!(
-	//         None,
-	//         calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 1)
-	//     );
-	//
-	//     if let Some(da_proof) = calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 2) {
-	//         assert_eq!(da_proof.leaf_index, 1);
-	//         assert_eq!(
-	//             format!("{:#x}", da_proof.root),
-	//             "0x0f1d00f4d84258b8d99bfc4748ff45b8039f108f43ca47e22ac5a1eab2e8c02d"
-	//         );
-	//         assert_eq!(da_proof.proof.len(), 2);
-	//         assert_eq!(
-	//             format!("{:#x}", da_proof.proof[0]),
-	//             "0x044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d"
-	//         );
-	//         assert_eq!(
-	//             format!("{:#x}", da_proof.proof[1]),
-	//             "0xad7c5bef027816a800da1736444fb58a807ef4c9603b7848673f7e3a68eb14a5"
-	//         );
-	//         assert_eq!(da_proof.number_of_leaves, 3);
-	//     } else {
-	//         panic!("Proof not generated for the transaction index 2!");
-	//     }
-	//
-	//     if let Some(da_proof) = calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 3) {
-	//         assert_eq!(da_proof.leaf_index, 2);
-	//         assert_eq!(
-	//             format!("{:#x}", da_proof.root),
-	//             "0x0f1d00f4d84258b8d99bfc4748ff45b8039f108f43ca47e22ac5a1eab2e8c02d"
-	//         );
-	//         assert_eq!(da_proof.proof.len(), 1);
-	//         assert_eq!(
-	//             format!("{:#x}", da_proof.proof[0]),
-	//             "0x0b4aa17bff8fc189efb37609ac5ea9fca0df4c834a6fbac74b24c8119c40fef2"
-	//         );
-	//         assert_eq!(da_proof.number_of_leaves, 3);
-	//     } else {
-	//         panic!("Proof not generated for the transaction index 3!");
-	//     }
-	//
-	//     // submit index that does not exists and proof should not be generated
-	//     assert_eq!(
-	//         None,
-	//         calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 15)
-	//     );
-	// }
 }
