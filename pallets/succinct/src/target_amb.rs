@@ -147,27 +147,33 @@ pub fn get_storage_root(
 	let trie =
 		TrieDBBuilder::<EIP1186Layout<keccak256::KeccakHasher>>::new(&db, &state_root).build();
 
-	let result: DBValue = trie.get(key.as_slice()).unwrap().unwrap();
-	let byte_slice = result.as_slice();
-	let r = Rlp::new(byte_slice);
-
-	let item_count = r
-		.item_count()
-		.map_err(|_| StorageError::StorageValueError)?;
-
-	if item_count != 4 {
-		return Err(StorageError::AccountNotFound);
-	}
-
-	let item = r
-		.at(2)
+	if let Some(result) = trie
+		.get(key.as_slice())
 		.map_err(|_| StorageError::StorageValueError)?
-		.data()
-		.map_err(|_| StorageError::StorageValueError)?;
+	{
+		let byte_slice = result.as_slice();
+		let r = Rlp::new(byte_slice);
 
-	let storage_root = H256::from_slice(item);
+		let item_count = r
+			.item_count()
+			.map_err(|_| StorageError::StorageValueError)?;
 
-	Ok(storage_root)
+		if item_count != 4 {
+			return Err(StorageError::AccountNotFound);
+		}
+
+		let item = r
+			.at(2)
+			.map_err(|_| StorageError::StorageValueError)?
+			.data()
+			.map_err(|_| StorageError::StorageValueError)?;
+
+		let storage_root = H256::from_slice(item);
+
+		Ok(storage_root)
+	} else {
+		Err(StorageError::StorageValueError)
+	}
 }
 
 pub mod keccak256 {

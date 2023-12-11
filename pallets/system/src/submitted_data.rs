@@ -9,7 +9,6 @@ use sp_io::hashing::keccak_256;
 use sp_runtime::traits::Keccak256;
 use sp_std::vec;
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
-
 const LOG_TARGET: &str = "runtime::system::submitted_data";
 
 /// Information about `submitted_data_root` and `submitted_data_proof` methods.
@@ -87,15 +86,13 @@ where
 		log::error!("Extractor cannot decode opaque: {e:?}");
 	}
 
-	let extracted_data = extracted.unwrap_or_default();
+	let (blob_root_data, bridge_root_data) = extracted.unwrap_or_default();
 
-	let blob_root = extracted_data
-		.0
+	let blob_root = blob_root_data
 		.into_iter()
 		.filter(|data| !data.is_empty())
 		.collect();
-	let data_root = extracted_data
-		.1
+	let data_root = bridge_root_data
 		.into_iter()
 		.filter(|data| !data.is_empty())
 		.collect();
@@ -122,13 +119,13 @@ where
 	let root_blob_data = blob_data
 		.into_iter()
 		.filter(|v| !v.is_empty())
-		.map(|leaf| keccak_256(leaf.as_slice()).as_slice().to_vec())
+		.map(|leaf| keccak_256(leaf.as_slice()).to_vec())
 		.collect::<Vec<_>>();
 
 	let root_bridge_data = bridge_data
 		.into_iter()
 		.filter(|v| !v.is_empty())
-		.map(|leaf| keccak_256(leaf.as_slice()).as_slice().to_vec())
+		.map(|leaf| keccak_256(leaf.as_slice()).to_vec())
 		.collect::<Vec<_>>();
 
 	let binding = root(root_blob_data.into_iter(), Rc::clone(&metrics));
@@ -322,7 +319,6 @@ mod test {
 				(vec![s.into_bytes()], vec![])
 			}
 		}
-
 		fn process_calls(_: Vec<C>, _: &RcMetrics) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
 			(vec![], vec![])
 		}

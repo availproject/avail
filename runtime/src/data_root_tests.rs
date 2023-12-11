@@ -1,6 +1,6 @@
 use avail_core::asdr::AppUncheckedExtrinsic;
 use avail_core::OpaqueExtrinsic;
-use codec::Decode;
+use codec::{Decode, Encode};
 use da_control::{Call as DaCall, CheckAppId};
 use frame_system::{
 	submitted_data::extrinsics_root, CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce,
@@ -9,6 +9,7 @@ use frame_system::{
 use hex_literal::hex;
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_core::{sr25519::Signature, H256};
+use sp_io::hashing::keccak_256;
 use sp_runtime::{generic::Era, AccountId32, MultiAddress};
 use test_case::test_case;
 
@@ -17,10 +18,19 @@ use super::*;
 fn submit_call() -> Vec<u8> {
 	hex!("ed018400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d01be06880f2f6203365b508b4226fd697d3d79d3a50a5617aad714466d40ef47067225e823135b32121aa0f6f56e696f5f71107a6d44768c2fefe38cb209f7f28224000000041d014054657374207375626d69742064617461").to_vec()
 }
+
 fn submit_call_expected() -> H256 {
 	// hex!("ddf368647a902a6f6ab9f53b32245be28edc99e92f43f0004bbc2cb359814b2a").into()
 	// hex!("9c6cf805b377632c6a224e1ca035f8f6975932529a5e492e73742e4f861ba89d").into()
-	hex!("db45128913020d152dbee4d00a1dffebdb703425c44adbd7d7dfc7ae93d836bc").into()
+	// leaf is keccak256(data) -> root
+	let leaf_data = hex!("db45128913020d152dbee4d00a1dffebdb703425c44adbd7d7dfc7ae93d836bc");
+	let blob_root = keccak_256(leaf_data.as_slice());
+
+	let mut concat = vec![];
+	// keccak_256(blob_root, bridge_root)
+	concat.extend_from_slice(blob_root.as_slice());
+	concat.extend_from_slice(H256::zero().as_bytes());
+	H256(keccak_256(concat.as_slice()))
 }
 
 #[test]

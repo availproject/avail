@@ -513,7 +513,14 @@ pub mod pallet {
 				amount: U256::zero(),
 			};
 
-			// let success = Self::transfer(message_data.amount, message_data.recipient_address)?;
+			// T::Currency::transfer(
+			// 	&who,
+			// 	&destination_account_id,
+			// 	transferable_amount,
+			// 	ExistenceRequirement::KeepAlive,
+			// )?;
+
+			let success = Self::transfer(message_data.amount, message_data.recipient_address)?;
 			// if success {
 			// 	Self::deposit_event(Event::<T>::ExecutedMessage {
 			// 		chain_id: message.source_chain_id,
