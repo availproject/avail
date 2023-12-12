@@ -444,10 +444,18 @@ where
 			.flat_map(|extrinsic| UncheckedExtrinsic::try_from(extrinsic).ok())
 			.map(|extrinsic| extrinsic.function);
 
-		let transaction_call = calls.clone().nth(transaction_index as usize).unwrap();
+		let transaction_call =
+			calls
+				.clone()
+				.nth(usize::from(transaction_index))
+				.or_else(internal_err!(
+						"Data proof cannot be generated for transaction call at index={} and block {:?}",
+						transaction_index,
+						at
+					))?;
+
 		let call_type: SubTrie;
 		let root_side: SubTrie;
-
 		match transaction_call {
 			RuntimeCall::DataAvailability(da_control::Call::submit_data { .. }) => {
 				call_type = SubTrie::Left;
@@ -482,8 +490,6 @@ where
 
 		// Execution Time Metric
 		KateRpcMetrics::observe_query_data_proof_execution_time(execution_start.elapsed());
-
-		log::info!("data_proof {:?}", data_proof);
 
 		data_proof
 	}

@@ -325,7 +325,7 @@ mod test {
 	}
 
 	#[test]
-	fn test_data_proof_with_skipped_tx() {
+	fn test_left_data_proof_with_skipped_tx() {
 		let tx1_data: String = String::from("0");
 		let tx2_data: String = String::new(); // tx should be skipped
 		let tx3_data: String = String::from("1");
@@ -341,7 +341,7 @@ mod test {
 		//                  1204b3dcd975ba0a68eafbf4d2ca0d13cc7b5e3709749c1dc36e6e74934270b3
 		// intermediate root (leaf[0], leaf[1]) db0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e
 		// data_root keccak256(db0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e, 1204b3dcd975ba0a68eafbf4d2ca0d13cc7b5e3709749c1dc36e6e74934270b3)
-		//                                                       47e6a27bc6c7fec523d7c8f0c1a8eb66cd00b2d49058730161b2cda6d64e81f2
+		//                                                       (47e6a27bc6c7fec523d7c8f0c1a8eb66cd00b2d49058730161b2cda6d64e81f2)
 
 		if let Some((da_proof, root)) =
 			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 0, SubTrie::Left)
