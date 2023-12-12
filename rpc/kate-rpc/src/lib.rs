@@ -12,7 +12,6 @@ use avail_core::{
 use da_runtime::RuntimeCall;
 use da_runtime::{apis::DataAvailApi, Runtime, UncheckedExtrinsic};
 use frame_system::{limits::BlockLength, submitted_data};
-use jsonrpsee::tracing::log;
 use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
@@ -444,15 +443,21 @@ where
 			.flat_map(|extrinsic| UncheckedExtrinsic::try_from(extrinsic).ok())
 			.map(|extrinsic| extrinsic.function);
 
-		let transaction_call =
-			calls
-				.clone()
-				.nth(usize::from(transaction_index))
-				.or_else(internal_err!(
-						"Data proof cannot be generated for transaction call at index={} and block {:?}",
-						transaction_index,
-						at
-					))?;
+		let tx_index = usize::try_from(transaction_index).map_err(|_| {
+			internal_err!(
+				"Data proof cannot be generated for transaction at index={:?} and block {:?}",
+				transaction_index,
+				at
+			)
+		})?;
+
+		let transaction_call = calls.clone().nth(tx_index).ok_or_else(|| {
+			internal_err!(
+				"Data proof cannot be generated for transaction call at index={:?} and block {:?}",
+				transaction_index,
+				at
+			)
+		})?;
 
 		let call_type: SubTrie;
 		let root_side: SubTrie;

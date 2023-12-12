@@ -9,6 +9,7 @@ use sp_io::hashing::keccak_256;
 use sp_runtime::traits::Keccak256;
 use sp_std::vec;
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
+
 const LOG_TARGET: &str = "runtime::system::submitted_data";
 
 /// Information about `submitted_data_root` and `submitted_data_proof` methods.
@@ -223,22 +224,22 @@ where
 		.count() - 1;
 
 	// clean root data
-	let data = submitted_data
+	let data_filtered = submitted_data
 		.into_iter()
 		.filter(|v| !v.is_empty())
 		.map(|leaf| keccak_256(leaf.as_slice()).as_slice().to_vec())
 		.collect::<Vec<_>>();
 
 	// clean root data
-	let root_data = root_data
+	let root_data_filtered = root_data
 		.into_iter()
 		.filter(|v| !v.is_empty())
 		.map(|leaf| keccak_256(leaf.as_slice()).as_slice().to_vec())
 		.collect::<Vec<_>>();
 
-	let root = root(root_data.into_iter(), Rc::clone(&metrics));
+	let root = root(root_data_filtered.into_iter(), Rc::clone(&metrics));
 	let data_index = u32::try_from(data_index).ok()?;
-	return if let Some(proof) = proof(data, data_index, Rc::clone(&metrics)) {
+	return if let Some(proof) = proof(data_filtered, data_index, Rc::clone(&metrics)) {
 		Some((proof, root))
 	} else {
 		None
@@ -398,8 +399,6 @@ mod test {
 		if let Some((da_proof, root)) =
 			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 3, SubTrie::Left)
 		{
-			println!("{:?}", root);
-
 			assert_eq!(da_proof.leaf_index, 2);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
