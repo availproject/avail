@@ -44,3 +44,6 @@ VOLUME ["/da/node-data"]
 ENTRYPOINT ["/usr/local/bin/data-avail"]
 CMD ["--chain", "goldberg", "--tmp", "--name", "MyAwesomeAvailNodeInContainer"]
 
+EXPOSE 9615
+EXPOSE 9944
+EXPOSE 30333
