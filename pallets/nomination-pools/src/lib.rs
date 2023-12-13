@@ -2696,7 +2696,7 @@ impl<T: Config> Pallet<T> {
 		);
 
 		// This shouldn't fail, but if it does we don't really care. Remaining balance can consist
-		// of unclaimed pending commission, errorneous transfers to the reward account, etc.
+		// of unclaimed pending commission, erroneous transfers to the reward account, etc.
 		let reward_pool_remaining = T::Currency::free_balance(&reward_account);
 		let _ = T::Currency::transfer(
 			&reward_account,
