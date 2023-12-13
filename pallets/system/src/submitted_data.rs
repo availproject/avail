@@ -298,6 +298,7 @@ where
 #[cfg(test)]
 mod test {
 	use avail_core::data_proof::SubTrie;
+	use hex_literal::hex;
 	use sp_core::H256;
 	use std::vec;
 
@@ -358,6 +359,14 @@ mod test {
 				format!("{:#x}", da_proof.proof[1]),
 				"0x1204b3dcd975ba0a68eafbf4d2ca0d13cc7b5e3709749c1dc36e6e74934270b3"
 			);
+
+			assert_eq!(
+				H256::from_slice(da_proof.leaf.as_slice()),
+				H256(hex!(
+					"044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d"
+				))
+			);
+
 			assert_eq!(da_proof.number_of_leaves, 3);
 		} else {
 			panic!("Proof not generated for the transaction index 0!");
