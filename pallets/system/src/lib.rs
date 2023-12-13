@@ -579,7 +579,7 @@ pub mod pallet {
 		KilledAccount { account: T::AccountId },
 		/// On on-chain remark happened.
 		Remarked { sender: T::AccountId, hash: T::Hash },
-		/// On on-chain remark happend called by Root.
+		/// On on-chain remark happened called by Root.
 		RemarkedByRoot { hash: T::Hash },
 	}
 
