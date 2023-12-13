@@ -7148,7 +7148,7 @@ checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 [[package]]
 name = "patricia-merkle-trie"
 version = "0.1.0"
-source = "git+https://github.com/ComposableFi/patricia-merkle-trie.git?branch=main#ac6d15892d2c10c68e56c9622274a7c4ed6ddedf"
+source = "git+https://github.com/0xSasaPrsic/patricia-merkle-trie.git?branch=main#ac6d15892d2c10c68e56c9622274a7c4ed6ddedf"
 dependencies = [
  "hash-db 0.15.2",
  "memory-db 0.30.0",

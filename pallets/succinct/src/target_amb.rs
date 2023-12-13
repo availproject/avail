@@ -9,9 +9,9 @@ use scale_info::prelude::vec::Vec;
 
 use ethabi::ParamType::{Address, FixedBytes, Uint};
 use sp_io::hashing::keccak_256 as keccak256;
-use trie_db::{DBValue, Trie, TrieDBBuilder};
+use trie_db::{Trie, TrieDBBuilder};
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub enum AMBError {
 	CannotDecodeMessageData,
 }
@@ -176,6 +176,7 @@ pub fn get_storage_root(
 	}
 }
 
+// no_std implementation of hash_db::Hasher needed for merkle patricia trie
 pub mod keccak256 {
 	use hash256_std_hasher::Hash256StdHasher;
 	use sp_io::hashing::keccak_256;
@@ -258,8 +259,6 @@ mod test {
 	#[test]
 	fn test_storage_value() {
 		let message_bytes = hex!("01000000000000005400000005e2b19845fe2b7bb353f377d12dd51af012fbba2000000064000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064").to_vec();
-		let message_bytes1 = hex!("01000000000000005400000005e2b19845fe2b7bb353f377d12dd51af012fbba2000000064000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064").as_slice();
-		let message = decode_message(message_bytes);
 
 		// 841
 		let abi_encoded = hex!("00000000000000000000000000000000000000000000000000000000000000540000000000000000000000000000000000000000000000000000000000000001").as_slice();
@@ -277,7 +276,7 @@ mod test {
 		));
 
 		let value = get_storage_value(H256(key), storage_root1, proof);
-		let expected_value = keccak_256(message_bytes1);
+		let expected_value = keccak_256(&message_bytes.as_slice());
 
 		assert_eq!(H256(expected_value), value.unwrap())
 	}

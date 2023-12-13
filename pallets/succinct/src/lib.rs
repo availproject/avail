@@ -24,7 +24,7 @@ mod verifier;
 mod weights;
 
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
-pub type AppDataFor<T> = BoundedVec<u8, <T as Config>::MaxBridgeDataLength>;
+pub type BridgeData<T> = BoundedVec<u8, <T as Config>::MaxBridgeDataLength>;
 
 parameter_types! {
 	// function identifiers
@@ -203,6 +203,10 @@ pub mod pallet {
 	// Ability to froze source chain
 	#[pallet::storage]
 	pub type SourceChainFrozen<T> = StorageMap<_, Identity, u32, bool, ValueQuery>;
+
+	// Nonce
+	#[pallet::storage]
+	pub type Nonce<T: Config> = StorageValue<_, u64, ValueQuery>;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -499,7 +503,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn submit_bridge_data(
 			origin: OriginFor<T>,
-			data: AppDataFor<T>,
+			data: BridgeData<T>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(!data.is_empty(), Error::<T>::BridgeDataCannotBeEmpty);
@@ -520,7 +524,7 @@ pub mod pallet {
 			// 	ExistenceRequirement::KeepAlive,
 			// )?;
 
-			let success = Self::transfer(message_data.amount, message_data.recipient_address)?;
+			let _success = Self::transfer(message_data.amount, message_data.recipient_address)?;
 			// if success {
 			// 	Self::deposit_event(Event::<T>::ExecutedMessage {
 			// 		chain_id: message.source_chain_id,

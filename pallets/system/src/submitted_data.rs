@@ -3,7 +3,6 @@ use core::fmt::Debug;
 
 use avail_core::OpaqueExtrinsic;
 use binary_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
-use frame_support::Hashable;
 use sp_core::H256;
 use sp_io::hashing::keccak_256;
 use sp_runtime::traits::Keccak256;
@@ -197,8 +196,8 @@ where
 		})
 		.unzip();
 
-	let mut submitted_data = vec![];
-	let mut root_data = vec![];
+	let submitted_data: Vec<Vec<u8>>;
+	let root_data: Vec<Vec<u8>>;
 
 	match call_type {
 		SubTrie::Left => {
@@ -227,23 +226,20 @@ where
 	let data_filtered = submitted_data
 		.into_iter()
 		.filter(|v| !v.is_empty())
-		.map(|leaf| keccak_256(leaf.as_slice()).as_slice().to_vec())
+		.map(|leaf| keccak_256(leaf.as_slice()).to_vec())
 		.collect::<Vec<_>>();
 
 	// clean root data
 	let root_data_filtered = root_data
 		.into_iter()
 		.filter(|v| !v.is_empty())
-		.map(|leaf| keccak_256(leaf.as_slice()).as_slice().to_vec())
+		.map(|leaf| keccak_256(leaf.as_slice()).to_vec())
 		.collect::<Vec<_>>();
 
 	let root = root(root_data_filtered.into_iter(), Rc::clone(&metrics));
 	let data_index = u32::try_from(data_index).ok()?;
-	return if let Some(proof) = proof(data_filtered, data_index, Rc::clone(&metrics)) {
-		Some((proof, root))
-	} else {
-		None
-	};
+
+	proof(data_filtered, data_index, Rc::clone(&metrics)).map(|proof| (proof, root))
 }
 
 /// Construct a Merkle Proof for `submit_data` given by `data_index` and stores
