@@ -1346,7 +1346,7 @@ impl<T: Config> RewardPool<T> {
 		//
 		// dot_total_issuance * 10^18 / 10^10 = dot_total_issuance * 10^8
 		//
-		// which, with the current numbers, is a miniscule fraction of the u128 capacity.
+		// which, with the current numbers, is a minuscule fraction of the u128 capacity.
 		//
 		// Thus, adding two values of type reward counter should be safe for ages in a chain like
 		// Polkadot. The important note here is that `reward_pool.last_recorded_reward_counter` only
