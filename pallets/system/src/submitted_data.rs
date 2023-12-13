@@ -128,17 +128,13 @@ where
 		.map(|leaf| keccak_256(leaf.as_slice()).to_vec())
 		.collect::<Vec<_>>();
 
-	let binding = root(root_blob_data.into_iter(), Rc::clone(&metrics));
-	let blob_root = binding.as_bytes();
-
-	let binding = root(root_bridge_data.into_iter(), Rc::clone(&metrics));
-
-	let bridge_root = binding.as_bytes();
+	let blob_root = root(root_blob_data.into_iter(), Rc::clone(&metrics));
+	let bridge_root = root(root_bridge_data.into_iter(), Rc::clone(&metrics));
 
 	let mut concat = vec![];
 	// keccak_256(blob_root, bridge_root)
-	concat.extend_from_slice(blob_root);
-	concat.extend_from_slice(bridge_root);
+	concat.extend_from_slice(blob_root.as_bytes());
+	concat.extend_from_slice(bridge_root.as_bytes());
 	let hash = keccak_256(concat.as_slice());
 	H256(hash)
 }
