@@ -453,7 +453,7 @@ where
 				call_type = SubTrie::Left;
 				root_side = SubTrie::Right;
 			},
-			RuntimeCall::Succinct(pallet_succinct::Call::submit_bridge_data { .. }) => {
+			RuntimeCall::Succinct(pallet_succinct::Call::send_message { .. }) => {
 				call_type = SubTrie::Right;
 				root_side = SubTrie::Left;
 			},
