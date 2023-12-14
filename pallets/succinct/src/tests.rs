@@ -3,13 +3,17 @@ use frame_support::{assert_err, assert_ok, BoundedVec};
 use hex_literal::hex;
 use primitive_types::H160;
 use sp_core::crypto::AccountId32;
+use sp_core::ByteArray;
 use sp_runtime::testing::H256;
 use sp_runtime::DispatchError::BadOrigin;
 
-use crate::mock::{new_test_ext, Bridge, RuntimeOrigin, Test};
+use crate::mock::System;
+use crate::mock::{new_test_ext, Bridge, RuntimeEvent, RuntimeOrigin, Test};
+use crate::state::State;
 use crate::target_amb::Message;
 use crate::{
-	Broadcasters, Error, ExecutionStateRoots, SourceChainFrozen, StateStorage, Timestamps,
+	Broadcasters, Error, Event, ExecutionStateRoots, SourceChainFrozen, StateStorage,
+	StepVerificationKeyStorage, Timestamps, VerificationKeyDef,
 };
 
 const TEST_SENDER_VEC: [u8; 32] = [2u8; 32];
@@ -108,6 +112,7 @@ fn test_execute_message_with_frozen_chain() {
             asset_id: Default::default(),
             message_id: 0,
         };
+
         //BoundedVec::truncate_from(hex!("01000000000000005400000005e2b19845fe2b7bb353f377d12dd51af012fbba2000000064000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064").to_vec());
         let account_proof = BoundedVec::truncate_from(vec![
             BoundedVec::truncate_from(hex!("f90211a050da92c339db0b71cd6a8ac7893a6b8689ec5a3a46a0231b3ee2bd1baee75e1da045a3d973eb74a02b762d8b1ba683f39bca3965806276c8ceffe2d2ebc6cce233a0e88ad29ca98fa08f59f2a7f0110d63505d99a173628643290df869c4d1fa312ba00bb4cc9dc0b1de6ae0d80424b1fa992efb400a07a0e84615c91762fe734b2d0ca0a07e495d39bf2b779405790c6c7e7eb1cc3c803a88db36d1ec600fb0e555b5bba09a1c776e89c8be75d0a9ea022c05fd2ff095869d549e74a8fff7f2fb2deaf738a073b874e49e77dfd9312d7b1afd1ac10e02021a1ba2ab7c97ecaeaa0e26a34027a07e3424405c13aa33a2eb9ec6d8640aa1f67fdd8c8e9e4276334515b1cf1df65ca0246b93b2e3cc625a5e75b40165c6cb95ae8ffb9406563d34092d6359c7616aeea04d2fd8fdb1ab7d8f8fc6079400396fec828914230fade3794f13dc5ae7f6bbb8a04811b9efbfa8d495c5be91be78372b4a29140bd1e092e793db50ed9c495a6d54a02e1b3a417e8341dc8e1ade6ca527778192d33c7c827cfa63a366d007f2884e24a0845f4f33a4993d85766a14222cde1d124bd0f15523d239572883258a7bbcccd9a0ed2021cc2206fcfd9f80d592890b1b4eb615fae4f11d4e4a66d54a6767908901a07d46bf6e9dc9599eb7ca036aa976ef9cc63f02e9097252799f5d3a8792c49620a00b58d1d2cc72401c7cb978d34e15f74038ac63355e415d53b894179b8938dbb780").to_vec()),
@@ -136,4 +141,181 @@ fn test_execute_message_with_frozen_chain() {
 
         assert_err!(error, Error::<Test>::SourceChainFrozen);
     });
+}
+
+#[test]
+fn test_full_fill_step_call() {
+	new_test_ext().execute_with(|| {
+        let function_id = H256(hex!("af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"));
+        let input = BoundedVec::truncate_from(hex!(
+			"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df0000000000747ffe"
+		).to_vec());
+        let output = BoundedVec::truncate_from(hex!("e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b90000000000747fa001fd").to_vec());
+
+        let proof = BoundedVec::truncate_from(hex!("0b496d04c0e12206bc846edd2077a20b8b55f65fc0e40bb8cf617d9b79ce39e508281ad49432300b3b7c8a95a0a63544f93f553fcfdeba38c82460888f4030ed1f67a1be666c12ee00658109c802042c58f645474fcee7d128277a4e35c1dd1504d33cb652ec23407cd3580eda0196dd97054eb5c2a817163d6997832d9abd422729b3e85a15941722baeb5ca8a42567a91c6a0b0cd64ac15431fde05071e90e0d30c12013d5803336cc2f433c16eaa5434e30b89ce7395c3c3cda29dde3be062281095f143d728486c71203b24fa6068e69aabf29d457ffadc6d682d51a4f08179d3240bc561ae7e2c005bb772a4d4c5ba6644986052fad554f042ab0074a8f").to_vec());
+        let slot = 7634942;
+
+        StepVerificationKeyStorage::<Test>::set(get_step_verification_key());
+
+        StateStorage::<Test>::set(State {
+            updater: H256::from_slice(TEST_SENDER_ACCOUNT.as_slice()),
+            slots_per_period: 8192,
+            finality_threshold: 461,
+        });
+
+        let result = Bridge::fulfill_call(
+            RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+            function_id,
+            input,
+            output,
+            proof,
+            slot);
+
+        assert_ok!(result);
+
+        // ensure that event is fired
+        let expected_event = RuntimeEvent::Bridge(Event::HeaderUpdate
+        {
+            slot,
+            finalization_root: H256(hex!("e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec")),
+        });
+
+        assert_eq!(expected_event, System::events()[0].event);
+    });
+}
+
+#[test]
+fn test_full_fill_step_call_no_verification_key_set() {
+	new_test_ext().execute_with(|| {
+        let function_id = H256(hex!("af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"));
+        let input = BoundedVec::truncate_from(hex!(
+			"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df0000000000747ffe"
+		).to_vec());
+        let output = BoundedVec::truncate_from(hex!("e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b90000000000747fa001fd").to_vec());
+
+        let proof = BoundedVec::truncate_from(hex!("0b496d04c0e12206bc846edd2077a20b8b55f65fc0e40bb8cf617d9b79ce39e508281ad49432300b3b7c8a95a0a63544f93f553fcfdeba38c82460888f4030ed1f67a1be666c12ee00658109c802042c58f645474fcee7d128277a4e35c1dd1504d33cb652ec23407cd3580eda0196dd97054eb5c2a817163d6997832d9abd422729b3e85a15941722baeb5ca8a42567a91c6a0b0cd64ac15431fde05071e90e0d30c12013d5803336cc2f433c16eaa5434e30b89ce7395c3c3cda29dde3be062281095f143d728486c71203b24fa6068e69aabf29d457ffadc6d682d51a4f08179d3240bc561ae7e2c005bb772a4d4c5ba6644986052fad554f042ab0074a8f").to_vec());
+        let slot = 7634942;
+
+        StateStorage::<Test>::set(State {
+            updater: H256::from_slice(TEST_SENDER_ACCOUNT.as_slice()),
+            slots_per_period: 8192,
+            finality_threshold: 461,
+        });
+
+        let result = Bridge::fulfill_call(
+            RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+            function_id,
+            input,
+            output,
+            proof,
+            slot);
+
+        assert_err!(result, Error::<Test>::VerificationKeyIsNotSet);
+    });
+}
+
+#[test]
+fn test_full_fill_step_call_proof_not_valid() {
+	new_test_ext().execute_with(|| {
+        let function_id = H256(hex!("af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"));
+        let input = BoundedVec::truncate_from(hex!(
+			"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df0000000000747ffe"
+		).to_vec());
+        let output = BoundedVec::truncate_from(hex!("e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b90000000000747fa001fd").to_vec());
+
+        let proof = BoundedVec::truncate_from(hex!("1b496d04c0e12206bc846edd2077a20b8b55f65fc0e40bb8cf617d9b79ce39e508281ad49432300b3b7c8a95a0a63544f93f553fcfdeba38c82460888f4030ed1f67a1be666c12ee00658109c802042c58f645474fcee7d128277a4e35c1dd1504d33cb652ec23407cd3580eda0196dd97054eb5c2a817163d6997832d9abd422729b3e85a15941722baeb5ca8a42567a91c6a0b0cd64ac15431fde05071e90e0d30c12013d5803336cc2f433c16eaa5434e30b89ce7395c3c3cda29dde3be062281095f143d728486c71203b24fa6068e69aabf29d457ffadc6d682d51a4f08179d3240bc561ae7e2c005bb772a4d4c5ba6644986052fad554f042ab0074a8f").to_vec());
+        let slot = 7634942;
+        StepVerificationKeyStorage::<Test>::set(get_step_verification_key());
+
+        StateStorage::<Test>::set(State {
+            updater: H256::from_slice(TEST_SENDER_ACCOUNT.as_slice()),
+            slots_per_period: 8192,
+            finality_threshold: 461,
+        });
+
+        let result = Bridge::fulfill_call(
+            RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+            function_id,
+            input,
+            output,
+            proof,
+            slot);
+
+        assert_err!(result, Error::<Test>::VerificationFailed);
+    });
+}
+
+fn get_step_verification_key() -> VerificationKeyDef<Test> {
+	let step_vk = r#"{"vk_json":{
+    "protocol": "groth16",
+    "curve": "bn128",
+    "nPublic": 2,
+    "vk_alpha_1": [
+        "20491192805390485299153009773594534940189261866228447918068658471970481763042",
+        "9383485363053290200918347156157836566562967994039712273449902621266178545958",
+        "1"
+    ],
+    "vk_beta_2": [
+        [
+            "6375614351688725206403948262868962793625744043794305715222011528459656738731",
+            "4252822878758300859123897981450591353533073413197771768651442665752259397132"
+        ],
+        [
+            "10505242626370262277552901082094356697409835680220590971873171140371331206856",
+            "21847035105528745403288232691147584728191162732299865338377159692350059136679"
+        ],
+        [
+            "1",
+            "0"
+        ]
+    ],
+    "vk_gamma_2": [
+        [
+            "10857046999023057135944570762232829481370756359578518086990519993285655852781",
+            "11559732032986387107991004021392285783925812861821192530917403151452391805634"
+        ],
+        [
+            "8495653923123431417604973247489272438418190587263600148770280649306958101930",
+            "4082367875863433681332203403145435568316851327593401208105741076214120093531"
+        ],
+        [
+            "1",
+            "0"
+        ]
+    ],
+    "vk_delta_2": [
+        [
+            "677302577815076814357170457144294271294364985082280272249076505900964830740",
+            "5628948730667472013190771331033856457010306836153142947462627646651446565415"
+        ],
+        [
+            "5877290568297658003612857476419103064356778304319760331670835003648166891449",
+            "10874997846396459971354014654692242947705540424071616448481145872912634110727"
+        ],
+        [
+            "1",
+            "0"
+        ]
+    ],
+    "vk_alphabeta_12": [],
+    "IC": [
+        [
+            "202333273032481017331373350816007583026713320195536354260471885571526195724",
+            "8246242704115088390751476790768744984402990892657920674334938931948100192840",
+            "1"
+        ],
+        [
+            "12901454334783146822957332552289769626984444933652541503990843020723194328882",
+            "12436078488518552293095332739673622487901350475115357313978341690183990059269",
+            "1"
+        ],
+        [
+            "12828056956769114977702246128118682473179646035440405756936949778100648490262",
+            "7351319165217643779735289066901404053730163225836026220896225559268517203790",
+            "1"
+        ]
+    ]
+}}"#;
+
+	BoundedVec::truncate_from(step_vk.as_bytes().to_vec())
 }
