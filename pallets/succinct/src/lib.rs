@@ -745,17 +745,6 @@ pub mod pallet {
 		) -> Result<VerifiedStepOutput, DispatchError> {
 			let input_hash = sha2_256(input.as_slice());
 
-			log::info!(
-				"step log {:?} {:?}",
-				verified_call.verified_function_id,
-				function_id
-			);
-			log::info!(
-				"step log {:?} {:?}",
-				verified_call.verified_input_hash,
-				H256(input_hash)
-			);
-
 			if verified_call.verified_function_id == function_id
 				&& verified_call.verified_input_hash == H256(input_hash)
 			{
