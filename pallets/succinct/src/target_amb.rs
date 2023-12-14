@@ -1,20 +1,21 @@
-use crate::TypeInfo;
+use crate::{MessageBytesMaxLen, TypeInfo};
 use codec::Decode;
 use codec::Encode;
 use codec::MaxEncodedLen;
+use patricia_merkle_trie::keccak256;
 use patricia_merkle_trie::{EIP1186Layout, StorageProof};
 use primitive_types::{H160, H256, U256};
 use rlp::Rlp;
 use scale_info::prelude::vec::Vec;
 
-use ethabi::ParamType::{Address, FixedBytes, Uint};
+use frame_support::BoundedVec;
 use sp_io::hashing::keccak_256 as keccak256;
 use trie_db::{Trie, TrieDBBuilder};
-
-#[derive(PartialEq)]
-pub enum AMBError {
-	CannotDecodeMessageData,
-}
+//
+// #[derive(PartialEq)]
+// pub enum AMBError {
+//     CannotDecodeMessageData,
+// }
 
 #[derive(Clone, Copy, Default, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 pub enum MessageStatusEnum {
@@ -24,84 +25,82 @@ pub enum MessageStatusEnum {
 	ExecutionSucceeded,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Default, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 pub struct Message {
-	pub version: u8,
-	pub nonce: u64,
-	pub source_chain_id: u32,
-	pub source_address: H160,
-	pub destination_chain_id: u32,
-	// // TODO not in use
-	pub destination_address: H256,
-	// TODO not in use
-	// arbitrary data that we want to pass
-	pub data: Vec<u8>,
+	pub message_type: u8,
+	pub from: H256,
+	pub to: H256,
+	pub data: BoundedVec<u8, MessageBytesMaxLen>,
+	pub domain: u8,
+	pub value: U256,
+	pub asset_id: H256,
+	pub message_id: u64,
 }
 
-#[derive(Debug)]
-pub struct MessageData {
-	pub recipient_address: H256,
-	pub amount: U256,
-}
+// #[derive(Debug)]
+// pub struct MessageData {
+// 	pub recipient_address: H256,
+// 	pub amount: U256,
+// }
+//
+// pub fn decode_message_data(message: Vec<u8>) -> Result<MessageData, AMBError> {
+// 	let decoded = ethabi::decode(&[FixedBytes(32), Uint(256), Address], message.as_slice())
+// 		.map_err(|_| AMBError::CannotDecodeMessageData)?;
+//
+// 	let receipient_token = decoded.get(0).ok_or(AMBError::CannotDecodeMessageData)?;
+//
+// 	let receipient_address = receipient_token
+// 		.clone()
+// 		.into_fixed_bytes()
+// 		.ok_or(AMBError::CannotDecodeMessageData)?;
+//
+// 	let amount_token = decoded.get(1).ok_or(AMBError::CannotDecodeMessageData)?;
+// 	let amount = amount_token
+// 		.clone()
+// 		.into_uint()
+// 		.ok_or(AMBError::CannotDecodeMessageData)?;
+//
+// 	Ok(MessageData {
+// 		recipient_address: H256::from_slice(receipient_address.as_slice()),
+// 		amount,
+// 	})
+// }
 
-pub fn decode_message_data(message: Vec<u8>) -> Result<MessageData, AMBError> {
-	let decoded = ethabi::decode(&[FixedBytes(32), Uint(256), Address], message.as_slice())
-		.map_err(|_| AMBError::CannotDecodeMessageData)?;
-
-	let receipient_token = decoded.get(0).ok_or(AMBError::CannotDecodeMessageData)?;
-
-	let receipient_address = receipient_token
-		.clone()
-		.into_fixed_bytes()
-		.ok_or(AMBError::CannotDecodeMessageData)?;
-
-	let amount_token = decoded.get(1).ok_or(AMBError::CannotDecodeMessageData)?;
-	let amount = amount_token
-		.clone()
-		.into_uint()
-		.ok_or(AMBError::CannotDecodeMessageData)?;
-
-	Ok(MessageData {
-		recipient_address: H256::from_slice(receipient_address.as_slice()),
-		amount,
-	})
-}
-
-pub fn decode_message(message: Vec<u8>) -> Message {
-	let version: u8 = message[0];
-
-	let mut buf = [0u8; 8];
-	buf[..8].copy_from_slice(&message[1..9]);
-	let nonce = u64::from_be_bytes(buf);
-
-	let mut buf_source_chain = [0u8; 4];
-	buf_source_chain[..4].copy_from_slice(&message[9..13]);
-	let source_chain_id = u32::from_be_bytes(buf_source_chain);
-
-	let mut buf_source_address = [0u8; 20];
-	buf_source_address[..20].copy_from_slice(&message[13..33]);
-	let source_address = H160(buf_source_address);
-
-	let mut buf_dest_chain = [0u8; 4];
-	buf_dest_chain[..4].copy_from_slice(&message[33..37]);
-	let destination_chain_id = u32::from_be_bytes(buf_dest_chain);
-
-	let mut buf_dest_address = [0u8; 32];
-	buf_dest_address[..32].copy_from_slice(&message[37..69]);
-	let destination_address = H256(buf_dest_address);
-
-	let data = message[69..].to_vec();
-
-	Message {
-		version,
-		nonce,
-		source_chain_id,
-		source_address,
-		destination_chain_id,
-		destination_address,
-		data,
-	}
-}
+// pub fn decode_message(message: Vec<u8>) -> Message {
+//     let version: u8 = message[0];
+//
+//     let mut buf = [0u8; 8];
+//     buf[..8].copy_from_slice(&message[1..9]);
+//     let nonce = u64::from_be_bytes(buf);
+//
+//     let mut buf_source_chain = [0u8; 4];
+//     buf_source_chain[..4].copy_from_slice(&message[9..13]);
+//     let source_chain_id = u32::from_be_bytes(buf_source_chain);
+//
+//     let mut buf_source_address = [0u8; 20];
+//     buf_source_address[..20].copy_from_slice(&message[13..33]);
+//     let source_address = H160(buf_source_address);
+//
+//     let mut buf_dest_chain = [0u8; 4];
+//     buf_dest_chain[..4].copy_from_slice(&message[33..37]);
+//     let destination_chain_id = u32::from_be_bytes(buf_dest_chain);
+//
+//     let mut buf_dest_address = [0u8; 32];
+//     buf_dest_address[..32].copy_from_slice(&message[37..69]);
+//     let destination_address = H256(buf_dest_address);
+//
+//     let data = message[69..].to_vec();
+//
+//     Message {
+//         version,
+//         nonce,
+//         source_chain_id,
+//         source_address,
+//         destination_chain_id,
+//         destination_address,
+//         data,
+//     }
+// }
 
 #[derive(Debug)]
 pub enum StorageError {
@@ -176,60 +175,38 @@ pub fn get_storage_root(
 	}
 }
 
-// no_std implementation of hash_db::Hasher needed for merkle patricia trie
-pub mod keccak256 {
-	use hash256_std_hasher::Hash256StdHasher;
-	use sp_io::hashing::keccak_256;
-
-	use super::*;
-
-	/// Concrete implementation of Hasher using Keccak 256-bit hashes
-	#[derive(Debug)]
-	pub struct KeccakHasher;
-
-	impl hash_db::Hasher for KeccakHasher {
-		type Out = H256;
-		type StdHasher = Hash256StdHasher;
-		const LENGTH: usize = 32;
-
-		fn hash(x: &[u8]) -> Self::Out {
-			keccak_256(x).into()
-		}
-	}
-}
-
 #[cfg(test)]
 mod test {
 	use ark_std::vec;
 	use hex_literal::hex;
-	use primitive_types::{H160, H256, U256};
+	use primitive_types::{H160, H256};
 	use sp_io::hashing::keccak_256;
 
-	use crate::target_amb::{decode_message, get_storage_root, get_storage_value};
+	use crate::target_amb::{get_storage_root, get_storage_value};
 
-	#[test]
-	fn test_message_decoding() {
-		let message_encoded = hex!("01000000000000007b00000005e2b19845fe2b7bb353f377d12dd51af012fbba20000000640000000000000000000000000000000000000000000000000000000000bc614e6789");
-
-		let message_decoded = decode_message(message_encoded.to_vec());
-		assert_eq!(123, message_decoded.nonce);
-		assert_eq!(1, message_decoded.version);
-		assert_eq!(5, message_decoded.source_chain_id);
-		assert_eq!(
-			H160(hex!("e2B19845Fe2B7Bb353f377d12dD51af012fbba20")),
-			message_decoded.source_address
-		);
-		assert_eq!(100, message_decoded.destination_chain_id);
-		assert_eq!(
-			U256::from(12345678u64),
-			U256::from(message_decoded.destination_address.as_bytes())
-		);
-		assert_eq!(vec![103, 137], message_decoded.data);
-	}
+	// #[test]
+	// fn test_message_decoding() {
+	//     let message_encoded = hex!("01000000000000007b00000005e2b19845fe2b7bb353f377d12dd51af012fbba20000000640000000000000000000000000000000000000000000000000000000000bc614e6789");
+	//
+	//     let message_decoded = decode_message(message_encoded.to_vec());
+	//     assert_eq!(123, message_decoded.nonce);
+	//     assert_eq!(1, message_decoded.version);
+	//     assert_eq!(5, message_decoded.source_chain_id);
+	//     assert_eq!(
+	//         H160(hex!("e2B19845Fe2B7Bb353f377d12dD51af012fbba20")),
+	//         message_decoded.source_address
+	//     );
+	//     assert_eq!(100, message_decoded.destination_chain_id);
+	//     assert_eq!(
+	//         U256::from(12345678u64),
+	//         U256::from(message_decoded.destination_address.as_bytes())
+	//     );
+	//     assert_eq!(vec![103, 137], message_decoded.data);
+	// }
 
 	#[test]
 	fn test_account_proof() {
-		let key = H160::from_slice(&hex!("43f0222552e8114ad8F224DEA89976d3bf41659D").as_slice());
+		let key = H160::from_slice(hex!("43f0222552e8114ad8F224DEA89976d3bf41659D").as_slice());
 		let proof = vec![
             hex!("f90211a050da92c339db0b71cd6a8ac7893a6b8689ec5a3a46a0231b3ee2bd1baee75e1da045a3d973eb74a02b762d8b1ba683f39bca3965806276c8ceffe2d2ebc6cce233a0e88ad29ca98fa08f59f2a7f0110d63505d99a173628643290df869c4d1fa312ba00bb4cc9dc0b1de6ae0d80424b1fa992efb400a07a0e84615c91762fe734b2d0ca0a07e495d39bf2b779405790c6c7e7eb1cc3c803a88db36d1ec600fb0e555b5bba09a1c776e89c8be75d0a9ea022c05fd2ff095869d549e74a8fff7f2fb2deaf738a073b874e49e77dfd9312d7b1afd1ac10e02021a1ba2ab7c97ecaeaa0e26a34027a07e3424405c13aa33a2eb9ec6d8640aa1f67fdd8c8e9e4276334515b1cf1df65ca0246b93b2e3cc625a5e75b40165c6cb95ae8ffb9406563d34092d6359c7616aeea04d2fd8fdb1ab7d8f8fc6079400396fec828914230fade3794f13dc5ae7f6bbb8a04811b9efbfa8d495c5be91be78372b4a29140bd1e092e793db50ed9c495a6d54a02e1b3a417e8341dc8e1ade6ca527778192d33c7c827cfa63a366d007f2884e24a0845f4f33a4993d85766a14222cde1d124bd0f15523d239572883258a7bbcccd9a0ed2021cc2206fcfd9f80d592890b1b4eb615fae4f11d4e4a66d54a6767908901a07d46bf6e9dc9599eb7ca036aa976ef9cc63f02e9097252799f5d3a8792c49620a00b58d1d2cc72401c7cb978d34e15f74038ac63355e415d53b894179b8938dbb780").to_vec(),
             hex!("f90211a03e22056b0eefc94898d516b45ea579bd298291aa521c8665f3d5215da5619513a0b5f3f839320c3d63436a8f27a07bc47a5e7ace4f5d80e437ce2084a007e0fd37a0e666b7198d6b6023de9a698f4bc90a9595e57f7f4e70d07d0366c693d53994c5a05b14820b719fbb37f5e9ff55770d6ceb63ef90af46934377c0364ca72335852ea09c4a1a1d5b1e58e9be1c9b4ea4e943c514b4ae8a382be6dd16e53336354e0500a0058c24b25f97ed51ca2c44e016631753eb97197733b23aea23aef112a2323321a03347d79447b18678fbbedd01b48e52747a5301d32223c4be91f5681d2a69d7b2a04182f6e242615804a49f3a54399e285d84a6e7692cca41008d2b638be30fe00fa0c64a1e71e7512d73008d4cce2a2ba0981023c4ff5f821ba97fcf8059f4699bb5a0673bee8a446cac15221e9292a904ed44762ccb19dac57bbef085d76c6c5b9bb0a065d1ccec63163a4e5ea501f3951a384daaa9aaf4c9c976f963e3597b3e8ce4eca0fb4a788676b5a593e7db6c1149e3c89c774ef9915010846bcb53563736ccde70a0d5274ce6a4e744adab98139ed9d6b5846a449721f32d0f49e020061f5abb094ba0bbf7fd5e93a74f6d8ec4df6f2b0c7f6ff2b387a1a2cb2fd1f26545208c099443a0ddac5ec494b529e87a014e9f80869493008eba559e8ed9e9691fcf219bea14d0a06092b5dc5dd24f768b0c0bf74a6deb0e4e9a5fa3c474d06d52a63ace81d272c980").to_vec(),
@@ -276,7 +253,7 @@ mod test {
 		));
 
 		let value = get_storage_value(H256(key), storage_root1, proof);
-		let expected_value = keccak_256(&message_bytes.as_slice());
+		let expected_value = keccak_256(message_bytes.as_slice());
 
 		assert_eq!(H256(expected_value), value.unwrap())
 	}

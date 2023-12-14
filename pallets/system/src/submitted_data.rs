@@ -400,6 +400,7 @@ mod test {
 		if let Some((da_proof, root)) =
 			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 3, SubTrie::Left)
 		{
+			assert_eq!(root, H256::zero());
 			assert_eq!(da_proof.leaf_index, 2);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),

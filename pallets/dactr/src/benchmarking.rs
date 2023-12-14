@@ -184,7 +184,7 @@ mod benchmarks {
 		#[extrinsic_call]
 		_(origin, key);
 
-		let info = Pallet::<T>::application_key(&key_verify);
+		let info = Pallet::<T>::application_key(key_verify);
 		assert_eq!(
 			info,
 			Some(AppKeyInfoFor::<T> {

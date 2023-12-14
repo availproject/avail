@@ -446,7 +446,7 @@ mod tests {
 		let result = v.verify(inp_hash, out_hash, proof.to_vec());
 
 		assert_ok!(result.clone());
-		assert_eq!(true, result.unwrap());
+		assert!(result.unwrap());
 	}
 
 	#[test]
@@ -535,7 +535,7 @@ mod tests {
 		let result = v.verify(inp_hash, out_hash, proof.to_vec());
 
 		assert_ok!(result.clone());
-		assert_eq!(true, result.unwrap());
+		assert!(result.unwrap());
 	}
 
 	#[test]

@@ -35,7 +35,8 @@ parameter_types! {
 	pub const MaxVerificationKeyLength: u32 = 4143;
 	pub const MaxProofLength: u32 = 1133;
 
-	pub const MessageVersion: u8 = 1;
+	pub const AvailAssetId: H256 = H256::zero();
+
 	pub const MessageMappingStorageIndex:u64 = 1;
 
 	// BoundedVec max size for fulfill call.
@@ -51,9 +52,7 @@ parameter_types! {
 
 	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
 
-
 	pub const MaxBridgeDataLength: u32= 256;
-
 }
 
 #[frame_support::pallet]
@@ -77,9 +76,7 @@ pub mod pallet {
 	use crate::state::{
 		parse_rotate_output, parse_step_output, VerifiedRotate, VerifiedStep, VerifiedStepOutput,
 	};
-	use crate::target_amb::{
-		decode_message, get_storage_root, get_storage_value, Message, MessageData,
-	};
+	use crate::target_amb::{get_storage_root, get_storage_value, Message};
 	use crate::verifier::encode_packed;
 
 	use super::*;
@@ -142,14 +139,14 @@ pub mod pallet {
 		},
 		// emit when message gets executed.
 		ExecutedMessage {
-			chain_id: u32,
+			chain_id: u8,
 			nonce: u64,
 			message_root: H256,
 			status: bool,
 		},
 		// emit if source chain gets frozen.
 		SourceChainFrozen {
-			source_chain_id: u32,
+			source_chain_id: u8,
 			frozen: bool,
 		},
 		BridgeDataSubmitted {
@@ -198,11 +195,11 @@ pub mod pallet {
 
 	// Mapping between source chainId and the address of the Telepathy broadcaster on that chain.
 	#[pallet::storage]
-	pub type Broadcasters<T> = StorageMap<_, Identity, u32, H160, ValueQuery>;
+	pub type Broadcasters<T> = StorageMap<_, Identity, u8, H160, ValueQuery>;
 
 	// Ability to froze source chain
 	#[pallet::storage]
-	pub type SourceChainFrozen<T> = StorageMap<_, Identity, u32, bool, ValueQuery>;
+	pub type SourceChainFrozen<T> = StorageMap<_, Identity, u8, bool, ValueQuery>;
 
 	// Nonce
 	#[pallet::storage]
@@ -229,7 +226,7 @@ pub mod pallet {
 		type RotateFunctionId: Get<H256>;
 
 		#[pallet::constant]
-		type MessageVersion: Get<u8>;
+		type AvailAssetId: Get<H256>;
 
 		#[pallet::constant]
 		type MessageMappingStorageIndex: Get<u64>;
@@ -409,70 +406,59 @@ pub mod pallet {
 		pub fn execute(
 			origin: OriginFor<T>,
 			slot: u64,
-			message_bytes: BoundedVec<u8, MessageBytesMaxLen>,
+			message: Message,
 			account_proof: BoundedVec<BoundedVec<u8, AccountProofMaxLen>, AccountProofLen>,
 			storage_proof: BoundedVec<BoundedVec<u8, StorageProofMaxLen>, StorageProofLen>,
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 
-			let message_root = H256(keccak_256(message_bytes.as_slice()));
+			let message_root = H256(keccak_256(message.encode().as_slice()));
 
-			let message = decode_message(message_bytes.to_vec());
 			check_preconditions::<T>(&message, message_root)?;
 
 			ensure!(
-				!SourceChainFrozen::<T>::get(message.source_chain_id),
+				!SourceChainFrozen::<T>::get(message.domain),
 				Error::<T>::SourceChainFrozen
 			);
-
 			let root = ExecutionStateRoots::<T>::get(slot);
-			let broadcaster = Broadcasters::<T>::get(message.source_chain_id);
+			let broadcaster = Broadcasters::<T>::get(message.domain);
 
 			let account_proof_vec = account_proof
 				.iter()
 				.map(|inner_bounded_vec| inner_bounded_vec.iter().copied().collect())
 				.collect();
-
 			let storage_root = get_storage_root(account_proof_vec, broadcaster, root)
 				.map_err(|_| Error::<T>::CannotGetStorageRoot)?;
 
-			let nonce = Uint(U256::from(message.nonce));
+			let nonce = Uint(U256::from(message.message_id));
 			let mm_idx = Uint(U256::from(MessageMappingStorageIndex::get()));
 			let slot_key = H256(keccak_256(ethabi::encode(&[nonce, mm_idx]).as_slice()));
-
+			//
 			let storage_proof_vec = storage_proof
 				.iter()
 				.map(|inner_bounded_vec| inner_bounded_vec.iter().copied().collect())
 				.collect();
-
+			//
 			let slot_value = get_storage_value(slot_key, storage_root, storage_proof_vec)
 				.map_err(|_| Error::<T>::CannotGetStorageValue)?;
-
+			//
 			ensure!(slot_value == message_root, Error::<T>::InvalidMessageHash);
 
-			// TODO decode message format
-			let message_data = MessageData {
-				recipient_address: H256([1u8; 32]),
-				amount: U256::zero(),
-			};
-			// let message_data = decode_message_data(message_data)
-			// 	.map_err(|_| Error::<T>::CannotDecodeMessageData)?;
-
-			let success = Self::transfer(message_data.amount, message_data.recipient_address)?;
+			let success = Self::transfer(message.value, message.to)?;
 
 			if success {
 				MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
 				Self::deposit_event(Event::<T>::ExecutedMessage {
-					chain_id: message.source_chain_id,
-					nonce: message.nonce,
+					chain_id: message.domain,
+					nonce: message.message_id,
 					message_root,
 					status: true,
 				});
 			} else {
 				MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionFailed);
 				Self::deposit_event(Event::<T>::ExecutedMessage {
-					chain_id: message.source_chain_id,
-					nonce: message.nonce,
+					chain_id: message.domain,
+					nonce: message.message_id,
 					message_root,
 					status: false,
 				});
@@ -485,7 +471,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn source_chain_froze(
 			origin: OriginFor<T>,
-			source_chain_id: u32,
+			source_chain_id: u8,
 			frozen: bool,
 		) -> DispatchResult {
 			ensure_root(origin)?;
@@ -512,10 +498,10 @@ pub mod pallet {
 			let data_hash = keccak_256(&data);
 
 			// TODO decode message format
-			let message_data = MessageData {
-				recipient_address: H256([1u8; 32]),
-				amount: U256::zero(),
-			};
+			// let message_data = MessageData {
+			// 	recipient_address: H256([1u8; 32]),
+			// 	amount: U256::zero(),
+			// };
 
 			// T::Currency::transfer(
 			// 	&who,
@@ -524,7 +510,7 @@ pub mod pallet {
 			// 	ExistenceRequirement::KeepAlive,
 			// )?;
 
-			let _success = Self::transfer(message_data.amount, message_data.recipient_address)?;
+			// let _success = Self::transfer(message_data.amount, message_data.recipient_address)?;
 			// if success {
 			// 	Self::deposit_event(Event::<T>::ExecutedMessage {
 			// 		chain_id: message.source_chain_id,
@@ -555,18 +541,18 @@ pub mod pallet {
 		message_root: H256,
 	) -> Result<(), DispatchError> {
 		let message_status = MessageStatus::<T>::get(message_root);
-		// Message must not be executed
+		// // Message must not be executed
 		ensure!(
 			message_status == MessageStatusEnum::NotExecuted,
 			Error::<T>::MessageAlreadyExecuted
 		);
-
+		// only supported avail asset id
 		ensure!(
-			message.version == MessageVersion::get(),
+			message.asset_id == AvailAssetId::get(),
 			Error::<T>::WrongVersion
 		);
-
-		let source_chain = Broadcasters::<T>::get(message.source_chain_id);
+		// TODO is this contract sending msg
+		let source_chain = Broadcasters::<T>::get(message.domain);
 		ensure!(
 			source_chain != H160::zero(),
 			Error::<T>::BroadcasterSourceChainNotSet

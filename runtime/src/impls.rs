@@ -38,8 +38,8 @@ use frame_system::submitted_data;
 use frame_system::EnsureRoot;
 use pallet_election_provider_multi_phase::SolutionAccuracyOf;
 use pallet_succinct::{
-	BridgePalletId, MaxBridgeDataLength, MaxProofLength, MaxVerificationKeyLength,
-	MessageMappingStorageIndex, MessageVersion, RotateFunctionId, StepFunctionId,
+	AvailAssetId, BridgePalletId, MaxBridgeDataLength, MaxProofLength, MaxVerificationKeyLength,
+	MessageMappingStorageIndex, RotateFunctionId, StepFunctionId,
 };
 use pallet_transaction_payment::CurrencyAdapter;
 use pallet_transaction_payment::Multiplier;
@@ -83,7 +83,6 @@ impl pallet_mandate::Config for Runtime {
 impl pallet_succinct::Config for Runtime {
 	type MaxProofLength = MaxProofLength;
 	type MaxVerificationKeyLength = MaxVerificationKeyLength;
-	type MessageVersion = MessageVersion;
 	type MessageMappingStorageIndex = MessageMappingStorageIndex;
 	type StepFunctionId = StepFunctionId;
 	type RotateFunctionId = RotateFunctionId;
@@ -97,6 +96,8 @@ impl pallet_succinct::Config for Runtime {
 	type Currency = Balances;
 
 	type PalletId = BridgePalletId;
+
+	type AvailAssetId = AvailAssetId;
 
 	type MaxBridgeDataLength = MaxBridgeDataLength;
 }

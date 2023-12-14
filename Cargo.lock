@@ -7148,13 +7148,15 @@ checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 [[package]]
 name = "patricia-merkle-trie"
 version = "0.1.0"
-source = "git+https://github.com/0xSasaPrsic/patricia-merkle-trie.git?branch=main#ac6d15892d2c10c68e56c9622274a7c4ed6ddedf"
+source = "git+https://github.com/0xSasaPrsic/patricia-merkle-trie.git?branch=main#b6936a217990a908fd9eb55437de435daf8af800"
 dependencies = [
  "hash-db 0.15.2",
+    "hash256-std-hasher",
  "memory-db 0.30.0",
  "parity-scale-codec",
  "primitive-types",
  "rlp",
+    "sp-io",
  "trie-db 0.24.0",
 ]
 

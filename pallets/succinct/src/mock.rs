@@ -8,7 +8,7 @@ use sp_runtime::{
 };
 
 use crate as succinct_bridge;
-use crate::{MaxBridgeDataLength, MaxProofLength, MessageMappingStorageIndex, MessageVersion};
+use crate::{AvailAssetId, MaxBridgeDataLength, MaxProofLength, MessageMappingStorageIndex};
 
 type Balance = u128;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -89,7 +89,7 @@ impl succinct_bridge::Config for Test {
 	type MaxVerificationKeyLength = MaxVerificationKeyLength;
 	type Currency = Balances;
 
-	type MessageVersion = MessageVersion;
+	type AvailAssetId = AvailAssetId;
 	type MessageMappingStorageIndex = MessageMappingStorageIndex;
 	type MaxProofLength = MaxProofLength;
 	type MaxBridgeDataLength = MaxBridgeDataLength;
