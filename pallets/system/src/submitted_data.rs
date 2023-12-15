@@ -338,16 +338,17 @@ where
 mod test {
 	use avail_core::data_proof::SubTrie;
 	use sp_core::H256;
+	use sp_runtime::AccountId32;
 	use std::vec;
 
-	use crate::submitted_data::{calls_proof, Filter, RcMetrics};
+	use crate::submitted_data::{calls_proof, Filter, RcMetrics, Message};
 
 	// dummy filter implementation that skips empty strings in vector
 	impl<C> Filter<C> for String
 	where
 		String: From<C>,
 	{
-		fn filter(d: C, _: RcMetrics) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
+		fn filter(d: C, _: RcMetrics, _: AccountId32) -> (Vec<Vec<u8>>, Vec<Message>) {
 			let s = String::try_from(d).unwrap();
 			if s.is_empty() {
 				(vec![], vec![])
@@ -355,7 +356,7 @@ mod test {
 				(vec![s.into_bytes()], vec![])
 			}
 		}
-		fn process_calls(_: Vec<C>, _: &RcMetrics) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
+		fn process_calls(_: Vec<C>, _: &RcMetrics, _: AccountId32) -> (Vec<Vec<u8>>, Vec<Message>) {
 			(vec![], vec![])
 		}
 	}
