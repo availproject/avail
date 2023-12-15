@@ -341,7 +341,8 @@ impl_runtime_apis! {
 	impl crate::apis::ExtensionBuilder<Block> for Runtime {
 		fn build_data_root( extrinsics: Vec<OpaqueExtrinsic>) -> H256  {
 			type Extractor = <Runtime as frame_system::Config>::SubmittedDataExtractor;
-			frame_system::submitted_data::extrinsics_root::<Extractor, _>(extrinsics.iter())
+			// TODO: fetch the nonce from staorage & pass it to the fn
+			frame_system::submitted_data::extrinsics_root::<Extractor, _>(extrinsics.iter(), 0u64).0
 		}
 
 		fn build_extension(

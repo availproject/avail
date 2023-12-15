@@ -115,5 +115,5 @@ fn data_root_filter(extrinsics: Vec<Vec<u8>>) -> H256 {
 		let o = OpaqueExtrinsic::decode(&mut extrinsic.as_slice()).unwrap();
 		opaque.push(o)
 	}
-	extrinsics_root::<Runtime, _>(opaque.iter())
+	extrinsics_root::<Runtime, _>(opaque.iter(), 0u64)
 }

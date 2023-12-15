@@ -133,12 +133,13 @@ where
 }
 
 /// Construct a root hash of Binary Merkle Tree created from given filtered `app_extrincs`.
-pub fn extrinsics_root<'a, E, I>(opaque_itr: I) -> H256
+pub fn extrinsics_root<'a, E, I>(opaque_itr: I, nonce: u64) -> (H256, u64)
 where
 	E: Extractor,
 	E::Error: Debug,
 	I: Iterator<Item = &'a OpaqueExtrinsic>,
 {
+	let mut bridge_nonce = nonce;
 	let metrics = Metrics::new_shared();
 
 	let (blob_data, bridge_data): (Vec<_>, Vec<_>) = opaque_itr
@@ -154,11 +155,16 @@ where
 		.map(|leaf| keccak_256(leaf.as_slice()).to_vec())
 		.collect::<Vec<_>>();
 
-	let root_bridge_data = bridge_data
+	let root_bridge_data: Vec<_> = bridge_data
 		.into_iter()
 		.filter(|m| m != &Message::default())
-		.map(|leaf| keccak_256(&leaf.encode()).to_vec())
-		.collect::<Vec<_>>();
+		.enumerate()
+		.map(|(index, mut m)| {
+			m.id = bridge_nonce + index as u64;
+			keccak_256(&m.encode()).to_vec()
+		})
+		.collect();
+	bridge_nonce += root_bridge_data.len() as u64;
 
 	let binding = root(root_blob_data.into_iter(), Rc::clone(&metrics));
 	let blob_root = binding.as_bytes();
@@ -172,7 +178,7 @@ where
 	concat.extend_from_slice(blob_root);
 	concat.extend_from_slice(bridge_root);
 	let hash = keccak_256(concat.as_slice());
-	H256(hash)
+	(H256(hash), bridge_nonce)
 }
 
 /// Construct a root hash of a Binary Merkle Tree created from given leaves and stores
@@ -341,7 +347,7 @@ mod test {
 	use sp_runtime::AccountId32;
 	use std::vec;
 
-	use crate::submitted_data::{calls_proof, Filter, RcMetrics, Message};
+	use crate::submitted_data::{calls_proof, Filter, Message, RcMetrics};
 
 	// dummy filter implementation that skips empty strings in vector
 	impl<C> Filter<C> for String

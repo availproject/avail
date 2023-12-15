@@ -722,6 +722,11 @@ pub mod pallet {
 	#[pallet::getter(fn block_length)]
 	pub type DynamicBlockLength<T: Config> = StorageValue<_, limits::BlockLength, ValueQuery>;
 
+	/// Total number of messages bridged to other chains
+	#[pallet::storage]
+	#[pallet::getter(fn bridge_nonce)]
+	pub(super) type BridgeNonce<T: Config> = StorageValue<_, u64, ValueQuery>;
+
 	#[derive(DefaultNoBound)]
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
@@ -1529,9 +1534,13 @@ impl<T: Config> Pallet<T> {
 			.collect::<Result<Vec<_>, _>>()
 			.expect("Any extrinsic MUST be decoded as OpaqueExtrinsic .qed");
 
-		let data_root =
-			submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(opaques.iter());
-
+		let (data_root, new_nonce) = submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(
+			opaques.iter(),
+			Self::bridge_nonce(),
+		);
+		if Self::bridge_nonce() != new_nonce {
+			BridgeNonce::<T>::put(new_nonce);
+		}
 		// move block hash pruning window by one block
 		let block_hash_count = T::BlockHashCount::get();
 		let to_remove = number
