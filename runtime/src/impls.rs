@@ -811,10 +811,10 @@ impl submitted_data::Extractor for Runtime {
 		metrics: submitted_data::RcMetrics,
 	) -> Result<(Vec<Vec<u8>>, Vec<Message>), Self::Error> {
 		let extrinsic = UncheckedExtrinsic::try_from(opaque)?;
-		let caller: AccountId32 = match extrinsic.signature.unwrap().0 {
-			MultiAddress::Id(id) => id, // This should be the case always
-			MultiAddress::Address32(ad) => ad.into(),
-			_ => AccountId32::new([0u8; 32]), // this should never happen
+		let caller: AccountId32 = match extrinsic.signature.as_ref().map(|s| &s.0) {
+			// Since both da::data_submit & bridge::send_message accepts only signed extrinsics, caller will always be of this type
+			Some(&MultiAddress::Id(ref id)) => id.clone(),
+			_ => AccountId32::new([0u8; 32]),
 		};
 		let data = <Runtime as submitted_data::Filter<RuntimeCall>>::filter(
 			extrinsic.function,
