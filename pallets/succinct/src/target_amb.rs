@@ -28,7 +28,7 @@ pub enum MessageStatusEnum {
 #[derive(Clone, Default, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 pub struct Message {
 	pub message_type: u8,
-	pub from: H256,
+	// pub from: H256,
 	pub to: H256,
 	pub data: BoundedVec<u8, MessageBytesMaxLen>,
 	pub domain: u8,

@@ -433,15 +433,15 @@ pub mod pallet {
 			let nonce = Uint(U256::from(message.message_id));
 			let mm_idx = Uint(U256::from(MessageMappingStorageIndex::get()));
 			let slot_key = H256(keccak_256(ethabi::encode(&[nonce, mm_idx]).as_slice()));
-			//
+
 			let storage_proof_vec = storage_proof
 				.iter()
 				.map(|inner_bounded_vec| inner_bounded_vec.iter().copied().collect())
 				.collect();
-			//
+
 			let slot_value = get_storage_value(slot_key, storage_root, storage_proof_vec)
 				.map_err(|_| Error::<T>::CannotGetStorageValue)?;
-			//
+
 			ensure!(slot_value == message_root, Error::<T>::InvalidMessageHash);
 
 			let success = Self::transfer(message.value, message.to)?;
