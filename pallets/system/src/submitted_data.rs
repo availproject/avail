@@ -1,15 +1,43 @@
 use avail_core::data_proof::SubTrie;
-use core::fmt::Debug;
-
 use avail_core::OpaqueExtrinsic;
 use binary_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
-use frame_support::Hashable;
+use codec::{Decode, Encode};
+use core::fmt::Debug;
+use frame_support::BoundedVec;
+use scale_info::TypeInfo;
+use sp_core::ConstU32;
 use sp_core::H256;
+use sp_core::U256;
 use sp_io::hashing::keccak_256;
 use sp_runtime::traits::Keccak256;
+use sp_runtime::AccountId32;
 use sp_std::vec;
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
 const LOG_TARGET: &str = "runtime::system::submitted_data";
+
+/// Maximum size of data allowed in the bridge
+pub type BoundedData = BoundedVec<u8, ConstU32<102_400>>;
+/// Possible types of Messages allowed by Avail to bridge to other chains.
+#[derive(TypeInfo, Debug, Default, Clone, Encode, Decode, PartialEq)]
+pub enum MessageType {
+	ArbitraryMessage,
+	#[default]
+	FungibleToken,
+	// NonFungibleToken, We should enable it when we support it
+}
+
+/// Message type used to bridge between Avail & other chains
+#[derive(Debug, Default, Encode, Decode, PartialEq)]
+pub struct Message {
+	pub message_type: MessageType,
+	pub from: H256,
+	pub to: H256,
+	pub data: BoundedData,
+	pub domain: u32,
+	pub value: U256,
+	pub asset_id: H256,
+	pub id: u64, // a global nonce that is incremented with each leaf
+}
 
 /// Information about `submitted_data_root` and `submitted_data_proof` methods.
 #[derive(Default, Debug)]
@@ -41,14 +69,14 @@ pub trait Extractor {
 	fn extract(
 		extrinsic: &OpaqueExtrinsic,
 		metrics: RcMetrics,
-	) -> Result<(Vec<Vec<u8>>, Vec<Vec<u8>>), Self::Error>;
+	) -> Result<(Vec<Vec<u8>>, Vec<Message>), Self::Error>;
 }
 
 #[cfg(any(feature = "std", test))]
 impl Extractor for () {
 	type Error = ();
 
-	fn extract(_: &OpaqueExtrinsic, _: RcMetrics) -> Result<(Vec<Vec<u8>>, Vec<Vec<u8>>), ()> {
+	fn extract(_: &OpaqueExtrinsic, _: RcMetrics) -> Result<(Vec<Vec<u8>>, Vec<Message>), ()> {
 		Ok((vec![], vec![]))
 	}
 }
@@ -56,19 +84,23 @@ impl Extractor for () {
 /// It is similar to `Extractor` but it uses `C` type for calls, instead of `AppExtrinsic`.
 pub trait Filter<C> {
 	/// Returns the `data` field of `call` if it is a one or multiple valid `da_ctrl::submit_data` call.
-	fn filter(call: C, metrics: RcMetrics) -> (Vec<Vec<u8>>, Vec<Vec<u8>>);
+	fn filter(call: C, metrics: RcMetrics, caller: AccountId32) -> (Vec<Vec<u8>>, Vec<Message>);
 
 	/// This function processes a list of calls and returns their data as Vec<Vec<u8>>
-	fn process_calls(calls: Vec<C>, metrics: &RcMetrics) -> (Vec<Vec<u8>>, Vec<Vec<u8>>);
+	fn process_calls(
+		calls: Vec<C>,
+		metrics: &RcMetrics,
+		caller: AccountId32,
+	) -> (Vec<Vec<u8>>, Vec<Message>);
 }
 
 #[cfg(any(feature = "std", test))]
 impl<C> Filter<C> for () {
-	fn filter(_: C, _: RcMetrics) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
+	fn filter(_: C, _: RcMetrics, _: AccountId32) -> (Vec<Vec<u8>>, Vec<Message>) {
 		(vec![], vec![])
 	}
 
-	fn process_calls(_: Vec<C>, _: &RcMetrics) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
+	fn process_calls(_: Vec<C>, _: &RcMetrics, _: AccountId32) -> (Vec<Vec<u8>>, Vec<Message>) {
 		(vec![], vec![])
 	}
 }
@@ -76,7 +108,7 @@ impl<C> Filter<C> for () {
 fn extract_and_inspect<E>(
 	opaque: &OpaqueExtrinsic,
 	metrics: RcMetrics,
-) -> (Vec<Vec<u8>>, Vec<Vec<u8>>)
+) -> (Vec<Vec<u8>>, Vec<Message>)
 where
 	E: Extractor,
 	E::Error: Debug,
@@ -94,7 +126,7 @@ where
 		.collect();
 	let data_root = bridge_root_data
 		.into_iter()
-		.filter(|data| !data.is_empty())
+		.filter(|msg| msg != &Message::default())
 		.collect();
 
 	(blob_root, data_root)
@@ -124,8 +156,8 @@ where
 
 	let root_bridge_data = bridge_data
 		.into_iter()
-		.filter(|v| !v.is_empty())
-		.map(|leaf| keccak_256(leaf.as_slice()).to_vec())
+		.filter(|m| m != &Message::default())
+		.map(|leaf| keccak_256(&leaf.encode()).to_vec())
 		.collect::<Vec<_>>();
 
 	let binding = root(root_blob_data.into_iter(), Rc::clone(&metrics));
@@ -186,12 +218,16 @@ where
 	let transaction_index = usize::try_from(transaction_index).ok()?;
 	let tx_max = transaction_index.checked_add(1)?;
 
+	// TODO: Handle the kate query_data_proof with actual caller
 	let (blob_data, bridge_data): (Vec<_>, Vec<_>) = calls
 		.map(|ext| {
-			let (l, r) = F::filter(ext, Rc::clone(&metrics));
+			let (l, r) = F::filter(ext, Rc::clone(&metrics), AccountId32::new([0u8; 32]));
 			(
 				l.into_iter().flatten().collect::<Vec<_>>(),
-				r.into_iter().flatten().collect::<Vec<_>>(),
+				r.into_iter()
+					.map(|m| m.encode())
+					.flatten()
+					.collect::<Vec<_>>(),
 			)
 		})
 		.unzip();

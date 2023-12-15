@@ -1,14 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use crate::target_amb::MessageStatusEnum;
+use crate::verifier::Verifier;
 use frame_support::traits::{Currency, ExistenceRequirement, UnixTime};
 use frame_support::{pallet_prelude::*, parameter_types, PalletId};
+use frame_system::submitted_data::{BoundedData, MessageType};
 use hex_literal::hex;
 pub use pallet::*;
-use sp_core::{H256, U256};
+use sp_core::H256;
 use sp_runtime::SaturatedConversion;
-
-use crate::verifier::Verifier;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -24,28 +24,6 @@ mod weights;
 
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
 pub type AppDataFor<T> = BoundedVec<u8, <T as Config>::MaxBridgeDataLength>;
-
-/// Possible types of Messages allowed by this pallet to bridge to other chains.
-#[derive(TypeInfo, Debug, Default, Clone, Encode, Decode, PartialEq)]
-pub enum MessageType {
-	ArbitraryMessage,
-	#[default]
-	FungibleToken,
-	// NonFungibleToken, We should enable it when we support it
-}
-
-/// Message type used to bridge between Avail & other chains
-#[derive(Debug, Default, Encode, Decode)]
-pub struct Message<T: pallet::Config> {
-	pub message_type: MessageType,
-	pub from: H256,
-	pub to: H256,
-	pub data: AppDataFor<T>,
-	pub domain: u32,
-	pub value: U256,
-	pub asset_id: H256,
-	pub id: u64, // a global nonce that is incremented with each leaf
-}
 
 // whitelist of supported domains
 // TODO: Create a storage & extrinsic around it to support onchain updation of supported domains, also can act as the panic button
@@ -535,7 +513,7 @@ pub mod pallet {
 			#[pallet::compact] domain: u32,
 			value: Option<u128>,
 			asset_id: Option<H256>,
-			data: Option<AppDataFor<T>>,
+			data: Option<BoundedData>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			// Ensure the domain is currently supported

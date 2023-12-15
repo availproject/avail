@@ -35,6 +35,7 @@ use frame_support::weights::ConstantMultiplier;
 use frame_support::{parameter_types, traits::EitherOfDiverse, PalletId};
 use frame_system::limits::BlockLength;
 use frame_system::submitted_data;
+use frame_system::submitted_data::Message;
 use frame_system::EnsureRoot;
 use pallet_election_provider_multi_phase::SolutionAccuracyOf;
 use pallet_succinct::{
@@ -45,14 +46,17 @@ use pallet_transaction_payment::CurrencyAdapter;
 use pallet_transaction_payment::Multiplier;
 use pallet_transaction_payment::TargetedFeeAdjustment;
 use sp_core::crypto::KeyTypeId;
+use sp_core::H256;
 use sp_runtime::generic::Era;
 use sp_runtime::traits;
 use sp_runtime::traits::BlakeTwo256;
 use sp_runtime::traits::Bounded;
 use sp_runtime::traits::Convert;
 use sp_runtime::traits::OpaqueKeys;
+use sp_runtime::AccountId32;
 use sp_runtime::FixedPointNumber;
 use sp_runtime::FixedU128;
+use sp_runtime::MultiAddress;
 use sp_runtime::Perbill;
 use sp_runtime::Perquintill;
 use sp_runtime::{Percent, Permill};
@@ -735,17 +739,33 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 	fn filter(
 		call: RuntimeCall,
 		metrics: submitted_data::RcMetrics,
-	) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
+		caller: AccountId32,
+	) -> (Vec<Vec<u8>>, Vec<Message>) {
 		metrics.borrow_mut().total_extrinsics += 1;
 
 		match call {
-			RuntimeCall::Succinct(pallet_succinct::Call::submit_bridge_data { data })
-				if !data.is_empty() =>
-			{
+			RuntimeCall::Succinct(pallet_succinct::Call::send_message {
+				data,
+				message_type,
+				to,
+				domain,
+				value,
+				asset_id,
+			}) => {
 				let mut metrics = metrics.borrow_mut();
 				metrics.data_submit_leaves += 1;
 				metrics.data_submit_extrinsics += 1;
-				(vec![], vec![data.into_inner()])
+				let message: submitted_data::Message = submitted_data::Message {
+					message_type,
+					from: H256::from_slice(caller.as_ref()),
+					to,
+					data: data.unwrap_or_default(),
+					domain,
+					value: value.unwrap_or_default().into(),
+					asset_id: asset_id.unwrap_or_default(),
+					id: Default::default(),
+				};
+				(vec![], vec![message])
 			},
 			RuntimeCall::DataAvailability(da_control::Call::submit_data { data })
 				if !data.is_empty() =>
@@ -758,7 +778,7 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 			RuntimeCall::Utility(pallet_utility::Call::batch { calls })
 			| RuntimeCall::Utility(pallet_utility::Call::batch_all { calls })
 			| RuntimeCall::Utility(pallet_utility::Call::force_batch { calls }) => {
-				Self::process_calls(calls, &metrics)
+				Self::process_calls(calls, &metrics, caller)
 			},
 			_ => (vec![], vec![]),
 		}
@@ -768,10 +788,11 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 	fn process_calls(
 		calls: Vec<RuntimeCall>,
 		metrics: &submitted_data::RcMetrics,
-	) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
+		caller: AccountId32,
+	) -> (Vec<Vec<u8>>, Vec<Message>) {
 		let (blob_data, bridge_data): (Vec<_>, Vec<_>) = calls
 			.into_iter()
-			.map(|call| Self::filter(call, Rc::clone(metrics)))
+			.map(|call| Self::filter(call, Rc::clone(metrics), caller.clone()))
 			.unzip();
 
 		(
@@ -788,11 +809,18 @@ impl submitted_data::Extractor for Runtime {
 	fn extract(
 		opaque: &OpaqueExtrinsic,
 		metrics: submitted_data::RcMetrics,
-	) -> Result<(Vec<Vec<u8>>, Vec<Vec<u8>>), Self::Error> {
+	) -> Result<(Vec<Vec<u8>>, Vec<Message>), Self::Error> {
 		let extrinsic = UncheckedExtrinsic::try_from(opaque)?;
-		let data =
-			<Runtime as submitted_data::Filter<RuntimeCall>>::filter(extrinsic.function, metrics);
-
+		let caller: AccountId32 = match extrinsic.signature.unwrap().0 {
+			MultiAddress::Id(id) => id, // This should be the case always
+			MultiAddress::Address32(ad) => ad.into(),
+			_ => AccountId32::new([0u8; 32]), // this should never happen
+		};
+		let data = <Runtime as submitted_data::Filter<RuntimeCall>>::filter(
+			extrinsic.function,
+			metrics,
+			caller,
+		);
 		Ok(data)
 	}
 }
