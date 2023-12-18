@@ -139,14 +139,14 @@ pub mod pallet {
 		},
 		// emit when message gets executed.
 		ExecutedMessage {
-			chain_id: u8,
+			chain_id: u32,
 			nonce: u64,
 			message_root: H256,
 			status: bool,
 		},
 		// emit if source chain gets frozen.
 		SourceChainFrozen {
-			source_chain_id: u8,
+			source_chain_id: u32,
 			frozen: bool,
 		},
 		BridgeDataSubmitted {
@@ -195,11 +195,11 @@ pub mod pallet {
 
 	// Mapping between source chainId and the address of the Telepathy broadcaster on that chain.
 	#[pallet::storage]
-	pub type Broadcasters<T> = StorageMap<_, Identity, u8, H160, ValueQuery>;
+	pub type Broadcasters<T> = StorageMap<_, Identity, u32, H256, ValueQuery>;
 
 	// Ability to froze source chain
 	#[pallet::storage]
-	pub type SourceChainFrozen<T> = StorageMap<_, Identity, u8, bool, ValueQuery>;
+	pub type SourceChainFrozen<T> = StorageMap<_, Identity, u32, bool, ValueQuery>;
 
 	// Nonce
 	#[pallet::storage]
@@ -273,7 +273,7 @@ pub mod pallet {
 					"cd187a0c3dddad24f1bb44211849cc55b6d2ff2713be85f727e9ab8c491c621c"
 				)),
 			);
-			Broadcasters::<T>::set(5, H160(hex!("43f0222552e8114ad8f224dea89976d3bf41659d")));
+			// Broadcasters::<T>::set(5, H160(hex!("43f0222552e8114ad8f224dea89976d3bf41659d")));
 		}
 	}
 
@@ -427,7 +427,10 @@ pub mod pallet {
 				.iter()
 				.map(|inner_bounded_vec| inner_bounded_vec.iter().copied().collect())
 				.collect();
-			let storage_root = get_storage_root(account_proof_vec, broadcaster, root)
+
+			let b = H160::zero(); //H160::from(broadcaster.as_bytes()[..20]);
+
+			let storage_root = get_storage_root(account_proof_vec, b, root)
 				.map_err(|_| Error::<T>::CannotGetStorageRoot)?;
 
 			let nonce = Uint(U256::from(message.message_id));
@@ -471,7 +474,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn source_chain_froze(
 			origin: OriginFor<T>,
-			source_chain_id: u8,
+			source_chain_id: u32,
 			frozen: bool,
 		) -> DispatchResult {
 			ensure_root(origin)?;
@@ -554,7 +557,7 @@ pub mod pallet {
 		// TODO is this contract sending msg
 		let source_chain = Broadcasters::<T>::get(message.domain);
 		ensure!(
-			source_chain != H160::zero(),
+			source_chain != H256::zero(),
 			Error::<T>::BroadcasterSourceChainNotSet
 		);
 

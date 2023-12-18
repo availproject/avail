@@ -805,28 +805,28 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.5.1"
-source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#43e77f4db305c9ec908a672c6f97cc8a31dd2c46"
+source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#dcfb7f640778db4e9fd42e9ce9245c6b1fd7c8af"
 dependencies = [
-    "binary-merkle-tree",
-    "derive_more",
-    "frame-support",
-    "hash256-std-hasher",
-    "hex",
-    "log",
-    "nomad-core",
-    "parity-scale-codec",
-    "scale-info",
-    "serde",
-    "sp-arithmetic",
-    "sp-core",
-    "sp-io",
-    "sp-runtime",
-    "sp-runtime-interface",
-    "sp-std",
-    "sp-trie",
-    "static_assertions",
-    "thiserror-no-std",
-    "tiny-keccak",
+ "binary-merkle-tree",
+ "derive_more",
+ "frame-support",
+ "hash256-std-hasher",
+ "hex",
+ "log",
+ "nomad-core",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-runtime-interface",
+ "sp-std",
+ "sp-trie",
+ "static_assertions",
+ "thiserror-no-std",
+ "tiny-keccak",
 ]
 
 [[package]]
@@ -3499,7 +3499,7 @@ dependencies = [
  "hex-literal 0.3.4",
  "impl-trait-for-tuples",
  "kate",
-    "libm",
+ "libm",
  "log",
  "once_cell",
  "parity-scale-codec",
@@ -4705,7 +4705,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.8.1"
-source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#43e77f4db305c9ec908a672c6f97cc8a31dd2c46"
+source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#dcfb7f640778db4e9fd42e9ce9245c6b1fd7c8af"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -4733,7 +4733,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.9.1"
-source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#43e77f4db305c9ec908a672c6f97cc8a31dd2c46"
+source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#dcfb7f640778db4e9fd42e9ce9245c6b1fd7c8af"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -5997,7 +5997,7 @@ dependencies = [
 [[package]]
 name = "nomad-base"
 version = "0.1.5"
-source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#43e77f4db305c9ec908a672c6f97cc8a31dd2c46"
+source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#dcfb7f640778db4e9fd42e9ce9245c6b1fd7c8af"
 dependencies = [
  "ethers-signers",
  "nomad-core",
@@ -6013,7 +6013,7 @@ dependencies = [
 [[package]]
 name = "nomad-core"
 version = "0.1.5"
-source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#43e77f4db305c9ec908a672c6f97cc8a31dd2c46"
+source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#dcfb7f640778db4e9fd42e9ce9245c6b1fd7c8af"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -6076,7 +6076,7 @@ dependencies = [
 [[package]]
 name = "nomad-merkle"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#43e77f4db305c9ec908a672c6f97cc8a31dd2c46"
+source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#dcfb7f640778db4e9fd42e9ce9245c6b1fd7c8af"
 dependencies = [
  "avail-core",
  "frame-support",
@@ -6094,7 +6094,7 @@ dependencies = [
 [[package]]
 name = "nomad-signature"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#43e77f4db305c9ec908a672c6f97cc8a31dd2c46"
+source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#dcfb7f640778db4e9fd42e9ce9245c6b1fd7c8af"
 dependencies = [
  "elliptic-curve 0.12.3",
  "ethers-core",
@@ -7158,12 +7158,12 @@ version = "0.1.0"
 source = "git+https://github.com/0xSasaPrsic/patricia-merkle-trie.git?branch=main#b6936a217990a908fd9eb55437de435daf8af800"
 dependencies = [
  "hash-db 0.15.2",
-    "hash256-std-hasher",
+ "hash256-std-hasher",
  "memory-db 0.30.0",
  "parity-scale-codec",
  "primitive-types",
  "rlp",
-    "sp-io",
+ "sp-io",
  "trie-db 0.24.0",
 ]
 
