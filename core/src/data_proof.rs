@@ -84,9 +84,9 @@ impl<H, T> core::convert::TryFrom<(&MerkleProof<H, T>, H256, SubTrie)> for DataP
 
         use sp_io::hashing::keccak_256;
 
-        let (merkle_proof, sub_trie_root, sub_trie) = merkle_proof_data;
+        let (merkle_proof, root, sub_trie) = merkle_proof_data;
 
-        let root: H256 = <[u8; 32]>::try_from(merkle_proof.root.as_ref())
+        let sub_trie_root: H256 = <[u8; 32]>::try_from(merkle_proof.root.as_ref())
             .map_err(|_| InvalidRoot)?
             .into();
         let leaf: H256 = <[u8; 32]>::try_from(merkle_proof.leaf.as_ref()).map_err(|_| InvalidRoot)?
