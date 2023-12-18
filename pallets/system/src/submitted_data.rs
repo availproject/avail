@@ -232,10 +232,14 @@ where
 		.map(|leaf| keccak_256(leaf.as_slice()).to_vec())
 		.collect::<Vec<_>>();
 
-	let root = root(root_data_filtered.into_iter(), Rc::clone(&metrics));
+	// make leaves 2^n
+	let root_data_balanced = calculate_balance_trie(root_data_filtered).or_else(|| None)?;
+	let data_filtered_balanced = calculate_balance_trie(data_filtered).or_else(|| None)?;
+
+	let root = root(root_data_balanced.into_iter(), Rc::clone(&metrics));
 	let data_index = u32::try_from(data_index).ok()?;
 
-	proof(data_filtered, data_index, Rc::clone(&metrics)).map(|proof| (proof, root))
+	proof(data_filtered_balanced, data_index, Rc::clone(&metrics)).map(|proof| (proof, root))
 }
 
 /// Construct a Merkle Proof for `submit_data` given by `data_index` and stores
@@ -262,6 +266,21 @@ fn proof(
 	);
 
 	Some(proof)
+}
+
+/// calculate_balance_trie extends trie to the nearest pow of 2 number of laves
+pub fn calculate_balance_trie(mut data: Vec<Vec<u8>>) -> Option<Vec<Vec<u8>>> {
+	if data.is_empty() {
+		return Some(data);
+	}
+	let card = u32::try_from(data.len()).ok()?;
+	let next_pow_2 = libm::ceil(libm::log2(card as f64)) as u32;
+	let leafs_to_append = usize::try_from(2u32.pow(next_pow_2) - card).ok()?;
+	let to_append = vec![H256::zero().as_bytes().to_vec(); leafs_to_append];
+
+	data.extend(to_append);
+
+	Some(data)
 }
 
 /// Verify Merkle Proof correctness versus given root hash.
@@ -294,11 +313,12 @@ where
 #[cfg(test)]
 mod test {
 	use avail_core::data_proof::SubTrie;
+	use avail_core::fail;
 	use hex_literal::hex;
 	use sp_core::H256;
 	use std::vec;
 
-	use crate::submitted_data::{calls_proof, Filter, RcMetrics};
+	use crate::submitted_data::{calculate_balance_trie, calls_proof, Filter, RcMetrics};
 
 	// dummy filter implementation that skips empty strings in vector
 	impl<C> Filter<C> for String
@@ -319,6 +339,61 @@ mod test {
 	}
 
 	#[test]
+	fn test_left_data_proof_with_one_tx() {
+		let tx1_data: String = String::from("0");
+		let submitted_data = vec![tx1_data];
+		// leaf 0 keccak256(044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d)
+		//                  40105d5bc10105c17fd72b93a8f73369e2ee6eee4d4714b7bf7bf3c2f156e601
+
+		if let Some((da_proof, root)) =
+			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 0, SubTrie::Left)
+		{
+			assert_eq!(root, H256::zero());
+			assert_eq!(da_proof.leaf_index, 0);
+			assert_eq!(
+				format!("{:#x}", da_proof.root),
+				"0x40105d5bc10105c17fd72b93a8f73369e2ee6eee4d4714b7bf7bf3c2f156e601"
+			);
+			assert_eq!(da_proof.proof.len(), 0);
+			assert_eq!(da_proof.number_of_leaves, 1);
+		} else {
+			panic!("Proof not generated for the transaction index 0!");
+		}
+	}
+
+	#[test]
+	fn test_left_data_proof_with_two_tx() {
+		let tx1_data: String = String::from("0");
+		let tx2_data: String = String::from("1");
+
+		let submitted_data = vec![tx1_data, tx2_data];
+		// leaf 0 keccak256(044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d)
+		//                  40105d5bc10105c17fd72b93a8f73369e2ee6eee4d4714b7bf7bf3c2f156e601
+		// leaf 1 keccak256(c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6)
+		//                  4aeff0db81e3146828378be230d377356e57b6d599286b4b517dbf8941b3e1b2
+
+		if let Some((da_proof, root)) =
+			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 0, SubTrie::Left)
+		{
+			assert_eq!(root, H256::zero());
+			assert_eq!(da_proof.leaf_index, 0);
+			assert_eq!(
+				format!("{:#x}", da_proof.root),
+				"0xdb0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e"
+			);
+			assert_eq!(da_proof.proof.len(), 1);
+			assert_eq!(da_proof.number_of_leaves, 2);
+
+			assert_eq!(
+				format!("{:#x}", da_proof.proof[0]),
+				"0x4aeff0db81e3146828378be230d377356e57b6d599286b4b517dbf8941b3e1b2"
+			);
+		} else {
+			panic!("Proof not generated for the transaction index 0!");
+		}
+	}
+
+	#[test]
 	fn test_left_data_proof_with_skipped_tx() {
 		let tx1_data: String = String::from("0");
 		let tx2_data: String = String::new(); // tx should be skipped
@@ -333,9 +408,14 @@ mod test {
 		//                  4aeff0db81e3146828378be230d377356e57b6d599286b4b517dbf8941b3e1b2
 		// leaf 2 keccak256(ad7c5bef027816a800da1736444fb58a807ef4c9603b7848673f7e3a68eb14a5)
 		//                  1204b3dcd975ba0a68eafbf4d2ca0d13cc7b5e3709749c1dc36e6e74934270b3
+		//  leaf appended in in order to have 2^n number of leaves
+		// leaf 3 (appended) keccak256(0000000000000000000000000000000000000000000000000000000000000000)
+		//                  290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563
+
 		// intermediate root (leaf[0], leaf[1]) db0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e
-		// data_root keccak256(db0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e, 1204b3dcd975ba0a68eafbf4d2ca0d13cc7b5e3709749c1dc36e6e74934270b3)
-		//                                                       (47e6a27bc6c7fec523d7c8f0c1a8eb66cd00b2d49058730161b2cda6d64e81f2)
+		// intermediate root (leaf[2], leaf[3]) 3c86bde3a90d18efbcf23e27e9b6714012aa055263fe903a72333aa9caa37f1b
+		// data_root keccak256(db0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e, 3c86bde3a90d18efbcf23e27e9b6714012aa055263fe903a72333aa9caa37f1b)
+		//                                                       (877f9ed6aa67f160e9b9b7794bb851998d15b65d11bab3efc6ff444339a3d750)
 
 		if let Some((da_proof, root)) =
 			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 0, SubTrie::Left)
@@ -344,7 +424,7 @@ mod test {
 			assert_eq!(da_proof.leaf_index, 0);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
-				"0x47e6a27bc6c7fec523d7c8f0c1a8eb66cd00b2d49058730161b2cda6d64e81f2"
+				"0x877f9ed6aa67f160e9b9b7794bb851998d15b65d11bab3efc6ff444339a3d750"
 			);
 			assert_eq!(da_proof.proof.len(), 2);
 			assert_eq!(
@@ -353,7 +433,7 @@ mod test {
 			);
 			assert_eq!(
 				format!("{:#x}", da_proof.proof[1]),
-				"0x1204b3dcd975ba0a68eafbf4d2ca0d13cc7b5e3709749c1dc36e6e74934270b3"
+				"0x3c86bde3a90d18efbcf23e27e9b6714012aa055263fe903a72333aa9caa37f1b"
 			);
 
 			assert_eq!(
@@ -363,7 +443,7 @@ mod test {
 				))
 			);
 
-			assert_eq!(da_proof.number_of_leaves, 3);
+			assert_eq!(da_proof.number_of_leaves, 4);
 		} else {
 			panic!("Proof not generated for the transaction index 0!");
 		}
@@ -381,7 +461,7 @@ mod test {
 			assert_eq!(da_proof.leaf_index, 1);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
-				"0x47e6a27bc6c7fec523d7c8f0c1a8eb66cd00b2d49058730161b2cda6d64e81f2"
+				"0x877f9ed6aa67f160e9b9b7794bb851998d15b65d11bab3efc6ff444339a3d750"
 			);
 			assert_eq!(da_proof.proof.len(), 2);
 			assert_eq!(
@@ -390,9 +470,9 @@ mod test {
 			);
 			assert_eq!(
 				format!("{:#x}", da_proof.proof[1]),
-				"0x1204b3dcd975ba0a68eafbf4d2ca0d13cc7b5e3709749c1dc36e6e74934270b3"
+				"0x3c86bde3a90d18efbcf23e27e9b6714012aa055263fe903a72333aa9caa37f1b"
 			);
-			assert_eq!(da_proof.number_of_leaves, 3);
+			assert_eq!(da_proof.number_of_leaves, 4);
 		} else {
 			panic!("Proof not generated for the transaction index 2!");
 		}
@@ -404,14 +484,18 @@ mod test {
 			assert_eq!(da_proof.leaf_index, 2);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
-				"0x47e6a27bc6c7fec523d7c8f0c1a8eb66cd00b2d49058730161b2cda6d64e81f2"
+				"0x877f9ed6aa67f160e9b9b7794bb851998d15b65d11bab3efc6ff444339a3d750"
 			);
-			assert_eq!(da_proof.proof.len(), 1);
+			assert_eq!(da_proof.proof.len(), 2);
 			assert_eq!(
 				format!("{:#x}", da_proof.proof[0]),
+				"0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563"
+			);
+			assert_eq!(
+				format!("{:#x}", da_proof.proof[1]),
 				"0xdb0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e"
 			);
-			assert_eq!(da_proof.number_of_leaves, 3);
+			assert_eq!(da_proof.number_of_leaves, 4);
 		} else {
 			panic!("Proof not generated for the transaction index 3!");
 		}
@@ -421,5 +505,30 @@ mod test {
 			None,
 			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 15, SubTrie::Left)
 		);
+	}
+
+	#[test]
+	fn test_pow_2_elements() {
+		let empty: Vec<Vec<u8>> = vec![];
+		if let Some(balanced) = calculate_balance_trie(empty) {
+			assert_eq!(balanced.len(), 0)
+		} else {
+			panic!("Trie leaves must be empty!");
+		}
+
+		let mut leaves = vec![0u32.to_be_bytes().to_vec()];
+		for i in 1..20u32 {
+			if let Some(balanced) = calculate_balance_trie(leaves.clone()) {
+				let before = leaves.len() as u32;
+				let after = balanced.len() as u32;
+				let next_pow_2 = (before as f64).log2().ceil() as u32;
+				let missing = 2u32.pow(next_pow_2) - before;
+
+				assert_eq!(after - before, missing);
+				leaves.push(i.to_be_bytes().to_vec())
+			} else {
+				panic!("Trie leaves must be empty!");
+			}
+		}
 	}
 }

@@ -21,12 +21,20 @@ use crate::{
 const TEST_SENDER_VEC: [u8; 32] = [2u8; 32];
 const TEST_SENDER_ACCOUNT: AccountId32 = AccountId32::new(TEST_SENDER_VEC);
 
-const VALID_INPUT: BoundedVec<u8, InputMaxLen> = BoundedVec::truncate_from(
-	hex!("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df0000000000747ffe")
-		.to_vec(),
-);
-const VALID_OUTPUT: BoundedVec<u8, OutputMaxLen> = BoundedVec::truncate_from(hex!("e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b90000000000747fa001fd").to_vec());
-const VALID_PROOF: BoundedVec<u8, ProofMaxLen> = BoundedVec::truncate_from(hex!("0b496d04c0e12206bc846edd2077a20b8b55f65fc0e40bb8cf617d9b79ce39e508281ad49432300b3b7c8a95a0a63544f93f553fcfdeba38c82460888f4030ed1f67a1be666c12ee00658109c802042c58f645474fcee7d128277a4e35c1dd1504d33cb652ec23407cd3580eda0196dd97054eb5c2a817163d6997832d9abd422729b3e85a15941722baeb5ca8a42567a91c6a0b0cd64ac15431fde05071e90e0d30c12013d5803336cc2f433c16eaa5434e30b89ce7395c3c3cda29dde3be062281095f143d728486c71203b24fa6068e69aabf29d457ffadc6d682d51a4f08179d3240bc561ae7e2c005bb772a4d4c5ba6644986052fad554f042ab0074a8f").to_vec());
+fn get_valid_input() -> BoundedVec<u8, InputMaxLen> {
+	BoundedVec::truncate_from(
+		hex!("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df0000000000747ffe")
+			.to_vec(),
+	)
+}
+
+fn get_valid_output() -> BoundedVec<u8, OutputMaxLen> {
+	BoundedVec::truncate_from(hex!("e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b90000000000747fa001fd").to_vec())
+}
+
+fn get_valid_proof() -> BoundedVec<u8, ProofMaxLen> {
+	BoundedVec::truncate_from(hex!("0b496d04c0e12206bc846edd2077a20b8b55f65fc0e40bb8cf617d9b79ce39e508281ad49432300b3b7c8a95a0a63544f93f553fcfdeba38c82460888f4030ed1f67a1be666c12ee00658109c802042c58f645474fcee7d128277a4e35c1dd1504d33cb652ec23407cd3580eda0196dd97054eb5c2a817163d6997832d9abd422729b3e85a15941722baeb5ca8a42567a91c6a0b0cd64ac15431fde05071e90e0d30c12013d5803336cc2f433c16eaa5434e30b89ce7395c3c3cda29dde3be062281095f143d728486c71203b24fa6068e69aabf29d457ffadc6d682d51a4f08179d3240bc561ae7e2c005bb772a4d4c5ba6644986052fad554f042ab0074a8f").to_vec())
+}
 const STEP_FN_ID: H256 = H256(hex!(
 	"af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
 ));
@@ -122,25 +130,25 @@ fn test_execute_message_with_frozen_chain() {
 	});
 }
 
-#[test]
-fn test_execute_message_with_faulty_account_proof() {
-	fail!("todo implement")
-}
-
-#[test]
-fn test_execute_message_with_faulty_storage_proof() {
-	fail!("todo implement")
-}
-
-#[test]
-fn test_execute_message_with_already_executed_message() {
-	fail!("todo implement")
-}
-
-#[test]
-fn test_execute_message_with_already_() {
-	fail!("todo implement")
-}
+// #[test]
+// fn test_execute_message_with_faulty_account_proof() {
+// 	fail!("todo implement")
+// }
+//
+// #[test]
+// fn test_execute_message_with_faulty_storage_proof() {
+// 	fail!("todo implement")
+// }
+//
+// #[test]
+// fn test_execute_message_with_already_executed_message() {
+// 	fail!("todo implement")
+// }
+//
+// #[test]
+// fn test_execute_message_with_already_() {
+// 	fail!("todo implement")
+// }
 
 #[test]
 fn test_full_fill_step_call() {
@@ -158,9 +166,9 @@ fn test_full_fill_step_call() {
 		let result = Bridge::fulfill_call(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
 			STEP_FN_ID,
-			VALID_INPUT,
-			VALID_OUTPUT,
-			VALID_PROOF,
+			get_valid_input(),
+			get_valid_output(),
+			get_valid_proof(),
 			slot,
 		);
 
@@ -192,9 +200,9 @@ fn test_full_fill_step_call_no_verification_key_set() {
 		let result = Bridge::fulfill_call(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
 			STEP_FN_ID,
-			VALID_INPUT,
-			VALID_OUTPUT,
-			VALID_PROOF,
+			get_valid_input(),
+			get_valid_output(),
+			get_valid_proof(),
 			slot,
 		);
 
@@ -217,9 +225,9 @@ fn test_full_fill_step_call_proof_not_valid() {
 		let result = Bridge::fulfill_call(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
 			STEP_FN_ID,
-			VALID_INPUT,
-			VALID_OUTPUT,
-			VALID_PROOF,
+			get_valid_input(),
+			get_valid_output(),
+			get_valid_proof(),
 			slot,
 		);
 
@@ -305,7 +313,7 @@ fn get_step_verification_key() -> VerificationKeyDef<Test> {
 fn get_valid_message() -> Message {
 	Message {
 		message_type: 0,
-		from: Default::default(),
+		// from: Default::default(),
 		to: Default::default(),
 		data: Default::default(),
 		domain: 0,

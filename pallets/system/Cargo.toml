@@ -41,6 +41,8 @@ binary-merkle-tree = { git = "https://github.com/paritytech/substrate.git", bran
 
 once_cell = { version = "1.18", optional = true }
 
+libm = { version = "0.2.1", default-features = false }
+
 [dev-dependencies]
 hex-literal = "0.3.1"
 test-case = "1.2.3"
