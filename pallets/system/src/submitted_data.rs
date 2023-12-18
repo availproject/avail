@@ -18,6 +18,7 @@ const LOG_TARGET: &str = "runtime::system::submitted_data";
 
 /// Maximum size of data allowed in the bridge
 pub type BoundedData = BoundedVec<u8, ConstU32<102_400>>;
+
 /// Possible types of Messages allowed by Avail to bridge to other chains.
 #[derive(TypeInfo, Debug, Default, Clone, Encode, Decode, PartialEq)]
 pub enum MessageType {
@@ -173,6 +174,9 @@ where
 
 	let blob_root = root(root_data_balanced.into_iter(), Rc::clone(&metrics));
 	let bridge_root = root(data_filtered_balanced.into_iter(), Rc::clone(&metrics));
+
+	log::info!("bridge root {:?}", bridge_root);
+	log::info!("blob root {:?}", blob_root);
 
 	let mut concat = vec![];
 	// keccak_256(blob_root, bridge_root)
@@ -369,14 +373,12 @@ where
 #[cfg(test)]
 mod test {
 	use avail_core::data_proof::SubTrie;
-	use avail_core::fail;
 	use hex_literal::hex;
 	use sp_core::H256;
 	use sp_runtime::AccountId32;
 	use std::vec;
 
-	use crate::submitted_data::{calculate_balance_trie, calls_proof, Filter, RcMetrics};
-	use crate::submitted_data::{calls_proof, Filter, Message, RcMetrics};
+	use crate::submitted_data::{calculate_balance_trie, calls_proof, Filter, Message, RcMetrics};
 
 	// dummy filter implementation that skips empty strings in vector
 	impl<C> Filter<C> for String
@@ -403,9 +405,16 @@ mod test {
 		// leaf 0 keccak256(044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d)
 		//                  40105d5bc10105c17fd72b93a8f73369e2ee6eee4d4714b7bf7bf3c2f156e601
 
-		if let Some((da_proof, root)) =
-			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 0, SubTrie::Left)
-		{
+		let callers: Vec<AccountId32> = vec![AccountId32::new([0u8; 32])];
+		let bridge_nonce: u64 = 0u64;
+
+		if let Some((da_proof, root)) = calls_proof::<String, _, _>(
+			submitted_data.clone().into_iter(),
+			callers.clone(),
+			0,
+			bridge_nonce,
+			SubTrie::Left,
+		) {
 			assert_eq!(root, H256::zero());
 			assert_eq!(da_proof.leaf_index, 0);
 			assert_eq!(
@@ -430,9 +439,17 @@ mod test {
 		// leaf 1 keccak256(c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6)
 		//                  4aeff0db81e3146828378be230d377356e57b6d599286b4b517dbf8941b3e1b2
 
-		if let Some((da_proof, root)) =
-			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 0, SubTrie::Left)
-		{
+		let callers: Vec<AccountId32> =
+			vec![AccountId32::new([0u8; 32]), AccountId32::new([0u8; 32])];
+		let bridge_nonce: u64 = 0u64;
+
+		if let Some((da_proof, root)) = calls_proof::<String, _, _>(
+			submitted_data.clone().into_iter(),
+			callers.clone(),
+			0,
+			bridge_nonce,
+			SubTrie::Left,
+		) {
 			assert_eq!(root, H256::zero());
 			assert_eq!(da_proof.leaf_index, 0);
 			assert_eq!(
@@ -525,7 +542,7 @@ mod test {
 				callers.clone(),
 				1,
 				bridge_nonce,
-				SubTrie::Left
+				SubTrie::Left,
 			)
 		);
 
@@ -556,9 +573,13 @@ mod test {
 			panic!("Proof not generated for the transaction index 2!");
 		}
 
-		if let Some((da_proof, root)) =
-			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 3, SubTrie::Left)
-		{
+		if let Some((da_proof, root)) = calls_proof::<String, _, _>(
+			submitted_data.clone().into_iter(),
+			callers.clone(),
+			3,
+			bridge_nonce,
+			SubTrie::Left,
+		) {
 			assert_eq!(root, H256::zero());
 			assert_eq!(da_proof.leaf_index, 2);
 			assert_eq!(
@@ -584,10 +605,10 @@ mod test {
 			None,
 			calls_proof::<String, _, _>(
 				submitted_data.clone().into_iter(),
-				callers,
+				callers.clone(),
 				15,
 				bridge_nonce,
-				SubTrie::Left
+				SubTrie::Left,
 			)
 		);
 	}

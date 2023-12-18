@@ -78,9 +78,7 @@ pub mod pallet {
 	use crate::state::{
 		parse_rotate_output, parse_step_output, VerifiedRotate, VerifiedStep, VerifiedStepOutput,
 	};
-	use crate::target_amb::{
-		decode_message, get_storage_root, get_storage_value, Message, MessageData,
-	};
+	use crate::target_amb::{get_storage_root, get_storage_value, Message};
 	use crate::verifier::encode_packed;
 
 	use super::*;
