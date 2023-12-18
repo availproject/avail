@@ -53,6 +53,9 @@ pub enum DataProofTryFromError {
     /// Root cannot be converted into `H256`.
     #[error("Root cannot be converted into `H256`")]
     InvalidRoot,
+    /// Leaf cannot be converted into `H256`.
+    #[error("Leaf cannot be converted into `H256`")]
+    InvalidLeaf,
     /// The given index of proofs cannot be converted into `H256`.
     #[error("Proof at {0} cannot be converted into `H256`")]
     InvalidProof(usize),
@@ -89,7 +92,7 @@ impl<H, T> core::convert::TryFrom<(&MerkleProof<H, T>, H256, SubTrie)> for DataP
         let root: H256 = <[u8; 32]>::try_from(merkle_proof.root.as_ref())
             .map_err(|_| InvalidRoot)?
             .into();
-        let leaf: H256 = <[u8; 32]>::try_from(merkle_proof.leaf.as_ref()).map_err(|_| InvalidRoot)?
+        let leaf: H256 = <[u8; 32]>::try_from(merkle_proof.leaf.as_ref()).map_err(|_| InvalidLeaf)?
             .into();
 
         let proof = merkle_proof
