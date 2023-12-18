@@ -89,7 +89,7 @@ impl<H, T> core::convert::TryFrom<(&MerkleProof<H, T>, H256, SubTrie)> for DataP
         let root: H256 = <[u8; 32]>::try_from(merkle_proof.root.as_ref())
             .map_err(|_| InvalidRoot)?
             .into();
-        let leaf = keccak_256(merkle_proof.leaf.as_ref()).into();
+        let leaf = merkle_proof.leaf.as_ref().into();
 
         let proof = merkle_proof
             .proof
@@ -114,11 +114,12 @@ impl<H, T> core::convert::TryFrom<(&MerkleProof<H, T>, H256, SubTrie)> for DataP
         match sub_trie {
             SubTrie::Right => {
                 data_root = keccak256_concat!(root, sub_trie_root.as_bytes());
-                blob_root = Some(root);
+                bridge_root = Some(root);
+
             }
             SubTrie::Left => {
                 data_root = keccak256_concat!(sub_trie_root.as_bytes(), root);
-                bridge_root = Some(root);
+                blob_root = Some(root);
             }
         }
 
