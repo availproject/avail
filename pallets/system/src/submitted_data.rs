@@ -212,7 +212,9 @@ pub fn root<I: Iterator<Item = Vec<u8>> + core::fmt::Debug>(
 /// adding the number of submitted data items at `System` pallet.
 pub fn calls_proof<F, I, C>(
 	calls: I,
+	callers: Vec<AccountId32>,
 	transaction_index: u32,
+	bridge_nonce: u64,
 	call_type: SubTrie,
 ) -> Option<(MerkleProof<H256, Vec<u8>>, H256)>
 where
@@ -223,18 +225,22 @@ where
 
 	let transaction_index = usize::try_from(transaction_index).ok()?;
 	let tx_max = transaction_index.checked_add(1)?;
+	let mut nonce = bridge_nonce;
 
-	// TODO: Handle the kate query_data_proof with actual caller
 	let (blob_data, bridge_data): (Vec<_>, Vec<_>) = calls
-		.map(|ext| {
-			let (l, r) = F::filter(ext, Rc::clone(&metrics), AccountId32::new([0u8; 32]));
-			(
-				l.into_iter().flatten().collect::<Vec<_>>(),
-				r.into_iter()
-					.map(|m| m.encode())
-					.flatten()
-					.collect::<Vec<_>>(),
-			)
+		.zip(callers.into_iter())
+		.map(|(ext, caller)| {
+			let (l, r) = F::filter(ext, Rc::clone(&metrics), caller);
+			let r_with_id: Vec<_> = r
+				.into_iter()
+				.map(|mut m| {
+					nonce += 1;
+					m.id = nonce;
+					m.encode()
+				})
+				.flatten()
+				.collect();
+			(l.into_iter().flatten().collect::<Vec<_>>(), r_with_id)
 		})
 		.unzip();
 
@@ -373,6 +379,13 @@ mod test {
 		let tx2_data: String = String::new(); // tx should be skipped
 		let tx3_data: String = String::from("1");
 		let tx4_data: String = String::from("2");
+		let callers: Vec<AccountId32> = vec![
+			AccountId32::new([0u8; 32]),
+			AccountId32::new([0u8; 32]),
+			AccountId32::new([0u8; 32]),
+			AccountId32::new([0u8; 32]),
+		];
+		let bridge_nonce: u64 = 0u64;
 
 		let submitted_data = vec![tx1_data, tx2_data, tx3_data, tx4_data];
 
@@ -386,9 +399,13 @@ mod test {
 		// data_root keccak256(db0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e, 1204b3dcd975ba0a68eafbf4d2ca0d13cc7b5e3709749c1dc36e6e74934270b3)
 		//                                                       47e6a27bc6c7fec523d7c8f0c1a8eb66cd00b2d49058730161b2cda6d64e81f2
 
-		if let Some((da_proof, root)) =
-			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 0, SubTrie::Left)
-		{
+		if let Some((da_proof, root)) = calls_proof::<String, _, _>(
+			submitted_data.clone().into_iter(),
+			callers.clone(),
+			0,
+			bridge_nonce,
+			SubTrie::Left,
+		) {
 			assert_eq!(root, H256::zero());
 			assert_eq!(da_proof.leaf_index, 0);
 			assert_eq!(
@@ -412,12 +429,22 @@ mod test {
 		// proof should not be generated when there is not data
 		assert_eq!(
 			None,
-			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 1, SubTrie::Left)
+			calls_proof::<String, _, _>(
+				submitted_data.clone().into_iter(),
+				callers.clone(),
+				1,
+				bridge_nonce,
+				SubTrie::Left
+			)
 		);
 
-		if let Some((da_proof, root)) =
-			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 2, SubTrie::Left)
-		{
+		if let Some((da_proof, root)) = calls_proof::<String, _, _>(
+			submitted_data.clone().into_iter(),
+			callers.clone(),
+			2,
+			bridge_nonce,
+			SubTrie::Left,
+		) {
 			assert_eq!(root, H256::zero());
 			assert_eq!(da_proof.leaf_index, 1);
 			assert_eq!(
@@ -438,9 +465,13 @@ mod test {
 			panic!("Proof not generated for the transaction index 2!");
 		}
 
-		if let Some((da_proof, root)) =
-			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 3, SubTrie::Left)
-		{
+		if let Some((da_proof, root)) = calls_proof::<String, _, _>(
+			submitted_data.clone().into_iter(),
+			callers.clone(),
+			3,
+			bridge_nonce,
+			SubTrie::Left,
+		) {
 			println!("{:?}", root);
 
 			assert_eq!(da_proof.leaf_index, 2);
@@ -461,7 +492,13 @@ mod test {
 		// submit index that does not exists and proof should not be generated
 		assert_eq!(
 			None,
-			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 15, SubTrie::Left)
+			calls_proof::<String, _, _>(
+				submitted_data.clone().into_iter(),
+				callers,
+				15,
+				bridge_nonce,
+				SubTrie::Left
+			)
 		);
 	}
 }
