@@ -10,7 +10,7 @@ use thiserror_no_std::Error;
 use nomad_core::keccak256_concat;
 
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum SubTrie {
     Left,
     Right,
@@ -142,8 +142,6 @@ impl<H, T> core::convert::TryFrom<(&MerkleProof<H, T>, H256, SubTrie)> for DataP
 mod test {
     use crate::{Keccak256};
     use hex_literal::hex;
-    use sp_core::H512;
-    use sp_io::hashing::keccak_256;
     use sp_std::cmp::min;
     use test_case::test_case;
 
@@ -151,7 +149,7 @@ mod test {
 
     fn leaves() -> Vec<Vec<u8>> {
         (0u8..7)
-            .map(|idx| H512::repeat_byte(idx).to_fixed_bytes().to_vec())
+            .map(|idx| H256::repeat_byte(idx).to_fixed_bytes().to_vec())
             .collect::<Vec<_>>()
     }
 
@@ -189,19 +187,19 @@ mod test {
             blob_root: None,
             bridge_root: None,
             proof: vec![
-                hex!("ad3228b676f7d3cd4284a5443f17f1962b36e491b30a40b2405849e597ba5fb5").into(),
-                hex!("8421b50025cb27f1412ed7103442ecdd09d4aa1e4a1ba777597ae921e48b31e1").into(),
-                hex!("08f1f28658e6a37fa6fd9be84bd7315c3ca1eceb0849ec88cbd5bf9a69160653").into(),
+                hex!("290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563").into(),
+                hex!("b54faa1de855f3a59f4b1fdd40d8fd1c5825be5e767edd3c2712eaa2db44e419").into(),
+                hex!("8b109df8272c258d0bee1ebd1ec97979ce0dc19f0dcbfb329a79323bffcc23d1").into(),
             ],
             number_of_leaves: 7,
             leaf_index: 1,
-            leaf: keccak_256(H512::repeat_byte(1).as_bytes()).into(),
+            leaf: H256::repeat_byte(1),
         };
 
-        if sub_trie == SubTrie::Left {
-            data_proof.bridge_root = Some(hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95").into());
+        if sub_trie == SubTrie::Right {
+            data_proof.bridge_root = Some(root);
         } else {
-            data_proof.blob_root = Some(hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95").into());
+            data_proof.blob_root = Some(root);
         }
 
         Ok(data_proof)
@@ -214,19 +212,19 @@ mod test {
             blob_root: None,
             bridge_root: None,
             proof: vec![
-                hex!("401617bc4f769381f86be40df0207a0a3e31ae0839497a5ac6d4252dfc35577f").into(),
-                hex!("8421b50025cb27f1412ed7103442ecdd09d4aa1e4a1ba777597ae921e48b31e1").into(),
-                hex!("08f1f28658e6a37fa6fd9be84bd7315c3ca1eceb0849ec88cbd5bf9a69160653").into(),
+                hex!("cebc8882fecbec7fb80d2cf4b312bec018884c2d66667c67a90508214bd8bafc").into(),
+                hex!("b54faa1de855f3a59f4b1fdd40d8fd1c5825be5e767edd3c2712eaa2db44e419").into(),
+                hex!("8b109df8272c258d0bee1ebd1ec97979ce0dc19f0dcbfb329a79323bffcc23d1").into(),
             ],
             number_of_leaves: 7,
             leaf_index: 0,
-            leaf: keccak_256(H512::repeat_byte(0).as_bytes()).into(),
+            leaf: H256::repeat_byte(0),
         };
 
-        if sub_trie == SubTrie::Left {
-            data_proof.bridge_root = Some(hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95").into());
+        if sub_trie == SubTrie::Right {
+            data_proof.bridge_root = Some(root);
         } else {
-            data_proof.blob_root = Some(hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95").into());
+            data_proof.blob_root = Some(root);
         }
 
         Ok(data_proof)
@@ -239,18 +237,18 @@ mod test {
             blob_root: None,
             bridge_root: None,
             proof: vec![
-                hex!("8663c7e2962f98579b883bf5e2179f9200ae3615ec6fc3bd8027a0de9973606a").into(),
-                hex!("b225b28cd9168524306b0d944342b11bb21d37e9156cdbf42073d4e51b2f0a41").into(),
+                hex!("98e3d39eab95363a52c1a9269a1840a6fc86bdae17f333ba1c64c123d77f5e1f").into(),
+                hex!("dd553f5e3808fd45b691f2ab61c50b52764085451f6ad64484c05632ad4c9bc8").into(),
             ],
             number_of_leaves: 7,
             leaf_index: 6,
-            leaf: keccak_256(H512::repeat_byte(6).as_bytes()).into(),
+            leaf: H256::repeat_byte(6),
         };
 
-        if sub_trie == SubTrie::Left {
-            data_proof.bridge_root = Some(hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95").into());
+        if sub_trie == SubTrie::Right {
+            data_proof.bridge_root = Some(root);
         } else {
-            data_proof.blob_root = Some(hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95").into());
+            data_proof.blob_root = Some(root);
         }
 
         Ok(data_proof)
@@ -259,7 +257,7 @@ mod test {
 
     fn expected_root(sub_trie: &SubTrie, sub_trie_root: H256) -> H256 {
         let data_root: H256;
-        let root = hex!("08a1133e47edacdc5a7a37f7301aad3c725fbf5698ca5e35acb7915ad1784b95");
+        let root = hex!("c93decb6f246d173698f24c03ffe19694f9c1633cf40ae35862816f1255c6516");
         match sub_trie {
             SubTrie::Left => {
                 data_root = keccak256_concat!(sub_trie_root.as_bytes(), root);
