@@ -1,15 +1,44 @@
 use avail_core::data_proof::SubTrie;
-use core::fmt::Debug;
-
 use avail_core::OpaqueExtrinsic;
 use binary_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
+use codec::{Decode, Encode};
+use core::fmt::Debug;
+use frame_support::BoundedVec;
+use scale_info::TypeInfo;
+use sp_core::ConstU32;
 use sp_core::H256;
+use sp_core::U256;
 use sp_io::hashing::keccak_256;
 use sp_runtime::traits::Keccak256;
+use sp_runtime::AccountId32;
 use sp_std::vec;
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
 
 const LOG_TARGET: &str = "runtime::system::submitted_data";
+
+/// Maximum size of data allowed in the bridge
+pub type BoundedData = BoundedVec<u8, ConstU32<102_400>>;
+/// Possible types of Messages allowed by Avail to bridge to other chains.
+#[derive(TypeInfo, Debug, Default, Clone, Encode, Decode, PartialEq)]
+pub enum MessageType {
+	ArbitraryMessage,
+	#[default]
+	FungibleToken,
+	// NonFungibleToken, We should enable it when we support it
+}
+
+/// Message type used to bridge between Avail & other chains
+#[derive(Debug, Default, Encode, Decode, PartialEq)]
+pub struct Message {
+	pub message_type: MessageType,
+	pub from: H256,
+	pub to: H256,
+	pub data: BoundedData,
+	pub domain: u32,
+	pub value: U256,
+	pub asset_id: H256,
+	pub id: u64, // a global nonce that is incremented with each leaf
+}
 
 /// Information about `submitted_data_root` and `submitted_data_proof` methods.
 #[derive(Default, Debug)]
@@ -41,14 +70,14 @@ pub trait Extractor {
 	fn extract(
 		extrinsic: &OpaqueExtrinsic,
 		metrics: RcMetrics,
-	) -> Result<(Vec<Vec<u8>>, Vec<Vec<u8>>), Self::Error>;
+	) -> Result<(Vec<Vec<u8>>, Vec<Message>), Self::Error>;
 }
 
 #[cfg(any(feature = "std", test))]
 impl Extractor for () {
 	type Error = ();
 
-	fn extract(_: &OpaqueExtrinsic, _: RcMetrics) -> Result<(Vec<Vec<u8>>, Vec<Vec<u8>>), ()> {
+	fn extract(_: &OpaqueExtrinsic, _: RcMetrics) -> Result<(Vec<Vec<u8>>, Vec<Message>), ()> {
 		Ok((vec![], vec![]))
 	}
 }
@@ -56,19 +85,23 @@ impl Extractor for () {
 /// It is similar to `Extractor` but it uses `C` type for calls, instead of `AppExtrinsic`.
 pub trait Filter<C> {
 	/// Returns the `data` field of `call` if it is a one or multiple valid `da_ctrl::submit_data` call.
-	fn filter(call: C, metrics: RcMetrics) -> (Vec<Vec<u8>>, Vec<Vec<u8>>);
+	fn filter(call: C, metrics: RcMetrics, caller: AccountId32) -> (Vec<Vec<u8>>, Vec<Message>);
 
 	/// This function processes a list of calls and returns their data as Vec<Vec<u8>>
-	fn process_calls(calls: Vec<C>, metrics: &RcMetrics) -> (Vec<Vec<u8>>, Vec<Vec<u8>>);
+	fn process_calls(
+		calls: Vec<C>,
+		metrics: &RcMetrics,
+		caller: AccountId32,
+	) -> (Vec<Vec<u8>>, Vec<Message>);
 }
 
 #[cfg(any(feature = "std", test))]
 impl<C> Filter<C> for () {
-	fn filter(_: C, _: RcMetrics) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
+	fn filter(_: C, _: RcMetrics, _: AccountId32) -> (Vec<Vec<u8>>, Vec<Message>) {
 		(vec![], vec![])
 	}
 
-	fn process_calls(_: Vec<C>, _: &RcMetrics) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
+	fn process_calls(_: Vec<C>, _: &RcMetrics, _: AccountId32) -> (Vec<Vec<u8>>, Vec<Message>) {
 		(vec![], vec![])
 	}
 }
@@ -76,7 +109,7 @@ impl<C> Filter<C> for () {
 fn extract_and_inspect<E>(
 	opaque: &OpaqueExtrinsic,
 	metrics: RcMetrics,
-) -> (Vec<Vec<u8>>, Vec<Vec<u8>>)
+) -> (Vec<Vec<u8>>, Vec<Message>)
 where
 	E: Extractor,
 	E::Error: Debug,
@@ -94,19 +127,20 @@ where
 		.collect();
 	let data_root = bridge_root_data
 		.into_iter()
-		.filter(|data| !data.is_empty())
+		.filter(|msg| msg != &Message::default())
 		.collect();
 
 	(blob_root, data_root)
 }
 
 /// Construct a root hash of Binary Merkle Tree created from given filtered `app_extrincs`.
-pub fn extrinsics_root<'a, E, I>(opaque_itr: I) -> H256
+pub fn extrinsics_root<'a, E, I>(opaque_itr: I, nonce: u64) -> (H256, u64)
 where
 	E: Extractor,
 	E::Error: Debug,
 	I: Iterator<Item = &'a OpaqueExtrinsic>,
 {
+	let mut bridge_nonce = nonce;
 	let metrics = Metrics::new_shared();
 
 	let (blob_data, bridge_data): (Vec<_>, Vec<_>) = opaque_itr
@@ -122,11 +156,16 @@ where
 		.map(|leaf| keccak_256(leaf.as_slice()).to_vec())
 		.collect::<Vec<_>>();
 
-	let root_bridge_data = bridge_data
+	let root_bridge_data: Vec<_> = bridge_data
 		.into_iter()
-		.filter(|v| !v.is_empty())
-		.map(|leaf| keccak_256(leaf.as_slice()).to_vec())
-		.collect::<Vec<_>>();
+		.filter(|m| m != &Message::default())
+		.enumerate()
+		.map(|(index, mut m)| {
+			m.id = bridge_nonce + index as u64;
+			keccak_256(&m.encode()).to_vec()
+		})
+		.collect();
+	bridge_nonce += root_bridge_data.len() as u64;
 
 	// make leaves 2^n
 	let root_data_balanced = calculate_balance_trie(root_blob_data).unwrap_or_default();
@@ -140,7 +179,7 @@ where
 	concat.extend_from_slice(blob_root.as_bytes());
 	concat.extend_from_slice(bridge_root.as_bytes());
 	let hash = keccak_256(concat.as_slice());
-	H256(hash)
+	(H256(hash), bridge_nonce)
 }
 
 /// Construct a root hash of a Binary Merkle Tree created from given leaves and stores
@@ -174,7 +213,9 @@ pub fn root<I: Iterator<Item = Vec<u8>> + core::fmt::Debug>(
 /// adding the number of submitted data items at `System` pallet.
 pub fn calls_proof<F, I, C>(
 	calls: I,
+	callers: Vec<AccountId32>,
 	transaction_index: u32,
+	bridge_nonce: u64,
 	call_type: SubTrie,
 ) -> Option<(MerkleProof<H256, Vec<u8>>, H256)>
 where
@@ -185,14 +226,22 @@ where
 
 	let transaction_index = usize::try_from(transaction_index).ok()?;
 	let tx_max = transaction_index.checked_add(1)?;
+	let mut nonce = bridge_nonce;
 
 	let (blob_data, bridge_data): (Vec<_>, Vec<_>) = calls
-		.map(|ext| {
-			let (l, r) = F::filter(ext, Rc::clone(&metrics));
-			(
-				l.into_iter().flatten().collect::<Vec<_>>(),
-				r.into_iter().flatten().collect::<Vec<_>>(),
-			)
+		.zip(callers.into_iter())
+		.map(|(ext, caller)| {
+			let (l, r) = F::filter(ext, Rc::clone(&metrics), caller);
+			let r_with_id: Vec<_> = r
+				.into_iter()
+				.map(|mut m| {
+					nonce += 1;
+					m.id = nonce;
+					m.encode()
+				})
+				.flatten()
+				.collect();
+			(l.into_iter().flatten().collect::<Vec<_>>(), r_with_id)
 		})
 		.unzip();
 
@@ -323,16 +372,18 @@ mod test {
 	use avail_core::fail;
 	use hex_literal::hex;
 	use sp_core::H256;
+	use sp_runtime::AccountId32;
 	use std::vec;
 
 	use crate::submitted_data::{calculate_balance_trie, calls_proof, Filter, RcMetrics};
+	use crate::submitted_data::{calls_proof, Filter, Message, RcMetrics};
 
 	// dummy filter implementation that skips empty strings in vector
 	impl<C> Filter<C> for String
 	where
 		String: From<C>,
 	{
-		fn filter(d: C, _: RcMetrics) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
+		fn filter(d: C, _: RcMetrics, _: AccountId32) -> (Vec<Vec<u8>>, Vec<Message>) {
 			let s = String::try_from(d).unwrap();
 			if s.is_empty() {
 				(vec![], vec![])
@@ -340,7 +391,7 @@ mod test {
 				(vec![s.into_bytes()], vec![])
 			}
 		}
-		fn process_calls(_: Vec<C>, _: &RcMetrics) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
+		fn process_calls(_: Vec<C>, _: &RcMetrics, _: AccountId32) -> (Vec<Vec<u8>>, Vec<Message>) {
 			(vec![], vec![])
 		}
 	}
@@ -406,6 +457,13 @@ mod test {
 		let tx2_data: String = String::new(); // tx should be skipped
 		let tx3_data: String = String::from("1");
 		let tx4_data: String = String::from("2");
+		let callers: Vec<AccountId32> = vec![
+			AccountId32::new([0u8; 32]),
+			AccountId32::new([0u8; 32]),
+			AccountId32::new([0u8; 32]),
+			AccountId32::new([0u8; 32]),
+		];
+		let bridge_nonce: u64 = 0u64;
 
 		let submitted_data = vec![tx1_data, tx2_data, tx3_data, tx4_data];
 
@@ -424,9 +482,13 @@ mod test {
 		// data_root keccak256(db0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e, 3c86bde3a90d18efbcf23e27e9b6714012aa055263fe903a72333aa9caa37f1b)
 		//                                                       (877f9ed6aa67f160e9b9b7794bb851998d15b65d11bab3efc6ff444339a3d750)
 
-		if let Some((da_proof, root)) =
-			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 0, SubTrie::Left)
-		{
+		if let Some((da_proof, root)) = calls_proof::<String, _, _>(
+			submitted_data.clone().into_iter(),
+			callers.clone(),
+			0,
+			bridge_nonce,
+			SubTrie::Left,
+		) {
 			assert_eq!(root, H256::zero());
 			assert_eq!(da_proof.leaf_index, 0);
 			assert_eq!(
@@ -458,12 +520,22 @@ mod test {
 		// proof should not be generated when there is not data
 		assert_eq!(
 			None,
-			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 1, SubTrie::Left)
+			calls_proof::<String, _, _>(
+				submitted_data.clone().into_iter(),
+				callers.clone(),
+				1,
+				bridge_nonce,
+				SubTrie::Left
+			)
 		);
 
-		if let Some((da_proof, root)) =
-			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 2, SubTrie::Left)
-		{
+		if let Some((da_proof, root)) = calls_proof::<String, _, _>(
+			submitted_data.clone().into_iter(),
+			callers.clone(),
+			2,
+			bridge_nonce,
+			SubTrie::Left,
+		) {
 			assert_eq!(root, H256::zero());
 			assert_eq!(da_proof.leaf_index, 1);
 			assert_eq!(
@@ -510,7 +582,13 @@ mod test {
 		// submit index that does not exists and proof should not be generated
 		assert_eq!(
 			None,
-			calls_proof::<String, _, _>(submitted_data.clone().into_iter(), 15, SubTrie::Left)
+			calls_proof::<String, _, _>(
+				submitted_data.clone().into_iter(),
+				callers,
+				15,
+				bridge_nonce,
+				SubTrie::Left
+			)
 		);
 	}
 

@@ -34,6 +34,7 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::{
 	generic::{Digest, SignedBlock},
 	traits::{Block as BlockT, Header},
+	{AccountId32, MultiAddress},
 };
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
@@ -443,22 +444,25 @@ where
 			.flat_map(|extrinsic| UncheckedExtrinsic::try_from(extrinsic).ok())
 			.map(|extrinsic| extrinsic.function);
 
-		let tx_index = usize::try_from(transaction_index).map_err(|_| {
-			internal_err!(
-				"Data proof cannot be generated for transaction at index={:?} and block {:?}",
-				transaction_index,
-				at
+		let callers: Vec<AccountId32> = block
+			.extrinsics()
+			.iter()
+			.flat_map(|extrinsic| UncheckedExtrinsic::try_from(extrinsic).ok())
+			.map(
+				|extrinsic| match extrinsic.signature.as_ref().map(|s| &s.0) {
+					Some(&MultiAddress::Id(ref id)) => id.clone(),
+					_ => AccountId32::new([0u8; 32]),
+				},
 			)
-		})?;
+			.collect();
 
-		let transaction_call = calls.clone().nth(tx_index).ok_or_else(|| {
-			internal_err!(
-				"Data proof cannot be generated for transaction call at index={:?} and block {:?}",
-				transaction_index,
-				at
-			)
-		})?;
+		let bridge_nonce = self
+			.client
+			.runtime_api()
+			.bridge_nonce(*block.header().parent_hash())
+			.map_err(|e| internal_err!("Failed to fetch bridge_nonce at ({:?}): {:?}", at, e))?;
 
+		let transaction_call = calls.clone().nth(transaction_index as usize).unwrap();
 		let call_type: SubTrie;
 		let root_side: SubTrie;
 		match transaction_call {
@@ -466,7 +470,7 @@ where
 				call_type = SubTrie::Left;
 				root_side = SubTrie::Right;
 			},
-			RuntimeCall::Succinct(pallet_succinct::Call::submit_bridge_data { .. }) => {
+			RuntimeCall::Succinct(pallet_succinct::Call::send_message { .. }) => {
 				call_type = SubTrie::Right;
 				root_side = SubTrie::Left;
 			},
@@ -480,15 +484,20 @@ where
 		}
 
 		// Build the proof.
-		let (proof, root) =
-			submitted_data::calls_proof::<Runtime, _, _>(calls, transaction_index, call_type)
-				.ok_or_else(|| {
-					internal_err!(
-						"Data proof cannot be generated for transaction index={} at block {:?}",
-						transaction_index,
-						at
-					)
-				})?;
+		let (proof, root) = submitted_data::calls_proof::<Runtime, _, _>(
+			calls,
+			callers,
+			transaction_index,
+			bridge_nonce,
+			call_type,
+		)
+		.ok_or_else(|| {
+			internal_err!(
+				"Data proof cannot be generated for transaction index={} at block {:?}",
+				transaction_index,
+				at
+			)
+		})?;
 
 		let data_proof = DataProof::try_from((&proof, root, root_side))
 			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e));

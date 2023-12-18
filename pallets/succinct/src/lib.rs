@@ -1,15 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use crate::target_amb::MessageStatusEnum;
+use crate::verifier::Verifier;
 use frame_support::traits::{Currency, ExistenceRequirement, UnixTime};
 use frame_support::{pallet_prelude::*, parameter_types, PalletId};
+use frame_system::submitted_data::{BoundedData, MessageType};
 use hex_literal::hex;
+pub use pallet::*;
 use sp_core::H256;
 use sp_runtime::SaturatedConversion;
-
-pub use pallet::*;
-
-use crate::verifier::Verifier;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -25,6 +24,10 @@ mod weights;
 
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
 pub type BridgeData<T> = BoundedVec<u8, <T as Config>::MaxBridgeDataLength>;
+
+// whitelist of supported domains
+// TODO: Create a storage & extrinsic around it to support onchain updation of supported domains, also can act as the panic button
+const WHITELISTED_DOMAINS: [u32; 1] = [2];
 
 parameter_types! {
 	// function identifiers
@@ -49,7 +52,6 @@ parameter_types! {
 	pub const AccountProofLen: u32 = 2048;
 	pub const StorageProofMaxLen: u32 = 2048;
 	pub const StorageProofLen: u32 = 2048;
-
 	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
 
 	pub const MaxBridgeDataLength: u32= 256;
@@ -76,7 +78,9 @@ pub mod pallet {
 	use crate::state::{
 		parse_rotate_output, parse_step_output, VerifiedRotate, VerifiedStep, VerifiedStepOutput,
 	};
-	use crate::target_amb::{get_storage_root, get_storage_value, Message};
+	use crate::target_amb::{
+		decode_message, get_storage_root, get_storage_value, Message, MessageData,
+	};
 	use crate::verifier::encode_packed;
 
 	use super::*;
@@ -115,6 +119,10 @@ pub mod pallet {
 		CannotDecodeDestinationAccountId,
 		// bridge
 		BridgeDataCannotBeEmpty,
+		/// Given inputs for the selected MessageType are invalid
+		InvalidBridgeInputs,
+		/// Domain is not supported
+		DomainNotSupported,
 	}
 
 	#[pallet::event]
@@ -152,6 +160,11 @@ pub mod pallet {
 		BridgeDataSubmitted {
 			who: T::AccountId,
 			data_hash: H256,
+		},
+		MessageSubmitted {
+			from: T::AccountId,
+			to: H256,
+			message_type: MessageType,
 		},
 	}
 
@@ -200,10 +213,6 @@ pub mod pallet {
 	// Ability to froze source chain
 	#[pallet::storage]
 	pub type SourceChainFrozen<T> = StorageMap<_, Identity, u32, bool, ValueQuery>;
-
-	// Nonce
-	#[pallet::storage]
-	pub type Nonce<T: Config> = StorageValue<_, u64, ValueQuery>;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -490,50 +499,54 @@ pub mod pallet {
 
 		#[pallet::call_index(7)]
 		#[pallet::weight(T::WeightInfo::step())]
-		pub fn submit_bridge_data(
+		pub fn send_message(
 			origin: OriginFor<T>,
-			data: BridgeData<T>,
+			message_type: MessageType,
+			to: H256,
+			#[pallet::compact] domain: u32,
+			value: Option<u128>,
+			asset_id: Option<H256>,
+			data: Option<BoundedData>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-			ensure!(!data.is_empty(), Error::<T>::BridgeDataCannotBeEmpty);
+			// Ensure the domain is currently supported
+			ensure!(
+				Self::is_domain_valid(domain),
+				Error::<T>::DomainNotSupported
+			);
+			// Check MessageType and enforce the rules
+			match message_type {
+				MessageType::ArbitraryMessage => {
+					ensure!(
+						value.is_none() && asset_id.is_none() && !data.is_none(),
+						Error::<T>::InvalidBridgeInputs
+					);
+					// What to do?
+					Self::deposit_event(Event::MessageSubmitted {
+						from: who,
+						to,
+						message_type,
+					});
+				},
+				MessageType::FungibleToken => {
+					ensure!(
+						!value.is_none() && !asset_id.is_none() && data.is_none(),
+						Error::<T>::InvalidBridgeInputs
+					);
 
-			// Index Tx in DB block.
-			let data_hash = keccak_256(&data);
-
-			// TODO decode message format
-			// let message_data = MessageData {
-			// 	recipient_address: H256([1u8; 32]),
-			// 	amount: U256::zero(),
-			// };
-
-			// T::Currency::transfer(
-			// 	&who,
-			// 	&destination_account_id,
-			// 	transferable_amount,
-			// 	ExistenceRequirement::KeepAlive,
-			// )?;
-
-			// let _success = Self::transfer(message_data.amount, message_data.recipient_address)?;
-			// if success {
-			// 	Self::deposit_event(Event::<T>::ExecutedMessage {
-			// 		chain_id: message.source_chain_id,
-			// 		nonce: message.nonce,
-			// 		message_root,
-			// 		status: true,
-			// 	});
-			// } else {
-			// 	Self::deposit_event(Event::<T>::ExecutedMessage {
-			// 		chain_id: message.source_chain_id,
-			// 		nonce: message.nonce,
-			// 		message_root,
-			// 		status: false,
-			// 	});
-			// }
-
-			Self::deposit_event(Event::BridgeDataSubmitted {
-				who,
-				data_hash: H256(data_hash),
-			});
+					T::Currency::transfer(
+						&who,
+						&Self::account_id(),
+						value.unwrap_or_default().saturated_into(),
+						ExistenceRequirement::KeepAlive,
+					)?;
+					Self::deposit_event(Event::MessageSubmitted {
+						from: who,
+						to,
+						message_type,
+					});
+				},
+			}
 
 			Ok(().into())
 		}
@@ -544,7 +557,7 @@ pub mod pallet {
 		message_root: H256,
 	) -> Result<(), DispatchError> {
 		let message_status = MessageStatus::<T>::get(message_root);
-		// // Message must not be executed
+		// Message must not be executed
 		ensure!(
 			message_status == MessageStatusEnum::NotExecuted,
 			Error::<T>::MessageAlreadyExecuted
@@ -771,6 +784,11 @@ pub mod pallet {
 			} else {
 				Err(Error::<T>::RotateVerificationError.into())
 			}
+		}
+
+		/// Check if the given domain is supported or not
+		fn is_domain_valid(domain: u32) -> bool {
+			WHITELISTED_DOMAINS.contains(&domain)
 		}
 	}
 }
