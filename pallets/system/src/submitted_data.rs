@@ -128,8 +128,12 @@ where
 		.map(|leaf| keccak_256(leaf.as_slice()).to_vec())
 		.collect::<Vec<_>>();
 
-	let blob_root = root(root_blob_data.into_iter(), Rc::clone(&metrics));
-	let bridge_root = root(root_bridge_data.into_iter(), Rc::clone(&metrics));
+	// make leaves 2^n
+	let root_data_balanced = calculate_balance_trie(root_blob_data).unwrap_or_default();
+	let data_filtered_balanced = calculate_balance_trie(root_bridge_data).unwrap_or_default();
+
+	let blob_root = root(root_data_balanced.into_iter(), Rc::clone(&metrics));
+	let bridge_root = root(data_filtered_balanced.into_iter(), Rc::clone(&metrics));
 
 	let mut concat = vec![];
 	// keccak_256(blob_root, bridge_root)
@@ -237,6 +241,9 @@ where
 	let data_filtered_balanced = calculate_balance_trie(data_filtered).or_else(|| None)?;
 
 	let root = root(root_data_balanced.into_iter(), Rc::clone(&metrics));
+
+	log::info!("Bridge root is: {:?}", root);
+
 	let data_index = u32::try_from(data_index).ok()?;
 
 	proof(data_filtered_balanced, data_index, Rc::clone(&metrics)).map(|proof| (proof, root))
