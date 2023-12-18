@@ -32,6 +32,7 @@ decl_runtime_apis! {
 	pub trait DataAvailApi {
 		fn block_length() -> BlockLength;
 		fn babe_vrf() -> Seed;
+		fn bridge_nonce() -> u64;
 	}
 
 	pub trait ExtensionBuilder {
@@ -334,6 +335,10 @@ impl_runtime_apis! {
 			log::info!("Runtime::get_babe_vrf(): epoc_and_block: {epoc_and_block:?}, seed: {seed:?}");
 
 			seed.into()
+		}
+
+		fn bridge_nonce() -> u64 {
+			frame_system::Pallet::<Runtime>::bridge_nonce()
 		}
 	}
 
