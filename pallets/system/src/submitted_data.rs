@@ -28,6 +28,15 @@ pub enum MessageType {
 	// NonFungibleToken, We should enable it when we support it
 }
 
+impl From<MessageType> for U256 {
+	fn from(msg_type: MessageType) -> Self {
+		match msg_type {
+			MessageType::ArbitraryMessage => U256::from(0u8),
+			MessageType::FungibleToken => U256::from(1u8),
+		}
+	}
+}
+
 /// Message type used to bridge between Avail & other chains
 #[derive(Debug, Default, Encode, Decode, PartialEq)]
 pub struct Message {
@@ -39,6 +48,24 @@ pub struct Message {
 	pub value: U256,
 	pub asset_id: H256,
 	pub id: u64, // a global nonce that is incremented with each leaf
+}
+
+impl Message {
+	fn abi_encode(self) -> Vec<u8> {
+		let params = vec![
+			// Assuming MessageType, H256, BoundedData, and U256 implement the ToToken trait
+			ethabi::Token::Uint(ethabi::Uint::from(self.message_type)),
+			ethabi::Token::FixedBytes(self.from.to_fixed_bytes().to_vec()),
+			ethabi::Token::FixedBytes(self.to.to_fixed_bytes().to_vec()),
+			ethabi::Token::Bytes(self.data.as_slice().to_vec()),
+			ethabi::Token::Uint(ethabi::Uint::from(self.domain)),
+			ethabi::Token::Uint(ethabi::Uint::from(self.value)),
+			ethabi::Token::FixedBytes(self.asset_id.to_fixed_bytes().to_vec()),
+			ethabi::Token::Uint(ethabi::Uint::from(self.id)),
+		];
+
+		ethabi::encode(params.as_slice())
+	}
 }
 
 /// Information about `submitted_data_root` and `submitted_data_proof` methods.
@@ -163,7 +190,7 @@ where
 		.enumerate()
 		.map(|(index, mut m)| {
 			m.id = bridge_nonce + index as u64;
-			keccak_256(&m.encode()).to_vec()
+			keccak_256(&m.abi_encode()).to_vec()
 		})
 		.collect();
 	bridge_nonce += root_bridge_data.len() as u64;
@@ -374,11 +401,14 @@ where
 mod test {
 	use avail_core::data_proof::SubTrie;
 	use hex_literal::hex;
-	use sp_core::H256;
-	use sp_runtime::AccountId32;
+	use sp_core::bytes::to_hex;
+	use sp_core::{H256, U256};
+	use sp_runtime::{AccountId32, BoundedVec};
 	use std::vec;
 
-	use crate::submitted_data::{calculate_balance_trie, calls_proof, Filter, Message, RcMetrics};
+	use crate::submitted_data::{
+		calculate_balance_trie, calls_proof, Filter, Message, MessageType, RcMetrics,
+	};
 
 	// dummy filter implementation that skips empty strings in vector
 	impl<C> Filter<C> for String
@@ -636,5 +666,23 @@ mod test {
 				panic!("Trie leaves must be empty!");
 			}
 		}
+	}
+
+	#[test]
+	fn test_message_encoding() {
+		let expected_encoded_message = hex!("0000000000000000000000000000000000000000000000000000000000000001040404040404040404040404040404040404040404040404040404040404040405050505050505050505050505050505050505050505050505050505050505050000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000001f4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000").to_vec();
+		let message = Message {
+			message_type: MessageType::FungibleToken,
+			from: H256([4u8; 32]),
+			to: H256([5u8; 32]),
+			data: BoundedVec::new(), // empty?
+			domain: 1,
+			value: U256::from(500),
+			asset_id: H256::zero(),
+			id: 1,
+		};
+		let abi_encoded = message.abi_encode();
+
+		assert_eq!(expected_encoded_message, abi_encoded);
 	}
 }

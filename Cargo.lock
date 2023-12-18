@@ -3495,6 +3495,7 @@ dependencies = [
  "cfg-if",
  "criterion",
  "derive_more",
+    "ethabi",
  "frame-support",
  "hex-literal 0.3.4",
  "impl-trait-for-tuples",
