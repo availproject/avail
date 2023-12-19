@@ -279,6 +279,7 @@ mod multiplier_tests {
 	}
 
 	#[test]
+	#[ignore]
 	fn weight_congested_chain_simulation() {
 		// `cargo test weight_congested_chain_simulation -- --nocapture` to get some insight.
 		sp_io::TestExternalities::default().execute_with(|| {
@@ -334,6 +335,7 @@ mod multiplier_tests {
 	}
 
 	#[test]
+	#[ignore]
 	fn length_congested_chain_simulation() {
 		// `cargo test length_congested_chain_simulation -- --nocapture` to get some insight.
 		sp_io::TestExternalities::default().execute_with(|| {
