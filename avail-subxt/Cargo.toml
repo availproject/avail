@@ -71,9 +71,9 @@ sp-core-hashing = { git = "https://github.com/paritytech/substrate.git", branch 
 
 
 [features]
-default = ["api-dev", "std"]
+default = [ "api-dev", "std" ]
 api-dev = []
 api-main = []
-std = ["codec/std", "sp-core/std"]
+std = [ "codec/std", "sp-core/std" ]
 
 [workspace]

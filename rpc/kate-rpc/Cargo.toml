@@ -30,17 +30,17 @@ sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "po
 moka = { version = "0.12.1", features = ["future"] }
 
 [features]
-default = ["std", "metrics"]
+default = [ "metrics", "std" ]
 std = [
 	"avail-base/std",
 	"avail-core/std",
 	"da-runtime/std",
+	"frame-support/std",
 	"frame-system/std",
 	"kate-recovery/std",
 	"kate/std",
 	"sp-api/std",
 	"sp-runtime/std",
-	"frame-support/std",
 ]
 metrics = []
 
