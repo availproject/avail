@@ -1,8 +1,11 @@
-use anyhow::Result;
+pub use anyhow::Result;
+use std::sync::Arc;
 use structopt::StructOpt;
+
 // Re-export some tools from `subxt`
 pub use api::runtime_types::bounded_collections::bounded_vec::BoundedVec;
-pub use subxt::{config, rpc, utils};
+use jsonrpsee::ws_client::{WsClient, WsClientBuilder};
+pub use subxt::{client::default_rpc_client, config, rpc as subxt_rpc, utils};
 use subxt::{
 	config::substrate::BlakeTwo256,
 	utils::{AccountId32, MultiAddress, MultiSignature, H256},
@@ -10,7 +13,9 @@ use subxt::{
 };
 
 pub mod primitives;
-use primitives::{AvailExtrinsicParams, Header};
+pub use primitives::{AvailExtrinsicParams, Cell, Header};
+
+pub mod rpc;
 
 #[derive(Clone, Debug, Default)]
 pub struct AvailConfig;
@@ -36,7 +41,8 @@ impl Config for AvailConfig {
 }
 
 pub mod avail {
-	use super::{api, AvailConfig};
+	use super::*;
+	use sp_core::ConstU32;
 
 	pub type Client = subxt::OnlineClient<AvailConfig>;
 	pub type TxProgress = subxt::tx::TxProgress<AvailConfig, Client>;
@@ -50,6 +56,12 @@ pub mod avail {
 	pub type Bounded = api::runtime_types::frame_support::traits::preimages::Bounded<RuntimeCall>;
 
 	pub const AVL: u128 = 1_000_000_000_000_000_000;
+
+	pub type MaxCells = ConstU32<64>;
+	pub type Cells = bounded_collections::BoundedVec<Cell, MaxCells>;
+
+	pub type MaxRows = ConstU32<64>;
+	pub type Rows = bounded_collections::BoundedVec<u32, MaxRows>;
 }
 
 #[cfg(feature = "api-dev")]
@@ -71,18 +83,22 @@ pub struct Opts {
 	pub validate_codegen: bool,
 }
 
-/// Creates a client and validate the code generation if `validate_codegen == true`.
+/// Creates a client and rpc based on the given url.
+/// It validates the code generation if `validate_codegen == true`.
 pub async fn build_client<U: AsRef<str>>(
 	url: U,
 	validate_codegen: bool,
-) -> Result<OnlineClient<AvailConfig>> {
-	let api = OnlineClient::<AvailConfig>::from_url(url).await?;
+) -> Result<(OnlineClient<AvailConfig>, Arc<WsClient>)> {
+	let rpc = Arc::new(WsClientBuilder::default().build(url).await?);
+	let api = OnlineClient::<AvailConfig>::from_rpc_client(Arc::clone(&rpc)).await?;
 	if validate_codegen {
 		api::validate_codegen(&api)?;
 	}
-	Ok(api)
+	Ok((api, rpc))
 }
 
+/// It submits `data` using the `app_id` as application ID.
+/// It does not wait for the transaction to be included in a block.
 pub async fn submit_data<ID, D>(
 	client: &OnlineClient<AvailConfig>,
 	signer: &avail::PairSigner,
@@ -99,6 +115,7 @@ where
 	Ok(tx)
 }
 
+/// It submits `data` using the `app_id` as application ID and waits until it is included in a block.
 pub async fn submit_data_in_block<ID, D>(
 	client: &OnlineClient<AvailConfig>,
 	signer: &avail::PairSigner,
@@ -116,6 +133,7 @@ where
 	Ok(tx_in_block)
 }
 
+/// It sumsbits `data` using the `app_id` as application ID and waits until it is included into a finalized block.
 pub async fn submit_data_finalized<ID, D>(
 	client: &OnlineClient<AvailConfig>,
 	signer: &avail::PairSigner,
