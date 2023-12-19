@@ -129,6 +129,25 @@ podman run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output availnode --dev 
 podman run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output:z availnode --dev --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all
 ```
 
+## Run Benchmarks
+### Kate RPC
+```bash
+cargo build --release --features kate-rpc-metrics
+deno run -A ./examples/deno/benchmarks/query_proof.ts && deno run -A ./examples/deno/benchmarks/query_data_proof.ts && deno run -A ./examples/deno/benchmarks/query_rows.ts && deno run -A ./examples/deno/benchmarks/query_block_length.ts && deno run -A ./examples/deno/benchmarks/query_app_data.ts
+```
+
+### Header Builder
+```bash
+# Option 1: for time measurement 
+cargo bench --bench header_kate_commitment_cri
+# Option 2: for time measurement 
+cargo bench --bench header_kate_commitment_divan
+# Option 1: for instructions, cache and main memory hits
+cargo bench --bench header_kate_commitment_iai_callgrind
+# Option 2: for instructions, cache and main memory hits
+cargo bench --bench header_kate_commitment_iai
+```
+
 ## Additional Documentation
 For additional documentation check our [wiki page](https://github.com/availproject/avail/wiki).
 There you can learn how to:

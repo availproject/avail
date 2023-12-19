@@ -1,5 +1,14 @@
-target
-.github
-.maintain
-avail-subxt
-e2e/target
+# Ignore everything
+*
+
+# Allow files and directories
+!/runtime
+!/rpc
+!/pallets
+!/node
+!/misc
+!/base
+!Cargo.toml
+!Cargo.lock
+!rust-toolchain.toml
+!rustfmt.toml

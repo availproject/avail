@@ -20,8 +20,7 @@ Once node is updated, we can re-generate the `src/api_dev.rs` file using the fol
 
 # E2E Binary
 
-This binary executes each example on a Data-Availability Node. It launches the node before run any
-example.
+This binary executes each example on a Data-Availability Node. It launches the node before running any example.
 
 The following command uses the node located in `./target/release/data-avail` to run each example
 

@@ -1,5 +1,5 @@
 use super::{get_account_id_from_seed, AuthorityKeys};
-use avail_core::BLOCK_CHUNK_SIZE;
+use avail_core::{BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO};
 use da_runtime::{
 	constants, wasm_binary_unwrap, AccountId, BabeConfig, Balance, BalancesConfig,
 	DataAvailabilityConfig, NomadHomeConfig, NomadUpdaterManagerConfig, NominationPoolsConfig,
@@ -43,7 +43,7 @@ fn standard_system_configuration() -> (Vec<u8>, BlockLength) {
 		MAX_BLOCK_ROWS,
 		MAX_BLOCK_COLUMNS,
 		BLOCK_CHUNK_SIZE,
-		Perbill::from_percent(90),
+		NORMAL_DISPATCH_RATIO,
 	)
 	.expect("Valid `BlockLength` genesis definition .qed");
 
