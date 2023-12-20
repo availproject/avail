@@ -16,15 +16,15 @@ targets = ["x86_64-unknown-linux-gnu"]
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
+sp-core = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2", default-features = false }
+sp-io = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2", default-features = false, optional = true }
+sp-runtime = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2", default-features = false, optional = true }
 
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+frame-support = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2", default-features = false }
 frame-system = { path = "../../../../pallets/system", default-features = false }
 
 [dev-dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", features = ["runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/data-increase", features = ["runtime"] }
 
 [features]
 default = [ "std" ]

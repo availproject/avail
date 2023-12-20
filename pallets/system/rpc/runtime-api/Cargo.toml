@@ -13,7 +13,7 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-api = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2", default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
 
 [features]

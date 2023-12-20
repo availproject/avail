@@ -28,7 +28,7 @@ schnorrkel = "0.9.1"
 
 # Substrate
 subxt = { version = "0.29" }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-core = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2", default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "full", "bit-vec"] }
 serde = { version = "1", features = ["derive"] }
 serde-hex = "0.1"
@@ -46,16 +46,16 @@ serde_json = "1.0"
 indicatif = "0.17"
 
 # Substrate 
-sp-keyring = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-keyring = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2" }
 
 
 # Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
 [patch.crates-io]
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-core-hashing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-core = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2" }
+sp-io = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2" }
+sp-runtime = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2" }
+sp-std = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2" }
+sp-core-hashing = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2" }
 
 
 [features]

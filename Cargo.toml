@@ -12,7 +12,7 @@ members = [
 ]
 
 
-[patch."https://github.com/paritytech/substrate.git"]
+[patch."https://github.com/leouarz/substrate.git"]
 frame-executive = { path = "pallets/executive" }
 frame-system = { path = "pallets/system" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }

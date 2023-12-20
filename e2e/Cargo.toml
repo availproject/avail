@@ -8,20 +8,20 @@ edition = "2021"
 [dependencies]
 avail-subxt = { path = "../avail-subxt" }
 async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
-sp-keyring = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-keyring = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2" }
 subxt = "0.29"
 anyhow = "1.0.66"
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "full", "bit-vec"] }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3" }
-kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3" }
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3" }
-binary-merkle-tree = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "ghali/data-increase" }
+kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/data-increase" }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/data-increase" }
+binary-merkle-tree = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2" }
 
 
 # Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
 [patch.crates-io]
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-core-hashing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-core = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2" }
+sp-io = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2" }
+sp-runtime = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2" }
+sp-std = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2" }
+sp-core-hashing = { git = "https://github.com/leouarz/substrate.git", branch = "ghali/data-increase-2" }
