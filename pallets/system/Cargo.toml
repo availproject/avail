@@ -37,14 +37,13 @@ sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkad
 sp-version = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, features = ["serde"] }
 sp-weights = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, features = ["serde"] }
 sp-runtime-interface = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-binary-merkle-tree = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" , default-features = false }
+binary-merkle-tree = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 
 once_cell = { version = "1.18", optional = true }
 
 libm = { version = "0.2.1", default-features = false }
 
 ethabi = { version = "18.0.0", default-features = false }
-
 
 [dev-dependencies]
 hex-literal = "0.3.1"
@@ -53,33 +52,33 @@ criterion = "0.5.1"
 sp-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
-	"avail-base/std",
-	"avail-core/std",
-	"binary-merkle-tree/std",
-	"codec/std",
-	"frame-support/std",
-	"kate/std",
-	"log/std",
-	"once_cell",
-	"scale-info/std",
-	"serde/std",
-	"sp-core/std",
-	"sp-io/std",
-	"sp-runtime-interface/std",
-	"sp-runtime/std",
-	"sp-std/std",
-	"sp-version/std",
-	"sp-weights/std",
+    "avail-base/std",
+    "avail-core/std",
+    "binary-merkle-tree/std",
+    "codec/std",
+    "frame-support/std",
+    "kate/std",
+    "log/std",
+    "once_cell",
+    "scale-info/std",
+    "serde/std",
+    "sp-core/std",
+    "sp-io/std",
+    "sp-runtime-interface/std",
+    "sp-runtime/std",
+    "sp-std/std",
+    "sp-version/std",
+    "sp-weights/std",
 ]
 runtime-benchmarks = [
-	"frame-support/runtime-benchmarks",
-	"serde",
-	"sp-runtime/runtime-benchmarks",
+    "frame-support/runtime-benchmarks",
+    "serde",
+    "sp-runtime/runtime-benchmarks",
 ]
-try-runtime = [ "avail-core/try-runtime", "frame-support/try-runtime" ]
-serde = [ "dep:serde" ]
+try-runtime = ["avail-core/try-runtime", "frame-support/try-runtime"]
+serde = ["dep:serde"]
 
 # It enables the use of header extension V2
 header_extension_v2 = []

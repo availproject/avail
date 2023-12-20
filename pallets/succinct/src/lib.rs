@@ -38,8 +38,6 @@ parameter_types! {
 	pub const MaxVerificationKeyLength: u32 = 4143;
 	pub const MaxProofLength: u32 = 1133;
 
-	pub const AvailAssetId: H256 = H256::zero();
-
 	pub const MessageMappingStorageIndex:u64 = 1;
 
 	// BoundedVec max size for fulfill call.
@@ -55,6 +53,10 @@ parameter_types! {
 	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
 
 	pub const MaxBridgeDataLength: u32= 256;
+
+	pub const AvailDomain: u32 = 1;
+	pub const SupportedDomain:u32 = 2;
+	pub const SupportedAssetId:H256 = H256::zero(); // Avail asset is supported for now
 }
 
 #[frame_support::pallet]
@@ -67,6 +69,7 @@ pub mod pallet {
 	use frame_support::traits::{Hash, LockableCurrency};
 	use frame_support::{pallet_prelude::ValueQuery, DefaultNoBound};
 	use frame_system::pallet_prelude::*;
+	use frame_system::submitted_data::Message;
 	use primitive_types::H160;
 	use primitive_types::{H256, U256};
 	use sp_io::hashing::keccak_256;
@@ -78,7 +81,7 @@ pub mod pallet {
 	use crate::state::{
 		parse_rotate_output, parse_step_output, VerifiedRotate, VerifiedStep, VerifiedStepOutput,
 	};
-	use crate::target_amb::{get_storage_root, get_storage_value, Message};
+	use crate::target_amb::{get_storage_root, get_storage_value};
 	use crate::verifier::encode_packed;
 
 	use super::*;
@@ -106,17 +109,18 @@ pub mod pallet {
 		SyncCommitteeNotSet,
 		//     Message execution
 		MessageAlreadyExecuted,
-		WrongVersion,
+		WrongDestinationChain,
+		UnsupportedDestinationChain,
 		BroadcasterSourceChainNotSet,
+		BroadcasterNotValid,
 		SourceChainFrozen,
-		AccountNotFound,
 		CannotGetStorageRoot,
 		CannotGetStorageValue,
 		InvalidMessageHash,
-		CannotDecodeMessageData,
+		CannotDecodeData,
 		CannotDecodeDestinationAccountId,
+		AssetNotSupported,
 		// bridge
-		BridgeDataCannotBeEmpty,
 		/// Given inputs for the selected MessageType are invalid
 		InvalidBridgeInputs,
 		/// Domain is not supported
@@ -233,14 +237,16 @@ pub mod pallet {
 		type RotateFunctionId: Get<H256>;
 
 		#[pallet::constant]
-		type AvailAssetId: Get<H256>;
-
-		#[pallet::constant]
 		type MessageMappingStorageIndex: Get<u64>;
 
 		/// Bridge's pallet id, used for deriving its sovereign account ID.
 		#[pallet::constant]
 		type PalletId: Get<PalletId>;
+
+		#[pallet::constant]
+		type AvailDomain: Get<u32>;
+		#[pallet::constant]
+		type SupportedDomain: Get<u32>;
 
 		type RuntimeCall: Parameter
 			+ UnfilteredDispatchable<RuntimeOrigin = Self::RuntimeOrigin>
@@ -418,29 +424,31 @@ pub mod pallet {
 			storage_proof: BoundedVec<BoundedVec<u8, StorageProofMaxLen>, StorageProofLen>,
 		) -> DispatchResult {
 			ensure_signed(origin)?;
+			let encoded_data = message.clone().abi_encode();
 
-			let message_root = H256(keccak_256(message.encode().as_slice()));
-
+			let message_root = H256(keccak_256(encoded_data.as_slice()));
 			check_preconditions::<T>(&message, message_root)?;
 
 			ensure!(
-				!SourceChainFrozen::<T>::get(message.domain),
+				!SourceChainFrozen::<T>::get(message.original_domain),
 				Error::<T>::SourceChainFrozen
 			);
 			let root = ExecutionStateRoots::<T>::get(slot);
-			let broadcaster = Broadcasters::<T>::get(message.domain);
+			let broadcaster = Broadcasters::<T>::get(message.original_domain);
+			ensure!(broadcaster == message.from, Error::<T>::BroadcasterNotValid);
 
+			// extract contract address
+			let contract_broadcaster_address = H160::from_slice(broadcaster[..20].as_ref());
 			let account_proof_vec = account_proof
 				.iter()
 				.map(|inner_bounded_vec| inner_bounded_vec.iter().copied().collect())
 				.collect();
 
-			let b = H160::zero(); //H160::from(broadcaster.as_bytes()[..20]);
+			let storage_root =
+				get_storage_root(account_proof_vec, contract_broadcaster_address, root)
+					.map_err(|_| Error::<T>::CannotGetStorageRoot)?;
 
-			let storage_root = get_storage_root(account_proof_vec, b, root)
-				.map_err(|_| Error::<T>::CannotGetStorageRoot)?;
-
-			let nonce = Uint(U256::from(message.message_id));
+			let nonce = Uint(U256::from(message.id));
 			let mm_idx = Uint(U256::from(MessageMappingStorageIndex::get()));
 			let slot_key = H256(keccak_256(ethabi::encode(&[nonce, mm_idx]).as_slice()));
 
@@ -454,21 +462,27 @@ pub mod pallet {
 
 			ensure!(slot_value == message_root, Error::<T>::InvalidMessageHash);
 
-			let success = Self::transfer(message.value, message.to)?;
+			let (asset_id, amount) = Self::decode_message_data(message.data.to_vec())?;
+			ensure!(
+				SupportedAssetId::get() == asset_id,
+				Error::<T>::AssetNotSupported
+			);
+
+			let success = Self::transfer(amount, message.to)?;
 
 			if success {
 				MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
 				Self::deposit_event(Event::<T>::ExecutedMessage {
-					chain_id: message.domain,
-					nonce: message.message_id,
+					chain_id: message.original_domain,
+					nonce: message.id,
 					message_root,
 					status: true,
 				});
 			} else {
 				MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionFailed);
 				Self::deposit_event(Event::<T>::ExecutedMessage {
-					chain_id: message.domain,
-					nonce: message.message_id,
+					chain_id: message.original_domain,
+					nonce: message.id,
 					message_root,
 					status: false,
 				});
@@ -560,13 +574,18 @@ pub mod pallet {
 			message_status == MessageStatusEnum::NotExecuted,
 			Error::<T>::MessageAlreadyExecuted
 		);
-		// only supported avail asset id
+
 		ensure!(
-			message.asset_id == AvailAssetId::get(),
-			Error::<T>::WrongVersion
+			message.destination_domain == AvailDomain::get(),
+			Error::<T>::WrongDestinationChain
 		);
-		// TODO is this contract sending msg
-		let source_chain = Broadcasters::<T>::get(message.domain);
+
+		ensure!(
+			SupportedDomain::get() == message.original_domain,
+			Error::<T>::UnsupportedDestinationChain
+		);
+
+		let source_chain = Broadcasters::<T>::get(message.original_domain);
 		ensure!(
 			source_chain != H256::zero(),
 			Error::<T>::BroadcasterSourceChainNotSet
@@ -576,6 +595,35 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		fn decode_message_data(data: Vec<u8>) -> Result<(H256, U256), DispatchError> {
+			//abi.encode(ASSET_ID, msg.value),
+			let decoded_data = ethabi::decode(
+				&[
+					ethabi::ParamType::FixedBytes(32),
+					ethabi::ParamType::Uint(256),
+				],
+				data.as_slice().as_ref(),
+			)
+			.map_err(|_| Error::<T>::CannotDecodeData)?;
+			ensure!(decoded_data.len() == 2, Error::<T>::CannotDecodeData);
+
+			let asset_id_token = decoded_data.get(0).ok_or(Error::<T>::CannotDecodeData)?;
+			let asset_id = asset_id_token
+				.clone()
+				.into_fixed_bytes()
+				.ok_or(Error::<T>::CannotDecodeData)?;
+
+			let asset = H256::from_slice(asset_id.as_slice());
+
+			let amount_token = decoded_data.get(1).ok_or(Error::<T>::CannotDecodeData)?;
+			let amount = amount_token
+				.clone()
+				.into_uint()
+				.ok_or(Error::<T>::CannotDecodeData)?;
+
+			Ok((asset, amount))
+		}
+
 		/// The account ID of the bridge's pot.
 		pub fn account_id() -> T::AccountId {
 			T::PalletId::get().into_account_truncating()

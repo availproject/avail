@@ -1,7 +1,7 @@
 use frame_support::dispatch::RawOrigin;
-use frame_support::{assert_err, assert_ok, fail, BoundedVec};
+use frame_support::{assert_err, assert_ok, BoundedVec};
+use frame_system::submitted_data::{Message, MessageType};
 use hex_literal::hex;
-use primitive_types::H160;
 use sp_core::crypto::AccountId32;
 use sp_core::ByteArray;
 use sp_runtime::testing::H256;
@@ -10,7 +10,6 @@ use sp_runtime::DispatchError::BadOrigin;
 use crate::mock::System;
 use crate::mock::{new_test_ext, Bridge, RuntimeEvent, RuntimeOrigin, Test};
 use crate::state::State;
-use crate::target_amb::Message;
 use crate::{
 	AccountProofLen, AccountProofMaxLen, Broadcasters, Error, Event, ExecutionStateRoots,
 	InputMaxLen, OutputMaxLen, ProofMaxLen, SourceChainFrozen, StateStorage,
@@ -35,6 +34,11 @@ fn get_valid_output() -> BoundedVec<u8, OutputMaxLen> {
 fn get_valid_proof() -> BoundedVec<u8, ProofMaxLen> {
 	BoundedVec::truncate_from(hex!("0b496d04c0e12206bc846edd2077a20b8b55f65fc0e40bb8cf617d9b79ce39e508281ad49432300b3b7c8a95a0a63544f93f553fcfdeba38c82460888f4030ed1f67a1be666c12ee00658109c802042c58f645474fcee7d128277a4e35c1dd1504d33cb652ec23407cd3580eda0196dd97054eb5c2a817163d6997832d9abd422729b3e85a15941722baeb5ca8a42567a91c6a0b0cd64ac15431fde05071e90e0d30c12013d5803336cc2f433c16eaa5434e30b89ce7395c3c3cda29dde3be062281095f143d728486c71203b24fa6068e69aabf29d457ffadc6d682d51a4f08179d3240bc561ae7e2c005bb772a4d4c5ba6644986052fad554f042ab0074a8f").to_vec())
 }
+
+fn get_invalid_proof() -> BoundedVec<u8, ProofMaxLen> {
+	BoundedVec::truncate_from(hex!("1b496d04c0e12206bc846edd2077a20b8b55f65fc0e40bb8cf617d9b79ce39e508281ad49432300b3b7c8a95a0a63544f93f553fcfdeba38c82460888f4030ed1f67a1be666c12ee00658109c802042c58f645474fcee7d128277a4e35c1dd1504d33cb652ec23407cd3580eda0196dd97054eb5c2a817163d6997832d9abd422729b3e85a15941722baeb5ca8a42567a91c6a0b0cd64ac15431fde05071e90e0d30c12013d5803336cc2f433c16eaa5434e30b89ce7395c3c3cda29dde3be062281095f143d728486c71203b24fa6068e69aabf29d457ffadc6d682d51a4f08179d3240bc561ae7e2c005bb772a4d4c5ba6644986052fad554f042ab0074a8f").to_vec())
+}
+
 const STEP_FN_ID: H256 = H256(hex!(
 	"af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
 ));
@@ -75,12 +79,18 @@ fn test_execute_message_via_storage() {
 				"cd187a0c3dddad24f1bb44211849cc55b6d2ff2713be85f727e9ab8c491c621c"
 			)),
 		);
-		// Broadcasters::<Test>::set(5, H160(hex!("43f0222552e8114ad8f224dea89976d3bf41659d")));
+		Broadcasters::<Test>::set(
+			2,
+			H256(hex!(
+				"43f0222552e8114ad8f224dea89976d3bf41659d000000000000000000000000"
+			)),
+		);
 
 		Timestamps::<Test>::set(slot, 1701327753);
 
+		// todo Message must be valid
 		let message_bytes = get_valid_message();
-		//BoundedVec::truncate_from(hex!("01000000000000005400000005e2b19845fe2b7bb353f377d12dd51af012fbba2000000064000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064").to_vec());
+
 		let account_proof = get_valid_account_proof();
 		let storage_proof = get_valid_storage_proof();
 
@@ -106,7 +116,12 @@ fn test_execute_message_with_frozen_chain() {
 				"cd187a0c3dddad24f1bb44211849cc55b6d2ff2713be85f727e9ab8c491c621c"
 			)),
 		);
-		// Broadcasters::<Test>::set(5, H160(hex!("43f0222552e8114ad8f224dea89976d3bf41659d")));
+		Broadcasters::<Test>::set(
+			2,
+			H256(hex!(
+				"43f0222552e8114ad8f224dea89976d3bf41659d000000000000000000000000"
+			)),
+		);
 
 		Timestamps::<Test>::set(slot, 1701327753);
 
@@ -117,7 +132,7 @@ fn test_execute_message_with_frozen_chain() {
 		let storage_proof = get_valid_storage_proof();
 
 		// Goal: Prevent from executing message
-		SourceChainFrozen::<Test>::set(5, true);
+		SourceChainFrozen::<Test>::set(2, true);
 		let error = Bridge::execute(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
 			slot,
@@ -227,7 +242,7 @@ fn test_full_fill_step_call_proof_not_valid() {
 			STEP_FN_ID,
 			get_valid_input(),
 			get_valid_output(),
-			get_valid_proof(),
+			get_invalid_proof(),
 			slot,
 		);
 
@@ -312,14 +327,13 @@ fn get_step_verification_key() -> VerificationKeyDef<Test> {
 
 fn get_valid_message() -> Message {
 	Message {
-		message_type: 0,
+		message_type: MessageType::FungibleToken,
 		from: Default::default(),
 		to: Default::default(),
+		original_domain: 2,
+		destination_domain: 1,
 		data: Default::default(),
-		domain: 0,
-		value: Default::default(),
-		asset_id: Default::default(),
-		message_id: 0,
+		id: 0,
 	}
 }
 

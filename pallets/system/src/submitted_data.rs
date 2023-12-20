@@ -3,11 +3,11 @@ use avail_core::OpaqueExtrinsic;
 use binary_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
 use codec::{Decode, Encode};
 use core::fmt::Debug;
+use ethabi::{encode, Token};
 use frame_support::BoundedVec;
 use scale_info::TypeInfo;
 use sp_core::ConstU32;
 use sp_core::H256;
-use sp_core::U256;
 use sp_io::hashing::keccak_256;
 use sp_runtime::traits::Keccak256;
 use sp_runtime::AccountId32;
@@ -28,43 +28,38 @@ pub enum MessageType {
 	// NonFungibleToken, We should enable it when we support it
 }
 
-impl From<MessageType> for U256 {
+impl From<MessageType> for Vec<u8> {
 	fn from(msg_type: MessageType) -> Self {
 		match msg_type {
-			MessageType::ArbitraryMessage => U256::from(0u8),
-			MessageType::FungibleToken => U256::from(1u8),
+			MessageType::ArbitraryMessage => vec![0x01],
+			MessageType::FungibleToken => vec![0x02],
 		}
 	}
 }
 
 /// Message type used to bridge between Avail & other chains
-#[derive(Debug, Default, Encode, Decode, PartialEq)]
+#[derive(Debug, Default, Clone, Encode, Decode, PartialEq, TypeInfo)]
 pub struct Message {
 	pub message_type: MessageType,
 	pub from: H256,
 	pub to: H256,
+	pub original_domain: u32,
+	pub destination_domain: u32,
 	pub data: BoundedData,
-	pub domain: u32,
-	pub value: U256,
-	pub asset_id: H256,
 	pub id: u64, // a global nonce that is incremented with each leaf
 }
 
 impl Message {
-	fn abi_encode(self) -> Vec<u8> {
-		let params = vec![
-			// Assuming MessageType, H256, BoundedData, and U256 implement the ToToken trait
-			ethabi::Token::Uint(ethabi::Uint::from(self.message_type)),
-			ethabi::Token::FixedBytes(self.from.to_fixed_bytes().to_vec()),
-			ethabi::Token::FixedBytes(self.to.to_fixed_bytes().to_vec()),
-			ethabi::Token::Bytes(self.data.as_slice().to_vec()),
-			ethabi::Token::Uint(ethabi::Uint::from(self.domain)),
-			ethabi::Token::Uint(ethabi::Uint::from(self.value)),
-			ethabi::Token::FixedBytes(self.asset_id.to_fixed_bytes().to_vec()),
-			ethabi::Token::Uint(ethabi::Uint::from(self.id)),
-		];
-
-		ethabi::encode(params.as_slice())
+	pub fn abi_encode(self) -> Vec<u8> {
+		encode(&[Token::Tuple(vec![
+			Token::FixedBytes(vec![0x02]),
+			Token::FixedBytes(self.from.to_fixed_bytes().to_vec()),
+			Token::FixedBytes(self.to.to_fixed_bytes().to_vec()),
+			Token::Uint(ethabi::Uint::from(self.original_domain)),
+			Token::Uint(ethabi::Uint::from(self.destination_domain)),
+			Token::Bytes(self.data.into()),
+			Token::Uint(ethabi::Uint::from(self.id)),
+		])])
 	}
 }
 
@@ -190,7 +185,8 @@ where
 		.enumerate()
 		.map(|(index, mut m)| {
 			m.id = bridge_nonce + index as u64;
-			keccak_256(&m.abi_encode()).to_vec()
+			log::info!("message in the bridge data {:?}", m);
+			keccak_256(&m.encode()).to_vec()
 		})
 		.collect();
 	bridge_nonce += root_bridge_data.len() as u64;
@@ -317,12 +313,10 @@ where
 		.collect::<Vec<_>>();
 
 	// make leaves 2^n
-	let root_data_balanced = calculate_balance_trie(root_data_filtered).or_else(|| None)?;
-	let data_filtered_balanced = calculate_balance_trie(data_filtered).or_else(|| None)?;
+	let root_data_balanced = calculate_balance_trie(root_data_filtered).or(None)?;
+	let data_filtered_balanced = calculate_balance_trie(data_filtered).or(None)?;
 
 	let root = root(root_data_balanced.into_iter(), Rc::clone(&metrics));
-
-	log::info!("Bridge root is: {:?}", root);
 
 	let data_index = u32::try_from(data_index).ok()?;
 
@@ -400,8 +394,8 @@ where
 #[cfg(test)]
 mod test {
 	use avail_core::data_proof::SubTrie;
+	use codec::Encode;
 	use hex_literal::hex;
-	use sp_core::bytes::to_hex;
 	use sp_core::{H256, U256};
 	use sp_runtime::{AccountId32, BoundedVec};
 	use std::vec;
@@ -670,17 +664,25 @@ mod test {
 
 	#[test]
 	fn test_message_encoding() {
-		let expected_encoded_message = hex!("0000000000000000000000000000000000000000000000000000000000000001040404040404040404040404040404040404040404040404040404040404040405050505050505050505050505050505050505050505050505050505050505050000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000001f4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000").to_vec();
+		let expected_encoded_message = hex!("02000000000000000000000000000000000000000000000000000000000000005b38da6a701c568545dcfcb03fcb875f56beddc4000000000000000000000000ada80b6ae7f00960c3020b5e97aaaccc3a4674f90000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001f4").to_vec();
+
+		let data = &[
+			ethabi::Token::FixedBytes(H256::zero().encode()),
+			ethabi::Token::Uint(U256::from(500)),
+		];
+
+		let encoded_data = BoundedVec::try_from(ethabi::encode(data)).unwrap();
+
 		let message = Message {
 			message_type: MessageType::FungibleToken,
-			from: H256([4u8; 32]),
-			to: H256([5u8; 32]),
-			data: BoundedVec::new(), // empty?
-			domain: 1,
-			value: U256::from(500),
-			asset_id: H256::zero(),
-			id: 1,
+			from: H256([0u8; 32]),
+			to: H256([0u8; 32]),
+			original_domain: 1,
+			destination_domain: 2,
+			data: encoded_data,
+			id: 5,
 		};
+
 		let abi_encoded = message.abi_encode();
 
 		assert_eq!(expected_encoded_message, abi_encoded);

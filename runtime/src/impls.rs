@@ -35,12 +35,12 @@ use frame_support::weights::ConstantMultiplier;
 use frame_support::{parameter_types, traits::EitherOfDiverse, PalletId};
 use frame_system::limits::BlockLength;
 use frame_system::submitted_data;
-use frame_system::submitted_data::Message;
+use frame_system::submitted_data::{Message, MessageType};
 use frame_system::EnsureRoot;
 use pallet_election_provider_multi_phase::SolutionAccuracyOf;
 use pallet_succinct::{
-	AvailAssetId, BridgePalletId, MaxBridgeDataLength, MaxProofLength, MaxVerificationKeyLength,
-	MessageMappingStorageIndex, RotateFunctionId, StepFunctionId,
+	AvailDomain, BridgePalletId, MaxBridgeDataLength, MaxProofLength, MaxVerificationKeyLength,
+	MessageMappingStorageIndex, RotateFunctionId, StepFunctionId, SupportedDomain,
 };
 use pallet_transaction_payment::CurrencyAdapter;
 use pallet_transaction_payment::Multiplier;
@@ -101,9 +101,10 @@ impl pallet_succinct::Config for Runtime {
 
 	type PalletId = BridgePalletId;
 
-	type AvailAssetId = AvailAssetId;
-
 	type MaxBridgeDataLength = MaxBridgeDataLength;
+
+	type AvailDomain = AvailDomain;
+	type SupportedDomain = SupportedDomain;
 }
 
 parameter_types! {
@@ -746,24 +747,29 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 
 		match call {
 			RuntimeCall::Succinct(pallet_succinct::Call::send_message {
-				data,
-				message_type,
-				to,
-				domain,
-				value,
-				asset_id,
+									  ..
+									  // data,
+									  // message_type,
+									  // to,
+									  // destination_domain,
+									  // value,
+									  // asset_id,
 			}) => {
 				let mut metrics = metrics.borrow_mut();
 				metrics.data_submit_leaves += 1;
 				metrics.data_submit_extrinsics += 1;
 				let message: submitted_data::Message = submitted_data::Message {
-					message_type,
+					message_type: MessageType::FungibleToken,
 					from: H256::from_slice(caller.as_ref()),
-					to,
-					data: data.unwrap_or_default(),
-					domain,
-					value: value.unwrap_or_default().into(),
-					asset_id: asset_id.unwrap_or_default(),
+					to: H256::zero(),
+					original_domain: 0,
+					// destination_domain: destination_domain,
+					// data: data.unwrap_or_default(),
+					// domain,
+					// value: value.unwrap_or_default().into(),
+					// asset_id: asset_id.unwrap_or_default(),
+					destination_domain: 0,
+					data: Default::default(),
 					id: Default::default(),
 				};
 				(vec![], vec![message])

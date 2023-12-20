@@ -1,21 +1,15 @@
-use crate::{MessageBytesMaxLen, TypeInfo};
+use crate::TypeInfo;
 use codec::Decode;
 use codec::Encode;
 use codec::MaxEncodedLen;
 use patricia_merkle_trie::keccak256;
 use patricia_merkle_trie::{EIP1186Layout, StorageProof};
-use primitive_types::{H160, H256, U256};
+use primitive_types::{H160, H256};
 use rlp::Rlp;
 use scale_info::prelude::vec::Vec;
 
-use frame_support::BoundedVec;
 use sp_io::hashing::keccak_256 as keccak256;
 use trie_db::{Trie, TrieDBBuilder};
-//
-// #[derive(PartialEq)]
-// pub enum AMBError {
-//     CannotDecodeMessageData,
-// }
 
 #[derive(Clone, Copy, Default, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 pub enum MessageStatusEnum {
@@ -24,83 +18,6 @@ pub enum MessageStatusEnum {
 	ExecutionFailed,
 	ExecutionSucceeded,
 }
-
-#[derive(Clone, Default, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
-pub struct Message {
-	pub message_type: u8,
-	pub from: H256,
-	pub to: H256,
-	pub domain: u32,
-	pub asset_id: H256,
-	pub value: U256,
-	pub data: BoundedVec<u8, MessageBytesMaxLen>,
-	pub message_id: u64,
-}
-
-// #[derive(Debug)]
-// pub struct MessageData {
-// 	pub recipient_address: H256,
-// 	pub amount: U256,
-// }
-//
-// pub fn decode_message_data(message: Vec<u8>) -> Result<MessageData, AMBError> {
-// 	let decoded = ethabi::decode(&[FixedBytes(32), Uint(256), Address], message.as_slice())
-// 		.map_err(|_| AMBError::CannotDecodeMessageData)?;
-//
-// 	let receipient_token = decoded.get(0).ok_or(AMBError::CannotDecodeMessageData)?;
-//
-// 	let receipient_address = receipient_token
-// 		.clone()
-// 		.into_fixed_bytes()
-// 		.ok_or(AMBError::CannotDecodeMessageData)?;
-//
-// 	let amount_token = decoded.get(1).ok_or(AMBError::CannotDecodeMessageData)?;
-// 	let amount = amount_token
-// 		.clone()
-// 		.into_uint()
-// 		.ok_or(AMBError::CannotDecodeMessageData)?;
-//
-// 	Ok(MessageData {
-// 		recipient_address: H256::from_slice(receipient_address.as_slice()),
-// 		amount,
-// 	})
-// }
-
-// pub fn decode_message(message: Vec<u8>) -> Message {
-//     let version: u8 = message[0];
-//
-//     let mut buf = [0u8; 8];
-//     buf[..8].copy_from_slice(&message[1..9]);
-//     let nonce = u64::from_be_bytes(buf);
-//
-//     let mut buf_source_chain = [0u8; 4];
-//     buf_source_chain[..4].copy_from_slice(&message[9..13]);
-//     let source_chain_id = u32::from_be_bytes(buf_source_chain);
-//
-//     let mut buf_source_address = [0u8; 20];
-//     buf_source_address[..20].copy_from_slice(&message[13..33]);
-//     let source_address = H160(buf_source_address);
-//
-//     let mut buf_dest_chain = [0u8; 4];
-//     buf_dest_chain[..4].copy_from_slice(&message[33..37]);
-//     let destination_chain_id = u32::from_be_bytes(buf_dest_chain);
-//
-//     let mut buf_dest_address = [0u8; 32];
-//     buf_dest_address[..32].copy_from_slice(&message[37..69]);
-//     let destination_address = H256(buf_dest_address);
-//
-//     let data = message[69..].to_vec();
-//
-//     Message {
-//         version,
-//         nonce,
-//         source_chain_id,
-//         source_address,
-//         destination_chain_id,
-//         destination_address,
-//         data,
-//     }
-// }
 
 #[derive(Debug)]
 pub enum StorageError {
@@ -178,31 +95,14 @@ pub fn get_storage_root(
 #[cfg(test)]
 mod test {
 	use ark_std::vec;
+	use ethabi::{encode, Token};
+	use frame_support::BoundedVec;
+	use frame_system::submitted_data::{Message, MessageType};
 	use hex_literal::hex;
-	use primitive_types::{H160, H256};
+	use primitive_types::{H160, H256, U256};
 	use sp_io::hashing::keccak_256;
 
 	use crate::target_amb::{get_storage_root, get_storage_value};
-
-	// #[test]
-	// fn test_message_decoding() {
-	//     let message_encoded = hex!("01000000000000007b00000005e2b19845fe2b7bb353f377d12dd51af012fbba20000000640000000000000000000000000000000000000000000000000000000000bc614e6789");
-	//
-	//     let message_decoded = decode_message(message_encoded.to_vec());
-	//     assert_eq!(123, message_decoded.nonce);
-	//     assert_eq!(1, message_decoded.version);
-	//     assert_eq!(5, message_decoded.source_chain_id);
-	//     assert_eq!(
-	//         H160(hex!("e2B19845Fe2B7Bb353f377d12dD51af012fbba20")),
-	//         message_decoded.source_address
-	//     );
-	//     assert_eq!(100, message_decoded.destination_chain_id);
-	//     assert_eq!(
-	//         U256::from(12345678u64),
-	//         U256::from(message_decoded.destination_address.as_bytes())
-	//     );
-	//     assert_eq!(vec![103, 137], message_decoded.data);
-	// }
 
 	#[test]
 	fn test_account_proof() {
@@ -248,13 +148,40 @@ mod test {
             hex!("f843a0204effc936259a57c56ffc97bf601a6f6ee129ac5cd39809a889df1a8ad3fdc1a1a03617643cdff88aaf66c6d09fd11c1a73ce69dd905086afd692a62c4ba800fdd4").to_vec(),
         ];
 
-		let storage_root1 = H256(hex!(
+		let storage_root = H256(hex!(
 			"a03e10dfba89f79567f7c9a238ee7fe66ed32e711be4db6e73d7211601dec360"
 		));
 
-		let value = get_storage_value(H256(key), storage_root1, proof);
+		let value = get_storage_value(H256(key), storage_root, proof);
 		let expected_value = keccak_256(message_bytes.as_slice());
 
 		assert_eq!(H256(expected_value), value.unwrap())
+	}
+
+	#[test]
+	fn test_abi_encoding() {
+		let expected_encoded_message = hex!("00000000000000000000000000000000000000000000000000000000000000200200000000000000000000000000000000000000000000000000000000000000a285c87622a3ac392fb25454033f0c54f17675252d052ed581a97f64b731db120000000000000000000000007f5c02de7232b8510000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007c7").to_vec();
+
+		let data = &[
+			Token::FixedBytes(H256::zero().as_bytes().to_vec()),
+			Token::Uint(U256::from(1991)),
+		];
+		let encoded_data = encode(data);
+
+		let m = Message {
+			message_type: MessageType::FungibleToken,
+			from: H256(hex!(
+				"a285c87622a3ac392fb25454033f0c54f17675252d052ed581a97f64b731db12"
+			)),
+			to: H256(hex!(
+				"0000000000000000000000007f5c02de7232B851000000000000000000000000"
+			)),
+			original_domain: 1,
+			destination_domain: 2,
+			data: BoundedVec::truncate_from(encoded_data),
+			id: 0,
+		};
+		let encoded_message = m.abi_encode();
+		assert_eq!(expected_encoded_message, encoded_message);
 	}
 }
