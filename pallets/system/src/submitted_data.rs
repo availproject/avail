@@ -51,7 +51,7 @@ pub struct Message {
 }
 
 impl Message {
-	fn abi_encode(self) -> Vec<u8> {
+	pub fn abi_encode(self) -> Vec<u8> {
 		let params = vec![
 			// Assuming MessageType, H256, BoundedData, and U256 implement the ToToken trait
 			ethabi::Token::Uint(ethabi::Uint::from(self.message_type)),

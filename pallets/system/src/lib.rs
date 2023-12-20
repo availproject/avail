@@ -725,7 +725,13 @@ pub mod pallet {
 	/// Total number of messages bridged to other chains
 	#[pallet::storage]
 	#[pallet::getter(fn bridge_nonce)]
-	pub(super) type BridgeNonce<T: Config> = StorageValue<_, u64, ValueQuery>;
+	pub type BridgeNonce<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	/// Bridge data for the current block.
+	#[pallet::storage]
+	#[pallet::getter(fn bridge_data)]
+	#[pallet::unbounded]
+	pub type BridgeData<T: Config> = StorageValue<_, Vec<Vec<u8>>, ValueQuery>;
 
 	#[derive(DefaultNoBound)]
 	#[pallet::genesis_config]

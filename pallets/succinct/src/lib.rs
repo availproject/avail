@@ -4,7 +4,8 @@ use crate::target_amb::MessageStatusEnum;
 use crate::verifier::Verifier;
 use frame_support::traits::{Currency, ExistenceRequirement, UnixTime};
 use frame_support::{pallet_prelude::*, parameter_types, PalletId};
-use frame_system::submitted_data::{BoundedData, MessageType};
+use frame_system::pallet::{BridgeData, BridgeNonce};
+use frame_system::submitted_data::{BoundedData, Message as BridgeMessage, MessageType};
 use hex_literal::hex;
 pub use pallet::*;
 use sp_core::H256;
@@ -23,7 +24,7 @@ mod verifier;
 mod weights;
 
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
-pub type BridgeData<T> = BoundedVec<u8, <T as Config>::MaxBridgeDataLength>;
+// pub type BridgeData<T> = BoundedVec<u8, <T as Config>::MaxBridgeDataLength>;
 
 // whitelist of supported domains
 // TODO: Create a storage & extrinsic around it to support onchain updation of supported domains, also can act as the panic button
@@ -121,6 +122,8 @@ pub mod pallet {
 		InvalidBridgeInputs,
 		/// Domain is not supported
 		DomainNotSupported,
+		/// Bridge nonce overflowed
+		NonceOverflow,
 	}
 
 	#[pallet::event]
@@ -506,7 +509,13 @@ pub mod pallet {
 			asset_id: Option<H256>,
 			data: Option<BoundedData>,
 		) -> DispatchResultWithPostInfo {
+			// Increment the bridge_nonce every
+			let id = BridgeNonce::<T>::try_mutate::<_, Error<T>, _>(|id| {
+				*id = id.checked_add(1).ok_or(Error::<T>::NonceOverflow)?;
+				Ok(*id)
+			})?;
 			let who = ensure_signed(origin)?;
+			let caller: [u8; 32] = who.clone().into();
 			// Ensure the domain is currently supported
 			ensure!(
 				Self::is_domain_valid(domain),
@@ -523,7 +532,7 @@ pub mod pallet {
 					Self::deposit_event(Event::MessageSubmitted {
 						from: who,
 						to,
-						message_type,
+						message_type: message_type.clone(),
 					});
 				},
 				MessageType::FungibleToken => {
@@ -541,11 +550,21 @@ pub mod pallet {
 					Self::deposit_event(Event::MessageSubmitted {
 						from: who,
 						to,
-						message_type,
+						message_type: message_type.clone(),
 					});
 				},
 			}
-
+			let message = BridgeMessage {
+				message_type,
+				from: H256(caller),
+				to,
+				data: data.unwrap_or_default(),
+				domain,
+				value: value.unwrap_or_default().into(),
+				asset_id: asset_id.unwrap_or_default(),
+				id,
+			};
+			Self::add_item_to_bridge_data(message.abi_encode());
 			Ok(().into())
 		}
 	}
@@ -579,6 +598,12 @@ pub mod pallet {
 		/// The account ID of the bridge's pot.
 		pub fn account_id() -> T::AccountId {
 			T::PalletId::get().into_account_truncating()
+		}
+
+		fn add_item_to_bridge_data(new_item: Vec<u8>) {
+			<BridgeData<T>>::mutate(|bridge_data| {
+				bridge_data.push(new_item);
+			});
 		}
 
 		pub fn transfer(amount: U256, destination_account: H256) -> Result<bool, DispatchError> {
