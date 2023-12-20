@@ -18,6 +18,7 @@ kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "nod
 # 3rd party
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
 rayon = { version = "1.5.2" }
+moka = { version = "0.12.1", features = ["future"] }
 
 
 # Substrate
@@ -25,12 +26,13 @@ sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkad
 frame-system = { path = "../../pallets/system", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sc-rpc-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-moka = { version = "0.12.1", features = ["future"] }
+
 
 [features]
-default = [ "metrics", "std" ]
+default = ["metrics", "std"]
 std = [
 	"avail-base/std",
 	"avail-core/std",

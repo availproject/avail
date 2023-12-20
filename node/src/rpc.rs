@@ -214,9 +214,13 @@ where
 	#[cfg(feature = "kate-rpc-metrics")]
 	io.merge(KateApiMetricsServer::into_rpc(Kate::<C, Block>::new(
 		client.clone(),
+		deny_unsafe,
 	)))?;
 
-	io.merge(KateApiServer::into_rpc(Kate::<C, Block>::new(client)))?;
+	io.merge(KateApiServer::into_rpc(Kate::<C, Block>::new(
+		client,
+		deny_unsafe,
+	)))?;
 
 	Ok(io)
 }

@@ -25,6 +25,7 @@ use kate_recovery::matrix::Dimensions;
 use moka::future::Cache;
 use rayon::prelude::*;
 use sc_client_api::BlockBackend;
+use sc_rpc_api::DenyUnsafe;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
@@ -81,10 +82,12 @@ pub struct Kate<Client, Block: BlockT> {
 	// Have to put dimensions here b/c it's not public in polynomialgrid
 	poly_grid_cache: Cache<Block::Hash, Arc<(Dimensions, PolynomialGrid)>>,
 	multiproof_srs: m1_blst::M1NoPrecomp,
+	/// Whether to deny unsafe calls.
+	deny_unsafe: DenyUnsafe,
 }
 
 impl<Client, Block: BlockT> Kate<Client, Block> {
-	pub fn new(client: Arc<Client>) -> Self {
+	pub fn new(client: Arc<Client>, deny_unsafe: DenyUnsafe) -> Self {
 		const GB: u64 = 2u64.pow(30);
 		Self {
 			client,
@@ -105,6 +108,7 @@ impl<Client, Block: BlockT> Kate<Client, Block> {
 				.max_capacity(GB)
 				.build(),
 			multiproof_srs: kate::couscous::multiproof_params(),
+			deny_unsafe,
 		}
 	}
 }
@@ -267,6 +271,7 @@ where
 	Client::Api: DataAvailApi<Block>,
 {
 	async fn query_rows(&self, rows: Rows, at: Option<HashOf<Block>>) -> RpcResult<Vec<Vec<u8>>> {
+		self.deny_unsafe.check_if_safe()?;
 		let execution_start = std::time::Instant::now();
 
 		let signed_block = self.get_signed_and_finalized_block(at)?;
@@ -296,6 +301,7 @@ where
 		app_id: AppId,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<Vec<u8>>>> {
+		self.deny_unsafe.check_if_safe()?;
 		let execution_start = std::time::Instant::now();
 
 		let signed_block = self.get_signed_and_finalized_block(at)?;
@@ -333,6 +339,7 @@ where
 	}
 
 	async fn query_proof(&self, cells: Cells, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
+		self.deny_unsafe.check_if_safe()?;
 		let execution_start = std::time::Instant::now();
 
 		let signed_block = self.get_signed_and_finalized_block(at)?;
@@ -391,6 +398,7 @@ where
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<DataProof> {
+		self.deny_unsafe.check_if_safe()?;
 		let execution_start = std::time::Instant::now();
 
 		let block = self.get_signed_block(at)?.block;
