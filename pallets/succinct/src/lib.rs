@@ -182,10 +182,12 @@ pub mod pallet {
 
 	// Storage for a general state.
 	#[pallet::storage]
+	#[pallet::getter(fn head)]
 	pub type Head<T: Config> = StorageValue<_, u64, ValueQuery>;
 
 	// Maps from a slot to a block header root.
 	#[pallet::storage]
+	#[pallet::getter(fn headers)]
 	pub type Headers<T> = StorageMap<_, Identity, u64, H256, ValueQuery>;
 
 	// Maps slot to the timestamp of when the headers mapping was updated with slot as a key
@@ -198,6 +200,7 @@ pub mod pallet {
 
 	// Maps from a period to the poseidon commitment for the sync committee.
 	#[pallet::storage]
+	#[pallet::getter(fn sync_committee_poseidons)]
 	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
 
 	// Storage for a general state.
@@ -276,7 +279,6 @@ pub mod pallet {
 				finality_threshold: self.finality_threshold,
 			});
 
-			Head::<T>::set(0);
 			<SyncCommitteePoseidons<T>>::insert(self.period, self.sync_committee_poseidon);
 
 			// TODO TEST

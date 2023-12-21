@@ -5,12 +5,14 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::limits::BlockLength;
+use pallet_succinct::SyncCommitteePoseidons;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
+
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::crypto::KeyTypeId;
-use sp_core::H256;
+use sp_core::{H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
 	traits::{Block as BlockT, NumberFor},
@@ -33,6 +35,9 @@ decl_runtime_apis! {
 		fn block_length() -> BlockLength;
 		fn babe_vrf() -> Seed;
 		fn bridge_nonce() -> u64;
+		fn sync_committee_poseidons(slot: u64) -> U256;
+		fn head() -> u64;
+		fn headers(slot: u64) -> H256;
 	}
 
 	pub trait ExtensionBuilder {
@@ -339,6 +344,18 @@ impl_runtime_apis! {
 
 		fn bridge_nonce() -> u64 {
 			frame_system::Pallet::<Runtime>::bridge_nonce()
+		}
+
+		fn sync_committee_poseidons(slot: u64) -> U256 {
+			pallet_succinct::Pallet::<Runtime>::sync_committee_poseidons(slot)
+		}
+
+		fn head() -> u64 {
+			pallet_succinct::Pallet::<Runtime>::head()
+		}
+
+		fn headers(slot: u64) -> H256 {
+			pallet_succinct::Pallet::<Runtime>::headers(slot)
 		}
 	}
 
