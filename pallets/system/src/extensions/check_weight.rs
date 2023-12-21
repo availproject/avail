@@ -101,7 +101,11 @@ where
 
 		// Check padded len.
 		let dynamic_block_len = DynamicBlockLength::<T>::get();
-		let padded_added_len = kate::padded_len(len as u32, dynamic_block_len.chunk_size());
+		// TODO: Make the calculation correct and not pessimistic (See kate::gridgen::EvaluationGrid::from_extrinsics for reference)
+		// We waste some space but we account that there might be, at maximum, 1 byte for padding tail delimiter, 2 bytes for every appId, 4 bytes for encoding the transaction
+		let padded_added_len =
+			kate::padded_len(len as u32, dynamic_block_len.chunk_size()).saturating_add(7u32);
+
 		all_extrinsics_len.padded = all_extrinsics_len.padded.saturating_add(padded_added_len);
 
 		let max_padded_len = BlockDimensions::new(
