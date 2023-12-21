@@ -273,7 +273,6 @@ pub mod pallet {
 		fn build(&self) {
 			// Preconfigure init data
 			<StateStorage<T>>::put(State {
-				updater: self.updater,
 				slots_per_period: self.slots_per_period,
 				finality_threshold: self.finality_threshold,
 			});
@@ -315,10 +314,8 @@ pub mod pallet {
 			proof: BoundedVec<u8, ProofMaxLen>,
 			slot: u64,
 		) -> DispatchResult {
-			let sender: [u8; 32] = ensure_signed(origin)?.into();
+			ensure_signed(origin)?.into();
 			let state = StateStorage::<T>::get();
-			// ensure sender is preconfigured
-			ensure!(H256(sender) == state.updater, Error::<T>::UpdaterMisMatch);
 			// compute hashes
 			let input_hash = H256(sha2_256(input.as_slice()));
 			let output_hash = H256(sha2_256(output.as_slice()));
@@ -361,26 +358,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Sets updater that can call step and rotate functions
-		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::step())]
-		pub fn set_updater(origin: OriginFor<T>, updater: H256) -> DispatchResult {
-			ensure_root(origin)?;
-			let old = StateStorage::<T>::get();
-			StateStorage::<T>::try_mutate(|cfg| -> Result<(), DispatchError> {
-				cfg.updater = updater;
-				Ok(())
-			})?;
-
-			Self::deposit_event(Event::<T>::NewUpdater {
-				old: old.updater,
-				new: updater,
-			});
-			Ok(())
-		}
-
 		/// Sets verification public inputs for step function.
-		#[pallet::call_index(2)]
+		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn setup_step_verification(
 			origin: OriginFor<T>,
@@ -398,7 +377,7 @@ pub mod pallet {
 		}
 
 		/// Sets verification public inputs for rotate function.
-		#[pallet::call_index(3)]
+		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn setup_rotate_verification(
 			origin: OriginFor<T>,
@@ -415,7 +394,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::call_index(5)]
+		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn execute(
 			origin: OriginFor<T>,
@@ -492,7 +471,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::call_index(6)]
+		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn source_chain_froze(
 			origin: OriginFor<T>,
@@ -510,7 +489,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::call_index(7)]
+		#[pallet::call_index(5)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn send_message(
 			origin: OriginFor<T>,

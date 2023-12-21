@@ -77,7 +77,6 @@ impl PublicSignals {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default)]
 pub struct State {
-	pub updater: H256,
 	pub slots_per_period: u64,
 	pub finality_threshold: u16,
 }

@@ -19,9 +19,6 @@ pub const PROTOCOL_ID: Option<&str> = Some("Avail");
 pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
 const NOMAD_LOCAL_DOMAIN: u32 = 2000;
 const NOMAD_UPDATER: H160 = H160(hex!("695dFcFc604F9b2992642BDC5b173d1a1ed60b03"));
-const SUCCINCT_UPDATER: H256 = H256(hex!(
-	"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
-));
 
 const ENDOWMENT: Balance = 1_000_000 * AVL;
 const STASH_BOND: Balance = ENDOWMENT / 100;
@@ -135,7 +132,6 @@ pub fn runtime_genesis_config(
 		succinct: SuccinctConfig {
 			//TODO check all values
 			slots_per_period: 8192,
-			updater: SUCCINCT_UPDATER,
 			finality_threshold: 461,
 			period: 931,
 			sync_committee_poseidon: U256::from(hex!(
