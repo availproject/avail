@@ -250,6 +250,57 @@ fn test_full_fill_step_call_proof_not_valid() {
 	});
 }
 
+#[test]
+fn test_full_fill_step_call_not_valid_function_id() {
+	new_test_ext().execute_with(|| {
+		let slot = 7634942;
+		StepVerificationKeyStorage::<Test>::set(get_step_verification_key());
+
+		StateStorage::<Test>::set(State {
+			updater: H256::from_slice(TEST_SENDER_ACCOUNT.as_slice()),
+			slots_per_period: 8192,
+			finality_threshold: 461,
+		});
+		let invalid_function_id: H256 = H256(hex!(
+			"bf44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
+		));
+		let result = Bridge::fulfill_call(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			invalid_function_id,
+			get_valid_input(),
+			get_valid_output(),
+			get_valid_proof(),
+			slot,
+		);
+
+		assert_err!(result, Error::<Test>::FunctionIdNotKnown);
+	});
+}
+
+#[test]
+fn test_full_fill_step_call_finality_not_met() {
+	new_test_ext().execute_with(|| {
+		let slot = 7634942;
+		StepVerificationKeyStorage::<Test>::set(get_step_verification_key());
+
+		StateStorage::<Test>::set(State {
+			updater: H256::from_slice(TEST_SENDER_ACCOUNT.as_slice()),
+			slots_per_period: 8192,
+			finality_threshold: 512, // max finality
+		});
+		let result = Bridge::fulfill_call(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			STEP_FN_ID,
+			get_valid_input(),
+			get_valid_output(),
+			get_valid_proof(),
+			slot,
+		);
+
+		assert_err!(result, Error::<Test>::NotEnoughParticipants);
+	});
+}
+
 fn get_step_verification_key() -> VerificationKeyDef<Test> {
 	let step_vk = r#"{"vk_json":{
     "protocol": "groth16",

@@ -102,7 +102,6 @@ pub mod pallet {
 		RotateVerificationError,
 		HeaderRootNotSet,
 		VerificationFailed,
-		FunctionIdNotRecognised,
 		HeaderRootAlreadySet,
 		StateRootAlreadySet,
 		SyncCommitteeAlreadySet,
@@ -356,7 +355,7 @@ pub mod pallet {
 					});
 				}
 			} else {
-				return Err(Error::<T>::FunctionIdNotRecognised.into());
+				return Err(Error::<T>::FunctionIdNotKnown.into());
 			}
 
 			Ok(())
