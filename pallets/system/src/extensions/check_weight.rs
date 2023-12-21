@@ -15,14 +15,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use avail_core::InvalidTransactionCustomId::MaxPaddedLenExceeded;
 use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::{DispatchInfo, PostDispatchInfo},
 	fail,
 	traits::Get,
 };
-use kate::BlockDimensions;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension},
@@ -32,8 +30,8 @@ use sp_runtime::{
 use sp_weights::Weight;
 
 use crate::{
-	limits::BlockWeights, AllExtrinsicsLen, Config, DynamicBlockLength, ExtrinsicLen, Pallet,
-	LOG_TARGET,
+	limits::BlockWeights, AllExtrinsicsLen, Config, Pallet,
+	LOG_TARGET, ExtrinsicLenOf,
 };
 
 /// Block resource (weight) limit check.
@@ -81,7 +79,7 @@ where
 	fn check_block_length(
 		info: &DispatchInfoOf<T::RuntimeCall>,
 		len: usize,
-	) -> Result<ExtrinsicLen, TransactionValidityError> {
+	) -> Result<ExtrinsicLenOf<T>, TransactionValidityError> {
 		let length_limit = T::BlockLength::get();
 		let mut all_extrinsics_len = AllExtrinsicsLen::<T>::get().unwrap_or_default();
 
@@ -95,32 +93,6 @@ where
 				"Block length (max {}) is exhausted, requested {}",
 				max_raw_len,
 				all_extrinsics_len.raw
-			);
-			fail!(InvalidTransaction::ExhaustsResources)
-		}
-
-		// Check padded len.
-		let dynamic_block_len = DynamicBlockLength::<T>::get();
-		let padded_added_len = kate::padded_len(len as u32, dynamic_block_len.chunk_size());
-		all_extrinsics_len.padded = all_extrinsics_len.padded.saturating_add(padded_added_len);
-
-		let max_padded_len = BlockDimensions::new(
-			dynamic_block_len.rows,
-			dynamic_block_len.cols,
-			dynamic_block_len.chunk_size(),
-		)
-		.ok_or(InvalidTransaction::Custom(MaxPaddedLenExceeded as u8))?
-		.size();
-
-		let max_padded_len = u32::try_from(max_padded_len)
-			.map_err(|_| InvalidTransaction::Custom(MaxPaddedLenExceeded as u8))?;
-
-		if all_extrinsics_len.padded > max_padded_len {
-			log::warn!(
-				target: LOG_TARGET,
-				"Padded block length (max {}) is exhausted, requested {}",
-				max_padded_len,
-				all_extrinsics_len.padded
 			);
 			fail!(InvalidTransaction::ExhaustsResources)
 		}
@@ -298,13 +270,13 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckWeight<T> {
 
 #[cfg(test)]
 mod tests {
-	use avail_core::BLOCK_CHUNK_SIZE;
 	use frame_support::{
 		assert_err, assert_ok,
 		dispatch::{DispatchClass, Pays},
 		weights::Weight,
 	};
 	use sp_std::marker::PhantomData;
+	use avail_core::AppId;
 
 	use super::*;
 	use crate::{
@@ -554,8 +526,9 @@ mod tests {
 			// likewise for length limit.
 			let len = 100_usize;
 			let raw = normal_length_limit();
-			let padded = kate::padded_len(raw, BLOCK_CHUNK_SIZE);
-			AllExtrinsicsLen::<Test>::put(ExtrinsicLen { raw, padded });
+			let mut extrinsic_len = ExtrinsicLenOf::<Test>::default();
+			extrinsic_len.add(AppId(0), raw).expect("should not overflow");
+			AllExtrinsicsLen::<Test>::put(extrinsic_len);
 			assert_err!(
 				CheckWeight::<Test>(PhantomData).pre_dispatch(&1, CALL, &normal, len),
 				InvalidTransaction::ExhaustsResources
@@ -570,7 +543,8 @@ mod tests {
 			let normal = DispatchInfo::default();
 			let normal_limit = normal_weight_limit().ref_time() as usize;
 			let reset_check_weight = |tx, s, f| {
-				AllExtrinsicsLen::<Test>::put(ExtrinsicLen::default());
+				let extrinsic_len = ExtrinsicLenOf::<Test>::default();
+				AllExtrinsicsLen::<Test>::put(extrinsic_len);
 				let r = CheckWeight::<Test>(PhantomData).pre_dispatch(&1, CALL, tx, s);
 				if f {
 					assert!(r.is_err())

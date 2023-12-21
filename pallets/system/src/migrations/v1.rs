@@ -1,27 +1,50 @@
-use codec::Decode;
+use crate::{Config, AllExtrinsicsLen, ExtrinsicLenOf};
+
 use frame_support::weights::Weight;
 use sp_core::Get;
+use codec::Decode;
 
-/// # V1 Migrations
-/// - `BlockLength` migration to `DynamicBlockLength`.
-/// - `AllExtrinsicLen` from single `u32` into `ExtrinsicLen` type.
-use crate::{limits::BlockLength, AllExtrinsicsLen, Config, DynamicBlockLength, ExtrinsicLen};
+pub mod v1 {
+	/// # V1 Migrations
+	/// - `BlockLength` migration to `DynamicBlockLength`.
+	/// - `AllExtrinsicLen` from single `u32` into `ExtrinsicLen` type.
+	use crate::{limits::BlockLength, AllExtrinsicsLen, DynamicBlockLength };
+	use super::*; 
 
-pub const BLOCK_LENGTH: &[u8] = b":block_length:";
+	const BLOCK_LENGTH: &[u8] = b":block_length:";
 
-pub fn migrate<T: Config>() -> Weight {
-	let mut weight = Weight::zero();
+	#[derive(Decode, Default)]
+	pub struct ExtrinsicLen {
+		pub raw: u32,
+		pub padded: u32,
+	}
 
-	// 1. Raw storage ":block_length:" into `System::DynamicBlockLength`.
-	let encoded_block_len = sp_io::storage::get(BLOCK_LENGTH).unwrap_or_default();
-	let block_len = BlockLength::decode(&mut &encoded_block_len[..]).unwrap_or_default();
-	DynamicBlockLength::<T>::put(block_len);
-	weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
+	pub fn migrate<T: Config>() -> Weight {
+		let mut weight = Weight::zero();
 
-	// 2. Storage `AllExtrinsicsLen` from `u32` to `ExtrinsicLen`.
-	// As it is called before `on_initialize`, it should be 0.
-	let _ = <AllExtrinsicsLen<T>>::translate(|maybe_len: Option<u32>| -> Option<ExtrinsicLen> {
-		maybe_len.map(|_| ExtrinsicLen::default())
-	});
-	weight.saturating_add(T::DbWeight::get().reads_writes(1, 1))
+		// 1. Raw storage ":block_length:" into `System::DynamicBlockLength`.
+		let encoded_block_len = sp_io::storage::get(BLOCK_LENGTH).unwrap_or_default();
+		let block_len = BlockLength::decode(&mut &encoded_block_len[..]).unwrap_or_default();
+		DynamicBlockLength::<T>::put(block_len);
+		weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
+
+		// 2. Storage `AllExtrinsicsLen` from `u32` to `ExtrinsicLen`.
+		// As it is called before `on_initialize`, it should be 0.
+		let _ = <AllExtrinsicsLen<T>>::translate(|maybe_len: Option<u32>| -> Option<ExtrinsicLenOf<T>> {
+			maybe_len.map(|_| ExtrinsicLenOf::<T>::default())
+		});
+		weight.saturating_add(T::DbWeight::get().reads_writes(1, 1))
+	}
+}
+
+pub mod v2 {
+	use super::*;
+
+	pub fn migrate<T: Config>() -> Weight {
+		<AllExtrinsicsLen<T>>::translate(|maybe_len: Option<v1::ExtrinsicLen>| -> Option<ExtrinsicLenOf<T>> {
+			maybe_len.map(|_| ExtrinsicLenOf::<T>::default())
+		});
+
+		T::DbWeight::get().reads_writes(1, 1)
+	}
 }

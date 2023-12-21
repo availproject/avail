@@ -7,6 +7,7 @@ use frame_support::{
 use frame_system::Config as SystemConfig;
 use pallet_utility::{Call as UtilityCall, Config as UtilityConfig};
 use scale_info::TypeInfo;
+use sp_arithmetic::traits::CheckedAdd;
 use sp_runtime::{
 	traits::{DispatchInfoOf, SignedExtension},
 	transaction_validity::{
@@ -23,6 +24,7 @@ use sp_std::{
 use crate::{Call as DACall, Config as DAConfig, Pallet};
 
 const MAX_ITERATIONS: usize = 2;
+const PADDED_LEN_EXCEEDED: InvalidTransaction = InvalidTransaction::Custom(MaxPaddedLenExceeded as u8);
 
 /// Check for Application Id.
 ///
@@ -52,9 +54,75 @@ where
 	///  - `DataAvailability::submit_data(..)` extrinsic can use `AppId != 0`.
 	///  - `Utility::batch/batch_all/force_batch(..)` extrinsic can use `AppId != 0` If the wrapped calls are ALL `DataAvailability::submit_data(..)`.
 	///  - Any other call must use `AppId == 0`.
-	pub fn do_validate(&self, call: &<T as SystemConfig>::RuntimeCall) -> TransactionValidity {
+	pub fn do_validate(
+		&self,
+		call: &<T as SystemConfig>::RuntimeCall,
+		len: usize,
+	) -> TransactionValidity {
+		self.ensure_valid_app_id(call)?;
+        let next_len = self.ensure_valid_padded_len(len)?;
+		AllExtrinsicsLen::<T>::put(next_len);
+
+		Ok(ValidTransaction::default())
+	}
+
+    fn check_padded_block_len(&self, len: usize) -> Result<(), ()> {
+		let app_id = self.app_id();
+		let len = u32::try_from(len)?;
+
+		// Get maximum padded length of current block length.
+		let curr_len = DynamicBlockLength::<T>::get();
+		let max_padded_len = BlockDimensions::new( curr_len.rows, curr_len.cols, curr_len.chunk_size())
+		.ok_or(())?
+		.size();
+		let max_padded_len = u32::try_from(max_padded_len)?
+
+		// Update extrinsics length info.
+		let mut all_extrinsics_len = AllExtrinsicsLen::<T>::get().unwrap_or_default();
+		all_extrinsics_len.padded.entry(&app_id).or_default().push(len);
+
+		// Calculate total padded length
+		all_extrinsics_len.padded.values().map(|lens_by_id|{
+			lens_by_id.iter().map(|len| { 
+				let vec_len = u32::try_from( Compact(len).compact_len())?
+				let tx_len = vec_len.checked_add(len)?;
+				let vec_len = Compact(vec_len).encode().len() as u32;
+				vec_len
+							}).sum::<u32>()
+			})
+			let vec_len = Compact()
+			lens.iter().sum::<u32>()
+		}).sum::<u32>();
+
+		let padded_added_len = kate::padded_len(len, dynamic_block_len.chunk_size());
+		all_extrinsics_len.padded = all_extrinsics_len.padded.saturating_add(padded_added_len);
+
+		if all_extrinsics_len.padded > max_padded_len {
+			log::warn!(
+				target: LOG_TARGET,
+				"Padded block length (max {}) is exhausted, requested {}",
+				max_padded_len,
+				all_extrinsics_len.padded
+			);
+			fail!(InvalidTransaction::ExhaustsResources)
+		}
+
+
+        let block_len = <Pallet<T>>::block_length();
+        let padded_len = len + (block_len - (len % block_len));
+        ensure!(
+            padded_len <= <Pallet<T>>::block_length().into(),
+            InvalidTransaction::ExhaustsResources,
+        );
+        Ok(())
+    }
+
+	fn ensure_valid_app_id(
+		&self,
+		call: &<T as SystemConfig>::RuntimeCall,
+	) -> Result<(), TransactionValidityError> {
 		if self.app_id() == AppId(0) {
-			return Ok(ValidTransaction::default());
+			return Ok(());
 		}
 
 		let mut stack = Vec::new();
@@ -97,7 +165,7 @@ where
 			}
 		}
 
-		Ok(ValidTransaction::default())
+		Ok(())
 	}
 }
 
@@ -140,9 +208,9 @@ where
 		_who: &Self::AccountId,
 		call: &Self::Call,
 		_info: &DispatchInfoOf<Self::Call>,
-		_len: usize,
+		len: usize,
 	) -> TransactionValidity {
-		self.do_validate(call)
+		self.do_validate(call, len)
 	}
 
 	fn pre_dispatch(
@@ -150,9 +218,9 @@ where
 		_who: &Self::AccountId,
 		call: &Self::Call,
 		_info: &DispatchInfoOf<Self::Call>,
-		_len: usize,
+		len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
-		self.do_validate(call)?;
+		self.do_validate(call, len)?;
 		Ok(())
 	}
 
