@@ -314,7 +314,7 @@ pub mod pallet {
 			proof: BoundedVec<u8, ProofMaxLen>,
 			slot: u64,
 		) -> DispatchResult {
-			ensure_signed(origin)?.into();
+			ensure_signed(origin)?;
 			let state = StateStorage::<T>::get();
 			// compute hashes
 			let input_hash = H256(sha2_256(input.as_slice()));

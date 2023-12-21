@@ -140,7 +140,7 @@ impl Verifier {
 		serde_json::from_slice(slice).map_err(|_| VKeyDeserializationError::SerdeError)
 	}
 
-	// Verifies input based on the supplied proof and hashes
+	/// Verifies input based on the supplied proof and hashes
 	pub fn verify(
 		self,
 		input_hash: H256,
@@ -157,7 +157,7 @@ impl Verifier {
 		let output_hash_byte_swap = output_hash[0] & bits_mask;
 		output_swap[0] = output_hash_byte_swap;
 
-		let decoded: (Vec<String>, Vec<Vec<String>>, Vec<String>) = decode_proof(proof);
+		let decoded: (Vec<String>, Vec<Vec<String>>, Vec<String>) = decode_proof(proof)?;
 
 		let circom_proof = CircomProof::new(decoded.0, decoded.1, decoded.2);
 		let proof = circom_proof.proof()?;
@@ -181,7 +181,9 @@ impl Verifier {
 	}
 }
 
-pub fn decode_proof(proof: Vec<u8>) -> (Vec<String>, Vec<Vec<String>>, Vec<String>) {
+pub fn decode_proof(
+	proof: Vec<u8>,
+) -> Result<(Vec<String>, Vec<Vec<String>>, Vec<String>), VerificationError> {
 	let decoded = ethabi::decode(
 		&[ParamType::Tuple(vec![
 			ParamType::FixedArray(Box::new(ParamType::Uint(256)), 2),
@@ -193,7 +195,7 @@ pub fn decode_proof(proof: Vec<u8>) -> (Vec<String>, Vec<Vec<String>>, Vec<Strin
 		])],
 		&proof,
 	)
-	.expect("Proof must be decodable .qed");
+	.map_err(|_| VerificationError::InvalidProof)?;
 
 	let mut a0: String = String::new();
 	let mut a1: String = String::new();
@@ -248,14 +250,14 @@ pub fn decode_proof(proof: Vec<u8>) -> (Vec<String>, Vec<Vec<String>>, Vec<Strin
 		}
 	}
 
-	(
+	Ok((
 		vec![a0, a1],
 		vec![vec![b01, b00], vec![b11, b10]],
 		vec![c0, c1],
-	)
+	))
 }
 
-// implements abi.encodePacked
+/// implements abi.encodePacked
 pub fn encode_packed(poseidon: U256, slot: u64) -> Vec<u8> {
 	let bytes: &mut [u8; 32] = &mut [0u8; 32];
 	poseidon.to_big_endian(bytes);
@@ -542,7 +544,8 @@ mod tests {
 	fn test_decode_proof() {
 		let proof = hex!("1332c772a8f9a02f304b5472d3b6b75f1a494bd9b137fc663fd5b9b475992bc829ba08f7cfa745e340938e356b139224d0288b9511a5cec83235f969f61a94ed16a14579fa0adcc3bf8da36209f64547fd5ff4e1c7e8b5b151335b5b4a471de3115f83b696517ac68ae7620f7d3840e44aff4781c0a4d265a2905ef9bcaa04432a660197790e60d1135946ae0603ef69a5ecb45b6f8046167f902dc6d8a35cf716bce116484dfa4fcd5d8f4c2fda26d68754b56e68f1a877d95dc171accc34d71285068693fe3d8d28e66342c31292ceee5c6d87fcb8ad8c132363565f2aeff905726b2d35def5c9636dd5ec402d8d6f6c9a7be7977e7e5727da327ea5b079ad");
 
-		let decoded: (Vec<String>, Vec<Vec<String>>, Vec<String>) = decode_proof(proof.to_vec());
+		let decoded: (Vec<String>, Vec<Vec<String>>, Vec<String>) =
+			decode_proof(proof.to_vec()).unwrap();
 
 		assert_eq!(
 			"8683663015073067038244847214283351810649000192281314413199884219842452597704",
