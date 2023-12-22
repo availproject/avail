@@ -19,7 +19,7 @@ For reporting security vulnerabilities, please contact: security@availproject.or
 
 If you discover any vulnerabilities in **Avail Technology**, please follow these steps to report them:
 
-1. **Contact Us Privately**: Reach out using one of the [private contact addresses](https://github.com/your-organization/your-repository#support).
+1. **Contact Us Privately**: Reach out using security@availproject.org
    
 2. **Describe the Vulnerability**: Provide a detailed description of the vulnerability. Include steps to reproduce it if possible. If you have a fix, please link it in your message.
 
