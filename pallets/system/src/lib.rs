@@ -643,7 +643,7 @@ pub mod pallet {
 
 	/// Total length (in bytes) for all extrinsics put together, for the current block.
 	#[pallet::storage]
-	pub(super) type AllExtrinsicsLen<T: Config> =
+	pub type AllExtrinsicsLen<T: Config> =
 		StorageValue<_, ExtrinsicLen<T::MaxDiffAppIdPerBlock, T::MaxTxPerAppIdPerBlock>>;
 
 	/// Map of block numbers to block hashes.
