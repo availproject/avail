@@ -24,11 +24,13 @@ use kate_recovery::matrix::Dimensions;
 use moka::future::Cache;
 use rayon::prelude::*;
 use sc_client_api::BlockBackend;
-use sp_api::ProvideRuntimeApi;
+use sp_api::{Encode, HashT, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
+	app_crypto::sp_core::blake2_256,
 	generic::{Digest, SignedBlock},
-	traits::{Block as BlockT, Header},
+	testing::H256,
+	traits::{BlakeTwo256, Block as BlockT, Header},
 };
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
@@ -60,6 +62,13 @@ where
 
 	#[method(name = "kate_queryDataProof")]
 	async fn query_data_proof(
+		&self,
+		transaction_index: u32,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<DataProof>;
+
+	#[method(name = "kate_queryInclusionProof")]
+	async fn query_inclusion_proof(
 		&self,
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
@@ -455,6 +464,42 @@ where
 		KateRpcMetrics::observe_query_data_proof_execution_time(execution_start.elapsed());
 
 		data_proof
+	}
+
+	async fn query_inclusion_proof(
+		&self,
+		transaction_index: u32,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<DataProof> {
+		let block = self.get_signed_block(at)?.block;
+
+		let merkle_proof = submitted_data::inclusion_proof(block.extrinsics(), transaction_index)
+			.ok_or_else(|| {
+			internal_err!(
+				"Failed to generate inclusion proof for transaction {transaction_index} at block {at:?}",
+			)
+		})?;
+
+		let data = block
+			.extrinsics()
+			.iter()
+			.map(Encode::encode)
+			.collect::<Vec<Vec<_>>>();
+
+		let root = BlakeTwo256::ordered_trie_root(data, sp_runtime::StateVersion::V0);
+
+		assert_eq!(
+			block.header().extrinsics_root().to_string(),
+			root.to_string()
+		);
+
+		Ok(DataProof {
+			root: merkle_proof.root,
+			proof: merkle_proof.proof,
+			number_of_leaves: merkle_proof.number_of_leaves as u32,
+			leaf_index: merkle_proof.leaf_index as u32,
+			leaf: H256::from(blake2_256(&merkle_proof.leaf)),
+		})
 	}
 }
 

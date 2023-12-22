@@ -2,8 +2,9 @@ use core::fmt::Debug;
 
 use avail_core::OpaqueExtrinsic;
 use binary_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
+use codec::Encode;
 use sp_core::H256;
-use sp_runtime::traits::Keccak256;
+use sp_runtime::traits::{BlakeTwo256, Keccak256};
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
 
 const LOG_TARGET: &str = "runtime::system::submitted_data";
@@ -151,6 +152,30 @@ where
 		.collect::<Vec<_>>();
 
 	proof(submitted_data, data_index, Rc::clone(&metrics))
+}
+
+pub fn inclusion_proof(
+	extrinsics: &[OpaqueExtrinsic],
+	index: u32,
+) -> Option<MerkleProof<H256, Vec<u8>>> {
+	let index = index as usize;
+	let data = extrinsics
+		.iter()
+		.map(Encode::encode)
+		.collect::<Vec<Vec<_>>>();
+
+	if index >= data.len() {
+		return None;
+	}
+
+	let proof = merkle_proof::<BlakeTwo256, _, _>(data, index);
+
+	log::debug!(
+		target: LOG_TARGET,
+		"Build submitted data proof of index {index}: {proof:?}",
+	);
+
+	Some(proof)
 }
 
 /// Creates the Merkle Proof of the submitted data items in `calls` filtered by `F` and
