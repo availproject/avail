@@ -291,7 +291,7 @@ mod multiplier_tests {
 				.max_total
 				.unwrap() - Weight::from_parts(100, 0);
 
-			let tx_len: usize = 1024 * 1024; //1 Mb data
+			let tx_len: usize = 512 * 1024; // 512 Kb data
 			let da_submission_weight = da_control::weight_helper::submit_data::<Runtime>(tx_len);
 			let dispatch_info = DispatchInfo {
 				weight: da_submission_weight.0,
@@ -347,7 +347,7 @@ mod multiplier_tests {
 					.try_into()
 					.unwrap();
 
-			let tx_len: usize = 1024 * 1024; //1 Mb data
+			let tx_len: usize = 512 * 1024; // 512 Kb data
 			let da_submission_weight = da_control::weight_helper::submit_data::<Runtime>(tx_len);
 			let dispatch_info = DispatchInfo {
 				weight: da_submission_weight.0,
