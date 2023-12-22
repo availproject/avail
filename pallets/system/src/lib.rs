@@ -212,7 +212,8 @@ impl<MaxNormal: Get<u32>, MaxOverflow: Get<u32>> ConsumerLimits for (MaxNormal, 
 	}
 }
 
-pub type ExtrinsicLenOf<T> = ExtrinsicLen<<T as Config>::MaxDiffAppIdPerBlock, <T as Config>::MaxTxPerAppIdPerBlock>;
+pub type ExtrinsicLenOf<T> =
+	ExtrinsicLen<<T as Config>::MaxDiffAppIdPerBlock, <T as Config>::MaxTxPerAppIdPerBlock>;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -430,10 +431,13 @@ pub mod pallet {
 		/// a transaction is validated (see `CheckAppId` signed extension).
 		#[pallet::constant]
 		#[pallet::no_default]
-		type MaxTxPerAppIdPerBlock: Get<u32>; 
+		type MaxTxPerAppIdPerBlock: Get<u32>;
 	}
 
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(3);
+
 	#[pallet::pallet]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::hooks]
@@ -445,6 +449,10 @@ pub mod pallet {
 					.validate()
 					.expect("The weights are invalid.");
 			});
+		}
+
+		fn on_runtime_upgrade() -> Weight {
+			migrations::migrate::<T>()
 		}
 	}
 
@@ -635,7 +643,8 @@ pub mod pallet {
 
 	/// Total length (in bytes) for all extrinsics put together, for the current block.
 	#[pallet::storage]
-	pub(super) type AllExtrinsicsLen<T: Config> = StorageValue<_, ExtrinsicLen<T::MaxDiffAppIdPerBlock, T::MaxTxPerAppIdPerBlock>>;
+	pub(super) type AllExtrinsicsLen<T: Config> =
+		StorageValue<_, ExtrinsicLen<T::MaxDiffAppIdPerBlock, T::MaxTxPerAppIdPerBlock>>;
 
 	/// Map of block numbers to block hashes.
 	#[pallet::storage]
@@ -1424,7 +1433,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Returns all extrinsics len in raw.
 	pub fn all_extrinsics_len() -> u32 {
-		AllExtrinsicsLen::<T>::get().unwrap_or_default().raw
+		AllExtrinsicsLen::<T>::get().unwrap_or_default().raw()
 	}
 
 	/// Inform the system pallet of some additional weight that should be accounted for, in the
@@ -1686,7 +1695,12 @@ impl<T: Config> Pallet<T> {
 		});
 		let len: u32 = len.saturated_into();
 		let mut all_ext_len = ExtrinsicLen::default();
-		all_ext_len.add(AppId(0), len).expect("In tests this must work always");
+		all_ext_len
+			.add_padded(AppId(0), len)
+			.expect("In tests this must work always");
+		all_ext_len
+			.add_raw(len)
+			.expect("In tests this must work always");
 
 		AllExtrinsicsLen::<T>::put(all_ext_len);
 	}

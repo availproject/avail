@@ -18,7 +18,6 @@
 use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::{DispatchInfo, PostDispatchInfo},
-	fail,
 	traits::Get,
 };
 use scale_info::TypeInfo;
@@ -29,10 +28,7 @@ use sp_runtime::{
 };
 use sp_weights::Weight;
 
-use crate::{
-	limits::BlockWeights, AllExtrinsicsLen, Config, Pallet,
-	LOG_TARGET, ExtrinsicLenOf,
-};
+use crate::{limits::BlockWeights, AllExtrinsicsLen, Config, ExtrinsicLenOf, Pallet, LOG_TARGET};
 
 /// Block resource (weight) limit check.
 ///
@@ -79,25 +75,23 @@ where
 	fn check_block_length(
 		info: &DispatchInfoOf<T::RuntimeCall>,
 		len: usize,
-	) -> Result<ExtrinsicLenOf<T>, TransactionValidityError> {
-		let length_limit = T::BlockLength::get();
-		let mut all_extrinsics_len = AllExtrinsicsLen::<T>::get().unwrap_or_default();
+	) -> Option<ExtrinsicLenOf<T>> {
+		let len = u32::try_from(len).ok()?;
+		let max_raw_len = *T::BlockLength::get().max.get(info.class);
 
 		// Check valid raw len
-		let added_len = len as u32;
-		all_extrinsics_len.raw = all_extrinsics_len.raw.saturating_add(added_len);
-		let max_raw_len = *length_limit.max.get(info.class);
-		if all_extrinsics_len.raw > max_raw_len {
+		let mut all_extrinsics_len = AllExtrinsicsLen::<T>::get().unwrap_or_default();
+		let new_len = all_extrinsics_len.add_raw(len)?;
+
+		if new_len <= max_raw_len {
+			Some(all_extrinsics_len)
+		} else {
 			log::debug!(
 				target: LOG_TARGET,
-				"Block length (max {}) is exhausted, requested {}",
-				max_raw_len,
-				all_extrinsics_len.raw
+				"Block length (max {max_raw_len} bytes) is exhausted, requested {new_len} bytes",
 			);
-			fail!(InvalidTransaction::ExhaustsResources)
+			None
 		}
-
-		Ok(all_extrinsics_len)
 	}
 
 	/// Creates new `SignedExtension` to check weight of the extrinsic.
@@ -112,7 +106,8 @@ where
 		info: &DispatchInfoOf<T::RuntimeCall>,
 		len: usize,
 	) -> Result<(), TransactionValidityError> {
-		let next_len = Self::check_block_length(info, len)?;
+		let next_len =
+			Self::check_block_length(info, len).ok_or(InvalidTransaction::ExhaustsResources)?;
 		let next_weight = Self::check_block_weight(info)?;
 		Self::check_extrinsic_weight(info)?;
 
@@ -126,7 +121,7 @@ where
 	/// It only checks that the block weight and length limit will not exceed.
 	pub fn do_validate(info: &DispatchInfoOf<T::RuntimeCall>, len: usize) -> TransactionValidity {
 		// ignore the next length. If they return `Ok`, then it is below the limit.
-		let _ = Self::check_block_length(info, len)?;
+		let _ = Self::check_block_length(info, len).ok_or(InvalidTransaction::ExhaustsResources)?;
 		// during validation we skip block limit check. Since the `validate_transaction`
 		// call runs on an empty block anyway, by this we prevent `on_initialize` weight
 		// consumption from causing false negatives.
@@ -276,7 +271,6 @@ mod tests {
 		weights::Weight,
 	};
 	use sp_std::marker::PhantomData;
-	use avail_core::AppId;
 
 	use super::*;
 	use crate::{
@@ -527,7 +521,7 @@ mod tests {
 			let len = 100_usize;
 			let raw = normal_length_limit();
 			let mut extrinsic_len = ExtrinsicLenOf::<Test>::default();
-			extrinsic_len.add(AppId(0), raw).expect("should not overflow");
+			extrinsic_len.add_raw(raw).expect("should not overflow");
 			AllExtrinsicsLen::<Test>::put(extrinsic_len);
 			assert_err!(
 				CheckWeight::<Test>(PhantomData).pre_dispatch(&1, CALL, &normal, len),
