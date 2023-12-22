@@ -226,7 +226,6 @@ impl pallet_transaction_payment::Config for Runtime {
 		MinimumMultiplier,
 		MaximumMultiplier,
 	>;
-	// To allow fees to change at most 50% in a day
 	type LengthMultiplierUpdate = LengthFeeAdjustment<
 		Self,
 		TargetBlockFullness,
