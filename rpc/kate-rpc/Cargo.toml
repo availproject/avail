@@ -9,11 +9,9 @@ edition = "2021"
 avail-base = { path = "../../base", default-features = false }
 da-runtime = { path = "../../runtime", default-features = false }
 
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false, features = [
-	"runtime",
-] }
-kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false }
+avail-core.workspace = true 
+kate.workspace = true
+kate-recovery.workspace = true
 
 # 3rd party
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
@@ -32,7 +30,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "po
 
 
 [features]
-default = ["metrics", "std"]
+default = [ "metrics", "std" ]
 std = [
 	"avail-base/std",
 	"avail-core/std",

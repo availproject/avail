@@ -64,7 +64,7 @@ where
 		call: &<T as SystemConfig>::RuntimeCall,
 		len: usize,
 	) -> TransactionValidity {
-		self.ensure_valid_app_id(call)?;
+		// self.ensure_valid_app_id(call)?;
 		let all_extrinsics_len = self
 			.next_all_extrinsics_len(len)
 			.ok_or(PADDED_LEN_EXCEEDED)?;
@@ -88,7 +88,7 @@ where
 		// Calculate total padded length
 		let total_scalars = all_extrinsics_len.total_num_scalars()?;
 
-		if total_scalars <= max_scalars {
+		if total_scalars < max_scalars {
 			Some(all_extrinsics_len)
 		} else {
 			log::warn!(
