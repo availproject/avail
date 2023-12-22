@@ -46,6 +46,7 @@
 //!   - How the fees are paid via [`Config::OnChargeTransaction`].
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::tabs_in_doc_comments)]
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
@@ -400,18 +401,16 @@ where
 
 /// Storage releases of the pallet.
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(Default)]
 enum Releases {
 	/// Original version of the pallet.
-	V1Ancient,
+	#[default]
+ V1Ancient,
 	/// One that bumps the usage to FixedU128 from FixedI128.
 	V2,
 }
 
-impl Default for Releases {
-	fn default() -> Self {
-		Releases::V1Ancient
-	}
-}
+
 
 /// Default value for NextFeeMultiplier. This is used in genesis and is also used in
 /// NextFeeMultiplierOnEmpty() to provide a value when none exists in storage.
@@ -843,6 +842,7 @@ where
 		self.0
 	}
 
+	#[allow(clippy::type_complexity)]
 	fn withdraw_fee(
 		&self,
 		who: &T::AccountId,
