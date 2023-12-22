@@ -347,7 +347,7 @@ mod multiplier_tests {
 					.try_into()
 					.unwrap();
 
-			let tx_len: usize = 1024 * 1024; // 1 Mb data
+			let tx_len: usize = 1024 * 1024; //1 Mb data
 			let da_submission_weight = da_control::weight_helper::submit_data::<Runtime>(tx_len);
 			let dispatch_info = DispatchInfo {
 				weight: da_submission_weight.0,
@@ -355,69 +355,34 @@ mod multiplier_tests {
 				pays_fee: Pays::Yes,
 			};
 			let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
-			let consumed_block_len = System::all_padded_extrinsics_len();
-			println!("Tx fee in absence of weight congestion(set to 1), at different length congestion");
 			println!(
-				"Epoch: {}\t lm: {:?}\t ConsumedLength: {} bytes\t Utilization: 0%\t Fee: {} MICRO_AVL",
+				"Epoch: {}, lm: {:?},  Fee: {} units / {} MICRO_AVL",
 				0,
 				lm,
-				consumed_block_len,
+				tx_fee,
 				tx_fee / MICRO_AVL,
 			);
 			run_with_system_length(max_padded_length, || {
 				let mut iterations: u32 = 0;
 				let mut day_count: u32 = 0;
-				let cogestion_percents = vec![
-					Percent::from_percent(100),
-					Percent::from_percent(40),
-					Percent::from_percent(30),
-					Percent::from_percent(20),
-					Percent::from_percent(10),
-					Percent::from_percent(0),
-					Percent::from_percent(60),
-					Percent::from_percent(70),
-					Percent::from_percent(80),
-					Percent::from_percent(90),
-					Percent::from_percent(100),
-					Percent::from_percent(100),
-				];
-				let congestion_levels = vec![
-					cogestion_percents[1] * max_padded_length,
-					cogestion_percents[2] * max_padded_length,
-					cogestion_percents[3] * max_padded_length,
-					cogestion_percents[4] * max_padded_length,
-					cogestion_percents[5] * max_padded_length,
-					cogestion_percents[6] * max_padded_length,
-					cogestion_percents[7] * max_padded_length,
-					cogestion_percents[8] * max_padded_length,
-					cogestion_percents[9] * max_padded_length,
-					cogestion_percents[10] * max_padded_length,
-					cogestion_percents[11] * max_padded_length,
-				];
-
 				loop {
 					iterations += 1;
 					TransactionPayment::on_finalize(System::block_number());
 					let lm = TransactionPayment::next_length_multiplier();
-					// Neutralize the weight multiplier effect
+					// Neutralise the weight multiplier effect
 					NextFeeMultiplier::<Runtime>::put(Multiplier::one());
 					let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
-					let consumed_block_len = System::all_padded_extrinsics_len();
 					if iterations % EPOCH_DURATION_IN_SLOTS == 0 {
 						day_count += 1;
 						println!(
-							"Epoch: {}\t lm: {:?}\t ConsumedLength: {} bytes\t Utilization: {:#?}\t Fee: {} MICRO_AVL",
+							"Epoch: {}, lm: {:?},  Fee: {} units / {} MICRO_AVL",
 							day_count,
 							lm,
-							consumed_block_len,
-							cogestion_percents[(day_count - 1u32) as usize],
+							tx_fee,
 							tx_fee / MICRO_AVL,
 						);
-						let current_block_length = congestion_levels[(day_count - 1u32) as usize];
-						System::set_block_consumed_resources(0.into(), current_block_length);
 					}
-
-					if day_count == 11u32 {
+					if day_count == 7u32 {
 						break;
 					}
 				}
