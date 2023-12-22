@@ -12,7 +12,7 @@ use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 use primitive_types::H160;
 use sc_telemetry::TelemetryEndpoints;
 use sp_core::sr25519::Public;
-use sp_runtime::{AccountId32, Perbill};
+use sp_runtime::AccountId32;
 
 pub const PROTOCOL_ID: Option<&str> = Some("Avail");
 pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
