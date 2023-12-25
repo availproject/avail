@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 use avail_base::metrics::avail::ImportBlockMetrics;
 use avail_core::{BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE};
+use codec::Decode;
 use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
 	Header as DaHeader,
@@ -23,6 +24,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{BlockOrigin, Error as ConsensusError};
 use sp_runtime::traits::Block as BlockT;
+use sp_runtime::DigestItem;
 
 #[derive(Constructor)]
 pub struct BlockImport<C, I> {
@@ -56,6 +58,7 @@ where
 	type Transaction = <I as BlockImportT<B>>::Transaction;
 
 	/// It verifies that header extension (Kate commitment & data root) is properly calculated.
+	// TODO: Optimise this fn after testing the PoC
 	async fn import_block(
 		&mut self,
 		block: BlockImportParams<B, Self::Transaction>,
@@ -78,10 +81,39 @@ where
 			let extrinsics = block.body.as_ref().unwrap_or(&no_extrinsics);
 			let best_hash = self.client.info().best_hash;
 
+			// Extract Other type of digest from the logs
+			let other_digest = {
+				let digest = &block.header.digest;
+				let other_data: Vec<&[u8]> = digest
+					.logs
+					.iter()
+					.filter_map(|item| {
+						if let DigestItem::Other(data) = item {
+							Some(data.as_slice())
+						} else {
+							None
+						}
+					})
+					.collect();
+
+				match other_data.len() {
+					1 => Ok(other_data[0]),
+					0 => Err("No DigestItem::Other found in the digest"),
+					_ => Err("Multiple DigestItem::Other entries found in the digest"),
+				}
+				.map_err(|e| ConsensusError::Other(e.into()))?
+			};
+			let success_indices: Vec<u32> =
+				Decode::decode(&mut &other_digest[..]).unwrap_or_default();
+			log::info!(target: "DA_IMPORT_BLOCK", "success_indices: {:?}", success_indices);
+			let successful_extrinsics = success_indices
+				.iter()
+				.filter_map(|&i| extrinsics.get(i as usize).cloned())
+				.collect();
 			let data_root = self
 				.client
 				.runtime_api()
-				.build_data_root(best_hash, extrinsics.clone())
+				.build_data_root(best_hash, successful_extrinsics)
 				.map_err(|e| {
 					ConsensusError::ClientImport(format!("Data root cannot be calculated: {e:?}"))
 				})?;
