@@ -727,11 +727,12 @@ pub mod pallet {
 	#[pallet::getter(fn bridge_nonce)]
 	pub type BridgeNonce<T: Config> = StorageValue<_, u64, ValueQuery>;
 
-	/// Bridge data for the current block.
+	/// List of successful indices in the current block
 	#[pallet::storage]
-	#[pallet::getter(fn bridge_data)]
+	#[pallet::getter(fn successfull_exrinsic_indices)]
+	// TODO: Convert this to BoundedVec of max tx allowed in the block
 	#[pallet::unbounded]
-	pub type BridgeData<T: Config> = StorageValue<_, Vec<Vec<u8>>, ValueQuery>;
+	pub type SuccessfulExtrinsicIndices<T: Config> = StorageValue<_, Vec<u32>, ValueQuery>;
 
 	#[derive(DefaultNoBound)]
 	#[pallet::genesis_config]
@@ -1129,6 +1130,12 @@ pub enum DecRefStatus {
 impl<T: Config> Pallet<T> {
 	pub fn account_exists(who: &T::AccountId) -> bool {
 		Account::<T>::contains_key(who)
+	}
+
+	fn add_successful_index(new_item: u32) {
+		<SuccessfulExtrinsicIndices<T>>::mutate(|indices| {
+			indices.push(new_item);
+		});
 	}
 
 	/// Write code to the storage and emit related events and digest items.
@@ -1530,11 +1537,14 @@ impl<T: Config> Pallet<T> {
 		// stay to be inspected by the client and will be cleared by `Self::initialize`.
 		let number = <Number<T>>::get();
 		let parent_hash = <ParentHash<T>>::get();
-		let digest = <Digest<T>>::get();
 
 		let extrinsics = Self::take_extrinsics().collect::<Vec<_>>();
-		let opaques = extrinsics
+		let successful_indices = SuccessfulExtrinsicIndices::<T>::take();
+		let opaques = successful_indices
 			.iter()
+			.filter_map(|&index| extrinsics.get(index as usize))
+			// let opaques = extrinsics
+			// 	.iter()
 			.filter(|ext| !ext.is_empty())
 			.map(|ext| OpaqueExtrinsic::decode(&mut ext.as_slice()))
 			.collect::<Result<Vec<_>, _>>()
@@ -1547,6 +1557,10 @@ impl<T: Config> Pallet<T> {
 		if Self::bridge_nonce() != new_nonce {
 			BridgeNonce::<T>::put(new_nonce);
 		}
+		let dr_digest = generic::DigestItem::Other(successful_indices.encode());
+		Self::deposit_log(dr_digest);
+		let digest = <Digest<T>>::get();
+
 		// move block hash pruning window by one block
 		let block_hash_count = T::BlockHashCount::get();
 		let to_remove = number
@@ -1780,8 +1794,11 @@ impl<T: Config> Pallet<T> {
 		info.pays_fee = extract_actual_pays_fee(r, &info);
 
 		Self::deposit_event(match r {
-			Ok(_) => Event::ExtrinsicSuccess {
-				dispatch_info: info,
+			Ok(_) => {
+				Self::add_successful_index(Self::extrinsic_index().unwrap_or_default());
+				Event::ExtrinsicSuccess {
+					dispatch_info: info,
+				}
 			},
 			Err(err) => {
 				log::trace!(
