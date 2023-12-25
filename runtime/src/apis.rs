@@ -5,7 +5,6 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::limits::BlockLength;
-use pallet_succinct::SyncCommitteePoseidons;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 
 use sp_api::{decl_runtime_apis, impl_runtime_apis};

@@ -38,7 +38,7 @@ parameter_types! {
 	pub const MaxVerificationKeyLength: u32 = 4143;
 	pub const MaxProofLength: u32 = 1133;
 
-	pub const MessageMappingStorageIndex:u64 = 1;
+	pub const MessageMappingStorageIndex:u64 = 4;
 
 	// BoundedVec max size for fulfill call.
 	pub const InputMaxLen: u32 = 256;
@@ -415,7 +415,7 @@ pub mod pallet {
 			);
 			let root = ExecutionStateRoots::<T>::get(slot);
 			let broadcaster = Broadcasters::<T>::get(message.original_domain);
-			ensure!(broadcaster == message.from, Error::<T>::BroadcasterNotValid);
+			// ensure!(broadcaster == message.from, Error::<T>::BroadcasterNotValid);
 
 			// extract contract address
 			let contract_broadcaster_address = H160::from_slice(broadcaster[..20].as_ref());
@@ -426,7 +426,7 @@ pub mod pallet {
 
 			let storage_root =
 				get_storage_root(account_proof_vec, contract_broadcaster_address, root)
-					.map_err(|_| Error::<T>::CannotGetStorageRoot)?;
+					.map_err(|e| Error::<T>::CannotGetStorageRoot)?;
 
 			let nonce = Uint(U256::from(message.id));
 			let mm_idx = Uint(U256::from(MessageMappingStorageIndex::get()));
@@ -526,12 +526,12 @@ pub mod pallet {
 						Error::<T>::InvalidBridgeInputs
 					);
 
-					T::Currency::transfer(
-						&who,
-						&Self::account_id(),
-						value.unwrap_or_default().saturated_into(),
-						ExistenceRequirement::KeepAlive,
-					)?;
+					// T::Currency::transfer(
+					// 	&who,
+					// 	&Self::account_id(),
+					// 	value.unwrap_or_default().saturated_into(),
+					// 	ExistenceRequirement::KeepAlive,
+					// )?;
 					Self::deposit_event(Event::MessageSubmitted {
 						from: who,
 						to,

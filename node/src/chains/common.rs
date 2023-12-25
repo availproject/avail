@@ -10,7 +10,7 @@ use da_runtime::{
 };
 use frame_system::limits::BlockLength;
 use hex_literal::hex;
-use primitive_types::{H160, H256, U256};
+use primitive_types::{H160, U256};
 use sc_telemetry::TelemetryEndpoints;
 use sp_core::crypto::AccountId32;
 use sp_core::sr25519::Public;
