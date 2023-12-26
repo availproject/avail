@@ -25,6 +25,15 @@ Make sure that you have a running local node with `--features kate-rpc-metrics` 
 ```bash
 cargo build --release --features kate-rpc-metrics
 ```
+- Make sure to populate basic configuration in `benchmarks/config.ts`
+```typescript
+export default {
+    mnemonic: "", // The secret seed value for account used to sign transactions. //Alice is used by default
+    ApiURL: "",   // Api url
+    txCount: 100, // Count of submitting transactions
+    jobCount: 10, // Count of tasks
+}
+```
 
 ```bash
 # To benchmark Query Proof RPC
