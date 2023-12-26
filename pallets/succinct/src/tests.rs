@@ -12,9 +12,10 @@ use crate::mock::{new_test_ext, Bridge, RuntimeEvent, RuntimeOrigin, Test};
 use crate::state::State;
 use crate::target_amb::MessageStatusEnum;
 use crate::{
-	Broadcasters, Error, Event, ExecutionStateRoots, Headers, InputMaxLen, MessageBytesMaxLen,
-	MessageItemsMaxLen, MessageStatus, OutputMaxLen, ProofMaxLen, RotateVerificationKeyStorage,
-	SourceChainFrozen, StateStorage, StepVerificationKeyStorage, Timestamps, VerificationKeyDef,
+	Broadcasters, Error, Event, ExecutionStateRoots, Head, Headers, InputMaxLen,
+	MessageBytesMaxLen, MessageItemsMaxLen, MessageStatus, OutputMaxLen, ProofMaxLen,
+	RotateVerificationKeyStorage, SourceChainFrozen, StateStorage, StepVerificationKeyStorage,
+	Timestamps, VerificationKeyDef,
 };
 
 const TEST_SENDER_VEC: [u8; 32] = [2u8; 32];
@@ -608,6 +609,25 @@ fn test_full_fill_step_call() {
 			)),
 		});
 
+		let finalized_slot = 7634848;
+
+		let header = Headers::<Test>::get(finalized_slot);
+		let head = Head::<Test>::get();
+		let ex_state_root = ExecutionStateRoots::<Test>::get(finalized_slot);
+
+		assert_eq!(
+			header,
+			H256(hex!(
+				"e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec"
+			))
+		);
+		assert_eq!(
+			ex_state_root,
+			H256(hex!(
+				"51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b9"
+			))
+		);
+		assert_eq!(head, finalized_slot);
 		assert_eq!(expected_event, System::events()[0].event);
 	});
 }
