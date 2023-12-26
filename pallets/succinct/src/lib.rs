@@ -34,10 +34,10 @@ parameter_types! {
 	pub const StepFunctionId: H256 = H256(hex!("af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"));
 	pub const RotateFunctionId: H256 = H256(hex!("9aed23f9e6e8f8b98751cf508069b5b7f015d4d510b6a4820d41ba1ce88190d9"));
 
-	// Max length constants
+	// Max verification key length.
 	pub const MaxVerificationKeyLength: u32 = 4143;
-	pub const MaxProofLength: u32 = 1133;
 
+	// The index of the `messages` mapping in contract.
 	pub const MessageMappingStorageIndex:u64 = 4;
 
 	// BoundedVec max size for fulfill call.
@@ -46,17 +46,16 @@ parameter_types! {
 	pub const ProofMaxLen: u32 = 1048;
 	// BoundedVec max size for execute call.
 	pub const MessageBytesMaxLen: u32 = 2048;
-	pub const AccountProofMaxLen: u32 = 2048;
-	pub const AccountProofLen: u32 = 2048;
-	pub const StorageProofMaxLen: u32 = 2048;
-	pub const StorageProofLen: u32 = 2048;
+	pub const MessageItemsMaxLen: u32 = 256;
+
 	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
-
+	// BoundedVec max size for send message call.
 	pub const MaxBridgeDataLength: u32= 256;
-
+	// Supported domains and assets.
 	pub const AvailDomain: u32 = 1;
 	pub const SupportedDomain:u32 = 2;
-	pub const SupportedAssetId:H256 = H256::zero(); // Avail asset is supported for now
+	// Avail asset is supported for now
+	pub const SupportedAssetId:H256 = H256::zero();
 }
 
 #[frame_support::pallet]
@@ -88,7 +87,6 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		UpdaterMisMatch,
 		VerificationError,
 		NotEnoughParticipants,
 		SlotBehindHead,
@@ -179,7 +177,7 @@ pub mod pallet {
 	pub type RotateVerificationKeyStorage<T: Config> =
 		StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
 
-	// Storage for a general state.
+	// Storage for a head updates.
 	#[pallet::storage]
 	#[pallet::getter(fn head)]
 	pub type Head<T: Config> = StorageValue<_, u64, ValueQuery>;
@@ -202,19 +200,19 @@ pub mod pallet {
 	#[pallet::getter(fn sync_committee_poseidons)]
 	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
 
-	// Storage for a general state.
+	// Storage for a config of finality threshold and slots per period.
 	#[pallet::storage]
 	pub type StateStorage<T: Config> = StorageValue<_, State, ValueQuery>;
 
-	// Maps status of the message to the message root
+	// Maps status of the message to the message root.
 	#[pallet::storage]
 	pub type MessageStatus<T> = StorageMap<_, Identity, H256, MessageStatusEnum, ValueQuery>;
 
-	// Mapping between source chainId and the address of the Telepathy broadcaster on that chain.
+	// Mapping between source chainId and the address of the broadcaster on that chain.
 	#[pallet::storage]
 	pub type Broadcasters<T> = StorageMap<_, Identity, u32, H256, ValueQuery>;
 
-	// Ability to froze source chain
+	// Flags source chain to be frozen.
 	#[pallet::storage]
 	pub type SourceChainFrozen<T> = StorageMap<_, Identity, u32, bool, ValueQuery>;
 
@@ -225,8 +223,6 @@ pub mod pallet {
 		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
 
 		type TimeProvider: UnixTime;
-		#[pallet::constant]
-		type MaxProofLength: Get<u32>;
 		// 1133
 		#[pallet::constant]
 		type MaxVerificationKeyLength: Get<u32>;
@@ -260,7 +256,6 @@ pub mod pallet {
 	#[pallet::genesis_config]
 	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
-		pub updater: Hash,
 		pub slots_per_period: u64,
 		pub finality_threshold: u16,
 		pub sync_committee_poseidon: U256,
@@ -279,7 +274,7 @@ pub mod pallet {
 
 			<SyncCommitteePoseidons<T>>::insert(self.period, self.sync_committee_poseidon);
 
-			// TODO TEST
+			// TODO TEST ONLY
 			ExecutionStateRoots::<T>::set(
 				8581263,
 				H256(hex!(
@@ -400,8 +395,8 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			slot: u64,
 			message: Message,
-			account_proof: BoundedVec<BoundedVec<u8, AccountProofMaxLen>, AccountProofLen>,
-			storage_proof: BoundedVec<BoundedVec<u8, StorageProofMaxLen>, StorageProofLen>,
+			account_proof: BoundedVec<BoundedVec<u8, MessageBytesMaxLen>, MessageItemsMaxLen>,
+			storage_proof: BoundedVec<BoundedVec<u8, MessageBytesMaxLen>, MessageItemsMaxLen>,
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 			let encoded_data = message.clone().abi_encode();
@@ -415,7 +410,7 @@ pub mod pallet {
 			);
 			let root = ExecutionStateRoots::<T>::get(slot);
 			let broadcaster = Broadcasters::<T>::get(message.original_domain);
-			// ensure!(broadcaster == message.from, Error::<T>::BroadcasterNotValid);
+			ensure!(broadcaster == message.from, Error::<T>::BroadcasterNotValid);
 
 			// extract contract address
 			let contract_broadcaster_address = H160::from_slice(broadcaster[..20].as_ref());
@@ -426,7 +421,7 @@ pub mod pallet {
 
 			let storage_root =
 				get_storage_root(account_proof_vec, contract_broadcaster_address, root)
-					.map_err(|e| Error::<T>::CannotGetStorageRoot)?;
+					.map_err(|_| Error::<T>::CannotGetStorageRoot)?;
 
 			let nonce = Uint(U256::from(message.id));
 			let mm_idx = Uint(U256::from(MessageMappingStorageIndex::get()));

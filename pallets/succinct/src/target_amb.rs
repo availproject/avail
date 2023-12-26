@@ -36,11 +36,10 @@ pub fn get_storage_value(
 	let trie =
 		TrieDBBuilder::<EIP1186Layout<keccak256::KeccakHasher>>::new(&db, &storage_root).build();
 
-	if let Some(storage_root) = trie.get(&key).map_err(|e| {
-		// println!("{:?}", e);
-
-		StorageError::StorageValueError
-	})? {
+	if let Some(storage_root) = trie
+		.get(&key)
+		.map_err(|_| StorageError::StorageValueError)?
+	{
 		let r = Rlp::new(storage_root.as_slice())
 			.data()
 			.map_err(|_| StorageError::CannotDecodeItems)?;
