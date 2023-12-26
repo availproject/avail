@@ -761,7 +761,7 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 					message_type: MessageType::FungibleToken,
 					from: H256::from_slice(caller.as_ref()),
 					to: H256::zero(),
-					original_domain: 0,
+					origin_domain: 0,
 					// destination_domain: destination_domain,
 					// data: data.unwrap_or_default(),
 					// domain,

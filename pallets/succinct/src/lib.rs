@@ -32,7 +32,7 @@ const WHITELISTED_DOMAINS: [u32; 1] = [2];
 parameter_types! {
 	// function identifiers
 	pub const StepFunctionId: H256 = H256(hex!("af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"));
-	pub const RotateFunctionId: H256 = H256(hex!("9aed23f9e6e8f8b98751cf508069b5b7f015d4d510b6a4820d41ba1ce88190d9"));
+	pub const RotateFunctionId: H256 = H256(hex!("9c1096d800fc42454d2d76e6ae1d461b5a67c7b474efb9d47989e47ed39b1b7b"));
 
 	// Max verification key length.
 	pub const MaxVerificationKeyLength: u32 = 4143;
@@ -65,7 +65,7 @@ pub mod pallet {
 	use ethabi::Token;
 	use ethabi::Token::Uint;
 	use frame_support::dispatch::{GetDispatchInfo, UnfilteredDispatchable};
-	use frame_support::traits::{Hash, LockableCurrency};
+	use frame_support::traits::LockableCurrency;
 	use frame_support::{pallet_prelude::ValueQuery, DefaultNoBound};
 	use frame_system::pallet_prelude::*;
 	use frame_system::submitted_data::Message;
@@ -275,12 +275,12 @@ pub mod pallet {
 			<SyncCommitteePoseidons<T>>::insert(self.period, self.sync_committee_poseidon);
 
 			// TODO TEST ONLY
-			ExecutionStateRoots::<T>::set(
-				8581263,
-				H256(hex!(
-					"cd187a0c3dddad24f1bb44211849cc55b6d2ff2713be85f727e9ab8c491c621c"
-				)),
-			);
+			// ExecutionStateRoots::<T>::set(
+			//     8581263,
+			//     H256(hex!(
+			// 		"cd187a0c3dddad24f1bb44211849cc55b6d2ff2713be85f727e9ab8c491c621c"
+			// 	)),
+			// );
 			// Broadcasters::<T>::set(5, H160(hex!("43f0222552e8114ad8f224dea89976d3bf41659d")));
 		}
 	}
@@ -340,12 +340,11 @@ pub mod pallet {
 					parse_rotate_output(output.to_vec()),
 				);
 
-				if Self::rotate_into(slot, state, &vr)? {
-					Self::deposit_event(Event::SyncCommitteeUpdate {
-						period: slot,
-						root: vr.sync_committee_poseidon,
-					});
-				}
+				let period = Self::rotate_into(slot, state, &vr)?;
+				Self::deposit_event(Event::SyncCommitteeUpdate {
+					period,
+					root: vr.sync_committee_poseidon,
+				});
 			} else {
 				return Err(Error::<T>::FunctionIdNotKnown.into());
 			}
@@ -405,12 +404,11 @@ pub mod pallet {
 			check_preconditions::<T>(&message, message_root)?;
 
 			ensure!(
-				!SourceChainFrozen::<T>::get(message.original_domain),
+				!SourceChainFrozen::<T>::get(message.origin_domain),
 				Error::<T>::SourceChainFrozen
 			);
 			let root = ExecutionStateRoots::<T>::get(slot);
-			let broadcaster = Broadcasters::<T>::get(message.original_domain);
-			ensure!(broadcaster == message.from, Error::<T>::BroadcasterNotValid);
+			let broadcaster = Broadcasters::<T>::get(message.origin_domain);
 
 			// extract contract address
 			let contract_broadcaster_address = H160::from_slice(broadcaster[..20].as_ref());
@@ -448,7 +446,7 @@ pub mod pallet {
 			if success {
 				MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
 				Self::deposit_event(Event::<T>::ExecutedMessage {
-					chain_id: message.original_domain,
+					chain_id: message.origin_domain,
 					nonce: message.id,
 					message_root,
 					status: true,
@@ -456,7 +454,7 @@ pub mod pallet {
 			} else {
 				MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionFailed);
 				Self::deposit_event(Event::<T>::ExecutedMessage {
-					chain_id: message.original_domain,
+					chain_id: message.origin_domain,
 					nonce: message.id,
 					message_root,
 					status: false,
@@ -556,11 +554,11 @@ pub mod pallet {
 		);
 
 		ensure!(
-			SupportedDomain::get() == message.original_domain,
+			SupportedDomain::get() == message.origin_domain,
 			Error::<T>::UnsupportedDestinationChain
 		);
 
-		let source_chain = Broadcasters::<T>::get(message.original_domain);
+		let source_chain = Broadcasters::<T>::get(message.origin_domain);
 		ensure!(
 			source_chain != H256::zero(),
 			Error::<T>::BroadcasterSourceChainNotSet
@@ -624,7 +622,7 @@ pub mod pallet {
 			finalized_slot: u64,
 			state: State,
 			rotate_store: &VerifiedRotate,
-		) -> Result<bool, DispatchError> {
+		) -> Result<u64, DispatchError> {
 			let finalized_header_root = Headers::<T>::get(finalized_slot);
 			ensure!(
 				finalized_header_root != H256::zero(),
@@ -638,9 +636,9 @@ pub mod pallet {
 			let period = finalized_slot / state.slots_per_period;
 			let next_period = period + 1;
 
-			let is_set = Self::set_sync_committee_poseidon(next_period, sync_committee_poseidon)?;
+			Self::set_sync_committee_poseidon(next_period, sync_committee_poseidon)?;
 
-			Ok(is_set)
+			Ok(period)
 		}
 
 		fn step_into(
@@ -698,7 +696,7 @@ pub mod pallet {
 		}
 
 		/// Sets the sync committee poseidon for a given period.
-		fn set_sync_committee_poseidon(period: u64, poseidon: U256) -> Result<bool, DispatchError> {
+		fn set_sync_committee_poseidon(period: u64, poseidon: U256) -> Result<(), DispatchError> {
 			let sync_committee_poseidons = SyncCommitteePoseidons::<T>::get(period);
 			ensure!(
 				sync_committee_poseidons == U256::zero(),
@@ -707,7 +705,7 @@ pub mod pallet {
 
 			SyncCommitteePoseidons::<T>::set(period, poseidon);
 
-			Ok(true)
+			Ok(())
 		}
 
 		/// get_verifier returns verifier based on the provided function id.
@@ -798,6 +796,7 @@ pub mod pallet {
 			verified_call: &VerifiedRotate,
 		) -> Result<U256, DispatchError> {
 			let input_hash = sha2_256(input.as_slice());
+
 			if verified_call.verified_function_id == function_id
 				&& verified_call.verified_input_hash == H256(input_hash)
 			{

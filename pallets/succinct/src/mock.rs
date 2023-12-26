@@ -107,9 +107,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		.expect("Genesis build should work");
 	succinct_bridge::GenesisConfig::<Test> {
 		slots_per_period: 8192,
-		updater: H256(hex!(
-			"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
-		)),
 		finality_threshold: 461,
 		period: 931,
 		sync_committee_poseidon: U256::from(hex!(
