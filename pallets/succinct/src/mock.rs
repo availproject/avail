@@ -107,7 +107,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		.expect("Genesis build should work");
 
 	pallet_balances::GenesisConfig::<Test> {
-		balances: vec![(Bridge::account_id(), 10_000 * 100000000000000000)],
+		balances: vec![(Bridge::account_id(), 2_000 * 1000000000000000000)],
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();

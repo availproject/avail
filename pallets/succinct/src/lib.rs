@@ -272,15 +272,15 @@ pub mod pallet {
 				finality_threshold: self.finality_threshold,
 			});
 
-			<SyncCommitteePoseidons<T>>::insert(self.period, self.sync_committee_poseidon);
-			Head::<T>::set(14);
-			Headers::<T>::set(
-				15,
-				H256(hex!(
-					"cd187a0c3dddad24f1bb44211849cc55b6d2ff2713be85f727e9ab8c491c621c"
-				)),
-			);
 			// TODO TEST ONLY
+			// <SyncCommitteePoseidons<T>>::insert(self.period, self.sync_committee_poseidon);
+			// Headers::<T>::set(
+			// 	15,
+			// 	H256(hex!(
+			// 		"cd187a0c3dddad24f1bb44211849cc55b6d2ff2713be85f727e9ab8c491c621c"
+			// 	)),
+			// );
+
 			// ExecutionStateRoots::<T>::set(
 			//     8581263,
 			//     H256(hex!(
@@ -457,25 +457,13 @@ pub mod pallet {
 				ExistenceRequirement::AllowDeath,
 			)?;
 
-			// let success = Self::transfer(amount, message.to)?;
-
-			// if success {
-			//     MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
-			//     Self::deposit_event(Event::<T>::ExecutedMessage {
-			//         chain_id: message.origin_domain,
-			//         nonce: message.id,
-			//         message_root,
-			//         status: true,
-			//     });
-			// } else {
-			//     MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionFailed);
-			//     Self::deposit_event(Event::<T>::ExecutedMessage {
-			//         chain_id: message.origin_domain,
-			//         nonce: message.id,
-			//         message_root,
-			//         status: false,
-			//     });
-			// }
+			MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
+			Self::deposit_event(Event::<T>::ExecutedMessage {
+				chain_id: message.origin_domain,
+				nonce: message.id,
+				message_root,
+				status: true,
+			});
 
 			Ok(())
 		}
@@ -617,22 +605,6 @@ pub mod pallet {
 		pub fn account_id() -> T::AccountId {
 			T::PalletId::get().into_account_truncating()
 		}
-
-		// pub fn transfer(amount: U256, destination_account: H256) -> Result<bool, DispatchError> {
-		// 	let destination_account_id =
-		// 		T::AccountId::decode(&mut &destination_account.encode()[..])
-		// 			.map_err(|_| Error::<T>::CannotDecodeDestinationAccountId)?;
-		//
-		// 	let transferable_amount = amount.as_u128().saturated_into();
-		// 	T::Currency::transfer(
-		// 		&Self::account_id(),
-		// 		&destination_account_id,
-		// 		transferable_amount,
-		// 		ExistenceRequirement::KeepAlive,
-		// 	)?;
-		//
-		// 	Ok(true)
-		// }
 
 		fn rotate_into(
 			finalized_slot: u64,

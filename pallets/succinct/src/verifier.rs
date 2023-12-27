@@ -271,7 +271,6 @@ pub fn encode_packed(poseidon: U256, slot: u64) -> Vec<u8> {
 mod tests {
 	use frame_support::assert_ok;
 	use hex_literal::hex;
-	use sp_core::bytes::to_hex;
 	use sp_core::{H256, U256};
 	use sp_io::hashing::sha2_256;
 
