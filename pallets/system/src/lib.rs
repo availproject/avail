@@ -730,7 +730,7 @@ pub mod pallet {
 	/// List of successful indices in the current block
 	#[pallet::storage]
 	#[pallet::getter(fn successfull_exrinsic_indices)]
-	// TODO: Convert this to BoundedVec of max tx allowed in the block
+	// TODO: Optimise this storage eg: store failed indices instead
 	#[pallet::unbounded]
 	pub type SuccessfulExtrinsicIndices<T: Config> = StorageValue<_, Vec<u32>, ValueQuery>;
 
@@ -1481,6 +1481,7 @@ impl<T: Config> Pallet<T> {
 
 		// Remove previous block data from storage
 		BlockWeight::<T>::kill();
+		SuccessfulExtrinsicIndices::<T>::kill();
 	}
 
 	/// Remove temporary "environment" entries in storage, compute the storage root and return the
@@ -1539,7 +1540,7 @@ impl<T: Config> Pallet<T> {
 		let parent_hash = <ParentHash<T>>::get();
 
 		let extrinsics = Self::take_extrinsics().collect::<Vec<_>>();
-		let successful_indices = SuccessfulExtrinsicIndices::<T>::take();
+		let successful_indices = SuccessfulExtrinsicIndices::<T>::get();
 		let opaques = successful_indices
 			.iter()
 			.filter_map(|&index| extrinsics.get(index as usize))
@@ -1557,8 +1558,8 @@ impl<T: Config> Pallet<T> {
 		if Self::bridge_nonce() != new_nonce {
 			BridgeNonce::<T>::put(new_nonce);
 		}
-		let dr_digest = generic::DigestItem::Other(successful_indices.encode());
-		Self::deposit_log(dr_digest);
+		// let dr_digest = generic::DigestItem::Other(successful_indices.encode());
+		// Self::deposit_log(dr_digest);
 		let digest = <Digest<T>>::get();
 
 		// move block hash pruning window by one block

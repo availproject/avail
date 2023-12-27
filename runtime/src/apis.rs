@@ -33,6 +33,7 @@ decl_runtime_apis! {
 		fn block_length() -> BlockLength;
 		fn babe_vrf() -> Seed;
 		fn bridge_nonce() -> u64;
+		fn successfull_exrinsic_indices() -> Vec<u32>;
 	}
 
 	pub trait ExtensionBuilder {
@@ -339,6 +340,10 @@ impl_runtime_apis! {
 
 		fn bridge_nonce() -> u64 {
 			frame_system::Pallet::<Runtime>::bridge_nonce()
+		}
+
+		fn successfull_exrinsic_indices() -> Vec<u32> {
+			frame_system::Pallet::<Runtime>::successfull_exrinsic_indices()
 		}
 	}
 
