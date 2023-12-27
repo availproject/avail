@@ -10,6 +10,10 @@
 
 ![demo](./.github/img/terminal.jpg)
 
+## Pull Requests
+
+> ⚠️ **At the moment, we do not accept pull requests from non-organizational members. Violating this rule may result in a ban.**
+
 ## Running Avail Node
 ### Manually
 
