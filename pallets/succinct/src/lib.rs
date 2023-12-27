@@ -273,7 +273,13 @@ pub mod pallet {
 			});
 
 			<SyncCommitteePoseidons<T>>::insert(self.period, self.sync_committee_poseidon);
-
+			Head::<T>::set(14);
+			Headers::<T>::set(
+				15,
+				H256(hex!(
+					"cd187a0c3dddad24f1bb44211849cc55b6d2ff2713be85f727e9ab8c491c621c"
+				)),
+			);
 			// TODO TEST ONLY
 			// ExecutionStateRoots::<T>::set(
 			//     8581263,
@@ -441,25 +447,35 @@ pub mod pallet {
 				Error::<T>::AssetNotSupported
 			);
 
-			let success = Self::transfer(amount, message.to)?;
+			let destination_account_id = T::AccountId::decode(&mut &message.to.encode()[..])
+				.map_err(|_| Error::<T>::CannotDecodeDestinationAccountId)?;
 
-			if success {
-				MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
-				Self::deposit_event(Event::<T>::ExecutedMessage {
-					chain_id: message.origin_domain,
-					nonce: message.id,
-					message_root,
-					status: true,
-				});
-			} else {
-				MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionFailed);
-				Self::deposit_event(Event::<T>::ExecutedMessage {
-					chain_id: message.origin_domain,
-					nonce: message.id,
-					message_root,
-					status: false,
-				});
-			}
+			T::Currency::transfer(
+				&Self::account_id(),
+				&destination_account_id,
+				amount.as_u128().saturated_into(),
+				ExistenceRequirement::AllowDeath,
+			)?;
+
+			// let success = Self::transfer(amount, message.to)?;
+
+			// if success {
+			//     MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
+			//     Self::deposit_event(Event::<T>::ExecutedMessage {
+			//         chain_id: message.origin_domain,
+			//         nonce: message.id,
+			//         message_root,
+			//         status: true,
+			//     });
+			// } else {
+			//     MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionFailed);
+			//     Self::deposit_event(Event::<T>::ExecutedMessage {
+			//         chain_id: message.origin_domain,
+			//         nonce: message.id,
+			//         message_root,
+			//         status: false,
+			//     });
+			// }
 
 			Ok(())
 		}
@@ -519,12 +535,12 @@ pub mod pallet {
 						Error::<T>::InvalidBridgeInputs
 					);
 
-					// T::Currency::transfer(
-					// 	&who,
-					// 	&Self::account_id(),
-					// 	value.unwrap_or_default().saturated_into(),
-					// 	ExistenceRequirement::KeepAlive,
-					// )?;
+					T::Currency::transfer(
+						&who,
+						&Self::account_id(),
+						value.unwrap_or_default().saturated_into(),
+						ExistenceRequirement::KeepAlive,
+					)?;
 					Self::deposit_event(Event::MessageSubmitted {
 						from: who,
 						to,
@@ -602,21 +618,21 @@ pub mod pallet {
 			T::PalletId::get().into_account_truncating()
 		}
 
-		pub fn transfer(amount: U256, destination_account: H256) -> Result<bool, DispatchError> {
-			let destination_account_id =
-				T::AccountId::decode(&mut &destination_account.encode()[..])
-					.map_err(|_| Error::<T>::CannotDecodeDestinationAccountId)?;
-
-			let transferable_amount = amount.as_u128().saturated_into();
-			T::Currency::transfer(
-				&Self::account_id(),
-				&destination_account_id,
-				transferable_amount,
-				ExistenceRequirement::KeepAlive,
-			)?;
-
-			Ok(true)
-		}
+		// pub fn transfer(amount: U256, destination_account: H256) -> Result<bool, DispatchError> {
+		// 	let destination_account_id =
+		// 		T::AccountId::decode(&mut &destination_account.encode()[..])
+		// 			.map_err(|_| Error::<T>::CannotDecodeDestinationAccountId)?;
+		//
+		// 	let transferable_amount = amount.as_u128().saturated_into();
+		// 	T::Currency::transfer(
+		// 		&Self::account_id(),
+		// 		&destination_account_id,
+		// 		transferable_amount,
+		// 		ExistenceRequirement::KeepAlive,
+		// 	)?;
+		//
+		// 	Ok(true)
+		// }
 
 		fn rotate_into(
 			finalized_slot: u64,

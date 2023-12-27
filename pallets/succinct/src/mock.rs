@@ -77,7 +77,7 @@ impl pallet_timestamp::Config for Test {
 parameter_types! {
 	pub const MaxVerificationKeyLength: u32 = 4143;
 	pub const StepFunctionId: H256 = H256(hex!("af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"));
-	pub const RotateFunctionId: H256 = H256(hex!("9aed23f9e6e8f8b98751cf508069b5b7f015d4d510b6a4820d41ba1ce88190d9"));
+	pub const RotateFunctionId: H256 = H256(hex!("9c1096d800fc42454d2d76e6ae1d461b5a67c7b474efb9d47989e47ed39b1b7b"));
 	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
 }
 
@@ -105,6 +105,13 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		.system
 		.build_storage()
 		.expect("Genesis build should work");
+
+	pallet_balances::GenesisConfig::<Test> {
+		balances: vec![(Bridge::account_id(), 10_000 * 100000000000000000)],
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+
 	succinct_bridge::GenesisConfig::<Test> {
 		slots_per_period: 8192,
 		finality_threshold: 461,

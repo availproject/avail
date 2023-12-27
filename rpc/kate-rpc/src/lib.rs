@@ -73,17 +73,17 @@ where
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<DataProof>;
 
-	#[method(name = "kate_getSyncCommitteePoseidons")]
+	#[method(name = "succinct_getSyncCommitteePoseidons")]
 	async fn get_sync_committee_poseidons(
 		&self,
 		slot: u64,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<U256>;
 
-	#[method(name = "kate_getHeader")]
+	#[method(name = "succinct_getHeader")]
 	async fn get_header(&self, slot: u64, at: Option<HashOf<Block>>) -> RpcResult<H256>;
 
-	#[method(name = "kate_getHead")]
+	#[method(name = "succinct_getHead")]
 	async fn get_head(&self, at: Option<HashOf<Block>>) -> RpcResult<u64>;
 }
 
