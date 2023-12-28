@@ -132,7 +132,7 @@ pub fn runtime_genesis_config(
 		succinct: SuccinctConfig {
 			//TODO check all values
 			slots_per_period: 8192,
-			finality_threshold: 461,
+			finality_threshold: 342,
 			period: 931,
 			sync_committee_poseidon: U256::from(hex!(
 				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"

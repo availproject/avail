@@ -682,7 +682,7 @@ fn test_full_fill_rotate_call() {
 
 		StateStorage::<Test>::set(State {
 			slots_per_period: 8192,
-			finality_threshold: 461,
+			finality_threshold: 342,
 		});
 
 		Headers::<Test>::set(
