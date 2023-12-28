@@ -77,6 +77,7 @@ type FullGrandpaBlockImport =
 pub type TransactionPool = sc_transaction_pool::FullPool<Block, FullClient>;
 
 pub type BlockImport = crate::da_block_import::BlockImport<
+	FullBackend,
 	FullClient,
 	sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
 >;
@@ -238,7 +239,12 @@ pub fn new_partial(
 		client.clone(),
 	)?;
 
-	let da_block_import = BlockImport::new(client.clone(), block_import, unsafe_da_sync);
+	let da_block_import = BlockImport::new(
+		backend.clone(),
+		client.clone(),
+		block_import,
+		unsafe_da_sync,
+	);
 
 	let slot_duration = babe_link.config().slot_duration();
 	let (import_queue, babe_worker_handle) =
