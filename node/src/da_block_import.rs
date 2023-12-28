@@ -155,8 +155,8 @@ where
 		let block_number = block.header.number;
 		// hash of the block being imported
 		let import_block_hash = block.post_hash();
-		let import_block_res = self.inner.import_block(block).await.map_err(Into::into);
-
+		// If there is any error in importing the block, No need to validate extension & return the error
+		let import_block_res = self.inner.import_block(block).await.map_err(Into::into)?;
 		if should_verify {
 			let success_indices = self
 				.client
@@ -166,14 +166,14 @@ where
 					ConsensusError::ClientImport(format!("Failed to fetch the successful indices"))
 				})?;
 			log::info!(target: "DA_IMPORT_BLOCK", "success_indices: {:?} at: {}", success_indices, import_block_hash);
-			let successful_extrinsics = success_indices
+			let successful_extrinsics: Vec<_> = success_indices
 				.iter()
 				.filter_map(|&i| extrinsics.get(i as usize).cloned())
 				.collect();
 			let data_root = self
 				.client
 				.runtime_api()
-				.build_data_root(best_hash, successful_extrinsics)
+				.build_data_root(best_hash, successful_extrinsics.clone())
 				.map_err(|e| {
 					ConsensusError::ClientImport(format!("Data root cannot be calculated: {e:?}"))
 				})?;
@@ -190,7 +190,13 @@ where
 			let generated_ext = self
 				.client
 				.runtime_api()
-				.build_extension(best_hash, extrinsics, data_root, block_len, block_number)
+				.build_extension(
+					best_hash,
+					successful_extrinsics,
+					data_root,
+					block_len,
+					block_number,
+				)
 				.map_err(|e| {
 					ConsensusError::ClientImport(format!("Build extension fails due to: {e:?}"))
 				})?;
@@ -204,7 +210,7 @@ where
 		// Metrics
 		ImportBlockMetrics::observe_total_execution_time(import_block_start.elapsed());
 
-		import_block_res
+		Ok(import_block_res)
 	}
 
 	async fn check_block(
