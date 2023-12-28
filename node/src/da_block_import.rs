@@ -76,29 +76,37 @@ where
 			BlockOrigin::NetworkInitialSync | BlockOrigin::File
 		);
 		let skip_sync = self.unsafe_da_sync && is_sync;
-
 		let should_verify = !is_own && !skip_sync;
+
 		let no_extrinsics = vec![];
 		let extrinsics = block.body.as_ref().unwrap_or(&no_extrinsics).clone();
+
 		let best_hash = self.client.info().best_hash;
 		let extension = &block.header.extension.clone();
 		let block_number = block.header.number;
-		// hash of the block being imported
 		let import_block_hash = block.post_hash();
-		// If there is any error in importing the block, No need to validate extension & return the error
+
 		let import_block_res = self.inner.import_block(block).await.map_err(Into::into)?;
+
 		if should_verify {
-			let da_validation_result = (|| -> Result<(), ConsensusError> {
+			if let Err(err) = async {
 				let success_indices = self
 					.client
 					.runtime_api()
 					.successfull_exrinsic_indices(import_block_hash)
 					.map_err(|_e| {
-						ConsensusError::ClientImport(format!(
-							"Failed to fetch the successful indices"
-						))
+						ConsensusError::ClientImport(
+							"Failed to fetch the successful indices".into(),
+						)
 					})?;
-				log::info!(target: "DA_IMPORT_BLOCK", "success_indices: {:?} at: {}", success_indices, import_block_hash);
+
+				log::info!(
+					target: "DA_IMPORT_BLOCK",
+					"success_indices: {:?} at: {}",
+					success_indices,
+					import_block_hash
+				);
+
 				let successful_extrinsics: Vec<_> = success_indices
 					.iter()
 					.filter_map(|&i| extrinsics.get(i as usize).cloned())
@@ -136,22 +144,26 @@ where
 					})?;
 
 				ensure!(
-				extension == &generated_ext,
-				ConsensusError::ClientImport(
-					format!("DA Extension does NOT match\nExpected: {extension:#?}\nGenerated:{generated_ext:#?}"))
-			);
-				Ok(())
-			})();
-			if let Err(err) = da_validation_result {
+					extension == &generated_ext,
+					ConsensusError::ClientImport(format!(
+						"DA Extension does NOT match\nExpected: {extension:#?}\nGenerated:{generated_ext:#?}"
+					))
+				);
+
+				Ok::<(), ConsensusError>(())
+			}
+			.await
+			{
 				log::error!(
 					target: "DA_IMPORT_BLOCK",
 					"Error during da extension validation: {:?}, attempting to revert the block import", err
 				);
 				// Revert the import operation
 				let _ = self.backend.revert(block_number, false);
-				return Err(err.into());
+				return Err(err);
 			}
 		}
+
 		// Metrics
 		ImportBlockMetrics::observe_total_execution_time(import_block_start.elapsed());
 
