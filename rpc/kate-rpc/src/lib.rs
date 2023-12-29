@@ -469,7 +469,7 @@ where
 			.flat_map(|extrinsic| UncheckedExtrinsic::try_from(extrinsic).ok())
 			.map(
 				|extrinsic| match extrinsic.signature.as_ref().map(|s| &s.0) {
-					Some(&MultiAddress::Id(ref id)) => id.clone(),
+					Some(MultiAddress::Id(id)) => id.clone(),
 					_ => AccountId32::new([0u8; 32]),
 				},
 			)

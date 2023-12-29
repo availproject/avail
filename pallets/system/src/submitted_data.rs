@@ -95,6 +95,7 @@ pub trait Extractor {
 	/// `Avail::SubmitData` call.
 	///
 	/// The `metrics` will be used to write accountability information about the whole process.
+	#[allow(clippy::type_complexity)]
 	fn extract(
 		extrinsic: &OpaqueExtrinsic,
 		metrics: RcMetrics,
@@ -187,8 +188,8 @@ where
 	let root_bridge_data: Vec<_> = bridge_data
 		.into_iter()
 		.filter(|m| m != &Message::default())
-		.enumerate()
-		.map(|(index, mut m)| {
+		// .enumerate()
+		.map(|mut m| {
 			bridge_nonce += 1;
 			m.id = bridge_nonce;
 			keccak_256(&m.abi_encode()).to_vec()
@@ -260,17 +261,16 @@ where
 	let mut nonce = bridge_nonce;
 
 	let (blob_data, bridge_data): (Vec<_>, Vec<_>) = calls
-		.zip(callers.into_iter())
+		.zip(callers)
 		.map(|(ext, caller)| {
 			let (l, r) = F::filter(ext, Rc::clone(&metrics), caller);
 			let r_with_id: Vec<_> = r
 				.into_iter()
-				.map(|mut m| {
+				.flat_map(|mut m| {
 					nonce += 1;
 					m.id = nonce;
 					m.abi_encode()
 				})
-				.flatten()
 				.collect();
 			(l.into_iter().flatten().collect::<Vec<_>>(), r_with_id)
 		})
@@ -317,8 +317,8 @@ where
 		.collect::<Vec<_>>();
 
 	// make leaves 2^n
-	let root_data_balanced = calculate_balance_trie(root_data_filtered).or_else(|| None)?;
-	let data_filtered_balanced = calculate_balance_trie(data_filtered).or_else(|| None)?;
+	let root_data_balanced = calculate_balance_trie(root_data_filtered).or(None)?;
+	let data_filtered_balanced = calculate_balance_trie(data_filtered).or(None)?;
 
 	let root = root(root_data_balanced.into_iter(), Rc::clone(&metrics));
 

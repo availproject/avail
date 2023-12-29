@@ -430,7 +430,7 @@ pub mod pallet {
 				Error::<T>::SourceChainFrozen
 			);
 			let root = ExecutionStateRoots::<T>::get(slot);
-			let broadcaster = Broadcasters::<T>::get(message.domain);
+			let _broadcaster = Broadcasters::<T>::get(message.domain);
 
 			let account_proof_vec = account_proof
 				.iter()
@@ -518,7 +518,7 @@ pub mod pallet {
 			match message_type {
 				MessageType::ArbitraryMessage => {
 					ensure!(
-						value.is_none() && asset_id.is_none() && !data.is_none(),
+						value.is_none() && asset_id.is_none() && data.is_some(),
 						Error::<T>::InvalidBridgeInputs
 					);
 					// What to do?
@@ -530,7 +530,7 @@ pub mod pallet {
 				},
 				MessageType::FungibleToken => {
 					ensure!(
-						!value.is_none() && !asset_id.is_none() && data.is_none(),
+						value.is_some() && asset_id.is_some() && data.is_none(),
 						Error::<T>::InvalidBridgeInputs
 					);
 
