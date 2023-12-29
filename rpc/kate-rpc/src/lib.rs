@@ -438,11 +438,30 @@ where
 		let execution_start = std::time::Instant::now();
 
 		let block = self.get_signed_block(at)?.block;
+		let successfull_indices = self
+			.client
+			.runtime_api()
+			.successfull_exrinsic_indices(block.hash())
+			.map_err(|e| {
+				internal_err!("Failed to fetch successfull indices at ({:?}): {:?}", at, e)
+			})?;
+
 		let calls = block
 			.extrinsics()
 			.iter()
-			.flat_map(|extrinsic| UncheckedExtrinsic::try_from(extrinsic).ok())
-			.map(|extrinsic| extrinsic.function);
+			.enumerate()
+			.flat_map(|(index, extrinsic)| {
+				UncheckedExtrinsic::try_from(extrinsic.clone())
+					.ok()
+					.map(|unchecked_extrinsic| {
+						if successfull_indices.contains(&(index as u32)) {
+							unchecked_extrinsic.function
+						} else {
+							// Some dummy Call
+							RuntimeCall::System(frame_system::Call::remark { remark: vec![] })
+						}
+					})
+			});
 
 		let callers: Vec<AccountId32> = block
 			.extrinsics()

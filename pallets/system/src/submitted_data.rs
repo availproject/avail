@@ -189,11 +189,11 @@ where
 		.filter(|m| m != &Message::default())
 		.enumerate()
 		.map(|(index, mut m)| {
-			m.id = bridge_nonce + index as u64;
+			bridge_nonce += 1;
+			m.id = bridge_nonce;
 			keccak_256(&m.abi_encode()).to_vec()
 		})
 		.collect();
-	bridge_nonce += root_bridge_data.len() as u64;
 
 	// make leaves 2^n
 	let root_data_balanced = calculate_balance_trie(root_blob_data).unwrap_or_default();
@@ -268,7 +268,7 @@ where
 				.map(|mut m| {
 					nonce += 1;
 					m.id = nonce;
-					m.encode()
+					m.abi_encode()
 				})
 				.flatten()
 				.collect();
