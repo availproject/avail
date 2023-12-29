@@ -402,8 +402,6 @@ fn test_execute_message_via_storage() {
 			)),
 		);
 
-		Timestamps::<Test>::set(slot, 1701327753);
-
 		let account_proof = get_valid_account_proof();
 		let storage_proof = get_valid_storage_proof();
 		let message = get_valid_message();

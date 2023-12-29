@@ -140,9 +140,10 @@ pub mod pallet {
 		// emit event when verification setup is completed.
 		VerificationSetupCompleted,
 		// emit when new updater is set
-		NewUpdater {
+		BroadcasterUpdate {
 			old: H256,
 			new: H256,
+			domain: u32,
 		},
 		// emit when message gets executed.
 		ExecutedMessage {
@@ -314,7 +315,7 @@ pub mod pallet {
 			output: BoundedVec<u8, OutputMaxLen>,
 			proof: BoundedVec<u8, ProofMaxLen>,
 			slot: u64,
-		) -> DispatchResult {
+		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			let state = StateStorage::<T>::get();
 			// compute hashes
@@ -355,7 +356,7 @@ pub mod pallet {
 				return Err(Error::<T>::FunctionIdNotKnown.into());
 			}
 
-			Ok(())
+			Ok(().into())
 		}
 
 		/// Sets verification public inputs for step function.
@@ -402,7 +403,7 @@ pub mod pallet {
 			message: Message,
 			account_proof: BoundedVec<BoundedVec<u8, MessageBytesMaxLen>, MessageItemsMaxLen>,
 			storage_proof: BoundedVec<BoundedVec<u8, MessageBytesMaxLen>, MessageItemsMaxLen>,
-		) -> DispatchResult {
+		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			let encoded_data = message.clone().abi_encode();
 
@@ -465,7 +466,7 @@ pub mod pallet {
 				status: true,
 			});
 
-			Ok(())
+			Ok(().into())
 		}
 
 		#[pallet::call_index(4)]
@@ -538,6 +539,44 @@ pub mod pallet {
 			}
 
 			Ok(().into())
+		}
+
+		#[pallet::call_index(6)]
+		#[pallet::weight(T::WeightInfo::step())]
+		pub fn set_poseidon_hash(
+			origin: OriginFor<T>,
+			period: u64,
+			poseidon_hash: U256,
+		) -> DispatchResultWithPostInfo {
+			ensure_root(origin)?;
+
+			SyncCommitteePoseidons::<T>::insert(period, poseidon_hash);
+			Self::deposit_event(Event::SyncCommitteeUpdate {
+				period,
+				root: poseidon_hash,
+			});
+			Ok(().into())
+		}
+
+		#[pallet::call_index(7)]
+		#[pallet::weight(T::WeightInfo::step())]
+		pub fn set_broadcaster(
+			origin: OriginFor<T>,
+			broadcaster_domain: u32,
+			broadcaster: H256,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			let old_bc = Broadcasters::<T>::get(broadcaster_domain);
+
+			Broadcasters::<T>::set(broadcaster_domain, broadcaster);
+
+			Self::deposit_event(Event::BroadcasterUpdate {
+				old: old_bc,
+				new: broadcaster,
+				domain: broadcaster_domain,
+			});
+
+			Ok(())
 		}
 	}
 
