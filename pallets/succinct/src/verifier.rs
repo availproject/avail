@@ -181,6 +181,7 @@ impl Verifier {
 	}
 }
 
+#[allow(clippy::type_complexity)]
 pub fn decode_proof(
 	proof: Vec<u8>,
 ) -> Result<(Vec<String>, Vec<Vec<String>>, Vec<String>), VerificationError> {

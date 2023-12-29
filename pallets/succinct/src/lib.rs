@@ -619,7 +619,7 @@ pub mod pallet {
 					ethabi::ParamType::FixedBytes(32),
 					ethabi::ParamType::Uint(256),
 				],
-				data.as_slice().as_ref(),
+				data.as_slice(),
 			)
 			.map_err(|_| Error::<T>::CannotDecodeData)?;
 			ensure!(decoded_data.len() == 2, Error::<T>::CannotDecodeData);
