@@ -277,19 +277,6 @@ pub mod pallet {
 
 			// TODO TEST ONLY
 			// <SyncCommitteePoseidons<T>>::insert(self.period, self.sync_committee_poseidon);
-			// Headers::<T>::set(
-			// 	15,
-			// 	H256(hex!(
-			// 		"cd187a0c3dddad24f1bb44211849cc55b6d2ff2713be85f727e9ab8c491c621c"
-			// 	)),
-			// );
-
-			// ExecutionStateRoots::<T>::set(
-			//     8581263,
-			//     H256(hex!(
-			// 		"cd187a0c3dddad24f1bb44211849cc55b6d2ff2713be85f727e9ab8c491c621c"
-			// 	)),
-			// );
 			// Broadcasters::<T>::set(5, H160(hex!("43f0222552e8114ad8f224dea89976d3bf41659d")));
 		}
 	}
