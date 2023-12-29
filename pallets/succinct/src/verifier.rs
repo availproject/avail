@@ -29,7 +29,6 @@ pub struct Verifier {
 pub enum VKeyDeserializationError {
 	SerdeError,
 }
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
 pub struct VerifyingKeyJson {
 	#[serde(rename = "IC")]
