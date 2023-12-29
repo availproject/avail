@@ -90,6 +90,7 @@ pub trait Extractor {
 	/// `Avail::SubmitData` call.
 	///
 	/// The `metrics` will be used to write accountability information about the whole process.
+	#[allow(clippy::type_complexity)]
 	fn extract(
 		extrinsic: &OpaqueExtrinsic,
 		metrics: RcMetrics,
@@ -182,14 +183,13 @@ where
 	let root_bridge_data: Vec<_> = bridge_data
 		.into_iter()
 		.filter(|m| m != &Message::default())
-		.enumerate()
-		.map(|(index, mut m)| {
-			m.id = bridge_nonce + index as u64;
-			log::info!("message in the bridge data {:?}", m);
-			keccak_256(&m.encode()).to_vec()
+		// .enumerate()
+		.map(|mut m| {
+			bridge_nonce += 1;
+			m.id = bridge_nonce;
+			keccak_256(&m.abi_encode()).to_vec()
 		})
 		.collect();
-	bridge_nonce += root_bridge_data.len() as u64;
 
 	// make leaves 2^n
 	let root_data_balanced = calculate_balance_trie(root_blob_data).unwrap_or_default();
@@ -256,17 +256,16 @@ where
 	let mut nonce = bridge_nonce;
 
 	let (blob_data, bridge_data): (Vec<_>, Vec<_>) = calls
-		.zip(callers.into_iter())
+		.zip(callers)
 		.map(|(ext, caller)| {
 			let (l, r) = F::filter(ext, Rc::clone(&metrics), caller);
 			let r_with_id: Vec<_> = r
 				.into_iter()
-				.map(|mut m| {
+				.flat_map(|mut m| {
 					nonce += 1;
 					m.id = nonce;
-					m.encode()
+					m.abi_encode()
 				})
-				.flatten()
 				.collect();
 			(l.into_iter().flatten().collect::<Vec<_>>(), r_with_id)
 		})

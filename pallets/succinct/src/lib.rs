@@ -23,7 +23,7 @@ mod verifier;
 mod weights;
 
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
-pub type BridgeData<T> = BoundedVec<u8, <T as Config>::MaxBridgeDataLength>;
+// pub type BridgeData<T> = BoundedVec<u8, <T as Config>::MaxBridgeDataLength>;
 
 // whitelist of supported domains
 // TODO: Create a storage & extrinsic around it to support onchain updation of supported domains, also can act as the panic button
@@ -122,6 +122,8 @@ pub mod pallet {
 		InvalidBridgeInputs,
 		/// Domain is not supported
 		DomainNotSupported,
+		/// Bridge nonce overflowed
+		NonceOverflow,
 	}
 
 	#[pallet::event]
@@ -508,19 +510,19 @@ pub mod pallet {
 			match message_type {
 				MessageType::ArbitraryMessage => {
 					ensure!(
-						value.is_none() && asset_id.is_none() && !data.is_none(),
+						value.is_none() && asset_id.is_none() && data.is_some(),
 						Error::<T>::InvalidBridgeInputs
 					);
 					// What to do?
 					Self::deposit_event(Event::MessageSubmitted {
 						from: who,
 						to,
-						message_type,
+						message_type: message_type.clone(),
 					});
 				},
 				MessageType::FungibleToken => {
 					ensure!(
-						!value.is_none() && !asset_id.is_none() && data.is_none(),
+						value.is_some() && asset_id.is_some() && data.is_none(),
 						Error::<T>::InvalidBridgeInputs
 					);
 
@@ -533,11 +535,10 @@ pub mod pallet {
 					Self::deposit_event(Event::MessageSubmitted {
 						from: who,
 						to,
-						message_type,
+						message_type: message_type.clone(),
 					});
 				},
 			}
-
 			Ok(().into())
 		}
 

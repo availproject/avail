@@ -37,6 +37,7 @@ decl_runtime_apis! {
 		fn sync_committee_poseidons(slot: u64) -> U256;
 		fn head() -> u64;
 		fn headers(slot: u64) -> H256;
+		fn successfull_exrinsic_indices() -> Vec<u32>;
 	}
 
 	pub trait ExtensionBuilder {
@@ -355,6 +356,10 @@ impl_runtime_apis! {
 
 		fn headers(slot: u64) -> H256 {
 			pallet_succinct::Pallet::<Runtime>::headers(slot)
+		}
+		
+		fn successfull_exrinsic_indices() -> Vec<u32> {
+			frame_system::Pallet::<Runtime>::successfull_exrinsic_indices()
 		}
 	}
 

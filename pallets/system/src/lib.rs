@@ -725,7 +725,14 @@ pub mod pallet {
 	/// Total number of messages bridged to other chains
 	#[pallet::storage]
 	#[pallet::getter(fn bridge_nonce)]
-	pub(super) type BridgeNonce<T: Config> = StorageValue<_, u64, ValueQuery>;
+	pub type BridgeNonce<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	/// List of successful indices in the current block
+	#[pallet::storage]
+	#[pallet::getter(fn successfull_exrinsic_indices)]
+	// TODO: Optimise this storage eg: store failed indices instead
+	#[pallet::unbounded]
+	pub type SuccessfulExtrinsicIndices<T: Config> = StorageValue<_, Vec<u32>, ValueQuery>;
 
 	#[derive(DefaultNoBound)]
 	#[pallet::genesis_config]
@@ -1125,6 +1132,12 @@ impl<T: Config> Pallet<T> {
 		Account::<T>::contains_key(who)
 	}
 
+	fn add_successful_index(new_item: u32) {
+		<SuccessfulExtrinsicIndices<T>>::mutate(|indices| {
+			indices.push(new_item);
+		});
+	}
+
 	/// Write code to the storage and emit related events and digest items.
 	///
 	/// Note this function almost never should be used directly. It is exposed
@@ -1468,6 +1481,7 @@ impl<T: Config> Pallet<T> {
 
 		// Remove previous block data from storage
 		BlockWeight::<T>::kill();
+		SuccessfulExtrinsicIndices::<T>::kill();
 	}
 
 	/// Remove temporary "environment" entries in storage, compute the storage root and return the
@@ -1524,11 +1538,14 @@ impl<T: Config> Pallet<T> {
 		// stay to be inspected by the client and will be cleared by `Self::initialize`.
 		let number = <Number<T>>::get();
 		let parent_hash = <ParentHash<T>>::get();
-		let digest = <Digest<T>>::get();
 
 		let extrinsics = Self::take_extrinsics().collect::<Vec<_>>();
-		let opaques = extrinsics
+		let successful_indices = SuccessfulExtrinsicIndices::<T>::get();
+		let opaques = successful_indices
 			.iter()
+			.filter_map(|&index| extrinsics.get(index as usize))
+			// let opaques = extrinsics
+			// 	.iter()
 			.filter(|ext| !ext.is_empty())
 			.map(|ext| OpaqueExtrinsic::decode(&mut ext.as_slice()))
 			.collect::<Result<Vec<_>, _>>()
@@ -1541,6 +1558,10 @@ impl<T: Config> Pallet<T> {
 		if Self::bridge_nonce() != new_nonce {
 			BridgeNonce::<T>::put(new_nonce);
 		}
+		// let dr_digest = generic::DigestItem::Other(successful_indices.encode());
+		// Self::deposit_log(dr_digest);
+		let digest = <Digest<T>>::get();
+
 		// move block hash pruning window by one block
 		let block_hash_count = T::BlockHashCount::get();
 		let to_remove = number
@@ -1774,8 +1795,11 @@ impl<T: Config> Pallet<T> {
 		info.pays_fee = extract_actual_pays_fee(r, &info);
 
 		Self::deposit_event(match r {
-			Ok(_) => Event::ExtrinsicSuccess {
-				dispatch_info: info,
+			Ok(_) => {
+				Self::add_successful_index(Self::extrinsic_index().unwrap_or_default());
+				Event::ExtrinsicSuccess {
+					dispatch_info: info,
+				}
 			},
 			Err(err) => {
 				log::trace!(
