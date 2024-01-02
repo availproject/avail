@@ -357,7 +357,7 @@ impl_runtime_apis! {
 		fn headers(slot: u64) -> H256 {
 			pallet_succinct::Pallet::<Runtime>::headers(slot)
 		}
-		
+
 		fn successfull_exrinsic_indices() -> Vec<u32> {
 			frame_system::Pallet::<Runtime>::successfull_exrinsic_indices()
 		}

@@ -14,21 +14,20 @@ use sp_runtime::SaturatedConversion;
 mod benchmarking;
 #[cfg(test)]
 mod mock;
-#[cfg(test)]
-mod tests;
-// mod verify;
 mod state;
 mod target_amb;
+#[cfg(test)]
+mod tests;
 mod verifier;
 mod weights;
 
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
-// pub type BridgeData<T> = BoundedVec<u8, <T as Config>::MaxBridgeDataLength>;
 
 // whitelist of supported domains
 // TODO: Create a storage & extrinsic around it to support onchain updation of supported domains, also can act as the panic button
 const WHITELISTED_DOMAINS: [u32; 1] = [2];
 
+// TODO: Move it to runtime constants or impls
 parameter_types! {
 	// function identifiers
 	pub const StepFunctionId: H256 = H256(hex!("af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"));
@@ -104,12 +103,10 @@ pub mod pallet {
 		StateRootAlreadySet,
 		SyncCommitteeAlreadySet,
 		SyncCommitteeNotSet,
-		//     Message execution
 		MessageAlreadyExecuted,
 		WrongDestinationChain,
 		UnsupportedDestinationChain,
 		BroadcasterSourceChainNotSet,
-		BroadcasterNotValid,
 		SourceChainFrozen,
 		CannotGetStorageRoot,
 		CannotGetStorageValue,
@@ -117,13 +114,10 @@ pub mod pallet {
 		CannotDecodeData,
 		CannotDecodeDestinationAccountId,
 		AssetNotSupported,
-		// bridge
 		/// Given inputs for the selected MessageType are invalid
 		InvalidBridgeInputs,
 		/// Domain is not supported
 		DomainNotSupported,
-		/// Bridge nonce overflowed
-		NonceOverflow,
 	}
 
 	#[pallet::event]
@@ -159,10 +153,6 @@ pub mod pallet {
 		SourceChainFrozen {
 			source_chain_id: u32,
 			frozen: bool,
-		},
-		BridgeDataSubmitted {
-			who: T::AccountId,
-			data_hash: H256,
 		},
 		MessageSubmitted {
 			from: T::AccountId,
@@ -275,10 +265,6 @@ pub mod pallet {
 				slots_per_period: self.slots_per_period,
 				finality_threshold: self.finality_threshold,
 			});
-
-			// TODO TEST ONLY
-			// <SyncCommitteePoseidons<T>>::insert(self.period, self.sync_committee_poseidon);
-			// Broadcasters::<T>::set(5, H160(hex!("43f0222552e8114ad8f224dea89976d3bf41659d")));
 		}
 	}
 
