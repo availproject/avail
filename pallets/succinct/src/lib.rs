@@ -153,6 +153,7 @@ pub mod pallet {
 			nonce: u64,
 			message_root: H256,
 			status: bool,
+			msg_type: MessageType,
 		},
 		// emit if source chain gets frozen.
 		SourceChainFrozen {
@@ -395,65 +396,78 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			let encoded_data = message.clone().abi_encode();
-
 			let message_root = H256(keccak_256(encoded_data.as_slice()));
-			check_preconditions::<T>(&message, message_root)?;
 
-			ensure!(
-				!SourceChainFrozen::<T>::get(message.origin_domain),
-				Error::<T>::SourceChainFrozen
-			);
-			let root = ExecutionStateRoots::<T>::get(slot);
-			let broadcaster = Broadcasters::<T>::get(message.origin_domain);
+			match message.message_type {
+				MessageType::ArbitraryMessage => Self::deposit_event(Event::<T>::ExecutedMessage {
+					chain_id: message.origin_domain,
+					nonce: message.id,
+					message_root,
+					status: true,
+					msg_type: message.message_type,
+				}),
+				MessageType::FungibleToken => {
+					check_preconditions::<T>(&message, message_root)?;
 
-			// extract contract address
-			let contract_broadcaster_address = H160::from_slice(broadcaster[..20].as_ref());
-			let account_proof_vec = account_proof
-				.iter()
-				.map(|inner_bounded_vec| inner_bounded_vec.iter().copied().collect())
-				.collect();
+					ensure!(
+						!SourceChainFrozen::<T>::get(message.origin_domain),
+						Error::<T>::SourceChainFrozen
+					);
+					let root = ExecutionStateRoots::<T>::get(slot);
+					let broadcaster = Broadcasters::<T>::get(message.origin_domain);
 
-			let storage_root =
-				get_storage_root(account_proof_vec, contract_broadcaster_address, root)
-					.map_err(|_| Error::<T>::CannotGetStorageRoot)?;
+					// extract contract address
+					let contract_broadcaster_address = H160::from_slice(broadcaster[..20].as_ref());
+					let account_proof_vec = account_proof
+						.iter()
+						.map(|inner_bounded_vec| inner_bounded_vec.iter().copied().collect())
+						.collect();
 
-			let nonce = Uint(U256::from(message.id));
-			let mm_idx = Uint(U256::from(MessageMappingStorageIndex::get()));
-			let slot_key = H256(keccak_256(ethabi::encode(&[nonce, mm_idx]).as_slice()));
+					let storage_root =
+						get_storage_root(account_proof_vec, contract_broadcaster_address, root)
+							.map_err(|_| Error::<T>::CannotGetStorageRoot)?;
 
-			let storage_proof_vec = storage_proof
-				.iter()
-				.map(|inner_bounded_vec| inner_bounded_vec.iter().copied().collect())
-				.collect();
+					let nonce = Uint(U256::from(message.id));
+					let mm_idx = Uint(U256::from(MessageMappingStorageIndex::get()));
+					let slot_key = H256(keccak_256(ethabi::encode(&[nonce, mm_idx]).as_slice()));
 
-			let slot_value = get_storage_value(slot_key, storage_root, storage_proof_vec)
-				.map_err(|_| Error::<T>::CannotGetStorageValue)?;
+					let storage_proof_vec = storage_proof
+						.iter()
+						.map(|inner_bounded_vec| inner_bounded_vec.iter().copied().collect())
+						.collect();
 
-			ensure!(slot_value == message_root, Error::<T>::InvalidMessageHash);
+					let slot_value = get_storage_value(slot_key, storage_root, storage_proof_vec)
+						.map_err(|_| Error::<T>::CannotGetStorageValue)?;
 
-			let (asset_id, amount) = Self::decode_message_data(message.data.to_vec())?;
-			ensure!(
-				SupportedAssetId::get() == asset_id,
-				Error::<T>::AssetNotSupported
-			);
+					ensure!(slot_value == message_root, Error::<T>::InvalidMessageHash);
 
-			let destination_account_id = T::AccountId::decode(&mut &message.to.encode()[..])
-				.map_err(|_| Error::<T>::CannotDecodeDestinationAccountId)?;
+					let (asset_id, amount) = Self::decode_message_data(message.data.to_vec())?;
+					ensure!(
+						SupportedAssetId::get() == asset_id,
+						Error::<T>::AssetNotSupported
+					);
 
-			T::Currency::transfer(
-				&Self::account_id(),
-				&destination_account_id,
-				amount.as_u128().saturated_into(),
-				ExistenceRequirement::AllowDeath,
-			)?;
+					let destination_account_id =
+						T::AccountId::decode(&mut &message.to.encode()[..])
+							.map_err(|_| Error::<T>::CannotDecodeDestinationAccountId)?;
 
-			MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
-			Self::deposit_event(Event::<T>::ExecutedMessage {
-				chain_id: message.origin_domain,
-				nonce: message.id,
-				message_root,
-				status: true,
-			});
+					T::Currency::transfer(
+						&Self::account_id(),
+						&destination_account_id,
+						amount.as_u128().saturated_into(),
+						ExistenceRequirement::AllowDeath,
+					)?;
+
+					MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
+					Self::deposit_event(Event::<T>::ExecutedMessage {
+						chain_id: message.origin_domain,
+						nonce: message.id,
+						message_root,
+						status: true,
+						msg_type: message.message_type,
+					});
+				},
+			}
 
 			Ok(().into())
 		}

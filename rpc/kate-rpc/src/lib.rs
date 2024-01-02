@@ -72,19 +72,6 @@ where
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<DataProof>;
-
-	#[method(name = "succinct_getSyncCommitteePoseidons")]
-	async fn get_sync_committee_poseidons(
-		&self,
-		slot: u64,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<U256>;
-
-	#[method(name = "succinct_getHeader")]
-	async fn get_header(&self, slot: u64, at: Option<HashOf<Block>>) -> RpcResult<H256>;
-
-	#[method(name = "succinct_getHead")]
-	async fn get_head(&self, at: Option<HashOf<Block>>) -> RpcResult<u64>;
 }
 
 #[cfg(feature = "metrics")]
@@ -540,57 +527,6 @@ where
 		KateRpcMetrics::observe_query_data_proof_execution_time(execution_start.elapsed());
 
 		data_proof
-	}
-
-	async fn get_sync_committee_poseidons(
-		&self,
-		slot: u64,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<U256> {
-		let block = self.get_signed_block(at)?.block.hash();
-
-		let poseidon = self
-			.client
-			.runtime_api()
-			.sync_committee_poseidons(block, slot)
-			.map_err(|e| {
-				internal_err!(
-					"Failed to fetch sync committee poseidons for slot ({:?}) at ({:?}): {:?}",
-					slot,
-					at,
-					e
-				)
-			})?;
-		Ok(poseidon)
-	}
-
-	async fn get_header(&self, slot: u64, at: Option<HashOf<Block>>) -> RpcResult<H256> {
-		let block = self.get_signed_block(at)?.block.hash();
-
-		let header = self
-			.client
-			.runtime_api()
-			.headers(block, slot)
-			.map_err(|e| {
-				internal_err!(
-					"Failed to fetch headers for slot ({:?}) at ({:?}): {:?}",
-					slot,
-					at,
-					e
-				)
-			})?;
-		Ok(header)
-	}
-
-	async fn get_head(&self, at: Option<HashOf<Block>>) -> RpcResult<u64> {
-		let block = self.get_signed_block(at)?.block.hash();
-
-		let head = self
-			.client
-			.runtime_api()
-			.head(block)
-			.map_err(|e| internal_err!("Failed to fetch head at ({:?}): {:?}", at, e))?;
-		Ok(head)
 	}
 }
 
