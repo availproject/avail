@@ -401,7 +401,7 @@ pub mod pallet {
 					msg_type: message.message_type,
 				}),
 				MessageType::FungibleToken => {
-					check_preconditions::<T>(&message, message_root)?;
+					Self::check_preconditions(&message, message_root)?;
 
 					// checks that the light client delay is adequate.
 					ensure!(
@@ -587,37 +587,34 @@ pub mod pallet {
 		}
 	}
 
-	pub fn check_preconditions<T: Config>(
-		message: &Message,
-		message_root: H256,
-	) -> Result<(), DispatchError> {
-		let message_status = MessageStatus::<T>::get(message_root);
-		// Message must not be executed
-		ensure!(
-			message_status == MessageStatusEnum::NotExecuted,
-			Error::<T>::MessageAlreadyExecuted
-		);
-
-		ensure!(
-			message.destination_domain == AvailDomain::get(),
-			Error::<T>::WrongDestinationChain
-		);
-
-		ensure!(
-			SupportedDomain::get() == message.origin_domain,
-			Error::<T>::UnsupportedDestinationChain
-		);
-
-		let source_chain = Broadcasters::<T>::get(message.origin_domain);
-		ensure!(
-			source_chain != H256::zero(),
-			Error::<T>::BroadcasterSourceChainNotSet
-		);
-
-		Ok(())
-	}
-
 	impl<T: Config> Pallet<T> {
+		fn check_preconditions(message: &Message, message_root: H256) -> Result<(), DispatchError> {
+			let message_status = MessageStatus::<T>::get(message_root);
+			// Message must not be executed
+			ensure!(
+				message_status == MessageStatusEnum::NotExecuted,
+				Error::<T>::MessageAlreadyExecuted
+			);
+
+			ensure!(
+				message.destination_domain == AvailDomain::get(),
+				Error::<T>::WrongDestinationChain
+			);
+
+			ensure!(
+				SupportedDomain::get() == message.origin_domain,
+				Error::<T>::UnsupportedDestinationChain
+			);
+
+			let source_chain = Broadcasters::<T>::get(message.origin_domain);
+			ensure!(
+				source_chain != H256::zero(),
+				Error::<T>::BroadcasterSourceChainNotSet
+			);
+
+			Ok(())
+		}
+
 		fn decode_message_data(data: Vec<u8>) -> Result<(H256, U256), DispatchError> {
 			//abi.encode(ASSET_ID, msg.value),
 			let decoded_data = ethabi::decode(
