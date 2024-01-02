@@ -13,9 +13,9 @@ use crate::mock::{Balances, System};
 use crate::state::Configuration;
 use crate::target_amb::MessageStatusEnum;
 use crate::{
-	Broadcasters, Error, Event, ExecutionStateRoots, Head, Headers, InputMaxLen,
-	MessageBytesMaxLen, MessageItemsMaxLen, MessageStatus, OutputMaxLen, ProofMaxLen,
-	RotateVerificationKeyStorage, SourceChainFrozen, StateStorage, StepVerificationKeyStorage,
+	Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, Head, Headers,
+	InputMaxLen, MessageBytesMaxLen, MessageItemsMaxLen, MessageStatus, OutputMaxLen, ProofMaxLen,
+	RotateVerificationKeyStorage, SourceChainFrozen, StepVerificationKeyStorage,
 	SyncCommitteePoseidons, Timestamps, VerificationKeyDef,
 };
 
@@ -286,7 +286,7 @@ fn test_full_fill_step_call_no_verification_key_set() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
 
-		StateStorage::<Test>::set(Configuration {
+		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 461,
 		});
@@ -310,7 +310,7 @@ fn test_full_fill_step_call_proof_not_valid() {
 		let slot = 7634942;
 		StepVerificationKeyStorage::<Test>::set(get_step_verification_key());
 
-		StateStorage::<Test>::set(Configuration {
+		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 461,
 		});
@@ -334,7 +334,7 @@ fn test_full_fill_step_call_not_valid_function_id() {
 		let slot = 7634942;
 		StepVerificationKeyStorage::<Test>::set(get_step_verification_key());
 
-		StateStorage::<Test>::set(Configuration {
+		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 461,
 		});
@@ -366,7 +366,7 @@ fn test_full_fill_step_call_finality_not_met() {
 		);
 		StepVerificationKeyStorage::<Test>::set(get_step_verification_key());
 
-		StateStorage::<Test>::set(Configuration {
+		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 512, // max finality
 		});
@@ -666,7 +666,7 @@ fn test_full_fill_step_call() {
 		);
 		StepVerificationKeyStorage::<Test>::set(get_step_verification_key());
 
-		StateStorage::<Test>::set(Configuration {
+		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 461,
 		});
@@ -729,7 +729,7 @@ fn test_full_fill_step_call_slot_behind_head() {
 
 		StepVerificationKeyStorage::<Test>::set(get_step_verification_key());
 
-		StateStorage::<Test>::set(Configuration {
+		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 461,
 		});
@@ -754,7 +754,7 @@ fn test_full_fill_rotate_call() {
 
 		RotateVerificationKeyStorage::<Test>::set(get_rotate_verification_key());
 
-		StateStorage::<Test>::set(Configuration {
+		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 342,
 		});
@@ -777,14 +777,20 @@ fn test_full_fill_rotate_call() {
 
 		assert_ok!(result);
 		// ensure that event is fired
+		let expected_poseidon = U256::from_dec_str(
+			"16399439943012933445970260519503780180385945954293268151243539801891563949197",
+		)
+		.unwrap();
+
+		let current_period = 931;
 		let expected_event = RuntimeEvent::Bridge(Event::SyncCommitteeUpdate {
-			period: 931,
-			root: U256::from_dec_str(
-				"16399439943012933445970260519503780180385945954293268151243539801891563949197",
-			)
-			.unwrap(),
+			period: current_period,
+			root: expected_poseidon,
 		});
 
+		let poseidon = SyncCommitteePoseidons::<Test>::get(current_period + 1);
+
 		assert_eq!(expected_event, System::events()[0].event);
+		assert_eq!(poseidon, expected_poseidon);
 	});
 }

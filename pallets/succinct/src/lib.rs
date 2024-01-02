@@ -200,7 +200,7 @@ pub mod pallet {
 
 	// Storage for a config of finality threshold and slots per period.
 	#[pallet::storage]
-	pub type StateStorage<T: Config> = StorageValue<_, Configuration, ValueQuery>;
+	pub type ConfigurationStorage<T: Config> = StorageValue<_, Configuration, ValueQuery>;
 
 	// Maps status of the message to the message root.
 	#[pallet::storage]
@@ -268,7 +268,7 @@ pub mod pallet {
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			// Preconfigure init data
-			<StateStorage<T>>::put(Configuration {
+			<ConfigurationStorage<T>>::put(Configuration {
 				slots_per_period: self.slots_per_period,
 				finality_threshold: self.finality_threshold,
 			});
@@ -300,7 +300,7 @@ pub mod pallet {
 			slot: u64,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
-			let state = StateStorage::<T>::get();
+			let state = ConfigurationStorage::<T>::get();
 			// compute hashes
 			let input_hash = H256(sha2_256(input.as_slice()));
 			let output_hash = H256(sha2_256(output.as_slice()));
@@ -651,7 +651,7 @@ pub mod pallet {
 
 		fn rotate_into(
 			finalized_slot: u64,
-			state: Configuration,
+			cfg: Configuration,
 			rotate_store: &VerifiedRotate,
 		) -> Result<u64, DispatchError> {
 			let finalized_header_root = Headers::<T>::get(finalized_slot);
@@ -664,7 +664,7 @@ pub mod pallet {
 			let sync_committee_poseidon: U256 =
 				Self::verified_rotate_call(RotateFunctionId::get(), input, rotate_store)?;
 
-			let period = finalized_slot / state.slots_per_period;
+			let period = finalized_slot / cfg.slots_per_period;
 			let next_period = period + 1;
 
 			Self::set_sync_committee_poseidon(next_period, sync_committee_poseidon)?;
@@ -674,10 +674,10 @@ pub mod pallet {
 
 		fn step_into(
 			attested_slot: u64,
-			state: Configuration,
+			cfg: Configuration,
 			step_store: &VerifiedStep,
 		) -> Result<bool, DispatchError> {
-			let period = attested_slot / state.slots_per_period;
+			let period = attested_slot / cfg.slots_per_period;
 
 			let sc_poseidon = SyncCommitteePoseidons::<T>::get(period);
 			ensure!(sc_poseidon != U256::zero(), Error::<T>::SyncCommitteeNotSet);
@@ -686,7 +686,7 @@ pub mod pallet {
 			let result = Self::verified_step_call(StepFunctionId::get(), input, step_store)?;
 
 			ensure!(
-				result.participation >= state.finality_threshold,
+				result.participation >= cfg.finality_threshold,
 				Error::<T>::NotEnoughParticipants
 			);
 
