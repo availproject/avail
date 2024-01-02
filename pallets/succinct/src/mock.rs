@@ -8,7 +8,9 @@ use sp_runtime::{
 };
 
 use crate as succinct_bridge;
-use crate::{AvailDomain, MaxBridgeDataLength, MessageMappingStorageIndex, SupportedDomain};
+use crate::{
+	AvailDomain, LCDelay, MaxBridgeDataLength, MessageMappingStorageIndex, SupportedDomain,
+};
 
 type Balance = u128;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -97,6 +99,8 @@ impl succinct_bridge::Config for Test {
 
 	type AvailDomain = AvailDomain;
 	type SupportedDomain = SupportedDomain;
+
+	type LightClientDelay = LCDelay;
 }
 
 /// Create new externalities for `Succinct` module tests.

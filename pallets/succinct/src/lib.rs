@@ -55,6 +55,9 @@ parameter_types! {
 	pub const SupportedDomain:u32 = 2;
 	// Avail asset is supported for now
 	pub const SupportedAssetId:H256 = H256::zero();
+
+	pub const LCDelay: u64= 120;
+
 }
 
 #[frame_support::pallet]
@@ -108,6 +111,7 @@ pub mod pallet {
 		UnsupportedDestinationChain,
 		BroadcasterSourceChainNotSet,
 		SourceChainFrozen,
+		MustWaitLonger,
 		CannotGetStorageRoot,
 		CannotGetStorageValue,
 		InvalidMessageHash,
@@ -239,6 +243,9 @@ pub mod pallet {
 		type AvailDomain: Get<u32>;
 		#[pallet::constant]
 		type SupportedDomain: Get<u32>;
+
+		#[pallet::constant]
+		type LightClientDelay: Get<u64>;
 
 		type RuntimeCall: Parameter
 			+ UnfilteredDispatchable<RuntimeOrigin = Self::RuntimeOrigin>
@@ -395,6 +402,13 @@ pub mod pallet {
 				}),
 				MessageType::FungibleToken => {
 					check_preconditions::<T>(&message, message_root)?;
+
+					// checks that the light client delay is adequate.
+					ensure!(
+						(Timestamps::<T>::get(slot) - T::TimeProvider::now().as_secs())
+							> LCDelay::get(),
+						Error::<T>::MustWaitLonger
+					);
 
 					ensure!(
 						!SourceChainFrozen::<T>::get(message.origin_domain),

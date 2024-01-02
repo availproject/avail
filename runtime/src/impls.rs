@@ -39,7 +39,7 @@ use frame_system::submitted_data::{Message, MessageType};
 use frame_system::EnsureRoot;
 use pallet_election_provider_multi_phase::SolutionAccuracyOf;
 use pallet_succinct::{
-	AvailDomain, BridgePalletId, MaxBridgeDataLength, MaxVerificationKeyLength,
+	AvailDomain, BridgePalletId, LCDelay, MaxBridgeDataLength, MaxVerificationKeyLength,
 	MessageMappingStorageIndex, RotateFunctionId, StepFunctionId, SupportedDomain,
 };
 use pallet_transaction_payment::CurrencyAdapter;
@@ -104,6 +104,8 @@ impl pallet_succinct::Config for Runtime {
 
 	type AvailDomain = AvailDomain;
 	type SupportedDomain = SupportedDomain;
+
+	type LightClientDelay = LCDelay;
 }
 
 parameter_types! {
