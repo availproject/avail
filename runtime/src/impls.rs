@@ -1,3 +1,5 @@
+use core::mem::size_of;
+
 use crate::voter_bags;
 use crate::SessionKeys;
 use crate::SLOT_DURATION;
@@ -25,6 +27,7 @@ use frame_support::pallet_prelude::Weight;
 use frame_support::traits::tokens::Imbalance;
 use frame_support::traits::ConstU32;
 use frame_support::traits::ContainsLengthBound;
+use frame_support::traits::DefensiveTruncateFrom;
 use frame_support::traits::EqualPrivilegeOnly;
 use frame_support::traits::Everything;
 use frame_support::traits::KeyOwnerProofSystem;
@@ -35,6 +38,7 @@ use frame_support::weights::ConstantMultiplier;
 use frame_support::{parameter_types, traits::EitherOfDiverse, PalletId};
 use frame_system::limits::BlockLength;
 use frame_system::submitted_data;
+use frame_system::submitted_data::BoundedData;
 use frame_system::submitted_data::{Message, MessageType};
 use frame_system::EnsureRoot;
 use pallet_election_provider_multi_phase::SolutionAccuracyOf;
@@ -47,6 +51,7 @@ use pallet_transaction_payment::Multiplier;
 use pallet_transaction_payment::TargetedFeeAdjustment;
 use sp_core::crypto::KeyTypeId;
 use sp_core::H256;
+use sp_core::U256;
 use sp_runtime::generic::Era;
 use sp_runtime::traits;
 use sp_runtime::traits::BlakeTwo256;
@@ -748,30 +753,38 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 
 		match call {
 			RuntimeCall::Succinct(pallet_succinct::Call::send_message {
-									  ..
-									  // data,
-									  // message_type,
-									  // to,
-									  // destination_domain,
-									  // value,
-									  // asset_id,
+				message_type,
+				to,
+				domain,
+				value,
+				asset_id,
+				data,
 			}) => {
+				// If the MessageType is ArbitraryMessage, data is data elseif MessageType is FungibleToken, data is asset_id + value
+				let data = match message_type {
+					MessageType::ArbitraryMessage => data.unwrap_or_default(),
+					MessageType::FungibleToken => {
+						let mut value_bytes: [u8; size_of::<U256>()] = [0u8; size_of::<U256>()];
+						// TODO: Check if ethereum-side expects le or be
+						U256::from(value.unwrap_or_default()).to_little_endian(&mut value_bytes);
+						let asset_bytes = asset_id.unwrap_or(H256::zero()).as_bytes().to_vec();
+						let mut result = Vec::new();
+						result.extend_from_slice(&asset_bytes);
+						result.extend_from_slice(&value_bytes);
+						BoundedData::defensive_truncate_from(result)
+					},
+				};
 				let mut metrics = metrics.borrow_mut();
 				metrics.data_submit_leaves += 1;
 				metrics.data_submit_extrinsics += 1;
 				let message: submitted_data::Message = submitted_data::Message {
-					message_type: MessageType::FungibleToken,
+					message_type,
 					from: H256::from_slice(caller.as_ref()),
-					to: H256::zero(),
-					origin_domain: 0,
-					// destination_domain: destination_domain,
-					// data: data.unwrap_or_default(),
-					// domain,
-					// value: value.unwrap_or_default().into(),
-					// asset_id: asset_id.unwrap_or_default(),
-					destination_domain: 0,
-					data: Default::default(),
-					id: Default::default(),
+					to,
+					origin_domain: 1, // domain = 1 for Avail
+					destination_domain: domain,
+					data,
+					id: Default::default(), // This will be set during the bridge root construction
 				};
 				(vec![], vec![message])
 			},

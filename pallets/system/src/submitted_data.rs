@@ -183,10 +183,10 @@ where
 	let root_bridge_data: Vec<_> = bridge_data
 		.into_iter()
 		.filter(|m| m != &Message::default())
-		// .enumerate()
 		.map(|mut m| {
 			bridge_nonce += 1;
 			m.id = bridge_nonce;
+			log::info!("Message: {:?}", m);
 			keccak_256(&m.abi_encode()).to_vec()
 		})
 		.collect();
