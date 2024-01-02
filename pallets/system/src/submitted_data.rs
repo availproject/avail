@@ -52,7 +52,7 @@ pub struct Message {
 impl Message {
 	pub fn abi_encode(self) -> Vec<u8> {
 		encode(&[Token::Tuple(vec![
-			Token::FixedBytes(vec![0x02]),
+			Token::FixedBytes(self.message_type.into()),
 			Token::FixedBytes(self.from.to_fixed_bytes().to_vec()),
 			Token::FixedBytes(self.to.to_fixed_bytes().to_vec()),
 			Token::Uint(ethabi::Uint::from(self.origin_domain)),
