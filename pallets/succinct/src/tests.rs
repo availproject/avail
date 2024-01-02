@@ -1,7 +1,6 @@
 use ethabi::{encode, Token};
 use frame_support::traits::fungible::Inspect;
 use frame_support::{assert_err, assert_ok, BoundedVec};
-use frame_system::submitted_data::MessageType::ArbitraryMessage;
 use frame_system::submitted_data::{Message, MessageType};
 use hex_literal::hex;
 use primitive_types::U256;
@@ -11,7 +10,7 @@ use sp_runtime::testing::H256;
 
 use crate::mock::{new_test_ext, Bridge, RuntimeEvent, RuntimeOrigin, Test};
 use crate::mock::{Balances, System};
-use crate::state::State;
+use crate::state::Configuration;
 use crate::target_amb::MessageStatusEnum;
 use crate::{
 	Broadcasters, Error, Event, ExecutionStateRoots, Head, Headers, InputMaxLen,
@@ -287,7 +286,7 @@ fn test_full_fill_step_call_no_verification_key_set() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
 
-		StateStorage::<Test>::set(State {
+		StateStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 461,
 		});
@@ -311,7 +310,7 @@ fn test_full_fill_step_call_proof_not_valid() {
 		let slot = 7634942;
 		StepVerificationKeyStorage::<Test>::set(get_step_verification_key());
 
-		StateStorage::<Test>::set(State {
+		StateStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 461,
 		});
@@ -335,7 +334,7 @@ fn test_full_fill_step_call_not_valid_function_id() {
 		let slot = 7634942;
 		StepVerificationKeyStorage::<Test>::set(get_step_verification_key());
 
-		StateStorage::<Test>::set(State {
+		StateStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 461,
 		});
@@ -367,7 +366,7 @@ fn test_full_fill_step_call_finality_not_met() {
 		);
 		StepVerificationKeyStorage::<Test>::set(get_step_verification_key());
 
-		StateStorage::<Test>::set(State {
+		StateStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 512, // max finality
 		});
@@ -428,7 +427,6 @@ fn test_execute_message_via_storage() {
 #[test]
 fn test_execute_message_via_storage_min_wait_time_not_met() {
 	new_test_ext().execute_with(|| {
-		let balance_before = Balances::balance(&Bridge::account_id());
 		Broadcasters::<Test>::set(
 			2,
 			H256(hex!(
@@ -668,7 +666,7 @@ fn test_full_fill_step_call() {
 		);
 		StepVerificationKeyStorage::<Test>::set(get_step_verification_key());
 
-		StateStorage::<Test>::set(State {
+		StateStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 461,
 		});
@@ -731,7 +729,7 @@ fn test_full_fill_step_call_slot_behind_head() {
 
 		StepVerificationKeyStorage::<Test>::set(get_step_verification_key());
 
-		StateStorage::<Test>::set(State {
+		StateStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 461,
 		});
@@ -756,7 +754,7 @@ fn test_full_fill_rotate_call() {
 
 		RotateVerificationKeyStorage::<Test>::set(get_rotate_verification_key());
 
-		StateStorage::<Test>::set(State {
+		StateStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 342,
 		});

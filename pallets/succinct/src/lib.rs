@@ -78,7 +78,7 @@ pub mod pallet {
 	use sp_runtime::traits::AccountIdConversion;
 	pub use weights::WeightInfo;
 
-	use crate::state::State;
+	use crate::state::Configuration;
 	use crate::state::{
 		parse_rotate_output, parse_step_output, VerifiedRotate, VerifiedStep, VerifiedStepOutput,
 	};
@@ -200,7 +200,7 @@ pub mod pallet {
 
 	// Storage for a config of finality threshold and slots per period.
 	#[pallet::storage]
-	pub type StateStorage<T: Config> = StorageValue<_, State, ValueQuery>;
+	pub type StateStorage<T: Config> = StorageValue<_, Configuration, ValueQuery>;
 
 	// Maps status of the message to the message root.
 	#[pallet::storage]
@@ -268,7 +268,7 @@ pub mod pallet {
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			// Preconfigure init data
-			<StateStorage<T>>::put(State {
+			<StateStorage<T>>::put(Configuration {
 				slots_per_period: self.slots_per_period,
 				finality_threshold: self.finality_threshold,
 			});
@@ -651,7 +651,7 @@ pub mod pallet {
 
 		fn rotate_into(
 			finalized_slot: u64,
-			state: State,
+			state: Configuration,
 			rotate_store: &VerifiedRotate,
 		) -> Result<u64, DispatchError> {
 			let finalized_header_root = Headers::<T>::get(finalized_slot);
@@ -674,7 +674,7 @@ pub mod pallet {
 
 		fn step_into(
 			attested_slot: u64,
-			state: State,
+			state: Configuration,
 			step_store: &VerifiedStep,
 		) -> Result<bool, DispatchError> {
 			let period = attested_slot / state.slots_per_period;

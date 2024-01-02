@@ -76,7 +76,7 @@ impl PublicSignals {
 #[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default)]
-pub struct State {
+pub struct Configuration {
 	pub slots_per_period: u64,
 	pub finality_threshold: u16,
 }
