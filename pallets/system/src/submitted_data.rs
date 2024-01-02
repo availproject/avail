@@ -6,6 +6,7 @@ use codec::Encode;
 use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, Keccak256};
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
+use sp_trie::{generate_trie_proof, LayoutV0, TrieDBMutBuilder, TrieMut};
 
 const LOG_TARGET: &str = "runtime::system::submitted_data";
 
@@ -154,28 +155,44 @@ where
 	proof(submitted_data, data_index, Rc::clone(&metrics))
 }
 
-pub fn inclusion_proof(
-	extrinsics: &[OpaqueExtrinsic],
-	index: u32,
-) -> Option<MerkleProof<H256, Vec<u8>>> {
-	let index = index as usize;
-	let data = extrinsics
+pub fn inclusion_proof(extrinsics: &[OpaqueExtrinsic], index: u32) -> Option<(H256, Vec<Vec<u8>>)> {
+	if extrinsics.is_empty() {
+		return None;
+	}
+
+	let extrinsics = extrinsics
 		.iter()
 		.map(Encode::encode)
 		.collect::<Vec<Vec<_>>>();
 
-	if index >= data.len() {
-		return None;
-	}
+	let mut db = sp_trie::MemoryDB::<BlakeTwo256>::default();
 
-	let proof = merkle_proof::<BlakeTwo256, _, _>(data, index);
+	let mut root = Default::default();
+	{
+		let mut trie = TrieDBMutBuilder::<LayoutV0<BlakeTwo256>>::new(&mut db, &mut root).build();
 
-	log::debug!(
+		for (i, ext) in extrinsics.into_iter().enumerate() {
+			let key = codec::Compact(i as u32).encode();
+			let _ = trie.insert(&key, &ext);
+		}
+	};
+
+	let key = codec::Compact::<u32>(index).encode();
+	let proof =
+		generate_trie_proof::<LayoutV0<BlakeTwo256>, _, _, _>(&db, root, sp_std::vec![&key])
+			.unwrap();
+
+	log::info!(
 		target: LOG_TARGET,
 		"Build submitted data proof of index {index}: {proof:?}",
 	);
 
-	Some(proof)
+	log::info!(
+		target: LOG_TARGET,
+		"Trie root: {root:?}",
+	);
+
+	Some((root, proof))
 }
 
 /// Creates the Merkle Proof of the submitted data items in `calls` filtered by `F` and
