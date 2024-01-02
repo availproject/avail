@@ -385,6 +385,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Executes message if a valid proofs are provided for the supported message type, assets and domains.
 		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn execute(
@@ -472,6 +473,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		/// source_chain_froze froze source chain and prevent messages to be executed.
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn source_chain_froze(
@@ -490,6 +492,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// send_message sends a message from a origin chain to the destination chain.
 		#[pallet::call_index(5)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn send_message(
@@ -543,6 +546,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		/// set_poseidon_hash sets poseidon hash of the sync commettee for the particular period.
 		#[pallet::call_index(6)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn set_poseidon_hash(
@@ -560,6 +564,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		/// set_broadcaster sets the broadcaster address of the message from the origin chain.
 		#[pallet::call_index(7)]
 		#[pallet::weight(T::WeightInfo::step())]
 		pub fn set_broadcaster(

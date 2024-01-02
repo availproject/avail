@@ -31,8 +31,6 @@ use rayon::prelude::*;
 use sc_client_api::BlockBackend;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::app_crypto::sp_core::U256;
-use sp_runtime::testing::H256;
 use sp_runtime::{
 	generic::{Digest, SignedBlock},
 	traits::{Block as BlockT, Header},
