@@ -17,11 +17,11 @@ use avail_core::OpaqueExtrinsic;
 use avail_core::NORMAL_DISPATCH_RATIO;
 use codec::Decode;
 use constants::time::DAYS;
-use frame_election_provider_support::onchain;
 use frame_election_provider_support::BalancingConfig;
 use frame_election_provider_support::ElectionDataProvider;
 use frame_election_provider_support::SequentialPhragmen;
 use frame_election_provider_support::VoteWeight;
+use frame_election_provider_support::{onchain, BoundedVec};
 use frame_support::pallet_prelude::Get;
 use frame_support::pallet_prelude::Weight;
 use frame_support::traits::tokens::Imbalance;
@@ -763,8 +763,7 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 					MessageType::ArbitraryMessage => data.unwrap_or_default(),
 					MessageType::FungibleToken => {
 						let mut value_bytes: [u8; size_of::<U256>()] = [0u8; size_of::<U256>()];
-						// TODO: Check if ethereum-side expects le or be
-						U256::from(value.unwrap_or_default()).to_little_endian(&mut value_bytes);
+						U256::from(value.unwrap_or_default()).to_big_endian(&mut value_bytes);
 						let asset_bytes = asset_id.unwrap_or(H256::zero()).as_bytes().to_vec();
 						let mut result = Vec::new();
 						result.extend_from_slice(&asset_bytes);

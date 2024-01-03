@@ -177,7 +177,7 @@ where
 	let root_blob_data = blob_data
 		.into_iter()
 		.filter(|v| !v.is_empty())
-		.map(|leaf| keccak_256(leaf.as_slice()).to_vec())
+		// .map(|leaf| keccak_256(leaf.as_slice()).to_vec())
 		.collect::<Vec<_>>();
 
 	let root_bridge_data: Vec<_> = bridge_data
@@ -186,7 +186,7 @@ where
 		.map(|mut m| {
 			bridge_nonce += 1;
 			m.id = bridge_nonce;
-			log::info!("Message: {:?}", m);
+			log::info!("Message is : {:?}", m);
 			keccak_256(&m.abi_encode()).to_vec()
 		})
 		.collect();
@@ -301,14 +301,26 @@ where
 	let data_filtered = submitted_data
 		.into_iter()
 		.filter(|v| !v.is_empty())
-		.map(|leaf| keccak_256(leaf.as_slice()).to_vec())
+		.map(|leaf| {
+			if call_type == SubTrie::Right {
+				keccak_256(leaf.as_slice()).to_vec()
+			} else {
+				leaf
+			}
+		})
 		.collect::<Vec<_>>();
 
 	// clean root data
 	let root_data_filtered = root_data
 		.into_iter()
 		.filter(|v| !v.is_empty())
-		.map(|leaf| keccak_256(leaf.as_slice()).to_vec())
+		.map(|leaf| {
+			if call_type == SubTrie::Right {
+				keccak_256(leaf.as_slice()).to_vec()
+			} else {
+				leaf
+			}
+		})
 		.collect::<Vec<_>>();
 
 	// make leaves 2^n
@@ -318,7 +330,7 @@ where
 	let root = root(root_data_balanced.into_iter(), Rc::clone(&metrics));
 
 	let data_index = u32::try_from(data_index).ok()?;
-
+	log::info!("Call type: {:?}", call_type);
 	proof(data_filtered_balanced, data_index, Rc::clone(&metrics)).map(|proof| (proof, root))
 }
 
@@ -394,13 +406,16 @@ where
 mod test {
 	use avail_core::data_proof::SubTrie;
 	use codec::Encode;
+	use frame_support::traits::DefensiveTruncateFrom;
 	use hex_literal::hex;
+	use sp_core::bytes::to_hex;
 	use sp_core::{keccak_256, H256, U256};
 	use sp_runtime::{AccountId32, BoundedVec};
+	use std::mem::size_of;
 	use std::vec;
 
 	use crate::submitted_data::{
-		calculate_balance_trie, calls_proof, Filter, Message, MessageType, RcMetrics,
+		calculate_balance_trie, calls_proof, BoundedData, Filter, Message, MessageType, RcMetrics,
 	};
 
 	// dummy filter implementation that skips empty strings in vector
@@ -689,5 +704,70 @@ mod test {
 
 		let abi_encoded = message.abi_encode();
 		assert_eq!(expected_encoded_message, abi_encoded);
+	}
+
+	// Message is : Message { message_type: FungibleToken, from: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d, to: 0x0000000000000000000000000000000000000000000000000000000000000001, origin_domain: 1, destination_domain: 2, data: BoundedVec([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 102400), id: 1 }
+
+	#[test]
+	fn test_message_encoding_from_avail_with_hash() {
+		let data = &[
+			ethabi::Token::FixedBytes(H256::zero().encode()),
+			ethabi::Token::Uint(U256::from(1u128)),
+		];
+
+		let encoded_data = BoundedVec::defensive_truncate_from(ethabi::encode(data));
+
+		let message = Message {
+			message_type: MessageType::FungibleToken,
+			from: H256(hex!(
+				"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+			)),
+			to: H256(hex!(
+				"0000000000000000000000000000000000000000000000000000000000000001"
+			)),
+			origin_domain: 1,
+			destination_domain: 2,
+			data: encoded_data,
+			id: 1,
+		};
+
+		let encoded = message.abi_encode();
+
+		let leaf_hash = H256(hex!(
+			"ccd6cb2b400270449e283f0f9e4fdf1dbfeb44fa5d86468272d6834d2be7574f"
+		));
+
+		assert_eq!(leaf_hash, H256(keccak_256(encoded.as_slice())));
+	}
+
+	#[test]
+	fn test_message_encoding_from_avail_with_hash1() {
+		let data = &[
+			ethabi::Token::FixedBytes(H256::zero().encode()),
+			ethabi::Token::Uint(U256::from(1u128)),
+		];
+
+		let encoded_data = BoundedVec::defensive_truncate_from(ethabi::encode(data));
+
+		let message = Message {
+			message_type: MessageType::FungibleToken,
+			from: H256(hex!(
+				"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+			)),
+			to: H256(hex!(
+				"0000000000000000000000000000000000000000000000000000000000000001"
+			)),
+			origin_domain: 1,
+			destination_domain: 2,
+			data: encoded_data,
+			id: 2,
+		};
+
+		let encoded = message.abi_encode();
+		let leaf_hash = H256(hex!(
+			"b6967c26a94c468b964c87a40af534524a236da0140e7d90d46c067cffb84c8f"
+		));
+
+		assert_eq!(leaf_hash, H256(keccak_256(encoded.as_slice())));
 	}
 }
