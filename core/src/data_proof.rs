@@ -23,11 +23,9 @@ pub struct DataProof {
 	/// Root hash of generated merkle tree.
 	pub data_root: H256,
 	/// Root hash of generated blob root.
-	#[serde(skip_serializing_if = "Option::is_none")]
-	pub blob_root: Option<H256>,
+	pub blob_root: H256,
 	/// Root hash of generated bridge root.
-	#[serde(skip_serializing_if = "Option::is_none")]
-	pub bridge_root: Option<H256>,
+	pub bridge_root: H256,
 	/// Proof items (does not contain the leaf hash, nor the root obviously).
 	///
 	/// This vec contains all inner node hashes necessary to reconstruct the root hash given the
@@ -120,16 +118,18 @@ where
 		ensure!(leaf_index < number_of_leaves, InvalidLeafIndex);
 
 		let data_root: H256;
-		let mut blob_root: Option<H256> = None;
-		let mut bridge_root: Option<H256> = None;
+		let mut blob_root: H256 ;
+		let mut bridge_root: H256;
 		match sub_trie {
 			SubTrie::Right => {
 				data_root = keccak256_concat!(root, sub_trie_root.as_bytes());
-				bridge_root = Some(sub_trie_root);
+				bridge_root = sub_trie_root;
+				blob_root = root;
 			},
 			SubTrie::Left => {
 				data_root = keccak256_concat!(sub_trie_root.as_bytes(), root);
-				blob_root = Some(sub_trie_root);
+				blob_root = sub_trie_root;
+				bridge_root = root;
 			},
 		}
 
@@ -200,8 +200,8 @@ mod test {
 		let data_root = expected_root(&sub_trie, root);
 		let mut data_proof = DataProof {
 			data_root,
-			blob_root: None,
-			bridge_root: None,
+			blob_root: H256::default(),
+			bridge_root: H256::default(),
 			proof: vec![
 				hex!("290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563").into(),
 				hex!("b54faa1de855f3a59f4b1fdd40d8fd1c5825be5e767edd3c2712eaa2db44e419").into(),
@@ -214,10 +214,13 @@ mod test {
 
 
         if sub_trie == SubTrie::Right {
-            data_proof.bridge_root = Some(root);
-        } else {
-            data_proof.blob_root = Some(root);
-            data_proof.leaf = keccak_256(H256::repeat_byte(1).as_bytes()).into();
+            data_proof.bridge_root = root;
+			data_proof.leaf = keccak_256(H256::repeat_byte(1).as_bytes()).into();
+			data_proof.blob_root = H256(hex!("c93decb6f246d173698f24c03ffe19694f9c1633cf40ae35862816f1255c6516"));
+
+		} else {
+            data_proof.blob_root = root;
+			data_proof.bridge_root = H256(hex!("c93decb6f246d173698f24c03ffe19694f9c1633cf40ae35862816f1255c6516"));
         }
 
 		Ok(data_proof)
@@ -230,8 +233,8 @@ mod test {
 		let data_root = expected_root(&sub_trie, root);
 		let mut data_proof = DataProof {
 			data_root,
-			blob_root: None,
-			bridge_root: None,
+			blob_root: H256::default(),
+			bridge_root: H256::default(),
 			proof: vec![
 				hex!("cebc8882fecbec7fb80d2cf4b312bec018884c2d66667c67a90508214bd8bafc").into(),
 				hex!("b54faa1de855f3a59f4b1fdd40d8fd1c5825be5e767edd3c2712eaa2db44e419").into(),
@@ -243,10 +246,12 @@ mod test {
 		};
 
         if sub_trie == SubTrie::Right {
-            data_proof.bridge_root = Some(root);
-        } else {
-            data_proof.blob_root = Some(root);
-            data_proof.leaf = keccak_256(H256::repeat_byte(0).as_bytes()).into();
+            data_proof.bridge_root = root;
+			data_proof.leaf = keccak_256(H256::repeat_byte(0).as_bytes()).into();
+			data_proof.blob_root = H256(hex!("c93decb6f246d173698f24c03ffe19694f9c1633cf40ae35862816f1255c6516"));
+		} else {
+            data_proof.blob_root = root;
+			data_proof.bridge_root = H256(hex!("c93decb6f246d173698f24c03ffe19694f9c1633cf40ae35862816f1255c6516"));
         }
 
 		Ok(data_proof)
@@ -259,8 +264,8 @@ mod test {
 		let data_root = expected_root(&sub_trie, root);
 		let mut data_proof = DataProof {
 			data_root,
-			blob_root: None,
-			bridge_root: None,
+			blob_root: H256::default(),
+			bridge_root: H256::default(),
 			proof: vec![
 				hex!("98e3d39eab95363a52c1a9269a1840a6fc86bdae17f333ba1c64c123d77f5e1f").into(),
 				hex!("dd553f5e3808fd45b691f2ab61c50b52764085451f6ad64484c05632ad4c9bc8").into(),
@@ -270,12 +275,13 @@ mod test {
 			leaf: H256::repeat_byte(6),
 		};
 
-
         if sub_trie == SubTrie::Right {
-            data_proof.bridge_root = Some(root);
-        } else {
-            data_proof.blob_root = Some(root);
-            data_proof.leaf = keccak_256(H256::repeat_byte(6).as_bytes()).into();
+            data_proof.bridge_root = root;
+			data_proof.leaf = keccak_256(H256::repeat_byte(6).as_bytes()).into();
+			data_proof.blob_root = H256(hex!("c93decb6f246d173698f24c03ffe19694f9c1633cf40ae35862816f1255c6516"));
+		} else {
+            data_proof.blob_root = root;
+			data_proof.bridge_root = H256(hex!("c93decb6f246d173698f24c03ffe19694f9c1633cf40ae35862816f1255c6516"));
         }
 
 		Ok(data_proof)
