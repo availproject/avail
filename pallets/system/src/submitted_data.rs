@@ -457,7 +457,7 @@ mod test {
 			assert_eq!(da_proof.leaf_index, 0);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
-				"0x40105d5bc10105c17fd72b93a8f73369e2ee6eee4d4714b7bf7bf3c2f156e601"
+				"0x044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d"
 			);
 			assert_eq!(da_proof.proof.len(), 0);
 			assert_eq!(da_proof.number_of_leaves, 1);
@@ -492,14 +492,14 @@ mod test {
 			assert_eq!(da_proof.leaf_index, 0);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
-				"0xdb0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e"
+				"0x0b4aa17bff8fc189efb37609ac5ea9fca0df4c834a6fbac74b24c8119c40fef2"
 			);
 			assert_eq!(da_proof.proof.len(), 1);
 			assert_eq!(da_proof.number_of_leaves, 2);
 
 			assert_eq!(
 				format!("{:#x}", da_proof.proof[0]),
-				"0x4aeff0db81e3146828378be230d377356e57b6d599286b4b517dbf8941b3e1b2"
+				"0xc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6"
 			);
 		} else {
 			panic!("Proof not generated for the transaction index 0!");
@@ -707,7 +707,6 @@ mod test {
 	}
 
 	// Message is : Message { message_type: FungibleToken, from: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d, to: 0x0000000000000000000000000000000000000000000000000000000000000001, origin_domain: 1, destination_domain: 2, data: BoundedVec([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 102400), id: 1 }
-
 	#[test]
 	fn test_message_encoding_from_avail_with_hash() {
 		let data = &[

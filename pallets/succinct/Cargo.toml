@@ -35,7 +35,7 @@ trie-db = { version = "0.24.0", default-features = false }
 hash-db = { version = "0.15.2", default-features = false }
 memory-db = { version = "0.30.0", default-features = false }
 tiny-keccak = { version = "2.0.2", features = ["keccak"], optional = true }
-patricia-merkle-trie = { git = "https://github.com/0xSasaPrsic/patricia-merkle-trie.git", default-features = false, branch = "main" }
+patricia-merkle-trie = { git = "https://github.com/availproject/patricia-merkle-trie.git", default-features = false, branch = "main" }
 rlp = { version = "0.5.2", default-features = false }
 hash256-std-hasher = { version = "0.15.2", default-features = false }
 

@@ -7156,7 +7156,7 @@ checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 [[package]]
 name = "patricia-merkle-trie"
 version = "0.1.0"
-source = "git+https://github.com/0xSasaPrsic/patricia-merkle-trie.git?branch=main#b6936a217990a908fd9eb55437de435daf8af800"
+source = "git+https://github.com/availproject/patricia-merkle-trie.git?branch=main#b6936a217990a908fd9eb55437de435daf8af800"
 dependencies = [
  "hash-db 0.15.2",
  "hash256-std-hasher",

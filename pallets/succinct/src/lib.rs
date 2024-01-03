@@ -441,7 +441,7 @@ pub mod pallet {
 					T::Currency::transfer(
 						&Self::account_id(),
 						&destination_account_id,
-						amount.unwrap_or_default().saturated_into(),
+						amount.as_u128().saturated_into(),
 						ExistenceRequirement::AllowDeath,
 					)?;
 
