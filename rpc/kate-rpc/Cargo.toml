@@ -9,25 +9,24 @@ edition = "2021"
 avail-base = { path = "../../base", default-features = false }
 da-runtime = { path = "../../runtime", default-features = false }
 
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false }
+avail-core.workspace = true
+kate.workspace = true
+kate-recovery.workspace = true
 
 # 3rd party
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
+moka = { version = "0.12.1", features = ["future"] }
 rayon = { version = "1.5.2" }
 
-
 # Substrate
-sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 frame-system = { path = "../../pallets/system", default-features = false }
 sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-moka = { version = "0.12.1", features = [ "future" ] }
 
 [features]
-default = [ "std" ]
+default = ["metrics", "std"]
 std = [
 	"avail-base/std",
 	"avail-core/std",
@@ -40,8 +39,8 @@ std = [
 ]
 metrics = []
 
-# Enables secure seed generation using for padding fill during the matrix 
+# Enables secure seed generation using for padding fill during the matrix
 # generation for Kate commitment.
-# NOTE: WIP because that affects the Data Availability Protocol used during 
+# NOTE: WIP because that affects the Data Availability Protocol used during
 # the block import process.
 secure_padding_fill = []

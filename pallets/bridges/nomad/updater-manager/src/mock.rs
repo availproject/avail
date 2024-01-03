@@ -1,4 +1,4 @@
-use frame_support::{derive_impl, parameter_types};
+use frame_support::{derive_impl, parameter_types, traits::ConstU32};
 use frame_system::{self as system, mocking::MockUncheckedExtrinsic, test_utils::TestRandomness};
 use sp_runtime::BuildStorage;
 
@@ -33,6 +33,8 @@ impl system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type SubmittedDataExtractor = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;
+	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
+	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
 
 impl updater_manager::Config for Test {

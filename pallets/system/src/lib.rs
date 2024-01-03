@@ -67,7 +67,7 @@
 use avail_core::{
 	header::HeaderExtension,
 	traits::{ExtendedBlock, ExtendedHeader},
-	AppExtrinsic, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+	AppExtrinsic, AppId, OpaqueExtrinsic,
 };
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
 use frame_support::{
@@ -127,6 +127,9 @@ pub mod test_utils;
 pub mod tests;
 pub mod weights;
 
+pub mod extrinsic_len;
+pub use extrinsic_len::{ExtrinsicLen, PaddedExtrinsicLen};
+
 pub mod migrations;
 
 // Backward compatible re-export.
@@ -143,7 +146,6 @@ pub use frame_support::dispatch::RawOrigin;
 pub use weights::WeightInfo;
 
 pub const LOG_TARGET: &str = "runtime::system";
-
 /// Compute the trie root of a list of extrinsics.
 ///
 /// The merkle proof is using the same trie as runtime state with
@@ -209,20 +211,9 @@ impl<MaxNormal: Get<u32>, MaxOverflow: Get<u32>> ConsumerLimits for (MaxNormal, 
 		MaxOverflow::get()
 	}
 }
-#[derive(Clone, Encode, Decode, TypeInfo, MaxEncodedLen)]
-pub struct ExtrinsicLen {
-	pub raw: u32,
-	pub padded: u32,
-}
 
-impl Default for ExtrinsicLen {
-	fn default() -> Self {
-		Self {
-			raw: <_>::default(),
-			padded: BLOCK_CHUNK_SIZE.get(),
-		}
-	}
-}
+pub type ExtrinsicLenOf<T> =
+	ExtrinsicLen<<T as Config>::MaxDiffAppIdPerBlock, <T as Config>::MaxTxPerAppIdPerBlock>;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -427,9 +418,26 @@ pub mod pallet {
 		#[pallet::no_default]
 		type UncheckedExtrinsic: Into<AppExtrinsic>
 			+ for<'a> TryFrom<&'a OpaqueExtrinsic, Error = codec::Error>;
+
+		/// Maximum different `AppId` allowed per block.
+		/// This is used during the calculation of padded length of the block when
+		/// a transaction is validated (see `CheckAppId` signed extension).
+		#[pallet::constant]
+		#[pallet::no_default]
+		type MaxDiffAppIdPerBlock: Get<u32>;
+
+		/// Maximum number of Tx per AppId allowed per block.
+		/// This is used during the calculation of padded length of the block when
+		/// a transaction is validated (see `CheckAppId` signed extension).
+		#[pallet::constant]
+		#[pallet::no_default]
+		type MaxTxPerAppIdPerBlock: Get<u32>;
 	}
 
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(3);
+
 	#[pallet::pallet]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::hooks]
@@ -441,6 +449,10 @@ pub mod pallet {
 					.validate()
 					.expect("The weights are invalid.");
 			});
+		}
+
+		fn on_runtime_upgrade() -> Weight {
+			migrations::migrate::<T>()
 		}
 	}
 
@@ -631,7 +643,8 @@ pub mod pallet {
 
 	/// Total length (in bytes) for all extrinsics put together, for the current block.
 	#[pallet::storage]
-	pub(super) type AllExtrinsicsLen<T: Config> = StorageValue<_, ExtrinsicLen>;
+	pub type AllExtrinsicsLen<T: Config> =
+		StorageValue<_, ExtrinsicLen<T::MaxDiffAppIdPerBlock, T::MaxTxPerAppIdPerBlock>>;
 
 	/// Map of block numbers to block hashes.
 	#[pallet::storage]
@@ -1420,12 +1433,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Returns all extrinsics len in raw.
 	pub fn all_extrinsics_len() -> u32 {
-		AllExtrinsicsLen::<T>::get().unwrap_or_default().raw
-	}
-
-	/// Returns all extrinsics len with padding.
-	pub fn all_padded_extrinsics_len() -> u32 {
-		AllExtrinsicsLen::<T>::get().unwrap_or_default().padded
+		AllExtrinsicsLen::<T>::get().unwrap_or_default().raw()
 	}
 
 	/// Inform the system pallet of some additional weight that should be accounted for, in the
@@ -1686,10 +1694,14 @@ impl<T: Config> Pallet<T> {
 			current_weight.set(weight, DispatchClass::Normal)
 		});
 		let len: u32 = len.saturated_into();
-		let all_ext_len = ExtrinsicLen {
-			raw: len,
-			padded: Self::padded_extrinsic_len(len),
-		};
+		let mut all_ext_len = ExtrinsicLen::default();
+		all_ext_len
+			.add_padded(AppId(0), len)
+			.expect("In tests this must work always");
+		all_ext_len
+			.add_raw(len)
+			.expect("In tests this must work always");
+
 		AllExtrinsicsLen::<T>::put(all_ext_len);
 	}
 

@@ -2,7 +2,7 @@ use frame_support::{
 	derive_impl,
 	pallet_prelude::Weight,
 	parameter_types,
-	traits::{EitherOf, EnsureOrigin},
+	traits::{ConstU32, EitherOf, EnsureOrigin},
 };
 use frame_system::EnsureRoot;
 use sp_runtime::BuildStorage;
@@ -41,6 +41,8 @@ impl frame_system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type SubmittedDataExtractor = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;
+	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
+	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
 
 parameter_types! {

@@ -3,35 +3,37 @@ name = "frame-system-benchmarking"
 version = "4.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
-license = "Apache-2.0"
 homepage = "https://substrate.io"
+license = "Apache-2.0"
+readme = "README.md"
 repository = "https://github.com/paritytech/substrate/"
 description = "FRAME System benchmarking"
-readme = "README.md"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false, features = ["runtime"] }
+avail-core.workspace = true
 
 # Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
-scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 frame-system = { path = "../", default-features = false }
+scale-info = { version = "2.5.0", default-features = false, features = [
+	"derive",
+] }
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 
 [dev-dependencies]
+sp-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-version = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"avail-core/std",
 	"codec/std",

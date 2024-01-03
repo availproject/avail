@@ -1,4 +1,4 @@
-use frame_support::{derive_impl, parameter_types};
+use frame_support::{derive_impl, parameter_types, traits::ConstU32};
 use frame_system::{self as system, header_builder::da, test_utils::TestRandomness};
 use nomad_base::NomadBase;
 use sp_core::{H160, H256};
@@ -38,6 +38,8 @@ impl system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type SubmittedDataExtractor = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;
+	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
+	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
 
 #[derive_impl(home::config_preludes::TestDefaultConfig as home::DefaultConfig)]

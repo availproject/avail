@@ -24,7 +24,7 @@ frame-support = { git = "https://github.com/paritytech/substrate.git", branch = 
 frame-system = { path = "../../../../pallets/system", default-features = false }
 
 [dev-dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", features = ["runtime"] }
+avail-core.workspace = true
 
 [features]
 default = [ "std" ]

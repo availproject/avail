@@ -98,6 +98,8 @@ impl Config for Test {
 	type SubmittedDataExtractor = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;
 	type Version = Version;
+	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
+	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
 
 #[allow(dead_code)]
