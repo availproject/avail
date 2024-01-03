@@ -90,12 +90,17 @@ where
 
 		let (merkle_proof, sub_trie_root, sub_trie) = merkle_proof_data;
 
-		let root: H256 = <[u8; 32]>::try_from(merkle_proof.root.as_ref())
-			.map_err(|_| InvalidRoot)?
-			.into();
-		let leaf: H256 = <[u8; 32]>::try_from(merkle_proof.leaf.as_ref())
-			.map_err(|_| InvalidLeaf)?
-			.into();
+        let root: H256 = <[u8; 32]>::try_from(merkle_proof.root.as_ref())
+            .map_err(|_| InvalidRoot)?
+            .into();
+
+        let leaf:H256;
+        if sub_trie == SubTrie::Left {
+            leaf = keccak_256(merkle_proof.leaf.as_ref()).into();
+        } else {
+            leaf = <[u8; 32]>::try_from(merkle_proof.leaf.as_ref()).map_err(|_| InvalidLeaf)?
+                .into();
+        }
 
 		let proof = merkle_proof
 			.proof
@@ -144,6 +149,7 @@ where
 mod test {
 	use crate::Keccak256;
 	use hex_literal::hex;
+	use sp_io::hashing::keccak_256;
 	use sp_std::cmp::min;
 	use test_case::test_case;
 
@@ -206,11 +212,13 @@ mod test {
 			leaf: H256::repeat_byte(1),
 		};
 
-		if sub_trie == SubTrie::Right {
-			data_proof.bridge_root = Some(root);
-		} else {
-			data_proof.blob_root = Some(root);
-		}
+
+        if sub_trie == SubTrie::Right {
+            data_proof.bridge_root = Some(root);
+        } else {
+            data_proof.blob_root = Some(root);
+            data_proof.leaf = keccak_256(H256::repeat_byte(1).as_bytes()).into();
+        }
 
 		Ok(data_proof)
 	}
@@ -234,11 +242,12 @@ mod test {
 			leaf: H256::repeat_byte(0),
 		};
 
-		if sub_trie == SubTrie::Right {
-			data_proof.bridge_root = Some(root);
-		} else {
-			data_proof.blob_root = Some(root);
-		}
+        if sub_trie == SubTrie::Right {
+            data_proof.bridge_root = Some(root);
+        } else {
+            data_proof.blob_root = Some(root);
+            data_proof.leaf = keccak_256(H256::repeat_byte(0).as_bytes()).into();
+        }
 
 		Ok(data_proof)
 	}
@@ -261,11 +270,13 @@ mod test {
 			leaf: H256::repeat_byte(6),
 		};
 
-		if sub_trie == SubTrie::Right {
-			data_proof.bridge_root = Some(root);
-		} else {
-			data_proof.blob_root = Some(root);
-		}
+
+        if sub_trie == SubTrie::Right {
+            data_proof.bridge_root = Some(root);
+        } else {
+            data_proof.blob_root = Some(root);
+            data_proof.leaf = keccak_256(H256::repeat_byte(6).as_bytes()).into();
+        }
 
 		Ok(data_proof)
 	}
