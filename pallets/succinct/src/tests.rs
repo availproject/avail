@@ -425,39 +425,6 @@ fn test_execute_message_via_storage() {
 }
 
 #[test]
-fn test_execute_message_via_storage_min_wait_time_not_met() {
-	new_test_ext().execute_with(|| {
-		Broadcasters::<Test>::set(
-			2,
-			H256(hex!(
-				"426bde66abd85741be832b824ea65a3aad70113e000000000000000000000000"
-			)),
-		);
-
-		let slot = 8581263;
-		ExecutionStateRoots::<Test>::set(
-			slot,
-			H256(hex!(
-				"d6b8a2fb20ade94a56d9d87a07ca11e46cc169ed43dc0d2527a0d3ca2309ba9c"
-			)),
-		);
-
-		let account_proof = get_valid_account_proof();
-		let storage_proof = get_valid_storage_proof();
-		let message = get_valid_message();
-		// amount in message 1000000000000000000
-		let err = Bridge::execute(
-			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			slot,
-			message,
-			account_proof,
-			storage_proof,
-		);
-		assert_err!(err, Error::<Test>::MustWaitLonger);
-	});
-}
-
-#[test]
 fn test_execute_arb_message() {
 	new_test_ext().execute_with(|| {
 		let balance_before = Balances::balance(&Bridge::account_id());
@@ -556,8 +523,6 @@ fn test_execute_message_with_faulty_account_proof() {
 			)),
 		);
 
-		Timestamps::<Test>::set(slot, 1701327753);
-
 		let account_proof = get_invalid_account_proof();
 		let storage_proof = get_valid_storage_proof();
 		let message = get_valid_message();
@@ -593,8 +558,6 @@ fn test_execute_message_with_faulty_storage_proof() {
 				"d6b8a2fb20ade94a56d9d87a07ca11e46cc169ed43dc0d2527a0d3ca2309ba9c"
 			)),
 		);
-
-		Timestamps::<Test>::set(slot, 1701327753);
 
 		let account_proof = get_valid_account_proof();
 		let storage_proof = get_invalid_storage_proof();
