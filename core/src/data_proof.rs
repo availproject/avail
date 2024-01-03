@@ -95,7 +95,7 @@ where
             .into();
 
         let leaf:H256;
-        if sub_trie == SubTrie::Left {
+        if sub_trie == SubTrie::Right {
             leaf = keccak_256(merkle_proof.leaf.as_ref()).into();
         } else {
             leaf = <[u8; 32]>::try_from(merkle_proof.leaf.as_ref()).map_err(|_| InvalidLeaf)?
