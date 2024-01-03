@@ -8,7 +8,6 @@ use sp_runtime::{
 };
 
 use crate as succinct_bridge;
-use crate::{AvailDomain, MaxBridgeDataLength, MessageMappingStorageIndex, SupportedDomain};
 
 type Balance = u128;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -89,14 +88,13 @@ impl succinct_bridge::Config for Test {
 	type MaxVerificationKeyLength = MaxVerificationKeyLength;
 	type Currency = Balances;
 
-	type MessageMappingStorageIndex = MessageMappingStorageIndex;
-	type MaxBridgeDataLength = MaxBridgeDataLength;
+	type MessageMappingStorageIndex = ConstU64<4>;
+	type MaxBridgeDataLength = ConstU32<256>;
 	type RotateFunctionId = RotateFunctionId;
 	type StepFunctionId = StepFunctionId;
 	type PalletId = BridgePalletId;
-
-	type AvailDomain = AvailDomain;
-	type SupportedDomain = SupportedDomain;
+	type AvailDomain = ConstU32<1>;
+	type SupportedDomain = ConstU32<2>;
 }
 
 /// Create new externalities for `Succinct` module tests.

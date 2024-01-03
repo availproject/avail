@@ -41,15 +41,13 @@ use frame_system::submitted_data;
 use frame_system::submitted_data::BoundedData;
 use frame_system::submitted_data::{Message, MessageType};
 use frame_system::EnsureRoot;
+use hex_literal::hex;
 use pallet_election_provider_multi_phase::SolutionAccuracyOf;
-use pallet_succinct::{
-	AvailDomain, BridgePalletId, MaxBridgeDataLength, MaxVerificationKeyLength,
-	MessageMappingStorageIndex, RotateFunctionId, StepFunctionId, SupportedDomain,
-};
 use pallet_transaction_payment::CurrencyAdapter;
 use pallet_transaction_payment::Multiplier;
 use pallet_transaction_payment::TargetedFeeAdjustment;
 use sp_core::crypto::KeyTypeId;
+use sp_core::ConstU64;
 use sp_core::H256;
 use sp_core::U256;
 use sp_runtime::generic::Era;
@@ -89,26 +87,27 @@ impl pallet_mandate::Config for Runtime {
 	type WeightInfo = weights::pallet_mandate::WeightInfo<Runtime>;
 }
 
-impl pallet_succinct::Config for Runtime {
-	type MaxVerificationKeyLength = MaxVerificationKeyLength;
-	type MessageMappingStorageIndex = MessageMappingStorageIndex;
-	type StepFunctionId = StepFunctionId;
-	type RotateFunctionId = RotateFunctionId;
+parameter_types! {
+	// function identifiers
+	pub const StepFunctionId: H256 = H256(hex!("af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"));
+	pub const RotateFunctionId: H256 = H256(hex!("9c1096d800fc42454d2d76e6ae1d461b5a67c7b474efb9d47989e47ed39b1b7b"));
+	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
+}
 
+impl pallet_succinct::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_succinct::WeightInfo<Runtime>;
-
 	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
-
 	type Currency = Balances;
-
+	type MaxVerificationKeyLength = ConstU32<4143>;
+	type MessageMappingStorageIndex = ConstU64<4>;
+	type StepFunctionId = StepFunctionId;
+	type RotateFunctionId = RotateFunctionId;
 	type PalletId = BridgePalletId;
-
-	type MaxBridgeDataLength = MaxBridgeDataLength;
-
-	type AvailDomain = AvailDomain;
-	type SupportedDomain = SupportedDomain;
+	type MaxBridgeDataLength = ConstU32<256>;
+	type AvailDomain = ConstU32<1>;
+	type SupportedDomain = ConstU32<2>;
 }
 
 parameter_types! {

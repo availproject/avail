@@ -5,7 +5,6 @@ use crate::verifier::Verifier;
 use frame_support::traits::{Currency, ExistenceRequirement, UnixTime};
 use frame_support::{pallet_prelude::*, parameter_types, PalletId};
 use frame_system::submitted_data::{BoundedData, MessageType};
-use hex_literal::hex;
 pub use pallet::*;
 use sp_core::H256;
 use sp_runtime::SaturatedConversion;
@@ -21,34 +20,16 @@ mod tests;
 mod verifier;
 mod weights;
 
+// TODO @MARKO Change the names to something more suitable.
+// TODO @MARKO The length constraints could be made generic if needed for tests.
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
+pub type FunctionInputVec = BoundedVec<u8, ConstU32<256>>;
+pub type FunctionOutputVec = BoundedVec<u8, ConstU32<512>>;
+pub type FunctionProofVec = BoundedVec<u8, ConstU32<1048>>;
+pub type ValidProofVec = BoundedVec<BoundedVec<u8, ConstU32<2048>>, ConstU32<256>>;
 
 // TODO: Move it to runtime constants or impls
 parameter_types! {
-	// function identifiers
-	pub const StepFunctionId: H256 = H256(hex!("af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"));
-	pub const RotateFunctionId: H256 = H256(hex!("9c1096d800fc42454d2d76e6ae1d461b5a67c7b474efb9d47989e47ed39b1b7b"));
-
-	// Max verification key length.
-	pub const MaxVerificationKeyLength: u32 = 4143;
-
-	// The index of the `messages` mapping in contract.
-	pub const MessageMappingStorageIndex:u64 = 4;
-
-	// BoundedVec max size for fulfill call.
-	pub const InputMaxLen: u32 = 256;
-	pub const OutputMaxLen: u32 = 512;
-	pub const ProofMaxLen: u32 = 1048;
-	// BoundedVec max size for execute call.
-	pub const MessageBytesMaxLen: u32 = 2048;
-	pub const MessageItemsMaxLen: u32 = 256;
-
-	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
-	// BoundedVec max size for send message call.
-	pub const MaxBridgeDataLength: u32= 256;
-	// Supported domains and assets.
-	pub const AvailDomain: u32 = 1;
-	pub const SupportedDomain:u32 = 2;
 	// Avail asset is supported for now
 	pub const SupportedAssetId:H256 = H256::zero();
 }
@@ -214,39 +195,42 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
+		/// TODO
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
-		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
-
-		type TimeProvider: UnixTime;
-		// 1133
-		#[pallet::constant]
-		type MaxVerificationKeyLength: Get<u32>;
-		#[pallet::constant]
-		type MaxBridgeDataLength: Get<u32>;
-		#[pallet::constant]
-		type StepFunctionId: Get<H256>;
-
-		#[pallet::constant]
-		type RotateFunctionId: Get<H256>;
-
-		#[pallet::constant]
-		type MessageMappingStorageIndex: Get<u64>;
-
-		/// Bridge's pallet id, used for deriving its sovereign account ID.
-		#[pallet::constant]
-		type PalletId: Get<PalletId>;
-
-		#[pallet::constant]
-		type AvailDomain: Get<u32>;
-		#[pallet::constant]
-		type SupportedDomain: Get<u32>;
-
+		/// TODO
 		type RuntimeCall: Parameter
 			+ UnfilteredDispatchable<RuntimeOrigin = Self::RuntimeOrigin>
 			+ GetDispatchInfo;
-
+		/// TODO
 		type WeightInfo: WeightInfo;
+		/// TODO
+		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
+		/// TODO
+		type TimeProvider: UnixTime;
+		/// TODO 1133
+		#[pallet::constant]
+		type MaxVerificationKeyLength: Get<u32>;
+		/// TODO
+		#[pallet::constant]
+		type MaxBridgeDataLength: Get<u32>;
+		/// TODO
+		#[pallet::constant]
+		type StepFunctionId: Get<H256>;
+		/// TODO
+		#[pallet::constant]
+		type RotateFunctionId: Get<H256>;
+		/// TODO
+		#[pallet::constant]
+		type MessageMappingStorageIndex: Get<u64>;
+		/// Bridge's pallet id, used for deriving its sovereign account ID.
+		#[pallet::constant]
+		type PalletId: Get<PalletId>;
+		/// TODO
+		#[pallet::constant]
+		type AvailDomain: Get<u32>;
+		/// TODO
+		#[pallet::constant]
+		type SupportedDomain: Get<u32>;
 	}
 
 	#[pallet::genesis_config]
@@ -301,9 +285,9 @@ pub mod pallet {
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
 			function_id: H256,
-			input: BoundedVec<u8, InputMaxLen>,
-			output: BoundedVec<u8, OutputMaxLen>,
-			proof: BoundedVec<u8, ProofMaxLen>,
+			input: FunctionInputVec,
+			output: FunctionOutputVec,
+			proof: FunctionProofVec,
 			slot: u64,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
@@ -320,7 +304,7 @@ pub mod pallet {
 			// make sure that verification call is valid
 			ensure!(is_success, Error::<T>::VerificationFailed);
 
-			if function_id == StepFunctionId::get() {
+			if function_id == T::StepFunctionId::get() {
 				let vs =
 					VerifiedStep::new(function_id, input_hash, parse_step_output(output.to_vec()));
 
@@ -330,7 +314,7 @@ pub mod pallet {
 						finalization_root: vs.verified_output.finalized_header_root,
 					});
 				}
-			} else if function_id == RotateFunctionId::get() {
+			} else if function_id == T::RotateFunctionId::get() {
 				let vr = VerifiedRotate::new(
 					function_id,
 					input_hash,
@@ -392,8 +376,8 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			slot: u64,
 			message: Message,
-			account_proof: BoundedVec<BoundedVec<u8, MessageBytesMaxLen>, MessageItemsMaxLen>,
-			storage_proof: BoundedVec<BoundedVec<u8, MessageBytesMaxLen>, MessageItemsMaxLen>,
+			account_proof: ValidProofVec,
+			storage_proof: ValidProofVec,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			let encoded_data = message.clone().abi_encode();
@@ -429,7 +413,7 @@ pub mod pallet {
 							.map_err(|_| Error::<T>::CannotGetStorageRoot)?;
 
 					let nonce = Uint(U256::from(message.id));
-					let mm_idx = Uint(U256::from(MessageMappingStorageIndex::get()));
+					let mm_idx = Uint(U256::from(T::MessageMappingStorageIndex::get()));
 					let slot_key = H256(keccak_256(ethabi::encode(&[nonce, mm_idx]).as_slice()));
 
 					let storage_proof_vec = storage_proof
@@ -612,12 +596,12 @@ pub mod pallet {
 			);
 
 			ensure!(
-				message.destination_domain == AvailDomain::get(),
+				message.destination_domain == T::AvailDomain::get(),
 				Error::<T>::WrongDestinationChain
 			);
 
 			ensure!(
-				SupportedDomain::get() == message.origin_domain,
+				T::SupportedDomain::get() == message.origin_domain,
 				Error::<T>::UnsupportedDestinationChain
 			);
 
@@ -677,7 +661,7 @@ pub mod pallet {
 
 			let input = ethabi::encode(&[Token::FixedBytes(finalized_header_root.0.to_vec())]);
 			let sync_committee_poseidon: U256 =
-				Self::verified_rotate_call(RotateFunctionId::get(), input, rotate_store)?;
+				Self::verified_rotate_call(T::RotateFunctionId::get(), input, rotate_store)?;
 
 			let period = finalized_slot / cfg.slots_per_period;
 			let next_period = period + 1;
@@ -698,7 +682,7 @@ pub mod pallet {
 			ensure!(sc_poseidon != U256::zero(), Error::<T>::SyncCommitteeNotSet);
 
 			let input = encode_packed(sc_poseidon, attested_slot);
-			let result = Self::verified_step_call(StepFunctionId::get(), input, step_store)?;
+			let result = Self::verified_step_call(T::StepFunctionId::get(), input, step_store)?;
 
 			ensure!(
 				result.participation >= cfg.finality_threshold,
@@ -756,9 +740,9 @@ pub mod pallet {
 
 		/// get_verifier returns verifier based on the provided function id.
 		fn get_verifier(function_id: H256) -> Result<Verifier, Error<T>> {
-			if function_id == StepFunctionId::get() {
+			if function_id == T::StepFunctionId::get() {
 				Self::get_step_verifier()
-			} else if function_id == RotateFunctionId::get() {
+			} else if function_id == T::RotateFunctionId::get() {
 				Self::get_rotate_verifier()
 			} else {
 				Err(Error::<T>::FunctionIdNotKnown)

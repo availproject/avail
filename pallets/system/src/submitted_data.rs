@@ -408,14 +408,12 @@ mod test {
 	use codec::Encode;
 	use frame_support::traits::DefensiveTruncateFrom;
 	use hex_literal::hex;
-	use sp_core::bytes::to_hex;
 	use sp_core::{keccak_256, H256, U256};
 	use sp_runtime::{AccountId32, BoundedVec};
-	use std::mem::size_of;
 	use std::vec;
 
 	use crate::submitted_data::{
-		calculate_balance_trie, calls_proof, BoundedData, Filter, Message, MessageType, RcMetrics,
+		calculate_balance_trie, calls_proof, Filter, Message, MessageType, RcMetrics,
 	};
 
 	// dummy filter implementation that skips empty strings in vector
