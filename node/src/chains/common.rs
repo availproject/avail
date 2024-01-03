@@ -137,6 +137,7 @@ pub fn runtime_genesis_config(
 			sync_committee_poseidon: U256::from(hex!(
 				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
 			)),
+			whitelisted_domains: vec![2],
 			..Default::default()
 		},
 		nomination_pools: NominationPoolsConfig {

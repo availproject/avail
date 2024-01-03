@@ -23,10 +23,6 @@ mod weights;
 
 type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
 
-// whitelist of supported domains
-// TODO: Create a storage & extrinsic around it to support onchain updation of supported domains, also can act as the panic button
-const WHITELISTED_DOMAINS: [u32; 1] = [2];
-
 // TODO: Move it to runtime constants or impls
 parameter_types! {
 	// function identifiers
@@ -159,6 +155,8 @@ pub mod pallet {
 			to: H256,
 			message_type: MessageType,
 		},
+		/// TODO
+		WhitelistedDomainsChanged,
 	}
 
 	// Step verification key storage.
@@ -210,6 +208,10 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type SourceChainFrozen<T> = StorageMap<_, Identity, u32, bool, ValueQuery>;
 
+	// TODO
+	#[pallet::storage]
+	pub type WhitelistedDomains<T> = StorageValue<_, BoundedVec<u32, ConstU32<10_000>>, ValueQuery>;
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -254,9 +256,12 @@ pub mod pallet {
 		pub finality_threshold: u16,
 		pub sync_committee_poseidon: U256,
 		pub period: u64,
+		pub whitelisted_domains: Vec<u32>,
 		pub _phantom: PhantomData<T>,
 	}
 
+	// TODO @MARKO This won't be executed on our Testnet. We need to either do it manually via a
+	// storage migration or write helper extrinsics to change it.
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
@@ -265,6 +270,15 @@ pub mod pallet {
 				slots_per_period: self.slots_per_period,
 				finality_threshold: self.finality_threshold,
 			});
+
+			let mut domains = self.whitelisted_domains.clone();
+
+			// Whitelisted domains sanitization.
+			domains.sort();
+			domains.dedup();
+			let domains =
+				BoundedVec::try_from(domains).expect("Cannot have more than 10_000 domains.");
+			WhitelistedDomains::<T>::put(domains);
 		}
 	}
 
@@ -571,6 +585,21 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// TODO
+		#[pallet::call_index(8)]
+		#[pallet::weight(T::WeightInfo::step())]
+		pub fn set_whitelisted_domains(
+			origin: OriginFor<T>,
+			value: BoundedVec<u32, ConstU32<10_000>>,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			WhitelistedDomains::<T>::put(value);
+
+			Self::deposit_event(Event::WhitelistedDomainsChanged);
+
+			Ok(())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -825,7 +854,7 @@ pub mod pallet {
 
 		/// Check if the given domain is supported or not
 		fn is_domain_valid(domain: u32) -> bool {
-			WHITELISTED_DOMAINS.contains(&domain)
+			WhitelistedDomains::<T>::get().contains(&domain)
 		}
 	}
 }
