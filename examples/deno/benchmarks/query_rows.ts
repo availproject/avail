@@ -3,10 +3,10 @@ import { API_TYPES, API_EXTENSIONS } from './../api_options.ts'
 import { API_RPC } from './api_options.ts'
 import { prepareData } from './misc.ts';
 import { BlockFinalizationStage, BlockInclusionStage, PerformanceMeasureStage, DataSubmissionStage, DoneStage, Task } from './task.ts';
-import config from './config.ts';
+import config from '../config.ts';
 
-const api = await ApiPromise.create({ provider: new WsProvider(config.ApiURL), rpc: API_RPC, types: API_TYPES, signedExtensions: API_EXTENSIONS  });
-const submitter = new Keyring({type: 'sr25519'}).addFromUri(config.mnemonic);
+const api = await ApiPromise.create({ provider: new WsProvider(config.endpoint), rpc: API_RPC, types: API_TYPES, signedExtensions: API_EXTENSIONS  });
+const keyring = new Keyring({type: 'sr25519'}).addFromUri(config.seed);
 
 console.log("Preparing data...")
 const txCount = config.txCount;
@@ -28,7 +28,7 @@ for(let i = 0; i < jobCount; ++i) {
         const res = await task.api.rpc.kate.queryRowsMetrics(rows, task.finalizedBlockHash);
         task.internal_measure = res[1].toNumber() / 1000;
     }, "Querying Rows");
-    const stages = [new BlockInclusionStage(targetBlockNumber + i), new DataSubmissionStage(submitter), new BlockFinalizationStage(targetBlockNumber + i + 1), customStage, new DoneStage()];
+    const stages = [new BlockInclusionStage(targetBlockNumber + i), new DataSubmissionStage(keyring), new BlockFinalizationStage(targetBlockNumber + i + 1), customStage, new DoneStage()];
 
     jobs.push(task.run(stages));
     tasks.push(task);

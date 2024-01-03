@@ -2,6 +2,8 @@
 
 Before running examples or benchmarks make sure that you have a running local node.
 
+Make sure to populate basic configuration in `config.ts` or leave the default if using local node. Take a look at the scripts for more details about the configuration.
+
 ```bash
 # To run the Connect example
 deno run -A ./examples/deno/connect.ts
@@ -25,15 +27,7 @@ Make sure that you have a running local node with `--features kate-rpc-metrics` 
 ```bash
 cargo build --release --features kate-rpc-metrics
 ```
-- Make sure to populate basic configuration in `benchmarks/config.ts`
-```typescript
-export default {
-    mnemonic: "", // The secret seed value for account used to sign transactions. //Alice is used by default
-    ApiURL: "",   // Api url
-    txCount: 100, // Count of submitting transactions
-    jobCount: 10, // Count of tasks
-}
-```
+Make sure to populate basic configuration in `config.ts` or leave the default if using local node. Take a look at the scripts for more details about the configuration.
 
 ```bash
 # To benchmark Query Proof RPC
