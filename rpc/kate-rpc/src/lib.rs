@@ -441,7 +441,7 @@ where
 		let successfull_indices = self
 			.client
 			.runtime_api()
-			.successfull_exrinsic_indices(block.hash())
+			.successful_extrinsic_indices(block.hash())
 			.map_err(|e| {
 				internal_err!("Failed to fetch successfull indices at ({:?}): {:?}", at, e)
 			})?;

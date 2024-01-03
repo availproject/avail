@@ -37,7 +37,7 @@ decl_runtime_apis! {
 		fn sync_committee_poseidons(slot: u64) -> U256;
 		fn head() -> u64;
 		fn headers(slot: u64) -> H256;
-		fn successfull_exrinsic_indices() -> Vec<u32>;
+		fn successful_extrinsic_indices() -> Vec<u32>;
 	}
 
 	pub trait ExtensionBuilder {
@@ -358,8 +358,24 @@ impl_runtime_apis! {
 			pallet_succinct::Pallet::<Runtime>::headers(slot)
 		}
 
-		fn successfull_exrinsic_indices() -> Vec<u32> {
-			frame_system::Pallet::<Runtime>::successfull_exrinsic_indices()
+		fn successful_extrinsic_indices() -> Vec<u32> {
+			let mut indices = frame_system::Pallet::<Runtime>::failed_extrinsic_indices();
+			let extrinsic_count = frame_system::Pallet::<Runtime>::extrinsic_count();
+
+			indices.sort();
+			let mut failed_indices = indices.iter().peekable();
+			let mut successful_indices = Vec::with_capacity((extrinsic_count as usize).saturating_sub(indices.len()));
+			for index in 0..extrinsic_count {
+				if let Some(failed_one) = failed_indices.peek() {
+					if index == **failed_one {
+						failed_indices.next();
+						continue;
+					}
+				}
+				successful_indices.push(index);
+			}
+
+			successful_indices
 		}
 	}
 

@@ -727,12 +727,12 @@ pub mod pallet {
 	#[pallet::getter(fn bridge_nonce)]
 	pub type BridgeNonce<T: Config> = StorageValue<_, u64, ValueQuery>;
 
-	/// List of successful indices in the current block
+	// TODO @MARKO Add missing tests
+	/// List of failed indices in the current block
 	#[pallet::storage]
-	#[pallet::getter(fn successfull_exrinsic_indices)]
-	// TODO: Optimise this storage eg: store failed indices instead
-	#[pallet::unbounded]
-	pub type SuccessfulExtrinsicIndices<T: Config> = StorageValue<_, Vec<u32>, ValueQuery>;
+	#[pallet::getter(fn failed_extrinsic_indices)]
+	pub type FailedExtrinsicIndices<T: Config> =
+		StorageValue<_, BoundedVec<u32, ConstU32<100_000>>, ValueQuery>;
 
 	#[derive(DefaultNoBound)]
 	#[pallet::genesis_config]
@@ -1132,12 +1132,6 @@ impl<T: Config> Pallet<T> {
 		Account::<T>::contains_key(who)
 	}
 
-	fn add_successful_index(new_item: u32) {
-		<SuccessfulExtrinsicIndices<T>>::mutate(|indices| {
-			indices.push(new_item);
-		});
-	}
-
 	/// Write code to the storage and emit related events and digest items.
 	///
 	/// Note this function almost never should be used directly. It is exposed
@@ -1481,7 +1475,7 @@ impl<T: Config> Pallet<T> {
 
 		// Remove previous block data from storage
 		BlockWeight::<T>::kill();
-		SuccessfulExtrinsicIndices::<T>::kill();
+		FailedExtrinsicIndices::<T>::kill();
 	}
 
 	/// Remove temporary "environment" entries in storage, compute the storage root and return the
@@ -1540,7 +1534,24 @@ impl<T: Config> Pallet<T> {
 		let parent_hash = <ParentHash<T>>::get();
 
 		let extrinsics = Self::take_extrinsics().collect::<Vec<_>>();
-		let successful_indices = SuccessfulExtrinsicIndices::<T>::get();
+
+		let mut indices = FailedExtrinsicIndices::<T>::get();
+		let extrinsic_count = Self::extrinsic_count();
+
+		indices.sort();
+		let mut failed_indices = indices.iter().peekable();
+		let mut successful_indices =
+			Vec::with_capacity((extrinsic_count as usize).saturating_sub(indices.len()));
+		for index in 0..extrinsic_count {
+			if let Some(failed_one) = failed_indices.peek() {
+				if index == **failed_one {
+					failed_indices.next();
+					continue;
+				}
+			}
+			successful_indices.push(index);
+		}
+
 		let opaques = successful_indices
 			.iter()
 			.filter_map(|&index| extrinsics.get(index as usize))
@@ -1794,12 +1805,11 @@ impl<T: Config> Pallet<T> {
 			.saturating_add(T::BlockWeights::get().get(info.class).base_extrinsic);
 		info.pays_fee = extract_actual_pays_fee(r, &info);
 
-		Self::deposit_event(match r {
-			Ok(_) => {
-				Self::add_successful_index(Self::extrinsic_index().unwrap_or_default());
-				Event::ExtrinsicSuccess {
-					dispatch_info: info,
-				}
+		let current_extrinsic_index = Self::extrinsic_index().unwrap_or_default();
+
+		let event = match r {
+			Ok(_) => Event::ExtrinsicSuccess {
+				dispatch_info: info,
 			},
 			Err(err) => {
 				log::trace!(
@@ -1808,14 +1818,23 @@ impl<T: Config> Pallet<T> {
 					Self::block_number(),
 					err,
 				);
+
+				FailedExtrinsicIndices::<T>::mutate(|x| {
+					x.try_push(current_extrinsic_index).expect(
+						"Limit is 100k. It should not be possible to reach that number. qed",
+					);
+				});
+
 				Event::ExtrinsicFailed {
 					dispatch_error: err.error,
 					dispatch_info: info,
 				}
 			},
-		});
+		};
 
-		let next_extrinsic_index = Self::extrinsic_index().unwrap_or_default() + 1u32;
+		Self::deposit_event(event);
+
+		let next_extrinsic_index = current_extrinsic_index + 1u32;
 
 		storage::unhashed::put(well_known_keys::EXTRINSIC_INDEX, &next_extrinsic_index);
 		ExecutionPhase::<T>::put(Phase::ApplyExtrinsic(next_extrinsic_index));

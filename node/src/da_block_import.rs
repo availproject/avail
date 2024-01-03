@@ -149,7 +149,7 @@ where
 	let success_indices: Vec<u32> = block_import
 		.client
 		.runtime_api()
-		.successfull_exrinsic_indices(import_block_hash)
+		.successful_extrinsic_indices(import_block_hash)
 		.map_err(|_e| ClientImport("Failed to fetch the successful indices".into()))?;
 
 	log::info!(
