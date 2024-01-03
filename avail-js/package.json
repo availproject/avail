@@ -1,6 +1,6 @@
 {
   "name": "avail-js-sdk",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "Avail library of functions to interact with blockchain and manipulate transactions",
   "main": "./build/index.js",
   "scripts": {
