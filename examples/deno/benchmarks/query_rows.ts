@@ -3,7 +3,7 @@ import { API_TYPES, API_EXTENSIONS } from './../api_options.ts'
 import { API_RPC } from './api_options.ts'
 import { prepareData } from './misc.ts';
 import { BlockFinalizationStage, BlockInclusionStage, PerformanceMeasureStage, DataSubmissionStage, DoneStage, Task } from './task.ts';
-import config from '../config.ts';
+import config from './config.ts';
 
 const api = await ApiPromise.create({ provider: new WsProvider(config.endpoint), rpc: API_RPC, types: API_TYPES, signedExtensions: API_EXTENSIONS  });
 const keyring = new Keyring({type: 'sr25519'}).addFromUri(config.seed);

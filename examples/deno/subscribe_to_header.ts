@@ -1,9 +1,8 @@
 import { ApiPromise, WsProvider } from 'https://deno.land/x/polkadot@0.2.42/api/mod.ts';
 import { API_RPC, API_TYPES, API_EXTENSIONS } from './api_options.ts'
 import { UnsubscribePromise } from 'https://deno.land/x/polkadot@0.2.42/api-base/types/base.ts';
-import config from './config.ts';
 
-const api = await ApiPromise.create({ provider: new WsProvider(config.endpoint), rpc: API_RPC, types: API_TYPES, signedExtensions: API_EXTENSIONS  });
+const api = await ApiPromise.create({ provider: new WsProvider("ws://127.0.0.1:9944"), rpc: API_RPC, types: API_TYPES, signedExtensions: API_EXTENSIONS  });
 
 const block_target = (await api.rpc.chain.getHeader()).number.toNumber() + 2;
 const readHeaders = new Promise<UnsubscribePromise>((res, _) => {
