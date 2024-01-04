@@ -330,7 +330,7 @@ where
 	let root = root(root_data_balanced.into_iter(), Rc::clone(&metrics));
 
 	let data_index = u32::try_from(data_index).ok()?;
-	log::info!("Call type: {:?}", call_type);
+
 	proof(data_filtered_balanced, data_index, Rc::clone(&metrics)).map(|proof| (proof, root))
 }
 
@@ -521,19 +521,19 @@ mod test {
 		let submitted_data = vec![tx1_data, tx2_data, tx3_data, tx4_data];
 
 		// leaf 0 keccak256(044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d)
-		//                  40105d5bc10105c17fd72b93a8f73369e2ee6eee4d4714b7bf7bf3c2f156e601
+		//
 		// leaf 1 keccak256(c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6)
-		//                  4aeff0db81e3146828378be230d377356e57b6d599286b4b517dbf8941b3e1b2
+		//
 		// leaf 2 keccak256(ad7c5bef027816a800da1736444fb58a807ef4c9603b7848673f7e3a68eb14a5)
-		//                  1204b3dcd975ba0a68eafbf4d2ca0d13cc7b5e3709749c1dc36e6e74934270b3
+		//
 		//  leaf appended in in order to have 2^n number of leaves
 		// leaf 3 (appended) keccak256(0000000000000000000000000000000000000000000000000000000000000000)
 		//                  290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563
 
-		// intermediate root (leaf[0], leaf[1]) db0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e
-		// intermediate root (leaf[2], leaf[3]) 3c86bde3a90d18efbcf23e27e9b6714012aa055263fe903a72333aa9caa37f1b
-		// data_root keccak256(db0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e, 3c86bde3a90d18efbcf23e27e9b6714012aa055263fe903a72333aa9caa37f1b)
-		//                                                       (877f9ed6aa67f160e9b9b7794bb851998d15b65d11bab3efc6ff444339a3d750)
+		// intermediate root (leaf[0], leaf[1]) 0b4aa17bff8fc189efb37609ac5ea9fca0df4c834a6fbac74b24c8119c40fef2
+		// intermediate root (leaf[2], leaf[3]) 55bb5000a6f1a01ffaceb5986609d4225532a8bc8e47172fca25b159764c29dd
+		// data_root keccak256(0b4aa17bff8fc189efb37609ac5ea9fca0df4c834a6fbac74b24c8119c40fef2,55bb5000a6f1a01ffaceb5986609d4225532a8bc8e47172fca25b159764c29dd )
+		//                                                       (0dfc48d8883fae891796204ca736c71163b80aaeb7682c26e58c80319d1978c4)
 
 		if let Some((da_proof, root)) = calls_proof::<String, _, _>(
 			submitted_data.clone().into_iter(),
@@ -546,24 +546,19 @@ mod test {
 			assert_eq!(da_proof.leaf_index, 0);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
-				"0x877f9ed6aa67f160e9b9b7794bb851998d15b65d11bab3efc6ff444339a3d750"
+				"0x0dfc48d8883fae891796204ca736c71163b80aaeb7682c26e58c80319d1978c4"
 			);
 			assert_eq!(da_proof.proof.len(), 2);
 			assert_eq!(
 				format!("{:#x}", da_proof.proof[0]),
-				"0x4aeff0db81e3146828378be230d377356e57b6d599286b4b517dbf8941b3e1b2"
+				"0xc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6"
 			);
 			assert_eq!(
 				format!("{:#x}", da_proof.proof[1]),
-				"0x3c86bde3a90d18efbcf23e27e9b6714012aa055263fe903a72333aa9caa37f1b"
+				"0x55bb5000a6f1a01ffaceb5986609d4225532a8bc8e47172fca25b159764c29dd"
 			);
 
-			assert_eq!(
-				H256::from_slice(da_proof.leaf.as_slice()),
-				H256(hex!(
-					"044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d"
-				))
-			);
+			assert_eq!(da_proof.leaf, b"0");
 
 			assert_eq!(da_proof.number_of_leaves, 4);
 		} else {
@@ -593,16 +588,16 @@ mod test {
 			assert_eq!(da_proof.leaf_index, 1);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
-				"0x877f9ed6aa67f160e9b9b7794bb851998d15b65d11bab3efc6ff444339a3d750"
+				"0x0dfc48d8883fae891796204ca736c71163b80aaeb7682c26e58c80319d1978c4"
 			);
 			assert_eq!(da_proof.proof.len(), 2);
 			assert_eq!(
 				format!("{:#x}", da_proof.proof[0]),
-				"0x40105d5bc10105c17fd72b93a8f73369e2ee6eee4d4714b7bf7bf3c2f156e601"
+				"0x044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d"
 			);
 			assert_eq!(
 				format!("{:#x}", da_proof.proof[1]),
-				"0x3c86bde3a90d18efbcf23e27e9b6714012aa055263fe903a72333aa9caa37f1b"
+				"0x55bb5000a6f1a01ffaceb5986609d4225532a8bc8e47172fca25b159764c29dd"
 			);
 			assert_eq!(da_proof.number_of_leaves, 4);
 		} else {
@@ -620,7 +615,7 @@ mod test {
 			assert_eq!(da_proof.leaf_index, 2);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
-				"0x877f9ed6aa67f160e9b9b7794bb851998d15b65d11bab3efc6ff444339a3d750"
+				"0x0dfc48d8883fae891796204ca736c71163b80aaeb7682c26e58c80319d1978c4"
 			);
 			assert_eq!(da_proof.proof.len(), 2);
 			assert_eq!(
@@ -629,7 +624,7 @@ mod test {
 			);
 			assert_eq!(
 				format!("{:#x}", da_proof.proof[1]),
-				"0xdb0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e"
+				"0x0b4aa17bff8fc189efb37609ac5ea9fca0df4c834a6fbac74b24c8119c40fef2"
 			);
 			assert_eq!(da_proof.number_of_leaves, 4);
 		} else {
