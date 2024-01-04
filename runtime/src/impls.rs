@@ -13,7 +13,7 @@ use avail_core::currency::{Balance, AVL, CENTS, NANO_AVL, PICO_AVL};
 use avail_core::AppId;
 use avail_core::OpaqueExtrinsic;
 use avail_core::NORMAL_DISPATCH_RATIO;
-use codec::Decode;
+use codec::{Decode, Encode, MaxEncodedLen};
 use constants::time::DAYS;
 use frame_election_provider_support::onchain;
 use frame_election_provider_support::BalancingConfig;
@@ -27,6 +27,7 @@ use frame_support::traits::ConstU32;
 use frame_support::traits::ContainsLengthBound;
 use frame_support::traits::EqualPrivilegeOnly;
 use frame_support::traits::Everything;
+use frame_support::traits::InstanceFilter;
 use frame_support::traits::KeyOwnerProofSystem;
 use frame_support::traits::SortedMembers;
 use frame_support::traits::{Currency, OnUnbalanced};
@@ -41,6 +42,7 @@ use pallet_transaction_payment::CurrencyAdapter;
 use pallet_transaction_payment::Multiplier;
 use pallet_transaction_payment::TargetedFeeAdjustment;
 use sp_core::crypto::KeyTypeId;
+use sp_core::RuntimeDebug;
 use sp_runtime::generic::Era;
 use sp_runtime::traits;
 use sp_runtime::traits::BlakeTwo256;
@@ -686,6 +688,84 @@ impl pallet_mmr::Config for Runtime {
 	const INDEXING_PREFIX: &'static [u8] = b"mmr";
 }
 
+/// The type used to represent the kinds of proxying allowed.
+#[derive(
+	Copy,
+	Clone,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	Encode,
+	Decode,
+	RuntimeDebug,
+	MaxEncodedLen,
+	scale_info::TypeInfo,
+)]
+pub enum ProxyType {
+	Any,
+	NonTransfer,
+	Governance,
+	Staking,
+}
+impl Default for ProxyType {
+	fn default() -> Self {
+		Self::Any
+	}
+}
+impl InstanceFilter<RuntimeCall> for ProxyType {
+	fn filter(&self, c: &RuntimeCall) -> bool {
+		match self {
+			ProxyType::Any => true,
+			ProxyType::NonTransfer => !matches!(
+				c,
+				RuntimeCall::Balances(..)
+					| RuntimeCall::Indices(pallet_indices::Call::transfer { .. })
+			),
+			ProxyType::Governance => matches!(
+				c,
+				RuntimeCall::TechnicalCommittee(..) | RuntimeCall::Treasury(..)
+			),
+			ProxyType::Staking => {
+				matches!(c, RuntimeCall::Staking(..))
+			},
+		}
+	}
+	fn is_superset(&self, o: &Self) -> bool {
+		match (self, o) {
+			(x, y) if x == y => true,
+			(ProxyType::Any, _) => true,
+			(_, ProxyType::Any) => false,
+			(ProxyType::NonTransfer, _) => true,
+			_ => false,
+		}
+	}
+}
+
+parameter_types! {
+	// One storage item; key size 32, value size 8; .
+	pub const ProxyDepositBase: Balance = 10 * AVL;
+	// Additional storage item size of 33 bytes.
+	pub const ProxyDepositFactor: Balance = 3 * AVL;
+	pub const AnnouncementDepositBase: Balance = 10 * AVL;
+	pub const AnnouncementDepositFactor: Balance = 5 * AVL;
+}
+
+impl pallet_proxy::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type Currency = Balances;
+	type ProxyType = ProxyType;
+	type ProxyDepositBase = ProxyDepositBase;
+	type ProxyDepositFactor = ProxyDepositFactor;
+	type MaxProxies = ConstU32<32>;
+	type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
+	type MaxPending = ConstU32<32>;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = AnnouncementDepositBase;
+	type AnnouncementDepositFactor = AnnouncementDepositFactor;
+}
+
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 2400;
 	pub const Version: RuntimeVersion = VERSION;
@@ -812,7 +892,6 @@ where
 		RuntimeCall,
 		<UncheckedExtrinsic as traits::Extrinsic>::SignaturePayload,
 	)> {
-		use codec::Encode;
 		use sp_runtime::{traits::StaticLookup, SaturatedConversion as _};
 
 		let tip = 0;

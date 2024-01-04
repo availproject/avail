@@ -42,7 +42,7 @@ impl OnRuntimeUpgrade for Migration {
 	}
 
 	#[cfg(feature = "try-runtime")]
-	fn post_upgrade(state: Vec<u8>) -> Result<(), TryRuntimeError> {
+	fn post_upgrade(_state: Vec<u8>) -> Result<(), TryRuntimeError> {
 		Ok(())
 	}
 }
