@@ -106,9 +106,9 @@ export const decodeHexAppId = (value: `0x${string}`): string => {
   const array = splitStringIntoArray(v)
   let s = BigInt(0)
   array.forEach((x, i) => {
-    s += BigInt(parseInt(x, 16) << (i * 8))
+    s += BigInt(parseInt(x, 16)) << BigInt(i * 8)
   })
-  const result = (s >> BigInt(2)).toString()
+  const result = (s >> BigInt(array.length <= 4 ? 2 : 8)).toString()
   return result
 }
 
