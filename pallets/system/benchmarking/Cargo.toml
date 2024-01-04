@@ -33,7 +33,7 @@ sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkado
 sp-version = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
 	"avail-core/std",
 	"codec/std",
