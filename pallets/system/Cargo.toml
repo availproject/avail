@@ -52,33 +52,33 @@ criterion = "0.5.1"
 sp-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-    "avail-base/std",
-    "avail-core/std",
-    "binary-merkle-tree/std",
-    "codec/std",
-    "frame-support/std",
-    "kate/std",
-    "log/std",
-    "once_cell",
-    "scale-info/std",
-    "serde/std",
-    "sp-core/std",
-    "sp-io/std",
-    "sp-runtime-interface/std",
-    "sp-runtime/std",
-    "sp-std/std",
-    "sp-version/std",
-    "sp-weights/std",
+	"avail-base/std",
+	"avail-core/std",
+	"binary-merkle-tree/std",
+	"codec/std",
+	"frame-support/std",
+	"kate/std",
+	"log/std",
+	"once_cell",
+	"scale-info/std",
+	"serde/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime-interface/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"sp-version/std",
+	"sp-weights/std",
 ]
 runtime-benchmarks = [
-    "frame-support/runtime-benchmarks",
-    "serde",
-    "sp-runtime/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"serde",
+	"sp-runtime/runtime-benchmarks",
 ]
-try-runtime = ["avail-core/try-runtime", "frame-support/try-runtime"]
-serde = ["dep:serde"]
+try-runtime = [ "avail-core/try-runtime", "frame-support/try-runtime" ]
+serde = [ "dep:serde" ]
 
 # It enables the use of header extension V2
 header_extension_v2 = []
