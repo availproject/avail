@@ -14,6 +14,8 @@ pallet-succinct = { path = "../../pallets/succinct" }
 avail-core = { git = "https://github.com/availproject/avail-core", branch = "add_new_proof_gen", default-features = false, features = ["runtime"] }
 kate = { git = "https://github.com/availproject/avail-core", branch = "add_new_proof_gen", default-features = false }
 kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "add_new_proof_gen", default-features = false }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"] }
+serde = { version = "1.0.163", default-features = false, features = ["derive", "alloc"] }
 
 # 3rd party
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }

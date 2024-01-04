@@ -9,6 +9,7 @@ use avail_core::{
 	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, DataProof,
 	OpaqueExtrinsic,
 };
+use codec::{Decode, Encode};
 use da_runtime::RuntimeCall;
 use da_runtime::{apis::DataAvailApi, Runtime, UncheckedExtrinsic};
 use frame_system::{limits::BlockLength, submitted_data};
@@ -16,6 +17,10 @@ use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 };
+
+use sp_runtime::serde::{Deserialize, Serialize};
+
+use jsonrpsee::tracing::log;
 use kate::gridgen::AsBytes;
 use kate::{
 	com::Cell,
@@ -25,6 +30,7 @@ use kate::{
 	Seed,
 };
 
+use frame_system::submitted_data::Message;
 use kate_recovery::matrix::Dimensions;
 use moka::future::Cache;
 use rayon::prelude::*;
@@ -36,6 +42,14 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header},
 	{AccountId32, MultiAddress},
 };
+
+#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProofResponse {
+	data_proof: DataProof,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	message: Option<Message>,
+}
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
 
@@ -69,7 +83,7 @@ where
 		&self,
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<DataProof>;
+	) -> RpcResult<ProofResponse>;
 }
 
 #[cfg(feature = "metrics")]
@@ -110,7 +124,7 @@ where
 		&self,
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<(DataProof, u128)>;
+	) -> RpcResult<(ProofResponse, u128)>;
 }
 
 #[allow(clippy::type_complexity)]
@@ -434,7 +448,7 @@ where
 		&self,
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<DataProof> {
+	) -> RpcResult<ProofResponse> {
 		let execution_start = std::time::Instant::now();
 
 		let block = self.get_signed_block(at)?.block;
@@ -481,7 +495,17 @@ where
 			.bridge_nonce(*block.header().parent_hash())
 			.map_err(|e| internal_err!("Failed to fetch bridge_nonce at ({:?}): {:?}", at, e))?;
 
-		let transaction_call = calls.clone().nth(transaction_index as usize).unwrap();
+		let transaction_call = calls
+			.clone()
+			.nth(transaction_index as usize)
+			.ok_or_else(|| {
+				internal_err!(
+					"Cannot to fetch transaction call at index {:?}: {:?}",
+					transaction_index,
+					at
+				)
+			})?;
+
 		let call_type: SubTrie;
 		let root_side: SubTrie;
 		match transaction_call {
@@ -503,7 +527,7 @@ where
 		}
 
 		// Build the proof.
-		let (proof, root) = submitted_data::calls_proof::<Runtime, _, _>(
+		let (proof, root, message) = submitted_data::calls_proof::<Runtime, _, _>(
 			calls,
 			callers,
 			transaction_index,
@@ -519,12 +543,15 @@ where
 		})?;
 
 		let data_proof = DataProof::try_from((&proof, root, root_side))
-			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e));
+			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e))?;
 
 		// Execution Time Metric
 		KateRpcMetrics::observe_query_data_proof_execution_time(execution_start.elapsed());
 
-		data_proof
+		Ok(ProofResponse {
+			data_proof,
+			message,
+		})
 	}
 }
 
@@ -594,7 +621,7 @@ where
 		&self,
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<(DataProof, u128)> {
+	) -> RpcResult<(ProofResponse, u128)> {
 		let start = std::time::Instant::now();
 		let result = self.query_data_proof(transaction_index, at).await;
 		let elapsed = start.elapsed();

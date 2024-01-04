@@ -3,8 +3,8 @@ use avail_core::OpaqueExtrinsic;
 use binary_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
 use codec::{Decode, Encode};
 use core::fmt::Debug;
-use ethabi::{encode, Token};
-use frame_support::BoundedVec;
+use ethabi::{decode, encode, ParamType, Token};
+use frame_support::{BoundedVec, Deserialize, Serialize};
 use scale_info::TypeInfo;
 use sp_core::ConstU32;
 use sp_core::H256;
@@ -20,7 +20,10 @@ const LOG_TARGET: &str = "runtime::system::submitted_data";
 pub type BoundedData = BoundedVec<u8, ConstU32<102_400>>;
 
 /// Possible types of Messages allowed by Avail to bridge to other chains.
-#[derive(TypeInfo, Debug, Default, Clone, Encode, Decode, PartialEq)]
+#[derive(
+	TypeInfo, Debug, Default, Eq, Clone, Encode, Decode, PartialEq, Serialize, Deserialize,
+)]
+#[serde(rename_all = "camelCase")]
 pub enum MessageType {
 	ArbitraryMessage,
 	#[default]
@@ -38,7 +41,10 @@ impl From<MessageType> for Vec<u8> {
 }
 
 /// Message type used to bridge between Avail & other chains
-#[derive(Debug, Default, Clone, Encode, Decode, PartialEq, TypeInfo)]
+#[derive(
+	Debug, Default, Clone, Eq, Encode, Decode, PartialEq, TypeInfo, Serialize, Deserialize,
+)]
+#[serde(rename_all = "camelCase")]
 pub struct Message {
 	pub message_type: MessageType,
 	pub from: H256,
@@ -244,7 +250,7 @@ pub fn calls_proof<F, I, C>(
 	transaction_index: u32,
 	bridge_nonce: u64,
 	call_type: SubTrie,
-) -> Option<(MerkleProof<H256, Vec<u8>>, H256)>
+) -> Option<(MerkleProof<H256, Vec<u8>>, H256, Option<Message>)>
 where
 	F: Filter<C>,
 	I: Iterator<Item = C>,
@@ -254,16 +260,22 @@ where
 	let transaction_index = usize::try_from(transaction_index).ok()?;
 	let tx_max = transaction_index.checked_add(1)?;
 	let mut nonce = bridge_nonce;
+	let mut message_data: Option<Message> = None;
 
 	let (blob_data, bridge_data): (Vec<_>, Vec<_>) = calls
 		.zip(callers)
-		.map(|(ext, caller)| {
+		.enumerate()
+		.map(|(index, (ext, caller))| {
 			let (l, r) = F::filter(ext, Rc::clone(&metrics), caller);
 			let r_with_id: Vec<_> = r
 				.into_iter()
 				.flat_map(|mut m| {
 					nonce += 1;
 					m.id = nonce;
+
+					if index == transaction_index {
+						message_data = Some(m.clone());
+					}
 					m.abi_encode()
 				})
 				.collect();
@@ -273,6 +285,8 @@ where
 
 	let submitted_data: Vec<Vec<u8>>;
 	let root_data: Vec<Vec<u8>>;
+
+	log::info!("Message from optional: {:?}", message_data);
 
 	match call_type {
 		SubTrie::Left => {
@@ -331,7 +345,8 @@ where
 
 	let data_index = u32::try_from(data_index).ok()?;
 
-	proof(data_filtered_balanced, data_index, Rc::clone(&metrics)).map(|proof| (proof, root))
+	proof(data_filtered_balanced, data_index, Rc::clone(&metrics))
+		.map(|proof| (proof, root, message_data))
 }
 
 /// Construct a Merkle Proof for `submit_data` given by `data_index` and stores
