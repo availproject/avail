@@ -11,6 +11,7 @@ use static_assertions::assert_eq_size_val;
 
 /// TODO
 /// - [ ] Deduplicate from `kate` & `kate_recovery` libs.
+/// Will be removed soon when https://github.com/availproject/avail-core/tree/ghali/remove-unused-padding is merged
 const PADDING_TAIL_VALUE: u8 = 0x80;
 
 #[derive(Debug, Decode, Encode, MaxEncodedLen, TypeInfo)]
