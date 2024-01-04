@@ -6,8 +6,8 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false, features = [ "runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", features = ["std"] }
+kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", features = ["std"] }
 kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3" }
 
 
