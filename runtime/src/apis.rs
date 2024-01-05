@@ -384,7 +384,7 @@ impl_runtime_apis! {
 		fn build_data_root( extrinsics: Vec<OpaqueExtrinsic>) -> H256  {
 			type Extractor = <Runtime as frame_system::Config>::SubmittedDataExtractor;
 			let bridge_nonce = frame_system::Pallet::<Runtime>::bridge_nonce();
-			frame_system::submitted_data::extrinsics_root::<Extractor, _>(extrinsics.iter(), bridge_nonce).0
+			frame_system::submitted_data::extrinsics_root_v2::<Extractor, _>(extrinsics.iter(), bridge_nonce).0
 		}
 
 		fn build_extension(

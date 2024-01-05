@@ -526,7 +526,7 @@ where
 		}
 
 		// Build the proof.
-		let (proof, root, message) = submitted_data::calls_proof::<Runtime, _, _>(
+		let (proof, root, message) = submitted_data::calls_proof_v2::<Runtime, _, _>(
 			calls,
 			callers,
 			transaction_index,

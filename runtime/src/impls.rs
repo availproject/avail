@@ -741,7 +741,36 @@ parameter_types! {
 
 /// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.
 impl submitted_data::Filter<RuntimeCall> for Runtime {
-	fn filter(
+	fn filter(call: RuntimeCall, metrics: submitted_data::RcMetrics) -> Vec<Vec<u8>> {
+		metrics.borrow_mut().total_extrinsics += 1;
+
+		match call {
+			RuntimeCall::DataAvailability(da_control::Call::submit_data { data })
+				if !data.is_empty() =>
+			{
+				let mut metrics = metrics.borrow_mut();
+				metrics.data_submit_leaves += 1;
+				metrics.data_submit_extrinsics += 1;
+				vec![data.into_inner()]
+			},
+			RuntimeCall::Utility(pallet_utility::Call::batch { calls })
+			| RuntimeCall::Utility(pallet_utility::Call::batch_all { calls })
+			| RuntimeCall::Utility(pallet_utility::Call::force_batch { calls }) => {
+				Self::process_calls(calls, &metrics)
+			},
+			_ => vec![],
+		}
+	}
+
+	/// This function processes a list of calls and returns their data as Vec<Vec<u8>>
+	fn process_calls(calls: Vec<RuntimeCall>, metrics: &submitted_data::RcMetrics) -> Vec<Vec<u8>> {
+		calls
+			.into_iter()
+			.flat_map(|call| Self::filter(call, Rc::clone(metrics)))
+			.collect()
+	}
+
+	fn filter_v2(
 		call: RuntimeCall,
 		metrics: submitted_data::RcMetrics,
 		caller: AccountId32,
@@ -795,21 +824,21 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 			RuntimeCall::Utility(pallet_utility::Call::batch { calls })
 			| RuntimeCall::Utility(pallet_utility::Call::batch_all { calls })
 			| RuntimeCall::Utility(pallet_utility::Call::force_batch { calls }) => {
-				Self::process_calls(calls, &metrics, caller)
+				Self::process_calls_v2(calls, &metrics, caller)
 			},
 			_ => (vec![], vec![]),
 		}
 	}
 
 	/// This function processes a list of calls and returns their data as Vec<Vec<u8>>
-	fn process_calls(
+	fn process_calls_v2(
 		calls: Vec<RuntimeCall>,
 		metrics: &submitted_data::RcMetrics,
 		caller: AccountId32,
 	) -> (Vec<Vec<u8>>, Vec<Message>) {
 		let (blob_data, bridge_data): (Vec<_>, Vec<_>) = calls
 			.into_iter()
-			.map(|call| Self::filter(call, Rc::clone(metrics), caller.clone()))
+			.map(|call| Self::filter_v2(call, Rc::clone(metrics), caller.clone()))
 			.unzip();
 
 		(
@@ -826,13 +855,24 @@ impl submitted_data::Extractor for Runtime {
 	fn extract(
 		opaque: &OpaqueExtrinsic,
 		metrics: submitted_data::RcMetrics,
+	) -> Result<Vec<Vec<u8>>, Self::Error> {
+		let extrinsic = UncheckedExtrinsic::try_from(opaque)?;
+		let data =
+			<Runtime as submitted_data::Filter<RuntimeCall>>::filter(extrinsic.function, metrics);
+
+		Ok(data)
+	}
+
+	fn extract_v2(
+		opaque: &OpaqueExtrinsic,
+		metrics: submitted_data::RcMetrics,
 	) -> Result<(Vec<Vec<u8>>, Vec<Message>), Self::Error> {
 		let extrinsic = UncheckedExtrinsic::try_from(opaque)?;
 		let caller: AccountId32 = match extrinsic.signature.as_ref().map(|s| &s.0) {
 			Some(MultiAddress::Id(id)) => id.clone(),
 			_ => AccountId32::new([0u8; 32]),
 		};
-		let data = <Runtime as submitted_data::Filter<RuntimeCall>>::filter(
+		let data = <Runtime as submitted_data::Filter<RuntimeCall>>::filter_v2(
 			extrinsic.function,
 			metrics,
 			caller,

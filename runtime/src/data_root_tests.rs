@@ -6,7 +6,7 @@ use frame_election_provider_support::BoundedVec;
 use frame_support::traits::DefensiveTruncateFrom;
 use frame_system::submitted_data::{Message, MessageType};
 use frame_system::{
-	submitted_data::extrinsics_root, CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce,
+	submitted_data::extrinsics_root_v2, CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce,
 	CheckSpecVersion, CheckTxVersion, CheckWeight,
 };
 use hex_literal::hex;
@@ -123,5 +123,5 @@ fn data_root_filter(extrinsics: Vec<Vec<u8>>) -> H256 {
 		let o = OpaqueExtrinsic::decode(&mut extrinsic.as_slice()).unwrap();
 		opaque.push(o)
 	}
-	extrinsics_root::<Runtime, _>(opaque.iter(), 0u64).0
+	extrinsics_root_v2::<Runtime, _>(opaque.iter(), 0u64).0
 }

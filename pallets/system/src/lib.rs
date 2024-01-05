@@ -1562,10 +1562,10 @@ impl<T: Config> Pallet<T> {
 			.collect::<Result<Vec<_>, _>>()
 			.expect("Any extrinsic MUST be decoded as OpaqueExtrinsic .qed");
 
-		let (data_root, new_nonce) = submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(
-			opaques.iter(),
-			Self::bridge_nonce(),
-		);
+		let (data_root, new_nonce) = submitted_data::extrinsics_root_v2::<
+			T::SubmittedDataExtractor,
+			_,
+		>(opaques.iter(), Self::bridge_nonce());
 		if Self::bridge_nonce() != new_nonce {
 			BridgeNonce::<T>::put(new_nonce);
 		}
