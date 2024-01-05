@@ -20,7 +20,6 @@ use jsonrpsee::{
 
 use sp_runtime::serde::{Deserialize, Serialize};
 
-use jsonrpsee::tracing::log;
 use kate::gridgen::AsBytes;
 use kate::{
 	com::Cell,

@@ -96,7 +96,7 @@ where
 
 		// This is were the magic happens.
 		let success = build_data_root_and_extension(
-			&self,
+			self,
 			best_hash,
 			import_block_hash,
 			extrinsics,
