@@ -256,7 +256,7 @@ fn get_rotate_verification_key() -> VerificationKeyDef<Test> {
 	BoundedVec::truncate_from(step_vk.as_bytes().to_vec())
 }
 
-fn get_valid_message() -> Message {
+pub fn get_valid_message() -> Message {
 	let data = &[
 		Token::FixedBytes(H256::zero().as_bytes().to_vec()),
 		Token::Uint(U256::from(1000000000000000000u128)),

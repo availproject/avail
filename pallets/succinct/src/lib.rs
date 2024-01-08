@@ -34,6 +34,9 @@ parameter_types! {
 	pub const SupportedAssetId:H256 = H256::zero();
 }
 
+pub type BalanceOf<T> =
+	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use ark_std::string::String;
