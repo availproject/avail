@@ -1,4 +1,4 @@
-use avail_core::data_proof::SubTrie;
+use avail_core::data_proof_v2::SubTrie;
 use avail_core::OpaqueExtrinsic;
 use binary_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
 use codec::{Decode, Encode};
@@ -513,7 +513,7 @@ where
 
 #[cfg(test)]
 mod test {
-	use avail_core::data_proof::SubTrie;
+	use crate::submitted_data::SubTrie;
 	use codec::Encode;
 	use frame_support::traits::DefensiveTruncateFrom;
 	use hex_literal::hex;

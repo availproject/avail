@@ -4,9 +4,9 @@ use core::num::NonZeroU16;
 use std::{marker::Sync, sync::Arc};
 
 use avail_base::metrics::avail::KateRpcMetrics;
-use avail_core::data_proof::SubTrie;
+use avail_core::data_proof_v2::SubTrie;
 use avail_core::{
-	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, DataProof,
+	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, DataProof, DataProofV2,
 	OpaqueExtrinsic,
 };
 use codec::{Decode, Encode};
@@ -45,7 +45,7 @@ use sp_runtime::{
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProofResponse {
-	pub data_proof: DataProof,
+	data_proof: DataProofV2,
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub message: Option<Message>,
 }
@@ -79,6 +79,13 @@ where
 
 	#[method(name = "kate_queryDataProof")]
 	async fn query_data_proof(
+		&self,
+		transaction_index: u32,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<DataProof>;
+
+	#[method(name = "kate_queryDataProofV2")]
+	async fn query_data_proof_v2(
 		&self,
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
@@ -447,6 +454,39 @@ where
 		&self,
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
+	) -> RpcResult<DataProof> {
+		let execution_start = std::time::Instant::now();
+
+		let block = self.get_signed_block(at)?.block;
+		let calls = block
+			.extrinsics()
+			.iter()
+			.flat_map(|extrinsic| UncheckedExtrinsic::try_from(extrinsic).ok())
+			.map(|extrinsic| extrinsic.function);
+
+		// Build the proof.
+		let merkle_proof = submitted_data::calls_proof::<Runtime, _, _>(calls, transaction_index)
+			.ok_or_else(|| {
+			internal_err!(
+				"Data proof cannot be generated for transaction index={} at block {:?}",
+				transaction_index,
+				at
+			)
+		})?;
+
+		let data_proof = DataProof::try_from(&merkle_proof)
+			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e));
+
+		// Execution Time Metric
+		KateRpcMetrics::observe_query_data_proof_execution_time(execution_start.elapsed());
+
+		data_proof
+	}
+
+	async fn query_data_proof_v2(
+		&self,
+		transaction_index: u32,
+		at: Option<HashOf<Block>>,
 	) -> RpcResult<ProofResponse> {
 		let execution_start = std::time::Instant::now();
 
@@ -541,7 +581,7 @@ where
 			)
 		})?;
 
-		let data_proof = DataProof::try_from((&proof, root, root_side))
+		let data_proof = DataProofV2::try_from((&proof, root, root_side))
 			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e))?;
 
 		// Execution Time Metric
