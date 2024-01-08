@@ -1,20 +1,16 @@
 [workspace]
 resolver = "2"
 members = [
-	"pallets/executive",
-	"pallets/system",
-	"pallets/dactr",
-	"pallets/bridges/nomad/updater-manager",
-	"pallets/bridges/nomad/home",
-	"pallets/bridges/nomad/da-bridge",
-	"runtime",
-	"node",
+    "pallets/executive",
+    "pallets/system",
+    "pallets/dactr",
+    "pallets/bridges/nomad/updater-manager",
+    "pallets/bridges/nomad/home",
+    "pallets/bridges/nomad/da-bridge",
+    "runtime",
+    "node",
 ]
 
-[workspace.dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false, features = [ "runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3" }
 
 [patch."https://github.com/paritytech/substrate.git"]
 frame-executive = { path = "pallets/executive" }

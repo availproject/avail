@@ -3274,7 +3274,6 @@ dependencies = [
  "avail-base",
  "avail-core",
  "binary-merkle-tree",
- "bounded-collections",
  "cfg-if",
  "criterion",
  "derive_more",

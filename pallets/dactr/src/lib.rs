@@ -26,8 +26,6 @@ mod tests;
 pub use extensions::check_app_id::CheckAppId;
 pub mod weights;
 
-pub const LOG_TARGET: &str = "runtime::da_control";
-
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::{pallet_prelude::*, DefaultNoBound};
@@ -206,7 +204,6 @@ pub mod pallet {
 				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO)
 					.map_err(|_| Error::<T>::BlockDimensionsOutOfBounds)?;
 
-			log::info!(target: LOG_TARGET, "Block length proposal submitted: {block_length:?}");
 			DynamicBlockLength::<T>::put(block_length);
 
 			Self::deposit_event(Event::BlockLengthProposalSubmitted { rows, cols });

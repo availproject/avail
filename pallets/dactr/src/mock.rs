@@ -52,8 +52,6 @@ impl frame_system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type SubmittedDataExtractor = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;
-	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
-	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
 
 parameter_types! {

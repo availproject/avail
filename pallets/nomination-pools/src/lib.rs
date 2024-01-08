@@ -351,10 +351,10 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Codec, Encode, Decode, MaxEncodedLen};
+use codec::Codec;
 use frame_support::{
 	defensive, ensure,
-	pallet_prelude::*,
+	pallet_prelude::{MaxEncodedLen, *},
 	storage::bounded_btree_map::BoundedBTreeMap,
 	traits::{
 		Currency, Defensive, DefensiveOption, DefensiveResult, DefensiveSaturating,

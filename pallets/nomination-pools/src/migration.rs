@@ -17,7 +17,6 @@
 
 use super::*;
 use crate::log;
-use codec::Decode;
 use frame_support::traits::OnRuntimeUpgrade;
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
@@ -94,19 +93,11 @@ pub mod v1 {
 
 				current.put::<Pallet<T>>();
 
-				log!(
-					info,
-					"Upgraded {} pools, storage to version {:?}",
-					translated,
-					current
-				);
+				log!(info, "Upgraded {} pools, storage to version {:?}", translated, current);
 
 				T::DbWeight::get().reads_writes(translated + 1, translated + 1)
 			} else {
-				log!(
-					info,
-					"Migration did not executed. This probably should be removed"
-				);
+				log!(info, "Migration did not executed. This probably should be removed");
 				T::DbWeight::get().reads(1)
 			}
 		}
@@ -143,14 +134,10 @@ pub mod v2 {
 			assert_eq!(BondedPool::<Runtime>::get(1).unwrap().points, 10);
 			assert_eq!(
 				RewardPools::<Runtime>::get(1).unwrap(),
-				RewardPool {
-					..Default::default()
-				}
+				RewardPool { ..Default::default() }
 			);
 			assert_eq!(
-				PoolMembers::<Runtime>::get(10)
-					.unwrap()
-					.last_recorded_reward_counter,
+				PoolMembers::<Runtime>::get(10).unwrap().last_recorded_reward_counter,
 				Zero::zero()
 			);
 
@@ -158,20 +145,14 @@ pub mod v2 {
 			assert_eq!(BondedPool::<Runtime>::get(1).unwrap().points, 20);
 			assert_eq!(
 				RewardPools::<Runtime>::get(1).unwrap(),
-				RewardPool {
-					..Default::default()
-				}
+				RewardPool { ..Default::default() }
 			);
 			assert_eq!(
-				PoolMembers::<Runtime>::get(10)
-					.unwrap()
-					.last_recorded_reward_counter,
+				PoolMembers::<Runtime>::get(10).unwrap().last_recorded_reward_counter,
 				Zero::zero()
 			);
 			assert_eq!(
-				PoolMembers::<Runtime>::get(20)
-					.unwrap()
-					.last_recorded_reward_counter,
+				PoolMembers::<Runtime>::get(20).unwrap().last_recorded_reward_counter,
 				Zero::zero()
 			);
 
@@ -179,26 +160,18 @@ pub mod v2 {
 			assert_eq!(BondedPool::<Runtime>::get(1).unwrap().points, 30);
 			assert_eq!(
 				RewardPools::<Runtime>::get(1).unwrap(),
-				RewardPool {
-					..Default::default()
-				}
+				RewardPool { ..Default::default() }
 			);
 			assert_eq!(
-				PoolMembers::<Runtime>::get(10)
-					.unwrap()
-					.last_recorded_reward_counter,
+				PoolMembers::<Runtime>::get(10).unwrap().last_recorded_reward_counter,
 				Zero::zero()
 			);
 			assert_eq!(
-				PoolMembers::<Runtime>::get(20)
-					.unwrap()
-					.last_recorded_reward_counter,
+				PoolMembers::<Runtime>::get(20).unwrap().last_recorded_reward_counter,
 				Zero::zero()
 			);
 			assert_eq!(
-				PoolMembers::<Runtime>::get(30)
-					.unwrap()
-					.last_recorded_reward_counter,
+				PoolMembers::<Runtime>::get(30).unwrap().last_recorded_reward_counter,
 				Zero::zero()
 			);
 		});
@@ -235,10 +208,7 @@ pub mod v2 {
 			let mut temp_members = BTreeMap::<PoolId, Vec<(T::AccountId, BalanceOf<T>)>>::new();
 			PoolMembers::<T>::translate::<OldPoolMember<T>, _>(|key, old_member| {
 				let id = old_member.pool_id;
-				temp_members
-					.entry(id)
-					.or_default()
-					.push((key, old_member.points));
+				temp_members.entry(id).or_default().push((key, old_member.points));
 
 				total_points_locked += old_member.points;
 				members_translated += 1;
@@ -258,14 +228,14 @@ pub mod v2 {
 						Some(x) => x,
 						None => {
 							log!(error, "pool {} has no member! deleting it..", id);
-							return None;
+							return None
 						},
 					};
 					let bonded_pool = match BondedPools::<T>::get(id) {
 						Some(x) => x,
 						None => {
 							log!(error, "pool {} has no bonded pool! deleting it..", id);
-							return None;
+							return None
 						},
 					};
 
@@ -280,7 +250,7 @@ pub mod v2 {
 								Some(x) => x,
 								None => {
 									log!(error, "pool {} for member {:?} does not exist!", id, who);
-									return None;
+									return None
 								},
 							};
 
@@ -336,12 +306,7 @@ pub mod v2 {
 							leftover,
 							ExistenceRequirement::KeepAlive,
 						);
-						log!(
-							warn,
-							"paying {:?} leftover to the depositor: {:?}",
-							leftover,
-							o
-						);
+						log!(warn, "paying {:?} leftover to the depositor: {:?}", leftover, o);
 					}
 
 					// finally, migrate the reward pool.
@@ -387,10 +352,7 @@ pub mod v2 {
 			if current == 2 && onchain == 1 {
 				Self::run(current)
 			} else {
-				log!(
-					info,
-					"MigrateToV2 did not executed. This probably should be removed"
-				);
+				log!(info, "MigrateToV2 did not executed. This probably should be removed");
 				T::DbWeight::get().reads(1)
 			}
 		}
@@ -400,8 +362,8 @@ pub mod v2 {
 			// all reward accounts must have more than ED.
 			RewardPools::<T>::iter().try_for_each(|(id, _)| -> Result<(), TryRuntimeError> {
 				ensure!(
-					T::Currency::free_balance(&Pallet::<T>::create_reward_account(id))
-						>= T::Currency::minimum_balance(),
+					T::Currency::free_balance(&Pallet::<T>::create_reward_account(id)) >=
+						T::Currency::minimum_balance(),
 					"Reward accounts must have greater balance than ED."
 				);
 				Ok(())
@@ -575,21 +537,13 @@ pub mod v4 {
 				});
 
 				StorageVersion::new(4).put::<Pallet<T>>();
-				log!(
-					info,
-					"Upgraded {} pools, storage to version {:?}",
-					translated,
-					current
-				);
+				log!(info, "Upgraded {} pools, storage to version {:?}", translated, current);
 
 				// reads: translated + onchain version.
 				// writes: translated + current.put + initial global commission.
 				T::DbWeight::get().reads_writes(translated + 1, translated + 2)
 			} else {
-				log!(
-					info,
-					"Migration did not execute. This probably should be removed"
-				);
+				log!(info, "Migration did not execute. This probably should be removed");
 				T::DbWeight::get().reads(1)
 			}
 		}
@@ -675,21 +629,13 @@ pub mod v5 {
 				});
 
 				current.put::<Pallet<T>>();
-				log!(
-					info,
-					"Upgraded {} pools, storage to version {:?}",
-					translated,
-					current
-				);
+				log!(info, "Upgraded {} pools, storage to version {:?}", translated, current);
 
 				// reads: translated + onchain version.
 				// writes: translated + current.put.
 				T::DbWeight::get().reads_writes(translated + 1, translated + 1)
 			} else {
-				log!(
-					info,
-					"Migration did not execute. This probably should be removed"
-				);
+				log!(info, "Migration did not execute. This probably should be removed");
 				T::DbWeight::get().reads(1)
 			}
 		}
@@ -711,8 +657,8 @@ pub mod v5 {
 				"There are undecodable BondedPools in storage. This migration will not fix that."
 			);
 			ensure!(
-				SubPoolsStorage::<T>::iter_keys().count()
-					== SubPoolsStorage::<T>::iter_values().count(),
+				SubPoolsStorage::<T>::iter_keys().count() ==
+					SubPoolsStorage::<T>::iter_values().count(),
 				"There are undecodable SubPools in storage. This migration will not fix that."
 			);
 			ensure!(
@@ -745,10 +691,10 @@ pub mod v5 {
 			// `total_commission_claimed` field.
 			ensure!(
 				RewardPools::<T>::iter().all(|(_, reward_pool)| reward_pool
-					.total_commission_pending
-					>= Zero::zero() && reward_pool
-					.total_commission_claimed
-					>= Zero::zero()),
+					.total_commission_pending >=
+					Zero::zero() && reward_pool
+					.total_commission_claimed >=
+					Zero::zero()),
 				"a commission value has been incorrectly set"
 			);
 			ensure!(
@@ -766,8 +712,8 @@ pub mod v5 {
 				"There are undecodable BondedPools in storage."
 			);
 			ensure!(
-				SubPoolsStorage::<T>::iter_keys().count()
-					== SubPoolsStorage::<T>::iter_values().count(),
+				SubPoolsStorage::<T>::iter_keys().count() ==
+					SubPoolsStorage::<T>::iter_values().count(),
 				"There are undecodable SubPools in storage."
 			);
 			ensure!(

@@ -1,5 +1,3 @@
-use crate::{limits::BlockLength, AllExtrinsicsLen, Config, DynamicBlockLength, ExtrinsicLenOf};
-
 use codec::Decode;
 use frame_support::weights::Weight;
 use sp_core::Get;
@@ -7,14 +5,9 @@ use sp_core::Get;
 /// # V1 Migrations
 /// - `BlockLength` migration to `DynamicBlockLength`.
 /// - `AllExtrinsicLen` from single `u32` into `ExtrinsicLen` type.
+use crate::{limits::BlockLength, AllExtrinsicsLen, Config, DynamicBlockLength, ExtrinsicLen};
 
-const BLOCK_LENGTH: &[u8] = b":block_length:";
-
-#[derive(Decode, Default)]
-pub struct ExtrinsicLen {
-	pub raw: u32,
-	pub padded: u32,
-}
+pub const BLOCK_LENGTH: &[u8] = b":block_length:";
 
 pub fn migrate<T: Config>() -> Weight {
 	let mut weight = Weight::zero();
@@ -27,10 +20,8 @@ pub fn migrate<T: Config>() -> Weight {
 
 	// 2. Storage `AllExtrinsicsLen` from `u32` to `ExtrinsicLen`.
 	// As it is called before `on_initialize`, it should be 0.
-	let _ =
-		<AllExtrinsicsLen<T>>::translate(|maybe_len: Option<u32>| -> Option<ExtrinsicLenOf<T>> {
-			maybe_len.map(|_| ExtrinsicLenOf::<T>::default())
-		});
-
+	let _ = <AllExtrinsicsLen<T>>::translate(|maybe_len: Option<u32>| -> Option<ExtrinsicLen> {
+		maybe_len.map(|_| ExtrinsicLen::default())
+	});
 	weight.saturating_add(T::DbWeight::get().reads_writes(1, 1))
 }
