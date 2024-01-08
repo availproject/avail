@@ -338,7 +338,7 @@ mod tests {
 	const NOMAD_HOME_CALL_SIZE: usize = size_of::<nomad_home::Call<Runtime>>();
 	const NOMAD_BRIDGE_CALL_SIZE: usize = size_of::<nomad_da_bridge::Call<Runtime>>();
 
-	#[test_case(RUNTIME_CALL_SIZE => 176)]
+	#[test_case(RUNTIME_CALL_SIZE => 168)]
 	#[test_case( DA_CALL_SIZE => 32)]
 	#[test_case( SYSTEM_CALL_SIZE => 32)]
 	#[test_case( NOMAD_UPDATER_MANAGER_CALL_SIZE => 0)]

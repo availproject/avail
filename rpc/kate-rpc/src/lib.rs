@@ -45,9 +45,9 @@ use sp_runtime::{
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProofResponse {
-	data_proof: DataProof,
+	pub data_proof: DataProof,
 	#[serde(skip_serializing_if = "Option::is_none")]
-	message: Option<Message>,
+	pub message: Option<Message>,
 }
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
