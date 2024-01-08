@@ -51,13 +51,16 @@ pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_succinct::WeightInfo for WeightInfo<T> {
 	/// Storage: `Succinct::WhitelistedDomains` (r:1 w:0)
 	/// Proof: `Succinct::WhitelistedDomains` (`max_values`: Some(1), `max_size`: Some(40002), added: 40497, mode: `MaxEncodedLen`)
-	fn send_message_arbitrary_message() -> Weight {
+	/// The range of component `l` is `[0, 102400]`.
+	fn send_message_arbitrary_message(l: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `100`
 		//  Estimated: `41487`
-		// Minimum execution time: 8_055_000 picoseconds.
-		Weight::from_parts(8_516_000, 0)
+		// Minimum execution time: 8_142_000 picoseconds.
+		Weight::from_parts(8_215_170, 0)
 			.saturating_add(Weight::from_parts(0, 41487))
+			// Standard Error: 1
+			.saturating_add(Weight::from_parts(252, 0).saturating_mul(l.into()))
 			.saturating_add(T::DbWeight::get().reads(1))
 	}
 	/// Storage: `Succinct::WhitelistedDomains` (r:1 w:0)
@@ -68,8 +71,8 @@ impl<T: frame_system::Config> pallet_succinct::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `329`
 		//  Estimated: `41487`
-		// Minimum execution time: 42_827_000 picoseconds.
-		Weight::from_parts(44_231_000, 0)
+		// Minimum execution time: 42_818_000 picoseconds.
+		Weight::from_parts(44_299_000, 0)
 			.saturating_add(Weight::from_parts(0, 41487))
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(2))
@@ -80,8 +83,8 @@ impl<T: frame_system::Config> pallet_succinct::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 6_548_000 picoseconds.
-		Weight::from_parts(6_858_000, 0)
+		// Minimum execution time: 6_287_000 picoseconds.
+		Weight::from_parts(6_489_000, 0)
 			.saturating_add(Weight::from_parts(0, 0))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -91,8 +94,8 @@ impl<T: frame_system::Config> pallet_succinct::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `100`
 		//  Estimated: `3501`
-		// Minimum execution time: 9_520_000 picoseconds.
-		Weight::from_parts(9_871_000, 0)
+		// Minimum execution time: 9_448_000 picoseconds.
+		Weight::from_parts(9_850_000, 0)
 			.saturating_add(Weight::from_parts(0, 3501))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -103,8 +106,8 @@ impl<T: frame_system::Config> pallet_succinct::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_931_000 picoseconds.
-		Weight::from_parts(6_259_000, 0)
+		// Minimum execution time: 5_591_000 picoseconds.
+		Weight::from_parts(5_936_000, 0)
 			.saturating_add(Weight::from_parts(0, 0))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -114,8 +117,8 @@ impl<T: frame_system::Config> pallet_succinct::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_869_000 picoseconds.
-		Weight::from_parts(6_130_000, 0)
+		// Minimum execution time: 5_667_000 picoseconds.
+		Weight::from_parts(5_960_000, 0)
 			.saturating_add(Weight::from_parts(0, 0))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -125,8 +128,8 @@ impl<T: frame_system::Config> pallet_succinct::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 24_429_000 picoseconds.
-		Weight::from_parts(24_837_000, 0)
+		// Minimum execution time: 24_153_000 picoseconds.
+		Weight::from_parts(24_917_000, 0)
 			.saturating_add(Weight::from_parts(0, 0))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -137,7 +140,7 @@ impl<T: frame_system::Config> pallet_succinct::WeightInfo for WeightInfo<T> {
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 24_077_000 picoseconds.
-		Weight::from_parts(24_833_000, 0)
+		Weight::from_parts(25_111_000, 0)
 			.saturating_add(Weight::from_parts(0, 0))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -161,8 +164,8 @@ impl<T: frame_system::Config> pallet_succinct::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `2704`
 		//  Estimated: `5630`
-		// Minimum execution time: 7_832_703_000 picoseconds.
-		Weight::from_parts(7_847_758_000, 0)
+		// Minimum execution time: 7_784_356_000 picoseconds.
+		Weight::from_parts(7_937_902_000, 0)
 			.saturating_add(Weight::from_parts(0, 5630))
 			.saturating_add(T::DbWeight::get().reads(7))
 			.saturating_add(T::DbWeight::get().writes(4))
@@ -181,18 +184,21 @@ impl<T: frame_system::Config> pallet_succinct::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `427`
 		//  Estimated: `6196`
-		// Minimum execution time: 85_187_000 picoseconds.
-		Weight::from_parts(87_129_000, 0)
+		// Minimum execution time: 82_523_000 picoseconds.
+		Weight::from_parts(85_409_000, 0)
 			.saturating_add(Weight::from_parts(0, 6196))
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
-	fn execute_arbitrary_message() -> Weight {
+	/// The range of component `l` is `[0, 102400]`.
+	fn execute_arbitrary_message(l: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 11_315_000 picoseconds.
-		Weight::from_parts(11_695_000, 0)
+		// Minimum execution time: 10_904_000 picoseconds.
+		Weight::from_parts(11_044_450, 0)
 			.saturating_add(Weight::from_parts(0, 0))
+			// Standard Error: 2
+			.saturating_add(Weight::from_parts(2_177, 0).saturating_mul(l.into()))
 	}
 }

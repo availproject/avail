@@ -50,7 +50,7 @@ use core::marker::PhantomData;
 
 /// Weight functions needed for `pallet_succinct`.
 pub trait WeightInfo {
-	fn send_message_arbitrary_message() -> Weight;
+	fn send_message_arbitrary_message(l: u32, ) -> Weight;
 	fn send_message_fungible_token() -> Weight;
 	fn set_poseidon_hash() -> Weight;
 	fn set_broadcaster() -> Weight;
@@ -60,7 +60,7 @@ pub trait WeightInfo {
 	fn setup_step_verification() -> Weight;
 	fn fulfill_call() -> Weight;
 	fn execute_fungible_token() -> Weight;
-	fn execute_arbitrary_message() -> Weight;
+	fn execute_arbitrary_message(l: u32, ) -> Weight;
 }
 
 /// Weights for `pallet_succinct` using the Avail node and recommended hardware.
@@ -68,12 +68,15 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Succinct::WhitelistedDomains` (r:1 w:0)
 	/// Proof: `Succinct::WhitelistedDomains` (`max_values`: Some(1), `max_size`: Some(40002), added: 40497, mode: `MaxEncodedLen`)
-	fn send_message_arbitrary_message() -> Weight {
+	/// The range of component `l` is `[0, 102400]`.
+	fn send_message_arbitrary_message(l: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `100`
 		//  Estimated: `41487`
-		// Minimum execution time: 8_060_000 picoseconds.
-		Weight::from_parts(8_539_000, 41487)
+		// Minimum execution time: 8_038_000 picoseconds.
+		Weight::from_parts(8_322_980, 41487)
+			// Standard Error: 1
+			.saturating_add(Weight::from_parts(246, 0).saturating_mul(l.into()))
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 	}
 	/// Storage: `Succinct::WhitelistedDomains` (r:1 w:0)
@@ -84,8 +87,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `329`
 		//  Estimated: `41487`
-		// Minimum execution time: 43_239_000 picoseconds.
-		Weight::from_parts(44_641_000, 41487)
+		// Minimum execution time: 43_296_000 picoseconds.
+		Weight::from_parts(43_889_000, 41487)
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -95,8 +98,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 6_477_000 picoseconds.
-		Weight::from_parts(7_474_000, 0)
+		// Minimum execution time: 6_377_000 picoseconds.
+		Weight::from_parts(6_679_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Succinct::Broadcasters` (r:1 w:1)
@@ -105,8 +108,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `100`
 		//  Estimated: `3501`
-		// Minimum execution time: 9_262_000 picoseconds.
-		Weight::from_parts(9_645_000, 3501)
+		// Minimum execution time: 9_366_000 picoseconds.
+		Weight::from_parts(9_635_000, 3501)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
@@ -116,8 +119,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_698_000 picoseconds.
-		Weight::from_parts(6_078_000, 0)
+		// Minimum execution time: 5_767_000 picoseconds.
+		Weight::from_parts(6_045_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Succinct::SourceChainFrozen` (r:0 w:1)
@@ -126,8 +129,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_764_000 picoseconds.
-		Weight::from_parts(6_090_000, 0)
+		// Minimum execution time: 5_865_000 picoseconds.
+		Weight::from_parts(6_220_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Succinct::RotateVerificationKeyStorage` (r:0 w:1)
@@ -136,8 +139,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 24_589_000 picoseconds.
-		Weight::from_parts(26_778_000, 0)
+		// Minimum execution time: 24_310_000 picoseconds.
+		Weight::from_parts(25_251_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Succinct::StepVerificationKeyStorage` (r:0 w:1)
@@ -146,8 +149,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 24_605_000 picoseconds.
-		Weight::from_parts(25_116_000, 0)
+		// Minimum execution time: 24_311_000 picoseconds.
+		Weight::from_parts(25_067_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Succinct::ConfigurationStorage` (r:1 w:0)
@@ -170,8 +173,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `2704`
 		//  Estimated: `5630`
-		// Minimum execution time: 7_917_572_000 picoseconds.
-		Weight::from_parts(7_960_752_000, 5630)
+		// Minimum execution time: 7_782_865_000 picoseconds.
+		Weight::from_parts(7_866_103_000, 5630)
 			.saturating_add(T::DbWeight::get().reads(7_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
@@ -189,17 +192,20 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `427`
 		//  Estimated: `6196`
-		// Minimum execution time: 85_038_000 picoseconds.
-		Weight::from_parts(87_977_000, 6196)
+		// Minimum execution time: 84_319_000 picoseconds.
+		Weight::from_parts(86_398_000, 6196)
 			.saturating_add(T::DbWeight::get().reads(6_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
-	fn execute_arbitrary_message() -> Weight {
+	/// The range of component `l` is `[0, 102400]`.
+	fn execute_arbitrary_message(l: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 11_422_000 picoseconds.
-		Weight::from_parts(11_868_000, 0)
+		// Minimum execution time: 11_233_000 picoseconds.
+		Weight::from_parts(11_057_151, 0)
+			// Standard Error: 1
+			.saturating_add(Weight::from_parts(2_160, 0).saturating_mul(l.into()))
 	}
 }
 
@@ -207,12 +213,15 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 impl WeightInfo for () {
 	/// Storage: `Succinct::WhitelistedDomains` (r:1 w:0)
 	/// Proof: `Succinct::WhitelistedDomains` (`max_values`: Some(1), `max_size`: Some(40002), added: 40497, mode: `MaxEncodedLen`)
-	fn send_message_arbitrary_message() -> Weight {
+	/// The range of component `l` is `[0, 102400]`.
+	fn send_message_arbitrary_message(l: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `100`
 		//  Estimated: `41487`
-		// Minimum execution time: 8_060_000 picoseconds.
-		Weight::from_parts(8_539_000, 41487)
+		// Minimum execution time: 8_038_000 picoseconds.
+		Weight::from_parts(8_322_980, 41487)
+			// Standard Error: 1
+			.saturating_add(Weight::from_parts(246, 0).saturating_mul(l.into()))
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 	}
 	/// Storage: `Succinct::WhitelistedDomains` (r:1 w:0)
@@ -223,8 +232,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `329`
 		//  Estimated: `41487`
-		// Minimum execution time: 43_239_000 picoseconds.
-		Weight::from_parts(44_641_000, 41487)
+		// Minimum execution time: 43_296_000 picoseconds.
+		Weight::from_parts(43_889_000, 41487)
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
@@ -234,8 +243,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 6_477_000 picoseconds.
-		Weight::from_parts(7_474_000, 0)
+		// Minimum execution time: 6_377_000 picoseconds.
+		Weight::from_parts(6_679_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Succinct::Broadcasters` (r:1 w:1)
@@ -244,8 +253,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `100`
 		//  Estimated: `3501`
-		// Minimum execution time: 9_262_000 picoseconds.
-		Weight::from_parts(9_645_000, 3501)
+		// Minimum execution time: 9_366_000 picoseconds.
+		Weight::from_parts(9_635_000, 3501)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
@@ -255,8 +264,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_698_000 picoseconds.
-		Weight::from_parts(6_078_000, 0)
+		// Minimum execution time: 5_767_000 picoseconds.
+		Weight::from_parts(6_045_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Succinct::SourceChainFrozen` (r:0 w:1)
@@ -265,8 +274,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_764_000 picoseconds.
-		Weight::from_parts(6_090_000, 0)
+		// Minimum execution time: 5_865_000 picoseconds.
+		Weight::from_parts(6_220_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Succinct::RotateVerificationKeyStorage` (r:0 w:1)
@@ -275,8 +284,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 24_589_000 picoseconds.
-		Weight::from_parts(26_778_000, 0)
+		// Minimum execution time: 24_310_000 picoseconds.
+		Weight::from_parts(25_251_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Succinct::StepVerificationKeyStorage` (r:0 w:1)
@@ -285,8 +294,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 24_605_000 picoseconds.
-		Weight::from_parts(25_116_000, 0)
+		// Minimum execution time: 24_311_000 picoseconds.
+		Weight::from_parts(25_067_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Succinct::ConfigurationStorage` (r:1 w:0)
@@ -309,8 +318,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `2704`
 		//  Estimated: `5630`
-		// Minimum execution time: 7_917_572_000 picoseconds.
-		Weight::from_parts(7_960_752_000, 5630)
+		// Minimum execution time: 7_782_865_000 picoseconds.
+		Weight::from_parts(7_866_103_000, 5630)
 			.saturating_add(RocksDbWeight::get().reads(7_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
@@ -328,16 +337,19 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `427`
 		//  Estimated: `6196`
-		// Minimum execution time: 85_038_000 picoseconds.
-		Weight::from_parts(87_977_000, 6196)
+		// Minimum execution time: 84_319_000 picoseconds.
+		Weight::from_parts(86_398_000, 6196)
 			.saturating_add(RocksDbWeight::get().reads(6_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
-	fn execute_arbitrary_message() -> Weight {
+	/// The range of component `l` is `[0, 102400]`.
+	fn execute_arbitrary_message(l: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 11_422_000 picoseconds.
-		Weight::from_parts(11_868_000, 0)
+		// Minimum execution time: 11_233_000 picoseconds.
+		Weight::from_parts(11_057_151, 0)
+			// Standard Error: 1
+			.saturating_add(Weight::from_parts(2_160, 0).saturating_mul(l.into()))
 	}
 }

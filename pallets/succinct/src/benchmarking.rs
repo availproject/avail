@@ -45,7 +45,7 @@ use frame_benchmarking::{
 };
 use frame_support::{traits::Currency, BoundedVec};
 use frame_system::{
-	submitted_data::{Message, MessageType},
+	submitted_data::{Message, MessageType, BOUNDED_DATA_MAX_LENGTH},
 	RawOrigin,
 };
 use hex_literal::hex;
@@ -65,13 +65,17 @@ mod benchmarks {
 	use super::*;
 
 	#[benchmark]
-	fn send_message_arbitrary_message() -> Result<(), BenchmarkError> {
+	fn send_message_arbitrary_message(
+		l: Linear<0, BOUNDED_DATA_MAX_LENGTH>,
+	) -> Result<(), BenchmarkError> {
 		let origin = RawOrigin::Signed(whitelisted_caller());
 		let kind = MessageType::ArbitraryMessage;
 		let to = H256(hex!(
 			"af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
 		));
-		let data = Some(BoundedVec::try_from(vec![4, 2, 0]).unwrap());
+
+		let data: Vec<u8> = (0..l).map(|_| 0 as u8).collect();
+		let data = Some(BoundedVec::try_from(data).unwrap());
 
 		#[extrinsic_call]
 		send_message(origin, kind, to, 2, None, None, data);
@@ -229,7 +233,9 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn execute_arbitrary_message() -> Result<(), BenchmarkError> {
+	fn execute_arbitrary_message(
+		l: Linear<0, BOUNDED_DATA_MAX_LENGTH>,
+	) -> Result<(), BenchmarkError> {
 		let hash = H256(hex!(
 			"426bde66abd85741be832b824ea65a3aad70113e000000000000000000000000"
 		));
@@ -254,7 +260,7 @@ mod benchmarks {
 
 		let account_proof = get_valid_account_proof();
 		let storage_proof = get_valid_storage_proof();
-		let message = get_valid_message_2();
+		let message = get_valid_message_2(l);
 		#[extrinsic_call]
 		// amount in message 1000000000000000000
 		execute(origin, slot, message, account_proof, storage_proof);
@@ -291,8 +297,10 @@ pub fn get_valid_message() -> Message {
 	}
 }
 
-pub fn get_valid_message_2() -> Message {
-	let data = BoundedVec::try_from(vec![4, 2, 0]).unwrap();
+pub fn get_valid_message_2(l: u32) -> Message {
+	let data: Vec<u8> = (0..l).map(|_| 0 as u8).collect();
+	let data = BoundedVec::try_from(data).unwrap();
+
 	Message {
 		message_type: MessageType::ArbitraryMessage,
 		from: H256(hex!(

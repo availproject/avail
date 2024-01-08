@@ -376,7 +376,7 @@ pub mod pallet {
 		#[pallet::call_index(3)]
 		#[pallet::weight({
 			match message.message_type {
-				MessageType::ArbitraryMessage => T::WeightInfo::execute_arbitrary_message(),
+				MessageType::ArbitraryMessage => T::WeightInfo::execute_arbitrary_message(message.data.len() as u32),
 				MessageType::FungibleToken => T::WeightInfo::execute_fungible_token(),
 			}
 		})]
@@ -488,7 +488,7 @@ pub mod pallet {
 		#[pallet::call_index(5)]
 		#[pallet::weight({
 			match message_type {
-				MessageType::ArbitraryMessage => T::WeightInfo::send_message_arbitrary_message(),
+				MessageType::ArbitraryMessage => T::WeightInfo::send_message_arbitrary_message(data.as_ref().unwrap_or(&Default::default()).len() as u32),
 				MessageType::FungibleToken => T::WeightInfo::send_message_fungible_token(),
 			}
 		})]

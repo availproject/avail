@@ -16,8 +16,9 @@ use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
 
 const LOG_TARGET: &str = "runtime::system::submitted_data";
 
+pub const BOUNDED_DATA_MAX_LENGTH: u32 = 102_400;
 /// Maximum size of data allowed in the bridge
-pub type BoundedData = BoundedVec<u8, ConstU32<102_400>>;
+pub type BoundedData = BoundedVec<u8, ConstU32<BOUNDED_DATA_MAX_LENGTH>>;
 
 /// Possible types of Messages allowed by Avail to bridge to other chains.
 #[derive(
