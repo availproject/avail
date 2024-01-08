@@ -28,7 +28,6 @@ pub enum MessageType {
 	ArbitraryMessage,
 	#[default]
 	FungibleToken,
-	// NonFungibleToken, We should enable it when we support it
 }
 
 impl From<MessageType> for Vec<u8> {
@@ -570,7 +569,7 @@ mod test {
 		let callers: Vec<AccountId32> = vec![AccountId32::new([0u8; 32])];
 		let bridge_nonce: u64 = 0u64;
 
-		if let Some((da_proof, root)) = calls_proof_v2::<String, _, _>(
+		if let Some((da_proof, root, _)) = calls_proof_v2::<String, _, _>(
 			submitted_data.clone().into_iter(),
 			callers.clone(),
 			0,
@@ -605,7 +604,7 @@ mod test {
 			vec![AccountId32::new([0u8; 32]), AccountId32::new([0u8; 32])];
 		let bridge_nonce: u64 = 0u64;
 
-		if let Some((da_proof, root)) = calls_proof_v2::<String, _, _>(
+		if let Some((da_proof, root, _)) = calls_proof_v2::<String, _, _>(
 			submitted_data.clone().into_iter(),
 			callers.clone(),
 			0,
@@ -661,7 +660,7 @@ mod test {
 		// data_root keccak256(0b4aa17bff8fc189efb37609ac5ea9fca0df4c834a6fbac74b24c8119c40fef2,55bb5000a6f1a01ffaceb5986609d4225532a8bc8e47172fca25b159764c29dd )
 		//                                                       (0dfc48d8883fae891796204ca736c71163b80aaeb7682c26e58c80319d1978c4)
 
-		if let Some((da_proof, root)) = calls_proof_v2::<String, _, _>(
+		if let Some((da_proof, root, _)) = calls_proof_v2::<String, _, _>(
 			submitted_data.clone().into_iter(),
 			callers.clone(),
 			0,
@@ -703,7 +702,7 @@ mod test {
 			)
 		);
 
-		if let Some((da_proof, root)) = calls_proof_v2::<String, _, _>(
+		if let Some((da_proof, root, _)) = calls_proof_v2::<String, _, _>(
 			submitted_data.clone().into_iter(),
 			callers.clone(),
 			2,
@@ -730,7 +729,7 @@ mod test {
 			panic!("Proof not generated for the transaction index 2!");
 		}
 
-		if let Some((da_proof, root)) = calls_proof_v2::<String, _, _>(
+		if let Some((da_proof, root, _)) = calls_proof_v2::<String, _, _>(
 			submitted_data.clone().into_iter(),
 			callers.clone(),
 			3,
