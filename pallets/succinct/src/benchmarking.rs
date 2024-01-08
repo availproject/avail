@@ -195,7 +195,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn execute() -> Result<(), BenchmarkError> {
+	fn execute_fungible_token() -> Result<(), BenchmarkError> {
 		let hash = H256(hex!(
 			"426bde66abd85741be832b824ea65a3aad70113e000000000000000000000000"
 		));
@@ -223,21 +223,41 @@ mod benchmarks {
 		let message = get_valid_message();
 		#[extrinsic_call]
 		// amount in message 1000000000000000000
-		_(origin, slot, message, account_proof, storage_proof);
+		execute(origin, slot, message, account_proof, storage_proof);
 
 		Ok(())
 	}
 
 	#[benchmark]
-	fn benchmark_test() -> Result<(), BenchmarkError> {
-		let mut i = 0;
+	fn execute_arbitrary_message() -> Result<(), BenchmarkError> {
+		let hash = H256(hex!(
+			"426bde66abd85741be832b824ea65a3aad70113e000000000000000000000000"
+		));
+		Pallet::<T>::set_broadcaster(RawOrigin::Root.into(), 2, hash).unwrap();
 
-		#[block]
-		{
-			while i < 100 {
-				i += 1;
-			}
-		}
+		let slot = 8581263;
+		Timestamps::<T>::set(slot, 1704180594);
+		ExecutionStateRoots::<T>::set(
+			slot,
+			H256(hex!(
+				"d6b8a2fb20ade94a56d9d87a07ca11e46cc169ed43dc0d2527a0d3ca2309ba9c"
+			)),
+		);
+
+		let account = T::AccountId::from(ACCOUNT1);
+		let origin = RawOrigin::Signed(account.clone());
+		T::Currency::make_free_balance_be(&account, BalanceOf::<T>::max_value() / 2u32.into());
+		T::Currency::make_free_balance_be(
+			&Pallet::<T>::account_id(),
+			BalanceOf::<T>::max_value() / 2u32.into(),
+		);
+
+		let account_proof = get_valid_account_proof();
+		let storage_proof = get_valid_storage_proof();
+		let message = get_valid_message_2();
+		#[extrinsic_call]
+		// amount in message 1000000000000000000
+		execute(origin, slot, message, account_proof, storage_proof);
 
 		Ok(())
 	}
@@ -255,7 +275,7 @@ pub fn get_valid_message() -> Message {
 	];
 
 	// message = Message(0x02, bytes32(bytes20(0x681257BED628425a28B469114Dc21A7c30205cFD)), bytes32(uint256(1)), 2, 1, abi.encode(bytes32(0), 1 ether), 0)
-	let encoded = encode(data);
+	let data = BoundedVec::try_from(encode(data).to_vec()).unwrap();
 	Message {
 		message_type: MessageType::FungibleToken,
 		from: H256(hex!(
@@ -266,7 +286,24 @@ pub fn get_valid_message() -> Message {
 		)),
 		origin_domain: 2,
 		destination_domain: 1,
-		data: BoundedVec::truncate_from(encoded.to_vec()),
+		data,
+		id: 0,
+	}
+}
+
+pub fn get_valid_message_2() -> Message {
+	let data = BoundedVec::try_from(vec![4, 2, 0]).unwrap();
+	Message {
+		message_type: MessageType::ArbitraryMessage,
+		from: H256(hex!(
+			"681257BED628425a28B469114Dc21A7c30205cFD000000000000000000000000"
+		)),
+		to: H256(hex!(
+			"0000000000000000000000000000000000000000000000000000000000000001"
+		)),
+		origin_domain: 2,
+		destination_domain: 1,
+		data,
 		id: 0,
 	}
 }

@@ -374,7 +374,12 @@ pub mod pallet {
 
 		/// Executes message if a valid proofs are provided for the supported message type, assets and domains.
 		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::execute())]
+		#[pallet::weight({
+			match message.message_type {
+				MessageType::ArbitraryMessage => T::WeightInfo::execute_arbitrary_message(),
+				MessageType::FungibleToken => T::WeightInfo::execute_fungible_token(),
+			}
+		})]
 		pub fn execute(
 			origin: OriginFor<T>,
 			slot: u64,
