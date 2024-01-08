@@ -3,7 +3,7 @@ use avail_core::OpaqueExtrinsic;
 use binary_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
 use codec::{Decode, Encode};
 use core::fmt::Debug;
-use ethabi::{decode, encode, ParamType, Token};
+use ethabi::{encode, Token};
 use frame_support::{BoundedVec, Deserialize, Serialize};
 use scale_info::TypeInfo;
 use sp_core::ConstU32;
@@ -334,6 +334,7 @@ where
 	proof(data, data_index, Rc::clone(&metrics))
 }
 
+#[allow(clippy::type_complexity)]
 pub fn calls_proof_v2<F, I, C>(
 	calls: I,
 	callers: Vec<AccountId32>,
