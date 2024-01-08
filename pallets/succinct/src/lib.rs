@@ -284,7 +284,7 @@ pub mod pallet {
 		/// proof  Function proof.
 		/// slot  Function slot to update.
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::step())]
+		#[pallet::weight(T::WeightInfo::fulfill_call())]
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
 			function_id: H256,
@@ -338,7 +338,7 @@ pub mod pallet {
 
 		/// Sets verification public inputs for step function.
 		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::step())]
+		#[pallet::weight(T::WeightInfo::setup_step_verification())]
 		pub fn setup_step_verification(
 			origin: OriginFor<T>,
 			verification: String,
@@ -356,7 +356,7 @@ pub mod pallet {
 
 		/// Sets verification public inputs for rotate function.
 		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::step())]
+		#[pallet::weight(T::WeightInfo::setup_rotate_verification())]
 		pub fn setup_rotate_verification(
 			origin: OriginFor<T>,
 			verification: String,
@@ -374,7 +374,7 @@ pub mod pallet {
 
 		/// Executes message if a valid proofs are provided for the supported message type, assets and domains.
 		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::step())]
+		#[pallet::weight(T::WeightInfo::execute())]
 		pub fn execute(
 			origin: OriginFor<T>,
 			slot: u64,
@@ -462,7 +462,7 @@ pub mod pallet {
 
 		/// source_chain_froze froze source chain and prevent messages to be executed.
 		#[pallet::call_index(4)]
-		#[pallet::weight(T::WeightInfo::step())]
+		#[pallet::weight(T::WeightInfo::source_chain_froze())]
 		pub fn source_chain_froze(
 			origin: OriginFor<T>,
 			source_chain_id: u32,
@@ -481,7 +481,12 @@ pub mod pallet {
 
 		/// send_message sends a message from a origin chain to the destination chain.
 		#[pallet::call_index(5)]
-		#[pallet::weight(T::WeightInfo::step())]
+		#[pallet::weight({
+			match message_type {
+				MessageType::ArbitraryMessage => T::WeightInfo::send_message_arbitrary_message(),
+				MessageType::FungibleToken => T::WeightInfo::send_message_fungible_token(),
+			}
+		})]
 		pub fn send_message(
 			origin: OriginFor<T>,
 			message_type: MessageType,
@@ -535,7 +540,7 @@ pub mod pallet {
 
 		/// set_poseidon_hash sets poseidon hash of the sync commettee for the particular period.
 		#[pallet::call_index(6)]
-		#[pallet::weight(T::WeightInfo::step())]
+		#[pallet::weight(T::WeightInfo::set_poseidon_hash())]
 		pub fn set_poseidon_hash(
 			origin: OriginFor<T>,
 			period: u64,
@@ -553,7 +558,7 @@ pub mod pallet {
 
 		/// set_broadcaster sets the broadcaster address of the message from the origin chain.
 		#[pallet::call_index(7)]
-		#[pallet::weight(T::WeightInfo::step())]
+		#[pallet::weight(T::WeightInfo::set_broadcaster())]
 		pub fn set_broadcaster(
 			origin: OriginFor<T>,
 			broadcaster_domain: u32,
@@ -575,7 +580,7 @@ pub mod pallet {
 
 		/// TODO
 		#[pallet::call_index(8)]
-		#[pallet::weight(T::WeightInfo::step())]
+		#[pallet::weight(T::WeightInfo::set_whitelisted_domains())]
 		pub fn set_whitelisted_domains(
 			origin: OriginFor<T>,
 			value: BoundedVec<u32, ConstU32<10_000>>,
