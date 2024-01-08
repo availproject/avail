@@ -235,7 +235,7 @@ mod benchmarks {
 
 		#[block]
 		{
-			submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(once(&opaque));
+			submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(once(&opaque), 0);
 		}
 
 		Ok(())
@@ -266,7 +266,7 @@ mod benchmarks {
 
 		#[block]
 		{
-			submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(calls.iter());
+			submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(calls.iter(), 0);
 		}
 
 		Ok(())
