@@ -4,7 +4,7 @@ use frame_support::{
 	traits::{KeyOwnerProofSystem, Randomness},
 	weights::Weight,
 };
-use frame_system::limits::BlockLength;
+use frame_system::{limits::BlockLength, HeaderVersion};
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
@@ -48,7 +48,18 @@ decl_runtime_apis! {
 			block_number: u32,
 		) -> HeaderExtension;
 
-		fn build_data_root( extrinsics: Vec<OpaqueExtrinsic>) -> H256;
+		#[api_version(2)]
+		fn build_versioned_extension(
+			extrinsics: Vec<OpaqueExtrinsic>,
+			data_root: H256,
+			block_length: BlockLength,
+			block_number: u32,
+			version: HeaderVersion
+		) -> HeaderExtension;
+
+		fn build_data_root(extrinsics: Vec<OpaqueExtrinsic>) -> H256;
+
+		fn build_data_root_v2(extrinsics: Vec<OpaqueExtrinsic>) -> H256;
 	}
 }
 
@@ -380,8 +391,14 @@ impl_runtime_apis! {
 	}
 
 
+	#[api_version(2)]
 	impl crate::apis::ExtensionBuilder<Block> for Runtime {
 		fn build_data_root( extrinsics: Vec<OpaqueExtrinsic>) -> H256  {
+			type Extractor = <Runtime as frame_system::Config>::SubmittedDataExtractor;
+			frame_system::submitted_data::extrinsics_root::<Extractor, _>(extrinsics.iter())
+		}
+
+		fn build_data_root_v2(extrinsics: Vec<OpaqueExtrinsic>) -> H256  {
 			type Extractor = <Runtime as frame_system::Config>::SubmittedDataExtractor;
 			let bridge_nonce = frame_system::Pallet::<Runtime>::bridge_nonce();
 			frame_system::submitted_data::extrinsics_root_v2::<Extractor, _>(extrinsics.iter(), bridge_nonce).0
@@ -410,7 +427,38 @@ impl_runtime_apis! {
 			app_extrinsics,
 			data_root,
 			block_length,
-			block_number)
+			block_number,
+			HeaderVersion::V1,
+		)
+		}
+
+		fn build_versioned_extension(
+			extrinsics: Vec<OpaqueExtrinsic>,
+			data_root: H256,
+			block_length: BlockLength,
+			block_number: u32,
+			version: HeaderVersion,
+		) -> HeaderExtension {
+			use frame_system::HeaderExtensionBuilder as _;
+
+			type UncheckedExtrinsic = <Runtime as frame_system::Config>::UncheckedExtrinsic;
+
+			let app_extrinsics = extrinsics
+				.into_iter()
+				.filter_map(|opaque| {
+					let unchecked = UncheckedExtrinsic::try_from(&opaque).ok()?;
+					let app_ext = unchecked.into();
+					Some(app_ext)
+				})
+				.collect::<Vec<_>>();
+
+			frame_system::header_builder::da::HeaderExtensionBuilder::<Runtime>::build(
+			app_extrinsics,
+			data_root,
+			block_length,
+			block_number,
+			version,
+		)
 		}
 	}
 

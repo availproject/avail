@@ -112,7 +112,7 @@ use sp_weights::{RuntimeDbWeight, Weight};
 
 pub mod header_builder;
 pub mod submitted_data;
-pub use header_builder::HeaderExtensionBuilder;
+pub use header_builder::{HeaderExtensionBuilder, HeaderVersion};
 
 pub mod limits;
 #[cfg(any(feature = "std", test))]
@@ -1610,6 +1610,7 @@ impl<T: Config> Pallet<T> {
 			data_root,
 			block_length,
 			number.unique_saturated_into(),
+			HeaderVersion::V2,
 		);
 
 		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
