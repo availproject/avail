@@ -357,6 +357,6 @@ pub mod tests {
 
 		let expected_proof_root = merkle_proof::<Keccak256, _, _>(vec![example_data.to_vec()], 0);
 		let actual_proof = query_data_proof(rpc, 1, block_hash).await.unwrap();
-		assert_eq!(actual_proof.root, expected_proof_root.root);
+		assert_eq!(actual_proof.blob_root, expected_proof_root.root);
 	}
 }
