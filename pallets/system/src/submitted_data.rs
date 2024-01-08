@@ -96,11 +96,16 @@ pub trait Extractor {
 	/// `Avail::SubmitData` call.
 	///
 	/// The `metrics` will be used to write accountability information about the whole process.
+	// Note: This should be deprecated in the upcoming versions in favour of extract_v2
 	fn extract(
 		extrinsic: &OpaqueExtrinsic,
 		metrics: RcMetrics,
 	) -> Result<Vec<Vec<u8>>, Self::Error>;
 
+	/// Returns the `data` or `Message` based on whether the given extrinsic is `da::submit_data`
+	/// or `bridge::send_message` Call respectively. It supports both v1 & v2 headers.
+	///
+	/// The `metrics` will be used to write accountability information about the whole process.
 	#[allow(clippy::type_complexity)]
 	fn extract_v2(
 		extrinsic: &OpaqueExtrinsic,
@@ -157,6 +162,7 @@ impl<C> Filter<C> for () {
 	}
 }
 
+// This should be deprecated in upcoming version in favour of extract_and_inspect_v2
 fn extract_and_inspect<E>(opaque: &OpaqueExtrinsic, metrics: RcMetrics) -> Vec<Vec<u8>>
 where
 	E: Extractor,
@@ -173,6 +179,7 @@ where
 		.collect()
 }
 
+// Supports both v1 & v2 headers
 fn extract_and_inspect_v2<E>(
 	opaque: &OpaqueExtrinsic,
 	metrics: RcMetrics,
@@ -188,16 +195,13 @@ where
 
 	let (blob_root_data, bridge_root_data) = extracted.unwrap_or_default();
 
+	// This filtering is required for data extraction of v1 header
 	let blob_root = blob_root_data
 		.into_iter()
 		.filter(|data| !data.is_empty())
 		.collect();
-	let data_root = bridge_root_data
-		.into_iter()
-		.filter(|msg| msg != &Message::default())
-		.collect();
 
-	(blob_root, data_root)
+	(blob_root, bridge_root_data)
 }
 
 /// Construct a root hash of Binary Merkle Tree created from given filtered `app_extrincs`.
@@ -238,7 +242,6 @@ where
 
 	let root_bridge_data: Vec<_> = bridge_data
 		.into_iter()
-		.filter(|m| m != &Message::default())
 		.map(|mut m| {
 			bridge_nonce += 1;
 			m.id = bridge_nonce;
