@@ -49,6 +49,7 @@ std = [
 	"hash256-std-hasher/std",
 	"hex",
 	"log/std",
+	"nomad-core/std",
 	"scale-info/std",
 	"serde/std",
 	"sp-arithmetic/std",
@@ -58,7 +59,6 @@ std = [
 	"sp-runtime?/std",
 	"sp-std/std",
 	"sp-trie/std",
-	"nomad-core/std",
 ]
 runtime = [
 	"binary-merkle-tree",
