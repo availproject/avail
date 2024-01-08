@@ -5,8 +5,8 @@ use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 use da_runtime::{
 	constants, wasm_binary_unwrap, AccountId, BabeConfig, Balance, BalancesConfig,
 	DataAvailabilityConfig, NomadHomeConfig, NomadUpdaterManagerConfig, NominationPoolsConfig,
-	RuntimeGenesisConfig, SessionConfig, StakerStatus, StakingConfig, SuccinctConfig,
-	SudoConfig, SystemConfig, TechnicalCommitteeConfig, AVL,
+	RuntimeGenesisConfig, SessionConfig, StakerStatus, StakingConfig, SuccinctConfig, SudoConfig,
+	SystemConfig, TechnicalCommitteeConfig, AVL,
 };
 use frame_system::limits::BlockLength;
 use hex_literal::hex;

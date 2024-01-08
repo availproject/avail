@@ -36,12 +36,20 @@
 //
 // }
 
-use crate::{BalanceOf, Call, Config, Pallet, ConfigurationStorage, FunctionInputVec, FunctionOutputVec, FunctionProofVec, state::Configuration, ExecutionStateRoots, ValidProofVec, Timestamps};
-use frame_benchmarking::{impl_benchmark_test_suite, vec, whitelisted_caller, BenchmarkError, v2::benchmarks, Vec};
-use frame_support::{BoundedVec, traits::Currency};
-use frame_system::{RawOrigin, submitted_data::{Message, MessageType}};
+use crate::{
+	state::Configuration, BalanceOf, Call, Config, ConfigurationStorage, ExecutionStateRoots,
+	FunctionInputVec, FunctionOutputVec, FunctionProofVec, Pallet, Timestamps, ValidProofVec,
+};
+use frame_benchmarking::{
+	impl_benchmark_test_suite, v2::benchmarks, vec, whitelisted_caller, BenchmarkError, Vec,
+};
+use frame_support::{traits::Currency, BoundedVec};
+use frame_system::{
+	submitted_data::{Message, MessageType},
+	RawOrigin,
+};
 use hex_literal::hex;
-use sp_core::{U256, H256};
+use sp_core::{H256, U256};
 use sp_runtime::traits::Bounded;
 
 const ACCOUNT1: [u8; 32] = [2u8; 32];
@@ -49,7 +57,7 @@ const STEP_FN_ID: H256 = H256(hex!(
 	"af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
 ));
 
-#[benchmarks(where 
+#[benchmarks(where
     [u8; 32]: From<<T as frame_system::Config>::AccountId>,
     <T as frame_system::Config>::AccountId: From<[u8; 32]>,
 )]
@@ -156,12 +164,12 @@ mod benchmarks {
 
 	#[benchmark]
 	fn fulfill_call() -> Result<(), BenchmarkError> {
-        use ark_std::string::String;
+		use ark_std::string::String;
 
 		let hash = U256::from(hex!(
 			"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
 		));
-        let verification = String::from_utf8(get_step_verification_key()).unwrap();
+		let verification = String::from_utf8(get_step_verification_key()).unwrap();
 
 		Pallet::<T>::set_poseidon_hash(RawOrigin::Root.into(), 931, hash).unwrap();
 		Pallet::<T>::setup_step_verification(RawOrigin::Root.into(), verification).unwrap();
@@ -171,20 +179,27 @@ mod benchmarks {
 			finality_threshold: 461,
 		});
 
-        let account = T::AccountId::from(ACCOUNT1);
+		let account = T::AccountId::from(ACCOUNT1);
 		let origin = RawOrigin::Signed(account.clone());
 		#[extrinsic_call]
-		_(origin, STEP_FN_ID, get_valid_step_input(), get_valid_step_output(), get_valid_step_proof(), 7634942);
+		_(
+			origin,
+			STEP_FN_ID,
+			get_valid_step_input(),
+			get_valid_step_output(),
+			get_valid_step_proof(),
+			7634942,
+		);
 
 		Ok(())
 	}
 
-    #[benchmark]
+	#[benchmark]
 	fn execute() -> Result<(), BenchmarkError> {
-        let hash = H256(hex!(
-            "426bde66abd85741be832b824ea65a3aad70113e000000000000000000000000"
-        ));
-        Pallet::<T>::set_broadcaster(RawOrigin::Root.into(), 2, hash).unwrap();
+		let hash = H256(hex!(
+			"426bde66abd85741be832b824ea65a3aad70113e000000000000000000000000"
+		));
+		Pallet::<T>::set_broadcaster(RawOrigin::Root.into(), 2, hash).unwrap();
 
 		let slot = 8581263;
 		Timestamps::<T>::set(slot, 1704180594);
@@ -195,12 +210,15 @@ mod benchmarks {
 			)),
 		);
 
-        let account = T::AccountId::from(ACCOUNT1);
+		let account = T::AccountId::from(ACCOUNT1);
 		let origin = RawOrigin::Signed(account.clone());
-        T::Currency::make_free_balance_be(&account, BalanceOf::<T>::max_value() / 2u32.into());
-        T::Currency::make_free_balance_be(&Pallet::<T>::account_id(), BalanceOf::<T>::max_value() / 2u32.into());
-        
-        let account_proof = get_valid_account_proof();
+		T::Currency::make_free_balance_be(&account, BalanceOf::<T>::max_value() / 2u32.into());
+		T::Currency::make_free_balance_be(
+			&Pallet::<T>::account_id(),
+			BalanceOf::<T>::max_value() / 2u32.into(),
+		);
+
+		let account_proof = get_valid_account_proof();
 		let storage_proof = get_valid_storage_proof();
 		let message = get_valid_message();
 		#[extrinsic_call]
@@ -227,10 +245,9 @@ mod benchmarks {
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
 }
 
-
 pub fn get_valid_message() -> Message {
-    use ethabi::Token;
-    use ethabi::encode;
+	use ethabi::encode;
+	use ethabi::Token;
 
 	let data = &[
 		Token::FixedBytes(H256::zero().as_bytes().to_vec()),
