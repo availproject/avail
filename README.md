@@ -129,6 +129,25 @@ podman run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output availnode --dev 
 podman run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output:z availnode --dev --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all
 ```
 
+## Run Benchmarks
+### Kate RPC
+```bash
+cargo build --release --features kate-rpc-metrics
+deno run -A ./examples/deno/benchmarks/query_proof.ts && deno run -A ./examples/deno/benchmarks/query_data_proof.ts && deno run -A ./examples/deno/benchmarks/query_rows.ts && deno run -A ./examples/deno/benchmarks/query_block_length.ts && deno run -A ./examples/deno/benchmarks/query_app_data.ts
+```
+
+### Header Builder
+```bash
+# Option 1: for time measurement 
+cargo bench --bench header_kate_commitment_cri
+# Option 2: for time measurement 
+cargo bench --bench header_kate_commitment_divan
+# Option 1: for instructions, cache and main memory hits
+cargo bench --bench header_kate_commitment_iai_callgrind
+# Option 2: for instructions, cache and main memory hits
+cargo bench --bench header_kate_commitment_iai
+```
+
 ## Additional Documentation
 For additional documentation check our [wiki page](https://github.com/availproject/avail/wiki).
 There you can learn how to:
@@ -136,3 +155,14 @@ There you can learn how to:
 - Build Avail Node for different Linux flavours
 - Find out what node synchronization options are available
 - Running Avail Benchmarks
+
+
+## Interract with the chain
+You can find on this repository many example on how to interract with any avail chain.
+- In the avail-js folder, you will find our wrapper for polkadot js including multiple helpers.
+    - The example folder contains some examples using node-js and an example web app to setup the extension.
+- In the avail-subxt folder, you will find our fork of subxt with some example on usage.
+- In the examples folders you will find examples for:
+  - Deno examples
+  - Go examples
+  - Validitum example implementation 

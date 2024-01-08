@@ -1,0 +1,12 @@
+{
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "eslint-config-prettier"],
+  "parser": "@typescript-eslint/parser",
+  "env": {
+    "node": true
+  },
+  "plugins": ["@typescript-eslint", "jest"],
+  "rules": {
+    // "@typescript-eslint/no-explicit-any": "off"
+  },
+  "ignorePatterns": ["build"]
+}
