@@ -824,9 +824,17 @@ mod test {
 		assert_eq!(expected_encoded_message, abi_encoded);
 	}
 
-	// Message is : Message { message_type: FungibleToken, from: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d, to: 0x0000000000000000000000000000000000000000000000000000000000000001, origin_domain: 1, destination_domain: 2, data: BoundedVec([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 102400), id: 1 }
 	#[test]
 	fn test_message_encoding_from_avail_with_hash() {
+		// Message is : Message {
+		// message_type: FungibleToken,
+		// from: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d,
+		// to: 0x0000000000000000000000000000000000000000000000000000000000000001,
+		// origin_domain: 1,
+		// destination_domain: 2,
+		// data: BoundedVec([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 102400),
+		// id: 1 }
+
 		let data = &[
 			ethabi::Token::FixedBytes(H256::zero().encode()),
 			ethabi::Token::Uint(U256::from(1u128)),
