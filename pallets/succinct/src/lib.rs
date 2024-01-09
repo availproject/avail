@@ -202,7 +202,8 @@ pub mod pallet {
 		/// When the provided function_id matches the rotate function identifier, specific logic related to rotate functions is executed.
 		#[pallet::constant]
 		type RotateFunctionId: Get<H256>;
-		/// TODO
+		/// The index of the `messages` mapping in contract.
+		/// This is mandatory when calling execute messages via storage ptoofs.
 		#[pallet::constant]
 		type MessageMappingStorageIndex: Get<u64>;
 		/// Bridge's pallet id, used for deriving its sovereign account ID.
@@ -224,8 +225,6 @@ pub mod pallet {
 		pub sync_committee_poseidon: U256,
 		pub period: u64,
 		pub whitelisted_domains: Vec<u32>,
-		pub step_vk: Vec<u8>,
-		pub rotate_vk: Vec<u8>,
 		pub _phantom: PhantomData<T>,
 	}
 

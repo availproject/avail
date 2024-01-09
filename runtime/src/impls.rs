@@ -233,8 +233,6 @@ parameter_types! {
         ]
     ]
 }}"#.as_bytes().to_vec();
-
-
 }
 
 impl pallet_succinct::Config for Runtime {
