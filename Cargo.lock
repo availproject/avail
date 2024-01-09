@@ -2181,6 +2181,7 @@ dependencies = [
  "pallet-nomination-pools-runtime-api",
  "pallet-offences",
  "pallet-preimage",
+ "pallet-proxy",
  "pallet-scheduler",
  "pallet-session",
  "pallet-staking",
@@ -4759,6 +4760,7 @@ dependencies = [
  "avail-core",
  "da-control",
  "da-runtime",
+ "frame-support",
  "frame-system",
  "jsonrpsee",
  "kate",
@@ -4768,6 +4770,7 @@ dependencies = [
  "parity-scale-codec",
  "rayon",
  "sc-client-api",
+ "sc-rpc-api",
  "serde",
  "sp-api",
  "sp-blockchain",
@@ -6741,6 +6744,21 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-proxy"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v1.0.0#948fbd2fd1233dc26dbb9f9bbc1d2cca2c03945d"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
  "sp-io",
  "sp-runtime",
  "sp-std",

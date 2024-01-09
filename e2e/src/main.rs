@@ -41,7 +41,8 @@ pub mod tests {
 			ws: String::from("ws://127.0.0.1:9944"),
 			validate_codegen: false,
 		};
-		build_client(args.ws, args.validate_codegen).await
+		let (client, _rpc) = build_client(args.ws, args.validate_codegen).await?;
+		Ok(client)
 	}
 
 	async fn send_da_example_data(

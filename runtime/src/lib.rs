@@ -149,6 +149,7 @@ construct_runtime!(
 		Identity: pallet_identity = 37,
 		Mandate: pallet_mandate = 38,
 		Succinct: pallet_succinct = 39,
+		Proxy: pallet_proxy = 40,
 	}
 );
 
@@ -194,6 +195,7 @@ mod benches {
 		[pallet_identity, $crate::Identity]
 		[pallet_mandate, $crate::Mandate]
 		[pallet_succinct, $crate::Succinct]
+		[pallet_proxy, $crate::Proxy]
 	);
 }
 
@@ -270,6 +272,7 @@ mod tests {
 		<pallet_mandate::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_succinct::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_nomination_pools::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_proxy::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		Ok(())
 	}
 

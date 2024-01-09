@@ -92,6 +92,7 @@ pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch 
 pallet-nomination-pools = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false}
 pallet-nomination-pools-runtime-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 pallet-identity = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+pallet-proxy = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 
 pallet-mandate = { path = "../pallets/mandate", default-features = false }
 pallet-succinct = { path = "../pallets/succinct", default-features = false }
@@ -186,6 +187,7 @@ std = [
 	"pallet-nomination-pools/std",
 	"pallet-offences/std",
 	"pallet-preimage/std",
+	"pallet-proxy/std",
 	"pallet-scheduler/std",
 	"pallet-session/std",
 	"pallet-staking/std",
@@ -244,6 +246,7 @@ runtime-benchmarks = [
 	"pallet-mmr/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
+	"pallet-proxy/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-staking/runtime-benchmarks",
 	"pallet-succinct/runtime-benchmarks",
@@ -285,6 +288,7 @@ try-runtime = [
 	"pallet-nomination-pools/try-runtime",
 	"pallet-offences/try-runtime",
 	"pallet-preimage/try-runtime",
+	"pallet-proxy/try-runtime",
 	"pallet-scheduler/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-staking/try-runtime",
