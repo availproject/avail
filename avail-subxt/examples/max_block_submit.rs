@@ -1,12 +1,5 @@
-use std::time::Instant;
+use avail_subxt::{build_client, submit_data, Opts};
 
-use anyhow::Result;
-use avail_subxt::{
-	api::{self, runtime_types::bounded_collections::bounded_vec::BoundedVec},
-	build_client,
-	primitives::AvailExtrinsicParams,
-	Opts,
-};
 use sp_keyring::AccountKeyring;
 use structopt::StructOpt;
 use subxt::tx::PairSigner;
@@ -16,33 +9,25 @@ use subxt::tx::PairSigner;
 /// to the next block. The limit for the transaction is currently set to 512 kB, and limit for the block
 /// is 2 MB, so this means 128 data transactions are needed to fill the block. Depending on the network,
 /// it may not be possible to transfer so many in 20 s (the default block time)
+const BLOCK_SIZE: usize = 2 * 1024 * 1024;
+const TX_MAX_SIZE: usize = 512 * 1024;
+const NUM_CHUNKS: usize = BLOCK_SIZE / TX_MAX_SIZE;
 
 #[async_std::main]
-async fn main() -> Result<()> {
+async fn main() -> anyhow::Result<()> {
 	let args = Opts::from_args();
-	let client = build_client(args.ws, args.validate_codegen).await?;
+	let (client, _) = build_client(args.ws, args.validate_codegen).await?;
 
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());
-	let size: usize = 2 * 1024 * 1024;
-	let max_size: usize = 512 * 1024;
-	let num_chunks = size / max_size;
-	let extrinsic_params = AvailExtrinsicParams::new_with_app_id(1.into());
-	let start = Instant::now();
+	let start = std::time::Instant::now();
 
-	for i in 1..=num_chunks {
-		let data_transfer =
-			api::tx()
-				.data_availability()
-				.submit_data(BoundedVec(vec![(i & 255) as u8; max_size]));
-		let h = client
-			.tx()
-			.sign_and_submit(&data_transfer, &signer, extrinsic_params.clone())
-			.await?;
+	for i in 1..=NUM_CHUNKS {
+		let data = vec![(i & 255) as u8; TX_MAX_SIZE];
+		let h = submit_data(&client, &signer, data, 1).await?;
 		println!("hash #{i}: {:?}", h);
 	}
 	let end = start.elapsed();
 
 	println!("Done in {end:?}!");
-
 	Ok(())
 }

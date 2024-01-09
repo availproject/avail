@@ -16,7 +16,7 @@ export const API_RPC = {
             params: [
                 {
                     name: 'cells',
-                    type: 'Vec<Cell>'
+                    type: 'BoundedVec<Cell>'
                 },
                 {
                     name: 'at',
@@ -61,7 +61,7 @@ export const API_RPC = {
             params: [
                 {
                     name: "rows",
-                    type: "Vec<u32>"
+                    type: "BoundedVec<u32>"
                 },
                 {
                     name: "at",
