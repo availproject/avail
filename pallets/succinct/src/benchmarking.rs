@@ -144,29 +144,6 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn setup_rotate_verification() -> Result<(), BenchmarkError> {
-		use ark_std::string::String;
-		let verification = get_rotate_verification_key();
-		let verification = String::from_utf8(verification).unwrap();
-
-		#[extrinsic_call]
-		_(RawOrigin::Root, verification);
-
-		Ok(())
-	}
-
-	#[benchmark]
-	fn setup_step_verification() -> Result<(), BenchmarkError> {
-		use ark_std::string::String;
-		let verification = String::from_utf8(get_step_verification_key()).unwrap();
-
-		#[extrinsic_call]
-		_(RawOrigin::Root, verification);
-
-		Ok(())
-	}
-
-	#[benchmark]
 	fn fulfill_call() -> Result<(), BenchmarkError> {
 		use ark_std::string::String;
 

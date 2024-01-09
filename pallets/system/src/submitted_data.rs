@@ -237,7 +237,6 @@ where
 	let root_blob_data = blob_data
 		.into_iter()
 		.filter(|v| !v.is_empty())
-		// .map(|leaf| keccak_256(leaf.as_slice()).to_vec())
 		.collect::<Vec<_>>();
 
 	let root_bridge_data: Vec<_> = bridge_data
@@ -245,7 +244,6 @@ where
 		.map(|mut m| {
 			bridge_nonce += 1;
 			m.id = bridge_nonce;
-			log::info!("Message is : {:?}", m);
 			keccak_256(&m.abi_encode()).to_vec()
 		})
 		.collect();

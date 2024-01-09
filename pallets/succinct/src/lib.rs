@@ -22,7 +22,6 @@ mod weights;
 
 // TODO @MARKO Change the names to something more suitable.
 // TODO @MARKO The length constraints could be made generic if needed for tests.
-type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
 pub type FunctionInputVec = BoundedVec<u8, ConstU32<256>>;
 pub type FunctionOutputVec = BoundedVec<u8, ConstU32<512>>;
 pub type FunctionProofVec = BoundedVec<u8, ConstU32<1048>>;
@@ -39,7 +38,6 @@ pub type BalanceOf<T> =
 
 #[frame_support::pallet]
 pub mod pallet {
-	use ark_std::string::String;
 	use ark_std::{vec, vec::Vec};
 	use ethabi::Token;
 	use ethabi::Token::Uint;
@@ -107,8 +105,6 @@ pub mod pallet {
 		HeaderUpdate { slot: u64, finalization_root: H256 },
 		/// emit event once the sync committee updates.
 		SyncCommitteeUpdate { period: u64, root: U256 },
-		/// emit event when verification setup is completed.
-		VerificationSetupCompleted,
 		/// emit when new updater is set
 		BroadcasterUpdate { old: H256, new: H256, domain: u32 },
 		/// emit when message gets executed.
@@ -130,16 +126,6 @@ pub mod pallet {
 		/// Whitelisted domains were updated.
 		WhitelistedDomainsUpdated,
 	}
-
-	/// Step verification key storage.
-	#[pallet::storage]
-	pub type StepVerificationKeyStorage<T: Config> =
-		StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
-
-	/// Rotate verification key storage.
-	#[pallet::storage]
-	pub type RotateVerificationKeyStorage<T: Config> =
-		StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
 
 	/// Storage for a head updates.
 	#[pallet::storage]
@@ -198,6 +184,13 @@ pub mod pallet {
 		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
 		/// Dependency that can provide current time.
 		type TimeProvider: UnixTime;
+		/// Step verification key constant
+		#[pallet::constant]
+		type StepVerificationKey: Get<Vec<u8>>;
+		/// Rotate verification key constant
+		#[pallet::constant]
+		type RotateVerificationKey: Get<Vec<u8>>;
+
 		/// Defines the maximum length of the verification key.
 		#[pallet::constant]
 		type MaxVerificationKeyLength: Get<u32>;
@@ -231,6 +224,8 @@ pub mod pallet {
 		pub sync_committee_poseidon: U256,
 		pub period: u64,
 		pub whitelisted_domains: Vec<u32>,
+		pub step_vk: Vec<u8>,
+		pub rotate_vk: Vec<u8>,
 		pub _phantom: PhantomData<T>,
 	}
 
@@ -323,44 +318,8 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		/// Sets verification public inputs for step function.
-		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::setup_step_verification())]
-		pub fn setup_step_verification(
-			origin: OriginFor<T>,
-			verification: String,
-		) -> DispatchResult {
-			ensure_root(origin)?;
-			// try from json to Verifier struct
-			Verifier::from_json_u8_slice(verification.as_bytes())
-				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
-			// store verification to storage
-			Self::store_step_verification_key(verification.as_bytes().to_vec())?;
-
-			Self::deposit_event(Event::<T>::VerificationSetupCompleted);
-			Ok(())
-		}
-
-		/// Sets verification public inputs for rotate function.
-		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::setup_rotate_verification())]
-		pub fn setup_rotate_verification(
-			origin: OriginFor<T>,
-			verification: String,
-		) -> DispatchResult {
-			ensure_root(origin)?;
-			// try from json to Verifier struct
-			Verifier::from_json_u8_slice(verification.as_bytes())
-				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
-			// store verification to storage
-			Self::store_rotate_verification_key(verification.as_bytes().to_vec())?;
-
-			Self::deposit_event(Event::<T>::VerificationSetupCompleted);
-			Ok(())
-		}
-
 		/// Executes message if a valid proofs are provided for the supported message type, assets and domains.
-		#[pallet::call_index(3)]
+		#[pallet::call_index(1)]
 		#[pallet::weight({
 			match message.message_type {
 				MessageType::ArbitraryMessage => T::WeightInfo::execute_arbitrary_message(message.data.len() as u32),
@@ -453,7 +412,7 @@ pub mod pallet {
 		}
 
 		/// source_chain_froze froze source chain and prevent messages to be executed.
-		#[pallet::call_index(4)]
+		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::source_chain_froze())]
 		pub fn source_chain_froze(
 			origin: OriginFor<T>,
@@ -472,7 +431,7 @@ pub mod pallet {
 		}
 
 		/// send_message sends a message from a origin chain to the destination chain.
-		#[pallet::call_index(5)]
+		#[pallet::call_index(3)]
 		#[pallet::weight({
 			match message_type {
 				MessageType::ArbitraryMessage => T::WeightInfo::send_message_arbitrary_message(data.as_ref().unwrap_or(&Default::default()).len() as u32),
@@ -531,25 +490,24 @@ pub mod pallet {
 		}
 
 		/// set_poseidon_hash sets poseidon hash of the sync commettee for the particular period.
-		#[pallet::call_index(6)]
+		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::set_poseidon_hash())]
 		pub fn set_poseidon_hash(
 			origin: OriginFor<T>,
 			period: u64,
-			poseidon_hash: U256,
+			poseidon_hash: BoundedVec<u8, ConstU32<200>>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 
-			SyncCommitteePoseidons::<T>::insert(period, poseidon_hash);
-			Self::deposit_event(Event::SyncCommitteeUpdate {
-				period,
-				root: poseidon_hash,
-			});
+			let hash = U256::from(poseidon_hash.to_vec().as_slice());
+
+			SyncCommitteePoseidons::<T>::insert(period, hash);
+			Self::deposit_event(Event::SyncCommitteeUpdate { period, root: hash });
 			Ok(().into())
 		}
 
 		/// set_broadcaster sets the broadcaster address of the message from the origin chain.
-		#[pallet::call_index(7)]
+		#[pallet::call_index(5)]
 		#[pallet::weight(T::WeightInfo::set_broadcaster())]
 		pub fn set_broadcaster(
 			origin: OriginFor<T>,
@@ -572,7 +530,7 @@ pub mod pallet {
 
 		/// The set_whitelisted_domains function allows the root (administrator) to set the whitelisted domains. It is a
 		/// privileged function intended for administrative purposes, used to manage a list of permitted domains.
-		#[pallet::call_index(8)]
+		#[pallet::call_index(6)]
 		#[pallet::weight(T::WeightInfo::set_whitelisted_domains())]
 		pub fn set_whitelisted_domains(
 			origin: OriginFor<T>,
@@ -751,7 +709,7 @@ pub mod pallet {
 		}
 
 		fn get_step_verifier() -> Result<Verifier, Error<T>> {
-			let vk = StepVerificationKeyStorage::<T>::get();
+			let vk = T::StepVerificationKey::get();
 			ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
 			let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
 				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
@@ -759,48 +717,10 @@ pub mod pallet {
 		}
 
 		fn get_rotate_verifier() -> Result<Verifier, Error<T>> {
-			let vk = RotateVerificationKeyStorage::<T>::get();
+			let vk = T::RotateVerificationKey::get();
 			ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
 			let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
 				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
-			Ok(deserialized_vk)
-		}
-
-		fn store_step_verification_key(vec_vk: Vec<u8>) -> Result<Verifier, Error<T>> {
-			let vk: VerificationKeyDef<T> = vec_vk
-				.try_into()
-				.map_err(|_| Error::<T>::TooLongVerificationKey)?;
-			let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
-				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
-			ensure!(
-				deserialized_vk.vk_json.curve == *"bn128",
-				Error::<T>::NotSupportedCurve
-			);
-			ensure!(
-				deserialized_vk.vk_json.protocol == *"groth16",
-				Error::<T>::NotSupportedProtocol
-			);
-
-			StepVerificationKeyStorage::<T>::put(vk);
-			Ok(deserialized_vk)
-		}
-
-		fn store_rotate_verification_key(vec_vk: Vec<u8>) -> Result<Verifier, Error<T>> {
-			let vk: VerificationKeyDef<T> = vec_vk
-				.try_into()
-				.map_err(|_| Error::<T>::TooLongVerificationKey)?;
-			let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
-				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
-			ensure!(
-				deserialized_vk.vk_json.curve == *"bn128",
-				Error::<T>::NotSupportedCurve
-			);
-			ensure!(
-				deserialized_vk.vk_json.protocol == *"groth16",
-				Error::<T>::NotSupportedProtocol
-			);
-
-			RotateVerificationKeyStorage::<T>::put(vk);
 			Ok(deserialized_vk)
 		}
 

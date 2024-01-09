@@ -11,7 +11,6 @@ use frame_system::{
 };
 use hex_literal::hex;
 use pallet_transaction_payment::ChargeTransactionPayment;
-use sp_core::bytes::to_hex;
 use sp_core::{sr25519::Signature, H256};
 use sp_io::hashing::keccak_256;
 use sp_runtime::{generic::Era, AccountId32, MultiAddress};
@@ -58,15 +57,9 @@ fn send_message_expected() -> H256 {
 		id: 1,
 	};
 
-	println!(
-		"{:?}",
-		to_hex(message.clone().abi_encode().as_slice(), false)
-	);
-
 	let encoded = message.abi_encode();
 	let leaf = keccak_256(encoded.as_slice());
 	let expected_bridge_root = keccak_256(leaf.as_slice());
-	println!("expected_bridge_root {:?}", H256(expected_bridge_root));
 	let mut concat = vec![];
 	concat.extend_from_slice(H256::zero().as_bytes());
 	concat.extend_from_slice(expected_bridge_root.as_slice());
