@@ -491,6 +491,14 @@ where
 		let execution_start = std::time::Instant::now();
 
 		let block = self.get_signed_block(at)?.block;
+		// We can't query DataProofV2 on older blocks which has a V1 header
+		if let HeaderExtension::V1(_) = block.header().extension() {
+			return Err(internal_err!(
+				"The block {:?} has V1 header, which doesn't support DataProofV2",
+				at
+			));
+		}
+
 		let successfull_indices = self
 			.client
 			.runtime_api()
