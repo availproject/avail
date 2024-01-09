@@ -53,12 +53,11 @@ where
 	C::Api: ExtensionBuilder<B>,
 {
 	type Error = ConsensusError;
-	type Transaction = <I as BlockImportT<B>>::Transaction;
 
 	/// It verifies that header extension (Kate commitment & data root) is properly calculated.
 	async fn import_block(
 		&mut self,
-		block: BlockImportParams<B, Self::Transaction>,
+		block: BlockImportParams<B>,
 	) -> Result<ImportResult, Self::Error> {
 		let import_block_start = std::time::Instant::now();
 

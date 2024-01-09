@@ -368,6 +368,7 @@ impl pallet_babe::Config for Runtime {
 	type KeyOwnerProof =
 		<Historical as KeyOwnerProofSystem<(KeyTypeId, pallet_babe::AuthorityId)>>::Proof;
 	type MaxAuthorities = constants::MaxAuthorities;
+	type MaxNominators = constants::staking::MaxNominatorRewardedPerValidator;
 	type WeightInfo = ();
 }
 
@@ -421,6 +422,7 @@ impl pallet_grandpa::Config for Runtime {
 	>;
 	type KeyOwnerProof = <Historical as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
 	type MaxAuthorities = constants::MaxAuthorities;
+	type MaxNominators = constants::staking::MaxNominatorRewardedPerValidator;
 	type MaxSetIdSessionEntries = MaxSetIdSessionEntries;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
@@ -485,12 +487,11 @@ impl pallet_election_provider_multi_phase::Config for Runtime {
 	type Currency = Balances;
 	// nothing to do upon rewards
 	type DataProvider = Staking;
+	type ElectionBounds = constants::staking::ElectionBoundsMultiPhase;
 	type EstimateCallFee = TransactionPayment;
 	type Fallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
 	type ForceOrigin = EnsureRoot<AccountId>;
 	type GovernanceFallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
-	type MaxElectableTargets = constants::MaxElectableTargets;
-	type MaxElectingVoters = constants::MaxElectingVoters;
 	type MaxWinners = constants::MaxActiveValidators;
 	type MinerConfig = Self;
 	type MinerTxPriority = constants::staking::MultiPhaseUnsignedPriority;
@@ -531,10 +532,11 @@ impl pallet_staking::Config for Runtime {
 	type EventListeners = NominationPools;
 	type GenesisElectionProvider = onchain::OnChainExecution<OnChainSeqPhragmen>;
 	type HistoryDepth = constants::staking::HistoryDepth;
-	type MaxNominations = constants::staking::MaxNominations;
 	type MaxNominatorRewardedPerValidator = constants::staking::MaxNominatorRewardedPerValidator;
 	type MaxUnlockingChunks = constants::staking::MaxUnlockingChunks;
 	type NextNewSession = Session;
+	type NominationsQuota =
+		pallet_staking::FixedNominationsQuota<{ constants::staking::MaxNominations::get() }>;
 	type OffendingValidatorsThreshold = constants::staking::OffendingValidatorsThreshold;
 	// send the slashed funds to the treasury.
 	type Reward = ();
@@ -596,6 +598,7 @@ impl Get<Option<BalancingConfig>> for OffchainRandomBalancing {
 
 pub struct OnChainSeqPhragmen;
 impl onchain::Config for OnChainSeqPhragmen {
+	type Bounds = constants::staking::ElectionBoundsOnChain;
 	type DataProvider = <Runtime as pallet_election_provider_multi_phase::Config>::DataProvider;
 	type MaxWinners = <Runtime as pallet_election_provider_multi_phase::Config>::MaxWinners;
 	type Solver = SequentialPhragmen<
@@ -603,8 +606,6 @@ impl onchain::Config for OnChainSeqPhragmen {
 		pallet_election_provider_multi_phase::SolutionAccuracyOf<Runtime>,
 	>;
 	type System = Runtime;
-	type TargetsBound = constants::MaxElectableTargets;
-	type VotersBound = constants::MaxElectingVoters;
 	type WeightInfo = frame_election_provider_support::weights::SubstrateWeight<Runtime>;
 }
 

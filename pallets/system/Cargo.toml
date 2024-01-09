@@ -5,7 +5,7 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 license = "Apache-2.0"
 homepage = "https://substrate.io"
-repository = "https://github.com/paritytech/substrate/"
+repository = "https://github.com/paritytech/polkadot-sdk/"
 description = "FRAME system module"
 readme = "README.md"
 
@@ -14,14 +14,14 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 avail-base = { path = "../../base", default-features = false }
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1", default-features = false }
 
 # Other
 cfg-if = "1.0"
 impl-trait-for-tuples = "0.2.1"
 static_assertions = "1.1.0"
-log = { version = "0.4.17", default-features = false }
+log = { version = "0.4.20", default-features = false }
 rs_merkle = { version = "1.2.0", default-features = false, optional = true }
 derive_more = { version = "0.99.17", default-features = false, features = ["from", "into"] }
 
@@ -29,15 +29,15 @@ derive_more = { version = "0.99.17", default-features = false, features = ["from
 codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive"] }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive", "serde"] }
 serde = { version = "1.0.188", default-features = false, features = ["derive", "alloc"], optional = true }
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, features = ["serde"] }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, features = ["serde"] }
-sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-sp-version = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, features = ["serde"] }
-sp-weights = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, features = ["serde"] }
-sp-runtime-interface = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-binary-merkle-tree = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" , default-features = false }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false, features = ["serde"] }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false, features = ["serde"] }
+sp-std = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
+sp-version = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false, features = ["serde"] }
+sp-weights = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false, features = ["serde"] }
+sp-runtime-interface = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
+binary-merkle-tree = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0" , default-features = false }
 
 once_cell = { version = "1.18", optional = true }
 
@@ -45,7 +45,7 @@ once_cell = { version = "1.18", optional = true }
 hex-literal = "0.3.1"
 test-case = "1.2.3"
 criterion = "0.5.1"
-sp-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-externalities = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0" }
 
 [features]
 default = [ "std" ]

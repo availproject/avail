@@ -19,6 +19,7 @@
 
 #![allow(clippy::identity_op)]
 use avail_core::currency::{Balance, AVL};
+use frame_election_provider_support::bounds::{ElectionBounds, ElectionBoundsBuilder};
 use frame_support::{
 	dispatch::DispatchClass,
 	parameter_types,
@@ -249,7 +250,7 @@ pub mod staking {
 	}
 
 	parameter_types! {
-		pub MaxNominations: u32 = <NposSolution16 as frame_election_provider_support::NposSolution>::LIMIT as u32;
+		pub const MaxNominations: u32 = <NposSolution16 as frame_election_provider_support::NposSolution>::LIMIT as u32;
 		pub const OffendingValidatorsThreshold: Perbill = Perbill::from_percent(17);
 		pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
 
@@ -277,6 +278,13 @@ pub mod staking {
 			.max
 			.get(DispatchClass::Normal);
 		pub const OffchainRepeat: BlockNumber = 5;
+
+		// Note: the EPM in this runtime runs the election on-chain. The election bounds must be
+		// carefully set so that an election round fits in one block.
+		pub ElectionBoundsMultiPhase: ElectionBounds = ElectionBoundsBuilder::default()
+			.voters_count(10_000.into()).targets_count(1_500.into()).build();
+		pub ElectionBoundsOnChain: ElectionBounds = ElectionBoundsBuilder::default()
+			.voters_count(5_000.into()).targets_count(1_250.into()).build();
 	}
 
 	pub type MaxNominatorRewardedPerValidator = ConstU32<256>;

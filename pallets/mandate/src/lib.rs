@@ -9,8 +9,9 @@ mod tests;
 mod weights;
 
 use frame_support::{
-	dispatch::{DispatchResultWithPostInfo, GetDispatchInfo, UnfilteredDispatchable},
+	dispatch::{DispatchResultWithPostInfo, GetDispatchInfo},
 	pallet_prelude::*,
+	traits::UnfilteredDispatchable,
 };
 use frame_system::pallet_prelude::*;
 pub use pallet::*;

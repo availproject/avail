@@ -232,7 +232,7 @@ pub mod pallet {
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
-		use super::DefaultConfig;
+		use super::{inject_runtime_type, DefaultConfig};
 
 		/// Provides a viable default config that can be used with
 		/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
@@ -259,6 +259,8 @@ pub mod pallet {
 			type BlockWeights = ();
 			type BlockLength = ();
 			type DbWeight = ();
+			#[inject_runtime_type]
+			type RuntimeEvent = ();
 		}
 	}
 
@@ -350,6 +352,7 @@ pub mod pallet {
 		type Randomness: Randomness<Self::Hash, BlockNumberFor<Self>>;
 
 		/// The aggregated event type of the runtime.
+		#[pallet::no_default_bounds]
 		type RuntimeEvent: Parameter
 			+ Member
 			+ From<Event<Self>>

@@ -53,7 +53,7 @@ pub use frame_support::{
 		},
 		ConstantMultiplier, IdentityFee, Weight,
 	},
-	PalletId, RuntimeDebug, StorageValue,
+	PalletId, StorageValue,
 };
 pub use impls::BlockHashCount;
 pub use pallet_balances::Call as BalancesCall;
@@ -65,7 +65,7 @@ pub use pallet_staking::StakerStatus;
 pub use primitives::*;
 use sp_core::OpaqueMetadata;
 
-pub use sp_runtime::{Perbill, Percent, Permill};
+pub use sp_runtime::{Perbill, Percent, Permill, RuntimeDebug};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -170,28 +170,28 @@ extern crate frame_benchmarking;
 mod benches {
 	define_benchmarks!(
 		[frame_benchmarking, BaselineBench::<Runtime>]
-		[pallet_utility, $crate::Utility]
-		[pallet_babe, $crate::Babe]
-		[pallet_timestamp, $crate::Timestamp]
-		[pallet_indices, $crate::Indices]
-		[pallet_balances, $crate::Balances]
-		[pallet_election_provider_multi_phase, $crate::ElectionProviderMultiPhase]
-		[pallet_staking, $crate::Staking]
-		[pallet_collective, $crate::TechnicalCommittee]
-		[pallet_grandpa, $crate::Grandpa]
-		[pallet_treasury, $crate::Treasury]
-		[pallet_im_online, $crate::ImOnline]
-		[pallet_scheduler, $crate::Scheduler]
-		[pallet_bounties, $crate::Bounties]
-		[pallet_tips, $crate::Tips]
-		[pallet_mmr, $crate::Mmr]
+		[pallet_utility, crate::Utility]
+		[pallet_babe, crate::Babe]
+		[pallet_timestamp, crate::Timestamp]
+		[pallet_indices, crate::Indices]
+		[pallet_balances, crate::Balances]
+		[pallet_election_provider_multi_phase, crate::ElectionProviderMultiPhase]
+		[pallet_staking, crate::Staking]
+		[pallet_collective, crate::TechnicalCommittee]
+		[pallet_grandpa, crate::Grandpa]
+		[pallet_treasury, crate::Treasury]
+		[pallet_im_online, crate::ImOnline]
+		[pallet_scheduler, crate::Scheduler]
+		[pallet_bounties, crate::Bounties]
+		[pallet_tips, crate::Tips]
+		[pallet_mmr, crate::Mmr]
 
 		[frame_system, SystemBench::<Runtime>]
-		[da_control, $crate::DataAvailability]
-		[nomad_home, $crate::NomadHome]
-		[nomad_da_bridge, $crate::NomadDABridge]
-		[pallet_identity, $crate::Identity]
-		[pallet_mandate, $crate::Mandate]
+		[da_control, crate::DataAvailability]
+		[nomad_home, crate::NomadHome]
+		[nomad_da_bridge, crate::NomadDABridge]
+		[pallet_identity, crate::Identity]
+		[pallet_mandate, crate::Mandate]
 	);
 }
 
