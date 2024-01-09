@@ -6,8 +6,8 @@ fn main() {}
 pub mod tests {
 	use std::num::NonZeroU16;
 
-	use avail_core::DataProof;
 	use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
+	use avail_core::{DataProof, DataProofV2};
 	use avail_subxt::{
 		api::{
 			self,
@@ -22,19 +22,27 @@ pub mod tests {
 		AvailConfig, Opts,
 	};
 	use binary_merkle_tree::merkle_proof;
-	use codec::Encode;
+	use codec::{Decode, Encode};
 	use kate::com::Cell;
 	use kate::gridgen::{AsBytes, EvaluationGrid};
 	use kate_recovery::matrix::Dimensions;
 	use kate_recovery::proof::verify;
 	use sp_keyring::AccountKeyring;
+	use subxt::ext::sp_core::keccak_256;
 	use subxt::ext::sp_runtime::traits::Keccak256;
+	use subxt::ext::sp_runtime::{Deserialize, Serialize};
 	use subxt::tx::TxClient;
 	use subxt::{
 		ext::sp_core::H256,
 		rpc::{types::ChainBlockResponse, Rpc, RpcParams},
 		OnlineClient,
 	};
+
+	#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, Default, Serialize, Deserialize)]
+	#[serde(rename_all = "camelCase")]
+	pub struct ProofResponse {
+		data_proof: DataProofV2,
+	}
 
 	async fn establish_a_connection() -> anyhow::Result<OnlineClient<AvailConfig>> {
 		let args = Opts {
@@ -143,6 +151,18 @@ pub mod tests {
 		params.push(Some(block_hash))?;
 		let data_proof: DataProof = rpc.request("kate_queryDataProof", params).await?;
 
+		Ok(data_proof)
+	}
+
+	async fn query_data_proof_v2(
+		rpc: &Rpc<AvailConfig>,
+		transaction_index: u32,
+		block_hash: H256,
+	) -> anyhow::Result<ProofResponse> {
+		let mut params = RpcParams::new();
+		params.push(transaction_index)?;
+		params.push(Some(block_hash))?;
+		let data_proof: ProofResponse = rpc.request("kate_queryDataProofV2", params).await?;
 		Ok(data_proof)
 	}
 
@@ -359,5 +379,28 @@ pub mod tests {
 		let expected_proof_root = merkle_proof::<Keccak256, _, _>(vec![example_data.to_vec()], 0);
 		let actual_proof = query_data_proof(rpc, 1, block_hash).await.unwrap();
 		assert_eq!(actual_proof.root, expected_proof_root.root);
+	}
+
+	#[async_std::test]
+	pub async fn rpc_query_data_proof_v2_test() {
+		let client = establish_a_connection().await.unwrap();
+		let (txc, rpc) = (client.tx(), client.rpc());
+
+		// data hash: 729afe29f4e9fee2624d7ed311bcf57d24683fb78938bcb4e2a6a22c4968795e
+		let example_data = "ExampleData".as_bytes();
+		assert_eq!(example_data.len(), 11);
+		let block_hash = send_da_example_data(&txc, example_data).await.unwrap();
+		let expected_proof_root = merkle_proof::<Keccak256, _, _>(vec![example_data.to_vec()], 0);
+		let actual_proof = query_data_proof_v2(rpc, 1, block_hash).await.unwrap();
+		// root is calculated keccak256(blob_root, bridge_root)
+		let mut root_data = vec![];
+		root_data.extend(expected_proof_root.root.as_bytes());
+		root_data.extend(H256::zero().as_bytes());
+		let expected_data_root = keccak_256(root_data.as_slice());
+
+		assert_eq!(actual_proof.data_proof.data_root, H256(expected_data_root));
+		assert_eq!(actual_proof.data_proof.proof, expected_proof_root.proof);
+		assert_eq!(actual_proof.data_proof.blob_root, expected_proof_root.root);
+		assert_eq!(actual_proof.data_proof.bridge_root, H256::zero());
 	}
 }
