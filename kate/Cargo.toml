@@ -19,8 +19,8 @@ dusk-plonk = { git = "https://github.com/availproject/plonk.git", tag = "v0.12.0
 
 # Parity & Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-sp-arithmetic = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-arithmetic = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
 
 # 3rd-party
 derive_more = { version = "0.99.17", default-features = false, features = ["constructor"] }
