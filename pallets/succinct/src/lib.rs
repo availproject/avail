@@ -103,25 +103,15 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		// emit event once the head is updated.
-		HeaderUpdate {
-			slot: u64,
-			finalization_root: H256,
-		},
-		// emit event once the sync committee updates.
-		SyncCommitteeUpdate {
-			period: u64,
-			root: U256,
-		},
-		// emit event when verification setup is completed.
+		/// emit event once the head is updated.
+		HeaderUpdate { slot: u64, finalization_root: H256 },
+		/// emit event once the sync committee updates.
+		SyncCommitteeUpdate { period: u64, root: U256 },
+		/// emit event when verification setup is completed.
 		VerificationSetupCompleted,
-		// emit when new updater is set
-		BroadcasterUpdate {
-			old: H256,
-			new: H256,
-			domain: u32,
-		},
-		// emit when message gets executed.
+		/// emit when new updater is set
+		BroadcasterUpdate { old: H256, new: H256, domain: u32 },
+		/// emit when message gets executed.
 		ExecutedMessage {
 			chain_id: u32,
 			nonce: u64,
@@ -129,97 +119,94 @@ pub mod pallet {
 			status: bool,
 			msg_type: MessageType,
 		},
-		// emit if source chain gets frozen.
-		SourceChainFrozen {
-			source_chain_id: u32,
-			frozen: bool,
-		},
+		/// emit if source chain gets frozen.
+		SourceChainFrozen { source_chain_id: u32, frozen: bool },
+		// @TODO
 		MessageSubmitted {
 			from: T::AccountId,
 			to: H256,
 			message_type: MessageType,
 		},
-		/// TODO
-		WhitelistedDomainsChanged,
+		/// Whitelisted domains were updated.
+		WhitelistedDomainsUpdated,
 	}
 
-	// Step verification key storage.
+	/// Step verification key storage.
 	#[pallet::storage]
 	pub type StepVerificationKeyStorage<T: Config> =
 		StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
 
-	// Rotate verification key storage.
+	/// Rotate verification key storage.
 	#[pallet::storage]
 	pub type RotateVerificationKeyStorage<T: Config> =
 		StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
 
-	// Storage for a head updates.
+	/// Storage for a head updates.
 	#[pallet::storage]
 	#[pallet::getter(fn head)]
 	pub type Head<T: Config> = StorageValue<_, u64, ValueQuery>;
 
-	// Maps from a slot to a block header root.
+	/// Maps from a slot to a block header root.
 	#[pallet::storage]
 	#[pallet::getter(fn headers)]
 	pub type Headers<T> = StorageMap<_, Identity, u64, H256, ValueQuery>;
 
-	// Maps slot to the timestamp of when the headers mapping was updated with slot as a key
+	/// Maps slot to the timestamp of when the headers mapping was updated with slot as a key
 	#[pallet::storage]
 	pub type Timestamps<T> = StorageMap<_, Identity, u64, u64, ValueQuery>;
 
-	// Maps from a slot to the current finalized ethereum execution state root.
+	/// Maps from a slot to the current finalized ethereum execution state root.
 	#[pallet::storage]
 	pub type ExecutionStateRoots<T> = StorageMap<_, Identity, u64, H256, ValueQuery>;
 
-	// Maps from a period to the poseidon commitment for the sync committee.
+	/// Maps from a period to the poseidon commitment for the sync committee.
 	#[pallet::storage]
 	#[pallet::getter(fn sync_committee_poseidons)]
 	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
 
-	// Storage for a config of finality threshold and slots per period.
+	/// Storage for a config of finality threshold and slots per period.
 	#[pallet::storage]
 	pub type ConfigurationStorage<T: Config> = StorageValue<_, Configuration, ValueQuery>;
 
-	// Maps status of the message to the message root.
+	/// Maps status of the message to the message root.
 	#[pallet::storage]
 	pub type MessageStatus<T> = StorageMap<_, Identity, H256, MessageStatusEnum, ValueQuery>;
 
-	// Mapping between source chainId and the address of the broadcaster on that chain.
+	/// Mapping between source chainId and the address of the broadcaster on that chain.
 	#[pallet::storage]
 	pub type Broadcasters<T> = StorageMap<_, Identity, u32, H256, ValueQuery>;
 
-	// Flags source chain to be frozen.
+	/// Flags source chain to be frozen.
 	#[pallet::storage]
 	pub type SourceChainFrozen<T> = StorageMap<_, Identity, u32, bool, ValueQuery>;
 
-	// TODO
+	/// List of permitted domains.
 	#[pallet::storage]
 	pub type WhitelistedDomains<T> = StorageValue<_, BoundedVec<u32, ConstU32<10_000>>, ValueQuery>;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		/// TODO
+		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-		/// TODO
+		/// Because this pallet has dispatchables, it depends on the runtime's definition of a call.
 		type RuntimeCall: Parameter
 			+ UnfilteredDispatchable<RuntimeOrigin = Self::RuntimeOrigin>
 			+ GetDispatchInfo;
-		/// TODO
+		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
-		/// TODO
+		/// Currency type for this pallet.
 		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
-		/// TODO
+		/// Dependency that can provide current time.
 		type TimeProvider: UnixTime;
-		/// TODO 1133
+		/// Defines the maximum length of the verification key.
 		#[pallet::constant]
 		type MaxVerificationKeyLength: Get<u32>;
-		/// TODO
-		#[pallet::constant]
-		type MaxBridgeDataLength: Get<u32>;
-		/// TODO
+		/// The step function identifier is used to distinguish step-related functionality within the fulfill_call function.
+		/// When the provided function_id matches the step function identifier, specific logic related to step functions is executed.
 		#[pallet::constant]
 		type StepFunctionId: Get<H256>;
-		/// TODO
+		/// The rotate function identifier is used to identify and handle rotate-related functionality within the fulfill_call function.
+		/// When the provided function_id matches the rotate function identifier, specific logic related to rotate functions is executed.
 		#[pallet::constant]
 		type RotateFunctionId: Get<H256>;
 		/// TODO
@@ -228,10 +215,10 @@ pub mod pallet {
 		/// Bridge's pallet id, used for deriving its sovereign account ID.
 		#[pallet::constant]
 		type PalletId: Get<PalletId>;
-		/// TODO
+		/// Unique value associated with Avail Network. Used to distinguish messages between Avail and non-Avail networks.
 		#[pallet::constant]
 		type AvailDomain: Get<u32>;
-		/// TODO
+		/// Unique value associated with the supported Network. Used to distinguish messages between non-Avail and Avail networks.
 		#[pallet::constant]
 		type SupportedDomain: Get<u32>;
 	}
@@ -583,7 +570,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// TODO
+		/// The set_whitelisted_domains function allows the root (administrator) to set the whitelisted domains. It is a
+		/// privileged function intended for administrative purposes, used to manage a list of permitted domains.
 		#[pallet::call_index(8)]
 		#[pallet::weight(T::WeightInfo::set_whitelisted_domains())]
 		pub fn set_whitelisted_domains(
@@ -593,7 +581,7 @@ pub mod pallet {
 			ensure_root(origin)?;
 			WhitelistedDomains::<T>::put(value);
 
-			Self::deposit_event(Event::WhitelistedDomainsChanged);
+			Self::deposit_event(Event::WhitelistedDomainsUpdated);
 
 			Ok(())
 		}

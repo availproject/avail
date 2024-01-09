@@ -1535,22 +1535,7 @@ impl<T: Config> Pallet<T> {
 
 		let extrinsics = Self::take_extrinsics().collect::<Vec<_>>();
 
-		let mut indices = FailedExtrinsicIndices::<T>::get();
-		let extrinsic_count = Self::extrinsic_count();
-
-		indices.sort();
-		let mut failed_indices = indices.iter().peekable();
-		let mut successful_indices =
-			Vec::with_capacity((extrinsic_count as usize).saturating_sub(indices.len()));
-		for index in 0..extrinsic_count {
-			if let Some(failed_one) = failed_indices.peek() {
-				if index == **failed_one {
-					failed_indices.next();
-					continue;
-				}
-			}
-			successful_indices.push(index);
-		}
+		let successful_indices = Self::successful_extrinsic_indices();
 
 		let opaques = successful_indices
 			.iter()
@@ -1907,6 +1892,27 @@ impl<T: Config> Pallet<T> {
 	pub fn padded_extrinsic_len(len: u32) -> u32 {
 		let chunk_size = Self::block_length().chunk_size();
 		kate::padded_len(len, chunk_size)
+	}
+
+	pub fn successful_extrinsic_indices() -> Vec<u32> {
+		let mut indices = FailedExtrinsicIndices::<T>::get();
+		let extrinsic_count = Self::extrinsic_count();
+
+		indices.sort();
+		let mut failed_indices = indices.iter().peekable();
+		let mut successful_indices =
+			Vec::with_capacity((extrinsic_count as usize).saturating_sub(indices.len()));
+		for index in 0..extrinsic_count {
+			if let Some(failed_one) = failed_indices.peek() {
+				if index == **failed_one {
+					failed_indices.next();
+					continue;
+				}
+			}
+			successful_indices.push(index);
+		}
+
+		successful_indices
 	}
 }
 

@@ -370,23 +370,7 @@ impl_runtime_apis! {
 		}
 
 		fn successful_extrinsic_indices() -> Vec<u32> {
-			let mut indices = frame_system::Pallet::<Runtime>::failed_extrinsic_indices();
-			let extrinsic_count = frame_system::Pallet::<Runtime>::extrinsic_count();
-
-			indices.sort();
-			let mut failed_indices = indices.iter().peekable();
-			let mut successful_indices = Vec::with_capacity((extrinsic_count as usize).saturating_sub(indices.len()));
-			for index in 0..extrinsic_count {
-				if let Some(failed_one) = failed_indices.peek() {
-					if index == **failed_one {
-						failed_indices.next();
-						continue;
-					}
-				}
-				successful_indices.push(index);
-			}
-
-			successful_indices
+			frame_system::Pallet::<Runtime>::successful_extrinsic_indices()
 		}
 	}
 

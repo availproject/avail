@@ -89,7 +89,6 @@ impl succinct_bridge::Config for Test {
 	type Currency = Balances;
 
 	type MessageMappingStorageIndex = ConstU64<4>;
-	type MaxBridgeDataLength = ConstU32<256>;
 	type RotateFunctionId = RotateFunctionId;
 	type StepFunctionId = StepFunctionId;
 	type PalletId = BridgePalletId;

@@ -105,7 +105,6 @@ impl pallet_succinct::Config for Runtime {
 	type StepFunctionId = StepFunctionId;
 	type RotateFunctionId = RotateFunctionId;
 	type PalletId = BridgePalletId;
-	type MaxBridgeDataLength = ConstU32<256>;
 	type AvailDomain = ConstU32<1>;
 	type SupportedDomain = ConstU32<2>;
 }

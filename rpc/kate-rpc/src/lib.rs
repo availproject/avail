@@ -593,7 +593,7 @@ where
 			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e))?;
 
 		// Execution Time Metric
-		KateRpcMetrics::observe_query_data_proof_execution_time(execution_start.elapsed());
+		KateRpcMetrics::observe_query_data_proof_v2_execution_time(execution_start.elapsed());
 
 		Ok(ProofResponse {
 			data_proof,
@@ -671,6 +671,18 @@ where
 	) -> RpcResult<(ProofResponse, u128)> {
 		let start = std::time::Instant::now();
 		let result = self.query_data_proof(transaction_index, at).await;
+		let elapsed = start.elapsed();
+
+		result.map(|r| (r, elapsed.as_micros()))
+	}
+
+	async fn query_data_proof_v2_metrics(
+		&self,
+		transaction_index: u32,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<(ProofResponse, u128)> {
+		let start = std::time::Instant::now();
+		let result = self.query_data_proof_v2(transaction_index, at).await;
 		let elapsed = start.elapsed();
 
 		result.map(|r| (r, elapsed.as_micros()))
