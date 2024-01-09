@@ -21667,6 +21667,7 @@ pub mod api {
 						# [codec (crate = :: subxt :: ext :: codec)]
 						#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 						#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+						#[serde(rename_all = "camelCase")]
 						pub struct HeaderExtension {
 							pub app_lookup:
 								runtime_types::avail_core::data_lookup::compact::CompactDataLookup,
@@ -21769,6 +21770,7 @@ pub mod api {
 					# [codec (crate = :: subxt :: ext :: codec)]
 					#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 					#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+					#[serde(rename_all = "camelCase")]
 					pub struct KateCommitment {
 						#[codec(compact)]
 						pub rows: ::core::primitive::u16,
