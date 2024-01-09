@@ -41,6 +41,21 @@ export const API_RPC = {
             ],
             type: 'DataProof'
         },
+        queryDataProofV2: {
+            description: 'Generate the data proof for the given `index`',
+            params: [
+                {
+                    name: 'transaction_index',
+                    type: 'u32'
+                },
+                {
+                    name: 'at',
+                    type: 'Hash',
+                    isOptional: true
+                }
+            ],
+            type: 'ProofResponse'
+        },
         queryAppData: {
             description: '',
             params: [
@@ -111,6 +126,21 @@ export const API_RPC = {
                 }
             ],
             type: '(DataProof, u128)'
+        },
+        queryDataProofV2Metrics: {
+            description: 'Generate the data proof for the given `index`',
+            params: [
+                {
+                    name: 'transaction_index',
+                    type: 'u32'
+                },
+                {
+                    name: 'at',
+                    type: 'Hash',
+                    isOptional: true
+                }
+            ],
+            type: '(ProofResponse, u128)'
         },
         queryAppDataMetrics: {
             description: '',

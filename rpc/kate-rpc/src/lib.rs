@@ -130,6 +130,13 @@ where
 		&self,
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
+	) -> RpcResult<(DataProof, u128)>;
+
+	#[method(name = "kate_queryDataProofV2Metrics")]
+	async fn query_data_proof_v2_metrics(
+		&self,
+		transaction_index: u32,
+		at: Option<HashOf<Block>>,
 	) -> RpcResult<(ProofResponse, u128)>;
 }
 
@@ -668,7 +675,7 @@ where
 		&self,
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<(ProofResponse, u128)> {
+	) -> RpcResult<(DataProof, u128)> {
 		let start = std::time::Instant::now();
 		let result = self.query_data_proof(transaction_index, at).await;
 		let elapsed = start.elapsed();
