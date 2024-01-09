@@ -60,7 +60,7 @@ const internalTotalTime = internalDurations.reduce((pv, cv) => pv += cv);
 const zip = e2eDurations.map((v, i) => [v, internalDurations[i]]);
 console.log(zip);
 
-console.log(`Total E2E time: ${e2eDurations}; Average E2E time: ${e2eTotalTime / jobCount}`);
+console.log(`Total E2E time: ${e2eTotalTime}; Average E2E time: ${e2eTotalTime / jobCount}`);
 console.log(`Total Internal time: ${internalTotalTime}; Average Internal time: ${internalTotalTime / jobCount}`);
 
 Deno.exit(0);
