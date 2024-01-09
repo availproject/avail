@@ -1168,9 +1168,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				109u8, 129u8, 141u8, 204u8, 141u8, 73u8, 55u8, 186u8, 200u8, 219u8, 157u8, 48u8,
-				208u8, 197u8, 144u8, 32u8, 147u8, 88u8, 128u8, 230u8, 205u8, 102u8, 170u8, 153u8,
-				81u8, 142u8, 72u8, 206u8, 242u8, 92u8, 109u8, 70u8,
+				85u8, 42u8, 73u8, 79u8, 26u8, 18u8, 170u8, 4u8, 70u8, 221u8, 95u8, 116u8, 10u8,
+				29u8, 230u8, 55u8, 160u8, 242u8, 97u8, 181u8, 74u8, 45u8, 61u8, 198u8, 234u8,
+				104u8, 221u8, 235u8, 231u8, 10u8, 22u8, 68u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -1954,9 +1954,10 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							62u8, 245u8, 224u8, 245u8, 191u8, 17u8, 76u8, 254u8, 6u8, 108u8, 247u8,
-							114u8, 248u8, 148u8, 80u8, 66u8, 229u8, 178u8, 57u8, 135u8, 238u8,
-							240u8, 241u8, 91u8, 118u8, 7u8, 67u8, 77u8, 126u8, 161u8, 92u8, 225u8,
+							243u8, 132u8, 45u8, 48u8, 179u8, 118u8, 63u8, 110u8, 81u8, 207u8,
+							217u8, 241u8, 244u8, 51u8, 237u8, 36u8, 128u8, 50u8, 114u8, 99u8, 27u8,
+							215u8, 150u8, 40u8, 201u8, 142u8, 185u8, 224u8, 155u8, 27u8, 72u8,
+							112u8,
 						],
 					)
 				}
@@ -20845,6 +20846,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "emit event once the head is updated."]
 			pub struct HeaderUpdate {
 				pub slot: ::core::primitive::u64,
 				pub finalization_root: ::subxt::utils::H256,
@@ -20866,6 +20868,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "emit event once the sync committee updates."]
 			pub struct SyncCommitteeUpdate {
 				pub period: ::core::primitive::u64,
 				pub root: runtime_types::primitive_types::U256,
@@ -20887,6 +20890,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "emit event when verification setup is completed."]
 			pub struct VerificationSetupCompleted;
 			impl ::subxt::events::StaticEvent for VerificationSetupCompleted {
 				const PALLET: &'static str = "Succinct";
@@ -20905,6 +20909,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "emit when new updater is set"]
 			pub struct BroadcasterUpdate {
 				pub old: ::subxt::utils::H256,
 				pub new: ::subxt::utils::H256,
@@ -20927,6 +20932,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "emit when message gets executed."]
 			pub struct ExecutedMessage {
 				pub chain_id: ::core::primitive::u32,
 				pub nonce: ::core::primitive::u64,
@@ -20951,6 +20957,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "emit if source chain gets frozen."]
 			pub struct SourceChainFrozen {
 				pub source_chain_id: ::core::primitive::u32,
 				pub frozen: ::core::primitive::bool,
@@ -20994,17 +21001,18 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "TODO"]
-			pub struct WhitelistedDomainsChanged;
-			impl ::subxt::events::StaticEvent for WhitelistedDomainsChanged {
+			#[doc = "Whitelisted domains were updated."]
+			pub struct WhitelistedDomainsUpdated;
+			impl ::subxt::events::StaticEvent for WhitelistedDomainsUpdated {
 				const PALLET: &'static str = "Succinct";
-				const EVENT: &'static str = "WhitelistedDomainsChanged";
+				const EVENT: &'static str = "WhitelistedDomainsUpdated";
 			}
 		}
 		pub mod storage {
 			use super::runtime_types;
 			pub struct StorageApi;
 			impl StorageApi {
+				#[doc = " Step verification key storage."]
 				pub fn step_verification_key_storage(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21027,6 +21035,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Rotate verification key storage."]
 				pub fn rotate_verification_key_storage(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21049,6 +21058,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Storage for a head updates."]
 				pub fn head(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21069,6 +21079,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Maps from a slot to a block header root."]
 				pub fn headers(
 					&self,
 					_0: impl ::std::borrow::Borrow<::core::primitive::u64>,
@@ -21093,6 +21104,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Maps from a slot to a block header root."]
 				pub fn headers_root(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21114,6 +21126,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Maps slot to the timestamp of when the headers mapping was updated with slot as a key"]
 				pub fn timestamps(
 					&self,
 					_0: impl ::std::borrow::Borrow<::core::primitive::u64>,
@@ -21138,6 +21151,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Maps slot to the timestamp of when the headers mapping was updated with slot as a key"]
 				pub fn timestamps_root(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21159,6 +21173,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Maps from a slot to the current finalized ethereum execution state root."]
 				pub fn execution_state_roots(
 					&self,
 					_0: impl ::std::borrow::Borrow<::core::primitive::u64>,
@@ -21182,6 +21197,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Maps from a slot to the current finalized ethereum execution state root."]
 				pub fn execution_state_roots_root(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21202,6 +21218,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Maps from a period to the poseidon commitment for the sync committee."]
 				pub fn sync_committee_poseidons(
 					&self,
 					_0: impl ::std::borrow::Borrow<::core::primitive::u64>,
@@ -21225,6 +21242,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Maps from a period to the poseidon commitment for the sync committee."]
 				pub fn sync_committee_poseidons_root(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21245,6 +21263,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Storage for a config of finality threshold and slots per period."]
 				pub fn configuration_storage(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21265,6 +21284,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Maps status of the message to the message root."]
 				pub fn message_status(
 					&self,
 					_0: impl ::std::borrow::Borrow<::subxt::utils::H256>,
@@ -21288,6 +21308,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Maps status of the message to the message root."]
 				pub fn message_status_root(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21308,6 +21329,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Mapping between source chainId and the address of the broadcaster on that chain."]
 				pub fn broadcasters(
 					&self,
 					_0: impl ::std::borrow::Borrow<::core::primitive::u32>,
@@ -21332,6 +21354,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Mapping between source chainId and the address of the broadcaster on that chain."]
 				pub fn broadcasters_root(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21353,6 +21376,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Flags source chain to be frozen."]
 				pub fn source_chain_frozen(
 					&self,
 					_0: impl ::std::borrow::Borrow<::core::primitive::u32>,
@@ -21376,6 +21400,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Flags source chain to be frozen."]
 				pub fn source_chain_frozen_root(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21396,6 +21421,7 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " List of permitted domains."]
 				pub fn whitelisted_domains(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21425,7 +21451,7 @@ pub mod api {
 			use super::runtime_types;
 			pub struct ConstantsApi;
 			impl ConstantsApi {
-				#[doc = " TODO 1133"]
+				#[doc = " Defines the maximum length of the verification key."]
 				pub fn max_verification_key_length(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
@@ -21440,22 +21466,8 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " TODO"]
-				pub fn max_bridge_data_length(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Succinct",
-						"MaxBridgeDataLength",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " TODO"]
+				#[doc = " The step function identifier is used to distinguish step-related functionality within the fulfill_call function."]
+				#[doc = " When the provided function_id matches the step function identifier, specific logic related to step functions is executed."]
 				pub fn step_function_id(
 					&self,
 				) -> ::subxt::constants::Address<::subxt::utils::H256> {
@@ -21470,7 +21482,8 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " TODO"]
+				#[doc = " The rotate function identifier is used to identify and handle rotate-related functionality within the fulfill_call function."]
+				#[doc = " When the provided function_id matches the rotate function identifier, specific logic related to rotate functions is executed."]
 				pub fn rotate_function_id(
 					&self,
 				) -> ::subxt::constants::Address<::subxt::utils::H256> {
@@ -21514,7 +21527,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " TODO"]
+				#[doc = " Unique value associated with Avail Network. Used to distinguish messages between Avail and non-Avail networks."]
 				pub fn avail_domain(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
 					::subxt::constants::Address::new_static(
 						"Succinct",
@@ -21527,7 +21540,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " TODO"]
+				#[doc = " Unique value associated with the supported Network. Used to distinguish messages between non-Avail and Avail networks."]
 				pub fn supported_domain(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
@@ -28292,24 +28305,29 @@ pub mod api {
 				#[doc = "The `Event` enum of this pallet"]
 				pub enum Event {
 					#[codec(index = 0)]
+					#[doc = "emit event once the head is updated."]
 					HeaderUpdate {
 						slot: ::core::primitive::u64,
 						finalization_root: ::subxt::utils::H256,
 					},
 					#[codec(index = 1)]
+					#[doc = "emit event once the sync committee updates."]
 					SyncCommitteeUpdate {
 						period: ::core::primitive::u64,
 						root: runtime_types::primitive_types::U256,
 					},
 					#[codec(index = 2)]
+					#[doc = "emit event when verification setup is completed."]
 					VerificationSetupCompleted,
 					#[codec(index = 3)]
+					#[doc = "emit when new updater is set"]
 					BroadcasterUpdate {
 						old: ::subxt::utils::H256,
 						new: ::subxt::utils::H256,
 						domain: ::core::primitive::u32,
 					},
 					#[codec(index = 4)]
+					#[doc = "emit when message gets executed."]
 					ExecutedMessage {
 						chain_id: ::core::primitive::u32,
 						nonce: ::core::primitive::u64,
@@ -28318,6 +28336,7 @@ pub mod api {
 						msg_type: runtime_types::frame_system::submitted_data::MessageType,
 					},
 					#[codec(index = 5)]
+					#[doc = "emit if source chain gets frozen."]
 					SourceChainFrozen {
 						source_chain_id: ::core::primitive::u32,
 						frozen: ::core::primitive::bool,
@@ -28329,8 +28348,8 @@ pub mod api {
 						message_type: runtime_types::frame_system::submitted_data::MessageType,
 					},
 					#[codec(index = 7)]
-					#[doc = "TODO"]
-					WhitelistedDomainsChanged,
+					#[doc = "Whitelisted domains were updated."]
+					WhitelistedDomainsUpdated,
 				}
 			}
 			pub mod state {

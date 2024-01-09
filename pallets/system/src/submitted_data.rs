@@ -257,6 +257,7 @@ where
 	let blob_root = root(root_data_balanced.into_iter(), Rc::clone(&metrics));
 	let bridge_root = root(data_filtered_balanced.into_iter(), Rc::clone(&metrics));
 
+	// TODO remove or put as debug. This applies to all logs in here.
 	log::info!("bridge root {:?}", bridge_root);
 	log::info!("blob root {:?}", blob_root);
 
