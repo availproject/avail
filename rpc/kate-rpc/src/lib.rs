@@ -47,7 +47,7 @@ use sp_runtime::{
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProofResponse {
-	data_proof: DataProofV2,
+	pub data_proof: DataProofV2,
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub message: Option<Message>,
 }
