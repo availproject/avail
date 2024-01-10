@@ -6,7 +6,7 @@ pub mod api {
 	mod root_mod {
 		pub use super::*;
 	}
-	pub static PALLETS: [&str; 34usize] = [
+	pub static PALLETS: [&str; 35usize] = [
 		"System",
 		"Utility",
 		"Babe",
@@ -41,6 +41,7 @@ pub mod api {
 		"NominationPools",
 		"Identity",
 		"Mandate",
+		"Proxy",
 	];
 	#[doc = r" The error type returned when there is a runtime issue."]
 	pub type DispatchError = runtime_types::sp_runtime::DispatchError;
@@ -114,6 +115,8 @@ pub mod api {
 		Identity(identity::Event),
 		#[codec(index = 38)]
 		Mandate(mandate::Event),
+		#[codec(index = 39)]
+		Proxy(proxy::Event),
 	}
 	impl ::subxt::events::RootEvent for Event {
 		fn root_event(
@@ -335,6 +338,13 @@ pub mod api {
 					metadata,
 				)?));
 			}
+			if pallet_name == "Proxy" {
+				return Ok(Event::Proxy(proxy::Event::decode_with_metadata(
+					&mut &*pallet_bytes,
+					pallet_ty,
+					metadata,
+				)?));
+			}
 			Err(::subxt::ext::scale_decode::Error::custom(format!(
 				"Pallet name '{}' not found in root Event enum",
 				pallet_name
@@ -412,6 +422,8 @@ pub mod api {
 		Identity(identity::Call),
 		#[codec(index = 38)]
 		Mandate(mandate::Call),
+		#[codec(index = 39)]
+		Proxy(proxy::Call),
 	}
 	impl ::subxt::blocks::RootExtrinsic for Call {
 		fn root_extrinsic(
@@ -631,6 +643,13 @@ pub mod api {
 					metadata,
 				)?));
 			}
+			if pallet_name == "Proxy" {
+				return Ok(Call::Proxy(proxy::Call::decode_with_metadata(
+					&mut &*pallet_bytes,
+					pallet_ty,
+					metadata,
+				)?));
+			}
 			Err(::subxt::ext::scale_decode::Error::custom(format!(
 				"Pallet name '{}' not found in root Call enum",
 				pallet_name
@@ -704,6 +723,8 @@ pub mod api {
 		NominationPools(nomination_pools::Error),
 		#[codec(index = 37)]
 		Identity(identity::Error),
+		#[codec(index = 39)]
+		Proxy(proxy::Error),
 	}
 	impl ::subxt::error::RootError for Error {
 		fn root_error(
@@ -714,126 +735,130 @@ pub mod api {
 			use ::subxt::metadata::DecodeWithMetadata;
 			let cursor = &mut &pallet_bytes[..];
 			if pallet_name == "System" {
-				let variant_error = system::Error::decode_with_metadata(cursor, 120u32, metadata)?;
+				let variant_error = system::Error::decode_with_metadata(cursor, 122u32, metadata)?;
 				return Ok(Error::System(variant_error));
 			}
 			if pallet_name == "Utility" {
-				let variant_error = utility::Error::decode_with_metadata(cursor, 311u32, metadata)?;
+				let variant_error = utility::Error::decode_with_metadata(cursor, 315u32, metadata)?;
 				return Ok(Error::Utility(variant_error));
 			}
 			if pallet_name == "Babe" {
-				let variant_error = babe::Error::decode_with_metadata(cursor, 327u32, metadata)?;
+				let variant_error = babe::Error::decode_with_metadata(cursor, 331u32, metadata)?;
 				return Ok(Error::Babe(variant_error));
 			}
 			if pallet_name == "Indices" {
-				let variant_error = indices::Error::decode_with_metadata(cursor, 329u32, metadata)?;
+				let variant_error = indices::Error::decode_with_metadata(cursor, 333u32, metadata)?;
 				return Ok(Error::Indices(variant_error));
 			}
 			if pallet_name == "Balances" {
 				let variant_error =
-					balances::Error::decode_with_metadata(cursor, 344u32, metadata)?;
+					balances::Error::decode_with_metadata(cursor, 348u32, metadata)?;
 				return Ok(Error::Balances(variant_error));
 			}
 			if pallet_name == "ElectionProviderMultiPhase" {
 				let variant_error = election_provider_multi_phase::Error::decode_with_metadata(
-					cursor, 357u32, metadata,
+					cursor, 361u32, metadata,
 				)?;
 				return Ok(Error::ElectionProviderMultiPhase(variant_error));
 			}
 			if pallet_name == "Staking" {
-				let variant_error = staking::Error::decode_with_metadata(cursor, 378u32, metadata)?;
+				let variant_error = staking::Error::decode_with_metadata(cursor, 382u32, metadata)?;
 				return Ok(Error::Staking(variant_error));
 			}
 			if pallet_name == "Session" {
-				let variant_error = session::Error::decode_with_metadata(cursor, 383u32, metadata)?;
+				let variant_error = session::Error::decode_with_metadata(cursor, 387u32, metadata)?;
 				return Ok(Error::Session(variant_error));
 			}
 			if pallet_name == "TechnicalCommittee" {
 				let variant_error =
-					technical_committee::Error::decode_with_metadata(cursor, 386u32, metadata)?;
+					technical_committee::Error::decode_with_metadata(cursor, 390u32, metadata)?;
 				return Ok(Error::TechnicalCommittee(variant_error));
 			}
 			if pallet_name == "TechnicalMembership" {
 				let variant_error =
-					technical_membership::Error::decode_with_metadata(cursor, 388u32, metadata)?;
+					technical_membership::Error::decode_with_metadata(cursor, 392u32, metadata)?;
 				return Ok(Error::TechnicalMembership(variant_error));
 			}
 			if pallet_name == "Grandpa" {
-				let variant_error = grandpa::Error::decode_with_metadata(cursor, 392u32, metadata)?;
+				let variant_error = grandpa::Error::decode_with_metadata(cursor, 396u32, metadata)?;
 				return Ok(Error::Grandpa(variant_error));
 			}
 			if pallet_name == "Treasury" {
 				let variant_error =
-					treasury::Error::decode_with_metadata(cursor, 398u32, metadata)?;
+					treasury::Error::decode_with_metadata(cursor, 402u32, metadata)?;
 				return Ok(Error::Treasury(variant_error));
 			}
 			if pallet_name == "Sudo" {
-				let variant_error = sudo::Error::decode_with_metadata(cursor, 399u32, metadata)?;
+				let variant_error = sudo::Error::decode_with_metadata(cursor, 403u32, metadata)?;
 				return Ok(Error::Sudo(variant_error));
 			}
 			if pallet_name == "ImOnline" {
 				let variant_error =
-					im_online::Error::decode_with_metadata(cursor, 402u32, metadata)?;
+					im_online::Error::decode_with_metadata(cursor, 406u32, metadata)?;
 				return Ok(Error::ImOnline(variant_error));
 			}
 			if pallet_name == "Scheduler" {
 				let variant_error =
-					scheduler::Error::decode_with_metadata(cursor, 414u32, metadata)?;
+					scheduler::Error::decode_with_metadata(cursor, 418u32, metadata)?;
 				return Ok(Error::Scheduler(variant_error));
 			}
 			if pallet_name == "Bounties" {
 				let variant_error =
-					bounties::Error::decode_with_metadata(cursor, 418u32, metadata)?;
+					bounties::Error::decode_with_metadata(cursor, 422u32, metadata)?;
 				return Ok(Error::Bounties(variant_error));
 			}
 			if pallet_name == "Tips" {
-				let variant_error = tips::Error::decode_with_metadata(cursor, 420u32, metadata)?;
+				let variant_error = tips::Error::decode_with_metadata(cursor, 424u32, metadata)?;
 				return Ok(Error::Tips(variant_error));
 			}
 			if pallet_name == "DataAvailability" {
 				let variant_error =
-					data_availability::Error::decode_with_metadata(cursor, 422u32, metadata)?;
+					data_availability::Error::decode_with_metadata(cursor, 426u32, metadata)?;
 				return Ok(Error::DataAvailability(variant_error));
 			}
 			if pallet_name == "NomadUpdaterManager" {
 				let variant_error =
-					nomad_updater_manager::Error::decode_with_metadata(cursor, 423u32, metadata)?;
+					nomad_updater_manager::Error::decode_with_metadata(cursor, 427u32, metadata)?;
 				return Ok(Error::NomadUpdaterManager(variant_error));
 			}
 			if pallet_name == "NomadHome" {
 				let variant_error =
-					nomad_home::Error::decode_with_metadata(cursor, 428u32, metadata)?;
+					nomad_home::Error::decode_with_metadata(cursor, 432u32, metadata)?;
 				return Ok(Error::NomadHome(variant_error));
 			}
 			if pallet_name == "NomadDABridge" {
 				let variant_error =
-					nomad_da_bridge::Error::decode_with_metadata(cursor, 429u32, metadata)?;
+					nomad_da_bridge::Error::decode_with_metadata(cursor, 433u32, metadata)?;
 				return Ok(Error::NomadDABridge(variant_error));
 			}
 			if pallet_name == "Preimage" {
 				let variant_error =
-					preimage::Error::decode_with_metadata(cursor, 433u32, metadata)?;
+					preimage::Error::decode_with_metadata(cursor, 437u32, metadata)?;
 				return Ok(Error::Preimage(variant_error));
 			}
 			if pallet_name == "Multisig" {
 				let variant_error =
-					multisig::Error::decode_with_metadata(cursor, 436u32, metadata)?;
+					multisig::Error::decode_with_metadata(cursor, 440u32, metadata)?;
 				return Ok(Error::Multisig(variant_error));
 			}
 			if pallet_name == "VoterList" {
 				let variant_error =
-					voter_list::Error::decode_with_metadata(cursor, 440u32, metadata)?;
+					voter_list::Error::decode_with_metadata(cursor, 444u32, metadata)?;
 				return Ok(Error::VoterList(variant_error));
 			}
 			if pallet_name == "NominationPools" {
 				let variant_error =
-					nomination_pools::Error::decode_with_metadata(cursor, 460u32, metadata)?;
+					nomination_pools::Error::decode_with_metadata(cursor, 464u32, metadata)?;
 				return Ok(Error::NominationPools(variant_error));
 			}
 			if pallet_name == "Identity" {
 				let variant_error =
-					identity::Error::decode_with_metadata(cursor, 472u32, metadata)?;
+					identity::Error::decode_with_metadata(cursor, 476u32, metadata)?;
 				return Ok(Error::Identity(variant_error));
+			}
+			if pallet_name == "Proxy" {
+				let variant_error = proxy::Error::decode_with_metadata(cursor, 485u32, metadata)?;
+				return Ok(Error::Proxy(variant_error));
 			}
 			Err(::subxt::ext::scale_decode::Error::custom(format!(
 				"Pallet name '{}' not found in root Error enum",
@@ -934,6 +959,9 @@ pub mod api {
 		pub fn identity(&self) -> identity::constants::ConstantsApi {
 			identity::constants::ConstantsApi
 		}
+		pub fn proxy(&self) -> proxy::constants::ConstantsApi {
+			proxy::constants::ConstantsApi
+		}
 	}
 	pub struct StorageApi;
 	impl StorageApi {
@@ -1032,6 +1060,9 @@ pub mod api {
 		pub fn identity(&self) -> identity::storage::StorageApi {
 			identity::storage::StorageApi
 		}
+		pub fn proxy(&self) -> proxy::storage::StorageApi {
+			proxy::storage::StorageApi
+		}
 	}
 	pub struct TransactionApi;
 	impl TransactionApi {
@@ -1121,6 +1152,9 @@ pub mod api {
 		pub fn mandate(&self) -> mandate::calls::TransactionApi {
 			mandate::calls::TransactionApi
 		}
+		pub fn proxy(&self) -> proxy::calls::TransactionApi {
+			proxy::calls::TransactionApi
+		}
 	}
 	#[doc = r" check whether the Client you are using is aligned with the statically generated codegen."]
 	pub fn validate_codegen<T: ::subxt::Config, C: ::subxt::client::OfflineClientT<T>>(
@@ -1133,9 +1167,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				38u8, 170u8, 174u8, 116u8, 112u8, 82u8, 137u8, 173u8, 208u8, 27u8, 62u8, 242u8,
-				107u8, 52u8, 187u8, 39u8, 160u8, 171u8, 100u8, 46u8, 172u8, 36u8, 87u8, 194u8,
-				246u8, 23u8, 0u8, 235u8, 87u8, 76u8, 35u8, 77u8,
+				172u8, 218u8, 221u8, 7u8, 37u8, 151u8, 242u8, 213u8, 233u8, 51u8, 61u8, 4u8, 36u8,
+				147u8, 244u8, 183u8, 230u8, 41u8, 6u8, 32u8, 65u8, 184u8, 137u8, 39u8, 18u8, 153u8,
+				241u8, 57u8, 30u8, 50u8, 237u8, 21u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -1919,10 +1953,9 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							203u8, 63u8, 214u8, 221u8, 94u8, 130u8, 207u8, 232u8, 34u8, 38u8, 80u8,
-							88u8, 248u8, 229u8, 35u8, 181u8, 220u8, 157u8, 93u8, 57u8, 142u8,
-							131u8, 99u8, 68u8, 208u8, 169u8, 43u8, 138u8, 248u8, 47u8, 208u8,
-							141u8,
+							88u8, 68u8, 80u8, 68u8, 112u8, 191u8, 116u8, 48u8, 62u8, 100u8, 147u8,
+							199u8, 2u8, 87u8, 127u8, 40u8, 16u8, 111u8, 128u8, 142u8, 210u8, 2u8,
+							224u8, 253u8, 202u8, 177u8, 185u8, 236u8, 130u8, 117u8, 184u8, 36u8,
 						],
 					)
 				}
@@ -2365,9 +2398,10 @@ pub mod api {
 						"batch",
 						types::Batch { calls },
 						[
-							59u8, 10u8, 227u8, 139u8, 123u8, 198u8, 102u8, 170u8, 227u8, 242u8,
-							37u8, 29u8, 28u8, 49u8, 243u8, 152u8, 138u8, 168u8, 63u8, 4u8, 129u8,
-							74u8, 28u8, 243u8, 224u8, 25u8, 198u8, 111u8, 229u8, 30u8, 95u8, 133u8,
+							128u8, 24u8, 226u8, 201u8, 155u8, 205u8, 234u8, 105u8, 212u8, 100u8,
+							32u8, 82u8, 196u8, 45u8, 91u8, 40u8, 2u8, 9u8, 53u8, 209u8, 198u8,
+							222u8, 40u8, 134u8, 166u8, 236u8, 255u8, 66u8, 216u8, 132u8, 214u8,
+							62u8,
 						],
 					)
 				}
@@ -2385,9 +2419,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							171u8, 204u8, 136u8, 167u8, 107u8, 213u8, 186u8, 219u8, 143u8, 20u8,
-							18u8, 220u8, 254u8, 51u8, 93u8, 74u8, 160u8, 252u8, 59u8, 22u8, 85u8,
-							29u8, 141u8, 8u8, 118u8, 194u8, 157u8, 16u8, 103u8, 86u8, 36u8, 10u8,
+							92u8, 214u8, 153u8, 23u8, 185u8, 227u8, 170u8, 101u8, 95u8, 117u8,
+							200u8, 149u8, 5u8, 88u8, 165u8, 135u8, 97u8, 16u8, 243u8, 245u8, 254u8,
+							191u8, 166u8, 195u8, 11u8, 227u8, 243u8, 53u8, 25u8, 198u8, 149u8,
+							85u8,
 						],
 					)
 				}
@@ -2401,10 +2436,9 @@ pub mod api {
 						"batch_all",
 						types::BatchAll { calls },
 						[
-							11u8, 248u8, 10u8, 245u8, 204u8, 72u8, 140u8, 54u8, 2u8, 167u8, 240u8,
-							117u8, 240u8, 171u8, 161u8, 198u8, 39u8, 172u8, 226u8, 250u8, 215u8,
-							194u8, 24u8, 89u8, 34u8, 168u8, 124u8, 216u8, 253u8, 160u8, 248u8,
-							219u8,
+							203u8, 215u8, 204u8, 241u8, 47u8, 191u8, 72u8, 60u8, 87u8, 17u8, 239u8,
+							37u8, 22u8, 199u8, 221u8, 170u8, 208u8, 83u8, 78u8, 0u8, 66u8, 39u8,
+							141u8, 134u8, 177u8, 23u8, 37u8, 113u8, 46u8, 85u8, 60u8, 78u8,
 						],
 					)
 				}
@@ -2422,9 +2456,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							218u8, 9u8, 226u8, 235u8, 22u8, 180u8, 168u8, 99u8, 128u8, 50u8, 68u8,
-							57u8, 6u8, 218u8, 159u8, 237u8, 43u8, 228u8, 156u8, 74u8, 34u8, 111u8,
-							58u8, 0u8, 239u8, 63u8, 220u8, 20u8, 75u8, 39u8, 75u8, 30u8,
+							226u8, 199u8, 227u8, 68u8, 100u8, 112u8, 222u8, 233u8, 102u8, 61u8,
+							106u8, 254u8, 235u8, 200u8, 61u8, 148u8, 117u8, 193u8, 3u8, 126u8,
+							122u8, 14u8, 60u8, 73u8, 157u8, 119u8, 141u8, 73u8, 144u8, 11u8, 89u8,
+							75u8,
 						],
 					)
 				}
@@ -2438,10 +2473,9 @@ pub mod api {
 						"force_batch",
 						types::ForceBatch { calls },
 						[
-							131u8, 207u8, 213u8, 37u8, 171u8, 200u8, 115u8, 152u8, 72u8, 186u8,
-							150u8, 91u8, 231u8, 174u8, 145u8, 211u8, 252u8, 90u8, 222u8, 133u8,
-							116u8, 127u8, 91u8, 237u8, 255u8, 94u8, 19u8, 10u8, 208u8, 154u8,
-							130u8, 87u8,
+							73u8, 200u8, 61u8, 43u8, 78u8, 252u8, 32u8, 44u8, 53u8, 2u8, 57u8,
+							163u8, 176u8, 13u8, 102u8, 228u8, 1u8, 17u8, 85u8, 204u8, 166u8, 118u8,
+							163u8, 225u8, 31u8, 88u8, 47u8, 2u8, 187u8, 162u8, 205u8, 153u8,
 						],
 					)
 				}
@@ -2459,10 +2493,9 @@ pub mod api {
 							weight,
 						},
 						[
-							191u8, 113u8, 69u8, 147u8, 78u8, 194u8, 37u8, 183u8, 67u8, 74u8, 96u8,
-							242u8, 127u8, 18u8, 13u8, 53u8, 56u8, 250u8, 248u8, 206u8, 232u8,
-							191u8, 155u8, 53u8, 207u8, 80u8, 213u8, 222u8, 220u8, 81u8, 238u8,
-							225u8,
+							64u8, 89u8, 209u8, 98u8, 0u8, 250u8, 98u8, 6u8, 171u8, 193u8, 148u8,
+							227u8, 7u8, 225u8, 184u8, 19u8, 99u8, 115u8, 81u8, 233u8, 174u8, 149u8,
+							201u8, 173u8, 97u8, 187u8, 88u8, 80u8, 36u8, 222u8, 245u8, 189u8,
 						],
 					)
 				}
@@ -9743,10 +9776,10 @@ pub mod api {
 							length_bound,
 						},
 						[
-							204u8, 126u8, 175u8, 251u8, 222u8, 18u8, 74u8, 233u8, 136u8, 0u8,
-							255u8, 167u8, 250u8, 137u8, 49u8, 147u8, 22u8, 98u8, 20u8, 204u8, 35u8,
-							229u8, 214u8, 103u8, 154u8, 47u8, 138u8, 132u8, 64u8, 70u8, 245u8,
-							100u8,
+							160u8, 209u8, 236u8, 234u8, 81u8, 99u8, 190u8, 6u8, 255u8, 209u8,
+							251u8, 58u8, 226u8, 200u8, 167u8, 19u8, 37u8, 247u8, 247u8, 125u8,
+							143u8, 104u8, 153u8, 40u8, 131u8, 154u8, 225u8, 167u8, 166u8, 51u8,
+							16u8, 141u8,
 						],
 					)
 				}
@@ -9766,10 +9799,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							67u8, 130u8, 12u8, 201u8, 154u8, 230u8, 97u8, 89u8, 72u8, 215u8, 65u8,
-							15u8, 136u8, 233u8, 143u8, 40u8, 254u8, 214u8, 115u8, 173u8, 127u8,
-							121u8, 167u8, 223u8, 122u8, 100u8, 74u8, 142u8, 148u8, 200u8, 208u8,
-							206u8,
+							237u8, 122u8, 108u8, 93u8, 11u8, 225u8, 43u8, 100u8, 186u8, 81u8, 97u8,
+							134u8, 37u8, 233u8, 240u8, 15u8, 203u8, 81u8, 113u8, 129u8, 5u8, 142u8,
+							196u8, 22u8, 201u8, 66u8, 224u8, 19u8, 238u8, 95u8, 140u8, 103u8,
 						],
 					)
 				}
@@ -10048,10 +10080,9 @@ pub mod api {
 							_0.borrow(),
 						)],
 						[
-							125u8, 12u8, 251u8, 103u8, 62u8, 228u8, 157u8, 165u8, 212u8, 212u8,
-							140u8, 224u8, 216u8, 105u8, 235u8, 28u8, 89u8, 48u8, 111u8, 168u8,
-							90u8, 171u8, 109u8, 242u8, 211u8, 204u8, 104u8, 154u8, 189u8, 205u8,
-							63u8, 70u8,
+							38u8, 224u8, 64u8, 97u8, 38u8, 29u8, 246u8, 50u8, 47u8, 47u8, 94u8,
+							178u8, 31u8, 209u8, 15u8, 79u8, 5u8, 251u8, 138u8, 14u8, 115u8, 33u8,
+							219u8, 117u8, 251u8, 81u8, 65u8, 124u8, 157u8, 43u8, 214u8, 30u8,
 						],
 					)
 				}
@@ -10070,10 +10101,9 @@ pub mod api {
 						"ProposalOf",
 						Vec::new(),
 						[
-							125u8, 12u8, 251u8, 103u8, 62u8, 228u8, 157u8, 165u8, 212u8, 212u8,
-							140u8, 224u8, 216u8, 105u8, 235u8, 28u8, 89u8, 48u8, 111u8, 168u8,
-							90u8, 171u8, 109u8, 242u8, 211u8, 204u8, 104u8, 154u8, 189u8, 205u8,
-							63u8, 70u8,
+							38u8, 224u8, 64u8, 97u8, 38u8, 29u8, 246u8, 50u8, 47u8, 47u8, 94u8,
+							178u8, 31u8, 209u8, 15u8, 79u8, 5u8, 251u8, 138u8, 14u8, 115u8, 33u8,
+							219u8, 117u8, 251u8, 81u8, 65u8, 124u8, 157u8, 43u8, 214u8, 30u8,
 						],
 					)
 				}
@@ -11928,9 +11958,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							22u8, 246u8, 244u8, 57u8, 3u8, 97u8, 81u8, 177u8, 135u8, 24u8, 184u8,
-							239u8, 3u8, 31u8, 188u8, 146u8, 245u8, 231u8, 97u8, 242u8, 40u8, 186u8,
-							119u8, 168u8, 213u8, 69u8, 135u8, 67u8, 81u8, 216u8, 129u8, 131u8,
+							179u8, 146u8, 252u8, 161u8, 10u8, 36u8, 204u8, 108u8, 143u8, 220u8,
+							229u8, 162u8, 173u8, 2u8, 135u8, 158u8, 140u8, 208u8, 167u8, 64u8,
+							41u8, 140u8, 113u8, 220u8, 92u8, 71u8, 73u8, 28u8, 216u8, 66u8, 46u8,
+							193u8,
 						],
 					)
 				}
@@ -11948,9 +11979,10 @@ pub mod api {
 							weight,
 						},
 						[
-							170u8, 4u8, 196u8, 22u8, 66u8, 64u8, 19u8, 4u8, 88u8, 14u8, 173u8,
-							160u8, 107u8, 11u8, 61u8, 11u8, 112u8, 205u8, 182u8, 97u8, 52u8, 227u8,
-							140u8, 64u8, 184u8, 175u8, 221u8, 179u8, 21u8, 219u8, 171u8, 35u8,
+							110u8, 193u8, 235u8, 14u8, 123u8, 61u8, 223u8, 39u8, 47u8, 203u8, 70u8,
+							134u8, 141u8, 13u8, 74u8, 54u8, 148u8, 180u8, 57u8, 173u8, 171u8,
+							179u8, 152u8, 214u8, 95u8, 145u8, 70u8, 234u8, 244u8, 160u8, 94u8,
+							138u8,
 						],
 					)
 				}
@@ -11991,10 +12023,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							111u8, 28u8, 43u8, 0u8, 219u8, 251u8, 247u8, 144u8, 99u8, 138u8, 156u8,
-							141u8, 0u8, 190u8, 115u8, 150u8, 233u8, 149u8, 79u8, 205u8, 131u8,
-							32u8, 144u8, 114u8, 247u8, 166u8, 112u8, 227u8, 89u8, 248u8, 106u8,
-							197u8,
+							16u8, 254u8, 123u8, 188u8, 228u8, 77u8, 170u8, 242u8, 122u8, 238u8,
+							162u8, 96u8, 22u8, 182u8, 18u8, 65u8, 243u8, 125u8, 108u8, 234u8, 28u8,
+							221u8, 36u8, 174u8, 19u8, 184u8, 195u8, 192u8, 123u8, 13u8, 100u8,
+							188u8,
 						],
 					)
 				}
@@ -12880,9 +12912,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							171u8, 203u8, 55u8, 42u8, 233u8, 219u8, 14u8, 252u8, 51u8, 71u8, 201u8,
-							34u8, 129u8, 60u8, 91u8, 6u8, 107u8, 168u8, 173u8, 235u8, 53u8, 233u8,
-							124u8, 98u8, 48u8, 232u8, 32u8, 235u8, 4u8, 208u8, 170u8, 36u8,
+							85u8, 235u8, 157u8, 247u8, 109u8, 173u8, 146u8, 238u8, 44u8, 91u8,
+							249u8, 47u8, 211u8, 190u8, 16u8, 243u8, 90u8, 80u8, 123u8, 102u8,
+							222u8, 202u8, 171u8, 132u8, 147u8, 45u8, 193u8, 220u8, 248u8, 215u8,
+							167u8, 75u8,
 						],
 					)
 				}
@@ -12927,10 +12960,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							242u8, 35u8, 92u8, 65u8, 76u8, 210u8, 224u8, 234u8, 253u8, 128u8,
-							223u8, 55u8, 58u8, 187u8, 247u8, 230u8, 155u8, 88u8, 98u8, 246u8,
-							157u8, 227u8, 190u8, 161u8, 72u8, 38u8, 57u8, 40u8, 186u8, 193u8, 49u8,
-							81u8,
+							70u8, 161u8, 123u8, 139u8, 74u8, 46u8, 189u8, 165u8, 213u8, 122u8,
+							225u8, 27u8, 253u8, 161u8, 246u8, 85u8, 96u8, 162u8, 238u8, 89u8,
+							234u8, 27u8, 249u8, 109u8, 141u8, 242u8, 47u8, 9u8, 1u8, 72u8, 176u8,
+							154u8,
 						],
 					)
 				}
@@ -12971,9 +13004,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							39u8, 139u8, 129u8, 105u8, 29u8, 12u8, 1u8, 169u8, 10u8, 246u8, 117u8,
-							49u8, 130u8, 254u8, 211u8, 104u8, 123u8, 211u8, 205u8, 16u8, 242u8,
-							90u8, 26u8, 182u8, 6u8, 179u8, 43u8, 248u8, 204u8, 70u8, 202u8, 127u8,
+							125u8, 239u8, 206u8, 202u8, 95u8, 152u8, 60u8, 143u8, 124u8, 49u8,
+							57u8, 238u8, 112u8, 253u8, 250u8, 116u8, 33u8, 95u8, 110u8, 94u8, 99u8,
+							223u8, 163u8, 54u8, 40u8, 69u8, 71u8, 210u8, 112u8, 138u8, 75u8, 124u8,
 						],
 					)
 				}
@@ -13000,10 +13033,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							85u8, 151u8, 189u8, 156u8, 231u8, 111u8, 53u8, 51u8, 58u8, 181u8,
-							254u8, 107u8, 21u8, 129u8, 159u8, 141u8, 116u8, 97u8, 72u8, 94u8,
-							240u8, 52u8, 161u8, 201u8, 176u8, 250u8, 170u8, 158u8, 244u8, 119u8,
-							188u8, 228u8,
+							95u8, 184u8, 182u8, 41u8, 189u8, 211u8, 217u8, 63u8, 1u8, 15u8, 125u8,
+							47u8, 155u8, 121u8, 189u8, 212u8, 197u8, 129u8, 217u8, 146u8, 253u8,
+							183u8, 148u8, 246u8, 137u8, 151u8, 238u8, 217u8, 155u8, 168u8, 66u8,
+							129u8,
 						],
 					)
 				}
@@ -16395,9 +16428,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							170u8, 33u8, 4u8, 189u8, 0u8, 84u8, 34u8, 218u8, 166u8, 64u8, 190u8,
-							240u8, 64u8, 159u8, 66u8, 233u8, 6u8, 33u8, 77u8, 124u8, 95u8, 154u8,
-							182u8, 214u8, 114u8, 234u8, 183u8, 28u8, 195u8, 61u8, 208u8, 121u8,
+							99u8, 229u8, 152u8, 194u8, 239u8, 81u8, 92u8, 210u8, 128u8, 18u8, 0u8,
+							65u8, 12u8, 139u8, 39u8, 13u8, 190u8, 192u8, 172u8, 64u8, 128u8, 242u8,
+							240u8, 44u8, 80u8, 40u8, 118u8, 220u8, 139u8, 141u8, 185u8, 244u8,
 						],
 					)
 				}
@@ -16423,10 +16456,10 @@ pub mod api {
 							max_weight,
 						},
 						[
-							191u8, 242u8, 61u8, 121u8, 132u8, 117u8, 64u8, 61u8, 179u8, 162u8,
-							139u8, 119u8, 237u8, 241u8, 71u8, 198u8, 173u8, 144u8, 50u8, 34u8,
-							208u8, 224u8, 200u8, 221u8, 254u8, 124u8, 234u8, 47u8, 123u8, 110u8,
-							39u8, 52u8,
+							148u8, 100u8, 34u8, 92u8, 159u8, 181u8, 78u8, 147u8, 24u8, 238u8,
+							189u8, 69u8, 23u8, 234u8, 26u8, 50u8, 99u8, 145u8, 123u8, 30u8, 3u8,
+							38u8, 61u8, 184u8, 122u8, 206u8, 182u8, 191u8, 175u8, 227u8, 174u8,
+							92u8,
 						],
 					)
 				}
@@ -20348,10 +20381,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							8u8, 191u8, 203u8, 242u8, 175u8, 68u8, 241u8, 71u8, 220u8, 179u8,
-							194u8, 118u8, 120u8, 215u8, 227u8, 245u8, 150u8, 188u8, 192u8, 51u8,
-							246u8, 198u8, 34u8, 121u8, 82u8, 168u8, 139u8, 179u8, 134u8, 242u8,
-							242u8, 86u8,
+							54u8, 70u8, 102u8, 190u8, 14u8, 231u8, 26u8, 73u8, 211u8, 62u8, 102u8,
+							223u8, 110u8, 127u8, 121u8, 150u8, 162u8, 229u8, 46u8, 154u8, 13u8,
+							212u8, 131u8, 96u8, 126u8, 227u8, 189u8, 103u8, 49u8, 170u8, 142u8,
+							226u8,
 						],
 					)
 				}
@@ -20381,6 +20414,872 @@ pub mod api {
 			impl ::subxt::events::StaticEvent for RootOp {
 				const PALLET: &'static str = "Mandate";
 				const EVENT: &'static str = "RootOp";
+			}
+		}
+	}
+	pub mod proxy {
+		use super::root_mod;
+		use super::runtime_types;
+		#[doc = "The `Error` enum of this pallet."]
+		pub type Error = runtime_types::pallet_proxy::pallet::Error;
+		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
+		pub type Call = runtime_types::pallet_proxy::pallet::Call;
+		pub mod calls {
+			use super::root_mod;
+			use super::runtime_types;
+			type DispatchError = runtime_types::sp_runtime::DispatchError;
+			pub mod types {
+				use super::runtime_types;
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct Proxy {
+					pub real: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					pub force_proxy_type:
+						::core::option::Option<runtime_types::da_runtime::impls::ProxyType>,
+					pub call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
+				}
+				impl ::subxt::blocks::StaticExtrinsic for Proxy {
+					const PALLET: &'static str = "Proxy";
+					const CALL: &'static str = "proxy";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct AddProxy {
+					pub delegate: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					pub proxy_type: runtime_types::da_runtime::impls::ProxyType,
+					pub delay: ::core::primitive::u32,
+				}
+				impl ::subxt::blocks::StaticExtrinsic for AddProxy {
+					const PALLET: &'static str = "Proxy";
+					const CALL: &'static str = "add_proxy";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct RemoveProxy {
+					pub delegate: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					pub proxy_type: runtime_types::da_runtime::impls::ProxyType,
+					pub delay: ::core::primitive::u32,
+				}
+				impl ::subxt::blocks::StaticExtrinsic for RemoveProxy {
+					const PALLET: &'static str = "Proxy";
+					const CALL: &'static str = "remove_proxy";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct RemoveProxies;
+				impl ::subxt::blocks::StaticExtrinsic for RemoveProxies {
+					const PALLET: &'static str = "Proxy";
+					const CALL: &'static str = "remove_proxies";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct CreatePure {
+					pub proxy_type: runtime_types::da_runtime::impls::ProxyType,
+					pub delay: ::core::primitive::u32,
+					pub index: ::core::primitive::u16,
+				}
+				impl ::subxt::blocks::StaticExtrinsic for CreatePure {
+					const PALLET: &'static str = "Proxy";
+					const CALL: &'static str = "create_pure";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct KillPure {
+					pub spawner: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					pub proxy_type: runtime_types::da_runtime::impls::ProxyType,
+					pub index: ::core::primitive::u16,
+					#[codec(compact)]
+					pub height: ::core::primitive::u32,
+					#[codec(compact)]
+					pub ext_index: ::core::primitive::u32,
+				}
+				impl ::subxt::blocks::StaticExtrinsic for KillPure {
+					const PALLET: &'static str = "Proxy";
+					const CALL: &'static str = "kill_pure";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct Announce {
+					pub real: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					pub call_hash: ::subxt::utils::H256,
+				}
+				impl ::subxt::blocks::StaticExtrinsic for Announce {
+					const PALLET: &'static str = "Proxy";
+					const CALL: &'static str = "announce";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct RemoveAnnouncement {
+					pub real: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					pub call_hash: ::subxt::utils::H256,
+				}
+				impl ::subxt::blocks::StaticExtrinsic for RemoveAnnouncement {
+					const PALLET: &'static str = "Proxy";
+					const CALL: &'static str = "remove_announcement";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct RejectAnnouncement {
+					pub delegate: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					pub call_hash: ::subxt::utils::H256,
+				}
+				impl ::subxt::blocks::StaticExtrinsic for RejectAnnouncement {
+					const PALLET: &'static str = "Proxy";
+					const CALL: &'static str = "reject_announcement";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct ProxyAnnounced {
+					pub delegate: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					pub real: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					pub force_proxy_type:
+						::core::option::Option<runtime_types::da_runtime::impls::ProxyType>,
+					pub call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
+				}
+				impl ::subxt::blocks::StaticExtrinsic for ProxyAnnounced {
+					const PALLET: &'static str = "Proxy";
+					const CALL: &'static str = "proxy_announced";
+				}
+			}
+			pub struct TransactionApi;
+			impl TransactionApi {
+				#[doc = "See [`Pallet::proxy`]."]
+				pub fn proxy(
+					&self,
+					real: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					force_proxy_type: ::core::option::Option<
+						runtime_types::da_runtime::impls::ProxyType,
+					>,
+					call: runtime_types::da_runtime::RuntimeCall,
+				) -> ::subxt::tx::Payload<types::Proxy> {
+					::subxt::tx::Payload::new_static(
+						"Proxy",
+						"proxy",
+						types::Proxy {
+							real,
+							force_proxy_type,
+							call: ::std::boxed::Box::new(call),
+						},
+						[
+							81u8, 198u8, 246u8, 30u8, 27u8, 252u8, 35u8, 43u8, 97u8, 111u8, 219u8,
+							204u8, 14u8, 184u8, 213u8, 221u8, 254u8, 216u8, 218u8, 6u8, 232u8,
+							80u8, 38u8, 239u8, 196u8, 168u8, 127u8, 6u8, 149u8, 49u8, 88u8, 243u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::add_proxy`]."]
+				pub fn add_proxy(
+					&self,
+					delegate: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					proxy_type: runtime_types::da_runtime::impls::ProxyType,
+					delay: ::core::primitive::u32,
+				) -> ::subxt::tx::Payload<types::AddProxy> {
+					::subxt::tx::Payload::new_static(
+						"Proxy",
+						"add_proxy",
+						types::AddProxy {
+							delegate,
+							proxy_type,
+							delay,
+						},
+						[
+							97u8, 125u8, 128u8, 243u8, 184u8, 99u8, 124u8, 24u8, 133u8, 41u8,
+							195u8, 127u8, 221u8, 215u8, 222u8, 132u8, 252u8, 167u8, 40u8, 241u8,
+							39u8, 96u8, 26u8, 209u8, 201u8, 9u8, 61u8, 145u8, 212u8, 99u8, 40u8,
+							235u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::remove_proxy`]."]
+				pub fn remove_proxy(
+					&self,
+					delegate: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					proxy_type: runtime_types::da_runtime::impls::ProxyType,
+					delay: ::core::primitive::u32,
+				) -> ::subxt::tx::Payload<types::RemoveProxy> {
+					::subxt::tx::Payload::new_static(
+						"Proxy",
+						"remove_proxy",
+						types::RemoveProxy {
+							delegate,
+							proxy_type,
+							delay,
+						},
+						[
+							200u8, 191u8, 58u8, 137u8, 191u8, 132u8, 73u8, 124u8, 188u8, 206u8,
+							125u8, 121u8, 246u8, 123u8, 114u8, 54u8, 134u8, 94u8, 169u8, 247u8,
+							6u8, 86u8, 221u8, 1u8, 88u8, 59u8, 215u8, 40u8, 206u8, 60u8, 68u8,
+							171u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::remove_proxies`]."]
+				pub fn remove_proxies(&self) -> ::subxt::tx::Payload<types::RemoveProxies> {
+					::subxt::tx::Payload::new_static(
+						"Proxy",
+						"remove_proxies",
+						types::RemoveProxies {},
+						[
+							1u8, 126u8, 36u8, 227u8, 185u8, 34u8, 218u8, 236u8, 125u8, 231u8, 68u8,
+							185u8, 145u8, 63u8, 250u8, 225u8, 103u8, 3u8, 189u8, 37u8, 172u8,
+							195u8, 197u8, 216u8, 99u8, 210u8, 240u8, 162u8, 158u8, 132u8, 24u8,
+							6u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::create_pure`]."]
+				pub fn create_pure(
+					&self,
+					proxy_type: runtime_types::da_runtime::impls::ProxyType,
+					delay: ::core::primitive::u32,
+					index: ::core::primitive::u16,
+				) -> ::subxt::tx::Payload<types::CreatePure> {
+					::subxt::tx::Payload::new_static(
+						"Proxy",
+						"create_pure",
+						types::CreatePure {
+							proxy_type,
+							delay,
+							index,
+						},
+						[
+							124u8, 25u8, 141u8, 194u8, 131u8, 102u8, 15u8, 29u8, 77u8, 240u8, 98u8,
+							39u8, 164u8, 93u8, 7u8, 231u8, 142u8, 56u8, 94u8, 150u8, 0u8, 12u8,
+							158u8, 156u8, 176u8, 76u8, 49u8, 153u8, 212u8, 110u8, 160u8, 96u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::kill_pure`]."]
+				pub fn kill_pure(
+					&self,
+					spawner: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					proxy_type: runtime_types::da_runtime::impls::ProxyType,
+					index: ::core::primitive::u16,
+					height: ::core::primitive::u32,
+					ext_index: ::core::primitive::u32,
+				) -> ::subxt::tx::Payload<types::KillPure> {
+					::subxt::tx::Payload::new_static(
+						"Proxy",
+						"kill_pure",
+						types::KillPure {
+							spawner,
+							proxy_type,
+							index,
+							height,
+							ext_index,
+						},
+						[
+							64u8, 36u8, 70u8, 155u8, 220u8, 122u8, 205u8, 146u8, 203u8, 5u8, 15u8,
+							8u8, 239u8, 31u8, 210u8, 228u8, 37u8, 216u8, 82u8, 214u8, 210u8, 98u8,
+							14u8, 45u8, 58u8, 247u8, 65u8, 57u8, 23u8, 176u8, 212u8, 239u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::announce`]."]
+				pub fn announce(
+					&self,
+					real: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					call_hash: ::subxt::utils::H256,
+				) -> ::subxt::tx::Payload<types::Announce> {
+					::subxt::tx::Payload::new_static(
+						"Proxy",
+						"announce",
+						types::Announce { real, call_hash },
+						[
+							221u8, 164u8, 208u8, 81u8, 100u8, 102u8, 1u8, 122u8, 103u8, 208u8,
+							75u8, 23u8, 238u8, 93u8, 160u8, 101u8, 101u8, 183u8, 112u8, 13u8,
+							113u8, 180u8, 171u8, 239u8, 53u8, 181u8, 46u8, 131u8, 191u8, 57u8,
+							191u8, 44u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::remove_announcement`]."]
+				pub fn remove_announcement(
+					&self,
+					real: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					call_hash: ::subxt::utils::H256,
+				) -> ::subxt::tx::Payload<types::RemoveAnnouncement> {
+					::subxt::tx::Payload::new_static(
+						"Proxy",
+						"remove_announcement",
+						types::RemoveAnnouncement { real, call_hash },
+						[
+							101u8, 86u8, 40u8, 136u8, 201u8, 115u8, 247u8, 209u8, 11u8, 90u8, 15u8,
+							191u8, 76u8, 206u8, 229u8, 159u8, 144u8, 198u8, 45u8, 113u8, 129u8,
+							39u8, 215u8, 77u8, 175u8, 108u8, 230u8, 113u8, 205u8, 109u8, 189u8,
+							6u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::reject_announcement`]."]
+				pub fn reject_announcement(
+					&self,
+					delegate: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					call_hash: ::subxt::utils::H256,
+				) -> ::subxt::tx::Payload<types::RejectAnnouncement> {
+					::subxt::tx::Payload::new_static(
+						"Proxy",
+						"reject_announcement",
+						types::RejectAnnouncement {
+							delegate,
+							call_hash,
+						},
+						[
+							83u8, 185u8, 140u8, 49u8, 246u8, 64u8, 68u8, 248u8, 26u8, 107u8, 235u8,
+							167u8, 130u8, 60u8, 24u8, 108u8, 108u8, 15u8, 155u8, 135u8, 228u8,
+							166u8, 242u8, 8u8, 85u8, 25u8, 58u8, 113u8, 168u8, 125u8, 155u8, 31u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::proxy_announced`]."]
+				pub fn proxy_announced(
+					&self,
+					delegate: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					real: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					force_proxy_type: ::core::option::Option<
+						runtime_types::da_runtime::impls::ProxyType,
+					>,
+					call: runtime_types::da_runtime::RuntimeCall,
+				) -> ::subxt::tx::Payload<types::ProxyAnnounced> {
+					::subxt::tx::Payload::new_static(
+						"Proxy",
+						"proxy_announced",
+						types::ProxyAnnounced {
+							delegate,
+							real,
+							force_proxy_type,
+							call: ::std::boxed::Box::new(call),
+						},
+						[
+							129u8, 5u8, 236u8, 190u8, 196u8, 60u8, 184u8, 99u8, 79u8, 123u8, 178u8,
+							153u8, 28u8, 175u8, 162u8, 133u8, 100u8, 78u8, 79u8, 106u8, 72u8,
+							227u8, 183u8, 83u8, 20u8, 62u8, 36u8, 120u8, 87u8, 137u8, 127u8, 221u8,
+						],
+					)
+				}
+			}
+		}
+		#[doc = "The `Event` enum of this pallet"]
+		pub type Event = runtime_types::pallet_proxy::pallet::Event;
+		pub mod events {
+			use super::runtime_types;
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "A proxy was executed correctly, with the given."]
+			pub struct ProxyExecuted {
+				pub result: ::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
+			}
+			impl ::subxt::events::StaticEvent for ProxyExecuted {
+				const PALLET: &'static str = "Proxy";
+				const EVENT: &'static str = "ProxyExecuted";
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "A pure account has been created by new proxy with given"]
+			#[doc = "disambiguation index and proxy type."]
+			pub struct PureCreated {
+				pub pure: ::subxt::utils::AccountId32,
+				pub who: ::subxt::utils::AccountId32,
+				pub proxy_type: runtime_types::da_runtime::impls::ProxyType,
+				pub disambiguation_index: ::core::primitive::u16,
+			}
+			impl ::subxt::events::StaticEvent for PureCreated {
+				const PALLET: &'static str = "Proxy";
+				const EVENT: &'static str = "PureCreated";
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "An announcement was placed to make a call in the future."]
+			pub struct Announced {
+				pub real: ::subxt::utils::AccountId32,
+				pub proxy: ::subxt::utils::AccountId32,
+				pub call_hash: ::subxt::utils::H256,
+			}
+			impl ::subxt::events::StaticEvent for Announced {
+				const PALLET: &'static str = "Proxy";
+				const EVENT: &'static str = "Announced";
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "A proxy was added."]
+			pub struct ProxyAdded {
+				pub delegator: ::subxt::utils::AccountId32,
+				pub delegatee: ::subxt::utils::AccountId32,
+				pub proxy_type: runtime_types::da_runtime::impls::ProxyType,
+				pub delay: ::core::primitive::u32,
+			}
+			impl ::subxt::events::StaticEvent for ProxyAdded {
+				const PALLET: &'static str = "Proxy";
+				const EVENT: &'static str = "ProxyAdded";
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "A proxy was removed."]
+			pub struct ProxyRemoved {
+				pub delegator: ::subxt::utils::AccountId32,
+				pub delegatee: ::subxt::utils::AccountId32,
+				pub proxy_type: runtime_types::da_runtime::impls::ProxyType,
+				pub delay: ::core::primitive::u32,
+			}
+			impl ::subxt::events::StaticEvent for ProxyRemoved {
+				const PALLET: &'static str = "Proxy";
+				const EVENT: &'static str = "ProxyRemoved";
+			}
+		}
+		pub mod storage {
+			use super::runtime_types;
+			pub struct StorageApi;
+			impl StorageApi {
+				#[doc = " The set of account proxies. Maps the account which has delegated to the accounts"]
+				#[doc = " which are being delegated to, together with the amount held on deposit."]
+				pub fn proxies(
+					&self,
+					_0: impl ::std::borrow::Borrow<::subxt::utils::AccountId32>,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					(
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							runtime_types::pallet_proxy::ProxyDefinition<
+								::subxt::utils::AccountId32,
+								runtime_types::da_runtime::impls::ProxyType,
+								::core::primitive::u32,
+							>,
+						>,
+						::core::primitive::u128,
+					),
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+				> {
+					::subxt::storage::address::Address::new_static(
+						"Proxy",
+						"Proxies",
+						vec![::subxt::storage::address::make_static_storage_map_key(
+							_0.borrow(),
+						)],
+						[
+							12u8, 0u8, 205u8, 30u8, 181u8, 11u8, 140u8, 207u8, 72u8, 175u8, 155u8,
+							245u8, 20u8, 69u8, 245u8, 212u8, 17u8, 161u8, 69u8, 215u8, 159u8,
+							243u8, 253u8, 182u8, 132u8, 139u8, 242u8, 255u8, 101u8, 211u8, 190u8,
+							157u8,
+						],
+					)
+				}
+				#[doc = " The set of account proxies. Maps the account which has delegated to the accounts"]
+				#[doc = " which are being delegated to, together with the amount held on deposit."]
+				pub fn proxies_root(
+					&self,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					(
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							runtime_types::pallet_proxy::ProxyDefinition<
+								::subxt::utils::AccountId32,
+								runtime_types::da_runtime::impls::ProxyType,
+								::core::primitive::u32,
+							>,
+						>,
+						::core::primitive::u128,
+					),
+					(),
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+				> {
+					::subxt::storage::address::Address::new_static(
+						"Proxy",
+						"Proxies",
+						Vec::new(),
+						[
+							12u8, 0u8, 205u8, 30u8, 181u8, 11u8, 140u8, 207u8, 72u8, 175u8, 155u8,
+							245u8, 20u8, 69u8, 245u8, 212u8, 17u8, 161u8, 69u8, 215u8, 159u8,
+							243u8, 253u8, 182u8, 132u8, 139u8, 242u8, 255u8, 101u8, 211u8, 190u8,
+							157u8,
+						],
+					)
+				}
+				#[doc = " The announcements made by the proxy (key)."]
+				pub fn announcements(
+					&self,
+					_0: impl ::std::borrow::Borrow<::subxt::utils::AccountId32>,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					(
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							runtime_types::pallet_proxy::Announcement<
+								::subxt::utils::AccountId32,
+								::subxt::utils::H256,
+								::core::primitive::u32,
+							>,
+						>,
+						::core::primitive::u128,
+					),
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+				> {
+					::subxt::storage::address::Address::new_static(
+						"Proxy",
+						"Announcements",
+						vec![::subxt::storage::address::make_static_storage_map_key(
+							_0.borrow(),
+						)],
+						[
+							195u8, 103u8, 36u8, 115u8, 220u8, 178u8, 159u8, 50u8, 133u8, 198u8,
+							14u8, 54u8, 122u8, 123u8, 35u8, 134u8, 152u8, 84u8, 103u8, 52u8, 31u8,
+							78u8, 136u8, 206u8, 9u8, 83u8, 155u8, 94u8, 2u8, 135u8, 159u8, 72u8,
+						],
+					)
+				}
+				#[doc = " The announcements made by the proxy (key)."]
+				pub fn announcements_root(
+					&self,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					(
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							runtime_types::pallet_proxy::Announcement<
+								::subxt::utils::AccountId32,
+								::subxt::utils::H256,
+								::core::primitive::u32,
+							>,
+						>,
+						::core::primitive::u128,
+					),
+					(),
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+				> {
+					::subxt::storage::address::Address::new_static(
+						"Proxy",
+						"Announcements",
+						Vec::new(),
+						[
+							195u8, 103u8, 36u8, 115u8, 220u8, 178u8, 159u8, 50u8, 133u8, 198u8,
+							14u8, 54u8, 122u8, 123u8, 35u8, 134u8, 152u8, 84u8, 103u8, 52u8, 31u8,
+							78u8, 136u8, 206u8, 9u8, 83u8, 155u8, 94u8, 2u8, 135u8, 159u8, 72u8,
+						],
+					)
+				}
+			}
+		}
+		pub mod constants {
+			use super::runtime_types;
+			pub struct ConstantsApi;
+			impl ConstantsApi {
+				#[doc = " The base amount of currency needed to reserve for creating a proxy."]
+				#[doc = ""]
+				#[doc = " This is held for an additional storage item whose value size is"]
+				#[doc = " `sizeof(Balance)` bytes and whose key size is `sizeof(AccountId)` bytes."]
+				pub fn proxy_deposit_base(
+					&self,
+				) -> ::subxt::constants::Address<::core::primitive::u128> {
+					::subxt::constants::Address::new_static(
+						"Proxy",
+						"ProxyDepositBase",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
+				}
+				#[doc = " The amount of currency needed per proxy added."]
+				#[doc = ""]
+				#[doc = " This is held for adding 32 bytes plus an instance of `ProxyType` more into a"]
+				#[doc = " pre-existing storage value. Thus, when configuring `ProxyDepositFactor` one should take"]
+				#[doc = " into account `32 + proxy_type.encode().len()` bytes of data."]
+				pub fn proxy_deposit_factor(
+					&self,
+				) -> ::subxt::constants::Address<::core::primitive::u128> {
+					::subxt::constants::Address::new_static(
+						"Proxy",
+						"ProxyDepositFactor",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
+				}
+				#[doc = " The maximum amount of proxies allowed for a single account."]
+				pub fn max_proxies(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
+					::subxt::constants::Address::new_static(
+						"Proxy",
+						"MaxProxies",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
+				}
+				#[doc = " The maximum amount of time-delayed announcements that are allowed to be pending."]
+				pub fn max_pending(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
+					::subxt::constants::Address::new_static(
+						"Proxy",
+						"MaxPending",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
+				}
+				#[doc = " The base amount of currency needed to reserve for creating an announcement."]
+				#[doc = ""]
+				#[doc = " This is held when a new storage item holding a `Balance` is created (typically 16"]
+				#[doc = " bytes)."]
+				pub fn announcement_deposit_base(
+					&self,
+				) -> ::subxt::constants::Address<::core::primitive::u128> {
+					::subxt::constants::Address::new_static(
+						"Proxy",
+						"AnnouncementDepositBase",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
+				}
+				#[doc = " The amount of currency needed per announcement made."]
+				#[doc = ""]
+				#[doc = " This is held for adding an `AccountId`, `Hash` and `BlockNumber` (typically 68 bytes)"]
+				#[doc = " into a pre-existing storage value."]
+				pub fn announcement_deposit_factor(
+					&self,
+				) -> ::subxt::constants::Address<::core::primitive::u128> {
+					::subxt::constants::Address::new_static(
+						"Proxy",
+						"AnnouncementDepositFactor",
+						[
+							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
+							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
+							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
+				}
 			}
 		}
 	}
@@ -21058,6 +21957,32 @@ pub mod api {
 					}
 				}
 			}
+			pub mod impls {
+				use super::runtime_types;
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub enum ProxyType {
+					#[codec(index = 0)]
+					Any,
+					#[codec(index = 1)]
+					NonTransfer,
+					#[codec(index = 2)]
+					Governance,
+					#[codec(index = 3)]
+					Staking,
+				}
+			}
 			pub mod primitives {
 				use super::runtime_types;
 				#[derive(
@@ -21191,6 +22116,8 @@ pub mod api {
 				Identity(runtime_types::pallet_identity::pallet::Call),
 				#[codec(index = 38)]
 				Mandate(runtime_types::pallet_mandate::pallet::Call),
+				#[codec(index = 39)]
+				Proxy(runtime_types::pallet_proxy::pallet::Call),
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -21264,6 +22191,8 @@ pub mod api {
 				Identity(runtime_types::pallet_identity::pallet::Event),
 				#[codec(index = 38)]
 				Mandate(runtime_types::pallet_mandate::pallet::Event),
+				#[codec(index = 39)]
+				Proxy(runtime_types::pallet_proxy::pallet::Event),
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -25956,6 +26885,255 @@ pub mod api {
 					count: ::core::primitive::u32,
 					len: ::core::option::Option<::core::primitive::u32>,
 				},
+			}
+		}
+		pub mod pallet_proxy {
+			use super::runtime_types;
+			pub mod pallet {
+				use super::runtime_types;
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
+				pub enum Call {
+					#[codec(index = 0)]
+					#[doc = "See [`Pallet::proxy`]."]
+					proxy {
+						real: ::subxt::utils::MultiAddress<
+							::subxt::utils::AccountId32,
+							::core::primitive::u32,
+						>,
+						force_proxy_type:
+							::core::option::Option<runtime_types::da_runtime::impls::ProxyType>,
+						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
+					},
+					#[codec(index = 1)]
+					#[doc = "See [`Pallet::add_proxy`]."]
+					add_proxy {
+						delegate: ::subxt::utils::MultiAddress<
+							::subxt::utils::AccountId32,
+							::core::primitive::u32,
+						>,
+						proxy_type: runtime_types::da_runtime::impls::ProxyType,
+						delay: ::core::primitive::u32,
+					},
+					#[codec(index = 2)]
+					#[doc = "See [`Pallet::remove_proxy`]."]
+					remove_proxy {
+						delegate: ::subxt::utils::MultiAddress<
+							::subxt::utils::AccountId32,
+							::core::primitive::u32,
+						>,
+						proxy_type: runtime_types::da_runtime::impls::ProxyType,
+						delay: ::core::primitive::u32,
+					},
+					#[codec(index = 3)]
+					#[doc = "See [`Pallet::remove_proxies`]."]
+					remove_proxies,
+					#[codec(index = 4)]
+					#[doc = "See [`Pallet::create_pure`]."]
+					create_pure {
+						proxy_type: runtime_types::da_runtime::impls::ProxyType,
+						delay: ::core::primitive::u32,
+						index: ::core::primitive::u16,
+					},
+					#[codec(index = 5)]
+					#[doc = "See [`Pallet::kill_pure`]."]
+					kill_pure {
+						spawner: ::subxt::utils::MultiAddress<
+							::subxt::utils::AccountId32,
+							::core::primitive::u32,
+						>,
+						proxy_type: runtime_types::da_runtime::impls::ProxyType,
+						index: ::core::primitive::u16,
+						#[codec(compact)]
+						height: ::core::primitive::u32,
+						#[codec(compact)]
+						ext_index: ::core::primitive::u32,
+					},
+					#[codec(index = 6)]
+					#[doc = "See [`Pallet::announce`]."]
+					announce {
+						real: ::subxt::utils::MultiAddress<
+							::subxt::utils::AccountId32,
+							::core::primitive::u32,
+						>,
+						call_hash: ::subxt::utils::H256,
+					},
+					#[codec(index = 7)]
+					#[doc = "See [`Pallet::remove_announcement`]."]
+					remove_announcement {
+						real: ::subxt::utils::MultiAddress<
+							::subxt::utils::AccountId32,
+							::core::primitive::u32,
+						>,
+						call_hash: ::subxt::utils::H256,
+					},
+					#[codec(index = 8)]
+					#[doc = "See [`Pallet::reject_announcement`]."]
+					reject_announcement {
+						delegate: ::subxt::utils::MultiAddress<
+							::subxt::utils::AccountId32,
+							::core::primitive::u32,
+						>,
+						call_hash: ::subxt::utils::H256,
+					},
+					#[codec(index = 9)]
+					#[doc = "See [`Pallet::proxy_announced`]."]
+					proxy_announced {
+						delegate: ::subxt::utils::MultiAddress<
+							::subxt::utils::AccountId32,
+							::core::primitive::u32,
+						>,
+						real: ::subxt::utils::MultiAddress<
+							::subxt::utils::AccountId32,
+							::core::primitive::u32,
+						>,
+						force_proxy_type:
+							::core::option::Option<runtime_types::da_runtime::impls::ProxyType>,
+						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
+					},
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "The `Error` enum of this pallet."]
+				pub enum Error {
+					#[codec(index = 0)]
+					#[doc = "There are too many proxies registered or too many announcements pending."]
+					TooMany,
+					#[codec(index = 1)]
+					#[doc = "Proxy registration not found."]
+					NotFound,
+					#[codec(index = 2)]
+					#[doc = "Sender is not a proxy of the account to be proxied."]
+					NotProxy,
+					#[codec(index = 3)]
+					#[doc = "A call which is incompatible with the proxy type's filter was attempted."]
+					Unproxyable,
+					#[codec(index = 4)]
+					#[doc = "Account is already a proxy."]
+					Duplicate,
+					#[codec(index = 5)]
+					#[doc = "Call may not be made by proxy because it may escalate its privileges."]
+					NoPermission,
+					#[codec(index = 6)]
+					#[doc = "Announcement, if made at all, was made too recently."]
+					Unannounced,
+					#[codec(index = 7)]
+					#[doc = "Cannot add self as proxy."]
+					NoSelfProxy,
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "The `Event` enum of this pallet"]
+				pub enum Event {
+					#[codec(index = 0)]
+					#[doc = "A proxy was executed correctly, with the given."]
+					ProxyExecuted {
+						result:
+							::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
+					},
+					#[codec(index = 1)]
+					#[doc = "A pure account has been created by new proxy with given"]
+					#[doc = "disambiguation index and proxy type."]
+					PureCreated {
+						pure: ::subxt::utils::AccountId32,
+						who: ::subxt::utils::AccountId32,
+						proxy_type: runtime_types::da_runtime::impls::ProxyType,
+						disambiguation_index: ::core::primitive::u16,
+					},
+					#[codec(index = 2)]
+					#[doc = "An announcement was placed to make a call in the future."]
+					Announced {
+						real: ::subxt::utils::AccountId32,
+						proxy: ::subxt::utils::AccountId32,
+						call_hash: ::subxt::utils::H256,
+					},
+					#[codec(index = 3)]
+					#[doc = "A proxy was added."]
+					ProxyAdded {
+						delegator: ::subxt::utils::AccountId32,
+						delegatee: ::subxt::utils::AccountId32,
+						proxy_type: runtime_types::da_runtime::impls::ProxyType,
+						delay: ::core::primitive::u32,
+					},
+					#[codec(index = 4)]
+					#[doc = "A proxy was removed."]
+					ProxyRemoved {
+						delegator: ::subxt::utils::AccountId32,
+						delegatee: ::subxt::utils::AccountId32,
+						proxy_type: runtime_types::da_runtime::impls::ProxyType,
+						delay: ::core::primitive::u32,
+					},
+				}
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			pub struct Announcement<_0, _1, _2> {
+				pub real: _0,
+				pub call_hash: _1,
+				pub height: _2,
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			pub struct ProxyDefinition<_0, _1, _2> {
+				pub delegate: _0,
+				pub proxy_type: _1,
+				pub delay: _2,
 			}
 		}
 		pub mod pallet_scheduler {
