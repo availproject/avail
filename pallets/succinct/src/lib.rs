@@ -543,8 +543,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// The set_whitelisted_domains function allows the root (administrator) to set the whitelisted domains. It is a
-		/// privileged function intended for administrative purposes, used to manage a list of permitted domains.
+		/// The set_configuration function allows the root (administrator) to set the configuration. It is a
+		/// privileged function intended for administrative purposes, used to manage slots_per_period and finality_threshold values.
 		//
 		// Test names: set_configuration_works_with_root(), set_configuration_does_not_work_with_non_root()
 		#[pallet::call_index(7)]
