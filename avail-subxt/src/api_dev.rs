@@ -1133,9 +1133,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				108u8, 83u8, 49u8, 109u8, 137u8, 253u8, 166u8, 247u8, 25u8, 130u8, 155u8, 49u8,
-				221u8, 148u8, 233u8, 254u8, 204u8, 208u8, 70u8, 253u8, 32u8, 14u8, 193u8, 60u8,
-				122u8, 130u8, 235u8, 243u8, 174u8, 199u8, 231u8, 137u8,
+				38u8, 170u8, 174u8, 116u8, 112u8, 82u8, 137u8, 173u8, 208u8, 27u8, 62u8, 242u8,
+				107u8, 52u8, 187u8, 39u8, 160u8, 171u8, 100u8, 46u8, 172u8, 36u8, 87u8, 194u8,
+				246u8, 23u8, 0u8, 235u8, 87u8, 76u8, 35u8, 77u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -1919,10 +1919,10 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							60u8, 162u8, 175u8, 153u8, 33u8, 61u8, 149u8, 182u8, 182u8, 30u8,
-							192u8, 213u8, 200u8, 85u8, 103u8, 81u8, 43u8, 74u8, 242u8, 174u8, 56u8,
-							179u8, 254u8, 135u8, 4u8, 240u8, 101u8, 169u8, 140u8, 11u8, 146u8,
-							197u8,
+							203u8, 63u8, 214u8, 221u8, 94u8, 130u8, 207u8, 232u8, 34u8, 38u8, 80u8,
+							88u8, 248u8, 229u8, 35u8, 181u8, 220u8, 157u8, 93u8, 57u8, 142u8,
+							131u8, 99u8, 68u8, 208u8, 169u8, 43u8, 138u8, 248u8, 47u8, 208u8,
+							141u8,
 						],
 					)
 				}
@@ -2365,9 +2365,9 @@ pub mod api {
 						"batch",
 						types::Batch { calls },
 						[
-							123u8, 9u8, 156u8, 59u8, 177u8, 240u8, 81u8, 230u8, 176u8, 177u8, 40u8,
-							14u8, 43u8, 123u8, 78u8, 93u8, 157u8, 24u8, 213u8, 85u8, 24u8, 239u8,
-							66u8, 125u8, 196u8, 217u8, 74u8, 138u8, 64u8, 200u8, 251u8, 223u8,
+							59u8, 10u8, 227u8, 139u8, 123u8, 198u8, 102u8, 170u8, 227u8, 242u8,
+							37u8, 29u8, 28u8, 49u8, 243u8, 152u8, 138u8, 168u8, 63u8, 4u8, 129u8,
+							74u8, 28u8, 243u8, 224u8, 25u8, 198u8, 111u8, 229u8, 30u8, 95u8, 133u8,
 						],
 					)
 				}
@@ -2385,9 +2385,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							219u8, 37u8, 229u8, 33u8, 112u8, 25u8, 235u8, 67u8, 93u8, 134u8, 106u8,
-							32u8, 40u8, 180u8, 53u8, 133u8, 149u8, 51u8, 236u8, 10u8, 254u8, 66u8,
-							115u8, 35u8, 61u8, 12u8, 20u8, 22u8, 235u8, 193u8, 176u8, 73u8,
+							171u8, 204u8, 136u8, 167u8, 107u8, 213u8, 186u8, 219u8, 143u8, 20u8,
+							18u8, 220u8, 254u8, 51u8, 93u8, 74u8, 160u8, 252u8, 59u8, 22u8, 85u8,
+							29u8, 141u8, 8u8, 118u8, 194u8, 157u8, 16u8, 103u8, 86u8, 36u8, 10u8,
 						],
 					)
 				}
@@ -2401,10 +2401,10 @@ pub mod api {
 						"batch_all",
 						types::BatchAll { calls },
 						[
-							52u8, 207u8, 182u8, 184u8, 10u8, 20u8, 77u8, 14u8, 115u8, 6u8, 33u8,
-							53u8, 224u8, 202u8, 247u8, 102u8, 218u8, 71u8, 100u8, 142u8, 92u8,
-							253u8, 51u8, 41u8, 209u8, 173u8, 240u8, 99u8, 213u8, 37u8, 145u8,
-							101u8,
+							11u8, 248u8, 10u8, 245u8, 204u8, 72u8, 140u8, 54u8, 2u8, 167u8, 240u8,
+							117u8, 240u8, 171u8, 161u8, 198u8, 39u8, 172u8, 226u8, 250u8, 215u8,
+							194u8, 24u8, 89u8, 34u8, 168u8, 124u8, 216u8, 253u8, 160u8, 248u8,
+							219u8,
 						],
 					)
 				}
@@ -2422,9 +2422,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							19u8, 131u8, 110u8, 96u8, 99u8, 157u8, 156u8, 75u8, 59u8, 110u8, 226u8,
-							157u8, 164u8, 49u8, 21u8, 246u8, 242u8, 12u8, 20u8, 96u8, 85u8, 105u8,
-							67u8, 93u8, 140u8, 150u8, 232u8, 207u8, 122u8, 164u8, 33u8, 112u8,
+							218u8, 9u8, 226u8, 235u8, 22u8, 180u8, 168u8, 99u8, 128u8, 50u8, 68u8,
+							57u8, 6u8, 218u8, 159u8, 237u8, 43u8, 228u8, 156u8, 74u8, 34u8, 111u8,
+							58u8, 0u8, 239u8, 63u8, 220u8, 20u8, 75u8, 39u8, 75u8, 30u8,
 						],
 					)
 				}
@@ -2438,10 +2438,10 @@ pub mod api {
 						"force_batch",
 						types::ForceBatch { calls },
 						[
-							139u8, 182u8, 216u8, 39u8, 196u8, 85u8, 158u8, 248u8, 59u8, 137u8,
-							15u8, 147u8, 180u8, 78u8, 158u8, 85u8, 124u8, 6u8, 187u8, 62u8, 239u8,
-							6u8, 222u8, 228u8, 120u8, 201u8, 196u8, 245u8, 161u8, 245u8, 26u8,
-							214u8,
+							131u8, 207u8, 213u8, 37u8, 171u8, 200u8, 115u8, 152u8, 72u8, 186u8,
+							150u8, 91u8, 231u8, 174u8, 145u8, 211u8, 252u8, 90u8, 222u8, 133u8,
+							116u8, 127u8, 91u8, 237u8, 255u8, 94u8, 19u8, 10u8, 208u8, 154u8,
+							130u8, 87u8,
 						],
 					)
 				}
@@ -2459,9 +2459,10 @@ pub mod api {
 							weight,
 						},
 						[
-							4u8, 20u8, 206u8, 231u8, 75u8, 124u8, 253u8, 191u8, 196u8, 155u8, 89u8,
-							192u8, 1u8, 89u8, 248u8, 131u8, 121u8, 240u8, 174u8, 71u8, 66u8, 111u8,
-							69u8, 105u8, 43u8, 53u8, 152u8, 108u8, 23u8, 10u8, 149u8, 214u8,
+							191u8, 113u8, 69u8, 147u8, 78u8, 194u8, 37u8, 183u8, 67u8, 74u8, 96u8,
+							242u8, 127u8, 18u8, 13u8, 53u8, 56u8, 250u8, 248u8, 206u8, 232u8,
+							191u8, 155u8, 53u8, 207u8, 80u8, 213u8, 222u8, 220u8, 81u8, 238u8,
+							225u8,
 						],
 					)
 				}
@@ -3279,6 +3280,21 @@ pub mod api {
 					::subxt::constants::Address::new_static(
 						"Babe",
 						"MaxAuthorities",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
+				}
+				#[doc = " The maximum number of nominators for each validator."]
+				pub fn max_nominators(
+					&self,
+				) -> ::subxt::constants::Address<::core::primitive::u32> {
+					::subxt::constants::Address::new_static(
+						"Babe",
+						"MaxNominators",
 						[
 							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
 							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
@@ -6187,37 +6203,6 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " The maximum number of electing voters to put in the snapshot. At the moment, snapshots"]
-				#[doc = " are only over a single block, but once multi-block elections are introduced they will"]
-				#[doc = " take place over multiple blocks."]
-				pub fn max_electing_voters(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"ElectionProviderMultiPhase",
-						"MaxElectingVoters",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " The maximum number of electable targets to put in the snapshot."]
-				pub fn max_electable_targets(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u16> {
-					::subxt::constants::Address::new_static(
-						"ElectionProviderMultiPhase",
-						"MaxElectableTargets",
-						[
-							116u8, 33u8, 2u8, 170u8, 181u8, 147u8, 171u8, 169u8, 167u8, 227u8,
-							41u8, 144u8, 11u8, 236u8, 82u8, 100u8, 74u8, 60u8, 184u8, 72u8, 169u8,
-							90u8, 208u8, 135u8, 15u8, 117u8, 10u8, 123u8, 128u8, 193u8, 29u8, 70u8,
-						],
-					)
-				}
 				#[doc = " The maximum number of winners that can be elected by this `ElectionProvider`"]
 				#[doc = " implementation."]
 				#[doc = ""]
@@ -7646,6 +7631,50 @@ pub mod api {
 				const EVENT: &'static str = "ValidatorPrefsSet";
 			}
 			#[derive(
+				:: subxt :: ext :: codec :: CompactAs,
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "Voters size limit reached."]
+			pub struct SnapshotVotersSizeExceeded {
+				pub size: ::core::primitive::u32,
+			}
+			impl ::subxt::events::StaticEvent for SnapshotVotersSizeExceeded {
+				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "SnapshotVotersSizeExceeded";
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: CompactAs,
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "Targets size limit reached."]
+			pub struct SnapshotTargetsSizeExceeded {
+				pub size: ::core::primitive::u32,
+			}
+			impl ::subxt::events::StaticEvent for SnapshotTargetsSizeExceeded {
+				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "SnapshotTargetsSizeExceeded";
+			}
+			#[derive(
 				:: subxt :: ext :: codec :: Decode,
 				:: subxt :: ext :: codec :: Encode,
 				:: subxt :: ext :: scale_decode :: DecodeAsType,
@@ -8072,7 +8101,8 @@ pub mod api {
 				#[doc = " they wish to support."]
 				#[doc = ""]
 				#[doc = " Note that the keys of this storage map might become non-decodable in case the"]
-				#[doc = " [`Config::MaxNominations`] configuration is decreased. In this rare case, these nominators"]
+				#[doc = " account's [`NominationsQuota::MaxNominations`] configuration is decreased."]
+				#[doc = " In this rare case, these nominators"]
 				#[doc = " are still existent in storage, their key is correct and retrievable (i.e. `contains_key`"]
 				#[doc = " indicates that they exist), but their value cannot be decoded. Therefore, the non-decodable"]
 				#[doc = " nominators will effectively not-exist, until they re-submit their preferences such that it"]
@@ -8113,7 +8143,8 @@ pub mod api {
 				#[doc = " they wish to support."]
 				#[doc = ""]
 				#[doc = " Note that the keys of this storage map might become non-decodable in case the"]
-				#[doc = " [`Config::MaxNominations`] configuration is decreased. In this rare case, these nominators"]
+				#[doc = " account's [`NominationsQuota::MaxNominations`] configuration is decreased."]
+				#[doc = " In this rare case, these nominators"]
 				#[doc = " are still existent in storage, their key is correct and retrievable (i.e. `contains_key`"]
 				#[doc = " indicates that they exist), but their value cannot be decoded. Therefore, the non-decodable"]
 				#[doc = " nominators will effectively not-exist, until they re-submit their preferences such that it"]
@@ -9065,21 +9096,6 @@ pub mod api {
 			use super::runtime_types;
 			pub struct ConstantsApi;
 			impl ConstantsApi {
-				#[doc = " Maximum number of nominations per nominator."]
-				pub fn max_nominations(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Staking",
-						"MaxNominations",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
 				#[doc = " Number of eras to keep in history."]
 				#[doc = ""]
 				#[doc = " Following information is kept for eras in `[current_era -"]
@@ -9727,10 +9743,10 @@ pub mod api {
 							length_bound,
 						},
 						[
-							165u8, 224u8, 223u8, 246u8, 188u8, 130u8, 201u8, 203u8, 58u8, 157u8,
-							69u8, 195u8, 218u8, 114u8, 238u8, 15u8, 250u8, 111u8, 229u8, 31u8,
-							127u8, 85u8, 227u8, 26u8, 24u8, 80u8, 31u8, 163u8, 229u8, 223u8, 228u8,
-							128u8,
+							204u8, 126u8, 175u8, 251u8, 222u8, 18u8, 74u8, 233u8, 136u8, 0u8,
+							255u8, 167u8, 250u8, 137u8, 49u8, 147u8, 22u8, 98u8, 20u8, 204u8, 35u8,
+							229u8, 214u8, 103u8, 154u8, 47u8, 138u8, 132u8, 64u8, 70u8, 245u8,
+							100u8,
 						],
 					)
 				}
@@ -9750,10 +9766,10 @@ pub mod api {
 							length_bound,
 						},
 						[
-							32u8, 182u8, 36u8, 84u8, 92u8, 135u8, 113u8, 170u8, 116u8, 243u8,
-							172u8, 16u8, 243u8, 171u8, 245u8, 203u8, 68u8, 174u8, 123u8, 213u8,
-							124u8, 68u8, 207u8, 250u8, 215u8, 43u8, 236u8, 42u8, 159u8, 165u8,
-							29u8, 189u8,
+							67u8, 130u8, 12u8, 201u8, 154u8, 230u8, 97u8, 89u8, 72u8, 215u8, 65u8,
+							15u8, 136u8, 233u8, 143u8, 40u8, 254u8, 214u8, 115u8, 173u8, 127u8,
+							121u8, 167u8, 223u8, 122u8, 100u8, 74u8, 142u8, 148u8, 200u8, 208u8,
+							206u8,
 						],
 					)
 				}
@@ -10032,9 +10048,10 @@ pub mod api {
 							_0.borrow(),
 						)],
 						[
-							18u8, 52u8, 192u8, 47u8, 93u8, 104u8, 240u8, 243u8, 185u8, 147u8, 32u8,
-							23u8, 157u8, 24u8, 0u8, 198u8, 126u8, 210u8, 21u8, 186u8, 18u8, 62u8,
-							191u8, 47u8, 87u8, 0u8, 243u8, 151u8, 44u8, 45u8, 221u8, 123u8,
+							125u8, 12u8, 251u8, 103u8, 62u8, 228u8, 157u8, 165u8, 212u8, 212u8,
+							140u8, 224u8, 216u8, 105u8, 235u8, 28u8, 89u8, 48u8, 111u8, 168u8,
+							90u8, 171u8, 109u8, 242u8, 211u8, 204u8, 104u8, 154u8, 189u8, 205u8,
+							63u8, 70u8,
 						],
 					)
 				}
@@ -10053,9 +10070,10 @@ pub mod api {
 						"ProposalOf",
 						Vec::new(),
 						[
-							18u8, 52u8, 192u8, 47u8, 93u8, 104u8, 240u8, 243u8, 185u8, 147u8, 32u8,
-							23u8, 157u8, 24u8, 0u8, 198u8, 126u8, 210u8, 21u8, 186u8, 18u8, 62u8,
-							191u8, 47u8, 87u8, 0u8, 243u8, 151u8, 44u8, 45u8, 221u8, 123u8,
+							125u8, 12u8, 251u8, 103u8, 62u8, 228u8, 157u8, 165u8, 212u8, 212u8,
+							140u8, 224u8, 216u8, 105u8, 235u8, 28u8, 89u8, 48u8, 111u8, 168u8,
+							90u8, 171u8, 109u8, 242u8, 211u8, 204u8, 104u8, 154u8, 189u8, 205u8,
+							63u8, 70u8,
 						],
 					)
 				}
@@ -11095,6 +11113,21 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " The maximum number of nominators for each validator."]
+				pub fn max_nominators(
+					&self,
+				) -> ::subxt::constants::Address<::core::primitive::u32> {
+					::subxt::constants::Address::new_static(
+						"Grandpa",
+						"MaxNominators",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
+				}
 				#[doc = " The maximum number of entries to keep in the set id to session index mapping."]
 				#[doc = ""]
 				#[doc = " Since the `SetIdSession` map is only used for validating equivocations this"]
@@ -11895,9 +11928,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							142u8, 12u8, 210u8, 169u8, 72u8, 173u8, 39u8, 227u8, 121u8, 3u8, 212u8,
-							104u8, 175u8, 125u8, 5u8, 202u8, 48u8, 73u8, 32u8, 192u8, 98u8, 113u8,
-							49u8, 14u8, 130u8, 91u8, 227u8, 149u8, 181u8, 114u8, 35u8, 95u8,
+							22u8, 246u8, 244u8, 57u8, 3u8, 97u8, 81u8, 177u8, 135u8, 24u8, 184u8,
+							239u8, 3u8, 31u8, 188u8, 146u8, 245u8, 231u8, 97u8, 242u8, 40u8, 186u8,
+							119u8, 168u8, 213u8, 69u8, 135u8, 67u8, 81u8, 216u8, 129u8, 131u8,
 						],
 					)
 				}
@@ -11915,9 +11948,9 @@ pub mod api {
 							weight,
 						},
 						[
-							202u8, 250u8, 131u8, 74u8, 248u8, 161u8, 246u8, 86u8, 132u8, 236u8,
-							34u8, 217u8, 239u8, 185u8, 7u8, 181u8, 177u8, 33u8, 51u8, 168u8, 168u8,
-							24u8, 64u8, 173u8, 154u8, 231u8, 39u8, 11u8, 63u8, 169u8, 89u8, 118u8,
+							170u8, 4u8, 196u8, 22u8, 66u8, 64u8, 19u8, 4u8, 88u8, 14u8, 173u8,
+							160u8, 107u8, 11u8, 61u8, 11u8, 112u8, 205u8, 182u8, 97u8, 52u8, 227u8,
+							140u8, 64u8, 184u8, 175u8, 221u8, 179u8, 21u8, 219u8, 171u8, 35u8,
 						],
 					)
 				}
@@ -11958,9 +11991,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							9u8, 198u8, 41u8, 23u8, 51u8, 246u8, 223u8, 65u8, 53u8, 225u8, 15u8,
-							29u8, 133u8, 192u8, 160u8, 44u8, 26u8, 82u8, 101u8, 113u8, 179u8, 17u8,
-							108u8, 11u8, 160u8, 0u8, 237u8, 164u8, 111u8, 46u8, 175u8, 255u8,
+							111u8, 28u8, 43u8, 0u8, 219u8, 251u8, 247u8, 144u8, 99u8, 138u8, 156u8,
+							141u8, 0u8, 190u8, 115u8, 150u8, 233u8, 149u8, 79u8, 205u8, 131u8,
+							32u8, 144u8, 114u8, 247u8, 166u8, 112u8, 227u8, 89u8, 248u8, 106u8,
+							197u8,
 						],
 					)
 				}
@@ -12846,9 +12880,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							223u8, 92u8, 220u8, 142u8, 170u8, 188u8, 243u8, 46u8, 60u8, 95u8, 10u8,
-							108u8, 19u8, 54u8, 71u8, 128u8, 119u8, 40u8, 227u8, 216u8, 74u8, 226u8,
-							148u8, 139u8, 61u8, 209u8, 161u8, 222u8, 56u8, 10u8, 78u8, 42u8,
+							171u8, 203u8, 55u8, 42u8, 233u8, 219u8, 14u8, 252u8, 51u8, 71u8, 201u8,
+							34u8, 129u8, 60u8, 91u8, 6u8, 107u8, 168u8, 173u8, 235u8, 53u8, 233u8,
+							124u8, 98u8, 48u8, 232u8, 32u8, 235u8, 4u8, 208u8, 170u8, 36u8,
 						],
 					)
 				}
@@ -12893,9 +12927,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							96u8, 226u8, 169u8, 34u8, 62u8, 45u8, 150u8, 0u8, 161u8, 61u8, 127u8,
-							199u8, 66u8, 175u8, 25u8, 50u8, 202u8, 27u8, 250u8, 66u8, 88u8, 161u8,
-							226u8, 11u8, 48u8, 176u8, 216u8, 152u8, 183u8, 205u8, 215u8, 90u8,
+							242u8, 35u8, 92u8, 65u8, 76u8, 210u8, 224u8, 234u8, 253u8, 128u8,
+							223u8, 55u8, 58u8, 187u8, 247u8, 230u8, 155u8, 88u8, 98u8, 246u8,
+							157u8, 227u8, 190u8, 161u8, 72u8, 38u8, 57u8, 40u8, 186u8, 193u8, 49u8,
+							81u8,
 						],
 					)
 				}
@@ -12936,10 +12971,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							232u8, 215u8, 255u8, 221u8, 227u8, 80u8, 193u8, 23u8, 133u8, 163u8,
-							13u8, 236u8, 234u8, 238u8, 242u8, 103u8, 153u8, 124u8, 70u8, 94u8,
-							101u8, 167u8, 85u8, 243u8, 52u8, 55u8, 183u8, 95u8, 11u8, 72u8, 232u8,
-							59u8,
+							39u8, 139u8, 129u8, 105u8, 29u8, 12u8, 1u8, 169u8, 10u8, 246u8, 117u8,
+							49u8, 130u8, 254u8, 211u8, 104u8, 123u8, 211u8, 205u8, 16u8, 242u8,
+							90u8, 26u8, 182u8, 6u8, 179u8, 43u8, 248u8, 204u8, 70u8, 202u8, 127u8,
 						],
 					)
 				}
@@ -12966,10 +13000,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							18u8, 206u8, 105u8, 62u8, 228u8, 50u8, 203u8, 238u8, 235u8, 222u8,
-							252u8, 118u8, 163u8, 137u8, 33u8, 51u8, 236u8, 81u8, 103u8, 10u8,
-							173u8, 186u8, 149u8, 198u8, 117u8, 104u8, 49u8, 5u8, 36u8, 8u8, 224u8,
-							136u8,
+							85u8, 151u8, 189u8, 156u8, 231u8, 111u8, 53u8, 51u8, 58u8, 181u8,
+							254u8, 107u8, 21u8, 129u8, 159u8, 141u8, 116u8, 97u8, 72u8, 94u8,
+							240u8, 52u8, 161u8, 201u8, 176u8, 250u8, 170u8, 158u8, 244u8, 119u8,
+							188u8, 228u8,
 						],
 					)
 				}
@@ -16361,9 +16395,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							107u8, 236u8, 159u8, 162u8, 105u8, 206u8, 205u8, 97u8, 228u8, 113u8,
-							139u8, 24u8, 186u8, 29u8, 63u8, 53u8, 57u8, 151u8, 148u8, 105u8, 51u8,
-							88u8, 146u8, 43u8, 167u8, 93u8, 135u8, 59u8, 30u8, 20u8, 107u8, 157u8,
+							170u8, 33u8, 4u8, 189u8, 0u8, 84u8, 34u8, 218u8, 166u8, 64u8, 190u8,
+							240u8, 64u8, 159u8, 66u8, 233u8, 6u8, 33u8, 77u8, 124u8, 95u8, 154u8,
+							182u8, 214u8, 114u8, 234u8, 183u8, 28u8, 195u8, 61u8, 208u8, 121u8,
 						],
 					)
 				}
@@ -16389,9 +16423,10 @@ pub mod api {
 							max_weight,
 						},
 						[
-							93u8, 11u8, 169u8, 85u8, 36u8, 30u8, 173u8, 173u8, 166u8, 152u8, 203u8,
-							178u8, 5u8, 35u8, 246u8, 49u8, 73u8, 210u8, 222u8, 60u8, 97u8, 76u8,
-							237u8, 195u8, 228u8, 103u8, 152u8, 192u8, 45u8, 55u8, 164u8, 153u8,
+							191u8, 242u8, 61u8, 121u8, 132u8, 117u8, 64u8, 61u8, 179u8, 162u8,
+							139u8, 119u8, 237u8, 241u8, 71u8, 198u8, 173u8, 144u8, 50u8, 34u8,
+							208u8, 224u8, 200u8, 221u8, 254u8, 124u8, 234u8, 47u8, 123u8, 110u8,
+							39u8, 52u8,
 						],
 					)
 				}
@@ -16726,6 +16761,33 @@ pub mod api {
 					const PALLET: &'static str = "VoterList";
 					const CALL: &'static str = "put_in_front_of";
 				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct PutInFrontOfOther {
+					pub heavier: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					pub lighter: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+				}
+				impl ::subxt::blocks::StaticExtrinsic for PutInFrontOfOther {
+					const PALLET: &'static str = "VoterList";
+					const CALL: &'static str = "put_in_front_of_other";
+				}
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
@@ -16765,6 +16827,30 @@ pub mod api {
 							191u8, 216u8, 170u8, 197u8, 3u8, 123u8, 116u8, 140u8, 49u8, 226u8,
 							65u8, 222u8, 235u8, 27u8, 123u8, 195u8, 169u8, 247u8, 50u8, 125u8,
 							245u8, 111u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::put_in_front_of_other`]."]
+				pub fn put_in_front_of_other(
+					&self,
+					heavier: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+					lighter: ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>,
+				) -> ::subxt::tx::Payload<types::PutInFrontOfOther> {
+					::subxt::tx::Payload::new_static(
+						"VoterList",
+						"put_in_front_of_other",
+						types::PutInFrontOfOther { heavier, lighter },
+						[
+							251u8, 63u8, 148u8, 245u8, 186u8, 169u8, 176u8, 47u8, 27u8, 125u8,
+							235u8, 13u8, 65u8, 172u8, 129u8, 184u8, 114u8, 223u8, 101u8, 159u8,
+							208u8, 70u8, 164u8, 113u8, 226u8, 72u8, 83u8, 209u8, 50u8, 8u8, 3u8,
+							102u8,
 						],
 					)
 				}
@@ -20262,9 +20348,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							57u8, 10u8, 2u8, 71u8, 252u8, 124u8, 35u8, 153u8, 139u8, 126u8, 200u8,
-							253u8, 64u8, 8u8, 239u8, 189u8, 215u8, 181u8, 235u8, 90u8, 99u8, 36u8,
-							233u8, 158u8, 171u8, 42u8, 221u8, 211u8, 53u8, 41u8, 39u8, 86u8,
+							8u8, 191u8, 203u8, 242u8, 175u8, 68u8, 241u8, 71u8, 220u8, 179u8,
+							194u8, 118u8, 120u8, 215u8, 227u8, 245u8, 150u8, 188u8, 192u8, 51u8,
+							246u8, 198u8, 34u8, 121u8, 82u8, 168u8, 139u8, 179u8, 134u8, 242u8,
+							242u8, 86u8,
 						],
 					)
 				}
@@ -22449,6 +22536,18 @@ pub mod api {
 							::core::primitive::u32,
 						>,
 					},
+					#[codec(index = 2)]
+					#[doc = "See [`Pallet::put_in_front_of_other`]."]
+					put_in_front_of_other {
+						heavier: ::subxt::utils::MultiAddress<
+							::subxt::utils::AccountId32,
+							::core::primitive::u32,
+						>,
+						lighter: ::subxt::utils::MultiAddress<
+							::subxt::utils::AccountId32,
+							::core::primitive::u32,
+						>,
+					},
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -23252,6 +23351,9 @@ pub mod api {
 					#[codec(index = 9)]
 					#[doc = "The given length bound for the proposal was too low."]
 					WrongProposalLength,
+					#[codec(index = 10)]
+					#[doc = "Prime account is not a member"]
+					PrimeAccountNotMember,
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -26530,6 +26632,12 @@ pub mod api {
 							prefs: runtime_types::pallet_staking::ValidatorPrefs,
 						},
 						#[codec(index = 14)]
+						#[doc = "Voters size limit reached."]
+						SnapshotVotersSizeExceeded { size: ::core::primitive::u32 },
+						#[codec(index = 15)]
+						#[doc = "Targets size limit reached."]
+						SnapshotTargetsSizeExceeded { size: ::core::primitive::u32 },
+						#[codec(index = 16)]
 						#[doc = "A new force era mode was set."]
 						ForceEra {
 							mode: runtime_types::pallet_staking::Forcing,
