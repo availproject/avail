@@ -38,7 +38,7 @@
 
 use crate::{
 	state::Configuration, BalanceOf, Call, Config, ConfigurationStorage, ExecutionStateRoots,
-	FunctionInputVec, FunctionOutputVec, FunctionProofVec, Pallet, Timestamps, ValidProofVec,
+	FunctionInput, FunctionOutput, FunctionProof, Pallet, Timestamps, ValidProof,
 };
 use frame_benchmarking::{
 	impl_benchmark_test_suite, v2::benchmarks, vec, whitelisted_caller, BenchmarkError, Vec,
@@ -295,7 +295,7 @@ pub fn get_valid_message_2(l: u32) -> Message {
 	}
 }
 
-fn get_valid_account_proof() -> ValidProofVec {
+fn get_valid_account_proof() -> ValidProof {
 	BoundedVec::truncate_from(vec![
         BoundedVec::truncate_from(hex!("f90211a00089429375db917315fb4b8d67055bdf76e13d11292801af4a4a151f5760ff7aa02ebce9bb13a075ff89c5aae6b67f4d457525c53dfcc016ce72ea17e0e15a3718a04201c7d41a78f6906183b252fecbb231305d4e22c7e5b729b95a5a6ac53f4d46a06b61a1f5e208c3babf5fc1c9c4180af47769ec421c2c3125f313b5394014fa8aa0b2f35b0e2a84ce9e685b3e9558a0495552c80baec0bd687092220314850f543ba0244dca6d79c72abe8e3a12d49f2cf1976ee7bef58c5c6eb9ff6708fa138abfcca005631aa85658a9962bfee9a4827df5ca6f5461c4bc533591c897a66421f9abbfa0478ef142f553c91d672d865bed8d5175ebbbfc72be010d23b8d81cdcb41247e0a0365a9b70e7c6d82d3246b130bc27453ba77f0bcb4301d43c719eae676a7e0d17a001768b342f6cbc790d57276817d0853c94a682e295930951059bd1c24352b46ea0e3d9b775f71b4c1b2a0c35b1e492b0f2c6ce66c94cf2c8320276fe5cd5e427c8a03bd4160a5626c0d56a4435cb13b6cd3adb5f93793b71148cafa16e07f554fa41a052ab349de3157030b412abdd7353ee1d6476c09c153ddb1dba487294f11a5c7ca0ab71e81c1fc9e656fa8f0df6ee16efa5f105acce3c43ef172a04534f00e5d25ea05306a9ed38acb653787765466a764d4c8748c29b4e7a9ad4a75c61c0840b4a17a0699307b9c473f45858fec9fecd034fa0b3427c0efdd02d407c03201dcdaca02380").to_vec()),
         BoundedVec::truncate_from(hex!("f90211a0f7c14d7714348be36359dd28afd64e2fb72679a7ae09a27027fc95e335bcde1ca0824329840722c728e0f19ae424caad4581ac42015a4ab8e9d3ea550c857da804a040d48c9df564c00b11d304e2a2597a35b17b25429c3850c4e3fe4e9a278bec88a0a497297590785cfaa8491579745c077b1095348912d4e3288d8f00857ed9db5da0b0ea3abfcdab8c6cf03152cc7a57f602f85d86f4bdb3d1ca2242a5e737561bbda06bbe0e0416b59f1c4cba36afdee766ea4689f1c1ac8e2245f45c2631e2478119a0222dec72b36685a0ca89e49ce87262957f7f891e695ea8ec52e25fbc3a328589a00b3cac878feb2bcd5fc3d49fe5f607eabf75f014df74a268d4aaa1d25654d030a000deffa5e2879748ef9a634a3573484b4dd259c0d4c10453a7e1e3504b56322ea05c356b24b3b36089583f650cb954f884b05275b09b7715a2eb3cf6fa9175738ea093abf2b2cb15649c192d0d79f62627ce634843f84ec98eee99267c1354b5135aa059e9c60388154b3b810ffd41f81ed9128c8091a12e0c53062d9e7430fedf5939a06855c9a5622a40b5bce572522e4774986c7061557d2f1b8f7070d8d397888b4ea04d220a5fb22e38d64cdf4b46a42898b9f1ce9f316f1d332eebebd32c0cc59000a09004930139d4ae94070b29245230d5b28b25ac59c11339928a2eb547f0828341a00f37af44fb487a5ed675e12f0566a54e59cc025466e91cf56dcf348ff4049ed980").to_vec()),
@@ -308,7 +308,7 @@ fn get_valid_account_proof() -> ValidProofVec {
     ])
 }
 
-fn get_valid_storage_proof() -> ValidProofVec {
+fn get_valid_storage_proof() -> ValidProof {
 	BoundedVec::truncate_from(vec![BoundedVec::truncate_from(hex!("f8d18080a0fc8644862938b67a6de59daee2ca86a4a43c8c4fe6d7ca5f71ea19a3e85565c080a002116e22ba81d7274dc866a4612e9b4e3f10345d5164d4c6e02fd6b672446f4da0b23f6176235c786974b40b6a64b3428c26e7ecc9530b122dd26ebe148d12c33380a04ee52d46ac712e1be0869a689dd6116bed17180e70d9d327d0e335e4098c0397808080a072b7b4fabd398c9b5c05e5f329038a9a9bda658b15a56a3d6a298755511538b18080a079866ac4ff54c3062d8fbd4fa347961e9a905b4114a2ed9785e22a5c03f4ffb88080").to_vec()),
                                    BoundedVec::truncate_from(hex!("e219a0053d037613f1c22bb588aaa70237b3798774d2b20413c686e2263daef21ec226").to_vec()),
                                    BoundedVec::truncate_from(hex!("f851a0c45dca792d516550b57f7f31e33c67f0e6debfe0bdb3076fe0078c65c5afbf8280808080a022e43fa2c06d3d498253aadec7a7db94183eec2aabbdf2afc67a45107d19932b8080808080808080808080").to_vec()),
@@ -316,17 +316,17 @@ fn get_valid_storage_proof() -> ValidProofVec {
     ])
 }
 
-fn get_valid_step_input() -> FunctionInputVec {
+fn get_valid_step_input() -> FunctionInput {
 	BoundedVec::truncate_from(
 		hex!("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df0000000000747ffe")
 			.to_vec(),
 	)
 }
 
-fn get_valid_step_output() -> FunctionOutputVec {
+fn get_valid_step_output() -> FunctionOutput {
 	BoundedVec::truncate_from(hex!("e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b90000000000747fa001fd").to_vec())
 }
 
-fn get_valid_step_proof() -> FunctionProofVec {
+fn get_valid_step_proof() -> FunctionProof {
 	BoundedVec::truncate_from(hex!("0b496d04c0e12206bc846edd2077a20b8b55f65fc0e40bb8cf617d9b79ce39e508281ad49432300b3b7c8a95a0a63544f93f553fcfdeba38c82460888f4030ed1f67a1be666c12ee00658109c802042c58f645474fcee7d128277a4e35c1dd1504d33cb652ec23407cd3580eda0196dd97054eb5c2a817163d6997832d9abd422729b3e85a15941722baeb5ca8a42567a91c6a0b0cd64ac15431fde05071e90e0d30c12013d5803336cc2f433c16eaa5434e30b89ce7395c3c3cda29dde3be062281095f143d728486c71203b24fa6068e69aabf29d457ffadc6d682d51a4f08179d3240bc561ae7e2c005bb772a4d4c5ba6644986052fad554f042ab0074a8f").to_vec())
 }

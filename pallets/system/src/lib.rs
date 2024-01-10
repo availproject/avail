@@ -727,8 +727,8 @@ pub mod pallet {
 	#[pallet::getter(fn bridge_nonce)]
 	pub type BridgeNonce<T: Config> = StorageValue<_, u64, ValueQuery>;
 
-	// TODO @MARKO Add missing tests
 	/// List of failed indices in the current block
+	// Test name: failed_extrinsic_indices_work()
 	#[pallet::storage]
 	#[pallet::getter(fn failed_extrinsic_indices)]
 	pub type FailedExtrinsicIndices<T: Config> =
@@ -1894,6 +1894,7 @@ impl<T: Config> Pallet<T> {
 		kate::padded_len(len, chunk_size)
 	}
 
+	// Test name: successful_extrinsic_indices_are_correct()
 	pub fn successful_extrinsic_indices() -> Vec<u32> {
 		let mut indices = FailedExtrinsicIndices::<T>::get();
 		let extrinsic_count = Self::extrinsic_count();

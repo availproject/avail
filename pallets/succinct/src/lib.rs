@@ -3,7 +3,7 @@
 use crate::target_amb::MessageStatusEnum;
 use crate::verifier::Verifier;
 use frame_support::traits::{Currency, ExistenceRequirement, UnixTime};
-use frame_support::{pallet_prelude::*, parameter_types, PalletId};
+use frame_support::{pallet_prelude::*, PalletId};
 use frame_system::submitted_data::{BoundedData, MessageType};
 pub use pallet::*;
 use sp_core::H256;
@@ -20,18 +20,13 @@ mod tests;
 mod verifier;
 mod weights;
 
-// TODO @MARKO Change the names to something more suitable.
-// TODO @MARKO The length constraints could be made generic if needed for tests.
-pub type FunctionInputVec = BoundedVec<u8, ConstU32<256>>;
-pub type FunctionOutputVec = BoundedVec<u8, ConstU32<512>>;
-pub type FunctionProofVec = BoundedVec<u8, ConstU32<1048>>;
-pub type ValidProofVec = BoundedVec<BoundedVec<u8, ConstU32<2048>>, ConstU32<256>>;
+pub type FunctionInput = BoundedVec<u8, ConstU32<256>>;
+pub type FunctionOutput = BoundedVec<u8, ConstU32<512>>;
+pub type FunctionProof = BoundedVec<u8, ConstU32<1048>>;
+pub type ValidProof = BoundedVec<BoundedVec<u8, ConstU32<2048>>, ConstU32<256>>;
 
-// TODO: Move it to runtime constants or impls
-parameter_types! {
-	// Avail asset is supported for now
-	pub const SupportedAssetId:H256 = H256::zero();
-}
+// Avail asset is supported for now
+pub const SUPPORTED_ASSET_ID: H256 = H256::zero();
 
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -269,9 +264,9 @@ pub mod pallet {
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
 			function_id: H256,
-			input: FunctionInputVec,
-			output: FunctionOutputVec,
-			proof: FunctionProofVec,
+			input: FunctionInput,
+			output: FunctionOutput,
+			proof: FunctionProof,
 			slot: u64,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
@@ -329,8 +324,8 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			slot: u64,
 			message: Message,
-			account_proof: ValidProofVec,
-			storage_proof: ValidProofVec,
+			account_proof: ValidProof,
+			storage_proof: ValidProof,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			let encoded_data = message.clone().abi_encode();
@@ -381,7 +376,7 @@ pub mod pallet {
 
 					let (asset_id, amount) = Self::decode_message_data(message.data.to_vec())?;
 					ensure!(
-						SupportedAssetId::get() == asset_id,
+						SUPPORTED_ASSET_ID == asset_id,
 						Error::<T>::AssetNotSupported
 					);
 
