@@ -91,6 +91,7 @@ pub trait HeaderExtensionBuilder {
 	}
 }
 
+#[allow(unused)]
 #[cfg(feature = "header_commitment_corruption")]
 fn corrupt_commitment(block_number: u32, commitment: &mut Vec<u8>) {
 	if let Some(ref_byte) = commitment.get_mut(0) {

@@ -120,6 +120,11 @@ pub mod pallet {
 		},
 		/// Whitelisted domains were updated.
 		WhitelistedDomainsUpdated,
+		/// Configuration was updated.
+		ConfigurationUpdated {
+			slots_per_period: u64,
+			finality_threshold: u16,
+		},
 	}
 
 	/// Storage for a head updates.
@@ -223,8 +228,6 @@ pub mod pallet {
 		pub _phantom: PhantomData<T>,
 	}
 
-	// TODO @MARKO This won't be executed on our Testnet. We need to either do it manually via a
-	// storage migration or write helper extrinsics to change it.
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
@@ -524,6 +527,8 @@ pub mod pallet {
 
 		/// The set_whitelisted_domains function allows the root (administrator) to set the whitelisted domains. It is a
 		/// privileged function intended for administrative purposes, used to manage a list of permitted domains.
+		//
+		// Test names: set_whitelisted_domains_works_with_root(), set_whitelisted_domains_does_not_work_with_non_root()
 		#[pallet::call_index(6)]
 		#[pallet::weight(T::WeightInfo::set_whitelisted_domains())]
 		pub fn set_whitelisted_domains(
@@ -534,6 +539,24 @@ pub mod pallet {
 			WhitelistedDomains::<T>::put(value);
 
 			Self::deposit_event(Event::WhitelistedDomainsUpdated);
+
+			Ok(())
+		}
+
+		/// The set_whitelisted_domains function allows the root (administrator) to set the whitelisted domains. It is a
+		/// privileged function intended for administrative purposes, used to manage a list of permitted domains.
+		//
+		// Test names: set_configuration_works_with_root(), set_configuration_does_not_work_with_non_root()
+		#[pallet::call_index(7)]
+		#[pallet::weight(T::WeightInfo::set_configuration())]
+		pub fn set_configuration(origin: OriginFor<T>, value: Configuration) -> DispatchResult {
+			ensure_root(origin)?;
+			ConfigurationStorage::<T>::put(value.clone());
+
+			Self::deposit_event(Event::ConfigurationUpdated {
+				slots_per_period: value.slots_per_period,
+				finality_threshold: value.finality_threshold,
+			});
 
 			Ok(())
 		}

@@ -7,6 +7,7 @@ use primitive_types::U256;
 use sp_core::crypto::AccountId32;
 use sp_core::keccak_256;
 use sp_runtime::testing::H256;
+use sp_runtime::traits::BadOrigin;
 
 use crate::mock::{new_test_ext, Bridge, RuntimeEvent, RuntimeOrigin, Test};
 use crate::mock::{Balances, System};
@@ -15,8 +16,9 @@ use crate::target_amb::MessageStatusEnum;
 use crate::{
 	Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, FunctionInput,
 	FunctionOutput, FunctionProof, Head, Headers, MessageStatus, SourceChainFrozen,
-	SyncCommitteePoseidons, Timestamps, ValidProof,
+	SyncCommitteePoseidons, Timestamps, ValidProof, WhitelistedDomains,
 };
+use frame_system::RawOrigin;
 
 const TEST_SENDER_VEC: [u8; 32] = [2u8; 32];
 const TEST_SENDER_ACCOUNT: AccountId32 = AccountId32::new(TEST_SENDER_VEC);
@@ -571,5 +573,68 @@ fn test_full_fill_rotate_call() {
 
 		assert_eq!(expected_event, System::events()[0].event);
 		assert_eq!(poseidon, expected_poseidon);
+	});
+}
+
+#[test]
+fn set_whitelisted_domains_works_with_root() {
+	new_test_ext().execute_with(|| {
+		let domains = BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap();
+		assert_ne!(WhitelistedDomains::<Test>::get(), domains);
+
+		let ok = Bridge::set_whitelisted_domains(RawOrigin::Root.into(), domains.clone());
+		assert_ok!(ok);
+		assert_eq!(WhitelistedDomains::<Test>::get(), domains);
+
+		let expected_event = RuntimeEvent::Bridge(Event::WhitelistedDomainsUpdated);
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn set_whitelisted_domains_does_not_work_with_non_root() {
+	new_test_ext().execute_with(|| {
+		let domains = BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap();
+		assert_ne!(WhitelistedDomains::<Test>::get(), domains);
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let ok = Bridge::set_whitelisted_domains(origin, domains.clone());
+		assert_err!(ok, BadOrigin);
+	});
+}
+
+#[test]
+fn set_configuration_works_with_root() {
+	new_test_ext().execute_with(|| {
+		let conf = Configuration {
+			slots_per_period: 1,
+			finality_threshold: 69,
+		};
+		assert_ne!(ConfigurationStorage::<Test>::get(), conf);
+
+		let ok = Bridge::set_configuration(RawOrigin::Root.into(), conf.clone());
+		assert_ok!(ok);
+		assert_eq!(ConfigurationStorage::<Test>::get(), conf);
+
+		let expected_event = RuntimeEvent::Bridge(Event::ConfigurationUpdated {
+			slots_per_period: conf.slots_per_period,
+			finality_threshold: conf.finality_threshold,
+		});
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn set_configuration_does_not_work_with_non_root() {
+	new_test_ext().execute_with(|| {
+		let conf = Configuration {
+			slots_per_period: 1,
+			finality_threshold: 69,
+		};
+		assert_ne!(ConfigurationStorage::<Test>::get(), conf);
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let ok = Bridge::set_configuration(origin, conf.clone());
+		assert_err!(ok, BadOrigin);
 	});
 }

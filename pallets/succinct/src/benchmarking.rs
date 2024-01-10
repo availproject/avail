@@ -142,6 +142,19 @@ mod benchmarks {
 	}
 
 	#[benchmark]
+	fn set_configuration() -> Result<(), BenchmarkError> {
+		let config = Configuration {
+			slots_per_period: 20,
+			finality_threshold: 20,
+		};
+
+		#[extrinsic_call]
+		_(RawOrigin::Root, config);
+
+		Ok(())
+	}
+
+	#[benchmark]
 	fn source_chain_froze() -> Result<(), BenchmarkError> {
 		#[extrinsic_call]
 		_(RawOrigin::Root, 0, true);
