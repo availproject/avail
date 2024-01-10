@@ -1,7 +1,7 @@
 use crate::{
 	api::runtime_types::frame_system::limits::BlockLength,
 	avail::{Cells, Rows},
-	AppId,
+	AppId, ProofResponse
 };
 use avail_core::DataProof;
 
@@ -42,4 +42,7 @@ pub trait KateRpc {
 
 	#[method(name = "queryDataProof")]
 	async fn query_data_proof(&self, transaction_index: u32, block: H256) -> Result<DataProof>;
+
+	#[method(name = "queryDataProofV2")]
+	async fn query_data_proof_v2(&self, transaction_index: u32, block: H256) -> Result<ProofResponse>;
 }
