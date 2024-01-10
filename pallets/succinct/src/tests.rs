@@ -440,6 +440,44 @@ fn test_execute_message_with_already_executed_message() {
 }
 
 #[test]
+fn test_execute_message_with_unsupported_domain() {
+	new_test_ext().execute_with(|| {
+		Broadcasters::<Test>::set(
+			2,
+			H256(hex!(
+				"426bde66abd85741be832b824ea65a3aad70113e000000000000000000000000"
+			)),
+		);
+
+		let slot = 8581263;
+		ExecutionStateRoots::<Test>::set(
+			slot,
+			H256(hex!(
+				"d6b8a2fb20ade94a56d9d87a07ca11e46cc169ed43dc0d2527a0d3ca2309ba9c"
+			)),
+		);
+
+		Timestamps::<Test>::set(slot, 1701327753);
+		let mut message = get_valid_message();
+		// alter
+		message.origin_domain = 4;
+
+		let account_proof = get_valid_account_proof();
+		let storage_proof = get_valid_storage_proof();
+
+		let fail = Bridge::execute(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			slot,
+			message,
+			account_proof,
+			storage_proof,
+		);
+
+		assert_err!(fail, Error::<Test>::UnsupportedOriginChain);
+	});
+}
+
+#[test]
 fn test_full_fill_step_call() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;

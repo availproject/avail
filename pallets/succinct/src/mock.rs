@@ -74,7 +74,6 @@ impl pallet_timestamp::Config for Test {
 }
 
 parameter_types! {
-	pub const MaxVerificationKeyLength: u32 = 4143;
 	pub const StepFunctionId: H256 = H256(hex!("af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"));
 	pub const RotateFunctionId: H256 = H256(hex!("9c1096d800fc42454d2d76e6ae1d461b5a67c7b474efb9d47989e47ed39b1b7b"));
 	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
@@ -228,7 +227,6 @@ impl succinct_bridge::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type TimeProvider = Timestamp;
-	type MaxVerificationKeyLength = MaxVerificationKeyLength;
 	type Currency = Balances;
 
 	type MessageMappingStorageIndex = ConstU64<4>;
@@ -238,7 +236,6 @@ impl succinct_bridge::Config for Test {
 	type RotateVerificationKey = RotateVk;
 	type PalletId = BridgePalletId;
 	type AvailDomain = ConstU32<1>;
-	type SupportedDomain = ConstU32<2>;
 }
 
 /// Create new externalities for `Succinct` module tests.

@@ -91,8 +91,8 @@ impl pallet_mandate::Config for Runtime {
 
 parameter_types! {
 	// function identifiers
-	pub const StepFunctionId: H256 = H256(hex!("af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"));
-	pub const RotateFunctionId: H256 = H256(hex!("9c1096d800fc42454d2d76e6ae1d461b5a67c7b474efb9d47989e47ed39b1b7b"));
+	pub const StepFunctionId: H256 = H256(hex!("a511bd86a30fa6db581480ac7591d4271c845411ac4e1ad93797d09a57b60522"));
+	pub const RotateFunctionId: H256 = H256(hex!("d7f33a3358d67df3bf792e8b2ab0188d16f4fc07418b35d950407af0d3cb33e0"));
 	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
 	pub StepVk: Vec<u8> = r#"{"vk_json":{
     "protocol": "groth16",
@@ -243,7 +243,6 @@ impl pallet_succinct::Config for Runtime {
 	type WeightInfo = weights::pallet_succinct::WeightInfo<Runtime>;
 	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
 	type Currency = Balances;
-	type MaxVerificationKeyLength = ConstU32<4143>;
 	type StepVerificationKey = StepVk;
 	type RotateVerificationKey = RotateVk;
 	type MessageMappingStorageIndex = ConstU64<4>;
@@ -251,7 +250,6 @@ impl pallet_succinct::Config for Runtime {
 	type RotateFunctionId = RotateFunctionId;
 	type PalletId = BridgePalletId;
 	type AvailDomain = ConstU32<1>;
-	type SupportedDomain = ConstU32<2>;
 }
 
 parameter_types! {

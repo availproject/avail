@@ -78,7 +78,7 @@ pub mod pallet {
 		SyncCommitteeNotSet,
 		MessageAlreadyExecuted,
 		WrongDestinationChain,
-		UnsupportedDestinationChain,
+		UnsupportedOriginChain,
 		BroadcasterSourceChainNotSet,
 		SourceChainFrozen,
 		CannotGetStorageRoot,
@@ -112,11 +112,12 @@ pub mod pallet {
 		},
 		/// emit if source chain gets frozen.
 		SourceChainFrozen { source_chain_id: u32, frozen: bool },
-		// @TODO
+		/// emit when message is submitted.
 		MessageSubmitted {
 			from: T::AccountId,
 			to: H256,
 			message_type: MessageType,
+			destination_domain: u32,
 		},
 		/// Whitelisted domains were updated.
 		WhitelistedDomainsUpdated,
@@ -190,10 +191,6 @@ pub mod pallet {
 		/// Rotate verification key constant
 		#[pallet::constant]
 		type RotateVerificationKey: Get<Vec<u8>>;
-
-		/// Defines the maximum length of the verification key.
-		#[pallet::constant]
-		type MaxVerificationKeyLength: Get<u32>;
 		/// The step function identifier is used to distinguish step-related functionality within the fulfill_call function.
 		/// When the provided function_id matches the step function identifier, specific logic related to step functions is executed.
 		#[pallet::constant]
@@ -212,9 +209,6 @@ pub mod pallet {
 		/// Unique value associated with Avail Network. Used to distinguish messages between Avail and non-Avail networks.
 		#[pallet::constant]
 		type AvailDomain: Get<u32>;
-		/// Unique value associated with the supported Network. Used to distinguish messages between non-Avail and Avail networks.
-		#[pallet::constant]
-		type SupportedDomain: Get<u32>;
 	}
 
 	#[pallet::genesis_config]
@@ -462,6 +456,7 @@ pub mod pallet {
 						from: who,
 						to,
 						message_type: message_type.clone(),
+						destination_domain: domain,
 					});
 				},
 				MessageType::FungibleToken => {
@@ -480,6 +475,7 @@ pub mod pallet {
 						from: who,
 						to,
 						message_type: message_type.clone(),
+						destination_domain: domain,
 					});
 				},
 			}
@@ -577,8 +573,8 @@ pub mod pallet {
 			);
 
 			ensure!(
-				T::SupportedDomain::get() == message.origin_domain,
-				Error::<T>::UnsupportedDestinationChain
+				WhitelistedDomains::<T>::get().contains(&message.origin_domain),
+				Error::<T>::UnsupportedOriginChain
 			);
 
 			let source_chain = Broadcasters::<T>::get(message.origin_domain);
