@@ -1,11 +1,11 @@
 use crate::{
 	api::runtime_types::frame_system::limits::BlockLength,
 	avail::{Cells, Rows},
-	AppId, ProofResponse,
+	AppId,
 };
+use avail_core::data_proof_v2::ProofResponse;
 use avail_core::DataProof;
 
-// use frame_system::limits::BlockLength;
 use jsonrpsee::{core::Error, proc_macros::rpc};
 use serde::Deserialize;
 use sp_core::H256;
