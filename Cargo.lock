@@ -313,6 +313,7 @@ version = "0.5.1"
 dependencies = [
  "binary-merkle-tree",
  "derive_more",
+ "ethabi",
  "frame-support",
  "hash256-std-hasher",
  "hex",

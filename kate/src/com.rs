@@ -413,7 +413,7 @@ pub fn build_proof<M: Metrics>(
 		let result = get_cell_row(cell);
 		let Ok((row, r_index, c_index)) = result else {
 			if let Ok(mut errors) = locked_errors.lock() {
-				errors.push(result.err().expect("We checked before that this is OK. "))
+				errors.push(result.expect_err("We checked before that this is OK."))
 			}
 			return;
 		};

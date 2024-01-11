@@ -1,13 +1,79 @@
 #[cfg(feature = "runtime")]
 use binary_merkle_tree::MerkleProof;
 use codec::{Decode, Encode};
+use ethabi::{encode, Token};
+use frame_support::BoundedVec;
 #[cfg(feature = "runtime")]
 use nomad_core::keccak256_concat;
+use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-use sp_core::H256;
+use sp_core::{ConstU32, H256};
+use sp_std::vec;
 use sp_std::vec::Vec;
 use thiserror_no_std::Error;
+
+/// Max data supported on bidge (Ethereum calldata limits)
+pub const BOUNDED_DATA_MAX_LENGTH: u32 = 102_400;
+/// Maximum size of data allowed in the bridge
+pub type BoundedData = BoundedVec<u8, ConstU32<BOUNDED_DATA_MAX_LENGTH>>;
+
+/// Possible types of Messages allowed by Avail to bridge to other chains.
+#[derive(
+	TypeInfo, Debug, Default, Eq, Clone, Encode, Decode, PartialEq, Serialize, Deserialize,
+)]
+#[serde(rename_all = "camelCase")]
+pub enum MessageType {
+	ArbitraryMessage,
+	#[default]
+	FungibleToken,
+}
+
+impl From<MessageType> for Vec<u8> {
+	fn from(msg_type: MessageType) -> Self {
+		match msg_type {
+			MessageType::ArbitraryMessage => vec![0x01],
+			MessageType::FungibleToken => vec![0x02],
+		}
+	}
+}
+
+/// Message type used to bridge between Avail & other chains
+#[derive(
+	Debug, Default, Clone, Eq, Encode, Decode, PartialEq, TypeInfo, Serialize, Deserialize,
+)]
+#[serde(rename_all = "camelCase")]
+pub struct Message {
+	pub message_type: MessageType,
+	pub from: H256,
+	pub to: H256,
+	pub origin_domain: u32,
+	pub destination_domain: u32,
+	pub data: BoundedData,
+	pub id: u64, // a global nonce that is incremented with each leaf
+}
+
+impl Message {
+	pub fn abi_encode(self) -> Vec<u8> {
+		encode(&[Token::Tuple(vec![
+			Token::FixedBytes(self.message_type.into()),
+			Token::FixedBytes(self.from.to_fixed_bytes().to_vec()),
+			Token::FixedBytes(self.to.to_fixed_bytes().to_vec()),
+			Token::Uint(ethabi::Uint::from(self.origin_domain)),
+			Token::Uint(ethabi::Uint::from(self.destination_domain)),
+			Token::Bytes(self.data.into()),
+			Token::Uint(ethabi::Uint::from(self.id)),
+		])])
+	}
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProofResponse {
+	pub data_proof: DataProofV2,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub message: Option<Message>,
+}
 
 #[derive(PartialEq, Debug)]
 pub enum SubTrie {
@@ -92,14 +158,13 @@ where
 			.map_err(|_| InvalidRoot)?
 			.into();
 
-		let leaf: H256;
-		if sub_trie == SubTrie::Right {
-			leaf = keccak_256(merkle_proof.leaf.as_ref()).into();
+		let leaf: H256 = if sub_trie == SubTrie::Right {
+			keccak_256(merkle_proof.leaf.as_ref()).into()
 		} else {
-			leaf = <[u8; 32]>::try_from(merkle_proof.leaf.as_ref())
+			<[u8; 32]>::try_from(merkle_proof.leaf.as_ref())
 				.map_err(|_| InvalidLeaf)?
-				.into();
-		}
+				.into()
+		};
 
 		let proof = merkle_proof
 			.proof
@@ -119,8 +184,8 @@ where
 		ensure!(leaf_index < number_of_leaves, InvalidLeafIndex);
 
 		let data_root: H256;
-		let mut blob_root: H256;
-		let mut bridge_root: H256;
+		let blob_root: H256;
+		let bridge_root: H256;
 		match sub_trie {
 			SubTrie::Right => {
 				data_root = keccak256_concat!(root, sub_trie_root.as_bytes());
