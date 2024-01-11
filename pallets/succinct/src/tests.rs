@@ -633,8 +633,6 @@ fn set_whitelisted_domains_works_with_root() {
 fn set_whitelisted_domains_does_not_work_with_non_root() {
 	new_test_ext().execute_with(|| {
 		let domains = BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap();
-		assert_ne!(WhitelistedDomains::<Test>::get(), domains);
-
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
 		let ok = Bridge::set_whitelisted_domains(origin, domains.clone());
 		assert_err!(ok, BadOrigin);
@@ -669,10 +667,38 @@ fn set_configuration_does_not_work_with_non_root() {
 			slots_per_period: 1,
 			finality_threshold: 69,
 		};
-		assert_ne!(ConfigurationStorage::<Test>::get(), conf);
 
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-		let ok = Bridge::set_configuration(origin, conf.clone());
+		let ok = Bridge::set_configuration(origin, conf);
+		assert_err!(ok, BadOrigin);
+	});
+}
+
+#[test]
+fn set_broadcaster_works_with_root() {
+	new_test_ext().execute_with(|| {
+		let domain = 2;
+		let old = Broadcasters::<Test>::get(domain);
+		assert_ne!(old, STEP_FN_ID);
+
+		let ok = Bridge::set_broadcaster(RawOrigin::Root.into(), domain, STEP_FN_ID);
+		assert_ok!(ok);
+		assert_eq!(Broadcasters::<Test>::get(domain), STEP_FN_ID);
+
+		let expected_event = RuntimeEvent::Bridge(Event::BroadcasterUpdate {
+			old,
+			new: STEP_FN_ID,
+			domain,
+		});
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn set_broadcaster_does_not_work_with_non_root() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let ok = Bridge::set_broadcaster(origin, 2, STEP_FN_ID);
 		assert_err!(ok, BadOrigin);
 	});
 }

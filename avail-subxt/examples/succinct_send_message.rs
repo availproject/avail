@@ -2,7 +2,7 @@ use anyhow::Result;
 use avail_subxt::{
 	api,
 	api::runtime_types::{
-		bounded_collections::bounded_vec::BoundedVec, frame_system::submitted_data::MessageType,
+		avail_core::data_proof_v2::MessageType, bounded_collections::bounded_vec::BoundedVec,
 	},
 	build_client, tx_send_in_block, AvailConfig, Opts,
 };

@@ -500,6 +500,8 @@ pub mod pallet {
 		}
 
 		/// set_broadcaster sets the broadcaster address of the message from the origin chain.
+		//
+		// Test names: set_broadcaster_works_with_root(), set_broadcaster_does_not_work_with_non_root()
 		#[pallet::call_index(5)]
 		#[pallet::weight(T::WeightInfo::set_broadcaster())]
 		pub fn set_broadcaster(

@@ -40,12 +40,13 @@ use crate::{
 	state::Configuration, BalanceOf, Call, Config, ConfigurationStorage, ExecutionStateRoots,
 	FunctionInput, FunctionOutput, FunctionProof, Pallet, Timestamps, ValidProof,
 };
+use avail_core::data_proof_v2::BOUNDED_DATA_MAX_LENGTH;
 use frame_benchmarking::{
 	impl_benchmark_test_suite, v2::benchmarks, vec, whitelisted_caller, BenchmarkError, Vec,
 };
 use frame_support::{traits::Currency, BoundedVec};
 use frame_system::{
-	submitted_data::{Message, MessageType, BOUNDED_DATA_MAX_LENGTH},
+	submitted_data::{Message, MessageType},
 	RawOrigin,
 };
 use hex_literal::hex;
