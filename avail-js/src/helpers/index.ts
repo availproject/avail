@@ -115,7 +115,7 @@ export const decodeHexAppId = (value: `0x${string}`): string => {
 /**
  * Extracts the data from a da submission
  *
- * @param {ApiPromise} api the api to interract with the chain.
+ * @param {ApiPromise} api the api to Interact with the chain.
  * @param {string} blockHash the hash of the block to query at.
  * @param {string} extrinsicHash the hash of the extrinsic to query at.
  * @return {Promise<string>} the bytes representing the data

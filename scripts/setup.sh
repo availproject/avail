@@ -78,7 +78,7 @@ python3 update-dev-chainspec.py $HOME/avail-keys
 data-avail build-spec --chain=$HOME/avail-keys/populated.devnet.chainspec.json --raw --disable-default-bootnode > $HOME/avail-keys/populated.devnet.chainspec.raw.json
 CHAIN_NAME=$(cat $HOME/avail-keys/populated.devnet.chainspec.raw.json | jq -r .id)
 
-## Imporing respective validator keys into their directories.
+## Importing respective validator keys into their directories.
 
 mkdir -p $HOME/avail-home/avail-validators
 

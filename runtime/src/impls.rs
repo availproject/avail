@@ -96,7 +96,7 @@ impl pallet_identity::Config for Runtime {
 	type ForceOrigin = EnsureRoot<AccountId>;
 	/// Maximum number of additional fields that may be stored in an ID.
 	type MaxAdditionalFields = MaxAdditionalFields;
-	/// Maxmimum number of registrars allowed in the system.
+	/// Maximum number of registrars allowed in the system.
 	type MaxRegistrars = MaxRegistrars;
 	/// The maximum number of sub-accounts allowed per identified account.
 	type MaxSubAccounts = MaxSubAccounts;

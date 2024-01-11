@@ -157,8 +157,8 @@ There you can learn how to:
 - Running Avail Benchmarks
 
 
-## Interract with the chain
-You can find on this repository many example on how to interract with any avail chain.
+## Interact with the chain
+You can find on this repository many example on how to Interact with any avail chain.
 - In the avail-js folder, you will find our wrapper for polkadot js including multiple helpers.
     - The example folder contains some examples using node-js and an example web app to setup the extension.
 - In the avail-subxt folder, you will find our fork of subxt with some example on usage.
