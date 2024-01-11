@@ -4,12 +4,11 @@ use core::num::NonZeroU16;
 use std::{marker::Sync, sync::Arc};
 
 use avail_base::metrics::avail::KateRpcMetrics;
-use avail_core::data_proof_v2::SubTrie;
+use avail_core::data_proof_v2::{ProofResponse, SubTrie};
 use avail_core::{
 	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, DataProof, DataProofV2,
 	OpaqueExtrinsic,
 };
-use codec::{Decode, Encode};
 use da_runtime::RuntimeCall;
 use da_runtime::{apis::DataAvailApi, Runtime, UncheckedExtrinsic};
 use frame_support::BoundedVec;
@@ -18,8 +17,6 @@ use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 };
-
-use sp_runtime::serde::{Deserialize, Serialize};
 
 use kate::gridgen::AsBytes;
 use kate::{
@@ -30,7 +27,6 @@ use kate::{
 	Seed,
 };
 
-use frame_system::submitted_data::Message;
 use kate_recovery::matrix::Dimensions;
 use moka::future::Cache;
 use rayon::prelude::*;
@@ -43,14 +39,6 @@ use sp_runtime::{
 	traits::{Block as BlockT, ConstU32, Header},
 	{AccountId32, MultiAddress},
 };
-
-#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, Default, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProofResponse {
-	pub data_proof: DataProofV2,
-	#[serde(skip_serializing_if = "Option::is_none")]
-	pub message: Option<Message>,
-}
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
 
