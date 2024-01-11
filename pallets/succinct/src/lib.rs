@@ -547,7 +547,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::set_configuration())]
 		pub fn set_configuration(origin: OriginFor<T>, value: Configuration) -> DispatchResult {
 			ensure_root(origin)?;
-			ConfigurationStorage::<T>::put(value.clone());
+			ConfigurationStorage::<T>::put(value);
 
 			Self::deposit_event(Event::ConfigurationUpdated {
 				slots_per_period: value.slots_per_period,

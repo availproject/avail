@@ -1,12 +1,8 @@
 use avail_core::data_proof_v2::SubTrie;
+pub use avail_core::data_proof_v2::{BoundedData, Message, MessageType};
 use avail_core::OpaqueExtrinsic;
 use binary_merkle_tree::{merkle_proof, merkle_root, verify_proof, Leaf, MerkleProof};
-use codec::{Decode, Encode};
 use core::fmt::Debug;
-use ethabi::{encode, Token};
-use frame_support::{BoundedVec, Deserialize, Serialize};
-use scale_info::TypeInfo;
-use sp_core::ConstU32;
 use sp_core::H256;
 use sp_io::hashing::keccak_256;
 use sp_runtime::traits::Keccak256;
@@ -15,59 +11,6 @@ use sp_std::vec;
 use sp_std::{cell::RefCell, rc::Rc, vec::Vec};
 
 const LOG_TARGET: &str = "runtime::system::submitted_data";
-
-pub const BOUNDED_DATA_MAX_LENGTH: u32 = 102_400;
-/// Maximum size of data allowed in the bridge
-pub type BoundedData = BoundedVec<u8, ConstU32<BOUNDED_DATA_MAX_LENGTH>>;
-
-/// Possible types of Messages allowed by Avail to bridge to other chains.
-#[derive(
-	TypeInfo, Debug, Default, Eq, Clone, Encode, Decode, PartialEq, Serialize, Deserialize,
-)]
-#[serde(rename_all = "camelCase")]
-pub enum MessageType {
-	ArbitraryMessage,
-	#[default]
-	FungibleToken,
-}
-
-impl From<MessageType> for Vec<u8> {
-	fn from(msg_type: MessageType) -> Self {
-		match msg_type {
-			MessageType::ArbitraryMessage => vec![0x01],
-			MessageType::FungibleToken => vec![0x02],
-		}
-	}
-}
-
-/// Message type used to bridge between Avail & other chains
-#[derive(
-	Debug, Default, Clone, Eq, Encode, Decode, PartialEq, TypeInfo, Serialize, Deserialize,
-)]
-#[serde(rename_all = "camelCase")]
-pub struct Message {
-	pub message_type: MessageType,
-	pub from: H256,
-	pub to: H256,
-	pub origin_domain: u32,
-	pub destination_domain: u32,
-	pub data: BoundedData,
-	pub id: u64, // a global nonce that is incremented with each leaf
-}
-
-impl Message {
-	pub fn abi_encode(self) -> Vec<u8> {
-		encode(&[Token::Tuple(vec![
-			Token::FixedBytes(self.message_type.into()),
-			Token::FixedBytes(self.from.to_fixed_bytes().to_vec()),
-			Token::FixedBytes(self.to.to_fixed_bytes().to_vec()),
-			Token::Uint(ethabi::Uint::from(self.origin_domain)),
-			Token::Uint(ethabi::Uint::from(self.destination_domain)),
-			Token::Bytes(self.data.into()),
-			Token::Uint(ethabi::Uint::from(self.id)),
-		])])
-	}
-}
 
 /// Information about `submitted_data_root` and `submitted_data_proof` methods.
 #[derive(Default, Debug)]
