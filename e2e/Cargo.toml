@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 avail-subxt = { path = "../avail-subxt" }
-#kate-rpc = {path = "../rpc/kate-rpc"}
 async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
 sp-keyring = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 subxt = "0.29"

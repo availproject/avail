@@ -462,31 +462,11 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 [[package]]
 name = "avail-core"
 version = "0.5.1"
-source = "git+https://github.com/availproject/avail-core?tag=node-v1.8.0.3#8f58e5f1520fb1f6c1ef3e2b5a0ebf782722b964"
-dependencies = [
- "derive_more",
- "hash256-std-hasher",
- "hex",
- "log",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-arithmetic",
- "sp-core",
- "sp-io",
- "sp-std",
- "sp-trie",
- "static_assertions",
- "thiserror-no-std",
-]
-
-[[package]]
-name = "avail-core"
-version = "0.5.1"
-source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#e80c3ef5230f94b1bb508e713addd5ac032d12d8"
+source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#5d5f9b8c837a71521014bff455f7ad48184d8a62"
 dependencies = [
  "binary-merkle-tree",
  "derive_more",
+ "ethabi",
  "frame-support",
  "hash256-std-hasher",
  "hex",
@@ -512,7 +492,7 @@ name = "avail-subxt"
 version = "0.4.0"
 dependencies = [
  "anyhow",
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?tag=node-v1.8.0.3)",
+ "avail-core",
  "bounded-collections",
  "curve25519-dalek 2.1.3",
  "derive_more",
@@ -1415,7 +1395,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-std",
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
+ "avail-core",
  "avail-subxt",
  "binary-merkle-tree",
  "kate",
@@ -2720,9 +2700,9 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.8.1"
-source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#e80c3ef5230f94b1bb508e713addd5ac032d12d8"
+source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#5d5f9b8c837a71521014bff455f7ad48184d8a62"
 dependencies = [
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
+ "avail-core",
  "derive_more",
  "dusk-bytes",
  "dusk-plonk",
@@ -2748,9 +2728,9 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.9.1"
-source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#e80c3ef5230f94b1bb508e713addd5ac032d12d8"
+source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#5d5f9b8c837a71521014bff455f7ad48184d8a62"
 dependencies = [
- "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
+ "avail-core",
  "derive_more",
  "dusk-bytes",
  "dusk-plonk",
@@ -3079,7 +3059,7 @@ checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
 [[package]]
 name = "nomad-core"
 version = "0.1.5"
-source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#e80c3ef5230f94b1bb508e713addd5ac032d12d8"
+source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#5d5f9b8c837a71521014bff455f7ad48184d8a62"
 dependencies = [
  "ethers-core",
  "ethers-signers",
@@ -3097,7 +3077,7 @@ dependencies = [
 [[package]]
 name = "nomad-signature"
 version = "0.1.3"
-source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#e80c3ef5230f94b1bb508e713addd5ac032d12d8"
+source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#5d5f9b8c837a71521014bff455f7ad48184d8a62"
 dependencies = [
  "elliptic-curve 0.12.3",
  "ethers-core",

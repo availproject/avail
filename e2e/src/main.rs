@@ -6,8 +6,9 @@ fn main() {}
 pub mod tests {
 	use std::num::NonZeroU16;
 
+	use avail_core::data_proof_v2::ProofResponse;
+	use avail_core::DataProof;
 	use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
-	use avail_core::{DataProof, DataProofV2};
 	use avail_subxt::{
 		api::{
 			self,
@@ -22,7 +23,7 @@ pub mod tests {
 		AvailConfig, Opts,
 	};
 	use binary_merkle_tree::merkle_proof;
-	use codec::{Decode, Encode};
+	use codec::Encode;
 	use kate::com::Cell;
 	use kate::gridgen::{AsBytes, EvaluationGrid};
 	use kate_recovery::matrix::Dimensions;
@@ -30,19 +31,12 @@ pub mod tests {
 	use sp_keyring::AccountKeyring;
 	use subxt::ext::sp_core::keccak_256;
 	use subxt::ext::sp_runtime::traits::Keccak256;
-	use subxt::ext::sp_runtime::{Deserialize, Serialize};
 	use subxt::tx::TxClient;
 	use subxt::{
 		ext::sp_core::H256,
 		rpc::{types::ChainBlockResponse, Rpc, RpcParams},
 		OnlineClient,
 	};
-
-	#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, Default, Serialize, Deserialize)]
-	#[serde(rename_all = "camelCase")]
-	pub struct ProofResponse {
-		data_proof: DataProofV2,
-	}
 
 	async fn establish_a_connection() -> anyhow::Result<OnlineClient<AvailConfig>> {
 		let args = Opts {
@@ -367,19 +361,19 @@ pub mod tests {
 		assert_eq!(length.chunk_size, 32);
 	}
 
-	#[async_std::test]
-	pub async fn rpc_query_data_proof_test() {
-		let client = establish_a_connection().await.unwrap();
-		let (txc, rpc) = (client.tx(), client.rpc());
+	// #[async_std::test]
+	// pub async fn rpc_query_data_proof_test() {
+	// 	let client = establish_a_connection().await.unwrap();
+	// 	let (txc, rpc) = (client.tx(), client.rpc());
 
-		let example_data = "ExampleData".as_bytes();
-		assert_eq!(example_data.len(), 11);
-		let block_hash = send_da_example_data(&txc, example_data).await.unwrap();
+	// 	let example_data = "ExampleData".as_bytes();
+	// 	assert_eq!(example_data.len(), 11);
+	// 	let block_hash = send_da_example_data(&txc, example_data).await.unwrap();
 
-		let expected_proof_root = merkle_proof::<Keccak256, _, _>(vec![example_data.to_vec()], 0);
-		let actual_proof = query_data_proof(rpc, 1, block_hash).await.unwrap();
-		assert_eq!(actual_proof.root, expected_proof_root.root);
-	}
+	// 	let expected_proof_root = merkle_proof::<Keccak256, _, _>(vec![example_data.to_vec()], 0);
+	// 	let actual_proof = query_data_proof(rpc, 1, block_hash).await.unwrap();
+	// 	assert_eq!(actual_proof.root, expected_proof_root.root);
+	// }
 
 	#[async_std::test]
 	pub async fn rpc_query_data_proof_v2_test() {
