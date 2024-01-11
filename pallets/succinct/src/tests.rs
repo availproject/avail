@@ -702,3 +702,248 @@ fn set_broadcaster_does_not_work_with_non_root() {
 		assert_err!(ok, BadOrigin);
 	});
 }
+
+#[test]
+fn set_poseidon_hash_works_with_root() {
+	new_test_ext().execute_with(|| {
+		let period = 2;
+		let poseidon_hash = BoundedVec::try_from([0, 1, 2, 3, 4].to_vec()).unwrap();
+		let root = U256::from(16909060u128);
+		assert_ne!(SyncCommitteePoseidons::<Test>::get(period), root);
+
+		let ok = Bridge::set_poseidon_hash(RawOrigin::Root.into(), period, poseidon_hash);
+		assert_ok!(ok);
+		assert_eq!(SyncCommitteePoseidons::<Test>::get(period), root);
+
+		let expected_event = RuntimeEvent::Bridge(Event::SyncCommitteeUpdate { period, root });
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn set_poseidon_hash_does_not_work_with_non_root() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let root = BoundedVec::try_from([0, 1, 2, 3, 4].to_vec()).unwrap();
+
+		let ok = Bridge::set_poseidon_hash(origin, 2, root);
+		assert_err!(ok, BadOrigin);
+	});
+}
+
+#[test]
+fn source_chain_froze_works_with_root() {
+	new_test_ext().execute_with(|| {
+		let source_chain_id = 2;
+		let frozen = true;
+		assert_ne!(SourceChainFrozen::<Test>::get(source_chain_id), frozen);
+
+		let ok = Bridge::source_chain_froze(RawOrigin::Root.into(), source_chain_id, frozen);
+		assert_ok!(ok);
+		assert_eq!(SourceChainFrozen::<Test>::get(source_chain_id), frozen);
+
+		let expected_event = RuntimeEvent::Bridge(Event::SourceChainFrozen {
+			source_chain_id,
+			frozen,
+		});
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn source_chain_froze_does_not_work_with_non_root() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+
+		let ok = Bridge::source_chain_froze(origin, 2, true);
+		assert_err!(ok, BadOrigin);
+	});
+}
+
+#[test]
+fn send_message_arbitrary_message_works() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let message_type = MessageType::ArbitraryMessage;
+		let to = ROTATE_FN_ID;
+		let domain = 2;
+		let data = Some(BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap());
+
+		let ok = Bridge::send_message(
+			origin,
+			message_type.clone(),
+			to,
+			domain,
+			None,
+			None,
+			data.clone(),
+		);
+		assert_ok!(ok);
+
+		let expected_event = RuntimeEvent::Bridge(Event::MessageSubmitted {
+			from: TEST_SENDER_VEC.into(),
+			to,
+			message_type,
+			destination_domain: domain,
+		});
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn send_message_arbitrary_message_doesnt_accept_value() {
+	new_test_ext().execute_with(|| {
+		use crate::Error;
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let data = Some(BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap());
+
+		let ok = Bridge::send_message(
+			origin,
+			MessageType::ArbitraryMessage,
+			ROTATE_FN_ID,
+			2,
+			Some(100u128),
+			None,
+			data,
+		);
+		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);
+	});
+}
+
+#[test]
+fn send_message_arbitrary_message_doesnt_accept_asset_id() {
+	new_test_ext().execute_with(|| {
+		use crate::Error;
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let data = Some(BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap());
+
+		let ok = Bridge::send_message(
+			origin,
+			MessageType::ArbitraryMessage,
+			ROTATE_FN_ID,
+			2,
+			None,
+			Some(ROTATE_FN_ID),
+			data,
+		);
+		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);
+	});
+}
+
+#[test]
+fn send_message_arbitrary_message_doesnt_accept_empty_data() {
+	new_test_ext().execute_with(|| {
+		use crate::Error;
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+
+		let ok = Bridge::send_message(
+			origin,
+			MessageType::ArbitraryMessage,
+			ROTATE_FN_ID,
+			2,
+			None,
+			None,
+			None,
+		);
+		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);
+	});
+}
+
+
+#[test]
+fn send_message_fungible_token_works() {
+	new_test_ext().execute_with(|| {
+		use crate::BalanceOf;
+		use frame_support::traits::Currency;
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let message_type = MessageType::FungibleToken;
+		let to = ROTATE_FN_ID;
+		let domain = 2;
+
+		Balances::make_free_balance_be(&TEST_SENDER_VEC.into(), BalanceOf::<Test>::max_value() / 2u128);
+
+		let ok = Bridge::send_message(
+			origin,
+			message_type.clone(),
+			to,
+			domain,
+			Some(100u128),
+			Some(ROTATE_FN_ID),
+			None,
+		);
+		assert_ok!(ok);
+
+		let expected_event = RuntimeEvent::Bridge(Event::MessageSubmitted {
+			from: TEST_SENDER_VEC.into(),
+			to,
+			message_type,
+			destination_domain: domain,
+		});
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn send_message_fungible_token_doesnt_accept_data() {
+	new_test_ext().execute_with(|| {
+		use crate::Error;
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let data = Some(BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap());
+
+		let ok = Bridge::send_message(
+			origin,
+			MessageType::FungibleToken,
+			ROTATE_FN_ID,
+			2,
+			Some(100u128),
+			Some(ROTATE_FN_ID),
+			data,
+		);
+		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);
+	});
+}
+
+#[test]
+fn send_message_fungible_token_doesnt_accept_empty_asset_id() {
+	new_test_ext().execute_with(|| {
+		use crate::Error;
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+
+		let ok = Bridge::send_message(
+			origin,
+			MessageType::FungibleToken,
+			ROTATE_FN_ID,
+			2,
+			Some(100u128),
+			None,
+			None,
+		);
+		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);
+	});
+}
+
+#[test]
+fn send_message_fungible_token_doesnt_accept_empty_value() {
+	new_test_ext().execute_with(|| {
+		use crate::Error;
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+
+		let ok = Bridge::send_message(
+			origin,
+			MessageType::FungibleToken,
+			ROTATE_FN_ID,
+			2,
+			None,
+			Some(ROTATE_FN_ID),
+			None,
+		);
+		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);
+	});
+}

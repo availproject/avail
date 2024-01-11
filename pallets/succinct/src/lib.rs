@@ -403,6 +403,8 @@ pub mod pallet {
 		}
 
 		/// source_chain_froze froze source chain and prevent messages to be executed.
+		//
+		// Test names: source_chain_froze_works_with_root(), source_chain_froze_does_not_work_with_non_root()
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::source_chain_froze())]
 		pub fn source_chain_froze(
@@ -422,6 +424,12 @@ pub mod pallet {
 		}
 
 		/// send_message sends a message from a origin chain to the destination chain.
+		//
+		// Test names:
+		//	send_message_fungible_token_works(), send_message_fungible_token_doesnt_accept_data(),
+		//	send_message_fungible_token_doesnt_accept_empty_asset_id(), send_message_fungible_token_doesnt_accept_empty_value(),
+		//	send_message_arbitrary_message_works(), send_message_arbitrary_message_doesnt_accept_value(),
+		//	send_message_arbitrary_message_doesnt_accept_asset_id(), send_message_arbitrary_message_doesnt_accept_empty_data()
 		#[pallet::call_index(3)]
 		#[pallet::weight({
 			match message_type {
@@ -483,6 +491,8 @@ pub mod pallet {
 		}
 
 		/// set_poseidon_hash sets poseidon hash of the sync commettee for the particular period.
+		//
+		// Test names: set_poseidon_hash_works_with_root(), set_poseidon_hash_does_not_work_with_non_root()
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::set_poseidon_hash())]
 		pub fn set_poseidon_hash(
