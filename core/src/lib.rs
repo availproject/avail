@@ -40,9 +40,7 @@ pub use keccak256::Keccak256;
 
 pub mod data_proof;
 pub use data_proof::DataProof;
-#[cfg(feature = "runtime")]
 pub mod data_proof_v2;
-#[cfg(feature = "runtime")]
 pub use data_proof_v2::DataProofV2;
 
 pub mod data_lookup;

@@ -46,7 +46,7 @@ std = [
 	"binary-merkle-tree?/std",
 	"codec/std",
 	"derive_more/display",
-	"frame-support?/std",
+	"frame-support/std",
 	"hash256-std-hasher/std",
 	"hex",
 	"log/std",
