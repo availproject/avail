@@ -56,7 +56,7 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 4_804_000 picoseconds.
-		Weight::from_parts(4_990_000, 0)
+		Weight::from_parts(60_500_4_990_000, 0)
 			.saturating_add(Weight::from_parts(0, 0))
 			// Standard Error: 0
 			.saturating_add(Weight::from_parts(532, 0).saturating_mul(b.into()))
@@ -67,7 +67,7 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 16_078_000 picoseconds.
-		Weight::from_parts(16_625_000, 0)
+		Weight::from_parts(60_500_4_990_000, 0)
 			.saturating_add(Weight::from_parts(0, 0))
 			// Standard Error: 4
 			.saturating_add(Weight::from_parts(1_734, 0).saturating_mul(b.into()))
