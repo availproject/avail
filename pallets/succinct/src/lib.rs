@@ -106,7 +106,6 @@ pub mod pallet {
 		ExecutedMessage {
 			message: Message,
 			message_root: H256,
-			status: bool,
 		},
 		/// emit if source chain gets frozen.
 		SourceChainFrozen { source_chain_id: u32, frozen: bool },
@@ -369,7 +368,6 @@ pub mod pallet {
 				MessageType::ArbitraryMessage => Self::deposit_event(Event::<T>::ExecutedMessage {
 					message,
 					message_root,
-					status: true,
 				}),
 				MessageType::FungibleToken => {
 					let (asset_id, amount) = Self::decode_message_data(message.data.to_vec())?;
@@ -393,7 +391,6 @@ pub mod pallet {
 					Self::deposit_event(Event::<T>::ExecutedMessage {
 						message,
 						message_root,
-						status: true,
 					});
 				},
 			}

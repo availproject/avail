@@ -3,7 +3,6 @@ use avail_core::OpaqueExtrinsic;
 use codec::Decode;
 use da_control::{Call as DaCall, CheckAppId};
 use frame_election_provider_support::BoundedVec;
-use frame_support::sp_core_hashing_proc_macro::keccak_256;
 use frame_support::traits::DefensiveTruncateFrom;
 use frame_system::submitted_data::{Message, MessageType};
 use frame_system::{
