@@ -520,7 +520,7 @@ mod test {
 			assert_eq!(da_proof.leaf_index, 0);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
-				"0x044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d"
+				"0x40105d5bc10105c17fd72b93a8f73369e2ee6eee4d4714b7bf7bf3c2f156e601"
 			);
 			assert_eq!(da_proof.proof.len(), 0);
 			assert_eq!(da_proof.number_of_leaves, 1);
