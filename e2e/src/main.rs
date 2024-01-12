@@ -384,7 +384,8 @@ pub mod tests {
 		let example_data = "ExampleData".as_bytes();
 		assert_eq!(example_data.len(), 11);
 		let block_hash = send_da_example_data(&txc, example_data).await.unwrap();
-		let expected_proof_root = merkle_proof::<Keccak256, _, _>(vec![keccak_256(example_data)], 0);
+		let expected_proof_root =
+			merkle_proof::<Keccak256, _, _>(vec![keccak_256(example_data)], 0);
 		let actual_proof = query_data_proof_v2(rpc, 1, block_hash).await.unwrap();
 		// root is calculated keccak256(blob_root, bridge_root)
 		let mut root_data = vec![];
