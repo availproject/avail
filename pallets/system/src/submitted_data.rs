@@ -454,7 +454,6 @@ where
 mod test {
 	use crate::submitted_data::SubTrie;
 	use codec::Encode;
-	use frame_support::sp_core_hashing_proc_macro::keccak_256;
 	use frame_support::traits::DefensiveTruncateFrom;
 	use hex_literal::hex;
 	use sp_core::{keccak_256, H256, U256};
@@ -556,14 +555,14 @@ mod test {
 			assert_eq!(da_proof.leaf_index, 0);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
-				"0x0b4aa17bff8fc189efb37609ac5ea9fca0df4c834a6fbac74b24c8119c40fef2"
+				"0xdb0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e"
 			);
 			assert_eq!(da_proof.proof.len(), 1);
 			assert_eq!(da_proof.number_of_leaves, 2);
 
 			assert_eq!(
 				format!("{:#x}", da_proof.proof[0]),
-				"0xc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6"
+				"0x4aeff0db81e3146828378be230d377356e57b6d599286b4b517dbf8941b3e1b2"
 			);
 		} else {
 			panic!("Proof not generated for the transaction index 0!");
