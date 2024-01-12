@@ -207,7 +207,8 @@ impl pallet_tips::Config for Runtime {
 }
 
 parameter_types! {
-	pub const WeightFee: Balance = PICO_AVL;
+	// Temporary increased price of all transactions by 50x
+	pub const WeightFee: Balance = 50 * PICO_AVL;
 	pub const TransactionByteFee: Balance = 100 * NANO_AVL; // 100 nanoAVL
 	pub const OperationalFeeMultiplier: u8 = 5u8;
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(50); // target_utilization 50%

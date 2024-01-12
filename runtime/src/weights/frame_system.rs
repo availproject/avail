@@ -52,22 +52,16 @@ pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 	/// The range of component `b` is `[0, 4718592]`.
 	fn remark(b: u32, ) -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 4_804_000 picoseconds.
-		Weight::from_parts(60_500_4_990_000, 0)
+		// Manually changed the value to be higher
+		Weight::from_parts(2_000_000_000, 0)
 			.saturating_add(Weight::from_parts(0, 0))
 			// Standard Error: 0
 			.saturating_add(Weight::from_parts(532, 0).saturating_mul(b.into()))
 	}
 	/// The range of component `b` is `[0, 4718592]`.
 	fn remark_with_event(b: u32, ) -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 16_078_000 picoseconds.
-		Weight::from_parts(60_500_4_990_000, 0)
+		// Manually changed the value to be higher
+		Weight::from_parts(2_000_000_000, 0)
 			.saturating_add(Weight::from_parts(0, 0))
 			// Standard Error: 4
 			.saturating_add(Weight::from_parts(1_734, 0).saturating_mul(b.into()))
@@ -87,15 +81,12 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	/// Storage: `System::Digest` (r:1 w:1)
-	/// Proof: `System::Digest` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Proof: `System::Dige st` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// Storage: UNKNOWN KEY `0x3a636f6465` (r:0 w:1)
 	/// Proof: UNKNOWN KEY `0x3a636f6465` (r:0 w:1)
 	fn set_code() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `1485`
-		// Minimum execution time: 1_165_620_414_000 picoseconds.
-		Weight::from_parts(1_208_693_195_000, 0)
+		// Manually changed the value to be lower
+		Weight::from_parts(20_000_000_000, 0)
 			.saturating_add(Weight::from_parts(0, 1485))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(2))
@@ -105,10 +96,6 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 	/// Storage: UNKNOWN KEY `0x3a636f6465` (r:0 w:1)
 	/// Proof: UNKNOWN KEY `0x3a636f6465` (r:0 w:1)
 	fn set_code_without_checks() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `1485`
-		// Minimum execution time: 4_176_897_000 picoseconds.
 		Weight::from_parts(4_311_210_000, 0)
 			.saturating_add(Weight::from_parts(0, 1485))
 			.saturating_add(T::DbWeight::get().reads(1))
