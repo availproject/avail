@@ -159,11 +159,11 @@ where
 			.into();
 
 		let leaf: H256 = if sub_trie == SubTrie::Right {
-			keccak_256(merkle_proof.leaf.as_ref()).into()
-		} else {
 			<[u8; 32]>::try_from(merkle_proof.leaf.as_ref())
 				.map_err(|_| InvalidLeaf)?
 				.into()
+		} else {
+			keccak_256(merkle_proof.leaf.as_ref()).into()
 		};
 
 		let proof = merkle_proof
@@ -280,12 +280,13 @@ mod test {
 
 		if sub_trie == SubTrie::Right {
 			data_proof.bridge_root = root;
-			data_proof.leaf = keccak_256(H256::repeat_byte(1).as_bytes()).into();
+			data_proof.leaf = H256::repeat_byte(1);
 			data_proof.blob_root = H256(hex!(
 				"c93decb6f246d173698f24c03ffe19694f9c1633cf40ae35862816f1255c6516"
 			));
 		} else {
 			data_proof.blob_root = root;
+			data_proof.leaf = keccak_256(H256::repeat_byte(1).as_bytes()).into();
 			data_proof.bridge_root = H256(hex!(
 				"c93decb6f246d173698f24c03ffe19694f9c1633cf40ae35862816f1255c6516"
 			));
@@ -315,11 +316,12 @@ mod test {
 
 		if sub_trie == SubTrie::Right {
 			data_proof.bridge_root = root;
-			data_proof.leaf = keccak_256(H256::repeat_byte(0).as_bytes()).into();
 			data_proof.blob_root = H256(hex!(
 				"c93decb6f246d173698f24c03ffe19694f9c1633cf40ae35862816f1255c6516"
 			));
+			data_proof.leaf = H256::repeat_byte(0);
 		} else {
+			data_proof.leaf = keccak_256(H256::repeat_byte(0).as_bytes()).into();
 			data_proof.blob_root = root;
 			data_proof.bridge_root = H256(hex!(
 				"c93decb6f246d173698f24c03ffe19694f9c1633cf40ae35862816f1255c6516"
@@ -349,12 +351,13 @@ mod test {
 
 		if sub_trie == SubTrie::Right {
 			data_proof.bridge_root = root;
-			data_proof.leaf = keccak_256(H256::repeat_byte(6).as_bytes()).into();
+			data_proof.leaf = H256::repeat_byte(6);
 			data_proof.blob_root = H256(hex!(
 				"c93decb6f246d173698f24c03ffe19694f9c1633cf40ae35862816f1255c6516"
 			));
 		} else {
 			data_proof.blob_root = root;
+			data_proof.leaf = keccak_256(H256::repeat_byte(6).as_bytes()).into();
 			data_proof.bridge_root = H256(hex!(
 				"c93decb6f246d173698f24c03ffe19694f9c1633cf40ae35862816f1255c6516"
 			));
