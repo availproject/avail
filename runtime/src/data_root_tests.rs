@@ -3,6 +3,7 @@ use avail_core::OpaqueExtrinsic;
 use codec::Decode;
 use da_control::{Call as DaCall, CheckAppId};
 use frame_election_provider_support::BoundedVec;
+use frame_support::sp_core_hashing_proc_macro::keccak_256;
 use frame_support::traits::DefensiveTruncateFrom;
 use frame_system::submitted_data::{Message, MessageType};
 use frame_system::{
@@ -28,8 +29,10 @@ fn send_message() -> Vec<u8> {
 
 fn submit_call_expected() -> H256 {
 	// data = "Test submit data"
-	// leaf is keccak256(data) -> root
-	let blob_root = hex!("db45128913020d152dbee4d00a1dffebdb703425c44adbd7d7dfc7ae93d836bc");
+	// leaf is keccak256(data) -> keccak256(root)
+	let blob_root = keccak_256(
+		hex!("db45128913020d152dbee4d00a1dffebdb703425c44adbd7d7dfc7ae93d836bc").as_slice(),
+	);
 
 	let mut concat = vec![];
 	// bridge_root = 0x0..0
@@ -59,10 +62,10 @@ fn send_message_expected() -> H256 {
 
 	let encoded = message.abi_encode();
 	let leaf = keccak_256(encoded.as_slice());
-	let expected_bridge_root = keccak_256(leaf.as_slice());
+	let expected_bridge_root = leaf.as_slice();
 	let mut concat = vec![];
 	concat.extend_from_slice(H256::zero().as_bytes());
-	concat.extend_from_slice(expected_bridge_root.as_slice());
+	concat.extend_from_slice(expected_bridge_root);
 	H256(keccak_256(concat.as_slice()))
 }
 

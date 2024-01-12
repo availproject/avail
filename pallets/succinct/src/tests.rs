@@ -248,7 +248,7 @@ fn test_execute_message_via_storage() {
 }
 
 #[test]
-fn test_execute_arb_message() {
+fn test_execute_arb_message_invalid_hash() {
 	new_test_ext().execute_with(|| {
 		let balance_before = Balances::balance(&Bridge::account_id());
 		Broadcasters::<Test>::set(
@@ -273,19 +273,16 @@ fn test_execute_arb_message() {
 		// change message type
 		message.message_type = MessageType::ArbitraryMessage;
 
-		// amount in message 1000000000000000000
-		let success = Bridge::execute(
+		let err = Bridge::execute(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
 			slot,
 			message,
 			account_proof,
 			storage_proof,
 		);
-		assert_ok!(success);
-
-		// Currently not supported and it shouldn not affect balance
 		let balance_left = Balances::balance(&Bridge::account_id());
-		assert_eq!(balance_before, balance_left)
+		assert_eq!(balance_before, balance_left);
+		assert_err!(err, Error::<Test>::InvalidMessageHash)
 	});
 }
 

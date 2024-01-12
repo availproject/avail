@@ -180,6 +180,7 @@ where
 	let root_blob_data = blob_data
 		.into_iter()
 		.filter(|v| !v.is_empty())
+		.map(|leaf| keccak_256(leaf.as_slice()).as_slice().to_vec())
 		.collect::<Vec<_>>();
 
 	let root_bridge_data: Vec<_> = bridge_data
@@ -187,7 +188,7 @@ where
 		.map(|mut m| {
 			bridge_nonce += 1;
 			m.id = bridge_nonce;
-			keccak_256(&m.abi_encode()).to_vec()
+			m.abi_encode().to_vec()
 		})
 		.collect();
 
@@ -307,7 +308,6 @@ where
 				.flat_map(|mut m| {
 					nonce += 1;
 					m.id = nonce;
-
 					if index == transaction_index {
 						message_data = Some(m.clone());
 					}
@@ -350,9 +350,9 @@ where
 		.filter(|v| !v.is_empty())
 		.map(|leaf| {
 			if call_type == SubTrie::Right {
-				keccak_256(leaf.as_slice()).to_vec()
-			} else {
 				leaf
+			} else {
+				keccak_256(leaf.as_slice()).to_vec()
 			}
 		})
 		.collect::<Vec<_>>();
@@ -363,9 +363,9 @@ where
 		.filter(|v| !v.is_empty())
 		.map(|leaf| {
 			if call_type == SubTrie::Right {
-				keccak_256(leaf.as_slice()).to_vec()
-			} else {
 				leaf
+			} else {
+				keccak_256(leaf.as_slice()).to_vec()
 			}
 		})
 		.collect::<Vec<_>>();
@@ -454,6 +454,7 @@ where
 mod test {
 	use crate::submitted_data::SubTrie;
 	use codec::Encode;
+	use frame_support::sp_core_hashing_proc_macro::keccak_256;
 	use frame_support::traits::DefensiveTruncateFrom;
 	use hex_literal::hex;
 	use sp_core::{keccak_256, H256, U256};
@@ -586,19 +587,19 @@ mod test {
 		let submitted_data = vec![tx1_data, tx2_data, tx3_data, tx4_data];
 
 		// leaf 0 keccak256(044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d)
-		//
+		//                  40105d5bc10105c17fd72b93a8f73369e2ee6eee4d4714b7bf7bf3c2f156e601
 		// leaf 1 keccak256(c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6)
-		//
+		//                  4aeff0db81e3146828378be230d377356e57b6d599286b4b517dbf8941b3e1b2
 		// leaf 2 keccak256(ad7c5bef027816a800da1736444fb58a807ef4c9603b7848673f7e3a68eb14a5)
-		//
+		//                  1204b3dcd975ba0a68eafbf4d2ca0d13cc7b5e3709749c1dc36e6e74934270b3
 		//  leaf appended in in order to have 2^n number of leaves
 		// leaf 3 (appended) keccak256(0000000000000000000000000000000000000000000000000000000000000000)
 		//                  290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563
 
-		// intermediate root (leaf[0], leaf[1]) 0b4aa17bff8fc189efb37609ac5ea9fca0df4c834a6fbac74b24c8119c40fef2
-		// intermediate root (leaf[2], leaf[3]) 55bb5000a6f1a01ffaceb5986609d4225532a8bc8e47172fca25b159764c29dd
-		// data_root keccak256(0b4aa17bff8fc189efb37609ac5ea9fca0df4c834a6fbac74b24c8119c40fef2,55bb5000a6f1a01ffaceb5986609d4225532a8bc8e47172fca25b159764c29dd )
-		//                                                       (0dfc48d8883fae891796204ca736c71163b80aaeb7682c26e58c80319d1978c4)
+		// intermediate root (leaf[0], leaf[1]) db0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e
+		// intermediate root (leaf[2], leaf[3]) 3c86bde3a90d18efbcf23e27e9b6714012aa055263fe903a72333aa9caa37f1b
+		// data_root keccak256(db0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e, 3c86bde3a90d18efbcf23e27e9b6714012aa055263fe903a72333aa9caa37f1b)
+		//                                                       (877f9ed6aa67f160e9b9b7794bb851998d15b65d11bab3efc6ff444339a3d750)
 
 		if let Some((da_proof, root, _)) = calls_proof_v2::<String, _, _>(
 			submitted_data.clone().into_iter(),
@@ -611,19 +612,24 @@ mod test {
 			assert_eq!(da_proof.leaf_index, 0);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
-				"0x0dfc48d8883fae891796204ca736c71163b80aaeb7682c26e58c80319d1978c4"
+				"0x877f9ed6aa67f160e9b9b7794bb851998d15b65d11bab3efc6ff444339a3d750"
 			);
 			assert_eq!(da_proof.proof.len(), 2);
 			assert_eq!(
 				format!("{:#x}", da_proof.proof[0]),
-				"0xc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6"
+				"0x4aeff0db81e3146828378be230d377356e57b6d599286b4b517dbf8941b3e1b2"
 			);
 			assert_eq!(
 				format!("{:#x}", da_proof.proof[1]),
-				"0x55bb5000a6f1a01ffaceb5986609d4225532a8bc8e47172fca25b159764c29dd"
+				"0x3c86bde3a90d18efbcf23e27e9b6714012aa055263fe903a72333aa9caa37f1b"
 			);
 
-			assert_eq!(da_proof.leaf, b"0");
+			assert_eq!(
+				H256::from_slice(da_proof.leaf.as_slice()),
+				H256(hex!(
+					"044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d"
+				))
+			);
 
 			assert_eq!(da_proof.number_of_leaves, 4);
 		} else {
@@ -653,16 +659,16 @@ mod test {
 			assert_eq!(da_proof.leaf_index, 1);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
-				"0x0dfc48d8883fae891796204ca736c71163b80aaeb7682c26e58c80319d1978c4"
+				"0x877f9ed6aa67f160e9b9b7794bb851998d15b65d11bab3efc6ff444339a3d750"
 			);
 			assert_eq!(da_proof.proof.len(), 2);
 			assert_eq!(
 				format!("{:#x}", da_proof.proof[0]),
-				"0x044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d"
+				"0x40105d5bc10105c17fd72b93a8f73369e2ee6eee4d4714b7bf7bf3c2f156e601"
 			);
 			assert_eq!(
 				format!("{:#x}", da_proof.proof[1]),
-				"0x55bb5000a6f1a01ffaceb5986609d4225532a8bc8e47172fca25b159764c29dd"
+				"0x3c86bde3a90d18efbcf23e27e9b6714012aa055263fe903a72333aa9caa37f1b"
 			);
 			assert_eq!(da_proof.number_of_leaves, 4);
 		} else {
@@ -680,7 +686,7 @@ mod test {
 			assert_eq!(da_proof.leaf_index, 2);
 			assert_eq!(
 				format!("{:#x}", da_proof.root),
-				"0x0dfc48d8883fae891796204ca736c71163b80aaeb7682c26e58c80319d1978c4"
+				"0x877f9ed6aa67f160e9b9b7794bb851998d15b65d11bab3efc6ff444339a3d750"
 			);
 			assert_eq!(da_proof.proof.len(), 2);
 			assert_eq!(
@@ -689,7 +695,7 @@ mod test {
 			);
 			assert_eq!(
 				format!("{:#x}", da_proof.proof[1]),
-				"0x0b4aa17bff8fc189efb37609ac5ea9fca0df4c834a6fbac74b24c8119c40fef2"
+				"0xdb0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e"
 			);
 			assert_eq!(da_proof.number_of_leaves, 4);
 		} else {
@@ -809,7 +815,7 @@ mod test {
 	fn test_message_encoding_from_avail_with_hash1() {
 		let data = &[
 			ethabi::Token::FixedBytes(H256::zero().encode()),
-			ethabi::Token::Uint(U256::from(1u128)),
+			ethabi::Token::Uint(U256::from(1000000000000000000u128)),
 		];
 
 		let encoded_data = BoundedVec::defensive_truncate_from(ethabi::encode(data));
@@ -825,12 +831,12 @@ mod test {
 			origin_domain: 1,
 			destination_domain: 2,
 			data: encoded_data,
-			id: 2,
+			id: 1,
 		};
 
 		let encoded = message.abi_encode();
 		let leaf_hash = H256(hex!(
-			"b6967c26a94c468b964c87a40af534524a236da0140e7d90d46c067cffb84c8f"
+			"94491650baa28a6f0db3c5e9495e12e43b7f1b2726fa5c5dabed2619514bd7b5"
 		));
 
 		assert_eq!(leaf_hash, H256(keccak_256(encoded.as_slice())));

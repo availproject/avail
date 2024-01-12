@@ -104,11 +104,9 @@ pub mod pallet {
 		BroadcasterUpdate { old: H256, new: H256, domain: u32 },
 		/// emit when message gets executed.
 		ExecutedMessage {
-			chain_id: u32,
-			nonce: u64,
+			message: Message,
 			message_root: H256,
 			status: bool,
-			msg_type: MessageType,
 		},
 		/// emit if source chain gets frozen.
 		SourceChainFrozen { source_chain_id: u32, frozen: bool },
@@ -317,11 +315,11 @@ pub mod pallet {
 		// TODO @Marko Check out if there are tests that we are missing
 		#[pallet::call_index(1)]
 		#[pallet::weight({
-			match message.message_type {
-				MessageType::ArbitraryMessage => T::WeightInfo::execute_arbitrary_message(message.data.len() as u32),
-				MessageType::FungibleToken => T::WeightInfo::execute_fungible_token(),
-			}
-		})]
+        match message.message_type {
+        MessageType::ArbitraryMessage => T::WeightInfo::execute_arbitrary_message(message.data.len() as u32),
+        MessageType::FungibleToken => T::WeightInfo::execute_fungible_token(),
+        }
+        })]
 		pub fn execute(
 			origin: OriginFor<T>,
 			slot: u64,
@@ -333,49 +331,47 @@ pub mod pallet {
 			let encoded_data = message.clone().abi_encode();
 			let message_root = H256(keccak_256(encoded_data.as_slice()));
 
+			Self::check_preconditions(&message, message_root)?;
+
+			ensure!(
+				!SourceChainFrozen::<T>::get(message.origin_domain),
+				Error::<T>::SourceChainFrozen
+			);
+			let root = ExecutionStateRoots::<T>::get(slot);
+			let broadcaster = Broadcasters::<T>::get(message.origin_domain);
+
+			// extract contract address
+			let contract_broadcaster_address = H160::from_slice(broadcaster[..20].as_ref());
+			let account_proof_vec = account_proof
+				.iter()
+				.map(|inner_bounded_vec| inner_bounded_vec.iter().copied().collect())
+				.collect();
+
+			let storage_root =
+				get_storage_root(account_proof_vec, contract_broadcaster_address, root)
+					.map_err(|_| Error::<T>::CannotGetStorageRoot)?;
+
+			let nonce = Uint(U256::from(message.id));
+			let mm_idx = Uint(U256::from(T::MessageMappingStorageIndex::get()));
+			let slot_key = H256(keccak_256(ethabi::encode(&[nonce, mm_idx]).as_slice()));
+
+			let storage_proof_vec = storage_proof
+				.iter()
+				.map(|inner_bounded_vec| inner_bounded_vec.iter().copied().collect())
+				.collect();
+
+			let slot_value = get_storage_value(slot_key, storage_root, storage_proof_vec)
+				.map_err(|_| Error::<T>::CannotGetStorageValue)?;
+
+			ensure!(slot_value == message_root, Error::<T>::InvalidMessageHash);
+
 			match message.message_type {
 				MessageType::ArbitraryMessage => Self::deposit_event(Event::<T>::ExecutedMessage {
-					chain_id: message.origin_domain,
-					nonce: message.id,
+					message,
 					message_root,
 					status: true,
-					msg_type: message.message_type,
 				}),
 				MessageType::FungibleToken => {
-					Self::check_preconditions(&message, message_root)?;
-
-					ensure!(
-						!SourceChainFrozen::<T>::get(message.origin_domain),
-						Error::<T>::SourceChainFrozen
-					);
-					let root = ExecutionStateRoots::<T>::get(slot);
-					let broadcaster = Broadcasters::<T>::get(message.origin_domain);
-
-					// extract contract address
-					let contract_broadcaster_address = H160::from_slice(broadcaster[..20].as_ref());
-					let account_proof_vec = account_proof
-						.iter()
-						.map(|inner_bounded_vec| inner_bounded_vec.iter().copied().collect())
-						.collect();
-
-					let storage_root =
-						get_storage_root(account_proof_vec, contract_broadcaster_address, root)
-							.map_err(|_| Error::<T>::CannotGetStorageRoot)?;
-
-					let nonce = Uint(U256::from(message.id));
-					let mm_idx = Uint(U256::from(T::MessageMappingStorageIndex::get()));
-					let slot_key = H256(keccak_256(ethabi::encode(&[nonce, mm_idx]).as_slice()));
-
-					let storage_proof_vec = storage_proof
-						.iter()
-						.map(|inner_bounded_vec| inner_bounded_vec.iter().copied().collect())
-						.collect();
-
-					let slot_value = get_storage_value(slot_key, storage_root, storage_proof_vec)
-						.map_err(|_| Error::<T>::CannotGetStorageValue)?;
-
-					ensure!(slot_value == message_root, Error::<T>::InvalidMessageHash);
-
 					let (asset_id, amount) = Self::decode_message_data(message.data.to_vec())?;
 					ensure!(
 						SUPPORTED_ASSET_ID == asset_id,
@@ -395,11 +391,9 @@ pub mod pallet {
 
 					MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
 					Self::deposit_event(Event::<T>::ExecutedMessage {
-						chain_id: message.origin_domain,
-						nonce: message.id,
+						message,
 						message_root,
 						status: true,
-						msg_type: message.message_type,
 					});
 				},
 			}
@@ -437,11 +431,11 @@ pub mod pallet {
 		//	send_message_arbitrary_message_doesnt_accept_asset_id(), send_message_arbitrary_message_doesnt_accept_empty_data()
 		#[pallet::call_index(3)]
 		#[pallet::weight({
-			match message_type {
-				MessageType::ArbitraryMessage => T::WeightInfo::send_message_arbitrary_message(data.as_ref().unwrap_or(&Default::default()).len() as u32),
-				MessageType::FungibleToken => T::WeightInfo::send_message_fungible_token(),
-			}
-		})]
+        match message_type {
+        MessageType::ArbitraryMessage => T::WeightInfo::send_message_arbitrary_message(data.as_ref().unwrap_or(& Default::default()).len() as u32),
+        MessageType::FungibleToken => T::WeightInfo::send_message_fungible_token(),
+        }
+        })]
 		pub fn send_message(
 			origin: OriginFor<T>,
 			message_type: MessageType,
