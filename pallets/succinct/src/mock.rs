@@ -1,7 +1,7 @@
 use frame_support::{derive_impl, parameter_types, traits::ConstU64, PalletId};
 use frame_system::{header_builder::da, test_utils::TestRandomness};
 use hex_literal::hex;
-use sp_core::{H256, U256};
+use sp_core::H256;
 use sp_runtime::{
 	traits::{ConstU32, IdentityLookup},
 	AccountId32, BuildStorage,
@@ -254,10 +254,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	succinct_bridge::GenesisConfig::<Test> {
 		slots_per_period: 8192,
 		finality_threshold: 461,
-		period: 931,
-		sync_committee_poseidon: U256::from(hex!(
-			"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
-		)),
 		whitelisted_domains: vec![2],
 		..Default::default()
 	}

@@ -90,7 +90,7 @@ impl pallet_mandate::Config for Runtime {
 }
 
 parameter_types! {
-	// function identifiers
+	//TODO add flag for different networks
 	pub const StepFunctionId: H256 = H256(hex!("a511bd86a30fa6db581480ac7591d4271c845411ac4e1ad93797d09a57b60522"));
 	pub const RotateFunctionId: H256 = H256(hex!("d7f33a3358d67df3bf792e8b2ab0188d16f4fc07418b35d950407af0d3cb33e0"));
 	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");

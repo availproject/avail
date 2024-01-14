@@ -97,7 +97,11 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// emit event once the head is updated.
-		HeaderUpdate { slot: u64, finalization_root: H256 },
+		HeaderUpdate {
+			slot: u64,
+			finalization_root: H256,
+			execution_state_root: H256,
+		},
 		/// emit event once the sync committee updates.
 		SyncCommitteeUpdate { period: u64, root: U256 },
 		/// emit when new updater is set
@@ -213,8 +217,8 @@ pub mod pallet {
 	pub struct GenesisConfig<T: Config> {
 		pub slots_per_period: u64,
 		pub finality_threshold: u16,
-		pub sync_committee_poseidon: U256,
-		pub period: u64,
+		pub broadcaster: H256,
+		pub broadcaster_domain: u32,
 		pub whitelisted_domains: Vec<u32>,
 		pub _phantom: PhantomData<T>,
 	}
@@ -236,6 +240,8 @@ pub mod pallet {
 			let domains =
 				BoundedVec::try_from(domains).expect("Cannot have more than 10_000 domains.");
 			WhitelistedDomains::<T>::put(domains);
+
+			Broadcasters::<T>::set(self.broadcaster_domain, self.broadcaster);
 		}
 	}
 
@@ -285,8 +291,9 @@ pub mod pallet {
 
 				if Self::step_into(slot, state, &vs)? {
 					Self::deposit_event(Event::HeaderUpdate {
-						slot,
+						slot: vs.verified_output.finalized_slot,
 						finalization_root: vs.verified_output.finalized_header_root,
+						execution_state_root: vs.verified_output.execution_state_root,
 					});
 				}
 			} else if function_id == T::RotateFunctionId::get() {

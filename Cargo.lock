@@ -794,7 +794,7 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 name = "avail-base"
 version = "0.1.0"
 dependencies = [
- "avail-core",
+ "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "kate",
  "log",
  "once_cell",
@@ -814,7 +814,35 @@ dependencies = [
  "hash256-std-hasher",
  "hex",
  "log",
- "nomad-core",
+ "nomad-core 0.1.5 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-runtime-interface",
+ "sp-std",
+ "sp-trie",
+ "static_assertions",
+ "thiserror-no-std",
+ "tiny-keccak",
+]
+
+[[package]]
+name = "avail-core"
+version = "0.5.1"
+source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen_with_serde#4f6828f06557361cc65662500ffce5695cac481d"
+dependencies = [
+ "binary-merkle-tree",
+ "derive_more",
+ "ethabi",
+ "frame-support",
+ "hash256-std-hasher",
+ "hex",
+ "log",
+ "nomad-core 0.1.5 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen_with_serde)",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -2111,7 +2139,7 @@ dependencies = [
 name = "da-control"
 version = "1.0.1"
 dependencies = [
- "avail-core",
+ "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -2136,7 +2164,7 @@ dependencies = [
 name = "da-runtime"
 version = "7.0.1"
 dependencies = [
- "avail-core",
+ "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "codspeed-criterion-compat",
  "criterion",
  "da-control",
@@ -2264,7 +2292,7 @@ version = "1.9.0"
 dependencies = [
  "async-trait",
  "avail-base",
- "avail-core",
+ "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "clap",
  "clap_complete",
  "da-control",
@@ -3492,7 +3520,7 @@ name = "frame-system"
 version = "4.0.0-dev"
 dependencies = [
  "avail-base",
- "avail-core",
+ "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "binary-merkle-tree",
  "cfg-if",
  "criterion",
@@ -3525,7 +3553,7 @@ dependencies = [
 name = "frame-system-benchmarking"
 version = "4.0.0-dev"
 dependencies = [
- "avail-core",
+ "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -4710,7 +4738,7 @@ name = "kate"
 version = "0.8.1"
 source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#2da35f6c7fdd416e8dc6a42300a9b86dc585a19e"
 dependencies = [
- "avail-core",
+ "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "derive_more",
  "dusk-bytes",
  "dusk-plonk",
@@ -4738,7 +4766,7 @@ name = "kate-recovery"
 version = "0.9.1"
 source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#2da35f6c7fdd416e8dc6a42300a9b86dc585a19e"
 dependencies = [
- "avail-core",
+ "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "derive_more",
  "dusk-bytes",
  "dusk-plonk",
@@ -4758,7 +4786,7 @@ name = "kate-rpc"
 version = "0.3.0"
 dependencies = [
  "avail-base",
- "avail-core",
+ "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "da-control",
  "da-runtime",
  "frame-support",
@@ -6005,8 +6033,8 @@ version = "0.1.5"
 source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#2da35f6c7fdd416e8dc6a42300a9b86dc585a19e"
 dependencies = [
  "ethers-signers",
- "nomad-core",
- "nomad-signature",
+ "nomad-core 0.1.5 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
+ "nomad-signature 0.1.3 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "once_cell",
  "parity-scale-codec",
  "scale-info",
@@ -6022,7 +6050,25 @@ source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_ge
 dependencies = [
  "ethers-core",
  "ethers-signers",
- "nomad-signature",
+ "nomad-signature 0.1.3 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "tiny-keccak",
+]
+
+[[package]]
+name = "nomad-core"
+version = "0.1.5"
+source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen_with_serde#4f6828f06557361cc65662500ffce5695cac481d"
+dependencies = [
+ "ethers-core",
+ "ethers-signers",
+ "nomad-signature 0.1.3 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen_with_serde)",
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
@@ -6037,13 +6083,13 @@ dependencies = [
 name = "nomad-da-bridge"
 version = "1.0.1"
 dependencies = [
- "avail-core",
+ "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex-literal 0.3.4",
  "nomad-base",
- "nomad-core",
+ "nomad-core 0.1.5 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "nomad-home",
  "nomad-merkle",
  "nomad-updater-manager",
@@ -6059,15 +6105,15 @@ dependencies = [
 name = "nomad-home"
 version = "4.0.0-dev"
 dependencies = [
- "avail-core",
+ "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex-literal 0.3.4",
  "nomad-base",
- "nomad-core",
+ "nomad-core 0.1.5 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "nomad-merkle",
- "nomad-signature",
+ "nomad-signature 0.1.3 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "nomad-updater-manager",
  "parity-scale-codec",
  "scale-info",
@@ -6083,10 +6129,10 @@ name = "nomad-merkle"
 version = "0.1.3"
 source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen#2da35f6c7fdd416e8dc6a42300a9b86dc585a19e"
 dependencies = [
- "avail-core",
+ "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "frame-support",
  "hex-literal 0.3.4",
- "nomad-core",
+ "nomad-core 0.1.5 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -6117,10 +6163,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "nomad-signature"
+version = "0.1.3"
+source = "git+https://github.com/availproject/avail-core?branch=add_new_proof_gen_with_serde#4f6828f06557361cc65662500ffce5695cac481d"
+dependencies = [
+ "elliptic-curve 0.12.3",
+ "ethers-core",
+ "frame-support",
+ "generic-array 0.14.7",
+ "hex",
+ "k256 0.11.6",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+ "thiserror-no-std",
+ "tiny-keccak",
+]
+
+[[package]]
 name = "nomad-updater-manager"
 version = "1.0.1"
 dependencies = [
- "avail-core",
+ "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -6625,7 +6691,7 @@ dependencies = [
 name = "pallet-mandate"
 version = "1.0.0"
 dependencies = [
- "avail-core",
+ "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6855,7 +6921,7 @@ dependencies = [
  "ark-serialize 0.4.2",
  "ark-snark 0.4.0",
  "ark-std 0.4.0",
- "avail-core",
+ "avail-core 0.5.1 (git+https://github.com/availproject/avail-core?branch=add_new_proof_gen_with_serde)",
  "ethabi",
  "frame-benchmarking",
  "frame-support",

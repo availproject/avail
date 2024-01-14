@@ -10,7 +10,7 @@ use da_runtime::{
 };
 use frame_system::limits::BlockLength;
 use hex_literal::hex;
-use primitive_types::{H160, U256};
+use primitive_types::{H160, H256};
 use sc_telemetry::TelemetryEndpoints;
 use sp_core::crypto::AccountId32;
 use sp_core::sr25519::Public;
@@ -19,6 +19,14 @@ pub const PROTOCOL_ID: Option<&str> = Some("Avail");
 pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
 const NOMAD_LOCAL_DOMAIN: u32 = 2000;
 const NOMAD_UPDATER: H160 = H160(hex!("695dFcFc604F9b2992642BDC5b173d1a1ed60b03"));
+
+// bridge init config
+const BROADCASTER_DOMAIN: u32 = 2;
+const BROADCASTER: H256 = H256(hex!(
+	"8F8d47bF15953E26c622F36F3366e43e26B9b78b000000000000000000000000"
+));
+const SLOTS_PER_PERIOD: u64 = 8192;
+const FINALITY_THRESHOLD: u16 = 342;
 
 const ENDOWMENT: Balance = 1_000_000 * AVL;
 const STASH_BOND: Balance = ENDOWMENT / 100;
@@ -130,13 +138,10 @@ pub fn runtime_genesis_config(
 			..Default::default()
 		},
 		succinct: SuccinctConfig {
-			//TODO check all values
-			slots_per_period: 8192,
-			finality_threshold: 342,
-			period: 931,
-			sync_committee_poseidon: U256::from(hex!(
-				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
-			)),
+			slots_per_period: SLOTS_PER_PERIOD,
+			finality_threshold: FINALITY_THRESHOLD,
+			broadcaster_domain: BROADCASTER_DOMAIN,
+			broadcaster: BROADCASTER,
 			whitelisted_domains: vec![2],
 			..Default::default()
 		},

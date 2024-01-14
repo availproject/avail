@@ -360,7 +360,6 @@ fn test_execute_message_with_faulty_account_proof() {
 	});
 }
 
-//
 #[test]
 fn test_execute_message_with_faulty_storage_proof() {
 	new_test_ext().execute_with(|| {
@@ -501,12 +500,15 @@ fn test_full_fill_step_call() {
 		);
 
 		assert_ok!(result);
-
+		let finalized_slot = 7634848;
 		// ensure that event is fired
 		let expected_event = RuntimeEvent::Bridge(Event::HeaderUpdate {
-			slot,
+			slot: finalized_slot,
 			finalization_root: H256(hex!(
 				"e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec"
+			)),
+			execution_state_root: H256(hex!(
+				"51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b9"
 			)),
 		});
 
