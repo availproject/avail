@@ -372,10 +372,14 @@ pub mod pallet {
 			ensure!(slot_value == message_root, Error::<T>::InvalidMessageHash);
 
 			match message.message_type {
-				MessageType::ArbitraryMessage => Self::deposit_event(Event::<T>::ExecutedMessage {
-					message,
-					message_root,
-				}),
+				MessageType::ArbitraryMessage => {
+					MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
+					Self::deposit_event(Event::<T>::ExecutedMessage {
+						message,
+						message_root,
+					})
+				},
+
 				MessageType::FungibleToken => {
 					let (asset_id, amount) = Self::decode_message_data(message.data.to_vec())?;
 					ensure!(

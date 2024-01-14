@@ -245,7 +245,7 @@ impl pallet_succinct::Config for Runtime {
 	type Currency = Balances;
 	type StepVerificationKey = StepVk;
 	type RotateVerificationKey = RotateVk;
-	type MessageMappingStorageIndex = ConstU64<4>;
+	type MessageMappingStorageIndex = ConstU64<5>;
 	type StepFunctionId = StepFunctionId;
 	type RotateFunctionId = RotateFunctionId;
 	type PalletId = BridgePalletId;
