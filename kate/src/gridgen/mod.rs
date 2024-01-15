@@ -92,6 +92,9 @@ impl EvaluationGrid {
 				let mut enc = datas.encode();
 				if with_padding_tail_value {
 					enc.push(PADDING_TAIL_VALUE); // TODO: remove 9797 padding stuff
+					log::info!("USED PADDING_TAIL_VALUE");
+				} else {
+					log::info!("NOT USED PADDING_TAIL_VALUE");
 				}
 				enc.chunks(DATA_CHUNK_SIZE)
 					.map(pad_to_bls_scalar)

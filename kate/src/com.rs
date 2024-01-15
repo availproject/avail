@@ -268,6 +268,9 @@ fn pad_iec_9797_1(mut data: Vec<u8>, with_padding_tail_value: bool) -> Vec<DataC
 	if with_padding_tail_value {
 		// Add `PADDING_TAIL_VALUE` and fill with zeros.
 		data.push(PADDING_TAIL_VALUE);
+		log::info!("USED PADDING_TAIL_VALUE");
+	} else {
+		log::info!("NOT USED PADDING_TAIL_VALUE");
 	}
 	data.resize(padded_size as usize, 0u8);
 
