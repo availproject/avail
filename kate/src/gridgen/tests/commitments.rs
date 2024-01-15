@@ -25,6 +25,7 @@ fn test_build_commitments_simple_commitment_check() {
 		block_width,
 		block_height,
 		hash,
+		true,
 	)
 	.unwrap();
 	let ext_evals = evals
@@ -62,7 +63,7 @@ fn par_build_commitments_row_wise_constant_row() {
 		data: vec![0; 31 * 8],
 	}];
 
-	let evals = EvaluationGrid::from_extrinsics(xts, 4, 4, 4, hash).unwrap();
+	let evals = EvaluationGrid::from_extrinsics(xts, 4, 4, 4, hash, true).unwrap();
 	let evals = evals
 		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 		.unwrap();
@@ -75,7 +76,7 @@ proptest! {
 	#[test]
 	fn commitments_verify(ref exts in app_extrinsics_strategy())  {
 		//let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default()).unwrap();
-		let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 16, 64, Seed::default()).unwrap();
+		let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 16, 64, Seed::default(), true).unwrap();
 		let grid = grid.extend_columns( unsafe { NonZeroU16::new_unchecked(2)}).unwrap();
 		let (g_rows, g_cols) :(u16,u16) = grid.dims().into();
 		let orig_dims = Dimensions::new(g_rows / 2, g_cols).unwrap();
@@ -103,7 +104,7 @@ proptest! {
 	}
 
 	fn verify_commitments_missing_row(ref xts in app_extrinsics_strategy())  {
-		let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 16, 64, Seed::default()).unwrap().extend_columns( unsafe { NonZeroU16::new_unchecked(2) }).unwrap();
+		let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 16, 64, Seed::default(), true).unwrap().extend_columns( unsafe { NonZeroU16::new_unchecked(2) }).unwrap();
 		let (g_rows, g_cols):(u16,u16) = grid.dims().into();
 		let orig_dims = Dimensions::new_from(g_rows / 2, g_cols).unwrap();
 		let polys = grid.make_polynomial_grid().unwrap();

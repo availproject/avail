@@ -26,7 +26,7 @@ fn test_multiple_extrinsics_for_same_app_id() {
 	];
 	// The hash is used for seed for padding the block to next power of two value
 	let hash = Seed::default();
-	let ev = EvaluationGrid::from_extrinsics(xts.into(), 4, 128, 2, hash)
+	let ev = EvaluationGrid::from_extrinsics(xts.into(), 4, 128, 2, hash, true)
 		.unwrap()
 		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 		.unwrap();
@@ -44,7 +44,7 @@ proptest! {
 #![proptest_config(ProptestConfig::with_cases(5))]
 #[test]
 fn test_build_and_reconstruct(exts in super::app_extrinsics_strategy())  {
-	let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 256, 256, Seed::default()).unwrap().extend_columns(unsafe { NonZeroU16::new_unchecked(2)}).unwrap();
+	let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 256, 256, Seed::default(), true).unwrap().extend_columns(unsafe { NonZeroU16::new_unchecked(2)}).unwrap();
 	let (rows, cols) :(usize,usize)= grid.dims().into();
 	//let (layout, commitments, dims, matrix) = par_build_commitments(
 	//	BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default()).unwrap();
@@ -97,7 +97,7 @@ get erasure coded to ensure redundancy."#;
 		AppExtrinsic::new(AppId(2), app_id_2_data.to_vec()),
 	];
 
-	let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 4, 32, Seed::default())
+	let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 4, 32, Seed::default(), true)
 		.unwrap()
 		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 		.unwrap();

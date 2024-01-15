@@ -140,6 +140,7 @@ pub fn flatten_and_pad_block(
 	chunk_size: NonZeroU32,
 	extrinsics: &[AppExtrinsic],
 	rng_seed: Seed,
+	with_padding_tail_value: bool
 ) -> Result<(XtsLayout, FlatData, BlockDimensions), Error> {
 	// First, sort the extrinsics by their app_id
 	let mut extrinsics = extrinsics.to_vec();
@@ -152,7 +153,7 @@ pub fn flatten_and_pad_block(
 		.map(|e| {
 			let app_id = e.0;
 			let data = e.1.encode();
-			let chunks = pad_iec_9797_1(data);
+			let chunks = pad_iec_9797_1(data, with_padding_tail_value);
 			let chunks_len = u32::try_from(chunks.len()).map_err(|_| Error::BlockTooBig)?;
 			Ok(((app_id, chunks_len), chunks))
 		})
@@ -262,10 +263,12 @@ fn pad_to_chunk(chunk: DataChunk, chunk_size: NonZeroU32) -> Vec<u8> {
 	padded
 }
 
-fn pad_iec_9797_1(mut data: Vec<u8>) -> Vec<DataChunk> {
+fn pad_iec_9797_1(mut data: Vec<u8>, with_padding_tail_value: bool) -> Vec<DataChunk> {
 	let padded_size = padded_len_of_pad_iec_9797_1(data.len().saturated_into());
-	// Add `PADDING_TAIL_VALUE` and fill with zeros.
-	data.push(PADDING_TAIL_VALUE);
+	if with_padding_tail_value {
+		// Add `PADDING_TAIL_VALUE` and fill with zeros.
+		data.push(PADDING_TAIL_VALUE);
+	}
 	data.resize(padded_size as usize, 0u8);
 
 	// Transform into `DataChunk`.
@@ -473,12 +476,13 @@ pub fn par_build_commitments<M: Metrics>(
 	extrinsics_by_key: &[AppExtrinsic],
 	rng_seed: Seed,
 	metrics: &M,
+	with_padding_tail_value: bool
 ) -> Result<(XtsLayout, Vec<u8>, BlockDimensions, DMatrix<BlsScalar>), Error> {
 	let start = Instant::now();
 
 	// generate data matrix first
 	let (tx_layout, block, block_dims) =
-		flatten_and_pad_block(rows, cols, chunk_size, extrinsics_by_key, rng_seed)?;
+		flatten_and_pad_block(rows, cols, chunk_size, extrinsics_by_key, rng_seed, with_padding_tail_value)?;
 
 	metrics.block_dims_and_size(block_dims, block.len().saturated_into());
 
@@ -709,7 +713,7 @@ mod tests {
 	#[test_case( 1..=34 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20212280000000000000000000000000000000000000000000000000000000" ; "Chunk 2 value longer")]
 	// newapi ignore
 	fn test_padding<I: Iterator<Item = u8>>(block: I) -> String {
-		let padded = pad_iec_9797_1(block.collect())
+		let padded = pad_iec_9797_1(block.collect(), true)
 			.iter()
 			.flat_map(|e| e.to_vec())
 			.collect::<Vec<_>>();
@@ -735,6 +739,7 @@ mod tests {
 			TCHUNK,
 			extrinsics.as_slice(),
 			Seed::default(),
+			true,
 		)
 		.unwrap();
 
@@ -854,7 +859,7 @@ mod tests {
 	fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy())  {
 		let metrics = IgnoreMetrics {};
 		let (layout, commitments, dims, matrix) = par_build_commitments(
-			BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &metrics).unwrap();
+			BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &metrics, true).unwrap();
 
 		let columns = sample_cells_from_matrix(&matrix, None);
 		let extended_dims = dims.try_into().unwrap();
@@ -891,7 +896,7 @@ mod tests {
 	#[test]
 	// newapi done
 	fn test_commitments_verify(ref xts in app_extrinsics_strategy())  {
-		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
+		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &IgnoreMetrics{}, true).unwrap();
 
 		let index = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
 		let dims_cols = usize::try_from(dims.cols.0).unwrap();
@@ -911,7 +916,7 @@ mod tests {
 	#[test]
 	// newapi done
 	fn verify_commitmnets_missing_row(ref xts in app_extrinsics_strategy())  {
-		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
+		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &IgnoreMetrics{}, true).unwrap();
 
 		let index = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
 		let dims_cols = usize::try_from(dims.cols.0).unwrap();
@@ -944,6 +949,7 @@ mod tests {
 			&[AppExtrinsic::from(original_data.to_vec())],
 			hash,
 			&IgnoreMetrics {},
+			true,
 		)
 		.unwrap();
 
@@ -976,6 +982,7 @@ get erasure coded to ensure redundancy."#;
 			TCHUNK,
 			&xts,
 			hash,
+			true
 		)?;
 		let matrix = par_extend_data_matrix(dims, &data[..], &IgnoreMetrics {})?;
 
@@ -1016,6 +1023,7 @@ get erasure coded to ensure redundancy."#;
 			TCHUNK,
 			&xts,
 			hash,
+			true
 		)?;
 		let matrix = par_extend_data_matrix(dims, &data[..], &IgnoreMetrics {})?;
 		let dimensions: Dimensions = dims.try_into()?;
@@ -1058,6 +1066,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			TCHUNK,
 			&[AppExtrinsic::from(orig_data.to_vec())],
 			hash,
+			true,
 		)?;
 
 		let matrix = par_extend_data_matrix(dims, &data[..], &IgnoreMetrics {})?;
@@ -1091,6 +1100,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			TCHUNK,
 			&xts,
 			hash,
+			true,
 		)?;
 
 		let matrix = par_extend_data_matrix(dims, &data[..], &IgnoreMetrics {})?;
@@ -1151,7 +1161,9 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let chunk_size = NonZeroU32::new(chunk_size).expect("Invalid chunk size .qed");
 		extrinsics
 			.into_iter()
-			.flat_map(pad_iec_9797_1)
+			.flat_map(|data| {
+				pad_iec_9797_1(data, true)
+			})
 			.map(|chunk| pad_to_chunk(chunk, chunk_size).len())
 			.sum::<usize>()
 			.saturated_into()
@@ -1178,6 +1190,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			&xts,
 			hash,
 			&IgnoreMetrics {},
+			true,
 		)
 		.unwrap();
 	}
@@ -1199,6 +1212,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			&xts,
 			hash,
 			&IgnoreMetrics {},
+			true,
 		)
 		.unwrap();
 	}

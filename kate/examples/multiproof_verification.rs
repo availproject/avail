@@ -46,7 +46,7 @@ fn multiproof_verification() -> Result<bool, AppError> {
 			},
 		];
 		let seed = Seed::default();
-		let grid = EvaluationGrid::from_extrinsics(exts, 4, 256, 256, seed)?
+		let grid = EvaluationGrid::from_extrinsics(exts, 4, 256, 256, seed, true)?
 			.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })?;
 
 		// Setup, serializing as bytes

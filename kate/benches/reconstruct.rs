@@ -117,6 +117,7 @@ fn reconstruct(xts: &[AppExtrinsic]) {
 		xts,
 		Seed::default(),
 		&metrics,
+		true
 	)
 	.unwrap();
 
