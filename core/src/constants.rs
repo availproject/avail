@@ -2,11 +2,6 @@ use core::num::NonZeroU32;
 use sp_arithmetic::Perbill;
 use static_assertions::const_assert;
 
-pub mod well_known_keys {
-	/// Public params used to generate Kate commitment
-	pub const KATE_PUBLIC_PARAMS: &[u8] = b":kate_public_params:";
-}
-
 /// We allow `Normal` extrinsics to fill up the block up to 85%, the rest can be used
 /// by  Operational  extrinsics.
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(85);
