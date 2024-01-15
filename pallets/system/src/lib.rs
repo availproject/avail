@@ -1554,8 +1554,6 @@ impl<T: Config> Pallet<T> {
 		if Self::bridge_nonce() != new_nonce {
 			BridgeNonce::<T>::put(new_nonce);
 		}
-		// let dr_digest = generic::DigestItem::Other(successful_indices.encode());
-		// Self::deposit_log(dr_digest);
 		let digest = <Digest<T>>::get();
 
 		// move block hash pruning window by one block

@@ -63,7 +63,6 @@ where
 	type Transaction = <I as BlockImportT<B>>::Transaction;
 
 	/// It verifies that header extension (Kate commitment & data root) is properly calculated.
-	// TODO: Optimise this fn after testing the PoC
 	async fn import_block(
 		&mut self,
 		block: BlockImportParams<B, Self::Transaction>,
@@ -97,7 +96,6 @@ where
 			return Ok(import_block_res);
 		}
 
-		// This is were the magic happens.
 		let success = build_data_root_and_extension(
 			self,
 			best_hash,

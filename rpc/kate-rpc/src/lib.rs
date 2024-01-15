@@ -1,5 +1,4 @@
 #![deny(unused_crate_dependencies)]
-
 use core::num::NonZeroU16;
 use std::{marker::Sync, sync::Arc};
 

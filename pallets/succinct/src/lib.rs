@@ -466,7 +466,6 @@ pub mod pallet {
 						value.is_none() && asset_id.is_none() && data.is_some(),
 						Error::<T>::InvalidBridgeInputs
 					);
-					// What to do?
 					Self::deposit_event(Event::MessageSubmitted {
 						from: who,
 						to,
