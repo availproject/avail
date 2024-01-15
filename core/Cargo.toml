@@ -8,12 +8,17 @@ license = "Apache-2.0"
 [dependencies]
 # Others
 derive_more = { version = "0.99.17", default-features = false, features = ["constructor", "from", "add", "deref", "mul", "into"] }
+ethabi = { version = "18.0.0", default-features = false }
 hash256-std-hasher = { version = "0.15.2", default-features = false }
 hex = { version = "0.4", optional = true, default-features = false, features = ["alloc", "serde"] }
 log = { version = "0.4.8", default-features = false }
 serde = { version = "1.0.163", default-features = false, features = ["derive", "alloc"], optional = true }
 static_assertions = { version = "1.1.0" }
 thiserror-no-std = { version = "2.0.2" }
+
+nomad-core = {path = "../nomad/core", default-features = false}
+tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
+
 
 # Substrate
 binary-merkle-tree = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
@@ -41,10 +46,11 @@ std = [
 	"binary-merkle-tree?/std",
 	"codec/std",
 	"derive_more/display",
-	"frame-support?/std",
+	"frame-support/std",
 	"hash256-std-hasher/std",
 	"hex",
 	"log/std",
+	"nomad-core/std",
 	"scale-info/std",
 	"serde/std",
 	"sp-arithmetic/std",
