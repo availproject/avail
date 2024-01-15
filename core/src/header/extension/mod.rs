@@ -18,6 +18,7 @@ pub mod v2;
 pub enum HeaderExtension {
 	V1(v1::HeaderExtension),
 	V2(v2::HeaderExtension),
+	V3(v2::HeaderExtension),
 }
 
 /// It forwards the call to the inner version of the header. Any invalid version will return the
@@ -27,6 +28,7 @@ macro_rules! forward_to_version {
 		match $self {
 			HeaderExtension::V1(ext) => ext.$function(),
 			HeaderExtension::V2(ext) => ext.$function(),
+			HeaderExtension::V3(ext) => ext.$function(),
 		}
 	}};
 
@@ -34,6 +36,7 @@ macro_rules! forward_to_version {
 		match $self {
 			HeaderExtension::V1(ext) => ext.$function($arg),
 			HeaderExtension::V2(ext) => ext.$function($arg),
+			HeaderExtension::V3(ext) => ext.$function($arg),
 		}
 	}};
 }
@@ -73,5 +76,12 @@ impl From<v2::HeaderExtension> for HeaderExtension {
 	#[inline]
 	fn from(ext: v2::HeaderExtension) -> Self {
 		Self::V2(ext)
+	}
+}
+
+impl From<v3::HeaderExtension> for HeaderExtension {
+	#[inline]
+	fn from(ext: v3::HeaderExtension) -> Self {
+		Self::V3(ext)
 	}
 }

@@ -403,6 +403,23 @@ mod tests {
 		}
 	}
 
+	/// The `commitment.data_root is none`.
+	fn header_v3() -> THeader {
+		let commitment = v2::KateCommitment {
+				commitment: hex!("80e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e975980e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e9759").to_vec(),
+				..Default::default()
+			};
+		let extension = extension::v3::HeaderExtension {
+			commitment,
+			..Default::default()
+		};
+
+		THeader {
+			extension: extension.into(),
+			..Default::default()
+		}
+	}
+
 	/// It creates a corrupted V2 header and the associated error on decodification.
 	fn corrupted_header() -> (Vec<u8>, Error) {
 		let mut encoded = header_v1().encode();
@@ -415,6 +432,7 @@ mod tests {
 
 	#[test_case( header_v1().encode().as_ref() => Ok(header_v1()) ; "Decode V1 header")]
 	#[test_case( header_v2().encode().as_ref() => Ok(header_v2()) ; "Decode V2 header")]
+	#[test_case( header_v3().encode().as_ref() => Ok(header_v3()) ; "Decode V3 header")]
 	#[test_case( corrupted_header().0.as_ref() => Err(corrupted_header().1) ; "Decode corrupted header")]
 	fn header_decoding(mut encoded_header: &[u8]) -> Result<THeader, Error> {
 		Header::decode(&mut encoded_header)
@@ -429,7 +447,6 @@ mod tests {
 		serde_json::from_str(&json_header).map_err(|serde_err| format!("{}", serde_err))
 	}
 
-	/// It is the header of block #368726 of current testnet.
 	fn header() -> (THeader, H256) {
 		let commitment = v1::KateCommitment {
 			rows:1,
@@ -490,6 +507,9 @@ mod tests {
 			extension::HeaderExtension::V2(ref mut ext) => {
 				ext.commitment.commitment = b"invalid commitment v2".to_vec();
 			},
+			extension::HeaderExtension::V3(ref mut ext) => {
+				ext.commitment.commitment = b"invalid commitment v3".to_vec();
+			},
 		};
 
 		(header, hash)
@@ -503,6 +523,9 @@ mod tests {
 				ext.commitment.data_root = H256::repeat_byte(1u8);
 			},
 			extension::HeaderExtension::V2(ref mut ext) => {
+				ext.commitment.data_root = H256::repeat_byte(2u8);
+			},
+			extension::HeaderExtension::V3(ref mut ext) => {
 				ext.commitment.data_root = H256::repeat_byte(2u8);
 			},
 		};
@@ -520,6 +543,9 @@ mod tests {
 			extension::HeaderExtension::V2(ref mut ext) => {
 				ext.commitment.cols += 2;
 			},
+			extension::HeaderExtension::V3(ref mut ext) => {
+				ext.commitment.cols += 2;
+			},
 		};
 
 		(header, hash)
@@ -533,6 +559,9 @@ mod tests {
 				ext.commitment.rows += 1;
 			},
 			extension::HeaderExtension::V2(ref mut ext) => {
+				ext.commitment.rows += 2;
+			},
+			extension::HeaderExtension::V3(ref mut ext) => {
 				ext.commitment.rows += 2;
 			},
 		};
