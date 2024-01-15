@@ -78,10 +78,3 @@ impl From<v2::HeaderExtension> for HeaderExtension {
 		Self::V2(ext)
 	}
 }
-
-impl From<v3::HeaderExtension> for HeaderExtension {
-	#[inline]
-	fn from(ext: v3::HeaderExtension) -> Self {
-		Self::V3(ext)
-	}
-}
