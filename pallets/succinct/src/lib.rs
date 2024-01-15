@@ -23,7 +23,7 @@ mod weights;
 pub type FunctionInput = BoundedVec<u8, ConstU32<256>>;
 pub type FunctionOutput = BoundedVec<u8, ConstU32<512>>;
 pub type FunctionProof = BoundedVec<u8, ConstU32<1048>>;
-pub type ValidProof = BoundedVec<BoundedVec<u8, ConstU32<2048>>, ConstU32<256>>;
+pub type ValidProof = BoundedVec<BoundedVec<u8, ConstU32<2048>>, ConstU32<32>>;
 
 // Avail asset is supported for now
 pub const SUPPORTED_ASSET_ID: H256 = H256::zero();
