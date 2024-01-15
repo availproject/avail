@@ -756,7 +756,7 @@ pub mod api {
 			use ::subxt::metadata::DecodeWithMetadata;
 			let cursor = &mut &pallet_bytes[..];
 			if pallet_name == "System" {
-				let variant_error = system::Error::decode_with_metadata(cursor, 128u32, metadata)?;
+				let variant_error = system::Error::decode_with_metadata(cursor, 130u32, metadata)?;
 				return Ok(Error::System(variant_error));
 			}
 			if pallet_name == "Utility" {
@@ -1202,9 +1202,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				88u8, 186u8, 111u8, 229u8, 38u8, 102u8, 240u8, 107u8, 130u8, 95u8, 20u8, 236u8,
-				40u8, 129u8, 153u8, 135u8, 170u8, 77u8, 120u8, 92u8, 84u8, 23u8, 227u8, 112u8,
-				225u8, 75u8, 98u8, 69u8, 140u8, 235u8, 101u8, 162u8,
+				1u8, 163u8, 146u8, 251u8, 53u8, 208u8, 122u8, 175u8, 168u8, 134u8, 225u8, 70u8,
+				225u8, 3u8, 26u8, 82u8, 237u8, 130u8, 159u8, 254u8, 173u8, 173u8, 43u8, 190u8,
+				172u8, 199u8, 148u8, 33u8, 172u8, 2u8, 78u8, 176u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -1988,9 +1988,9 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							71u8, 196u8, 53u8, 94u8, 119u8, 56u8, 237u8, 188u8, 234u8, 156u8, 91u8,
-							106u8, 13u8, 161u8, 190u8, 28u8, 116u8, 207u8, 8u8, 2u8, 113u8, 34u8,
-							99u8, 88u8, 100u8, 177u8, 254u8, 246u8, 140u8, 197u8, 85u8, 172u8,
+							130u8, 49u8, 146u8, 10u8, 60u8, 248u8, 139u8, 14u8, 50u8, 45u8, 152u8,
+							254u8, 112u8, 88u8, 164u8, 10u8, 57u8, 26u8, 124u8, 109u8, 131u8, 84u8,
+							120u8, 140u8, 128u8, 120u8, 144u8, 192u8, 23u8, 3u8, 190u8, 90u8,
 						],
 					)
 				}
@@ -20847,6 +20847,7 @@ pub mod api {
 			pub struct HeaderUpdate {
 				pub slot: ::core::primitive::u64,
 				pub finalization_root: ::subxt::utils::H256,
+				pub execution_state_root: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for HeaderUpdate {
 				const PALLET: &'static str = "Succinct";
@@ -20912,11 +20913,8 @@ pub mod api {
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 			#[doc = "emit when message gets executed."]
 			pub struct ExecutedMessage {
-				pub chain_id: ::core::primitive::u32,
-				pub nonce: ::core::primitive::u64,
+				pub message: runtime_types::avail_core::data_proof_v2::Message,
 				pub message_root: ::subxt::utils::H256,
-				pub status: ::core::primitive::bool,
-				pub msg_type: runtime_types::avail_core::data_proof_v2::MessageType,
 			}
 			impl ::subxt::events::StaticEvent for ExecutedMessage {
 				const PALLET: &'static str = "Succinct";
@@ -29413,6 +29411,7 @@ pub mod api {
 					HeaderUpdate {
 						slot: ::core::primitive::u64,
 						finalization_root: ::subxt::utils::H256,
+						execution_state_root: ::subxt::utils::H256,
 					},
 					#[codec(index = 1)]
 					#[doc = "emit event once the sync committee updates."]
@@ -29430,11 +29429,8 @@ pub mod api {
 					#[codec(index = 3)]
 					#[doc = "emit when message gets executed."]
 					ExecutedMessage {
-						chain_id: ::core::primitive::u32,
-						nonce: ::core::primitive::u64,
+						message: runtime_types::avail_core::data_proof_v2::Message,
 						message_root: ::subxt::utils::H256,
-						status: ::core::primitive::bool,
-						msg_type: runtime_types::avail_core::data_proof_v2::MessageType,
 					},
 					#[codec(index = 4)]
 					#[doc = "emit if source chain gets frozen."]
