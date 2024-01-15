@@ -14,10 +14,10 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 # Our crates
-nomad-signature = { git = "https://github.com/availproject/avail-core", branch = "add_new_proof_gen", default-features = false }
-nomad-merkle = { git = "https://github.com/availproject/avail-core", branch = "add_new_proof_gen", default-features = false }
-nomad-base = { git = "https://github.com/availproject/avail-core", branch = "add_new_proof_gen", default-features = false }
-nomad-core = { git = "https://github.com/availproject/avail-core", branch = "add_new_proof_gen", default-features = false }
+nomad-signature = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false }
+nomad-merkle = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false }
+nomad-base = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false }
+nomad-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false }
 nomad-updater-manager = { path = "../updater-manager", default-features = false }
 
 # Substrate 
@@ -34,7 +34,7 @@ frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", bran
 hex-literal = { version = "0.3.4", optional = true }
 
 [dev-dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "add_new_proof_gen", features = ["runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", features = ["runtime"] }
 frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 test-case = "1.2.3"

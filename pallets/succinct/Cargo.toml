@@ -16,7 +16,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "po
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "add_new_proof_gen", default-features = false, features = ["runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false, features = ["runtime"] }
 
 
 ark-bn254 = { version = "0.3.0", default-features = false, features = ["curve"] }

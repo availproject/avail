@@ -12,9 +12,9 @@ sp-keyring = { git = "https://github.com/paritytech/substrate.git", branch = "po
 subxt = "0.29"
 anyhow = "1.0.66"
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "full", "bit-vec"] }
-kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "add_new_proof_gen" }
-kate = { git = "https://github.com/availproject/avail-core", branch = "add_new_proof_gen" }
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "add_new_proof_gen" }
+kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0" }
+kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0" }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0" }
 binary-merkle-tree = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 serde = { version = "1.0.163", default-features = false, features = ["derive", "alloc"] }
 
