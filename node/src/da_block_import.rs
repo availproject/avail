@@ -164,7 +164,7 @@ where
 
 	let generated_ext = match header_version {
 		HeaderVersion::V1 => {
-			log::info!(target: "DA_IMPORT_BLOCK", "V1 validation..");
+			log::debug!(target: "DA_IMPORT_BLOCK", "V1 validation..");
 			let data_root = block_import
 				.client
 				.runtime_api()
@@ -178,14 +178,14 @@ where
 				.map_err(|e| ClientImport(format!("Build extension fails due to: {e:?}")))?
 		},
 		_ => {
-			log::info!(target: "DA_IMPORT_BLOCK", "V2 validation..");
+			log::debug!(target: "DA_IMPORT_BLOCK", "V2 validation..");
 			let success_indices: Vec<u32> = block_import
 				.client
 				.runtime_api()
 				.successful_extrinsic_indices(import_block_hash)
 				.map_err(|_e| ClientImport("Failed to fetch the successful indices".into()))?;
 
-			log::info!(
+			log::debug!(
 				target: "DA_IMPORT_BLOCK",
 				"success_indices: {:?} at: {}",
 				success_indices,
