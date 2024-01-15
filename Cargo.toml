@@ -24,6 +24,7 @@ pallet-nomination-pools-runtime-api = { path = "pallets/nomination-pools/runtime
 # Customized Local pallets
 
 # Other stuff
+uint = { git = "https://github.com/paritytech/parity-common.git", tag = "uint-v0.9.5" }
 rlp = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }
 
 ## CLI
