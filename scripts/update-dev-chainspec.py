@@ -34,7 +34,6 @@ rt["staking"]["minNominatorBond"] = 10000000000000000000
 rt["staking"]["minValidatorBond"] = 1000000000000000000000
 rt["session"]["keys"] = []
 rt["technicalCommittee"]["members"] = []
-rt["elections"]["members"] = []
 
 for node in nodes:
     rt["balances"]["balances"].append([
@@ -60,15 +59,10 @@ for node in nodes:
         ])
     if re.match("tech-committee-", node):
         rt["technicalCommittee"]["members"].append(nodes[node]["wallet"]["sr25519"]["ss58PublicKey"])
-    if re.match("election-", node):
-        rt["elections"]["members"].append([
-            nodes[node]["wallet"]["sr25519"]["ss58PublicKey"],
-            1000000000000000000
-        ])
 
 new_app_keys = []
 for key in rt["dataAvailability"]["appKeys"]:
-    key[1]["owner"] = nodes["sudo-01"]["wallet"]["sr25519"]["ss58PublicKey"]
+    key[1][0] = nodes["sudo-01"]["wallet"]["sr25519"]["ss58PublicKey"]
     new_app_keys.append(key)
 rt["dataAvailability"]["appKeys"] = new_app_keys
 

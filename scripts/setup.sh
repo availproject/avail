@@ -73,7 +73,7 @@ python3 consolidate-keys.py $HOME/avail-keys
 
 ## Generating dynamic spec.
 
-data-avail build-spec --disable-default-bootnode --chain testnet > $HOME/avail-keys/devnet.template.json
+data-avail build-spec --disable-default-bootnode --chain dev > $HOME/avail-keys/devnet.template.json
 python3 update-dev-chainspec.py $HOME/avail-keys
 data-avail build-spec --chain=$HOME/avail-keys/populated.devnet.chainspec.json --raw --disable-default-bootnode > $HOME/avail-keys/populated.devnet.chainspec.raw.json
 CHAIN_NAME=$(cat $HOME/avail-keys/populated.devnet.chainspec.raw.json | jq -r .id)
@@ -134,7 +134,7 @@ do
     mkdir -p $HOME/avail-home/avail-fullnodes/node-$i/chains/$CHAIN_NAME/network
     DIFF=$(($i - 1))
     INC=$(($DIFF * 2))
-    RPC=$((9933 + $INC))
+    RPC=$((9944 + $INC))
     P2P=$((30135 + $INC))
     PROM=$((6100 + $INC))
     echo "[Unit]
@@ -143,7 +143,7 @@ do
     [Service]
     Type=simple
     User=$USER
-    ExecStart=$(which data-avail) --rpc-cors=all --rpc-port $RPC --port $P2P --prometheus-port $PROM --ws-external --rpc-external --unsafe-ws-external --unsafe-rpc-external --no-mdns --allow-private-ipv4 --base-path $HOME/avail-home/avail-fullnodes/node-$i --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json $(cat $HOME/avail-keys/bootnode.txt) 
+    ExecStart=$(which data-avail) --rpc-cors=all --rpc-port $RPC --port $P2P --prometheus-port $PROM --rpc-external --unsafe-rpc-external --no-mdns --allow-private-ipv4 --base-path $HOME/avail-home/avail-fullnodes/node-$i --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json $(cat $HOME/avail-keys/bootnode.txt) 
     Restart=on-failure
     RuntimeMaxSec=1d
     RestartSec=3
@@ -162,14 +162,14 @@ done
 data-avail key generate-node-key 2> $HOME/avail-keys/light-client-boot.public.key 1> $HOME/avail-keys/light-client-boot.private.key
 mkdir -p $HOME/avail-home/avail-light/light-1
 echo "log_level = \"info\"
-p2p_port = 3700
+p2p_port = 39000
 secret_key = { key =  \"$(cat $HOME/avail-keys/light-client-boot.private.key)\" }
 identify_protocol = \"/avail_kad/id/1.0.0\"
 identify_agent = \"avail-light-client/rust-client\"
 kad_connection_idle_timeout = 30
 kad_query_timeout = 60
 avail_path = \"$HOME/avail-home/avail-light/light-1\"
-" | sudo tee "$HOME/avail-home/avail-light/light-1/config.yaml"
+" | tee "$HOME/avail-home/avail-light/light-1/config.yaml"
 echo "HTTP port of bootstrap light client is: http://$IP:7000" >> $HOME/endpoints.txt
 
 ## Generate config files for light clients
@@ -184,15 +184,14 @@ do
     HTTP=$((7001 + $INC))
     echo "log_level = \"info\"
     http_server_host = \"127.0.0.1\"
-    http_server_port = \"$HTTP\"
-    libp2p_seed = 1
-    libp2p_port = \"$P2P\"
-    bootstraps = [[\"$(cat $HOME/avail-keys/light-client-boot.public.key)\", \"/ip4/127.0.0.1/tcp/3700\"]]
-    full_node_ws = [\"ws://127.0.0.1:9933\"]
+    http_server_port = $HTTP
+    port = $P2P
+    bootstraps = [[\"$(cat $HOME/avail-keys/light-client-boot.public.key)\", \"/ip4/127.0.0.1/tcp/39001\"]]
+    full_node_ws = [\"ws://127.0.0.1:9944\"]
     app_id = 0
     confidence = 92.0
     prometheus_port = $PROM
-    avail_path = \"$HOME/avail-home/avail-light/light-$i\" " | sudo tee "$HOME/avail-home/avail-light/light-$i/config.yaml" 
+    avail_path = \"$HOME/avail-home/avail-light/light-$i\" " | tee "$HOME/avail-home/avail-light/light-$i/config.yaml" 
     echo "HTTP port of light client $i is: http://$IP:$HTTP" >> $HOME/endpoints.txt
 done
 
@@ -204,7 +203,7 @@ After=network.target
 [Service]
 Type=simple
 User=$USER
-ExecStart=$(which avail-light-bootstrap) -C $HOME/avail-home/avail-light/light-1/config.yaml
+ExecStart=$(which avail-light-bootstrap) -c $HOME/avail-home/avail-light/light-1/config.yaml
 Restart=on-failure
 RuntimeMaxSec=1d
 RestartSec=3
@@ -242,7 +241,96 @@ cd ~/
 wget https://github.com/availproject/avail-apps/releases/download/v1.6-rc2/avail-explorer.tar.gz
 tar -xvf avail-explorer.tar.gz
 rm avail-explorer.tar.gz
-echo "window.process_env = {"\"WS_URL"\": "\"ws://$IP:9933"\"};" >> build/env-config.js
+echo "window.process_env = {"\"WS_URL"\": "\"ws://$IP:9944"\"};" >> build/env-config.js
 sudo cp -r build/* /var/www/html/
 sudo systemctl restart apache2
 echo "Explorer url is http://$IP" >> $HOME/endpoints.txt
+
+# Setting up observability components
+
+# Setting up Prometheus job for collecting metrics
+cd ~/
+cp prometheus-example.yaml prometheus.yaml
+for (( i=1; i<=$VAL_COUNT; i++ ))
+do
+    DIFF=$(($i - 1))
+    INC=$(($DIFF * 2))
+    PROM=$((6000 + $INC))
+    echo "  - job_name: \"validator-$i\"
+    static_configs:
+      - targets: [\"localhost:$PROM\"]" >>  prometheus.yaml
+done
+
+for (( i=1; i<=$NODE_COUNT; i++ ))
+do
+    DIFF=$(($i - 1))
+    INC=$(($DIFF * 2))
+    PROM=$((6100 + $INC))
+    echo "  - job_name: \"full-node-$i\"
+    static_configs:
+      - targets: [\"localhost:$PROM\"]
+      " >>  prometheus.yaml
+done
+
+sudo systemctl restart prometheus.service
+
+# Setting up Promtail job for collecting logs
+
+cd ~/
+cp promtail-example.yaml promtail.yaml
+
+for (( i=1; i<=$VAL_COUNT; i++ ))
+do
+    echo "  - job_name: val-$i-log
+    journal:
+      json: false
+      max_age: 12h
+      path: /var/log/journal
+      labels:
+        job: val-$i-log
+    relabel_configs:
+      - action: keep
+        source_labels: ["__journal__systemd_unit"]
+        regex: avail-val-${i}.service
+      - source_labels: ["__journal__systemd_unit"]
+        target_label: "systemd_unit"
+        " >> promtail.yaml
+done
+
+for (( i=1; i<=$NODE_COUNT; i++ ))
+do
+    echo "  - job_name: full-$i-log
+    journal:
+      json: false
+      max_age: 12h
+      path: /var/log/journal
+      labels:
+        job: full-$i-log
+    relabel_configs:
+      - action: keep
+        source_labels: ["__journal__systemd_unit"]
+        regex: avail-full-${i}.service
+      - source_labels: ["__journal__systemd_unit"]
+        target_label: "systemd_unit"
+        " >> promtail.yaml
+done
+
+for (( i=1; i<=$LC_COUNT; i++ ))
+do
+    echo "  - job_name: light-$i-log
+    journal:
+      json: false
+      max_age: 12h
+      path: /var/log/journal
+      labels:
+        job: light-$i-log
+    relabel_configs:
+      - action: keep
+        source_labels: ["__journal__systemd_unit"]
+        regex: avail-light-${i}.service
+      - source_labels: ["__journal__systemd_unit"]
+        target_label: "systemd_unit"
+        " >> promtail.yaml
+done
+
+sudo systemctl restart promtail
