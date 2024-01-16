@@ -760,130 +760,130 @@ pub mod api {
 				return Ok(Error::System(variant_error));
 			}
 			if pallet_name == "Utility" {
-				let variant_error = utility::Error::decode_with_metadata(cursor, 332u32, metadata)?;
+				let variant_error = utility::Error::decode_with_metadata(cursor, 334u32, metadata)?;
 				return Ok(Error::Utility(variant_error));
 			}
 			if pallet_name == "Babe" {
-				let variant_error = babe::Error::decode_with_metadata(cursor, 348u32, metadata)?;
+				let variant_error = babe::Error::decode_with_metadata(cursor, 350u32, metadata)?;
 				return Ok(Error::Babe(variant_error));
 			}
 			if pallet_name == "Indices" {
-				let variant_error = indices::Error::decode_with_metadata(cursor, 350u32, metadata)?;
+				let variant_error = indices::Error::decode_with_metadata(cursor, 352u32, metadata)?;
 				return Ok(Error::Indices(variant_error));
 			}
 			if pallet_name == "Balances" {
 				let variant_error =
-					balances::Error::decode_with_metadata(cursor, 365u32, metadata)?;
+					balances::Error::decode_with_metadata(cursor, 367u32, metadata)?;
 				return Ok(Error::Balances(variant_error));
 			}
 			if pallet_name == "ElectionProviderMultiPhase" {
 				let variant_error = election_provider_multi_phase::Error::decode_with_metadata(
-					cursor, 378u32, metadata,
+					cursor, 380u32, metadata,
 				)?;
 				return Ok(Error::ElectionProviderMultiPhase(variant_error));
 			}
 			if pallet_name == "Staking" {
-				let variant_error = staking::Error::decode_with_metadata(cursor, 399u32, metadata)?;
+				let variant_error = staking::Error::decode_with_metadata(cursor, 401u32, metadata)?;
 				return Ok(Error::Staking(variant_error));
 			}
 			if pallet_name == "Session" {
-				let variant_error = session::Error::decode_with_metadata(cursor, 404u32, metadata)?;
+				let variant_error = session::Error::decode_with_metadata(cursor, 406u32, metadata)?;
 				return Ok(Error::Session(variant_error));
 			}
 			if pallet_name == "TechnicalCommittee" {
 				let variant_error =
-					technical_committee::Error::decode_with_metadata(cursor, 407u32, metadata)?;
+					technical_committee::Error::decode_with_metadata(cursor, 409u32, metadata)?;
 				return Ok(Error::TechnicalCommittee(variant_error));
 			}
 			if pallet_name == "TechnicalMembership" {
 				let variant_error =
-					technical_membership::Error::decode_with_metadata(cursor, 409u32, metadata)?;
+					technical_membership::Error::decode_with_metadata(cursor, 411u32, metadata)?;
 				return Ok(Error::TechnicalMembership(variant_error));
 			}
 			if pallet_name == "Grandpa" {
-				let variant_error = grandpa::Error::decode_with_metadata(cursor, 413u32, metadata)?;
+				let variant_error = grandpa::Error::decode_with_metadata(cursor, 415u32, metadata)?;
 				return Ok(Error::Grandpa(variant_error));
 			}
 			if pallet_name == "Treasury" {
 				let variant_error =
-					treasury::Error::decode_with_metadata(cursor, 418u32, metadata)?;
+					treasury::Error::decode_with_metadata(cursor, 420u32, metadata)?;
 				return Ok(Error::Treasury(variant_error));
 			}
 			if pallet_name == "Sudo" {
-				let variant_error = sudo::Error::decode_with_metadata(cursor, 419u32, metadata)?;
+				let variant_error = sudo::Error::decode_with_metadata(cursor, 421u32, metadata)?;
 				return Ok(Error::Sudo(variant_error));
 			}
 			if pallet_name == "ImOnline" {
 				let variant_error =
-					im_online::Error::decode_with_metadata(cursor, 422u32, metadata)?;
+					im_online::Error::decode_with_metadata(cursor, 424u32, metadata)?;
 				return Ok(Error::ImOnline(variant_error));
 			}
 			if pallet_name == "Scheduler" {
 				let variant_error =
-					scheduler::Error::decode_with_metadata(cursor, 434u32, metadata)?;
+					scheduler::Error::decode_with_metadata(cursor, 436u32, metadata)?;
 				return Ok(Error::Scheduler(variant_error));
 			}
 			if pallet_name == "Bounties" {
 				let variant_error =
-					bounties::Error::decode_with_metadata(cursor, 438u32, metadata)?;
+					bounties::Error::decode_with_metadata(cursor, 440u32, metadata)?;
 				return Ok(Error::Bounties(variant_error));
 			}
 			if pallet_name == "Tips" {
-				let variant_error = tips::Error::decode_with_metadata(cursor, 440u32, metadata)?;
+				let variant_error = tips::Error::decode_with_metadata(cursor, 442u32, metadata)?;
 				return Ok(Error::Tips(variant_error));
 			}
 			if pallet_name == "DataAvailability" {
 				let variant_error =
-					data_availability::Error::decode_with_metadata(cursor, 442u32, metadata)?;
+					data_availability::Error::decode_with_metadata(cursor, 444u32, metadata)?;
 				return Ok(Error::DataAvailability(variant_error));
 			}
 			if pallet_name == "NomadUpdaterManager" {
 				let variant_error =
-					nomad_updater_manager::Error::decode_with_metadata(cursor, 443u32, metadata)?;
+					nomad_updater_manager::Error::decode_with_metadata(cursor, 445u32, metadata)?;
 				return Ok(Error::NomadUpdaterManager(variant_error));
 			}
 			if pallet_name == "NomadHome" {
 				let variant_error =
-					nomad_home::Error::decode_with_metadata(cursor, 448u32, metadata)?;
+					nomad_home::Error::decode_with_metadata(cursor, 450u32, metadata)?;
 				return Ok(Error::NomadHome(variant_error));
 			}
 			if pallet_name == "NomadDABridge" {
 				let variant_error =
-					nomad_da_bridge::Error::decode_with_metadata(cursor, 449u32, metadata)?;
+					nomad_da_bridge::Error::decode_with_metadata(cursor, 451u32, metadata)?;
 				return Ok(Error::NomadDABridge(variant_error));
 			}
 			if pallet_name == "Preimage" {
 				let variant_error =
-					preimage::Error::decode_with_metadata(cursor, 453u32, metadata)?;
+					preimage::Error::decode_with_metadata(cursor, 455u32, metadata)?;
 				return Ok(Error::Preimage(variant_error));
 			}
 			if pallet_name == "Multisig" {
 				let variant_error =
-					multisig::Error::decode_with_metadata(cursor, 456u32, metadata)?;
+					multisig::Error::decode_with_metadata(cursor, 458u32, metadata)?;
 				return Ok(Error::Multisig(variant_error));
 			}
 			if pallet_name == "VoterList" {
 				let variant_error =
-					voter_list::Error::decode_with_metadata(cursor, 460u32, metadata)?;
+					voter_list::Error::decode_with_metadata(cursor, 462u32, metadata)?;
 				return Ok(Error::VoterList(variant_error));
 			}
 			if pallet_name == "NominationPools" {
 				let variant_error =
-					nomination_pools::Error::decode_with_metadata(cursor, 479u32, metadata)?;
+					nomination_pools::Error::decode_with_metadata(cursor, 481u32, metadata)?;
 				return Ok(Error::NominationPools(variant_error));
 			}
 			if pallet_name == "Identity" {
 				let variant_error =
-					identity::Error::decode_with_metadata(cursor, 491u32, metadata)?;
+					identity::Error::decode_with_metadata(cursor, 493u32, metadata)?;
 				return Ok(Error::Identity(variant_error));
 			}
 			if pallet_name == "Succinct" {
 				let variant_error =
-					succinct::Error::decode_with_metadata(cursor, 493u32, metadata)?;
+					succinct::Error::decode_with_metadata(cursor, 495u32, metadata)?;
 				return Ok(Error::Succinct(variant_error));
 			}
 			if pallet_name == "Proxy" {
-				let variant_error = proxy::Error::decode_with_metadata(cursor, 502u32, metadata)?;
+				let variant_error = proxy::Error::decode_with_metadata(cursor, 504u32, metadata)?;
 				return Ok(Error::Proxy(variant_error));
 			}
 			Err(::subxt::ext::scale_decode::Error::custom(format!(
@@ -1202,9 +1202,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				1u8, 163u8, 146u8, 251u8, 53u8, 208u8, 122u8, 175u8, 168u8, 134u8, 225u8, 70u8,
-				225u8, 3u8, 26u8, 82u8, 237u8, 130u8, 159u8, 254u8, 173u8, 173u8, 43u8, 190u8,
-				172u8, 199u8, 148u8, 33u8, 172u8, 2u8, 78u8, 176u8,
+				52u8, 171u8, 70u8, 70u8, 40u8, 81u8, 37u8, 183u8, 180u8, 20u8, 158u8, 50u8, 17u8,
+				184u8, 255u8, 108u8, 65u8, 46u8, 67u8, 110u8, 253u8, 67u8, 129u8, 82u8, 202u8,
+				57u8, 241u8, 34u8, 179u8, 167u8, 141u8, 62u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -2477,9 +2477,9 @@ pub mod api {
 						"batch",
 						types::Batch { calls },
 						[
-							149u8, 10u8, 98u8, 65u8, 25u8, 237u8, 21u8, 231u8, 254u8, 116u8, 141u8,
-							207u8, 150u8, 27u8, 165u8, 65u8, 167u8, 251u8, 187u8, 56u8, 134u8,
-							64u8, 164u8, 109u8, 97u8, 140u8, 164u8, 80u8, 1u8, 133u8, 75u8, 99u8,
+							239u8, 100u8, 241u8, 251u8, 246u8, 211u8, 87u8, 85u8, 4u8, 61u8, 218u8,
+							243u8, 60u8, 63u8, 174u8, 62u8, 9u8, 51u8, 183u8, 142u8, 9u8, 14u8,
+							23u8, 197u8, 71u8, 227u8, 18u8, 153u8, 151u8, 9u8, 135u8, 214u8,
 						],
 					)
 				}
@@ -2497,10 +2497,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							174u8, 210u8, 22u8, 186u8, 158u8, 206u8, 120u8, 155u8, 111u8, 136u8,
-							66u8, 150u8, 231u8, 123u8, 194u8, 88u8, 2u8, 253u8, 149u8, 24u8, 151u8,
-							79u8, 188u8, 181u8, 189u8, 71u8, 28u8, 157u8, 90u8, 194u8, 153u8,
-							131u8,
+							106u8, 126u8, 206u8, 136u8, 112u8, 85u8, 88u8, 238u8, 159u8, 220u8,
+							98u8, 45u8, 234u8, 196u8, 71u8, 132u8, 93u8, 234u8, 59u8, 48u8, 219u8,
+							252u8, 15u8, 240u8, 211u8, 18u8, 143u8, 236u8, 94u8, 107u8, 151u8,
+							210u8,
 						],
 					)
 				}
@@ -2514,9 +2514,9 @@ pub mod api {
 						"batch_all",
 						types::BatchAll { calls },
 						[
-							131u8, 157u8, 220u8, 116u8, 246u8, 175u8, 151u8, 102u8, 39u8, 30u8,
-							70u8, 71u8, 210u8, 190u8, 51u8, 107u8, 61u8, 93u8, 203u8, 123u8, 40u8,
-							143u8, 119u8, 86u8, 103u8, 127u8, 135u8, 140u8, 6u8, 78u8, 100u8, 60u8,
+							118u8, 163u8, 77u8, 107u8, 91u8, 22u8, 93u8, 155u8, 248u8, 134u8, 29u8,
+							37u8, 41u8, 167u8, 36u8, 180u8, 115u8, 0u8, 178u8, 241u8, 113u8, 213u8,
+							8u8, 7u8, 217u8, 156u8, 23u8, 205u8, 102u8, 33u8, 69u8, 196u8,
 						],
 					)
 				}
@@ -2534,9 +2534,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							12u8, 74u8, 136u8, 164u8, 25u8, 214u8, 196u8, 135u8, 52u8, 194u8, 3u8,
-							222u8, 191u8, 113u8, 24u8, 212u8, 24u8, 200u8, 129u8, 216u8, 213u8,
-							123u8, 162u8, 192u8, 2u8, 6u8, 36u8, 113u8, 152u8, 148u8, 164u8, 200u8,
+							191u8, 213u8, 207u8, 217u8, 71u8, 173u8, 166u8, 105u8, 130u8, 37u8,
+							118u8, 93u8, 145u8, 163u8, 123u8, 113u8, 195u8, 178u8, 4u8, 139u8,
+							165u8, 45u8, 252u8, 152u8, 248u8, 226u8, 31u8, 92u8, 166u8, 13u8,
+							199u8, 53u8,
 						],
 					)
 				}
@@ -2550,9 +2551,10 @@ pub mod api {
 						"force_batch",
 						types::ForceBatch { calls },
 						[
-							111u8, 150u8, 225u8, 61u8, 43u8, 57u8, 30u8, 207u8, 9u8, 58u8, 76u8,
-							221u8, 45u8, 122u8, 21u8, 102u8, 11u8, 222u8, 245u8, 108u8, 201u8,
-							142u8, 50u8, 9u8, 57u8, 5u8, 68u8, 80u8, 157u8, 38u8, 73u8, 136u8,
+							224u8, 121u8, 36u8, 123u8, 82u8, 178u8, 163u8, 236u8, 32u8, 97u8,
+							196u8, 129u8, 72u8, 4u8, 178u8, 140u8, 254u8, 226u8, 201u8, 174u8,
+							164u8, 86u8, 130u8, 146u8, 13u8, 41u8, 213u8, 115u8, 165u8, 35u8, 78u8,
+							190u8,
 						],
 					)
 				}
@@ -2570,10 +2572,9 @@ pub mod api {
 							weight,
 						},
 						[
-							127u8, 254u8, 174u8, 238u8, 127u8, 247u8, 196u8, 199u8, 222u8, 246u8,
-							38u8, 103u8, 207u8, 108u8, 96u8, 248u8, 17u8, 217u8, 10u8, 136u8,
-							161u8, 172u8, 219u8, 13u8, 233u8, 20u8, 49u8, 58u8, 101u8, 200u8,
-							203u8, 232u8,
+							182u8, 173u8, 100u8, 240u8, 38u8, 246u8, 191u8, 71u8, 106u8, 15u8,
+							61u8, 79u8, 28u8, 41u8, 233u8, 245u8, 131u8, 58u8, 29u8, 157u8, 180u8,
+							192u8, 26u8, 11u8, 180u8, 237u8, 107u8, 240u8, 12u8, 25u8, 203u8, 23u8,
 						],
 					)
 				}
@@ -2842,9 +2843,9 @@ pub mod api {
 							key_owner_proof,
 						},
 						[
-							21u8, 124u8, 152u8, 173u8, 181u8, 212u8, 110u8, 247u8, 108u8, 14u8,
-							118u8, 56u8, 96u8, 69u8, 136u8, 173u8, 114u8, 69u8, 31u8, 187u8, 72u8,
-							200u8, 99u8, 37u8, 6u8, 161u8, 128u8, 140u8, 92u8, 43u8, 106u8, 11u8,
+							163u8, 83u8, 110u8, 20u8, 138u8, 34u8, 250u8, 211u8, 96u8, 14u8, 151u8,
+							70u8, 139u8, 207u8, 238u8, 233u8, 25u8, 202u8, 111u8, 2u8, 64u8, 84u8,
+							72u8, 218u8, 164u8, 12u8, 164u8, 25u8, 178u8, 45u8, 182u8, 242u8,
 						],
 					)
 				}
@@ -2868,9 +2869,10 @@ pub mod api {
 							key_owner_proof,
 						},
 						[
-							147u8, 122u8, 88u8, 241u8, 82u8, 205u8, 154u8, 127u8, 239u8, 157u8,
-							78u8, 65u8, 29u8, 148u8, 155u8, 241u8, 88u8, 218u8, 53u8, 211u8, 34u8,
-							19u8, 158u8, 253u8, 47u8, 237u8, 6u8, 171u8, 43u8, 234u8, 137u8, 20u8,
+							132u8, 180u8, 149u8, 236u8, 75u8, 252u8, 188u8, 41u8, 196u8, 74u8,
+							159u8, 144u8, 27u8, 126u8, 30u8, 67u8, 95u8, 234u8, 86u8, 158u8, 36u8,
+							218u8, 163u8, 243u8, 127u8, 143u8, 116u8, 218u8, 103u8, 248u8, 134u8,
+							215u8,
 						],
 					)
 				}
@@ -9839,9 +9841,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							13u8, 7u8, 219u8, 64u8, 102u8, 5u8, 93u8, 127u8, 200u8, 194u8, 64u8,
-							135u8, 236u8, 39u8, 133u8, 77u8, 217u8, 33u8, 9u8, 200u8, 255u8, 217u8,
-							4u8, 20u8, 167u8, 83u8, 140u8, 155u8, 172u8, 35u8, 211u8, 39u8,
+							41u8, 175u8, 24u8, 44u8, 237u8, 6u8, 212u8, 27u8, 8u8, 23u8, 243u8,
+							99u8, 243u8, 85u8, 75u8, 198u8, 1u8, 149u8, 3u8, 175u8, 203u8, 24u8,
+							246u8, 99u8, 124u8, 154u8, 175u8, 169u8, 249u8, 97u8, 204u8, 35u8,
 						],
 					)
 				}
@@ -9861,10 +9863,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							104u8, 41u8, 64u8, 127u8, 97u8, 167u8, 5u8, 160u8, 133u8, 162u8, 227u8,
-							216u8, 193u8, 88u8, 211u8, 238u8, 49u8, 21u8, 235u8, 140u8, 114u8,
-							163u8, 12u8, 236u8, 197u8, 78u8, 200u8, 62u8, 58u8, 144u8, 179u8,
-							249u8,
+							69u8, 216u8, 135u8, 74u8, 138u8, 16u8, 98u8, 71u8, 3u8, 182u8, 175u8,
+							44u8, 4u8, 13u8, 188u8, 90u8, 205u8, 140u8, 84u8, 146u8, 23u8, 147u8,
+							72u8, 73u8, 98u8, 163u8, 64u8, 4u8, 58u8, 216u8, 179u8, 196u8,
 						],
 					)
 				}
@@ -10143,10 +10144,10 @@ pub mod api {
 							_0.borrow(),
 						)],
 						[
-							176u8, 188u8, 61u8, 104u8, 222u8, 177u8, 46u8, 78u8, 19u8, 199u8, 73u8,
-							186u8, 126u8, 131u8, 155u8, 73u8, 33u8, 17u8, 193u8, 245u8, 62u8,
-							241u8, 104u8, 64u8, 25u8, 251u8, 169u8, 6u8, 133u8, 216u8, 136u8,
-							201u8,
+							16u8, 162u8, 235u8, 117u8, 157u8, 108u8, 252u8, 96u8, 127u8, 231u8,
+							90u8, 197u8, 153u8, 148u8, 158u8, 54u8, 79u8, 216u8, 24u8, 97u8, 195u8,
+							23u8, 75u8, 236u8, 75u8, 168u8, 179u8, 181u8, 190u8, 78u8, 218u8,
+							238u8,
 						],
 					)
 				}
@@ -10165,10 +10166,10 @@ pub mod api {
 						"ProposalOf",
 						Vec::new(),
 						[
-							176u8, 188u8, 61u8, 104u8, 222u8, 177u8, 46u8, 78u8, 19u8, 199u8, 73u8,
-							186u8, 126u8, 131u8, 155u8, 73u8, 33u8, 17u8, 193u8, 245u8, 62u8,
-							241u8, 104u8, 64u8, 25u8, 251u8, 169u8, 6u8, 133u8, 216u8, 136u8,
-							201u8,
+							16u8, 162u8, 235u8, 117u8, 157u8, 108u8, 252u8, 96u8, 127u8, 231u8,
+							90u8, 197u8, 153u8, 148u8, 158u8, 54u8, 79u8, 216u8, 24u8, 97u8, 195u8,
+							23u8, 75u8, 236u8, 75u8, 168u8, 179u8, 181u8, 190u8, 78u8, 218u8,
+							238u8,
 						],
 					)
 				}
@@ -12008,10 +12009,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							84u8, 39u8, 183u8, 248u8, 32u8, 227u8, 188u8, 108u8, 185u8, 153u8,
-							100u8, 227u8, 227u8, 137u8, 189u8, 128u8, 161u8, 127u8, 95u8, 38u8,
-							106u8, 35u8, 218u8, 216u8, 237u8, 141u8, 6u8, 166u8, 61u8, 69u8, 208u8,
-							168u8,
+							32u8, 107u8, 199u8, 149u8, 64u8, 247u8, 210u8, 171u8, 156u8, 81u8,
+							110u8, 154u8, 239u8, 48u8, 97u8, 30u8, 243u8, 156u8, 37u8, 168u8,
+							249u8, 95u8, 101u8, 53u8, 86u8, 25u8, 238u8, 254u8, 149u8, 153u8,
+							144u8, 113u8,
 						],
 					)
 				}
@@ -12029,9 +12030,9 @@ pub mod api {
 							weight,
 						},
 						[
-							102u8, 249u8, 54u8, 166u8, 16u8, 234u8, 235u8, 234u8, 200u8, 103u8,
-							49u8, 107u8, 11u8, 56u8, 65u8, 6u8, 85u8, 89u8, 185u8, 229u8, 174u8,
-							233u8, 234u8, 83u8, 12u8, 68u8, 242u8, 58u8, 125u8, 15u8, 107u8, 59u8,
+							15u8, 139u8, 252u8, 226u8, 150u8, 190u8, 111u8, 254u8, 1u8, 47u8, 85u8,
+							85u8, 150u8, 140u8, 153u8, 79u8, 114u8, 178u8, 159u8, 79u8, 21u8,
+							216u8, 133u8, 96u8, 105u8, 43u8, 63u8, 149u8, 27u8, 162u8, 146u8, 67u8,
 						],
 					)
 				}
@@ -12072,9 +12073,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							180u8, 252u8, 177u8, 162u8, 203u8, 59u8, 202u8, 228u8, 233u8, 231u8,
-							34u8, 33u8, 143u8, 212u8, 248u8, 169u8, 28u8, 158u8, 20u8, 95u8, 209u8,
-							67u8, 231u8, 242u8, 20u8, 167u8, 90u8, 23u8, 79u8, 205u8, 145u8, 70u8,
+							170u8, 246u8, 190u8, 227u8, 34u8, 188u8, 94u8, 188u8, 205u8, 234u8,
+							35u8, 48u8, 124u8, 219u8, 230u8, 147u8, 100u8, 240u8, 173u8, 127u8,
+							101u8, 18u8, 187u8, 231u8, 139u8, 26u8, 48u8, 52u8, 58u8, 17u8, 232u8,
+							127u8,
 						],
 					)
 				}
@@ -12960,10 +12962,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							16u8, 250u8, 97u8, 51u8, 188u8, 186u8, 135u8, 248u8, 167u8, 42u8, 52u8,
-							61u8, 45u8, 231u8, 216u8, 237u8, 7u8, 163u8, 107u8, 152u8, 222u8,
-							133u8, 195u8, 112u8, 77u8, 155u8, 211u8, 206u8, 246u8, 38u8, 47u8,
-							73u8,
+							144u8, 169u8, 43u8, 78u8, 145u8, 174u8, 86u8, 40u8, 224u8, 179u8, 6u8,
+							200u8, 93u8, 113u8, 92u8, 169u8, 114u8, 124u8, 133u8, 146u8, 44u8,
+							157u8, 190u8, 22u8, 168u8, 125u8, 111u8, 74u8, 117u8, 104u8, 53u8,
+							110u8,
 						],
 					)
 				}
@@ -13008,9 +13010,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							56u8, 247u8, 132u8, 52u8, 243u8, 5u8, 224u8, 11u8, 30u8, 46u8, 72u8,
-							79u8, 14u8, 225u8, 117u8, 43u8, 221u8, 50u8, 66u8, 46u8, 112u8, 57u8,
-							36u8, 17u8, 194u8, 128u8, 73u8, 124u8, 107u8, 223u8, 170u8, 216u8,
+							65u8, 90u8, 236u8, 145u8, 249u8, 150u8, 39u8, 29u8, 101u8, 126u8, 94u8,
+							178u8, 223u8, 254u8, 230u8, 151u8, 59u8, 7u8, 118u8, 91u8, 99u8, 217u8,
+							167u8, 235u8, 52u8, 41u8, 241u8, 17u8, 129u8, 192u8, 55u8, 253u8,
 						],
 					)
 				}
@@ -13051,9 +13053,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							55u8, 174u8, 95u8, 72u8, 24u8, 55u8, 104u8, 137u8, 11u8, 77u8, 169u8,
-							162u8, 102u8, 39u8, 89u8, 144u8, 129u8, 175u8, 129u8, 139u8, 102u8,
-							75u8, 188u8, 134u8, 8u8, 129u8, 98u8, 224u8, 133u8, 144u8, 102u8, 6u8,
+							46u8, 131u8, 253u8, 35u8, 66u8, 16u8, 126u8, 150u8, 102u8, 5u8, 175u8,
+							214u8, 40u8, 6u8, 184u8, 120u8, 243u8, 220u8, 12u8, 137u8, 115u8,
+							108u8, 211u8, 13u8, 36u8, 71u8, 144u8, 227u8, 168u8, 34u8, 128u8, 5u8,
 						],
 					)
 				}
@@ -13080,10 +13082,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							213u8, 218u8, 190u8, 186u8, 59u8, 136u8, 233u8, 71u8, 155u8, 213u8,
-							242u8, 53u8, 107u8, 108u8, 155u8, 78u8, 88u8, 216u8, 224u8, 217u8,
-							104u8, 158u8, 74u8, 200u8, 49u8, 175u8, 153u8, 25u8, 146u8, 217u8,
-							25u8, 39u8,
+							108u8, 220u8, 7u8, 169u8, 29u8, 84u8, 120u8, 148u8, 178u8, 103u8, 89u8,
+							7u8, 236u8, 242u8, 23u8, 211u8, 113u8, 113u8, 238u8, 175u8, 68u8,
+							242u8, 138u8, 225u8, 217u8, 167u8, 169u8, 206u8, 21u8, 200u8, 58u8,
+							103u8,
 						],
 					)
 				}
@@ -15950,9 +15952,10 @@ pub mod api {
 							header: ::std::boxed::Box::new(header),
 						},
 						[
-							81u8, 164u8, 161u8, 23u8, 225u8, 133u8, 122u8, 237u8, 202u8, 152u8,
-							7u8, 183u8, 214u8, 25u8, 253u8, 5u8, 163u8, 38u8, 161u8, 56u8, 44u8,
-							233u8, 5u8, 23u8, 132u8, 168u8, 59u8, 188u8, 42u8, 54u8, 19u8, 130u8,
+							48u8, 171u8, 12u8, 33u8, 173u8, 51u8, 87u8, 50u8, 29u8, 160u8, 77u8,
+							200u8, 61u8, 182u8, 14u8, 172u8, 78u8, 75u8, 207u8, 212u8, 156u8,
+							250u8, 129u8, 173u8, 161u8, 210u8, 216u8, 58u8, 206u8, 112u8, 150u8,
+							173u8,
 						],
 					)
 				}
@@ -16475,9 +16478,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							213u8, 54u8, 203u8, 135u8, 7u8, 231u8, 160u8, 52u8, 110u8, 191u8,
-							113u8, 46u8, 65u8, 94u8, 46u8, 6u8, 97u8, 38u8, 44u8, 108u8, 20u8,
-							64u8, 5u8, 6u8, 198u8, 155u8, 104u8, 233u8, 148u8, 113u8, 40u8, 128u8,
+							98u8, 246u8, 212u8, 122u8, 24u8, 58u8, 75u8, 19u8, 185u8, 227u8, 0u8,
+							247u8, 130u8, 153u8, 254u8, 155u8, 212u8, 123u8, 238u8, 71u8, 31u8,
+							137u8, 106u8, 122u8, 40u8, 140u8, 80u8, 214u8, 52u8, 24u8, 119u8,
+							227u8,
 						],
 					)
 				}
@@ -16503,9 +16507,10 @@ pub mod api {
 							max_weight,
 						},
 						[
-							242u8, 56u8, 247u8, 152u8, 147u8, 35u8, 61u8, 52u8, 251u8, 83u8, 133u8,
-							172u8, 46u8, 200u8, 101u8, 195u8, 18u8, 44u8, 69u8, 123u8, 134u8,
-							147u8, 179u8, 242u8, 218u8, 4u8, 1u8, 133u8, 193u8, 249u8, 55u8, 163u8,
+							117u8, 224u8, 173u8, 77u8, 181u8, 240u8, 180u8, 179u8, 41u8, 230u8,
+							68u8, 104u8, 8u8, 210u8, 97u8, 68u8, 215u8, 35u8, 181u8, 106u8, 194u8,
+							93u8, 127u8, 187u8, 234u8, 54u8, 141u8, 179u8, 147u8, 229u8, 189u8,
+							185u8,
 						],
 					)
 				}
@@ -20376,10 +20381,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							44u8, 6u8, 24u8, 174u8, 101u8, 118u8, 141u8, 113u8, 192u8, 249u8, 15u8,
-							31u8, 115u8, 177u8, 207u8, 145u8, 95u8, 122u8, 46u8, 116u8, 27u8,
-							211u8, 251u8, 88u8, 173u8, 70u8, 143u8, 233u8, 183u8, 226u8, 12u8,
-							14u8,
+							144u8, 124u8, 119u8, 114u8, 40u8, 151u8, 202u8, 14u8, 205u8, 186u8,
+							113u8, 224u8, 89u8, 27u8, 230u8, 235u8, 230u8, 87u8, 191u8, 58u8, 38u8,
+							50u8, 27u8, 72u8, 14u8, 19u8, 220u8, 186u8, 125u8, 213u8, 204u8, 5u8,
 						],
 					)
 				}
@@ -21797,9 +21801,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							71u8, 38u8, 220u8, 237u8, 27u8, 4u8, 250u8, 53u8, 221u8, 85u8, 165u8,
-							112u8, 7u8, 105u8, 137u8, 130u8, 251u8, 29u8, 241u8, 11u8, 246u8, 8u8,
-							23u8, 219u8, 180u8, 81u8, 30u8, 249u8, 192u8, 141u8, 1u8, 139u8,
+							47u8, 43u8, 101u8, 41u8, 177u8, 249u8, 35u8, 146u8, 63u8, 116u8, 7u8,
+							239u8, 154u8, 186u8, 224u8, 98u8, 176u8, 200u8, 159u8, 170u8, 244u8,
+							36u8, 160u8, 0u8, 33u8, 96u8, 11u8, 144u8, 48u8, 18u8, 178u8, 79u8,
 						],
 					)
 				}
@@ -22011,10 +22015,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							214u8, 202u8, 216u8, 157u8, 100u8, 182u8, 30u8, 199u8, 8u8, 56u8,
-							114u8, 247u8, 190u8, 21u8, 222u8, 41u8, 250u8, 244u8, 52u8, 186u8,
-							193u8, 73u8, 32u8, 66u8, 174u8, 70u8, 146u8, 179u8, 140u8, 65u8, 251u8,
-							107u8,
+							50u8, 196u8, 244u8, 246u8, 8u8, 71u8, 41u8, 101u8, 37u8, 136u8, 4u8,
+							119u8, 190u8, 88u8, 71u8, 236u8, 59u8, 93u8, 52u8, 218u8, 234u8, 15u8,
+							77u8, 121u8, 142u8, 91u8, 139u8, 164u8, 89u8, 4u8, 239u8, 84u8,
 						],
 					)
 				}
@@ -22556,6 +22559,32 @@ pub mod api {
 								runtime_types::avail_core::kate_commitment::v2::KateCommitment,
 						}
 					}
+					pub mod v3 {
+						use super::runtime_types;
+						#[derive(
+							:: subxt :: ext :: codec :: Decode,
+							:: subxt :: ext :: codec :: Encode,
+							:: subxt :: ext :: scale_decode :: DecodeAsType,
+							:: subxt :: ext :: scale_encode :: EncodeAsType,
+							Clone,
+							Debug,
+							Default,
+							Eq,
+							PartialEq,
+							serde :: Deserialize,
+							serde :: Serialize,
+						)]
+						# [codec (crate = :: subxt :: ext :: codec)]
+						#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+						#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+						#[serde(rename_all = "camelCase")]
+						pub struct HeaderExtension {
+							pub app_lookup:
+								runtime_types::avail_core::data_lookup::compact::CompactDataLookup,
+							pub commitment:
+								runtime_types::avail_core::kate_commitment::v3::KateCommitment,
+						}
+					}
 					#[derive(
 						:: subxt :: ext :: codec :: Decode,
 						:: subxt :: ext :: codec :: Encode,
@@ -22576,6 +22605,8 @@ pub mod api {
 						V1(runtime_types::avail_core::header::extension::v1::HeaderExtension),
 						#[codec(index = 1)]
 						V2(runtime_types::avail_core::header::extension::v2::HeaderExtension),
+						#[codec(index = 2)]
+						V3(runtime_types::avail_core::header::extension::v3::HeaderExtension),
 					}
 				}
 				#[derive(
@@ -22634,6 +22665,34 @@ pub mod api {
 					}
 				}
 				pub mod v2 {
+					use super::runtime_types;
+					#[derive(
+						:: subxt :: ext :: codec :: Decode,
+						:: subxt :: ext :: codec :: Encode,
+						:: subxt :: ext :: scale_decode :: DecodeAsType,
+						:: subxt :: ext :: scale_encode :: EncodeAsType,
+						Clone,
+						Debug,
+						Default,
+						Eq,
+						PartialEq,
+						serde :: Deserialize,
+						serde :: Serialize,
+					)]
+					# [codec (crate = :: subxt :: ext :: codec)]
+					#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+					#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+					#[serde(rename_all = "camelCase")]
+					pub struct KateCommitment {
+						#[codec(compact)]
+						pub rows: ::core::primitive::u16,
+						#[codec(compact)]
+						pub cols: ::core::primitive::u16,
+						pub commitment: ::std::vec::Vec<::core::primitive::u8>,
+						pub data_root: ::subxt::utils::H256,
+					}
+				}
+				pub mod v3 {
 					use super::runtime_types;
 					#[derive(
 						:: subxt :: ext :: codec :: Decode,

@@ -324,11 +324,11 @@ pub mod tests {
 		let pp = kate::couscous::public_params();
 
 		let submitted_block = get_submitted_block(rpc, block_hash).await.unwrap();
-		let ext = if let HeaderExtension::V2(ref ext) = submitted_block.block.header.extension {
-			ext
-		} else {
-			panic!("Unsupported header extension version")
-		};
+		let ext = match submitted_block.block.header.extension {
+			HeaderExtension::V1(_) => panic!("Unsupported header extension version"),
+			HeaderExtension::V2(ext) => ext,
+			HeaderExtension::V3(ext) => ext,
+		}
 
 		let mut content = [0u8; 80];
 		content.copy_from_slice(&actual_proof);
