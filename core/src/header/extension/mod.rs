@@ -63,7 +63,7 @@ impl HeaderExtension {
 		match self {
 			HeaderExtension::V1(_) => HeaderVersion::V1,
 			HeaderExtension::V2(_) => HeaderVersion::V2,
-			HeaderExtension::V3(_) => HeaderVersion::V2,
+			HeaderExtension::V3(_) => HeaderVersion::V3,
 		}
 	}
 }
