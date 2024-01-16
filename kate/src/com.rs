@@ -269,7 +269,7 @@ fn pad_iec_9797_1(mut data: Vec<u8>, header_version: HeaderVersion) -> Vec<DataC
 	match header_version {
 		// Add `PADDING_TAIL_VALUE` and fill with zeros.
 		HeaderVersion::V1 | HeaderVersion::V2 => data.push(PADDING_TAIL_VALUE),
-		_ => log::info!("NOT USED PADDING_TAIL_VALUE"),
+		_ => (),
 	}
 	data.resize(padded_size as usize, 0u8);
 

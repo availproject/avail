@@ -92,7 +92,7 @@ impl EvaluationGrid {
 				let mut enc = datas.encode();
 				match header_version {
 					HeaderVersion::V1 | HeaderVersion::V2 => enc.push(PADDING_TAIL_VALUE),
-					_ => log::info!("NOT USED PADDING_TAIL_VALUE"),
+					_ => (),
 				};
 				enc.chunks(DATA_CHUNK_SIZE)
 					.map(pad_to_bls_scalar)
