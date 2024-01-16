@@ -362,7 +362,7 @@ where
 		.into_iter()
 		.filter(|v| !v.is_empty())
 		.map(|leaf| {
-			if call_type == SubTrie::Right {
+			if call_type == SubTrie::Left {
 				leaf
 			} else {
 				keccak_256(leaf.as_slice()).to_vec()
