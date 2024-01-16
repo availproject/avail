@@ -600,7 +600,7 @@ mod tests {
 		matrix::{Dimensions, Position},
 	};
 
-	#[test_case(0 => vec![0] ; "App 0 spans 2 rows form row 0")]
+	#[test_case(0 => vec![0] ; "App 0 spans 2 rows from row 0")]
 	#[test_case(1 => vec![0, 2] ; "App 1 spans 2 rows from row 0")]
 	#[test_case(2 => vec![2] ; "App 2 spans 1 rows from row 2")]
 	#[test_case(3 => vec![4, 6] ; "App 3 spans 2 rows from row 4")]
