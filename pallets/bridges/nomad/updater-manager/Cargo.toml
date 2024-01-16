@@ -24,7 +24,7 @@ frame-support = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = 
 frame-system = { path = "../../../../pallets/system", default-features = false }
 
 [dev-dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1", features = ["runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding", features = ["runtime"] }
 
 [features]
 default = [ "std" ]

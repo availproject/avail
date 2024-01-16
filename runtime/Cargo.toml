@@ -15,8 +15,8 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 
 # Internal
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding", default-features = false }
 da-control = { path = "../pallets/dactr", default-features = false }
 
 ## Nomad

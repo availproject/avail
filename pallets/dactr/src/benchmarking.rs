@@ -3,7 +3,7 @@
 use super::*;
 use crate::Pallet;
 use avail_core::{
-	asdr::AppUncheckedExtrinsic, AppExtrinsic, BlockLengthColumns, BlockLengthRows,
+	asdr::AppUncheckedExtrinsic, AppExtrinsic, BlockLengthColumns, BlockLengthRows, HeaderVersion,
 	OpaqueExtrinsic, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
 };
 use codec::{Decode, Encode};
@@ -11,7 +11,6 @@ use frame_benchmarking::{
 	impl_benchmark_test_suite, v1::BenchmarkError, v2::*, whitelisted_caller,
 };
 use frame_support::traits::Get;
-use frame_system::HeaderVersion;
 use frame_system::{
 	header_builder::hosted_header_builder, limits::BlockLength, submitted_data, RawOrigin,
 };
@@ -282,7 +281,7 @@ mod benchmarks {
 				block_length,
 				block_number,
 				seed,
-				HeaderVersion::V2,
+				HeaderVersion::V3,
 			);
 		}
 
@@ -303,7 +302,7 @@ mod benchmarks {
 				block_length,
 				block_number,
 				seed,
-				HeaderVersion::V2,
+				HeaderVersion::V3,
 			);
 		}
 
@@ -324,7 +323,7 @@ mod benchmarks {
 				block_length,
 				block_number,
 				seed,
-				HeaderVersion::V2,
+				HeaderVersion::V3,
 			);
 		}
 
@@ -345,7 +344,7 @@ mod benchmarks {
 				block_length,
 				block_number,
 				seed,
-				HeaderVersion::V2,
+				HeaderVersion::V3,
 			);
 		}
 

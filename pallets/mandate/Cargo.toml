@@ -22,7 +22,7 @@ frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk.git", t
 [dev-dependencies]
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
 pallet-collective = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1", features = ["runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding", features = ["runtime"] }
 
 [features]
 default = [ "std" ]

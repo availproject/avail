@@ -13,8 +13,8 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 # Our crates
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1", default-features = false, features = ["runtime"] }
-nomad-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding", default-features = false, features = ["runtime"] }
+nomad-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding", default-features = false }
 nomad-home = { path = "../home", default-features = false }
 
 #  Substrate 
@@ -31,8 +31,8 @@ frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk.git", t
 hex-literal = { version = "0.3.4", optional = true }
 
 [dev-dependencies]
-nomad-base = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1" }
-nomad-merkle = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1" }
+nomad-base = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding" }
+nomad-merkle = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding" }
 nomad-updater-manager = { path = "../updater-manager" }
 
 sp-io = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0" }

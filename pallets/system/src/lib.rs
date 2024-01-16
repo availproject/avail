@@ -67,7 +67,7 @@
 use avail_core::{
 	header::HeaderExtension,
 	traits::{ExtendedBlock, ExtendedHeader},
-	AppExtrinsic, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+	AppExtrinsic, HeaderVersion, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
 use frame_support::{
@@ -112,7 +112,7 @@ use sp_weights::{RuntimeDbWeight, Weight};
 
 pub mod header_builder;
 pub mod submitted_data;
-pub use header_builder::{HeaderExtensionBuilder, HeaderVersion};
+pub use header_builder::HeaderExtensionBuilder;
 
 pub mod limits;
 #[cfg(any(feature = "std", test))]
@@ -1596,7 +1596,7 @@ impl<T: Config> Pallet<T> {
 			data_root,
 			block_length,
 			number.unique_saturated_into(),
-			HeaderVersion::V2,
+			HeaderVersion::V3,
 		);
 
 		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);

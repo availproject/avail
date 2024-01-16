@@ -1,10 +1,10 @@
 use crate::version::VERSION;
-use avail_core::{currency::Balance, header::HeaderExtension, OpaqueExtrinsic};
+use avail_core::{currency::Balance, header::HeaderExtension, HeaderVersion, OpaqueExtrinsic};
 use frame_support::{
 	traits::{KeyOwnerProofSystem, Randomness},
 	weights::Weight,
 };
-use frame_system::{limits::BlockLength, HeaderVersion};
+use frame_system::limits::BlockLength;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 
 use sp_api::{decl_runtime_apis, impl_runtime_apis};

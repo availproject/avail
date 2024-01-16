@@ -14,8 +14,8 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 avail-base = { path = "../../base", default-features = false }
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding", default-features = false }
 
 # Other
 cfg-if = "1.0"
@@ -79,9 +79,6 @@ runtime-benchmarks = [
 ]
 try-runtime = [ "avail-core/try-runtime", "frame-support/try-runtime" ]
 serde = [ "dep:serde" ]
-
-# It enables the use of header extension V2
-header_extension_v2 = []
 
 # It enables the corruption of header extensions where block number is greater than 20.
 # NOTE: Only for testing and development purposes.

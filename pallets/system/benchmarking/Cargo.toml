@@ -13,7 +13,7 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1", default-features = false, features = ["runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding", default-features = false, features = ["runtime"] }
 
 # Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false }

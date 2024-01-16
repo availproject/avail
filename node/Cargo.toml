@@ -1,6 +1,6 @@
 [package]
 name = "data-avail"
-version = "1.9.0"
+version = "1.9.1"
 description = "Avail Node"
 authors = ["Anonymous"]
 homepage = "https://www.availproject.org/"
@@ -20,8 +20,8 @@ name = "data-avail"
 avail-base = { path = "../base" }
 
 # Internals
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding", default-features = false }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }

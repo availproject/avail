@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use avail_base::metrics::avail::ImportBlockMetrics;
 use avail_core::{
-	header::HeaderExtension, BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+	BlockLengthColumns, BlockLengthRows, HeaderVersion, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
 use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
@@ -17,7 +17,6 @@ use da_runtime::{
 use derive_more::Constructor;
 use frame_support::ensure;
 use frame_system::limits::BlockLength;
-use frame_system::HeaderVersion;
 use sc_client_api::Backend;
 use sc_consensus::{
 	block_import::{BlockCheckParams, BlockImport as BlockImportT, BlockImportParams},
@@ -146,10 +145,7 @@ where
 {
 	use ConsensusError::ClientImport;
 
-	let header_version = match extension {
-		HeaderExtension::V1(_) => HeaderVersion::V1,
-		HeaderExtension::V2(_) => HeaderVersion::V2,
-	};
+	let header_version = extension.get_header_version();
 
 	let block_length = BlockLength::with_normal_ratio(
 		BlockLengthRows(extension.rows() as u32),
@@ -175,7 +171,7 @@ where
 				.map_err(|e| ClientImport(format!("Build extension fails due to: {e:?}")))?
 		},
 		_ => {
-			log::debug!(target: "DA_IMPORT_BLOCK", "V2 validation..");
+			log::debug!(target: "DA_IMPORT_BLOCK", "V2^ validation..");
 			let success_indices: Vec<u32> = block_import
 				.client
 				.runtime_api()
