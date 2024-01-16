@@ -351,8 +351,16 @@ pub mod tests {
 		let submitted_block = get_submitted_block(rpc, block_hash).await.unwrap();
 		let (commitment, rows, cols) = match submitted_block.block.header.extension {
 			HeaderExtension::V1(_) => panic!("Unsupported header extension version"),
-			HeaderExtension::V2(ext) => (ext.commitment.commitment, ext.commitment.rows, ext.commitment.cols),
-			HeaderExtension::V3(ext) => (ext.commitment.commitment, ext.commitment.rows, ext.commitment.cols),
+			HeaderExtension::V2(ext) => (
+				ext.commitment.commitment,
+				ext.commitment.rows,
+				ext.commitment.cols,
+			),
+			HeaderExtension::V3(ext) => (
+				ext.commitment.commitment,
+				ext.commitment.rows,
+				ext.commitment.cols,
+			),
 		};
 
 		let mut content = [0u8; 80];
