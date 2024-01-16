@@ -394,11 +394,13 @@ version = "0.5.1"
 dependencies = [
  "binary-merkle-tree",
  "derive_more",
+ "ethabi",
  "frame-support",
  "hash256-std-hasher",
  "hex",
  "hex-literal",
  "log",
+ "nomad-core",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -413,6 +415,7 @@ dependencies = [
  "static_assertions",
  "test-case",
  "thiserror-no-std",
+ "tiny-keccak",
 ]
 
 [[package]]
@@ -2398,7 +2401,7 @@ dependencies = [
 
 [[package]]
 name = "kate-recovery"
-version = "0.9.1"
+version = "0.9.2"
 dependencies = [
  "avail-core",
  "derive_more",

@@ -56,6 +56,22 @@ pub struct Cell {
 	pub col: BlockLengthColumns,
 }
 
+impl Cell {
+	// Returns usize versions of row and col.
+	// If an error is returned it means that we weren't able to
+	// convert an u32 value to usize.
+	pub fn get_dimensions(&self) -> Result<(usize, usize), ()> {
+		let Ok(row) = usize::try_from(self.row.0) else {
+			return Err(());
+		};
+		let Ok(col) = usize::try_from(self.col.0) else {
+			return Err(());
+		};
+
+		Ok((row, col))
+	}
+}
+
 #[derive(Error, Debug)]
 pub enum Error {
 	PlonkError(#[from] PlonkError),
@@ -413,7 +429,7 @@ pub fn build_proof<M: Metrics>(
 		let result = get_cell_row(cell);
 		let Ok((row, r_index, c_index)) = result else {
 			if let Ok(mut errors) = locked_errors.lock() {
-				errors.push(result.err().expect("We checked before that this is OK. "))
+				errors.push(result.expect_err("We checked before that this is OK."))
 			}
 			return;
 		};
@@ -1256,5 +1272,21 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	// newapi ignore
 	fn serde_block_length_types_untagged(data: &str) -> Cell {
 		serde_json::from_str(data).unwrap()
+	}
+
+	#[test]
+	fn cell_get_dimensions_returns_the_correct_values() {
+		let row = 20;
+		let col = 25;
+		let cell = Cell {
+			row: BlockLengthRows::new(row),
+			col: BlockLengthColumns::new(col),
+		};
+
+		let expected_row = usize::try_from(row).unwrap();
+		let expected_col = usize::try_from(col).unwrap();
+		let (actual_row, actual_col) = cell.get_dimensions().unwrap();
+		assert_eq!(actual_row, expected_row);
+		assert_eq!(actual_col, expected_col);
 	}
 }
