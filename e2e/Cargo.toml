@@ -6,9 +6,10 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-kate-recovery.workspace = true
-kate = { workspace = true, features = ["std"] }
-avail-core = { workspace = true, features = ["std"] }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", features = ["std"] }
+kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", features = ["std"] }
+kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3" }
+
 
 avail-subxt = { path = "../avail-subxt" }
 async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
