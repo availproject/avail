@@ -22,6 +22,7 @@ frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 # Customized Local pallets
 
 # Other stuff
+uint = { git = "https://github.com/paritytech/parity-common.git", tag = "uint-v0.9.5" }
 rlp = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }
 
 ## CLI

@@ -11,6 +11,7 @@ use frame_benchmarking::{
 	impl_benchmark_test_suite, v1::BenchmarkError, v2::*, whitelisted_caller,
 };
 use frame_support::traits::Get;
+use frame_system::HeaderVersion;
 use frame_system::{
 	header_builder::hosted_header_builder, limits::BlockLength, submitted_data, RawOrigin,
 };
@@ -179,7 +180,7 @@ mod benchmarks {
 		#[extrinsic_call]
 		_(origin, key);
 
-		let info = Pallet::<T>::application_key(&key_verify);
+		let info = Pallet::<T>::application_key(key_verify);
 		assert_eq!(
 			info,
 			Some(AppKeyInfoFor::<T> {
@@ -230,7 +231,7 @@ mod benchmarks {
 
 		#[block]
 		{
-			submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(once(&opaque));
+			submitted_data::extrinsics_root_v2::<T::SubmittedDataExtractor, _>(once(&opaque), 0);
 		}
 
 		Ok(())
@@ -261,7 +262,7 @@ mod benchmarks {
 
 		#[block]
 		{
-			submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(calls.iter());
+			submitted_data::extrinsics_root_v2::<T::SubmittedDataExtractor, _>(calls.iter(), 0);
 		}
 
 		Ok(())
@@ -275,7 +276,14 @@ mod benchmarks {
 
 		#[block]
 		{
-			hosted_header_builder::build(txs, root, block_length, block_number, seed);
+			hosted_header_builder::build(
+				txs,
+				root,
+				block_length,
+				block_number,
+				seed,
+				HeaderVersion::V2,
+			);
 		}
 
 		Ok(())
@@ -289,7 +297,14 @@ mod benchmarks {
 
 		#[block]
 		{
-			hosted_header_builder::build(txs, root, block_length, block_number, seed);
+			hosted_header_builder::build(
+				txs,
+				root,
+				block_length,
+				block_number,
+				seed,
+				HeaderVersion::V2,
+			);
 		}
 
 		Ok(())
@@ -303,7 +318,14 @@ mod benchmarks {
 
 		#[block]
 		{
-			hosted_header_builder::build(txs, root, block_length, block_number, seed);
+			hosted_header_builder::build(
+				txs,
+				root,
+				block_length,
+				block_number,
+				seed,
+				HeaderVersion::V2,
+			);
 		}
 
 		Ok(())
@@ -317,7 +339,14 @@ mod benchmarks {
 
 		#[block]
 		{
-			hosted_header_builder::build(txs, root, block_length, block_number, seed);
+			hosted_header_builder::build(
+				txs,
+				root,
+				block_length,
+				block_number,
+				seed,
+				HeaderVersion::V2,
+			);
 		}
 
 		Ok(())

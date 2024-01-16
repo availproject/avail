@@ -28,7 +28,7 @@ nomad-da-bridge = { path = "../pallets/bridges/nomad/da-bridge", default-feature
 static_assertions = "1.1.0"
 serde = { version = "1.0.121", optional = true, features = ["derive"] }
 log = { version = "0.4.20", default-features = false }
-hex-literal = { version = "0.3.4", optional = true }
+hex-literal = { version = "0.3.4" }
 
 # Substrate
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
@@ -96,6 +96,7 @@ pallet-identity = { git = "https://github.com/paritytech/polkadot-sdk.git", tag 
 pallet-proxy = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
 
 pallet-mandate = { path = "../pallets/mandate", default-features = false }
+pallet-succinct = { path = "../pallets/succinct", default-features = false }
 
 ## RPCs
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
@@ -191,6 +192,7 @@ std = [
 	"pallet-scheduler/std",
 	"pallet-session/std",
 	"pallet-staking/std",
+	"pallet-succinct/std",
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
 	"pallet-tips/std",
@@ -224,7 +226,6 @@ runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
-	"hex-literal",
 	"nomad-da-bridge/runtime-benchmarks",
 	"nomad-home/runtime-benchmarks",
 	"nomad-updater-manager/runtime-benchmarks",
@@ -249,6 +250,7 @@ runtime-benchmarks = [
 	"pallet-proxy/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-staking/runtime-benchmarks",
+	"pallet-succinct/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-tips/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
@@ -291,6 +293,7 @@ try-runtime = [
 	"pallet-scheduler/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-staking/try-runtime",
+	"pallet-succinct/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-tips/try-runtime",

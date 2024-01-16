@@ -3,10 +3,12 @@ use core::num::NonZeroU16;
 use std::{marker::Sync, sync::Arc};
 
 use avail_base::metrics::avail::KateRpcMetrics;
+use avail_core::data_proof_v2::{ProofResponse, SubTrie};
 use avail_core::{
-	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, DataProof,
+	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, DataProof, DataProofV2,
 	OpaqueExtrinsic,
 };
+use da_runtime::RuntimeCall;
 use da_runtime::{apis::DataAvailApi, Runtime, UncheckedExtrinsic};
 use frame_support::BoundedVec;
 use frame_system::{limits::BlockLength, submitted_data};
@@ -14,13 +16,16 @@ use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 };
+
+use kate::gridgen::AsBytes;
 use kate::{
 	com::Cell,
 	config::{COL_EXTENSION, ROW_EXTENSION},
-	gridgen::{AsBytes, EvaluationGrid, PolynomialGrid},
+	gridgen::{EvaluationGrid, PolynomialGrid},
 	pmp::m1_blst,
 	Seed,
 };
+
 use kate_recovery::matrix::Dimensions;
 use moka::future::Cache;
 use rayon::prelude::*;
@@ -31,6 +36,7 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::{
 	generic::{Digest, SignedBlock},
 	traits::{Block as BlockT, ConstU32, Header},
+	{AccountId32, MultiAddress},
 };
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
@@ -73,6 +79,13 @@ where
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<DataProof>;
+
+	#[method(name = "kate_queryDataProofV2")]
+	async fn query_data_proof_v2(
+		&self,
+		transaction_index: u32,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<ProofResponse>;
 }
 
 #[allow(clippy::type_complexity)]
@@ -402,15 +415,141 @@ where
 		let execution_start = std::time::Instant::now();
 
 		let block = self.get_signed_block(at)?.block;
+		// We can quey data_proof only on V1 headers
+		if let HeaderExtension::V1(_) = block.header().extension() {
+			let calls = block
+				.extrinsics()
+				.iter()
+				.flat_map(|extrinsic| UncheckedExtrinsic::try_from(extrinsic).ok())
+				.map(|extrinsic| extrinsic.function);
+
+			// Build the proof.
+			let merkle_proof =
+				submitted_data::calls_proof::<Runtime, _, _>(calls, transaction_index).ok_or_else(
+					|| {
+						internal_err!(
+							"Data proof cannot be generated for transaction index={} at block {:?}",
+							transaction_index,
+							at
+						)
+					},
+				)?;
+
+			let data_proof = DataProof::try_from(&merkle_proof).map_err(|e| {
+				internal_err!("Data proof cannot be loaded from merkle root: {:?}", e)
+			});
+
+			// Execution Time Metric
+			KateRpcMetrics::observe_query_data_proof_execution_time(execution_start.elapsed());
+
+			data_proof
+		} else {
+			return Err(internal_err!(
+				"Cannot query data_proof on a block with a header other than V1. Block {:?} does not support DataProof.",
+				at
+			));
+		}
+	}
+
+	async fn query_data_proof_v2(
+		&self,
+		transaction_index: u32,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<ProofResponse> {
+		let execution_start = std::time::Instant::now();
+
+		let block = self.get_signed_block(at)?.block;
+		// We can't query DataProofV2 on older blocks which has a V1 header
+		if let HeaderExtension::V1(_) = block.header().extension() {
+			return Err(internal_err!(
+				"The block {:?} has V1 header, which doesn't support DataProofV2",
+				at
+			));
+		}
+
+		let successfull_indices = self
+			.client
+			.runtime_api()
+			.successful_extrinsic_indices(block.hash())
+			.map_err(|e| {
+				internal_err!("Failed to fetch successfull indices at ({:?}): {:?}", at, e)
+			})?;
+
 		let calls = block
 			.extrinsics()
 			.iter()
+			.enumerate()
+			.flat_map(|(index, extrinsic)| {
+				UncheckedExtrinsic::try_from(extrinsic.clone())
+					.ok()
+					.map(|unchecked_extrinsic| {
+						if successfull_indices.contains(&(index as u32)) {
+							unchecked_extrinsic.function
+						} else {
+							// Some dummy Call
+							RuntimeCall::System(frame_system::Call::remark { remark: vec![] })
+						}
+					})
+			});
+
+		let callers: Vec<AccountId32> = block
+			.extrinsics()
+			.iter()
 			.flat_map(|extrinsic| UncheckedExtrinsic::try_from(extrinsic).ok())
-			.map(|extrinsic| extrinsic.function);
+			.map(
+				|extrinsic| match extrinsic.signature.as_ref().map(|s| &s.0) {
+					Some(MultiAddress::Id(id)) => id.clone(),
+					_ => AccountId32::new([0u8; 32]),
+				},
+			)
+			.collect();
+
+		let bridge_nonce = self
+			.client
+			.runtime_api()
+			.bridge_nonce(*block.header().parent_hash())
+			.map_err(|e| internal_err!("Failed to fetch bridge_nonce at ({:?}): {:?}", at, e))?;
+
+		let transaction_call = calls
+			.clone()
+			.nth(transaction_index as usize)
+			.ok_or_else(|| {
+				internal_err!(
+					"Cannot to fetch transaction call at index {:?}: {:?}",
+					transaction_index,
+					at
+				)
+			})?;
+
+		let call_type: SubTrie;
+		let root_side: SubTrie;
+		match transaction_call {
+			RuntimeCall::DataAvailability(da_control::Call::submit_data { .. }) => {
+				call_type = SubTrie::Left;
+				root_side = SubTrie::Right;
+			},
+			RuntimeCall::Succinct(pallet_succinct::Call::send_message { .. }) => {
+				call_type = SubTrie::Right;
+				root_side = SubTrie::Left;
+			},
+			_ => {
+				return Err(internal_err!(
+					"Data proof cannot be generated for transaction index={} at block {:?}",
+					transaction_index,
+					at
+				));
+			},
+		}
 
 		// Build the proof.
-		let merkle_proof = submitted_data::calls_proof::<Runtime, _, _>(calls, transaction_index)
-			.ok_or_else(|| {
+		let (proof, root, message) = submitted_data::calls_proof_v2::<Runtime, _, _>(
+			calls,
+			callers,
+			transaction_index,
+			bridge_nonce,
+			call_type,
+		)
+		.ok_or_else(|| {
 			internal_err!(
 				"Data proof cannot be generated for transaction index={} at block {:?}",
 				transaction_index,
@@ -418,13 +557,16 @@ where
 			)
 		})?;
 
-		let data_proof = DataProof::try_from(&merkle_proof)
-			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e));
+		let data_proof = DataProofV2::try_from((&proof, root, root_side))
+			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e))?;
 
 		// Execution Time Metric
-		KateRpcMetrics::observe_query_data_proof_execution_time(execution_start.elapsed());
+		KateRpcMetrics::observe_query_data_proof_v2_execution_time(execution_start.elapsed());
 
-		data_proof
+		Ok(ProofResponse {
+			data_proof,
+			message,
+		})
 	}
 }
 

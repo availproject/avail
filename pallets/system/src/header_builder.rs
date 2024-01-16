@@ -1,17 +1,25 @@
 use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic};
+use codec::{Decode, Encode};
 use frame_support::traits::Randomness;
 pub use kate::{
 	metrics::{IgnoreMetrics, Metrics},
 	Seed,
 };
+use scale_info::TypeInfo;
 use sp_core::H256;
 #[cfg(feature = "std")]
 use sp_runtime::SaturatedConversion;
 use sp_runtime::{generic::Digest, traits::Hash};
-use sp_runtime_interface::runtime_interface;
+use sp_runtime_interface::{pass_by::PassByCodec, runtime_interface};
 use sp_std::vec::Vec;
 
 use crate::{limits::BlockLength, Config, LOG_TARGET};
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, PassByCodec, Encode, Decode, TypeInfo)]
+pub enum HeaderVersion {
+	V1, // Current one
+	V2, // To be used after runtime upgrade (new data_root)
+}
 
 pub mod da {
 	use core::marker::PhantomData;
@@ -36,6 +44,7 @@ pub mod da {
 			data_root: H256,
 			block_length: BlockLength,
 			block_number: u32,
+			version: HeaderVersion,
 		) -> HeaderExtension {
 			let seed = Self::random_seed::<T>();
 
@@ -45,6 +54,7 @@ pub mod da {
 				block_length,
 				block_number,
 				seed,
+				version,
 			)
 		}
 	}
@@ -60,6 +70,7 @@ pub trait HeaderExtensionBuilder {
 		data_root: H256,
 		block_length: BlockLength,
 		block_number: u32,
+		version: HeaderVersion,
 	) -> HeaderExtension;
 
 	/// Generates a random seed using the _epoch seed_ and the _current block_ returned by
@@ -80,6 +91,7 @@ pub trait HeaderExtensionBuilder {
 	}
 }
 
+#[allow(unused)]
 #[cfg(feature = "header_commitment_corruption")]
 fn corrupt_commitment(block_number: u32, commitment: &mut Vec<u8>) {
 	if let Some(ref_byte) = commitment.get_mut(0) {
@@ -106,6 +118,7 @@ pub fn build_extension(
 	block_length: BlockLength,
 	_block_number: u32,
 	seed: Seed,
+	version: HeaderVersion,
 ) -> HeaderExtension {
 	use avail_base::metrics::avail::HeaderExtensionBuilderMetrics;
 	use avail_core::header::extension::{v1, v2};
@@ -154,51 +167,42 @@ pub fn build_extension(
 	HeaderExtensionBuilderMetrics::observe_grid_cols(cols as f64);
 
 	let app_lookup = grid.lookup().clone();
-	// **NOTE:** Header extension V2 is not yet enable by default.
-	if cfg!(feature = "header_extension_v2") {
-		use avail_core::kate_commitment::v2::KateCommitment;
-		#[allow(unused_mut)]
-		let mut kate = KateCommitment::new(rows, cols, data_root, commitment);
 
-		#[cfg(feature = "header_commitment_corruption")]
-		if _block_number > 20 {
-			corrupt_commitment(_block_number, &mut kate.commitment);
-		}
+	match version {
+		HeaderVersion::V1 => {
+			let kate = avail_core::kate_commitment::v1::KateCommitment {
+				rows,
+				cols,
+				commitment,
+				data_root,
+			};
 
-		// Total Execution Time Metrics
-		HeaderExtensionBuilderMetrics::observe_total_execution_time(
-			build_extension_start.elapsed(),
-		);
+			// Total Execution Time Metrics
+			HeaderExtensionBuilderMetrics::observe_total_execution_time(
+				build_extension_start.elapsed(),
+			);
 
-		v2::HeaderExtension {
-			app_lookup,
-			commitment: kate,
-		}
-		.into()
-	} else {
-		#[allow(unused_mut)]
-		let mut kate = avail_core::kate_commitment::v1::KateCommitment {
-			rows,
-			cols,
-			commitment,
-			data_root,
-		};
+			v1::HeaderExtension {
+				app_lookup,
+				commitment: kate,
+			}
+			.into()
+		},
+		HeaderVersion::V2 => {
+			use avail_core::kate_commitment::v2::KateCommitment;
+			let kate = KateCommitment::new(rows, cols, data_root, commitment);
 
-		#[cfg(feature = "header_commitment_corruption")]
-		if _block_number > 20 {
-			corrupt_commitment(_block_number, &mut kate.commitment);
-		}
+			// Total Execution Time Metrics
+			HeaderExtensionBuilderMetrics::observe_total_execution_time(
+				build_extension_start.elapsed(),
+			);
 
-		// Total Execution Time Metrics
-		HeaderExtensionBuilderMetrics::observe_total_execution_time(
-			build_extension_start.elapsed(),
-		);
-
-		v1::HeaderExtension {
-			app_lookup,
-			commitment: kate,
-		}
-		.into()
+			v2::HeaderExtension {
+				app_lookup,
+				commitment: kate,
+			}
+			.into()
+		},
 	}
 }
 
@@ -215,6 +219,32 @@ pub trait HostedHeaderBuilder {
 		block_number: u32,
 		seed: Seed,
 	) -> HeaderExtension {
-		build_extension(&app_extrinsics, data_root, block_length, block_number, seed)
+		build_extension(
+			&app_extrinsics,
+			data_root,
+			block_length,
+			block_number,
+			seed,
+			HeaderVersion::V1,
+		)
+	}
+
+	#[version(2)]
+	fn build(
+		app_extrinsics: Vec<AppExtrinsic>,
+		data_root: H256,
+		block_length: BlockLength,
+		block_number: u32,
+		seed: Seed,
+		version: HeaderVersion,
+	) -> HeaderExtension {
+		build_extension(
+			&app_extrinsics,
+			data_root,
+			block_length,
+			block_number,
+			seed,
+			version,
+		)
 	}
 }

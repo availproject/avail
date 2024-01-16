@@ -4,13 +4,14 @@ use frame_support::{
 	traits::{KeyOwnerProofSystem, Randomness},
 	weights::Weight,
 };
-use frame_system::limits::BlockLength;
+use frame_system::{limits::BlockLength, HeaderVersion};
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
+
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::crypto::KeyTypeId;
-use sp_core::H256;
+use sp_core::{H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
 	traits::{Block as BlockT, NumberFor},
@@ -32,6 +33,11 @@ decl_runtime_apis! {
 	pub trait DataAvailApi {
 		fn block_length() -> BlockLength;
 		fn babe_vrf() -> Seed;
+		fn bridge_nonce() -> u64;
+		fn sync_committee_poseidons(slot: u64) -> U256;
+		fn head() -> u64;
+		fn headers(slot: u64) -> H256;
+		fn successful_extrinsic_indices() -> Vec<u32>;
 	}
 
 	pub trait ExtensionBuilder {
@@ -42,7 +48,18 @@ decl_runtime_apis! {
 			block_number: u32,
 		) -> HeaderExtension;
 
-		fn build_data_root( extrinsics: Vec<OpaqueExtrinsic>) -> H256;
+		#[api_version(2)]
+		fn build_versioned_extension(
+			extrinsics: Vec<OpaqueExtrinsic>,
+			data_root: H256,
+			block_length: BlockLength,
+			block_number: u32,
+			version: HeaderVersion
+		) -> HeaderExtension;
+
+		fn build_data_root(extrinsics: Vec<OpaqueExtrinsic>) -> H256;
+
+		fn build_data_root_v2(extrinsics: Vec<OpaqueExtrinsic>) -> H256;
 	}
 }
 
@@ -335,13 +352,40 @@ impl_runtime_apis! {
 
 			seed.into()
 		}
+
+		fn bridge_nonce() -> u64 {
+			frame_system::Pallet::<Runtime>::bridge_nonce()
+		}
+
+		fn sync_committee_poseidons(slot: u64) -> U256 {
+			pallet_succinct::Pallet::<Runtime>::sync_committee_poseidons(slot)
+		}
+
+		fn head() -> u64 {
+			pallet_succinct::Pallet::<Runtime>::head()
+		}
+
+		fn headers(slot: u64) -> H256 {
+			pallet_succinct::Pallet::<Runtime>::headers(slot)
+		}
+
+		fn successful_extrinsic_indices() -> Vec<u32> {
+			frame_system::Pallet::<Runtime>::successful_extrinsic_indices()
+		}
 	}
 
 
+	#[api_version(2)]
 	impl crate::apis::ExtensionBuilder<Block> for Runtime {
 		fn build_data_root( extrinsics: Vec<OpaqueExtrinsic>) -> H256  {
 			type Extractor = <Runtime as frame_system::Config>::SubmittedDataExtractor;
 			frame_system::submitted_data::extrinsics_root::<Extractor, _>(extrinsics.iter())
+		}
+
+		fn build_data_root_v2(extrinsics: Vec<OpaqueExtrinsic>) -> H256  {
+			type Extractor = <Runtime as frame_system::Config>::SubmittedDataExtractor;
+			let bridge_nonce = frame_system::Pallet::<Runtime>::bridge_nonce();
+			frame_system::submitted_data::extrinsics_root_v2::<Extractor, _>(extrinsics.iter(), bridge_nonce).0
 		}
 
 		fn build_extension(
@@ -367,7 +411,38 @@ impl_runtime_apis! {
 			app_extrinsics,
 			data_root,
 			block_length,
-			block_number)
+			block_number,
+			HeaderVersion::V1,
+		)
+		}
+
+		fn build_versioned_extension(
+			extrinsics: Vec<OpaqueExtrinsic>,
+			data_root: H256,
+			block_length: BlockLength,
+			block_number: u32,
+			version: HeaderVersion,
+		) -> HeaderExtension {
+			use frame_system::HeaderExtensionBuilder as _;
+
+			type UncheckedExtrinsic = <Runtime as frame_system::Config>::UncheckedExtrinsic;
+
+			let app_extrinsics = extrinsics
+				.into_iter()
+				.filter_map(|opaque| {
+					let unchecked = UncheckedExtrinsic::try_from(&opaque).ok()?;
+					let app_ext = unchecked.into();
+					Some(app_ext)
+				})
+				.collect::<Vec<_>>();
+
+			frame_system::header_builder::da::HeaderExtensionBuilder::<Runtime>::build(
+			app_extrinsics,
+			data_root,
+			block_length,
+			block_number,
+			version,
+		)
 		}
 	}
 

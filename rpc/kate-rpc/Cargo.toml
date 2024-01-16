@@ -8,6 +8,8 @@ edition = "2021"
 [dependencies]
 avail-base = { path = "../../base", default-features = false }
 da-runtime = { path = "../../runtime", default-features = false }
+da-control = { path = "../../pallets/dactr" }
+pallet-succinct = { path = "../../pallets/succinct" }
 
 avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1", default-features = false, features = ["runtime"] }
 kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/polkadot-sdk-1.1", default-features = false }
@@ -27,7 +29,6 @@ sc-client-api = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = 
 sc-rpc-api = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0" }
 sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0" }
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
-
 
 [features]
 default = [ "metrics", "std" ]

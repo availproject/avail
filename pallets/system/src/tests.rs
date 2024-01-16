@@ -23,7 +23,7 @@ use mock::{RuntimeOrigin, *};
 use sp_core::H256;
 use sp_runtime::{
 	traits::{BlakeTwo256, Header as _},
-	DispatchError, DispatchErrorWithPostInfo,
+	BoundedVec, DispatchError, DispatchErrorWithPostInfo,
 };
 
 use crate::*;
@@ -779,6 +779,37 @@ fn ensure_signed_stuff_works() {
 			successful_origin
 		));
 	}
+}
+
+#[test]
+fn successful_extrinsic_indices_are_correct() {
+	new_test_ext().execute_with(|| {
+		let failed_indices = BoundedVec::try_from([1, 2, 4, 6].to_vec()).unwrap();
+		FailedExtrinsicIndices::<Test>::put(failed_indices);
+		ExtrinsicCount::<Test>::put(8);
+
+		let expected_indices = [0, 3, 5, 7].to_vec();
+		let actual_indices = Pallet::<Test>::successful_extrinsic_indices();
+
+		assert_eq!(expected_indices, actual_indices);
+	});
+}
+
+#[test]
+fn failed_extrinsic_indices_work() {
+	new_test_ext().execute_with(|| {
+		System::note_applied_extrinsic(&Ok(().into()), Default::default());
+		System::note_applied_extrinsic(&Err(DispatchError::BadOrigin.into()), Default::default());
+		System::note_applied_extrinsic(&Err(DispatchError::BadOrigin.into()), Default::default());
+		System::note_applied_extrinsic(&Ok(().into()), Default::default());
+		System::note_applied_extrinsic(&Err(DispatchError::BadOrigin.into()), Default::default());
+
+		let expected_indices: BoundedVec<u32, ConstU32<100_000>> =
+			BoundedVec::try_from([1, 2, 4].to_vec()).unwrap();
+		let actual_indices = FailedExtrinsicIndices::<Test>::get();
+
+		assert_eq!(expected_indices, actual_indices);
+	});
 }
 
 pub fn from_actual_ref_time(ref_time: Option<u64>) -> PostDispatchInfo {
