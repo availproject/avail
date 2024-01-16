@@ -327,9 +327,9 @@ impl Dimensions {
 		&self,
 		partition: &Partition,
 	) -> impl Iterator<Item = Position> {
-		let size = (self.extended_size() as f64 / partition.fraction as f64).ceil() as u32;
-		let start = size * (partition.number - 1) as u32;
-		let end = size * (partition.number as u32);
+		let size = self.extended_size() as f64 / partition.fraction as f64;
+		let start = (size * (partition.number - 1) as f64).floor() as u32;
+		let end = (size * (partition.number as f64)).ceil() as u32;
 		let cols: u32 = self.cols.get().into();
 
 		(start..end).map(move |cell| Position {
@@ -392,11 +392,31 @@ mod tests {
 
 	#[test_case(1, 2, &[(0, 0), (0, 1), (0, 2), (0, 3)] ; "First partition")]
 	#[test_case(2, 2, &[(1, 0), (1, 1), (1, 2), (1, 3)] ; "Second partition")]
+	#[test_case(1, 20, &[(0, 0)] ; "1/20 partition")]
+	#[test_case(2, 20, &[(0, 0)] ; "2/20 partition")]
+	#[test_case(3, 20, &[(0, 0)] ; "3/20 partition")]
+	#[test_case(4, 20, &[(0, 1)] ; "4/20 partition")]
+	#[test_case(5, 20, &[(0, 1)] ; "5/20 partition")]
+	#[test_case(6, 20, &[(0, 2)] ; "6/20 partition")]
+	#[test_case(7, 20, &[(0, 2)] ; "7/20 partition")]
+	#[test_case(8, 20, &[(0, 2)] ; "8/20 partition")]
+	#[test_case(9, 20, &[(0, 3)] ; "9/20 partition")]
+	#[test_case(10, 20, &[(0, 3)] ; "10/20 partition")]
+	#[test_case(11, 20, &[(1, 0)] ; "11/20 partition")]
+	#[test_case(12, 20, &[(1, 0)] ; "12/20 partition")]
+	#[test_case(13, 20, &[(1, 0)] ; "13/20 partition")]
+	#[test_case(14, 20, &[(1, 1)] ; "14/20 partition")]
+	#[test_case(15, 20, &[(1, 1)] ; "15/20 partition")]
+	#[test_case(16, 20, &[(1, 2)] ; "16/20 partition")]
+	#[test_case(17, 20, &[(1, 2)] ; "17/20 partition")]
+	#[test_case(18, 20, &[(1, 2)] ; "18/20 partition")]
+	#[test_case(19, 20, &[(1, 3)] ; "19/20 partition")]
+	#[test_case(20, 20, &[(1, 3)] ; "20/20 partition")]
 	fn iter_extended_partition_positions(number: u8, fraction: u8, expected: &[(u32, u16)]) {
 		Dimensions::new(1, 4)
 			.unwrap()
 			.iter_extended_partition_positions(&Partition { number, fraction })
 			.zip(expected.iter().map(|&(row, col)| Position { row, col }))
-			.for_each(|(p1, p2)| assert_eq!(p1, p2));
+			.for_each(|(position, expected)| assert_eq!(expected, position));
 	}
 }
