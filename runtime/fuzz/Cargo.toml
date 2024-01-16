@@ -1,0 +1,49 @@
+[package]
+name = "da-runtime-fuzz"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+anyhow = "1.0"
+libfuzzer-sys = "0.4"
+
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+frame-system = { path = "../../pallets/system", default-features = false, features = ["serde"] }
+pallet-babe = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-keyring = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+
+avail-core = { workspace = true, features = ["std"] }
+da-control = { path = "../../pallets/dactr", default-features = false }
+da-runtime = { path = "../" }
+
+[features]
+default = [ "std" ]
+std = [
+	"da-control/std",
+	"da-runtime/std",
+	"frame-system/std",
+	"pallet-balances/std",
+	"pallet-transaction-payment/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+]
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "kate_commit_size"
+path = "header/kate_commit_size.rs"
+test = false
+doc = false

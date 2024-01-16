@@ -30,15 +30,9 @@ serde = { version = "1.0.121", optional = true, features = ["derive"] }
 static_assertions = "1.1.0"
 
 # Substrate
-codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
-	"derive",
-] }
-parity-util-mem = { version = "0.12.0", default-features = false, features = [
-	"primitive-types",
-] }
-scale-info = { version = "2.5.0", default-features = false, features = [
-	"derive",
-] }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+parity-util-mem = { version = "0.12.0", default-features = false, features = ["primitive-types"] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 
 ## primitives
 sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
@@ -61,9 +55,7 @@ sp-version = { git = "https://github.com/paritytech/substrate.git", branch = "po
 ## frame dependencies
 frame-executive = { path = "../pallets/executive", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-frame-system = { path = "../pallets/system", default-features = false, features = [
-	"serde",
-] }
+frame-system = { path = "../pallets/system", default-features = false, features = ["serde"] }
 frame-try-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
 
 frame-election-provider-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
@@ -90,9 +82,7 @@ pallet-nomination-pools-runtime-api = { git = "https://github.com/paritytech/sub
 pallet-offences = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-pallet-session = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", features = [
-	'historical',
-], default-features = false }
+pallet-session = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", features = ['historical'], default-features = false }
 pallet-staking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 pallet-staking-reward-curve = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 pallet-sudo = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
@@ -148,11 +138,11 @@ name = "header_kate_commitment_divan"
 harness = false
 
 [features]
-default = ["std"]
-with-tracing = ["frame-executive/with-tracing"]
+default = [ "std" ]
+with-tracing = [ "frame-executive/with-tracing" ]
 fast-runtime = []
 codspeed = []
-header_commitment_corruption = ["frame-system/header_commitment_corruption"]
+header_commitment_corruption = [ "frame-system/header_commitment_corruption" ]
 std = [
 	"avail-core/std",
 	"codec/std",
