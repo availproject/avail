@@ -328,7 +328,7 @@ pub mod tests {
 			HeaderExtension::V1(_) => panic!("Unsupported header extension version"),
 			HeaderExtension::V2(ext) => ext,
 			HeaderExtension::V3(ext) => ext,
-		}
+		};
 
 		let mut content = [0u8; 80];
 		content.copy_from_slice(&actual_proof);
