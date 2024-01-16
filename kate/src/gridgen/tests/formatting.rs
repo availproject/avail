@@ -1,4 +1,4 @@
-use avail_core::{AppExtrinsic, AppId, DataLookup};
+use avail_core::{AppExtrinsic, AppId, DataLookup, HeaderVersion};
 use hex_literal::hex;
 use kate_recovery::{
 	com::{app_specific_cells, decode_app_extrinsics, reconstruct_extrinsics},
@@ -18,14 +18,22 @@ use core::num::NonZeroU16;
 #[test]
 fn newapi_test_flatten_block() {
 	let extrinsics: Vec<AppExtrinsic> = vec![
-		AppExtrinsic::new(AppId(0), (1..=29).collect()),
-		AppExtrinsic::new(AppId(1), (1..=30).collect()),
-		AppExtrinsic::new(AppId(2), (1..=31).collect()),
-		AppExtrinsic::new(AppId(3), (1..=60).collect()),
+		AppExtrinsic::new(AppId(0), (1..=30).collect()),
+		AppExtrinsic::new(AppId(1), (1..=31).collect()),
+		AppExtrinsic::new(AppId(2), (1..=32).collect()),
+		AppExtrinsic::new(AppId(3), (1..=61).collect()),
 	];
 
 	let expected_dims = Dimensions::new_from(1, 16).unwrap();
-	let evals = EvaluationGrid::from_extrinsics(extrinsics, 4, 256, 256, Seed::default(), true).unwrap();
+	let evals = EvaluationGrid::from_extrinsics(
+		extrinsics,
+		4,
+		256,
+		256,
+		Seed::default(),
+		HeaderVersion::V3,
+	)
+	.unwrap();
 
 	let id_lens: Vec<(u32, usize)> = vec![(0, 2), (1, 2), (2, 2), (3, 3)];
 	let expected_lookup = DataLookup::from_id_and_len_iter(id_lens.into_iter()).unwrap();
@@ -37,7 +45,7 @@ fn newapi_test_flatten_block() {
 		"Dimensions don't match the expected"
 	);
 
-	let expected_data = hex!("04740102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d00800000000000000000000000000000000000000000000000000000000000000004780102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e80000000000000000000000000000000000000000000000000000000000000047c0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f80000000000000000000000000000000000000000000000000000000000004f00102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c00800000000000000000000000000000000000000000000000000000000000000076a04053bda0a88bda5177b86a15c3b29f559873cb481232299cd5743151ac004b2d63ae198e7bb0a9011f28e473c95f4013d7d53ec5fbc3b42df8ed101f6d00e831e52bfb76e51cca8b4e9016838657edfae09cb9a71eb219025c4c87a67c004aaa86f20ac0aa792bc121ee42e2c326127061eda15599cb5db3db870bea5a00ecf353161c3cb528b0c5d98050c4570bfc942d8b19ed7b0cbba5725e03e5f000b7e30db36b6df82ac151f668f5f80a5e2a9cac7c64991dd6a6ce21c060175800edb9260d2a86c836efc05f17e5c59525e404c6a93d051651fe2e4eefae281300");
+	let expected_data = hex!("04780102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e00000000000000000000000000000000000000000000000000000000000000047c0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f00000000000000000000000000000000000000000000000000000000000004800102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f20000000000000000000000000000000000000000000000000000000000004f40102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c003d0000000000000000000000000000000000000000000000000000000000000076a04053bda0a88bda5177b86a15c3b29f559873cb481232299cd5743151ac004b2d63ae198e7bb0a9011f28e473c95f4013d7d53ec5fbc3b42df8ed101f6d00e831e52bfb76e51cca8b4e9016838657edfae09cb9a71eb219025c4c87a67c004aaa86f20ac0aa792bc121ee42e2c326127061eda15599cb5db3db870bea5a00ecf353161c3cb528b0c5d98050c4570bfc942d8b19ed7b0cbba5725e03e5f000b7e30db36b6df82ac151f668f5f80a5e2a9cac7c64991dd6a6ce21c060175800edb9260d2a86c836efc05f17e5c59525e404c6a93d051651fe2e4eefae281300");
 
 	let data = evals
 		.evals
@@ -48,6 +56,7 @@ fn newapi_test_flatten_block() {
 				.collect::<Vec<_>>()
 		})
 		.collect::<Vec<_>>();
+
 	assert_eq!(data, expected_data, "Data doesn't match the expected data");
 }
 
@@ -112,7 +121,7 @@ get erasure coded to ensure redundancy."#;
 		.map(|(id, data)| AppExtrinsic::new(AppId(id), data))
 		.collect::<Vec<_>>();
 
-	let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 32, 4, hash, true)
+	let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 32, 4, hash, HeaderVersion::V3)
 		.unwrap()
 		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 		.unwrap();
@@ -151,7 +160,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 	// The hash is used for seed for padding the block to next power of two value
 	let hash = Seed::default();
-	let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 128, 2, hash, true)
+	let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 128, 2, hash, HeaderVersion::V3)
 		.unwrap()
 		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 		.unwrap();

@@ -25,7 +25,7 @@ fn test_build_commitments_simple_commitment_check() {
 		block_width,
 		block_height,
 		hash,
-		true,
+		HeaderVersion::V3,
 	)
 	.unwrap();
 	let ext_evals = evals
@@ -48,7 +48,7 @@ fn test_build_commitments_simple_commitment_check() {
 		.collect::<Vec<_>>();
 
 	assert_eq!(ext_evals.dims(), Dimensions::new_from(2, 4).unwrap());
-	let expected_commitments = hex!("960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D");
+	let expected_commitments = hex!("911bc20a0709b046847fcc53eaa981d84738dd6a76beaf2495ec9efcb2da498dfed29a15b5724343ee54382a9a3102a3911bc20a0709b046847fcc53eaa981d84738dd6a76beaf2495ec9efcb2da498dfed29a15b5724343ee54382a9a3102a3");
 	assert_eq!(commits, expected_commitments);
 	assert_eq!(commits_fft_extended, expected_commitments);
 }
@@ -63,7 +63,7 @@ fn par_build_commitments_row_wise_constant_row() {
 		data: vec![0; 31 * 8],
 	}];
 
-	let evals = EvaluationGrid::from_extrinsics(xts, 4, 4, 4, hash, true).unwrap();
+	let evals = EvaluationGrid::from_extrinsics(xts, 4, 4, 4, hash, HeaderVersion::V3).unwrap();
 	let evals = evals
 		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 		.unwrap();
@@ -76,7 +76,7 @@ proptest! {
 	#[test]
 	fn commitments_verify(ref exts in app_extrinsics_strategy())  {
 		//let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default()).unwrap();
-		let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 16, 64, Seed::default(), true).unwrap();
+		let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 16, 64, Seed::default(), HeaderVersion::V3).unwrap();
 		let grid = grid.extend_columns( unsafe { NonZeroU16::new_unchecked(2)}).unwrap();
 		let (g_rows, g_cols) :(u16,u16) = grid.dims().into();
 		let orig_dims = Dimensions::new(g_rows / 2, g_cols).unwrap();
@@ -104,7 +104,7 @@ proptest! {
 	}
 
 	fn verify_commitments_missing_row(ref xts in app_extrinsics_strategy())  {
-		let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 16, 64, Seed::default(), true).unwrap().extend_columns( unsafe { NonZeroU16::new_unchecked(2) }).unwrap();
+		let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 16, 64, Seed::default(), HeaderVersion::V3).unwrap().extend_columns( unsafe { NonZeroU16::new_unchecked(2) }).unwrap();
 		let (g_rows, g_cols):(u16,u16) = grid.dims().into();
 		let orig_dims = Dimensions::new_from(g_rows / 2, g_cols).unwrap();
 		let polys = grid.make_polynomial_grid().unwrap();

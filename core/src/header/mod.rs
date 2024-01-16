@@ -292,7 +292,7 @@ mod tests {
 
 	use super::*;
 	use crate::{
-		kate_commitment::{v1, v2},
+		kate_commitment::{v1, v2, v3},
 		AppId, DataLookup,
 	};
 
@@ -405,7 +405,7 @@ mod tests {
 
 	/// The `commitment.data_root is none`.
 	fn header_v3() -> THeader {
-		let commitment = v2::KateCommitment {
+		let commitment = v3::KateCommitment {
 				commitment: hex!("80e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e975980e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e9759").to_vec(),
 				..Default::default()
 			};
@@ -420,9 +420,9 @@ mod tests {
 		}
 	}
 
-	/// It creates a corrupted V2 header and the associated error on decodification.
+	/// It creates a corrupted V3 header and the associated error on decodification.
 	fn corrupted_header() -> (Vec<u8>, Error) {
-		let mut encoded = header_v1().encode();
+		let mut encoded = header_v3().encode();
 		encoded.remove(110);
 
 		let error = THeader::decode(&mut encoded.as_slice()).unwrap_err();

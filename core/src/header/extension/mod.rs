@@ -6,10 +6,11 @@ use sp_core::{RuntimeDebug, H256};
 #[cfg(feature = "runtime")]
 use sp_runtime_interface::pass_by::PassByCodec;
 
-use crate::DataLookup;
+use crate::{DataLookup, HeaderVersion};
 
 pub mod v1;
 pub mod v2;
+pub mod v3;
 
 /// Header extension data.
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, TypeInfo, Encode, Decode)]
@@ -18,7 +19,7 @@ pub mod v2;
 pub enum HeaderExtension {
 	V1(v1::HeaderExtension),
 	V2(v2::HeaderExtension),
-	V3(v2::HeaderExtension),
+	V3(v3::HeaderExtension),
 }
 
 /// It forwards the call to the inner version of the header. Any invalid version will return the
@@ -57,6 +58,14 @@ impl HeaderExtension {
 	pub fn cols(&self) -> u16 {
 		forward_to_version!(self, cols)
 	}
+
+	pub fn get_header_version(&self) -> HeaderVersion {
+		match self {
+			HeaderExtension::V1(_) => HeaderVersion::V1,
+			HeaderExtension::V2(_) => HeaderVersion::V2,
+			HeaderExtension::V3(_) => HeaderVersion::V2,
+		}
+	}
 }
 
 impl Default for HeaderExtension {
@@ -76,5 +85,12 @@ impl From<v2::HeaderExtension> for HeaderExtension {
 	#[inline]
 	fn from(ext: v2::HeaderExtension) -> Self {
 		Self::V2(ext)
+	}
+}
+
+impl From<v3::HeaderExtension> for HeaderExtension {
+	#[inline]
+	fn from(ext: v3::HeaderExtension) -> Self {
+		Self::V3(ext)
 	}
 }
