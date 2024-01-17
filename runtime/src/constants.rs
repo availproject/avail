@@ -375,17 +375,6 @@ pub mod da {
 	pub type MaxAppDataLength = ConstU32<524_288>; // 512 Kb
 }
 
-pub mod nomad {
-	use sp_core::H256;
-
-	use super::*;
-
-	parameter_types! {
-		pub const DABridgePalletId: H256 = H256::repeat_byte(1);
-	}
-	pub type MaxMessageBodyBytes = ConstU32<2048>;
-}
-
 /// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value
 /// or to an environment variable or testing value (in case the `fast-runtime` feature is selected).
 /// Note that the environment variable is evaluated _at compile time_.

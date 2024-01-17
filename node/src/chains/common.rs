@@ -4,22 +4,19 @@ use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 
 use da_runtime::{
 	constants, wasm_binary_unwrap, AccountId, BabeConfig, Balance, BalancesConfig,
-	DataAvailabilityConfig, NomadHomeConfig, NomadUpdaterManagerConfig, NominationPoolsConfig,
-	RuntimeGenesisConfig, SessionConfig, StakerStatus, StakingConfig, SuccinctConfig, SudoConfig,
-	SystemConfig, TechnicalCommitteeConfig, AVL,
+	DataAvailabilityConfig, NominationPoolsConfig, RuntimeGenesisConfig, SessionConfig,
+	StakerStatus, StakingConfig, SuccinctConfig, SudoConfig, SystemConfig,
+	TechnicalCommitteeConfig, AVL,
 };
 use frame_system::limits::BlockLength;
 use hex_literal::hex;
-use primitive_types::{H160, H256};
+use primitive_types::H256;
 use sc_telemetry::TelemetryEndpoints;
 use sp_core::crypto::AccountId32;
 use sp_core::sr25519::Public;
 
 pub const PROTOCOL_ID: Option<&str> = Some("Avail");
 pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
-const NOMAD_LOCAL_DOMAIN: u32 = 2000;
-const NOMAD_UPDATER: H160 = H160(hex!("695dFcFc604F9b2992642BDC5b173d1a1ed60b03"));
-
 // bridge init config
 const BROADCASTER_DOMAIN: u32 = 2;
 const BROADCASTER: H256 = H256(hex!(
@@ -127,15 +124,6 @@ pub fn runtime_genesis_config(
 		},
 		sudo: SudoConfig {
 			key: Some(sudo.clone()),
-		},
-		nomad_home: NomadHomeConfig {
-			local_domain: NOMAD_LOCAL_DOMAIN,
-			updater: NOMAD_UPDATER,
-			..Default::default()
-		},
-		nomad_updater_manager: NomadUpdaterManagerConfig {
-			updater: NOMAD_UPDATER,
-			..Default::default()
 		},
 		succinct: SuccinctConfig {
 			slots_per_period: SLOTS_PER_PERIOD,

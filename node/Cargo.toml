@@ -25,10 +25,6 @@ kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }
-# Nomad
-nomad-updater-manager = { path = "../pallets/bridges/nomad/updater-manager" }
-nomad-home = { path = "../pallets/bridges/nomad/home" }
-nomad-da-bridge = { path = "../pallets/bridges/nomad/da-bridge" }
 
 # 3rd-party
 codec = { package = "parity-scale-codec", version = "3" }
@@ -137,9 +133,6 @@ runtime-benchmarks = [
 	"da-control/runtime-benchmarks",
 	"da-runtime/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
-	"nomad-da-bridge/runtime-benchmarks",
-	"nomad-home/runtime-benchmarks",
-	"nomad-updater-manager/runtime-benchmarks",
 ]
 # Enable features that allow the runtime to be tried and debugged. Name might be subject to change
 # in the near future.
@@ -148,9 +141,6 @@ try-runtime = [
 	"da-control/try-runtime",
 	"da-runtime/try-runtime",
 	"frame-system/try-runtime",
-	"nomad-da-bridge/try-runtime",
-	"nomad-home/try-runtime",
-	"nomad-updater-manager/try-runtime",
 	"try-runtime-cli/try-runtime",
 ]
 kate-rpc-metrics = [ "kate-rpc/metrics" ]
