@@ -18,7 +18,7 @@ const submitData = new Promise<[H256, H256]>((res, _) => {
     });
 });
 
-console.log("Submiting TX...");
+console.log("Submitting TX...");
 const [blockHash, txHash] = await submitData;
 console.log(`Finalized block hash ${blockHash} and tx hash ${txHash}`);
 
