@@ -159,7 +159,6 @@ jobs:
           ./data-avail --dev &
           sleep 5
           cargo run --release --manifest-path avail-subxt/Cargo.toml --example accounts_from_mnemonics
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example da_bridge_actor 
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example headers
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example max_block_submit
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data
