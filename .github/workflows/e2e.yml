@@ -165,9 +165,7 @@ jobs:
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data_and_dispatch_data_root
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal
-          # Democracy calls are executable only with fast runtime (with democracy InstantAllowed set to true)
-          # cargo run --release  --manifest-path avail-subxt/Cargo.toml --example democracy_external 
-          # cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal_democracy
+          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example succinct_send_message
 
       - name: Display SCCache Stats
         run: ${{ env.SCCACHE_BIN }} --show-stats

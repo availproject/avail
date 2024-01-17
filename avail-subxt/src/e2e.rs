@@ -9,8 +9,7 @@ use tokio::{
 	time::sleep,
 };
 
-pub mod rpc;
-use rpc::*;
+use avail_subxt::rpc::*;
 
 #[derive(Debug, StructOpt)]
 pub struct E2EOpts {

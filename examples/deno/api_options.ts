@@ -16,7 +16,7 @@ export const API_RPC = {
             params: [
                 {
                     name: 'cells',
-                    type: 'Vec<Cell>'
+                    type: 'BoundedVec<Cell>'
                 },
                 {
                     name: 'at',
@@ -27,7 +27,7 @@ export const API_RPC = {
             type: 'Vec<u8>'
         },
         queryDataProof: {
-            description: 'Generate the data proof for the given `index`',
+            description: 'Generate the data proof for the given `transaction_index`',
             params: [
                 {
                     name: 'transaction_index',
@@ -41,8 +41,23 @@ export const API_RPC = {
             ],
             type: 'DataProof'
         },
+        queryDataProofV2: {
+            description: 'Generate the data proof for the given `transaction_index`',
+            params: [
+                {
+                    name: 'transaction_index',
+                    type: 'u32'
+                },
+                {
+                    name: 'at',
+                    type: 'Hash',
+                    isOptional: true
+                }
+            ],
+            type: 'ProofResponse'
+        },
         queryAppData: {
-            description: '',
+            description: 'Fetches app data rows for the given app',
             params: [
                 {
                     name: "app_id",
@@ -54,14 +69,14 @@ export const API_RPC = {
                     isOptional: true
                 }
             ],
-            type: 'Vec<Vec<u8>>',
+            type: 'Vec<Option<Vec<u8>>',
         },
         queryRows: {
             description: '',
             params: [
                 {
                     name: "rows",
-                    type: "Vec<u32>"
+                    type: "BoundedVec<u32>"
                 },
                 {
                     name: "at",
@@ -85,25 +100,25 @@ export const API_TYPES = {
         index: 'Vec<DataLookupIndexItem>'
     },
     KateCommitment: {
-        rows: 'Compact<u16>',
-        cols: 'Compact<u16>',
-        commitment: 'Vec<u8>',
-        dataRoot: 'H256'
-    },
-    V1HeaderExtension: {
-        appLookup: 'DataLookup',
-        commitment: 'KateCommitment'
-    },
-    VTHeaderExtension: {
-        newField: 'Vec<u8>',
-        commitment: 'KateCommitment',
-        appLookup: 'DataLookup'
-    },
-    HeaderExtension: {
+        rows: "Compact<u16>",
+        cols: "Compact<u16>",
+        commitment: "Vec<u8>",
+        dataRoot: "H256",
+      },
+      V1HeaderExtension: {
+        appLookup: "DataLookup",
+        commitment: "KateCommitment",
+      },
+      V2HeaderExtension: {
+        appLookup: "DataLookup",
+        commitment: "KateCommitment",
+      },
+      HeaderExtension: {
         _enum: {
-            V1: 'V1HeaderExtension'
-        }
-    },
+          V1: "V1HeaderExtension",
+          V2: "V2HeaderExtension",
+        },
+      },
     DaHeader: {
         parentHash: 'Hash',
         number: 'Compact<BlockNumber>',
@@ -121,10 +136,12 @@ export const API_TYPES = {
         extra: 'CheckAppIdExtra',
         types: 'CheckAppIdTypes'
     },
+    BlockLengthColumns: "Compact<u32>",
+    BlockLengthRows: "Compact<u32>",
     BlockLength: {
         max: 'PerDispatchClass',
-        cols: 'Compact<u32>',
-        rows: 'Compact<u32>',
+        cols: 'BlockLengthColumns',
+        rows: 'BlockLengthRows',
         chunkSize: 'Compact<u32>'
     },
     PerDispatchClass: {
@@ -138,6 +155,31 @@ export const API_TYPES = {
         numberOfLeaves: 'Compact<u32>',
         leafIndex: 'Compact<u32>',
         leaf: 'H256'
+    },
+    DataProofV2: {
+        data_root: 'H256',
+        blob_root: 'H256',
+        bridge_root: 'H256',
+        proof: 'Vec<H256>',
+        numberOfLeaves: 'Compact<u32>',
+        leafIndex: 'Compact<u32>',
+        leaf: 'H256'
+    },
+    ProofResponse: {
+        dataProof: 'DataProofV2',
+        message: 'Option<Message>'
+    },
+    Message: {
+        message_type: 'MessageType',
+        from: 'H256',
+        to: 'H256',
+        origin_domain: 'u32',
+        destination_domain: 'u32',
+        data: 'Vec<u8>',
+        id: 'u64',
+    },
+    MessageType: {
+        _enum: ["ArbitraryMessage", "FungibleToken"],
     },
     Cell: {
         row: 'u32',

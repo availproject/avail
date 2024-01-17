@@ -1,5 +1,5 @@
 use anyhow::Result;
-use avail_subxt::{api, build_client, primitives::AvailExtrinsicParams, AvailConfig, Opts};
+use avail_subxt::{api, build_client, tx_send_in_finalized, AvailConfig, Opts};
 use structopt::StructOpt;
 use subxt::{
 	ext::sp_core::{sr25519::Pair, Pair as _},
@@ -16,28 +16,19 @@ const BOB_SEED: &str = "bottom drive obey lake curtain smoke basket hold race lo
 #[async_std::main]
 async fn main() -> Result<()> {
 	let args = Opts::from_args();
-	let client = build_client(args.ws, args.validate_codegen).await?;
+	let (client, _) = build_client(args.ws, args.validate_codegen).await?;
 
 	// Accounts
-	let pair_a = Pair::from_string_with_seed(ALICE_SEED, None).unwrap();
-	let signer_a = PairSigner::<AvailConfig, Pair>::new(pair_a.0);
-	let pair_b = Pair::from_string_with_seed(BOB_SEED, None).unwrap();
-	let signer_b = PairSigner::<AvailConfig, Pair>::new(pair_b.0);
+	let alice = Pair::from_string_with_seed(ALICE_SEED, None).unwrap();
+	let alice = PairSigner::<AvailConfig, Pair>::new(alice.0);
+	let bob = Pair::from_string_with_seed(BOB_SEED, None).unwrap();
+	let bob = PairSigner::<AvailConfig, Pair>::new(bob.0);
 
 	// Transfer and wait finalized
-	let balance_transfer = api::tx()
+	let call = api::tx()
 		.balances()
-		.transfer(MultiAddress::Id(signer_b.account_id().clone()), 2);
-	let _ = client
-		.tx()
-		.sign_and_submit_then_watch(
-			&balance_transfer,
-			&signer_a,
-			AvailExtrinsicParams::new_with_app_id(0.into()),
-		)
-		.await?
-		.wait_for_finalized_success()
-		.await?;
+		.transfer(MultiAddress::Id(bob.account_id().clone()), 2);
+	let _ = tx_send_in_finalized!(&client, &call, &alice).await?;
 
 	Ok(())
 }

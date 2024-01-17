@@ -19,6 +19,7 @@
 
 use avail_core::{traits::GetAppId, AppExtrinsic, OpaqueExtrinsic};
 use codec::{Decode, Encode};
+use frame_support::traits::ExtrinsicCall;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	generic,
@@ -75,6 +76,12 @@ impl<T: Config> ExtrinsicMetadata for MockUncheckedExtrinsic<T> {
 	type SignedExtensions = DefaultGetAppId;
 
 	const VERSION: u8 = avail_core::asdr::EXTRINSIC_FORMAT_VERSION;
+}
+
+impl<T: Config> ExtrinsicCall for MockUncheckedExtrinsic<T> {
+	fn call(&self) -> &Self::Call {
+		&self.0.function
+	}
 }
 
 #[cfg(feature = "std")]

@@ -1,0 +1,26 @@
+{
+  "name": "node-examples",
+  "version": "0.0.1",
+  "description": "Shows a basic usage of the Avail polkadot js wrapper",
+  "scripts": {
+    "clean": "rimraf build",
+    "build": "npm run clean && tsc",
+    "connect": "npm run build && node build/node-examples/src/connect.js",
+    "transfer": "npm run build && node build/node-examples/src/transfer.js",
+    "data-submission": "npm run build && node build/node-examples/src/data-submission.js",
+    "data-submission-async": "npm run build && node build/node-examples/src/data-submission-async.js",
+    "create-app-id": "npm run build && node build/node-examples/src/create-app-id.js",
+    "subscribe-blocks": "npm run build && node build/node-examples/src/subscribe-blocks.js",
+    "query-app-data": "npm run build && node build/node-examples/src/query-app-data.js",
+    "query-proof": "npm run build && node build/node-examples/src/query-proof.js",
+    "query-proof-data": "npm run build && node build/node-examples/src/query-proof-data.js",
+    "submit-proposal": "npm run build && node build/node-examples/src/submit-proposal.js",
+    "dispatch-data-root": "npm run build && node build/node-examples/src/dispatch-data-root.js"
+  },
+  "dependencies": {
+    "avail-js-sdk": "^0.1.14"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5"
+  }
+}

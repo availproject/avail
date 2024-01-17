@@ -42,7 +42,7 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.KEY }}
         port: ${{ secrets.PORT }}
-        command_timeout: "60m"
+        command_timeout: "120m"
         script: |
           cd ~/scripts
           bash setup.sh ${{ github.event.pull_request.head.sha }} ${{ vars.LC_TAG }} ${{ vars.VAL_COUNT }} ${{ vars.NODE_COUNT }} ${{ vars.LC_COUNT }}

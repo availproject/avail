@@ -22,7 +22,7 @@ frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", bran
 [dev-dependencies]
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 pallet-collective = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", features = ["runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", features = ["runtime"] }
 
 [features]
 default = [ "std" ]

@@ -1,0 +1,48 @@
+{
+  "name": "avail-js-sdk",
+  "version": "0.1.14",
+  "description": "Avail library of functions to interact with blockchain and manipulate transactions",
+  "main": "./build/index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "dev": "nodemon src/index.ts",
+    "build": "rimraf build && tsc && node ./_scripts/build.mjs",
+    "publish-avail": "npm run lint && npm run format && npm run build && cd build && npm publish && cd ..",
+    "test": "npx jest --config jest.config.ts",
+    "format": "prettier --write .",
+    "lint": "eslint ./src --ext .js,.ts",
+    "doc": "npx typedoc --out docs src"
+  },
+  "keywords": [
+    "avail",
+    "data",
+    "blockchain",
+    "substrate",
+    "sdk",
+    "typescript"
+  ],
+  "author": "Ghali Leouarz",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/availproject/avail-js/issues"
+  },
+  "homepage": "https://github.com/availproject/avail-js#readme",
+  "devDependencies": {
+    "@types/jest": "^29.5.6",
+    "@types/node": "^20.8.9",
+    "@typescript-eslint/eslint-plugin": "^6.9.0",
+    "@typescript-eslint/parser": "^6.9.0",
+    "eslint": "^8.52.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-jest": "^27.6.0",
+    "nodemon": "^3.0.1",
+    "prettier": "^3.0.3",
+    "ts-jest": "^29.1.1",
+    "ts-node": "^10.9.1",
+    "typedoc": "^0.25.3",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "@polkadot/api": "^10.10.1"
+  }
+}

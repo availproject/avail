@@ -1,0 +1,76 @@
+[package]
+name = "pallet-succinct"
+version = "1.0.0"
+edition = "2021"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
+frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+frame-system = { default-features = false, path = "../system" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false, features = ["runtime"] }
+
+
+ark-bn254 = { version = "0.3.0", default-features = false, features = ["curve"] }
+ark-groth16 = { version = "0.3.0", default-features = false }
+ark-ec = "0.4.2"
+ark-std = { version = "0.4.0", default-features = false }
+ark-serialize = { version = "0.4.0", features = ["derive"], default-features = false }
+ark-ff = { version = "0.3.0", default-features = false }
+ark-snark = "0.4.0"
+
+serde = { version = "1.0.149", default-features = false, features = ["derive", "alloc"] }
+serde_json = { version = "1.0.89", default-features = false, features = ["alloc"] }
+sha2 = { version = "0.10.8", default-features = false }
+log = "0.4.20"
+hex-literal = "0.4.1"
+trie-db = { version = "0.24.0", default-features = false }
+hash-db = { version = "0.15.2", default-features = false }
+memory-db = { version = "0.30.0", default-features = false }
+tiny-keccak = { version = "2.0.2", features = ["keccak"], optional = true }
+patricia-merkle-trie = { git = "https://github.com/availproject/patricia-merkle-trie.git", default-features = false, branch = "main" }
+rlp = { version = "0.5.2", default-features = false }
+hash256-std-hasher = { version = "0.15.2", default-features = false }
+
+#hex = "0.4.3"
+primitive-types = { version = "0.12.0", default-features = false }
+ethabi = { version = "18.0.0", default-features = false }
+[dev-dependencies]
+# sp-core = { version = "21.0.0", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+
+[features]
+default = [ "std" ]
+std = [
+	"avail-core/std",
+	"codec/std",
+	"frame-benchmarking?/std",
+	"frame-support/std",
+	"frame-system/std",
+	"scale-info/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
+]
+runtime-benchmarks = [
+	"frame-benchmarking",
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+]
+try-runtime = [
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"sp-runtime/try-runtime",
+]

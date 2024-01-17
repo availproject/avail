@@ -148,6 +148,8 @@ construct_runtime!(
 		NominationPools: pallet_nomination_pools = 36,
 		Identity: pallet_identity = 37,
 		Mandate: pallet_mandate = 38,
+		Succinct: pallet_succinct = 39,
+		Proxy: pallet_proxy = 40,
 	}
 );
 
@@ -192,6 +194,8 @@ mod benches {
 		[nomad_da_bridge, $crate::NomadDABridge]
 		[pallet_identity, $crate::Identity]
 		[pallet_mandate, $crate::Mandate]
+		[pallet_succinct, $crate::Succinct]
+		[pallet_proxy, $crate::Proxy]
 	);
 }
 
@@ -266,7 +270,9 @@ mod tests {
 		>>::try_state(block, All)?;
 		<pallet_identity::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_mandate::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_succinct::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_nomination_pools::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_proxy::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		Ok(())
 	}
 
@@ -335,7 +341,7 @@ mod tests {
 	const NOMAD_HOME_CALL_SIZE: usize = size_of::<nomad_home::Call<Runtime>>();
 	const NOMAD_BRIDGE_CALL_SIZE: usize = size_of::<nomad_da_bridge::Call<Runtime>>();
 
-	#[test_case( RUNTIME_CALL_SIZE => 160)]
+	#[test_case(RUNTIME_CALL_SIZE => 168)]
 	#[test_case( DA_CALL_SIZE => 32)]
 	#[test_case( SYSTEM_CALL_SIZE => 32)]
 	#[test_case( NOMAD_UPDATER_MANAGER_CALL_SIZE => 0)]
