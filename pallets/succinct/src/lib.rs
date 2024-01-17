@@ -476,7 +476,6 @@ pub mod pallet {
 					});
 				},
 				MessageType::FungibleToken => {
-					// TODO value > 0?
 					ensure!(
 						value.is_some() && asset_id.is_some() && data.is_none(),
 						Error::<T>::InvalidBridgeInputs
