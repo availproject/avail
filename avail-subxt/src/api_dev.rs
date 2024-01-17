@@ -6,7 +6,8 @@ pub mod api {
 	mod root_mod {
 		pub use super::*;
 	}
-	pub static PALLETS: [&str; 36usize] = [
+
+	pub static PALLETS: [&str; 33usize] = [
 		"System",
 		"Utility",
 		"Babe",
@@ -32,9 +33,6 @@ pub mod api {
 		"Tips",
 		"Mmr",
 		"DataAvailability",
-		"NomadUpdaterManager",
-		"NomadHome",
-		"NomadDABridge",
 		"Preimage",
 		"Multisig",
 		"VoterList",
@@ -98,12 +96,6 @@ pub mod api {
 		Tips(tips::Event),
 		#[codec(index = 29)]
 		DataAvailability(data_availability::Event),
-		#[codec(index = 30)]
-		NomadUpdaterManager(nomad_updater_manager::Event),
-		#[codec(index = 31)]
-		NomadHome(nomad_home::Event),
-		#[codec(index = 32)]
-		NomadDABridge(nomad_da_bridge::Event),
 		#[codec(index = 33)]
 		Preimage(preimage::Event),
 		#[codec(index = 34)]
@@ -272,31 +264,6 @@ pub mod api {
 					)?,
 				));
 			}
-			if pallet_name == "NomadUpdaterManager" {
-				return Ok(Event::NomadUpdaterManager(
-					nomad_updater_manager::Event::decode_with_metadata(
-						&mut &*pallet_bytes,
-						pallet_ty,
-						metadata,
-					)?,
-				));
-			}
-			if pallet_name == "NomadHome" {
-				return Ok(Event::NomadHome(nomad_home::Event::decode_with_metadata(
-					&mut &*pallet_bytes,
-					pallet_ty,
-					metadata,
-				)?));
-			}
-			if pallet_name == "NomadDABridge" {
-				return Ok(Event::NomadDABridge(
-					nomad_da_bridge::Event::decode_with_metadata(
-						&mut &*pallet_bytes,
-						pallet_ty,
-						metadata,
-					)?,
-				));
-			}
 			if pallet_name == "Preimage" {
 				return Ok(Event::Preimage(preimage::Event::decode_with_metadata(
 					&mut &*pallet_bytes,
@@ -414,12 +381,6 @@ pub mod api {
 		Tips(tips::Call),
 		#[codec(index = 29)]
 		DataAvailability(data_availability::Call),
-		#[codec(index = 30)]
-		NomadUpdaterManager(nomad_updater_manager::Call),
-		#[codec(index = 31)]
-		NomadHome(nomad_home::Call),
-		#[codec(index = 32)]
-		NomadDABridge(nomad_da_bridge::Call),
 		#[codec(index = 33)]
 		Preimage(preimage::Call),
 		#[codec(index = 34)]
@@ -586,31 +547,6 @@ pub mod api {
 					)?,
 				));
 			}
-			if pallet_name == "NomadUpdaterManager" {
-				return Ok(Call::NomadUpdaterManager(
-					nomad_updater_manager::Call::decode_with_metadata(
-						&mut &*pallet_bytes,
-						pallet_ty,
-						metadata,
-					)?,
-				));
-			}
-			if pallet_name == "NomadHome" {
-				return Ok(Call::NomadHome(nomad_home::Call::decode_with_metadata(
-					&mut &*pallet_bytes,
-					pallet_ty,
-					metadata,
-				)?));
-			}
-			if pallet_name == "NomadDABridge" {
-				return Ok(Call::NomadDABridge(
-					nomad_da_bridge::Call::decode_with_metadata(
-						&mut &*pallet_bytes,
-						pallet_ty,
-						metadata,
-					)?,
-				));
-			}
 			if pallet_name == "Preimage" {
 				return Ok(Call::Preimage(preimage::Call::decode_with_metadata(
 					&mut &*pallet_bytes,
@@ -726,12 +662,6 @@ pub mod api {
 		Tips(tips::Error),
 		#[codec(index = 29)]
 		DataAvailability(data_availability::Error),
-		#[codec(index = 30)]
-		NomadUpdaterManager(nomad_updater_manager::Error),
-		#[codec(index = 31)]
-		NomadHome(nomad_home::Error),
-		#[codec(index = 32)]
-		NomadDABridge(nomad_da_bridge::Error),
 		#[codec(index = 33)]
 		Preimage(preimage::Error),
 		#[codec(index = 34)]
@@ -756,134 +686,119 @@ pub mod api {
 			use ::subxt::metadata::DecodeWithMetadata;
 			let cursor = &mut &pallet_bytes[..];
 			if pallet_name == "System" {
-				let variant_error = system::Error::decode_with_metadata(cursor, 128u32, metadata)?;
+				let variant_error = system::Error::decode_with_metadata(cursor, 125u32, metadata)?;
 				return Ok(Error::System(variant_error));
 			}
 			if pallet_name == "Utility" {
-				let variant_error = utility::Error::decode_with_metadata(cursor, 332u32, metadata)?;
+				let variant_error = utility::Error::decode_with_metadata(cursor, 322u32, metadata)?;
 				return Ok(Error::Utility(variant_error));
 			}
 			if pallet_name == "Babe" {
-				let variant_error = babe::Error::decode_with_metadata(cursor, 348u32, metadata)?;
+				let variant_error = babe::Error::decode_with_metadata(cursor, 338u32, metadata)?;
 				return Ok(Error::Babe(variant_error));
 			}
 			if pallet_name == "Indices" {
-				let variant_error = indices::Error::decode_with_metadata(cursor, 350u32, metadata)?;
+				let variant_error = indices::Error::decode_with_metadata(cursor, 340u32, metadata)?;
 				return Ok(Error::Indices(variant_error));
 			}
 			if pallet_name == "Balances" {
 				let variant_error =
-					balances::Error::decode_with_metadata(cursor, 365u32, metadata)?;
+					balances::Error::decode_with_metadata(cursor, 355u32, metadata)?;
 				return Ok(Error::Balances(variant_error));
 			}
 			if pallet_name == "ElectionProviderMultiPhase" {
 				let variant_error = election_provider_multi_phase::Error::decode_with_metadata(
-					cursor, 378u32, metadata,
+					cursor, 368u32, metadata,
 				)?;
 				return Ok(Error::ElectionProviderMultiPhase(variant_error));
 			}
 			if pallet_name == "Staking" {
-				let variant_error = staking::Error::decode_with_metadata(cursor, 399u32, metadata)?;
+				let variant_error = staking::Error::decode_with_metadata(cursor, 389u32, metadata)?;
 				return Ok(Error::Staking(variant_error));
 			}
 			if pallet_name == "Session" {
-				let variant_error = session::Error::decode_with_metadata(cursor, 404u32, metadata)?;
+				let variant_error = session::Error::decode_with_metadata(cursor, 394u32, metadata)?;
 				return Ok(Error::Session(variant_error));
 			}
 			if pallet_name == "TechnicalCommittee" {
 				let variant_error =
-					technical_committee::Error::decode_with_metadata(cursor, 407u32, metadata)?;
+					technical_committee::Error::decode_with_metadata(cursor, 397u32, metadata)?;
 				return Ok(Error::TechnicalCommittee(variant_error));
 			}
 			if pallet_name == "TechnicalMembership" {
 				let variant_error =
-					technical_membership::Error::decode_with_metadata(cursor, 409u32, metadata)?;
+					technical_membership::Error::decode_with_metadata(cursor, 399u32, metadata)?;
 				return Ok(Error::TechnicalMembership(variant_error));
 			}
 			if pallet_name == "Grandpa" {
-				let variant_error = grandpa::Error::decode_with_metadata(cursor, 413u32, metadata)?;
+				let variant_error = grandpa::Error::decode_with_metadata(cursor, 403u32, metadata)?;
 				return Ok(Error::Grandpa(variant_error));
 			}
 			if pallet_name == "Treasury" {
 				let variant_error =
-					treasury::Error::decode_with_metadata(cursor, 418u32, metadata)?;
+					treasury::Error::decode_with_metadata(cursor, 408u32, metadata)?;
 				return Ok(Error::Treasury(variant_error));
 			}
 			if pallet_name == "Sudo" {
-				let variant_error = sudo::Error::decode_with_metadata(cursor, 419u32, metadata)?;
+				let variant_error = sudo::Error::decode_with_metadata(cursor, 409u32, metadata)?;
 				return Ok(Error::Sudo(variant_error));
 			}
 			if pallet_name == "ImOnline" {
 				let variant_error =
-					im_online::Error::decode_with_metadata(cursor, 422u32, metadata)?;
+					im_online::Error::decode_with_metadata(cursor, 412u32, metadata)?;
 				return Ok(Error::ImOnline(variant_error));
 			}
 			if pallet_name == "Scheduler" {
 				let variant_error =
-					scheduler::Error::decode_with_metadata(cursor, 434u32, metadata)?;
+					scheduler::Error::decode_with_metadata(cursor, 424u32, metadata)?;
 				return Ok(Error::Scheduler(variant_error));
 			}
 			if pallet_name == "Bounties" {
 				let variant_error =
-					bounties::Error::decode_with_metadata(cursor, 438u32, metadata)?;
+					bounties::Error::decode_with_metadata(cursor, 428u32, metadata)?;
 				return Ok(Error::Bounties(variant_error));
 			}
 			if pallet_name == "Tips" {
-				let variant_error = tips::Error::decode_with_metadata(cursor, 440u32, metadata)?;
+				let variant_error = tips::Error::decode_with_metadata(cursor, 430u32, metadata)?;
 				return Ok(Error::Tips(variant_error));
 			}
 			if pallet_name == "DataAvailability" {
 				let variant_error =
-					data_availability::Error::decode_with_metadata(cursor, 442u32, metadata)?;
+					data_availability::Error::decode_with_metadata(cursor, 432u32, metadata)?;
 				return Ok(Error::DataAvailability(variant_error));
-			}
-			if pallet_name == "NomadUpdaterManager" {
-				let variant_error =
-					nomad_updater_manager::Error::decode_with_metadata(cursor, 443u32, metadata)?;
-				return Ok(Error::NomadUpdaterManager(variant_error));
-			}
-			if pallet_name == "NomadHome" {
-				let variant_error =
-					nomad_home::Error::decode_with_metadata(cursor, 448u32, metadata)?;
-				return Ok(Error::NomadHome(variant_error));
-			}
-			if pallet_name == "NomadDABridge" {
-				let variant_error =
-					nomad_da_bridge::Error::decode_with_metadata(cursor, 449u32, metadata)?;
-				return Ok(Error::NomadDABridge(variant_error));
 			}
 			if pallet_name == "Preimage" {
 				let variant_error =
-					preimage::Error::decode_with_metadata(cursor, 453u32, metadata)?;
+					preimage::Error::decode_with_metadata(cursor, 436u32, metadata)?;
 				return Ok(Error::Preimage(variant_error));
 			}
 			if pallet_name == "Multisig" {
 				let variant_error =
-					multisig::Error::decode_with_metadata(cursor, 456u32, metadata)?;
+					multisig::Error::decode_with_metadata(cursor, 439u32, metadata)?;
 				return Ok(Error::Multisig(variant_error));
 			}
 			if pallet_name == "VoterList" {
 				let variant_error =
-					voter_list::Error::decode_with_metadata(cursor, 460u32, metadata)?;
+					voter_list::Error::decode_with_metadata(cursor, 443u32, metadata)?;
 				return Ok(Error::VoterList(variant_error));
 			}
 			if pallet_name == "NominationPools" {
 				let variant_error =
-					nomination_pools::Error::decode_with_metadata(cursor, 479u32, metadata)?;
+					nomination_pools::Error::decode_with_metadata(cursor, 462u32, metadata)?;
 				return Ok(Error::NominationPools(variant_error));
 			}
 			if pallet_name == "Identity" {
 				let variant_error =
-					identity::Error::decode_with_metadata(cursor, 491u32, metadata)?;
+					identity::Error::decode_with_metadata(cursor, 474u32, metadata)?;
 				return Ok(Error::Identity(variant_error));
 			}
 			if pallet_name == "Succinct" {
 				let variant_error =
-					succinct::Error::decode_with_metadata(cursor, 493u32, metadata)?;
+					succinct::Error::decode_with_metadata(cursor, 476u32, metadata)?;
 				return Ok(Error::Succinct(variant_error));
 			}
 			if pallet_name == "Proxy" {
-				let variant_error = proxy::Error::decode_with_metadata(cursor, 502u32, metadata)?;
+				let variant_error = proxy::Error::decode_with_metadata(cursor, 485u32, metadata)?;
 				return Ok(Error::Proxy(variant_error));
 			}
 			Err(::subxt::ext::scale_decode::Error::custom(format!(
@@ -966,12 +881,6 @@ pub mod api {
 		}
 		pub fn data_availability(&self) -> data_availability::constants::ConstantsApi {
 			data_availability::constants::ConstantsApi
-		}
-		pub fn nomad_home(&self) -> nomad_home::constants::ConstantsApi {
-			nomad_home::constants::ConstantsApi
-		}
-		pub fn nomad_da_bridge(&self) -> nomad_da_bridge::constants::ConstantsApi {
-			nomad_da_bridge::constants::ConstantsApi
 		}
 		pub fn multisig(&self) -> multisig::constants::ConstantsApi {
 			multisig::constants::ConstantsApi
@@ -1068,12 +977,6 @@ pub mod api {
 		pub fn data_availability(&self) -> data_availability::storage::StorageApi {
 			data_availability::storage::StorageApi
 		}
-		pub fn nomad_updater_manager(&self) -> nomad_updater_manager::storage::StorageApi {
-			nomad_updater_manager::storage::StorageApi
-		}
-		pub fn nomad_home(&self) -> nomad_home::storage::StorageApi {
-			nomad_home::storage::StorageApi
-		}
 		pub fn preimage(&self) -> preimage::storage::StorageApi {
 			preimage::storage::StorageApi
 		}
@@ -1157,15 +1060,6 @@ pub mod api {
 		pub fn data_availability(&self) -> data_availability::calls::TransactionApi {
 			data_availability::calls::TransactionApi
 		}
-		pub fn nomad_updater_manager(&self) -> nomad_updater_manager::calls::TransactionApi {
-			nomad_updater_manager::calls::TransactionApi
-		}
-		pub fn nomad_home(&self) -> nomad_home::calls::TransactionApi {
-			nomad_home::calls::TransactionApi
-		}
-		pub fn nomad_da_bridge(&self) -> nomad_da_bridge::calls::TransactionApi {
-			nomad_da_bridge::calls::TransactionApi
-		}
 		pub fn preimage(&self) -> preimage::calls::TransactionApi {
 			preimage::calls::TransactionApi
 		}
@@ -1202,9 +1096,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				155u8, 120u8, 14u8, 94u8, 254u8, 115u8, 135u8, 216u8, 15u8, 236u8, 104u8, 62u8,
-				228u8, 154u8, 47u8, 215u8, 47u8, 110u8, 103u8, 170u8, 10u8, 163u8, 135u8, 98u8,
-				166u8, 189u8, 190u8, 140u8, 100u8, 16u8, 66u8, 86u8,
+				233u8, 96u8, 132u8, 203u8, 116u8, 73u8, 123u8, 46u8, 228u8, 42u8, 157u8, 17u8,
+				129u8, 63u8, 77u8, 229u8, 98u8, 231u8, 136u8, 237u8, 90u8, 232u8, 0u8, 85u8, 79u8,
+				49u8, 201u8, 222u8, 159u8, 90u8, 112u8, 8u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -1988,9 +1882,9 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							1u8, 39u8, 123u8, 77u8, 9u8, 165u8, 18u8, 28u8, 48u8, 140u8, 34u8,
-							14u8, 187u8, 72u8, 11u8, 93u8, 228u8, 128u8, 160u8, 168u8, 108u8, 56u8,
-							141u8, 196u8, 114u8, 242u8, 11u8, 182u8, 15u8, 14u8, 110u8, 13u8,
+							142u8, 1u8, 187u8, 25u8, 229u8, 134u8, 117u8, 200u8, 80u8, 166u8,
+							176u8, 158u8, 117u8, 6u8, 225u8, 216u8, 1u8, 254u8, 210u8, 248u8, 54u8,
+							131u8, 121u8, 196u8, 71u8, 177u8, 74u8, 121u8, 31u8, 89u8, 34u8, 227u8,
 						],
 					)
 				}
@@ -2477,9 +2371,9 @@ pub mod api {
 						"batch",
 						types::Batch { calls },
 						[
-							149u8, 10u8, 98u8, 65u8, 25u8, 237u8, 21u8, 231u8, 254u8, 116u8, 141u8,
-							207u8, 150u8, 27u8, 165u8, 65u8, 167u8, 251u8, 187u8, 56u8, 134u8,
-							64u8, 164u8, 109u8, 97u8, 140u8, 164u8, 80u8, 1u8, 133u8, 75u8, 99u8,
+							155u8, 224u8, 142u8, 250u8, 163u8, 171u8, 201u8, 114u8, 74u8, 162u8,
+							83u8, 4u8, 60u8, 47u8, 132u8, 249u8, 103u8, 40u8, 128u8, 29u8, 26u8,
+							77u8, 6u8, 129u8, 121u8, 156u8, 58u8, 30u8, 107u8, 243u8, 2u8, 123u8,
 						],
 					)
 				}
@@ -2497,10 +2391,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							174u8, 210u8, 22u8, 186u8, 158u8, 206u8, 120u8, 155u8, 111u8, 136u8,
-							66u8, 150u8, 231u8, 123u8, 194u8, 88u8, 2u8, 253u8, 149u8, 24u8, 151u8,
-							79u8, 188u8, 181u8, 189u8, 71u8, 28u8, 157u8, 90u8, 194u8, 153u8,
-							131u8,
+							10u8, 12u8, 84u8, 111u8, 17u8, 118u8, 208u8, 127u8, 207u8, 225u8,
+							174u8, 235u8, 2u8, 85u8, 140u8, 240u8, 111u8, 87u8, 106u8, 254u8,
+							182u8, 235u8, 182u8, 115u8, 44u8, 179u8, 229u8, 22u8, 144u8, 25u8,
+							217u8, 118u8,
 						],
 					)
 				}
@@ -2514,9 +2408,9 @@ pub mod api {
 						"batch_all",
 						types::BatchAll { calls },
 						[
-							131u8, 157u8, 220u8, 116u8, 246u8, 175u8, 151u8, 102u8, 39u8, 30u8,
-							70u8, 71u8, 210u8, 190u8, 51u8, 107u8, 61u8, 93u8, 203u8, 123u8, 40u8,
-							143u8, 119u8, 86u8, 103u8, 127u8, 135u8, 140u8, 6u8, 78u8, 100u8, 60u8,
+							230u8, 179u8, 105u8, 178u8, 6u8, 76u8, 105u8, 244u8, 96u8, 133u8,
+							119u8, 48u8, 225u8, 197u8, 6u8, 62u8, 31u8, 100u8, 177u8, 203u8, 131u8,
+							33u8, 5u8, 207u8, 14u8, 52u8, 10u8, 12u8, 227u8, 251u8, 196u8, 131u8,
 						],
 					)
 				}
@@ -2534,9 +2428,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							12u8, 74u8, 136u8, 164u8, 25u8, 214u8, 196u8, 135u8, 52u8, 194u8, 3u8,
-							222u8, 191u8, 113u8, 24u8, 212u8, 24u8, 200u8, 129u8, 216u8, 213u8,
-							123u8, 162u8, 192u8, 2u8, 6u8, 36u8, 113u8, 152u8, 148u8, 164u8, 200u8,
+							197u8, 95u8, 183u8, 99u8, 149u8, 211u8, 196u8, 31u8, 50u8, 217u8,
+							217u8, 99u8, 211u8, 203u8, 113u8, 73u8, 10u8, 20u8, 198u8, 174u8, 28u8,
+							20u8, 202u8, 120u8, 34u8, 57u8, 238u8, 53u8, 140u8, 165u8, 183u8,
+							138u8,
 						],
 					)
 				}
@@ -2550,9 +2445,9 @@ pub mod api {
 						"force_batch",
 						types::ForceBatch { calls },
 						[
-							111u8, 150u8, 225u8, 61u8, 43u8, 57u8, 30u8, 207u8, 9u8, 58u8, 76u8,
-							221u8, 45u8, 122u8, 21u8, 102u8, 11u8, 222u8, 245u8, 108u8, 201u8,
-							142u8, 50u8, 9u8, 57u8, 5u8, 68u8, 80u8, 157u8, 38u8, 73u8, 136u8,
+							244u8, 212u8, 234u8, 227u8, 252u8, 29u8, 51u8, 42u8, 127u8, 189u8,
+							140u8, 140u8, 48u8, 103u8, 42u8, 81u8, 244u8, 230u8, 67u8, 80u8, 47u8,
+							162u8, 120u8, 12u8, 237u8, 145u8, 92u8, 105u8, 84u8, 197u8, 71u8, 1u8,
 						],
 					)
 				}
@@ -2570,10 +2465,9 @@ pub mod api {
 							weight,
 						},
 						[
-							127u8, 254u8, 174u8, 238u8, 127u8, 247u8, 196u8, 199u8, 222u8, 246u8,
-							38u8, 103u8, 207u8, 108u8, 96u8, 248u8, 17u8, 217u8, 10u8, 136u8,
-							161u8, 172u8, 219u8, 13u8, 233u8, 20u8, 49u8, 58u8, 101u8, 200u8,
-							203u8, 232u8,
+							134u8, 223u8, 119u8, 8u8, 182u8, 20u8, 105u8, 230u8, 74u8, 152u8, 10u8,
+							55u8, 83u8, 5u8, 185u8, 220u8, 131u8, 58u8, 29u8, 120u8, 79u8, 48u8,
+							95u8, 172u8, 206u8, 107u8, 167u8, 151u8, 60u8, 62u8, 192u8, 120u8,
 						],
 					)
 				}
@@ -9839,9 +9733,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							13u8, 7u8, 219u8, 64u8, 102u8, 5u8, 93u8, 127u8, 200u8, 194u8, 64u8,
-							135u8, 236u8, 39u8, 133u8, 77u8, 217u8, 33u8, 9u8, 200u8, 255u8, 217u8,
-							4u8, 20u8, 167u8, 83u8, 140u8, 155u8, 172u8, 35u8, 211u8, 39u8,
+							85u8, 21u8, 157u8, 207u8, 46u8, 213u8, 35u8, 248u8, 166u8, 190u8,
+							245u8, 96u8, 110u8, 182u8, 8u8, 160u8, 187u8, 243u8, 42u8, 89u8, 245u8,
+							180u8, 86u8, 122u8, 61u8, 7u8, 0u8, 251u8, 75u8, 218u8, 218u8, 13u8,
 						],
 					)
 				}
@@ -9861,10 +9755,10 @@ pub mod api {
 							length_bound,
 						},
 						[
-							104u8, 41u8, 64u8, 127u8, 97u8, 167u8, 5u8, 160u8, 133u8, 162u8, 227u8,
-							216u8, 193u8, 88u8, 211u8, 238u8, 49u8, 21u8, 235u8, 140u8, 114u8,
-							163u8, 12u8, 236u8, 197u8, 78u8, 200u8, 62u8, 58u8, 144u8, 179u8,
-							249u8,
+							145u8, 252u8, 115u8, 155u8, 234u8, 13u8, 202u8, 122u8, 158u8, 109u8,
+							224u8, 192u8, 63u8, 254u8, 218u8, 247u8, 152u8, 133u8, 159u8, 134u8,
+							253u8, 2u8, 7u8, 90u8, 139u8, 131u8, 34u8, 108u8, 37u8, 197u8, 121u8,
+							90u8,
 						],
 					)
 				}
@@ -10143,10 +10037,10 @@ pub mod api {
 							_0.borrow(),
 						)],
 						[
-							176u8, 188u8, 61u8, 104u8, 222u8, 177u8, 46u8, 78u8, 19u8, 199u8, 73u8,
-							186u8, 126u8, 131u8, 155u8, 73u8, 33u8, 17u8, 193u8, 245u8, 62u8,
-							241u8, 104u8, 64u8, 25u8, 251u8, 169u8, 6u8, 133u8, 216u8, 136u8,
-							201u8,
+							69u8, 63u8, 151u8, 11u8, 86u8, 217u8, 36u8, 198u8, 227u8, 202u8, 149u8,
+							164u8, 78u8, 228u8, 114u8, 147u8, 115u8, 34u8, 140u8, 106u8, 244u8,
+							152u8, 248u8, 144u8, 236u8, 106u8, 33u8, 182u8, 104u8, 104u8, 40u8,
+							193u8,
 						],
 					)
 				}
@@ -10165,10 +10059,10 @@ pub mod api {
 						"ProposalOf",
 						Vec::new(),
 						[
-							176u8, 188u8, 61u8, 104u8, 222u8, 177u8, 46u8, 78u8, 19u8, 199u8, 73u8,
-							186u8, 126u8, 131u8, 155u8, 73u8, 33u8, 17u8, 193u8, 245u8, 62u8,
-							241u8, 104u8, 64u8, 25u8, 251u8, 169u8, 6u8, 133u8, 216u8, 136u8,
-							201u8,
+							69u8, 63u8, 151u8, 11u8, 86u8, 217u8, 36u8, 198u8, 227u8, 202u8, 149u8,
+							164u8, 78u8, 228u8, 114u8, 147u8, 115u8, 34u8, 140u8, 106u8, 244u8,
+							152u8, 248u8, 144u8, 236u8, 106u8, 33u8, 182u8, 104u8, 104u8, 40u8,
+							193u8,
 						],
 					)
 				}
@@ -12008,10 +11902,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							84u8, 39u8, 183u8, 248u8, 32u8, 227u8, 188u8, 108u8, 185u8, 153u8,
-							100u8, 227u8, 227u8, 137u8, 189u8, 128u8, 161u8, 127u8, 95u8, 38u8,
-							106u8, 35u8, 218u8, 216u8, 237u8, 141u8, 6u8, 166u8, 61u8, 69u8, 208u8,
-							168u8,
+							193u8, 178u8, 2u8, 114u8, 231u8, 231u8, 64u8, 16u8, 17u8, 44u8, 178u8,
+							137u8, 48u8, 48u8, 210u8, 67u8, 82u8, 92u8, 51u8, 18u8, 184u8, 42u8,
+							42u8, 43u8, 202u8, 66u8, 43u8, 9u8, 137u8, 168u8, 17u8, 242u8,
 						],
 					)
 				}
@@ -12029,9 +11922,10 @@ pub mod api {
 							weight,
 						},
 						[
-							102u8, 249u8, 54u8, 166u8, 16u8, 234u8, 235u8, 234u8, 200u8, 103u8,
-							49u8, 107u8, 11u8, 56u8, 65u8, 6u8, 85u8, 89u8, 185u8, 229u8, 174u8,
-							233u8, 234u8, 83u8, 12u8, 68u8, 242u8, 58u8, 125u8, 15u8, 107u8, 59u8,
+							184u8, 21u8, 11u8, 150u8, 119u8, 207u8, 64u8, 141u8, 70u8, 151u8,
+							145u8, 255u8, 161u8, 215u8, 232u8, 42u8, 101u8, 48u8, 31u8, 212u8,
+							69u8, 59u8, 169u8, 113u8, 72u8, 154u8, 89u8, 21u8, 57u8, 71u8, 193u8,
+							249u8,
 						],
 					)
 				}
@@ -12072,9 +11966,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							180u8, 252u8, 177u8, 162u8, 203u8, 59u8, 202u8, 228u8, 233u8, 231u8,
-							34u8, 33u8, 143u8, 212u8, 248u8, 169u8, 28u8, 158u8, 20u8, 95u8, 209u8,
-							67u8, 231u8, 242u8, 20u8, 167u8, 90u8, 23u8, 79u8, 205u8, 145u8, 70u8,
+							43u8, 167u8, 120u8, 15u8, 73u8, 52u8, 108u8, 90u8, 174u8, 11u8, 215u8,
+							232u8, 98u8, 133u8, 42u8, 46u8, 111u8, 92u8, 111u8, 13u8, 243u8, 66u8,
+							194u8, 30u8, 19u8, 217u8, 227u8, 93u8, 253u8, 126u8, 142u8, 75u8,
 						],
 					)
 				}
@@ -12960,10 +12854,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							16u8, 250u8, 97u8, 51u8, 188u8, 186u8, 135u8, 248u8, 167u8, 42u8, 52u8,
-							61u8, 45u8, 231u8, 216u8, 237u8, 7u8, 163u8, 107u8, 152u8, 222u8,
-							133u8, 195u8, 112u8, 77u8, 155u8, 211u8, 206u8, 246u8, 38u8, 47u8,
-							73u8,
+							44u8, 13u8, 100u8, 94u8, 126u8, 243u8, 71u8, 151u8, 165u8, 20u8, 22u8,
+							179u8, 27u8, 23u8, 112u8, 34u8, 97u8, 199u8, 197u8, 64u8, 2u8, 177u8,
+							116u8, 112u8, 111u8, 76u8, 192u8, 6u8, 191u8, 255u8, 45u8, 46u8,
 						],
 					)
 				}
@@ -13008,9 +12901,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							56u8, 247u8, 132u8, 52u8, 243u8, 5u8, 224u8, 11u8, 30u8, 46u8, 72u8,
-							79u8, 14u8, 225u8, 117u8, 43u8, 221u8, 50u8, 66u8, 46u8, 112u8, 57u8,
-							36u8, 17u8, 194u8, 128u8, 73u8, 124u8, 107u8, 223u8, 170u8, 216u8,
+							88u8, 171u8, 20u8, 92u8, 34u8, 71u8, 151u8, 246u8, 252u8, 251u8, 162u8,
+							215u8, 70u8, 163u8, 103u8, 66u8, 68u8, 240u8, 64u8, 51u8, 107u8, 148u8,
+							168u8, 97u8, 13u8, 132u8, 46u8, 180u8, 17u8, 100u8, 144u8, 83u8,
 						],
 					)
 				}
@@ -13051,9 +12944,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							55u8, 174u8, 95u8, 72u8, 24u8, 55u8, 104u8, 137u8, 11u8, 77u8, 169u8,
-							162u8, 102u8, 39u8, 89u8, 144u8, 129u8, 175u8, 129u8, 139u8, 102u8,
-							75u8, 188u8, 134u8, 8u8, 129u8, 98u8, 224u8, 133u8, 144u8, 102u8, 6u8,
+							95u8, 153u8, 44u8, 21u8, 182u8, 126u8, 118u8, 48u8, 101u8, 215u8,
+							133u8, 189u8, 135u8, 138u8, 82u8, 81u8, 102u8, 178u8, 56u8, 11u8, 41u8,
+							98u8, 10u8, 105u8, 129u8, 159u8, 52u8, 60u8, 241u8, 194u8, 49u8, 147u8,
 						],
 					)
 				}
@@ -13080,10 +12973,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							213u8, 218u8, 190u8, 186u8, 59u8, 136u8, 233u8, 71u8, 155u8, 213u8,
-							242u8, 53u8, 107u8, 108u8, 155u8, 78u8, 88u8, 216u8, 224u8, 217u8,
-							104u8, 158u8, 74u8, 200u8, 49u8, 175u8, 153u8, 25u8, 146u8, 217u8,
-							25u8, 39u8,
+							130u8, 111u8, 91u8, 115u8, 163u8, 78u8, 244u8, 41u8, 155u8, 37u8,
+							132u8, 251u8, 240u8, 187u8, 228u8, 33u8, 81u8, 89u8, 222u8, 213u8,
+							231u8, 108u8, 224u8, 106u8, 45u8, 37u8, 88u8, 212u8, 160u8, 148u8,
+							186u8, 63u8,
 						],
 					)
 				}
@@ -15321,692 +15214,6 @@ pub mod api {
 			}
 		}
 	}
-	pub mod nomad_updater_manager {
-		use super::root_mod;
-		use super::runtime_types;
-		#[doc = "The `Error` enum of this pallet."]
-		pub type Error = runtime_types::nomad_updater_manager::pallet::Error;
-		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-		pub type Call = runtime_types::nomad_updater_manager::pallet::Call;
-		pub mod calls {
-			use super::root_mod;
-			use super::runtime_types;
-			type DispatchError = runtime_types::sp_runtime::DispatchError;
-			pub mod types {
-				use super::runtime_types;
-			}
-			pub struct TransactionApi;
-			impl TransactionApi {}
-		}
-		#[doc = "The `Event` enum of this pallet"]
-		pub type Event = runtime_types::nomad_updater_manager::pallet::Event;
-		pub mod events {
-			use super::runtime_types;
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			pub struct NewUpdater {
-				pub old_updater: ::subxt::utils::H160,
-				pub new_updater: ::subxt::utils::H160,
-			}
-			impl ::subxt::events::StaticEvent for NewUpdater {
-				const PALLET: &'static str = "NomadUpdaterManager";
-				const EVENT: &'static str = "NewUpdater";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			pub struct FakeSlashed {
-				pub reporter: ::subxt::utils::AccountId32,
-			}
-			impl ::subxt::events::StaticEvent for FakeSlashed {
-				const PALLET: &'static str = "NomadUpdaterManager";
-				const EVENT: &'static str = "FakeSlashed";
-			}
-		}
-		pub mod storage {
-			use super::runtime_types;
-			pub struct StorageApi;
-			impl StorageApi {
-				pub fn updater(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::subxt::utils::H160,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"NomadUpdaterManager",
-						"Updater",
-						vec![],
-						[
-							97u8, 46u8, 26u8, 40u8, 198u8, 108u8, 164u8, 28u8, 138u8, 86u8, 248u8,
-							90u8, 34u8, 68u8, 122u8, 144u8, 154u8, 236u8, 244u8, 219u8, 57u8,
-							136u8, 163u8, 184u8, 201u8, 5u8, 132u8, 141u8, 114u8, 190u8, 138u8,
-							204u8,
-						],
-					)
-				}
-			}
-		}
-	}
-	pub mod nomad_home {
-		use super::root_mod;
-		use super::runtime_types;
-		#[doc = "The `Error` enum of this pallet."]
-		pub type Error = runtime_types::nomad_home::pallet::Error;
-		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-		pub type Call = runtime_types::nomad_home::pallet::Call;
-		pub mod calls {
-			use super::root_mod;
-			use super::runtime_types;
-			type DispatchError = runtime_types::sp_runtime::DispatchError;
-			pub mod types {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Dispatch {
-					#[codec(compact)]
-					pub destination_domain: ::core::primitive::u32,
-					pub recipient_address: ::subxt::utils::H256,
-					pub message_body: runtime_types::bounded_collections::bounded_vec::BoundedVec<
-						::core::primitive::u8,
-					>,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for Dispatch {
-					const PALLET: &'static str = "NomadHome";
-					const CALL: &'static str = "dispatch";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Update {
-					pub signed_update: runtime_types::nomad_core::update::SignedUpdate,
-					#[codec(compact)]
-					pub max_index: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for Update {
-					const PALLET: &'static str = "NomadHome";
-					const CALL: &'static str = "update";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct ImproperUpdate {
-					pub signed_update: runtime_types::nomad_core::update::SignedUpdate,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for ImproperUpdate {
-					const PALLET: &'static str = "NomadHome";
-					const CALL: &'static str = "improper_update";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct SetUpdater {
-					pub new_updater: ::subxt::utils::H160,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for SetUpdater {
-					const PALLET: &'static str = "NomadHome";
-					const CALL: &'static str = "set_updater";
-				}
-			}
-			pub struct TransactionApi;
-			impl TransactionApi {
-				#[doc = "See [`Pallet::dispatch`]."]
-				pub fn dispatch(
-					&self,
-					destination_domain: ::core::primitive::u32,
-					recipient_address: ::subxt::utils::H256,
-					message_body: runtime_types::bounded_collections::bounded_vec::BoundedVec<
-						::core::primitive::u8,
-					>,
-				) -> ::subxt::tx::Payload<types::Dispatch> {
-					::subxt::tx::Payload::new_static(
-						"NomadHome",
-						"dispatch",
-						types::Dispatch {
-							destination_domain,
-							recipient_address,
-							message_body,
-						},
-						[
-							7u8, 224u8, 49u8, 89u8, 228u8, 226u8, 26u8, 35u8, 45u8, 124u8, 124u8,
-							55u8, 26u8, 234u8, 151u8, 239u8, 140u8, 176u8, 228u8, 35u8, 207u8,
-							235u8, 97u8, 237u8, 59u8, 91u8, 231u8, 208u8, 89u8, 116u8, 166u8, 67u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::update`]."]
-				pub fn update(
-					&self,
-					signed_update: runtime_types::nomad_core::update::SignedUpdate,
-					max_index: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::Update> {
-					::subxt::tx::Payload::new_static(
-						"NomadHome",
-						"update",
-						types::Update {
-							signed_update,
-							max_index,
-						},
-						[
-							41u8, 107u8, 21u8, 50u8, 78u8, 61u8, 173u8, 159u8, 208u8, 99u8, 27u8,
-							164u8, 166u8, 136u8, 83u8, 219u8, 146u8, 122u8, 148u8, 41u8, 45u8,
-							106u8, 13u8, 251u8, 241u8, 74u8, 100u8, 7u8, 59u8, 30u8, 162u8, 174u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::improper_update`]."]
-				pub fn improper_update(
-					&self,
-					signed_update: runtime_types::nomad_core::update::SignedUpdate,
-				) -> ::subxt::tx::Payload<types::ImproperUpdate> {
-					::subxt::tx::Payload::new_static(
-						"NomadHome",
-						"improper_update",
-						types::ImproperUpdate { signed_update },
-						[
-							246u8, 11u8, 33u8, 100u8, 156u8, 239u8, 209u8, 122u8, 10u8, 188u8,
-							86u8, 17u8, 145u8, 60u8, 64u8, 102u8, 145u8, 76u8, 82u8, 186u8, 140u8,
-							188u8, 173u8, 207u8, 122u8, 119u8, 141u8, 6u8, 82u8, 42u8, 103u8, 87u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::set_updater`]."]
-				pub fn set_updater(
-					&self,
-					new_updater: ::subxt::utils::H160,
-				) -> ::subxt::tx::Payload<types::SetUpdater> {
-					::subxt::tx::Payload::new_static(
-						"NomadHome",
-						"set_updater",
-						types::SetUpdater { new_updater },
-						[
-							127u8, 126u8, 8u8, 188u8, 162u8, 36u8, 215u8, 205u8, 243u8, 213u8,
-							108u8, 196u8, 151u8, 61u8, 27u8, 146u8, 162u8, 77u8, 158u8, 85u8,
-							165u8, 89u8, 197u8, 244u8, 214u8, 21u8, 109u8, 167u8, 2u8, 139u8,
-							191u8, 154u8,
-						],
-					)
-				}
-			}
-		}
-		#[doc = "The `Event` enum of this pallet"]
-		pub type Event = runtime_types::nomad_home::pallet::Event;
-		pub mod events {
-			use super::runtime_types;
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			pub struct Dispatch {
-				pub message_hash: ::subxt::utils::H256,
-				pub leaf_index: ::core::primitive::u32,
-				pub destination_and_nonce: ::core::primitive::u64,
-				pub committed_root: ::subxt::utils::H256,
-				pub message: ::std::vec::Vec<::core::primitive::u8>,
-			}
-			impl ::subxt::events::StaticEvent for Dispatch {
-				const PALLET: &'static str = "NomadHome";
-				const EVENT: &'static str = "Dispatch";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			pub struct Update {
-				pub home_domain: ::core::primitive::u32,
-				pub previous_root: ::subxt::utils::H256,
-				pub new_root: ::subxt::utils::H256,
-				pub signature: ::std::vec::Vec<::core::primitive::u8>,
-			}
-			impl ::subxt::events::StaticEvent for Update {
-				const PALLET: &'static str = "NomadHome";
-				const EVENT: &'static str = "Update";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			pub struct ImproperUpdate {
-				pub previous_root: ::subxt::utils::H256,
-				pub new_root: ::subxt::utils::H256,
-				pub signature: ::std::vec::Vec<::core::primitive::u8>,
-			}
-			impl ::subxt::events::StaticEvent for ImproperUpdate {
-				const PALLET: &'static str = "NomadHome";
-				const EVENT: &'static str = "ImproperUpdate";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			pub struct UpdaterSlashed {
-				pub updater: ::subxt::utils::H160,
-				pub reporter: ::subxt::utils::AccountId32,
-			}
-			impl ::subxt::events::StaticEvent for UpdaterSlashed {
-				const PALLET: &'static str = "NomadHome";
-				const EVENT: &'static str = "UpdaterSlashed";
-			}
-		}
-		pub mod storage {
-			use super::runtime_types;
-			pub struct StorageApi;
-			impl StorageApi {
-				pub fn base(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::nomad_base::NomadBase,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"NomadHome",
-						"Base",
-						vec![],
-						[
-							254u8, 56u8, 220u8, 109u8, 51u8, 237u8, 70u8, 31u8, 134u8, 49u8, 145u8,
-							104u8, 204u8, 243u8, 216u8, 242u8, 57u8, 113u8, 132u8, 190u8, 170u8,
-							80u8, 232u8, 190u8, 37u8, 91u8, 20u8, 188u8, 41u8, 41u8, 187u8, 107u8,
-						],
-					)
-				}
-				pub fn tree(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::nomad_merkle::light::LightMerkle,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"NomadHome",
-						"Tree",
-						vec![],
-						[
-							22u8, 211u8, 114u8, 109u8, 20u8, 79u8, 40u8, 238u8, 244u8, 223u8, 95u8,
-							97u8, 85u8, 113u8, 201u8, 242u8, 23u8, 140u8, 106u8, 222u8, 130u8,
-							29u8, 218u8, 108u8, 210u8, 13u8, 115u8, 231u8, 22u8, 137u8, 227u8,
-							175u8,
-						],
-					)
-				}
-				pub fn nonces(
-					&self,
-					_0: impl ::std::borrow::Borrow<::core::primitive::u32>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::core::primitive::u32,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"NomadHome",
-						"Nonces",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							155u8, 100u8, 216u8, 144u8, 68u8, 188u8, 75u8, 83u8, 99u8, 245u8, 27u8,
-							196u8, 64u8, 193u8, 166u8, 33u8, 47u8, 87u8, 188u8, 46u8, 101u8, 144u8,
-							166u8, 231u8, 168u8, 236u8, 81u8, 141u8, 57u8, 185u8, 41u8, 124u8,
-						],
-					)
-				}
-				pub fn nonces_root(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::core::primitive::u32,
-					(),
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"NomadHome",
-						"Nonces",
-						Vec::new(),
-						[
-							155u8, 100u8, 216u8, 144u8, 68u8, 188u8, 75u8, 83u8, 99u8, 245u8, 27u8,
-							196u8, 64u8, 193u8, 166u8, 33u8, 47u8, 87u8, 188u8, 46u8, 101u8, 144u8,
-							166u8, 231u8, 168u8, 236u8, 81u8, 141u8, 57u8, 185u8, 41u8, 124u8,
-						],
-					)
-				}
-				pub fn index_to_root(
-					&self,
-					_0: impl ::std::borrow::Borrow<::core::primitive::u32>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::subxt::utils::H256,
-					::subxt::storage::address::Yes,
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"NomadHome",
-						"IndexToRoot",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							101u8, 71u8, 233u8, 178u8, 28u8, 89u8, 252u8, 186u8, 13u8, 210u8, 44u8,
-							76u8, 161u8, 238u8, 35u8, 40u8, 182u8, 168u8, 39u8, 114u8, 91u8, 125u8,
-							240u8, 115u8, 4u8, 121u8, 72u8, 90u8, 134u8, 119u8, 47u8, 116u8,
-						],
-					)
-				}
-				pub fn index_to_root_root(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::subxt::utils::H256,
-					(),
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"NomadHome",
-						"IndexToRoot",
-						Vec::new(),
-						[
-							101u8, 71u8, 233u8, 178u8, 28u8, 89u8, 252u8, 186u8, 13u8, 210u8, 44u8,
-							76u8, 161u8, 238u8, 35u8, 40u8, 182u8, 168u8, 39u8, 114u8, 91u8, 125u8,
-							240u8, 115u8, 4u8, 121u8, 72u8, 90u8, 134u8, 119u8, 47u8, 116u8,
-						],
-					)
-				}
-				pub fn root_to_index(
-					&self,
-					_0: impl ::std::borrow::Borrow<::subxt::utils::H256>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::core::primitive::u32,
-					::subxt::storage::address::Yes,
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"NomadHome",
-						"RootToIndex",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							82u8, 113u8, 217u8, 4u8, 206u8, 200u8, 21u8, 79u8, 246u8, 211u8, 8u8,
-							37u8, 160u8, 89u8, 10u8, 228u8, 211u8, 167u8, 119u8, 98u8, 50u8, 158u8,
-							13u8, 130u8, 26u8, 12u8, 132u8, 22u8, 47u8, 54u8, 213u8, 39u8,
-						],
-					)
-				}
-				pub fn root_to_index_root(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::core::primitive::u32,
-					(),
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"NomadHome",
-						"RootToIndex",
-						Vec::new(),
-						[
-							82u8, 113u8, 217u8, 4u8, 206u8, 200u8, 21u8, 79u8, 246u8, 211u8, 8u8,
-							37u8, 160u8, 89u8, 10u8, 228u8, 211u8, 167u8, 119u8, 98u8, 50u8, 158u8,
-							13u8, 130u8, 26u8, 12u8, 132u8, 22u8, 47u8, 54u8, 213u8, 39u8,
-						],
-					)
-				}
-			}
-		}
-		pub mod constants {
-			use super::runtime_types;
-			pub struct ConstantsApi;
-			impl ConstantsApi {
-				#[doc = " Max allowed message body size"]
-				pub fn max_message_body_bytes(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"NomadHome",
-						"MaxMessageBodyBytes",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-			}
-		}
-	}
-	pub mod nomad_da_bridge {
-		use super::root_mod;
-		use super::runtime_types;
-		#[doc = "The `Error` enum of this pallet."]
-		pub type Error = runtime_types::nomad_da_bridge::pallet::Error;
-		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-		pub type Call = runtime_types::nomad_da_bridge::pallet::Call;
-		pub mod calls {
-			use super::root_mod;
-			use super::runtime_types;
-			type DispatchError = runtime_types::sp_runtime::DispatchError;
-			pub mod types {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct TryDispatchDataRoot {
-					#[codec(compact)]
-					pub destination_domain: ::core::primitive::u32,
-					pub recipient_address: ::subxt::utils::H256,
-					pub header: ::std::boxed::Box<
-						runtime_types::avail_core::header::Header<
-							::core::primitive::u32,
-							runtime_types::sp_runtime::traits::BlakeTwo256,
-						>,
-					>,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for TryDispatchDataRoot {
-					const PALLET: &'static str = "NomadDABridge";
-					const CALL: &'static str = "try_dispatch_data_root";
-				}
-			}
-			pub struct TransactionApi;
-			impl TransactionApi {
-				#[doc = "See [`Pallet::try_dispatch_data_root`]."]
-				pub fn try_dispatch_data_root(
-					&self,
-					destination_domain: ::core::primitive::u32,
-					recipient_address: ::subxt::utils::H256,
-					header: runtime_types::avail_core::header::Header<
-						::core::primitive::u32,
-						runtime_types::sp_runtime::traits::BlakeTwo256,
-					>,
-				) -> ::subxt::tx::Payload<types::TryDispatchDataRoot> {
-					::subxt::tx::Payload::new_static(
-						"NomadDABridge",
-						"try_dispatch_data_root",
-						types::TryDispatchDataRoot {
-							destination_domain,
-							recipient_address,
-							header: ::std::boxed::Box::new(header),
-						},
-						[
-							81u8, 164u8, 161u8, 23u8, 225u8, 133u8, 122u8, 237u8, 202u8, 152u8,
-							7u8, 183u8, 214u8, 25u8, 253u8, 5u8, 163u8, 38u8, 161u8, 56u8, 44u8,
-							233u8, 5u8, 23u8, 132u8, 168u8, 59u8, 188u8, 42u8, 54u8, 19u8, 130u8,
-						],
-					)
-				}
-			}
-		}
-		#[doc = "The `Event` enum of this pallet"]
-		pub type Event = runtime_types::nomad_da_bridge::pallet::Event;
-		pub mod events {
-			use super::runtime_types;
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			pub struct DataRootDispatched {
-				pub destination_domain: ::core::primitive::u32,
-				pub recipient_address: ::subxt::utils::H256,
-				pub block_number: ::core::primitive::u32,
-				pub data_root: ::subxt::utils::H256,
-			}
-			impl ::subxt::events::StaticEvent for DataRootDispatched {
-				const PALLET: &'static str = "NomadDABridge";
-				const EVENT: &'static str = "DataRootDispatched";
-			}
-		}
-		pub mod constants {
-			use super::runtime_types;
-			pub struct ConstantsApi;
-			impl ConstantsApi {
-				pub fn da_bridge_pallet_id(
-					&self,
-				) -> ::subxt::constants::Address<::subxt::utils::H256> {
-					::subxt::constants::Address::new_static(
-						"NomadDABridge",
-						"DABridgePalletId",
-						[
-							115u8, 233u8, 13u8, 223u8, 88u8, 20u8, 202u8, 139u8, 153u8, 28u8,
-							155u8, 157u8, 224u8, 66u8, 3u8, 250u8, 23u8, 53u8, 88u8, 168u8, 211u8,
-							204u8, 122u8, 166u8, 248u8, 23u8, 174u8, 225u8, 99u8, 108u8, 89u8,
-							135u8,
-						],
-					)
-				}
-			}
-		}
-	}
 	pub mod preimage {
 		use super::root_mod;
 		use super::runtime_types;
@@ -16475,9 +15682,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							213u8, 54u8, 203u8, 135u8, 7u8, 231u8, 160u8, 52u8, 110u8, 191u8,
-							113u8, 46u8, 65u8, 94u8, 46u8, 6u8, 97u8, 38u8, 44u8, 108u8, 20u8,
-							64u8, 5u8, 6u8, 198u8, 155u8, 104u8, 233u8, 148u8, 113u8, 40u8, 128u8,
+							235u8, 176u8, 27u8, 146u8, 191u8, 85u8, 164u8, 161u8, 166u8, 160u8,
+							242u8, 44u8, 98u8, 95u8, 162u8, 77u8, 70u8, 81u8, 55u8, 243u8, 119u8,
+							109u8, 128u8, 21u8, 177u8, 83u8, 229u8, 175u8, 94u8, 10u8, 101u8, 14u8,
 						],
 					)
 				}
@@ -16503,9 +15710,9 @@ pub mod api {
 							max_weight,
 						},
 						[
-							242u8, 56u8, 247u8, 152u8, 147u8, 35u8, 61u8, 52u8, 251u8, 83u8, 133u8,
-							172u8, 46u8, 200u8, 101u8, 195u8, 18u8, 44u8, 69u8, 123u8, 134u8,
-							147u8, 179u8, 242u8, 218u8, 4u8, 1u8, 133u8, 193u8, 249u8, 55u8, 163u8,
+							198u8, 242u8, 109u8, 252u8, 57u8, 72u8, 106u8, 179u8, 26u8, 3u8, 136u8,
+							167u8, 124u8, 67u8, 28u8, 138u8, 83u8, 121u8, 12u8, 107u8, 128u8,
+							224u8, 102u8, 230u8, 168u8, 8u8, 4u8, 9u8, 84u8, 134u8, 74u8, 185u8,
 						],
 					)
 				}
@@ -20376,10 +19583,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							44u8, 6u8, 24u8, 174u8, 101u8, 118u8, 141u8, 113u8, 192u8, 249u8, 15u8,
-							31u8, 115u8, 177u8, 207u8, 145u8, 95u8, 122u8, 46u8, 116u8, 27u8,
-							211u8, 251u8, 88u8, 173u8, 70u8, 143u8, 233u8, 183u8, 226u8, 12u8,
-							14u8,
+							111u8, 234u8, 236u8, 219u8, 37u8, 117u8, 124u8, 213u8, 156u8, 43u8,
+							11u8, 29u8, 178u8, 236u8, 217u8, 162u8, 57u8, 60u8, 118u8, 250u8,
+							220u8, 23u8, 239u8, 183u8, 64u8, 101u8, 180u8, 50u8, 100u8, 74u8,
+							208u8, 55u8,
 						],
 					)
 				}
@@ -21799,9 +21006,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							71u8, 38u8, 220u8, 237u8, 27u8, 4u8, 250u8, 53u8, 221u8, 85u8, 165u8,
-							112u8, 7u8, 105u8, 137u8, 130u8, 251u8, 29u8, 241u8, 11u8, 246u8, 8u8,
-							23u8, 219u8, 180u8, 81u8, 30u8, 249u8, 192u8, 141u8, 1u8, 139u8,
+							114u8, 142u8, 194u8, 0u8, 193u8, 112u8, 127u8, 181u8, 245u8, 195u8,
+							119u8, 238u8, 192u8, 16u8, 0u8, 198u8, 247u8, 240u8, 156u8, 5u8, 131u8,
+							80u8, 237u8, 145u8, 65u8, 104u8, 55u8, 158u8, 137u8, 82u8, 117u8, 45u8,
 						],
 					)
 				}
@@ -22013,10 +21220,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							214u8, 202u8, 216u8, 157u8, 100u8, 182u8, 30u8, 199u8, 8u8, 56u8,
-							114u8, 247u8, 190u8, 21u8, 222u8, 41u8, 250u8, 244u8, 52u8, 186u8,
-							193u8, 73u8, 32u8, 66u8, 174u8, 70u8, 146u8, 179u8, 140u8, 65u8, 251u8,
-							107u8,
+							123u8, 231u8, 118u8, 6u8, 203u8, 117u8, 221u8, 140u8, 238u8, 16u8,
+							134u8, 121u8, 185u8, 222u8, 32u8, 238u8, 164u8, 65u8, 105u8, 219u8,
+							218u8, 35u8, 78u8, 221u8, 26u8, 24u8, 105u8, 152u8, 77u8, 12u8, 0u8,
+							226u8,
 						],
 					)
 				}
@@ -23245,12 +22452,6 @@ pub mod api {
 				Tips(runtime_types::pallet_tips::pallet::Call),
 				#[codec(index = 29)]
 				DataAvailability(runtime_types::da_control::pallet::Call),
-				#[codec(index = 30)]
-				NomadUpdaterManager(runtime_types::nomad_updater_manager::pallet::Call),
-				#[codec(index = 31)]
-				NomadHome(runtime_types::nomad_home::pallet::Call),
-				#[codec(index = 32)]
-				NomadDABridge(runtime_types::nomad_da_bridge::pallet::Call),
 				#[codec(index = 33)]
 				Preimage(runtime_types::pallet_preimage::pallet::Call),
 				#[codec(index = 34)]
@@ -23322,12 +22523,6 @@ pub mod api {
 				Tips(runtime_types::pallet_tips::pallet::Event),
 				#[codec(index = 29)]
 				DataAvailability(runtime_types::da_control::pallet::Event),
-				#[codec(index = 30)]
-				NomadUpdaterManager(runtime_types::nomad_updater_manager::pallet::Event),
-				#[codec(index = 31)]
-				NomadHome(runtime_types::nomad_home::pallet::Event),
-				#[codec(index = 32)]
-				NomadDABridge(runtime_types::nomad_da_bridge::pallet::Event),
 				#[codec(index = 33)]
 				Preimage(runtime_types::pallet_preimage::pallet::Event),
 				#[codec(index = 34)]
@@ -24032,407 +23227,6 @@ pub mod api {
 				Finalization,
 				#[codec(index = 2)]
 				Initialization,
-			}
-		}
-		pub mod nomad_base {
-			use super::runtime_types;
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			pub struct NomadBase {
-				pub state: runtime_types::nomad_core::state::NomadState,
-				pub local_domain: ::core::primitive::u32,
-				pub committed_root: ::subxt::utils::H256,
-				pub updater: ::subxt::utils::H160,
-			}
-		}
-		pub mod nomad_core {
-			use super::runtime_types;
-			pub mod state {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub enum NomadState {
-					#[codec(index = 0)]
-					Active,
-					#[codec(index = 1)]
-					Failed,
-				}
-			}
-			pub mod update {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct SignedUpdate {
-					pub update: runtime_types::nomad_core::update::Update,
-					pub signature: runtime_types::nomad_signature::signature::Signature,
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Update {
-					pub home_domain: ::core::primitive::u32,
-					pub previous_root: ::subxt::utils::H256,
-					pub new_root: ::subxt::utils::H256,
-				}
-			}
-		}
-		pub mod nomad_da_bridge {
-			use super::runtime_types;
-			pub mod pallet {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-				pub enum Call {
-					#[codec(index = 0)]
-					#[doc = "See [`Pallet::try_dispatch_data_root`]."]
-					try_dispatch_data_root {
-						#[codec(compact)]
-						destination_domain: ::core::primitive::u32,
-						recipient_address: ::subxt::utils::H256,
-						header: ::std::boxed::Box<
-							runtime_types::avail_core::header::Header<
-								::core::primitive::u32,
-								runtime_types::sp_runtime::traits::BlakeTwo256,
-							>,
-						>,
-					},
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "The `Error` enum of this pallet."]
-				pub enum Error {
-					#[codec(index = 0)]
-					InitializationError,
-					#[codec(index = 1)]
-					HashOfBlockNotMatchBlockNumber,
-					#[codec(index = 2)]
-					DABridgeMessageExceedsMaxMessageSize,
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "The `Event` enum of this pallet"]
-				pub enum Event {
-					#[codec(index = 0)]
-					DataRootDispatched {
-						destination_domain: ::core::primitive::u32,
-						recipient_address: ::subxt::utils::H256,
-						block_number: ::core::primitive::u32,
-						data_root: ::subxt::utils::H256,
-					},
-				}
-			}
-		}
-		pub mod nomad_home {
-			use super::runtime_types;
-			pub mod pallet {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-				pub enum Call {
-					#[codec(index = 0)]
-					#[doc = "See [`Pallet::dispatch`]."]
-					dispatch {
-						#[codec(compact)]
-						destination_domain: ::core::primitive::u32,
-						recipient_address: ::subxt::utils::H256,
-						message_body: runtime_types::bounded_collections::bounded_vec::BoundedVec<
-							::core::primitive::u8,
-						>,
-					},
-					#[codec(index = 1)]
-					#[doc = "See [`Pallet::update`]."]
-					update {
-						signed_update: runtime_types::nomad_core::update::SignedUpdate,
-						#[codec(compact)]
-						max_index: ::core::primitive::u32,
-					},
-					#[codec(index = 2)]
-					#[doc = "See [`Pallet::improper_update`]."]
-					improper_update {
-						signed_update: runtime_types::nomad_core::update::SignedUpdate,
-					},
-					#[codec(index = 3)]
-					#[doc = "See [`Pallet::set_updater`]."]
-					set_updater { new_updater: ::subxt::utils::H160 },
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "The `Error` enum of this pallet."]
-				pub enum Error {
-					#[codec(index = 0)]
-					InitializationError,
-					#[codec(index = 1)]
-					IngestionError,
-					#[codec(index = 2)]
-					SignatureRecoveryError,
-					#[codec(index = 3)]
-					MessageTooLarge,
-					#[codec(index = 4)]
-					InvalidUpdaterSignature,
-					#[codec(index = 5)]
-					CommittedRootNotMatchUpdatePrevious,
-					#[codec(index = 6)]
-					RootForIndexNotFound,
-					#[codec(index = 7)]
-					IndexForRootNotFound,
-					#[codec(index = 8)]
-					FailedState,
-					#[codec(index = 9)]
-					MaxIndexWitnessExhausted,
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "The `Event` enum of this pallet"]
-				pub enum Event {
-					#[codec(index = 0)]
-					Dispatch {
-						message_hash: ::subxt::utils::H256,
-						leaf_index: ::core::primitive::u32,
-						destination_and_nonce: ::core::primitive::u64,
-						committed_root: ::subxt::utils::H256,
-						message: ::std::vec::Vec<::core::primitive::u8>,
-					},
-					#[codec(index = 1)]
-					Update {
-						home_domain: ::core::primitive::u32,
-						previous_root: ::subxt::utils::H256,
-						new_root: ::subxt::utils::H256,
-						signature: ::std::vec::Vec<::core::primitive::u8>,
-					},
-					#[codec(index = 2)]
-					ImproperUpdate {
-						previous_root: ::subxt::utils::H256,
-						new_root: ::subxt::utils::H256,
-						signature: ::std::vec::Vec<::core::primitive::u8>,
-					},
-					#[codec(index = 3)]
-					UpdaterSlashed {
-						updater: ::subxt::utils::H160,
-						reporter: ::subxt::utils::AccountId32,
-					},
-				}
-			}
-		}
-		pub mod nomad_merkle {
-			use super::runtime_types;
-			pub mod light {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct LightMerkle {
-					pub branch: [::subxt::utils::H256; 32usize],
-					pub count: ::core::primitive::u32,
-				}
-			}
-		}
-		pub mod nomad_signature {
-			use super::runtime_types;
-			pub mod signature {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Signature {
-					pub r: runtime_types::primitive_types::U256,
-					pub s: runtime_types::primitive_types::U256,
-					pub v: ::core::primitive::u64,
-				}
-			}
-		}
-		pub mod nomad_updater_manager {
-			use super::runtime_types;
-			pub mod pallet {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-				pub enum Call {}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "The `Error` enum of this pallet."]
-				pub enum Error {
-					#[codec(index = 0)]
-					InitializationError,
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "The `Event` enum of this pallet"]
-				pub enum Event {
-					#[codec(index = 0)]
-					NewUpdater {
-						old_updater: ::subxt::utils::H160,
-						new_updater: ::subxt::utils::H160,
-					},
-					#[codec(index = 1)]
-					FakeSlashed {
-						reporter: ::subxt::utils::AccountId32,
-					},
-				}
 			}
 		}
 		pub mod pallet_babe {
