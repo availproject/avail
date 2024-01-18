@@ -145,6 +145,8 @@ default = [ "std" ]
 with-tracing = [ "frame-executive/with-tracing" ]
 fast-runtime = []
 codspeed = []
+# To be used for all dev & test networks
+goldberg = []
 header_commitment_corruption = [ "frame-system/header_commitment_corruption" ]
 std = [
 	"avail-core/std",

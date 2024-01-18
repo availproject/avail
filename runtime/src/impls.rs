@@ -1,5 +1,6 @@
 use core::mem::size_of;
 
+use crate::prod_or_test;
 use crate::voter_bags;
 use crate::SessionKeys;
 use crate::SLOT_DURATION;
@@ -90,9 +91,8 @@ impl pallet_mandate::Config for Runtime {
 }
 
 parameter_types! {
-	//TODO add flag for different networks
-	pub const StepFunctionId: H256 = H256(hex!("a511bd86a30fa6db581480ac7591d4271c845411ac4e1ad93797d09a57b60522"));
-	pub const RotateFunctionId: H256 = H256(hex!("d7f33a3358d67df3bf792e8b2ab0188d16f4fc07418b35d950407af0d3cb33e0"));
+	pub const StepFunctionId: H256 = prod_or_test!(H256(hex!("22405eefd595d2057393ef9c27a3694839a58b5121cac7e41ed9123a56930c8b")), H256(hex!("a511bd86a30fa6db581480ac7591d4271c845411ac4e1ad93797d09a57b60522")));
+	pub const RotateFunctionId: H256 = prod_or_test!(H256(hex!("c7e13ba912a18fc047292e7698bb2af9c8a2eb901886a785b2cb4b9fd2394573")), H256(hex!("d7f33a3358d67df3bf792e8b2ab0188d16f4fc07418b35d950407af0d3cb33e0")));
 	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
 	pub StepVk: Vec<u8> = r#"{"vk_json":{
     "protocol": "groth16",
@@ -245,7 +245,7 @@ impl pallet_succinct::Config for Runtime {
 	type Currency = Balances;
 	type StepVerificationKey = StepVk;
 	type RotateVerificationKey = RotateVk;
-	type MessageMappingStorageIndex = ConstU64<5>;
+	type MessageMappingStorageIndex = ConstU64<1>;
 	type StepFunctionId = StepFunctionId;
 	type RotateFunctionId = RotateFunctionId;
 	type PalletId = BridgePalletId;

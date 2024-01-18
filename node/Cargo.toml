@@ -133,6 +133,8 @@ default = [ "cli" ]
 header_commitment_corruption = [ "da-runtime/header_commitment_corruption" ]
 fast-runtime = [ "da-runtime/fast-runtime" ]
 cli = [ "clap", "clap_complete", "frame-benchmarking-cli" ]
+# To be used for all dev & test networks
+goldberg = [ "da-runtime/goldberg" ]
 runtime-benchmarks = [
 	"da-control/runtime-benchmarks",
 	"da-runtime/runtime-benchmarks",

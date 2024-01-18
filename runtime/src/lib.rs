@@ -24,6 +24,7 @@
 #![allow(macro_expanded_macro_exports_accessed_by_absolute_paths)]
 
 pub mod apis;
+pub mod commons;
 pub mod constants;
 #[cfg(test)]
 mod data_root_tests;
