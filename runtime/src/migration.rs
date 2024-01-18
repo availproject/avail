@@ -78,7 +78,9 @@ pub mod nomad {
 			return Err(TryRuntimeError::Other("NomadHome storage was not deleted"));
 		}
 		if contains_prefixed_key(&sp_io::hashing::twox_128(b"NomadUpdaterManager")) {
-			return Err(TryRuntimeError::Other("NomadUpdaterManager storage was not deleted"));
+			return Err(TryRuntimeError::Other(
+				"NomadUpdaterManager storage was not deleted",
+			));
 		}
 
 		Ok(())
