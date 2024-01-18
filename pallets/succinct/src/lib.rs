@@ -81,6 +81,7 @@ pub mod pallet {
 		UnsupportedOriginChain,
 		BroadcasterSourceChainNotSet,
 		SourceChainFrozen,
+		LCDisabled,
 		CannotGetStorageRoot,
 		CannotGetStorageValue,
 		InvalidMessageHash,
@@ -103,16 +104,26 @@ pub mod pallet {
 			execution_state_root: H256,
 		},
 		/// emit event once the sync committee updates.
-		SyncCommitteeUpdate { period: u64, root: U256 },
+		SyncCommitteeUpdate {
+			period: u64,
+			root: U256,
+		},
 		/// emit when new updater is set
-		BroadcasterUpdate { old: H256, new: H256, domain: u32 },
+		BroadcasterUpdate {
+			old: H256,
+			new: H256,
+			domain: u32,
+		},
 		/// emit when message gets executed.
 		ExecutedMessage {
 			message: Message,
 			message_root: H256,
 		},
 		/// emit if source chain gets frozen.
-		SourceChainFrozen { source_chain_id: u32, frozen: bool },
+		SourceChainFrozen {
+			source_chain_id: u32,
+			frozen: bool,
+		},
 		/// emit when message is submitted.
 		MessageSubmitted {
 			from: T::AccountId,
@@ -126,6 +137,9 @@ pub mod pallet {
 		ConfigurationUpdated {
 			slots_per_period: u64,
 			finality_threshold: u16,
+		},
+		LCStatusUpdate {
+			disabled: bool,
 		},
 	}
 
@@ -167,6 +181,10 @@ pub mod pallet {
 	/// Flags source chain to be frozen.
 	#[pallet::storage]
 	pub type SourceChainFrozen<T> = StorageMap<_, Identity, u32, bool, ValueQuery>;
+
+	/// Disables LC.
+	#[pallet::storage]
+	pub type DisableLC<T> = StorageValue<_, bool, ValueQuery>;
 
 	/// List of permitted domains.
 	#[pallet::storage]
@@ -271,6 +289,8 @@ pub mod pallet {
 			proof: FunctionProof,
 			slot: u64,
 		) -> DispatchResultWithPostInfo {
+			ensure!(!DisableLC::<T>::get(), Error::<T>::LCDisabled);
+
 			ensure_signed(origin)?;
 			let state = ConfigurationStorage::<T>::get();
 			// compute hashes
@@ -571,6 +591,20 @@ pub mod pallet {
 				slots_per_period: value.slots_per_period,
 				finality_threshold: value.finality_threshold,
 			});
+
+			Ok(())
+		}
+
+		// TODO disable LC?
+		/// The disable_lc flags LC if it is disabled or not.
+		//
+		#[pallet::call_index(8)]
+		#[pallet::weight(T::WeightInfo::set_broadcaster())]
+		pub fn disable_lc(origin: OriginFor<T>, disabled: bool) -> DispatchResult {
+			ensure_root(origin)?;
+			DisableLC::<T>::set(disabled);
+
+			Self::deposit_event(Event::LCStatusUpdate { disabled });
 
 			Ok(())
 		}
