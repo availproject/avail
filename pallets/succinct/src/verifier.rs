@@ -29,6 +29,8 @@ pub struct Verifier {
 pub enum VKeyDeserializationError {
 	SerdeError,
 }
+
+/// VerifyingKeyJson struct that contains key for Rotate and Step verification.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
 pub struct VerifyingKeyJson {
 	#[serde(rename = "IC")]
@@ -134,12 +136,12 @@ pub fn str_to_fq(s: &str) -> Result<Fq, VerificationError> {
 }
 
 impl Verifier {
-	/// Creates `Verifier` from json representation
+	/// Creates `Verifier` from json representation.
 	pub fn from_json_u8_slice(slice: &[u8]) -> Result<Self, VKeyDeserializationError> {
 		serde_json::from_slice(slice).map_err(|_| VKeyDeserializationError::SerdeError)
 	}
 
-	/// Verifies input based on the supplied proof and hashes
+	/// Verifies input based on the supplied proof and hashes.
 	pub fn verify(
 		self,
 		input_hash: H256,
@@ -180,6 +182,7 @@ impl Verifier {
 	}
 }
 
+/// decode_proof decodes proof into points.
 #[allow(clippy::type_complexity)]
 pub fn decode_proof(
 	proof: Vec<u8>,
@@ -257,7 +260,7 @@ pub fn decode_proof(
 	))
 }
 
-/// implements abi.encodePacked
+/// encode_packed implements abi.encodePacked function for poseidon hash.
 pub fn encode_packed(poseidon: U256, slot: u64) -> Vec<u8> {
 	let bytes: &mut [u8; 32] = &mut [0u8; 32];
 	poseidon.to_big_endian(bytes);
