@@ -113,9 +113,9 @@ impl VerifyingKeyJson {
 			.iter()
 			.map(|coords| {
 				G1Affine::from(G1Projective::new(
-					Fq::from_str(&coords[0]).unwrap(),
-					Fq::from_str(&coords[1]).unwrap(),
-					Fq::from_str(&coords[2]).unwrap(),
+					Fq::from_str(&coords[0]).unwrap_or_default(),
+					Fq::from_str(&coords[1]).unwrap_or_default(),
+					Fq::from_str(&coords[2]).unwrap_or_default(),
 				))
 			})
 			.collect();
