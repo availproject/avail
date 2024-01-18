@@ -204,7 +204,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type RotateFunctionId: Get<H256>;
 		/// The index of the `messages` mapping in contract.
-		/// This is mandatory when calling execute messages via storage ptoofs.
+		/// This is mandatory when calling execute messages via storage proofs.
 		#[pallet::constant]
 		type MessageMappingStorageIndex: Get<u64>;
 		/// Bridge's pallet id, used for deriving its sovereign account ID.
