@@ -37,7 +37,7 @@ impl OnRuntimeUpgrade for Migration {
 
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade(_state: Vec<u8>) -> Result<(), TryRuntimeError> {
-		nomad::post_upgrade()
+		nomad::post_upgrade(_state)
 		// Ok(())
 	}
 }
@@ -75,10 +75,10 @@ pub mod nomad {
 	#[cfg(feature = "try-runtime")]
 	pub fn post_upgrade(_state: Vec<u8>) -> Result<(), TryRuntimeError> {
 		if contains_prefixed_key(&sp_io::hashing::twox_128(b"NomadHome")) {
-			return Err(());
+			return Err(TryRuntimeError::Other("NomadHome storage was not deleted"));
 		}
 		if contains_prefixed_key(&sp_io::hashing::twox_128(b"NomadUpdaterManager")) {
-			return Err(());
+			return Err(TryRuntimeError::Other("NomadUpdaterManager storage was not deleted"));
 		}
 
 		Ok(())
