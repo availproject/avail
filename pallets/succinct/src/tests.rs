@@ -1012,7 +1012,7 @@ fn send_message_fungible_token_doesnt_accept_empty_value() {
 }
 
 #[test]
-fn execute_arbitary_message_works() {
+fn execute_arbitrary_message_works() {
 	new_test_ext().execute_with(|| {
 		use crate::BalanceOf;
 		use frame_support::traits::Currency;
@@ -1068,7 +1068,7 @@ fn execute_arbitary_message_works() {
 }
 
 #[test]
-fn test_double_execute_arbitary_message() {
+fn test_double_execute_arbitrary_message() {
 	new_test_ext().execute_with(|| {
 		use crate::BalanceOf;
 		use frame_support::traits::Currency;
