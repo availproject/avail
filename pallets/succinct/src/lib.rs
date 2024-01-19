@@ -272,6 +272,11 @@ pub mod pallet {
 			slot: u64,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
+
+			let domain = Self::get_domain(function_id)?;
+			let is_frozen = SourceChainFrozen::<T>::get(domain);
+			ensure!(!is_frozen, Error::<T>::SourceChainFrozen);
+
 			let state = ConfigurationStorage::<T>::get();
 			// compute hashes
 			let input_hash = H256(sha2_256(input.as_slice()));
@@ -734,6 +739,17 @@ pub mod pallet {
 				Self::get_step_verifier()
 			} else if function_id == T::RotateFunctionId::get() {
 				Self::get_rotate_verifier()
+			} else {
+				Err(Error::<T>::FunctionIdNotKnown)
+			}
+		}
+
+		/// get_domain returns domain based on the current function id.
+		/// there is only one domain for which pallet operates.
+		fn get_domain(function_id: H256) -> Result<u32, Error<T>> {
+			if function_id == T::StepFunctionId::get() || function_id == T::RotateFunctionId::get()
+			{
+				Ok(2u32)
 			} else {
 				Err(Error::<T>::FunctionIdNotKnown)
 			}
