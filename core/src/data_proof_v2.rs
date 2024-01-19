@@ -3,8 +3,6 @@ use binary_merkle_tree::MerkleProof;
 use codec::{Decode, Encode};
 use ethabi::{encode, Token};
 use frame_support::BoundedVec;
-#[cfg(feature = "runtime")]
-use nomad_core::keccak256_concat;
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -12,6 +10,8 @@ use sp_core::{ConstU32, H256};
 use sp_std::vec;
 use sp_std::vec::Vec;
 use thiserror_no_std::Error;
+#[cfg(feature = "runtime")]
+use crate::keccak256_concat;
 
 /// Max data supported on bidge (Ethereum calldata limits)
 pub const BOUNDED_DATA_MAX_LENGTH: u32 = 102_400;
