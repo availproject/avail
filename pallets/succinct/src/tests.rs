@@ -247,7 +247,7 @@ fn test_full_fill_step_call_finality_not_met() {
 }
 
 #[test]
-fn test_execute_message_via_storage() {
+fn test_execute_fungible_token_via_storage() {
 	new_test_ext().execute_with(|| {
 		let balance_before = Balances::balance(&Bridge::account_id());
 		Broadcasters::<Test>::set(

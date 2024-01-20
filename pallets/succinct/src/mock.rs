@@ -228,7 +228,6 @@ impl succinct_bridge::Config for Test {
 	type WeightInfo = ();
 	type TimeProvider = Timestamp;
 	type Currency = Balances;
-
 	type MessageMappingStorageIndex = ConstU64<1>;
 	type RotateFunctionId = RotateFunctionId;
 	type StepFunctionId = StepFunctionId;
