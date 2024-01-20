@@ -18,7 +18,7 @@ use test_case::test_case;
 
 use super::*;
 
-fn submit_call() -> Vec<u8> {
+fn submit_blob_call() -> Vec<u8> {
 	hex!("ed018400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d01be06880f2f6203365b508b4226fd697d3d79d3a50a5617aad714466d40ef47067225e823135b32121aa0f6f56e696f5f71107a6d44768c2fefe38cb209f7f28224000000041d014054657374207375626d69742064617461").to_vec()
 }
 
@@ -26,22 +26,26 @@ fn send_message() -> Vec<u8> {
 	hex!("fd028400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d0178ece77c33dbecbf1eff04371af093ab55f7a7b102b0d38760f1506468e78556761e1a1fc9ca57dcfad69f551306fc86d16191a094d9d1ce61ee70aa421339884400040000270301000000000000000000000000000000000000000000000000000000000000000108010100000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000").to_vec()
 }
 
-fn submit_call_expected() -> H256 {
+fn expected_blob_root() -> H256 {
 	// data = "Test submit data"
 	// leaf is keccak256(data) -> keccak256(root)
 	let blob_root = keccak_256(
 		hex!("db45128913020d152dbee4d00a1dffebdb703425c44adbd7d7dfc7ae93d836bc").as_slice(),
 	);
 
+	H256(blob_root)
+}
+
+fn submit_blob_call_expected() -> H256 {
 	let mut concat = vec![];
 	// bridge_root = 0x0..0
 	// keccak_256(blob_root, bridge_root)
-	concat.extend_from_slice(blob_root.as_slice());
+	concat.extend_from_slice(expected_blob_root().as_bytes());
 	concat.extend_from_slice(H256::zero().as_bytes());
 	H256(keccak_256(concat.as_slice()))
 }
 
-fn send_message_expected() -> H256 {
+fn expected_bridge_root() -> H256 {
 	let data = hex!("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001");
 	let encoded_data = BoundedVec::defensive_truncate_from(data.to_vec());
 
@@ -62,15 +66,29 @@ fn send_message_expected() -> H256 {
 	let encoded = message.abi_encode();
 	let leaf = keccak_256(encoded.as_slice());
 	let expected_bridge_root = leaf.as_slice();
+
+	H256::from_slice(expected_bridge_root)
+}
+
+fn send_message_expected() -> H256 {
 	let mut concat = vec![];
 	concat.extend_from_slice(H256::zero().as_bytes());
-	concat.extend_from_slice(expected_bridge_root);
+	concat.extend_from_slice(expected_bridge_root().as_bytes());
+
+	H256(keccak_256(concat.as_slice()))
+}
+
+fn expect_sending_blob_and_bridge_extrinsic() -> H256 {
+	let mut concat = vec![];
+	concat.extend_from_slice(expected_blob_root().as_bytes());
+	concat.extend_from_slice(expected_bridge_root().as_bytes());
+
 	H256(keccak_256(concat.as_slice()))
 }
 
 #[test]
-fn decode_submit_call() {
-	let encoded_call = submit_call();
+fn decode_submit_blob_call() {
+	let encoded_call = submit_blob_call();
 
 	let call = super::UncheckedExtrinsic::decode(&mut encoded_call.as_slice()).unwrap();
 
@@ -109,8 +127,9 @@ fn decode_submit_call() {
 	assert_eq!(call, expected_call);
 }
 
-#[test_case([submit_call()].into() => submit_call_expected(); "Test submit data")]
-#[test_case([send_message()].into() => send_message_expected(); "Test send message")]
+#[test_case([submit_blob_call()].into() => submit_blob_call_expected(); "Test submit blob extrinsic")]
+#[test_case([send_message()].into() => send_message_expected(); "Test submit bridge extrinsic")]
+#[test_case([send_message(), submit_blob_call()].into() => expect_sending_blob_and_bridge_extrinsic(); "Test send message and bridge extrinsic")]
 fn data_root_filter(extrinsics: Vec<Vec<u8>>) -> H256 {
 	let mut opaque = vec![];
 
@@ -118,5 +137,6 @@ fn data_root_filter(extrinsics: Vec<Vec<u8>>) -> H256 {
 		let o = OpaqueExtrinsic::decode(&mut extrinsic.as_slice()).unwrap();
 		opaque.push(o)
 	}
+
 	extrinsics_root_v2::<Runtime, _>(opaque.iter(), 0u64).0
 }
