@@ -262,8 +262,6 @@ pub mod pallet {
 		/// output Function output.
 		/// proof  Function proof.
 		/// slot  Function slot to update.
-		//
-		// TODO @Marko Check out if there are tests that we are missing
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::fulfill_call())]
 		pub fn fulfill_call(
@@ -319,9 +317,6 @@ pub mod pallet {
 		}
 
 		/// Executes message if a valid proofs are provided for the supported message type, assets and domains.
-		//
-		// Test names: execute_arbitary_message_works
-		// TODO @Marko Check out if there are tests that we are missing
 		#[pallet::call_index(1)]
 		#[pallet::weight({
         match message.message_type {
