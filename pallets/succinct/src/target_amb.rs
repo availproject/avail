@@ -26,6 +26,7 @@ pub enum StorageError {
 	CannotDecodeItems,
 }
 
+/// get_storage_value returns a storage value based on the proof that is provided.
 pub fn get_storage_value(
 	slot_hash: H256,
 	storage_root: H256,
@@ -53,6 +54,7 @@ pub fn get_storage_value(
 	}
 }
 
+/// get_storage_root returns storage root based on the provided proof.
 pub fn get_storage_root(
 	proof: Vec<Vec<u8>>,
 	address: H160,
