@@ -2597,22 +2597,23 @@ dependencies = [
 
 [[package]]
 name = "divan"
-version = "0.1.2"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fab20f5802e0b897093184f5dc5d23447fa715604f238dc798f6da188b230019"
+checksum = "5398159ee27f2b123d89b856bad61725442f37df5fb98c30cd570c318d594aee"
 dependencies = [
+ "cfg-if",
  "clap",
  "condtype",
  "divan-macros",
- "linkme",
+ "libc",
  "regex-lite",
 ]
 
 [[package]]
 name = "divan-macros"
-version = "0.1.2"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c5d6354551e0b5c451a948814fc47fe745a14eac7835c087d60162661019db4"
+checksum = "5092f66eb3563a01e85552731ae82c04c934ff4efd7ad1a0deae7b948f4b3ec4"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4832,9 +4833,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "libc"
-version = "0.2.147"
+version = "0.2.152"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4668fb0ea861c1df094127ac5f1da3409a82116a4ba74fca2e58ef927159bb3"
+checksum = "13e3bf6590cbc649f4d1a3eefc9d5d6eb746f5200ffb04e5e142700b8faa56e7"
 
 [[package]]
 name = "libloading"
@@ -5373,26 +5374,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "47186c6da4d81ca383c7c47c1bfc80f4b95f4720514d860a5407aaf4233f9588"
 dependencies = [
  "linked-hash-map",
-]
-
-[[package]]
-name = "linkme"
-version = "0.3.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91ed2ee9464ff9707af8e9ad834cffa4802f072caad90639c583dd3c62e6e608"
-dependencies = [
- "linkme-impl",
-]
-
-[[package]]
-name = "linkme-impl"
-version = "0.3.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba125974b109d512fccbc6c0244e7580143e460895dfd6ea7f8bbb692fd94396"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.38",
 ]
 
 [[package]]
