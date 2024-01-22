@@ -125,6 +125,7 @@ pub fn runtime_genesis_config(
 			members: technical_committee,
 			..Default::default()
 		},
+		tx_pause: Default::default(),
 		sudo: SudoConfig {
 			key: Some(sudo.clone()),
 		},

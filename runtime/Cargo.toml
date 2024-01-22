@@ -94,6 +94,8 @@ pallet-nomination-pools = { git = "https://github.com/paritytech/polkadot-sdk.gi
 pallet-nomination-pools-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
 pallet-identity = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
 pallet-proxy = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
+pallet-tx-pause = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false}
+
 
 pallet-mandate = { path = "../pallets/mandate", default-features = false }
 pallet-succinct = { path = "../pallets/succinct", default-features = false }
@@ -199,6 +201,7 @@ std = [
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 	"pallet-treasury/std",
+	"pallet-tx-pause/std",
 	"pallet-utility/std",
 	"scale-info/std",
 	"serde",
@@ -254,6 +257,7 @@ runtime-benchmarks = [
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-tips/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
+	"pallet-tx-pause/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 ]
@@ -299,6 +303,7 @@ try-runtime = [
 	"pallet-tips/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-treasury/try-runtime",
+	"pallet-tx-pause/try-runtime",
 	"pallet-utility/try-runtime",
 	"sp-runtime/try-runtime",
 ]

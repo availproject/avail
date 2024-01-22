@@ -6,7 +6,7 @@ pub mod api {
 	mod root_mod {
 		pub use super::*;
 	}
-	pub static PALLETS: [&str; 36usize] = [
+	pub static PALLETS: [&str; 37usize] = [
 		"System",
 		"Utility",
 		"Babe",
@@ -43,6 +43,7 @@ pub mod api {
 		"Mandate",
 		"Succinct",
 		"Proxy",
+		"TxPause",
 	];
 	#[doc = r" The error type returned when there is a runtime issue."]
 	pub type DispatchError = runtime_types::sp_runtime::DispatchError;
@@ -120,6 +121,8 @@ pub mod api {
 		Succinct(succinct::Event),
 		#[codec(index = 40)]
 		Proxy(proxy::Event),
+		#[codec(index = 41)]
+		TxPause(tx_pause::Event),
 	}
 	impl ::subxt::events::RootEvent for Event {
 		fn root_event(
@@ -355,6 +358,13 @@ pub mod api {
 					metadata,
 				)?));
 			}
+			if pallet_name == "TxPause" {
+				return Ok(Event::TxPause(tx_pause::Event::decode_with_metadata(
+					&mut &*pallet_bytes,
+					pallet_ty,
+					metadata,
+				)?));
+			}
 			Err(::subxt::ext::scale_decode::Error::custom(format!(
 				"Pallet name '{}' not found in root Event enum",
 				pallet_name
@@ -436,6 +446,8 @@ pub mod api {
 		Succinct(succinct::Call),
 		#[codec(index = 40)]
 		Proxy(proxy::Call),
+		#[codec(index = 41)]
+		TxPause(tx_pause::Call),
 	}
 	impl ::subxt::blocks::RootExtrinsic for Call {
 		fn root_extrinsic(
@@ -669,6 +681,13 @@ pub mod api {
 					metadata,
 				)?));
 			}
+			if pallet_name == "TxPause" {
+				return Ok(Call::TxPause(tx_pause::Call::decode_with_metadata(
+					&mut &*pallet_bytes,
+					pallet_ty,
+					metadata,
+				)?));
+			}
 			Err(::subxt::ext::scale_decode::Error::custom(format!(
 				"Pallet name '{}' not found in root Call enum",
 				pallet_name
@@ -746,6 +765,8 @@ pub mod api {
 		Succinct(succinct::Error),
 		#[codec(index = 40)]
 		Proxy(proxy::Error),
+		#[codec(index = 41)]
+		TxPause(tx_pause::Error),
 	}
 	impl ::subxt::error::RootError for Error {
 		fn root_error(
@@ -756,135 +777,140 @@ pub mod api {
 			use ::subxt::metadata::DecodeWithMetadata;
 			let cursor = &mut &pallet_bytes[..];
 			if pallet_name == "System" {
-				let variant_error = system::Error::decode_with_metadata(cursor, 130u32, metadata)?;
+				let variant_error = system::Error::decode_with_metadata(cursor, 133u32, metadata)?;
 				return Ok(Error::System(variant_error));
 			}
 			if pallet_name == "Utility" {
-				let variant_error = utility::Error::decode_with_metadata(cursor, 334u32, metadata)?;
+				let variant_error = utility::Error::decode_with_metadata(cursor, 337u32, metadata)?;
 				return Ok(Error::Utility(variant_error));
 			}
 			if pallet_name == "Babe" {
-				let variant_error = babe::Error::decode_with_metadata(cursor, 350u32, metadata)?;
+				let variant_error = babe::Error::decode_with_metadata(cursor, 353u32, metadata)?;
 				return Ok(Error::Babe(variant_error));
 			}
 			if pallet_name == "Indices" {
-				let variant_error = indices::Error::decode_with_metadata(cursor, 352u32, metadata)?;
+				let variant_error = indices::Error::decode_with_metadata(cursor, 355u32, metadata)?;
 				return Ok(Error::Indices(variant_error));
 			}
 			if pallet_name == "Balances" {
 				let variant_error =
-					balances::Error::decode_with_metadata(cursor, 367u32, metadata)?;
+					balances::Error::decode_with_metadata(cursor, 370u32, metadata)?;
 				return Ok(Error::Balances(variant_error));
 			}
 			if pallet_name == "ElectionProviderMultiPhase" {
 				let variant_error = election_provider_multi_phase::Error::decode_with_metadata(
-					cursor, 380u32, metadata,
+					cursor, 383u32, metadata,
 				)?;
 				return Ok(Error::ElectionProviderMultiPhase(variant_error));
 			}
 			if pallet_name == "Staking" {
-				let variant_error = staking::Error::decode_with_metadata(cursor, 401u32, metadata)?;
+				let variant_error = staking::Error::decode_with_metadata(cursor, 404u32, metadata)?;
 				return Ok(Error::Staking(variant_error));
 			}
 			if pallet_name == "Session" {
-				let variant_error = session::Error::decode_with_metadata(cursor, 406u32, metadata)?;
+				let variant_error = session::Error::decode_with_metadata(cursor, 409u32, metadata)?;
 				return Ok(Error::Session(variant_error));
 			}
 			if pallet_name == "TechnicalCommittee" {
 				let variant_error =
-					technical_committee::Error::decode_with_metadata(cursor, 409u32, metadata)?;
+					technical_committee::Error::decode_with_metadata(cursor, 412u32, metadata)?;
 				return Ok(Error::TechnicalCommittee(variant_error));
 			}
 			if pallet_name == "TechnicalMembership" {
 				let variant_error =
-					technical_membership::Error::decode_with_metadata(cursor, 411u32, metadata)?;
+					technical_membership::Error::decode_with_metadata(cursor, 414u32, metadata)?;
 				return Ok(Error::TechnicalMembership(variant_error));
 			}
 			if pallet_name == "Grandpa" {
-				let variant_error = grandpa::Error::decode_with_metadata(cursor, 415u32, metadata)?;
+				let variant_error = grandpa::Error::decode_with_metadata(cursor, 418u32, metadata)?;
 				return Ok(Error::Grandpa(variant_error));
 			}
 			if pallet_name == "Treasury" {
 				let variant_error =
-					treasury::Error::decode_with_metadata(cursor, 420u32, metadata)?;
+					treasury::Error::decode_with_metadata(cursor, 423u32, metadata)?;
 				return Ok(Error::Treasury(variant_error));
 			}
 			if pallet_name == "Sudo" {
-				let variant_error = sudo::Error::decode_with_metadata(cursor, 421u32, metadata)?;
+				let variant_error = sudo::Error::decode_with_metadata(cursor, 424u32, metadata)?;
 				return Ok(Error::Sudo(variant_error));
 			}
 			if pallet_name == "ImOnline" {
 				let variant_error =
-					im_online::Error::decode_with_metadata(cursor, 424u32, metadata)?;
+					im_online::Error::decode_with_metadata(cursor, 427u32, metadata)?;
 				return Ok(Error::ImOnline(variant_error));
 			}
 			if pallet_name == "Scheduler" {
 				let variant_error =
-					scheduler::Error::decode_with_metadata(cursor, 436u32, metadata)?;
+					scheduler::Error::decode_with_metadata(cursor, 439u32, metadata)?;
 				return Ok(Error::Scheduler(variant_error));
 			}
 			if pallet_name == "Bounties" {
 				let variant_error =
-					bounties::Error::decode_with_metadata(cursor, 440u32, metadata)?;
+					bounties::Error::decode_with_metadata(cursor, 443u32, metadata)?;
 				return Ok(Error::Bounties(variant_error));
 			}
 			if pallet_name == "Tips" {
-				let variant_error = tips::Error::decode_with_metadata(cursor, 442u32, metadata)?;
+				let variant_error = tips::Error::decode_with_metadata(cursor, 445u32, metadata)?;
 				return Ok(Error::Tips(variant_error));
 			}
 			if pallet_name == "DataAvailability" {
 				let variant_error =
-					data_availability::Error::decode_with_metadata(cursor, 444u32, metadata)?;
+					data_availability::Error::decode_with_metadata(cursor, 447u32, metadata)?;
 				return Ok(Error::DataAvailability(variant_error));
 			}
 			if pallet_name == "NomadUpdaterManager" {
 				let variant_error =
-					nomad_updater_manager::Error::decode_with_metadata(cursor, 445u32, metadata)?;
+					nomad_updater_manager::Error::decode_with_metadata(cursor, 448u32, metadata)?;
 				return Ok(Error::NomadUpdaterManager(variant_error));
 			}
 			if pallet_name == "NomadHome" {
 				let variant_error =
-					nomad_home::Error::decode_with_metadata(cursor, 450u32, metadata)?;
+					nomad_home::Error::decode_with_metadata(cursor, 453u32, metadata)?;
 				return Ok(Error::NomadHome(variant_error));
 			}
 			if pallet_name == "NomadDABridge" {
 				let variant_error =
-					nomad_da_bridge::Error::decode_with_metadata(cursor, 451u32, metadata)?;
+					nomad_da_bridge::Error::decode_with_metadata(cursor, 454u32, metadata)?;
 				return Ok(Error::NomadDABridge(variant_error));
 			}
 			if pallet_name == "Preimage" {
 				let variant_error =
-					preimage::Error::decode_with_metadata(cursor, 455u32, metadata)?;
+					preimage::Error::decode_with_metadata(cursor, 458u32, metadata)?;
 				return Ok(Error::Preimage(variant_error));
 			}
 			if pallet_name == "Multisig" {
 				let variant_error =
-					multisig::Error::decode_with_metadata(cursor, 458u32, metadata)?;
+					multisig::Error::decode_with_metadata(cursor, 461u32, metadata)?;
 				return Ok(Error::Multisig(variant_error));
 			}
 			if pallet_name == "VoterList" {
 				let variant_error =
-					voter_list::Error::decode_with_metadata(cursor, 462u32, metadata)?;
+					voter_list::Error::decode_with_metadata(cursor, 465u32, metadata)?;
 				return Ok(Error::VoterList(variant_error));
 			}
 			if pallet_name == "NominationPools" {
 				let variant_error =
-					nomination_pools::Error::decode_with_metadata(cursor, 481u32, metadata)?;
+					nomination_pools::Error::decode_with_metadata(cursor, 484u32, metadata)?;
 				return Ok(Error::NominationPools(variant_error));
 			}
 			if pallet_name == "Identity" {
 				let variant_error =
-					identity::Error::decode_with_metadata(cursor, 493u32, metadata)?;
+					identity::Error::decode_with_metadata(cursor, 496u32, metadata)?;
 				return Ok(Error::Identity(variant_error));
 			}
 			if pallet_name == "Succinct" {
 				let variant_error =
-					succinct::Error::decode_with_metadata(cursor, 495u32, metadata)?;
+					succinct::Error::decode_with_metadata(cursor, 498u32, metadata)?;
 				return Ok(Error::Succinct(variant_error));
 			}
 			if pallet_name == "Proxy" {
-				let variant_error = proxy::Error::decode_with_metadata(cursor, 504u32, metadata)?;
+				let variant_error = proxy::Error::decode_with_metadata(cursor, 507u32, metadata)?;
 				return Ok(Error::Proxy(variant_error));
+			}
+			if pallet_name == "TxPause" {
+				let variant_error =
+					tx_pause::Error::decode_with_metadata(cursor, 508u32, metadata)?;
+				return Ok(Error::TxPause(variant_error));
 			}
 			Err(::subxt::ext::scale_decode::Error::custom(format!(
 				"Pallet name '{}' not found in root Error enum",
@@ -991,6 +1017,9 @@ pub mod api {
 		pub fn proxy(&self) -> proxy::constants::ConstantsApi {
 			proxy::constants::ConstantsApi
 		}
+		pub fn tx_pause(&self) -> tx_pause::constants::ConstantsApi {
+			tx_pause::constants::ConstantsApi
+		}
 	}
 	pub struct StorageApi;
 	impl StorageApi {
@@ -1095,6 +1124,9 @@ pub mod api {
 		pub fn proxy(&self) -> proxy::storage::StorageApi {
 			proxy::storage::StorageApi
 		}
+		pub fn tx_pause(&self) -> tx_pause::storage::StorageApi {
+			tx_pause::storage::StorageApi
+		}
 	}
 	pub struct TransactionApi;
 	impl TransactionApi {
@@ -1190,6 +1222,9 @@ pub mod api {
 		pub fn proxy(&self) -> proxy::calls::TransactionApi {
 			proxy::calls::TransactionApi
 		}
+		pub fn tx_pause(&self) -> tx_pause::calls::TransactionApi {
+			tx_pause::calls::TransactionApi
+		}
 	}
 	#[doc = r" check whether the Client you are using is aligned with the statically generated codegen."]
 	pub fn validate_codegen<T: ::subxt::Config, C: ::subxt::client::OfflineClientT<T>>(
@@ -1202,9 +1237,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				28u8, 71u8, 225u8, 167u8, 214u8, 189u8, 176u8, 30u8, 68u8, 26u8, 74u8, 109u8, 26u8,
-				132u8, 12u8, 183u8, 147u8, 2u8, 15u8, 56u8, 53u8, 43u8, 192u8, 69u8, 204u8, 78u8,
-				64u8, 104u8, 237u8, 57u8, 242u8, 49u8,
+				85u8, 18u8, 6u8, 155u8, 93u8, 219u8, 213u8, 88u8, 144u8, 167u8, 89u8, 173u8, 218u8,
+				73u8, 117u8, 2u8, 229u8, 194u8, 196u8, 65u8, 178u8, 144u8, 237u8, 81u8, 213u8,
+				132u8, 229u8, 33u8, 19u8, 88u8, 168u8, 169u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -1988,9 +2023,9 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							239u8, 3u8, 66u8, 212u8, 251u8, 96u8, 129u8, 243u8, 55u8, 227u8, 197u8,
-							235u8, 99u8, 14u8, 64u8, 70u8, 173u8, 27u8, 158u8, 17u8, 237u8, 68u8,
-							250u8, 213u8, 229u8, 174u8, 232u8, 42u8, 10u8, 243u8, 50u8, 140u8,
+							247u8, 163u8, 56u8, 53u8, 128u8, 69u8, 78u8, 211u8, 212u8, 65u8, 209u8,
+							188u8, 35u8, 63u8, 167u8, 113u8, 241u8, 181u8, 95u8, 152u8, 154u8,
+							189u8, 8u8, 173u8, 106u8, 50u8, 188u8, 91u8, 214u8, 107u8, 157u8, 30u8,
 						],
 					)
 				}
@@ -2477,10 +2512,9 @@ pub mod api {
 						"batch",
 						types::Batch { calls },
 						[
-							80u8, 200u8, 184u8, 143u8, 250u8, 1u8, 46u8, 143u8, 20u8, 37u8, 231u8,
-							20u8, 19u8, 141u8, 105u8, 52u8, 71u8, 229u8, 205u8, 252u8, 207u8,
-							154u8, 190u8, 143u8, 119u8, 11u8, 172u8, 15u8, 211u8, 110u8, 84u8,
-							134u8,
+							51u8, 3u8, 78u8, 130u8, 198u8, 59u8, 43u8, 193u8, 180u8, 39u8, 224u8,
+							80u8, 167u8, 226u8, 96u8, 150u8, 75u8, 55u8, 56u8, 98u8, 80u8, 77u8,
+							47u8, 137u8, 30u8, 137u8, 65u8, 104u8, 148u8, 70u8, 252u8, 44u8,
 						],
 					)
 				}
@@ -2498,10 +2532,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							24u8, 116u8, 221u8, 129u8, 56u8, 225u8, 101u8, 95u8, 39u8, 226u8,
-							245u8, 4u8, 151u8, 209u8, 156u8, 233u8, 47u8, 152u8, 177u8, 93u8,
-							184u8, 251u8, 210u8, 85u8, 29u8, 52u8, 243u8, 12u8, 112u8, 255u8, 60u8,
-							43u8,
+							89u8, 113u8, 60u8, 38u8, 211u8, 212u8, 20u8, 232u8, 137u8, 63u8, 12u8,
+							61u8, 129u8, 172u8, 213u8, 35u8, 82u8, 38u8, 130u8, 216u8, 181u8,
+							228u8, 47u8, 136u8, 177u8, 106u8, 125u8, 86u8, 29u8, 88u8, 163u8,
+							227u8,
 						],
 					)
 				}
@@ -2515,9 +2549,10 @@ pub mod api {
 						"batch_all",
 						types::BatchAll { calls },
 						[
-							1u8, 4u8, 33u8, 172u8, 53u8, 131u8, 135u8, 207u8, 192u8, 196u8, 254u8,
-							105u8, 64u8, 236u8, 137u8, 39u8, 217u8, 224u8, 83u8, 1u8, 35u8, 200u8,
-							9u8, 4u8, 235u8, 168u8, 7u8, 106u8, 215u8, 137u8, 47u8, 87u8,
+							186u8, 177u8, 137u8, 94u8, 218u8, 157u8, 81u8, 20u8, 214u8, 207u8,
+							125u8, 202u8, 100u8, 110u8, 42u8, 201u8, 24u8, 150u8, 18u8, 151u8,
+							192u8, 235u8, 246u8, 41u8, 201u8, 87u8, 249u8, 35u8, 148u8, 205u8,
+							31u8, 220u8,
 						],
 					)
 				}
@@ -2535,9 +2570,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							201u8, 82u8, 167u8, 119u8, 148u8, 124u8, 198u8, 250u8, 125u8, 36u8,
-							90u8, 169u8, 33u8, 79u8, 22u8, 162u8, 183u8, 237u8, 2u8, 172u8, 151u8,
-							137u8, 32u8, 230u8, 74u8, 2u8, 125u8, 136u8, 37u8, 198u8, 53u8, 57u8,
+							26u8, 213u8, 123u8, 128u8, 120u8, 255u8, 109u8, 161u8, 97u8, 241u8,
+							143u8, 100u8, 128u8, 201u8, 140u8, 71u8, 80u8, 180u8, 156u8, 221u8,
+							44u8, 206u8, 229u8, 50u8, 82u8, 15u8, 47u8, 99u8, 45u8, 220u8, 25u8,
+							3u8,
 						],
 					)
 				}
@@ -2551,10 +2587,9 @@ pub mod api {
 						"force_batch",
 						types::ForceBatch { calls },
 						[
-							220u8, 209u8, 125u8, 108u8, 177u8, 42u8, 193u8, 197u8, 45u8, 185u8,
-							50u8, 17u8, 163u8, 220u8, 2u8, 11u8, 52u8, 195u8, 138u8, 157u8, 155u8,
-							180u8, 92u8, 241u8, 112u8, 56u8, 213u8, 141u8, 157u8, 85u8, 106u8,
-							203u8,
+							220u8, 251u8, 1u8, 54u8, 219u8, 203u8, 50u8, 11u8, 250u8, 70u8, 190u8,
+							237u8, 94u8, 75u8, 96u8, 221u8, 40u8, 65u8, 29u8, 166u8, 100u8, 14u8,
+							83u8, 208u8, 139u8, 207u8, 234u8, 47u8, 68u8, 122u8, 220u8, 23u8,
 						],
 					)
 				}
@@ -2572,9 +2607,9 @@ pub mod api {
 							weight,
 						},
 						[
-							124u8, 24u8, 181u8, 112u8, 173u8, 78u8, 154u8, 218u8, 52u8, 148u8,
-							73u8, 35u8, 123u8, 234u8, 183u8, 209u8, 35u8, 169u8, 247u8, 175u8, 4u8,
-							216u8, 21u8, 228u8, 32u8, 182u8, 94u8, 10u8, 233u8, 4u8, 134u8, 237u8,
+							248u8, 248u8, 17u8, 198u8, 249u8, 20u8, 15u8, 76u8, 8u8, 88u8, 185u8,
+							199u8, 207u8, 65u8, 107u8, 129u8, 39u8, 151u8, 112u8, 170u8, 178u8,
+							217u8, 133u8, 6u8, 44u8, 214u8, 71u8, 250u8, 81u8, 58u8, 118u8, 96u8,
 						],
 					)
 				}
@@ -9856,9 +9891,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							28u8, 225u8, 243u8, 30u8, 190u8, 223u8, 80u8, 254u8, 210u8, 136u8,
-							60u8, 40u8, 237u8, 63u8, 15u8, 227u8, 187u8, 31u8, 170u8, 117u8, 91u8,
-							181u8, 46u8, 182u8, 13u8, 59u8, 160u8, 180u8, 110u8, 98u8, 247u8, 53u8,
+							109u8, 15u8, 47u8, 140u8, 172u8, 24u8, 56u8, 73u8, 166u8, 235u8, 246u8,
+							23u8, 180u8, 74u8, 122u8, 137u8, 73u8, 138u8, 87u8, 205u8, 52u8, 169u8,
+							106u8, 184u8, 155u8, 134u8, 225u8, 238u8, 214u8, 149u8, 82u8, 13u8,
 						],
 					)
 				}
@@ -9878,10 +9913,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							94u8, 48u8, 148u8, 245u8, 151u8, 99u8, 148u8, 141u8, 93u8, 240u8, 27u8,
-							164u8, 193u8, 133u8, 226u8, 86u8, 194u8, 249u8, 243u8, 190u8, 176u8,
-							249u8, 26u8, 239u8, 170u8, 228u8, 182u8, 34u8, 32u8, 176u8, 152u8,
-							238u8,
+							204u8, 47u8, 84u8, 150u8, 40u8, 155u8, 151u8, 0u8, 93u8, 157u8, 87u8,
+							110u8, 211u8, 67u8, 248u8, 113u8, 126u8, 180u8, 53u8, 193u8, 216u8,
+							46u8, 220u8, 83u8, 76u8, 251u8, 185u8, 151u8, 33u8, 209u8, 31u8, 217u8,
 						],
 					)
 				}
@@ -10160,10 +10194,9 @@ pub mod api {
 							_0.borrow(),
 						)],
 						[
-							171u8, 170u8, 231u8, 235u8, 231u8, 193u8, 111u8, 140u8, 34u8, 81u8,
-							86u8, 240u8, 239u8, 96u8, 49u8, 213u8, 130u8, 97u8, 31u8, 218u8, 250u8,
-							204u8, 51u8, 52u8, 144u8, 234u8, 179u8, 206u8, 147u8, 214u8, 213u8,
-							78u8,
+							106u8, 182u8, 137u8, 73u8, 221u8, 81u8, 122u8, 5u8, 46u8, 74u8, 120u8,
+							141u8, 86u8, 194u8, 220u8, 205u8, 54u8, 150u8, 19u8, 162u8, 182u8, 7u8,
+							233u8, 233u8, 85u8, 14u8, 242u8, 191u8, 26u8, 193u8, 104u8, 161u8,
 						],
 					)
 				}
@@ -10182,10 +10215,9 @@ pub mod api {
 						"ProposalOf",
 						Vec::new(),
 						[
-							171u8, 170u8, 231u8, 235u8, 231u8, 193u8, 111u8, 140u8, 34u8, 81u8,
-							86u8, 240u8, 239u8, 96u8, 49u8, 213u8, 130u8, 97u8, 31u8, 218u8, 250u8,
-							204u8, 51u8, 52u8, 144u8, 234u8, 179u8, 206u8, 147u8, 214u8, 213u8,
-							78u8,
+							106u8, 182u8, 137u8, 73u8, 221u8, 81u8, 122u8, 5u8, 46u8, 74u8, 120u8,
+							141u8, 86u8, 194u8, 220u8, 205u8, 54u8, 150u8, 19u8, 162u8, 182u8, 7u8,
+							233u8, 233u8, 85u8, 14u8, 242u8, 191u8, 26u8, 193u8, 104u8, 161u8,
 						],
 					)
 				}
@@ -12040,10 +12072,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							205u8, 112u8, 130u8, 215u8, 188u8, 109u8, 18u8, 69u8, 78u8, 26u8,
-							238u8, 110u8, 146u8, 247u8, 228u8, 57u8, 231u8, 146u8, 40u8, 149u8,
-							88u8, 35u8, 34u8, 85u8, 149u8, 83u8, 206u8, 218u8, 103u8, 48u8, 32u8,
-							112u8,
+							19u8, 15u8, 84u8, 243u8, 224u8, 95u8, 104u8, 227u8, 10u8, 130u8, 175u8,
+							236u8, 242u8, 177u8, 129u8, 173u8, 142u8, 117u8, 234u8, 234u8, 108u8,
+							177u8, 108u8, 19u8, 191u8, 81u8, 101u8, 13u8, 91u8, 74u8, 250u8, 7u8,
 						],
 					)
 				}
@@ -12061,9 +12092,9 @@ pub mod api {
 							weight,
 						},
 						[
-							62u8, 183u8, 118u8, 192u8, 7u8, 171u8, 65u8, 23u8, 86u8, 200u8, 62u8,
-							86u8, 177u8, 10u8, 134u8, 145u8, 15u8, 54u8, 128u8, 79u8, 58u8, 220u8,
-							243u8, 205u8, 83u8, 204u8, 90u8, 251u8, 4u8, 181u8, 233u8, 201u8,
+							195u8, 203u8, 70u8, 35u8, 251u8, 111u8, 15u8, 90u8, 8u8, 242u8, 57u8,
+							231u8, 132u8, 164u8, 214u8, 83u8, 98u8, 251u8, 229u8, 77u8, 11u8, 17u8,
+							174u8, 76u8, 18u8, 76u8, 247u8, 140u8, 175u8, 208u8, 214u8, 88u8,
 						],
 					)
 				}
@@ -12104,9 +12135,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							92u8, 5u8, 157u8, 238u8, 216u8, 39u8, 152u8, 225u8, 226u8, 244u8, 23u8,
-							121u8, 16u8, 35u8, 148u8, 80u8, 139u8, 97u8, 149u8, 212u8, 216u8,
-							209u8, 155u8, 232u8, 11u8, 65u8, 90u8, 195u8, 148u8, 98u8, 100u8, 92u8,
+							214u8, 111u8, 157u8, 126u8, 63u8, 62u8, 211u8, 255u8, 104u8, 80u8,
+							67u8, 139u8, 94u8, 130u8, 16u8, 135u8, 190u8, 182u8, 122u8, 203u8,
+							64u8, 18u8, 29u8, 149u8, 78u8, 143u8, 240u8, 188u8, 146u8, 153u8,
+							182u8, 147u8,
 						],
 					)
 				}
@@ -12992,9 +13024,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							206u8, 35u8, 239u8, 75u8, 255u8, 82u8, 103u8, 43u8, 188u8, 187u8, 59u8,
-							31u8, 119u8, 147u8, 228u8, 152u8, 149u8, 198u8, 36u8, 51u8, 228u8,
-							187u8, 224u8, 15u8, 220u8, 124u8, 104u8, 113u8, 53u8, 6u8, 142u8, 41u8,
+							199u8, 177u8, 6u8, 37u8, 72u8, 114u8, 73u8, 46u8, 9u8, 190u8, 68u8,
+							48u8, 199u8, 191u8, 209u8, 19u8, 29u8, 12u8, 195u8, 68u8, 120u8, 177u8,
+							68u8, 243u8, 246u8, 196u8, 150u8, 116u8, 40u8, 122u8, 194u8, 95u8,
 						],
 					)
 				}
@@ -13039,9 +13071,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							157u8, 241u8, 223u8, 188u8, 35u8, 35u8, 244u8, 6u8, 142u8, 53u8, 184u8,
-							182u8, 84u8, 101u8, 213u8, 1u8, 143u8, 85u8, 235u8, 38u8, 228u8, 157u8,
-							238u8, 131u8, 19u8, 222u8, 174u8, 92u8, 122u8, 205u8, 54u8, 1u8,
+							87u8, 3u8, 110u8, 21u8, 79u8, 55u8, 139u8, 13u8, 1u8, 81u8, 149u8,
+							173u8, 225u8, 188u8, 255u8, 61u8, 9u8, 129u8, 32u8, 33u8, 186u8, 190u8,
+							88u8, 79u8, 255u8, 228u8, 42u8, 94u8, 128u8, 63u8, 115u8, 174u8,
 						],
 					)
 				}
@@ -13082,9 +13114,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							71u8, 2u8, 12u8, 169u8, 134u8, 39u8, 89u8, 61u8, 209u8, 248u8, 205u8,
-							233u8, 142u8, 251u8, 129u8, 193u8, 12u8, 81u8, 142u8, 225u8, 229u8,
-							133u8, 28u8, 163u8, 2u8, 140u8, 128u8, 168u8, 36u8, 250u8, 85u8, 11u8,
+							51u8, 9u8, 143u8, 23u8, 50u8, 241u8, 254u8, 153u8, 86u8, 167u8, 130u8,
+							10u8, 225u8, 172u8, 209u8, 14u8, 101u8, 135u8, 3u8, 162u8, 107u8,
+							127u8, 65u8, 209u8, 77u8, 90u8, 132u8, 87u8, 203u8, 174u8, 10u8, 44u8,
 						],
 					)
 				}
@@ -13111,10 +13143,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							118u8, 133u8, 189u8, 142u8, 238u8, 199u8, 14u8, 4u8, 222u8, 250u8,
-							71u8, 103u8, 42u8, 89u8, 4u8, 253u8, 88u8, 63u8, 22u8, 54u8, 159u8,
-							22u8, 149u8, 140u8, 130u8, 202u8, 171u8, 55u8, 81u8, 182u8, 181u8,
-							59u8,
+							28u8, 233u8, 84u8, 106u8, 126u8, 27u8, 177u8, 225u8, 138u8, 225u8,
+							218u8, 61u8, 234u8, 96u8, 154u8, 54u8, 97u8, 236u8, 13u8, 132u8, 69u8,
+							102u8, 227u8, 130u8, 227u8, 208u8, 223u8, 198u8, 111u8, 199u8, 123u8,
+							161u8,
 						],
 					)
 				}
@@ -16507,9 +16539,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							5u8, 235u8, 107u8, 92u8, 70u8, 207u8, 115u8, 169u8, 20u8, 168u8, 245u8,
-							61u8, 100u8, 7u8, 170u8, 11u8, 85u8, 145u8, 118u8, 133u8, 160u8, 33u8,
-							204u8, 61u8, 18u8, 117u8, 103u8, 247u8, 132u8, 254u8, 57u8, 52u8,
+							166u8, 112u8, 86u8, 140u8, 36u8, 221u8, 206u8, 5u8, 77u8, 175u8, 53u8,
+							137u8, 199u8, 151u8, 187u8, 230u8, 119u8, 120u8, 23u8, 110u8, 42u8,
+							16u8, 37u8, 58u8, 146u8, 250u8, 108u8, 131u8, 208u8, 91u8, 207u8,
+							226u8,
 						],
 					)
 				}
@@ -16535,10 +16568,10 @@ pub mod api {
 							max_weight,
 						},
 						[
-							207u8, 170u8, 11u8, 247u8, 143u8, 75u8, 171u8, 38u8, 223u8, 163u8,
-							133u8, 211u8, 121u8, 162u8, 241u8, 116u8, 38u8, 37u8, 161u8, 170u8,
-							233u8, 144u8, 26u8, 73u8, 48u8, 74u8, 6u8, 50u8, 5u8, 119u8, 250u8,
-							209u8,
+							244u8, 50u8, 84u8, 147u8, 113u8, 97u8, 210u8, 15u8, 173u8, 112u8,
+							255u8, 8u8, 78u8, 239u8, 25u8, 51u8, 96u8, 3u8, 153u8, 205u8, 50u8,
+							51u8, 194u8, 125u8, 128u8, 219u8, 121u8, 161u8, 202u8, 213u8, 239u8,
+							162u8,
 						],
 					)
 				}
@@ -20460,10 +20493,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							186u8, 157u8, 37u8, 6u8, 100u8, 129u8, 85u8, 8u8, 105u8, 72u8, 18u8,
-							90u8, 250u8, 239u8, 155u8, 202u8, 88u8, 166u8, 196u8, 10u8, 12u8,
-							251u8, 74u8, 224u8, 109u8, 112u8, 218u8, 133u8, 237u8, 131u8, 221u8,
-							187u8,
+							246u8, 93u8, 189u8, 183u8, 192u8, 244u8, 224u8, 116u8, 170u8, 153u8,
+							150u8, 189u8, 24u8, 23u8, 223u8, 243u8, 24u8, 54u8, 122u8, 56u8, 78u8,
+							154u8, 164u8, 58u8, 129u8, 2u8, 14u8, 74u8, 17u8, 31u8, 196u8, 131u8,
 						],
 					)
 				}
@@ -21881,9 +21913,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							86u8, 245u8, 138u8, 95u8, 201u8, 35u8, 5u8, 247u8, 38u8, 129u8, 252u8,
-							221u8, 58u8, 10u8, 241u8, 109u8, 132u8, 242u8, 86u8, 86u8, 106u8, 85u8,
-							195u8, 212u8, 195u8, 88u8, 223u8, 131u8, 187u8, 213u8, 67u8, 42u8,
+							73u8, 219u8, 237u8, 240u8, 70u8, 101u8, 59u8, 215u8, 3u8, 175u8, 254u8,
+							206u8, 168u8, 186u8, 55u8, 27u8, 86u8, 103u8, 64u8, 14u8, 255u8, 3u8,
+							235u8, 107u8, 109u8, 211u8, 102u8, 56u8, 129u8, 224u8, 189u8, 26u8,
 						],
 					)
 				}
@@ -22095,10 +22127,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							66u8, 11u8, 79u8, 126u8, 146u8, 122u8, 176u8, 152u8, 185u8, 132u8,
-							141u8, 29u8, 255u8, 219u8, 208u8, 84u8, 154u8, 254u8, 181u8, 200u8,
-							234u8, 64u8, 82u8, 126u8, 114u8, 142u8, 25u8, 13u8, 244u8, 207u8,
-							122u8, 210u8,
+							126u8, 213u8, 247u8, 163u8, 146u8, 238u8, 190u8, 98u8, 15u8, 248u8,
+							217u8, 86u8, 189u8, 218u8, 69u8, 105u8, 211u8, 181u8, 155u8, 39u8,
+							30u8, 234u8, 104u8, 126u8, 255u8, 174u8, 179u8, 27u8, 226u8, 228u8,
+							93u8, 72u8,
 						],
 					)
 				}
@@ -22458,6 +22490,271 @@ pub mod api {
 							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
 							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
 							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
+						],
+					)
+				}
+			}
+		}
+	}
+	pub mod tx_pause {
+		use super::root_mod;
+		use super::runtime_types;
+		#[doc = "The `Error` enum of this pallet."]
+		pub type Error = runtime_types::pallet_tx_pause::pallet::Error;
+		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
+		pub type Call = runtime_types::pallet_tx_pause::pallet::Call;
+		pub mod calls {
+			use super::root_mod;
+			use super::runtime_types;
+			type DispatchError = runtime_types::sp_runtime::DispatchError;
+			pub mod types {
+				use super::runtime_types;
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct Pause {
+					pub full_name: (
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+					),
+				}
+				impl ::subxt::blocks::StaticExtrinsic for Pause {
+					const PALLET: &'static str = "TxPause";
+					const CALL: &'static str = "pause";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct Unpause {
+					pub ident: (
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+					),
+				}
+				impl ::subxt::blocks::StaticExtrinsic for Unpause {
+					const PALLET: &'static str = "TxPause";
+					const CALL: &'static str = "unpause";
+				}
+			}
+			pub struct TransactionApi;
+			impl TransactionApi {
+				#[doc = "See [`Pallet::pause`]."]
+				pub fn pause(
+					&self,
+					full_name: (
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+					),
+				) -> ::subxt::tx::Payload<types::Pause> {
+					::subxt::tx::Payload::new_static(
+						"TxPause",
+						"pause",
+						types::Pause { full_name },
+						[
+							27u8, 82u8, 101u8, 32u8, 32u8, 220u8, 17u8, 8u8, 182u8, 16u8, 145u8,
+							174u8, 203u8, 116u8, 184u8, 255u8, 49u8, 137u8, 203u8, 189u8, 157u8,
+							136u8, 129u8, 233u8, 124u8, 173u8, 227u8, 230u8, 214u8, 252u8, 92u8,
+							112u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::unpause`]."]
+				pub fn unpause(
+					&self,
+					ident: (
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+					),
+				) -> ::subxt::tx::Payload<types::Unpause> {
+					::subxt::tx::Payload::new_static(
+						"TxPause",
+						"unpause",
+						types::Unpause { ident },
+						[
+							133u8, 121u8, 127u8, 133u8, 56u8, 186u8, 60u8, 55u8, 5u8, 39u8, 118u8,
+							87u8, 90u8, 227u8, 125u8, 208u8, 18u8, 36u8, 100u8, 154u8, 3u8, 9u8,
+							248u8, 255u8, 215u8, 145u8, 181u8, 197u8, 113u8, 112u8, 243u8, 195u8,
+						],
+					)
+				}
+			}
+		}
+		#[doc = "The `Event` enum of this pallet"]
+		pub type Event = runtime_types::pallet_tx_pause::pallet::Event;
+		pub mod events {
+			use super::runtime_types;
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "This pallet, or a specific call is now paused."]
+			pub struct CallPaused {
+				pub full_name: (
+					runtime_types::bounded_collections::bounded_vec::BoundedVec<
+						::core::primitive::u8,
+					>,
+					runtime_types::bounded_collections::bounded_vec::BoundedVec<
+						::core::primitive::u8,
+					>,
+				),
+			}
+			impl ::subxt::events::StaticEvent for CallPaused {
+				const PALLET: &'static str = "TxPause";
+				const EVENT: &'static str = "CallPaused";
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "This pallet, or a specific call is now unpaused."]
+			pub struct CallUnpaused {
+				pub full_name: (
+					runtime_types::bounded_collections::bounded_vec::BoundedVec<
+						::core::primitive::u8,
+					>,
+					runtime_types::bounded_collections::bounded_vec::BoundedVec<
+						::core::primitive::u8,
+					>,
+				),
+			}
+			impl ::subxt::events::StaticEvent for CallUnpaused {
+				const PALLET: &'static str = "TxPause";
+				const EVENT: &'static str = "CallUnpaused";
+			}
+		}
+		pub mod storage {
+			use super::runtime_types;
+			pub struct StorageApi;
+			impl StorageApi {
+				#[doc = " The set of calls that are explicitly paused."]
+				pub fn paused_calls(
+					&self,
+					_0: impl ::std::borrow::Borrow<
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+					>,
+					_1: impl ::std::borrow::Borrow<
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+					>,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					(),
+					::subxt::storage::address::Yes,
+					(),
+					::subxt::storage::address::Yes,
+				> {
+					::subxt::storage::address::Address::new_static(
+						"TxPause",
+						"PausedCalls",
+						vec![
+							::subxt::storage::address::make_static_storage_map_key(_0.borrow()),
+							::subxt::storage::address::make_static_storage_map_key(_1.borrow()),
+						],
+						[
+							57u8, 252u8, 70u8, 110u8, 219u8, 83u8, 149u8, 152u8, 74u8, 150u8,
+							151u8, 151u8, 235u8, 150u8, 211u8, 12u8, 144u8, 174u8, 252u8, 50u8,
+							14u8, 75u8, 141u8, 149u8, 182u8, 146u8, 85u8, 213u8, 135u8, 174u8,
+							205u8, 126u8,
+						],
+					)
+				}
+				#[doc = " The set of calls that are explicitly paused."]
+				pub fn paused_calls_root(
+					&self,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					(),
+					(),
+					(),
+					::subxt::storage::address::Yes,
+				> {
+					::subxt::storage::address::Address::new_static(
+						"TxPause",
+						"PausedCalls",
+						Vec::new(),
+						[
+							57u8, 252u8, 70u8, 110u8, 219u8, 83u8, 149u8, 152u8, 74u8, 150u8,
+							151u8, 151u8, 235u8, 150u8, 211u8, 12u8, 144u8, 174u8, 252u8, 50u8,
+							14u8, 75u8, 141u8, 149u8, 182u8, 146u8, 85u8, 213u8, 135u8, 174u8,
+							205u8, 126u8,
+						],
+					)
+				}
+			}
+		}
+		pub mod constants {
+			use super::runtime_types;
+			pub struct ConstantsApi;
+			impl ConstantsApi {
+				#[doc = " Maximum length for pallet name and call name SCALE encoded string names."]
+				#[doc = ""]
+				#[doc = " TOO LONG NAMES WILL BE TREATED AS PAUSED."]
+				pub fn max_name_len(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
+					::subxt::constants::Address::new_static(
+						"TxPause",
+						"MaxNameLen",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
 						],
 					)
 				}
@@ -23405,6 +23702,8 @@ pub mod api {
 				Succinct(runtime_types::pallet_succinct::pallet::Call),
 				#[codec(index = 40)]
 				Proxy(runtime_types::pallet_proxy::pallet::Call),
+				#[codec(index = 41)]
+				TxPause(runtime_types::pallet_tx_pause::pallet::Call),
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -23482,6 +23781,8 @@ pub mod api {
 				Succinct(runtime_types::pallet_succinct::pallet::Event),
 				#[codec(index = 40)]
 				Proxy(runtime_types::pallet_proxy::pallet::Event),
+				#[codec(index = 41)]
+				TxPause(runtime_types::pallet_tx_pause::pallet::Event),
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -30183,6 +30484,119 @@ pub mod api {
 				pub value: _1,
 				pub beneficiary: _0,
 				pub bond: _1,
+			}
+		}
+		pub mod pallet_tx_pause {
+			use super::runtime_types;
+			pub mod pallet {
+				use super::runtime_types;
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
+				pub enum Call {
+					#[codec(index = 0)]
+					#[doc = "See [`Pallet::pause`]."]
+					pause {
+						full_name: (
+							runtime_types::bounded_collections::bounded_vec::BoundedVec<
+								::core::primitive::u8,
+							>,
+							runtime_types::bounded_collections::bounded_vec::BoundedVec<
+								::core::primitive::u8,
+							>,
+						),
+					},
+					#[codec(index = 1)]
+					#[doc = "See [`Pallet::unpause`]."]
+					unpause {
+						ident: (
+							runtime_types::bounded_collections::bounded_vec::BoundedVec<
+								::core::primitive::u8,
+							>,
+							runtime_types::bounded_collections::bounded_vec::BoundedVec<
+								::core::primitive::u8,
+							>,
+						),
+					},
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "The `Error` enum of this pallet."]
+				pub enum Error {
+					#[codec(index = 0)]
+					#[doc = "The call is paused."]
+					IsPaused,
+					#[codec(index = 1)]
+					#[doc = "The call is unpaused."]
+					IsUnpaused,
+					#[codec(index = 2)]
+					#[doc = "The call is whitelisted and cannot be paused."]
+					Unpausable,
+					#[codec(index = 3)]
+					NotFound,
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "The `Event` enum of this pallet"]
+				pub enum Event {
+					#[codec(index = 0)]
+					#[doc = "This pallet, or a specific call is now paused."]
+					CallPaused {
+						full_name: (
+							runtime_types::bounded_collections::bounded_vec::BoundedVec<
+								::core::primitive::u8,
+							>,
+							runtime_types::bounded_collections::bounded_vec::BoundedVec<
+								::core::primitive::u8,
+							>,
+						),
+					},
+					#[codec(index = 1)]
+					#[doc = "This pallet, or a specific call is now unpaused."]
+					CallUnpaused {
+						full_name: (
+							runtime_types::bounded_collections::bounded_vec::BoundedVec<
+								::core::primitive::u8,
+							>,
+							runtime_types::bounded_collections::bounded_vec::BoundedVec<
+								::core::primitive::u8,
+							>,
+						),
+					},
+				}
 			}
 		}
 		pub mod pallet_utility {

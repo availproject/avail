@@ -5,11 +5,12 @@ use crate::SessionKeys;
 use crate::SLOT_DURATION;
 use crate::{
 	constants, prod_or_fast, weights, AccountId, AccountIndex, Babe, Balances, Block, BlockNumber,
-	Bounties, ElectionProviderMultiPhase, GrandpaId, Hash, Historical, ImOnline, ImOnlineId, Index,
-	Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo, Preimage,
-	ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeHoldReason, RuntimeOrigin,
-	RuntimeVersion, Session, Signature, SignedPayload, Staking, System, TechnicalCommittee,
-	Timestamp, TransactionPayment, Treasury, UncheckedExtrinsic, VoterList, MINUTES, VERSION,
+	Bounties, ElectionProviderMultiPhase, Everything, GrandpaId, Hash, Historical, ImOnline,
+	ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo,
+	Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeHoldReason,
+	RuntimeOrigin, RuntimeVersion, Session, Signature, SignedPayload, Staking, System,
+	TechnicalCommittee, Timestamp, TransactionPayment, Treasury, TxPause, UncheckedExtrinsic,
+	VoterList, MINUTES, VERSION,
 };
 use avail_core::currency::{Balance, AVL, CENTS, NANO_AVL, PICO_AVL};
 use avail_core::AppId;
@@ -26,10 +27,11 @@ use frame_support::pallet_prelude::Get;
 use frame_support::pallet_prelude::Weight;
 use frame_support::traits::tokens::Imbalance;
 use frame_support::traits::ConstU32;
+use frame_support::traits::Contains;
 use frame_support::traits::ContainsLengthBound;
 use frame_support::traits::DefensiveTruncateFrom;
 use frame_support::traits::EqualPrivilegeOnly;
-use frame_support::traits::Everything;
+use frame_support::traits::InsideBoth;
 use frame_support::traits::InstanceFilter;
 use frame_support::traits::KeyOwnerProofSystem;
 use frame_support::traits::SortedMembers;
@@ -47,6 +49,7 @@ use pallet_election_provider_multi_phase::SolutionAccuracyOf;
 use pallet_transaction_payment::CurrencyAdapter;
 use pallet_transaction_payment::Multiplier;
 use pallet_transaction_payment::TargetedFeeAdjustment;
+use pallet_tx_pause::RuntimeCallNameOf;
 use sp_core::crypto::KeyTypeId;
 use sp_core::ConstU64;
 use sp_core::RuntimeDebug;
@@ -954,6 +957,29 @@ impl pallet_proxy::Config for Runtime {
 	type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
+/// Calls that cannot be paused by the tx-pause pallet.
+pub struct TxPauseWhitelistedCalls;
+/// Whitelist `Balances::transfer_keep_alive`, all others are pauseable.
+impl Contains<RuntimeCallNameOf<Runtime>> for TxPauseWhitelistedCalls {
+	fn contains(_full_name: &RuntimeCallNameOf<Runtime>) -> bool {
+		false
+		// match (full_name.0.as_slice(), full_name.1.as_slice()) {
+		// 	(b"Balances", b"transfer_keep_alive") => true,
+		// 	_ => false,
+		// }
+	}
+}
+
+impl pallet_tx_pause::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type PauseOrigin = EnsureRoot<AccountId>;
+	type UnpauseOrigin = EnsureRoot<AccountId>;
+	type WhitelistedCalls = TxPauseWhitelistedCalls;
+	type MaxNameLen = ConstU32<256>;
+	type WeightInfo = pallet_tx_pause::weights::SubstrateWeight<Runtime>;
+}
+
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 2400;
 	pub const Version: RuntimeVersion = VERSION;
@@ -1111,7 +1137,7 @@ impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// The basic call filter to use in dispatchable.
-	type BaseCallFilter = Everything;
+	type BaseCallFilter = InsideBoth<Everything, TxPause>;
 	/// The Block type used by the runtime
 	type Block = Block;
 	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).

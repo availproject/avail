@@ -150,6 +150,7 @@ construct_runtime!(
 		Mandate: pallet_mandate = 38,
 		Succinct: pallet_succinct = 39,
 		Proxy: pallet_proxy = 40,
+		TxPause: pallet_tx_pause = 41,
 	}
 );
 
@@ -196,6 +197,7 @@ mod benches {
 		[pallet_mandate, crate::Mandate]
 		[pallet_succinct, crate::Succinct]
 		[pallet_proxy, crate::Proxy]
+		[pallet_tx_pause, crate::TxPause]
 	);
 }
 
