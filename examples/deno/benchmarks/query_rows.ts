@@ -13,7 +13,7 @@ const txCount = config.txCount;
 const data = prepareData(txCount);
 
 const rows: number[] = [];
-for (let i = 0; i < 256; ++i) {
+for (let i = 0; i < 64; ++i) {
     rows.push(i);
 }
 

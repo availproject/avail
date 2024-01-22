@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 as builder
+FROM debian:12.2-slim as builder
 
 # This installs all dependencies that we need (besides Rust).
 RUN apt update -y && \
@@ -10,7 +10,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rust_install.sh 
 ADD . ./workdir
 WORKDIR "/workdir"
 
-# This install the right toolchain
+# This installs the right toolchain
 RUN $HOME/.cargo/bin/rustup show
 
 # This builds the binary.
