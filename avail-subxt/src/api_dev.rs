@@ -756,7 +756,7 @@ pub mod api {
 			use ::subxt::metadata::DecodeWithMetadata;
 			let cursor = &mut &pallet_bytes[..];
 			if pallet_name == "System" {
-				let variant_error = system::Error::decode_with_metadata(cursor, 130u32, metadata)?;
+				let variant_error = system::Error::decode_with_metadata(cursor, 128u32, metadata)?;
 				return Ok(Error::System(variant_error));
 			}
 			if pallet_name == "Utility" {
@@ -1202,9 +1202,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				1u8, 163u8, 146u8, 251u8, 53u8, 208u8, 122u8, 175u8, 168u8, 134u8, 225u8, 70u8,
-				225u8, 3u8, 26u8, 82u8, 237u8, 130u8, 159u8, 254u8, 173u8, 173u8, 43u8, 190u8,
-				172u8, 199u8, 148u8, 33u8, 172u8, 2u8, 78u8, 176u8,
+				155u8, 120u8, 14u8, 94u8, 254u8, 115u8, 135u8, 216u8, 15u8, 236u8, 104u8, 62u8,
+				228u8, 154u8, 47u8, 215u8, 47u8, 110u8, 103u8, 170u8, 10u8, 163u8, 135u8, 98u8,
+				166u8, 189u8, 190u8, 140u8, 100u8, 16u8, 66u8, 86u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -1988,9 +1988,9 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							130u8, 49u8, 146u8, 10u8, 60u8, 248u8, 139u8, 14u8, 50u8, 45u8, 152u8,
-							254u8, 112u8, 88u8, 164u8, 10u8, 57u8, 26u8, 124u8, 109u8, 131u8, 84u8,
-							120u8, 140u8, 128u8, 120u8, 144u8, 192u8, 23u8, 3u8, 190u8, 90u8,
+							1u8, 39u8, 123u8, 77u8, 9u8, 165u8, 18u8, 28u8, 48u8, 140u8, 34u8,
+							14u8, 187u8, 72u8, 11u8, 93u8, 228u8, 128u8, 160u8, 168u8, 108u8, 56u8,
+							141u8, 196u8, 114u8, 242u8, 11u8, 182u8, 15u8, 14u8, 110u8, 13u8,
 						],
 					)
 				}
@@ -20913,7 +20913,9 @@ pub mod api {
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 			#[doc = "emit when message gets executed."]
 			pub struct ExecutedMessage {
-				pub message: runtime_types::avail_core::data_proof_v2::Message,
+				pub from: ::subxt::utils::H256,
+				pub to: ::subxt::utils::H256,
+				pub message_id: ::core::primitive::u64,
 				pub message_root: ::subxt::utils::H256,
 			}
 			impl ::subxt::events::StaticEvent for ExecutedMessage {
@@ -29333,61 +29335,63 @@ pub mod api {
 					#[codec(index = 1)]
 					NotEnoughParticipants,
 					#[codec(index = 2)]
-					SlotBehindHead,
+					ConfigurationNotSet,
 					#[codec(index = 3)]
-					TooLongVerificationKey,
+					SlotBehindHead,
 					#[codec(index = 4)]
-					VerificationKeyIsNotSet,
+					TooLongVerificationKey,
 					#[codec(index = 5)]
-					MalformedVerificationKey,
+					VerificationKeyIsNotSet,
 					#[codec(index = 6)]
-					FunctionIdNotKnown,
+					MalformedVerificationKey,
 					#[codec(index = 7)]
-					NotSupportedCurve,
+					FunctionIdNotKnown,
 					#[codec(index = 8)]
-					NotSupportedProtocol,
+					NotSupportedCurve,
 					#[codec(index = 9)]
-					StepVerificationError,
+					NotSupportedProtocol,
 					#[codec(index = 10)]
-					RotateVerificationError,
+					StepVerificationError,
 					#[codec(index = 11)]
-					HeaderRootNotSet,
+					RotateVerificationError,
 					#[codec(index = 12)]
-					VerificationFailed,
+					HeaderRootNotSet,
 					#[codec(index = 13)]
-					HeaderRootAlreadySet,
+					VerificationFailed,
 					#[codec(index = 14)]
-					StateRootAlreadySet,
+					HeaderRootAlreadySet,
 					#[codec(index = 15)]
-					SyncCommitteeAlreadySet,
+					StateRootAlreadySet,
 					#[codec(index = 16)]
-					SyncCommitteeNotSet,
+					SyncCommitteeAlreadySet,
 					#[codec(index = 17)]
-					MessageAlreadyExecuted,
+					SyncCommitteeNotSet,
 					#[codec(index = 18)]
-					WrongDestinationChain,
+					MessageAlreadyExecuted,
 					#[codec(index = 19)]
-					UnsupportedOriginChain,
+					WrongDestinationChain,
 					#[codec(index = 20)]
-					BroadcasterSourceChainNotSet,
+					UnsupportedOriginChain,
 					#[codec(index = 21)]
-					SourceChainFrozen,
+					BroadcasterSourceChainNotSet,
 					#[codec(index = 22)]
-					CannotGetStorageRoot,
+					SourceChainFrozen,
 					#[codec(index = 23)]
-					CannotGetStorageValue,
+					CannotGetStorageRoot,
 					#[codec(index = 24)]
-					InvalidMessageHash,
+					CannotGetStorageValue,
 					#[codec(index = 25)]
-					CannotDecodeData,
+					InvalidMessageHash,
 					#[codec(index = 26)]
-					CannotDecodeDestinationAccountId,
+					CannotDecodeData,
 					#[codec(index = 27)]
-					AssetNotSupported,
+					CannotDecodeDestinationAccountId,
 					#[codec(index = 28)]
+					AssetNotSupported,
+					#[codec(index = 29)]
 					#[doc = "Given inputs for the selected MessageType are invalid"]
 					InvalidBridgeInputs,
-					#[codec(index = 29)]
+					#[codec(index = 30)]
 					#[doc = "Domain is not supported"]
 					DomainNotSupported,
 				}
@@ -29429,7 +29433,9 @@ pub mod api {
 					#[codec(index = 3)]
 					#[doc = "emit when message gets executed."]
 					ExecutedMessage {
-						message: runtime_types::avail_core::data_proof_v2::Message,
+						from: ::subxt::utils::H256,
+						to: ::subxt::utils::H256,
+						message_id: ::core::primitive::u64,
 						message_root: ::subxt::utils::H256,
 					},
 					#[codec(index = 4)]
