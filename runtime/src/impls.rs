@@ -732,7 +732,7 @@ impl pallet_staking::Config for Runtime {
 	type TargetList = pallet_staking::UseValidatorsMap<Self>;
 	type UnixTime = Timestamp;
 	type VoterList = VoterList;
-	type WeightInfo = pallet_staking::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_staking::SubstrateWeight<Runtime>;
 }
 
 /// The numbers configured here could always be more than the maximum limits of staking pallet
