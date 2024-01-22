@@ -1054,7 +1054,9 @@ fn execute_arbitary_message_works() {
 		let message_root = H256(keccak_256(encoded_data.as_slice()));
 
 		let expected_event = RuntimeEvent::Bridge(Event::ExecutedMessage {
-			message,
+			from: message.from,
+			to: message.to,
+			message_id: message.id,
 			message_root,
 		});
 		System::assert_last_event(expected_event);
@@ -1120,7 +1122,9 @@ fn test_double_execute_arbitary_message() {
 		let message_root = H256(keccak_256(encoded_data.as_slice()));
 
 		let expected_event = RuntimeEvent::Bridge(Event::ExecutedMessage {
-			message,
+			from: message.from,
+			to: message.to,
+			message_id: message.id,
 			message_root,
 		});
 		System::assert_last_event(expected_event);
