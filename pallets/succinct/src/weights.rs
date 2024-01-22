@@ -50,7 +50,7 @@ use core::marker::PhantomData;
 
 /// Weight functions needed for `pallet_succinct`.
 pub trait WeightInfo {
-	fn send_message_arbitrary_message(l: u32, ) -> Weight;
+	fn send_message_arbitrary_message(l: u32) -> Weight;
 	fn send_message_fungible_token() -> Weight;
 	fn set_poseidon_hash() -> Weight;
 	fn set_broadcaster() -> Weight;
@@ -59,11 +59,12 @@ pub trait WeightInfo {
 	fn source_chain_froze() -> Weight;
 	fn fulfill_call() -> Weight;
 	fn execute_fungible_token() -> Weight;
-	fn execute_arbitrary_message(l: u32, ) -> Weight;
+	fn execute_arbitrary_message(l: u32) -> Weight;
 }
 
 /// Weights for `pallet_succinct` using the Avail node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
+
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Succinct::WhitelistedDomains` (r:1 w:0)
 	/// Proof: `Succinct::WhitelistedDomains` (`max_values`: Some(1), `max_size`: Some(40002), added: 40497, mode: `MaxEncodedLen`)
@@ -185,7 +186,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	/// The range of component `l` is `[0, 102400]`.
-	fn execute_arbitrary_message(l: u32, ) -> Weight {
+	fn execute_arbitrary_message(l: u32) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
@@ -201,7 +202,7 @@ impl WeightInfo for () {
 	/// Storage: `Succinct::WhitelistedDomains` (r:1 w:0)
 	/// Proof: `Succinct::WhitelistedDomains` (`max_values`: Some(1), `max_size`: Some(40002), added: 40497, mode: `MaxEncodedLen`)
 	/// The range of component `l` is `[0, 102400]`.
-	fn send_message_arbitrary_message(l: u32, ) -> Weight {
+	fn send_message_arbitrary_message(l: u32) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `100`
 		//  Estimated: `41487`
