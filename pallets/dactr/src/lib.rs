@@ -206,7 +206,6 @@ pub mod pallet {
 				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO)
 					.map_err(|_| Error::<T>::BlockDimensionsOutOfBounds)?;
 
-			log::info!(target: LOG_TARGET, "Block length proposal submitted: {block_length:?}");
 			DynamicBlockLength::<T>::put(block_length);
 
 			Self::deposit_event(Event::BlockLengthProposalSubmitted { rows, cols });

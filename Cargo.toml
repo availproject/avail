@@ -1,14 +1,14 @@
 [workspace]
 resolver = "2"
 members = [
-	"pallets/executive",
-	"pallets/system",
-	"pallets/dactr",
-	"pallets/bridges/nomad/updater-manager",
-	"pallets/bridges/nomad/home",
-	"pallets/bridges/nomad/da-bridge",
-	"runtime",
-	"node",
+    "pallets/executive",
+    "pallets/system",
+    "pallets/dactr",
+    "pallets/bridges/nomad/updater-manager",
+    "pallets/bridges/nomad/home",
+    "pallets/bridges/nomad/da-bridge",
+    "runtime",
+    "node",
 ]
 
 [workspace.dependencies]
