@@ -756,134 +756,134 @@ pub mod api {
 			use ::subxt::metadata::DecodeWithMetadata;
 			let cursor = &mut &pallet_bytes[..];
 			if pallet_name == "System" {
-				let variant_error = system::Error::decode_with_metadata(cursor, 128u32, metadata)?;
+				let variant_error = system::Error::decode_with_metadata(cursor, 134u32, metadata)?;
 				return Ok(Error::System(variant_error));
 			}
 			if pallet_name == "Utility" {
-				let variant_error = utility::Error::decode_with_metadata(cursor, 332u32, metadata)?;
+				let variant_error = utility::Error::decode_with_metadata(cursor, 338u32, metadata)?;
 				return Ok(Error::Utility(variant_error));
 			}
 			if pallet_name == "Babe" {
-				let variant_error = babe::Error::decode_with_metadata(cursor, 348u32, metadata)?;
+				let variant_error = babe::Error::decode_with_metadata(cursor, 354u32, metadata)?;
 				return Ok(Error::Babe(variant_error));
 			}
 			if pallet_name == "Indices" {
-				let variant_error = indices::Error::decode_with_metadata(cursor, 350u32, metadata)?;
+				let variant_error = indices::Error::decode_with_metadata(cursor, 356u32, metadata)?;
 				return Ok(Error::Indices(variant_error));
 			}
 			if pallet_name == "Balances" {
 				let variant_error =
-					balances::Error::decode_with_metadata(cursor, 365u32, metadata)?;
+					balances::Error::decode_with_metadata(cursor, 371u32, metadata)?;
 				return Ok(Error::Balances(variant_error));
 			}
 			if pallet_name == "ElectionProviderMultiPhase" {
 				let variant_error = election_provider_multi_phase::Error::decode_with_metadata(
-					cursor, 378u32, metadata,
+					cursor, 384u32, metadata,
 				)?;
 				return Ok(Error::ElectionProviderMultiPhase(variant_error));
 			}
 			if pallet_name == "Staking" {
-				let variant_error = staking::Error::decode_with_metadata(cursor, 399u32, metadata)?;
+				let variant_error = staking::Error::decode_with_metadata(cursor, 405u32, metadata)?;
 				return Ok(Error::Staking(variant_error));
 			}
 			if pallet_name == "Session" {
-				let variant_error = session::Error::decode_with_metadata(cursor, 404u32, metadata)?;
+				let variant_error = session::Error::decode_with_metadata(cursor, 410u32, metadata)?;
 				return Ok(Error::Session(variant_error));
 			}
 			if pallet_name == "TechnicalCommittee" {
 				let variant_error =
-					technical_committee::Error::decode_with_metadata(cursor, 407u32, metadata)?;
+					technical_committee::Error::decode_with_metadata(cursor, 413u32, metadata)?;
 				return Ok(Error::TechnicalCommittee(variant_error));
 			}
 			if pallet_name == "TechnicalMembership" {
 				let variant_error =
-					technical_membership::Error::decode_with_metadata(cursor, 409u32, metadata)?;
+					technical_membership::Error::decode_with_metadata(cursor, 415u32, metadata)?;
 				return Ok(Error::TechnicalMembership(variant_error));
 			}
 			if pallet_name == "Grandpa" {
-				let variant_error = grandpa::Error::decode_with_metadata(cursor, 413u32, metadata)?;
+				let variant_error = grandpa::Error::decode_with_metadata(cursor, 419u32, metadata)?;
 				return Ok(Error::Grandpa(variant_error));
 			}
 			if pallet_name == "Treasury" {
 				let variant_error =
-					treasury::Error::decode_with_metadata(cursor, 418u32, metadata)?;
+					treasury::Error::decode_with_metadata(cursor, 424u32, metadata)?;
 				return Ok(Error::Treasury(variant_error));
 			}
 			if pallet_name == "Sudo" {
-				let variant_error = sudo::Error::decode_with_metadata(cursor, 419u32, metadata)?;
+				let variant_error = sudo::Error::decode_with_metadata(cursor, 425u32, metadata)?;
 				return Ok(Error::Sudo(variant_error));
 			}
 			if pallet_name == "ImOnline" {
 				let variant_error =
-					im_online::Error::decode_with_metadata(cursor, 422u32, metadata)?;
+					im_online::Error::decode_with_metadata(cursor, 428u32, metadata)?;
 				return Ok(Error::ImOnline(variant_error));
 			}
 			if pallet_name == "Scheduler" {
 				let variant_error =
-					scheduler::Error::decode_with_metadata(cursor, 434u32, metadata)?;
+					scheduler::Error::decode_with_metadata(cursor, 440u32, metadata)?;
 				return Ok(Error::Scheduler(variant_error));
 			}
 			if pallet_name == "Bounties" {
 				let variant_error =
-					bounties::Error::decode_with_metadata(cursor, 438u32, metadata)?;
+					bounties::Error::decode_with_metadata(cursor, 444u32, metadata)?;
 				return Ok(Error::Bounties(variant_error));
 			}
 			if pallet_name == "Tips" {
-				let variant_error = tips::Error::decode_with_metadata(cursor, 440u32, metadata)?;
+				let variant_error = tips::Error::decode_with_metadata(cursor, 446u32, metadata)?;
 				return Ok(Error::Tips(variant_error));
 			}
 			if pallet_name == "DataAvailability" {
 				let variant_error =
-					data_availability::Error::decode_with_metadata(cursor, 442u32, metadata)?;
+					data_availability::Error::decode_with_metadata(cursor, 448u32, metadata)?;
 				return Ok(Error::DataAvailability(variant_error));
 			}
 			if pallet_name == "NomadUpdaterManager" {
 				let variant_error =
-					nomad_updater_manager::Error::decode_with_metadata(cursor, 443u32, metadata)?;
+					nomad_updater_manager::Error::decode_with_metadata(cursor, 449u32, metadata)?;
 				return Ok(Error::NomadUpdaterManager(variant_error));
 			}
 			if pallet_name == "NomadHome" {
 				let variant_error =
-					nomad_home::Error::decode_with_metadata(cursor, 448u32, metadata)?;
+					nomad_home::Error::decode_with_metadata(cursor, 454u32, metadata)?;
 				return Ok(Error::NomadHome(variant_error));
 			}
 			if pallet_name == "NomadDABridge" {
 				let variant_error =
-					nomad_da_bridge::Error::decode_with_metadata(cursor, 449u32, metadata)?;
+					nomad_da_bridge::Error::decode_with_metadata(cursor, 455u32, metadata)?;
 				return Ok(Error::NomadDABridge(variant_error));
 			}
 			if pallet_name == "Preimage" {
 				let variant_error =
-					preimage::Error::decode_with_metadata(cursor, 453u32, metadata)?;
+					preimage::Error::decode_with_metadata(cursor, 459u32, metadata)?;
 				return Ok(Error::Preimage(variant_error));
 			}
 			if pallet_name == "Multisig" {
 				let variant_error =
-					multisig::Error::decode_with_metadata(cursor, 456u32, metadata)?;
+					multisig::Error::decode_with_metadata(cursor, 462u32, metadata)?;
 				return Ok(Error::Multisig(variant_error));
 			}
 			if pallet_name == "VoterList" {
 				let variant_error =
-					voter_list::Error::decode_with_metadata(cursor, 460u32, metadata)?;
+					voter_list::Error::decode_with_metadata(cursor, 466u32, metadata)?;
 				return Ok(Error::VoterList(variant_error));
 			}
 			if pallet_name == "NominationPools" {
 				let variant_error =
-					nomination_pools::Error::decode_with_metadata(cursor, 479u32, metadata)?;
+					nomination_pools::Error::decode_with_metadata(cursor, 485u32, metadata)?;
 				return Ok(Error::NominationPools(variant_error));
 			}
 			if pallet_name == "Identity" {
 				let variant_error =
-					identity::Error::decode_with_metadata(cursor, 491u32, metadata)?;
+					identity::Error::decode_with_metadata(cursor, 497u32, metadata)?;
 				return Ok(Error::Identity(variant_error));
 			}
 			if pallet_name == "Succinct" {
 				let variant_error =
-					succinct::Error::decode_with_metadata(cursor, 493u32, metadata)?;
+					succinct::Error::decode_with_metadata(cursor, 499u32, metadata)?;
 				return Ok(Error::Succinct(variant_error));
 			}
 			if pallet_name == "Proxy" {
-				let variant_error = proxy::Error::decode_with_metadata(cursor, 502u32, metadata)?;
+				let variant_error = proxy::Error::decode_with_metadata(cursor, 508u32, metadata)?;
 				return Ok(Error::Proxy(variant_error));
 			}
 			Err(::subxt::ext::scale_decode::Error::custom(format!(
@@ -1202,9 +1202,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				155u8, 120u8, 14u8, 94u8, 254u8, 115u8, 135u8, 216u8, 15u8, 236u8, 104u8, 62u8,
-				228u8, 154u8, 47u8, 215u8, 47u8, 110u8, 103u8, 170u8, 10u8, 163u8, 135u8, 98u8,
-				166u8, 189u8, 190u8, 140u8, 100u8, 16u8, 66u8, 86u8,
+				171u8, 163u8, 6u8, 40u8, 29u8, 4u8, 167u8, 21u8, 52u8, 44u8, 48u8, 206u8, 21u8,
+				84u8, 91u8, 93u8, 119u8, 93u8, 16u8, 131u8, 75u8, 99u8, 183u8, 180u8, 160u8, 198u8,
+				218u8, 135u8, 198u8, 13u8, 17u8, 143u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -1789,7 +1789,7 @@ pub mod api {
 					&self,
 				) -> ::subxt::storage::address::Address<
 					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::frame_system::ExtrinsicLen,
+					runtime_types::frame_system::extrinsic_len::ExtrinsicLen,
 					::subxt::storage::address::Yes,
 					(),
 					(),
@@ -1799,10 +1799,10 @@ pub mod api {
 						"AllExtrinsicsLen",
 						vec![],
 						[
-							210u8, 178u8, 187u8, 254u8, 187u8, 172u8, 33u8, 225u8, 56u8, 183u8,
-							1u8, 152u8, 21u8, 25u8, 90u8, 117u8, 173u8, 85u8, 113u8, 166u8, 211u8,
-							152u8, 186u8, 48u8, 171u8, 246u8, 67u8, 194u8, 107u8, 14u8, 104u8,
-							179u8,
+							224u8, 200u8, 105u8, 198u8, 96u8, 168u8, 209u8, 126u8, 3u8, 201u8,
+							142u8, 27u8, 12u8, 73u8, 117u8, 129u8, 229u8, 75u8, 159u8, 136u8, 10u8,
+							215u8, 148u8, 125u8, 137u8, 161u8, 124u8, 53u8, 75u8, 129u8, 175u8,
+							70u8,
 						],
 					)
 				}
@@ -2322,6 +2322,40 @@ pub mod api {
 							116u8, 33u8, 2u8, 170u8, 181u8, 147u8, 171u8, 169u8, 167u8, 227u8,
 							41u8, 144u8, 11u8, 236u8, 82u8, 100u8, 74u8, 60u8, 184u8, 72u8, 169u8,
 							90u8, 208u8, 135u8, 15u8, 117u8, 10u8, 123u8, 128u8, 193u8, 29u8, 70u8,
+						],
+					)
+				}
+				#[doc = " Maximum different `AppId` allowed per block."]
+				#[doc = " This is used during the calculation of padded length of the block when"]
+				#[doc = " a transaction is validated (see `CheckAppId` signed extension)."]
+				pub fn max_diff_app_id_per_block(
+					&self,
+				) -> ::subxt::constants::Address<::core::primitive::u32> {
+					::subxt::constants::Address::new_static(
+						"System",
+						"MaxDiffAppIdPerBlock",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
+				}
+				#[doc = " Maximum number of Tx per AppId allowed per block."]
+				#[doc = " This is used during the calculation of padded length of the block when"]
+				#[doc = " a transaction is validated (see `CheckAppId` signed extension)."]
+				pub fn max_tx_per_app_id_per_block(
+					&self,
+				) -> ::subxt::constants::Address<::core::primitive::u32> {
+					::subxt::constants::Address::new_static(
+						"System",
+						"MaxTxPerAppIdPerBlock",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
 						],
 					)
 				}
@@ -21470,7 +21504,7 @@ pub mod api {
 					)
 				}
 				#[doc = " The index of the `messages` mapping in contract."]
-				#[doc = " This is mandatory when calling execute messages via storage ptoofs."]
+				#[doc = " This is mandatory when calling execute messages via storage proofs."]
 				pub fn message_mapping_storage_index(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u64> {
@@ -23721,6 +23755,49 @@ pub mod api {
 					pub struct CheckWeight;
 				}
 			}
+			pub mod extrinsic_len {
+				use super::runtime_types;
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct ExtrinsicLen {
+					pub raw: ::core::primitive::u32,
+					pub padded:
+						runtime_types::bounded_collections::bounded_btree_map::BoundedBTreeMap<
+							runtime_types::avail_core::AppId,
+							runtime_types::frame_system::extrinsic_len::PaddedExtrinsicLen,
+						>,
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct PaddedExtrinsicLen {
+					pub tx_lens: runtime_types::bounded_collections::bounded_vec::BoundedVec<
+						::core::primitive::u32,
+					>,
+					pub num_scalars: ::core::primitive::u32,
+				}
+			}
 			pub mod limits {
 				use super::runtime_types;
 				#[derive(
@@ -23976,23 +24053,6 @@ pub mod api {
 				pub phase: runtime_types::frame_system::Phase,
 				pub event: _0,
 				pub topics: ::std::vec::Vec<_1>,
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			pub struct ExtrinsicLen {
-				pub raw: ::core::primitive::u32,
-				pub padded: ::core::primitive::u32,
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
