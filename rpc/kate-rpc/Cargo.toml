@@ -8,6 +8,8 @@ edition = "2021"
 [dependencies]
 avail-base = { path = "../../base", default-features = false }
 da-runtime = { path = "../../runtime", default-features = false }
+da-control = { path = "../../pallets/dactr" }
+pallet-succinct = { path = "../../pallets/succinct" }
 
 avail-core.workspace = true
 kate.workspace = true
@@ -15,13 +17,16 @@ kate-recovery.workspace = true
 
 # 3rd party
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
-moka = { version = "0.12.1", features = ["future"] }
 rayon = { version = "1.5.2" }
+moka = { version = "0.12.1", features = ["future"] }
+
 
 # Substrate
-frame-system = { path = "../../pallets/system", default-features = false }
-sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+frame-system = { path = "../../pallets/system", default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sc-rpc-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 
@@ -31,6 +36,7 @@ std = [
 	"avail-base/std",
 	"avail-core/std",
 	"da-runtime/std",
+	"frame-support/std",
 	"frame-system/std",
 	"kate-recovery/std",
 	"kate/std",
@@ -39,8 +45,8 @@ std = [
 ]
 metrics = []
 
-# Enables secure seed generation using for padding fill during the matrix
+# Enables secure seed generation using for padding fill during the matrix 
 # generation for Kate commitment.
-# NOTE: WIP because that affects the Data Availability Protocol used during
+# NOTE: WIP because that affects the Data Availability Protocol used during 
 # the block import process.
 secure_padding_fill = []

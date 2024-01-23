@@ -7,7 +7,9 @@
 use std::sync::Arc;
 
 use avail_base::metrics::avail::ImportBlockMetrics;
-use avail_core::{BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE};
+use avail_core::{
+	header::HeaderExtension, BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+};
 use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
 	Header as DaHeader,
@@ -15,6 +17,8 @@ use da_runtime::{
 use derive_more::Constructor;
 use frame_support::ensure;
 use frame_system::limits::BlockLength;
+use frame_system::HeaderVersion;
+use sc_client_api::Backend;
 use sc_consensus::{
 	block_import::{BlockCheckParams, BlockImport as BlockImportT, BlockImportParams},
 	ImportResult,
@@ -25,16 +29,18 @@ use sp_consensus::{BlockOrigin, Error as ConsensusError};
 use sp_runtime::traits::Block as BlockT;
 
 #[derive(Constructor)]
-pub struct BlockImport<C, I> {
+pub struct BlockImport<BE, C, I> {
+	pub backend: Arc<BE>,
 	pub client: Arc<C>,
 	pub inner: I,
 	// If true, it skips the DA block import check during sync only.
 	pub unsafe_da_sync: bool,
 }
 
-impl<C, I: Clone> Clone for BlockImport<C, I> {
+impl<BE, C, I: Clone> Clone for BlockImport<BE, C, I> {
 	fn clone(&self) -> Self {
 		Self {
+			backend: self.backend.clone(),
 			client: self.client.clone(),
 			inner: self.inner.clone(),
 			unsafe_da_sync: self.unsafe_da_sync,
@@ -43,9 +49,10 @@ impl<C, I: Clone> Clone for BlockImport<C, I> {
 }
 
 #[async_trait::async_trait]
-impl<B, C, I> BlockImportT<B> for BlockImport<C, I>
+impl<B, BE, C, I> BlockImportT<B> for BlockImport<BE, C, I>
 where
 	B: BlockT<Extrinsic = OpaqueExtrinsic, Header = DaHeader>,
+	BE: Backend<B>,
 	I: BlockImportT<B> + Clone + Send + Sync,
 	I::Error: Into<ConsensusError>,
 	C: ProvideRuntimeApi<B> + HeaderBackend<B> + Send + Sync,
@@ -71,57 +78,49 @@ where
 			BlockOrigin::NetworkInitialSync | BlockOrigin::File
 		);
 		let skip_sync = self.unsafe_da_sync && is_sync;
-
 		let should_verify = !is_own && !skip_sync;
-		if should_verify {
-			let no_extrinsics = vec![];
-			let extrinsics = block.body.as_ref().unwrap_or(&no_extrinsics);
-			let best_hash = self.client.info().best_hash;
 
-			let data_root = self
-				.client
-				.runtime_api()
-				.build_data_root(best_hash, extrinsics.clone())
-				.map_err(|e| {
-					ConsensusError::ClientImport(format!("Data root cannot be calculated: {e:?}"))
-				})?;
+		let extrinsics = block.body.as_ref().unwrap_or(&vec![]).clone();
 
-			let extension = &block.header.extension;
-			let block_len = BlockLength::with_normal_ratio(
-				BlockLengthRows(extension.rows() as u32),
-				BlockLengthColumns(extension.cols() as u32),
-				BLOCK_CHUNK_SIZE,
-				sp_runtime::Perbill::from_percent(90),
-			)
-			.expect("Valid BlockLength at genesis .qed");
+		let best_hash = self.client.info().best_hash;
+		let extension = &block.header.extension.clone();
 
-			let generated_ext = self
-				.client
-				.runtime_api()
-				.build_extension(
-					best_hash,
-					extrinsics.clone(),
-					data_root,
-					block_len,
-					block.header.number,
-				)
-				.map_err(|e| {
-					ConsensusError::ClientImport(format!("Build extension fails due to: {e:?}"))
-				})?;
+		let (block_number, import_block_hash) = (block.header.number, block.post_hash());
 
-			ensure!(
-				extension == &generated_ext,
-				ConsensusError::ClientImport(
-					format!("DA Extension does NOT match\nExpected: {extension:#?}\nGenerated:{generated_ext:#?}"))
-			);
+		let import_block_res = self.inner.import_block(block).await.map_err(Into::into)?;
+
+		// Nothing to verify. Let's do an early return.
+		if !should_verify {
+			// Metrics
+			ImportBlockMetrics::observe_total_execution_time(import_block_start.elapsed());
+			return Ok(import_block_res);
 		}
 
-		let import_block_res = self.inner.import_block(block).await.map_err(Into::into);
+		let success = build_data_root_and_extension(
+			self,
+			best_hash,
+			import_block_hash,
+			extrinsics,
+			extension,
+			block_number,
+		);
+
+		let mut result = Ok(import_block_res);
+		if let Err(err) = success {
+			log::error!(
+				target: "DA_IMPORT_BLOCK",
+				"Error during da extension validation: {:?}, attempting to revert the block import", err
+			);
+
+			// Revert the import operation
+			let _ = self.backend.revert(block_number, false);
+			result = Err(err);
+		}
 
 		// Metrics
 		ImportBlockMetrics::observe_total_execution_time(import_block_start.elapsed());
 
-		import_block_res
+		result
 	}
 
 	async fn check_block(
@@ -130,4 +129,99 @@ where
 	) -> Result<ImportResult, Self::Error> {
 		self.inner.check_block(block).await.map_err(Into::into)
 	}
+}
+
+fn build_data_root_and_extension<B, BE, C, I>(
+	block_import: &BlockImport<BE, C, I>,
+	best_hash: <B as BlockT>::Hash,
+	import_block_hash: <B as BlockT>::Hash,
+	extrinsics: Vec<OpaqueExtrinsic>,
+	extension: &avail_core::header::HeaderExtension,
+	block_number: u32,
+) -> Result<(), ConsensusError>
+where
+	B: BlockT<Extrinsic = OpaqueExtrinsic, Header = DaHeader>,
+	C: ProvideRuntimeApi<B> + HeaderBackend<B> + Send + Sync,
+	C::Api: DataAvailApi<B>,
+	C::Api: ExtensionBuilder<B>,
+{
+	use ConsensusError::ClientImport;
+
+	let header_version = match extension {
+		HeaderExtension::V1(_) => HeaderVersion::V1,
+		HeaderExtension::V2(_) => HeaderVersion::V2,
+	};
+
+	let block_length = BlockLength::with_normal_ratio(
+		BlockLengthRows(extension.rows() as u32),
+		BlockLengthColumns(extension.cols() as u32),
+		BLOCK_CHUNK_SIZE,
+		sp_runtime::Perbill::from_percent(90),
+	)
+	.expect("Valid BlockLength at genesis .qed");
+
+	let generated_ext = match header_version {
+		HeaderVersion::V1 => {
+			log::debug!(target: "DA_IMPORT_BLOCK", "V1 validation..");
+			let data_root = block_import
+				.client
+				.runtime_api()
+				.build_data_root(best_hash, extrinsics.clone())
+				.map_err(|e| ClientImport(format!("Data root cannot be calculated: {e:?}")))?;
+
+			block_import
+				.client
+				.runtime_api()
+				.build_extension(best_hash, extrinsics, data_root, block_length, block_number)
+				.map_err(|e| ClientImport(format!("Build extension fails due to: {e:?}")))?
+		},
+		_ => {
+			log::debug!(target: "DA_IMPORT_BLOCK", "V2 validation..");
+			let success_indices: Vec<u32> = block_import
+				.client
+				.runtime_api()
+				.successful_extrinsic_indices(import_block_hash)
+				.map_err(|_e| ClientImport("Failed to fetch the successful indices".into()))?;
+
+			log::debug!(
+				target: "DA_IMPORT_BLOCK",
+				"success_indices: {:?} at: {}",
+				success_indices,
+				import_block_hash
+			);
+
+			let successful_extrinsics: Vec<_> = success_indices
+				.iter()
+				.filter_map(|&i| extrinsics.get(i as usize).cloned())
+				.collect();
+
+			let data_root = block_import
+				.client
+				.runtime_api()
+				.build_data_root_v2(best_hash, successful_extrinsics.clone())
+				.map_err(|e| ClientImport(format!("Data root cannot be calculated: {e:?}")))?;
+
+			block_import
+				.client
+				.runtime_api()
+				.build_versioned_extension(
+					best_hash,
+					successful_extrinsics,
+					data_root,
+					block_length,
+					block_number,
+					header_version,
+				)
+				.map_err(|e| ClientImport(format!("Build extension fails due to: {e:?}")))?
+		},
+	};
+
+	ensure!(
+		extension == &generated_ext,
+		ClientImport(format!(
+			"DA Extension does NOT match\nExpected: {extension:#?}\nGenerated:{generated_ext:#?}"
+		))
+	);
+
+	Ok(())
 }

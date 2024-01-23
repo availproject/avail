@@ -12,9 +12,9 @@ members = [
 ]
 
 [workspace.dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false, features = [ "runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v1.8.0.3" }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false, features = [ "runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0" }
 
 [patch."https://github.com/paritytech/substrate.git"]
 frame-executive = { path = "pallets/executive" }
@@ -28,6 +28,7 @@ pallet-nomination-pools-runtime-api = { path = "pallets/nomination-pools/runtime
 # Customized Local pallets
 
 # Other stuff
+uint = { git = "https://github.com/paritytech/parity-common.git", tag = "uint-v0.9.5" }
 rlp = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }
 
 ## CLI

@@ -82,7 +82,7 @@ where
 
 	fn try_origin(o: OuterOrigin) -> Result<Self::Success, OuterOrigin> {
 		o.into().and_then(|o| match o {
-			pallet_collective::RawOrigin::Members(n, m) if n * 2u32 >= 1u32 * m => Ok(()),
+			pallet_collective::RawOrigin::Members(n, m) if n * 2u32 >= m => Ok(()),
 			r => Err(OuterOrigin::from(r)),
 		})
 	}

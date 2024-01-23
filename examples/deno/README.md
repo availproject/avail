@@ -26,12 +26,26 @@ Make sure that you have a running local node with `--features kate-rpc-metrics` 
 cargo build --release --features kate-rpc-metrics
 ```
 
+Make sure to populate basic configuration in `benchmarks/config.ts` or leave the default if using local node. Take a look at the scripts for more details about the configuration.
+
+```typescript
+export default {
+    seed: "bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice",
+    endpoint: "ws://127.0.0.1:9944",
+    txCount: 100,
+    jobCount: 10,
+}
+```
+
 ```bash
 # To benchmark Query Proof RPC
 deno run -A ./examples/deno/benchmarks/query_proof.ts
 
 # To benchmark Query Data Proof RPC
 deno run -A ./examples/deno/benchmarks/query_data_proof.ts
+
+# To benchmark Query Data Proof V2 RPC
+deno run -A ./examples/deno/benchmarks/query_data_proof_v2.ts
 
 # To benchmark Query Rows RPC
 deno run -A ./examples/deno/benchmarks/query_rows.ts

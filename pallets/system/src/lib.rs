@@ -112,7 +112,7 @@ use sp_weights::{RuntimeDbWeight, Weight};
 
 pub mod header_builder;
 pub mod submitted_data;
-pub use header_builder::HeaderExtensionBuilder;
+pub use header_builder::{HeaderExtensionBuilder, HeaderVersion};
 
 pub mod limits;
 #[cfg(any(feature = "std", test))]
@@ -734,6 +734,18 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn block_length)]
 	pub type DynamicBlockLength<T: Config> = StorageValue<_, limits::BlockLength, ValueQuery>;
+
+	/// Total number of messages bridged to other chains
+	#[pallet::storage]
+	#[pallet::getter(fn bridge_nonce)]
+	pub type BridgeNonce<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	/// List of failed indices in the current block
+	// Test name: failed_extrinsic_indices_work()
+	#[pallet::storage]
+	#[pallet::getter(fn failed_extrinsic_indices)]
+	pub type FailedExtrinsicIndices<T: Config> =
+		StorageValue<_, BoundedVec<u32, ConstU32<100_000>>, ValueQuery>;
 
 	#[derive(DefaultNoBound)]
 	#[pallet::genesis_config]
@@ -1471,6 +1483,7 @@ impl<T: Config> Pallet<T> {
 
 		// Remove previous block data from storage
 		BlockWeight::<T>::kill();
+		FailedExtrinsicIndices::<T>::kill();
 	}
 
 	/// Remove temporary "environment" entries in storage, compute the storage root and return the
@@ -1527,18 +1540,29 @@ impl<T: Config> Pallet<T> {
 		// stay to be inspected by the client and will be cleared by `Self::initialize`.
 		let number = <Number<T>>::get();
 		let parent_hash = <ParentHash<T>>::get();
-		let digest = <Digest<T>>::get();
 
 		let extrinsics = Self::take_extrinsics().collect::<Vec<_>>();
-		let opaques = extrinsics
+
+		let successful_indices = Self::successful_extrinsic_indices();
+
+		let opaques = successful_indices
 			.iter()
+			.filter_map(|&index| extrinsics.get(index as usize))
+			// let opaques = extrinsics
+			// 	.iter()
 			.filter(|ext| !ext.is_empty())
 			.map(|ext| OpaqueExtrinsic::decode(&mut ext.as_slice()))
 			.collect::<Result<Vec<_>, _>>()
 			.expect("Any extrinsic MUST be decoded as OpaqueExtrinsic .qed");
 
-		let data_root =
-			submitted_data::extrinsics_root::<T::SubmittedDataExtractor, _>(opaques.iter());
+		let (data_root, new_nonce) = submitted_data::extrinsics_root_v2::<
+			T::SubmittedDataExtractor,
+			_,
+		>(opaques.iter(), Self::bridge_nonce());
+		if Self::bridge_nonce() != new_nonce {
+			BridgeNonce::<T>::put(new_nonce);
+		}
+		let digest = <Digest<T>>::get();
 
 		// move block hash pruning window by one block
 		let block_hash_count = T::BlockHashCount::get();
@@ -1577,6 +1601,7 @@ impl<T: Config> Pallet<T> {
 			data_root,
 			block_length,
 			number.unique_saturated_into(),
+			HeaderVersion::V2,
 		);
 
 		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
@@ -1776,7 +1801,9 @@ impl<T: Config> Pallet<T> {
 			.saturating_add(T::BlockWeights::get().get(info.class).base_extrinsic);
 		info.pays_fee = extract_actual_pays_fee(r, &info);
 
-		Self::deposit_event(match r {
+		let current_extrinsic_index = Self::extrinsic_index().unwrap_or_default();
+
+		let event = match r {
 			Ok(_) => Event::ExtrinsicSuccess {
 				dispatch_info: info,
 			},
@@ -1787,14 +1814,23 @@ impl<T: Config> Pallet<T> {
 					Self::block_number(),
 					err,
 				);
+
+				FailedExtrinsicIndices::<T>::mutate(|x| {
+					x.try_push(current_extrinsic_index).expect(
+						"Limit is 100k. It should not be possible to reach that number. qed",
+					);
+				});
+
 				Event::ExtrinsicFailed {
 					dispatch_error: err.error,
 					dispatch_info: info,
 				}
 			},
-		});
+		};
 
-		let next_extrinsic_index = Self::extrinsic_index().unwrap_or_default() + 1u32;
+		Self::deposit_event(event);
+
+		let next_extrinsic_index = current_extrinsic_index + 1u32;
 
 		storage::unhashed::put(well_known_keys::EXTRINSIC_INDEX, &next_extrinsic_index);
 		ExecutionPhase::<T>::put(Phase::ApplyExtrinsic(next_extrinsic_index));
@@ -1866,6 +1902,28 @@ impl<T: Config> Pallet<T> {
 	pub fn padded_extrinsic_len(len: u32) -> u32 {
 		let chunk_size = Self::block_length().chunk_size();
 		kate::padded_len(len, chunk_size)
+	}
+
+	// Test name: successful_extrinsic_indices_are_correct()
+	pub fn successful_extrinsic_indices() -> Vec<u32> {
+		let mut indices = FailedExtrinsicIndices::<T>::get();
+		let extrinsic_count = Self::extrinsic_count();
+
+		indices.sort();
+		let mut failed_indices = indices.iter().peekable();
+		let mut successful_indices =
+			Vec::with_capacity((extrinsic_count as usize).saturating_sub(indices.len()));
+		for index in 0..extrinsic_count {
+			if let Some(failed_one) = failed_indices.peek() {
+				if index == **failed_one {
+					failed_indices.next();
+					continue;
+				}
+			}
+			successful_indices.push(index);
+		}
+
+		successful_indices
 	}
 }
 

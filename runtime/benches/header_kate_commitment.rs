@@ -36,5 +36,12 @@ fn commitment_builder_with(txs: Vec<AppExtrinsic>, block_length: BlockLength) {
 	let root = H256::zero();
 	let block_number: u32 = 0;
 
-	let _ = hosted_header_builder::build(txs, root, block_length, block_number, seed);
+	let _ = hosted_header_builder::build(
+		txs,
+		root,
+		block_length,
+		block_number,
+		seed,
+		frame_system::HeaderVersion::V2,
+	);
 }

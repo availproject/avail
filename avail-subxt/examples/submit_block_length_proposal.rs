@@ -10,7 +10,7 @@ use avail_subxt::{
 		sudo::events as SudoEvent,
 	},
 	avail::{Client, PairSigner},
-	build_client, tx_asend, tx_send, Call, Opts,
+	build_client, tx_async_send, tx_send_in_block, tx_send_in_finalized, Call, Opts,
 };
 use sp_keyring::AccountKeyring;
 use structopt::StructOpt;
@@ -25,7 +25,7 @@ async fn reset(client: &Client, signer: &PairSigner) -> Result<()> {
 		cols: 256,
 	});
 	let sudo_call = api::tx().sudo().sudo(block_length_update);
-	tx_send!(client, &sudo_call, signer);
+	let _ = tx_send_in_finalized!(client, &sudo_call, signer).await;
 	Ok(())
 }
 
@@ -36,7 +36,7 @@ async fn submit_data(client: &Client, signer: &PairSigner, n: u8) -> Result<()> 
 		.data_availability()
 		.submit_data(BoundedVec(example_data));
 	for _ in 0..n {
-		tx_asend!(client, &data_submission, signer)?;
+		let _ = tx_async_send!(client, &data_submission, signer);
 	}
 
 	Ok(())
@@ -50,7 +50,7 @@ async fn submit_data(client: &Client, signer: &PairSigner, n: u8) -> Result<()> 
 async fn main() -> Result<()> {
 	pretty_env_logger::init();
 	let args = Opts::from_args();
-	let client = build_client(args.ws, args.validate_codegen).await?;
+	let (client, _) = build_client(args.ws, args.validate_codegen).await?;
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());
 
 	reset(&client, &signer).await?;
@@ -74,7 +74,9 @@ pub async fn simple_tx(client: &Client, signer: &PairSigner) -> Result<()> {
 		cols: BLOCK_DIM_VALUE,
 	});
 	let sudo_call = api::tx().sudo().sudo(block_length_update);
-	tx_send!(client, &sudo_call, signer)
+	tx_send_in_block!(client, &sudo_call, signer)
+		.fetch_events()
+		.await?
 		.find_first::<DaEvent::BlockLengthProposalSubmitted>()?
 		.expect("1 - Block Length Proposal Submitted event is emitted .qed");
 	log::info!("1 - Block Length Proposal Submitted found.");
@@ -92,7 +94,9 @@ pub async fn batch_tx(client: &Client, signer: &PairSigner) -> Result<()> {
 		call: Box::new(block_length_update),
 	});
 	let batch_call = api::tx().utility().batch(vec![sudo_call]);
-	tx_send!(client, &batch_call, signer)
+	tx_send_in_block!(client, &batch_call, signer)
+		.fetch_events()
+		.await?
 		.find_first::<DaEvent::BlockLengthProposalSubmitted>()?
 		.expect("2 - Block Length Proposal Submitted event is emitted .qed");
 	log::info!("2 - Block Length Proposal Submitted found.");
@@ -110,7 +114,9 @@ pub async fn fail_simple_tx(client: &Client, signer: &PairSigner) -> Result<()> 
 		cols: BLOCK_DIM_VALUE,
 	});
 	let sudo_call = api::tx().sudo().sudo(block_length_update);
-	let events = tx_send!(client, &sudo_call, signer);
+	let events = tx_send_in_block!(client, &sudo_call, signer)
+		.fetch_events()
+		.await?;
 	let event = events
 		.find_first::<SudoEvent::Sudid>()?
 		.expect("1-Fail - Sudid event is emitted .qed");
@@ -143,7 +149,9 @@ pub async fn fail_batch_tx(client: &Client, signer: &PairSigner) -> Result<()> {
 	});
 	let batch_call = api::tx().utility().batch(vec![sudo_call]);
 
-	let events = tx_send!(client, &batch_call, signer);
+	let events = tx_send_in_block!(client, &batch_call, signer)
+		.fetch_events()
+		.await?;
 	let event = events
 		.find_first::<SudoEvent::Sudid>()?
 		.expect("2-Fail - Sudid event is emitted .qed");

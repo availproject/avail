@@ -12,3 +12,4 @@
 !Cargo.lock
 !rust-toolchain.toml
 !rustfmt.toml
+!.git

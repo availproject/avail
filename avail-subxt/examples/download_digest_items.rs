@@ -83,7 +83,7 @@ const OUTPUT_PATH: &str = "/tmp/header.json";
 #[async_std::main]
 async fn main() -> Result<()> {
 	let args = Opts::from_args();
-	let client = build_client(args.ws, args.validate_codegen).await?;
+	let (client, _) = build_client(args.ws, args.validate_codegen).await?;
 
 	// Get best block
 	let best_block = client

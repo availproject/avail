@@ -9,6 +9,8 @@ pub mod pallet_identity;
 pub mod pallet_indices;
 pub mod pallet_mandate;
 pub mod pallet_scheduler;
+pub mod pallet_staking;
+pub mod pallet_succinct;
 pub mod pallet_timestamp;
 pub mod pallet_tips;
 pub mod pallet_treasury;

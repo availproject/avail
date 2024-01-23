@@ -1,3 +1,5 @@
+use core::mem::size_of;
+
 use crate::voter_bags;
 use crate::SessionKeys;
 use crate::SLOT_DURATION;
@@ -13,7 +15,7 @@ use avail_core::currency::{Balance, AVL, CENTS, NANO_AVL, PICO_AVL};
 use avail_core::AppId;
 use avail_core::OpaqueExtrinsic;
 use avail_core::NORMAL_DISPATCH_RATIO;
-use codec::Decode;
+use codec::{Decode, Encode, MaxEncodedLen};
 use constants::time::DAYS;
 use frame_election_provider_support::onchain;
 use frame_election_provider_support::BalancingConfig;
@@ -25,8 +27,10 @@ use frame_support::pallet_prelude::Weight;
 use frame_support::traits::tokens::Imbalance;
 use frame_support::traits::ConstU32;
 use frame_support::traits::ContainsLengthBound;
+use frame_support::traits::DefensiveTruncateFrom;
 use frame_support::traits::EqualPrivilegeOnly;
 use frame_support::traits::Everything;
+use frame_support::traits::InstanceFilter;
 use frame_support::traits::KeyOwnerProofSystem;
 use frame_support::traits::SortedMembers;
 use frame_support::traits::{Currency, OnUnbalanced};
@@ -35,19 +39,29 @@ use frame_support::weights::ConstantMultiplier;
 use frame_support::{parameter_types, traits::EitherOfDiverse, PalletId};
 use frame_system::limits::BlockLength;
 use frame_system::submitted_data;
+use frame_system::submitted_data::BoundedData;
+use frame_system::submitted_data::{Message, MessageType};
 use frame_system::EnsureRoot;
+use hex_literal::hex;
 use pallet_election_provider_multi_phase::SolutionAccuracyOf;
 use pallet_transaction_payment::CurrencyAdapter;
 use pallet_transaction_payment::Multiplier;
 use pallet_transaction_payment::TargetedFeeAdjustment;
 use sp_core::crypto::KeyTypeId;
+use sp_core::ConstU64;
+use sp_core::RuntimeDebug;
+use sp_core::H256;
+use sp_core::U256;
 use sp_runtime::generic::Era;
 use sp_runtime::traits;
 use sp_runtime::traits::BlakeTwo256;
 use sp_runtime::traits::Bounded;
+use sp_runtime::traits::Convert;
 use sp_runtime::traits::OpaqueKeys;
+use sp_runtime::AccountId32;
 use sp_runtime::FixedPointNumber;
 use sp_runtime::FixedU128;
+use sp_runtime::MultiAddress;
 use sp_runtime::Perbill;
 use sp_runtime::Perquintill;
 use sp_runtime::{Percent, Permill};
@@ -73,6 +87,169 @@ impl pallet_mandate::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_mandate::WeightInfo<Runtime>;
+}
+
+parameter_types! {
+	//TODO add flag for different networks
+	pub const StepFunctionId: H256 = H256(hex!("a511bd86a30fa6db581480ac7591d4271c845411ac4e1ad93797d09a57b60522"));
+	pub const RotateFunctionId: H256 = H256(hex!("d7f33a3358d67df3bf792e8b2ab0188d16f4fc07418b35d950407af0d3cb33e0"));
+	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
+	pub StepVk: Vec<u8> = r#"{"vk_json":{
+    "protocol": "groth16",
+    "curve": "bn128",
+    "nPublic": 2,
+    "vk_alpha_1": [
+        "20491192805390485299153009773594534940189261866228447918068658471970481763042",
+        "9383485363053290200918347156157836566562967994039712273449902621266178545958",
+        "1"
+    ],
+    "vk_beta_2": [
+        [
+            "6375614351688725206403948262868962793625744043794305715222011528459656738731",
+            "4252822878758300859123897981450591353533073413197771768651442665752259397132"
+        ],
+        [
+            "10505242626370262277552901082094356697409835680220590971873171140371331206856",
+            "21847035105528745403288232691147584728191162732299865338377159692350059136679"
+        ],
+        [
+            "1",
+            "0"
+        ]
+    ],
+    "vk_gamma_2": [
+        [
+            "10857046999023057135944570762232829481370756359578518086990519993285655852781",
+            "11559732032986387107991004021392285783925812861821192530917403151452391805634"
+        ],
+        [
+            "8495653923123431417604973247489272438418190587263600148770280649306958101930",
+            "4082367875863433681332203403145435568316851327593401208105741076214120093531"
+        ],
+        [
+            "1",
+            "0"
+        ]
+    ],
+    "vk_delta_2": [
+        [
+            "677302577815076814357170457144294271294364985082280272249076505900964830740",
+            "5628948730667472013190771331033856457010306836153142947462627646651446565415"
+        ],
+        [
+            "5877290568297658003612857476419103064356778304319760331670835003648166891449",
+            "10874997846396459971354014654692242947705540424071616448481145872912634110727"
+        ],
+        [
+            "1",
+            "0"
+        ]
+    ],
+    "vk_alphabeta_12": [],
+    "IC": [
+        [
+            "202333273032481017331373350816007583026713320195536354260471885571526195724",
+            "8246242704115088390751476790768744984402990892657920674334938931948100192840",
+            "1"
+        ],
+        [
+            "12901454334783146822957332552289769626984444933652541503990843020723194328882",
+            "12436078488518552293095332739673622487901350475115357313978341690183990059269",
+            "1"
+        ],
+        [
+            "12828056956769114977702246128118682473179646035440405756936949778100648490262",
+            "7351319165217643779735289066901404053730163225836026220896225559268517203790",
+            "1"
+        ]
+    ]
+}}"#.as_bytes().to_vec();
+
+	pub RotateVk: Vec<u8> = r#"{"vk_json":{
+    "protocol": "groth16",
+    "curve": "bn128",
+    "nPublic": 2,
+    "vk_alpha_1": [
+        "20491192805390485299153009773594534940189261866228447918068658471970481763042",
+        "9383485363053290200918347156157836566562967994039712273449902621266178545958",
+        "1"
+    ],
+    "vk_beta_2": [
+        [
+            "6375614351688725206403948262868962793625744043794305715222011528459656738731",
+            "4252822878758300859123897981450591353533073413197771768651442665752259397132"
+        ],
+        [
+            "10505242626370262277552901082094356697409835680220590971873171140371331206856",
+            "21847035105528745403288232691147584728191162732299865338377159692350059136679"
+        ],
+        [
+            "1",
+            "0"
+        ]
+    ],
+    "vk_gamma_2": [
+        [
+            "10857046999023057135944570762232829481370756359578518086990519993285655852781",
+            "11559732032986387107991004021392285783925812861821192530917403151452391805634"
+        ],
+        [
+            "8495653923123431417604973247489272438418190587263600148770280649306958101930",
+            "4082367875863433681332203403145435568316851327593401208105741076214120093531"
+        ],
+        [
+            "1",
+            "0"
+        ]
+    ],
+    "vk_delta_2": [
+        [
+            "2864156988502350018268114524769442611229738724281856064310359811414088775164",
+            "19784911050814990253005325251017779746002278450060367709911093357779852409724"
+        ],
+        [
+            "2320747355788118605608963241136772405889379999161258135797985959373766905799",
+            "7118041328407665643077665093375077236507031390654037220453830314560753892708"
+        ],
+        [
+            "1",
+            "0"
+        ]
+    ],
+    "vk_alphabeta_12": [],
+    "IC": [
+        [
+            "15615341388138779177592192310982411536626378440854127969627902314302018589756",
+            "15825561397777957655855081872509949298182852212017977148985160662370122761845",
+            "1"
+        ],
+        [
+            "21866659777455953012076240694890418723891531368136637553921599064988704009798",
+            "18794682133425820197214508210971026410261369883290190279860606526851568182754",
+            "1"
+        ],
+        [
+            "17134706853007662603932468543386586959990776778768283640697616786730646170163",
+            "20580957029031123131958004810864543174606183854578157485523871304119815226629",
+            "1"
+        ]
+    ]
+}}"#.as_bytes().to_vec();
+}
+
+impl pallet_succinct::Config for Runtime {
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = weights::pallet_succinct::WeightInfo<Runtime>;
+	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
+	type Currency = Balances;
+	type StepVerificationKey = StepVk;
+	type RotateVerificationKey = RotateVk;
+	type MessageMappingStorageIndex = ConstU64<1>;
+	type StepFunctionId = StepFunctionId;
+	type RotateFunctionId = RotateFunctionId;
+	type PalletId = BridgePalletId;
+	type AvailDomain = ConstU32<1>;
 }
 
 parameter_types! {
@@ -175,6 +352,7 @@ impl pallet_bounties::Config for Runtime {
 }
 
 pub struct Tippers;
+
 impl SortedMembers<AccountId> for Tippers {
 	fn sorted_members() -> Vec<AccountId> {
 		let Some(account) = pallet_sudo::Pallet::<Runtime>::key() else {
@@ -207,7 +385,8 @@ impl pallet_tips::Config for Runtime {
 }
 
 parameter_types! {
-	pub const WeightFee: Balance = PICO_AVL;
+	// Temporary increased price of all transactions by 50x
+	pub const WeightFee: Balance = 50 * PICO_AVL;
 	pub const TransactionByteFee: Balance = 100 * NANO_AVL; // 100 nanoAVL
 	pub const OperationalFeeMultiplier: u8 = 5u8;
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(50); // target_utilization 50%
@@ -267,6 +446,7 @@ impl pallet_session::historical::Config for Runtime {
 
 /// Logic for the author to get a portion of fees.
 pub struct Author<R>(sp_std::marker::PhantomData<R>);
+
 impl<R> OnUnbalanced<NegativeImbalance<R>> for Author<R>
 where
 	R: pallet_balances::Config + pallet_authorship::Config,
@@ -281,6 +461,7 @@ where
 }
 
 pub struct DealWithFees<R>(sp_std::marker::PhantomData<R>);
+
 impl<R> OnUnbalanced<NegativeImbalance<R>> for DealWithFees<R>
 where
 	R: pallet_balances::Config + pallet_treasury::Config + pallet_authorship::Config,
@@ -432,6 +613,7 @@ parameter_types! {
 pub type TechnicalMaxMembers = ConstU32<100>;
 
 pub type TechnicalCollective = pallet_collective::Instance2;
+
 impl pallet_collective::Config<TechnicalCollective> for Runtime {
 	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
 	type MaxMembers = TechnicalMaxMembers;
@@ -462,7 +644,7 @@ impl pallet_election_provider_multi_phase::MinerConfig for Runtime {
 	type AccountId = AccountId;
 	type MaxLength = constants::staking::MinerMaxLength;
 	type MaxVotesPerVoter =
-	<<Self as pallet_election_provider_multi_phase::Config>::DataProvider as ElectionDataProvider>::MaxVotesPerVoter;
+    <<Self as pallet_election_provider_multi_phase::Config>::DataProvider as ElectionDataProvider>::MaxVotesPerVoter;
 	type MaxWeight = constants::staking::MinerMaxWeight;
 	type MaxWinners = <Runtime as pallet_election_provider_multi_phase::Config>::MaxWinners;
 	type Solution = constants::staking::NposSolution16;
@@ -471,10 +653,10 @@ impl pallet_election_provider_multi_phase::MinerConfig for Runtime {
 	// weight estimate function is wired to this call's weight.
 	fn solution_weight(v: u32, t: u32, a: u32, d: u32) -> Weight {
 		<
-			<Self as pallet_election_provider_multi_phase::Config>::WeightInfo
-			as
-			pallet_election_provider_multi_phase::WeightInfo
-		>::submit_unsigned(v, t, a, d)
+        <Self as pallet_election_provider_multi_phase::Config>::WeightInfo
+        as
+        pallet_election_provider_multi_phase::WeightInfo
+        >::submit_unsigned(v, t, a, d)
 	}
 }
 
@@ -513,6 +695,7 @@ impl pallet_election_provider_multi_phase::Config for Runtime {
 }
 
 pub struct StakingBenchmarkingConfig;
+
 impl pallet_staking::BenchmarkingConfig for StakingBenchmarkingConfig {
 	type MaxNominators = constants::staking::MaxNominators;
 	type MaxValidators = constants::staking::MaxValidators;
@@ -549,13 +732,14 @@ impl pallet_staking::Config for Runtime {
 	type TargetList = pallet_staking::UseValidatorsMap<Self>;
 	type UnixTime = Timestamp;
 	type VoterList = VoterList;
-	type WeightInfo = pallet_staking::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_staking::SubstrateWeight<Runtime>;
 }
 
 /// The numbers configured here could always be more than the maximum limits of staking pallet
 /// to ensure election snapshot will not run out of memory. For now, we set them to smaller values
 /// since the staking is bounded and the weight pipeline takes hours for this single pallet.
 pub struct ElectionProviderBenchmarkConfig;
+
 impl pallet_election_provider_multi_phase::BenchmarkingConfig for ElectionProviderBenchmarkConfig {
 	const ACTIVE_VOTERS: [u32; 2] = [500, 800];
 	const DESIRED_TARGETS: [u32; 2] = [200, 400];
@@ -572,6 +756,7 @@ pub const MINER_MAX_ITERATIONS: u32 = 10;
 
 /// A source of random balance for NposSolver, which is meant to be run by the OCW election miner.
 pub struct OffchainRandomBalancing;
+
 impl Get<Option<BalancingConfig>> for OffchainRandomBalancing {
 	fn get() -> Option<BalancingConfig> {
 		use sp_runtime::traits::TrailingZeroInput;
@@ -595,6 +780,7 @@ impl Get<Option<BalancingConfig>> for OffchainRandomBalancing {
 }
 
 pub struct OnChainSeqPhragmen;
+
 impl onchain::Config for OnChainSeqPhragmen {
 	type DataProvider = <Runtime as pallet_election_provider_multi_phase::Config>::DataProvider;
 	type MaxWinners = <Runtime as pallet_election_provider_multi_phase::Config>::MaxWinners;
@@ -613,6 +799,7 @@ parameter_types! {
 }
 
 type VoterBagsListInstance = pallet_bags_list::Instance1;
+
 impl pallet_bags_list::Config<VoterBagsListInstance> for Runtime {
 	type BagThresholds = BagThresholds;
 	type RuntimeEvent = RuntimeEvent;
@@ -629,14 +816,16 @@ parameter_types! {
 	pub const MaxPointsToBalance: u8 = 10;
 }
 
-use sp_runtime::traits::Convert;
 pub struct BalanceToU256;
+
 impl Convert<Balance, sp_core::U256> for BalanceToU256 {
 	fn convert(balance: Balance) -> sp_core::U256 {
 		sp_core::U256::from(balance)
 	}
 }
+
 pub struct U256ToBalance;
+
 impl Convert<sp_core::U256, Balance> for U256ToBalance {
 	fn convert(n: sp_core::U256) -> Balance {
 		n.try_into().unwrap_or(Balance::max_value())
@@ -686,6 +875,84 @@ impl pallet_mmr::Config for Runtime {
 	const INDEXING_PREFIX: &'static [u8] = b"mmr";
 }
 
+/// The type used to represent the kinds of proxying allowed.
+#[derive(
+	Copy,
+	Clone,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	Encode,
+	Decode,
+	RuntimeDebug,
+	MaxEncodedLen,
+	scale_info::TypeInfo,
+)]
+pub enum ProxyType {
+	Any,
+	NonTransfer,
+	Governance,
+	Staking,
+}
+impl Default for ProxyType {
+	fn default() -> Self {
+		Self::Any
+	}
+}
+impl InstanceFilter<RuntimeCall> for ProxyType {
+	fn filter(&self, c: &RuntimeCall) -> bool {
+		match self {
+			ProxyType::Any => true,
+			ProxyType::NonTransfer => !matches!(
+				c,
+				RuntimeCall::Balances(..)
+					| RuntimeCall::Indices(pallet_indices::Call::transfer { .. })
+			),
+			ProxyType::Governance => matches!(
+				c,
+				RuntimeCall::TechnicalCommittee(..) | RuntimeCall::Treasury(..)
+			),
+			ProxyType::Staking => {
+				matches!(c, RuntimeCall::Staking(..))
+			},
+		}
+	}
+	fn is_superset(&self, o: &Self) -> bool {
+		match (self, o) {
+			(x, y) if x == y => true,
+			(ProxyType::Any, _) => true,
+			(_, ProxyType::Any) => false,
+			(ProxyType::NonTransfer, _) => true,
+			_ => false,
+		}
+	}
+}
+
+parameter_types! {
+	// One storage item; key size 32, value size 8; .
+	pub const ProxyDepositBase: Balance = 10 * AVL;
+	// Additional storage item size of 33 bytes.
+	pub const ProxyDepositFactor: Balance = 3 * AVL;
+	pub const AnnouncementDepositBase: Balance = 10 * AVL;
+	pub const AnnouncementDepositFactor: Balance = 5 * AVL;
+}
+
+impl pallet_proxy::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type Currency = Balances;
+	type ProxyType = ProxyType;
+	type ProxyDepositBase = ProxyDepositBase;
+	type ProxyDepositFactor = ProxyDepositFactor;
+	type MaxProxies = ConstU32<32>;
+	type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
+	type MaxPending = ConstU32<32>;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = AnnouncementDepositBase;
+	type AnnouncementDepositFactor = AnnouncementDepositFactor;
+}
+
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 2400;
 	pub const Version: RuntimeVersion = VERSION;
@@ -723,6 +990,83 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 			.flat_map(|call| Self::filter(call, Rc::clone(metrics)))
 			.collect()
 	}
+
+	fn filter_v2(
+		call: RuntimeCall,
+		metrics: submitted_data::RcMetrics,
+		caller: AccountId32,
+	) -> (Vec<Vec<u8>>, Vec<Message>) {
+		metrics.borrow_mut().total_extrinsics += 1;
+
+		match call {
+			RuntimeCall::Succinct(pallet_succinct::Call::send_message {
+				message_type,
+				to,
+				domain,
+				value,
+				asset_id,
+				data,
+			}) => {
+				// If the MessageType is ArbitraryMessage, data is data elseif MessageType is FungibleToken, data is asset_id + value
+				let data = match message_type {
+					MessageType::ArbitraryMessage => data.unwrap_or_default(),
+					MessageType::FungibleToken => {
+						let mut value_bytes: [u8; size_of::<U256>()] = [0u8; size_of::<U256>()];
+						U256::from(value.unwrap_or_default()).to_big_endian(&mut value_bytes);
+						let asset_bytes = asset_id.unwrap_or(H256::zero()).as_bytes().to_vec();
+						let mut result = Vec::new();
+						result.extend_from_slice(&asset_bytes);
+						result.extend_from_slice(&value_bytes);
+						BoundedData::defensive_truncate_from(result)
+					},
+				};
+				let mut metrics = metrics.borrow_mut();
+				metrics.data_submit_leaves += 1;
+				metrics.data_submit_extrinsics += 1;
+				let message: submitted_data::Message = submitted_data::Message {
+					message_type,
+					from: H256::from_slice(caller.as_ref()),
+					to,
+					origin_domain: 1, // domain = 1 for Avail
+					destination_domain: domain,
+					data,
+					id: Default::default(), // This will be set during the bridge root construction
+				};
+				(vec![], vec![message])
+			},
+			RuntimeCall::DataAvailability(da_control::Call::submit_data { data })
+				if !data.is_empty() =>
+			{
+				let mut metrics = metrics.borrow_mut();
+				metrics.data_submit_leaves += 1;
+				metrics.data_submit_extrinsics += 1;
+				(vec![data.into_inner()], vec![])
+			},
+			RuntimeCall::Utility(pallet_utility::Call::batch { calls })
+			| RuntimeCall::Utility(pallet_utility::Call::batch_all { calls })
+			| RuntimeCall::Utility(pallet_utility::Call::force_batch { calls }) => {
+				Self::process_calls_v2(calls, &metrics, caller)
+			},
+			_ => (vec![], vec![]),
+		}
+	}
+
+	/// This function processes a list of calls and returns their data as Vec<Vec<u8>>
+	fn process_calls_v2(
+		calls: Vec<RuntimeCall>,
+		metrics: &submitted_data::RcMetrics,
+		caller: AccountId32,
+	) -> (Vec<Vec<u8>>, Vec<Message>) {
+		let (blob_data, bridge_data): (Vec<_>, Vec<_>) = calls
+			.into_iter()
+			.map(|call| Self::filter_v2(call, Rc::clone(metrics), caller.clone()))
+			.unzip();
+
+		(
+			blob_data.into_iter().flatten().collect(),
+			bridge_data.into_iter().flatten().collect(),
+		)
+	}
 }
 
 /// Decodes and extracts the `data` of `DataAvailability::submit_data` extrinsics.
@@ -737,6 +1081,23 @@ impl submitted_data::Extractor for Runtime {
 		let data =
 			<Runtime as submitted_data::Filter<RuntimeCall>>::filter(extrinsic.function, metrics);
 
+		Ok(data)
+	}
+
+	fn extract_v2(
+		opaque: &OpaqueExtrinsic,
+		metrics: submitted_data::RcMetrics,
+	) -> Result<(Vec<Vec<u8>>, Vec<Message>), Self::Error> {
+		let extrinsic = UncheckedExtrinsic::try_from(opaque)?;
+		let caller: AccountId32 = match extrinsic.signature.as_ref().map(|s| &s.0) {
+			Some(MultiAddress::Id(id)) => id.clone(),
+			_ => AccountId32::new([0u8; 32]),
+		};
+		let data = <Runtime as submitted_data::Filter<RuntimeCall>>::filter_v2(
+			extrinsic.function,
+			metrics,
+			caller,
+		);
 		Ok(data)
 	}
 }
@@ -814,7 +1175,6 @@ where
 		RuntimeCall,
 		<UncheckedExtrinsic as traits::Extrinsic>::SignaturePayload,
 	)> {
-		use codec::Encode;
 		use sp_runtime::{traits::StaticLookup, SaturatedConversion as _};
 
 		let tip = 0;
