@@ -9,7 +9,12 @@ cargo-fuzz = true
 
 [dependencies]
 anyhow = "1.0"
-libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+rand = "0.8.5"
+
+# Fuzz deps
+afl = { version = "0.15.2", optional = true }
+libfuzzer-sys = { version = "0.4", optional = true }
 
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
@@ -27,7 +32,10 @@ da-control = { path = "../../pallets/dactr", default-features = false }
 da-runtime = { path = "../" }
 
 [features]
-default = [ "std" ]
+default = [ "std", "use_fuzzer" ]
+# default = [ "std", "use_afl" ]
+use_fuzzer = [ "libfuzzer-sys" ]
+use_afl = [ "afl" ]
 std = [
 	"da-control/std",
 	"da-runtime/std",
