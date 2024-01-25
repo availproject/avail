@@ -12,7 +12,7 @@ use sp_keyring::sr25519::sr25519::{self, Pair};
 use structopt::StructOpt;
 use subxt::tx::PairSigner;
 
-/// This example demonstrates submission of arbitrary & token message on succinct bridge.
+/// This example demonstrates submission of arbitrary & token message on vector bridge.
 const ALICE_SEED: &str =
 	"bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice";
 
@@ -30,7 +30,7 @@ async fn main() -> Result<()> {
 	));
 
 	// Submit Arbitrary Message
-	let call = api::tx().succinct().send_message(
+	let call = api::tx().vector().send_message(
 		MessageType::ArbitraryMessage,
 		to,
 		2,
@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
 		Some(BoundedVec(b"some_data".to_vec())),
 	);
 	let block = tx_send_in_block!(&client, &call, &signer).block_hash();
-	println!("Succinct bridge arbitrary message submitted to block hash: {block:?}");
+	println!("Vector bridge arbitrary message submitted to block hash: {block:?}");
 
 	// Submit Token Message
 	let value = Some(1_000_000_000_000_000_000u128);
@@ -48,10 +48,10 @@ async fn main() -> Result<()> {
 	)));
 	let call =
 		api::tx()
-			.succinct()
+			.vector()
 			.send_message(MessageType::FungibleToken, to, 2, value, asset_id, None);
 	let block = tx_send_in_block!(&client, &call, &signer).block_hash();
-	println!("Succinct bridge token message submitted to block hash: {block:?}");
+	println!("Vector bridge token message submitted to block hash: {block:?}");
 
 	Ok(())
 }
