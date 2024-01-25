@@ -93,6 +93,8 @@ pub struct FullDeps<C, P, SC, B> {
 	pub babe: BabeDeps,
 	/// GRANDPA specific dependencies.
 	pub grandpa: GrandpaDeps<B>,
+	/// The maximum number of cells that can be requested in one go.
+	pub kate_max_cells_size: usize,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -141,6 +143,7 @@ where
 		deny_unsafe,
 		babe,
 		grandpa,
+		kate_max_cells_size,
 	} = deps;
 
 	let BabeDeps {
@@ -215,11 +218,13 @@ where
 	io.merge(KateApiMetricsServer::into_rpc(Kate::<C, Block>::new(
 		client.clone(),
 		deny_unsafe,
+		kate_max_cells_size,
 	)))?;
 
 	io.merge(KateApiServer::into_rpc(Kate::<C, Block>::new(
 		client,
 		deny_unsafe,
+		kate_max_cells_size,
 	)))?;
 
 	Ok(io)
