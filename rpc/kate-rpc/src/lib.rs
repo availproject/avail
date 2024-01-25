@@ -359,7 +359,8 @@ where
 		self.deny_unsafe.check_if_safe()?;
 		if cells.len() > self.max_cells_size {
 			let err = Custom(format!(
-				"Cannot query more than {} amount of cells per call.",
+				"Cannot query ({}) more than {} amount of cells per call. Either increase the max cells size (--kate-max-cells-size) or query less amount of cells per request.",
+				cells.len(),
 				self.max_cells_size
 			));
 			return Err(err);
