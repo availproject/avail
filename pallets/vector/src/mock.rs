@@ -237,7 +237,7 @@ impl vector_bridge::Config for Test {
 	type AvailDomain = ConstU32<1>;
 }
 
-/// Create new externalities for `Succinct` module tests.
+/// Create new externalities for `Vector` module tests.
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = RuntimeGenesisConfig::default()
 		.system
