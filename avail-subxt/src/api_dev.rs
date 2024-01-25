@@ -20416,9 +20416,9 @@ pub mod api {
 		use super::root_mod;
 		use super::runtime_types;
 		#[doc = "The `Error` enum of this pallet."]
-		pub type Error = runtime_types::pallet_succinct::pallet::Error;
+		pub type Error = runtime_types::pallet_vector::pallet::Error;
 		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-		pub type Call = runtime_types::pallet_succinct::pallet::Call;
+		pub type Call = runtime_types::pallet_vector::pallet::Call;
 		pub mod calls {
 			use super::root_mod;
 			use super::runtime_types;
@@ -20617,7 +20617,7 @@ pub mod api {
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				pub struct SetConfiguration {
-					pub value: runtime_types::pallet_succinct::state::Configuration,
+					pub value: runtime_types::pallet_vector::state::Configuration,
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetConfiguration {
 					const PALLET: &'static str = "Succinct";
@@ -20810,7 +20810,7 @@ pub mod api {
 				#[doc = "See [`Pallet::set_configuration`]."]
 				pub fn set_configuration(
 					&self,
-					value: runtime_types::pallet_succinct::state::Configuration,
+					value: runtime_types::pallet_vector::state::Configuration,
 				) -> ::subxt::tx::Payload<types::SetConfiguration> {
 					::subxt::tx::Payload::new_static(
 						"Succinct",
@@ -20827,7 +20827,7 @@ pub mod api {
 			}
 		}
 		#[doc = "The `Event` enum of this pallet"]
-		pub type Event = runtime_types::pallet_succinct::pallet::Event;
+		pub type Event = runtime_types::pallet_vector::pallet::Event;
 		pub mod events {
 			use super::runtime_types;
 			#[derive(
@@ -21224,7 +21224,7 @@ pub mod api {
 					&self,
 				) -> ::subxt::storage::address::Address<
 					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_succinct::state::Configuration,
+					runtime_types::pallet_vector::state::Configuration,
 					::subxt::storage::address::Yes,
 					::subxt::storage::address::Yes,
 					(),
@@ -21246,7 +21246,7 @@ pub mod api {
 					_0: impl ::std::borrow::Borrow<::subxt::utils::H256>,
 				) -> ::subxt::storage::address::Address<
 					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_succinct::target_amb::MessageStatusEnum,
+					runtime_types::pallet_vector::target_amb::MessageStatusEnum,
 					::subxt::storage::address::Yes,
 					::subxt::storage::address::Yes,
 					::subxt::storage::address::Yes,
@@ -21269,7 +21269,7 @@ pub mod api {
 					&self,
 				) -> ::subxt::storage::address::Address<
 					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_succinct::target_amb::MessageStatusEnum,
+					runtime_types::pallet_vector::target_amb::MessageStatusEnum,
 					(),
 					::subxt::storage::address::Yes,
 					::subxt::storage::address::Yes,
@@ -23264,7 +23264,7 @@ pub mod api {
 				#[codec(index = 38)]
 				Mandate(runtime_types::pallet_mandate::pallet::Call),
 				#[codec(index = 39)]
-				Succinct(runtime_types::pallet_succinct::pallet::Call),
+				Succinct(runtime_types::pallet_vector::pallet::Call),
 				#[codec(index = 40)]
 				Proxy(runtime_types::pallet_proxy::pallet::Call),
 			}
@@ -23341,7 +23341,7 @@ pub mod api {
 				#[codec(index = 38)]
 				Mandate(runtime_types::pallet_mandate::pallet::Event),
 				#[codec(index = 39)]
-				Succinct(runtime_types::pallet_succinct::pallet::Event),
+				Succinct(runtime_types::pallet_vector::pallet::Event),
 				#[codec(index = 40)]
 				Proxy(runtime_types::pallet_proxy::pallet::Event),
 			}
@@ -29217,7 +29217,7 @@ pub mod api {
 				pub blocked: ::core::primitive::bool,
 			}
 		}
-		pub mod pallet_succinct {
+		pub mod pallet_vector {
 			use super::runtime_types;
 			pub mod pallet {
 				use super::runtime_types;
@@ -29312,7 +29312,7 @@ pub mod api {
 					#[codec(index = 7)]
 					#[doc = "See [`Pallet::set_configuration`]."]
 					set_configuration {
-						value: runtime_types::pallet_succinct::state::Configuration,
+						value: runtime_types::pallet_vector::state::Configuration,
 					},
 				}
 				#[derive(

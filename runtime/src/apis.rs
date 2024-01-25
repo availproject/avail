@@ -358,15 +358,15 @@ impl_runtime_apis! {
 		}
 
 		fn sync_committee_poseidons(slot: u64) -> U256 {
-			pallet_succinct::Pallet::<Runtime>::sync_committee_poseidons(slot)
+			pallet_vector::Pallet::<Runtime>::sync_committee_poseidons(slot)
 		}
 
 		fn head() -> u64 {
-			pallet_succinct::Pallet::<Runtime>::head()
+			pallet_vector::Pallet::<Runtime>::head()
 		}
 
 		fn headers(slot: u64) -> H256 {
-			pallet_succinct::Pallet::<Runtime>::headers(slot)
+			pallet_vector::Pallet::<Runtime>::headers(slot)
 		}
 
 		fn successful_extrinsic_indices() -> Vec<u32> {

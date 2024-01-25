@@ -95,7 +95,7 @@ pallet-identity = { git = "https://github.com/paritytech/substrate.git", branch 
 pallet-proxy = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 
 pallet-mandate = { path = "../pallets/mandate", default-features = false }
-pallet-succinct = { path = "../pallets/succinct", default-features = false }
+pallet-vector = { path = "../pallets/vector", default-features = false }
 
 ## RPCs
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
@@ -191,7 +191,7 @@ std = [
 	"pallet-scheduler/std",
 	"pallet-session/std",
 	"pallet-staking/std",
-	"pallet-succinct/std",
+	"pallet-vector/std",
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
 	"pallet-tips/std",
@@ -249,7 +249,7 @@ runtime-benchmarks = [
 	"pallet-proxy/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-staking/runtime-benchmarks",
-	"pallet-succinct/runtime-benchmarks",
+	"pallet-vector/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-tips/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
@@ -292,7 +292,7 @@ try-runtime = [
 	"pallet-scheduler/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-staking/try-runtime",
-	"pallet-succinct/try-runtime",
+	"pallet-vector/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-tips/try-runtime",

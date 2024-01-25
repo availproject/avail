@@ -2188,7 +2188,6 @@ dependencies = [
  "pallet-staking",
  "pallet-staking-reward-curve",
  "pallet-staking-reward-fn",
- "pallet-succinct",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-tips",
@@ -2196,6 +2195,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
  "pallet-utility",
+ "pallet-vector",
  "parity-scale-codec",
  "parity-util-mem",
  "scale-info",
@@ -4768,7 +4768,7 @@ dependencies = [
  "kate",
  "kate-recovery",
  "moka",
- "pallet-succinct",
+ "pallet-vector",
  "rayon",
  "sc-client-api",
  "sc-rpc-api",
@@ -6826,45 +6826,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-succinct"
-version = "1.0.0"
-dependencies = [
- "ark-bn254",
- "ark-ec 0.4.2",
- "ark-ff 0.3.0",
- "ark-groth16",
- "ark-serialize 0.4.2",
- "ark-snark 0.4.0",
- "ark-std 0.4.0",
- "avail-core",
- "ethabi",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "hash-db 0.15.2",
- "hash256-std-hasher",
- "hex-literal 0.4.1",
- "log",
- "memory-db 0.30.0",
- "pallet-balances",
- "pallet-timestamp",
- "parity-scale-codec",
- "patricia-merkle-trie",
- "primitive-types",
- "rlp",
- "scale-info",
- "serde",
- "serde_json",
- "sha2 0.10.8",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "tiny-keccak",
- "trie-db 0.24.0",
-]
-
-[[package]]
 name = "pallet-sudo"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v1.0.0#948fbd2fd1233dc26dbb9f9bbc1d2cca2c03945d"
@@ -6991,6 +6952,45 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-vector"
+version = "1.0.0"
+dependencies = [
+ "ark-bn254",
+ "ark-ec 0.4.2",
+ "ark-ff 0.3.0",
+ "ark-groth16",
+ "ark-serialize 0.4.2",
+ "ark-snark 0.4.0",
+ "ark-std 0.4.0",
+ "avail-core",
+ "ethabi",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hash-db 0.15.2",
+ "hash256-std-hasher",
+ "hex-literal 0.4.1",
+ "log",
+ "memory-db 0.30.0",
+ "pallet-balances",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "patricia-merkle-trie",
+ "primitive-types",
+ "rlp",
+ "scale-info",
+ "serde",
+ "serde_json",
+ "sha2 0.10.8",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "tiny-keccak",
+ "trie-db 0.24.0",
 ]
 
 [[package]]
