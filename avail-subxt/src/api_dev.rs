@@ -6,7 +6,6 @@ pub mod api {
 	mod root_mod {
 		pub use super::*;
 	}
-
 	pub static PALLETS: [&str; 33usize] = [
 		"System",
 		"Utility",
@@ -686,7 +685,7 @@ pub mod api {
 			use ::subxt::metadata::DecodeWithMetadata;
 			let cursor = &mut &pallet_bytes[..];
 			if pallet_name == "System" {
-				let variant_error = system::Error::decode_with_metadata(cursor, 125u32, metadata)?;
+				let variant_error = system::Error::decode_with_metadata(cursor, 123u32, metadata)?;
 				return Ok(Error::System(variant_error));
 			}
 			if pallet_name == "Utility" {
@@ -1096,9 +1095,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				233u8, 96u8, 132u8, 203u8, 116u8, 73u8, 123u8, 46u8, 228u8, 42u8, 157u8, 17u8,
-				129u8, 63u8, 77u8, 229u8, 98u8, 231u8, 136u8, 237u8, 90u8, 232u8, 0u8, 85u8, 79u8,
-				49u8, 201u8, 222u8, 159u8, 90u8, 112u8, 8u8,
+				179u8, 10u8, 167u8, 115u8, 51u8, 42u8, 187u8, 170u8, 125u8, 160u8, 174u8, 131u8,
+				171u8, 71u8, 229u8, 172u8, 68u8, 108u8, 47u8, 24u8, 7u8, 241u8, 154u8, 247u8, 8u8,
+				150u8, 47u8, 236u8, 224u8, 96u8, 124u8, 93u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -1882,9 +1881,10 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							142u8, 1u8, 187u8, 25u8, 229u8, 134u8, 117u8, 200u8, 80u8, 166u8,
-							176u8, 158u8, 117u8, 6u8, 225u8, 216u8, 1u8, 254u8, 210u8, 248u8, 54u8,
-							131u8, 121u8, 196u8, 71u8, 177u8, 74u8, 121u8, 31u8, 89u8, 34u8, 227u8,
+							54u8, 190u8, 1u8, 188u8, 11u8, 156u8, 103u8, 227u8, 102u8, 141u8,
+							179u8, 15u8, 111u8, 150u8, 119u8, 155u8, 132u8, 51u8, 254u8, 167u8,
+							191u8, 226u8, 80u8, 215u8, 185u8, 121u8, 175u8, 80u8, 206u8, 106u8,
+							30u8, 164u8,
 						],
 					)
 				}
@@ -20677,7 +20677,7 @@ pub mod api {
 					)
 				}
 				#[doc = " The index of the `messages` mapping in contract."]
-				#[doc = " This is mandatory when calling execute messages via storage ptoofs."]
+				#[doc = " This is mandatory when calling execute messages via storage proofs."]
 				pub fn message_mapping_storage_index(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u64> {
