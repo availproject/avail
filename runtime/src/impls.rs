@@ -248,7 +248,7 @@ impl pallet_succinct::Config for Runtime {
 	type Currency = Balances;
 	type StepVerificationKey = StepVk;
 	type RotateVerificationKey = RotateVk;
-	type MessageMappingStorageIndex = ConstU64<5>;
+	type MessageMappingStorageIndex = ConstU64<1>;
 	type StepFunctionId = StepFunctionId;
 	type RotateFunctionId = RotateFunctionId;
 	type PalletId = BridgePalletId;
@@ -388,8 +388,8 @@ impl pallet_tips::Config for Runtime {
 }
 
 parameter_types! {
-	// Temporary increased price of all transactions by 50x
-	pub const WeightFee: Balance = 50 * PICO_AVL;
+	// Temporary increased price of all transactions by 10x
+	pub const WeightFee: Balance = 10 * PICO_AVL;
 	pub const TransactionByteFee: Balance = 100 * NANO_AVL; // 100 nanoAVL
 	pub const OperationalFeeMultiplier: u8 = 5u8;
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(50); // target_utilization 50%
@@ -737,7 +737,7 @@ impl pallet_staking::Config for Runtime {
 	type TargetList = pallet_staking::UseValidatorsMap<Self>;
 	type UnixTime = Timestamp;
 	type VoterList = VoterList;
-	type WeightInfo = pallet_staking::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_staking::SubstrateWeight<Runtime>;
 }
 
 /// The numbers configured here could always be more than the maximum limits of staking pallet

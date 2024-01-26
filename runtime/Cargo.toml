@@ -125,7 +125,7 @@ iai = "0.1.1"
 iai-callgrind = { version = "0.7.3" }
 criterion = "0.5.1"
 codspeed-criterion-compat = "2.2.0"
-divan = "0.1.2"
+divan = "0.1.11"
 
 [[bench]]
 name = "header_kate_commitment_iai_callgrind"

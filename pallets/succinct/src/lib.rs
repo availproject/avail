@@ -61,6 +61,7 @@ pub mod pallet {
 	pub enum Error<T> {
 		VerificationError,
 		NotEnoughParticipants,
+		ConfigurationNotSet,
 		SlotBehindHead,
 		TooLongVerificationKey,
 		VerificationKeyIsNotSet,
@@ -108,7 +109,9 @@ pub mod pallet {
 		BroadcasterUpdate { old: H256, new: H256, domain: u32 },
 		/// emit when message gets executed.
 		ExecutedMessage {
-			message: Message,
+			from: H256,
+			to: H256,
+			message_id: u64,
 			message_root: H256,
 		},
 		/// emit if source chain gets frozen.
@@ -201,7 +204,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type RotateFunctionId: Get<H256>;
 		/// The index of the `messages` mapping in contract.
-		/// This is mandatory when calling execute messages via storage ptoofs.
+		/// This is mandatory when calling execute messages via storage proofs.
 		#[pallet::constant]
 		type MessageMappingStorageIndex: Get<u64>;
 		/// Bridge's pallet id, used for deriving its sovereign account ID.
@@ -259,8 +262,6 @@ pub mod pallet {
 		/// output Function output.
 		/// proof  Function proof.
 		/// slot  Function slot to update.
-		//
-		// TODO @Marko Check out if there are tests that we are missing
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::fulfill_call())]
 		pub fn fulfill_call(
@@ -316,9 +317,6 @@ pub mod pallet {
 		}
 
 		/// Executes message if a valid proofs are provided for the supported message type, assets and domains.
-		//
-		// Test names: execute_arbitary_message_works
-		// TODO @Marko Check out if there are tests that we are missing
 		#[pallet::call_index(1)]
 		#[pallet::weight({
         match message.message_type {
@@ -375,7 +373,9 @@ pub mod pallet {
 				MessageType::ArbitraryMessage => {
 					MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
 					Self::deposit_event(Event::<T>::ExecutedMessage {
-						message,
+						from: message.from,
+						to: message.to,
+						message_id: message.id,
 						message_root,
 					})
 				},
@@ -400,9 +400,11 @@ pub mod pallet {
 
 					MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
 					Self::deposit_event(Event::<T>::ExecutedMessage {
-						message,
+						from: message.from,
+						to: message.to,
+						message_id: message.id,
 						message_root,
-					});
+					})
 				},
 			}
 
@@ -653,7 +655,9 @@ pub mod pallet {
 			let sync_committee_poseidon: U256 =
 				Self::verified_rotate_call(T::RotateFunctionId::get(), input, rotate_store)?;
 
-			let period = finalized_slot / cfg.slots_per_period;
+			let period = finalized_slot
+				.checked_div(cfg.slots_per_period)
+				.ok_or(Error::<T>::ConfigurationNotSet)?;
 			let next_period = period + 1;
 
 			Self::set_sync_committee_poseidon(next_period, sync_committee_poseidon)?;
@@ -666,7 +670,9 @@ pub mod pallet {
 			cfg: Configuration,
 			step_store: &VerifiedStep,
 		) -> Result<bool, DispatchError> {
-			let period = attested_slot / cfg.slots_per_period;
+			let period = attested_slot
+				.checked_div(cfg.slots_per_period)
+				.ok_or(Error::<T>::ConfigurationNotSet)?;
 
 			let sc_poseidon = SyncCommitteePoseidons::<T>::get(period);
 			ensure!(sc_poseidon != U256::zero(), Error::<T>::SyncCommitteeNotSet);

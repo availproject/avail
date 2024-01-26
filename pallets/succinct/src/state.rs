@@ -81,6 +81,7 @@ pub struct Configuration {
 	pub finality_threshold: u16,
 }
 
+/// VerifiedStep struct that holds verified params from a step call.
 #[derive(Default, Debug)]
 pub struct VerifiedStep {
 	pub verified_function_id: H256,
@@ -102,6 +103,7 @@ impl VerifiedStep {
 	}
 }
 
+/// VerifiedRotate struct that holds verified params from a rotate call.
 #[derive(Default)]
 pub struct VerifiedRotate {
 	pub verified_function_id: H256,
@@ -123,6 +125,7 @@ impl VerifiedRotate {
 	}
 }
 
+/// VerifiedStepOutput struct that holds a step output params.
 #[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default)]
