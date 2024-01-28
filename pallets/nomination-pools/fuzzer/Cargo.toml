@@ -18,12 +18,12 @@ honggfuzz = "0.5.54"
 
 pallet-nomination-pools = { path = "..", features = ["fuzzing"] }
 
-frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0"  }
+frame-system = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+frame-support = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix"  }
 
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0"  }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-tracing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-runtime = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix"  }
+sp-io = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-tracing = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
 
 rand = { version = "0.8.5", features = ["small_rng"] }
 log = "0.4.17"

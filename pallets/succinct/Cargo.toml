@@ -9,14 +9,14 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+frame-support = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false }
 frame-system = { default-features = false, path = "../system" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false, features = ["runtime"] }
+sp-io = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false }
+sp-runtime = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false }
+sp-std = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false }
+sp-core = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false }
+frame-benchmarking = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false, optional = true }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "marko/babe-fix-core", default-features = false, features = ["runtime"] }
 
 
 ark-bn254 = { version = "0.3.0", default-features = false, features = ["curve"] }
@@ -36,7 +36,7 @@ trie-db = { version = "0.24.0", default-features = false }
 hash-db = { version = "0.15.2", default-features = false }
 memory-db = { version = "0.30.0", default-features = false }
 tiny-keccak = { version = "2.0.2", features = ["keccak"], optional = true }
-patricia-merkle-trie = { git = "https://github.com/availproject/patricia-merkle-trie.git", default-features = false, branch = "main" }
+patricia-merkle-trie = { git = "https://github.com/availproject/patricia-merkle-trie.git", default-features = false, branch = "marko/babe-fix-patricia" }
 rlp = { version = "0.5.2", default-features = false }
 hash256-std-hasher = { version = "0.15.2", default-features = false }
 
@@ -45,8 +45,8 @@ primitive-types = { version = "0.12.0", default-features = false }
 ethabi = { version = "18.0.0", default-features = false }
 [dev-dependencies]
 # sp-core = { version = "21.0.0", default-features = false }
-pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-balances = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+pallet-timestamp = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
 
 [features]
 default = [ "std" ]
