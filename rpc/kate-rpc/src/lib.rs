@@ -97,8 +97,16 @@ pub struct Kate<Client, Block: BlockT> {
 }
 
 impl<Client, Block: BlockT> Kate<Client, Block> {
-	pub fn new(client: Arc<Client>, max_cells_size: usize) -> Self {
-		const GB: u64 = 2u64.pow(30);
+	pub fn new(
+		client: Arc<Client>,
+		max_cells_size: usize,
+		eval_grid_cache_size: u64,
+		poly_grid_cach_size: u64,
+	) -> Self {
+		// eval_grid_cache_size and poly_grid_cach_size are in MiB. We need Bytes.
+		let eval_grid_cache_size = eval_grid_cache_size * 1024 * 1024;
+		let poly_grid_cach_size = poly_grid_cach_size * 1024 * 1024;
+
 		Self {
 			client,
 			eval_grid_cache: Cache::<_, Arc<EvaluationGrid>>::builder()
@@ -106,7 +114,7 @@ impl<Client, Block: BlockT> Kate<Client, Block> {
 					let n_cells: u32 = v.dims().size();
 					n_cells * 32 + 8
 				})
-				.max_capacity(GB)
+				.max_capacity(eval_grid_cache_size)
 				.build(),
 			poly_grid_cache: Cache::<_, Arc<(Dimensions, PolynomialGrid)>>::builder()
 				.weigher(|_, v| {
@@ -115,7 +123,7 @@ impl<Client, Block: BlockT> Kate<Client, Block> {
 						v.0.width().try_into().expect("Never more than 2^32 points");
 					n_cells * 32 + n_points * 32
 				})
-				.max_capacity(GB)
+				.max_capacity(poly_grid_cach_size)
 				.build(),
 			multiproof_srs: kate::couscous::multiproof_params(),
 			max_cells_size,
@@ -419,40 +427,42 @@ where
 		let execution_start = std::time::Instant::now();
 
 		let block = self.get_signed_block(at)?.block;
+		let extension = block.header().extension();
+
 		// We can quey data_proof only on V1 headers
-		if let HeaderExtension::V1(_) = block.header().extension() {
-			let calls = block
-				.extrinsics()
-				.iter()
-				.flat_map(|extrinsic| UncheckedExtrinsic::try_from(extrinsic).ok())
-				.map(|extrinsic| extrinsic.function);
-
-			// Build the proof.
-			let merkle_proof =
-				submitted_data::calls_proof::<Runtime, _, _>(calls, transaction_index).ok_or_else(
-					|| {
-						internal_err!(
-							"Data proof cannot be generated for transaction index={} at block {:?}",
-							transaction_index,
-							at
-						)
-					},
-				)?;
-
-			let data_proof = DataProof::try_from(&merkle_proof).map_err(|e| {
-				internal_err!("Data proof cannot be loaded from merkle root: {:?}", e)
-			});
-
+		if !matches!(extension, HeaderExtension::V1(_)) {
 			// Execution Time Metric
 			KateRpcMetrics::observe_query_data_proof_execution_time(execution_start.elapsed());
 
-			data_proof
-		} else {
 			return Err(internal_err!(
 				"Cannot query data_proof on a block with a header other than V1. Block {:?} does not support DataProof.",
 				at
 			));
-		}
+		};
+
+		let calls = block
+			.extrinsics()
+			.iter()
+			.flat_map(|extrinsic| UncheckedExtrinsic::try_from(extrinsic).ok())
+			.map(|extrinsic| extrinsic.function);
+
+		// Build the proof.
+		let merkle_proof = submitted_data::calls_proof::<Runtime, _, _>(calls, transaction_index)
+			.ok_or_else(|| {
+			internal_err!(
+				"Data proof cannot be generated for transaction index={} at block {:?}",
+				transaction_index,
+				at
+			)
+		})?;
+
+		let data_proof = DataProof::try_from(&merkle_proof)
+			.map_err(|e| internal_err!("Data proof cannot be loaded from merkle root: {:?}", e));
+
+		// Execution Time Metric
+		KateRpcMetrics::observe_query_data_proof_execution_time(execution_start.elapsed());
+
+		data_proof
 	}
 
 	async fn query_data_proof_v2(
