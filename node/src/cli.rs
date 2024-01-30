@@ -41,20 +41,6 @@ pub struct Cli {
 	#[arg(long)] /*, conflicts_with_all = &["validator"] */
 	pub unsafe_da_sync: bool,
 
-	/// Represents the maximum size (in MiBs) for the evaluation grid cache.
-	///
-	/// The cache is used to speedup some kate RPC calls. The bigger the cache
-	/// the more space will the node use.
-	#[arg(long, value_name = "MiB", default_value_t = 1024)]
-	pub eval_grid_cache_size: u64,
-
-	/// Represents the maximum size (in MiBs) for the polynomial grid cache.
-	///
-	/// The cache is used to speedup some kate RPC calls. The bigger the cache
-	/// the more space will the node use.
-	#[arg(long, value_name = "MiB", default_value_t = 1024)]
-	pub poly_grid_cach_size: u64,
-
 	/// Provides storage monitoring options on the node
 	#[clap(flatten)]
 	pub storage_monitor: sc_storage_monitor::StorageMonitorParams,
@@ -71,6 +57,20 @@ pub struct Cli {
 	/// Enable Kate RPC Metrics
 	#[clap(long = "enable-kate-rpc-metrics", default_value_t = false)]
 	pub kate_rpc_metrics_enabled: bool,
+
+	/// Represents the maximum size (in MiBs) for the evaluation grid cache.
+	///
+	/// The cache is used to speedup some kate RPC calls. The bigger the cache
+	/// the more space will the node use.
+	#[arg(long, value_name = "MiB", default_value_t = 1024)]
+	pub eval_grid_cache_size: u64,
+
+	/// Represents the maximum size (in MiBs) for the polynomial grid cache.
+	///
+	/// The cache is used to speedup some kate RPC calls. The bigger the cache
+	/// the more space will the node use.
+	#[arg(long, value_name = "MiB", default_value_t = 1024)]
+	pub poly_grid_cach_size: u64,
 }
 
 fn kate_max_cells_size_upper_bound(s: &str) -> Result<usize, String> {
