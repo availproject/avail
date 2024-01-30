@@ -165,6 +165,8 @@ pub fn new_partial(
 	config: &Configuration,
 	unsafe_da_sync: bool,
 	kate_max_cells_size: usize,
+	kate_rpc_enabled: bool,
+	kate_rpc_metrics_enabled: bool,
 ) -> Result<
 	sc_service::PartialComponents<
 		FullClient,
@@ -313,6 +315,8 @@ pub fn new_partial(
 					finality_provider: finality_proof_provider.clone(),
 				},
 				kate_max_cells_size,
+				kate_rpc_enabled,
+				kate_rpc_metrics_enabled,
 			};
 
 			node_rpc::create_full(deps, rpc_backend.clone()).map_err(Into::into)
@@ -356,6 +360,8 @@ pub fn new_full_base(
 	with_startup_data: impl FnOnce(&BlockImport, &sc_consensus_babe::BabeLink<Block>),
 	unsafe_da_sync: bool,
 	kate_max_cells_size: usize,
+	kate_rpc_enabled: bool,
+	kate_rpc_metrics_enabled: bool,
 ) -> Result<NewFullBase, ServiceError> {
 	let hwbench = if !disable_hardware_benchmarks {
 		config.database.path().map(|database_path| {
@@ -375,7 +381,13 @@ pub fn new_full_base(
 		select_chain,
 		transaction_pool,
 		other: (rpc_builder, import_setup, rpc_setup, mut telemetry),
-	} = new_partial(&config, unsafe_da_sync, kate_max_cells_size)?;
+	} = new_partial(
+		&config,
+		unsafe_da_sync,
+		kate_max_cells_size,
+		kate_rpc_enabled,
+		kate_rpc_metrics_enabled,
+	)?;
 
 	let shared_voter_state = rpc_setup;
 	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
@@ -629,6 +641,8 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 		|_, _| (),
 		cli.unsafe_da_sync,
 		cli.kate_max_cells_size,
+		cli.kate_rpc_enabled,
+		cli.kate_rpc_metrics_enabled,
 	)
 	.map(|NewFullBase { task_manager, .. }| task_manager)?;
 

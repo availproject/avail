@@ -44,12 +44,19 @@ pub struct Cli {
 	/// Provides storage monitoring options on the node
 	#[clap(flatten)]
 	pub storage_monitor: sc_storage_monitor::StorageMonitorParams,
-
 	/// The maximum number of cells that can be requested in one go.
 	///
 	/// Max size cannot exceed 10_000
 	#[arg(long, default_value_t = 64, value_parser=kate_max_cells_size_upper_bound)]
 	pub kate_max_cells_size: usize,
+
+	/// Enable Kate RPC
+	#[clap(long = "enable-kate-rpc", default_value_t = false)]
+	pub kate_rpc_enabled: bool,
+
+	/// Enable Kate RPC Metrics
+	#[clap(long = "enable-kate-rpc-metrics", default_value_t = false)]
+	pub kate_rpc_metrics_enabled: bool,
 }
 
 fn kate_max_cells_size_upper_bound(s: &str) -> Result<usize, String> {
