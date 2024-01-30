@@ -30,7 +30,6 @@ const STEP_FN_ID: H256 = H256(hex!(
 mod benchmarks {
 	use super::*;
 	use crate::Broadcasters;
-	use frame_support::PalletId;
 	use sp_runtime::traits::AccountIdConversion;
 
 	#[benchmark]

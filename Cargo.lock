@@ -4781,7 +4781,6 @@ dependencies = [
  "pallet-succinct",
  "rayon",
  "sc-client-api",
- "sc-rpc-api",
  "sp-api",
  "sp-blockchain",
  "sp-runtime",

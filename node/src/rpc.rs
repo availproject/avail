@@ -95,6 +95,12 @@ pub struct FullDeps<C, P, SC, B> {
 	pub grandpa: GrandpaDeps<B>,
 	/// The maximum number of cells that can be requested in one go.
 	pub kate_max_cells_size: usize,
+	/// Enable Kate RPCs
+	pub kate_rpc_enabled: bool,
+	/// Enable Kate RPCs Metrics
+	///
+	/// Should not be used unless unless you know what you're doing.
+	pub kate_rpc_metrics_enabled: bool,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -122,7 +128,6 @@ where
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashFor<Block>>,
 {
-	#[cfg(feature = "kate-rpc-metrics")]
 	use kate_rpc::metrics::KateApiMetricsServer;
 	use kate_rpc::{Kate, KateApiServer};
 	use mmr_rpc::{Mmr, MmrApiServer};
@@ -144,6 +149,8 @@ where
 		babe,
 		grandpa,
 		kate_max_cells_size,
+		kate_rpc_enabled,
+		kate_rpc_metrics_enabled,
 	} = deps;
 
 	let BabeDeps {
@@ -214,18 +221,19 @@ where
 
 	io.merge(StateMigration::new(client.clone(), backend, deny_unsafe).into_rpc())?;
 
-	#[cfg(feature = "kate-rpc-metrics")]
-	io.merge(KateApiMetricsServer::into_rpc(Kate::<C, Block>::new(
-		client.clone(),
-		deny_unsafe,
-		kate_max_cells_size,
-	)))?;
+	if kate_rpc_metrics_enabled {
+		io.merge(KateApiMetricsServer::into_rpc(Kate::<C, Block>::new(
+			client.clone(),
+			kate_max_cells_size,
+		)))?;
+	}
 
-	io.merge(KateApiServer::into_rpc(Kate::<C, Block>::new(
-		client,
-		deny_unsafe,
-		kate_max_cells_size,
-	)))?;
+	if kate_rpc_enabled || kate_rpc_metrics_enabled {
+		io.merge(KateApiServer::into_rpc(Kate::<C, Block>::new(
+			client,
+			kate_max_cells_size,
+		)))?;
+	}
 
 	Ok(io)
 }
