@@ -167,6 +167,8 @@ pub fn new_partial(
 	kate_max_cells_size: usize,
 	kate_rpc_enabled: bool,
 	kate_rpc_metrics_enabled: bool,
+	eval_grid_cache_size: u64,
+	poly_grid_cach_size: u64,
 ) -> Result<
 	sc_service::PartialComponents<
 		FullClient,
@@ -319,7 +321,13 @@ pub fn new_partial(
 				kate_rpc_metrics_enabled,
 			};
 
-			node_rpc::create_full(deps, rpc_backend.clone()).map_err(Into::into)
+			node_rpc::create_full(
+				deps,
+				rpc_backend.clone(),
+				eval_grid_cache_size,
+				poly_grid_cach_size,
+			)
+			.map_err(Into::into)
 		};
 
 		(rpc_extensions_builder, shared_voter_state2)
@@ -362,6 +370,8 @@ pub fn new_full_base(
 	kate_max_cells_size: usize,
 	kate_rpc_enabled: bool,
 	kate_rpc_metrics_enabled: bool,
+	eval_grid_cache_size: u64,
+	poly_grid_cach_size: u64,
 ) -> Result<NewFullBase, ServiceError> {
 	let hwbench = if !disable_hardware_benchmarks {
 		config.database.path().map(|database_path| {
@@ -387,6 +397,8 @@ pub fn new_full_base(
 		kate_max_cells_size,
 		kate_rpc_enabled,
 		kate_rpc_metrics_enabled,
+		eval_grid_cache_size,
+		poly_grid_cach_size,
 	)?;
 
 	let shared_voter_state = rpc_setup;
@@ -643,6 +655,8 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 		cli.kate_max_cells_size,
 		cli.kate_rpc_enabled,
 		cli.kate_rpc_metrics_enabled,
+		cli.eval_grid_cache_size,
+		cli.poly_grid_cach_size,
 	)
 	.map(|NewFullBase { task_manager, .. }| task_manager)?;
 

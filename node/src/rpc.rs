@@ -107,6 +107,8 @@ pub struct FullDeps<C, P, SC, B> {
 pub fn create_full<C, P, SC, B>(
 	deps: FullDeps<C, P, SC, B>,
 	backend: Arc<B>,
+	eval_grid_cache_size: u64,
+	poly_grid_cach_size: u64,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
 	C: ProvideRuntimeApi<Block>
@@ -225,6 +227,8 @@ where
 		io.merge(KateApiMetricsServer::into_rpc(Kate::<C, Block>::new(
 			client.clone(),
 			kate_max_cells_size,
+			eval_grid_cache_size,
+			poly_grid_cach_size,
 		)))?;
 	}
 
@@ -232,6 +236,8 @@ where
 		io.merge(KateApiServer::into_rpc(Kate::<C, Block>::new(
 			client,
 			kate_max_cells_size,
+			eval_grid_cache_size,
+			poly_grid_cach_size,
 		)))?;
 	}
 
