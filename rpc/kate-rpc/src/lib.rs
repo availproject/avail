@@ -44,7 +44,7 @@ pub type HashOf<Block> = <Block as BlockT>::Hash;
 pub type MaxRows = ConstU32<64>;
 pub type Rows = BoundedVec<u32, MaxRows>;
 
-pub type MaxCells = ConstU32<64>;
+pub type MaxCells = ConstU32<10_000>;
 pub type Cells = BoundedVec<Cell, MaxCells>;
 
 #[cfg(feature = "metrics")]
@@ -97,10 +97,11 @@ pub struct Kate<Client, Block: BlockT> {
 	multiproof_srs: m1_blst::M1NoPrecomp,
 	/// Whether to deny unsafe calls.
 	deny_unsafe: DenyUnsafe,
+	max_cells_size: usize,
 }
 
 impl<Client, Block: BlockT> Kate<Client, Block> {
-	pub fn new(client: Arc<Client>, deny_unsafe: DenyUnsafe) -> Self {
+	pub fn new(client: Arc<Client>, deny_unsafe: DenyUnsafe, max_cells_size: usize) -> Self {
 		const GB: u64 = 2u64.pow(30);
 		Self {
 			client,
@@ -122,6 +123,7 @@ impl<Client, Block: BlockT> Kate<Client, Block> {
 				.build(),
 			multiproof_srs: kate::couscous::multiproof_params(),
 			deny_unsafe,
+			max_cells_size,
 		}
 	}
 }
@@ -352,7 +354,18 @@ where
 	}
 
 	async fn query_proof(&self, cells: Cells, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
+		use crate::JsonRpseeError::Custom;
+
 		self.deny_unsafe.check_if_safe()?;
+		if cells.len() > self.max_cells_size {
+			let err = Custom(format!(
+				"Cannot query ({}) more than {} amount of cells per request. Either increase the max cells size (--kate-max-cells-size) or query less amount of cells per request.",
+				cells.len(),
+				self.max_cells_size
+			));
+			return Err(err);
+		}
+
 		let execution_start = std::time::Instant::now();
 
 		let signed_block = self.get_signed_and_finalized_block(at)?;
