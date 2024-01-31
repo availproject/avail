@@ -100,7 +100,7 @@ pub mod bridge {
 	#[cfg(feature = "try-runtime")]
 	pub fn pre_migrate<P: PalletInfoAccess, N: AsRef<str>>(old_pallet_name: N) {
 		use frame_support::traits::STORAGE_VERSION_STORAGE_KEY_POSTFIX;
-		
+
 		let old_pallet_name = old_pallet_name.as_ref();
 		let new_pallet_name = <P as PalletInfoAccess>::name();
 		log_migration("pre-migration", old_pallet_name, new_pallet_name);
