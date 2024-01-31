@@ -55,7 +55,6 @@ impl OnRuntimeUpgrade for Migration {
 pub mod bridge {
 	use crate::migration::Weight;
 	use frame_support::pallet_prelude::PalletInfoAccess;
-	use frame_support::traits::STORAGE_VERSION_STORAGE_KEY_POSTFIX;
 	use sp_core::Get;
 	use sp_io::hashing::twox_128;
 
@@ -98,7 +97,10 @@ pub mod bridge {
 		<T as frame_system::Config>::DbWeight::get().reads_writes(10, 10)
 	}
 
+	#[cfg(feature = "try-runtime")]
 	pub fn pre_migrate<P: PalletInfoAccess, N: AsRef<str>>(old_pallet_name: N) {
+		use frame_support::traits::STORAGE_VERSION_STORAGE_KEY_POSTFIX;
+		
 		let old_pallet_name = old_pallet_name.as_ref();
 		let new_pallet_name = <P as PalletInfoAccess>::name();
 		log_migration("pre-migration", old_pallet_name, new_pallet_name);
@@ -120,6 +122,7 @@ pub mod bridge {
 		assert!(new_pallet_prefix_iter.all(|key| key == storage_version_key));
 	}
 
+	#[cfg(feature = "try-runtime")]
 	pub fn post_migrate<P: PalletInfoAccess, N: AsRef<str>>(old_pallet_name: N) {
 		let old_pallet_name = old_pallet_name.as_ref();
 		let new_pallet_name = <P as PalletInfoAccess>::name();
@@ -156,5 +159,45 @@ pub mod bridge {
 			old_pallet_name,
 			new_pallet_name,
 		);
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use crate::{Runtime, System};
+	use frame_support::{
+		migration::{get_storage_value, put_storage_value},
+		traits::OnRuntimeUpgrade,
+	};
+	use sp_runtime::BuildStorage;
+
+	pub fn new_test_ext() -> sp_io::TestExternalities {
+		let t = frame_system::GenesisConfig::<Runtime>::default()
+			.build_storage()
+			.unwrap();
+
+		let mut ext = sp_io::TestExternalities::new(t);
+		ext.execute_with(|| System::set_block_number(1));
+		ext
+	}
+
+	#[test]
+	fn migration_test() {
+		new_test_ext().execute_with(|| {
+			put_storage_value(b"Succinct", b"WhitelistedDomains", b"", vec![2u32]);
+			assert!(
+				get_storage_value::<Vec<u32>>(b"Succinct", b"WhitelistedDomains", b"").is_some()
+			);
+			assert!(get_storage_value::<Vec<u32>>(b"Vector", b"WhitelistedDomains", b"").is_none());
+			super::Migration::on_runtime_upgrade();
+
+			assert!(
+				get_storage_value::<Vec<u32>>(b"Succinct", b"WhitelistedDomains", b"").is_none()
+			);
+			assert_eq!(
+				get_storage_value::<Vec<u32>>(b"Vector", b"WhitelistedDomains", b""),
+				Some(vec![2u32])
+			);
+		});
 	}
 }
