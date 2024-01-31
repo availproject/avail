@@ -16,22 +16,22 @@ targets = ["x86_64-unknown-linux-gnu"]
 codec = { package = "parity-scale-codec", version = "3.6.1", features = ["derive"] }
 scale-info = { version = "2.0.1", features = ["derive"] }
 
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-staking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-runtime = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-io = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-std = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-staking = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-core = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
 
-frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-frame-election-provider-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+frame-system = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+frame-support = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+frame-election-provider-support = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
 
-pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-pallet-staking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-pallet-bags-list = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-pallet-staking-reward-curve = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-timestamp = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+pallet-balances = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+pallet-staking = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+pallet-bags-list = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+pallet-staking-reward-curve = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
 pallet-nomination-pools = { version = "1.0.0-dev", path = ".." }
 
-sp-tracing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-tracing = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
 log = { version = "0.4.0" }

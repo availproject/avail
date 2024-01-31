@@ -20,8 +20,8 @@ name = "data-avail"
 avail-base = { path = "../base" }
 
 # Internals
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.10.0.0", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.10.0.0", default-features = false }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }
@@ -47,86 +47,86 @@ async-trait = "0.1.60"
 
 # Substrate
 ## Primitives
-sc-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-statement-store = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-executor = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-storage-monitor = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-keystore = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-keystore = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-keyring = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-inherents = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-transaction-storage-proof = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-consensus-babe-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-consensus-babe = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-offchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sc-cli = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-io = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-statement-store = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-core = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-executor = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-service = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-storage-monitor = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-telemetry = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-keystore = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-keystore = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-keyring = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-transaction-pool = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-transaction-pool = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-inherents = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-transaction-pool-api = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-transaction-storage-proof = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-consensus-babe-rpc = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-consensus-babe = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-consensus = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-consensus = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-offchain = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
 # Renamed: (https://github.com/paritytech/substrate/pull/13458)
-sc-consensus-grandpa-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sc-consensus-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-consensus-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-consensus-babe = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-consensus-slots = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-authority-discovery = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-authority-discovery = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-chain-spec = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-client-db = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-sync-state-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-sysinfo = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-network-common = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-network-sync = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sc-consensus-grandpa-rpc = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-consensus-grandpa = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-consensus-grandpa = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-client-api = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-runtime = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-timestamp = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-consensus-babe = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-consensus-slots = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-network = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-authority-discovery = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-authority-discovery = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-chain-spec = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-client-db = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-blockchain = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-block-builder = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-basic-authorship = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-sync-state-rpc = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-api = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-sysinfo = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-network-common = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-network-sync = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
 primitive-types = "0.12.0"
 
 # FRAME
-pallet-im-online = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-im-online = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
 frame-system = { path = "../pallets/system" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-mmr-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-transaction-payment = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+frame-support = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+mmr-rpc = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
 
 # These dependencies are used for the node template's RPCs
-sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-rpc-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-rpc-spec-v2 = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-substrate-state-trie-migration-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sc-rpc = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-rpc = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-rpc-api = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sc-rpc-spec-v2 = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+substrate-frame-rpc-system = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+pallet-transaction-payment-rpc = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+substrate-state-trie-migration-rpc = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
 substrate-prometheus-endpoint = "0.10.0-dev"
 
 # These dependencies are used for runtime benchmarking
-frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+frame-benchmarking = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+frame-benchmarking-cli = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
 
 # Try-runtime
-try-runtime-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", optional = true }
+try-runtime-cli = { git = "https://github.com/availproject/substrate.git", branch = "goldberg", optional = true }
 
 # Custom
 frame-system-rpc-runtime-api = { path = "../pallets/system/rpc/runtime-api" }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+substrate-build-script-utils = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
 clap = { version = "4.0.9", optional = true }
 clap_complete = { version = "4.0.2", optional = true }
-frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", optional = true }
+frame-benchmarking-cli = { git = "https://github.com/availproject/substrate.git", branch = "goldberg", optional = true }
 
 [dev-dependencies]
-sp-tracing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-tracing = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
 tempfile = "3.1.0"
 
 [features]
