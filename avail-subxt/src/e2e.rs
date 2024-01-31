@@ -17,7 +17,7 @@ pub struct E2EOpts {
 	#[structopt(long, default_value = "dev")]
 	pub chain: String,
 	/// Path to avail-data binary
-	#[structopt(long, default_value = "../target/release/data-avail")]
+	#[structopt(long, default_value = "../target/release/avail-node")]
 	pub avail_path: String,
 	/// Base path for node storage
 	#[structopt(long, default_value = "base/alice")]

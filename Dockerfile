@@ -15,10 +15,10 @@ RUN git clone -b $AVAIL_TAG --single-branch https://github.com/availproject/avai
 # This installs Rust and updates Rust to the right version.
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rust_install.sh && chmod u+x rust_install.sh && ./rust_install.sh -y
 
-# Build Binary at /da/src/data-avail
+# Build Binary at /da/src/avail-node
 RUN $HOME/.cargo/bin/rustup show 
 RUN $HOME/.cargo/bin/cargo build --locked --release
-RUN cp ./target/release/data-avail .
+RUN cp ./target/release/avail-node .
 
 # Phase 2: Binary deployment
 # =========================
@@ -26,8 +26,8 @@ FROM debian:12.2-slim
 
 RUN apt update -y && apt install curl -y
 
-COPY --from=builder /da/src/data-avail /usr/local/bin/data-avail
-RUN chmod +x /usr/local/bin/data-avail
+COPY --from=builder /da/src/avail-node /usr/local/bin/avail-node
+RUN chmod +x /usr/local/bin/avail-node
 
 # Opencontainers annotations
 LABEL org.opencontainers.image.authors="The Avail Project Team" \
@@ -41,6 +41,6 @@ LABEL org.opencontainers.image.authors="The Avail Project Team" \
 	org.opencontainers.image.description="Data Availability Docker Node"
 
 VOLUME ["/da/node-data"]
-ENTRYPOINT ["/usr/local/bin/data-avail"]
+ENTRYPOINT ["/usr/local/bin/avail-node"]
 CMD ["--chain", "goldberg", "--tmp", "--name", "MyAwesomeAvailNodeInContainer"]
 

@@ -25,12 +25,12 @@ jobs:
 
           chmod 777 runtime
           docker run --name srtool --rm -e PACKAGE=da-runtime -e RUNTIME_DIR=runtime/ -e PROFILE=release -v $(pwd):/build:rw -v /tmp/cargo:/cargo-home docker.io/paritytech/srtool:1.70.0 build
-          mv runtime/target/srtool/release/wbuild/da-runtime/da_runtime.compact.compressed.wasm target/release/wbuild/da-runtime/data-avail-runtime.compact.compressed.wasm
+          mv runtime/target/srtool/release/wbuild/da-runtime/da_runtime.compact.compressed.wasm target/release/wbuild/da-runtime/avail-node-runtime.compact.compressed.wasm
 
       - uses: actions/upload-artifact@v2
         with:
           name: avail-runtime-compressed-wasm
-          path: target/release/wbuild/da-runtime/data-avail-runtime.compact.compressed.wasm
+          path: target/release/wbuild/da-runtime/avail-node-runtime.compact.compressed.wasm
   
   binary_linux_amd64:
     runs-on: ubuntu-20.04
@@ -47,13 +47,13 @@ jobs:
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source "$HOME/.cargo/env" && rustup show && cargo build --locked --release
           pushd target/release
-          tar -czf x86_64-ubuntu-2004-data-avail.tar.gz data-avail
+          tar -czf x86_64-ubuntu-2004-avail-node.tar.gz avail-node
           popd
 
       - uses: actions/upload-artifact@v2
         with:
-          name: x86_64-ubuntu-2004-data-avail.tar.gz
-          path: target/release/x86_64-ubuntu-2004-data-avail.tar.gz
+          name: x86_64-ubuntu-2004-avail-node.tar.gz
+          path: target/release/x86_64-ubuntu-2004-avail-node.tar.gz
 
   binary_linux_aarch64:
     runs-on: ubuntu-20.04
@@ -72,14 +72,14 @@ jobs:
           
           rustup target add aarch64-unknown-linux-gnu
           sudo apt-get update && sudo apt-get install -y musl-tools clang gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev libc6-dev-arm64-cross
-          env  BINDGEN_EXTRA_CLANG_ARGS='--sysroot /usr/aarch64-linux-gnu' CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=/usr/bin/aarch64-linux-gnu-gcc cargo build --release --target=aarch64-unknown-linux-gnu -p data-avail
+          env  BINDGEN_EXTRA_CLANG_ARGS='--sysroot /usr/aarch64-linux-gnu' CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=/usr/bin/aarch64-linux-gnu-gcc cargo build --release --target=aarch64-unknown-linux-gnu -p avail-node
           pushd target/aarch64-unknown-linux-gnu/release/
-          tar -czf arm64-ubuntu-2004-data-avail.tar.gz data-avail
+          tar -czf arm64-ubuntu-2004-avail-node.tar.gz avail-node
           popd
       - uses: actions/upload-artifact@v2
         with:
-          name: arm64-ubuntu-2004-data-avail.tar.gz
-          path: target/aarch64-unknown-linux-gnu/release/arm64-ubuntu-2004-data-avail.tar.gz
+          name: arm64-ubuntu-2004-avail-node.tar.gz
+          path: target/aarch64-unknown-linux-gnu/release/arm64-ubuntu-2004-avail-node.tar.gz
 
 
   # compile all binaries from previous jobs into single release
@@ -92,12 +92,12 @@ jobs:
 
       - uses: actions/download-artifact@v3
         with:
-          name: x86_64-ubuntu-2004-data-avail.tar.gz
+          name: x86_64-ubuntu-2004-avail-node.tar.gz
           path: ./artifact
         
       - uses: actions/download-artifact@v3
         with:
-          name: arm64-ubuntu-2004-data-avail.tar.gz
+          name: arm64-ubuntu-2004-avail-node.tar.gz
           path: ./artifact
         
       - uses: actions/download-artifact@v3

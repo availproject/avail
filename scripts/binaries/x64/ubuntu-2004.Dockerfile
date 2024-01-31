@@ -23,4 +23,4 @@ RUN $HOME/.cargo/bin/cargo build --locked --release
 RUN mkdir -p output
 
 VOLUME ["/output"]
-CMD cp ./target/release/data-avail /output
+CMD cp ./target/release/avail-node /output

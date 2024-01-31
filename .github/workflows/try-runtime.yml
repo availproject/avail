@@ -31,7 +31,7 @@ jobs:
 
       - name: Test try-runtime on-runtime-upgrade
         run: |
-          ./target/release/data-avail try-runtime \
+          ./target/release/avail-node try-runtime \
           --runtime ./target/release/wbuild/da-runtime/da_runtime.compact.compressed.wasm \
           --chain ./misc/genesis/testnet.kate.chain.spec.raw.json \
           on-runtime-upgrade live \

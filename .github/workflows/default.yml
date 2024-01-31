@@ -94,13 +94,13 @@ jobs:
           echo "RUSTC_WRAPPER=${HOME}/.cargo/bin/sccache" >> $GITHUB_ENV
 
       - name: Build node
-        run: cargo build --release -p data-avail
+        run: cargo build --release -p avail-node
 
-      - name: Upload data-avail binary
+      - name: Upload avail-node binary
         uses: actions/upload-artifact@v2
         with:
-          name: data-avail
-          path: target/release/data-avail
+          name: avail-node
+          path: target/release/avail-node
 
       - name: Display SCCache Stats
         run: sccache --show-stats
@@ -154,4 +154,4 @@ jobs:
       - name: Check other features
         env:
           SKIP_WASM_BUILD: true
-        run: cargo check --release --workspace --features "runtime-benchmarks try-runtime" -p data-avail
+        run: cargo check --release --workspace --features "runtime-benchmarks try-runtime" -p avail-node

@@ -1,4 +1,4 @@
-// This file is part of Data-Availability.
+// This file is part of avail-nodeability.
 
 // Copyright (C) 2022
 // SPDX-License-Identifier: Apache-2.0
