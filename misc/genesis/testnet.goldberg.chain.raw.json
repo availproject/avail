@@ -21,7 +21,9 @@
     "tokenDecimals": 18,
     "tokenSymbol": "AVL"
   },
-  "forkBlocks": null,
+  "forkBlocks": [
+    [344638, "0xe7b45ce0fe4573cee57813849711dc534123df7638c389729a6c580ea8a9c325"]
+  ],
   "badBlocks": null,
   "lightSyncState": null,
   "codeSubstitutes": {},

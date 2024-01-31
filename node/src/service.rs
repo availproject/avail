@@ -164,6 +164,11 @@ pub fn create_extrinsic(
 pub fn new_partial(
 	config: &Configuration,
 	unsafe_da_sync: bool,
+	kate_max_cells_size: usize,
+	kate_rpc_enabled: bool,
+	kate_rpc_metrics_enabled: bool,
+	eval_grid_cache_size: u64,
+	poly_grid_cach_size: u64,
 ) -> Result<
 	sc_service::PartialComponents<
 		FullClient,
@@ -311,9 +316,18 @@ pub fn new_partial(
 					subscription_executor,
 					finality_provider: finality_proof_provider.clone(),
 				},
+				kate_max_cells_size,
+				kate_rpc_enabled,
+				kate_rpc_metrics_enabled,
 			};
 
-			node_rpc::create_full(deps, rpc_backend.clone()).map_err(Into::into)
+			node_rpc::create_full(
+				deps,
+				rpc_backend.clone(),
+				eval_grid_cache_size,
+				poly_grid_cach_size,
+			)
+			.map_err(Into::into)
 		};
 
 		(rpc_extensions_builder, shared_voter_state2)
@@ -353,6 +367,11 @@ pub fn new_full_base(
 	disable_hardware_benchmarks: bool,
 	with_startup_data: impl FnOnce(&BlockImport, &sc_consensus_babe::BabeLink<Block>),
 	unsafe_da_sync: bool,
+	kate_max_cells_size: usize,
+	kate_rpc_enabled: bool,
+	kate_rpc_metrics_enabled: bool,
+	eval_grid_cache_size: u64,
+	poly_grid_cach_size: u64,
 ) -> Result<NewFullBase, ServiceError> {
 	let hwbench = if !disable_hardware_benchmarks {
 		config.database.path().map(|database_path| {
@@ -372,7 +391,15 @@ pub fn new_full_base(
 		select_chain,
 		transaction_pool,
 		other: (rpc_builder, import_setup, rpc_setup, mut telemetry),
-	} = new_partial(&config, unsafe_da_sync)?;
+	} = new_partial(
+		&config,
+		unsafe_da_sync,
+		kate_max_cells_size,
+		kate_rpc_enabled,
+		kate_rpc_metrics_enabled,
+		eval_grid_cache_size,
+		poly_grid_cach_size,
+	)?;
 
 	let shared_voter_state = rpc_setup;
 	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
@@ -625,6 +652,11 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 		cli.no_hardware_benchmarks,
 		|_, _| (),
 		cli.unsafe_da_sync,
+		cli.kate_max_cells_size,
+		cli.kate_rpc_enabled,
+		cli.kate_rpc_metrics_enabled,
+		cli.eval_grid_cache_size,
+		cli.poly_grid_cach_size,
 	)
 	.map(|NewFullBase { task_manager, .. }| task_manager)?;
 

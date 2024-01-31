@@ -26,12 +26,11 @@ sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkad
 frame-system = { path = "../../pallets/system", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-rpc-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 
 [features]
-default = [ "metrics", "std" ]
+default = [ "std" ]
 std = [
 	"avail-base/std",
 	"avail-core/std",
@@ -43,7 +42,6 @@ std = [
 	"sp-api/std",
 	"sp-runtime/std",
 ]
-metrics = []
 
 # Enables secure seed generation using for padding fill during the matrix 
 # generation for Kate commitment.

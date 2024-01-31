@@ -1447,6 +1447,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap-num"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e063d263364859dc54fb064cedb7c122740cd4733644b14b176c097f51e8ab7"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
 name = "clap_builder"
 version = "4.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2260,12 +2269,13 @@ dependencies = [
 
 [[package]]
 name = "data-avail"
-version = "1.9.0"
+version = "1.10.0"
 dependencies = [
  "async-trait",
  "avail-base",
  "avail-core",
  "clap",
+ "clap-num",
  "clap_complete",
  "da-control",
  "da-runtime",
@@ -4771,7 +4781,6 @@ dependencies = [
  "pallet-vector",
  "rayon",
  "sc-client-api",
- "sc-rpc-api",
  "sp-api",
  "sp-blockchain",
  "sp-runtime",
