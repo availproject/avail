@@ -9,8 +9,8 @@ repository = ""
 description = "Mokcked Runtime for Testing"
 
 [dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "marko/babe-fix-core", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "marko/babe-fix-core", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.10.0.0", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.10.0.0", default-features = false }
 da-control = { path = "../dactr" }
 
 scale-info = { version = "2.5.0", features = ["derive"] }
@@ -19,22 +19,22 @@ parity-util-mem = { version = "0.12.0", features = ["primitive-types"] }
 derive_more = "0.99.17" 
 serde = { version = "1.0.121", features = ["derive"] }
 
-frame-support = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
-sp-runtime = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
-sp-core = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
-sp-staking = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
-sp-io = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
-sp-version = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
-sp-inherents = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
-sp-std = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+frame-support = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-runtime = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-core = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-staking = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-io = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-version = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-inherents = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-std = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
 
 # Pallets
 frame-system = { path = "../system" }
-pallet-transaction-payment = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
-pallet-balances = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
-pallet-timestamp = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
-pallet-babe = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
-pallet-staking = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+pallet-transaction-payment = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+pallet-balances = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+pallet-timestamp = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+pallet-babe = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+pallet-staking = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
 
 
 [features]

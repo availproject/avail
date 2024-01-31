@@ -11,9 +11,9 @@ da-runtime = { path = "../../runtime", default-features = false }
 da-control = { path = "../../pallets/dactr" }
 pallet-succinct = { path = "../../pallets/succinct" }
 
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "marko/babe-fix-core", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "marko/babe-fix-core", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "marko/babe-fix-core", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.10.0.0", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.10.0.0", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.10.0.0", default-features = false }
 
 # 3rd party
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
@@ -22,12 +22,12 @@ moka = { version = "0.12.1", features = ["future"] }
 
 
 # Substrate
-sp-api = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false }
+sp-api = { git = "https://github.com/availproject/substrate.git", branch = "goldberg", default-features = false }
 frame-system = { path = "../../pallets/system", default-features = false }
-frame-support = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false }
-sc-client-api = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
-sp-blockchain = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
-sp-runtime = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false }
+frame-support = { git = "https://github.com/availproject/substrate.git", branch = "goldberg", default-features = false }
+sc-client-api = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-blockchain = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-runtime = { git = "https://github.com/availproject/substrate.git", branch = "goldberg", default-features = false }
 
 [features]
 default = [ "std" ]

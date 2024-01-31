@@ -13,7 +13,7 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-sp-api = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false }
+sp-api = { git = "https://github.com/availproject/substrate.git", branch = "goldberg", default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
 
 [features]

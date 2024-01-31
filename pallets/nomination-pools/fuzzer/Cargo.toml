@@ -18,12 +18,12 @@ honggfuzz = "0.5.54"
 
 pallet-nomination-pools = { path = "..", features = ["fuzzing"] }
 
-frame-system = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
-frame-support = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix"  }
+frame-system = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+frame-support = { git = "https://github.com/availproject/substrate.git", branch = "goldberg"  }
 
-sp-runtime = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix"  }
-sp-io = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
-sp-tracing = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-runtime = { git = "https://github.com/availproject/substrate.git", branch = "goldberg"  }
+sp-io = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
+sp-tracing = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
 
 rand = { version = "0.8.5", features = ["small_rng"] }
 log = "0.4.17"
