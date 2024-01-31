@@ -21243,7 +21243,7 @@ pub mod api {
 					_0: impl ::std::borrow::Borrow<::subxt::utils::H256>,
 				) -> ::subxt::storage::address::Address<
 					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_vector::target_amb::MessageStatusEnum,
+					runtime_types::pallet_vector::storage_utils::MessageStatusEnum,
 					::subxt::storage::address::Yes,
 					::subxt::storage::address::Yes,
 					::subxt::storage::address::Yes,
@@ -21266,7 +21266,7 @@ pub mod api {
 					&self,
 				) -> ::subxt::storage::address::Address<
 					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_vector::target_amb::MessageStatusEnum,
+					runtime_types::pallet_vector::storage_utils::MessageStatusEnum,
 					(),
 					::subxt::storage::address::Yes,
 					::subxt::storage::address::Yes,
@@ -30120,7 +30120,7 @@ pub mod api {
 					pub finality_threshold: ::core::primitive::u16,
 				}
 			}
-			pub mod target_amb {
+			pub mod storage_utils {
 				use super::runtime_types;
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,

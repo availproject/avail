@@ -13,7 +13,7 @@ use sp_runtime::traits::BadOrigin;
 use crate::mock::{new_test_ext, Bridge, RuntimeEvent, RuntimeOrigin, Test};
 use crate::mock::{Balances, System};
 use crate::state::Configuration;
-use crate::target_amb::MessageStatusEnum;
+use crate::storage_utils::MessageStatusEnum;
 use crate::{
 	Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, FunctionInput,
 	FunctionOutput, FunctionProof, Head, Headers, MessageStatus, SourceChainFrozen,
