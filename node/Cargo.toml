@@ -20,8 +20,8 @@ name = "data-avail"
 avail-base = { path = "../base" }
 
 # Internals
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "marko/babe-fix-core", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", branch = "marko/babe-fix-core", default-features = false }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }
@@ -47,86 +47,86 @@ async-trait = "0.1.60"
 
 # Substrate
 ## Primitives
-sc-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-statement-store = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-executor = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-storage-monitor = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-keystore = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-keystore = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-keyring = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-inherents = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-transaction-storage-proof = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-consensus-babe-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-consensus-babe = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-offchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sc-cli = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-io = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-statement-store = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-core = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-executor = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-service = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-storage-monitor = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-telemetry = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-keystore = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-keystore = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-keyring = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-transaction-pool = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-transaction-pool = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-inherents = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-transaction-pool-api = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-transaction-storage-proof = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-consensus-babe-rpc = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-consensus-babe = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-consensus = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-consensus = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-offchain = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
 # Renamed: (https://github.com/paritytech/substrate/pull/13458)
-sc-consensus-grandpa-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sc-consensus-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-consensus-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-consensus-babe = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-consensus-slots = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-authority-discovery = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-authority-discovery = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-chain-spec = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-client-db = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-sync-state-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-sysinfo = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-network-common = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-network-sync = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sc-consensus-grandpa-rpc = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-consensus-grandpa = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-consensus-grandpa = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-client-api = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-runtime = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-timestamp = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-consensus-babe = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-consensus-slots = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-network = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-authority-discovery = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-authority-discovery = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-chain-spec = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-client-db = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-blockchain = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-block-builder = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-basic-authorship = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-sync-state-rpc = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-api = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-sysinfo = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-network-common = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-network-sync = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
 primitive-types = "0.12.0"
 
 # FRAME
-pallet-im-online = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-im-online = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
 frame-system = { path = "../pallets/system" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-mmr-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-transaction-payment = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+frame-support = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+mmr-rpc = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
 
 # These dependencies are used for the node template's RPCs
-sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-rpc-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-rpc-spec-v2 = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-substrate-state-trie-migration-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sc-rpc = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sp-rpc = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-rpc-api = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+sc-rpc-spec-v2 = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+substrate-frame-rpc-system = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+pallet-transaction-payment-rpc = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+substrate-state-trie-migration-rpc = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
 substrate-prometheus-endpoint = "0.10.0-dev"
 
 # These dependencies are used for runtime benchmarking
-frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+frame-benchmarking = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
+frame-benchmarking-cli = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
 
 # Try-runtime
-try-runtime-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", optional = true }
+try-runtime-cli = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", optional = true }
 
 # Custom
 frame-system-rpc-runtime-api = { path = "../pallets/system/rpc/runtime-api" }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+substrate-build-script-utils = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
 clap = { version = "4.0.9", optional = true }
 clap_complete = { version = "4.0.2", optional = true }
-frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", optional = true }
+frame-benchmarking-cli = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", optional = true }
 
 [dev-dependencies]
-sp-tracing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-tracing = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix" }
 tempfile = "3.1.0"
 
 [features]

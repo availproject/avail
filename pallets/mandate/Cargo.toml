@@ -10,19 +10,19 @@ targets = ["x86_64-unknown-linux-gnu"]
 # Substrate
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+frame-support = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false }
 frame-system = { default-features = false, path = "../system" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-io = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false }
+sp-runtime = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false }
+sp-std = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false }
 
 # Benchmarking
-frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
+frame-benchmarking = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false, optional = true }
 
 [dev-dependencies]
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-pallet-collective = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", features = ["runtime"] }
+sp-core = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false }
+pallet-collective = { git = "https://github.com/markopoloparadox/substrate.git", branch = "marko/babe-fix", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "marko/babe-fix-core", features = ["runtime"] }
 
 [features]
 default = [ "std" ]
