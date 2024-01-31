@@ -104,7 +104,7 @@ mod test {
 	use primitive_types::{H160, H256, U256};
 	use sp_io::hashing::keccak_256;
 
-	use crate::target_amb::{get_storage_root, get_storage_value};
+	use crate::storage_utils::{get_storage_root, get_storage_value};
 
 	#[test]
 	fn test_account_proof() {

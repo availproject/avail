@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::target_amb::MessageStatusEnum;
+use crate::storage_utils::MessageStatusEnum;
 use crate::verifier::Verifier;
 use frame_support::traits::{Currency, ExistenceRequirement, UnixTime};
 use frame_support::{pallet_prelude::*, PalletId};
@@ -14,7 +14,7 @@ mod benchmarking;
 #[cfg(test)]
 mod mock;
 mod state;
-mod target_amb;
+mod storage_utils;
 #[cfg(test)]
 mod tests;
 mod verifier;
@@ -52,7 +52,7 @@ pub mod pallet {
 	use crate::state::{
 		parse_rotate_output, parse_step_output, VerifiedRotate, VerifiedStep, VerifiedStepOutput,
 	};
-	use crate::target_amb::{get_storage_root, get_storage_value};
+	use crate::storage_utils::{get_storage_root, get_storage_value};
 	use crate::verifier::encode_packed;
 
 	use super::*;
