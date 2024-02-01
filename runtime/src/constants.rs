@@ -79,7 +79,7 @@ pub mod time {
 	///
 	/// <https://research.web3.foundation/en/latest/polkadot/block-production/Babe.html#-6.-practical-results>
 	#[cfg(not(feature = "fast-runtime"))]
-	pub const MILLISECS_PER_BLOCK: Moment = 20_000;
+	pub const MILLISECS_PER_BLOCK: Moment = 3_000;
 	#[cfg(feature = "fast-runtime")]
 	pub const MILLISECS_PER_BLOCK: Moment = 6_000;
 
@@ -95,7 +95,7 @@ pub mod time {
 	// NOTE: Currently it is not possible to change the epoch duration after the chain has started.
 	//       Attempting to do so will brick block production.
 	#[cfg(not(feature = "fast-runtime"))]
-	pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 4 * HOURS;
+	pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 2 * MINUTES;
 	#[cfg(feature = "fast-runtime")]
 	pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 5 * MINUTES;
 
@@ -243,8 +243,8 @@ pub mod staking {
 
 	#[cfg(not(feature = "fast-runtime"))]
 	parameter_types! {
-		pub const SessionsPerEra: sp_staking::SessionIndex = 6;
-		pub const BondingDuration: sp_staking::EraIndex = 28; // 28 days
+		pub const SessionsPerEra: sp_staking::SessionIndex = 2;
+		pub const BondingDuration: sp_staking::EraIndex = 2; // 28 days
 		pub const SlashDeferDuration: sp_staking::EraIndex = BondingDuration::get() - 1; // 27 Days
 	}
 
