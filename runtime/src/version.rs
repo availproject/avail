@@ -6,11 +6,11 @@ use crate::apis;
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	/// The identifier for the different Substrate runtimes.
-	spec_name: create_runtime_str!("avail-node"),
+	spec_name: create_runtime_str!("data-avail"),
 	/// The name of the implementation of the spec. This is of little
 	/// consequence for the node and serves only to differentiate code of
 	/// different implementation teams.
-	impl_name: create_runtime_str!("avail-node"),
+	impl_name: create_runtime_str!("data-avail"),
 	/// The version of the authorship interface. An authoring node will not
 	/// attempt to author blocks unless this is equal to its native runtime.
 	authoring_version: 11,
