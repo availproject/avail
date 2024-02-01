@@ -25,6 +25,7 @@ use sc_consensus::{
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{BlockOrigin, Error as ConsensusError};
+use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
 
 #[derive(Constructor)]
@@ -50,7 +51,7 @@ impl<BE, C, I: Clone> Clone for BlockImport<BE, C, I> {
 #[async_trait::async_trait]
 impl<B, BE, C, I> BlockImportT<B> for BlockImport<BE, C, I>
 where
-	B: BlockT<Extrinsic = OpaqueExtrinsic, Header = DaHeader>,
+	B: BlockT<Extrinsic = OpaqueExtrinsic, Header = DaHeader, Hash = H256>,
 	BE: Backend<B>,
 	I: BlockImportT<B> + Clone + Send + Sync,
 	I::Error: Into<ConsensusError>,
@@ -80,7 +81,7 @@ where
 
 		let extrinsics = block.body.as_ref().unwrap_or(&vec![]).clone();
 
-		let best_hash = self.client.info().best_hash;
+		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
 		let extension = &block.header.extension.clone();
 
 		let (block_number, import_block_hash) = (block.header.number, block.post_hash());
@@ -96,7 +97,7 @@ where
 
 		let success = build_data_root_and_extension(
 			self,
-			best_hash,
+			parent_hash,
 			import_block_hash,
 			extrinsics,
 			extension,
@@ -131,7 +132,7 @@ where
 
 fn build_data_root_and_extension<B, BE, C, I>(
 	block_import: &BlockImport<BE, C, I>,
-	best_hash: <B as BlockT>::Hash,
+	parent_hash: <B as BlockT>::Hash,
 	import_block_hash: <B as BlockT>::Hash,
 	extrinsics: Vec<OpaqueExtrinsic>,
 	extension: &avail_core::header::HeaderExtension,
@@ -161,13 +162,19 @@ where
 			let data_root = block_import
 				.client
 				.runtime_api()
-				.build_data_root(best_hash, extrinsics.clone())
+				.build_data_root(parent_hash, extrinsics.clone())
 				.map_err(|e| ClientImport(format!("Data root cannot be calculated: {e:?}")))?;
 
 			block_import
 				.client
 				.runtime_api()
-				.build_extension(best_hash, extrinsics, data_root, block_length, block_number)
+				.build_extension(
+					parent_hash,
+					extrinsics,
+					data_root,
+					block_length,
+					block_number,
+				)
 				.map_err(|e| ClientImport(format!("Build extension fails due to: {e:?}")))?
 		},
 		_ => {
@@ -193,14 +200,14 @@ where
 			let data_root = block_import
 				.client
 				.runtime_api()
-				.build_data_root_v2(best_hash, successful_extrinsics.clone())
+				.build_data_root_v2(parent_hash, successful_extrinsics.clone())
 				.map_err(|e| ClientImport(format!("Data root cannot be calculated: {e:?}")))?;
 
 			block_import
 				.client
 				.runtime_api()
 				.build_versioned_extension(
-					best_hash,
+					parent_hash,
 					successful_extrinsics,
 					data_root,
 					block_length,

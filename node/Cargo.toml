@@ -1,6 +1,6 @@
 [package]
 name = "data-avail"
-version = "1.9.1"
+version = "1.10.0"
 description = "Avail Node"
 authors = ["Anonymous"]
 homepage = "https://www.availproject.org/"
@@ -33,6 +33,7 @@ nomad-da-bridge = { path = "../pallets/bridges/nomad/da-bridge" }
 # 3rd-party
 codec = { package = "parity-scale-codec", version = "3" }
 clap = { version = "4.4.17", features = ["derive"], optional = true }
+clap-num = { version = "1.1.1", optional = true }
 jsonrpsee = { version = "0.16.2", features = ["server"] }
 futures = "0.3.21"
 serde = { version = "1.0.126", features = ["derive"] }
@@ -131,7 +132,7 @@ tempfile = "3.1.0"
 default = [ "cli" ]
 header_commitment_corruption = [ "da-runtime/header_commitment_corruption" ]
 fast-runtime = [ "da-runtime/fast-runtime" ]
-cli = [ "clap", "clap_complete", "frame-benchmarking-cli" ]
+cli = [ "clap", "clap-num", "clap_complete", "frame-benchmarking-cli" ]
 runtime-benchmarks = [
 	"da-control/runtime-benchmarks",
 	"da-runtime/runtime-benchmarks",
@@ -152,6 +153,3 @@ try-runtime = [
 	"nomad-updater-manager/try-runtime",
 	"try-runtime-cli/try-runtime",
 ]
-kate-rpc-metrics = [ "kate-rpc/metrics" ]
-
-
