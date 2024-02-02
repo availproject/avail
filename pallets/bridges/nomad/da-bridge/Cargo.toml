@@ -13,29 +13,29 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 # Our crates
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding", default-features = false, features = ["runtime"] }
-nomad-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-1.6", default-features = false, features = ["runtime"] }
+nomad-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-1.6", default-features = false }
 nomad-home = { path = "../home", default-features = false }
 
 #  Substrate 
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
-sp-std = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
 frame-system = { path = "../../../../pallets/system", default-features = false }
-frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0", default-features = false, optional = true }
+frame-benchmarking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, optional = true }
 
 # 3rd party
 hex-literal = { version = "0.3.4", optional = true }
 
 [dev-dependencies]
-nomad-base = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding" }
-nomad-merkle = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-and-padding" }
+nomad-base = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-1.6" }
+nomad-merkle = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-1.6" }
 nomad-updater-manager = { path = "../updater-manager" }
 
-sp-io = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0" }
+sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
 
 [features]
 default = [ "std" ]

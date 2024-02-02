@@ -26,10 +26,11 @@ use frame_support::{
 	traits::{ConstU16, ConstU32},
 	weights::{constants::BlockExecutionWeight, Weight},
 };
-use sp_runtime::{transaction_validity::TransactionPriority, Perbill, Permill};
+use sp_runtime::{transaction_validity::TransactionPriority, Perbill, Percent, Permill};
 use static_assertions::const_assert;
 
 use crate::BlockNumber;
+use crate::RuntimeHoldReason;
 
 /// cannot have validators higher than this count.
 pub type MaxAuthorities = ConstU32<100_000>;
@@ -259,10 +260,9 @@ pub mod staking {
 		pub const UnsignedPhase: u32 = EPOCH_DURATION_IN_SLOTS / 4;
 
 		pub const SignedRewardBase: Balance = AVL;
-		pub const SignedDepositBase: Balance = AVL;
 		pub const SignedDepositByte: Balance = CENTS;
-
-		pub BetterUnsignedThreshold: Perbill = Perbill::from_rational(1u32, 10_000);
+		pub const SignedFixedDeposit: Balance = AVL;
+		pub const SignedDepositIncreaseFactor: Percent = Percent::from_percent(10);
 
 		pub SolutionImprovementThreshold: Perbill = Perbill::from_rational(1u32, 10_000);
 		// miner configs		/// We prioritize im-online heartbeats over election solution submission.
@@ -287,11 +287,15 @@ pub mod staking {
 			.voters_count(5_000.into()).targets_count(1_250.into()).build();
 	}
 
-	pub type MaxNominatorRewardedPerValidator = ConstU32<256>;
+	pub type MaxControllersInDeprecationBatch = ConstU32<5900>;
+
+	// Note: this is not really correct as Max Nominators is (MaxExposurePageSize * page_count) but
+	// this is an unbounded number. We just set it to a reasonably high value, 1 full page
+	// of nominators.
+	pub type MaxNominators = ConstU32<256>;
+	pub type MaxExposurePageSize = ConstU32<256>;
 	pub type MaxUnlockingChunks = ConstU32<32>;
 	pub type HistoryDepth = ConstU32<84>;
-	pub type MaxNominators = ConstU32<1_024>;
-	pub type MaxValidators = ConstU32<32>;
 
 	// OnChain values are lower.
 	pub type MaxOnChainElectingVoters = ConstU32<1_024>;
@@ -341,6 +345,7 @@ pub mod preimage {
 		pub const PreimageBaseDeposit: Balance = 1 * AVL;
 		// One cent: $10,000 / MB
 		pub const PreimageByteDeposit: Balance = 1 * CENTS;
+		pub const PreimageHoldReason: RuntimeHoldReason = RuntimeHoldReason::Preimage(pallet_preimage::HoldReason::Preimage);
 	}
 }
 
