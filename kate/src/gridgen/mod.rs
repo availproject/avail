@@ -4,7 +4,7 @@ use crate::pmp::{
 	merlin::Transcript,
 	traits::Committer,
 };
-use avail_core::{ensure, AppExtrinsic, AppId, DataLookup};
+use avail_core::{ensure, AppExtrinsic, AppId, DataLookup, HeaderVersion};
 use codec::Encode;
 use core::{
 	cmp::{max, min},
@@ -73,6 +73,7 @@ impl EvaluationGrid {
 		max_width: usize,
 		max_height: usize,
 		rng_seed: Seed,
+		header_version: HeaderVersion,
 	) -> Result<Self, Error> {
 		// Group extrinsics by app id, also sorted by app id.
 		// Using a BTreeMap here will still iter in sorted order. Sweet!
@@ -89,7 +90,10 @@ impl EvaluationGrid {
 			.into_iter()
 			.map(|(id, datas)| {
 				let mut enc = datas.encode();
-				enc.push(PADDING_TAIL_VALUE); // TODO: remove 9797 padding stuff
+				match header_version {
+					HeaderVersion::V1 | HeaderVersion::V2 => enc.push(PADDING_TAIL_VALUE),
+					_ => (),
+				};
 				enc.chunks(DATA_CHUNK_SIZE)
 					.map(pad_to_bls_scalar)
 					.collect::<Result<Vec<_>, _>>()
