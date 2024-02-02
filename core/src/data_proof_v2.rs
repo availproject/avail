@@ -1,10 +1,10 @@
 #[cfg(feature = "runtime")]
+use crate::keccak256_concat;
+#[cfg(feature = "runtime")]
 use binary_merkle_tree::MerkleProof;
 use codec::{Decode, Encode};
 use ethabi::{encode, Token};
 use frame_support::BoundedVec;
-#[cfg(feature = "runtime")]
-use nomad_core::keccak256_concat;
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
