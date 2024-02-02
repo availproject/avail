@@ -52,6 +52,9 @@ pub use app_extrinsic::*;
 pub mod constants;
 pub use constants::*;
 
+pub mod header_version;
+pub use header_version::HeaderVersion;
+
 #[cfg(feature = "runtime")]
 pub mod bench_randomness;
 

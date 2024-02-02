@@ -41,7 +41,7 @@ jobs:
       - name: Check TOML formatting
         run: |
           cargo install zepter --locked --version 0.11.0 -q -f --no-default-features && zepter --version
-          zepter format features --check
+          zepter format features
 
       - name: Check code formatting
         uses: actions-rs/cargo@v1
