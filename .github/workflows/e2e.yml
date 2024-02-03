@@ -35,6 +35,7 @@ jobs:
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source "$HOME/.cargo/env"
+          rustup target add wasm32-unknown-unknown
           rustup show
 
       - name: SCCache
@@ -80,6 +81,7 @@ jobs:
           run: |
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             source "$HOME/.cargo/env"
+            rustup target add wasm32-unknown-unknown
             rustup show
   
         - name: SCCache
@@ -130,6 +132,7 @@ jobs:
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source "$HOME/.cargo/env"
+          rustup target add wasm32-unknown-unknown
           rustup show
 
       - name: SCCache
