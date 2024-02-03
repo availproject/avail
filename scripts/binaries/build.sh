@@ -42,5 +42,5 @@ if  [[ "$ZIP" ]]; then
     fi
 
     cd ./output/$ARCH/$DISTRO
-    tar -czf ./../../../output/zips/${arch}-${DISTRO}-data-avail.tar.gz data-avail
+    tar -czf ./../../../output/zips/${arch}-${DISTRO}-avail-node.tar.gz avail-node
 fi

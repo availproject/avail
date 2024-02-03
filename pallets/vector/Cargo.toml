@@ -1,5 +1,5 @@
 [package]
-name = "pallet-succinct"
+name = "pallet-vector"
 version = "1.0.0"
 edition = "2021"
 

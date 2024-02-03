@@ -7,7 +7,7 @@ use sp_runtime::{
 	AccountId32, BuildStorage,
 };
 
-use crate as succinct_bridge;
+use crate as vector_bridge;
 
 type Balance = u128;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -18,7 +18,7 @@ frame_support::construct_runtime!(
 		System: frame_system,
 		Timestamp: pallet_timestamp,
 		Balances: pallet_balances,
-		Bridge: succinct_bridge,
+		Bridge: vector_bridge,
 	}
 );
 
@@ -223,7 +223,7 @@ parameter_types! {
 
 }
 
-impl succinct_bridge::Config for Test {
+impl vector_bridge::Config for Test {
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
@@ -238,7 +238,7 @@ impl succinct_bridge::Config for Test {
 	type AvailDomain = ConstU32<1>;
 }
 
-/// Create new externalities for `Succinct` module tests.
+/// Create new externalities for `Vector` module tests.
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = RuntimeGenesisConfig::default()
 		.system
@@ -251,7 +251,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.assimilate_storage(&mut t)
 	.unwrap();
 
-	succinct_bridge::GenesisConfig::<Test> {
+	vector_bridge::GenesisConfig::<Test> {
 		slots_per_period: 8192,
 		finality_threshold: 461,
 		whitelisted_domains: vec![2],

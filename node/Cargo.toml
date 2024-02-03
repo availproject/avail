@@ -1,5 +1,5 @@
 [package]
-name = "data-avail"
+name = "avail-node"
 version = "1.10.0"
 description = "Avail Node"
 authors = ["Anonymous"]
@@ -14,7 +14,7 @@ build = "build.rs"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [[bin]]
-name = "data-avail"
+name = "avail-node"
 
 [dependencies]
 avail-base = { path = "../base" }

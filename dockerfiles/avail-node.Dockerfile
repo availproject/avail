@@ -13,8 +13,8 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rust_install.sh 
 
 # This builds the binary.
 RUN $HOME/.cargo/bin/cargo build --locked --release
-RUN cp target/release/data-avail /bin/
+RUN cp target/release/avail-node /bin/
 
 VOLUME ["/output"]
-ENTRYPOINT ["/bin/data-avail"]
+ENTRYPOINT ["/bin/avail-node"]
 CMD ["--chain=goldberg", "--name=MyAvailNode", "-d=/output/data", "--rpc-methods=unsafe", "--unsafe-rpc-external", "--rpc-cors=all"]

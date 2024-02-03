@@ -249,10 +249,10 @@ parameter_types! {
 }}"#.as_bytes().to_vec();
 }
 
-impl pallet_succinct::Config for Runtime {
+impl pallet_vector::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = weights::pallet_succinct::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_vector::WeightInfo<Runtime>;
 	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
 	type Currency = Balances;
 	type StepVerificationKey = StepVk;
@@ -1053,7 +1053,7 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 		metrics.borrow_mut().total_extrinsics += 1;
 
 		match call {
-			RuntimeCall::Succinct(pallet_succinct::Call::send_message {
+			RuntimeCall::Vector(pallet_vector::Call::send_message {
 				message_type,
 				to,
 				domain,

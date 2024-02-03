@@ -18,8 +18,8 @@
 
 use std::sync::Arc;
 
+use avail_node::chains;
 use da_runtime::Block;
-use data_avail::chains;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use sc_cli::{Result, SubstrateCli};
 use sc_service::PartialComponents;

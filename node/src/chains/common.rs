@@ -115,7 +115,7 @@ pub fn runtime_genesis_config(
 		"technicalCommittee": {
 			"members": technical_committee,
 		},
-		"succinct": {
+		"vector": {
 			"slotsPerPeriod": SLOTS_PER_PERIOD,
 			"finalityThreshold": FINALITY_THRESHOLD,
 			"broadcasterDomain": BROADCASTER_DOMAIN,

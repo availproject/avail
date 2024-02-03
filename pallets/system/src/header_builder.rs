@@ -24,7 +24,7 @@ pub mod da {
 	pub type Hash = sp_core::H256;
 	pub type BlockNumber = u32;
 
-	/// Data-Avail Header builder.
+	/// avail-node Header builder.
 	pub struct HeaderExtensionBuilder<T: Config>(PhantomData<T>);
 
 	impl<T: Config> super::HeaderExtensionBuilder for HeaderExtensionBuilder<T> {
