@@ -36,22 +36,30 @@ pub mod pallet {
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
-		use super::DefaultConfig;
+		use super::*;
+		use frame_support::derive_impl;
 
 		/// Provides a viable default config that can be used with
 		/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
 		/// based on this one.
 		pub struct TestDefaultConfig;
 
+		#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig, no_aggregated_types)]
+		impl frame_system::DefaultConfig for TestDefaultConfig {}
+
 		#[frame_support::register_default_impl(TestDefaultConfig)]
 		impl DefaultConfig for TestDefaultConfig {
 			type MaxMessageBodyBytes = frame_support::traits::ConstU32<2048>;
 			type WeightInfo = ();
+			#[inject_runtime_type]
+			type RuntimeEvent = ();
 		}
 	}
 
 	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config + nomad_updater_manager::Config {
+		/// Pallet Event
+		#[pallet::no_default_bounds]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Max allowed message body size

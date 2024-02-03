@@ -53,7 +53,9 @@ pub mod avail {
 	pub type PairSigner = subxt::tx::PairSigner<AvailConfig, Pair>;
 
 	pub type RuntimeCall = api::runtime_types::da_runtime::RuntimeCall;
-	pub type Bounded = api::runtime_types::frame_support::traits::preimages::Bounded<RuntimeCall>;
+	pub type BlakeTwo256 = api::runtime_types::sp_runtime::traits::BlakeTwo256;
+	pub type Bounded =
+		api::runtime_types::frame_support::traits::preimages::Bounded<RuntimeCall, BlakeTwo256>;
 
 	pub const AVL: u128 = 1_000_000_000_000_000_000;
 

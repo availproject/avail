@@ -27,7 +27,7 @@ async fn main() -> Result<()> {
 	// Transfer and wait finalized
 	let call = api::tx()
 		.balances()
-		.transfer(MultiAddress::Id(bob.account_id().clone()), 2);
+		.transfer_keep_alive(MultiAddress::Id(bob.account_id().clone()), 2);
 	let _ = tx_send_in_finalized!(&client, &call, &alice).await?;
 
 	Ok(())

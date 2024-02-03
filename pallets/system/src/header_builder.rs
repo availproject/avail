@@ -1,25 +1,17 @@
-use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic};
-use codec::{Decode, Encode};
+use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, HeaderVersion};
 use frame_support::traits::Randomness;
 pub use kate::{
 	metrics::{IgnoreMetrics, Metrics},
 	Seed,
 };
-use scale_info::TypeInfo;
 use sp_core::H256;
 #[cfg(feature = "std")]
 use sp_runtime::SaturatedConversion;
 use sp_runtime::{generic::Digest, traits::Hash};
-use sp_runtime_interface::{pass_by::PassByCodec, runtime_interface};
+use sp_runtime_interface::runtime_interface;
 use sp_std::vec::Vec;
 
 use crate::{limits::BlockLength, Config, LOG_TARGET};
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq, PassByCodec, Encode, Decode, TypeInfo)]
-pub enum HeaderVersion {
-	V1, // Current one
-	V2, // To be used after runtime upgrade (new data_root)
-}
 
 pub mod da {
 	use core::marker::PhantomData;
@@ -121,7 +113,7 @@ pub fn build_extension(
 	version: HeaderVersion,
 ) -> HeaderExtension {
 	use avail_base::metrics::avail::HeaderExtensionBuilderMetrics;
-	use avail_core::header::extension::{v1, v2};
+	use avail_core::header::extension::{v1, v2, v3};
 	use kate::gridgen::AsBytes;
 	use once_cell::sync::Lazy;
 
@@ -139,6 +131,7 @@ pub fn build_extension(
 		block_length.cols.0.saturated_into(), // even if we run on a u16 target this is fine
 		block_length.rows.0.saturated_into(),
 		seed,
+		version,
 	)
 	.expect("Grid construction cannot fail");
 
@@ -198,6 +191,21 @@ pub fn build_extension(
 			);
 
 			v2::HeaderExtension {
+				app_lookup,
+				commitment: kate,
+			}
+			.into()
+		},
+		HeaderVersion::V3 => {
+			use avail_core::kate_commitment::v3::KateCommitment;
+			let kate = KateCommitment::new(rows, cols, data_root, commitment);
+
+			// Total Execution Time Metrics
+			HeaderExtensionBuilderMetrics::observe_total_execution_time(
+				build_extension_start.elapsed(),
+			);
+
+			v3::HeaderExtension {
 				app_lookup,
 				commitment: kate,
 			}

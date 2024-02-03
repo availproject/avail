@@ -81,7 +81,7 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	/// Storage: `System::Digest` (r:1 w:1)
-	/// Proof: `System::Dige st` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Proof: `System::Digest` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// Storage: UNKNOWN KEY `0x3a636f6465` (r:0 w:1)
 	/// Proof: UNKNOWN KEY `0x3a636f6465` (r:0 w:1)
 	fn set_code() -> Weight {

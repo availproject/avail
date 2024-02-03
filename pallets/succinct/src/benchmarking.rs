@@ -5,7 +5,7 @@ use crate::{
 use avail_core::data_proof_v2::BOUNDED_DATA_MAX_LENGTH;
 use ethabi::{encode, Token};
 use frame_benchmarking::{
-	impl_benchmark_test_suite, v2::benchmarks, vec, whitelisted_caller, BenchmarkError, Vec,
+	impl_benchmark_test_suite, v2::benchmarks, whitelisted_caller, BenchmarkError,
 };
 use frame_support::traits::DefensiveTruncateFrom;
 use frame_support::{traits::Currency, BoundedVec};
@@ -17,10 +17,11 @@ use hex_literal::hex;
 use sp_core::Get;
 use sp_core::{H256, U256};
 use sp_runtime::traits::Bounded;
+use sp_std::{vec, vec::Vec};
 
 const ACCOUNT1: [u8; 32] = [2u8; 32];
 const STEP_FN_ID: H256 = H256(hex!(
-	"a511bd86a30fa6db581480ac7591d4271c845411ac4e1ad93797d09a57b60522"
+	"af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
 ));
 
 #[benchmarks(where
