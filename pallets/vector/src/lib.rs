@@ -36,8 +36,8 @@ pub mod pallet {
 	use ark_std::{vec, vec::Vec};
 	use ethabi::Token;
 	use ethabi::Token::Uint;
-	use frame_support::dispatch::{GetDispatchInfo, UnfilteredDispatchable};
-	use frame_support::traits::LockableCurrency;
+	use frame_support::dispatch::GetDispatchInfo;
+	use frame_support::traits::{LockableCurrency, UnfilteredDispatchable};
 	use frame_support::{pallet_prelude::ValueQuery, DefaultNoBound};
 	use frame_system::pallet_prelude::*;
 	use frame_system::submitted_data::Message;

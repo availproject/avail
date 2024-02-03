@@ -4,6 +4,7 @@ mod definitions;
 use common::*;
 pub use definitions::*;
 
+use serde_json::Value;
 #[cfg(test)]
 use sp_runtime::BuildStorage;
 
@@ -24,25 +25,23 @@ pub mod goldberg {
 
 pub mod dev {
 	use super::*;
-	use da_runtime::RuntimeGenesisConfig;
+	use da_runtime::wasm_binary_unwrap;
 	use sc_chain_spec::ChainType;
 
 	pub fn chain_spec() -> ChainSpec {
-		ChainSpec::from_genesis(
-			"Avail Development Network",
-			"avail_development_network",
-			ChainType::Development,
-			genesis_constructor,
-			vec![],
-			Some(super::to_telemetry_endpoint(TELEMETRY_URL.into())),
-			PROTOCOL_ID,
-			None,
-			chain_properties(),
-			Default::default(),
-		)
+		ChainSpec::builder(wasm_binary_unwrap(), Default::default())
+			.with_name("Avail Development Network")
+			.with_id("avail_development_network")
+			.with_chain_type(ChainType::Development)
+			.with_genesis_config_patch(genesis_constructor())
+			.with_telemetry_endpoints(super::to_telemetry_endpoint(TELEMETRY_URL.into()))
+			.with_protocol_id(PROTOCOL_ID)
+			.with_properties(chain_properties())
+			.with_boot_nodes(vec![])
+			.build()
 	}
 
-	pub fn genesis_constructor() -> RuntimeGenesisConfig {
+	pub fn genesis_constructor() -> Value {
 		let alice = AuthorityKeys::from_seed("Alice");
 		let sudo = alice.controller.clone();
 
@@ -57,25 +56,23 @@ pub mod dev {
 
 pub mod dev_tri {
 	use super::*;
-	use da_runtime::RuntimeGenesisConfig;
+	use da_runtime::wasm_binary_unwrap;
 	use sc_chain_spec::ChainType;
 
 	pub fn chain_spec() -> ChainSpec {
-		ChainSpec::from_genesis(
-			"Avail Tri Development Network",
-			"avail_tri_development_network",
-			ChainType::Development,
-			genesis_constructor,
-			vec![],
-			Some(super::to_telemetry_endpoint(TELEMETRY_URL.into())),
-			PROTOCOL_ID,
-			None,
-			chain_properties(),
-			Default::default(),
-		)
+		ChainSpec::builder(wasm_binary_unwrap(), Default::default())
+			.with_name("Avail Tri Development Network")
+			.with_id("avail_tri_development_network")
+			.with_chain_type(ChainType::Development)
+			.with_genesis_config_patch(genesis_constructor())
+			.with_telemetry_endpoints(super::to_telemetry_endpoint(TELEMETRY_URL.into()))
+			.with_protocol_id(PROTOCOL_ID)
+			.with_properties(chain_properties())
+			.with_boot_nodes(vec![])
+			.build()
 	}
 
-	pub fn genesis_constructor() -> RuntimeGenesisConfig {
+	pub fn genesis_constructor() -> Value {
 		let alice = AuthorityKeys::from_seed("Alice");
 		let bob = AuthorityKeys::from_seed("Bob");
 		let charlie = AuthorityKeys::from_seed("Charlie");

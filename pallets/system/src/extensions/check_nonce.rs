@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.
+// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@ use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchInfo;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{DispatchInfoOf, Dispatchable, One, SignedExtension},
+	traits::{DispatchInfoOf, Dispatchable, One, SignedExtension, Zero},
 	transaction_validity::{
 		InvalidTransaction, TransactionLongevity, TransactionValidity, TransactionValidityError,
 		ValidTransaction,
@@ -82,6 +82,10 @@ where
 		_len: usize,
 	) -> Result<(), TransactionValidityError> {
 		let mut account = crate::Account::<T>::get(who);
+		if account.providers.is_zero() && account.sufficients.is_zero() {
+			// Nonce storage not paid for
+			return Err(InvalidTransaction::Payment.into());
+		}
 		if self.0 != account.nonce {
 			return Err(if self.0 < account.nonce {
 				InvalidTransaction::Stale
@@ -104,6 +108,10 @@ where
 	) -> TransactionValidity {
 		// check index
 		let account = crate::Account::<T>::get(who);
+		if account.providers.is_zero() && account.sufficients.is_zero() {
+			// Nonce storage not paid for
+			return InvalidTransaction::Payment.into();
+		}
 		if self.0 < account.nonce {
 			return InvalidTransaction::Stale.into();
 		}
@@ -140,7 +148,7 @@ mod tests {
 				crate::AccountInfo {
 					nonce: 1,
 					consumers: 0,
-					providers: 0,
+					providers: 1,
 					sufficients: 0,
 					data: 0,
 				},
@@ -165,6 +173,49 @@ mod tests {
 				CheckNonce::<Test>(5).pre_dispatch(&1, CALL, &info, len),
 				InvalidTransaction::Future
 			);
+		})
+	}
+
+	#[test]
+	fn signed_ext_check_nonce_requires_provider() {
+		new_test_ext().execute_with(|| {
+			crate::Account::<Test>::insert(
+				2,
+				crate::AccountInfo {
+					nonce: 1,
+					consumers: 0,
+					providers: 1,
+					sufficients: 0,
+					data: 0,
+				},
+			);
+			crate::Account::<Test>::insert(
+				3,
+				crate::AccountInfo {
+					nonce: 1,
+					consumers: 0,
+					providers: 0,
+					sufficients: 1,
+					data: 0,
+				},
+			);
+			let info = DispatchInfo::default();
+			let len = 0_usize;
+			// Both providers and sufficients zero
+			assert_noop!(
+				CheckNonce::<Test>(1).validate(&1, CALL, &info, len),
+				InvalidTransaction::Payment
+			);
+			assert_noop!(
+				CheckNonce::<Test>(1).pre_dispatch(&1, CALL, &info, len),
+				InvalidTransaction::Payment
+			);
+			// Non-zero providers
+			assert_ok!(CheckNonce::<Test>(1).validate(&2, CALL, &info, len));
+			assert_ok!(CheckNonce::<Test>(1).pre_dispatch(&2, CALL, &info, len));
+			// Non-zero sufficients
+			assert_ok!(CheckNonce::<Test>(1).validate(&3, CALL, &info, len));
+			assert_ok!(CheckNonce::<Test>(1).pre_dispatch(&3, CALL, &info, len));
 		})
 	}
 }

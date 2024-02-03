@@ -171,7 +171,7 @@ fn get_valid_amb_message() -> Message {
 }
 
 #[test]
-fn test_full_fill_step_call_proof_not_valid() {
+fn test_fulfill_step_call_proof_not_valid() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
 
@@ -194,7 +194,7 @@ fn test_full_fill_step_call_proof_not_valid() {
 }
 
 #[test]
-fn test_full_fill_step_call_not_valid_function_id() {
+fn test_fulfill_step_call_not_valid_function_id() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
 
@@ -219,7 +219,7 @@ fn test_full_fill_step_call_not_valid_function_id() {
 }
 
 #[test]
-fn test_full_fill_step_call_finality_not_met() {
+fn test_fulfill_step_call_finality_not_met() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
 		SyncCommitteePoseidons::<Test>::insert(
@@ -536,7 +536,7 @@ fn test_execute_message_with_unsupported_domain() {
 }
 
 #[test]
-fn test_full_fill_step_call() {
+fn test_fulfill_step_call() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
 
@@ -598,7 +598,7 @@ fn test_full_fill_step_call() {
 }
 
 #[test]
-fn test_full_fill_step_call_slot_behind_head() {
+fn test_fulfill_step_call_slot_behind_head() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
 		SyncCommitteePoseidons::<Test>::insert(
@@ -630,7 +630,7 @@ fn test_full_fill_step_call_slot_behind_head() {
 }
 
 #[test]
-fn test_full_fill_rotate_call() {
+fn test_fulfill_rotate_call() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
 

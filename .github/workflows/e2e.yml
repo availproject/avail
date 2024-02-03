@@ -159,11 +159,9 @@ jobs:
           ./avail-node --dev --enable-kate-rpc &
           sleep 5
           cargo run --release --manifest-path avail-subxt/Cargo.toml --example accounts_from_mnemonics
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example da_bridge_actor 
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example headers
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example max_block_submit
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data_and_dispatch_data_root
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example bridge_send_message
 

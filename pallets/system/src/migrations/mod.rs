@@ -20,8 +20,8 @@
 use codec::{Decode, Encode, FullCodec};
 use frame_support::{
 	pallet_prelude::ValueQuery, traits::PalletInfoAccess, weights::Weight, Blake2_128Concat,
-	RuntimeDebug,
 };
+use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 
 use crate::{Config, Pallet};

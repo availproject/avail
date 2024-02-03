@@ -1,10 +1,12 @@
 use crate::version::VERSION;
-use avail_core::{currency::Balance, header::HeaderExtension, OpaqueExtrinsic};
+use crate::RuntimeGenesisConfig;
+use avail_core::{currency::Balance, header::HeaderExtension, HeaderVersion, OpaqueExtrinsic};
 use frame_support::{
+	genesis_builder_helper::{build_config, create_default_config},
 	traits::{KeyOwnerProofSystem, Randomness},
 	weights::Weight,
 };
-use frame_system::{limits::BlockLength, HeaderVersion};
+use frame_system::limits::BlockLength;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
@@ -495,7 +497,7 @@ impl_runtime_apis! {
 		) {
 			use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
-			use crate::{list_benchmarks, AllPalletsWithSystem };
+			use crate::{AllPalletsWithSystem, list_benchmarks};
 
 			// Trying to add benchmarks directly to the Session Pallet caused cyclic dependency
 			// issues. To get around that, we separated the Session benchmarks into its own crate,
@@ -514,7 +516,8 @@ impl_runtime_apis! {
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch,  TrackedStorageKey};
+			use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch};
+			use sp_storage::TrackedStorageKey;
 			use crate::{add_benchmarks, Treasury, AllPalletsWithSystem};
 
 			// Trying to add benchmarks directly to the Session Pallet caused cyclic dependency
@@ -537,6 +540,16 @@ impl_runtime_apis! {
 			let params = (&config, &whitelist);
 			add_benchmarks!(params, batches);
 			Ok(batches)
+		}
+	}
+
+	impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
+		fn create_default_config() -> Vec<u8> {
+			create_default_config::<RuntimeGenesisConfig>()
+		}
+
+		fn build_config(config: Vec<u8>) -> sp_genesis_builder::Result {
+			build_config::<RuntimeGenesisConfig>(config)
 		}
 	}
 }

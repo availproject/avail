@@ -31,15 +31,16 @@ use sc_client_api::BlockBackend;
 use sc_consensus_babe::{self, SlotProportion};
 pub use sc_executor::NativeElseWasmExecutor;
 use sc_network::{Event, NetworkEventStream, NetworkService};
-use sc_network_common::sync::warp::WarpSyncParams;
 use sc_network_sync::SyncingService;
-use sc_service::{error::Error as ServiceError, Configuration, RpcHandlers, TaskManager};
+use sc_service::{
+	error::Error as ServiceError, Configuration, RpcHandlers, TaskManager, WarpSyncParams,
+};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_api::ProvideRuntimeApi;
 use sp_core::crypto::Pair;
 use sp_runtime::{generic::Era, traits::Block as BlockT, SaturatedConversion};
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 use substrate_prometheus_endpoint::{PrometheusError, Registry};
 
 use crate::rpc as node_rpc;
@@ -64,6 +65,10 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 		da_runtime::native_version()
 	}
 }
+
+/// The minimum period of blocks on which justifications will be
+/// imported and generated.
+const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 
 /// The full client type definition.
 pub type FullClient =
@@ -174,7 +179,7 @@ pub fn new_partial(
 		FullClient,
 		FullBackend,
 		FullSelectChain,
-		sc_consensus::DefaultImportQueue<Block, FullClient>,
+		sc_consensus::DefaultImportQueue<Block>,
 		sc_transaction_pool::FullPool<Block, FullClient>,
 		(
 			impl Fn(
@@ -232,6 +237,7 @@ pub fn new_partial(
 
 	let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
 		client.clone(),
+		GRANDPA_JUSTIFICATION_PERIOD,
 		&(client.clone() as Arc<_>),
 		select_chain.clone(),
 		telemetry.as_ref().map(|x| x.handle()),
@@ -362,6 +368,7 @@ pub struct NewFullBase {
 }
 
 /// Creates a full service from the configuration.
+#[allow(clippy::too_many_arguments)]
 pub fn new_full_base(
 	config: Configuration,
 	disable_hardware_benchmarks: bool,
@@ -412,9 +419,9 @@ pub fn new_full_base(
 			.expect("Genesis block exists; qed"),
 		&config.chain_spec,
 	);
-	net_config.add_notification_protocol(sc_consensus_grandpa::grandpa_peers_set_config(
-		grandpa_protocol_name.clone(),
-	));
+	let (grandpa_protocol_config, grandpa_notification_service) =
+		sc_consensus_grandpa::grandpa_peers_set_config(grandpa_protocol_name.clone());
+	net_config.add_notification_protocol(grandpa_protocol_config);
 	let warp_sync = Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
 		backend.clone(),
 		import_setup.1.shared_authority_set().clone(),
@@ -431,6 +438,7 @@ pub fn new_full_base(
 			import_queue,
 			block_announce_validator_builder: None,
 			warp_sync_params: Some(WarpSyncParams::WithProvider(warp_sync)),
+			block_relay: None,
 		})?;
 
 	let role = config.role.clone();
@@ -575,7 +583,7 @@ pub fn new_full_base(
 
 	let grandpa_config = sc_consensus_grandpa::Config {
 		gossip_duration: std::time::Duration::from_millis(333),
-		justification_period: 512,
+		justification_generation_period: GRANDPA_JUSTIFICATION_PERIOD,
 		name: Some(name),
 		observer_enabled: false,
 		keystore,
@@ -595,6 +603,7 @@ pub fn new_full_base(
 			config: grandpa_config,
 			link: grandpa_link,
 			network: network.clone(),
+			notification_service: grandpa_notification_service,
 			sync: Arc::new(sync_service.clone()),
 			telemetry: telemetry.as_ref().map(|x| x.handle()),
 			voting_rule: sc_consensus_grandpa::VotingRulesBuilder::default().build(),
@@ -646,7 +655,7 @@ pub fn new_full_base(
 
 /// Builds a new service for a full client.
 pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceError> {
-	let database_source = config.database.clone();
+	let database_path = config.database.path().map(Path::to_path_buf);
 	let task_manager = new_full_base(
 		config,
 		cli.no_hardware_benchmarks,
@@ -660,12 +669,14 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 	)
 	.map(|NewFullBase { task_manager, .. }| task_manager)?;
 
-	sc_storage_monitor::StorageMonitorService::try_spawn(
-		cli.storage_monitor,
-		database_source,
-		&task_manager.spawn_essential_handle(),
-	)
-	.map_err(|e| ServiceError::Application(e.into()))?;
+	if let Some(database_path) = database_path {
+		sc_storage_monitor::StorageMonitorService::try_spawn(
+			cli.storage_monitor,
+			database_path,
+			&task_manager.spawn_essential_handle(),
+		)
+		.map_err(|e| ServiceError::Application(e.into()))?;
+	}
 
 	Ok(task_manager)
 }

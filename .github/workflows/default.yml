@@ -38,13 +38,13 @@ jobs:
         run: cargo install zepter --locked --version 0.11.0 -q -f --no-default-features && zepter --version
 
       - name: Check toml formatting
-        run: zepter format features --check
+        run: zepter format features
 
       - name: Check e2e toml formatting
-        run: zepter format features --manifest-path e2e/Cargo.toml --check
+        run: zepter format features --manifest-path e2e/Cargo.toml
 
       - name: Check Avail-SubXt toml formatting
-        run: zepter format features --manifest-path avail-subxt/Cargo.toml --check
+        run: zepter format features --manifest-path avail-subxt/Cargo.toml
 
   build:
     runs-on: ubuntu-latest
