@@ -2,12 +2,16 @@
 mod multiplier_tests {
 	use crate::impls::*;
 	use crate::*;
-	use avail_core::currency::{CENTS, MILLICENTS};
+	use avail_core::currency::{CENTS, MICRO_AVL, MILLICENTS};
 	use frame_support::{
-		dispatch::DispatchClass,
+		dispatch::{DispatchClass, DispatchInfo, Pays},
+		traits::OnFinalize,
 		weights::{Weight, WeightToFee},
 	};
-	use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
+	use pallet_transaction_payment::{
+		LengthFeeAdjustment, Multiplier, NextFeeMultiplier, NextLengthMultiplier,
+		TargetedFeeAdjustment,
+	};
 	use sp_runtime::{
 		assert_eq_error_rate,
 		traits::{Convert, One, Zero},
@@ -45,6 +49,18 @@ mod multiplier_tests {
 		>::convert(fm)
 	}
 
+	// update based on the runtime impl of LengthMultiplier
+	#[cfg(not(feature = "fast-runtime"))]
+	fn length_multiplier_update(lm: Multiplier) -> Multiplier {
+		LengthFeeAdjustment::<
+			Runtime,
+			TargetBlockFullness,
+			LenAdjustmentVariable,
+			MinLenMultiplier,
+			MaximumMultiplier,
+		>::convert(lm)
+	}
+
 	// update based on reference impl.
 	fn truth_value_update(block_weight: Weight, previous: Multiplier) -> Multiplier {
 		let accuracy = Multiplier::accuracy() as f64;
@@ -79,6 +95,20 @@ mod multiplier_tests {
 			.into();
 		t.execute_with(|| {
 			System::set_block_consumed_resources(w, 0);
+			assertions()
+		});
+	}
+
+	fn run_with_system_length<F>(l: usize, assertions: F)
+	where
+		F: Fn() -> (),
+	{
+		let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::<Runtime>::default()
+			.build_storage()
+			.unwrap()
+			.into();
+		t.execute_with(|| {
+			System::set_block_consumed_resources(0.into(), l);
 			assertions()
 		});
 	}
@@ -181,6 +211,28 @@ mod multiplier_tests {
 		})
 	}
 
+	#[cfg(not(feature = "fast-runtime"))]
+	#[test]
+	fn min_lm_change_per_epoch() {
+		sp_io::TestExternalities::default().execute_with(|| {
+			let max_padded_length: usize =
+				(*System::block_length().max.get(DispatchClass::Mandatory))
+					.try_into()
+					.unwrap();
+			run_with_system_length(max_padded_length, || {
+				let mut lm = Multiplier::one();
+				// We expect to double the multiplier within an epoch if we sustain the length_congestion on Avail
+				for _ in 0..EPOCH_DURATION_IN_SLOTS {
+					let next = length_multiplier_update(lm);
+					assert!(next > lm);
+					lm = next;
+				}
+
+				assert!(lm > Multiplier::from_u32(2), "Invalid lm ={}", lm);
+			})
+		});
+	}
+
 	#[test]
 	#[ignore]
 	fn congested_chain_simulation() {
@@ -225,6 +277,118 @@ mod multiplier_tests {
 					adjusted_fee / DOLLARS,
 				);
 			}
+		});
+	}
+
+	#[test]
+	#[ignore]
+	fn weight_congested_chain_simulation() {
+		// `cargo test weight_congested_chain_simulation -- --nocapture` to get some insight.
+		sp_io::TestExternalities::default().execute_with(|| {
+			// By default weight multiplier will be 1
+			let wm = TransactionPayment::next_fee_multiplier();
+			assert_eq!(wm, Multiplier::one());
+			let block_weight = BlockWeights::get()
+				.get(DispatchClass::Normal)
+				.max_total
+				.unwrap() - Weight::from_parts(100, 0);
+
+			let tx_len: usize = 512 * 1024; // 512 Kb data
+			let da_submission_weight = da_control::weight_helper::submit_data::<Runtime>(tx_len);
+			let dispatch_info = DispatchInfo {
+				weight: da_submission_weight.0,
+				class: da_submission_weight.1,
+				pays_fee: Pays::Yes,
+			};
+			let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
+			println!(
+				"Iteration: {}, wm: {:?},  Fee: {} units / {} MICRO_AVL",
+				0,
+				wm,
+				tx_fee,
+				tx_fee / MICRO_AVL,
+			);
+			run_with_system_weight(block_weight, || {
+				let mut iterations: u32 = 0;
+				let mut day_count: u32 = 0;
+				loop {
+					iterations += 1;
+					TransactionPayment::on_finalize(System::block_number());
+					let wm = TransactionPayment::next_fee_multiplier();
+					// Neutralise the length multiplier effect
+					NextLengthMultiplier::<Runtime>::put(Multiplier::one());
+					let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
+					if iterations % EPOCH_DURATION_IN_SLOTS == 0 {
+						day_count += 1;
+						println!(
+							"Iteration: {}, wm: {:?},  Fee: {} units / {} MICRO_AVL",
+							day_count,
+							wm,
+							tx_fee,
+							tx_fee / MICRO_AVL,
+						);
+					}
+					if day_count == 7u32 {
+						break;
+					}
+				}
+			});
+		});
+	}
+
+	#[test]
+	#[ignore]
+	fn length_congested_chain_simulation() {
+		// `cargo test length_congested_chain_simulation -- --nocapture` to get some insight.
+		sp_io::TestExternalities::default().execute_with(|| {
+			// By default length multiplier will be 1
+			let lm = TransactionPayment::next_length_multiplier();
+			assert_eq!(lm, Multiplier::one());
+			let max_padded_length: usize =
+				(*System::block_length().max.get(DispatchClass::Mandatory))
+					.try_into()
+					.unwrap();
+
+			let tx_len: usize = 512 * 1024; // 512 Kb data
+			let da_submission_weight = da_control::weight_helper::submit_data::<Runtime>(tx_len);
+			let dispatch_info = DispatchInfo {
+				weight: da_submission_weight.0,
+				class: da_submission_weight.1,
+				pays_fee: Pays::Yes,
+			};
+			let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
+			println!(
+				"Epoch: {}, lm: {:?},  Fee: {} units / {} MICRO_AVL",
+				0,
+				lm,
+				tx_fee,
+				tx_fee / MICRO_AVL,
+			);
+			run_with_system_length(max_padded_length, || {
+				let mut iterations: u32 = 0;
+				let mut day_count: u32 = 0;
+				loop {
+					iterations += 1;
+					TransactionPayment::on_finalize(System::block_number());
+					let lm = TransactionPayment::next_length_multiplier();
+					// Neutralise the weight multiplier effect
+					NextFeeMultiplier::<Runtime>::put(Multiplier::one());
+					let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
+					if iterations % EPOCH_DURATION_IN_SLOTS == 0 {
+						day_count += 1;
+						println!(
+							"Epoch: {}, lm: {:?},  Fee: {} units / {} MICRO_AVL",
+							day_count,
+							lm,
+							tx_fee,
+							tx_fee / MICRO_AVL,
+						);
+					}
+					if day_count == 7u32 {
+						break;
+					}
+				}
+			});
 		});
 	}
 

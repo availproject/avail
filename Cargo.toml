@@ -4,6 +4,7 @@ members = [
     "pallets/executive",
     "pallets/system",
     "pallets/dactr",
+    "pallets/transaction-payment",
     "runtime",
     "node",
 ]
@@ -14,6 +15,9 @@ frame-executive = { path = "pallets/executive" }
 frame-system = { path = "pallets/system" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
+pallet-transaction-payment = { path = "pallets/transaction-payment" }
+pallet-transaction-payment-rpc = { path = "pallets/transaction-payment/rpc" }
+pallet-transaction-payment-rpc-runtime-api = { path = "pallets/transaction-payment/rpc/runtime-api" }
 
 [patch.crates-io]
 # Customized Local pallets

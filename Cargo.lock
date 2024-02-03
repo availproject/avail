@@ -6622,13 +6622,15 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment"
 version = "4.0.0-dev"
-source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-v1.6.0-patch#cd9bf4752239899ac1059d366a7e717cad30648d"
 dependencies = [
  "frame-support",
  "frame-system",
+ "log",
+ "pallet-balances",
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "serde_json",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -6638,7 +6640,6 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-v1.6.0-patch#cd9bf4752239899ac1059d366a7e717cad30648d"
 dependencies = [
  "jsonrpsee",
  "pallet-transaction-payment-rpc-runtime-api",
@@ -6654,7 +6655,6 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-v1.6.0-patch#cd9bf4752239899ac1059d366a7e717cad30648d"
 dependencies = [
  "pallet-transaction-payment",
  "parity-scale-codec",

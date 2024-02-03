@@ -316,12 +316,12 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-mod weight_helper {
+pub mod weight_helper {
 
 	use super::*;
 
 	/// Weight for `dataAvailability::submit_data`.
-	pub(crate) fn submit_data<T: Config>(data_len: usize) -> (Weight, DispatchClass) {
+	pub fn submit_data<T: Config>(data_len: usize) -> (Weight, DispatchClass) {
 		let data_len: u32 = data_len.saturated_into();
 		let basic_weight = T::WeightInfo::submit_data(data_len);
 		let data_root_weight = T::WeightInfo::data_root(data_len);
