@@ -4,22 +4,17 @@ members = [
     "pallets/executive",
     "pallets/system",
     "pallets/dactr",
-    "pallets/bridges/nomad/updater-manager",
-    "pallets/bridges/nomad/home",
-    "pallets/bridges/nomad/da-bridge",
     "pallets/transaction-payment",
     "runtime",
     "node",
 ]
 
 
-[patch."https://github.com/paritytech/substrate.git"]
+[patch."https://github.com/availproject/polkadot-sdk.git"]
 frame-executive = { path = "pallets/executive" }
 frame-system = { path = "pallets/system" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
-pallet-nomination-pools = { path = "pallets/nomination-pools" }
-pallet-nomination-pools-runtime-api = { path = "pallets/nomination-pools/runtime-api" }
 pallet-transaction-payment = { path = "pallets/transaction-payment" }
 pallet-transaction-payment-rpc = { path = "pallets/transaction-payment/rpc" }
 pallet-transaction-payment-rpc-runtime-api = { path = "pallets/transaction-payment/rpc/runtime-api" }

@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use avail_base::metrics::avail::ImportBlockMetrics;
 use avail_core::{
-	header::HeaderExtension, BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+	BlockLengthColumns, BlockLengthRows, HeaderVersion, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
 use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
@@ -17,7 +17,6 @@ use da_runtime::{
 use derive_more::Constructor;
 use frame_support::ensure;
 use frame_system::limits::BlockLength;
-use frame_system::HeaderVersion;
 use sc_client_api::Backend;
 use sc_consensus::{
 	block_import::{BlockCheckParams, BlockImport as BlockImportT, BlockImportParams},
@@ -26,6 +25,7 @@ use sc_consensus::{
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{BlockOrigin, Error as ConsensusError};
+use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
 
 #[derive(Constructor)]
@@ -51,7 +51,7 @@ impl<BE, C, I: Clone> Clone for BlockImport<BE, C, I> {
 #[async_trait::async_trait]
 impl<B, BE, C, I> BlockImportT<B> for BlockImport<BE, C, I>
 where
-	B: BlockT<Extrinsic = OpaqueExtrinsic, Header = DaHeader>,
+	B: BlockT<Extrinsic = OpaqueExtrinsic, Header = DaHeader, Hash = H256>,
 	BE: Backend<B>,
 	I: BlockImportT<B> + Clone + Send + Sync,
 	I::Error: Into<ConsensusError>,
@@ -60,12 +60,11 @@ where
 	C::Api: ExtensionBuilder<B>,
 {
 	type Error = ConsensusError;
-	type Transaction = <I as BlockImportT<B>>::Transaction;
 
 	/// It verifies that header extension (Kate commitment & data root) is properly calculated.
 	async fn import_block(
 		&mut self,
-		block: BlockImportParams<B, Self::Transaction>,
+		block: BlockImportParams<B>,
 	) -> Result<ImportResult, Self::Error> {
 		let import_block_start = std::time::Instant::now();
 
@@ -82,7 +81,7 @@ where
 
 		let extrinsics = block.body.as_ref().unwrap_or(&vec![]).clone();
 
-		let best_hash = self.client.info().best_hash;
+		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
 		let extension = &block.header.extension.clone();
 
 		let (block_number, import_block_hash) = (block.header.number, block.post_hash());
@@ -98,7 +97,7 @@ where
 
 		let success = build_data_root_and_extension(
 			self,
-			best_hash,
+			parent_hash,
 			import_block_hash,
 			extrinsics,
 			extension,
@@ -133,7 +132,7 @@ where
 
 fn build_data_root_and_extension<B, BE, C, I>(
 	block_import: &BlockImport<BE, C, I>,
-	best_hash: <B as BlockT>::Hash,
+	parent_hash: <B as BlockT>::Hash,
 	import_block_hash: <B as BlockT>::Hash,
 	extrinsics: Vec<OpaqueExtrinsic>,
 	extension: &avail_core::header::HeaderExtension,
@@ -147,10 +146,7 @@ where
 {
 	use ConsensusError::ClientImport;
 
-	let header_version = match extension {
-		HeaderExtension::V1(_) => HeaderVersion::V1,
-		HeaderExtension::V2(_) => HeaderVersion::V2,
-	};
+	let header_version = extension.get_header_version();
 
 	let block_length = BlockLength::with_normal_ratio(
 		BlockLengthRows(extension.rows() as u32),
@@ -166,17 +162,23 @@ where
 			let data_root = block_import
 				.client
 				.runtime_api()
-				.build_data_root(best_hash, extrinsics.clone())
+				.build_data_root(parent_hash, extrinsics.clone())
 				.map_err(|e| ClientImport(format!("Data root cannot be calculated: {e:?}")))?;
 
 			block_import
 				.client
 				.runtime_api()
-				.build_extension(best_hash, extrinsics, data_root, block_length, block_number)
+				.build_extension(
+					parent_hash,
+					extrinsics,
+					data_root,
+					block_length,
+					block_number,
+				)
 				.map_err(|e| ClientImport(format!("Build extension fails due to: {e:?}")))?
 		},
 		_ => {
-			log::debug!(target: "DA_IMPORT_BLOCK", "V2 validation..");
+			log::debug!(target: "DA_IMPORT_BLOCK", "V2^ validation..");
 			let success_indices: Vec<u32> = block_import
 				.client
 				.runtime_api()
@@ -198,14 +200,14 @@ where
 			let data_root = block_import
 				.client
 				.runtime_api()
-				.build_data_root_v2(best_hash, successful_extrinsics.clone())
+				.build_data_root_v2(parent_hash, successful_extrinsics.clone())
 				.map_err(|e| ClientImport(format!("Data root cannot be calculated: {e:?}")))?;
 
 			block_import
 				.client
 				.runtime_api()
 				.build_versioned_extension(
-					best_hash,
+					parent_hash,
 					successful_extrinsics,
 					data_root,
 					block_length,

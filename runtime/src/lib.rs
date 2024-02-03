@@ -53,7 +53,7 @@ pub use frame_support::{
 		},
 		ConstantMultiplier, IdentityFee, Weight,
 	},
-	PalletId, RuntimeDebug, StorageValue,
+	PalletId, StorageValue,
 };
 pub use impls::BlockHashCount;
 pub use pallet_balances::Call as BalancesCall;
@@ -65,7 +65,7 @@ pub use pallet_staking::StakerStatus;
 pub use primitives::*;
 use sp_core::OpaqueMetadata;
 
-pub use sp_runtime::{Perbill, Percent, Permill};
+pub use sp_runtime::{Perbill, Percent, Permill, RuntimeDebug};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -136,10 +136,7 @@ construct_runtime!(
 		// DA module
 		DataAvailability: da_control = 29,
 
-		// Nomad
-		NomadUpdaterManager: nomad_updater_manager = 30,
-		NomadHome: nomad_home = 31,
-		NomadDABridge: nomad_da_bridge = 32,
+		// Old: Nomad - don't use id 30,31,32
 
 		// More from upgrade to v0.9.33
 		Preimage: pallet_preimage = 33,
@@ -148,8 +145,9 @@ construct_runtime!(
 		NominationPools: pallet_nomination_pools = 36,
 		Identity: pallet_identity = 37,
 		Mandate: pallet_mandate = 38,
-		Succinct: pallet_succinct = 39,
+		Vector: pallet_vector = 39,
 		Proxy: pallet_proxy = 40,
+		TxPause: pallet_tx_pause = 41,
 	}
 );
 
@@ -172,30 +170,29 @@ extern crate frame_benchmarking;
 mod benches {
 	define_benchmarks!(
 		[frame_benchmarking, BaselineBench::<Runtime>]
-		[pallet_utility, $crate::Utility]
-		[pallet_babe, $crate::Babe]
-		[pallet_timestamp, $crate::Timestamp]
-		[pallet_indices, $crate::Indices]
-		[pallet_balances, $crate::Balances]
-		[pallet_election_provider_multi_phase, $crate::ElectionProviderMultiPhase]
-		[pallet_staking, $crate::Staking]
-		[pallet_collective, $crate::TechnicalCommittee]
-		[pallet_grandpa, $crate::Grandpa]
-		[pallet_treasury, $crate::Treasury]
-		[pallet_im_online, $crate::ImOnline]
-		[pallet_scheduler, $crate::Scheduler]
-		[pallet_bounties, $crate::Bounties]
-		[pallet_tips, $crate::Tips]
-		[pallet_mmr, $crate::Mmr]
+		[pallet_utility, crate::Utility]
+		[pallet_babe, crate::Babe]
+		[pallet_timestamp, crate::Timestamp]
+		[pallet_indices, crate::Indices]
+		[pallet_balances, crate::Balances]
+		[pallet_election_provider_multi_phase, crate::ElectionProviderMultiPhase]
+		[pallet_staking, crate::Staking]
+		[pallet_collective, crate::TechnicalCommittee]
+		[pallet_grandpa, crate::Grandpa]
+		[pallet_treasury, crate::Treasury]
+		[pallet_im_online, crate::ImOnline]
+		[pallet_scheduler, crate::Scheduler]
+		[pallet_bounties, crate::Bounties]
+		[pallet_tips, crate::Tips]
+		[pallet_mmr, crate::Mmr]
 
 		[frame_system, SystemBench::<Runtime>]
-		[da_control, $crate::DataAvailability]
-		[nomad_home, $crate::NomadHome]
-		[nomad_da_bridge, $crate::NomadDABridge]
-		[pallet_identity, $crate::Identity]
-		[pallet_mandate, $crate::Mandate]
-		[pallet_succinct, $crate::Succinct]
-		[pallet_proxy, $crate::Proxy]
+		[da_control, crate::DataAvailability]
+		[pallet_identity, crate::Identity]
+		[pallet_mandate, crate::Mandate]
+		[pallet_vector, crate::Vector]
+		[pallet_proxy, crate::Proxy]
+		[pallet_tx_pause, crate::TxPause]
 	);
 }
 
@@ -260,9 +257,6 @@ mod tests {
 		<pallet_tips::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_mmr::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<da_control::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
-		<nomad_updater_manager::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
-		<nomad_home::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
-		<nomad_da_bridge::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_preimage::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_multisig::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_bags_list::Pallet<Runtime, pallet_bags_list::Instance1> as TryState<
@@ -270,7 +264,7 @@ mod tests {
 		>>::try_state(block, All)?;
 		<pallet_identity::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_mandate::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
-		<pallet_succinct::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_vector::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_nomination_pools::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_proxy::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		Ok(())
@@ -336,17 +330,10 @@ mod tests {
 	const RUNTIME_CALL_SIZE: usize = size_of::<RuntimeCall>();
 	const DA_CALL_SIZE: usize = size_of::<da_control::Call<Runtime>>();
 	const SYSTEM_CALL_SIZE: usize = size_of::<frame_system::Call<Runtime>>();
-	const NOMAD_UPDATER_MANAGER_CALL_SIZE: usize =
-		size_of::<nomad_updater_manager::Call<Runtime>>();
-	const NOMAD_HOME_CALL_SIZE: usize = size_of::<nomad_home::Call<Runtime>>();
-	const NOMAD_BRIDGE_CALL_SIZE: usize = size_of::<nomad_da_bridge::Call<Runtime>>();
 
 	#[test_case(RUNTIME_CALL_SIZE => 168)]
 	#[test_case( DA_CALL_SIZE => 32)]
 	#[test_case( SYSTEM_CALL_SIZE => 32)]
-	#[test_case( NOMAD_UPDATER_MANAGER_CALL_SIZE => 0)]
-	#[test_case( NOMAD_HOME_CALL_SIZE => 152)]
-	#[test_case( NOMAD_BRIDGE_CALL_SIZE => 48)]
 	fn call_size(size: usize) -> usize {
 		const MAX_CALL_SIZE: usize = 208;
 		assert!(

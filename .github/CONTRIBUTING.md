@@ -8,7 +8,7 @@ Please review and adhere to our [Code of Conduct](./CODE_OF_CONDUCT.md) to maint
 
 ## Reporting Issues
 
-If you encounter a bug or have a feature request, please create an issue using the appropriate [issue template](https://github.com/availproject/avail/issues/new).
+If you encounter a bug or have a feature request, please create an issue using the appropriate [issue template](https://github.com/availproject/avail/issues/new/choose).
 
 ## Submitting Pull Requests
 

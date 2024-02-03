@@ -19,16 +19,18 @@
 
 #![allow(clippy::identity_op)]
 use avail_core::currency::{Balance, AVL};
+use frame_election_provider_support::bounds::{ElectionBounds, ElectionBoundsBuilder};
 use frame_support::{
 	dispatch::DispatchClass,
 	parameter_types,
 	traits::{ConstU16, ConstU32},
 	weights::{constants::BlockExecutionWeight, Weight},
 };
-use sp_runtime::{transaction_validity::TransactionPriority, Perbill, Permill};
+use sp_runtime::{transaction_validity::TransactionPriority, Perbill, Percent, Permill};
 use static_assertions::const_assert;
 
 use crate::BlockNumber;
+use crate::RuntimeHoldReason;
 
 /// cannot have validators higher than this count.
 pub type MaxAuthorities = ConstU32<100_000>;
@@ -249,7 +251,7 @@ pub mod staking {
 	}
 
 	parameter_types! {
-		pub MaxNominations: u32 = <NposSolution16 as frame_election_provider_support::NposSolution>::LIMIT as u32;
+		pub const MaxNominations: u32 = <NposSolution16 as frame_election_provider_support::NposSolution>::LIMIT as u32;
 		pub const OffendingValidatorsThreshold: Perbill = Perbill::from_percent(17);
 		pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
 
@@ -258,10 +260,9 @@ pub mod staking {
 		pub const UnsignedPhase: u32 = EPOCH_DURATION_IN_SLOTS / 4;
 
 		pub const SignedRewardBase: Balance = AVL;
-		pub const SignedDepositBase: Balance = AVL;
 		pub const SignedDepositByte: Balance = CENTS;
-
-		pub BetterUnsignedThreshold: Perbill = Perbill::from_rational(1u32, 10_000);
+		pub const SignedFixedDeposit: Balance = AVL;
+		pub const SignedDepositIncreaseFactor: Percent = Percent::from_percent(10);
 
 		pub SolutionImprovementThreshold: Perbill = Perbill::from_rational(1u32, 10_000);
 		// miner configs		/// We prioritize im-online heartbeats over election solution submission.
@@ -277,13 +278,24 @@ pub mod staking {
 			.max
 			.get(DispatchClass::Normal);
 		pub const OffchainRepeat: BlockNumber = 5;
+
+		// Note: the EPM in this runtime runs the election on-chain. The election bounds must be
+		// carefully set so that an election round fits in one block.
+		pub ElectionBoundsMultiPhase: ElectionBounds = ElectionBoundsBuilder::default()
+			.voters_count(10_000.into()).targets_count(1_500.into()).build();
+		pub ElectionBoundsOnChain: ElectionBounds = ElectionBoundsBuilder::default()
+			.voters_count(5_000.into()).targets_count(1_250.into()).build();
 	}
 
-	pub type MaxNominatorRewardedPerValidator = ConstU32<256>;
+	pub type MaxControllersInDeprecationBatch = ConstU32<5900>;
+
+	// Note: this is not really correct as Max Nominators is (MaxExposurePageSize * page_count) but
+	// this is an unbounded number. We just set it to a reasonably high value, 1 full page
+	// of nominators.
+	pub type MaxNominators = ConstU32<256>;
+	pub type MaxExposurePageSize = ConstU32<256>;
 	pub type MaxUnlockingChunks = ConstU32<32>;
 	pub type HistoryDepth = ConstU32<84>;
-	pub type MaxNominators = ConstU32<1_024>;
-	pub type MaxValidators = ConstU32<32>;
 
 	// OnChain values are lower.
 	pub type MaxOnChainElectingVoters = ConstU32<1_024>;
@@ -333,6 +345,7 @@ pub mod preimage {
 		pub const PreimageBaseDeposit: Balance = 1 * AVL;
 		// One cent: $10,000 / MB
 		pub const PreimageByteDeposit: Balance = 1 * CENTS;
+		pub const PreimageHoldReason: RuntimeHoldReason = RuntimeHoldReason::Preimage(pallet_preimage::HoldReason::Preimage);
 	}
 }
 
@@ -373,17 +386,6 @@ pub mod da {
 	}
 	pub type MaxAppKeyLength = ConstU32<64>;
 	pub type MaxAppDataLength = ConstU32<524_288>; // 512 Kb
-}
-
-pub mod nomad {
-	use sp_core::H256;
-
-	use super::*;
-
-	parameter_types! {
-		pub const DABridgePalletId: H256 = H256::repeat_byte(1);
-	}
-	pub type MaxMessageBodyBytes = ConstU32<2048>;
 }
 
 /// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value

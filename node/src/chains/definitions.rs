@@ -33,10 +33,11 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 }
 
 /// Common properties for chains
-pub fn chain_properties() -> Option<Properties> {
+pub fn chain_properties() -> Properties {
 	serde_json::json!({ "tokenDecimals": 18, "tokenSymbol": "AVL" })
 		.as_object()
-		.cloned()
+		.expect("Map given; qed")
+		.clone()
 }
 
 /// Generate an account ID from seed.
