@@ -11,9 +11,9 @@ da-runtime = { path = "../../runtime", default-features = false }
 da-control = { path = "../../pallets/dactr" }
 pallet-succinct = { path = "../../pallets/succinct" }
 
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false }
 
 # 3rd party
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
@@ -22,16 +22,15 @@ moka = { version = "0.12.1", features = ["future"] }
 
 
 # Substrate
-sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
 frame-system = { path = "../../pallets/system", default-features = false }
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-rpc-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-client-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+sp-blockchain = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
 
 [features]
-default = [ "metrics", "std" ]
+default = [ "std" ]
 std = [
 	"avail-base/std",
 	"avail-core/std",
@@ -43,7 +42,6 @@ std = [
 	"sp-api/std",
 	"sp-runtime/std",
 ]
-metrics = []
 
 # Enables secure seed generation using for padding fill during the matrix 
 # generation for Kate commitment.

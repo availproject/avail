@@ -53,7 +53,7 @@ pub use frame_support::{
 		},
 		ConstantMultiplier, IdentityFee, Weight,
 	},
-	PalletId, RuntimeDebug, StorageValue,
+	PalletId, StorageValue,
 };
 pub use impls::BlockHashCount;
 pub use pallet_balances::Call as BalancesCall;
@@ -65,7 +65,7 @@ pub use pallet_staking::StakerStatus;
 pub use primitives::*;
 use sp_core::OpaqueMetadata;
 
-pub use sp_runtime::{Perbill, Percent, Permill};
+pub use sp_runtime::{Perbill, Percent, Permill, RuntimeDebug};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -136,10 +136,7 @@ construct_runtime!(
 		// DA module
 		DataAvailability: da_control = 29,
 
-		// Nomad
-		// NomadUpdaterManager: nomad_updater_manager = 30,
-		// NomadHome: nomad_home = 31,
-		// NomadDABridge: nomad_da_bridge = 32,
+		// Old: Nomad - don't use id 30,31,32
 
 		// More from upgrade to v0.9.33
 		Preimage: pallet_preimage = 33,
@@ -150,6 +147,7 @@ construct_runtime!(
 		Mandate: pallet_mandate = 38,
 		Succinct: pallet_succinct = 39,
 		Proxy: pallet_proxy = 40,
+		TxPause: pallet_tx_pause = 41,
 	}
 );
 
@@ -172,28 +170,29 @@ extern crate frame_benchmarking;
 mod benches {
 	define_benchmarks!(
 		[frame_benchmarking, BaselineBench::<Runtime>]
-		[pallet_utility, $crate::Utility]
-		[pallet_babe, $crate::Babe]
-		[pallet_timestamp, $crate::Timestamp]
-		[pallet_indices, $crate::Indices]
-		[pallet_balances, $crate::Balances]
-		[pallet_election_provider_multi_phase, $crate::ElectionProviderMultiPhase]
-		[pallet_staking, $crate::Staking]
-		[pallet_collective, $crate::TechnicalCommittee]
-		[pallet_grandpa, $crate::Grandpa]
-		[pallet_treasury, $crate::Treasury]
-		[pallet_im_online, $crate::ImOnline]
-		[pallet_scheduler, $crate::Scheduler]
-		[pallet_bounties, $crate::Bounties]
-		[pallet_tips, $crate::Tips]
-		[pallet_mmr, $crate::Mmr]
+		[pallet_utility, crate::Utility]
+		[pallet_babe, crate::Babe]
+		[pallet_timestamp, crate::Timestamp]
+		[pallet_indices, crate::Indices]
+		[pallet_balances, crate::Balances]
+		[pallet_election_provider_multi_phase, crate::ElectionProviderMultiPhase]
+		[pallet_staking, crate::Staking]
+		[pallet_collective, crate::TechnicalCommittee]
+		[pallet_grandpa, crate::Grandpa]
+		[pallet_treasury, crate::Treasury]
+		[pallet_im_online, crate::ImOnline]
+		[pallet_scheduler, crate::Scheduler]
+		[pallet_bounties, crate::Bounties]
+		[pallet_tips, crate::Tips]
+		[pallet_mmr, crate::Mmr]
 
 		[frame_system, SystemBench::<Runtime>]
-		[da_control, $crate::DataAvailability]
-		[pallet_identity, $crate::Identity]
-		[pallet_mandate, $crate::Mandate]
-		[pallet_succinct, $crate::Succinct]
-		[pallet_proxy, $crate::Proxy]
+		[da_control, crate::DataAvailability]
+		[pallet_identity, crate::Identity]
+		[pallet_mandate, crate::Mandate]
+		[pallet_succinct, crate::Succinct]
+		[pallet_proxy, crate::Proxy]
+		[pallet_tx_pause, crate::TxPause]
 	);
 }
 

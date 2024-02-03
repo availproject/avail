@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.
+// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -67,7 +67,7 @@
 use avail_core::{
 	header::HeaderExtension,
 	traits::{ExtendedBlock, ExtendedHeader},
-	AppExtrinsic, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+	AppExtrinsic, HeaderVersion, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
 use frame_support::{
@@ -112,7 +112,7 @@ use sp_weights::{RuntimeDbWeight, Weight};
 
 pub mod header_builder;
 pub mod submitted_data;
-pub use header_builder::{HeaderExtensionBuilder, HeaderVersion};
+pub use header_builder::HeaderExtensionBuilder;
 
 pub mod limits;
 #[cfg(any(feature = "std", test))]
@@ -173,7 +173,7 @@ pub trait SetCode<T: Config> {
 
 impl<T: Config> SetCode<T> for () {
 	fn set_code(code: Vec<u8>) -> DispatchResult {
-		<Pallet<T>>::update_code_in_storage(&code)?;
+		<Pallet<T>>::update_code_in_storage(&code);
 		Ok(())
 	}
 }
@@ -232,7 +232,7 @@ pub mod pallet {
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
-		use super::DefaultConfig;
+		use super::{inject_runtime_type, DefaultConfig};
 
 		/// Provides a viable default config that can be used with
 		/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
@@ -259,6 +259,8 @@ pub mod pallet {
 			type BlockWeights = ();
 			type BlockLength = ();
 			type DbWeight = ();
+			#[inject_runtime_type]
+			type RuntimeEvent = ();
 		}
 	}
 
@@ -350,6 +352,7 @@ pub mod pallet {
 		type Randomness: Randomness<Self::Hash, BlockNumberFor<Self>>;
 
 		/// The aggregated event type of the runtime.
+		#[pallet::no_default_bounds]
 		type RuntimeEvent: Parameter
 			+ Member
 			+ From<Event<Self>>
@@ -453,8 +456,9 @@ pub mod pallet {
 		/// # </weight>
 		/// Can be executed by every `origin`.
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::SystemWeightInfo::remark(_remark.len() as u32))]
-		pub fn remark(_origin: OriginFor<T>, _remark: Vec<u8>) -> DispatchResultWithPostInfo {
+		#[pallet::weight(T::SystemWeightInfo::remark(remark.len() as u32))]
+		pub fn remark(_origin: OriginFor<T>, remark: Vec<u8>) -> DispatchResultWithPostInfo {
+			let _ = remark; // No need to check the weight witness.
 			Ok(().into())
 		}
 
@@ -528,16 +532,16 @@ pub mod pallet {
 		/// the prefix we are removing to accurately calculate the weight of this function.
 		#[pallet::call_index(6)]
 		#[pallet::weight((
-			T::SystemWeightInfo::kill_prefix(_subkeys.saturating_add(1)),
+			T::SystemWeightInfo::kill_prefix(subkeys.saturating_add(1)),
 			DispatchClass::Operational,
 		))]
 		pub fn kill_prefix(
 			origin: OriginFor<T>,
 			prefix: Key,
-			_subkeys: u32,
+			subkeys: u32,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let _ = storage::unhashed::clear_prefix(&prefix, None, None);
+			let _ = storage::unhashed::clear_prefix(&prefix, Some(subkeys), None);
 			Ok(().into())
 		}
 
@@ -1137,11 +1141,10 @@ impl<T: Config> Pallet<T> {
 	/// Note this function almost never should be used directly. It is exposed
 	/// for `OnSetCode` implementations that defer actual code being written to
 	/// the storage (for instance in case of parachains).
-	pub fn update_code_in_storage(code: &[u8]) -> DispatchResult {
+	pub fn update_code_in_storage(code: &[u8]) {
 		storage::unhashed::put_raw(well_known_keys::CODE, code);
 		Self::deposit_log(generic::DigestItem::RuntimeEnvironmentUpdated);
 		Self::deposit_event(Event::CodeUpdated);
-		Ok(())
 	}
 
 	/// Increment the reference counter on an account.
@@ -1593,7 +1596,7 @@ impl<T: Config> Pallet<T> {
 			data_root,
 			block_length,
 			number.unique_saturated_into(),
-			HeaderVersion::V2,
+			HeaderVersion::V3,
 		);
 
 		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);

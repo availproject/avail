@@ -106,7 +106,7 @@ jobs:
         - name: Run Kate RPC E2E tests
           run: |
             chmod uog+x data-avail
-            ./data-avail --dev &
+            ./data-avail --dev --enable-kate-rpc &
             sleep 5
             cd e2e
             cargo test -- --test-threads 1
@@ -156,7 +156,7 @@ jobs:
       - name: Run SubXt E2E tests
         run: |
           chmod uog+x data-avail
-          ./data-avail --dev &
+          ./data-avail --dev --enable-kate-rpc &
           sleep 5
           cargo run --release --manifest-path avail-subxt/Cargo.toml --example accounts_from_mnemonics
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example headers

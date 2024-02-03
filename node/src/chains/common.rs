@@ -3,20 +3,19 @@ use avail_core::{BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO};
 use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 
 use da_runtime::{
-	constants, wasm_binary_unwrap, AccountId, BabeConfig, Balance, BalancesConfig,
-	DataAvailabilityConfig, NominationPoolsConfig, RuntimeGenesisConfig, SessionConfig,
-	StakerStatus, StakingConfig, SuccinctConfig, SudoConfig, SystemConfig,
-	TechnicalCommitteeConfig, AVL,
+	constants, AccountId, Balance, DataAvailabilityConfig, SessionKeys, StakerStatus, AVL,
 };
 use frame_system::limits::BlockLength;
 use hex_literal::hex;
 use primitive_types::H256;
 use sc_telemetry::TelemetryEndpoints;
+use serde_json::{json, Value};
 use sp_core::crypto::AccountId32;
 use sp_core::sr25519::Public;
 
-pub const PROTOCOL_ID: Option<&str> = Some("Avail");
+pub const PROTOCOL_ID: &str = "Avail";
 pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
+
 // bridge init config
 const BROADCASTER_DOMAIN: u32 = 2;
 const BROADCASTER: H256 = H256(hex!(
@@ -43,20 +42,6 @@ const DEFAULT_ENDOWED_SEEDS: [&str; 12] = [
 ];
 const INIT_APP_IDS: [(u32, &str); 3] = [(0, "Data Avail"), (1, "Ethereum"), (2, "Polygon")];
 
-fn standard_system_configuration() -> (Vec<u8>, BlockLength) {
-	let code = wasm_binary_unwrap().to_vec();
-
-	let block_length = BlockLength::with_normal_ratio(
-		MAX_BLOCK_ROWS,
-		MAX_BLOCK_COLUMNS,
-		BLOCK_CHUNK_SIZE,
-		NORMAL_DISPATCH_RATIO,
-	)
-	.expect("Valid `BlockLength` genesis definition .qed");
-
-	(code, block_length)
-}
-
 pub fn to_telemetry_endpoint(s: String) -> TelemetryEndpoints {
 	TelemetryEndpoints::new(vec![(s, 0)]).unwrap()
 }
@@ -82,9 +67,9 @@ pub fn runtime_genesis_config(
 	sudo: AccountId32,
 	technical_committee: Vec<AccountId32>,
 	session_keys: Vec<AuthorityKeys>,
-) -> RuntimeGenesisConfig {
+) -> Value {
 	let balances = dev_endowed_accounts();
-	let stakers = session_keys
+	let stakers: Vec<(AccountId, AccountId, Balance, StakerStatus<AccountId>)> = session_keys
 		.iter()
 		.map(|k| {
 			(
@@ -96,58 +81,56 @@ pub fn runtime_genesis_config(
 		})
 		.collect();
 	let validator_count = session_keys.len() as u32;
-	let session_keys = session_keys.into_iter().map(|k| k.into()).collect();
+	let session_keys: Vec<(AccountId, AccountId, SessionKeys)> =
+		session_keys.into_iter().map(|k| k.into()).collect();
+	let block_length = BlockLength::with_normal_ratio(
+		MAX_BLOCK_ROWS,
+		MAX_BLOCK_COLUMNS,
+		BLOCK_CHUNK_SIZE,
+		NORMAL_DISPATCH_RATIO,
+	)
+	.expect("Valid `BlockLength` genesis definition .qed");
 
-	let (code, block_length) = standard_system_configuration();
-	RuntimeGenesisConfig {
-		// General
-		system: SystemConfig {
-			code,
-			block_length,
-			..Default::default()
+	json!({
+		"system": {
+			"blockLength": block_length,
 		},
-		babe: BabeConfig {
-			epoch_config: Some(da_runtime::constants::babe::GENESIS_EPOCH_CONFIG),
-			..Default::default()
+		"balances": {
+			"balances": balances,
 		},
-		balances: BalancesConfig { balances },
-		staking: StakingConfig {
-			stakers,
-			validator_count,
-			minimum_validator_count: 1,
-			..Default::default()
+		"staking": {
+			"validatorCount": validator_count,
+			"minimumValidatorCount": 1,
+			"stakers": stakers,
 		},
-		session: SessionConfig { keys: session_keys },
-		technical_committee: TechnicalCommitteeConfig {
-			members: technical_committee,
-			..Default::default()
+		"babe": {
+			"epochConfig": Some(da_runtime::constants::babe::GENESIS_EPOCH_CONFIG),
 		},
-		sudo: SudoConfig {
-			key: Some(sudo.clone()),
+		"session": {
+			"keys": session_keys,
 		},
-		succinct: SuccinctConfig {
-			slots_per_period: SLOTS_PER_PERIOD,
-			finality_threshold: FINALITY_THRESHOLD,
-			broadcaster_domain: BROADCASTER_DOMAIN,
-			broadcaster: BROADCASTER,
-			whitelisted_domains: vec![2],
-			..Default::default()
+		"sudo": {
+			"key": Some(sudo.clone()),
 		},
-		nomination_pools: NominationPoolsConfig {
-			min_create_bond: constants::nomination_pools::MIN_CREATE_BOND,
-			min_join_bond: constants::nomination_pools::MIN_JOIN_BOND,
-			max_pools: Some(constants::nomination_pools::MAX_POOLS),
-			max_members_per_pool: Some(constants::nomination_pools::MAX_MEMBERS_PER_POOL),
-			max_members: Some(constants::nomination_pools::MAX_MEMBERS),
-			..Default::default()
+		"technicalCommittee": {
+			"members": technical_committee,
 		},
-		grandpa: Default::default(),
-		treasury: Default::default(),
-		im_online: Default::default(),
-		authority_discovery: Default::default(),
-		transaction_payment: Default::default(),
-		indices: Default::default(),
-		data_availability: make_data_avail_config(sudo),
-		technical_membership: Default::default(),
-	}
+		"succinct": {
+			"slotsPerPeriod": SLOTS_PER_PERIOD,
+			"finalityThreshold": FINALITY_THRESHOLD,
+			"broadcasterDomain": BROADCASTER_DOMAIN,
+			"broadcaster": BROADCASTER,
+			"whitelistedDomains": vec![2],
+		},
+		"nominationPools": {
+			"minCreateBond": constants::nomination_pools::MIN_CREATE_BOND,
+			"minJoinBond": constants::nomination_pools::MIN_JOIN_BOND,
+			"maxPools": Some(constants::nomination_pools::MAX_POOLS),
+			"maxMembersPerPool": Some(constants::nomination_pools::MAX_MEMBERS_PER_POOL),
+			"maxMembers": Some(constants::nomination_pools::MAX_MEMBERS),
+		},
+		"dataAvailability": {
+			"appKeys": make_data_avail_config(sudo).app_keys
+		},
+	})
 }

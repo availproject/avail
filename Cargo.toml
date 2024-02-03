@@ -9,13 +9,11 @@ members = [
 ]
 
 
-[patch."https://github.com/paritytech/substrate.git"]
+[patch."https://github.com/availproject/polkadot-sdk.git"]
 frame-executive = { path = "pallets/executive" }
 frame-system = { path = "pallets/system" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
-pallet-nomination-pools = { path = "pallets/nomination-pools" }
-pallet-nomination-pools-runtime-api = { path = "pallets/nomination-pools/runtime-api" }
 
 [patch.crates-io]
 # Customized Local pallets
