@@ -210,6 +210,7 @@ mod multiplier_tests {
 		})
 	}
 
+	#[cfg(not(feature = "fast-runtime"))]
 	#[test]
 	fn min_lm_change_per_epoch() {
 		sp_io::TestExternalities::default().execute_with(|| {
