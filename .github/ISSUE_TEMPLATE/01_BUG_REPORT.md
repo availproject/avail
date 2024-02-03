@@ -8,7 +8,7 @@ assignees: ""
 
 # Bug Report
 
-Check the [contributing guide](/.github/CONTRIBUTING.md)
+Check the [contributing guide](https://github.com/availproject/avail/blob/main/.github/CONTRIBUTING.md)
 
 ## Description
 <!-- Provide a clear and concise description of the bug. -->
