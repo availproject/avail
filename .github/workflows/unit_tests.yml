@@ -47,7 +47,6 @@ jobs:
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source "$HOME/.cargo/env"
-          rustup target add wasm32-unknown-unknown --toolchain nightly
           rustup show
 
       - name: Set PATH for cargo
@@ -119,7 +118,6 @@ jobs:
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source "$HOME/.cargo/env"
-          rustup target add wasm32-unknown-unknown --toolchain nightly
           rustup show
 
       - name: Set PATH for cargo
