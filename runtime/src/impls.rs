@@ -313,22 +313,6 @@ impl da_control::Config for Runtime {
 	type WeightInfo = weights::pallet_dactr::WeightInfo<Runtime>;
 }
 
-impl nomad_updater_manager::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-}
-
-impl nomad_home::Config for Runtime {
-	type MaxMessageBodyBytes = constants::nomad::MaxMessageBodyBytes;
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = weights::nomad_home::WeightInfo<Runtime>;
-}
-
-impl nomad_da_bridge::Config for Runtime {
-	type DABridgePalletId = constants::nomad::DABridgePalletId;
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = weights::nomad_da_bridge::WeightInfo<Runtime>;
-}
-
 impl pallet_offences::Config for Runtime {
 	type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
 	type OnOffenceHandler = Staking;

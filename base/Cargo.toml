@@ -7,8 +7,8 @@ edition = "2021"
 
 [dependencies]
 # Our crates
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-1.6", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-1.6", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false }
 
 # Substrate related
 substrate-prometheus-endpoint = {  version = "0.10.0-dev", optional = true }

@@ -15,14 +15,9 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 
 # Internal
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-1.6", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-1.6", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false }
 da-control = { path = "../pallets/dactr", default-features = false }
-
-## Nomad
-nomad-updater-manager = { path = "../pallets/bridges/nomad/updater-manager", default-features = false }
-nomad-home = { path = "../pallets/bridges/nomad/home", default-features = false }
-nomad-da-bridge = { path = "../pallets/bridges/nomad/da-bridge", default-features = false }
 
 # External 
 static_assertions = "1.1.0"
@@ -165,9 +160,6 @@ std = [
 	"frame-try-runtime?/std",
 	"kate/std",
 	"log/std",
-	"nomad-da-bridge/std",
-	"nomad-home/std",
-	"nomad-updater-manager/std",
 	"pallet-authority-discovery/std",
 	"pallet-authorship/std",
 	"pallet-babe/std",
@@ -231,9 +223,6 @@ runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
-	"nomad-da-bridge/runtime-benchmarks",
-	"nomad-home/runtime-benchmarks",
-	"nomad-updater-manager/runtime-benchmarks",
 	"pallet-babe/runtime-benchmarks",
 	"pallet-bags-list/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
@@ -271,9 +260,6 @@ try-runtime = [
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
 	"frame-try-runtime/try-runtime",
-	"nomad-da-bridge/try-runtime",
-	"nomad-home/try-runtime",
-	"nomad-updater-manager/try-runtime",
 	"pallet-authority-discovery/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-babe/try-runtime",

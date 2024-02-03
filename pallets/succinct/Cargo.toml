@@ -16,7 +16,7 @@ sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "
 sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
 sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
 frame-benchmarking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, optional = true }
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/substrate-1.6", default-features = false, features = ["runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false, features = ["runtime"] }
 
 
 ark-bn254 = { version = "0.3.0", default-features = false, features = ["curve"] }
