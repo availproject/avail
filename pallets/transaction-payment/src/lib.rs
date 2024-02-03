@@ -69,7 +69,7 @@ use sp_runtime::{
 	transaction_validity::{
 		TransactionPriority, TransactionValidity, TransactionValidityError, ValidTransaction,
 	},
-	FixedPointNumber, FixedPointOperand, FixedU128, Perbill, Perquintill, RuntimeDebug,
+	FixedPointNumber, FixedU128, Perbill, Perquintill, RuntimeDebug,
 };
 use sp_std::prelude::*;
 pub use types::{FeeDetails, InclusionFee, RuntimeDispatchInfo};
@@ -400,15 +400,18 @@ where
 }
 
 /// Storage releases of the pallet.
-#[derive(
-	Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen, Default,
-)]
+#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 enum Releases {
 	/// Original version of the pallet.
-	#[default]
 	V1Ancient,
 	/// One that bumps the usage to FixedU128 from FixedI128.
 	V2,
+}
+
+impl Default for Releases {
+	fn default() -> Self {
+		Releases::V1Ancient
+	}
 }
 
 /// Default value for NextFeeMultiplier. This is used in genesis and is also used in
@@ -425,9 +428,30 @@ pub mod pallet {
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
-	#[pallet::config]
+	pub mod config_preludes {
+		use super::*;
+		use frame_support::derive_impl;
+
+		/// Default prelude sensible to be used in a testing environment.
+		pub struct TestDefaultConfig;
+
+		#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig, no_aggregated_types)]
+		impl frame_system::DefaultConfig for TestDefaultConfig {}
+
+		#[frame_support::register_default_impl(TestDefaultConfig)]
+		impl DefaultConfig for TestDefaultConfig {
+			#[inject_runtime_type]
+			type RuntimeEvent = ();
+			type FeeMultiplierUpdate = ();
+			type OperationalFeeMultiplier = ();
+			type LengthMultiplierUpdate = ();
+		}
+	}
+
+	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
+		#[pallet::no_default_bounds]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Handler for withdrawing, refunding and depositing the transaction fee.
@@ -436,12 +460,24 @@ pub mod pallet {
 		/// adjusted, depending on the used resources by the transaction. If the
 		/// transaction weight is lower than expected, parts of the transaction fee
 		/// might be refunded. In the end the fees can be deposited.
+		#[pallet::no_default]
 		type OnChargeTransaction: OnChargeTransaction<Self>;
 
-		/// A fee mulitplier for `Operational` extrinsics to compute "virtual tip" to boost their
+		/// Convert a weight value into a deductible fee based on the currency type.
+		#[pallet::no_default]
+		type WeightToFee: WeightToFee<Balance = BalanceOf<Self>>;
+
+		/// Convert a length value into a deductible fee based on the currency type.
+		#[pallet::no_default]
+		type LengthToFee: WeightToFee<Balance = BalanceOf<Self>>;
+
+		/// Update the multiplier of the next block, based on the previous block's weight.
+		type FeeMultiplierUpdate: MultiplierUpdate;
+
+		/// A fee multiplier for `Operational` extrinsics to compute "virtual tip" to boost their
 		/// `priority`
 		///
-		/// This value is multipled by the `final_fee` to obtain a "virtual tip" that is later
+		/// This value is multiplied by the `final_fee` to obtain a "virtual tip" that is later
 		/// added to a tip component in regular `priority` calculations.
 		/// It means that a `Normal` transaction can front-run a similarly-sized `Operational`
 		/// extrinsic (with no tip), by including a tip value greater than the virtual tip.
@@ -461,15 +497,6 @@ pub mod pallet {
 		/// transactions.
 		#[pallet::constant]
 		type OperationalFeeMultiplier: Get<u8>;
-
-		/// Convert a weight value into a deductible fee based on the currency type.
-		type WeightToFee: WeightToFee<Balance = BalanceOf<Self>>;
-
-		/// Convert a length value into a deductible fee based on the currency type.
-		type LengthToFee: WeightToFee<Balance = BalanceOf<Self>>;
-
-		/// Update the multiplier of the next block, based on the previous block's weight.
-		type FeeMultiplierUpdate: MultiplierUpdate;
 
 		/// Update the multiplier of the next block, based on the previous block's length.
 		type LengthMultiplierUpdate: MultiplierUpdate;
@@ -541,6 +568,7 @@ pub mod pallet {
 			});
 		}
 
+		#[cfg(feature = "std")]
 		fn integrity_test() {
 			// given weight == u64, we build multipliers from `diff` of two weight values, which can
 			// at most be maximum block weight. Make sure that this can fit in a multiplier without
@@ -573,33 +601,27 @@ pub mod pallet {
 				return;
 			}
 
-			#[cfg(any(feature = "std", test))]
-			sp_io::TestExternalities::new_empty().execute_with(|| {
-				// This is the minimum value of the multiplier. Make sure that if we collapse to
-				// this value, we can recover with a reasonable amount of traffic. For this test we
-				// assert that if we collapse to minimum, the trend will be positive with a weight
-				// value which is 1% more than the target.
-				let min_value = T::FeeMultiplierUpdate::min();
+			// This is the minimum value of the multiplier. Make sure that if we collapse to
+			// this value, we can recover with a reasonable amount of traffic. For this test we
+			// assert that if we collapse to minimum, the trend will be positive with a weight
+			// value which is 1% more than the target.
+			let min_value = T::FeeMultiplierUpdate::min();
 
-				let target = target + addition;
+			let target = target + addition;
 
-				<frame_system::Pallet<T>>::set_block_consumed_resources(target, 0);
-				let next = T::FeeMultiplierUpdate::convert(min_value);
-				assert!(
-					next > min_value,
-					"The minimum bound of the multiplier is too low. When \
+			<frame_system::Pallet<T>>::set_block_consumed_resources(target, 0);
+			let next = T::FeeMultiplierUpdate::convert(min_value);
+			assert!(
+				next > min_value,
+				"The minimum bound of the multiplier is too low. When \
 					block saturation is more than target by 1% and multiplier is minimal then \
 					the multiplier doesn't increase."
-				);
-			});
+			);
 		}
 	}
 }
 
-impl<T: Config> Pallet<T>
-where
-	BalanceOf<T>: FixedPointOperand,
-{
+impl<T: Config> Pallet<T> {
 	/// Query the data that we know about the fee of a given `call`.
 	///
 	/// This pallet is not and cannot be aware of the internals of a signed extension, for example
@@ -829,7 +851,7 @@ pub struct ChargeTransactionPayment<T: Config>(#[codec(compact)] BalanceOf<T>);
 impl<T: Config> ChargeTransactionPayment<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
-	BalanceOf<T>: Send + Sync + FixedPointOperand,
+	BalanceOf<T>: Send + Sync,
 {
 	/// utility constructor. Used only in client/factory code.
 	pub fn from(fee: BalanceOf<T>) -> Self {
@@ -955,7 +977,7 @@ impl<T: Config> sp_std::fmt::Debug for ChargeTransactionPayment<T> {
 
 impl<T: Config> SignedExtension for ChargeTransactionPayment<T>
 where
-	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand,
+	BalanceOf<T>: Send + Sync + From<u64>,
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
 	const IDENTIFIER: &'static str = "ChargeTransactionPayment";
@@ -1025,7 +1047,6 @@ where
 impl<T: Config, AnyCall: GetDispatchInfo + Encode> EstimateCallFee<AnyCall, BalanceOf<T>>
 	for Pallet<T>
 where
-	BalanceOf<T>: FixedPointOperand,
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
 	fn estimate_call_fee(call: &AnyCall, post_info: PostDispatchInfo) -> BalanceOf<T> {

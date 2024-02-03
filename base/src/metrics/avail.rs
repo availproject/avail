@@ -284,7 +284,7 @@ impl KateRpcMetrics {
 		if let Some(metrics) = AVAIL_METRICS.get() {
 			metrics
 				.kate_rpc
-				.query_data_proof_execution_time
+				.query_data_proof_v2_execution_time
 				.observe(duration.as_micros() as f64);
 		}
 	}

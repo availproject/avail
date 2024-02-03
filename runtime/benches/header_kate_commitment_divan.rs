@@ -14,11 +14,11 @@ mod commitment_builder {
 		(txs, block_length)
 	}
 
-	#[divan::bench(max_time = 120.0, consts = [ 32, 64, 128, 256 ])]
-	fn columns_count<const N: u32>(bencher: divan::Bencher) {
+	#[divan::bench(max_time = 120.0, args = [ 32, 64, 128, 256 ])]
+	fn columns_count(bencher: divan::Bencher, n: u32) {
 		bencher
-			.counter(N)
-			.with_inputs(|| setup(BlockLengthColumns(N)))
+			.counter(n)
+			.with_inputs(|| setup(BlockLengthColumns(n)))
 			.bench_values(|input| {
 				commitment_builder_with(input.0, input.1);
 			})

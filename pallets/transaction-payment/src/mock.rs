@@ -17,6 +17,7 @@
 
 use super::*;
 use crate as pallet_transaction_payment;
+
 use frame_support::{
 	derive_impl,
 	dispatch::DispatchClass,
@@ -109,6 +110,7 @@ impl pallet_balances::Config for Runtime {
 	type FreezeIdentifier = ();
 	type MaxFreezes = ();
 	type RuntimeHoldReason = ();
+	type RuntimeFreezeReason = ();
 	type MaxHolds = ();
 }
 

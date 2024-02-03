@@ -531,7 +531,10 @@ mod tests {
 	use crate::BlockNumber;
 	use frame_support::{
 		derive_impl, parameter_types,
-		traits::{ConstU32, FindAuthor},
+		traits::{
+			tokens::{PayFromAccount, UnityAssetBalanceConversion},
+			ConstU32, FindAuthor,
+		},
 		PalletId,
 	};
 	use frame_system::{
@@ -596,13 +599,15 @@ mod tests {
 		type MaxReserves = MaxReserves;
 		type ReserveIdentifier = [u8; 8];
 		type RuntimeEvent = RuntimeEvent;
-		type RuntimeHoldReason = [u8; 8];
+		type RuntimeHoldReason = ();
+		type RuntimeFreezeReason = ();
 		type WeightInfo = ();
 	}
 
 	parameter_types! {
 		pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
 		pub const MaxApprovals: u32 = 100;
+		pub TreasuryAccount: AccountId = Treasury::account_id();
 	}
 
 	impl pallet_treasury::Config for Test {
@@ -620,8 +625,17 @@ mod tests {
 		type PalletId = TreasuryPalletId;
 		type SpendFunds = ();
 		type MaxApprovals = MaxApprovals;
-		type WeightInfo = ();
 		type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
+		type WeightInfo = ();
+
+		type AssetKind = ();
+		type Beneficiary = Self::AccountId;
+		type BeneficiaryLookup = IdentityLookup<Self::AccountId>;
+		type Paymaster = PayFromAccount<Balances, TreasuryAccount>;
+		type BalanceConverter = UnityAssetBalanceConversion;
+		type PayoutPeriod = ConstU32<0>;
+		#[cfg(feature = "runtime-benchmarks")]
+		type BenchmarkHelper = ();
 	}
 
 	pub struct OneAuthor;

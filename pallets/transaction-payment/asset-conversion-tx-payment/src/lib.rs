@@ -48,7 +48,7 @@ use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	traits::{
-		tokens::fungibles::{Balanced, Inspect},
+		fungibles::{Balanced, Inspect},
 		IsType,
 	},
 	DefaultNoBound,
@@ -60,7 +60,6 @@ use sp_runtime::{
 	transaction_validity::{
 		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransaction,
 	},
-	FixedPointOperand,
 };
 
 #[cfg(test)]
@@ -116,7 +115,9 @@ pub mod pallet {
 	use super::*;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
+	pub trait Config:
+		frame_system::Config + pallet_transaction_payment::Config + pallet_asset_conversion::Config
+	{
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// The fungibles instance used to pay for transactions in assets.
@@ -161,12 +162,8 @@ pub struct ChargeAssetTxPayment<T: Config> {
 impl<T: Config> ChargeAssetTxPayment<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
-	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
-	BalanceOf<T>: Send
-		+ Sync
-		+ FixedPointOperand
-		+ Into<ChargeAssetBalanceOf<T>>
-		+ From<ChargeAssetLiquidityOf<T>>,
+	AssetBalanceOf<T>: Send + Sync,
+	BalanceOf<T>: Send + Sync + Into<ChargeAssetBalanceOf<T>> + From<ChargeAssetLiquidityOf<T>>,
 	ChargeAssetIdOf<T>: Send + Sync,
 {
 	/// Utility constructor. Used only in client/factory code.
@@ -184,15 +181,18 @@ where
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, self.tip);
-		debug_assert!(self.tip <= fee, "tip should be included in the computed fee");
+		debug_assert!(
+			self.tip <= fee,
+			"tip should be included in the computed fee"
+		);
 		if fee.is_zero() {
 			Ok((fee, InitialPayment::Nothing))
-		} else if let Some(asset_id) = self.asset_id {
+		} else if let Some(asset_id) = &self.asset_id {
 			T::OnChargeAssetTransaction::withdraw_fee(
 				who,
 				call,
 				info,
-				asset_id,
+				asset_id.clone(),
 				fee.into(),
 				self.tip.into(),
 			)
@@ -219,7 +219,12 @@ where
 impl<T: Config> sp_std::fmt::Debug for ChargeAssetTxPayment<T> {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		write!(f, "ChargeAssetTxPayment<{:?}, {:?}>", self.tip, self.asset_id.encode())
+		write!(
+			f,
+			"ChargeAssetTxPayment<{:?}, {:?}>",
+			self.tip,
+			self.asset_id.encode()
+		)
 	}
 	#[cfg(not(feature = "std"))]
 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
@@ -230,11 +235,10 @@ impl<T: Config> sp_std::fmt::Debug for ChargeAssetTxPayment<T> {
 impl<T: Config> SignedExtension for ChargeAssetTxPayment<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
-	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
+	AssetBalanceOf<T>: Send + Sync,
 	BalanceOf<T>: Send
 		+ Sync
 		+ From<u64>
-		+ FixedPointOperand
 		+ Into<ChargeAssetBalanceOf<T>>
 		+ Into<ChargeAssetLiquidityOf<T>>
 		+ From<ChargeAssetLiquidityOf<T>>,
@@ -269,7 +273,10 @@ where
 		use pallet_transaction_payment::ChargeTransactionPayment;
 		let (fee, _) = self.withdraw_fee(who, call, info, len)?;
 		let priority = ChargeTransactionPayment::<T>::get_priority(info, len, self.tip, fee);
-		Ok(ValidTransaction { priority, ..Default::default() })
+		Ok(ValidTransaction {
+			priority,
+			..Default::default()
+		})
 	}
 
 	fn pre_dispatch(
@@ -324,7 +331,7 @@ where
 							tip.into(),
 							used_for_fee.into(),
 							received_exchanged.into(),
-							asset_id,
+							asset_id.clone(),
 							asset_consumed.into(),
 						)?;
 

@@ -13,12 +13,12 @@ source $HOME/.cargo/env
 rustup update nightly
 rustup target add wasm32-unknown-unknown --toolchain nightly
 
-## Cloning and Building data-avail and light client bootstrap binaries.
+## Cloning and Building avail-node and light client bootstrap binaries.
 
-git clone https://github.com/kaustubhkapatral/avail.git ~/data-avail && cd ~/data-avail
+git clone https://github.com/kaustubhkapatral/avail.git ~/avail-node && cd ~/avail-node
 git checkout $BUILD_COMMIT
-cargo build --release -p data-avail
-sudo cp target/release/data-avail /usr/bin
+cargo build --release -p avail-node
+sudo cp target/release/avail-node /usr/bin
 cd $HOME
 git clone https://github.com/availproject/avail-light-bootstrap.git ~/light-bootstrap && cd ~/light-bootstrap
 cargo build --release
@@ -62,10 +62,10 @@ echo "load-test" >> $HOME/avail-keys/nodecount.txt
 
 cat $HOME/avail-keys/nodecount.txt | while IFS= read -r node_name; do
     printf 'Generating keys for %s\n' "$node_name"
-    data-avail key generate --output-type json --scheme Sr25519 -w 21 > $HOME/avail-keys/$node_name.wallet.sr25519.json
+    avail-node key generate --output-type json --scheme Sr25519 -w 21 > $HOME/avail-keys/$node_name.wallet.sr25519.json
     cat $HOME/avail-keys/$node_name.wallet.sr25519.json | jq -r '.secretPhrase' > $HOME/avail-keys/$node_name.wallet.secret
-    data-avail key generate-node-key 2> $HOME/avail-keys/$node_name.public.key 1> $HOME/avail-keys/$node_name.private.key
-    data-avail key inspect --scheme Ed25519 --output-type json $HOME/avail-keys/$node_name.wallet.secret > $HOME/avail-keys/$node_name.wallet.ed25519.json
+    avail-node key generate-node-key 2> $HOME/avail-keys/$node_name.public.key 1> $HOME/avail-keys/$node_name.private.key
+    avail-node key inspect --scheme Ed25519 --output-type json $HOME/avail-keys/$node_name.wallet.secret > $HOME/avail-keys/$node_name.wallet.ed25519.json
 done
 
 cd $HOME/scripts
@@ -73,9 +73,9 @@ python3 consolidate-keys.py $HOME/avail-keys
 
 ## Generating dynamic spec.
 
-data-avail build-spec --disable-default-bootnode --chain dev > $HOME/avail-keys/devnet.template.json
+avail-node build-spec --disable-default-bootnode --chain dev > $HOME/avail-keys/devnet.template.json
 python3 update-dev-chainspec.py $HOME/avail-keys
-data-avail build-spec --chain=$HOME/avail-keys/populated.devnet.chainspec.json --raw --disable-default-bootnode > $HOME/avail-keys/populated.devnet.chainspec.raw.json
+avail-node build-spec --chain=$HOME/avail-keys/populated.devnet.chainspec.json --raw --disable-default-bootnode > $HOME/avail-keys/populated.devnet.chainspec.raw.json
 CHAIN_NAME=$(cat $HOME/avail-keys/populated.devnet.chainspec.raw.json | jq -r .id)
 
 ## Imporing respective validator keys into their directories.
@@ -87,8 +87,8 @@ do
     mkdir -p $HOME/avail-home/avail-validators/validator-$i/chains/$CHAIN_NAME/network
     mkdir -p $HOME/avail-home/avail-fullnodes/node-$i/chains/$CHAIN_NAME/network
     cp $HOME/avail-keys/validator-$i.private.key $HOME/avail-home/avail-validators/validator-$i/chains/$CHAIN_NAME/network/secret_ed25519
-    data-avail key insert --base-path $HOME/avail-home/avail-validators/validator-$i --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json --scheme Sr25519 --suri "$(cat $HOME/avail-keys/validator-${i}.wallet.secret)" --key-type babe
-    data-avail key insert --base-path $HOME/avail-home/avail-validators/validator-$i --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json --scheme Ed25519 --suri "$(cat $HOME/avail-keys/validator-${i}.wallet.secret)" --key-type gran
+    avail-node key insert --base-path $HOME/avail-home/avail-validators/validator-$i --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json --scheme Sr25519 --suri "$(cat $HOME/avail-keys/validator-${i}.wallet.secret)" --key-type babe
+    avail-node key insert --base-path $HOME/avail-home/avail-validators/validator-$i --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json --scheme Ed25519 --suri "$(cat $HOME/avail-keys/validator-${i}.wallet.secret)" --key-type gran
     export NODE_KEY=$(cat $HOME/avail-keys/validator-$i.public.key)
     DIFF=$(($i - 1))
     INC=$(($DIFF * 2))
@@ -113,7 +113,7 @@ do
     [Service]
     Type=simple
     User=$USER
-    ExecStart=$(which data-avail) --validator --allow-private-ipv4 --base-path $HOME/avail-home/avail-validators/validator-$i --rpc-port $RPC --port $P2P --prometheus-port $PROM --no-mdns --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json $(cat $HOME/avail-keys/bootnode.txt) 
+    ExecStart=$(which avail-node) --validator --allow-private-ipv4 --base-path $HOME/avail-home/avail-validators/validator-$i --rpc-port $RPC --port $P2P --prometheus-port $PROM --no-mdns --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json $(cat $HOME/avail-keys/bootnode.txt) 
     Restart=on-failure
     RuntimeMaxSec=1d
     RestartSec=3
@@ -143,7 +143,7 @@ do
     [Service]
     Type=simple
     User=$USER
-    ExecStart=$(which data-avail) --rpc-cors=all --rpc-port $RPC --port $P2P --prometheus-port $PROM --rpc-external --unsafe-rpc-external --no-mdns --allow-private-ipv4 --base-path $HOME/avail-home/avail-fullnodes/node-$i --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json $(cat $HOME/avail-keys/bootnode.txt) 
+    ExecStart=$(which avail-node) --rpc-cors=all --rpc-port $RPC --port $P2P --prometheus-port $PROM --rpc-external --unsafe-rpc-external --no-mdns --allow-private-ipv4 --base-path $HOME/avail-home/avail-fullnodes/node-$i --chain $HOME/avail-keys/populated.devnet.chainspec.raw.json $(cat $HOME/avail-keys/bootnode.txt) 
     Restart=on-failure
     RuntimeMaxSec=1d
     RestartSec=3
@@ -159,7 +159,7 @@ done
 
 ## Generate node key and config for light client bootstrap.
 
-data-avail key generate-node-key 2> $HOME/avail-keys/light-client-boot.public.key 1> $HOME/avail-keys/light-client-boot.private.key
+avail-node key generate-node-key 2> $HOME/avail-keys/light-client-boot.public.key 1> $HOME/avail-keys/light-client-boot.private.key
 mkdir -p $HOME/avail-home/avail-light/light-1
 echo "log_level = \"info\"
 p2p_port = 39000
