@@ -400,18 +400,15 @@ where
 }
 
 /// Storage releases of the pallet.
-#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(
+	Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen, Default,
+)]
 enum Releases {
 	/// Original version of the pallet.
+	#[default]
 	V1Ancient,
 	/// One that bumps the usage to FixedU128 from FixedI128.
 	V2,
-}
-
-impl Default for Releases {
-	fn default() -> Self {
-		Releases::V1Ancient
-	}
 }
 
 /// Default value for NextFeeMultiplier. This is used in genesis and is also used in

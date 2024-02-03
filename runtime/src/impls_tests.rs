@@ -50,6 +50,7 @@ mod multiplier_tests {
 	}
 
 	// update based on the runtime impl of LengthMultiplier
+	#[cfg(not(feature = "fast-runtime"))]
 	fn length_multiplier_update(lm: Multiplier) -> Multiplier {
 		LengthFeeAdjustment::<
 			Runtime,

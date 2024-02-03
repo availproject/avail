@@ -1129,9 +1129,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				20u8, 17u8, 189u8, 175u8, 242u8, 97u8, 231u8, 177u8, 219u8, 81u8, 125u8, 164u8,
-				252u8, 226u8, 68u8, 77u8, 67u8, 131u8, 104u8, 141u8, 188u8, 225u8, 9u8, 167u8,
-				225u8, 59u8, 201u8, 78u8, 3u8, 87u8, 178u8, 96u8,
+				65u8, 133u8, 160u8, 221u8, 232u8, 7u8, 137u8, 83u8, 239u8, 140u8, 134u8, 113u8,
+				194u8, 78u8, 233u8, 114u8, 139u8, 231u8, 159u8, 149u8, 191u8, 75u8, 185u8, 8u8,
+				200u8, 150u8, 2u8, 227u8, 34u8, 167u8, 242u8, 91u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -5188,6 +5188,26 @@ pub mod api {
 							147u8, 213u8, 59u8, 80u8, 139u8, 35u8, 36u8, 196u8, 152u8, 19u8, 9u8,
 							159u8, 176u8, 79u8, 249u8, 201u8, 170u8, 1u8, 129u8, 79u8, 146u8,
 							197u8,
+						],
+					)
+				}
+				pub fn next_length_multiplier(
+					&self,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					runtime_types::sp_arithmetic::fixed_point::FixedU128,
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+					(),
+				> {
+					::subxt::storage::address::Address::new_static(
+						"TransactionPayment",
+						"NextLengthMultiplier",
+						vec![],
+						[
+							105u8, 206u8, 224u8, 246u8, 81u8, 232u8, 83u8, 112u8, 5u8, 40u8, 153u8,
+							27u8, 57u8, 168u8, 89u8, 200u8, 130u8, 38u8, 57u8, 222u8, 66u8, 23u8,
+							25u8, 34u8, 222u8, 32u8, 171u8, 208u8, 101u8, 175u8, 137u8, 106u8,
 						],
 					)
 				}
