@@ -51,12 +51,16 @@ pub mod pallet {
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
-		use super::DefaultConfig;
+		use super::*;
+		use frame_support::derive_impl;
 
 		/// Provides a viable default config that can be used with
 		/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
 		/// based on this one.
 		pub struct TestDefaultConfig;
+
+		#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig, no_aggregated_types)]
+		impl frame_system::DefaultConfig for TestDefaultConfig {}
 
 		#[frame_support::register_default_impl(TestDefaultConfig)]
 		impl DefaultConfig for TestDefaultConfig {
@@ -68,12 +72,15 @@ pub mod pallet {
 			type MinBlockCols = ();
 			type MinBlockRows = ();
 			type WeightInfo = ();
+			#[inject_runtime_type]
+			type RuntimeEvent = ();
 		}
 	}
 
 	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config {
 		/// Pallet Event
+		#[pallet::no_default_bounds]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Block length proposal Id.
@@ -311,12 +318,12 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-mod weight_helper {
+pub mod weight_helper {
 
 	use super::*;
 
 	/// Weight for `dataAvailability::submit_data`.
-	pub(crate) fn submit_data<T: Config>(data_len: usize) -> (Weight, DispatchClass) {
+	pub fn submit_data<T: Config>(data_len: usize) -> (Weight, DispatchClass) {
 		let data_len: u32 = data_len.saturated_into();
 		let basic_weight = T::WeightInfo::submit_data(data_len);
 		let data_root_weight = T::WeightInfo::data_root(data_len);

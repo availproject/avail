@@ -16,7 +16,7 @@ export const API_RPC = {
             params: [
                 {
                     name: 'cells',
-                    type: 'BoundedVec<Cell>'
+                    type: 'Vec<Cell>'
                 },
                 {
                     name: 'at',
@@ -76,7 +76,7 @@ export const API_RPC = {
             params: [
                 {
                     name: "rows",
-                    type: "BoundedVec<u32>"
+                    type: "Vec<u32>"
                 },
                 {
                     name: "at",
@@ -113,10 +113,15 @@ export const API_TYPES = {
         appLookup: "DataLookup",
         commitment: "KateCommitment",
       },
+      V3HeaderExtension: {
+        appLookup: "DataLookup",
+        commitment: "KateCommitment",
+      },
       HeaderExtension: {
         _enum: {
           V1: "V1HeaderExtension",
           V2: "V2HeaderExtension",
+          V3: "V3HeaderExtension",
         },
       },
     DaHeader: {

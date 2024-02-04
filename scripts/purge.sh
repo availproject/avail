@@ -29,7 +29,7 @@ rm -rf $HOME/avail-apps
 
 rm -rf $HOME/build
 
-rm -rf $HOME/data-avail
+rm -rf $HOME/avail-node
 
 rm -rf $HOME/light-bootstrap
 

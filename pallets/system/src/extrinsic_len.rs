@@ -7,12 +7,6 @@ use core::mem::swap;
 use frame_support::traits::Get;
 use scale_info::TypeInfo;
 use sp_std::iter::once;
-use static_assertions::assert_eq_size_val;
-
-/// TODO
-/// - [ ] Deduplicate from `kate` & `kate_recovery` libs.
-/// Will be removed soon when https://github.com/availproject/avail-core/tree/ghali/remove-unused-padding is merged
-const PADDING_TAIL_VALUE: u8 = 0x80;
 
 #[derive(Debug, Decode, Encode, MaxEncodedLen, TypeInfo)]
 #[scale_info(skip_type_params(S))]
@@ -35,11 +29,9 @@ impl<S: Get<u32>> PaddedExtrinsicLen<S> {
 		let data_vec_prefix = compact_len(&next_tx_count)?;
 		let next_encoded_len = data_len.checked_add(data_vec_prefix)?;
 
-		// Add padding tail and calculate next num_scalars.
+		// Calculate next num_scalars.
 		// It simulates `ceil( (next_encoded_len +1)/ DATA_CHUNK_SIZE )` using integer division,
 		// like `(next_encode_len + 1 /*TAIL*/ + (DATA_CHUNK_SIZE -1)/*ceil*/ ) / DATA_CHUNK_SIZE`
-		// NOTE: We check at compile time that `PADDING_TAIL_VALUE` is just one byte.
-		assert_eq_size_val!(0u8, PADDING_TAIL_VALUE);
 		let data_chunk_size = u32::try_from(DATA_CHUNK_SIZE).ok()?;
 		let next_num_scalars = next_encoded_len
 			.checked_add(data_chunk_size)?
@@ -88,6 +80,13 @@ impl<SID: Get<u32>, STX: Get<u32>> ExtrinsicLen<SID, STX> {
 
 	pub fn raw(&self) -> u32 {
 		self.raw
+	}
+
+	pub fn padded(&self) -> u32 {
+		self.padded
+			.values()
+			.map(|padded| padded.tx_lens.iter().sum::<u32>())
+			.sum()
 	}
 
 	pub fn add_raw(&mut self, len: u32) -> Option<u32> {

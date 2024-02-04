@@ -22,9 +22,10 @@ use frame_support::{
 	pallet_prelude::{StorageVersion, ValueQuery},
 	traits::{GetStorageVersion, PalletInfoAccess},
 	weights::Weight,
-	Blake2_128Concat, RuntimeDebug,
+	Blake2_128Concat,
 };
 use sp_core::Get;
+use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 
 use crate::{Config, Pallet};

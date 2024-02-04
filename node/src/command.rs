@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.
+// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 // This program is free software: you can redistribute it and/or modify
@@ -18,8 +18,8 @@
 
 use std::sync::Arc;
 
+use avail_node::chains;
 use da_runtime::Block;
-use data_avail::chains;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use sc_cli::{Result, SubstrateCli};
 use sc_service::PartialComponents;
@@ -196,7 +196,15 @@ pub fn run() -> Result<()> {
 					task_manager,
 					import_queue,
 					..
-				} = new_partial(&config, cli.unsafe_da_sync)?;
+				} = new_partial(
+					&config,
+					cli.unsafe_da_sync,
+					cli.kate_max_cells_size,
+					cli.kate_rpc_enabled,
+					cli.kate_rpc_metrics_enabled,
+					cli.eval_grid_cache_size,
+					cli.poly_grid_cach_size,
+				)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
@@ -207,7 +215,15 @@ pub fn run() -> Result<()> {
 					client,
 					task_manager,
 					..
-				} = new_partial(&config, cli.unsafe_da_sync)?;
+				} = new_partial(
+					&config,
+					cli.unsafe_da_sync,
+					cli.kate_max_cells_size,
+					cli.kate_rpc_enabled,
+					cli.kate_rpc_metrics_enabled,
+					cli.eval_grid_cache_size,
+					cli.poly_grid_cach_size,
+				)?;
 				Ok((cmd.run(client, config.database), task_manager))
 			})
 		},
@@ -218,7 +234,15 @@ pub fn run() -> Result<()> {
 					client,
 					task_manager,
 					..
-				} = new_partial(&config, cli.unsafe_da_sync)?;
+				} = new_partial(
+					&config,
+					cli.unsafe_da_sync,
+					cli.kate_max_cells_size,
+					cli.kate_rpc_enabled,
+					cli.kate_rpc_metrics_enabled,
+					cli.eval_grid_cache_size,
+					cli.poly_grid_cach_size,
+				)?;
 				Ok((cmd.run(client, config.chain_spec), task_manager))
 			})
 		},
@@ -230,7 +254,15 @@ pub fn run() -> Result<()> {
 					task_manager,
 					import_queue,
 					..
-				} = new_partial(&config, cli.unsafe_da_sync)?;
+				} = new_partial(
+					&config,
+					cli.unsafe_da_sync,
+					cli.kate_max_cells_size,
+					cli.kate_rpc_enabled,
+					cli.kate_rpc_metrics_enabled,
+					cli.eval_grid_cache_size,
+					cli.poly_grid_cach_size,
+				)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
@@ -246,7 +278,15 @@ pub fn run() -> Result<()> {
 					task_manager,
 					backend,
 					..
-				} = new_partial(&config, cli.unsafe_da_sync)?;
+				} = new_partial(
+					&config,
+					cli.unsafe_da_sync,
+					cli.kate_max_cells_size,
+					cli.kate_rpc_enabled,
+					cli.kate_rpc_metrics_enabled,
+					cli.eval_grid_cache_size,
+					cli.poly_grid_cach_size,
+				)?;
 				let aux_revert = Box::new(|client: Arc<FullClient>, backend, blocks| {
 					sc_consensus_babe::revert(client.clone(), backend, blocks)?;
 					sc_consensus_grandpa::revert(client, blocks)?;

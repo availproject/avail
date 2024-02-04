@@ -5,7 +5,7 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 license = "Apache-2.0"
 homepage = "https://substrate.io"
-repository = "https://github.com/paritytech/substrate/"
+repository = "https://github.com/availproject/polkadot-sdk/"
 description = "Runtime API definition required by System RPC extensions."
 readme = "README.md"
 
@@ -13,7 +13,7 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
 
 [features]

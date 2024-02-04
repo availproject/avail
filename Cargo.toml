@@ -1,28 +1,30 @@
 [workspace]
 resolver = "2"
 members = [
-    "pallets/executive",
-    "pallets/system",
     "pallets/dactr",
-    "pallets/bridges/nomad/updater-manager",
-    "pallets/bridges/nomad/home",
-    "pallets/bridges/nomad/da-bridge",
-    "runtime",
+    "pallets/executive",
+    "pallets/mandate",
+    "pallets/system",
+    "pallets/transaction-payment",
+    "pallets/vector",
     "node",
+    "runtime",
+    "runtime/fuzz",
 ]
 
 [workspace.dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false, features = [ "runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0" }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false, features = [ "runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "next" }
 
-[patch."https://github.com/paritytech/substrate.git"]
+[patch."https://github.com/availproject/polkadot-sdk.git"]
 frame-executive = { path = "pallets/executive" }
 frame-system = { path = "pallets/system" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
-pallet-nomination-pools = { path = "pallets/nomination-pools" }
-pallet-nomination-pools-runtime-api = { path = "pallets/nomination-pools/runtime-api" }
+pallet-transaction-payment = { path = "pallets/transaction-payment" }
+pallet-transaction-payment-rpc = { path = "pallets/transaction-payment/rpc" }
+pallet-transaction-payment-rpc-runtime-api = { path = "pallets/transaction-payment/rpc/runtime-api" }
 
 [patch.crates-io]
 # Customized Local pallets

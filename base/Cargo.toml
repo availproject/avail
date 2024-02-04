@@ -12,7 +12,7 @@ kate.workspace = true
 
 # Substrate related
 substrate-prometheus-endpoint = {  version = "0.10.0-dev", optional = true }
-sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
 
 # 3rd-party
 log = "0.4.17"
