@@ -3,15 +3,14 @@
 use super::*;
 use crate::Pallet;
 use avail_core::{
-	asdr::AppUncheckedExtrinsic, AppExtrinsic, BlockLengthColumns, BlockLengthRows,
+	asdr::AppUncheckedExtrinsic, AppExtrinsic, BlockLengthColumns, BlockLengthRows, HeaderVersion,
 	OpaqueExtrinsic, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
 };
 use codec::{Decode, Encode};
 use frame_benchmarking::{
-	impl_benchmark_test_suite, v1::BenchmarkError, v2::*, vec, whitelisted_caller,
+	impl_benchmark_test_suite, v1::BenchmarkError, v2::*, whitelisted_caller,
 };
-use frame_support::{log::info, traits::Get};
-use frame_system::HeaderVersion;
+use frame_support::traits::Get;
 use frame_system::{
 	header_builder::hosted_header_builder, limits::BlockLength, submitted_data, RawOrigin,
 };
@@ -24,6 +23,7 @@ use sp_runtime::{
 use sp_std::{
 	fmt::Debug,
 	iter::{once, repeat},
+	vec,
 	vec::Vec,
 };
 
@@ -159,12 +159,6 @@ where
 	let data: Vec<u8> = generate_bounded::<AppDataFor<T>>(data_length).to_vec();
 	let txs = vec![AppExtrinsic::from(data.to_vec()); nb_tx as usize];
 
-	info!("Launching extrinsic with:");
-	info!(
-		"rows: {} - cols: {} - DataLength: {} - Nb Txs: {}",
-		rows.0, cols.0, data_length, nb_tx
-	);
-
 	(txs, root, block_length, block_number, seed)
 }
 
@@ -287,7 +281,7 @@ mod benchmarks {
 				block_length,
 				block_number,
 				seed,
-				HeaderVersion::V2,
+				HeaderVersion::V3,
 			);
 		}
 
@@ -308,7 +302,7 @@ mod benchmarks {
 				block_length,
 				block_number,
 				seed,
-				HeaderVersion::V2,
+				HeaderVersion::V3,
 			);
 		}
 
@@ -329,7 +323,7 @@ mod benchmarks {
 				block_length,
 				block_number,
 				seed,
-				HeaderVersion::V2,
+				HeaderVersion::V3,
 			);
 		}
 
@@ -350,7 +344,7 @@ mod benchmarks {
 				block_length,
 				block_number,
 				seed,
-				HeaderVersion::V2,
+				HeaderVersion::V3,
 			);
 		}
 

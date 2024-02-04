@@ -4,7 +4,7 @@ STEPS="${STEPS:-50}"
 REPEAT="${REPEAT:-20}"
 TEMPLATE_PATH="${TEMPLATE_PATH:-./.maintain/frame-weight-template.hbs}"
 OUTPUT_PATH="${OUTPUT_PATH:-./output}"
-BINARY_LOCATION="./target/release/data-avail"
+BINARY_LOCATION="./target/release/avail-node"
 PALLETS="${PALLETS:-*}"
 
 echo "STEPS: $STEPS, REPEAT: $REPEAT"

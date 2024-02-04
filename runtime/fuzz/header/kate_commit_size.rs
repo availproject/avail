@@ -13,15 +13,13 @@ use std::{
 use avail_core::{header::HeaderExtension, InvalidTransactionCustomId as TxAvailErr};
 use da_control::{pallet::Call as DaControlCall, AppDataFor, CheckAppId};
 use da_runtime::{
-	constants::da::MaxAppDataLength, AppId, Executive, Header, Runtime, RuntimeCall,
-	RuntimeGenesisConfig, SignedExtra, SignedPayload, Timestamp, UncheckedExtrinsic, AVL,
+	AppId, Executive, Header, Runtime, RuntimeCall, RuntimeGenesisConfig, SignedExtra,
+	SignedPayload, Timestamp, UncheckedExtrinsic, AVL,
 };
 
 use codec::Encode;
-use frame_support::{
-	dispatch::GetDispatchInfo,
-	pallet_prelude::{InvalidTransaction as InvalidTx, TransactionValidityError as TxErr},
-	traits::Get as _,
+use frame_support::pallet_prelude::{
+	InvalidTransaction as InvalidTx, TransactionValidityError as TxErr,
 };
 use frame_system::{
 	CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce, CheckSpecVersion, CheckTxVersion,
@@ -31,9 +29,7 @@ use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_core::{Pair, H256};
 use sp_io::TestExternalities;
 use sp_keyring::AccountKeyring::Alice;
-use sp_runtime::{
-	generic::Era, traits::SignedExtension as _, BuildStorage, Digest, MultiAddress, MultiSignature,
-};
+use sp_runtime::{generic::Era, BuildStorage, Digest, MultiAddress, MultiSignature};
 
 const MAX_PADDED_LEN_EXCEEDED: u8 = TxAvailErr::MaxPaddedLenExceeded as u8;
 
@@ -121,7 +117,6 @@ struct TestData {
 
 impl<'a> Arbitrary<'a> for TestData {
 	fn arbitrary(u: &mut Unstructured<'a>) -> AResult<Self> {
-		// let max_app_data_len: u32 = MaxAppDataLength::get();
 		let max_app_data_len: u8 = 128;
 		// Get an iterator of arbitrary `T`s.
 		let pre_total_app_id = usize::arbitrary(u).unwrap_or(1);
@@ -166,8 +161,6 @@ fn kate_commit_size_fuzzer(total_app_id: NonZeroUsize, data_lens: Vec<NonZeroUsi
 		data_lens.len()
 	);
 
-	let who = Alice.to_account_id();
-
 	runtime_ext(total_app_id).execute_with(|| {
 		let txs = data_lens
 			.into_iter()
@@ -190,11 +183,11 @@ fn kate_commit_size_fuzzer(total_app_id: NonZeroUsize, data_lens: Vec<NonZeroUsi
 				.sample_iter(&Standard)
 				.take(data_len.get())
 				.collect::<Vec<_>>();
-			let (tx, call) = submit_data(nonce, app_id, data).unwrap();
-			let (_address, _signature, extra) = tx.signature.as_ref().unwrap();
-			let (_, _, _, _, _, _, check_weight, _, check_app_id) = extra;
-			let len = tx.encode().len();
-			let info = call.get_dispatch_info();
+			let (tx, _call) = submit_data(nonce, app_id, data).unwrap();
+			let (_address, _signature, _extra) = tx.signature.as_ref().unwrap();
+			// let (_, _, _, _, _, _, _, _, _) = extra;
+			// let len = tx.encode().len();
+			// let info = call.get_dispatch_info();
 
 			match Executive::apply_extrinsic(tx) {
 				Ok(_) => total_ok_txs += 1,

@@ -7,8 +7,8 @@ pub mod tests {
 	use std::num::NonZeroU16;
 
 	use avail_core::data_proof_v2::ProofResponse;
-	use avail_core::DataProof;
 	use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
+	use avail_core::{DataProof, HeaderVersion};
 	use avail_subxt::{
 		api::{
 			self,
@@ -135,6 +135,7 @@ pub mod tests {
 		Ok(block_length)
 	}
 
+	#[allow(dead_code)]
 	async fn query_data_proof(
 		rpc: &Rpc<AvailConfig>,
 		transaction_index: u32,
@@ -186,7 +187,15 @@ pub mod tests {
 		let app_extrinsics = get_block_app_extrinsics(&submitted_block).unwrap();
 
 		// Grid Creation
-		let grid = EvaluationGrid::from_extrinsics(app_extrinsics, 4, 256, 256, [0u8; 32]).unwrap();
+		let grid = EvaluationGrid::from_extrinsics(
+			app_extrinsics,
+			4,
+			256,
+			256,
+			[0u8; 32],
+			HeaderVersion::V3,
+		)
+		.unwrap();
 		let extended_grid = grid.extend_columns(NonZeroU16::new(2).unwrap()).unwrap();
 
 		assert_eq!(grid.dims(), Dimensions::new(1, 8).unwrap());
@@ -227,7 +236,15 @@ pub mod tests {
 		let app_extrinsics = get_block_app_extrinsics(&submitted_block).unwrap();
 
 		// Grid Creation
-		let grid = EvaluationGrid::from_extrinsics(app_extrinsics, 4, 256, 256, [0u8; 32]).unwrap();
+		let grid = EvaluationGrid::from_extrinsics(
+			app_extrinsics,
+			4,
+			256,
+			256,
+			[0u8; 32],
+			HeaderVersion::V3,
+		)
+		.unwrap();
 		assert_eq!(grid.dims(), Dimensions::new(1, 8).unwrap());
 
 		// RPC call
@@ -256,7 +273,15 @@ pub mod tests {
 		let app_extrinsics = get_block_app_extrinsics(&submitted_block).unwrap();
 
 		// Grid Creation
-		let grid = EvaluationGrid::from_extrinsics(app_extrinsics, 4, 256, 256, [0u8; 32]).unwrap();
+		let grid = EvaluationGrid::from_extrinsics(
+			app_extrinsics,
+			4,
+			256,
+			256,
+			[0u8; 32],
+			HeaderVersion::V3,
+		)
+		.unwrap();
 		let extended_grid = grid.extend_columns(NonZeroU16::new(2).unwrap()).unwrap();
 		let poly_grid = extended_grid.make_polynomial_grid().unwrap();
 
@@ -324,20 +349,28 @@ pub mod tests {
 		let pp = kate::couscous::public_params();
 
 		let submitted_block = get_submitted_block(rpc, block_hash).await.unwrap();
-		let ext = if let HeaderExtension::V2(ref ext) = submitted_block.block.header.extension {
-			ext
-		} else {
-			panic!("Unsupported header extension version")
+		let (commitment, rows, cols) = match submitted_block.block.header.extension {
+			HeaderExtension::V1(_) => panic!("Unsupported header extension version"),
+			HeaderExtension::V2(ext) => (
+				ext.commitment.commitment,
+				ext.commitment.rows,
+				ext.commitment.cols,
+			),
+			HeaderExtension::V3(ext) => (
+				ext.commitment.commitment,
+				ext.commitment.rows,
+				ext.commitment.cols,
+			),
 		};
 
 		let mut content = [0u8; 80];
 		content.copy_from_slice(&actual_proof);
-		let commitment: [u8; 48] = ext.commitment.commitment[..48].try_into().unwrap();
+		let commitment: [u8; 48] = commitment[..48].try_into().unwrap();
 		let dcell = kate_recovery::data::Cell {
 			position: kate_recovery::matrix::Position { row: 0, col: 0 },
 			content,
 		};
-		let dim = Dimensions::new(ext.commitment.rows, ext.commitment.cols).unwrap();
+		let dim = Dimensions::new(rows, cols).unwrap();
 		let res = verify(&pp, dim, &commitment, &dcell).unwrap();
 		assert!(res);
 	}
