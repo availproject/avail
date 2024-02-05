@@ -6,8 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-avail-base = { path = "../../base", default-features = false }
-da-runtime = { path = "../../runtime", default-features = false }
+avail-base = { path = "../../base" }
+da-runtime = { path = "../../runtime" }
 da-control = { path = "../../pallets/dactr" }
 pallet-vector = { path = "../../pallets/vector" }
 

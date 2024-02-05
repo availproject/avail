@@ -20,11 +20,11 @@ name = "avail-node"
 avail-base = { path = "../base" }
 
 # Internals
-avail-core = { workspace = true, default-features = false, features = ["std"] }
-kate = { workspace = true, default-features = false }
-da-runtime = { path = "../runtime", default-features = false }
-da-control = { path = "../pallets/dactr", default-features = false }
-kate-rpc = { path = "../rpc/kate-rpc", default-features = false }
+avail-core = { workspace = true, features = ["std"] }
+kate = { workspace = true }
+da-runtime = { path = "../runtime" }
+da-control = { path = "../pallets/dactr" }
+kate-rpc = { path = "../rpc/kate-rpc" }
 
 # 3rd-party
 codec = { package = "parity-scale-codec", version = "3" }
