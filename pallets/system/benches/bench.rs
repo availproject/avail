@@ -97,6 +97,8 @@ impl frame_system::Config for Runtime {
 	type SystemWeightInfo = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;
 	type Version = ();
+	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
+	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
 
 impl module::Config for Runtime {

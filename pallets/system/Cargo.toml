@@ -5,7 +5,7 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 license = "Apache-2.0"
 homepage = "https://substrate.io"
-repository = "https://github.com/paritytech/polkadot-sdk/"
+repository = "https://github.com/availproject/polkadot-sdk/"
 description = "FRAME system module"
 readme = "README.md"
 
@@ -14,8 +14,8 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 avail-base = { path = "../../base", default-features = false }
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false }
+avail-core.workspace = true
+kate.workspace = true
 
 # Other
 cfg-if = "1.0"
@@ -38,6 +38,7 @@ sp-version = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "
 sp-weights = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, features = ["serde"] }
 sp-runtime-interface = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
 binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" , default-features = false }
+bounded-collections = { version = "0.1.8", default-features = false }
 
 once_cell = { version = "1.18", optional = true }
 
@@ -57,6 +58,7 @@ std = [
 	"avail-base/std",
 	"avail-core/std",
 	"binary-merkle-tree/std",
+	"bounded-collections/std",
 	"codec/std",
 	"frame-support/std",
 	"kate/std",

@@ -1,14 +1,21 @@
 [workspace]
 resolver = "2"
 members = [
-    "pallets/executive",
-    "pallets/system",
     "pallets/dactr",
+    "pallets/executive",
+    "pallets/mandate",
+    "pallets/system",
     "pallets/transaction-payment",
-    "runtime",
+    "pallets/vector",
     "node",
+    "runtime",
+    "runtime/fuzz",
 ]
 
+[workspace.dependencies]
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false, features = [ "runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "next" }
 
 [patch."https://github.com/availproject/polkadot-sdk.git"]
 frame-executive = { path = "pallets/executive" }

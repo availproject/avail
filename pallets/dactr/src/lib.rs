@@ -26,6 +26,8 @@ mod tests;
 pub use extensions::check_app_id::CheckAppId;
 pub mod weights;
 
+pub const LOG_TARGET: &str = "runtime::da_control";
+
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::{pallet_prelude::*, DefaultNoBound};

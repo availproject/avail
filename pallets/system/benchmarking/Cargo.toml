@@ -5,7 +5,7 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 license = "Apache-2.0"
 homepage = "https://substrate.io"
-repository = "https://github.com/paritytech/polkadot-sdk/"
+repository = "https://github.com/availproject/polkadot-sdk/"
 description = "FRAME System benchmarking"
 readme = "README.md"
 
@@ -13,9 +13,7 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false, features = [
-	"runtime",
-] }
+avail-core.workspace = true
 
 # Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false }

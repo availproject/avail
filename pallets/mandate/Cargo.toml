@@ -22,7 +22,7 @@ frame-benchmarking = { git = "https://github.com/availproject/polkadot-sdk.git",
 [dev-dependencies]
 sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
 pallet-collective = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "next", features = ["runtime"] }
+avail-core.workspace = true
 
 [features]
 default = [ "std" ]

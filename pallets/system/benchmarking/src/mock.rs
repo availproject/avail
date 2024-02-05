@@ -20,7 +20,7 @@
 #![cfg(test)]
 
 use codec::Encode;
-use frame_support::derive_impl;
+use frame_support::{derive_impl, traits::ConstU32};
 use frame_system::{
 	header_builder::da::HeaderExtensionBuilder, mocking::MockUncheckedExtrinsic,
 	test_utils::TestRandomness,
@@ -50,6 +50,8 @@ impl frame_system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type SubmittedDataExtractor = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;
+	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
+	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
 
 impl crate::Config for Test {}

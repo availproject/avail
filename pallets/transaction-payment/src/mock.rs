@@ -22,7 +22,7 @@ use frame_support::{
 	derive_impl,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{ConstU64, Imbalance, OnUnbalanced},
+	traits::{ConstU32, ConstU64, Imbalance, OnUnbalanced},
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
 use frame_system as system;
@@ -95,6 +95,8 @@ impl system::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type SubmittedDataExtractor = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;
+	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
+	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
 
 impl pallet_balances::Config for Runtime {

@@ -11,9 +11,9 @@ da-runtime = { path = "../../runtime", default-features = false }
 da-control = { path = "../../pallets/dactr" }
 pallet-vector = { path = "../../pallets/vector" }
 
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false }
+avail-core.workspace = true
+kate.workspace = true
+kate-recovery.workspace = true
 
 # 3rd party
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }

@@ -13,11 +13,10 @@ repository = "https://github.com/availproject/avail"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-
 # Internal
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false }
+avail-core.workspace = true
 da-control = { path = "../pallets/dactr", default-features = false }
+kate.workspace = true
 
 # External 
 static_assertions = "1.1.0"
@@ -103,8 +102,6 @@ frame-system-rpc-runtime-api = { path = "../pallets/system/rpc/runtime-api" , de
 ## benchmarking
 frame-benchmarking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, optional = true }
 frame-system-benchmarking = { path = "../pallets/system/benchmarking", default-features = false, optional = true }
-#pallet-session-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
-#pallet-offences-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true }
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
@@ -153,7 +150,6 @@ std = [
 	"frame-election-provider-support/std",
 	"frame-executive/std",
 	"frame-support/std",
-	#"parity-util-mem/std",
 	"frame-system-benchmarking?/std",
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",

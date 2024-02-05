@@ -1221,6 +1221,8 @@ impl frame_system::Config for Runtime {
 	type UncheckedExtrinsic = UncheckedExtrinsic;
 	/// Version of the runtime.
 	type Version = Version;
+	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
+	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime

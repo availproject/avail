@@ -20,10 +20,8 @@ name = "avail-node"
 avail-base = { path = "../base" }
 
 # Internals
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false, features = [
-	"runtime",
-] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false }
+avail-core = { workspace = true, features = ["std"]}
+kate.workspace = true
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }
