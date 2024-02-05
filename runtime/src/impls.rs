@@ -192,11 +192,9 @@ parameter_types! {
    "1"
   ]
  ]
-}
 }}"#.as_bytes().to_vec();
 
 	pub RotateVk: Vec<u8> = r#"{"vk_json":{
- {
  "protocol": "groth16",
  "curve": "bn128",
  "nPublic": 2,
