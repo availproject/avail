@@ -31,9 +31,9 @@ sp-io = { workspace = true, default-features = false }
 sp-keyring = { workspace = true, default-features = false }
 sp-runtime = { workspace = true, default-features = false }
 
-avail-core = { workspace = true }
+avail-core = { workspace = true, default-features = false }
 da-control = { path = "../../pallets/dactr", default-features = false }
-da-runtime = { path = "../" }
+da-runtime = { path = "../", default-features = false }
 
 [features]
 default = [ "std", "use_fuzzer" ]

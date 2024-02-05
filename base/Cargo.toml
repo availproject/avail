@@ -7,8 +7,8 @@ edition = "2021"
 
 [dependencies]
 # Our crates
-avail-core.workspace = true
-kate.workspace = true
+avail-core = { workspace = true, default-features = false }
+kate = { workspace = true, default-features = false }
 
 # Substrate related
 substrate-prometheus-endpoint = { version = "0.10.0-dev", optional = true }

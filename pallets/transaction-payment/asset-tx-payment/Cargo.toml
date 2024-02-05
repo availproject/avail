@@ -34,9 +34,9 @@ serde_json = "1.0.85"
 
 sp-storage = { version = "13.0.0", workspace = true, default-features = false }
 
-pallet-assets = { version = "4.0.0-dev", workspace = true }
-pallet-authorship = { version = "4.0.0-dev", workspace = true }
-pallet-balances = { version = "4.0.0-dev", workspace = true }
+pallet-assets = { version = "4.0.0-dev", workspace = true, default-features = false }
+pallet-authorship = { version = "4.0.0-dev", workspace = true, default-features = false }
+pallet-balances = { version = "4.0.0-dev", workspace = true, default-features = false }
 
 [features]
 default = ["std"]

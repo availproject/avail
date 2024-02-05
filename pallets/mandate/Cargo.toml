@@ -22,7 +22,7 @@ frame-benchmarking = { workspace = true, default-features = false, optional = tr
 [dev-dependencies]
 sp-core = { workspace = true, default-features = false }
 pallet-collective = { workspace = true, default-features = false }
-avail-core = { workspace = true }
+avail-core = { workspace = true, default-features = false }
 
 [features]
 default = [ "std" ]

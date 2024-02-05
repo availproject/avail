@@ -1,10 +1,10 @@
 [package]
 name = "pallet-skip-feeless-payment"
 version = "1.0.0-dev"
-authors.workspace = true
-edition.workspace = true
-license.workspace = true
-repository.workspace = true
+authors = { workspace = true, default-features = false }
+edition = { workspace = true, default-features = false }
+license = { workspace = true, default-features = false }
+repository = { workspace = true, default-features = false }
 description = "Pallet to skip payments for calls annotated with `feeless_if` if the respective conditions are satisfied."
 
 [lints]

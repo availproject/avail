@@ -12,10 +12,10 @@ description = "Data Avail Control Module"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-avail-core = { workspace = true }
-kate = { workspace = true }
+avail-core = { workspace = true, default-features = false }
+kate = { workspace = true, default-features = false }
 frame-system = { path = "../../pallets/system", default-features = false }
-pallet-transaction-payment = { path = "../../pallets/transaction-payment" }
+pallet-transaction-payment = { path = "../../pallets/transaction-payment", default-features = false }
 
 log = { version = "0.4.20", default-features = false }
 static_assertions = "1.1.0"
@@ -38,7 +38,7 @@ frame-benchmarking = { workspace = true, default-features = false, optional = tr
 pallet-utility = { workspace = true, default-features = false }
 
 [dev-dependencies]
-pallet-balances = { workspace = true }
+pallet-balances = { workspace = true, default-features = false }
 test-case = "1.2.3"
 
 [features]

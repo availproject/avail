@@ -20,11 +20,11 @@ name = "avail-node"
 avail-base = { path = "../base" }
 
 # Internals
-avail-core = { workspace = true, features = ["std"] }
-kate = { workspace = true }
-da-runtime = { path = "../runtime" }
-da-control = { path = "../pallets/dactr" }
-kate-rpc = { path = "../rpc/kate-rpc" }
+avail-core = { workspace = true, default-features = false, features = ["std"] }
+kate = { workspace = true, default-features = false }
+da-runtime = { path = "../runtime", default-features = false }
+da-control = { path = "../pallets/dactr", default-features = false }
+kate-rpc = { path = "../rpc/kate-rpc", default-features = false }
 
 # 3rd-party
 codec = { package = "parity-scale-codec", version = "3" }
@@ -43,85 +43,85 @@ async-trait = "0.1.60"
 
 # Substrate
 ## Primitives
-sc-cli = { workspace = true }
-sp-io = { workspace = true }
-sp-statement-store = { workspace = true }
-sp-core = { workspace = true }
-sc-executor = { workspace = true }
-sc-service = { workspace = true }
-sc-storage-monitor = { workspace = true }
-sc-telemetry = { workspace = true }
-sc-keystore = { workspace = true }
-sp-keystore = { workspace = true }
-sp-keyring = { workspace = true }
-sc-transaction-pool = { workspace = true }
-sp-transaction-pool = { workspace = true }
-sp-inherents = { workspace = true }
-sc-transaction-pool-api = { workspace = true }
-sp-transaction-storage-proof = { workspace = true }
-sc-consensus-babe-rpc = { workspace = true }
-sp-consensus-babe = { workspace = true }
-sp-consensus = { workspace = true }
-sc-consensus = { workspace = true }
-sc-offchain = { workspace = true }
-sc-consensus-grandpa-rpc = { workspace = true }
-sc-consensus-grandpa = { workspace = true }
-sp-consensus-grandpa = { workspace = true }
-sc-client-api = { workspace = true }
-sp-runtime = { workspace = true }
-sp-timestamp = { workspace = true }
-sc-consensus-babe = { workspace = true }
-sc-consensus-slots = { workspace = true }
-sc-network = { workspace = true }
-sp-authority-discovery = { workspace = true }
-sc-authority-discovery = { workspace = true }
-sc-chain-spec = { workspace = true }
-sc-client-db = { workspace = true }
-sp-blockchain = { workspace = true }
-sp-block-builder = { workspace = true }
-sc-basic-authorship = { workspace = true }
-sc-sync-state-rpc = { workspace = true }
-sp-api = { workspace = true }
-sc-sysinfo = { workspace = true }
-sc-network-common = { workspace = true }
-sc-network-sync = { workspace = true }
+sc-cli = { workspace = true, default-features = false }
+sp-io = { workspace = true, default-features = false }
+sp-statement-store = { workspace = true, default-features = false }
+sp-core = { workspace = true, default-features = false }
+sc-executor = { workspace = true, default-features = false }
+sc-service = { workspace = true, default-features = false }
+sc-storage-monitor = { workspace = true, default-features = false }
+sc-telemetry = { workspace = true, default-features = false }
+sc-keystore = { workspace = true, default-features = false }
+sp-keystore = { workspace = true, default-features = false }
+sp-keyring = { workspace = true, default-features = false }
+sc-transaction-pool = { workspace = true, default-features = false }
+sp-transaction-pool = { workspace = true, default-features = false }
+sp-inherents = { workspace = true, default-features = false }
+sc-transaction-pool-api = { workspace = true, default-features = false }
+sp-transaction-storage-proof = { workspace = true, default-features = false }
+sc-consensus-babe-rpc = { workspace = true, default-features = false }
+sp-consensus-babe = { workspace = true, default-features = false }
+sp-consensus = { workspace = true, default-features = false }
+sc-consensus = { workspace = true, default-features = false }
+sc-offchain = { workspace = true, default-features = false }
+sc-consensus-grandpa-rpc = { workspace = true, default-features = false }
+sc-consensus-grandpa = { workspace = true, default-features = false }
+sp-consensus-grandpa = { workspace = true, default-features = false }
+sc-client-api = { workspace = true, default-features = false }
+sp-runtime = { workspace = true, default-features = false }
+sp-timestamp = { workspace = true, default-features = false }
+sc-consensus-babe = { workspace = true, default-features = false }
+sc-consensus-slots = { workspace = true, default-features = false }
+sc-network = { workspace = true, default-features = false }
+sp-authority-discovery = { workspace = true, default-features = false }
+sc-authority-discovery = { workspace = true, default-features = false }
+sc-chain-spec = { workspace = true, default-features = false }
+sc-client-db = { workspace = true, default-features = false }
+sp-blockchain = { workspace = true, default-features = false }
+sp-block-builder = { workspace = true, default-features = false }
+sc-basic-authorship = { workspace = true, default-features = false }
+sc-sync-state-rpc = { workspace = true, default-features = false }
+sp-api = { workspace = true, default-features = false }
+sc-sysinfo = { workspace = true, default-features = false }
+sc-network-common = { workspace = true, default-features = false }
+sc-network-sync = { workspace = true, default-features = false }
 primitive-types = "0.12.0"
 
 # FRAME
-pallet-im-online = { workspace = true }
-frame-system = { path = "../pallets/system" }
-pallet-transaction-payment = { workspace = true }
-frame-support = { workspace = true }
-mmr-rpc = { workspace = true }
+pallet-im-online = { workspace = true, default-features = false }
+frame-system = { path = "../pallets/system", default-features = false }
+pallet-transaction-payment = { workspace = true, default-features = false }
+frame-support = { workspace = true, default-features = false }
+mmr-rpc = { workspace = true, default-features = false }
 
 # These dependencies are used for the node template's RPCs
-sc-rpc = { workspace = true }
-sp-rpc = { workspace = true }
-sc-rpc-api = { workspace = true }
-sc-rpc-spec-v2 = { workspace = true }
-substrate-frame-rpc-system = { workspace = true }
-pallet-transaction-payment-rpc = { workspace = true }
-substrate-state-trie-migration-rpc = { workspace = true }
+sc-rpc = { workspace = true, default-features = false }
+sp-rpc = { workspace = true, default-features = false }
+sc-rpc-api = { workspace = true, default-features = false }
+sc-rpc-spec-v2 = { workspace = true, default-features = false }
+substrate-frame-rpc-system = { workspace = true, default-features = false }
+pallet-transaction-payment-rpc = { workspace = true, default-features = false }
+substrate-state-trie-migration-rpc = { workspace = true, default-features = false }
 substrate-prometheus-endpoint = "0.10.0-dev"
 
 # These dependencies are used for runtime benchmarking
-frame-benchmarking = { workspace = true }
-frame-benchmarking-cli = { workspace = true }
+frame-benchmarking = { workspace = true, default-features = false }
+frame-benchmarking-cli = { workspace = true, default-features = false }
 
 # Try-runtime
-try-runtime-cli = { workspace = true, optional = true }
+try-runtime-cli = { workspace = true, default-features = false, optional = true }
 
 # Custom
 frame-system-rpc-runtime-api = { path = "../pallets/system/rpc/runtime-api" }
 
 [build-dependencies]
-substrate-build-script-utils = { workspace = true }
+substrate-build-script-utils = { workspace = true, default-features = false }
 clap = { version = "4.4.17", optional = true }
 clap_complete = { version = "4.0.2", optional = true }
 frame-benchmarking-cli = { workspace = true, optional = true }
 
 [dev-dependencies]
-sp-tracing = { workspace = true }
+sp-tracing = { workspace = true, default-features = false }
 tempfile = "3.1.0"
 
 [features]

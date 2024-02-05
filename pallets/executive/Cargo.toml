@@ -29,12 +29,12 @@ sp-tracing = { workspace = true, default-features = false }
 
 [dev-dependencies]
 array-bytes = "6.1"
-pallet-balances = { workspace = true }
+pallet-balances = { workspace = true, default-features = false }
 pallet-transaction-payment = { path = "../../pallets/transaction-payment" }
-sp-core = { workspace = true }
-sp-inherents = { workspace = true }
-sp-io = { workspace = true }
-sp-version = { workspace = true }
+sp-core = { workspace = true, default-features = false }
+sp-inherents = { workspace = true, default-features = false }
+sp-io = { workspace = true, default-features = false }
+sp-version = { workspace = true, default-features = false }
 
 [features]
 default = [ "std" ]
