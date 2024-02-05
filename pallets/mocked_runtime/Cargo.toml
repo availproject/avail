@@ -19,22 +19,22 @@ parity-util-mem = { version = "0.12.0", features = ["primitive-types"] }
 derive_more = "0.99.17" 
 serde = { version = "1.0.121", features = ["derive"] }
 
-frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-staking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-version = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-inherents = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+frame-support = { workspace = true }
+sp-runtime = { workspace = true }
+sp-core = { workspace = true }
+sp-staking = { workspace = true }
+sp-io = { workspace = true }
+sp-version = { workspace = true }
+sp-inherents = { workspace = true }
+sp-std = { workspace = true }
 
 # Pallets
 frame-system = { path = "../system" }
-pallet-transaction-payment = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-pallet-balances = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-pallet-timestamp = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-pallet-babe = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-pallet-staking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+pallet-transaction-payment = { path = "../transaction-payment" }
+pallet-balances = { workspace = true }
+pallet-timestamp = { workspace = true }
+pallet-babe = { workspace = true }
+pallet-staking = { workspace = true }
 
 
 [features]

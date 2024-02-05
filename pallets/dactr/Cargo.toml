@@ -12,29 +12,33 @@ description = "Data Avail Control Module"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-avail-core.workspace = true
-kate.workspace = true
+avail-core = { workspace = true }
+kate = { workspace = true }
+frame-system = { path = "../../pallets/system", default-features = false }
+pallet-transaction-payment = { path = "../../pallets/transaction-payment" }
 
 log = { version = "0.4.20", default-features = false }
 static_assertions = "1.1.0"
 
 # Substrate
 serde = { version = "1.0.126", optional = true, features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-arithmetic = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-frame-system = { path = "../../pallets/system", default-features = false }
-frame-benchmarking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, optional = true }
-pallet-utility = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
+	"derive",
+] }
+scale-info = { version = "2.5.0", default-features = false, features = [
+	"derive",
+] }
+sp-core = { workspace = true, default-features = false }
+sp-std = { workspace = true, default-features = false }
+sp-io = { workspace = true, default-features = false }
+sp-runtime = { workspace = true, default-features = false }
+sp-arithmetic = { workspace = true, default-features = false }
+frame-support = { workspace = true, default-features = false }
+frame-benchmarking = { workspace = true, default-features = false, optional = true }
+pallet-utility = { workspace = true, default-features = false }
 
 [dev-dependencies]
-pallet-transaction-payment = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-pallet-balances = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+pallet-balances = { workspace = true }
 test-case = "1.2.3"
 
 [features]

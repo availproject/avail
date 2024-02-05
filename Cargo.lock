@@ -943,7 +943,7 @@ dependencies = [
 
 [[package]]
 name = "avail-node"
-version = "1.10.0"
+version = "2.0.0"
 dependencies = [
  "async-trait",
  "avail-base",
@@ -4259,6 +4259,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "impl-rlp"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f28220f89297a075ddc7245cd538076ee98b01f2a9c23a53a4f1105d5a322808"
+dependencies = [
+ "rlp",
+]
+
+[[package]]
 name = "impl-serde"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6986,15 +6995,18 @@ checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 [[package]]
 name = "patricia-merkle-trie"
 version = "0.1.0"
-source = "git+https://github.com/availproject/patricia-merkle-trie.git?branch=ghali/substrate-1.6#7ecb9f0c28c3af353eb7dbdb7cbbee7b4291c100"
 dependencies = [
  "hash-db 0.15.2",
  "hash256-std-hasher",
+ "hex",
+ "hex-literal 0.3.4",
  "memory-db 0.30.0",
  "parity-scale-codec",
  "primitive-types",
  "rlp",
+ "rlp-derive",
  "sp-io",
+ "tiny-keccak",
  "trie-db 0.24.0",
 ]
 
@@ -7344,6 +7356,7 @@ checksum = "9f3486ccba82358b11a77516035647c34ba167dfa53312630de83b12bd4f3d66"
 dependencies = [
  "fixed-hash",
  "impl-codec",
+ "impl-rlp",
  "impl-serde",
  "scale-info",
  "uint",
@@ -7934,6 +7947,17 @@ source = "git+https://github.com/paritytech/parity-common.git?tag=rlp-v0.5.2#866
 dependencies = [
  "bytes",
  "rustc-hex",
+]
+
+[[package]]
+name = "rlp-derive"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e33d7b2abe0c340d8797fe2907d3f20d3b5ea5908683618bfe80df7f621f672a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -11377,6 +11401,7 @@ dependencies = [
  "hash-db 0.15.2",
  "hashbrown 0.12.3",
  "log",
+ "rustc-hex",
  "smallvec",
 ]
 

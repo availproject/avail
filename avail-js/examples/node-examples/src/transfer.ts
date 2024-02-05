@@ -14,7 +14,7 @@ const main = async () => {
     const decimals = getDecimals(api)
     const amount = formatNumberToBalance(config.amount, decimals)
 
-    await api.tx.balances.transfer(config.recipient, amount).signAndSend(keyring, options, ({ status, events }) => {
+    await api.tx.balances.transferKeepAlive(config.recipient, amount).signAndSend(keyring, options, ({ status, events }) => {
       if (status.isInBlock) {
         console.log(`Transaction included at blockHash ${status.asInBlock}`)
         events.forEach(({ event: { data, method, section } }) => {

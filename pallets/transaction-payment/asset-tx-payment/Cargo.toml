@@ -14,15 +14,15 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 # Substrate dependencies
-sp-core = { version = "21.0.0", default-features = false, git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-io = { version = "23.0.0", default-features = false, git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-runtime = { version = "24.0.0", default-features = false, git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-std = { version = "8.0.0", default-features = false, git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+sp-core = { version = "21.0.0", workspace = true, default-features = false }
+sp-io = { version = "23.0.0", workspace = true, default-features = false }
+sp-runtime = { version = "24.0.0", workspace = true, default-features = false }
+sp-std = { version = "8.0.0", workspace = true, default-features = false }
 
-frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+frame-support = { workspace = true, default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false, path = "../../system" }
 pallet-transaction-payment = { version = "4.0.0-dev", default-features = false, path = ".." }
-frame-benchmarking = { version = "4.0.0-dev", default-features = false, git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", optional = true }
+frame-benchmarking = { version = "4.0.0-dev", workspace = true, default-features = false, optional = true }
 
 # Other dependencies
 codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive"] }
@@ -32,11 +32,11 @@ serde = { version = "1.0.163", optional = true }
 [dev-dependencies]
 serde_json = "1.0.85"
 
-sp-storage = { version = "13.0.0", default-features = false, git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+sp-storage = { version = "13.0.0", workspace = true, default-features = false }
 
-pallet-assets = { version = "4.0.0-dev", git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-pallet-authorship = { version = "4.0.0-dev", git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-pallet-balances = { version = "4.0.0-dev", git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+pallet-assets = { version = "4.0.0-dev", workspace = true }
+pallet-authorship = { version = "4.0.0-dev", workspace = true }
+pallet-balances = { version = "4.0.0-dev", workspace = true }
 
 [features]
 default = ["std"]

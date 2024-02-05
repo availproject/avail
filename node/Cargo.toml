@@ -1,6 +1,6 @@
 [package]
 name = "avail-node"
-version = "1.10.0"
+version = "2.0.0"
 description = "Avail Node"
 authors = ["Anonymous"]
 homepage = "https://www.availproject.org/"
@@ -20,8 +20,8 @@ name = "avail-node"
 avail-base = { path = "../base" }
 
 # Internals
-avail-core = { workspace = true, features = ["std"]}
-kate.workspace = true
+avail-core = { workspace = true, features = ["std"] }
+kate = { workspace = true }
 da-runtime = { path = "../runtime" }
 da-control = { path = "../pallets/dactr" }
 kate-rpc = { path = "../rpc/kate-rpc" }
@@ -43,85 +43,85 @@ async-trait = "0.1.60"
 
 # Substrate
 ## Primitives
-sc-cli = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-statement-store = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-executor = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-service = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-storage-monitor = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-telemetry = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-keystore = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-keystore = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-transaction-pool = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-transaction-pool = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-inherents = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-transaction-pool-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-transaction-storage-proof = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-consensus-babe-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-consensus-babe = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-consensus = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-consensus = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-offchain = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-consensus-grandpa-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-consensus-grandpa = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-consensus-grandpa = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-client-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-timestamp = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-consensus-babe = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-consensus-slots = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-network = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-authority-discovery = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-authority-discovery = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-chain-spec = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-client-db = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-blockchain = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-block-builder = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-basic-authorship = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-sync-state-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-sysinfo = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-network-common = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-network-sync = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+sc-cli = { workspace = true }
+sp-io = { workspace = true }
+sp-statement-store = { workspace = true }
+sp-core = { workspace = true }
+sc-executor = { workspace = true }
+sc-service = { workspace = true }
+sc-storage-monitor = { workspace = true }
+sc-telemetry = { workspace = true }
+sc-keystore = { workspace = true }
+sp-keystore = { workspace = true }
+sp-keyring = { workspace = true }
+sc-transaction-pool = { workspace = true }
+sp-transaction-pool = { workspace = true }
+sp-inherents = { workspace = true }
+sc-transaction-pool-api = { workspace = true }
+sp-transaction-storage-proof = { workspace = true }
+sc-consensus-babe-rpc = { workspace = true }
+sp-consensus-babe = { workspace = true }
+sp-consensus = { workspace = true }
+sc-consensus = { workspace = true }
+sc-offchain = { workspace = true }
+sc-consensus-grandpa-rpc = { workspace = true }
+sc-consensus-grandpa = { workspace = true }
+sp-consensus-grandpa = { workspace = true }
+sc-client-api = { workspace = true }
+sp-runtime = { workspace = true }
+sp-timestamp = { workspace = true }
+sc-consensus-babe = { workspace = true }
+sc-consensus-slots = { workspace = true }
+sc-network = { workspace = true }
+sp-authority-discovery = { workspace = true }
+sc-authority-discovery = { workspace = true }
+sc-chain-spec = { workspace = true }
+sc-client-db = { workspace = true }
+sp-blockchain = { workspace = true }
+sp-block-builder = { workspace = true }
+sc-basic-authorship = { workspace = true }
+sc-sync-state-rpc = { workspace = true }
+sp-api = { workspace = true }
+sc-sysinfo = { workspace = true }
+sc-network-common = { workspace = true }
+sc-network-sync = { workspace = true }
 primitive-types = "0.12.0"
 
 # FRAME
-pallet-im-online = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+pallet-im-online = { workspace = true }
 frame-system = { path = "../pallets/system" }
-pallet-transaction-payment = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-mmr-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+pallet-transaction-payment = { workspace = true }
+frame-support = { workspace = true }
+mmr-rpc = { workspace = true }
 
 # These dependencies are used for the node template's RPCs
-sc-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-rpc-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sc-rpc-spec-v2 = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-substrate-frame-rpc-system = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-pallet-transaction-payment-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-substrate-state-trie-migration-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+sc-rpc = { workspace = true }
+sp-rpc = { workspace = true }
+sc-rpc-api = { workspace = true }
+sc-rpc-spec-v2 = { workspace = true }
+substrate-frame-rpc-system = { workspace = true }
+pallet-transaction-payment-rpc = { workspace = true }
+substrate-state-trie-migration-rpc = { workspace = true }
 substrate-prometheus-endpoint = "0.10.0-dev"
 
 # These dependencies are used for runtime benchmarking
-frame-benchmarking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-frame-benchmarking-cli = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+frame-benchmarking = { workspace = true }
+frame-benchmarking-cli = { workspace = true }
 
 # Try-runtime
-try-runtime-cli = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", optional = true }
+try-runtime-cli = { workspace = true, optional = true }
 
 # Custom
 frame-system-rpc-runtime-api = { path = "../pallets/system/rpc/runtime-api" }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+substrate-build-script-utils = { workspace = true }
 clap = { version = "4.4.17", optional = true }
 clap_complete = { version = "4.0.2", optional = true }
-frame-benchmarking-cli = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", optional = true }
+frame-benchmarking-cli = { workspace = true, optional = true }
 
 [dev-dependencies]
-sp-tracing = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+sp-tracing = { workspace = true }
 tempfile = "3.1.0"
 
 [features]

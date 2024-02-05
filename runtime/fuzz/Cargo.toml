@@ -19,19 +19,19 @@ libfuzzer-sys = { version = "0.4", optional = true }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
 	"derive",
 ] }
-frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+frame-support = { workspace = true, default-features = false }
 frame-system = { path = "../../pallets/system", default-features = false, features = [
 	"serde",
 ] }
-pallet-babe = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-pallet-balances = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "next" }
 pallet-transaction-payment = { path = "../../pallets/transaction-payment", default-features = false }
+pallet-babe = { workspace = true, default-features = false }
+pallet-balances = { workspace = true, default-features = false }
+sp-core = { workspace = true, default-features = false }
+sp-io = { workspace = true, default-features = false }
+sp-keyring = { workspace = true, default-features = false }
+sp-runtime = { workspace = true, default-features = false }
+
+avail-core = { workspace = true }
 da-control = { path = "../../pallets/dactr", default-features = false }
 da-runtime = { path = "../" }
 
