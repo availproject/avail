@@ -34,13 +34,16 @@ use crate::{
 	service::{self, new_partial, FullClient},
 };
 
+use avail_node::NODE_VERSION;
+
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
 		"Avail Node".into()
 	}
 
 	fn impl_version() -> String {
-		env!("SUBSTRATE_CLI_IMPL_VERSION").into()
+		let commit_hash = env!("SUBSTRATE_CLI_COMMIT_HASH");
+		format!("{NODE_VERSION}-{commit_hash}")
 	}
 
 	fn description() -> String {

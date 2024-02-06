@@ -8,9 +8,10 @@ mod multiplier_tests {
 		traits::OnFinalize,
 		weights::{Weight, WeightToFee},
 	};
+	#[cfg(not(feature = "fast-runtime"))]
+	use pallet_transaction_payment::LengthFeeAdjustment;
 	use pallet_transaction_payment::{
-		LengthFeeAdjustment, Multiplier, NextFeeMultiplier, NextLengthMultiplier,
-		TargetedFeeAdjustment,
+		Multiplier, NextFeeMultiplier, NextLengthMultiplier, TargetedFeeAdjustment,
 	};
 	use sp_runtime::{
 		assert_eq_error_rate,
