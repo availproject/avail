@@ -11,6 +11,7 @@ use sp_runtime::SaturatedConversion;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+pub mod constants;
 #[cfg(test)]
 mod mock;
 mod state;
@@ -92,6 +93,8 @@ pub mod pallet {
 		InvalidBridgeInputs,
 		/// Domain is not supported
 		DomainNotSupported,
+		/// Function ids (step / rotate) are not set
+		FunctionIdsAreNotSet,
 	}
 
 	#[pallet::event]
@@ -129,6 +132,16 @@ pub mod pallet {
 		ConfigurationUpdated {
 			slots_per_period: u64,
 			finality_threshold: u16,
+		},
+		/// Function Ids were updated
+		FunctionIdsUpdated { value: Option<(H256, H256)> },
+		/// Step verification key was updated
+		StepVerificationKeyUpdated {
+			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
+		},
+		/// Rotate verification key was updated
+		RotateVerificationKeyUpdated {
+			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
 		},
 	}
 
@@ -175,6 +188,27 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type WhitelistedDomains<T> = StorageValue<_, BoundedVec<u32, ConstU32<10_000>>, ValueQuery>;
 
+	/// The storage for the step function identifier and the rotate function identifier.
+	/// Step function id is used to distinguish step-related functionality within the fulfill_call function.
+	/// Rotate function id is used to handle rotate-related functionality within the fulfill_call function.
+	/// When the provided function_id matches the step/rotate function identifier, specific logic related to step/rotate functions is executed.
+	/// The order of storage is (step_function_id, rotate_function_id)
+	#[pallet::storage]
+	#[pallet::getter(fn function_ids)]
+	pub type FunctionIds<T: Config> = StorageValue<_, Option<(H256, H256)>, ValueQuery>;
+
+	/// Step verification key storage
+	#[pallet::storage]
+	#[pallet::getter(fn step_verification_key)]
+	pub type StepVerificationKey<T: Config> =
+		StorageValue<_, Option<BoundedVec<u8, ConstU32<10_000>>>, ValueQuery>;
+
+	/// Rotate verification key storage
+	#[pallet::storage]
+	#[pallet::getter(fn rotate_verification_key)]
+	pub type RotateVerificationKey<T: Config> =
+		StorageValue<_, Option<BoundedVec<u8, ConstU32<10_000>>>, ValueQuery>;
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
@@ -189,20 +223,6 @@ pub mod pallet {
 		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
 		/// Dependency that can provide current time.
 		type TimeProvider: UnixTime;
-		/// Step verification key constant
-		#[pallet::constant]
-		type StepVerificationKey: Get<Vec<u8>>;
-		/// Rotate verification key constant
-		#[pallet::constant]
-		type RotateVerificationKey: Get<Vec<u8>>;
-		/// The step function identifier is used to distinguish step-related functionality within the fulfill_call function.
-		/// When the provided function_id matches the step function identifier, specific logic related to step functions is executed.
-		#[pallet::constant]
-		type StepFunctionId: Get<H256>;
-		/// The rotate function identifier is used to identify and handle rotate-related functionality within the fulfill_call function.
-		/// When the provided function_id matches the rotate function identifier, specific logic related to rotate functions is executed.
-		#[pallet::constant]
-		type RotateFunctionId: Get<H256>;
 		/// The index of the `messages` mapping in contract.
 		/// This is mandatory when calling execute messages via storage proofs.
 		#[pallet::constant]
@@ -220,8 +240,11 @@ pub mod pallet {
 	pub struct GenesisConfig<T: Config> {
 		pub slots_per_period: u64,
 		pub finality_threshold: u16,
+		pub function_ids: (H256, H256),
 		pub broadcaster: H256,
 		pub broadcaster_domain: u32,
+		pub step_verification_key: Vec<u8>,
+		pub rotate_verification_key: Vec<u8>,
 		pub whitelisted_domains: Vec<u32>,
 		pub _phantom: PhantomData<T>,
 	}
@@ -245,6 +268,17 @@ pub mod pallet {
 			WhitelistedDomains::<T>::put(domains);
 
 			Broadcasters::<T>::set(self.broadcaster_domain, self.broadcaster);
+
+			FunctionIds::<T>::set(Some(self.function_ids));
+
+			let step_verification_key = BoundedVec::try_from(self.step_verification_key.clone())
+				.expect("Step verification key should be valid at genesis.");
+			StepVerificationKey::<T>::set(Some(step_verification_key));
+
+			let rotate_verification_key =
+				BoundedVec::try_from(self.rotate_verification_key.clone())
+					.expect("Rotate verification key should be valid at genesis.");
+			RotateVerificationKey::<T>::set(Some(rotate_verification_key));
 		}
 	}
 
@@ -277,7 +311,8 @@ pub mod pallet {
 			// compute hashes
 			let input_hash = H256(sha2_256(input.as_slice()));
 			let output_hash = H256(sha2_256(output.as_slice()));
-			let verifier = Self::get_verifier(function_id)?;
+			let (step_function_id, rotate_function_id) = Self::get_function_ids()?;
+			let verifier = Self::get_verifier(function_id, step_function_id, rotate_function_id)?;
 
 			let is_success = verifier
 				.verify(input_hash, output_hash, proof.to_vec())
@@ -286,25 +321,25 @@ pub mod pallet {
 			// make sure that verification call is valid
 			ensure!(is_success, Error::<T>::VerificationFailed);
 
-			if function_id == T::StepFunctionId::get() {
+			if function_id == step_function_id {
 				let vs =
 					VerifiedStep::new(function_id, input_hash, parse_step_output(output.to_vec()));
 
-				if Self::step_into(slot, state, &vs)? {
+				if Self::step_into(slot, state, &vs, step_function_id)? {
 					Self::deposit_event(Event::HeaderUpdate {
 						slot: vs.verified_output.finalized_slot,
 						finalization_root: vs.verified_output.finalized_header_root,
 						execution_state_root: vs.verified_output.execution_state_root,
 					});
 				}
-			} else if function_id == T::RotateFunctionId::get() {
+			} else if function_id == rotate_function_id {
 				let vr = VerifiedRotate::new(
 					function_id,
 					input_hash,
 					parse_rotate_output(output.to_vec()),
 				);
 
-				let period = Self::rotate_into(slot, state, &vr)?;
+				let period = Self::rotate_into(slot, state, &vr, rotate_function_id)?;
 				Self::deposit_event(Event::SyncCommitteeUpdate {
 					period,
 					root: vr.sync_committee_poseidon,
@@ -576,6 +611,48 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		#[pallet::call_index(8)]
+		#[pallet::weight(T::WeightInfo::set_function_ids())]
+		pub fn set_function_ids(
+			origin: OriginFor<T>,
+			value: Option<(H256, H256)>,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			FunctionIds::<T>::put(value);
+
+			Self::deposit_event(Event::FunctionIdsUpdated { value });
+
+			Ok(())
+		}
+
+		#[pallet::call_index(9)]
+		#[pallet::weight(T::WeightInfo::set_step_verification_key())]
+		pub fn set_step_verification_key(
+			origin: OriginFor<T>,
+			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			StepVerificationKey::<T>::put(value.clone());
+
+			Self::deposit_event(Event::StepVerificationKeyUpdated { value });
+
+			Ok(())
+		}
+
+		#[pallet::call_index(10)]
+		#[pallet::weight(T::WeightInfo::set_rotate_verification_key())]
+		pub fn set_rotate_verification_key(
+			origin: OriginFor<T>,
+			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			RotateVerificationKey::<T>::put(value.clone());
+
+			Self::deposit_event(Event::RotateVerificationKeyUpdated { value });
+
+			Ok(())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -644,6 +721,7 @@ pub mod pallet {
 			finalized_slot: u64,
 			cfg: Configuration,
 			rotate_store: &VerifiedRotate,
+			rotate_function_id: H256,
 		) -> Result<u64, DispatchError> {
 			let finalized_header_root = Headers::<T>::get(finalized_slot);
 			ensure!(
@@ -653,7 +731,7 @@ pub mod pallet {
 
 			let input = ethabi::encode(&[Token::FixedBytes(finalized_header_root.0.to_vec())]);
 			let sync_committee_poseidon: U256 =
-				Self::verified_rotate_call(T::RotateFunctionId::get(), input, rotate_store)?;
+				Self::verified_rotate_call(rotate_function_id, input, rotate_store)?;
 
 			let period = finalized_slot
 				.checked_div(cfg.slots_per_period)
@@ -669,6 +747,7 @@ pub mod pallet {
 			attested_slot: u64,
 			cfg: Configuration,
 			step_store: &VerifiedStep,
+			step_function_id: H256,
 		) -> Result<bool, DispatchError> {
 			let period = attested_slot
 				.checked_div(cfg.slots_per_period)
@@ -678,8 +757,7 @@ pub mod pallet {
 			ensure!(sc_poseidon != U256::zero(), Error::<T>::SyncCommitteeNotSet);
 
 			let input = encode_packed(sc_poseidon, attested_slot);
-			let result = Self::verified_step_call(T::StepFunctionId::get(), input, step_store)?;
-
+			let result = Self::verified_step_call(step_function_id, input, step_store)?;
 			ensure!(
 				result.participation >= cfg.finality_threshold,
 				Error::<T>::NotEnoughParticipants
@@ -735,10 +813,14 @@ pub mod pallet {
 		}
 
 		/// get_verifier returns verifier based on the provided function id.
-		fn get_verifier(function_id: H256) -> Result<Verifier, Error<T>> {
-			if function_id == T::StepFunctionId::get() {
+		fn get_verifier(
+			function_id: H256,
+			step_function_id: H256,
+			rotate_function_id: H256,
+		) -> Result<Verifier, Error<T>> {
+			if function_id == step_function_id {
 				Self::get_step_verifier()
-			} else if function_id == T::RotateFunctionId::get() {
+			} else if function_id == rotate_function_id {
 				Self::get_rotate_verifier()
 			} else {
 				Err(Error::<T>::FunctionIdNotKnown)
@@ -746,19 +828,23 @@ pub mod pallet {
 		}
 
 		fn get_step_verifier() -> Result<Verifier, Error<T>> {
-			let vk = T::StepVerificationKey::get();
-			ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
-			let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
-				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
-			Ok(deserialized_vk)
+			if let Some(vk) = StepVerificationKey::<T>::get() {
+				let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
+					.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+				Ok(deserialized_vk)
+			} else {
+				Err(Error::<T>::VerificationKeyIsNotSet)
+			}
 		}
 
 		fn get_rotate_verifier() -> Result<Verifier, Error<T>> {
-			let vk = T::RotateVerificationKey::get();
-			ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
-			let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
-				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
-			Ok(deserialized_vk)
+			if let Some(vk) = RotateVerificationKey::<T>::get() {
+				let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
+					.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+				Ok(deserialized_vk)
+			} else {
+				Err(Error::<T>::VerificationKeyIsNotSet)
+			}
 		}
 
 		fn verified_step_call(
@@ -797,6 +883,14 @@ pub mod pallet {
 		/// Check if the given domain is supported or not
 		fn is_domain_valid(domain: u32) -> bool {
 			WhitelistedDomains::<T>::get().contains(&domain)
+		}
+
+		fn get_function_ids() -> Result<(H256, H256), DispatchError> {
+			if let Some(function_ids) = FunctionIds::<T>::get() {
+				Ok(function_ids)
+			} else {
+				Err(Error::<T>::FunctionIdsAreNotSet.into())
+			}
 		}
 	}
 }

@@ -60,6 +60,9 @@ pub trait WeightInfo {
 	fn fulfill_call() -> Weight;
 	fn execute_fungible_token() -> Weight;
 	fn execute_arbitrary_message(l: u32, ) -> Weight;
+	fn set_function_ids() -> Weight;
+	fn set_step_verification_key() -> Weight;
+	fn set_rotate_verification_key() -> Weight;
 }
 
 /// Weights for `pallet_vector` using the Avail node and recommended hardware.
@@ -206,6 +209,18 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(5_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+
+	fn set_function_ids() -> Weight {
+		Weight::from_parts(10_000_000, 1_000)
+	}
+
+	fn set_step_verification_key() -> Weight {
+		Weight::from_parts(10_000_000, 1_000)
+	}
+
+	fn set_rotate_verification_key() -> Weight {
+		Weight::from_parts(10_000_000, 1_000)
+	}
 }
 
 // For backwards compatibility and tests.
@@ -350,5 +365,17 @@ impl WeightInfo for () {
 		Weight::from_parts(49_944_329, 41487)
 			.saturating_add(RocksDbWeight::get().reads(5_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+
+	fn set_function_ids() -> Weight {
+		Weight::from_parts(10_000_000, 1_000)
+	}
+
+	fn set_step_verification_key() -> Weight {
+		Weight::from_parts(10_000_000, 1_000)
+	}
+
+	fn set_rotate_verification_key() -> Weight {
+		Weight::from_parts(10_000_000, 1_000)
 	}
 }

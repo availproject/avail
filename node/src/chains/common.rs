@@ -7,6 +7,7 @@ use da_runtime::{
 };
 use frame_system::limits::BlockLength;
 use hex_literal::hex;
+use pallet_vector::constants::{ROTATE_VK, STEP_VK};
 use primitive_types::H256;
 use sc_telemetry::TelemetryEndpoints;
 use serde_json::{json, Value};
@@ -67,6 +68,7 @@ pub fn runtime_genesis_config(
 	sudo: AccountId32,
 	technical_committee: Vec<AccountId32>,
 	session_keys: Vec<AuthorityKeys>,
+	vector_function_ids: (H256, H256),
 ) -> Value {
 	let balances = dev_endowed_accounts();
 	let stakers: Vec<(AccountId, AccountId, Balance, StakerStatus<AccountId>)> = session_keys
@@ -116,10 +118,13 @@ pub fn runtime_genesis_config(
 			"members": technical_committee,
 		},
 		"vector": {
-			"slotsPerPeriod": SLOTS_PER_PERIOD,
-			"finalityThreshold": FINALITY_THRESHOLD,
-			"broadcasterDomain": BROADCASTER_DOMAIN,
 			"broadcaster": BROADCASTER,
+			"broadcasterDomain": BROADCASTER_DOMAIN,
+			"finalityThreshold": FINALITY_THRESHOLD,
+			"functionIds": vector_function_ids,
+			"slotsPerPeriod": SLOTS_PER_PERIOD,
+			"stepVerificationKey": STEP_VK.as_bytes().to_vec(),
+			"rotateVerificationKey": ROTATE_VK.as_bytes().to_vec(),
 			"whitelistedDomains": vec![2],
 		},
 		"nominationPools": {

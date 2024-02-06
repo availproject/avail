@@ -202,4 +202,16 @@ impl<T: frame_system::Config> pallet_vector::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
+
+	fn set_function_ids() -> Weight {
+		Weight::from_parts(10_000_000, 1_000)
+	}
+
+	fn set_step_verification_key() -> Weight {
+		Weight::from_parts(10_000_000, 1_000)
+	}
+
+	fn set_rotate_verification_key() -> Weight {
+		Weight::from_parts(10_000_000, 1_000)
+	}
 }

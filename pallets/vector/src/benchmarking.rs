@@ -1,6 +1,8 @@
 use crate::{
-	state::Configuration, BalanceOf, Call, Config, ConfigurationStorage, ExecutionStateRoots,
-	FunctionInput, FunctionOutput, FunctionProof, Pallet, ValidProof,
+	constants::{ROTATE_VK, STEP_VK, TEST_ROTATE_FUNCTION_ID, TEST_STEP_FUNCTION_ID},
+	state::Configuration,
+	BalanceOf, Call, Config, ConfigurationStorage, ExecutionStateRoots, FunctionInput,
+	FunctionOutput, FunctionProof, Pallet, ValidProof,
 };
 use avail_core::data_proof_v2::BOUNDED_DATA_MAX_LENGTH;
 use ethabi::{encode, Token};
@@ -20,9 +22,6 @@ use sp_runtime::traits::Bounded;
 use sp_std::{vec, vec::Vec};
 
 const ACCOUNT1: [u8; 32] = [2u8; 32];
-const STEP_FN_ID: H256 = H256(hex!(
-	"af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
-));
 
 #[benchmarks(where
 [u8; 32]: From << T as frame_system::Config >::AccountId >,
@@ -149,7 +148,7 @@ mod benchmarks {
 		#[extrinsic_call]
 		_(
 			origin,
-			STEP_FN_ID,
+			TEST_STEP_FUNCTION_ID,
 			get_valid_step_input(),
 			get_valid_step_output(),
 			get_valid_step_proof(),
@@ -226,6 +225,41 @@ mod benchmarks {
 		#[extrinsic_call]
 		// amount in message 1000000000000000000
 		execute(origin, slot, message, account_proof, storage_proof);
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn set_function_ids() -> Result<(), BenchmarkError> {
+		let origin = RawOrigin::Root;
+
+		#[extrinsic_call]
+		_(
+			origin,
+			Some((TEST_STEP_FUNCTION_ID, TEST_ROTATE_FUNCTION_ID)),
+		);
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn set_step_verification_key() -> Result<(), BenchmarkError> {
+		let origin = RawOrigin::Root;
+		let value = Some(BoundedVec::try_from(STEP_VK.as_bytes().to_vec()).unwrap());
+
+		#[extrinsic_call]
+		_(origin, value);
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn set_rotate_verification_key() -> Result<(), BenchmarkError> {
+		let origin = RawOrigin::Root;
+		let value = Some(BoundedVec::try_from(ROTATE_VK.as_bytes().to_vec()).unwrap());
+
+		#[extrinsic_call]
+		_(origin, value);
 
 		Ok(())
 	}
