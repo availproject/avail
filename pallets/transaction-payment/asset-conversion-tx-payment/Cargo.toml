@@ -27,7 +27,7 @@ sp-core = { version = "21.0.0", workspace = true, default-features = false }
 sp-io = { version = "23.0.0", workspace = true, default-features = false }
 sp-storage = { version = "13.0.0", workspace = true, default-features = false }
 pallet-assets = { version = "4.0.0-dev", workspace = true, default-features = false }
-pallet-balances = { version = "4.0.0-dev", workspace = true, default-features = false }
+pallet-balances = { version = "4.0.0-dev", workspace = true, default-features = false, features = ["std"] }
 pallet-asset-conversion = { version = "4.0.0-dev", workspace = true, default-features = false }
 
 [features]

@@ -4,7 +4,7 @@ mod definitions;
 use common::*;
 pub use definitions::*;
 
-use pallet_vector::constants::{TEST_ROTATE_FUNCTION_ID, TEST_STEP_FUNCTION_ID};
+use pallet_vector::constants::{ROTATE_FUNCTION_ID, STEP_FUNCTION_ID};
 use serde_json::Value;
 #[cfg(test)]
 use sp_runtime::BuildStorage;
@@ -50,7 +50,7 @@ pub mod dev {
 			sudo.clone(),
 			vec![sudo],
 			vec![alice],
-			(TEST_STEP_FUNCTION_ID, TEST_ROTATE_FUNCTION_ID),
+			(STEP_FUNCTION_ID, ROTATE_FUNCTION_ID),
 		)
 	}
 
@@ -88,7 +88,7 @@ pub mod dev_tri {
 			sudo.clone(),
 			vec![sudo],
 			vec![alice, bob, charlie],
-			(TEST_STEP_FUNCTION_ID, TEST_ROTATE_FUNCTION_ID),
+			(STEP_FUNCTION_ID, ROTATE_FUNCTION_ID),
 		)
 	}
 

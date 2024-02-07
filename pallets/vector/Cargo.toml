@@ -43,7 +43,7 @@ ethabi = { version = "18.0.0", default-features = false }
 patricia-merkle-trie = { path = "../../patricia-merkle-trie", default-features = false }
 
 [dev-dependencies]
-pallet-balances = { workspace = true, default-features = false }
+pallet-balances = { workspace = true, default-features = false, features = ["std"] }
 pallet-timestamp = { workspace = true, default-features = false }
 
 [features]
