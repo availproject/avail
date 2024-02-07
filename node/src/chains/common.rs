@@ -7,7 +7,6 @@ use da_runtime::{
 };
 use frame_system::limits::BlockLength;
 use hex_literal::hex;
-use pallet_vector::constants::{ROTATE_VK, STEP_VK};
 use primitive_types::H256;
 use sc_telemetry::TelemetryEndpoints;
 use serde_json::{json, Value};
