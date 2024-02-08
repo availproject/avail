@@ -213,7 +213,7 @@ where
 				.runtime_api()
 				.build_versioned_extension(
 					parent_hash,
-					successful_extrinsics,
+					extrinsics,
 					data_root,
 					block_length,
 					block_number,
