@@ -1,7 +1,6 @@
 use crate::{
-	state::Configuration,
-	BalanceOf, Call, Config, ConfigurationStorage, ExecutionStateRoots, FunctionInput,
-	FunctionOutput, FunctionProof, Pallet, ValidProof,
+	state::Configuration, BalanceOf, Call, Config, ConfigurationStorage, ExecutionStateRoots,
+	FunctionInput, FunctionOutput, FunctionProof, Pallet, ValidProof,
 };
 use avail_core::data_proof_v2::BOUNDED_DATA_MAX_LENGTH;
 use ethabi::{encode, Token};

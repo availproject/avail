@@ -193,7 +193,6 @@ pub mod tests {
 			256,
 			256,
 			[0u8; 32],
-			HeaderVersion::V3,
 		)
 		.unwrap();
 		let extended_grid = grid.extend_columns(NonZeroU16::new(2).unwrap()).unwrap();
@@ -242,7 +241,6 @@ pub mod tests {
 			256,
 			256,
 			[0u8; 32],
-			HeaderVersion::V3,
 		)
 		.unwrap();
 		assert_eq!(grid.dims(), Dimensions::new(1, 8).unwrap());
@@ -279,7 +277,6 @@ pub mod tests {
 			256,
 			256,
 			[0u8; 32],
-			HeaderVersion::V3,
 		)
 		.unwrap();
 		let extended_grid = grid.extend_columns(NonZeroU16::new(2).unwrap()).unwrap();
@@ -352,11 +349,6 @@ pub mod tests {
 		let (commitment, rows, cols) = match submitted_block.block.header.extension {
 			HeaderExtension::V1(_) => panic!("Unsupported header extension version"),
 			HeaderExtension::V2(ext) => (
-				ext.commitment.commitment,
-				ext.commitment.rows,
-				ext.commitment.cols,
-			),
-			HeaderExtension::V3(ext) => (
 				ext.commitment.commitment,
 				ext.commitment.rows,
 				ext.commitment.cols,

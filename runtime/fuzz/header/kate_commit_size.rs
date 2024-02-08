@@ -106,7 +106,7 @@ fn header() -> Header {
 	Header::new(1, extrinsic_root, state_root, parent_hash, digest, ext)
 }
 
-const MAX_IDS: usize = 1 * 1_024 * 1_024;
+const MAX_IDS: usize = 1_024 * 1_024;
 const MAX_TXS: usize = 8 * 1_024;
 
 #[derive(Clone, Debug)]

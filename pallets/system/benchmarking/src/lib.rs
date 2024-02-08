@@ -148,7 +148,7 @@ benchmarks! {
 		let block_length = Default::default();
 
 	}: {
-		let _header = T::HeaderExtensionBuilder::build(app_extrinsics, data_root, block_length, 0, HeaderVersion::V3);
+		let _header = T::HeaderExtensionBuilder::build(app_extrinsics, data_root, block_length, 0, HeaderVersion::V2);
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
