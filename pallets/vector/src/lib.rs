@@ -307,7 +307,7 @@ pub mod pallet {
 			slot: u64,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
-			let state = ConfigurationStorage::<T>::get();
+			let config = ConfigurationStorage::<T>::get();
 			// compute hashes
 			let input_hash = H256(sha2_256(input.as_slice()));
 			let output_hash = H256(sha2_256(output.as_slice()));
@@ -325,7 +325,7 @@ pub mod pallet {
 				let vs =
 					VerifiedStep::new(function_id, input_hash, parse_step_output(output.to_vec()));
 
-				if Self::step_into(slot, state, &vs, step_function_id)? {
+				if Self::step_into(slot, config, &vs, step_function_id)? {
 					Self::deposit_event(Event::HeaderUpdate {
 						slot: vs.verified_output.finalized_slot,
 						finalization_root: vs.verified_output.finalized_header_root,
@@ -339,7 +339,7 @@ pub mod pallet {
 					parse_rotate_output(output.to_vec()),
 				);
 
-				let period = Self::rotate_into(slot, state, &vr, rotate_function_id)?;
+				let period = Self::rotate_into(slot, config, &vr, rotate_function_id)?;
 				Self::deposit_event(Event::SyncCommitteeUpdate {
 					period,
 					root: vr.sync_committee_poseidon,
