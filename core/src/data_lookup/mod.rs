@@ -127,7 +127,7 @@ impl TryFrom<CompactDataLookup> for DataLookup {
 				.ok_or(Error::OffsetOverflows)?,
 		);
 
-		for c_item in compacted.index.into_iter() {
+		for c_item in compacted.index {
 			index.push((prev_id, offset..c_item.start));
 			prev_id = c_item.app_id;
 			offset = c_item.start;

@@ -11,7 +11,7 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_std::fmt;
 
 pub mod v1 {
-	use super::*;
+	use super::{fmt, Decode, Deserialize, Encode, HexDisplay, Serialize, TypeInfo, Vec, H256};
 
 	/// Customized extrinsics root to save the commitment.
 	#[derive(PartialEq, Eq, Clone, Default, Encode, Decode, TypeInfo)]
@@ -45,7 +45,7 @@ pub mod v1 {
 }
 
 pub mod v2 {
-	use super::*;
+	use super::{fmt, Decode, Deserialize, Encode, HexDisplay, Serialize, TypeInfo, Vec, H256};
 
 	/// Customized extrinsics root to save the commitment.
 	#[derive(PartialEq, Eq, Clone, Default, Encode, Decode, TypeInfo)]
@@ -93,7 +93,7 @@ pub mod v2 {
 }
 
 pub mod v3 {
-	use super::*;
+	use super::{fmt, Decode, Deserialize, Encode, HexDisplay, Serialize, TypeInfo, Vec, H256};
 
 	/// Customized extrinsics root to save the commitment.
 	#[derive(PartialEq, Eq, Clone, Default, Encode, Decode, TypeInfo)]

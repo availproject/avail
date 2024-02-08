@@ -1,88 +1,44 @@
+use codec::{Decode, Encode};
+use frame_support::BoundedVec;
+use sp_core::{ConstU32, H256};
+use sp_std::vec::Vec;
+use thiserror_no_std::Error;
+
 #[cfg(feature = "runtime")]
 use crate::keccak256_concat;
 #[cfg(feature = "runtime")]
 use binary_merkle_tree::MerkleProof;
-use codec::{Decode, Encode};
-use ethabi::{encode, Token};
-use frame_support::BoundedVec;
-use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-use sp_core::{ConstU32, H256};
-use sp_std::vec;
-use sp_std::vec::Vec;
-use thiserror_no_std::Error;
 
 /// Max data supported on bidge (Ethereum calldata limits)
 pub const BOUNDED_DATA_MAX_LENGTH: u32 = 102_400;
 /// Maximum size of data allowed in the bridge
 pub type BoundedData = BoundedVec<u8, ConstU32<BOUNDED_DATA_MAX_LENGTH>>;
 
-/// Possible types of Messages allowed by Avail to bridge to other chains.
-#[derive(
-	TypeInfo, Debug, Default, Eq, Clone, Encode, Decode, PartialEq, Serialize, Deserialize,
-)]
-#[serde(rename_all = "camelCase")]
-pub enum MessageType {
-	ArbitraryMessage,
-	#[default]
-	FungibleToken,
-}
+pub mod message;
+pub use message::{Message, MessageType};
 
-impl From<MessageType> for Vec<u8> {
-	fn from(msg_type: MessageType) -> Self {
-		match msg_type {
-			MessageType::ArbitraryMessage => vec![0x01],
-			MessageType::FungibleToken => vec![0x02],
-		}
-	}
-}
+pub mod message_ref;
+pub use message_ref::{MessageRef, MessageTypeRef};
 
-/// Message type used to bridge between Avail & other chains
-#[derive(
-	Debug, Default, Clone, Eq, Encode, Decode, PartialEq, TypeInfo, Serialize, Deserialize,
-)]
-#[serde(rename_all = "camelCase")]
-pub struct Message {
-	pub message_type: MessageType,
-	pub from: H256,
-	pub to: H256,
-	pub origin_domain: u32,
-	pub destination_domain: u32,
-	pub data: BoundedData,
-	pub id: u64, // a global nonce that is incremented with each leaf
-}
-
-impl Message {
-	pub fn abi_encode(self) -> Vec<u8> {
-		encode(&[Token::Tuple(vec![
-			Token::FixedBytes(self.message_type.into()),
-			Token::FixedBytes(self.from.to_fixed_bytes().to_vec()),
-			Token::FixedBytes(self.to.to_fixed_bytes().to_vec()),
-			Token::Uint(ethabi::Uint::from(self.origin_domain)),
-			Token::Uint(ethabi::Uint::from(self.destination_domain)),
-			Token::Bytes(self.data.into()),
-			Token::Uint(ethabi::Uint::from(self.id)),
-		])])
-	}
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, Default, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct ProofResponse {
 	pub data_proof: DataProofV2,
-	#[serde(skip_serializing_if = "Option::is_none")]
+	#[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
 	pub message: Option<Message>,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum SubTrie {
-	Left,
-	Right,
+	DataSubmit,
+	Bridge,
 }
 
 /// Wrapper of `binary-merkle-tree::MerkleProof` with codec support.
-#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, Default)]
+#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct DataProofV2 {
@@ -111,7 +67,7 @@ pub struct DataProofV2 {
 }
 
 /// Conversion error from `binary-merkle-tree::MerkleProof`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Error)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Error)]
 pub enum DataProofV2TryFromError {
 	/// Root cannot be converted into `H256`.
 	#[error("Root cannot be converted into `H256`")]
@@ -158,7 +114,7 @@ where
 			.map_err(|_| InvalidRoot)?
 			.into();
 
-		let leaf: H256 = if sub_trie == SubTrie::Right {
+		let leaf: H256 = if sub_trie == SubTrie::Bridge {
 			<[u8; 32]>::try_from(merkle_proof.leaf.as_ref())
 				.map_err(|_| InvalidLeaf)?
 				.into()
@@ -187,12 +143,12 @@ where
 		let blob_root: H256;
 		let bridge_root: H256;
 		match sub_trie {
-			SubTrie::Right => {
+			SubTrie::Bridge => {
 				data_root = keccak256_concat!(root, sub_trie_root.as_bytes());
 				bridge_root = sub_trie_root;
 				blob_root = root;
 			},
-			SubTrie::Left => {
+			SubTrie::DataSubmit => {
 				data_root = keccak256_concat!(sub_trie_root.as_bytes(), root);
 				blob_root = sub_trie_root;
 				bridge_root = root;
@@ -255,7 +211,7 @@ mod test {
 				leaf: H256::default().to_fixed_bytes().to_vec(),
 			},
 			H256::zero(),
-			SubTrie::Left,
+			SubTrie::DataSubmit,
 		)
 	}
 
@@ -278,7 +234,7 @@ mod test {
 			leaf: H256::repeat_byte(1),
 		};
 
-		if sub_trie == SubTrie::Right {
+		if sub_trie == SubTrie::Bridge {
 			data_proof.bridge_root = root;
 			data_proof.leaf = H256::repeat_byte(1);
 			data_proof.blob_root = H256(hex!(
@@ -314,7 +270,7 @@ mod test {
 			leaf: H256::repeat_byte(0),
 		};
 
-		if sub_trie == SubTrie::Right {
+		if sub_trie == SubTrie::Bridge {
 			data_proof.bridge_root = root;
 			data_proof.blob_root = H256(hex!(
 				"c93decb6f246d173698f24c03ffe19694f9c1633cf40ae35862816f1255c6516"
@@ -349,7 +305,7 @@ mod test {
 			leaf: H256::repeat_byte(6),
 		};
 
-		if sub_trie == SubTrie::Right {
+		if sub_trie == SubTrie::Bridge {
 			data_proof.bridge_root = root;
 			data_proof.leaf = H256::repeat_byte(6);
 			data_proof.blob_root = H256(hex!(
@@ -370,30 +326,30 @@ mod test {
 		let data_root: H256;
 		let root = hex!("c93decb6f246d173698f24c03ffe19694f9c1633cf40ae35862816f1255c6516");
 		match sub_trie {
-			SubTrie::Left => {
+			SubTrie::DataSubmit => {
 				data_root = keccak256_concat!(sub_trie_root.as_bytes(), root);
 			},
-			SubTrie::Right => {
+			SubTrie::Bridge => {
 				data_root = keccak256_concat!(root, sub_trie_root.as_bytes());
 			},
 		}
 		data_root
 	}
 
-	#[test_case(merkle_proof_idx(0, H256::zero(), SubTrie::Left) => expected_data_proof_0(H256::zero(), SubTrie::Left); "From merkle proof 0 left sub trie")]
-	#[test_case(merkle_proof_idx(1, H256::zero(), SubTrie::Left) => expected_data_proof_1(H256::zero(), SubTrie::Left); "From merkle proof 1 left sub trie")]
-	#[test_case(merkle_proof_idx(6, H256::zero(), SubTrie::Left) => expected_data_proof_6(H256::zero(), SubTrie::Left); "From merkle proof 6 left sub trie")]
-	#[test_case(merkle_proof_idx(0, H256::zero(), SubTrie::Right) => expected_data_proof_0(H256::zero(), SubTrie::Right); "From merkle proof 0 right sub trie")]
-	#[test_case(merkle_proof_idx(1, H256::zero(), SubTrie::Right) => expected_data_proof_1(H256::zero(), SubTrie::Right); "From merkle proof 1 right sub trie")]
-	#[test_case(merkle_proof_idx(6, H256::zero(), SubTrie::Right) => expected_data_proof_6(H256::zero(), SubTrie::Right); "From merkle proof 6 right sub trie")]
-	#[test_case(merkle_proof_idx(0, H256::repeat_byte(1), SubTrie::Left) => expected_data_proof_0(H256::repeat_byte(1), SubTrie::Left); "From merkle proof 0 left sub trie non zero")]
-	#[test_case(merkle_proof_idx(1, H256::repeat_byte(1), SubTrie::Left) => expected_data_proof_1(H256::repeat_byte(1), SubTrie::Left); "From merkle proof 1 left sub trie non zero")]
-	#[test_case(merkle_proof_idx(6, H256::repeat_byte(1), SubTrie::Left) => expected_data_proof_6(H256::repeat_byte(1), SubTrie::Left); "From merkle proof 6 left sub trie non zero")]
-	#[test_case(merkle_proof_idx(0, H256::repeat_byte(1), SubTrie::Right) => expected_data_proof_0(H256::repeat_byte(1), SubTrie::Right); "From merkle proof 0 right sub trie non zero")]
-	#[test_case(merkle_proof_idx(1, H256::repeat_byte(1), SubTrie::Right) => expected_data_proof_1(H256::repeat_byte(1), SubTrie::Right); "From merkle proof 1 right sub trie non zero")]
-	#[test_case(merkle_proof_idx(6, H256::repeat_byte(1), SubTrie::Right) => expected_data_proof_6(H256::repeat_byte(1), SubTrie::Right); "From merkle proof 6 right sub trie non zero")]
-	#[test_case(merkle_proof_idx(7, H256::zero(), SubTrie::Left) => Err(DataProofV2TryFromError::InvalidLeafIndex); "From invalid leaf index left sub trie")]
-	#[test_case(merkle_proof_idx(7, H256::zero(), SubTrie::Right) => Err(DataProofV2TryFromError::InvalidLeafIndex); "From invalid leaf index right sub trie")]
+	#[test_case(merkle_proof_idx(0, H256::zero(), SubTrie::DataSubmit) => expected_data_proof_0(H256::zero(), SubTrie::DataSubmit); "From merkle proof 0 left sub trie")]
+	#[test_case(merkle_proof_idx(1, H256::zero(), SubTrie::DataSubmit) => expected_data_proof_1(H256::zero(), SubTrie::DataSubmit); "From merkle proof 1 left sub trie")]
+	#[test_case(merkle_proof_idx(6, H256::zero(), SubTrie::DataSubmit) => expected_data_proof_6(H256::zero(), SubTrie::DataSubmit); "From merkle proof 6 left sub trie")]
+	#[test_case(merkle_proof_idx(0, H256::zero(), SubTrie::Bridge) => expected_data_proof_0(H256::zero(), SubTrie::Bridge); "From merkle proof 0 right sub trie")]
+	#[test_case(merkle_proof_idx(1, H256::zero(), SubTrie::Bridge) => expected_data_proof_1(H256::zero(), SubTrie::Bridge); "From merkle proof 1 right sub trie")]
+	#[test_case(merkle_proof_idx(6, H256::zero(), SubTrie::Bridge) => expected_data_proof_6(H256::zero(), SubTrie::Bridge); "From merkle proof 6 right sub trie")]
+	#[test_case(merkle_proof_idx(0, H256::repeat_byte(1), SubTrie::DataSubmit) => expected_data_proof_0(H256::repeat_byte(1), SubTrie::DataSubmit); "From merkle proof 0 left sub trie non zero")]
+	#[test_case(merkle_proof_idx(1, H256::repeat_byte(1), SubTrie::DataSubmit) => expected_data_proof_1(H256::repeat_byte(1), SubTrie::DataSubmit); "From merkle proof 1 left sub trie non zero")]
+	#[test_case(merkle_proof_idx(6, H256::repeat_byte(1), SubTrie::DataSubmit) => expected_data_proof_6(H256::repeat_byte(1), SubTrie::DataSubmit); "From merkle proof 6 left sub trie non zero")]
+	#[test_case(merkle_proof_idx(0, H256::repeat_byte(1), SubTrie::Bridge) => expected_data_proof_0(H256::repeat_byte(1), SubTrie::Bridge); "From merkle proof 0 right sub trie non zero")]
+	#[test_case(merkle_proof_idx(1, H256::repeat_byte(1), SubTrie::Bridge) => expected_data_proof_1(H256::repeat_byte(1), SubTrie::Bridge); "From merkle proof 1 right sub trie non zero")]
+	#[test_case(merkle_proof_idx(6, H256::repeat_byte(1), SubTrie::Bridge) => expected_data_proof_6(H256::repeat_byte(1), SubTrie::Bridge); "From merkle proof 6 right sub trie non zero")]
+	#[test_case(merkle_proof_idx(7, H256::zero(), SubTrie::DataSubmit) => Err(DataProofV2TryFromError::InvalidLeafIndex); "From invalid leaf index left sub trie")]
+	#[test_case(merkle_proof_idx(7, H256::zero(), SubTrie::Bridge) => Err(DataProofV2TryFromError::InvalidLeafIndex); "From invalid leaf index right sub trie")]
 	#[test_case(invalid_merkle_proof_zero_leaves() => Err(DataProofV2TryFromError::InvalidNumberOfLeaves); "From invalid number of leaves")]
 	fn from_binary(
 		binary_proof: (MerkleProof<H256, Vec<u8>>, H256, SubTrie),
