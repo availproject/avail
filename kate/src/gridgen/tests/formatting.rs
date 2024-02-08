@@ -1,4 +1,4 @@
-use avail_core::{AppExtrinsic, AppId, DataLookup, HeaderVersion};
+use avail_core::{AppExtrinsic, AppId, DataLookup};
 use hex_literal::hex;
 use kate_recovery::{
 	com::{app_specific_cells, decode_app_extrinsics, reconstruct_extrinsics},
@@ -25,15 +25,7 @@ fn newapi_test_flatten_block() {
 	];
 
 	let expected_dims = Dimensions::new_from(1, 16).unwrap();
-	let evals = EvaluationGrid::from_extrinsics(
-		extrinsics,
-		4,
-		256,
-		256,
-		Seed::default(),
-		HeaderVersion::V3,
-	)
-	.unwrap();
+	let evals = EvaluationGrid::from_extrinsics(extrinsics, 4, 256, 256, Seed::default()).unwrap();
 
 	let id_lens: Vec<(u32, usize)> = vec![(0, 2), (1, 2), (2, 2), (3, 3)];
 	let expected_lookup = DataLookup::from_id_and_len_iter(id_lens.into_iter()).unwrap();
@@ -121,7 +113,7 @@ get erasure coded to ensure redundancy."#;
 		.map(|(id, data)| AppExtrinsic::new(AppId(id), data))
 		.collect::<Vec<_>>();
 
-	let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 32, 4, hash, HeaderVersion::V3)
+	let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 32, 4, hash)
 		.unwrap()
 		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 		.unwrap();
@@ -160,7 +152,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 	// The hash is used for seed for padding the block to next power of two value
 	let hash = Seed::default();
-	let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 128, 2, hash, HeaderVersion::V3)
+	let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 128, 2, hash)
 		.unwrap()
 		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 		.unwrap();

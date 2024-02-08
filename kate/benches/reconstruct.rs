@@ -1,4 +1,4 @@
-use avail_core::{AppExtrinsic, BlockLengthColumns, BlockLengthRows, DataLookup, HeaderVersion};
+use avail_core::{AppExtrinsic, BlockLengthColumns, BlockLengthRows, DataLookup};
 use core::num::NonZeroU32;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use dusk_plonk::prelude::BlsScalar;
@@ -117,7 +117,6 @@ fn reconstruct(xts: &[AppExtrinsic]) {
 		xts,
 		Seed::default(),
 		&metrics,
-		HeaderVersion::V3,
 	)
 	.unwrap();
 

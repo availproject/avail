@@ -4,14 +4,14 @@ use crate::pmp::{
 	merlin::Transcript,
 	traits::Committer,
 };
-use avail_core::{ensure, AppExtrinsic, AppId, DataLookup, HeaderVersion};
+use avail_core::{ensure, AppExtrinsic, AppId, DataLookup};
 use codec::Encode;
 use core::{
 	cmp::{max, min},
 	iter,
 	num::NonZeroU16,
 };
-use kate_recovery::{config::PADDING_TAIL_VALUE, matrix::Dimensions};
+use kate_recovery::matrix::Dimensions;
 use nalgebra::base::DMatrix;
 use poly_multiproof::{
 	m1_blst::Proof,
@@ -73,7 +73,6 @@ impl EvaluationGrid {
 		max_width: usize,
 		max_height: usize,
 		rng_seed: Seed,
-		header_version: HeaderVersion,
 	) -> Result<Self, Error> {
 		// Group extrinsics by app id, also sorted by app id.
 		// Using a BTreeMap here will still iter in sorted order. Sweet!
@@ -89,11 +88,7 @@ impl EvaluationGrid {
 		let scalars_by_app = grouped
 			.into_iter()
 			.map(|(id, datas)| {
-				let mut enc = datas.encode();
-				match header_version {
-					HeaderVersion::V1 | HeaderVersion::V2 => enc.push(PADDING_TAIL_VALUE),
-					_ => (),
-				};
+				let enc = datas.encode();
 				enc.chunks(DATA_CHUNK_SIZE)
 					.map(pad_to_bls_scalar)
 					.collect::<Result<Vec<_>, _>>()

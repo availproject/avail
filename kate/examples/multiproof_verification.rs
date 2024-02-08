@@ -1,4 +1,4 @@
-use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows, HeaderVersion};
+use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 use core::num::NonZeroU16;
 use hex_literal::hex;
 use kate::{
@@ -46,7 +46,7 @@ fn multiproof_verification() -> Result<bool, AppError> {
 			},
 		];
 		let seed = Seed::default();
-		let grid = EvaluationGrid::from_extrinsics(exts, 4, 256, 256, seed, HeaderVersion::V3)?
+		let grid = EvaluationGrid::from_extrinsics(exts, 4, 256, 256, seed)?
 			.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })?;
 
 		// Setup, serializing as bytes
