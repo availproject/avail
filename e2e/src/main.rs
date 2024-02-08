@@ -7,7 +7,7 @@ pub mod tests {
 	use std::num::NonZeroU16;
 
 	use avail_core::data_proof_v2::ProofResponse;
-	use avail_core::DataProof;
+	//use avail_core::DataProof;
 	use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 	use avail_subxt::{
 		api::{
@@ -135,7 +135,7 @@ pub mod tests {
 		Ok(block_length)
 	}
 
-	async fn query_data_proof(
+	/* 	async fn query_data_proof(
 		rpc: &Rpc<AvailConfig>,
 		transaction_index: u32,
 		block_hash: H256,
@@ -146,7 +146,7 @@ pub mod tests {
 		let data_proof: DataProof = rpc.request("kate_queryDataProof", params).await?;
 
 		Ok(data_proof)
-	}
+	} */
 
 	async fn query_data_proof_v2(
 		rpc: &Rpc<AvailConfig>,
@@ -324,19 +324,25 @@ pub mod tests {
 		let pp = kate::couscous::public_params();
 
 		let submitted_block = get_submitted_block(rpc, block_hash).await.unwrap();
-		let ext = if let HeaderExtension::V2(ref ext) = submitted_block.block.header.extension {
-			ext
-		} else {
-			panic!("Unsupported header extension version")
+		let extension = submitted_block.block.header.extension;
+		let ext = match extension {
+			HeaderExtension::V3(ref ext) => ext,
+			HeaderExtension::V2(_) => {
+				panic!("Unsupported header extension version")
+			},
+			HeaderExtension::V1(_) => {
+				panic!("Unsupported header extension version")
+			},
 		};
 
 		let mut content = [0u8; 80];
 		content.copy_from_slice(&actual_proof);
-		let commitment: [u8; 48] = ext.commitment.commitment[..48].try_into().unwrap();
 		let dcell = kate_recovery::data::Cell {
 			position: kate_recovery::matrix::Position { row: 0, col: 0 },
 			content,
 		};
+
+		let commitment: [u8; 48] = ext.commitment.commitment[..48].try_into().unwrap();
 		let dim = Dimensions::new(ext.commitment.rows, ext.commitment.cols).unwrap();
 		let res = verify(&pp, dim, &commitment, &dcell).unwrap();
 		assert!(res);
