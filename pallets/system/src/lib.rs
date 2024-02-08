@@ -1600,7 +1600,7 @@ impl<T: Config> Pallet<T> {
 			data_root,
 			block_length,
 			number.unique_saturated_into(),
-			HeaderVersion::V2,
+			HeaderVersion::V3,
 		);
 
 		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);

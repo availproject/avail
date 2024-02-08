@@ -26,6 +26,7 @@ use kate::{
 	Seed,
 };
 
+use frame_system::HeaderVersion;
 use kate_recovery::matrix::Dimensions;
 use moka::future::Cache;
 use rayon::prelude::*;
@@ -157,6 +158,12 @@ macro_rules! internal_err {
 impl<Client, Block> Kate<Client, Block>
 where
 	Block: BlockT,
+	<Block as BlockT>::Header: ExtendedHeader<
+		<<Block as BlockT>::Header as Header>::Number,
+		<Block as BlockT>::Hash,
+		Digest,
+		HeaderExtension,
+	>,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: DataAvailApi<Block>,
@@ -196,6 +203,25 @@ where
 		Ok(signed_block)
 	}
 
+	fn get_header_version(&self, at: Option<Block::Hash>) -> RpcResult<HeaderVersion> {
+		use avail_core::header::HeaderExtension::*;
+
+		let at = self.at_or_best(at);
+		let header = self
+			.client
+			.header(at)
+			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
+			.ok_or_else(|| internal_err!("Missing block {}", at))?;
+		let extension = header.extension();
+
+		let version = match extension {
+			V1(_) => HeaderVersion::V1,
+			V2(_) => HeaderVersion::V2,
+			V3(_) => HeaderVersion::V3,
+		};
+		Ok(version)
+	}
+
 	/// If feature `secure_padding_fill` is enabled then the returned seed is generated using Babe VRF.
 	/// Otherwise, it will use the default `Seed` value.
 	fn get_seed(&self, at: Block::Hash) -> RpcResult<Seed> {
@@ -213,20 +239,50 @@ where
 	async fn get_eval_grid(
 		&self,
 		signed_block: &SignedBlock<Block>,
+		header_version: HeaderVersion,
 	) -> RpcResult<Arc<EvaluationGrid>> {
 		let block_hash = signed_block.block.header().hash();
 
 		self.eval_grid_cache
 			.try_get_with(block_hash, async move {
-				// build block data extension and cache it
-				let xts_by_id: Vec<AppExtrinsic> = signed_block
-					.block
-					.extrinsics()
-					.iter()
-					.cloned()
-					.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
-					.map(AppExtrinsic::from)
-					.collect();
+				let xts_by_id: Vec<AppExtrinsic> = if header_version == HeaderVersion::V2 {
+					let successful_indices = self
+						.client
+						.runtime_api()
+						.successful_extrinsic_indices(block_hash)
+						.map_err(|e| {
+							internal_err!(
+								"Failed to retrieve successful extrinsic indices: {:?}",
+								e
+							)
+						})?;
+
+					// build block data extension and cache it
+					signed_block
+						.block
+						.extrinsics()
+						.iter()
+						.cloned()
+						.enumerate()
+						.filter_map(|(i, opaque)| {
+							if successful_indices.contains(&(i as u32)) {
+								return UncheckedExtrinsic::try_from(opaque).ok();
+							} else {
+								None
+							}
+						})
+						.map(AppExtrinsic::from)
+						.collect()
+				} else {
+					signed_block
+						.block
+						.extrinsics()
+						.iter()
+						.cloned()
+						.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
+						.map(AppExtrinsic::from)
+						.collect()
+				};
 
 				// Use Babe's VRF
 				let seed = self.get_seed(block_hash)?;
@@ -259,11 +315,12 @@ where
 	async fn get_poly_grid(
 		&self,
 		signed_block: &SignedBlock<Block>,
+		header_version: HeaderVersion,
 	) -> RpcResult<Arc<(Dimensions, PolynomialGrid)>> {
 		let block_hash = signed_block.block.header().hash();
 		self.poly_grid_cache
 			.try_get_with(block_hash, async move {
-				let evals = self.get_eval_grid(signed_block).await?;
+				let evals = self.get_eval_grid(signed_block, header_version).await?;
 				let polys = evals
 					.make_polynomial_grid()
 					.map_err(|e| internal_err!("Error getting polynomial grid {:?}", e))?;
@@ -292,7 +349,8 @@ where
 		let execution_start = std::time::Instant::now();
 
 		let signed_block = self.get_signed_and_finalized_block(at)?;
-		let evals = self.get_eval_grid(&signed_block).await?;
+		let header_version = self.get_header_version(at)?;
+		let evals = self.get_eval_grid(&signed_block, header_version).await?;
 
 		let mut data_rows = Vec::with_capacity(rows.len());
 		for index in rows {
@@ -321,7 +379,8 @@ where
 		let execution_start = std::time::Instant::now();
 
 		let signed_block = self.get_signed_and_finalized_block(at)?;
-		let evals = self.get_eval_grid(&signed_block).await?;
+		let header_version = self.get_header_version(at)?;
+		let evals = self.get_eval_grid(&signed_block, header_version).await?;
 
 		let extended_dims = evals.dims();
 		let orig_dims = non_extended_dimensions(extended_dims)?;
@@ -369,8 +428,9 @@ where
 		let execution_start = std::time::Instant::now();
 
 		let signed_block = self.get_signed_and_finalized_block(at)?;
-		let evals = self.get_eval_grid(&signed_block).await?;
-		let polys = self.get_poly_grid(&signed_block).await?;
+		let header_version = self.get_header_version(at)?;
+		let evals = self.get_eval_grid(&signed_block, header_version).await?;
+		let polys = self.get_poly_grid(&signed_block, header_version).await?;
 
 		let proof = cells
 			.par_iter()

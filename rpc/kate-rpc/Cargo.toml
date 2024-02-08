@@ -11,9 +11,9 @@ da-runtime = { path = "../../runtime", default-features = false }
 da-control = { path = "../../pallets/dactr" }
 pallet-succinct = { path = "../../pallets/succinct" }
 
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.10.0.0", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.10.0.0", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.10.0.0", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "goldberg", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", branch = "goldberg", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "goldberg", default-features = false }
 
 # 3rd party
 jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }

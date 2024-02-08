@@ -151,6 +151,7 @@ where
 	let header_version = match extension {
 		HeaderExtension::V1(_) => HeaderVersion::V1,
 		HeaderExtension::V2(_) => HeaderVersion::V2,
+		HeaderExtension::V3(_) => HeaderVersion::V3,
 	};
 
 	let block_length = BlockLength::with_normal_ratio(
@@ -182,8 +183,47 @@ where
 				)
 				.map_err(|e| ClientImport(format!("Build extension fails due to: {e:?}")))?
 		},
-		_ => {
+		HeaderVersion::V2 => {
 			log::debug!(target: "DA_IMPORT_BLOCK", "V2 validation..");
+			let success_indices: Vec<u32> = block_import
+				.client
+				.runtime_api()
+				.successful_extrinsic_indices(import_block_hash)
+				.map_err(|_e| ClientImport("Failed to fetch the successful indices".into()))?;
+
+			log::debug!(
+				target: "DA_IMPORT_BLOCK",
+				"success_indices: {:?} at: {}",
+				success_indices,
+				import_block_hash
+			);
+
+			let successful_extrinsics: Vec<_> = success_indices
+				.iter()
+				.filter_map(|&i| extrinsics.get(i as usize).cloned())
+				.collect();
+
+			let data_root = block_import
+				.client
+				.runtime_api()
+				.build_data_root_v2(parent_hash, successful_extrinsics.clone())
+				.map_err(|e| ClientImport(format!("Data root cannot be calculated: {e:?}")))?;
+
+			block_import
+				.client
+				.runtime_api()
+				.build_versioned_extension(
+					parent_hash,
+					successful_extrinsics,
+					data_root,
+					block_length,
+					block_number,
+					header_version,
+				)
+				.map_err(|e| ClientImport(format!("Build extension fails due to: {e:?}")))?
+		},
+		HeaderVersion::V3 => {
+			log::debug!(target: "DA_IMPORT_BLOCK", "V3 validation..");
 			let success_indices: Vec<u32> = block_import
 				.client
 				.runtime_api()

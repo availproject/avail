@@ -16,7 +16,7 @@ sp-runtime = { git = "https://github.com/availproject/substrate.git", branch = "
 sp-std = { git = "https://github.com/availproject/substrate.git", branch = "goldberg", default-features = false }
 sp-core = { git = "https://github.com/availproject/substrate.git", branch = "goldberg", default-features = false }
 frame-benchmarking = { git = "https://github.com/availproject/substrate.git", branch = "goldberg", default-features = false, optional = true }
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.10.0.0", default-features = false, features = ["runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "goldberg", default-features = false, features = ["runtime"] }
 
 
 ark-bn254 = { version = "0.3.0", default-features = false, features = ["curve"] }

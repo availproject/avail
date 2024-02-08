@@ -12,9 +12,9 @@ sp-keyring = { git = "https://github.com/availproject/substrate.git", branch = "
 subxt = "0.29"
 anyhow = "1.0.66"
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "full", "bit-vec"] }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.10.0.0" }
-kate = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.10.0.0" }
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.10.0.0" }
+kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "goldberg" }
+kate = { git = "https://github.com/availproject/avail-core", branch = "goldberg" }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "goldberg" }
 binary-merkle-tree = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }
 serde = { version = "1.0.163", default-features = false, features = ["derive", "alloc"] }
 

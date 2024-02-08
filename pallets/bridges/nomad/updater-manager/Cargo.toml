@@ -24,7 +24,7 @@ frame-support = { git = "https://github.com/availproject/substrate.git", branch 
 frame-system = { path = "../../../../pallets/system", default-features = false }
 
 [dev-dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.10.0.0", features = ["runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "goldberg", features = ["runtime"] }
 
 [features]
 default = [ "std" ]

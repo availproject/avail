@@ -19,6 +19,7 @@ use crate::{limits::BlockLength, Config, LOG_TARGET};
 pub enum HeaderVersion {
 	V1, // Current one
 	V2, // To be used after runtime upgrade (new data_root)
+	V3, // Commitment now uses all transactions instead of just the successful ones
 }
 
 pub mod da {
@@ -121,7 +122,7 @@ pub fn build_extension(
 	version: HeaderVersion,
 ) -> HeaderExtension {
 	use avail_base::metrics::avail::HeaderExtensionBuilderMetrics;
-	use avail_core::header::extension::{v1, v2};
+	use avail_core::header::extension::{v1, v2, v3};
 	use kate::gridgen::AsBytes;
 	use once_cell::sync::Lazy;
 
@@ -198,6 +199,21 @@ pub fn build_extension(
 			);
 
 			v2::HeaderExtension {
+				app_lookup,
+				commitment: kate,
+			}
+			.into()
+		},
+		HeaderVersion::V3 => {
+			use avail_core::kate_commitment::v3::KateCommitment;
+			let kate = KateCommitment::new(rows, cols, data_root, commitment);
+
+			// Total Execution Time Metrics
+			HeaderExtensionBuilderMetrics::observe_total_execution_time(
+				build_extension_start.elapsed(),
+			);
+
+			v3::HeaderExtension {
 				app_lookup,
 				commitment: kate,
 			}
