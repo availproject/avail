@@ -1,23 +1,34 @@
 use hex_literal::hex;
+use primitive_types::U256;
 use sp_core::H256;
 
-// Dev
+//** DEV **
+// Vector init config
+pub const BROADCASTER_DOMAIN: u32 = 2;
+pub const BROADCASTER: H256 = H256(hex!(
+	"Aa8c1bFC413e00884A7ac991851686D27b387997000000000000000000000000" // Sepolia address
+));
+pub const SLOTS_PER_PERIOD: u64 = 8192;
+pub const FINALITY_THRESHOLD: u16 = 342;
+pub const PERIOD: u64 = 526;
+pub fn get_poseidon_hash_for_period() -> U256 {
+	// PERIOD hash
+	U256::from(hex!(
+		"20d4234c2adca715b9b7c7d3eb3f8d9230fc97fa036e14dd9f050cd2010e0492"
+	))
+}
+pub const GENESIS_VALIDATOR_ROOT: H256 = H256(hex!(
+	"d8ea171f3c94aea21ebc42a1ed61052acf3f9209c00e4efbaaddac09ed9b8078"
+));
+pub const GENESIS_TIME: u64 = 1655733600;
+pub const SECONDS_PER_SLOT: u64 = 12;
+pub const SOURCE_CHAIN_ID: u64 = 11155111;
 pub const STEP_FUNCTION_ID: H256 = H256(hex!(
 	"55b63fe87aef4a2d5e6a141455c12964f2b5611a45a30104fc78cbda308c0ee3"
 ));
 pub const ROTATE_FUNCTION_ID: H256 = H256(hex!(
 	"a511bd86a30fa6db581480ac7591d4271c845411ac4e1ad93797d09a57b60522"
 ));
-
-// Prod
-pub const PROD_STEP_FUNCTION_ID: H256 = H256(hex!(
-	"22405eefd595d2057393ef9c27a3694839a58b5121cac7e41ed9123a56930c8b"
-));
-pub const PROD_ROTATE_FUNCTION_ID: H256 = H256(hex!(
-	"c7e13ba912a18fc047292e7698bb2af9c8a2eb901886a785b2cb4b9fd2394573"
-));
-
-// Both
 pub const STEP_VK: &str = r#"{"vk_json":{
     "protocol": "groth16",
  "curve": "bn128",
@@ -117,7 +128,6 @@ pub const STEP_VK: &str = r#"{"vk_json":{
   ]
  ]
 }}"#;
-
 pub const ROTATE_VK: &str = r#"{"vk_json":{
     "protocol": "groth16",
     "curve": "bn128",
@@ -218,6 +228,33 @@ pub const ROTATE_VK: &str = r#"{"vk_json":{
     ]
 }}"#;
 
+//** PROD **
+// Vector init config
+pub const PROD_BROADCASTER_DOMAIN: u32 = 2;
+pub const PROD_BROADCASTER: H256 = H256(hex!(
+	"Aa8c1bFC413e00884A7ac991851686D27b387997000000000000000000000000" // Sepolia address
+));
+pub const PROD_SLOTS_PER_PERIOD: u64 = 8192;
+pub const PROD_FINALITY_THRESHOLD: u16 = 342;
+pub const PROD_PERIOD: u64 = 526;
+pub fn prod_get_poseidon_hash_for_period() -> U256 {
+	// PERIOD hash
+	U256::from(hex!(
+		"20d4234c2adca715b9b7c7d3eb3f8d9230fc97fa036e14dd9f050cd2010e0492"
+	))
+}
+pub const PROD_GENESIS_VALIDATOR_ROOT: H256 = H256(hex!(
+	"4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95"
+));
+pub const PROD_GENESIS_TIME: u64 = 1606824023;
+pub const PROD_SECONDS_PER_SLOT: u64 = 12;
+pub const PROD_SOURCE_CHAIN_ID: u64 = 1;
+pub const PROD_STEP_FUNCTION_ID: H256 = H256(hex!(
+	"22405eefd595d2057393ef9c27a3694839a58b5121cac7e41ed9123a56930c8b"
+));
+pub const PROD_ROTATE_FUNCTION_ID: H256 = H256(hex!(
+	"c7e13ba912a18fc047292e7698bb2af9c8a2eb901886a785b2cb4b9fd2394573"
+));
 pub const PROD_STEP_VK: &str = r#"{"vk_json":{
     "protocol": "groth16",
     "curve": "bn128",
@@ -317,7 +354,6 @@ pub const PROD_STEP_VK: &str = r#"{"vk_json":{
      ]
     ]
    }}"#;
-
 pub const PROD_ROTATE_VK: &str = r#"{"vk_json":{
  "protocol": "groth16",
  "curve": "bn128",
