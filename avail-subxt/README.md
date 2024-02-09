@@ -1,6 +1,6 @@
-# avail-nodeability SubXt Library 
+# Avail node SubXt Library 
 
-Facilities to use `subxt` to connect with a avail-nodeability Node.
+Facilities to use `subxt` to connect with an Avail Node.
 
 ## Generate/Update `src/api_dev.rs`
 
@@ -20,7 +20,7 @@ Once node is updated, we can re-generate the `src/api_dev.rs` file using the fol
 
 # E2E Binary
 
-This binary executes each example on a avail-nodeability Node. It launches the node before running any example.
+This binary executes each example on a Avail Node. It launches the node before running any example.
 
 The following command uses the node located in `./target/release/avail-node` to run each example
 

@@ -1,6 +1,6 @@
 [package]
 name = "avail-node"
-version = "2.0.0"
+version = "0.1.0"
 description = "Avail Node"
 authors = ["Anonymous"]
 homepage = "https://www.availproject.org/"
@@ -113,6 +113,7 @@ try-runtime-cli = { workspace = true, default-features = false, optional = true 
 
 # Custom
 frame-system-rpc-runtime-api = { path = "../pallets/system/rpc/runtime-api" }
+pallet-vector = { path = "../pallets/vector" }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true, default-features = false }

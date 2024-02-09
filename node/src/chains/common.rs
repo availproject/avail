@@ -6,8 +6,11 @@ use da_runtime::{
 	constants, AccountId, Balance, DataAvailabilityConfig, SessionKeys, StakerStatus, AVL,
 };
 use frame_system::limits::BlockLength;
-use hex_literal::hex;
-use primitive_types::H256;
+use pallet_vector::constants::{
+	get_poseidon_hash_for_period, BROADCASTER, BROADCASTER_DOMAIN, FINALITY_THRESHOLD,
+	GENESIS_TIME, GENESIS_VALIDATOR_ROOT, PERIOD, ROTATE_FUNCTION_ID, ROTATE_VK, SECONDS_PER_SLOT,
+	SLOTS_PER_PERIOD, SOURCE_CHAIN_ID, STEP_FUNCTION_ID, STEP_VK,
+};
 use sc_telemetry::TelemetryEndpoints;
 use serde_json::{json, Value};
 use sp_core::crypto::AccountId32;
@@ -15,14 +18,6 @@ use sp_core::sr25519::Public;
 
 pub const PROTOCOL_ID: &str = "Avail";
 pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
-
-// bridge init config
-const BROADCASTER_DOMAIN: u32 = 2;
-const BROADCASTER: H256 = H256(hex!(
-	"Aa8c1bFC413e00884A7ac991851686D27b387997000000000000000000000000" // Sepolia address
-));
-const SLOTS_PER_PERIOD: u64 = 8192;
-const FINALITY_THRESHOLD: u16 = 342;
 
 const ENDOWMENT: Balance = 1_000_000 * AVL;
 const STASH_BOND: Balance = ENDOWMENT / 100;
@@ -116,10 +111,19 @@ pub fn runtime_genesis_config(
 			"members": technical_committee,
 		},
 		"vector": {
-			"slotsPerPeriod": SLOTS_PER_PERIOD,
-			"finalityThreshold": FINALITY_THRESHOLD,
-			"broadcasterDomain": BROADCASTER_DOMAIN,
 			"broadcaster": BROADCASTER,
+			"broadcasterDomain": BROADCASTER_DOMAIN,
+			"finalityThreshold": FINALITY_THRESHOLD,
+			"functionIds": (STEP_FUNCTION_ID, ROTATE_FUNCTION_ID),
+			"genesisTime": GENESIS_TIME,
+			"genesisValidatorRoot": GENESIS_VALIDATOR_ROOT,
+			"period": PERIOD,
+			"secondsPerSlot": SECONDS_PER_SLOT,
+			"slotsPerPeriod": SLOTS_PER_PERIOD,
+			"sourceChainId": SOURCE_CHAIN_ID,
+			"syncCommitteePoseidon":get_poseidon_hash_for_period(),
+			"stepVerificationKey": STEP_VK.as_bytes().to_vec(),
+			"rotateVerificationKey": ROTATE_VK.as_bytes().to_vec(),
 			"whitelistedDomains": vec![2],
 		},
 		"nominationPools": {

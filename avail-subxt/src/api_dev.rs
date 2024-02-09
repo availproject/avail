@@ -706,123 +706,123 @@ pub mod api {
 			use ::subxt::metadata::DecodeWithMetadata;
 			let cursor = &mut &pallet_bytes[..];
 			if pallet_name == "System" {
-				let variant_error = system::Error::decode_with_metadata(cursor, 136u32, metadata)?;
+				let variant_error = system::Error::decode_with_metadata(cursor, 140u32, metadata)?;
 				return Ok(Error::System(variant_error));
 			}
 			if pallet_name == "Utility" {
-				let variant_error = utility::Error::decode_with_metadata(cursor, 339u32, metadata)?;
+				let variant_error = utility::Error::decode_with_metadata(cursor, 343u32, metadata)?;
 				return Ok(Error::Utility(variant_error));
 			}
 			if pallet_name == "Babe" {
-				let variant_error = babe::Error::decode_with_metadata(cursor, 355u32, metadata)?;
+				let variant_error = babe::Error::decode_with_metadata(cursor, 359u32, metadata)?;
 				return Ok(Error::Babe(variant_error));
 			}
 			if pallet_name == "Indices" {
-				let variant_error = indices::Error::decode_with_metadata(cursor, 357u32, metadata)?;
+				let variant_error = indices::Error::decode_with_metadata(cursor, 361u32, metadata)?;
 				return Ok(Error::Indices(variant_error));
 			}
 			if pallet_name == "Balances" {
 				let variant_error =
-					balances::Error::decode_with_metadata(cursor, 375u32, metadata)?;
+					balances::Error::decode_with_metadata(cursor, 379u32, metadata)?;
 				return Ok(Error::Balances(variant_error));
 			}
 			if pallet_name == "ElectionProviderMultiPhase" {
 				let variant_error = election_provider_multi_phase::Error::decode_with_metadata(
-					cursor, 388u32, metadata,
+					cursor, 392u32, metadata,
 				)?;
 				return Ok(Error::ElectionProviderMultiPhase(variant_error));
 			}
 			if pallet_name == "Staking" {
-				let variant_error = staking::Error::decode_with_metadata(cursor, 412u32, metadata)?;
+				let variant_error = staking::Error::decode_with_metadata(cursor, 416u32, metadata)?;
 				return Ok(Error::Staking(variant_error));
 			}
 			if pallet_name == "Session" {
-				let variant_error = session::Error::decode_with_metadata(cursor, 417u32, metadata)?;
+				let variant_error = session::Error::decode_with_metadata(cursor, 421u32, metadata)?;
 				return Ok(Error::Session(variant_error));
 			}
 			if pallet_name == "TechnicalCommittee" {
 				let variant_error =
-					technical_committee::Error::decode_with_metadata(cursor, 420u32, metadata)?;
+					technical_committee::Error::decode_with_metadata(cursor, 424u32, metadata)?;
 				return Ok(Error::TechnicalCommittee(variant_error));
 			}
 			if pallet_name == "TechnicalMembership" {
 				let variant_error =
-					technical_membership::Error::decode_with_metadata(cursor, 422u32, metadata)?;
+					technical_membership::Error::decode_with_metadata(cursor, 426u32, metadata)?;
 				return Ok(Error::TechnicalMembership(variant_error));
 			}
 			if pallet_name == "Grandpa" {
-				let variant_error = grandpa::Error::decode_with_metadata(cursor, 426u32, metadata)?;
+				let variant_error = grandpa::Error::decode_with_metadata(cursor, 430u32, metadata)?;
 				return Ok(Error::Grandpa(variant_error));
 			}
 			if pallet_name == "Treasury" {
 				let variant_error =
-					treasury::Error::decode_with_metadata(cursor, 433u32, metadata)?;
+					treasury::Error::decode_with_metadata(cursor, 437u32, metadata)?;
 				return Ok(Error::Treasury(variant_error));
 			}
 			if pallet_name == "Sudo" {
-				let variant_error = sudo::Error::decode_with_metadata(cursor, 434u32, metadata)?;
+				let variant_error = sudo::Error::decode_with_metadata(cursor, 438u32, metadata)?;
 				return Ok(Error::Sudo(variant_error));
 			}
 			if pallet_name == "ImOnline" {
 				let variant_error =
-					im_online::Error::decode_with_metadata(cursor, 437u32, metadata)?;
+					im_online::Error::decode_with_metadata(cursor, 441u32, metadata)?;
 				return Ok(Error::ImOnline(variant_error));
 			}
 			if pallet_name == "Scheduler" {
 				let variant_error =
-					scheduler::Error::decode_with_metadata(cursor, 449u32, metadata)?;
+					scheduler::Error::decode_with_metadata(cursor, 453u32, metadata)?;
 				return Ok(Error::Scheduler(variant_error));
 			}
 			if pallet_name == "Bounties" {
 				let variant_error =
-					bounties::Error::decode_with_metadata(cursor, 453u32, metadata)?;
+					bounties::Error::decode_with_metadata(cursor, 457u32, metadata)?;
 				return Ok(Error::Bounties(variant_error));
 			}
 			if pallet_name == "Tips" {
-				let variant_error = tips::Error::decode_with_metadata(cursor, 455u32, metadata)?;
+				let variant_error = tips::Error::decode_with_metadata(cursor, 459u32, metadata)?;
 				return Ok(Error::Tips(variant_error));
 			}
 			if pallet_name == "DataAvailability" {
 				let variant_error =
-					data_availability::Error::decode_with_metadata(cursor, 457u32, metadata)?;
+					data_availability::Error::decode_with_metadata(cursor, 461u32, metadata)?;
 				return Ok(Error::DataAvailability(variant_error));
 			}
 			if pallet_name == "Preimage" {
 				let variant_error =
-					preimage::Error::decode_with_metadata(cursor, 465u32, metadata)?;
+					preimage::Error::decode_with_metadata(cursor, 469u32, metadata)?;
 				return Ok(Error::Preimage(variant_error));
 			}
 			if pallet_name == "Multisig" {
 				let variant_error =
-					multisig::Error::decode_with_metadata(cursor, 468u32, metadata)?;
+					multisig::Error::decode_with_metadata(cursor, 472u32, metadata)?;
 				return Ok(Error::Multisig(variant_error));
 			}
 			if pallet_name == "VoterList" {
 				let variant_error =
-					voter_list::Error::decode_with_metadata(cursor, 472u32, metadata)?;
+					voter_list::Error::decode_with_metadata(cursor, 476u32, metadata)?;
 				return Ok(Error::VoterList(variant_error));
 			}
 			if pallet_name == "NominationPools" {
 				let variant_error =
-					nomination_pools::Error::decode_with_metadata(cursor, 491u32, metadata)?;
+					nomination_pools::Error::decode_with_metadata(cursor, 495u32, metadata)?;
 				return Ok(Error::NominationPools(variant_error));
 			}
 			if pallet_name == "Identity" {
 				let variant_error =
-					identity::Error::decode_with_metadata(cursor, 507u32, metadata)?;
+					identity::Error::decode_with_metadata(cursor, 511u32, metadata)?;
 				return Ok(Error::Identity(variant_error));
 			}
 			if pallet_name == "Vector" {
-				let variant_error = vector::Error::decode_with_metadata(cursor, 509u32, metadata)?;
+				let variant_error = vector::Error::decode_with_metadata(cursor, 513u32, metadata)?;
 				return Ok(Error::Vector(variant_error));
 			}
 			if pallet_name == "Proxy" {
-				let variant_error = proxy::Error::decode_with_metadata(cursor, 518u32, metadata)?;
+				let variant_error = proxy::Error::decode_with_metadata(cursor, 522u32, metadata)?;
 				return Ok(Error::Proxy(variant_error));
 			}
 			if pallet_name == "TxPause" {
 				let variant_error =
-					tx_pause::Error::decode_with_metadata(cursor, 519u32, metadata)?;
+					tx_pause::Error::decode_with_metadata(cursor, 523u32, metadata)?;
 				return Ok(Error::TxPause(variant_error));
 			}
 			Err(::subxt::ext::scale_decode::Error::custom(format!(
@@ -1129,9 +1129,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				17u8, 51u8, 174u8, 56u8, 3u8, 163u8, 25u8, 63u8, 143u8, 229u8, 37u8, 111u8, 186u8,
-				88u8, 74u8, 152u8, 138u8, 74u8, 238u8, 149u8, 175u8, 27u8, 55u8, 207u8, 215u8,
-				149u8, 172u8, 214u8, 199u8, 83u8, 168u8, 91u8,
+				213u8, 34u8, 61u8, 109u8, 163u8, 110u8, 100u8, 153u8, 230u8, 56u8, 188u8, 53u8,
+				64u8, 217u8, 127u8, 214u8, 105u8, 250u8, 167u8, 150u8, 47u8, 127u8, 136u8, 209u8,
+				120u8, 200u8, 133u8, 47u8, 21u8, 175u8, 40u8, 142u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -1915,9 +1915,10 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							227u8, 79u8, 165u8, 196u8, 211u8, 11u8, 169u8, 168u8, 86u8, 155u8, 5u8,
-							193u8, 35u8, 190u8, 101u8, 171u8, 13u8, 211u8, 43u8, 109u8, 7u8, 209u8,
-							162u8, 46u8, 220u8, 137u8, 252u8, 0u8, 83u8, 185u8, 102u8, 215u8,
+							36u8, 169u8, 162u8, 207u8, 47u8, 135u8, 27u8, 169u8, 134u8, 234u8,
+							40u8, 145u8, 56u8, 114u8, 79u8, 227u8, 126u8, 157u8, 139u8, 148u8,
+							226u8, 217u8, 231u8, 140u8, 106u8, 11u8, 152u8, 5u8, 243u8, 199u8,
+							251u8, 236u8,
 						],
 					)
 				}
@@ -2438,9 +2439,9 @@ pub mod api {
 						"batch",
 						types::Batch { calls },
 						[
-							162u8, 136u8, 115u8, 76u8, 3u8, 108u8, 236u8, 169u8, 26u8, 147u8, 34u8,
-							166u8, 192u8, 38u8, 77u8, 31u8, 52u8, 166u8, 248u8, 249u8, 12u8, 254u8,
-							110u8, 56u8, 171u8, 189u8, 161u8, 212u8, 98u8, 242u8, 248u8, 51u8,
+							86u8, 215u8, 138u8, 185u8, 27u8, 55u8, 16u8, 6u8, 135u8, 18u8, 167u8,
+							38u8, 255u8, 209u8, 247u8, 53u8, 63u8, 50u8, 34u8, 219u8, 61u8, 183u8,
+							112u8, 229u8, 53u8, 245u8, 218u8, 225u8, 53u8, 212u8, 201u8, 125u8,
 						],
 					)
 				}
@@ -2458,10 +2459,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							201u8, 155u8, 65u8, 170u8, 122u8, 249u8, 209u8, 245u8, 122u8, 192u8,
-							126u8, 44u8, 131u8, 183u8, 29u8, 69u8, 48u8, 232u8, 122u8, 225u8,
-							224u8, 90u8, 225u8, 200u8, 19u8, 19u8, 135u8, 173u8, 210u8, 206u8,
-							165u8, 98u8,
+							240u8, 203u8, 161u8, 131u8, 189u8, 104u8, 143u8, 206u8, 34u8, 151u8,
+							207u8, 122u8, 183u8, 180u8, 208u8, 215u8, 13u8, 22u8, 121u8, 196u8,
+							87u8, 244u8, 140u8, 31u8, 12u8, 134u8, 79u8, 242u8, 173u8, 98u8, 105u8,
+							26u8,
 						],
 					)
 				}
@@ -2475,10 +2476,10 @@ pub mod api {
 						"batch_all",
 						types::BatchAll { calls },
 						[
-							37u8, 91u8, 213u8, 178u8, 105u8, 116u8, 24u8, 102u8, 143u8, 65u8,
-							107u8, 120u8, 252u8, 138u8, 9u8, 107u8, 37u8, 98u8, 135u8, 134u8,
-							172u8, 54u8, 47u8, 220u8, 212u8, 40u8, 146u8, 10u8, 74u8, 100u8, 169u8,
-							86u8,
+							62u8, 43u8, 255u8, 49u8, 200u8, 113u8, 234u8, 219u8, 216u8, 175u8,
+							148u8, 162u8, 207u8, 245u8, 245u8, 200u8, 89u8, 116u8, 36u8, 116u8,
+							165u8, 210u8, 202u8, 122u8, 230u8, 1u8, 124u8, 149u8, 41u8, 39u8,
+							104u8, 169u8,
 						],
 					)
 				}
@@ -2496,9 +2497,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							203u8, 82u8, 50u8, 230u8, 134u8, 57u8, 85u8, 18u8, 175u8, 241u8, 52u8,
-							4u8, 89u8, 90u8, 72u8, 214u8, 144u8, 169u8, 127u8, 0u8, 162u8, 65u8,
-							239u8, 233u8, 45u8, 211u8, 178u8, 150u8, 176u8, 254u8, 6u8, 166u8,
+							70u8, 84u8, 233u8, 150u8, 211u8, 210u8, 50u8, 54u8, 51u8, 253u8, 23u8,
+							211u8, 111u8, 108u8, 98u8, 124u8, 144u8, 105u8, 169u8, 65u8, 196u8,
+							3u8, 234u8, 7u8, 46u8, 159u8, 91u8, 245u8, 210u8, 84u8, 27u8, 130u8,
 						],
 					)
 				}
@@ -2512,10 +2513,10 @@ pub mod api {
 						"force_batch",
 						types::ForceBatch { calls },
 						[
-							91u8, 72u8, 24u8, 199u8, 247u8, 104u8, 240u8, 197u8, 247u8, 76u8,
-							114u8, 77u8, 142u8, 222u8, 86u8, 230u8, 37u8, 43u8, 252u8, 158u8,
-							228u8, 107u8, 6u8, 82u8, 248u8, 209u8, 21u8, 154u8, 174u8, 98u8, 76u8,
-							52u8,
+							246u8, 153u8, 205u8, 106u8, 182u8, 187u8, 232u8, 42u8, 73u8, 232u8,
+							87u8, 20u8, 139u8, 236u8, 246u8, 124u8, 193u8, 208u8, 93u8, 63u8,
+							231u8, 78u8, 239u8, 54u8, 224u8, 58u8, 233u8, 201u8, 137u8, 67u8,
+							107u8, 175u8,
 						],
 					)
 				}
@@ -2533,9 +2534,9 @@ pub mod api {
 							weight,
 						},
 						[
-							24u8, 158u8, 98u8, 12u8, 133u8, 184u8, 237u8, 245u8, 181u8, 87u8, 41u8,
-							118u8, 63u8, 131u8, 164u8, 205u8, 54u8, 64u8, 5u8, 231u8, 101u8, 69u8,
-							218u8, 43u8, 247u8, 214u8, 41u8, 111u8, 87u8, 75u8, 248u8, 52u8,
+							93u8, 22u8, 120u8, 64u8, 179u8, 252u8, 157u8, 90u8, 208u8, 241u8, 86u8,
+							71u8, 203u8, 248u8, 207u8, 1u8, 64u8, 85u8, 170u8, 40u8, 2u8, 125u8,
+							246u8, 233u8, 72u8, 120u8, 122u8, 41u8, 56u8, 131u8, 167u8, 187u8,
 						],
 					)
 				}
@@ -10066,9 +10067,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							62u8, 228u8, 42u8, 171u8, 95u8, 8u8, 161u8, 198u8, 58u8, 114u8, 30u8,
-							88u8, 205u8, 33u8, 19u8, 12u8, 110u8, 162u8, 76u8, 123u8, 174u8, 10u8,
-							0u8, 252u8, 33u8, 235u8, 227u8, 227u8, 9u8, 6u8, 175u8, 222u8,
+							207u8, 50u8, 10u8, 3u8, 55u8, 50u8, 225u8, 159u8, 198u8, 138u8, 24u8,
+							85u8, 83u8, 236u8, 158u8, 12u8, 190u8, 44u8, 115u8, 128u8, 165u8,
+							108u8, 223u8, 4u8, 99u8, 93u8, 133u8, 81u8, 5u8, 87u8, 201u8, 16u8,
 						],
 					)
 				}
@@ -10088,10 +10089,10 @@ pub mod api {
 							length_bound,
 						},
 						[
-							35u8, 75u8, 139u8, 177u8, 253u8, 118u8, 110u8, 150u8, 124u8, 233u8,
-							56u8, 70u8, 69u8, 102u8, 9u8, 159u8, 201u8, 17u8, 48u8, 10u8, 139u8,
-							170u8, 191u8, 134u8, 177u8, 244u8, 214u8, 22u8, 198u8, 184u8, 35u8,
-							163u8,
+							87u8, 100u8, 219u8, 199u8, 8u8, 97u8, 179u8, 88u8, 81u8, 236u8, 124u8,
+							10u8, 22u8, 117u8, 20u8, 232u8, 129u8, 108u8, 147u8, 222u8, 242u8,
+							195u8, 138u8, 60u8, 15u8, 241u8, 151u8, 33u8, 118u8, 127u8, 47u8,
+							160u8,
 						],
 					)
 				}
@@ -10370,9 +10371,10 @@ pub mod api {
 							_0.borrow(),
 						)],
 						[
-							41u8, 6u8, 79u8, 41u8, 63u8, 198u8, 60u8, 33u8, 206u8, 5u8, 76u8,
-							226u8, 5u8, 235u8, 30u8, 234u8, 21u8, 115u8, 242u8, 229u8, 209u8, 37u8,
-							89u8, 146u8, 224u8, 157u8, 191u8, 124u8, 86u8, 130u8, 26u8, 253u8,
+							131u8, 21u8, 184u8, 21u8, 58u8, 212u8, 123u8, 209u8, 213u8, 210u8,
+							196u8, 102u8, 51u8, 164u8, 130u8, 101u8, 173u8, 67u8, 111u8, 42u8,
+							238u8, 36u8, 231u8, 102u8, 242u8, 82u8, 147u8, 210u8, 13u8, 53u8,
+							134u8, 163u8,
 						],
 					)
 				}
@@ -10391,9 +10393,10 @@ pub mod api {
 						"ProposalOf",
 						Vec::new(),
 						[
-							41u8, 6u8, 79u8, 41u8, 63u8, 198u8, 60u8, 33u8, 206u8, 5u8, 76u8,
-							226u8, 5u8, 235u8, 30u8, 234u8, 21u8, 115u8, 242u8, 229u8, 209u8, 37u8,
-							89u8, 146u8, 224u8, 157u8, 191u8, 124u8, 86u8, 130u8, 26u8, 253u8,
+							131u8, 21u8, 184u8, 21u8, 58u8, 212u8, 123u8, 209u8, 213u8, 210u8,
+							196u8, 102u8, 51u8, 164u8, 130u8, 101u8, 173u8, 67u8, 111u8, 42u8,
+							238u8, 36u8, 231u8, 102u8, 242u8, 82u8, 147u8, 210u8, 13u8, 53u8,
+							134u8, 163u8,
 						],
 					)
 				}
@@ -12657,9 +12660,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							97u8, 67u8, 72u8, 229u8, 253u8, 251u8, 170u8, 64u8, 75u8, 206u8, 210u8,
-							23u8, 19u8, 202u8, 51u8, 3u8, 76u8, 250u8, 192u8, 213u8, 188u8, 31u8,
-							79u8, 255u8, 198u8, 106u8, 9u8, 255u8, 126u8, 55u8, 210u8, 173u8,
+							162u8, 243u8, 79u8, 137u8, 171u8, 140u8, 83u8, 232u8, 53u8, 114u8,
+							231u8, 183u8, 15u8, 143u8, 173u8, 109u8, 188u8, 128u8, 132u8, 249u8,
+							239u8, 209u8, 239u8, 141u8, 240u8, 29u8, 207u8, 171u8, 60u8, 108u8,
+							98u8, 252u8,
 						],
 					)
 				}
@@ -12677,9 +12681,9 @@ pub mod api {
 							weight,
 						},
 						[
-							97u8, 226u8, 235u8, 106u8, 9u8, 145u8, 114u8, 207u8, 244u8, 162u8,
-							186u8, 220u8, 145u8, 97u8, 220u8, 9u8, 100u8, 55u8, 212u8, 180u8, 61u8,
-							84u8, 90u8, 141u8, 185u8, 213u8, 20u8, 107u8, 93u8, 250u8, 26u8, 86u8,
+							63u8, 89u8, 193u8, 195u8, 5u8, 145u8, 85u8, 249u8, 112u8, 184u8, 240u8,
+							170u8, 100u8, 254u8, 146u8, 26u8, 197u8, 210u8, 16u8, 59u8, 50u8, 61u8,
+							177u8, 70u8, 42u8, 167u8, 124u8, 238u8, 238u8, 69u8, 65u8, 183u8,
 						],
 					)
 				}
@@ -12720,10 +12724,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							107u8, 219u8, 148u8, 10u8, 10u8, 154u8, 254u8, 156u8, 251u8, 53u8,
-							174u8, 166u8, 103u8, 115u8, 135u8, 62u8, 200u8, 48u8, 31u8, 90u8,
-							179u8, 118u8, 138u8, 158u8, 8u8, 66u8, 8u8, 235u8, 76u8, 248u8, 194u8,
-							123u8,
+							51u8, 51u8, 1u8, 46u8, 37u8, 62u8, 15u8, 8u8, 213u8, 104u8, 71u8,
+							172u8, 152u8, 222u8, 231u8, 191u8, 38u8, 119u8, 202u8, 142u8, 132u8,
+							116u8, 239u8, 200u8, 6u8, 98u8, 96u8, 143u8, 184u8, 107u8, 230u8,
+							238u8,
 						],
 					)
 				}
@@ -13643,9 +13647,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							200u8, 16u8, 32u8, 235u8, 187u8, 39u8, 137u8, 247u8, 244u8, 227u8,
-							54u8, 235u8, 85u8, 187u8, 10u8, 116u8, 163u8, 1u8, 159u8, 34u8, 142u8,
-							93u8, 38u8, 165u8, 35u8, 211u8, 11u8, 59u8, 216u8, 86u8, 126u8, 43u8,
+							65u8, 181u8, 185u8, 156u8, 28u8, 235u8, 102u8, 238u8, 113u8, 65u8,
+							205u8, 181u8, 67u8, 97u8, 45u8, 12u8, 38u8, 238u8, 255u8, 155u8, 199u8,
+							202u8, 207u8, 9u8, 145u8, 147u8, 180u8, 208u8, 8u8, 139u8, 102u8,
+							232u8,
 						],
 					)
 				}
@@ -13690,9 +13695,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							212u8, 66u8, 57u8, 124u8, 215u8, 148u8, 238u8, 97u8, 43u8, 179u8, 24u8,
-							55u8, 234u8, 84u8, 152u8, 131u8, 89u8, 111u8, 20u8, 83u8, 231u8, 198u8,
-							75u8, 148u8, 193u8, 235u8, 20u8, 47u8, 204u8, 198u8, 188u8, 130u8,
+							123u8, 169u8, 229u8, 100u8, 113u8, 162u8, 253u8, 112u8, 185u8, 84u8,
+							78u8, 236u8, 37u8, 124u8, 130u8, 188u8, 67u8, 218u8, 206u8, 239u8,
+							119u8, 240u8, 113u8, 90u8, 183u8, 175u8, 172u8, 25u8, 209u8, 47u8,
+							196u8, 184u8,
 						],
 					)
 				}
@@ -13733,9 +13739,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							70u8, 41u8, 140u8, 234u8, 251u8, 16u8, 232u8, 181u8, 20u8, 125u8, 32u8,
-							30u8, 89u8, 38u8, 227u8, 73u8, 179u8, 88u8, 123u8, 20u8, 62u8, 226u8,
-							188u8, 11u8, 186u8, 93u8, 241u8, 86u8, 167u8, 119u8, 89u8, 75u8,
+							165u8, 249u8, 130u8, 51u8, 160u8, 241u8, 37u8, 2u8, 240u8, 186u8, 90u8,
+							92u8, 191u8, 236u8, 163u8, 248u8, 175u8, 147u8, 137u8, 169u8, 70u8,
+							185u8, 144u8, 29u8, 201u8, 205u8, 83u8, 45u8, 113u8, 138u8, 185u8,
+							47u8,
 						],
 					)
 				}
@@ -13762,9 +13769,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							79u8, 6u8, 214u8, 32u8, 131u8, 88u8, 183u8, 119u8, 211u8, 28u8, 33u8,
-							233u8, 20u8, 120u8, 77u8, 7u8, 89u8, 52u8, 80u8, 219u8, 126u8, 219u8,
-							239u8, 51u8, 147u8, 179u8, 51u8, 210u8, 120u8, 36u8, 74u8, 115u8,
+							213u8, 47u8, 217u8, 172u8, 198u8, 66u8, 70u8, 181u8, 25u8, 6u8, 87u8,
+							75u8, 127u8, 127u8, 198u8, 62u8, 5u8, 40u8, 227u8, 96u8, 106u8, 8u8,
+							158u8, 213u8, 72u8, 253u8, 33u8, 9u8, 15u8, 72u8, 233u8, 193u8,
 						],
 					)
 				}
@@ -16662,9 +16669,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							99u8, 146u8, 5u8, 101u8, 63u8, 52u8, 108u8, 166u8, 63u8, 254u8, 176u8,
-							87u8, 171u8, 70u8, 150u8, 206u8, 57u8, 53u8, 159u8, 123u8, 249u8,
-							227u8, 61u8, 25u8, 187u8, 193u8, 134u8, 74u8, 130u8, 202u8, 3u8, 166u8,
+							1u8, 27u8, 226u8, 250u8, 95u8, 98u8, 215u8, 179u8, 92u8, 59u8, 111u8,
+							95u8, 57u8, 35u8, 17u8, 220u8, 255u8, 63u8, 163u8, 224u8, 76u8, 246u8,
+							116u8, 60u8, 34u8, 90u8, 23u8, 63u8, 97u8, 45u8, 154u8, 63u8,
 						],
 					)
 				}
@@ -16690,9 +16697,9 @@ pub mod api {
 							max_weight,
 						},
 						[
-							50u8, 251u8, 36u8, 207u8, 88u8, 101u8, 124u8, 214u8, 40u8, 87u8, 185u8,
-							63u8, 89u8, 7u8, 146u8, 2u8, 82u8, 110u8, 68u8, 175u8, 217u8, 217u8,
-							29u8, 6u8, 142u8, 212u8, 156u8, 46u8, 4u8, 133u8, 92u8, 36u8,
+							135u8, 42u8, 53u8, 207u8, 113u8, 40u8, 96u8, 134u8, 82u8, 134u8, 38u8,
+							159u8, 215u8, 203u8, 55u8, 126u8, 131u8, 178u8, 180u8, 60u8, 22u8,
+							172u8, 249u8, 124u8, 58u8, 63u8, 233u8, 74u8, 87u8, 107u8, 18u8, 64u8,
 						],
 					)
 				}
@@ -21493,9 +21500,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							228u8, 11u8, 13u8, 248u8, 171u8, 81u8, 9u8, 16u8, 14u8, 167u8, 153u8,
-							28u8, 57u8, 156u8, 215u8, 206u8, 79u8, 158u8, 66u8, 40u8, 158u8, 152u8,
-							120u8, 218u8, 111u8, 155u8, 75u8, 48u8, 14u8, 39u8, 28u8, 28u8,
+							13u8, 29u8, 37u8, 126u8, 61u8, 13u8, 207u8, 215u8, 109u8, 118u8, 119u8,
+							201u8, 155u8, 48u8, 222u8, 236u8, 51u8, 35u8, 185u8, 76u8, 56u8, 88u8,
+							239u8, 159u8, 59u8, 218u8, 125u8, 56u8, 233u8, 93u8, 193u8, 171u8,
 						],
 					)
 				}
@@ -21739,6 +21746,74 @@ pub mod api {
 					const PALLET: &'static str = "Vector";
 					const CALL: &'static str = "set_configuration";
 				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct SetFunctionIds {
+					pub value: ::core::option::Option<(::subxt::utils::H256, ::subxt::utils::H256)>,
+				}
+				impl ::subxt::blocks::StaticExtrinsic for SetFunctionIds {
+					const PALLET: &'static str = "Vector";
+					const CALL: &'static str = "set_function_ids";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct SetStepVerificationKey {
+					pub value: ::core::option::Option<
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+					>,
+				}
+				impl ::subxt::blocks::StaticExtrinsic for SetStepVerificationKey {
+					const PALLET: &'static str = "Vector";
+					const CALL: &'static str = "set_step_verification_key";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				pub struct SetRotateVerificationKey {
+					pub value: ::core::option::Option<
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+					>,
+				}
+				impl ::subxt::blocks::StaticExtrinsic for SetRotateVerificationKey {
+					const PALLET: &'static str = "Vector";
+					const CALL: &'static str = "set_rotate_verification_key";
+				}
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
@@ -21940,6 +22015,63 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = "See [`Pallet::set_function_ids`]."]
+				pub fn set_function_ids(
+					&self,
+					value: ::core::option::Option<(::subxt::utils::H256, ::subxt::utils::H256)>,
+				) -> ::subxt::tx::Payload<types::SetFunctionIds> {
+					::subxt::tx::Payload::new_static(
+						"Vector",
+						"set_function_ids",
+						types::SetFunctionIds { value },
+						[
+							250u8, 200u8, 208u8, 55u8, 254u8, 97u8, 91u8, 195u8, 119u8, 6u8, 138u8,
+							146u8, 208u8, 79u8, 13u8, 174u8, 39u8, 98u8, 11u8, 199u8, 54u8, 240u8,
+							148u8, 71u8, 202u8, 171u8, 58u8, 137u8, 91u8, 238u8, 48u8, 186u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::set_step_verification_key`]."]
+				pub fn set_step_verification_key(
+					&self,
+					value: ::core::option::Option<
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+					>,
+				) -> ::subxt::tx::Payload<types::SetStepVerificationKey> {
+					::subxt::tx::Payload::new_static(
+						"Vector",
+						"set_step_verification_key",
+						types::SetStepVerificationKey { value },
+						[
+							58u8, 83u8, 113u8, 4u8, 59u8, 10u8, 139u8, 52u8, 117u8, 175u8, 3u8,
+							106u8, 69u8, 113u8, 253u8, 245u8, 249u8, 176u8, 237u8, 76u8, 53u8,
+							140u8, 10u8, 141u8, 64u8, 25u8, 182u8, 110u8, 2u8, 2u8, 233u8, 173u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::set_rotate_verification_key`]."]
+				pub fn set_rotate_verification_key(
+					&self,
+					value: ::core::option::Option<
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+					>,
+				) -> ::subxt::tx::Payload<types::SetRotateVerificationKey> {
+					::subxt::tx::Payload::new_static(
+						"Vector",
+						"set_rotate_verification_key",
+						types::SetRotateVerificationKey { value },
+						[
+							190u8, 108u8, 200u8, 208u8, 19u8, 147u8, 74u8, 224u8, 254u8, 109u8,
+							24u8, 174u8, 96u8, 186u8, 238u8, 119u8, 222u8, 48u8, 174u8, 67u8,
+							205u8, 135u8, 196u8, 7u8, 133u8, 152u8, 30u8, 181u8, 166u8, 231u8,
+							119u8, 179u8,
+						],
+					)
+				}
 			}
 		}
 		#[doc = "The `Event` enum of this pallet"]
@@ -22124,6 +22256,77 @@ pub mod api {
 			impl ::subxt::events::StaticEvent for ConfigurationUpdated {
 				const PALLET: &'static str = "Vector";
 				const EVENT: &'static str = "ConfigurationUpdated";
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "Function Ids were updated"]
+			pub struct FunctionIdsUpdated {
+				pub value: ::core::option::Option<(::subxt::utils::H256, ::subxt::utils::H256)>,
+			}
+			impl ::subxt::events::StaticEvent for FunctionIdsUpdated {
+				const PALLET: &'static str = "Vector";
+				const EVENT: &'static str = "FunctionIdsUpdated";
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "Step verification key was updated"]
+			pub struct StepVerificationKeyUpdated {
+				pub value: ::core::option::Option<
+					runtime_types::bounded_collections::bounded_vec::BoundedVec<
+						::core::primitive::u8,
+					>,
+				>,
+			}
+			impl ::subxt::events::StaticEvent for StepVerificationKeyUpdated {
+				const PALLET: &'static str = "Vector";
+				const EVENT: &'static str = "StepVerificationKeyUpdated";
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "Rotate verification key was updated"]
+			pub struct RotateVerificationKeyUpdated {
+				pub value: ::core::option::Option<
+					runtime_types::bounded_collections::bounded_vec::BoundedVec<
+						::core::primitive::u8,
+					>,
+				>,
+			}
+			impl ::subxt::events::StaticEvent for RotateVerificationKeyUpdated {
+				const PALLET: &'static str = "Vector";
+				const EVENT: &'static str = "RotateVerificationKeyUpdated";
 			}
 		}
 		pub mod storage {
@@ -22517,74 +22720,89 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " The storage for the step function identifier and the rotate function identifier."]
+				#[doc = " Step function id is used to distinguish step-related functionality within the fulfill_call function."]
+				#[doc = " Rotate function id is used to handle rotate-related functionality within the fulfill_call function."]
+				#[doc = " When the provided function_id matches the step/rotate function identifier, specific logic related to step/rotate functions is executed."]
+				#[doc = " The order of storage is (step_function_id, rotate_function_id)"]
+				pub fn function_ids(
+					&self,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					::core::option::Option<(::subxt::utils::H256, ::subxt::utils::H256)>,
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+					(),
+				> {
+					::subxt::storage::address::Address::new_static(
+						"Vector",
+						"FunctionIds",
+						vec![],
+						[
+							59u8, 131u8, 194u8, 197u8, 121u8, 27u8, 166u8, 240u8, 250u8, 101u8,
+							193u8, 165u8, 16u8, 210u8, 138u8, 30u8, 210u8, 247u8, 242u8, 201u8,
+							197u8, 133u8, 8u8, 144u8, 225u8, 101u8, 106u8, 244u8, 133u8, 45u8,
+							16u8, 201u8,
+						],
+					)
+				}
+				#[doc = " Step verification key storage"]
+				pub fn step_verification_key(
+					&self,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					::core::option::Option<
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+					>,
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+					(),
+				> {
+					::subxt::storage::address::Address::new_static(
+						"Vector",
+						"StepVerificationKey",
+						vec![],
+						[
+							141u8, 135u8, 8u8, 233u8, 246u8, 47u8, 25u8, 37u8, 248u8, 22u8, 244u8,
+							174u8, 91u8, 44u8, 23u8, 247u8, 126u8, 220u8, 42u8, 93u8, 238u8, 180u8,
+							57u8, 81u8, 173u8, 61u8, 137u8, 128u8, 179u8, 230u8, 121u8, 194u8,
+						],
+					)
+				}
+				#[doc = " Rotate verification key storage"]
+				pub fn rotate_verification_key(
+					&self,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					::core::option::Option<
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+					>,
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+					(),
+				> {
+					::subxt::storage::address::Address::new_static(
+						"Vector",
+						"RotateVerificationKey",
+						vec![],
+						[
+							182u8, 122u8, 251u8, 66u8, 244u8, 112u8, 157u8, 238u8, 78u8, 74u8,
+							144u8, 81u8, 245u8, 192u8, 126u8, 181u8, 189u8, 200u8, 119u8, 30u8,
+							99u8, 191u8, 56u8, 115u8, 163u8, 84u8, 187u8, 150u8, 111u8, 170u8,
+							174u8, 18u8,
+						],
+					)
+				}
 			}
 		}
 		pub mod constants {
 			use super::runtime_types;
 			pub struct ConstantsApi;
 			impl ConstantsApi {
-				#[doc = " Step verification key constant"]
-				pub fn step_verification_key(
-					&self,
-				) -> ::subxt::constants::Address<::std::vec::Vec<::core::primitive::u8>> {
-					::subxt::constants::Address::new_static(
-						"Vector",
-						"StepVerificationKey",
-						[
-							64u8, 190u8, 244u8, 122u8, 87u8, 182u8, 217u8, 16u8, 55u8, 223u8,
-							128u8, 6u8, 112u8, 30u8, 236u8, 222u8, 153u8, 53u8, 247u8, 102u8,
-							196u8, 31u8, 6u8, 186u8, 251u8, 209u8, 114u8, 125u8, 213u8, 222u8,
-							240u8, 8u8,
-						],
-					)
-				}
-				#[doc = " Rotate verification key constant"]
-				pub fn rotate_verification_key(
-					&self,
-				) -> ::subxt::constants::Address<::std::vec::Vec<::core::primitive::u8>> {
-					::subxt::constants::Address::new_static(
-						"Vector",
-						"RotateVerificationKey",
-						[
-							64u8, 190u8, 244u8, 122u8, 87u8, 182u8, 217u8, 16u8, 55u8, 223u8,
-							128u8, 6u8, 112u8, 30u8, 236u8, 222u8, 153u8, 53u8, 247u8, 102u8,
-							196u8, 31u8, 6u8, 186u8, 251u8, 209u8, 114u8, 125u8, 213u8, 222u8,
-							240u8, 8u8,
-						],
-					)
-				}
-				#[doc = " The step function identifier is used to distinguish step-related functionality within the fulfill_call function."]
-				#[doc = " When the provided function_id matches the step function identifier, specific logic related to step functions is executed."]
-				pub fn step_function_id(
-					&self,
-				) -> ::subxt::constants::Address<::subxt::utils::H256> {
-					::subxt::constants::Address::new_static(
-						"Vector",
-						"StepFunctionId",
-						[
-							115u8, 233u8, 13u8, 223u8, 88u8, 20u8, 202u8, 139u8, 153u8, 28u8,
-							155u8, 157u8, 224u8, 66u8, 3u8, 250u8, 23u8, 53u8, 88u8, 168u8, 211u8,
-							204u8, 122u8, 166u8, 248u8, 23u8, 174u8, 225u8, 99u8, 108u8, 89u8,
-							135u8,
-						],
-					)
-				}
-				#[doc = " The rotate function identifier is used to identify and handle rotate-related functionality within the fulfill_call function."]
-				#[doc = " When the provided function_id matches the rotate function identifier, specific logic related to rotate functions is executed."]
-				pub fn rotate_function_id(
-					&self,
-				) -> ::subxt::constants::Address<::subxt::utils::H256> {
-					::subxt::constants::Address::new_static(
-						"Vector",
-						"RotateFunctionId",
-						[
-							115u8, 233u8, 13u8, 223u8, 88u8, 20u8, 202u8, 139u8, 153u8, 28u8,
-							155u8, 157u8, 224u8, 66u8, 3u8, 250u8, 23u8, 53u8, 88u8, 168u8, 211u8,
-							204u8, 122u8, 166u8, 248u8, 23u8, 174u8, 225u8, 99u8, 108u8, 89u8,
-							135u8,
-						],
-					)
-				}
 				#[doc = " The index of the `messages` mapping in contract."]
 				#[doc = " This is mandatory when calling execute messages via storage proofs."]
 				pub fn message_mapping_storage_index(
@@ -22915,10 +23133,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							129u8, 10u8, 101u8, 217u8, 70u8, 118u8, 13u8, 71u8, 206u8, 232u8,
-							220u8, 6u8, 241u8, 15u8, 185u8, 103u8, 159u8, 16u8, 28u8, 200u8, 228u8,
-							94u8, 234u8, 197u8, 205u8, 181u8, 209u8, 190u8, 90u8, 123u8, 57u8,
-							83u8,
+							133u8, 229u8, 253u8, 82u8, 41u8, 64u8, 244u8, 206u8, 255u8, 176u8,
+							189u8, 194u8, 206u8, 185u8, 2u8, 193u8, 161u8, 42u8, 43u8, 163u8,
+							227u8, 111u8, 252u8, 51u8, 229u8, 92u8, 143u8, 107u8, 209u8, 16u8,
+							176u8, 106u8,
 						],
 					)
 				}
@@ -23130,10 +23348,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							62u8, 67u8, 63u8, 230u8, 103u8, 151u8, 232u8, 48u8, 52u8, 213u8, 144u8,
-							16u8, 150u8, 137u8, 65u8, 244u8, 137u8, 167u8, 22u8, 209u8, 116u8,
-							111u8, 189u8, 1u8, 188u8, 244u8, 176u8, 151u8, 130u8, 235u8, 170u8,
-							236u8,
+							13u8, 13u8, 248u8, 86u8, 218u8, 110u8, 236u8, 240u8, 174u8, 232u8,
+							133u8, 213u8, 220u8, 223u8, 251u8, 52u8, 177u8, 5u8, 215u8, 207u8,
+							128u8, 150u8, 38u8, 96u8, 110u8, 65u8, 224u8, 84u8, 218u8, 169u8,
+							103u8, 112u8,
 						],
 					)
 				}
@@ -31518,6 +31736,29 @@ pub mod api {
 					set_configuration {
 						value: runtime_types::pallet_vector::state::Configuration,
 					},
+					#[codec(index = 8)]
+					#[doc = "See [`Pallet::set_function_ids`]."]
+					set_function_ids {
+						value: ::core::option::Option<(::subxt::utils::H256, ::subxt::utils::H256)>,
+					},
+					#[codec(index = 9)]
+					#[doc = "See [`Pallet::set_step_verification_key`]."]
+					set_step_verification_key {
+						value: ::core::option::Option<
+							runtime_types::bounded_collections::bounded_vec::BoundedVec<
+								::core::primitive::u8,
+							>,
+						>,
+					},
+					#[codec(index = 10)]
+					#[doc = "See [`Pallet::set_rotate_verification_key`]."]
+					set_rotate_verification_key {
+						value: ::core::option::Option<
+							runtime_types::bounded_collections::bounded_vec::BoundedVec<
+								::core::primitive::u8,
+							>,
+						>,
+					},
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -31598,6 +31839,9 @@ pub mod api {
 					#[codec(index = 30)]
 					#[doc = "Domain is not supported"]
 					DomainNotSupported,
+					#[codec(index = 31)]
+					#[doc = "Function ids (step / rotate) are not set"]
+					FunctionIdsAreNotSet,
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -31664,6 +31908,29 @@ pub mod api {
 					ConfigurationUpdated {
 						slots_per_period: ::core::primitive::u64,
 						finality_threshold: ::core::primitive::u16,
+					},
+					#[codec(index = 8)]
+					#[doc = "Function Ids were updated"]
+					FunctionIdsUpdated {
+						value: ::core::option::Option<(::subxt::utils::H256, ::subxt::utils::H256)>,
+					},
+					#[codec(index = 9)]
+					#[doc = "Step verification key was updated"]
+					StepVerificationKeyUpdated {
+						value: ::core::option::Option<
+							runtime_types::bounded_collections::bounded_vec::BoundedVec<
+								::core::primitive::u8,
+							>,
+						>,
+					},
+					#[codec(index = 10)]
+					#[doc = "Rotate verification key was updated"]
+					RotateVerificationKeyUpdated {
+						value: ::core::option::Option<
+							runtime_types::bounded_collections::bounded_vec::BoundedVec<
+								::core::primitive::u8,
+							>,
+						>,
 					},
 				}
 			}

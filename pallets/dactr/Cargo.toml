@@ -38,7 +38,7 @@ frame-benchmarking = { workspace = true, default-features = false, optional = tr
 pallet-utility = { workspace = true, default-features = false }
 
 [dev-dependencies]
-pallet-balances = { workspace = true, default-features = false }
+pallet-balances = { workspace = true, default-features = false, features = ["std"] }
 test-case = "1.2.3"
 
 [features]

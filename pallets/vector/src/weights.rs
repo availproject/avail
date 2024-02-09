@@ -57,9 +57,13 @@ pub trait WeightInfo {
 	fn set_whitelisted_domains() -> Weight;
 	fn set_configuration() -> Weight;
 	fn source_chain_froze() -> Weight;
-	fn fulfill_call() -> Weight;
+	fn fulfill_call_step() -> Weight;
+	fn fulfill_call_rotate() -> Weight;
 	fn execute_fungible_token() -> Weight;
 	fn execute_arbitrary_message(l: u32, ) -> Weight;
+	fn set_function_ids() -> Weight;
+	fn set_step_verification_key() -> Weight;
+	fn set_rotate_verification_key() -> Weight;
 }
 
 /// Weights for `pallet_vector` using the Avail node and recommended hardware.
@@ -144,6 +148,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: `Vector::ConfigurationStorage` (r:1 w:0)
 	/// Proof: `Vector::ConfigurationStorage` (`max_values`: Some(1), `max_size`: Some(10), added: 505, mode: `MaxEncodedLen`)
+	/// Storage: `Vector::FunctionIds` (r:1 w:0)
+	/// Proof: `Vector::FunctionIds` (`max_values`: Some(1), `max_size`: Some(65), added: 560, mode: `MaxEncodedLen`)
+	/// Storage: `Vector::StepVerificationKey` (r:1 w:0)
+	/// Proof: `Vector::StepVerificationKey` (`max_values`: Some(1), `max_size`: Some(10003), added: 10498, mode: `MaxEncodedLen`)
 	/// Storage: `Vector::SyncCommitteePoseidons` (r:1 w:0)
 	/// Proof: `Vector::SyncCommitteePoseidons` (`max_values`: None, `max_size`: Some(40), added: 2515, mode: `MaxEncodedLen`)
 	/// Storage: `Vector::Head` (r:1 w:1)
@@ -156,14 +164,33 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Timestamp::Now` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
 	/// Storage: `Vector::Timestamps` (r:0 w:1)
 	/// Proof: `Vector::Timestamps` (`max_values`: None, `max_size`: Some(16), added: 2491, mode: `MaxEncodedLen`)
-	fn fulfill_call() -> Weight {
+	fn fulfill_call_step() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `235`
-		//  Estimated: `3505`
-		// Minimum execution time: 7_935_397_000 picoseconds.
-		Weight::from_parts(7_970_190_000, 3505)
-			.saturating_add(T::DbWeight::get().reads(6_u64))
+		//  Measured:  `2485`
+		//  Estimated: `11488`
+		// Minimum execution time: 86_559_825_000 picoseconds.
+		Weight::from_parts(86_605_948_000, 11488)
+			.saturating_add(T::DbWeight::get().reads(8_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
+	}
+	/// Storage: `Vector::ConfigurationStorage` (r:1 w:0)
+	/// Proof: `Vector::ConfigurationStorage` (`max_values`: Some(1), `max_size`: Some(10), added: 505, mode: `MaxEncodedLen`)
+	/// Storage: `Vector::FunctionIds` (r:1 w:0)
+	/// Proof: `Vector::FunctionIds` (`max_values`: Some(1), `max_size`: Some(65), added: 560, mode: `MaxEncodedLen`)
+	/// Storage: `Vector::RotateVerificationKey` (r:1 w:0)
+	/// Proof: `Vector::RotateVerificationKey` (`max_values`: Some(1), `max_size`: Some(10003), added: 10498, mode: `MaxEncodedLen`)
+	/// Storage: `Vector::Headers` (r:1 w:0)
+	/// Proof: `Vector::Headers` (`max_values`: None, `max_size`: Some(40), added: 2515, mode: `MaxEncodedLen`)
+	/// Storage: `Vector::SyncCommitteePoseidons` (r:1 w:1)
+	/// Proof: `Vector::SyncCommitteePoseidons` (`max_values`: None, `max_size`: Some(40), added: 2515, mode: `MaxEncodedLen`)
+	fn fulfill_call_rotate() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `2958`
+		//  Estimated: `11488`
+		// Minimum execution time: 86_435_671_000 picoseconds.
+		Weight::from_parts(86_578_476_000, 11488)
+			.saturating_add(T::DbWeight::get().reads(5_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Vector::MessageStatus` (r:1 w:1)
 	/// Proof: `Vector::MessageStatus` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
@@ -204,6 +231,37 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Minimum execution time: 46_898_000 picoseconds.
 		Weight::from_parts(49_944_329, 41487)
 			.saturating_add(T::DbWeight::get().reads(5_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+
+	/// Storage: `Vector::FunctionIds` (r:0 w:1)
+	/// Proof: `Vector::FunctionIds` (`max_values`: Some(1), `max_size`: Some(65), added: 560, mode: `MaxEncodedLen`)
+	fn set_function_ids() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 8_315_000 picoseconds.
+		Weight::from_parts(9_217_000, 0)
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Vector::StepVerificationKey` (r:0 w:1)
+	/// Proof: `Vector::StepVerificationKey` (`max_values`: Some(1), `max_size`: Some(10003), added: 10498, mode: `MaxEncodedLen`)
+	fn set_step_verification_key() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 9_047_000 picoseconds.
+		Weight::from_parts(9_398_000, 0)
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Vector::RotateVerificationKey` (r:0 w:1)
+	/// Proof: `Vector::RotateVerificationKey` (`max_values`: Some(1), `max_size`: Some(10003), added: 10498, mode: `MaxEncodedLen`)
+	fn set_rotate_verification_key() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 9_568_000 picoseconds.
+		Weight::from_parts(9_979_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
@@ -289,6 +347,10 @@ impl WeightInfo for () {
 	}
 	/// Storage: `Vector::ConfigurationStorage` (r:1 w:0)
 	/// Proof: `Vector::ConfigurationStorage` (`max_values`: Some(1), `max_size`: Some(10), added: 505, mode: `MaxEncodedLen`)
+	/// Storage: `Vector::FunctionIds` (r:1 w:0)
+	/// Proof: `Vector::FunctionIds` (`max_values`: Some(1), `max_size`: Some(65), added: 560, mode: `MaxEncodedLen`)
+	/// Storage: `Vector::StepVerificationKey` (r:1 w:0)
+	/// Proof: `Vector::StepVerificationKey` (`max_values`: Some(1), `max_size`: Some(10003), added: 10498, mode: `MaxEncodedLen`)
 	/// Storage: `Vector::SyncCommitteePoseidons` (r:1 w:0)
 	/// Proof: `Vector::SyncCommitteePoseidons` (`max_values`: None, `max_size`: Some(40), added: 2515, mode: `MaxEncodedLen`)
 	/// Storage: `Vector::Head` (r:1 w:1)
@@ -301,14 +363,33 @@ impl WeightInfo for () {
 	/// Proof: `Timestamp::Now` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
 	/// Storage: `Vector::Timestamps` (r:0 w:1)
 	/// Proof: `Vector::Timestamps` (`max_values`: None, `max_size`: Some(16), added: 2491, mode: `MaxEncodedLen`)
-	fn fulfill_call() -> Weight {
+	fn fulfill_call_step() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `235`
-		//  Estimated: `3505`
-		// Minimum execution time: 7_935_397_000 picoseconds.
-		Weight::from_parts(7_970_190_000, 3505)
-			.saturating_add(RocksDbWeight::get().reads(6_u64))
+		//  Measured:  `2485`
+		//  Estimated: `11488`
+		// Minimum execution time: 86_559_825_000 picoseconds.
+		Weight::from_parts(86_605_948_000, 11488)
+			.saturating_add(RocksDbWeight::get().reads(8_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
+	}
+	/// Storage: `Vector::ConfigurationStorage` (r:1 w:0)
+	/// Proof: `Vector::ConfigurationStorage` (`max_values`: Some(1), `max_size`: Some(10), added: 505, mode: `MaxEncodedLen`)
+	/// Storage: `Vector::FunctionIds` (r:1 w:0)
+	/// Proof: `Vector::FunctionIds` (`max_values`: Some(1), `max_size`: Some(65), added: 560, mode: `MaxEncodedLen`)
+	/// Storage: `Vector::RotateVerificationKey` (r:1 w:0)
+	/// Proof: `Vector::RotateVerificationKey` (`max_values`: Some(1), `max_size`: Some(10003), added: 10498, mode: `MaxEncodedLen`)
+	/// Storage: `Vector::Headers` (r:1 w:0)
+	/// Proof: `Vector::Headers` (`max_values`: None, `max_size`: Some(40), added: 2515, mode: `MaxEncodedLen`)
+	/// Storage: `Vector::SyncCommitteePoseidons` (r:1 w:1)
+	/// Proof: `Vector::SyncCommitteePoseidons` (`max_values`: None, `max_size`: Some(40), added: 2515, mode: `MaxEncodedLen`)
+	fn fulfill_call_rotate() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `2958`
+		//  Estimated: `11488`
+		// Minimum execution time: 86_435_671_000 picoseconds.
+		Weight::from_parts(86_578_476_000, 11488)
+			.saturating_add(RocksDbWeight::get().reads(5_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Vector::MessageStatus` (r:1 w:1)
 	/// Proof: `Vector::MessageStatus` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
@@ -349,6 +430,37 @@ impl WeightInfo for () {
 		// Minimum execution time: 46_898_000 picoseconds.
 		Weight::from_parts(49_944_329, 41487)
 			.saturating_add(RocksDbWeight::get().reads(5_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+
+	/// Storage: `Vector::FunctionIds` (r:0 w:1)
+	/// Proof: `Vector::FunctionIds` (`max_values`: Some(1), `max_size`: Some(65), added: 560, mode: `MaxEncodedLen`)
+	fn set_function_ids() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 8_315_000 picoseconds.
+		Weight::from_parts(9_217_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Vector::StepVerificationKey` (r:0 w:1)
+	/// Proof: `Vector::StepVerificationKey` (`max_values`: Some(1), `max_size`: Some(10003), added: 10498, mode: `MaxEncodedLen`)
+	fn set_step_verification_key() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 9_047_000 picoseconds.
+		Weight::from_parts(9_398_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Vector::RotateVerificationKey` (r:0 w:1)
+	/// Proof: `Vector::RotateVerificationKey` (`max_values`: Some(1), `max_size`: Some(10003), added: 10498, mode: `MaxEncodedLen`)
+	fn set_rotate_verification_key() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 9_568_000 picoseconds.
+		Weight::from_parts(9_979_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }
