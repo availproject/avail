@@ -4,7 +4,6 @@ mod definitions;
 use common::*;
 pub use definitions::*;
 
-use pallet_vector::constants::{ROTATE_FUNCTION_ID, STEP_FUNCTION_ID};
 use serde_json::Value;
 #[cfg(test)]
 use sp_runtime::BuildStorage;
@@ -46,12 +45,7 @@ pub mod dev {
 		let alice = AuthorityKeys::from_seed("Alice");
 		let sudo = alice.controller.clone();
 
-		runtime_genesis_config(
-			sudo.clone(),
-			vec![sudo],
-			vec![alice],
-			(STEP_FUNCTION_ID, ROTATE_FUNCTION_ID),
-		)
+		runtime_genesis_config(sudo.clone(), vec![sudo], vec![alice])
 	}
 
 	#[test]
@@ -84,12 +78,7 @@ pub mod dev_tri {
 		let charlie = AuthorityKeys::from_seed("Charlie");
 		let sudo = alice.controller.clone();
 
-		runtime_genesis_config(
-			sudo.clone(),
-			vec![sudo],
-			vec![alice, bob, charlie],
-			(STEP_FUNCTION_ID, ROTATE_FUNCTION_ID),
-		)
+		runtime_genesis_config(sudo.clone(), vec![sudo], vec![alice, bob, charlie])
 	}
 
 	#[test]
