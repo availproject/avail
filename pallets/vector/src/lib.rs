@@ -241,6 +241,8 @@ pub mod pallet {
 		pub slots_per_period: u64,
 		pub finality_threshold: u16,
 		pub function_ids: (H256, H256),
+		pub sync_committee_poseidon: U256,
+		pub period: u64,
 		pub broadcaster: H256,
 		pub broadcaster_domain: u32,
 		pub step_verification_key: Vec<u8>,
@@ -279,6 +281,8 @@ pub mod pallet {
 				BoundedVec::try_from(self.rotate_verification_key.clone())
 					.expect("Rotate verification key should be valid at genesis.");
 			RotateVerificationKey::<T>::set(Some(rotate_verification_key));
+
+			SyncCommitteePoseidons::<T>::insert(self.period, self.sync_committee_poseidon);
 		}
 	}
 

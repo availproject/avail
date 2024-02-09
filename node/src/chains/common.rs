@@ -8,7 +8,7 @@ use da_runtime::{
 use frame_system::limits::BlockLength;
 use hex_literal::hex;
 use pallet_vector::constants::{ROTATE_VK, STEP_VK};
-use primitive_types::H256;
+use primitive_types::{H256, U256};
 use sc_telemetry::TelemetryEndpoints;
 use serde_json::{json, Value};
 use sp_core::crypto::AccountId32;
@@ -17,13 +17,20 @@ use sp_core::sr25519::Public;
 pub const PROTOCOL_ID: &str = "Avail";
 pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
 
-// bridge init config
+// Vector init config
 const BROADCASTER_DOMAIN: u32 = 2;
 const BROADCASTER: H256 = H256(hex!(
 	"Aa8c1bFC413e00884A7ac991851686D27b387997000000000000000000000000" // Sepolia address
 ));
 const SLOTS_PER_PERIOD: u64 = 8192;
 const FINALITY_THRESHOLD: u16 = 342;
+const PERIOD: u64 = 526;
+fn get_poseidon_hash_for_period() -> U256 {
+	// PERIOD hash
+	U256::from(hex!(
+		"20d4234c2adca715b9b7c7d3eb3f8d9230fc97fa036e14dd9f050cd2010e0492"
+	))
+}
 
 const ENDOWMENT: Balance = 1_000_000 * AVL;
 const STASH_BOND: Balance = ENDOWMENT / 100;
@@ -122,6 +129,8 @@ pub fn runtime_genesis_config(
 			"broadcasterDomain": BROADCASTER_DOMAIN,
 			"finalityThreshold": FINALITY_THRESHOLD,
 			"functionIds": vector_function_ids,
+			"period": PERIOD,
+			"syncCommitteePoseidon":get_poseidon_hash_for_period(),
 			"slotsPerPeriod": SLOTS_PER_PERIOD,
 			"stepVerificationKey": STEP_VK.as_bytes().to_vec(),
 			"rotateVerificationKey": ROTATE_VK.as_bytes().to_vec(),
