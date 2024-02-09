@@ -53,7 +53,7 @@ where
 	}
 
 	fn decode_plan(data: &[u8]) -> Result<NodePlan, Self::Error> {
-		if data == &HASHED_NULL_NODE {
+		if data == HASHED_NULL_NODE {
 			// early return if this is == keccak(rlp(null)), aka empty trie root
 			// source: https://ethereum.github.io/execution-specs/diffs/frontier_homestead/trie/index.html#empty-trie-root
 			return Ok(NodePlan::Empty);
@@ -105,6 +105,7 @@ where
 					None, None, None,
 				];
 
+				#[allow(clippy::needless_range_loop)]
 				for index in 0..16 {
 					let (item, offset) = r.at_with_offset(index)?;
 					let i = item.payload_info()?;

@@ -44,6 +44,6 @@ fn commitment_builder_with(txs: Vec<AppExtrinsic>, block_length: BlockLength) {
 		block_length,
 		block_number,
 		seed,
-		HeaderVersion::V3,
+		HeaderVersion::V2,
 	);
 }

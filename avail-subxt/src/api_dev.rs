@@ -2805,9 +2805,9 @@ pub mod api {
 							key_owner_proof,
 						},
 						[
-							163u8, 83u8, 110u8, 20u8, 138u8, 34u8, 250u8, 211u8, 96u8, 14u8, 151u8,
-							70u8, 139u8, 207u8, 238u8, 233u8, 25u8, 202u8, 111u8, 2u8, 64u8, 84u8,
-							72u8, 218u8, 164u8, 12u8, 164u8, 25u8, 178u8, 45u8, 182u8, 242u8,
+							21u8, 124u8, 152u8, 173u8, 181u8, 212u8, 110u8, 247u8, 108u8, 14u8,
+							118u8, 56u8, 96u8, 69u8, 136u8, 173u8, 114u8, 69u8, 31u8, 187u8, 72u8,
+							200u8, 99u8, 37u8, 6u8, 161u8, 128u8, 140u8, 92u8, 43u8, 106u8, 11u8,
 						],
 					)
 				}
@@ -2831,10 +2831,9 @@ pub mod api {
 							key_owner_proof,
 						},
 						[
-							132u8, 180u8, 149u8, 236u8, 75u8, 252u8, 188u8, 41u8, 196u8, 74u8,
-							159u8, 144u8, 27u8, 126u8, 30u8, 67u8, 95u8, 234u8, 86u8, 158u8, 36u8,
-							218u8, 163u8, 243u8, 127u8, 143u8, 116u8, 218u8, 103u8, 248u8, 134u8,
-							215u8,
+							147u8, 122u8, 88u8, 241u8, 82u8, 205u8, 154u8, 127u8, 239u8, 157u8,
+							78u8, 65u8, 29u8, 148u8, 155u8, 241u8, 88u8, 218u8, 53u8, 211u8, 34u8,
+							19u8, 158u8, 253u8, 47u8, 237u8, 6u8, 171u8, 43u8, 234u8, 137u8, 20u8,
 						],
 					)
 				}
@@ -24158,32 +24157,6 @@ pub mod api {
 								runtime_types::avail_core::kate_commitment::v2::KateCommitment,
 						}
 					}
-					pub mod v3 {
-						use super::runtime_types;
-						#[derive(
-							:: subxt :: ext :: codec :: Decode,
-							:: subxt :: ext :: codec :: Encode,
-							:: subxt :: ext :: scale_decode :: DecodeAsType,
-							:: subxt :: ext :: scale_encode :: EncodeAsType,
-							Clone,
-							Debug,
-							Default,
-							Eq,
-							PartialEq,
-							serde :: Deserialize,
-							serde :: Serialize,
-						)]
-						# [codec (crate = :: subxt :: ext :: codec)]
-						#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-						#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-						#[serde(rename_all = "camelCase")]
-						pub struct HeaderExtension {
-							pub app_lookup:
-								runtime_types::avail_core::data_lookup::compact::CompactDataLookup,
-							pub commitment:
-								runtime_types::avail_core::kate_commitment::v3::KateCommitment,
-						}
-					}
 					#[derive(
 						:: subxt :: ext :: codec :: Decode,
 						:: subxt :: ext :: codec :: Encode,
@@ -24204,8 +24177,6 @@ pub mod api {
 						V1(runtime_types::avail_core::header::extension::v1::HeaderExtension),
 						#[codec(index = 1)]
 						V2(runtime_types::avail_core::header::extension::v2::HeaderExtension),
-						#[codec(index = 2)]
-						V3(runtime_types::avail_core::header::extension::v3::HeaderExtension),
 					}
 				}
 				#[derive(
@@ -24264,34 +24235,6 @@ pub mod api {
 					}
 				}
 				pub mod v2 {
-					use super::runtime_types;
-					#[derive(
-						:: subxt :: ext :: codec :: Decode,
-						:: subxt :: ext :: codec :: Encode,
-						:: subxt :: ext :: scale_decode :: DecodeAsType,
-						:: subxt :: ext :: scale_encode :: EncodeAsType,
-						Clone,
-						Debug,
-						Default,
-						Eq,
-						PartialEq,
-						serde :: Deserialize,
-						serde :: Serialize,
-					)]
-					# [codec (crate = :: subxt :: ext :: codec)]
-					#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-					#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-					#[serde(rename_all = "camelCase")]
-					pub struct KateCommitment {
-						#[codec(compact)]
-						pub rows: ::core::primitive::u16,
-						#[codec(compact)]
-						pub cols: ::core::primitive::u16,
-						pub commitment: ::std::vec::Vec<::core::primitive::u8>,
-						pub data_root: ::subxt::utils::H256,
-					}
-				}
-				pub mod v3 {
 					use super::runtime_types;
 					#[derive(
 						:: subxt :: ext :: codec :: Decode,

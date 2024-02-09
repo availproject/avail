@@ -62,6 +62,7 @@ pub fn runtime_genesis_config(
 	sudo: AccountId32,
 	technical_committee: Vec<AccountId32>,
 	session_keys: Vec<AuthorityKeys>,
+	vector_function_ids: (H256, H256),
 ) -> Value {
 	let balances = dev_endowed_accounts();
 	let stakers: Vec<(AccountId, AccountId, Balance, StakerStatus<AccountId>)> = session_keys
