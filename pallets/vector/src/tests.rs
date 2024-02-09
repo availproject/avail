@@ -561,7 +561,7 @@ fn test_fulfill_step_call() {
 		assert_ok!(result);
 		let finalized_slot = 7634848;
 		// ensure that event is fired
-		let expected_event = RuntimeEvent::Bridge(Event::HeaderUpdate {
+		let expected_event = RuntimeEvent::Bridge(Event::HeaderUpdated {
 			slot: finalized_slot,
 			finalization_root: H256(hex!(
 				"e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec"
@@ -660,7 +660,7 @@ fn test_fulfill_rotate_call() {
 		.unwrap();
 
 		let current_period = 931;
-		let expected_event = RuntimeEvent::Bridge(Event::SyncCommitteeUpdate {
+		let expected_event = RuntimeEvent::Bridge(Event::SyncCommitteeUpdated {
 			period: current_period,
 			root: expected_poseidon,
 		});
@@ -821,7 +821,7 @@ fn set_broadcaster_works_with_root() {
 		assert_ok!(ok);
 		assert_eq!(Broadcasters::<Test>::get(domain), STEP_FUNCTION_ID);
 
-		let expected_event = RuntimeEvent::Bridge(Event::BroadcasterUpdate {
+		let expected_event = RuntimeEvent::Bridge(Event::BroadcasterUpdated {
 			old,
 			new: STEP_FUNCTION_ID,
 			domain,
@@ -851,7 +851,7 @@ fn set_poseidon_hash_works_with_root() {
 		assert_ok!(ok);
 		assert_eq!(SyncCommitteePoseidons::<Test>::get(period), root);
 
-		let expected_event = RuntimeEvent::Bridge(Event::SyncCommitteeUpdate { period, root });
+		let expected_event = RuntimeEvent::Bridge(Event::SyncCommitteeUpdated { period, root });
 		System::assert_last_event(expected_event);
 	});
 }
@@ -1128,7 +1128,7 @@ fn execute_arbitrary_message_works() {
 		let encoded_data = message.clone().abi_encode();
 		let message_root = H256(keccak_256(encoded_data.as_slice()));
 
-		let expected_event = RuntimeEvent::Bridge(Event::ExecutedMessage {
+		let expected_event = RuntimeEvent::Bridge(Event::MessageExecuted {
 			from: message.from,
 			to: message.to,
 			message_id: message.id,
@@ -1196,7 +1196,7 @@ fn test_double_execute_arbitrary_message() {
 		let encoded_data = message.clone().abi_encode();
 		let message_root = H256(keccak_256(encoded_data.as_slice()));
 
-		let expected_event = RuntimeEvent::Bridge(Event::ExecutedMessage {
+		let expected_event = RuntimeEvent::Bridge(Event::MessageExecuted {
 			from: message.from,
 			to: message.to,
 			message_id: message.id,

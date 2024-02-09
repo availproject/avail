@@ -1,7 +1,7 @@
 use crate::{
-	state::Configuration,
-	BalanceOf, Call, Config, ConfigurationStorage, ExecutionStateRoots, FunctionInput,
-	FunctionOutput, FunctionProof, Pallet, ValidProof,
+	state::Configuration, BalanceOf, Call, Config, ConfigurationStorage, ExecutionStateRoots,
+	FunctionIds, FunctionInput, FunctionOutput, FunctionProof, Headers, Pallet,
+	RotateVerificationKey, StepVerificationKey, ValidProof,
 };
 use avail_core::data_proof_v2::BOUNDED_DATA_MAX_LENGTH;
 use ethabi::{encode, Token};
@@ -276,7 +276,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn fulfill_call() -> Result<(), BenchmarkError> {
+	fn fulfill_call_step() -> Result<(), BenchmarkError> {
 		let hash = BoundedVec::truncate_from(
 			hex!("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df").to_vec(),
 		);
@@ -290,14 +290,72 @@ mod benchmarks {
 
 		let account = T::AccountId::from(ACCOUNT1);
 		let origin = RawOrigin::Signed(account.clone());
+
+		// We use test values instead of dev / prod values
+		// We override dev config
+		FunctionIds::<T>::set(Some((STEP_FUNCTION_ID, ROTATE_FUNCTION_ID)));
+		StepVerificationKey::<T>::set(Some(
+			BoundedVec::try_from(STEP_VK.as_bytes().to_vec()).unwrap(),
+		));
+		RotateVerificationKey::<T>::set(Some(
+			BoundedVec::try_from(ROTATE_VK.as_bytes().to_vec()).unwrap(),
+		));
+
 		#[extrinsic_call]
-		_(
+		fulfill_call(
 			origin,
 			STEP_FUNCTION_ID,
 			get_valid_step_input(),
 			get_valid_step_output(),
 			get_valid_step_proof(),
 			7634942,
+		);
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn fulfill_call_rotate() -> Result<(), BenchmarkError> {
+		let slot = 7634942;
+		let hash = BoundedVec::truncate_from(
+			hex!("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df").to_vec(),
+		);
+
+		Pallet::<T>::set_poseidon_hash(RawOrigin::Root.into(), 931, hash).unwrap();
+
+		ConfigurationStorage::<T>::set(Configuration {
+			slots_per_period: 8192,
+			finality_threshold: 342,
+		});
+
+		Headers::<T>::set(
+			slot,
+			H256(hex!(
+				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57856"
+			)),
+		);
+
+		let account = T::AccountId::from(ACCOUNT1);
+		let origin = RawOrigin::Signed(account.clone());
+
+		// We use test values instead of dev / prod values
+		// We override dev config
+		FunctionIds::<T>::set(Some((STEP_FUNCTION_ID, ROTATE_FUNCTION_ID)));
+		StepVerificationKey::<T>::set(Some(
+			BoundedVec::try_from(STEP_VK.as_bytes().to_vec()).unwrap(),
+		));
+		RotateVerificationKey::<T>::set(Some(
+			BoundedVec::try_from(ROTATE_VK.as_bytes().to_vec()).unwrap(),
+		));
+
+		#[extrinsic_call]
+		fulfill_call(
+			origin,
+			ROTATE_FUNCTION_ID,
+			get_valid_rotate_input(),
+			get_valid_rotate_output(),
+			get_valid_rotate_proof(),
+			slot,
 		);
 
 		Ok(())
@@ -505,4 +563,20 @@ fn get_valid_step_output() -> FunctionOutput {
 
 fn get_valid_step_proof() -> FunctionProof {
 	BoundedVec::truncate_from(hex!("0b496d04c0e12206bc846edd2077a20b8b55f65fc0e40bb8cf617d9b79ce39e508281ad49432300b3b7c8a95a0a63544f93f553fcfdeba38c82460888f4030ed1f67a1be666c12ee00658109c802042c58f645474fcee7d128277a4e35c1dd1504d33cb652ec23407cd3580eda0196dd97054eb5c2a817163d6997832d9abd422729b3e85a15941722baeb5ca8a42567a91c6a0b0cd64ac15431fde05071e90e0d30c12013d5803336cc2f433c16eaa5434e30b89ce7395c3c3cda29dde3be062281095f143d728486c71203b24fa6068e69aabf29d457ffadc6d682d51a4f08179d3240bc561ae7e2c005bb772a4d4c5ba6644986052fad554f042ab0074a8f").to_vec())
+}
+
+fn get_valid_rotate_input() -> FunctionInput {
+	BoundedVec::truncate_from(
+		hex!("e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57856").to_vec(),
+	)
+}
+
+fn get_valid_rotate_output() -> FunctionOutput {
+	BoundedVec::truncate_from(
+		hex!("2441c10b0b6605985c56ebf6dc1ca7e9a0ae20e617c931d72f2ec19aa40ccc8d").to_vec(),
+	)
+}
+
+fn get_valid_rotate_proof() -> FunctionProof {
+	BoundedVec::truncate_from(hex!("14305744fb26a377656a947cae0874c14b086de9d407bdfaf415ca9f47402c04144589183b473537750e7211f93671e324825db673edcf5c0839b08eecba08202966ba52dc07e1bf9832a54770048b84999172d47c57628758d8fe43dd9fe1412e6f8c0e75a79cde28e0e24eb09f9d23309defb07f4a1761deb6598de77278971d2d914930ad2e3ad8b6264e595a0516a912fc9394c93fa61146efc54d61e5c32378a5d4460aa2164422702f9401fcfb3e2b991a0e5b847ede3ea9ffe70a55100203abc0636c101adb6546c2f7aaf32d79e69093afb40c3c1a674e44a1ece76a1183fc03ef9553a7728672de2aada5d5582b5bcf0859e8c312ab59429553ed6d").to_vec())
 }

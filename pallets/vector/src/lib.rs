@@ -101,17 +101,17 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// emit event once the head is updated.
-		HeaderUpdate {
+		HeaderUpdated {
 			slot: u64,
 			finalization_root: H256,
 			execution_state_root: H256,
 		},
 		/// emit event once the sync committee updates.
-		SyncCommitteeUpdate { period: u64, root: U256 },
+		SyncCommitteeUpdated { period: u64, root: U256 },
 		/// emit when new updater is set
-		BroadcasterUpdate { old: H256, new: H256, domain: u32 },
+		BroadcasterUpdated { old: H256, new: H256, domain: u32 },
 		/// emit when message gets executed.
-		ExecutedMessage {
+		MessageExecuted {
 			from: H256,
 			to: H256,
 			message_id: u64,
@@ -209,6 +209,22 @@ pub mod pallet {
 	pub type RotateVerificationKey<T: Config> =
 		StorageValue<_, Option<BoundedVec<u8, ConstU32<10_000>>>, ValueQuery>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn genesis_validator_root)]
+	pub type GenesisValidatorRoot<T: Config> = StorageValue<_, H256, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn genesis_timestamp)]
+	pub type GenesisTimestamp<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn seconds_per_slot)]
+	pub type SecondsPerSlot<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn source_chain_id)]
+	pub type SourceChainId<T: Config> = StorageValue<_, u64, ValueQuery>;
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
@@ -248,6 +264,10 @@ pub mod pallet {
 		pub step_verification_key: Vec<u8>,
 		pub rotate_verification_key: Vec<u8>,
 		pub whitelisted_domains: Vec<u32>,
+		pub genesis_validator_root: H256,
+		pub genesis_time: u64,
+		pub seconds_per_slot: u64,
+		pub source_chain_id: u64,
 		pub _phantom: PhantomData<T>,
 	}
 
@@ -283,6 +303,14 @@ pub mod pallet {
 			RotateVerificationKey::<T>::set(Some(rotate_verification_key));
 
 			SyncCommitteePoseidons::<T>::insert(self.period, self.sync_committee_poseidon);
+
+			GenesisValidatorRoot::<T>::set(self.genesis_validator_root);
+
+			GenesisTimestamp::<T>::set(self.genesis_time);
+
+			SecondsPerSlot::<T>::set(self.seconds_per_slot);
+
+			SourceChainId::<T>::set(self.source_chain_id);
 		}
 	}
 
@@ -301,7 +329,7 @@ pub mod pallet {
 		/// proof  Function proof.
 		/// slot  Function slot to update.
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::fulfill_call())]
+		#[pallet::weight(weight_helper::fulfill_call::<T>(*function_id))]
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
 			function_id: H256,
@@ -329,8 +357,8 @@ pub mod pallet {
 				let vs =
 					VerifiedStep::new(function_id, input_hash, parse_step_output(output.to_vec()));
 
-				if Self::step_into(slot, config, &vs, step_function_id)? {
-					Self::deposit_event(Event::HeaderUpdate {
+				if Self::step_into(slot, &config, &vs, step_function_id)? {
+					Self::deposit_event(Event::HeaderUpdated {
 						slot: vs.verified_output.finalized_slot,
 						finalization_root: vs.verified_output.finalized_header_root,
 						execution_state_root: vs.verified_output.execution_state_root,
@@ -343,8 +371,8 @@ pub mod pallet {
 					parse_rotate_output(output.to_vec()),
 				);
 
-				let period = Self::rotate_into(slot, config, &vr, rotate_function_id)?;
-				Self::deposit_event(Event::SyncCommitteeUpdate {
+				let period = Self::rotate_into(slot, &config, &vr, rotate_function_id)?;
+				Self::deposit_event(Event::SyncCommitteeUpdated {
 					period,
 					root: vr.sync_committee_poseidon,
 				});
@@ -411,7 +439,7 @@ pub mod pallet {
 			match message.message_type {
 				MessageType::ArbitraryMessage => {
 					MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
-					Self::deposit_event(Event::<T>::ExecutedMessage {
+					Self::deposit_event(Event::<T>::MessageExecuted {
 						from: message.from,
 						to: message.to,
 						message_id: message.id,
@@ -438,7 +466,7 @@ pub mod pallet {
 					)?;
 
 					MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
-					Self::deposit_event(Event::<T>::ExecutedMessage {
+					Self::deposit_event(Event::<T>::MessageExecuted {
 						from: message.from,
 						to: message.to,
 						message_id: message.id,
@@ -552,7 +580,7 @@ pub mod pallet {
 			let hash = U256::from(poseidon_hash.to_vec().as_slice());
 
 			SyncCommitteePoseidons::<T>::insert(period, hash);
-			Self::deposit_event(Event::SyncCommitteeUpdate { period, root: hash });
+			Self::deposit_event(Event::SyncCommitteeUpdated { period, root: hash });
 			Ok(().into())
 		}
 
@@ -571,7 +599,7 @@ pub mod pallet {
 
 			Broadcasters::<T>::set(broadcaster_domain, broadcaster);
 
-			Self::deposit_event(Event::BroadcasterUpdate {
+			Self::deposit_event(Event::BroadcasterUpdated {
 				old: old_bc,
 				new: broadcaster,
 				domain: broadcaster_domain,
@@ -723,7 +751,7 @@ pub mod pallet {
 
 		fn rotate_into(
 			finalized_slot: u64,
-			cfg: Configuration,
+			cfg: &Configuration,
 			rotate_store: &VerifiedRotate,
 			rotate_function_id: H256,
 		) -> Result<u64, DispatchError> {
@@ -749,7 +777,7 @@ pub mod pallet {
 
 		fn step_into(
 			attested_slot: u64,
-			cfg: Configuration,
+			cfg: &Configuration,
 			step_store: &VerifiedStep,
 			step_function_id: H256,
 		) -> Result<bool, DispatchError> {
@@ -896,5 +924,20 @@ pub mod pallet {
 				Err(Error::<T>::FunctionIdsAreNotSet.into())
 			}
 		}
+	}
+}
+
+pub mod weight_helper {
+
+	use super::*;
+
+	/// Weight for `dataAvailability::submit_data`.
+	pub fn fulfill_call<T: Config>(function_id: H256) -> (Weight, DispatchClass) {
+		if let Some((step_function_id, _)) = FunctionIds::<T>::get() {
+			if step_function_id == function_id {
+				return (T::WeightInfo::fulfill_call_step(), DispatchClass::Normal);
+			}
+		}
+		(T::WeightInfo::fulfill_call_rotate(), DispatchClass::Normal)
 	}
 }
