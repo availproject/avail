@@ -239,7 +239,7 @@ impl pallet_tips::Config for Runtime {
 
 parameter_types! {
 	// Temporary increased price of all transactions by 10x
-	pub const WeightFee: Balance = 10 * PICO_AVL;
+	pub const WeightFee: Balance = PICO_AVL;
 	pub const TransactionByteFee: Balance = 100 * NANO_AVL; // 100 nanoAVL
 	pub const OperationalFeeMultiplier: u8 = 5u8;
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(50); // target_utilization 50%
@@ -610,7 +610,7 @@ impl pallet_staking::Config for Runtime {
 	type TargetList = pallet_staking::UseValidatorsMap<Self>;
 	type UnixTime = Timestamp;
 	type VoterList = VoterList;
-	type WeightInfo = weights::pallet_staking::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_staking::WeightInfo<Runtime>;
 }
 
 /// The numbers configured here could always be more than the maximum limits of staking pallet
