@@ -106,7 +106,8 @@ pub async fn batch_tx(client: &Client, signer: &PairSigner) -> Result<()> {
 
 /** Fail cases **/
 pub async fn fail_simple_tx(client: &Client, signer: &PairSigner) -> Result<()> {
-	log::info!("1-Fail - Should fail: Sudo call to reduce the dimensions of the block, after data transmission.");
+	log::info!("1-Fail - Should fail: Sudo call to reduce the dimensions of the block, after data submissions.");
+	submit_data(client, signer, 2).await?;
 	submit_data(client, signer, 2).await?;
 
 	let block_length_update = Call::DataAvailability(DaCall::submit_block_length_proposal {
@@ -137,7 +138,8 @@ pub async fn fail_simple_tx(client: &Client, signer: &PairSigner) -> Result<()> 
 }
 
 pub async fn fail_batch_tx(client: &Client, signer: &PairSigner) -> Result<()> {
-	log::info!("2-Fail - Should fail: Batch call to reduce the dimensions of the block, after data transmission.");
+	log::info!("2-Fail - Should fail: Batch call to reduce the dimensions of the block, after data submissions.");
+	submit_data(client, signer, 2).await?;
 	submit_data(client, signer, 2).await?;
 
 	let block_length_update = Call::DataAvailability(DaCall::submit_block_length_proposal {
