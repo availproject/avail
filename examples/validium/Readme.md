@@ -2,7 +2,7 @@
 
 This repository contains examples on how to verify data availability on the Ethereum network.
 More details can be found in the official documentation
-for [Validiums](https://availproject.github.io/using-avail/validiums).
+for [Validiums](https://docs.availproject.org/category/validium/).
 
 Example of submitting data and dispatching data root can be found in [submitData.js](submitData.js).
 This example will submit data transaction to the Avail and try to dispatch data root
@@ -16,7 +16,7 @@ contract [ValidiumContract.sol](contracts%2FValidiumContract.sol).
 
 In order to run these examples, install all necessary dependencies via **npm** 
 and make sure that all variables in **.env** file are populated (`DATA`, `SURI`, etc...), 
-more details in the Avail documentation for [Validiums](https://availproject.github.io/using-avail/validiums#verify-data-availability-on-ethereum).
+more details in the Avail documentation for [Validiums](https://docs.availproject.org/api/use-case-validiums/#verify-data-availability-on-ethereum).
 
 Running submit data example:
 ```bash
