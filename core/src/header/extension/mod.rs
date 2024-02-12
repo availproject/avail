@@ -6,7 +6,7 @@ use sp_core::{RuntimeDebug, H256};
 #[cfg(feature = "runtime")]
 use sp_runtime_interface::pass_by::PassByCodec;
 
-use crate::DataLookup;
+use crate::{DataLookup, HeaderVersion};
 
 pub mod v1;
 pub mod v2;
@@ -53,6 +53,13 @@ impl HeaderExtension {
 
 	pub fn cols(&self) -> u16 {
 		forward_to_version!(self, cols)
+	}
+
+	pub fn get_header_version(&self) -> HeaderVersion {
+		match self {
+			HeaderExtension::V1(_) => HeaderVersion::V1,
+			HeaderExtension::V2(_) => HeaderVersion::V2,
+		}
 	}
 }
 

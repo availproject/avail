@@ -11,7 +11,7 @@ use core::{
 	iter,
 	num::NonZeroU16,
 };
-use kate_recovery::{config::PADDING_TAIL_VALUE, matrix::Dimensions};
+use kate_recovery::matrix::Dimensions;
 use nalgebra::base::DMatrix;
 use poly_multiproof::{
 	m1_blst::Proof,
@@ -88,8 +88,7 @@ impl EvaluationGrid {
 		let scalars_by_app = grouped
 			.into_iter()
 			.map(|(id, datas)| {
-				let mut enc = datas.encode();
-				enc.push(PADDING_TAIL_VALUE); // TODO: remove 9797 padding stuff
+				let enc = datas.encode();
 				enc.chunks(DATA_CHUNK_SIZE)
 					.map(pad_to_bls_scalar)
 					.collect::<Result<Vec<_>, _>>()

@@ -4,10 +4,6 @@ members = [
 	"core",
 	"kate/recovery",
 	"kate",
-	"nomad/signature",
-	"nomad/core",
-	"nomad/base",
-	"nomad/merkle",
 ]
 
 [profile.dev.package]

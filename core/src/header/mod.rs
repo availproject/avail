@@ -405,7 +405,7 @@ mod tests {
 
 	/// It creates a corrupted V2 header and the associated error on decodification.
 	fn corrupted_header() -> (Vec<u8>, Error) {
-		let mut encoded = header_v1().encode();
+		let mut encoded = header_v2().encode();
 		encoded.remove(110);
 
 		let error = THeader::decode(&mut encoded.as_slice()).unwrap_err();
@@ -429,7 +429,6 @@ mod tests {
 		serde_json::from_str(&json_header).map_err(|serde_err| format!("{}", serde_err))
 	}
 
-	/// It is the header of block #368726 of current testnet.
 	fn header() -> (THeader, H256) {
 		let commitment = v1::KateCommitment {
 			rows:1,

@@ -60,6 +60,7 @@ impl Cell {
 	// Returns usize versions of row and col.
 	// If an error is returned it means that we weren't able to
 	// convert an u32 value to usize.
+	#[allow(clippy::result_unit_err)]
 	pub fn get_dimensions(&self) -> Result<(usize, usize), ()> {
 		let Ok(row) = usize::try_from(self.row.0) else {
 			return Err(());
@@ -120,7 +121,6 @@ impl PartialEq for Error {
 pub type XtsLayout = Vec<(AppId, u32)>;
 type FlatData = Vec<u8>;
 type DataChunk = [u8; DATA_CHUNK_SIZE];
-const PADDING_TAIL_VALUE: u8 = 0x80;
 /// Helper which groups extrinsics data that share the same app_id.
 /// We assume the input extrinsics are already sorted by app_id, i.e. extrinsics with the same app_id are consecutive.
 /// This function does the same thing as group_by (unstable), just less general.
@@ -264,8 +264,6 @@ fn pad_to_chunk(chunk: DataChunk, chunk_size: NonZeroU32) -> Vec<u8> {
 
 fn pad_iec_9797_1(mut data: Vec<u8>) -> Vec<DataChunk> {
 	let padded_size = padded_len_of_pad_iec_9797_1(data.len().saturated_into());
-	// Add `PADDING_TAIL_VALUE` and fill with zeros.
-	data.push(PADDING_TAIL_VALUE);
 	data.resize(padded_size as usize, 0u8);
 
 	// Transform into `DataChunk`.
@@ -637,10 +635,11 @@ mod tests {
 	};
 
 	const TCHUNK: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(32) };
-	#[test_case(0,   256, 256 => (1, 4, 32) ; "block size zero")]
-	#[test_case(11,   256, 256 => (1, 4, 32) ; "below minimum block size")]
-	#[test_case(300,  256, 256 => (1, 16, 32) ; "regular case")]
-	#[test_case(513,  256, 256 => (1, 32, 32) ; "minimum overhead after 512")]
+	#[cfg(not(feature = "maximum-block-size"))]
+	#[test_case(0, 256, 256 => (1, 4, 32) ; "block size zero")]
+	#[test_case(11, 256, 256 => (1, 4, 32) ; "below minimum block size")]
+	#[test_case(300, 256, 256 => (1, 16, 32) ; "regular case")]
+	#[test_case(513, 256, 256 => (1, 32, 32) ; "minimum overhead after 512")]
 	#[test_case(8192, 256, 256 => (1, 256, 32) ; "maximum cols")]
 	#[test_case(8224, 256, 256 => (2, 256, 32) ; "two rows")]
 	#[test_case(2097152, 256, 256 => (256, 256, 32) ; "max block size")]
@@ -701,12 +700,12 @@ mod tests {
 		assert_eq!(ext_matrix, expected);
 	}
 
-	#[test_case( 1..=29 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d8000" ; "chunk more than 3 values shorter")]
-	#[test_case( 1..=30 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e80" ; "Chunk 2 values shorter")]
-	#[test_case( 1..=31 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f80000000000000000000000000000000000000000000000000000000000000" ; "Chunk 1 value shorter")]
-	#[test_case( 1..=32 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20800000000000000000000000000000000000000000000000000000000000" ; "Chunk same size")]
-	#[test_case( 1..=33 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20218000000000000000000000000000000000000000000000000000000000" ; "Chunk 1 value longer")]
-	#[test_case( 1..=34 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20212280000000000000000000000000000000000000000000000000000000" ; "Chunk 2 value longer")]
+	#[test_case( 1..=29 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d0000" ; "chunk more than 3 values shorter")]
+	#[test_case( 1..=30 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e00" ; "Chunk 2 values shorter")]
+	#[test_case( 1..=31 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00000000000000000000000000000000000000000000000000000000000000" ; "Chunk 1 value shorter")]
+	#[test_case( 1..=32 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20000000000000000000000000000000000000000000000000000000000000" ; "Chunk same size")]
+	#[test_case( 1..=33 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20210000000000000000000000000000000000000000000000000000000000" ; "Chunk 1 value longer")]
+	#[test_case( 1..=34 => "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20212200000000000000000000000000000000000000000000000000000000" ; "Chunk 2 value longer")]
 	// newapi ignore
 	fn test_padding<I: Iterator<Item = u8>>(block: I) -> String {
 		let padded = pad_iec_9797_1(block.collect())
@@ -719,12 +718,13 @@ mod tests {
 
 	// newapi done
 	#[test]
+	#[cfg(not(feature = "maximum-block-size"))]
 	fn test_flatten_block() {
 		let extrinsics: Vec<AppExtrinsic> = vec![
-			AppExtrinsic::new(AppId(0), (1..=29).collect()),
-			AppExtrinsic::new(AppId(1), (1..=30).collect()),
-			AppExtrinsic::new(AppId(2), (1..=31).collect()),
-			AppExtrinsic::new(AppId(3), (1..=60).collect()),
+			AppExtrinsic::new(AppId(0), (1..=30).collect()),
+			AppExtrinsic::new(AppId(1), (1..=31).collect()),
+			AppExtrinsic::new(AppId(2), (1..=32).collect()),
+			AppExtrinsic::new(AppId(3), (1..=61).collect()),
 		];
 
 		let expected_dims =
@@ -741,7 +741,7 @@ mod tests {
 		let expected_layout = vec![(AppId(0), 2), (AppId(1), 2), (AppId(2), 2), (AppId(3), 3)];
 		assert_eq!(layout, expected_layout, "The layouts don't match");
 
-		let expected_data = hex!("04740102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d00800000000000000000000000000000000000000000000000000000000000000004780102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e80000000000000000000000000000000000000000000000000000000000000047c0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f80000000000000000000000000000000000000000000000000000000000004f00102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c00800000000000000000000000000000000000000000000000000000000000000076a04053bda0a88bda5177b86a15c3b29f559873cb481232299cd5743151ac004b2d63ae198e7bb0a9011f28e473c95f4013d7d53ec5fbc3b42df8ed101f6d00e831e52bfb76e51cca8b4e9016838657edfae09cb9a71eb219025c4c87a67c004aaa86f20ac0aa792bc121ee42e2c326127061eda15599cb5db3db870bea5a00ecf353161c3cb528b0c5d98050c4570bfc942d8b19ed7b0cbba5725e03e5f000b7e30db36b6df82ac151f668f5f80a5e2a9cac7c64991dd6a6ce21c060175800edb9260d2a86c836efc05f17e5c59525e404c6a93d051651fe2e4eefae281300");
+		let expected_data = hex!("04780102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e00000000000000000000000000000000000000000000000000000000000000047c0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f00000000000000000000000000000000000000000000000000000000000004800102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f20000000000000000000000000000000000000000000000000000000000004f40102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d001e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c003d0000000000000000000000000000000000000000000000000000000000000076a04053bda0a88bda5177b86a15c3b29f559873cb481232299cd5743151ac004b2d63ae198e7bb0a9011f28e473c95f4013d7d53ec5fbc3b42df8ed101f6d00e831e52bfb76e51cca8b4e9016838657edfae09cb9a71eb219025c4c87a67c004aaa86f20ac0aa792bc121ee42e2c326127061eda15599cb5db3db870bea5a00ecf353161c3cb528b0c5d98050c4570bfc942d8b19ed7b0cbba5725e03e5f000b7e30db36b6df82ac151f668f5f80a5e2a9cac7c64991dd6a6ce21c060175800edb9260d2a86c836efc05f17e5c59525e404c6a93d051651fe2e4eefae281300");
 
 		assert_eq!(dims, expected_dims, "Dimensions don't match the expected");
 		assert_eq!(data, expected_data, "Data doesn't match the expected data");
@@ -929,8 +929,7 @@ mod tests {
 	}
 
 	#[test]
-	// Test build_commitments() function with a predefined input
-	// newapi done
+	#[cfg(not(feature = "maximum-block-size"))]
 	fn test_build_commitments_simple_commitment_check() {
 		let block_rows = BlockLengthRows(256);
 		let block_cols = BlockLengthColumns(256);
@@ -951,7 +950,7 @@ mod tests {
 			dimensions,
 			BlockDimensions::new(BlockLengthRows(1), BlockLengthColumns(4), TCHUNK).unwrap(),
 		);
-		let expected_commitments = hex!("960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D");
+		let expected_commitments = hex!("911bc20a0709b046847fcc53eaa981d84738dd6a76beaf2495ec9efcb2da498dfed29a15b5724343ee54382a9a3102a3911bc20a0709b046847fcc53eaa981d84738dd6a76beaf2495ec9efcb2da498dfed29a15b5724343ee54382a9a3102a3");
 		assert_eq!(commitments, expected_commitments);
 	}
 
@@ -1151,7 +1150,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let chunk_size = NonZeroU32::new(chunk_size).expect("Invalid chunk size .qed");
 		extrinsics
 			.into_iter()
-			.flat_map(pad_iec_9797_1)
+			.flat_map(|data| pad_iec_9797_1(data))
 			.map(|chunk| pad_to_chunk(chunk, chunk_size).len())
 			.sum::<usize>()
 			.saturated_into()

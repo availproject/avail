@@ -52,6 +52,9 @@ pub use app_extrinsic::*;
 pub mod constants;
 pub use constants::*;
 
+pub mod header_version;
+pub use header_version::HeaderVersion;
+
 #[cfg(feature = "runtime")]
 pub mod bench_randomness;
 
@@ -164,4 +167,32 @@ macro_rules! ensure {
 			$crate::fail!($y);
 		}
 	}};
+}
+
+/// Variadic macro used by `keccak256_concat` internally.
+#[macro_export]
+macro_rules! keccak256_concat_update {
+	($hasher:ident, $e:expr) => {{
+		$hasher.update($e.as_ref());
+	}};
+
+	($hasher:ident, $e:expr, $($es:expr),+) => {{
+		$hasher.update($e.as_ref());
+		$crate::keccak256_concat_update!($hasher, $($es),+);
+	}};
+}
+
+/// Calculates the Kecck 256 of arguments with NO extra allocations to join inputs.
+#[macro_export]
+macro_rules! keccak256_concat{
+	($($arg:tt)*) => {{
+		{
+			use tiny_keccak::Hasher as _;
+			let mut output = [0u8; 32];
+			let mut hasher = tiny_keccak::Keccak::v256();
+			$crate::keccak256_concat_update!(hasher, $($arg)*);
+			hasher.finalize(&mut output);
+			sp_core::H256::from(output)
+		}
+	}}
 }

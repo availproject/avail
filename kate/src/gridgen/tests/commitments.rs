@@ -47,7 +47,7 @@ fn test_build_commitments_simple_commitment_check() {
 		.collect::<Vec<_>>();
 
 	assert_eq!(ext_evals.dims(), Dimensions::new_from(2, 4).unwrap());
-	let expected_commitments = hex!("960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D960F08F97D3A8BD21C3F5682366130132E18E375A587A1E5900937D7AA5F33C4E20A1C0ACAE664DCE1FD99EDC2693B8D");
+	let expected_commitments = hex!("911bc20a0709b046847fcc53eaa981d84738dd6a76beaf2495ec9efcb2da498dfed29a15b5724343ee54382a9a3102a3911bc20a0709b046847fcc53eaa981d84738dd6a76beaf2495ec9efcb2da498dfed29a15b5724343ee54382a9a3102a3");
 	assert_eq!(commits, expected_commitments);
 	assert_eq!(commits_fft_extended, expected_commitments);
 }
