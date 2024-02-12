@@ -13,8 +13,8 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 # Our crates
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "goldberg", default-features = false, features = ["runtime"] }
-nomad-core = { git = "https://github.com/availproject/avail-core", branch = "goldberg", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.11.0.0", default-features = false, features = ["runtime"] }
+nomad-core = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.11.0.0", default-features = false }
 nomad-home = { path = "../home", default-features = false }
 
 #  Substrate 
@@ -31,8 +31,8 @@ frame-benchmarking = { git = "https://github.com/availproject/substrate.git", br
 hex-literal = { version = "0.3.4", optional = true }
 
 [dev-dependencies]
-nomad-base = { git = "https://github.com/availproject/avail-core", branch = "goldberg" }
-nomad-merkle = { git = "https://github.com/availproject/avail-core", branch = "goldberg" }
+nomad-base = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.11.0.0" }
+nomad-merkle = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.11.0.0" }
 nomad-updater-manager = { path = "../updater-manager" }
 
 sp-io = { git = "https://github.com/availproject/substrate.git", branch = "goldberg" }

@@ -9,8 +9,8 @@ repository = ""
 description = "Mokcked Runtime for Testing"
 
 [dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "goldberg", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "goldberg", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.11.0.0", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", tag = "core-goldberg-v1.11.0.0", default-features = false }
 da-control = { path = "../dactr" }
 
 scale-info = { version = "2.5.0", features = ["derive"] }
