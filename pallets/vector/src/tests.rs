@@ -561,7 +561,7 @@ fn test_fulfill_step_call() {
 		assert_ok!(result);
 		let finalized_slot = 7634848;
 		// ensure that event is fired
-		let expected_event = RuntimeEvent::Bridge(Event::HeaderUpdated {
+		let expected_event = RuntimeEvent::Bridge(Event::HeadUpdated {
 			slot: finalized_slot,
 			finalization_root: H256(hex!(
 				"e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec"

@@ -101,7 +101,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// emit event once the head is updated.
-		HeaderUpdated {
+		HeadUpdated {
 			slot: u64,
 			finalization_root: H256,
 			execution_state_root: H256,
@@ -358,7 +358,7 @@ pub mod pallet {
 					VerifiedStep::new(function_id, input_hash, parse_step_output(output.to_vec()));
 
 				if Self::step_into(slot, &config, &vs, step_function_id)? {
-					Self::deposit_event(Event::HeaderUpdated {
+					Self::deposit_event(Event::HeadUpdated {
 						slot: vs.verified_output.finalized_slot,
 						finalization_root: vs.verified_output.finalized_header_root,
 						execution_state_root: vs.verified_output.execution_state_root,

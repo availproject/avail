@@ -1129,9 +1129,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				121u8, 244u8, 152u8, 174u8, 172u8, 91u8, 133u8, 240u8, 155u8, 229u8, 236u8, 20u8,
-				165u8, 106u8, 44u8, 232u8, 154u8, 33u8, 48u8, 191u8, 28u8, 204u8, 207u8, 163u8,
-				14u8, 247u8, 2u8, 198u8, 126u8, 57u8, 7u8, 81u8,
+				84u8, 217u8, 172u8, 197u8, 105u8, 33u8, 203u8, 8u8, 3u8, 206u8, 5u8, 99u8, 58u8,
+				182u8, 123u8, 204u8, 83u8, 178u8, 136u8, 201u8, 16u8, 210u8, 151u8, 102u8, 27u8,
+				60u8, 1u8, 57u8, 189u8, 125u8, 141u8, 184u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -1915,10 +1915,9 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							211u8, 97u8, 151u8, 237u8, 73u8, 170u8, 176u8, 122u8, 11u8, 40u8, 66u8,
-							254u8, 152u8, 132u8, 254u8, 26u8, 88u8, 129u8, 121u8, 229u8, 66u8,
-							189u8, 195u8, 154u8, 149u8, 7u8, 69u8, 204u8, 166u8, 182u8, 146u8,
-							199u8,
+							240u8, 229u8, 172u8, 247u8, 173u8, 144u8, 104u8, 190u8, 67u8, 43u8,
+							21u8, 239u8, 40u8, 147u8, 206u8, 91u8, 41u8, 3u8, 50u8, 106u8, 37u8,
+							126u8, 59u8, 173u8, 46u8, 187u8, 198u8, 232u8, 2u8, 59u8, 82u8, 108u8,
 						],
 					)
 				}
@@ -22091,14 +22090,14 @@ pub mod api {
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 			#[doc = "emit event once the head is updated."]
-			pub struct HeaderUpdated {
+			pub struct HeadUpdated {
 				pub slot: ::core::primitive::u64,
 				pub finalization_root: ::subxt::utils::H256,
 				pub execution_state_root: ::subxt::utils::H256,
 			}
-			impl ::subxt::events::StaticEvent for HeaderUpdated {
+			impl ::subxt::events::StaticEvent for HeadUpdated {
 				const PALLET: &'static str = "Vector";
-				const EVENT: &'static str = "HeaderUpdated";
+				const EVENT: &'static str = "HeadUpdated";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -31884,7 +31883,7 @@ pub mod api {
 				pub enum Event {
 					#[codec(index = 0)]
 					#[doc = "emit event once the head is updated."]
-					HeaderUpdated {
+					HeadUpdated {
 						slot: ::core::primitive::u64,
 						finalization_root: ::subxt::utils::H256,
 						execution_state_root: ::subxt::utils::H256,
