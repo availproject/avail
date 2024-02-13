@@ -772,7 +772,7 @@ pub mod pallet {
 
 			Self::set_sync_committee_poseidon(next_period, sync_committee_poseidon)?;
 
-			Ok(period)
+			Ok(next_period)
 		}
 
 		fn step_into(
