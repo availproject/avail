@@ -157,6 +157,12 @@ macro_rules! internal_err {
 impl<Client, Block> Kate<Client, Block>
 where
 	Block: BlockT,
+	<Block as BlockT>::Header: ExtendedHeader<
+		<<Block as BlockT>::Header as Header>::Number,
+		<Block as BlockT>::Hash,
+		Digest,
+		HeaderExtension,
+	>,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: DataAvailApi<Block>,
@@ -214,7 +220,8 @@ where
 		&self,
 		signed_block: &SignedBlock<Block>,
 	) -> RpcResult<Arc<EvaluationGrid>> {
-		let block_hash = signed_block.block.header().hash();
+		let block_header = signed_block.block.header();
+		let block_hash = block_header.hash();
 
 		self.eval_grid_cache
 			.try_get_with(block_hash, async move {
@@ -540,7 +547,7 @@ where
 				call_type = SubTrie::Left;
 				root_side = SubTrie::Right;
 			},
-			RuntimeCall::Succinct(pallet_succinct::Call::send_message { .. }) => {
+			RuntimeCall::Vector(pallet_vector::Call::send_message { .. }) => {
 				call_type = SubTrie::Right;
 				root_side = SubTrie::Left;
 			},

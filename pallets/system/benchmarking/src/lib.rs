@@ -19,13 +19,11 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use avail_core::HeaderVersion;
 use codec::Encode;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::{dispatch::DispatchClass, storage, traits::Get};
-use frame_system::{
-	header_builder::{HeaderExtensionBuilder, HeaderVersion},
-	Call, Pallet as System, RawOrigin,
-};
+use frame_system::{header_builder::HeaderExtensionBuilder, Call, Pallet as System, RawOrigin};
 use sp_core::storage::well_known_keys;
 use sp_runtime::traits::Hash;
 use sp_std::{prelude::*, vec};
@@ -150,7 +148,7 @@ benchmarks! {
 		let block_length = Default::default();
 
 	}: {
-		let _header = T::HeaderExtensionBuilder::build(app_extrinsics, data_root, block_length, 0, HeaderVersion::V1);
+		let _header = T::HeaderExtensionBuilder::build(app_extrinsics, data_root, block_length, 0, HeaderVersion::V2);
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);

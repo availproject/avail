@@ -113,10 +113,15 @@ export const API_TYPES = {
         appLookup: "DataLookup",
         commitment: "KateCommitment",
       },
+      V3HeaderExtension: {
+        appLookup: "DataLookup",
+        commitment: "KateCommitment",
+      },
       HeaderExtension: {
         _enum: {
           V1: "V1HeaderExtension",
           V2: "V2HeaderExtension",
+          V3: "V3HeaderExtension",
         },
       },
     DaHeader: {

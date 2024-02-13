@@ -1,10 +1,15 @@
-use avail_core::{traits::GetAppId, AppId, InvalidTransactionCustomId};
+use crate::{Call as DACall, Config as DAConfig, Pallet, LOG_TARGET};
+use avail_core::{
+	traits::GetAppId, AppId, InvalidTransactionCustomId,
+	InvalidTransactionCustomId::MaxPaddedLenExceeded,
+};
+
 use codec::{Decode, Encode};
 use frame_support::{
 	ensure,
 	traits::{IsSubType, IsType},
 };
-use frame_system::Config as SystemConfig;
+use frame_system::{AllExtrinsicsLen, Config as SystemConfig, DynamicBlockLength, ExtrinsicLenOf};
 use pallet_utility::{Call as UtilityCall, Config as UtilityConfig};
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -20,9 +25,9 @@ use sp_std::{
 	vec::Vec,
 };
 
-use crate::{Call as DACall, Config as DAConfig, Pallet};
-
 const MAX_ITERATIONS: usize = 2;
+const PADDED_LEN_EXCEEDED: InvalidTransaction =
+	InvalidTransaction::Custom(MaxPaddedLenExceeded as u8);
 
 /// Check for Application Id.
 ///
@@ -52,9 +57,54 @@ where
 	///  - `DataAvailability::submit_data(..)` extrinsic can use `AppId != 0`.
 	///  - `Utility::batch/batch_all/force_batch(..)` extrinsic can use `AppId != 0` If the wrapped calls are ALL `DataAvailability::submit_data(..)`.
 	///  - Any other call must use `AppId == 0`.
-	pub fn do_validate(&self, call: &<T as SystemConfig>::RuntimeCall) -> TransactionValidity {
+	///  - It also ensures that Kate's evaluation grid can be generated during the header
+	///  production.
+	pub fn do_validate(
+		&self,
+		call: &<T as SystemConfig>::RuntimeCall,
+		len: usize,
+	) -> TransactionValidity {
+		self.ensure_valid_app_id(call)?;
+		let all_extrinsics_len = self
+			.next_all_extrinsics_len(len)
+			.ok_or(PADDED_LEN_EXCEEDED)?;
+		AllExtrinsicsLen::<T>::put(all_extrinsics_len);
+
+		Ok(ValidTransaction::default())
+	}
+
+	fn next_all_extrinsics_len(&self, len: usize) -> Option<ExtrinsicLenOf<T>> {
+		let app_id = self.app_id();
+		let len = u32::try_from(len).ok()?;
+
+		// Get maximum padded length of current block length.
+		let curr_len = DynamicBlockLength::<T>::get();
+		let max_scalars = curr_len.rows.0.checked_mul(curr_len.cols.0)?;
+
+		// Update extrinsics length info.
+		let mut all_extrinsics_len = AllExtrinsicsLen::<T>::get().unwrap_or_default();
+		let _ = all_extrinsics_len.add_padded(app_id, len)?;
+
+		// Calculate total padded length
+		let total_scalars = all_extrinsics_len.total_num_scalars()?;
+
+		if total_scalars < max_scalars {
+			Some(all_extrinsics_len)
+		} else {
+			log::warn!(
+				target: LOG_TARGET,
+				"Padded block length (max {max_scalars} scalars) is exhausted, requested {total_scalars}");
+
+			None
+		}
+	}
+
+	fn ensure_valid_app_id(
+		&self,
+		call: &<T as SystemConfig>::RuntimeCall,
+	) -> Result<(), TransactionValidityError> {
 		if self.app_id() == AppId(0) {
-			return Ok(ValidTransaction::default());
+			return Ok(());
 		}
 
 		let mut stack = Vec::new();
@@ -97,7 +147,7 @@ where
 			}
 		}
 
-		Ok(ValidTransaction::default())
+		Ok(())
 	}
 }
 
@@ -140,9 +190,9 @@ where
 		_who: &Self::AccountId,
 		call: &Self::Call,
 		_info: &DispatchInfoOf<Self::Call>,
-		_len: usize,
+		len: usize,
 	) -> TransactionValidity {
-		self.do_validate(call)
+		self.do_validate(call, len)
 	}
 
 	fn pre_dispatch(
@@ -150,9 +200,9 @@ where
 		_who: &Self::AccountId,
 		call: &Self::Call,
 		_info: &DispatchInfoOf<Self::Call>,
-		_len: usize,
+		len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
-		self.do_validate(call)?;
+		self.do_validate(call, len)?;
 		Ok(())
 	}
 
@@ -173,7 +223,10 @@ where
 
 #[cfg(test)]
 mod tests {
-	use avail_core::InvalidTransactionCustomId::{ForbiddenAppId, InvalidAppId};
+	use avail_core::{
+		asdr::AppUncheckedExtrinsic,
+		InvalidTransactionCustomId::{ForbiddenAppId, InvalidAppId},
+	};
 	use frame_system::pallet::Call as SysCall;
 	use pallet_utility::pallet::Call as UtilityCall;
 	use sp_runtime::transaction_validity::InvalidTransaction;
@@ -224,6 +277,9 @@ mod tests {
 	#[test_case(1, batch_mixed_call() => to_invalid_tx(ForbiddenAppId); "utility batch filled with submit_data and remark cannot be called if AppId != 0" )]
 	#[test_case(0, batch_mixed_call() => Ok(ValidTransaction::default()); "utility batch filled with submit_data and remark can be called if AppId == 0" )]
 	fn do_validate_test(id: u32, call: RuntimeCall) -> TransactionValidity {
-		new_test_ext().execute_with(|| CheckAppId::<Test>::from(AppId(id)).do_validate(&call))
+		let extrinsic =
+			AppUncheckedExtrinsic::<u32, RuntimeCall, (), ()>::new_unsigned(call.clone());
+		let len = extrinsic.encoded_size();
+		new_test_ext().execute_with(|| CheckAppId::<Test>::from(AppId(id)).do_validate(&call, len))
 	}
 }

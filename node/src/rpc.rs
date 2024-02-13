@@ -128,7 +128,7 @@ where
 	P: TransactionPool + 'static,
 	SC: SelectChain<Block> + 'static,
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
-	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashFor<Block>>,
+	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashingFor<Block>>,
 {
 	use kate_rpc::metrics::KateApiMetricsServer;
 	use kate_rpc::{Kate, KateApiServer};

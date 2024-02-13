@@ -53,13 +53,13 @@ jobs:
           echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
 
       - name: Build node
-        run: cargo build --release -p data-avail
+        run: cargo build --release -p avail-node
 
-      - name: Upload data-avail binary
+      - name: Upload avail-node binary
         uses: actions/upload-artifact@v2
         with:
-          name: data-avail
-          path: target/release/data-avail
+          name: avail-node
+          path: target/release/avail-node
 
       - name: Display SCCache Stats
         run: ${{ env.SCCACHE_BIN }} --show-stats
@@ -101,12 +101,12 @@ jobs:
   
         - uses: actions/download-artifact@v2
           with:
-            name: data-avail
+            name: avail-node
   
         - name: Run Kate RPC E2E tests
           run: |
-            chmod uog+x data-avail
-            ./data-avail --dev --enable-kate-rpc &
+            chmod uog+x avail-node
+            ./avail-node --dev --enable-kate-rpc &
             sleep 5
             cd e2e
             cargo test -- --test-threads 1
@@ -151,21 +151,19 @@ jobs:
 
       - uses: actions/download-artifact@v2
         with:
-          name: data-avail
+          name: avail-node
 
       - name: Run SubXt E2E tests
         run: |
-          chmod uog+x data-avail
-          ./data-avail --dev --enable-kate-rpc &
+          chmod uog+x avail-node
+          ./avail-node --dev --enable-kate-rpc &
           sleep 5
           cargo run --release --manifest-path avail-subxt/Cargo.toml --example accounts_from_mnemonics
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example da_bridge_actor 
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example headers
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example max_block_submit
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data_and_dispatch_data_root
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example succinct_send_message
+          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example bridge_send_message
 
       - name: Display SCCache Stats
         run: ${{ env.SCCACHE_BIN }} --show-stats

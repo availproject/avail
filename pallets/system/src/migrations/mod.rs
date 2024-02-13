@@ -19,13 +19,18 @@
 
 use codec::{Decode, Encode, FullCodec};
 use frame_support::{
-	pallet_prelude::ValueQuery, traits::PalletInfoAccess, weights::Weight, Blake2_128Concat,
-	RuntimeDebug,
+	pallet_prelude::{StorageVersion, ValueQuery},
+	traits::{GetStorageVersion, PalletInfoAccess},
+	weights::Weight,
+	Blake2_128Concat,
 };
+use sp_core::Get;
+use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 
 use crate::{Config, Pallet};
 pub mod v1;
+pub mod v2;
 
 /// Type used to encode the number of references an account has.
 type RefCount = u32;
@@ -138,4 +143,26 @@ pub fn migrate_from_dual_to_triple_ref_count<V: V2ToV3, T: Config>() -> Weight {
 	);
 	<UpgradedToTripleRefCount<T>>::put(true);
 	Weight::MAX
+}
+
+pub fn migrate<T: Config>() -> Weight {
+	// At least one read: `StorageVersion`
+	let mut weight = T::DbWeight::get().reads(1);
+	let on_chain = Pallet::<T>::on_chain_storage_version();
+	let curr_version = Pallet::<T>::current_storage_version();
+
+	if on_chain < curr_version {
+		if on_chain < StorageVersion::new(1) {
+			weight = weight.saturating_add(v1::migrate::<T>());
+		}
+		if on_chain < StorageVersion::new(2) {
+			weight = weight.saturating_add(v2::migrate::<T>());
+		}
+
+		// After migration, we need to update the storage version.
+		curr_version.put::<Pallet<T>>();
+		weight = weight.saturating_add(T::DbWeight::get().writes(1));
+	}
+
+	weight
 }

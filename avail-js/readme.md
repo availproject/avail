@@ -34,4 +34,4 @@ npm install avail-js-sdk
 
 ## Error Reporting
 
-In case you encounter a bug, don't hesitate to [open an issue](https://github.com/availproject/avail/issues/new) with the maximum amount of detail and we will deal with it as soon as possible.
+In case you encounter a bug, don't hesitate to [open an issue](https://github.com/availproject/avail/issues/new/choose) with the maximum amount of detail and we will deal with it as soon as possible.

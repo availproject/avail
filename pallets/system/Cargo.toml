@@ -5,7 +5,7 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 license = "Apache-2.0"
 homepage = "https://substrate.io"
-repository = "https://github.com/paritytech/substrate/"
+repository = "https://github.com/availproject/polkadot-sdk/"
 description = "FRAME system module"
 readme = "README.md"
 
@@ -14,42 +14,40 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 avail-base = { path = "../../base", default-features = false }
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", tag = "node-v1.9.0.0", default-features = false }
+avail-core = { workspace = true, default-features = false }
+kate = { workspace = true, default-features = false }
 
 # Other
 cfg-if = "1.0"
 impl-trait-for-tuples = "0.2.1"
 static_assertions = "1.1.0"
-log = { version = "0.4.17", default-features = false }
+log = { version = "0.4.20", default-features = false }
 rs_merkle = { version = "1.2.0", default-features = false, optional = true }
 derive_more = { version = "0.99.17", default-features = false, features = ["from", "into"] }
+once_cell = { version = "1.18", optional = true }
+libm = { version = "0.2.1", default-features = false }
+ethabi = { version = "18.0.0", default-features = false }
 
 # Substrate
 codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive"] }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive", "serde"] }
 serde = { version = "1.0.188", default-features = false, features = ["derive", "alloc"], optional = true }
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, features = ["serde"] }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, features = ["serde"] }
-sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-sp-version = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, features = ["serde"] }
-sp-weights = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, features = ["serde"] }
-sp-runtime-interface = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-binary-merkle-tree = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
-
-once_cell = { version = "1.18", optional = true }
-
-libm = { version = "0.2.1", default-features = false }
-
-ethabi = { version = "18.0.0", default-features = false }
+frame-support = { workspace = true, default-features = false }
+sp-core = { workspace = true, default-features = false, features = ["serde"] }
+sp-io = { workspace = true, default-features = false }
+sp-runtime = { workspace = true, default-features = false, features = ["serde"] }
+sp-std = { workspace = true, default-features = false }
+sp-version = { workspace = true, default-features = false, features = ["serde"] }
+sp-weights = { workspace = true, default-features = false, features = ["serde"] }
+sp-runtime-interface = { workspace = true, default-features = false }
+binary-merkle-tree = { workspace = true, default-features = false }
+bounded-collections = { version = "0.1.8", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.3.1"
 test-case = "1.2.3"
 criterion = "0.5.1"
-sp-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-externalities = { workspace = true, default-features = false }
 
 [features]
 default = [ "std" ]
@@ -57,6 +55,7 @@ std = [
 	"avail-base/std",
 	"avail-core/std",
 	"binary-merkle-tree/std",
+	"bounded-collections/std",
 	"codec/std",
 	"frame-support/std",
 	"kate/std",
@@ -65,6 +64,7 @@ std = [
 	"scale-info/std",
 	"serde/std",
 	"sp-core/std",
+	"sp-externalities/std",
 	"sp-io/std",
 	"sp-runtime-interface/std",
 	"sp-runtime/std",
@@ -77,11 +77,12 @@ runtime-benchmarks = [
 	"serde",
 	"sp-runtime/runtime-benchmarks",
 ]
-try-runtime = [ "avail-core/try-runtime", "frame-support/try-runtime" ]
+try-runtime = [
+	"avail-core/try-runtime",
+	"frame-support/try-runtime",
+	"sp-runtime/try-runtime",
+]
 serde = [ "dep:serde" ]
-
-# It enables the use of header extension V2
-header_extension_v2 = []
 
 # It enables the corruption of header extensions where block number is greater than 20.
 # NOTE: Only for testing and development purposes.

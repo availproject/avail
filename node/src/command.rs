@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.
+// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 // This program is free software: you can redistribute it and/or modify
@@ -18,8 +18,8 @@
 
 use std::sync::Arc;
 
+use avail_node::chains;
 use da_runtime::Block;
-use data_avail::chains;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use sc_cli::{Result, SubstrateCli};
 use sc_service::PartialComponents;
@@ -34,13 +34,16 @@ use crate::{
 	service::{self, new_partial, FullClient},
 };
 
+use avail_node::NODE_VERSION;
+
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
 		"Avail Node".into()
 	}
 
 	fn impl_version() -> String {
-		env!("SUBSTRATE_CLI_IMPL_VERSION").into()
+		let commit_hash = env!("SUBSTRATE_CLI_COMMIT_HASH");
+		format!("{NODE_VERSION}-{commit_hash}")
 	}
 
 	fn description() -> String {

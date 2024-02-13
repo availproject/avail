@@ -38,13 +38,13 @@ jobs:
         run: cargo install zepter --locked --version 0.11.0 -q -f --no-default-features && zepter --version
 
       - name: Check toml formatting
-        run: zepter format features --check
+        run: zepter format features
 
       - name: Check e2e toml formatting
-        run: zepter format features --manifest-path e2e/Cargo.toml --check
+        run: zepter format features --manifest-path e2e/Cargo.toml
 
       - name: Check Avail-SubXt toml formatting
-        run: zepter format features --manifest-path avail-subxt/Cargo.toml --check
+        run: zepter format features --manifest-path avail-subxt/Cargo.toml
 
   build:
     runs-on: ubuntu-latest
@@ -94,13 +94,13 @@ jobs:
           echo "RUSTC_WRAPPER=${HOME}/.cargo/bin/sccache" >> $GITHUB_ENV
 
       - name: Build node
-        run: cargo build --release -p data-avail
+        run: cargo build --release -p avail-node
 
-      - name: Upload data-avail binary
+      - name: Upload avail-node binary
         uses: actions/upload-artifact@v2
         with:
-          name: data-avail
-          path: target/release/data-avail
+          name: avail-node
+          path: target/release/avail-node
 
       - name: Display SCCache Stats
         run: sccache --show-stats
@@ -154,4 +154,4 @@ jobs:
       - name: Check other features
         env:
           SKIP_WASM_BUILD: true
-        run: cargo check --release --workspace --features "runtime-benchmarks try-runtime" -p data-avail
+        run: cargo check --release --workspace --features "runtime-benchmarks try-runtime" -p avail-node

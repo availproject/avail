@@ -7,7 +7,7 @@ const alice = new Keyring({type: 'sr25519'}).addFromUri("//Alice");
 const bobAddress = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty";
 
 const oneAvl = api.registry.createType('Compact<u128>', new BN("1000000000000000000"));
-const hash = await api.tx.balances.transfer(bobAddress, oneAvl).signAndSend(alice);
+const hash = await api.tx.balances.transferKeepAlive(bobAddress, oneAvl).signAndSend(alice);
 console.log("Transfer sent with hash: " + hash.toHuman())
 
 Deno.exit(0);

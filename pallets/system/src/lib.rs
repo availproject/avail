@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.
+// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -67,7 +67,7 @@
 use avail_core::{
 	header::HeaderExtension,
 	traits::{ExtendedBlock, ExtendedHeader},
-	AppExtrinsic, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+	AppExtrinsic, AppId, HeaderVersion, OpaqueExtrinsic,
 };
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
 use frame_support::{
@@ -112,7 +112,7 @@ use sp_weights::{RuntimeDbWeight, Weight};
 
 pub mod header_builder;
 pub mod submitted_data;
-pub use header_builder::{HeaderExtensionBuilder, HeaderVersion};
+pub use header_builder::HeaderExtensionBuilder;
 
 pub mod limits;
 #[cfg(any(feature = "std", test))]
@@ -126,6 +126,9 @@ pub mod test_utils;
 #[cfg(test)]
 pub mod tests;
 pub mod weights;
+
+pub mod extrinsic_len;
+pub use extrinsic_len::{ExtrinsicLen, PaddedExtrinsicLen};
 
 pub mod migrations;
 
@@ -143,7 +146,6 @@ pub use frame_support::dispatch::RawOrigin;
 pub use weights::WeightInfo;
 
 pub const LOG_TARGET: &str = "runtime::system";
-
 /// Compute the trie root of a list of extrinsics.
 ///
 /// The merkle proof is using the same trie as runtime state with
@@ -173,7 +175,7 @@ pub trait SetCode<T: Config> {
 
 impl<T: Config> SetCode<T> for () {
 	fn set_code(code: Vec<u8>) -> DispatchResult {
-		<Pallet<T>>::update_code_in_storage(&code)?;
+		<Pallet<T>>::update_code_in_storage(&code);
 		Ok(())
 	}
 }
@@ -209,20 +211,9 @@ impl<MaxNormal: Get<u32>, MaxOverflow: Get<u32>> ConsumerLimits for (MaxNormal, 
 		MaxOverflow::get()
 	}
 }
-#[derive(Clone, Encode, Decode, TypeInfo, MaxEncodedLen)]
-pub struct ExtrinsicLen {
-	pub raw: u32,
-	pub padded: u32,
-}
 
-impl Default for ExtrinsicLen {
-	fn default() -> Self {
-		Self {
-			raw: <_>::default(),
-			padded: BLOCK_CHUNK_SIZE.get(),
-		}
-	}
-}
+pub type ExtrinsicLenOf<T> =
+	ExtrinsicLen<<T as Config>::MaxDiffAppIdPerBlock, <T as Config>::MaxTxPerAppIdPerBlock>;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -232,7 +223,7 @@ pub mod pallet {
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
-		use super::DefaultConfig;
+		use super::{inject_runtime_type, DefaultConfig};
 
 		/// Provides a viable default config that can be used with
 		/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
@@ -259,6 +250,8 @@ pub mod pallet {
 			type BlockWeights = ();
 			type BlockLength = ();
 			type DbWeight = ();
+			#[inject_runtime_type]
+			type RuntimeEvent = ();
 		}
 	}
 
@@ -350,6 +343,7 @@ pub mod pallet {
 		type Randomness: Randomness<Self::Hash, BlockNumberFor<Self>>;
 
 		/// The aggregated event type of the runtime.
+		#[pallet::no_default_bounds]
 		type RuntimeEvent: Parameter
 			+ Member
 			+ From<Event<Self>>
@@ -427,9 +421,26 @@ pub mod pallet {
 		#[pallet::no_default]
 		type UncheckedExtrinsic: Into<AppExtrinsic>
 			+ for<'a> TryFrom<&'a OpaqueExtrinsic, Error = codec::Error>;
+
+		/// Maximum different `AppId` allowed per block.
+		/// This is used during the calculation of padded length of the block when
+		/// a transaction is validated (see `CheckAppId` signed extension).
+		#[pallet::constant]
+		#[pallet::no_default]
+		type MaxDiffAppIdPerBlock: Get<u32>;
+
+		/// Maximum number of Tx per AppId allowed per block.
+		/// This is used during the calculation of padded length of the block when
+		/// a transaction is validated (see `CheckAppId` signed extension).
+		#[pallet::constant]
+		#[pallet::no_default]
+		type MaxTxPerAppIdPerBlock: Get<u32>;
 	}
 
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(3);
+
 	#[pallet::pallet]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::hooks]
@@ -442,6 +453,10 @@ pub mod pallet {
 					.expect("The weights are invalid.");
 			});
 		}
+
+		fn on_runtime_upgrade() -> Weight {
+			migrations::migrate::<T>()
+		}
 	}
 
 	#[pallet::call]
@@ -453,8 +468,9 @@ pub mod pallet {
 		/// # </weight>
 		/// Can be executed by every `origin`.
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::SystemWeightInfo::remark(_remark.len() as u32))]
-		pub fn remark(_origin: OriginFor<T>, _remark: Vec<u8>) -> DispatchResultWithPostInfo {
+		#[pallet::weight(T::SystemWeightInfo::remark(remark.len() as u32))]
+		pub fn remark(_origin: OriginFor<T>, remark: Vec<u8>) -> DispatchResultWithPostInfo {
+			let _ = remark; // No need to check the weight witness.
 			Ok(().into())
 		}
 
@@ -528,16 +544,16 @@ pub mod pallet {
 		/// the prefix we are removing to accurately calculate the weight of this function.
 		#[pallet::call_index(6)]
 		#[pallet::weight((
-			T::SystemWeightInfo::kill_prefix(_subkeys.saturating_add(1)),
+			T::SystemWeightInfo::kill_prefix(subkeys.saturating_add(1)),
 			DispatchClass::Operational,
 		))]
 		pub fn kill_prefix(
 			origin: OriginFor<T>,
 			prefix: Key,
-			_subkeys: u32,
+			subkeys: u32,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let _ = storage::unhashed::clear_prefix(&prefix, None, None);
+			let _ = storage::unhashed::clear_prefix(&prefix, Some(subkeys), None);
 			Ok(().into())
 		}
 
@@ -631,7 +647,8 @@ pub mod pallet {
 
 	/// Total length (in bytes) for all extrinsics put together, for the current block.
 	#[pallet::storage]
-	pub(super) type AllExtrinsicsLen<T: Config> = StorageValue<_, ExtrinsicLen>;
+	pub type AllExtrinsicsLen<T: Config> =
+		StorageValue<_, ExtrinsicLen<T::MaxDiffAppIdPerBlock, T::MaxTxPerAppIdPerBlock>>;
 
 	/// Map of block numbers to block hashes.
 	#[pallet::storage]
@@ -1137,11 +1154,10 @@ impl<T: Config> Pallet<T> {
 	/// Note this function almost never should be used directly. It is exposed
 	/// for `OnSetCode` implementations that defer actual code being written to
 	/// the storage (for instance in case of parachains).
-	pub fn update_code_in_storage(code: &[u8]) -> DispatchResult {
+	pub fn update_code_in_storage(code: &[u8]) {
 		storage::unhashed::put_raw(well_known_keys::CODE, code);
 		Self::deposit_log(generic::DigestItem::RuntimeEnvironmentUpdated);
 		Self::deposit_event(Event::CodeUpdated);
-		Ok(())
 	}
 
 	/// Increment the reference counter on an account.
@@ -1432,12 +1448,12 @@ impl<T: Config> Pallet<T> {
 
 	/// Returns all extrinsics len in raw.
 	pub fn all_extrinsics_len() -> u32 {
-		AllExtrinsicsLen::<T>::get().unwrap_or_default().raw
+		AllExtrinsicsLen::<T>::get().unwrap_or_default().raw()
 	}
 
 	/// Returns all extrinsics len with padding.
 	pub fn all_padded_extrinsics_len() -> u32 {
-		AllExtrinsicsLen::<T>::get().unwrap_or_default().padded
+		AllExtrinsicsLen::<T>::get().unwrap_or_default().padded()
 	}
 
 	/// Inform the system pallet of some additional weight that should be accounted for, in the
@@ -1572,6 +1588,13 @@ impl<T: Config> Pallet<T> {
 			.expect("Node is configured to use the same hash; qed");
 
 		let block_length = Self::block_length();
+
+		let opaques = extrinsics
+			.iter()
+			.filter(|ext| !ext.is_empty())
+			.map(|ext| OpaqueExtrinsic::decode(&mut ext.as_slice()))
+			.collect::<Result<Vec<_>, _>>()
+			.expect("Any extrinsic MUST be decoded as OpaqueExtrinsic .qed");
 
 		// Transform extrinsics into AppExtrinsic.
 		let app_extrinsics = opaques
@@ -1711,10 +1734,14 @@ impl<T: Config> Pallet<T> {
 			current_weight.set(weight, DispatchClass::Normal)
 		});
 		let len: u32 = len.saturated_into();
-		let all_ext_len = ExtrinsicLen {
-			raw: len,
-			padded: Self::padded_extrinsic_len(len),
-		};
+		let mut all_ext_len = ExtrinsicLen::default();
+		all_ext_len
+			.add_padded(AppId(0), len)
+			.expect("In tests this must work always");
+		all_ext_len
+			.add_raw(len)
+			.expect("In tests this must work always");
+
 		AllExtrinsicsLen::<T>::put(all_ext_len);
 	}
 

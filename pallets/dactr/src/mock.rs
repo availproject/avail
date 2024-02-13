@@ -52,6 +52,8 @@ impl frame_system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type SubmittedDataExtractor = ();
 	type UncheckedExtrinsic = UncheckedExtrinsic;
+	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
+	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
 
 parameter_types! {
@@ -60,6 +62,7 @@ parameter_types! {
 }
 impl pallet_transaction_payment::Config for Test {
 	type FeeMultiplierUpdate = ();
+	type LengthMultiplierUpdate = ();
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
@@ -83,7 +86,8 @@ impl pallet_balances::Config for Test {
 	type MaxReserves = MaxReserves;
 	type ReserveIdentifier = [u8; 8];
 	type RuntimeEvent = RuntimeEvent;
-	type RuntimeHoldReason = [u8; 8];
+	type RuntimeHoldReason = ();
+	type RuntimeFreezeReason = ();
 	type WeightInfo = ();
 }
 

@@ -1,25 +1,17 @@
-use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic};
-use codec::{Decode, Encode};
+use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, HeaderVersion};
 use frame_support::traits::Randomness;
 pub use kate::{
 	metrics::{IgnoreMetrics, Metrics},
 	Seed,
 };
-use scale_info::TypeInfo;
 use sp_core::H256;
 #[cfg(feature = "std")]
 use sp_runtime::SaturatedConversion;
 use sp_runtime::{generic::Digest, traits::Hash};
-use sp_runtime_interface::{pass_by::PassByCodec, runtime_interface};
+use sp_runtime_interface::runtime_interface;
 use sp_std::vec::Vec;
 
 use crate::{limits::BlockLength, Config, LOG_TARGET};
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq, PassByCodec, Encode, Decode, TypeInfo)]
-pub enum HeaderVersion {
-	V1, // Current one
-	V2, // To be used after runtime upgrade (new data_root)
-}
 
 pub mod da {
 	use core::marker::PhantomData;
@@ -32,7 +24,7 @@ pub mod da {
 	pub type Hash = sp_core::H256;
 	pub type BlockNumber = u32;
 
-	/// Data-Avail Header builder.
+	/// avail-node Header builder.
 	pub struct HeaderExtensionBuilder<T: Config>(PhantomData<T>);
 
 	impl<T: Config> super::HeaderExtensionBuilder for HeaderExtensionBuilder<T> {

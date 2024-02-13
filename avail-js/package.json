@@ -1,6 +1,6 @@
 {
   "name": "avail-js-sdk",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "Avail library of functions to interact with blockchain and manipulate transactions",
   "main": "./build/index.js",
   "scripts": {
@@ -24,9 +24,9 @@
   "author": "Ghali Leouarz",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/availproject/avail-js/issues"
+    "url": "https://github.com/availproject/avail/issues/new/choose"
   },
-  "homepage": "https://github.com/availproject/avail-js#readme",
+  "homepage": "https://github.com/availproject/avail/blob/main/avail-js/readme.md",
   "devDependencies": {
     "@types/jest": "^29.5.6",
     "@types/node": "^20.8.9",

@@ -1,0 +1,58 @@
+[package]
+name = "da-runtime-fuzz"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+anyhow = "1.0"
+arbitrary = { version = "1", features = ["derive"] }
+rand = "0.8.5"
+
+# Fuzz deps
+afl = { version = "0.15.2", optional = true }
+libfuzzer-sys = { version = "0.4", optional = true }
+
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
+	"derive",
+] }
+frame-support = { workspace = true, default-features = false }
+frame-system = { path = "../../pallets/system", default-features = false, features = [
+	"serde",
+] }
+pallet-transaction-payment = { path = "../../pallets/transaction-payment", default-features = false }
+pallet-babe = { workspace = true, default-features = false }
+pallet-balances = { workspace = true, default-features = false }
+sp-core = { workspace = true, default-features = false }
+sp-io = { workspace = true, default-features = false }
+sp-keyring = { workspace = true, default-features = false }
+sp-runtime = { workspace = true, default-features = false }
+
+avail-core = { workspace = true, default-features = false }
+da-control = { path = "../../pallets/dactr", default-features = false }
+da-runtime = { path = "../", default-features = false }
+
+[features]
+default = [ "std", "use_fuzzer" ]
+# default = [ "std", "use_afl" ]
+use_fuzzer = [ "libfuzzer-sys" ]
+use_afl = [ "afl" ]
+std = [
+	"da-control/std",
+	"da-runtime/std",
+	"frame-system/std",
+	"pallet-balances/std",
+	"pallet-transaction-payment/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+]
+
+[[bin]]
+name = "kate_commit_size"
+path = "header/kate_commit_size.rs"
+test = false
+doc = false
