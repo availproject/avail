@@ -3,18 +3,18 @@ use primitive_types::U256;
 use sp_core::H256;
 
 //** DEV **
-// Vector init config
+// Vector initial configuration
 pub const BROADCASTER_DOMAIN: u32 = 2;
 pub const BROADCASTER: H256 = H256(hex!(
 	"Aa8c1bFC413e00884A7ac991851686D27b387997000000000000000000000000" // Sepolia address
 ));
 pub const SLOTS_PER_PERIOD: u64 = 8192;
 pub const FINALITY_THRESHOLD: u16 = 342;
-pub const PERIOD: u64 = 526;
+pub const PERIOD: u64 = 529;
 pub fn get_poseidon_hash_for_period() -> U256 {
 	// PERIOD hash
 	U256::from(hex!(
-		"20d4234c2adca715b9b7c7d3eb3f8d9230fc97fa036e14dd9f050cd2010e0492"
+		"1ae06a2e5edb0240a30d228f87b5cef69f5bc5d7ce005f95671d9dc4a4f71cea"
 	))
 }
 pub const GENESIS_VALIDATOR_ROOT: H256 = H256(hex!(
