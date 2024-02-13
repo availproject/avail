@@ -661,7 +661,7 @@ fn test_fulfill_rotate_call() {
 
 		let current_period = 931;
 		let expected_event = RuntimeEvent::Bridge(Event::SyncCommitteeUpdated {
-			period: current_period,
+			period: current_period + 1,
 			root: expected_poseidon,
 		});
 
