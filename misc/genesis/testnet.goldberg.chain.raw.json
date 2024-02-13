@@ -8,7 +8,13 @@
     "/dns/bootnode-003.goldberg.avail.tools/tcp/30333/p2p/12D3KooWMR9ZoAVWJv6ahraVzUCfacNbFKk7ABoWxVL3fJ3XXGDw",
     "/dns/bootnode-004.goldberg.avail.tools/tcp/30333/p2p/12D3KooWMuyLE3aPQ82HTWuPUCjiP764ebQrZvGUzxrYGuXWZJZV",
     "/dns/bootnode-005.goldberg.avail.tools/tcp/30333/p2p/12D3KooWKJwbdcZ7QWcPLHy3EJ1UiffaLGnNBMffeK8AqRVWBZA1",
-    "/dns/bootnode-006.goldberg.avail.tools/tcp/30333/p2p/12D3KooWM8AaHDH8SJvg6bq4CGQyHvW2LH7DCHbdv633dsrti7i5"
+    "/dns/bootnode-006.goldberg.avail.tools/tcp/30333/p2p/12D3KooWM8AaHDH8SJvg6bq4CGQyHvW2LH7DCHbdv633dsrti7i5",
+    "/dns/bootnode-007.goldberg.avail.tools/tcp/30333/p2p/12D3KooWDSJEj4N5VquHdTpauenavEqNPLj8nNTVGsXJVnvSsuzp",
+    "/dns/bootnode-008.goldberg.avail.tools/tcp/30333/p2p/12D3KooWFtivix1j7PJdVHsUEDv7d82ckxGeGwtyQNVhchMsF8Fk",
+    "/dns/bootnode-009.goldberg.avail.tools/tcp/30333/p2p/12D3KooWAibJ6hnf9XNVyGzLCKtCoDsBweGbSiEjAd1mgKbwqoWu",
+    "/dns/bootnode-010.goldberg.avail.tools/tcp/30333/p2p/12D3KooWG8RcBkZyFUT8C1XdCTEVVVeBteX2F2kH426MfsbuHg7r",
+    "/dns/bootnode-011.goldberg.avail.tools/tcp/30333/p2p/12D3KooWAgPQMhnt6cfvnx8jFgptJkGG5BX1b5rdh4TDrNpEe9rn",
+    "/dns/bootnode-012.goldberg.avail.tools/tcp/30333/p2p/12D3KooWAUxPXGWG81C4UjDcaVngd6uFVu4LbvAQiaUj7oymohNt"
   ],
   "telemetryEndpoints": [
     [
