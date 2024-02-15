@@ -26,7 +26,7 @@ jobs:
           rustup target add wasm32-unknown-unknown
           rustup show 
 
-      - name: Build node with Try-runtime
+      - name: Build node with try-runtime
         run: cargo build --release --features try-runtime
 
       - name: Test try-runtime on-runtime-upgrade
