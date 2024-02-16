@@ -58,10 +58,7 @@ fn par_build_commitments_row_wise_constant_row() {
 	// Due to scale encoding, first line is not constant.
 	// We will use second line to ensure constant row.
 	let hash = Seed::default();
-	let xts = vec![AppExtrinsic {
-		app_id: AppId(0),
-		data: vec![0; 31 * 8],
-	}];
+	let xts = vec![AppExtrinsic::new(AppId(0), 0, vec![0; 31 * 8])];
 
 	let evals = EvaluationGrid::from_extrinsics(xts, 4, 4, 4, hash, HeaderVersion::V3).unwrap();
 	let evals = evals

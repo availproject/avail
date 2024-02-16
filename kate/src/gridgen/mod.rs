@@ -80,7 +80,7 @@ impl EvaluationGrid {
 		let grouped = extrinsics.into_iter().fold::<BTreeMap<AppId, Vec<_>>, _>(
 			BTreeMap::default(),
 			|mut acc, e| {
-				acc.entry(e.app_id).or_default().push(e.data);
+				acc.entry(e.app_id).or_default().push(e.opaque);
 				acc
 			},
 		);

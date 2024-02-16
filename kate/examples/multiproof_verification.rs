@@ -32,18 +32,21 @@ fn multiproof_verification() -> Result<bool, AppError> {
 	let points = kate::gridgen::domain_points(256)?;
 	let (proof, evals, commitments, dims) = {
 		let exts = vec![
-			AppExtrinsic {
-				app_id: AppId(0),
-				data: hex!("CAFEBABE00000000000000000000000000000000000000").to_vec(),
-			},
-			AppExtrinsic {
-				app_id: AppId(1),
-				data: hex!("DEADBEEF1111111111111111111111111111111111").to_vec(),
-			},
-			AppExtrinsic {
-				app_id: AppId(2),
-				data: hex!("1234567899999999999999999999999999999999").to_vec(),
-			},
+			AppExtrinsic::new(
+				AppId(0),
+				0,
+				hex!("CAFEBABE00000000000000000000000000000000000000").to_vec(),
+			),
+			AppExtrinsic::new(
+				AppId(1),
+				1,
+				hex!("DEADBEEF1111111111111111111111111111111111").to_vec(),
+			),
+			AppExtrinsic::new(
+				AppId(2),
+				2,
+				hex!("1234567899999999999999999999999999999999").to_vec(),
+			),
 		];
 		let seed = Seed::default();
 		let grid = EvaluationGrid::from_extrinsics(exts, 4, 256, 256, seed, HeaderVersion::V3)?

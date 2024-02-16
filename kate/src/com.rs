@@ -125,11 +125,11 @@ const PADDING_TAIL_VALUE: u8 = 0x80;
 /// Helper which groups extrinsics data that share the same app_id.
 /// We assume the input extrinsics are already sorted by app_id, i.e. extrinsics with the same app_id are consecutive.
 /// This function does the same thing as group_by (unstable), just less general.
-fn app_extrinsics_group_by_app_id(extrinsics: &[AppExtrinsic]) -> Vec<(AppId, Vec<Vec<u8>>)> {
-	extrinsics.iter().fold(vec![], |mut acc, e| {
+fn app_extrinsics_group_by_app_id(extrinsics: Vec<AppExtrinsic>) -> Vec<(AppId, Vec<Vec<u8>>)> {
+	extrinsics.into_iter().fold(vec![], |mut acc, e| {
 		match acc.last_mut() {
-			Some((app_id, data)) if e.app_id == *app_id => data.push(e.data.clone()),
-			None | Some(_) => acc.push((e.app_id, vec![e.data.clone()])),
+			Some((app_id, opaques)) if e.app_id == *app_id => opaques.push(e.opaque),
+			None | Some(_) => acc.push((e.app_id, vec![e.opaque])),
 		}
 		acc
 	})
@@ -149,11 +149,10 @@ pub fn flatten_and_pad_block(
 
 	// Pad data before determining exact block size
 	// Padding occurs both inside a single chunk and with additional chunk (if needed)
-	let (tx_layout, padded_chunks): (Vec<_>, Vec<_>) = app_extrinsics_group_by_app_id(&extrinsics)
-		.iter()
-		.map(|e| {
-			let app_id = e.0;
-			let data = e.1.encode();
+	let (tx_layout, padded_chunks): (Vec<_>, Vec<_>) = app_extrinsics_group_by_app_id(extrinsics)
+		.into_iter()
+		.map(|(app_id, opaques)| {
+			let data = opaques.encode();
 			let chunks = pad_iec_9797_1(data, header_version);
 			let chunks_len = u32::try_from(chunks.len()).map_err(|_| Error::BlockTooBig)?;
 			Ok(((app_id, chunks_len), chunks))
@@ -751,10 +750,10 @@ mod tests {
 	#[cfg(not(feature = "maximum-block-size"))]
 	fn test_flatten_block() {
 		let extrinsics: Vec<AppExtrinsic> = vec![
-			AppExtrinsic::new(AppId(0), (1..=30).collect()),
-			AppExtrinsic::new(AppId(1), (1..=31).collect()),
-			AppExtrinsic::new(AppId(2), (1..=32).collect()),
-			AppExtrinsic::new(AppId(3), (1..=61).collect()),
+			AppExtrinsic::new(AppId(0), 0, (1..=30).collect()),
+			AppExtrinsic::new(AppId(1), 1, (1..=31).collect()),
+			AppExtrinsic::new(AppId(2), 2, (1..=32).collect()),
+			AppExtrinsic::new(AppId(3), 3, (1..=61).collect()),
 		];
 
 		let expected_dims =
@@ -789,7 +788,7 @@ mod tests {
 
 		for ((id, data), exp) in res.iter().zip(extrinsics.iter()) {
 			assert_eq!(id.0, *exp.app_id);
-			assert_eq!(data[0], exp.data);
+			assert_eq!(data[0], exp.opaque);
 		}
 	}
 
@@ -843,10 +842,7 @@ mod tests {
 			any::<u32>(),
 			any_with::<Vec<u8>>(size_range(1..2048).lift()),
 		)
-			.prop_map(|(app_id, data)| AppExtrinsic {
-				app_id: AppId(app_id),
-				data,
-			})
+			.prop_map(|(id, opaque)| AppExtrinsic::new(AppId(id), 0, opaque))
 	}
 
 	fn app_extrinsics_strategy() -> impl Strategy<Value = Vec<AppExtrinsic>> {
@@ -893,7 +889,7 @@ mod tests {
 		let reconstructed = reconstruct_extrinsics(&index, extended_dims, columns).unwrap();
 		for ((app_id, data), xt) in reconstructed.iter().zip(xts) {
 			prop_assert_eq!(app_id.0, *xt.app_id);
-			prop_assert_eq!(data[0].as_slice(), &xt.data);
+			prop_assert_eq!(data[0].as_slice(), &xt.opaque);
 		}
 
 		let dims_cols = usize::try_from(dims.cols.0).unwrap();
@@ -964,14 +960,14 @@ mod tests {
 	fn test_build_commitments_simple_commitment_check() {
 		let block_rows = BlockLengthRows(256);
 		let block_cols = BlockLengthColumns(256);
-		let original_data = br#"test"#;
+		let original_data = br#"test"#.to_vec();
 		let hash: Seed = hex!("4c29ae91bb0c61204b6f95d1f3c3a50aa6ac2f29da18d4423e05bbbf81056903");
 
 		let (_, commitments, dimensions, _) = par_build_commitments(
 			block_rows,
 			block_cols,
 			TCHUNK,
-			&[AppExtrinsic::from(original_data.to_vec())],
+			&[original_data.into()],
 			hash,
 			&IgnoreMetrics {},
 			HeaderVersion::V3,
@@ -996,9 +992,9 @@ get erasure coded to ensure redundancy."#;
 
 		let hash = Seed::default();
 		let xts = vec![
-			AppExtrinsic::new(AppId(0), vec![0]),
-			AppExtrinsic::new(AppId(1), app_id_1_data.to_vec()),
-			AppExtrinsic::new(AppId(2), app_id_2_data.to_vec()),
+			AppExtrinsic::new(AppId(0), 0, vec![0]),
+			AppExtrinsic::new(AppId(1), 1, app_id_1_data.to_vec()),
+			AppExtrinsic::new(AppId(2), 2, app_id_2_data.to_vec()),
 		];
 
 		let (layout, data, dims) = flatten_and_pad_block(
@@ -1039,7 +1035,8 @@ get erasure coded to ensure redundancy."#;
 		let hash = Seed::default();
 		let xts = (0..=2)
 			.zip(data)
-			.map(|(app_id, data)| AppExtrinsic::new(AppId(app_id), data))
+			.enumerate()
+			.map(|(idx, (app_id, data))| AppExtrinsic::new(AppId(app_id), idx as u32, data))
 			.collect::<Vec<_>>();
 
 		let (layout, data, dims) = flatten_and_pad_block(
@@ -1066,7 +1063,7 @@ get erasure coded to ensure redundancy."#;
 				})
 				.collect::<Vec<_>>();
 			let data = &decode_app_extrinsics(&index, dimensions, cells, xt.app_id).unwrap()[0];
-			assert_eq!(data, &xt.data);
+			assert_eq!(data, &xt.opaque);
 		}
 
 		assert!(matches!(
@@ -1114,8 +1111,8 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let xt1 = vec![5, 5];
 		let xt2 = vec![6, 6];
 		let xts = [
-			AppExtrinsic::new(AppId(1), xt1.clone()),
-			AppExtrinsic::new(AppId(1), xt2.clone()),
+			AppExtrinsic::new(AppId(1), 0, xt1.clone()),
+			AppExtrinsic::new(AppId(1), 1, xt2.clone()),
 		];
 		// The hash is used for seed for padding the block to next power of two value
 		let hash = Seed::default();
@@ -1148,11 +1145,11 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let xt2 = vec![6, 6];
 		let xt3 = vec![7];
 		let xt4 = vec![];
-		let xts = [
-			AppExtrinsic::new(AppId(1), xt1.clone()),
-			AppExtrinsic::new(AppId(1), xt2.clone()),
-			AppExtrinsic::new(AppId(2), xt3.clone()),
-			AppExtrinsic::new(AppId(3), xt4.clone()),
+		let xts = vec![
+			AppExtrinsic::new(AppId(1), 0, xt1.clone()),
+			AppExtrinsic::new(AppId(1), 1, xt2.clone()),
+			AppExtrinsic::new(AppId(2), 2, xt3.clone()),
+			AppExtrinsic::new(AppId(3), 3, xt4.clone()),
 		];
 
 		let expected = vec![
@@ -1160,7 +1157,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			(AppId(2), vec![xt3]),
 			(AppId(3), vec![xt4]),
 		];
-		let rez = app_extrinsics_group_by_app_id(&xts);
+		let rez = app_extrinsics_group_by_app_id(xts);
 		println!("{:?}", rez);
 
 		assert_eq!(rez, expected);
@@ -1201,10 +1198,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let hash = Seed::default();
 		let data = (0..3).flat_map(|i| vec![i; 31]).collect::<Vec<_>>();
 		let xts = (0..4)
-			.map(|app_id| AppExtrinsic {
-				app_id: AppId(app_id),
-				data: data.clone(),
-			})
+			.map(|app_id| AppExtrinsic::new(AppId(app_id), app_id, data.clone()))
 			.collect::<Vec<_>>();
 		par_build_commitments(
 			BlockLengthRows(4),
@@ -1224,10 +1218,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		// Due to scale encoding, first line is not constant.
 		// We will use second line to ensure constant row.
 		let hash = Seed::default();
-		let xts = vec![AppExtrinsic {
-			app_id: AppId(0),
-			data: vec![0; 31 * 8],
-		}];
+		let xts = vec![AppExtrinsic::new(AppId(0), 0, vec![0; 31 * 8])];
 		par_build_commitments(
 			BlockLengthRows(4),
 			BlockLengthColumns(4),

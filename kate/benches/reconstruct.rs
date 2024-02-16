@@ -95,7 +95,7 @@ fn bench_reconstruct(c: &mut Criterion) {
 	for xts in xts_sets.into_iter() {
 		let size = xts
 			.iter()
-			.map(|app| app.data.len())
+			.map(|app| app.opaque.len())
 			.sum::<usize>()
 			.try_into()
 			.unwrap();
@@ -127,7 +127,7 @@ fn reconstruct(xts: &[AppExtrinsic]) {
 	let reconstructed = reconstruct_extrinsics(&lookup, extended_dims, columns).unwrap();
 	for ((app_id, data), xt) in reconstructed.iter().zip(xts) {
 		assert_eq!(app_id.0, *xt.app_id);
-		assert_eq!(data[0].as_slice(), &xt.data);
+		assert_eq!(data[0].as_slice(), &xt.opaque);
 	}
 
 	let dims_cols: u32 = dims.cols().into();

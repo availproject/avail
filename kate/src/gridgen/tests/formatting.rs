@@ -18,10 +18,10 @@ use core::num::NonZeroU16;
 #[test]
 fn newapi_test_flatten_block() {
 	let extrinsics: Vec<AppExtrinsic> = vec![
-		AppExtrinsic::new(AppId(0), (1..=30).collect()),
-		AppExtrinsic::new(AppId(1), (1..=31).collect()),
-		AppExtrinsic::new(AppId(2), (1..=32).collect()),
-		AppExtrinsic::new(AppId(3), (1..=61).collect()),
+		AppExtrinsic::new(AppId(0), 0, (1..=30).collect()),
+		AppExtrinsic::new(AppId(1), 1, (1..=31).collect()),
+		AppExtrinsic::new(AppId(2), 2, (1..=32).collect()),
+		AppExtrinsic::new(AppId(3), 3, (1..=61).collect()),
 	];
 
 	let expected_dims = Dimensions::new_from(1, 16).unwrap();
@@ -118,7 +118,7 @@ get erasure coded to ensure redundancy."#;
 	let hash = Seed::default();
 	let xts = (0..=2)
 		.zip(data)
-		.map(|(id, data)| AppExtrinsic::new(AppId(id), data))
+		.map(|(id, data)| AppExtrinsic::new(AppId(id), id, data))
 		.collect::<Vec<_>>();
 
 	let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 32, 4, hash, HeaderVersion::V3)
@@ -142,7 +142,7 @@ get erasure coded to ensure redundancy."#;
 			})
 			.collect::<Vec<_>>();
 		let data = &decode_app_extrinsics(&grid.lookup, bdims, cells, xt.app_id).unwrap()[0];
-		assert_eq!(data, &xt.data);
+		assert_eq!(data, &xt.opaque);
 	}
 
 	assert!(matches!(

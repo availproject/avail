@@ -21,10 +21,7 @@ fn app_extrinsic_strategy() -> impl Strategy<Value = AppExtrinsic> {
 		any::<u32>(),
 		any_with::<Vec<u8>>(size_range(1..2048).lift()),
 	)
-		.prop_map(|(app_id, data)| AppExtrinsic {
-			app_id: AppId(app_id),
-			data,
-		})
+		.prop_map(|(app_id, data)| AppExtrinsic::new(AppId(app_id), 0, data))
 }
 
 fn app_extrinsics_strategy() -> impl Strategy<Value = Vec<AppExtrinsic>> {
