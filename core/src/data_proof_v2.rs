@@ -1,5 +1,5 @@
+use bounded_collections::BoundedVec;
 use codec::{Decode, Encode};
-use frame_support::BoundedVec;
 use sp_core::{ConstU32, H256};
 use sp_std::vec::Vec;
 use thiserror_no_std::Error;
@@ -17,10 +17,10 @@ pub const BOUNDED_DATA_MAX_LENGTH: u32 = 102_400;
 pub type BoundedData = BoundedVec<u8, ConstU32<BOUNDED_DATA_MAX_LENGTH>>;
 
 pub mod message;
-pub use message::{Message, MessageType};
+pub use message::{AddressedMessage, Message, MessageType};
 
 pub mod message_ref;
-pub use message_ref::{MessageRef, MessageTypeRef};
+pub use message_ref::{AddressedMessageRef, MessageRef};
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

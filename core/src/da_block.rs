@@ -20,15 +20,14 @@
 #[cfg(feature = "std")]
 use std::fmt;
 
-use crate::traits::{DaHeaderProvider, ExtendedBlock, ExtendedHeader};
+use crate::traits::{ExtendedBlock, ExtendedHeader};
 use codec::{Codec, Decode, Encode};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sp_core::RuntimeDebug;
 use sp_runtime::{
 	traits::{
-		self, Block as BlockT, Header as HeaderT, MaybeSerialize, MaybeSerializeDeserialize,
-		Member, NumberFor,
+		self, Block as BlockT, Header as HeaderT, MaybeSerializeDeserialize, Member, NumberFor,
 	},
 	Justifications,
 };
@@ -82,7 +81,11 @@ impl<Block: BlockT> fmt::Display for BlockId<Block> {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 #[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
-pub struct DaBlock<Header, Extrinsic> {
+pub struct DaBlock<Header, Extrinsic>
+where
+	Header: Codec,
+	Extrinsic: Codec,
+{
 	/// The block header.
 	pub header: Header,
 	/// The accompanying extrinsics.
@@ -91,14 +94,15 @@ pub struct DaBlock<Header, Extrinsic> {
 
 impl<Header, Extrinsic> traits::HeaderProvider for DaBlock<Header, Extrinsic>
 where
-	Header: HeaderT,
+	Header: Codec + HeaderT,
+	Extrinsic: Codec,
 {
 	type HeaderT = Header;
 }
 
-impl<Header, Extrinsic: MaybeSerialize> BlockT for DaBlock<Header, Extrinsic>
+impl<Header, Extrinsic> BlockT for DaBlock<Header, Extrinsic>
 where
-	Header: HeaderT + MaybeSerializeDeserialize,
+	Header: Codec + HeaderT + MaybeSerializeDeserialize,
 	Extrinsic: Member + Codec + MaybeSerializeDeserialize + traits::Extrinsic,
 {
 	type Extrinsic = Extrinsic;
@@ -122,48 +126,22 @@ where
 	}
 }
 
+impl<Header, Extrinsic> ExtendedBlock for DaBlock<Header, Extrinsic>
+where
+	Header: Codec + ExtendedHeader + MaybeSerializeDeserialize,
+	Extrinsic: Member + Codec + traits::Extrinsic + MaybeSerializeDeserialize,
+{
+	type ExtHeader = Header;
+}
+
 /// Abstraction over a substrate block and justification.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 #[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
-pub struct SignedBlock<Block> {
+pub struct SignedBlock<Block: Codec> {
 	/// Full block.
 	pub block: Block,
 	/// Block justification.
 	pub justifications: Option<Justifications>,
-}
-
-impl<Header, Extrinsic, Extension> ExtendedBlock<Extension> for DaBlock<Header, Extrinsic>
-where
-	Header: HeaderT
-		+ MaybeSerializeDeserialize
-		+ ExtendedHeader<
-			<Header as sp_runtime::traits::Header>::Number,
-			<Header as sp_runtime::traits::Header>::Hash,
-			sp_runtime::Digest,
-			Extension,
-		>,
-	Extrinsic: Member + Codec + traits::Extrinsic + MaybeSerializeDeserialize,
-{
-	type DaHeader = Header;
-}
-
-impl<Header, Extrinsic, Extension>
-	DaHeaderProvider<
-		<Header as sp_runtime::traits::Header>::Number,
-		<Header as sp_runtime::traits::Header>::Hash,
-		sp_runtime::Digest,
-		Extension,
-	> for DaBlock<Header, Extrinsic>
-where
-	Header: HeaderT
-		+ ExtendedHeader<
-			<Header as sp_runtime::traits::Header>::Number,
-			<Header as sp_runtime::traits::Header>::Hash,
-			sp_runtime::Digest,
-			Extension,
-		>,
-{
-	type DaHeader = Header;
 }

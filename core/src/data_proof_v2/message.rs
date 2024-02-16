@@ -1,53 +1,96 @@
 use super::BoundedData;
 
-use ethabi::{encode, Token};
+use codec::{Decode, Encode};
+use derive_more::From;
+use scale_info::TypeInfo;
+use sp_core::H256;
+use sp_std::{vec, vec::Vec};
+
+use ethabi_decode::{encode, Token, U256};
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-use sp_core::H256;
 
-/// Possible types of Messages allowed by Avail to bridge to other chains.
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum MessageType {
-	ArbitraryMessage,
-	#[default]
+	Data,
 	FungibleToken,
 }
 
-impl From<MessageType> for Vec<u8> {
-	fn from(msg_type: MessageType) -> Self {
-		match msg_type {
-			MessageType::ArbitraryMessage => vec![0x01],
-			MessageType::FungibleToken => vec![0x02],
+impl From<&Message> for MessageType {
+	fn from(msg: &Message) -> Self {
+		match msg {
+			Message::Data(..) => MessageType::Data,
+			Message::FungibleToken { .. } => MessageType::FungibleToken,
+		}
+	}
+}
+
+/// Possible types of Messages allowed by Avail to bridge to other chains.
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo, From)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+pub enum Message {
+	Data(BoundedData),
+	FungibleToken {
+		asset_id: H256,
+		#[codec(compact)]
+		amount: u128,
+	},
+}
+
+impl Message {
+	pub fn selector_abi_encode(&self) -> Vec<u8> {
+		match self {
+			Message::Data(..) => vec![0x01],
+			Message::FungibleToken { .. } => vec![0x02],
 		}
 	}
 }
 
 /// Message type used to bridge between Avail & other chains
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
-pub struct Message {
-	pub message_type: MessageType,
+pub struct AddressedMessage {
+	pub message: Message,
 	pub from: H256,
 	pub to: H256,
+	#[codec(compact)]
 	pub origin_domain: u32,
+	#[codec(compact)]
 	pub destination_domain: u32,
-	pub data: BoundedData,
-	pub id: u64, // a global nonce that is incremented with each leaf
+	/// Unique identifier for the message
+	#[codec(compact)]
+	pub id: u64,
 }
 
-impl Message {
+impl AddressedMessage {
+	fn abi_data(&self) -> Vec<u8> {
+		match &self.message {
+			Message::Data(data) => data.clone().into_inner(),
+			Message::FungibleToken { asset_id, amount } => {
+				let data = [
+					Token::FixedBytes(asset_id.encode()),
+					Token::Uint(U256::from(*amount)),
+				];
+				encode(&data)
+			},
+		}
+	}
+
 	pub fn abi_encode(self) -> Vec<u8> {
+		let data = self.abi_data();
 		encode(&[Token::Tuple(vec![
-			Token::FixedBytes(self.message_type.into()),
+			Token::FixedBytes(self.message.selector_abi_encode()),
 			Token::FixedBytes(self.from.to_fixed_bytes().to_vec()),
 			Token::FixedBytes(self.to.to_fixed_bytes().to_vec()),
-			Token::Uint(ethabi::Uint::from(self.origin_domain)),
-			Token::Uint(ethabi::Uint::from(self.destination_domain)),
-			Token::Bytes(self.data.into()),
-			Token::Uint(ethabi::Uint::from(self.id)),
+			Token::Uint(U256::from(self.origin_domain)),
+			Token::Uint(U256::from(self.destination_domain)),
+			Token::Bytes(data),
+			Token::Uint(U256::from(self.id)),
 		])])
 	}
 }

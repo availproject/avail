@@ -16,9 +16,26 @@
 // limitations under the License.
 
 //! Generic implementation of an unchecked (pre-verification) extrinsic.
+use crate::{
+	traits::{GetAppId, MaybeCaller},
+	AppId, OpaqueExtrinsic,
+};
 
-use codec::{Compact, Decode, Encode, EncodeLike, Error, Input};
+use codec::{Codec, Compact, Decode, Encode, EncodeLike, Error, Input};
 use scale_info::{build::Fields, meta_type, Path, StaticTypeInfo, Type, TypeInfo, TypeParameter};
+use sp_io::hashing::blake2_256;
+use sp_runtime::MultiAddress;
+use sp_std::{
+	fmt::{Debug, Formatter, Result as FmtResult},
+	vec,
+	vec::Vec,
+};
+
+#[cfg(feature = "runtime")]
+use frame_support::{
+	dispatch::{DispatchInfo, GetDispatchInfo},
+	traits::ExtrinsicCall,
+};
 #[cfg(feature = "runtime")]
 use sp_runtime::{
 	generic::CheckedExtrinsic,
@@ -30,16 +47,6 @@ use sp_runtime::{
 };
 #[cfg(all(not(feature = "std"), feature = "serde"))]
 use sp_std::alloc::format;
-use sp_std::{
-	convert::TryFrom,
-	fmt::{Debug, Formatter, Result as FmtResult},
-	vec,
-	vec::Vec,
-};
-
-use sp_io::hashing::blake2_256;
-
-use crate::{traits::GetAppId, AppId, OpaqueExtrinsic};
 
 /// Current version of the [`UncheckedExtrinsic`] encoded format.
 ///
@@ -49,19 +56,42 @@ use crate::{traits::GetAppId, AppId, OpaqueExtrinsic};
 pub const EXTRINSIC_FORMAT_VERSION: u8 = 4;
 
 /// The `SingaturePayload` of `UncheckedExtrinsic`.
-type AppUncheckedSignaturePayload<Address, Signature, Extra> = (Address, Signature, Extra);
+type SignaturePayload<Address, Signature, Extra> = (Address, Signature, Extra);
 
-/// A extrinsic right from the external world. This is unchecked and so
-/// can contain a signature.
+/// An extrinsic right from the external world. This is unchecked and so can contain a signature.
+///
+/// An extrinsic is formally described as any external data that is originating from the outside of
+/// the runtime and fed into the runtime as a part of the block-body.
+///
+/// Inherents are special types of extrinsics that are placed into the block by the block-builder.
+/// They are unsigned because the assertion is that they are "inherently true" by virtue of getting
+/// past all validators.
+///
+/// Transactions are all other statements provided by external entities that the chain deems values
+/// and decided to include in the block. This value is typically in the form of fee payment, but it
+/// could in principle be any other interaction. Transactions are either signed or unsigned. A
+/// sensible transaction pool should ensure that only transactions that are worthwhile are
+/// considered for block-building.
+///
+/// This type is by no means enforced within Substrate, but given its genericness, it is highly
+/// likely that for most use-cases it will suffice. Thus, the encoding of this type will dictate
+/// exactly what bytes should be sent to a runtime to transact with it.
+///
+/// This can be checked using [`Checkable`], yielding a [`CheckedExtrinsic`], which is the
+/// counterpart of this type after its signature (and other non-negotiable validity checks) have
+/// passed.
 #[derive(PartialEq, Eq, Clone)]
 pub struct AppUncheckedExtrinsic<Address, Call, Signature, Extra>
 where
+	Address: Codec,
+	Call: Codec,
+	Signature: Codec,
 	Extra: SignedExtension,
 {
 	/// The signature, address, number of extrinsics have come before from
 	/// the same signer and an era describing the longevity of this transaction,
 	/// if this is a signed extrinsic.
-	pub signature: Option<AppUncheckedSignaturePayload<Address, Signature, Extra>>,
+	pub signature: Option<SignaturePayload<Address, Signature, Extra>>,
 	/// The function that should be called.
 	pub function: Call,
 }
@@ -70,15 +100,14 @@ where
 /// `Vec<u8>`, but requires some logic to extract the signature and payload.
 ///
 /// See [`AppUncheckedExtrinsic::encode`] and [`AppUncheckedExtrinsic::decode`].
-impl<Address, Call, Signature, Extra> TypeInfo
-	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<A, C, S, E> TypeInfo for AppUncheckedExtrinsic<A, C, S, E>
 where
-	Address: StaticTypeInfo,
-	Call: StaticTypeInfo,
-	Signature: StaticTypeInfo,
-	Extra: SignedExtension + StaticTypeInfo,
+	A: Codec + StaticTypeInfo,
+	C: Codec + StaticTypeInfo,
+	S: Codec + StaticTypeInfo,
+	E: SignedExtension + StaticTypeInfo,
 {
-	type Identity = AppUncheckedExtrinsic<Address, Call, Signature, Extra>;
+	type Identity = AppUncheckedExtrinsic<A, C, S, E>;
 
 	fn type_info() -> Type {
 		Type::builder()
@@ -87,10 +116,10 @@ where
 			// the described fields. These type definitions can be used by downstream consumers
 			// to help construct the custom decoding from the opaque bytes (see below).
 			.type_params(vec![
-				TypeParameter::new("Address", Some(meta_type::<Address>())),
-				TypeParameter::new("Call", Some(meta_type::<Call>())),
-				TypeParameter::new("Signature", Some(meta_type::<Signature>())),
-				TypeParameter::new("Extra", Some(meta_type::<Extra>())),
+				TypeParameter::new("Address", Some(meta_type::<A>())),
+				TypeParameter::new("Call", Some(meta_type::<C>())),
+				TypeParameter::new("Signature", Some(meta_type::<S>())),
+				TypeParameter::new("Extra", Some(meta_type::<E>())),
 			])
 			.docs(&["AppUncheckedExtrinsic raw bytes, requires custom decoding routine"])
 			// Because of the custom encoding, we can only accurately describe the encoding as an
@@ -100,11 +129,15 @@ where
 	}
 }
 
-impl<Address, Call, Signature, Extra: SignedExtension>
-	AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<A, C, S, E> AppUncheckedExtrinsic<A, C, S, E>
+where
+	A: Codec,
+	C: Codec,
+	S: Codec,
+	E: SignedExtension,
 {
 	/// New instance of a signed extrinsic aka "transaction".
-	pub fn new_signed(function: Call, signed: Address, signature: Signature, extra: Extra) -> Self {
+	pub fn new_signed(function: C, signed: A, signature: S, extra: E) -> Self {
 		Self {
 			signature: Some((signed, signature, extra)),
 			function,
@@ -112,7 +145,7 @@ impl<Address, Call, Signature, Extra: SignedExtension>
 	}
 
 	/// New instance of an unsigned extrinsic aka "inherent".
-	pub fn new_unsigned(function: Call) -> Self {
+	pub fn new_unsigned(function: C) -> Self {
 		Self {
 			signature: None,
 			function,
@@ -120,13 +153,12 @@ impl<Address, Call, Signature, Extra: SignedExtension>
 	}
 }
 
-impl<Address, Call, Signature, Extra: SignedExtension>
-	AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<A, C, S, E> AppUncheckedExtrinsic<A, C, S, E>
 where
-	Address: Decode,
-	Signature: Decode,
-	Call: Decode,
-	Extra: SignedExtension,
+	A: Codec,
+	S: Codec,
+	C: Codec,
+	E: SignedExtension,
 {
 	pub fn decode_no_vec_prefix<I: Input>(input: &mut I) -> Result<Self, Error> {
 		let version = input.read_byte()?;
@@ -147,18 +179,21 @@ where
 	}
 }
 
-impl<Address: TypeInfo, Call: TypeInfo, Signature: TypeInfo, Extra: SignedExtension + TypeInfo>
-	Extrinsic for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<A, C, S, E> Extrinsic for AppUncheckedExtrinsic<A, C, S, E>
+where
+	A: Codec + TypeInfo,
+	S: Codec + TypeInfo,
+	C: Codec + TypeInfo,
+	E: SignedExtension,
 {
-	type Call = Call;
-
-	type SignaturePayload = AppUncheckedSignaturePayload<Address, Signature, Extra>;
+	type Call = C;
+	type SignaturePayload = SignaturePayload<A, S, E>;
 
 	fn is_signed(&self) -> Option<bool> {
 		Some(self.signature.is_some())
 	}
 
-	fn new(function: Call, signed_data: Option<Self::SignaturePayload>) -> Option<Self> {
+	fn new(function: C, signed_data: Option<Self::SignaturePayload>) -> Option<Self> {
 		Some(if let Some((address, signature, extra)) = signed_data {
 			Self::new_signed(function, address, signature, extra)
 		} else {
@@ -167,33 +202,24 @@ impl<Address: TypeInfo, Call: TypeInfo, Signature: TypeInfo, Extra: SignedExtens
 	}
 }
 
-impl<Address, AccountId, Call, Signature, Extra, Lookup> Checkable<Lookup>
-	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<LookupSource, AccountId, C, S, E, Lookup> Checkable<Lookup>
+	for AppUncheckedExtrinsic<LookupSource, C, S, E>
 where
-	Address: Member + MaybeDisplay,
-	Call: Encode + Member,
-	Signature: Member + traits::Verify,
-	<Signature as traits::Verify>::Signer: IdentifyAccount<AccountId = AccountId>,
-	Extra: SignedExtension<AccountId = AccountId>,
+	LookupSource: Codec + Member + MaybeDisplay,
+	C: Codec + Member,
+	S: Codec + Member + traits::Verify,
+	<S as traits::Verify>::Signer: IdentifyAccount<AccountId = AccountId>,
+	E: SignedExtension<AccountId = AccountId>,
 	AccountId: Member + MaybeDisplay,
-	Lookup: traits::Lookup<Source = Address, Target = AccountId>,
-	<Extra as SignedExtension>::AdditionalSigned: sp_std::fmt::Debug,
+	Lookup: traits::Lookup<Source = LookupSource, Target = AccountId>,
 {
-	type Checked = CheckedExtrinsic<AccountId, Call, Extra>;
+	type Checked = CheckedExtrinsic<AccountId, C, E>;
 
 	fn check(self, lookup: &Lookup) -> Result<Self::Checked, TransactionValidityError> {
 		Ok(match self.signature {
 			Some((signed, signature, extra)) => {
 				let signed = lookup.lookup(signed)?;
 				let raw_payload = SignedPayload::new(self.function, extra)?;
-
-				log::debug!(
-					"AppUncheckedExtrinsic: Signed: {:?}, Signature: {:?}, RawPayload: {:?}",
-					signed,
-					signature,
-					raw_payload
-				);
-
 				if !raw_payload.using_encoded(|payload| signature.verify(payload, &signed)) {
 					return Err(InvalidTransaction::BadProof.into());
 				}
@@ -234,24 +260,24 @@ where
 	}
 }
 
-impl<Address, Call, Signature, Extra> ExtrinsicMetadata
-	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<A, C, S, E> ExtrinsicMetadata for AppUncheckedExtrinsic<A, C, S, E>
 where
-	Extra: SignedExtension,
+	A: Codec,
+	S: Codec,
+	C: Codec,
+	E: SignedExtension,
 {
 	const VERSION: u8 = EXTRINSIC_FORMAT_VERSION;
-	type SignedExtensions = Extra;
+	type SignedExtensions = E;
 }
 
 #[cfg(feature = "runtime")]
-use frame_support::dispatch::{DispatchInfo, GetDispatchInfo};
-
-#[cfg(feature = "runtime")]
-impl<Address, Call, Signature, Extra> GetDispatchInfo
-	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<A, C, S, E> GetDispatchInfo for AppUncheckedExtrinsic<A, C, S, E>
 where
-	Call: GetDispatchInfo,
-	Extra: SignedExtension,
+	A: Codec,
+	S: Codec,
+	C: Codec + GetDispatchInfo,
+	E: SignedExtension,
 {
 	fn get_dispatch_info(&self) -> DispatchInfo {
 		self.function.get_dispatch_info()
@@ -264,21 +290,6 @@ where
 /// is going to be different than the `SignaturePayload` - so the thing the extrinsic
 /// actually contains.
 pub struct SignedPayload<Call, Extra: SignedExtension>((Call, Extra, Extra::AdditionalSigned));
-
-impl<Call, Extra> Debug for SignedPayload<Call, Extra>
-where
-	Call: Debug,
-	Extra: SignedExtension + Debug,
-	Extra::AdditionalSigned: Debug,
-{
-	fn fmt(&self, f: &mut Formatter) -> FmtResult {
-		write!(
-			f,
-			"SignedPayload(call: {:?}, extra: {:?}, additional_signed: {:?})",
-			self.0 .0, self.0 .1, self.0 .2
-		)
-	}
-}
 
 impl<Call, Extra> SignedPayload<Call, Extra>
 where
@@ -331,13 +342,12 @@ where
 {
 }
 
-impl<Address, Call, Signature, Extra> Decode
-	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<A, C, S, E> Decode for AppUncheckedExtrinsic<A, C, S, E>
 where
-	Address: Decode,
-	Signature: Decode,
-	Call: Decode,
-	Extra: SignedExtension,
+	A: Codec,
+	S: Codec,
+	C: Codec,
+	E: SignedExtension,
 {
 	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
 		// This is a little more complicated than usual since the binary format must be compatible
@@ -363,13 +373,12 @@ where
 	}
 }
 
-impl<Address, Call, Signature, Extra> Encode
-	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<A, C, S, E> Encode for AppUncheckedExtrinsic<A, C, S, E>
 where
-	Address: Encode,
-	Signature: Encode,
-	Call: Encode,
-	Extra: SignedExtension,
+	A: Codec,
+	S: Codec,
+	C: Codec,
+	E: SignedExtension,
 {
 	fn encode(&self) -> Vec<u8> {
 		let mut tmp = Vec::with_capacity(sp_std::mem::size_of::<Self>());
@@ -389,11 +398,7 @@ where
 		let compact_len = codec::Compact::<u32>(tmp.len() as u32);
 
 		// Allocate the output buffer with the correct length
-		let output_len = compact_len
-			.size_hint()
-			.checked_add(tmp.len())
-			.expect("Cannot encode this `AppUncheckedExtrinsic` into memory");
-		let mut output = Vec::with_capacity(output_len);
+		let mut output = Vec::with_capacity(compact_len.size_hint() + tmp.len());
 
 		compact_len.encode_to(&mut output);
 		output.extend(tmp);
@@ -402,19 +407,22 @@ where
 	}
 }
 
-impl<Address, Call, Signature, Extra> EncodeLike
-	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<A, C, S, E> EncodeLike for AppUncheckedExtrinsic<A, C, S, E>
 where
-	Address: Encode,
-	Signature: Encode,
-	Call: Encode,
-	Extra: SignedExtension,
+	A: Codec,
+	S: Codec,
+	C: Codec,
+	E: SignedExtension,
 {
 }
 
 #[cfg(feature = "serde")]
-impl<Address: Encode, Signature: Encode, Call: Encode, Extra: SignedExtension> serde::Serialize
-	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<A, Sig, C, E> serde::Serialize for AppUncheckedExtrinsic<A, C, Sig, E>
+where
+	A: Codec,
+	Sig: Codec,
+	C: Codec,
+	E: SignedExtension,
 {
 	fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
 	where
@@ -426,8 +434,12 @@ impl<Address: Encode, Signature: Encode, Call: Encode, Extra: SignedExtension> s
 }
 
 #[cfg(feature = "serde")]
-impl<'a, Address: Decode, Signature: Decode, Call: Decode, Extra: SignedExtension>
-	serde::Deserialize<'a> for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<'a, A, S, C, E> serde::Deserialize<'a> for AppUncheckedExtrinsic<A, C, S, E>
+where
+	A: Codec,
+	S: Codec,
+	C: Codec,
+	E: SignedExtension,
 {
 	fn deserialize<D>(de: D) -> Result<Self, D::Error>
 	where
@@ -439,12 +451,12 @@ impl<'a, Address: Decode, Signature: Decode, Call: Decode, Extra: SignedExtensio
 	}
 }
 
-impl<Address, Call, Signature, Extra> Debug
-	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<A, C, S, E> Debug for AppUncheckedExtrinsic<A, C, S, E>
 where
-	Address: Debug,
-	Call: Debug,
-	Extra: SignedExtension,
+	A: Codec + Debug,
+	S: Codec,
+	C: Codec + Debug,
+	E: SignedExtension,
 {
 	fn fmt(&self, f: &mut Formatter) -> FmtResult {
 		write!(
@@ -456,10 +468,12 @@ where
 	}
 }
 
-impl<Address, Call, Signature, Extra> GetAppId
-	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<A, C, S, E> GetAppId for AppUncheckedExtrinsic<A, C, S, E>
 where
-	Extra: SignedExtension + GetAppId,
+	A: Codec + Debug,
+	S: Codec,
+	C: Codec + Debug,
+	E: SignedExtension + GetAppId,
 {
 	fn app_id(&self) -> AppId {
 		self.signature
@@ -470,19 +484,19 @@ where
 }
 
 #[cfg(feature = "runtime")]
-impl<Address, Call, Signature, Extra> frame_support::traits::ExtrinsicCall
-	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<A, C, S, E> ExtrinsicCall for AppUncheckedExtrinsic<A, C, S, E>
 where
-	Address: TypeInfo,
-	Call: TypeInfo,
-	Signature: TypeInfo,
-	Extra: SignedExtension + TypeInfo,
+	A: Codec + TypeInfo,
+	C: Codec + TypeInfo,
+	S: Codec + TypeInfo,
+	E: SignedExtension,
 {
 	fn call(&self) -> &Self::Call {
 		&self.function
 	}
 }
 
+/*
 impl<Address, Call, Signature, Extra> TryFrom<&OpaqueExtrinsic>
 	for AppUncheckedExtrinsic<Address, Call, Signature, Extra>
 where
@@ -526,21 +540,39 @@ where
 	fn try_from(mut raw: &[u8]) -> Result<Self, Self::Error> {
 		Self::decode_no_vec_prefix(&mut raw)
 	}
-}
+}*/
 
-impl<Address, Call, Signature, Extra> From<AppUncheckedExtrinsic<Address, Call, Signature, Extra>>
-	for OpaqueExtrinsic
+impl<A, C, S, E> From<AppUncheckedExtrinsic<A, C, S, E>> for OpaqueExtrinsic
 where
-	Address: Encode,
-	Signature: Encode,
-	Call: Encode,
-	Extra: SignedExtension,
+	A: Codec,
+	S: Codec,
+	C: Codec,
+	E: SignedExtension,
 {
-	fn from(extrinsic: AppUncheckedExtrinsic<Address, Call, Signature, Extra>) -> Self {
+	fn from(extrinsic: AppUncheckedExtrinsic<A, C, S, E>) -> Self {
 		Self::from_bytes(extrinsic.encode().as_slice()).expect(
 			"both OpaqueExtrinsic and AppUncheckedExtrinsic have encoding that is compatible with \
 				raw Vec<u8> encoding; qed",
 		)
+	}
+}
+
+impl<AccountId, AccountIndex, C, S, E> MaybeCaller<AccountId>
+	for AppUncheckedExtrinsic<MultiAddress<AccountId, AccountIndex>, C, S, E>
+where
+	C: Codec,
+	S: Codec,
+	E: SignedExtension,
+	MultiAddress<AccountId, AccountIndex>: Codec,
+{
+	fn caller(&self) -> Option<&AccountId> {
+		self.signature
+			.as_ref()
+			.map(|s| match s.0 {
+				MultiAddress::Id(ref id) => Some(id),
+				_ => None,
+			})
+			.flatten()
 	}
 }
 
@@ -572,7 +604,7 @@ mod tests {
 
 		const IDENTIFIER: &'static str = "TestExtra";
 
-		fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+		fn additional_signed(&self) -> Result<(), TransactionValidityError> {
 			Ok(())
 		}
 
