@@ -213,3 +213,12 @@ zeroize = { opt-level = 3 }
 [profile.release]
 # Substrate runtime requires unwinding.
 panic = "unwind"
+
+[profile.debug-fast]
+inherits = "release"
+debug = true
+
+[profile.maxperf]
+inherits = "release"
+lto = "fat"
+codegen-units = 1
