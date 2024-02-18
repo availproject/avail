@@ -15,7 +15,7 @@ import (
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 )
 
-// The following example shows how submit data blob and track transaction status
+// The following example shows how to submit a data blob and track transaction status
 func main() {
 	var configJSON string
 	var config config.Config
