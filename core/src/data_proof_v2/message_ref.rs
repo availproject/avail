@@ -186,19 +186,18 @@ mod tests {
 		}
 	}
 
-	#[test_case( data(vec![]); "arbitray no data")]
-	#[test_case( data(b"Some data".to_vec()); "arbitray data")]
-	#[test_case( fungible(H256::zero(), 0); "fungible 0x0 zero")]
-	#[test_case( fungible(H256::zero(), random()); "fungible 0x0 rand")]
-	#[test_case( fungible(H256::zero(), u128::MAX); "fungible 0x0 max")]
-	#[test_case( fungible(H256(random()), 0); "fungible rand zero")]
-	#[test_case( fungible(H256(random()), random()); "fungible rand rand")]
-	#[test_case( fungible(H256(random()), u128::MAX); "fungible rand max")]
-
-	fn check_ref_abi_encode(m: AddressedMessage) {
+	#[test_case( &data(vec![]); "arbitray no data")]
+	#[test_case( &data(b"Some data".to_vec()); "arbitray data")]
+	#[test_case( &fungible(H256::zero(), 0); "fungible 0x0 zero")]
+	#[test_case( &fungible(H256::zero(), random()); "fungible 0x0 rand")]
+	#[test_case( &fungible(H256::zero(), u128::MAX); "fungible 0x0 max")]
+	#[test_case( &fungible(H256(random()), 0); "fungible rand zero")]
+	#[test_case( &fungible(H256(random()), random()); "fungible rand rand")]
+	#[test_case( &fungible(H256(random()), u128::MAX); "fungible rand max")]
+	fn check_ref_abi_encode(m: &AddressedMessage) {
 		// `Message` -> `MessageRef`, check `abi_encode` is the same
 		let m_encoded = m.clone().abi_encode();
-		let m_ref = AddressedMessageRef::from(&m);
+		let m_ref = AddressedMessageRef::from(m);
 		let m_ref_encoded = m_ref.abi_encode();
 		assert_eq!(m_encoded, m_ref_encoded);
 

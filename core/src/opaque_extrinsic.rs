@@ -12,6 +12,8 @@ pub struct OpaqueExtrinsic(pub Vec<u8>);
 
 impl OpaqueExtrinsic {
 	/// Convert an encoded extrinsic to an `OpaqueExtrinsic`.
+	/// # Errors
+	/// A decodification error if `bytes` does not follow the `Vec<u8>` encoded schema.
 	pub fn from_bytes(mut bytes: &[u8]) -> Result<Self, codec::Error> {
 		Self::decode(&mut bytes)
 	}

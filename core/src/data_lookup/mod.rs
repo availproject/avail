@@ -37,7 +37,7 @@ pub struct DataLookup {
 
 impl DataLookup {
 	pub fn len(&self) -> u32 {
-		self.index.last().map(|(_id, range)| range.end).unwrap_or(0)
+		self.index.last().map_or(0, |(_id, range)| range.end)
 	}
 
 	pub fn is_empty(&self) -> bool {
@@ -60,6 +60,9 @@ impl DataLookup {
 		})
 	}
 
+	/// It projects `self.index` into _chunked_ indexes.
+	/// # Errors
+	/// It raises `Error::OffsetOverflows` up if any index multiplied by `chunk_size` overflows.
 	pub fn projected_ranges(&self, chunk_size: u32) -> Result<Vec<(AppId, Range<u32>)>, Error> {
 		self.index
 			.iter()
