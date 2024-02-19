@@ -9,7 +9,7 @@ use sp_core::RuntimeDebug;
 use sp_std::vec::Vec;
 
 /// Raw Extrinsic with application id.
-/// TODO: 
+/// TODO:
 /// - [ ] Support `opaque` as ref?
 #[derive(Clone, TypeInfo, Default, Encode, Decode, RuntimeDebug, Constructor)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

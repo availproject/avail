@@ -8,5 +8,4 @@ use sp_runtime_interface::pass_by::PassByCodec;
 pub enum HeaderVersion {
 	V1,
 	V2, // Current one
-	V3, // To be used after removing padding_tail_value
 }
