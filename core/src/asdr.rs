@@ -570,10 +570,11 @@ where
 	MultiAddress<AccountId, AccountIndex>: Codec,
 {
 	fn caller(&self) -> Option<&AccountId> {
-		self.signature.as_ref().map(|s| match s.0 {
+		let sig = self.signature.as_ref()?;
+		match sig.0 {
 			MultiAddress::Id(ref id) => Some(id),
 			_ => None,
-		})
+		}
 	}
 }
 
