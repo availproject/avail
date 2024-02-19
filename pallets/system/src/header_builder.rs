@@ -2,6 +2,7 @@ use avail_core::{
 	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, DataLookup, HeaderVersion,
 };
 use frame_support::traits::Randomness;
+#[cfg(feature = "std")]
 use kate::gridgen::EvaluationGrid;
 pub use kate::{
 	metrics::{IgnoreMetrics, Metrics},
@@ -106,13 +107,14 @@ fn corrupt_commitment(block_number: u32, commitment: &mut Vec<u8>) {
 	}
 }
 
+#[cfg(feature = "std")]
 pub fn build_grid(
 	app_extrinsics: &[AppExtrinsic],
 	block_length: BlockLength,
 	seed: Seed,
 ) -> Result<EvaluationGrid, String> {
 	const MIN_WIDTH: usize = 4;
-	let grid = kate::gridgen::EvaluationGrid::from_extrinsics(
+	let grid = EvaluationGrid::from_extrinsics(
 		app_extrinsics.to_vec(),
 		MIN_WIDTH,
 		block_length.cols.0.saturated_into(), // even if we run on a u16 target this is fine
@@ -124,6 +126,7 @@ pub fn build_grid(
 	Ok(grid)
 }
 
+#[cfg(feature = "std")]
 pub fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, String> {
 	use kate::gridgen::AsBytes;
 	use once_cell::sync::Lazy;
@@ -148,6 +151,7 @@ pub fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, String> {
 	Ok(commitment)
 }
 
+#[cfg(feature = "std")]
 pub fn get_empty_header(data_root: H256, version: HeaderVersion) -> HeaderExtension {
 	use avail_core::header::extension::{v1, v2};
 	let empty_commitment: Vec<u8> = vec![0];
