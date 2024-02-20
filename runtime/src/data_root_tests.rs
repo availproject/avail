@@ -1,14 +1,15 @@
-use avail_core::asdr::AppUncheckedExtrinsic;
-use avail_core::OpaqueExtrinsic;
-use codec::Decode;
-use da_control::{Call as DaCall, CheckAppId};
-use frame_election_provider_support::BoundedVec;
-use frame_support::traits::DefensiveTruncateFrom;
-use frame_system::submitted_data::{Message, MessageType};
-use frame_system::{
-	submitted_data::extrinsics_root_v2, CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce,
-	CheckSpecVersion, CheckTxVersion, CheckWeight,
+use avail_core::{
+	asdr::AppUncheckedExtrinsic,
+	data_proof_v2::{AddressedMessage, Message},
+	OpaqueExtrinsic,
 };
+use da_control::{Call as DaCall, CheckAppId};
+use frame_system::{
+	CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce, CheckSpecVersion, CheckTxVersion,
+	CheckWeight,
+};
+
+use codec::Decode;
 use hex_literal::hex;
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_core::{sr25519::Signature, H256};
@@ -46,20 +47,16 @@ fn submit_blob_call_expected() -> H256 {
 }
 
 fn expected_bridge_root() -> H256 {
-	let data = hex!("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001");
-	let encoded_data = BoundedVec::defensive_truncate_from(data.to_vec());
-
-	let message = Message {
-		message_type: MessageType::FungibleToken,
-		from: H256(hex!(
-			"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
-		)),
-		to: H256(hex!(
-			"0000000000000000000000000000000000000000000000000000000000000001"
-		)),
+	let asset_id = H256::zero();
+	let amount = 1u128;
+	let from = hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
+	let to = hex!("0000000000000000000000000000000000000000000000000000000000000001");
+	let message = AddressedMessage {
+		message: Message::FungibleToken { asset_id, amount },
+		from: from.into(),
+		to: to.into(),
 		origin_domain: 1,
 		destination_domain: 2,
-		data: encoded_data,
 		id: 1,
 	};
 
@@ -90,7 +87,7 @@ fn expect_sending_blob_and_bridge_extrinsic() -> H256 {
 fn decode_submit_blob_call() {
 	let encoded_call = submit_blob_call();
 
-	let call = super::UncheckedExtrinsic::decode(&mut encoded_call.as_slice()).unwrap();
+	let call = super::Extrinsic::decode(&mut encoded_call.as_slice()).unwrap();
 
 	let account = hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
 	let expected_signature = sp_runtime::MultiSignature::Sr25519(Signature(hex!("be06880f2f6203365b508b4226fd697d3d79d3a50a5617aad714466d40ef47067225e823135b32121aa0f6f56e696f5f71107a6d44768c2fefe38cb209f7f282")));
@@ -131,12 +128,13 @@ fn decode_submit_blob_call() {
 #[test_case([send_message()].into() => send_message_expected(); "Test submit bridge extrinsic")]
 #[test_case([send_message(), submit_blob_call()].into() => expect_sending_blob_and_bridge_extrinsic(); "Test send message and bridge extrinsic")]
 fn data_root_filter(extrinsics: Vec<Vec<u8>>) -> H256 {
-	let mut opaque = vec![];
+	let opaque = extrinsics
+		.into_iter()
+		.enumerate()
+		.map(|(idx, e)| OpaqueExtrinsic::decode(&mut e.as_slice()).map(|o| (idx, o)))
+		.collect::<Result<Vec<_>, _>>()
+		.unwrap();
 
-	for extrinsic in extrinsics {
-		let o = OpaqueExtrinsic::decode(&mut extrinsic.as_slice()).unwrap();
-		opaque.push(o)
-	}
-
-	extrinsics_root_v2::<Runtime, _>(opaque.iter(), 0u64).0
+	todo!()
+	// extrinsics_root::<Runtime, _>(0, opaque.iter().map(|(i, o)| (*i, o)))
 }

@@ -60,6 +60,7 @@ pub trait WeightInfo {
 	fn fulfill_call() -> Weight;
 	fn execute_fungible_token() -> Weight;
 	fn execute_arbitrary_message(l: u32, ) -> Weight;
+	fn failed_tx_index(_l: u32) -> Weight { Weight::zero() }
 }
 
 /// Weights for `pallet_vector` using the Avail node and recommended hardware.

@@ -1,14 +1,10 @@
-use crate::TypeInfo;
-use codec::Decode;
-use codec::Encode;
-use codec::MaxEncodedLen;
-use patricia_merkle_trie::keccak256;
-use patricia_merkle_trie::{EIP1186Layout, StorageProof};
+use codec::{Decode, Encode, MaxEncodedLen};
+use patricia_merkle_trie::{keccak256, EIP1186Layout, StorageProof};
 use primitive_types::{H160, H256};
 use rlp::Rlp;
-use scale_info::prelude::vec::Vec;
-
+use scale_info::TypeInfo;
 use sp_io::hashing::keccak_256 as keccak256;
+use sp_std::vec::Vec;
 use trie_db::{Trie, TrieDBBuilder};
 
 #[derive(Clone, Copy, Default, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
@@ -96,15 +92,13 @@ pub fn get_storage_root(
 
 #[cfg(test)]
 mod test {
+	use super::*;
 	use ark_std::vec;
-	use ethabi::{encode, Token};
-	use frame_support::BoundedVec;
-	use frame_system::submitted_data::{Message, MessageType};
-	use hex_literal::hex;
-	use primitive_types::{H160, H256, U256};
-	use sp_io::hashing::keccak_256;
+	use avail_core::data_proof_v2::{AddressedMessage, Message};
 
-	use crate::storage_utils::{get_storage_root, get_storage_value};
+	use hex_literal::hex;
+	use primitive_types::{H160, H256};
+	use sp_io::hashing::keccak_256;
 
 	#[test]
 	fn test_account_proof() {
@@ -185,28 +179,20 @@ mod test {
 	fn test_abi_encoding() {
 		let expected_encoded_message = hex!("00000000000000000000000000000000000000000000000000000000000000200200000000000000000000000000000000000000000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb9226600000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000de0b6b3a7640000").to_vec();
 
-		let data = &[
-			Token::FixedBytes(H256::zero().as_bytes().to_vec()),
-			Token::Uint(U256::from(1000000000000000000u128)),
-		];
-		let encoded_data = encode(data);
-
-		let m = Message {
-			message_type: MessageType::FungibleToken,
-			from: H256(hex!(
-				"f39Fd6e51aad88F6F4ce6aB8827279cffFb92266000000000000000000000000"
-			)),
-			to: H256(hex!(
-				"0000000000000000000000000000000000000000000000000000000000000001"
-			)),
+		let asset_id = H256::zero();
+		let amount = 1_000_000_000_000_000_000u128;
+		let from = hex!("f39Fd6e51aad88F6F4ce6aB8827279cffFb92266000000000000000000000000");
+		let to = hex!("0000000000000000000000000000000000000000000000000000000000000001");
+		let m = AddressedMessage {
+			message: Message::FungibleToken { asset_id, amount },
+			from: from.into(),
+			to: to.into(),
 			origin_domain: 2,
 			destination_domain: 1,
-			data: BoundedVec::truncate_from(encoded_data),
 			id: 0,
 		};
 
 		let encoded = m.abi_encode();
-
 		assert_eq!(expected_encoded_message, encoded);
 	}
 }

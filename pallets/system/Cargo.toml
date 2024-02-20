@@ -22,38 +22,59 @@ cfg-if = "1.0"
 impl-trait-for-tuples = "0.2.1"
 static_assertions = "1.1.0"
 log = { version = "0.4.20", default-features = false }
+docify = "0.2.6"
 rs_merkle = { version = "1.2.0", default-features = false, optional = true }
-derive_more = { version = "0.99.17", default-features = false, features = ["from", "into"] }
+derive_more = { version = "0.99.17", default-features = false, features = [
+	"from",
+	"into",
+] }
 
 # Substrate
-codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive"] }
-scale-info = { version = "2.5.0", default-features = false, features = ["derive", "serde"] }
-serde = { version = "1.0.188", default-features = false, features = ["derive", "alloc"], optional = true }
+codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
+	"derive",
+] }
+scale-info = { version = "2.5.0", default-features = false, features = [
+	"derive",
+	"serde",
+] }
+serde = { version = "1.0.188", default-features = false, features = [
+	"derive",
+	"alloc",
+], optional = true }
 frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, features = ["serde"] }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, features = [
+	"serde",
+] }
 sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, features = ["serde"] }
+sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, features = [
+	"serde",
+] }
 sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-version = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, features = ["serde"] }
-sp-weights = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, features = ["serde"] }
+sp-version = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, features = [
+	"serde",
+] }
+sp-weights = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, features = [
+	"serde",
+] }
 sp-runtime-interface = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" , default-features = false }
+binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
 bounded-collections = { version = "0.1.8", default-features = false }
 
 once_cell = { version = "1.18", optional = true }
 
-libm = { version = "0.2.1", default-features = false }
-
+# TODO 
+# - Check `no_std` replacement like `ethabi-decode` from Snowfork
 ethabi = { version = "18.0.0", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.3.1"
 test-case = "1.2.3"
-criterion = "0.5.1"
+criterion.workspace = true
 sp-externalities = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
 
+
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"avail-base/std",
 	"avail-core/std",
@@ -85,7 +106,8 @@ try-runtime = [
 	"frame-support/try-runtime",
 	"sp-runtime/try-runtime",
 ]
-serde = [ "dep:serde" ]
+experimental = ["frame-support/experimental"]
+serde = ["dep:serde"]
 
 # It enables the corruption of header extensions where block number is greater than 20.
 # NOTE: Only for testing and development purposes.

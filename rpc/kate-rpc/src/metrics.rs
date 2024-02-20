@@ -1,8 +1,6 @@
 use crate::{Cells, HashOf, Kate, KateApiServer, ProofResponse, Rows};
 
-use avail_core::{
-	header::HeaderExtension, traits::ExtendedHeader, AppId, DataProof, OpaqueExtrinsic,
-};
+use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppId, OpaqueExtrinsic};
 use da_runtime::apis::DataAvailApi;
 
 use frame_system::limits::BlockLength;
@@ -55,26 +53,23 @@ where
 		&self,
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<(DataProof, u128)>;
+	) -> RpcResult<(ProofResponse, u128)>;
 
+	/*
 	#[method(name = "kate_queryDataProofV2Metrics")]
 	async fn query_data_proof_v2_metrics(
 		&self,
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<(ProofResponse, u128)>;
+	*/
 }
 
 #[async_trait]
 impl<Client, Block> KateApiMetricsServer<Block> for Kate<Client, Block>
 where
 	Block: BlockT<Extrinsic = OpaqueExtrinsic>,
-	<Block as BlockT>::Header: ExtendedHeader<
-		<<Block as BlockT>::Header as Header>::Number,
-		<Block as BlockT>::Hash,
-		Digest,
-		HeaderExtension,
-	>,
+	<Block as BlockT>::Header: ExtendedHeader,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: DataAvailApi<Block>,
@@ -130,7 +125,7 @@ where
 		&self,
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<(DataProof, u128)> {
+	) -> RpcResult<(ProofResponse, u128)> {
 		let start = std::time::Instant::now();
 		let result = self.query_data_proof(transaction_index, at).await;
 		let elapsed = start.elapsed();
@@ -138,6 +133,7 @@ where
 		result.map(|r| (r, elapsed.as_micros()))
 	}
 
+	/*
 	async fn query_data_proof_v2_metrics(
 		&self,
 		transaction_index: u32,
@@ -148,5 +144,5 @@ where
 		let elapsed = start.elapsed();
 
 		result.map(|r| (r, elapsed.as_micros()))
-	}
+	}*/
 }

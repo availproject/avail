@@ -1,21 +1,32 @@
 [workspace]
 resolver = "2"
 members = [
-    "pallets/dactr",
-    "pallets/executive",
-    "pallets/mandate",
-    "pallets/system",
-    "pallets/transaction-payment",
-    "pallets/vector",
-    "node",
-    "runtime",
-    "runtime/fuzz",
+	"base",
+	"pallets/dactr",
+	"pallets/executive",
+	"pallets/mandate",
+	"pallets/system",
+	"pallets/transaction-payment",
+	"pallets/vector",
+	"node",
+	"runtime",
+	# "runtime/fuzz",
 ]
 
 [workspace.dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false, features = [ "runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "next" }
+# avail-core = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false, features = [ "runtime"] }
+avail-core = { path = "../avail-core/core", default-features = false, features = [
+	"runtime",
+] }
+# kate = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false }
+kate = { path = "../avail-core/kate", default-features = false }
+# kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "next" }
+kate-recovery = { path = "../avail-core/kate/recovery/" }
+
+# Eth 
+# ethabi-decode = { git = "https://github.com/Snowfork/ethabi-decode.git", branch = "master", default-features = false }
+criterion = { version = "0.4", default-features = false }
+# codspeed-criterion-compat = "2.2.0"
 
 [patch."https://github.com/availproject/polkadot-sdk.git"]
 frame-executive = { path = "pallets/executive" }
@@ -26,9 +37,10 @@ pallet-transaction-payment = { path = "pallets/transaction-payment" }
 pallet-transaction-payment-rpc = { path = "pallets/transaction-payment/rpc" }
 pallet-transaction-payment-rpc-runtime-api = { path = "pallets/transaction-payment/rpc/runtime-api" }
 
-[patch.crates-io]
-# Customized Local pallets
+[patch."https://github.com/paritytech/polkadot-sdk"]
+sp-crypto-ec-utils = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
 
+[patch.crates-io]
 # Other stuff
 uint = { git = "https://github.com/paritytech/parity-common.git", tag = "uint-v0.9.5" }
 rlp = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }

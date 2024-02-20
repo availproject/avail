@@ -8,7 +8,8 @@ use std::sync::Arc;
 
 use avail_base::metrics::avail::ImportBlockMetrics;
 use avail_core::{
-	BlockLengthColumns, BlockLengthRows, HeaderVersion, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+	header::HeaderExtension, BlockLengthColumns, BlockLengthRows, HeaderVersion, OpaqueExtrinsic,
+	BLOCK_CHUNK_SIZE,
 };
 use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
@@ -17,7 +18,6 @@ use da_runtime::{
 use derive_more::Constructor;
 use frame_support::ensure;
 use frame_system::limits::BlockLength;
-use sc_client_api::Backend;
 use sc_consensus::{
 	block_import::{BlockCheckParams, BlockImport as BlockImportT, BlockImportParams},
 	ImportResult,
@@ -29,18 +29,16 @@ use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
 
 #[derive(Constructor)]
-pub struct BlockImport<BE, C, I> {
-	pub backend: Arc<BE>,
+pub struct BlockImport<C, I> {
 	pub client: Arc<C>,
 	pub inner: I,
 	// If true, it skips the DA block import check during sync only.
 	pub unsafe_da_sync: bool,
 }
 
-impl<BE, C, I: Clone> Clone for BlockImport<BE, C, I> {
+impl<C, I: Clone> Clone for BlockImport<C, I> {
 	fn clone(&self) -> Self {
 		Self {
-			backend: self.backend.clone(),
 			client: self.client.clone(),
 			inner: self.inner.clone(),
 			unsafe_da_sync: self.unsafe_da_sync,
@@ -49,10 +47,9 @@ impl<BE, C, I: Clone> Clone for BlockImport<BE, C, I> {
 }
 
 #[async_trait::async_trait]
-impl<B, BE, C, I> BlockImportT<B> for BlockImport<BE, C, I>
+impl<B, C, I> BlockImportT<B> for BlockImport<C, I>
 where
-	B: BlockT<Extrinsic = OpaqueExtrinsic, Header = DaHeader, Hash = H256>,
-	BE: Backend<B>,
+	B: BlockT<Extrinsic = OpaqueExtrinsic, Header = DaHeader>,
 	I: BlockImportT<B> + Clone + Send + Sync,
 	I::Error: Into<ConsensusError>,
 	C: ProvideRuntimeApi<B> + HeaderBackend<B> + Send + Sync,
@@ -60,6 +57,7 @@ where
 	C::Api: ExtensionBuilder<B>,
 {
 	type Error = ConsensusError;
+	// type Transaction = <I as BlockImportT<B>>::Transaction;
 
 	/// It verifies that header extension (Kate commitment & data root) is properly calculated.
 	async fn import_block(
@@ -77,50 +75,46 @@ where
 			BlockOrigin::NetworkInitialSync | BlockOrigin::File
 		);
 		let skip_sync = self.unsafe_da_sync && is_sync;
+		/*
 		let should_verify = !is_own && !skip_sync;
+		if should_verify {
 
-		let extrinsics = block.body.as_ref().unwrap_or(&vec![]).clone();
+			let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
+			let extension = &block.header.extension.clone();
+			let (block_number, import_block_hash) = (block.header.number, block.post_hash());
 
-		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
-		let extension = &block.header.extension.clone();
-
-		let (block_number, import_block_hash) = (block.header.number, block.post_hash());
-
-		let import_block_res = self.inner.import_block(block).await.map_err(Into::into)?;
-
-		// Nothing to verify. Let's do an early return.
-		if !should_verify {
-			// Metrics
-			ImportBlockMetrics::observe_total_execution_time(import_block_start.elapsed());
-			return Ok(import_block_res);
-		}
-
-		let success = build_data_root_and_extension(
-			self,
-			parent_hash,
-			import_block_hash,
-			extrinsics,
-			extension,
-			block_number,
-		);
-
-		let mut result = Ok(import_block_res);
-		if let Err(err) = success {
-			log::error!(
-				target: "DA_IMPORT_BLOCK",
-				"Error during da extension validation: {:?}, attempting to revert the block import", err
+			let success = build_data_root_and_extension(
+				self,
+				parent_hash,
+				import_block_hash,
+				extrinsics,
+				extension,
+				block_number,
 			);
 
-			// Revert the import operation
-			let _ = self.backend.revert(block_number, false);
-			result = Err(err);
-		}
+		}*/
 
-		// Metrics
+		// Next import block stage & metrics
+		let result = self.inner.import_block(block).await;
 		ImportBlockMetrics::observe_total_execution_time(import_block_start.elapsed());
-
-		result
+		result.map_err(Into::into)
 	}
+
+	/*
+	fn check_header_extension(&self,
+		block: &BlockCheckParams<B>,
+	) -> bool {
+		// NOTE: Using `extrinsics` as ref is important to avoid cloning the extrinsics.
+		let no_extrinsics = vec![];
+		let extrinsics = block.body.as_ref().unwrap_or(&no_extrinsics);
+
+		let block_len = extension_block_len(&block.header.extension);
+		match extension.get_header_version() {
+			HeaderVersion::V1 => check_header_extension_v1( self),
+			HeaderVersion::V2 => check_header_extension_v1( self),
+			HeaderVersion::V3 => check_header_extension_v1( self),
+		}
+	}*/
 
 	async fn check_block(
 		&mut self,
@@ -130,8 +124,19 @@ where
 	}
 }
 
+fn extension_block_len(extension: &HeaderExtension) -> BlockLength {
+	BlockLength::with_normal_ratio(
+		BlockLengthRows(extension.rows() as u32),
+		BlockLengthColumns(extension.cols() as u32),
+		BLOCK_CHUNK_SIZE,
+		sp_runtime::Perbill::from_percent(90),
+	)
+	.expect("Valid BlockLength at genesis .qed")
+}
+
+/*
 fn build_data_root_and_extension<B, BE, C, I>(
-	block_import: &BlockImport<BE, C, I>,
+	block_import: &BlockImport<C, I>,
 	parent_hash: <B as BlockT>::Hash,
 	import_block_hash: <B as BlockT>::Hash,
 	extrinsics: Vec<OpaqueExtrinsic>,
@@ -226,4 +231,4 @@ where
 	);
 
 	Ok(())
-}
+}*/

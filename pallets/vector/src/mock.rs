@@ -3,15 +3,16 @@ use frame_system::{header_builder::da, test_utils::TestRandomness};
 use hex_literal::hex;
 use sp_core::H256;
 use sp_runtime::{
-	traits::{ConstU32, IdentityLookup},
+	traits::{Block as BlockT, ConstU32, IdentityLookup},
 	AccountId32, BuildStorage,
 };
 
 use crate as vector_bridge;
 
 type Balance = u128;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Extrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockDaBlock<Test>;
+type Header = <Block as BlockT>::Header;
 
 frame_support::construct_runtime!(
 	pub struct Test {
@@ -41,8 +42,9 @@ impl frame_system::Config for Test {
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
-	type SubmittedDataExtractor = ();
-	type UncheckedExtrinsic = UncheckedExtrinsic;
+	type TxDataExtractor = ();
+	type Header = Header;
+	type Extrinsic = Extrinsic;
 	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }

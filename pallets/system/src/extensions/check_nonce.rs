@@ -64,8 +64,8 @@ where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo>,
 {
 	type AccountId = T::AccountId;
-	type AdditionalSigned = ();
 	type Call = T::RuntimeCall;
+	type AdditionalSigned = ();
 	type Pre = ();
 
 	const IDENTIFIER: &'static str = "CheckNonce";

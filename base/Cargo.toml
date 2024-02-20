@@ -11,20 +11,32 @@ avail-core.workspace = true
 kate.workspace = true
 
 # Substrate related
-substrate-prometheus-endpoint = {  version = "0.10.0-dev", optional = true }
+substrate-prometheus-endpoint = { version = "0.10.0-dev", optional = true }
 sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
+	"derive",
+] }
+scale-info = { version = "2.5.0", default-features = false, features = [
+	"derive",
+] }
 
 # 3rd-party
 log = "0.4.17"
 once_cell = { version = "1.17.1", optional = true }
+hex-literal = "0.3.4"
 
+[dev-dependencies]
+sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"avail-core/std",
+	"codec/std",
 	"kate/std",
 	"once_cell",
+	"sp-core/std",
 	"sp-std/std",
 	"substrate-prometheus-endpoint",
 ]

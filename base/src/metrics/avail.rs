@@ -44,9 +44,17 @@ pub struct HeaderExtensionBuilderMetrics {
 impl HeaderExtensionBuilderMetrics {
 	pub fn new(registry: &Registry) -> Result<Self, PrometheusError> {
 		let buckets = [
-			25000.0, 100000.0, 250000.0, 500000.0, //  25ms, 100ms, 250ms, 500ms
-			1000000.0, 2000000.0, 3000000.0, 4000000.0, // 1s, 2s, 3s, 4s
-			5000000.0, 7500000.0, 10000000.0, // 5s, 7.5s, 10s
+			25000.0,
+			100_000.0,
+			250_000.0,
+			500_000.0, //  25ms, 100ms, 250ms, 500ms
+			1_000_000.0,
+			2_000_000.0,
+			3_000_000.0,
+			4_000_000.0, // 1s, 2s, 3s, 4s
+			5_000_000.0,
+			7_500_000.0,
+			10_000_000.0, // 5s, 7.5s, 10s
 		];
 		let total_execution_time = custom_histogram(
 			registry,
@@ -56,9 +64,19 @@ impl HeaderExtensionBuilderMetrics {
 		)?;
 
 		let buckets = [
-			150.0, 500.0, 1000.0, 50000.0, 100000.0, // 0.15ms, 0.5ms, 1ms, 50ms, 100ms
-			250000.0, 500000.0, 1000000.0, 1500000.0, // 250ms, 500ms, 1s, 1.5s
-			2000000.0, 3000000.0, 4000000.0, 5000000.0, // 2s, 3s, 4s, 5s
+			150.0,
+			500.0,
+			1000.0,
+			50000.0,
+			100_000.0, // 0.15ms, 0.5ms, 1ms, 50ms, 100ms
+			250_000.0,
+			500_000.0,
+			1_000_000.0,
+			1_500_000.0, // 250ms, 500ms, 1s, 1.5s
+			2_000_000.0,
+			3_000_000.0,
+			4_000_000.0,
+			5_000_000.0, // 2s, 3s, 4s, 5s
 		];
 		let evaluation_grid_build_time = custom_histogram(
 			registry,
@@ -68,9 +86,17 @@ impl HeaderExtensionBuilderMetrics {
 		)?;
 
 		let buckets = [
-			25000.0, 100000.0, 250000.0, 500000.0, //  25ms, 100ms, 250ms, 500ms
-			1000000.0, 2000000.0, 3000000.0, 4000000.0, // 1s, 2s, 3s, 4s
-			5000000.0, 7500000.0, 10000000.0, // 5s, 7.5s, 10s
+			25000.0,
+			100_000.0,
+			250_000.0,
+			500_000.0, //  25ms, 100ms, 250ms, 500ms
+			1_000_000.0,
+			2_000_000.0,
+			3_000_000.0,
+			4_000_000.0, // 1s, 2s, 3s, 4s
+			5_000_000.0,
+			7_500_000.0,
+			10_000_000.0, // 5s, 7.5s, 10s
 		];
 		let commitment_build_time = custom_histogram(
 			registry,
@@ -155,8 +181,8 @@ impl KateRpcMetrics {
 	pub fn new(registry: &Registry) -> Result<Self, PrometheusError> {
 		let buckets = [
 			1000.0, 5000.0, 10000.0, 25000.0, //  1ms, 5ms, 10ms, 25ms
-			50000.0, 75000.0, 100000.0, 150000.0, // 50ms, 75ms, 100ms, 150ms
-			200000.0, 300000.0, 400000.0, 500000.0, // 200ms, 300ms, 400ms, 500ms
+			50000.0, 75000.0, 100_000.0, 150_000.0, // 50ms, 75ms, 100ms, 150ms
+			200_000.0, 300_000.0, 400_000.0, 500_000.0, // 200ms, 300ms, 400ms, 500ms
 		];
 		let query_rows_execution_time = custom_histogram(
 			registry,
@@ -167,8 +193,8 @@ impl KateRpcMetrics {
 
 		let buckets = [
 			1000.0, 10000.0, 25000.0, 50000.0, // 1ms, 10ms, 25ms, 50ms
-			75000.0, 100000.0, 150000.0, 200000.0, // 75ms, 100ms, 150ms, 200ms
-			300000.0, 500000.0, // 300ms, 500ms
+			75000.0, 100_000.0, 150_000.0, 200_000.0, // 75ms, 100ms, 150ms, 200ms
+			300_000.0, 500_000.0, // 300ms, 500ms
 		];
 		let query_app_data_execution_time = custom_histogram(
 			registry,
@@ -178,9 +204,17 @@ impl KateRpcMetrics {
 		)?;
 
 		let buckets = [
-			100000.0, 250000.0, 500000.0, 1000000.0, //  100ms, 250ms, 500ms, 1s
-			2500000.0, 5000000.0, 7500000.0, 10000000.0, // 2.5s, 5s, 7.5s, 10s
-			12500000.0, 15000000.0, 17500000.0, // 12.5s, 15s, 17.5s
+			100_000.0,
+			250_000.0,
+			500_000.0,
+			1_000_000.0, //  100ms, 250ms, 500ms, 1s
+			2_500_000.0,
+			5_000_000.0,
+			7_500_000.0,
+			10_000_000.0, // 2.5s, 5s, 7.5s, 10s
+			12_500_000.0,
+			15_000_000.0,
+			17_500_000.0, // 12.5s, 15s, 17.5s
 		];
 		let query_proof_execution_time = custom_histogram(
 			registry,
@@ -296,9 +330,19 @@ pub struct ImportBlockMetrics {
 impl ImportBlockMetrics {
 	pub fn new(registry: &Registry) -> Result<Self, PrometheusError> {
 		let buckets = [
-			500.0, 1000.0, 50000.0, 100000.0, 250000.0, //  0.5ms, 1ms, 50ms, 100ms, 250ms,
-			500000.0, 1000000.0, 2000000.0, 3000000.0, // 500ms, 1s, 2s,  3s
-			4000000.0, 5000000.0, 7500000.0, 10000000.0, // 4s, 5s, 7.5s, 10s
+			500.0,
+			1000.0,
+			50000.0,
+			100_000.0,
+			250_000.0, //  0.5ms, 1ms, 50ms, 100ms, 250ms,
+			500_000.0,
+			1_000_000.0,
+			2_000_000.0,
+			3_000_000.0, // 500ms, 1s, 2s,  3s
+			4_000_000.0,
+			5_000_000.0,
+			7_500_000.0,
+			10_000_000.0, // 4s, 5s, 7.5s, 10s
 		];
 
 		let total_execution_time = custom_histogram(

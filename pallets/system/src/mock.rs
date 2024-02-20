@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2017-2021 Parity Technologies (UK) Ltd.
+// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,17 +15,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use avail_core::header::Header as DaHeader;
 use frame_support::{derive_impl, parameter_types, traits::ConstU32};
-use sp_runtime::{BuildStorage, Perbill};
+use sp_core::H256;
+use sp_runtime::{
+	traits::{BlakeTwo256, IdentityLookup},
+	BuildStorage, Perbill,
+};
 
 use crate::{self as frame_system, test_utils::TestRandomness, *};
 
-type UncheckedExtrinsic = mocking::MockUncheckedExtrinsic<Test>;
+type Extrinsic = mocking::MockUncheckedExtrinsic<Test>;
+type BlockNumber = u32;
+type Header = DaHeader<BlockNumber, BlakeTwo256>;
 type Block = mocking::MockDaBlock<Test>;
 
 frame_support::construct_runtime!(
-	pub struct Test {
-		System: frame_system,
+	pub enum Test
+	{
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 	}
 );
 
@@ -82,22 +90,34 @@ impl OnKilledAccount<u64> for RecordKilled {
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
-	type Block = Block;
-	type BlockHashCount = ConstU32<10>;
-	type BlockLength = RuntimeBlockLength;
 	type BlockWeights = RuntimeBlockWeights;
-	type DbWeight = DbWeight;
-	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
-	type OnKilledAccount = RecordKilled;
-	type OnSetCode = ();
-	type PalletInfo = PalletInfo;
-	type Randomness = TestRandomness<Test>;
-	type RuntimeCall = RuntimeCall;
-	type RuntimeEvent = RuntimeEvent;
+	type BlockLength = RuntimeBlockLength;
 	type RuntimeOrigin = RuntimeOrigin;
-	type SubmittedDataExtractor = ();
-	type UncheckedExtrinsic = UncheckedExtrinsic;
+	type RuntimeCall = RuntimeCall;
+	type Nonce = u64;
+	type Hash = H256;
+	type Hashing = BlakeTwo256;
+	type AccountId = u64;
+	type Lookup = IdentityLookup<Self::AccountId>;
+	type Block = Block;
+	type RuntimeEvent = RuntimeEvent;
+	type BlockHashCount = ConstU32<10>;
+	type DbWeight = DbWeight;
 	type Version = Version;
+	type PalletInfo = PalletInfo;
+	type OnNewAccount = ();
+	type OnKilledAccount = RecordKilled;
+	type SystemWeightInfo = ();
+	type SS58Prefix = ();
+	type OnSetCode = ();
+	type MaxConsumers = ConstU32<16>;
+	type AccountData = u32;
+
+	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
+	type Randomness = TestRandomness<Test>;
+	type Header = Header;
+	type TxDataExtractor = ();
+	type Extrinsic = Extrinsic;
 	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
@@ -114,9 +134,8 @@ pub const CALL: &<Test as Config>::RuntimeCall =
 #[allow(dead_code)]
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut ext: sp_io::TestExternalities = RuntimeGenesisConfig::default()
-		.system
 		.build_storage()
-		.expect("Genesis build should work")
+		.unwrap()
 		.into();
 	// Add to each test the initial weight of a block
 	ext.execute_with(|| {

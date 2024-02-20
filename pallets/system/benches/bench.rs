@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2019-2022 Parity Technologies (UK) Ltd.
+// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +16,13 @@
 // limitations under the License.
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use frame_support::{traits::ConstU32, weights::Weight};
+use frame_support::{
+	construct_runtime, derive_impl, dispatch::DispatchClass, parameter_types, traits::ConstU32,
+	weights::Weight,
+};
 use frame_system::{
 	header_builder::da::HeaderExtensionBuilder,
+	limits::{BlockLength, BlockWeights},
 	mocking::{MockDaBlock, MockUncheckedExtrinsic},
 	test_utils::TestRandomness,
 };
@@ -50,7 +54,7 @@ mod module {
 type UncheckedExtrinsic = MockUncheckedExtrinsic<Runtime>;
 type Block = MockDaBlock<Runtime>;
 
-frame_support::construct_runtime!(
+construct_runtime!(
 	pub struct Runtime
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
@@ -58,45 +62,61 @@ frame_support::construct_runtime!(
 	}
 );
 
-frame_support::parameter_types! {
+const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+const MAX_BLOCK_WEIGHT: Weight = Weight::from_parts(1024, u64::MAX);
+
+parameter_types! {
 	pub const BlockHashCount: u64 = 250;
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::with_sensible_defaults(
-			Weight::from_parts(4 * 1024 * 1024, 0), Perbill::from_percent(75),
-		);
-	pub BlockLength: frame_system::limits::BlockLength =
-		frame_system::limits::BlockLength::max_with_normal_ratio(
-			4 * 1024 * 1024, Perbill::from_percent(75),
-		);
+	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
+		.base_block(Weight::from_parts(10, 0))
+		.for_class(DispatchClass::all(), |weights| {
+			weights.base_extrinsic = Weight::from_parts(5, 0);
+		})
+		.for_class(DispatchClass::Normal, |weights| {
+			weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAX_BLOCK_WEIGHT);
+		})
+		.for_class(DispatchClass::Operational, |weights| {
+			weights.base_extrinsic = Weight::from_parts(10, 0);
+			weights.max_total = Some(MAX_BLOCK_WEIGHT);
+			weights.reserved = Some(
+				MAX_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAX_BLOCK_WEIGHT
+			);
+		})
+		.avg_block_initialization(Perbill::from_percent(0))
+		.build_or_panic();
+	pub RuntimeBlockLength: BlockLength = BlockLength::max_with_normal_ratio(1024, NORMAL_DISPATCH_RATIO);
 }
+
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Runtime {
-	type AccountData = ();
-	type AccountId = u64;
 	type BaseCallFilter = frame_support::traits::Everything;
-	type Block = Block;
-	type BlockHashCount = ConstU32<250>;
-	type BlockLength = BlockLength;
-	type BlockWeights = ();
-	type DbWeight = ();
+	type BlockWeights = RuntimeBlockWeights;
+	type BlockLength = RuntimeBlockLength;
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeCall = RuntimeCall;
+	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type HeaderExtensionBuilder = HeaderExtensionBuilder<Runtime>;
+	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type MaxConsumers = ConstU32<16>;
-	type Nonce = u64;
-	type OnKilledAccount = ();
-	type OnNewAccount = ();
-	type OnSetCode = ();
-	type PalletInfo = PalletInfo;
-	type Randomness = TestRandomness<Runtime>;
-	type RuntimeCall = RuntimeCall;
+	type Block = Block;
 	type RuntimeEvent = RuntimeEvent;
-	type RuntimeOrigin = RuntimeOrigin;
-	type SS58Prefix = ();
-	type SubmittedDataExtractor = ();
-	type SystemWeightInfo = ();
-	type UncheckedExtrinsic = UncheckedExtrinsic;
+	type BlockHashCount = ConstU32<10>;
+	type DbWeight = ();
 	type Version = ();
+	type PalletInfo = PalletInfo;
+	type OnNewAccount = ();
+	type OnKilledAccount = ();
+	type SystemWeightInfo = ();
+	type SS58Prefix = ();
+	type OnSetCode = ();
+	type MaxConsumers = ConstU32<16>;
+	type AccountData = u32;
+
+	type HeaderExtensionBuilder = HeaderExtensionBuilder<Runtime>;
+	type Randomness = TestRandomness<Runtime>;
+	type TxDataExtractor = ();
+	type Extrinsic = UncheckedExtrinsic;
 	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
@@ -106,10 +126,9 @@ impl module::Config for Runtime {
 }
 
 fn new_test_ext() -> sp_io::TestExternalities {
-	RuntimeGenesisConfig::default()
-		.system
+	frame_system::GenesisConfig::<Runtime>::default()
 		.build_storage()
-		.expect("Genesis build should work")
+		.unwrap()
 		.into()
 }
 

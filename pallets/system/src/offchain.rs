@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2019-2022 Parity Technologies (UK) Ltd.
+// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -213,7 +213,7 @@ impl<T: SigningTypes, C: AppCrypto<T::Public, T::Signature>> Signer<T, C, ForAny
 		F: Fn(&Account<T>) -> Option<R>,
 	{
 		let accounts = self.accounts_from_keys();
-		for account in accounts {
+		for account in accounts.into_iter() {
 			let res = f(&account);
 			if let Some(res) = res {
 				return Some((account, res));
@@ -398,6 +398,8 @@ where
 /// type Public = MultiSigner: From<sr25519::Public>;
 /// type Signature = MulitSignature: From<sr25519::Signature>;
 /// ```
+// TODO [#5662] Potentially use `IsWrappedBy` types, or find some other way to make it easy to
+// obtain unwrapped crypto (and wrap it back).
 pub trait AppCrypto<Public, Signature> {
 	/// A application-specific crypto.
 	type RuntimeAppPublic: RuntimeAppPublic;
@@ -448,6 +450,8 @@ pub trait AppCrypto<Public, Signature> {
 ///
 /// This trait adds extra bounds to `Public` and `Signature` types of the runtime
 /// that are necessary to use these types for signing.
+// TODO [#5663] Could this be just `T::Signature as traits::Verify>::Signer`?
+// Seems that this may cause issues with bounds resolution.
 pub trait SigningTypes: crate::Config {
 	/// A public key that is capable of identifying `AccountId`s.
 	///
@@ -498,7 +502,7 @@ pub trait CreateSignedTransaction<LocalCall>:
 		nonce: Self::Nonce,
 	) -> Option<(
 		Self::OverarchingCall,
-		<Self::Extrinsic as ExtrinsicT>::SignaturePayload,
+		<<Self as SendTransactionTypes<LocalCall>>::Extrinsic as ExtrinsicT>::SignaturePayload,
 	)>;
 }
 

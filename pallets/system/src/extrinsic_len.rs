@@ -101,6 +101,19 @@ impl<SID: Get<u32>, STX: Get<u32>> ExtrinsicLen<SID, STX> {
 			.map(PaddedExtrinsicLen::num_scalars)
 			.try_fold(0u32, |acc, num_scalars| acc.checked_add(num_scalars))
 	}
+
+	/// Creates a `ExtrinsicLen` with one single Tx on `AppId == 0` and given `len`.
+	/// NOTE: It SHOULD BE in tests only.
+	#[cfg(any(feature = "std", test))]
+	pub fn new(len: u32) -> Self {
+		let mut this = Self {
+			raw: len,
+			..Default::default()
+		};
+		this.add_padded(AppId(0), len)
+			.expect("In tests this must work always");
+		this
+	}
 }
 
 impl<SID: Get<u32>, STX: Get<u32>> Default for ExtrinsicLen<SID, STX> {

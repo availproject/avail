@@ -17,27 +17,60 @@
 
 //! # System Pallet
 //!
-//! The System pallet provides low-level access to core types and cross-cutting utilities.
-//! It acts as the base layer for other pallets to interact with the Substrate framework components.
+//! The System pallet provides low-level access to core types and cross-cutting utilities. It acts
+//! as the base layer for other pallets to interact with the Substrate framework components.
 //!
 //! - [`Config`]
 //!
 //! ## Overview
 //!
-//! The System pallet defines the core data types used in a Substrate runtime.
-//! It also provides several utility functions (see [`Pallet`]) for other FRAME pallets.
+//! The System pallet defines the core data types used in a Substrate runtime. It also provides
+//! several utility functions (see [`Pallet`]) for other FRAME pallets.
 //!
-//! In addition, it manages the storage items for extrinsics data, indexes, event records, and
-//! digest items, among other things that support the execution of the current block.
+//! In addition, it manages the storage items for extrinsic data, indices, event records, and digest
+//! items, among other things that support the execution of the current block.
 //!
-//! It also handles low-level tasks like depositing logs, basic set up and take down of
-//! temporary storage entries, and access to previous block hashes.
+//! It also handles low-level tasks like depositing logs, basic set up and take down of temporary
+//! storage entries, and access to previous block hashes.
 //!
 //! ## Interface
 //!
 //! ### Dispatchable Functions
 //!
-//! The System pallet does not implement any dispatchable functions.
+//! The System pallet provides dispatchable functions that, with the exception of `remark`, manage
+//! low-level or privileged functionality of a Substrate-based runtime.
+//!
+//! - `remark`: Make some on-chain remark.
+//! - `set_heap_pages`: Set the number of pages in the WebAssembly environment's heap.
+//! - `set_code`: Set the new runtime code.
+//! - `set_code_without_checks`: Set the new runtime code without any checks.
+//! - `set_storage`: Set some items of storage.
+//! - `kill_storage`: Kill some items from storage.
+//! - `kill_prefix`: Kill all storage items with a key that starts with the given prefix.
+//! - `remark_with_event`: Make some on-chain remark and emit an event.
+//! - `do_task`: Do some specified task.
+//! - `authorize_upgrade`: Authorize new runtime code.
+//! - `authorize_upgrade_without_checks`: Authorize new runtime code and an upgrade sans
+//!   verification.
+//! - `apply_authorized_upgrade`: Provide new, already-authorized runtime code.
+//!
+//! #### A Note on Upgrades
+//!
+//! The pallet provides two primary means of upgrading the runtime, a single-phase means using
+//! `set_code` and a two-phase means using `authorize_upgrade` followed by
+//! `apply_authorized_upgrade`. The first will directly attempt to apply the provided `code`
+//! (application may have to be scheduled, depending on the context and implementation of the
+//! `OnSetCode` trait).
+//!
+//! The `authorize_upgrade` route allows the authorization of a runtime's code hash. Once
+//! authorized, anyone may upload the correct runtime to apply the code. This pattern is useful when
+//! providing the runtime ahead of time may be unwieldy, for example when a large preimage (the
+//! code) would need to be stored on-chain or sent over a message transport protocol such as a
+//! bridge.
+//!
+//! The `*_without_checks` variants do not perform any version checks, so using them runs the risk
+//! of applying a downgrade or entirely other chain specification. They will still validate that the
+//! `code` meets the authorized hash.
 //!
 //! ### Public Functions
 //!
@@ -50,7 +83,7 @@
 //!   - [`CheckWeight`]: Checks the weight and length of the block and ensure that it does not
 //!     exceed the limits.
 //!   - [`CheckNonce`]: Checks the nonce of the transaction. Contains a single payload of type
-//!     `T::Index`.
+//!     `T::Nonce`.
 //!   - [`CheckEra`]: Checks the era of the transaction. Contains a single payload of type `Era`.
 //!   - [`CheckGenesis`]: Checks the provided genesis hash of the transaction. Must be a part of the
 //!     signed payload of the transaction.
@@ -59,21 +92,22 @@
 //!   - [`CheckTxVersion`]: Checks that the transaction version is the same as the one used to sign
 //!     the transaction.
 //!
-//! Lookup the runtime aggregator file (e.g. `node/runtime`) to see the full list of signed
+//! Look up the runtime aggregator file (e.g. `node/runtime`) to see the full list of signed
 //! extensions included in a chain.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use avail_core::{
-	header::HeaderExtension,
-	traits::{ExtendedBlock, ExtendedHeader},
-	AppExtrinsic, AppId, HeaderVersion, OpaqueExtrinsic,
+	ensure,
+	header::{Header as DaHeader, HeaderExtension},
+	traits::{ExtendedBlock, ExtendedHeader, GetAppId, MaybeCaller},
+	AppExtrinsic,
 };
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
 use frame_support::{
 	dispatch::{
 		extract_actual_pays_fee, extract_actual_weight, DispatchClass, DispatchInfo,
-		DispatchResult, DispatchResultWithPostInfo, PerDispatchClass,
+		DispatchResult, DispatchResultWithPostInfo, Pays, PerDispatchClass, PostDispatchInfo,
 	},
 	impl_ensure_origin_with_arg_ignoring_arg,
 	storage::{self, StorageStreamIter},
@@ -85,7 +119,7 @@ use frame_support::{
 	Parameter,
 };
 use kate::Seed;
-use pallet_prelude::{BlockNumberFor, DaHeaderFor};
+use pallet_prelude::{BlockNumberFor, HeaderFor};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::Serialize;
@@ -98,9 +132,9 @@ use sp_runtime::traits::TrailingZeroInput;
 use sp_runtime::{
 	generic,
 	traits::{
-		AtLeast32Bit, BadOrigin, BlockNumberProvider, Bounded, CheckEqual, Dispatchable, Hash,
-		Lookup, LookupError, MaybeDisplay, Member, One, Saturating, SimpleBitOps, StaticLookup,
-		UniqueSaturatedInto, Zero,
+		AtLeast32Bit, BadOrigin, BlakeTwo256, BlockNumberProvider, Bounded, CheckEqual,
+		Dispatchable, Hash, Lookup, LookupError, MaybeDisplay, Member, One, Saturating,
+		SimpleBitOps, StaticLookup, UniqueSaturatedInto, Zero,
 	},
 	DispatchError, RuntimeDebug,
 };
@@ -110,8 +144,10 @@ use sp_std::{fmt::Debug, marker::PhantomData, prelude::*};
 use sp_version::RuntimeVersion;
 use sp_weights::{RuntimeDbWeight, Weight};
 
-pub mod header_builder;
 pub mod submitted_data;
+use submitted_data::{tx_data_root, TxDataFilter};
+
+pub mod header_builder;
 pub use header_builder::HeaderExtensionBuilder;
 
 pub mod limits;
@@ -215,15 +251,30 @@ impl<MaxNormal: Get<u32>, MaxOverflow: Get<u32>> ConsumerLimits for (MaxNormal, 
 pub type ExtrinsicLenOf<T> =
 	ExtrinsicLen<<T as Config>::MaxDiffAppIdPerBlock, <T as Config>::MaxTxPerAppIdPerBlock>;
 
+/// Information needed when a new runtime binary is submitted and needs to be authorized before
+/// replacing the current runtime.
+#[derive(Decode, Encode, Default, PartialEq, Eq, MaxEncodedLen, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct CodeUpgradeAuthorization<T>
+where
+	T: Config,
+{
+	/// Hash of the new runtime binary.
+	code_hash: T::Hash,
+	/// Whether or not to carry out version checks.
+	check_version: bool,
+}
+
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{pallet_prelude::*, DefaultNoBound};
+	use frame_support::{pallet_prelude::*, traits::ExtrinsicCall, DefaultNoBound};
 
 	use crate::{self as frame_system, pallet_prelude::*, *};
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
-		use super::{inject_runtime_type, DefaultConfig};
+		use super::{inject_runtime_type, AccountInfo, BlakeTwo256, DaHeader, DefaultConfig};
+		use frame_support::derive_impl;
 
 		/// Provides a viable default config that can be used with
 		/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
@@ -241,7 +292,7 @@ pub mod pallet {
 			type AccountId = u64;
 			type Lookup = sp_runtime::traits::IdentityLookup<u64>;
 			type MaxConsumers = frame_support::traits::ConstU32<16>;
-			type AccountData = u32;
+			type AccountData = ();
 			type OnNewAccount = ();
 			type OnKilledAccount = ();
 			type SystemWeightInfo = ();
@@ -252,7 +303,131 @@ pub mod pallet {
 			type DbWeight = ();
 			#[inject_runtime_type]
 			type RuntimeEvent = ();
+			#[inject_runtime_type]
+			type RuntimeOrigin = ();
+			#[inject_runtime_type]
+			type RuntimeCall = ();
+			#[inject_runtime_type]
+			type PalletInfo = ();
+			#[inject_runtime_type]
+			type RuntimeTask = ();
+			type BaseCallFilter = frame_support::traits::Everything;
+			type BlockHashCount = frame_support::traits::ConstU64<10>;
+			type OnSetCode = ();
+			type Header = DaHeader<u32, BlakeTwo256>;
 		}
+
+		/// Default configurations of this pallet in a solo-chain environment.
+		///
+		/// ## Considerations:
+		///
+		/// By default, this type makes the following choices:
+		///
+		/// * Use a normal 32 byte account id, with a [`DefaultConfig::Lookup`] that implies no
+		///   'account-indexing' pallet is being used.
+		/// * Given that we don't know anything about the existence of a currency system in scope,
+		///   an [`DefaultConfig::AccountData`] is chosen that has no addition data. Overwrite this
+		///   if you use `pallet-balances` or similar.
+		/// * Make sure to overwrite [`DefaultConfig::Version`].
+		/// * 2s block time, and a default 5mb block size is used.
+		pub struct SolochainDefaultConfig;
+
+		#[frame_support::register_default_impl(SolochainDefaultConfig)]
+		impl DefaultConfig for SolochainDefaultConfig {
+			/// The default type for storing how many extrinsics an account has signed.
+			type Nonce = u32;
+
+			/// The default type for hashing blocks and tries.
+			type Hash = sp_core::hash::H256;
+
+			/// The default hashing algorithm used.
+			type Hashing = sp_runtime::traits::BlakeTwo256;
+
+			/// The default identifier used to distinguish between accounts.
+			type AccountId = sp_runtime::AccountId32;
+
+			/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
+			type Lookup = sp_runtime::traits::AccountIdLookup<Self::AccountId, ()>;
+
+			/// The maximum number of consumers allowed on a single account. Using 128 as default.
+			type MaxConsumers = frame_support::traits::ConstU32<128>;
+
+			/// The default data to be stored in an account.
+			type AccountData = AccountInfo<Self::Nonce, ()>;
+
+			/// What to do if a new account is created.
+			type OnNewAccount = ();
+
+			/// What to do if an account is fully reaped from the system.
+			type OnKilledAccount = ();
+
+			/// Weight information for the extrinsics of this pallet.
+			type SystemWeightInfo = ();
+
+			/// This is used as an identifier of the chain.
+			type SS58Prefix = ();
+
+			/// Version of the runtime.
+			type Version = ();
+
+			/// Block & extrinsics weights: base values and limits.
+			type BlockWeights = ();
+
+			/// The maximum length of a block (in bytes).
+			type BlockLength = ();
+
+			/// The weight of database operations that the runtime can invoke.
+			type DbWeight = ();
+
+			/// The ubiquitous event type injected by `construct_runtime!`.
+			#[inject_runtime_type]
+			type RuntimeEvent = ();
+
+			/// The ubiquitous origin type injected by `construct_runtime!`.
+			#[inject_runtime_type]
+			type RuntimeOrigin = ();
+
+			/// The aggregated dispatch type available for extrinsics, injected by
+			/// `construct_runtime!`.
+			#[inject_runtime_type]
+			type RuntimeCall = ();
+
+			/// The aggregated Task type, injected by `construct_runtime!`.
+			#[inject_runtime_type]
+			type RuntimeTask = ();
+
+			/// Converts a module to the index of the module, injected by `construct_runtime!`.
+			#[inject_runtime_type]
+			type PalletInfo = ();
+
+			/// The basic call filter to use in dispatchable. Supports everything as the default.
+			type BaseCallFilter = frame_support::traits::Everything;
+
+			/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
+			/// Using 256 as default.
+			type BlockHashCount = frame_support::traits::ConstU32<256>;
+
+			/// The set code logic, just the default since we're not a parachain.
+			type OnSetCode = ();
+
+			type Header = DaHeader<u32, BlakeTwo256>;
+		}
+
+		/// Default configurations of this pallet in a relay-chain environment.
+		pub struct RelayChainDefaultConfig;
+
+		/// It currently uses the same configuration as `SolochainDefaultConfig`.
+		#[derive_impl(SolochainDefaultConfig as DefaultConfig, no_aggregated_types)]
+		#[frame_support::register_default_impl(RelayChainDefaultConfig)]
+		impl DefaultConfig for RelayChainDefaultConfig {}
+
+		/// Default configurations of this pallet in a parachain environment.
+		pub struct ParaChainDefaultConfig;
+
+		/// It currently uses the same configuration as `SolochainDefaultConfig`.
+		#[derive_impl(SolochainDefaultConfig as DefaultConfig, no_aggregated_types)]
+		#[frame_support::register_default_impl(ParaChainDefaultConfig)]
+		impl DefaultConfig for ParaChainDefaultConfig {}
 	}
 
 	/// System configuration trait. Implemented by runtime.
@@ -261,7 +436,15 @@ pub mod pallet {
 	pub trait Config: 'static + Eq + Clone {
 		/// The basic call filter to use in Origin. All origins are built with this filter as base,
 		/// except Root.
-		#[pallet::no_default]
+		///
+		/// This works as a filter for each incoming call. The call needs to pass this filter in
+		/// order to dispatch. Otherwise it will be rejected with `CallFiltered`. This can be
+		/// bypassed via `dispatch_bypass_filter` which should only be accessible by root. The
+		/// filter can be composed of sub-filters by nesting for example
+		/// [`frame_support::traits::InsideBoth`], [`frame_support::traits::TheseExcept`] or
+		/// [`frame_support::traits::EverythingBut`] et al. The default would be
+		/// [`frame_support::traits::Everything`].
+		#[pallet::no_default_bounds]
 		type BaseCallFilter: Contains<Self::RuntimeCall>;
 
 		/// Block & extrinsics weights: base values and limits.
@@ -273,18 +456,22 @@ pub mod pallet {
 		type BlockLength: Get<limits::BlockLength>;
 
 		/// The `RuntimeOrigin` type used by dispatchable calls.
-		#[pallet::no_default]
+		#[pallet::no_default_bounds]
 		type RuntimeOrigin: Into<Result<RawOrigin<Self::AccountId>, Self::RuntimeOrigin>>
 			+ From<RawOrigin<Self::AccountId>>
 			+ Clone
 			+ OriginTrait<Call = Self::RuntimeCall, AccountId = Self::AccountId>;
 
 		/// The aggregated `RuntimeCall` type.
-		#[pallet::no_default]
+		#[pallet::no_default_bounds]
 		type RuntimeCall: Parameter
 			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>
 			+ Debug
 			+ From<Call<Self>>;
+
+		/// The aggregated `RuntimeTask` type.
+		#[pallet::no_default_bounds]
+		type RuntimeTask: Task;
 
 		/// This stores the number of previous transactions associated with a sender account.
 		type Nonce: Parameter
@@ -350,14 +537,24 @@ pub mod pallet {
 			+ Debug
 			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
+		/// UncheckedExtrinsic Type used on Kate commitment & Data root calculation.
+		#[pallet::no_default]
+		type Extrinsic: Encode
+			+ Decode
+			+ ExtrinsicCall<Call = Self::RuntimeCall>
+			+ GetAppId
+			+ MaybeCaller<Self::AccountId>;
+
+		type Header: ExtendedHeader<Extension = HeaderExtension, Hash = Self::Hash>;
+
 		/// The Block type used by the runtime. This is used by `construct_runtime` to retrieve the
 		/// extrinsics or other block specific data as needed.
 		#[pallet::no_default]
-		type Block: Parameter + Member + ExtendedBlock<HeaderExtension, Hash = Self::Hash>;
+		type Block: Parameter + Member + ExtendedBlock<ExtHeader = Self::Header, Hash = Self::Hash>;
 
 		/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 		#[pallet::constant]
-		#[pallet::no_default]
+		#[pallet::no_default_bounds]
 		type BlockHashCount: Get<BlockNumberFor<Self>>;
 
 		/// The weight of runtime database operations the runtime can invoke.
@@ -374,7 +571,7 @@ pub mod pallet {
 		/// runtime.
 		///
 		/// For tests it is okay to use `()` as type, however it will provide "useless" data.
-		#[pallet::no_default]
+		#[pallet::no_default_bounds]
 		type PalletInfo: PalletInfo;
 
 		/// Data to be associated with an account (other than nonce/transaction counter, which this
@@ -406,7 +603,7 @@ pub mod pallet {
 		/// [`Pallet::update_code_in_storage`]).
 		/// It's unlikely that this needs to be customized, unless you are writing a parachain using
 		/// `Cumulus`, where the actual code change is deferred.
-		#[pallet::no_default]
+		#[pallet::no_default_bounds]
 		type OnSetCode: SetCode<Self>;
 
 		/// The maximum number of consumers allowed on a single account.
@@ -414,13 +611,7 @@ pub mod pallet {
 
 		/// Filter used by `DataRootBuilder`.
 		#[pallet::no_default]
-		type SubmittedDataExtractor: submitted_data::Extractor
-			+ submitted_data::Filter<Self::RuntimeCall>;
-
-		/// UncheckedExtrinsic Type used on Kate commitment & Data root calculation.
-		#[pallet::no_default]
-		type UncheckedExtrinsic: Into<AppExtrinsic>
-			+ for<'a> TryFrom<&'a OpaqueExtrinsic, Error = codec::Error>;
+		type TxDataExtractor: TxDataFilter<Self::AccountId, Self::RuntimeCall>;
 
 		/// Maximum different `AppId` allowed per block.
 		/// This is used during the calculation of padded length of the block when
@@ -447,15 +638,9 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		#[cfg(feature = "std")]
 		fn integrity_test() {
-			sp_io::TestExternalities::default().execute_with(|| {
-				T::BlockWeights::get()
-					.validate()
-					.expect("The weights are invalid.");
-			});
-		}
-
-		fn on_runtime_upgrade() -> Weight {
-			migrations::migrate::<T>()
+			T::BlockWeights::get()
+				.validate()
+				.expect("The weights are invalid.");
 		}
 	}
 
@@ -463,9 +648,6 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Make some on-chain remark.
 		///
-		/// # <weight>
-		/// - `O(1)`
-		/// # </weight>
 		/// Can be executed by every `origin`.
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::SystemWeightInfo::remark(remark.len() as u32))]
@@ -575,6 +757,79 @@ pub mod pallet {
 			Self::deposit_event(event);
 			Ok(().into())
 		}
+
+		#[cfg(feature = "experimental")]
+		#[pallet::call_index(8)]
+		#[pallet::weight(task.weight())]
+		pub fn do_task(origin: OriginFor<T>, task: T::RuntimeTask) -> DispatchResultWithPostInfo {
+			ensure_signed(origin)?;
+
+			if !task.is_valid() {
+				return Err(Error::<T>::InvalidTask.into());
+			}
+
+			Self::deposit_event(Event::TaskStarted { task: task.clone() });
+			if let Err(err) = task.run() {
+				Self::deposit_event(Event::TaskFailed { task, err });
+				return Err(Error::<T>::FailedTask.into());
+			}
+
+			// Emit a success event, if your design includes events for this pallet.
+			Self::deposit_event(Event::TaskCompleted { task });
+
+			// Return success.
+			Ok(().into())
+		}
+
+		/// Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
+		/// later.
+		///
+		/// This call requires Root origin.
+		#[pallet::call_index(9)]
+		#[pallet::weight((T::SystemWeightInfo::authorize_upgrade(), DispatchClass::Operational))]
+		pub fn authorize_upgrade(origin: OriginFor<T>, code_hash: T::Hash) -> DispatchResult {
+			ensure_root(origin)?;
+			Self::do_authorize_upgrade(code_hash, true);
+			Ok(())
+		}
+
+		/// Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
+		/// later.
+		///
+		/// WARNING: This authorizes an upgrade that will take place without any safety checks, for
+		/// example that the spec name remains the same and that the version number increases. Not
+		/// recommended for normal use. Use `authorize_upgrade` instead.
+		///
+		/// This call requires Root origin.
+		#[pallet::call_index(10)]
+		#[pallet::weight((T::SystemWeightInfo::authorize_upgrade(), DispatchClass::Operational))]
+		pub fn authorize_upgrade_without_checks(
+			origin: OriginFor<T>,
+			code_hash: T::Hash,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			Self::do_authorize_upgrade(code_hash, false);
+			Ok(())
+		}
+
+		/// Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
+		///
+		/// If the authorization required a version check, this call will ensure the spec name
+		/// remains unchanged and that the spec version has increased.
+		///
+		/// Depending on the runtime's `OnSetCode` configuration, this function may directly apply
+		/// the new `code` in the same block or attempt to schedule the upgrade.
+		///
+		/// All origins are allowed.
+		#[pallet::call_index(11)]
+		#[pallet::weight((T::SystemWeightInfo::apply_authorized_upgrade(), DispatchClass::Operational))]
+		pub fn apply_authorized_upgrade(
+			_: OriginFor<T>,
+			code: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
+			let post = Self::do_apply_authorize_upgrade(code)?;
+			Ok(post)
+		}
 	}
 
 	/// Event for the System pallet.
@@ -597,6 +852,23 @@ pub mod pallet {
 		Remarked { sender: T::AccountId, hash: T::Hash },
 		/// On on-chain remark happend called by Root.
 		RemarkedByRoot { hash: T::Hash },
+		#[cfg(feature = "experimental")]
+		/// A [`Task`] has started executing
+		TaskStarted { task: T::RuntimeTask },
+		#[cfg(feature = "experimental")]
+		/// A [`Task`] has finished executing.
+		TaskCompleted { task: T::RuntimeTask },
+		#[cfg(feature = "experimental")]
+		/// A [`Task`] failed during execution.
+		TaskFailed {
+			task: T::RuntimeTask,
+			err: DispatchError,
+		},
+		/// An upgrade was authorized.
+		UpgradeAuthorized {
+			code_hash: T::Hash,
+			check_version: bool,
+		},
 	}
 
 	/// Error for the System pallet
@@ -618,6 +890,16 @@ pub mod pallet {
 		NonZeroRefCount,
 		/// The origin filter prevent the call to be dispatched.
 		CallFiltered,
+		#[cfg(feature = "experimental")]
+		/// The specified [`Task`] is not valid.
+		InvalidTask,
+		#[cfg(feature = "experimental")]
+		/// The specified [`Task`] failed during execution.
+		FailedTask,
+		/// No upgrade authorized.
+		NothingAuthorized,
+		/// The submitted code is not authorized.
+		Unauthorized,
 	}
 
 	/// Exposed trait-generic origin type.
@@ -739,23 +1021,22 @@ pub mod pallet {
 	#[pallet::getter(fn block_length)]
 	pub type DynamicBlockLength<T: Config> = StorageValue<_, limits::BlockLength, ValueQuery>;
 
-	/// Total number of messages bridged to other chains
 	#[pallet::storage]
-	#[pallet::getter(fn bridge_nonce)]
-	pub type BridgeNonce<T: Config> = StorageValue<_, u64, ValueQuery>;
+	#[pallet::getter(fn authorized_upgrade)]
+	pub(super) type AuthorizedUpgrade<T: Config> =
+		StorageValue<_, CodeUpgradeAuthorization<T>, OptionQuery>;
 
 	/// List of failed indices in the current block
 	// Test name: failed_extrinsic_indices_work()
 	#[pallet::storage]
+	#[pallet::unbounded]
+	#[pallet::whitelist_storage]
 	#[pallet::getter(fn failed_extrinsic_indices)]
-	pub type FailedExtrinsicIndices<T: Config> =
-		StorageValue<_, BoundedVec<u32, ConstU32<100_000>>, ValueQuery>;
+	pub type FailedExtrinsicIndices<T: Config> = StorageValue<_, Vec<u32>, ValueQuery>;
 
 	#[derive(DefaultNoBound)]
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
-		#[serde(with = "sp_core::bytes")]
-		pub code: Vec<u8>,
 		#[serde(skip)]
 		pub _config: sp_std::marker::PhantomData<T>,
 		pub block_length: limits::BlockLength,
@@ -764,19 +1045,33 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
-			use frame_support::traits::StorageVersion;
-
 			<BlockHash<T>>::insert::<_, T::Hash>(BlockNumberFor::<T>::zero(), hash69());
 			<ParentHash<T>>::put::<T::Hash>(hash69());
 			<LastRuntimeUpgrade<T>>::put(LastRuntimeUpgradeInfo::from(T::Version::get()));
 			<UpgradedToU32RefCount<T>>::put(true);
 			<UpgradedToTripleRefCount<T>>::put(true);
 
-			sp_io::storage::set(well_known_keys::CODE, &self.code);
 			sp_io::storage::set(well_known_keys::EXTRINSIC_INDEX, &0u32.encode());
 			<DynamicBlockLength<T>>::put(&self.block_length);
+		}
+	}
 
-			StorageVersion::new(1).put::<Pallet<T>>();
+	#[pallet::validate_unsigned]
+	impl<T: Config> sp_runtime::traits::ValidateUnsigned for Pallet<T> {
+		type Call = Call<T>;
+		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+			if let Call::apply_authorized_upgrade { ref code } = call {
+				if let Ok(hash) = Self::validate_authorized_upgrade(&code[..]) {
+					return Ok(ValidTransaction {
+						priority: 100,
+						requires: Vec::new(),
+						provides: vec![hash.as_ref().to_vec()],
+						longevity: TransactionLongevity::max_value(),
+						propagate: true,
+					});
+				}
+			}
+			Err(InvalidTransaction::Call.into())
 		}
 	}
 }
@@ -883,7 +1178,6 @@ impl<O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>, Acco
 	EnsureOrigin<O> for EnsureRoot<AccountId>
 {
 	type Success = ();
-
 	fn try_origin(o: O) -> Result<Self::Success, O> {
 		o.into().and_then(|o| match o {
 			RawOrigin::Root => Ok(()),
@@ -914,7 +1208,6 @@ impl<
 	> EnsureOrigin<O> for EnsureRootWithSuccess<AccountId, Success>
 {
 	type Success = Success::Type;
-
 	fn try_origin(o: O) -> Result<Self::Success, O> {
 		o.into().and_then(|o| match o {
 			RawOrigin::Root => Ok(Success::get()),
@@ -958,19 +1251,12 @@ impl<
 	}
 }
 
-impl_ensure_origin_with_arg_ignoring_arg! {
-	impl< { O: .., AccountId: Decode, T } >
-		EnsureOriginWithArg<O, T> for EnsureSigned<AccountId>
-	{}
-}
-
 /// Ensure the origin is any `Signed` origin.
 pub struct EnsureSigned<AccountId>(sp_std::marker::PhantomData<AccountId>);
 impl<O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>, AccountId: Decode>
 	EnsureOrigin<O> for EnsureSigned<AccountId>
 {
 	type Success = AccountId;
-
 	fn try_origin(o: O) -> Result<Self::Success, O> {
 		o.into().and_then(|o| match o {
 			RawOrigin::Signed(who) => Ok(who),
@@ -995,7 +1281,6 @@ impl<
 	> EnsureOrigin<O> for EnsureSignedBy<Who, AccountId>
 {
 	type Success = AccountId;
-
 	fn try_origin(o: O) -> Result<Self::Success, O> {
 		o.into().and_then(|o| match o {
 			RawOrigin::Signed(ref who) if Who::contains(who) => Ok(who.clone()),
@@ -1005,9 +1290,6 @@ impl<
 
 	#[cfg(feature = "runtime-benchmarks")]
 	fn try_successful_origin() -> Result<O, ()> {
-		let _zero_account_id =
-			AccountId::decode(&mut TrailingZeroInput::zeroes()).map_err(|_| ())?;
-		let _members = Who::sorted_members();
 		let first_member = match Who::sorted_members().first() {
 			Some(account) => account.clone(),
 			None => AccountId::decode(&mut TrailingZeroInput::zeroes()).map_err(|_| ())?,
@@ -1028,7 +1310,6 @@ impl<O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>, Acco
 	EnsureOrigin<O> for EnsureNone<AccountId>
 {
 	type Success = ();
-
 	fn try_origin(o: O) -> Result<Self::Success, O> {
 		o.into().and_then(|o| match o {
 			RawOrigin::None => Ok(()),
@@ -1052,7 +1333,6 @@ impl_ensure_origin_with_arg_ignoring_arg! {
 pub struct EnsureNever<Success>(sp_std::marker::PhantomData<Success>);
 impl<O, Success> EnsureOrigin<O> for EnsureNever<Success> {
 	type Success = Success;
-
 	fn try_origin(o: O) -> Result<Self::Success, O> {
 		Err(o)
 	}
@@ -1069,6 +1349,7 @@ impl_ensure_origin_with_arg_ignoring_arg! {
 	{}
 }
 
+#[docify::export]
 /// Ensure that the origin `o` represents a signed extrinsic (i.e. transaction).
 /// Returns `Ok` with the account that signed the extrinsic or an `Err` otherwise.
 pub fn ensure_signed<OuterOrigin, AccountId>(o: OuterOrigin) -> Result<AccountId, BadOrigin>
@@ -1145,6 +1426,25 @@ pub enum DecRefStatus {
 }
 
 impl<T: Config> Pallet<T> {
+	/// Returns the `spec_version` of the last runtime upgrade.
+	///
+	/// This function is useful for writing guarded runtime migrations in the runtime. A runtime
+	/// migration can use the `spec_version` to ensure that it isn't applied twice. This works
+	/// similar as the storage version for pallets.
+	///
+	/// This functions returns the `spec_version` of the last runtime upgrade while executing the
+	/// runtime migrations
+	/// [`on_runtime_upgrade`](frame_support::traits::OnRuntimeUpgrade::on_runtime_upgrade)
+	/// function. After all migrations are executed, this will return the `spec_version` of the
+	/// current runtime until there is another runtime upgrade.
+	///
+	/// Example:
+	#[doc = docify::embed!("src/tests.rs", last_runtime_upgrade_spec_version_usage)]
+	pub fn last_runtime_upgrade_spec_version() -> u32 {
+		LastRuntimeUpgrade::<T>::get().map_or(0, |l| l.spec_version.0)
+	}
+
+	/// Returns true if the given account exists.
 	pub fn account_exists(who: &T::AccountId) -> bool {
 		Account::<T>::contains_key(who)
 	}
@@ -1404,6 +1704,7 @@ impl<T: Config> Pallet<T> {
 	/// NOTE: Events not registered at the genesis block and quietly omitted.
 	pub fn deposit_event_indexed(topics: &[T::Hash], event: T::RuntimeEvent) {
 		let block_number = Self::block_number();
+
 		// Don't populate events on genesis.
 		if block_number.is_zero() {
 			return;
@@ -1416,7 +1717,7 @@ impl<T: Config> Pallet<T> {
 			topics: topics.to_vec(),
 		};
 
-		// Index of the to be added event.
+		// Index of the event to be added.
 		let event_idx = {
 			let old_event_count = EventCount::<T>::get();
 			let new_event_count = match old_event_count.checked_add(1) {
@@ -1491,12 +1792,11 @@ impl<T: Config> Pallet<T> {
 
 		// Remove previous block data from storage
 		BlockWeight::<T>::kill();
-		FailedExtrinsicIndices::<T>::kill();
 	}
 
 	/// Remove temporary "environment" entries in storage, compute the storage root and return the
 	/// resulting header for this block.
-	pub fn finalize() -> DaHeaderFor<T> {
+	pub fn finalize() -> HeaderFor<T> {
 		log::debug!(
 			target: LOG_TARGET,
 			"[{:?}] {} extrinsics, length: {} (normal {}%, op: {}%, mandatory {}%) / normal weight:\
@@ -1519,23 +1819,23 @@ impl<T: Config> Pallet<T> {
 			Self::block_weight().get(DispatchClass::Normal),
 			sp_runtime::Percent::from_rational(
 				Self::block_weight().get(DispatchClass::Normal).ref_time(),
-				T::BlockWeights::get().get(DispatchClass::Normal).max_total.unwrap_or_else(Bounded::max_value).ref_time()
+				T::BlockWeights::get().get(DispatchClass::Normal).max_total.unwrap_or(Bounded::max_value()).ref_time()
 			).deconstruct(),
 			Self::block_weight().get(DispatchClass::Operational),
 			sp_runtime::Percent::from_rational(
 				Self::block_weight().get(DispatchClass::Operational).ref_time(),
-				T::BlockWeights::get().get(DispatchClass::Operational).max_total.unwrap_or_else(Bounded::max_value).ref_time()
+				T::BlockWeights::get().get(DispatchClass::Operational).max_total.unwrap_or(Bounded::max_value()).ref_time()
 			).deconstruct(),
 			Self::block_weight().get(DispatchClass::Mandatory),
 			sp_runtime::Percent::from_rational(
 				Self::block_weight().get(DispatchClass::Mandatory).ref_time(),
-				T::BlockWeights::get().get(DispatchClass::Mandatory).max_total.unwrap_or_else(Bounded::max_value).ref_time()
+				T::BlockWeights::get().get(DispatchClass::Mandatory).max_total.unwrap_or(Bounded::max_value()).ref_time()
 			).deconstruct(),
 		);
 		ExecutionPhase::<T>::kill();
 		AllExtrinsicsLen::<T>::kill();
-
 		storage::unhashed::kill(well_known_keys::INTRABLOCK_ENTROPY);
+
 		// The following fields
 		//
 		// - <Events<T>>
@@ -1548,29 +1848,30 @@ impl<T: Config> Pallet<T> {
 		// stay to be inspected by the client and will be cleared by `Self::initialize`.
 		let number = <Number<T>>::get();
 		let parent_hash = <ParentHash<T>>::get();
-
-		let extrinsics = Self::take_extrinsics().collect::<Vec<_>>();
-
-		let successful_indices = Self::successful_extrinsic_indices();
-
-		let opaques = successful_indices
-			.iter()
-			.filter_map(|&index| extrinsics.get(index as usize))
-			// let opaques = extrinsics
-			// 	.iter()
-			.filter(|ext| !ext.is_empty())
-			.map(|ext| OpaqueExtrinsic::decode(&mut ext.as_slice()))
-			.collect::<Result<Vec<_>, _>>()
-			.expect("Any extrinsic MUST be decoded as OpaqueExtrinsic .qed");
-
-		let (data_root, new_nonce) = submitted_data::extrinsics_root_v2::<
-			T::SubmittedDataExtractor,
-			_,
-		>(opaques.iter(), Self::bridge_nonce());
-		if Self::bridge_nonce() != new_nonce {
-			BridgeNonce::<T>::put(new_nonce);
-		}
 		let digest = <Digest<T>>::get();
+
+		let extrinsics = (0..ExtrinsicCount::<T>::take().unwrap_or_default())
+			.map(ExtrinsicData::<T>::take)
+			.collect::<Vec<_>>();
+
+		// Transform *raw extrinsics* into `T::UncheckedExtrinsic` only if it was successfully executed.
+		let indexed_ext = extrinsics
+			.iter()
+			.enumerate()
+			.filter_map(|(idx, raw)| {
+				let ext = T::Extrinsic::decode(&mut raw.as_slice()).ok()?;
+				Some((idx, ext))
+			})
+			.collect::<Vec<_>>();
+		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
+
+		let block_number: u32 = number
+			.try_into()
+			.map_err(|_| number) // NOTE: TryInto::Error does not implement Debug
+			.expect("Block number is within u32; qed");
+
+		let data_root =
+			tx_data_root::<T::TxDataExtractor, _, _>(block_number, indexed_ext.as_slice());
 
 		// move block hash pruning window by one block
 		let block_hash_count = T::BlockHashCount::get();
@@ -1590,35 +1891,19 @@ impl<T: Config> Pallet<T> {
 		let block_length = Self::block_length();
 
 		// Transform extrinsics into AppExtrinsic.
-		let app_extrinsics = opaques
-			.iter()
-			.filter_map(|opaque| {
-				let res = T::UncheckedExtrinsic::try_from(opaque);
-				if let Err(e) = res.as_ref() {
-					log::error!(
-						target: LOG_TARGET,
-						"Opaque extrinsic cannot be decoded as UncheckedExtrinsic: {e:?}"
-					)
-				}
-				res.map(T::UncheckedExtrinsic::into).ok()
-			})
-			.collect::<Vec<AppExtrinsic>>();
+		let app_extrinsics: Vec<AppExtrinsic> = indexed_ext
+			.into_iter()
+			.map(|(idx, ext)| AppExtrinsic::new(ext.app_id(), idx as u32, ext.encode()))
+			.collect();
 
 		let extension = header_builder::da::HeaderExtensionBuilder::<T>::build(
 			app_extrinsics,
 			data_root,
 			block_length,
 			number.unique_saturated_into(),
-			HeaderVersion::V3,
 		);
 
-		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
-		let header = <DaHeaderFor<T> as ExtendedHeader<
-			BlockNumberFor<T>,
-			T::Hash,
-			generic::Digest,
-			HeaderExtension,
-		>>::new(
+		let header = <HeaderFor<T> as ExtendedHeader>::new(
 			number,
 			extrinsics_root,
 			storage_root,
@@ -1639,11 +1924,6 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Deposits a log and ensures it matches the block's log data.
-	///
-	/// # <weight>
-	/// - `O(1)`
-	/// - 1 storage write (codec `O(1)`)
-	/// # </weight>
 	pub fn deposit_log(item: generic::DigestItem) {
 		<Digest<T>>::append(item);
 	}
@@ -1670,12 +1950,7 @@ impl<T: Config> Pallet<T> {
 	/// NOTE: Events not registered at the genesis block and quietly omitted.
 	#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
 	pub fn events() -> Vec<EventRecord<T::RuntimeEvent, T::Hash>> {
-		debug_assert!(
-			!Self::block_number().is_zero(),
-			"events not registered at the genesis block"
-		);
-		// Dereferencing the events here is fine since we are not in the
-		// memory-restricted runtime.
+		// Dereferencing the events here is fine since we are not in the memory-restricted runtime.
 		Self::read_events_no_consensus().map(|e| *e).collect()
 	}
 
@@ -1696,6 +1971,21 @@ impl<T: Config> Pallet<T> {
 	pub fn read_events_no_consensus(
 	) -> impl sp_std::iter::Iterator<Item = Box<EventRecord<T::RuntimeEvent, T::Hash>>> {
 		Events::<T>::stream_iter()
+	}
+
+	/// Read and return the events of a specific pallet, as denoted by `E`.
+	///
+	/// This is useful for a pallet that wishes to read only the events it has deposited into
+	/// `frame_system` using the standard `fn deposit_event`.
+	pub fn read_events_for_pallet<E>() -> Vec<E>
+	where
+		T::RuntimeEvent: TryInto<E>,
+	{
+		Events::<T>::get()
+			.into_iter()
+			.map(|er| er.event)
+			.filter_map(|e| e.try_into().ok())
+			.collect::<_>()
 	}
 
 	/// Set the block number to something in particular. Can be used as an alternative to
@@ -1726,16 +2016,7 @@ impl<T: Config> Pallet<T> {
 		BlockWeight::<T>::mutate(|current_weight| {
 			current_weight.set(weight, DispatchClass::Normal)
 		});
-		let len: u32 = len.saturated_into();
-		let mut all_ext_len = ExtrinsicLen::default();
-		all_ext_len
-			.add_padded(AppId(0), len)
-			.expect("In tests this must work always");
-		all_ext_len
-			.add_raw(len)
-			.expect("In tests this must work always");
-
-		AllExtrinsicsLen::<T>::put(all_ext_len);
+		AllExtrinsicsLen::<T>::put(ExtrinsicLen::new(len.saturated_into()));
 	}
 
 	/// Reset events.
@@ -1809,8 +2090,7 @@ impl<T: Config> Pallet<T> {
 			.saturating_add(T::BlockWeights::get().get(info.class).base_extrinsic);
 		info.pays_fee = extract_actual_pays_fee(r, &info);
 
-		let current_extrinsic_index = Self::extrinsic_index().unwrap_or_default();
-
+		let extrinsic_index = Self::extrinsic_index().unwrap_or_default();
 		let event = match r {
 			Ok(_) => Event::ExtrinsicSuccess {
 				dispatch_info: info,
@@ -1823,11 +2103,7 @@ impl<T: Config> Pallet<T> {
 					err,
 				);
 
-				FailedExtrinsicIndices::<T>::mutate(|x| {
-					x.try_push(current_extrinsic_index).expect(
-						"Limit is 100k. It should not be possible to reach that number. qed",
-					);
-				});
+				FailedExtrinsicIndices::<T>::mutate(|x| x.push(extrinsic_index));
 
 				Event::ExtrinsicFailed {
 					dispatch_error: err.error,
@@ -1838,7 +2114,8 @@ impl<T: Config> Pallet<T> {
 
 		Self::deposit_event(event);
 
-		let next_extrinsic_index = current_extrinsic_index + 1u32;
+		// # Safety: This index does NOT overflow due to limitations of `weights` and block len.
+		let next_extrinsic_index = extrinsic_index + 1u32;
 
 		storage::unhashed::put(well_known_keys::EXTRINSIC_INDEX, &next_extrinsic_index);
 		ExecutionPhase::<T>::put(Phase::ApplyExtrinsic(next_extrinsic_index));
@@ -1901,8 +2178,48 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	pub fn take_extrinsics() -> impl Iterator<Item = Vec<u8>> {
-		(0..Self::extrinsic_count()).map(ExtrinsicData::<T>::take)
+	/// To be called after any origin/privilege checks. Put the code upgrade authorization into
+	/// storage and emit an event. Infallible.
+	pub fn do_authorize_upgrade(code_hash: T::Hash, check_version: bool) {
+		AuthorizedUpgrade::<T>::put(CodeUpgradeAuthorization {
+			code_hash,
+			check_version,
+		});
+		Self::deposit_event(Event::UpgradeAuthorized {
+			code_hash,
+			check_version,
+		});
+	}
+
+	/// Apply an authorized upgrade, performing any validation checks, and remove the authorization.
+	/// Whether or not the code is set directly depends on the `OnSetCode` configuration of the
+	/// runtime.
+	pub fn do_apply_authorize_upgrade(code: Vec<u8>) -> Result<PostDispatchInfo, DispatchError> {
+		Self::validate_authorized_upgrade(&code[..])?;
+		T::OnSetCode::set_code(code)?;
+		AuthorizedUpgrade::<T>::kill();
+		let post = PostDispatchInfo {
+			// consume the rest of the block to prevent further transactions
+			actual_weight: Some(T::BlockWeights::get().max_block),
+			// no fee for valid upgrade
+			pays_fee: Pays::No,
+		};
+		Ok(post)
+	}
+
+	/// Check that provided `code` can be upgraded to. Namely, check that its hash matches an
+	/// existing authorization and that it meets the specification requirements of `can_set_code`.
+	pub fn validate_authorized_upgrade(code: &[u8]) -> Result<T::Hash, DispatchError> {
+		let authorization = AuthorizedUpgrade::<T>::get().ok_or(Error::<T>::NothingAuthorized)?;
+		let actual_hash = T::Hashing::hash(code);
+		ensure!(
+			actual_hash == authorization.code_hash,
+			Error::<T>::Unauthorized
+		);
+		if authorization.check_version {
+			Self::can_set_code(code)?
+		}
+		Ok(actual_hash)
 	}
 
 	/// Creates a `ExtrinsicLen` based on `len` as raw length.
@@ -1910,28 +2227,6 @@ impl<T: Config> Pallet<T> {
 	pub fn padded_extrinsic_len(len: u32) -> u32 {
 		let chunk_size = Self::block_length().chunk_size();
 		kate::padded_len(len, chunk_size)
-	}
-
-	// Test name: successful_extrinsic_indices_are_correct()
-	pub fn successful_extrinsic_indices() -> Vec<u32> {
-		let mut indices = FailedExtrinsicIndices::<T>::get();
-		let extrinsic_count = Self::extrinsic_count();
-
-		indices.sort();
-		let mut failed_indices = indices.iter().peekable();
-		let mut successful_indices =
-			Vec::with_capacity((extrinsic_count as usize).saturating_sub(indices.len()));
-		for index in 0..extrinsic_count {
-			if let Some(failed_one) = failed_indices.peek() {
-				if index == **failed_one {
-					failed_indices.next();
-					continue;
-				}
-			}
-			successful_indices.push(index);
-		}
-
-		successful_indices
 	}
 }
 
@@ -1952,7 +2247,6 @@ impl<T: Config> HandleLifetime<T::AccountId> for Provider<T> {
 		Pallet::<T>::inc_providers(t);
 		Ok(())
 	}
-
 	fn killed(t: &T::AccountId) -> Result<(), DispatchError> {
 		Pallet::<T>::dec_providers(t).map(|_| ())
 	}
@@ -1965,7 +2259,6 @@ impl<T: Config> HandleLifetime<T::AccountId> for SelfSufficient<T> {
 		Pallet::<T>::inc_sufficients(t);
 		Ok(())
 	}
-
 	fn killed(t: &T::AccountId) -> Result<(), DispatchError> {
 		Pallet::<T>::dec_sufficients(t);
 		Ok(())
@@ -1978,7 +2271,6 @@ impl<T: Config> HandleLifetime<T::AccountId> for Consumer<T> {
 	fn created(t: &T::AccountId) -> Result<(), DispatchError> {
 		Pallet::<T>::inc_consumers(t)
 	}
-
 	fn killed(t: &T::AccountId) -> Result<(), DispatchError> {
 		Pallet::<T>::dec_consumers(t);
 		Ok(())
@@ -1990,6 +2282,11 @@ impl<T: Config> BlockNumberProvider for Pallet<T> {
 
 	fn current_block_number() -> Self::BlockNumber {
 		Pallet::<T>::block_number()
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn set_block_number(n: BlockNumberFor<T>) {
+		Self::set_block_number(n)
 	}
 }
 
@@ -2052,26 +2349,21 @@ impl<T: Config> Lookup for ChainContext<T> {
 
 /// Prelude to be used alongside pallet macro, for ease of use.
 pub mod pallet_prelude {
-	use avail_core::header::HeaderExtension;
-
 	pub use crate::{ensure_none, ensure_root, ensure_signed, ensure_signed_or_root};
 
 	/// Type alias for the `Origin` associated type of system config.
 	pub type OriginFor<T> = <T as crate::Config>::RuntimeOrigin;
 
-	/// Type alias for the substrate `Header`.
-	pub type HeaderFor<T> =
-		<<T as crate::Config>::Block as sp_runtime::traits::HeaderProvider>::HeaderT;
+	/// Type alias for the `Header`.
+	pub type HeaderFor<T> = <T as crate::Config>::Header;
 
 	/// Type alias for the `BlockNumber` associated type of system config.
 	pub type BlockNumberFor<T> = <HeaderFor<T> as sp_runtime::traits::Header>::Number;
 
-	/// Type alias for the DA Header
-	pub type DaHeaderFor<T> =
-		<<T as crate::Config>::Block as avail_core::traits::DaHeaderProvider<
-			BlockNumberFor<T>,
-			<T as crate::Config>::Hash,
-			sp_runtime::generic::Digest,
-			HeaderExtension,
-		>>::DaHeader;
+	/// Type alias for the `Extrinsic` associated type of system config.
+	pub type ExtrinsicFor<T> =
+		<<T as crate::Config>::Block as sp_runtime::traits::Block>::Extrinsic;
+
+	/// Type alias for the `RuntimeCall` associated type of system config.
+	pub type RuntimeCallFor<T> = <T as crate::Config>::RuntimeCall;
 }

@@ -525,17 +525,12 @@ mod multiplier_tests {
 
 #[cfg(test)]
 mod tests {
-	use crate::impls::DealWithFees;
-	use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::Currency;
-	use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::OnUnbalanced;
-	use crate::AccountId;
-	use crate::Balance;
-	use crate::BlockNumber;
+	use crate::{impls::DealWithFees, AccountId, Balance, BlockNumber, Header};
 	use frame_support::{
 		derive_impl, parameter_types,
 		traits::{
 			tokens::{PayFromAccount, UnityAssetBalanceConversion},
-			ConstU32, FindAuthor,
+			ConstU32, Currency, FindAuthor, OnUnbalanced,
 		},
 		PalletId,
 	};
@@ -546,7 +541,7 @@ mod tests {
 	use sp_runtime::{traits::IdentityLookup, BuildStorage, Perquintill};
 
 	/// An unchecked extrinsic type to be used in tests.
-	type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
+	type Extrinsic = MockUncheckedExtrinsic<Test>;
 
 	/// An implementation of `sp_runtime::traits::Block` to be used in tests.
 	type Block = frame_system::mocking::MockDaBlock<Test>;
@@ -581,8 +576,10 @@ mod tests {
 		type RuntimeCall = RuntimeCall;
 		type RuntimeEvent = RuntimeEvent;
 		type RuntimeOrigin = RuntimeOrigin;
-		type SubmittedDataExtractor = ();
-		type UncheckedExtrinsic = UncheckedExtrinsic;
+		type TxDataExtractor = ();
+
+		type Header = Header;
+		type Extrinsic = Extrinsic;
 		type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 		type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 	}

@@ -75,22 +75,25 @@ where
 	fn check_block_length(
 		info: &DispatchInfoOf<T::RuntimeCall>,
 		len: usize,
-	) -> Option<ExtrinsicLenOf<T>> {
-		let len = u32::try_from(len).ok()?;
+	) -> Result<ExtrinsicLenOf<T>, TransactionValidityError> {
+		let len = u32::try_from(len).map_err(|_| InvalidTransaction::ExhaustsResources)?;
 		let max_raw_len = *T::BlockLength::get().max.get(info.class);
 
 		// Check valid raw len
 		let mut all_extrinsics_len = AllExtrinsicsLen::<T>::get().unwrap_or_default();
-		let new_len = all_extrinsics_len.add_raw(len)?;
+		let new_len = all_extrinsics_len
+			.add_raw(len)
+			.ok_or(InvalidTransaction::ExhaustsResources)?;
 
-		if new_len <= max_raw_len {
-			Some(all_extrinsics_len)
-		} else {
+		if new_len > max_raw_len {
 			log::debug!(
 				target: LOG_TARGET,
-				"Block length (max {max_raw_len} bytes) is exhausted, requested {new_len} bytes",
+				"Exceeded block length limit: {new_len} > {max_raw_len}",
 			);
-			None
+
+			Err(InvalidTransaction::ExhaustsResources.into())
+		} else {
+			Ok(all_extrinsics_len)
 		}
 	}
 
@@ -106,8 +109,7 @@ where
 		info: &DispatchInfoOf<T::RuntimeCall>,
 		len: usize,
 	) -> Result<(), TransactionValidityError> {
-		let next_len =
-			Self::check_block_length(info, len).ok_or(InvalidTransaction::ExhaustsResources)?;
+		let next_len = Self::check_block_length(info, len)?;
 		let next_weight = Self::check_block_weight(info)?;
 		Self::check_extrinsic_weight(info)?;
 
@@ -121,7 +123,7 @@ where
 	/// It only checks that the block weight and length limit will not exceed.
 	pub fn do_validate(info: &DispatchInfoOf<T::RuntimeCall>, len: usize) -> TransactionValidity {
 		// ignore the next length. If they return `Ok`, then it is below the limit.
-		let _ = Self::check_block_length(info, len).ok_or(InvalidTransaction::ExhaustsResources)?;
+		let _ = Self::check_block_length(info, len)?;
 		// during validation we skip block limit check. Since the `validate_transaction`
 		// call runs on an empty block anyway, by this we prevent `on_initialize` weight
 		// consumption from causing false negatives.
@@ -150,7 +152,11 @@ where
 	} else {
 		all_weight
 			.checked_accrue(extrinsic_weight, info.class)
-			.map_err(|_| InvalidTransaction::ExhaustsResources)?;
+			.map_err(|_| {
+				log::debug!(target: LOG_TARGET, "All weight checked add overflow.",);
+
+				InvalidTransaction::ExhaustsResources
+			})?;
 	}
 
 	let per_class = *all_weight.get(info.class);
@@ -158,7 +164,9 @@ where
 	// Check if we don't exceed per-class allowance
 	match limit_per_class.max_total {
 		Some(max) if per_class.any_gt(max) => {
-			return Err(InvalidTransaction::ExhaustsResources.into())
+			log::debug!(target: LOG_TARGET, "Exceeded the per-class allowance.",);
+
+			return Err(InvalidTransaction::ExhaustsResources.into());
 		},
 		// There is no `max_total` limit (`None`),
 		// or we are below the limit.
@@ -171,7 +179,9 @@ where
 		match limit_per_class.reserved {
 			// We are over the limit in reserved pool.
 			Some(reserved) if per_class.any_gt(reserved) => {
-				return Err(InvalidTransaction::ExhaustsResources.into())
+				log::debug!(target: LOG_TARGET, "Total block weight is exceeded.",);
+
+				return Err(InvalidTransaction::ExhaustsResources.into());
 			},
 			// There is either no limit in reserved pool (`None`),
 			// or we are below the limit.
@@ -187,10 +197,9 @@ where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
 	type AccountId = T::AccountId;
-	type AdditionalSigned = ();
 	type Call = T::RuntimeCall;
+	type AdditionalSigned = ();
 	type Pre = ();
-
 	const IDENTIFIER: &'static str = "CheckWeight";
 
 	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {

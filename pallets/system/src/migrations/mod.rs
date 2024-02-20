@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2021-2022 Parity Technologies (UK) Ltd.
+// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,7 +28,7 @@ use sp_core::Get;
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 
-use crate::{Config, Pallet};
+use crate::{Config, Pallet, LOG_TARGET};
 pub mod v1;
 pub mod v2;
 
@@ -53,7 +53,7 @@ pub trait V2ToV3 {
 	/// System config account id
 	type AccountId: 'static + FullCodec;
 
-	/// System config Nonce
+	/// System config nonce
 	type Nonce: 'static + FullCodec + Copy;
 
 	/// System config account data
@@ -88,7 +88,7 @@ pub fn migrate_from_single_u8_to_triple_ref_count<V: V2ToV3, T: Config>() -> Wei
 		})
 	});
 	log::info!(
-		target: "runtime::system",
+		target: LOG_TARGET,
 		"Applied migration from single u8 to triple reference counting to {:?} elements.",
 		translated
 	);
@@ -113,7 +113,7 @@ pub fn migrate_from_single_to_triple_ref_count<V: V2ToV3, T: Config>() -> Weight
 		},
 	);
 	log::info!(
-		target: "runtime::system",
+		target: LOG_TARGET,
 		"Applied migration from single to triple reference counting to {:?} elements.",
 		translated
 	);
@@ -137,7 +137,7 @@ pub fn migrate_from_dual_to_triple_ref_count<V: V2ToV3, T: Config>() -> Weight {
 		},
 	);
 	log::info!(
-		target: "runtime::system",
+		target: LOG_TARGET,
 		"Applied migration from dual to triple reference counting to {:?} elements.",
 		translated
 	);

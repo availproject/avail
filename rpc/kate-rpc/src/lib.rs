@@ -1,17 +1,17 @@
-#![deny(unused_crate_dependencies)]
 use core::num::NonZeroU16;
-use std::{marker::Sync, sync::Arc};
+use std::{marker::Sync, sync::Arc, time::Instant};
 
 use avail_base::metrics::avail::KateRpcMetrics;
-use avail_core::data_proof_v2::{ProofResponse, SubTrie};
 use avail_core::{
-	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, DataProof, DataProofV2,
-	OpaqueExtrinsic,
+	data_proof_v2::ProofResponse,
+	header::HeaderExtension,
+	traits::{ExtendedHeader, GetAppId},
+	AppExtrinsic, AppId, OpaqueExtrinsic,
 };
-use da_runtime::RuntimeCall;
-use da_runtime::{apis::DataAvailApi, Runtime, UncheckedExtrinsic};
+
+use da_runtime::{apis::DataAvailApi, Extrinsic};
 use frame_support::BoundedVec;
-use frame_system::{limits::BlockLength, submitted_data};
+use frame_system::limits::BlockLength;
 use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
@@ -35,7 +35,6 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::{
 	generic::{Digest, SignedBlock},
 	traits::{Block as BlockT, ConstU32, Header},
-	{AccountId32, MultiAddress},
 };
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
@@ -73,13 +72,6 @@ where
 
 	#[method(name = "kate_queryDataProof")]
 	async fn query_data_proof(
-		&self,
-		transaction_index: u32,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<DataProof>;
-
-	#[method(name = "kate_queryDataProofV2")]
-	async fn query_data_proof_v2(
 		&self,
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
@@ -157,16 +149,11 @@ macro_rules! internal_err {
 impl<Client, Block> Kate<Client, Block>
 where
 	Block: BlockT,
-	<Block as BlockT>::Header: ExtendedHeader<
-		<<Block as BlockT>::Header as Header>::Number,
-		<Block as BlockT>::Hash,
-		Digest,
-		HeaderExtension,
-	>,
+	<Block as BlockT>::Header: ExtendedHeader,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: DataAvailApi<Block>,
-	UncheckedExtrinsic: TryFrom<<Block as BlockT>::Extrinsic>,
+	Extrinsic: TryFrom<<Block as BlockT>::Extrinsic>,
 {
 	fn at_or_best(&self, at: Option<<Block as BlockT>::Hash>) -> <Block as BlockT>::Hash {
 		at.unwrap_or_else(|| self.client.info().best_hash)
@@ -220,6 +207,8 @@ where
 		&self,
 		signed_block: &SignedBlock<Block>,
 	) -> RpcResult<Arc<EvaluationGrid>> {
+		todo!();
+		/*
 		let block_header = signed_block.block.header();
 		let block_hash = block_header.hash();
 
@@ -230,9 +219,11 @@ where
 					.block
 					.extrinsics()
 					.iter()
-					.cloned()
-					.filter_map(|opaque| UncheckedExtrinsic::try_from(opaque).ok())
-					.map(AppExtrinsic::from)
+					.enumerate()
+					.filter_map(|(tx_idx, opaque)| {
+						let ext = Extrinsic::try_from(opaque.clone()).ok()?;
+						Some(AppExtrinsic::new(ext.app_id(), tx_idx as u32, opaque.clone()))
+					})
 					.collect();
 
 				// Use Babe's VRF
@@ -263,6 +254,7 @@ where
 			})
 			.await
 			.map_err(|e: Arc<_>| internal_err!("failed to construct block: {}", e)) // Deref the arc into a reference, clone the ref
+		*/
 	}
 
 	// TODO: We should probably have a metrics item for this
@@ -288,17 +280,14 @@ where
 impl<Client, Block> KateApiServer<Block> for Kate<Client, Block>
 where
 	Block: BlockT<Extrinsic = OpaqueExtrinsic>,
-	<Block as BlockT>::Header: ExtendedHeader<
-		<<Block as BlockT>::Header as Header>::Number,
-		<Block as BlockT>::Hash,
-		Digest,
-		HeaderExtension,
-	>,
+	<Block as BlockT>::Header: ExtendedHeader,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: DataAvailApi<Block>,
 {
 	async fn query_rows(&self, rows: Rows, at: Option<HashOf<Block>>) -> RpcResult<Vec<Vec<u8>>> {
+		todo!("Implement this");
+		/*
 		let execution_start = std::time::Instant::now();
 
 		let signed_block = self.get_signed_and_finalized_block(at)?;
@@ -321,6 +310,7 @@ where
 		KateRpcMetrics::observe_query_rows_execution_time(execution_start.elapsed());
 
 		Ok(data_rows)
+		*/
 	}
 
 	async fn query_app_data(
@@ -328,6 +318,8 @@ where
 		app_id: AppId,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<Vec<u8>>>> {
+		todo!("Implement this");
+		/*
 		let execution_start = std::time::Instant::now();
 
 		let signed_block = self.get_signed_and_finalized_block(at)?;
@@ -362,9 +354,12 @@ where
 		KateRpcMetrics::observe_query_app_data_execution_time(execution_start.elapsed());
 
 		Ok(all_rows)
+		*/
 	}
 
 	async fn query_proof(&self, cells: Cells, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
+		todo!("Implement this");
+		/*
 		use crate::JsonRpseeError::Custom;
 
 		if cells.len() > self.max_cells_size {
@@ -412,9 +407,12 @@ where
 		KateRpcMetrics::observe_query_proof_execution_time(execution_start.elapsed());
 
 		Ok(proof)
+		*/
 	}
 
 	async fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength> {
+		todo!();
+		/*
 		let execution_start = std::time::Instant::now();
 
 		let at = self.at_or_best(at);
@@ -427,8 +425,10 @@ where
 		KateRpcMetrics::observe_query_block_length_execution_time(execution_start.elapsed());
 
 		Ok(block_length)
+		*/
 	}
 
+	/*
 	async fn query_data_proof(
 		&self,
 		transaction_index: u32,
@@ -442,8 +442,12 @@ where
 			let calls = block
 				.extrinsics()
 				.iter()
-				.flat_map(|extrinsic| UncheckedExtrinsic::try_from(extrinsic).ok())
-				.map(|extrinsic| extrinsic.function);
+				.enumerate()
+				.filter_map(|(idx, extrinsic)| {
+					UncheckedExtrinsic::try_from(extrinsic)
+						.map(|un_ext| (un_ext.signature.owner, idx, un_ext.function))
+						.ok()
+				});
 
 			// Build the proof.
 			let merkle_proof =
@@ -471,23 +475,17 @@ where
 				at
 			));
 		}
-	}
+	}*/
 
-	async fn query_data_proof_v2(
+	async fn query_data_proof(
 		&self,
-		transaction_index: u32,
+		_transaction_index: u32,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<ProofResponse> {
-		let execution_start = std::time::Instant::now();
-
-		let block = self.get_signed_block(at)?.block;
-		// We can't query DataProofV2 on older blocks which has a V1 header
-		if let HeaderExtension::V1(_) = block.header().extension() {
-			return Err(internal_err!(
-				"The block {:?} has V1 header, which doesn't support DataProofV2",
-				at
-			));
-		}
+		todo!()
+		/*
+		let _execution_start = Instant::now();
+		let _block = self.get_signed_block(at)?.block;
 
 		let successfull_indices = self
 			.client
@@ -589,6 +587,7 @@ where
 			data_proof,
 			message,
 		})
+		*/
 	}
 }
 

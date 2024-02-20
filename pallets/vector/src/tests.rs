@@ -1,8 +1,6 @@
-use ethabi::{encode, Token};
 use frame_support::traits::fungible::Inspect;
 use frame_support::traits::DefensiveTruncateFrom;
 use frame_support::{assert_err, assert_ok, BoundedVec};
-use frame_system::submitted_data::{Message, MessageType};
 use hex_literal::hex;
 use primitive_types::U256;
 use sp_core::crypto::AccountId32;
@@ -15,9 +13,9 @@ use crate::mock::{Balances, System};
 use crate::state::Configuration;
 use crate::storage_utils::MessageStatusEnum;
 use crate::{
-	Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, FunctionInput,
-	FunctionOutput, FunctionProof, Head, Headers, MessageStatus, SourceChainFrozen,
-	SyncCommitteePoseidons, ValidProof, WhitelistedDomains,
+	AddressedMessage, Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots,
+	FunctionInput, FunctionOutput, FunctionProof, Head, Headers, Message, MessageStatus,
+	SourceChainFrozen, SyncCommitteePoseidons, ValidProof, WhitelistedDomains,
 };
 use frame_system::RawOrigin;
 
@@ -128,44 +126,33 @@ fn get_valid_amb_storage_proof() -> ValidProof {
     ])
 }
 
-pub fn get_valid_message() -> Message {
-	let data = &[
-		Token::FixedBytes(H256::zero().as_bytes().to_vec()),
-		Token::Uint(U256::from(1000000000000000000u128)),
-	];
+pub fn get_valid_message() -> AddressedMessage {
+	let asset_id = H256::zero();
+	let amount = 1_000_000_000_000_000_000u128;
+	let from = hex!("681257BED628425a28B469114Dc21A7c30205cFD000000000000000000000000");
+	let to = hex!("0000000000000000000000000000000000000000000000000000000000000001");
 
-	// message = Message(0x02, bytes32(bytes20(0x681257BED628425a28B469114Dc21A7c30205cFD)), bytes32(uint256(1)), 2, 1, abi.encode(bytes32(0), 1 ether), 0)
-	let encoded = encode(data);
-	Message {
-		message_type: MessageType::FungibleToken,
-		from: H256(hex!(
-			"681257BED628425a28B469114Dc21A7c30205cFD000000000000000000000000"
-		)),
-		to: H256(hex!(
-			"0000000000000000000000000000000000000000000000000000000000000001"
-		)),
+	AddressedMessage {
+		message: Message::FungibleToken { asset_id, amount },
+		from: from.into(),
+		to: to.into(),
 		origin_domain: 2,
 		destination_domain: 1,
-		data: BoundedVec::truncate_from(encoded.to_vec()),
 		id: 0,
 	}
 }
 
-fn get_valid_amb_message() -> Message {
-	let recipient = H256(hex!(
-		"3547517355657647456b6f7847444a5044576251694b4478714b6d675a357047"
-	));
-	let encoded_data = BoundedVec::defensive_truncate_from("Hello, World!".as_bytes().to_vec());
+fn get_valid_amb_message() -> AddressedMessage {
+	let recipient = hex!("3547517355657647456b6f7847444a5044576251694b4478714b6d675a357047");
+	let from = hex!("681257BED628425a28B469114Dc21A7c30205cFD000000000000000000000000");
+	let data = BoundedVec::defensive_truncate_from("Hello, World!".as_bytes().to_vec());
 
-	Message {
-		message_type: MessageType::ArbitraryMessage,
-		from: H256(hex!(
-			"681257BED628425a28B469114Dc21A7c30205cFD000000000000000000000000"
-		)),
-		to: recipient,
+	AddressedMessage {
+		message: Message::Data(data),
+		from: from.into(),
+		to: recipient.into(),
 		origin_domain: 2,
 		destination_domain: 1,
-		data: encoded_data,
 		id: 0,
 	}
 }
@@ -294,45 +281,6 @@ fn test_execute_fungible_token_via_storage() {
 			MessageStatus::<Test>::get(message_root),
 			MessageStatusEnum::ExecutionSucceeded
 		);
-	});
-}
-
-#[test]
-fn test_execute_arb_message_invalid_hash() {
-	new_test_ext().execute_with(|| {
-		let balance_before = Balances::balance(&Bridge::account_id());
-		Broadcasters::<Test>::set(
-			2,
-			H256(hex!(
-				"Aa8c1bFC413e00884A7ac991851686D27b387997000000000000000000000000"
-			)),
-		);
-
-		let slot = 5085118;
-		ExecutionStateRoots::<Test>::set(
-			slot,
-			H256(hex!(
-				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
-			)),
-		);
-
-		let account_proof = get_valid_amb_account_proof();
-		let storage_proof = get_valid_amb_storage_proof();
-		let mut message = get_valid_amb_message();
-
-		// change message type
-		message.message_type = MessageType::FungibleToken;
-
-		let err = Bridge::execute(
-			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			slot,
-			message,
-			account_proof,
-			storage_proof,
-		);
-		let balance_left = Balances::balance(&Bridge::account_id());
-		assert_eq!(balance_before, balance_left);
-		assert_err!(err, Error::<Test>::InvalidMessageHash)
 	});
 }
 
@@ -685,8 +633,7 @@ fn set_whitelisted_domains_works_with_root() {
 		assert_ok!(ok);
 		assert_eq!(WhitelistedDomains::<Test>::get(), domains);
 
-		let expected_event = RuntimeEvent::Bridge(Event::WhitelistedDomainsUpdated);
-		System::assert_last_event(expected_event);
+		System::assert_last_event(RuntimeEvent::Bridge(Event::WhitelistedDomainsUpdated));
 	});
 }
 
@@ -709,7 +656,7 @@ fn set_configuration_works_with_root() {
 		};
 		assert_ne!(ConfigurationStorage::<Test>::get(), conf);
 
-		let ok = Bridge::set_configuration(RawOrigin::Root.into(), conf.clone());
+		let ok = Bridge::set_configuration(RawOrigin::Root.into(), conf);
 		assert_ok!(ok);
 		assert_eq!(ConfigurationStorage::<Test>::get(), conf);
 
@@ -825,90 +772,29 @@ fn source_chain_froze_does_not_work_with_non_root() {
 fn send_message_arbitrary_message_works() {
 	new_test_ext().execute_with(|| {
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-		let message_type = MessageType::ArbitraryMessage;
+		let message = Message::Data(BoundedVec::truncate_from([0, 1, 2, 3].to_vec()));
 		let to = ROTATE_FN_ID;
 		let domain = 2;
-		let data = Some(BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap());
 
-		let ok = Bridge::send_message(
-			origin,
-			message_type.clone(),
-			to,
-			domain,
-			None,
-			None,
-			data.clone(),
-		);
-		assert_ok!(ok);
-
-		let expected_event = RuntimeEvent::Bridge(Event::MessageSubmitted {
+		let event = Event::MessageSubmitted {
 			from: TEST_SENDER_VEC.into(),
 			to,
-			message_type,
+			message_type: (&message).into(),
 			destination_domain: domain,
-		});
-		System::assert_last_event(expected_event);
-	});
-}
-
-#[test]
-fn send_message_arbitrary_message_doesnt_accept_value() {
-	new_test_ext().execute_with(|| {
-		use crate::Error;
-
-		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-		let data = Some(BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap());
-
-		let ok = Bridge::send_message(
-			origin,
-			MessageType::ArbitraryMessage,
-			ROTATE_FN_ID,
-			2,
-			Some(100u128),
-			None,
-			data,
-		);
-		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);
-	});
-}
-
-#[test]
-fn send_message_arbitrary_message_doesnt_accept_asset_id() {
-	new_test_ext().execute_with(|| {
-		use crate::Error;
-
-		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-		let data = Some(BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap());
-
-		let ok = Bridge::send_message(
-			origin,
-			MessageType::ArbitraryMessage,
-			ROTATE_FN_ID,
-			2,
-			None,
-			Some(ROTATE_FN_ID),
-			data,
-		);
-		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);
+		};
+		let ok = Bridge::send_message(origin, message, to, domain);
+		assert_ok!(ok);
+		System::assert_last_event(RuntimeEvent::Bridge(event));
 	});
 }
 
 #[test]
 fn send_message_arbitrary_message_doesnt_accept_empty_data() {
 	new_test_ext().execute_with(|| {
-		use crate::Error;
-
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let message = Message::Data(BoundedVec::truncate_from(vec![]));
 
-		let ok = Bridge::send_message(
-			origin,
-			MessageType::ArbitraryMessage,
-			ROTATE_FN_ID,
-			2,
-			None,
-			None,
-			None,
-		);
+		let ok = Bridge::send_message(origin, message, ROTATE_FN_ID, 2);
 		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);
 	});
 }
@@ -920,7 +806,10 @@ fn send_message_fungible_token_works() {
 		use frame_support::traits::Currency;
 
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-		let message_type = MessageType::FungibleToken;
+		let message = Message::FungibleToken {
+			asset_id: ROTATE_FN_ID,
+			amount: 100,
+		};
 		let to = ROTATE_FN_ID;
 		let domain = 2;
 
@@ -929,85 +818,15 @@ fn send_message_fungible_token_works() {
 			BalanceOf::<Test>::max_value() / 2u128,
 		);
 
-		let ok = Bridge::send_message(
-			origin,
-			message_type.clone(),
-			to,
-			domain,
-			Some(100u128),
-			Some(ROTATE_FN_ID),
-			None,
-		);
-		assert_ok!(ok);
-
-		let expected_event = RuntimeEvent::Bridge(Event::MessageSubmitted {
+		let event = Event::MessageSubmitted {
 			from: TEST_SENDER_VEC.into(),
 			to,
-			message_type,
+			message_type: (&message).into(),
 			destination_domain: domain,
-		});
-		System::assert_last_event(expected_event);
-	});
-}
-
-#[test]
-fn send_message_fungible_token_doesnt_accept_data() {
-	new_test_ext().execute_with(|| {
-		use crate::Error;
-
-		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-		let data = Some(BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap());
-
-		let ok = Bridge::send_message(
-			origin,
-			MessageType::FungibleToken,
-			ROTATE_FN_ID,
-			2,
-			Some(100u128),
-			Some(ROTATE_FN_ID),
-			data,
-		);
-		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);
-	});
-}
-
-#[test]
-fn send_message_fungible_token_doesnt_accept_empty_asset_id() {
-	new_test_ext().execute_with(|| {
-		use crate::Error;
-
-		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-
-		let ok = Bridge::send_message(
-			origin,
-			MessageType::FungibleToken,
-			ROTATE_FN_ID,
-			2,
-			Some(100u128),
-			None,
-			None,
-		);
-		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);
-	});
-}
-
-#[test]
-fn send_message_fungible_token_doesnt_accept_empty_value() {
-	new_test_ext().execute_with(|| {
-		use crate::Error;
-
-		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-
-		let ok = Bridge::send_message(
-			origin,
-			MessageType::FungibleToken,
-			ROTATE_FN_ID,
-			2,
-			None,
-			Some(ROTATE_FN_ID),
-			None,
-		);
-		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);
+		};
+		let ok = Bridge::send_message(origin, message, to, domain);
+		assert_ok!(ok);
+		System::assert_last_event(RuntimeEvent::Bridge(event));
 	});
 }
 
