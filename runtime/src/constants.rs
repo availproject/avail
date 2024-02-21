@@ -18,7 +18,7 @@
 //! A set of constant values used in substrate runtime.
 
 #![allow(clippy::identity_op)]
-use avail_core::currency::{Balance, AVL};
+use avail_core::currency::{Balance, AVAIL};
 use frame_election_provider_support::bounds::{ElectionBounds, ElectionBoundsBuilder};
 use frame_support::{
 	dispatch::DispatchClass,
@@ -163,7 +163,7 @@ pub mod indices {
 	use super::*;
 
 	parameter_types! {
-		pub const IndexDeposit :Balance =  1 * AVL;
+		pub const IndexDeposit :Balance =  1 * AVAIL;
 	}
 }
 
@@ -171,7 +171,7 @@ pub mod balances {
 	use super::{currency::*, *};
 
 	parameter_types! {
-		pub const ExistentialDeposit :Balance =  10 * CENTS; // 0.1 AVLs
+		pub const ExistentialDeposit :Balance =  10 * CENTS; // 0.1 AVAILs
 	}
 }
 
@@ -201,8 +201,8 @@ pub mod council {
 pub mod nomination_pools {
 	use super::*;
 
-	pub const MIN_CREATE_BOND: Balance = 10 * AVL;
-	pub const MIN_JOIN_BOND: Balance = 1 * AVL;
+	pub const MIN_CREATE_BOND: Balance = 10 * AVAIL;
+	pub const MIN_JOIN_BOND: Balance = 1 * AVAIL;
 	pub const MAX_POOLS: u32 = 16;
 	pub const MAX_MEMBERS_PER_POOL: u32 = 100;
 	pub const MAX_MEMBERS: u32 = MAX_POOLS * MAX_MEMBERS_PER_POOL;
@@ -259,9 +259,9 @@ pub mod staking {
 		pub const SignedPhase: u32 = EPOCH_DURATION_IN_SLOTS / 4;
 		pub const UnsignedPhase: u32 = EPOCH_DURATION_IN_SLOTS / 4;
 
-		pub const SignedRewardBase: Balance = AVL;
+		pub const SignedRewardBase: Balance = AVAIL;
 		pub const SignedDepositByte: Balance = CENTS;
-		pub const SignedFixedDeposit: Balance = AVL;
+		pub const SignedFixedDeposit: Balance = AVAIL;
 		pub const SignedDepositIncreaseFactor: Percent = Percent::from_percent(10);
 
 		pub SolutionImprovementThreshold: Perbill = Perbill::from_rational(1u32, 10_000);
@@ -342,7 +342,7 @@ pub mod preimage {
 	use super::{currency::*, *};
 
 	parameter_types! {
-		pub const PreimageBaseDeposit: Balance = 1 * AVL;
+		pub const PreimageBaseDeposit: Balance = 1 * AVAIL;
 		// One cent: $10,000 / MB
 		pub const PreimageByteDeposit: Balance = 1 * CENTS;
 		pub const PreimageHoldReason: RuntimeHoldReason = RuntimeHoldReason::Preimage(pallet_preimage::HoldReason::Preimage);
@@ -365,11 +365,11 @@ pub mod bounty {
 	}
 
 	parameter_types! {
-		pub const ValueMinimum: Balance = 5 * AVL;
-		pub const DepositBase: Balance = AVL;
+		pub const ValueMinimum: Balance = 5 * AVAIL;
+		pub const DepositBase: Balance = AVAIL;
 		pub const CuratorDepositMultiplier: Permill = Permill::from_percent(50);
-		pub const CuratorDepositMin: Balance = 1 * AVL;
-		pub const CuratorDepositMax: Balance = 100 * AVL;
+		pub const CuratorDepositMin: Balance = 1 * AVAIL;
+		pub const CuratorDepositMax: Balance = 100 * AVAIL;
 	}
 }
 

@@ -12,7 +12,7 @@ use crate::{
 	System, TechnicalCommittee, Timestamp, TransactionPayment, Treasury, TxPause,
 	UncheckedExtrinsic, VoterList, MINUTES, VERSION,
 };
-use avail_core::currency::{Balance, AVL, CENTS, NANO_AVL, PICO_AVL};
+use avail_core::currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL};
 use avail_core::AppId;
 use avail_core::OpaqueExtrinsic;
 use avail_core::NORMAL_DISPATCH_RATIO;
@@ -116,9 +116,9 @@ impl pallet_vector::Config for Runtime {
 }
 
 parameter_types! {
-	pub const BasicDeposit: Balance = 10 * AVL;
+	pub const BasicDeposit: Balance = 10 * AVAIL;
 	pub const ByteDeposit: Balance = constants::currency::deposit(0,1);
-	pub const SubAccountDeposit: Balance = 2 * AVL;
+	pub const SubAccountDeposit: Balance = 2 * AVAIL;
 	pub const MaxSubAccounts: u32 = 100;
 	pub const MaxAdditionalFields: u32 = 100;
 	pub const MaxRegistrars: u32 = 20;
@@ -176,12 +176,12 @@ impl pallet_authority_discovery::Config for Runtime {
 
 parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(5);
-	pub const ProposalBondMinimum: Balance = AVL;
+	pub const ProposalBondMinimum: Balance = AVAIL;
 	pub const SpendPeriod: BlockNumber = DAYS;
 	pub const Burn: Permill = Permill::from_percent(0); // Not burning any funds for now
 	pub const TipCountdown: BlockNumber = DAYS;
 	pub const TipFindersFee: Percent = Percent::from_percent(20);
-	pub const TipReportDepositBase: Balance = AVL;
+	pub const TipReportDepositBase: Balance = AVAIL;
 	pub const DataDepositPerByte: Balance = CENTS;
 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
 	pub const MaximumReasonLength: u32 = 16384;
@@ -227,7 +227,7 @@ impl ContainsLengthBound for Tippers {
 
 impl pallet_tips::Config for Runtime {
 	type DataDepositPerByte = DataDepositPerByte;
-	type MaxTipAmount = ConstU128<{ 500 * AVL }>;
+	type MaxTipAmount = ConstU128<{ 500 * AVAIL }>;
 	type MaximumReasonLength = MaximumReasonLength;
 	type RuntimeEvent = RuntimeEvent;
 	type TipCountdown = TipCountdown;
@@ -239,8 +239,8 @@ impl pallet_tips::Config for Runtime {
 
 parameter_types! {
 	// Temporary increased price of all transactions by 10x
-	pub const WeightFee: Balance = PICO_AVL;
-	pub const TransactionByteFee: Balance = 100 * NANO_AVL; // 100 nanoAVL
+	pub const WeightFee: Balance = PICO_AVAIL;
+	pub const TransactionByteFee: Balance = 100 * NANO_AVAIL; // 100 nanoAVAIL
 	pub const OperationalFeeMultiplier: u8 = 5u8;
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(50); // target_utilization 50%
 	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000); // 0.000001
@@ -269,7 +269,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = CurrencyAdapter<Balances, DealWithFees<Runtime>>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightToFee = ConstantMultiplier<Balance, WeightFee>; // 1 weight = 1 picoAVL -> second_price = 1 AVL
+	type WeightToFee = ConstantMultiplier<Balance, WeightFee>; // 1 weight = 1 picoAVAIL -> second_price = 1 AVAIL
 }
 
 parameter_types! {
@@ -354,7 +354,7 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-	pub const DepositBase: Balance = 2 * AVL;
+	pub const DepositBase: Balance = 2 * AVAIL;
 	// Additional storage item size of 32 bytes.
 	pub const DepositFactor: Balance = 5 * CENTS;
 }
@@ -822,11 +822,11 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 
 parameter_types! {
 	// One storage item; key size 32, value size 8; .
-	pub const ProxyDepositBase: Balance = 10 * AVL;
+	pub const ProxyDepositBase: Balance = 10 * AVAIL;
 	// Additional storage item size of 33 bytes.
-	pub const ProxyDepositFactor: Balance = 3 * AVL;
-	pub const AnnouncementDepositBase: Balance = 10 * AVL;
-	pub const AnnouncementDepositFactor: Balance = 5 * AVL;
+	pub const ProxyDepositFactor: Balance = 3 * AVAIL;
+	pub const AnnouncementDepositBase: Balance = 10 * AVAIL;
+	pub const AnnouncementDepositFactor: Balance = 5 * AVAIL;
 }
 
 impl pallet_proxy::Config for Runtime {

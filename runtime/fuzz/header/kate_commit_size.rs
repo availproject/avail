@@ -14,7 +14,7 @@ use avail_core::{header::HeaderExtension, InvalidTransactionCustomId as TxAvailE
 use da_control::{pallet::Call as DaControlCall, AppDataFor, CheckAppId};
 use da_runtime::{
 	AppId, Executive, Header, Runtime, RuntimeCall, RuntimeGenesisConfig, SignedExtra,
-	SignedPayload, Timestamp, UncheckedExtrinsic, AVL,
+	SignedPayload, Timestamp, UncheckedExtrinsic, AVAIL,
 };
 
 use codec::Encode;
@@ -49,7 +49,7 @@ fn runtime_ext(total_app_ids: NonZeroUsize) -> TestExternalities {
 
 	// Alice has all the money
 	pallet_balances::GenesisConfig::<Runtime> {
-		balances: vec![(alice.clone(), 100_000_000 * AVL)],
+		balances: vec![(alice.clone(), 100_000_000 * AVAIL)],
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
