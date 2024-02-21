@@ -57,7 +57,7 @@ pub mod avail {
 	pub type Bounded =
 		api::runtime_types::frame_support::traits::preimages::Bounded<RuntimeCall, BlakeTwo256>;
 
-	pub const AVL: u128 = 1_000_000_000_000_000_000;
+	pub const AVAIL: u128 = 1_000_000_000_000_000_000;
 
 	pub type MaxCells = ConstU32<64>;
 	pub type Cells = bounded_collections::BoundedVec<Cell, MaxCells>;

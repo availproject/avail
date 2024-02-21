@@ -15,11 +15,11 @@ members = [
 
 [workspace.dependencies]
 # Avail core
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "main", default-features = false, features = [
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/rename-symbol", default-features = false, features = [
     "runtime",
 ] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "main", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "main", default-features = false }
+kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/rename-symbol", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "ghali/rename-symbol", default-features = false }
 
 # Substrate
 sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
