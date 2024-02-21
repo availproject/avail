@@ -14,7 +14,7 @@
   "protocolId": "Avail",
   "properties": {
     "tokenDecimals": 18,
-    "tokenSymbol": "AVL"
+    "tokenSymbol": "AVAIL"
   },
   "forkBlocks": null,
   "badBlocks": null,

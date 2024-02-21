@@ -3,7 +3,7 @@ use avail_core::{BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO};
 use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 
 use da_runtime::{
-	constants, AccountId, Balance, DataAvailabilityConfig, SessionKeys, StakerStatus, AVL,
+	constants, AccountId, Balance, DataAvailabilityConfig, SessionKeys, StakerStatus, AVAIL,
 };
 use frame_system::limits::BlockLength;
 use pallet_vector::constants::{
@@ -19,7 +19,7 @@ use sp_core::sr25519::Public;
 pub const PROTOCOL_ID: &str = "Avail";
 pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
 
-const ENDOWMENT: Balance = 1_000_000 * AVL;
+const ENDOWMENT: Balance = 1_000_000 * AVAIL;
 const STASH_BOND: Balance = ENDOWMENT / 100;
 const DEFAULT_ENDOWED_SEEDS: [&str; 12] = [
 	"Alice",
