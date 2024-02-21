@@ -6,7 +6,7 @@ Library to connect to Avail
 
 ## Introduction
 
-The simplest way to interract with the avail chain.
+The simplest way to interact with the avail chain.
 
 ## Installation
 
@@ -26,7 +26,7 @@ npm install avail-js-sdk
 
 ## Goals
 
-- Provide an easy way to interract with avail
+- Provide an easy way to interact with avail
 - Facilitate account management
 - Add utility helpers
 - Still expose polkadot-js
