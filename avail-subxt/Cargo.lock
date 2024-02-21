@@ -583,7 +583,7 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 [[package]]
 name = "avail-core"
 version = "0.5.1"
-source = "git+https://github.com/availproject/avail-core?branch=ghali/rename-symbol#e73a6e7d6d552882916a8c890f065002961bc711"
+source = "git+https://github.com/availproject/avail-core?branch=main#437bc6f634d0bb8c35daae2dcd7d37e198874319"
 dependencies = [
  "binary-merkle-tree",
  "derive_more",
