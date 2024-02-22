@@ -16,7 +16,7 @@ kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "
 kate = { git = "https://github.com/availproject/avail-core", branch = "main" }
 avail-core = { git = "https://github.com/availproject/avail-core", branch = "main" }
 binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-serde = { version = "1.0.163", default-features = false, features = ["derive", "alloc"] }
+serde = { version = "1.0.195", default-features = false, features = ["derive", "alloc"] }
 
 
 # Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)

@@ -846,7 +846,7 @@ impl pallet_proxy::Config for Runtime {
 
 /// Calls that cannot be paused by the tx-pause pallet.
 pub struct TxPauseWhitelistedCalls;
-/// Whitelist `Balances::transfer_keep_alive`, all others are pauseable.
+/// All calls are pauseable.
 impl Contains<RuntimeCallNameOf<Runtime>> for TxPauseWhitelistedCalls {
 	fn contains(_full_name: &RuntimeCallNameOf<Runtime>) -> bool {
 		false

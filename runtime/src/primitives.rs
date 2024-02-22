@@ -6,7 +6,7 @@ use sp_runtime::{
 };
 use sp_std::vec::Vec;
 
-use crate::{migration, AllPalletsWithSystem, Runtime, RuntimeCall};
+use crate::{AllPalletsWithSystem, Runtime, RuntimeCall};
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -72,12 +72,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	Migrations,
 >;
-
-/// All migrations executed on runtime upgrade as a nested tuple of types implementing
-/// `OnRuntimeUpgrade`.
-type Migrations = (migration::Migration,);
 
 /// ID type for named reserves.
 pub type ReserveIdentifier = [u8; 8];

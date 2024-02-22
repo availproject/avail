@@ -130,8 +130,6 @@ pub mod weights;
 pub mod extrinsic_len;
 pub use extrinsic_len::{ExtrinsicLen, PaddedExtrinsicLen};
 
-pub mod migrations;
-
 // Backward compatible re-export.
 pub use extensions::{
 	check_genesis::CheckGenesis,
@@ -453,10 +451,6 @@ pub mod pallet {
 					.expect("The weights are invalid.");
 			});
 		}
-
-		fn on_runtime_upgrade() -> Weight {
-			migrations::migrate::<T>()
-		}
 	}
 
 	#[pallet::call]
@@ -776,7 +770,7 @@ pub mod pallet {
 			sp_io::storage::set(well_known_keys::EXTRINSIC_INDEX, &0u32.encode());
 			<DynamicBlockLength<T>>::put(&self.block_length);
 
-			StorageVersion::new(1).put::<Pallet<T>>();
+			StorageVersion::new(3).put::<Pallet<T>>();
 		}
 	}
 }
