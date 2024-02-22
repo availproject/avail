@@ -143,10 +143,13 @@ pub fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, String> {
 		.extended_commitments(&*PMP, 2)
 		.map_err(|e| format!("Grid extension failed: {e:?}"))?;
 
-	let commitment = extended_grid
-		.iter()
-		.flat_map(|c| c.to_bytes().expect("Commitment serialization cannot fail"))
-		.collect::<Vec<u8>>();
+	let mut commitment = Vec::new();
+	for c in extended_grid.iter() {
+		match c.to_bytes() {
+			Ok(bytes) => commitment.extend(bytes),
+			Err(e) => return Err(format!("Commitment serialization failed: {:?}", e)),
+		}
+	}
 
 	Ok(commitment)
 }
