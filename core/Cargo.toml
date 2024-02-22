@@ -20,19 +20,19 @@ tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak
 
 
 # Substrate
-binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, optional = true }
+binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1", default-features = false, optional = true }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "2", default-features = false, features = ["derive"] }
-sp-arithmetic = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-trie = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-arithmetic = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1", default-features = false }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1", default-features = false }
+sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1", default-features = false }
+sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1", default-features = false }
+sp-trie = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1", default-features = false }
 
 # Substrate Runtime
-frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, optional = true }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, optional = true }
-sp-runtime-interface = {git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, optional = true }
+frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1", default-features = false, optional = true }
+sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1", default-features = false, optional = true }
+sp-runtime-interface = {git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1", default-features = false, optional = true }
 
 [dev-dependencies]
 hex-literal = { version = "0.3.4" }
