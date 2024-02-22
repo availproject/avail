@@ -26,21 +26,6 @@ export const rpc = {
       ],
       type: "Vec<u8>",
     },
-    queryDataProof: {
-      description: "Generate the data proof for the given `transaction_index`",
-      params: [
-        {
-          name: "transaction_index",
-          type: "u32",
-        },
-        {
-          name: "at",
-          type: "Hash",
-          isOptional: true,
-        },
-      ],
-      type: "DataProof",
-    },
     queryDataProofV2: {
       description: "Generate the data proof for the given `transaction_index`",
       params: [

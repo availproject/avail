@@ -46,7 +46,7 @@ pub trait Extractor {
 	) -> Result<Vec<Vec<u8>>, Self::Error>;
 
 	/// Returns the `data` or `Message` based on whether the given extrinsic is `da::submit_data`
-	/// or `bridge::send_message` Call respectively. It supports both v1 & v2 headers.
+	/// or `bridge::send_message` Call respectively. It supports v3 headers.
 	///
 	/// The `metrics` will be used to write accountability information about the whole process.
 	#[allow(clippy::type_complexity)]
@@ -122,7 +122,7 @@ where
 		.collect()
 }
 
-// Supports both v1 & v2 headers
+// Supports v3 headers
 fn extract_and_inspect_v2<E>(
 	opaque: &OpaqueExtrinsic,
 	metrics: RcMetrics,

@@ -156,29 +156,15 @@ pub fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, String> {
 
 #[cfg(feature = "std")]
 pub fn get_empty_header(data_root: H256, version: HeaderVersion) -> HeaderExtension {
-	use avail_core::header::extension::{v1, v2};
+	use avail_core::header::extension::v3;
 	let empty_commitment: Vec<u8> = vec![0];
 	let empty_app_lookup = DataLookup::new_empty();
 
 	match version {
-		HeaderVersion::V1 => {
-			use avail_core::kate_commitment::v1::KateCommitment;
-			let kate = KateCommitment {
-				rows: 1,
-				cols: 4,
-				commitment: empty_commitment,
-				data_root,
-			};
-			v1::HeaderExtension {
-				app_lookup: empty_app_lookup,
-				commitment: kate,
-			}
-			.into()
-		},
-		HeaderVersion::V2 => {
-			use avail_core::kate_commitment::v2::KateCommitment;
+		HeaderVersion::V3 => {
+			use avail_core::kate_commitment::v3::KateCommitment;
 			let kate = KateCommitment::new(1, 4, data_root, empty_commitment);
-			v2::HeaderExtension {
+			v3::HeaderExtension {
 				app_lookup: empty_app_lookup,
 				commitment: kate,
 			}
@@ -197,7 +183,7 @@ pub fn build_extension(
 	version: HeaderVersion,
 ) -> HeaderExtension {
 	use avail_base::metrics::avail::HeaderExtensionBuilderMetrics;
-	use avail_core::header::extension::{v1, v2};
+	use avail_core::header::extension::v3;
 
 	let build_extension_start = std::time::Instant::now();
 
@@ -246,24 +232,10 @@ pub fn build_extension(
 	let app_lookup = grid.lookup().clone();
 
 	let header_extension = match version {
-		HeaderVersion::V1 => {
-			use avail_core::kate_commitment::v1::KateCommitment;
-			let kate = KateCommitment {
-				rows,
-				cols,
-				commitment,
-				data_root,
-			};
-			v1::HeaderExtension {
-				app_lookup,
-				commitment: kate,
-			}
-			.into()
-		},
-		HeaderVersion::V2 => {
-			use avail_core::kate_commitment::v2::KateCommitment;
+		HeaderVersion::V3 => {
+			use avail_core::kate_commitment::v3::KateCommitment;
 			let kate = KateCommitment::new(rows, cols, data_root, commitment);
-			v2::HeaderExtension {
+			v3::HeaderExtension {
 				app_lookup,
 				commitment: kate,
 			}
@@ -280,27 +252,6 @@ pub fn build_extension(
 /// Hosted function to build the header using `kate` commitments.
 #[runtime_interface]
 pub trait HostedHeaderBuilder {
-	/// Creates the header using the given parameters.
-	/// *NOTE:* Version 1 uses `dusk-plonk v0.8.2`
-	#[version(1)]
-	fn build(
-		app_extrinsics: Vec<AppExtrinsic>,
-		data_root: H256,
-		block_length: BlockLength,
-		block_number: u32,
-		seed: Seed,
-	) -> HeaderExtension {
-		build_extension(
-			&app_extrinsics,
-			data_root,
-			block_length,
-			block_number,
-			seed,
-			HeaderVersion::V1,
-		)
-	}
-
-	#[version(2)]
 	fn build(
 		app_extrinsics: Vec<AppExtrinsic>,
 		data_root: H256,

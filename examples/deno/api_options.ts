@@ -26,21 +26,6 @@ export const API_RPC = {
             ],
             type: 'Vec<u8>'
         },
-        queryDataProof: {
-            description: 'Generate the data proof for the given `transaction_index`',
-            params: [
-                {
-                    name: 'transaction_index',
-                    type: 'u32'
-                },
-                {
-                    name: 'at',
-                    type: 'Hash',
-                    isOptional: true
-                }
-            ],
-            type: 'DataProof'
-        },
         queryDataProofV2: {
             description: 'Generate the data proof for the given `transaction_index`',
             params: [
@@ -105,22 +90,12 @@ export const API_TYPES = {
         commitment: "Vec<u8>",
         dataRoot: "H256",
       },
-      V1HeaderExtension: {
-        appLookup: "DataLookup",
-        commitment: "KateCommitment",
-      },
-      V2HeaderExtension: {
-        appLookup: "DataLookup",
-        commitment: "KateCommitment",
-      },
       V3HeaderExtension: {
         appLookup: "DataLookup",
         commitment: "KateCommitment",
       },
       HeaderExtension: {
         _enum: {
-          V1: "V1HeaderExtension",
-          V2: "V2HeaderExtension",
           V3: "V3HeaderExtension",
         },
       },
@@ -153,13 +128,6 @@ export const API_TYPES = {
         normal: 'u32',
         operational: 'u32',
         mandatory: 'u32'
-    },
-    DataProof: {
-        root: 'H256',
-        proof: 'Vec<H256>',
-        numberOfLeaves: 'Compact<u32>',
-        leafIndex: 'Compact<u32>',
-        leaf: 'H256'
     },
     DataProofV2: {
         data_root: 'H256',

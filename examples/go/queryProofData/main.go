@@ -51,7 +51,7 @@ func main() {
 
 	// query proof
 	var data HeaderF
-	err = api.Client.Call(&data, "kate_queryDataProof", transactionIndex, h)
+	err = api.Client.Call(&data, "kate_queryDataProofv2", transactionIndex, h)
 	if err != nil {
 		panic(fmt.Sprintf("%v\n", err))
 	}
@@ -67,7 +67,7 @@ func main() {
 	fmt.Printf("Leaf: %v\n", data.Leaf.Hex())
 }
 
-// HeaderF struct represents response from queryDataProof
+// HeaderF struct represents response from queryDataProof2
 type HeaderF struct {
 	Root             types.Hash
 	Proof            []types.Hash

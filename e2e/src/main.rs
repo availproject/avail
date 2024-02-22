@@ -8,7 +8,7 @@ pub mod tests {
 
 	use avail_core::data_proof_v2::ProofResponse;
 	use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
-	use avail_core::{DataProof, HeaderVersion};
+	use avail_core::HeaderVersion;
 	use avail_subxt::{
 		api::{
 			self,
@@ -133,20 +133,6 @@ pub mod tests {
 		let block_length: BlockLength = rpc.request("kate_blockLength", params).await?;
 
 		Ok(block_length)
-	}
-
-	#[allow(dead_code)]
-	async fn query_data_proof(
-		rpc: &Rpc<AvailConfig>,
-		transaction_index: u32,
-		block_hash: H256,
-	) -> anyhow::Result<DataProof> {
-		let mut params = RpcParams::new();
-		params.push(transaction_index)?;
-		params.push(Some(block_hash))?;
-		let data_proof: DataProof = rpc.request("kate_queryDataProof", params).await?;
-
-		Ok(data_proof)
 	}
 
 	async fn query_data_proof_v2(
@@ -326,8 +312,7 @@ pub mod tests {
 
 		let submitted_block = get_submitted_block(rpc, block_hash).await.unwrap();
 		let (commitment, rows, cols) = match submitted_block.block.header.extension {
-			HeaderExtension::V1(_) => panic!("Unsupported header extension version"),
-			HeaderExtension::V2(ext) => (
+			HeaderExtension::V3(ext) => (
 				ext.commitment.commitment,
 				ext.commitment.rows,
 				ext.commitment.cols,
@@ -364,20 +349,6 @@ pub mod tests {
 		assert_eq!(length.rows, BlockLengthRows(256));
 		assert_eq!(length.chunk_size, 32);
 	}
-
-	// #[async_std::test]
-	// pub async fn rpc_query_data_proof_test() {
-	// 	let client = establish_a_connection().await.unwrap();
-	// 	let (txc, rpc) = (client.tx(), client.rpc());
-
-	// 	let example_data = "ExampleData".as_bytes();
-	// 	assert_eq!(example_data.len(), 11);
-	// 	let block_hash = send_da_example_data(&txc, example_data).await.unwrap();
-
-	// 	let expected_proof_root = merkle_proof::<Keccak256, _, _>(vec![example_data.to_vec()], 0);
-	// 	let actual_proof = query_data_proof(rpc, 1, block_hash).await.unwrap();
-	// 	assert_eq!(actual_proof.root, expected_proof_root.root);
-	// }
 
 	#[async_std::test]
 	pub async fn rpc_query_data_proof_v2_test() {
