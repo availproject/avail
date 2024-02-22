@@ -21,7 +21,7 @@ log = { version = "0.4.20", default-features = false }
 static_assertions = "1.1.0"
 
 # Substrate
-serde = { version = "1.0.126", optional = true, features = ["derive"] }
+serde = { version = "1.0.195", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
 	"derive",
 ] }

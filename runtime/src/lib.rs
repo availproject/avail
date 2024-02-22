@@ -30,7 +30,6 @@ mod data_root_tests;
 pub mod impls;
 #[cfg(test)]
 mod impls_tests;
-mod migration;
 mod primitives;
 mod version;
 mod weights;

@@ -31,7 +31,7 @@ ethabi = { version = "18.0.0", default-features = false }
 # Substrate
 codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive"] }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive", "serde"] }
-serde = { version = "1.0.188", default-features = false, features = ["derive", "alloc"], optional = true }
+serde = { version = "1.0.195", default-features = false, features = ["derive", "alloc"], optional = true }
 frame-support = { workspace = true, default-features = false }
 sp-core = { workspace = true, default-features = false, features = ["serde"] }
 sp-io = { workspace = true, default-features = false }

@@ -17,7 +17,7 @@ scale-info = { version = "2.5.0", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3", features = ["derive"] }
 parity-util-mem = { version = "0.12.0", features = ["primitive-types"] }
 derive_more = "0.99.17" 
-serde = { version = "1.0.121", features = ["derive"] }
+serde = { version = "1.0.195", features = ["derive"] }
 
 frame-support = { workspace = true, default-features = false }
 sp-runtime = { workspace = true, default-features = false }
