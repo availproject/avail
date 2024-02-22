@@ -574,7 +574,8 @@ pub fn new_full_base(
 	};
 
 	let grandpa_config = sc_consensus_grandpa::Config {
-		gossip_duration: std::time::Duration::from_millis(333),
+		// Considering our block_time of 20 seconds, we may consider increasing this to 2 seconds without introducing delay in finality.
+		gossip_duration: std::time::Duration::from_millis(1000),
 		justification_period: 512,
 		name: Some(name),
 		observer_enabled: false,
