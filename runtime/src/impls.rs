@@ -1062,6 +1062,7 @@ impl frame_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	/// The ubiquitous origin type.
 	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeTask = ();
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = constants::system::SS58Prefix;
 	/// Data Root

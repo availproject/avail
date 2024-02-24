@@ -20,7 +20,7 @@ frame-support = { workspace = true, default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false, path = "../../system" }
 pallet-transaction-payment = { version = "4.0.0-dev", default-features = false, path = ".." }
 codec = { package = "parity-scale-codec", version = "3.2.2", default-features = false, features = ["derive"] }
-scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
 
 [dev-dependencies]
 sp-core = { version = "21.0.0", workspace = true, default-features = false }

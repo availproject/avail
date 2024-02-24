@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2019-2022 Parity Technologies (UK) Ltd.
+// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 sp_api::decl_runtime_apis! {
-	/// The API to query account nonce
+	/// The API to query account nonce.
 	pub trait AccountNonceApi<AccountId, Nonce> where
 		AccountId: codec::Codec,
 		Nonce: codec::Codec,

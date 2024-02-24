@@ -7,8 +7,8 @@ pub mod tests {
 	use std::num::NonZeroU16;
 
 	use avail_core::data_proof_v2::ProofResponse;
-	use avail_core::HeaderVersion;
 	use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
+	use avail_subxt::avail;
 	use avail_subxt::{
 		api::{
 			self,
@@ -17,7 +17,7 @@ pub mod tests {
 				bounded_collections::bounded_vec::BoundedVec, frame_system::limits::BlockLength,
 			},
 		},
-		avail::{AppUncheckedExtrinsic, PairSigner},
+		avail::AppUncheckedExtrinsic,
 		build_client,
 		primitives::AvailExtrinsicParams,
 		AvailConfig, Opts,
@@ -29,9 +29,9 @@ pub mod tests {
 	use kate_recovery::matrix::Dimensions;
 	use kate_recovery::proof::verify;
 	use sp_keyring::AccountKeyring;
-	use subxt::ext::sp_core::keccak_256;
+	use subxt::ext::sp_core::{keccak_256, Pair};
 	use subxt::ext::sp_runtime::traits::Keccak256;
-	use subxt::tx::TxClient;
+	use subxt::tx::{PairSigner, TxClient};
 	use subxt::{
 		ext::sp_core::H256,
 		rpc::{types::ChainBlockResponse, Rpc, RpcParams},
@@ -51,7 +51,9 @@ pub mod tests {
 		txc: &TxClient<AvailConfig, OnlineClient<AvailConfig>>,
 		data: &[u8],
 	) -> anyhow::Result<H256> {
-		let signer = PairSigner::new(AccountKeyring::Alice.pair());
+		let alice =
+			avail::Pair::from_string_with_seed(&AccountKeyring::Alice.to_seed(), None).unwrap();
+		let signer = PairSigner::<AvailConfig, avail::Pair>::new(alice.0);
 
 		let call = api::tx()
 			.data_availability()

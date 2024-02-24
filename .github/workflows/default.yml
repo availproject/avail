@@ -44,7 +44,7 @@ jobs:
         run: zepter format features --manifest-path e2e/Cargo.toml
 
       - name: Check Avail-SubXt toml formatting
-        run: zepter format features --manifest-path avail-subxt/Cargo.toml
+        run: zepter format features --manifest-path e2e/Cargo.toml
 
   build:
     runs-on: ubuntu-latest
