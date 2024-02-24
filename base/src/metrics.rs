@@ -74,7 +74,7 @@ fn custom_histogram(
 	buckets: Vec<f64>,
 ) -> Result<Histogram, PrometheusError> {
 	let histogram = Histogram::with_opts(HistogramOpts {
-		common_opts: Opts::new(name.clone(), help),
+		common_opts: Opts::new(name, help),
 		buckets,
 	})?;
 	register(histogram.clone(), registry)?;

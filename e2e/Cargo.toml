@@ -8,21 +8,21 @@ edition = "2021"
 [dependencies]
 avail-subxt = { path = "../avail-subxt" }
 async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
-sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1" }
+sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
 subxt = "0.29"
 anyhow = "1.0.66"
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "full", "bit-vec"] }
 kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "ghali/prepare-mainnet" }
 kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/prepare-mainnet" }
 avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/prepare-mainnet" }
-binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1" }
+binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
 serde = { version = "1.0.195", default-features = false, features = ["derive", "alloc"] }
 
 
 # Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
 [patch.crates-io]
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1" }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1" }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1" }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1" }
-sp-core-hashing = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1" }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
+sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
+sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
+sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
+sp-core-hashing = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }

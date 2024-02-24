@@ -1,8 +1,8 @@
-use avail_subxt::{build_client, submit_data, Opts};
+use avail_subxt::{avail, build_client, submit_data, AvailConfig, Opts};
 
 use sp_keyring::AccountKeyring;
 use structopt::StructOpt;
-use subxt::tx::PairSigner;
+use subxt::{ext::sp_core::Pair, tx::PairSigner};
 
 /// This example attempts to submit data to fill the entire block. Note that this doesn't guarantee
 /// that the block will be filled, but if you submit more than a full block, then it will spill over
@@ -18,7 +18,8 @@ async fn main() -> anyhow::Result<()> {
 	let args = Opts::from_args();
 	let (client, _) = build_client(args.ws, args.validate_codegen).await?;
 
-	let signer = PairSigner::new(AccountKeyring::Alice.pair());
+	let alice = avail::Pair::from_string_with_seed(&AccountKeyring::Alice.to_seed(), None).unwrap();
+	let signer = PairSigner::<AvailConfig, avail::Pair>::new(alice.0);
 	let start = std::time::Instant::now();
 
 	for i in 1..=NUM_CHUNKS {

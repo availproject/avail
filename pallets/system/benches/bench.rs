@@ -16,7 +16,7 @@
 // limitations under the License.
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use frame_support::{traits::ConstU32, weights::Weight};
+use frame_support::{derive_impl, traits::ConstU32, weights::Weight};
 use frame_system::{
 	header_builder::da::HeaderExtensionBuilder,
 	mocking::{MockDaBlock, MockUncheckedExtrinsic},
@@ -51,7 +51,7 @@ type UncheckedExtrinsic = MockUncheckedExtrinsic<Runtime>;
 type Block = MockDaBlock<Runtime>;
 
 frame_support::construct_runtime!(
-	pub struct Runtime
+	pub enum Runtime
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Module: module::{Pallet, Event},
@@ -69,6 +69,8 @@ frame_support::parameter_types! {
 			4 * 1024 * 1024, Perbill::from_percent(75),
 		);
 }
+
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Runtime {
 	type AccountData = ();
 	type AccountId = u64;

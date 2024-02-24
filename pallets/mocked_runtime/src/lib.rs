@@ -173,7 +173,6 @@ impl pallet_balances::Config for Runtime {
 	type ExistentialDeposit = ExistentialDeposit;
 	type FreezeIdentifier = [u8; 8];
 	type MaxFreezes = ConstU32<2>;
-	type MaxHolds = ConstU32<2>;
 	type MaxLocks = ();
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
@@ -198,7 +197,7 @@ impl da_control::Config for Runtime {
 impl custom::custom::Config for Runtime {}
 
 construct_runtime!(
-	pub struct Runtime
+	pub enum Runtime
 	{
 		System: frame_system,
 		Balances: pallet_balances,

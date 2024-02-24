@@ -67,7 +67,7 @@
 use avail_core::{
 	header::HeaderExtension,
 	traits::{ExtendedBlock, ExtendedHeader},
-	AppExtrinsic, AppId, HeaderVersion, OpaqueExtrinsic,
+	AppExtrinsic, HeaderVersion, OpaqueExtrinsic,
 };
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
 use frame_support::{
@@ -1139,6 +1139,24 @@ pub enum DecRefStatus {
 }
 
 impl<T: Config> Pallet<T> {
+	/// Returns the `spec_version` of the last runtime upgrade.
+	///
+	/// This function is useful for writing guarded runtime migrations in the runtime. A runtime
+	/// migration can use the `spec_version` to ensure that it isn't applied twice. This works
+	/// similar as the storage version for pallets.
+	///
+	/// This functions returns the `spec_version` of the last runtime upgrade while executing the
+	/// runtime migrations
+	/// [`on_runtime_upgrade`](frame_support::traits::OnRuntimeUpgrade::on_runtime_upgrade)
+	/// function. After all migrations are executed, this will return the `spec_version` of the
+	/// current runtime until there is another runtime upgrade.
+	///
+	/// Example:
+	pub fn last_runtime_upgrade_spec_version() -> u32 {
+		LastRuntimeUpgrade::<T>::get().map_or(0, |l| l.spec_version.0)
+	}
+
+	/// Returns true if the given account exists.
 	pub fn account_exists(who: &T::AccountId) -> bool {
 		Account::<T>::contains_key(who)
 	}
@@ -1699,6 +1717,21 @@ impl<T: Config> Pallet<T> {
 		Events::<T>::stream_iter()
 	}
 
+	/// Read and return the events of a specific pallet, as denoted by `E`.
+	///
+	/// This is useful for a pallet that wishes to read only the events it has deposited into
+	/// `frame_system` using the standard `fn deposit_event`.
+	pub fn read_events_for_pallet<E>() -> Vec<E>
+	where
+		T::RuntimeEvent: TryInto<E>,
+	{
+		Events::<T>::get()
+			.into_iter()
+			.map(|er| er.event)
+			.filter_map(|e| e.try_into().ok())
+			.collect::<_>()
+	}
+
 	/// Set the block number to something in particular. Can be used as an alternative to
 	/// `initialize` for tests that don't need to bother with the other environment entries.
 	#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
@@ -1722,6 +1755,7 @@ impl<T: Config> Pallet<T> {
 	/// Set the current block weight. This should only be used in some integration tests.
 	#[cfg(any(feature = "std", test))]
 	pub fn set_block_consumed_resources(weight: Weight, len: usize) {
+		use avail_core::AppId;
 		use sp_runtime::SaturatedConversion as _;
 
 		BlockWeight::<T>::mutate(|current_weight| {
@@ -1991,6 +2025,11 @@ impl<T: Config> BlockNumberProvider for Pallet<T> {
 
 	fn current_block_number() -> Self::BlockNumber {
 		Pallet::<T>::block_number()
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn set_block_number(n: BlockNumberFor<T>) {
+		Self::set_block_number(n)
 	}
 }
 

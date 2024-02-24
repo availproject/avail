@@ -15,6 +15,7 @@ use frame_system::{limits::BlockLength, submitted_data};
 use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
+	types::error::ErrorObject,
 };
 
 use kate::gridgen::AsBytes;
@@ -127,23 +128,24 @@ impl<Client, Block: BlockT> Kate<Client, Block> {
 /// Error type of this RPC api.
 pub enum Error {
 	/// The transaction was not decodable.
-	DecodeError,
-	/// The call to runtime failed.
-	RuntimeError,
+	KateRPCError,
 }
 
-impl From<Error> for i64 {
-	fn from(e: Error) -> i64 {
+impl From<Error> for i32 {
+	fn from(e: Error) -> i32 {
 		match e {
-			Error::RuntimeError => 1,
-			Error::DecodeError => 2,
+			Error::KateRPCError => 1,
 		}
 	}
 }
 
 macro_rules! internal_err {
 	($($arg:tt)*) => {{
-		JsonRpseeError::Custom(format!($($arg)*))
+		ErrorObject::owned(
+			Error::KateRPCError.into(),
+			format!($($arg)*),
+			None::<()>
+		)
 	}}
 }
 
@@ -165,7 +167,7 @@ where
 		at.unwrap_or_else(|| self.client.info().best_hash)
 	}
 
-	fn is_block_finalized(&self, block: &SignedBlock<Block>) -> Result<(), JsonRpseeError> {
+	fn is_block_finalized(&self, block: &SignedBlock<Block>) -> RpcResult<()> {
 		let block_header = block.block.header();
 		let (block_hash, block_number) = (block_header.hash(), *block_header.number());
 
@@ -355,15 +357,14 @@ where
 	}
 
 	async fn query_proof(&self, cells: Cells, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
-		use crate::JsonRpseeError::Custom;
-
 		if cells.len() > self.max_cells_size {
-			let err = Custom(format!(
-				"Cannot query ({}) more than {} amount of cells per request. Either increase the max cells size (--kate-max-cells-size) or query less amount of cells per request.",
-				cells.len(),
-				self.max_cells_size
-			));
-			return Err(err);
+			return Err(
+				internal_err!(
+					"Cannot query ({}) more than {} amount of cells per request. Either increase the max cells size (--kate-max-cells-size) or query less amount of cells per request.",
+					cells.len(),
+					self.max_cells_size
+				)
+			);
 		}
 
 		let execution_start = std::time::Instant::now();

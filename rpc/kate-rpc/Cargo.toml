@@ -16,7 +16,7 @@ kate = { workspace = true, default-features = false }
 kate-recovery = { workspace = true, default-features = false }
 
 # 3rd party
-jsonrpsee = { version = "0.16.2", features = ["server", "client", "macros"] }
+jsonrpsee = { version = "0.20.3", features = ["server", "client", "macros"] }
 rayon = { version = "1.5.2" }
 moka = { version = "0.12.1", features = ["future"] }
 

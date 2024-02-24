@@ -1,6 +1,4 @@
-use avail_core::{
-	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, DataLookup, HeaderVersion,
-};
+use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, HeaderVersion};
 use frame_support::traits::Randomness;
 #[cfg(feature = "std")]
 use kate::gridgen::EvaluationGrid;
@@ -156,7 +154,7 @@ pub fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, String> {
 
 #[cfg(feature = "std")]
 pub fn get_empty_header(data_root: H256, version: HeaderVersion) -> HeaderExtension {
-	use avail_core::header::extension::v3;
+	use avail_core::{header::extension::v3, DataLookup};
 	let empty_commitment: Vec<u8> = vec![0];
 	let empty_app_lookup = DataLookup::new_empty();
 

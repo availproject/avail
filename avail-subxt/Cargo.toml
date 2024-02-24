@@ -35,14 +35,14 @@ avail-core = { git = "https://github.com/availproject/avail-core", branch = "gha
 
 # Substrate
 subxt = { version = "0.29" }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1", default-features = false }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
 	"derive",
 	"full",
 	"bit-vec",
 ] }
 scale-info = { version = "2.5.0", features = ["bit-vec"] }
-bounded-collections = { version = "0.1.8", features = ["serde"] }
+bounded-collections = { version = "0.2.0", features = ["serde"] }
 
 [dev-dependencies]
 async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
@@ -56,16 +56,15 @@ serde_json = "1.0"
 indicatif = "0.17"
 
 # Substrate 
-sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1" }
+sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
 
 
 # Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
 [patch.crates-io]
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1" }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1" }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1" }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1" }
-sp-core-hashing = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.7.1" }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
+sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
+sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
+sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
 
 
 [features]

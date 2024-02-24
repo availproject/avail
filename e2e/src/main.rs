@@ -7,8 +7,8 @@ pub mod tests {
 	use std::num::NonZeroU16;
 
 	use avail_core::data_proof_v2::ProofResponse;
-	use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 	use avail_core::HeaderVersion;
+	use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 	use avail_subxt::{
 		api::{
 			self,

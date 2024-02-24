@@ -42,11 +42,11 @@ type BlockNumber = u32;
 type Balance = u64;
 
 frame_support::construct_runtime!(
-	pub struct Runtime
+	pub enum Runtime
 	{
-		System: system::{Pallet, Call, Config<T>, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
+		System: system,
+		Balances: pallet_balances,
+		TransactionPayment: pallet_transaction_payment,
 	}
 );
 
@@ -113,7 +113,6 @@ impl pallet_balances::Config for Runtime {
 	type MaxFreezes = ();
 	type RuntimeHoldReason = ();
 	type RuntimeFreezeReason = ();
-	type MaxHolds = ();
 }
 
 impl WeightToFeeT for WeightToFee {
