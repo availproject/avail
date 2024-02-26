@@ -41,7 +41,7 @@ sp-version = { workspace = true, default-features = false, features = ["serde"] 
 sp-weights = { workspace = true, default-features = false, features = ["serde"] }
 sp-runtime-interface = { workspace = true, default-features = false }
 binary-merkle-tree = { workspace = true, default-features = false }
-bounded-collections = { version = "0.1.8", default-features = false }
+bounded-collections = { version = "0.2.0", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.3.1"

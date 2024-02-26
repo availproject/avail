@@ -35,18 +35,9 @@ impl Metrics {
 /// Extracts the `data` field from some types of extrinsics.
 pub trait Extractor {
 	type Error: Debug;
-	/// Returns the `data` field of `encoded_extrinsic` if it contains one, like a
-	/// `Avail::SubmitData` call.
-	///
-	/// The `metrics` will be used to write accountability information about the whole process.
-	// Note: This should be deprecated in the upcoming versions in favour of extract_v2
-	fn extract(
-		extrinsic: &OpaqueExtrinsic,
-		metrics: RcMetrics,
-	) -> Result<Vec<Vec<u8>>, Self::Error>;
 
 	/// Returns the `data` or `Message` based on whether the given extrinsic is `da::submit_data`
-	/// or `bridge::send_message` Call respectively. It supports both v1 & v2 headers.
+	/// or `bridge::send_message` Call respectively. It supports v3 headers.
 	///
 	/// The `metrics` will be used to write accountability information about the whole process.
 	#[allow(clippy::type_complexity)]
@@ -60,10 +51,6 @@ pub trait Extractor {
 impl Extractor for () {
 	type Error = ();
 
-	fn extract(_: &OpaqueExtrinsic, _: RcMetrics) -> Result<Vec<Vec<u8>>, ()> {
-		Ok(vec![])
-	}
-
 	fn extract_v2(_: &OpaqueExtrinsic, _: RcMetrics) -> Result<(Vec<Vec<u8>>, Vec<Message>), ()> {
 		Ok((vec![], vec![]))
 	}
@@ -71,13 +58,9 @@ impl Extractor for () {
 
 /// It is similar to `Extractor` but it uses `C` type for calls, instead of `AppExtrinsic`.
 pub trait Filter<C> {
-	/// Returns the `data` field of `call` if it is a one or multiple valid `da_ctrl::submit_data` call.
-	fn filter(call: C, metrics: RcMetrics) -> Vec<Vec<u8>>;
-
+	/// Returns the `data` or `Message` based on whether the given extrinsic is `da::submit_data`
+	/// or `bridge::send_message` Call respectively. It supports v3 headers.
 	fn filter_v2(call: C, metrics: RcMetrics, caller: AccountId32) -> (Vec<Vec<u8>>, Vec<Message>);
-
-	/// This function processes a list of calls and returns their data as Vec<Vec<u8>>
-	fn process_calls(calls: Vec<C>, metrics: &RcMetrics) -> Vec<Vec<u8>>;
 
 	fn process_calls_v2(
 		calls: Vec<C>,
@@ -88,14 +71,6 @@ pub trait Filter<C> {
 
 #[cfg(any(feature = "std", test))]
 impl<C> Filter<C> for () {
-	fn filter(_: C, _: RcMetrics) -> Vec<Vec<u8>> {
-		vec![]
-	}
-
-	fn process_calls(_: Vec<C>, _: &RcMetrics) -> Vec<Vec<u8>> {
-		vec![]
-	}
-
 	fn filter_v2(_: C, _: RcMetrics, _: AccountId32) -> (Vec<Vec<u8>>, Vec<Message>) {
 		(vec![], vec![])
 	}
@@ -105,24 +80,7 @@ impl<C> Filter<C> for () {
 	}
 }
 
-// This should be deprecated in upcoming version in favour of extract_and_inspect_v2
-fn extract_and_inspect<E>(opaque: &OpaqueExtrinsic, metrics: RcMetrics) -> Vec<Vec<u8>>
-where
-	E: Extractor,
-	E::Error: Debug,
-{
-	let extracted = E::extract(opaque, metrics);
-	if let Err(e) = extracted.as_ref() {
-		log::error!("Extractor cannot decode opaque: {e:?}");
-	}
-	extracted
-		.unwrap_or_default()
-		.into_iter()
-		.filter(|data| !data.is_empty())
-		.collect()
-}
-
-// Supports both v1 & v2 headers
+// Supports v3 headers
 fn extract_and_inspect_v2<E>(
 	opaque: &OpaqueExtrinsic,
 	metrics: RcMetrics,
@@ -148,19 +106,6 @@ where
 }
 
 /// Construct a root hash of Binary Merkle Tree created from given filtered `app_extrincs`.
-pub fn extrinsics_root<'a, E, I>(opaque_itr: I) -> H256
-where
-	E: Extractor,
-	E::Error: Debug,
-	I: Iterator<Item = &'a OpaqueExtrinsic> + core::fmt::Debug,
-{
-	let metrics = Metrics::new_shared();
-	let submitted_data =
-		opaque_itr.flat_map(|ext| extract_and_inspect::<E>(ext, Rc::clone(&metrics)));
-
-	root(submitted_data, Rc::clone(&metrics))
-}
-
 pub fn extrinsics_root_v2<'a, E, I>(opaque_itr: I, nonce: u64) -> (H256, u64)
 where
 	E: Extractor,
@@ -231,54 +176,6 @@ pub fn root<I: Iterator<Item = Vec<u8>> + core::fmt::Debug>(
 
 /// Creates the Merkle Proof of the submitted data items in `calls` filtered by `F` and
 /// the given `data_index`.
-///
-/// If `transaction_index` is greater than the number transactions in the block, it will return `None`.
-/// If `data_index` is greater than the number of Merkle leaves, it will return `None`.
-///
-/// # TODO
-/// - The `merkle_proof` requires `ExactSizeIterator`, forcing to load all submitted data into
-/// memory. That would increase the memory footprint of the node significantly. We could fix this
-/// adding the number of submitted data items at `System` pallet.
-pub fn calls_proof<F, I, C>(calls: I, transaction_index: u32) -> Option<MerkleProof<H256, Vec<u8>>>
-where
-	F: Filter<C>,
-	I: Iterator<Item = C>,
-{
-	let metrics = Metrics::new_shared();
-
-	let transaction_index = usize::try_from(transaction_index).ok()?;
-	let tx_max = transaction_index.checked_add(1)?;
-
-	let submitted_data = calls
-		.map(|c| {
-			F::filter(c, Rc::clone(&metrics))
-				.into_iter()
-				.flatten()
-				.collect::<Vec<_>>()
-		})
-		.collect::<Vec<_>>();
-
-	match submitted_data.get(transaction_index) {
-		None => return None,
-		Some(data) if data.is_empty() => return None,
-		_ => (),
-	};
-
-	let data_index = submitted_data
-		.iter()
-		.take(tx_max)
-		.filter(|data| !data.is_empty())
-		.count() - 1;
-
-	let data = submitted_data
-		.into_iter()
-		.filter(|v| !v.is_empty())
-		.collect::<Vec<_>>();
-
-	let data_index = u32::try_from(data_index).ok()?;
-	proof(data, data_index, Rc::clone(&metrics))
-}
-
 #[allow(clippy::type_complexity)]
 pub fn calls_proof_v2<F, I, C>(
 	calls: I,
@@ -469,19 +366,6 @@ mod test {
 	where
 		String: From<C>,
 	{
-		fn filter(d: C, _: RcMetrics) -> Vec<Vec<u8>> {
-			let s = String::try_from(d).unwrap();
-			if s.is_empty() {
-				vec![]
-			} else {
-				vec![s.into_bytes()]
-			}
-		}
-
-		fn process_calls(_: Vec<C>, _: &RcMetrics) -> Vec<Vec<u8>> {
-			vec![]
-		}
-
 		fn filter_v2(d: C, _: RcMetrics, _: AccountId32) -> (Vec<Vec<u8>>, Vec<Message>) {
 			let s = String::try_from(d).unwrap();
 			if s.is_empty() {

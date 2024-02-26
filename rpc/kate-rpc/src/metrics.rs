@@ -1,8 +1,6 @@
 use crate::{Cells, HashOf, Kate, KateApiServer, ProofResponse, Rows};
 
-use avail_core::{
-	header::HeaderExtension, traits::ExtendedHeader, AppId, DataProof, OpaqueExtrinsic,
-};
+use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppId, OpaqueExtrinsic};
 use da_runtime::apis::DataAvailApi;
 
 use frame_system::limits::BlockLength;
@@ -49,13 +47,6 @@ where
 		&self,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<(BlockLength, u128)>;
-
-	#[method(name = "kate_queryDataProofMetrics")]
-	async fn query_data_proof_metrics(
-		&self,
-		transaction_index: u32,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<(DataProof, u128)>;
 
 	#[method(name = "kate_queryDataProofV2Metrics")]
 	async fn query_data_proof_v2_metrics(
@@ -121,18 +112,6 @@ where
 	) -> RpcResult<(BlockLength, u128)> {
 		let start = std::time::Instant::now();
 		let result = self.query_block_length(at).await;
-		let elapsed = start.elapsed();
-
-		result.map(|r| (r, elapsed.as_micros()))
-	}
-
-	async fn query_data_proof_metrics(
-		&self,
-		transaction_index: u32,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<(DataProof, u128)> {
-		let start = std::time::Instant::now();
-		let result = self.query_data_proof(transaction_index, at).await;
 		let elapsed = start.elapsed();
 
 		result.map(|r| (r, elapsed.as_micros()))

@@ -81,7 +81,6 @@ impl pallet_balances::Config for Test {
 	type ExistentialDeposit = ExistentialDeposit;
 	type FreezeIdentifier = [u8; 8];
 	type MaxFreezes = ConstU32<2>;
-	type MaxHolds = ConstU32<2>;
 	type MaxLocks = ();
 	type MaxReserves = MaxReserves;
 	type ReserveIdentifier = [u8; 8];

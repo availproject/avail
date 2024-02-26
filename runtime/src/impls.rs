@@ -439,7 +439,6 @@ impl pallet_balances::Config for Runtime {
 	type ExistentialDeposit = constants::balances::ExistentialDeposit;
 	type FreezeIdentifier = RuntimeFreezeReason;
 	type MaxFreezes = ConstU32<2>;
-	type MaxHolds = ConstU32<2>;
 	type MaxLocks = ConstU32<50>;
 	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = ReserveIdentifier;
@@ -876,35 +875,6 @@ parameter_types! {
 
 /// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.
 impl submitted_data::Filter<RuntimeCall> for Runtime {
-	fn filter(call: RuntimeCall, metrics: submitted_data::RcMetrics) -> Vec<Vec<u8>> {
-		metrics.borrow_mut().total_extrinsics += 1;
-
-		match call {
-			RuntimeCall::DataAvailability(da_control::Call::submit_data { data })
-				if !data.is_empty() =>
-			{
-				let mut metrics = metrics.borrow_mut();
-				metrics.data_submit_leaves += 1;
-				metrics.data_submit_extrinsics += 1;
-				vec![data.into_inner()]
-			},
-			RuntimeCall::Utility(pallet_utility::Call::batch { calls })
-			| RuntimeCall::Utility(pallet_utility::Call::batch_all { calls })
-			| RuntimeCall::Utility(pallet_utility::Call::force_batch { calls }) => {
-				Self::process_calls(calls, &metrics)
-			},
-			_ => vec![],
-		}
-	}
-
-	/// This function processes a list of calls and returns their data as Vec<Vec<u8>>
-	fn process_calls(calls: Vec<RuntimeCall>, metrics: &submitted_data::RcMetrics) -> Vec<Vec<u8>> {
-		calls
-			.into_iter()
-			.flat_map(|call| Self::filter(call, Rc::clone(metrics)))
-			.collect()
-	}
-
 	fn filter_v2(
 		call: RuntimeCall,
 		metrics: submitted_data::RcMetrics,
@@ -987,17 +957,6 @@ impl submitted_data::Filter<RuntimeCall> for Runtime {
 impl submitted_data::Extractor for Runtime {
 	type Error = codec::Error;
 
-	fn extract(
-		opaque: &OpaqueExtrinsic,
-		metrics: submitted_data::RcMetrics,
-	) -> Result<Vec<Vec<u8>>, Self::Error> {
-		let extrinsic = UncheckedExtrinsic::try_from(opaque)?;
-		let data =
-			<Runtime as submitted_data::Filter<RuntimeCall>>::filter(extrinsic.function, metrics);
-
-		Ok(data)
-	}
-
 	fn extract_v2(
 		opaque: &OpaqueExtrinsic,
 		metrics: submitted_data::RcMetrics,
@@ -1063,6 +1022,7 @@ impl frame_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	/// The ubiquitous origin type.
 	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeTask = ();
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = constants::system::SS58Prefix;
 	/// Data Root

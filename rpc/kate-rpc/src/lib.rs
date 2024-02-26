@@ -5,7 +5,7 @@ use std::{marker::Sync, sync::Arc};
 use avail_base::metrics::avail::KateRpcMetrics;
 use avail_core::data_proof_v2::{ProofResponse, SubTrie};
 use avail_core::{
-	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, DataProof, DataProofV2,
+	header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, AppId, DataProofV2,
 	OpaqueExtrinsic,
 };
 use da_runtime::RuntimeCall;
@@ -15,6 +15,7 @@ use frame_system::{limits::BlockLength, submitted_data};
 use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
+	types::error::ErrorObject,
 };
 
 use kate::gridgen::AsBytes;
@@ -70,13 +71,6 @@ where
 
 	#[method(name = "kate_blockLength")]
 	async fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength>;
-
-	#[method(name = "kate_queryDataProof")]
-	async fn query_data_proof(
-		&self,
-		transaction_index: u32,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<DataProof>;
 
 	#[method(name = "kate_queryDataProofV2")]
 	async fn query_data_proof_v2(
@@ -134,23 +128,24 @@ impl<Client, Block: BlockT> Kate<Client, Block> {
 /// Error type of this RPC api.
 pub enum Error {
 	/// The transaction was not decodable.
-	DecodeError,
-	/// The call to runtime failed.
-	RuntimeError,
+	KateRPCError,
 }
 
-impl From<Error> for i64 {
-	fn from(e: Error) -> i64 {
+impl From<Error> for i32 {
+	fn from(e: Error) -> i32 {
 		match e {
-			Error::RuntimeError => 1,
-			Error::DecodeError => 2,
+			Error::KateRPCError => 1,
 		}
 	}
 }
 
 macro_rules! internal_err {
 	($($arg:tt)*) => {{
-		JsonRpseeError::Custom(format!($($arg)*))
+		ErrorObject::owned(
+			Error::KateRPCError.into(),
+			format!($($arg)*),
+			None::<()>
+		)
 	}}
 }
 
@@ -172,7 +167,7 @@ where
 		at.unwrap_or_else(|| self.client.info().best_hash)
 	}
 
-	fn is_block_finalized(&self, block: &SignedBlock<Block>) -> Result<(), JsonRpseeError> {
+	fn is_block_finalized(&self, block: &SignedBlock<Block>) -> RpcResult<()> {
 		let block_header = block.block.header();
 		let (block_hash, block_number) = (block_header.hash(), *block_header.number());
 
@@ -362,15 +357,14 @@ where
 	}
 
 	async fn query_proof(&self, cells: Cells, at: Option<HashOf<Block>>) -> RpcResult<Vec<u8>> {
-		use crate::JsonRpseeError::Custom;
-
 		if cells.len() > self.max_cells_size {
-			let err = Custom(format!(
-				"Cannot query ({}) more than {} amount of cells per request. Either increase the max cells size (--kate-max-cells-size) or query less amount of cells per request.",
-				cells.len(),
-				self.max_cells_size
-			));
-			return Err(err);
+			return Err(
+				internal_err!(
+					"Cannot query ({}) more than {} amount of cells per request. Either increase the max cells size (--kate-max-cells-size) or query less amount of cells per request.",
+					cells.len(),
+					self.max_cells_size
+				)
+			);
 		}
 
 		let execution_start = std::time::Instant::now();
@@ -426,50 +420,6 @@ where
 		Ok(block_length)
 	}
 
-	async fn query_data_proof(
-		&self,
-		transaction_index: u32,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<DataProof> {
-		let execution_start = std::time::Instant::now();
-
-		let block = self.get_signed_block(at)?.block;
-		// We can quey data_proof only on V1 headers
-		if let HeaderExtension::V1(_) = block.header().extension() {
-			let calls = block
-				.extrinsics()
-				.iter()
-				.flat_map(|extrinsic| UncheckedExtrinsic::try_from(extrinsic).ok())
-				.map(|extrinsic| extrinsic.function);
-
-			// Build the proof.
-			let merkle_proof =
-				submitted_data::calls_proof::<Runtime, _, _>(calls, transaction_index).ok_or_else(
-					|| {
-						internal_err!(
-							"Data proof cannot be generated for transaction index={} at block {:?}",
-							transaction_index,
-							at
-						)
-					},
-				)?;
-
-			let data_proof = DataProof::try_from(&merkle_proof).map_err(|e| {
-				internal_err!("Data proof cannot be loaded from merkle root: {:?}", e)
-			});
-
-			// Execution Time Metric
-			KateRpcMetrics::observe_query_data_proof_execution_time(execution_start.elapsed());
-
-			data_proof
-		} else {
-			return Err(internal_err!(
-				"Cannot query data_proof on a block with a header other than V1. Block {:?} does not support DataProof.",
-				at
-			));
-		}
-	}
-
 	async fn query_data_proof_v2(
 		&self,
 		transaction_index: u32,
@@ -478,14 +428,6 @@ where
 		let execution_start = std::time::Instant::now();
 
 		let block = self.get_signed_block(at)?.block;
-		// We can't query DataProofV2 on older blocks which has a V1 header
-		if let HeaderExtension::V1(_) = block.header().extension() {
-			return Err(internal_err!(
-				"The block {:?} has V1 header, which doesn't support DataProofV2",
-				at
-			));
-		}
-
 		let successfull_indices = self
 			.client
 			.runtime_api()

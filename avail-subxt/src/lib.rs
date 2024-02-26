@@ -49,7 +49,7 @@ pub mod avail {
 	pub type TxInBlock = subxt::tx::TxInBlock<AvailConfig, Client>;
 	pub type AppUncheckedExtrinsic =
 		crate::primitives::app_unchecked_extrinsic::AppUncheckedExtrinsic;
-	pub type Pair = sp_core::sr25519::Pair;
+	pub type Pair = subxt::ext::sp_core::sr25519::Pair;
 	pub type PairSigner = subxt::tx::PairSigner<AvailConfig, Pair>;
 
 	pub type RuntimeCall = api::runtime_types::da_runtime::RuntimeCall;

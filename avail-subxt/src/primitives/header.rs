@@ -30,8 +30,7 @@ pub struct Header {
 impl Header {
 	pub fn data_root(&self) -> H256 {
 		match &self.extension {
-			HeaderExtension::V1(ext) => ext.commitment.data_root,
-			HeaderExtension::V2(ext) => ext.commitment.data_root,
+			HeaderExtension::V3(ext) => ext.commitment.data_root,
 		}
 	}
 }
