@@ -28,7 +28,7 @@ export default function Home() {
       chain: api.runtimeChain.toString(),
       specVersion: api.runtimeVersion.specVersion.toNumber(),
       tokenDecimals: api.registry.chainDecimals[0] || 18,
-      tokenSymbol: api.registry.chainTokens[0] || "AVL",
+      tokenSymbol: api.registry.chainTokens[0] || "AVAIL",
       genesisHash: api.genesisHash.toHex(),
       ss58Format: isNumber(api.registry.chainSS58) ? api.registry.chainSS58 : 0,
       chainType: "substrate" as "substrate",

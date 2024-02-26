@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use avail_core::currency::{Balance, AVL};
+use avail_core::currency::{Balance, AVAIL};
 use frame_support::{
 	derive_impl, parameter_types,
 	weights::{ConstantMultiplier, IdentityFee},
@@ -125,7 +125,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		.unwrap();
 
 	pallet_balances::GenesisConfig::<Test> {
-		balances: vec![(1, 10_000 * AVL), (2, 5_000 * AVL), (3, 1_000 * AVL)],
+		balances: vec![(1, 10_000 * AVAIL), (2, 5_000 * AVAIL), (3, 1_000 * AVAIL)],
 	}
 	.assimilate_storage(&mut storage)
 	.unwrap();

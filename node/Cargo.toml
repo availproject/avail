@@ -35,7 +35,7 @@ clap = { version = "4.4.17", features = ["derive"], optional = true }
 clap-num = { version = "1.1.1", optional = true }
 jsonrpsee = { version = "0.16.2", features = ["server"] }
 futures = "0.3.21"
-serde = { version = "1.0.126", features = ["derive"] }
+serde = { version = "1.0.195", features = ["derive"] }
 serde_json = { version = "1.0", features = ["arbitrary_precision"] }
 lru = "0.7.2"
 log = "0.4.17"

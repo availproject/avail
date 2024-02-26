@@ -69,3 +69,7 @@ pub type Executive = executive::Executive<
 ```
 
 License: Apache-2.0
+
+## Avail Changes
+
+The only functional modification introduced in this fork is the adjustment of the return type for the `finalize_block()` function. Specifically, the return type has been changed from ```frame_system::pallet_prelude::HeaderFor<System>``` to ```frame_system::pallet_prelude::DaHeaderFor<System>```.

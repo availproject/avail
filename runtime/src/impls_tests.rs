@@ -2,7 +2,7 @@
 mod multiplier_tests {
 	use crate::impls::*;
 	use crate::*;
-	use avail_core::currency::{CENTS, MICRO_AVL, MILLICENTS};
+	use avail_core::currency::{CENTS, MICRO_AVAIL, MILLICENTS};
 	use frame_support::{
 		dispatch::{DispatchClass, DispatchInfo, Pays},
 		traits::OnFinalize,
@@ -303,11 +303,11 @@ mod multiplier_tests {
 			};
 			let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
 			println!(
-				"Iteration: {}, wm: {:?},  Fee: {} units / {} MICRO_AVL",
+				"Iteration: {}, wm: {:?},  Fee: {} units / {} MICRO_AVAIL",
 				0,
 				wm,
 				tx_fee,
-				tx_fee / MICRO_AVL,
+				tx_fee / MICRO_AVAIL,
 			);
 			run_with_system_weight(block_weight, || {
 				let mut iterations: u32 = 0;
@@ -322,11 +322,11 @@ mod multiplier_tests {
 					if iterations % EPOCH_DURATION_IN_SLOTS == 0 {
 						day_count += 1;
 						println!(
-							"Iteration: {}, wm: {:?},  Fee: {} units / {} MICRO_AVL",
+							"Iteration: {}, wm: {:?},  Fee: {} units / {} MICRO_AVAIL",
 							day_count,
 							wm,
 							tx_fee,
-							tx_fee / MICRO_AVL,
+							tx_fee / MICRO_AVAIL,
 						);
 					}
 					if day_count == 7u32 {
@@ -359,11 +359,11 @@ mod multiplier_tests {
 			};
 			let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
 			println!(
-				"Epoch: {}, lm: {:?},  Fee: {} units / {} MICRO_AVL",
+				"Epoch: {}, lm: {:?},  Fee: {} units / {} MICRO_AVAIL",
 				0,
 				lm,
 				tx_fee,
-				tx_fee / MICRO_AVL,
+				tx_fee / MICRO_AVAIL,
 			);
 			run_with_system_length(max_padded_length, || {
 				let mut iterations: u32 = 0;
@@ -378,11 +378,11 @@ mod multiplier_tests {
 					if iterations % EPOCH_DURATION_IN_SLOTS == 0 {
 						day_count += 1;
 						println!(
-							"Epoch: {}, lm: {:?},  Fee: {} units / {} MICRO_AVL",
+							"Epoch: {}, lm: {:?},  Fee: {} units / {} MICRO_AVAIL",
 							day_count,
 							lm,
 							tx_fee,
-							tx_fee / MICRO_AVL,
+							tx_fee / MICRO_AVAIL,
 						);
 					}
 					if day_count == 7u32 {

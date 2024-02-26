@@ -166,8 +166,6 @@ pub mod weights;
 pub mod extrinsic_len;
 pub use extrinsic_len::{ExtrinsicLen, PaddedExtrinsicLen};
 
-pub mod migrations;
-
 // Backward compatible re-export.
 pub use extensions::{
 	check_genesis::CheckGenesis,
@@ -1045,6 +1043,7 @@ pub mod pallet {
 
 			sp_io::storage::set(well_known_keys::EXTRINSIC_INDEX, &0u32.encode());
 			<DynamicBlockLength<T>>::put(&self.block_length);
+			StorageVersion::new(3).put::<Pallet<T>>();
 		}
 	}
 
@@ -1827,13 +1826,6 @@ impl<T: Config> Pallet<T> {
 		ExecutionPhase::<T>::kill();
 		AllExtrinsicsLen::<T>::kill();
 		storage::unhashed::kill(well_known_keys::INTRABLOCK_ENTROPY);
-
-		/*
-				let valid_send_msg_tx_extractor = |digest_item: &DigestItem| match digest_item {
-					generic::DigestItem::Other(raw) => <Vec<u32>>::decode(&mut raw.as_slice()).ok(),
-					_ => None,
-				};
-		*/
 		// The following fields
 		//
 		// - <Events<T>>

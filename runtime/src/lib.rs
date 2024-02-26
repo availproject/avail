@@ -32,12 +32,11 @@ pub mod impls;
 // pub mod extractor;
 #[cfg(test)]
 mod impls_tests;
-mod migration;
 mod primitives;
 mod version;
 mod weights;
 
-pub use avail_core::currency::{Balance, AVL, CENTS, MILLICENTS};
+pub use avail_core::currency::{Balance, AVAIL, CENTS, MILLICENTS};
 pub use avail_core::{header::Header as DaHeader, AppId};
 use constants::time::*;
 pub use frame_support::{
@@ -349,11 +348,11 @@ mod tests {
 	}
 
 	const TRANSFER_RAW : &[u8]= &hex!("b4040600008eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a4813000064a7b3b6e00d");
-	/// Creates a transfer tx of 1 AVL to Bob.
+	/// Creates a transfer tx of 1 AVAIL to Bob.
 	fn transfer_expected() -> RuntimeCall {
 		RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death {
 			dest: MultiAddress::Id(Bob.to_account_id()),
-			value: 1 * AVL,
+			value: 1 * AVAIL,
 		})
 	}
 
@@ -365,7 +364,7 @@ mod tests {
 		})
 	}
 
-	#[test_case( &TRANSFER_RAW => transfer_expected(); "Transfer 1 AVL to Bob")]
+	#[test_case( &TRANSFER_RAW => transfer_expected(); "Transfer 1 AVAIL to Bob")]
 	#[test_case( &SET_TIMESTAMP_RAW => set_timestamp_expected(); "set_timestamp_block_242")]
 	fn decode_app_unchecked_extrinsics(mut raw_ext: &[u8]) -> RuntimeCall {
 		use codec::Decode;

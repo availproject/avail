@@ -218,18 +218,22 @@ pub mod pallet {
 	pub type RotateVerificationKey<T: Config> =
 		StorageValue<_, Option<BoundedVec<u8, ConstU32<10_000>>>, ValueQuery>;
 
+	/// Genesis validator root, used to check initialization
 	#[pallet::storage]
 	#[pallet::getter(fn genesis_validator_root)]
 	pub type GenesisValidatorRoot<T: Config> = StorageValue<_, H256, ValueQuery>;
 
+	/// Genesis timestamp, used to check initialization
 	#[pallet::storage]
 	#[pallet::getter(fn genesis_timestamp)]
 	pub type GenesisTimestamp<T: Config> = StorageValue<_, u64, ValueQuery>;
 
+	/// Seconds per slot, used to check initialization
 	#[pallet::storage]
 	#[pallet::getter(fn seconds_per_slot)]
 	pub type SecondsPerSlot<T: Config> = StorageValue<_, u64, ValueQuery>;
 
+	/// Source chain id, used to check initialization
 	#[pallet::storage]
 	#[pallet::getter(fn source_chain_id)]
 	pub type SourceChainId<T: Config> = StorageValue<_, u64, ValueQuery>;
