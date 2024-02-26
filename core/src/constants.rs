@@ -15,25 +15,25 @@ pub mod currency {
 
 	pub type Balance = u128;
 
-	/// AVL has 18 decimal positions.
-	pub const AVL: Balance = 1_000_000_000_000_000_000;
+	/// `AVAIL` has 18 decimal positions.
+	pub const AVAIL: Balance = 1_000_000_000_000_000_000;
 
-	/// Cents of AVL has 16 decimal positions (100 Cents = $1)
+	/// Cents of AVAIL has 16 decimal positions (100 Cents = $1)
 	/// 1 DOLLARS = `10_000_000_000_000_000`
-	pub const CENTS: Balance = AVL / 100;
+	pub const CENTS: Balance = AVAIL / 100;
 
-	/// Millicent of AVL has 13 decimal positions( 100 mCents = 1 cent).
+	/// Millicent of AVAIL has 13 decimal positions( 100 mCents = 1 cent).
 	pub const MILLICENTS: Balance = CENTS / 1_000;
 
-	/// `MILLI_AVL` has 15 decimal positions
-	pub const MILLI_AVL: Balance = AVL / 1_000;
+	/// `MILLI_AVAIL` has 15 decimal positions
+	pub const MILLI_AVAIL: Balance = AVAIL / 1_000;
 
-	/// `MICRO_AVL` has 12 decimal positions
-	pub const MICRO_AVL: Balance = MILLI_AVL / 1_000;
+	/// `MICRO_AVAIL` has 12 decimal positions
+	pub const MICRO_AVAIL: Balance = MILLI_AVAIL / 1_000;
 
-	/// `NANO_AVL` has 9 decimal positions
-	pub const NANO_AVL: Balance = MICRO_AVL / 1_000;
+	/// `NANO_AVAIL` has 9 decimal positions
+	pub const NANO_AVAIL: Balance = MICRO_AVAIL / 1_000;
 
-	/// `PICO_AVL` has 6 decimal positions
-	pub const PICO_AVL: Balance = NANO_AVL / 1_000;
+	/// `PICO_AVAIL` has 6 decimal positions
+	pub const PICO_AVAIL: Balance = NANO_AVAIL / 1_000;
 }

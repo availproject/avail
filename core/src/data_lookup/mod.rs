@@ -114,6 +114,11 @@ impl DataLookup {
 
 		Ok(Self { index })
 	}
+
+	/// This function is only used when something has gone wrong during header extension building
+	pub fn new_empty() -> Self {
+		Self { index: Vec::new() }
+	}
 }
 
 impl TryFrom<CompactDataLookup> for DataLookup {
