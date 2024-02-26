@@ -1,33 +1,36 @@
 [package]
 name = "avail-base"
 version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
 
 [dependencies]
 # Our crates
-avail-core.workspace = true
-kate.workspace = true
+avail-core = { workspace = true, default-features = false }
+kate = { workspace = true, default-features = false }
 
 # Substrate related
-substrate-prometheus-endpoint = { version = "0.10.0-dev", optional = true }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
 	"derive",
 ] }
-scale-info = { version = "2.5.0", default-features = false, features = [
-	"derive",
-] }
+sp-std = { workspace = true, default-features = false }
+sp-api = { workspace = true, default-features = false }
+sp-runtime = { workspace = true, default-features = false }
+sp-core = { workspace = true, default-features = false }
+sp-inherents = { workspace = true, default-features = false }
+sp-runtime-interface = { workspace = true, default-features = false }
+scale-info = { workspace = true, default-features = false }
+# sc-client-api = { workspace = true, default-features = false }
+# sp-externalities = { workspace = true, default-features = false }
+
+substrate-prometheus-endpoint = { workspace = true, optional = true }
 
 # 3rd-party
-log = "0.4.17"
-once_cell = { version = "1.17.1", optional = true }
-hex-literal = "0.3.4"
-
-[dev-dependencies]
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+log.workspace = true
+once_cell = { workspace = true, default-features = false, optional = true }
+hex-literal.workspace = true
 
 [features]
 default = ["std"]
@@ -38,5 +41,10 @@ std = [
 	"once_cell",
 	"sp-core/std",
 	"sp-std/std",
+	"sp-api/std",
+	"sp-runtime/std",
+	"sp-runtime-interface/std",
+	"sp-inherents/std",
+	# "sp-externalities/std",
 	"substrate-prometheus-endpoint",
 ]

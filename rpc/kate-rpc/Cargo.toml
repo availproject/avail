@@ -6,13 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-avail-base = { path = "../../base", default-features = false }
-da-runtime = { path = "../../runtime", default-features = false }
+avail-base = { path = "../../base" }
+da-runtime = { path = "../../runtime" }
 da-control = { path = "../../pallets/dactr" }
 pallet-vector = { path = "../../pallets/vector" }
 
-avail-core.workspace = true
-kate.workspace = true
+avail-core = { workspace = true, default-features = false }
+kate = { workspace = true, default-features = false }
 kate-recovery.workspace = true
 
 # 3rd party
@@ -22,12 +22,12 @@ moka = { version = "0.12.1", features = ["future"] }
 
 
 # Substrate
-sp-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-api = { workspace = true, default-features = false }
 frame-system = { path = "../../pallets/system", default-features = false }
-frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sc-client-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-blockchain = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+frame-support = { workspace = true, default-features = false }
+sc-client-api = { workspace = true, default-features = false }
+sp-blockchain = { workspace = true, default-features = false }
+sp-runtime = { workspace = true, default-features = false }
 
 [features]
 default = [ "std" ]

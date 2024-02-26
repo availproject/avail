@@ -1,0 +1,37 @@
+[package]
+name = "patricia-merkle-trie"
+version = "0.1.0"
+authors = ["Seun Lanlege <seunlanlege@gmail.com>"]
+edition.workspace = true
+repository.workspace = true
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+
+trie-db = { workspace = true, default-features = false }
+hash-db = { workspace = true, default-features = false }
+primitive-types = { workspace = true, default-features = false }
+memory-db = { workspace = true, default-features = false }
+sp-io = { workspace = true, default-features = false }
+
+hash256-std-hasher = { workspace = true, default-features = false }
+rlp = { workspace = true, default-features = false }
+tiny-keccak = { workspace = true,  optional = true }
+
+[dev-dependencies]
+hex.workspace = true
+hex-literal.workspace = true
+primitive-types = { workspace = true, features = ["rlp"] }
+rlp-derive.workspace = true
+
+[features]
+default = [ "std" ]
+std = [
+	"codec/std",
+	"hash-db/std",
+	"primitive-types/std",
+	"rlp/std",
+	"sp-io/std",
+	"tiny-keccak",
+	"trie-db/std",
+]

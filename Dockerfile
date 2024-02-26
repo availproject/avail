@@ -1,6 +1,6 @@
 # Phase 1: Builder
 # =========================
-FROM debian:12.2-slim as builder
+FROM debian:12.4-slim as builder
 
 # Install needed packages
 RUN apt update -y && \
@@ -22,7 +22,7 @@ RUN cp ./target/release/avail-node .
 
 # Phase 2: Binary deployment
 # =========================
-FROM debian:12.2-slim
+FROM debian:12.4-slim
 
 RUN apt update -y && apt install curl -y
 

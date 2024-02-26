@@ -53,6 +53,7 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 	type ExtendHostFunctions = (
 		frame_benchmarking::benchmarking::HostFunctions,
 		frame_system::header_builder::hosted_header_builder::HostFunctions,
+		avail_base::aux_store_ext::hosted_mem_tmp_storage::HostFunctions,
 	);
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -513,10 +514,6 @@ pub fn new_full_base(
 							&parent,
 						)?;
 
-					/*
-					let vector_fails = pallet_vector::IDProvider{};
-					Ok((slot, timestamp, storage_proof, vector_fails))
-					*/
 					Ok((slot, timestamp, storage_proof))
 				}
 			},

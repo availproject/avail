@@ -8,26 +8,221 @@ members = [
 	"pallets/system",
 	"pallets/transaction-payment",
 	"pallets/vector",
-	"node",
+	"patricia-merkle-trie",
+	"client/basic-authorship",
 	"runtime",
 	# "runtime/fuzz",
+	"node",
 ]
+
+[workspace.package]
+authors = ["Avail Project <info@availproject.org>"]
+edition = "2021"
+repository = "https://github.com/availproject/avail"
+license = "GNU GPLv3"
+homepage = "https://www.availproject.org/"
+
 
 [workspace.dependencies]
 # avail-core = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false, features = [ "runtime"] }
-avail-core = { path = "../avail-core/core", default-features = false, features = [
-	"runtime",
-] }
-# kate = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false }
-kate = { path = "../avail-core/kate", default-features = false }
+# kate = { git = "https://github.com/availproject/avail-core", branch = "main", default-features = false }
 # kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "next" }
-kate-recovery = { path = "../avail-core/kate/recovery/" }
+avail-base = { path = "base", default-features = false }
+avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
+kate = { path = "../avail-core/kate/", default-features = false }
+kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
+da-control = { path = "pallets/dactr", default-features = false }
+pallet-mandate = { path = "pallets/mandate", default-features = false }
+pallet-vector = { path = "pallets/vector", default-features = false }
 
-# Eth 
-# ethabi-decode = { git = "https://github.com/Snowfork/ethabi-decode.git", branch = "master", default-features = false }
+sc-basic-authorship = { path = "client/basic-authorship", default-features = false }
+frame-executive = { path = "pallets/executive", default-features = false }
+frame-system = { path = "pallets/system", default-features = false }
+frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api", default-features = false }
+frame-system-benchmarking = { path = "pallets/system/benchmarking", default-features = false }
+pallet-transaction-payment = { path = "pallets/transaction-payment", default-features = false }
+pallet-transaction-payment-rpc = { path = "pallets/transaction-payment/rpc", default-features = false }
+pallet-transaction-payment-rpc-runtime-api = { path = "pallets/transaction-payment/rpc/runtime-api", default-features = false }
+
+
+# benchmarking
 criterion = { version = "0.4", default-features = false }
+iai = "0.1.1"
+iai-callgrind = "0.7.3" 
+divan = "0.1.11"
+
 # codspeed-criterion-compat = "2.2.0"
 
+# Logging and testing 
+log = "0.4.20"
+test-case = "1.2.3"
+hex = "0.4"
+env_logger = "0.9.1"
+
+# Futures, async and multi-threading
+futures = "0.3.21"
+futures-timer = "3.0.1"
+parking_lot = "0.12.1"
+once_cell = "1.17.1"
+async-trait = "0.1.74"
+
+# Macros and code generation
+hex-literal = "0.3.4"
+static_assertions = "1.1.0"
+serde = { version = "1.0.197", default-features = false, features = ["derive"] }
+serde_json = { version = "1.0", default-features = false }
+derive_more = { version = "0.99.17", default-features = false, features = ["from", "into", "display"] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive","serde"] }
+cfg-if = "1.0"
+impl-trait-for-tuples = "0.2.1"
+docify = "0.2.6"
+
+# Encryptions and hashing
+sha2 = { version = "0.10.8", default-features = false }
+hash256-std-hasher = { version = "0.15.2", default-features = false }
+ark-bn254 = { version = "0.3.0", default-features = false, features = ["curve"] }
+ark-groth16 = { version = "0.3.0", default-features = false }
+ark-ec = "0.4.2"
+ark-std = { version = "0.4.0", default-features = false }
+ark-serialize = { version = "0.4.0", features = ["derive"], default-features = false }
+ark-ff = { version = "0.3.0", default-features = false }
+ark-snark = "0.4.0"
+
+# Misc
+parity-util-mem = { version = "0.12.0", features = ["primitive-types"], default-features = false }
+array-bytes = "6.1"
+trie-db = { version = "0.24.0", default-features = false }
+hash-db = { version = "0.15.2", default-features = false }
+memory-db = { version = "0.30.0", default-features = false }
+bounded-collections = { version = "0.1.9", default-features = false }
+
+# Ethereum
+rlp = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2", default-features = false }
+rlp-derive = "0.1.0"
+primitive-types = { version = "0.12.0", default-features = false }
+ethabi = { version = "18.0.0", default-features = false }
+tiny-keccak = { version = "2.0.2", features = ["keccak"], default-features = false }
+
+# Polkadot 
+sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-babe = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-balances = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-timestamp = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-arithmetic = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+frame-benchmarking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-utility = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-client-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-blockchain = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+frame-try-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-tracing = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-inherents = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-version = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-weights = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-storage = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-assets = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-authorship = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-asset-conversion = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-collective = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-externalities = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-runtime-interface = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-staking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-staking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-consensus-grandpa = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-authority-discovery = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-consensus-babe = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-genesis-builder = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-transaction-pool = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-offchain = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-session = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-block-builder = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-npos-elections = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-session = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-im-online = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-grandpa = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-staking-reward-curve = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-scheduler = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-indices = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-offences = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-treasury = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-bounties = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-sudo = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-authority-discovery = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-elections-phragmen = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-tips = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-membership = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-bags-list = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-election-provider-multi-phase = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+frame-election-provider-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-democracy = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-mmr = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-multisig = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-child-bounties = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-preimage = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-nomination-pools = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-nomination-pools-runtime-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-identity = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-proxy = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-tx-pause = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+pallet-staking-reward-fn = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+substrate-wasm-builder = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-cli = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-statement-store = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-executor = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-service = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-storage-monitor = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-telemetry = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-keystore = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-keystore = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-transaction-pool = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-transaction-pool-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-transaction-storage-proof = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-consensus-babe-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-consensus = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-consensus = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-offchain = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-consensus-grandpa-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-consensus-grandpa = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-timestamp = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-consensus-babe = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-consensus-slots = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-network = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-authority-discovery = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-chain-spec = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-client-db = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-sync-state-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-sysinfo = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-network-common = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-network-sync = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+mmr-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-rpc-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sc-rpc-spec-v2 = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+substrate-frame-rpc-system = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+substrate-state-trie-migration-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+frame-benchmarking-cli = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+try-runtime-cli = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+substrate-build-script-utils = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-trie = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-state-machine = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+
+
+sc-block-builder = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+sc-proposer-metrics = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+# sc-basic-authorship= { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+substrate-prometheus-endpoint = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+substrate-test-runtime-client = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+
+
+# Patch from forked pallets
 [patch."https://github.com/availproject/polkadot-sdk.git"]
 frame-executive = { path = "pallets/executive" }
 frame-system = { path = "pallets/system" }
@@ -44,6 +239,36 @@ sp-crypto-ec-utils = { git = "https://github.com/availproject/polkadot-sdk.git",
 # Other stuff
 uint = { git = "https://github.com/paritytech/parity-common.git", tag = "uint-v0.9.5" }
 rlp = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }
+
+[workspace.lints.rust]
+suspicious_double_ref_op = { level = "allow", priority = 2 }
+
+[workspace.lints.clippy]
+all = { level = "allow", priority = 0 }
+correctness = { level = "warn", priority = 1 }
+complexity = { level = "warn", priority = 1 }
+if-same-then-else = { level = "allow", priority = 2 }
+zero-prefixed-literal = { level = "allow", priority = 2 }            # 00_1000_000
+type_complexity = { level = "allow", priority = 2 }                  # raison d'etre
+nonminimal-bool = { level = "allow", priority = 2 }                  # maybe
+borrowed-box = { level = "allow", priority = 2 }                     # Reasonable to fix this one
+too-many-arguments = { level = "allow", priority = 2 }               # (Turning this on would lead to)
+needless-lifetimes = { level = "allow", priority = 2 }               # generated code
+unnecessary_cast = { level = "allow", priority = 2 }                 # Types may change
+identity-op = { level = "allow", priority = 2 }                      # One case where we do 0 +
+useless_conversion = { level = "allow", priority = 2 }               # Types may change
+unit_arg = { level = "allow", priority = 2 }                         # stylistic
+option-map-unit-fn = { level = "allow", priority = 2 }               # stylistic
+bind_instead_of_map = { level = "allow", priority = 2 }              # stylistic
+erasing_op = { level = "allow", priority = 2 }                       # E.g. 0 * DOLLARS
+eq_op = { level = "allow", priority = 2 }                            # In tests we test equality.
+while_immutable_condition = { level = "allow", priority = 2 }        # false positives
+needless_option_as_deref = { level = "allow", priority = 2 }         # false positives
+derivable_impls = { level = "allow", priority = 2 }                  # false positives
+stable_sort_primitive = { level = "allow", priority = 2 }            # prefer stable sort
+extra-unused-type-parameters = { level = "allow", priority = 2 }     # stylistic
+default_constructed_unit_structs = { level = "allow", priority = 2 } # stylistic
+
 
 ## CLI
 

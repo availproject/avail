@@ -131,6 +131,7 @@ pub trait HostedHeaderBuilder {
 		block_length: BlockLength,
 		block_number: u32,
 		seed: Seed,
+		_version: HeaderVersion,
 	) -> HeaderExtension {
 		v2::build_extension(
 			&app_extrinsics,
@@ -141,24 +142,22 @@ pub trait HostedHeaderBuilder {
 			HeaderVersion::V2,
 		)
 	}
-}
 
-#[allow(unused)]
-#[cfg(feature = "header_commitment_corruption")]
-fn corrupt_commitment(block_number: u32, commitment: &mut Vec<u8>) {
-	if let Some(ref_byte) = commitment.get_mut(0) {
-		log::trace!(
-			target: LOG_TARGET,
-			"Block {block_number}, corrupting 1st byte of commitment from {ref_byte:x} to {:x}",
-			*ref_byte ^ 0xffu8
-		);
-
-		*ref_byte ^= 0xffu8;
-	} else {
-		log::trace!(
-			target: LOG_TARGET,
-			"Block {block_number}, corrupting commitment by adding one `0xFF` byte "
-		);
-		commitment.push(0xffu8)
+	#[version(4)]
+	fn build(
+		app_extrinsics: Vec<AppExtrinsic>,
+		data_root: H256,
+		block_length: BlockLength,
+		block_number: u32,
+		seed: Seed,
+	) -> HeaderExtension {
+		v2::build_extension(
+			&app_extrinsics,
+			data_root,
+			block_length,
+			block_number,
+			seed,
+			HeaderVersion::V2,
+		)
 	}
 }

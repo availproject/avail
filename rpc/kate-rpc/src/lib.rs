@@ -234,15 +234,12 @@ where
 					.block_length(block_hash)
 					.map_err(|e| internal_err!("Block Length cannot be fetched: {:?}", e))?;
 
-				let header_version = block_header.extension().get_header_version();
-
 				let mut evals = kate::gridgen::EvaluationGrid::from_extrinsics(
 					xts_by_id.clone(),
 					4,
 					block_length.cols.0.try_into().expect("TODO"), // 'cols' is the # of cols, so width
 					block_length.rows.0.try_into().expect("TODO"), // 'rows' is the # of rows, so height
 					seed,
-					header_version,
 				)
 				.map_err(|e| internal_err!("Building evals grid failed: {:?}", e))?;
 

@@ -1,11 +1,31 @@
-use crate::{InherentError, INHERENT_IDENTIFIER};
+use codec::{Decode, Encode};
+use sp_core::RuntimeDebug;
+use sp_inherents::{Error as IError, InherentData, InherentIdentifier, IsFatalError};
 
-use async_trait::async_trait;
-use codec::Decode;
-use sp_inherents::{Error as IError, InherentData, InherentDataProvider, InherentIdentifier};
+/// The identifier for the `FailedSendMsg` inherent.
+pub const ID: InherentIdentifier = *b"vector00";
 
+/// Errors that can occur while checking the timestamp inherent.
+#[derive(Encode, RuntimeDebug)]
+#[cfg_attr(feature = "std", derive(Decode))]
+pub enum InherentError {
+	MismatchFailedList,
+}
+
+impl IsFatalError for InherentError {
+	fn is_fatal_error(&self) -> bool {
+		true
+	}
+}
+
+pub trait InherentUpdater {
+	fn update_inherent() -> Result<(), IError>;
+}
+
+/*
 pub struct IDProvider {}
 
+use async_trait::async_trait;
 #[async_trait]
 impl InherentDataProvider for IDProvider {
 	async fn provide_inherent_data(&self, inherent_data: &mut InherentData) -> Result<(), IError> {
@@ -25,4 +45,4 @@ impl InherentDataProvider for IDProvider {
 		let error = InherentError::decode(&mut error).ok()?;
 		Some(Err(IError::Application(Box::from(format!("{:?}", error)))))
 	}
-}
+}*/

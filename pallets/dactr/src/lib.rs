@@ -312,7 +312,7 @@ impl<T: Config> Pallet<T> {
 	pub fn is_block_weight_acceptable() -> bool {
 		let current_weight = <frame_system::Pallet<T>>::block_weight();
 		let current_normal_weight = current_weight.get(DispatchClass::Normal);
-		let acceptable_limit = T::WeightInfo::submit_block_length_proposal().saturating_mul(3);
+		let acceptable_limit = T::WeightInfo::submit_block_length_proposal().saturating_mul(5);
 		current_normal_weight.ref_time() <= acceptable_limit.ref_time()
 			&& current_normal_weight.proof_size() < acceptable_limit.proof_size()
 	}

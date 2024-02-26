@@ -7,67 +7,51 @@ edition = "2021"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-avail-core.workspace = true
-
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
-	"derive",
-] }
-scale-info = { version = "2.5.0", default-features = false, features = [
-	"derive",
-] }
-frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+scale-info.workspace = true
+frame-support = { workspace = true, default-features = false }
 frame-system = { default-features = false, path = "../system" }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-frame-benchmarking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, optional = true }
-sp-inherents = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false, optional = true }
+sp-io = { workspace = true, default-features = false }
+sp-runtime = { workspace = true, default-features = false }
+sp-std = { workspace = true, default-features = false }
+sp-core = { workspace = true, default-features = false }
+sp-inherents = { workspace = true, default-features = false }
+frame-benchmarking = { workspace = true, default-features = false, optional = true }
+avail-core = { workspace = true, default-features = false, features = ["runtime"]}
+avail-base = { workspace = true, default-features = false }
 
+ark-bn254.workspace = true
+ark-groth16.workspace = true
+ark-ec.workspace = true
+ark-std.workspace = true
+ark-serialize.workspace = true
+ark-ff.workspace = true
+ark-snark.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+log.workspace = true
+hex-literal.workspace = true
+trie-db.workspace = true
+hash-db.workspace = true
+memory-db.workspace = true
+tiny-keccak = { workspace = true, optional = true }
+rlp.workspace = true
+hash256-std-hasher.workspace = true
+async-trait = { workspace = true, optional = true }
+primitive-types.workspace = true
+ethabi.workspace = true
 
-ark-bn254 = { version = "0.3.0", default-features = false, features = [
-	"curve",
-] }
-ark-groth16 = { version = "0.3.0", default-features = false }
-ark-ec = "0.4.2"
-ark-std = { version = "0.4.0", default-features = false }
-ark-serialize = { version = "0.4.0", features = [
-	"derive",
-], default-features = false }
-ark-ff = { version = "0.3.0", default-features = false }
-ark-snark = "0.4.0"
-
-serde = { version = "1.0.149", default-features = false, features = [
-	"derive",
-	"alloc",
-] }
-serde_json = { version = "1.0.89", default-features = false, features = [
-	"alloc",
-] }
-sha2 = { version = "0.10.8", default-features = false }
-log = "0.4.20"
-hex-literal = "0.4.1"
-trie-db = { version = "0.24.0", default-features = false }
-hash-db = { version = "0.15.2", default-features = false }
-memory-db = { version = "0.30.0", default-features = false }
-tiny-keccak = { version = "2.0.2", features = ["keccak"], optional = true }
-patricia-merkle-trie = { git = "https://github.com/availproject/patricia-merkle-trie.git", default-features = false, branch = "ghali/substrate-1.6" }
-rlp = { version = "0.5.2", default-features = false }
-hash256-std-hasher = { version = "0.15.2", default-features = false }
-async-trait = { version = "0.1.74", optional = true }
-
-#hex = "0.4.3"
-primitive-types = { version = "0.12.0", default-features = false }
-ethabi = { version = "18.0.0", default-features = false }
+patricia-merkle-trie = { path = "../../patricia-merkle-trie", default-features = false }
 
 [dev-dependencies]
-# sp-core = { version = "21.0.0", default-features = false }
-pallet-balances = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-pallet-timestamp = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+pallet-balances = { workspace = true, default-features = false, features = ["std"] }
+pallet-timestamp = { workspace = true, default-features = false }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
+	"avail-base/std",
 	"avail-core/std",
 	"codec/std",
 	"frame-benchmarking?/std",
@@ -79,7 +63,6 @@ std = [
 	"sp-runtime/std",
 	"sp-std/std",
 	"sp-inherents/std",
-	"async-trait",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

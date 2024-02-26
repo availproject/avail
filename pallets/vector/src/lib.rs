@@ -1,18 +1,21 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use crate::{storage_utils::MessageStatusEnum, verifier::Verifier};
+use avail_base::{mts_get, mts_update, ProvidePostInherent};
 use avail_core::data_proof_v2::{Message, MessageType};
 
 use frame_support::traits::{Currency, ExistenceRequirement, UnixTime};
 use frame_support::{inherent::IsFatalError, pallet_prelude::*, PalletId};
 use frame_system::submitted_data::AddressedMessage;
 use sp_core::H256;
+use sp_inherents::InherentData;
 use sp_io::{hashing::blake2_256, transaction_index};
-use sp_runtime::{RuntimeDebug, SaturatedConversion};
+use sp_runtime::{DigestItem, RuntimeDebug, SaturatedConversion};
 use sp_std::{vec, vec::Vec};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+pub mod constants;
 #[cfg(test)]
 mod mock;
 mod state;
@@ -21,14 +24,10 @@ mod storage_utils;
 mod tests;
 mod verifier;
 mod weights;
-pub mod well_known_keys;
+// pub mod well_known_keys;
 
-/*
-#[cfg(feature = "std")]
 mod inherent_data_providers;
-#[cfg(feature = "std")]
-pub use inherent_data_providers::IDProvider;
-*/
+use inherent_data_providers as inherent;
 
 pub use pallet::*;
 
@@ -39,27 +38,7 @@ pub type ValidProof = BoundedVec<BoundedVec<u8, ConstU32<2048>>, ConstU32<32>>;
 
 // Avail asset is supported for now
 pub const SUPPORTED_ASSET_ID: H256 = H256::zero();
-
-/*
-/// The identifier for the `timestamp` inherent.
-pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"vector00";
-
-/// The type of the inherent.
-pub type InherentType = Vec<u32>;
-
-/// Errors that can occur while checking the timestamp inherent.
-#[derive(Encode, RuntimeDebug)]
-#[cfg_attr(feature = "std", derive(Decode))]
-pub enum InherentError {
-	MismatchFailedList,
-}
-
-impl IsFatalError for InherentError {
-	fn is_fatal_error(&self) -> bool {
-		true
-	}
-}
-*/
+pub const FAILED_SEND_MSG_ID: &[u8] = b"vector:failed_send_msg_txs";
 
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -123,23 +102,25 @@ pub mod pallet {
 		InvalidBridgeInputs,
 		/// Domain is not supported
 		DomainNotSupported,
+		/// Function ids (step / rotate) are not set
+		FunctionIdsAreNotSet,
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// emit event once the head is updated.
-		HeaderUpdate {
+		HeadUpdated {
 			slot: u64,
 			finalization_root: H256,
 			execution_state_root: H256,
 		},
 		/// emit event once the sync committee updates.
-		SyncCommitteeUpdate { period: u64, root: U256 },
+		SyncCommitteeUpdated { period: u64, root: U256 },
 		/// emit when new updater is set
-		BroadcasterUpdate { old: H256, new: H256, domain: u32 },
+		BroadcasterUpdated { old: H256, new: H256, domain: u32 },
 		/// emit when message gets executed.
-		ExecutedMessage {
+		MessageExecuted {
 			from: H256,
 			to: H256,
 			message_id: u64,
@@ -160,6 +141,16 @@ pub mod pallet {
 		ConfigurationUpdated {
 			slots_per_period: u64,
 			finality_threshold: u16,
+		},
+		/// Function Ids were updated
+		FunctionIdsUpdated { value: Option<(H256, H256)> },
+		/// Step verification key was updated
+		StepVerificationKeyUpdated {
+			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
+		},
+		/// Rotate verification key was updated
+		RotateVerificationKeyUpdated {
+			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
 		},
 	}
 
@@ -206,6 +197,52 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type WhitelistedDomains<T> = StorageValue<_, BoundedVec<u32, ConstU32<10_000>>, ValueQuery>;
 
+	/// The storage for the step function identifier and the rotate function identifier.
+	/// Step function id is used to distinguish step-related functionality within the fulfill_call function.
+	/// Rotate function id is used to handle rotate-related functionality within the fulfill_call function.
+	/// When the provided function_id matches the step/rotate function identifier, specific logic related to step/rotate functions is executed.
+	/// The order of storage is (step_function_id, rotate_function_id)
+	#[pallet::storage]
+	#[pallet::getter(fn function_ids)]
+	pub type FunctionIds<T: Config> = StorageValue<_, Option<(H256, H256)>, ValueQuery>;
+
+	/// Step verification key storage
+	#[pallet::storage]
+	#[pallet::getter(fn step_verification_key)]
+	pub type StepVerificationKey<T: Config> =
+		StorageValue<_, Option<BoundedVec<u8, ConstU32<10_000>>>, ValueQuery>;
+
+	/// Rotate verification key storage
+	#[pallet::storage]
+	#[pallet::getter(fn rotate_verification_key)]
+	pub type RotateVerificationKey<T: Config> =
+		StorageValue<_, Option<BoundedVec<u8, ConstU32<10_000>>>, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn genesis_validator_root)]
+	pub type GenesisValidatorRoot<T: Config> = StorageValue<_, H256, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn genesis_timestamp)]
+	pub type GenesisTimestamp<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn seconds_per_slot)]
+	pub type SecondsPerSlot<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn source_chain_id)]
+	pub type SourceChainId<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	/*
+	/// List of failed indices in the current block
+	#[pallet::storage]
+	#[pallet::unbounded]
+	#[pallet::whitelist_storage]
+	#[pallet::getter(fn failed_send_msg)]
+	pub type ValidSendMessageTxIdx<T: Config> = StorageValue<_, Vec<u32>, ValueQuery>;
+	*/
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
@@ -220,20 +257,6 @@ pub mod pallet {
 		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
 		/// Dependency that can provide current time.
 		type TimeProvider: UnixTime;
-		/// Step verification key constant
-		#[pallet::constant]
-		type StepVerificationKey: Get<Vec<u8>>;
-		/// Rotate verification key constant
-		#[pallet::constant]
-		type RotateVerificationKey: Get<Vec<u8>>;
-		/// The step function identifier is used to distinguish step-related functionality within the fulfill_call function.
-		/// When the provided function_id matches the step function identifier, specific logic related to step functions is executed.
-		#[pallet::constant]
-		type StepFunctionId: Get<H256>;
-		/// The rotate function identifier is used to identify and handle rotate-related functionality within the fulfill_call function.
-		/// When the provided function_id matches the rotate function identifier, specific logic related to rotate functions is executed.
-		#[pallet::constant]
-		type RotateFunctionId: Get<H256>;
 		/// The index of the `messages` mapping in contract.
 		/// This is mandatory when calling execute messages via storage proofs.
 		#[pallet::constant]
@@ -251,9 +274,18 @@ pub mod pallet {
 	pub struct GenesisConfig<T: Config> {
 		pub slots_per_period: u64,
 		pub finality_threshold: u16,
+		pub function_ids: (H256, H256),
+		pub sync_committee_poseidon: U256,
+		pub period: u64,
 		pub broadcaster: H256,
 		pub broadcaster_domain: u32,
+		pub step_verification_key: Vec<u8>,
+		pub rotate_verification_key: Vec<u8>,
 		pub whitelisted_domains: Vec<u32>,
+		pub genesis_validator_root: H256,
+		pub genesis_time: u64,
+		pub seconds_per_slot: u64,
+		pub source_chain_id: u64,
 		pub _phantom: PhantomData<T>,
 	}
 
@@ -276,32 +308,52 @@ pub mod pallet {
 			WhitelistedDomains::<T>::put(domains);
 
 			Broadcasters::<T>::set(self.broadcaster_domain, self.broadcaster);
+
+			FunctionIds::<T>::set(Some(self.function_ids));
+
+			let step_verification_key = BoundedVec::try_from(self.step_verification_key.clone())
+				.expect("Step verification key should be valid at genesis.");
+			StepVerificationKey::<T>::set(Some(step_verification_key));
+
+			let rotate_verification_key =
+				BoundedVec::try_from(self.rotate_verification_key.clone())
+					.expect("Rotate verification key should be valid at genesis.");
+			RotateVerificationKey::<T>::set(Some(rotate_verification_key));
+
+			SyncCommitteePoseidons::<T>::insert(self.period, self.sync_committee_poseidon);
+
+			GenesisValidatorRoot::<T>::set(self.genesis_validator_root);
+
+			GenesisTimestamp::<T>::set(self.genesis_time);
+
+			SecondsPerSlot::<T>::set(self.seconds_per_slot);
+
+			SourceChainId::<T>::set(self.source_chain_id);
 		}
 	}
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
+	/*
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T>
 	where
 		[u8; 32]: From<T::AccountId>,
 	{
 		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
-			// log::trace!(target: "vector", "killing failed send msg");
-			// well_known_keys::kill_failed_send_msg();
 			T::DbWeight::get().writes(1)
 		}
 
 		fn on_finalize(_n: BlockNumberFor<T>) {
-			let failed = well_known_keys::take_failed_send_msg();
-			if !failed.is_empty() {
-				return;
+			let valid_send_msg_tx = ValidSendMessageTxIdx::<T>::take();
+			if !valid_send_msg_tx.is_empty() {
+				let log = DigestItem::Other(valid_send_msg_tx.encode());
+				<frame_system::Pallet<T>>::deposit_log(log);
 			}
-			Call::<T>::failed_tx_index { failed }
-				.dispatch_bypass_filter(frame_system::RawOrigin::None.into());
 		}
 	}
+	*/
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
@@ -315,7 +367,7 @@ pub mod pallet {
 		/// proof  Function proof.
 		/// slot  Function slot to update.
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::fulfill_call())]
+		#[pallet::weight(weight_helper::fulfill_call::<T>(*function_id))]
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
 			function_id: H256,
@@ -325,11 +377,12 @@ pub mod pallet {
 			#[pallet::compact] slot: u64,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
-			let state = ConfigurationStorage::<T>::get();
+			let config = ConfigurationStorage::<T>::get();
 			// compute hashes
 			let input_hash = H256(sha2_256(input.as_slice()));
 			let output_hash = H256(sha2_256(output.as_slice()));
-			let verifier = Self::get_verifier(function_id)?;
+			let (step_function_id, rotate_function_id) = Self::get_function_ids()?;
+			let verifier = Self::get_verifier(function_id, step_function_id, rotate_function_id)?;
 
 			let is_success = verifier
 				.verify(input_hash, output_hash, proof.to_vec())
@@ -338,26 +391,26 @@ pub mod pallet {
 			// make sure that verification call is valid
 			ensure!(is_success, Error::<T>::VerificationFailed);
 
-			if function_id == T::StepFunctionId::get() {
+			if function_id == step_function_id {
 				let vs =
 					VerifiedStep::new(function_id, input_hash, parse_step_output(output.to_vec()));
 
-				if Self::step_into(slot, state, &vs)? {
-					Self::deposit_event(Event::HeaderUpdate {
+				if Self::step_into(slot, &config, &vs, step_function_id)? {
+					Self::deposit_event(Event::HeadUpdated {
 						slot: vs.verified_output.finalized_slot,
 						finalization_root: vs.verified_output.finalized_header_root,
 						execution_state_root: vs.verified_output.execution_state_root,
 					});
 				}
-			} else if function_id == T::RotateFunctionId::get() {
+			} else if function_id == rotate_function_id {
 				let vr = VerifiedRotate::new(
 					function_id,
 					input_hash,
 					parse_rotate_output(output.to_vec()),
 				);
 
-				let period = Self::rotate_into(slot, state, &vr)?;
-				Self::deposit_event(Event::SyncCommitteeUpdate {
+				let period = Self::rotate_into(slot, &config, &vr, rotate_function_id)?;
+				Self::deposit_event(Event::SyncCommitteeUpdated {
 					period,
 					root: vr.sync_committee_poseidon,
 				});
@@ -440,7 +493,7 @@ pub mod pallet {
 			}
 
 			MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
-			Self::deposit_event(Event::<T>::ExecutedMessage {
+			Self::deposit_event(Event::<T>::MessageExecuted {
 				from: addr_message.from,
 				to: addr_message.to,
 				message_id: addr_message.id,
@@ -499,13 +552,21 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			let dispatch = Self::do_send_message(who, message, to, domain);
-			if dispatch.is_err() {
+			/*
+			if dispatch.is_ok() {
 				let tx_idx = <frame_system::Pallet<T>>::extrinsic_index().unwrap_or_default();
-				let mut failed = well_known_keys::failed_send_msg();
-				log::trace!(target: "vector", "Failed to send message at {tx_idx}: {failed:?}");
-				failed.push(tx_idx);
-				well_known_keys::set_failed_send_msg(&failed);
+				ValidSendMessageTxIdx::<T>::append(tx_idx);
+				log::trace!(target: "vector", "Success to send message at {tx_idx}");
 			}
+			*/
+			if dispatch.is_err() {
+				let _ = mts_update::<Vec<u32>, _>(inherent::ID.to_vec(), |failed| {
+					let tx_idx = <frame_system::Pallet<T>>::extrinsic_index().unwrap_or_default();
+					failed.push(tx_idx);
+					log::error!(target: "vector", "Failed to send message: {failed:?}");
+				});
+			}
+
 			dispatch
 		}
 
@@ -524,7 +585,7 @@ pub mod pallet {
 			let hash = U256::from(poseidon_hash.to_vec().as_slice());
 
 			SyncCommitteePoseidons::<T>::insert(period, hash);
-			Self::deposit_event(Event::SyncCommitteeUpdate { period, root: hash });
+			Self::deposit_event(Event::SyncCommitteeUpdated { period, root: hash });
 			Ok(().into())
 		}
 
@@ -543,7 +604,7 @@ pub mod pallet {
 
 			Broadcasters::<T>::set(broadcaster_domain, broadcaster);
 
-			Self::deposit_event(Event::BroadcasterUpdate {
+			Self::deposit_event(Event::BroadcasterUpdated {
 				old: old_bc,
 				new: broadcaster,
 				domain: broadcaster_domain,
@@ -588,19 +649,55 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// # TODO
-		/// - Ensure `failed` is not empty.
 		#[pallet::call_index(8)]
-		#[pallet::weight((T::WeightInfo::failed_tx_index(failed.len() as u32), DispatchClass::Mandatory))]
-		pub fn failed_tx_index(origin: OriginFor<T>, failed: Vec<u32>) -> DispatchResult {
+		#[pallet::weight(T::WeightInfo::set_function_ids())]
+		pub fn set_function_ids(
+			origin: OriginFor<T>,
+			value: Option<(H256, H256)>,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			FunctionIds::<T>::put(value);
+
+			Self::deposit_event(Event::FunctionIdsUpdated { value });
+
+			Ok(())
+		}
+
+		#[pallet::call_index(9)]
+		#[pallet::weight(T::WeightInfo::set_step_verification_key())]
+		pub fn set_step_verification_key(
+			origin: OriginFor<T>,
+			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			StepVerificationKey::<T>::put(value.clone());
+
+			Self::deposit_event(Event::StepVerificationKeyUpdated { value });
+
+			Ok(())
+		}
+
+		#[pallet::call_index(10)]
+		#[pallet::weight(T::WeightInfo::set_rotate_verification_key())]
+		pub fn set_rotate_verification_key(
+			origin: OriginFor<T>,
+			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			RotateVerificationKey::<T>::put(value.clone());
+
+			Self::deposit_event(Event::RotateVerificationKeyUpdated { value });
+
+			Ok(())
+		}
+
+		#[pallet::call_index(11)]
+		#[pallet::weight(T::WeightInfo::failed_tx_index(0u32))]
+		pub fn failed_send_message_txs(
+			origin: OriginFor<T>,
+			failed_txs: Vec<u32>,
+		) -> DispatchResult {
 			ensure_none(origin)?;
-			let failed_encoded = failed.encode();
-
-			// Index Tx in DB block.
-			let data_hash = blake2_256(&failed_encoded);
-			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index().unwrap_or_default();
-			transaction_index::index(extrinsic_index, failed.len() as u32, data_hash);
-
 			Ok(())
 		}
 	}
@@ -674,6 +771,35 @@ pub mod pallet {
 			Ok(())
 		}
 
+		fn decode_message_data(data: Vec<u8>) -> Result<(H256, U256), DispatchError> {
+			//abi.encode(ASSET_ID, msg.value),
+			let decoded_data = ethabi::decode(
+				&[
+					ethabi::ParamType::FixedBytes(32),
+					ethabi::ParamType::Uint(256),
+				],
+				data.as_slice(),
+			)
+			.map_err(|_| Error::<T>::CannotDecodeData)?;
+			ensure!(decoded_data.len() == 2, Error::<T>::CannotDecodeData);
+
+			let asset_id_token = decoded_data.get(0).ok_or(Error::<T>::CannotDecodeData)?;
+			let asset_id = asset_id_token
+				.clone()
+				.into_fixed_bytes()
+				.ok_or(Error::<T>::CannotDecodeData)?;
+
+			let asset = H256::from_slice(asset_id.as_slice());
+
+			let amount_token = decoded_data.get(1).ok_or(Error::<T>::CannotDecodeData)?;
+			let amount = amount_token
+				.clone()
+				.into_uint()
+				.ok_or(Error::<T>::CannotDecodeData)?;
+
+			Ok((asset, amount))
+		}
+
 		/// The account ID of the bridge's pot.
 		pub fn account_id() -> T::AccountId {
 			T::PalletId::get().into_account_truncating()
@@ -681,8 +807,9 @@ pub mod pallet {
 
 		fn rotate_into(
 			finalized_slot: u64,
-			cfg: Configuration,
+			cfg: &Configuration,
 			rotate_store: &VerifiedRotate,
+			rotate_function_id: H256,
 		) -> Result<u64, DispatchError> {
 			let finalized_header_root = Headers::<T>::get(finalized_slot);
 			ensure!(
@@ -692,7 +819,7 @@ pub mod pallet {
 
 			let input = ethabi::encode(&[Token::FixedBytes(finalized_header_root.0.to_vec())]);
 			let sync_committee_poseidon: U256 =
-				Self::verified_rotate_call(T::RotateFunctionId::get(), input, rotate_store)?;
+				Self::verified_rotate_call(rotate_function_id, input, rotate_store)?;
 
 			let period = finalized_slot
 				.checked_div(cfg.slots_per_period)
@@ -701,13 +828,14 @@ pub mod pallet {
 
 			Self::set_sync_committee_poseidon(next_period, sync_committee_poseidon)?;
 
-			Ok(period)
+			Ok(next_period)
 		}
 
 		fn step_into(
 			attested_slot: u64,
-			cfg: Configuration,
+			cfg: &Configuration,
 			step_store: &VerifiedStep,
+			step_function_id: H256,
 		) -> Result<bool, DispatchError> {
 			let period = attested_slot
 				.checked_div(cfg.slots_per_period)
@@ -717,8 +845,7 @@ pub mod pallet {
 			ensure!(sc_poseidon != U256::zero(), Error::<T>::SyncCommitteeNotSet);
 
 			let input = encode_packed(sc_poseidon, attested_slot);
-			let result = Self::verified_step_call(T::StepFunctionId::get(), input, step_store)?;
-
+			let result = Self::verified_step_call(step_function_id, input, step_store)?;
 			ensure!(
 				result.participation >= cfg.finality_threshold,
 				Error::<T>::NotEnoughParticipants
@@ -774,10 +901,14 @@ pub mod pallet {
 		}
 
 		/// get_verifier returns verifier based on the provided function id.
-		fn get_verifier(function_id: H256) -> Result<Verifier, Error<T>> {
-			if function_id == T::StepFunctionId::get() {
+		fn get_verifier(
+			function_id: H256,
+			step_function_id: H256,
+			rotate_function_id: H256,
+		) -> Result<Verifier, Error<T>> {
+			if function_id == step_function_id {
 				Self::get_step_verifier()
-			} else if function_id == T::RotateFunctionId::get() {
+			} else if function_id == rotate_function_id {
 				Self::get_rotate_verifier()
 			} else {
 				Err(Error::<T>::FunctionIdNotKnown)
@@ -785,19 +916,23 @@ pub mod pallet {
 		}
 
 		fn get_step_verifier() -> Result<Verifier, Error<T>> {
-			let vk = T::StepVerificationKey::get();
-			ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
-			let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
-				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
-			Ok(deserialized_vk)
+			if let Some(vk) = StepVerificationKey::<T>::get() {
+				let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
+					.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+				Ok(deserialized_vk)
+			} else {
+				Err(Error::<T>::VerificationKeyIsNotSet)
+			}
 		}
 
 		fn get_rotate_verifier() -> Result<Verifier, Error<T>> {
-			let vk = T::RotateVerificationKey::get();
-			ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
-			let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
-				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
-			Ok(deserialized_vk)
+			if let Some(vk) = RotateVerificationKey::<T>::get() {
+				let deserialized_vk = Verifier::from_json_u8_slice(vk.as_slice())
+					.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+				Ok(deserialized_vk)
+			} else {
+				Err(Error::<T>::VerificationKeyIsNotSet)
+			}
 		}
 
 		fn verified_step_call(
@@ -837,51 +972,51 @@ pub mod pallet {
 		fn is_domain_valid(domain: u32) -> bool {
 			WhitelistedDomains::<T>::get().contains(&domain)
 		}
-	}
 
-	/*
-	#[pallet::inherent]
-	impl<T: Config> ProvideInherent for Pallet<T>
-	where
-		[u8; 32]: From<T::AccountId>,
-	{
-		type Call = Call<T>;
-		type Error = InherentError;
-		const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
-
-		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-			/*let failed = data
-				.get_data::<InherentType>(&INHERENT_IDENTIFIER)
-				.ok()
-				.flatten()
-			.unwrap_or_default();*/
-			let failed = well_known_keys::failed_send_msg();
-			log::trace!(target: "vector", "Create inherent extrinsic failed send msg: {failed:?}");
-			// (!failed.is_empty()).then_some(Call::failed_tx_index { failed })
-			Some(Call::failed_tx_index { failed })
-		}
-
-		fn check_inherent(call: &Self::Call, data: &InherentData) -> Result<(), Self::Error> {
-			if let Some(unused_failed) = data
-				.get_data::<InherentType>(&INHERENT_IDENTIFIER)
-				.ok()
-				.flatten()
-			{
-				let exp_failed = match call {
-					Call::failed_tx_index { ref failed } => failed.clone(),
-					_ => vec![],
-				};
-				let failed = well_known_keys::failed_send_msg();
-				log::trace!(target: "vector", "Check inherent extrinsic failed send msg: {failed:?} expected {exp_failed:?}");
-				ensure!(failed == exp_failed, InherentError::MismatchFailedList);
+		fn get_function_ids() -> Result<(H256, H256), DispatchError> {
+			if let Some(function_ids) = FunctionIds::<T>::get() {
+				Ok(function_ids)
+			} else {
+				Err(Error::<T>::FunctionIdsAreNotSet.into())
 			}
-
-			Ok(())
-		}
-
-		fn is_inherent(call: &Self::Call) -> bool {
-			matches!(call, Call::failed_tx_index { .. })
 		}
 	}
-	*/
+}
+
+impl<T: Config> ProvidePostInherent for Pallet<T>
+where
+	[u8; 32]: From<T::AccountId>,
+{
+	type Call = Call<T>;
+	type Error = inherent::InherentError;
+	const INHERENT_IDENTIFIER: InherentIdentifier = inherent::ID;
+
+	fn create_inherent(_: &avail_base::StorageMap) -> Option<Self::Call> {
+		let failed_txs = mts_get::<Vec<u32>>(&Self::INHERENT_IDENTIFIER).unwrap_or_default();
+		if !failed_txs.is_empty() {
+			log::trace!(target: "vector", "Failed Send Message Tx: {failed_txs:?}");
+			Some(Call::failed_send_message_txs { failed_txs })
+		} else {
+			None
+		}
+	}
+
+	fn is_inherent(call: &Self::Call) -> bool {
+		matches!(call, Call::failed_send_message_txs { .. })
+	}
+}
+
+pub mod weight_helper {
+
+	use super::*;
+
+	/// Weight for `dataAvailability::submit_data`.
+	pub fn fulfill_call<T: Config>(function_id: H256) -> (Weight, DispatchClass) {
+		if let Some((step_function_id, _)) = FunctionIds::<T>::get() {
+			if step_function_id == function_id {
+				return (T::WeightInfo::fulfill_call_step(), DispatchClass::Normal);
+			}
+		}
+		(T::WeightInfo::fulfill_call_rotate(), DispatchClass::Normal)
+	}
 }

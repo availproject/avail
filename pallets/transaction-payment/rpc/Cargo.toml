@@ -16,9 +16,9 @@ targets = ["x86_64-unknown-linux-gnu"]
 codec = { package = "parity-scale-codec", version = "3.6.1" }
 jsonrpsee = { version = "0.16.2", features = ["client-core", "server", "macros"] }
 pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", path = "./runtime-api" }
-sp-api = { version = "4.0.0-dev", git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-core = { version = "21.0.0", git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-rpc = { version = "6.0.0", git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-runtime = { version = "24.0.0", git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-weights = { version = "20.0.0", git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+sp-api = { workspace = true, default-features = false }
+sp-blockchain = { workspace = true, default-features = false }
+sp-core = { workspace = true, default-features = false }
+sp-rpc = { workspace = true, default-features = false }
+sp-runtime = { workspace = true, default-features = false }
+sp-weights = { workspace = true, default-features = false }

@@ -13,24 +13,24 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-avail-core.workspace = true
+avail-core = { workspace = true, default-features = false }
 
 # Substrate
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
 scale-info = { version = "2.5.0", default-features = false, features = [
 	"derive",
 ] }
-frame-benchmarking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+frame-benchmarking = { workspace = true, default-features = false }
+frame-support = { workspace = true, default-features = false }
 frame-system = { path = "../", default-features = false }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch", default-features = false }
+sp-core = { workspace = true, default-features = false }
+sp-runtime = { workspace = true, default-features = false }
+sp-std = { workspace = true, default-features = false }
 
 [dev-dependencies]
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-version = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
-sp-externalities = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-v1.6.0-patch" }
+sp-io = { workspace = true, default-features = false }
+sp-version = { workspace = true, default-features = false }
+sp-externalities = { workspace = true, default-features = false }
 
 [features]
 default = [ "std" ]

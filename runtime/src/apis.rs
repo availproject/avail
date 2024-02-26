@@ -1,6 +1,12 @@
-use crate::version::VERSION;
-use crate::RuntimeGenesisConfig;
+use crate::{
+	constants, mmr, version::VERSION, AccountId, AuthorityDiscovery, Babe, Block, BlockNumber,
+	EpochDuration, Executive, Grandpa, Historical, Identity, Index, InherentDataExt, Mmr,
+	NominationPools, OpaqueMetadata, Runtime, RuntimeCall, RuntimeGenesisConfig, Seed, SessionKeys,
+	System, TransactionPayment,
+};
+use avail_base::ProvidePostInherent;
 use avail_core::{currency::Balance, header::HeaderExtension, OpaqueExtrinsic};
+
 use frame_support::{
 	genesis_builder_helper::{build_config, create_default_config},
 	traits::{KeyOwnerProofSystem, Randomness},
@@ -8,28 +14,20 @@ use frame_support::{
 };
 use frame_system::limits::BlockLength;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
-
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
-use sp_core::crypto::KeyTypeId;
-use sp_core::{H256, U256};
+use sp_core::{crypto::KeyTypeId, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
-	traits::{Block as BlockT, NumberFor},
+	traits::{Block as BlockT, Extrinsic as ExtrinsicT, NumberFor},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
-use sp_std::{borrow::Cow, vec::Vec};
+use sp_std::{borrow::Cow, vec, vec::Vec};
 use sp_version::RuntimeVersion;
 
-#[allow(unused)]
-use crate::Identity;
-use crate::{
-	constants, mmr, AccountId, AuthorityDiscovery, Babe, Block, BlockNumber, EpochDuration,
-	Executive, Grandpa, Historical, Index, InherentDataExt, Mmr, NominationPools, OpaqueMetadata,
-	Runtime, RuntimeCall, Seed, SessionKeys, System, TransactionPayment,
-};
+type Extrinsic = <Block as BlockT>::Extrinsic;
 
 decl_runtime_apis! {
 	#[api_version(2)]
@@ -93,7 +91,8 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl sp_block_builder::BlockBuilder<Block> for Runtime {
+	impl sp_block_builder::BlockBuilder<Block> for Runtime
+	{
 		fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
 			Executive::apply_extrinsic(extrinsic)
 		}
@@ -411,6 +410,17 @@ impl_runtime_apis! {
 	impl crate::apis::VectorApi<Block> for Runtime {
 		fn invalid_send_tx_indices() -> Vec<u32> {
 			todo!()
+		}
+	}
+
+	impl avail_base::PostInherentsProvider<Block> for Runtime {
+		fn create_post_inherent_extrinsics(data: avail_base::StorageMap) -> Vec<<Block as BlockT>::Extrinsic> {
+			pallet_vector::Pallet::<Runtime>::create_inherent(&data)
+				.into_iter()
+				.filter_map(|inherent| {
+					<Block as BlockT>::Extrinsic::new(inherent.into(), None)
+				})
+				.collect()
 		}
 	}
 

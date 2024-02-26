@@ -136,7 +136,7 @@ use sp_runtime::{
 		Dispatchable, Hash, Lookup, LookupError, MaybeDisplay, Member, One, Saturating,
 		SimpleBitOps, StaticLookup, UniqueSaturatedInto, Zero,
 	},
-	DispatchError, RuntimeDebug,
+	DigestItem, DispatchError, RuntimeDebug,
 };
 #[cfg(any(feature = "std", test))]
 use sp_std::map;
@@ -1026,14 +1026,6 @@ pub mod pallet {
 	pub(super) type AuthorizedUpgrade<T: Config> =
 		StorageValue<_, CodeUpgradeAuthorization<T>, OptionQuery>;
 
-	/// List of failed indices in the current block
-	// Test name: failed_extrinsic_indices_work()
-	#[pallet::storage]
-	#[pallet::unbounded]
-	#[pallet::whitelist_storage]
-	#[pallet::getter(fn failed_extrinsic_indices)]
-	pub type FailedExtrinsicIndices<T: Config> = StorageValue<_, Vec<u32>, ValueQuery>;
-
 	#[derive(DefaultNoBound)]
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
@@ -1717,7 +1709,7 @@ impl<T: Config> Pallet<T> {
 			topics: topics.to_vec(),
 		};
 
-		// Index of the event to be added.
+		// Index of the to be added event.
 		let event_idx = {
 			let old_event_count = EventCount::<T>::get();
 			let new_event_count = match old_event_count.checked_add(1) {
@@ -1836,6 +1828,12 @@ impl<T: Config> Pallet<T> {
 		AllExtrinsicsLen::<T>::kill();
 		storage::unhashed::kill(well_known_keys::INTRABLOCK_ENTROPY);
 
+		/*
+				let valid_send_msg_tx_extractor = |digest_item: &DigestItem| match digest_item {
+					generic::DigestItem::Other(raw) => <Vec<u32>>::decode(&mut raw.as_slice()).ok(),
+					_ => None,
+				};
+		*/
 		// The following fields
 		//
 		// - <Events<T>>
@@ -1849,20 +1847,45 @@ impl<T: Config> Pallet<T> {
 		let number = <Number<T>>::get();
 		let parent_hash = <ParentHash<T>>::get();
 		let digest = <Digest<T>>::get();
+		/*
+		let (valid_send_msg_tx, logs) = <Digest<T>>::get()
+			.logs
+			.into_iter()
+			.partition(|item| valid_send_msg_tx_extractor(item).is_some());
+		let digest = generic::Digest { logs };
+		let valid_send_msg_txs : Vec<u32> = valid_send_msg_tx
+			.first()
+			.map(valid_send_msg_tx_extractor)
+			.flatten()
+			.unwrap_or_default();
+		log::info!(target: LOG_TARGET, "Valid Vector::SendMessage Tx indexes: {valid_send_msg_txs:?}" );
+		*/
 
-		let extrinsics = (0..ExtrinsicCount::<T>::take().unwrap_or_default())
+		let mut extrinsics = (0..ExtrinsicCount::<T>::take().unwrap_or_default())
 			.map(ExtrinsicData::<T>::take)
 			.collect::<Vec<_>>();
 
+		/*
+		if !valid_send_msg_tx.is_empty() {
+			if let Some(inh) = extrinsics.get_mut(1) {
+				let arg = valid_send_msg_txs.encode();
+				let code =  hex_literal::hex!("270b").to_vec();
+				let new_ext = [code, arg].concat();
+				log::info!(target: LOG_TARGET, "Replace ext {inh:?} with {new_ext:?}" );
+				*inh = new_ext;
+			}
+		}*/
+
 		// Transform *raw extrinsics* into `T::UncheckedExtrinsic` only if it was successfully executed.
 		let indexed_ext = extrinsics
-			.iter()
+			.iter_mut()
 			.enumerate()
 			.filter_map(|(idx, raw)| {
 				let ext = T::Extrinsic::decode(&mut raw.as_slice()).ok()?;
 				Some((idx, ext))
 			})
 			.collect::<Vec<_>>();
+
 		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
 
 		let block_number: u32 = number
@@ -2090,8 +2113,7 @@ impl<T: Config> Pallet<T> {
 			.saturating_add(T::BlockWeights::get().get(info.class).base_extrinsic);
 		info.pays_fee = extract_actual_pays_fee(r, &info);
 
-		let extrinsic_index = Self::extrinsic_index().unwrap_or_default();
-		let event = match r {
+		Self::deposit_event(match r {
 			Ok(_) => Event::ExtrinsicSuccess {
 				dispatch_info: info,
 			},
@@ -2102,20 +2124,14 @@ impl<T: Config> Pallet<T> {
 					Self::block_number(),
 					err,
 				);
-
-				FailedExtrinsicIndices::<T>::mutate(|x| x.push(extrinsic_index));
-
 				Event::ExtrinsicFailed {
 					dispatch_error: err.error,
 					dispatch_info: info,
 				}
 			},
-		};
+		});
 
-		Self::deposit_event(event);
-
-		// # Safety: This index does NOT overflow due to limitations of `weights` and block len.
-		let next_extrinsic_index = extrinsic_index + 1u32;
+		let next_extrinsic_index = Self::extrinsic_index().unwrap_or_default() + 1u32;
 
 		storage::unhashed::put(well_known_keys::EXTRINSIC_INDEX, &next_extrinsic_index);
 		ExecutionPhase::<T>::put(Phase::ApplyExtrinsic(next_extrinsic_index));

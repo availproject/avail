@@ -8,6 +8,22 @@ use pallet_vector::Call as VectorCall;
 use sp_core::H256;
 use sp_std::vec;
 
+/*
+impl InherentDataMutator<Call, Vec<u32>> for Runtime {
+	fn update(call: &Call, failed: Vec<u32>) -> Option<Call> {
+		match call {
+			Call::Vector(call) => match call {
+				VectorCall::failed_tx_index{..} => {
+					Some(Call::Vector(VectorCall::failed_tx_index { failed }))
+				},
+				_ => None,
+			},
+			_ => None,
+		}
+	}
+}
+*/
+
 /// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.
 impl TxDataFilter<AccountId, Call> for Runtime {
 	fn filter<'a, 'b>(
