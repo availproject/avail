@@ -1,6 +1,8 @@
-use crate::StorageMap;
+use crate::{mts_clear, mts_storage, StorageMap};
 
-use sp_inherents::{InherentData, InherentIdentifier, IsFatalError};
+use sp_api::decl_runtime_apis;
+use sp_runtime::traits::Block as BlockT;
+use sp_std::vec::Vec;
 
 /// A pallet that provides or verifies an inherent extrinsic will implement this trait.
 ///
@@ -12,9 +14,9 @@ pub trait ProvidePostInherent {
 	/// The call type of the pallet.
 	type Call;
 	/// The error returned by `check_inherent`.
-	type Error: codec::Encode + IsFatalError;
+	type Error: codec::Encode;
 	/// The inherent identifier used by this inherent.
-	const INHERENT_IDENTIFIER: self::InherentIdentifier;
+	const INHERENT_IDENTIFIER: [u8; 8];
 
 	/// Create an inherent out of the given `InherentData`.
 	///
@@ -55,4 +57,27 @@ pub trait ProvidePostInherent {
 	/// is an inherent call, when implementing `ValidateUnsigned::validate_unsigned`.
 	/// Otherwise block producers can produce invalid blocks by including them after non inherents.
 	fn is_inherent(call: &Self::Call) -> bool;
+}
+
+decl_runtime_apis! {
+	#[core_trait]
+	#[allow(unused_imports)]
+	pub trait PostInherentsProvider {
+		fn create_post_inherent_extrinsics(data: StorageMap) -> Vec<<Block as BlockT>::Extrinsic>;
+	}
+}
+
+pub trait PostInherentsBackend {
+	fn init_post_inherent_data(&self);
+	fn post_inherent_data(&self) -> StorageMap;
+}
+
+/// Client API for post-inherents.
+impl<T> PostInherentsBackend for T {
+	fn init_post_inherent_data(&self) {
+		mts_clear();
+	}
+	fn post_inherent_data(&self) -> StorageMap {
+		mts_storage()
+	}
 }
