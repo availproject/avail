@@ -14,21 +14,21 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 # Substrate dependencies
-sp-runtime = { version = "24.0.0", workspace = true, default-features = false }
-sp-std = { version = "8.0.0", workspace = true, default-features = false }
+sp-runtime = { workspace = true, default-features = false }
+sp-std = { workspace = true, default-features = false }
 frame-support = { workspace = true, default-features = false }
-frame-system = { version = "4.0.0-dev", default-features = false, path = "../../system" }
-pallet-transaction-payment = { version = "4.0.0-dev", default-features = false, path = ".." }
+frame-system = { default-features = false, path = "../../system" }
+pallet-transaction-payment = { default-features = false, path = ".." }
 codec = { package = "parity-scale-codec", version = "3.2.2", default-features = false, features = ["derive"] }
-scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
+scale-info = { default-features = false, features = ["derive"] }
 
 [dev-dependencies]
-sp-core = { version = "21.0.0", workspace = true, default-features = false }
-sp-io = { version = "23.0.0", workspace = true, default-features = false }
-sp-storage = { version = "13.0.0", workspace = true, default-features = false }
-pallet-assets = { version = "4.0.0-dev", workspace = true, default-features = false }
-pallet-balances = { version = "4.0.0-dev", workspace = true, default-features = false, features = ["std"] }
-pallet-asset-conversion = { version = "4.0.0-dev", workspace = true, default-features = false }
+sp-core = { workspace = true, default-features = false }
+sp-io = { workspace = true, default-features = false }
+sp-storage = { workspace = true, default-features = false }
+pallet-assets = { workspace = true, default-features = false }
+pallet-balances = { workspace = true, default-features = false, features = ["std"] }
+pallet-asset-conversion = { workspace = true, default-features = false }
 
 [features]
 default = ["std"]
