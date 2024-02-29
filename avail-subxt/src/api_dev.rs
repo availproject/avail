@@ -24414,7 +24414,7 @@ pub mod api {
 					#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 					#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 					pub enum HeaderExtension {
-						#[codec(index = 3)]
+						#[codec(index = 2)]
 						V3(runtime_types::avail_core::header::extension::v3::HeaderExtension),
 					}
 				}
