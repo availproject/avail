@@ -16,7 +16,7 @@ pub mod v3;
 #[cfg_attr(feature = "runtime", derive(PassByCodec))]
 #[repr(u8)]
 pub enum HeaderExtension {
-	V3(v3::HeaderExtension) = 3,
+	V3(v3::HeaderExtension) = 2,
 }
 
 /// It forwards the call to the inner version of the header. Any invalid version will return the
