@@ -82,7 +82,7 @@ fn kate_max_cells_size_upper_bound(s: &str) -> Result<usize, String> {
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
 	/*
-	/// The custom inspect subcommmand for decoding blocks and extrinsics.
+	/// The custom inspect subcommand for decoding blocks and extrinsics.
 	#[command(
 		name = "inspect",
 		about = "Decode given block or extrinsic using current native runtime."

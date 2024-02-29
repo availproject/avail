@@ -433,7 +433,7 @@ where
 			.runtime_api()
 			.successful_extrinsic_indices(block.hash())
 			.map_err(|e| {
-				internal_err!("Failed to fetch successfull indices at ({:?}): {:?}", at, e)
+				internal_err!("Failed to fetch successful indices at ({:?}): {:?}", at, e)
 			})?;
 
 		let calls = block

@@ -8,5 +8,5 @@ export * as chain from "./chain"
 export * as helpers from "./helpers"
 export * as spec from "./spec"
 
-// Re-exports to avoid duplicattion
+// Re-exports to avoid duplication
 export * from "@polkadot/api"

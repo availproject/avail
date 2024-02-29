@@ -88,7 +88,7 @@ impl AvailExtrinsicParams {
 
 impl Encode for AvailExtrinsicParams {
 	fn encode_to<T: Output + ?Sized>(&self, dest: &mut T) {
-		// CheckMortality, CheckNonce, ChargeTransationPayment, CheckAppId
+		// CheckMortality, CheckNonce, ChargeTransactionPayment, CheckAppId
 		(self.mortality, self.nonce, self.tip, self.app_id).encode_to(dest);
 	}
 }
