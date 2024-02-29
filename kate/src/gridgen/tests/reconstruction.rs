@@ -4,7 +4,7 @@ use crate::{
 	gridgen::{tests::sample_cells, EvaluationGrid},
 	Seed,
 };
-use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
+use avail_core::{AppId, BlockLengthColumns, BlockLengthRows, SubmittedData};
 use core::num::NonZeroU16;
 use kate_recovery::{
 	com::{reconstruct_app_extrinsics, reconstruct_extrinsics},
@@ -21,12 +21,12 @@ fn test_multiple_extrinsics_for_same_app_id() {
 	let xt1 = vec![5, 5];
 	let xt2 = vec![6, 6];
 	let xts = [
-		AppExtrinsic::new(AppId(1), 0, xt1.clone()),
-		AppExtrinsic::new(AppId(1), 1, xt2.clone()),
+		SubmittedData::new(AppId(1), &xt1),
+		SubmittedData::new(AppId(1), &xt2),
 	];
 	// The hash is used for seed for padding the block to next power of two value
 	let hash = Seed::default();
-	let ev = EvaluationGrid::from_extrinsics(xts.into(), 4, 128, 2, hash)
+	let ev = EvaluationGrid::from_extrinsics(xts, 4, 128, 2, hash)
 		.unwrap()
 		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 		.unwrap();
@@ -43,7 +43,8 @@ fn test_multiple_extrinsics_for_same_app_id() {
 proptest! {
 #![proptest_config(ProptestConfig::with_cases(5))]
 #[test]
-fn test_build_and_reconstruct(exts in super::app_extrinsics_strategy())  {
+fn test_build_and_reconstruct(dexts in super::app_extrinsics_strategy())  {
+	let exts = dexts.iter().map(|(app_id, data)| SubmittedData::new(*app_id, &data)).collect::<Vec<_>>();
 	let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 256, 256, Seed::default()).unwrap().extend_columns(unsafe { NonZeroU16::new_unchecked(2)}).unwrap();
 	let (rows, cols) :(usize,usize)= grid.dims().into();
 	//let (layout, commitments, dims, matrix) = par_build_commitments(
@@ -54,8 +55,8 @@ fn test_build_and_reconstruct(exts in super::app_extrinsics_strategy())  {
 	let bdims = Dimensions::new_from(rows, cols).unwrap();
 	let reconstructed = reconstruct_extrinsics(&grid.lookup, bdims, cells).unwrap();
 	for ((id,data), xt) in reconstructed.iter().zip(exts) {
-		prop_assert_eq!(id.0, *xt.app_id);
-		prop_assert_eq!(data[0].as_slice(), &xt.opaque);
+		prop_assert_eq!(id.0, *xt.id);
+		prop_assert_eq!(data[0].as_slice(), xt.data);
 	}
 
 	let pp = &*PMP;
@@ -91,13 +92,14 @@ get erasure coded to ensure redundancy."#;
 	let app_id_2_data =
 		br#""Let's see how this gets encoded and then reconstructed by sampling only some data."#;
 
-	let xts = vec![
-		AppExtrinsic::new(AppId(0), 0, vec![0]),
-		AppExtrinsic::new(AppId(1), 1, app_id_1_data.to_vec()),
-		AppExtrinsic::new(AppId(2), 2, app_id_2_data.to_vec()),
-	];
+	let xts_data = vec![vec![0], app_id_1_data.to_vec(), app_id_2_data.to_vec()];
+	let xts = xts_data
+		.iter()
+		.enumerate()
+		.map(|(i, data)| SubmittedData::new(AppId(i as u32), &data))
+		.collect::<Vec<_>>();
 
-	let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 4, 32, Seed::default())
+	let grid = EvaluationGrid::from_extrinsics(xts, 4, 4, 32, Seed::default())
 		.unwrap()
 		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 		.unwrap();

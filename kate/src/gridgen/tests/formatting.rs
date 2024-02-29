@@ -1,4 +1,4 @@
-use avail_core::{AppExtrinsic, AppId, DataLookup};
+use avail_core::{AppId, DataLookup, SubmittedData};
 use hex_literal::hex;
 use kate_recovery::{
 	com::{app_specific_cells, decode_app_extrinsics, reconstruct_extrinsics},
@@ -17,13 +17,17 @@ use core::num::NonZeroU16;
 
 #[test]
 fn newapi_test_flatten_block() {
-	let extrinsics: Vec<AppExtrinsic> = vec![
-		AppExtrinsic::new(AppId(0), 0, (1..=30).collect()),
-		AppExtrinsic::new(AppId(1), 1, (1..=31).collect()),
-		AppExtrinsic::new(AppId(2), 2, (1..=32).collect()),
-		AppExtrinsic::new(AppId(3), 3, (1..=61).collect()),
+	let datas: Vec<Vec<u8>> = vec![
+		(1..=30).collect(),
+		(1..=31).collect(),
+		(1..=32).collect(),
+		(1..=61).collect(),
 	];
-
+	let extrinsics = datas
+		.iter()
+		.enumerate()
+		.map(|(i, d)| SubmittedData::new(AppId(i as u32), &d))
+		.collect::<Vec<_>>();
 	let expected_dims = Dimensions::new_from(1, 16).unwrap();
 	let evals = EvaluationGrid::from_extrinsics(extrinsics, 4, 256, 256, Seed::default()).unwrap();
 
@@ -109,8 +113,8 @@ get erasure coded to ensure redundancy."#;
 
 	let hash = Seed::default();
 	let xts = (0..=2)
-		.zip(data)
-		.map(|(id, data)| AppExtrinsic::new(AppId(id), id, data))
+		.zip(data.iter())
+		.map(|(id, data)| SubmittedData::new(AppId(id), &data))
 		.collect::<Vec<_>>();
 
 	let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 32, 4, hash)
@@ -120,7 +124,7 @@ get erasure coded to ensure redundancy."#;
 
 	let bdims = grid.dims();
 	for xt in &xts {
-		let positions = app_specific_cells(&grid.lookup, bdims, xt.app_id).unwrap();
+		let positions = app_specific_cells(&grid.lookup, bdims, xt.id).unwrap();
 		let cells = positions
 			.iter()
 			.map(|pos| DataCell {
@@ -133,8 +137,8 @@ get erasure coded to ensure redundancy."#;
 					.unwrap(),
 			})
 			.collect::<Vec<_>>();
-		let data = &decode_app_extrinsics(&grid.lookup, bdims, cells, xt.app_id).unwrap()[0];
-		assert_eq!(data, &xt.opaque);
+		let data = &decode_app_extrinsics(&grid.lookup, bdims, cells, xt.id).unwrap()[0];
+		assert_eq!(data, &xt.data);
 	}
 
 	assert!(matches!(
@@ -145,14 +149,14 @@ get erasure coded to ensure redundancy."#;
 
 #[test]
 fn test_extend_mock_data() {
-	let orig_data = r#"This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
+	let orig_data = br#"This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
 get erasure coded to ensure redundancy.
 Let's see how this gets encoded and then reconstructed by sampling only some data."#;
-	let exts = vec![AppExtrinsic::from(orig_data.as_bytes().to_vec())];
+	let exts = vec![SubmittedData::from(&orig_data[..])];
 
 	// The hash is used for seed for padding the block to next power of two value
 	let hash = Seed::default();
-	let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 128, 2, hash)
+	let grid = EvaluationGrid::from_extrinsics(exts, 4, 128, 2, hash)
 		.unwrap()
 		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 		.unwrap();
@@ -161,10 +165,8 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	let bdims = grid.dims();
 
 	let res = reconstruct_extrinsics(&grid.lookup, bdims, cols).unwrap();
-	let s = String::from_utf8_lossy(res[0].1[0].as_slice());
+	let s = res[0].1[0].as_slice();
 
 	assert_eq!(s, orig_data);
-	assert_eq!(res[0].1[0], orig_data.as_bytes());
-
-	eprintln!("Decoded: {}", s);
+	eprintln!("Decoded: {s:?}");
 }

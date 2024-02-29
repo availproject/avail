@@ -1,4 +1,4 @@
-use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
+use avail_core::{AppId, BlockLengthColumns, BlockLengthRows, SubmittedData};
 use core::num::NonZeroU16;
 use hex_literal::hex;
 use kate::{
@@ -30,24 +30,17 @@ fn multiproof_verification() -> Result<bool, AppError> {
 	let pp = multiproof_params(256, 256);
 	let pmp = poly_multiproof::m1_blst::M1NoPrecomp::new(256, 256, &mut thread_rng());
 	let points = kate::gridgen::domain_points(256)?;
+	let exts_data = vec![
+		hex!("CAFEBABE00000000000000000000000000000000000000").to_vec(),
+		hex!("DEADBEEF1111111111111111111111111111111111").to_vec(),
+		hex!("1234567899999999999999999999999999999999").to_vec(),
+	];
 	let (proof, evals, commitments, dims) = {
-		let exts = vec![
-			AppExtrinsic::new(
-				AppId(0),
-				0,
-				hex!("CAFEBABE00000000000000000000000000000000000000").to_vec(),
-			),
-			AppExtrinsic::new(
-				AppId(1),
-				1,
-				hex!("DEADBEEF1111111111111111111111111111111111").to_vec(),
-			),
-			AppExtrinsic::new(
-				AppId(2),
-				2,
-				hex!("1234567899999999999999999999999999999999").to_vec(),
-			),
-		];
+		let exts = exts_data
+			.iter()
+			.enumerate()
+			.map(|(i, data)| SubmittedData::new(AppId(i as u32), &data))
+			.collect::<Vec<_>>();
 		let seed = Seed::default();
 		let grid = EvaluationGrid::from_extrinsics(exts, 4, 256, 256, seed)?
 			.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })?;

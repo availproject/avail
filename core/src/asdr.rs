@@ -474,9 +474,9 @@ where
 
 impl<A, C, S, E> GetAppId for AppUncheckedExtrinsic<A, C, S, E>
 where
-	A: Codec + Debug,
+	A: Codec,
 	S: Codec,
-	C: Codec + Debug,
+	C: Codec,
 	E: SignedExtension + GetAppId,
 {
 	fn app_id(&self) -> AppId {

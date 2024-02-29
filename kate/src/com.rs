@@ -8,8 +8,8 @@ use std::{
 };
 
 use avail_core::{
-	data_lookup::Error as DataLookupError, ensure, AppExtrinsic, AppId, BlockLengthColumns,
-	BlockLengthRows, DataLookup,
+	data_lookup::Error as DataLookupError, ensure, AppId, BlockLengthColumns, BlockLengthRows,
+	DataLookup, SubmittedData,
 };
 use codec::Encode;
 use derive_more::Constructor;
@@ -121,14 +121,15 @@ impl PartialEq for Error {
 pub type XtsLayout = Vec<(AppId, u32)>;
 type FlatData = Vec<u8>;
 type DataChunk = [u8; DATA_CHUNK_SIZE];
+
 /// Helper which groups extrinsics data that share the same app_id.
 /// We assume the input extrinsics are already sorted by app_id, i.e. extrinsics with the same app_id are consecutive.
 /// This function does the same thing as group_by (unstable), just less general.
-fn app_extrinsics_group_by_app_id(extrinsics: Vec<AppExtrinsic>) -> Vec<(AppId, Vec<Vec<u8>>)> {
+fn app_extrinsics_group_by_app_id(extrinsics: Vec<SubmittedData<'_>>) -> Vec<(AppId, Vec<&[u8]>)> {
 	extrinsics.into_iter().fold(vec![], |mut acc, e| {
 		match acc.last_mut() {
-			Some((app_id, opaques)) if e.app_id == *app_id => opaques.push(e.opaque),
-			None | Some(_) => acc.push((e.app_id, vec![e.opaque])),
+			Some((app_id, opaques)) if e.id == *app_id => opaques.push(e.data),
+			None | Some(_) => acc.push((e.id, vec![e.data])),
 		}
 		acc
 	})
@@ -138,12 +139,12 @@ pub fn flatten_and_pad_block(
 	max_rows: BlockLengthRows,
 	max_cols: BlockLengthColumns,
 	chunk_size: NonZeroU32,
-	extrinsics: &[AppExtrinsic],
+	extrinsics: &[SubmittedData],
 	rng_seed: Seed,
 ) -> Result<(XtsLayout, FlatData, BlockDimensions), Error> {
 	// First, sort the extrinsics by their app_id
 	let mut extrinsics = extrinsics.to_vec();
-	extrinsics.sort_by(|a, b| a.app_id.cmp(&b.app_id));
+	extrinsics.sort_by(|a, b| a.id.cmp(&b.id));
 
 	// Pad data before determining exact block size
 	// Padding occurs both inside a single chunk and with additional chunk (if needed)
@@ -467,7 +468,7 @@ pub fn par_build_commitments<M: Metrics>(
 	rows: BlockLengthRows,
 	cols: BlockLengthColumns,
 	chunk_size: NonZeroU32,
-	extrinsics_by_key: &[AppExtrinsic],
+	extrinsics_by_key: &[SubmittedData],
 	rng_seed: Seed,
 	metrics: &M,
 ) -> Result<(XtsLayout, Vec<u8>, BlockDimensions, DMatrix<BlsScalar>), Error> {
@@ -719,12 +720,17 @@ mod tests {
 	#[test]
 	#[cfg(not(feature = "maximum-block-size"))]
 	fn test_flatten_block() {
-		let extrinsics: Vec<AppExtrinsic> = vec![
-			AppExtrinsic::new(AppId(0), 0, (1..=30).collect()),
-			AppExtrinsic::new(AppId(1), 1, (1..=31).collect()),
-			AppExtrinsic::new(AppId(2), 2, (1..=32).collect()),
-			AppExtrinsic::new(AppId(3), 3, (1..=61).collect()),
+		let raw_ext: Vec<Vec<u8>> = vec![
+			(1..=30).collect(),
+			(1..=31).collect(),
+			(1..=32).collect(),
+			(1..=61).collect(),
 		];
+		let extrinsics = raw_ext
+			.iter()
+			.enumerate()
+			.map(|(idx, r)| SubmittedData::new(AppId(idx as u32), r))
+			.collect::<Vec<_>>();
 
 		let expected_dims =
 			BlockDimensions::new(BlockLengthRows(1), BlockLengthColumns(16), TCHUNK).unwrap();
@@ -756,8 +762,8 @@ mod tests {
 		);
 
 		for ((id, data), exp) in res.iter().zip(extrinsics.iter()) {
-			assert_eq!(id.0, *exp.app_id);
-			assert_eq!(data[0], exp.opaque);
+			assert_eq!(id.0, *exp.id);
+			assert_eq!(data[0], exp.data);
 		}
 	}
 
@@ -806,18 +812,18 @@ mod tests {
 			.collect()
 	}
 
-	fn app_extrinsic_strategy() -> impl Strategy<Value = AppExtrinsic> {
+	fn app_extrinsic_strategy() -> impl Strategy<Value = (AppId, Vec<u8>)> {
 		(
 			any::<u32>(),
 			any_with::<Vec<u8>>(size_range(1..2048).lift()),
 		)
-			.prop_map(|(id, opaque)| AppExtrinsic::new(AppId(id), 0, opaque))
+			.prop_map(|(id, opaque)| (AppId(id), opaque))
 	}
 
-	fn app_extrinsics_strategy() -> impl Strategy<Value = Vec<AppExtrinsic>> {
+	fn app_extrinsics_strategy() -> impl Strategy<Value = Vec<(AppId, Vec<u8>)>> {
 		collection::vec(app_extrinsic_strategy(), size_range(1..16)).prop_map(|xts| {
 			let mut new_xts = xts;
-			new_xts.sort_by(|a1, a2| a1.app_id.cmp(&a2.app_id));
+			new_xts.sort_by(|a1, a2| a1.0.cmp(&a2.0));
 			new_xts
 		})
 	}
@@ -847,18 +853,19 @@ mod tests {
 	#![proptest_config(ProptestConfig::with_cases(10))]
 	#[test]
 	// newapi done
-	fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy())  {
+	fn test_build_and_reconstruct(ref dxts in app_extrinsics_strategy()) {
+		let xts = dxts.iter().map(|(id, opaque)| SubmittedData::new(*id, &opaque)).collect::<Vec<_>>();
 		let metrics = IgnoreMetrics {};
 		let (layout, commitments, dims, matrix) = par_build_commitments(
-			BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &metrics).unwrap();
+			BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, &xts, Seed::default(), &metrics).unwrap();
 
 		let columns = sample_cells_from_matrix(&matrix, None);
 		let extended_dims = dims.try_into().unwrap();
 		let index = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
 		let reconstructed = reconstruct_extrinsics(&index, extended_dims, columns).unwrap();
 		for ((app_id, data), xt) in reconstructed.iter().zip(xts) {
-			prop_assert_eq!(app_id.0, *xt.app_id);
-			prop_assert_eq!(data[0].as_slice(), &xt.opaque);
+			prop_assert_eq!(app_id.0, *xt.id);
+			prop_assert_eq!(data[0].as_slice(), xt.data);
 		}
 
 		let dims_cols = usize::try_from(dims.cols.0).unwrap();
@@ -886,8 +893,9 @@ mod tests {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
 	// newapi done
-	fn test_commitments_verify(ref xts in app_extrinsics_strategy())  {
-		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
+	fn test_commitments_verify(ref dxts in app_extrinsics_strategy())  {
+		let xts = dxts.iter().map(|(id, opaque)| SubmittedData::new(*id, &opaque)).collect::<Vec<_>>();
+		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, &xts, Seed::default(), &IgnoreMetrics{}).unwrap();
 
 		let index = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
 		let dims_cols = usize::try_from(dims.cols.0).unwrap();
@@ -895,8 +903,8 @@ mod tests {
 		let extended_dims = dims.try_into().unwrap();
 		let commitments = commitments::from_slice(&commitments).unwrap();
 		for xt in xts {
-			let rows = scalars_to_app_rows(xt.app_id, &index, extended_dims, &matrix);
-			let (_, missing) = commitments::verify_equality(&public_params, &commitments, rows.as_slice(), &index, extended_dims, xt.app_id).unwrap();
+			let rows = scalars_to_app_rows(xt.id, &index, extended_dims, &matrix);
+			let (_, missing) = commitments::verify_equality(&public_params, &commitments, rows.as_slice(), &index, extended_dims, xt.id).unwrap();
 			prop_assert!(missing.is_empty());
 		}
 	}
@@ -906,8 +914,9 @@ mod tests {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
 	// newapi done
-	fn verify_commitmnets_missing_row(ref xts in app_extrinsics_strategy())  {
-		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
+	fn verify_commitmnets_missing_row(ref dxts in app_extrinsics_strategy())  {
+		let xts = dxts.iter().map(|(id, opaque)| SubmittedData::new(*id, &opaque)).collect::<Vec<_>>();
+		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, &xts, Seed::default(), &IgnoreMetrics{}).unwrap();
 
 		let index = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
 		let dims_cols = usize::try_from(dims.cols.0).unwrap();
@@ -915,10 +924,10 @@ mod tests {
 		let extended_dims =  dims.try_into().unwrap();
 		let commitments = commitments::from_slice(&commitments).unwrap();
 		for xt in xts {
-			let mut rows = scalars_to_app_rows(xt.app_id, &index, extended_dims, &matrix);
+			let mut rows = scalars_to_app_rows(xt.id, &index, extended_dims, &matrix);
 			let app_row_index = rows.iter().position(Option::is_some).unwrap();
 			rows.remove(app_row_index);
-			let (_, missing) = commitments::verify_equality(&public_params, &commitments, &rows,&index, extended_dims,xt.app_id).unwrap();
+			let (_, missing) = commitments::verify_equality(&public_params, &commitments, &rows,&index, extended_dims,xt.id).unwrap();
 			prop_assert!(!missing.is_empty());
 		}
 	}
@@ -929,14 +938,15 @@ mod tests {
 	fn test_build_commitments_simple_commitment_check() {
 		let block_rows = BlockLengthRows(256);
 		let block_cols = BlockLengthColumns(256);
-		let original_data = br#"test"#.to_vec();
+		let original_data = br#"test"#;
+		let extrinsics = vec![SubmittedData::from(&original_data[..])];
 		let hash: Seed = hex!("4c29ae91bb0c61204b6f95d1f3c3a50aa6ac2f29da18d4423e05bbbf81056903");
 
 		let (_, commitments, dimensions, _) = par_build_commitments(
 			block_rows,
 			block_cols,
 			TCHUNK,
-			&[original_data.into()],
+			&extrinsics,
 			hash,
 			&IgnoreMetrics {},
 		)
@@ -959,11 +969,13 @@ get erasure coded to ensure redundancy."#;
 		let app_id_2_data = br#""Let's see how this gets encoded and then reconstructed by sampling only some data."#;
 
 		let hash = Seed::default();
-		let xts = vec![
-			AppExtrinsic::new(AppId(0), 0, vec![0]),
-			AppExtrinsic::new(AppId(1), 1, app_id_1_data.to_vec()),
-			AppExtrinsic::new(AppId(2), 2, app_id_2_data.to_vec()),
-		];
+		let dxts = vec![vec![0], app_id_1_data.to_vec(), app_id_2_data.to_vec()];
+
+		let xts = dxts
+			.iter()
+			.enumerate()
+			.map(|(idx, raw)| SubmittedData::new(AppId(idx as u32), &raw))
+			.collect::<Vec<_>>();
 
 		let (layout, data, dims) = flatten_and_pad_block(
 			BlockLengthRows(32),
@@ -1001,9 +1013,8 @@ get erasure coded to ensure redundancy."#;
 
 		let hash = Seed::default();
 		let xts = (0..=2)
-			.zip(data)
-			.enumerate()
-			.map(|(idx, (app_id, data))| AppExtrinsic::new(AppId(app_id), idx as u32, data))
+			.zip(data.iter())
+			.map(|(app_id, data)| SubmittedData::new(AppId(app_id), &data))
 			.collect::<Vec<_>>();
 
 		let (layout, data, dims) = flatten_and_pad_block(
@@ -1018,7 +1029,7 @@ get erasure coded to ensure redundancy."#;
 
 		let index = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
 		for xt in xts {
-			let positions = app_specific_cells(&index, dimensions, xt.app_id).unwrap();
+			let positions = app_specific_cells(&index, dimensions, xt.id).unwrap();
 			let cells = positions
 				.into_iter()
 				.map(|position| {
@@ -1028,8 +1039,8 @@ get erasure coded to ensure redundancy."#;
 					DataCell::new(position, data)
 				})
 				.collect::<Vec<_>>();
-			let data = &decode_app_extrinsics(&index, dimensions, cells, xt.app_id).unwrap()[0];
-			assert_eq!(data, &xt.opaque);
+			let data = &decode_app_extrinsics(&index, dimensions, cells, xt.id).unwrap()[0];
+			assert_eq!(data, &xt.data);
 		}
 
 		assert!(matches!(
@@ -1052,7 +1063,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 			BlockLengthRows(128),
 			BlockLengthColumns(2),
 			TCHUNK,
-			&[AppExtrinsic::from(orig_data.to_vec())],
+			&[SubmittedData::from(&orig_data[..])],
 			hash,
 		)?;
 
@@ -1076,8 +1087,8 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let xt1 = vec![5, 5];
 		let xt2 = vec![6, 6];
 		let xts = [
-			AppExtrinsic::new(AppId(1), 0, xt1.clone()),
-			AppExtrinsic::new(AppId(1), 1, xt2.clone()),
+			SubmittedData::new(AppId(1), &xt1),
+			SubmittedData::new(AppId(1), &xt2),
 		];
 		// The hash is used for seed for padding the block to next power of two value
 		let hash = Seed::default();
@@ -1110,16 +1121,16 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let xt3 = vec![7];
 		let xt4 = vec![];
 		let xts = vec![
-			AppExtrinsic::new(AppId(1), 0, xt1.clone()),
-			AppExtrinsic::new(AppId(1), 1, xt2.clone()),
-			AppExtrinsic::new(AppId(2), 2, xt3.clone()),
-			AppExtrinsic::new(AppId(3), 3, xt4.clone()),
+			SubmittedData::new(AppId(1), &xt1),
+			SubmittedData::new(AppId(1), &xt2),
+			SubmittedData::new(AppId(2), &xt3),
+			SubmittedData::new(AppId(3), &xt4),
 		];
 
-		let expected = vec![
-			(AppId(1), vec![xt1, xt2]),
-			(AppId(2), vec![xt3]),
-			(AppId(3), vec![xt4]),
+		let expected: Vec<(AppId, Vec<&[u8]>)> = vec![
+			(AppId(1), vec![&xt1, &xt2]),
+			(AppId(2), vec![&xt3]),
+			(AppId(3), vec![&xt4]),
 		];
 		let rez = app_extrinsics_group_by_app_id(xts);
 		println!("{:?}", rez);
@@ -1162,7 +1173,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let hash = Seed::default();
 		let data = (0..3).flat_map(|i| vec![i; 31]).collect::<Vec<_>>();
 		let xts = (0..4)
-			.map(|app_id| AppExtrinsic::new(AppId(app_id), app_id, data.clone()))
+			.map(|app_id| SubmittedData::new(AppId(app_id), &data))
 			.collect::<Vec<_>>();
 		par_build_commitments(
 			BlockLengthRows(4),
@@ -1181,7 +1192,8 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		// Due to scale encoding, first line is not constant.
 		// We will use second line to ensure constant row.
 		let hash = Seed::default();
-		let xts = vec![AppExtrinsic::new(AppId(0), 0, vec![0; 31 * 8])];
+		let data = vec![0u8; 31 * 8];
+		let xts = vec![SubmittedData::from(data.as_slice())];
 		par_build_commitments(
 			BlockLengthRows(4),
 			BlockLengthColumns(4),
