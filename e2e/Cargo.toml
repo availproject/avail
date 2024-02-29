@@ -25,4 +25,3 @@ sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "pol
 sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
 sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
 sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
-sp-core-hashing = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }

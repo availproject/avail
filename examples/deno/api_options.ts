@@ -96,6 +96,8 @@ export const API_TYPES = {
       },
       HeaderExtension: {
         _enum: {
+          V1: null,
+          V2: null,
           V3: "V3HeaderExtension",
         },
       },

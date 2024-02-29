@@ -6654,8 +6654,3 @@ dependencies = [
  "quote",
  "syn 2.0.50",
 ]
-
-[[patch.unused]]
-name = "sp-core-hashing"
-version = "15.0.0"
-source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch#b66ca4dfd5e244b70458d12ae37b5461739bee31"

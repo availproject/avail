@@ -18,7 +18,7 @@
     "dispatch-data-root": "npm run build && node build/node-examples/src/dispatch-data-root.js"
   },
   "dependencies": {
-    "avail-js-sdk": "^0.2.0"
+    "avail-js-sdk": "^0.2.1"
   },
   "devDependencies": {
     "rimraf": "^5.0.5"
