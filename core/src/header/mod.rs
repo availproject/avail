@@ -419,7 +419,7 @@ mod tests {
 		assert_eq!(
 			hash,
 			H256(hex!(
-				"0xc9941af1cb862db9f2e4c0c94f457d1217b363ecf6e6cc0dbeb5cbfeb35fbc12"
+				"c9941af1cb862db9f2e4c0c94f457d1217b363ecf6e6cc0dbeb5cbfeb35fbc12"
 			))
 		);
 
