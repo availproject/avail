@@ -133,7 +133,7 @@ impl pallet_identity::Config for Runtime {
 	type IdentityInformation = IdentityInfo<MaxAdditionalFields>;
 	/// The origin which may forcibly set or remove a name. Root can always do this.
 	type ForceOrigin = EnsureRoot<AccountId>;
-	/// Maxmimum number of registrars allowed in the system.
+	/// Maximum number of registrars allowed in the system.
 	type MaxRegistrars = MaxRegistrars;
 	/// The maximum number of sub-accounts allowed per identified account.
 	type MaxSubAccounts = MaxSubAccounts;
