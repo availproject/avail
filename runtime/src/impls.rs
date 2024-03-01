@@ -870,7 +870,7 @@ parameter_types! {
 	pub const BlockHashCount: BlockNumber = 2400;
 	pub const Version: RuntimeVersion = VERSION;
 	pub RuntimeBlockLength: BlockLength =
-		BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+		BlockLength::max_with_normal_ratio(180 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 }
 
 /// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.

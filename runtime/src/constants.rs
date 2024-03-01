@@ -134,7 +134,7 @@ pub mod system {
 	/// We allow for 5 seconds of compute with a 20 second average block time, with maximum proof size.
 	#[cfg(not(feature = "fast-runtime"))]
 	const MAXIMUM_BLOCK_WEIGHT: Weight =
-		Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(5), u64::MAX);
+		Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(10), u64::MAX);
 
 	parameter_types! {
 		pub RuntimeBlockWeights: SystemBlockWeights = SystemBlockWeights::builder()
@@ -385,7 +385,7 @@ pub mod da {
 		pub const MaxBlockCols: BlockLengthColumns = kate::config::MAX_BLOCK_COLUMNS;
 	}
 	pub type MaxAppKeyLength = ConstU32<64>;
-	pub type MaxAppDataLength = ConstU32<524_288>; // 512 Kb
+	pub type MaxAppDataLength = ConstU32<8_340_608>; // 524_288 512 Kb
 }
 
 /// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value

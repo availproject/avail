@@ -486,13 +486,14 @@ pub fn new_full_base(
 	(with_startup_data)(&block_import, &babe_link);
 
 	if let sc_service::config::Role::Authority { .. } = &role {
-		let proposer = sc_basic_authorship::ProposerFactory::new(
+		let mut proposer = sc_basic_authorship::ProposerFactory::new(
 			task_manager.spawn_handle(),
 			client.clone(),
 			transaction_pool.clone(),
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|x| x.handle()),
 		);
+		proposer.set_default_block_size_limit(128 * 1024 * 1024 + 512);
 
 		let client_clone = client.clone();
 		let slot_duration = babe_link.config().slot_duration();

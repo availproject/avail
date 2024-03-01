@@ -1,6 +1,5 @@
 use super::{get_account_id_from_seed, AuthorityKeys};
-use avail_core::{BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO};
-use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
+use avail_core::{BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO, BlockLengthRows, BlockLengthColumns};
 
 use da_runtime::{
 	constants, AccountId, Balance, DataAvailabilityConfig, SessionKeys, StakerStatus, AVAIL,
@@ -79,8 +78,8 @@ pub fn runtime_genesis_config(
 	let session_keys: Vec<(AccountId, AccountId, SessionKeys)> =
 		session_keys.into_iter().map(|k| k.into()).collect();
 	let block_length = BlockLength::with_normal_ratio(
-		MAX_BLOCK_ROWS,
-		MAX_BLOCK_COLUMNS,
+		BlockLengthRows(2048),
+		BlockLengthColumns(1024),
 		BLOCK_CHUNK_SIZE,
 		NORMAL_DISPATCH_RATIO,
 	)
