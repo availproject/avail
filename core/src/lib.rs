@@ -61,11 +61,9 @@ pub enum InvalidTransactionCustomId {
 	/// The AppId is not registered.
 	InvalidAppId = 137,
 	/// Extrinsic is not allowed for the given `AppId`.
-	ForbiddenAppId,
-	/// Max padded length was exceeded.
-	MaxPaddedLenExceeded,
+	ForbiddenAppId = 138,
 	/// Max recursion was reached for a call with AppId != 0.
-	MaxRecursionExceeded,
+	MaxRecursionExceeded = 139,
 }
 
 #[derive(
