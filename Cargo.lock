@@ -917,7 +917,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.5.1"
-source = "git+https://github.com/availproject/avail-core?branch=main#861f35a79a6c278bfe68b34d1a1d2794f7734f47"
+source = "git+https://github.com/availproject/avail-core?branch=ghali/remove-old-error#2ac4494602b0c31783f405a63001565e9af89495"
 dependencies = [
  "binary-merkle-tree",
  "derive_more",
@@ -4611,7 +4611,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.8.1"
-source = "git+https://github.com/availproject/avail-core?branch=main#861f35a79a6c278bfe68b34d1a1d2794f7734f47"
+source = "git+https://github.com/availproject/avail-core?branch=ghali/remove-old-error#2ac4494602b0c31783f405a63001565e9af89495"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -4639,7 +4639,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.9.2"
-source = "git+https://github.com/availproject/avail-core?branch=main#861f35a79a6c278bfe68b34d1a1d2794f7734f47"
+source = "git+https://github.com/availproject/avail-core?branch=ghali/remove-old-error#2ac4494602b0c31783f405a63001565e9af89495"
 dependencies = [
  "avail-core",
  "derive_more",
