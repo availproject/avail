@@ -1,16 +1,19 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![recursion_limit = "512"]
 
 use crate::{storage_utils::MessageStatusEnum, verifier::Verifier};
-use avail_base::{mts_get, mts_update, ProvidePostInherent};
-use avail_core::data_proof_v2::{Message, MessageType};
+use avail_base::{mts_get, mts_take, mts_update, ProvidePostInherent};
+use avail_core::data_proof_v2::{tx_uid, AddressedMessage, Message, MessageType};
 
-use frame_support::traits::{Currency, ExistenceRequirement, UnixTime};
-use frame_support::{inherent::IsFatalError, pallet_prelude::*, PalletId};
-use frame_system::submitted_data::AddressedMessage;
+use codec::Compact;
+use frame_support::{
+	pallet_prelude::*,
+	traits::{Currency, ExistenceRequirement, UnixTime},
+	PalletId,
+};
 use sp_core::H256;
-use sp_inherents::InherentData;
 use sp_io::{hashing::blake2_256, transaction_index};
-use sp_runtime::{DigestItem, RuntimeDebug, SaturatedConversion};
+use sp_runtime::SaturatedConversion;
 use sp_std::{vec, vec::Vec};
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -24,10 +27,6 @@ mod storage_utils;
 mod tests;
 mod verifier;
 mod weights;
-// pub mod well_known_keys;
-
-mod inherent_data_providers;
-use inherent_data_providers as inherent;
 
 pub use pallet::*;
 
@@ -39,6 +38,7 @@ pub type ValidProof = BoundedVec<BoundedVec<u8, ConstU32<2048>>, ConstU32<32>>;
 // Avail asset is supported for now
 pub const SUPPORTED_ASSET_ID: H256 = H256::zero();
 pub const FAILED_SEND_MSG_ID: &[u8] = b"vector:failed_send_msg_txs";
+pub const LOG_TARGET: &str = "runtime::vector";
 
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -104,6 +104,8 @@ pub mod pallet {
 		DomainNotSupported,
 		/// Function ids (step / rotate) are not set
 		FunctionIdsAreNotSet,
+		/// Inherent call outside of block execution context.
+		BadContext,
 	}
 
 	#[pallet::event]
@@ -134,6 +136,7 @@ pub mod pallet {
 			to: H256,
 			message_type: MessageType,
 			destination_domain: u32,
+			nonce: u64,
 		},
 		/// Whitelisted domains were updated.
 		WhitelistedDomainsUpdated,
@@ -238,15 +241,6 @@ pub mod pallet {
 	#[pallet::getter(fn source_chain_id)]
 	pub type SourceChainId<T: Config> = StorageValue<_, u64, ValueQuery>;
 
-	/*
-	/// List of failed indices in the current block
-	#[pallet::storage]
-	#[pallet::unbounded]
-	#[pallet::whitelist_storage]
-	#[pallet::getter(fn failed_send_msg)]
-	pub type ValidSendMessageTxIdx<T: Config> = StorageValue<_, Vec<u32>, ValueQuery>;
-	*/
-
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
@@ -339,25 +333,16 @@ pub mod pallet {
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
-	/*
 	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T>
-	where
-		[u8; 32]: From<T::AccountId>,
-	{
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
-			T::DbWeight::get().writes(1)
-		}
-
-		fn on_finalize(_n: BlockNumberFor<T>) {
-			let valid_send_msg_tx = ValidSendMessageTxIdx::<T>::take();
-			if !valid_send_msg_tx.is_empty() {
-				let log = DigestItem::Other(valid_send_msg_tx.encode());
-				<frame_system::Pallet<T>>::deposit_log(log);
+			if let Some(failed_txs) = mts_take::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID) {
+				log::trace!(target: LOG_TARGET, "Failed Txs cleaned: {failed_txs:?}");
 			}
+
+			Weight::zero()
 		}
 	}
-	*/
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
@@ -428,8 +413,8 @@ pub mod pallet {
 		/// Executes message if a valid proofs are provided for the supported message type, assets and domains.
 		#[pallet::call_index(1)]
 		#[pallet::weight({
-			match &addr_message.message {
-				Message::Data(data) => T::WeightInfo::execute_arbitrary_message(data.len() as u32),
+			match addr_message.message {
+				Message::Data(ref data) => T::WeightInfo::execute_arbitrary_message(data.len() as u32),
 				Message::FungibleToken {..} => T::WeightInfo::execute_fungible_token(),
 			}
 		})]
@@ -535,15 +520,10 @@ pub mod pallet {
 		//	send_message_fungible_token_doesnt_accept_empty_asset_id(), send_message_fungible_token_doesnt_accept_empty_value(),
 		//	send_message_arbitrary_message_works(), send_message_arbitrary_message_doesnt_accept_value(),
 		//	send_message_arbitrary_message_doesnt_accept_asset_id(), send_message_arbitrary_message_doesnt_accept_empty_data()
-		/// # TODO:
-		/// - Param `#[compact] value: u128` is better than `Optional<u128>` in coding size &
-		/// ergonomics.
-		/// - Param `data: BoundedData` is better that `Optional<BoundedData>` in coding size where
-		/// is `some`.
 		#[pallet::call_index(3)]
 		#[pallet::weight({
-			match &message {
-				Message::Data(data) => T::WeightInfo::send_message_arbitrary_message(data.len() as u32),
+			match message {
+				Message::Data(ref data) => T::WeightInfo::send_message_arbitrary_message(data.len() as u32),
 				Message::FungibleToken{..} => T::WeightInfo::send_message_fungible_token(),
 			}
 		})]
@@ -556,18 +536,11 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			let dispatch = Self::do_send_message(who, message, to, domain);
-			/*
-			if dispatch.is_ok() {
-				let tx_idx = <frame_system::Pallet<T>>::extrinsic_index().unwrap_or_default();
-				ValidSendMessageTxIdx::<T>::append(tx_idx);
-				log::trace!(target: "vector", "Success to send message at {tx_idx}");
-			}
-			*/
 			if dispatch.is_err() {
-				let _ = mts_update::<Vec<u32>, _>(inherent::ID.to_vec(), |failed| {
+				let _ = mts_update::<Vec<Compact<u32>>, _>(FAILED_SEND_MSG_ID.to_vec(), |failed| {
 					let tx_idx = <frame_system::Pallet<T>>::extrinsic_index().unwrap_or_default();
-					failed.push(tx_idx);
-					log::error!(target: "vector", "Failed to send message: {failed:?}");
+					failed.push(tx_idx.into());
+					log::trace!(target: LOG_TARGET, "Send Message failed txs: {failed:?}");
 				});
 			}
 
@@ -699,9 +672,21 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::failed_tx_index(0u32))]
 		pub fn failed_send_message_txs(
 			origin: OriginFor<T>,
-			failed_txs: Vec<u32>,
+			failed_txs: Vec<Compact<u32>>,
 		) -> DispatchResult {
 			ensure_none(origin)?;
+
+			// SAFETY: `failed_txs.len()` is always less than `u32::MAX` because it is bounded by
+			// `BoundedVec`
+			let encoded = failed_txs.encode();
+			let len = encoded.len() as u32;
+
+			// Index Tx in DB block.
+			let failed_hash = blake2_256(&encoded);
+			let extrinsic_index =
+				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::BadContext)?;
+			transaction_index::index(extrinsic_index, len, failed_hash);
+
 			Ok(())
 		}
 	}
@@ -719,7 +704,7 @@ pub mod pallet {
 				Error::<T>::DomainNotSupported
 			);
 			// Check MessageType and enforce the rules
-			let message_type = MessageType::from(&message);
+			let message_type = message.r#type();
 			match message {
 				Message::FungibleToken {
 					asset_id: _,
@@ -735,14 +720,23 @@ pub mod pallet {
 				Message::Data(data) => ensure!(!data.is_empty(), Error::<T>::InvalidBridgeInputs),
 			};
 
+			let nonce = Self::fetch_curr_tx_nonce();
 			Self::deposit_event(Event::MessageSubmitted {
 				from: who,
 				to,
 				message_type,
 				destination_domain: domain,
+				nonce,
 			});
 
 			Ok(().into())
+		}
+
+		fn fetch_curr_tx_nonce() -> u64 {
+			let number = <frame_system::Pallet<T>>::block_number().saturated_into::<u32>();
+			let tx_index = <frame_system::Pallet<T>>::extrinsic_index().unwrap_or_default();
+
+			tx_uid(number, tx_index)
 		}
 
 		fn check_preconditions(
@@ -992,21 +986,29 @@ where
 	[u8; 32]: From<T::AccountId>,
 {
 	type Call = Call<T>;
-	type Error = inherent::InherentError;
-	const INHERENT_IDENTIFIER: InherentIdentifier = inherent::ID;
+	type Error = ();
 
 	fn create_inherent(_: &avail_base::StorageMap) -> Option<Self::Call> {
-		let failed_txs = mts_get::<Vec<u32>>(&Self::INHERENT_IDENTIFIER).unwrap_or_default();
+		let failed_txs = mts_get::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID).unwrap_or_default();
 		if !failed_txs.is_empty() {
-			log::trace!(target: "vector", "Failed Send Message Tx: {failed_txs:?}");
-			Some(Call::failed_send_message_txs { failed_txs })
-		} else {
-			None
+			log::trace!(target: LOG_TARGET, "Create post inherent failed vector txs: {failed_txs:?}");
+			return Some(Call::failed_send_message_txs { failed_txs });
 		}
+
+		None
 	}
 
 	fn is_inherent(call: &Self::Call) -> bool {
 		matches!(call, Call::failed_send_message_txs { .. })
+	}
+
+	fn check_inherent(call: &Self::Call) -> Result<(), Self::Error> {
+		if let Call::failed_send_message_txs { failed_txs } = call {
+			let local_failed_txs =
+				mts_get::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID).unwrap_or_default();
+			ensure!(&local_failed_txs == failed_txs, ());
+		}
+		Ok(())
 	}
 }
 

@@ -1,8 +1,9 @@
 use crate::limits::BlockLength;
 use avail_base::metrics::avail::HeaderExtensionBuilderMetrics as Metrics;
 use avail_core::{
+	app_extrinsic::AppExtrinsic,
 	header::{extension as he, HeaderExtension},
-	kate_commitment as kc, AppExtrinsic, HeaderVersion,
+	kate_commitment as kc, HeaderVersion,
 };
 use kate::{
 	couscous::multiproof_params,
@@ -19,7 +20,7 @@ const MIN_WIDTH: usize = 4;
 static PMP: OnceLock<M1NoPrecomp> = OnceLock::new();
 
 pub fn build_extension(
-	app_extrinsics: &[AppExtrinsic],
+	submitted: Vec<AppExtrinsic>,
 	data_root: H256,
 	block_length: BlockLength,
 	_block_number: u32,
@@ -33,7 +34,7 @@ pub fn build_extension(
 
 	let timer = Instant::now();
 	let grid = EvaluationGrid::from_extrinsics(
-		app_extrinsics.to_vec(),
+		submitted,
 		MIN_WIDTH,
 		block_length.cols.0.saturated_into(), // even if we run on a u16 target this is fine
 		block_length.rows.0.saturated_into(),
@@ -68,22 +69,9 @@ pub fn build_extension(
 	let app_lookup = grid.lookup().clone();
 
 	let extension = match version {
-		HeaderVersion::V1 => {
-			let commitment = kc::v1::KateCommitment {
-				rows,
-				cols,
-				commitment,
-				data_root,
-			};
-			he::v1::HeaderExtension {
-				app_lookup,
-				commitment,
-			}
-			.into()
-		},
-		HeaderVersion::V2 => {
-			let commitment = kc::v2::KateCommitment::new(rows, cols, data_root, commitment);
-			he::v2::HeaderExtension {
+		HeaderVersion::V3 => {
+			let commitment = kc::v3::KateCommitment::new(rows, cols, data_root, commitment);
+			he::v3::HeaderExtension {
 				app_lookup,
 				commitment,
 			}

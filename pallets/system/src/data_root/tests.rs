@@ -1,50 +1,105 @@
 use super::*;
+use crate::{calls_proof, CallsProof};
+use avail_core::AppId;
 
-use avail_core::data_proof_v2::{AddressedMessage, Message};
-use frame_support::traits::DefensiveTruncateFrom;
+use avail_core::data_proof_v2::{AddressedMessage, Message, SubTrie};
+use binary_merkle_tree::MerkleProof;
+use codec::{Decode, Encode};
+use frame_support::traits::{DefensiveTruncateFrom, ExtrinsicCall};
 use hex_literal::hex;
 use sp_core::{keccak_256, H256};
-use sp_runtime::{AccountId32, BoundedVec};
+use sp_runtime::{traits::Extrinsic, AccountId32, BoundedVec};
 use std::vec;
 
 const ACC: AccountId32 = AccountId32::new([0u8; 32]);
 
-// dummy filter implementation that skips empty strings in vector
-impl TxDataFilter<AccountId32, String> for String {
-	fn filter<'a, 'b>(
-		_: &'a AccountId32,
-		s: &'a String,
-		_: u32,
-		_: usize,
-		_: &'b mut Metrics,
-	) -> Option<TxDataRef<'a>> {
-		(!s.is_empty()).then(|| TxDataRef::new(vec![s.as_bytes()], vec![]))
+#[derive(Encode, Decode)]
+struct TExt {
+	caller: AccountId32,
+	call: String,
+	app_id: AppId,
+}
+
+impl TExt {
+	pub fn new(caller: AccountId32, call: String) -> Self {
+		let app_id = AppId::default();
+		Self {
+			caller,
+			call,
+			app_id,
+		}
 	}
 }
 
-fn calls_proof_adaptor(
-	calls: &[(AccountId32, String)],
-	tx_index: u32,
-) -> Option<(MerkleProof<H256, Vec<u8>>, H256)> {
-	// Create calls with Tx Index: `(acc, tx_idx, data)`
-	let calls_iter = calls
-		.iter()
-		.enumerate()
-		.map(|(idx, (acc, s))| (acc, idx, s))
-		.filter(|(_, _, s)| !s.is_empty());
+impl Extrinsic for TExt {
+	type Call = String;
+	type SignaturePayload = ();
 
-	// Map `tx_index` to leaf index
-	if let Some(leaf_idx) = calls_iter
-		.clone()
-		.position(|(_, call_idx, _)| call_idx == tx_index as usize)
-	{
-		let (da_proof, root, _) =
-			calls_proof::<String, _, _>(calls_iter, 0, leaf_idx, SubTrie::DataSubmit)?;
-
-		Some((da_proof, root))
-	} else {
+	// Provided methods
+	fn is_signed(&self) -> Option<bool> {
+		Some(false)
+	}
+	fn new(_call: Self::Call, _signed_data: Option<Self::SignaturePayload>) -> Option<Self> {
 		None
 	}
+}
+
+impl ExtrinsicCall for TExt {
+	fn call(&self) -> &Self::Call {
+		&self.call
+	}
+}
+
+impl MaybeCaller<AccountId32> for TExt {
+	fn caller(&self) -> Option<&AccountId32> {
+		Some(&self.caller)
+	}
+}
+
+impl GetAppId for TExt {}
+
+// dummy filter implementation that skips empty strings in vector
+impl TxDataFilter<AccountId32, String> for String {
+	fn filter<'a, 'b>(
+		_: &AccountId32,
+		s: &String,
+		app: AppId,
+		_: u32,
+		_: usize,
+		_: &mut Metrics,
+	) -> Option<TxData> {
+		(!s.is_empty()).then(|| SubmittedData::new(app, s.as_bytes().to_vec()).into())
+	}
+}
+
+fn calls_proof_adaptor<I>(calls: I, tx_index: u32) -> Option<(MerkleProof<H256, Vec<u8>>, H256)>
+where
+	I: IntoIterator<Item = (AccountId32, String)>,
+{
+	// Create calls with Tx Index: `(acc, tx_idx, data)`
+	let extrinsics = calls
+		.into_iter()
+		.enumerate()
+		.filter_map(|(idx, (acc, s))| (!s.is_empty()).then(|| (idx, TExt::new(acc, s).encode())))
+		.collect::<Vec<(usize, Vec<_>)>>();
+
+	// Map `tx_index` to leaf index
+	let leaf_idx = extrinsics
+		.iter()
+		.position(|(idx, _)| *idx == tx_index as usize)?;
+
+	let CallsProof {
+		proof,
+		root,
+		message: _,
+	} = calls_proof::<String, TExt, _, _>(
+		0,
+		extrinsics.iter().map(|(_, e)| e),
+		leaf_idx,
+		SubTrie::DataSubmit,
+	)?;
+
+	Some((proof, root))
 }
 
 #[test]
@@ -63,7 +118,7 @@ fn test_left_data_proof_with_one_tx() {
 	);
 
 	let (da_proof, root) =
-		calls_proof_adaptor(&calls, 0).expect("Proof not generated for the transaction index 0!");
+		calls_proof_adaptor(calls, 0).expect("Proof not generated for the transaction index 0!");
 
 	assert_eq!(root, H256::zero());
 	assert_eq!(da_proof.leaf_index, 0);
@@ -83,7 +138,7 @@ fn test_left_data_proof_with_two_tx() {
 	//                  4aeff0db81e3146828378be230d377356e57b6d599286b4b517dbf8941b3e1b2
 
 	let (da_proof, root) =
-		calls_proof_adaptor(&calls, 0).expect("Proof not generated for the transaction index 0!");
+		calls_proof_adaptor(calls, 0).expect("Proof not generated for the transaction index 0!");
 
 	assert_eq!(root, H256::zero());
 	assert_eq!(da_proof.leaf_index, 0);
@@ -115,8 +170,8 @@ fn test_left_data_proof_with_skipped_tx() {
 	// data_root keccak256(db0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e, 3c86bde3a90d18efbcf23e27e9b6714012aa055263fe903a72333aa9caa37f1b)
 	//                                                       (877f9ed6aa67f160e9b9b7794bb851998d15b65d11bab3efc6ff444339a3d750)
 
-	let (da_proof, root) =
-		calls_proof_adaptor(&calls, 0).expect("Proof not generated for the transaction index 0!");
+	let (da_proof, root) = calls_proof_adaptor(calls.clone(), 0)
+		.expect("Proof not generated for the transaction index 0!");
 
 	let exp_proof_root = hex!("877f9ed6aa67f160e9b9b7794bb851998d15b65d11bab3efc6ff444339a3d750");
 	let exp_proofs_0: [H256; 2] = [
@@ -133,10 +188,10 @@ fn test_left_data_proof_with_skipped_tx() {
 	assert_eq!(da_proof.number_of_leaves, 4);
 
 	// proof should not be generated when there is not data
-	assert_eq!(None, calls_proof_adaptor(&calls, 1));
+	assert_eq!(None, calls_proof_adaptor(calls.clone(), 1));
 
-	let (da_proof, root) =
-		calls_proof_adaptor(&calls, 2).expect("Proof not generated for the transaction index 2!");
+	let (da_proof, root) = calls_proof_adaptor(calls.clone(), 2)
+		.expect("Proof not generated for the transaction index 2!");
 	let exp_proof_2: [H256; 2] = [
 		hex!("40105d5bc10105c17fd72b93a8f73369e2ee6eee4d4714b7bf7bf3c2f156e601").into(),
 		hex!("3c86bde3a90d18efbcf23e27e9b6714012aa055263fe903a72333aa9caa37f1b").into(),
@@ -148,8 +203,8 @@ fn test_left_data_proof_with_skipped_tx() {
 	assert_eq!(exp_proof_2, da_proof.proof.as_slice());
 	assert_eq!(da_proof.number_of_leaves, 4);
 
-	let (da_proof, root) =
-		calls_proof_adaptor(&calls, 3).expect("Proof not generated for the transaction index 3!");
+	let (da_proof, root) = calls_proof_adaptor(calls.clone(), 3)
+		.expect("Proof not generated for the transaction index 3!");
 
 	assert_eq!(root, H256::zero());
 	assert_eq!(da_proof.leaf_index, 2);
@@ -170,7 +225,7 @@ fn test_left_data_proof_with_skipped_tx() {
 	assert_eq!(da_proof.number_of_leaves, 4);
 
 	// submit index that does not exists and proof should not be generated
-	assert_eq!(None, calls_proof_adaptor(&calls, 15));
+	assert_eq!(None, calls_proof_adaptor(calls, 15));
 }
 
 #[test]

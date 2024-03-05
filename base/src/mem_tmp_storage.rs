@@ -29,6 +29,14 @@ pub fn mts_insert<T: Encode + Decode>(key: Vec<u8>, value: T) -> Option<T> {
 		.and_then(|raw| T::decode(&mut raw.as_slice()).ok())
 }
 
+pub fn mts_remove(key: &[u8]) -> bool {
+	hosted_mem_tmp_storage::take(key).is_some()
+}
+
+pub fn mts_take<T: Decode>(key: &[u8]) -> Option<T> {
+	hosted_mem_tmp_storage::take(key).and_then(|raw| T::decode(&mut raw.as_slice()).ok())
+}
+
 /// Updates the value under `key` in the memory temporal storage.
 pub fn mts_update<T, F>(key: Vec<u8>, f: F) -> Option<T>
 where
@@ -74,6 +82,14 @@ pub trait HostedMemTmpStorage {
 			.map_err(log_poisoned_sync)
 			.ok()
 			.and_then(|guard| guard.get(key).cloned())
+	}
+
+	fn take(key: &[u8]) -> Option<Vec<u8>> {
+		native::memory_tmp_storage()
+			.write()
+			.map_err(log_poisoned_sync)
+			.ok()
+			.and_then(|mut guard| guard.remove(key))
 	}
 
 	/// Clears the memory temporal storage.

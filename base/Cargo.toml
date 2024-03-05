@@ -10,9 +10,6 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-# Our crates
-kate = { workspace = true, default-features = false }
-
 # Substrate related
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 sp-std = { workspace = true, default-features = false }
@@ -30,7 +27,6 @@ once_cell = { workspace = true, optional = true }
 default = [ "std" ]
 std = [
 	"codec/std",
-	"kate/std",
 	"once_cell",
 	"sp-api/std",
 	"sp-runtime-interface/std",

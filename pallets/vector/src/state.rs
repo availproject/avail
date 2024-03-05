@@ -77,7 +77,9 @@ impl PublicSignals {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default)]
 pub struct Configuration {
+	#[codec(compact)]
 	pub slots_per_period: u64,
+	#[codec(compact)]
 	pub finality_threshold: u16,
 }
 

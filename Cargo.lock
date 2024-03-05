@@ -316,9 +316,9 @@ checksum = "ff773c0ef8c655c98071d3026a63950798a66b2f45baef22d8334c1756f1bd18"
 dependencies = [
  "ark-ec 0.3.0",
  "ark-ff 0.3.0",
- "ark-relations 0.3.0",
+ "ark-relations",
  "ark-serialize 0.3.0",
- "ark-snark 0.3.0",
+ "ark-snark",
  "ark-std 0.3.0",
  "blake2 0.9.2",
  "derivative",
@@ -500,7 +500,7 @@ dependencies = [
  "ark-ec 0.3.0",
  "ark-ff 0.3.0",
  "ark-poly 0.3.0",
- "ark-relations 0.3.0",
+ "ark-relations",
  "ark-serialize 0.3.0",
  "ark-std 0.3.0",
 ]
@@ -552,17 +552,6 @@ checksum = "4cba4c1c99792a6834bd97f7fd76578ec2cd58d2afc5139a17e1d1bec65b38f6"
 dependencies = [
  "ark-ff 0.3.0",
  "ark-std 0.3.0",
- "tracing",
-]
-
-[[package]]
-name = "ark-relations"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00796b6efc05a3f48225e59cb6a2cda78881e7c390872d5786aaf112f31fb4f0"
-dependencies = [
- "ark-ff 0.4.2",
- "ark-std 0.4.0",
  "tracing",
 ]
 
@@ -647,20 +636,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0dc3dff1a5f67a9c0b34df32b079752d8dd17f1e9d06253da0453db6c1b7cc8a"
 dependencies = [
  "ark-ff 0.3.0",
- "ark-relations 0.3.0",
+ "ark-relations",
  "ark-std 0.3.0",
-]
-
-[[package]]
-name = "ark-snark"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84d3cc6833a335bb8a600241889ead68ee89a3cf8448081fb7694c0fe503da63"
-dependencies = [
- "ark-ff 0.4.2",
- "ark-relations 0.4.0",
- "ark-serialize 0.4.2",
- "ark-std 0.4.0",
 ]
 
 [[package]]
@@ -861,16 +838,10 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 name = "avail-base"
 version = "0.1.0"
 dependencies = [
- "avail-core",
- "hex-literal",
- "kate",
  "log",
  "once_cell",
  "parity-scale-codec",
- "scale-info",
  "sp-api",
- "sp-core",
- "sp-inherents",
  "sp-runtime",
  "sp-runtime-interface",
  "sp-std",
@@ -2203,7 +2174,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "static_assertions",
  "test-case",
 ]
 
@@ -3329,7 +3299,7 @@ dependencies = [
  "docify",
  "frame-support",
  "hex-literal",
- "impl-trait-for-tuples",
+ "itertools 0.10.5",
  "kate",
  "log",
  "parity-scale-codec",
@@ -3351,12 +3321,10 @@ dependencies = [
 name = "frame-system-benchmarking"
 version = "4.0.0-dev"
 dependencies = [
- "avail-core",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
- "scale-info",
  "sp-core",
  "sp-externalities",
  "sp-io",
@@ -6670,11 +6638,8 @@ name = "pallet-vector"
 version = "1.0.0"
 dependencies = [
  "ark-bn254",
- "ark-ec 0.4.2",
  "ark-ff 0.3.0",
  "ark-groth16",
- "ark-serialize 0.4.2",
- "ark-snark 0.4.0",
  "ark-std 0.4.0",
  "async-trait",
  "avail-base",
@@ -6683,11 +6648,8 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "hash-db 0.15.2",
- "hash256-std-hasher",
  "hex-literal",
  "log",
- "memory-db 0.30.0",
  "pallet-balances",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -6697,13 +6659,11 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "sha2 0.10.8",
  "sp-core",
  "sp-inherents",
  "sp-io",
  "sp-runtime",
  "sp-std",
- "tiny-keccak",
  "trie-db 0.24.0",
 ]
 

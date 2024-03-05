@@ -15,8 +15,6 @@ pub trait ProvidePostInherent {
 	type Call;
 	/// The error returned by `check_inherent`.
 	type Error: codec::Encode;
-	/// The inherent identifier used by this inherent.
-	const INHERENT_IDENTIFIER: [u8; 8];
 
 	/// Create an inherent out of the given `InherentData`.
 	///

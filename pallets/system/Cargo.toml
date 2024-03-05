@@ -9,43 +9,38 @@ repository = "https://github.com/availproject/polkadot-sdk/"
 description = "FRAME system module"
 readme = "README.md"
 
+[lints]
+workspace = true
+
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+# Our deps.
 avail-base = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
 
 # Other
 cfg-if.workspace = true
-impl-trait-for-tuples.workspace = true
 static_assertions.workspace = true
 log.workspace = true
 docify.workspace = true
-# rs_merkle = { version = "1.2.0", default-features = false, optional = true }
 derive_more.workspace = true
 hex-literal.workspace = true
+itertools = { workspace = true, default-features = false }
 
 # Substrate
-codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
-	"derive",
-] }
+codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [ "derive"] }
 scale-info = { workspace = true, default-features = false }
 serde = { workspace = true, default-features = false, optional = true }
 frame-support = { workspace = true, default-features = false }
 sp-core = { workspace = true, default-features = false, features = ["serde"] }
 sp-io = { workspace = true, default-features = false }
-sp-runtime = { workspace = true, default-features = false, features = [
-	"serde",
-] }
+sp-runtime = { workspace = true, default-features = false, features = [ "serde"] }
 sp-std = { workspace = true, default-features = false }
-sp-version = { workspace = true, default-features = false, features = [
-	"serde",
-] }
-sp-weights = { workspace = true, default-features = false, features = [
-	"serde",
-] }
+sp-version = { workspace = true, default-features = false, features = [ "serde" ] }
+sp-weights = { workspace = true, default-features = false, features = [ "serde" ] }
 sp-runtime-interface = { workspace = true, default-features = false }
 binary-merkle-tree = { workspace = true, default-features = false }
 bounded-collections = { workspace = true, default-features = false }
@@ -54,9 +49,10 @@ bounded-collections = { workspace = true, default-features = false }
 test-case.workspace = true
 criterion.workspace = true
 sp-externalities = { workspace = true, default-features = false }
+# substrate-test-runtime-client.workspace = true
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
 	"avail-base/std",
 	"avail-core/std",
@@ -87,8 +83,8 @@ try-runtime = [
 	"frame-support/try-runtime",
 	"sp-runtime/try-runtime",
 ]
-experimental = ["frame-support/experimental"]
-serde = ["dep:serde"]
+experimental = [ "frame-support/experimental" ]
+serde = [ "dep:serde" ]
 
 # It enables the corruption of header extensions where block number is greater than 20.
 # NOTE: Only for testing and development purposes.

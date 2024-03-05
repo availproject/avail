@@ -22,22 +22,14 @@ avail-base = { workspace = true, default-features = false }
 
 ark-bn254.workspace = true
 ark-groth16.workspace = true
-ark-ec.workspace = true
 ark-std.workspace = true
-ark-serialize.workspace = true
 ark-ff.workspace = true
-ark-snark.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-sha2.workspace = true
 log.workspace = true
 hex-literal.workspace = true
 trie-db.workspace = true
-hash-db.workspace = true
-memory-db.workspace = true
-tiny-keccak = { workspace = true, optional = true }
 rlp.workspace = true
-hash256-std-hasher.workspace = true
 async-trait = { workspace = true, optional = true }
 primitive-types.workspace = true
 ethabi.workspace = true
@@ -59,10 +51,10 @@ std = [
 	"frame-system/std",
 	"scale-info/std",
 	"sp-core/std",
+	"sp-inherents/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
-	"sp-inherents/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

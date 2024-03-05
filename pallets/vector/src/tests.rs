@@ -10,7 +10,7 @@ use crate::{
 	RotateVerificationKey, SourceChainFrozen, StepVerificationKey, SyncCommitteePoseidons,
 	ValidProof, WhitelistedDomains,
 };
-use avail_core::data_proof_v2::{AddressedMessage, Message, MessageType};
+use avail_core::data_proof_v2::{tx_uid, AddressedMessage, Message};
 
 use frame_support::{
 	assert_err, assert_ok,
@@ -854,8 +854,9 @@ fn send_message_arbitrary_message_works() {
 		let event = Event::MessageSubmitted {
 			from: TEST_SENDER_VEC.into(),
 			to,
-			message_type: (&message).into(),
+			message_type: message.r#type(),
 			destination_domain: domain,
+			nonce: tx_uid(1, 0),
 		};
 		let ok = Bridge::send_message(origin, message, to, domain);
 		assert_ok!(ok);
@@ -896,8 +897,9 @@ fn send_message_fungible_token_works() {
 		let event = Event::MessageSubmitted {
 			from: TEST_SENDER_VEC.into(),
 			to,
-			message_type: (&message).into(),
+			message_type: message.r#type(),
 			destination_domain: domain,
+			nonce: tx_uid(1, 0),
 		};
 		let ok = Bridge::send_message(origin, message, to, domain);
 		assert_ok!(ok);

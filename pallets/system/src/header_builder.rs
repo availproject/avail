@@ -1,4 +1,6 @@
-use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic, HeaderVersion};
+use avail_core::{
+	app_extrinsic::AppExtrinsic, header::HeaderExtension, traits::ExtendedHeader, HeaderVersion,
+};
 use frame_support::traits::Randomness;
 pub use kate::{
 	metrics::{IgnoreMetrics, Metrics},
@@ -12,7 +14,7 @@ use sp_std::vec::Vec;
 use crate::{limits::BlockLength, Config, LOG_TARGET};
 
 #[cfg(feature = "std")]
-mod v2;
+mod v3;
 
 pub mod da {
 	use core::marker::PhantomData;
@@ -33,7 +35,7 @@ pub mod da {
 
 		#[inline]
 		fn build(
-			app_extrinsics: Vec<AppExtrinsic>,
+			submitted: Vec<AppExtrinsic>,
 			data_root: H256,
 			block_length: BlockLength,
 			block_number: u32,
@@ -41,7 +43,7 @@ pub mod da {
 			let seed = Self::random_seed::<T>();
 
 			super::hosted_header_builder::build(
-				app_extrinsics,
+				submitted,
 				data_root,
 				block_length,
 				block_number,
@@ -84,80 +86,21 @@ pub trait HeaderExtensionBuilder {
 /// Hosted function to build the header using `kate` commitments.
 #[runtime_interface]
 pub trait HostedHeaderBuilder {
-	/// Creates the header using the given parameters.
-	/// *NOTE:* Version 1 uses `dusk-plonk v0.8.2`
-	/// *NOTE:* V2 supports V1.
 	#[version(1)]
 	fn build(
-		app_extrinsics: Vec<AppExtrinsic>,
+		submitted: Vec<AppExtrinsic>,
 		data_root: H256,
 		block_length: BlockLength,
 		block_number: u32,
 		seed: Seed,
 	) -> HeaderExtension {
-		v2::build_extension(
-			&app_extrinsics,
+		v3::build_extension(
+			submitted,
 			data_root,
 			block_length,
 			block_number,
 			seed,
-			HeaderVersion::V1,
-		)
-	}
-
-	#[version(2)]
-	fn build(
-		app_extrinsics: Vec<AppExtrinsic>,
-		data_root: H256,
-		block_length: BlockLength,
-		block_number: u32,
-		seed: Seed,
-		_version: HeaderVersion,
-	) -> HeaderExtension {
-		v2::build_extension(
-			&app_extrinsics,
-			data_root,
-			block_length,
-			block_number,
-			seed,
-			HeaderVersion::V2,
-		)
-	}
-
-	#[version(3)]
-	fn build(
-		app_extrinsics: Vec<AppExtrinsic>,
-		data_root: H256,
-		block_length: BlockLength,
-		block_number: u32,
-		seed: Seed,
-		_version: HeaderVersion,
-	) -> HeaderExtension {
-		v2::build_extension(
-			&app_extrinsics,
-			data_root,
-			block_length,
-			block_number,
-			seed,
-			HeaderVersion::V2,
-		)
-	}
-
-	#[version(4)]
-	fn build(
-		app_extrinsics: Vec<AppExtrinsic>,
-		data_root: H256,
-		block_length: BlockLength,
-		block_number: u32,
-		seed: Seed,
-	) -> HeaderExtension {
-		v2::build_extension(
-			&app_extrinsics,
-			data_root,
-			block_length,
-			block_number,
-			seed,
-			HeaderVersion::V2,
+			HeaderVersion::V3,
 		)
 	}
 }

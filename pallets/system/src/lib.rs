@@ -96,12 +96,12 @@
 //! extensions included in a chain.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![warn(unused_extern_crates)]
 
 use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
 	traits::{ExtendedBlock, ExtendedHeader, GetAppId, MaybeCaller},
-	AppExtrinsic,
 };
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
 use frame_support::{
@@ -136,7 +136,7 @@ use sp_runtime::{
 		Dispatchable, Hash, Lookup, LookupError, MaybeDisplay, Member, One, Saturating,
 		SimpleBitOps, StaticLookup, UniqueSaturatedInto, Zero,
 	},
-	DigestItem, DispatchError, RuntimeDebug,
+	DispatchError, RuntimeDebug,
 };
 #[cfg(any(feature = "std", test))]
 use sp_std::map;
@@ -144,8 +144,11 @@ use sp_std::{fmt::Debug, marker::PhantomData, prelude::*};
 use sp_version::RuntimeVersion;
 use sp_weights::{RuntimeDbWeight, Weight};
 
-pub mod submitted_data;
-use submitted_data::{tx_data_root, TxDataFilter};
+pub mod data_root;
+use data_root::{build_tx_data, TxDataFilter};
+
+mod calls_proof;
+pub use calls_proof::{calls_proof, CallsProof};
 
 pub mod header_builder;
 pub use header_builder::HeaderExtensionBuilder;
@@ -1839,54 +1842,25 @@ impl<T: Config> Pallet<T> {
 		let number = <Number<T>>::get();
 		let parent_hash = <ParentHash<T>>::get();
 		let digest = <Digest<T>>::get();
-		/*
-		let (valid_send_msg_tx, logs) = <Digest<T>>::get()
-			.logs
-			.into_iter()
-			.partition(|item| valid_send_msg_tx_extractor(item).is_some());
-		let digest = generic::Digest { logs };
-		let valid_send_msg_txs : Vec<u32> = valid_send_msg_tx
-			.first()
-			.map(valid_send_msg_tx_extractor)
-			.flatten()
-			.unwrap_or_default();
-		log::info!(target: LOG_TARGET, "Valid Vector::SendMessage Tx indexes: {valid_send_msg_txs:?}" );
-		*/
-
-		let mut extrinsics = (0..ExtrinsicCount::<T>::take().unwrap_or_default())
-			.map(ExtrinsicData::<T>::take)
-			.collect::<Vec<_>>();
-
-		/*
-		if !valid_send_msg_tx.is_empty() {
-			if let Some(inh) = extrinsics.get_mut(1) {
-				let arg = valid_send_msg_txs.encode();
-				let code =  hex_literal::hex!("270b").to_vec();
-				let new_ext = [code, arg].concat();
-				log::info!(target: LOG_TARGET, "Replace ext {inh:?} with {new_ext:?}" );
-				*inh = new_ext;
-			}
-		}*/
-
-		// Transform *raw extrinsics* into `T::UncheckedExtrinsic` only if it was successfully executed.
-		let indexed_ext = extrinsics
-			.iter_mut()
-			.enumerate()
-			.filter_map(|(idx, raw)| {
-				let ext = T::Extrinsic::decode(&mut raw.as_slice()).ok()?;
-				Some((idx, ext))
-			})
-			.collect::<Vec<_>>();
-
-		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
-
 		let block_number: u32 = number
 			.try_into()
 			.map_err(|_| number) // NOTE: TryInto::Error does not implement Debug
 			.expect("Block number is within u32; qed");
 
-		let data_root =
-			tx_data_root::<T::TxDataExtractor, _, _>(block_number, indexed_ext.as_slice());
+		let extrinsics = (0..ExtrinsicCount::<T>::take().unwrap_or_default())
+			.map(ExtrinsicData::<T>::take)
+			.collect::<Vec<_>>();
+
+		/*
+		let indexed_ext = extrinsics.iter().enumerate().filter_map(|(idx, raw)| {
+			T::Extrinsic::decode(&mut raw.as_slice()).ok().map(|ext| (idx,ext))
+		})*/
+
+		let tx_data = build_tx_data::<T::TxDataExtractor, T::Extrinsic, _, _>(
+			block_number,
+			extrinsics.iter(),
+		);
+		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
 
 		// move block hash pruning window by one block
 		let block_hash_count = T::BlockHashCount::get();
@@ -1906,13 +1880,10 @@ impl<T: Config> Pallet<T> {
 		let block_length = Self::block_length();
 
 		// Transform extrinsics into AppExtrinsic.
-		let app_extrinsics: Vec<AppExtrinsic> = indexed_ext
-			.into_iter()
-			.map(|(idx, ext)| AppExtrinsic::new(ext.app_id(), idx as u32, ext.encode()))
-			.collect();
-
+		let data_root = tx_data.root();
+		let submitted = tx_data.to_app_extrinsics();
 		let extension = header_builder::da::HeaderExtensionBuilder::<T>::build(
-			app_extrinsics,
+			submitted,
 			data_root,
 			block_length,
 			number.unique_saturated_into(),

@@ -95,6 +95,7 @@ trie-db = { version = "0.24.0", default-features = false }
 hash-db = { version = "0.15.2", default-features = false }
 memory-db = { version = "0.30.0", default-features = false }
 bounded-collections = { version = "0.1.9", default-features = false }
+itertools = { version = "0.10.5", default-features = false }
 
 # Ethereum
 rlp = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2", default-features = false }

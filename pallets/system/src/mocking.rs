@@ -19,7 +19,7 @@
 
 use avail_core::{
 	traits::{GetAppId, MaybeCaller},
-	AppExtrinsic, AppId, OpaqueExtrinsic,
+	AppId, OpaqueExtrinsic,
 };
 use codec::{Decode, Encode};
 use frame_support::traits::ExtrinsicCall;
@@ -139,12 +139,6 @@ impl<T: Config> TryFrom<&OpaqueExtrinsic> for MockUncheckedExtrinsic<T> {
 	fn try_from(opaque: &OpaqueExtrinsic) -> Result<Self, Self::Error> {
 		let encoded = opaque.encode();
 		Self::decode(&mut encoded.as_slice())
-	}
-}
-
-impl<T: Config> From<MockUncheckedExtrinsic<T>> for AppExtrinsic {
-	fn from(xt: MockUncheckedExtrinsic<T>) -> Self {
-		AppExtrinsic::from(xt.0.encode())
 	}
 }
 
