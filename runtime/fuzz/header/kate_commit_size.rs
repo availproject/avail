@@ -10,7 +10,7 @@ use std::{
 	panic,
 };
 
-use avail_core::{header::HeaderExtension, InvalidTransactionCustomId as TxAvailErr};
+use avail_core::header::HeaderExtension;
 use da_control::{pallet::Call as DaControlCall, AppDataFor, CheckAppId};
 use da_runtime::{
 	AppId, Executive, Header, Runtime, RuntimeCall, RuntimeGenesisConfig, SignedExtra,
@@ -30,8 +30,6 @@ use sp_core::{Pair, H256};
 use sp_io::TestExternalities;
 use sp_keyring::AccountKeyring::Alice;
 use sp_runtime::{generic::Era, BuildStorage, Digest, MultiAddress, MultiSignature};
-
-const MAX_PADDED_LEN_EXCEEDED: u8 = TxAvailErr::MaxPaddedLenExceeded as u8;
 
 fn runtime_ext(total_app_ids: NonZeroUsize) -> TestExternalities {
 	let alice = Alice.to_account_id();
@@ -185,18 +183,11 @@ fn kate_commit_size_fuzzer(total_app_id: NonZeroUsize, data_lens: Vec<NonZeroUsi
 				.collect::<Vec<_>>();
 			let (tx, _call) = submit_data(nonce, app_id, data).unwrap();
 			let (_address, _signature, _extra) = tx.signature.as_ref().unwrap();
-			// let (_, _, _, _, _, _, _, _, _) = extra;
-			// let len = tx.encode().len();
-			// let info = call.get_dispatch_info();
 
 			match Executive::apply_extrinsic(tx) {
 				Ok(_) => total_ok_txs += 1,
 				Err(e) => match e {
 					TxErr::Invalid(InvalidTx::ExhaustsResources) => break,
-					TxErr::Invalid(InvalidTx::Custom(id)) => match id {
-						MAX_PADDED_LEN_EXCEEDED => break,
-						_ => panic!("Failed to apply extrinsic at index {i}: {id}"),
-					},
 					_ => panic!("Failed to apply extrinsic at index {i}: {e:?}"),
 				},
 			}
