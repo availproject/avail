@@ -4,7 +4,7 @@ use crate::pmp::{
 	merlin::Transcript,
 	traits::Committer,
 };
-use avail_core::{ensure, AppId, DataLookup, SubmittedData};
+use avail_core::{app_extrinsic::AppExtrinsic, ensure, AppId, DataLookup};
 use codec::Encode;
 use core::{
 	cmp::{max, min},
@@ -69,24 +69,22 @@ impl EvaluationGrid {
 	/// From the app extrinsics, create a data grid of Scalars
 	/// # TODO
 	/// - Remove non Data Submission
-	pub fn from_extrinsics<'a, I>(
-		submitted_datas: I,
+	pub fn from_extrinsics(
+		submitted: Vec<AppExtrinsic>,
 		min_width: usize,
 		max_width: usize,
 		max_height: usize,
 		rng_seed: Seed,
-	) -> Result<Self, Error>
-	where
-		I: IntoIterator<Item = SubmittedData<'a>>,
-	{
+	) -> Result<Self, Error> {
 		// Group extrinsics by app id, also sorted by app id.
 		// Using a BTreeMap here will still iter in sorted order. Sweet!
-		let grouped = submitted_datas
-			.into_iter()
-			.fold::<BTreeMap<AppId, Vec<_>>, _>(BTreeMap::default(), |mut acc, e| {
-				acc.entry(e.id).or_default().push(e.data);
+		let grouped = submitted.iter().fold::<BTreeMap<AppId, Vec<&[u8]>>, _>(
+			BTreeMap::default(),
+			|mut acc, e| {
+				acc.entry(e.app_id).or_default().push(e.data.as_slice());
 				acc
-			});
+			},
+		);
 
 		// Convert each grup of extrinsics into scalars
 		let scalars_by_app = grouped

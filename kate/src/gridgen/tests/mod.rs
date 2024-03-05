@@ -1,4 +1,4 @@
-use avail_core::AppId;
+use avail_core::{AppExtrinsic, AppId};
 use kate_recovery::{data::DataCell, matrix::Position};
 use once_cell::sync::Lazy;
 use poly_multiproof::{m1_blst::M1NoPrecomp, traits::AsBytes};
@@ -16,18 +16,18 @@ mod reconstruction;
 
 pub static PMP: Lazy<M1NoPrecomp> = Lazy::new(|| testnet::multiproof_params(256, 256));
 
-fn app_extrinsic_strategy() -> impl Strategy<Value = (AppId, Vec<u8>)> {
+fn app_extrinsic_strategy() -> impl Strategy<Value = AppExtrinsic> {
 	(
 		any::<u32>(),
 		any_with::<Vec<u8>>(size_range(1..2048).lift()),
 	)
-		.prop_map(|(app_id, data)| (AppId(app_id), data))
+		.prop_map(|(app_id, data)| AppExtrinsic::new(AppId(app_id), data))
 }
 
-fn app_extrinsics_strategy() -> impl Strategy<Value = Vec<(AppId, Vec<u8>)>> {
+fn app_extrinsics_strategy() -> impl Strategy<Value = Vec<AppExtrinsic>> {
 	collection::vec(app_extrinsic_strategy(), size_range(1..16)).prop_map(|xts| {
 		let mut new_xts = xts;
-		new_xts.sort_by(|a1, a2| a1.0.cmp(&a2.0));
+		new_xts.sort_by(|a1, a2| a1.app_id.cmp(&a2.app_id));
 		new_xts
 	})
 }

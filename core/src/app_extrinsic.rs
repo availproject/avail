@@ -1,5 +1,7 @@
 use crate::traits::GetAppId;
-use codec::{Codec, Decode, Encode};
+#[cfg(feature = "runtime")]
+use codec::Codec;
+use codec::{Decode, Encode};
 use derive_more::Constructor;
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]

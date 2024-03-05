@@ -1,4 +1,4 @@
-use avail_core::{AppId, BlockLengthColumns, BlockLengthRows, SubmittedData};
+use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 use core::num::NonZeroU16;
 use hex_literal::hex;
 use kate::{
@@ -37,9 +37,9 @@ fn multiproof_verification() -> Result<bool, AppError> {
 	];
 	let (proof, evals, commitments, dims) = {
 		let exts = exts_data
-			.iter()
+			.into_iter()
 			.enumerate()
-			.map(|(i, data)| SubmittedData::new(AppId(i as u32), &data))
+			.map(|(i, data)| AppExtrinsic::new(AppId(i as u32), data))
 			.collect::<Vec<_>>();
 		let seed = Seed::default();
 		let grid = EvaluationGrid::from_extrinsics(exts, 4, 256, 256, seed)?

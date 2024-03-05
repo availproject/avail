@@ -1,11 +1,12 @@
-use super::{AddressedMessage, BoundedData, Message};
+use super::{tx_uid, AddressedMessage, BoundedData, Message};
 
 use codec::Encode;
+use derive_more::Constructor;
 use ethabi_decode::{encode, Token, U256};
 use sp_core::H256;
 use sp_std::{vec, vec::Vec};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub enum MessageRef<'a> {
 	Data(&'a [u8]),
 	FungibleToken { asset_id: H256, amount: u128 },
@@ -18,22 +19,18 @@ impl MessageRef<'_> {
 			MessageRef::FungibleToken { .. } => false,
 		}
 	}
-}
 
-impl<'a> From<MessageRef<'a>> for Vec<u8> {
-	fn from(msg: MessageRef<'a>) -> Self {
-		match msg {
+	pub fn abi_type(&self) -> Vec<u8> {
+		match self {
 			MessageRef::Data(..) => vec![0x01],
 			MessageRef::FungibleToken { .. } => vec![0x02],
 		}
 	}
-}
 
-impl<'a> From<&'a Message> for MessageRef<'a> {
-	fn from(m: &'a Message) -> Self {
-		match m {
-			Message::Data(data) => MessageRef::Data(data.as_ref()),
-			Message::FungibleToken { asset_id, amount } => MessageRef::FungibleToken {
+	pub fn to_owned(&self) -> Message {
+		match self {
+			MessageRef::Data(data) => Message::Data(BoundedData::truncate_from(data.to_vec())),
+			MessageRef::FungibleToken { asset_id, amount } => Message::FungibleToken {
 				asset_id: *asset_id,
 				amount: *amount,
 			},
@@ -41,18 +38,7 @@ impl<'a> From<&'a Message> for MessageRef<'a> {
 	}
 }
 
-impl<'a> From<MessageRef<'a>> for Message {
-	fn from(m: MessageRef<'a>) -> Self {
-		match m {
-			MessageRef::Data(data) => Message::Data(BoundedData::truncate_from(data.to_vec())),
-			MessageRef::FungibleToken { asset_id, amount } => {
-				Message::FungibleToken { asset_id, amount }
-			},
-		}
-	}
-}
-
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Constructor)]
 pub struct AddressedMessageRef<'a> {
 	pub message: MessageRef<'a>,
 	pub from: H256,
@@ -63,25 +49,6 @@ pub struct AddressedMessageRef<'a> {
 }
 
 impl<'a> AddressedMessageRef<'a> {
-	pub fn new(
-		message: &'a Message,
-		from: H256,
-		to: H256,
-		domain: u32,
-		block: u32,
-		tx_index: u32,
-	) -> Self {
-		let message = MessageRef::from(message);
-		Self {
-			message,
-			from,
-			to,
-			domain,
-			block,
-			tx_index,
-		}
-	}
-
 	fn abi_data(&self) -> Vec<u8> {
 		match &self.message {
 			MessageRef::Data(data) => data.to_vec(),
@@ -98,7 +65,7 @@ impl<'a> AddressedMessageRef<'a> {
 	pub fn abi_encode(&self) -> Vec<u8> {
 		let data = self.abi_data();
 		encode(&[Token::Tuple(vec![
-			Token::FixedBytes(self.message.into()),
+			Token::FixedBytes(self.message.abi_type()),
 			Token::FixedBytes(self.from.to_fixed_bytes().to_vec()),
 			Token::FixedBytes(self.to.to_fixed_bytes().to_vec()),
 			Token::Uint(U256::from(1u32)),
@@ -108,52 +75,25 @@ impl<'a> AddressedMessageRef<'a> {
 		])])
 	}
 
+	#[inline]
 	pub fn id(&self) -> u64 {
-		let mut buf = [0u8; 8];
-		buf[..4].copy_from_slice(&self.block.to_be_bytes());
-		buf[4..].copy_from_slice(&self.tx_index.to_be_bytes());
-		u64::from_be_bytes(buf)
+		tx_uid(self.block, self.tx_index)
 	}
 
 	pub fn is_empty(&self) -> bool {
 		self.message.is_empty()
 	}
-}
 
-const SLICE_ERR: &str = "Valid slice .qed";
-
-impl<'a> From<&'a AddressedMessage> for AddressedMessageRef<'a> {
-	fn from(m: &'a AddressedMessage) -> Self {
-		let id: [u8; 8] = m.id.to_be_bytes();
-		let block = u32::from_be_bytes(id[..4].try_into().expect(SLICE_ERR));
-		let tx_index = u32::from_be_bytes(id[4..].try_into().expect(SLICE_ERR));
-
-		Self {
-			message: (&m.message).into(),
-			from: m.from,
-			to: m.to,
-			domain: m.destination_domain,
-			block,
-			tx_index,
-		}
-	}
-}
-
-impl<'a> From<AddressedMessageRef<'a>> for AddressedMessage {
-	fn from(m: AddressedMessageRef<'a>) -> Self {
-		let mut id_bytes = [0u8; 8];
-		id_bytes[..4].copy_from_slice(&m.block.to_be_bytes());
-		id_bytes[4..].copy_from_slice(&m.tx_index.to_be_bytes());
-		let id = u64::from_be_bytes(id_bytes);
-
-		Self {
-			message: m.message.into(),
-			from: m.from,
-			to: m.to,
-			origin_domain: 1,
-			destination_domain: m.domain,
+	pub fn to_owned(&self) -> AddressedMessage {
+		let id = self.id();
+		AddressedMessage::new(
+			self.message.to_owned(),
+			self.from,
+			self.to,
+			1,
+			self.domain,
 			id,
-		}
+		)
 	}
 }
 
@@ -197,12 +137,12 @@ mod tests {
 	fn check_ref_abi_encode(m: &AddressedMessage) {
 		// `Message` -> `MessageRef`, check `abi_encode` is the same
 		let m_encoded = m.clone().abi_encode();
-		let m_ref = AddressedMessageRef::from(m);
+		let m_ref = m.to_ref();
 		let m_ref_encoded = m_ref.abi_encode();
 		assert_eq!(m_encoded, m_ref_encoded);
 
 		// `MessageRef` -> `Message`, check `abi_encode` is the same
-		let new_m = AddressedMessage::from(m_ref);
+		let new_m = m_ref.to_owned();
 		let new_m_encoded = new_m.abi_encode();
 		assert_eq!(m_encoded, new_m_encoded);
 	}

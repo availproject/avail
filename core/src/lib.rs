@@ -46,10 +46,8 @@ pub use data_proof_v2::DataProofV2;
 pub mod data_lookup;
 pub use data_lookup::*;
 
-pub mod submitted_data;
-pub use submitted_data::SubmittedData;
-
 pub mod app_extrinsic;
+pub use app_extrinsic::AppExtrinsic;
 
 pub mod constants;
 pub use constants::*;

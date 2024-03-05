@@ -1,6 +1,6 @@
 use super::*;
 use crate::{couscous, gridgen::*, testnet, Seed};
-use avail_core::{BlockLengthColumns, BlockLengthRows, SubmittedData};
+use avail_core::{AppExtrinsic, BlockLengthColumns, BlockLengthRows};
 use hex_literal::hex;
 use kate_recovery::{
 	commitments::verify_equality,
@@ -10,7 +10,7 @@ use test_case::test_case;
 
 #[test]
 fn test_build_commitments_simple_commitment_check() {
-	let original_data = br#"test"#;
+	let original_data = br#"test"#.to_vec();
 	let block_height = 256usize;
 	let block_width = 256usize;
 	let hash: Seed = [
@@ -20,7 +20,7 @@ fn test_build_commitments_simple_commitment_check() {
 	let pmp_pp = crate::testnet::multiproof_params(256, 256);
 
 	let evals = EvaluationGrid::from_extrinsics(
-		vec![SubmittedData::from(&original_data[..])],
+		vec![AppExtrinsic::from(original_data)],
 		4,
 		block_width,
 		block_height,
@@ -57,8 +57,7 @@ fn par_build_commitments_row_wise_constant_row() {
 	// Due to scale encoding, first line is not constant.
 	// We will use second line to ensure constant row.
 	let hash = Seed::default();
-	let data = vec![0u8; 31 * 8];
-	let xts = vec![SubmittedData::from(data.as_slice())];
+	let xts = vec![AppExtrinsic::from(vec![0u8; 31 * 8])];
 
 	let evals = EvaluationGrid::from_extrinsics(xts, 4, 4, 4, hash).unwrap();
 	let evals = evals
@@ -71,9 +70,8 @@ fn par_build_commitments_row_wise_constant_row() {
 proptest! {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
-	fn commitments_verify(ref dexts in app_extrinsics_strategy())  {
+	fn commitments_verify(ref exts in app_extrinsics_strategy())  {
 		//let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), 32, xts, Seed::default()).unwrap();
-		let exts = dexts.iter().map(|(app_id, data)| SubmittedData::new(*app_id, &data)).collect::<Vec<_>>();
 		let grid = EvaluationGrid::from_extrinsics(exts.clone(), 4, 16, 64, Seed::default()).unwrap();
 		let grid = grid.extend_columns( unsafe { NonZeroU16::new_unchecked(2)}).unwrap();
 		let (g_rows, g_cols) :(u16,u16) = grid.dims().into();
@@ -88,7 +86,7 @@ proptest! {
 		let public_params = testnet::public_params( BlockLengthColumns(g_cols.into()));
 
 		for xt in exts.iter() {
-			let rows = grid.app_rows(xt.id, Some(orig_dims)).unwrap().unwrap();
+			let rows = grid.app_rows(xt.app_id, Some(orig_dims)).unwrap().unwrap();
 			// Have to put the rows we find in this funky data structure
 			let mut app_rows = vec![None; g_rows.into()];
 			for (row_i, row) in rows {
@@ -96,13 +94,12 @@ proptest! {
 			}
 			// Need to provide the original dimensions here too
 			let extended_dims = orig_dims;
-			let (_, missing) = verify_equality(&public_params, &commits, &app_rows, &grid.lookup, extended_dims, xt.id).unwrap();
+			let (_, missing) = verify_equality(&public_params, &commits, &app_rows, &grid.lookup, extended_dims, xt.app_id).unwrap();
 			prop_assert!(missing.is_empty());
 		}
 	}
 
-	fn verify_commitments_missing_row(ref dxts in app_extrinsics_strategy())  {
-		let xts = dxts.iter().map(|(app_id, data)| SubmittedData::new(*app_id, &data)).collect::<Vec<_>>();
+	fn verify_commitments_missing_row(ref xts in app_extrinsics_strategy())  {
 		let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 16, 64, Seed::default()).unwrap().extend_columns( unsafe { NonZeroU16::new_unchecked(2) }).unwrap();
 		let (g_rows, g_cols):(u16,u16) = grid.dims().into();
 		let orig_dims = Dimensions::new_from(g_rows / 2, g_cols).unwrap();
@@ -116,7 +113,7 @@ proptest! {
 		let public_params = testnet::public_params( BlockLengthColumns(g_cols.into()));
 
 		for xt in xts {
-			let rows = grid.app_rows(xt.id, Some(orig_dims)).unwrap().unwrap();
+			let rows = grid.app_rows(xt.app_id, Some(orig_dims)).unwrap().unwrap();
 			let mut row_elems = vec![None; g_rows.into()];
 			for (i, data) in &rows {
 				row_elems[*i] = Some(data.iter().flat_map(|s| s.to_bytes().unwrap()).collect());
@@ -125,7 +122,7 @@ proptest! {
 			row_elems.remove(first_index);
 
 			let extended_dims = orig_dims.transpose();
-			let (_, missing) = verify_equality(&public_params, &commits, &row_elems,&grid.lookup,extended_dims,xt.id).unwrap();
+			let (_, missing) = verify_equality(&public_params, &commits, &row_elems,&grid.lookup,extended_dims,xt.app_id).unwrap();
 			prop_assert!(!missing.is_empty());
 		}
 	}
@@ -143,7 +140,7 @@ fn test_zero_deg_poly_commit(row_values: Vec<u8>) {
 		.map(|val| pad_to_bls_scalar([*val]).unwrap())
 		.collect::<Vec<_>>();
 
-	//let ae = SubmittedData { 0.into(), vec![}
+	//let ae = AppExtrinsic { 0.into(), vec![}
 	let ev = EvaluationGrid {
 		lookup: Default::default(), // Shouldn't need to care about this
 		evals: DMatrix::from_row_iterator(len, 1, row).transpose(),

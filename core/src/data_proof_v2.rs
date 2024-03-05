@@ -22,6 +22,24 @@ pub use message::{AddressedMessage, Message, MessageType};
 pub mod message_ref;
 pub use message_ref::{AddressedMessageRef, MessageRef};
 
+/// Unique Tx identifier based on its block number and index.
+pub fn tx_uid(block: u32, tx_index: u32) -> u64 {
+	let mut buf = [0u8; 8];
+	buf[..4].copy_from_slice(&block.to_be_bytes());
+	buf[4..].copy_from_slice(&tx_index.to_be_bytes());
+	u64::from_be_bytes(buf)
+}
+
+pub fn tx_uid_deconstruct(uid: u64) -> (u32, u32) {
+	const SLICE_ERR: &str = "Valid slice .qed";
+
+	let id: [u8; 8] = uid.to_be_bytes();
+	let block = u32::from_be_bytes(id[..4].try_into().expect(SLICE_ERR));
+	let tx_index = u32::from_be_bytes(id[4..].try_into().expect(SLICE_ERR));
+
+	(block, tx_index)
+}
+
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
