@@ -5,12 +5,12 @@ use crate::SessionKeys;
 use crate::SLOT_DURATION;
 use crate::{
 	constants, prod_or_fast, weights, AccountId, AccountIndex, Babe, Balances, Block, BlockNumber,
-	Bounties, ElectionProviderMultiPhase, Everything, GrandpaId, Hash, Historical, ImOnline,
-	ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo,
-	Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason,
-	RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, Signature, SignedPayload, Staking,
-	System, TechnicalCommittee, Timestamp, TransactionPayment, Treasury, TxPause,
-	UncheckedExtrinsic, VoterList, MINUTES, VERSION,
+	ElectionProviderMultiPhase, Everything, GrandpaId, Hash, Historical, ImOnline, ImOnlineId,
+	Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo, Preimage,
+	ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason,
+	RuntimeOrigin, RuntimeVersion, Session, Signature, SignedPayload, Staking, System,
+	TechnicalCommittee, Timestamp, TransactionPayment, Treasury, TxPause, UncheckedExtrinsic,
+	VoterList, MINUTES, VERSION,
 };
 use avail_core::currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL};
 use avail_core::AppId;
@@ -186,55 +186,6 @@ parameter_types! {
 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
 	pub const MaximumReasonLength: u32 = 16384;
 	pub const MaxApprovals: u32 = 100;
-}
-
-impl pallet_bounties::Config for Runtime {
-	type BountyDepositBase = constants::bounty::DepositBase;
-	type BountyDepositPayoutDelay = constants::bounty::DepositPayoutDelay;
-	type BountyUpdatePeriod = constants::bounty::UpdatePeriod;
-	type BountyValueMinimum = constants::bounty::ValueMinimum;
-	type ChildBountyManager = ();
-	type CuratorDepositMax = constants::bounty::CuratorDepositMax;
-	type CuratorDepositMin = constants::bounty::CuratorDepositMin;
-	type CuratorDepositMultiplier = constants::bounty::CuratorDepositMultiplier;
-	type DataDepositPerByte = DataDepositPerByte;
-	type MaximumReasonLength = MaximumReasonLength;
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = weights::pallet_bounties::WeightInfo<Runtime>;
-}
-
-pub struct Tippers;
-
-impl SortedMembers<AccountId> for Tippers {
-	fn sorted_members() -> Vec<AccountId> {
-		let Some(account) = pallet_sudo::Pallet::<Runtime>::key() else {
-			return vec![];
-		};
-
-		vec![account]
-	}
-}
-
-impl ContainsLengthBound for Tippers {
-	fn min_len() -> usize {
-		0
-	}
-
-	fn max_len() -> usize {
-		1
-	}
-}
-
-impl pallet_tips::Config for Runtime {
-	type DataDepositPerByte = DataDepositPerByte;
-	type MaxTipAmount = ConstU128<{ 500 * AVAIL }>;
-	type MaximumReasonLength = MaximumReasonLength;
-	type RuntimeEvent = RuntimeEvent;
-	type TipCountdown = TipCountdown;
-	type TipFindersFee = TipFindersFee;
-	type TipReportDepositBase = TipReportDepositBase;
-	type Tippers = Tippers;
-	type WeightInfo = weights::pallet_tips::WeightInfo<Runtime>;
 }
 
 parameter_types! {
