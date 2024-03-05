@@ -56,6 +56,13 @@ impl Message {
 			Message::FungibleToken { .. } => MessageType::MTFungibleToken,
 		}
 	}
+
+	pub fn is_empty(&self) -> bool {
+		match self {
+			Message::Data(data) => data.is_empty(),
+			Message::FungibleToken { .. } => false,
+		}
+	}
 }
 
 /// Message type used to bridge between Avail & other chains
