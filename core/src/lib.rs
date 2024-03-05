@@ -38,8 +38,6 @@ pub mod traits;
 pub mod keccak256;
 pub use keccak256::Keccak256;
 
-pub mod data_proof;
-pub use data_proof::DataProof;
 pub mod data_proof_v2;
 pub use data_proof_v2::DataProofV2;
 
@@ -63,11 +61,9 @@ pub enum InvalidTransactionCustomId {
 	/// The AppId is not registered.
 	InvalidAppId = 137,
 	/// Extrinsic is not allowed for the given `AppId`.
-	ForbiddenAppId,
-	/// Max padded length was exceeded.
-	MaxPaddedLenExceeded,
+	ForbiddenAppId = 138,
 	/// Max recursion was reached for a call with AppId != 0.
-	MaxRecursionExceeded,
+	MaxRecursionExceeded = 139,
 }
 
 #[derive(

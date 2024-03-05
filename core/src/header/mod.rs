@@ -284,17 +284,11 @@ mod tests {
 	use codec::Error;
 	use hex_literal::hex;
 	use sp_core::H256;
-	use sp_runtime::{
-		traits::{BlakeTwo256, Hash},
-		DigestItem,
-	};
+	use sp_runtime::{traits::BlakeTwo256, DigestItem};
 	use test_case::test_case;
 
 	use super::*;
-	use crate::{
-		kate_commitment::{v1, v2},
-		AppId, DataLookup,
-	};
+	use crate::{kate_commitment::v3, AppId, DataLookup};
 
 	type THeader = Header<u32, BlakeTwo256>;
 
@@ -340,59 +334,13 @@ mod tests {
 		);
 	}
 
-	#[test]
-	fn ensure_format_is_unchanged() {
-		let commitment = v1::KateCommitment {
-				rows: 1,
-				cols: 4,
-				data_root: hex!("3fbf3227926cfa3f4167771e5ad91cfa2c2d7090667ce01e911ca90b4f315b11").into(),
-				commitment: hex!("80e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e975980e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e9759").to_vec()
-		};
-
-		let extension = extension::v1::HeaderExtension {
-			commitment,
-			..Default::default()
-		};
-
-		let header = THeader {
-			parent_hash: BlakeTwo256::hash(b"1"),
-			number: 2,
-			state_root: BlakeTwo256::hash(b"3"),
-			extrinsics_root: BlakeTwo256::hash(b"4"),
-			digest: Digest {
-				logs: vec![DigestItem::Other(b"5".to_vec())],
-			},
-			extension: extension.into(),
-		};
-
-		let encoded = header.encode();
-		assert_eq!(encoded, hex!("92cdf578c47085a5992256f0dcf97d0b19f1f1c9de4d5fe30c3ace6191b6e5db08581348337b0f3e148620173daaa5f94d00d881705dcbf0aa83efdaba61d2ede1eb8649214997574e20c464388a172420d25403682bbbb80c496831c8cc1f8f0d040004350000000410810180e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e975980e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e97593fbf3227926cfa3f4167771e5ad91cfa2c2d7090667ce01e911ca90b4f315b11").to_vec());
-	}
-
-	fn header_v1() -> THeader {
-		let commitment = v1::KateCommitment {
-				data_root: hex!("3fbf3227926cfa3f4167771e5ad91cfa2c2d7090667ce01e911ca90b4f315b11").into(),
-				commitment: hex!("80e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e975980e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e9759").to_vec(),
-				..Default::default()
-			};
-		let extension = extension::v1::HeaderExtension {
-			commitment,
-			..Default::default()
-		};
-
-		THeader {
-			extension: extension.into(),
-			..Default::default()
-		}
-	}
-
 	/// The `commitment.data_root is none`.
-	fn header_v2() -> THeader {
-		let commitment = v2::KateCommitment {
+	fn header_v3() -> THeader {
+		let commitment = v3::KateCommitment {
 				commitment: hex!("80e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e975980e949ebdaf5c13e09649c587c6b1905fb770b4a6843abaac6b413e3a7405d9825ac764db2341db9b7965965073e9759").to_vec(),
 				..Default::default()
 			};
-		let extension = extension::v2::HeaderExtension {
+		let extension = extension::v3::HeaderExtension {
 			commitment,
 			..Default::default()
 		};
@@ -403,9 +351,9 @@ mod tests {
 		}
 	}
 
-	/// It creates a corrupted V2 header and the associated error on decodification.
+	/// It creates a corrupted V3 header and the associated error on decodification.
 	fn corrupted_header() -> (Vec<u8>, Error) {
-		let mut encoded = header_v2().encode();
+		let mut encoded = header_v3().encode();
 		encoded.remove(110);
 
 		let error = THeader::decode(&mut encoded.as_slice()).unwrap_err();
@@ -413,8 +361,7 @@ mod tests {
 		(encoded, error)
 	}
 
-	#[test_case( header_v1().encode().as_ref() => Ok(header_v1()) ; "Decode V1 header")]
-	#[test_case( header_v2().encode().as_ref() => Ok(header_v2()) ; "Decode V2 header")]
+	#[test_case( header_v3().encode().as_ref() => Ok(header_v3()) ; "Decode V3 header")]
 	#[test_case( corrupted_header().0.as_ref() => Err(corrupted_header().1) ; "Decode corrupted header")]
 	fn header_decoding(mut encoded_header: &[u8]) -> Result<THeader, Error> {
 		Header::decode(&mut encoded_header)
@@ -427,19 +374,19 @@ mod tests {
 		serde_json::to_string(&header).unwrap_or_default()
 	}
 
-	#[test_case( header_serde_encode(header_v1()) => Ok(header_v1()) ; "Serde V1 header")]
+	#[test_case(header_serde_encode(header_v3()) => Ok(header_v3()) ; "Serde V3 header")]
 	fn header_serde(json_header: String) -> Result<THeader, String> {
 		serde_json::from_str(&json_header).map_err(|serde_err| format!("{}", serde_err))
 	}
 
 	fn header() -> (THeader, H256) {
-		let commitment = v1::KateCommitment {
+		let commitment = v3::KateCommitment {
 			rows:1,
 			cols:4,
 			data_root: hex!("0000000000000000000000000000000000000000000000000000000000000000").into(),
 			commitment: hex!("ace5bc6a21eef8b28987eb878e0b97b5ae3c8b8e05efe957802dc0008b23327b349f62ec96bcee48bdc30f6bb670f3d1ace5bc6a21eef8b28987eb878e0b97b5ae3c8b8e05efe957802dc0008b23327b349f62ec96bcee48bdc30f6bb670f3d1").into()
 		};
-		let extension = extension::v1::HeaderExtension {
+		let extension = extension::v3::HeaderExtension {
 			commitment,
 			app_lookup: DataLookup::from_id_and_len_iter([(AppId(0), 1)].into_iter())
 				.expect("Valid DataLookup .qed"),
@@ -475,7 +422,7 @@ mod tests {
 		assert_eq!(
 			hash,
 			H256(hex!(
-				"2658abca4272bbd01abe73b29b0396dd03eb6af104a1d9b9e601d13d933a88b5"
+				"c9941af1cb862db9f2e4c0c94f457d1217b363ecf6e6cc0dbeb5cbfeb35fbc12"
 			))
 		);
 
@@ -486,11 +433,8 @@ mod tests {
 		let (mut header, hash) = header_and_hash;
 
 		match header.extension {
-			extension::HeaderExtension::V1(ref mut ext) => {
-				ext.commitment.commitment = b"invalid commitment v1".to_vec();
-			},
-			extension::HeaderExtension::V2(ref mut ext) => {
-				ext.commitment.commitment = b"invalid commitment v2".to_vec();
+			extension::HeaderExtension::V3(ref mut ext) => {
+				ext.commitment.commitment = b"invalid commitment v3".to_vec();
 			},
 		};
 
@@ -501,10 +445,7 @@ mod tests {
 		let (mut header, hash) = header_and_hash;
 
 		match header.extension {
-			extension::HeaderExtension::V1(ref mut ext) => {
-				ext.commitment.data_root = H256::repeat_byte(1u8);
-			},
-			extension::HeaderExtension::V2(ref mut ext) => {
+			extension::HeaderExtension::V3(ref mut ext) => {
 				ext.commitment.data_root = H256::repeat_byte(2u8);
 			},
 		};
@@ -516,10 +457,7 @@ mod tests {
 		let (mut header, hash) = header_and_hash;
 
 		match header.extension {
-			extension::HeaderExtension::V1(ref mut ext) => {
-				ext.commitment.cols += 1;
-			},
-			extension::HeaderExtension::V2(ref mut ext) => {
+			extension::HeaderExtension::V3(ref mut ext) => {
 				ext.commitment.cols += 2;
 			},
 		};
@@ -531,10 +469,7 @@ mod tests {
 		let (mut header, hash) = header_and_hash;
 
 		match header.extension {
-			extension::HeaderExtension::V1(ref mut ext) => {
-				ext.commitment.rows += 1;
-			},
-			extension::HeaderExtension::V2(ref mut ext) => {
+			extension::HeaderExtension::V3(ref mut ext) => {
 				ext.commitment.rows += 2;
 			},
 		};
