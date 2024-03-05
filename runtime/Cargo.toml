@@ -71,11 +71,9 @@ pallet-indices = { workspace = true, default-features = false }
 pallet-offences = { workspace = true, default-features = false }
 pallet-treasury = { workspace = true, default-features = false }
 pallet-collective = { workspace = true, default-features = false }
-pallet-bounties = { workspace = true, default-features = false }
 pallet-sudo = { workspace = true, default-features = false }
 pallet-authority-discovery = { workspace = true, default-features = false }
 pallet-elections-phragmen = { workspace = true, default-features = false }
-pallet-tips = { workspace = true, default-features = false }
 pallet-membership = { workspace = true, default-features = false }
 pallet-bags-list = { workspace = true, default-features = false }
 pallet-election-provider-multi-phase = { workspace = true, default-features = false }
@@ -160,7 +158,6 @@ std = [
 	"pallet-babe/std",
 	"pallet-bags-list/std",
 	"pallet-balances/std",
-	"pallet-bounties/std",
 	"pallet-child-bounties/std",
 	"pallet-collective/std",
 	"pallet-democracy/std",
@@ -184,7 +181,6 @@ std = [
 	"pallet-staking/std",
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
-	"pallet-tips/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 	"pallet-treasury/std",
@@ -221,7 +217,6 @@ runtime-benchmarks = [
 	"pallet-babe/runtime-benchmarks",
 	"pallet-bags-list/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
-	"pallet-bounties/runtime-benchmarks",
 	"pallet-child-bounties/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
 	"pallet-democracy/runtime-benchmarks",
@@ -240,7 +235,6 @@ runtime-benchmarks = [
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-staking/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
-	"pallet-tips/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
 	"pallet-tx-pause/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
@@ -260,7 +254,6 @@ try-runtime = [
 	"pallet-babe/try-runtime",
 	"pallet-bags-list/try-runtime",
 	"pallet-balances/try-runtime",
-	"pallet-bounties/try-runtime",
 	"pallet-collective/try-runtime",
 	"pallet-democracy/try-runtime",
 	"pallet-election-provider-multi-phase/try-runtime",
@@ -282,7 +275,6 @@ try-runtime = [
 	"pallet-staking/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
-	"pallet-tips/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-treasury/try-runtime",
 	"pallet-tx-pause/try-runtime",
