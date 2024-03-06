@@ -127,8 +127,6 @@ construct_runtime!(
 		Historical: pallet_session_historical = 23,
 
 		Scheduler: pallet_scheduler = 24,
-		Bounties: pallet_bounties = 25,
-		Tips: pallet_tips = 26,
 		Mmr: pallet_mmr = 27,
 		// BagsList: pallet_bags_list = 28,
 
@@ -181,8 +179,6 @@ mod benches {
 		[pallet_treasury, crate::Treasury]
 		[pallet_im_online, crate::ImOnline]
 		[pallet_scheduler, crate::Scheduler]
-		[pallet_bounties, crate::Bounties]
-		[pallet_tips, crate::Tips]
 		[pallet_mmr, crate::Mmr]
 
 		[frame_system, SystemBench::<Runtime>]
@@ -252,8 +248,6 @@ mod tests {
 			block, All,
 		)?;
 		<pallet_scheduler::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
-		<pallet_bounties::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
-		<pallet_tips::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_mmr::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<da_control::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_preimage::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;

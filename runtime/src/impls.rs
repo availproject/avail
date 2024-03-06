@@ -5,12 +5,12 @@ use crate::SessionKeys;
 use crate::SLOT_DURATION;
 use crate::{
 	constants, prod_or_fast, weights, AccountId, AccountIndex, Babe, Balances, Block, BlockNumber,
-	Bounties, ElectionProviderMultiPhase, Everything, GrandpaId, Hash, Historical, ImOnline,
-	ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo,
-	Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason,
-	RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, Signature, SignedPayload, Staking,
-	System, TechnicalCommittee, Timestamp, TransactionPayment, Treasury, TxPause,
-	UncheckedExtrinsic, VoterList, MINUTES, VERSION,
+	ElectionProviderMultiPhase, Everything, GrandpaId, Hash, Historical, ImOnline, ImOnlineId,
+	Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo, Preimage,
+	ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason,
+	RuntimeOrigin, RuntimeVersion, Session, Signature, SignedPayload, Staking, System,
+	TechnicalCommittee, Timestamp, TransactionPayment, Treasury, TxPause, UncheckedExtrinsic,
+	VoterList, MINUTES, VERSION,
 };
 use avail_core::currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL};
 use avail_core::AppId;
@@ -29,10 +29,8 @@ use frame_support::traits::fungible::HoldConsideration;
 use frame_support::traits::tokens::pay::PayFromAccount;
 use frame_support::traits::tokens::Imbalance;
 use frame_support::traits::tokens::UnityAssetBalanceConversion;
-use frame_support::traits::ConstU128;
 use frame_support::traits::ConstU32;
 use frame_support::traits::Contains;
-use frame_support::traits::ContainsLengthBound;
 use frame_support::traits::Currency;
 use frame_support::traits::DefensiveTruncateFrom;
 use frame_support::traits::EqualPrivilegeOnly;
@@ -41,7 +39,6 @@ use frame_support::traits::InstanceFilter;
 use frame_support::traits::KeyOwnerProofSystem;
 use frame_support::traits::LinearStoragePrice;
 use frame_support::traits::OnUnbalanced;
-use frame_support::traits::SortedMembers;
 use frame_support::weights::constants::RocksDbWeight;
 use frame_support::weights::ConstantMultiplier;
 use frame_support::{parameter_types, traits::EitherOfDiverse, PalletId};
@@ -186,55 +183,6 @@ parameter_types! {
 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
 	pub const MaximumReasonLength: u32 = 16384;
 	pub const MaxApprovals: u32 = 100;
-}
-
-impl pallet_bounties::Config for Runtime {
-	type BountyDepositBase = constants::bounty::DepositBase;
-	type BountyDepositPayoutDelay = constants::bounty::DepositPayoutDelay;
-	type BountyUpdatePeriod = constants::bounty::UpdatePeriod;
-	type BountyValueMinimum = constants::bounty::ValueMinimum;
-	type ChildBountyManager = ();
-	type CuratorDepositMax = constants::bounty::CuratorDepositMax;
-	type CuratorDepositMin = constants::bounty::CuratorDepositMin;
-	type CuratorDepositMultiplier = constants::bounty::CuratorDepositMultiplier;
-	type DataDepositPerByte = DataDepositPerByte;
-	type MaximumReasonLength = MaximumReasonLength;
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = weights::pallet_bounties::WeightInfo<Runtime>;
-}
-
-pub struct Tippers;
-
-impl SortedMembers<AccountId> for Tippers {
-	fn sorted_members() -> Vec<AccountId> {
-		let Some(account) = pallet_sudo::Pallet::<Runtime>::key() else {
-			return vec![];
-		};
-
-		vec![account]
-	}
-}
-
-impl ContainsLengthBound for Tippers {
-	fn min_len() -> usize {
-		0
-	}
-
-	fn max_len() -> usize {
-		1
-	}
-}
-
-impl pallet_tips::Config for Runtime {
-	type DataDepositPerByte = DataDepositPerByte;
-	type MaxTipAmount = ConstU128<{ 500 * AVAIL }>;
-	type MaximumReasonLength = MaximumReasonLength;
-	type RuntimeEvent = RuntimeEvent;
-	type TipCountdown = TipCountdown;
-	type TipFindersFee = TipFindersFee;
-	type TipReportDepositBase = TipReportDepositBase;
-	type Tippers = Tippers;
-	type WeightInfo = weights::pallet_tips::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -741,7 +689,7 @@ impl pallet_treasury::Config for Runtime {
 	type ProposalBondMinimum = ProposalBondMinimum;
 	type RejectOrigin = EnsureRoot<AccountId>;
 	type RuntimeEvent = RuntimeEvent;
-	type SpendFunds = Bounties;
+	type SpendFunds = ();
 	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
 	type SpendPeriod = SpendPeriod;
 	type WeightInfo = weights::pallet_treasury::WeightInfo<Runtime>;

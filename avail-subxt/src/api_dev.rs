@@ -6,7 +6,7 @@ pub mod api {
 	mod root_mod {
 		pub use super::*;
 	}
-	pub static PALLETS: [&str; 34usize] = [
+	pub static PALLETS: [&str; 32usize] = [
 		"System",
 		"Utility",
 		"Babe",
@@ -28,8 +28,6 @@ pub mod api {
 		"Offences",
 		"Historical",
 		"Scheduler",
-		"Bounties",
-		"Tips",
 		"Mmr",
 		"DataAvailability",
 		"Preimage",
@@ -90,10 +88,6 @@ pub mod api {
 		Offences(offences::Event),
 		#[codec(index = 24)]
 		Scheduler(scheduler::Event),
-		#[codec(index = 25)]
-		Bounties(bounties::Event),
-		#[codec(index = 26)]
-		Tips(tips::Event),
 		#[codec(index = 29)]
 		DataAvailability(data_availability::Event),
 		#[codec(index = 33)]
@@ -243,20 +237,6 @@ pub mod api {
 					metadata,
 				)?));
 			}
-			if pallet_name == "Bounties" {
-				return Ok(Event::Bounties(bounties::Event::decode_with_metadata(
-					&mut &*pallet_bytes,
-					pallet_ty,
-					metadata,
-				)?));
-			}
-			if pallet_name == "Tips" {
-				return Ok(Event::Tips(tips::Event::decode_with_metadata(
-					&mut &*pallet_bytes,
-					pallet_ty,
-					metadata,
-				)?));
-			}
 			if pallet_name == "DataAvailability" {
 				return Ok(Event::DataAvailability(
 					data_availability::Event::decode_with_metadata(
@@ -384,10 +364,6 @@ pub mod api {
 		ImOnline(im_online::Call),
 		#[codec(index = 24)]
 		Scheduler(scheduler::Call),
-		#[codec(index = 25)]
-		Bounties(bounties::Call),
-		#[codec(index = 26)]
-		Tips(tips::Call),
 		#[codec(index = 29)]
 		DataAvailability(data_availability::Call),
 		#[codec(index = 33)]
@@ -535,20 +511,6 @@ pub mod api {
 					metadata,
 				)?));
 			}
-			if pallet_name == "Bounties" {
-				return Ok(Call::Bounties(bounties::Call::decode_with_metadata(
-					&mut &*pallet_bytes,
-					pallet_ty,
-					metadata,
-				)?));
-			}
-			if pallet_name == "Tips" {
-				return Ok(Call::Tips(tips::Call::decode_with_metadata(
-					&mut &*pallet_bytes,
-					pallet_ty,
-					metadata,
-				)?));
-			}
 			if pallet_name == "DataAvailability" {
 				return Ok(Call::DataAvailability(
 					data_availability::Call::decode_with_metadata(
@@ -674,10 +636,6 @@ pub mod api {
 		ImOnline(im_online::Error),
 		#[codec(index = 24)]
 		Scheduler(scheduler::Error),
-		#[codec(index = 25)]
-		Bounties(bounties::Error),
-		#[codec(index = 26)]
-		Tips(tips::Error),
 		#[codec(index = 29)]
 		DataAvailability(data_availability::Error),
 		#[codec(index = 33)]
@@ -706,123 +664,114 @@ pub mod api {
 			use ::subxt::metadata::DecodeWithMetadata;
 			let cursor = &mut &pallet_bytes[..];
 			if pallet_name == "System" {
-				let variant_error = system::Error::decode_with_metadata(cursor, 141u32, metadata)?;
+				let variant_error = system::Error::decode_with_metadata(cursor, 139u32, metadata)?;
 				return Ok(Error::System(variant_error));
 			}
 			if pallet_name == "Utility" {
-				let variant_error = utility::Error::decode_with_metadata(cursor, 341u32, metadata)?;
+				let variant_error = utility::Error::decode_with_metadata(cursor, 337u32, metadata)?;
 				return Ok(Error::Utility(variant_error));
 			}
 			if pallet_name == "Babe" {
-				let variant_error = babe::Error::decode_with_metadata(cursor, 357u32, metadata)?;
+				let variant_error = babe::Error::decode_with_metadata(cursor, 353u32, metadata)?;
 				return Ok(Error::Babe(variant_error));
 			}
 			if pallet_name == "Indices" {
-				let variant_error = indices::Error::decode_with_metadata(cursor, 359u32, metadata)?;
+				let variant_error = indices::Error::decode_with_metadata(cursor, 355u32, metadata)?;
 				return Ok(Error::Indices(variant_error));
 			}
 			if pallet_name == "Balances" {
 				let variant_error =
-					balances::Error::decode_with_metadata(cursor, 377u32, metadata)?;
+					balances::Error::decode_with_metadata(cursor, 373u32, metadata)?;
 				return Ok(Error::Balances(variant_error));
 			}
 			if pallet_name == "ElectionProviderMultiPhase" {
 				let variant_error = election_provider_multi_phase::Error::decode_with_metadata(
-					cursor, 390u32, metadata,
+					cursor, 386u32, metadata,
 				)?;
 				return Ok(Error::ElectionProviderMultiPhase(variant_error));
 			}
 			if pallet_name == "Staking" {
-				let variant_error = staking::Error::decode_with_metadata(cursor, 414u32, metadata)?;
+				let variant_error = staking::Error::decode_with_metadata(cursor, 410u32, metadata)?;
 				return Ok(Error::Staking(variant_error));
 			}
 			if pallet_name == "Session" {
-				let variant_error = session::Error::decode_with_metadata(cursor, 419u32, metadata)?;
+				let variant_error = session::Error::decode_with_metadata(cursor, 415u32, metadata)?;
 				return Ok(Error::Session(variant_error));
 			}
 			if pallet_name == "TechnicalCommittee" {
 				let variant_error =
-					technical_committee::Error::decode_with_metadata(cursor, 422u32, metadata)?;
+					technical_committee::Error::decode_with_metadata(cursor, 418u32, metadata)?;
 				return Ok(Error::TechnicalCommittee(variant_error));
 			}
 			if pallet_name == "TechnicalMembership" {
 				let variant_error =
-					technical_membership::Error::decode_with_metadata(cursor, 424u32, metadata)?;
+					technical_membership::Error::decode_with_metadata(cursor, 420u32, metadata)?;
 				return Ok(Error::TechnicalMembership(variant_error));
 			}
 			if pallet_name == "Grandpa" {
-				let variant_error = grandpa::Error::decode_with_metadata(cursor, 428u32, metadata)?;
+				let variant_error = grandpa::Error::decode_with_metadata(cursor, 424u32, metadata)?;
 				return Ok(Error::Grandpa(variant_error));
 			}
 			if pallet_name == "Treasury" {
 				let variant_error =
-					treasury::Error::decode_with_metadata(cursor, 435u32, metadata)?;
+					treasury::Error::decode_with_metadata(cursor, 431u32, metadata)?;
 				return Ok(Error::Treasury(variant_error));
 			}
 			if pallet_name == "Sudo" {
-				let variant_error = sudo::Error::decode_with_metadata(cursor, 436u32, metadata)?;
+				let variant_error = sudo::Error::decode_with_metadata(cursor, 432u32, metadata)?;
 				return Ok(Error::Sudo(variant_error));
 			}
 			if pallet_name == "ImOnline" {
 				let variant_error =
-					im_online::Error::decode_with_metadata(cursor, 439u32, metadata)?;
+					im_online::Error::decode_with_metadata(cursor, 435u32, metadata)?;
 				return Ok(Error::ImOnline(variant_error));
 			}
 			if pallet_name == "Scheduler" {
 				let variant_error =
-					scheduler::Error::decode_with_metadata(cursor, 451u32, metadata)?;
+					scheduler::Error::decode_with_metadata(cursor, 447u32, metadata)?;
 				return Ok(Error::Scheduler(variant_error));
-			}
-			if pallet_name == "Bounties" {
-				let variant_error =
-					bounties::Error::decode_with_metadata(cursor, 455u32, metadata)?;
-				return Ok(Error::Bounties(variant_error));
-			}
-			if pallet_name == "Tips" {
-				let variant_error = tips::Error::decode_with_metadata(cursor, 457u32, metadata)?;
-				return Ok(Error::Tips(variant_error));
 			}
 			if pallet_name == "DataAvailability" {
 				let variant_error =
-					data_availability::Error::decode_with_metadata(cursor, 459u32, metadata)?;
+					data_availability::Error::decode_with_metadata(cursor, 449u32, metadata)?;
 				return Ok(Error::DataAvailability(variant_error));
 			}
 			if pallet_name == "Preimage" {
 				let variant_error =
-					preimage::Error::decode_with_metadata(cursor, 467u32, metadata)?;
+					preimage::Error::decode_with_metadata(cursor, 457u32, metadata)?;
 				return Ok(Error::Preimage(variant_error));
 			}
 			if pallet_name == "Multisig" {
 				let variant_error =
-					multisig::Error::decode_with_metadata(cursor, 470u32, metadata)?;
+					multisig::Error::decode_with_metadata(cursor, 460u32, metadata)?;
 				return Ok(Error::Multisig(variant_error));
 			}
 			if pallet_name == "VoterList" {
 				let variant_error =
-					voter_list::Error::decode_with_metadata(cursor, 474u32, metadata)?;
+					voter_list::Error::decode_with_metadata(cursor, 464u32, metadata)?;
 				return Ok(Error::VoterList(variant_error));
 			}
 			if pallet_name == "NominationPools" {
 				let variant_error =
-					nomination_pools::Error::decode_with_metadata(cursor, 493u32, metadata)?;
+					nomination_pools::Error::decode_with_metadata(cursor, 483u32, metadata)?;
 				return Ok(Error::NominationPools(variant_error));
 			}
 			if pallet_name == "Identity" {
 				let variant_error =
-					identity::Error::decode_with_metadata(cursor, 509u32, metadata)?;
+					identity::Error::decode_with_metadata(cursor, 499u32, metadata)?;
 				return Ok(Error::Identity(variant_error));
 			}
 			if pallet_name == "Vector" {
-				let variant_error = vector::Error::decode_with_metadata(cursor, 511u32, metadata)?;
+				let variant_error = vector::Error::decode_with_metadata(cursor, 501u32, metadata)?;
 				return Ok(Error::Vector(variant_error));
 			}
 			if pallet_name == "Proxy" {
-				let variant_error = proxy::Error::decode_with_metadata(cursor, 520u32, metadata)?;
+				let variant_error = proxy::Error::decode_with_metadata(cursor, 510u32, metadata)?;
 				return Ok(Error::Proxy(variant_error));
 			}
 			if pallet_name == "TxPause" {
 				let variant_error =
-					tx_pause::Error::decode_with_metadata(cursor, 521u32, metadata)?;
+					tx_pause::Error::decode_with_metadata(cursor, 511u32, metadata)?;
 				return Ok(Error::TxPause(variant_error));
 			}
 			Err(::subxt::ext::scale_decode::Error::custom(format!(
@@ -896,12 +845,6 @@ pub mod api {
 		}
 		pub fn scheduler(&self) -> scheduler::constants::ConstantsApi {
 			scheduler::constants::ConstantsApi
-		}
-		pub fn bounties(&self) -> bounties::constants::ConstantsApi {
-			bounties::constants::ConstantsApi
-		}
-		pub fn tips(&self) -> tips::constants::ConstantsApi {
-			tips::constants::ConstantsApi
 		}
 		pub fn data_availability(&self) -> data_availability::constants::ConstantsApi {
 			data_availability::constants::ConstantsApi
@@ -992,12 +935,6 @@ pub mod api {
 		pub fn scheduler(&self) -> scheduler::storage::StorageApi {
 			scheduler::storage::StorageApi
 		}
-		pub fn bounties(&self) -> bounties::storage::StorageApi {
-			bounties::storage::StorageApi
-		}
-		pub fn tips(&self) -> tips::storage::StorageApi {
-			tips::storage::StorageApi
-		}
 		pub fn mmr(&self) -> mmr::storage::StorageApi {
 			mmr::storage::StorageApi
 		}
@@ -1081,12 +1018,6 @@ pub mod api {
 		pub fn scheduler(&self) -> scheduler::calls::TransactionApi {
 			scheduler::calls::TransactionApi
 		}
-		pub fn bounties(&self) -> bounties::calls::TransactionApi {
-			bounties::calls::TransactionApi
-		}
-		pub fn tips(&self) -> tips::calls::TransactionApi {
-			tips::calls::TransactionApi
-		}
 		pub fn data_availability(&self) -> data_availability::calls::TransactionApi {
 			data_availability::calls::TransactionApi
 		}
@@ -1129,9 +1060,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				93u8, 106u8, 75u8, 31u8, 236u8, 5u8, 128u8, 56u8, 3u8, 62u8, 57u8, 62u8, 233u8,
-				255u8, 34u8, 20u8, 250u8, 236u8, 146u8, 183u8, 165u8, 152u8, 115u8, 82u8, 22u8,
-				196u8, 197u8, 40u8, 232u8, 118u8, 59u8, 51u8,
+				208u8, 46u8, 194u8, 71u8, 123u8, 145u8, 98u8, 53u8, 165u8, 44u8, 11u8, 171u8,
+				192u8, 42u8, 213u8, 247u8, 198u8, 157u8, 131u8, 252u8, 255u8, 134u8, 48u8, 92u8,
+				110u8, 206u8, 81u8, 156u8, 97u8, 255u8, 67u8, 120u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -2026,9 +1957,10 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							91u8, 28u8, 7u8, 108u8, 223u8, 20u8, 128u8, 151u8, 197u8, 76u8, 215u8,
-							12u8, 137u8, 11u8, 13u8, 53u8, 90u8, 12u8, 9u8, 158u8, 167u8, 124u8,
-							5u8, 54u8, 12u8, 142u8, 205u8, 160u8, 11u8, 194u8, 84u8, 109u8,
+							166u8, 101u8, 237u8, 217u8, 193u8, 80u8, 23u8, 107u8, 138u8, 12u8,
+							164u8, 125u8, 241u8, 196u8, 116u8, 123u8, 202u8, 55u8, 71u8, 15u8,
+							134u8, 216u8, 189u8, 173u8, 130u8, 155u8, 38u8, 51u8, 93u8, 47u8,
+							251u8, 170u8,
 						],
 					)
 				}
@@ -2570,9 +2502,9 @@ pub mod api {
 						"batch",
 						types::Batch { calls },
 						[
-							208u8, 164u8, 183u8, 142u8, 230u8, 74u8, 50u8, 7u8, 161u8, 70u8, 223u8,
-							158u8, 58u8, 126u8, 54u8, 171u8, 74u8, 207u8, 3u8, 237u8, 196u8, 79u8,
-							204u8, 169u8, 240u8, 24u8, 209u8, 81u8, 100u8, 180u8, 153u8, 66u8,
+							137u8, 164u8, 217u8, 148u8, 83u8, 14u8, 22u8, 104u8, 206u8, 23u8, 2u8,
+							162u8, 196u8, 170u8, 16u8, 26u8, 92u8, 55u8, 97u8, 154u8, 215u8, 238u8,
+							107u8, 36u8, 99u8, 64u8, 27u8, 207u8, 225u8, 172u8, 95u8, 64u8,
 						],
 					)
 				}
@@ -2590,9 +2522,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							168u8, 45u8, 168u8, 85u8, 66u8, 15u8, 149u8, 91u8, 121u8, 16u8, 93u8,
-							166u8, 113u8, 251u8, 19u8, 5u8, 86u8, 97u8, 11u8, 55u8, 32u8, 28u8,
-							38u8, 174u8, 198u8, 151u8, 150u8, 96u8, 145u8, 99u8, 53u8, 107u8,
+							116u8, 176u8, 97u8, 236u8, 202u8, 22u8, 241u8, 92u8, 237u8, 213u8,
+							238u8, 60u8, 71u8, 190u8, 4u8, 52u8, 243u8, 25u8, 134u8, 48u8, 173u8,
+							199u8, 44u8, 137u8, 163u8, 244u8, 246u8, 136u8, 132u8, 218u8, 134u8,
+							73u8,
 						],
 					)
 				}
@@ -2606,9 +2539,9 @@ pub mod api {
 						"batch_all",
 						types::BatchAll { calls },
 						[
-							58u8, 131u8, 240u8, 116u8, 208u8, 207u8, 163u8, 194u8, 250u8, 163u8,
-							237u8, 228u8, 243u8, 145u8, 33u8, 56u8, 97u8, 157u8, 26u8, 4u8, 239u8,
-							114u8, 217u8, 160u8, 155u8, 5u8, 43u8, 86u8, 70u8, 213u8, 242u8, 226u8,
+							240u8, 223u8, 220u8, 48u8, 182u8, 209u8, 14u8, 118u8, 233u8, 149u8,
+							79u8, 143u8, 22u8, 236u8, 142u8, 46u8, 113u8, 94u8, 4u8, 48u8, 167u8,
+							9u8, 49u8, 57u8, 221u8, 162u8, 190u8, 245u8, 83u8, 50u8, 221u8, 231u8,
 						],
 					)
 				}
@@ -2626,10 +2559,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							170u8, 162u8, 86u8, 238u8, 84u8, 82u8, 96u8, 97u8, 107u8, 82u8, 124u8,
-							183u8, 208u8, 92u8, 63u8, 210u8, 211u8, 246u8, 44u8, 156u8, 229u8,
-							106u8, 211u8, 113u8, 102u8, 29u8, 152u8, 83u8, 22u8, 114u8, 240u8,
-							117u8,
+							92u8, 236u8, 115u8, 174u8, 153u8, 132u8, 164u8, 185u8, 163u8, 106u8,
+							37u8, 223u8, 113u8, 240u8, 69u8, 156u8, 208u8, 178u8, 43u8, 159u8,
+							205u8, 171u8, 247u8, 233u8, 15u8, 11u8, 225u8, 71u8, 154u8, 75u8,
+							168u8, 2u8,
 						],
 					)
 				}
@@ -2643,9 +2576,9 @@ pub mod api {
 						"force_batch",
 						types::ForceBatch { calls },
 						[
-							114u8, 148u8, 27u8, 220u8, 59u8, 175u8, 34u8, 4u8, 214u8, 97u8, 216u8,
-							83u8, 41u8, 182u8, 157u8, 230u8, 196u8, 184u8, 96u8, 238u8, 151u8,
-							51u8, 54u8, 255u8, 65u8, 162u8, 170u8, 145u8, 116u8, 139u8, 84u8, 82u8,
+							255u8, 39u8, 252u8, 221u8, 30u8, 9u8, 49u8, 100u8, 45u8, 181u8, 152u8,
+							125u8, 172u8, 51u8, 78u8, 189u8, 48u8, 44u8, 63u8, 159u8, 104u8, 113u8,
+							184u8, 40u8, 228u8, 180u8, 213u8, 190u8, 31u8, 119u8, 101u8, 166u8,
 						],
 					)
 				}
@@ -2663,10 +2596,10 @@ pub mod api {
 							weight,
 						},
 						[
-							120u8, 173u8, 145u8, 246u8, 92u8, 154u8, 232u8, 151u8, 2u8, 195u8,
-							223u8, 166u8, 220u8, 41u8, 58u8, 50u8, 92u8, 237u8, 226u8, 194u8,
-							113u8, 251u8, 217u8, 239u8, 242u8, 19u8, 253u8, 183u8, 244u8, 237u8,
-							96u8, 141u8,
+							146u8, 214u8, 68u8, 137u8, 150u8, 152u8, 97u8, 68u8, 193u8, 245u8, 0u8,
+							122u8, 150u8, 141u8, 149u8, 224u8, 218u8, 42u8, 42u8, 176u8, 181u8,
+							217u8, 9u8, 174u8, 204u8, 254u8, 233u8, 91u8, 171u8, 204u8, 130u8,
+							194u8,
 						],
 					)
 				}
@@ -10249,10 +10182,10 @@ pub mod api {
 							length_bound,
 						},
 						[
-							56u8, 153u8, 27u8, 1u8, 23u8, 150u8, 62u8, 187u8, 248u8, 4u8, 22u8,
-							66u8, 211u8, 165u8, 27u8, 212u8, 129u8, 49u8, 249u8, 45u8, 186u8,
-							140u8, 178u8, 190u8, 40u8, 244u8, 176u8, 211u8, 26u8, 154u8, 86u8,
-							26u8,
+							155u8, 5u8, 210u8, 224u8, 34u8, 199u8, 70u8, 101u8, 233u8, 247u8,
+							227u8, 27u8, 213u8, 30u8, 234u8, 178u8, 59u8, 239u8, 106u8, 61u8,
+							203u8, 93u8, 121u8, 75u8, 227u8, 180u8, 98u8, 138u8, 146u8, 206u8,
+							241u8, 190u8,
 						],
 					)
 				}
@@ -10272,9 +10205,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							28u8, 68u8, 142u8, 8u8, 53u8, 97u8, 32u8, 98u8, 164u8, 64u8, 204u8,
-							237u8, 61u8, 137u8, 76u8, 244u8, 73u8, 189u8, 2u8, 153u8, 15u8, 77u8,
-							146u8, 81u8, 189u8, 227u8, 148u8, 174u8, 233u8, 109u8, 102u8, 203u8,
+							78u8, 235u8, 214u8, 75u8, 84u8, 14u8, 79u8, 24u8, 44u8, 99u8, 69u8,
+							15u8, 229u8, 171u8, 2u8, 50u8, 46u8, 222u8, 6u8, 74u8, 201u8, 119u8,
+							163u8, 180u8, 9u8, 5u8, 109u8, 51u8, 234u8, 116u8, 14u8, 85u8,
 						],
 					)
 				}
@@ -10553,10 +10486,10 @@ pub mod api {
 							_0.borrow(),
 						)],
 						[
-							104u8, 223u8, 111u8, 7u8, 156u8, 134u8, 200u8, 167u8, 197u8, 80u8,
-							176u8, 160u8, 43u8, 185u8, 236u8, 225u8, 231u8, 96u8, 203u8, 30u8,
-							48u8, 86u8, 12u8, 186u8, 58u8, 28u8, 20u8, 146u8, 117u8, 196u8, 190u8,
-							101u8,
+							217u8, 159u8, 155u8, 195u8, 104u8, 238u8, 99u8, 241u8, 145u8, 64u8,
+							154u8, 189u8, 250u8, 38u8, 108u8, 93u8, 3u8, 76u8, 100u8, 33u8, 53u8,
+							252u8, 217u8, 13u8, 251u8, 128u8, 86u8, 220u8, 160u8, 76u8, 245u8,
+							148u8,
 						],
 					)
 				}
@@ -10575,10 +10508,10 @@ pub mod api {
 						"ProposalOf",
 						Vec::new(),
 						[
-							104u8, 223u8, 111u8, 7u8, 156u8, 134u8, 200u8, 167u8, 197u8, 80u8,
-							176u8, 160u8, 43u8, 185u8, 236u8, 225u8, 231u8, 96u8, 203u8, 30u8,
-							48u8, 86u8, 12u8, 186u8, 58u8, 28u8, 20u8, 146u8, 117u8, 196u8, 190u8,
-							101u8,
+							217u8, 159u8, 155u8, 195u8, 104u8, 238u8, 99u8, 241u8, 145u8, 64u8,
+							154u8, 189u8, 250u8, 38u8, 108u8, 93u8, 3u8, 76u8, 100u8, 33u8, 53u8,
+							252u8, 217u8, 13u8, 251u8, 128u8, 86u8, 220u8, 160u8, 76u8, 245u8,
+							148u8,
 						],
 					)
 				}
@@ -12842,9 +12775,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							69u8, 99u8, 212u8, 84u8, 214u8, 254u8, 70u8, 41u8, 254u8, 50u8, 62u8,
-							244u8, 210u8, 145u8, 172u8, 80u8, 189u8, 63u8, 30u8, 69u8, 148u8, 43u8,
-							127u8, 211u8, 190u8, 205u8, 133u8, 201u8, 227u8, 131u8, 152u8, 86u8,
+							244u8, 24u8, 6u8, 34u8, 47u8, 175u8, 90u8, 247u8, 113u8, 221u8, 69u8,
+							191u8, 231u8, 114u8, 195u8, 117u8, 85u8, 176u8, 84u8, 79u8, 190u8,
+							26u8, 70u8, 208u8, 231u8, 232u8, 192u8, 1u8, 119u8, 152u8, 27u8, 194u8,
 						],
 					)
 				}
@@ -12862,9 +12795,10 @@ pub mod api {
 							weight,
 						},
 						[
-							192u8, 85u8, 204u8, 247u8, 126u8, 119u8, 99u8, 39u8, 80u8, 66u8, 111u8,
-							241u8, 61u8, 19u8, 108u8, 67u8, 246u8, 57u8, 125u8, 246u8, 16u8, 228u8,
-							34u8, 246u8, 242u8, 102u8, 48u8, 45u8, 186u8, 65u8, 59u8, 236u8,
+							201u8, 109u8, 57u8, 153u8, 58u8, 231u8, 228u8, 248u8, 49u8, 216u8,
+							131u8, 255u8, 252u8, 26u8, 202u8, 214u8, 117u8, 209u8, 183u8, 37u8,
+							223u8, 181u8, 44u8, 67u8, 152u8, 141u8, 226u8, 13u8, 171u8, 253u8,
+							24u8, 233u8,
 						],
 					)
 				}
@@ -12905,10 +12839,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							181u8, 92u8, 93u8, 95u8, 122u8, 34u8, 21u8, 46u8, 140u8, 237u8, 16u8,
-							199u8, 116u8, 213u8, 67u8, 25u8, 4u8, 169u8, 123u8, 239u8, 253u8,
-							160u8, 183u8, 178u8, 133u8, 43u8, 107u8, 254u8, 127u8, 154u8, 142u8,
-							207u8,
+							10u8, 18u8, 41u8, 127u8, 162u8, 170u8, 18u8, 15u8, 122u8, 76u8, 2u8,
+							232u8, 54u8, 33u8, 184u8, 230u8, 195u8, 33u8, 85u8, 77u8, 91u8, 76u8,
+							1u8, 148u8, 135u8, 67u8, 147u8, 142u8, 188u8, 2u8, 183u8, 81u8,
 						],
 					)
 				}
@@ -13828,9 +13761,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							37u8, 158u8, 126u8, 238u8, 41u8, 207u8, 146u8, 254u8, 130u8, 221u8,
-							3u8, 48u8, 241u8, 235u8, 17u8, 176u8, 103u8, 211u8, 171u8, 25u8, 33u8,
-							101u8, 19u8, 9u8, 35u8, 239u8, 52u8, 225u8, 68u8, 237u8, 106u8, 104u8,
+							46u8, 211u8, 131u8, 135u8, 153u8, 172u8, 250u8, 66u8, 126u8, 186u8,
+							125u8, 171u8, 249u8, 77u8, 244u8, 169u8, 73u8, 140u8, 233u8, 8u8,
+							237u8, 246u8, 197u8, 37u8, 192u8, 191u8, 18u8, 168u8, 34u8, 157u8,
+							204u8, 8u8,
 						],
 					)
 				}
@@ -13875,10 +13809,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							128u8, 168u8, 122u8, 76u8, 211u8, 203u8, 26u8, 31u8, 200u8, 167u8,
-							85u8, 247u8, 42u8, 179u8, 189u8, 234u8, 197u8, 237u8, 216u8, 4u8,
-							248u8, 76u8, 111u8, 111u8, 198u8, 112u8, 72u8, 41u8, 168u8, 52u8, 51u8,
-							246u8,
+							218u8, 5u8, 126u8, 142u8, 40u8, 192u8, 207u8, 110u8, 194u8, 118u8,
+							187u8, 138u8, 16u8, 110u8, 160u8, 190u8, 238u8, 123u8, 63u8, 242u8,
+							178u8, 23u8, 97u8, 138u8, 237u8, 76u8, 158u8, 68u8, 35u8, 204u8, 30u8,
+							183u8,
 						],
 					)
 				}
@@ -13919,9 +13853,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							78u8, 247u8, 37u8, 112u8, 29u8, 147u8, 227u8, 100u8, 188u8, 40u8, 18u8,
-							113u8, 137u8, 75u8, 227u8, 98u8, 34u8, 251u8, 101u8, 41u8, 53u8, 63u8,
-							78u8, 197u8, 118u8, 103u8, 241u8, 92u8, 49u8, 34u8, 133u8, 50u8,
+							216u8, 4u8, 141u8, 136u8, 163u8, 185u8, 188u8, 34u8, 202u8, 100u8, 6u8,
+							230u8, 77u8, 160u8, 112u8, 118u8, 92u8, 2u8, 94u8, 56u8, 232u8, 236u8,
+							225u8, 122u8, 91u8, 18u8, 141u8, 35u8, 170u8, 90u8, 72u8, 116u8,
 						],
 					)
 				}
@@ -13948,9 +13882,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							195u8, 226u8, 81u8, 58u8, 41u8, 135u8, 235u8, 2u8, 13u8, 101u8, 41u8,
-							165u8, 242u8, 14u8, 214u8, 186u8, 185u8, 123u8, 5u8, 243u8, 106u8,
-							119u8, 69u8, 29u8, 249u8, 157u8, 247u8, 113u8, 185u8, 3u8, 80u8, 66u8,
+							106u8, 107u8, 111u8, 242u8, 210u8, 120u8, 128u8, 10u8, 204u8, 19u8,
+							135u8, 85u8, 165u8, 180u8, 35u8, 37u8, 245u8, 8u8, 254u8, 250u8, 7u8,
+							83u8, 116u8, 4u8, 83u8, 175u8, 115u8, 126u8, 72u8, 110u8, 17u8, 47u8,
 						],
 					)
 				}
@@ -14278,1530 +14212,6 @@ pub mod api {
 							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
 							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
 							145u8,
-						],
-					)
-				}
-			}
-		}
-	}
-	pub mod bounties {
-		use super::root_mod;
-		use super::runtime_types;
-		#[doc = "The `Error` enum of this pallet."]
-		pub type Error = runtime_types::pallet_bounties::pallet::Error;
-		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-		pub type Call = runtime_types::pallet_bounties::pallet::Call;
-		pub mod calls {
-			use super::root_mod;
-			use super::runtime_types;
-			type DispatchError = runtime_types::sp_runtime::DispatchError;
-			pub mod types {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct ProposeBounty {
-					#[codec(compact)]
-					pub value: ::core::primitive::u128,
-					pub description: ::std::vec::Vec<::core::primitive::u8>,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for ProposeBounty {
-					const PALLET: &'static str = "Bounties";
-					const CALL: &'static str = "propose_bounty";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct ApproveBounty {
-					#[codec(compact)]
-					pub bounty_id: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for ApproveBounty {
-					const PALLET: &'static str = "Bounties";
-					const CALL: &'static str = "approve_bounty";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct ProposeCurator {
-					#[codec(compact)]
-					pub bounty_id: ::core::primitive::u32,
-					pub curator: ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-					#[codec(compact)]
-					pub fee: ::core::primitive::u128,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for ProposeCurator {
-					const PALLET: &'static str = "Bounties";
-					const CALL: &'static str = "propose_curator";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct UnassignCurator {
-					#[codec(compact)]
-					pub bounty_id: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for UnassignCurator {
-					const PALLET: &'static str = "Bounties";
-					const CALL: &'static str = "unassign_curator";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct AcceptCurator {
-					#[codec(compact)]
-					pub bounty_id: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for AcceptCurator {
-					const PALLET: &'static str = "Bounties";
-					const CALL: &'static str = "accept_curator";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct AwardBounty {
-					#[codec(compact)]
-					pub bounty_id: ::core::primitive::u32,
-					pub beneficiary: ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for AwardBounty {
-					const PALLET: &'static str = "Bounties";
-					const CALL: &'static str = "award_bounty";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct ClaimBounty {
-					#[codec(compact)]
-					pub bounty_id: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for ClaimBounty {
-					const PALLET: &'static str = "Bounties";
-					const CALL: &'static str = "claim_bounty";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct CloseBounty {
-					#[codec(compact)]
-					pub bounty_id: ::core::primitive::u32,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for CloseBounty {
-					const PALLET: &'static str = "Bounties";
-					const CALL: &'static str = "close_bounty";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct ExtendBountyExpiry {
-					#[codec(compact)]
-					pub bounty_id: ::core::primitive::u32,
-					pub remark: ::std::vec::Vec<::core::primitive::u8>,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for ExtendBountyExpiry {
-					const PALLET: &'static str = "Bounties";
-					const CALL: &'static str = "extend_bounty_expiry";
-				}
-			}
-			pub struct TransactionApi;
-			impl TransactionApi {
-				#[doc = "See [`Pallet::propose_bounty`]."]
-				pub fn propose_bounty(
-					&self,
-					value: ::core::primitive::u128,
-					description: ::std::vec::Vec<::core::primitive::u8>,
-				) -> ::subxt::tx::Payload<types::ProposeBounty> {
-					::subxt::tx::Payload::new_static(
-						"Bounties",
-						"propose_bounty",
-						types::ProposeBounty { value, description },
-						[
-							131u8, 169u8, 55u8, 102u8, 212u8, 139u8, 9u8, 65u8, 75u8, 112u8, 6u8,
-							180u8, 92u8, 124u8, 43u8, 42u8, 38u8, 40u8, 226u8, 24u8, 28u8, 34u8,
-							169u8, 220u8, 184u8, 206u8, 109u8, 227u8, 53u8, 228u8, 88u8, 25u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::approve_bounty`]."]
-				pub fn approve_bounty(
-					&self,
-					bounty_id: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::ApproveBounty> {
-					::subxt::tx::Payload::new_static(
-						"Bounties",
-						"approve_bounty",
-						types::ApproveBounty { bounty_id },
-						[
-							85u8, 12u8, 177u8, 91u8, 183u8, 124u8, 175u8, 148u8, 188u8, 200u8,
-							237u8, 144u8, 6u8, 67u8, 159u8, 48u8, 177u8, 222u8, 183u8, 137u8,
-							173u8, 131u8, 128u8, 219u8, 255u8, 243u8, 80u8, 224u8, 126u8, 136u8,
-							90u8, 47u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::propose_curator`]."]
-				pub fn propose_curator(
-					&self,
-					bounty_id: ::core::primitive::u32,
-					curator: ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-					fee: ::core::primitive::u128,
-				) -> ::subxt::tx::Payload<types::ProposeCurator> {
-					::subxt::tx::Payload::new_static(
-						"Bounties",
-						"propose_curator",
-						types::ProposeCurator {
-							bounty_id,
-							curator,
-							fee,
-						},
-						[
-							71u8, 194u8, 107u8, 158u8, 153u8, 106u8, 130u8, 173u8, 57u8, 240u8,
-							43u8, 213u8, 143u8, 48u8, 179u8, 254u8, 63u8, 190u8, 105u8, 52u8,
-							127u8, 238u8, 84u8, 105u8, 41u8, 180u8, 25u8, 98u8, 215u8, 197u8, 61u8,
-							72u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::unassign_curator`]."]
-				pub fn unassign_curator(
-					&self,
-					bounty_id: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::UnassignCurator> {
-					::subxt::tx::Payload::new_static(
-						"Bounties",
-						"unassign_curator",
-						types::UnassignCurator { bounty_id },
-						[
-							98u8, 94u8, 107u8, 111u8, 151u8, 182u8, 71u8, 239u8, 214u8, 88u8,
-							108u8, 11u8, 51u8, 163u8, 102u8, 162u8, 245u8, 247u8, 244u8, 159u8,
-							197u8, 23u8, 171u8, 6u8, 60u8, 146u8, 144u8, 101u8, 68u8, 133u8, 245u8,
-							74u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::accept_curator`]."]
-				pub fn accept_curator(
-					&self,
-					bounty_id: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::AcceptCurator> {
-					::subxt::tx::Payload::new_static(
-						"Bounties",
-						"accept_curator",
-						types::AcceptCurator { bounty_id },
-						[
-							178u8, 142u8, 138u8, 15u8, 243u8, 10u8, 222u8, 169u8, 150u8, 200u8,
-							85u8, 185u8, 39u8, 167u8, 134u8, 3u8, 186u8, 84u8, 43u8, 140u8, 11u8,
-							70u8, 56u8, 197u8, 39u8, 84u8, 138u8, 139u8, 198u8, 104u8, 41u8, 238u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::award_bounty`]."]
-				pub fn award_bounty(
-					&self,
-					bounty_id: ::core::primitive::u32,
-					beneficiary: ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-				) -> ::subxt::tx::Payload<types::AwardBounty> {
-					::subxt::tx::Payload::new_static(
-						"Bounties",
-						"award_bounty",
-						types::AwardBounty {
-							bounty_id,
-							beneficiary,
-						},
-						[
-							69u8, 87u8, 233u8, 113u8, 45u8, 84u8, 104u8, 158u8, 128u8, 111u8,
-							231u8, 80u8, 175u8, 226u8, 231u8, 61u8, 106u8, 6u8, 192u8, 208u8,
-							128u8, 160u8, 75u8, 27u8, 190u8, 9u8, 191u8, 90u8, 219u8, 25u8, 129u8,
-							244u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::claim_bounty`]."]
-				pub fn claim_bounty(
-					&self,
-					bounty_id: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::ClaimBounty> {
-					::subxt::tx::Payload::new_static(
-						"Bounties",
-						"claim_bounty",
-						types::ClaimBounty { bounty_id },
-						[
-							211u8, 143u8, 123u8, 205u8, 140u8, 43u8, 176u8, 103u8, 110u8, 125u8,
-							158u8, 131u8, 103u8, 62u8, 69u8, 215u8, 220u8, 110u8, 11u8, 3u8, 30u8,
-							193u8, 235u8, 177u8, 96u8, 241u8, 140u8, 53u8, 62u8, 133u8, 170u8,
-							25u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::close_bounty`]."]
-				pub fn close_bounty(
-					&self,
-					bounty_id: ::core::primitive::u32,
-				) -> ::subxt::tx::Payload<types::CloseBounty> {
-					::subxt::tx::Payload::new_static(
-						"Bounties",
-						"close_bounty",
-						types::CloseBounty { bounty_id },
-						[
-							144u8, 234u8, 109u8, 39u8, 227u8, 231u8, 104u8, 48u8, 45u8, 196u8,
-							217u8, 220u8, 241u8, 197u8, 157u8, 227u8, 154u8, 156u8, 181u8, 69u8,
-							146u8, 77u8, 203u8, 167u8, 79u8, 102u8, 15u8, 253u8, 135u8, 53u8, 96u8,
-							60u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::extend_bounty_expiry`]."]
-				pub fn extend_bounty_expiry(
-					&self,
-					bounty_id: ::core::primitive::u32,
-					remark: ::std::vec::Vec<::core::primitive::u8>,
-				) -> ::subxt::tx::Payload<types::ExtendBountyExpiry> {
-					::subxt::tx::Payload::new_static(
-						"Bounties",
-						"extend_bounty_expiry",
-						types::ExtendBountyExpiry { bounty_id, remark },
-						[
-							102u8, 118u8, 89u8, 189u8, 138u8, 157u8, 216u8, 10u8, 239u8, 3u8,
-							200u8, 217u8, 219u8, 19u8, 195u8, 182u8, 105u8, 220u8, 11u8, 146u8,
-							222u8, 79u8, 95u8, 136u8, 188u8, 230u8, 248u8, 119u8, 30u8, 6u8, 242u8,
-							194u8,
-						],
-					)
-				}
-			}
-		}
-		#[doc = "The `Event` enum of this pallet"]
-		pub type Event = runtime_types::pallet_bounties::pallet::Event;
-		pub mod events {
-			use super::runtime_types;
-			#[derive(
-				:: subxt :: ext :: codec :: CompactAs,
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "New bounty proposal."]
-			pub struct BountyProposed {
-				pub index: ::core::primitive::u32,
-			}
-			impl ::subxt::events::StaticEvent for BountyProposed {
-				const PALLET: &'static str = "Bounties";
-				const EVENT: &'static str = "BountyProposed";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A bounty proposal was rejected; funds were slashed."]
-			pub struct BountyRejected {
-				pub index: ::core::primitive::u32,
-				pub bond: ::core::primitive::u128,
-			}
-			impl ::subxt::events::StaticEvent for BountyRejected {
-				const PALLET: &'static str = "Bounties";
-				const EVENT: &'static str = "BountyRejected";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: CompactAs,
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A bounty proposal is funded and became active."]
-			pub struct BountyBecameActive {
-				pub index: ::core::primitive::u32,
-			}
-			impl ::subxt::events::StaticEvent for BountyBecameActive {
-				const PALLET: &'static str = "Bounties";
-				const EVENT: &'static str = "BountyBecameActive";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A bounty is awarded to a beneficiary."]
-			pub struct BountyAwarded {
-				pub index: ::core::primitive::u32,
-				pub beneficiary: ::subxt::utils::AccountId32,
-			}
-			impl ::subxt::events::StaticEvent for BountyAwarded {
-				const PALLET: &'static str = "Bounties";
-				const EVENT: &'static str = "BountyAwarded";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A bounty is claimed by beneficiary."]
-			pub struct BountyClaimed {
-				pub index: ::core::primitive::u32,
-				pub payout: ::core::primitive::u128,
-				pub beneficiary: ::subxt::utils::AccountId32,
-			}
-			impl ::subxt::events::StaticEvent for BountyClaimed {
-				const PALLET: &'static str = "Bounties";
-				const EVENT: &'static str = "BountyClaimed";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: CompactAs,
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A bounty is cancelled."]
-			pub struct BountyCanceled {
-				pub index: ::core::primitive::u32,
-			}
-			impl ::subxt::events::StaticEvent for BountyCanceled {
-				const PALLET: &'static str = "Bounties";
-				const EVENT: &'static str = "BountyCanceled";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: CompactAs,
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A bounty expiry is extended."]
-			pub struct BountyExtended {
-				pub index: ::core::primitive::u32,
-			}
-			impl ::subxt::events::StaticEvent for BountyExtended {
-				const PALLET: &'static str = "Bounties";
-				const EVENT: &'static str = "BountyExtended";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: CompactAs,
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A bounty is approved."]
-			pub struct BountyApproved {
-				pub index: ::core::primitive::u32,
-			}
-			impl ::subxt::events::StaticEvent for BountyApproved {
-				const PALLET: &'static str = "Bounties";
-				const EVENT: &'static str = "BountyApproved";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A bounty curator is proposed."]
-			pub struct CuratorProposed {
-				pub bounty_id: ::core::primitive::u32,
-				pub curator: ::subxt::utils::AccountId32,
-			}
-			impl ::subxt::events::StaticEvent for CuratorProposed {
-				const PALLET: &'static str = "Bounties";
-				const EVENT: &'static str = "CuratorProposed";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: CompactAs,
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A bounty curator is unassigned."]
-			pub struct CuratorUnassigned {
-				pub bounty_id: ::core::primitive::u32,
-			}
-			impl ::subxt::events::StaticEvent for CuratorUnassigned {
-				const PALLET: &'static str = "Bounties";
-				const EVENT: &'static str = "CuratorUnassigned";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A bounty curator is accepted."]
-			pub struct CuratorAccepted {
-				pub bounty_id: ::core::primitive::u32,
-				pub curator: ::subxt::utils::AccountId32,
-			}
-			impl ::subxt::events::StaticEvent for CuratorAccepted {
-				const PALLET: &'static str = "Bounties";
-				const EVENT: &'static str = "CuratorAccepted";
-			}
-		}
-		pub mod storage {
-			use super::runtime_types;
-			pub struct StorageApi;
-			impl StorageApi {
-				#[doc = " Number of bounty proposals that have been made."]
-				pub fn bounty_count(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::core::primitive::u32,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Bounties",
-						"BountyCount",
-						vec![],
-						[
-							120u8, 204u8, 26u8, 150u8, 37u8, 81u8, 43u8, 223u8, 180u8, 252u8,
-							142u8, 144u8, 109u8, 5u8, 184u8, 72u8, 223u8, 230u8, 66u8, 196u8, 14u8,
-							14u8, 164u8, 190u8, 246u8, 168u8, 190u8, 56u8, 212u8, 73u8, 175u8,
-							26u8,
-						],
-					)
-				}
-				#[doc = " Bounties that have been made."]
-				pub fn bounties(
-					&self,
-					_0: impl ::std::borrow::Borrow<::core::primitive::u32>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_bounties::Bounty<
-						::subxt::utils::AccountId32,
-						::core::primitive::u128,
-						::core::primitive::u32,
-					>,
-					::subxt::storage::address::Yes,
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Bounties",
-						"Bounties",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							197u8, 26u8, 141u8, 98u8, 53u8, 123u8, 87u8, 219u8, 248u8, 200u8,
-							207u8, 196u8, 211u8, 159u8, 124u8, 173u8, 143u8, 144u8, 85u8, 180u8,
-							227u8, 24u8, 7u8, 52u8, 130u8, 98u8, 107u8, 145u8, 162u8, 55u8, 64u8,
-							199u8,
-						],
-					)
-				}
-				#[doc = " Bounties that have been made."]
-				pub fn bounties_root(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_bounties::Bounty<
-						::subxt::utils::AccountId32,
-						::core::primitive::u128,
-						::core::primitive::u32,
-					>,
-					(),
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Bounties",
-						"Bounties",
-						Vec::new(),
-						[
-							197u8, 26u8, 141u8, 98u8, 53u8, 123u8, 87u8, 219u8, 248u8, 200u8,
-							207u8, 196u8, 211u8, 159u8, 124u8, 173u8, 143u8, 144u8, 85u8, 180u8,
-							227u8, 24u8, 7u8, 52u8, 130u8, 98u8, 107u8, 145u8, 162u8, 55u8, 64u8,
-							199u8,
-						],
-					)
-				}
-				#[doc = " The description of each bounty."]
-				pub fn bounty_descriptions(
-					&self,
-					_0: impl ::std::borrow::Borrow<::core::primitive::u32>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::bounded_collections::bounded_vec::BoundedVec<
-						::core::primitive::u8,
-					>,
-					::subxt::storage::address::Yes,
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Bounties",
-						"BountyDescriptions",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							71u8, 40u8, 133u8, 84u8, 55u8, 207u8, 169u8, 189u8, 160u8, 51u8, 202u8,
-							144u8, 15u8, 226u8, 97u8, 114u8, 54u8, 247u8, 53u8, 26u8, 36u8, 54u8,
-							186u8, 163u8, 198u8, 100u8, 191u8, 121u8, 186u8, 160u8, 85u8, 97u8,
-						],
-					)
-				}
-				#[doc = " The description of each bounty."]
-				pub fn bounty_descriptions_root(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::bounded_collections::bounded_vec::BoundedVec<
-						::core::primitive::u8,
-					>,
-					(),
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Bounties",
-						"BountyDescriptions",
-						Vec::new(),
-						[
-							71u8, 40u8, 133u8, 84u8, 55u8, 207u8, 169u8, 189u8, 160u8, 51u8, 202u8,
-							144u8, 15u8, 226u8, 97u8, 114u8, 54u8, 247u8, 53u8, 26u8, 36u8, 54u8,
-							186u8, 163u8, 198u8, 100u8, 191u8, 121u8, 186u8, 160u8, 85u8, 97u8,
-						],
-					)
-				}
-				#[doc = " Bounty indices that have been approved but not yet funded."]
-				pub fn bounty_approvals(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::bounded_collections::bounded_vec::BoundedVec<
-						::core::primitive::u32,
-					>,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Bounties",
-						"BountyApprovals",
-						vec![],
-						[
-							182u8, 228u8, 0u8, 46u8, 176u8, 25u8, 222u8, 180u8, 51u8, 57u8, 14u8,
-							0u8, 69u8, 160u8, 64u8, 27u8, 88u8, 29u8, 227u8, 146u8, 2u8, 121u8,
-							27u8, 85u8, 45u8, 110u8, 244u8, 62u8, 134u8, 77u8, 175u8, 188u8,
-						],
-					)
-				}
-			}
-		}
-		pub mod constants {
-			use super::runtime_types;
-			pub struct ConstantsApi;
-			impl ConstantsApi {
-				#[doc = " The amount held on deposit for placing a bounty proposal."]
-				pub fn bounty_deposit_base(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static(
-						"Bounties",
-						"BountyDepositBase",
-						[
-							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
-							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-						],
-					)
-				}
-				#[doc = " The delay period for which a bounty beneficiary need to wait before claim the payout."]
-				pub fn bounty_deposit_payout_delay(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Bounties",
-						"BountyDepositPayoutDelay",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " Bounty duration in blocks."]
-				pub fn bounty_update_period(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Bounties",
-						"BountyUpdatePeriod",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " The curator deposit is calculated as a percentage of the curator fee."]
-				#[doc = ""]
-				#[doc = " This deposit has optional upper and lower bounds with `CuratorDepositMax` and"]
-				#[doc = " `CuratorDepositMin`."]
-				pub fn curator_deposit_multiplier(
-					&self,
-				) -> ::subxt::constants::Address<runtime_types::sp_arithmetic::per_things::Permill>
-				{
-					::subxt::constants::Address::new_static(
-						"Bounties",
-						"CuratorDepositMultiplier",
-						[
-							65u8, 93u8, 120u8, 165u8, 204u8, 81u8, 159u8, 163u8, 93u8, 135u8,
-							114u8, 121u8, 147u8, 35u8, 215u8, 213u8, 4u8, 223u8, 83u8, 37u8, 225u8,
-							200u8, 189u8, 156u8, 140u8, 36u8, 58u8, 46u8, 42u8, 232u8, 155u8, 0u8,
-						],
-					)
-				}
-				#[doc = " Maximum amount of funds that should be placed in a deposit for making a proposal."]
-				pub fn curator_deposit_max(
-					&self,
-				) -> ::subxt::constants::Address<::core::option::Option<::core::primitive::u128>> {
-					::subxt::constants::Address::new_static(
-						"Bounties",
-						"CuratorDepositMax",
-						[
-							198u8, 51u8, 89u8, 159u8, 124u8, 251u8, 51u8, 80u8, 167u8, 193u8, 44u8,
-							199u8, 80u8, 36u8, 41u8, 130u8, 137u8, 229u8, 178u8, 208u8, 37u8,
-							215u8, 169u8, 183u8, 180u8, 191u8, 140u8, 240u8, 250u8, 61u8, 42u8,
-							147u8,
-						],
-					)
-				}
-				#[doc = " Minimum amount of funds that should be placed in a deposit for making a proposal."]
-				pub fn curator_deposit_min(
-					&self,
-				) -> ::subxt::constants::Address<::core::option::Option<::core::primitive::u128>> {
-					::subxt::constants::Address::new_static(
-						"Bounties",
-						"CuratorDepositMin",
-						[
-							198u8, 51u8, 89u8, 159u8, 124u8, 251u8, 51u8, 80u8, 167u8, 193u8, 44u8,
-							199u8, 80u8, 36u8, 41u8, 130u8, 137u8, 229u8, 178u8, 208u8, 37u8,
-							215u8, 169u8, 183u8, 180u8, 191u8, 140u8, 240u8, 250u8, 61u8, 42u8,
-							147u8,
-						],
-					)
-				}
-				#[doc = " Minimum value for a bounty."]
-				pub fn bounty_value_minimum(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static(
-						"Bounties",
-						"BountyValueMinimum",
-						[
-							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
-							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-						],
-					)
-				}
-				#[doc = " The amount held on deposit per byte within the tip report reason or bounty description."]
-				pub fn data_deposit_per_byte(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static(
-						"Bounties",
-						"DataDepositPerByte",
-						[
-							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
-							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-						],
-					)
-				}
-				#[doc = " Maximum acceptable reason length."]
-				#[doc = ""]
-				#[doc = " Benchmarks depend on this value, be sure to update weights file when changing this value"]
-				pub fn maximum_reason_length(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Bounties",
-						"MaximumReasonLength",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-			}
-		}
-	}
-	pub mod tips {
-		use super::root_mod;
-		use super::runtime_types;
-		#[doc = "The `Error` enum of this pallet."]
-		pub type Error = runtime_types::pallet_tips::pallet::Error;
-		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-		pub type Call = runtime_types::pallet_tips::pallet::Call;
-		pub mod calls {
-			use super::root_mod;
-			use super::runtime_types;
-			type DispatchError = runtime_types::sp_runtime::DispatchError;
-			pub mod types {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct ReportAwesome {
-					pub reason: ::std::vec::Vec<::core::primitive::u8>,
-					pub who: ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for ReportAwesome {
-					const PALLET: &'static str = "Tips";
-					const CALL: &'static str = "report_awesome";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct RetractTip {
-					pub hash: ::subxt::utils::H256,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for RetractTip {
-					const PALLET: &'static str = "Tips";
-					const CALL: &'static str = "retract_tip";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct TipNew {
-					pub reason: ::std::vec::Vec<::core::primitive::u8>,
-					pub who: ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-					#[codec(compact)]
-					pub tip_value: ::core::primitive::u128,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for TipNew {
-					const PALLET: &'static str = "Tips";
-					const CALL: &'static str = "tip_new";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Tip {
-					pub hash: ::subxt::utils::H256,
-					#[codec(compact)]
-					pub tip_value: ::core::primitive::u128,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for Tip {
-					const PALLET: &'static str = "Tips";
-					const CALL: &'static str = "tip";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct CloseTip {
-					pub hash: ::subxt::utils::H256,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for CloseTip {
-					const PALLET: &'static str = "Tips";
-					const CALL: &'static str = "close_tip";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct SlashTip {
-					pub hash: ::subxt::utils::H256,
-				}
-				impl ::subxt::blocks::StaticExtrinsic for SlashTip {
-					const PALLET: &'static str = "Tips";
-					const CALL: &'static str = "slash_tip";
-				}
-			}
-			pub struct TransactionApi;
-			impl TransactionApi {
-				#[doc = "See [`Pallet::report_awesome`]."]
-				pub fn report_awesome(
-					&self,
-					reason: ::std::vec::Vec<::core::primitive::u8>,
-					who: ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-				) -> ::subxt::tx::Payload<types::ReportAwesome> {
-					::subxt::tx::Payload::new_static(
-						"Tips",
-						"report_awesome",
-						types::ReportAwesome { reason, who },
-						[
-							162u8, 130u8, 216u8, 166u8, 87u8, 77u8, 47u8, 168u8, 146u8, 90u8, 39u8,
-							41u8, 160u8, 144u8, 176u8, 42u8, 68u8, 112u8, 240u8, 144u8, 119u8,
-							24u8, 69u8, 101u8, 240u8, 212u8, 170u8, 174u8, 155u8, 234u8, 184u8,
-							232u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::retract_tip`]."]
-				pub fn retract_tip(
-					&self,
-					hash: ::subxt::utils::H256,
-				) -> ::subxt::tx::Payload<types::RetractTip> {
-					::subxt::tx::Payload::new_static(
-						"Tips",
-						"retract_tip",
-						types::RetractTip { hash },
-						[
-							127u8, 232u8, 112u8, 136u8, 48u8, 227u8, 202u8, 51u8, 78u8, 191u8,
-							248u8, 44u8, 159u8, 76u8, 101u8, 107u8, 212u8, 55u8, 85u8, 250u8,
-							222u8, 181u8, 58u8, 130u8, 53u8, 103u8, 190u8, 31u8, 113u8, 195u8,
-							186u8, 44u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::tip_new`]."]
-				pub fn tip_new(
-					&self,
-					reason: ::std::vec::Vec<::core::primitive::u8>,
-					who: ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>,
-					tip_value: ::core::primitive::u128,
-				) -> ::subxt::tx::Payload<types::TipNew> {
-					::subxt::tx::Payload::new_static(
-						"Tips",
-						"tip_new",
-						types::TipNew {
-							reason,
-							who,
-							tip_value,
-						},
-						[
-							236u8, 82u8, 15u8, 103u8, 143u8, 84u8, 161u8, 90u8, 120u8, 185u8,
-							251u8, 212u8, 168u8, 2u8, 227u8, 63u8, 222u8, 171u8, 187u8, 137u8,
-							177u8, 0u8, 119u8, 97u8, 72u8, 244u8, 31u8, 252u8, 29u8, 19u8, 225u8,
-							5u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::tip`]."]
-				pub fn tip(
-					&self,
-					hash: ::subxt::utils::H256,
-					tip_value: ::core::primitive::u128,
-				) -> ::subxt::tx::Payload<types::Tip> {
-					::subxt::tx::Payload::new_static(
-						"Tips",
-						"tip",
-						types::Tip { hash, tip_value },
-						[
-							241u8, 5u8, 164u8, 248u8, 140u8, 60u8, 29u8, 9u8, 63u8, 208u8, 249u8,
-							210u8, 221u8, 173u8, 70u8, 240u8, 50u8, 131u8, 80u8, 236u8, 131u8,
-							101u8, 191u8, 49u8, 94u8, 216u8, 74u8, 234u8, 184u8, 167u8, 159u8,
-							176u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::close_tip`]."]
-				pub fn close_tip(
-					&self,
-					hash: ::subxt::utils::H256,
-				) -> ::subxt::tx::Payload<types::CloseTip> {
-					::subxt::tx::Payload::new_static(
-						"Tips",
-						"close_tip",
-						types::CloseTip { hash },
-						[
-							85u8, 213u8, 248u8, 146u8, 90u8, 110u8, 217u8, 109u8, 78u8, 6u8, 104u8,
-							71u8, 184u8, 209u8, 148u8, 81u8, 145u8, 71u8, 151u8, 174u8, 25u8,
-							238u8, 48u8, 0u8, 51u8, 102u8, 155u8, 143u8, 130u8, 157u8, 100u8,
-							246u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::slash_tip`]."]
-				pub fn slash_tip(
-					&self,
-					hash: ::subxt::utils::H256,
-				) -> ::subxt::tx::Payload<types::SlashTip> {
-					::subxt::tx::Payload::new_static(
-						"Tips",
-						"slash_tip",
-						types::SlashTip { hash },
-						[
-							127u8, 21u8, 252u8, 189u8, 121u8, 103u8, 54u8, 155u8, 71u8, 81u8,
-							109u8, 0u8, 159u8, 151u8, 62u8, 81u8, 104u8, 31u8, 2u8, 83u8, 248u8,
-							141u8, 252u8, 162u8, 173u8, 189u8, 252u8, 249u8, 54u8, 142u8, 108u8,
-							19u8,
-						],
-					)
-				}
-			}
-		}
-		#[doc = "The `Event` enum of this pallet"]
-		pub type Event = runtime_types::pallet_tips::pallet::Event;
-		pub mod events {
-			use super::runtime_types;
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A new tip suggestion has been opened."]
-			pub struct NewTip {
-				pub tip_hash: ::subxt::utils::H256,
-			}
-			impl ::subxt::events::StaticEvent for NewTip {
-				const PALLET: &'static str = "Tips";
-				const EVENT: &'static str = "NewTip";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A tip suggestion has reached threshold and is closing."]
-			pub struct TipClosing {
-				pub tip_hash: ::subxt::utils::H256,
-			}
-			impl ::subxt::events::StaticEvent for TipClosing {
-				const PALLET: &'static str = "Tips";
-				const EVENT: &'static str = "TipClosing";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A tip suggestion has been closed."]
-			pub struct TipClosed {
-				pub tip_hash: ::subxt::utils::H256,
-				pub who: ::subxt::utils::AccountId32,
-				pub payout: ::core::primitive::u128,
-			}
-			impl ::subxt::events::StaticEvent for TipClosed {
-				const PALLET: &'static str = "Tips";
-				const EVENT: &'static str = "TipClosed";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A tip suggestion has been retracted."]
-			pub struct TipRetracted {
-				pub tip_hash: ::subxt::utils::H256,
-			}
-			impl ::subxt::events::StaticEvent for TipRetracted {
-				const PALLET: &'static str = "Tips";
-				const EVENT: &'static str = "TipRetracted";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A tip suggestion has been slashed."]
-			pub struct TipSlashed {
-				pub tip_hash: ::subxt::utils::H256,
-				pub finder: ::subxt::utils::AccountId32,
-				pub deposit: ::core::primitive::u128,
-			}
-			impl ::subxt::events::StaticEvent for TipSlashed {
-				const PALLET: &'static str = "Tips";
-				const EVENT: &'static str = "TipSlashed";
-			}
-		}
-		pub mod storage {
-			use super::runtime_types;
-			pub struct StorageApi;
-			impl StorageApi {
-				#[doc = " TipsMap that are not yet completed. Keyed by the hash of `(reason, who)` from the value."]
-				#[doc = " This has the insecure enumerable hash function since the key itself is already"]
-				#[doc = " guaranteed to be a secure hash."]
-				pub fn tips(
-					&self,
-					_0: impl ::std::borrow::Borrow<::subxt::utils::H256>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_tips::OpenTip<
-						::subxt::utils::AccountId32,
-						::core::primitive::u128,
-						::core::primitive::u32,
-						::subxt::utils::H256,
-					>,
-					::subxt::storage::address::Yes,
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Tips",
-						"Tips",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							173u8, 172u8, 116u8, 247u8, 202u8, 228u8, 47u8, 222u8, 67u8, 146u8,
-							225u8, 0u8, 74u8, 189u8, 226u8, 206u8, 245u8, 209u8, 26u8, 49u8, 189u8,
-							73u8, 20u8, 117u8, 30u8, 41u8, 129u8, 170u8, 5u8, 226u8, 92u8, 140u8,
-						],
-					)
-				}
-				#[doc = " TipsMap that are not yet completed. Keyed by the hash of `(reason, who)` from the value."]
-				#[doc = " This has the insecure enumerable hash function since the key itself is already"]
-				#[doc = " guaranteed to be a secure hash."]
-				pub fn tips_root(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					runtime_types::pallet_tips::OpenTip<
-						::subxt::utils::AccountId32,
-						::core::primitive::u128,
-						::core::primitive::u32,
-						::subxt::utils::H256,
-					>,
-					(),
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Tips",
-						"Tips",
-						Vec::new(),
-						[
-							173u8, 172u8, 116u8, 247u8, 202u8, 228u8, 47u8, 222u8, 67u8, 146u8,
-							225u8, 0u8, 74u8, 189u8, 226u8, 206u8, 245u8, 209u8, 26u8, 49u8, 189u8,
-							73u8, 20u8, 117u8, 30u8, 41u8, 129u8, 170u8, 5u8, 226u8, 92u8, 140u8,
-						],
-					)
-				}
-				#[doc = " Simple preimage lookup from the reason's hash to the original data. Again, has an"]
-				#[doc = " insecure enumerable hash since the key is guaranteed to be the result of a secure hash."]
-				pub fn reasons(
-					&self,
-					_0: impl ::std::borrow::Borrow<::subxt::utils::H256>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::std::vec::Vec<::core::primitive::u8>,
-					::subxt::storage::address::Yes,
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Tips",
-						"Reasons",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							212u8, 224u8, 153u8, 133u8, 234u8, 213u8, 134u8, 255u8, 59u8, 61u8,
-							200u8, 47u8, 186u8, 177u8, 35u8, 108u8, 85u8, 144u8, 185u8, 69u8,
-							159u8, 38u8, 83u8, 166u8, 200u8, 20u8, 220u8, 234u8, 59u8, 61u8, 223u8,
-							167u8,
-						],
-					)
-				}
-				#[doc = " Simple preimage lookup from the reason's hash to the original data. Again, has an"]
-				#[doc = " insecure enumerable hash since the key is guaranteed to be the result of a secure hash."]
-				pub fn reasons_root(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					::std::vec::Vec<::core::primitive::u8>,
-					(),
-					(),
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Tips",
-						"Reasons",
-						Vec::new(),
-						[
-							212u8, 224u8, 153u8, 133u8, 234u8, 213u8, 134u8, 255u8, 59u8, 61u8,
-							200u8, 47u8, 186u8, 177u8, 35u8, 108u8, 85u8, 144u8, 185u8, 69u8,
-							159u8, 38u8, 83u8, 166u8, 200u8, 20u8, 220u8, 234u8, 59u8, 61u8, 223u8,
-							167u8,
-						],
-					)
-				}
-			}
-		}
-		pub mod constants {
-			use super::runtime_types;
-			pub struct ConstantsApi;
-			impl ConstantsApi {
-				#[doc = " Maximum acceptable reason length."]
-				#[doc = ""]
-				#[doc = " Benchmarks depend on this value, be sure to update weights file when changing this value"]
-				pub fn maximum_reason_length(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Tips",
-						"MaximumReasonLength",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " The amount held on deposit per byte within the tip report reason or bounty description."]
-				pub fn data_deposit_per_byte(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static(
-						"Tips",
-						"DataDepositPerByte",
-						[
-							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
-							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-						],
-					)
-				}
-				#[doc = " The period for which a tip remains open after is has achieved threshold tippers."]
-				pub fn tip_countdown(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"Tips",
-						"TipCountdown",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " The percent of the final tip which goes to the original reporter of the tip."]
-				pub fn tip_finders_fee(
-					&self,
-				) -> ::subxt::constants::Address<runtime_types::sp_arithmetic::per_things::Percent>
-				{
-					::subxt::constants::Address::new_static(
-						"Tips",
-						"TipFindersFee",
-						[
-							40u8, 171u8, 69u8, 196u8, 34u8, 184u8, 50u8, 128u8, 139u8, 192u8, 63u8,
-							231u8, 249u8, 200u8, 252u8, 73u8, 244u8, 170u8, 51u8, 177u8, 106u8,
-							47u8, 114u8, 234u8, 84u8, 104u8, 62u8, 118u8, 227u8, 50u8, 225u8,
-							122u8,
-						],
-					)
-				}
-				#[doc = " The non-zero amount held on deposit for placing a tip report."]
-				pub fn tip_report_deposit_base(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static(
-						"Tips",
-						"TipReportDepositBase",
-						[
-							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
-							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-						],
-					)
-				}
-				#[doc = " The maximum amount for a single tip."]
-				pub fn max_tip_amount(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static(
-						"Tips",
-						"MaxTipAmount",
-						[
-							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
-							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
 						],
 					)
 				}
@@ -16848,10 +15258,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							53u8, 100u8, 156u8, 253u8, 61u8, 158u8, 236u8, 223u8, 75u8, 180u8,
-							46u8, 239u8, 229u8, 7u8, 218u8, 222u8, 194u8, 255u8, 167u8, 4u8, 159u8,
-							166u8, 201u8, 27u8, 199u8, 29u8, 173u8, 236u8, 161u8, 145u8, 114u8,
-							77u8,
+							16u8, 240u8, 100u8, 144u8, 61u8, 183u8, 120u8, 146u8, 210u8, 226u8,
+							50u8, 227u8, 65u8, 85u8, 195u8, 118u8, 65u8, 243u8, 169u8, 33u8, 157u8,
+							46u8, 54u8, 168u8, 129u8, 253u8, 143u8, 96u8, 197u8, 205u8, 247u8,
+							224u8,
 						],
 					)
 				}
@@ -16877,9 +15287,9 @@ pub mod api {
 							max_weight,
 						},
 						[
-							105u8, 99u8, 53u8, 82u8, 245u8, 129u8, 38u8, 218u8, 170u8, 129u8, 70u8,
-							190u8, 167u8, 67u8, 133u8, 69u8, 127u8, 236u8, 132u8, 65u8, 196u8,
-							232u8, 127u8, 225u8, 134u8, 208u8, 93u8, 106u8, 39u8, 67u8, 1u8, 51u8,
+							154u8, 197u8, 70u8, 116u8, 27u8, 145u8, 242u8, 17u8, 168u8, 238u8,
+							39u8, 73u8, 24u8, 106u8, 85u8, 171u8, 103u8, 155u8, 48u8, 207u8, 235u8,
+							207u8, 34u8, 134u8, 203u8, 85u8, 229u8, 5u8, 230u8, 179u8, 24u8, 40u8,
 						],
 					)
 				}
@@ -21680,10 +20090,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							231u8, 111u8, 119u8, 246u8, 98u8, 36u8, 26u8, 111u8, 189u8, 151u8,
-							72u8, 167u8, 226u8, 21u8, 75u8, 165u8, 95u8, 244u8, 208u8, 72u8, 2u8,
-							103u8, 63u8, 153u8, 180u8, 167u8, 147u8, 24u8, 123u8, 114u8, 141u8,
-							246u8,
+							226u8, 228u8, 181u8, 21u8, 18u8, 2u8, 13u8, 19u8, 141u8, 1u8, 27u8,
+							56u8, 44u8, 214u8, 194u8, 250u8, 81u8, 229u8, 86u8, 78u8, 87u8, 35u8,
+							218u8, 149u8, 31u8, 224u8, 220u8, 82u8, 63u8, 155u8, 38u8, 254u8,
 						],
 					)
 				}
@@ -23401,9 +21810,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							178u8, 5u8, 28u8, 11u8, 101u8, 143u8, 200u8, 10u8, 209u8, 159u8, 125u8,
-							40u8, 107u8, 238u8, 12u8, 43u8, 160u8, 163u8, 149u8, 136u8, 44u8, 80u8,
-							108u8, 171u8, 74u8, 134u8, 2u8, 18u8, 53u8, 208u8, 85u8, 97u8,
+							7u8, 43u8, 251u8, 70u8, 138u8, 156u8, 89u8, 208u8, 23u8, 54u8, 148u8,
+							87u8, 125u8, 243u8, 114u8, 217u8, 59u8, 28u8, 135u8, 61u8, 254u8, 52u8,
+							89u8, 123u8, 70u8, 141u8, 34u8, 170u8, 51u8, 93u8, 197u8, 176u8,
 						],
 					)
 				}
@@ -23615,9 +22024,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							69u8, 203u8, 93u8, 107u8, 220u8, 227u8, 37u8, 164u8, 59u8, 42u8, 209u8,
-							52u8, 175u8, 74u8, 63u8, 191u8, 250u8, 15u8, 172u8, 151u8, 172u8, 17u8,
-							32u8, 90u8, 62u8, 132u8, 2u8, 206u8, 121u8, 203u8, 222u8, 41u8,
+							121u8, 179u8, 36u8, 1u8, 134u8, 201u8, 201u8, 98u8, 123u8, 30u8, 188u8,
+							137u8, 252u8, 210u8, 162u8, 3u8, 163u8, 124u8, 103u8, 29u8, 47u8, 1u8,
+							169u8, 91u8, 83u8, 22u8, 123u8, 227u8, 97u8, 226u8, 161u8, 194u8,
 						],
 					)
 				}
@@ -25049,10 +23458,6 @@ pub mod api {
 				ImOnline(runtime_types::pallet_im_online::pallet::Call),
 				#[codec(index = 24)]
 				Scheduler(runtime_types::pallet_scheduler::pallet::Call),
-				#[codec(index = 25)]
-				Bounties(runtime_types::pallet_bounties::pallet::Call),
-				#[codec(index = 26)]
-				Tips(runtime_types::pallet_tips::pallet::Call),
 				#[codec(index = 29)]
 				DataAvailability(runtime_types::da_control::pallet::Call),
 				#[codec(index = 33)]
@@ -25122,10 +23527,6 @@ pub mod api {
 				Offences(runtime_types::pallet_offences::pallet::Event),
 				#[codec(index = 24)]
 				Scheduler(runtime_types::pallet_scheduler::pallet::Event),
-				#[codec(index = 25)]
-				Bounties(runtime_types::pallet_bounties::pallet::Event),
-				#[codec(index = 26)]
-				Tips(runtime_types::pallet_tips::pallet::Event),
 				#[codec(index = 29)]
 				DataAvailability(runtime_types::da_control::pallet::Event),
 				#[codec(index = 33)]
@@ -26601,261 +25002,6 @@ pub mod api {
 					pub id: _0,
 					pub amount: _1,
 				}
-			}
-		}
-		pub mod pallet_bounties {
-			use super::runtime_types;
-			pub mod pallet {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-				pub enum Call {
-					#[codec(index = 0)]
-					#[doc = "See [`Pallet::propose_bounty`]."]
-					propose_bounty {
-						#[codec(compact)]
-						value: ::core::primitive::u128,
-						description: ::std::vec::Vec<::core::primitive::u8>,
-					},
-					#[codec(index = 1)]
-					#[doc = "See [`Pallet::approve_bounty`]."]
-					approve_bounty {
-						#[codec(compact)]
-						bounty_id: ::core::primitive::u32,
-					},
-					#[codec(index = 2)]
-					#[doc = "See [`Pallet::propose_curator`]."]
-					propose_curator {
-						#[codec(compact)]
-						bounty_id: ::core::primitive::u32,
-						curator: ::subxt::utils::MultiAddress<
-							::subxt::utils::AccountId32,
-							::core::primitive::u32,
-						>,
-						#[codec(compact)]
-						fee: ::core::primitive::u128,
-					},
-					#[codec(index = 3)]
-					#[doc = "See [`Pallet::unassign_curator`]."]
-					unassign_curator {
-						#[codec(compact)]
-						bounty_id: ::core::primitive::u32,
-					},
-					#[codec(index = 4)]
-					#[doc = "See [`Pallet::accept_curator`]."]
-					accept_curator {
-						#[codec(compact)]
-						bounty_id: ::core::primitive::u32,
-					},
-					#[codec(index = 5)]
-					#[doc = "See [`Pallet::award_bounty`]."]
-					award_bounty {
-						#[codec(compact)]
-						bounty_id: ::core::primitive::u32,
-						beneficiary: ::subxt::utils::MultiAddress<
-							::subxt::utils::AccountId32,
-							::core::primitive::u32,
-						>,
-					},
-					#[codec(index = 6)]
-					#[doc = "See [`Pallet::claim_bounty`]."]
-					claim_bounty {
-						#[codec(compact)]
-						bounty_id: ::core::primitive::u32,
-					},
-					#[codec(index = 7)]
-					#[doc = "See [`Pallet::close_bounty`]."]
-					close_bounty {
-						#[codec(compact)]
-						bounty_id: ::core::primitive::u32,
-					},
-					#[codec(index = 8)]
-					#[doc = "See [`Pallet::extend_bounty_expiry`]."]
-					extend_bounty_expiry {
-						#[codec(compact)]
-						bounty_id: ::core::primitive::u32,
-						remark: ::std::vec::Vec<::core::primitive::u8>,
-					},
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "The `Error` enum of this pallet."]
-				pub enum Error {
-					#[codec(index = 0)]
-					#[doc = "Proposer's balance is too low."]
-					InsufficientProposersBalance,
-					#[codec(index = 1)]
-					#[doc = "No proposal or bounty at that index."]
-					InvalidIndex,
-					#[codec(index = 2)]
-					#[doc = "The reason given is just too big."]
-					ReasonTooBig,
-					#[codec(index = 3)]
-					#[doc = "The bounty status is unexpected."]
-					UnexpectedStatus,
-					#[codec(index = 4)]
-					#[doc = "Require bounty curator."]
-					RequireCurator,
-					#[codec(index = 5)]
-					#[doc = "Invalid bounty value."]
-					InvalidValue,
-					#[codec(index = 6)]
-					#[doc = "Invalid bounty fee."]
-					InvalidFee,
-					#[codec(index = 7)]
-					#[doc = "A bounty payout is pending."]
-					#[doc = "To cancel the bounty, you must unassign and slash the curator."]
-					PendingPayout,
-					#[codec(index = 8)]
-					#[doc = "The bounties cannot be claimed/closed because it's still in the countdown period."]
-					Premature,
-					#[codec(index = 9)]
-					#[doc = "The bounty cannot be closed because it has active child bounties."]
-					HasActiveChildBounty,
-					#[codec(index = 10)]
-					#[doc = "Too many approvals are already queued."]
-					TooManyQueued,
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "The `Event` enum of this pallet"]
-				pub enum Event {
-					#[codec(index = 0)]
-					#[doc = "New bounty proposal."]
-					BountyProposed { index: ::core::primitive::u32 },
-					#[codec(index = 1)]
-					#[doc = "A bounty proposal was rejected; funds were slashed."]
-					BountyRejected {
-						index: ::core::primitive::u32,
-						bond: ::core::primitive::u128,
-					},
-					#[codec(index = 2)]
-					#[doc = "A bounty proposal is funded and became active."]
-					BountyBecameActive { index: ::core::primitive::u32 },
-					#[codec(index = 3)]
-					#[doc = "A bounty is awarded to a beneficiary."]
-					BountyAwarded {
-						index: ::core::primitive::u32,
-						beneficiary: ::subxt::utils::AccountId32,
-					},
-					#[codec(index = 4)]
-					#[doc = "A bounty is claimed by beneficiary."]
-					BountyClaimed {
-						index: ::core::primitive::u32,
-						payout: ::core::primitive::u128,
-						beneficiary: ::subxt::utils::AccountId32,
-					},
-					#[codec(index = 5)]
-					#[doc = "A bounty is cancelled."]
-					BountyCanceled { index: ::core::primitive::u32 },
-					#[codec(index = 6)]
-					#[doc = "A bounty expiry is extended."]
-					BountyExtended { index: ::core::primitive::u32 },
-					#[codec(index = 7)]
-					#[doc = "A bounty is approved."]
-					BountyApproved { index: ::core::primitive::u32 },
-					#[codec(index = 8)]
-					#[doc = "A bounty curator is proposed."]
-					CuratorProposed {
-						bounty_id: ::core::primitive::u32,
-						curator: ::subxt::utils::AccountId32,
-					},
-					#[codec(index = 9)]
-					#[doc = "A bounty curator is unassigned."]
-					CuratorUnassigned { bounty_id: ::core::primitive::u32 },
-					#[codec(index = 10)]
-					#[doc = "A bounty curator is accepted."]
-					CuratorAccepted {
-						bounty_id: ::core::primitive::u32,
-						curator: ::subxt::utils::AccountId32,
-					},
-				}
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			pub struct Bounty<_0, _1, _2> {
-				pub proposer: _0,
-				pub value: _1,
-				pub fee: _1,
-				pub curator_deposit: _1,
-				pub bond: _1,
-				pub status: runtime_types::pallet_bounties::BountyStatus<_0, _2>,
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			pub enum BountyStatus<_0, _1> {
-				#[codec(index = 0)]
-				Proposed,
-				#[codec(index = 1)]
-				Approved,
-				#[codec(index = 2)]
-				Funded,
-				#[codec(index = 3)]
-				CuratorProposed { curator: _0 },
-				#[codec(index = 4)]
-				Active { curator: _0, update_due: _1 },
-				#[codec(index = 5)]
-				PendingPayout {
-					curator: _0,
-					beneficiary: _0,
-					unlock_at: _1,
-				},
 			}
 		}
 		pub mod pallet_collective {
@@ -31129,162 +29275,6 @@ pub mod api {
 						now: ::core::primitive::u64,
 					},
 				}
-			}
-		}
-		pub mod pallet_tips {
-			use super::runtime_types;
-			pub mod pallet {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-				pub enum Call {
-					#[codec(index = 0)]
-					#[doc = "See [`Pallet::report_awesome`]."]
-					report_awesome {
-						reason: ::std::vec::Vec<::core::primitive::u8>,
-						who: ::subxt::utils::MultiAddress<
-							::subxt::utils::AccountId32,
-							::core::primitive::u32,
-						>,
-					},
-					#[codec(index = 1)]
-					#[doc = "See [`Pallet::retract_tip`]."]
-					retract_tip { hash: ::subxt::utils::H256 },
-					#[codec(index = 2)]
-					#[doc = "See [`Pallet::tip_new`]."]
-					tip_new {
-						reason: ::std::vec::Vec<::core::primitive::u8>,
-						who: ::subxt::utils::MultiAddress<
-							::subxt::utils::AccountId32,
-							::core::primitive::u32,
-						>,
-						#[codec(compact)]
-						tip_value: ::core::primitive::u128,
-					},
-					#[codec(index = 3)]
-					#[doc = "See [`Pallet::tip`]."]
-					tip {
-						hash: ::subxt::utils::H256,
-						#[codec(compact)]
-						tip_value: ::core::primitive::u128,
-					},
-					#[codec(index = 4)]
-					#[doc = "See [`Pallet::close_tip`]."]
-					close_tip { hash: ::subxt::utils::H256 },
-					#[codec(index = 5)]
-					#[doc = "See [`Pallet::slash_tip`]."]
-					slash_tip { hash: ::subxt::utils::H256 },
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "The `Error` enum of this pallet."]
-				pub enum Error {
-					#[codec(index = 0)]
-					#[doc = "The reason given is just too big."]
-					ReasonTooBig,
-					#[codec(index = 1)]
-					#[doc = "The tip was already found/started."]
-					AlreadyKnown,
-					#[codec(index = 2)]
-					#[doc = "The tip hash is unknown."]
-					UnknownTip,
-					#[codec(index = 3)]
-					#[doc = "The tip given was too generous."]
-					MaxTipAmountExceeded,
-					#[codec(index = 4)]
-					#[doc = "The account attempting to retract the tip is not the finder of the tip."]
-					NotFinder,
-					#[codec(index = 5)]
-					#[doc = "The tip cannot be claimed/closed because there are not enough tippers yet."]
-					StillOpen,
-					#[codec(index = 6)]
-					#[doc = "The tip cannot be claimed/closed because it's still in the countdown period."]
-					Premature,
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "The `Event` enum of this pallet"]
-				pub enum Event {
-					#[codec(index = 0)]
-					#[doc = "A new tip suggestion has been opened."]
-					NewTip { tip_hash: ::subxt::utils::H256 },
-					#[codec(index = 1)]
-					#[doc = "A tip suggestion has reached threshold and is closing."]
-					TipClosing { tip_hash: ::subxt::utils::H256 },
-					#[codec(index = 2)]
-					#[doc = "A tip suggestion has been closed."]
-					TipClosed {
-						tip_hash: ::subxt::utils::H256,
-						who: ::subxt::utils::AccountId32,
-						payout: ::core::primitive::u128,
-					},
-					#[codec(index = 3)]
-					#[doc = "A tip suggestion has been retracted."]
-					TipRetracted { tip_hash: ::subxt::utils::H256 },
-					#[codec(index = 4)]
-					#[doc = "A tip suggestion has been slashed."]
-					TipSlashed {
-						tip_hash: ::subxt::utils::H256,
-						finder: ::subxt::utils::AccountId32,
-						deposit: ::core::primitive::u128,
-					},
-				}
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			pub struct OpenTip<_0, _1, _2, _3> {
-				pub reason: _3,
-				pub who: _0,
-				pub finder: _0,
-				pub deposit: _1,
-				pub closes: ::core::option::Option<_2>,
-				pub tips: ::std::vec::Vec<(_0, _1)>,
-				pub finders_fee: ::core::primitive::bool,
 			}
 		}
 		pub mod pallet_transaction_payment {
