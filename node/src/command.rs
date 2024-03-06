@@ -59,7 +59,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn copyright_start_year() -> i32 {
-		// Notice 
+		// Notice
 		2017
 	}
 
