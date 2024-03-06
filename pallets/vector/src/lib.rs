@@ -333,7 +333,7 @@ pub mod pallet {
 		/// proof  Function proof.
 		/// slot  Function slot to update.
 		#[pallet::call_index(0)]
-		#[pallet::weight(weight_helper::fulfill_call::<T>(*function_id))]
+		#[pallet::weight(weight_helper::fulfill_call::< T > (* function_id))]
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
 			function_id: H256,
@@ -888,8 +888,9 @@ pub mod pallet {
 			input: ethabi::Bytes,
 			verified_call: &VerifiedStep,
 		) -> Result<VerifiedStepOutput, DispatchError> {
+			// input attested slot + poseidon
 			let input_hash = sha2_256(input.as_slice());
-
+			// verified_input_hash
 			if verified_call.verified_function_id == function_id
 				&& verified_call.verified_input_hash == H256(input_hash)
 			{
@@ -905,8 +906,9 @@ pub mod pallet {
 			input: ethabi::Bytes,
 			verified_call: &VerifiedRotate,
 		) -> Result<U256, DispatchError> {
+			// input from headers (finalized_header_root)
 			let input_hash = sha2_256(input.as_slice());
-
+			// verified_input_hash from input sha256(input)
 			if verified_call.verified_function_id == function_id
 				&& verified_call.verified_input_hash == H256(input_hash)
 			{
@@ -932,7 +934,6 @@ pub mod pallet {
 }
 
 pub mod weight_helper {
-
 	use super::*;
 
 	/// Weight for `dataAvailability::submit_data`.
