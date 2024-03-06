@@ -2,7 +2,7 @@
 name = "avail-node"
 version = "0.1.0"
 description = "Avail Node"
-authors = ["Anonymous"]
+authors = ["Avail Team"]
 homepage = "https://www.availproject.org/"
 edition = "2021"
 license = "GNU GPLv3"

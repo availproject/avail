@@ -55,10 +55,11 @@ impl SubstrateCli for Cli {
 	}
 
 	fn support_url() -> String {
-		"support.anonymous.an".into()
+		"https://github.com/availproject/avail/issues/new/choose".into()
 	}
 
 	fn copyright_start_year() -> i32 {
+		// Notice 
 		2017
 	}
 
