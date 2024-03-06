@@ -678,10 +678,10 @@ mod tests {
 
 			DealWithFees::on_unbalanceds(vec![fee, tip].into_iter());
 
-			// Author gets 100% of tip and 20% of fee = 22
-			assert_eq!(Balances::free_balance(TEST_ACCOUNT), 22);
-			// Treasury gets 80% of fee = 8
-			assert_eq!(Balances::free_balance(Treasury::account_id()), 8);
+			// Author gets 100% of tip and 80% of fee = 28
+			assert_eq!(Balances::free_balance(TEST_ACCOUNT), 28);
+			// Treasury gets 20% of fee = 2
+			assert_eq!(Balances::free_balance(Treasury::account_id()), 2);
 		});
 	}
 
