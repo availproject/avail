@@ -73,6 +73,7 @@ impl PublicSignals {
 	}
 }
 
+/// Configuration struct that holds basic pallet configuration.
 #[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default)]
@@ -136,10 +137,12 @@ pub struct VerifiedStepOutput {
 	pub participation: u16,
 }
 
+/// parse_rotate_output converts the output of the successful rotate verification call
 pub fn parse_rotate_output(output: Vec<u8>) -> U256 {
 	U256::from_big_endian(output.as_slice())
 }
 
+/// parse_step_output parses the output of the successful step verification call
 pub fn parse_step_output(output: Vec<u8>) -> VerifiedStepOutput {
 	let mut finalized_header_root: [u8; 32] = [0; 32];
 	let mut execution_state_root: [u8; 32] = [0; 32];

@@ -64,12 +64,9 @@ pub mod pallet {
 		NotEnoughParticipants,
 		ConfigurationNotSet,
 		SlotBehindHead,
-		TooLongVerificationKey,
 		VerificationKeyIsNotSet,
 		MalformedVerificationKey,
 		FunctionIdNotKnown,
-		NotSupportedCurve,
-		NotSupportedProtocol,
 		StepVerificationError,
 		RotateVerificationError,
 		HeaderRootNotSet,
@@ -100,46 +97,46 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// emit event once the head is updated.
+		/// Emit event once the head is updated.
 		HeadUpdated {
 			slot: u64,
 			finalization_root: H256,
 			execution_state_root: H256,
 		},
-		/// emit event once the sync committee updates.
+		/// Emit event once the sync committee updates.
 		SyncCommitteeUpdated { period: u64, root: U256 },
-		/// emit when new updater is set
+		/// Emit when new updater is set.
 		BroadcasterUpdated { old: H256, new: H256, domain: u32 },
-		/// emit when message gets executed.
+		/// Emit when message gets executed.
 		MessageExecuted {
 			from: H256,
 			to: H256,
 			message_id: u64,
 			message_root: H256,
 		},
-		/// emit if source chain gets frozen.
+		/// Emit if source chain gets frozen.
 		SourceChainFrozen { source_chain_id: u32, frozen: bool },
-		/// emit when message is submitted.
+		/// Emit when message is submitted.
 		MessageSubmitted {
 			from: T::AccountId,
 			to: H256,
 			message_type: MessageType,
 			destination_domain: u32,
 		},
-		/// Whitelisted domains were updated.
+		/// Emit whitelisted domains that are updated.
 		WhitelistedDomainsUpdated,
-		/// Configuration was updated.
+		/// Emit when configuration is updated.
 		ConfigurationUpdated {
 			slots_per_period: u64,
 			finality_threshold: u16,
 		},
-		/// Function Ids were updated
+		/// Emit function Ids that are updated.
 		FunctionIdsUpdated { value: Option<(H256, H256)> },
-		/// Step verification key was updated
+		/// Emit updated step verification key.
 		StepVerificationKeyUpdated {
 			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
 		},
-		/// Rotate verification key was updated
+		/// Emit updated rotate verification key.
 		RotateVerificationKeyUpdated {
 			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
 		},
@@ -197,34 +194,34 @@ pub mod pallet {
 	#[pallet::getter(fn function_ids)]
 	pub type FunctionIds<T: Config> = StorageValue<_, Option<(H256, H256)>, ValueQuery>;
 
-	/// Step verification key storage
+	/// Step verification key storage.
 	#[pallet::storage]
 	#[pallet::getter(fn step_verification_key)]
 	pub type StepVerificationKey<T: Config> =
 		StorageValue<_, Option<BoundedVec<u8, ConstU32<10_000>>>, ValueQuery>;
 
-	/// Rotate verification key storage
+	/// Rotate verification key storage.
 	#[pallet::storage]
 	#[pallet::getter(fn rotate_verification_key)]
 	pub type RotateVerificationKey<T: Config> =
 		StorageValue<_, Option<BoundedVec<u8, ConstU32<10_000>>>, ValueQuery>;
 
-	/// Genesis validator root, used to check initialization
+	/// Genesis validator root, used to check initialization.
 	#[pallet::storage]
 	#[pallet::getter(fn genesis_validator_root)]
 	pub type GenesisValidatorRoot<T: Config> = StorageValue<_, H256, ValueQuery>;
 
-	/// Genesis timestamp, used to check initialization
+	/// Genesis timestamp, used to check initialization.
 	#[pallet::storage]
 	#[pallet::getter(fn genesis_timestamp)]
 	pub type GenesisTimestamp<T: Config> = StorageValue<_, u64, ValueQuery>;
 
-	/// Seconds per slot, used to check initialization
+	/// Seconds per slot, used to check initialization.
 	#[pallet::storage]
 	#[pallet::getter(fn seconds_per_slot)]
 	pub type SecondsPerSlot<T: Config> = StorageValue<_, u64, ValueQuery>;
 
-	/// Source chain id, used to check initialization
+	/// Source chain id, used to check initialization.
 	#[pallet::storage]
 	#[pallet::getter(fn source_chain_id)]
 	pub type SourceChainId<T: Config> = StorageValue<_, u64, ValueQuery>;
@@ -333,7 +330,7 @@ pub mod pallet {
 		/// proof  Function proof.
 		/// slot  Function slot to update.
 		#[pallet::call_index(0)]
-		#[pallet::weight(weight_helper::fulfill_call::<T>(*function_id))]
+		#[pallet::weight(weight_helper::fulfill_call::<T>(* function_id))]
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
 			function_id: H256,
@@ -344,7 +341,6 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			let config = ConfigurationStorage::<T>::get();
-			// compute hashes
 			let input_hash = H256(sha2_256(input.as_slice()));
 			let output_hash = H256(sha2_256(output.as_slice()));
 			let (step_function_id, rotate_function_id) = Self::get_function_ids()?;
@@ -357,6 +353,7 @@ pub mod pallet {
 			// make sure that verification call is valid
 			ensure!(is_success, Error::<T>::VerificationFailed);
 
+			// verification is success and, we can safely parse and validate output
 			if function_id == step_function_id {
 				let vs =
 					VerifiedStep::new(function_id, input_hash, parse_step_output(output.to_vec()));
@@ -503,7 +500,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// send_message sends a message from a origin chain to the destination chain.
+		/// send_message sends a message from an origin chain to the destination chain.
 		//
 		// Test names:
 		//	send_message_fungible_token_works(), send_message_fungible_token_doesnt_accept_data(),
@@ -569,7 +566,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		/// set_poseidon_hash sets poseidon hash of the sync commettee for the particular period.
+		/// set_poseidon_hash sets poseidon hash of the sync committee for the particular period.
 		//
 		// Test names: set_poseidon_hash_works_with_root(), set_poseidon_hash_does_not_work_with_non_root()
 		#[pallet::call_index(4)]
@@ -669,6 +666,11 @@ pub mod pallet {
 			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
+			if let Some(vk) = value.clone() {
+				let _ = Verifier::from_json_u8_slice(vk.as_slice())
+					.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+			}
+
 			StepVerificationKey::<T>::put(value.clone());
 
 			Self::deposit_event(Event::StepVerificationKeyUpdated { value });
@@ -683,6 +685,11 @@ pub mod pallet {
 			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
+			if let Some(vk) = value.clone() {
+				let _ = Verifier::from_json_u8_slice(vk.as_slice())
+					.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+			}
+
 			RotateVerificationKey::<T>::put(value.clone());
 
 			Self::deposit_event(Event::RotateVerificationKeyUpdated { value });
@@ -756,7 +763,7 @@ pub mod pallet {
 		fn rotate_into(
 			finalized_slot: u64,
 			cfg: &Configuration,
-			rotate_store: &VerifiedRotate,
+			verified_rotate_call: &VerifiedRotate,
 			rotate_function_id: H256,
 		) -> Result<u64, DispatchError> {
 			let finalized_header_root = Headers::<T>::get(finalized_slot);
@@ -767,7 +774,7 @@ pub mod pallet {
 
 			let input = ethabi::encode(&[Token::FixedBytes(finalized_header_root.0.to_vec())]);
 			let sync_committee_poseidon: U256 =
-				Self::verified_rotate_call(rotate_function_id, input, rotate_store)?;
+				Self::verified_rotate_call(rotate_function_id, input, verified_rotate_call)?;
 
 			let period = finalized_slot
 				.checked_div(cfg.slots_per_period)
@@ -782,7 +789,7 @@ pub mod pallet {
 		fn step_into(
 			attested_slot: u64,
 			cfg: &Configuration,
-			step_store: &VerifiedStep,
+			verified_step_call: &VerifiedStep,
 			step_function_id: H256,
 		) -> Result<bool, DispatchError> {
 			let period = attested_slot
@@ -793,7 +800,7 @@ pub mod pallet {
 			ensure!(sc_poseidon != U256::zero(), Error::<T>::SyncCommitteeNotSet);
 
 			let input = encode_packed(sc_poseidon, attested_slot);
-			let result = Self::verified_step_call(step_function_id, input, step_store)?;
+			let result = Self::verified_step_call(step_function_id, input, verified_step_call)?;
 			ensure!(
 				result.participation >= cfg.finality_threshold,
 				Error::<T>::NotEnoughParticipants
@@ -893,8 +900,8 @@ pub mod pallet {
 			if verified_call.verified_function_id == function_id
 				&& verified_call.verified_input_hash == H256(input_hash)
 			{
-				let trait_object: VerifiedStepOutput = verified_call.verified_output;
-				Ok(trait_object)
+				let verified_output: VerifiedStepOutput = verified_call.verified_output;
+				Ok(verified_output)
 			} else {
 				Err(Error::<T>::StepVerificationError.into())
 			}
@@ -932,7 +939,6 @@ pub mod pallet {
 }
 
 pub mod weight_helper {
-
 	use super::*;
 
 	/// Weight for `dataAvailability::submit_data`.
