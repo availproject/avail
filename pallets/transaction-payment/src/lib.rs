@@ -320,18 +320,18 @@ where
 		let max_multiplier = X::get();
 		let previous = previous.max(min_multiplier);
 
-		// Considering the padded_length as it consistently serves as a limiting factor compared to block_length and padded_block_length.
+		// Considering the raw_length as it serves as a limiting factor between raw_length and padded_block_length.
 		// Both the Mandatory and Operational classes have a maximum block length set, with no enforced limit on normal transactions.
-		let max_padded_length: u64 = (*DynamicBlockLength::<T>::get()
+		let max_block_length: u64 = (*DynamicBlockLength::<T>::get()
 			.max
 			.get(DispatchClass::Mandatory))
 		.into();
-		let current_block_length = <frame_system::Pallet<T>>::all_padded_extrinsics_len();
+		let current_block_length = <frame_system::Pallet<T>>::all_extrinsics_len();
 
 		let target_block_fullness = S::get();
 		let adjustment_variable = V::get();
 
-		let target_length = (target_block_fullness * max_padded_length) as u128;
+		let target_length = (target_block_fullness * max_block_length) as u128;
 		let block_length = current_block_length as u128;
 
 		log::debug!(target: LOG_TARGET,
@@ -344,7 +344,7 @@ where
 
 		// defensive only, a test case assures that the maximum weight diff can fit in Multiplier
 		// without any saturation.
-		let diff = Multiplier::saturating_from_rational(diff_abs, max_padded_length.max(1));
+		let diff = Multiplier::saturating_from_rational(diff_abs, max_block_length.max(1));
 		let diff_squared = diff.saturating_mul(diff);
 
 		let v_squared_2 = adjustment_variable.saturating_mul(adjustment_variable)
