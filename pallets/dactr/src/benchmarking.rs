@@ -268,27 +268,6 @@ mod benchmarks {
 	}
 
 	#[benchmark(extra)]
-	fn commitment_builder_32(
-		i: Linear<32, { T::MaxBlockRows::get().0 }>,
-	) -> Result<(), BenchmarkError> {
-		let (txs, root, block_length, block_number, seed) = commitment_parameters::<T>(i, 32);
-
-		#[block]
-		{
-			hosted_header_builder::build(
-				txs,
-				root,
-				block_length,
-				block_number,
-				seed,
-				HeaderVersion::V3,
-			);
-		}
-
-		Ok(())
-	}
-
-	#[benchmark(extra)]
 	fn commitment_builder_64(
 		i: Linear<32, { T::MaxBlockRows::get().0 }>,
 	) -> Result<(), BenchmarkError> {
