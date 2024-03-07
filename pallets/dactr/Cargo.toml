@@ -19,6 +19,7 @@ pallet-transaction-payment = { workspace = true, default-features = false }
 
 # Others
 log.workspace = true
+thiserror-no-std.workspace = true
 
 # Substrate
 serde = { workspace = true, optional = true }
@@ -31,6 +32,7 @@ sp-runtime = { workspace = true, default-features = false }
 sp-arithmetic = { workspace = true, default-features = false }
 frame-support = { workspace = true, default-features = false }
 frame-benchmarking = { workspace = true, default-features = false, optional = true }
+sp-runtime-interface = { workspace = true, default-features = false }
 pallet-utility = { workspace = true, default-features = false }
 
 [dev-dependencies]
@@ -41,15 +43,17 @@ test-case.workspace = true
 default = [ "std" ]
 std = [
 	"avail-core/std",
+	"kate/std",
 	"codec/std",
 	"frame-support/std",
 	"frame-system/std",
-	"kate/std",
 	"log/std",
 	"pallet-utility/std",
 	"scale-info/std",
 	"serde",
 	"sp-arithmetic/std",
+	"sp-runtime-interface/std",
+	"pallet-transaction-payment/std",
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
