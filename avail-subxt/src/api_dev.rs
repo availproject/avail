@@ -1060,9 +1060,9 @@ pub mod api {
 			.hash();
 		if runtime_metadata_hash
 			!= [
-				208u8, 46u8, 194u8, 71u8, 123u8, 145u8, 98u8, 53u8, 165u8, 44u8, 11u8, 171u8,
-				192u8, 42u8, 213u8, 247u8, 198u8, 157u8, 131u8, 252u8, 255u8, 134u8, 48u8, 92u8,
-				110u8, 206u8, 81u8, 156u8, 97u8, 255u8, 67u8, 120u8,
+				160u8, 204u8, 237u8, 41u8, 9u8, 116u8, 60u8, 24u8, 242u8, 138u8, 65u8, 61u8, 47u8,
+				206u8, 212u8, 251u8, 182u8, 107u8, 205u8, 151u8, 139u8, 201u8, 33u8, 220u8, 201u8,
+				14u8, 34u8, 181u8, 220u8, 239u8, 124u8, 19u8,
 			] {
 			Err(::subxt::error::MetadataError::IncompatibleCodegen)
 		} else {
@@ -20681,7 +20681,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "emit event once the head is updated."]
+			#[doc = "Emit event once the head is updated."]
 			pub struct HeadUpdated {
 				pub slot: ::core::primitive::u64,
 				pub finalization_root: ::subxt::utils::H256,
@@ -20704,7 +20704,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "emit event once the sync committee updates."]
+			#[doc = "Emit event once the sync committee updates."]
 			pub struct SyncCommitteeUpdated {
 				pub period: ::core::primitive::u64,
 				pub root: runtime_types::primitive_types::U256,
@@ -20726,7 +20726,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "emit when new updater is set"]
+			#[doc = "Emit when new updater is set."]
 			pub struct BroadcasterUpdated {
 				pub old: ::subxt::utils::H256,
 				pub new: ::subxt::utils::H256,
@@ -20749,7 +20749,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "emit when message gets executed."]
+			#[doc = "Emit when message gets executed."]
 			pub struct MessageExecuted {
 				pub from: ::subxt::utils::H256,
 				pub to: ::subxt::utils::H256,
@@ -20773,7 +20773,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "emit if source chain gets frozen."]
+			#[doc = "Emit if source chain gets frozen."]
 			pub struct SourceChainFrozen {
 				pub source_chain_id: ::core::primitive::u32,
 				pub frozen: ::core::primitive::bool,
@@ -20795,7 +20795,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "emit when message is submitted."]
+			#[doc = "Emit when message is submitted."]
 			pub struct MessageSubmitted {
 				pub from: ::subxt::utils::AccountId32,
 				pub to: ::subxt::utils::H256,
@@ -20819,7 +20819,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "Whitelisted domains were updated."]
+			#[doc = "Emit whitelisted domains that are updated."]
 			pub struct WhitelistedDomainsUpdated;
 			impl ::subxt::events::StaticEvent for WhitelistedDomainsUpdated {
 				const PALLET: &'static str = "Vector";
@@ -20838,7 +20838,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "Configuration was updated."]
+			#[doc = "Emit when configuration is updated."]
 			pub struct ConfigurationUpdated {
 				pub slots_per_period: ::core::primitive::u64,
 				pub finality_threshold: ::core::primitive::u16,
@@ -20860,7 +20860,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "Function Ids were updated"]
+			#[doc = "Emit function Ids that are updated."]
 			pub struct FunctionIdsUpdated {
 				pub value: ::core::option::Option<(::subxt::utils::H256, ::subxt::utils::H256)>,
 			}
@@ -20881,7 +20881,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "Step verification key was updated"]
+			#[doc = "Emit updated step verification key."]
 			pub struct StepVerificationKeyUpdated {
 				pub value: ::core::option::Option<
 					runtime_types::bounded_collections::bounded_vec::BoundedVec<
@@ -20906,7 +20906,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "Rotate verification key was updated"]
+			#[doc = "Emit updated rotate verification key."]
 			pub struct RotateVerificationKeyUpdated {
 				pub value: ::core::option::Option<
 					runtime_types::bounded_collections::bounded_vec::BoundedVec<
@@ -21336,7 +21336,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " Step verification key storage"]
+				#[doc = " Step verification key storage."]
 				pub fn step_verification_key(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21361,7 +21361,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " Rotate verification key storage"]
+				#[doc = " Rotate verification key storage."]
 				pub fn rotate_verification_key(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21387,7 +21387,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " Genesis validator root, used to check initialization"]
+				#[doc = " Genesis validator root, used to check initialization."]
 				pub fn genesis_validator_root(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21409,7 +21409,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " Genesis timestamp, used to check initialization"]
+				#[doc = " Genesis timestamp, used to check initialization."]
 				pub fn genesis_timestamp(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21431,7 +21431,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " Seconds per slot, used to check initialization"]
+				#[doc = " Seconds per slot, used to check initialization."]
 				pub fn seconds_per_slot(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -21452,7 +21452,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " Source chain id, used to check initialization"]
+				#[doc = " Source chain id, used to check initialization."]
 				pub fn source_chain_id(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -30003,62 +30003,56 @@ pub mod api {
 					#[codec(index = 3)]
 					SlotBehindHead,
 					#[codec(index = 4)]
-					TooLongVerificationKey,
-					#[codec(index = 5)]
 					VerificationKeyIsNotSet,
-					#[codec(index = 6)]
+					#[codec(index = 5)]
 					MalformedVerificationKey,
-					#[codec(index = 7)]
+					#[codec(index = 6)]
 					FunctionIdNotKnown,
-					#[codec(index = 8)]
-					NotSupportedCurve,
-					#[codec(index = 9)]
-					NotSupportedProtocol,
-					#[codec(index = 10)]
+					#[codec(index = 7)]
 					StepVerificationError,
-					#[codec(index = 11)]
+					#[codec(index = 8)]
 					RotateVerificationError,
-					#[codec(index = 12)]
+					#[codec(index = 9)]
 					HeaderRootNotSet,
-					#[codec(index = 13)]
+					#[codec(index = 10)]
 					VerificationFailed,
-					#[codec(index = 14)]
+					#[codec(index = 11)]
 					HeaderRootAlreadySet,
-					#[codec(index = 15)]
+					#[codec(index = 12)]
 					StateRootAlreadySet,
-					#[codec(index = 16)]
+					#[codec(index = 13)]
 					SyncCommitteeAlreadySet,
-					#[codec(index = 17)]
+					#[codec(index = 14)]
 					SyncCommitteeNotSet,
-					#[codec(index = 18)]
+					#[codec(index = 15)]
 					MessageAlreadyExecuted,
-					#[codec(index = 19)]
+					#[codec(index = 16)]
 					WrongDestinationChain,
-					#[codec(index = 20)]
+					#[codec(index = 17)]
 					UnsupportedOriginChain,
-					#[codec(index = 21)]
+					#[codec(index = 18)]
 					BroadcasterSourceChainNotSet,
-					#[codec(index = 22)]
+					#[codec(index = 19)]
 					SourceChainFrozen,
-					#[codec(index = 23)]
+					#[codec(index = 20)]
 					CannotGetStorageRoot,
-					#[codec(index = 24)]
+					#[codec(index = 21)]
 					CannotGetStorageValue,
-					#[codec(index = 25)]
+					#[codec(index = 22)]
 					InvalidMessageHash,
-					#[codec(index = 26)]
+					#[codec(index = 23)]
 					CannotDecodeData,
-					#[codec(index = 27)]
+					#[codec(index = 24)]
 					CannotDecodeDestinationAccountId,
-					#[codec(index = 28)]
+					#[codec(index = 25)]
 					AssetNotSupported,
-					#[codec(index = 29)]
+					#[codec(index = 26)]
 					#[doc = "Given inputs for the selected MessageType are invalid"]
 					InvalidBridgeInputs,
-					#[codec(index = 30)]
+					#[codec(index = 27)]
 					#[doc = "Domain is not supported"]
 					DomainNotSupported,
-					#[codec(index = 31)]
+					#[codec(index = 28)]
 					#[doc = "Function ids (step / rotate) are not set"]
 					FunctionIdsAreNotSet,
 				}
@@ -30078,27 +30072,27 @@ pub mod api {
 				#[doc = "The `Event` enum of this pallet"]
 				pub enum Event {
 					#[codec(index = 0)]
-					#[doc = "emit event once the head is updated."]
+					#[doc = "Emit event once the head is updated."]
 					HeadUpdated {
 						slot: ::core::primitive::u64,
 						finalization_root: ::subxt::utils::H256,
 						execution_state_root: ::subxt::utils::H256,
 					},
 					#[codec(index = 1)]
-					#[doc = "emit event once the sync committee updates."]
+					#[doc = "Emit event once the sync committee updates."]
 					SyncCommitteeUpdated {
 						period: ::core::primitive::u64,
 						root: runtime_types::primitive_types::U256,
 					},
 					#[codec(index = 2)]
-					#[doc = "emit when new updater is set"]
+					#[doc = "Emit when new updater is set."]
 					BroadcasterUpdated {
 						old: ::subxt::utils::H256,
 						new: ::subxt::utils::H256,
 						domain: ::core::primitive::u32,
 					},
 					#[codec(index = 3)]
-					#[doc = "emit when message gets executed."]
+					#[doc = "Emit when message gets executed."]
 					MessageExecuted {
 						from: ::subxt::utils::H256,
 						to: ::subxt::utils::H256,
@@ -30106,13 +30100,13 @@ pub mod api {
 						message_root: ::subxt::utils::H256,
 					},
 					#[codec(index = 4)]
-					#[doc = "emit if source chain gets frozen."]
+					#[doc = "Emit if source chain gets frozen."]
 					SourceChainFrozen {
 						source_chain_id: ::core::primitive::u32,
 						frozen: ::core::primitive::bool,
 					},
 					#[codec(index = 5)]
-					#[doc = "emit when message is submitted."]
+					#[doc = "Emit when message is submitted."]
 					MessageSubmitted {
 						from: ::subxt::utils::AccountId32,
 						to: ::subxt::utils::H256,
@@ -30120,21 +30114,21 @@ pub mod api {
 						destination_domain: ::core::primitive::u32,
 					},
 					#[codec(index = 6)]
-					#[doc = "Whitelisted domains were updated."]
+					#[doc = "Emit whitelisted domains that are updated."]
 					WhitelistedDomainsUpdated,
 					#[codec(index = 7)]
-					#[doc = "Configuration was updated."]
+					#[doc = "Emit when configuration is updated."]
 					ConfigurationUpdated {
 						slots_per_period: ::core::primitive::u64,
 						finality_threshold: ::core::primitive::u16,
 					},
 					#[codec(index = 8)]
-					#[doc = "Function Ids were updated"]
+					#[doc = "Emit function Ids that are updated."]
 					FunctionIdsUpdated {
 						value: ::core::option::Option<(::subxt::utils::H256, ::subxt::utils::H256)>,
 					},
 					#[codec(index = 9)]
-					#[doc = "Step verification key was updated"]
+					#[doc = "Emit updated step verification key."]
 					StepVerificationKeyUpdated {
 						value: ::core::option::Option<
 							runtime_types::bounded_collections::bounded_vec::BoundedVec<
@@ -30143,7 +30137,7 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 10)]
-					#[doc = "Rotate verification key was updated"]
+					#[doc = "Emit updated rotate verification key."]
 					RotateVerificationKeyUpdated {
 						value: ::core::option::Option<
 							runtime_types::bounded_collections::bounded_vec::BoundedVec<
