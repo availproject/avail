@@ -131,7 +131,7 @@ where
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashingFor<Block>>,
 {
-	use kate_rpc::metrics::KateApiMetricsServer;
+	// use kate_rpc::metrics::KateApiMetricsServer;
 	use kate_rpc::{Kate, KateApiServer};
 	use mmr_rpc::{Mmr, MmrApiServer};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};

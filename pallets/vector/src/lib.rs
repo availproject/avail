@@ -783,7 +783,7 @@ pub mod pallet {
 			.map_err(|_| Error::<T>::CannotDecodeData)?;
 			ensure!(decoded_data.len() == 2, Error::<T>::CannotDecodeData);
 
-			let asset_id_token = decoded_data.get(0).ok_or(Error::<T>::CannotDecodeData)?;
+			let asset_id_token = decoded_data.first().ok_or(Error::<T>::CannotDecodeData)?;
 			let asset_id = asset_id_token
 				.clone()
 				.into_fixed_bytes()

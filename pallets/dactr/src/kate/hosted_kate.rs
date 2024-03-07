@@ -1,24 +1,20 @@
 use super::{AppExtrinsic, AppId, BlockLength, Error, GDataProof, GProof, GRawScalar, GRow, Seed};
+use avail_core::{BlockLengthColumns, BlockLengthRows};
 use frame_system::header_builder::MIN_WIDTH;
+#[cfg(feature = "std")]
 use kate::{
 	com::Cell,
 	couscous::multiproof_params,
-	// config::{COL_EXTENSION, ROW_EXTENSION},
 	gridgen::{AsBytes as _, EvaluationGrid as EGrid},
 	pmp::m1_blst::M1NoPrecomp,
 };
-// use kate_recovery::matrix::Dimensions;
-use avail_core::{BlockLengthColumns, BlockLengthRows};
 
-// use core::num::NonZeroU16;
 use sp_runtime::SaturatedConversion as _;
 use sp_runtime_interface::runtime_interface;
+use sp_std::vec::Vec;
 
 #[cfg(feature = "std")]
-use std::sync::OnceLock;
-
-#[cfg(feature = "std")]
-static SRS: OnceLock<M1NoPrecomp> = OnceLock::new();
+static SRS: std::sync::OnceLock<M1NoPrecomp> = std::sync::OnceLock::new();
 
 /// Hosted function to build the header using `kate` commitments.
 #[runtime_interface]

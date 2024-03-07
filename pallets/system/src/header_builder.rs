@@ -1,9 +1,8 @@
 use crate::{limits::BlockLength, Config, LOG_TARGET};
-use avail_core::{
-	app_extrinsic::AppExtrinsic, header::HeaderExtension, traits::ExtendedHeader, HeaderVersion,
-};
+#[cfg(feature = "std")]
+use avail_core::HeaderVersion;
+use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic};
 pub use kate::{
-	com::Error as KateError,
 	metrics::{IgnoreMetrics, Metrics},
 	Seed,
 };

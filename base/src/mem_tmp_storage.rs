@@ -113,6 +113,7 @@ pub trait HostedMemTmpStorage {
 	}
 }
 
+#[cfg(feature = "std")]
 fn log_poisoned_sync<E>(_: E) {
 	log::error!("Memory Temporal Storage with a poisoned sync");
 }

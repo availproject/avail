@@ -24,16 +24,19 @@ homepage = "https://www.availproject.org/"
 
 
 [workspace.dependencies]
-# avail-core = { git = "https://github.com/availproject/avail-core", branch = "next", default-features = false, features = [ "runtime"] }
-# kate = { git = "https://github.com/availproject/avail-core", branch = "main", default-features = false }
-# kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "next" }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "miguel/recover_protocol_sequence", default-features = false, features = [ "runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", branch = "miguel/recover_protocol_sequence", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "miguel/recover_protocol_sequence", default-features = false  }
+# avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
+# kate = { path = "../avail-core/kate/", default-features = false }
+# kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
+
 avail-base = { path = "base", default-features = false }
-avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
-kate = { path = "../avail-core/kate/", default-features = false }
-kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
 da-control = { path = "pallets/dactr", default-features = false }
 pallet-mandate = { path = "pallets/mandate", default-features = false }
 pallet-vector = { path = "pallets/vector", default-features = false }
+da-runtime = { path = "runtime", default-features = false }
+kate-rpc = { path = "rpc/kate-rpc" }
 
 sc-basic-authorship = { path = "client/basic-authorship", default-features = false }
 frame-executive = { path = "pallets/executive", default-features = false }
@@ -66,6 +69,7 @@ futures-timer = "3.0.1"
 parking_lot = "0.12.1"
 once_cell = "1.17.1"
 async-trait = "0.1.74"
+rayon = "1.5.2"
 
 # Macros and code generation
 hex-literal = "0.3.4"
@@ -88,6 +92,7 @@ ark-std = { version = "0.4.0", default-features = false }
 ark-serialize = { version = "0.4.0", features = ["derive"], default-features = false }
 ark-ff = { version = "0.3.0", default-features = false }
 ark-snark = "0.4.0"
+rand = "0.8"
 
 # Misc
 parity-util-mem = { version = "0.12.0", features = ["primitive-types"], default-features = false }
@@ -97,6 +102,10 @@ hash-db = { version = "0.15.2", default-features = false }
 memory-db = { version = "0.30.0", default-features = false }
 bounded-collections = { version = "0.2", default-features = false }
 itertools = { version = "0.10.5", default-features = false }
+jsonrpsee = { version = "0.20.3", features = ["server", "client", "macros"] }
+moka = { version = "0.12.1", features = ["future"] }
+lru = "0.7.2"
+tempfile = "3.1.0"
 
 # Ethereum
 rlp = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2", default-features = false }
@@ -104,6 +113,11 @@ rlp-derive = "0.1.0"
 primitive-types = { version = "0.12.0", default-features = false }
 ethabi = { version = "18.0.0", default-features = false }
 tiny-keccak = { version = "2.0.2", features = ["keccak"], default-features = false }
+
+# Cli
+clap = { version = "4.4.17", features = ["derive"] }
+clap-num = "1.1.1"
+clap_complete = "4.0.2"
 
 # Polkadot 
 sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }

@@ -82,6 +82,7 @@ type FullGrandpaBlockImport =
 pub type TransactionPool = sc_transaction_pool::FullPool<Block, FullClient>;
 
 pub type BlockImport = crate::da_block_import::BlockImport<
+	Block,
 	FullClient,
 	sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
 >;

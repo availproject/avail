@@ -6,24 +6,18 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-avail-base = { path = "../../base" }
-da-runtime = { path = "../../runtime" }
-da-control = { path = "../../pallets/dactr" }
-pallet-vector = { path = "../../pallets/vector" }
-
+avail-base.workspace = true
+da-runtime.workspace = true
+da-control.workspace = true
+frame-system = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
-kate-recovery.workspace = true
 
 # 3rd party
-jsonrpsee = { version = "0.20.3", features = ["server", "client", "macros"] }
-rayon = { version = "1.5.2" }
-moka = { version = "0.12.1", features = ["future"] }
-
+jsonrpsee.workspace = true
 
 # Substrate
 sp-api = { workspace = true, default-features = false }
-frame-system = { path = "../../pallets/system", default-features = false }
 frame-support = { workspace = true, default-features = false }
 sc-client-api = { workspace = true, default-features = false }
 sp-blockchain = { workspace = true, default-features = false }
@@ -37,7 +31,6 @@ std = [
 	"da-runtime/std",
 	"frame-support/std",
 	"frame-system/std",
-	"kate-recovery/std",
 	"kate/std",
 	"sp-api/std",
 	"sp-runtime/std",

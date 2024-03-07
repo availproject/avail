@@ -1,7 +1,9 @@
 use crate::{Config, LOG_TARGET};
 use avail_core::{AppExtrinsic, AppId};
 use frame_system::{limits::BlockLength, Config as SysConfig};
-use kate::{com::Error as KateError, gridgen::AppRowError as KateAppRowError, Seed};
+use kate::Seed;
+#[cfg(feature = "std")]
+use kate::{com::Error as KateError, gridgen::AppRowError as KateAppRowError};
 
 use codec::{Decode, Encode};
 use core::{marker::PhantomData, num::TryFromIntError};
@@ -11,6 +13,7 @@ use scale_info::TypeInfo;
 use sp_core::U256;
 use sp_runtime::traits::Hash;
 use sp_runtime_interface::pass_by::{PassByCodec, PassByInner};
+use sp_std::vec::Vec;
 use thiserror_no_std::Error;
 
 #[cfg(feature = "std")]
@@ -125,12 +128,14 @@ impl From<TryFromIntError> for Error {
 	}
 }
 
+#[cfg(feature = "std")]
 impl From<KateError> for Error {
 	fn from(_: KateError) -> Self {
 		Self::KateGrid
 	}
 }
 
+#[cfg(feature = "std")]
 impl From<KateAppRowError> for Error {
 	fn from(_: KateAppRowError) -> Self {
 		Self::AppRow

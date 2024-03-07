@@ -211,7 +211,7 @@ pub fn decode_proof(
 	let mut c0: String = String::new();
 	let mut c1: String = String::new();
 
-	if let Some(ethabi::Token::Tuple(t)) = decoded.get(0) {
+	if let Some(ethabi::Token::Tuple(t)) = decoded.first() {
 		if let ethabi::Token::FixedArray(ar) = &t[0] {
 			if let ethabi::Token::Uint(u) = &ar[0] {
 				a0 = u.to_string();
