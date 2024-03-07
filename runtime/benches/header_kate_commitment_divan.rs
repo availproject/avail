@@ -14,7 +14,7 @@ mod commitment_builder {
 		(txs, block_length)
 	}
 
-	#[divan::bench(max_time = 120.0, args = [ 32, 64, 128, 256 ])]
+	#[divan::bench(max_time = 120.0, args = [ 64, 128, 256 ])]
 	fn columns_count(bencher: divan::Bencher, n: u32) {
 		bencher
 			.counter(n)

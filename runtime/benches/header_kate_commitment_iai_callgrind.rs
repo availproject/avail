@@ -9,7 +9,6 @@ fn setup(cols: u32) -> (Vec<AppExtrinsic>, BlockLength) {
 }
 
 #[library_benchmark]
-#[bench::columns_32(setup(32))]
 #[bench::columns_64(setup(64))]
 #[bench::columns_128(setup(128))]
 #[bench::columns_256(setup(256))]
