@@ -14,22 +14,14 @@ export const types = {
     commitment: "Vec<u8>",
     dataRoot: "H256",
   },
-  V1HeaderExtension: {
-    appLookup: "DataLookup",
-    commitment: "KateCommitment",
-  },
-  V2HeaderExtension: {
-    appLookup: "DataLookup",
-    commitment: "KateCommitment",
-  },
   V3HeaderExtension: {
     appLookup: "DataLookup",
     commitment: "KateCommitment",
   },
   HeaderExtension: {
     _enum: {
-      V1: "V1HeaderExtension",
-      V2: "V2HeaderExtension",
+      V1: null,
+      V2: null,
       V3: "V3HeaderExtension",
     },
   },
@@ -62,13 +54,6 @@ export const types = {
     normal: "u32",
     operational: "u32",
     mandatory: "u32",
-  },
-  DataProof: {
-    root: "H256",
-    proof: "Vec<H256>",
-    numberOfLeaves: "Compact<u32>",
-    leaf_index: "Compact<u32>",
-    leaf: "H256",
   },
   DataProofV2: {
     dataRoot: "H256",

@@ -1,6 +1,9 @@
 use crate::data_root::{BridgedData, SubmittedData, TxDataRef};
-
-use avail_core::{app_extrinsic::AppExtrinsic, Keccak256};
+use avail_core::{
+	app_extrinsic::AppExtrinsic,
+	data_proof_v2::{SubTrie, TxDataRoots},
+	Keccak256,
+};
 
 use binary_merkle_tree::{merkle_proof, merkle_root, MerkleProof};
 use codec::{Decode, Encode};
@@ -11,13 +14,6 @@ use sp_io::hashing::keccak_256;
 use sp_runtime_interface::pass_by::PassByCodec;
 use sp_std::{iter::repeat, vec, vec::Vec};
 
-#[derive(Debug, Clone, Copy, Constructor, Encode, Decode)]
-pub struct TxDataRoots {
-	pub root: H256,
-	pub submit: H256,
-	pub bridge: H256,
-}
-
 #[derive(Debug, Default, Constructor, PassByCodec, Encode, Decode)]
 pub struct TxData {
 	pub submitted: Vec<SubmittedData>,
@@ -26,16 +22,23 @@ pub struct TxData {
 }
 
 impl TxData {
+	pub fn failed_send_msg_txs(failed_send_msg_txs: Vec<u32>) -> Self {
+		Self {
+			failed_send_msg_txs,
+			..Default::default()
+		}
+	}
+
 	pub fn to_ref(&self) -> TxDataRef<'_> {
 		let submitted = self.submitted.iter().map(SubmittedData::to_ref).collect();
 		let bridged = self.bridged.iter().map(BridgedData::to_ref).collect();
 		TxDataRef::new(submitted, bridged, self.failed_send_msg_txs.clone())
 	}
 
-	pub fn to_app_extrinsics(&self) -> Vec<AppExtrinsic> {
+	pub fn to_app_extrinsics(self) -> Vec<AppExtrinsic> {
 		self.submitted
-			.iter()
-			.map(|s| AppExtrinsic::new(s.id, s.data.to_vec()))
+			.into_iter()
+			.map(|s| AppExtrinsic::new(s.id, s.data))
 			.collect()
 	}
 
@@ -44,15 +47,10 @@ impl TxData {
 	}
 
 	pub fn roots(&self) -> TxDataRoots {
-		// Keccak of `data_submit` and balance with `keccak_256(0x00..0)`.
-		let submit = self.submitted_root();
-		let bridge = self.bridged_root();
+		let submitted = self.submitted_root();
+		let bridged = self.bridged_root();
 
-		// keccak_256(submit_root, bridge_root)
-		let sub_roots = [submit.to_fixed_bytes(), bridge.to_fixed_bytes()].concat();
-		let root = keccak_256(sub_roots.as_slice()).into();
-
-		TxDataRoots::new(root, submit, bridge)
+		TxDataRoots::new(submitted, bridged)
 	}
 
 	/// Generates the root of sub-tries.
@@ -102,6 +100,16 @@ impl TxData {
 		}
 		let proof = merkle_proof_to_owned(self.balanced_bridged(), leaf_idx);
 		Some(proof)
+	}
+
+	pub fn leaf_idx(&self, tx_idx: u32) -> Option<(usize, SubTrie)> {
+		if let Some(idx) = self.submitted.iter().position(|s| s.tx_index == tx_idx) {
+			return Some((idx, SubTrie::DataSubmit));
+		}
+		if let Some(idx) = self.bridged.iter().position(|b| b.tx_index == tx_idx) {
+			return Some((idx, SubTrie::Bridge));
+		}
+		None
 	}
 }
 

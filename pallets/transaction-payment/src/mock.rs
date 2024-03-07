@@ -33,7 +33,7 @@ use frame_system::{
 use pallet_balances::Call as BalancesCall;
 
 /// An unchecked extrinsic type to be used in tests.
-type UncheckedExtrinsic = MockUncheckedExtrinsic<Runtime>;
+type Extrinsic = MockUncheckedExtrinsic<Runtime>;
 
 /// An implementation of `sp_runtime::traits::Block` to be used in tests.
 type Block = frame_system::mocking::MockDaBlock<Runtime>;
@@ -42,11 +42,11 @@ type BlockNumber = u32;
 type Balance = u64;
 
 frame_support::construct_runtime!(
-	pub struct Runtime
+	pub enum Runtime
 	{
-		System: system::{Pallet, Call, Config<T>, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
+		System: system,
+		Balances: pallet_balances,
+		TransactionPayment: pallet_transaction_payment,
 	}
 );
 
@@ -93,10 +93,10 @@ impl system::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
-	type SubmittedDataExtractor = ();
-	type UncheckedExtrinsic = UncheckedExtrinsic;
 	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
+	type TxDataExtractor = ();
+	type Extrinsic = Extrinsic;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -113,7 +113,6 @@ impl pallet_balances::Config for Runtime {
 	type MaxFreezes = ();
 	type RuntimeHoldReason = ();
 	type RuntimeFreezeReason = ();
-	type MaxHolds = ();
 }
 
 impl WeightToFeeT for WeightToFee {

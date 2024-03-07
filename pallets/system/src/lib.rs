@@ -179,6 +179,7 @@ pub use extensions::{
 	check_tx_version::CheckTxVersion,
 	check_weight::CheckWeight,
 };
+// Backward compatible re-export.
 pub use frame_support::dispatch::RawOrigin;
 pub use weights::WeightInfo;
 
@@ -249,9 +250,6 @@ impl<MaxNormal: Get<u32>, MaxOverflow: Get<u32>> ConsumerLimits for (MaxNormal, 
 	}
 }
 
-pub type ExtrinsicLenOf<T> =
-	ExtrinsicLen<<T as Config>::MaxDiffAppIdPerBlock, <T as Config>::MaxTxPerAppIdPerBlock>;
-
 /// Information needed when a new runtime binary is submitted and needs to be authorized before
 /// replacing the current runtime.
 #[derive(Decode, Encode, Default, PartialEq, Eq, MaxEncodedLen, TypeInfo)]
@@ -265,6 +263,9 @@ where
 	/// Whether or not to carry out version checks.
 	check_version: bool,
 }
+
+pub type ExtrinsicLenOf<T> =
+	ExtrinsicLen<<T as Config>::MaxDiffAppIdPerBlock, <T as Config>::MaxTxPerAppIdPerBlock>;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -747,15 +748,9 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			remark: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
-			let maybe_who = ensure_signed_or_root(origin)?;
+			let who = ensure_signed(origin)?;
 			let hash = T::Hashing::hash(&remark[..]);
-
-			let event = match maybe_who {
-				Some(who) => Event::Remarked { sender: who, hash },
-				None => Event::RemarkedByRoot { hash },
-			};
-
-			Self::deposit_event(event);
+			Self::deposit_event(Event::Remarked { sender: who, hash });
 			Ok(().into())
 		}
 
@@ -764,24 +759,19 @@ pub mod pallet {
 		#[pallet::weight(task.weight())]
 		pub fn do_task(origin: OriginFor<T>, task: T::RuntimeTask) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
-
 			if !task.is_valid() {
 				return Err(Error::<T>::InvalidTask.into());
 			}
-
 			Self::deposit_event(Event::TaskStarted { task: task.clone() });
 			if let Err(err) = task.run() {
 				Self::deposit_event(Event::TaskFailed { task, err });
 				return Err(Error::<T>::FailedTask.into());
 			}
-
 			// Emit a success event, if your design includes events for this pallet.
 			Self::deposit_event(Event::TaskCompleted { task });
-
 			// Return success.
 			Ok(().into())
 		}
-
 		/// Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
 		/// later.
 		///
@@ -793,7 +783,6 @@ pub mod pallet {
 			Self::do_authorize_upgrade(code_hash, true);
 			Ok(())
 		}
-
 		/// Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
 		/// later.
 		///
@@ -812,7 +801,6 @@ pub mod pallet {
 			Self::do_authorize_upgrade(code_hash, false);
 			Ok(())
 		}
-
 		/// Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
 		///
 		/// If the authorization required a version check, this call will ensure the spec name
@@ -851,8 +839,6 @@ pub mod pallet {
 		KilledAccount { account: T::AccountId },
 		/// On on-chain remark happened.
 		Remarked { sender: T::AccountId, hash: T::Hash },
-		/// On on-chain remark happend called by Root.
-		RemarkedByRoot { hash: T::Hash },
 		#[cfg(feature = "experimental")]
 		/// A [`Task`] has started executing
 		TaskStarted { task: T::RuntimeTask },
@@ -1017,15 +1003,16 @@ pub mod pallet {
 	#[pallet::whitelist_storage]
 	pub(super) type ExecutionPhase<T: Config> = StorageValue<_, Phase>;
 
-	/// The dynamic block length
-	#[pallet::storage]
-	#[pallet::getter(fn block_length)]
-	pub type DynamicBlockLength<T: Config> = StorageValue<_, limits::BlockLength, ValueQuery>;
-
+	/// `Some` if a code upgrade has been authorized.
 	#[pallet::storage]
 	#[pallet::getter(fn authorized_upgrade)]
 	pub(super) type AuthorizedUpgrade<T: Config> =
 		StorageValue<_, CodeUpgradeAuthorization<T>, OptionQuery>;
+
+	/// The dynamic block length
+	#[pallet::storage]
+	#[pallet::getter(fn block_length)]
+	pub type DynamicBlockLength<T: Config> = StorageValue<_, limits::BlockLength, ValueQuery>;
 
 	#[derive(DefaultNoBound)]
 	#[pallet::genesis_config]
@@ -1431,9 +1418,6 @@ impl<T: Config> Pallet<T> {
 	/// [`on_runtime_upgrade`](frame_support::traits::OnRuntimeUpgrade::on_runtime_upgrade)
 	/// function. After all migrations are executed, this will return the `spec_version` of the
 	/// current runtime until there is another runtime upgrade.
-	///
-	/// Example:
-	#[doc = docify::embed!("src/tests.rs", last_runtime_upgrade_spec_version_usage)]
 	pub fn last_runtime_upgrade_spec_version() -> u32 {
 		LastRuntimeUpgrade::<T>::get().map_or(0, |l| l.spec_version.0)
 	}
@@ -1711,7 +1695,7 @@ impl<T: Config> Pallet<T> {
 			topics: topics.to_vec(),
 		};
 
-		// Index of the to be added event.
+		// Index of the event to be added.
 		let event_idx = {
 			let old_event_count = EventCount::<T>::get();
 			let new_event_count = match old_event_count.checked_add(1) {
@@ -1850,11 +1834,6 @@ impl<T: Config> Pallet<T> {
 		let extrinsics = (0..ExtrinsicCount::<T>::take().unwrap_or_default())
 			.map(ExtrinsicData::<T>::take)
 			.collect::<Vec<_>>();
-
-		/*
-		let indexed_ext = extrinsics.iter().enumerate().filter_map(|(idx, raw)| {
-			T::Extrinsic::decode(&mut raw.as_slice()).ok().map(|ext| (idx,ext))
-		})*/
 
 		let tx_data = build_tx_data::<T::TxDataExtractor, T::Extrinsic, _, _>(
 			block_number,

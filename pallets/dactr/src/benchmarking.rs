@@ -281,7 +281,7 @@ mod benchmarks {
 				block_length,
 				block_number,
 				seed,
-				HeaderVersion::V2,
+				HeaderVersion::V3,
 			);
 		}
 
@@ -302,7 +302,7 @@ mod benchmarks {
 				block_length,
 				block_number,
 				seed,
-				HeaderVersion::V2,
+				HeaderVersion::V3,
 			);
 		}
 
@@ -323,7 +323,7 @@ mod benchmarks {
 				block_length,
 				block_number,
 				seed,
-				HeaderVersion::V2,
+				HeaderVersion::V3,
 			);
 		}
 
@@ -344,7 +344,7 @@ mod benchmarks {
 				block_length,
 				block_number,
 				seed,
-				HeaderVersion::V2,
+				HeaderVersion::V3,
 			);
 		}
 

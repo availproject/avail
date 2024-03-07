@@ -684,88 +684,86 @@ fn assert_runtime_updated_digest(num: usize) {
 	);
 }
 
-/*
-#[test]
-fn set_code_with_real_wasm_blob() {
-	let executor = new_native_executor();
-	let mut ext = new_test_ext();
-	ext.register_extension(sp_core::traits::ReadRuntimeVersionExt::new(executor));
-	ext.execute_with(|| {
-		System::set_block_number(1);
-		System::set_code(
-			RawOrigin::Root.into(),
-			substrate_test_runtime_client::runtime::wasm_binary_unwrap().to_vec(),
-		)
-		.unwrap();
+// #[test]
+// fn set_code_with_real_wasm_blob() {
+// 	let executor = substrate_test_runtime_client::new_native_or_wasm_executor();
+// 	let mut ext = new_test_ext();
+// 	ext.register_extension(sp_core::traits::ReadRuntimeVersionExt::new(executor));
+// 	ext.execute_with(|| {
+// 		System::set_block_number(1);
+// 		System::set_code(
+// 			RawOrigin::Root.into(),
+// 			substrate_test_runtime_client::runtime::wasm_binary_unwrap().to_vec(),
+// 		)
+// 		.unwrap();
 
-		assert_eq!(
-			System::events(),
-			vec![EventRecord {
-				phase: Phase::Initialization,
-				event: SysEvent::CodeUpdated.into(),
-				topics: vec![],
-			}],
-		);
-	});
-}
+// 		assert_eq!(
+// 			System::events(),
+// 			vec![EventRecord {
+// 				phase: Phase::Initialization,
+// 				event: SysEvent::CodeUpdated.into(),
+// 				topics: vec![],
+// 			}],
+// 		);
+// 	});
+// }
 
-#[test]
-fn set_code_via_authorization_works() {
-	let executor = new_native_executor();
-	let mut ext = new_test_ext();
-	ext.register_extension(sp_core::traits::ReadRuntimeVersionExt::new(executor));
-	ext.execute_with(|| {
-		System::set_block_number(1);
-		assert!(System::authorized_upgrade().is_none());
+// #[test]
+// fn set_code_via_authorization_works() {
+// 	let executor = substrate_test_runtime_client::new_native_or_wasm_executor();
+// 	let mut ext = new_test_ext();
+// 	ext.register_extension(sp_core::traits::ReadRuntimeVersionExt::new(executor));
+// 	ext.execute_with(|| {
+// 		System::set_block_number(1);
+// 		assert!(System::authorized_upgrade().is_none());
 
-		let runtime = substrate_test_runtime_client::runtime::wasm_binary_unwrap().to_vec();
-		let hash = <mock::Test as pallet::Config>::Hashing::hash(&runtime);
+// 		let runtime = substrate_test_runtime_client::runtime::wasm_binary_unwrap().to_vec();
+// 		let hash = <mock::Test as pallet::Config>::Hashing::hash(&runtime);
 
-		// Can't apply before authorization
-		assert_noop!(
-			System::apply_authorized_upgrade(RawOrigin::None.into(), runtime.clone()),
-			Error::<Test>::NothingAuthorized,
-		);
+// 		// Can't apply before authorization
+// 		assert_noop!(
+// 			System::apply_authorized_upgrade(RawOrigin::None.into(), runtime.clone()),
+// 			Error::<Test>::NothingAuthorized,
+// 		);
 
-		// Can authorize
-		assert_ok!(System::authorize_upgrade(RawOrigin::Root.into(), hash));
-		System::assert_has_event(
-			SysEvent::UpgradeAuthorized { code_hash: hash, check_version: true }.into(),
-		);
-		assert!(System::authorized_upgrade().is_some());
+// 		// Can authorize
+// 		assert_ok!(System::authorize_upgrade(RawOrigin::Root.into(), hash));
+// 		System::assert_has_event(
+// 			SysEvent::UpgradeAuthorized { code_hash: hash, check_version: true }.into(),
+// 		);
+// 		assert!(System::authorized_upgrade().is_some());
 
-		// Can't be sneaky
-		let mut bad_runtime = substrate_test_runtime_client::runtime::wasm_binary_unwrap().to_vec();
-		bad_runtime.extend(b"sneaky");
-		assert_noop!(
-			System::apply_authorized_upgrade(RawOrigin::None.into(), bad_runtime),
-			Error::<Test>::Unauthorized,
-		);
+// 		// Can't be sneaky
+// 		let mut bad_runtime = substrate_test_runtime_client::runtime::wasm_binary_unwrap().to_vec();
+// 		bad_runtime.extend(b"sneaky");
+// 		assert_noop!(
+// 			System::apply_authorized_upgrade(RawOrigin::None.into(), bad_runtime),
+// 			Error::<Test>::Unauthorized,
+// 		);
 
-		// Can apply correct runtime
-		assert_ok!(System::apply_authorized_upgrade(RawOrigin::None.into(), runtime));
-		System::assert_has_event(SysEvent::CodeUpdated.into());
-		assert!(System::authorized_upgrade().is_none());
-	});
-}
+// 		// Can apply correct runtime
+// 		assert_ok!(System::apply_authorized_upgrade(RawOrigin::None.into(), runtime));
+// 		System::assert_has_event(SysEvent::CodeUpdated.into());
+// 		assert!(System::authorized_upgrade().is_none());
+// 	});
+// }
 
-#[test]
-fn runtime_upgraded_with_set_storage() {
-	let executor = new_native_executor();
-	let mut ext = new_test_ext();
-	ext.register_extension(sp_core::traits::ReadRuntimeVersionExt::new(executor));
-	ext.execute_with(|| {
-		System::set_storage(
-			RawOrigin::Root.into(),
-			vec![(
-				well_known_keys::CODE.to_vec(),
-				substrate_test_runtime_client::runtime::wasm_binary_unwrap().to_vec(),
-			)],
-		)
-		.unwrap();
-	});
-}
-*/
+// #[test]
+// fn runtime_upgraded_with_set_storage() {
+// 	let executor = substrate_test_runtime_client::new_native_or_wasm_executor();
+// 	let mut ext = new_test_ext();
+// 	ext.register_extension(sp_core::traits::ReadRuntimeVersionExt::new(executor));
+// 	ext.execute_with(|| {
+// 		System::set_storage(
+// 			RawOrigin::Root.into(),
+// 			vec![(
+// 				well_known_keys::CODE.to_vec(),
+// 				substrate_test_runtime_client::runtime::wasm_binary_unwrap().to_vec(),
+// 			)],
+// 		)
+// 		.unwrap();
+// 	});
+// }
 
 #[test]
 fn events_not_emitted_during_genesis() {
@@ -863,7 +861,6 @@ pub fn from_post_weight_info(ref_time: Option<u64>, pays_fee: Pays) -> PostDispa
 	}
 }
 
-#[docify::export]
 #[test]
 fn last_runtime_upgrade_spec_version_usage() {
 	struct Migration;

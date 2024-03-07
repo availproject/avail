@@ -10,7 +10,4 @@ pub use mem_tmp_storage::{
 };
 
 mod post_inherents;
-pub use post_inherents::{
-	runtime_decl_for_post_inherents_provider, PostInherentsBackend, PostInherentsProvider,
-	ProvidePostInherent,
-};
+pub use post_inherents::*;

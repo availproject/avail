@@ -1,8 +1,5 @@
 use crate::{Call as DACall, Config as DAConfig, Pallet, LOG_TARGET};
-use avail_core::{
-	traits::GetAppId, AppId, InvalidTransactionCustomId,
-	InvalidTransactionCustomId::MaxPaddedLenExceeded,
-};
+use avail_core::{traits::GetAppId, AppId, InvalidTransactionCustomId};
 
 use codec::{Decode, Encode};
 use frame_support::{
@@ -26,9 +23,6 @@ use sp_std::{
 };
 
 const MAX_ITERATIONS: usize = 2;
-const PADDED_LEN_EXCEEDED: InvalidTransaction =
-	InvalidTransaction::Custom(MaxPaddedLenExceeded as u8);
-
 /// Check for Application Id.
 ///
 /// # Transaction Validity
@@ -67,7 +61,7 @@ where
 		self.ensure_valid_app_id(call)?;
 		let all_extrinsics_len = self
 			.next_all_extrinsics_len(len)
-			.ok_or(PADDED_LEN_EXCEEDED)?;
+			.ok_or(InvalidTransaction::ExhaustsResources)?;
 		AllExtrinsicsLen::<T>::put(all_extrinsics_len);
 
 		Ok(ValidTransaction::default())

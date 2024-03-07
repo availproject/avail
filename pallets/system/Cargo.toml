@@ -29,6 +29,7 @@ docify.workspace = true
 derive_more.workspace = true
 hex-literal.workspace = true
 itertools = { workspace = true, default-features = false }
+thiserror-no-std.workspace = true
 
 # Substrate
 codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [ "derive"] }

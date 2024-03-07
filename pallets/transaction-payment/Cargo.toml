@@ -21,7 +21,6 @@ scale-info = { version = "2.5.0", default-features = false, features = ["derive"
 serde = { version = "1.0.195", optional = true }
 frame-support = { workspace = true, default-features = false }
 frame-system = { version = "4.0.0-dev", default-features = false, path = "../system" }
-sp-core = { workspace = true, default-features = false }
 sp-io = { workspace = true, default-features = false }
 sp-runtime = { workspace = true, default-features = false }
 sp-std = { workspace = true, default-features = false }
@@ -38,7 +37,6 @@ std = [
 	"frame-system/std",
 	"scale-info/std",
 	"serde",
-	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",

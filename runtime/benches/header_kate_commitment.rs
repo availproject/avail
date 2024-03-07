@@ -1,5 +1,5 @@
 use avail_core::{
-	AppExtrinsic, BlockLengthColumns, HeaderVersion, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
+	AppExtrinsic, BlockLengthColumns, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
 };
 use da_control::Config as DAConfig;
 use da_runtime::Runtime;

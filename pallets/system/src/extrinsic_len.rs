@@ -16,7 +16,7 @@ pub struct PaddedExtrinsicLen<S: Get<u32>> {
 }
 
 impl<S: Get<u32>> PaddedExtrinsicLen<S> {
-	/// It adds a new lenght of the Tx and recalculate the total number of scalars.
+	/// It adds a new length of the Tx and recalculate the total number of scalars.
 	pub fn add(&mut self, len: u32) -> Option<u32> {
 		// Calculate new data length: each len + its vec prefix
 		let next_tx_lens = self.tx_lens.iter().chain(once(&len));

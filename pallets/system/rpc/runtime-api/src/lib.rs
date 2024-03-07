@@ -24,7 +24,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 sp_api::decl_runtime_apis! {
-	/// The API to query account nonce
+	/// The API to query account nonce.
 	pub trait AccountNonceApi<AccountId, Nonce> where
 		AccountId: codec::Codec,
 		Nonce: codec::Codec,

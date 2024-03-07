@@ -82,6 +82,7 @@ where
 /// concatenating and hashing end up with given root hash.
 ///
 /// The proof must not contain the root hash.
+#[allow(dead_code)]
 pub fn verify<I>(
 	root: H256,
 	proof: I,

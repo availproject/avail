@@ -7,12 +7,13 @@ use sp_std::vec::Vec;
 #[derive(Constructor, Debug)]
 pub struct SubmittedDataRef<'a> {
 	pub id: AppId,
+	pub tx_index: u32,
 	pub data: &'a [u8],
 }
 
 impl SubmittedDataRef<'_> {
 	pub fn to_owned(&self) -> SubmittedData {
-		SubmittedData::new(self.id, self.data.to_vec())
+		SubmittedData::new(self.id, self.tx_index, self.data.to_vec())
 	}
 }
 
@@ -22,21 +23,16 @@ impl<'a> GetAppId for SubmittedDataRef<'a> {
 	}
 }
 
-impl<'a> From<&'a [u8]> for SubmittedDataRef<'a> {
-	fn from(opaque: &'a [u8]) -> Self {
-		Self::new(AppId(0), opaque)
-	}
-}
-
 #[derive(Debug, Constructor, Encode, Decode)]
 pub struct SubmittedData {
 	pub id: AppId,
+	pub tx_index: u32,
 	pub data: Vec<u8>,
 }
 
 impl SubmittedData {
 	pub fn to_ref(&self) -> SubmittedDataRef<'_> {
-		SubmittedDataRef::new(self.id, &self.data)
+		SubmittedDataRef::new(self.id, self.tx_index, &self.data)
 	}
 }
 

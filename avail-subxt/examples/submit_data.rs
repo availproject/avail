@@ -1,11 +1,12 @@
 use anyhow::Result;
 use avail_subxt::{
-	api::runtime_types::da_control::pallet::Call as DaCall, avail::AppUncheckedExtrinsic,
-	build_client, submit_data_in_block as submit, Call, Opts,
+	api::runtime_types::da_control::pallet::Call as DaCall,
+	avail::{self, AppUncheckedExtrinsic},
+	build_client, submit_data_in_block as submit, AvailConfig, Call, Opts,
 };
 use sp_keyring::AccountKeyring;
 use structopt::StructOpt;
-use subxt::tx::PairSigner;
+use subxt::{ext::sp_core::Pair, tx::PairSigner};
 
 const DATA: &[u8] = b"example";
 
@@ -15,7 +16,8 @@ const DATA: &[u8] = b"example";
 async fn main() -> Result<()> {
 	let args = Opts::from_args();
 	let (client, _) = build_client(args.ws, args.validate_codegen).await?;
-	let signer = PairSigner::new(AccountKeyring::Alice.pair());
+	let alice = avail::Pair::from_string_with_seed(&AccountKeyring::Alice.to_seed(), None).unwrap();
+	let signer = PairSigner::<AvailConfig, avail::Pair>::new(alice.0);
 
 	let block = submit(&client, &signer, DATA, 1).await?.block_hash();
 	let submitted_block = client.rpc().block(Some(block)).await?.unwrap();

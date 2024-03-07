@@ -65,10 +65,16 @@ impl TxDataFilter<AccountId32, String> for String {
 		s: &String,
 		app: AppId,
 		_: u32,
-		_: usize,
+		tx_idx: usize,
 		_: &mut Metrics,
 	) -> Option<TxData> {
-		(!s.is_empty()).then(|| SubmittedData::new(app, s.as_bytes().to_vec()).into())
+		if s.is_empty() {
+			return None;
+		}
+
+		let tx_idx = u32::try_from(tx_idx).ok()?;
+		let data = SubmittedData::new(app, tx_idx, s.as_bytes().to_vec());
+		Some(data.into())
 	}
 }
 

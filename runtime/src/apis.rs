@@ -1,18 +1,28 @@
 use crate::{
 	constants, mmr, version::VERSION, AccountId, AuthorityDiscovery, Babe, Block, BlockNumber,
-	EpochDuration, Executive, Grandpa, Historical, Identity, Index, InherentDataExt, Mmr,
-	NominationPools, OpaqueMetadata, Runtime, RuntimeCall, RuntimeGenesisConfig, Seed, SessionKeys,
-	System, TransactionPayment,
+	EpochDuration, Executive, Grandpa, Historical, Index, InherentDataExt, Mmr, NominationPools,
+	OpaqueMetadata, Runtime, RuntimeCall, RuntimeGenesisConfig, SessionKeys, System,
+	TransactionPayment,
 };
 use avail_base::ProvidePostInherent;
-use avail_core::{currency::Balance, header::HeaderExtension, OpaqueExtrinsic};
+use avail_core::{
+	currency::Balance,
+	data_proof_v2::{DataProofV2, ProofResponse, SubTrie},
+	header::HeaderExtension,
+	OpaqueExtrinsic,
+};
+use frame_system::{
+	data_root::build_tx_data,
+	header_builder::{da::HeaderExtensionBuilder, Error as HBError},
+	limits::BlockLength,
+	HeaderExtensionBuilder as _,
+};
 
 use frame_support::{
 	genesis_builder_helper::{build_config, create_default_config},
-	traits::{KeyOwnerProofSystem, Randomness},
+	traits::KeyOwnerProofSystem,
 	weights::Weight,
 };
-use frame_system::limits::BlockLength;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
@@ -24,19 +34,16 @@ use sp_runtime::{
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
-use sp_std::{borrow::Cow, vec, vec::Vec};
+use sp_std::{borrow::Cow, vec::Vec};
 use sp_version::RuntimeVersion;
 
-type Extrinsic = <Block as BlockT>::Extrinsic;
+type RTExtractor = <Runtime as frame_system::Config>::TxDataExtractor;
+type RTExtrinsic = <Runtime as frame_system::Config>::Extrinsic;
 
 decl_runtime_apis! {
 	#[api_version(2)]
 	pub trait DataAvailApi {
 		fn block_length() -> BlockLength;
-		fn babe_vrf() -> Seed;
-		fn sync_committee_poseidons(slot: u64) -> U256;
-		fn head() -> u64;
-		fn headers(slot: u64) -> H256;
 	}
 
 	pub trait ExtensionBuilder {
@@ -52,7 +59,15 @@ decl_runtime_apis! {
 	}
 
 	pub trait VectorApi {
-		fn invalid_send_tx_indices() -> Vec<u32>;
+		fn sync_committee_poseidons(slot: u64) -> U256;
+		fn head() -> u64;
+		fn headers(slot: u64) -> H256;
+	}
+
+	pub trait KateApi {
+		fn data_proof(extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse>;
+		fn rows(extrinsics: Vec<OpaqueExtrinsic>, max_width: u32, max_height: u32, rows: Vec<u32>) -> Result<Vec<Vec<[u8;32]>>, HBError>;
+		fn app_data(extrinsic: OpaqueExtrinsic, id: AppId) -> u8;
 	}
 }
 
@@ -335,18 +350,28 @@ impl_runtime_apis! {
 		fn block_length() -> frame_system::limits::BlockLength {
 			frame_system::Pallet::<Runtime>::block_length()
 		}
+	}
 
-		fn babe_vrf() -> Seed {
-			use frame_system::Config;
-			use sp_runtime::traits::Hash;
-
-			let epoc_and_block = <Runtime as Config>::Randomness::random_seed();
-			let seed = <Runtime as Config>::Hashing::hash_of(&epoc_and_block);
-			log::info!("Runtime::get_babe_vrf(): epoc_and_block: {epoc_and_block:?}, seed: {seed:?}");
-
-			seed.into()
+	#[api_version(4)]
+	impl crate::apis::ExtensionBuilder<Block> for Runtime {
+		fn build_data_root(block: u32, extrinsics: Vec<OpaqueExtrinsic>) -> H256  {
+			let tx_data = build_tx_data::<RTExtractor, RTExtrinsic, _, _>(block, extrinsics.iter().map(|opaque| &opaque.0));
+			tx_data.root()
 		}
 
+		fn build_extension(
+			extrinsics: Vec<OpaqueExtrinsic>,
+			data_root: H256,
+			block_length: BlockLength,
+			block_number: u32,
+		) -> HeaderExtension {
+			let tx_data = build_tx_data::<RTExtractor, RTExtrinsic, _, _>(block_number, extrinsics.iter().map(|opaque| &opaque.0));
+			let submitted = tx_data.to_app_extrinsics();
+			HeaderExtensionBuilder::<Runtime>::build( submitted, data_root, block_length, block_number)
+		}
+	}
+
+	impl crate::apis::VectorApi<Block> for Runtime {
 		fn sync_committee_poseidons(slot: u64) -> U256 {
 			pallet_vector::Pallet::<Runtime>::sync_committee_poseidons(slot)
 		}
@@ -360,56 +385,36 @@ impl_runtime_apis! {
 		}
 	}
 
-	#[api_version(4)]
-	impl crate::apis::ExtensionBuilder<Block> for Runtime {
-		fn build_data_root(_block: u32, _extrinsics: Vec<OpaqueExtrinsic>) -> H256  {
-			type Extractor = <Runtime as frame_system::Config>::TxDataExtractor;
-			type Extrinsic = <Runtime as frame_system::Config>::Extrinsic;
+	impl crate::apis::KateApi<Block> for Runtime {
+		fn data_proof(extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse> {
+			let tx_data = build_tx_data::<RTExtractor, RTExtrinsic, _, _>(0, extrinsics.iter().map(|opaque| &opaque.0));
+			let (leaf_idx, sub_trie) = tx_data.leaf_idx(tx_idx)?;
 
-			todo!();
+			let (sub_proof, message) = match sub_trie {
+				SubTrie::DataSubmit => {
+					let proof = tx_data.submitted_proof_of(leaf_idx)?;
+					(proof, None)
+				},
+				SubTrie::Bridge => {
+					let message = tx_data.bridged.get(leaf_idx).map(|b| b.addr_msg.message.clone());
+					let proof = tx_data.bridged_proof_of(leaf_idx)?;
+					(proof, message)
+				},
+			};
 
-			/*
-			let failed = Self::failed_extrinsic_indices();
-
-			// Transform *raw extrinsics* into `T::UncheckedExtrinsic` only if it was successfully executed.
-			let indexed_ext = extrinsics
-				.iter()
-				.enumerate()
-				.filter_map(|(idx, ext)| {
-					filter_failed_into::<T::UncheckedExtrinsic>(idx, &ext, &failed)
-				})
-				.collect::<Vec<_>>();
-
-
-
-			tx_data_root::<Extractor, _, _>(block, extrinsics.iter().enumerate())
-			*/
+			let roots = tx_data.roots();
+			let data_proof = DataProofV2::new(roots, sub_proof);
+			Some(ProofResponse::new(data_proof, message))
 		}
 
-		fn build_extension(
-			_extrinsics: Vec<OpaqueExtrinsic>,
-			_data_root: H256,
-			_block_length: BlockLength,
-			_block_number: u32,
-		) -> HeaderExtension {
-			use frame_system::{Config };
-			type Extrinsic = <Runtime as Config>::Extrinsic;
-
-			todo!()
-			/*
-			let app_extrinsics = extrinsics
-				.into_iter()
-				.filter_map(|opaque| UE::try_from(&opaque).map(AppExtrinsic::from).ok())
-				.collect::<Vec<_>>();
-
-			HEB::<Runtime>::build(app_extrinsics, data_root, block_length, block_number)
-			*/
+		fn rows(extrinsics: Vec<OpaqueExtrinsic>, max_width: u32, max_height: u32, rows: Vec<u32>) -> Result<Vec<Vec<[u8;32]>>, HBError> {
+			let submitted = build_tx_data::<RTExtractor, RTExtrinsic, _, _>(0, extrinsics.iter().map(|opaque| &opaque.0)).to_app_extrinsics();
+			HeaderExtensionBuilder::<Runtime>::grid( submitted, max_width, max_height, rows)
 		}
-	}
-
-	impl crate::apis::VectorApi<Block> for Runtime {
-		fn invalid_send_tx_indices() -> Vec<u32> {
-			todo!()
+		
+		fn app_data(extrinsic: Vec<OpaqueExtrinsic>, id: AppId) -> u8 {
+			let submitted = build_tx_data::<RTExtractor, RTExtrinsic, _, _>(0, extrinsic.iter().map(|opaque| &opaque.0)).to_app_extrinsics();
+			HeaderExtensionBuilder::<Runtime>::app_data(submitted, id)
 		}
 	}
 

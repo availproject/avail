@@ -162,28 +162,8 @@ where
 	.expect("Valid BlockLength at genesis .qed");
 
 	let generated_ext = match header_version {
-		HeaderVersion::V1 => {
-			log::debug!(target: "DA_IMPORT_BLOCK", "V1 validation..");
-			let data_root = block_import
-				.client
-				.runtime_api()
-				.build_data_root(parent_hash, extrinsics.clone())
-				.map_err(|e| ClientImport(format!("Data root cannot be calculated: {e:?}")))?;
-
-			block_import
-				.client
-				.runtime_api()
-				.build_extension(
-					parent_hash,
-					extrinsics,
-					data_root,
-					block_length,
-					block_number,
-				)
-				.map_err(|e| ClientImport(format!("Build extension fails due to: {e:?}")))?
-		},
-		_ => {
-			log::debug!(target: "DA_IMPORT_BLOCK", "V2^ validation..");
+		HeaderVersion::V3 => {
+			log::debug!(target: "DA_IMPORT_BLOCK", "V3 validation..");
 			let success_indices: Vec<u32> = block_import
 				.client
 				.runtime_api()

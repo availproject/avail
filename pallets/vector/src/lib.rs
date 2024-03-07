@@ -769,8 +769,10 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// # TODO
+		/// - Remove `dead_code` here.
+		#[allow(dead_code)]
 		fn decode_message_data(data: Vec<u8>) -> Result<(H256, U256), DispatchError> {
-			//abi.encode(ASSET_ID, msg.value),
 			let decoded_data = ethabi::decode(
 				&[
 					ethabi::ParamType::FixedBytes(32),

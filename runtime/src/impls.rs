@@ -3,7 +3,7 @@ use crate::{
 	BlockNumber, Bounties, ElectionProviderMultiPhase, Everything, Extrinsic, GrandpaId, Hash,
 	Header, Historical, ImOnline, ImOnlineId, Index, Indices, Moment, NominationPools, Offences,
 	OriginCaller, PalletInfo, Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent,
-	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask, RuntimeVersion, Session,
+	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session,
 	SessionKeys, Signature, SignedPayload, Staking, System, TechnicalCommittee, Timestamp,
 	TransactionPayment, Treasury, TxPause, VoterList, MINUTES, SLOT_DURATION, VERSION,
 };
@@ -38,7 +38,7 @@ use pallet_transaction_payment::{
 	CurrencyAdapter, LengthFeeAdjustment, Multiplier, TargetedFeeAdjustment,
 };
 use pallet_tx_pause::RuntimeCallNameOf;
-use sp_core::{crypto::KeyTypeId, ConstU64, RuntimeDebug, H256};
+use sp_core::{crypto::KeyTypeId, ConstU64, RuntimeDebug};
 use sp_runtime::{
 	generic::Era,
 	traits::{self, BlakeTwo256, Bounded, Convert, IdentityLookup, OpaqueKeys},
@@ -99,7 +99,7 @@ impl pallet_identity::Config for Runtime {
 	type IdentityInformation = IdentityInfo<MaxAdditionalFields>;
 	/// The origin which may forcibly set or remove a name. Root can always do this.
 	type ForceOrigin = EnsureRoot<AccountId>;
-	/// Maxmimum number of registrars allowed in the system.
+	/// Maximum number of registrars allowed in the system.
 	type MaxRegistrars = MaxRegistrars;
 	/// The maximum number of sub-accounts allowed per identified account.
 	type MaxSubAccounts = MaxSubAccounts;
@@ -405,7 +405,6 @@ impl pallet_balances::Config for Runtime {
 	type ExistentialDeposit = constants::balances::ExistentialDeposit;
 	type FreezeIdentifier = RuntimeFreezeReason;
 	type MaxFreezes = ConstU32<2>;
-	type MaxHolds = ConstU32<2>;
 	type MaxLocks = ConstU32<50>;
 	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = ReserveIdentifier;
@@ -888,6 +887,7 @@ impl frame_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	/// The ubiquitous origin type.
 	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeTask = ();
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = constants::system::SS58Prefix;
 	/// Data Root
