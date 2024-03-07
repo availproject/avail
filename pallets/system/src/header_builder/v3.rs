@@ -1,4 +1,5 @@
-use crate::{limits::BlockLength, header_builder::Error};
+use super::MIN_WIDTH;
+use crate::limits::BlockLength;
 
 use avail_base::metrics::avail::HeaderExtensionBuilderMetrics as Metrics;
 use avail_core::{
@@ -8,7 +9,7 @@ use avail_core::{
 };
 use kate::{
 	couscous::multiproof_params,
-	gridgen::{AsBytes, EvaluationGrid, ArkScalar},
+	gridgen::{AsBytes, EvaluationGrid},
 	pmp::m1_blst::M1NoPrecomp,
 	Seed,
 };
@@ -17,30 +18,7 @@ use sp_core::H256;
 use sp_runtime::SaturatedConversion;
 use std::{sync::OnceLock, time::Instant, vec::Vec};
 
-const MIN_WIDTH: usize = 4;
 static PMP: OnceLock<M1NoPrecomp> = OnceLock::new();
-
-pub fn grid(
-	submitted: Vec<AppExtrinsic>,
-	max_width: usize,
-	max_height: usize,
-	seed: Seed,
-	rows: Vec<usize>,
-) -> Result<Vec<Vec<[u8;32]>>, Error> {
-	let grid = EvaluationGrid::from_extrinsics(submitted, MIN_WIDTH, max_width, max_height, seed)?;
-
-	let grid_rows = rows.into_iter()
-		.map(|row_idx| {
-			let row = grid.row(row_idx).ok_or(Error::MissingRow(row_idx as u32))?;
-			row.iter()
-				.map(ArkScalar::to_bytes)
-				.collect::<Result<Vec<_>, _>>()
-				.map_err(|_| Error::InvalidScalarAtRow(row_idx as u32))
-		})
-		.collect::<Result<Vec<_>,_>>()?;
-
-	Ok(grid_rows)
-}
 
 pub fn build_extension(
 	submitted: Vec<AppExtrinsic>,

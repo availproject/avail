@@ -2163,8 +2163,10 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "sp-runtime-interface",
  "sp-std",
  "test-case",
+ "thiserror-no-std",
 ]
 
 [[package]]
