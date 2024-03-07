@@ -37,7 +37,8 @@
 use std::sync::Arc;
 
 use da_runtime::{
-	apis::DataAvailApi, AccountId, Balance, BlockNumber, Hash, Index, NodeBlock as Block,
+	apis::{DataAvailApi, KateApi, VectorApi},
+	AccountId, Balance, BlockNumber, Hash, Index, NodeBlock as Block,
 };
 use jsonrpsee::RpcModule;
 use sc_client_api::AuxStore;
@@ -124,7 +125,7 @@ where
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: BabeApi<Block>,
 	C::Api: BlockBuilder<Block>,
-	C::Api: DataAvailApi<Block>,
+	C::Api: DataAvailApi<Block> + KateApi<Block> + VectorApi<Block>,
 	P: TransactionPool + 'static,
 	SC: SelectChain<Block> + 'static,
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
@@ -223,6 +224,7 @@ where
 
 	io.merge(StateMigration::new(client.clone(), backend, deny_unsafe).into_rpc())?;
 
+	/*
 	if kate_rpc_metrics_enabled {
 		io.merge(KateApiMetricsServer::into_rpc(Kate::<C, Block>::new(
 			client.clone(),
@@ -231,6 +233,7 @@ where
 			poly_grid_cach_size,
 		)))?;
 	}
+	*/
 
 	if kate_rpc_enabled || kate_rpc_metrics_enabled {
 		io.merge(KateApiServer::into_rpc(Kate::<C, Block>::new(

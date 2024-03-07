@@ -100,9 +100,10 @@ pub trait HostedKate {
 					.map_err(|_| Error::InvalidScalarAtRow(row))?;
 
 				let cell = Cell::new(BlockLengthRows(row), BlockLengthColumns(col));
-				let proof: GProof = poly
+				let proof = poly
 					.proof(srs, &cell)?
 					.to_bytes()
+					.map(GProof::from)
 					.map_err(|_| Error::Proof)?;
 
 				Ok((data, proof))

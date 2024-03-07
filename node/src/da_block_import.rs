@@ -8,15 +8,13 @@ use std::sync::Arc;
 
 use avail_base::metrics::avail::ImportBlockMetrics;
 use avail_core::{
-	header::HeaderExtension, BlockLengthColumns, BlockLengthRows, HeaderVersion, OpaqueExtrinsic,
-	BLOCK_CHUNK_SIZE,
+	header::HeaderExtension, BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
 use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
 	Header as DaHeader,
 };
 use derive_more::Constructor;
-use frame_support::ensure;
 use frame_system::limits::BlockLength;
 use sc_consensus::{
 	block_import::{BlockCheckParams, BlockImport as BlockImportT, BlockImportParams},
@@ -25,7 +23,6 @@ use sc_consensus::{
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{BlockOrigin, Error as ConsensusError};
-use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
 
 #[derive(Constructor)]

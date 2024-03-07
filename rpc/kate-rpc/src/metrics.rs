@@ -1,20 +1,9 @@
-use crate::{Cells, HashOf, Kate, KateApiServer, ProofResponse, Rows};
-
-use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppId, OpaqueExtrinsic};
-use da_runtime::apis::DataAvailApi;
-
+use crate::{Cells, HashOf, ProofResponse, Rows};
+use avail_core::AppId;
 use frame_system::limits::BlockLength;
-use jsonrpsee::{
-	core::{async_trait, RpcResult},
-	proc_macros::rpc,
-};
-use sc_client_api::BlockBackend;
-use sp_api::ProvideRuntimeApi;
-use sp_blockchain::HeaderBackend;
-use sp_runtime::{
-	generic::Digest,
-	traits::{Block as BlockT, Header},
-};
+
+use jsonrpsee::{core::RpcResult, proc_macros::rpc};
+use sp_runtime::traits::Block as BlockT;
 
 #[rpc(client, server)]
 pub trait KateApiMetrics<Block>
@@ -56,6 +45,7 @@ where
 	) -> RpcResult<(ProofResponse, u128)>;
 }
 
+/*
 #[async_trait]
 impl<Client, Block> KateApiMetricsServer<Block> for Kate<Client, Block>
 where
@@ -123,4 +113,4 @@ where
 
 		result.map(|r| (r, elapsed.as_micros()))
 	}
-}
+}*/

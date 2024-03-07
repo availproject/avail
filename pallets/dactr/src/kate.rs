@@ -5,19 +5,49 @@ use kate::{com::Error as KateError, gridgen::AppRowError as KateAppRowError, See
 
 use codec::{Decode, Encode};
 use core::{marker::PhantomData, num::TryFromIntError};
+use derive_more::From;
 use frame_support::traits::Randomness;
 use scale_info::TypeInfo;
 use sp_core::U256;
 use sp_runtime::traits::Hash;
-use sp_runtime_interface::pass_by::PassByCodec;
+use sp_runtime_interface::pass_by::{PassByCodec, PassByInner};
 use thiserror_no_std::Error;
+
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 pub type GRawScalar = U256;
 pub type GRow = Vec<GRawScalar>;
-pub type GProof = [u8; 48];
 pub type GDataProof = (GRawScalar, GProof);
 
-mod hosted_kate;
+/// # NOTE
+/// `Serde` requires a custom implementation for `GProof` due to the array size (greater than `[T;32]`).
+/// In this case, we transform into a `Vec<u8>` as intermediate step to serialize/deserialize.
+#[derive(Encode, Decode, TypeInfo, PassByInner, Debug, From, Clone, Copy)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "std", serde(try_from = "Vec<u8>", into = "Vec<u8>"))]
+pub struct GProof([u8; 48]);
+
+impl From<GProof> for Vec<u8> {
+	fn from(proof: GProof) -> Self {
+		proof.0.to_vec()
+	}
+}
+
+impl TryFrom<Vec<u8>> for GProof {
+	type Error = u32;
+	fn try_from(data: Vec<u8>) -> Result<Self, Self::Error> {
+		if data.len() != 48 {
+			return Err(data.len() as u32);
+		};
+
+		let mut proof = [0u8; 48];
+		proof.copy_from_slice(&data);
+		Ok(GProof(proof))
+	}
+}
+
+pub mod hosted_kate;
 pub use hosted_kate::hosted_kate::{
 	app_data as hosted_app_data, grid as hosted_grid, proof as hosted_proof,
 };

@@ -40,7 +40,12 @@ impl TxDataFilter<AccountId, Call> for Runtime {
 }
 
 /// Filters and extracts `data` from `calls` if internal data is not empty.
-fn filter_da_call(call: &DACall<Runtime>, app_id: AppId, tx_idx: usize, metrics: &mut Metrics) -> Option<TxData> {
+fn filter_da_call(
+	call: &DACall<Runtime>,
+	app_id: AppId,
+	tx_idx: usize,
+	metrics: &mut Metrics,
+) -> Option<TxData> {
 	metrics.data_submit_extrinsics += 1;
 
 	match call {

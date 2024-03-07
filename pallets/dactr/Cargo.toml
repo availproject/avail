@@ -20,9 +20,10 @@ pallet-transaction-payment = { workspace = true, default-features = false }
 # Others
 log.workspace = true
 thiserror-no-std.workspace = true
+derive_more.workspace = true
 
 # Substrate
-serde = { workspace = true, optional = true }
+serde = { workspace = true, optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive", ] }
 scale-info = { workspace = true, default-features = false }
 sp-core = { workspace = true, default-features = false }

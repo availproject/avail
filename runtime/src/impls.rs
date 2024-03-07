@@ -3,9 +3,9 @@ use crate::{
 	BlockNumber, Bounties, ElectionProviderMultiPhase, Everything, Extrinsic, GrandpaId, Hash,
 	Header, Historical, ImOnline, ImOnlineId, Index, Indices, Moment, NominationPools, Offences,
 	OriginCaller, PalletInfo, Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent,
-	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session,
-	SessionKeys, Signature, SignedPayload, Staking, System, TechnicalCommittee, Timestamp,
-	TransactionPayment, Treasury, TxPause, VoterList, MINUTES, SLOT_DURATION, VERSION,
+	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, SessionKeys,
+	Signature, SignedPayload, Staking, System, TechnicalCommittee, Timestamp, TransactionPayment,
+	Treasury, TxPause, VoterList, MINUTES, SLOT_DURATION, VERSION,
 };
 use avail_core::{
 	currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL},

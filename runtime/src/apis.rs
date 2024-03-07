@@ -9,12 +9,11 @@ use avail_core::{
 	currency::Balance,
 	data_proof_v2::{DataProofV2, ProofResponse, SubTrie},
 	header::HeaderExtension,
-	OpaqueExtrinsic,
+	AppId, OpaqueExtrinsic,
 };
+use da_control::kate::{Error as RTKateError, GDataProof, GRow, RTKate};
 use frame_system::{
-	data_root::build_tx_data,
-	header_builder::{da::HeaderExtensionBuilder, Error as HBError},
-	limits::BlockLength,
+	data_root::build_tx_data, header_builder::da::HeaderExtensionBuilder, limits::BlockLength,
 	HeaderExtensionBuilder as _,
 };
 
@@ -66,8 +65,9 @@ decl_runtime_apis! {
 
 	pub trait KateApi {
 		fn data_proof(extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse>;
-		fn rows(extrinsics: Vec<OpaqueExtrinsic>, max_width: u32, max_height: u32, rows: Vec<u32>) -> Result<Vec<Vec<[u8;32]>>, HBError>;
-		fn app_data(extrinsic: OpaqueExtrinsic, id: AppId) -> u8;
+		fn rows(extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError >;
+		fn app_data(extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, id: AppId) -> Result<Vec<Option<GRow>>, RTKateError>;
+		fn proof(extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError>;
 	}
 }
 
@@ -407,14 +407,19 @@ impl_runtime_apis! {
 			Some(ProofResponse::new(data_proof, message))
 		}
 
-		fn rows(extrinsics: Vec<OpaqueExtrinsic>, max_width: u32, max_height: u32, rows: Vec<u32>) -> Result<Vec<Vec<[u8;32]>>, HBError> {
-			let submitted = build_tx_data::<RTExtractor, RTExtrinsic, _, _>(0, extrinsics.iter().map(|opaque| &opaque.0)).to_app_extrinsics();
-			HeaderExtensionBuilder::<Runtime>::grid( submitted, max_width, max_height, rows)
+		fn rows(extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError> {
+			let app_exts = build_tx_data::<RTExtractor, RTExtrinsic, _, _>(0, extrinsics.iter().map(|opaque| &opaque.0)).to_app_extrinsics();
+			RTKate::<Runtime>::grid( app_exts, block_len, rows)
 		}
-		
-		fn app_data(extrinsic: Vec<OpaqueExtrinsic>, id: AppId) -> u8 {
-			let submitted = build_tx_data::<RTExtractor, RTExtrinsic, _, _>(0, extrinsic.iter().map(|opaque| &opaque.0)).to_app_extrinsics();
-			HeaderExtensionBuilder::<Runtime>::app_data(submitted, id)
+
+		fn app_data(extrinsic: Vec<OpaqueExtrinsic>, block_len: BlockLength, id: AppId) -> Result<Vec<Option<GRow>>, RTKateError> {
+			let app_exts = build_tx_data::<RTExtractor, RTExtrinsic, _, _>(0, extrinsic.iter().map(|opaque| &opaque.0)).to_app_extrinsics();
+			RTKate::<Runtime>::app_data(app_exts, block_len, id)
+		}
+
+		fn proof(extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError> {
+			let app_exts =  build_tx_data::<RTExtractor, RTExtrinsic, _, _>(0, extrinsics.iter().map(|opaque| &opaque.0)).to_app_extrinsics();
+			RTKate::<Runtime>::proof(app_exts, block_len, cells)
 		}
 	}
 

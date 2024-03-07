@@ -52,7 +52,7 @@ fn signed_extrinsic(function: RuntimeCall) -> Vec<u8> {
 	let signature: MultiSignature = Alice.sign(&payload).into();
 
 	assert!(signature.verify(&*payload, &alice));
-	Extrinsic::new_signed( function, alice.into(), signature, extra).encode()
+	Extrinsic::new_signed(function, alice.into(), signature, extra).encode()
 }
 
 fn submit_data(data: Vec<u8>) -> Vec<u8> {
@@ -65,7 +65,12 @@ fn submit_data(data: Vec<u8>) -> Vec<u8> {
 fn bridge_msg(data: Vec<u8>) -> Vec<u8> {
 	let message = Message::Data(BoundedData::truncate_from(data));
 	let to = H256::repeat_byte(0x01);
-	let function = VectorCall::send_message { message, to, domain: 2 }.into();
+	let function = VectorCall::send_message {
+		message,
+		to,
+		domain: 2,
+	}
+	.into();
 
 	signed_extrinsic(function)
 }
@@ -73,7 +78,12 @@ fn bridge_msg(data: Vec<u8>) -> Vec<u8> {
 fn bridge_fungible_msg(asset_id: H256, amount: u128) -> Vec<u8> {
 	let message = Message::FungibleToken { asset_id, amount };
 	let to = H256::repeat_byte(0x01);
-	let function = VectorCall::send_message { message, to, domain: 2 } .into();
+	let function = VectorCall::send_message {
+		message,
+		to,
+		domain: 2,
+	}
+	.into();
 
 	signed_extrinsic(function)
 }

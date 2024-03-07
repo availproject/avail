@@ -2148,6 +2148,7 @@ name = "da-control"
 version = "1.0.1"
 dependencies = [
  "avail-core",
+ "derive_more",
  "frame-benchmarking",
  "frame-support",
  "frame-system",

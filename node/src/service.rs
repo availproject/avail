@@ -53,7 +53,8 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 	type ExtendHostFunctions = (
 		frame_benchmarking::benchmarking::HostFunctions,
 		frame_system::header_builder::hosted_header_builder::HostFunctions,
-		avail_base::aux_store_ext::hosted_mem_tmp_storage::HostFunctions,
+		avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
+		da_control::kate::hosted_kate::hosted_kate::HostFunctions,
 	);
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {

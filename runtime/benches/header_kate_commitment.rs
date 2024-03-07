@@ -1,6 +1,4 @@
-use avail_core::{
-	AppExtrinsic, BlockLengthColumns, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
-};
+use avail_core::{AppExtrinsic, BlockLengthColumns, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO};
 use da_control::Config as DAConfig;
 use da_runtime::Runtime;
 use frame_support::traits::Get as _;
