@@ -8,12 +8,10 @@ mod traits;
 pub use traits::TxDataFilter;
 mod submitted_data;
 pub use submitted_data::{SubmittedData, SubmittedDataRef};
-mod tx_data_ref;
-pub use tx_data_ref::TxDataRef;
 mod tx_data;
 pub use tx_data::TxData;
 mod bridge_data;
-pub use bridge_data::{BridgedData, BridgedDataRef};
+pub use bridge_data::BridgedData;
 mod metrics;
 pub use metrics::{Metrics, RcMetrics};
 

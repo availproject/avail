@@ -1,4 +1,4 @@
-use crate::data_root::{BridgedData, SubmittedData, TxDataRef};
+use crate::data_root::{BridgedData, SubmittedData};
 use avail_core::{
 	app_extrinsic::AppExtrinsic,
 	data_proof_v2::{SubTrie, TxDataRoots},
@@ -27,12 +27,6 @@ impl TxData {
 			failed_send_msg_txs,
 			..Default::default()
 		}
-	}
-
-	pub fn to_ref(&self) -> TxDataRef<'_> {
-		let submitted = self.submitted.iter().map(SubmittedData::to_ref).collect();
-		let bridged = self.bridged.iter().map(BridgedData::to_ref).collect();
-		TxDataRef::new(submitted, bridged, self.failed_send_msg_txs.clone())
 	}
 
 	pub fn to_app_extrinsics(self) -> Vec<AppExtrinsic> {
