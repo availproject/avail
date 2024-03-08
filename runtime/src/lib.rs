@@ -145,6 +145,7 @@ construct_runtime!(
 		Vector: pallet_vector = 39,
 		Proxy: pallet_proxy = 40,
 		TxPause: pallet_tx_pause = 41,
+		TreasuryCommittee: pallet_collective::<Instance1> = 42,
 	}
 );
 
@@ -188,6 +189,7 @@ mod benches {
 		[pallet_vector, crate::Vector]
 		[pallet_proxy, crate::Proxy]
 		[pallet_tx_pause, crate::TxPause]
+		[pallet_collective, crate::TreasuryCommittee]
 	);
 }
 
@@ -212,7 +214,7 @@ mod tests {
 	#[cfg(feature = "try-runtime")]
 	#[allow(dead_code)]
 	fn check_try_runtime_support_on_pallets() -> Result<(), &'static str> {
-		use crate::impls::TechnicalCollective;
+		use crate::impls::{TechnicalCollective, TreasuryCollective};
 		use frame_support::traits::{TryState, TryStateSelect::All};
 		use sp_runtime::traits::Zero;
 
@@ -257,6 +259,7 @@ mod tests {
 		<pallet_vector::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_nomination_pools::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_proxy::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_collective::Pallet<Runtime, TreasuryCollective> as TryState<BlockNumber>>::try_state(block, All)?;
 		Ok(())
 	}
 

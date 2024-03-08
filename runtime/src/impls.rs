@@ -40,12 +40,17 @@ use frame_support::traits::LinearStoragePrice;
 use frame_support::traits::OnUnbalanced;
 use frame_support::weights::constants::RocksDbWeight;
 use frame_support::weights::ConstantMultiplier;
-use frame_support::{parameter_types, traits::EitherOfDiverse, PalletId};
+use frame_support::{
+	parameter_types,
+	traits::{EitherOf, EitherOfDiverse},
+	PalletId,
+};
 use frame_system::limits::BlockLength;
 use frame_system::submitted_data;
 use frame_system::submitted_data::BoundedData;
 use frame_system::submitted_data::{Message, MessageType};
 use frame_system::EnsureRoot;
+use frame_system::{EnsureRootWithSuccess, EnsureWithSuccess};
 use pallet_election_provider_multi_phase::{GeometricDepositBase, SolutionAccuracyOf};
 use pallet_identity::legacy::IdentityInfo;
 use pallet_transaction_payment::CurrencyAdapter;
@@ -420,6 +425,25 @@ impl pallet_grandpa::Config for Runtime {
 }
 
 parameter_types! {
+	pub const TreasuryMotionDuration: BlockNumber = prod_or_fast!(5 * DAYS, 5 * MINUTES);
+}
+
+pub type TreasuryCollective = pallet_collective::Instance1;
+
+impl pallet_collective::Config<TreasuryCollective> for Runtime {
+	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
+	type MaxMembers = ConstU32<100>;
+	type MaxProposalWeight = constants::council::MaxProposalWeight;
+	type MaxProposals = ConstU32<100>;
+	type MotionDuration = TreasuryMotionDuration;
+	type Proposal = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeOrigin = RuntimeOrigin;
+	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
 	pub const TechnicalMotionDuration: BlockNumber = prod_or_fast!(5 * DAYS, 5 * MINUTES);
 }
 pub type TechnicalMaxMembers = ConstU32<100>;
@@ -654,7 +678,12 @@ impl pallet_nomination_pools::Config for Runtime {
 parameter_types! {
 	pub const SpendPayoutPeriod: BlockNumber = 30 * DAYS;
 	pub TreasuryAccount: AccountId = Treasury::account_id();
+	pub const MaxBalance: Balance = Balance::max_value();
+	pub const MaxTreasurySpend: Balance = 10_000_000 * AVAIL; // 10 Million AVAILs
 }
+
+pub type TreasurySpender =
+	pallet_collective::EnsureProportionMoreThan<AccountId, TreasuryCollective, 1, 2>;
 
 impl pallet_treasury::Config for Runtime {
 	type ApproveOrigin = EnsureRoot<AccountId>;
@@ -670,7 +699,10 @@ impl pallet_treasury::Config for Runtime {
 	type RejectOrigin = EnsureRoot<AccountId>;
 	type RuntimeEvent = RuntimeEvent;
 	type SpendFunds = ();
-	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
+	type SpendOrigin = EitherOf<
+		EnsureRootWithSuccess<AccountId, MaxBalance>,
+		EnsureWithSuccess<TreasurySpender, AccountId, MaxTreasurySpend>,
+	>;
 	type SpendPeriod = SpendPeriod;
 	type WeightInfo = weights::pallet_treasury::WeightInfo<Runtime>;
 	type AssetKind = ();
