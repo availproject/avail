@@ -116,7 +116,7 @@ construct_runtime!(
 		// Council: pallet_collective::<Instance1> = 13,
 		TechnicalCommittee: pallet_collective::<Instance2> = 14,
 		// Elections: pallet_elections_phragmen = 15,
-		TechnicalMembership: pallet_membership::<Instance1> = 16,
+		// TechnicalMembership: pallet_membership::<Instance1> = 16,
 		Grandpa: pallet_grandpa = 17,
 		Treasury: pallet_treasury = 18,
 
@@ -233,9 +233,6 @@ mod tests {
 		<pallet_staking::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_session::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_collective::Pallet<Runtime, TechnicalCollective> as TryState<BlockNumber>>::try_state(block, All)?;
-		<pallet_membership::Pallet<Runtime, pallet_membership::Instance1> as TryState<
-			BlockNumber,
-		>>::try_state(block, All)?;
 		<pallet_grandpa::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_treasury::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_sudo::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;

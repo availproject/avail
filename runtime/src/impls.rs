@@ -8,9 +8,8 @@ use crate::{
 	ElectionProviderMultiPhase, Everything, GrandpaId, Hash, Historical, ImOnline, ImOnlineId,
 	Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo, Preimage,
 	ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason,
-	RuntimeOrigin, RuntimeVersion, Session, Signature, SignedPayload, Staking, System,
-	TechnicalCommittee, Timestamp, TransactionPayment, Treasury, TxPause, UncheckedExtrinsic,
-	VoterList, MINUTES, VERSION,
+	RuntimeOrigin, RuntimeVersion, Session, Signature, SignedPayload, Staking, System, Timestamp,
+	TransactionPayment, Treasury, TxPause, UncheckedExtrinsic, VoterList, MINUTES, VERSION,
 };
 use avail_core::currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL};
 use avail_core::AppId;
@@ -445,19 +444,6 @@ impl pallet_collective::Config<TechnicalCollective> for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
-}
-
-impl pallet_membership::Config<pallet_membership::Instance1> for Runtime {
-	type AddOrigin = EnsureRoot<AccountId>;
-	type MaxMembers = TechnicalMaxMembers;
-	type MembershipChanged = TechnicalCommittee;
-	type MembershipInitialized = TechnicalCommittee;
-	type PrimeOrigin = EnsureRoot<AccountId>;
-	type RemoveOrigin = EnsureRoot<AccountId>;
-	type ResetOrigin = EnsureRoot<AccountId>;
-	type RuntimeEvent = RuntimeEvent;
-	type SwapOrigin = EnsureRoot<AccountId>;
-	type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_election_provider_multi_phase::MinerConfig for Runtime {

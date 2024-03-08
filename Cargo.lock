@@ -2324,7 +2324,6 @@ dependencies = [
  "pallet-im-online",
  "pallet-indices",
  "pallet-mandate",
- "pallet-membership",
  "pallet-mmr",
  "pallet-multisig",
  "pallet-nomination-pools",
@@ -6414,23 +6413,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-collective",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch)",
-]
-
-[[package]]
-name = "pallet-membership"
-version = "28.0.0"
-source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch#b66ca4dfd5e244b70458d12ae37b5461739bee31"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
  "parity-scale-codec",
  "scale-info",
  "sp-core",

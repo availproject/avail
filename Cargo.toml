@@ -77,7 +77,6 @@ pallet-sudo = { git = "https://github.com/availproject/polkadot-sdk.git", tag = 
 pallet-authority-discovery = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
 pallet-elections-phragmen = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
 pallet-tips = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
-pallet-membership = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
 pallet-bags-list = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
 pallet-election-provider-multi-phase = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
 frame-election-provider-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
