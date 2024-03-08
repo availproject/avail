@@ -116,18 +116,3 @@ fn to_width_height(block_len: &BlockLength) -> (usize, usize) {
 	let height = block_len.rows.0.saturated_into();
 	(width, height)
 }
-
-/*
-fn non_extended_dims(dims: Dimensions) -> Option<Dimensions> {
-	// Dimension of no extended matrix.
-	let rows = dims
-		.rows()
-		.get()
-		.checked_div(NonZeroU16::get(ROW_EXTENSION))?;
-	let cols = dims
-		.cols()
-		.get()
-		.checked_div(NonZeroU16::get(COL_EXTENSION))?;
-
-	Dimensions::new_from(rows, cols)
-}*/

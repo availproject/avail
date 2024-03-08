@@ -7,7 +7,7 @@ use sp_std::vec::Vec;
 mod traits;
 pub use traits::TxDataFilter;
 mod submitted_data;
-pub use submitted_data::{SubmittedData, SubmittedDataRef};
+pub use submitted_data::SubmittedData;
 mod tx_data;
 pub use tx_data::TxData;
 mod bridge_data;

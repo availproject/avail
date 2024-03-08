@@ -1,4 +1,4 @@
-use crate::data_root::{Metrics, TxData, TxDataFilter};
+use crate::data_root::{build_tx_data, TxDataFilter};
 
 use avail_core::{
 	data_proof_v2::{AddressedMessage, SubTrie},
@@ -41,19 +41,7 @@ where
 	E: ExtrinsicCall + MaybeCaller<A> + GetAppId + Decode,
 	I: Iterator<Item = &'a Vec<u8>> + 'a,
 {
-	let mut metrics = Metrics::default();
-
-	let tx_data = extrinsics
-		.enumerate()
-		.filter_map(|(idx, raw_extrinsic)| {
-			let ext = E::decode(&mut raw_extrinsic.as_slice()).ok()?;
-			let caller = ext.caller()?;
-			let app_id = ext.app_id();
-			let call = ext.call();
-			F::filter(caller, call, app_id, block, idx, &mut metrics)
-		})
-		.collect::<TxData>();
-
+	let tx_data = build_tx_data::<F, E, A, I>(block, extrinsics);
 	let message = tx_data
 		.bridged
 		.get(leaf_idx)
