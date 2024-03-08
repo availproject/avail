@@ -349,30 +349,6 @@ pub mod preimage {
 	}
 }
 
-pub mod bounty {
-	use super::{time::*, *};
-
-	#[cfg(not(feature = "fast-runtime"))]
-	parameter_types! {
-		pub const DepositPayoutDelay: BlockNumber = 8 * DAYS;
-		pub const UpdatePeriod: BlockNumber = 90 * DAYS;
-	}
-
-	#[cfg(feature = "fast-runtime")]
-	parameter_types! {
-		pub const DepositPayoutDelay: BlockNumber = 1 * MINUTES;
-		pub const UpdatePeriod: BlockNumber = 10 * MINUTES;
-	}
-
-	parameter_types! {
-		pub const ValueMinimum: Balance = 5 * AVAIL;
-		pub const DepositBase: Balance = AVAIL;
-		pub const CuratorDepositMultiplier: Permill = Permill::from_percent(50);
-		pub const CuratorDepositMin: Balance = 1 * AVAIL;
-		pub const CuratorDepositMax: Balance = 100 * AVAIL;
-	}
-}
-
 pub mod da {
 	use avail_core::{BlockLengthColumns, BlockLengthRows};
 
