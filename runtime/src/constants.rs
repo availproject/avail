@@ -26,7 +26,7 @@ use frame_support::{
 	traits::{ConstU16, ConstU32},
 	weights::{constants::BlockExecutionWeight, Weight},
 };
-use sp_runtime::{transaction_validity::TransactionPriority, Perbill, Percent, Permill};
+use sp_runtime::{transaction_validity::TransactionPriority, Perbill, Percent};
 use static_assertions::const_assert;
 
 use crate::BlockNumber;
@@ -163,7 +163,7 @@ pub mod indices {
 	use super::*;
 
 	parameter_types! {
-		pub const IndexDeposit :Balance =  1 * AVAIL;
+		pub const IndexDeposit :Balance =  10 * AVAIL;
 	}
 }
 
@@ -171,7 +171,7 @@ pub mod balances {
 	use super::{currency::*, *};
 
 	parameter_types! {
-		pub const ExistentialDeposit :Balance =  10 * CENTS; // 0.1 AVAILs
+		pub const ExistentialDeposit :Balance = CENTS; // 0.01 AVAILs
 	}
 }
 
@@ -201,8 +201,8 @@ pub mod council {
 pub mod nomination_pools {
 	use super::*;
 
-	pub const MIN_CREATE_BOND: Balance = 10 * AVAIL;
-	pub const MIN_JOIN_BOND: Balance = 1 * AVAIL;
+	pub const MIN_CREATE_BOND: Balance = 100 * AVAIL;
+	pub const MIN_JOIN_BOND: Balance = 10 * AVAIL;
 	pub const MAX_POOLS: u32 = 16;
 	pub const MAX_MEMBERS_PER_POOL: u32 = 100;
 	pub const MAX_MEMBERS: u32 = MAX_POOLS * MAX_MEMBERS_PER_POOL;
