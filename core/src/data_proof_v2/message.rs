@@ -1,4 +1,4 @@
-use super::{tx_uid_deconstruct, AddressedMessageRef, BoundedData, MessageRef};
+use super::BoundedData;
 
 use codec::{Decode, Encode};
 use derive_more::{Constructor, From};
@@ -15,8 +15,8 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum MessageType {
-	MTData,
-	MTFungibleToken,
+	Data,
+	FungibleToken,
 }
 
 /// Possible types of Messages allowed by Avail to bridge to other chains.
@@ -40,20 +40,10 @@ impl Message {
 		}
 	}
 
-	pub fn to_ref(&self) -> MessageRef<'_> {
-		match self {
-			Message::Data(data) => MessageRef::Data(data.as_ref()),
-			Message::FungibleToken { asset_id, amount } => MessageRef::FungibleToken {
-				asset_id: *asset_id,
-				amount: *amount,
-			},
-		}
-	}
-
 	pub fn r#type(&self) -> MessageType {
 		match self {
-			Message::Data(..) => MessageType::MTData,
-			Message::FungibleToken { .. } => MessageType::MTFungibleToken,
+			Message::Data(..) => MessageType::Data,
+			Message::FungibleToken { .. } => MessageType::FungibleToken,
 		}
 	}
 
@@ -107,18 +97,5 @@ impl AddressedMessage {
 			Token::Bytes(data),
 			Token::Uint(U256::from(self.id)),
 		])])
-	}
-
-	pub fn to_ref(&self) -> AddressedMessageRef<'_> {
-		let (block, tx_index) = tx_uid_deconstruct(self.id);
-
-		AddressedMessageRef::new(
-			self.message.to_ref(),
-			self.from,
-			self.to,
-			self.destination_domain,
-			block,
-			tx_index,
-		)
 	}
 }

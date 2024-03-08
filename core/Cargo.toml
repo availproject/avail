@@ -38,6 +38,7 @@ hex-literal.workspace = true
 rand.workspace = true
 serde_json.workspace = true
 test-case.workspace = true
+avail-core = { path = ".", features = ["runtime"] }
 
 [features]
 default = [ "std" ]

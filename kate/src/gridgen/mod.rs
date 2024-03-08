@@ -67,10 +67,8 @@ pub enum AppRowError {
 
 impl EvaluationGrid {
 	/// From the app extrinsics, create a data grid of Scalars
-	/// # TODO
-	/// - Remove non Data Submission
 	pub fn from_extrinsics(
-		submitted: Vec<AppExtrinsic>,
+		extrinsics: Vec<AppExtrinsic>,
 		min_width: usize,
 		max_width: usize,
 		max_height: usize,
@@ -78,7 +76,7 @@ impl EvaluationGrid {
 	) -> Result<Self, Error> {
 		// Group extrinsics by app id, also sorted by app id.
 		// Using a BTreeMap here will still iter in sorted order. Sweet!
-		let grouped = submitted.iter().fold::<BTreeMap<AppId, Vec<&[u8]>>, _>(
+		let grouped = extrinsics.iter().fold::<BTreeMap<AppId, Vec<&[u8]>>, _>(
 			BTreeMap::default(),
 			|mut acc, e| {
 				acc.entry(e.app_id).or_default().push(e.data.as_slice());
