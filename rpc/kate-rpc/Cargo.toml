@@ -15,6 +15,7 @@ kate = { workspace = true, default-features = false }
 
 # 3rd party
 jsonrpsee.workspace = true
+log.workspace = true
 
 # Substrate
 sp-api = { workspace = true, default-features = false }

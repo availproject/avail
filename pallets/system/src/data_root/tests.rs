@@ -61,7 +61,7 @@ impl GetAppId for TExt {}
 // dummy filter implementation that skips empty strings in vector
 impl TxDataFilter<AccountId32, String> for String {
 	fn filter<'a, 'b>(
-		_: &AccountId32,
+		_: Option<&AccountId32>,
 		s: &String,
 		app: AppId,
 		_: u32,
@@ -308,7 +308,7 @@ fn test_amb_message_encoding() {
 	let data = BoundedVec::defensive_truncate_from(data.to_vec());
 
 	let message = AddressedMessage {
-		message: Message::Data(data),
+		message: Message::ArbitraryMessage(data),
 		from: H256(hex!(
 			"8f8d47bf15953e26c622f36f3366e43e26b9b78b000000000000000000000000"
 		)),
@@ -331,7 +331,7 @@ fn test_amb_message_encoding_with_hash_check() {
 	let data = BoundedVec::defensive_truncate_from("Hello, World!".as_bytes().to_vec());
 
 	let message = AddressedMessage {
-		message: Message::Data(data),
+		message: Message::ArbitraryMessage(data),
 		from: hex!("681257BED628425a28B469114Dc21A7c30205cFD000000000000000000000000").into(),
 		to: hex!("3547517355657647456b6f7847444a5044576251694b4478714b6d675a357047").into(),
 		origin_domain: 2,

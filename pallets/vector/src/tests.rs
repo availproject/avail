@@ -145,7 +145,7 @@ fn get_valid_amb_message() -> AddressedMessage {
 	let data = BoundedVec::defensive_truncate_from("Hello, World!".as_bytes().to_vec());
 
 	AddressedMessage {
-		message: Message::Data(data),
+		message: Message::ArbitraryMessage(data),
 		from: from.into(),
 		to: recipient.into(),
 		origin_domain: 2,
@@ -847,7 +847,7 @@ fn source_chain_froze_does_not_work_with_non_root() {
 fn send_message_arbitrary_message_works() {
 	new_test_ext().execute_with(|| {
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-		let message = Message::Data(BoundedVec::truncate_from([0, 1, 2, 3].to_vec()));
+		let message = Message::ArbitraryMessage(BoundedVec::truncate_from([0, 1, 2, 3].to_vec()));
 		let to = ROTATE_FUNCTION_ID;
 		let domain = 2;
 
@@ -868,7 +868,7 @@ fn send_message_arbitrary_message_works() {
 fn send_message_arbitrary_message_doesnt_accept_empty_data() {
 	new_test_ext().execute_with(|| {
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-		let message = Message::Data(BoundedVec::truncate_from(vec![]));
+		let message = Message::ArbitraryMessage(BoundedVec::truncate_from(vec![]));
 
 		let ok = Bridge::send_message(origin, message, ROTATE_FUNCTION_ID, 2);
 		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);

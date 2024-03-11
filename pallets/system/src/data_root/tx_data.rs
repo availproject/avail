@@ -14,7 +14,7 @@ use sp_io::hashing::keccak_256;
 use sp_runtime_interface::pass_by::PassByCodec;
 use sp_std::{iter::repeat, vec, vec::Vec};
 
-#[derive(Debug, Default, Constructor, PassByCodec, Encode, Decode)]
+#[derive(Debug, Default, Constructor, PassByCodec, Encode, Decode, Eq, PartialEq)]
 pub struct TxData {
 	pub submitted: Vec<SubmittedData>,
 	pub bridged: Vec<BridgedData>,

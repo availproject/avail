@@ -14,7 +14,7 @@ use sp_std::vec::Vec;
 /// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.
 impl TxDataFilter<AccountId, Call> for Runtime {
 	fn filter(
-		caller: &AccountId,
+		caller: Option<&AccountId>,
 		call: &Call,
 		app_id: AppId,
 		block: u32,
@@ -30,7 +30,7 @@ impl TxDataFilter<AccountId, Call> for Runtime {
 				UtilCall::batch { calls }
 				| UtilCall::batch_all { calls }
 				| UtilCall::force_batch { calls } => {
-					Self::process_calls(caller, calls, app_id, block, tx_index, metrics)
+					Self::process_calls(caller?, calls, app_id, block, tx_index, metrics)
 				},
 				_ => None,
 			},
@@ -61,7 +61,7 @@ fn filter_da_call(
 
 /// Filters and extracts message references from `call`
 fn filter_vector_call(
-	caller: &AccountId,
+	caller: Option<&AccountId>,
 	call: &VectorCall<Runtime>,
 	block: u32,
 	tx_index: usize,
@@ -75,9 +75,9 @@ fn filter_vector_call(
 		} if !message.is_empty() => {
 			metrics.bridge_leaves += 1;
 
+			let from: [u8; 32] = *caller?.as_ref();
 			let tx_index = u32::try_from(tx_index).ok()?;
 			let id = tx_uid(block, tx_index);
-			let from: [u8; 32] = *caller.as_ref();
 			let msg = AddressedMessage::new(message.clone(), H256(from), *to, 1, *domain, id);
 			let bridged = BridgedData::new(tx_index, msg);
 			Some(bridged.into())

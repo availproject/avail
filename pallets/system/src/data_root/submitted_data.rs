@@ -4,7 +4,7 @@ use codec::{Decode, Encode};
 use derive_more::Constructor;
 use sp_std::vec::Vec;
 
-#[derive(Debug, Constructor, Encode, Decode)]
+#[derive(Debug, Constructor, Encode, Decode, PartialEq, Eq)]
 pub struct SubmittedData {
 	pub id: AppId,
 	pub tx_index: u32,

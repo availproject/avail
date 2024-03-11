@@ -4,7 +4,7 @@ use avail_core::AppId;
 /// It is similar to `Extractor` but it uses `C` type for calls, instead of `AppExtrinsic`.
 pub trait TxDataFilter<A, C> {
 	fn filter(
-		caller: &A,
+		caller: Option<&A>,
 		call: &C,
 		app_id: AppId,
 		block: u32,
@@ -22,7 +22,7 @@ pub trait TxDataFilter<A, C> {
 	) -> Option<TxData> {
 		let tx_data = calls
 			.iter()
-			.filter_map(|call| Self::filter(caller, call, app_id, block, tx_idx, metrics))
+			.filter_map(|call| Self::filter(Some(caller), call, app_id, block, tx_idx, metrics))
 			.collect::<TxData>();
 		(tx_data.is_empty()).then_some(tx_data)
 	}
@@ -30,7 +30,7 @@ pub trait TxDataFilter<A, C> {
 
 #[cfg(feature = "std")]
 impl<A, C> TxDataFilter<A, C> for () {
-	fn filter(_: &A, _: &C, _: AppId, _: u32, _: usize, _: &mut Metrics) -> Option<TxData> {
+	fn filter(_: Option<&A>, _: &C, _: AppId, _: u32, _: usize, _: &mut Metrics) -> Option<TxData> {
 		None
 	}
 }

@@ -414,7 +414,7 @@ pub mod pallet {
 		#[pallet::call_index(1)]
 		#[pallet::weight({
 			match addr_message.message {
-				Message::Data(ref data) => T::WeightInfo::execute_arbitrary_message(data.len() as u32),
+				Message::ArbitraryMessage(ref data) => T::WeightInfo::execute_arbitrary_message(data.len() as u32),
 				Message::FungibleToken {..} => T::WeightInfo::execute_fungible_token(),
 			}
 		})]
@@ -523,7 +523,7 @@ pub mod pallet {
 		#[pallet::call_index(3)]
 		#[pallet::weight({
 			match message {
-				Message::Data(ref data) => T::WeightInfo::send_message_arbitrary_message(data.len() as u32),
+				Message::ArbitraryMessage(ref data) => T::WeightInfo::send_message_arbitrary_message(data.len() as u32),
 				Message::FungibleToken{..} => T::WeightInfo::send_message_fungible_token(),
 			}
 		})]
@@ -717,7 +717,9 @@ pub mod pallet {
 						ExistenceRequirement::KeepAlive,
 					)?;
 				},
-				Message::Data(data) => ensure!(!data.is_empty(), Error::<T>::InvalidBridgeInputs),
+				Message::ArbitraryMessage(data) => {
+					ensure!(!data.is_empty(), Error::<T>::InvalidBridgeInputs)
+				},
 			};
 
 			let nonce = Self::fetch_curr_tx_nonce();

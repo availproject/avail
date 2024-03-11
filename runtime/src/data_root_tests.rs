@@ -63,7 +63,7 @@ fn submit_data(data: Vec<u8>) -> Vec<u8> {
 }
 
 fn bridge_msg(data: Vec<u8>) -> Vec<u8> {
-	let message = Message::Data(BoundedData::truncate_from(data));
+	let message = Message::ArbitraryMessage(BoundedData::truncate_from(data));
 	let to = H256::repeat_byte(0x01);
 	let function = VectorCall::send_message {
 		message,
