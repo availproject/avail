@@ -1,7 +1,7 @@
 [package]
 name = "da-runtime"
 version = "7.0.1"
-authors = ["Anonymous"]
+authors = ["Avail Team"]
 description = "Avail Runtime"
 edition = "2021"
 build = "build.rs"

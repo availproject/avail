@@ -28,7 +28,7 @@ This command compiles and runs the Avail Node connected to the Goldberg Network.
 ```
 2023-11-17 11:31:35 Avail Node    
 2023-11-17 11:31:35 ✌️  version 1.8.2-3fe1bd1a835    
-2023-11-17 11:31:35 ❤️  by Anonymous, 2017-2023    
+2023-11-17 11:31:35 ❤️  by Avail Team, 2017-2023    
 2023-11-17 11:31:35 📋 Chain specification: Avail Goldberg Testnet    
 2023-11-17 11:31:35 🏷  Node name: exotic-shame-9524    
 2023-11-17 11:31:35 👤 Role: FULL    
