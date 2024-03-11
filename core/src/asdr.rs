@@ -532,6 +532,20 @@ where
 	}
 }
 
+impl<A, C, S, E> TryFrom<OpaqueExtrinsic> for AppUncheckedExtrinsic<A, C, S, E>
+where
+	A: Codec,
+	S: Codec,
+	C: Codec,
+	E: SignedExtension,
+{
+	type Error = codec::Error;
+
+	fn try_from(opaque: OpaqueExtrinsic) -> Result<Self, Self::Error> {
+		Self::decode_no_vec_prefix(&mut opaque.0.as_slice())
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use sp_runtime::{

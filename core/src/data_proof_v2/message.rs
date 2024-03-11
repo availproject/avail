@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum MessageType {
-	Data,
+	ArbitraryMessage,
 	FungibleToken,
 }
 
@@ -24,7 +24,7 @@ pub enum MessageType {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum Message {
-	Data(BoundedData),
+	ArbitraryMessage(BoundedData),
 	FungibleToken {
 		asset_id: H256,
 		#[codec(compact)]
@@ -35,21 +35,21 @@ pub enum Message {
 impl Message {
 	pub fn selector_abi_encode(&self) -> Vec<u8> {
 		match self {
-			Message::Data(..) => vec![0x01],
+			Message::ArbitraryMessage(..) => vec![0x01],
 			Message::FungibleToken { .. } => vec![0x02],
 		}
 	}
 
 	pub fn r#type(&self) -> MessageType {
 		match self {
-			Message::Data(..) => MessageType::Data,
+			Message::ArbitraryMessage(..) => MessageType::ArbitraryMessage,
 			Message::FungibleToken { .. } => MessageType::FungibleToken,
 		}
 	}
 
 	pub fn is_empty(&self) -> bool {
 		match self {
-			Message::Data(data) => data.is_empty(),
+			Message::ArbitraryMessage(data) => data.is_empty(),
 			Message::FungibleToken { .. } => false,
 		}
 	}
@@ -75,7 +75,7 @@ pub struct AddressedMessage {
 impl AddressedMessage {
 	fn abi_data(&self) -> Vec<u8> {
 		match &self.message {
-			Message::Data(data) => data.clone().into_inner(),
+			Message::ArbitraryMessage(data) => data.clone().into_inner(),
 			Message::FungibleToken { asset_id, amount } => {
 				let data = [
 					Token::FixedBytes(asset_id.encode()),
