@@ -201,8 +201,8 @@ pub mod council {
 pub mod nomination_pools {
 	use super::*;
 
-	pub const MIN_CREATE_BOND: Balance = 100 * AVAIL;
-	pub const MIN_JOIN_BOND: Balance = 10 * AVAIL;
+	pub const MIN_CREATE_BOND: Balance = 10_000 * AVAIL;
+	pub const MIN_JOIN_BOND: Balance = 100 * AVAIL;
 	pub const MAX_POOLS: u32 = 16;
 	pub const MAX_MEMBERS_PER_POOL: u32 = 100;
 	pub const MAX_MEMBERS: u32 = MAX_POOLS * MAX_MEMBERS_PER_POOL;
