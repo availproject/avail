@@ -74,7 +74,6 @@ pallet-collective = { workspace = true, default-features = false }
 pallet-sudo = { workspace = true, default-features = false }
 pallet-authority-discovery = { workspace = true, default-features = false }
 pallet-elections-phragmen = { workspace = true, default-features = false }
-pallet-membership = { workspace = true, default-features = false }
 pallet-bags-list = { workspace = true, default-features = false }
 pallet-election-provider-multi-phase = { workspace = true, default-features = false }
 frame-election-provider-support = { workspace = true, default-features = false }
@@ -168,7 +167,6 @@ std = [
 	"pallet-im-online/std",
 	"pallet-indices/std",
 	"pallet-mandate/std",
-	"pallet-membership/std",
 	"pallet-mmr/std",
 	"pallet-multisig/std",
 	"pallet-nomination-pools-runtime-api/std",
@@ -227,7 +225,6 @@ runtime-benchmarks = [
 	"pallet-im-online/runtime-benchmarks",
 	"pallet-indices/runtime-benchmarks",
 	"pallet-mandate/runtime-benchmarks",
-	"pallet-membership/runtime-benchmarks",
 	"pallet-mmr/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
@@ -263,7 +260,6 @@ try-runtime = [
 	"pallet-im-online/try-runtime",
 	"pallet-indices/try-runtime",
 	"pallet-mandate/try-runtime",
-	"pallet-membership/try-runtime",
 	"pallet-mmr/try-runtime",
 	"pallet-multisig/try-runtime",
 	"pallet-nomination-pools/try-runtime",

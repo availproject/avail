@@ -8,9 +8,8 @@ use crate::{
 	ElectionProviderMultiPhase, Everything, GrandpaId, Hash, Historical, ImOnline, ImOnlineId,
 	Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo, Preimage,
 	ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason,
-	RuntimeOrigin, RuntimeVersion, Session, Signature, SignedPayload, Staking, System,
-	TechnicalCommittee, Timestamp, TransactionPayment, Treasury, TxPause, UncheckedExtrinsic,
-	VoterList, MINUTES, VERSION,
+	RuntimeOrigin, RuntimeVersion, Session, Signature, SignedPayload, Staking, System, Timestamp,
+	TransactionPayment, Treasury, TxPause, UncheckedExtrinsic, VoterList, MINUTES, VERSION,
 };
 use avail_core::currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL};
 use avail_core::AppId;
@@ -41,12 +40,17 @@ use frame_support::traits::LinearStoragePrice;
 use frame_support::traits::OnUnbalanced;
 use frame_support::weights::constants::RocksDbWeight;
 use frame_support::weights::ConstantMultiplier;
-use frame_support::{parameter_types, traits::EitherOfDiverse, PalletId};
+use frame_support::{
+	parameter_types,
+	traits::{EitherOf, EitherOfDiverse},
+	PalletId,
+};
 use frame_system::limits::BlockLength;
 use frame_system::submitted_data;
 use frame_system::submitted_data::BoundedData;
 use frame_system::submitted_data::{Message, MessageType};
 use frame_system::EnsureRoot;
+use frame_system::{EnsureRootWithSuccess, EnsureWithSuccess};
 use pallet_election_provider_multi_phase::{GeometricDepositBase, SolutionAccuracyOf};
 use pallet_identity::legacy::IdentityInfo;
 use pallet_transaction_payment::CurrencyAdapter;
@@ -70,7 +74,6 @@ use sp_runtime::FixedPointNumber;
 use sp_runtime::FixedU128;
 use sp_runtime::MultiAddress;
 use sp_runtime::Perbill;
-use sp_runtime::Percent;
 use sp_runtime::Permill;
 use sp_runtime::Perquintill;
 use sp_std::rc::Rc;
@@ -113,7 +116,7 @@ impl pallet_vector::Config for Runtime {
 }
 
 parameter_types! {
-	pub const BasicDeposit: Balance = 10 * AVAIL;
+	pub const BasicDeposit: Balance = 100 * AVAIL;
 	pub const ByteDeposit: Balance = constants::currency::deposit(0,1);
 	pub const SubAccountDeposit: Balance = 2 * AVAIL;
 	pub const MaxSubAccounts: u32 = 100;
@@ -172,27 +175,21 @@ impl pallet_authority_discovery::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ProposalBond: Permill = Permill::from_percent(5);
-	pub const ProposalBondMinimum: Balance = AVAIL;
+	pub const ProposalBond: Permill = Permill::from_percent(50);
+	pub const ProposalBondMinimum: Balance = 100 * AVAIL;
 	pub const SpendPeriod: BlockNumber = DAYS;
 	pub const Burn: Permill = Permill::from_percent(0); // Not burning any funds for now
-	pub const TipCountdown: BlockNumber = DAYS;
-	pub const TipFindersFee: Percent = Percent::from_percent(20);
-	pub const TipReportDepositBase: Balance = AVAIL;
-	pub const DataDepositPerByte: Balance = CENTS;
 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
-	pub const MaximumReasonLength: u32 = 16384;
 	pub const MaxApprovals: u32 = 100;
 }
 
 parameter_types! {
-	// Temporary increased price of all transactions by 10x
-	pub const WeightFee: Balance = PICO_AVAIL;
+	pub const WeightFee: Balance = 10 * PICO_AVAIL;
 	pub const TransactionByteFee: Balance = 100 * NANO_AVAIL; // 100 nanoAVAIL
 	pub const OperationalFeeMultiplier: u8 = 5u8;
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(50); // target_utilization 50%
 	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000); // 0.000001
-	pub LenAdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(2, 1000); // 0.002 to double the len_multiplier in one epoch
+	pub LenAdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(4, 1000); // 0.004 to make fee 4x in one epoch on a fully congested network
 	pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
 	pub MinLenMultiplier: Multiplier = Multiplier::from_u32(1);
 	pub MaximumMultiplier: Multiplier = Bounded::max_value();
@@ -217,7 +214,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = CurrencyAdapter<Balances, DealWithFees<Runtime>>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightToFee = ConstantMultiplier<Balance, WeightFee>; // 1 weight = 1 picoAVAIL -> second_price = 1 AVAIL
+	type WeightToFee = ConstantMultiplier<Balance, WeightFee>; // 1 weight = 10 picoAVAIL -> second_price = 10 AVAIL
 }
 
 parameter_types! {
@@ -428,6 +425,25 @@ impl pallet_grandpa::Config for Runtime {
 }
 
 parameter_types! {
+	pub const TreasuryMotionDuration: BlockNumber = prod_or_fast!(5 * DAYS, 5 * MINUTES);
+}
+
+pub type TreasuryCollective = pallet_collective::Instance1;
+
+impl pallet_collective::Config<TreasuryCollective> for Runtime {
+	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
+	type MaxMembers = ConstU32<100>;
+	type MaxProposalWeight = constants::council::MaxProposalWeight;
+	type MaxProposals = ConstU32<100>;
+	type MotionDuration = TreasuryMotionDuration;
+	type Proposal = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeOrigin = RuntimeOrigin;
+	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
 	pub const TechnicalMotionDuration: BlockNumber = prod_or_fast!(5 * DAYS, 5 * MINUTES);
 }
 pub type TechnicalMaxMembers = ConstU32<100>;
@@ -445,19 +461,6 @@ impl pallet_collective::Config<TechnicalCollective> for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
-}
-
-impl pallet_membership::Config<pallet_membership::Instance1> for Runtime {
-	type AddOrigin = EnsureRoot<AccountId>;
-	type MaxMembers = TechnicalMaxMembers;
-	type MembershipChanged = TechnicalCommittee;
-	type MembershipInitialized = TechnicalCommittee;
-	type PrimeOrigin = EnsureRoot<AccountId>;
-	type RemoveOrigin = EnsureRoot<AccountId>;
-	type ResetOrigin = EnsureRoot<AccountId>;
-	type RuntimeEvent = RuntimeEvent;
-	type SwapOrigin = EnsureRoot<AccountId>;
-	type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_election_provider_multi_phase::MinerConfig for Runtime {
@@ -675,7 +678,13 @@ impl pallet_nomination_pools::Config for Runtime {
 parameter_types! {
 	pub const SpendPayoutPeriod: BlockNumber = 30 * DAYS;
 	pub TreasuryAccount: AccountId = Treasury::account_id();
+	pub const MaxBalance: Balance = Balance::max_value();
+	pub const MaxTreasurySpend: Balance = 10_000_000 * AVAIL; // 10 Million AVAILs
 }
+
+pub type TreasurySpender =
+	pallet_collective::EnsureProportionMoreThan<AccountId, TreasuryCollective, 1, 2>;
+
 impl pallet_treasury::Config for Runtime {
 	type ApproveOrigin = EnsureRoot<AccountId>;
 	type Burn = Burn;
@@ -690,10 +699,12 @@ impl pallet_treasury::Config for Runtime {
 	type RejectOrigin = EnsureRoot<AccountId>;
 	type RuntimeEvent = RuntimeEvent;
 	type SpendFunds = ();
-	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
+	type SpendOrigin = EitherOf<
+		EnsureRootWithSuccess<AccountId, MaxBalance>,
+		EnsureWithSuccess<TreasurySpender, AccountId, MaxTreasurySpend>,
+	>;
 	type SpendPeriod = SpendPeriod;
 	type WeightInfo = weights::pallet_treasury::WeightInfo<Runtime>;
-
 	type AssetKind = ();
 	type Beneficiary = AccountId;
 	type BeneficiaryLookup = IdentityLookup<Self::Beneficiary>;
