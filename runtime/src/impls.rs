@@ -4,8 +4,8 @@ use crate::{
 	Historical, ImOnline, ImOnlineId, Index, Indices, Moment, NominationPools, Offences,
 	OriginCaller, PalletInfo, Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent,
 	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, SessionKeys,
-	Signature, SignedPayload, Staking, System, TechnicalCommittee, Timestamp, TransactionPayment,
-	Treasury, TxPause, VoterList, MINUTES, SLOT_DURATION, VERSION,
+	Signature, SignedPayload, Staking, System, Timestamp, TransactionPayment, Treasury, TxPause,
+	VoterList, MINUTES, SLOT_DURATION, VERSION,
 };
 use avail_core::{
 	currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL},
@@ -24,9 +24,8 @@ use frame_support::{
 	traits::{
 		fungible::HoldConsideration,
 		tokens::{pay::PayFromAccount, Imbalance, UnityAssetBalanceConversion},
-		ConstU128, ConstU32, Contains, ContainsLengthBound, Currency, EitherOf, EitherOfDiverse,
-		EqualPrivilegeOnly, InsideBoth, InstanceFilter, KeyOwnerProofSystem, LinearStoragePrice,
-		OnUnbalanced, SortedMembers,
+		ConstU32, Contains, Currency, EitherOf, EitherOfDiverse, EqualPrivilegeOnly, InsideBoth,
+		InstanceFilter, KeyOwnerProofSystem, LinearStoragePrice, OnUnbalanced,
 	},
 	weights::{constants::RocksDbWeight, ConstantMultiplier},
 	PalletId,
@@ -42,9 +41,8 @@ use sp_core::{crypto::KeyTypeId, ConstU64, RuntimeDebug};
 use sp_runtime::{
 	generic::Era,
 	traits::{self, BlakeTwo256, Bounded, Convert, IdentityLookup, OpaqueKeys},
-	FixedPointNumber, FixedU128, Perbill, Percent, Permill, Perquintill,
+	FixedPointNumber, FixedU128, Perbill, Permill, Perquintill,
 };
-use sp_std::{vec, vec::Vec};
 
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
 	<T as frame_system::Config>::AccountId,

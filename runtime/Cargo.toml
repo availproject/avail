@@ -75,7 +75,6 @@ pallet-treasury = { workspace = true, default-features = false }
 pallet-collective = { workspace = true, default-features = false }
 pallet-sudo = { workspace = true, default-features = false }
 pallet-authority-discovery = { workspace = true, default-features = false }
-pallet-elections-phragmen = { workspace = true, default-features = false }
 pallet-bags-list = { workspace = true, default-features = false }
 pallet-election-provider-multi-phase = { workspace = true, default-features = false }
 frame-election-provider-support = { workspace = true, default-features = false }
