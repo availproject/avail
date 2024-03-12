@@ -16,7 +16,8 @@ use sp_keyring::AccountKeyring;
 use structopt::StructOpt;
 use subxt::{ext::sp_core::Pair, tx::PairSigner};
 
-const BLOCK_DIM_VALUE: u32 = 32;
+const BLOCK_DIM_VALUE_ROWS: u32 = 32;
+const BLOCK_DIM_VALUE_COLS: u32 = 64;
 
 /// Sets the block dimensions to default
 async fn reset(client: &Client, signer: &PairSigner<AvailConfig, avail::Pair>) -> Result<()> {
@@ -79,8 +80,8 @@ pub async fn simple_tx(
 ) -> Result<()> {
 	log::info!("1 - Sudo call to reduce the dimensions of the block.");
 	let block_length_update = Call::DataAvailability(DaCall::submit_block_length_proposal {
-		rows: BLOCK_DIM_VALUE,
-		cols: BLOCK_DIM_VALUE,
+		rows: BLOCK_DIM_VALUE_ROWS,
+		cols: BLOCK_DIM_VALUE_COLS,
 	});
 	let sudo_call = api::tx().sudo().sudo(block_length_update);
 	tx_send_in_block!(client, &sudo_call, signer)
@@ -99,8 +100,8 @@ pub async fn batch_tx(
 ) -> Result<()> {
 	log::info!("2 - Sudo call in a batch to reduce the dimensions of the block.");
 	let block_length_update = Call::DataAvailability(DaCall::submit_block_length_proposal {
-		rows: BLOCK_DIM_VALUE,
-		cols: BLOCK_DIM_VALUE,
+		rows: BLOCK_DIM_VALUE_ROWS,
+		cols: BLOCK_DIM_VALUE_COLS,
 	});
 	let sudo_call = Call::Sudo(SudoCall::sudo {
 		call: Box::new(block_length_update),
@@ -126,8 +127,8 @@ pub async fn fail_simple_tx(
 	submit_data(client, signer, 2).await?;
 
 	let block_length_update = Call::DataAvailability(DaCall::submit_block_length_proposal {
-		rows: BLOCK_DIM_VALUE,
-		cols: BLOCK_DIM_VALUE,
+		rows: BLOCK_DIM_VALUE_ROWS,
+		cols: BLOCK_DIM_VALUE_COLS,
 	});
 	let sudo_call = api::tx().sudo().sudo(block_length_update);
 	let events = tx_send_in_block!(client, &sudo_call, signer)
@@ -161,8 +162,8 @@ pub async fn fail_batch_tx(
 	submit_data(client, signer, 2).await?;
 
 	let block_length_update = Call::DataAvailability(DaCall::submit_block_length_proposal {
-		rows: BLOCK_DIM_VALUE,
-		cols: BLOCK_DIM_VALUE,
+		rows: BLOCK_DIM_VALUE_ROWS,
+		cols: BLOCK_DIM_VALUE_COLS,
 	});
 	let sudo_call = Call::Sudo(SudoCall::sudo {
 		call: Box::new(block_length_update),

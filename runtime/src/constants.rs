@@ -26,7 +26,7 @@ use frame_support::{
 	traits::{ConstU16, ConstU32},
 	weights::{constants::BlockExecutionWeight, Weight},
 };
-use sp_runtime::{transaction_validity::TransactionPriority, Perbill, Percent, Permill};
+use sp_runtime::{transaction_validity::TransactionPriority, Perbill, Percent};
 use static_assertions::const_assert;
 
 use crate::BlockNumber;
@@ -163,7 +163,7 @@ pub mod indices {
 	use super::*;
 
 	parameter_types! {
-		pub const IndexDeposit :Balance =  1 * AVAIL;
+		pub const IndexDeposit :Balance =  10 * AVAIL;
 	}
 }
 
@@ -171,7 +171,7 @@ pub mod balances {
 	use super::{currency::*, *};
 
 	parameter_types! {
-		pub const ExistentialDeposit :Balance =  10 * CENTS; // 0.1 AVAILs
+		pub const ExistentialDeposit :Balance = CENTS; // 0.01 AVAILs
 	}
 }
 
@@ -201,8 +201,8 @@ pub mod council {
 pub mod nomination_pools {
 	use super::*;
 
-	pub const MIN_CREATE_BOND: Balance = 10 * AVAIL;
-	pub const MIN_JOIN_BOND: Balance = 1 * AVAIL;
+	pub const MIN_CREATE_BOND: Balance = 10_000 * AVAIL;
+	pub const MIN_JOIN_BOND: Balance = 100 * AVAIL;
 	pub const MAX_POOLS: u32 = 16;
 	pub const MAX_MEMBERS_PER_POOL: u32 = 100;
 	pub const MAX_MEMBERS: u32 = MAX_POOLS * MAX_MEMBERS_PER_POOL;
@@ -349,30 +349,6 @@ pub mod preimage {
 	}
 }
 
-pub mod bounty {
-	use super::{time::*, *};
-
-	#[cfg(not(feature = "fast-runtime"))]
-	parameter_types! {
-		pub const DepositPayoutDelay: BlockNumber = 8 * DAYS;
-		pub const UpdatePeriod: BlockNumber = 90 * DAYS;
-	}
-
-	#[cfg(feature = "fast-runtime")]
-	parameter_types! {
-		pub const DepositPayoutDelay: BlockNumber = 1 * MINUTES;
-		pub const UpdatePeriod: BlockNumber = 10 * MINUTES;
-	}
-
-	parameter_types! {
-		pub const ValueMinimum: Balance = 5 * AVAIL;
-		pub const DepositBase: Balance = AVAIL;
-		pub const CuratorDepositMultiplier: Permill = Permill::from_percent(50);
-		pub const CuratorDepositMin: Balance = 1 * AVAIL;
-		pub const CuratorDepositMax: Balance = 100 * AVAIL;
-	}
-}
-
 pub mod da {
 	use avail_core::{BlockLengthColumns, BlockLengthRows};
 
@@ -381,7 +357,7 @@ pub mod da {
 	parameter_types! {
 		pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
 		pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
-		pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(32);
+		pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(64);
 		pub const MaxBlockCols: BlockLengthColumns = kate::config::MAX_BLOCK_COLUMNS;
 	}
 	pub type MaxAppKeyLength = ConstU32<64>;

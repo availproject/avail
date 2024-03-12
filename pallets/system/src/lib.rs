@@ -1770,6 +1770,8 @@ impl<T: Config> Pallet<T> {
 
 		// Remove previous block data from storage
 		BlockWeight::<T>::kill();
+		FailedExtrinsicIndices::<T>::kill();
+		AllExtrinsicsLen::<T>::kill();
 	}
 
 	/// Remove temporary "environment" entries in storage, compute the storage root and return the
@@ -1811,7 +1813,9 @@ impl<T: Config> Pallet<T> {
 			).deconstruct(),
 		);
 		ExecutionPhase::<T>::kill();
-		AllExtrinsicsLen::<T>::kill();
+		// This will be cleared in on_initialise of next block
+		// AllExtrinsicsLen::<T>::kill();
+
 		storage::unhashed::kill(well_known_keys::INTRABLOCK_ENTROPY);
 		// The following fields
 		//

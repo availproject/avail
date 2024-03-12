@@ -222,14 +222,14 @@ mod multiplier_tests {
 					.unwrap();
 			run_with_system_length(max_padded_length, || {
 				let mut lm = Multiplier::one();
-				// We expect to double the multiplier within an epoch if we sustain the length_congestion on Avail
+				// We expect the multiplier to get 4x within an epoch if we sustain the length_congestion on Avail
 				for _ in 0..EPOCH_DURATION_IN_SLOTS {
 					let next = length_multiplier_update(lm);
 					assert!(next > lm);
 					lm = next;
 				}
 
-				assert!(lm > Multiplier::from_u32(2), "Invalid lm ={}", lm);
+				assert!(lm > Multiplier::from_u32(4), "Invalid lm ={}", lm);
 			})
 		});
 	}

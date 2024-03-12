@@ -73,11 +73,9 @@ pallet-indices = { workspace = true, default-features = false }
 pallet-offences = { workspace = true, default-features = false }
 pallet-treasury = { workspace = true, default-features = false }
 pallet-collective = { workspace = true, default-features = false }
-pallet-bounties = { workspace = true, default-features = false }
 pallet-sudo = { workspace = true, default-features = false }
 pallet-authority-discovery = { workspace = true, default-features = false }
-pallet-tips = { workspace = true, default-features = false }
-pallet-membership = { workspace = true, default-features = false }
+pallet-elections-phragmen = { workspace = true, default-features = false }
 pallet-bags-list = { workspace = true, default-features = false }
 pallet-election-provider-multi-phase = { workspace = true, default-features = false }
 frame-election-provider-support = { workspace = true, default-features = false }
@@ -157,7 +155,6 @@ std = [
 	"pallet-babe/std",
 	"pallet-bags-list/std",
 	"pallet-balances/std",
-	"pallet-bounties/std",
 	"pallet-collective/std",
 	"pallet-election-provider-multi-phase/std",
 	"pallet-grandpa/std",
@@ -165,7 +162,6 @@ std = [
 	"pallet-im-online/std",
 	"pallet-indices/std",
 	"pallet-mandate/std",
-	"pallet-membership/std",
 	"pallet-mmr/std",
 	"pallet-multisig/std",
 	"pallet-nomination-pools-runtime-api/std",
@@ -178,7 +174,6 @@ std = [
 	"pallet-staking/std",
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
-	"pallet-tips/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 	"pallet-treasury/std",
@@ -213,7 +208,6 @@ runtime-benchmarks = [
 	"pallet-babe/runtime-benchmarks",
 	"pallet-bags-list/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
-	"pallet-bounties/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
 	"pallet-election-provider-multi-phase/runtime-benchmarks",
 	"pallet-grandpa/runtime-benchmarks",
@@ -221,7 +215,6 @@ runtime-benchmarks = [
 	"pallet-im-online/runtime-benchmarks",
 	"pallet-indices/runtime-benchmarks",
 	"pallet-mandate/runtime-benchmarks",
-	"pallet-membership/runtime-benchmarks",
 	"pallet-mmr/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
@@ -229,7 +222,6 @@ runtime-benchmarks = [
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-staking/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
-	"pallet-tips/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
 	"pallet-tx-pause/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
@@ -249,7 +241,6 @@ try-runtime = [
 	"pallet-babe/try-runtime",
 	"pallet-bags-list/try-runtime",
 	"pallet-balances/try-runtime",
-	"pallet-bounties/try-runtime",
 	"pallet-collective/try-runtime",
 	"pallet-election-provider-multi-phase/try-runtime",
 	"pallet-grandpa/try-runtime",
@@ -257,7 +248,6 @@ try-runtime = [
 	"pallet-im-online/try-runtime",
 	"pallet-indices/try-runtime",
 	"pallet-mandate/try-runtime",
-	"pallet-membership/try-runtime",
 	"pallet-mmr/try-runtime",
 	"pallet-multisig/try-runtime",
 	"pallet-nomination-pools/try-runtime",
@@ -269,7 +259,6 @@ try-runtime = [
 	"pallet-staking/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
-	"pallet-tips/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-treasury/try-runtime",
 	"pallet-tx-pause/try-runtime",
