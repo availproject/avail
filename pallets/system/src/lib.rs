@@ -1770,7 +1770,6 @@ impl<T: Config> Pallet<T> {
 
 		// Remove previous block data from storage
 		BlockWeight::<T>::kill();
-		FailedExtrinsicIndices::<T>::kill();
 		AllExtrinsicsLen::<T>::kill();
 	}
 
