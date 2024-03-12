@@ -95,7 +95,7 @@ export const API_RPC = {
                     isOptional: true
                 },
             ],
-            type: '(Vec<u8>, u128)'
+            type: '(Vec<(U256, [u8; 48])>, u128)'
         },
         queryDataProofV2Metrics: {
             description: 'Generate the data proof for the given `index`',
