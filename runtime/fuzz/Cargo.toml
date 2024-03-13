@@ -4,6 +4,12 @@ version = "0.1.0"
 edition = "2021"
 publish = false
 
+[[bin]]
+name = "kate-commit-size"
+path = "header/kate_commit_size.rs"
+test = false
+doc = false
+
 [package.metadata]
 cargo-fuzz = true
 
@@ -50,9 +56,3 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 ]
-
-[[bin]]
-name = "kate_commit_size"
-path = "header/kate_commit_size.rs"
-test = false
-doc = false
