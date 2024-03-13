@@ -24,9 +24,9 @@ export const API_RPC = {
                     isOptional: true
                 },
             ],
-            type: 'Vec<u8>'
+            type: 'Vec<(U256, [u8; 48])>'
         },
-        queryDataProofV2: {
+        queryDataProof: {
             description: 'Generate the data proof for the given `transaction_index`',
             params: [
                 {
@@ -97,7 +97,7 @@ export const API_RPC = {
             ],
             type: '(Vec<(U256, [u8; 48])>, u128)'
         },
-        queryDataProofV2Metrics: {
+        queryDataProofMetrics: {
             description: 'Generate the data proof for the given `index`',
             params: [
                 {
