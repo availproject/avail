@@ -1,4 +1,4 @@
-use crate::{mts_clear, mts_storage, StorageMap};
+use crate::{MemoryTemporaryStorage, StorageMap};
 
 use sp_api::decl_runtime_apis;
 use sp_runtime::traits::Block as BlockT;
@@ -73,9 +73,9 @@ pub trait PostInherentsBackend {
 /// Client API for post-inherents.
 impl<T> PostInherentsBackend for T {
 	fn init_post_inherent_data(&self) {
-		mts_clear();
+		MemoryTemporaryStorage::clear();
 	}
 	fn post_inherent_data(&self) -> StorageMap {
-		mts_storage()
+		MemoryTemporaryStorage::storage()
 	}
 }

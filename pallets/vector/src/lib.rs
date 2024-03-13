@@ -2,7 +2,7 @@
 #![recursion_limit = "512"]
 
 use crate::{storage_utils::MessageStatusEnum, verifier::Verifier};
-use avail_base::{mts_get, mts_take, mts_update, ProvidePostInherent};
+use avail_base::{MemoryTemporaryStorage, ProvidePostInherent};
 use avail_core::data_proof_v2::{tx_uid, AddressedMessage, Message, MessageType};
 
 use codec::Compact;
@@ -333,7 +333,9 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
-			if let Some(failed_txs) = mts_take::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID) {
+			if let Some(failed_txs) =
+				MemoryTemporaryStorage::take::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID)
+			{
 				log::trace!(target: LOG_TARGET, "Failed Txs cleaned: {failed_txs:?}");
 			}
 
@@ -534,11 +536,15 @@ pub mod pallet {
 
 			let dispatch = Self::do_send_message(who, message, to, domain);
 			if dispatch.is_err() {
-				let _ = mts_update::<Vec<Compact<u32>>, _>(FAILED_SEND_MSG_ID.to_vec(), |failed| {
-					let tx_idx = <frame_system::Pallet<T>>::extrinsic_index().unwrap_or_default();
-					failed.push(tx_idx.into());
-					log::trace!(target: LOG_TARGET, "Send Message failed txs: {failed:?}");
-				});
+				let _ = MemoryTemporaryStorage::update::<Vec<Compact<u32>>, _>(
+					FAILED_SEND_MSG_ID.to_vec(),
+					|failed| {
+						let tx_idx =
+							<frame_system::Pallet<T>>::extrinsic_index().unwrap_or_default();
+						failed.push(tx_idx.into());
+						log::trace!(target: LOG_TARGET, "Send Message failed txs: {failed:?}");
+					},
+				);
 			}
 
 			dispatch
@@ -1000,7 +1006,8 @@ where
 	type Error = ();
 
 	fn create_inherent(_: &avail_base::StorageMap) -> Option<Self::Call> {
-		let failed_txs = mts_get::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID).unwrap_or_default();
+		let failed_txs = MemoryTemporaryStorage::get::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID)
+			.unwrap_or_default();
 		if !failed_txs.is_empty() {
 			log::trace!(target: LOG_TARGET, "Create post inherent failed vector txs: {failed_txs:?}");
 			return Some(Call::failed_send_message_txs { failed_txs });
@@ -1016,7 +1023,8 @@ where
 	fn check_inherent(call: &Self::Call) -> Result<(), Self::Error> {
 		if let Call::failed_send_message_txs { failed_txs } = call {
 			let local_failed_txs =
-				mts_get::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID).unwrap_or_default();
+				MemoryTemporaryStorage::get::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID)
+					.unwrap_or_default();
 			ensure!(&local_failed_txs == failed_txs, ());
 		}
 		Ok(())
