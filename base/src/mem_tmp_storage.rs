@@ -5,13 +5,9 @@ use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 /// A simple key-value storage in memory.
 pub type StorageMap = BTreeMap<Vec<u8>, Vec<u8>>;
 
-#[cfg(feature = "std")]
-pub(crate) mod native {
-	use super::*;
-	use sp_std::sync::RwLock;
-
-	pub static MEM_TMP_STORAGE: RwLock<StorageMap> = RwLock::new(StorageMap::new());
-}
+//////
+////// Runtime Code
+//////
 
 /// TODO docs
 pub struct MemoryTemporaryStorage;
@@ -28,10 +24,12 @@ impl MemoryTemporaryStorage {
 			.and_then(|raw| T::decode(&mut raw.as_slice()).ok())
 	}
 
+	/// TODO docs
 	pub fn remove(key: &[u8]) -> bool {
 		hosted_mem_tmp_storage::take(key).is_some()
 	}
 
+	/// TODO docs
 	pub fn take<T: Decode>(key: &[u8]) -> Option<T> {
 		hosted_mem_tmp_storage::take(key).and_then(|raw| T::decode(&mut raw.as_slice()).ok())
 	}
@@ -56,6 +54,18 @@ impl MemoryTemporaryStorage {
 	pub fn storage() -> StorageMap {
 		hosted_mem_tmp_storage::storage().into_iter().collect()
 	}
+}
+
+//////
+////// Native Code
+//////
+
+#[cfg(feature = "std")]
+pub(crate) mod native {
+	use super::*;
+	use sp_std::sync::RwLock;
+
+	pub static MEM_TMP_STORAGE: RwLock<StorageMap> = RwLock::new(StorageMap::new());
 }
 
 /// The memory temporal storage will be cleared at the begining of each block building.
