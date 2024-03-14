@@ -845,7 +845,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.0"
-source = "git+https://github.com/availproject/avail-core?branch=miguel/recover_protocol_sequence#ae71246ed5809274db490d66ffe0b99809bdc7d2"
+source = "git+https://github.com/availproject/avail-core?branch=miguel/recover_protocol_sequence#3509f902344ea4ff79641715ffd697fdfc6c0303"
 dependencies = [
  "binary-merkle-tree",
  "bounded-collections",
@@ -3215,10 +3215,12 @@ dependencies = [
 name = "frame-system-benchmarking"
 version = "4.0.0-dev"
 dependencies = [
+ "avail-core",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
+ "scale-info",
  "sp-core",
  "sp-externalities",
  "sp-io",
@@ -4377,7 +4379,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.8.2"
-source = "git+https://github.com/availproject/avail-core?branch=miguel/recover_protocol_sequence#ae71246ed5809274db490d66ffe0b99809bdc7d2"
+source = "git+https://github.com/availproject/avail-core?branch=miguel/recover_protocol_sequence#3509f902344ea4ff79641715ffd697fdfc6c0303"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -4405,7 +4407,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.9.3"
-source = "git+https://github.com/availproject/avail-core?branch=miguel/recover_protocol_sequence#ae71246ed5809274db490d66ffe0b99809bdc7d2"
+source = "git+https://github.com/availproject/avail-core?branch=miguel/recover_protocol_sequence#3509f902344ea4ff79641715ffd697fdfc6c0303"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -7716,6 +7718,7 @@ name = "sc-basic-authorship"
 version = "0.10.0-dev"
 dependencies = [
  "avail-base",
+ "da-runtime",
  "futures",
  "futures-timer",
  "log",
@@ -7734,7 +7737,6 @@ dependencies = [
  "sp-inherents",
  "sp-runtime",
  "substrate-prometheus-endpoint",
- "substrate-test-runtime-client",
 ]
 
 [[package]]
@@ -10173,93 +10175,6 @@ dependencies = [
  "sp-state-machine",
  "sp-trie",
  "trie-db 0.28.0",
-]
-
-[[package]]
-name = "substrate-test-client"
-version = "2.0.1"
-source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch#b66ca4dfd5e244b70458d12ae37b5461739bee31"
-dependencies = [
- "array-bytes 6.2.2",
- "async-trait",
- "futures",
- "parity-scale-codec",
- "sc-client-api",
- "sc-client-db",
- "sc-consensus",
- "sc-executor",
- "sc-offchain",
- "sc-service",
- "serde",
- "serde_json",
- "sp-blockchain",
- "sp-consensus",
- "sp-core",
- "sp-keyring",
- "sp-keystore",
- "sp-runtime",
- "sp-state-machine",
- "tokio",
-]
-
-[[package]]
-name = "substrate-test-runtime"
-version = "2.0.0"
-source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch#b66ca4dfd5e244b70458d12ae37b5461739bee31"
-dependencies = [
- "array-bytes 6.2.2",
- "frame-executive",
- "frame-support",
- "frame-system",
- "frame-system-rpc-runtime-api",
- "log",
- "pallet-babe",
- "pallet-balances",
- "pallet-timestamp",
- "parity-scale-codec",
- "sc-service",
- "scale-info",
- "sp-api",
- "sp-application-crypto",
- "sp-block-builder",
- "sp-consensus-aura",
- "sp-consensus-babe",
- "sp-consensus-grandpa",
- "sp-core",
- "sp-crypto-hashing",
- "sp-externalities",
- "sp-genesis-builder",
- "sp-inherents",
- "sp-io",
- "sp-keyring",
- "sp-offchain",
- "sp-runtime",
- "sp-session",
- "sp-state-machine",
- "sp-std",
- "sp-transaction-pool",
- "sp-trie",
- "sp-version",
- "substrate-wasm-builder",
- "trie-db 0.28.0",
-]
-
-[[package]]
-name = "substrate-test-runtime-client"
-version = "2.0.0"
-source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch#b66ca4dfd5e244b70458d12ae37b5461739bee31"
-dependencies = [
- "futures",
- "sc-block-builder",
- "sc-client-api",
- "sc-consensus",
- "sp-api",
- "sp-blockchain",
- "sp-consensus",
- "sp-core",
- "sp-runtime",
- "substrate-test-client",
- "substrate-test-runtime",
 ]
 
 [[package]]

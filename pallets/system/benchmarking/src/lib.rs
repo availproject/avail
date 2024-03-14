@@ -20,7 +20,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg(feature = "runtime-benchmarks")]
 
-use avail_core::HeaderVersion;
 use codec::Encode;
 use frame_benchmarking::{impl_benchmark_test_suite, v2::*};
 use frame_support::{dispatch::DispatchClass, storage, traits::Get};

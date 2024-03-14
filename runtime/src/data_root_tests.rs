@@ -89,7 +89,7 @@ fn bridge_fungible_msg(asset_id: H256, amount: u128) -> Vec<u8> {
 }
 
 fn empty_root() -> H256 {
-	let root = TxDataRoots::new(H256::zero(), H256::zero()).root;
+	let root = TxDataRoots::new(H256::zero(), H256::zero()).data_root;
 	let exp_root = hex!("ad3228b676f7d3cd4284a5443f17f1962b36e491b30a40b2405849e597ba5fb5");
 	assert_eq!(root.0, exp_root);
 	root

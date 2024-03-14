@@ -27,7 +27,7 @@ use frame_system::{
 };
 use sp_runtime::BuildStorage;
 
-type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
+type Extrinsic = MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockDaBlock<Test>;
 
 frame_support::construct_runtime!(
@@ -48,10 +48,10 @@ impl frame_system::Config for Test {
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
-	type SubmittedDataExtractor = ();
-	type UncheckedExtrinsic = UncheckedExtrinsic;
 	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
+	type TxDataExtractor = ();
+	type Extrinsic = Extrinsic;
 }
 
 impl crate::Config for Test {}

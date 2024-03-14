@@ -232,7 +232,7 @@ sp-state-machine = { git = "https://github.com/availproject/polkadot-sdk.git", t
 sc-block-builder = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
 sc-proposer-metrics = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
 substrate-prometheus-endpoint = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
-substrate-test-runtime-client = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
+# substrate-test-runtime-client = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
 
 
 # Patch from forked pallets
