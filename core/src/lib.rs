@@ -38,8 +38,8 @@ pub mod traits;
 pub mod keccak256;
 pub use keccak256::Keccak256;
 
-pub mod data_proof_v2;
-pub use data_proof_v2::DataProofV2;
+pub mod data_proof;
+pub use data_proof::DataProof;
 
 pub mod data_lookup;
 pub use data_lookup::*;

@@ -43,9 +43,9 @@ pub fn tx_uid_deconstruct(uid: u64) -> (u32, u32) {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct ProofResponse {
-	pub data_proof: DataProofV2,
+	pub data_proof: DataProof,
 	#[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
-	pub message: Option<Message>,
+	pub message: Option<AddressedMessage>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -84,7 +84,7 @@ impl TxDataRoots {
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, TypeInfo, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
-pub struct DataProofV2 {
+pub struct DataProof {
 	pub roots: TxDataRoots,
 	/// Proof items (does not contain the leaf hash, nor the root obviously).
 	///
@@ -105,7 +105,7 @@ pub struct DataProofV2 {
 }
 
 #[cfg(feature = "runtime")]
-impl DataProofV2 {
+impl DataProof {
 	pub fn new(roots: TxDataRoots, m_proof: MerkleProof<H256, Vec<u8>>) -> Self {
 		let leaf = keccak_256(m_proof.leaf.as_slice()).into();
 
