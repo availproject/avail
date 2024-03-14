@@ -1,7 +1,7 @@
 use crate::data_root::{build_tx_data, TxDataFilter};
 
 use avail_core::{
-	data_proof_v2::{AddressedMessage, SubTrie},
+	data_proof::{AddressedMessage, SubTrie},
 	traits::{GetAppId, MaybeCaller},
 };
 

@@ -94,7 +94,7 @@ pub fn get_storage_root(
 mod test {
 	use super::*;
 	use ark_std::vec;
-	use avail_core::data_proof_v2::{AddressedMessage, Message};
+	use avail_core::data_proof::{AddressedMessage, Message};
 
 	use hex_literal::hex;
 	use primitive_types::{H160, H256};

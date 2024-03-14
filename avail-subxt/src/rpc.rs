@@ -3,7 +3,7 @@ use crate::{
 	avail::{Cells, Rows},
 	AppId,
 };
-use avail_core::data_proof_v2::ProofResponse;
+use avail_core::data_proof::ProofResponse;
 
 use jsonrpsee::{core::Error, proc_macros::rpc};
 use serde::Deserialize;

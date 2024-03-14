@@ -10,7 +10,7 @@ use crate::{
 	RotateVerificationKey, SourceChainFrozen, StepVerificationKey, SyncCommitteePoseidons,
 	ValidProof, WhitelistedDomains,
 };
-use avail_core::data_proof_v2::{tx_uid, AddressedMessage, Message};
+use avail_core::data_proof::{tx_uid, AddressedMessage, Message};
 
 use frame_support::{
 	assert_err, assert_ok,

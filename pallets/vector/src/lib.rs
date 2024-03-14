@@ -3,7 +3,7 @@
 
 use crate::{storage_utils::MessageStatusEnum, verifier::Verifier};
 use avail_base::{MemoryTemporaryStorage, ProvidePostInherent};
-use avail_core::data_proof_v2::{tx_uid, AddressedMessage, Message, MessageType};
+use avail_core::data_proof::{tx_uid, AddressedMessage, Message, MessageType};
 
 use codec::Compact;
 use frame_support::{

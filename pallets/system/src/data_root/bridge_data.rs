@@ -1,4 +1,4 @@
-use avail_core::data_proof_v2::AddressedMessage;
+use avail_core::data_proof::AddressedMessage;
 
 use codec::{Decode, Encode};
 use derive_more::Constructor;

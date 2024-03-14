@@ -1,5 +1,5 @@
 use avail_base::metrics::avail::KateRpcMetrics;
-use avail_core::{data_proof_v2::ProofResponse, traits::ExtendedHeader, AppId, OpaqueExtrinsic};
+use avail_core::{data_proof::ProofResponse, traits::ExtendedHeader, AppId, OpaqueExtrinsic};
 use da_control::kate::{GDataProof, GRow};
 use da_runtime::apis::{DataAvailApi, KateApi as RTKateApi};
 use kate::com::Cell;
