@@ -1,6 +1,6 @@
 use crate::{AccountId, Runtime, RuntimeCall as Call};
 use avail_core::{
-	data_proof_v2::{tx_uid, AddressedMessage},
+	data_proof::{tx_uid, AddressedMessage},
 	AppId,
 };
 

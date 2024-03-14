@@ -1,5 +1,5 @@
 use crate::{Extrinsic, Runtime, SignedExtra};
-use avail_core::data_proof_v2::{BoundedData, Message, TxDataRoots};
+use avail_core::data_proof::{BoundedData, Message, TxDataRoots};
 use da_control::{AppDataFor, Call as DaCall, CheckAppId};
 use frame_system::{
 	data_root::build_tx_data, CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce,

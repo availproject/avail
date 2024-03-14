@@ -7,7 +7,7 @@ use crate::{
 use avail_base::ProvidePostInherent;
 use avail_core::{
 	currency::Balance,
-	data_proof_v2::{DataProofV2, ProofResponse, SubTrie},
+	data_proof::{DataProof, ProofResponse, SubTrie},
 	header::HeaderExtension,
 	AppId, OpaqueExtrinsic,
 };
@@ -407,7 +407,7 @@ impl_runtime_apis! {
 			};
 
 			let roots = tx_data.roots();
-			let data_proof = DataProofV2::new(roots, sub_proof);
+			let data_proof = DataProof::new(roots, sub_proof);
 			let proof = ProofResponse::new(data_proof, message);
 			log::trace!(
 				target: LOG_TARGET,
@@ -558,7 +558,7 @@ impl_runtime_apis! {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use avail_core::data_proof_v2::{AddressedMessage, BoundedData, Message};
+	use avail_core::data_proof::{AddressedMessage, BoundedData, Message};
 	use frame_system::data_root::{BridgedData, TxData};
 	use hex_literal::hex;
 	use sp_std::{vec, vec::Vec};

@@ -2,7 +2,7 @@ use super::*;
 use crate::{calls_proof, CallsProof};
 use avail_core::AppId;
 
-use avail_core::data_proof_v2::{AddressedMessage, Message, SubTrie};
+use avail_core::data_proof::{AddressedMessage, Message, SubTrie};
 use binary_merkle_tree::MerkleProof;
 use codec::{Decode, Encode};
 use frame_support::traits::{DefensiveTruncateFrom, ExtrinsicCall};

@@ -3,7 +3,7 @@ use crate::{
 	avail::{Cells, Rows},
 	AppId,
 };
-use avail_core::data_proof_v2::ProofResponse;
+use avail_core::data_proof::ProofResponse;
 
 use jsonrpsee::{core::Error, proc_macros::rpc};
 use serde::Deserialize;
@@ -39,10 +39,6 @@ pub trait KateRpc {
 	#[method(name = "blockLength")]
 	async fn query_block_length(&self, block: H256) -> Result<BlockLength>;
 
-	#[method(name = "queryDataProofV2")]
-	async fn query_data_proof_v2(
-		&self,
-		transaction_index: u32,
-		block: H256,
-	) -> Result<ProofResponse>;
+	#[method(name = "queryDataProof")]
+	async fn query_data_proof(&self, transaction_index: u32, block: H256) -> Result<ProofResponse>;
 }

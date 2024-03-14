@@ -1,7 +1,7 @@
 use crate::data_root::{BridgedData, SubmittedData};
 use avail_core::{
 	app_extrinsic::AppExtrinsic,
-	data_proof_v2::{SubTrie, TxDataRoots},
+	data_proof::{SubTrie, TxDataRoots},
 	Keccak256,
 };
 
@@ -49,7 +49,7 @@ impl TxData {
 
 	/// Generates the root of sub-tries.
 	pub fn root(&self) -> H256 {
-		self.roots().root
+		self.roots().data_root
 	}
 
 	/// Generates the bridge root, using `bridges` as leaves and after balancing the merkle tree with
