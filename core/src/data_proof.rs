@@ -109,21 +109,17 @@ pub struct DataProof {
 #[cfg(feature = "runtime")]
 impl DataProof {
 	pub fn new(sub_trie: SubTrie, roots: TxDataRoots, m_proof: MerkleProof<H256, Vec<u8>>) -> Self {
-		match sub_trie {
-			SubTrie::DataSubmit => Self {
-				roots,
-				leaf: H256::from_slice(m_proof.leaf.as_slice()),
-				proof: m_proof.proof,
-				number_of_leaves: m_proof.number_of_leaves as u32,
-				leaf_index: m_proof.leaf_index as u32,
-			},
-			SubTrie::Bridge => Self {
-				roots,
-				leaf: keccak_256(m_proof.leaf.as_slice()).into(),
-				proof: m_proof.proof,
-				number_of_leaves: m_proof.number_of_leaves as u32,
-				leaf_index: m_proof.leaf_index as u32,
-			},
+		let leaf = match sub_trie {
+			SubTrie::DataSubmit => H256::from_slice(m_proof.leaf.as_slice()),
+			SubTrie::Bridge => keccak_256(m_proof.leaf.as_slice()).into(),
+		};
+
+		Self {
+			roots,
+			leaf,
+			proof: m_proof.proof,
+			number_of_leaves: m_proof.number_of_leaves as u32,
+			leaf_index: m_proof.leaf_index as u32,
 		}
 	}
 }
