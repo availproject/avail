@@ -3,13 +3,13 @@ use derive_more::Constructor;
 use serde::{Deserialize, Serialize};
 
 pub mod extrinsic_params;
-pub use extrinsic_params::AvailExtrinsicParams;
+pub use extrinsic_params::{new_params_from_app_id, CheckAppId, ExtrinsicParams};
 
 pub mod header;
 pub use header::Header;
 
-pub mod app_unchecked_extrinsic;
-pub use app_unchecked_extrinsic::AppUncheckedExtrinsic;
+// pub mod app_unchecked_extrinsic;
+// pub use app_unchecked_extrinsic::AppUncheckedExtrinsic;
 
 pub mod babe;
 pub mod grandpa;

@@ -1,72 +1,37 @@
+use avail_subxt::{AvailClient, Opts};
+
 use anyhow::Result;
-use avail_subxt::{build_client, Opts};
-use futures::future::{join_all, TryFutureExt};
+use core::mem::swap;
 use structopt::StructOpt;
-use subxt::{config::Header as XtHeader, rpc::types::BlockNumber};
+use subxt::{config::Header as XtHeader, utils::H256};
 
 /// This example gets all the headers from testnet. It requests them in concurrently in batches of BATCH_NUM.
 /// Fetching headers one by one is too slow for a large number of blocks.
 
-const BATCH_NUM: usize = 1000;
 #[async_std::main]
 async fn main() -> Result<()> {
 	let args = Opts::from_args();
-	let (client, _) = build_client(args.ws, args.validate_codegen).await?;
+	let client = AvailClient::new(args.ws).await?;
 
-	let head_block = client
-		.rpc()
-		.block(None)
-		.await?
-		.expect("Best block always exists .qed");
+	let genesis_hash = client.genesis_hash();
+	let mut block = client.blocks().at_latest().await?;
 
-	let block_num = head_block.block.header.number;
-	println!("Current head: {block_num}");
-	println!(
-		"Current head block extrinsic: {block:?}",
-		block = head_block.block.extrinsics
-	);
-	println!(
-		"Current head block header: {header:?}",
-		header = head_block.block.header
-	);
+	let hash = block.header().hash();
+	println!("Current hash block: {hash:?} and genesis: {genesis_hash:?}");
 
-	let mut headers = vec![];
+	let mut headers = vec![hash];
 
-	for batch in (1u32..=block_num)
-		.collect::<Vec<_>>()
-		.chunks(BATCH_NUM)
-		.map(|e| {
-			join_all(
-				e.iter()
-					.map(|n| {
-						let block_number = Some(BlockNumber::from(*n));
-						client
-							.rpc()
-							.block_hash(block_number)
-							.and_then(|h| client.rpc().header(h))
-					})
-					.collect::<Vec<_>>(),
-			)
-		}) {
-		headers.extend(batch.await);
+	for _ in 1u32..=50_000 {
+		let parent: H256 = block.header().parent_hash;
+		headers.push(parent);
+		if parent == genesis_hash {
+			break;
+		}
+		let mut parent_block = client.blocks().at(parent).await?;
+		swap(&mut block, &mut parent_block);
 	}
-	println!("Headers: {num}", num = headers.len());
-	let header_hashes = headers
-		.iter()
-		.map(|result_maybe_header| {
-			result_maybe_header
-				.as_ref()
-				.map(|maybe_header| maybe_header.as_ref().map(XtHeader::hash))
-				.unwrap_or_default()
-		})
-		.collect::<Vec<_>>();
-	println!("Header hashes: {:?}", header_hashes);
-
-	assert_eq!(
-		headers.len(),
-		block_num as usize,
-		"Didn't get the same number of block headers."
-	);
+	println!("Headers: {}", headers.len());
+	println!("Header hashes: {headers:?}");
 
 	Ok(())
 }

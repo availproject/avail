@@ -77,7 +77,7 @@ where
 			extrinsics_root: h.extrinsics_root,
 			digest: h.digest.into(),
 			extension: h.extension,
-			__subxt_unused_type_params: PhantomData,
+			__ignore: PhantomData,
 		}
 	}
 }

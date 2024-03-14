@@ -1,14 +1,9 @@
-use crate::{
-	api::runtime_types::frame_system::limits::BlockLength,
-	avail::{Cells, Rows},
-	AppId,
-};
 use avail_core::data_proof::ProofResponse;
 
-use jsonrpsee::{core::Error, proc_macros::rpc};
-use serde::Deserialize;
+use jsonrpsee::proc_macros::rpc;
 use sp_core::H256;
 
+/*
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Deserialize, Debug)]
@@ -24,9 +19,11 @@ pub trait Rpc {
 	#[method(name = "health")]
 	async fn health(&self) -> Result<Health>;
 }
+*/
 
 #[rpc(client, namespace = "kate")]
 pub trait KateRpc {
+	/*
 	#[method(name = "queryRows")]
 	async fn query_rows(&self, rows: Rows, block: H256) -> Result<Vec<Vec<u8>>>;
 
@@ -38,7 +35,8 @@ pub trait KateRpc {
 
 	#[method(name = "blockLength")]
 	async fn query_block_length(&self, block: H256) -> Result<BlockLength>;
+	*/
 
 	#[method(name = "queryDataProof")]
-	async fn query_data_proof(&self, transaction_index: u32, block: H256) -> Result<ProofResponse>;
+	async fn query_data_proof(&self, transaction_index: u32, at: H256) -> RpcResult<ProofResponse>;
 }
