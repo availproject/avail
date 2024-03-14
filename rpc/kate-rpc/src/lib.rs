@@ -9,10 +9,10 @@ use frame_system::limits::BlockLength;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
-	types::error::ErrorObject,
+	types::error::{ErrorCode, ErrorObject},
 };
 use sc_client_api::BlockBackend;
-use sp_api::ProvideRuntimeApi;
+use sp_api::{ApiRef, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
 	generic::SignedBlock,
@@ -141,6 +141,11 @@ macro_rules! internal_err {
 	}}
 }
 
+// ApiRef<'_, dyn ApiExt<Block>>,
+
+type Opaques<B> = Vec<<B as BlockT>::Extrinsic>;
+type Api<'a, C, B> = ApiRef<'a, <C as ProvideRuntimeApi<B>>::Api>;
+
 impl<Client, Block> Kate<Client, Block>
 where
 	Block: BlockT,
@@ -150,6 +155,31 @@ where
 	Client::Api: DataAvailApi<Block>,
 	// Extrinsic: TryFrom<<Block as BlockT>::Extrinsic>,
 {
+	fn scope(
+		&self,
+		at: Option<Block::Hash>,
+	) -> RpcResult<(
+		Api<'_, Client, Block>,
+		<Block as BlockT>::Hash,
+		u32,
+		BlockLength,
+		Opaques<Block>,
+	)> {
+		let at = self.at_or_best(at);
+		let block = self.get_finalized_block(Some(at))?.block;
+		let number: u32 = (*block.header().number())
+			.try_into()
+			.map_err(|_| ErrorCode::InvalidParams)?;
+		let (_, extrinsics) = block.deconstruct();
+
+		let api = self.client.runtime_api();
+		let block_len = api
+			.block_length(at)
+			.map_err(|e| internal_err!("Length of best block({at:?}): {e:?}"))?;
+
+		Ok((api, at, number, block_len, extrinsics))
+	}
+
 	fn at_or_best(&self, at: Option<<Block as BlockT>::Hash>) -> <Block as BlockT>::Hash {
 		at.unwrap_or_else(|| self.client.info().best_hash)
 	}
@@ -192,18 +222,11 @@ where
 	Client::Api: DataAvailApi<Block> + RTKateApi<Block>,
 {
 	async fn query_rows(&self, rows: Rows, at: Option<HashOf<Block>>) -> RpcResult<Vec<GRow>> {
-		let at = self.at_or_best(at);
-		let block = self.get_finalized_block(Some(at))?.block;
-		let (_, extrinsics) = block.deconstruct();
-
-		let api = self.client.runtime_api();
-		let block_len = api
-			.block_length(at)
-			.map_err(|e| internal_err!("Length of best block({at:?}): {e:?}"))?;
+		let (api, at, number, block_len, extrinsics) = self.scope(at)?;
 
 		let execution_start = Instant::now();
 		let grid_rows = api
-			.rows(at, extrinsics, block_len, rows.into())
+			.rows(at, number, extrinsics, block_len, rows.into())
 			.map_err(|kate_err| internal_err!("Failed Kate rows: {kate_err:?}"))?
 			.map_err(|api_err| internal_err!("Failed API: {api_err:?}"))?;
 		KateRpcMetrics::observe_query_rows_execution_time(execution_start.elapsed());
@@ -216,18 +239,11 @@ where
 		app_id: AppId,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<GRow>>> {
-		let at = self.at_or_best(at);
-		let block = self.get_finalized_block(Some(at))?.block;
-		let (_, extrinsics) = block.deconstruct();
-
-		let api = self.client.runtime_api();
-		let block_len = api
-			.block_length(at)
-			.map_err(|e| internal_err!("Length of best block({at:?}): {e:?}"))?;
+		let (api, at, number, block_len, extrinsics) = self.scope(at)?;
 
 		let execution_start = Instant::now();
 		let app_data = api
-			.app_data(at, extrinsics, block_len, app_id)
+			.app_data(at, number, extrinsics, block_len, app_id)
 			.map_err(|kate_err| internal_err!("Failed Kate app data: {kate_err:?}"))?
 			.map_err(|api_err| internal_err!("Failed API: {api_err:?}"))?;
 		KateRpcMetrics::observe_query_app_data_execution_time(execution_start.elapsed());
@@ -250,14 +266,7 @@ where
 			);
 		}
 
-		let at = self.at_or_best(at);
-		let block = self.get_finalized_block(Some(at))?.block;
-		let (_, extrinsics) = block.deconstruct();
-
-		let api = self.client.runtime_api();
-		let block_len = api
-			.block_length(at)
-			.map_err(|e| internal_err!("Length of best block({at:?}): {e:?}"))?;
+		let (api, at, number, block_len, extrinsics) = self.scope(at)?;
 
 		let execution_start = Instant::now();
 		let cells = cells
@@ -265,7 +274,7 @@ where
 			.map(|cell| (cell.row.0, cell.col.0))
 			.collect::<Vec<_>>();
 		let proof = api
-			.proof(at, extrinsics, block_len, cells)
+			.proof(at, number, extrinsics, block_len, cells)
 			.map_err(|kate_err| internal_err!("KateApi::proof failed: {kate_err:?}"))?
 			.map_err(|api_err| internal_err!("Failed API: {api_err:?}"))?;
 
@@ -296,15 +305,11 @@ where
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<ProofResponse> {
 		// Calculate proof for block and tx index
-		let at = self.at_or_best(at);
-		let block = self.get_block(Some(at))?.block;
-		let (_header, extrinsics) = block.deconstruct();
+		let (api, at, number, _, extrinsics) = self.scope(at)?;
 
 		let execution_start = Instant::now();
-		let proof = self
-			.client
-			.runtime_api()
-			.data_proof(at, extrinsics, tx_idx)
+		let proof = api
+			.data_proof(at, number, extrinsics, tx_idx)
 			.map_err(|e| internal_err!("KateApi::data_proof failed: {e:?}"))?
 			.ok_or_else(|| {
 				internal_err!("Cannot to fetch tx data at tx index {tx_idx:?} at block {at:?}")

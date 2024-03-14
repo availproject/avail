@@ -11,7 +11,7 @@ include!("header_kate_commitment.rs");
 
 fn commitment_builder(c: &mut Criterion) {
 	let mut group = c.benchmark_group("commitment_builder");
-	for columns in [32, 64, 128, 256].iter() {
+	for columns in [64, 128, 256].iter() {
 		let block_columns = BlockLengthColumns(*columns);
 		let block_length = block_length(block_columns);
 		let txs = make_txs(block_columns);

@@ -41,7 +41,7 @@ where
 		.collect::<TxData>()
 }
 
-pub fn build_tx_data_from_opaque<'a, F, E, A, I>(block: u32, opaques: I) -> TxData
+pub fn build_tx_data_from_opaque<F, E, A, I>(block: u32, opaques: I) -> TxData
 where
 	F: TxDataFilter<A, E::Call>,
 	E: ExtrinsicCall + MaybeCaller<A> + GetAppId + TryFrom<OpaqueExtrinsic>,

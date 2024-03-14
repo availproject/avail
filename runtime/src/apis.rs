@@ -64,10 +64,10 @@ decl_runtime_apis! {
 	}
 
 	pub trait KateApi {
-		fn data_proof(extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse>;
-		fn rows(extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError >;
-		fn app_data(extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, id: AppId) -> Result<Vec<Option<GRow>>, RTKateError>;
-		fn proof(extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError>;
+		fn data_proof(block: u32, extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse>;
+		fn rows(block: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError >;
+		fn app_data(block: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, id: AppId) -> Result<Vec<Option<GRow>>, RTKateError>;
+		fn proof(block: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError>;
 	}
 }
 
@@ -386,9 +386,9 @@ impl_runtime_apis! {
 	}
 
 	impl crate::apis::KateApi<Block> for Runtime {
-		fn data_proof(extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse> {
+		fn data_proof(block: u32, extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse> {
 
-			let tx_data = build_tx_data_from_opaque::<RTExtractor, RTExtrinsic, _, _>(0, extrinsics);
+			let tx_data = build_tx_data_from_opaque::<RTExtractor, RTExtrinsic, _, _>(block, extrinsics);
 			let (leaf_idx, sub_trie) = tx_data.leaf_idx(tx_idx)?;
 			log::trace!(
 				target: LOG_TARGET,
@@ -416,22 +416,22 @@ impl_runtime_apis! {
 			Some(proof)
 		}
 
-		fn rows(extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError> {
-			let app_exts = build_tx_data_from_opaque::<RTExtractor, RTExtrinsic, _, _>(0, extrinsics).to_app_extrinsics();
+		fn rows(block: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError> {
+			let app_exts = build_tx_data_from_opaque::<RTExtractor, RTExtrinsic, _, _>(block, extrinsics).to_app_extrinsics();
 			let grid_rows = RTKate::<Runtime>::grid( app_exts, block_len, rows)?;
 			log::trace!(target: LOG_TARGET, "KateApi::rows: rows={grid_rows:#?}");
 			Ok(grid_rows)
 		}
 
-		fn app_data(extrinsic: Vec<OpaqueExtrinsic>, block_len: BlockLength, id: AppId) -> Result<Vec<Option<GRow>>, RTKateError> {
-			let app_exts = build_tx_data_from_opaque::<RTExtractor, RTExtrinsic, _, _>(0, extrinsic).to_app_extrinsics();
+		fn app_data(block: u32, extrinsic: Vec<OpaqueExtrinsic>, block_len: BlockLength, id: AppId) -> Result<Vec<Option<GRow>>, RTKateError> {
+			let app_exts = build_tx_data_from_opaque::<RTExtractor, RTExtrinsic, _, _>(block, extrinsic).to_app_extrinsics();
 			let grid_rows = RTKate::<Runtime>::app_data(app_exts, block_len, id)?;
 			log::trace!(target: LOG_TARGET, "KateApi::app_data: rows={grid_rows:#?}");
 			Ok(grid_rows)
 		}
 
-		fn proof(extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError> {
-			let app_exts = build_tx_data_from_opaque::<RTExtractor, RTExtrinsic, _, _>(0, extrinsics).to_app_extrinsics();
+		fn proof(block: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError> {
+			let app_exts = build_tx_data_from_opaque::<RTExtractor, RTExtrinsic, _, _>(block, extrinsics).to_app_extrinsics();
 			let data_proofs = RTKate::<Runtime>::proof(app_exts, block_len, cells)?;
 			log::trace!(target: LOG_TARGET, "KateApi::proof: data_proofs={data_proofs:#?}");
 			Ok(data_proofs)

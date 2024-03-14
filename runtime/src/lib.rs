@@ -31,7 +31,6 @@ pub mod constants;
 mod data_root_tests;
 pub mod filter;
 pub mod impls;
-// pub mod extractor;
 #[cfg(test)]
 mod impls_tests;
 mod primitives;
@@ -120,7 +119,7 @@ construct_runtime!(
 		// Council: pallet_collective::<Instance1> = 13,
 		TechnicalCommittee: pallet_collective::<Instance2> = 14,
 		// Elections: pallet_elections_phragmen = 15,
-		TechnicalMembership: pallet_membership::<Instance1> = 16,
+		// TechnicalMembership: pallet_membership::<Instance1> = 16,
 		Grandpa: pallet_grandpa = 17,
 		Treasury: pallet_treasury = 18,
 
@@ -131,8 +130,6 @@ construct_runtime!(
 		Historical: pallet_session_historical = 23,
 
 		Scheduler: pallet_scheduler = 24,
-		Bounties: pallet_bounties = 25,
-		Tips: pallet_tips = 26,
 		Mmr: pallet_mmr = 27,
 		// BagsList: pallet_bags_list = 28,
 
@@ -151,6 +148,7 @@ construct_runtime!(
 		Vector: pallet_vector = 39,
 		Proxy: pallet_proxy = 40,
 		TxPause: pallet_tx_pause = 41,
+		TreasuryCommittee: pallet_collective::<Instance1> = 42,
 	}
 );
 
@@ -185,8 +183,6 @@ mod benches {
 		[pallet_treasury, crate::Treasury]
 		[pallet_im_online, crate::ImOnline]
 		[pallet_scheduler, crate::Scheduler]
-		[pallet_bounties, crate::Bounties]
-		[pallet_tips, crate::Tips]
 		[pallet_mmr, crate::Mmr]
 
 		[frame_system, SystemBench::<Runtime>]
@@ -196,6 +192,7 @@ mod benches {
 		[pallet_vector, crate::Vector]
 		[pallet_proxy, crate::Proxy]
 		[pallet_tx_pause, crate::TxPause]
+		[pallet_collective, crate::TreasuryCommittee]
 	);
 }
 
@@ -220,7 +217,7 @@ mod tests {
 	#[cfg(feature = "try-runtime")]
 	#[allow(dead_code)]
 	fn check_try_runtime_support_on_pallets() -> Result<(), &'static str> {
-		use crate::impls::TechnicalCollective;
+		use crate::impls::{TechnicalCollective, TreasuryCollective};
 		use frame_support::traits::{TryState, TryStateSelect::All};
 		use sp_runtime::traits::Zero;
 
@@ -241,9 +238,6 @@ mod tests {
 		<pallet_staking::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_session::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_collective::Pallet<Runtime, TechnicalCollective> as TryState<BlockNumber>>::try_state(block, All)?;
-		<pallet_membership::Pallet<Runtime, pallet_membership::Instance1> as TryState<
-			BlockNumber,
-		>>::try_state(block, All)?;
 		<pallet_grandpa::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_treasury::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_sudo::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
@@ -256,8 +250,6 @@ mod tests {
 			block, All,
 		)?;
 		<pallet_scheduler::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
-		<pallet_bounties::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
-		<pallet_tips::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_mmr::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<da_control::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_preimage::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
@@ -270,6 +262,7 @@ mod tests {
 		<pallet_vector::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_nomination_pools::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
 		<pallet_proxy::Pallet<Runtime> as TryState<BlockNumber>>::try_state(block, All)?;
+		<pallet_collective::Pallet<Runtime, TreasuryCollective> as TryState<BlockNumber>>::try_state(block, All)?;
 		Ok(())
 	}
 

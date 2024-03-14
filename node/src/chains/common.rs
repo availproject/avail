@@ -61,6 +61,7 @@ fn make_data_avail_config(owner: AccountId) -> DataAvailabilityConfig {
 pub fn runtime_genesis_config(
 	sudo: AccountId32,
 	technical_committee: Vec<AccountId32>,
+	treasury_committee: Vec<AccountId32>,
 	session_keys: Vec<AuthorityKeys>,
 ) -> Value {
 	let balances = dev_endowed_accounts();
@@ -109,6 +110,9 @@ pub fn runtime_genesis_config(
 		},
 		"technicalCommittee": {
 			"members": technical_committee,
+		},
+		"treasuryCommittee": {
+			"members": treasury_committee,
 		},
 		"vector": {
 			"broadcaster": BROADCASTER,
