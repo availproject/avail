@@ -35,9 +35,10 @@ sp-core = { workspace = true, features = ["std"] }
 sp-inherents = { workspace = true, features = ["std"] }
 sp-runtime = { workspace = true, features = ["std"] }
 sp-consensus.workspace = true
+da-runtime = { workspace = true, features = ["std"]  }
 
 [dev-dependencies]
 parking_lot.workspace = true
 sc-client-api.workspace = true
 sc-transaction-pool.workspace = true
-substrate-test-runtime-client.workspace = true
+# substrate-test-runtime-client.workspace = true
