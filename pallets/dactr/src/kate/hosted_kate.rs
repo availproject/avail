@@ -16,6 +16,9 @@ use sp_std::vec::Vec;
 #[cfg(feature = "std")]
 static SRS: std::sync::OnceLock<M1NoPrecomp> = std::sync::OnceLock::new();
 
+#[cfg(feature = "std")]
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
 /// Hosted function to build the header using `kate` commitments.
 #[runtime_interface]
 pub trait HostedKate {
@@ -27,13 +30,13 @@ pub trait HostedKate {
 	) -> Result<Vec<GRow>, Error> {
 		let (max_width, max_height) = to_width_height(&block_length);
 		let selected_rows = selected_rows
-			.into_iter()
+			.into_par_iter()
 			.map(usize::try_from)
 			.collect::<Result<Vec<_>, _>>()?;
 
 		let grid = EGrid::from_extrinsics(submitted, MIN_WIDTH, max_width, max_height, seed)?;
 		let rows = selected_rows
-			.into_iter()
+			.into_par_iter()
 			.map(|row_idx| {
 				let row = grid.row(row_idx).ok_or(Error::MissingRow(row_idx as u32))?;
 				row.iter()
@@ -64,7 +67,7 @@ pub trait HostedKate {
 		let mut all_rows = vec![None; dims.height()];
 		for (row_y, row) in rows {
 			let g_row = row
-				.into_iter()
+				.into_par_iter()
 				.map(|s| s.to_bytes().map(GRawScalar::from))
 				.collect::<Result<Vec<_>, _>>()
 				.map_err(|_| Error::InvalidScalarAtRow(row_y as u32))?;
@@ -86,7 +89,7 @@ pub trait HostedKate {
 		let poly = grid.make_polynomial_grid()?;
 
 		let proofs = cells
-			.into_iter()
+			.into_par_iter()
 			.map(|(row, col)| -> Result<GDataProof, Error> {
 				let data: GRawScalar = grid
 					.get(row as usize, col as usize)

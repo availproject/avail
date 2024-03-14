@@ -35,6 +35,7 @@ frame-support = { workspace = true, default-features = false }
 frame-benchmarking = { workspace = true, default-features = false, optional = true }
 sp-runtime-interface = { workspace = true, default-features = false }
 pallet-utility = { workspace = true, default-features = false }
+rayon = "1.5.2"
 
 [dev-dependencies]
 pallet-balances = { workspace = true, default-features = false, features = ["std"] }
