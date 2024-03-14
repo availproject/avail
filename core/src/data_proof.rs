@@ -14,10 +14,12 @@ use sp_io::hashing::keccak_256;
 
 /// Max data supported on bidge (Ethereum calldata limits)
 pub const BOUNDED_DATA_MAX_LENGTH: u32 = 102_400;
+
 /// Maximum size of data allowed in the bridge
 pub type BoundedData = BoundedVec<u8, ConstU32<BOUNDED_DATA_MAX_LENGTH>>;
 
 pub mod message;
+
 pub use message::{AddressedMessage, Message, MessageType};
 
 /// Unique Tx identifier based on its block number and index.
@@ -58,11 +60,11 @@ pub enum SubTrie {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct TxDataRoots {
 	/// Global Merkle root
-	pub root: H256,
+	pub data_root: H256,
 	/// Merkle root hash of submitted data
-	pub submitted: H256,
+	pub blob_root: H256,
 	/// Merkle root of bridged data
-	pub bridged: H256,
+	pub bridge_root: H256,
 }
 
 #[cfg(feature = "runtime")]
@@ -73,9 +75,9 @@ impl TxDataRoots {
 		let root = keccak_256(sub_roots.as_slice()).into();
 
 		Self {
-			root,
-			submitted,
-			bridged,
+			data_root: root,
+			blob_root: submitted,
+			bridge_root: bridged,
 		}
 	}
 }
@@ -106,15 +108,22 @@ pub struct DataProof {
 
 #[cfg(feature = "runtime")]
 impl DataProof {
-	pub fn new(roots: TxDataRoots, m_proof: MerkleProof<H256, Vec<u8>>) -> Self {
-		let leaf = keccak_256(m_proof.leaf.as_slice()).into();
-
-		Self {
-			roots,
-			leaf,
-			proof: m_proof.proof,
-			number_of_leaves: m_proof.number_of_leaves as u32,
-			leaf_index: m_proof.leaf_index as u32,
+	pub fn new(sub_trie: SubTrie, roots: TxDataRoots, m_proof: MerkleProof<H256, Vec<u8>>) -> Self {
+		match sub_trie {
+			SubTrie::DataSubmit => Self {
+				roots,
+				leaf: H256::from_slice(m_proof.leaf.as_slice()),
+				proof: m_proof.proof,
+				number_of_leaves: m_proof.number_of_leaves as u32,
+				leaf_index: m_proof.leaf_index as u32,
+			},
+			SubTrie::Bridge => Self {
+				roots,
+				leaf: keccak_256(m_proof.leaf.as_slice()).into(),
+				proof: m_proof.proof,
+				number_of_leaves: m_proof.number_of_leaves as u32,
+				leaf_index: m_proof.leaf_index as u32,
+			},
 		}
 	}
 }
