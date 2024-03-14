@@ -400,14 +400,14 @@ impl_runtime_apis! {
 					(proof, None)
 				},
 				SubTrie::Bridge => {
-					let message = tx_data.bridged.get(leaf_idx).map(|b| b.addr_msg.message.clone());
+					let message = tx_data.bridged.get(leaf_idx).map(|b| b.addr_msg.clone());
 					let proof = tx_data.bridged_proof_of(leaf_idx)?;
 					(proof, message)
 				},
 			};
 
 			let roots = tx_data.roots();
-			let data_proof = DataProof::new(roots, sub_proof);
+			let data_proof = DataProof::new(sub_trie, roots, sub_proof);
 			let proof = ProofResponse::new(data_proof, message);
 			log::trace!(
 				target: LOG_TARGET,
