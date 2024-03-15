@@ -161,8 +161,11 @@ jobs:
           cargo run --release --manifest-path avail-subxt/Cargo.toml --example accounts_from_mnemonics
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example headers
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example max_block_submit
+          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example wait_next_block
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data
+          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example wait_next_block
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal
+          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example wait_next_block
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example bridge_send_message
 
       - name: Display SCCache Stats
