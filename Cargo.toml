@@ -3,7 +3,6 @@ resolver = "2"
 members = [
 	"base",
 	"pallets/dactr",
-	"pallets/executive",
 	"pallets/mandate",
 	"pallets/system",
 	"pallets/transaction-payment",
@@ -40,7 +39,6 @@ kate-rpc = { path = "rpc/kate-rpc" }
 patricia-merkle-trie = { path = "patricia-merkle-trie", default-features = false }
 
 sc-basic-authorship = { path = "client/basic-authorship", default-features = false }
-frame-executive = { path = "pallets/executive", default-features = false }
 frame-system = { path = "pallets/system", default-features = false }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api", default-features = false }
 frame-system-benchmarking = { path = "pallets/system/benchmarking", default-features = false }
@@ -121,6 +119,7 @@ clap-num = "1.1.1"
 clap_complete = "4.0.2"
 
 # Polkadot 
+frame-executive = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
 sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
 frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
 pallet-babe = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
@@ -237,7 +236,6 @@ substrate-prometheus-endpoint = { git = "https://github.com/availproject/polkado
 
 # Patch from forked pallets
 [patch."https://github.com/availproject/polkadot-sdk.git"]
-frame-executive = { path = "pallets/executive" }
 frame-system = { path = "pallets/system" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }

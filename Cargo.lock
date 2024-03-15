@@ -3042,24 +3042,20 @@ dependencies = [
 
 [[package]]
 name = "frame-executive"
-version = "4.0.0-dev"
+version = "28.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch#b66ca4dfd5e244b70458d12ae37b5461739bee31"
 dependencies = [
- "array-bytes 6.2.2",
  "frame-support",
  "frame-system",
  "frame-try-runtime",
  "log",
- "pallet-balances",
- "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
- "sp-inherents",
  "sp-io",
  "sp-runtime",
  "sp-std",
  "sp-tracing",
- "sp-version",
 ]
 
 [[package]]
