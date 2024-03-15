@@ -1,10 +1,61 @@
 [workspace]
 resolver = "2"
-members = [
-	"core",
-	"kate/recovery",
-	"kate",
-]
+members = ["core", "kate/recovery", "kate"]
+
+[workspace.dependencies]
+# Parity
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"] }
+bounded-collections = { version = "0.2", default-features = false }
+scale-info = { version = "2", default-features = false, features = ["derive"] }
+
+# Polkadot SDK
+binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
+sp-arithmetic = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
+sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
+sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
+sp-trie = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
+sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
+frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
+sp-runtime-interface = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
+
+# Macros
+derive_more = { version = "0.99.17", default-features = false, features = ["constructor", "from", "add", "deref", "mul", "into"] }
+static_assertions = { version = "1.1.0" }
+hex-literal = { version = "0.3.4" }
+
+# Error & Logging
+thiserror-no-std = { version = "2.0.2" }
+log = { version = "0.4.8", default-features = false }
+test-case = { version = "1.2.3" }
+proptest = { version = "1" }
+criterion = { version = "0.4", default-features = false }
+
+# Serialization
+serde = { version = "1.0.196", default-features = false, features = ["derive", "alloc"] }
+hex = { version = "0.4", default-features = false, features = ["alloc", "serde"] }
+serde_json = { version = "1" }
+dusk-bytes = { version = "0.1.6", default-features = false }
+
+# Crypto
+hash256-std-hasher = { version = "0.15.2", default-features = false }
+tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
+rand = { version = "0.8.4", features = ["alloc", "small_rng"], default-features = false }
+rand_chacha = { version = "0.3", default-features = false }
+
+poly-multiproof = { git = "https://github.com/availproject/poly-multiproof", default-features = false, tag = "v0.0.1" }
+dusk-plonk = { git = "https://github.com/availproject/plonk.git", tag = "v0.12.0-polygon-2" }
+
+# Others
+rayon = "1.5.2"
+once_cell = "1.8.0"
+nalgebra = { version = "0.32.2", default-features = false }
+
+# ETH
+ethabi-decode = { git = "https://github.com/Snowfork/ethabi-decode.git", branch = "master", default-features = false }
+
+[patch."https://github.com/paritytech/polkadot-sdk"]
+sp-crypto-ec-utils = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch" }
 
 [profile.dev.package]
 nalgebra = { opt-level = 3 }

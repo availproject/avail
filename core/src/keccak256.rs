@@ -47,4 +47,5 @@ pub mod hash {
 }
 
 #[cfg(feature = "runtime")]
+#[allow(unused_imports)]
 pub use hash::*;

@@ -4,7 +4,7 @@ use crate::pmp::{
 	merlin::Transcript,
 	traits::Committer,
 };
-use avail_core::{ensure, AppExtrinsic, AppId, DataLookup};
+use avail_core::{app_extrinsic::AppExtrinsic, ensure, AppId, DataLookup};
 use codec::Encode;
 use core::{
 	cmp::{max, min},
@@ -76,10 +76,10 @@ impl EvaluationGrid {
 	) -> Result<Self, Error> {
 		// Group extrinsics by app id, also sorted by app id.
 		// Using a BTreeMap here will still iter in sorted order. Sweet!
-		let grouped = extrinsics.into_iter().fold::<BTreeMap<AppId, Vec<_>>, _>(
+		let grouped = extrinsics.iter().fold::<BTreeMap<AppId, Vec<&[u8]>>, _>(
 			BTreeMap::default(),
 			|mut acc, e| {
-				acc.entry(e.app_id).or_default().push(e.data);
+				acc.entry(e.app_id).or_default().push(e.data.as_slice());
 				acc
 			},
 		);

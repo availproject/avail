@@ -110,7 +110,7 @@ fn map_cells(
 		if !dimensions.extended_contains(&position) {
 			return Err(ReconstructionError::InvalidCell(position));
 		}
-		let cells = result.entry(position.col).or_insert_with(HashMap::new);
+		let cells = result.entry(position.col).or_default();
 		if cells.insert(position.row, cell).is_some() {
 			return Err(ReconstructionError::DuplicateCellFound);
 		}

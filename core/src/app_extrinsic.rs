@@ -1,4 +1,6 @@
 use crate::traits::GetAppId;
+#[cfg(feature = "runtime")]
+use codec::Codec;
 use codec::{Decode, Encode};
 use derive_more::Constructor;
 use scale_info::TypeInfo;
@@ -62,9 +64,9 @@ impl From<Vec<u8>> for AppExtrinsic {
 #[cfg(feature = "runtime")]
 impl<A, C, S, E> From<&AppUncheckedExtrinsic<A, C, S, E>> for AppExtrinsic
 where
-	A: Encode,
-	C: Encode,
-	S: Encode,
+	A: Codec,
+	C: Codec,
+	S: Codec,
 	E: SignedExtension + GetAppId,
 {
 	fn from(app_ext: &AppUncheckedExtrinsic<A, C, S, E>) -> Self {
@@ -78,9 +80,9 @@ where
 #[cfg(feature = "runtime")]
 impl<A, C, S, E> From<AppUncheckedExtrinsic<A, C, S, E>> for AppExtrinsic
 where
-	A: Encode,
-	C: Encode,
-	S: Encode,
+	A: Codec,
+	C: Codec,
+	S: Codec,
 	E: SignedExtension + GetAppId,
 {
 	fn from(app_ext: AppUncheckedExtrinsic<A, C, S, E>) -> Self {

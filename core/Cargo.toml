@@ -1,51 +1,54 @@
 [package]
 name = "avail-core"
-version = "0.5.1"
+version = "0.6.0"
 authors = []
 edition = "2021"
 license = "Apache-2.0"
 
 [dependencies]
 # Others
-derive_more = { version = "0.99.17", default-features = false, features = ["constructor", "from", "add", "deref", "mul", "into"] }
-ethabi = { version = "18.0.0", default-features = false }
-hash256-std-hasher = { version = "0.15.2", default-features = false }
-hex = { version = "0.4", optional = true, default-features = false, features = ["alloc", "serde"] }
-log = { version = "0.4.8", default-features = false }
-serde = { version = "1.0.196", default-features = false, features = ["derive", "alloc"], optional = true }
-static_assertions = { version = "1.1.0" }
-thiserror-no-std = { version = "2.0.2" }
+derive_more.workspace = true
+ethabi-decode.workspace = true
+hash256-std-hasher.workspace = true
+hex = { workspace = true, optional = true }
+log.workspace = true
+serde = { workspace = true, optional = true }
+static_assertions.workspace = true
+thiserror-no-std.workspace = true
+tiny-keccak.workspace = true
 
-tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak"] }
-
-
-# Substrate
-binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false, optional = true }
+# Parity
+binary-merkle-tree = { workspace = true, optional = true }
+bounded-collections.workspace = true
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"] }
-scale-info = { version = "2", default-features = false, features = ["derive"] }
-sp-arithmetic = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
-sp-trie = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
+scale-info.workspace = true
 
-# Substrate Runtime
-frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false, optional = true }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false, optional = true }
-sp-runtime-interface = {git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false, optional = true }
+# Polkadot SDK
+frame-support = { workspace = true, optional = true }
+sp-arithmetic.workspace = true
+sp-core.workspace = true
+sp-io.workspace = true
+sp-runtime = { workspace = true, optional = true }
+sp-runtime-interface = { workspace = true, optional = true }
+sp-std.workspace = true
+sp-trie.workspace = true
 
 [dev-dependencies]
-hex-literal = { version = "0.3.4" }
-serde_json = { version = "1" }
-test-case = { version = "1.2.3" }
+hex-literal.workspace = true
+rand.workspace = true
+serde_json.workspace = true
+test-case.workspace = true
+avail-core = { path = ".", features = ["runtime"] }
 
 [features]
 default = [ "std" ]
 std = [
 	"binary-merkle-tree?/std",
+	"bounded-collections/std",
 	"codec/std",
 	"derive_more/display",
-	"frame-support/std",
+	"ethabi-decode/std",
+	"frame-support?/std",
 	"hash256-std-hasher/std",
 	"hex",
 	"log/std",

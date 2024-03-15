@@ -145,10 +145,10 @@ get erasure coded to ensure redundancy."#;
 
 #[test]
 fn test_extend_mock_data() {
-	let orig_data = r#"This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
+	let orig_data = br#"This is mocked test data. It will be formatted as a matrix of BLS scalar cells and then individual columns 
 get erasure coded to ensure redundancy.
 Let's see how this gets encoded and then reconstructed by sampling only some data."#;
-	let exts = vec![AppExtrinsic::from(orig_data.as_bytes().to_vec())];
+	let exts = vec![AppExtrinsic::from(orig_data.to_vec())];
 
 	// The hash is used for seed for padding the block to next power of two value
 	let hash = Seed::default();
@@ -161,10 +161,6 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 	let bdims = grid.dims();
 
 	let res = reconstruct_extrinsics(&grid.lookup, bdims, cols).unwrap();
-	let s = String::from_utf8_lossy(res[0].1[0].as_slice());
 
-	assert_eq!(s, orig_data);
-	assert_eq!(res[0].1[0], orig_data.as_bytes());
-
-	eprintln!("Decoded: {}", s);
+	assert_eq!(res[0].1[0], orig_data);
 }

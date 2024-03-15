@@ -121,6 +121,7 @@ impl PartialEq for Error {
 pub type XtsLayout = Vec<(AppId, u32)>;
 type FlatData = Vec<u8>;
 type DataChunk = [u8; DATA_CHUNK_SIZE];
+
 /// Helper which groups extrinsics data that share the same app_id.
 /// We assume the input extrinsics are already sorted by app_id, i.e. extrinsics with the same app_id are consecutive.
 /// This function does the same thing as group_by (unstable), just less general.
@@ -149,12 +150,11 @@ pub fn flatten_and_pad_block(
 	// Padding occurs both inside a single chunk and with additional chunk (if needed)
 	let (tx_layout, padded_chunks): (Vec<_>, Vec<_>) = app_extrinsics_group_by_app_id(&extrinsics)
 		.iter()
-		.map(|e| {
-			let app_id = e.0;
-			let data = e.1.encode();
+		.map(|(app_id, opaques)| {
+			let data = opaques.encode();
 			let chunks = pad_iec_9797_1(data);
 			let chunks_len = u32::try_from(chunks.len()).map_err(|_| Error::BlockTooBig)?;
-			Ok(((app_id, chunks_len), chunks))
+			Ok(((*app_id, chunks_len), chunks))
 		})
 		.collect::<Result<Vec<_>, Error>>()?
 		.into_iter()
@@ -1165,10 +1165,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let hash = Seed::default();
 		let data = (0..3).flat_map(|i| vec![i; 31]).collect::<Vec<_>>();
 		let xts = (0..4)
-			.map(|app_id| AppExtrinsic {
-				app_id: AppId(app_id),
-				data: data.clone(),
-			})
+			.map(|app_id| AppExtrinsic::new(AppId(app_id), data.clone()))
 			.collect::<Vec<_>>();
 		par_build_commitments(
 			BlockLengthRows(4),
@@ -1187,10 +1184,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		// Due to scale encoding, first line is not constant.
 		// We will use second line to ensure constant row.
 		let hash = Seed::default();
-		let xts = vec![AppExtrinsic {
-			app_id: AppId(0),
-			data: vec![0; 31 * 8],
-		}];
+		let xts = vec![AppExtrinsic::from(vec![0u8; 31 * 8])];
 		par_build_commitments(
 			BlockLengthRows(4),
 			BlockLengthColumns(4),

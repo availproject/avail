@@ -20,13 +20,13 @@ use rand_chacha::ChaChaRng;
 fn test_multiple_extrinsics_for_same_app_id() {
 	let xt1 = vec![5, 5];
 	let xt2 = vec![6, 6];
-	let xts = [
+	let xts = vec![
 		AppExtrinsic::new(AppId(1), xt1.clone()),
 		AppExtrinsic::new(AppId(1), xt2.clone()),
 	];
 	// The hash is used for seed for padding the block to next power of two value
 	let hash = Seed::default();
-	let ev = EvaluationGrid::from_extrinsics(xts.into(), 4, 128, 2, hash)
+	let ev = EvaluationGrid::from_extrinsics(xts, 4, 128, 2, hash)
 		.unwrap()
 		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 		.unwrap();
@@ -55,7 +55,7 @@ fn test_build_and_reconstruct(exts in super::app_extrinsics_strategy())  {
 	let reconstructed = reconstruct_extrinsics(&grid.lookup, bdims, cells).unwrap();
 	for ((id,data), xt) in reconstructed.iter().zip(exts) {
 		prop_assert_eq!(id.0, *xt.app_id);
-		prop_assert_eq!(data[0].as_slice(), &xt.data);
+		prop_assert_eq!(data[0].as_slice(), xt.data);
 	}
 
 	let pp = &*PMP;
@@ -91,13 +91,14 @@ get erasure coded to ensure redundancy."#;
 	let app_id_2_data =
 		br#""Let's see how this gets encoded and then reconstructed by sampling only some data."#;
 
-	let xts = vec![
-		AppExtrinsic::new(AppId(0), vec![0]),
-		AppExtrinsic::new(AppId(1), app_id_1_data.to_vec()),
-		AppExtrinsic::new(AppId(2), app_id_2_data.to_vec()),
-	];
+	let xts_data = vec![vec![0], app_id_1_data.to_vec(), app_id_2_data.to_vec()];
+	let xts = xts_data
+		.into_iter()
+		.enumerate()
+		.map(|(i, data)| AppExtrinsic::new(AppId(i as u32), data))
+		.collect::<Vec<_>>();
 
-	let grid = EvaluationGrid::from_extrinsics(xts.clone(), 4, 4, 32, Seed::default())
+	let grid = EvaluationGrid::from_extrinsics(xts, 4, 4, 32, Seed::default())
 		.unwrap()
 		.extend_columns(unsafe { NonZeroU16::new_unchecked(2) })
 		.unwrap();

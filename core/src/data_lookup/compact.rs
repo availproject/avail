@@ -48,7 +48,7 @@ impl CompactDataLookup {
 			.filter(|(id, _)| *id != AppId(0))
 			.map(|(id, range)| DataLookupItem::new(*id, range.start))
 			.collect();
-		let size = lookup.index.last().map(|(_, range)| range.end).unwrap_or(0);
+		let size = lookup.index.last().map_or(0, |(_, range)| range.end);
 		Self { size, index }
 	}
 }

@@ -17,23 +17,22 @@
 
 //! Data-Avail implementation of a block header.
 
-use codec::{Codec, Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
+use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-use sp_arithmetic::{traits::Saturating, MultiplyRational};
 use sp_core::{hexdisplay::HexDisplay, U256};
 use sp_runtime::{
-	traits::{
-		AtLeast32BitUnsigned, Hash as HashT, Header as HeaderT, MaybeDisplay, MaybeSerialize,
-		MaybeSerializeDeserialize, Member, SimpleBitOps,
-	},
+	traits::{BlockNumber, Hash as HashT, Header as HeaderT},
 	Digest,
 };
 use sp_runtime_interface::pass_by::{Codec as PassByCodecImpl, PassBy};
-use sp_std::{convert::TryFrom, fmt};
+use sp_std::{
+	convert::TryFrom,
+	fmt::{Debug, Formatter},
+};
 
-use crate::traits::{ExtendedHeader, HeaderBlockNumber, HeaderHash};
+use crate::traits::ExtendedHeader;
 
 #[cfg(feature = "std")]
 const LOG_TARGET: &str = "header";
@@ -48,67 +47,34 @@ pub use extension::HeaderExtension;
 	feature = "serde",
 	serde(deny_unknown_fields, rename_all = "camelCase")
 )]
-pub struct Header<Number: HeaderBlockNumber, Hash: HeaderHash> {
+pub struct Header<N, H>
+where
+	N: BlockNumber,
+	H: HashT,
+	H::Output: TypeInfo,
+{
 	/// The parent hash.
-	pub parent_hash: Hash::Output,
+	pub parent_hash: H::Output,
 	/// The block number.
 	#[cfg_attr(feature = "serde", serde(with = "number_serde"))]
 	#[codec(compact)]
-	pub number: Number,
+	pub number: N,
 	/// The state trie merkle root
-	pub state_root: Hash::Output,
+	pub state_root: H::Output,
 	/// The merkle root of the extrinsics.
-	pub extrinsics_root: Hash::Output,
+	pub extrinsics_root: H::Output,
 	/// A chain-specific digest of data useful for light clients or referencing auxiliary data.
 	pub digest: Digest,
 	/// Data Availability header extension.
 	pub extension: HeaderExtension,
 }
 
-impl<N: HeaderBlockNumber, H: HeaderHash> fmt::Debug for Header<N, H> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		let parent_hash = self.parent_hash.as_ref();
-		let state_root = self.state_root.as_ref();
-		let extrinsics_root = self.extrinsics_root.as_ref();
-
-		f.debug_struct("Header")
-			.field("parent_hash", &HexDisplay::from(&parent_hash))
-			.field("number", &self.number)
-			.field("state_root", &HexDisplay::from(&state_root))
-			.field("extrinsics_root", &HexDisplay::from(&extrinsics_root))
-			.field("digest", &self.digest)
-			.field("extension", &self.extension)
-			.finish()
-	}
-}
-
-/// This module adds serialization support to `Header::number` field.
-#[cfg(feature = "serde")]
-mod number_serde {
-	use serde::{Deserializer, Serializer};
-
-	use super::*;
-
-	pub fn serialize<N, S>(n: &N, serializer: S) -> Result<S::Ok, S::Error>
-	where
-		N: HeaderBlockNumber,
-		S: Serializer,
-	{
-		let u256: U256 = (*n).into();
-		serde::Serialize::serialize(&u256, serializer)
-	}
-
-	pub fn deserialize<'de, D, T>(d: D) -> Result<T, D::Error>
-	where
-		T: HeaderBlockNumber,
-		D: Deserializer<'de>,
-	{
-		let u256: U256 = serde::Deserialize::deserialize(d)?;
-		TryFrom::try_from(u256).map_err(|_| serde::de::Error::custom("Try from failed"))
-	}
-}
-
-impl<N: HeaderBlockNumber, H: HeaderHash> Header<N, H> {
+impl<N, H> Header<N, H>
+where
+	N: BlockNumber,
+	H: HashT,
+	H::Output: TypeInfo,
+{
 	/// Creates a header V1
 	#[inline]
 	pub fn new(
@@ -137,10 +103,59 @@ impl<N: HeaderBlockNumber, H: HeaderHash> Header<N, H> {
 	}
 }
 
+impl<N, H> Debug for Header<N, H>
+where
+	N: BlockNumber,
+	H: HashT,
+	H::Output: TypeInfo,
+{
+	fn fmt(&self, f: &mut Formatter<'_>) -> sp_std::fmt::Result {
+		let parent_hash = self.parent_hash.as_ref();
+		let state_root = self.state_root.as_ref();
+		let extrinsics_root = self.extrinsics_root.as_ref();
+
+		f.debug_struct("Header")
+			.field("parent_hash", &HexDisplay::from(&parent_hash))
+			.field("number", &self.number)
+			.field("state_root", &HexDisplay::from(&state_root))
+			.field("extrinsics_root", &HexDisplay::from(&extrinsics_root))
+			.field("digest", &self.digest)
+			.field("extension", &self.extension)
+			.finish()
+	}
+}
+
+/// This module adds serialization support to `Header::number` field.
+#[cfg(feature = "serde")]
+mod number_serde {
+	use serde::{de::Error, Deserializer, Serializer};
+
+	use super::*;
+
+	pub fn serialize<N, S>(n: &N, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		N: BlockNumber,
+		S: Serializer,
+	{
+		let u256: U256 = (*n).into();
+		serde::Serialize::serialize(&u256, serializer)
+	}
+
+	pub fn deserialize<'de, D, T>(d: D) -> Result<T, D::Error>
+	where
+		T: BlockNumber,
+		D: Deserializer<'de>,
+	{
+		let u256: U256 = serde::Deserialize::deserialize(d)?;
+		TryFrom::try_from(u256).map_err(|_| Error::custom("Try from failed"))
+	}
+}
+
 impl<N, H> Default for Header<N, H>
 where
-	N: HeaderBlockNumber + Default,
-	H: HeaderHash,
+	N: BlockNumber,
+	H: HashT,
+	H::Output: TypeInfo,
 {
 	fn default() -> Self {
 		Self {
@@ -154,46 +169,25 @@ where
 	}
 }
 
-impl<N: HeaderBlockNumber, H: HeaderHash> PassBy for Header<N, H> {
+impl<N, H> PassBy for Header<N, H>
+where
+	N: BlockNumber,
+	H: HashT,
+	H::Output: TypeInfo,
+{
 	type PassBy = PassByCodecImpl<Header<N, H>>;
 }
 
-impl<Number, Hash> HeaderT for Header<Number, Hash>
+impl<N, H> HeaderT for Header<N, H>
 where
-	Number: Member
-		+ MaybeSerializeDeserialize
-		+ fmt::Debug
-		+ sp_std::hash::Hash
-		+ MaybeDisplay
-		+ AtLeast32BitUnsigned
-		+ Codec
-		+ Copy
-		+ Into<U256>
-		+ TryFrom<U256>
-		+ sp_std::str::FromStr
-		+ MultiplyRational
-		+ Saturating
-		+ TypeInfo
-		+ EncodeLike
-		+ MaxEncodedLen
-		+ FullCodec
-		+ Default,
-	Hash: HashT + TypeInfo,
-	Hash::Output: Default
-		+ sp_std::hash::Hash
-		+ Copy
-		+ Member
-		+ Ord
-		+ MaybeSerialize
-		+ fmt::Debug
-		+ MaybeDisplay
-		+ SimpleBitOps
-		+ Codec,
-	Header<Number, Hash>: Encode + Decode,
+	N: BlockNumber,
+	H: HashT,
+	H::Output: TypeInfo,
+	Header<N, H>: TypeInfo,
 {
-	type Hash = <Hash as HashT>::Output;
-	type Hashing = Hash;
-	type Number = Number;
+	type Hash = H::Output;
+	type Hashing = H;
+	type Number = N;
 
 	fn number(&self) -> &Self::Number {
 		&self.number
@@ -255,15 +249,21 @@ where
 	}
 }
 
-impl<N: HeaderBlockNumber, H: HeaderHash>
-	ExtendedHeader<N, <H as HashT>::Output, Digest, HeaderExtension> for Header<N, H>
+impl<N, H> ExtendedHeader for Header<N, H>
+where
+	N: BlockNumber,
+	H: HashT,
+	H::Output: TypeInfo,
+	Header<N, H>: HeaderT<Hashing = H, Hash = H::Output, Number = N>,
 {
+	type Extension = HeaderExtension;
+
 	/// Creates new header.
 	fn new(
-		n: N,
-		extrinsics: <H as HashT>::Output,
-		state: <H as HashT>::Output,
-		parent: <H as HashT>::Output,
+		n: Self::Number,
+		extrinsics: H::Output,
+		state: H::Output,
+		parent: H::Output,
 		digest: Digest,
 		extension: HeaderExtension,
 	) -> Self {
@@ -367,7 +367,10 @@ mod tests {
 		Header::decode(&mut encoded_header)
 	}
 
-	fn header_serde_encode<N: HeaderBlockNumber, H: HeaderHash>(header: Header<N, H>) -> String {
+	fn header_serde_encode<N: BlockNumber, H: HashT>(header: Header<N, H>) -> String
+	where
+		H::Output: TypeInfo,
+	{
 		serde_json::to_string(&header).unwrap_or_default()
 	}
 

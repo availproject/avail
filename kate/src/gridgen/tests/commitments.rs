@@ -1,6 +1,6 @@
 use super::*;
 use crate::{couscous, gridgen::*, testnet, Seed};
-use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
+use avail_core::{AppExtrinsic, BlockLengthColumns, BlockLengthRows};
 use hex_literal::hex;
 use kate_recovery::{
 	commitments::verify_equality,
@@ -10,7 +10,7 @@ use test_case::test_case;
 
 #[test]
 fn test_build_commitments_simple_commitment_check() {
-	let original_data = br#"test"#;
+	let original_data = br#"test"#.to_vec();
 	let block_height = 256usize;
 	let block_width = 256usize;
 	let hash: Seed = [
@@ -20,7 +20,7 @@ fn test_build_commitments_simple_commitment_check() {
 	let pmp_pp = crate::testnet::multiproof_params(256, 256);
 
 	let evals = EvaluationGrid::from_extrinsics(
-		vec![AppExtrinsic::from(original_data.to_vec())],
+		vec![AppExtrinsic::from(original_data)],
 		4,
 		block_width,
 		block_height,
@@ -57,10 +57,7 @@ fn par_build_commitments_row_wise_constant_row() {
 	// Due to scale encoding, first line is not constant.
 	// We will use second line to ensure constant row.
 	let hash = Seed::default();
-	let xts = vec![AppExtrinsic {
-		app_id: AppId(0),
-		data: vec![0; 31 * 8],
-	}];
+	let xts = vec![AppExtrinsic::from(vec![0u8; 31 * 8])];
 
 	let evals = EvaluationGrid::from_extrinsics(xts, 4, 4, 4, hash).unwrap();
 	let evals = evals

@@ -12,6 +12,8 @@ pub struct OpaqueExtrinsic(pub Vec<u8>);
 
 impl OpaqueExtrinsic {
 	/// Convert an encoded extrinsic to an `OpaqueExtrinsic`.
+	/// # Errors
+	/// A decodification error if `bytes` does not follow the `Vec<u8>` encoded schema.
 	pub fn from_bytes(mut bytes: &[u8]) -> Result<Self, codec::Error> {
 		Self::decode(&mut bytes)
 	}
@@ -47,7 +49,7 @@ impl<'a> ::serde::Deserialize<'a> for OpaqueExtrinsic {
 	{
 		let r = ::sp_core::bytes::deserialize(de)?;
 		Decode::decode(&mut &r[..])
-			.map_err(|e| ::serde::de::Error::custom(format!("Decode error: {}", e)))
+			.map_err(|e| ::serde::de::Error::custom(format!("Decode error: {e}")))
 	}
 }
 

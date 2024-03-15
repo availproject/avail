@@ -3,7 +3,7 @@ use crate::AppId;
 /// Get application Id trait
 pub trait GetAppId {
 	fn app_id(&self) -> AppId {
-		Default::default()
+		AppId::default()
 	}
 }
 
@@ -41,6 +41,6 @@ mod tests {
 		let default_app_id = (0, 1, 2, 3, 4, 5, 6, DefaultGetAppId {});
 
 		assert_eq!(custom_app_id.app_id(), AppId(7));
-		assert_eq!(default_app_id.app_id(), Default::default());
+		assert_eq!(default_app_id.app_id(), AppId::default());
 	}
 }
