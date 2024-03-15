@@ -55,6 +55,7 @@ decl_runtime_apis! {
 		) -> HeaderExtension;
 
 		fn build_data_root(block: u32, extrinsics: Vec<OpaqueExtrinsic>) -> H256;
+		fn check_if_extrinsic_is_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool;
 	}
 
 	pub trait VectorApi {
@@ -368,6 +369,25 @@ impl_runtime_apis! {
 			let tx_data = build_tx_data_from_opaque::<RTExtractor, RTExtrinsic, _, _>(block_number, extrinsics);
 			let submitted = tx_data.to_app_extrinsics();
 			HeaderExtensionBuilder::<Runtime>::build( submitted, data_root, block_length, block_number)
+		}
+
+		fn check_if_extrinsic_is_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool {
+			use frame_support::traits::ExtrinsicCall;
+
+			let Ok(xt) =  TryInto::<&RTExtrinsic>::try_into(uxt) else {
+				return false;
+			};
+
+			let vector_pallet_call = match xt.call() {
+				RuntimeCall::Vector(call) => call,
+				_ => return false
+			};
+
+
+			match vector_pallet_call {
+				pallet_vector::Call::failed_send_message_txs {failed_txs: _} => true,
+				_ => false,
+			}
 		}
 	}
 

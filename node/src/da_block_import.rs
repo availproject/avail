@@ -51,6 +51,34 @@ where
 		}
 	}
 
+	fn ensure_last_extrinsic_is_failed_send_message_txs(
+		&self,
+		block: &BlockImportParams<B>,
+	) -> Result<(), ConsensusError> {
+		let err = block_doesnt_contain_post_inherent();
+
+		let maybe_body = block.body.as_ref();
+		let Some(body) = maybe_body else {
+			return Err(err);
+		};
+
+		let Some(last_extrinsic) = body.last() else {
+			return Err(err);
+		};
+
+		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
+		let api = self.client.runtime_api();
+
+		let Ok(found) = api.check_if_extrinsic_is_post_inherent(parent_hash, &last_extrinsic)
+		else {
+			return Err(err);
+		};
+
+		ensure!(found, err);
+
+		Ok(())
+	}
+
 	fn ensure_valid_header_extension(
 		&self,
 		block: &BlockImportParams<B>,
@@ -112,6 +140,7 @@ where
 		);
 		let skip_sync = self.unsafe_da_sync && is_sync;
 		if !is_own && !skip_sync {
+			self.ensure_last_extrinsic_is_failed_send_message_txs(&block)?;
 			self.ensure_valid_header_extension(&block)?;
 		}
 
@@ -164,5 +193,10 @@ fn data_root_fail(e: ApiError) -> ConsensusError {
 
 fn build_ext_fail(e: ApiError) -> ConsensusError {
 	let msg = format!("Build extension fails due to: {e:?}");
+	ConsensusError::ClientImport(msg)
+}
+
+fn block_doesnt_contain_post_inherent() -> ConsensusError {
+	let msg = format!("Block does not contain post inherent");
 	ConsensusError::ClientImport(msg)
 }
