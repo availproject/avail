@@ -543,6 +543,36 @@ fn test_fulfill_step_call() {
 }
 
 #[test]
+fn test_fulfill_step_call_wrong_poseidon() {
+	new_test_ext().execute_with(|| {
+		let slot = 7634942;
+		// current poseidon is not the same as the one in the valid proof
+		SyncCommitteePoseidons::<Test>::insert(
+			931,
+			U256::from(hex!(
+				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332da"
+			)),
+		);
+
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: 8192,
+			finality_threshold: 461,
+		});
+
+		let result = Bridge::fulfill_call(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			STEP_FUNCTION_ID,
+			get_valid_step_input(),
+			get_valid_step_output(),
+			get_valid_step_proof(),
+			slot,
+		);
+
+		assert_err!(result, Error::<Test>::StepVerificationError);
+	});
+}
+
+#[test]
 fn test_fulfill_step_call_slot_behind_head() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
@@ -617,6 +647,36 @@ fn test_fulfill_rotate_call() {
 
 		assert_eq!(expected_event, System::events()[0].event);
 		assert_eq!(poseidon, expected_poseidon);
+	});
+}
+
+#[test]
+fn test_fulfill_rotate_call_wrong_header() {
+	new_test_ext().execute_with(|| {
+		let slot = 7634942;
+
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: 8192,
+			finality_threshold: 342,
+		});
+		// set current wrong header for valid rotate call
+		Headers::<Test>::set(
+			slot,
+			H256(hex!(
+				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57855"
+			)),
+		);
+
+		let result = Bridge::fulfill_call(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			ROTATE_FUNCTION_ID,
+			get_valid_rotate_input(),
+			get_valid_rotate_output(),
+			get_valid_rotate_proof(),
+			slot,
+		);
+
+		assert_err!(result, Error::<Test>::RotateVerificationError);
 	});
 }
 
