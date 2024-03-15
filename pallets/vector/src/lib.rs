@@ -103,6 +103,8 @@ pub mod pallet {
 		FunctionIdsAreNotSet,
 		/// Inherent call outside of block execution context.
 		BadContext,
+		/// Invalid FailedIndices
+		InvalidFailedIndices,
 	}
 
 	#[pallet::event]
@@ -682,12 +684,22 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(11)]
-		#[pallet::weight(T::WeightInfo::failed_tx_index(0u32))]
+		#[pallet::weight((
+			T::WeightInfo::failed_tx_index(0u32),
+			DispatchClass::Mandatory
+		))]
 		pub fn failed_send_message_txs(
 			origin: OriginFor<T>,
 			failed_txs: Vec<Compact<u32>>,
 		) -> DispatchResult {
 			ensure_none(origin)?;
+			let local_failed_txs =
+				MemoryTemporaryStorage::get::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID)
+					.unwrap_or_default();
+			ensure!(
+				&local_failed_txs == &failed_txs,
+				Error::<T>::InvalidFailedIndices
+			);
 
 			// SAFETY: `failed_txs.len()` is always less than `u32::MAX` because it is bounded by
 			// `BoundedVec`
@@ -1008,12 +1020,9 @@ where
 	fn create_inherent(_: &avail_base::StorageMap) -> Option<Self::Call> {
 		let failed_txs = MemoryTemporaryStorage::get::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID)
 			.unwrap_or_default();
-		if !failed_txs.is_empty() {
-			log::trace!(target: LOG_TARGET, "Create post inherent failed vector txs: {failed_txs:?}");
-			return Some(Call::failed_send_message_txs { failed_txs });
-		}
 
-		None
+		log::trace!(target: LOG_TARGET, "Create post inherent failed vector txs: {failed_txs:?}");
+		Some(Call::failed_send_message_txs { failed_txs })
 	}
 
 	fn is_inherent(call: &Self::Call) -> bool {
