@@ -57,7 +57,11 @@ pub enum SubTrie {
 }
 
 #[derive(Debug, Clone, Copy, Encode, Decode, PartialEq, Eq, Default, TypeInfo)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(
+	feature = "serde",
+	serde(rename_all = "camelCase"),
+	derive(Serialize, Deserialize)
+)]
 pub struct TxDataRoots {
 	/// Global Merkle root
 	pub data_root: H256,
