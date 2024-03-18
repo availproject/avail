@@ -106,3 +106,18 @@ pub mod devnet0 {
 		chain_spec().unwrap().build_storage().unwrap();
 	}
 }
+
+pub mod mainnet {
+	use super::*;
+
+	pub fn chain_spec() -> Result<ChainSpec, String> {
+		ChainSpec::from_json_bytes(
+			&include_bytes!("./../../../misc/genesis/mainnet.chain.spec.raw.json",)[..],
+		)
+	}
+
+	#[test]
+	fn test_chain_spec_creation() {
+		chain_spec().unwrap().build_storage().unwrap();
+	}
+}

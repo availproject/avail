@@ -74,6 +74,7 @@ impl SubstrateCli for Cli {
 			"dev.tri" => Box::new(chains::dev_tri::chain_spec()),
 			"goldberg" => Box::new(chains::goldberg::chain_spec()?),
 			"devnet0" => Box::new(chains::devnet0::chain_spec()?),
+			"mainnet" => Box::new(chains::mainnet::chain_spec()?),
 			path => Box::new(chains::ChainSpec::from_json_file(
 				std::path::PathBuf::from(path),
 			)?),
