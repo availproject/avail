@@ -335,9 +335,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				147u8, 140u8, 150u8, 19u8, 196u8, 61u8, 147u8, 115u8, 64u8, 8u8, 137u8, 185u8,
-				175u8, 82u8, 27u8, 115u8, 235u8, 22u8, 154u8, 107u8, 184u8, 225u8, 206u8, 150u8,
-				88u8, 218u8, 128u8, 154u8, 243u8, 158u8, 138u8, 63u8,
+				196u8, 73u8, 134u8, 39u8, 27u8, 167u8, 87u8, 95u8, 79u8, 167u8, 34u8, 85u8, 126u8,
+				160u8, 126u8, 129u8, 205u8, 64u8, 208u8, 5u8, 16u8, 9u8, 2u8, 84u8, 6u8, 171u8,
+				134u8, 2u8, 98u8, 6u8, 152u8, 153u8,
 			]
 	}
 	pub mod system {
@@ -32597,6 +32597,9 @@ pub mod api {
 					#[codec(index = 29)]
 					#[doc = "Inherent call outside of block execution context."]
 					BadContext,
+					#[codec(index = 30)]
+					#[doc = "Invalid FailedIndices"]
+					InvalidFailedIndices,
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
