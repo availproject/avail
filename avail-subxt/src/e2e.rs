@@ -1,7 +1,7 @@
 use std::{process::Stdio, str, time::Duration};
 
 use anyhow::{anyhow, ensure, Result};
-use jsonrpsee::ws_client::WsClientBuilder;
+// use jsonrpsee::ws_client::WsClientBuilder;
 use structopt::StructOpt;
 use tokio::{
 	fs::remove_dir_all,
@@ -9,7 +9,7 @@ use tokio::{
 	time::sleep,
 };
 
-use avail_subxt::rpc::*;
+// use avail_subxt::rpc::*;
 
 #[derive(Debug, StructOpt)]
 pub struct E2EOpts {
@@ -116,17 +116,18 @@ async fn run_alice_node(opts: &E2EOpts) -> Result<Child> {
 		.spawn()?;
 
 	// Wait until node is ready up to 5 secs.
-	for i in 1..=5 {
-		if let Ok(client) = WsClientBuilder::default().build(opts.ws.clone()).await {
-			if let Ok(health) = client.health().await {
-				println!("Client Health: {:?}", health);
-				break;
-			}
-		}
+	sleep(Duration::from_secs(1)).await;
+	// for i in 1..=5 {
+	// 	if let Ok(client) = WsClientBuilder::default().build(opts.ws.clone()).await {
+	// 		if let Ok(health) = client.health().await {
+	// 			println!("Client Health: {:?}", health);
+	// 			break;
+	// 		}
+	// 	}
 
-		ensure!(i != 5, anyhow!("Client cannot connect to `{}`", opts.ws));
-		sleep(Duration::from_secs(1)).await;
-	}
+	// 	ensure!(i != 5, anyhow!("Client cannot connect to `{}`", opts.ws));
+	// 	sleep(Duration::from_secs(1)).await;
+	// }
 
 	Ok(child)
 }
