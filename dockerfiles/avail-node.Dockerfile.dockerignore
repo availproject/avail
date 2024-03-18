@@ -4,11 +4,14 @@
 # Allow files and directories
 !/runtime
 !/rpc
+!/patricia-merkle-trie
 !/pallets
 !/node
 !/misc
+!/client
 !/base
 !Cargo.toml
 !Cargo.lock
 !rust-toolchain.toml
 !rustfmt.toml
+!.git
