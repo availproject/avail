@@ -1,6 +1,4 @@
-use avail_core::{
-	AppExtrinsic, BlockLengthColumns, HeaderVersion, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
-};
+use avail_core::{AppExtrinsic, BlockLengthColumns, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO};
 use da_control::Config as DAConfig;
 use da_runtime::Runtime;
 use frame_support::traits::Get as _;
@@ -38,12 +36,5 @@ fn commitment_builder_with(txs: Vec<AppExtrinsic>, block_length: BlockLength) {
 	let root = H256::zero();
 	let block_number: u32 = 0;
 
-	let _ = hosted_header_builder::build(
-		txs,
-		root,
-		block_length,
-		block_number,
-		seed,
-		HeaderVersion::V3,
-	);
+	let _ = hosted_header_builder::build(txs, root, block_length, block_number, seed);
 }

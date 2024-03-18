@@ -573,11 +573,7 @@ pub mod pallet {
 			assert!(
 				<Multiplier as sp_runtime::traits::Bounded>::max_value()
 					>= Multiplier::checked_from_integer::<u128>(
-						T::BlockWeights::get()
-							.max_block
-							.ref_time()
-							.try_into()
-							.unwrap()
+						T::BlockWeights::get().max_block.ref_time().into()
 					)
 					.unwrap(),
 			);

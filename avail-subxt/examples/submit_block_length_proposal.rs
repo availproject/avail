@@ -1,181 +1,185 @@
-use anyhow::Result;
 use avail_subxt::{
 	api::{
 		self,
 		data_availability::events as DaEvent,
 		runtime_types::{
-			bounded_collections::bounded_vec::BoundedVec, da_control::pallet::Call as DaCall,
-			pallet_sudo::pallet::Call as SudoCall,
+			da_control::pallet::Call as DaCall, pallet_sudo::pallet::Call as SudoCall,
 		},
 		sudo::events as SudoEvent,
 	},
-	avail::{self, Client},
-	build_client, tx_async_send, tx_send_in_block, tx_send_in_finalized, AvailConfig, Call, Opts,
+	avail::TxInBlock,
+	submit::submit_data_with_nonce,
+	tx, AvailClient, AvailConfig, Call, Opts,
 };
-use sp_keyring::AccountKeyring;
+
+use futures::future::join_all;
 use structopt::StructOpt;
-use subxt::{ext::sp_core::Pair, tx::PairSigner};
+use subxt::{tx::Signer as SignerT, utils::H256, Error};
+use subxt_signer::sr25519::dev;
 
-const BLOCK_DIM_VALUE_ROWS: u32 = 32;
-const BLOCK_DIM_VALUE_COLS: u32 = 64;
+const BLOCK_ROWS: u32 = 32;
+const BLOCK_COLS: u32 = 64;
 
+fn length_proposal_call(rows: u32, cols: u32) -> Call {
+	DaCall::submit_block_length_proposal { rows, cols }.into()
+}
 /// Sets the block dimensions to default
-async fn reset(client: &Client, signer: &PairSigner<AvailConfig, avail::Pair>) -> Result<()> {
-	log::info!("Resetting block dimensions for further tests");
-	let block_length_update = Call::DataAvailability(DaCall::submit_block_length_proposal {
-		rows: 256,
-		cols: 256,
-	});
-	let sudo_call = api::tx().sudo().sudo(block_length_update);
-	let _ = tx_send_in_finalized!(client, &sudo_call, signer).await;
-	Ok(())
+async fn reset<S: SignerT<AvailConfig>>(
+	client: &AvailClient,
+	signer: &S,
+	nonce: u64,
+) -> Result<u64, Error> {
+	println!("Resetting block dimensions for further tests");
+	let call = length_proposal_call(256, 256);
+
+	let sudo_call = api::tx().sudo().sudo(call);
+	let progress = tx::send_with_nonce(client, &sudo_call, signer, 0, nonce).await?;
+	let _ = tx::then_in_block(progress).await?;
+
+	Ok(nonce + 1)
 }
 
-/// Make `n` data submission transaction
-async fn submit_data(
-	client: &Client,
-	signer: &PairSigner<AvailConfig, avail::Pair>,
-	n: u8,
-) -> Result<()> {
-	let example_data = b"X".repeat(1000).to_vec();
-	let data_submission = api::tx()
-		.data_availability()
-		.submit_data(BoundedVec(example_data));
-	for _ in 0..n {
-		let _ = tx_async_send!(client, &data_submission, signer);
-	}
-
-	Ok(())
-}
-
-/// This example submits transactions to reduce the block dimensions
-/// This should work only if the block is mostly empty (using batch or not)
-/// To see logs:
-/// RUST_LOG="submit_block_length_proposal=info" cargo run --example submit_block_length_proposal
 #[async_std::main]
-async fn main() -> Result<()> {
-	pretty_env_logger::init();
+async fn main() -> Result<(), Error> {
 	let args = Opts::from_args();
-	let (client, _) = build_client(args.ws, args.validate_codegen).await?;
-	let alice = avail::Pair::from_string_with_seed(&AccountKeyring::Alice.to_seed(), None).unwrap();
-	let signer = PairSigner::<AvailConfig, avail::Pair>::new(alice.0);
+	let client = AvailClient::new(args.ws).await?;
 
-	reset(&client, &signer).await?;
+	let alice = dev::alice();
+	let alice_id = alice.public_key().into();
+	let nonce = client.tx().account_nonce(&alice_id).await?;
+	let nonce = reset(&client, &alice, nonce).await?;
 
 	// Success cases
-	simple_tx(&client, &signer).await?;
-	batch_tx(&client, &signer).await?;
+	let nonce = simple_tx(&client, &alice, nonce).await?;
+	let nonce = batch_tx(&client, &alice, nonce).await?;
 
 	// Fail cases
-	fail_simple_tx(&client, &signer).await?;
-	fail_batch_tx(&client, &signer).await?;
+	let nonce = fail_simple_tx(&client, &alice, nonce).await?;
+	let _ = fail_batch_tx(&client, &alice, nonce).await?;
 
 	Ok(())
 }
 
 /** Success cases **/
-pub async fn simple_tx(
-	client: &Client,
-	signer: &PairSigner<AvailConfig, avail::Pair>,
-) -> Result<()> {
-	log::info!("1 - Sudo call to reduce the dimensions of the block.");
-	let block_length_update = Call::DataAvailability(DaCall::submit_block_length_proposal {
-		rows: BLOCK_DIM_VALUE_ROWS,
-		cols: BLOCK_DIM_VALUE_COLS,
-	});
-	let sudo_call = api::tx().sudo().sudo(block_length_update);
-	tx_send_in_block!(client, &sudo_call, signer)
+pub async fn simple_tx<S>(client: &AvailClient, signer: &S, nonce: u64) -> Result<u64, Error>
+where
+	S: SignerT<AvailConfig>,
+{
+	println!("1 - Sudo call to reduce the dimensions of the block.");
+	let call = length_proposal_call(BLOCK_ROWS, BLOCK_COLS);
+	let sudo_call = api::tx().sudo().sudo(call);
+
+	let progress = tx::send_with_nonce(client, &sudo_call, signer, 0, nonce).await?;
+	let _event = tx::then_in_block(progress)
+		.await?
 		.fetch_events()
 		.await?
 		.find_first::<DaEvent::BlockLengthProposalSubmitted>()?
-		.expect("1 - Block Length Proposal Submitted event is emitted .qed");
-	log::info!("1 - Block Length Proposal Submitted found.");
-	reset(client, signer).await?;
-	Ok(())
+		.ok_or_else(|| {
+			Error::Other("1 - Block Length Proposal Submitted event not emitted".to_string())
+		})?;
+
+	println!("1 - Block Length Proposal Submitted found.");
+	reset(client, signer, nonce + 1).await
 }
 
-pub async fn batch_tx(
-	client: &Client,
-	signer: &PairSigner<AvailConfig, avail::Pair>,
-) -> Result<()> {
-	log::info!("2 - Sudo call in a batch to reduce the dimensions of the block.");
-	let block_length_update = Call::DataAvailability(DaCall::submit_block_length_proposal {
-		rows: BLOCK_DIM_VALUE_ROWS,
-		cols: BLOCK_DIM_VALUE_COLS,
-	});
-	let sudo_call = Call::Sudo(SudoCall::sudo {
-		call: Box::new(block_length_update),
-	});
+pub async fn batch_tx<S>(client: &AvailClient, signer: &S, nonce: u64) -> Result<u64, Error>
+where
+	S: SignerT<AvailConfig>,
+{
+	println!("2 - Sudo call in a batch to reduce the dimensions of the block.");
+	let call = Box::new(length_proposal_call(BLOCK_ROWS, BLOCK_COLS));
+	let sudo_call = SudoCall::sudo { call }.into();
 	let batch_call = api::tx().utility().batch(vec![sudo_call]);
-	tx_send_in_block!(client, &batch_call, signer)
+
+	let progress = tx::send_with_nonce(client, &batch_call, signer, 0, nonce).await?;
+	let _ = tx::then_in_block(progress)
+		.await?
 		.fetch_events()
 		.await?
 		.find_first::<DaEvent::BlockLengthProposalSubmitted>()?
-		.expect("2 - Block Length Proposal Submitted event is emitted .qed");
-	log::info!("2 - Block Length Proposal Submitted found.");
-	reset(client, signer).await?;
-	Ok(())
+		.ok_or_else(|| {
+			Error::Other("2 - Block Length Proposal Submitted event is emitted .qed".to_string())
+		})?;
+
+	println!("2 - Block Length Proposal Submitted found.");
+	reset(client, signer, nonce + 1).await
 }
 
 /** Fail cases **/
-pub async fn fail_simple_tx(
-	client: &Client,
-	signer: &PairSigner<AvailConfig, avail::Pair>,
-) -> Result<()> {
-	log::info!("1-Fail - Should fail: Sudo call to reduce the dimensions of the block, after data submissions.");
-	submit_data(client, signer, 2).await?;
-	submit_data(client, signer, 2).await?;
+pub async fn fail_simple_tx<S>(client: &AvailClient, signer: &S, nonce: u64) -> Result<u64, Error>
+where
+	S: SignerT<AvailConfig>,
+{
+	println!("1-Fail - Should fail: Sudo call to reduce the dimensions of the block, after data submissions.");
+	let data = b"X".repeat(10_000).to_vec();
 
-	let block_length_update = Call::DataAvailability(DaCall::submit_block_length_proposal {
-		rows: BLOCK_DIM_VALUE_ROWS,
-		cols: BLOCK_DIM_VALUE_COLS,
-	});
-	let sudo_call = api::tx().sudo().sudo(block_length_update);
-	let events = tx_send_in_block!(client, &sudo_call, signer)
-		.fetch_events()
-		.await?;
+	let call = length_proposal_call(BLOCK_ROWS, BLOCK_COLS);
+	let sudo_call = api::tx().sudo().sudo(call);
+
+	let events = loop {
+		let tx_1 = submit_data_with_nonce(client, signer, data.as_slice(), 2, nonce).await?;
+		let tx_2 = submit_data_with_nonce(client, signer, data.as_slice(), 2, nonce + 1).await?;
+		let tx_3 = tx::send_with_nonce(client, &sudo_call, signer, 0, nonce + 2).await?;
+
+		let in_block_fut = vec![tx_1, tx_2, tx_3]
+			.into_iter()
+			.map(tx::then_in_block)
+			.collect::<Vec<_>>();
+		let in_block = join_all(in_block_fut)
+			.await
+			.into_iter()
+			.collect::<Result<Vec<_>, _>>()?;
+
+		let tx_blocks = in_block
+			.iter()
+			.map(TxInBlock::block_hash)
+			.collect::<Vec<H256>>();
+		println!("All tx should be in the same block: {tx_blocks:?}");
+
+		let hash = tx_blocks[0];
+		if tx_blocks.iter().all(|h| h == &hash) {
+			// Ensure that the sudo call is included in the same block as the data submissions
+			break in_block[2].fetch_events().await?;
+		}
+	};
+
 	let event = events
 		.find_first::<SudoEvent::Sudid>()?
-		.expect("1-Fail - Sudid event is emitted .qed");
+		.ok_or_else(|| Error::Other("1-Fail - Sudid event is emitted .qed".to_string()))?;
 	assert!(
 		event.sudo_result.is_err(),
 		"1-Fail - BlockLengthProposal was abnormally successful"
 	);
+
+	let event = events.find_first::<DaEvent::BlockLengthProposalSubmitted>()?;
 	assert!(
-		events
-			.find_first::<DaEvent::BlockLengthProposalSubmitted>()?
-			.is_none(),
+		event.is_none(),
 		"1-Fail - BlockLengthProposal was abnormally successful"
 	);
 
-	log::info!("1-Fail - BlockLengthProposal submission correctly failed after another tx.");
-	reset(client, signer).await?;
-	Ok(())
+	println!("1-Fail - BlockLengthProposal submission correctly failed after another tx.");
+	reset(client, signer, nonce + 3).await
 }
 
-pub async fn fail_batch_tx(
-	client: &Client,
-	signer: &PairSigner<AvailConfig, avail::Pair>,
-) -> Result<()> {
-	log::info!("2-Fail - Should fail: Batch call to reduce the dimensions of the block, after data submissions.");
-	submit_data(client, signer, 2).await?;
-	submit_data(client, signer, 2).await?;
+pub async fn fail_batch_tx<S>(client: &AvailClient, signer: &S, nonce: u64) -> Result<u64, Error>
+where
+	S: SignerT<AvailConfig>,
+{
+	println!("2-Fail - Should fail: Batch call to reduce the dimensions of the block, after data submissions.");
+	let data = b"X".repeat(1000).to_vec();
+	let _ = submit_data_with_nonce(client, signer, data.clone(), 2, nonce).await?;
+	let _ = submit_data_with_nonce(client, signer, data, 2, nonce + 1).await?;
 
-	let block_length_update = Call::DataAvailability(DaCall::submit_block_length_proposal {
-		rows: BLOCK_DIM_VALUE_ROWS,
-		cols: BLOCK_DIM_VALUE_COLS,
-	});
-	let sudo_call = Call::Sudo(SudoCall::sudo {
-		call: Box::new(block_length_update),
-	});
+	let call = Box::new(length_proposal_call(BLOCK_ROWS, BLOCK_COLS));
+	let sudo_call = SudoCall::sudo { call }.into();
 	let batch_call = api::tx().utility().batch(vec![sudo_call]);
 
-	let events = tx_send_in_block!(client, &batch_call, signer)
-		.fetch_events()
-		.await?;
+	let progress = tx::send_with_nonce(client, &batch_call, signer, 0, nonce + 2).await?;
+	let events = tx::then_in_block(progress).await?.fetch_events().await?;
 	let event = events
 		.find_first::<SudoEvent::Sudid>()?
-		.expect("2-Fail - Sudid event is emitted .qed");
+		.ok_or_else(|| Error::Other("2-Fail - Sudid event is emitted .qed".to_string()))?;
 	assert!(
 		event.sudo_result.is_err(),
 		"2-Fail - BlockLengthProposal was abnormally successful"
@@ -187,7 +191,6 @@ pub async fn fail_batch_tx(
 		"2-Fail - BlockLengthProposal was abnormally successful"
 	);
 
-	log::info!("2-Fail - BlockLengthProposal submission correctly failed after another tx.");
-	reset(client, signer).await?;
-	Ok(())
+	println!("2-Fail - BlockLengthProposal submission correctly failed after another tx.");
+	reset(client, signer, nonce + 3).await
 }

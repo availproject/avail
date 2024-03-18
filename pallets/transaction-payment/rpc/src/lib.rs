@@ -60,7 +60,10 @@ pub struct TransactionPayment<C, P> {
 impl<C, P> TransactionPayment<C, P> {
 	/// Creates a new instance of the TransactionPayment Rpc helper.
 	pub fn new(client: Arc<C>) -> Self {
-		Self { client, _marker: Default::default() }
+		Self {
+			client,
+			_marker: Default::default(),
+		}
 	}
 }
 
@@ -142,13 +145,15 @@ where
 				Some(format!("{:?}", e)),
 			)
 		})?;
-		let fee_details = api.query_fee_details(at_hash, uxt, encoded_len).map_err(|e| {
-			ErrorObject::owned(
-				Error::RuntimeError.into(),
-				"Unable to query fee details.",
-				Some(e.to_string()),
-			)
-		})?;
+		let fee_details = api
+			.query_fee_details(at_hash, uxt, encoded_len)
+			.map_err(|e| {
+				ErrorObject::owned(
+					Error::RuntimeError.into(),
+					"Unable to query fee details.",
+					Some(e.to_string()),
+				)
+			})?;
 
 		let try_into_rpc_balance = |value: Balance| {
 			value.try_into().map_err(|_| {

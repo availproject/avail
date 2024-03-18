@@ -15,7 +15,7 @@ use sp_runtime::{traits::ConstU32, BuildStorage};
 use crate::{self as da_control, *};
 
 /// An unchecked extrinsic type to be used in tests.
-type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
+type Extrinsic = MockUncheckedExtrinsic<Test>;
 
 /// An implementation of `sp_runtime::traits::Block` to be used in tests.
 type Block = frame_system::mocking::MockDaBlock<Test>;
@@ -50,8 +50,8 @@ impl frame_system::Config for Test {
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
-	type SubmittedDataExtractor = ();
-	type UncheckedExtrinsic = UncheckedExtrinsic;
+	type TxDataExtractor = ();
+	type Extrinsic = Extrinsic;
 	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
@@ -103,7 +103,7 @@ parameter_types! {
 	pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
 	pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
 	pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(32);
-	pub const MaxBlockCols: BlockLengthColumns = kate::config::MAX_BLOCK_COLUMNS;
+	pub const MaxBlockCols: BlockLengthColumns = ::kate::config::MAX_BLOCK_COLUMNS;
 }
 
 #[derive_impl(da_control::config_preludes::TestDefaultConfig)]

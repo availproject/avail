@@ -1,12 +1,10 @@
-use anyhow::Result;
 use avail_subxt::{
-	api::runtime_types::da_control::pallet::Call as DaCall,
-	avail::{self, AppUncheckedExtrinsic},
-	build_client, submit_data_in_block as submit, AvailConfig, Call, Opts,
+	api::data_availability::calls::types::SubmitData, submit::submit_data, tx, AvailClient, Opts,
 };
-use sp_keyring::AccountKeyring;
+
+use anyhow::Result;
 use structopt::StructOpt;
-use subxt::{ext::sp_core::Pair, tx::PairSigner};
+use subxt_signer::sr25519::dev;
 
 const DATA: &[u8] = b"example";
 
@@ -15,27 +13,17 @@ const DATA: &[u8] = b"example";
 #[async_std::main]
 async fn main() -> Result<()> {
 	let args = Opts::from_args();
-	let (client, _) = build_client(args.ws, args.validate_codegen).await?;
-	let alice = avail::Pair::from_string_with_seed(&AccountKeyring::Alice.to_seed(), None).unwrap();
-	let signer = PairSigner::<AvailConfig, avail::Pair>::new(alice.0);
+	let client = AvailClient::new(args.ws).await?;
 
-	let block = submit(&client, &signer, DATA, 1).await?.block_hash();
-	let submitted_block = client.rpc().block(Some(block)).await?.unwrap();
+	let alice = dev::alice();
+	let hash = tx::then_in_block(submit_data(&client, &alice, DATA, 1).await?)
+		.await?
+		.block_hash();
+	println!("Submitted data in block hash: {hash:?}");
 
-	let matched_xt = submitted_block
-		.block
-		.extrinsics
-		.into_iter()
-		.filter_map(|chain_block_ext| {
-			AppUncheckedExtrinsic::try_from(chain_block_ext)
-				.map(|ext| ext.function)
-				.ok()
-		})
-		.find(|call| match call {
-			Call::DataAvailability(DaCall::submit_data { data }) => data.0 == DATA,
-			_ => false,
-		});
-	assert!(matched_xt.is_some(), "Submitted data not found");
+	let extrinsics = client.blocks().at(hash).await?.extrinsics().await?;
+	let submit_call = extrinsics.find::<SubmitData>().next().unwrap()?;
+	assert_eq!(submit_call.value.data.0.as_slice(), DATA);
 
 	Ok(())
 }

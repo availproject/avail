@@ -24,6 +24,7 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 pub use extensions::check_app_id::CheckAppId;
+pub mod kate;
 pub mod weights;
 
 pub const LOG_TARGET: &str = "runtime::da_control";

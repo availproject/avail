@@ -3,15 +3,16 @@ use frame_system::{header_builder::da, test_utils::TestRandomness};
 use hex_literal::hex;
 use primitive_types::H256;
 use sp_runtime::{
-	traits::{ConstU32, IdentityLookup},
+	traits::{Block as BlockT, ConstU32, IdentityLookup},
 	AccountId32, BuildStorage,
 };
 
 use crate as vector_bridge;
 
 type Balance = u128;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Extrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockDaBlock<Test>;
+type Header = <Block as BlockT>::Header;
 
 pub const STEP_FUNCTION_ID: H256 = H256(hex!(
 	"af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
@@ -20,7 +21,7 @@ pub const ROTATE_FUNCTION_ID: H256 = H256(hex!(
 	"9c1096d800fc42454d2d76e6ae1d461b5a67c7b474efb9d47989e47ed39b1b7b"
 ));
 pub const STEP_VK: &str = r#"{"vk_json":{
-	"protocol": "groth16",
+"protocol": "groth16",
 	"curve": "bn128",
 	"nPublic": 2,
 	"vk_alpha_1": [
@@ -89,6 +90,7 @@ pub const STEP_VK: &str = r#"{"vk_json":{
 		]
 	]
 }}"#;
+
 pub const ROTATE_VK: &str = r#"{"vk_json":{
     "protocol": "groth16",
     "curve": "bn128",
@@ -188,8 +190,9 @@ impl frame_system::Config for Test {
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
-	type SubmittedDataExtractor = ();
-	type UncheckedExtrinsic = UncheckedExtrinsic;
+	type TxDataExtractor = ();
+	type Header = Header;
+	type Extrinsic = Extrinsic;
 	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }

@@ -20,7 +20,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg(feature = "runtime-benchmarks")]
 
-use avail_core::HeaderVersion;
 use codec::Encode;
 use frame_benchmarking::{impl_benchmark_test_suite, v2::*};
 use frame_support::{dispatch::DispatchClass, storage, traits::Get};
@@ -244,13 +243,8 @@ mod benchmarks {
 
 		#[block]
 		{
-			let _header = T::HeaderExtensionBuilder::build(
-				app_extrinsics,
-				data_root,
-				block_length,
-				0,
-				HeaderVersion::V3,
-			);
+			let _header =
+				T::HeaderExtensionBuilder::build(app_extrinsics, data_root, block_length, 0);
 		}
 
 		Ok(())

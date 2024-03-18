@@ -20,29 +20,25 @@ sp-runtime = { workspace = true, default-features = false }
 sp-std = { workspace = true, default-features = false }
 
 frame-support = { workspace = true, default-features = false }
-frame-system = { default-features = false, path = "../../system" }
-pallet-transaction-payment = { default-features = false, path = ".." }
-frame-benchmarking = { workspace = true, default-features = false, optional = true }
+frame-system = { workspace = true, default-features = false }
+pallet-transaction-payment = { workspace = true, default-features = false }
 
 # Other dependencies
 codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive"] }
-scale-info = { default-features = false, features = ["derive"] }
-serde = { optional = true }
+scale-info = { workspace = true, default-features = false }
 
 [dev-dependencies]
-serde_json = "1.0.85"
+serde_json.workspace = true
+sp-storage.workspace = true
 
-sp-storage = { workspace = true, default-features = false }
-
-pallet-assets = { workspace = true, default-features = false }
-pallet-authorship = { workspace = true, default-features = false }
-pallet-balances = { workspace = true, default-features = false, features = ["std"] }
+pallet-assets = { workspace = true, features = ["std"] }
+pallet-authorship.workspace = true
+pallet-balances = { workspace = true, features = ["std"] }
 
 [features]
 default = ["std"]
 std = [
 	"scale-info/std",
-	"serde",
 	"codec/std",
 	"sp-std/std",
 	"sp-runtime/std",
@@ -51,10 +47,8 @@ std = [
 	"sp-io/std",
 	"sp-core/std",
 	"pallet-transaction-payment/std",
-	"frame-benchmarking?/std",
 ]
 runtime-benchmarks = [
-	"frame-benchmarking/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 ]

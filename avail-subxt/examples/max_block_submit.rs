@@ -1,8 +1,7 @@
-use avail_subxt::{avail, build_client, submit_data, AvailConfig, Opts};
+use avail_subxt::{api, tx, AccountId, AvailClient, BoundedVec, Opts};
 
-use sp_keyring::AccountKeyring;
 use structopt::StructOpt;
-use subxt::{ext::sp_core::Pair, tx::PairSigner};
+use subxt_signer::sr25519::dev;
 
 /// This example attempts to submit data to fill the entire block. Note that this doesn't guarantee
 /// that the block will be filled, but if you submit more than a full block, then it will spill over
@@ -11,24 +10,34 @@ use subxt::{ext::sp_core::Pair, tx::PairSigner};
 /// it may not be possible to transfer so many in 20 s (the default block time)
 const BLOCK_SIZE: usize = 2 * 1024 * 1024;
 const TX_MAX_SIZE: usize = 512 * 1024;
-const NUM_CHUNKS: usize = BLOCK_SIZE / TX_MAX_SIZE;
+const NUM_CHUNKS: u64 = (BLOCK_SIZE / TX_MAX_SIZE) as u64;
 
 #[async_std::main]
 async fn main() -> anyhow::Result<()> {
 	let args = Opts::from_args();
-	let (client, _) = build_client(args.ws, args.validate_codegen).await?;
+	let client = AvailClient::new(args.ws).await?;
 
-	let alice = avail::Pair::from_string_with_seed(&AccountKeyring::Alice.to_seed(), None).unwrap();
-	let signer = PairSigner::<AvailConfig, avail::Pair>::new(alice.0);
+	let alice = dev::alice();
+	let alice_id: AccountId = alice.public_key().into();
+	let nonce = client.tx().account_nonce(&alice_id).await?;
+	let mut submittions = Vec::with_capacity(NUM_CHUNKS as usize);
+
 	let start = std::time::Instant::now();
+	for i in 0..NUM_CHUNKS {
+		let data = BoundedVec(vec![(i & 255) as u8; TX_MAX_SIZE]);
+		let call = api::tx().data_availability().submit_data(data);
+		let progress = tx::send_with_nonce(&client, &call, &alice, 1, nonce + i).await?;
+		submittions.push(progress);
+	}
+	let submittions_end = start.elapsed();
+	println!("Submittions done in {submittions_end:?}");
 
-	for i in 1..=NUM_CHUNKS {
-		let data = vec![(i & 255) as u8; TX_MAX_SIZE];
-		let h = submit_data(&client, &signer, data, 1).await?;
-		println!("hash #{i}: {:?}", h);
+	for (i, progress) in submittions.into_iter().enumerate() {
+		let hash = tx::then_in_block(progress).await?.block_hash();
+		println!("Finalized {i} in block: {hash:?} in {:?}", start.elapsed());
 	}
 	let end = start.elapsed();
+	println!("Finalized in {end:?}");
 
-	println!("Done in {end:?}!");
 	Ok(())
 }

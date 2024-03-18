@@ -1,27 +1,28 @@
 [package]
 name = "patricia-merkle-trie"
 version = "0.1.0"
-edition = "2021"
 authors = ["Seun Lanlege <seunlanlege@gmail.com>"]
+edition.workspace = true
+repository.workspace = true
 
 [dependencies]
-trie-db = { version= "0.24.0", default-features = false }
-hash-db = { version = "0.15.2", default-features = false }
-rlp = { version = "0.5.1", default-features = false }
-primitive-types = { version = "0.12.0", default-features = false }
-memory-db = { version = "0.30.0", default-features = false }
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+
+trie-db = { workspace = true, default-features = false }
+hash-db = { workspace = true, default-features = false }
+primitive-types = { workspace = true, default-features = false }
+memory-db = { workspace = true, default-features = false }
 sp-io = { workspace = true, default-features = false }
 
-
-hash256-std-hasher = { version = "0.15.2", default-features = false }
-tiny-keccak = { version = "2.0.2", features = ["keccak"],  optional = true }
+hash256-std-hasher = { workspace = true, default-features = false }
+rlp = { workspace = true, default-features = false }
+tiny-keccak = { workspace = true,  optional = true }
 
 [dev-dependencies]
-hex = "0.4.3"
-hex-literal = "0.3.4"
-primitive-types = { version = "0.12.0", features = ["rlp"] }
-rlp-derive = "0.1.0"
+hex.workspace = true
+hex-literal.workspace = true
+primitive-types = { workspace = true, features = ["rlp"] }
+rlp-derive.workspace = true
 
 [features]
 default = [ "std" ]

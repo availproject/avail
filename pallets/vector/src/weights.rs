@@ -62,6 +62,7 @@ pub trait WeightInfo {
 	fn execute_fungible_token() -> Weight;
 	fn execute_arbitrary_message(l: u32, ) -> Weight;
 	fn set_function_ids() -> Weight;
+	fn failed_tx_index(_l: u32) -> Weight { Weight::zero() }
 	fn set_step_verification_key() -> Weight;
 	fn set_rotate_verification_key() -> Weight;
 }

@@ -32,9 +32,9 @@ pub type Address = sp_runtime::MultiAddress<AccountId, AccountIndex>;
 /// Block header type as expected by this runtime.
 pub type Header = DaHeader<BlockNumber, BlakeTwo256>;
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = AppUncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+pub type Extrinsic = AppUncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// DA Block type as expected by this runtime.
-pub type Block = avail_core::DaBlock<Header, UncheckedExtrinsic>;
+pub type Block = avail_core::DaBlock<Header, Extrinsic>;
 /// Block type for the node
 pub type NodeBlock = generic::Block<Header, OpaqueExtrinsic>;
 /// A Block signed with a Justification

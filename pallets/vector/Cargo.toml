@@ -7,40 +7,33 @@ edition = "2021"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+frame-system = { workspace = true, default-features = false }
+avail-core = { workspace = true, default-features = false, features = ["runtime"]}
+avail-base = { workspace = true, default-features = false }
+patricia-merkle-trie = { workspace = true, default-features = false }
+
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
-scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
+scale-info.workspace = true
 frame-support = { workspace = true, default-features = false }
-frame-system = { default-features = false, path = "../system" }
 sp-io = { workspace = true, default-features = false }
 sp-runtime = { workspace = true, default-features = false }
 sp-std = { workspace = true, default-features = false }
 sp-core = { workspace = true, default-features = false }
 frame-benchmarking = { workspace = true, default-features = false, optional = true }
-avail-core = { workspace = true, default-features = false, features = ["runtime"]}
 
+ark-bn254.workspace = true
+ark-groth16.workspace = true
+ark-std.workspace = true
+ark-ff.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+log.workspace = true
+hex-literal.workspace = true
+trie-db.workspace = true
+rlp.workspace = true
+primitive-types.workspace = true
+ethabi.workspace = true
 
-ark-bn254 = { version = "0.3.0", default-features = false, features = ["curve"] }
-ark-groth16 = { version = "0.3.0", default-features = false }
-ark-ec = "0.4.2"
-ark-std = { version = "0.4.0", default-features = false }
-ark-serialize = { version = "0.4.0", features = ["derive"], default-features = false }
-ark-ff = { version = "0.3.0", default-features = false }
-ark-snark = "0.4.0"
-serde = { version = "1.0.195", default-features = false, features = ["derive", "alloc"] }
-serde_json = { version = "1.0.89", default-features = false, features = ["alloc"] }
-sha2 = { version = "0.10.8", default-features = false }
-log = "0.4.20"
-hex-literal = "0.4.1"
-trie-db = { version = "0.24.0", default-features = false }
-hash-db = { version = "0.15.2", default-features = false }
-memory-db = { version = "0.30.0", default-features = false }
-tiny-keccak = { version = "2.0.2", features = ["keccak"], optional = true }
-rlp = { version = "0.5.2", default-features = false }
-hash256-std-hasher = { version = "0.15.2", default-features = false }
-primitive-types = { version = "0.12.0", default-features = false }
-ethabi = { version = "18.0.0", default-features = false }
-
-patricia-merkle-trie = { path = "../../patricia-merkle-trie", default-features = false }
 
 [dev-dependencies]
 pallet-balances = { workspace = true, default-features = false, features = ["std"] }
@@ -49,6 +42,7 @@ pallet-timestamp = { workspace = true, default-features = false }
 [features]
 default = [ "std" ]
 std = [
+	"avail-base/std",
 	"avail-core/std",
 	"codec/std",
 	"frame-benchmarking?/std",

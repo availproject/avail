@@ -1,13 +1,20 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![recursion_limit = "512"]
 
-use crate::storage_utils::MessageStatusEnum;
-use crate::verifier::Verifier;
-use frame_support::traits::{Currency, ExistenceRequirement, UnixTime};
-use frame_support::{pallet_prelude::*, PalletId};
-use frame_system::submitted_data::{BoundedData, MessageType};
-pub use pallet::*;
+use crate::{storage_utils::MessageStatusEnum, verifier::Verifier};
+use avail_base::{MemoryTemporaryStorage, ProvidePostInherent};
+use avail_core::data_proof::{tx_uid, AddressedMessage, Message, MessageType};
+
+use codec::Compact;
+use frame_support::{
+	pallet_prelude::*,
+	traits::{Currency, ExistenceRequirement, UnixTime},
+	PalletId,
+};
 use sp_core::H256;
+use sp_io::{hashing::blake2_256, transaction_index};
 use sp_runtime::SaturatedConversion;
+use sp_std::{vec, vec::Vec};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -21,6 +28,8 @@ mod tests;
 mod verifier;
 mod weights;
 
+pub use pallet::*;
+
 pub type FunctionInput = BoundedVec<u8, ConstU32<256>>;
 pub type FunctionOutput = BoundedVec<u8, ConstU32<512>>;
 pub type FunctionProof = BoundedVec<u8, ConstU32<1048>>;
@@ -28,20 +37,20 @@ pub type ValidProof = BoundedVec<BoundedVec<u8, ConstU32<2048>>, ConstU32<32>>;
 
 // Avail asset is supported for now
 pub const SUPPORTED_ASSET_ID: H256 = H256::zero();
+pub const FAILED_SEND_MSG_ID: &[u8] = b"vector:failed_send_msg_txs";
+pub const LOG_TARGET: &str = "runtime::vector";
 
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use ark_std::{vec, vec::Vec};
 	use ethabi::Token;
 	use ethabi::Token::Uint;
 	use frame_support::dispatch::GetDispatchInfo;
 	use frame_support::traits::{LockableCurrency, UnfilteredDispatchable};
 	use frame_support::{pallet_prelude::ValueQuery, DefaultNoBound};
 	use frame_system::pallet_prelude::*;
-	use frame_system::submitted_data::Message;
 	use primitive_types::H160;
 	use primitive_types::{H256, U256};
 	use sp_io::hashing::keccak_256;
@@ -92,6 +101,10 @@ pub mod pallet {
 		DomainNotSupported,
 		/// Function ids (step / rotate) are not set
 		FunctionIdsAreNotSet,
+		/// Inherent call outside of block execution context.
+		BadContext,
+		/// Invalid FailedIndices
+		InvalidFailedIndices,
 	}
 
 	#[pallet::event]
@@ -122,6 +135,7 @@ pub mod pallet {
 			to: H256,
 			message_type: MessageType,
 			destination_domain: u32,
+			nonce: u64,
 		},
 		/// Emit whitelisted domains that are updated.
 		WhitelistedDomainsUpdated,
@@ -318,6 +332,19 @@ pub mod pallet {
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
+			if let Some(failed_txs) =
+				MemoryTemporaryStorage::take::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID)
+			{
+				log::trace!(target: LOG_TARGET, "Failed Txs cleaned: {failed_txs:?}");
+			}
+
+			Weight::zero()
+		}
+	}
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
@@ -337,7 +364,7 @@ pub mod pallet {
 			input: FunctionInput,
 			output: FunctionOutput,
 			proof: FunctionProof,
-			slot: u64,
+			#[pallet::compact] slot: u64,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			let config = ConfigurationStorage::<T>::get();
@@ -387,30 +414,30 @@ pub mod pallet {
 		/// Executes message if a valid proofs are provided for the supported message type, assets and domains.
 		#[pallet::call_index(1)]
 		#[pallet::weight({
-        match message.message_type {
-        MessageType::ArbitraryMessage => T::WeightInfo::execute_arbitrary_message(message.data.len() as u32),
-        MessageType::FungibleToken => T::WeightInfo::execute_fungible_token(),
-        }
-        })]
+			match addr_message.message {
+				Message::ArbitraryMessage(ref data) => T::WeightInfo::execute_arbitrary_message(data.len() as u32),
+				Message::FungibleToken {..} => T::WeightInfo::execute_fungible_token(),
+			}
+		})]
 		pub fn execute(
 			origin: OriginFor<T>,
-			slot: u64,
-			message: Message,
+			#[pallet::compact] slot: u64,
+			addr_message: AddressedMessage,
 			account_proof: ValidProof,
 			storage_proof: ValidProof,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
-			let encoded_data = message.clone().abi_encode();
+			let encoded_data = addr_message.clone().abi_encode();
 			let message_root = H256(keccak_256(encoded_data.as_slice()));
 
-			Self::check_preconditions(&message, message_root)?;
+			Self::check_preconditions(&addr_message, message_root)?;
 
 			ensure!(
-				!SourceChainFrozen::<T>::get(message.origin_domain),
+				!SourceChainFrozen::<T>::get(addr_message.origin_domain),
 				Error::<T>::SourceChainFrozen
 			);
 			let root = ExecutionStateRoots::<T>::get(slot);
-			let broadcaster = Broadcasters::<T>::get(message.origin_domain);
+			let broadcaster = Broadcasters::<T>::get(addr_message.origin_domain);
 
 			// extract contract address
 			let contract_broadcaster_address = H160::from_slice(broadcaster[..20].as_ref());
@@ -423,7 +450,7 @@ pub mod pallet {
 				get_storage_root(account_proof_vec, contract_broadcaster_address, root)
 					.map_err(|_| Error::<T>::CannotGetStorageRoot)?;
 
-			let nonce = Uint(U256::from(message.id));
+			let nonce = Uint(U256::from(addr_message.id));
 			let mm_idx = Uint(U256::from(T::MessageMappingStorageIndex::get()));
 			let slot_key = H256(keccak_256(ethabi::encode(&[nonce, mm_idx]).as_slice()));
 
@@ -437,44 +464,31 @@ pub mod pallet {
 
 			ensure!(slot_value == message_root, Error::<T>::InvalidMessageHash);
 
-			match message.message_type {
-				MessageType::ArbitraryMessage => {
-					MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
-					Self::deposit_event(Event::<T>::MessageExecuted {
-						from: message.from,
-						to: message.to,
-						message_id: message.id,
-						message_root,
-					})
-				},
+			if let Message::FungibleToken { asset_id, amount } = &addr_message.message {
+				ensure!(
+					SUPPORTED_ASSET_ID == *asset_id,
+					Error::<T>::AssetNotSupported
+				);
 
-				MessageType::FungibleToken => {
-					let (asset_id, amount) = Self::decode_message_data(message.data.to_vec())?;
-					ensure!(
-						SUPPORTED_ASSET_ID == asset_id,
-						Error::<T>::AssetNotSupported
-					);
+				let destination_account_id =
+					T::AccountId::decode(&mut &addr_message.to.encode()[..])
+						.map_err(|_| Error::<T>::CannotDecodeDestinationAccountId)?;
 
-					let destination_account_id =
-						T::AccountId::decode(&mut &message.to.encode()[..])
-							.map_err(|_| Error::<T>::CannotDecodeDestinationAccountId)?;
-
-					T::Currency::transfer(
-						&Self::account_id(),
-						&destination_account_id,
-						amount.as_u128().saturated_into(),
-						ExistenceRequirement::AllowDeath,
-					)?;
-
-					MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
-					Self::deposit_event(Event::<T>::MessageExecuted {
-						from: message.from,
-						to: message.to,
-						message_id: message.id,
-						message_root,
-					})
-				},
+				T::Currency::transfer(
+					&Self::account_id(),
+					&destination_account_id,
+					(*amount).saturated_into(),
+					ExistenceRequirement::AllowDeath,
+				)?;
 			}
+
+			MessageStatus::<T>::set(message_root, MessageStatusEnum::ExecutionSucceeded);
+			Self::deposit_event(Event::<T>::MessageExecuted {
+				from: addr_message.from,
+				to: addr_message.to,
+				message_id: addr_message.id,
+				message_root,
+			});
 
 			Ok(().into())
 		}
@@ -486,7 +500,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::source_chain_froze())]
 		pub fn source_chain_froze(
 			origin: OriginFor<T>,
-			source_chain_id: u32,
+			#[pallet::compact] source_chain_id: u32,
 			frozen: bool,
 		) -> DispatchResult {
 			ensure_root(origin)?;
@@ -509,61 +523,33 @@ pub mod pallet {
 		//	send_message_arbitrary_message_doesnt_accept_asset_id(), send_message_arbitrary_message_doesnt_accept_empty_data()
 		#[pallet::call_index(3)]
 		#[pallet::weight({
-        match message_type {
-        MessageType::ArbitraryMessage => T::WeightInfo::send_message_arbitrary_message(data.as_ref().unwrap_or(& Default::default()).len() as u32),
-        MessageType::FungibleToken => T::WeightInfo::send_message_fungible_token(),
-        }
-        })]
+			match message {
+				Message::ArbitraryMessage(ref data) => T::WeightInfo::send_message_arbitrary_message(data.len() as u32),
+				Message::FungibleToken{..} => T::WeightInfo::send_message_fungible_token(),
+			}
+		})]
 		pub fn send_message(
 			origin: OriginFor<T>,
-			message_type: MessageType,
+			message: Message,
 			to: H256,
 			#[pallet::compact] domain: u32,
-			value: Option<u128>,
-			asset_id: Option<H256>,
-			data: Option<BoundedData>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-			// Ensure the domain is currently supported
-			ensure!(
-				Self::is_domain_valid(domain),
-				Error::<T>::DomainNotSupported
-			);
-			// Check MessageType and enforce the rules
-			match message_type {
-				MessageType::ArbitraryMessage => {
-					ensure!(
-						value.is_none() && asset_id.is_none() && data.is_some(),
-						Error::<T>::InvalidBridgeInputs
-					);
-					Self::deposit_event(Event::MessageSubmitted {
-						from: who,
-						to,
-						message_type: message_type.clone(),
-						destination_domain: domain,
-					});
-				},
-				MessageType::FungibleToken => {
-					ensure!(
-						value.is_some() && asset_id.is_some() && data.is_none(),
-						Error::<T>::InvalidBridgeInputs
-					);
 
-					T::Currency::transfer(
-						&who,
-						&Self::account_id(),
-						value.unwrap_or_default().saturated_into(),
-						ExistenceRequirement::KeepAlive,
-					)?;
-					Self::deposit_event(Event::MessageSubmitted {
-						from: who,
-						to,
-						message_type: message_type.clone(),
-						destination_domain: domain,
-					});
-				},
+			let dispatch = Self::do_send_message(who, message, to, domain);
+			if dispatch.is_err() {
+				let _ = MemoryTemporaryStorage::update::<Vec<Compact<u32>>, _>(
+					FAILED_SEND_MSG_ID.to_vec(),
+					|failed| {
+						let tx_idx =
+							<frame_system::Pallet<T>>::extrinsic_index().unwrap_or_default();
+						failed.push(tx_idx.into());
+						log::trace!(target: LOG_TARGET, "Send Message failed txs: {failed:?}");
+					},
+				);
 			}
-			Ok(().into())
+
+			dispatch
 		}
 
 		/// set_poseidon_hash sets poseidon hash of the sync committee for the particular period.
@@ -573,7 +559,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::set_poseidon_hash())]
 		pub fn set_poseidon_hash(
 			origin: OriginFor<T>,
-			period: u64,
+			#[pallet::compact] period: u64,
 			poseidon_hash: BoundedVec<u8, ConstU32<200>>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
@@ -592,7 +578,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::set_broadcaster())]
 		pub fn set_broadcaster(
 			origin: OriginFor<T>,
-			broadcaster_domain: u32,
+			#[pallet::compact] broadcaster_domain: u32,
 			broadcaster: H256,
 		) -> DispatchResult {
 			ensure_root(origin)?;
@@ -696,10 +682,94 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		#[pallet::call_index(11)]
+		#[pallet::weight((
+			T::WeightInfo::failed_tx_index(0u32),
+			DispatchClass::Mandatory
+		))]
+		pub fn failed_send_message_txs(
+			origin: OriginFor<T>,
+			failed_txs: Vec<Compact<u32>>,
+		) -> DispatchResult {
+			ensure_none(origin)?;
+			let local_failed_txs =
+				MemoryTemporaryStorage::get::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID)
+					.unwrap_or_default();
+			ensure!(
+				&local_failed_txs == &failed_txs,
+				Error::<T>::InvalidFailedIndices
+			);
+
+			// SAFETY: `failed_txs.len()` is always less than `u32::MAX` because it is bounded by
+			// `BoundedVec`
+			let encoded = failed_txs.encode();
+			let len = encoded.len() as u32;
+
+			// Index Tx in DB block.
+			let failed_hash = blake2_256(&encoded);
+			let extrinsic_index =
+				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::BadContext)?;
+			transaction_index::index(extrinsic_index, len, failed_hash);
+
+			Ok(())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
-		fn check_preconditions(message: &Message, message_root: H256) -> Result<(), DispatchError> {
+		fn do_send_message(
+			who: T::AccountId,
+			message: Message,
+			to: H256,
+			domain: u32,
+		) -> DispatchResultWithPostInfo {
+			// Ensure the domain is currently supported
+			ensure!(
+				Self::is_domain_valid(domain),
+				Error::<T>::DomainNotSupported
+			);
+			// Check MessageType and enforce the rules
+			let message_type = message.r#type();
+			match message {
+				Message::FungibleToken {
+					asset_id: _,
+					amount,
+				} => {
+					T::Currency::transfer(
+						&who,
+						&Self::account_id(),
+						amount.saturated_into(),
+						ExistenceRequirement::KeepAlive,
+					)?;
+				},
+				Message::ArbitraryMessage(data) => {
+					ensure!(!data.is_empty(), Error::<T>::InvalidBridgeInputs)
+				},
+			};
+
+			let nonce = Self::fetch_curr_tx_nonce();
+			Self::deposit_event(Event::MessageSubmitted {
+				from: who,
+				to,
+				message_type,
+				destination_domain: domain,
+				nonce,
+			});
+
+			Ok(().into())
+		}
+
+		fn fetch_curr_tx_nonce() -> u64 {
+			let number = <frame_system::Pallet<T>>::block_number().saturated_into::<u32>();
+			let tx_index = <frame_system::Pallet<T>>::extrinsic_index().unwrap_or_default();
+
+			tx_uid(number, tx_index)
+		}
+
+		fn check_preconditions(
+			message: &AddressedMessage,
+			message_root: H256,
+		) -> Result<(), DispatchError> {
 			let message_status = MessageStatus::<T>::get(message_root);
 			// Message must not be executed
 			ensure!(
@@ -726,8 +796,10 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// # TODO
+		/// - Remove `dead_code` here.
+		#[allow(dead_code)]
 		fn decode_message_data(data: Vec<u8>) -> Result<(H256, U256), DispatchError> {
-			//abi.encode(ASSET_ID, msg.value),
 			let decoded_data = ethabi::decode(
 				&[
 					ethabi::ParamType::FixedBytes(32),
@@ -738,7 +810,7 @@ pub mod pallet {
 			.map_err(|_| Error::<T>::CannotDecodeData)?;
 			ensure!(decoded_data.len() == 2, Error::<T>::CannotDecodeData);
 
-			let asset_id_token = decoded_data.get(0).ok_or(Error::<T>::CannotDecodeData)?;
+			let asset_id_token = decoded_data.first().ok_or(Error::<T>::CannotDecodeData)?;
 			let asset_id = asset_id_token
 				.clone()
 				.into_fixed_bytes()
@@ -935,6 +1007,36 @@ pub mod pallet {
 				Err(Error::<T>::FunctionIdsAreNotSet.into())
 			}
 		}
+	}
+}
+
+impl<T: Config> ProvidePostInherent for Pallet<T>
+where
+	[u8; 32]: From<T::AccountId>,
+{
+	type Call = Call<T>;
+	type Error = ();
+
+	fn create_inherent(_: &avail_base::StorageMap) -> Option<Self::Call> {
+		let failed_txs = MemoryTemporaryStorage::get::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID)
+			.unwrap_or_default();
+
+		log::trace!(target: LOG_TARGET, "Create post inherent failed vector txs: {failed_txs:?}");
+		Some(Call::failed_send_message_txs { failed_txs })
+	}
+
+	fn is_inherent(call: &Self::Call) -> bool {
+		matches!(call, Call::failed_send_message_txs { .. })
+	}
+
+	fn check_inherent(call: &Self::Call) -> Result<(), Self::Error> {
+		if let Call::failed_send_message_txs { failed_txs } = call {
+			let local_failed_txs =
+				MemoryTemporaryStorage::get::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID)
+					.unwrap_or_default();
+			ensure!(&local_failed_txs == failed_txs, ());
+		}
+		Ok(())
 	}
 }
 

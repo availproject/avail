@@ -1,23 +1,23 @@
 [package]
 name = "mocked-runtime"
 version = "1.0.1"
-authors = [""]
-edition = "2021"
 license = "Apache-2.0"
-homepage = ""
-repository = ""
 description = "Mokcked Runtime for Testing"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
 
 [dependencies]
 avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
-da-control = { path = "../dactr" }
+da-control = { workspace = true, default-features = false }
 
-scale-info = { version = "2.5.0", features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "3", features = ["derive"] }
-parity-util-mem = { version = "0.12.0", features = ["primitive-types"] }
-derive_more = "0.99.17" 
-serde = { version = "1.0.195", features = ["derive"] }
+scale-info = { workspace = true, features = ["derive"], default-features = false }
+codec = { package = "parity-scale-codec", version = "3", features = ["derive"], default-features = false }
+parity-util-mem.workspace = true
+derive_more.workspace = true
+serde.workspace = true
 
 frame-support = { workspace = true, default-features = false }
 sp-runtime = { workspace = true, default-features = false }
@@ -29,15 +29,16 @@ sp-inherents = { workspace = true, default-features = false }
 sp-std = { workspace = true, default-features = false }
 
 # Pallets
-frame-system = { path = "../system" }
-pallet-transaction-payment = { path = "../transaction-payment" }
-pallet-balances = { workspace = true, default-features = false, features = ["std"] }
+frame-system = { workspace = true, default-features = false }
+pallet-transaction-payment = { workspace = true, default-features = false }
+pallet-balances = { workspace = true, default-features = false }
 pallet-timestamp = { workspace = true, default-features = false }
 pallet-babe = { workspace = true, default-features = false }
 pallet-staking = { workspace = true, default-features = false }
 
-
 [features]
 default = ["std"]
-std = [ ]
+std = [
+	"pallet-balances/std",
+]
 try-runtime = []

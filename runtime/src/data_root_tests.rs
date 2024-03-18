@@ -1,142 +1,107 @@
-use avail_core::asdr::AppUncheckedExtrinsic;
-use avail_core::OpaqueExtrinsic;
-use codec::Decode;
-use da_control::{Call as DaCall, CheckAppId};
-use frame_election_provider_support::BoundedVec;
-use frame_support::traits::DefensiveTruncateFrom;
-use frame_system::submitted_data::{Message, MessageType};
+use crate::{Extrinsic, Runtime, SignedExtra};
+use avail_core::data_proof::{BoundedData, Message, TxDataRoots};
+use da_control::{AppDataFor, Call as DaCall, CheckAppId};
 use frame_system::{
-	submitted_data::extrinsics_root_v2, CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce,
+	data_root::build_tx_data, CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce,
 	CheckSpecVersion, CheckTxVersion, CheckWeight,
 };
+use pallet_vector::Call as VectorCall;
+
+use codec::Encode;
 use hex_literal::hex;
 use pallet_transaction_payment::ChargeTransactionPayment;
-use sp_core::{sr25519::Signature, H256};
-use sp_io::hashing::keccak_256;
-use sp_runtime::{generic::Era, AccountId32, MultiAddress};
+use sp_core::H256;
+use sp_keyring::AccountKeyring::Alice;
+use sp_runtime::{
+	generic::Era,
+	traits::{SignedExtension, Verify as _},
+	MultiSignature,
+};
 use test_case::test_case;
 
 use super::*;
 
-fn submit_blob_call() -> Vec<u8> {
-	hex!("ed018400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d01be06880f2f6203365b508b4226fd697d3d79d3a50a5617aad714466d40ef47067225e823135b32121aa0f6f56e696f5f71107a6d44768c2fefe38cb209f7f28224000000041d014054657374207375626d69742064617461").to_vec()
+fn extra() -> SignedExtra {
+	(
+		CheckNonZeroSender::<Runtime>::new(),
+		CheckSpecVersion::<Runtime>::new(),
+		CheckTxVersion::<Runtime>::new(),
+		CheckGenesis::<Runtime>::new(),
+		CheckEra::<Runtime>::from(Era::Mortal(32, 2)),
+		CheckNonce::<Runtime>::from(0),
+		CheckWeight::<Runtime>::new(),
+		ChargeTransactionPayment::<Runtime>::from(0),
+		CheckAppId::<Runtime>::from(AppId(1)),
+	)
+}
+fn additional_signed() -> <SignedExtra as SignedExtension>::AdditionalSigned {
+	let spec_ver = VERSION.spec_version;
+	let tx_ver = VERSION.transaction_version;
+	let genesis = H256::default();
+	let era = H256::repeat_byte(1);
+
+	((), spec_ver, tx_ver, genesis, era, (), (), (), ())
 }
 
-fn send_message() -> Vec<u8> {
-	hex!("fd028400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d0178ece77c33dbecbf1eff04371af093ab55f7a7b102b0d38760f1506468e78556761e1a1fc9ca57dcfad69f551306fc86d16191a094d9d1ce61ee70aa421339884400040000270301000000000000000000000000000000000000000000000000000000000000000108010100000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000").to_vec()
+fn signed_extrinsic(function: RuntimeCall) -> Vec<u8> {
+	let extra = extra();
+	let additional = additional_signed();
+	let alice = Alice.to_account_id();
+
+	let payload = SignedPayload::from_raw(function.clone(), extra.clone(), additional).encode();
+	let signature: MultiSignature = Alice.sign(&payload).into();
+
+	assert!(signature.verify(&*payload, &alice));
+	Extrinsic::new_signed(function, alice.into(), signature, extra).encode()
 }
 
-fn expected_blob_root() -> H256 {
-	// data = "Test submit data"
-	// leaf is keccak256(data) -> keccak256(root)
-	let blob_root = keccak_256(
-		hex!("db45128913020d152dbee4d00a1dffebdb703425c44adbd7d7dfc7ae93d836bc").as_slice(),
-	);
+fn submit_data(data: Vec<u8>) -> Vec<u8> {
+	let data = AppDataFor::<Runtime>::truncate_from(data);
+	let function = DaCall::submit_data { data }.into();
 
-	H256(blob_root)
+	signed_extrinsic(function)
 }
 
-fn submit_blob_call_expected() -> H256 {
-	let mut concat = vec![];
-	// bridge_root = 0x0..0
-	// keccak_256(blob_root, bridge_root)
-	concat.extend_from_slice(expected_blob_root().as_bytes());
-	concat.extend_from_slice(H256::zero().as_bytes());
-	H256(keccak_256(concat.as_slice()))
-}
-
-fn expected_bridge_root() -> H256 {
-	let data = hex!("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001");
-	let encoded_data = BoundedVec::defensive_truncate_from(data.to_vec());
-
-	let message = Message {
-		message_type: MessageType::FungibleToken,
-		from: H256(hex!(
-			"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
-		)),
-		to: H256(hex!(
-			"0000000000000000000000000000000000000000000000000000000000000001"
-		)),
-		origin_domain: 1,
-		destination_domain: 2,
-		data: encoded_data,
-		id: 1,
-	};
-
-	let encoded = message.abi_encode();
-	let leaf = keccak_256(encoded.as_slice());
-	let expected_bridge_root = leaf.as_slice();
-
-	H256::from_slice(expected_bridge_root)
-}
-
-fn send_message_expected() -> H256 {
-	let mut concat = vec![];
-	concat.extend_from_slice(H256::zero().as_bytes());
-	concat.extend_from_slice(expected_bridge_root().as_bytes());
-
-	H256(keccak_256(concat.as_slice()))
-}
-
-fn expect_sending_blob_and_bridge_extrinsic() -> H256 {
-	let mut concat = vec![];
-	concat.extend_from_slice(expected_blob_root().as_bytes());
-	concat.extend_from_slice(expected_bridge_root().as_bytes());
-
-	H256(keccak_256(concat.as_slice()))
-}
-
-#[test]
-fn decode_submit_blob_call() {
-	let encoded_call = submit_blob_call();
-
-	let call = super::UncheckedExtrinsic::decode(&mut encoded_call.as_slice()).unwrap();
-
-	let account = hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
-	let expected_signature = sp_runtime::MultiSignature::Sr25519(Signature(hex!("be06880f2f6203365b508b4226fd697d3d79d3a50a5617aad714466d40ef47067225e823135b32121aa0f6f56e696f5f71107a6d44768c2fefe38cb209f7f282")));
-	let expected_call = AppUncheckedExtrinsic {
-		function: RuntimeCall::DataAvailability(DaCall::submit_data {
-			data: hex!("54657374207375626d69742064617461")
-				.to_vec()
-				.try_into()
-				.unwrap(),
-		}),
-
-		// signature: Option<(Address, Signature, Extra)>,
-		signature: Some((
-			MultiAddress::Id(AccountId32::new(account)),
-			expected_signature.clone(),
-			// super::SignedExtra::default()
-			(
-				CheckNonZeroSender::<Runtime>::new(),
-				CheckSpecVersion::<Runtime>::new(),
-				CheckTxVersion::<Runtime>::new(),
-				CheckGenesis::<Runtime>::new(),
-				CheckEra::<Runtime>::from(Era::Mortal(32, 2)),
-				CheckNonce::<Runtime>::from(0),
-				CheckWeight::<Runtime>::new(),
-				ChargeTransactionPayment::<Runtime>::from(0),
-				CheckAppId::<Runtime>::from(AppId(1)),
-			),
-		)),
-	};
-
-	if let Some(ref signature) = call.signature {
-		assert_eq!(signature.1, expected_signature);
+fn bridge_msg(data: Vec<u8>) -> Vec<u8> {
+	let message = Message::ArbitraryMessage(BoundedData::truncate_from(data));
+	let to = H256::repeat_byte(0x01);
+	let function = VectorCall::send_message {
+		message,
+		to,
+		domain: 2,
 	}
-	assert_eq!(call, expected_call);
+	.into();
+
+	signed_extrinsic(function)
 }
 
-#[test_case([submit_blob_call()].into() => submit_blob_call_expected(); "Test submit blob extrinsic")]
-#[test_case([send_message()].into() => send_message_expected(); "Test submit bridge extrinsic")]
-#[test_case([send_message(), submit_blob_call()].into() => expect_sending_blob_and_bridge_extrinsic(); "Test send message and bridge extrinsic")]
-fn data_root_filter(extrinsics: Vec<Vec<u8>>) -> H256 {
-	let mut opaque = vec![];
-
-	for extrinsic in extrinsics {
-		let o = OpaqueExtrinsic::decode(&mut extrinsic.as_slice()).unwrap();
-		opaque.push(o)
+fn bridge_fungible_msg(asset_id: H256, amount: u128) -> Vec<u8> {
+	let message = Message::FungibleToken { asset_id, amount };
+	let to = H256::repeat_byte(0x01);
+	let function = VectorCall::send_message {
+		message,
+		to,
+		domain: 2,
 	}
+	.into();
 
-	extrinsics_root_v2::<Runtime, _>(opaque.iter(), 0u64).0
+	signed_extrinsic(function)
+}
+
+fn empty_root() -> H256 {
+	let root = TxDataRoots::new(H256::zero(), H256::zero()).data_root;
+	let exp_root = hex!("ad3228b676f7d3cd4284a5443f17f1962b36e491b30a40b2405849e597ba5fb5");
+	assert_eq!(root.0, exp_root);
+	root
+}
+
+#[test_case(&[submit_data(hex!("abcd").to_vec())] => H256(hex!("f1f399f7e0d8c8ed712df0c21b4ec78f3b8533f1c3d0215e4023e1b7c80bfd91")); "submitted")]
+#[test_case(&[submit_data(vec![])] => empty_root(); "empty submitted")]
+#[test_case(&[] => empty_root(); "empty submitted 2")]
+#[test_case(&[bridge_msg(hex!("47").to_vec())] => H256(hex!("df93f65f9f5adf3ac0d46e5a08432b96ef362bf229e1737939051884c5506e02")); "bridged data")]
+#[test_case(&[bridge_fungible_msg(H256::repeat_byte(1), 1_000_000)] => H256(hex!("e93394eeaedb2158a154a29b9333fe06451fbe82c9cff5b961a6d701782450bc")) ; "bridged fungible")]
+#[test_case(&[submit_data(hex!("abcd").to_vec()), bridge_msg(hex!("47").to_vec())] => H256(hex!("c925bfccfc86f15523c5b40b2bd6d8a66fc51f3d41176d77be7928cb9e3831a7")); "submitted and bridged")]
+fn data_root_filter(extrinsics: &[Vec<u8>]) -> H256 {
+	let tx_data = build_tx_data::<Runtime, Extrinsic, _, _>(0, extrinsics.iter());
+	tx_data.root()
 }

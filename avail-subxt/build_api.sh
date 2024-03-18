@@ -1,6 +1,6 @@
 #!/bin/sh
 echo "⛓ Installing SubXt..."
-cargo install --git https://github.com/paritytech/subxt --tag v0.29.0 subxt-cli || true 
+cargo install --git https://github.com/paritytech/subxt --tag v0.34.0 subxt-cli || true 
 echo "🔨 Generating Avail-SubXt API from localhost..."
 subxt codegen --version 14 \
 	--derive Clone \
@@ -40,6 +40,7 @@ subxt codegen --version 14 \
 	| sed -En "s/pub struct HeaderExtension/#\[serde\(rename_all = \"camelCase\"\)\] &/gp" \
 	| sed -En "s/pub struct DataLookupItem/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
 	| sed -En "s/pub struct BlockLength\b/#\[serde\(rename_all = \"camelCase\"\)\] \0/p" \
+	| sed -En "s/pub enum RuntimeCall\b/#\[derive\(derive_more::From\)\] \0/p" \
 	| sed -E '1i \#\[allow(clippy::all)]' \
 	| rustfmt --edition=2021 --emit=stdout > src/api_dev.rs
 echo "🎁 Avail-SubXt API generated in 'src/api_dev.rs'"

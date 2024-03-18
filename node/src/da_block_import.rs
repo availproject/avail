@@ -4,60 +4,122 @@
 /// to Babe and Grandpa.
 /// It double-checks the **extension header** which contains the `Kate Commitment` and `Data
 /// Root`.
-use std::sync::Arc;
-
 use avail_base::metrics::avail::ImportBlockMetrics;
 use avail_core::{
-	BlockLengthColumns, BlockLengthRows, HeaderVersion, OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+	ensure, header::HeaderExtension, BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic,
+	BLOCK_CHUNK_SIZE,
 };
 use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
 	Header as DaHeader,
 };
-use derive_more::Constructor;
-use frame_support::ensure;
 use frame_system::limits::BlockLength;
-use sc_client_api::Backend;
+
 use sc_consensus::{
 	block_import::{BlockCheckParams, BlockImport as BlockImportT, BlockImportParams},
 	ImportResult,
 };
-use sp_api::ProvideRuntimeApi;
+use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{BlockOrigin, Error as ConsensusError};
 use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
+use std::{marker::PhantomData, sync::Arc, time::Instant};
 
-#[derive(Constructor)]
-pub struct BlockImport<BE, C, I> {
-	pub backend: Arc<BE>,
-	pub client: Arc<C>,
-	pub inner: I,
+pub struct BlockImport<B, C, I> {
+	client: Arc<C>,
+	inner: I,
 	// If true, it skips the DA block import check during sync only.
-	pub unsafe_da_sync: bool,
+	unsafe_da_sync: bool,
+	_block: PhantomData<B>,
 }
 
-impl<BE, C, I: Clone> Clone for BlockImport<BE, C, I> {
-	fn clone(&self) -> Self {
+impl<B, C, I> BlockImport<B, C, I>
+where
+	B: BlockT<Extrinsic = OpaqueExtrinsic, Header = DaHeader, Hash = H256>,
+	I: BlockImportT<B> + Clone + Send + Sync,
+	I::Error: Into<ConsensusError>,
+	C: ProvideRuntimeApi<B> + HeaderBackend<B> + Send + Sync,
+	C::Api: DataAvailApi<B> + ExtensionBuilder<B>,
+{
+	pub fn new(client: Arc<C>, inner: I, unsafe_da_sync: bool) -> Self {
 		Self {
-			backend: self.backend.clone(),
-			client: self.client.clone(),
-			inner: self.inner.clone(),
-			unsafe_da_sync: self.unsafe_da_sync,
+			client,
+			inner,
+			unsafe_da_sync,
+			_block: PhantomData,
 		}
+	}
+
+	fn ensure_last_extrinsic_is_failed_send_message_txs(
+		&self,
+		block: &BlockImportParams<B>,
+	) -> Result<(), ConsensusError> {
+		let err = block_doesnt_contain_post_inherent();
+
+		let maybe_body = block.body.as_ref();
+		let Some(body) = maybe_body else {
+			return Err(err);
+		};
+
+		let Some(last_extrinsic) = body.last() else {
+			return Err(err);
+		};
+
+		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
+		let api = self.client.runtime_api();
+
+		let Ok(found) = api.check_if_extrinsic_is_post_inherent(parent_hash, &last_extrinsic)
+		else {
+			return Err(err);
+		};
+
+		ensure!(found, err);
+
+		Ok(())
+	}
+
+	fn ensure_valid_header_extension(
+		&self,
+		block: &BlockImportParams<B>,
+	) -> Result<(), ConsensusError> {
+		let block_len = extension_block_len(&block.header.extension);
+		let extrinsics = || block.body.clone().unwrap_or_default();
+		let block_number: u32 = block.header.number;
+		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
+		let api = self.client.runtime_api();
+
+		// Calculate data root and extension.
+		let data_root = api
+			.build_data_root(parent_hash, block_number, extrinsics())
+			.map_err(data_root_fail)?;
+		let extension = api
+			.build_extension(
+				parent_hash,
+				extrinsics(),
+				data_root,
+				block_len,
+				block_number,
+			)
+			.map_err(build_ext_fail)?;
+
+		// Check equality between calculated and imported extensions.
+		ensure!(
+			block.header.extension == extension,
+			extension_mismatch(&block.header.extension, &extension)
+		);
+		Ok(())
 	}
 }
 
 #[async_trait::async_trait]
-impl<B, BE, C, I> BlockImportT<B> for BlockImport<BE, C, I>
+impl<B, C, I> BlockImportT<B> for BlockImport<B, C, I>
 where
 	B: BlockT<Extrinsic = OpaqueExtrinsic, Header = DaHeader, Hash = H256>,
-	BE: Backend<B>,
 	I: BlockImportT<B> + Clone + Send + Sync,
 	I::Error: Into<ConsensusError>,
 	C: ProvideRuntimeApi<B> + HeaderBackend<B> + Send + Sync,
-	C::Api: DataAvailApi<B>,
-	C::Api: ExtensionBuilder<B>,
+	C::Api: DataAvailApi<B> + ExtensionBuilder<B>,
 {
 	type Error = ConsensusError;
 
@@ -66,7 +128,7 @@ where
 		&mut self,
 		block: BlockImportParams<B>,
 	) -> Result<ImportResult, Self::Error> {
-		let import_block_start = std::time::Instant::now();
+		let import_block_start = Instant::now();
 
 		// We only want to check for blocks that are not from "Own"
 		let is_own = matches!(block.origin, BlockOrigin::Own);
@@ -77,49 +139,15 @@ where
 			BlockOrigin::NetworkInitialSync | BlockOrigin::File
 		);
 		let skip_sync = self.unsafe_da_sync && is_sync;
-		let should_verify = !is_own && !skip_sync;
-
-		let extrinsics = block.body.as_ref().unwrap_or(&vec![]).clone();
-
-		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
-		let extension = &block.header.extension.clone();
-
-		let (block_number, import_block_hash) = (block.header.number, block.post_hash());
-
-		let import_block_res = self.inner.import_block(block).await.map_err(Into::into)?;
-
-		// Nothing to verify. Let's do an early return.
-		if !should_verify {
-			// Metrics
-			ImportBlockMetrics::observe_total_execution_time(import_block_start.elapsed());
-			return Ok(import_block_res);
+		if !is_own && !skip_sync {
+			self.ensure_last_extrinsic_is_failed_send_message_txs(&block)?;
+			self.ensure_valid_header_extension(&block)?;
 		}
 
-		let success = build_data_root_and_extension(
-			self,
-			parent_hash,
-			import_block_hash,
-			extrinsics,
-			extension,
-			block_number,
-		);
-
-		let mut result = Ok(import_block_res);
-		if let Err(err) = success {
-			log::error!(
-				target: "DA_IMPORT_BLOCK",
-				"Error during da extension validation: {:?}, attempting to revert the block import", err
-			);
-
-			// Revert the import operation
-			let _ = self.backend.revert(block_number, false);
-			result = Err(err);
-		}
-
-		// Metrics
+		// Next import block stage & metrics
+		let result = self.inner.import_block(block).await;
 		ImportBlockMetrics::observe_total_execution_time(import_block_start.elapsed());
-
-		result
+		result.map_err(Into::into)
 	}
 
 	async fn check_block(
@@ -130,80 +158,45 @@ where
 	}
 }
 
-fn build_data_root_and_extension<B, BE, C, I>(
-	block_import: &BlockImport<BE, C, I>,
-	parent_hash: <B as BlockT>::Hash,
-	import_block_hash: <B as BlockT>::Hash,
-	extrinsics: Vec<OpaqueExtrinsic>,
-	extension: &avail_core::header::HeaderExtension,
-	block_number: u32,
-) -> Result<(), ConsensusError>
-where
-	B: BlockT<Extrinsic = OpaqueExtrinsic, Header = DaHeader>,
-	C: ProvideRuntimeApi<B> + HeaderBackend<B> + Send + Sync,
-	C::Api: DataAvailApi<B>,
-	C::Api: ExtensionBuilder<B>,
-{
-	use ConsensusError::ClientImport;
+impl<B, C, I: Clone> Clone for BlockImport<B, C, I> {
+	fn clone(&self) -> Self {
+		Self {
+			client: self.client.clone(),
+			inner: self.inner.clone(),
+			unsafe_da_sync: self.unsafe_da_sync,
+			_block: PhantomData,
+		}
+	}
+}
 
-	let header_version = extension.get_header_version();
-
-	let block_length = BlockLength::with_normal_ratio(
+/// Calculate block length from `extension`.
+fn extension_block_len(extension: &HeaderExtension) -> BlockLength {
+	BlockLength::with_normal_ratio(
 		BlockLengthRows(extension.rows() as u32),
 		BlockLengthColumns(extension.cols() as u32),
 		BLOCK_CHUNK_SIZE,
 		sp_runtime::Perbill::from_percent(90),
 	)
-	.expect("Valid BlockLength at genesis .qed");
+	.expect("Valid BlockLength at genesis .qed")
+}
 
-	let generated_ext = match header_version {
-		HeaderVersion::V3 => {
-			log::debug!(target: "DA_IMPORT_BLOCK", "V3 validation..");
-			let success_indices: Vec<u32> = block_import
-				.client
-				.runtime_api()
-				.successful_extrinsic_indices(import_block_hash)
-				.map_err(|_e| ClientImport("Failed to fetch the successful indices".into()))?;
+fn extension_mismatch(imported: &HeaderExtension, generated: &HeaderExtension) -> ConsensusError {
+	let msg =
+		format!("DA Extension does NOT match\nExpected: {imported:#?}\nGenerated:{generated:#?}");
+	ConsensusError::ClientImport(msg)
+}
 
-			log::debug!(
-				target: "DA_IMPORT_BLOCK",
-				"success_indices: {:?} at: {}",
-				success_indices,
-				import_block_hash
-			);
+fn data_root_fail(e: ApiError) -> ConsensusError {
+	let msg = format!("Data root cannot be calculated: {e:?}");
+	ConsensusError::ClientImport(msg)
+}
 
-			let successful_extrinsics: Vec<_> = success_indices
-				.iter()
-				.filter_map(|&i| extrinsics.get(i as usize).cloned())
-				.collect();
+fn build_ext_fail(e: ApiError) -> ConsensusError {
+	let msg = format!("Build extension fails due to: {e:?}");
+	ConsensusError::ClientImport(msg)
+}
 
-			let data_root = block_import
-				.client
-				.runtime_api()
-				.build_data_root_v2(parent_hash, successful_extrinsics.clone())
-				.map_err(|e| ClientImport(format!("Data root cannot be calculated: {e:?}")))?;
-
-			block_import
-				.client
-				.runtime_api()
-				.build_versioned_extension(
-					parent_hash,
-					extrinsics,
-					data_root,
-					block_length,
-					block_number,
-					header_version,
-				)
-				.map_err(|e| ClientImport(format!("Build extension fails due to: {e:?}")))?
-		},
-	};
-
-	ensure!(
-		extension == &generated_ext,
-		ClientImport(format!(
-			"DA Extension does NOT match\nExpected: {extension:#?}\nGenerated:{generated_ext:#?}"
-		))
-	);
-
-	Ok(())
+fn block_doesnt_contain_post_inherent() -> ConsensusError {
+	let msg = format!("Block does not contain post inherent");
+	ConsensusError::ClientImport(msg)
 }

@@ -1,84 +1,48 @@
-use core::mem::size_of;
-
-use crate::voter_bags;
-use crate::SessionKeys;
-use crate::SLOT_DURATION;
 use crate::{
-	constants, prod_or_fast, weights, AccountId, AccountIndex, Babe, Balances, Block, BlockNumber,
-	ElectionProviderMultiPhase, Everything, GrandpaId, Hash, Historical, ImOnline, ImOnlineId,
-	Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo, Preimage,
-	ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason,
-	RuntimeOrigin, RuntimeVersion, Session, Signature, SignedPayload, Staking, System, Timestamp,
-	TransactionPayment, Treasury, TxPause, UncheckedExtrinsic, VoterList, MINUTES, VERSION,
+	constants, prod_or_fast, voter_bags, weights, AccountId, AccountIndex, Babe, Balances, Block,
+	BlockNumber, ElectionProviderMultiPhase, Everything, Extrinsic, GrandpaId, Hash, Header,
+	Historical, ImOnline, ImOnlineId, Index, Indices, Moment, NominationPools, Offences,
+	OriginCaller, PalletInfo, Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent,
+	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, SessionKeys,
+	Signature, SignedPayload, Staking, System, Timestamp, TransactionPayment, Treasury, TxPause,
+	VoterList, MINUTES, SLOT_DURATION, VERSION,
 };
-use avail_core::currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL};
-use avail_core::AppId;
-use avail_core::OpaqueExtrinsic;
-use avail_core::NORMAL_DISPATCH_RATIO;
+use avail_core::{
+	currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL},
+	AppId, NORMAL_DISPATCH_RATIO,
+};
+
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::time::DAYS;
-use frame_election_provider_support::onchain;
-use frame_election_provider_support::BalancingConfig;
-use frame_election_provider_support::ElectionDataProvider;
-use frame_election_provider_support::SequentialPhragmen;
-use frame_election_provider_support::VoteWeight;
-use frame_support::pallet_prelude::Get;
-use frame_support::pallet_prelude::Weight;
-use frame_support::traits::fungible::HoldConsideration;
-use frame_support::traits::tokens::pay::PayFromAccount;
-use frame_support::traits::tokens::Imbalance;
-use frame_support::traits::tokens::UnityAssetBalanceConversion;
-use frame_support::traits::ConstU32;
-use frame_support::traits::Contains;
-use frame_support::traits::Currency;
-use frame_support::traits::DefensiveTruncateFrom;
-use frame_support::traits::EqualPrivilegeOnly;
-use frame_support::traits::InsideBoth;
-use frame_support::traits::InstanceFilter;
-use frame_support::traits::KeyOwnerProofSystem;
-use frame_support::traits::LinearStoragePrice;
-use frame_support::traits::OnUnbalanced;
-use frame_support::weights::constants::RocksDbWeight;
-use frame_support::weights::ConstantMultiplier;
+use frame_election_provider_support::{
+	onchain, BalancingConfig, ElectionDataProvider, SequentialPhragmen, VoteWeight,
+};
 use frame_support::{
+	derive_impl,
+	pallet_prelude::{Get, Weight},
 	parameter_types,
-	traits::{EitherOf, EitherOfDiverse},
+	traits::{
+		fungible::HoldConsideration,
+		tokens::{pay::PayFromAccount, Imbalance, UnityAssetBalanceConversion},
+		ConstU32, Contains, Currency, EitherOf, EitherOfDiverse, EqualPrivilegeOnly, InsideBoth,
+		InstanceFilter, KeyOwnerProofSystem, LinearStoragePrice, OnUnbalanced,
+	},
+	weights::{constants::RocksDbWeight, ConstantMultiplier},
 	PalletId,
 };
-use frame_system::limits::BlockLength;
-use frame_system::submitted_data;
-use frame_system::submitted_data::BoundedData;
-use frame_system::submitted_data::{Message, MessageType};
-use frame_system::EnsureRoot;
-use frame_system::{EnsureRootWithSuccess, EnsureWithSuccess};
+use frame_system::{limits::BlockLength, EnsureRoot, EnsureRootWithSuccess, EnsureWithSuccess};
 use pallet_election_provider_multi_phase::{GeometricDepositBase, SolutionAccuracyOf};
 use pallet_identity::legacy::IdentityInfo;
-use pallet_transaction_payment::CurrencyAdapter;
-use pallet_transaction_payment::Multiplier;
-use pallet_transaction_payment::{LengthFeeAdjustment, TargetedFeeAdjustment};
+use pallet_transaction_payment::{
+	CurrencyAdapter, LengthFeeAdjustment, Multiplier, TargetedFeeAdjustment,
+};
 use pallet_tx_pause::RuntimeCallNameOf;
-use sp_core::crypto::KeyTypeId;
-use sp_core::ConstU64;
-use sp_core::RuntimeDebug;
-use sp_core::H256;
-use sp_core::U256;
-use sp_runtime::generic::Era;
-use sp_runtime::traits;
-use sp_runtime::traits::BlakeTwo256;
-use sp_runtime::traits::Bounded;
-use sp_runtime::traits::Convert;
-use sp_runtime::traits::IdentityLookup;
-use sp_runtime::traits::OpaqueKeys;
-use sp_runtime::AccountId32;
-use sp_runtime::FixedPointNumber;
-use sp_runtime::FixedU128;
-use sp_runtime::MultiAddress;
-use sp_runtime::Perbill;
-use sp_runtime::Permill;
-use sp_runtime::Perquintill;
-use sp_std::rc::Rc;
-use sp_std::vec;
-use sp_std::vec::Vec;
+use sp_core::{crypto::KeyTypeId, ConstU64, RuntimeDebug};
+use sp_runtime::{
+	generic::Era,
+	traits::{self, BlakeTwo256, Bounded, Convert, IdentityLookup, OpaqueKeys},
+	FixedPointNumber, FixedU128, Perbill, Permill, Perquintill,
+};
 
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
 	<T as frame_system::Config>::AccountId,
@@ -832,109 +796,8 @@ parameter_types! {
 		BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 }
 
-/// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.
-impl submitted_data::Filter<RuntimeCall> for Runtime {
-	fn filter_v2(
-		call: RuntimeCall,
-		metrics: submitted_data::RcMetrics,
-		caller: AccountId32,
-	) -> (Vec<Vec<u8>>, Vec<Message>) {
-		metrics.borrow_mut().total_extrinsics += 1;
-
-		match call {
-			RuntimeCall::Vector(pallet_vector::Call::send_message {
-				message_type,
-				to,
-				domain,
-				value,
-				asset_id,
-				data,
-			}) => {
-				// If the MessageType is ArbitraryMessage, data is data elseif MessageType is FungibleToken, data is asset_id + value
-				let data = match message_type {
-					MessageType::ArbitraryMessage => data.unwrap_or_default(),
-					MessageType::FungibleToken => {
-						let mut value_bytes: [u8; size_of::<U256>()] = [0u8; size_of::<U256>()];
-						U256::from(value.unwrap_or_default()).to_big_endian(&mut value_bytes);
-						let asset_bytes = asset_id.unwrap_or(H256::zero()).as_bytes().to_vec();
-						let mut result = Vec::new();
-						result.extend_from_slice(&asset_bytes);
-						result.extend_from_slice(&value_bytes);
-						BoundedData::defensive_truncate_from(result)
-					},
-				};
-				let mut metrics = metrics.borrow_mut();
-				metrics.data_submit_leaves += 1;
-				metrics.data_submit_extrinsics += 1;
-				let message: submitted_data::Message = submitted_data::Message {
-					message_type,
-					from: H256::from_slice(caller.as_ref()),
-					to,
-					origin_domain: 1, // domain = 1 for Avail
-					destination_domain: domain,
-					data,
-					id: Default::default(), // This will be set during the bridge root construction
-				};
-				(vec![], vec![message])
-			},
-			RuntimeCall::DataAvailability(da_control::Call::submit_data { data })
-				if !data.is_empty() =>
-			{
-				let mut metrics = metrics.borrow_mut();
-				metrics.data_submit_leaves += 1;
-				metrics.data_submit_extrinsics += 1;
-				(vec![data.into_inner()], vec![])
-			},
-			RuntimeCall::Utility(pallet_utility::Call::batch { calls })
-			| RuntimeCall::Utility(pallet_utility::Call::batch_all { calls })
-			| RuntimeCall::Utility(pallet_utility::Call::force_batch { calls }) => {
-				Self::process_calls_v2(calls, &metrics, caller)
-			},
-			_ => (vec![], vec![]),
-		}
-	}
-
-	/// This function processes a list of calls and returns their data as Vec<Vec<u8>>
-	fn process_calls_v2(
-		calls: Vec<RuntimeCall>,
-		metrics: &submitted_data::RcMetrics,
-		caller: AccountId32,
-	) -> (Vec<Vec<u8>>, Vec<Message>) {
-		let (blob_data, bridge_data): (Vec<_>, Vec<_>) = calls
-			.into_iter()
-			.map(|call| Self::filter_v2(call, Rc::clone(metrics), caller.clone()))
-			.unzip();
-
-		(
-			blob_data.into_iter().flatten().collect(),
-			bridge_data.into_iter().flatten().collect(),
-		)
-	}
-}
-
-/// Decodes and extracts the `data` of `DataAvailability::submit_data` extrinsics.
-impl submitted_data::Extractor for Runtime {
-	type Error = codec::Error;
-
-	fn extract_v2(
-		opaque: &OpaqueExtrinsic,
-		metrics: submitted_data::RcMetrics,
-	) -> Result<(Vec<Vec<u8>>, Vec<Message>), Self::Error> {
-		let extrinsic = UncheckedExtrinsic::try_from(opaque)?;
-		let caller: AccountId32 = match extrinsic.signature.as_ref().map(|s| &s.0) {
-			Some(MultiAddress::Id(id)) => id.clone(),
-			_ => AccountId32::new([0u8; 32]),
-		};
-		let data = <Runtime as submitted_data::Filter<RuntimeCall>>::filter_v2(
-			extrinsic.function,
-			metrics,
-			caller,
-		);
-		Ok(data)
-	}
-}
-
 // Configure FRAME pallets to include in runtime.
+#[derive_impl(frame_system::config_preludes::SolochainDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Runtime {
 	/// The data to be stored in an account.
 	type AccountData = pallet_balances::AccountData<Balance>;
@@ -985,12 +848,14 @@ impl frame_system::Config for Runtime {
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = constants::system::SS58Prefix;
 	/// Data Root
-	type SubmittedDataExtractor = Runtime;
+	type TxDataExtractor = Runtime;
 	/// Weight information for the extrinsics of this pallet.
 	type SystemWeightInfo = weights::frame_system::WeightInfo<Runtime>;
-	type UncheckedExtrinsic = UncheckedExtrinsic;
 	/// Version of the runtime.
 	type Version = Version;
+
+	type Extrinsic = Extrinsic;
+	type Header = Header;
 	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
@@ -1006,7 +871,7 @@ where
 		nonce: Index,
 	) -> Option<(
 		RuntimeCall,
-		<UncheckedExtrinsic as traits::Extrinsic>::SignaturePayload,
+		<Extrinsic as traits::Extrinsic>::SignaturePayload,
 	)> {
 		use sp_runtime::{traits::StaticLookup, SaturatedConversion as _};
 
@@ -1054,6 +919,6 @@ impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
 where
 	RuntimeCall: From<C>,
 {
-	type Extrinsic = UncheckedExtrinsic;
+	type Extrinsic = Extrinsic;
 	type OverarchingCall = RuntimeCall;
 }

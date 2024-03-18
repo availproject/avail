@@ -17,7 +17,10 @@
 
 //! Provide types to help defining a mock environment when testing pallets.
 
-use avail_core::{traits::GetAppId, AppExtrinsic, OpaqueExtrinsic};
+use avail_core::{
+	traits::{GetAppId, MaybeCaller},
+	AppId, OpaqueExtrinsic,
+};
 use codec::{Decode, Encode};
 use frame_support::traits::ExtrinsicCall;
 use scale_info::TypeInfo;
@@ -84,6 +87,18 @@ impl<T: Config> ExtrinsicCall for MockUncheckedExtrinsic<T> {
 	}
 }
 
+impl<T: Config> MaybeCaller<T::AccountId> for MockUncheckedExtrinsic<T> {
+	fn caller(&self) -> Option<&T::AccountId> {
+		self.0.signature.as_ref().map(|s| &s.0)
+	}
+}
+
+impl<T: Config> GetAppId for MockUncheckedExtrinsic<T> {
+	fn app_id(&self) -> AppId {
+		AppId::default()
+	}
+}
+
 #[cfg(feature = "std")]
 impl<T: Config> serde::Serialize for MockUncheckedExtrinsic<T> {
 	fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
@@ -124,12 +139,6 @@ impl<T: Config> TryFrom<&OpaqueExtrinsic> for MockUncheckedExtrinsic<T> {
 	fn try_from(opaque: &OpaqueExtrinsic) -> Result<Self, Self::Error> {
 		let encoded = opaque.encode();
 		Self::decode(&mut encoded.as_slice())
-	}
-}
-
-impl<T: Config> From<MockUncheckedExtrinsic<T>> for AppExtrinsic {
-	fn from(xt: MockUncheckedExtrinsic<T>) -> Self {
-		AppExtrinsic::from(xt.0)
 	}
 }
 

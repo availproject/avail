@@ -1,12 +1,12 @@
 [package]
 name = "da-control"
 version = "1.0.1"
-authors = [""]
-edition = "2021"
 license = "Apache-2.0"
-homepage = ""
-repository = ""
 description = "Data Avail Control Module"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -14,20 +14,18 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
-frame-system = { path = "../../pallets/system", default-features = false }
-pallet-transaction-payment = { path = "../../pallets/transaction-payment", default-features = false }
+frame-system = { workspace = true, default-features = false }
+pallet-transaction-payment = { workspace = true, default-features = false }
 
-log = { version = "0.4.20", default-features = false }
-static_assertions = "1.1.0"
+# Others
+log.workspace = true
+thiserror-no-std.workspace = true
+derive_more.workspace = true
 
 # Substrate
-serde = { version = "1.0.195", optional = true, features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
-	"derive",
-] }
-scale-info = { version = "2.5.0", default-features = false, features = [
-	"derive",
-] }
+serde = { workspace = true, optional = true, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive", ] }
+scale-info = { workspace = true, default-features = false }
 sp-core = { workspace = true, default-features = false }
 sp-std = { workspace = true, default-features = false }
 sp-io = { workspace = true, default-features = false }
@@ -35,25 +33,29 @@ sp-runtime = { workspace = true, default-features = false }
 sp-arithmetic = { workspace = true, default-features = false }
 frame-support = { workspace = true, default-features = false }
 frame-benchmarking = { workspace = true, default-features = false, optional = true }
+sp-runtime-interface = { workspace = true, default-features = false }
 pallet-utility = { workspace = true, default-features = false }
+rayon = "1.5.2"
 
 [dev-dependencies]
 pallet-balances = { workspace = true, default-features = false, features = ["std"] }
-test-case = "1.2.3"
+test-case.workspace = true
 
 [features]
 default = [ "std" ]
 std = [
 	"avail-core/std",
+	"kate/std",
 	"codec/std",
 	"frame-support/std",
 	"frame-system/std",
-	"kate/std",
 	"log/std",
 	"pallet-utility/std",
 	"scale-info/std",
 	"serde",
 	"sp-arithmetic/std",
+	"sp-runtime-interface/std",
+	"pallet-transaction-payment/std",
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",

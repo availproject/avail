@@ -213,7 +213,7 @@ impl<T: SigningTypes, C: AppCrypto<T::Public, T::Signature>> Signer<T, C, ForAny
 		F: Fn(&Account<T>) -> Option<R>,
 	{
 		let accounts = self.accounts_from_keys();
-		for account in accounts {
+		for account in accounts.into_iter() {
 			let res = f(&account);
 			if let Some(res) = res {
 				return Some((account, res));
@@ -502,7 +502,7 @@ pub trait CreateSignedTransaction<LocalCall>:
 		nonce: Self::Nonce,
 	) -> Option<(
 		Self::OverarchingCall,
-		<Self::Extrinsic as ExtrinsicT>::SignaturePayload,
+		<<Self as SendTransactionTypes<LocalCall>>::Extrinsic as ExtrinsicT>::SignaturePayload,
 	)>;
 }
 

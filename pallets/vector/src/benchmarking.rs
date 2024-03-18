@@ -3,7 +3,7 @@ use crate::{
 	FunctionIds, FunctionInput, FunctionOutput, FunctionProof, Headers, Pallet,
 	RotateVerificationKey, StepVerificationKey, ValidProof,
 };
-use avail_core::data_proof_v2::BOUNDED_DATA_MAX_LENGTH;
+use avail_core::data_proof::BOUNDED_DATA_MAX_LENGTH;
 use ethabi::{encode, Token};
 use frame_benchmarking::{
 	impl_benchmark_test_suite, v2::benchmarks, whitelisted_caller, BenchmarkError,

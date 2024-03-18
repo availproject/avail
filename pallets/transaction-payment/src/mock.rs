@@ -33,7 +33,7 @@ use frame_system::{
 use pallet_balances::Call as BalancesCall;
 
 /// An unchecked extrinsic type to be used in tests.
-type UncheckedExtrinsic = MockUncheckedExtrinsic<Runtime>;
+type Extrinsic = MockUncheckedExtrinsic<Runtime>;
 
 /// An implementation of `sp_runtime::traits::Block` to be used in tests.
 type Block = frame_system::mocking::MockDaBlock<Runtime>;
@@ -93,10 +93,10 @@ impl system::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
-	type SubmittedDataExtractor = ();
-	type UncheckedExtrinsic = UncheckedExtrinsic;
 	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
+	type TxDataExtractor = ();
+	type Extrinsic = Extrinsic;
 }
 
 impl pallet_balances::Config for Runtime {

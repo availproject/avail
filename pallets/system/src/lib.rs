@@ -17,21 +17,21 @@
 
 //! # System Pallet
 //!
-//! The System pallet provides low-level access to core types and cross-cutting utilities.
-//! It acts as the base layer for other pallets to interact with the Substrate framework components.
+//! The System pallet provides low-level access to core types and cross-cutting utilities. It acts
+//! as the base layer for other pallets to interact with the Substrate framework components.
 //!
 //! - [`Config`]
 //!
 //! ## Overview
 //!
-//! The System pallet defines the core data types used in a Substrate runtime.
-//! It also provides several utility functions (see [`Pallet`]) for other FRAME pallets.
+//! The System pallet defines the core data types used in a Substrate runtime. It also provides
+//! several utility functions (see [`Pallet`]) for other FRAME pallets.
 //!
-//! In addition, it manages the storage items for extrinsics data, indexes, event records, and
-//! digest items, among other things that support the execution of the current block.
+//! In addition, it manages the storage items for extrinsic data, indices, event records, and digest
+//! items, among other things that support the execution of the current block.
 //!
-//! It also handles low-level tasks like depositing logs, basic set up and take down of
-//! temporary storage entries, and access to previous block hashes.
+//! It also handles low-level tasks like depositing logs, basic set up and take down of temporary
+//! storage entries, and access to previous block hashes.
 //!
 //! ## Interface
 //!
@@ -92,24 +92,24 @@
 //!   - [`CheckTxVersion`]: Checks that the transaction version is the same as the one used to sign
 //!     the transaction.
 //!
-//! Lookup the runtime aggregator file (e.g. `node/runtime`) to see the full list of signed
+//! Look up the runtime aggregator file (e.g. `node/runtime`) to see the full list of signed
 //! extensions included in a chain.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![warn(unused_extern_crates)]
 
 use avail_core::{
-	header::HeaderExtension,
-	traits::{ExtendedBlock, ExtendedHeader},
-	AppExtrinsic, HeaderVersion, OpaqueExtrinsic,
+	ensure,
+	header::{Header as DaHeader, HeaderExtension},
+	traits::{ExtendedBlock, ExtendedHeader, GetAppId, MaybeCaller},
 };
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
 use frame_support::{
 	dispatch::{
 		extract_actual_pays_fee, extract_actual_weight, DispatchClass, DispatchInfo,
-		DispatchResult, DispatchResultWithPostInfo, PerDispatchClass, PostDispatchInfo,
+		DispatchResult, DispatchResultWithPostInfo, Pays, PerDispatchClass, PostDispatchInfo,
 	},
-	ensure, impl_ensure_origin_with_arg_ignoring_arg,
-	pallet_prelude::Pays,
+	impl_ensure_origin_with_arg_ignoring_arg,
 	storage::{self, StorageStreamIter},
 	traits::{
 		ConstU32, Contains, EnsureOrigin, EnsureOriginWithArg, Get, HandleLifetime,
@@ -119,7 +119,7 @@ use frame_support::{
 	Parameter,
 };
 use kate::Seed;
-use pallet_prelude::{BlockNumberFor, DaHeaderFor};
+use pallet_prelude::{BlockNumberFor, HeaderFor};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::Serialize;
@@ -132,9 +132,9 @@ use sp_runtime::traits::TrailingZeroInput;
 use sp_runtime::{
 	generic,
 	traits::{
-		AtLeast32Bit, BadOrigin, BlockNumberProvider, Bounded, CheckEqual, Dispatchable, Hash,
-		Lookup, LookupError, MaybeDisplay, Member, One, Saturating, SimpleBitOps, StaticLookup,
-		UniqueSaturatedInto, Zero,
+		AtLeast32Bit, BadOrigin, BlakeTwo256, BlockNumberProvider, Bounded, CheckEqual,
+		Dispatchable, Hash, Lookup, LookupError, MaybeDisplay, Member, One, Saturating,
+		SimpleBitOps, StaticLookup, UniqueSaturatedInto, Zero,
 	},
 	DispatchError, RuntimeDebug,
 };
@@ -144,8 +144,13 @@ use sp_std::{fmt::Debug, marker::PhantomData, prelude::*};
 use sp_version::RuntimeVersion;
 use sp_weights::{RuntimeDbWeight, Weight};
 
+pub mod data_root;
+use data_root::{build_tx_data, TxDataFilter};
+
+mod calls_proof;
+pub use calls_proof::{calls_proof, CallsProof};
+
 pub mod header_builder;
-pub mod submitted_data;
 pub use header_builder::HeaderExtensionBuilder;
 
 pub mod limits;
@@ -264,14 +269,13 @@ pub type ExtrinsicLenOf<T> =
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{pallet_prelude::*, DefaultNoBound};
+	use frame_support::{pallet_prelude::*, traits::ExtrinsicCall, DefaultNoBound};
 
 	use crate::{self as frame_system, pallet_prelude::*, *};
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
-		use super::{inject_runtime_type, DefaultConfig};
-		use crate::AccountInfo;
+		use super::{inject_runtime_type, AccountInfo, BlakeTwo256, DaHeader, DefaultConfig};
 		use frame_support::derive_impl;
 
 		/// Provides a viable default config that can be used with
@@ -290,7 +294,7 @@ pub mod pallet {
 			type AccountId = u64;
 			type Lookup = sp_runtime::traits::IdentityLookup<u64>;
 			type MaxConsumers = frame_support::traits::ConstU32<16>;
-			type AccountData = u32;
+			type AccountData = ();
 			type OnNewAccount = ();
 			type OnKilledAccount = ();
 			type SystemWeightInfo = ();
@@ -312,6 +316,7 @@ pub mod pallet {
 			type BaseCallFilter = frame_support::traits::Everything;
 			type BlockHashCount = frame_support::traits::ConstU64<10>;
 			type OnSetCode = ();
+			type Header = DaHeader<u32, BlakeTwo256>;
 		}
 
 		/// Default configurations of this pallet in a solo-chain environment.
@@ -406,6 +411,8 @@ pub mod pallet {
 
 			/// The set code logic, just the default since we're not a parachain.
 			type OnSetCode = ();
+
+			type Header = DaHeader<u32, BlakeTwo256>;
 		}
 
 		/// Default configurations of this pallet in a relay-chain environment.
@@ -429,14 +436,6 @@ pub mod pallet {
 	#[pallet::config(with_default)]
 	#[pallet::disable_frame_system_supertrait_check]
 	pub trait Config: 'static + Eq + Clone {
-		/// The aggregated event type of the runtime.
-		#[pallet::no_default_bounds]
-		type RuntimeEvent: Parameter
-			+ Member
-			+ From<Event<Self>>
-			+ Debug
-			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
 		/// The basic call filter to use in Origin. All origins are built with this filter as base,
 		/// except Root.
 		///
@@ -532,10 +531,28 @@ pub mod pallet {
 		#[pallet::no_default]
 		type Randomness: Randomness<Self::Hash, BlockNumberFor<Self>>;
 
+		/// The aggregated event type of the runtime.
+		#[pallet::no_default_bounds]
+		type RuntimeEvent: Parameter
+			+ Member
+			+ From<Event<Self>>
+			+ Debug
+			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+		/// UncheckedExtrinsic Type used on Kate commitment & Data root calculation.
+		#[pallet::no_default]
+		type Extrinsic: Encode
+			+ Decode
+			+ ExtrinsicCall<Call = Self::RuntimeCall>
+			+ GetAppId
+			+ MaybeCaller<Self::AccountId>;
+
+		type Header: ExtendedHeader<Extension = HeaderExtension, Hash = Self::Hash>;
+
 		/// The Block type used by the runtime. This is used by `construct_runtime` to retrieve the
 		/// extrinsics or other block specific data as needed.
 		#[pallet::no_default]
-		type Block: Parameter + Member + ExtendedBlock<HeaderExtension, Hash = Self::Hash>;
+		type Block: Parameter + Member + ExtendedBlock<ExtHeader = Self::Header, Hash = Self::Hash>;
 
 		/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 		#[pallet::constant]
@@ -596,13 +613,7 @@ pub mod pallet {
 
 		/// Filter used by `DataRootBuilder`.
 		#[pallet::no_default]
-		type SubmittedDataExtractor: submitted_data::Extractor
-			+ submitted_data::Filter<Self::RuntimeCall>;
-
-		/// UncheckedExtrinsic Type used on Kate commitment & Data root calculation.
-		#[pallet::no_default]
-		type UncheckedExtrinsic: Into<AppExtrinsic>
-			+ for<'a> TryFrom<&'a OpaqueExtrinsic, Error = codec::Error>;
+		type TxDataExtractor: TxDataFilter<Self::AccountId, Self::RuntimeCall>;
 
 		/// Maximum different `AppId` allowed per block.
 		/// This is used during the calculation of padded length of the block when
@@ -1003,23 +1014,9 @@ pub mod pallet {
 	#[pallet::getter(fn block_length)]
 	pub type DynamicBlockLength<T: Config> = StorageValue<_, limits::BlockLength, ValueQuery>;
 
-	/// Total number of messages bridged to other chains
-	#[pallet::storage]
-	#[pallet::getter(fn bridge_nonce)]
-	pub type BridgeNonce<T: Config> = StorageValue<_, u64, ValueQuery>;
-
-	/// List of failed indices in the current block
-	// Test name: failed_extrinsic_indices_work()
-	#[pallet::storage]
-	#[pallet::getter(fn failed_extrinsic_indices)]
-	pub type FailedExtrinsicIndices<T: Config> =
-		StorageValue<_, BoundedVec<u32, ConstU32<100_000>>, ValueQuery>;
-
 	#[derive(DefaultNoBound)]
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
-		#[serde(with = "sp_core::bytes")]
-		pub code: Vec<u8>,
 		#[serde(skip)]
 		pub _config: sp_std::marker::PhantomData<T>,
 		pub block_length: limits::BlockLength,
@@ -1028,18 +1025,14 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
-			use frame_support::traits::StorageVersion;
-
 			<BlockHash<T>>::insert::<_, T::Hash>(BlockNumberFor::<T>::zero(), hash69());
 			<ParentHash<T>>::put::<T::Hash>(hash69());
 			<LastRuntimeUpgrade<T>>::put(LastRuntimeUpgradeInfo::from(T::Version::get()));
 			<UpgradedToU32RefCount<T>>::put(true);
 			<UpgradedToTripleRefCount<T>>::put(true);
 
-			sp_io::storage::set(well_known_keys::CODE, &self.code);
 			sp_io::storage::set(well_known_keys::EXTRINSIC_INDEX, &0u32.encode());
 			<DynamicBlockLength<T>>::put(&self.block_length);
-
 			StorageVersion::new(3).put::<Pallet<T>>();
 		}
 	}
@@ -1166,7 +1159,6 @@ impl<O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>, Acco
 	EnsureOrigin<O> for EnsureRoot<AccountId>
 {
 	type Success = ();
-
 	fn try_origin(o: O) -> Result<Self::Success, O> {
 		o.into().and_then(|o| match o {
 			RawOrigin::Root => Ok(()),
@@ -1197,7 +1189,6 @@ impl<
 	> EnsureOrigin<O> for EnsureRootWithSuccess<AccountId, Success>
 {
 	type Success = Success::Type;
-
 	fn try_origin(o: O) -> Result<Self::Success, O> {
 		o.into().and_then(|o| match o {
 			RawOrigin::Root => Ok(Success::get()),
@@ -1241,19 +1232,12 @@ impl<
 	}
 }
 
-impl_ensure_origin_with_arg_ignoring_arg! {
-	impl< { O: .., AccountId: Decode, T } >
-		EnsureOriginWithArg<O, T> for EnsureSigned<AccountId>
-	{}
-}
-
 /// Ensure the origin is any `Signed` origin.
 pub struct EnsureSigned<AccountId>(sp_std::marker::PhantomData<AccountId>);
 impl<O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>, AccountId: Decode>
 	EnsureOrigin<O> for EnsureSigned<AccountId>
 {
 	type Success = AccountId;
-
 	fn try_origin(o: O) -> Result<Self::Success, O> {
 		o.into().and_then(|o| match o {
 			RawOrigin::Signed(who) => Ok(who),
@@ -1278,7 +1262,6 @@ impl<
 	> EnsureOrigin<O> for EnsureSignedBy<Who, AccountId>
 {
 	type Success = AccountId;
-
 	fn try_origin(o: O) -> Result<Self::Success, O> {
 		o.into().and_then(|o| match o {
 			RawOrigin::Signed(ref who) if Who::contains(who) => Ok(who.clone()),
@@ -1308,7 +1291,6 @@ impl<O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>, Acco
 	EnsureOrigin<O> for EnsureNone<AccountId>
 {
 	type Success = ();
-
 	fn try_origin(o: O) -> Result<Self::Success, O> {
 		o.into().and_then(|o| match o {
 			RawOrigin::None => Ok(()),
@@ -1332,7 +1314,6 @@ impl_ensure_origin_with_arg_ignoring_arg! {
 pub struct EnsureNever<Success>(sp_std::marker::PhantomData<Success>);
 impl<O, Success> EnsureOrigin<O> for EnsureNever<Success> {
 	type Success = Success;
-
 	fn try_origin(o: O) -> Result<Self::Success, O> {
 		Err(o)
 	}
@@ -1349,6 +1330,7 @@ impl_ensure_origin_with_arg_ignoring_arg! {
 	{}
 }
 
+#[docify::export]
 /// Ensure that the origin `o` represents a signed extrinsic (i.e. transaction).
 /// Returns `Ok` with the account that signed the extrinsic or an `Err` otherwise.
 pub fn ensure_signed<OuterOrigin, AccountId>(o: OuterOrigin) -> Result<AccountId, BadOrigin>
@@ -1436,8 +1418,6 @@ impl<T: Config> Pallet<T> {
 	/// [`on_runtime_upgrade`](frame_support::traits::OnRuntimeUpgrade::on_runtime_upgrade)
 	/// function. After all migrations are executed, this will return the `spec_version` of the
 	/// current runtime until there is another runtime upgrade.
-	///
-	/// Example:
 	pub fn last_runtime_upgrade_spec_version() -> u32 {
 		LastRuntimeUpgrade::<T>::get().map_or(0, |l| l.spec_version.0)
 	}
@@ -1702,6 +1682,7 @@ impl<T: Config> Pallet<T> {
 	/// NOTE: Events not registered at the genesis block and quietly omitted.
 	pub fn deposit_event_indexed(topics: &[T::Hash], event: T::RuntimeEvent) {
 		let block_number = Self::block_number();
+
 		// Don't populate events on genesis.
 		if block_number.is_zero() {
 			return;
@@ -1789,13 +1770,12 @@ impl<T: Config> Pallet<T> {
 
 		// Remove previous block data from storage
 		BlockWeight::<T>::kill();
-		FailedExtrinsicIndices::<T>::kill();
 		AllExtrinsicsLen::<T>::kill();
 	}
 
 	/// Remove temporary "environment" entries in storage, compute the storage root and return the
 	/// resulting header for this block.
-	pub fn finalize() -> DaHeaderFor<T> {
+	pub fn finalize() -> HeaderFor<T> {
 		log::debug!(
 			target: LOG_TARGET,
 			"[{:?}] {} extrinsics, length: {} (normal {}%, op: {}%, mandatory {}%) / normal weight:\
@@ -1818,23 +1798,22 @@ impl<T: Config> Pallet<T> {
 			Self::block_weight().get(DispatchClass::Normal),
 			sp_runtime::Percent::from_rational(
 				Self::block_weight().get(DispatchClass::Normal).ref_time(),
-				T::BlockWeights::get().get(DispatchClass::Normal).max_total.unwrap_or_else(Bounded::max_value).ref_time()
+				T::BlockWeights::get().get(DispatchClass::Normal).max_total.unwrap_or(Bounded::max_value()).ref_time()
 			).deconstruct(),
 			Self::block_weight().get(DispatchClass::Operational),
 			sp_runtime::Percent::from_rational(
 				Self::block_weight().get(DispatchClass::Operational).ref_time(),
-				T::BlockWeights::get().get(DispatchClass::Operational).max_total.unwrap_or_else(Bounded::max_value).ref_time()
+				T::BlockWeights::get().get(DispatchClass::Operational).max_total.unwrap_or(Bounded::max_value()).ref_time()
 			).deconstruct(),
 			Self::block_weight().get(DispatchClass::Mandatory),
 			sp_runtime::Percent::from_rational(
 				Self::block_weight().get(DispatchClass::Mandatory).ref_time(),
-				T::BlockWeights::get().get(DispatchClass::Mandatory).max_total.unwrap_or_else(Bounded::max_value).ref_time()
+				T::BlockWeights::get().get(DispatchClass::Mandatory).max_total.unwrap_or(Bounded::max_value()).ref_time()
 			).deconstruct(),
 		);
 		ExecutionPhase::<T>::kill();
 		// This will be cleared in on_initialise of next block
 		// AllExtrinsicsLen::<T>::kill();
-
 		storage::unhashed::kill(well_known_keys::INTRABLOCK_ENTROPY);
 		// The following fields
 		//
@@ -1848,29 +1827,21 @@ impl<T: Config> Pallet<T> {
 		// stay to be inspected by the client and will be cleared by `Self::initialize`.
 		let number = <Number<T>>::get();
 		let parent_hash = <ParentHash<T>>::get();
-
-		let extrinsics = Self::take_extrinsics().collect::<Vec<_>>();
-
-		let successful_indices = Self::successful_extrinsic_indices();
-
-		let opaques = successful_indices
-			.iter()
-			.filter_map(|&index| extrinsics.get(index as usize))
-			// let opaques = extrinsics
-			// 	.iter()
-			.filter(|ext| !ext.is_empty())
-			.map(|ext| OpaqueExtrinsic::decode(&mut ext.as_slice()))
-			.collect::<Result<Vec<_>, _>>()
-			.expect("Any extrinsic MUST be decoded as OpaqueExtrinsic .qed");
-
-		let (data_root, new_nonce) = submitted_data::extrinsics_root_v2::<
-			T::SubmittedDataExtractor,
-			_,
-		>(opaques.iter(), Self::bridge_nonce());
-		if Self::bridge_nonce() != new_nonce {
-			BridgeNonce::<T>::put(new_nonce);
-		}
 		let digest = <Digest<T>>::get();
+		let block_number: u32 = number
+			.try_into()
+			.map_err(|_| number) // NOTE: TryInto::Error does not implement Debug
+			.expect("Block number is within u32; qed");
+
+		let extrinsics = (0..ExtrinsicCount::<T>::take().unwrap_or_default())
+			.map(ExtrinsicData::<T>::take)
+			.collect::<Vec<_>>();
+
+		let tx_data = build_tx_data::<T::TxDataExtractor, T::Extrinsic, _, _>(
+			block_number,
+			extrinsics.iter(),
+		);
+		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
 
 		// move block hash pruning window by one block
 		let block_hash_count = T::BlockHashCount::get();
@@ -1889,43 +1860,17 @@ impl<T: Config> Pallet<T> {
 
 		let block_length = Self::block_length();
 
-		let opaques = extrinsics
-			.iter()
-			.filter(|ext| !ext.is_empty())
-			.map(|ext| OpaqueExtrinsic::decode(&mut ext.as_slice()))
-			.collect::<Result<Vec<_>, _>>()
-			.expect("Any extrinsic MUST be decoded as OpaqueExtrinsic .qed");
-
 		// Transform extrinsics into AppExtrinsic.
-		let app_extrinsics = opaques
-			.iter()
-			.filter_map(|opaque| {
-				let res = T::UncheckedExtrinsic::try_from(opaque);
-				if let Err(e) = res.as_ref() {
-					log::error!(
-						target: LOG_TARGET,
-						"Opaque extrinsic cannot be decoded as UncheckedExtrinsic: {e:?}"
-					)
-				}
-				res.map(T::UncheckedExtrinsic::into).ok()
-			})
-			.collect::<Vec<AppExtrinsic>>();
-
+		let data_root = tx_data.root();
+		let submitted = tx_data.to_app_extrinsics();
 		let extension = header_builder::da::HeaderExtensionBuilder::<T>::build(
-			app_extrinsics,
+			submitted,
 			data_root,
 			block_length,
 			number.unique_saturated_into(),
-			HeaderVersion::V3,
 		);
 
-		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
-		let header = <DaHeaderFor<T> as ExtendedHeader<
-			BlockNumberFor<T>,
-			T::Hash,
-			generic::Digest,
-			HeaderExtension,
-		>>::new(
+		let header = <HeaderFor<T> as ExtendedHeader>::new(
 			number,
 			extrinsics_root,
 			storage_root,
@@ -1946,8 +1891,6 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Deposits a log and ensures it matches the block's log data.
-	///
-	/// # </weight>
 	pub fn deposit_log(item: generic::DigestItem) {
 		<Digest<T>>::append(item);
 	}
@@ -1974,12 +1917,7 @@ impl<T: Config> Pallet<T> {
 	/// NOTE: Events not registered at the genesis block and quietly omitted.
 	#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
 	pub fn events() -> Vec<EventRecord<T::RuntimeEvent, T::Hash>> {
-		debug_assert!(
-			!Self::block_number().is_zero(),
-			"events not registered at the genesis block"
-		);
-		// Dereferencing the events here is fine since we are not in the
-		// memory-restricted runtime.
+		// Dereferencing the events here is fine since we are not in the memory-restricted runtime.
 		Self::read_events_no_consensus().map(|e| *e).collect()
 	}
 
@@ -2040,22 +1978,12 @@ impl<T: Config> Pallet<T> {
 	/// Set the current block weight. This should only be used in some integration tests.
 	#[cfg(any(feature = "std", test))]
 	pub fn set_block_consumed_resources(weight: Weight, len: usize) {
-		use avail_core::AppId;
 		use sp_runtime::SaturatedConversion as _;
 
 		BlockWeight::<T>::mutate(|current_weight| {
 			current_weight.set(weight, DispatchClass::Normal)
 		});
-		let len: u32 = len.saturated_into();
-		let mut all_ext_len = ExtrinsicLen::default();
-		all_ext_len
-			.add_padded(AppId(0), len)
-			.expect("In tests this must work always");
-		all_ext_len
-			.add_raw(len)
-			.expect("In tests this must work always");
-
-		AllExtrinsicsLen::<T>::put(all_ext_len);
+		AllExtrinsicsLen::<T>::put(ExtrinsicLen::new(len.saturated_into()));
 	}
 
 	/// Reset events.
@@ -2129,9 +2057,7 @@ impl<T: Config> Pallet<T> {
 			.saturating_add(T::BlockWeights::get().get(info.class).base_extrinsic);
 		info.pays_fee = extract_actual_pays_fee(r, &info);
 
-		let current_extrinsic_index = Self::extrinsic_index().unwrap_or_default();
-
-		let event = match r {
+		Self::deposit_event(match r {
 			Ok(_) => Event::ExtrinsicSuccess {
 				dispatch_info: info,
 			},
@@ -2142,23 +2068,14 @@ impl<T: Config> Pallet<T> {
 					Self::block_number(),
 					err,
 				);
-
-				FailedExtrinsicIndices::<T>::mutate(|x| {
-					x.try_push(current_extrinsic_index).expect(
-						"Limit is 100k. It should not be possible to reach that number. qed",
-					);
-				});
-
 				Event::ExtrinsicFailed {
 					dispatch_error: err.error,
 					dispatch_info: info,
 				}
 			},
-		};
+		});
 
-		Self::deposit_event(event);
-
-		let next_extrinsic_index = current_extrinsic_index + 1u32;
+		let next_extrinsic_index = Self::extrinsic_index().unwrap_or_default() + 1u32;
 
 		storage::unhashed::put(well_known_keys::EXTRINSIC_INDEX, &next_extrinsic_index);
 		ExecutionPhase::<T>::put(Phase::ApplyExtrinsic(next_extrinsic_index));
@@ -2265,37 +2182,11 @@ impl<T: Config> Pallet<T> {
 		Ok(actual_hash)
 	}
 
-	pub fn take_extrinsics() -> impl Iterator<Item = Vec<u8>> {
-		(0..Self::extrinsic_count()).map(ExtrinsicData::<T>::take)
-	}
-
 	/// Creates a `ExtrinsicLen` based on `len` as raw length.
 	/// It uses the current `chunk_size` to calculate the padded len.
 	pub fn padded_extrinsic_len(len: u32) -> u32 {
 		let chunk_size = Self::block_length().chunk_size();
 		kate::padded_len(len, chunk_size)
-	}
-
-	// Test name: successful_extrinsic_indices_are_correct()
-	pub fn successful_extrinsic_indices() -> Vec<u32> {
-		let mut indices = FailedExtrinsicIndices::<T>::get();
-		let extrinsic_count = Self::extrinsic_count();
-
-		indices.sort();
-		let mut failed_indices = indices.iter().peekable();
-		let mut successful_indices =
-			Vec::with_capacity((extrinsic_count as usize).saturating_sub(indices.len()));
-		for index in 0..extrinsic_count {
-			if let Some(failed_one) = failed_indices.peek() {
-				if index == **failed_one {
-					failed_indices.next();
-					continue;
-				}
-			}
-			successful_indices.push(index);
-		}
-
-		successful_indices
 	}
 }
 
@@ -2316,7 +2207,6 @@ impl<T: Config> HandleLifetime<T::AccountId> for Provider<T> {
 		Pallet::<T>::inc_providers(t);
 		Ok(())
 	}
-
 	fn killed(t: &T::AccountId) -> Result<(), DispatchError> {
 		Pallet::<T>::dec_providers(t).map(|_| ())
 	}
@@ -2329,7 +2219,6 @@ impl<T: Config> HandleLifetime<T::AccountId> for SelfSufficient<T> {
 		Pallet::<T>::inc_sufficients(t);
 		Ok(())
 	}
-
 	fn killed(t: &T::AccountId) -> Result<(), DispatchError> {
 		Pallet::<T>::dec_sufficients(t);
 		Ok(())
@@ -2342,7 +2231,6 @@ impl<T: Config> HandleLifetime<T::AccountId> for Consumer<T> {
 	fn created(t: &T::AccountId) -> Result<(), DispatchError> {
 		Pallet::<T>::inc_consumers(t)
 	}
-
 	fn killed(t: &T::AccountId) -> Result<(), DispatchError> {
 		Pallet::<T>::dec_consumers(t);
 		Ok(())
@@ -2421,16 +2309,13 @@ impl<T: Config> Lookup for ChainContext<T> {
 
 /// Prelude to be used alongside pallet macro, for ease of use.
 pub mod pallet_prelude {
-	use avail_core::header::HeaderExtension;
-
 	pub use crate::{ensure_none, ensure_root, ensure_signed, ensure_signed_or_root};
 
 	/// Type alias for the `Origin` associated type of system config.
 	pub type OriginFor<T> = <T as crate::Config>::RuntimeOrigin;
 
-	/// Type alias for the substrate `Header`.
-	pub type HeaderFor<T> =
-		<<T as crate::Config>::Block as sp_runtime::traits::HeaderProvider>::HeaderT;
+	/// Type alias for the `Header`.
+	pub type HeaderFor<T> = <T as crate::Config>::Header;
 
 	/// Type alias for the `BlockNumber` associated type of system config.
 	pub type BlockNumberFor<T> = <HeaderFor<T> as sp_runtime::traits::Header>::Number;
@@ -2441,13 +2326,4 @@ pub mod pallet_prelude {
 
 	/// Type alias for the `RuntimeCall` associated type of system config.
 	pub type RuntimeCallFor<T> = <T as crate::Config>::RuntimeCall;
-
-	/// Type alias for the DA Header
-	pub type DaHeaderFor<T> =
-		<<T as crate::Config>::Block as avail_core::traits::DaHeaderProvider<
-			BlockNumberFor<T>,
-			<T as crate::Config>::Hash,
-			sp_runtime::generic::Digest,
-			HeaderExtension,
-		>>::DaHeader;
 }
