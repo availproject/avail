@@ -33,6 +33,7 @@ sp-externalities = { workspace = true, default-features = false }
 [features]
 default = [ "std" ]
 std = [
+	"avail-core/std",
 	"codec/std",
 	"frame-benchmarking/std",
 	"frame-support/std",
@@ -41,7 +42,6 @@ std = [
 	"sp-externalities/std",
 	"sp-runtime/std",
 	"sp-std/std",
-	"avail-core/std",
 ]
 
 runtime-benchmarks = [
