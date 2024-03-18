@@ -21,48 +21,59 @@
 After ensuring you have the dependencies installed, you can run the Avail Node using the following command:
 ```bash
 mkdir -p output
-cargo run --locked --release -- --chain goldberg -d ./output
+cargo run --locked --release -- --chain mainnet -d ./output
 ```
-This command compiles and runs the Avail Node connected to the Goldberg Network.
+This command compiles and runs the Avail Node connected to the Mainnet Network.
 
 ```
-2023-11-17 11:31:35 Avail Node    
-2023-11-17 11:31:35 ✌️  version 1.8.2-3fe1bd1a835    
-2023-11-17 11:31:35 ❤️  by Avail Team, 2017-2023    
-2023-11-17 11:31:35 📋 Chain specification: Avail Goldberg Testnet    
-2023-11-17 11:31:35 🏷  Node name: exotic-shame-9524    
-2023-11-17 11:31:35 👤 Role: FULL    
-2023-11-17 11:31:35 💾 Database: RocksDb at /tmp/substrate6VCSz0/chains/avail_goldberg_testnet/db/full    
-2023-11-17 11:31:36 🔨 Initializing Genesis block/state (state: 0x6bc7…ec83, header-hash: 0x6f09…a7ae)    
-2023-11-17 11:31:36 👴 Loading GRANDPA authority set from genesis on what appears to be first startup.    
-2023-11-17 11:31:36 👶 Creating empty BABE epoch changes on what appears to be first startup.    
-2023-11-17 11:31:36 🏷  Local node identity is: 12D3KooWGhdJUhZTtqByZKpojSdT26eadVtnvQ6fdrJU8mjeTuiq    
-2023-11-17 11:31:36 Prometheus metrics extended with avail metrics    
-2023-11-17 11:31:36 💻 Operating system: linux    
-2023-11-17 11:31:36 💻 CPU architecture: x86_64    
-2023-11-17 11:31:36 💻 Target environment: gnu    
-2023-11-17 11:31:36 💻 CPU: 13th Gen Intel(R) Core(TM) i7-13700K    
-2023-11-17 11:31:36 💻 CPU cores: 16    
-2023-11-17 11:31:36 💻 Memory: 31863MB    
-2023-11-17 11:31:36 💻 Kernel: 6.5.10-200.fc38.x86_64    
-2023-11-17 11:31:36 💻 Linux distribution: Fedora Linux 38 (Workstation Edition)    
-2023-11-17 11:31:36 💻 Virtual machine: no    
-2023-11-17 11:31:36 📦 Highest known block at #0    
-2023-11-17 11:31:36 〽️ Prometheus exporter started at 127.0.0.1:9615    
-2023-11-17 11:31:36 Running JSON-RPC server: addr=127.0.0.1:9944, allowed origins=["http://localhost:*", "http://127.0.0.1:*", "https://localhost:*", "https://127.0.0.1:*", "https://polkadot.js.org"]    
-2023-11-17 11:31:36 🏁 CPU score: 1.65 GiBs    
-2023-11-17 11:31:36 🏁 Memory score: 22.56 GiBs    
-2023-11-17 11:31:36 🏁 Disk score (seq. writes): 7.25 GiBs    
-2023-11-17 11:31:36 🏁 Disk score (rand. writes): 2.81 GiBs    
-2023-11-17 11:31:37 🔍 Discovered new external address for our node: /ip4/176.61.156.176/tcp/30333/ws/p2p/12D3KooWGhdJUhZTtqByZKpojSdT26eadVtnvQ6fdrJU8mjeTuiq    
-2023-11-17 11:31:41 ⚙️  Syncing, target=#41833 (8 peers), best: #2690 (0x13c8…42fa), finalized #2560 (0x1282…a791), ⬇ 2.9MiB/s ⬆ 38.4kiB/s    
-2023-11-17 11:31:46 ⚙️  Syncing 62.8 bps, target=#41833 (8 peers), best: #3004 (0xa183…81a0), finalized #2560 (0x1282…a791), ⬇ 106.9kiB/s ⬆ 2.1kiB/s  
+2024-03-05 12:31:25 Avail Node    
+2024-03-05 12:31:25 ✌️  version 2.0.0-7d6ed7f7141    
+2024-03-05 12:31:25 ❤️  by Avail Team, 2017-2024    
+2024-03-05 12:31:25 📋 Chain specification: Avail Development Network    
+2024-03-05 12:31:25 🏷  Node name: Alice    
+2024-03-05 12:31:25 👤 Role: AUTHORITY    
+2024-03-05 12:31:25 💾 Database: ParityDb at /tmp/substrateecX1Gm/chains/avail_development_network/paritydb/full    
+2024-03-05 12:31:27 🔨 Initializing Genesis block/state (state: 0x7d28…a6c8, header-hash: 0x1074…234a)    
+2024-03-05 12:31:27 👴 Loading GRANDPA authority set from genesis on what appears to be first startup.    
+2024-03-05 12:31:28 👶 Creating empty BABE epoch changes on what appears to be first startup.    
+2024-03-05 12:31:28 🏷  Local node identity is: 12D3KooWQDpM9w2zcvUaJS89KVAEdXsDFcBrTtc8awHGusRwSCEr    
+2024-03-05 12:31:28 Prometheus metrics extended with avail metrics    
+2024-03-05 12:31:28 💻 Operating system: linux    
+2024-03-05 12:31:28 💻 CPU architecture: x86_64    
+2024-03-05 12:31:28 💻 Target environment: gnu    
+2024-03-05 12:31:28 💻 CPU: 13th Gen Intel(R) Core(TM) i7-13700K    
+2024-03-05 12:31:28 💻 CPU cores: 16    
+2024-03-05 12:31:28 💻 Memory: 31873MB    
+2024-03-05 12:31:28 💻 Kernel: 6.7.6-200.fc39.x86_64    
+2024-03-05 12:31:28 💻 Linux distribution: Fedora Linux 39 (Workstation Edition)    
+2024-03-05 12:31:28 💻 Virtual machine: no    
+2024-03-05 12:31:28 📦 Highest known block at #0    
+2024-03-05 12:31:28 〽️ Prometheus exporter started at 127.0.0.1:9615    
+2024-03-05 12:31:28 Running JSON-RPC server: addr=127.0.0.1:9944, allowed origins=["http://localhost:*", "http://127.0.0.1:*", "https://localhost:*", "https://127.0.0.1:*", "https://polkadot.js.org"]    
+2024-03-05 12:31:28 🏁 CPU score: 1.65 GiBs    
+2024-03-05 12:31:28 🏁 Memory score: 22.52 GiBs    
+2024-03-05 12:31:28 🏁 Disk score (seq. writes): 7.00 GiBs    
+2024-03-05 12:31:28 🏁 Disk score (rand. writes): 2.77 GiBs    
+2024-03-05 12:31:28 👶 Starting BABE Authorship worker    
+2024-03-05 12:31:33 💤 Idle (0 peers), best: #0 (0x1074…234), finalized #0 (0x1074…234a), ⬇ 0 ⬆ 0    
+2024-03-05 12:31:38 💤 Idle (0 peers), best: #0 (0x1074…234a), finalized #0 (0x1074…234a), ⬇ 0 ⬆ 0   
 ```
 
-#### Running Dev Chain
+### Supported Chains
+#### Development
 A development chain is typically used for testing and development purposes.
 ```bash
 cargo run --locked --release -- --dev
+```
+
+#### Testnet New
+```bash
+cargo run --locked --release -- --chain new
+```
+
+#### Mainnet
+```bash
+cargo run --locked --release -- --chain mainnet
 ```
 
 ### Docker
@@ -135,6 +146,36 @@ To enable Kate RPC you need to pass `--enable-kate-rpc` flag when executing the 
 ./avail-node --enable-kate-rpc
 ```
 
+## All Custom Flags
+```bash
+--enable-kate-rpc
+    Enable Kate RPC
+
+--enable-kate-rpc-metrics
+    Enable Kate RPC Metrics
+
+--kate-max-cells-size <KATE_MAX_CELLS_SIZE>
+    The maximum number of cells that can be requested in one go.
+    
+    Max size cannot exceed 10_000
+    
+    [default: 64]
+
+--eval-grid-cache-size <MiB>
+    Represents the maximum size (in MiBs) for the evaluation grid cache.
+    
+    The cache is used to speedup some kate RPC calls. The bigger the cache the more space will the node use.
+    
+    [default: 1024]
+
+--poly-grid-cach-size <MiB>
+    Represents the maximum size (in MiBs) for the polynomial grid cache.
+    
+    The cache is used to speedup some kate RPC calls. The bigger the cache the more space will the node use.
+    
+    [default: 1024]
+```
+
 ## Run Benchmarks
 ### Kate RPC
 ```bash
@@ -171,4 +212,3 @@ You can find on this repository many example on how to interract with any avail 
 - In the examples folders you will find examples for:
   - Deno examples
   - Go examples
-  - Validium example implementation 
