@@ -1,4 +1,6 @@
-use avail_subxt::{avail::Cells, submit::submit_data, tx, AvailClient, Cell, Opts, primitives::GDataProof};
+use avail_subxt::{
+	avail::Cells, primitives::GDataProof, submit::submit_data, tx, AvailClient, Cell, Opts,
+};
 use structopt::StructOpt;
 use subxt::backend::rpc::RpcParams;
 use subxt_signer::sr25519::dev;
@@ -22,7 +24,11 @@ async fn main() -> anyhow::Result<()> {
 	params.push(Some(block_hash))?;
 
 	println!("hash: {block_hash:?}");
-	let proof: Vec<GDataProof> = client.rpc().request("kate_queryProof", params).await.unwrap();
+	let proof: Vec<GDataProof> = client
+		.rpc()
+		.request("kate_queryProof", params)
+		.await
+		.unwrap();
 
 	println!("Submitted data in block {block_hash:?} and got proof {proof:?}");
 	Ok(())

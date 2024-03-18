@@ -116,7 +116,7 @@ async fn main() -> Result<()> {
 			.unwrap();
 
 		let block = client.blocks().at(block_hash).await?;
-		
+
 		let header = block.header();
 
 		let digests = header.digest.logs.clone().into_iter().collect::<Vec<_>>();

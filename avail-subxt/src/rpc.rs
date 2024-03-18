@@ -5,8 +5,10 @@ use serde::Deserialize;
 use sp_core::H256;
 
 use crate::{
+	api::runtime_types::frame_system::limits::BlockLength,
 	avail::{Cells, Rows},
-	primitives::GDataProof, AppId, api::runtime_types::frame_system::limits::BlockLength,
+	primitives::GDataProof,
+	AppId,
 };
 
 #[derive(Deserialize, Debug)]
@@ -31,7 +33,6 @@ pub trait KateRpc {
 	#[method(name = "queryProof")]
 	async fn query_proof(&self, cells: Cells, block: H256) -> RpcResult<Vec<GDataProof>>;
 
-	
 	#[method(name = "queryAppData")]
 	async fn query_app_data(&self, app_id: AppId, block: H256) -> RpcResult<Vec<Option<Vec<u8>>>>;
 
