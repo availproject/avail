@@ -3,13 +3,13 @@ use std::{fmt::Write, str::from_utf8};
 use anyhow::Result;
 use async_std::{fs::File, io::BufWriter, prelude::*};
 use avail_subxt::{
-	build_client,
 	primitives::{babe, grandpa},
-	Opts,
+	AvailConfig, Opts,
 };
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use serde_json::{json, Value};
 use structopt::StructOpt;
+use subxt::backend::{legacy::LegacyRpcMethods, rpc::RpcClient};
 use subxt::{
 	config::substrate::{ConsensusEngineId, DigestItem},
 	ext::codec::Decode,
@@ -83,12 +83,15 @@ const OUTPUT_PATH: &str = "/tmp/header.json";
 #[async_std::main]
 async fn main() -> Result<()> {
 	let args = Opts::from_args();
-	let (client, _) = build_client(args.ws, args.validate_codegen).await?;
+	// First, create a raw RPC client:
+	let rpc_client = RpcClient::from_url(args.ws).await?;
+
+	// Use this to construct our RPC methods:
+	let rpc = LegacyRpcMethods::<AvailConfig>::new(rpc_client.clone());
 
 	// Get best block
-	let best_block = client
-		.rpc()
-		.block(None)
+	let best_block = rpc
+		.chain_get_block(None)
 		.await?
 		.expect("Best block always exists .qed");
 
@@ -114,12 +117,11 @@ async fn main() -> Result<()> {
 
 	// Load all headers and decode each digest item.
 	for block_num in 1..=best_block_num {
-		let block_hash = client
-			.rpc()
-			.block_hash(Some(block_num.into()))
+		let block_hash = rpc
+			.chain_get_block_hash(Some(block_num.into()))
 			.await?
 			.unwrap();
-		let header = client.rpc().header(Some(block_hash)).await?.unwrap();
+		let header = rpc.chain_get_header(Some(block_hash)).await?.unwrap();
 
 		let digests = header
 			.digest
