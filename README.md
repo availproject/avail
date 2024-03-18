@@ -23,7 +23,7 @@ After ensuring you have the dependencies installed, you can run the Avail Node u
 mkdir -p output
 cargo run --locked --release -- --chain mainnet -d ./output
 ```
-This command compiles and runs the Avail Node connected to the Goldberg Network.
+This command compiles and runs the Avail Node connected to the Mainnet Network.
 
 ```
 2024-03-05 12:31:25 Avail Node    
@@ -59,10 +59,21 @@ This command compiles and runs the Avail Node connected to the Goldberg Network.
 2024-03-05 12:31:38 💤 Idle (0 peers), best: #0 (0x1074…234a), finalized #0 (0x1074…234a), ⬇ 0 ⬆ 0   
 ```
 
-#### Running Dev Chain
+### Supported Chains
+#### Development
 A development chain is typically used for testing and development purposes.
 ```bash
 cargo run --locked --release -- --dev
+```
+
+#### Testnet New
+```bash
+cargo run --locked --release -- --chain new
+```
+
+#### Mainnet
+```bash
+cargo run --locked --release -- --chain mainnet
 ```
 
 ### Docker
@@ -163,7 +174,6 @@ To enable Kate RPC you need to pass `--enable-kate-rpc` flag when executing the 
     The cache is used to speedup some kate RPC calls. The bigger the cache the more space will the node use.
     
     [default: 1024]
-
 ```
 
 ## Run Benchmarks

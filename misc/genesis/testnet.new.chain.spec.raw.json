@@ -1,6 +1,6 @@
 {
-  "name": "Avail Mainnet Network",
-  "id": "avail_mainnet_network",
+  "name": "Avail Testnet New Network",
+  "id": "avail_new_network",
   "chainType": "Development",
   "bootNodes": [],
   "telemetryEndpoints": [

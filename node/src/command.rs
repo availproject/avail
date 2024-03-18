@@ -67,14 +67,14 @@ impl SubstrateCli for Cli {
 		let spec = match id {
 			"" => {
 				return Err(
-					"Please specify which chain you want to run, e.g. --chain goldberg".into(),
+					"Please specify which chain you want to run, e.g. --chain mainnet".into(),
 				)
 			},
 			"dev" => Box::new(chains::dev::chain_spec()),
 			"dev.tri" => Box::new(chains::dev_tri::chain_spec()),
-			"goldberg" => Box::new(chains::goldberg::chain_spec()?),
 			"devnet0" => Box::new(chains::devnet0::chain_spec()?),
 			"mainnet" => Box::new(chains::mainnet::chain_spec()?),
+			"new" => Box::new(chains::new::chain_spec()?),
 			path => Box::new(chains::ChainSpec::from_json_file(
 				std::path::PathBuf::from(path),
 			)?),

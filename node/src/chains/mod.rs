@@ -8,21 +8,6 @@ use serde_json::Value;
 #[cfg(test)]
 use sp_runtime::BuildStorage;
 
-pub mod goldberg {
-	use super::*;
-
-	pub fn chain_spec() -> Result<ChainSpec, String> {
-		ChainSpec::from_json_bytes(
-			&include_bytes!("./../../../misc/genesis/testnet.goldberg.chain.raw.json",)[..],
-		)
-	}
-
-	#[test]
-	fn test_chain_spec_creation() {
-		chain_spec().unwrap().build_storage().unwrap();
-	}
-}
-
 pub mod dev {
 	use super::*;
 	use da_runtime::wasm_binary_unwrap;
@@ -113,6 +98,21 @@ pub mod mainnet {
 	pub fn chain_spec() -> Result<ChainSpec, String> {
 		ChainSpec::from_json_bytes(
 			&include_bytes!("./../../../misc/genesis/mainnet.chain.spec.raw.json",)[..],
+		)
+	}
+
+	#[test]
+	fn test_chain_spec_creation() {
+		chain_spec().unwrap().build_storage().unwrap();
+	}
+}
+
+pub mod new {
+	use super::*;
+
+	pub fn chain_spec() -> Result<ChainSpec, String> {
+		ChainSpec::from_json_bytes(
+			&include_bytes!("./../../../misc/genesis/testnet.new.chain.spec.raw.json",)[..],
 		)
 	}
 
