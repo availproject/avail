@@ -11,7 +11,7 @@ use subxt::{
 };
 
 pub mod primitives;
-use primitives::Cell;
+pub use primitives::Cell;
 pub mod avail_client;
 pub use avail_client::AvailClient;
 
