@@ -1,7 +1,7 @@
 use crate::{
 	avail::{TxInBlock, TxProgress, TxStatus},
 	primitives::new_params_from_app_id,
-	AppId, AvailConfig,
+	AccountId, AppId, AvailConfig,
 };
 
 use subxt::{
@@ -88,4 +88,12 @@ where
 		.create_signed_with_nonce(call, signer, nonce, params)?
 		.submit_and_watch()
 		.await
+}
+
+pub async fn nonce<S>(client: &OnlineClient<AvailConfig>, signer: &S) -> Result<u64, Error>
+where
+	S: SignerT<AvailConfig>,
+{
+	let acc_id: AccountId = signer.account_id();
+	client.tx().account_nonce(&acc_id).await
 }

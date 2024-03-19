@@ -167,6 +167,8 @@ jobs:
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example wait_next_block
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example bridge_send_message
+          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example wait_next_block
+          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example vector_send_msg 
 
       - name: Display SCCache Stats
         run: ${{ env.SCCACHE_BIN }} --show-stats

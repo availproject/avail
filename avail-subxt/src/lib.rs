@@ -51,7 +51,7 @@ impl Config for AvailConfig {
 
 pub mod avail {
 	use super::*;
-	use sp_core::ConstU32;
+	use sp_core::{ConstU32, U256};
 
 	pub type Client = subxt::OnlineClient<AvailConfig>;
 	pub type TxProgress = subxt::tx::TxProgress<AvailConfig, Client>;
@@ -73,6 +73,11 @@ pub mod avail {
 
 	pub type MaxRows = ConstU32<64>;
 	pub type Rows = bounded_collections::BoundedVec<u32, MaxRows>;
+
+	pub type GRawScalar = U256;
+	pub type GRow = Vec<GRawScalar>;
+	pub type GDataProof = (GRawScalar, GProof);
+	pub type GProof = crate::rpc::GProof;
 }
 
 #[allow(dead_code)]

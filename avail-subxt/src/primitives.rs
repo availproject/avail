@@ -35,3 +35,19 @@ where
 		}
 	}
 }
+
+use crate::{api::runtime_types::avail_core::data_proof::message::Message, BoundedVec};
+use avail_core::data_proof::Message as CMessage;
+
+impl From<CMessage> for Message {
+	fn from(m: CMessage) -> Self {
+		match m {
+			CMessage::ArbitraryMessage(data) => {
+				Message::ArbitraryMessage(BoundedVec(data.into_inner()))
+			},
+			CMessage::FungibleToken { asset_id, amount } => {
+				Message::FungibleToken { asset_id, amount }
+			},
+		}
+	}
+}
