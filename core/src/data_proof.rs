@@ -58,6 +58,7 @@ pub enum SubTrie {
 
 #[derive(Debug, Clone, Copy, Encode, Decode, PartialEq, Eq, Default, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct TxDataRoots {
 	/// Global Merkle root
 	pub data_root: H256,
@@ -120,6 +121,25 @@ impl DataProof {
 			proof: m_proof.proof,
 			number_of_leaves: m_proof.number_of_leaves as u32,
 			leaf_index: m_proof.leaf_index as u32,
+		}
+	}
+
+	pub fn as_sub_merkle_proof(
+		&self,
+		sub_trie: SubTrie,
+		leaf: Vec<u8>,
+	) -> MerkleProof<H256, Vec<u8>> {
+		let root = match sub_trie {
+			SubTrie::DataSubmit => self.roots.blob_root,
+			SubTrie::Bridge => self.roots.bridge_root,
+		};
+
+		MerkleProof {
+			root,
+			proof: self.proof.clone(),
+			leaf,
+			number_of_leaves: self.number_of_leaves as usize,
+			leaf_index: self.leaf_index as usize,
 		}
 	}
 }
