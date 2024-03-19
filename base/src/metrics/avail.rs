@@ -173,7 +173,7 @@ pub struct KateRpcMetrics {
 	pub query_app_data_execution_time: Histogram,
 	pub query_proof_execution_time: Histogram,
 	pub query_block_length_execution_time: Histogram,
-	pub query_data_proof_v2_execution_time: Histogram,
+	pub query_data_proof_execution_time: Histogram,
 }
 
 impl KateRpcMetrics {
@@ -239,10 +239,10 @@ impl KateRpcMetrics {
 			5000.0, 7500.0, 10000.0, 25000.0, // 5ms, 7.5ms, 10ms, 25ms
 			50000.0, // 50ms
 		];
-		let query_data_proof_v2_execution_time = custom_histogram(
+		let query_data_proof_execution_time = custom_histogram(
 			registry,
-			"avail_kate_rpc_query_data_proof_v2_execution_time",
-			"Kate RPC - Query Data Proof V2 Time in microseconds",
+			"avail_kate_rpc_query_data_proof_execution_time",
+			"Kate RPC - Query Data Proof Time in microseconds",
 			buckets.to_vec(),
 		)?;
 
@@ -251,7 +251,7 @@ impl KateRpcMetrics {
 			query_app_data_execution_time,
 			query_proof_execution_time,
 			query_block_length_execution_time,
-			query_data_proof_v2_execution_time,
+			query_data_proof_execution_time,
 		})
 	}
 
@@ -291,11 +291,11 @@ impl KateRpcMetrics {
 		}
 	}
 
-	pub fn observe_query_data_proof_v2_execution_time(duration: Duration) {
+	pub fn observe_query_data_proof_execution_time(duration: Duration) {
 		if let Some(metrics) = AVAIL_METRICS.get() {
 			metrics
 				.kate_rpc
-				.query_data_proof_v2_execution_time
+				.query_data_proof_execution_time
 				.observe(duration.as_micros() as f64);
 		}
 	}

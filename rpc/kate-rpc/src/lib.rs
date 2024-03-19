@@ -63,54 +63,17 @@ where
 	) -> RpcResult<ProofResponse>;
 }
 
-/// TODO
-/// - Re-enable caches on RPC.
-/// - Use rayon again.
 #[allow(clippy::type_complexity)]
 pub struct Kate<Client, Block: BlockT> {
 	client: Arc<Client>,
-	// eval_grid_cache: Cache<Block::Hash, Arc<EvaluationGrid>>,
-	// Have to put dimensions here b/c it's not public in polynomialgrid
-	// poly_grid_cache: Cache<Block::Hash, Arc<(Dimensions, PolynomialGrid)>>,
-	// multiproof_srs: m1_blst::M1NoPrecomp,
 	max_cells_size: usize,
 	_block: PhantomData<Block>,
 }
 
 impl<Client, Block: BlockT> Kate<Client, Block> {
-	pub fn new(
-		client: Arc<Client>,
-		max_cells_size: usize,
-		_eval_grid_cache_size: u64,
-		_poly_grid_cach_size: u64,
-	) -> Self {
-		/*
-		// eval_grid_cache_size and poly_grid_cach_size are in MiB. We need Bytes.
-		let eval_grid_cache_size = eval_grid_cache_size * 1024 * 1024;
-		let poly_grid_cach_size = poly_grid_cach_size * 1024 * 1024;
-		*/
-
+	pub fn new(client: Arc<Client>, max_cells_size: usize) -> Self {
 		Self {
 			client,
-			/*
-			eval_grid_cache: Cache::<_, Arc<EvaluationGrid>>::builder()
-				.weigher(|_, v| {
-					let n_cells: u32 = v.dims().size();
-					n_cells * 32 + 8
-				})
-				.max_capacity(eval_grid_cache_size)
-				.build(),
-			poly_grid_cache: Cache::<_, Arc<(Dimensions, PolynomialGrid)>>::builder()
-				.weigher(|_, v| {
-					let n_cells: u32 = v.0.size();
-					let n_points: u32 =
-						v.0.width().try_into().expect("Never more than 2^32 points");
-					n_cells * 32 + n_points * 32
-				})
-				.max_capacity(poly_grid_cach_size)
-				.build(),
-			multiproof_srs: kate::couscous::multiproof_params(),
-			*/
 			max_cells_size,
 			_block: PhantomData,
 		}
@@ -314,7 +277,7 @@ where
 			.ok_or_else(|| {
 				internal_err!("Cannot to fetch tx data at tx index {tx_idx:?} at block {at:?}")
 			})?;
-		KateRpcMetrics::observe_query_data_proof_v2_execution_time(execution_start.elapsed());
+		KateRpcMetrics::observe_query_data_proof_execution_time(execution_start.elapsed());
 
 		Ok(proof)
 	}
