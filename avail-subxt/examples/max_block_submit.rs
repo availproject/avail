@@ -1,8 +1,8 @@
 use avail_subxt::{api, tx, AvailClient, BoundedVec, Opts};
 
+use futures::stream::{FuturesOrdered, TryStreamExt as _};
 use structopt::StructOpt;
 use subxt_signer::sr25519::dev;
-use futures::stream::{FuturesOrdered, TryStreamExt as _};
 
 /// This example attempts to submit data to fill the entire block. Note that this doesn't guarantee
 /// that the block will be filled, but if you submit more than a full block, then it will spill over
@@ -22,20 +22,26 @@ async fn main() -> anyhow::Result<()> {
 	let nonce = tx::nonce(&client, &alice).await?;
 
 	let start = std::time::Instant::now();
-	let calls = (0..NUM_CHUNKS).map(|i| {
-		let data = BoundedVec(vec![(i & 255) as u8; TX_MAX_SIZE]);
-		api::tx().data_availability().submit_data(data)
-	}).collect::<Vec<_>>();
-	let txs = calls.iter().enumerate().map(|(idx,call)| {
-		tx::send_with_nonce(&client, call, &alice, 1, nonce + idx as u64)
-	})
+	let calls = (0..NUM_CHUNKS)
+		.map(|i| {
+			let data = BoundedVec(vec![(i & 255) as u8; TX_MAX_SIZE]);
+			api::tx().data_availability().submit_data(data)
+		})
+		.collect::<Vec<_>>();
+	let txs = calls
+		.iter()
+		.enumerate()
+		.map(|(idx, call)| tx::send_with_nonce(&client, call, &alice, 1, nonce + idx as u64))
 		.collect::<FuturesOrdered<_>>()
-		.try_collect::<Vec<_>>().await?;
+		.try_collect::<Vec<_>>()
+		.await?;
 
 	let submittions_end = start.elapsed();
 	println!("Submittions done in {submittions_end:?}");
 
-	let in_block_txs = txs.into_iter().map(tx::in_finalized)
+	let in_block_txs = txs
+		.into_iter()
+		.map(tx::in_finalized)
 		.collect::<FuturesOrdered<_>>()
 		.try_collect::<Vec<_>>()
 		.await?;
@@ -45,7 +51,6 @@ async fn main() -> anyhow::Result<()> {
 	}
 	let end = start.elapsed();
 	println!("Finalized in {end:?}");
-
 
 	Ok(())
 }

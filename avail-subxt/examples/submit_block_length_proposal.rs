@@ -125,8 +125,9 @@ where
 		let in_block = vec![tx_1, tx_2, tx_3]
 			.into_iter()
 			.map(tx::in_finalized)
-            .collect::<FuturesOrdered<_>>()
-			.try_collect::<Vec<_>>().await?;
+			.collect::<FuturesOrdered<_>>()
+			.try_collect::<Vec<_>>()
+			.await?;
 
 		let tx_blocks = in_block
 			.iter()
