@@ -20,7 +20,7 @@ const jobCount = config.jobCount;
 for(let i = 0; i < jobCount; ++i) {
     const task = new Task(`${i}`, api, data, txCount);
     const customStage = new PerformanceMeasureStage(async (task) => {
-        const res = await task.api.rpc.kate.queryDataProofV2Metrics(1, task.finalizedBlockHash);
+        const res = await task.api.rpc.kate.queryDataProofMetrics(1, task.finalizedBlockHash);
         task.internal_measure = res[1].toNumber() / 1000;
     }, "Querying Data Proof");
     const stages = [new BlockInclusionStage(targetBlockNumber + i), new DataSubmissionStage(keyring), new BlockFinalizationStage(targetBlockNumber + 1 + i), customStage, new DoneStage()];
