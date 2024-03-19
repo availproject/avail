@@ -131,9 +131,16 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 	da_control::GenesisConfig::<Test> {
 		app_keys: vec![
-			(b"Data Avail".to_vec(), (1, 0)),
-			(b"Ethereum".to_vec(), (2, 1)),
-			(b"Polygon".to_vec(), (2, 2)),
+			(b"Avail".to_vec(), (1, 0)),
+			(b"Reserved-1".to_vec(), (2, 1)),
+			(b"Reserved-2".to_vec(), (2, 2)),
+			(b"Reserved-3".to_vec(), (2, 3)),
+			(b"Reserved-4".to_vec(), (2, 4)),
+			(b"Reserved-5".to_vec(), (2, 5)),
+			(b"Reserved-6".to_vec(), (2, 6)),
+			(b"Reserved-7".to_vec(), (2, 7)),
+			(b"Reserved-8".to_vec(), (2, 8)),
+			(b"Reserved-9".to_vec(), (2, 9)),
 		],
 	}
 	.assimilate_storage(&mut storage)

@@ -35,7 +35,18 @@ const DEFAULT_ENDOWED_SEEDS: [&str; 12] = [
 	"Eve//stash",
 	"Ferdie//stash",
 ];
-const INIT_APP_IDS: [(u32, &str); 3] = [(0, "Data Avail"), (1, "Ethereum"), (2, "Polygon")];
+const INIT_APP_IDS: [(u32, &str); 10] = [
+	(0, "Avail"),
+	(1, "Reserved-1"),
+	(2, "Reserved-2"),
+	(3, "Reserved-3"),
+	(4, "Reserved-4"),
+	(5, "Reserved-5"),
+	(6, "Reserved-6"),
+	(7, "Reserved-7"),
+	(8, "Reserved-8"),
+	(9, "Reserved-9"),
+];
 
 pub fn to_telemetry_endpoint(s: String) -> TelemetryEndpoints {
 	TelemetryEndpoints::new(vec![(s, 0)]).unwrap()

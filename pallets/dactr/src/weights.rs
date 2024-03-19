@@ -55,6 +55,7 @@ pub trait WeightInfo {
 	fn submit_data(i: u32, ) -> Weight;
 	fn data_root(i: u32, ) -> Weight;
 	fn data_root_batch(i: u32, ) -> Weight;
+	fn set_application_key() -> Weight;
 }
 
 /// Weights for `da_control` using the Avail node and recommended hardware.
@@ -114,6 +115,15 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			// Standard Error: 41
 			.saturating_add(Weight::from_parts(5_154, 0).saturating_mul(i.into()))
 	}
+	fn set_application_key() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `117`
+		//  Estimated: `3583`
+		// Minimum execution time: 26_999_000 picoseconds.
+		Weight::from_parts(28_094_000, 3583)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
+	}
 }
 
 // For backwards compatibility and tests.
@@ -171,5 +181,14 @@ impl WeightInfo for () {
 		Weight::from_parts(63_519_257, 0)
 			// Standard Error: 41
 			.saturating_add(Weight::from_parts(5_154, 0).saturating_mul(i.into()))
+	}
+	fn set_application_key() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `117`
+		//  Estimated: `3583`
+		// Minimum execution time: 26_999_000 picoseconds.
+		Weight::from_parts(28_094_000, 3583)
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
 }
