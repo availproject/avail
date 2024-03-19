@@ -89,18 +89,18 @@ export const API_TYPES = {
         cols: "Compact<u16>",
         commitment: "Vec<u8>",
         dataRoot: "H256",
-      },
-      V3HeaderExtension: {
+    },
+    V3HeaderExtension: {
         appLookup: "DataLookup",
         commitment: "KateCommitment",
-      },
-      HeaderExtension: {
+    },
+    HeaderExtension: {
         _enum: {
-          V1: null,
-          V2: null,
-          V3: "V3HeaderExtension",
+            V1: null,
+            V2: null,
+            V3: "V3HeaderExtension",
         },
-      },
+    },
     DaHeader: {
         parentHash: 'Hash',
         number: 'Compact<BlockNumber>',
@@ -131,7 +131,7 @@ export const API_TYPES = {
         operational: 'u32',
         mandatory: 'u32'
     },
-    DataProofV2: {
+    DataProof: {
         data_root: 'H256',
         blob_root: 'H256',
         bridge_root: 'H256',
@@ -141,21 +141,35 @@ export const API_TYPES = {
         leaf: 'H256'
     },
     ProofResponse: {
-        dataProof: 'DataProofV2',
-        message: 'Option<Message>'
+        dataProof: 'DataProof',
+        message: 'Option<AddressedMessage>'
     },
-    Message: {
-        message_type: 'MessageType',
+    AddressedMessage: {
+        message: 'Message',
         from: 'H256',
         to: 'H256',
         origin_domain: 'u32',
         destination_domain: 'u32',
-        data: 'Vec<u8>',
         id: 'u64',
     },
-    MessageType: {
-        _enum: ["ArbitraryMessage", "FungibleToken"],
+    Message: {
+        _enum: {
+            ArbitraryMessage: 'ArbitraryMessage',
+            FungibleToken: 'FungibleToken'
+        }
     },
+    MessageType: {
+        _enum: [
+            'ArbitraryMessage',
+            'FungibleToken'
+        ]
+    },
+    FungibleToken: {
+        asset_id: 'H256',
+        amount: 'String'
+    },
+    BoundedData: 'Vec<u8>',
+    ArbitraryMessage: 'BoundedData',
     Cell: {
         row: 'u32',
         col: 'u32',

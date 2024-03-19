@@ -52,7 +52,7 @@ npm run create-app-id
 npm run subscribe-blocks
 npm run query-app-data
 npm run query-proof
-npm run query-proof-data
+npm run query-data-proof
 npm run submit-proposal
 npm run dispatch-data-root
 ```

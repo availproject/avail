@@ -137,7 +137,7 @@ pub mod tests {
 		Ok(block_length)
 	}
 
-	async fn query_data_proof_v2(
+	async fn query_data_proof(
 		rpc: &Rpc<AvailConfig>,
 		transaction_index: u32,
 		block_hash: H256,
@@ -145,7 +145,7 @@ pub mod tests {
 		let mut params = RpcParams::new();
 		params.push(transaction_index)?;
 		params.push(Some(block_hash))?;
-		let data_proof: ProofResponse = rpc.request("kate_queryDataProofV2", params).await?;
+		let data_proof: ProofResponse = rpc.request("kate_queryDataProof", params).await?;
 		Ok(data_proof)
 	}
 
@@ -353,7 +353,7 @@ pub mod tests {
 	}
 
 	#[async_std::test]
-	pub async fn rpc_query_data_proof_v2_test() {
+	pub async fn rpc_query_data_proof_test() {
 		let client = establish_a_connection().await.unwrap();
 		let (txc, rpc) = (client.tx(), client.rpc());
 
@@ -363,7 +363,7 @@ pub mod tests {
 		let block_hash = send_da_example_data(&txc, example_data).await.unwrap();
 		let expected_proof_root =
 			merkle_proof::<Keccak256, _, _>(vec![keccak_256(example_data)], 0);
-		let actual_proof = query_data_proof_v2(rpc, 1, block_hash).await.unwrap();
+		let actual_proof = query_data_proof(rpc, 1, block_hash).await.unwrap();
 		// root is calculated keccak256(blob_root, bridge_root)
 		let mut root_data = vec![];
 		root_data.extend(expected_proof_root.root.as_bytes());
