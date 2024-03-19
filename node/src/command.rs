@@ -207,8 +207,6 @@ pub fn run() -> Result<()> {
 					cli.kate_max_cells_size,
 					cli.kate_rpc_enabled,
 					cli.kate_rpc_metrics_enabled,
-					cli.eval_grid_cache_size,
-					cli.poly_grid_cach_size,
 				)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
@@ -226,8 +224,6 @@ pub fn run() -> Result<()> {
 					cli.kate_max_cells_size,
 					cli.kate_rpc_enabled,
 					cli.kate_rpc_metrics_enabled,
-					cli.eval_grid_cache_size,
-					cli.poly_grid_cach_size,
 				)?;
 				Ok((cmd.run(client, config.database), task_manager))
 			})
@@ -245,8 +241,6 @@ pub fn run() -> Result<()> {
 					cli.kate_max_cells_size,
 					cli.kate_rpc_enabled,
 					cli.kate_rpc_metrics_enabled,
-					cli.eval_grid_cache_size,
-					cli.poly_grid_cach_size,
 				)?;
 				Ok((cmd.run(client, config.chain_spec), task_manager))
 			})
@@ -265,8 +259,6 @@ pub fn run() -> Result<()> {
 					cli.kate_max_cells_size,
 					cli.kate_rpc_enabled,
 					cli.kate_rpc_metrics_enabled,
-					cli.eval_grid_cache_size,
-					cli.poly_grid_cach_size,
 				)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
@@ -289,8 +281,6 @@ pub fn run() -> Result<()> {
 					cli.kate_max_cells_size,
 					cli.kate_rpc_enabled,
 					cli.kate_rpc_metrics_enabled,
-					cli.eval_grid_cache_size,
-					cli.poly_grid_cach_size,
 				)?;
 				let aux_revert = Box::new(|client: Arc<FullClient>, backend, blocks| {
 					sc_consensus_babe::revert(client.clone(), backend, blocks)?;

@@ -160,20 +160,6 @@ To enable Kate RPC you need to pass `--enable-kate-rpc` flag when executing the 
     Max size cannot exceed 10_000
     
     [default: 64]
-
---eval-grid-cache-size <MiB>
-    Represents the maximum size (in MiBs) for the evaluation grid cache.
-    
-    The cache is used to speedup some kate RPC calls. The bigger the cache the more space will the node use.
-    
-    [default: 1024]
-
---poly-grid-cach-size <MiB>
-    Represents the maximum size (in MiBs) for the polynomial grid cache.
-    
-    The cache is used to speedup some kate RPC calls. The bigger the cache the more space will the node use.
-    
-    [default: 1024]
 ```
 
 ## Run Benchmarks
