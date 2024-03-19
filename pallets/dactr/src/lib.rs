@@ -220,6 +220,39 @@ pub mod pallet {
 
 			Ok(().into())
 		}
+
+		#[pallet::call_index(3)]
+		#[pallet::weight(T::WeightInfo::set_application_key())]
+		pub fn set_application_key(
+			origin: OriginFor<T>,
+			old_key: AppKeyFor<T>,
+			new_key: AppKeyFor<T>,
+		) -> DispatchResultWithPostInfo {
+			ensure_root(origin)?;
+
+			ensure!(!old_key.is_empty(), Error::<T>::AppKeyCannotBeEmpty);
+			ensure!(!new_key.is_empty(), Error::<T>::AppKeyCannotBeEmpty);
+
+			// Check for uniqueness
+			let maybe_existing_key = AppKeys::<T>::get(&new_key);
+			ensure!(
+				maybe_existing_key.is_none(),
+				Error::<T>::AppKeyAlreadyExists
+			);
+
+			// Get app info for the given key
+			let app_key_info = AppKeys::<T>::get(&old_key).ok_or(Error::<T>::UnknownAppKey)?;
+
+			// Remove the old key
+			AppKeys::<T>::remove(&old_key);
+
+			// Insert the app info under the new key
+			AppKeys::<T>::insert(&new_key, app_key_info);
+
+			Self::deposit_event(Event::ApplicationKeySet { old_key, new_key });
+
+			Ok(().into())
+		}
 	}
 
 	/// Event for the pallet.
@@ -239,6 +272,10 @@ pub mod pallet {
 		BlockLengthProposalSubmitted {
 			rows: BlockLengthRows,
 			cols: BlockLengthColumns,
+		},
+		ApplicationKeySet {
+			old_key: AppKeyFor<T>,
+			new_key: AppKeyFor<T>,
 		},
 	}
 
@@ -263,6 +300,8 @@ pub mod pallet {
 		InvalidBlockWeightReduction,
 		/// Submit data call outside of block execution context.
 		BadContext,
+		/// App info was not found for the given App key
+		UnknownAppKey,
 	}
 
 	#[pallet::genesis_config]
