@@ -7,9 +7,7 @@ pub use extrinsic_params::{new_params_from_app_id, CheckAppId, ExtrinsicParams};
 
 pub mod header;
 pub use header::Header;
-
-// pub mod app_unchecked_extrinsic;
-// pub use app_unchecked_extrinsic::AppUncheckedExtrinsic;
+use sp_core::U256;
 
 pub mod babe;
 pub mod grandpa;
@@ -33,5 +31,31 @@ where
 			row: row.into(),
 			col: col.into(),
 		}
+	}
+}
+
+// TODO: Move all types used in rpc in avail-core so we don't have to create them here
+pub type GRawScalar = U256;
+pub type GDataProof = (GRawScalar, GProof);
+
+#[derive(Encode, Decode, Debug, Clone, Copy)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "std", serde(try_from = "Vec<u8>", into = "Vec<u8>"))]
+pub struct GProof([u8; 48]);
+impl From<GProof> for Vec<u8> {
+	fn from(proof: GProof) -> Self {
+		proof.0.to_vec()
+	}
+}
+impl TryFrom<Vec<u8>> for GProof {
+	type Error = u32;
+	fn try_from(data: Vec<u8>) -> Result<Self, Self::Error> {
+		if data.len() != 48 {
+			return Err(data.len() as u32);
+		};
+
+		let mut proof = [0u8; 48];
+		proof.copy_from_slice(&data);
+		Ok(GProof(proof))
 	}
 }

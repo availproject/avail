@@ -26,7 +26,7 @@ export const rpc = {
       ],
       type: "Vec<(U256, [u8; 48])>",
     },
-    queryDataProofV2: {
+    queryDataProof: {
       description: "Generate the data proof for the given `transaction_index`",
       params: [
         {

@@ -1,12 +1,9 @@
 use avail_subxt::{
-	avail::{self, Cells},
-	build_client,
-	rpc::KateRpcClient as _,
-	submit_data_finalized as submit, AvailConfig, Cell, Opts,
+	avail::Cells, primitives::GDataProof, submit::submit_data, tx, AvailClient, Cell, Opts,
 };
-use sp_keyring::AccountKeyring;
 use structopt::StructOpt;
-use subxt::{ext::sp_core::Pair, tx::PairSigner};
+use subxt::backend::rpc::RpcParams;
+use subxt_signer::sr25519::dev;
 
 const DATA: &[u8] = b"Hello World";
 
@@ -14,14 +11,25 @@ const DATA: &[u8] = b"Hello World";
 #[async_std::main]
 async fn main() -> anyhow::Result<()> {
 	let args = Opts::from_args();
-	let alice = avail::Pair::from_string_with_seed(&AccountKeyring::Alice.to_seed(), None).unwrap();
-	let signer = PairSigner::<AvailConfig, avail::Pair>::new(alice.0);
-	let (client, rpc) = build_client(args.ws, args.validate_codegen).await?;
+	let signer = dev::alice();
+	let client = AvailClient::new(args.ws).await?;
 
-	let block = submit(&client, &signer, DATA, 1).await?.block_hash();
+	let block_hash = tx::then_in_finalized_block(submit_data(&client, &signer, DATA, 1).await?)
+		.await?
+		.block_hash();
 	let cells = Cells::try_from(vec![Cell::new(0, 0)]).expect("Valid bounds .qed");
-	let proof = hex::encode(rpc.query_proof(cells, block).await?);
 
-	println!("Submitted data in block {block:?} and got proof {proof:?}");
+	let mut params = RpcParams::new();
+	params.push(cells)?;
+	params.push(Some(block_hash))?;
+
+	println!("hash: {block_hash:?}");
+	let proof: Vec<GDataProof> = client
+		.rpc()
+		.request("kate_queryProof", params)
+		.await
+		.unwrap();
+
+	println!("Submitted data in block {block_hash:?} and got proof {proof:?}");
 	Ok(())
 }

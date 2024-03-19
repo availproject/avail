@@ -13,12 +13,12 @@
     "subscribe-blocks": "npm run build && node build/node-examples/src/subscribe-blocks.js",
     "query-app-data": "npm run build && node build/node-examples/src/query-app-data.js",
     "query-proof": "npm run build && node build/node-examples/src/query-proof.js",
-    "query-proof-data": "npm run build && node build/node-examples/src/query-proof-data.js",
+    "query-data-proof": "npm run build && node build/node-examples/src/query-data-proof.js",
     "submit-proposal": "npm run build && node build/node-examples/src/submit-proposal.js",
     "dispatch-data-root": "npm run build && node build/node-examples/src/dispatch-data-root.js"
   },
   "dependencies": {
-    "avail-js-sdk": "^0.2.1"
+    "avail-js-sdk": "^0.2.2"
   },
   "devDependencies": {
     "rimraf": "^5.0.5"

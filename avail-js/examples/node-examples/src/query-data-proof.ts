@@ -20,7 +20,7 @@ const main = async () => {
 
         // After block finalization we can query for the Merkle proof of the data submitted
         const hash = status.asFinalized
-        const daHeader = await rpc.kate.queryDataProofV2(txIndex, hash)
+        const daHeader = await rpc.kate.queryDataProof(txIndex, hash)
 
         console.log(`Fetched proof from Avail for txn index ${txIndex} inside block ${hash}`)
         console.log(`Header: ${JSON.stringify(daHeader, undefined, 2)}`)
