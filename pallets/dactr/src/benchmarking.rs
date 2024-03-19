@@ -3,7 +3,8 @@
 use super::*;
 use crate::Pallet;
 use avail_core::{
-	asdr::AppUncheckedExtrinsic, AppExtrinsic, BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
+	asdr::AppUncheckedExtrinsic, AppExtrinsic, BlockLengthColumns, BlockLengthRows,
+	BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
 };
 use codec::{Decode, Encode};
 use frame_benchmarking::{
