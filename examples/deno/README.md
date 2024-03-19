@@ -42,7 +42,7 @@ export default {
 deno run -A ./examples/deno/benchmarks/query_proof.ts
 
 # To benchmark Query Data Proof V2 RPC
-deno run -A ./examples/deno/benchmarks/query_data_proof_v2.ts
+deno run -A ./examples/deno/benchmarks/query_data_proof.ts
 
 # To benchmark Query Rows RPC
 deno run -A ./examples/deno/benchmarks/query_rows.ts

@@ -12,7 +12,7 @@ use avail_subxt::{
 	tx, AvailClient, AvailConfig, Call, Opts,
 };
 
-use futures::future::join_all;
+use futures::stream::{FuturesOrdered, TryStreamExt as _};
 use structopt::StructOpt;
 use subxt::{tx::Signer as SignerT, utils::H256, Error};
 use subxt_signer::sr25519::dev;
@@ -70,7 +70,7 @@ where
 	let sudo_call = api::tx().sudo().sudo(call);
 
 	let progress = tx::send_with_nonce(client, &sudo_call, signer, 0, nonce).await?;
-	let _event = tx::then_in_block(progress)
+	let _event = tx::in_finalized(progress)
 		.await?
 		.fetch_events()
 		.await?
@@ -93,7 +93,7 @@ where
 	let batch_call = api::tx().utility().batch(vec![sudo_call]);
 
 	let progress = tx::send_with_nonce(client, &batch_call, signer, 0, nonce).await?;
-	let _ = tx::then_in_block(progress)
+	let _ = tx::in_finalized(progress)
 		.await?
 		.fetch_events()
 		.await?
@@ -122,14 +122,11 @@ where
 		let tx_2 = submit_data_with_nonce(client, signer, data.as_slice(), 2, nonce + 1).await?;
 		let tx_3 = tx::send_with_nonce(client, &sudo_call, signer, 0, nonce + 2).await?;
 
-		let in_block_fut = vec![tx_1, tx_2, tx_3]
+		let in_block = vec![tx_1, tx_2, tx_3]
 			.into_iter()
-			.map(tx::then_in_block)
-			.collect::<Vec<_>>();
-		let in_block = join_all(in_block_fut)
-			.await
-			.into_iter()
-			.collect::<Result<Vec<_>, _>>()?;
+			.map(tx::in_finalized)
+            .collect::<FuturesOrdered<_>>()
+			.try_collect::<Vec<_>>().await?;
 
 		let tx_blocks = in_block
 			.iter()
@@ -176,7 +173,7 @@ where
 	let batch_call = api::tx().utility().batch(vec![sudo_call]);
 
 	let progress = tx::send_with_nonce(client, &batch_call, signer, 0, nonce + 2).await?;
-	let events = tx::then_in_block(progress).await?.fetch_events().await?;
+	let events = tx::in_finalized(progress).await?.fetch_events().await?;
 	let event = events
 		.find_first::<SudoEvent::Sudid>()?
 		.ok_or_else(|| Error::Other("2-Fail - Sudid event is emitted .qed".to_string()))?;

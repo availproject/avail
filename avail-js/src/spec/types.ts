@@ -55,7 +55,7 @@ export const types = {
     operational: "u32",
     mandatory: "u32",
   },
-  DataProofV2: {
+  DataProof: {
     dataRoot: "H256",
     blobRoot: "H256",
     bridgeRoot: "H256",
@@ -65,11 +65,11 @@ export const types = {
     leaf: "H256",
   },
   ProofResponse: {
-    dataProof: "DataProofV2",
-    message: "Option<Message>",
+    dataProof: "DataProof",
+    message: "Option<AddressedMessage>",
   },
-  Message: {
-    messageType: "MessageType",
+  AddressedMessage: {
+    message: "Message",
     from: "H256",
     to: "H256",
     originDomain: "u32",
@@ -77,9 +77,21 @@ export const types = {
     data: "Vec<u8>",
     id: "u64",
   },
+  Message: {
+    _enum: {
+      ArbitraryMessage: "ArbitraryMessage",
+      FungibleToken: "FungibleToken",
+    },
+  },
   MessageType: {
     _enum: ["ArbitraryMessage", "FungibleToken"],
   },
+  FungibleToken: {
+    asset_id: "H256",
+    amount: "String",
+  },
+  BoundedData: "Vec<u8>",
+  ArbitraryMessage: "BoundedData",
   Cell: {
     row: "u32",
     col: "u32",

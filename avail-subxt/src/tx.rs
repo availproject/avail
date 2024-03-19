@@ -52,6 +52,16 @@ pub async fn then_in_block(mut progress: TxProgress) -> Result<TxInBlock, Error>
 	Ok(in_block)
 }
 
+pub async fn then_in_finalized_block(mut progress: TxProgress) -> Result<TxInBlock, Error> {
+	let in_block = loop {
+		let status = progress.next().await.transpose()?;
+		if let Some(TxStatus::InFinalizedBlock(in_block)) = status {
+			break in_block;
+		}
+	};
+	Ok(in_block)
+}
+
 pub async fn send<C, S, A>(
 	client: &OnlineClient<AvailConfig>,
 	call: &C,

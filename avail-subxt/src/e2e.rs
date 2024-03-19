@@ -9,8 +9,6 @@ use tokio::{
 	time::sleep,
 };
 
-use avail_subxt::rpc::*;
-
 #[derive(Debug, StructOpt)]
 pub struct E2EOpts {
 	/// Chain spec for tests
@@ -118,8 +116,8 @@ async fn run_alice_node(opts: &E2EOpts) -> Result<Child> {
 	// Wait until node is ready up to 5 secs.
 	for i in 1..=5 {
 		if let Ok(client) = WsClientBuilder::default().build(opts.ws.clone()).await {
-			if let Ok(health) = client.health().await {
-				println!("Client Health: {:?}", health);
+			if client.is_connected() {
+				println!("Client is connected");
 				break;
 			}
 		}

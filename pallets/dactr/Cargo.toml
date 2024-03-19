@@ -45,19 +45,19 @@ test-case.workspace = true
 default = [ "std" ]
 std = [
 	"avail-core/std",
-	"kate/std",
 	"codec/std",
 	"frame-support/std",
 	"frame-system/std",
+	"kate/std",
 	"log/std",
+	"pallet-transaction-payment/std",
 	"pallet-utility/std",
 	"scale-info/std",
 	"serde",
 	"sp-arithmetic/std",
-	"sp-runtime-interface/std",
-	"pallet-transaction-payment/std",
 	"sp-core/std",
 	"sp-io/std",
+	"sp-runtime-interface/std",
 	"sp-runtime/std",
 	"sp-std/std",
 ]

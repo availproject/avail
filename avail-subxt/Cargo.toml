@@ -76,10 +76,10 @@ sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polk
 
 
 [features]
-default = ["api-dev", "std", "native"]
+default = [ "api-dev", "native", "std" ]
 api-dev = []
 api-main = []
-std = ["codec/std", "sp-core/std"]
-native = ["subxt/native"]
+std = [ "codec/std", "sp-core/std" ]
+native = [ "subxt/native" ]
 
 [workspace]

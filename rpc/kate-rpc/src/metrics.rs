@@ -48,8 +48,8 @@ where
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<(BlockLength, u128)>;
 
-	#[method(name = "kate_queryDataProofV2Metrics")]
-	async fn query_data_proof_v2_metrics(
+	#[method(name = "kate_queryDataProofMetrics")]
+	async fn query_data_proof_metrics(
 		&self,
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
@@ -112,7 +112,7 @@ where
 		result.map(|r| (r, elapsed.as_micros()))
 	}
 
-	async fn query_data_proof_v2_metrics(
+	async fn query_data_proof_metrics(
 		&self,
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,

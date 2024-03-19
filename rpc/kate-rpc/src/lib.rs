@@ -314,7 +314,7 @@ where
 			.ok_or_else(|| {
 				internal_err!("Cannot to fetch tx data at tx index {tx_idx:?} at block {at:?}")
 			})?;
-		KateRpcMetrics::observe_query_data_proof_v2_execution_time(execution_start.elapsed());
+		KateRpcMetrics::observe_query_data_proof_execution_time(execution_start.elapsed());
 
 		Ok(proof)
 	}

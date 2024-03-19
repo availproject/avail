@@ -11,7 +11,7 @@ use subxt::{
 };
 
 pub mod primitives;
-use primitives::Cell;
+pub use primitives::Cell;
 pub mod avail_client;
 pub use avail_client::AvailClient;
 
@@ -57,9 +57,6 @@ pub mod avail {
 	pub type TxProgress = subxt::tx::TxProgress<AvailConfig, Client>;
 	pub type TxInBlock = subxt::tx::TxInBlock<AvailConfig, Client>;
 	pub type TxStatus = subxt::tx::TxStatus<AvailConfig, Client>;
-
-	// pub type Pair = sr25519::Pair;
-	// pub type PairSigner = subxt::tx::PairSigner<AvailConfig, Pair>;
 
 	pub type RuntimeCall = api::runtime_types::da_runtime::RuntimeCall;
 	pub type BlakeTwo256 = api::runtime_types::sp_runtime::traits::BlakeTwo256;
