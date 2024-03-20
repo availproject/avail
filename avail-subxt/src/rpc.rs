@@ -28,13 +28,14 @@ pub trait Rpc {
 #[rpc(client, namespace = "kate")]
 pub trait KateRpc {
 	#[method(name = "queryRows")]
-	async fn query_rows(&self, rows: Rows, block: H256) -> RpcResult<Vec<Vec<u8>>>;
+	async fn query_rows(&self, rows: Rows, block: H256) -> RpcResult<Vec<Vec<U256>>>;
 
 	#[method(name = "queryProof")]
 	async fn query_proof(&self, cells: Cells, block: H256) -> RpcResult<Vec<GDataProof>>;
 
 	#[method(name = "queryAppData")]
-	async fn query_app_data(&self, app_id: AppId, block: H256) -> RpcResult<Vec<Option<Vec<u8>>>>;
+	async fn query_app_data(&self, app_id: AppId, block: H256)
+		-> RpcResult<Vec<Option<Vec<U256>>>>;
 
 	#[method(name = "blockLength")]
 	async fn query_block_length(&self, block: H256) -> RpcResult<BlockLength>;
