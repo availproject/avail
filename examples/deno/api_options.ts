@@ -162,7 +162,7 @@ export const API_TYPES = {
     },
   },
   FungibleToken: {
-    asset_id: "H256",
+    assetId: "H256",
     amount: "u128",
   },
   BoundedData: "Vec<u8>",
