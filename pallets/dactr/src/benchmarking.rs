@@ -182,7 +182,7 @@ mod benchmarks {
 			info,
 			Some(AppKeyInfoFor::<T> {
 				owner: caller,
-				id: AppId(3)
+				id: AppId(10)
 			})
 		);
 
@@ -225,14 +225,14 @@ mod benchmarks {
 	fn set_application_key() -> Result<(), BenchmarkError> {
 		let origin = RawOrigin::Root;
 		let max_key_len = T::MaxAppKeyLength::get();
-		let old_key = AppKeyFor::<Test>::try_from(b"Avail".to_vec()).unwrap();
+		let old_key = AppKeyFor::<T>::try_from(b"Avail".to_vec()).unwrap();
 		let new_key = generate_bounded::<AppKeyFor<T>>(max_key_len);
 		let key_verify = new_key.clone();
 
 		#[extrinsic_call]
 		_(origin, old_key, new_key);
 
-		let info = Pallet::<T>::application_key(key_verify).unwrap();
+		let _info = Pallet::<T>::application_key(key_verify).unwrap();
 		Ok(())
 	}
 

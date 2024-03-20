@@ -328,7 +328,7 @@ mod tests {
 	const SYSTEM_CALL_SIZE: usize = size_of::<frame_system::Call<Runtime>>();
 
 	#[test_case(RUNTIME_CALL_SIZE => 192)]
-	#[test_case(DA_CALL_SIZE => 32)]
+	#[test_case(DA_CALL_SIZE => 56)]
 	#[test_case(SYSTEM_CALL_SIZE => 40)]
 	fn call_size(size: usize) -> usize {
 		const MAX_CALL_SIZE: usize = 208;
