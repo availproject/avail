@@ -152,7 +152,7 @@ impl frame_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type SS58Prefix = ();
-	type SubmittedDataExtractor = ();
+	type TxDataExtractor = ();
 	type SystemWeightInfo = ();
 	type Version = RuntimeVersion;
 }

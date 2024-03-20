@@ -108,4 +108,14 @@ impl<T: frame_system::Config> da_control::WeightInfo for WeightInfo<T> {
 			// Standard Error: 26
 			.saturating_add(Weight::from_parts(5_052, 0).saturating_mul(i.into()))
 	}
+	fn set_application_key() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `117`
+		//  Estimated: `3583`
+		// Minimum execution time: 27_288_000 picoseconds.
+		Weight::from_parts(27_784_000, 0)
+			.saturating_add(Weight::from_parts(0, 3583))
+			.saturating_add(T::DbWeight::get().reads(2))
+			.saturating_add(T::DbWeight::get().writes(2))
+	}
 }

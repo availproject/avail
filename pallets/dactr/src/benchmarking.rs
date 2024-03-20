@@ -3,8 +3,8 @@
 use super::*;
 use crate::Pallet;
 use avail_core::{
-	asdr::AppUncheckedExtrinsic, AppExtrinsic, BlockLengthColumns, BlockLengthRows, HeaderVersion,
-	OpaqueExtrinsic, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
+	asdr::AppUncheckedExtrinsic, AppExtrinsic, BlockLengthColumns, BlockLengthRows,
+	BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
 };
 use codec::{Decode, Encode};
 use frame_benchmarking::{
@@ -12,7 +12,7 @@ use frame_benchmarking::{
 };
 use frame_support::traits::Get;
 use frame_system::{
-	header_builder::hosted_header_builder, limits::BlockLength, submitted_data, RawOrigin,
+	data_root::build_tx_data, header_builder::hosted_header_builder, limits::BlockLength, RawOrigin,
 };
 use scale_info::{StaticTypeInfo, TypeInfo};
 use sp_core::H256;
@@ -114,7 +114,7 @@ fn submit_data_ext<
 	T: frame_system::Config + Send + Sync + pallet::Config + Debug + StaticTypeInfo,
 >(
 	data: AppDataFor<T>,
-) -> OpaqueExtrinsic
+) -> Vec<u8>
 where
 	T: frame_system::Config + Send + Sync + pallet::Config + Debug + StaticTypeInfo,
 	RuntimeCallOf<T>: From<DACall<T>>,
@@ -125,10 +125,8 @@ where
 		AppUncheckedExtrinsic::<(), RuntimeCallOf<T>, (), SignedExtensionUnused<T>>::new_unsigned(
 			runtime_call,
 		);
-	let encoded_call = unchecked_extrinsic.encode();
 
-	OpaqueExtrinsic::decode(&mut encoded_call.as_slice())
-		.expect("Unchecked is always decoded as opaque .qed")
+	unchecked_extrinsic.encode()
 }
 
 fn commitment_parameters<T: frame_system::Config + pallet::Config>(
@@ -184,7 +182,7 @@ mod benchmarks {
 			info,
 			Some(AppKeyInfoFor::<T> {
 				owner: caller,
-				id: AppId(3)
+				id: AppId(10)
 			})
 		);
 
@@ -224,13 +222,28 @@ mod benchmarks {
 	}
 
 	#[benchmark]
+	fn set_application_key() -> Result<(), BenchmarkError> {
+		let origin = RawOrigin::Root;
+		let max_key_len = T::MaxAppKeyLength::get();
+		let old_key = AppKeyFor::<T>::try_from(b"Avail".to_vec()).unwrap();
+		let new_key = generate_bounded::<AppKeyFor<T>>(max_key_len);
+		let key_verify = new_key.clone();
+
+		#[extrinsic_call]
+		_(origin, old_key, new_key);
+
+		let _info = Pallet::<T>::application_key(key_verify).unwrap();
+		Ok(())
+	}
+
+	#[benchmark]
 	fn data_root(i: Linear<0, { T::MaxAppDataLength::get() }>) -> Result<(), BenchmarkError> {
 		let data = generate_bounded::<AppDataFor<T>>(i);
 		let opaque = submit_data_ext::<T>(data);
 
 		#[block]
 		{
-			submitted_data::extrinsics_root_v2::<T::SubmittedDataExtractor, _>(once(&opaque), 0);
+			build_tx_data::<T::TxDataExtractor, T::Extrinsic, _, _>(1u32, once(&opaque)).root();
 		}
 
 		Ok(())
@@ -261,7 +274,7 @@ mod benchmarks {
 
 		#[block]
 		{
-			submitted_data::extrinsics_root_v2::<T::SubmittedDataExtractor, _>(calls.iter(), 0);
+			build_tx_data::<T::TxDataExtractor, T::Extrinsic, _, _>(1u32, calls.iter()).root();
 		}
 
 		Ok(())
@@ -275,14 +288,7 @@ mod benchmarks {
 
 		#[block]
 		{
-			hosted_header_builder::build(
-				txs,
-				root,
-				block_length,
-				block_number,
-				seed,
-				HeaderVersion::V3,
-			);
+			hosted_header_builder::build(txs, root, block_length, block_number, seed);
 		}
 
 		Ok(())
@@ -296,14 +302,7 @@ mod benchmarks {
 
 		#[block]
 		{
-			hosted_header_builder::build(
-				txs,
-				root,
-				block_length,
-				block_number,
-				seed,
-				HeaderVersion::V3,
-			);
+			hosted_header_builder::build(txs, root, block_length, block_number, seed);
 		}
 
 		Ok(())
@@ -317,14 +316,7 @@ mod benchmarks {
 
 		#[block]
 		{
-			hosted_header_builder::build(
-				txs,
-				root,
-				block_length,
-				block_number,
-				seed,
-				HeaderVersion::V3,
-			);
+			hosted_header_builder::build(txs, root, block_length, block_number, seed);
 		}
 
 		Ok(())

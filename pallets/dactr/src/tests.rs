@@ -234,3 +234,76 @@ mod submit_block_length_proposal {
 		})
 	}
 }
+
+mod set_application_key {
+	use super::*;
+
+	#[test]
+	fn set_application_key() {
+		new_test_ext().execute_with(|| {
+			let root: RuntimeOrigin = RawOrigin::Root.into();
+
+			let old_key = AppKeyFor::<Test>::try_from(b"Avail".to_vec()).unwrap();
+			let new_key = AppKeyFor::<Test>::try_from(b"Avail Let's goo".to_vec()).unwrap();
+
+			let old_info = DataAvailability::application_key(&old_key);
+
+			assert_ok!(DataAvailability::set_application_key(
+				root,
+				old_key.clone(),
+				new_key.clone(),
+			));
+
+			assert_eq!(DataAvailability::application_key(&new_key), old_info);
+
+			let event =
+				RuntimeEvent::DataAvailability(Event::ApplicationKeySet { old_key, new_key });
+			System::assert_last_event(event);
+		})
+	}
+
+	#[test]
+	fn app_key_cannot_be_empty() {
+		new_test_ext().execute_with(|| {
+			let root: RuntimeOrigin = RawOrigin::Root.into();
+
+			let old_key = AppKeyFor::<Test>::try_from(b"".to_vec()).unwrap();
+			let new_key = AppKeyFor::<Test>::try_from(b"Avail Let's goo".to_vec()).unwrap();
+
+			let err = DataAvailability::set_application_key(root.clone(), old_key, new_key);
+			assert_noop!(err, Error::AppKeyCannotBeEmpty);
+
+			let old_key = AppKeyFor::<Test>::try_from(b"Avail Let's goo".to_vec()).unwrap();
+			let new_key = AppKeyFor::<Test>::try_from(b"".to_vec()).unwrap();
+
+			let err = DataAvailability::set_application_key(root, old_key, new_key);
+			assert_noop!(err, Error::AppKeyCannotBeEmpty);
+		})
+	}
+
+	#[test]
+	fn app_key_already_exists() {
+		new_test_ext().execute_with(|| {
+			let root: RuntimeOrigin = RawOrigin::Root.into();
+
+			let old_key = AppKeyFor::<Test>::try_from(b"Avail".to_vec()).unwrap();
+			let new_key = AppKeyFor::<Test>::try_from(b"Reserved-1".to_vec()).unwrap();
+
+			let err = DataAvailability::set_application_key(root, old_key, new_key);
+			assert_noop!(err, Error::AppKeyAlreadyExists);
+		})
+	}
+
+	#[test]
+	fn unknown_app_key() {
+		new_test_ext().execute_with(|| {
+			let root: RuntimeOrigin = RawOrigin::Root.into();
+
+			let old_key = AppKeyFor::<Test>::try_from(b"NotExisting".to_vec()).unwrap();
+			let new_key = AppKeyFor::<Test>::try_from(b"Hello".to_vec()).unwrap();
+
+			let err = DataAvailability::set_application_key(root, old_key, new_key);
+			assert_noop!(err, Error::UnknownAppKey);
+		})
+	}
+}
