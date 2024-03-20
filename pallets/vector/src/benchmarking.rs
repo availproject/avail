@@ -4,21 +4,17 @@ use crate::{
 	RotateVerificationKey, StepVerificationKey, ValidProof,
 };
 use avail_core::data_proof::BOUNDED_DATA_MAX_LENGTH;
-use ethabi::{encode, Token};
+use avail_core::data_proof::{AddressedMessage, Message};
 use frame_benchmarking::{
 	impl_benchmark_test_suite, v2::benchmarks, whitelisted_caller, BenchmarkError,
 };
 use frame_support::traits::DefensiveTruncateFrom;
 use frame_support::{traits::Currency, BoundedVec};
-use frame_system::{
-	submitted_data::{Message, MessageType},
-	RawOrigin,
-};
+use frame_system::RawOrigin;
 use hex_literal::hex;
-use sp_core::Get;
-use sp_core::{H256, U256};
+use sp_core::{Get, H256};
 use sp_runtime::traits::Bounded;
-use sp_std::{vec, vec::Vec};
+use sp_std::vec;
 
 const ACCOUNT1: [u8; 32] = [2u8; 32];
 pub const STEP_FUNCTION_ID: H256 = H256(hex!(
@@ -182,16 +178,12 @@ mod benchmarks {
 		l: Linear<0, BOUNDED_DATA_MAX_LENGTH>,
 	) -> Result<(), BenchmarkError> {
 		let origin = RawOrigin::Signed(whitelisted_caller());
-		let kind = MessageType::ArbitraryMessage;
-		let to = H256(hex!(
-			"af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
-		));
-
-		let data: Vec<u8> = (0..l).map(|_| 0 as u8).collect();
-		let data = Some(BoundedVec::try_from(data).unwrap());
+		let message = Message::ArbitraryMessage(BoundedVec::truncate_from([0, 1, 2, 3].to_vec()));
+		let to = ROTATE_FUNCTION_ID;
+		let domain = 2;
 
 		#[extrinsic_call]
-		send_message(origin, kind, to, 2, None, None, data);
+		send_message(origin, message, to, domain);
 
 		Ok(())
 	}
@@ -200,20 +192,18 @@ mod benchmarks {
 	fn send_message_fungible_token() -> Result<(), BenchmarkError> {
 		let account = T::AccountId::from(ACCOUNT1);
 		let origin = RawOrigin::Signed(account.clone());
-		let kind = MessageType::FungibleToken;
-		let to = H256(hex!(
-			"af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
-		));
-		let value = Some(1_000_000_000_000_000_000u128);
-		let asset_id = Some(H256(hex!(
-			"4554480000000000000000000000000000000000000000000000000000000000"
-		)));
+		let message = Message::FungibleToken {
+			asset_id: ROTATE_FUNCTION_ID,
+			amount: 1_000_000_000_000_000_000u128,
+		};
+		let to = ROTATE_FUNCTION_ID;
+		let domain = 2;
 
 		// ACCOUNT1 needs to have enough funds to send 1 token
 		T::Currency::make_free_balance_be(&account, BalanceOf::<T>::max_value() / 2u32.into());
 
 		#[extrinsic_call]
-		send_message(origin, kind, to, 2, value, asset_id, None);
+		send_message(origin, message, to, domain);
 
 		Ok(())
 	}
@@ -467,44 +457,33 @@ mod benchmarks {
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
 }
 
-pub fn get_valid_message() -> Message {
-	let data = &[
-		Token::FixedBytes(H256::zero().as_bytes().to_vec()),
-		Token::Uint(U256::from(1000000000000000000u128)),
-	];
+pub fn get_valid_message() -> AddressedMessage {
+	let asset_id = H256::zero();
+	let amount = 1_000_000_000_000_000_000u128;
+	let from = hex!("681257BED628425a28B469114Dc21A7c30205cFD000000000000000000000000");
+	let to = hex!("0000000000000000000000000000000000000000000000000000000000000001");
 
-	// message = Message(0x02, bytes32(bytes20(0x681257BED628425a28B469114Dc21A7c30205cFD)), bytes32(uint256(1)), 2, 1, abi.encode(bytes32(0), 1 ether), 0)
-	let encoded = encode(data);
-	Message {
-		message_type: MessageType::FungibleToken,
-		from: H256(hex!(
-			"681257BED628425a28B469114Dc21A7c30205cFD000000000000000000000000"
-		)),
-		to: H256(hex!(
-			"0000000000000000000000000000000000000000000000000000000000000001"
-		)),
+	AddressedMessage {
+		message: Message::FungibleToken { asset_id, amount },
+		from: from.into(),
+		to: to.into(),
 		origin_domain: 2,
 		destination_domain: 1,
-		data: BoundedVec::truncate_from(encoded.to_vec()),
 		id: 0,
 	}
 }
 
-fn get_valid_amb_message() -> Message {
-	let recipient = H256(hex!(
-		"3547517355657647456b6f7847444a5044576251694b4478714b6d675a357047"
-	));
-	let encoded_data = BoundedVec::defensive_truncate_from("Hello, World!".as_bytes().to_vec());
+fn get_valid_amb_message() -> AddressedMessage {
+	let recipient = hex!("3547517355657647456b6f7847444a5044576251694b4478714b6d675a357047");
+	let from = hex!("681257BED628425a28B469114Dc21A7c30205cFD000000000000000000000000");
+	let data = BoundedVec::defensive_truncate_from("Hello, World!".as_bytes().to_vec());
 
-	Message {
-		message_type: MessageType::ArbitraryMessage,
-		from: H256(hex!(
-			"681257BED628425a28B469114Dc21A7c30205cFD000000000000000000000000"
-		)),
-		to: recipient,
+	AddressedMessage {
+		message: Message::ArbitraryMessage(data),
+		from: from.into(),
+		to: recipient.into(),
 		origin_domain: 2,
 		destination_domain: 1,
-		data: encoded_data,
 		id: 0,
 	}
 }
