@@ -131,10 +131,13 @@ export const API_TYPES = {
     operational: "u32",
     mandatory: "u32",
   },
+  TxDataRoots: {
+    dataRoot: "H256",
+    blobRoot: "H256",
+    bridgeRoot: "H256",
+  },
   DataProof: {
-    data_root: "H256",
-    blob_root: "H256",
-    bridge_root: "H256",
+    roots: "TxDataRoots",
     proof: "Vec<H256>",
     numberOfLeaves: "Compact<u32>",
     leafIndex: "Compact<u32>",
@@ -148,8 +151,8 @@ export const API_TYPES = {
     message: "Message",
     from: "H256",
     to: "H256",
-    origin_domain: "u32",
-    destination_domain: "u32",
+    originDomain: "u32",
+    destinationDomain: "u32",
     id: "u64",
   },
   Message: {
