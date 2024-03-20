@@ -246,7 +246,7 @@ mod set_application_key {
 			let old_key = AppKeyFor::<Test>::try_from(b"Avail".to_vec()).unwrap();
 			let new_key = AppKeyFor::<Test>::try_from(b"Avail Let's goo".to_vec()).unwrap();
 
-			old_info = DataAvailability::application_key(&old_key);
+			let old_info = DataAvailability::application_key(&old_key);
 
 			assert_ok!(DataAvailability::set_application_key(
 				root,
@@ -270,7 +270,7 @@ mod set_application_key {
 			let old_key = AppKeyFor::<Test>::try_from(b"".to_vec()).unwrap();
 			let new_key = AppKeyFor::<Test>::try_from(b"Avail Let's goo".to_vec()).unwrap();
 
-			let err = DataAvailability::set_application_key(root, old_key, new_key);
+			let err = DataAvailability::set_application_key(root.clone(), old_key, new_key);
 			assert_noop!(err, Error::AppKeyCannotBeEmpty);
 
 			let old_key = AppKeyFor::<Test>::try_from(b"Avail Let's goo".to_vec()).unwrap();
