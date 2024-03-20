@@ -54,7 +54,7 @@ export const API_RPC = {
                     isOptional: true
                 }
             ],
-            type: 'Vec<Option<Vec<u8>>>',
+            type: 'Vec<Option<Vec<U256>>>',
         },
         queryRows: {
             description: '',
@@ -69,7 +69,7 @@ export const API_RPC = {
                     isOptional: true
                 }
             ],
-            type: 'Vec<Vec<u8>>',
+            type: 'Vec<Vec<U256>>',
         },
         blockLengthMetrics: {
             description: "Get Block Length",
@@ -125,7 +125,7 @@ export const API_RPC = {
                     isOptional: true
                 }
             ],
-            type: '(Vec<Option<Vec<u8>>>, u128)',
+            type: '(Vec<Option<Vec<U256>>>, u128)',
         },
         queryRowsMetrics: {
             description: '',
@@ -140,7 +140,7 @@ export const API_RPC = {
                     isOptional: true
                 }
             ],
-            type: '(Vec<Vec<u8>>, u128)',
+            type: '(Vec<Vec<U256>>, u128)',
         }
     }
 }

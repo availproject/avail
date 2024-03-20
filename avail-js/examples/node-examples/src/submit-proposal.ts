@@ -18,9 +18,12 @@ const main = async () => {
       args: increaseValidatorCount.args,
     })
 
+    // Mandate the proposal
+    const mandate = api.tx.mandate.mandate(proposal)
+
     // create the motion from the proposal
     const motion = {
-      proposal: proposal,
+      proposal: mandate,
       threshold: api.registry.createType("Compact<u32>", 1),
       length_bound: api.registry.createType("Compact<u32>", 36),
     }
