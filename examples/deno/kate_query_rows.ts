@@ -38,7 +38,7 @@ console.log("Submitting TX...");
 const [blockHash, txHash] = await submitData;
 console.log(`Finalized block hash ${blockHash} and tx hash ${txHash}`);
 
-const proof = await api.rpc.kate.queryProof([{ row: 0, col: 0 }], blockHash);
-console.log(new Uint8Array(proof));
+const rows = await api.rpc.kate.queryRows([0], blockHash);
+console.log(rows.toHuman());
 
 Deno.exit(0);

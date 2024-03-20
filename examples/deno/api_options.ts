@@ -1,15 +1,34 @@
 export const API_RPC = {
   kate: {
-    blockLength: {
-      description: "Get Block Length",
+    queryRows: {
+      description: "",
       params: [
+        {
+          name: "rows",
+          type: "Vec<u32>",
+        },
         {
           name: "at",
           type: "Hash",
           isOptional: true,
         },
       ],
-      type: "BlockLength",
+      type: "Vec<GRow>",
+    },
+    queryAppData: {
+      description: "Fetches app data rows for the given app",
+      params: [
+        {
+          name: "app_id",
+          type: "AppId",
+        },
+        {
+          name: "at",
+          type: "Hash",
+          isOptional: true,
+        },
+      ],
+      type: "Vec<Option<GRow>>",
     },
     queryProof: {
       description: "Generate the kate proof for the given `cells`",
@@ -24,7 +43,18 @@ export const API_RPC = {
           isOptional: true,
         },
       ],
-      type: "Vec<(U256, [u8; 48])>",
+      type: "Vec<GDataProof>",
+    },
+    blockLength: {
+      description: "Get Block Length",
+      params: [
+        {
+          name: "at",
+          type: "Hash",
+          isOptional: true,
+        },
+      ],
+      type: "BlockLength",
     },
     queryDataProof: {
       description: "Generate the data proof for the given `transaction_index`",
@@ -40,36 +70,6 @@ export const API_RPC = {
         },
       ],
       type: "ProofResponse",
-    },
-    queryAppData: {
-      description: "Fetches app data rows for the given app",
-      params: [
-        {
-          name: "app_id",
-          type: "AppId",
-        },
-        {
-          name: "at",
-          type: "Hash",
-          isOptional: true,
-        },
-      ],
-      type: "Vec<Option<Vec<u8>>>",
-    },
-    queryRows: {
-      description: "",
-      params: [
-        {
-          name: "rows",
-          type: "Vec<u32>",
-        },
-        {
-          name: "at",
-          type: "Hash",
-          isOptional: true,
-        },
-      ],
-      type: "Vec<Vec<u8>>",
     },
   },
 };
@@ -160,7 +160,7 @@ export const API_TYPES = {
   },
   FungibleToken: {
     asset_id: "H256",
-    amount: "String",
+    amount: "u128",
   },
   BoundedData: "Vec<u8>",
   ArbitraryMessage: "BoundedData",
@@ -168,6 +168,10 @@ export const API_TYPES = {
     row: "u32",
     col: "u32",
   },
+  GRawScalar: "U256",
+  GProof: "[u8; 48]",
+  GRow: "Vec<GRawScalar>",
+  GDataProof: "(GRawScalar, GProof)"
 };
 
 export const API_EXTENSIONS = {

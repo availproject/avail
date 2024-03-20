@@ -1,15 +1,34 @@
 export const API_RPC = {
   kate: {
-    blockLength: {
-      description: "Get Block Length",
+    queryRows: {
+      description: "",
       params: [
+        {
+          name: "rows",
+          type: "Vec<u32>",
+        },
         {
           name: "at",
           type: "Hash",
           isOptional: true,
         },
       ],
-      type: "BlockLength",
+      type: "Vec<GRow>",
+    },
+    queryAppData: {
+      description: "Fetches app data rows for the given app",
+      params: [
+        {
+          name: "app_id",
+          type: "AppId",
+        },
+        {
+          name: "at",
+          type: "Hash",
+          isOptional: true,
+        },
+      ],
+      type: "Vec<Option<GRow>>",
     },
     queryProof: {
       description: "Generate the kate proof for the given `cells`",
@@ -24,7 +43,18 @@ export const API_RPC = {
           isOptional: true,
         },
       ],
-      type: "Vec<(U256, [u8; 48])>",
+      type: "Vec<GDataProof>",
+    },
+    blockLength: {
+      description: "Get Block Length",
+      params: [
+        {
+          name: "at",
+          type: "Hash",
+          isOptional: true,
+        },
+      ],
+      type: "BlockLength",
     },
     queryDataProof: {
       description: "Generate the data proof for the given `transaction_index`",
@@ -41,22 +71,7 @@ export const API_RPC = {
       ],
       type: "ProofResponse",
     },
-    queryAppData: {
-      description: "Fetches app data rows for the given app",
-      params: [
-        {
-          name: "app_id",
-          type: "AppId",
-        },
-        {
-          name: "at",
-          type: "Hash",
-          isOptional: true,
-        },
-      ],
-      type: "Vec<Option<Vec<u8>>>",
-    },
-    queryRows: {
+    queryRowsMetrics: {
       description: "",
       params: [
         {
@@ -69,18 +84,22 @@ export const API_RPC = {
           isOptional: true,
         },
       ],
-      type: "Vec<Vec<u8>>",
+      type: "(Vec<GRow>, u128)",
     },
-    blockLengthMetrics: {
-      description: "Get Block Length",
+    queryAppDataMetrics: {
+      description: "Fetches app data rows for the given app",
       params: [
+        {
+          name: "app_id",
+          type: "AppId",
+        },
         {
           name: "at",
           type: "Hash",
           isOptional: true,
         },
       ],
-      type: "(BlockLength, u128)",
+      type: "(Vec<Option<GRow>>, u128)",
     },
     queryProofMetrics: {
       description: "Generate the kate proof for the given `cells`",
@@ -95,7 +114,18 @@ export const API_RPC = {
           isOptional: true,
         },
       ],
-      type: "(Vec<(U256, [u8; 48])>, u128)",
+      type: "(Vec<GDataProof>, u128)",
+    },
+    blockLengthMetrics: {
+      description: "Get Block Length",
+      params: [
+        {
+          name: "at",
+          type: "Hash",
+          isOptional: true,
+        },
+      ],
+      type: "(BlockLength, u128)",
     },
     queryDataProofMetrics: {
       description: "Generate the data proof for the given `index`",
@@ -111,36 +141,6 @@ export const API_RPC = {
         },
       ],
       type: "(ProofResponse, u128)",
-    },
-    queryAppDataMetrics: {
-      description: "Fetches app data rows for the given app",
-      params: [
-        {
-          name: "app_id",
-          type: "AppId",
-        },
-        {
-          name: "at",
-          type: "Hash",
-          isOptional: true,
-        },
-      ],
-      type: "(Vec<Option<Vec<u8>>>, u128)",
-    },
-    queryRowsMetrics: {
-      description: "",
-      params: [
-        {
-          name: "rows",
-          type: "Vec<u32>",
-        },
-        {
-          name: "at",
-          type: "Hash",
-          isOptional: true,
-        },
-      ],
-      type: "(Vec<Vec<u8>>, u128)",
     },
   },
 };
