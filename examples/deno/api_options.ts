@@ -174,7 +174,7 @@ export const API_TYPES = {
   GRawScalar: "U256",
   GProof: "[u8; 48]",
   GRow: "Vec<GRawScalar>",
-  GDataProof: "(GRawScalar, GProof)"
+  GDataProof: "(GRawScalar, GProof)",
 };
 
 export const API_EXTENSIONS = {
