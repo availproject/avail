@@ -132,13 +132,16 @@ export const API_TYPES = {
         mandatory: 'u32'
     },
     DataProof: {
-        data_root: 'H256',
-        blob_root: 'H256',
-        bridge_root: 'H256',
-        proof: 'Vec<H256>',
-        numberOfLeaves: 'Compact<u32>',
-        leafIndex: 'Compact<u32>',
-        leaf: 'H256'
+        roots: "TxDataRoots",
+        proof: "Vec<H256>",
+        numberOfLeaves: "Compact<u32>",
+        leafIndex: "Compact<u32>",
+        leaf: "H256",
+    },
+    TxDataRoots: {
+        dataRoot: "H256",
+        blobRoot: "H256",
+        bridgeRoot: "H256",
     },
     ProofResponse: {
         dataProof: 'DataProof',
@@ -165,7 +168,7 @@ export const API_TYPES = {
         ]
     },
     FungibleToken: {
-        asset_id: 'H256',
+        assetId: 'H256',
         amount: 'String'
     },
     BoundedData: 'Vec<u8>',
