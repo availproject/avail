@@ -335,9 +335,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				48u8, 50u8, 242u8, 75u8, 127u8, 53u8, 16u8, 42u8, 126u8, 163u8, 6u8, 138u8, 218u8,
-				116u8, 142u8, 145u8, 182u8, 63u8, 20u8, 160u8, 40u8, 175u8, 59u8, 234u8, 180u8,
-				160u8, 93u8, 106u8, 99u8, 157u8, 129u8, 51u8,
+				59u8, 178u8, 12u8, 174u8, 154u8, 53u8, 79u8, 254u8, 80u8, 136u8, 54u8, 159u8,
+				225u8, 253u8, 220u8, 254u8, 238u8, 159u8, 242u8, 134u8, 224u8, 30u8, 124u8, 253u8,
+				107u8, 109u8, 182u8, 5u8, 99u8, 133u8, 57u8, 6u8,
 			]
 	}
 	pub mod system {
@@ -1385,9 +1385,9 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							128u8, 85u8, 172u8, 194u8, 194u8, 72u8, 69u8, 34u8, 232u8, 191u8, 18u8,
-							184u8, 49u8, 166u8, 181u8, 141u8, 183u8, 97u8, 215u8, 213u8, 74u8,
-							229u8, 167u8, 56u8, 85u8, 109u8, 4u8, 112u8, 39u8, 21u8, 66u8, 7u8,
+							40u8, 56u8, 19u8, 133u8, 158u8, 71u8, 115u8, 231u8, 14u8, 127u8, 200u8,
+							86u8, 36u8, 34u8, 107u8, 10u8, 133u8, 115u8, 87u8, 68u8, 136u8, 23u8,
+							37u8, 123u8, 191u8, 116u8, 120u8, 123u8, 211u8, 131u8, 53u8, 227u8,
 						],
 					)
 				}
@@ -22307,7 +22307,7 @@ pub mod api {
 				pub to: message_submitted::To,
 				pub message_type: message_submitted::MessageType,
 				pub destination_domain: message_submitted::DestinationDomain,
-				pub nonce: message_submitted::Nonce,
+				pub message_id: message_submitted::MessageId,
 			}
 			pub mod message_submitted {
 				use super::runtime_types;
@@ -22315,7 +22315,7 @@ pub mod api {
 				pub type To = ::subxt::utils::H256;
 				pub type MessageType = runtime_types::avail_core::data_proof::message::MessageType;
 				pub type DestinationDomain = ::core::primitive::u32;
-				pub type Nonce = ::core::primitive::u64;
+				pub type MessageId = ::core::primitive::u64;
 			}
 			impl ::subxt::events::StaticEvent for MessageSubmitted {
 				const PALLET: &'static str = "Vector";
@@ -32756,7 +32756,7 @@ pub mod api {
 						to: ::subxt::utils::H256,
 						message_type: runtime_types::avail_core::data_proof::message::MessageType,
 						destination_domain: ::core::primitive::u32,
-						nonce: ::core::primitive::u64,
+						message_id: ::core::primitive::u64,
 					},
 					#[codec(index = 6)]
 					#[doc = "Emit whitelisted domains that are updated."]
