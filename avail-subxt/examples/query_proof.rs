@@ -1,6 +1,10 @@
+use avail_core::AppId;
 use avail_subxt::{
-	avail::Cells, primitives::GDataProof, submit::submit_data, tx, AvailClient, Cell, Opts,
+	avail::{Cells, GDataProof},
+	submit::submit_data,
+	tx, AvailClient, Cell, Opts,
 };
+
 use structopt::StructOpt;
 use subxt::backend::rpc::RpcParams;
 use subxt_signer::sr25519::dev;
@@ -14,9 +18,10 @@ async fn main() -> anyhow::Result<()> {
 	let signer = dev::alice();
 	let client = AvailClient::new(args.ws).await?;
 
-	let block_hash = tx::then_in_finalized_block(submit_data(&client, &signer, DATA, 1).await?)
-		.await?
-		.block_hash();
+	let block_hash =
+		tx::then_in_finalized_block(submit_data(&client, &signer, DATA, AppId(1)).await?)
+			.await?
+			.block_hash();
 	let cells = Cells::try_from(vec![Cell::new(0, 0)]).expect("Valid bounds .qed");
 
 	let mut params = RpcParams::new();

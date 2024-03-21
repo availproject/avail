@@ -1,3 +1,4 @@
+use avail_core::AppId;
 use avail_subxt::{api, tx, AvailClient, BoundedVec, Opts};
 
 use futures::stream::{FuturesOrdered, TryStreamExt as _};
@@ -31,7 +32,7 @@ async fn main() -> anyhow::Result<()> {
 	let txs = calls
 		.iter()
 		.enumerate()
-		.map(|(idx, call)| tx::send_with_nonce(&client, call, &alice, 1, nonce + idx as u64))
+		.map(|(idx, call)| tx::send_with_nonce(&client, call, &alice, AppId(1), nonce + idx as u64))
 		.collect::<FuturesOrdered<_>>()
 		.try_collect::<Vec<_>>()
 		.await?;

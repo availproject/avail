@@ -1,3 +1,13 @@
+use crate::{
+	api::runtime_types::da_control::pallet::Call as DaCall,
+	avail::{Extrinsics, RuntimeCall},
+	primitives::AppUncheckedExtrinsic,
+};
+
+use avail_base::data_root::{SubmittedData, TxData};
+use avail_core::AppExtrinsic;
+use codec::{Decode, Encode};
+
 pub mod democracy {
 	use derive_more::Constructor;
 	use num_enum::TryFromPrimitive;
@@ -28,4 +38,36 @@ pub mod democracy {
 		/// 6x votes, locked for 32x...
 		Locked6x,
 	}
+}
+
+pub fn to_app_extrinsics(extrinsics: &Extrinsics) -> Vec<AppExtrinsic> {
+	extrinsics
+		.iter()
+		.filter_map(|ext_details| {
+			let raw = ext_details.ok()?.bytes().encode();
+			AppExtrinsic::decode(&mut raw.as_slice()).ok()
+		})
+		.collect()
+}
+
+pub fn submitted_data_from(extrinsics: &Extrinsics) -> Vec<SubmittedData> {
+	let tx_data = extrinsics
+		.iter()
+		.enumerate()
+		.filter_map(|(tx_idx, details)| {
+			let extrinsic = AppUncheckedExtrinsic::try_from(details.ok()?).ok()?;
+			let app_id = extrinsic.app_id();
+			if let RuntimeCall::DataAvailability(DaCall::submit_data { data }) = extrinsic.function
+			{
+				if !data.0.is_empty() {
+					let tx_idx = u32::try_from(tx_idx).ok()?;
+					let submitted = SubmittedData::new(app_id, tx_idx, data.0);
+					return Some(submitted.into());
+				}
+			}
+			None
+		})
+		.collect::<TxData>();
+
+	tx_data.submitted
 }

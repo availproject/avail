@@ -1,3 +1,4 @@
+use avail_core::AppId;
 use avail_subxt::{
 	api::{
 		self,
@@ -33,7 +34,7 @@ async fn reset<S: SignerT<AvailConfig>>(
 	let call = length_proposal_call(256, 256);
 
 	let sudo_call = api::tx().sudo().sudo(call);
-	let progress = tx::send_with_nonce(client, &sudo_call, signer, 0, nonce).await?;
+	let progress = tx::send_with_nonce(client, &sudo_call, signer, AppId(0), nonce).await?;
 	let _ = tx::then_in_block(progress).await?;
 
 	Ok(nonce + 1)
@@ -69,7 +70,7 @@ where
 	let call = length_proposal_call(BLOCK_ROWS, BLOCK_COLS);
 	let sudo_call = api::tx().sudo().sudo(call);
 
-	let progress = tx::send_with_nonce(client, &sudo_call, signer, 0, nonce).await?;
+	let progress = tx::send_with_nonce(client, &sudo_call, signer, AppId(0), nonce).await?;
 	let _event = tx::in_finalized(progress)
 		.await?
 		.fetch_events()
@@ -92,7 +93,7 @@ where
 	let sudo_call = SudoCall::sudo { call }.into();
 	let batch_call = api::tx().utility().batch(vec![sudo_call]);
 
-	let progress = tx::send_with_nonce(client, &batch_call, signer, 0, nonce).await?;
+	let progress = tx::send_with_nonce(client, &batch_call, signer, AppId(0), nonce).await?;
 	let _ = tx::in_finalized(progress)
 		.await?
 		.fetch_events()
@@ -116,11 +117,13 @@ where
 
 	let call = length_proposal_call(BLOCK_ROWS, BLOCK_COLS);
 	let sudo_call = api::tx().sudo().sudo(call);
+	let app_id = AppId(2);
 
 	let events = loop {
-		let tx_1 = submit_data_with_nonce(client, signer, data.as_slice(), 2, nonce).await?;
-		let tx_2 = submit_data_with_nonce(client, signer, data.as_slice(), 2, nonce + 1).await?;
-		let tx_3 = tx::send_with_nonce(client, &sudo_call, signer, 0, nonce + 2).await?;
+		let tx_1 = submit_data_with_nonce(client, signer, data.as_slice(), app_id, nonce).await?;
+		let tx_2 =
+			submit_data_with_nonce(client, signer, data.as_slice(), app_id, nonce + 1).await?;
+		let tx_3 = tx::send_with_nonce(client, &sudo_call, signer, AppId(0), nonce + 2).await?;
 
 		let in_block = vec![tx_1, tx_2, tx_3]
 			.into_iter()
@@ -164,16 +167,17 @@ pub async fn fail_batch_tx<S>(client: &AvailClient, signer: &S, nonce: u64) -> R
 where
 	S: SignerT<AvailConfig>,
 {
+	let app_id = AppId(2);
 	println!("2-Fail - Should fail: Batch call to reduce the dimensions of the block, after data submissions.");
 	let data = b"X".repeat(1000).to_vec();
-	let _ = submit_data_with_nonce(client, signer, data.clone(), 2, nonce).await?;
-	let _ = submit_data_with_nonce(client, signer, data, 2, nonce + 1).await?;
+	let _ = submit_data_with_nonce(client, signer, data.clone(), app_id, nonce).await?;
+	let _ = submit_data_with_nonce(client, signer, data, app_id, nonce + 1).await?;
 
 	let call = Box::new(length_proposal_call(BLOCK_ROWS, BLOCK_COLS));
 	let sudo_call = SudoCall::sudo { call }.into();
 	let batch_call = api::tx().utility().batch(vec![sudo_call]);
 
-	let progress = tx::send_with_nonce(client, &batch_call, signer, 0, nonce + 2).await?;
+	let progress = tx::send_with_nonce(client, &batch_call, signer, AppId(0), nonce + 2).await?;
 	let events = tx::in_finalized(progress).await?.fetch_events().await?;
 	let event = events
 		.find_first::<SudoEvent::Sudid>()?

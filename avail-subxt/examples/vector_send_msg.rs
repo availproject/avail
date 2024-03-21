@@ -1,6 +1,6 @@
 use avail_core::{
 	data_proof::{tx_uid, AddressedMessage, BoundedData, Message, SubTrie},
-	Keccak256,
+	AppId, Keccak256,
 };
 use avail_subxt::{
 	api, avail_client::RpcMethods, rpc::KateRpcClient as _, tx, AccountId, AvailClient, Opts,
@@ -47,7 +47,9 @@ async fn send_messages_in_same_block(client: &AvailClient) -> Result<(H256, Vec<
 		let send_progress_list = calls
 			.iter()
 			.enumerate()
-			.map(|(idx, call)| tx::send_with_nonce(&client, call, &alice, 0, nonce + idx as u64))
+			.map(|(idx, call)| {
+				tx::send_with_nonce(&client, call, &alice, AppId(0), nonce + idx as u64)
+			})
 			.collect::<FuturesOrdered<_>>()
 			.try_collect::<Vec<_>>()
 			.await?;

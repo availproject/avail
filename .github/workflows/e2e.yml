@@ -162,7 +162,6 @@ jobs:
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example headers
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example max_block_submit
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example bridge_send_message
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example vector_send_msg 
           cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal
 

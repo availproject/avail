@@ -1,5 +1,5 @@
+use avail_core::AppId;
 use avail_subxt::{
-	api::runtime_types::avail_core::AppId,
 	avail::{Cells, Rows, TxInBlock, TxProgress},
 	primitives::Cell,
 	rpc::KateRpcClient as _,
@@ -46,7 +46,13 @@ async fn main() -> anyhow::Result<()> {
 			.iter()
 			.enumerate()
 			.map(|(idx, data)| {
-				submit_data_with_nonce(&client, &alice, data.as_slice(), 1, nonce + idx as u64)
+				submit_data_with_nonce(
+					&client,
+					&alice,
+					data.as_slice(),
+					AppId(1),
+					nonce + idx as u64,
+				)
 			})
 			.collect::<FuturesOrdered<_>>()
 			.try_collect::<Vec<TxProgress>>()

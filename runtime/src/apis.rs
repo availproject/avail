@@ -4,7 +4,7 @@ use crate::{
 	OpaqueMetadata, Runtime, RuntimeCall, RuntimeGenesisConfig, SessionKeys, System,
 	TransactionPayment, LOG_TARGET,
 };
-use avail_base::ProvidePostInherent;
+use avail_base::{data_root::build_tx_data_from_opaque, ProvidePostInherent};
 use avail_core::{
 	currency::Balance,
 	data_proof::{DataProof, ProofResponse, SubTrie},
@@ -12,9 +12,9 @@ use avail_core::{
 	AppId, OpaqueExtrinsic,
 };
 use da_control::kate::{Error as RTKateError, GDataProof, GRow, RTKate};
+
 use frame_system::{
-	data_root::build_tx_data_from_opaque, header_builder::da::HeaderExtensionBuilder,
-	limits::BlockLength, HeaderExtensionBuilder as _,
+	header_builder::da::HeaderExtensionBuilder, limits::BlockLength, HeaderExtensionBuilder as _,
 };
 
 use frame_support::{
@@ -578,8 +578,8 @@ impl_runtime_apis! {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use avail_base::data_root::{BridgedData, TxData};
 	use avail_core::data_proof::{AddressedMessage, BoundedData, Message};
-	use frame_system::data_root::{BridgedData, TxData};
 	use hex_literal::hex;
 	use sp_std::{vec, vec::Vec};
 	use test_case::test_case;

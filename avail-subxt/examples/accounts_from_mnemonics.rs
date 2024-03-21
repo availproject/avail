@@ -1,4 +1,4 @@
-use avail_core::currency::Balance;
+use avail_core::{currency::Balance, AppId};
 use avail_subxt::{api, avail::AVAIL, tx, AccountId, AvailClient, AvailConfig, Opts};
 
 use anyhow::Result;
@@ -47,7 +47,7 @@ async fn main() -> Result<()> {
 	let call = api::tx()
 		.balances()
 		.transfer_keep_alive(bob_id.into(), AMOUNT);
-	let tx_in_block = tx::send_then_finalized(&client, &call, &alice, 0)
+	let tx_in_block = tx::send_then_finalized(&client, &call, &alice, AppId(0))
 		.await?
 		.block_hash();
 	println!("Transfer {AMOUNT} from Alice to Bob at {tx_in_block:?}");

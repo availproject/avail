@@ -35,7 +35,7 @@ pub type AccountIndex = u32;
 pub type Address = MultiAddress<AccountId, AccountIndex>;
 pub type Call = api::runtime_types::da_runtime::RuntimeCall;
 pub type SignaturePayload = (Address, Signature, primitives::ExtrinsicParams);
-pub type AppId = api::runtime_types::avail_core::AppId;
+pub type AppId = avail_core::AppId;
 
 /// Avail Blockchain configuration
 impl Config for AvailConfig {
@@ -57,6 +57,8 @@ pub mod avail {
 	pub type TxProgress = subxt::tx::TxProgress<AvailConfig, Client>;
 	pub type TxInBlock = subxt::tx::TxInBlock<AvailConfig, Client>;
 	pub type TxStatus = subxt::tx::TxStatus<AvailConfig, Client>;
+	pub type Extrinsics = subxt::blocks::Extrinsics<AvailConfig, Client>;
+	pub type ExtrinsicDetails = subxt::blocks::ExtrinsicDetails<AvailConfig, Client>;
 
 	pub type RuntimeCall = api::runtime_types::da_runtime::RuntimeCall;
 	pub type BlakeTwo256 = api::runtime_types::sp_runtime::traits::BlakeTwo256;

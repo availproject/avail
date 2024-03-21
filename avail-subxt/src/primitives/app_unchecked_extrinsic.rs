@@ -1,10 +1,14 @@
-use std::mem::size_of;
+use crate::{
+	avail::{ExtrinsicDetails, RuntimeCall},
+	primitives::OnlyCodecExtra,
+	Address, AppId, Signature,
+};
 
 use codec::{Compact, Decode, Encode, EncodeLike, Error, Input};
 use serde::{Deserialize, Serialize};
-use subxt::rpc::types::ChainBlockExtrinsic;
+use std::mem::size_of;
 
-use crate::{Call, SignaturePayload};
+pub type SignaturePayload = (Address, Signature, OnlyCodecExtra);
 
 /// Current version of the [`UncheckedExtrinsic`] encoded format.
 ///
@@ -20,7 +24,7 @@ pub struct AppUncheckedExtrinsic {
 	/// if this is a signed extrinsic.
 	pub signature: Option<SignaturePayload>,
 	/// The function that should be called.
-	pub function: Call,
+	pub function: RuntimeCall,
 }
 
 impl AppUncheckedExtrinsic {
@@ -34,6 +38,13 @@ impl AppUncheckedExtrinsic {
 		output.extend(inner);
 
 		output
+	}
+
+	pub fn app_id(&self) -> AppId {
+		self.signature
+			.as_ref()
+			.map(|(_, _, extra)| extra.8)
+			.unwrap_or_default()
 	}
 }
 
@@ -117,11 +128,11 @@ impl<'a> Deserialize<'a> for AppUncheckedExtrinsic {
 	}
 }
 
-impl TryFrom<ChainBlockExtrinsic> for AppUncheckedExtrinsic {
+impl TryFrom<ExtrinsicDetails> for AppUncheckedExtrinsic {
 	type Error = Error;
 
-	fn try_from(extrinsic: ChainBlockExtrinsic) -> Result<Self, Self::Error> {
-		let fixed_encoded = Self::encode_vec_compatible(&extrinsic.0);
-		<AppUncheckedExtrinsic>::decode(&mut fixed_encoded.as_slice())
+	fn try_from(extrinsic: ExtrinsicDetails) -> Result<Self, Self::Error> {
+		let encoded = extrinsic.bytes().encode();
+		Self::decode(&mut encoded.as_slice())
 	}
 }
