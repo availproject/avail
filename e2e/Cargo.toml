@@ -12,9 +12,9 @@ sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "
 subxt = "0.29"
 anyhow = "1.0.66"
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "full", "bit-vec"] }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v2.0.0.0-rc" }
-kate = { git = "https://github.com/availproject/avail-core", tag = "node-v2.0.0.0-rc" }
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v2.0.0.0-rc" }
+kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "ghali/test-matrix-weight" }
+kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/test-matrix-weight" }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "ghali/test-matrix-weight" }
 binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2" }
 serde = { version = "1.0.195", default-features = false, features = ["derive", "alloc"] }
 

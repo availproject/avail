@@ -845,7 +845,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.0"
-source = "git+https://github.com/availproject/avail-core?tag=node-v2.0.0.0-rc#56b0d5c1e0b3ae4b91222d584f6e7975ff5f5e62"
+source = "git+https://github.com/availproject/avail-core?branch=ghali/test-matrix-weight#12e37c02fd53d76d36887227fb7427d739b00102"
 dependencies = [
  "binary-merkle-tree",
  "bounded-collections",
@@ -4375,7 +4375,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.8.2"
-source = "git+https://github.com/availproject/avail-core?tag=node-v2.0.0.0-rc#56b0d5c1e0b3ae4b91222d584f6e7975ff5f5e62"
+source = "git+https://github.com/availproject/avail-core?branch=ghali/test-matrix-weight#12e37c02fd53d76d36887227fb7427d739b00102"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -4403,7 +4403,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.9.3"
-source = "git+https://github.com/availproject/avail-core?tag=node-v2.0.0.0-rc#56b0d5c1e0b3ae4b91222d584f6e7975ff5f5e62"
+source = "git+https://github.com/availproject/avail-core?branch=ghali/test-matrix-weight#12e37c02fd53d76d36887227fb7427d739b00102"
 dependencies = [
  "avail-core",
  "derive_more",

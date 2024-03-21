@@ -1,4 +1,4 @@
-use avail_core::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO};
+use avail_core::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO};
 use frame_support::{assert_noop, assert_ok, error::BadOrigin};
 use frame_system::{limits::BlockLength, RawOrigin};
 use sp_core::H256;
@@ -134,7 +134,7 @@ mod submit_block_length_proposal {
 
 			let dynamic_block_length = System::block_length();
 			let new_block_length =
-				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO)
+				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO)
 					.unwrap();
 			assert_eq!(dynamic_block_length, new_block_length);
 
@@ -157,7 +157,7 @@ mod submit_block_length_proposal {
 
 			let dynamic_block_length = System::block_length();
 			let new_block_length =
-				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO)
+				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO)
 					.unwrap();
 			assert_eq!(dynamic_block_length, new_block_length);
 
@@ -180,7 +180,7 @@ mod submit_block_length_proposal {
 
 			let dynamic_block_length = System::block_length();
 			let new_block_length =
-				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO)
+				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO)
 					.unwrap();
 			assert_eq!(dynamic_block_length, new_block_length);
 
