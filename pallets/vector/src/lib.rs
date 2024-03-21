@@ -697,7 +697,7 @@ pub mod pallet {
 				MemoryTemporaryStorage::get::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID)
 					.unwrap_or_default();
 			ensure!(
-				&local_failed_txs == &failed_txs,
+				local_failed_txs == failed_txs,
 				Error::<T>::InvalidFailedIndices
 			);
 
