@@ -40,7 +40,7 @@ jobs:
 
       - name: Setup Rust toolchain
         run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.75.0
           source "$HOME/.cargo/env"
           rustup show
 
@@ -120,7 +120,7 @@ jobs:
 
       - name: Setup Rust toolchain
         run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.75.0
           source "$HOME/.cargo/env"
           rustup show 
 
