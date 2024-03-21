@@ -346,7 +346,7 @@ mod tests {
 	fn transfer_expected() -> RuntimeCall {
 		RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death {
 			dest: MultiAddress::Id(Bob.to_account_id()),
-			value: 1 * AVAIL,
+			value: AVAIL,
 		})
 	}
 

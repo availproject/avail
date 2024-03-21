@@ -13,7 +13,8 @@ fn setup(cols: u32) -> (Vec<AppExtrinsic>, BlockLength) {
 #[bench::columns_128(setup(128))]
 #[bench::columns_256(setup(256))]
 fn commitment_builder(input: (Vec<AppExtrinsic>, BlockLength)) {
-	black_box(commitment_builder_with(input.0, input.1));
+	commitment_builder_with(input.0, input.1);
+	black_box(());
 }
 
 library_benchmark_group!(

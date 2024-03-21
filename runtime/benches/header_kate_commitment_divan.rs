@@ -1,5 +1,4 @@
 include!("header_kate_commitment.rs");
-use divan;
 
 fn main() {
 	divan::main();

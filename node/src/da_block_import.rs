@@ -69,8 +69,7 @@ where
 		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
 		let api = self.client.runtime_api();
 
-		let Ok(found) = api.check_if_extrinsic_is_post_inherent(parent_hash, &last_extrinsic)
-		else {
+		let Ok(found) = api.check_if_extrinsic_is_post_inherent(parent_hash, last_extrinsic) else {
 			return Err(err);
 		};
 
@@ -197,6 +196,6 @@ fn build_ext_fail(e: ApiError) -> ConsensusError {
 }
 
 fn block_doesnt_contain_post_inherent() -> ConsensusError {
-	let msg = format!("Block does not contain post inherent");
+	let msg = "Block does not contain post inherent".to_string();
 	ConsensusError::ClientImport(msg)
 }
