@@ -3,7 +3,7 @@ use structopt::StructOpt;
 
 // Re-export some tools from `subxt`
 pub use api::runtime_types::bounded_collections::bounded_vec::BoundedVec;
-pub use subxt::{config, utils};
+pub use subxt::{config, utils, backend::rpc::RpcParams};
 use subxt::{
 	config::substrate::BlakeTwo256,
 	utils::{AccountId32, MultiAddress, MultiSignature, H256},
