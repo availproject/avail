@@ -381,7 +381,7 @@ pub mod weight_helper {
 
 		// We compute the matrix size and multiply with the DA dispatch ratio.
 		let max_matrix_size = cols.saturating_mul(rows).saturating_mul(chunk_size);
-		let max_matrix_size_normal_ratio = DA_DISPATCH_RATIO * max_matrix_size;
+		let max_matrix_size_da_ratio = DA_DISPATCH_RATIO * max_matrix_size;
 
 		// We get the current maximum weight in a block and multiply with normal dispatch ratio.
 		let block_weights = <T as frame_system::Config>::BlockWeights::get();
@@ -389,7 +389,7 @@ pub mod weight_helper {
 			NORMAL_DISPATCH_RATIO * block_weights.max_block.ref_time();
 
 		// We compute the ratio of data length / max matrix size  and multiply with the maximum weight.
-		let data_matrix_ratio = Perbill::from_rational(data_len, max_matrix_size_normal_ratio);
+		let data_matrix_ratio = Perbill::from_rational(data_len, max_matrix_size_da_ratio);
 		let matrix_based_ref_time = data_matrix_ratio * max_weight_normal_ratio;
 
 		// We create a weight object from the matrix based weight.
