@@ -135,7 +135,7 @@ pub mod pallet {
 			to: H256,
 			message_type: MessageType,
 			destination_domain: u32,
-			nonce: u64,
+			message_id: u64,
 		},
 		/// Emit whitelisted domains that are updated.
 		WhitelistedDomainsUpdated,
@@ -450,9 +450,9 @@ pub mod pallet {
 				get_storage_root(account_proof_vec, contract_broadcaster_address, root)
 					.map_err(|_| Error::<T>::CannotGetStorageRoot)?;
 
-			let nonce = Uint(U256::from(addr_message.id));
+			let message_id = Uint(U256::from(addr_message.id));
 			let mm_idx = Uint(U256::from(T::MessageMappingStorageIndex::get()));
-			let slot_key = H256(keccak_256(ethabi::encode(&[nonce, mm_idx]).as_slice()));
+			let slot_key = H256(keccak_256(ethabi::encode(&[message_id, mm_idx]).as_slice()));
 
 			let storage_proof_vec = storage_proof
 				.iter()
@@ -747,19 +747,19 @@ pub mod pallet {
 				},
 			};
 
-			let nonce = Self::fetch_curr_tx_nonce();
+			let message_id = Self::fetch_curr_message_id();
 			Self::deposit_event(Event::MessageSubmitted {
 				from: who,
 				to,
 				message_type,
 				destination_domain: domain,
-				nonce,
+				message_id,
 			});
 
 			Ok(().into())
 		}
 
-		fn fetch_curr_tx_nonce() -> u64 {
+		fn fetch_curr_message_id() -> u64 {
 			let number = <frame_system::Pallet<T>>::block_number().saturated_into::<u32>();
 			let tx_index = <frame_system::Pallet<T>>::extrinsic_index().unwrap_or_default();
 
