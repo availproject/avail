@@ -6,6 +6,10 @@ use static_assertions::const_assert;
 /// by  Operational  extrinsics.
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(85);
 
+/// We allow `Normal` data submissions to fill up the matrix up to 100%, there is no
+/// Operational or mandatory extrinsic that goes in the matrix.
+pub const DA_DISPATCH_RATIO: Perbill = Perbill::from_percent(100);
+
 const_assert!(BLOCK_CHUNK_SIZE.get() > 0);
 pub const BLOCK_CHUNK_SIZE: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(32) };
 
