@@ -50,7 +50,7 @@ export default function Home() {
       // Init API
       let api = availApi
       if (!(api && api.isConnected)) {
-        api = await initialize()
+        api = await initialize("ws://127.0.0.1:9944")
         setAvailApi(api)
       }
 

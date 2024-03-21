@@ -30,7 +30,7 @@ func transfer(api *gsrpc.SubstrateAPI, senderSeed string, receiver string, amoun
 		return fmt.Errorf("cannot create address from given hex:%w", err)
 	}
 
-	balanceCall, err := types.NewCall(meta, "Balances.transferKeepAlive", dest, types.NewUCompactFromUInt(amount))
+	balanceCall, err := types.NewCall(meta, "Balances.transfer_keep_alive", dest, types.NewUCompactFromUInt(amount))
 	if err != nil {
 		return fmt.Errorf("cannot create balance call:%w", err)
 	}

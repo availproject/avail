@@ -40,7 +40,7 @@ jobs:
 
       - name: Setup Rust toolchain
         run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.75.0
           source "$HOME/.cargo/env"
           rustup show
 
@@ -120,7 +120,7 @@ jobs:
 
       - name: Setup Rust toolchain
         run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.75.0
           source "$HOME/.cargo/env"
           rustup show 
 
@@ -149,7 +149,7 @@ jobs:
       - name: Run Header Generation Benchmarks on Criterion 
         run: |
           mkdir -p ~/.cache/cri/
-          cargo bench -p da-runtime --bench header_kate_commitment_cri -- --color never --noplot --output-format bencher | tee ~/.cache/cri/header_gen_bench_cri.txt || true
+          cargo +1.75.0 bench -p da-runtime --bench header_kate_commitment_cri -- --color never --noplot --output-format bencher | tee ~/.cache/cri/header_gen_bench_cri.txt || true
 
       - name: Header Generation Regression Checks on Criterion 
         uses: fmiguelgarcia/github-action-benchmark@v1

@@ -59,7 +59,6 @@ pub use frame_support::{
 };
 pub use impls::BlockHashCount;
 pub use pallet_balances::Call as BalancesCall;
-use pallet_grandpa::AuthorityId as GrandpaId;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_session::historical as pallet_session_historical;
 #[cfg(feature = "std")]
