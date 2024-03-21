@@ -88,6 +88,8 @@ pub trait HeaderExtensionBuilder {
 /// Hosted function to build the header using `kate` commitments.
 #[runtime_interface]
 pub trait HostedHeaderBuilder {
+	/// Note: Whenever a new header version is introduced, ensure to create a corresponding version
+	/// of the `build` hosted function, while retaining the existing ones.
 	#[version(1)]
 	fn build(
 		submitted: Vec<AppExtrinsic>,
