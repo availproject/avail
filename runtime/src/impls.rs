@@ -1,6 +1,6 @@
 use crate::{
 	constants, prod_or_fast, voter_bags, weights, AccountId, AccountIndex, Babe, Balances, Block,
-	BlockNumber, ElectionProviderMultiPhase, Everything, Extrinsic, GrandpaId, Hash, Header,
+	BlockNumber, ElectionProviderMultiPhase, Everything, Extrinsic, Hash, Header,
 	Historical, ImOnline, ImOnlineId, Index, Indices, Moment, NominationPools, Offences,
 	OriginCaller, PalletInfo, Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent,
 	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, SessionKeys,
@@ -25,7 +25,7 @@ use frame_support::{
 		fungible::HoldConsideration,
 		tokens::{pay::PayFromAccount, Imbalance, UnityAssetBalanceConversion},
 		ConstU32, Contains, Currency, EitherOf, EitherOfDiverse, EqualPrivilegeOnly, InsideBoth,
-		InstanceFilter, KeyOwnerProofSystem, LinearStoragePrice, OnUnbalanced,
+		InstanceFilter, LinearStoragePrice, OnUnbalanced,
 	},
 	weights::{constants::RocksDbWeight, ConstantMultiplier},
 	PalletId,
@@ -37,7 +37,7 @@ use pallet_transaction_payment::{
 	CurrencyAdapter, LengthFeeAdjustment, Multiplier, TargetedFeeAdjustment,
 };
 use pallet_tx_pause::RuntimeCallNameOf;
-use sp_core::{crypto::KeyTypeId, ConstU64, RuntimeDebug};
+use sp_core::{ConstU64, RuntimeDebug};
 use sp_runtime::{
 	generic::Era,
 	traits::{self, BlakeTwo256, Bounded, Convert, IdentityLookup, OpaqueKeys},
@@ -325,8 +325,7 @@ impl pallet_babe::Config for Runtime {
 		constants::babe::ReportLongevity,
 	>;
 	type ExpectedBlockTime = constants::time::ExpectedBlockTime;
-	type KeyOwnerProof =
-		<Historical as KeyOwnerProofSystem<(KeyTypeId, pallet_babe::AuthorityId)>>::Proof;
+	type KeyOwnerProof = sp_session::MembershipProof;
 	type MaxAuthorities = constants::MaxAuthorities;
 	type MaxNominators = constants::staking::MaxNominators;
 	type WeightInfo = ();
@@ -380,7 +379,7 @@ impl pallet_grandpa::Config for Runtime {
 		Historical,
 		constants::babe::ReportLongevity,
 	>;
-	type KeyOwnerProof = <Historical as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
+	type KeyOwnerProof = sp_session::MembershipProof;
 	type MaxAuthorities = constants::MaxAuthorities;
 	type MaxNominators = constants::staking::MaxNominators;
 	type MaxSetIdSessionEntries = MaxSetIdSessionEntries;
