@@ -14,7 +14,7 @@ use sp_runtime_interface::runtime_interface;
 use sp_std::vec::Vec;
 
 #[cfg(feature = "std")]
-mod v3;
+mod version_select;
 
 pub const MIN_WIDTH: usize = 4;
 
@@ -96,7 +96,7 @@ pub trait HostedHeaderBuilder {
 		block_number: u32,
 		seed: Seed,
 	) -> HeaderExtension {
-		v3::build_extension(
+		version_select::build_extension(
 			submitted,
 			data_root,
 			block_length,
