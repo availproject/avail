@@ -2,7 +2,7 @@ use avail_core::data_proof::ProofResponse;
 
 use jsonrpsee::proc_macros::rpc;
 use serde::Deserialize;
-use sp_core::H256;
+use sp_core::{H256, U256};
 
 use crate::{
 	api::runtime_types::frame_system::limits::BlockLength,
