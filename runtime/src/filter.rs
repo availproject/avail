@@ -1,11 +1,11 @@
 use crate::{AccountId, Runtime, RuntimeCall as Call};
+use avail_base::data_root::{BridgedData, Metrics, SubmittedData, TxData, TxDataFilter};
 use avail_core::{
 	data_proof::{tx_uid, AddressedMessage},
 	AppId,
 };
 
 use da_control::Call as DACall;
-use frame_system::data_root::{BridgedData, Metrics, SubmittedData, TxData, TxDataFilter};
 use pallet_utility::Call as UtilCall;
 use pallet_vector::Call as VectorCall;
 use sp_core::H256;

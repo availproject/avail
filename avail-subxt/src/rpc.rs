@@ -1,45 +1,52 @@
-use avail_core::data_proof::ProofResponse;
-
-use jsonrpsee::proc_macros::rpc;
-use serde::Deserialize;
-use sp_core::{H256, U256};
-
 use crate::{
 	api::runtime_types::frame_system::limits::BlockLength,
-	avail::{Cells, Rows},
-	primitives::GDataProof,
+	avail::{Cells, GDataProof, GRow, Rows},
 	AppId,
 };
+use avail_core::data_proof::ProofResponse;
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct Health {
-	pub is_syncing: bool,
-	pub peers: u32,
-	pub should_have_peers: bool,
-}
-
-#[rpc(client, namespace = "system")]
-pub trait Rpc {
-	#[method(name = "health")]
-	async fn health(&self) -> RpcResult<Health>;
-}
+use derive_more::From;
+use jsonrpsee::proc_macros::rpc;
+use serde::{Deserialize, Serialize};
+use sp_core::H256;
 
 #[rpc(client, namespace = "kate")]
 pub trait KateRpc {
 	#[method(name = "queryRows")]
-	async fn query_rows(&self, rows: Rows, block: H256) -> RpcResult<Vec<Vec<U256>>>;
+	async fn query_rows(&self, rows: Rows, block: H256) -> RpcResult<Vec<GRow>>;
 
 	#[method(name = "queryProof")]
 	async fn query_proof(&self, cells: Cells, block: H256) -> RpcResult<Vec<GDataProof>>;
 
 	#[method(name = "queryAppData")]
-	async fn query_app_data(&self, app_id: AppId, block: H256)
-		-> RpcResult<Vec<Option<Vec<U256>>>>;
+	async fn query_app_data(&self, app_id: AppId, block: H256) -> RpcResult<Vec<Option<GRow>>>;
 
 	#[method(name = "blockLength")]
 	async fn query_block_length(&self, block: H256) -> RpcResult<BlockLength>;
 
 	#[method(name = "queryDataProof")]
 	async fn query_data_proof(&self, transaction_index: u32, at: H256) -> RpcResult<ProofResponse>;
+}
+
+#[derive(Debug, From, Clone, Copy, Serialize, Deserialize)]
+#[serde(try_from = "Vec<u8>", into = "Vec<u8>")]
+pub struct GProof([u8; 48]);
+
+impl From<GProof> for Vec<u8> {
+	fn from(proof: GProof) -> Self {
+		proof.0.to_vec()
+	}
+}
+
+impl TryFrom<Vec<u8>> for GProof {
+	type Error = u32;
+	fn try_from(data: Vec<u8>) -> Result<Self, Self::Error> {
+		if data.len() != 48 {
+			return Err(data.len() as u32);
+		};
+
+		let mut proof = [0u8; 48];
+		proof.copy_from_slice(&data);
+		Ok(GProof(proof))
+	}
 }

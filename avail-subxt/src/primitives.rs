@@ -3,14 +3,18 @@ use derive_more::Constructor;
 use serde::{Deserialize, Serialize};
 
 pub mod extrinsic_params;
-pub use extrinsic_params::{new_params_from_app_id, CheckAppId, ExtrinsicParams};
+pub use extrinsic_params::{
+	new_params_from_app_id, CheckAppId, Extra, ExtrinsicParams, OnlyCodecExtra,
+};
 
 pub mod header;
 pub use header::Header;
-use sp_core::U256;
 
 pub mod babe;
 pub mod grandpa;
+
+pub mod app_unchecked_extrinsic;
+pub use app_unchecked_extrinsic::AppUncheckedExtrinsic;
 
 /// Compatible with `kate::com::Cell`
 #[derive(Clone, Constructor, Debug, Serialize, Deserialize, Encode, Decode)]
@@ -34,28 +38,18 @@ where
 	}
 }
 
-// TODO: Move all types used in rpc in avail-core so we don't have to create them here
-pub type GRawScalar = U256;
-pub type GDataProof = (GRawScalar, GProof);
+use crate::{api::runtime_types::avail_core::data_proof::message::Message, BoundedVec};
+use avail_core::data_proof::Message as CMessage;
 
-#[derive(Encode, Decode, Debug, Clone, Copy)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "std", serde(try_from = "Vec<u8>", into = "Vec<u8>"))]
-pub struct GProof([u8; 48]);
-impl From<GProof> for Vec<u8> {
-	fn from(proof: GProof) -> Self {
-		proof.0.to_vec()
-	}
-}
-impl TryFrom<Vec<u8>> for GProof {
-	type Error = u32;
-	fn try_from(data: Vec<u8>) -> Result<Self, Self::Error> {
-		if data.len() != 48 {
-			return Err(data.len() as u32);
-		};
-
-		let mut proof = [0u8; 48];
-		proof.copy_from_slice(&data);
-		Ok(GProof(proof))
+impl From<CMessage> for Message {
+	fn from(m: CMessage) -> Self {
+		match m {
+			CMessage::ArbitraryMessage(data) => {
+				Message::ArbitraryMessage(BoundedVec(data.into_inner()))
+			},
+			CMessage::FungibleToken { asset_id, amount } => {
+				Message::FungibleToken { asset_id, amount }
+			},
+		}
 	}
 }

@@ -2,6 +2,7 @@
 
 use super::*;
 use crate::Pallet;
+use avail_base::data_root::build_tx_data;
 use avail_core::{
 	asdr::AppUncheckedExtrinsic, AppExtrinsic, BlockLengthColumns, BlockLengthRows,
 	BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO,
@@ -11,9 +12,7 @@ use frame_benchmarking::{
 	impl_benchmark_test_suite, v1::BenchmarkError, v2::*, whitelisted_caller,
 };
 use frame_support::traits::Get;
-use frame_system::{
-	data_root::build_tx_data, header_builder::hosted_header_builder, limits::BlockLength, RawOrigin,
-};
+use frame_system::{header_builder::hosted_header_builder, limits::BlockLength, RawOrigin};
 use scale_info::{StaticTypeInfo, TypeInfo};
 use sp_core::H256;
 use sp_runtime::{

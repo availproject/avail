@@ -1,4 +1,4 @@
-use crate::{AppId, AvailConfig};
+use crate::{api::runtime_types::sp_runtime::generic::era::Era, AppId, AvailConfig};
 
 use codec::{Compact, Encode};
 use scale_info::PortableRegistry;
@@ -14,19 +14,31 @@ use subxt::{
 	Config,
 };
 
-pub type ExtrinsicParams = AnyOf<
-	AvailConfig,
-	(
-		// CheckNonZeroSender,
-		CheckSpecVersion,
-		CheckTxVersion,
-		CheckGenesis<AvailConfig>,
-		CheckMortality<AvailConfig>,
-		CheckNonce,
-		ChargeTransactionPayment,
-		CheckAppId,
-	),
->;
+/// Type used only for decoding extrinsic from blocks.
+pub type OnlyCodecExtra = (
+	(),            // CheckNonZeroSender,
+	(),            // CheckSpecVersion<Runtime>,
+	(),            // CheckTxVersion<Runtime>,
+	(),            // CheckGenesis<Runtime>,
+	Era,           // CheckEra<Runtime>,
+	Compact<u32>,  // CheckNonce<Runtime>,
+	(),            // CheckWeight<Runtime>,
+	Compact<u128>, // ChargeTransactionPayment<Runtime>,
+	AppId,         // CheckAppId<Runtime>,
+);
+
+pub type Extra = (
+	// CheckNonZeroSender,
+	CheckSpecVersion,
+	CheckTxVersion,
+	CheckGenesis<AvailConfig>,
+	CheckMortality<AvailConfig>,
+	CheckNonce,
+	ChargeTransactionPayment,
+	CheckAppId,
+);
+
+pub type ExtrinsicParams = AnyOf<AvailConfig, Extra>;
 pub type OtherParams =
 	<ExtrinsicParams as subxt::config::ExtrinsicParams<AvailConfig>>::OtherParams;
 
@@ -45,7 +57,7 @@ pub fn new_params_from_app_id<Id: Into<AppId>>(id: Id) -> OtherParams {
 pub struct CheckAppId(pub AppId);
 
 impl<T: Config> SignedExtension<T> for CheckAppId {
-	type Decoded = AppId;
+	type Decoded = Compact<u32>;
 
 	fn matches(identifier: &str, _type_id: u32, _types: &PortableRegistry) -> bool {
 		identifier == "CheckAppId"

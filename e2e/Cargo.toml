@@ -7,17 +7,22 @@ edition = "2021"
 
 [dependencies]
 avail-subxt = { path = "../avail-subxt" }
-async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
-sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2" }
-subxt = "0.29"
-anyhow = "1.0.66"
-codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "full", "bit-vec"] }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v2.0.0.0-rc" }
-kate = { git = "https://github.com/availproject/avail-core", tag = "node-v2.0.0.0-rc" }
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v2.0.0.0-rc" }
-binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2" }
-serde = { version = "1.0.195", default-features = false, features = ["derive", "alloc"] }
+kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "main" }
+kate = { git = "https://github.com/availproject/avail-core", branch = "main" }
+avail-core = {  git = "https://github.com/availproject/avail-core", branch = "main" }
 
+# Parity
+sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2" }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2" }
+subxt = "0.34"
+subxt-signer = "0.34"
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "full", "bit-vec"] }
+binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2" }
+
+# Other
+async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
+anyhow = "1.0.66"
+serde = { version = "1.0.195", default-features = false, features = ["derive", "alloc"] }
 
 # Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
 [patch.crates-io]

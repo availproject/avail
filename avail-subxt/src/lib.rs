@@ -36,7 +36,7 @@ pub type AccountIndex = u32;
 pub type Address = MultiAddress<AccountId, AccountIndex>;
 pub type Call = api::runtime_types::da_runtime::RuntimeCall;
 pub type SignaturePayload = (Address, Signature, primitives::ExtrinsicParams);
-pub type AppId = api::runtime_types::avail_core::AppId;
+pub type AppId = avail_core::AppId;
 
 /// Avail Blockchain configuration
 impl Config for AvailConfig {
@@ -52,12 +52,14 @@ impl Config for AvailConfig {
 
 pub mod avail {
 	use super::*;
-	use sp_core::ConstU32;
+	use sp_core::{ConstU32, U256};
 
 	pub type Client = subxt::OnlineClient<AvailConfig>;
 	pub type TxProgress = subxt::tx::TxProgress<AvailConfig, Client>;
 	pub type TxInBlock = subxt::tx::TxInBlock<AvailConfig, Client>;
 	pub type TxStatus = subxt::tx::TxStatus<AvailConfig, Client>;
+	pub type Extrinsics = subxt::blocks::Extrinsics<AvailConfig, Client>;
+	pub type ExtrinsicDetails = subxt::blocks::ExtrinsicDetails<AvailConfig, Client>;
 
 	pub type RuntimeCall = api::runtime_types::da_runtime::RuntimeCall;
 	pub type BlakeTwo256 = api::runtime_types::sp_runtime::traits::BlakeTwo256;
@@ -71,6 +73,11 @@ pub mod avail {
 
 	pub type MaxRows = ConstU32<64>;
 	pub type Rows = bounded_collections::BoundedVec<u32, MaxRows>;
+
+	pub type GRawScalar = U256;
+	pub type GRow = Vec<GRawScalar>;
+	pub type GDataProof = (GRawScalar, GProof);
+	pub type GProof = crate::rpc::GProof;
 }
 
 #[allow(dead_code)]
