@@ -193,7 +193,7 @@ mod benchmarks {
 		let account = T::AccountId::from(ACCOUNT1);
 		let origin = RawOrigin::Signed(account.clone());
 		let message = Message::FungibleToken {
-			asset_id: ROTATE_FUNCTION_ID,
+			asset_id: H256::zero(),
 			amount: 1_000_000_000_000_000_000u128,
 		};
 		let to = ROTATE_FUNCTION_ID;

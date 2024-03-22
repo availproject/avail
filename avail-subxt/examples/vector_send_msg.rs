@@ -9,7 +9,6 @@ use avail_subxt::{
 use binary_merkle_tree::verify_proof;
 use derive_more::Constructor;
 use futures::stream::{FuturesOrdered, TryStreamExt as _};
-use hex_literal::hex;
 use std::collections::HashSet;
 use structopt::StructOpt;
 use subxt::{backend::BlockRef, error::RpcError, utils::H256, Error};
@@ -19,12 +18,10 @@ const DATA: &[u8] = b"Test 42";
 const DOMAIN: u32 = 2;
 
 fn messages() -> Vec<Message> {
-	let asset_id = hex!("4554480000000000000000000000000000000000000000000000000000000000");
-
 	vec![
 		Message::ArbitraryMessage(BoundedData::truncate_from(DATA.to_vec())),
 		Message::FungibleToken {
-			asset_id: H256(asset_id),
+			asset_id: H256::zero(),
 			amount: 42_000_000_000_000_000_000u128,
 		},
 	]

@@ -943,7 +943,7 @@ fn send_message_fungible_token_works() {
 
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
 		let message = Message::FungibleToken {
-			asset_id: ROTATE_FUNCTION_ID,
+			asset_id: H256::zero(),
 			amount: 100,
 		};
 		let to = ROTATE_FUNCTION_ID;
