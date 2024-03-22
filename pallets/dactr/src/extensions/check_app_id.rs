@@ -59,10 +59,12 @@ where
 		len: usize,
 	) -> TransactionValidity {
 		self.ensure_valid_app_id(call)?;
-		let all_extrinsics_len = self
-			.next_all_extrinsics_len(len)
-			.ok_or(InvalidTransaction::ExhaustsResources)?;
-		AllExtrinsicsLen::<T>::put(all_extrinsics_len);
+		if let Some(DACall::<T>::submit_data { .. }) = call.is_sub_type() {
+			let all_extrinsics_len = self
+				.next_all_extrinsics_len(len)
+				.ok_or(InvalidTransaction::ExhaustsResources)?;
+			AllExtrinsicsLen::<T>::put(all_extrinsics_len);
+		}
 
 		Ok(ValidTransaction::default())
 	}
