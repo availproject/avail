@@ -13,8 +13,8 @@ use std::{
 use avail_core::header::HeaderExtension;
 use da_control::{pallet::Call as DaControlCall, AppDataFor, CheckAppId};
 use da_runtime::{
-	AppId, Executive, Header, Runtime, RuntimeCall, RuntimeGenesisConfig, SignedExtra,
-	SignedPayload, Timestamp, UncheckedExtrinsic, AVAIL,
+	AppId, Executive, Extrinsic, Header, Runtime, RuntimeCall, RuntimeGenesisConfig, SignedExtra,
+	SignedPayload, Timestamp, AVAIL,
 };
 
 use codec::Encode;
@@ -64,11 +64,7 @@ fn runtime_ext(total_app_ids: NonZeroUsize) -> TestExternalities {
 	t.into()
 }
 
-fn submit_data(
-	nonce: u32,
-	app_id: AppId,
-	data: Vec<u8>,
-) -> Result<(UncheckedExtrinsic, RuntimeCall)> {
+fn submit_data(nonce: u32, app_id: AppId, data: Vec<u8>) -> Result<(Extrinsic, RuntimeCall)> {
 	let data = AppDataFor::<Runtime>::try_from(data).map_err(|_| anyhow!("Data too long"))?;
 	let call = RuntimeCall::DataAvailability(DaControlCall::<Runtime>::submit_data { data });
 
@@ -90,7 +86,7 @@ fn submit_data(
 	let (call, extra, _signed) = payload.deconstruct();
 	let signer = MultiAddress::from(Alice.to_account_id());
 
-	let tx = UncheckedExtrinsic::new_signed(call.clone(), signer, signature, extra);
+	let tx = Extrinsic::new_signed(call.clone(), signer, signature, extra);
 	Ok((tx, call))
 }
 
