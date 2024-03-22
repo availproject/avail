@@ -10,25 +10,41 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
+avail-core = { workspace = true, default-features = false }
+
 # Substrate related
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+sp-core = { workspace = true, default-features = false, features = ["serde"] }
 sp-std = { workspace = true, default-features = false }
 sp-api = { workspace = true, default-features = false }
+sp-io = { workspace = true, default-features = false }
 sp-runtime = { workspace = true, default-features = false }
 sp-runtime-interface = { workspace = true, default-features = false }
+frame-support = { workspace = true, default-features = false }
+binary-merkle-tree = { workspace = true, default-features = false }
 
 substrate-prometheus-endpoint = { workspace = true, optional = true }
 
 # 3rd-party
 log.workspace = true
 once_cell = { workspace = true, optional = true }
+derive_more.workspace = true
+itertools = { workspace = true, default-features = false }
+
+[dev-dependencies]
+test-case.workspace = true
+hex-literal.workspace = true
 
 [features]
 default = [ "std" ]
 std = [
+	"avail-core/std",
+	"binary-merkle-tree/std",
 	"codec/std",
+	"frame-support/std",
 	"once_cell",
 	"sp-api/std",
+	"sp-core/std",
 	"sp-runtime-interface/std",
 	"sp-runtime/std",
 	"sp-std/std",

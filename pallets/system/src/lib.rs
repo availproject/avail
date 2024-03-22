@@ -98,11 +98,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(unused_extern_crates)]
 
+use avail_base::data_root::{build_tx_data, TxDataFilter};
 use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
 	traits::{ExtendedBlock, ExtendedHeader, GetAppId, MaybeCaller},
 };
+
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
 use frame_support::{
 	dispatch::{
@@ -143,12 +145,6 @@ use sp_std::map;
 use sp_std::{fmt::Debug, marker::PhantomData, prelude::*};
 use sp_version::RuntimeVersion;
 use sp_weights::{RuntimeDbWeight, Weight};
-
-pub mod data_root;
-use data_root::{build_tx_data, TxDataFilter};
-
-mod calls_proof;
-pub use calls_proof::{calls_proof, CallsProof};
 
 pub mod header_builder;
 pub use header_builder::HeaderExtensionBuilder;

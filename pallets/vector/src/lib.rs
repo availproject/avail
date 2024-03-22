@@ -94,6 +94,7 @@ pub mod pallet {
 		InvalidMessageHash,
 		CannotDecodeData,
 		CannotDecodeDestinationAccountId,
+		/// Given AssetId is not supported
 		AssetNotSupported,
 		/// Given inputs for the selected MessageType are invalid
 		InvalidBridgeInputs,
@@ -731,10 +732,11 @@ pub mod pallet {
 			// Check MessageType and enforce the rules
 			let message_type = message.r#type();
 			match message {
-				Message::FungibleToken {
-					asset_id: _,
-					amount,
-				} => {
+				Message::FungibleToken { asset_id, amount } => {
+					ensure!(
+						SUPPORTED_ASSET_ID == asset_id,
+						Error::<T>::AssetNotSupported
+					);
 					T::Currency::transfer(
 						&who,
 						&Self::account_id(),

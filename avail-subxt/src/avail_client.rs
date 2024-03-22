@@ -1,7 +1,7 @@
 use crate::AvailConfig;
 
 use core::ops::Deref;
-use jsonrpsee::core::client::Client as JClient;
+pub use jsonrpsee::core::client::Client as RpcMethods;
 use subxt::{
 	backend::{legacy::LegacyRpcMethods, rpc::RpcClient},
 	utils::validate_url_is_secure,
@@ -10,7 +10,7 @@ use subxt::{
 
 #[derive(Debug)]
 pub struct AvailClient {
-	client: JClient,
+	rpc_methods: RpcMethods,
 	online: OnlineClient<AvailConfig>,
 	rpc: RpcClient,
 }
@@ -18,7 +18,7 @@ pub struct AvailClient {
 impl AvailClient {
 	pub async fn new<U: AsRef<str>>(ws_uri: U) -> Result<Self, Error> {
 		validate_url_is_secure(ws_uri.as_ref())?;
-		let client = jsonrpsee_helpers::client(ws_uri.as_ref())
+		let rpc_methods = jsonrpsee_helpers::client(ws_uri.as_ref())
 			.await
 			.map_err(|e| Error::Other(format!("Client cannot be created: {e:?}")))?;
 
@@ -26,7 +26,7 @@ impl AvailClient {
 		let online = OnlineClient::<AvailConfig>::from_rpc_client(rpc.clone()).await?;
 
 		Ok(AvailClient {
-			client,
+			rpc_methods,
 			online,
 			rpc,
 		})
@@ -44,8 +44,8 @@ impl AvailClient {
 		&self.online
 	}
 
-	pub fn jclient(&self) -> &JClient {
-		&self.client
+	pub fn rpc_methods(&self) -> &RpcMethods {
+		&self.rpc_methods
 	}
 }
 

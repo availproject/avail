@@ -1,5 +1,7 @@
-use avail_subxt::{api, tx, AccountId, AvailClient, BoundedVec, Opts};
+use avail_core::AppId;
+use avail_subxt::{api, tx, AvailClient, BoundedVec, Opts};
 
+use futures::stream::{FuturesOrdered, TryStreamExt as _};
 use structopt::StructOpt;
 use subxt_signer::sr25519::dev;
 
@@ -18,23 +20,35 @@ async fn main() -> anyhow::Result<()> {
 	let client = AvailClient::new(args.ws).await?;
 
 	let alice = dev::alice();
-	let alice_id: AccountId = alice.public_key().into();
-	let nonce = client.tx().account_nonce(&alice_id).await?;
-	let mut submittions = Vec::with_capacity(NUM_CHUNKS as usize);
+	let nonce = tx::nonce(&client, &alice).await?;
 
 	let start = std::time::Instant::now();
-	for i in 0..NUM_CHUNKS {
-		let data = BoundedVec(vec![(i & 255) as u8; TX_MAX_SIZE]);
-		let call = api::tx().data_availability().submit_data(data);
-		let progress = tx::send_with_nonce(&client, &call, &alice, 1, nonce + i).await?;
-		submittions.push(progress);
-	}
+	let calls = (0..NUM_CHUNKS)
+		.map(|i| {
+			let data = BoundedVec(vec![(i & 255) as u8; TX_MAX_SIZE]);
+			api::tx().data_availability().submit_data(data)
+		})
+		.collect::<Vec<_>>();
+	let txs = calls
+		.iter()
+		.enumerate()
+		.map(|(idx, call)| tx::send_with_nonce(&client, call, &alice, AppId(1), nonce + idx as u64))
+		.collect::<FuturesOrdered<_>>()
+		.try_collect::<Vec<_>>()
+		.await?;
+
 	let submittions_end = start.elapsed();
 	println!("Submittions done in {submittions_end:?}");
 
-	for (i, progress) in submittions.into_iter().enumerate() {
-		let hash = tx::then_in_block(progress).await?.block_hash();
-		println!("Finalized {i} in block: {hash:?} in {:?}", start.elapsed());
+	let in_block_txs = txs
+		.into_iter()
+		.map(tx::in_finalized)
+		.collect::<FuturesOrdered<_>>()
+		.try_collect::<Vec<_>>()
+		.await?;
+	for (i, in_block) in in_block_txs.into_iter().enumerate() {
+		let hash = in_block.block_hash();
+		println!("Finalized {i} in block: {hash:?}");
 	}
 	let end = start.elapsed();
 	println!("Finalized in {end:?}");
