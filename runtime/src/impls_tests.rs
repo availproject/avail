@@ -88,7 +88,7 @@ mod multiplier_tests {
 
 	fn run_with_system_weight<F>(w: Weight, assertions: F)
 	where
-		F: Fn() -> (),
+		F: Fn(),
 	{
 		let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::<Runtime>::default()
 			.build_storage()
@@ -102,7 +102,7 @@ mod multiplier_tests {
 
 	fn run_with_system_length<F>(l: usize, assertions: F)
 	where
-		F: Fn() -> (),
+		F: Fn(),
 	{
 		let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::<Runtime>::default()
 			.build_storage()

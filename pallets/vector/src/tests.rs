@@ -916,7 +916,7 @@ fn send_message_arbitrary_message_works() {
 			to,
 			message_type: message.r#type(),
 			destination_domain: domain,
-			nonce: tx_uid(1, 0),
+			message_id: tx_uid(1, 0),
 		};
 		let ok = Bridge::send_message(origin, message, to, domain);
 		assert_ok!(ok);
@@ -959,7 +959,7 @@ fn send_message_fungible_token_works() {
 			to,
 			message_type: message.r#type(),
 			destination_domain: domain,
-			nonce: tx_uid(1, 0),
+			message_id: tx_uid(1, 0),
 		};
 		let ok = Bridge::send_message(origin, message, to, domain);
 		assert_ok!(ok);

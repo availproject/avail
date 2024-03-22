@@ -14,7 +14,7 @@ use sp_runtime_interface::runtime_interface;
 use sp_std::vec::Vec;
 
 #[cfg(feature = "std")]
-mod v3;
+mod version_select;
 
 pub const MIN_WIDTH: usize = 4;
 
@@ -88,6 +88,8 @@ pub trait HeaderExtensionBuilder {
 /// Hosted function to build the header using `kate` commitments.
 #[runtime_interface]
 pub trait HostedHeaderBuilder {
+	/// Note: Whenever a new header version is introduced, ensure to create a corresponding version
+	/// of the `build` hosted function, while retaining the existing ones.
 	#[version(1)]
 	fn build(
 		submitted: Vec<AppExtrinsic>,
@@ -96,7 +98,7 @@ pub trait HostedHeaderBuilder {
 		block_number: u32,
 		seed: Seed,
 	) -> HeaderExtension {
-		v3::build_extension(
+		version_select::build_extension(
 			submitted,
 			data_root,
 			block_length,

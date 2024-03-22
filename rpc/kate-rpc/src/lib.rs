@@ -118,6 +118,7 @@ where
 	Client::Api: DataAvailApi<Block>,
 	// Extrinsic: TryFrom<<Block as BlockT>::Extrinsic>,
 {
+	#[allow(clippy::type_complexity)]
 	fn scope(
 		&self,
 		at: Option<Block::Hash>,

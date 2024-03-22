@@ -72,6 +72,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "afl"
+version = "0.15.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5effc0335134b5dc5dbc4c18d114db4e08af8a7e7431a4be12025bbc88eb8673"
+dependencies = [
+ "home",
+ "libc",
+ "rustc_version 0.4.0",
+ "xdg",
+]
+
+[[package]]
 name = "ahash"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -221,6 +233,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.52",
+]
+
+[[package]]
+name = "arbitrary"
+version = "1.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d5a26814d8dcb93b0e5a0ff3c6d80a8843bafb21b39e8e18a6f05471870e110"
+dependencies = [
+ "derive_arbitrary",
 ]
 
 [[package]]
@@ -2176,6 +2197,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "da-runtime-fuzz"
+version = "0.1.0"
+dependencies = [
+ "afl",
+ "anyhow",
+ "arbitrary",
+ "avail-core",
+ "da-control",
+ "da-runtime",
+ "frame-support",
+ "frame-system",
+ "libfuzzer-sys",
+ "pallet-babe",
+ "pallet-balances",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "rand",
+ "sp-core",
+ "sp-io",
+ "sp-keyring",
+ "sp-runtime",
+]
+
+[[package]]
 name = "data-encoding"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2265,6 +2310,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "derive_arbitrary"
+version = "1.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "67e77553c4162a157adbf834ebae5b415acbecbeafc7a74b0e886657506a7611"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.52",
 ]
 
 [[package]]
@@ -4504,6 +4560,17 @@ name = "libc"
 version = "0.2.153"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c198f91728a82281a64e1f4f9eeb25d82cb32a5de251c6bd1b5154d63a8e7bd"
+
+[[package]]
+name = "libfuzzer-sys"
+version = "0.4.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a96cfd5557eb82f2b83fed4955246c988d331975a002961b07c81584d107e7f7"
+dependencies = [
+ "arbitrary",
+ "cc",
+ "once_cell",
+]
 
 [[package]]
 name = "libloading"
@@ -11805,6 +11872,12 @@ dependencies = [
  "thiserror",
  "time",
 ]
+
+[[package]]
+name = "xdg"
+version = "2.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "213b7324336b53d2414b2db8537e56544d981803139155afa84f76eeebb7a546"
 
 [[package]]
 name = "yamux"

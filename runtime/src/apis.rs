@@ -384,10 +384,7 @@ impl_runtime_apis! {
 			};
 
 
-			match vector_pallet_call {
-				pallet_vector::Call::failed_send_message_txs {failed_txs: _} => true,
-				_ => false,
-			}
+			matches!(vector_pallet_call, pallet_vector::Call::failed_send_message_txs {failed_txs: _})
 		}
 	}
 
@@ -616,7 +613,7 @@ mod tests {
 	fn kate_data_proof(raw_extrinsics: Vec<Vec<u8>>) -> TxData {
 		let extrinsics = raw_extrinsics
 			.into_iter()
-			.map(|raw| OpaqueExtrinsic(raw))
+			.map(OpaqueExtrinsic)
 			.collect::<Vec<OpaqueExtrinsic>>();
 		build_tx_data_from_opaque::<RTExtractor, RTExtrinsic, _, _>(0, extrinsics)
 	}
