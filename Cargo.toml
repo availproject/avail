@@ -10,7 +10,7 @@ members = [
 	"patricia-merkle-trie",
 	"client/basic-authorship",
 	"runtime",
-	# "runtime/fuzz",
+	"runtime/fuzz",
 	"node",
 ]
 
