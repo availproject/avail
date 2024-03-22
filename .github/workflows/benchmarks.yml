@@ -73,7 +73,7 @@ jobs:
           sudo dpkg -S `which valgrind`
           valgrind --version
           mkdir -p ~/.cache/iai/
-          cargo bench -p da-runtime --bench header_kate_commitment_iai | tee ~/.cache/iai/header_gen_bench_iai.txt || true
+          cargo +1.75.0 bench -p da-runtime --bench header_kate_commitment_iai | tee ~/.cache/iai/header_gen_bench_iai.txt || true
           find ./runtime/target/iai -type f
 
       - name: Header Generation Regression Checks on IAI
