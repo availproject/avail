@@ -13,6 +13,7 @@ avail-core = {  git = "https://github.com/availproject/avail-core", branch = "ma
 
 # Parity
 sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2" }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2" }
 subxt = "0.34"
 subxt-signer = "0.34"
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "full", "bit-vec"] }

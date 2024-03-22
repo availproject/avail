@@ -39,13 +39,13 @@ hex-literal.workspace = true
 default = [ "std" ]
 std = [
 	"avail-core/std",
-	"codec/std",
-	"once_cell",
 	"binary-merkle-tree/std",
+	"codec/std",
+	"frame-support/std",
+	"once_cell",
 	"sp-api/std",
 	"sp-core/std",
 	"sp-runtime-interface/std",
-	"frame-support/std",
 	"sp-runtime/std",
 	"sp-std/std",
 	"substrate-prometheus-endpoint",
