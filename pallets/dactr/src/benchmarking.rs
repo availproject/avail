@@ -151,8 +151,7 @@ where
 	}
 
 	let block_length =
-		BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO)
-			.unwrap();
+		BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO).unwrap();
 	let data: Vec<u8> = generate_bounded::<AppDataFor<T>>(data_length).to_vec();
 	let txs = vec![AppExtrinsic::from(data.to_vec()); nb_tx as usize];
 

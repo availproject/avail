@@ -6,6 +6,7 @@ use avail_core::{
 	AppId, BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO,
 	NORMAL_DISPATCH_RATIO,
 };
+use codec::{Compact, CompactLen as _};
 use frame_support::{dispatch::DispatchClass, traits::Get, weights::Weight};
 use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
 #[cfg(feature = "std")]
@@ -356,7 +357,7 @@ impl<T: Config> Pallet<T> {
 		let current_normal_weight: &Weight = current_weight.get(DispatchClass::Normal);
 		let acceptable_limit: Weight =
 			T::WeightInfo::submit_block_length_proposal().saturating_mul(5);
-		current_normal_weight.all_gte(acceptable_limit)
+		current_normal_weight.all_lte(acceptable_limit)
 	}
 }
 
@@ -368,6 +369,15 @@ pub mod weight_helper {
 	pub fn submit_data<T: Config>(data_len: usize) -> (Weight, DispatchClass) {
 		/* Compute regular substrate weight. */
 		let data_len: u32 = data_len.saturated_into();
+		let data_prefix_len: u32 = match compact_len(&data_len) {
+			Some(value) => value,
+			None => 4, // We imply the maximum
+		};
+		// Get the encoded len.
+		let encoded_data_len: u32 = match data_len.checked_add(data_prefix_len) {
+			Some(l) => l,
+			None => data_len,
+		};
 		let basic_weight = T::WeightInfo::submit_data(data_len);
 		let data_root_weight = T::WeightInfo::data_root(data_len);
 		let regular_weight = basic_weight.saturating_add(data_root_weight);
@@ -379,29 +389,35 @@ pub mod weight_helper {
 		let rows: u32 = current_block_dimension.rows.0;
 		let chunk_size: u32 = 32;
 
-		// We compute the matrix size and multiply with the DA dispatch ratio.
-		let max_matrix_size = cols.saturating_mul(rows).saturating_mul(chunk_size);
-		let max_matrix_size_da_ratio = DA_DISPATCH_RATIO * max_matrix_size;
+		// We compute the maximum numbers of scalars in the matrix and multiply with the DA dispatch ratio.
+		let max_scalar_da_ratio = DA_DISPATCH_RATIO * cols.saturating_mul(rows);
 
 		// We get the current maximum weight in a block and multiply with normal dispatch ratio.
 		let block_weights = <T as frame_system::Config>::BlockWeights::get();
 		let max_weight_normal_ratio: u64 =
 			NORMAL_DISPATCH_RATIO * block_weights.max_block.ref_time();
 
-		// We compute the ratio of data length / max matrix size  and multiply with the maximum weight.
-		let data_matrix_ratio = Perbill::from_rational(data_len, max_matrix_size_da_ratio);
-		let matrix_based_ref_time = data_matrix_ratio * max_weight_normal_ratio;
+		// We compute the number of scalars
+		let nb_scalar = encoded_data_len
+			.saturating_add(chunk_size - 1)
+			.saturating_div(chunk_size - 1);
 
-		// We create a weight object from the matrix based weight.
-		let matrix_based_weight =
-			Weight::from_parts(matrix_based_ref_time, regular_weight.proof_size());
+		// We compute the ratio of nb scalars / max scalars in the matrix and multiply with the maximum weight.
+		let data_scalar_ratio = Perbill::from_rational(nb_scalar, max_scalar_da_ratio);
+		let ref_time = data_scalar_ratio * max_weight_normal_ratio;
+		let scalar_based_weight = Weight::from_parts(ref_time, regular_weight.proof_size());
 
-		// We return the biggest value between the regular weight and matrix based weight.
+		// We return the biggest value between the regular weight and scalar based weight.
 		// I cannot think of a case where regular weight > matrix based weight.
 		(
-			matrix_based_weight.max(regular_weight),
+			scalar_based_weight.max(regular_weight),
 			DispatchClass::Normal,
 		)
+	}
+
+	fn compact_len(value: &u32) -> Option<u32> {
+		let len = Compact::<u32>::compact_len(value);
+		u32::try_from(len).ok()
 	}
 }
 
