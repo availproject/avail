@@ -62,7 +62,7 @@ construct_runtime!(
 	}
 );
 
-const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(85);
+const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 const MAX_BLOCK_WEIGHT: Weight = Weight::from_parts(1024, u64::MAX);
 
 parameter_types! {
