@@ -64,6 +64,11 @@ pub enum InvalidTransactionCustomId {
 	ForbiddenAppId = 138,
 	/// Max recursion was reached for a call with AppId != 0.
 	MaxRecursionExceeded = 139,
+	/// DA::submit_data calls are forbidden to be in Batch calls
+	UnexpectedSubmitDataCall = 140,
+	/// Vector::send_message calls are forbidden to be in Batch calls
+	UnexpectedSendMessageCall = 141,
+
 }
 
 #[derive(

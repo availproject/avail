@@ -19,6 +19,12 @@ impl<A, B, C, D, E, F, G, H, I: GetAppId> GetAppId for (A, B, C, D, E, F, G, H, 
 	}
 }
 
+impl<A, B, C, D, E, F, G, H, I: GetAppId, J> GetAppId for (A, B, C, D, E, F, G, H, I, J) {
+	fn app_id(&self) -> AppId {
+		self.8.app_id()
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
