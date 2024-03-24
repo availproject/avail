@@ -68,7 +68,6 @@ pub enum InvalidTransactionCustomId {
 	UnexpectedSubmitDataCall = 140,
 	/// Vector::send_message calls are forbidden to be in Batch calls
 	UnexpectedSendMessageCall = 141,
-
 }
 
 #[derive(
