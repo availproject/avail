@@ -7,6 +7,7 @@ use frame_system::{
 };
 use pallet_transaction_payment::CurrencyAdapter;
 use sp_runtime::{AccountId32, BuildStorage};
+use frame_support::weights::WeightToFee;
 
 use crate::{self as da_control, *};
 
@@ -40,9 +41,19 @@ impl frame_system::Config for Test {
 	type Lookup = sp_runtime::traits::IdentityLookup<AccountId32>;
 }
 
+pub struct TestLengthToFeeU64;
+
+impl WeightToFee for TestLengthToFeeU64 {
+	type Balance = u64;
+
+	fn weight_to_fee(_weight: &Weight) -> Self::Balance {
+		0
+	}
+}
+
 #[derive_impl(pallet_transaction_payment::config_preludes::TestDefaultConfig as pallet_transaction_payment::DefaultConfig)]
 impl pallet_transaction_payment::Config for Test {
-	type LengthToFee = pallet_transaction_payment::TestLengthToFeeU64;
+	type LengthToFee = TestLengthToFeeU64;
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type WeightToFee = IdentityFee<Balance>;
 }
