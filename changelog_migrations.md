@@ -6,7 +6,7 @@ Label Legend:
 
 # v2.0.0.0 Changelog
 ## Native
-- Binary name changed from `data-avail` to `avail-data`
+- Binary name changed from `data-avail` to `avail-node`
 - Added chain specification for new testnet and mainnet.
 - Updated Polkadot-SDK dependency to v1.7.1
 - **Batch calls that contain DataSubmit txs or Bridge txs are now banned from usage.**
@@ -21,6 +21,7 @@ Label Legend:
 - Removed Nomad Bridge.
 - Removed Bounties.
 - Removed Technical Membership.
+- Added Treasury Committee.
 
 ## SDKs
 - Updated Avail-subxt subxt dependency from v0.29 to v0.34
