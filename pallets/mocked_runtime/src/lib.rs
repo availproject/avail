@@ -157,42 +157,22 @@ impl frame_system::Config for Runtime {
 	type Version = RuntimeVersion;
 }
 
+#[derive_impl(pallet_transaction_payment::config_preludes::TestDefaultConfig as pallet_transaction_payment::DefaultConfig)]
 impl pallet_transaction_payment::Config for Runtime {
-	type FeeMultiplierUpdate = ();
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
-	type OperationalFeeMultiplier = OperationalFeeMultiplier;
-	type RuntimeEvent = RuntimeEvent;
 	type WeightToFee = IdentityFee<Balance>;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig as pallet_balances::DefaultConfig)]
 impl pallet_balances::Config for Runtime {
 	type AccountStore = System;
 	type Balance = Balance;
-	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
-	type FreezeIdentifier = [u8; 8];
-	type MaxFreezes = ConstU32<2>;
-	type MaxLocks = ();
-	type MaxReserves = ();
-	type ReserveIdentifier = [u8; 8];
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeHoldReason = ();
-	type RuntimeFreezeReason = ();
-	type WeightInfo = ();
 }
 
-impl da_control::Config for Runtime {
-	type BlockLenProposalId = u32;
-	type MaxAppDataLength = MaxAppDataLength;
-	type MaxAppKeyLength = MaxAppKeyLength;
-	type MaxBlockCols = MaxBlockCols;
-	type MaxBlockRows = MaxBlockRows;
-	type MinBlockCols = MinBlockCols;
-	type MinBlockRows = MinBlockRows;
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = da_control::weights::SubstrateWeight<Runtime>;
-}
+#[derive_impl(da_control::config_preludes::TestDefaultConfig)]
+impl da_control::Config for Runtime {}
 
 impl custom::custom::Config for Runtime {}
 

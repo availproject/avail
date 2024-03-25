@@ -320,5 +320,5 @@ mod benchmarks {
 		Ok(())
 	}
 
-	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
+	impl_benchmark_test_suite!(Pallet, crate::mock::new_benchmark_ext(), crate::mock::Test);
 }

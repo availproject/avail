@@ -10,7 +10,7 @@ use frame_system::{
 	test_utils::TestRandomness,
 };
 use pallet_transaction_payment::CurrencyAdapter;
-use sp_runtime::{traits::ConstU32, BuildStorage};
+use sp_runtime::BuildStorage;
 
 use crate::{self as da_control, *};
 
@@ -40,32 +40,22 @@ parameter_types! {
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
 	type AccountData = pallet_balances::AccountData<Balance>;
-	type BaseCallFilter = frame_support::traits::Everything;
 	type Block = Block;
 	type BlockHashCount = BlockHashCount;
 	type HeaderExtensionBuilder = HeaderExtensionBuilder<Test>;
-	type OnSetCode = ();
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Test>;
-	type RuntimeCall = RuntimeCall;
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeOrigin = RuntimeOrigin;
-	type TxDataExtractor = ();
 	type Extrinsic = Extrinsic;
-	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
-	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
 
 parameter_types! {
 	pub const TransactionByteFee: Balance = 1;
-	pub const OperationalFeeMultiplier: u8 = 5;
 }
+
+#[derive_impl(pallet_transaction_payment::config_preludes::TestDefaultConfig as pallet_transaction_payment::DefaultConfig)]
 impl pallet_transaction_payment::Config for Test {
-	type FeeMultiplierUpdate = ();
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
-	type OperationalFeeMultiplier = OperationalFeeMultiplier;
-	type RuntimeEvent = RuntimeEvent;
 	type WeightToFee = IdentityFee<Balance>;
 }
 
@@ -73,20 +63,11 @@ parameter_types! {
 	pub const MaxReserves: u32 = 2;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig as pallet_balances::DefaultConfig)]
 impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type Balance = Balance;
-	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
-	type FreezeIdentifier = [u8; 8];
-	type MaxFreezes = ConstU32<2>;
-	type MaxLocks = ();
-	type MaxReserves = MaxReserves;
-	type ReserveIdentifier = [u8; 8];
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeHoldReason = ();
-	type RuntimeFreezeReason = ();
-	type WeightInfo = ();
 }
 
 impl pallet_utility::Config for Test {
@@ -96,28 +77,38 @@ impl pallet_utility::Config for Test {
 	type WeightInfo = ();
 }
 
-parameter_types! {
-	pub const MaxAppKeyLength: u32 = 32;
-	pub const MaxAppDataLength: u32 = 512 * 1024; // 512 Kb
-	pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
-	pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
-	pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(32);
-	pub const MaxBlockCols: BlockLengthColumns = ::kate::config::MAX_BLOCK_COLUMNS;
-}
-
 #[derive_impl(da_control::config_preludes::TestDefaultConfig)]
-impl da_control::Config for Test {
-	type MaxAppDataLength = MaxAppDataLength;
-	type MaxAppKeyLength = MaxAppKeyLength;
-	type MaxBlockCols = MaxBlockCols;
-	type MaxBlockRows = MaxBlockRows;
-	type MinBlockCols = MinBlockCols;
-	type MinBlockRows = MinBlockRows;
-	type RuntimeEvent = RuntimeEvent;
-}
+impl da_control::Config for Test {}
 
 /// Create new externalities for `System` module tests.
 pub fn new_test_ext() -> sp_io::TestExternalities {
+	let mut storage = frame_system::GenesisConfig::<Test>::default()
+		.build_storage()
+		.unwrap();
+
+	pallet_balances::GenesisConfig::<Test> {
+		balances: vec![(1, 10_000 * AVAIL), (2, 5_000 * AVAIL), (3, 1_000 * AVAIL)],
+	}
+	.assimilate_storage(&mut storage)
+	.unwrap();
+
+	da_control::GenesisConfig::<Test> {
+		app_keys: vec![
+			(b"Avail".to_vec(), (1, 0)),
+			(b"Reserved-1".to_vec(), (2, 1)),
+			(b"A Brave New World".to_vec(), (2, 2)),
+		],
+	}
+	.assimilate_storage(&mut storage)
+	.unwrap();
+
+	let mut ext = sp_io::TestExternalities::new(storage);
+	ext.execute_with(|| System::set_block_number(1));
+	ext
+}
+
+/// Create new externalities for Benchmarks
+pub fn new_benchmark_ext() -> sp_io::TestExternalities {
 	let mut storage = frame_system::GenesisConfig::<Test>::default()
 		.build_storage()
 		.unwrap();

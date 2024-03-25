@@ -3,11 +3,11 @@ use frame_support::{assert_noop, assert_ok, error::BadOrigin};
 use frame_system::{limits::BlockLength, RawOrigin};
 use sp_core::H256;
 
+use crate::config_preludes::{
+	MaxAppDataLength, MaxBlockCols, MaxBlockRows, MinBlockCols, MinBlockRows,
+};
 use crate::{
-	mock::{
-		new_test_ext, DataAvailability, MaxAppDataLength, MaxBlockCols, MaxBlockRows, MinBlockCols,
-		MinBlockRows, RuntimeEvent, RuntimeOrigin, System, Test,
-	},
+	mock::{new_test_ext, DataAvailability, RuntimeEvent, RuntimeOrigin, System, Test},
 	AppDataFor, AppKeyFor, AppKeyInfoFor, Event,
 };
 
