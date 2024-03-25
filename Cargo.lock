@@ -875,7 +875,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.0"
-source = "git+https://github.com/availproject/avail-core?branch=main#6c1932ccd95be861c09e84408f1796de5e98eff8"
+source = "git+https://github.com/availproject/avail-core?branch=main#424ee429135dae04be5150db0699be4e9cd4892b"
 dependencies = [
  "binary-merkle-tree",
  "bounded-collections",
@@ -2330,7 +2330,7 @@ checksum = "67e77553c4162a157adbf834ebae5b415acbecbeafc7a74b0e886657506a7611"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.52",
+ "syn 2.0.53",
 ]
 
 [[package]]
@@ -4447,7 +4447,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.8.2"
-source = "git+https://github.com/availproject/avail-core?branch=main#6c1932ccd95be861c09e84408f1796de5e98eff8"
+source = "git+https://github.com/availproject/avail-core?branch=main#424ee429135dae04be5150db0699be4e9cd4892b"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -4475,7 +4475,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.9.3"
-source = "git+https://github.com/availproject/avail-core?branch=main#6c1932ccd95be861c09e84408f1796de5e98eff8"
+source = "git+https://github.com/availproject/avail-core?branch=main#424ee429135dae04be5150db0699be4e9cd4892b"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -6370,16 +6370,15 @@ dependencies = [
 
 [[package]]
 name = "pallet-transaction-payment"
-version = "4.0.0-dev"
+version = "28.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch-2#421b75ae1795b6c4e9a362b214395b3910ed5b8c"
 dependencies = [
  "frame-support",
  "frame-system",
- "log",
- "pallet-balances",
  "parity-scale-codec",
  "scale-info",
  "serde",
- "serde_json",
+ "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -6387,7 +6386,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-transaction-payment-rpc"
-version = "4.0.0-dev"
+version = "30.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch-2#421b75ae1795b6c4e9a362b214395b3910ed5b8c"
 dependencies = [
  "jsonrpsee",
  "pallet-transaction-payment-rpc-runtime-api",
@@ -6402,7 +6402,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-transaction-payment-rpc-runtime-api"
-version = "4.0.0-dev"
+version = "28.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch-2#421b75ae1795b6c4e9a362b214395b3910ed5b8c"
 dependencies = [
  "pallet-transaction-payment",
  "parity-scale-codec",

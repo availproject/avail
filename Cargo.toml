@@ -5,7 +5,6 @@ members = [
 	"pallets/dactr",
 	"pallets/mandate",
 	"pallets/system",
-	"pallets/transaction-payment",
 	"pallets/vector",
 	"patricia-merkle-trie",
 	"client/basic-authorship",
@@ -42,9 +41,6 @@ sc-basic-authorship = { path = "client/basic-authorship", default-features = fal
 frame-system = { path = "pallets/system", default-features = false }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api", default-features = false }
 frame-system-benchmarking = { path = "pallets/system/benchmarking", default-features = false }
-pallet-transaction-payment = { path = "pallets/transaction-payment", default-features = false }
-pallet-transaction-payment-rpc = { path = "pallets/transaction-payment/rpc", default-features = false }
-pallet-transaction-payment-rpc-runtime-api = { path = "pallets/transaction-payment/rpc/runtime-api", default-features = false }
 
 
 # benchmarking
@@ -185,6 +181,9 @@ pallet-nomination-pools-runtime-api = { git = "https://github.com/availproject/p
 pallet-identity = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2", default-features = false }
 pallet-proxy = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2", default-features = false }
 pallet-tx-pause = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2", default-features = false }
+pallet-transaction-payment = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2", default-features = false }
+pallet-transaction-payment-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2", default-features = false }
+pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2", default-features = false }
 pallet-staking-reward-fn = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2", default-features = false }
 substrate-wasm-builder = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2", default-features = false }
 sc-cli = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2", default-features = false }
@@ -239,9 +238,6 @@ substrate-prometheus-endpoint = { git = "https://github.com/availproject/polkado
 frame-system = { path = "pallets/system" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
-pallet-transaction-payment = { path = "pallets/transaction-payment" }
-pallet-transaction-payment-rpc = { path = "pallets/transaction-payment/rpc" }
-pallet-transaction-payment-rpc-runtime-api = { path = "pallets/transaction-payment/rpc/runtime-api" }
 
 [patch."https://github.com/paritytech/polkadot-sdk"]
 sp-crypto-ec-utils = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2" }
