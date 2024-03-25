@@ -474,7 +474,7 @@
           ],
           "genesisTime": 1655733600,
           "genesisValidatorRoot": "0xd8ea171f3c94aea21ebc42a1ed61052acf3f9209c00e4efbaaddac09ed9b8078",
-          "period": 565,
+          "period": 566,
           "rotateVerificationKey": [
             123,
             34,
@@ -6723,7 +6723,7 @@
             125,
             125
           ],
-          "syncCommitteePoseidon": "0xaf1f1f7a7ad38b0a11f1e51e9189a63336a853a23f94ecdd1112d7c7b190521",
+          "syncCommitteePoseidon": "0x03bb653a74fff851a48ad577e9bdafd6ab8b73726b7f3056f0e3c94b456de502",
           "whitelistedDomains": [
             2
           ]
