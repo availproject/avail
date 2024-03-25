@@ -335,9 +335,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				59u8, 178u8, 12u8, 174u8, 154u8, 53u8, 79u8, 254u8, 80u8, 136u8, 54u8, 159u8,
-				225u8, 253u8, 220u8, 254u8, 238u8, 159u8, 242u8, 134u8, 224u8, 30u8, 124u8, 253u8,
-				107u8, 109u8, 182u8, 5u8, 99u8, 133u8, 57u8, 6u8,
+				30u8, 210u8, 82u8, 100u8, 154u8, 236u8, 22u8, 25u8, 205u8, 227u8, 14u8, 58u8, 95u8,
+				120u8, 242u8, 225u8, 211u8, 26u8, 213u8, 192u8, 224u8, 54u8, 231u8, 189u8, 117u8,
+				2u8, 169u8, 26u8, 207u8, 97u8, 202u8, 182u8,
 			]
 	}
 	pub mod system {
@@ -5054,11 +5054,6 @@ pub mod api {
 					pub type NextFeeMultiplier =
 						runtime_types::sp_arithmetic::fixed_point::FixedU128;
 				}
-				pub mod next_length_multiplier {
-					use super::runtime_types;
-					pub type NextLengthMultiplier =
-						runtime_types::sp_arithmetic::fixed_point::FixedU128;
-				}
 				pub mod storage_version {
 					use super::runtime_types;
 					pub type StorageVersion = runtime_types::pallet_transaction_payment::Releases;
@@ -5084,26 +5079,6 @@ pub mod api {
 							147u8, 213u8, 59u8, 80u8, 139u8, 35u8, 36u8, 196u8, 152u8, 19u8, 9u8,
 							159u8, 176u8, 79u8, 249u8, 201u8, 170u8, 1u8, 129u8, 79u8, 146u8,
 							197u8,
-						],
-					)
-				}
-				pub fn next_length_multiplier(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					types::next_length_multiplier::NextLengthMultiplier,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"TransactionPayment",
-						"NextLengthMultiplier",
-						vec![],
-						[
-							105u8, 206u8, 224u8, 246u8, 81u8, 232u8, 83u8, 112u8, 5u8, 40u8, 153u8,
-							27u8, 57u8, 168u8, 89u8, 200u8, 130u8, 38u8, 57u8, 222u8, 66u8, 23u8,
-							25u8, 34u8, 222u8, 32u8, 171u8, 208u8, 101u8, 175u8, 137u8, 106u8,
 						],
 					)
 				}
@@ -32683,6 +32658,7 @@ pub mod api {
 					#[codec(index = 24)]
 					CannotDecodeDestinationAccountId,
 					#[codec(index = 25)]
+					#[doc = "Given AssetId is not supported"]
 					AssetNotSupported,
 					#[codec(index = 26)]
 					#[doc = "Given inputs for the selected MessageType are invalid"]

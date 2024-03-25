@@ -33,9 +33,7 @@ use frame_support::{
 use frame_system::{limits::BlockLength, EnsureRoot, EnsureRootWithSuccess, EnsureWithSuccess};
 use pallet_election_provider_multi_phase::{GeometricDepositBase, SolutionAccuracyOf};
 use pallet_identity::legacy::IdentityInfo;
-use pallet_transaction_payment::{
-	CurrencyAdapter, LengthFeeAdjustment, Multiplier, TargetedFeeAdjustment,
-};
+use pallet_transaction_payment::{CurrencyAdapter, Multiplier, TargetedFeeAdjustment};
 use pallet_tx_pause::RuntimeCallNameOf;
 use sp_core::{ConstU64, RuntimeDebug};
 use sp_runtime::{
@@ -153,7 +151,7 @@ parameter_types! {
 	pub const OperationalFeeMultiplier: u8 = 5u8;
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(50); // target_utilization 50%
 	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000); // 0.000001
-	pub LenAdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(4, 1000); // 0.004 to make fee 4x in one epoch on a fully congested network
+	// pub LenAdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(4, 1000); // 0.004 to make fee 4x in one epoch on a fully congested network
 	pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
 	pub MinLenMultiplier: Multiplier = Multiplier::from_u32(1);
 	pub MaximumMultiplier: Multiplier = Bounded::max_value();
@@ -167,13 +165,13 @@ impl pallet_transaction_payment::Config for Runtime {
 		MinimumMultiplier,
 		MaximumMultiplier,
 	>;
-	type LengthMultiplierUpdate = LengthFeeAdjustment<
-		Self,
-		TargetBlockFullness,
-		LenAdjustmentVariable,
-		MinLenMultiplier,
-		MaximumMultiplier,
-	>;
+	// type LengthMultiplierUpdate = LengthFeeAdjustment<
+	// 	Self,
+	// 	TargetBlockFullness,
+	// 	LenAdjustmentVariable,
+	// 	MinLenMultiplier,
+	// 	MaximumMultiplier,
+	// >;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type OnChargeTransaction = CurrencyAdapter<Balances, DealWithFees<Runtime>>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
