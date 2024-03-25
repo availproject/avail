@@ -1,5 +1,6 @@
 #![cfg(test)]
 
+use frame_support::weights::WeightToFee;
 use frame_support::{derive_impl, weights::IdentityFee};
 use frame_system::{
 	header_builder::da::HeaderExtensionBuilder, mocking::MockUncheckedExtrinsic,
@@ -7,7 +8,6 @@ use frame_system::{
 };
 use pallet_transaction_payment::CurrencyAdapter;
 use sp_runtime::{AccountId32, BuildStorage};
-use frame_support::weights::WeightToFee;
 
 use crate::{self as da_control, *};
 
