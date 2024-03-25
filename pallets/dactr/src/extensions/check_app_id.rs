@@ -1,4 +1,5 @@
-use crate::{Call as DACall, Config as DAConfig, Pallet, LOG_TARGET};
+use super::MAX_ITERATIONS;
+use crate::{Call as DACall, CheckBatchTransactions, Config as DAConfig, Pallet, LOG_TARGET};
 use avail_core::{traits::GetAppId, AppId, InvalidTransactionCustomId};
 
 use codec::{Decode, Encode};
@@ -8,6 +9,7 @@ use frame_support::{
 };
 use frame_system::{AllExtrinsicsLen, Config as SystemConfig, DynamicBlockLength, ExtrinsicLenOf};
 use pallet_utility::{Call as UtilityCall, Config as UtilityConfig};
+use pallet_vector::{Call as VectorCall, Config as VectorConfig};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, SignedExtension},
@@ -22,7 +24,6 @@ use sp_std::{
 	vec::Vec,
 };
 
-const MAX_ITERATIONS: usize = 2;
 /// Check for Application Id.
 ///
 /// # Transaction Validity
@@ -38,8 +39,10 @@ pub struct CheckAppId<T: DAConfig + UtilityConfig + Send + Sync>(
 
 impl<T> CheckAppId<T>
 where
-	T: DAConfig + UtilityConfig + Send + Sync,
-	<T as SystemConfig>::RuntimeCall: IsSubType<DACall<T>> + IsSubType<UtilityCall<T>>,
+	T: DAConfig + VectorConfig + UtilityConfig + Send + Sync,
+	<T as SystemConfig>::RuntimeCall:
+		IsSubType<DACall<T>> + IsSubType<UtilityCall<T>> + IsSubType<VectorCall<T>>,
+	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 {
 	/// utility constructor. Used only in client/factory code.
 	pub fn from(app_id: AppId) -> Self {
@@ -66,6 +69,7 @@ where
 			AllExtrinsicsLen::<T>::put(all_extrinsics_len);
 		}
 
+		CheckBatchTransactions::<T>::new().do_validate(call, len)?;
 		Ok(ValidTransaction::default())
 	}
 
@@ -147,7 +151,7 @@ where
 	}
 }
 
-impl<T: DAConfig + UtilityConfig + Send + Sync> Default for CheckAppId<T> {
+impl<T: DAConfig + UtilityConfig + VectorConfig + Send + Sync> Default for CheckAppId<T> {
 	fn default() -> Self {
 		Self(AppId::default(), PhantomData)
 	}
@@ -155,7 +159,7 @@ impl<T: DAConfig + UtilityConfig + Send + Sync> Default for CheckAppId<T> {
 
 impl<T> Debug for CheckAppId<T>
 where
-	T: DAConfig + UtilityConfig + Send + Sync,
+	T: DAConfig + UtilityConfig + VectorConfig + Send + Sync,
 {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -170,9 +174,10 @@ where
 
 impl<T> SignedExtension for CheckAppId<T>
 where
-	T: DAConfig + UtilityConfig + Send + Sync,
+	T: DAConfig + VectorConfig + UtilityConfig + Send + Sync,
 	<T as frame_system::Config>::RuntimeCall:
-		IsSubType<DACall<T>> + IsSubType<pallet_utility::Call<T>>,
+		IsSubType<DACall<T>> + IsSubType<pallet_utility::Call<T>> + IsSubType<VectorCall<T>>,
+	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 {
 	type AccountId = T::AccountId;
 	type AdditionalSigned = ();
@@ -209,7 +214,7 @@ where
 
 impl<T> GetAppId for CheckAppId<T>
 where
-	T: DAConfig + UtilityConfig + Send + Sync,
+	T: DAConfig + UtilityConfig + VectorConfig + Send + Sync,
 {
 	#[inline]
 	fn app_id(&self) -> AppId {
@@ -224,15 +229,12 @@ mod tests {
 		InvalidTransactionCustomId::{ForbiddenAppId, InvalidAppId},
 	};
 	use frame_system::pallet::Call as SysCall;
-	use pallet_utility::pallet::Call as UtilityCall;
 	use sp_runtime::transaction_validity::InvalidTransaction;
 	use test_case::test_case;
 
 	use super::*;
-	use crate::{
-		mock::{new_test_ext, RuntimeCall, Test},
-		pallet::Call as DACall,
-	};
+	use crate::extensions::extensions_mock::{new_test_ext, RuntimeCall, Test};
+	use crate::pallet::Call as DACall;
 
 	fn remark_call() -> RuntimeCall {
 		RuntimeCall::System(SysCall::remark { remark: vec![] })
@@ -244,34 +246,16 @@ mod tests {
 		})
 	}
 
-	fn batch_submit_call() -> RuntimeCall {
-		let call = submit_data_call();
-		RuntimeCall::Utility(UtilityCall::batch {
-			calls: vec![call.clone(), call.clone(), call],
-		})
-	}
-
-	fn batch_mixed_call() -> RuntimeCall {
-		let call = submit_data_call();
-		let remark = remark_call();
-		RuntimeCall::Utility(UtilityCall::batch {
-			calls: vec![remark, call.clone(), call],
-		})
-	}
-
 	fn to_invalid_tx(custom_id: InvalidTransactionCustomId) -> TransactionValidity {
 		Err(TransactionValidityError::Invalid(
 			InvalidTransaction::Custom(custom_id as u8),
 		))
 	}
 
-	#[test_case(100, submit_data_call() => to_invalid_tx(InvalidAppId); "100 AppId is invalid" )]
-	#[test_case(0, remark_call() => Ok(ValidTransaction::default()); "System::remark can be called if AppId == 0" )]
-	#[test_case(1, remark_call() => to_invalid_tx(ForbiddenAppId); "System::remark cannot be called if AppId != 0" )]
-	#[test_case(1, submit_data_call() => Ok(ValidTransaction::default()); "submit_data can be called with any valid AppId" )]
-	#[test_case(1, batch_submit_call() => Ok(ValidTransaction::default()); "utility batch filled with submit_data can be called with any valid AppId" )]
-	#[test_case(1, batch_mixed_call() => to_invalid_tx(ForbiddenAppId); "utility batch filled with submit_data and remark cannot be called if AppId != 0" )]
-	#[test_case(0, batch_mixed_call() => Ok(ValidTransaction::default()); "utility batch filled with submit_data and remark can be called if AppId == 0" )]
+	#[test_case(1, submit_data_call() => Ok(ValidTransaction::default()); "Submit Data call should be allowed to use any valid AppId" )]
+	#[test_case(100, submit_data_call() => to_invalid_tx(InvalidAppId); "Submit Data call with invalid AppId should be blocked" )]
+	#[test_case(0, remark_call() => Ok(ValidTransaction::default()); "Any Non-Submit-Data call with AppId == 0 should be allowed" )]
+	#[test_case(1, remark_call() => to_invalid_tx(ForbiddenAppId); "Any Non-Submit-Data call with valid AppId != 0 should be blocked" )]
 	fn do_validate_test(id: u32, call: RuntimeCall) -> TransactionValidity {
 		let extrinsic =
 			AppUncheckedExtrinsic::<u32, RuntimeCall, (), ()>::new_unsigned(call.clone());

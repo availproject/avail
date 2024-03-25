@@ -9,9 +9,7 @@ use frame_support::{
 };
 use frame_system::{CheckEra, CheckNonce, CheckWeight};
 use pallet_transaction_payment::CurrencyAdapter;
-use sp_runtime::{
-	traits::{BlakeTwo256, ConstU32, IdentityLookup, TrailingZeroInput},
-};
+use sp_runtime::traits::{BlakeTwo256, ConstU32, IdentityLookup, TrailingZeroInput};
 use sp_std::marker::PhantomData;
 
 pub mod custom;
@@ -118,7 +116,9 @@ parameter_types! {
 #[derive(Clone, Copy)]
 pub struct RuntimeVersion;
 impl frame_support::traits::Get<sp_version::RuntimeVersion> for RuntimeVersion {
-	fn get() -> sp_version::RuntimeVersion { RuntimeVersionTestValues::get() }
+	fn get() -> sp_version::RuntimeVersion {
+		RuntimeVersionTestValues::get()
+	}
 }
 
 parameter_types! {

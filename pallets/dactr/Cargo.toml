@@ -17,6 +17,7 @@ avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
 frame-system = { workspace = true, default-features = false }
 pallet-transaction-payment = { workspace = true, default-features = false }
+pallet-vector = { workspace = true, default-features = false }
 
 # Others
 log.workspace = true
@@ -40,6 +41,7 @@ rayon = "1.5.2"
 
 [dev-dependencies]
 pallet-balances = { workspace = true, default-features = false, features = ["std"] }
+pallet-timestamp = { workspace = true, default-features = false, features = ["std"] }
 test-case.workspace = true
 
 [features]
@@ -53,6 +55,7 @@ std = [
 	"log/std",
 	"pallet-transaction-payment/std",
 	"pallet-utility/std",
+	"pallet-vector/std",
 	"scale-info/std",
 	"serde",
 	"sp-arithmetic/std",
