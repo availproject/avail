@@ -1,5 +1,5 @@
 use super::{get_account_id_from_seed, AuthorityKeys};
-use avail_core::{BLOCK_CHUNK_SIZE, NORMAL_DISPATCH_RATIO};
+use avail_core::{BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO};
 use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 
 use da_runtime::{
@@ -94,7 +94,7 @@ pub fn runtime_genesis_config(
 		MAX_BLOCK_ROWS,
 		MAX_BLOCK_COLUMNS,
 		BLOCK_CHUNK_SIZE,
-		NORMAL_DISPATCH_RATIO,
+		DA_DISPATCH_RATIO,
 	)
 	.expect("Valid `BlockLength` genesis definition .qed");
 
