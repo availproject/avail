@@ -6,15 +6,15 @@ use sp_core::H256;
 // Vector initial configuration
 pub const BROADCASTER_DOMAIN: u32 = 2;
 pub const BROADCASTER: H256 = H256(hex!(
-	"75545225C83B985f3A517bF61f316266057bb13b000000000000000000000000" // Sepolia broadcaster address
+	"1369A4C9391cF90D393b40fAeAD521b0F7019dc5000000000000000000000000" // Sepolia broadcaster address
 ));
 pub const SLOTS_PER_PERIOD: u64 = 8192;
 pub const FINALITY_THRESHOLD: u16 = 342;
-pub const PERIOD: u64 = 550;
+pub const PERIOD: u64 = 565;
 pub fn get_poseidon_hash_for_period() -> U256 {
 	// PERIOD hash
 	U256::from(hex!(
-		"125b550e0d81650a3f4cf67e2552c48f179fcc4e59e1b45af967ff3af89decd8"
+		"0af1f1f7a7ad38b0a11f1e51e9189a63336a853a23f94ecdd1112d7c7b190521"
 	))
 }
 pub const GENESIS_VALIDATOR_ROOT: H256 = H256(hex!(
