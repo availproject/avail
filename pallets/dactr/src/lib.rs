@@ -27,6 +27,7 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 pub use extensions::check_app_id::CheckAppId;
+pub use extensions::check_batch_transactions::CheckBatchTransactions;
 pub mod kate;
 pub mod weights;
 
@@ -57,6 +58,7 @@ pub mod pallet {
 	pub mod config_preludes {
 		use super::*;
 		use frame_support::derive_impl;
+		use frame_support::parameter_types;
 
 		/// Provides a viable default config that can be used with
 		/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
@@ -66,15 +68,24 @@ pub mod pallet {
 		#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig, no_aggregated_types)]
 		impl frame_system::DefaultConfig for TestDefaultConfig {}
 
+		parameter_types! {
+			pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
+			pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
+			pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(64);
+			pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(256);
+		}
+		pub type MaxAppKeyLength = ConstU32<64>;
+		pub type MaxAppDataLength = ConstU32<524_288>; // 512 Kb
+
 		#[frame_support::register_default_impl(TestDefaultConfig)]
 		impl DefaultConfig for TestDefaultConfig {
 			type BlockLenProposalId = u32;
-			type MaxAppDataLength = ();
-			type MaxAppKeyLength = ();
-			type MaxBlockCols = ();
-			type MaxBlockRows = ();
-			type MinBlockCols = ();
-			type MinBlockRows = ();
+			type MaxAppDataLength = MaxAppDataLength;
+			type MaxAppKeyLength = MaxAppKeyLength;
+			type MaxBlockCols = MaxBlockCols;
+			type MaxBlockRows = MaxBlockRows;
+			type MinBlockCols = MinBlockCols;
+			type MinBlockRows = MinBlockRows;
 			type WeightInfo = ();
 			#[inject_runtime_type]
 			type RuntimeEvent = ();

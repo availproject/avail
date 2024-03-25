@@ -272,7 +272,7 @@ pub mod pallet {
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
 		use super::{inject_runtime_type, AccountInfo, BlakeTwo256, DaHeader, DefaultConfig};
-		use frame_support::derive_impl;
+		use frame_support::{derive_impl, traits::ConstU32};
 
 		/// Provides a viable default config that can be used with
 		/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
@@ -310,9 +310,12 @@ pub mod pallet {
 			#[inject_runtime_type]
 			type RuntimeTask = ();
 			type BaseCallFilter = frame_support::traits::Everything;
-			type BlockHashCount = frame_support::traits::ConstU64<10>;
+			type BlockHashCount = frame_support::traits::ConstU32<10>;
 			type OnSetCode = ();
 			type Header = DaHeader<u32, BlakeTwo256>;
+			type MaxDiffAppIdPerBlock = ConstU32<1_024>;
+			type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
+			type TxDataExtractor = ();
 		}
 
 		/// Default configurations of this pallet in a solo-chain environment.
@@ -409,6 +412,9 @@ pub mod pallet {
 			type OnSetCode = ();
 
 			type Header = DaHeader<u32, BlakeTwo256>;
+			type MaxDiffAppIdPerBlock = ConstU32<1_024>;
+			type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
+			type TxDataExtractor = ();
 		}
 
 		/// Default configurations of this pallet in a relay-chain environment.
@@ -608,21 +614,18 @@ pub mod pallet {
 		type MaxConsumers: ConsumerLimits;
 
 		/// Filter used by `DataRootBuilder`.
-		#[pallet::no_default]
 		type TxDataExtractor: TxDataFilter<Self::AccountId, Self::RuntimeCall>;
 
 		/// Maximum different `AppId` allowed per block.
 		/// This is used during the calculation of padded length of the block when
 		/// a transaction is validated (see `CheckAppId` signed extension).
 		#[pallet::constant]
-		#[pallet::no_default]
 		type MaxDiffAppIdPerBlock: Get<u32>;
 
 		/// Maximum number of Tx per AppId allowed per block.
 		/// This is used during the calculation of padded length of the block when
 		/// a transaction is validated (see `CheckAppId` signed extension).
 		#[pallet::constant]
-		#[pallet::no_default]
 		type MaxTxPerAppIdPerBlock: Get<u32>;
 	}
 

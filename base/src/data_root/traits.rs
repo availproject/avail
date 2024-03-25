@@ -34,3 +34,9 @@ impl<A, C> TxDataFilter<A, C> for () {
 		None
 	}
 }
+#[cfg(not(feature = "std"))]
+impl<A, C> TxDataFilter<A, C> for () {
+	fn filter(_: Option<&A>, _: &C, _: AppId, _: u32, _: usize, _: &mut Metrics) -> Option<TxData> {
+		None
+	}
+}

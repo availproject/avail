@@ -6,7 +6,6 @@ use avail_core::{
 };
 
 use da_control::Call as DACall;
-use pallet_utility::Call as UtilCall;
 use pallet_vector::Call as VectorCall;
 use sp_core::H256;
 use sp_std::vec::Vec;
@@ -26,14 +25,6 @@ impl TxDataFilter<AccountId, Call> for Runtime {
 		match call {
 			Call::Vector(call) => filter_vector_call(caller, call, block, tx_index, metrics),
 			Call::DataAvailability(call) => filter_da_call(call, app_id, tx_index, metrics),
-			Call::Utility(util_call) => match util_call {
-				UtilCall::batch { calls }
-				| UtilCall::batch_all { calls }
-				| UtilCall::force_batch { calls } => {
-					Self::process_calls(caller?, calls, app_id, block, tx_index, metrics)
-				},
-				_ => None,
-			},
 			_ => None,
 		}
 	}

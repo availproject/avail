@@ -241,19 +241,55 @@ pub mod pallet {
 	#[pallet::getter(fn source_chain_id)]
 	pub type SourceChainId<T: Config> = StorageValue<_, u64, ValueQuery>;
 
-	#[pallet::config]
+	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
+	pub mod config_preludes {
+		use super::*;
+		use frame_support::derive_impl;
+		use frame_support::parameter_types;
+		use frame_support::traits::ConstU64;
+
+		parameter_types! {
+			pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
+		}
+
+		/// Provides a viable default config that can be used with
+		/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
+		/// based on this one.
+		pub struct TestDefaultConfig;
+
+		#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig, no_aggregated_types)]
+		impl frame_system::DefaultConfig for TestDefaultConfig {}
+
+		#[frame_support::register_default_impl(TestDefaultConfig)]
+		impl DefaultConfig for TestDefaultConfig {
+			type WeightInfo = ();
+			type MessageMappingStorageIndex = ConstU64<1>;
+			type AvailDomain = ConstU32<1>;
+			#[inject_runtime_type]
+			type RuntimeEvent = ();
+			#[inject_runtime_type]
+			type RuntimeCall = ();
+			type PalletId = BridgePalletId;
+		}
+	}
+
+	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
+		#[pallet::no_default_bounds]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Because this pallet has dispatchables, it depends on the runtime's definition of a call.
+		#[pallet::no_default_bounds]
 		type RuntimeCall: Parameter
 			+ UnfilteredDispatchable<RuntimeOrigin = Self::RuntimeOrigin>
 			+ GetDispatchInfo;
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 		/// Currency type for this pallet.
+		#[pallet::no_default]
 		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
 		/// Dependency that can provide current time.
+		#[pallet::no_default]
 		type TimeProvider: UnixTime;
 		/// The index of the `messages` mapping in contract.
 		/// This is mandatory when calling execute messages via storage proofs.
