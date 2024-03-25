@@ -29,20 +29,13 @@ parameter_types! {
 
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
-	type BaseCallFilter = frame_support::traits::Everything;
 	type Block = Block;
 	type BlockHashCount = BlockHashCount;
 	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
 	type OnSetCode = ();
 	type PalletInfo = PalletInfo;
 	type Randomness = frame_system::test_utils::TestRandomness<Test>;
-	type RuntimeCall = RuntimeCall;
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeOrigin = RuntimeOrigin;
-	type TxDataExtractor = ();
 	type Extrinsic = Extrinsic;
-	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
-	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
 
 parameter_types! {

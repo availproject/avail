@@ -3,7 +3,7 @@ use frame_system::{header_builder::da, test_utils::TestRandomness};
 use hex_literal::hex;
 use primitive_types::H256;
 use sp_runtime::{
-	traits::{Block as BlockT, ConstU32, IdentityLookup},
+	traits::{Block as BlockT, IdentityLookup},
 	AccountId32, BuildStorage,
 };
 
@@ -179,22 +179,14 @@ parameter_types! {
 impl frame_system::Config for Test {
 	type AccountData = pallet_balances::AccountData<Balance>;
 	type AccountId = AccountId32;
-	type BaseCallFilter = frame_support::traits::Everything;
 	type Block = Block;
 	type BlockHashCount = BlockHashCount;
 	type HeaderExtensionBuilder = da::HeaderExtensionBuilder<Test>;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type OnSetCode = ();
 	type PalletInfo = PalletInfo;
 	type Randomness = TestRandomness<Test>;
-	type RuntimeCall = RuntimeCall;
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeOrigin = RuntimeOrigin;
-	type TxDataExtractor = ();
 	type Header = Header;
 	type Extrinsic = Extrinsic;
-	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
-	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
 
 parameter_types! {
@@ -202,20 +194,11 @@ parameter_types! {
 	pub static ExistentialDeposit: u128 = 1;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig as pallet_balances::DefaultConfig)]
 impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type Balance = Balance;
-	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
-	type FreezeIdentifier = [u8; 8];
-	type MaxFreezes = ConstU32<2>;
-	type MaxLocks = ();
-	type MaxReserves = ();
-	type ReserveIdentifier = [u8; 8];
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeHoldReason = ();
-	type RuntimeFreezeReason = ();
-	type WeightInfo = ();
 }
 
 impl pallet_timestamp::Config for Test {
@@ -229,15 +212,10 @@ parameter_types! {
 	pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
 }
 
+#[derive_impl(crate::config_preludes::TestDefaultConfig as crate::DefaultConfig)]
 impl vector_bridge::Config for Test {
-	type RuntimeCall = RuntimeCall;
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
 	type TimeProvider = Timestamp;
 	type Currency = Balances;
-	type MessageMappingStorageIndex = ConstU64<1>;
-	type PalletId = BridgePalletId;
-	type AvailDomain = ConstU32<1>;
 }
 
 /// Create new externalities for `Vector` module tests.

@@ -71,11 +71,11 @@ pub mod pallet {
 		parameter_types! {
 			pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
 			pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
-			pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(64);
+			pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(32);
 			pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(256);
+			pub const MaxAppKeyLength: u32 = 32;
+			pub const MaxAppDataLength: u32 = 524_288; // 512 Kb
 		}
-		pub type MaxAppKeyLength = ConstU32<64>;
-		pub type MaxAppDataLength = ConstU32<524_288>; // 512 Kb
 
 		#[frame_support::register_default_impl(TestDefaultConfig)]
 		impl DefaultConfig for TestDefaultConfig {
