@@ -45,63 +45,63 @@
           "balances": [
             [
               "5F94b3JvoD2pq9m3bgyn3M2tcUA7WW1M3uck4yBYPNZUZmce",
-              10000000000000000000000
+              1000000000000000000000000
             ],
             [
               "5G961Rr3p9CdaLfdRUDb5XexmSTtgDECx4ErEZPn2zPPeaH7",
-              10000000000000000000000
+              1000000000000000000000000
             ],
             [
               "5E9WFrdJgeP46qPEr6VL6y9agscxm4Gf78vqiuQnAftekN3R",
-              10000000000000000000000
+              1000000000000000000000000
             ],
             [
               "5DhHJyY2PojTiZ1Qm4F8RuzKEHYYWsEJDoXDakPcVMqPkfsE",
-              10000000000000000000000
+              1000000000000000000000000
             ],
             [
               "5CXVnAHFCt4m3LcwLzjcT3mdiQjnxJ5PA2ytZ8aD91DxKMic",
-              10000000000000000000000
+              1000000000000000000000000
             ],
             [
               "5D814dkZGy3ra2xtX7tAtXenhTvBH1SZuVEs1y3VyvvZW6ko",
-              10000000000000000000000
+              1000000000000000000000000
             ],
             [
               "5H1M3avPbU5gGUBQJBqqzBJecy2kVPRK9nGbbgjho5Y4BA8Y",
-              10000000000000000000000
+              1000000000000000000000000
             ],
             [
               "5DFAJjy18Rb12MCPr9NrVqnEJiCkMAnoHgE2Gixr5KDsoLGP",
-              10000000000000000000000
+              1000000000000000000000000
             ],
             [
               "5DPKoNweegkiVKVshQcS1GGB9D9g7PbZjsiFb3wVbgQ34xPZ",
-              10000000000000000000000
+              1000000000000000000000000
             ],
             [
               "5EqSuy9Mf9rnZCJE2owSoiFtJPeZZTzUg3MQimkb2axGzaCN",
-              10000000000000000000000
+              1000000000000000000000000
             ],
             [
               "5EPbankXoBhhECf2ST28A2nLBhLPTtftUwVKZm9QsJeQuHoa",
-              10000000000000000000000
+              1000000000000000000000000
             ],
             [
               "5H9Wh9UPU2kGZRCMLmEDKhhMxh1PLgBefMUgpLgGzFvjKkKw",
-              10000000000000000000000
+              1000000000000000000000000
             ],
             [
               "5EtAkcQuTKHoDyYuEdp4xQLzYHuBrgBJdQNE84yvuiof3bzP",
-              10000000000000000000000
+              1000000000000000000000000
             ],
             [
               "5G4jDSUsMeVqVqSPmia2StpmfbRxtpkUTSjdFiTKKa45byuC",
-              10000000000000000000000
+              1000000000000000000000000
             ],
             [
               "5CK87QdvhcSJvVa7ZACcEfd5i7J1GqoqbEFB2kzNn3Ms13fE",
-              10000000000000000000000
+              1000000000000000000000000
             ]
           ]
         },
@@ -377,53 +377,55 @@
         },
         "staking": {
           "minimumValidatorCount": 1,
+          "minNominatorBond": 1000000000000000000000,
+          "minValidatorBond": 100000000000000000000000,
           "stakers": [
             [
               "5F94b3JvoD2pq9m3bgyn3M2tcUA7WW1M3uck4yBYPNZUZmce",
               "5F94b3JvoD2pq9m3bgyn3M2tcUA7WW1M3uck4yBYPNZUZmce",
-              1000000000000000000000,
+              100000000000000000000000,
               "Validator"
             ],
             [
               "5G961Rr3p9CdaLfdRUDb5XexmSTtgDECx4ErEZPn2zPPeaH7",
               "5G961Rr3p9CdaLfdRUDb5XexmSTtgDECx4ErEZPn2zPPeaH7",
-              1000000000000000000000,
+              100000000000000000000000,
               "Validator"
             ],
             [
               "5E9WFrdJgeP46qPEr6VL6y9agscxm4Gf78vqiuQnAftekN3R",
               "5E9WFrdJgeP46qPEr6VL6y9agscxm4Gf78vqiuQnAftekN3R",
-              1000000000000000000000,
+              100000000000000000000000,
               "Validator"
             ],
             [
               "5DhHJyY2PojTiZ1Qm4F8RuzKEHYYWsEJDoXDakPcVMqPkfsE",
               "5DhHJyY2PojTiZ1Qm4F8RuzKEHYYWsEJDoXDakPcVMqPkfsE",
-              1000000000000000000000,
+              100000000000000000000000,
               "Validator"
             ],
             [
               "5CXVnAHFCt4m3LcwLzjcT3mdiQjnxJ5PA2ytZ8aD91DxKMic",
               "5CXVnAHFCt4m3LcwLzjcT3mdiQjnxJ5PA2ytZ8aD91DxKMic",
-              1000000000000000000000,
+              100000000000000000000000,
               "Validator"
             ],
             [
               "5D814dkZGy3ra2xtX7tAtXenhTvBH1SZuVEs1y3VyvvZW6ko",
               "5D814dkZGy3ra2xtX7tAtXenhTvBH1SZuVEs1y3VyvvZW6ko",
-              1000000000000000000000,
+              100000000000000000000000,
               "Validator"
             ],
             [
               "5H1M3avPbU5gGUBQJBqqzBJecy2kVPRK9nGbbgjho5Y4BA8Y",
               "5H1M3avPbU5gGUBQJBqqzBJecy2kVPRK9nGbbgjho5Y4BA8Y",
-              1000000000000000000000,
+              100000000000000000000000,
               "Validator"
             ],
             [
               "5DFAJjy18Rb12MCPr9NrVqnEJiCkMAnoHgE2Gixr5KDsoLGP",
               "5DFAJjy18Rb12MCPr9NrVqnEJiCkMAnoHgE2Gixr5KDsoLGP",
-              1000000000000000000000,
+              100000000000000000000000,
               "Validator"
             ]            
           ],
