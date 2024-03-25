@@ -1,4 +1,3 @@
-
 UNIQUE_ID=$RANDOM
 NODE_LOCATION="./target/release/avail-node"
 CONTROLLER_LOC_SR="./keys/${UNIQUE_ID}/controller_sr25519.txt"
