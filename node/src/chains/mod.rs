@@ -107,12 +107,12 @@ pub mod mainnet {
 	}
 }
 
-pub mod new {
+pub mod turing {
 	use super::*;
 
 	pub fn chain_spec() -> Result<ChainSpec, String> {
 		ChainSpec::from_json_bytes(
-			&include_bytes!("./../../../misc/genesis/testnet.new.chain.spec.raw.json",)[..],
+			&include_bytes!("./../../../misc/genesis/testnet.turing.chain.spec.raw.json",)[..],
 		)
 	}
 
