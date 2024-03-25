@@ -62,7 +62,6 @@ parameter_types! {
 }
 impl pallet_transaction_payment::Config for Test {
 	type FeeMultiplierUpdate = ();
-	type LengthMultiplierUpdate = ();
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
