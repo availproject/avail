@@ -54,7 +54,12 @@ pub fn to_telemetry_endpoint(s: String) -> TelemetryEndpoints {
 fn dev_endowed_accounts() -> Vec<(AccountId, Balance)> {
 	DEFAULT_ENDOWED_SEEDS
 		.iter()
-		.map(|seed| (get_account_id_from_seed::<Public>(seed), constants::staking::MIN_VALIDATOR_BOND * 100))
+		.map(|seed| {
+			(
+				get_account_id_from_seed::<Public>(seed),
+				constants::staking::MIN_VALIDATOR_BOND * 100,
+			)
+		})
 		.collect()
 }
 
@@ -108,7 +113,7 @@ pub fn runtime_genesis_config(
 			"minimumValidatorCount": 1,
 			"stakers": stakers,
 			"minNominatorBond": constants::staking::MIN_NOMINATOR_BOND,
-    		"minValidatorBond": constants::staking::MIN_VALIDATOR_BOND,
+			"minValidatorBond": constants::staking::MIN_VALIDATOR_BOND,
 		},
 		"babe": {
 			"epochConfig": Some(da_runtime::constants::babe::GENESIS_EPOCH_CONFIG),

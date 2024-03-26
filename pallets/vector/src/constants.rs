@@ -14,7 +14,7 @@ pub const PERIOD: u64 = 566;
 // Attention!
 // If Posidon hash starts with "0" it (the zero character) will be ignore.
 // This means that that hash needs to be manually added to the chain spec.
-// 
+//
 // "May fortune favor the foolish." - Captain James T. Kirk (Star Trek)
 pub fn get_poseidon_hash_for_period() -> U256 {
 	// PERIOD hash
