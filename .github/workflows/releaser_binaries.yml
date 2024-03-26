@@ -32,8 +32,8 @@ jobs:
           name: avail-runtime-compressed-wasm
           path: target/release/wbuild/da-runtime/avail-node-runtime.compact.compressed.wasm
   
-  x86_64_linux_ubuntu_2004:
-    runs-on: ubuntu-latest
+  x86_64_ubuntu_2004:
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - name: Install Protoc
@@ -41,158 +41,21 @@ jobs:
         with:
           version: '3.x'
 
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail binary
-        run: ENGINE=podman DISTRO=ubuntu-2004 ZIP=1 ./scripts/binaries/build.sh
+      - name: install cargo deps and build avail
+        shell: bash
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source "$HOME/.cargo/env" && rustup show && cargo build --locked --release
+          pushd target/release
+          tar -czf x86_64-ubuntu-2004-avail-node.tar.gz avail-node
+          popd
 
       - uses: actions/upload-artifact@v2
         with:
           name: x86_64-ubuntu-2004-avail-node.tar.gz
-          path: output/zips/x86_64-ubuntu-2004-avail-node.tar.gz
+          path: target/release/x86_64-ubuntu-2004-avail-node.tar.gz
 
-  x86_64_linux_ubuntu_2204:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail binary
-        run: ENGINE=podman DISTRO=ubuntu-2204 ZIP=1 ./scripts/binaries/build.sh
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: x86_64-ubuntu-2204-avail-node.tar.gz
-          path: output/zips/x86_64-ubuntu-2204-avail-node.tar.gz
-
-  x86_64_linux_ubuntu_2310:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail binary
-        run: ENGINE=podman DISTRO=ubuntu-2310 ZIP=1 ./scripts/binaries/build.sh
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: x86_64-ubuntu-2310-avail-node.tar.gz
-          path: output/zips/x86_64-ubuntu-2310-avail-node.tar.gz
-
-  x86_64_linux_fedora_38:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail binary
-        run: ENGINE=podman DISTRO=fedora-38 ZIP=1 ./scripts/binaries/build.sh
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: x86_64-fedora-38-avail-node.tar.gz
-          path: output/zips/x86_64-fedora-38-avail-node.tar.gz
-
-  x86_64_linux_fedora_39:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail binary
-        run: ENGINE=podman DISTRO=fedora-39 ZIP=1 ./scripts/binaries/build.sh
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: x86_64-fedora-39-avail-node.tar.gz
-          path: output/zips/x86_64-fedora-39-avail-node.tar.gz
-
-  x86_64_linux_debian_11:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail binary
-        run: ENGINE=podman DISTRO=debian-11 ZIP=1 ./scripts/binaries/build.sh
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: x86_64-debian-11-avail-node.tar.gz
-          path: output/zips/x86_64-debian-11-avail-node.tar.gz
-
-  x86_64_linux_debian_12:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail binary
-        run: ENGINE=podman DISTRO=debian-12 ZIP=1 ./scripts/binaries/build.sh
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: x86_64-debian-12-avail-node.tar.gz
-          path: output/zips/x86_64-debian-12-avail-node.tar.gz
-
-  x86_64_linux_arch:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail binary
-        run: ENGINE=podman DISTRO=arch ZIP=1 ./scripts/binaries/build.sh
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: x86_64-arch-avail-node.tar.gz
-          path: output/zips/x86_64-arch-avail-node.tar.gz
-
-  arm64_linux_arch:
+  arm64_ubuntu_2004:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -221,7 +84,7 @@ jobs:
 
   # compile all binaries from previous jobs into single release
   binary_publish:
-    needs: [x86_64_linux_ubuntu_2004, x86_64_linux_ubuntu_2204, x86_64_linux_ubuntu_2310, x86_64_linux_fedora_38, x86_64_linux_fedora_39, x86_64_linux_debian_11, x86_64_linux_debian_12, x86_64_linux_arch, arm64_linux_arch, build_wasm]
+    needs: [x86_64_ubuntu_2004, arm64_ubuntu_2004,  build_wasm]
     runs-on: ubuntu-latest
     steps:
       - name: Create Artifact Directory
@@ -230,41 +93,6 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: x86_64-ubuntu-2004-avail-node.tar.gz
-          path: ./artifact
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: x86_64-ubuntu-2204-avail-node.tar.gz
-          path: ./artifact
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: x86_64-ubuntu-2310-avail-node.tar.gz
-          path: ./artifact
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: x86_64-fedora-39-avail-node.tar.gz
-          path: ./artifact
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: x86_64-fedora-39-avail-node.tar.gz
-          path: ./artifact
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: x86_64-debian-11-avail-node.tar.gz
-          path: ./artifact
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: x86_64-debian-12-avail-node.tar.gz
-          path: ./artifact
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: x86_64-arch-avail-node.tar.gz
           path: ./artifact
 
       - uses: actions/download-artifact@v3
