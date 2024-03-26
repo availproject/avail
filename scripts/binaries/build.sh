@@ -20,21 +20,16 @@ echo "Selected engine: $ENGINE"
 echo "Selected arch: $ARCH"
 echo "Selected docker file: $DOCKER_FILE"
 
-PLATFORM="amd64"
-if [ ARCH == "arm64" ]; then
-    PLATFORM="arm64"
-fi
-
 # Build the image
-"$ENGINE" build --platform="$PLATFORM" -t availnode -f $DOCKER_FILE .
+"$ENGINE" build -t availnodet -f $DOCKER_FILE .
 
 mkdir -p "output/$ARCH/$DISTRO"
 
 selinuxenabled
 if [ $? -ne 0 ]; then
-    "$ENGINE" run --rm -v ./output/$ARCH/$DISTRO:/output availnode
+    "$ENGINE" run --rm -v ./output/$ARCH/$DISTRO:/output availnodet
 else
-    "$ENGINE" run --rm -v ./output/$ARCH/$DISTRO:/output:z availnode
+    "$ENGINE" run --rm -v ./output/$ARCH/$DISTRO:/output:z availnodet
 fi
 
 
