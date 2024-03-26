@@ -3,7 +3,7 @@ use avail_core::{BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO};
 use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 
 use da_runtime::{
-	constants, AccountId, Balance, DataAvailabilityConfig, SessionKeys, StakerStatus, AVAIL,
+	constants, AccountId, Balance, DataAvailabilityConfig, SessionKeys, StakerStatus,
 };
 use frame_system::limits::BlockLength;
 use pallet_vector::constants::{
@@ -19,8 +19,6 @@ use sp_core::sr25519::Public;
 pub const PROTOCOL_ID: &str = "Avail";
 pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
 
-const ENDOWMENT: Balance = 1_000_000 * AVAIL;
-const STASH_BOND: Balance = ENDOWMENT / 100;
 const DEFAULT_ENDOWED_SEEDS: [&str; 12] = [
 	"Alice",
 	"Bob",
@@ -56,7 +54,12 @@ pub fn to_telemetry_endpoint(s: String) -> TelemetryEndpoints {
 fn dev_endowed_accounts() -> Vec<(AccountId, Balance)> {
 	DEFAULT_ENDOWED_SEEDS
 		.iter()
-		.map(|seed| (get_account_id_from_seed::<Public>(seed), ENDOWMENT))
+		.map(|seed| {
+			(
+				get_account_id_from_seed::<Public>(seed),
+				constants::staking::MIN_VALIDATOR_BOND * 100,
+			)
+		})
 		.collect()
 }
 
@@ -82,7 +85,7 @@ pub fn runtime_genesis_config(
 			(
 				k.stash.clone(),
 				k.controller.clone(),
-				STASH_BOND,
+				constants::staking::MIN_VALIDATOR_BOND,
 				StakerStatus::Validator,
 			)
 		})
@@ -109,6 +112,8 @@ pub fn runtime_genesis_config(
 			"validatorCount": validator_count,
 			"minimumValidatorCount": 1,
 			"stakers": stakers,
+			"minNominatorBond": constants::staking::MIN_NOMINATOR_BOND,
+			"minValidatorBond": constants::staking::MIN_VALIDATOR_BOND,
 		},
 		"babe": {
 			"epochConfig": Some(da_runtime::constants::babe::GENESIS_EPOCH_CONFIG),

@@ -215,6 +215,9 @@ pub mod staking {
 
 	use super::{currency::*, time::*, *};
 
+	pub const MIN_VALIDATOR_BOND: Balance = 100_000 * AVAIL;
+	pub const MIN_NOMINATOR_BOND: Balance = 1_000 * AVAIL;
+
 	pallet_staking_reward_curve::build! {
 	const REWARD_CURVE: PiecewiseLinear<'static> = curve!(
 		min_inflation: 0_010_000, // minimum_inflation_rate = 1%

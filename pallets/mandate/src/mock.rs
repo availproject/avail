@@ -2,7 +2,7 @@ use frame_support::{
 	derive_impl,
 	pallet_prelude::Weight,
 	parameter_types,
-	traits::{ConstU32, EitherOf, EnsureOrigin},
+	traits::{EitherOf, EnsureOrigin},
 };
 use frame_system::EnsureRoot;
 use sp_runtime::BuildStorage;
