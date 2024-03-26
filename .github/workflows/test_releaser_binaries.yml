@@ -1,10 +1,13 @@
-name: Releaser Binaries
+name: Test Releaser Binaries
 on:
   push:
-    branches-ignore:
-      - '**'
-    tags:
-      - '*'
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
   workflow_dispatch:
 
 jobs:
@@ -16,7 +19,7 @@ jobs:
         uses: arduino/setup-protoc@v1
         with:
           version: '3.x'
-      
+
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
         with:
@@ -27,11 +30,6 @@ jobs:
         
       - name: build docker image and build avail binary
         run: ENGINE=podman DISTRO=ubuntu-2004 ZIP=1 ./scripts/binaries/build.sh
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: x86_64-ubuntu-2004-avail-node.tar.gz
-          path: output/zips/x86_64-ubuntu-2004-avail-node.tar.gz
 
   x86_64_ubuntu_2204:
     runs-on: ubuntu-latest
@@ -53,11 +51,6 @@ jobs:
       - name: build docker image and build avail binary
         run: ENGINE=podman DISTRO=ubuntu-2204 ZIP=1 ./scripts/binaries/build.sh
 
-      - uses: actions/upload-artifact@v2
-        with:
-          name: x86_64-ubuntu-2204-avail-node.tar.gz
-          path: output/zips/x86_64-ubuntu-2204-avail-node.tar.gz
-
   x86_64_ubuntu_2310:
     runs-on: ubuntu-latest
     steps:
@@ -77,11 +70,6 @@ jobs:
         
       - name: build docker image and build avail binary
         run: ENGINE=podman DISTRO=ubuntu-2310 ZIP=1 ./scripts/binaries/build.sh
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: x86_64-ubuntu-2310-avail-node.tar.gz
-          path: output/zips/x86_64-ubuntu-2310-avail-node.tar.gz
 
   x86_64_fedora_38:
     runs-on: ubuntu-latest
@@ -103,11 +91,6 @@ jobs:
       - name: build docker image and build avail binary
         run: ENGINE=podman DISTRO=fedora-38 ZIP=1 ./scripts/binaries/build.sh
 
-      - uses: actions/upload-artifact@v2
-        with:
-          name: x86_64-fedora-38-avail-node.tar.gz
-          path: output/zips/x86_64-fedora-38-avail-node.tar.gz
-
   x86_64_fedora_39:
     runs-on: ubuntu-latest
     steps:
@@ -127,11 +110,6 @@ jobs:
         
       - name: build docker image and build avail binary
         run: ENGINE=podman DISTRO=fedora-39 ZIP=1 ./scripts/binaries/build.sh
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: x86_64-fedora-39-avail-node.tar.gz
-          path: output/zips/x86_64-fedora-39-avail-node.tar.gz
 
   x86_64_debian_11:
     runs-on: ubuntu-latest
@@ -153,11 +131,6 @@ jobs:
       - name: build docker image and build avail binary
         run: ENGINE=podman DISTRO=debian-11 ZIP=1 ./scripts/binaries/build.sh
 
-      - uses: actions/upload-artifact@v2
-        with:
-          name: x86_64-debian-11-avail-node.tar.gz
-          path: output/zips/x86_64-debian-11-avail-node.tar.gz
-
   x86_64_debian_12:
     runs-on: ubuntu-latest
     steps:
@@ -178,11 +151,6 @@ jobs:
       - name: build docker image and build avail binary
         run: ENGINE=podman DISTRO=debian-12 ZIP=1 ./scripts/binaries/build.sh
 
-      - uses: actions/upload-artifact@v2
-        with:
-          name: x86_64-debian-12-avail-node.tar.gz
-          path: output/zips/x86_64-debian-12-avail-node.tar.gz
-
   x86_64_arch:
     runs-on: ubuntu-latest
     steps:
@@ -202,11 +170,6 @@ jobs:
         
       - name: build docker image and build avail binary
         run: ENGINE=podman DISTRO=arch ZIP=1 ./scripts/binaries/build.sh
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: x86_64-arch-avail-node.tar.gz
-          path: output/zips/x86_64-arch-avail-node.tar.gz
 
   arm64_ubuntu_2004:
     runs-on: ubuntu-20.04
@@ -234,77 +197,3 @@ jobs:
           pushd target/aarch64-unknown-linux-gnu/release/
           tar -czf arm64-ubuntu-2004-avail-node.tar.gz avail-node
           popd
-      - uses: actions/upload-artifact@v2
-        with:
-          name: arm64-ubuntu-2004-avail-node.tar.gz
-          path: target/aarch64-unknown-linux-gnu/release/arm64-ubuntu-2004-avail-node.tar.gz
-
-
-  # compile all binaries from previous jobs into single release
-  binary_publish:
-    needs: [x86_64_ubuntu_2004, x86_64_ubuntu_2204, x86_64_ubuntu_2310, x86_64_fedora_38, x86_64_fedora_39, x86_64_debian_11, x86_64_debian_12, x86_64_arch, arm64_ubuntu_2004]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Create Artifact Directory
-        run: mkdir ./artifact
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: x86_64-ubuntu-2004-avail-node.tar.gz
-          path: ./artifact
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: x86_64-ubuntu-2204-avail-node.tar.gz
-          path: ./artifact
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: x86_64-ubuntu-2310-avail-node.tar.gz
-          path: ./artifact
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: x86_64-fedora-39-avail-node.tar.gz
-          path: ./artifact
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: x86_64-fedora-39-avail-node.tar.gz
-          path: ./artifact
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: x86_64-debian-11-avail-node.tar.gz
-          path: ./artifact
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: x86_64-debian-12-avail-node.tar.gz
-          path: ./artifact
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: x86_64-arch-avail-node.tar.gz
-          path: ./artifact
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: arm64-ubuntu-2004-avail-node.tar.gz
-          path: ./artifact
-        
-      - name: Prepare
-        id: prepare
-        run: |
-            TAG=${GITHUB_REF#refs/tags/}
-            echo "tag_name=${TAG}" >> $GITHUB_OUTPUT
-
-      - name: publish binaries
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./artifact/*
-          release_name: ${{ steps.prepare.outputs.tag_name }}
-          tag: ${{ steps.prepare.outputs.tag_name }}
-          overwrite: true
-          file_glob: true
