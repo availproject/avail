@@ -42,7 +42,7 @@ jobs:
           version: '3.x'
 
       - name: install podman
-        run: apt install podman -y
+        run: sudo apt-get update && sudo apt install podman -y
         
       - name: build docker image and build avail binary
         run: ENGINE=podman DISTRO=ubuntu-2004 ZIP=1 ./scripts/binaries/build.sh
@@ -62,7 +62,7 @@ jobs:
           version: '3.x'
 
       - name: install podman
-        run: apt install podman -y
+        run: sudo apt-get update && sudo apt install podman -y
         
       - name: build docker image and build avail binary
         run: ENGINE=podman DISTRO=ubuntu-2204 ZIP=1 ./scripts/binaries/build.sh
@@ -82,7 +82,7 @@ jobs:
           version: '3.x'
 
       - name: install podman
-        run: apt install podman -y
+        run: sudo apt-get update && sudo apt install podman -y
         
       - name: build docker image and build avail binary
         run: ENGINE=podman DISTRO=ubuntu-2310 ZIP=1 ./scripts/binaries/build.sh
@@ -102,7 +102,7 @@ jobs:
           version: '3.x'
 
       - name: install podman
-        run: apt install podman -y
+        run: sudo apt-get update && sudo apt install podman -y
         
       - name: build docker image and build avail binary
         run: ENGINE=podman DISTRO=fedora-38 ZIP=1 ./scripts/binaries/build.sh
@@ -122,7 +122,7 @@ jobs:
           version: '3.x'
 
       - name: install podman
-        run: apt install podman -y
+        run: sudo apt-get update && sudo apt install podman -y
         
       - name: build docker image and build avail binary
         run: ENGINE=podman DISTRO=fedora-39 ZIP=1 ./scripts/binaries/build.sh
@@ -142,7 +142,7 @@ jobs:
           version: '3.x'
 
       - name: install podman
-        run: apt install podman -y
+        run: sudo apt-get update && sudo apt install podman -y
         
       - name: build docker image and build avail binary
         run: ENGINE=podman DISTRO=debian-11 ZIP=1 ./scripts/binaries/build.sh
@@ -162,7 +162,7 @@ jobs:
           version: '3.x'
 
       - name: install podman
-        run: apt install podman -y
+        run: sudo apt-get update && sudo apt install podman -y
         
       - name: build docker image and build avail binary
         run: ENGINE=podman DISTRO=debian-12 ZIP=1 ./scripts/binaries/build.sh
@@ -182,7 +182,7 @@ jobs:
           version: '3.x'
 
       - name: install podman
-        run: apt install podman -y
+        run: sudo apt-get update && sudo apt install podman -y
         
       - name: build docker image and build avail binary
         run: ENGINE=podman DISTRO=arch ZIP=1 ./scripts/binaries/build.sh
