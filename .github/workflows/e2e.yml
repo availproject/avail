@@ -10,11 +10,6 @@ on:
       - develop
   workflow_dispatch:
 
-env:
-  CARGO_SCCACHE_COMMIT: bed5571c
-  SCCACHE_DIR: /home/runner/.cache/cargo-sccache-bed5571c
-  SCCACHE_BIN: /home/runner/.cache/cargo-sccache-bed5571c/bin/sccache
-
 jobs:
   kate_rpc_e2e_tests:
     runs-on: ubuntu-latest
