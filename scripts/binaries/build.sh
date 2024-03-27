@@ -21,10 +21,11 @@ echo "Selected engine: $ENGINE"
 echo "Selected arch: $ARCH"
 echo "Selected docker file: $DOCKER_FILE"
 
+mkdir -p "output/$ARCH/$DISTRO"
+
 # Build the image
 "$ENGINE" build -t availnodet --ignorefile=$DOCKER_IGNORE_FILE -f $DOCKER_FILE .
 
-mkdir -p "output/$ARCH/$DISTRO"
 
 selinuxenabled
 if [ $? -ne 0 ]; then

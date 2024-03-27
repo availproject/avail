@@ -11,9 +11,10 @@ fi
 DOCKER_FILE="./scripts/workflows/base.Dockerfile"
 DOCKER_IGNORE_FILE="./scripts/workflows/shared.dockerignore"
 
+mkdir -p "output"
+
 "$ENGINE" build -t availnodet --ignorefile=$DOCKER_IGNORE_FILE -f $DOCKER_FILE .
 
-mkdir -p "output"
 
 selinuxenabled
 if [ $? -ne 0 ]; then

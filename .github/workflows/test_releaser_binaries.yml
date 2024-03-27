@@ -11,8 +11,20 @@ on:
   workflow_dispatch:
 
 jobs:
-  wasm:
+  build_binaries:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - command: ENGINE=podman SCRIPT_LOC=./scripts/workflows/releaser_wasm.sh ./scripts/workflows/run.sh
+          - command: ENGINE=podman DISTRO=ubuntu-2004 ZIP=1 ./scripts/binaries/build.sh
+          - command: ENGINE=podman DISTRO=ubuntu-2204 ZIP=1 ./scripts/binaries/build.sh
+          - command: ENGINE=podman DISTRO=ubuntu-2310 ZIP=1 ./scripts/binaries/build.sh
+          - command: ENGINE=podman DISTRO=fedora-38 ZIP=1 ./scripts/binaries/build.sh
+          - command: ENGINE=podman DISTRO=fedora-39 ZIP=1 ./scripts/binaries/build.sh
+          - command: ENGINE=podman DISTRO=debian-11 ZIP=1 ./scripts/binaries/build.sh
+          - command: ENGINE=podman DISTRO=debian-12 ZIP=1 ./scripts/binaries/build.sh
+          - command: ENGINE=podman DISTRO=arch ZIP=1 ./scripts/binaries/build.sh
     steps:
       - uses: actions/checkout@v2
 
@@ -28,179 +40,12 @@ jobs:
       
       - name: install podman
         run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail wasm
-        run: ENGINE=podman SCRIPT_LOC=./scripts/workflows/releaser_wasm.sh ./scripts/workflows/run.sh
 
-
-  x86_64_ubuntu_2004:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
+      - uses: nick-fields/retry@v3
         with:
-          tool-cache: true
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-      
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail binary
-        run: ENGINE=podman DISTRO=ubuntu-2004 ZIP=1 ./scripts/binaries/build.sh
-
-  x86_64_ubuntu_2204:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail binary
-        run: ENGINE=podman DISTRO=ubuntu-2204 ZIP=1 ./scripts/binaries/build.sh
-
-
-  x86_64_ubuntu_2310:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail binary
-        run: ENGINE=podman DISTRO=ubuntu-2310 ZIP=1 ./scripts/binaries/build.sh
-
-  x86_64_fedora_38:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail binary
-        run: ENGINE=podman DISTRO=fedora-38 ZIP=1 ./scripts/binaries/build.sh
-
-  x86_64_fedora_39:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail binary
-        run: ENGINE=podman DISTRO=fedora-39 ZIP=1 ./scripts/binaries/build.sh
-
-  x86_64_debian_11:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail binary
-        run: ENGINE=podman DISTRO=debian-11 ZIP=1 ./scripts/binaries/build.sh
-
-  x86_64_debian_12:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail binary
-        run: ENGINE=podman DISTRO=debian-12 ZIP=1 ./scripts/binaries/build.sh
-
-  x86_64_arch:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and build avail binary
-        run: ENGINE=podman DISTRO=arch ZIP=1 ./scripts/binaries/build.sh
+          timeout_minutes: 60
+          max_attempts: 2
+          command: ${{ matrix.command }}
 
   arm64_ubuntu_2004:
     runs-on: ubuntu-20.04

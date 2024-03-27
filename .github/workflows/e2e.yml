@@ -11,8 +11,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  kate_rpc_e2e_tests:
+  e2e_tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - command: ENGINE=podman SCRIPT_LOC=./scripts/workflows/e2e_kate.sh ./scripts/workflows/run.sh
+          - command: ENGINE=podman SCRIPT_LOC=./scripts/workflows/subxt_examples.sh ./scripts/workflows/run.sh
     steps:
       - uses: actions/checkout@v2
 
@@ -28,27 +33,9 @@ jobs:
       
       - name: install podman
         run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and run kate e2e tests
-        run: ENGINE=podman SCRIPT_LOC=./scripts/workflows/e2e_kate.sh ./scripts/workflows/run.sh
 
-  avail_subxt_tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
+      - uses: nick-fields/retry@v3
         with:
-          tool-cache: true
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-      
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
-        
-      - name: build docker image and run avail-subxt examples
-        run: ENGINE=podman SCRIPT_LOC=./scripts/workflows/subxt_examples.sh ./scripts/workflows/run.sh
+          timeout_minutes: 60
+          max_attempts: 3
+          command: ${{ matrix.command }}
