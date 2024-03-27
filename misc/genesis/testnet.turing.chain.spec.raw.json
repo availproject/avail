@@ -15,7 +15,7 @@
   ],
   "telemetryEndpoints": [
     [
-      "/dns/telemetry.avail.tools/tcp/8001/x-parity-ws/%2Fsubmit",
+      "/dns/telemetry.avail.so/tcp/8001/x-parity-ws/%2Fsubmit",
       0
     ]
   ],
