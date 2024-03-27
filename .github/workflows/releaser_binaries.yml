@@ -300,7 +300,7 @@ jobs:
 
       - uses: actions/download-artifact@v3
         with:
-          name: x86_64-fedora-39-avail-node.tar.gz
+          name: x86_64-fedora-38-avail-node.tar.gz
           path: ./artifact
 
       - uses: actions/download-artifact@v3
