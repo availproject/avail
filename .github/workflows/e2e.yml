@@ -16,154 +16,44 @@ env:
   SCCACHE_BIN: /home/runner/.cache/cargo-sccache-bed5571c/bin/sccache
 
 jobs:
-  build:
+  kate_rpc_e2e_tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
-      - uses: actions/cache@v3
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
         with:
-          path: ${{ env.SCCACHE_DIR }}
-          key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+          tool-cache: true
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v1
         with:
-          version: "3.x"
-
-      - name: Setup Rust toolchain
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source "$HOME/.cargo/env"
-          rustup show
-
-      - name: SCCache
-        run: |
-          # We altered the path to avoid old actions to overwrite it
-          if [ ! -f $SCCACHE_BIN ]; then
-            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_DIR
-          fi
-          ls -la $SCCACHE_BIN
-          ps aux | grep sccache
-          if [[ -z `pgrep sccache` ]]; then
-            chmod +x $SCCACHE_BIN
-            $SCCACHE_BIN --start-server
-          fi
-          $SCCACHE_BIN -s
-          echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
-
-      - name: Build node
-        run: cargo build --release -p avail-node
-
-      - name: Upload avail-node binary
-        uses: actions/upload-artifact@v2
-        with:
-          name: avail-node
-          path: target/release/avail-node
-
-      - name: Display SCCache Stats
-        run: ${{ env.SCCACHE_BIN }} --show-stats
-
-  kate_rpc_e2e_tests:
-      runs-on: ubuntu-latest
-      needs: [build]
-      steps:
-        - uses: actions/checkout@v2
-  
-        # Restore cache from `build`
-        - uses: actions/cache/restore@v3
-          with:
-            path: ${{ env.SCCACHE_DIR }}
-            key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
-  
-        - name: Setup Rust toolchain
-          run: |
-            curl https://sh.rustup.rs -sSf | sh -s -- -y
-            source "$HOME/.cargo/env"
-            rustup show
-  
-        - name: SCCache
-          run: |
-            # We altered the path to avoid old actions to overwrite it
-            # SCCACHE_DIR=${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
-            # SCCACHE_BIN=${SCCACHE_DIR}/bin/sccache
-            if [ ! -f $SCCACHE_BIN ]; then
-              cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_DIR
-            fi
-            ls -la $SCCACHE_BIN
-            ps aux | grep sccache
-            if [[ -z `pgrep sccache` ]]; then
-              chmod +x $SCCACHE_BIN
-              $SCCACHE_BIN --start-server
-            fi
-            $SCCACHE_BIN -s
-            echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
-  
-        - uses: actions/download-artifact@v2
-          with:
-            name: avail-node
-  
-        - name: Run Kate RPC E2E tests
-          run: |
-            chmod uog+x avail-node
-            ./avail-node --dev --enable-kate-rpc &
-            sleep 5
-            cd e2e
-            cargo test -- --test-threads 1
-  
-        - name: Display SCCache Stats
-          run: ${{ env.SCCACHE_BIN }} --show-stats
+          version: '3.x'
+      
+      - name: install podman
+        run: sudo apt-get update && sudo apt install podman -y
+        
+      - name: build docker image and run kate e2e tests
+        run: ENGINE=podman SCRIPT_LOC=./scripts/workflows/e2e_kate.sh ./scripts/workflows/run.sh
 
   avail_subxt_tests:
     runs-on: ubuntu-latest
-    needs: [build]
     steps:
       - uses: actions/checkout@v2
 
-      # Restore cache from `build`
-      - uses: actions/cache/restore@v3
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
         with:
-          path: ${{ env.SCCACHE_DIR }}
-          key: ${{ runner.OS }}-sccache-bin-${{ env.CARGO_SCCACHE_COMMIT }}-v1
+          tool-cache: true
 
-      - name: Setup Rust toolchain
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source "$HOME/.cargo/env"
-          rustup show
-
-      - name: SCCache
-        run: |
-          # We altered the path to avoid old actions to overwrite it
-          # SCCACHE_DIR=${{ runner.tool_cache }}/cargo-sccache-${CARGO_SCCACHE_COMMIT}
-          # SCCACHE_BIN=${SCCACHE_DIR}/bin/sccache
-          if [ ! -f $SCCACHE_BIN ]; then
-            cargo install sccache --git https://github.com/purestake/sccache.git --rev $CARGO_SCCACHE_COMMIT --force --no-default-features --features=dist-client --root $SCCACHE_DIR
-          fi
-          ls -la $SCCACHE_BIN
-          ps aux | grep sccache
-          if [[ -z `pgrep sccache` ]]; then
-            chmod +x $SCCACHE_BIN
-            $SCCACHE_BIN --start-server
-          fi
-          $SCCACHE_BIN -s
-          echo "RUSTC_WRAPPER=$SCCACHE_BIN" >> $GITHUB_ENV
-
-      - uses: actions/download-artifact@v2
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
         with:
-          name: avail-node
-
-      - name: Run SubXt E2E tests
-        run: |
-          chmod uog+x avail-node
-          ./avail-node --dev --enable-kate-rpc &
-          sleep 5
-          cargo run --release --manifest-path avail-subxt/Cargo.toml --example accounts_from_mnemonics
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example headers
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example max_block_submit
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_data
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example vector_send_msg 
-          cargo run --release  --manifest-path avail-subxt/Cargo.toml --example submit_block_length_proposal
-
-      - name: Display SCCache Stats
-        run: ${{ env.SCCACHE_BIN }} --show-stats
+          version: '3.x'
+      
+      - name: install podman
+        run: sudo apt-get update && sudo apt install podman -y
+        
+      - name: build docker image and run avail-subxt examples
+        run: ENGINE=podman SCRIPT_LOC=./scripts/workflows/subxt_examples.sh ./scripts/workflows/run.sh
