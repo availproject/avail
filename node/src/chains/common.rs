@@ -17,7 +17,8 @@ use sp_core::crypto::AccountId32;
 use sp_core::sr25519::Public;
 
 pub const PROTOCOL_ID: &str = "Avail";
-pub const TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
+pub const TESTNET_TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
+// pub const TELEMETRY_URL: &str = "ws://telemetry.avail.so:8001/submit";
 
 const DEFAULT_ENDOWED_SEEDS: [&str; 12] = [
 	"Alice",
