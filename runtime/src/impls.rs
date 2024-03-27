@@ -363,7 +363,7 @@ impl pallet_im_online::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type UnsignedPriority = constants::im::ImOnlineUnsignedPriority;
 	type ValidatorSet = Historical;
-	type WeightInfo = pallet_im_online::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_im_online::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -401,7 +401,7 @@ impl pallet_collective::Config<TreasuryCollective> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
-	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_collective::WeightInfo<Runtime>;
 }
 
 parameter_types! {
