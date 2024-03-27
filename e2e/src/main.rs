@@ -214,7 +214,7 @@ pub mod tests {
 				.await?
 				.block_hash();
 
-		let cell = Cell { row: 10, col: 0 };
+		let cell = Cell { row: 0, col: 0 };
 		let cells = Cells::try_from(vec![cell.clone()]).unwrap();
 
 		// RPC call
