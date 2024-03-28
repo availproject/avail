@@ -549,7 +549,7 @@ impl BlockWeights {
 						Some(Weight::zero())
 					};
 					WeightsPerClass {
-						base_extrinsic: constants::ExtrinsicBaseWeight::get(),
+						base_extrinsic: constants::ExtrinsicBaseWeight::get().saturating_mul(100),
 						max_extrinsic: None,
 						max_total: initial,
 						reserved: initial,

@@ -131,16 +131,17 @@ pub mod system {
 	const MAXIMUM_BLOCK_WEIGHT: Weight =
 		Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2), u64::MAX);
 
-	/// We allow for 5 seconds of compute with a 20 second average block time, with maximum proof size.
+	/// We allow for 2 (temporary) seconds of compute with a 20 second average block time, with maximum proof size.
 	#[cfg(not(feature = "fast-runtime"))]
 	const MAXIMUM_BLOCK_WEIGHT: Weight =
-		Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(5), u64::MAX);
+		Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2), u64::MAX);
 
 	parameter_types! {
 		pub RuntimeBlockWeights: SystemBlockWeights = SystemBlockWeights::builder()
 			.base_block(BlockExecutionWeight::get())
 			.for_class(DispatchClass::all(), |weights| {
-				weights.base_extrinsic = ExtrinsicBaseWeight::get();
+				// Note: To make min tx cost at least 0.1 AVAIL, BaseWeight has been increased by 100x
+				weights.base_extrinsic = ExtrinsicBaseWeight::get().saturating_mul(100);
 			})
 			.for_class(DispatchClass::Normal, |weights| {
 				weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
