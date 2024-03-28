@@ -6,6 +6,7 @@ ARCH="${ARCH:-x86_64}"
 
 IMAGE="${DISTRO}.Dockerfile"
 DOCKER_FILE="./scripts/binaries/$ARCH/$IMAGE"
+DOCKER_IGNORE_FILE="./scripts/binaries/$ARCH/shared.dockerignore"
 
 if ! test -f "$DOCKER_FILE"; then
     echo "Unknown option"
@@ -20,10 +21,11 @@ echo "Selected engine: $ENGINE"
 echo "Selected arch: $ARCH"
 echo "Selected docker file: $DOCKER_FILE"
 
-# Build the image
-"$ENGINE" build -t availnodet -f $DOCKER_FILE .
-
 mkdir -p "output/$ARCH/$DISTRO"
+
+# Build the image
+"$ENGINE" build -t availnodet --ignorefile=$DOCKER_IGNORE_FILE -f $DOCKER_FILE .
+
 
 selinuxenabled
 if [ $? -ne 0 ]; then

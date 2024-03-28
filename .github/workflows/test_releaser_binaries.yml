@@ -1,10 +1,13 @@
-name: Releaser Binaries and WASM
+name: Test Releaser Binaries and WASM
 on:
   push:
-    branches-ignore:
-      - '**'
-    tags:
-      - '*'
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
   workflow_dispatch:
 
 jobs:
@@ -14,23 +17,14 @@ jobs:
       matrix:
         include:
           - command: ENGINE=podman SCRIPT_LOC=./scripts/workflows/releaser_wasm.sh ./scripts/workflows/run.sh
-            output_file: output/da_runtime.compact.compressed.wasm
           - command: ENGINE=podman DISTRO=ubuntu-2004 ZIP=1 ./scripts/binaries/build.sh
-            output_file: output/zips/x86_64-ubuntu-2004-avail-node.tar.gz
           - command: ENGINE=podman DISTRO=ubuntu-2204 ZIP=1 ./scripts/binaries/build.sh
-            output_file: output/zips/x86_64-ubuntu-2204-avail-node.tar.gz
           - command: ENGINE=podman DISTRO=ubuntu-2310 ZIP=1 ./scripts/binaries/build.sh
-            output_file: output/zips/x86_64-ubuntu-2310-avail-node.tar.gz
           - command: ENGINE=podman DISTRO=fedora-38 ZIP=1 ./scripts/binaries/build.sh
-            output_file: output/zips/x86_64-fedora-38-avail-node.tar.gz
           - command: ENGINE=podman DISTRO=fedora-39 ZIP=1 ./scripts/binaries/build.sh
-            output_file: output/zips/x86_64-fedora-39-avail-node.tar.gz
           - command: ENGINE=podman DISTRO=debian-11 ZIP=1 ./scripts/binaries/build.sh
-            output_file: output/zips/x86_64-debian-11-avail-node.tar.gz
           - command: ENGINE=podman DISTRO=debian-12 ZIP=1 ./scripts/binaries/build.sh
-            output_file: output/zips/x86_64-debian-12-avail-node.tar.gz
           - command: ENGINE=podman DISTRO=arch ZIP=1 ./scripts/binaries/build.sh
-            output_file: output/zips/x86_64-arch-avail-node.tar.gz
     steps:
       - uses: actions/checkout@v2
 
@@ -50,23 +44,8 @@ jobs:
       - uses: nick-fields/retry@v3
         with:
           timeout_minutes: 60
-          max_attempts: 3
+          max_attempts: 2
           command: ${{ matrix.command }}
-
-      - name: Prepare
-        id: prepare
-        run: |
-            TAG=${GITHUB_REF#refs/tags/}
-            echo "tag_name=${TAG}" >> $GITHUB_OUTPUT
-
-      - name: publish binary
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ matrix.output_file }}
-          release_name: ${{ steps.prepare.outputs.tag_name }}
-          tag: ${{ steps.prepare.outputs.tag_name }}
-          overwrite: true
 
   arm64_ubuntu_2004:
     runs-on: ubuntu-20.04
@@ -95,18 +74,3 @@ jobs:
           pushd target/aarch64-unknown-linux-gnu/release/
           tar -czf arm64-ubuntu-2004-avail-node.tar.gz avail-node
           popd
-
-      - name: Prepare
-        id: prepare
-        run: |
-            TAG=${GITHUB_REF#refs/tags/}
-            echo "tag_name=${TAG}" >> $GITHUB_OUTPUT
-
-      - name: publish binaries
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/aarch64-unknown-linux-gnu/release/arm64-ubuntu-2004-avail-node.tar.gz
-          release_name: ${{ steps.prepare.outputs.tag_name }}
-          tag: ${{ steps.prepare.outputs.tag_name }}
-          overwrite: true
