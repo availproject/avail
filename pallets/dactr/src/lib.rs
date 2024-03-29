@@ -7,6 +7,7 @@ use avail_core::{
 	NORMAL_DISPATCH_RATIO,
 };
 use codec::{Compact, CompactLen as _};
+use frame_support::weights::constants::ExtrinsicBaseWeight;
 use frame_support::{dispatch::DispatchClass, traits::Get, weights::Weight};
 use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
 #[cfg(feature = "std")]
@@ -366,8 +367,11 @@ impl<T: Config> Pallet<T> {
 	pub fn is_block_weight_acceptable() -> bool {
 		let current_weight = <frame_system::Pallet<T>>::block_weight();
 		let current_normal_weight: &Weight = current_weight.get(DispatchClass::Normal);
-		let acceptable_limit: Weight =
-			T::WeightInfo::submit_block_length_proposal().saturating_mul(5);
+		// Offsetting the base_weight multiplication done for all txs
+		let base_weight = ExtrinsicBaseWeight::get().saturating_mul(100);
+		let acceptable_limit: Weight = T::WeightInfo::submit_block_length_proposal()
+			.saturating_mul(5)
+			.saturating_add(base_weight);
 		current_normal_weight.all_lte(acceptable_limit)
 	}
 }
