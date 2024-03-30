@@ -968,6 +968,22 @@ fn send_message_fungible_token_works() {
 }
 
 #[test]
+fn send_message_fungible_token_does_not_accept_zero_amount() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let message = Message::FungibleToken {
+			asset_id: H256::zero(),
+			amount: 0,
+		};
+		let to = ROTATE_FUNCTION_ID;
+		let domain = 2;
+
+		let err = Bridge::send_message(origin, message, to, domain);
+		assert_err!(err, Error::<Test>::InvalidBridgeInputs);
+	});
+}
+
+#[test]
 fn execute_arbitrary_message_works() {
 	new_test_ext().execute_with(|| {
 		use crate::BalanceOf;
