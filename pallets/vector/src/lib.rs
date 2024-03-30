@@ -773,7 +773,10 @@ pub mod pallet {
 						SUPPORTED_ASSET_ID == asset_id,
 						Error::<T>::AssetNotSupported
 					);
-					ensure!(amount.saturated_into::<u128>() > 0, Error::<T>::InvalidBridgeInputs);
+					ensure!(
+						amount.saturated_into::<u128>() > 0,
+						Error::<T>::InvalidBridgeInputs
+					);
 					T::Currency::transfer(
 						&who,
 						&Self::account_id(),
