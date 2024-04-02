@@ -120,6 +120,8 @@ pub enum Error {
 	MissingCell { row: u32, col: u32 },
 	#[error("MultiProof error")]
 	Proof,
+	#[error("Failed to extend columns")]
+	ColumnExtension,
 }
 
 impl From<TryFromIntError> for Error {

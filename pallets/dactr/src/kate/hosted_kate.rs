@@ -1,5 +1,6 @@
 use super::{AppExtrinsic, AppId, BlockLength, Error, GDataProof, GProof, GRawScalar, GRow, Seed};
 use avail_core::{BlockLengthColumns, BlockLengthRows};
+use core::num::NonZeroU16;
 use frame_system::header_builder::MIN_WIDTH;
 #[cfg(feature = "std")]
 use kate::{
@@ -85,7 +86,10 @@ pub trait HostedKate {
 	) -> Result<Vec<GDataProof>, Error> {
 		let srs = SRS.get_or_init(multiproof_params);
 		let (max_width, max_height) = to_width_height(&block_len);
-		let grid = EGrid::from_extrinsics(extrinsics, MIN_WIDTH, max_width, max_height, seed)?;
+		let grid = EGrid::from_extrinsics(extrinsics, MIN_WIDTH, max_width, max_height, seed)?
+			.extend_columns(NonZeroU16::new(2).expect("2>0"))
+			.map_err(|_| Error::ColumnExtension)?;
+
 		let poly = grid.make_polynomial_grid()?;
 
 		let proofs = cells
