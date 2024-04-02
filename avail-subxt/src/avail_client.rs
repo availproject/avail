@@ -32,6 +32,21 @@ impl AvailClient {
 		})
 	}
 
+	pub async fn new_insecure<U: AsRef<str>>(ws_uri: U) -> Result<Self, Error> {
+		let rpc_methods = jsonrpsee_helpers::client(ws_uri.as_ref())
+			.await
+			.map_err(|e| Error::Other(format!("Client cannot be created: {e:?}")))?;
+
+		let rpc = RpcClient::from_insecure_url(ws_uri).await?;
+		let online = OnlineClient::<AvailConfig>::from_rpc_client(rpc.clone()).await?;
+
+		Ok(AvailClient {
+			rpc_methods,
+			online,
+			rpc,
+		})
+	}
+
 	pub fn legacy_rpc(&self) -> LegacyRpcMethods<AvailConfig> {
 		LegacyRpcMethods::<AvailConfig>::new(self.rpc.clone())
 	}
