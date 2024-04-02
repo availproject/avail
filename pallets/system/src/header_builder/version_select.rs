@@ -45,7 +45,7 @@ pub fn build_grid(
 	seed: Seed,
 ) -> Result<EvaluationGrid, String> {
 	let grid = EvaluationGrid::from_extrinsics(
-		submitted.to_vec(),
+		submitted,
 		MIN_WIDTH,
 		block_length.cols.0.saturated_into(), // even if we run on a u16 target this is fine
 		block_length.rows.0.saturated_into(),
