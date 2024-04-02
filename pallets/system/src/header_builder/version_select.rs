@@ -20,6 +20,66 @@ use std::{sync::OnceLock, time::Instant, vec::Vec};
 
 static PMP: OnceLock<M1NoPrecomp> = OnceLock::new();
 
+#[cfg(feature = "std")]
+pub fn get_empty_header(data_root: H256, version: HeaderVersion) -> HeaderExtension {
+	use avail_core::DataLookup;
+	let empty_commitment: Vec<u8> = vec![0];
+	let empty_app_lookup = DataLookup::new_empty();
+
+	match version {
+		HeaderVersion::V3 => {
+			let commitment = kc::v3::KateCommitment::new(1, 4, data_root, empty_commitment);
+			he::v3::HeaderExtension {
+				app_lookup: empty_app_lookup,
+				commitment,
+			}
+			.into()
+		},
+	}
+}
+
+#[cfg(feature = "std")]
+pub fn build_grid(
+	submitted: Vec<AppExtrinsic>,
+	block_length: BlockLength,
+	seed: Seed,
+) -> Result<EvaluationGrid, String> {
+	let grid = EvaluationGrid::from_extrinsics(
+		submitted.to_vec(),
+		MIN_WIDTH,
+		block_length.cols.0.saturated_into(), // even if we run on a u16 target this is fine
+		block_length.rows.0.saturated_into(),
+		seed,
+	)
+	.map_err(|e| format!("Grid construction failed: {e:?}"))?;
+
+	Ok(grid)
+}
+
+#[cfg(feature = "std")]
+pub fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, String> {
+	// couscous has pp for degree upto 1024
+	let pmp = PMP.get_or_init(multiproof_params);
+
+	let poly_grid = grid
+		.make_polynomial_grid()
+		.map_err(|e| format!("Make polynomial grid failed: {e:?}"))?;
+
+	let extended_grid = poly_grid
+		.extended_commitments(pmp, 2)
+		.map_err(|e| format!("Grid extension failed: {e:?}"))?;
+
+	let mut commitment = Vec::new();
+	for c in extended_grid.iter() {
+		match c.to_bytes() {
+			Ok(bytes) => commitment.extend(bytes),
+			Err(e) => return Err(format!("Commitment serialization failed: {:?}", e)),
+		}
+	}
+
+	Ok(commitment)
+}
+
 pub fn build_extension(
 	submitted: Vec<AppExtrinsic>,
 	data_root: H256,
@@ -30,34 +90,41 @@ pub fn build_extension(
 ) -> HeaderExtension {
 	let build_extension_start = Instant::now();
 
-	// couscous has pp for degree upto 1024
-	let pmp = PMP.get_or_init(multiproof_params);
-
+	// Build the grid
 	let timer = Instant::now();
-	let grid = EvaluationGrid::from_extrinsics(
-		submitted,
-		MIN_WIDTH,
-		block_length.cols.0.saturated_into(), // even if we run on a u16 target this is fine
-		block_length.rows.0.saturated_into(),
-		seed,
-	)
-	.expect("Grid construction cannot fail");
+	let maybe_grid = build_grid(submitted, block_length, seed);
 
 	// Evaluation Grid Build Time Metrics
 	Metrics::observe_evaluation_grid_build_time(timer.elapsed());
 
+	// We get the grid or return an empty header in case of an error
+	let grid = match maybe_grid {
+		Ok(res) => res,
+		Err(message) => {
+			log::error!("NODE_CRITICAL_ERROR_001 - A critical error has occured: {message:?}.");
+			log::error!("NODE_CRITICAL_ERROR_001 - If you see this, please warn Avail team and raise an issue.");
+			Metrics::observe_total_execution_time(build_extension_start.elapsed());
+			return get_empty_header(data_root, version);
+		},
+	};
+
+	// Build the commitment
 	let timer = Instant::now();
-	let commitment = grid
-		.make_polynomial_grid()
-		.expect("Make polynomials cannot fail")
-		.extended_commitments(pmp, 2)
-		.expect("Extended commitments cannot fail")
-		.iter()
-		.flat_map(|c| c.to_bytes().expect("Commitment serialization cannot fail"))
-		.collect::<Vec<u8>>();
+	let maybe_commitment = build_commitment(&grid);
 
 	// Commitment Build Time Metrics
 	Metrics::observe_commitment_build_time(timer.elapsed());
+
+	// We get the commitment or return an empty header in case of an error
+	let commitment = match maybe_commitment {
+		Ok(res) => res,
+		Err(message) => {
+			log::error!("NODE_CRITICAL_ERROR_002 - A critical error has occured: {message:?}.");
+			log::error!("NODE_CRITICAL_ERROR_002 - If you see this, please warn Avail team and raise an issue.");
+			Metrics::observe_total_execution_time(build_extension_start.elapsed());
+			return get_empty_header(data_root, version);
+		},
+	};
 
 	// Note that this uses the original dims, _not the extended ones_
 	let rows = grid.dims().rows().get();
@@ -82,5 +149,6 @@ pub fn build_extension(
 
 	// Total Execution Time Metrics
 	Metrics::observe_total_execution_time(build_extension_start.elapsed());
+
 	extension
 }
