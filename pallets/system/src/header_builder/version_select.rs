@@ -23,12 +23,12 @@ static PMP: OnceLock<M1NoPrecomp> = OnceLock::new();
 #[cfg(feature = "std")]
 pub fn get_empty_header(data_root: H256, version: HeaderVersion) -> HeaderExtension {
 	use avail_core::DataLookup;
-	let empty_commitment: Vec<u8> = vec![0];
+	let empty_commitment: Vec<u8> = vec![];
 	let empty_app_lookup = DataLookup::new_empty();
 
 	match version {
 		HeaderVersion::V3 => {
-			let commitment = kc::v3::KateCommitment::new(1, 4, data_root, empty_commitment);
+			let commitment = kc::v3::KateCommitment::new(0, 0, data_root, empty_commitment);
 			he::v3::HeaderExtension {
 				app_lookup: empty_app_lookup,
 				commitment,
