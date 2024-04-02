@@ -258,6 +258,48 @@ pub mod tests {
 		let dim = Dimensions::new(rows, cols).unwrap();
 		let res = verify(&pp, dim, &commitment, &dcell).unwrap();
 		assert!(res);
+
+		// Fetch & verify extended cell
+		let cell = Cell { row: 1, col: 1 };
+		let cells = Cells::try_from(vec![cell.clone()]).unwrap();
+
+		// RPC call
+		let actual_proof: Vec<GDataProof> =
+			client.rpc_methods().query_proof(cells, block_hash).await?;
+		let actual_proof: Vec<u8> = actual_proof
+			.iter()
+			.map(|(raw_scalar, g_proof)| {
+				let mut scalar_bytes = [0u8; 32];
+				raw_scalar.to_big_endian(&mut scalar_bytes);
+				let proof_bytes: Vec<u8> = Vec::from(*g_proof);
+
+				[proof_bytes, scalar_bytes.to_vec()]
+					.into_iter()
+					.flatten()
+					.collect::<Vec<u8>>()
+			})
+			.flatten()
+			.collect();
+		assert_eq!(actual_proof.len(), 80);
+
+		let (commitment, rows, cols) = match &submitted_block.header().extension {
+			HeaderExtension::V3(ext) => (
+				ext.commitment.commitment.clone(),
+				ext.commitment.rows,
+				ext.commitment.cols,
+			),
+		};
+
+		let mut content = [0u8; 80];
+		content.copy_from_slice(&actual_proof);
+		let commitment: [u8; 48] = commitment[48..96].try_into().unwrap();
+		let dcell = kate_recovery::data::Cell {
+			position: kate_recovery::matrix::Position { row: 1, col: 1 },
+			content,
+		};
+		let dim = Dimensions::new(rows, cols).unwrap();
+		let res = verify(&pp, dim, &commitment, &dcell).unwrap();
+		assert!(res);
 		Ok(())
 	}
 
