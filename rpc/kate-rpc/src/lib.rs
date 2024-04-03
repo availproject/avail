@@ -1,5 +1,5 @@
 use avail_base::metrics::avail::KateRpcMetrics;
-use avail_core::{data_proof::ProofResponse, traits::ExtendedHeader, AppId, OpaqueExtrinsic};
+use avail_core::{data_proof::ProofResponse, header::HeaderExtension, traits::ExtendedHeader, AppId, OpaqueExtrinsic};
 use da_control::kate::{GDataProof, GRow};
 use da_runtime::apis::{DataAvailApi, KateApi as RTKateApi};
 use kate::com::Cell;
@@ -112,7 +112,7 @@ type Api<'a, C, B> = ApiRef<'a, <C as ProvideRuntimeApi<B>>::Api>;
 impl<Client, Block> Kate<Client, Block>
 where
 	Block: BlockT,
-	<Block as BlockT>::Header: ExtendedHeader,
+	<Block as BlockT>::Header: ExtendedHeader<Extension = HeaderExtension>,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: DataAvailApi<Block>,
@@ -128,20 +128,21 @@ where
 		u32,
 		BlockLength,
 		Opaques<Block>,
+		<Block as BlockT>::Header,
 	)> {
 		let at = self.at_or_best(at);
 		let block = self.get_finalized_block(Some(at))?.block;
 		let number: u32 = (*block.header().number())
 			.try_into()
 			.map_err(|_| ErrorCode::InvalidParams)?;
-		let (_, extrinsics) = block.deconstruct();
+		let (header, extrinsics) = block.deconstruct();
 
 		let api = self.client.runtime_api();
 		let block_len = api
 			.block_length(at)
 			.map_err(|e| internal_err!("Length of best block({at:?}): {e:?}"))?;
 
-		Ok((api, at, number, block_len, extrinsics))
+		Ok((api, at, number, block_len, extrinsics, header))
 	}
 
 	fn at_or_best(&self, at: Option<<Block as BlockT>::Hash>) -> <Block as BlockT>::Hash {
@@ -180,14 +181,21 @@ where
 impl<Client, Block> KateApiServer<Block> for Kate<Client, Block>
 where
 	Block: BlockT<Extrinsic = OpaqueExtrinsic>,
-	<Block as BlockT>::Header: ExtendedHeader,
+	<Block as BlockT>::Header: ExtendedHeader<Extension = HeaderExtension>,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: DataAvailApi<Block> + RTKateApi<Block>,
 {
 	async fn query_rows(&self, rows: Rows, at: Option<HashOf<Block>>) -> RpcResult<Vec<GRow>> {
-		let (api, at, number, block_len, extrinsics) = self.scope(at)?;
+		let (api, at, number, block_len, extrinsics, header) = self.scope(at)?;
 
+		match header.extension() {
+			HeaderExtension::V3(ext) => {
+				if ext.commitment.commitment.is_empty() {
+					return Err(internal_err!("Requested block {at} has empty commitments"));
+				}
+			},
+		};
 		let execution_start = Instant::now();
 		let grid_rows = api
 			.rows(at, number, extrinsics, block_len, rows.into())
@@ -203,7 +211,7 @@ where
 		app_id: AppId,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<Option<GRow>>> {
-		let (api, at, number, block_len, extrinsics) = self.scope(at)?;
+		let (api, at, number, block_len, extrinsics, _) = self.scope(at)?;
 
 		let execution_start = Instant::now();
 		let app_data = api
@@ -230,8 +238,14 @@ where
 			);
 		}
 
-		let (api, at, number, block_len, extrinsics) = self.scope(at)?;
-
+		let (api, at, number, block_len, extrinsics, header) = self.scope(at)?;
+		match header.extension() {
+			HeaderExtension::V3(ext) => {
+				if ext.commitment.commitment.is_empty() {
+					return Err(internal_err!("Requested block {at} has empty commitments"));
+				}
+			},
+		};
 		let execution_start = Instant::now();
 		let cells = cells
 			.into_iter()
@@ -269,7 +283,7 @@ where
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<ProofResponse> {
 		// Calculate proof for block and tx index
-		let (api, at, number, _, extrinsics) = self.scope(at)?;
+		let (api, at, number, _, extrinsics, _) = self.scope(at)?;
 
 		let execution_start = Instant::now();
 		let proof = api

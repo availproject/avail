@@ -1,6 +1,6 @@
 use crate::{Cells, HashOf, Kate, KateApiServer, ProofResponse, Rows};
 
-use avail_core::{traits::ExtendedHeader, AppId, OpaqueExtrinsic};
+use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppId, OpaqueExtrinsic};
 use da_runtime::apis::DataAvailApi;
 
 use crate::RTKateApi;
@@ -60,7 +60,7 @@ where
 impl<Client, Block> KateApiMetricsServer<Block> for Kate<Client, Block>
 where
 	Block: BlockT<Extrinsic = OpaqueExtrinsic>,
-	<Block as BlockT>::Header: ExtendedHeader,
+	<Block as BlockT>::Header: ExtendedHeader<Extension = HeaderExtension>,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: DataAvailApi<Block> + RTKateApi<Block>,
