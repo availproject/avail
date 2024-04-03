@@ -7,6 +7,7 @@ pub mod tests {
 	use std::num::NonZeroU16;
 
 	use avail_core::{AppExtrinsic, AppId, Keccak256};
+	use avail_subxt::api;
 	use avail_subxt::{
 		api::runtime_types::avail_core::header::extension::HeaderExtension,
 		avail::{Cells, GDataProof, GRawScalar, GRow, Rows},
@@ -300,6 +301,33 @@ pub mod tests {
 		let dim = Dimensions::new(rows, cols).unwrap();
 		let res = verify(&pp, dim, &commitment, &dcell).unwrap();
 		assert!(res);
+		Ok(())
+	}
+
+	#[async_std::test]
+	pub async fn empty_commitments_test() -> Result<()> {
+		let client = establish_a_connection().await.unwrap();
+		let alice = dev::alice();
+		// other than DA tx
+		let call = api::tx().system().remark(b"Hi".to_vec());
+		let block_hash = tx::send_then_finalized(&client, &call, &alice, AppId(0))
+			.await?
+			.block_hash();
+
+		// query_rows should fail for block with empty commitments
+		let row_indexes = Rows::truncate_from(vec![0]);
+		let rows = client
+			.rpc_methods()
+			.query_rows(row_indexes, block_hash)
+			.await;
+		assert!(rows.is_err());
+
+		// query_proof should fail for block with empty commitments
+		let cell = Cell { row: 0, col: 0 };
+		let cells = Cells::try_from(vec![cell.clone()]).unwrap();
+
+		let proof = client.rpc_methods().query_proof(cells, block_hash).await;
+		assert!(proof.is_err());
 		Ok(())
 	}
 
