@@ -88,6 +88,10 @@ pub fn build_extension(
 	seed: Seed,
 	version: HeaderVersion,
 ) -> HeaderExtension {
+	// Blocks with non-DA extrinsics will have empty commitments
+	if submitted.is_empty() {
+		return get_empty_header(data_root, version);
+	}
 	let build_extension_start = Instant::now();
 
 	// Build the grid
