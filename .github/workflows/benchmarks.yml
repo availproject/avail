@@ -1,13 +1,13 @@
 name: Header and RPC Benchmarks
 on:
-  push:
-    branches:
-      - main
-      - develop
-  pull_request:
-    branches:
-      - main
-      - develop
+  # push:
+  #   branches:
+  #     - main
+  #     - develop
+  # pull_request:
+  #   branches:
+  #     - main
+  #     - develop
   workflow_dispatch:
 
 env:
