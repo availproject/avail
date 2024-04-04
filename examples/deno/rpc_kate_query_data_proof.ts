@@ -1,14 +1,9 @@
-/// TODO DOC
-///
+/// The example showcases how to programmatically call query data proof RPC. 
 ///
 
-import {
-  ApiPromise,
-  Keyring,
-  WsProvider,
-} from "https://deno.land/x/polkadot@0.2.42/api/mod.ts";
-import { ISubmittableResult } from "https://deno.land/x/polkadot@0.2.42/types/types/extrinsic.ts";
-import { H256 } from "https://deno.land/x/polkadot@0.2.42/types/interfaces/types.ts";
+import { ApiPromise, Keyring, WsProvider } from "https://deno.land/x/polkadot@0.2.45/api/mod.ts";
+import { ISubmittableResult } from "https://deno.land/x/polkadot@0.2.45/types/types/extrinsic.ts";
+import { H256 } from "https://deno.land/x/polkadot@0.2.45/types/interfaces/types.ts";
 import { API_EXTENSIONS, API_RPC, API_TYPES } from "./api_options.ts";
 
 const api = await ApiPromise.create({
@@ -17,28 +12,41 @@ const api = await ApiPromise.create({
   types: API_TYPES,
   signedExtensions: API_EXTENSIONS,
 });
-const alice = new Keyring({ type: "sr25519" }).addFromUri("//Alice");
+const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice");
 
 // submit data transaction
-const data = "Hello World";
-const submitData = new Promise<[H256, H256]>((res, _) => {
-  api.tx.dataAvailability.submitData(data).signAndSend(
-    alice,
-    (result: ISubmittableResult) => {
-      if (result.isInBlock) {
-        console.log("Waiting for block finalization...");
-      } else if (result.isFinalized) {
-        res([result.status.asFinalized as H256, result.txHash as H256]);
+const tx_result = await new Promise<ISubmittableResult>((res, _) => {
+  api.tx.dataAvailability.submitData("Hello World").signAndSend(account, (result: ISubmittableResult) => {
+      if (result.isFinalized || result.isError) {
+        res(result);
       }
     },
   );
 });
 
-console.log("Submitting TX...");
-const [blockHash, txHash] = await submitData;
-console.log(`Finalized block hash ${blockHash} and tx hash ${txHash}`);
+// Rejected Transaction handling
+if (tx_result.isError) {
+  console.log(`Transaction was not executed`);
+  Deno.exit(0);
+} 
 
-const dataProof = await api.rpc.kate.queryDataProof(1, blockHash);
+const [tx_hash, block_hash] = [tx_result.txHash as H256, tx_result.status.asFinalized as H256];
+console.log(`Tx Hash: ${tx_hash}, Block Hash: ${block_hash}`);
+
+// Failed Transaction handling
+const error = tx_result.dispatchError;
+if (error != undefined) {
+  if (error.isModule) {
+    const decoded = api.registry.findMetaError(error.asModule);
+    const { docs, name, section } = decoded;
+    console.log(`${section}.${name}: ${docs.join(' ')}`);
+  } else {
+    console.log(error.toString());
+  }
+  Deno.exit(0);
+}
+
+const dataProof = await api.rpc.kate.queryDataProof(1, block_hash);
 console.log(dataProof.toHuman());
 
 Deno.exit(0);

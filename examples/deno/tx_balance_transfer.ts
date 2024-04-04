@@ -1,11 +1,16 @@
-/// TODO DOC
+/// The example showcases how to programmatically do balance transfer. 
 ///
+/// The following transactions are being called:
+///   Balance.transfer
+///
+/// The following storage are being queried:
+///   System.account
 ///
 
-import { ApiPromise, Keyring, WsProvider } from "https://deno.land/x/polkadot@0.2.42/api/mod.ts";
-import { BN } from "https://deno.land/x/polkadot@0.2.42/util/mod.ts";
-import { ISubmittableResult } from "https://deno.land/x/polkadot@0.2.42/types/types/extrinsic.ts";
-import { H256 } from "https://deno.land/x/polkadot@0.2.42/types/interfaces/types.ts";
+import { ApiPromise, Keyring, WsProvider } from "https://deno.land/x/polkadot@0.2.45/api/mod.ts";
+import { BN } from "https://deno.land/x/polkadot@0.2.45/util/mod.ts";
+import { ISubmittableResult } from "https://deno.land/x/polkadot@0.2.45/types/types/extrinsic.ts";
+import { H256 } from "https://deno.land/x/polkadot@0.2.45/types/interfaces/types.ts";
 import { API_EXTENSIONS, API_RPC, API_TYPES } from "./api_options.ts";
 
 const api = await ApiPromise.create({
