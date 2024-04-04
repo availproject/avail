@@ -13,10 +13,13 @@ const api = await ApiPromise.create({
   signedExtensions: API_EXTENSIONS,
 });
 const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice");
+// Change App Id to something that has meaning to you or leave it at one
+const options = { app_id: 1, nonce: -1 }
 
 // submit data transaction
 const tx_result = await new Promise<ISubmittableResult>((res, _) => {
-  api.tx.dataAvailability.submitData("Hello World").signAndSend(account, (result: ISubmittableResult) => {
+  api.tx.dataAvailability.submitData("Hello World").signAndSend(account, options, (result: ISubmittableResult) => {
+    console.log(`Tx status: ${result.status}`);
       if (result.isFinalized || result.isError) {
         res(result);
       }
@@ -27,7 +30,7 @@ const tx_result = await new Promise<ISubmittableResult>((res, _) => {
 // Rejected Transaction handling
 if (tx_result.isError) {
   console.log(`Transaction was not executed`);
-  Deno.exit(0);
+  Deno.exit(1);
 } 
 
 const [tx_hash, block_hash] = [tx_result.txHash as H256, tx_result.status.asFinalized as H256];
@@ -43,7 +46,7 @@ if (error != undefined) {
   } else {
     console.log(error.toString());
   }
-  Deno.exit(0);
+  Deno.exit(1);
 }
 
 const dataProof = await api.rpc.kate.queryDataProof(1, block_hash);

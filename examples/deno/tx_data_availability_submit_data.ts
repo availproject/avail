@@ -22,8 +22,10 @@ const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice");
 // Transaction call
 // Change "Hello World" to something that has meaning to you
 const data = "Hello World";
+// Change App Id to something that has meaning to you or leave it at one
+const options = { app_id: 1, nonce: -1 }
 const tx_result = await new Promise<ISubmittableResult>((res, _) => {
-  api.tx.dataAvailability.submitData(data).signAndSend(account, (result: ISubmittableResult) => {
+  api.tx.dataAvailability.submitData(data).signAndSend(account, options, (result: ISubmittableResult) => {
       console.log(`Tx status: ${result.status}`);
       if (result.isFinalized || result.isError) {
         res(result);
@@ -35,7 +37,7 @@ const tx_result = await new Promise<ISubmittableResult>((res, _) => {
 // Rejected Transaction handling
 if (tx_result.isError) {
   console.log(`Transaction was not executed`);
-  Deno.exit(0);
+  Deno.exit(1);
 } 
 
 const [tx_hash, block_hash] = [tx_result.txHash as H256, tx_result.status.asFinalized as H256];
@@ -51,7 +53,7 @@ if (error != undefined) {
   } else {
     console.log(error.toString());
   }
-  Deno.exit(0);
+  Deno.exit(1);
 }
 
 // Extracting data
@@ -59,7 +61,7 @@ const block = await api.rpc.chain.getBlock(block_hash);
 const tx = block.block.extrinsics.find((tx) => tx.hash.toHex() == tx_hash.toHex());
 if (tx == undefined) {
   console.log("Failed to find the Submit Data transaction");
-  Deno.exit(0);
+  Deno.exit(1);
 }
 
 console.log(tx.toHuman());

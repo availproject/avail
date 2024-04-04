@@ -44,13 +44,14 @@ const error = tx_result.dispatchError;
 if (tx_result.isError) {
   console.log(`Transaction was not executed`);
 } else if (error != undefined) {
-    if (error.isModule) {
-      const decoded = api.registry.findMetaError(error.asModule);
-      const { docs, name, section } = decoded;
-      console.log(`${section}.${name}: ${docs.join(' ')}`);
-    } else {
-      console.log(error.toString());
-    }
+  if (error.isModule) {
+    const decoded = api.registry.findMetaError(error.asModule);
+    const { docs, name, section } = decoded;
+    console.log(`${section}.${name}: ${docs.join(' ')}`);
+  } else {
+    console.log(error.toString());
+  }
+  Deno.exit(1);
 }
 
 const new_bobs_state: any = await api.query.system.account(bob_address);

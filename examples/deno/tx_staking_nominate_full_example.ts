@@ -50,7 +50,7 @@ const tx_result = await new Promise<ISubmittableResult>((res, _) => {
 // Rejected Transaction handling
 if (tx_result.isError) {
   console.log(`Transaction was not executed`);
-  Deno.exit(0);
+  Deno.exit(1);
 } 
 
 const [tx_hash, block_hash] = [tx_result.txHash as H256, tx_result.status.asFinalized as H256]
@@ -68,7 +68,7 @@ if (error != undefined) {
     // Other, CannotLookup, BadOrigin, no extra info
     console.log(error.toString());
   }
-  Deno.exit(0);
+  Deno.exit(1);
 }
 
 // Reading Nomination related information from storage 
@@ -77,10 +77,10 @@ const ledger = await api.query.staking.ledger(account.address);
 const nominators = await api.query.staking.nominators(account.address);
 if (is_bonded == undefined) {
   console.log("Something went wrong :(");
-  Deno.exit(0);
+  Deno.exit(1);
 }
 
-console.log(`Staking.ledger: ${ledger}`)
-console.log(`Staking.nominators: ${nominators}`)
+console.log(`Staking.ledger: ${ledger}`);
+console.log(`Staking.nominators: ${nominators}`);
 
 Deno.exit(0);
