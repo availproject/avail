@@ -7,7 +7,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rust_install.sh && c
 rustup show
 cargo build --locked --release
 
-./target/release/avail-node --dev --enable-kate-rpc &
+./target/release/avail-node --dev &
 sleep 5
 cd e2e
 cargo test -- --test-threads 1
