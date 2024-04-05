@@ -721,11 +721,11 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			),
 			ProxyType::Governance => matches!(
 				c,
-				RuntimeCall::TechnicalCommittee(..) | RuntimeCall::Treasury(..)
+				RuntimeCall::TechnicalCommittee(..)
+					| RuntimeCall::Treasury(..)
+					| RuntimeCall::TreasuryCommittee(..)
 			),
-			ProxyType::Staking => {
-				matches!(c, RuntimeCall::Staking(..))
-			},
+			ProxyType::Staking => matches!(c, RuntimeCall::Session(..) | RuntimeCall::Staking(..)),
 		}
 	}
 	fn is_superset(&self, o: &Self) -> bool {
