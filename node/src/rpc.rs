@@ -166,7 +166,7 @@ where
 		finality_provider,
 	} = grandpa;
 
-	let is_dev_chain = chain_spec.id() == "avail_development_network";
+	let is_dev_chain = chain_spec.id().ends_with("development_network");
 	let chain_name = chain_spec.name().to_string();
 	let genesis_hash = client
 		.block_hash(0)
