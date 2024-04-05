@@ -28,7 +28,7 @@ npm i -g ts-node
 
 - Make sure to populate basic configuration in `config.ts` or leave the default if you are running a local node. Take a look at the scripts for more details about
   the configuration.
-- If you are using a local node, make sure you are running the node with this command : `./target/release/avail-node --dev --enable-kate-rpc`
+- If you are using a local node, make sure you are running the node with this command : `./target/release/avail-node --dev`
 
 ```typescript
 export default {

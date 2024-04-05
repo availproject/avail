@@ -166,6 +166,7 @@ where
 		finality_provider,
 	} = grandpa;
 
+	let is_dev_chain = chain_spec.id() == "avail_development_network";
 	let chain_name = chain_spec.name().to_string();
 	let genesis_hash = client
 		.block_hash(0)
@@ -222,14 +223,14 @@ where
 
 	io.merge(StateMigration::new(client.clone(), backend, deny_unsafe).into_rpc())?;
 
-	if kate_rpc_metrics_enabled {
+	if is_dev_chain || kate_rpc_metrics_enabled {
 		io.merge(KateApiMetricsServer::into_rpc(Kate::<C, Block>::new(
 			client.clone(),
 			kate_max_cells_size,
 		)))?;
 	}
 
-	if kate_rpc_enabled || kate_rpc_metrics_enabled {
+	if is_dev_chain || kate_rpc_enabled || kate_rpc_metrics_enabled {
 		io.merge(KateApiServer::into_rpc(Kate::<C, Block>::new(
 			client,
 			kate_max_cells_size,

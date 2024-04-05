@@ -142,6 +142,8 @@ podman run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output:z availnode --de
 
 ## Kate RPC
 To enable Kate RPC you need to pass `--enable-kate-rpc` flag when executing the binary.
+`--dev` implies `--enable-kate-rpc`.
+
 ```bash
 ./avail-node --enable-kate-rpc
 ```
@@ -165,7 +167,7 @@ To enable Kate RPC you need to pass `--enable-kate-rpc` flag when executing the 
 ## Run Benchmarks
 ### Kate RPC
 ```bash
-./avail-node --dev --enable-kate-rpc-metrics
+./avail-node --dev
 deno run -A ./examples/deno/benchmarks/query_proof.ts && deno run -A ./examples/deno/benchmarks/query_rows.ts && deno run -A ./examples/deno/benchmarks/query_block_length.ts && deno run -A ./examples/deno/benchmarks/query_app_data.ts && deno run -A ./examples/deno/benchmarks/query_data_proof.ts
 ```
 
