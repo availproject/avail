@@ -356,7 +356,7 @@ impl_runtime_apis! {
 	#[api_version(4)]
 	impl crate::apis::ExtensionBuilder<Block> for Runtime {
 		fn build_data_root(block: u32, extrinsics: Vec<OpaqueExtrinsic>) -> H256  {
-			HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block, &extrinsics).root()
+			HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block, &extrinsics).data_root()
 		}
 
 		fn build_extension(

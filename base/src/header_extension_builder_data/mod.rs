@@ -81,7 +81,7 @@ impl HeaderExtensionBuilderData {
 		HeaderExtensionBuilderData::from(extracted_tx_datas)
 	}
 
-	pub fn to_app_extrinsics(self) -> Vec<AppExtrinsic> {
+	pub fn to_app_extrinsics(&self) -> Vec<AppExtrinsic> {
 		self.app_extrinsics.clone()
 	}
 
@@ -97,7 +97,7 @@ impl HeaderExtensionBuilderData {
 	}
 
 	/// Generates the root of sub-tries.
-	pub fn root(&self) -> H256 {
+	pub fn data_root(&self) -> H256 {
 		self.roots().data_root
 	}
 

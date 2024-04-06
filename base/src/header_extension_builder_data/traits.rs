@@ -1,7 +1,6 @@
 use super::ExtractedTxData;
 use avail_core::OpaqueExtrinsic;
 
-/// It is similar to `Extractor` but it uses `C` type for calls, instead of `AppExtrinsic`.
 pub trait TxDataFilter {
 	fn filter(
 		failed_transactions: &[u32],

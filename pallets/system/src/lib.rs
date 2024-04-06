@@ -1855,20 +1855,16 @@ impl<T: Config> Pallet<T> {
 		// Code beyond is custom added code for computing the extension.
 		//
 
-		let tx_data = HeaderExtensionBuilderData::from_raw_extrinsics::<T::TxDataExtractor>(
-			block_number,
-			&extrinsics,
-		);
+		let header_extension_builder_data = HeaderExtensionBuilderData::from_raw_extrinsics::<
+			T::TxDataExtractor,
+		>(block_number, &extrinsics);
 		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
 
 		let block_length = Self::block_length();
 
-		// Transform extrinsics into AppExtrinsic.
-		let data_root = tx_data.root();
-		let app_extrinsics = tx_data.to_app_extrinsics();
 		let extension = header_builder::da::HeaderExtensionBuilder::<T>::build(
-			app_extrinsics,
-			data_root,
+			header_extension_builder_data.to_app_extrinsics(),
+			header_extension_builder_data.data_root(),
 			block_length,
 			number.unique_saturated_into(),
 		);
