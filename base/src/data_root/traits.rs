@@ -11,7 +11,7 @@ pub trait TxDataFilter {
 		metrics: &mut Metrics,
 	) -> Option<ExtractedTxData>;
 
-	fn get_failed_transaction_txs(opaque: &OpaqueExtrinsic) -> Option<Vec<u32>>;
+	fn get_failed_transaction_ids(opaque: &OpaqueExtrinsic) -> Option<Vec<u32>>;
 }
 
 #[cfg(feature = "std")]
@@ -26,7 +26,7 @@ impl TxDataFilter for () {
 		None
 	}
 
-	fn get_failed_transaction_txs(_: &OpaqueExtrinsic) -> Option<Vec<u32>> {
+	fn get_failed_transaction_ids(_: &OpaqueExtrinsic) -> Option<Vec<u32>> {
 		None
 	}
 }
@@ -42,7 +42,7 @@ impl TxDataFilter for () {
 		None
 	}
 
-	fn get_failed_transaction_txs(_: &OpaqueExtrinsic) -> Option<Vec<u32>> {
+	fn get_failed_transaction_ids(_: &OpaqueExtrinsic) -> Option<Vec<u32>> {
 		None
 	}
 }

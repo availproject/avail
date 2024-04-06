@@ -46,7 +46,7 @@ impl TxDataFilter for Runtime {
 		}
 	}
 
-	fn get_failed_transaction_txs(opaque: &OpaqueExtrinsic) -> Option<Vec<u32>> {
+	fn get_failed_transaction_ids(opaque: &OpaqueExtrinsic) -> Option<Vec<u32>> {
 		let Ok(unchecked_extrinsic) = Extrinsic::try_from(opaque.clone()) else {
 			return None;
 		};

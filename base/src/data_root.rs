@@ -41,7 +41,7 @@ where
 	let failed_transactions = opaques
 		.iter()
 		.rev()
-		.find_map(|o| F::get_failed_transaction_txs(o));
+		.find_map(|o| F::get_failed_transaction_ids(o));
 	let failed_transactions = failed_transactions.unwrap_or_else(|| Vec::new());
 
 	let extracted_tx_datas: Vec<ExtractedTxData> = opaques
