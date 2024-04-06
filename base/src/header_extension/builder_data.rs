@@ -1,4 +1,4 @@
-use super::TxDataFilter;
+use super::HeaderExtensionDataFilter;
 use avail_core::OpaqueExtrinsic;
 use avail_core::{
 	app_extrinsic::AppExtrinsic,
@@ -48,7 +48,10 @@ pub struct HeaderExtensionBuilderData {
 }
 
 impl HeaderExtensionBuilderData {
-	pub fn from_raw_extrinsics<F: TxDataFilter>(block: u32, extrinsics: &[Vec<u8>]) -> Self {
+	pub fn from_raw_extrinsics<F: HeaderExtensionDataFilter>(
+		block: u32,
+		extrinsics: &[Vec<u8>],
+	) -> Self {
 		let opaques: Vec<OpaqueExtrinsic> = extrinsics
 			.iter()
 			.filter_map(|e| OpaqueExtrinsic::from_bytes(e).ok())
@@ -57,7 +60,7 @@ impl HeaderExtensionBuilderData {
 		Self::from_opaque_extrinsics::<F>(block, &opaques)
 	}
 
-	pub fn from_opaque_extrinsics<F: TxDataFilter>(
+	pub fn from_opaque_extrinsics<F: HeaderExtensionDataFilter>(
 		block: u32,
 		opaques: &[OpaqueExtrinsic],
 	) -> Self {

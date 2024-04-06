@@ -1,7 +1,7 @@
 use super::ExtractedTxData;
 use avail_core::OpaqueExtrinsic;
 
-pub trait TxDataFilter {
+pub trait HeaderExtensionDataFilter {
 	fn filter(
 		failed_transactions: &[u32],
 		opaque: OpaqueExtrinsic,
@@ -13,7 +13,7 @@ pub trait TxDataFilter {
 }
 
 #[cfg(feature = "std")]
-impl TxDataFilter for () {
+impl HeaderExtensionDataFilter for () {
 	fn filter(_: &[u32], _: OpaqueExtrinsic, _: u32, _: usize) -> Option<ExtractedTxData> {
 		None
 	}
@@ -23,7 +23,7 @@ impl TxDataFilter for () {
 	}
 }
 #[cfg(not(feature = "std"))]
-impl TxDataFilter for () {
+impl HeaderExtensionDataFilter for () {
 	fn filter(_: &[u32], _: OpaqueExtrinsic, _: u32, _: usize) -> Option<ExtractedTxData> {
 		None
 	}

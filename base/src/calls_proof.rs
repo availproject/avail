@@ -1,4 +1,4 @@
-use crate::header_extension::{HeaderExtensionBuilderData, TxDataFilter};
+use crate::header_extension::{HeaderExtensionBuilderData, HeaderExtensionDataFilter};
 
 use avail_core::data_proof::{AddressedMessage, SubTrie};
 
@@ -32,7 +32,7 @@ pub fn calls_proof<'a, F>(
 	call_type: SubTrie,
 ) -> Option<CallsProof>
 where
-	F: TxDataFilter,
+	F: HeaderExtensionDataFilter,
 {
 	let tx_data = HeaderExtensionBuilderData::from_raw_extrinsics::<F>(block, &extrinsics);
 	let message = tx_data

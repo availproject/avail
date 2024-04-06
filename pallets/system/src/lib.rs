@@ -98,7 +98,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(unused_extern_crates)]
 
-use avail_base::{HeaderExtensionBuilderData, TxDataFilter};
+use avail_base::{HeaderExtensionBuilderData, HeaderExtensionDataFilter};
 use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
@@ -315,7 +315,7 @@ pub mod pallet {
 			type Header = DaHeader<u32, BlakeTwo256>;
 			type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 			type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
-			type TxDataExtractor = ();
+			type HeaderExtensionDataFilter = ();
 		}
 
 		/// Default configurations of this pallet in a solo-chain environment.
@@ -414,7 +414,7 @@ pub mod pallet {
 			type Header = DaHeader<u32, BlakeTwo256>;
 			type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 			type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
-			type TxDataExtractor = ();
+			type HeaderExtensionDataFilter = ();
 		}
 
 		/// Default configurations of this pallet in a relay-chain environment.
@@ -614,7 +614,7 @@ pub mod pallet {
 		type MaxConsumers: ConsumerLimits;
 
 		/// Filter used by `DataRootBuilder`.
-		type TxDataExtractor: TxDataFilter;
+		type HeaderExtensionDataFilter: HeaderExtensionDataFilter;
 
 		/// Maximum different `AppId` allowed per block.
 		/// This is used during the calculation of padded length of the block when
@@ -1856,7 +1856,7 @@ impl<T: Config> Pallet<T> {
 		//
 
 		let header_extension_builder_data = HeaderExtensionBuilderData::from_raw_extrinsics::<
-			T::TxDataExtractor,
+			T::HeaderExtensionDataFilter,
 		>(block_number, &extrinsics);
 		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
 

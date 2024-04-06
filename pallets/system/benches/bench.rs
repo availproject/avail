@@ -115,7 +115,7 @@ impl frame_system::Config for Runtime {
 
 	type HeaderExtensionBuilder = HeaderExtensionBuilder<Runtime>;
 	type Randomness = TestRandomness<Runtime>;
-	type TxDataExtractor = ();
+	type HeaderExtensionDataFilter = ();
 	type Extrinsic = UncheckedExtrinsic;
 	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;

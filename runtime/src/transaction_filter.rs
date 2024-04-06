@@ -1,5 +1,7 @@
 use crate::{AccountId, Runtime, RuntimeCall as Call, UncheckedExtrinsic};
-use avail_base::header_extension::{BridgedData, ExtractedTxData, SubmittedData, TxDataFilter};
+use avail_base::header_extension::{
+	BridgedData, ExtractedTxData, HeaderExtensionDataFilter, SubmittedData,
+};
 use avail_core::{
 	data_proof::{tx_uid, AddressedMessage},
 	traits::{GetAppId, MaybeCaller},
@@ -12,7 +14,7 @@ use sp_core::H256;
 use sp_std::vec::Vec;
 
 /// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.
-impl TxDataFilter for Runtime {
+impl HeaderExtensionDataFilter for Runtime {
 	fn filter(
 		failed_transactions: &[u32],
 		opaque: OpaqueExtrinsic,

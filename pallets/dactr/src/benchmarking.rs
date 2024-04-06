@@ -241,7 +241,7 @@ mod benchmarks {
 
 		#[block]
 		{
-			HeaderExtensionBuilderData::from_raw_extrinsics::<T::TxDataExtractor>(
+			HeaderExtensionBuilderData::from_raw_extrinsics::<T::HeaderExtensionDataFilter>(
 				1u32,
 				&vec![opaque],
 			)
@@ -276,8 +276,10 @@ mod benchmarks {
 
 		#[block]
 		{
-			HeaderExtensionBuilderData::from_raw_extrinsics::<T::TxDataExtractor>(1u32, &calls)
-				.data_root();
+			HeaderExtensionBuilderData::from_raw_extrinsics::<T::HeaderExtensionDataFilter>(
+				1u32, &calls,
+			)
+			.data_root();
 		}
 
 		Ok(())

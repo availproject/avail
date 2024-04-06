@@ -50,7 +50,7 @@ impl frame_system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
-	type TxDataExtractor = ();
+	type HeaderExtensionDataFilter = ();
 	type Extrinsic = Extrinsic;
 }
 

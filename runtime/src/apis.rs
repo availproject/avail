@@ -36,7 +36,7 @@ use sp_runtime::{
 use sp_std::{borrow::Cow, vec::Vec};
 use sp_version::RuntimeVersion;
 
-type RTExtractor = <Runtime as frame_system::Config>::TxDataExtractor;
+type RTExtractor = <Runtime as frame_system::Config>::HeaderExtensionDataFilter;
 type RTExtrinsic = <Runtime as frame_system::Config>::Extrinsic;
 
 decl_runtime_apis! {

@@ -845,7 +845,7 @@ impl frame_system::Config for Runtime {
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = constants::system::SS58Prefix;
 	/// Data Root
-	type TxDataExtractor = Runtime;
+	type HeaderExtensionDataFilter = Runtime;
 	/// Weight information for the extrinsics of this pallet.
 	type SystemWeightInfo = weights::frame_system::WeightInfo<Runtime>;
 	/// Version of the runtime.

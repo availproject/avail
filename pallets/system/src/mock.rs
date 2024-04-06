@@ -116,7 +116,7 @@ impl Config for Test {
 	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
 	type Randomness = TestRandomness<Test>;
 	type Header = Header;
-	type TxDataExtractor = ();
+	type HeaderExtensionDataFilter = ();
 	type Extrinsic = Extrinsic;
 	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
