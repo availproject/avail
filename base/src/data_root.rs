@@ -1,10 +1,5 @@
-use avail_core::{
-	traits::{GetAppId, MaybeCaller},
-	OpaqueExtrinsic,
-};
+use avail_core::OpaqueExtrinsic;
 
-use codec::Decode;
-use frame_support::traits::ExtrinsicCall;
 use sp_std::vec::Vec;
 
 mod traits;

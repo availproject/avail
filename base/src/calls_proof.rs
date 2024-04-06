@@ -1,14 +1,9 @@
 use crate::data_root::{build_tx_data, TxDataFilter};
 
-use avail_core::{
-	data_proof::{AddressedMessage, SubTrie},
-	traits::{GetAppId, MaybeCaller},
-};
+use avail_core::data_proof::{AddressedMessage, SubTrie};
 
 use binary_merkle_tree::{verify_proof, Leaf, MerkleProof};
-use codec::Decode;
 use derive_more::Constructor;
-use frame_support::traits::ExtrinsicCall;
 use sp_core::H256;
 use sp_runtime::traits::Keccak256;
 use sp_std::vec::Vec;

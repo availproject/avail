@@ -1,11 +1,11 @@
 use crate::{
 	constants, prod_or_fast, voter_bags, weights, AccountId, AccountIndex, Babe, Balances, Block,
-	BlockNumber, ElectionProviderMultiPhase, Everything, Extrinsic, Hash, Header, Historical,
-	ImOnline, ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller,
-	PalletInfo, Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent,
-	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, SessionKeys,
-	Signature, SignedPayload, Staking, System, Timestamp, TransactionPayment, Treasury, TxPause,
-	VoterList, MINUTES, SLOT_DURATION, VERSION,
+	BlockNumber, ElectionProviderMultiPhase, Everything, Hash, Header, Historical, ImOnline,
+	ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo,
+	Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason,
+	RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, SessionKeys, Signature,
+	SignedPayload, Staking, System, Timestamp, TransactionPayment, Treasury, TxPause,
+	UncheckedExtrinsic, VoterList, MINUTES, SLOT_DURATION, VERSION,
 };
 use avail_core::{
 	currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL},
@@ -851,7 +851,7 @@ impl frame_system::Config for Runtime {
 	/// Version of the runtime.
 	type Version = Version;
 
-	type Extrinsic = Extrinsic;
+	type Extrinsic = UncheckedExtrinsic;
 	type Header = Header;
 	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
@@ -868,7 +868,7 @@ where
 		nonce: Index,
 	) -> Option<(
 		RuntimeCall,
-		<Extrinsic as traits::Extrinsic>::SignaturePayload,
+		<UncheckedExtrinsic as traits::Extrinsic>::SignaturePayload,
 	)> {
 		use sp_runtime::{traits::StaticLookup, SaturatedConversion as _};
 
@@ -916,6 +916,6 @@ impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
 where
 	RuntimeCall: From<C>,
 {
-	type Extrinsic = Extrinsic;
+	type Extrinsic = UncheckedExtrinsic;
 	type OverarchingCall = RuntimeCall;
 }

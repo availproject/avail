@@ -1,4 +1,4 @@
-use crate::{AccountId, Extrinsic, Runtime, RuntimeCall as Call};
+use crate::{AccountId, Runtime, RuntimeCall as Call, UncheckedExtrinsic};
 use avail_base::data_root::{BridgedData, ExtractedTxData, Metrics, SubmittedData, TxDataFilter};
 use avail_core::{
 	data_proof::{tx_uid, AddressedMessage},
@@ -22,7 +22,7 @@ impl TxDataFilter for Runtime {
 	) -> Option<ExtractedTxData> {
 		metrics.total_extrinsics += 1;
 
-		let Ok(unchecked_extrinsic) = Extrinsic::try_from(opaque) else {
+		let Ok(unchecked_extrinsic) = UncheckedExtrinsic::try_from(opaque) else {
 			return None;
 		};
 
@@ -47,7 +47,7 @@ impl TxDataFilter for Runtime {
 	}
 
 	fn get_failed_transaction_ids(opaque: &OpaqueExtrinsic) -> Option<Vec<u32>> {
-		let Ok(unchecked_extrinsic) = Extrinsic::try_from(opaque.clone()) else {
+		let Ok(unchecked_extrinsic) = UncheckedExtrinsic::try_from(opaque.clone()) else {
 			return None;
 		};
 

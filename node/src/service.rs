@@ -110,7 +110,7 @@ pub fn create_extrinsic(
 	function: impl Into<da_runtime::RuntimeCall>,
 	nonce: Option<u32>,
 	app_id: AppId,
-) -> da_runtime::Extrinsic {
+) -> da_runtime::UncheckedExtrinsic {
 	let function = function.into();
 	let genesis_hash = client
 		.block_hash(0)
@@ -155,7 +155,7 @@ pub fn create_extrinsic(
 	);
 	let signature = raw_payload.using_encoded(|e| sender.sign(e));
 
-	da_runtime::Extrinsic::new_signed(
+	da_runtime::UncheckedExtrinsic::new_signed(
 		function,
 		sp_runtime::AccountId32::from(sender.public()).into(),
 		da_runtime::Signature::Sr25519(signature),
