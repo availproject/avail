@@ -1,4 +1,4 @@
-use super::{ExtractedTxData, Metrics};
+use super::ExtractedTxData;
 use avail_core::OpaqueExtrinsic;
 
 /// It is similar to `Extractor` but it uses `C` type for calls, instead of `AppExtrinsic`.
@@ -8,7 +8,6 @@ pub trait TxDataFilter {
 		opaque: OpaqueExtrinsic,
 		block: u32,
 		tx_idx: usize,
-		metrics: &mut Metrics,
 	) -> Option<ExtractedTxData>;
 
 	fn get_failed_transaction_ids(opaque: &OpaqueExtrinsic) -> Option<Vec<u32>>;
@@ -16,13 +15,7 @@ pub trait TxDataFilter {
 
 #[cfg(feature = "std")]
 impl TxDataFilter for () {
-	fn filter(
-		_: &[u32],
-		_: OpaqueExtrinsic,
-		_: u32,
-		_: usize,
-		_: &mut Metrics,
-	) -> Option<ExtractedTxData> {
+	fn filter(_: &[u32], _: OpaqueExtrinsic, _: u32, _: usize) -> Option<ExtractedTxData> {
 		None
 	}
 
@@ -32,13 +25,7 @@ impl TxDataFilter for () {
 }
 #[cfg(not(feature = "std"))]
 impl TxDataFilter for () {
-	fn filter(
-		_: &[u32],
-		_: OpaqueExtrinsic,
-		_: u32,
-		_: usize,
-		_: &mut Metrics,
-	) -> Option<ExtractedTxData> {
+	fn filter(_: &[u32], _: OpaqueExtrinsic, _: u32, _: usize) -> Option<ExtractedTxData> {
 		None
 	}
 

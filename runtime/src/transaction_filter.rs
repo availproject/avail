@@ -1,5 +1,7 @@
 use crate::{AccountId, Runtime, RuntimeCall as Call, UncheckedExtrinsic};
-use avail_base::data_root::{BridgedData, ExtractedTxData, Metrics, SubmittedData, TxDataFilter};
+use avail_base::header_extension_builder_data::{
+	BridgedData, ExtractedTxData, SubmittedData, TxDataFilter,
+};
 use avail_core::{
 	data_proof::{tx_uid, AddressedMessage},
 	traits::{GetAppId, MaybeCaller},
@@ -18,10 +20,7 @@ impl TxDataFilter for Runtime {
 		opaque: OpaqueExtrinsic,
 		block: u32,
 		tx_index: usize,
-		metrics: &mut Metrics,
 	) -> Option<ExtractedTxData> {
-		metrics.total_extrinsics += 1;
-
 		let Ok(unchecked_extrinsic) = UncheckedExtrinsic::try_from(opaque) else {
 			return None;
 		};
@@ -30,17 +29,12 @@ impl TxDataFilter for Runtime {
 		let maybe_caller = unchecked_extrinsic.caller();
 
 		match &unchecked_extrinsic.function {
-			Call::Vector(call) => filter_vector_call(
-				failed_transactions,
-				maybe_caller,
-				call,
-				block,
-				tx_index,
-				metrics,
-			),
+			Call::Vector(call) => {
+				filter_vector_call(failed_transactions, maybe_caller, call, block, tx_index)
+			},
 			Call::DataAvailability(call) => {
 				let app_extrinsic = AppExtrinsic::from(unchecked_extrinsic.clone());
-				filter_da_call(app_extrinsic, call, app_id, tx_index, metrics)
+				filter_da_call(app_extrinsic, call, app_id, tx_index)
 			},
 			_ => None,
 		}
@@ -69,10 +63,7 @@ fn filter_da_call(
 	call: &DACall<Runtime>,
 	app_id: AppId,
 	tx_index: usize,
-	metrics: &mut Metrics,
 ) -> Option<ExtractedTxData> {
-	metrics.data_submit_extrinsics += 1;
-
 	let DACall::submit_data { data } = call else {
 		return None;
 	};
@@ -81,7 +72,6 @@ fn filter_da_call(
 		return None;
 	}
 
-	metrics.data_submit_leaves += 1;
 	let tx_index = u32::try_from(tx_index).ok()?;
 	let submitted_data = Some(SubmittedData::new(
 		app_id,
@@ -103,7 +93,6 @@ fn filter_vector_call(
 	call: &VectorCall<Runtime>,
 	block: u32,
 	tx_index: usize,
-	metrics: &mut Metrics,
 ) -> Option<ExtractedTxData> {
 	let tx_index = u32::try_from(tx_index).ok()?;
 	if failed_transactions.contains(&tx_index) {
@@ -127,7 +116,6 @@ fn filter_vector_call(
 	let id = tx_uid(block, tx_index);
 	let msg = AddressedMessage::new(message.clone(), H256(from), *to, 1, *domain, id);
 	let bridge_data = Some(BridgedData::new(tx_index, msg));
-	metrics.bridge_leaves += 1;
 	Some(ExtractedTxData {
 		bridge_data,
 		..Default::default()

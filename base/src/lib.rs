@@ -10,7 +10,8 @@ pub use mem_tmp_storage::{MemoryTemporaryStorage, StorageMap};
 mod post_inherents;
 pub use post_inherents::*;
 
-pub mod data_root;
+pub mod header_extension_builder_data;
+pub use header_extension_builder_data::{HeaderExtensionBuilderData, TxDataFilter};
 
 mod calls_proof;
 pub use calls_proof::{calls_proof, CallsProof};

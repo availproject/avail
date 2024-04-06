@@ -1,4 +1,4 @@
-use crate::data_root::{build_tx_data, TxDataFilter};
+use crate::header_extension_builder_data::{HeaderExtensionBuilderData, TxDataFilter};
 
 use avail_core::data_proof::{AddressedMessage, SubTrie};
 
@@ -34,9 +34,9 @@ pub fn calls_proof<'a, F, E, A, I>(
 where
 	F: TxDataFilter,
 {
-	let tx_data = build_tx_data::<F>(block, &extrinsics);
+	let tx_data = HeaderExtensionBuilderData::from_raw_extrinsics::<F>(block, &extrinsics);
 	let message = tx_data
-		.bridged
+		.bridge_messages
 		.get(leaf_idx)
 		.map(|bridged| bridged.addr_msg.clone());
 

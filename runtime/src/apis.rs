@@ -4,7 +4,7 @@ use crate::{
 	OpaqueMetadata, Runtime, RuntimeCall, RuntimeGenesisConfig, SessionKeys, System,
 	TransactionPayment, LOG_TARGET,
 };
-use avail_base::{data_root::build_tx_data_from_opaque, ProvidePostInherent};
+use avail_base::{HeaderExtensionBuilderData, ProvidePostInherent};
 use avail_core::{
 	currency::Balance,
 	data_proof::{DataProof, ProofResponse, SubTrie},
@@ -356,8 +356,7 @@ impl_runtime_apis! {
 	#[api_version(4)]
 	impl crate::apis::ExtensionBuilder<Block> for Runtime {
 		fn build_data_root(block: u32, extrinsics: Vec<OpaqueExtrinsic>) -> H256  {
-			let tx_data = build_tx_data_from_opaque::<RTExtractor>(block, &extrinsics);
-			tx_data.root()
+			HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block, &extrinsics).root()
 		}
 
 		fn build_extension(
@@ -366,9 +365,8 @@ impl_runtime_apis! {
 			block_length: BlockLength,
 			block_number: u32,
 		) -> HeaderExtension {
-			let tx_data = build_tx_data_from_opaque::<RTExtractor>(block_number, &extrinsics);
-			let submitted = tx_data.to_app_extrinsics();
-			HeaderExtensionBuilder::<Runtime>::build( submitted, data_root, block_length, block_number)
+			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
+			HeaderExtensionBuilder::<Runtime>::build(app_extrinsics, data_root, block_length, block_number)
 		}
 
 		fn check_if_extrinsic_is_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool {
@@ -404,25 +402,25 @@ impl_runtime_apis! {
 
 	impl crate::apis::KateApi<Block> for Runtime {
 		fn data_proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse> {
-			let tx_data = build_tx_data_from_opaque::<RTExtractor>(block_number, &extrinsics);
-			let (leaf_idx, sub_trie) = tx_data.leaf_idx(tx_idx)?;
+			let data = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics);
+			let (leaf_idx, sub_trie) = data.leaf_idx(tx_idx)?;
 			log::trace!(
 				target: LOG_TARGET,
 				"KateApi::data_proof: tx_idx={tx_idx:?} leaf_idx={leaf_idx:?}, sub_trie:{sub_trie:?}");
 
 			let (sub_proof, message) = match sub_trie {
 				SubTrie::DataSubmit => {
-					let proof = tx_data.submitted_proof_of(leaf_idx)?;
+					let proof = data.submitted_proof_of(leaf_idx)?;
 					(proof, None)
 				},
 				SubTrie::Bridge => {
-					let message = tx_data.bridged.get(leaf_idx).map(|b| b.addr_msg.clone());
-					let proof = tx_data.bridged_proof_of(leaf_idx)?;
+					let message = data.bridge_messages.get(leaf_idx).map(|b| b.addr_msg.clone());
+					let proof = data.bridged_proof_of(leaf_idx)?;
 					(proof, message)
 				},
 			};
 
-			let roots = tx_data.roots();
+			let roots = data.roots();
 			let data_proof = DataProof::new(sub_trie, roots, sub_proof);
 			let proof = ProofResponse::new(data_proof, message);
 			log::trace!(
@@ -433,22 +431,22 @@ impl_runtime_apis! {
 		}
 
 		fn rows(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError> {
-			let app_exts = build_tx_data_from_opaque::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
-			let grid_rows = RTKate::<Runtime>::grid(app_exts, block_len, rows)?;
+			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
+			let grid_rows = RTKate::<Runtime>::grid(app_extrinsics, block_len, rows)?;
 			log::trace!(target: LOG_TARGET, "KateApi::rows: rows={grid_rows:#?}");
 			Ok(grid_rows)
 		}
 
 		fn app_data(block_number: u32, extrinsic: Vec<OpaqueExtrinsic>, block_len: BlockLength, id: AppId) -> Result<Vec<Option<GRow>>, RTKateError> {
-			let app_exts = build_tx_data_from_opaque::<RTExtractor>(block_number, &extrinsic).to_app_extrinsics();
-			let grid_rows = RTKate::<Runtime>::app_data(app_exts, block_len, id)?;
+			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsic).to_app_extrinsics();
+			let grid_rows = RTKate::<Runtime>::app_data(app_extrinsics, block_len, id)?;
 			log::trace!(target: LOG_TARGET, "KateApi::app_data: rows={grid_rows:#?}");
 			Ok(grid_rows)
 		}
 
 		fn proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError> {
-			let app_exts = build_tx_data_from_opaque::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
-			let data_proofs = RTKate::<Runtime>::proof(app_exts, block_len, cells)?;
+			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
+			let data_proofs = RTKate::<Runtime>::proof(app_extrinsics, block_len, cells)?;
 			log::trace!(target: LOG_TARGET, "KateApi::proof: data_proofs={data_proofs:#?}");
 			Ok(data_proofs)
 		}
@@ -574,7 +572,7 @@ impl_runtime_apis! {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use avail_base::data_root::{BridgedData, TxData};
+	use avail_base::data_root::{BridgedData, HeaderExtensionBuilderData};
 	use avail_core::data_proof::{AddressedMessage, BoundedData, Message};
 	use hex_literal::hex;
 	use sp_std::{vec, vec::Vec};
@@ -583,7 +581,7 @@ mod tests {
 	const SEND_ARBITRARY_DATA: &[u8] = &hex!("8400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d01e6052f8eddddbd425c2794829ca84c3382ea8b14f3e193824900523650149e2a9dea3cf9e417068ddc04d9ac9563e6b22ea11be1505e4a6a82f70864b01af38214000800002703000c313233000000000000000000000000000000000000000000000000000000000000003254");
 	const FAILED_TXS: &[u8] = &hex!("04270b080c10");
 
-	fn expected_send_arbitrary_data() -> TxData {
+	fn expected_send_arbitrary_data() -> HeaderExtensionBuilderData {
 		let message = Message::ArbitraryMessage(BoundedData::truncate_from(b"123".to_vec()));
 		let addr_msg = AddressedMessage::new(
 			message,
@@ -596,11 +594,11 @@ mod tests {
 		BridgedData::new(0, addr_msg).into()
 	}
 
-	fn expected_failed_send_txs() -> TxData {
-		TxData::failed_send_msg_txs(vec![3, 4])
+	fn expected_failed_send_txs() -> HeaderExtensionBuilderData {
+		HeaderExtensionBuilderData::failed_send_msg_txs(vec![3, 4])
 	}
 
-	fn expected_all() -> TxData {
+	fn expected_all() -> HeaderExtensionBuilderData {
 		[expected_send_arbitrary_data(), expected_failed_send_txs()]
 			.into_iter()
 			.collect()
@@ -609,7 +607,7 @@ mod tests {
 	#[test_case( vec![SEND_ARBITRARY_DATA.to_vec()] => expected_send_arbitrary_data(); "Vector Send Arbitrary")]
 	#[test_case( vec![FAILED_TXS.to_vec()] => expected_failed_send_txs(); "Post Inherent failed tx")]
 	#[test_case( vec![SEND_ARBITRARY_DATA.to_vec(), FAILED_TXS.to_vec()] => expected_all(); "all")]
-	fn kate_data_proof(raw_extrinsics: Vec<Vec<u8>>) -> TxData {
+	fn kate_data_proof(raw_extrinsics: Vec<Vec<u8>>) -> HeaderExtensionBuilderData {
 		let extrinsics = raw_extrinsics
 			.into_iter()
 			.map(OpaqueExtrinsic)

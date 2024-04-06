@@ -29,11 +29,11 @@ pub mod apis;
 pub mod constants;
 #[cfg(test)]
 mod data_root_tests;
-pub mod filter;
 pub mod impls;
 #[cfg(test)]
 mod impls_tests;
 mod primitives;
+pub mod transaction_filter;
 mod version;
 mod weights;
 

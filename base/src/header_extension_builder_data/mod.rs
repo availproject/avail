@@ -1,16 +1,42 @@
-use crate::data_root::{BridgedData, SubmittedData};
+//pub mod tests;
+pub mod traits;
+
+// Reexport
+pub use traits::TxDataFilter;
+
+use avail_core::OpaqueExtrinsic;
 use avail_core::{
 	app_extrinsic::AppExtrinsic,
-	data_proof::{SubTrie, TxDataRoots},
+	data_proof::{AddressedMessage, SubTrie, TxDataRoots},
 	Keccak256,
 };
-
+use avail_core::{traits::GetAppId, AppId};
 use binary_merkle_tree::{merkle_proof, merkle_root, MerkleProof};
 use codec::{Decode, Encode};
+use derive_more::Constructor;
 use sp_core::H256;
 use sp_io::hashing::keccak_256;
 use sp_runtime_interface::pass_by::PassByCodec;
 use sp_std::{iter::repeat, vec::Vec};
+
+#[derive(Constructor, Debug, Encode, Decode, Clone, PartialEq, Eq)]
+pub struct BridgedData {
+	pub tx_index: u32,
+	pub addr_msg: AddressedMessage,
+}
+
+#[derive(Debug, Constructor, Encode, Decode, PartialEq, Eq)]
+pub struct SubmittedData {
+	pub id: AppId,
+	pub tx_index: u32,
+	pub data: Vec<u8>,
+}
+
+impl GetAppId for SubmittedData {
+	fn app_id(&self) -> AppId {
+		self.id
+	}
+}
 
 #[derive(Debug, Default)]
 pub struct ExtractedTxData {
@@ -20,19 +46,47 @@ pub struct ExtractedTxData {
 }
 
 #[derive(Debug, Default, PassByCodec, Encode, Decode)]
-pub struct TxData {
+pub struct HeaderExtensionBuilderData {
 	pub app_extrinsics: Vec<AppExtrinsic>,
-	pub submitted: Vec<SubmittedData>,
-	pub bridged: Vec<BridgedData>,
+	pub data_submissions: Vec<SubmittedData>,
+	pub bridge_messages: Vec<BridgedData>,
 }
 
-impl TxData {
+impl HeaderExtensionBuilderData {
+	pub fn from_raw_extrinsics<F: TxDataFilter>(block: u32, extrinsics: &[Vec<u8>]) -> Self {
+		let opaques: Vec<OpaqueExtrinsic> = extrinsics
+			.iter()
+			.filter_map(|e| OpaqueExtrinsic::from_bytes(e).ok())
+			.collect();
+
+		Self::from_opaque_extrinsics::<F>(block, &opaques)
+	}
+
+	pub fn from_opaque_extrinsics<F: TxDataFilter>(
+		block: u32,
+		opaques: &[OpaqueExtrinsic],
+	) -> Self {
+		let failed_transactions = opaques
+			.iter()
+			.rev()
+			.find_map(|o| F::get_failed_transaction_ids(o));
+		let failed_transactions = failed_transactions.unwrap_or_else(|| Vec::new());
+
+		let extracted_tx_datas: Vec<ExtractedTxData> = opaques
+			.into_iter()
+			.enumerate()
+			.filter_map(|(idx, opaque)| F::filter(&failed_transactions, opaque.clone(), block, idx))
+			.collect();
+
+		HeaderExtensionBuilderData::from(extracted_tx_datas)
+	}
+
 	pub fn to_app_extrinsics(self) -> Vec<AppExtrinsic> {
 		self.app_extrinsics.clone()
 	}
 
 	pub fn is_empty(&self) -> bool {
-		self.submitted.is_empty() && self.bridged.is_empty()
+		self.data_submissions.is_empty() && self.bridge_messages.is_empty()
 	}
 
 	pub fn roots(&self) -> TxDataRoots {
@@ -51,7 +105,7 @@ impl TxData {
 	/// `H256::zero` leaves.
 	/// If `bridges` is empty, it will return `H256::zero()`.
 	pub fn bridged_root(&self) -> H256 {
-		if self.bridged.is_empty() {
+		if self.bridge_messages.is_empty() {
 			return H256::zero();
 		}
 
@@ -67,7 +121,7 @@ impl TxData {
 	///   on Avail.
 	/// - It should not be possible to pass an internal node as a blob leaf.
 	pub fn submitted_root(&self) -> H256 {
-		if self.submitted.is_empty() {
+		if self.data_submissions.is_empty() {
 			return H256::zero();
 		}
 
@@ -75,7 +129,7 @@ impl TxData {
 	}
 
 	pub fn submitted_proof_of(&self, leaf_idx: usize) -> Option<MerkleProof<H256, Vec<u8>>> {
-		if self.submitted.is_empty() || leaf_idx >= self.submitted.len() {
+		if self.data_submissions.is_empty() || leaf_idx >= self.data_submissions.len() {
 			return None;
 		}
 
@@ -84,7 +138,7 @@ impl TxData {
 	}
 
 	pub fn bridged_proof_of(&self, leaf_idx: usize) -> Option<MerkleProof<H256, Vec<u8>>> {
-		if self.bridged.is_empty() || leaf_idx >= self.bridged.len() {
+		if self.bridge_messages.is_empty() || leaf_idx >= self.bridge_messages.len() {
 			return None;
 		}
 		let proof = merkle_proof_to_owned(self.balanced_bridged(), leaf_idx);
@@ -92,20 +146,28 @@ impl TxData {
 	}
 
 	pub fn leaf_idx(&self, tx_idx: u32) -> Option<(usize, SubTrie)> {
-		if let Some(idx) = self.submitted.iter().position(|s| s.tx_index == tx_idx) {
+		if let Some(idx) = self
+			.data_submissions
+			.iter()
+			.position(|s| s.tx_index == tx_idx)
+		{
 			return Some((idx, SubTrie::DataSubmit));
 		}
-		if let Some(idx) = self.bridged.iter().position(|b| b.tx_index == tx_idx) {
+		if let Some(idx) = self
+			.bridge_messages
+			.iter()
+			.position(|b| b.tx_index == tx_idx)
+		{
 			return Some((idx, SubTrie::Bridge));
 		}
 		None
 	}
 }
 
-impl TxData {
+impl HeaderExtensionBuilderData {
 	fn balanced_submitted(&self) -> impl Iterator<Item = H256> + '_ {
-		let balanced_len = next_power_of_two(&self.submitted);
-		self.submitted
+		let balanced_len = next_power_of_two(&self.data_submissions);
+		self.data_submissions
 			.iter()
 			.map(|s| H256(keccak_256(&s.data)))
 			.chain(repeat(H256::zero()))
@@ -114,9 +176,9 @@ impl TxData {
 
 	fn balanced_bridged(&self) -> impl Iterator<Item = Vec<u8>> + '_ {
 		let value: Vec<u8> = H256::zero().to_fixed_bytes().into();
-		let balanced_len = next_power_of_two(&self.bridged);
+		let balanced_len = next_power_of_two(&self.bridge_messages);
 
-		self.bridged
+		self.bridge_messages
 			.iter()
 			.map(|b| b.addr_msg.abi_encode())
 			.chain(repeat(value))
@@ -124,7 +186,7 @@ impl TxData {
 	}
 }
 
-impl From<Vec<ExtractedTxData>> for TxData {
+impl From<Vec<ExtractedTxData>> for HeaderExtensionBuilderData {
 	fn from(value: Vec<ExtractedTxData>) -> Self {
 		let mut data_submissions = Vec::new();
 		let mut bridge_messages = Vec::new();
@@ -145,8 +207,8 @@ impl From<Vec<ExtractedTxData>> for TxData {
 		}
 
 		Self {
-			submitted: data_submissions,
-			bridged: bridge_messages,
+			data_submissions,
+			bridge_messages,
 			app_extrinsics,
 		}
 	}

@@ -98,7 +98,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(unused_extern_crates)]
 
-use avail_base::data_root::{build_tx_data, TxDataFilter};
+use avail_base::{HeaderExtensionBuilderData, TxDataFilter};
 use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
@@ -1855,16 +1855,19 @@ impl<T: Config> Pallet<T> {
 		// Code beyond is custom added code for computing the extension.
 		//
 
-		let tx_data = build_tx_data::<T::TxDataExtractor>(block_number, &extrinsics);
+		let tx_data = HeaderExtensionBuilderData::from_raw_extrinsics::<T::TxDataExtractor>(
+			block_number,
+			&extrinsics,
+		);
 		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
 
 		let block_length = Self::block_length();
 
 		// Transform extrinsics into AppExtrinsic.
 		let data_root = tx_data.root();
-		let submitted = tx_data.to_app_extrinsics();
+		let app_extrinsics = tx_data.to_app_extrinsics();
 		let extension = header_builder::da::HeaderExtensionBuilder::<T>::build(
-			submitted,
+			app_extrinsics,
 			data_root,
 			block_length,
 			number.unique_saturated_into(),

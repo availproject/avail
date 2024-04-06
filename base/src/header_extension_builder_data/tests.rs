@@ -67,7 +67,7 @@ impl TxDataFilter<AccountId32, String> for String {
 		_: u32,
 		tx_idx: usize,
 		_: &mut Metrics,
-	) -> Option<TxData> {
+	) -> Option<HeaderExtensionBuilderData> {
 		if s.is_empty() {
 			return None;
 		}
