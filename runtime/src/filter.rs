@@ -1,8 +1,9 @@
-use crate::{AccountId, Runtime, RuntimeCall as Call};
-use avail_base::data_root::{BridgedData, Metrics, SubmittedData, TxData, TxDataFilter};
+use crate::{AccountId, Extrinsic, Runtime, RuntimeCall as Call};
+use avail_base::data_root::{BridgedData, ExtractedTxData, Metrics, SubmittedData, TxDataFilter};
 use avail_core::{
 	data_proof::{tx_uid, AddressedMessage},
-	AppId,
+	traits::{GetAppId, MaybeCaller},
+	AppExtrinsic, AppId, OpaqueExtrinsic,
 };
 
 use da_control::Call as DACall;
@@ -11,73 +12,124 @@ use sp_core::H256;
 use sp_std::vec::Vec;
 
 /// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.
-impl TxDataFilter<AccountId, Call> for Runtime {
+impl TxDataFilter for Runtime {
 	fn filter(
-		caller: Option<&AccountId>,
-		call: &Call,
-		app_id: AppId,
+		failed_transactions: &[u32],
+		opaque: OpaqueExtrinsic,
 		block: u32,
 		tx_index: usize,
 		metrics: &mut Metrics,
-	) -> Option<TxData> {
+	) -> Option<ExtractedTxData> {
 		metrics.total_extrinsics += 1;
 
-		match call {
-			Call::Vector(call) => filter_vector_call(caller, call, block, tx_index, metrics),
-			Call::DataAvailability(call) => filter_da_call(call, app_id, tx_index, metrics),
+		let Ok(unchecked_extrinsic) = Extrinsic::try_from(opaque) else {
+			return None;
+		};
+
+		let app_id = unchecked_extrinsic.app_id();
+		let maybe_caller = unchecked_extrinsic.caller();
+
+		match &unchecked_extrinsic.function {
+			Call::Vector(call) => filter_vector_call(
+				failed_transactions,
+				maybe_caller,
+				call,
+				block,
+				tx_index,
+				metrics,
+			),
+			Call::DataAvailability(call) => {
+				let app_extrinsic = AppExtrinsic::from(unchecked_extrinsic.clone());
+				filter_da_call(app_extrinsic, call, app_id, tx_index, metrics)
+			},
 			_ => None,
 		}
+	}
+
+	fn get_failed_transaction_txs(opaque: &OpaqueExtrinsic) -> Option<Vec<u32>> {
+		let Ok(unchecked_extrinsic) = Extrinsic::try_from(opaque.clone()) else {
+			return None;
+		};
+
+		let Call::Vector(call) = &unchecked_extrinsic.function else {
+			return None;
+		};
+
+		let VectorCall::failed_send_message_txs { failed_txs } = call else {
+			return None;
+		};
+
+		return Some(failed_txs.iter().map(|c| c.0).collect::<Vec<_>>());
 	}
 }
 
 /// Filters and extracts `data` from `calls` if internal data is not empty.
 fn filter_da_call(
+	app_extrinsic: AppExtrinsic,
 	call: &DACall<Runtime>,
 	app_id: AppId,
-	tx_idx: usize,
+	tx_index: usize,
 	metrics: &mut Metrics,
-) -> Option<TxData> {
+) -> Option<ExtractedTxData> {
 	metrics.data_submit_extrinsics += 1;
 
-	match call {
-		DACall::submit_data { data } if !data.is_empty() => {
-			metrics.data_submit_leaves += 1;
-			let tx_idx = u32::try_from(tx_idx).ok()?;
-			let submitted = SubmittedData::new(app_id, tx_idx, data.as_slice().to_vec());
-			Some(submitted.into())
-		},
-		_ => None,
+	let DACall::submit_data { data } = call else {
+		return None;
+	};
+
+	if data.is_empty() {
+		return None;
 	}
+
+	metrics.data_submit_leaves += 1;
+	let tx_index = u32::try_from(tx_index).ok()?;
+	let submitted_data = Some(SubmittedData::new(
+		app_id,
+		tx_index,
+		data.as_slice().to_vec(),
+	));
+
+	Some(ExtractedTxData {
+		submitted_data,
+		app_extrinsic: Some(app_extrinsic),
+		..Default::default()
+	})
 }
 
 /// Filters and extracts message references from `call`
 fn filter_vector_call(
+	failed_transactions: &[u32],
 	caller: Option<&AccountId>,
 	call: &VectorCall<Runtime>,
 	block: u32,
 	tx_index: usize,
 	metrics: &mut Metrics,
-) -> Option<TxData> {
-	match call {
-		VectorCall::send_message {
-			message,
-			to,
-			domain,
-		} if !message.is_empty() => {
-			metrics.bridge_leaves += 1;
-
-			let from: [u8; 32] = *caller?.as_ref();
-			let tx_index = u32::try_from(tx_index).ok()?;
-			let id = tx_uid(block, tx_index);
-			let msg = AddressedMessage::new(message.clone(), H256(from), *to, 1, *domain, id);
-			let bridged = BridgedData::new(tx_index, msg);
-			Some(bridged.into())
-		},
-		VectorCall::failed_send_message_txs { failed_txs } if !failed_txs.is_empty() => {
-			let failed_txs = failed_txs.iter().map(|c| c.0).collect::<Vec<_>>();
-			Some(TxData::failed_send_msg_txs(failed_txs))
-		},
-
-		_ => None,
+) -> Option<ExtractedTxData> {
+	let tx_index = u32::try_from(tx_index).ok()?;
+	if failed_transactions.contains(&tx_index) {
+		return None;
 	}
+
+	let VectorCall::send_message {
+		message,
+		to,
+		domain,
+	} = call
+	else {
+		return None;
+	};
+
+	if message.is_empty() {
+		return None;
+	}
+
+	let from: [u8; 32] = *caller?.as_ref();
+	let id = tx_uid(block, tx_index);
+	let msg = AddressedMessage::new(message.clone(), H256(from), *to, 1, *domain, id);
+	let bridge_data = Some(BridgedData::new(tx_index, msg));
+	metrics.bridge_leaves += 1;
+	Some(ExtractedTxData {
+		bridge_data,
+		..Default::default()
+	})
 }

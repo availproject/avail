@@ -614,7 +614,7 @@ pub mod pallet {
 		type MaxConsumers: ConsumerLimits;
 
 		/// Filter used by `DataRootBuilder`.
-		type TxDataExtractor: TxDataFilter<Self::AccountId, Self::RuntimeCall>;
+		type TxDataExtractor: TxDataFilter;
 
 		/// Maximum different `AppId` allowed per block.
 		/// This is used during the calculation of padded length of the block when
@@ -1836,12 +1836,6 @@ impl<T: Config> Pallet<T> {
 			.map(ExtrinsicData::<T>::take)
 			.collect::<Vec<_>>();
 
-		let tx_data = build_tx_data::<T::TxDataExtractor, T::Extrinsic, _, _>(
-			block_number,
-			extrinsics.iter(),
-		);
-		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
-
 		// move block hash pruning window by one block
 		let block_hash_count = T::BlockHashCount::get();
 		let to_remove = number
@@ -1856,6 +1850,13 @@ impl<T: Config> Pallet<T> {
 		let version = T::Version::get().state_version();
 		let storage_root = T::Hash::decode(&mut &sp_io::storage::root(version)[..])
 			.expect("Node is configured to use the same hash; qed");
+
+		// @CUSTOM
+		// Code beyond is custom added code for computing the extension.
+		//
+
+		let tx_data = build_tx_data::<T::TxDataExtractor>(block_number, &extrinsics);
+		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
 
 		let block_length = Self::block_length();
 

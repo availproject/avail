@@ -32,16 +32,14 @@ pub struct CallsProof {
 /// adding the number of submitted data items at `System` pallet.
 pub fn calls_proof<'a, F, E, A, I>(
 	block: u32,
-	extrinsics: I,
+	extrinsics: &[Vec<u8>],
 	leaf_idx: usize,
 	call_type: SubTrie,
 ) -> Option<CallsProof>
 where
-	F: TxDataFilter<A, E::Call>,
-	E: ExtrinsicCall + MaybeCaller<A> + GetAppId + Decode,
-	I: Iterator<Item = &'a Vec<u8>> + 'a,
+	F: TxDataFilter,
 {
-	let tx_data = build_tx_data::<F, E, A, I>(block, extrinsics);
+	let tx_data = build_tx_data::<F>(block, &extrinsics);
 	let message = tx_data
 		.bridged
 		.get(leaf_idx)

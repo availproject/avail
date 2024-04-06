@@ -7,33 +7,28 @@ use avail_core::{
 
 use binary_merkle_tree::{merkle_proof, merkle_root, MerkleProof};
 use codec::{Decode, Encode};
-use derive_more::Constructor;
-use itertools::Itertools;
 use sp_core::H256;
 use sp_io::hashing::keccak_256;
 use sp_runtime_interface::pass_by::PassByCodec;
-use sp_std::{iter::repeat, vec, vec::Vec};
+use sp_std::{iter::repeat, vec::Vec};
 
-#[derive(Debug, Default, Constructor, PassByCodec, Encode, Decode, Eq, PartialEq)]
+#[derive(Debug, Default)]
+pub struct ExtractedTxData {
+	pub app_extrinsic: Option<AppExtrinsic>,
+	pub submitted_data: Option<SubmittedData>,
+	pub bridge_data: Option<BridgedData>,
+}
+
+#[derive(Debug, Default, PassByCodec, Encode, Decode)]
 pub struct TxData {
+	pub app_extrinsics: Vec<AppExtrinsic>,
 	pub submitted: Vec<SubmittedData>,
 	pub bridged: Vec<BridgedData>,
-	failed_send_msg_txs: Vec<u32>,
 }
 
 impl TxData {
-	pub fn failed_send_msg_txs(failed_send_msg_txs: Vec<u32>) -> Self {
-		Self {
-			failed_send_msg_txs,
-			..Default::default()
-		}
-	}
-
 	pub fn to_app_extrinsics(self) -> Vec<AppExtrinsic> {
-		self.submitted
-			.into_iter()
-			.map(|s| AppExtrinsic::new(s.id, s.data))
-			.collect()
+		self.app_extrinsics.clone()
 	}
 
 	pub fn is_empty(&self) -> bool {
@@ -129,56 +124,30 @@ impl TxData {
 	}
 }
 
-impl From<SubmittedData> for TxData {
-	fn from(s: SubmittedData) -> Self {
-		Self {
-			submitted: vec![s],
-			..Default::default()
+impl From<Vec<ExtractedTxData>> for TxData {
+	fn from(value: Vec<ExtractedTxData>) -> Self {
+		let mut data_submissions = Vec::new();
+		let mut bridge_messages = Vec::new();
+		let mut app_extrinsics = Vec::new();
+
+		for val in value {
+			if let Some(data_submission) = val.submitted_data {
+				data_submissions.push(data_submission);
+			}
+
+			if let Some(bridge_message) = val.bridge_data {
+				bridge_messages.push(bridge_message);
+			}
+
+			if let Some(app_extrinsic) = val.app_extrinsic {
+				app_extrinsics.push(app_extrinsic);
+			}
 		}
-	}
-}
-
-impl From<BridgedData> for TxData {
-	fn from(b: BridgedData) -> Self {
-		Self {
-			bridged: vec![b],
-			..Default::default()
-		}
-	}
-}
-
-impl FromIterator<TxData> for TxData {
-	fn from_iter<I: IntoIterator<Item = TxData>>(iter: I) -> Self {
-		let (submitted, bridged, failed_send_msg_txs): (Vec<_>, Vec<_>, Vec<_>) = iter
-			.into_iter()
-			.map(|tx| (tx.submitted, tx.bridged, tx.failed_send_msg_txs))
-			.multiunzip();
-
-		let mut failed_send_msg_txs = failed_send_msg_txs
-			.into_iter()
-			.flatten()
-			.collect::<Vec<_>>();
-		failed_send_msg_txs.sort();
-		failed_send_msg_txs.dedup();
-
-		// Filter empty data submissions.
-		let submitted = submitted
-			.into_iter()
-			.flatten()
-			.filter(|s| !s.data.is_empty())
-			.collect::<Vec<_>>();
-
-		// Filter failed Txs.
-		let bridged = bridged
-			.into_iter()
-			.flatten()
-			.filter(|b| !failed_send_msg_txs.contains(&b.tx_index))
-			.collect::<Vec<_>>();
 
 		Self {
-			submitted,
-			bridged,
-			failed_send_msg_txs,
+			submitted: data_submissions,
+			bridged: bridge_messages,
+			app_extrinsics,
 		}
 	}
 }
