@@ -1,9 +1,4 @@
-//pub mod tests;
-pub mod traits;
-
-// Reexport
-pub use traits::TxDataFilter;
-
+use super::TxDataFilter;
 use avail_core::OpaqueExtrinsic;
 use avail_core::{
 	app_extrinsic::AppExtrinsic,

@@ -572,7 +572,7 @@ impl_runtime_apis! {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use avail_base::header_extension_builder_data::{BridgedData, HeaderExtensionBuilderData};
+	use avail_base::header_extension::{BridgedData, HeaderExtensionBuilderData};
 	use avail_core::data_proof::{AddressedMessage, BoundedData, Message};
 	use hex_literal::hex;
 	use sp_std::{vec, vec::Vec};

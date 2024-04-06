@@ -1,7 +1,5 @@
 use crate::{AccountId, Runtime, RuntimeCall as Call, UncheckedExtrinsic};
-use avail_base::header_extension_builder_data::{
-	BridgedData, ExtractedTxData, SubmittedData, TxDataFilter,
-};
+use avail_base::header_extension::{BridgedData, ExtractedTxData, SubmittedData, TxDataFilter};
 use avail_core::{
 	data_proof::{tx_uid, AddressedMessage},
 	traits::{GetAppId, MaybeCaller},

@@ -1,4 +1,4 @@
-use crate::header_extension_builder_data::{HeaderExtensionBuilderData, TxDataFilter};
+use crate::header_extension::{HeaderExtensionBuilderData, TxDataFilter};
 
 use avail_core::data_proof::{AddressedMessage, SubTrie};
 
@@ -25,7 +25,7 @@ pub struct CallsProof {
 /// - The `merkle_proof` requires `ExactSizeIterator`, forcing to load all submitted data into
 /// memory. That would increase the memory footprint of the node significantly. We could fix this
 /// adding the number of submitted data items at `System` pallet.
-pub fn calls_proof<'a, F, E, A, I>(
+pub fn calls_proof<'a, F>(
 	block: u32,
 	extrinsics: &[Vec<u8>],
 	leaf_idx: usize,
