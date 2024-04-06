@@ -14,24 +14,23 @@ export const goldbergTypes = {
     commitment: "Vec<u8>",
     dataRoot: "H256",
   },
-  KateCommitmentV2: {
-    rows: "Compact<u16>",
-    cols: "Compact<u16>",
-    dataRoot: "Option<H256>",
-    commitment: "Vec<u8>",
-  },
   V1HeaderExtension: {
     appLookup: "DataLookup",
     commitment: "KateCommitment",
   },
   V2HeaderExtension: {
     appLookup: "DataLookup",
-    commitment: "KateCommitmentV2",
+    commitment: "KateCommitment",
+  },
+  V3HeaderExtension: {
+    appLookup: "DataLookup",
+    commitment: "KateCommitment",
   },
   HeaderExtension: {
     _enum: {
       V1: "V1HeaderExtension",
       V2: "V2HeaderExtension",
+      V3: "V3HeaderExtension",
     },
   },
   DaHeader: {
@@ -51,10 +50,12 @@ export const goldbergTypes = {
     extra: "CheckAppIdExtra",
     types: "CheckAppIdTypes",
   },
+  BlockLengthColumns: "Compact<u32>",
+  BlockLengthRows: "Compact<u32>",
   BlockLength: {
     max: "PerDispatchClass",
-    cols: "Compact<u32>",
-    rows: "Compact<u32>",
+    cols: "BlockLengthColumns",
+    rows: "BlockLengthRows",
     chunkSize: "Compact<u32>",
   },
   PerDispatchClass: {
@@ -68,6 +69,31 @@ export const goldbergTypes = {
     numberOfLeaves: "Compact<u32>",
     leaf_index: "Compact<u32>",
     leaf: "H256",
+  },
+  DataProofV2: {
+    dataRoot: "H256",
+    blobRoot: "H256",
+    bridgeRoot: "H256",
+    proof: "Vec<H256>",
+    numberOfLeaves: "Compact<u32>",
+    leafIndex: "Compact<u32>",
+    leaf: "H256",
+  },
+  ProofResponse: {
+    dataProof: "DataProofV2",
+    message: "Option<Message>",
+  },
+  Message: {
+    messageType: "MessageType",
+    from: "H256",
+    to: "H256",
+    originDomain: "u32",
+    destinationDomain: "u32",
+    data: "Vec<u8>",
+    id: "u64",
+  },
+  MessageType: {
+    _enum: ["ArbitraryMessage", "FungibleToken"],
   },
   Cell: {
     row: "u32",
