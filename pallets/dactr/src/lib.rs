@@ -29,7 +29,6 @@ pub mod mock;
 mod tests;
 pub use extensions::check_app_id::CheckAppId;
 pub use extensions::check_batch_transactions::CheckBatchTransactions;
-pub mod kate;
 pub mod weights;
 
 pub const LOG_TARGET: &str = "runtime::da_control";

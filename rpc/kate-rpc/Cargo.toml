@@ -8,7 +8,6 @@ edition = "2021"
 [dependencies]
 avail-base.workspace = true
 da-runtime.workspace = true
-da-control.workspace = true
 frame-system = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }

@@ -1,3 +1,4 @@
+use super::kate::{Error as RTKateError, GDataProof, GRow};
 use crate::{
 	constants, mmr, version::VERSION, AccountId, AuthorityDiscovery, Babe, Block, BlockNumber,
 	EpochDuration, Executive, Grandpa, Historical, Index, InherentDataExt, Mmr, NominationPools,
@@ -11,7 +12,6 @@ use avail_core::{
 	header::HeaderExtension,
 	AppId, OpaqueExtrinsic,
 };
-use da_control::kate::{Error as RTKateError, GDataProof, GRow, RTKate};
 
 use frame_system::{
 	header_builder::da::HeaderExtensionBuilder, limits::BlockLength, HeaderExtensionBuilder as _,
@@ -432,21 +432,21 @@ impl_runtime_apis! {
 
 		fn rows(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError> {
 			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
-			let grid_rows = RTKate::<Runtime>::grid(app_extrinsics, block_len, rows)?;
+			let grid_rows = super::kate::grid::<Runtime>(app_extrinsics, block_len, rows)?;
 			log::trace!(target: LOG_TARGET, "KateApi::rows: rows={grid_rows:#?}");
 			Ok(grid_rows)
 		}
 
 		fn app_data(block_number: u32, extrinsic: Vec<OpaqueExtrinsic>, block_len: BlockLength, id: AppId) -> Result<Vec<Option<GRow>>, RTKateError> {
 			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsic).to_app_extrinsics();
-			let grid_rows = RTKate::<Runtime>::app_data(app_extrinsics, block_len, id)?;
+			let grid_rows = super::kate::app_data::<Runtime>(app_extrinsics, block_len, id)?;
 			log::trace!(target: LOG_TARGET, "KateApi::app_data: rows={grid_rows:#?}");
 			Ok(grid_rows)
 		}
 
 		fn proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError> {
 			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
-			let data_proofs = RTKate::<Runtime>::proof(app_extrinsics, block_len, cells)?;
+			let data_proofs = super::kate::proof::<Runtime>(app_extrinsics, block_len, cells)?;
 			log::trace!(target: LOG_TARGET, "KateApi::proof: data_proofs={data_proofs:#?}");
 			Ok(data_proofs)
 		}

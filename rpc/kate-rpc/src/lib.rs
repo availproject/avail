@@ -3,8 +3,8 @@ use avail_core::{
 	data_proof::ProofResponse, header::HeaderExtension, traits::ExtendedHeader, AppId,
 	OpaqueExtrinsic,
 };
-use da_control::kate::{GDataProof, GRow};
 use da_runtime::apis::{DataAvailApi, KateApi as RTKateApi};
+use da_runtime::kate::{GDataProof, GRow};
 use kate::com::Cell;
 
 use frame_support::BoundedVec;

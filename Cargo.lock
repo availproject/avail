@@ -2113,7 +2113,6 @@ dependencies = [
  "pallet-utility",
  "pallet-vector",
  "parity-scale-codec",
- "rayon",
  "scale-info",
  "serde",
  "sp-arithmetic",
@@ -2183,7 +2182,9 @@ dependencies = [
  "pallet-utility",
  "pallet-vector",
  "parity-scale-codec",
+ "rayon",
  "scale-info",
+ "serde",
  "serde_json",
  "sp-api",
  "sp-authority-discovery",
@@ -2197,6 +2198,7 @@ dependencies = [
  "sp-keyring",
  "sp-offchain",
  "sp-runtime",
+ "sp-runtime-interface",
  "sp-session",
  "sp-staking",
  "sp-std",
@@ -2206,6 +2208,7 @@ dependencies = [
  "static_assertions",
  "substrate-wasm-builder",
  "test-case",
+ "thiserror-no-std",
 ]
 
 [[package]]
@@ -4500,7 +4503,6 @@ version = "0.3.0"
 dependencies = [
  "avail-base",
  "avail-core",
- "da-control",
  "da-runtime",
  "frame-support",
  "frame-system",

@@ -32,6 +32,7 @@ mod data_root_tests;
 pub mod impls;
 #[cfg(test)]
 mod impls_tests;
+pub mod kate;
 mod primitives;
 pub mod transaction_filter;
 mod version;
@@ -362,7 +363,7 @@ mod tests {
 	#[test_case( &SET_TIMESTAMP_RAW => set_timestamp_expected(); "set_timestamp_block_242")]
 	fn decode_app_unchecked_extrinsics(mut raw_ext: &[u8]) -> RuntimeCall {
 		use codec::Decode;
-		let app_ext = Extrinsic::decode(&mut raw_ext).expect("Valid raw extrinsic .qed");
+		let app_ext = UncheckedExtrinsic::decode(&mut raw_ext).expect("Valid raw extrinsic .qed");
 		app_ext.function
 	}
 }
