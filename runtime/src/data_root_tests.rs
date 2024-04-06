@@ -1,7 +1,7 @@
 use super::*;
-use crate::{Extrinsic, Runtime, SignedExtra};
+use crate::{Runtime, SignedExtra, UncheckedExtrinsic};
 
-use avail_base::data_root::build_tx_data;
+use avail_base::HeaderExtensionBuilderData;
 use avail_core::data_proof::{BoundedData, Message, TxDataRoots};
 use da_control::{AppDataFor, Call as DaCall, CheckAppId};
 use frame_system::{
@@ -53,7 +53,7 @@ fn signed_extrinsic(function: RuntimeCall) -> Vec<u8> {
 	let signature: MultiSignature = Alice.sign(&payload).into();
 
 	assert!(signature.verify(&*payload, &alice));
-	Extrinsic::new_signed(function, alice.into(), signature, extra).encode()
+	UncheckedExtrinsic::new_signed(function, alice.into(), signature, extra).encode()
 }
 
 fn submit_data(data: Vec<u8>) -> Vec<u8> {
@@ -103,6 +103,5 @@ fn empty_root() -> H256 {
 #[test_case(&[bridge_fungible_msg(H256::repeat_byte(1), 1_000_000)] => H256(hex!("e93394eeaedb2158a154a29b9333fe06451fbe82c9cff5b961a6d701782450bc")) ; "bridged fungible")]
 #[test_case(&[submit_data(hex!("abcd").to_vec()), bridge_msg(hex!("47").to_vec())] => H256(hex!("c925bfccfc86f15523c5b40b2bd6d8a66fc51f3d41176d77be7928cb9e3831a7")); "submitted and bridged")]
 fn data_root_filter(extrinsics: &[Vec<u8>]) -> H256 {
-	let tx_data = build_tx_data::<Runtime, Extrinsic, _, _>(0, extrinsics.iter());
-	tx_data.root()
+	HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, extrinsics).data_root()
 }

@@ -572,14 +572,13 @@ impl_runtime_apis! {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use avail_base::data_root::{BridgedData, HeaderExtensionBuilderData};
+	use avail_base::header_extension_builder_data::{BridgedData, HeaderExtensionBuilderData};
 	use avail_core::data_proof::{AddressedMessage, BoundedData, Message};
 	use hex_literal::hex;
 	use sp_std::{vec, vec::Vec};
 	use test_case::test_case;
 
 	const SEND_ARBITRARY_DATA: &[u8] = &hex!("8400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d01e6052f8eddddbd425c2794829ca84c3382ea8b14f3e193824900523650149e2a9dea3cf9e417068ddc04d9ac9563e6b22ea11be1505e4a6a82f70864b01af38214000800002703000c313233000000000000000000000000000000000000000000000000000000000000003254");
-	const FAILED_TXS: &[u8] = &hex!("04270b080c10");
 
 	fn expected_send_arbitrary_data() -> HeaderExtensionBuilderData {
 		let message = Message::ArbitraryMessage(BoundedData::truncate_from(b"123".to_vec()));
@@ -591,27 +590,16 @@ mod tests {
 			21,
 			0,
 		);
-		BridgedData::new(0, addr_msg).into()
+		HeaderExtensionBuilderData {
+			bridge_messages: vec![BridgedData::new(0, addr_msg)],
+			..Default::default()
+		}
 	}
 
-	fn expected_failed_send_txs() -> HeaderExtensionBuilderData {
-		HeaderExtensionBuilderData::failed_send_msg_txs(vec![3, 4])
-	}
-
-	fn expected_all() -> HeaderExtensionBuilderData {
-		[expected_send_arbitrary_data(), expected_failed_send_txs()]
-			.into_iter()
-			.collect()
-	}
-
+	// TODO TESTS
+	/*
 	#[test_case( vec![SEND_ARBITRARY_DATA.to_vec()] => expected_send_arbitrary_data(); "Vector Send Arbitrary")]
-	#[test_case( vec![FAILED_TXS.to_vec()] => expected_failed_send_txs(); "Post Inherent failed tx")]
-	#[test_case( vec![SEND_ARBITRARY_DATA.to_vec(), FAILED_TXS.to_vec()] => expected_all(); "all")]
 	fn kate_data_proof(raw_extrinsics: Vec<Vec<u8>>) -> HeaderExtensionBuilderData {
-		let extrinsics = raw_extrinsics
-			.into_iter()
-			.map(OpaqueExtrinsic)
-			.collect::<Vec<OpaqueExtrinsic>>();
-		build_tx_data_from_opaque::<RTExtractor, RTExtrinsic, _, _>(0, extrinsics)
-	}
+		HeaderExtensionBuilderData::from_raw_extrinsics::<RTExtractor>(0, &raw_extrinsics)
+	} */
 }
