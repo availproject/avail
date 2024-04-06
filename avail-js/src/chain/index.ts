@@ -3,7 +3,7 @@ import { cryptoWaitReady } from "@polkadot/util-crypto"
 import { ApiOptions } from "@polkadot/api/types"
 import { rpc, signedExtensions, types } from "../spec"
 
-export const GOLDBERG_ENDPOINT = "wss://goldberg.avail.tools/ws"
+export const GOLDBERG_ENDPOINT = "wss://rpc-testnet.avail.tools/ws"
 export const TURING_ENDPOINT = "wss://turing-rpc.avail.so"
 
 export let api: ApiPromise
