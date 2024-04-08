@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.12
-	github.com/vedhavyas/go-subkey/v2 v2.0.0
+	github.com/vedhavyas/go-subkey v1.0.4
 )
 
 require (
@@ -21,8 +21,9 @@ require (
 	github.com/mimoo/StrobeGo v0.0.0-20220103164710-9a04d6ca976b // indirect
 	github.com/pierrec/xxHash v0.1.5 // indirect
 	github.com/rs/cors v1.8.2 // indirect
-	golang.org/x/crypto v0.7.0 // indirect
-	golang.org/x/sys v0.6.0 // indirect
+	github.com/vedhavyas/go-subkey/v2 v2.0.0 // indirect
+	golang.org/x/crypto v0.22.0 // indirect
+	golang.org/x/sys v0.19.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 )
 
