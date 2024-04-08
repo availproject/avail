@@ -6,13 +6,16 @@ pub use runtime::{app_data, grid, proof};
 
 use codec::{Decode, Encode};
 use core::num::TryFromIntError;
-use kate::{com::Error as KateError, gridgen::AppRowError as KateAppRowError};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::U256;
 use sp_runtime_interface::pass_by::{PassByCodec, PassByInner};
 use thiserror_no_std::Error;
+use sp_std::vec::Vec;
+
+#[cfg(feature = "std")]
+use kate::{com::Error as KateError, gridgen::AppRowError as KateAppRowError};
 
 pub type GRawScalar = U256;
 pub type GRow = Vec<GRawScalar>;

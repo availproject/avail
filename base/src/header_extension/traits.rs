@@ -1,5 +1,6 @@
 use super::ExtractedTxData;
 use avail_core::OpaqueExtrinsic;
+use sp_std::vec::Vec;
 
 pub trait HeaderExtensionDataFilter {
 	fn filter(
