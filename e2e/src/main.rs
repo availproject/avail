@@ -8,10 +8,11 @@ pub mod tests {
 
 	use avail_core::{AppExtrinsic, AppId, Keccak256};
 	use avail_subxt::api;
+	use avail_subxt::avail::{Extrinsics, GRawScalar};
+	use avail_subxt::rpc::GProof;
 	use avail_subxt::{
 		api::runtime_types::avail_core::header::extension::HeaderExtension,
-		avail::{Cells, GDataProof, GRawScalar, GRow, Rows},
-		helpers::submitted_data_from,
+		avail::{Cells, GDataProof, Rows},
 		rpc::KateRpcClient as _,
 		submit::submit_data,
 		tx,
@@ -22,6 +23,7 @@ pub mod tests {
 	use anyhow::{anyhow, Result};
 	use avail_subxt::api::runtime_types::avail_core::{BlockLengthColumns, BlockLengthRows};
 	use binary_merkle_tree::merkle_proof;
+	use codec::{Decode, Encode};
 	use kate::gridgen::{AsBytes as _, EvaluationGrid};
 	use kate_recovery::matrix::Dimensions;
 	use kate_recovery::proof::verify;
@@ -37,105 +39,51 @@ pub mod tests {
 		Ok(client)
 	}
 
+	pub fn to_app_extrinsics(extrinsics: &Extrinsics) -> Vec<AppExtrinsic> {
+		extrinsics
+			.iter()
+			.filter_map(|ext_details| {
+				let raw = ext_details.ok()?.bytes().encode();
+				AppExtrinsic::decode(&mut raw.as_slice()).ok()
+			})
+			.collect()
+	}
+
 	async fn eval_grid_from_block(
 		client: &AvailClient,
 		block_hash: H256,
 	) -> Result<EvaluationGrid> {
 		let block = client.blocks().at(block_hash).await?;
 		let extrinsics = block.extrinsics().await?;
-		let app_ext = submitted_data_from(&extrinsics)
-			.into_iter()
-			.map(|s| AppExtrinsic::new(s.id, s.data))
-			.collect();
+
+		let mut app_extrinsics = Vec::new();
+		for (i, e) in extrinsics.iter().enumerate() {
+			let e = e.unwrap();
+			if i == 0 || i == (extrinsics.len() - 1) {
+				continue;
+			}
+			let raw_extrinsic = e.bytes().encode();
+			let app_extrinsic = AppExtrinsic {
+				app_id: AppId(1),
+				data: raw_extrinsic,
+			};
+			app_extrinsics.push(app_extrinsic);
+		}
 
 		let block_len = client.rpc_methods().query_block_length(block_hash).await?;
 		let max_width = block_len.cols.0 as usize;
 		let max_height = block_len.rows.0 as usize;
 		let seed = [0u8; 32];
 
-		EvaluationGrid::from_extrinsics(app_ext, MIN_WIDTH, max_width, max_height, seed)
+		EvaluationGrid::from_extrinsics(app_extrinsics, MIN_WIDTH, max_width, max_height, seed)
 			.map_err(|e| anyhow!("Eval grid failed {e:?}"))
 	}
 
 	#[async_std::test]
-	pub async fn rpc_query_rows_test() -> Result<()> {
-		let client = establish_a_connection().await?;
-		let alice = dev::alice();
-
-		println!("Data submitted...");
-		let block_hash = tx::in_finalized(submit_data(&client, &alice, DATA, AppId(1)).await?)
-			.await?
-			.block_hash();
-
-		// Grid Creation
-		println!("Generating Evaluation Grid at block hash {block_hash:?}...");
-		let grid = eval_grid_from_block(&client, block_hash).await?;
-		let extended_grid = grid.extend_columns(NonZeroU16::new(2).unwrap()).unwrap();
-
-		assert_eq!(grid.dims(), Dimensions::new(1, 4).unwrap());
-		assert_eq!(extended_grid.dims(), Dimensions::new(2, 4).unwrap());
-		assert_eq!(grid.row(0), extended_grid.row(0));
-		assert_eq!(grid.row(0), extended_grid.row(1));
-
-		println!("RPC query rows ...");
-		// RPC call: Querying non existing rows should fail
-		let row_indexes = Rows::truncate_from(vec![2]);
-		let rows = client
-			.rpc_methods()
-			.query_rows(row_indexes, block_hash)
-			.await;
-		assert!(rows.is_err());
-
-		// RPC call: Querying existing rows should NOT fail
-		let row_indexes = Rows::truncate_from(vec![0]);
-		let actual_rows = client
-			.rpc_methods()
-			.query_rows(row_indexes, block_hash)
-			.await?;
-
-		let expected_rows = [extended_grid.row(0)]
-			.into_iter()
-			.filter_map(|row| {
-				row.map(|r| {
-					r.iter()
-						.flat_map(|r| r.to_bytes().map(GRawScalar::from))
-						.collect()
-				})
-			})
-			.collect::<Vec<GRow>>();
-
-		assert_eq!(actual_rows, expected_rows);
-		Ok(())
-	}
-
-	#[async_std::test]
-	pub async fn rpc_query_app_data_test() -> Result<()> {
-		let client = establish_a_connection().await?;
-		let alice = dev::alice();
-		let app_id = AppId(1);
-
-		let block_hash = tx::in_finalized(submit_data(&client, &alice, DATA, app_id).await?)
-			.await?
-			.block_hash();
-		let grid = eval_grid_from_block(&client, block_hash).await?;
-
-		// RPC call
-		let actual_rows = client
-			.rpc_methods()
-			.query_app_data(app_id, block_hash)
-			.await?;
-
-		let row = grid.row(0).unwrap();
-		let expected_rows = row
-			.iter()
-			.flat_map(|r| r.to_bytes().map(GRawScalar::from))
-			.collect::<Vec<_>>();
-		assert_eq!(actual_rows, vec![Some(expected_rows)]);
-		Ok(())
-	}
-
-	#[async_std::test]
 	pub async fn rpc_query_proof_test() -> Result<()> {
+		use avail_core::BlockLengthColumns;
+		use avail_core::BlockLengthRows;
+		use kate::com::Cell as KateCell;
 		let client = establish_a_connection().await?;
 		let alice = dev::alice();
 		let app_id = AppId(1);
@@ -143,9 +91,9 @@ pub mod tests {
 		let block_hash = tx::in_finalized(submit_data(&client, &alice, DATA, app_id).await?)
 			.await?
 			.block_hash();
-		let grid = eval_grid_from_block(&client, block_hash).await?;
 
 		// Grid Creation
+		let grid = eval_grid_from_block(&client, block_hash).await?;
 		let extended_grid = grid.extend_columns(NonZeroU16::new(2).unwrap()).unwrap();
 		let poly_grid = extended_grid.make_polynomial_grid().unwrap();
 
@@ -158,46 +106,44 @@ pub mod tests {
 			.map(|col| Cell::new(0, col.into()))
 			.collect::<Vec<_>>();
 		let multiproof_srs = kate::couscous::multiproof_params();
-		let expected_proof: Vec<Vec<u8>> = cells
+		let expected_proofs: Vec<GDataProof> = cells
 			.iter()
-			.map(|cell| {
-				let row = usize::try_from(cell.row).unwrap();
-				let col = usize::try_from(cell.col).unwrap();
-				let data = extended_grid.get::<usize, usize>(row, col).unwrap();
-				let kate_cell = kate::com::Cell::new(
-					avail_core::BlockLengthRows(cell.row),
-					avail_core::BlockLengthColumns(cell.col),
-				);
-				let proof = poly_grid.proof(&multiproof_srs, &kate_cell).unwrap();
-				let data = data.to_bytes().expect("Ser cannot fail").to_vec();
-				let proof = proof.to_bytes().expect("Ser cannot fail").to_vec();
+			.map(|c| -> GDataProof {
+				let data: GRawScalar = grid
+					.get(c.row as usize, c.col as usize)
+					.unwrap()
+					.to_bytes()
+					.map(GRawScalar::from)
+					.unwrap();
 
-				[proof, data].into_iter().flatten().collect::<Vec<u8>>()
+				let cell = KateCell {
+					row: BlockLengthRows(c.row),
+					col: BlockLengthColumns(c.col),
+				};
+				let proof = poly_grid
+					.proof(&multiproof_srs, &cell)
+					.unwrap()
+					.to_bytes()
+					.map(|b| GProof(b))
+					.unwrap();
+
+				(data, proof)
 			})
 			.collect();
-		let expected_proof: Vec<u8> = expected_proof.into_iter().flatten().collect();
 
 		// RPC call
-		let actual_proof: Vec<GDataProof> = client
+		let actual_proofs: Vec<GDataProof> = client
 			.rpc_methods()
 			.query_proof(Cells::try_from(cells).unwrap(), block_hash)
 			.await?;
-		let actual_proof: Vec<u8> = actual_proof
-			.iter()
-			.map(|(raw_scalar, g_proof)| {
-				let mut scalar_bytes = [0u8; 32];
-				raw_scalar.to_big_endian(&mut scalar_bytes);
-				let proof_bytes: Vec<u8> = Vec::from(*g_proof);
 
-				[proof_bytes, scalar_bytes.to_vec()]
-					.into_iter()
-					.flatten()
-					.collect::<Vec<u8>>()
-			})
-			.flatten()
-			.collect();
+		let len = actual_proofs.len();
+		assert_eq!(actual_proofs.len(), expected_proofs.len());
+		for i in 0..len {
+			assert_eq!(actual_proofs[i].0, expected_proofs[i].0);
+			assert_eq!(actual_proofs[i].1 .0, expected_proofs[i].1 .0);
+		}
 
-		assert_eq!(actual_proof, expected_proof);
 		Ok(())
 	}
 

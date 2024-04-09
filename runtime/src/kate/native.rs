@@ -1,7 +1,8 @@
-use super::{AppExtrinsic, AppId, BlockLength, Error, GDataProof, GProof, GRawScalar, GRow, Seed};
-use avail_core::{BlockLengthColumns, BlockLengthRows};
+use super::{Error, GDataProof, GProof, GRawScalar, GRow};
+use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 use core::num::NonZeroU16;
-use frame_system::header_builder::MIN_WIDTH;
+use frame_system::{header_builder::MIN_WIDTH, limits::BlockLength};
+use kate::Seed;
 #[cfg(feature = "std")]
 use kate::{
 	com::Cell,
@@ -9,7 +10,6 @@ use kate::{
 	gridgen::{AsBytes as _, EvaluationGrid as EGrid},
 	pmp::m1_blst::M1NoPrecomp,
 };
-
 use sp_runtime::SaturatedConversion as _;
 use sp_runtime_interface::runtime_interface;
 use sp_std::vec::Vec;
@@ -35,7 +35,9 @@ pub trait HostedKate {
 			.map(usize::try_from)
 			.collect::<Result<Vec<_>, _>>()?;
 
-		let grid = EGrid::from_extrinsics(submitted, MIN_WIDTH, max_width, max_height, seed)?;
+		let grid = EGrid::from_extrinsics(submitted, MIN_WIDTH, max_width, max_height, seed)?
+			.extend_columns(NonZeroU16::new(2).expect("2>0"))
+			.map_err(|_| Error::ColumnExtension)?;
 		let rows = selected_rows
 			.into_par_iter()
 			.map(|row_idx| {
@@ -106,7 +108,7 @@ pub trait HostedKate {
 				let proof = poly
 					.proof(srs, &cell)?
 					.to_bytes()
-					.map(GProof::from)
+					.map(|b| GProof(b))
 					.map_err(|_| Error::Proof)?;
 
 				Ok((data, proof))

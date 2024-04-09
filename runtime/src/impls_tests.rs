@@ -467,7 +467,7 @@ mod tests {
 		type RuntimeCall = RuntimeCall;
 		type RuntimeEvent = RuntimeEvent;
 		type RuntimeOrigin = RuntimeOrigin;
-		type TxDataExtractor = ();
+		type HeaderExtensionDataFilter = ();
 
 		type Header = Header;
 		type Extrinsic = Extrinsic;

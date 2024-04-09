@@ -2,7 +2,7 @@
 
 use super::*;
 use crate::Pallet;
-use avail_base::data_root::build_tx_data;
+use avail_base::HeaderExtensionBuilderData;
 use avail_core::{
 	asdr::AppUncheckedExtrinsic, AppExtrinsic, BlockLengthColumns, BlockLengthRows,
 	BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO,
@@ -241,7 +241,11 @@ mod benchmarks {
 
 		#[block]
 		{
-			build_tx_data::<T::TxDataExtractor, T::Extrinsic, _, _>(1u32, once(&opaque)).root();
+			HeaderExtensionBuilderData::from_raw_extrinsics::<T::HeaderExtensionDataFilter>(
+				1u32,
+				&vec![opaque],
+			)
+			.data_root();
 		}
 
 		Ok(())
@@ -272,7 +276,10 @@ mod benchmarks {
 
 		#[block]
 		{
-			build_tx_data::<T::TxDataExtractor, T::Extrinsic, _, _>(1u32, calls.iter()).root();
+			HeaderExtensionBuilderData::from_raw_extrinsics::<T::HeaderExtensionDataFilter>(
+				1u32, &calls,
+			)
+			.data_root();
 		}
 
 		Ok(())

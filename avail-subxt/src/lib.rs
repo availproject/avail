@@ -25,8 +25,6 @@ mod api_dev;
 #[cfg(feature = "api-dev")]
 pub use api_dev::api;
 
-pub mod helpers;
-
 #[derive(Clone, Debug, Default)]
 pub struct AvailConfig;
 

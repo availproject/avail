@@ -4,8 +4,7 @@ use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppId, OpaqueE
 use da_runtime::apis::DataAvailApi;
 
 use crate::RTKateApi;
-use da_control::kate::GDataProof;
-use da_control::kate::GRow;
+use da_runtime::kate::{GDataProof, GRow};
 use frame_system::limits::BlockLength;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},

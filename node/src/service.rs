@@ -54,7 +54,7 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 		frame_benchmarking::benchmarking::HostFunctions,
 		frame_system::header_builder::hosted_header_builder::HostFunctions,
 		avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
-		da_control::kate::hosted_kate::hosted_kate::HostFunctions,
+		da_runtime::kate::native::hosted_kate::HostFunctions,
 	);
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -110,7 +110,7 @@ pub fn create_extrinsic(
 	function: impl Into<da_runtime::RuntimeCall>,
 	nonce: Option<u32>,
 	app_id: AppId,
-) -> da_runtime::Extrinsic {
+) -> da_runtime::UncheckedExtrinsic {
 	let function = function.into();
 	let genesis_hash = client
 		.block_hash(0)
@@ -155,7 +155,7 @@ pub fn create_extrinsic(
 	);
 	let signature = raw_payload.using_encoded(|e| sender.sign(e));
 
-	da_runtime::Extrinsic::new_signed(
+	da_runtime::UncheckedExtrinsic::new_signed(
 		function,
 		sp_runtime::AccountId32::from(sender.public()).into(),
 		da_runtime::Signature::Sr25519(signature),

@@ -98,7 +98,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(unused_extern_crates)]
 
-use avail_base::data_root::{build_tx_data, TxDataFilter};
+use avail_base::{HeaderExtensionBuilderData, HeaderExtensionDataFilter};
 use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
@@ -315,7 +315,7 @@ pub mod pallet {
 			type Header = DaHeader<u32, BlakeTwo256>;
 			type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 			type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
-			type TxDataExtractor = ();
+			type HeaderExtensionDataFilter = ();
 		}
 
 		/// Default configurations of this pallet in a solo-chain environment.
@@ -414,7 +414,7 @@ pub mod pallet {
 			type Header = DaHeader<u32, BlakeTwo256>;
 			type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 			type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
-			type TxDataExtractor = ();
+			type HeaderExtensionDataFilter = ();
 		}
 
 		/// Default configurations of this pallet in a relay-chain environment.
@@ -614,7 +614,7 @@ pub mod pallet {
 		type MaxConsumers: ConsumerLimits;
 
 		/// Filter used by `DataRootBuilder`.
-		type TxDataExtractor: TxDataFilter<Self::AccountId, Self::RuntimeCall>;
+		type HeaderExtensionDataFilter: HeaderExtensionDataFilter;
 
 		/// Maximum different `AppId` allowed per block.
 		/// This is used during the calculation of padded length of the block when
@@ -1836,12 +1836,6 @@ impl<T: Config> Pallet<T> {
 			.map(ExtrinsicData::<T>::take)
 			.collect::<Vec<_>>();
 
-		let tx_data = build_tx_data::<T::TxDataExtractor, T::Extrinsic, _, _>(
-			block_number,
-			extrinsics.iter(),
-		);
-		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
-
 		// move block hash pruning window by one block
 		let block_hash_count = T::BlockHashCount::get();
 		let to_remove = number
@@ -1857,14 +1851,20 @@ impl<T: Config> Pallet<T> {
 		let storage_root = T::Hash::decode(&mut &sp_io::storage::root(version)[..])
 			.expect("Node is configured to use the same hash; qed");
 
+		// @CUSTOM
+		// Code beyond is custom added code for computing the extension.
+		//
+
+		let header_extension_builder_data = HeaderExtensionBuilderData::from_raw_extrinsics::<
+			T::HeaderExtensionDataFilter,
+		>(block_number, &extrinsics);
+		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
+
 		let block_length = Self::block_length();
 
-		// Transform extrinsics into AppExtrinsic.
-		let data_root = tx_data.root();
-		let submitted = tx_data.to_app_extrinsics();
 		let extension = header_builder::da::HeaderExtensionBuilder::<T>::build(
-			submitted,
-			data_root,
+			header_extension_builder_data.to_app_extrinsics(),
+			header_extension_builder_data.data_root(),
 			block_length,
 			number.unique_saturated_into(),
 		);

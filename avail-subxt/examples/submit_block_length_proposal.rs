@@ -112,7 +112,7 @@ pub async fn fail_simple_tx<S>(client: &AvailClient, signer: &S, nonce: u64) -> 
 where
 	S: SignerT<AvailConfig>,
 {
-	println!("1-Fail - Should fail: Sudo call to reduce the dimensions of the block, after data submissions.");
+	println!("1 - Fail - Should fail: Sudo call to reduce the dimensions of the block, after data submissions.");
 	let data = b"X".repeat(10_000).to_vec();
 
 	let call = length_proposal_call(BLOCK_ROWS, BLOCK_COLS);
@@ -147,19 +147,19 @@ where
 
 	let event = events
 		.find_first::<SudoEvent::Sudid>()?
-		.ok_or_else(|| Error::Other("1-Fail - Sudid event is emitted .qed".to_string()))?;
+		.ok_or_else(|| Error::Other("1 - Fail - Sudid event is emitted .qed".to_string()))?;
 	assert!(
 		event.sudo_result.is_err(),
-		"1-Fail - BlockLengthProposal was abnormally successful"
+		"1 - Fail - BlockLengthProposal was abnormally successful"
 	);
 
 	let event = events.find_first::<DaEvent::BlockLengthProposalSubmitted>()?;
 	assert!(
 		event.is_none(),
-		"1-Fail - BlockLengthProposal was abnormally successful"
+		"1 - Fail - BlockLengthProposal was abnormally successful"
 	);
 
-	println!("1-Fail - BlockLengthProposal submission correctly failed after another tx.");
+	println!("1 - Fail - BlockLengthProposal submission correctly failed after another tx.");
 	reset(client, signer, nonce + 3).await
 }
 
@@ -168,7 +168,7 @@ where
 	S: SignerT<AvailConfig>,
 {
 	let app_id = AppId(2);
-	println!("2-Fail - Should fail: Batch call to reduce the dimensions of the block, after data submissions.");
+	println!("2 - Fail - Should fail: Batch call to reduce the dimensions of the block, after data submissions.");
 	let data = b"X".repeat(1000).to_vec();
 	let _ = submit_data_with_nonce(client, signer, data.clone(), app_id, nonce).await?;
 	let _ = submit_data_with_nonce(client, signer, data, app_id, nonce + 1).await?;
@@ -181,18 +181,18 @@ where
 	let events = tx::in_finalized(progress).await?.fetch_events().await?;
 	let event = events
 		.find_first::<SudoEvent::Sudid>()?
-		.ok_or_else(|| Error::Other("2-Fail - Sudid event is emitted .qed".to_string()))?;
+		.ok_or_else(|| Error::Other("2 - Fail - Sudid event is emitted .qed".to_string()))?;
 	assert!(
 		event.sudo_result.is_err(),
-		"2-Fail - BlockLengthProposal was abnormally successful"
+		"2 - Fail - BlockLengthProposal was abnormally successful"
 	);
 	assert!(
 		events
 			.find_first::<DaEvent::BlockLengthProposalSubmitted>()?
 			.is_none(),
-		"2-Fail - BlockLengthProposal was abnormally successful"
+		"2 - Fail - BlockLengthProposal was abnormally successful"
 	);
 
-	println!("2-Fail - BlockLengthProposal submission correctly failed after another tx.");
+	println!("2 - Fail - BlockLengthProposal submission correctly failed after another tx.");
 	reset(client, signer, nonce + 3).await
 }

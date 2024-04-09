@@ -117,7 +117,7 @@ pub fn run() -> Result<()> {
 						cmd.run::<Block, (
 							frame_system::header_builder::hosted_header_builder::HostFunctions,
 							avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
-							da_control::kate::hosted_kate::hosted_kate::HostFunctions,
+							da_runtime::kate::native::hosted_kate::HostFunctions,
 						)>(config)
 					},
 					BenchmarkCmd::Block(_cmd) => {

@@ -30,7 +30,7 @@ pub trait KateRpc {
 
 #[derive(Debug, From, Clone, Copy, Serialize, Deserialize)]
 #[serde(try_from = "Vec<u8>", into = "Vec<u8>")]
-pub struct GProof([u8; 48]);
+pub struct GProof(pub [u8; 48]);
 
 impl From<GProof> for Vec<u8> {
 	fn from(proof: GProof) -> Self {

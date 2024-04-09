@@ -1,14 +1,9 @@
-use crate::data_root::{build_tx_data, TxDataFilter};
+use crate::header_extension::{HeaderExtensionBuilderData, HeaderExtensionDataFilter};
 
-use avail_core::{
-	data_proof::{AddressedMessage, SubTrie},
-	traits::{GetAppId, MaybeCaller},
-};
+use avail_core::data_proof::{AddressedMessage, SubTrie};
 
 use binary_merkle_tree::{verify_proof, Leaf, MerkleProof};
-use codec::Decode;
 use derive_more::Constructor;
-use frame_support::traits::ExtrinsicCall;
 use sp_core::H256;
 use sp_runtime::traits::Keccak256;
 use sp_std::vec::Vec;
@@ -30,20 +25,18 @@ pub struct CallsProof {
 /// - The `merkle_proof` requires `ExactSizeIterator`, forcing to load all submitted data into
 /// memory. That would increase the memory footprint of the node significantly. We could fix this
 /// adding the number of submitted data items at `System` pallet.
-pub fn calls_proof<'a, F, E, A, I>(
+pub fn calls_proof<'a, F>(
 	block: u32,
-	extrinsics: I,
+	extrinsics: &[Vec<u8>],
 	leaf_idx: usize,
 	call_type: SubTrie,
 ) -> Option<CallsProof>
 where
-	F: TxDataFilter<A, E::Call>,
-	E: ExtrinsicCall + MaybeCaller<A> + GetAppId + Decode,
-	I: Iterator<Item = &'a Vec<u8>> + 'a,
+	F: HeaderExtensionDataFilter,
 {
-	let tx_data = build_tx_data::<F, E, A, I>(block, extrinsics);
+	let tx_data = HeaderExtensionBuilderData::from_raw_extrinsics::<F>(block, &extrinsics);
 	let message = tx_data
-		.bridged
+		.bridge_messages
 		.get(leaf_idx)
 		.map(|bridged| bridged.addr_msg.clone());
 

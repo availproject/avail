@@ -1740,7 +1740,6 @@ dependencies = [
  "serde",
  "sp-core",
  "sp-keyring",
- "subxt",
  "subxt-signer",
 ]
 

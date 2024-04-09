@@ -1,23 +1,21 @@
-use crate::{Config, LOG_TARGET};
-use avail_core::{AppExtrinsic, AppId};
-use frame_system::{limits::BlockLength, Config as SysConfig};
-use kate::Seed;
-#[cfg(feature = "std")]
-use kate::{com::Error as KateError, gridgen::AppRowError as KateAppRowError};
+pub mod native;
+pub mod runtime;
+
+// Reexport
+pub use runtime::{app_data, grid, proof};
 
 use codec::{Decode, Encode};
-use core::{marker::PhantomData, num::TryFromIntError};
-use derive_more::From;
-use frame_support::traits::Randomness;
+use core::num::TryFromIntError;
 use scale_info::TypeInfo;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 use sp_core::U256;
-use sp_runtime::traits::Hash;
 use sp_runtime_interface::pass_by::{PassByCodec, PassByInner};
 use sp_std::vec::Vec;
 use thiserror_no_std::Error;
 
 #[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
+use kate::{com::Error as KateError, gridgen::AppRowError as KateAppRowError};
 
 pub type GRawScalar = U256;
 pub type GRow = Vec<GRawScalar>;
@@ -26,7 +24,7 @@ pub type GDataProof = (GRawScalar, GProof);
 /// # NOTE
 /// `Serde` requires a custom implementation for `GProof` due to the array size (greater than `[T;32]`).
 /// In this case, we transform into a `Vec<u8>` as intermediate step to serialize/deserialize.
-#[derive(Encode, Decode, TypeInfo, PassByInner, Debug, From, Clone, Copy)]
+#[derive(Encode, Decode, TypeInfo, PassByInner, Debug, Clone, Copy)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "std", serde(try_from = "Vec<u8>", into = "Vec<u8>"))]
 pub struct GProof([u8; 48]);
@@ -47,58 +45,6 @@ impl TryFrom<Vec<u8>> for GProof {
 		let mut proof = [0u8; 48];
 		proof.copy_from_slice(&data);
 		Ok(GProof(proof))
-	}
-}
-
-pub mod hosted_kate;
-pub use hosted_kate::hosted_kate::{
-	app_data as hosted_app_data, grid as hosted_grid, proof as hosted_proof,
-};
-
-#[derive(Default)]
-pub struct RTKate<T: Config>(PhantomData<T>);
-
-impl<T: Config> RTKate<T> {
-	fn random_seed() -> Seed {
-		let seed = if cfg!(feature = "secure_padding_fill") {
-			let (epoch_seed, block_number) = <T as SysConfig>::Randomness::random_seed();
-			let seed = <T as SysConfig>::Hashing::hash_of(&(&epoch_seed, &block_number));
-			log::trace!(
-				target: LOG_TARGET,
-				"RTKate seed {seed:?} from epoch seed {epoch_seed:?} and block {block_number:?}");
-			seed
-		} else {
-			<T as SysConfig>::Hash::default()
-		};
-
-		seed.into()
-	}
-
-	pub fn grid(
-		submitted: Vec<AppExtrinsic>,
-		block_length: BlockLength,
-		selected_rows: Vec<u32>,
-	) -> Result<Vec<GRow>, Error> {
-		let seed = Self::random_seed();
-		hosted_grid(submitted, block_length, seed, selected_rows)
-	}
-
-	pub fn app_data(
-		submitted: Vec<AppExtrinsic>,
-		block_length: BlockLength,
-		app_id: AppId,
-	) -> Result<Vec<Option<GRow>>, Error> {
-		let seed = Self::random_seed();
-		hosted_app_data(submitted, block_length, seed, app_id.0)
-	}
-
-	pub fn proof(
-		extrinsics: Vec<AppExtrinsic>,
-		block_len: BlockLength,
-		cells: Vec<(u32, u32)>,
-	) -> Result<Vec<GDataProof>, Error> {
-		let seed = Self::random_seed();
-		hosted_proof(extrinsics, block_len, seed, cells)
 	}
 }
 
