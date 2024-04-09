@@ -90,7 +90,7 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("cannot create api client:%v", err))
 	}
-	appId := types.NewUCompactFromUInt(uint64(1))
+	// appId := types.NewUCompactFromUInt(uint64(1))
 
 	response := make([][]BigInt, 1)
 	response[0] = make([]BigInt, 1)
@@ -104,8 +104,9 @@ func main() {
 			fmt.Println("Recovered in main", r)
 		}
 	}()
-
-	err = api.Client.Call(&response, "kate_queryAppData", appId, h)
+	myArr := make([]uint32, 1)
+	myArr[0] = 0
+	err = api.Client.Call(&response, "kate_queryRows", myArr, h)
 	if err != nil {
 		fmt.Println("Error calling api.Client.Call:", err)
 		return
