@@ -8,9 +8,10 @@ pub mod tests {
 
 	use avail_core::{AppExtrinsic, AppId, Keccak256};
 	use avail_subxt::api;
+	use avail_subxt::avail::Extrinsics;
 	use avail_subxt::{
 		api::runtime_types::avail_core::header::extension::HeaderExtension,
-		avail::{Cells, GDataProof, GRawScalar, GRow, Rows},
+		avail::{Cells, GDataProof, Rows},
 		rpc::KateRpcClient as _,
 		submit::submit_data,
 		tx,
@@ -21,16 +22,15 @@ pub mod tests {
 	use anyhow::{anyhow, Result};
 	use avail_subxt::api::runtime_types::avail_core::{BlockLengthColumns, BlockLengthRows};
 	use binary_merkle_tree::merkle_proof;
+	use codec::{Decode, Encode};
 	use kate::gridgen::{AsBytes as _, EvaluationGrid};
 	use kate_recovery::matrix::Dimensions;
 	use kate_recovery::proof::verify;
-	use sp_core::{keccak_256, U256};
+	use sp_core::keccak_256;
 	use subxt_signer::sr25519::dev;
 
 	pub const MIN_WIDTH: usize = 4;
-	pub const DATA: &[u8] = b"ExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleDataExampleData";
-	pub const TWO_FULL_ROWS: &str = include_str!("./res/two_full_rows.txt");
-	pub const ONE_FULL_ROW: &str = include_str!("./res/one_full_row.txt");
+	pub const DATA: &[u8] = b"ExampleData";
 
 	async fn establish_a_connection() -> Result<AvailClient> {
 		let ws = String::from("ws://127.0.0.1:9944");
@@ -38,151 +38,42 @@ pub mod tests {
 		Ok(client)
 	}
 
-	/* 	#[async_std::test]
-	   pub async fn rpc_query_rows_test_1() -> Result<()> {
-		   let client = establish_a_connection().await?;
-		   let alice = dev::alice();
-
-		   let data = ONE_FULL_ROW.to_ascii_lowercase();
-		   let data = data.as_bytes();
-
-		   println!("-----");
-		   println!("Test 1: Submitting one full row of data.");
-		   println!("-----");
-		   let block_hash = tx::in_finalized(submit_data(&client, &alice, data, AppId(1)).await?)
-			   .await?
-			   .block_hash();
-
-		   print!("If only one row is submited then there should not be a second row.");
-		   let rows = client
-			   .rpc_methods()
-			   .query_rows(Rows::truncate_from(vec![1]), block_hash)
-			   .await;
-		   assert!(rows.is_err(), "Got two rows. This is bad");
-		   println!(" Passed ✅");
-
-		   print!("Fetching the first row.");
-		   let rows = client
-			   .rpc_methods()
-			   .query_rows(Rows::truncate_from(vec![0]), block_hash)
-			   .await;
-		   assert!(rows.is_ok(), "Got no rows. This is bad");
-		   println!(" Passed ✅");
-		   let rows = rows.unwrap();
-
-		   print!("There should be 256 U256 elements in the first row.");
-		   assert_eq!(rows[0].len(), 256, "Didn't get 256 U256 elements");
-		   println!(" Passed ✅");
-
-		   print!("First element in the row should be U256: `2242984242519499925972102513023760885346123943699308488855333492107061879552.`");
-		   assert_eq!(
-			   rows[0][0].to_string(),
-			   String::from(
-				   "2242984242519499925972102513023760885346123943699308488855333492107061879552"
-			   ),
-			   "First element in the row didn't match"
-		   );
-		   println!(" Passed ✅");
-
-		   println!("Skipping second element...");
-		   println!("Skipping third element...");
-		   println!("Skipping fourth element...");
-
-		   print!("The rest of them in the row should be U256: `22250244598543112061784228491865519548275408818103480933072241632893111185664.`");
-		   for v in &rows[0][4..] {
-			   assert_eq!(
-				   v.to_string(),
-				   String::from(
-					   "22250244598543112061784228491865519548275408818103480933072241632893111185664"
-				   ),
-				   "One element in the row didn't match"
-			   );
-		   }
-		   println!(" Passed ✅");
-
-		   Ok(())
-	   }
-	*/
-	#[async_std::test]
-	pub async fn rpc_query_rows_test_2() -> Result<()> {
-		let client = establish_a_connection().await?;
-		let alice = dev::alice();
-
-		println!("-----");
-		println!("Test 2: Submitting two full rows of data.");
-		println!("-----");
-
-		let data = TWO_FULL_ROWS.to_ascii_lowercase();
-		let data = data.as_bytes();
-		let block_hash = tx::in_finalized(submit_data(&client, &alice, data, AppId(1)).await?)
-			.await?
-			.block_hash();
-
-		print!("If only two rows is submited then there should not be a third row.");
-		let rows = client
-			.rpc_methods()
-			.query_rows(Rows::truncate_from(vec![2]), block_hash)
-			.await;
-		assert!(rows.is_err(), "Got three rows. This is bad");
-		println!(" Passed ✅");
-
-		print!("Fetching the first two rows.");
-		let rows = client
-			.rpc_methods()
-			.query_rows(Rows::truncate_from(vec![0, 1]), block_hash)
-			.await;
-		assert!(rows.is_ok(), "Got no rows. This is bad");
-		println!(" Passed ✅");
-		let rows = rows.unwrap();
-
-		print!("The last 252 elements in the first row should be the same as the last 256 elements in the second row. U256: `22250244598543112061784228491865519548275408818103480933072241632893111185664.`");
-		for v in &rows[1][4..] {
-			assert_eq!(
-				v.to_string(),
-				String::from(
-					"22250244598543112061784228491865519548275408818103480933072241632893111185664"
-				),
-				"One element in the first row didn't match"
-			);
-		}
-		for v in &rows[1] {
-			assert_eq!(
-				v.to_string(),
-				String::from(
-					"22250244598543112061784228491865519548275408818103480933072241632893111185664"
-				),
-				"One element in the second row didn't match"
-			);
-		}
-		println!(" Passed ✅");
-
-		Ok(())
-	}
-	/*
-	#[async_std::test]
-	pub async fn rpc_query_app_data_test() -> Result<()> {
-		let client = establish_a_connection().await?;
-		let alice = dev::alice();
-		let app_id = AppId(1);
-
-		let block_hash = tx::in_finalized(submit_data(&client, &alice, DATA, app_id).await?)
-			.await?
-			.block_hash();
-		let grid = eval_grid_from_block(&client, block_hash).await?;
-
-		// RPC call
-		let actual_rows = client
-			.rpc_methods()
-			.query_app_data(app_id, block_hash)
-			.await?;
-
-		let row = grid.row(0).unwrap();
-		let expected_rows = row
+	pub fn to_app_extrinsics(extrinsics: &Extrinsics) -> Vec<AppExtrinsic> {
+		extrinsics
 			.iter()
-			.flat_map(|r| r.to_bytes().map(GRawScalar::from))
-			.collect::<Vec<_>>();
-		assert_eq!(actual_rows, vec![Some(expected_rows)]);
-		Ok(())
+			.filter_map(|ext_details| {
+				let raw = ext_details.ok()?.bytes().encode();
+				AppExtrinsic::decode(&mut raw.as_slice()).ok()
+			})
+			.collect()
+	}
+
+	async fn eval_grid_from_block(
+		client: &AvailClient,
+		block_hash: H256,
+	) -> Result<EvaluationGrid> {
+		let block = client.blocks().at(block_hash).await?;
+		let extrinsics = block.extrinsics().await?;
+
+		let mut app_extrinsics = Vec::new();
+		for (i, e) in extrinsics.iter().enumerate() {
+			if i == 0 || i == (extrinsics.len() - 1) {
+				continue;
+			}
+
+			let e = e.unwrap();
+			let raw_extrinsic = e.bytes().encode();
+			let app_extrinsic = AppExtrinsic::decode(&mut raw_extrinsic.as_slice()).unwrap();
+			app_extrinsics.push(app_extrinsic);
+		}
+
+		let block_len = client.rpc_methods().query_block_length(block_hash).await?;
+		let max_width = block_len.cols.0 as usize;
+		let max_height = block_len.rows.0 as usize;
+		let seed = [0u8; 32];
+
+		EvaluationGrid::from_extrinsics(app_extrinsics, MIN_WIDTH, max_width, max_height, seed)
+			.map_err(|e| anyhow!("Eval grid failed {e:?}"))
 	}
 
 	#[async_std::test]
@@ -194,9 +85,9 @@ pub mod tests {
 		let block_hash = tx::in_finalized(submit_data(&client, &alice, DATA, app_id).await?)
 			.await?
 			.block_hash();
-		let grid = eval_grid_from_block(&client, block_hash).await?;
 
 		// Grid Creation
+		let grid = eval_grid_from_block(&client, block_hash).await?;
 		let extended_grid = grid.extend_columns(NonZeroU16::new(2).unwrap()).unwrap();
 		let poly_grid = extended_grid.make_polynomial_grid().unwrap();
 
@@ -431,5 +322,5 @@ pub mod tests {
 		);
 		assert_eq!(actual_proof.data_proof.roots.bridge_root, H256::zero());
 		Ok(())
-	} */
+	}
 }
