@@ -104,19 +104,3 @@ let proof: Vec<u8> = rpc.request("kate_queryProof", params).await?;
 let cells = Cells::try_from(cells)?;
 let proof: Vec<GDataProof> = client.rpc_methods().query_proof(Cells::try_from(cells).unwrap(), block_hash).await?;
 ```
-
-## Changed Kate::queryAppData output from `Vec<Option<Vec<u8>>>` to `Vec<Option<Grow>>` [RPC, TYP]
-```rust
-// Subxt example
-let app_id = AppId(0);
-let block_hash: H256 = // Hash
-
-// v1.11.0.0
-let mut params = RpcParams::new();
-params.push(app_id)?;
-params.push(Some(block_hash))?;
-let rows: Vec<Option<Vec<u8>>> = rpc.request("kate_queryAppData", params).await?;
-
-// v2.0.0.0
-let rows: Vec<Option<Grow>> = client.rpc_methods().query_app_data(app_id, block_hash).await?;
-```

@@ -170,7 +170,6 @@ impl HeaderExtensionBuilderMetrics {
 
 pub struct KateRpcMetrics {
 	pub query_rows_execution_time: Histogram,
-	pub query_app_data_execution_time: Histogram,
 	pub query_proof_execution_time: Histogram,
 	pub query_block_length_execution_time: Histogram,
 	pub query_data_proof_execution_time: Histogram,
@@ -187,18 +186,6 @@ impl KateRpcMetrics {
 			registry,
 			"avail_kate_rpc_query_rows_execution_time",
 			"Kate RPC - Query Rows Time in microseconds",
-			buckets.to_vec(),
-		)?;
-
-		let buckets = [
-			1000.0, 10000.0, 25000.0, 50000.0, // 1ms, 10ms, 25ms, 50ms
-			75000.0, 100_000.0, 150_000.0, 200_000.0, // 75ms, 100ms, 150ms, 200ms
-			300_000.0, 500_000.0, // 300ms, 500ms
-		];
-		let query_app_data_execution_time = custom_histogram(
-			registry,
-			"avail_kate_rpc_query_app_data_execution_time",
-			"Kate RPC - Query App Data Time in microseconds",
 			buckets.to_vec(),
 		)?;
 
@@ -248,7 +235,6 @@ impl KateRpcMetrics {
 
 		Ok(Self {
 			query_rows_execution_time,
-			query_app_data_execution_time,
 			query_proof_execution_time,
 			query_block_length_execution_time,
 			query_data_proof_execution_time,
@@ -260,15 +246,6 @@ impl KateRpcMetrics {
 			metrics
 				.kate_rpc
 				.query_rows_execution_time
-				.observe(duration.as_micros() as f64);
-		}
-	}
-
-	pub fn observe_query_app_data_execution_time(duration: Duration) {
-		if let Some(metrics) = AVAIL_METRICS.get() {
-			metrics
-				.kate_rpc
-				.query_app_data_execution_time
 				.observe(duration.as_micros() as f64);
 		}
 	}

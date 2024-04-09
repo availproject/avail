@@ -27,13 +27,6 @@ where
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<(Vec<GRow>, u128)>;
 
-	#[method(name = "kate_queryAppDataMetrics")]
-	async fn query_app_data_metrics(
-		&self,
-		app_id: AppId,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<(Vec<Option<GRow>>, u128)>;
-
 	#[method(name = "kate_queryProofMetrics")]
 	async fn query_proof_metrics(
 		&self,
@@ -71,18 +64,6 @@ where
 	) -> RpcResult<(Vec<GRow>, u128)> {
 		let start = std::time::Instant::now();
 		let result = self.query_rows(rows, at).await;
-		let elapsed = start.elapsed();
-
-		result.map(|r| (r, elapsed.as_micros()))
-	}
-
-	async fn query_app_data_metrics(
-		&self,
-		app_id: AppId,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<(Vec<Option<GRow>>, u128)> {
-		let start = std::time::Instant::now();
-		let result = self.query_app_data(app_id, at).await;
 		let elapsed = start.elapsed();
 
 		result.map(|r| (r, elapsed.as_micros()))

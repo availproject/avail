@@ -168,7 +168,7 @@ To enable Kate RPC you need to pass `--enable-kate-rpc` flag when executing the 
 ### Kate RPC
 ```bash
 ./avail-node --dev
-deno run -A ./examples/deno/benchmarks/query_proof.ts && deno run -A ./examples/deno/benchmarks/query_rows.ts && deno run -A ./examples/deno/benchmarks/query_block_length.ts && deno run -A ./examples/deno/benchmarks/query_app_data.ts && deno run -A ./examples/deno/benchmarks/query_data_proof.ts
+deno run -A ./examples/deno/benchmarks/query_proof.ts && deno run -A ./examples/deno/benchmarks/query_rows.ts && deno run -A ./examples/deno/benchmarks/query_block_length.ts && deno run -A ./examples/deno/benchmarks/query_data_proof.ts
 ```
 
 ### Header Builder

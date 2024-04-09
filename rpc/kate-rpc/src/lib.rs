@@ -41,13 +41,6 @@ where
 	#[method(name = "kate_queryRows")]
 	async fn query_rows(&self, rows: Rows, at: Option<HashOf<Block>>) -> RpcResult<Vec<GRow>>;
 
-	#[method(name = "kate_queryAppData")]
-	async fn query_app_data(
-		&self,
-		app_id: AppId,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<Option<GRow>>>;
-
 	#[method(name = "kate_queryProof")]
 	async fn query_proof(
 		&self,
@@ -207,23 +200,6 @@ where
 		KateRpcMetrics::observe_query_rows_execution_time(execution_start.elapsed());
 
 		Ok(grid_rows)
-	}
-
-	async fn query_app_data(
-		&self,
-		app_id: AppId,
-		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<Option<GRow>>> {
-		let (api, at, number, block_len, extrinsics, _) = self.scope(at)?;
-
-		let execution_start = Instant::now();
-		let app_data = api
-			.app_data(at, number, extrinsics, block_len, app_id)
-			.map_err(|kate_err| internal_err!("Failed Kate app data: {kate_err:?}"))?
-			.map_err(|api_err| internal_err!("Failed API: {api_err:?}"))?;
-		KateRpcMetrics::observe_query_app_data_execution_time(execution_start.elapsed());
-
-		Ok(app_data)
 	}
 
 	async fn query_proof(
