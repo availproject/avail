@@ -11,8 +11,8 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::U256;
 use sp_runtime_interface::pass_by::{PassByCodec, PassByInner};
-use thiserror_no_std::Error;
 use sp_std::vec::Vec;
+use thiserror_no_std::Error;
 
 #[cfg(feature = "std")]
 use kate::{com::Error as KateError, gridgen::AppRowError as KateAppRowError};
