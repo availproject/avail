@@ -35,7 +35,9 @@ pub trait HostedKate {
 			.map(usize::try_from)
 			.collect::<Result<Vec<_>, _>>()?;
 
-		let grid = EGrid::from_extrinsics(submitted, MIN_WIDTH, max_width, max_height, seed)?;
+		let grid = EGrid::from_extrinsics(submitted, MIN_WIDTH, max_width, max_height, seed)?
+			.extend_columns(NonZeroU16::new(2).expect("2>0"))
+			.map_err(|_| Error::ColumnExtension)?;
 		let rows = selected_rows
 			.into_par_iter()
 			.map(|row_idx| {
