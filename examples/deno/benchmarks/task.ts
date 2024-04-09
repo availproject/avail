@@ -1,6 +1,6 @@
-import { ApiPromise } from "https://deno.land/x/polkadot@0.2.42/api/mod.ts";
+import { ApiPromise } from "https://deno.land/x/polkadot@0.2.45/api/mod.ts";
 import { waitForBlockFinalization, waitForBlockInclusion } from "./misc.ts";
-import { KeyringPair } from "https://deno.land/x/polkadot@0.2.42/keyring/types.ts";
+import { KeyringPair } from "https://deno.land/x/polkadot@0.2.45/keyring/types.ts";
 
 export class Task {
   public api: ApiPromise;

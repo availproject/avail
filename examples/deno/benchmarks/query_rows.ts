@@ -2,7 +2,7 @@ import {
   ApiPromise,
   Keyring,
   WsProvider,
-} from "https://deno.land/x/polkadot@0.2.42/api/mod.ts";
+} from "https://deno.land/x/polkadot@0.2.45/api/mod.ts";
 import { API_EXTENSIONS, API_TYPES } from "./../api_options.ts";
 import { API_RPC } from "./api_options.ts";
 import { prepareData } from "./misc.ts";

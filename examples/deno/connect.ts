@@ -1,11 +1,7 @@
-/// TODO DOC
-///
+/// The example showcases how to programmatically connect to a network
 ///
 
-import {
-  ApiPromise,
-  WsProvider,
-} from "https://deno.land/x/polkadot@0.2.42/api/mod.ts";
+import { ApiPromise, WsProvider } from "https://deno.land/x/polkadot@0.2.45/api/mod.ts";
 import { API_EXTENSIONS, API_RPC, API_TYPES } from "./api_options.ts";
 
 const endpoint = "wss://kate.avail.tools/ws";

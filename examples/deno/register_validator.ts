@@ -1,15 +1,7 @@
-/// TODO DOC
-///
-///
-
-import {
-  ApiPromise,
-  Keyring,
-  WsProvider,
-} from "https://deno.land/x/polkadot@0.2.42/api/mod.ts";
-import { BN } from "https://deno.land/x/polkadot@0.2.42/util/mod.ts";
+import { ApiPromise, Keyring, WsProvider } from "https://deno.land/x/polkadot@0.2.45/api/mod.ts";
+import { BN } from "https://deno.land/x/polkadot@0.2.45/util/mod.ts";
 import { API_EXTENSIONS, API_RPC, API_TYPES } from "./api_options.ts";
-import { ISubmittableResult } from "https://deno.land/x/polkadot@0.2.42/types/types/extrinsic.ts";
+import { ISubmittableResult } from "https://deno.land/x/polkadot@0.2.45/types/types/extrinsic.ts";
 
 interface Config {
   session_keys: string | undefined;

@@ -1,5 +1,5 @@
-import { ApiPromise } from "https://deno.land/x/polkadot@0.2.42/api/mod.ts";
-import { UnsubscribePromise } from "https://deno.land/x/polkadot@0.2.42/api-base/types/base.ts";
+import { ApiPromise } from "https://deno.land/x/polkadot@0.2.45/api/mod.ts";
+import { UnsubscribePromise } from "https://deno.land/x/polkadot@0.2.45/api-base/types/base.ts";
 
 export async function waitForBlockInclusion(
   api: ApiPromise,

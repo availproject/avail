@@ -5,9 +5,9 @@
 import {
   ApiPromise,
   WsProvider,
-} from "https://deno.land/x/polkadot@0.2.42/api/mod.ts";
+} from "https://deno.land/x/polkadot@0.2.45/api/mod.ts";
 import { API_EXTENSIONS, API_RPC, API_TYPES } from "./api_options.ts";
-import { UnsubscribePromise } from "https://deno.land/x/polkadot@0.2.42/api-base/types/base.ts";
+import { UnsubscribePromise } from "https://deno.land/x/polkadot@0.2.45/api-base/types/base.ts";
 
 const api = await ApiPromise.create({
   provider: new WsProvider("ws://127.0.0.1:9944"),
