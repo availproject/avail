@@ -55,6 +55,13 @@ impl CompactDataLookup {
 
 impl From<DataLookup> for CompactDataLookup {
 	fn from(lookup: DataLookup) -> Self {
-		CompactDataLookup::from_expanded(&lookup)
+		if lookup.is_error {
+			CompactDataLookup {
+				size: u32::MAX,
+				index: Vec::default(),
+			}
+		} else {
+			CompactDataLookup::from_expanded(&lookup)
+		}
 	}
 }

@@ -30,4 +30,24 @@ impl HeaderExtension {
 	pub fn cols(&self) -> u16 {
 		self.commitment.cols
 	}
+
+	pub fn get_empty_header(&self, data_root: H256) -> Self {
+		let empty_commitment: Vec<u8> = vec![];
+		let empty_app_lookup = DataLookup::new_empty();
+		let commitment = KateCommitment::new(0, 0, data_root, empty_commitment);
+		HeaderExtension {
+			app_lookup: empty_app_lookup,
+			commitment,
+		}
+	}
+
+	pub fn get_faulty_header(&self, data_root: H256) -> Self {
+		let empty_commitment: Vec<u8> = vec![];
+		let error_app_lookup = DataLookup::new_error();
+		let commitment = KateCommitment::new(0, 0, data_root, empty_commitment);
+		HeaderExtension {
+			app_lookup: error_app_lookup,
+			commitment,
+		}
+	}
 }

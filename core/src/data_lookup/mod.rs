@@ -33,6 +33,7 @@ pub enum Error {
 )]
 pub struct DataLookup {
 	pub(crate) index: Vec<(AppId, DataLookupRange)>,
+	pub(crate) is_error: bool,
 }
 
 impl DataLookup {
@@ -112,12 +113,25 @@ impl DataLookup {
 			})
 			.collect::<Result<_, _>>()?;
 
-		Ok(Self { index })
+		Ok(Self {
+			index,
+			is_error: false,
+		})
 	}
 
 	/// This function is only used when something has gone wrong during header extension building
 	pub fn new_empty() -> Self {
-		Self { index: Vec::new() }
+		Self {
+			index: Vec::new(),
+			is_error: false,
+		}
+	}
+
+	pub fn new_error() -> Self {
+		Self {
+			index: Vec::new(),
+			is_error: true,
+		}
 	}
 }
 
@@ -146,7 +160,10 @@ impl TryFrom<CompactDataLookup> for DataLookup {
 			index.push((prev_id, offset..compacted.size));
 		}
 
-		let lookup = DataLookup { index };
+		let lookup = DataLookup {
+			index,
+			is_error: false,
+		};
 		ensure!(lookup.len() == compacted.size, Error::DataNotSorted);
 
 		Ok(lookup)

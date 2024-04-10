@@ -52,6 +52,14 @@ impl HeaderExtension {
 		forward_to_version!(self, cols)
 	}
 
+	pub fn get_empty_header(&self, data_root: H256) -> HeaderExtension {
+		forward_to_version!(self, get_empty_header, data_root).into()
+	}
+
+	pub fn get_faulty_header(&self, data_root: H256) -> HeaderExtension {
+		forward_to_version!(self, get_faulty_header, data_root).into()
+	}
+
 	pub fn get_header_version(&self) -> HeaderVersion {
 		match self {
 			HeaderExtension::V3(_) => HeaderVersion::V3,
