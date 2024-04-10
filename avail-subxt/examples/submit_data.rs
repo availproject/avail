@@ -86,36 +86,15 @@ async fn main() -> anyhow::Result<()> {
 	assert_eq!(submit_call.value.data.0.as_slice(), DATA);
 	*/
 
-	// 1. Check AppData RPC.
-	let rows = client
-		.rpc_methods()
-		.query_app_data(AppId(1), block_hash)
-		.await?;
-	let index_and_lens = rows
-		.iter()
-		.enumerate()
-		.filter_map(|(idx, maybe_row)| maybe_row.as_ref().map(|r| (idx, r.len())))
-		.collect::<Vec<_>>();
-	println!(
-		"AppData at block {block_hash:?}, rows len={}, no empty indexes: {index_and_lens:?}",
-		rows.len()
-	);
-
-	// 2. Check query rows.
-	let row_indexes = index_and_lens
-		.into_iter()
-		.map(|(idx, _)| idx as u32)
-		.collect::<Vec<_>>();
+	// Note: Ideal way to get the rows for specific appData, we should use the app_specific_rows from kate recovery, 
+	// which is out scope for this example
+	// 1. Check query rows.
+	let row_indexes = Rows::truncate_from(vec![0]);
 	let query_rows = client
 		.rpc_methods()
-		.query_rows(Rows::truncate_from(row_indexes), block_hash)
+		.query_rows(Rows::truncate_from(row_indexes.to_vec()), block_hash)
 		.await?;
-	let no_empty_rows = rows
-		.into_iter()
-		.filter_map(|maybe_row| maybe_row)
-		.collect::<Vec<_>>();
-	println!("Check query rows RPC");
-	assert_eq!(no_empty_rows, query_rows);
+	println!("Query rows RPC: {query_rows:?}");
 
 	// 3. Check proof.
 	let mut rng = thread_rng();
