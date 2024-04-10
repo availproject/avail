@@ -42,14 +42,21 @@ pub struct CompactDataLookup {
 
 impl CompactDataLookup {
 	pub fn from_expanded(lookup: &DataLookup) -> Self {
-		let index = lookup
-			.index
-			.iter()
-			.filter(|(id, _)| *id != AppId(0))
-			.map(|(id, range)| DataLookupItem::new(*id, range.start))
-			.collect();
-		let size = lookup.index.last().map_or(0, |(_, range)| range.end);
-		Self { size, index }
+		if lookup.is_error {
+			CompactDataLookup {
+				size: u32::MAX,
+				index: Vec::default(),
+			}
+		} else {
+			let index = lookup
+				.index
+				.iter()
+				.filter(|(id, _)| *id != AppId(0))
+				.map(|(id, range)| DataLookupItem::new(*id, range.start))
+				.collect();
+			let size = lookup.index.last().map_or(0, |(_, range)| range.end);
+			Self { size, index }
+		}
 	}
 }
 

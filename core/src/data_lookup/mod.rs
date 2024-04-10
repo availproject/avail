@@ -119,7 +119,7 @@ impl DataLookup {
 		})
 	}
 
-	/// This function is only used when something has gone wrong during header extension building
+	/// This function is used a block contains no data submissions.
 	pub fn new_empty() -> Self {
 		Self {
 			index: Vec::new(),
@@ -127,6 +127,7 @@ impl DataLookup {
 		}
 	}
 
+	/// This function is only used when something has gone wrong during header extension building
 	pub fn new_error() -> Self {
 		Self {
 			index: Vec::new(),
@@ -139,6 +140,10 @@ impl TryFrom<CompactDataLookup> for DataLookup {
 	type Error = Error;
 
 	fn try_from(compacted: CompactDataLookup) -> Result<Self, Self::Error> {
+		if compacted.size == u32::MAX {
+			return Ok(DataLookup::new_error());
+		}
+		
 		let mut offset = 0;
 		let mut prev_id = AppId(0);
 		let mut index = Vec::with_capacity(
