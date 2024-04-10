@@ -183,6 +183,7 @@ std = [
 	"pallet-utility/std",
 	"pallet-vector/std",
 	"scale-info/std",
+	"serde",
 	"sp-api/std",
 	"sp-authority-discovery/std",
 	"sp-block-builder/std",
@@ -193,14 +194,13 @@ std = [
 	"sp-inherents/std",
 	"sp-io/std",
 	"sp-offchain/std",
-	"sp-runtime/std",
 	"sp-runtime-interface/std",
+	"sp-runtime/std",
 	"sp-session/std",
 	"sp-staking/std",
 	"sp-std/std",
 	"sp-transaction-pool/std",
 	"sp-version/std",
-	"serde",
 ]
 
 runtime-benchmarks = [
