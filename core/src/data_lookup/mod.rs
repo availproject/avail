@@ -181,7 +181,7 @@ impl TryFrom<CompactDataLookup> for DataLookup {
 impl Encode for DataLookup {
 	/// Encodes as a `compact::DataLookup`.
 	fn encode(&self) -> Vec<u8> {
-		let compacted = CompactDataLookup::from_expanded(self);
+		let compacted: CompactDataLookup = CompactDataLookup::from_data_lookup(&self);
 		compacted.encode()
 	}
 }
@@ -241,7 +241,7 @@ mod test {
 	fn compressed_conversions(id_lens: Vec<(u32, usize)>) {
 		let lookup = DataLookup::from_id_and_len_iter(id_lens.into_iter()).unwrap();
 
-		let compact_lookup = CompactDataLookup::from_expanded(&lookup);
+		let compact_lookup = CompactDataLookup::from_data_lookup(&lookup);
 		let expanded_lookup = DataLookup::try_from(compact_lookup.clone()).unwrap();
 
 		assert_eq!(
