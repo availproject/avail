@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 
 	gsrpc "github.com/centrifuge/go-substrate-rpc-client/v4"
@@ -42,28 +43,28 @@ func main() {
 	if err != nil {
 		fmt.Printf("cannot get metadata:%v", err)
 	}
-	sessionKeys := config.SessionKeys
-	keys := deconstructSessionKeys(sessionKeys)
-	// bondAmount := new(big.Int)
-	// bondAmount.SetString("1000000000000000000000", 10) // Set bondAmount to 1000000000000000000000
+	// sessionKeys := config.SessionKeys
+	// keys := deconstructSessionKeys(sessionKeys)
+	bondAmount := new(big.Int)
+	bondAmount.SetString("1000000000000000000000", 10) // Set bondAmount to 1000000000000000000000
 
-	// // Convert big.Int to types.UCompact
-	// bondAmountUCompact := types.NewUCompact(bondAmount)
+	// Convert big.Int to types.UCompact
+	bondAmountUCompact := types.NewUCompact(bondAmount)
 
-	// c, err := types.NewCall(meta, "Staking.bond_extra", bondAmountUCompact) // "Staked" is usually represented as a constant in the API, here represented as 1 for demonstration
-	// if err != nil {
-	// 	fmt.Printf("cannot create new call:%v", err)
-	// }
-	// Create the extrinsic
-	// ext := types.NewExtrinsic(c)
-	proof := types.NewU8(0)
-
-	d, err := types.NewCall(meta, "Session.set_keys", keys, proof) // "Staked" is usually represented as a constant in the API, here represented as 1 for demonstration
+	c, err := types.NewCall(meta, "Staking.bond", bondAmountUCompact, types.NewU8(0)) // "Staked" is usually represented as a constant in the API, here represented as 1 for demonstration
 	if err != nil {
 		fmt.Printf("cannot create new call:%v", err)
 	}
 	// Create the extrinsic
-	ext := types.NewExtrinsic(d)
+	ext := types.NewExtrinsic(c)
+	// proof := types.NewU8(0)
+
+	// d, err := types.NewCall(meta, "Session.set_keys", keys, proof) // "Staked" is usually represented as a constant in the API, here represented as 1 for demonstration
+	// if err != nil {
+	// 	fmt.Printf("cannot create new call:%v", err)
+	// }
+	// // Create the extrinsic
+	// ext := types.NewExtrinsic(d)
 
 	// batchCall, err := types.NewCall(meta, "Utility.batch_all", []types.Call{c, d})
 	// if err != nil {
@@ -107,8 +108,6 @@ func main() {
 	if err != nil {
 		fmt.Printf("cannot sign:%v", err)
 	}
-	z, _ := api.RPC.System.Properties()
-	fmt.Println(z)
 	// Send the extrinsic
 	hash, err := api.RPC.Author.SubmitExtrinsic(ext)
 	if err != nil {
