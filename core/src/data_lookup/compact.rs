@@ -1,20 +1,25 @@
 use crate::{AppId, DataLookup};
 
 use codec::{Decode, Encode};
-use derive_more::Constructor;
 use scale_info::TypeInfo;
 use sp_std::vec::Vec;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Copy, Clone, Encode, Decode, TypeInfo, Constructor, Debug)]
+#[derive(Copy, Clone, Encode, Decode, TypeInfo, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct DataLookupItem {
 	pub app_id: AppId,
 	#[codec(compact)]
 	pub start: u32,
+}
+
+impl DataLookupItem {
+	pub fn new(app_id: AppId, start: u32) -> Self {
+		Self { app_id, start }
+	}
 }
 
 impl<A, S> From<(A, S)> for DataLookupItem
@@ -30,7 +35,13 @@ where
 	}
 }
 
-#[derive(Encode, Decode, TypeInfo, Constructor, Debug, Clone)]
+// If .size is equal to u32::MAX then the no commitment was generated
+// because of an error that occurred.
+//
+// This is just a temporary solution that will be replaced by a more
+// sofisticated one once we do to do the next header change.
+//
+#[derive(Encode, Decode, TypeInfo, Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CompactDataLookup {
 	/// size of the look up
@@ -41,7 +52,18 @@ pub struct CompactDataLookup {
 }
 
 impl CompactDataLookup {
-	pub fn from_expanded(lookup: &DataLookup) -> Self {
+	pub fn new(size: u32, index: Vec<DataLookupItem>) -> Self {
+		Self { size, index }
+	}
+
+	pub fn from_data_lookup(lookup: &DataLookup) -> Self {
+		if lookup.is_error {
+			return CompactDataLookup {
+				size: u32::MAX,
+				index: Vec::default(),
+			};
+		}
+
 		let index = lookup
 			.index
 			.iter()
@@ -53,8 +75,11 @@ impl CompactDataLookup {
 	}
 }
 
+// We added this just to please the compiler regarding the Serde macro.
+// Do not change this implementation!
+//
 impl From<DataLookup> for CompactDataLookup {
 	fn from(lookup: DataLookup) -> Self {
-		CompactDataLookup::from_expanded(&lookup)
+		Self::from_data_lookup(&lookup)
 	}
 }

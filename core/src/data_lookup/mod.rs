@@ -33,6 +33,7 @@ pub enum Error {
 )]
 pub struct DataLookup {
 	pub(crate) index: Vec<(AppId, DataLookupRange)>,
+	pub(crate) is_error: bool,
 }
 
 impl DataLookup {
@@ -112,12 +113,26 @@ impl DataLookup {
 			})
 			.collect::<Result<_, _>>()?;
 
-		Ok(Self { index })
+		Ok(Self {
+			index,
+			is_error: false,
+		})
+	}
+
+	/// This function is used a block contains no data submissions.
+	pub fn new_empty() -> Self {
+		Self {
+			index: Vec::new(),
+			is_error: false,
+		}
 	}
 
 	/// This function is only used when something has gone wrong during header extension building
-	pub fn new_empty() -> Self {
-		Self { index: Vec::new() }
+	pub fn new_error() -> Self {
+		Self {
+			index: Vec::new(),
+			is_error: true,
+		}
 	}
 }
 
@@ -125,6 +140,10 @@ impl TryFrom<CompactDataLookup> for DataLookup {
 	type Error = Error;
 
 	fn try_from(compacted: CompactDataLookup) -> Result<Self, Self::Error> {
+		if compacted.size == u32::MAX {
+			return Ok(DataLookup::new_error());
+		}
+
 		let mut offset = 0;
 		let mut prev_id = AppId(0);
 		let mut index = Vec::with_capacity(
@@ -146,7 +165,10 @@ impl TryFrom<CompactDataLookup> for DataLookup {
 			index.push((prev_id, offset..compacted.size));
 		}
 
-		let lookup = DataLookup { index };
+		let lookup = DataLookup {
+			index,
+			is_error: false,
+		};
 		ensure!(lookup.len() == compacted.size, Error::DataNotSorted);
 
 		Ok(lookup)
@@ -159,7 +181,7 @@ impl TryFrom<CompactDataLookup> for DataLookup {
 impl Encode for DataLookup {
 	/// Encodes as a `compact::DataLookup`.
 	fn encode(&self) -> Vec<u8> {
-		let compacted = CompactDataLookup::from_expanded(self);
+		let compacted: CompactDataLookup = CompactDataLookup::from_data_lookup(&self);
 		compacted.encode()
 	}
 }
@@ -219,7 +241,7 @@ mod test {
 	fn compressed_conversions(id_lens: Vec<(u32, usize)>) {
 		let lookup = DataLookup::from_id_and_len_iter(id_lens.into_iter()).unwrap();
 
-		let compact_lookup = CompactDataLookup::from_expanded(&lookup);
+		let compact_lookup = CompactDataLookup::from_data_lookup(&lookup);
 		let expanded_lookup = DataLookup::try_from(compact_lookup.clone()).unwrap();
 
 		assert_eq!(
