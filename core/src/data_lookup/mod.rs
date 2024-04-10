@@ -143,7 +143,7 @@ impl TryFrom<CompactDataLookup> for DataLookup {
 		if compacted.size == u32::MAX {
 			return Ok(DataLookup::new_error());
 		}
-		
+
 		let mut offset = 0;
 		let mut prev_id = AppId(0);
 		let mut index = Vec::with_capacity(
