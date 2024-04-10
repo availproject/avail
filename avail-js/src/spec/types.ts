@@ -1,12 +1,12 @@
 export const types = {
   AppId: "Compact<u32>",
-  DataLookupIndexItem: {
+  DataLookupItem: {
     appId: "AppId",
     start: "Compact<u32>",
   },
-  DataLookup: {
+  CompactDataLookup: {
     size: "Compact<u32>",
-    index: "Vec<DataLookupIndexItem>",
+    index: "Vec<DataLookupItem>",
   },
   KateCommitment: {
     rows: "Compact<u16>",
@@ -15,7 +15,7 @@ export const types = {
     dataRoot: "H256",
   },
   V3HeaderExtension: {
-    appLookup: "DataLookup",
+    appLookup: "CompactDataLookup",
     commitment: "KateCommitment",
   },
   HeaderExtension: {

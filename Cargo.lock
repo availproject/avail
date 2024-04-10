@@ -875,7 +875,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.0"
-source = "git+https://github.com/availproject/avail-core?branch=ghali/header-error-management#6c631d3ca377accdca84a4cefdcace77b9983daf"
+source = "git+https://github.com/availproject/avail-core?branch=ghali/header-error-management#27d1afa7ab0e79cd10870dae9c8b22df8bb5269f"
 dependencies = [
  "binary-merkle-tree",
  "bounded-collections",
@@ -4452,7 +4452,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.8.2"
-source = "git+https://github.com/availproject/avail-core?branch=ghali/header-error-management#6c631d3ca377accdca84a4cefdcace77b9983daf"
+source = "git+https://github.com/availproject/avail-core?branch=ghali/header-error-management#27d1afa7ab0e79cd10870dae9c8b22df8bb5269f"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -4480,7 +4480,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.9.3"
-source = "git+https://github.com/availproject/avail-core?branch=ghali/header-error-management#6c631d3ca377accdca84a4cefdcace77b9983daf"
+source = "git+https://github.com/availproject/avail-core?branch=ghali/header-error-management#27d1afa7ab0e79cd10870dae9c8b22df8bb5269f"
 dependencies = [
  "avail-core",
  "derive_more",
