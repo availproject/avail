@@ -86,8 +86,7 @@ async fn main() -> anyhow::Result<()> {
 	assert_eq!(submit_call.value.data.0.as_slice(), DATA);
 	*/
 
-	// Note: Ideal way to get the rows for specific appData, we should use the app_specific_rows from kate recovery, 
-	// which is out scope for this example
+	// Note: Ideal way to get the rows for specific appData, we should use the app_specific_rows from kate recovery, which is out scope for this example
 	// 1. Check query rows.
 	let row_indexes = Rows::truncate_from(vec![0]);
 	let query_rows = client
