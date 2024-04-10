@@ -1,5 +1,5 @@
 /* eslint-disable  @typescript-eslint/no-explicit-any */
-/// The example showcases how to programmatically do balance transfer. 
+/// The example showcases how to programmatically do balance transfer.
 ///
 /// The following transactions are being called:
 ///   Balance.transfer
@@ -24,40 +24,41 @@ const main = async () => {
     const decimals = getDecimals(api)
     const amount = formatNumberToBalance(config.amount, decimals)
 
-    const oldBalance: any = await api.query.system.account(config.recipient);
-    console.log(`Balance before the transfer call: ${oldBalance["data"]["free"].toHuman()}`);
+    const oldBalance: any = await api.query.system.account(config.recipient)
+    console.log(`Balance before the transfer call: ${oldBalance["data"]["free"].toHuman()}`)
 
     // Transaction call
     const txResult = await new Promise<ISubmittableResult>((res) => {
-      api.tx.balances.transferKeepAlive(config.recipient, amount).signAndSend(keyring, options, (result: ISubmittableResult) => {
-          console.log(`Tx status: ${result.status}`);
+      api.tx.balances
+        .transferKeepAlive(config.recipient, amount)
+        .signAndSend(keyring, options, (result: ISubmittableResult) => {
+          console.log(`Tx status: ${result.status}`)
           if (result.isFinalized || result.isError) {
-            res(result);
+            res(result)
           }
-        },
-      );
-    });
-    console.log(`Tx Hash: ${txResult.txHash as H256}, Block Hash: ${txResult.status.asFinalized as H256}`);
+        })
+    })
+    console.log(`Tx Hash: ${txResult.txHash as H256}, Block Hash: ${txResult.status.asFinalized as H256}`)
 
     // Error handling
-    const error = txResult.dispatchError;
+    const error = txResult.dispatchError
     if (txResult.isError) {
-      console.log(`Transaction was not executed`);
+      console.log(`Transaction was not executed`)
     } else if (error != undefined) {
       if (error.isModule) {
-        const decoded = api.registry.findMetaError(error.asModule);
-        const { docs, name, section } = decoded;
-        console.log(`${section}.${name}: ${docs.join(' ')}`);
+        const decoded = api.registry.findMetaError(error.asModule)
+        const { docs, name, section } = decoded
+        console.log(`${section}.${name}: ${docs.join(" ")}`)
       } else {
-        console.log(error.toString());
+        console.log(error.toString())
       }
-      process.exit(1);
+      process.exit(1)
     }
 
-    const newBalance: any = await api.query.system.account(config.recipient);
-    console.log(`Balance after the transfer call: ${newBalance["data"]["free"].toHuman()}`);
+    const newBalance: any = await api.query.system.account(config.recipient)
+    console.log(`Balance after the transfer call: ${newBalance["data"]["free"].toHuman()}`)
 
-    process.exit(0);
+    process.exit(0)
   } catch (err) {
     console.error(err)
     process.exit(1)

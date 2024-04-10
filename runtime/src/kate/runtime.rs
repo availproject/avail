@@ -33,15 +33,6 @@ pub fn grid<T: SystemConfig>(
 	hosted_kate::grid(app_extrinsics, block_length, seed, selected_rows)
 }
 
-pub fn app_data<T: SystemConfig>(
-	app_extrinsics: Vec<AppExtrinsic>,
-	block_length: BlockLength,
-	app_id: AppId,
-) -> Result<Vec<Option<GRow>>, Error> {
-	let seed = random_seed::<T>();
-	hosted_kate::app_data(app_extrinsics, block_length, seed, app_id.0)
-}
-
 pub fn proof<T: SystemConfig>(
 	app_extrinsics: Vec<AppExtrinsic>,
 	block_len: BlockLength,

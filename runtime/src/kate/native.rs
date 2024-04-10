@@ -52,34 +52,6 @@ pub trait HostedKate {
 		Ok(rows)
 	}
 
-	fn app_data(
-		submitted: Vec<AppExtrinsic>,
-		block_length: BlockLength,
-		seed: Seed,
-		app_id: u32,
-	) -> Result<Vec<Option<GRow>>, Error> {
-		let (max_width, max_height) = to_width_height(&block_length);
-		let grid = EGrid::from_extrinsics(submitted, MIN_WIDTH, max_width, max_height, seed)?;
-
-		// let orig_dims = non_extended_dims(grid.dims()).ok_or(Error::InvalidDimension)?;
-		let dims = grid.dims();
-		let Some(rows) = grid.app_rows(AppId(app_id), Some(dims))? else {
-			return Err(Error::AppRow);
-		};
-
-		let mut all_rows = vec![None; dims.height()];
-		for (row_y, row) in rows {
-			let g_row = row
-				.into_par_iter()
-				.map(|s| s.to_bytes().map(GRawScalar::from))
-				.collect::<Result<Vec<_>, _>>()
-				.map_err(|_| Error::InvalidScalarAtRow(row_y as u32))?;
-			all_rows[row_y] = Some(g_row);
-		}
-
-		Ok(all_rows)
-	}
-
 	fn proof(
 		extrinsics: Vec<AppExtrinsic>,
 		block_len: BlockLength,

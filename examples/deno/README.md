@@ -56,7 +56,4 @@ deno run -A ./examples/deno/benchmarks/query_rows.ts
 
 # To benchmark Query Block Length RPC
 deno run -A ./examples/deno/benchmarks/query_block_length.ts
-
-# To benchmark Query App Data RPC
-deno run -A ./examples/deno/benchmarks/query_app_data.ts
 ```

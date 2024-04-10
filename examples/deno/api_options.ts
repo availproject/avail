@@ -15,21 +15,6 @@ export const API_RPC = {
       ],
       type: "Vec<GRow>",
     },
-    queryAppData: {
-      description: "Fetches app data rows for the given app",
-      params: [
-        {
-          name: "app_id",
-          type: "AppId",
-        },
-        {
-          name: "at",
-          type: "Hash",
-          isOptional: true,
-        },
-      ],
-      type: "Vec<Option<GRow>>",
-    },
     queryProof: {
       description: "Generate the kate proof for the given `cells`",
       params: [

@@ -41,21 +41,6 @@ export const rpc = {
       ],
       type: "ProofResponse",
     },
-    queryAppData: {
-      description: "Fetches app data rows for the given app",
-      params: [
-        {
-          name: "app_id",
-          type: "AppId",
-        },
-        {
-          name: "at",
-          type: "Hash",
-          isOptional: true,
-        },
-      ],
-      type: "Vec<Option<Vec<U256>>>",
-    },
     queryRows: {
       description: "Query rows based on their indices",
       params: [
