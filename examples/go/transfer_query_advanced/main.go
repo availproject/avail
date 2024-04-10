@@ -2,6 +2,7 @@ package main
 
 import (
 	"avail-gsrpc-examples/internal/config"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"log"
@@ -16,6 +17,8 @@ import (
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	. "github.com/centrifuge/go-substrate-rpc-client/v4/types/codec"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"golang.org/x/crypto/blake2b"
 
 	"github.com/vedhavyas/go-subkey"
 )
@@ -124,6 +127,15 @@ func transfer(api *gsrpc.SubstrateAPI, senderSeed string, receiver string, amoun
 		return fmt.Errorf("cannot sign:%w", err)
 	}
 
+	enc, _ := EncodeToHex(ext)
+
+	cleanedHexString := strings.TrimPrefix(enc, "0x")
+	bytes, err := hex.DecodeString(cleanedHexString)
+	if err != nil {
+		log.Fatal(err)
+	}
+	hash := blake2b.Sum256(bytes)
+	ext_z := hexutil.Encode(hash[:])
 	// Send the extrinsic
 	sub, err := api.RPC.Author.SubmitAndWatchExtrinsic(ext)
 	if err != nil {
@@ -149,12 +161,21 @@ func transfer(api *gsrpc.SubstrateAPI, senderSeed string, receiver string, amoun
 				for i, j := range exts {
 					if j.IsSigned() && j.Method.CallIndex.SectionIndex == 6 {
 						enc, _ = EncodeToHex(j)
-
-						fmt.Printf("\n the Transfer extrinsic Index is %d", i+1)
-						signer := j.Signature.Signer
-						fmt.Printf("\nfrom address hex %x", signer.AsID)
-						address := fmt.Sprintf("\n%x", j.Method.Args[1:])
-						fmt.Println("to address hex:", address)
+						cleanedHexString := strings.TrimPrefix(enc, "0x")
+						bytes, err := hex.DecodeString(cleanedHexString)
+						if err != nil {
+							log.Fatal(err)
+						}
+						hash := blake2b.Sum256(bytes)
+						z := hexutil.Encode(hash[:])
+						fmt.Printf("ext hash is %v", z)
+						if z == ext_z {
+							fmt.Printf("\n the Transfer extrinsic Index is %d", i+1)
+							signer := j.Signature.Signer
+							fmt.Printf("\nfrom address hex %x\n", signer.AsID)
+							address := fmt.Sprintf("\n%x", j.Method.Args[1:])
+							fmt.Println("\nto address hex:", address)
+						}
 					}
 				}
 
@@ -208,7 +229,6 @@ func transfer(api *gsrpc.SubstrateAPI, senderSeed string, receiver string, amoun
 					panic(fmt.Sprintf("%v\n", err))
 				}
 
-				fmt.Println("Formatted Inclusion Fee:")
 				fmt.Printf("Base Fee: %s\n", formatFee(inclusionFee.BaseFee, false))
 				fmt.Printf("Length Fee: %s\n", formatFee(inclusionFee.LenFee, true))
 				fmt.Printf("Adjusted Weight Fee: %s\n", formatFee(inclusionFee.AdjustedWeightFee, false))
