@@ -21,24 +21,6 @@ use std::{sync::OnceLock, time::Instant, vec::Vec};
 static PMP: OnceLock<M1NoPrecomp> = OnceLock::new();
 
 #[cfg(feature = "std")]
-pub fn get_empty_header(data_root: H256, version: HeaderVersion) -> HeaderExtension {
-	use avail_core::DataLookup;
-	let empty_commitment: Vec<u8> = vec![];
-	let empty_app_lookup = DataLookup::new_empty();
-
-	match version {
-		HeaderVersion::V3 => {
-			let commitment = kc::v3::KateCommitment::new(0, 0, data_root, empty_commitment);
-			he::v3::HeaderExtension {
-				app_lookup: empty_app_lookup,
-				commitment,
-			}
-			.into()
-		},
-	}
-}
-
-#[cfg(feature = "std")]
 pub fn build_grid(
 	submitted: Vec<AppExtrinsic>,
 	block_length: BlockLength,
@@ -90,7 +72,7 @@ pub fn build_extension(
 ) -> HeaderExtension {
 	// Blocks with non-DA extrinsics will have empty commitments
 	if submitted.is_empty() {
-		return get_empty_header(data_root, version);
+		return HeaderExtension::get_empty_header(data_root, version);
 	}
 	let build_extension_start = Instant::now();
 
@@ -108,7 +90,7 @@ pub fn build_extension(
 			log::error!("NODE_CRITICAL_ERROR_001 - A critical error has occured: {message:?}.");
 			log::error!("NODE_CRITICAL_ERROR_001 - If you see this, please warn Avail team and raise an issue.");
 			Metrics::observe_total_execution_time(build_extension_start.elapsed());
-			return get_empty_header(data_root, version);
+			return HeaderExtension::get_faulty_header(data_root, version);
 		},
 	};
 
@@ -126,7 +108,7 @@ pub fn build_extension(
 			log::error!("NODE_CRITICAL_ERROR_002 - A critical error has occured: {message:?}.");
 			log::error!("NODE_CRITICAL_ERROR_002 - If you see this, please warn Avail team and raise an issue.");
 			Metrics::observe_total_execution_time(build_extension_start.elapsed());
-			return get_empty_header(data_root, version);
+			return HeaderExtension::get_faulty_header(data_root, version);
 		},
 	};
 

@@ -7,9 +7,9 @@ edition = "2021"
 
 [dependencies]
 avail-subxt = { path = "../avail-subxt" }
-kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "main" }
-kate = { git = "https://github.com/availproject/avail-core", branch = "main" }
-avail-core = {  git = "https://github.com/availproject/avail-core", branch = "main" }
+kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "ghali/header-error-management" }
+kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/header-error-management" }
+avail-core = {  git = "https://github.com/availproject/avail-core", branch = "ghali/header-error-management" }
 
 # Parity
 sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2" }
