@@ -11,7 +11,6 @@ use trie_db::{Trie, TrieDBBuilder};
 pub enum MessageStatusEnum {
 	#[default]
 	NotExecuted,
-	ExecutionFailed,
 	ExecutionSucceeded,
 }
 
