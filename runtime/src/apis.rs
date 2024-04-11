@@ -10,7 +10,7 @@ use avail_core::{
 	currency::Balance,
 	data_proof::{DataProof, ProofResponse, SubTrie},
 	header::HeaderExtension,
-	AppId, OpaqueExtrinsic,
+	OpaqueExtrinsic,
 };
 
 use frame_system::{

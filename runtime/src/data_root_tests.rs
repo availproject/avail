@@ -8,13 +8,14 @@ use frame_system::{
 	CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce, CheckSpecVersion, CheckTxVersion,
 	CheckWeight,
 };
+use pallet_balances::Call as BalancesCall;
 use pallet_vector::Call as VectorCall;
 
 use codec::Encode;
 use hex_literal::hex;
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_core::H256;
-use sp_keyring::AccountKeyring::Alice;
+use sp_keyring::AccountKeyring::{Alice, Bob};
 use sp_runtime::{
 	generic::Era,
 	traits::{SignedExtension, Verify as _},
@@ -63,6 +64,18 @@ fn submit_data(data: Vec<u8>) -> Vec<u8> {
 	signed_extrinsic(function)
 }
 
+fn transfer_keep_alive() -> Vec<u8> {
+	let bob = Bob.to_account_id();
+	let amount = 1 * AVAIL;
+	let function = BalancesCall::transfer_keep_alive {
+		dest: bob.into(),
+		value: amount,
+	}
+	.into();
+
+	signed_extrinsic(function)
+}
+
 fn bridge_msg(data: Vec<u8>) -> Vec<u8> {
 	let message = Message::ArbitraryMessage(BoundedData::truncate_from(data));
 	let to = H256::repeat_byte(0x01);
@@ -104,4 +117,83 @@ fn empty_root() -> H256 {
 #[test_case(&[submit_data(hex!("abcd").to_vec()), bridge_msg(hex!("47").to_vec())] => H256(hex!("c925bfccfc86f15523c5b40b2bd6d8a66fc51f3d41176d77be7928cb9e3831a7")); "submitted and bridged")]
 fn data_root_filter(extrinsics: &[Vec<u8>]) -> H256 {
 	HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, extrinsics).data_root()
+}
+
+#[test]
+fn to_app_extrinsics_filters_correctly_1() {
+	let extrinsics: Vec<Vec<u8>> = vec![];
+
+	let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics)
+		.to_app_extrinsics()
+		.into_iter()
+		.map(|app_extrinsic| app_extrinsic.data)
+		.collect::<Vec<Vec<u8>>>();
+
+	assert_eq!(extrinsics, data)
+}
+
+#[test]
+fn to_app_extrinsics_filters_correctly_2() {
+	let extrinsics: Vec<Vec<u8>> = vec![
+		transfer_keep_alive().to_vec(),
+		transfer_keep_alive().to_vec(),
+	];
+
+	let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics)
+		.to_app_extrinsics()
+		.into_iter()
+		.map(|app_extrinsic| app_extrinsic.data)
+		.collect::<Vec<Vec<u8>>>();
+
+	let expected_data: Vec<Vec<u8>> = vec![];
+
+	assert_eq!(expected_data, data)
+}
+
+#[test]
+fn to_app_extrinsics_filters_correctly_3() {
+	let extrinsics = vec![
+		submit_data(hex!("abcd").to_vec()),
+		submit_data(hex!("abcd").to_vec()),
+	];
+
+	let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics)
+		.to_app_extrinsics()
+		.into_iter()
+		.map(|app_extrinsic| app_extrinsic.data)
+		.collect::<Vec<Vec<u8>>>();
+
+	assert_eq!(extrinsics, data)
+}
+
+#[test]
+fn to_app_extrinsics_filters_correctly_4() {
+	let extrinsics = vec![
+		submit_data(hex!("abcd").to_vec()),
+		transfer_keep_alive().to_vec(),
+	];
+
+	let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics)
+		.to_app_extrinsics()
+		.into_iter()
+		.map(|app_extrinsic| app_extrinsic.data)
+		.collect::<Vec<Vec<u8>>>();
+
+	assert_eq!(vec![extrinsics[0].clone()], data)
+}
+
+#[test]
+fn to_app_extrinsics_filters_correctly_5() {
+	let extrinsics = vec![
+		submit_data(hex!("abcd").to_vec()),
+		submit_data(hex!("").to_vec()),
+	];
+
+	let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics)
+		.to_app_extrinsics()
+		.into_iter()
+		.map(|app_extrinsic| app_extrinsic.data)
+		.collect::<Vec<Vec<u8>>>();
+
+	assert_eq!(vec![extrinsics[0].clone()], data)
 }
