@@ -124,6 +124,36 @@ func main() {
 		case status := <-sub.Chan():
 			if status.IsInBlock {
 				fmt.Printf("Txn inside block %v\n", status.AsInBlock.Hex())
+				h := status.AsInBlock
+
+				key, err := types.CreateStorageKey(meta, "System", "Events", nil, nil)
+				if err != nil {
+					log.Fatalf("Failed to create storage key: %v", err)
+				}
+				rawEvents, err := api.RPC.State.GetStorageRaw(key, h)
+				if err != nil {
+					log.Fatalf("Failed to fetch events: %v", err)
+				}
+				events := types.EventRecords{}
+				err = types.EventRecordsRaw(*rawEvents).DecodeEventRecords(meta, &events)
+				if err != nil {
+					log.Fatalf("Failed to decode events: %v", err)
+				}
+				if rawEvents != nil && len(*rawEvents) > 0 {
+					err = types.EventRecordsRaw(*rawEvents).DecodeEventRecords(meta, &events)
+					if err != nil {
+						log.Fatalf("Failed to decode events: %v", err)
+					}
+					
+					for _, e := range events.DataAvailability_DataSubmitted {
+
+						fmt.Printf("Datahash from event: %v\n", e.DataHash.Hex())
+
+					}
+
+				} else {
+					fmt.Println("No events found in the block")
+				}
 			} else if status.IsFinalized {
 				fmt.Printf("Txn inside finalized block\n")
 				hash := status.AsFinalized
@@ -147,6 +177,7 @@ func getData(hash types.Hash, api *gsrpc.SubstrateAPI, data string) error {
 		return fmt.Errorf("cannot get block by hash:%w", err)
 	}
 	for _, ext := range block.Block.Extrinsics {
+
 		// these values below are specific indexes only for data submission, differs with each extrinsic
 		if ext.Method.CallIndex.SectionIndex == 29 && ext.Method.CallIndex.MethodIndex == 1 {
 			arg := ext.Method.Args
