@@ -128,10 +128,10 @@ impl<'a> Deserialize<'a> for AppUncheckedExtrinsic {
 	}
 }
 
-impl TryFrom<ExtrinsicDetails> for AppUncheckedExtrinsic {
+impl TryFrom<&ExtrinsicDetails> for AppUncheckedExtrinsic {
 	type Error = Error;
 
-	fn try_from(extrinsic: ExtrinsicDetails) -> Result<Self, Self::Error> {
+	fn try_from(extrinsic: &ExtrinsicDetails) -> Result<Self, Self::Error> {
 		let encoded = extrinsic.bytes().encode();
 		Self::decode(&mut encoded.as_slice())
 	}
