@@ -335,9 +335,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				108u8, 1u8, 183u8, 110u8, 191u8, 155u8, 153u8, 113u8, 184u8, 114u8, 250u8, 198u8,
-				60u8, 15u8, 117u8, 232u8, 132u8, 34u8, 183u8, 247u8, 220u8, 110u8, 16u8, 90u8,
-				14u8, 106u8, 103u8, 30u8, 160u8, 229u8, 97u8, 194u8,
+				40u8, 39u8, 15u8, 207u8, 194u8, 95u8, 192u8, 179u8, 7u8, 108u8, 48u8, 14u8, 207u8,
+				104u8, 80u8, 164u8, 125u8, 6u8, 80u8, 126u8, 242u8, 92u8, 19u8, 183u8, 194u8,
+				215u8, 199u8, 163u8, 239u8, 210u8, 184u8, 18u8,
 			]
 	}
 	pub mod system {
@@ -25599,6 +25599,9 @@ pub mod api {
 					#[codec(index = 9)]
 					#[doc = "App info was not found for the given App key"]
 					UnknownAppKey,
+					#[codec(index = 10)]
+					#[doc = "Submit block length proposal was made with values not power of 2"]
+					NotPowerOfTwo,
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
