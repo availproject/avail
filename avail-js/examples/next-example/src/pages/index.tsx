@@ -79,7 +79,7 @@ export default function Home() {
         { signer: injector.signer, app_id: 1 } as Partial<SignerOptions>,
         ({ status, isError, events }) => {
           if (isError) {
-            addLogs("An error has occured, open console to view logs", "error")
+            addLogs("An error has occurred, open console to view logs", "error")
             console.log(events)
           }
           if (status.isInBlock) {

@@ -87,7 +87,7 @@ pub fn build_extension(
 	let grid = match maybe_grid {
 		Ok(res) => res,
 		Err(message) => {
-			log::error!("NODE_CRITICAL_ERROR_001 - A critical error has occured: {message:?}.");
+			log::error!("NODE_CRITICAL_ERROR_001 - A critical error has occurred: {message:?}.");
 			log::error!("NODE_CRITICAL_ERROR_001 - If you see this, please warn Avail team and raise an issue.");
 			Metrics::observe_total_execution_time(build_extension_start.elapsed());
 			return HeaderExtension::get_faulty_header(data_root, version);
@@ -105,7 +105,7 @@ pub fn build_extension(
 	let commitment = match maybe_commitment {
 		Ok(res) => res,
 		Err(message) => {
-			log::error!("NODE_CRITICAL_ERROR_002 - A critical error has occured: {message:?}.");
+			log::error!("NODE_CRITICAL_ERROR_002 - A critical error has occurred: {message:?}.");
 			log::error!("NODE_CRITICAL_ERROR_002 - If you see this, please warn Avail team and raise an issue.");
 			Metrics::observe_total_execution_time(build_extension_start.elapsed());
 			return HeaderExtension::get_faulty_header(data_root, version);

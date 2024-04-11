@@ -30,7 +30,7 @@ npm install avail-js-sdk
 - Facilitate account management
 - Add utility helpers
 - Still expose polkadot-js
-- Allows versionning of polkadot-js to ensure compatibility
+- Allows versioning of polkadot-js to ensure compatibility
 
 ## Error Reporting
 
