@@ -58,9 +58,14 @@ impl CompactDataLookup {
 
 	pub fn from_data_lookup(lookup: &DataLookup) -> Self {
 		if lookup.is_error {
+			// Data lookup is not valid if size is 0 and lookup index is not empty
 			return CompactDataLookup {
-				size: u32::MAX,
-				index: Vec::default(),
+				size: 0,
+				index: [DataLookupItem {
+					app_id: AppId(0),
+					start: 0,
+				}]
+				.to_vec(),
 			};
 		}
 
