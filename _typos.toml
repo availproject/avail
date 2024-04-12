@@ -1,11 +1,16 @@
 [default]
 # False positives
 extend-ignore-identifiers-re = [
+    "groth*",
+    "Groth*",
+    "280403000ba302ac318301"
 ]
 
 [files]
 extend-exclude = [
   "*.png",
   "*.svg",
+  "Cargo.toml",
+  "avail-js/docs/assets/**",
   "misc/genesis/**",
 ]

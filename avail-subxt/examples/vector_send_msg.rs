@@ -118,7 +118,7 @@ async fn check_query_data_proof_rpc(
 	block_hash: H256,
 	leaves: &[Leaf],
 ) -> Result<(), Error> {
-	let indexed_leafs_len = leaves.len();
+	let indexed_leaves_len = leaves.len();
 	for indexed_leaf in leaves {
 		let Leaf {
 			leaf_idx,
@@ -138,7 +138,7 @@ async fn check_query_data_proof_rpc(
 		let verified = verify_proof::<Keccak256, _, _>(
 			&bridge_root,
 			proof,
-			indexed_leafs_len,
+			indexed_leaves_len,
 			*leaf_idx,
 			leaf,
 		);
@@ -160,7 +160,7 @@ async fn main() -> anyhow::Result<()> {
 	let block = client.blocks().at(BlockRef::from_hash(block_hash)).await?;
 	let block_number = block.number();
 
-	// 1. Generate merkle leafs for bridged messages.
+	// 1. Generate merkle leaves for bridged messages.
 	let indexed_leaves = messages_to_leaves(block_number, tx_indexes);
 
 	// 2. Use Kate to get the proof and double-check it.

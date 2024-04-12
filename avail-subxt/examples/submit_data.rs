@@ -36,13 +36,13 @@ async fn main() -> anyhow::Result<()> {
 	let client = AvailClient::new(args.ws).await?;
 	let alice = dev::alice();
 	let alice_id = alice.public_key().into();
-	let sub_datas = data(5, 1_024);
+	let sub_data = data(5, 1_024);
 	let mut try_count = 0;
 
 	let block_hash = loop {
 		let nonce = client.tx().account_nonce(&alice_id).await?;
 		println!("Submitting data to network");
-		let txs = sub_datas
+		let txs = sub_data
 			.iter()
 			.enumerate()
 			.map(|(idx, data)| {

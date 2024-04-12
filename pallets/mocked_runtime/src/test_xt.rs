@@ -7,7 +7,7 @@ use serde::Serializer;
 use sp_runtime::{
 	testing::TestXt as SPTestXt,
 	traits::{
-		Applyable, Checkable, DispatchInfoOf, Dispatchable, Extrinsic, ExtrinsicMetadata,
+		Applicable, Checkable, DispatchInfoOf, Dispatchable, Extrinsic, ExtrinsicMetadata,
 		PostDispatchInfoOf, SignedExtension, ValidateUnsigned,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
@@ -81,7 +81,7 @@ where
 	const VERSION: u8 = 0u8;
 }
 
-impl<Origin, Call, Extra> Applyable for TestXt<Call, Extra>
+impl<Origin, Call, Extra> Applicable for TestXt<Call, Extra>
 where
 	Call: 'static
 		+ Sized

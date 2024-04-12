@@ -5417,7 +5417,7 @@ pub mod api {
 			#[doc = "A solution was stored with the given compute."]
 			#[doc = ""]
 			#[doc = "The `origin` indicates the origin of the solution. If `origin` is `Some(AccountId)`,"]
-			#[doc = "the stored solution was submited in the signed phase by a miner with the `AccountId`."]
+			#[doc = "the stored solution was submitted in the signed phase by a miner with the `AccountId`."]
 			#[doc = "Otherwise, the solution was stored either during the unsigned phase or by"]
 			#[doc = "`T::ForceOrigin`. The `bool` is `true` when a previous solution was ejected to make"]
 			#[doc = "room for this one."]
@@ -18974,7 +18974,7 @@ pub mod api {
 					)
 				}
 				#[doc = " Reward pools. This is where there rewards for each pool accumulate. When a members payout is"]
-				#[doc = " claimed, the balance comes out fo the reward pool. Keyed by the bonded pools account."]
+				#[doc = " claimed, the balance comes out of the reward pool. Keyed by the bonded pools account."]
 				pub fn reward_pools_iter(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -18997,7 +18997,7 @@ pub mod api {
 					)
 				}
 				#[doc = " Reward pools. This is where there rewards for each pool accumulate. When a members payout is"]
-				#[doc = " claimed, the balance comes out fo the reward pool. Keyed by the bonded pools account."]
+				#[doc = " claimed, the balance comes out of the reward pool. Keyed by the bonded pools account."]
 				pub fn reward_pools(
 					&self,
 					_0: impl ::std::borrow::Borrow<types::reward_pools::Param0>,
@@ -21346,7 +21346,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " Maxmimum number of registrars allowed in the system. Needed to bound the complexity"]
+				#[doc = " Maximum number of registrars allowed in the system. Needed to bound the complexity"]
 				#[doc = " of, e.g., updating judgements."]
 				pub fn max_registrars(
 					&self,
@@ -28063,7 +28063,7 @@ pub mod api {
 					#[doc = "A solution was stored with the given compute."]
 					#[doc = ""]
 					#[doc = "The `origin` indicates the origin of the solution. If `origin` is `Some(AccountId)`,"]
-					#[doc = "the stored solution was submited in the signed phase by a miner with the `AccountId`."]
+					#[doc = "the stored solution was submitted in the signed phase by a miner with the `AccountId`."]
 					#[doc = "Otherwise, the solution was stored either during the unsigned phase or by"]
 					#[doc = "`T::ForceOrigin`. The `bool` is `true` when a previous solution was ejected to make"]
 					#[doc = "room for this one."]

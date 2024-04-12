@@ -70,13 +70,13 @@ impl HeaderExtensionBuilderData {
 			.find_map(|o| F::get_failed_transaction_ids(o));
 		let failed_transactions = failed_transactions.unwrap_or_else(|| Vec::new());
 
-		let extracted_tx_datas: Vec<ExtractedTxData> = opaques
+		let extracted_tx_data: Vec<ExtractedTxData> = opaques
 			.into_iter()
 			.enumerate()
 			.filter_map(|(idx, opaque)| F::filter(&failed_transactions, opaque.clone(), block, idx))
 			.collect();
 
-		HeaderExtensionBuilderData::from(extracted_tx_datas)
+		HeaderExtensionBuilderData::from(extracted_tx_data)
 	}
 
 	pub fn to_app_extrinsics(&self) -> Vec<AppExtrinsic> {
@@ -231,7 +231,7 @@ where
 {
 	let leaves = leaf_iter.collect::<Vec<_>>();
 	let mp = merkle_proof::<Keccak256, _, T>(leaves, leaf_idx);
-	// NOTE: As we are using refrences for the leaves, like `&'a [u8]`, we need to
+	// NOTE: As we are using references for the leaves, like `&'a [u8]`, we need to
 	// convert them to `Vec<u8>`.
 	MerkleProof {
 		root: mp.root,
