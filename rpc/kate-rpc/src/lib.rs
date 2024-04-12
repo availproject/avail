@@ -1,7 +1,6 @@
 use avail_base::metrics::avail::KateRpcMetrics;
 use avail_core::{
-	data_proof::ProofResponse, header::HeaderExtension, traits::ExtendedHeader, AppId,
-	OpaqueExtrinsic,
+	data_proof::ProofResponse, header::HeaderExtension, traits::ExtendedHeader, OpaqueExtrinsic,
 };
 use da_runtime::apis::{DataAvailApi, KateApi as RTKateApi};
 use da_runtime::kate::{GDataProof, GRow};

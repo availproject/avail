@@ -19,12 +19,7 @@ use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, SignedExtension},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 };
-use sp_std::{
-	fmt::Debug,
-	iter::{once, repeat},
-	vec,
-	vec::Vec,
-};
+use sp_std::{fmt::Debug, iter::repeat, vec, vec::Vec};
 
 use crate::pallet::Call as DACall;
 

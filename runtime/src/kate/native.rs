@@ -1,5 +1,5 @@
 use super::{Error, GDataProof, GProof, GRawScalar, GRow};
-use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
+use avail_core::{AppExtrinsic, BlockLengthColumns, BlockLengthRows};
 use core::num::NonZeroU16;
 use frame_system::{header_builder::MIN_WIDTH, limits::BlockLength};
 use kate::Seed;

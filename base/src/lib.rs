@@ -12,6 +12,3 @@ pub use post_inherents::*;
 
 pub mod header_extension;
 pub use header_extension::{HeaderExtensionBuilderData, HeaderExtensionDataFilter};
-
-mod calls_proof;
-pub use calls_proof::{calls_proof, CallsProof};

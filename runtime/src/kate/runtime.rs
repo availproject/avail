@@ -1,7 +1,7 @@
 use super::{native::hosted_kate, Error, GDataProof, GRow};
 use da_control::LOG_TARGET as DALOG_TARGET;
 
-use avail_core::{AppExtrinsic, AppId};
+use avail_core::AppExtrinsic;
 use frame_system::{limits::BlockLength, Config as SystemConfig};
 use kate::Seed;
 
