@@ -32,7 +32,7 @@ jobs:
           - command: ENGINE=podman DISTRO=arch ZIP=1 ./scripts/binaries/build.sh
             output_file: output/zips/x86_64-arch-avail-node.tar.gz
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -71,7 +71,7 @@ jobs:
   arm64_ubuntu_2004:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -107,6 +107,49 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/aarch64-unknown-linux-gnu/release/arm64-ubuntu-2004-avail-node.tar.gz
+          release_name: ${{ steps.prepare.outputs.tag_name }}
+          tag: ${{ steps.prepare.outputs.tag_name }}
+          overwrite: true
+
+  arm64_ubuntu_2204:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: '3.x'
+
+      - name: install cargo deps and build avail
+        shell: bash
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source "$HOME/.cargo/env" && rustup show 
+          
+          rustup target add aarch64-unknown-linux-gnu
+          sudo apt-get update && sudo apt-get install -y musl-tools clang gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev libc6-dev-arm64-cross
+          env  BINDGEN_EXTRA_CLANG_ARGS='--sysroot /usr/aarch64-linux-gnu' CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=/usr/bin/aarch64-linux-gnu-gcc cargo build --release --target=aarch64-unknown-linux-gnu -p avail-node
+          pushd target/aarch64-unknown-linux-gnu/release/
+          tar -czf arm64-ubuntu-2204-avail-node.tar.gz avail-node
+          popd
+
+      - name: Prepare
+        id: prepare
+        run: |
+            TAG=${GITHUB_REF#refs/tags/}
+            echo "tag_name=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: publish binaries
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/aarch64-unknown-linux-gnu/release/arm64-ubuntu-2204-avail-node.tar.gz
           release_name: ${{ steps.prepare.outputs.tag_name }}
           tag: ${{ steps.prepare.outputs.tag_name }}
           overwrite: true
