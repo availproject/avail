@@ -233,6 +233,22 @@ mod submit_block_length_proposal {
 			assert_noop!(err, Error::BlockDimensionsTooSmall);
 		})
 	}
+
+	#[test]
+	fn not_power_of_two() {
+		new_test_ext().execute_with(|| {
+			let root: RuntimeOrigin = RawOrigin::Root.into();
+
+			let err = DataAvailability::submit_block_length_proposal(root.clone(), 118, 128);
+			assert_noop!(err, Error::NotPowerOfTwo);
+
+			let err = DataAvailability::submit_block_length_proposal(root.clone(), 128, 118);
+			assert_noop!(err, Error::NotPowerOfTwo);
+
+			let err = DataAvailability::submit_block_length_proposal(root.clone(), 111, 111);
+			assert_noop!(err, Error::NotPowerOfTwo);
+		})
+	}
 }
 
 mod set_application_key {

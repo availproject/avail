@@ -216,6 +216,17 @@ pub mod pallet {
 				Error::<T>::BlockDimensionsTooSmall
 			);
 
+			// Check if rows and cols are powers of 2
+			// Check if `rows` or `cols` are a power of 2: they must be nonzero and have no bits in common with `(rows or cols) - 1`.
+			ensure!(
+				rows.0 != 0 && (rows.0 & (rows.0 - 1)) == 0,
+				Error::<T>::NotPowerOfTwo
+			);
+			ensure!(
+				cols.0 != 0 && (cols.0 & (cols.0 - 1)) == 0,
+				Error::<T>::NotPowerOfTwo
+			);
+
 			let current_block_dimension = DynamicBlockLength::<T>::get();
 			let is_increase =
 				rows >= current_block_dimension.rows && cols >= current_block_dimension.cols;
@@ -316,6 +327,8 @@ pub mod pallet {
 		BadContext,
 		/// App info was not found for the given App key
 		UnknownAppKey,
+		/// Submit block length proposal was made with values not power of 2
+		NotPowerOfTwo,
 	}
 
 	#[pallet::genesis_config]
