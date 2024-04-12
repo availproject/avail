@@ -1,7 +1,6 @@
 use crate::{
 	api::runtime_types::frame_system::limits::BlockLength,
 	avail::{Cells, GDataProof, GRow, Rows},
-	AppId,
 };
 use avail_core::data_proof::ProofResponse;
 
