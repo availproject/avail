@@ -1,7 +1,9 @@
 use super::MIN_WIDTH;
 use crate::limits::BlockLength;
 
-use avail_base::metrics::avail::HeaderExtensionBuilderMetrics as Metrics;
+use avail_base::metrics::avail::{
+	HeaderExtensionBuilderMetrics as Metrics, MetricObserver, ObserveKind,
+};
 use avail_core::{
 	app_extrinsic::AppExtrinsic,
 	header::{extension as he, HeaderExtension},
@@ -16,7 +18,7 @@ use kate::{
 
 use sp_core::H256;
 use sp_runtime::SaturatedConversion;
-use std::{sync::OnceLock, time::Instant, vec::Vec};
+use std::{sync::OnceLock, vec::Vec};
 
 static PMP: OnceLock<M1NoPrecomp> = OnceLock::new();
 
@@ -26,6 +28,8 @@ pub fn build_grid(
 	block_length: BlockLength,
 	seed: Seed,
 ) -> Result<EvaluationGrid, String> {
+	let _metric_observer = MetricObserver::new(ObserveKind::HEGrid);
+
 	let grid = EvaluationGrid::from_extrinsics(
 		submitted,
 		MIN_WIDTH,
@@ -40,6 +44,8 @@ pub fn build_grid(
 
 #[cfg(feature = "std")]
 pub fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, String> {
+	let _metric_observer = MetricObserver::new(ObserveKind::HECommitment);
+
 	// couscous has pp for degree upto 1024
 	let pmp = PMP.get_or_init(multiproof_params);
 
@@ -74,14 +80,10 @@ pub fn build_extension(
 	if submitted.is_empty() {
 		return HeaderExtension::get_empty_header(data_root, version);
 	}
-	let build_extension_start = Instant::now();
+	let _metric_observer = MetricObserver::new(ObserveKind::HETotalExecutionTime);
 
 	// Build the grid
-	let timer = Instant::now();
 	let maybe_grid = build_grid(submitted, block_length, seed);
-
-	// Evaluation Grid Build Time Metrics
-	Metrics::observe_evaluation_grid_build_time(timer.elapsed());
 
 	// We get the grid or return an empty header in case of an error
 	let grid = match maybe_grid {
@@ -89,17 +91,11 @@ pub fn build_extension(
 		Err(message) => {
 			log::error!("NODE_CRITICAL_ERROR_001 - A critical error has occured: {message:?}.");
 			log::error!("NODE_CRITICAL_ERROR_001 - If you see this, please warn Avail team and raise an issue.");
-			Metrics::observe_total_execution_time(build_extension_start.elapsed());
 			return HeaderExtension::get_faulty_header(data_root, version);
 		},
 	};
 
-	// Build the commitment
-	let timer = Instant::now();
 	let maybe_commitment = build_commitment(&grid);
-
-	// Commitment Build Time Metrics
-	Metrics::observe_commitment_build_time(timer.elapsed());
 
 	// We get the commitment or return an empty header in case of an error
 	let commitment = match maybe_commitment {
@@ -107,7 +103,6 @@ pub fn build_extension(
 		Err(message) => {
 			log::error!("NODE_CRITICAL_ERROR_002 - A critical error has occured: {message:?}.");
 			log::error!("NODE_CRITICAL_ERROR_002 - If you see this, please warn Avail team and raise an issue.");
-			Metrics::observe_total_execution_time(build_extension_start.elapsed());
 			return HeaderExtension::get_faulty_header(data_root, version);
 		},
 	};
@@ -122,7 +117,7 @@ pub fn build_extension(
 
 	let app_lookup = grid.lookup().clone();
 
-	let extension = match version {
+	match version {
 		HeaderVersion::V3 => {
 			let commitment = kc::v3::KateCommitment::new(rows, cols, data_root, commitment);
 			he::v3::HeaderExtension {
@@ -131,10 +126,5 @@ pub fn build_extension(
 			}
 			.into()
 		},
-	};
-
-	// Total Execution Time Metrics
-	Metrics::observe_total_execution_time(build_extension_start.elapsed());
-
-	extension
+	}
 }
