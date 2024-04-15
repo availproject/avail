@@ -4,7 +4,7 @@
 /// to Babe and Grandpa.
 /// It double-checks the **extension header** which contains the `Kate Commitment` and `Data
 /// Root`.
-use avail_base::metrics::avail::ImportBlockMetrics;
+use avail_base::metrics::avail::{MetricObserver, ObserveKind};
 use avail_core::{
 	ensure, header::HeaderExtension, BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic,
 	BLOCK_CHUNK_SIZE,
@@ -24,7 +24,7 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::{BlockOrigin, Error as ConsensusError};
 use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
-use std::{marker::PhantomData, sync::Arc, time::Instant};
+use std::{marker::PhantomData, sync::Arc};
 
 pub struct BlockImport<B, C, I> {
 	client: Arc<C>,
@@ -127,7 +127,7 @@ where
 		&mut self,
 		block: BlockImportParams<B>,
 	) -> Result<ImportResult, Self::Error> {
-		let import_block_start = Instant::now();
+		let _metric_observer = MetricObserver::new(ObserveKind::ImportBlockTotalExecutionTime);
 
 		// We only want to check for blocks that are not from "Own"
 		let is_own = matches!(block.origin, BlockOrigin::Own);
@@ -145,7 +145,6 @@ where
 
 		// Next import block stage & metrics
 		let result = self.inner.import_block(block).await;
-		ImportBlockMetrics::observe_total_execution_time(import_block_start.elapsed());
 		result.map_err(Into::into)
 	}
 
