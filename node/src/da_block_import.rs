@@ -138,7 +138,7 @@ where
 			BlockOrigin::NetworkInitialSync | BlockOrigin::File
 		);
 		let skip_sync = self.unsafe_da_sync && is_sync;
-		if !is_own && !skip_sync {
+		if !is_own && !skip_sync && !block.with_state() {
 			self.ensure_last_extrinsic_is_failed_send_message_txs(&block)?;
 			self.ensure_valid_header_extension(&block)?;
 		}
