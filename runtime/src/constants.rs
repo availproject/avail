@@ -38,7 +38,7 @@ pub type MaxAuthorities = ConstU32<100_000>;
 pub type MaxActiveValidators = ConstU32<1200>;
 
 parameter_types! {
-	/// We take the top 12500 nominators as electing voters..
+	/// We take the top 22500 nominators as electing voters..
 	pub const MaxElectingVoters: u32 = 22_500;
 	/// ... and all of the validators as electable targets. Whilst this is the case, we cannot and
 	/// shall not increase the size of the validator intentions.
