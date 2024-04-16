@@ -107,4 +107,24 @@ pub trait HostedHeaderBuilder {
 			HeaderVersion::V3,
 		)
 	}
+
+	/// Note: Whenever a new header version is introduced, ensure to create a corresponding version
+	/// of the `build` hosted function, while retaining the existing ones.
+	#[version(2)]
+	fn build(
+		submitted: Vec<AppExtrinsic>,
+		data_root: H256,
+		block_length: BlockLength,
+		block_number: u32,
+		seed: Seed,
+	) -> HeaderExtension {
+		version_select::build_extension_2(
+			submitted,
+			data_root,
+			block_length,
+			block_number,
+			seed,
+			HeaderVersion::V3,
+		)
+	}
 }
