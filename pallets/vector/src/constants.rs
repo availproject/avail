@@ -12,7 +12,7 @@ pub const SLOTS_PER_PERIOD: u64 = 8192;
 pub const FINALITY_THRESHOLD: u16 = 342;
 pub const PERIOD: u64 = 566;
 // Attention!
-// If Posidon hash starts with "0" it (the zero character) will be ignore.
+// If Position hash starts with "0" it (the zero character) will be ignored.
 // This means that that hash needs to be manually added to the chain spec.
 //
 // "May fortune favor the foolish." - Captain James T. Kirk (Star Trek)
