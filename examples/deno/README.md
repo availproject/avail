@@ -22,12 +22,10 @@ deno run -A ./examples/deno/transfer.ts
 
 ## Benchmarks
 
-Make sure that you have a running local node with `--enable-kate-rpc-metrics`
-flag.
-`--dev` implies `--enable-kate-rpc-metric`.
+Make sure that you are already running a local node.
 
 ```bash
-./avail-node --enable-kate-rpc-metrics
+./avail-node --dev
 ```
 
 Make sure to populate basic configuration in `benchmarks/config.ts` or leave the

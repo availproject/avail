@@ -153,9 +153,6 @@ To enable Kate RPC you need to pass `--enable-kate-rpc` flag when executing the 
 --enable-kate-rpc
     Enable Kate RPC
 
---enable-kate-rpc-metrics
-    Enable Kate RPC Metrics
-
 --kate-max-cells-size <KATE_MAX_CELLS_SIZE>
     The maximum number of cells that can be requested in one go.
     
