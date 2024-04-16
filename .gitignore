@@ -5,4 +5,5 @@ node_modules
 dist
 tests/rust_scripts/target
 .vscode
+.idea
 output
