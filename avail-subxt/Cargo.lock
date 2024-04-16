@@ -736,7 +736,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.0"
-source = "git+https://github.com/availproject/avail-core?branch=main#eb5e631d664cbacca21075d9ec7d26afca45189c"
+source = "git+https://github.com/availproject/avail-core?tag=node-v2100-rc1#eb5e631d664cbacca21075d9ec7d26afca45189c"
 dependencies = [
  "binary-merkle-tree 13.0.0 (git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch-2)",
  "bounded-collections",
