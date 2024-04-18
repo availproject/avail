@@ -9,7 +9,6 @@ export class Task {
   public txCount: number;
   public finalizedBlockHash = "Error";
   public e2e_measure: PerformanceMeasure;
-  public internal_measure = 0;
 
   constructor(name: string, api: ApiPromise, data: string[], txCount: number) {
     this.name = name;
@@ -105,6 +104,6 @@ export class PerformanceMeasureStage implements Stage {
 
 export class DoneStage implements Stage {
   async run(task: Task): Promise<void> {
-    console.log(`Task ${task.name}: Done`);
+    console.log(`Task ${task.name}: Done. Duration: ` + task.e2e_measure.duration);
   }
 }

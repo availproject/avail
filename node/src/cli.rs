@@ -38,7 +38,7 @@ pub struct Cli {
 	pub no_hardware_benchmarks: bool,
 
 	/// Disable checking commitment on imported block during sync
-	#[arg(long)] /*, conflicts_with_all = &["validator"] */
+	#[arg(long, conflicts_with_all = &["validator"])]
 	pub unsafe_da_sync: bool,
 
 	/// Provides storage monitoring options on the node

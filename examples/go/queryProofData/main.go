@@ -19,14 +19,16 @@ type ProofResponse struct {
 }
 
 type TxDataRoot struct {
-	dataRoot   types.Hash
-	blobRoot   types.Hash
-	bridgeRoot types.Hash
+	DataRoot   types.Hash
+	BlobRoot   types.Hash
+	BridgeRoot types.Hash
 }
 
 // DataProof struct represents the data proof response
 type DataProof struct {
-	Root           TxDataRoot
+	DataRoot       types.Hash
+	BlobRoot       types.Hash
+	BridgeRoot     types.Hash
 	Proof          []types.Hash
 	NumberOfLeaves uint32 // Change to uint32 to match Rust u32
 	LeafIndex      uint32 // Change to uint32 to match Rust u32
@@ -105,9 +107,9 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("%v\n", err))
 	}
-	fmt.Printf("DataRoot:%v\n", response.DataProof.Root.dataRoot.Hex())
-	fmt.Printf("BlobRoot:%v\n", response.DataProof.Root.blobRoot.Hex())
-	fmt.Printf("BridgeRoot:%v\n", response.DataProof.Root.bridgeRoot.Hex())
+	fmt.Printf("DataRoot:%v\n", response.DataProof.DataRoot.Hex())
+	fmt.Printf("BlobRoot:%v\n", response.DataProof.BlobRoot.Hex())
+	fmt.Printf("BridgeRoot:%v\n", response.DataProof.BridgeRoot.Hex())
 	// print array of proof
 	fmt.Printf("Proof:\n")
 	for _, p := range response.DataProof.Proof {

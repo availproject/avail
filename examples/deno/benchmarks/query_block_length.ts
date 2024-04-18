@@ -37,10 +37,7 @@ const jobCount = config.jobCount;
 for (let i = 0; i < jobCount; ++i) {
   const task = new Task(`${i}`, api, data, txCount);
   const customStage = new PerformanceMeasureStage(async (task) => {
-    const res = await task.api.rpc.kate.blockLengthMetrics(
-      task.finalizedBlockHash,
-    );
-    task.internal_measure = res[1].toNumber() / 1000;
+    await task.api.rpc.kate.blockLength(task.finalizedBlockHash);
   }, "Query Block Length");
   const stages = [
     new BlockInclusionStage(targetBlockNumber + i),
@@ -58,20 +55,12 @@ await Promise.all(jobs);
 
 const e2eDurations = tasks.map((t) => t.e2e_measure?.duration);
 const e2eTotalTime = e2eDurations.reduce((pv, cv) => pv += cv);
-const internalDurations = tasks.map((t) => t.internal_measure);
-const internalTotalTime = internalDurations.reduce((pv, cv) => pv += cv);
 
-const zip = e2eDurations.map((v, i) => [v, internalDurations[i]]);
-console.log(zip);
+console.log(e2eDurations);
 
 console.log(
   `Total E2E time: ${e2eTotalTime}; Average E2E time: ${
     e2eTotalTime / jobCount
-  }`,
-);
-console.log(
-  `Total Internal time: ${internalTotalTime}; Average Internal time: ${
-    internalTotalTime / jobCount
   }`,
 );
 

@@ -1,4 +1,5 @@
 use core::time::Duration;
+use std::time::Instant;
 
 use substrate_prometheus_endpoint::{Histogram, PrometheusError, Registry};
 
@@ -128,7 +129,7 @@ impl HeaderExtensionBuilderMetrics {
 		})
 	}
 
-	pub fn observe_total_execution_time(duration: Duration) {
+	pub(crate) fn observe_total_execution_time(duration: Duration) {
 		if let Some(metrics) = AVAIL_METRICS.get() {
 			metrics
 				.header_extension
@@ -137,7 +138,7 @@ impl HeaderExtensionBuilderMetrics {
 		}
 	}
 
-	pub fn observe_evaluation_grid_build_time(duration: Duration) {
+	pub(crate) fn observe_evaluation_grid_build_time(duration: Duration) {
 		if let Some(metrics) = AVAIL_METRICS.get() {
 			metrics
 				.header_extension
@@ -146,7 +147,7 @@ impl HeaderExtensionBuilderMetrics {
 		}
 	}
 
-	pub fn observe_commitment_build_time(duration: Duration) {
+	pub(crate) fn observe_commitment_build_time(duration: Duration) {
 		if let Some(metrics) = AVAIL_METRICS.get() {
 			metrics
 				.header_extension
@@ -241,7 +242,7 @@ impl KateRpcMetrics {
 		})
 	}
 
-	pub fn observe_query_rows_execution_time(duration: Duration) {
+	pub(crate) fn observe_query_rows_execution_time(duration: Duration) {
 		if let Some(metrics) = AVAIL_METRICS.get() {
 			metrics
 				.kate_rpc
@@ -250,7 +251,7 @@ impl KateRpcMetrics {
 		}
 	}
 
-	pub fn observe_query_proof_execution_time(duration: Duration) {
+	pub(crate) fn observe_query_proof_execution_time(duration: Duration) {
 		if let Some(metrics) = AVAIL_METRICS.get() {
 			metrics
 				.kate_rpc
@@ -259,7 +260,7 @@ impl KateRpcMetrics {
 		}
 	}
 
-	pub fn observe_query_block_length_execution_time(duration: Duration) {
+	pub(crate) fn observe_query_block_length_execution_time(duration: Duration) {
 		if let Some(metrics) = AVAIL_METRICS.get() {
 			metrics
 				.kate_rpc
@@ -268,7 +269,7 @@ impl KateRpcMetrics {
 		}
 	}
 
-	pub fn observe_query_data_proof_execution_time(duration: Duration) {
+	pub(crate) fn observe_query_data_proof_execution_time(duration: Duration) {
 		if let Some(metrics) = AVAIL_METRICS.get() {
 			metrics
 				.kate_rpc
@@ -311,12 +312,69 @@ impl ImportBlockMetrics {
 		})
 	}
 
-	pub fn observe_total_execution_time(duration: Duration) {
+	pub(crate) fn observe_total_execution_time(duration: Duration) {
 		if let Some(metrics) = AVAIL_METRICS.get() {
 			metrics
 				.import_block
 				.total_execution_time
 				.observe(duration.as_micros() as f64);
+		}
+	}
+}
+
+pub enum ObserveKind {
+	ImportBlockTotalExecutionTime,
+	KateQueryDataProof,
+	KateQueryBlockLength,
+	KateQueryProof,
+	KateQueryRows,
+	HETotalExecutionTime,
+	HEGrid,
+	HECommitment,
+}
+
+pub struct MetricObserver {
+	pub kind: ObserveKind,
+	pub start_time: Instant,
+}
+
+impl MetricObserver {
+	pub fn new(kind: ObserveKind) -> Self {
+		Self {
+			kind,
+			start_time: std::time::Instant::now(),
+		}
+	}
+}
+
+impl Drop for MetricObserver {
+	fn drop(&mut self) {
+		let duration = self.start_time.elapsed();
+		match self.kind {
+			ObserveKind::ImportBlockTotalExecutionTime => {
+				ImportBlockMetrics::observe_total_execution_time(duration)
+			},
+			ObserveKind::KateQueryDataProof => {
+				KateRpcMetrics::observe_query_data_proof_execution_time(duration)
+			},
+			ObserveKind::KateQueryBlockLength => {
+				KateRpcMetrics::observe_query_block_length_execution_time(duration)
+			},
+			ObserveKind::KateQueryProof => {
+				KateRpcMetrics::observe_query_proof_execution_time(duration)
+			},
+			ObserveKind::KateQueryRows => {
+				KateRpcMetrics::observe_query_rows_execution_time(duration)
+			},
+			ObserveKind::HETotalExecutionTime => {
+				HeaderExtensionBuilderMetrics::observe_total_execution_time(duration)
+			},
+			ObserveKind::HEGrid => {
+				HeaderExtensionBuilderMetrics::observe_evaluation_grid_build_time(duration)
+			},
+			ObserveKind::HECommitment => {
+				HeaderExtensionBuilderMetrics::observe_commitment_build_time(duration)
+			},
 		}
 	}
 }
