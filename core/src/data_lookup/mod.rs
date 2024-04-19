@@ -33,7 +33,6 @@ pub enum Error {
 )]
 pub struct DataLookup {
 	pub(crate) index: Vec<(AppId, DataLookupRange)>,
-	pub(crate) is_error: bool,
 }
 
 impl DataLookup {
@@ -43,6 +42,10 @@ impl DataLookup {
 
 	pub fn is_empty(&self) -> bool {
 		self.len() == 0
+	}
+
+	pub fn is_error(&self) -> bool {
+		self.is_empty() && !self.index.is_empty()
 	}
 
 	pub fn range_of(&self, app_id: AppId) -> Option<DataLookupRange> {
@@ -113,25 +116,18 @@ impl DataLookup {
 			})
 			.collect::<Result<_, _>>()?;
 
-		Ok(Self {
-			index,
-			is_error: false,
-		})
+		Ok(Self { index })
 	}
 
 	/// This function is used a block contains no data submissions.
 	pub fn new_empty() -> Self {
-		Self {
-			index: Vec::new(),
-			is_error: false,
-		}
+		Self { index: Vec::new() }
 	}
 
 	/// This function is only used when something has gone wrong during header extension building
 	pub fn new_error() -> Self {
 		Self {
-			index: Vec::new(),
-			is_error: true,
+			index: vec![(AppId(0), 0..0)],
 		}
 	}
 }
@@ -140,7 +136,7 @@ impl TryFrom<CompactDataLookup> for DataLookup {
 	type Error = Error;
 
 	fn try_from(compacted: CompactDataLookup) -> Result<Self, Self::Error> {
-		if compacted.size == u32::MAX {
+		if compacted.is_error() {
 			return Ok(DataLookup::new_error());
 		}
 
@@ -165,10 +161,7 @@ impl TryFrom<CompactDataLookup> for DataLookup {
 			index.push((prev_id, offset..compacted.size));
 		}
 
-		let lookup = DataLookup {
-			index,
-			is_error: false,
-		};
+		let lookup = DataLookup { index };
 		ensure!(lookup.len() == compacted.size, Error::DataNotSorted);
 
 		Ok(lookup)

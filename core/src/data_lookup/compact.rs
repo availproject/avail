@@ -35,7 +35,7 @@ where
 	}
 }
 
-// If .size is equal to u32::MAX then the no commitment was generated
+// If .size is 0, and index contains items then no commitment was generated
 // because of an error that occurred.
 //
 // This is just a temporary solution that will be replaced by a more
@@ -56,17 +56,22 @@ impl CompactDataLookup {
 		Self { size, index }
 	}
 
+	pub fn is_error(&self) -> bool {
+		// For backward compatibility, case when size is u32::MAX is also supported
+		self.size == u32::MAX || (self.size == 0 && !self.index.is_empty())
+	}
+
+	// Data lookup is not valid if size is 0 and lookup index is not empty
+	fn new_error() -> Self {
+		Self {
+			size: 0,
+			index: [DataLookupItem::new(AppId(0), 0)].to_vec(),
+		}
+	}
+
 	pub fn from_data_lookup(lookup: &DataLookup) -> Self {
-		if lookup.is_error {
-			// Data lookup is not valid if size is 0 and lookup index is not empty
-			return CompactDataLookup {
-				size: 0,
-				index: [DataLookupItem {
-					app_id: AppId(0),
-					start: 0,
-				}]
-				.to_vec(),
-			};
+		if lookup.is_error() {
+			return Self::new_error();
 		}
 
 		let index = lookup
