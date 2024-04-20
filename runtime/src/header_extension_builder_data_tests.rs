@@ -495,7 +495,7 @@ mod data_root {
 		//                  4aeff0db81e3146828378be230d377356e57b6d599286b4b517dbf8941b3e1b2
 		// leaf 2 keccak256(ad7c5bef027816a800da1736444fb58a807ef4c9603b7848673f7e3a68eb14a5)
 		//                  1204b3dcd975ba0a68eafbf4d2ca0d13cc7b5e3709749c1dc36e6e74934270b3
-		//  leaf appended in in order to have 2^n number of leaves
+		//  leaf appended in order to have 2^n number of leaves
 		// leaf 3 (appended) keccak256(0000000000000000000000000000000000000000000000000000000000000000)
 		//                  290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563
 
