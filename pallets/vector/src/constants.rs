@@ -7,8 +7,8 @@ use sp_core::H256;
 // "secondsPerSlot": 12,
 // "slotsPerPeriod": 8192,
 // "sourceChainId": 1,
-// "syncCommitteePeriod": 1087,
-// "syncCommitteePoseidon": "0x1f83dba8e252a9757a98801565f3d0b645fc3fb10c5817cfbbd26f3b5c71cc93"
+// "syncCommitteePeriod": 1088,
+// "syncCommitteePoseidon": "0x2d58c80760e5cd189d2c721061e46a3a2d32607c1fa8fb3ec7b5257d15f707c7"
 // }
 
 
@@ -17,7 +17,7 @@ pub const BROADCASTER_DOMAIN: u32 = 2;
 pub const BROADCASTER: H256 = H256::zero();
 pub const SLOTS_PER_PERIOD: u64 = 8192;
 pub const FINALITY_THRESHOLD: u16 = 342;
-pub const PERIOD: u64 = 1087;
+pub const PERIOD: u64 = 1088;
 // Attention!
 // If Posidon hash starts with "0" it (the zero character) will be ignore.
 // This means that that hash needs to be manually added to the chain spec.
@@ -26,7 +26,7 @@ pub const PERIOD: u64 = 1087;
 pub fn get_poseidon_hash_for_period() -> U256 {
 	// PERIOD hash
 	U256::from(hex!(
-		"1f83dba8e252a9757a98801565f3d0b645fc3fb10c5817cfbbd26f3b5c71cc93"
+		"2d58c80760e5cd189d2c721061e46a3a2d32607c1fa8fb3ec7b5257d15f707c7"
 	))
 }
 pub const GENESIS_VALIDATOR_ROOT: H256 = H256(hex!(
