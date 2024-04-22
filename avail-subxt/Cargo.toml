@@ -16,7 +16,7 @@ path = "src/e2e.rs"
 
 [dependencies]
 avail-base = { path = "../base" }
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v2100-rc1", features = ["serde"] }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v2100-rc2", features = ["serde"] }
 
 # Other
 derive_more = "0.99.17"
@@ -51,7 +51,7 @@ scale-info = { version = "2.5.0", features = ["bit-vec"] }
 bounded-collections = { version = "0.2.0", features = ["serde"] }
 
 [dev-dependencies]
-avail-core = {  git = "https://github.com/availproject/avail-core", tag = "node-v2100-rc1", features = ["serde", "runtime"] }
+avail-core = {  git = "https://github.com/availproject/avail-core", tag = "node-v2100-rc2", features = ["serde", "runtime"] }
 
 async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
 futures = "0.3.13"
