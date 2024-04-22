@@ -2,13 +2,13 @@ use hex_literal::hex;
 use primitive_types::U256;
 use sp_core::H256;
 // {
-// "genesisTime":1606824023,
-// "genesisValidatorsRoot":"0x4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95",
-// "secondsPerSlot":12,
-// "slotsPerPeriod":8192,
-// "sourceChainId":1,
-// "syncCommitteePeriod":1082,
-// "syncCommitteePoseidon":"0x23c942302aa9a4733d2ca296f21ea4342af1c55693190300cffbf90785d701e4"
+// "genesisTime": 1606824023,
+// "genesisValidatorsRoot": "0x4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95",
+// "secondsPerSlot": 12,
+// "slotsPerPeriod": 8192,
+// "sourceChainId": 1,
+// "syncCommitteePeriod": 1087,
+// "syncCommitteePoseidon": "0x1f83dba8e252a9757a98801565f3d0b645fc3fb10c5817cfbbd26f3b5c71cc93"
 // }
 
 
@@ -17,7 +17,7 @@ pub const BROADCASTER_DOMAIN: u32 = 2;
 pub const BROADCASTER: H256 = H256::zero();
 pub const SLOTS_PER_PERIOD: u64 = 8192;
 pub const FINALITY_THRESHOLD: u16 = 342;
-pub const PERIOD: u64 = 1082;
+pub const PERIOD: u64 = 1087;
 // Attention!
 // If Posidon hash starts with "0" it (the zero character) will be ignore.
 // This means that that hash needs to be manually added to the chain spec.
@@ -26,7 +26,7 @@ pub const PERIOD: u64 = 1082;
 pub fn get_poseidon_hash_for_period() -> U256 {
 	// PERIOD hash
 	U256::from(hex!(
-		"23c942302aa9a4733d2ca296f21ea4342af1c55693190300cffbf90785d701e4"
+		"1f83dba8e252a9757a98801565f3d0b645fc3fb10c5817cfbbd26f3b5c71cc93"
 	))
 }
 pub const GENESIS_VALIDATOR_ROOT: H256 = H256(hex!(
