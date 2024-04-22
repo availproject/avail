@@ -175,7 +175,7 @@ impl TryFrom<CompactDataLookup> for DataLookup {
 impl Encode for DataLookup {
 	/// Encodes as a `compact::DataLookup`.
 	fn encode(&self) -> Vec<u8> {
-		let compacted: CompactDataLookup = CompactDataLookup::from_data_lookup(&self);
+		let compacted: CompactDataLookup = CompactDataLookup::from_data_lookup(self);
 		compacted.encode()
 	}
 }
