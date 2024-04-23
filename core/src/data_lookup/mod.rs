@@ -2,6 +2,7 @@ use codec::{Decode, Encode, Input};
 use core::convert::TryFrom;
 use scale_info::{Type, TypeInfo};
 use sp_core::RuntimeDebug;
+use sp_std::vec;
 use sp_std::{ops::Range, vec::Vec};
 use thiserror_no_std::Error;
 
@@ -174,7 +175,7 @@ impl TryFrom<CompactDataLookup> for DataLookup {
 impl Encode for DataLookup {
 	/// Encodes as a `compact::DataLookup`.
 	fn encode(&self) -> Vec<u8> {
-		let compacted: CompactDataLookup = CompactDataLookup::from_data_lookup(&self);
+		let compacted: CompactDataLookup = CompactDataLookup::from_data_lookup(self);
 		compacted.encode()
 	}
 }
