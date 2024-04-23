@@ -751,7 +751,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.0"
-source = "git+https://github.com/availproject/avail-core?branch=ghali/fix-import#af1db5ffcb3343125b9325500dd1fcbb0082e0dc"
+source = "git+https://github.com/availproject/avail-core?tag=node-v2100-rc2#7a0d1ecf0a4075ca5079fa1352429490d4aea917"
 dependencies = [
  "binary-merkle-tree",
  "bounded-collections",
@@ -2990,7 +2990,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.8.2"
-source = "git+https://github.com/availproject/avail-core?branch=ghali/fix-import#af1db5ffcb3343125b9325500dd1fcbb0082e0dc"
+source = "git+https://github.com/availproject/avail-core?tag=node-v2100-rc2#7a0d1ecf0a4075ca5079fa1352429490d4aea917"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -3018,7 +3018,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.9.3"
-source = "git+https://github.com/availproject/avail-core?branch=ghali/fix-import#af1db5ffcb3343125b9325500dd1fcbb0082e0dc"
+source = "git+https://github.com/availproject/avail-core?tag=node-v2100-rc2#7a0d1ecf0a4075ca5079fa1352429490d4aea917"
 dependencies = [
  "avail-core",
  "derive_more",
