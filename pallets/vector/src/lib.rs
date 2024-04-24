@@ -69,6 +69,7 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
+		UpdaterMisMatch,
 		VerificationError,
 		NotEnoughParticipants,
 		ConfigurationNotSet,
@@ -155,6 +156,8 @@ pub mod pallet {
 		RotateVerificationKeyUpdated {
 			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
 		},
+		/// Emit new updater.
+		NewUpdater { old: H256, new: H256 },
 	}
 
 	/// Storage for a head updates.
@@ -240,6 +243,11 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn source_chain_id)]
 	pub type SourceChainId<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	/// Updater that can submit updates
+	#[pallet::storage]
+	#[pallet::getter(fn updater)]
+	pub type Updater<T: Config> = StorageValue<_, H256, ValueQuery>;
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
@@ -394,7 +402,7 @@ pub mod pallet {
 		/// proof  Function proof.
 		/// slot  Function slot to update.
 		#[pallet::call_index(0)]
-		#[pallet::weight(weight_helper::fulfill_call::<T>(* function_id))]
+		#[pallet::weight(weight_helper::fulfill_call::< T > (* function_id))]
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
 			function_id: H256,
@@ -403,7 +411,11 @@ pub mod pallet {
 			proof: FunctionProof,
 			#[pallet::compact] slot: u64,
 		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin)?;
+			let sender: [u8; 32] = ensure_signed(origin)?.into();
+			let updater = Updater::<T>::get();
+			// ensure sender is preconfigured
+			ensure!(H256(sender) == updater, Error::<T>::UpdaterMisMatch);
+
 			let config = ConfigurationStorage::<T>::get();
 			let input_hash = H256(sha2_256(input.as_slice()));
 			let output_hash = H256(sha2_256(output.as_slice()));
@@ -451,11 +463,11 @@ pub mod pallet {
 		/// Executes message if a valid proofs are provided for the supported message type, assets and domains.
 		#[pallet::call_index(1)]
 		#[pallet::weight({
-			match addr_message.message {
-				Message::ArbitraryMessage(ref data) => T::WeightInfo::execute_arbitrary_message(data.len() as u32),
-				Message::FungibleToken {..} => T::WeightInfo::execute_fungible_token(),
-			}
-		})]
+        match addr_message.message {
+        Message::ArbitraryMessage(ref data) => T::WeightInfo::execute_arbitrary_message(data.len() as u32),
+        Message::FungibleToken {..} => T::WeightInfo::execute_fungible_token(),
+        }
+        })]
 		pub fn execute(
 			origin: OriginFor<T>,
 			#[pallet::compact] slot: u64,
@@ -560,11 +572,11 @@ pub mod pallet {
 		//	send_message_arbitrary_message_doesnt_accept_asset_id(), send_message_arbitrary_message_doesnt_accept_empty_data()
 		#[pallet::call_index(3)]
 		#[pallet::weight({
-			match message {
-				Message::ArbitraryMessage(ref data) => T::WeightInfo::send_message_arbitrary_message(data.len() as u32),
-				Message::FungibleToken{..} => T::WeightInfo::send_message_fungible_token(),
-			}
-		})]
+        match message {
+        Message::ArbitraryMessage(ref data) => T::WeightInfo::send_message_arbitrary_message(data.len() as u32),
+        Message::FungibleToken{..} => T::WeightInfo::send_message_fungible_token(),
+        }
+        })]
 		pub fn send_message(
 			origin: OriginFor<T>,
 			message: Message,
@@ -722,9 +734,9 @@ pub mod pallet {
 
 		#[pallet::call_index(11)]
 		#[pallet::weight((
-			T::WeightInfo::failed_tx_index(0u32),
-			DispatchClass::Mandatory
-		))]
+        T::WeightInfo::failed_tx_index(0u32),
+        DispatchClass::Mandatory
+        ))]
 		pub fn failed_send_message_txs(
 			origin: OriginFor<T>,
 			failed_txs: Vec<Compact<u32>>,
@@ -749,6 +761,17 @@ pub mod pallet {
 				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::BadContext)?;
 			transaction_index::index(extrinsic_index, len, failed_hash);
 
+			Ok(())
+		}
+
+		#[pallet::call_index(12)]
+		#[pallet::weight(T::WeightInfo::set_step_verification_key())]
+		pub fn set_updater(origin: OriginFor<T>, updater: H256) -> DispatchResult {
+			ensure_root(origin)?;
+			let old = Updater::<T>::get();
+			Updater::<T>::set(updater);
+
+			Self::deposit_event(Event::<T>::NewUpdater { old, new: updater });
 			Ok(())
 		}
 	}

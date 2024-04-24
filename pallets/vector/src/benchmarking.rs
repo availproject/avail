@@ -1,7 +1,7 @@
 use crate::{
 	state::Configuration, BalanceOf, Call, Config, ConfigurationStorage, ExecutionStateRoots,
 	FunctionIds, FunctionInput, FunctionOutput, FunctionProof, Headers, Pallet,
-	RotateVerificationKey, StepVerificationKey, ValidProof,
+	RotateVerificationKey, StepVerificationKey, Updater, ValidProof,
 };
 use avail_core::data_proof::BOUNDED_DATA_MAX_LENGTH;
 use avail_core::data_proof::{AddressedMessage, Message};
@@ -273,6 +273,7 @@ mod benchmarks {
 
 		Pallet::<T>::set_poseidon_hash(RawOrigin::Root.into(), 931, hash).unwrap();
 
+		Updater::<T>::set(H256(ACCOUNT1));
 		ConfigurationStorage::<T>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 461,
@@ -313,6 +314,7 @@ mod benchmarks {
 
 		Pallet::<T>::set_poseidon_hash(RawOrigin::Root.into(), 931, hash).unwrap();
 
+		Updater::<T>::set(H256(ACCOUNT1));
 		ConfigurationStorage::<T>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 342,
@@ -428,6 +430,16 @@ mod benchmarks {
 
 		#[extrinsic_call]
 		_(origin, Some((STEP_FUNCTION_ID, ROTATE_FUNCTION_ID)));
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn set_updater() -> Result<(), BenchmarkError> {
+		let origin = RawOrigin::Root;
+
+		#[extrinsic_call]
+		_(origin, H256(ACCOUNT1));
 
 		Ok(())
 	}
