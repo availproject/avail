@@ -11,7 +11,6 @@ use sp_core::H256;
 // "syncCommitteePoseidon": "0x1e20a0cc530eb84dc1c40a572737fb0f284855d8740251edcd0f3612d6e6b0df"
 // }
 
-
 // Vector initial configuration
 pub const BROADCASTER_DOMAIN: u32 = 2;
 pub const BROADCASTER: H256 = H256::zero();
