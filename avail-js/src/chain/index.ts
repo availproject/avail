@@ -4,7 +4,7 @@ import { ApiOptions } from "@polkadot/api/types"
 import { rpc, signedExtensions, types } from "../spec"
 
 export const GOLDBERG_ENDPOINT = "wss://rpc-testnet.avail.tools/ws"
-export const TURING_ENDPOINT = "wss://turing-rpc.avail.so"
+export const TURING_ENDPOINT = "wss://turing-rpc.avail.so/ws"
 
 export let api: ApiPromise
 export let chainEndpoint = TURING_ENDPOINT

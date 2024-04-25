@@ -14,7 +14,7 @@ import (
 
 func main() {
 
-	api, err := gsrpc.NewSubstrateAPI("wss://turing-rpc.avail.so/")
+	api, err := gsrpc.NewSubstrateAPI("wss://turing-rpc.avail.so/ws")
 	if err != nil {
 		panic(fmt.Sprintf("cannot create api client:%v", err))
 	}
