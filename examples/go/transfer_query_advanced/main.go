@@ -14,6 +14,9 @@ import (
 	"time"
 
 	gsrpc "github.com/centrifuge/go-substrate-rpc-client/v4"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry"
+	. "github.com/centrifuge/go-substrate-rpc-client/v4/registry/retriever"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/state"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	. "github.com/centrifuge/go-substrate-rpc-client/v4/types/codec"
@@ -93,13 +96,11 @@ func transfer(api *gsrpc.SubstrateAPI, senderSeed string, receiver string, amoun
 	if err != nil {
 		return fmt.Errorf("cannot runtime version:%w", err)
 	}
-
 	keyringPair, err := signature.KeyringPairFromSecret(senderSeed, 42)
 	if err != nil {
 		return fmt.Errorf("cannot create KeyPair:%w", err)
 	}
-
-	key, err := types.CreateStorageKey(meta, "System", "Account", signature.TestKeyringPairAlice.PublicKey, nil)
+	key, err := types.CreateStorageKey(meta, "System", "Account", keyringPair.PublicKey, nil)
 	if err != nil {
 		return fmt.Errorf("cannot create storage key:%w", err)
 	}
@@ -174,45 +175,161 @@ func transfer(api *gsrpc.SubstrateAPI, senderSeed string, receiver string, amoun
 							signer := j.Signature.Signer
 							fmt.Printf("\nfrom address hex %x\n", signer.AsID)
 							address := fmt.Sprintf("\n%x", j.Method.Args[1:])
-							fmt.Println("\nto address hex:", address)
+							fmt.Printf("to address hex: %s \n", address)
 						}
 					}
 				}
 
-				key, err := types.CreateStorageKey(meta, "System", "Events", nil, nil)
+				// key, err := types.CreateStorageKey(meta, "System", "Events", nil, nil)
+				// if err != nil {
+				// 	log.Fatalf("Failed to create storage key: %v", err)
+				// }
+				// rawEvents, err := api.RPC.State.GetStorageRaw(key, h)
+				// if err != nil {
+				// 	log.Fatalf("Failed to fetch events: %v", err)
+				// }
+				// events := types.EventRecords{}
+				// err = types.EventRecordsRaw(*rawEvents).DecodeEventRecords(meta, &events)
+				// if err != nil {
+				// 	log.Fatalf("Failed to decode events: %v", err)
+				// }
+
+				// if rawEvents != nil && len(*rawEvents) > 0 {
+				// 	err = types.EventRecordsRaw(*rawEvents).DecodeEventRecords(meta, &events)
+				// 	if err != nil {
+				// 		log.Fatalf("Failed to decode events: %v", err)
+				// 	}
+
+				// 	for _, e := range events.Balances_Transfer {
+
+				// 		vals := convInt(fmt.Sprintf("%v", e.Value))
+				// 		fmt.Printf("Transfer event: %v\n", vals)
+
+				// 	}
+				// 	f := events.TransactionPayment_TransactionFeePaid
+				// 	for _, i := range f {
+				// 		fee := convInt(i.ActualFee.String())
+				// 		fmt.Printf("Fee Paid %v", fee)
+				// 	}
+
+				// } else {
+				// 	fmt.Println("No events found in the block")
+				// }
+
+				//Updating the event from generic decoding to registry
+				retriever, err := NewDefaultEventRetriever(state.NewEventProvider(api.RPC.State), api.RPC.State)
+
 				if err != nil {
-					log.Fatalf("Failed to create storage key: %v", err)
+					fmt.Printf("Couldn't create event retriever: %s", err)
 				}
-				rawEvents, err := api.RPC.State.GetStorageRaw(key, h)
+				events, err := retriever.GetEvents(h)
+
 				if err != nil {
-					log.Fatalf("Failed to fetch events: %v", err)
+					log.Printf("Couldn't retrieve events")
 				}
-				events := types.EventRecords{}
-				err = types.EventRecordsRaw(*rawEvents).DecodeEventRecords(meta, &events)
-				if err != nil {
-					log.Fatalf("Failed to decode events: %v", err)
-				}
+				for _, event := range events {
+					if event.Name == "Balances.Transfer" {
+						from, err := registry.ProcessDecodedFieldValue[*types.AccountID](
+							event.Fields,
+							func(fieldIndex int, field *registry.DecodedField) bool {
 
-				if rawEvents != nil && len(*rawEvents) > 0 {
-					err = types.EventRecordsRaw(*rawEvents).DecodeEventRecords(meta, &events)
-					if err != nil {
-						log.Fatalf("Failed to decode events: %v", err)
+								return field.Name == "sp_core.crypto.AccountId32.from"
+							},
+							func(value any) (*types.AccountID, error) {
+								fields, ok := value.(registry.DecodedFields)
+
+								if !ok {
+									return nil, fmt.Errorf("unexpected value: %v", value)
+								}
+
+								accByteSlice, err := registry.GetDecodedFieldAsSliceOfType[types.U8](fields, func(fieldIndex int, field *registry.DecodedField) bool {
+									return fieldIndex == 0
+								})
+
+								if err != nil {
+									return nil, err
+								}
+
+								var accBytes []byte
+
+								for _, accByte := range accByteSlice {
+									accBytes = append(accBytes, byte(accByte))
+								}
+
+								return types.NewAccountID(accBytes)
+							},
+						)
+						a := from.ToHexString()
+
+						// // add, _ := types.NewAddressFromHexAccountID(a)
+						// fmt.Println(from)
+						fmt.Printf("from address read from event: %s \n", a)
+
+						to, err := registry.ProcessDecodedFieldValue[*types.AccountID](
+							event.Fields,
+
+							func(fieldIndex int, field *registry.DecodedField) bool {
+
+								return field.Name == "sp_core.crypto.AccountId32.to"
+							},
+							func(value any) (*types.AccountID, error) {
+								fields, ok := value.(registry.DecodedFields)
+
+								if !ok {
+									return nil, fmt.Errorf("unexpected value: %v", value)
+								}
+
+								accByteSlice, err := registry.GetDecodedFieldAsSliceOfType[types.U8](fields, func(fieldIndex int, field *registry.DecodedField) bool {
+									return fieldIndex == 0
+								})
+
+								if err != nil {
+									return nil, err
+								}
+
+								var accBytes []byte
+
+								for _, accByte := range accByteSlice {
+									accBytes = append(accBytes, byte(accByte))
+								}
+
+								return types.NewAccountID(accBytes)
+							},
+						)
+						if err != nil {
+							fmt.Printf("TO parsing err: %s\n", err.Error())
+						}
+						fmt.Printf("To address read from event: %s \n", to.ToHexString())
+						amount, err := registry.GetDecodedFieldAsType[types.U128](
+							event.Fields,
+							func(fieldIndex int, field *registry.DecodedField) bool {
+								return fieldIndex == 2
+							},
+						)
+						if err != nil {
+							fmt.Printf("Amount parsing err: %s\n", err.Error())
+						}
+						fmt.Printf("Amount transferred : %s \n", convInt(amount.String()))
+						if err != nil {
+							fmt.Printf("Balances.Deposit.Who: %s\n", err.Error())
+						}
 					}
+					if event.Name == "TransactionPayment.TransactionFeePaid" {
 
-					for _, e := range events.Balances_Transfer {
-
-						vals := convInt(fmt.Sprintf("%v", e.Value))
-						fmt.Printf("Transfer event: %v\n", vals)
-
+						amount, err := registry.GetDecodedFieldAsType[types.U128](
+							event.Fields,
+							func(fieldIndex int, field *registry.DecodedField) bool {
+								return fieldIndex == 1
+							},
+						)
+						if err != nil {
+							fmt.Printf("Amount parsing err: %s\n", err.Error())
+						}
+						fmt.Printf("Actual Fee from TransactionPayment.TransactionFeePaid event: %s \n", convInt(amount.String()))
+						if err != nil {
+							fmt.Printf("Balances.Deposit.Who: %s\n", err.Error())
+						}
 					}
-					f := events.TransactionPayment_TransactionFeePaid
-					for _, i := range f {
-						fee := convInt(i.ActualFee.String())
-						fmt.Printf("Fee Paid %v", fee)
-					}
-
-				} else {
-					fmt.Println("No events found in the block")
 				}
 				var inclusionFee InclusionFee = InclusionFee{
 					BaseFee:           BigInt{big.NewInt(0)},
