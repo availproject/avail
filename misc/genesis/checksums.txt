@@ -1,1 +1,1 @@
-9b3743fdc7783f5014955e98d2387a74  mainnet.chain.spec.raw.json
+c832e99652f228d1668b65c4c07a3602  mainnet.chain.spec.raw.json
