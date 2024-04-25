@@ -1,3 +1,7 @@
+// !!!!
+// More info about how runtime interfaces work: (https://docs.rs/sp-runtime-interface/latest/sp_runtime_interface/attr.runtime_interface.html
+// !!!!
+
 use crate::{limits::BlockLength, Config, LOG_TARGET};
 #[cfg(feature = "std")]
 use avail_core::HeaderVersion;
@@ -7,8 +11,6 @@ pub use kate::{
 	Seed,
 };
 
-use super::build_extension_v1;
-use super::build_extension_v2;
 use frame_support::traits::Randomness;
 use sp_core::H256;
 use sp_runtime::traits::Hash;
@@ -97,7 +99,7 @@ pub trait HostedHeaderBuilder {
 		block_number: u32,
 		seed: Seed,
 	) -> HeaderExtension {
-		build_extension_v1::build_extension(
+		crate::native::build_extension_v1::build_extension(
 			submitted,
 			data_root,
 			block_length,
@@ -117,7 +119,7 @@ pub trait HostedHeaderBuilder {
 		block_number: u32,
 		seed: Seed,
 	) -> HeaderExtension {
-		build_extension_v2::build_extension(
+		crate::native::build_extension_v2::build_extension(
 			submitted,
 			data_root,
 			block_length,
