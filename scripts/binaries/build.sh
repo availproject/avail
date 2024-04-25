@@ -10,7 +10,7 @@ DOCKER_IGNORE_FILE="./scripts/binaries/$ARCH/shared.dockerignore"
 
 if ! test -f "$DOCKER_FILE"; then
     echo "Unknown option"
-    echo "Supported DISTRO: ubuntu-2004 ubuntu-2204 ubuntu-2304 ubuntu-2310 fedora-38 fedora-39 debian-11 debian-12 arch"
+    echo "Supported DISTRO: ubuntu-2004 ubuntu-2204 ubuntu-2404 fedora-39 fedora-40 debian-11 debian-12 arch"
     echo "Supported ARCH: x86_64 arm64"
     echo "Supported ENGINE: docker podman"
     exit 0
@@ -37,7 +37,7 @@ fi
 
 if  [[ "$ZIP" ]]; then
     mkdir -p ./output/zips/
-
+    
     cd ./output/$ARCH/$DISTRO
     tar -czf ./../../../output/zips/${ARCH}-${DISTRO}-avail-node.tar.gz avail-node
 fi
