@@ -32,11 +32,6 @@ jobs:
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: true
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
       
       - name: install podman
         run: sudo apt-get update && sudo apt install podman -y
