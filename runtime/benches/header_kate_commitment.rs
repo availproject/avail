@@ -2,7 +2,7 @@ use avail_core::{AppExtrinsic, BlockLengthColumns, BLOCK_CHUNK_SIZE, DA_DISPATCH
 use da_control::Config as DAConfig;
 use da_runtime::Runtime;
 use frame_support::traits::Get as _;
-use frame_system::{header_builder::hosted_header_builder, limits::BlockLength};
+use frame_system::{limits::BlockLength, native::hosted_header_builder::hosted_header_builder};
 use sp_core::H256;
 use sp_std::iter::repeat;
 

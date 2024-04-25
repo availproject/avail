@@ -817,7 +817,8 @@ impl frame_system::Config for Runtime {
 	/// The hashing algorithm used.
 	type Hashing = BlakeTwo256;
 	/// The header builder type.
-	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Runtime>;
+	type HeaderExtensionBuilder =
+		frame_system::native::hosted_header_builder::da::HeaderExtensionBuilder<Runtime>;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
 	type Lookup = Indices;
 	type MaxConsumers = constants::system::MaxConsumers;

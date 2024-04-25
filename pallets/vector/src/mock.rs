@@ -1,5 +1,5 @@
 use frame_support::{derive_impl, parameter_types, traits::ConstU64, PalletId};
-use frame_system::{header_builder::da, test_utils::TestRandomness};
+use frame_system::{native::hosted_header_builder::da, test_utils::TestRandomness};
 use hex_literal::hex;
 use primitive_types::H256;
 use sp_runtime::{

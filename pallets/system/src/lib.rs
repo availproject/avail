@@ -146,8 +146,8 @@ use sp_std::{fmt::Debug, marker::PhantomData, prelude::*};
 use sp_version::RuntimeVersion;
 use sp_weights::{RuntimeDbWeight, Weight};
 
-pub mod header_builder;
-pub use header_builder::HeaderExtensionBuilder;
+pub mod native;
+pub use native::hosted_header_builder::HeaderExtensionBuilder;
 
 pub mod limits;
 #[cfg(any(feature = "std", test))]
@@ -527,7 +527,7 @@ pub mod pallet {
 
 		/// Header builder
 		#[pallet::no_default]
-		type HeaderExtensionBuilder: header_builder::HeaderExtensionBuilder;
+		type HeaderExtensionBuilder: native::hosted_header_builder::HeaderExtensionBuilder;
 
 		/// Source of random seeds.
 		#[pallet::no_default]
@@ -1862,7 +1862,7 @@ impl<T: Config> Pallet<T> {
 
 		let block_length = Self::block_length();
 
-		let extension = header_builder::da::HeaderExtensionBuilder::<T>::build(
+		let extension = native::hosted_header_builder::da::HeaderExtensionBuilder::<T>::build(
 			header_extension_builder_data.to_app_extrinsics(),
 			header_extension_builder_data.data_root(),
 			block_length,

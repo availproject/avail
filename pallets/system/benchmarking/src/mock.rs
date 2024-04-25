@@ -22,7 +22,7 @@
 use codec::Encode;
 use frame_support::{derive_impl, traits::ConstU32};
 use frame_system::{
-	header_builder::da::HeaderExtensionBuilder, mocking::MockUncheckedExtrinsic,
+	mocking::MockUncheckedExtrinsic, native::hosted_header_builder::da::HeaderExtensionBuilder,
 	test_utils::TestRandomness,
 };
 use sp_runtime::BuildStorage;

@@ -31,7 +31,8 @@ parameter_types! {
 impl frame_system::Config for Test {
 	type Block = Block;
 	type BlockHashCount = BlockHashCount;
-	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
+	type HeaderExtensionBuilder =
+		frame_system::native::hosted_header_builder::da::HeaderExtensionBuilder<Test>;
 	type OnSetCode = ();
 	type PalletInfo = PalletInfo;
 	type Randomness = frame_system::test_utils::TestRandomness<Test>;

@@ -21,9 +21,9 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::{
-	header_builder::da::HeaderExtensionBuilder,
 	limits::{BlockLength, BlockWeights},
 	mocking::{MockDaBlock, MockUncheckedExtrinsic},
+	native::hosted_header_builder::da::HeaderExtensionBuilder,
 	test_utils::TestRandomness,
 };
 use sp_core::H256;

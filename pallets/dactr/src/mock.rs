@@ -6,7 +6,7 @@ use frame_support::{
 	weights::{ConstantMultiplier, IdentityFee},
 };
 use frame_system::{
-	header_builder::da::HeaderExtensionBuilder, mocking::MockUncheckedExtrinsic,
+	mocking::MockUncheckedExtrinsic, native::hosted_header_builder::da::HeaderExtensionBuilder,
 	test_utils::TestRandomness,
 };
 use pallet_transaction_payment::CurrencyAdapter;
