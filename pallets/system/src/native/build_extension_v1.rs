@@ -2,6 +2,7 @@
 // If the logic is changed in this file it will break Turing. Do not change it.
 // If the logic is changed in avail-core it will break Turing as well. Do no change it.
 // !!!!
+#![cfg(feature = "std")]
 
 use super::hosted_header_builder::MIN_WIDTH;
 use crate::limits::BlockLength;
@@ -25,8 +26,7 @@ use std::{sync::OnceLock, vec::Vec};
 
 static PMP: OnceLock<M1NoPrecomp> = OnceLock::new();
 
-#[cfg(feature = "std")]
-pub fn build_grid(
+fn build_grid(
 	submitted: Vec<AppExtrinsic>,
 	block_length: BlockLength,
 	seed: Seed,
@@ -45,8 +45,7 @@ pub fn build_grid(
 	Ok(grid)
 }
 
-#[cfg(feature = "std")]
-pub fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, String> {
+fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, String> {
 	let _metric_observer = MetricObserver::new(ObserveKind::HECommitment);
 
 	// couscous has pp for degree upto 1024
