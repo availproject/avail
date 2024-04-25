@@ -7,14 +7,13 @@ pub use kate::{
 	Seed,
 };
 
+use super::build_extension_v1;
+use super::build_extension_v2;
 use frame_support::traits::Randomness;
 use sp_core::H256;
 use sp_runtime::traits::Hash;
 use sp_runtime_interface::runtime_interface;
 use sp_std::vec::Vec;
-
-#[cfg(feature = "std")]
-mod version_select;
 
 pub const MIN_WIDTH: usize = 4;
 
@@ -98,7 +97,7 @@ pub trait HostedHeaderBuilder {
 		block_number: u32,
 		seed: Seed,
 	) -> HeaderExtension {
-		version_select::build_extension(
+		build_extension_v1::build_extension(
 			submitted,
 			data_root,
 			block_length,
@@ -118,7 +117,7 @@ pub trait HostedHeaderBuilder {
 		block_number: u32,
 		seed: Seed,
 	) -> HeaderExtension {
-		version_select::build_extension_2(
+		build_extension_v2::build_extension(
 			submitted,
 			data_root,
 			block_length,

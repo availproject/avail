@@ -52,7 +52,7 @@ pub struct ExecutorDispatch;
 impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 	type ExtendHostFunctions = (
 		frame_benchmarking::benchmarking::HostFunctions,
-		frame_system::header_builder::hosted_header_builder::HostFunctions,
+		frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
 		avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
 		da_runtime::kate::native::hosted_kate::HostFunctions,
 	);

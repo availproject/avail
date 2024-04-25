@@ -30,7 +30,7 @@ use sp_runtime::{
 	transaction_validity::TransactionValidityError,
 };
 
-use crate::{header_builder::da::BlockNumber, Config};
+use crate::{native::hosted_header_builder::da::BlockNumber, Config};
 
 #[derive(Clone, Copy, Default, Debug, Encode, Decode, PartialEq, Eq, TypeInfo)]
 pub struct DefaultGetAppId {}

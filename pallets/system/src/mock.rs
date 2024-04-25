@@ -112,8 +112,8 @@ impl Config for Test {
 	type OnSetCode = ();
 	type MaxConsumers = ConstU32<16>;
 	type AccountData = u32;
-
-	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Test>;
+	type HeaderExtensionBuilder =
+		frame_system::native::hosted_header_builder::da::HeaderExtensionBuilder<Test>;
 	type Randomness = TestRandomness<Test>;
 	type Header = Header;
 	type HeaderExtensionDataFilter = ();

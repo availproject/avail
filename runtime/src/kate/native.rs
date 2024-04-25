@@ -1,7 +1,7 @@
 use super::{Error, GDataProof, GProof, GRawScalar, GRow};
 use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 use core::num::NonZeroU16;
-use frame_system::{header_builder::MIN_WIDTH, limits::BlockLength};
+use frame_system::{limits::BlockLength, native::hosted_header_builder::MIN_WIDTH};
 use kate::Seed;
 #[cfg(feature = "std")]
 use kate::{

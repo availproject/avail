@@ -12,7 +12,9 @@ use frame_benchmarking::{
 	impl_benchmark_test_suite, v1::BenchmarkError, v2::*, whitelisted_caller,
 };
 use frame_support::traits::Get;
-use frame_system::{header_builder::hosted_header_builder, limits::BlockLength, RawOrigin};
+use frame_system::{
+	limits::BlockLength, native::hosted_header_builder::hosted_header_builder, RawOrigin,
+};
 use scale_info::{StaticTypeInfo, TypeInfo};
 use sp_core::H256;
 use sp_runtime::{

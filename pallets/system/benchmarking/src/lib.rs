@@ -23,7 +23,9 @@
 use codec::Encode;
 use frame_benchmarking::{impl_benchmark_test_suite, v2::*};
 use frame_support::{dispatch::DispatchClass, storage, traits::Get};
-use frame_system::{header_builder::HeaderExtensionBuilder, Call, Pallet as System, RawOrigin};
+use frame_system::{
+	native::hosted_header_builder::HeaderExtensionBuilder, Call, Pallet as System, RawOrigin,
+};
 use sp_core::storage::well_known_keys;
 use sp_runtime::traits::Hash;
 use sp_std::{prelude::*, vec};

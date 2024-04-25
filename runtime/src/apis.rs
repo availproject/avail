@@ -13,9 +13,7 @@ use avail_core::{
 	OpaqueExtrinsic,
 };
 
-use frame_system::{
-	header_builder::da::HeaderExtensionBuilder, limits::BlockLength, HeaderExtensionBuilder as _,
-};
+use frame_system::limits::BlockLength;
 
 use frame_support::{
 	genesis_builder_helper::{build_config, create_default_config},
@@ -364,6 +362,9 @@ impl_runtime_apis! {
 			block_length: BlockLength,
 			block_number: u32,
 		) -> HeaderExtension {
+			use frame_system::native::hosted_header_builder::da::HeaderExtensionBuilder;
+			use frame_system::HeaderExtensionBuilder as _;
+
 			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
 			HeaderExtensionBuilder::<Runtime>::build(app_extrinsics, data_root, block_length, block_number)
 		}

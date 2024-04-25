@@ -139,7 +139,8 @@ impl frame_system::Config for Runtime {
 	type DbWeight = ();
 	type Hash = sp_core::H256;
 	type Hashing = BlakeTwo256;
-	type HeaderExtensionBuilder = frame_system::header_builder::da::HeaderExtensionBuilder<Runtime>;
+	type HeaderExtensionBuilder =
+		frame_system::native::hosted_header_builder::da::HeaderExtensionBuilder<Runtime>;
 	type Nonce = u64;
 	type Lookup = IdentityLookup<u64>;
 	type MaxConsumers = ConstU32<16>;
