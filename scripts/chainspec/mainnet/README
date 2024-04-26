@@ -1,0 +1,5 @@
+You can validate the mainnet script by executing the following command:
+
+```bash
+deno run -A spec_validator.ts
+```
