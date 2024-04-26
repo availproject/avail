@@ -55,7 +55,7 @@ impl pallet_sudo::Config for Runtime {
 impl pallet_mandate::Config for Runtime {
 	type ApprovedOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
-		pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 1, 2>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 5, 7>,
 	>;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
@@ -644,7 +644,7 @@ parameter_types! {
 }
 
 pub type TreasurySpender =
-	pallet_collective::EnsureProportionMoreThan<AccountId, TreasuryCollective, 1, 2>;
+	pallet_collective::EnsureProportionMoreThan<AccountId, TreasuryCollective, 5, 7>;
 
 impl pallet_treasury::Config for Runtime {
 	type ApproveOrigin = EnsureRoot<AccountId>;

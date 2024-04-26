@@ -66,9 +66,9 @@ A development chain is typically used for testing and development purposes.
 cargo run --locked --release -- --dev
 ```
 
-#### Testnet New
+#### Testnet Turing
 ```bash
-cargo run --locked --release -- --chain new
+cargo run --locked --release -- --chain turing
 ```
 
 #### Mainnet

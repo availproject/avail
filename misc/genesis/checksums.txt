@@ -1,0 +1,1 @@
+9a6a88337064a66e3032981074e0bf41  mainnet.chain.spec.raw.json
