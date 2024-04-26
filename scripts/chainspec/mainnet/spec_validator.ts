@@ -87,6 +87,82 @@ console.log("   Checking Stakers...");
     accounts_that_needs_funding = accounts_that_needs_funding.concat(expected_stakers);
 }
 
+// Session
+console.log("Checking Session Keys...");
+{
+    const actual_keys = genesis["session"]["keys"];
+    const expected_stash_accounts = [
+        "5DvV9ja7y1iLwyyHcXUhSTTPLBt6pfXzcjtEQBVDvLPMrCFc", 
+        "5GuPR92DPMtfRQsTnhNoChi5NXRsYku8Qr5vJK3DdWxhhf1w",
+        "5GMqZDmBjfTG2NmknpwU74eBgh6kVf9XywxyErxu3BbMFZat",
+        "5FXG7qY4JcUYWPSdsncwwavQq7jsYTTS1DVfVh1WQndSehmU",
+        "5FGxV7MLTXS5oCsQrctv3pquZZP21Uv9EXhfht83h3cvKkFi",
+        "5FX6PRNa7j6UYLJAG2YfYqLu4HeTZZSEr1nTkhBXeQWdhKpr",
+        "5EHxoz7vjDyd9nEmqfc7Lgs47zoRhZdfxRwJ9UYoRGrqnfmE",
+        "5DcP87pHMRYF9N3RNDdcwJMUU2kNJAickdACtnsVmmf5Qkp3"
+    ];
+
+    const expected_session_keys = [
+        {
+            "authority_discovery": "5CwJxm67vcXZ7U8VVCPm9h9ADBB42vNUCyVGwyQUjugsMWKE",
+            "babe": "5CwJxm67vcXZ7U8VVCPm9h9ADBB42vNUCyVGwyQUjugsMWKE",
+            "grandpa": "5DrvsiEJpHibsLgCGmRg43Qq18NHQzd89PEQzuYMj4GPEBZC",
+            "im_online": "5CwJxm67vcXZ7U8VVCPm9h9ADBB42vNUCyVGwyQUjugsMWKE" 
+        },
+        {
+            "authority_discovery": "5DUxdn6djBW7aMTwvaMvb8ty9i36qyn5vete6gQrJzBijswq",
+            "babe": "5DUxdn6djBW7aMTwvaMvb8ty9i36qyn5vete6gQrJzBijswq",
+            "grandpa": "5GNSGaKbzGF4QgLbKQoRwwHLu2vAhwVAN1oRuSt8zS4DM3FV",
+            "im_online": "5DUxdn6djBW7aMTwvaMvb8ty9i36qyn5vete6gQrJzBijswq"
+        },
+        {
+            "authority_discovery": "5ELFgZdQtnfnhv9gUMxu7kT7K4rZ3JXze7td4CSgRFu2UFFm",
+            "babe": "5ELFgZdQtnfnhv9gUMxu7kT7K4rZ3JXze7td4CSgRFu2UFFm",
+            "grandpa": "5FbuCKrH9ZtPpo9rz9dokoWgCb1w3QjaFeuFHJ1riZqHRhQe",
+            "im_online": "5ELFgZdQtnfnhv9gUMxu7kT7K4rZ3JXze7td4CSgRFu2UFFm"
+        },
+        {
+            "authority_discovery": "5GGqdgLAAH9ZF718hjPuUgPgNh4owsMejkJwS9zosyMWvJoo",
+            "babe": "5GGqdgLAAH9ZF718hjPuUgPgNh4owsMejkJwS9zosyMWvJoo",
+            "grandpa": "5FGBnS3jNDfVE8pYrZq4qLeXhxmhzu33AHUdvecS7LTVYXUJ",
+            "im_online": "5GGqdgLAAH9ZF718hjPuUgPgNh4owsMejkJwS9zosyMWvJoo"
+        },
+        {
+            "authority_discovery": "5Gb19xRRPGuwPRqeoejGz69Vhjc4TBoLUNTckVxiFWZBBkHB",
+            "babe": "5Gb19xRRPGuwPRqeoejGz69Vhjc4TBoLUNTckVxiFWZBBkHB",
+            "grandpa": "5C5PVWHxGXVzwfjrhi59Sa34EnBE6Y2q5FTRx3Fey2ZnYGoM",
+            "im_online": "5Gb19xRRPGuwPRqeoejGz69Vhjc4TBoLUNTckVxiFWZBBkHB"
+        },
+        {
+            "authority_discovery": "5DXayiN8jpg6iiGe2sCDM6LnVPT18prgKER4kkTzQ2o4W4Mk",
+            "babe": "5DXayiN8jpg6iiGe2sCDM6LnVPT18prgKER4kkTzQ2o4W4Mk",
+            "grandpa": "5DCBp3hVGvur2e1KsXmZZJS2Ctua7WZFkYqoixAQNtAJPy7x",
+            "im_online": "5DXayiN8jpg6iiGe2sCDM6LnVPT18prgKER4kkTzQ2o4W4Mk"
+        },
+        {
+            "authority_discovery": "5DfHXsGkYhVHzhFdDUrhbg4TYxEhNPRUBCwTdM4CsW1KhGa6",
+            "babe": "5DfHXsGkYhVHzhFdDUrhbg4TYxEhNPRUBCwTdM4CsW1KhGa6",
+            "grandpa": "5DEKGTdQHVrW6Yt1KLGG94mfCw7TBuCmN78VEaqd9bubxTZF",
+            "im_online": "5DfHXsGkYhVHzhFdDUrhbg4TYxEhNPRUBCwTdM4CsW1KhGa6"
+        },
+        {
+            "authority_discovery": "5GeYPskHoX9mAgBseWGyPRuXTSaLMVpGu7ePUhdpZK4fDmhB",
+            "babe": "5GeYPskHoX9mAgBseWGyPRuXTSaLMVpGu7ePUhdpZK4fDmhB",
+            "grandpa": "5CB9iBTtuwFsGvqfCSAC61xf7bJuW22ZMMLD86YrYfKkCBVM",
+            "im_online": "5GeYPskHoX9mAgBseWGyPRuXTSaLMVpGu7ePUhdpZK4fDmhB"
+        }
+    ]
+
+    assertEquals(actual_keys.length, expected_stash_accounts.length);
+    assertEquals(expected_session_keys.length, expected_stash_accounts.length);
+
+    for(let i = 0; i < expected_stash_accounts.length; ++i) {
+        assertEquals(actual_keys[i][0], expected_stash_accounts[i]);
+        assertEquals(actual_keys[i][1], expected_stash_accounts[i]);
+        assertEquals(actual_keys[i][2], expected_session_keys[i]);
+    }
+}
+
 // Additional Balance accounts
 accounts_that_needs_funding.push("5G41ZeH7Yigm6eVcyRzptt3Tc6P8kJhn98wtTGHqfD2qg9xp");
 accounts_that_needs_funding.push("5E52kfQfQWiGbPxrsUkVzbcpa5YYHkiR4GSF4YzgdbjNJGR5");
