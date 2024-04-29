@@ -83,8 +83,6 @@ To run the Avail Node using Docker, follow these steps:
 # Build the Docker image for the Avail Node:
 docker build -t availnode -f ./dockerfiles/avail-node.Dockerfile .
 
-# Create an output directory. Here the node's data will be stored.
-mkdir output
 
 # Run the Avail Node container:
 docker run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output availnode
@@ -98,9 +96,6 @@ There are instructions for running a development chain using Docker. A developme
 ```bash
 # Build the Docker image for the Avail Node:
 docker build -t availnode -f ./dockerfiles/avail-node.Dockerfile .
-
-# Create an output directory. Here the node's data will be stored.
-mkdir output
 
 # Run the Avail Node container:
 docker run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output availnode --dev --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all
