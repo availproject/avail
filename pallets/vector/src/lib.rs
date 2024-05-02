@@ -69,7 +69,6 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		UpdaterMisMatch,
 		VerificationError,
 		NotEnoughParticipants,
 		ConfigurationNotSet,
@@ -107,6 +106,8 @@ pub mod pallet {
 		BadContext,
 		/// Invalid FailedIndices
 		InvalidFailedIndices,
+		/// Invalid updater
+		UpdaterMisMatch,
 	}
 
 	#[pallet::event]
@@ -402,7 +403,7 @@ pub mod pallet {
 		/// proof  Function proof.
 		/// slot  Function slot to update.
 		#[pallet::call_index(0)]
-		#[pallet::weight(weight_helper::fulfill_call::< T > (* function_id))]
+		#[pallet::weight(weight_helper::fulfill_call::<T>(* function_id))]
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
 			function_id: H256,
