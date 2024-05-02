@@ -35,7 +35,7 @@ use sc_network_sync::SyncingService;
 use sc_service::{
 	error::Error as ServiceError, Configuration, RpcHandlers, TaskManager, WarpSyncParams,
 };
-use sc_telemetry::{Telemetry, TelemetryWorker};
+use sc_telemetry::{Telemetry, TelemetryWorker, custom_telemetry::CustomTelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_api::ProvideRuntimeApi;
 use sp_core::crypto::Pair;
@@ -222,6 +222,12 @@ pub fn new_partial(
 			.spawn("telemetry", None, worker.run());
 		telemetry
 	});
+
+	let telemetry_handle = telemetry.as_ref().map(|t| t.handle());
+	let custom_telemetry_worker = CustomTelemetryWorker { handle: telemetry_handle, sampling_interval_ms: 20_000u128 };
+	task_manager
+		.spawn_handle()
+		.spawn("custom_telemetry", None, custom_telemetry_worker.run());
 
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
