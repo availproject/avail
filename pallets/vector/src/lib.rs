@@ -468,7 +468,7 @@ pub mod pallet {
 				Message::ArbitraryMessage(ref data) => T::WeightInfo::execute_arbitrary_message(data.len() as u32),
 				Message::FungibleToken {..} => T::WeightInfo::execute_fungible_token(),
 			}
-        })]
+		})]
 		pub fn execute(
 			origin: OriginFor<T>,
 			#[pallet::compact] slot: u64,
@@ -577,7 +577,7 @@ pub mod pallet {
 				Message::ArbitraryMessage(ref data) => T::WeightInfo::send_message_arbitrary_message(data.len() as u32),
 				Message::FungibleToken{..} => T::WeightInfo::send_message_fungible_token(),
 			}
-        })]
+		})]
 		pub fn send_message(
 			origin: OriginFor<T>,
 			message: Message,
@@ -737,7 +737,7 @@ pub mod pallet {
 		#[pallet::weight((
 			T::WeightInfo::failed_tx_index(0u32),
 			DispatchClass::Mandatory
-        ))]
+		))]
 		pub fn failed_send_message_txs(
 			origin: OriginFor<T>,
 			failed_txs: Vec<Compact<u32>>,
