@@ -7,7 +7,7 @@ use crate::{
 	storage_utils::MessageStatusEnum,
 	Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, FunctionIds,
 	FunctionInput, FunctionOutput, FunctionProof, Head, Headers, MessageStatus,
-	RotateVerificationKey, SourceChainFrozen, StepVerificationKey, SyncCommitteePoseidons,
+	RotateVerificationKey, SourceChainFrozen, StepVerificationKey, SyncCommitteePoseidons, Updater,
 	ValidProof, WhitelistedDomains,
 };
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message};
@@ -23,7 +23,8 @@ use primitive_types::U256;
 use sp_core::{crypto::AccountId32, keccak_256, ByteArray};
 use sp_runtime::{testing::H256, traits::BadOrigin};
 
-const TEST_SENDER_VEC: [u8; 32] = [2u8; 32];
+const TEST_SENDER_VEC: [u8; 32] =
+	hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
 const TEST_SENDER_ACCOUNT: AccountId32 = AccountId32::new(TEST_SENDER_VEC);
 
 fn get_valid_step_input() -> FunctionInput {
@@ -158,7 +159,7 @@ fn get_valid_amb_message() -> AddressedMessage {
 fn test_fulfill_step_call_proof_not_valid() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
-
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 461,
@@ -181,7 +182,7 @@ fn test_fulfill_step_call_proof_not_valid() {
 fn test_fulfill_step_call_not_valid_function_id() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
-
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 461,
@@ -206,6 +207,7 @@ fn test_fulfill_step_call_not_valid_function_id() {
 fn test_fulfill_step_call_finality_not_met() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
 		SyncCommitteePoseidons::<Test>::insert(
 			931,
 			U256::from(hex!(
@@ -227,6 +229,34 @@ fn test_fulfill_step_call_finality_not_met() {
 		);
 
 		assert_err!(result, Error::<Test>::NotEnoughParticipants);
+	});
+}
+
+#[test]
+fn test_fulfill_step_call_wrong_updater_address() {
+	new_test_ext().execute_with(|| {
+		let slot = 7634942;
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: 8192,
+			finality_threshold: 461,
+		});
+		let invalid_function_id: H256 = H256(hex!(
+			"bf44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
+		));
+
+		let wrong_updater: AccountId32 = AccountId32::new([1u8; 32]);
+
+		let result = Bridge::fulfill_call(
+			RuntimeOrigin::signed(wrong_updater),
+			invalid_function_id,
+			get_valid_step_input(),
+			get_valid_step_output(),
+			get_valid_step_proof(),
+			slot,
+		);
+
+		assert_err!(result, Error::<Test>::UpdaterMisMatch);
 	});
 }
 
@@ -484,6 +514,7 @@ fn test_execute_message_with_unsupported_domain() {
 fn test_fulfill_step_call() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
 
 		SyncCommitteePoseidons::<Test>::insert(
 			931,
@@ -546,6 +577,8 @@ fn test_fulfill_step_call() {
 fn test_fulfill_step_call_wrong_poseidon() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
 		// current poseidon is not the same as the one in the valid proof
 		SyncCommitteePoseidons::<Test>::insert(
 			931,
@@ -576,6 +609,7 @@ fn test_fulfill_step_call_wrong_poseidon() {
 fn test_fulfill_step_call_slot_behind_head() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
 		SyncCommitteePoseidons::<Test>::insert(
 			931,
 			U256::from(hex!(
@@ -608,6 +642,7 @@ fn test_fulfill_step_call_slot_behind_head() {
 fn test_fulfill_rotate_call() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
@@ -654,6 +689,7 @@ fn test_fulfill_rotate_call() {
 fn test_fulfill_rotate_call_wrong_header() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
@@ -683,6 +719,8 @@ fn test_fulfill_rotate_call_wrong_header() {
 #[test]
 fn test_fulfill_call_function_ids_not_set() {
 	new_test_ext().execute_with(|| {
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
 		Bridge::set_function_ids(RawOrigin::Root.into(), None).unwrap();
 		let slot = 7634942;
 		let err = Bridge::fulfill_call(
@@ -701,6 +739,7 @@ fn test_fulfill_call_function_ids_not_set() {
 fn test_fulfill_step_call_verification_key_is_not_set() {
 	new_test_ext().execute_with(|| {
 		Bridge::set_step_verification_key(RawOrigin::Root.into(), None).unwrap();
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
 
 		let slot = 7634942;
 
@@ -733,6 +772,7 @@ fn test_fulfill_rotate_call_verification_key_is_not_set() {
 	new_test_ext().execute_with(|| {
 		Bridge::set_rotate_verification_key(RawOrigin::Root.into(), None).unwrap();
 		let slot = 7634942;
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
@@ -1178,5 +1218,37 @@ fn set_rotate_verification_key_does_not_work_with_non_root() {
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
 		let ok = Bridge::set_rotate_verification_key(origin, None);
 		assert_err!(ok, BadOrigin);
+	});
+}
+
+#[test]
+fn update_updater() {
+	new_test_ext().execute_with(|| {
+		let old_updater = H256(TEST_SENDER_VEC);
+		Updater::<Test>::set(old_updater);
+
+		let new_updater = H256([2u8; 32]);
+		let ok = Bridge::set_updater(RawOrigin::Root.into(), new_updater);
+		assert_ok!(ok);
+
+		let expected_event = RuntimeEvent::Bridge(Event::NewUpdater {
+			old: old_updater,
+			new: new_updater,
+		});
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn update_updater_non_root() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let old_updater = H256(TEST_SENDER_VEC);
+		Updater::<Test>::set(old_updater);
+		let new_updater = H256([2u8; 32]);
+
+		let err = Bridge::set_updater(origin, new_updater);
+		assert_err!(err, BadOrigin);
+		assert_eq!(old_updater, Updater::<Test>::get());
 	});
 }

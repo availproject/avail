@@ -106,6 +106,8 @@ pub mod pallet {
 		BadContext,
 		/// Invalid FailedIndices
 		InvalidFailedIndices,
+		/// Invalid updater
+		UpdaterMisMatch,
 	}
 
 	#[pallet::event]
@@ -155,6 +157,8 @@ pub mod pallet {
 		RotateVerificationKeyUpdated {
 			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
 		},
+		/// Emit new updater.
+		NewUpdater { old: H256, new: H256 },
 	}
 
 	/// Storage for a head updates.
@@ -240,6 +244,11 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn source_chain_id)]
 	pub type SourceChainId<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	/// Updater that can submit updates
+	#[pallet::storage]
+	#[pallet::getter(fn updater)]
+	pub type Updater<T: Config> = StorageValue<_, H256, ValueQuery>;
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
@@ -403,7 +412,11 @@ pub mod pallet {
 			proof: FunctionProof,
 			#[pallet::compact] slot: u64,
 		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin)?;
+			let sender: [u8; 32] = ensure_signed(origin)?.into();
+			let updater = Updater::<T>::get();
+			// ensure sender is preconfigured
+			ensure!(H256(sender) == updater, Error::<T>::UpdaterMisMatch);
+
 			let config = ConfigurationStorage::<T>::get();
 			let input_hash = H256(sha2_256(input.as_slice()));
 			let output_hash = H256(sha2_256(output.as_slice()));
@@ -749,6 +762,17 @@ pub mod pallet {
 				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::BadContext)?;
 			transaction_index::index(extrinsic_index, len, failed_hash);
 
+			Ok(())
+		}
+
+		#[pallet::call_index(12)]
+		#[pallet::weight(T::WeightInfo::set_updater())]
+		pub fn set_updater(origin: OriginFor<T>, updater: H256) -> DispatchResult {
+			ensure_root(origin)?;
+			let old = Updater::<T>::get();
+			Updater::<T>::set(updater);
+
+			Self::deposit_event(Event::<T>::NewUpdater { old, new: updater });
 			Ok(())
 		}
 	}
