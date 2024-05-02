@@ -65,6 +65,7 @@ pub trait WeightInfo {
 	fn failed_tx_index(_l: u32) -> Weight { Weight::zero() }
 	fn set_step_verification_key() -> Weight;
 	fn set_rotate_verification_key() -> Weight;
+	fn set_updater() -> Weight;
 }
 
 /// Weights for `pallet_vector` using the Avail node and recommended hardware.
@@ -264,6 +265,17 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(40_176_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+	/// Storage: `Vector::Updater` (r:1 w:1)
+	/// Proof: `Vector::Updater` (`max_values`: Some(1), `max_size`: Some(32), added: 527, mode: `MaxEncodedLen`)
+	fn set_updater() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `388`
+		//  Estimated: `1517`
+		// Minimum execution time: 14_000_000 picoseconds.
+		Weight::from_parts(15_000_000, 1517)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
 
 // For backwards compatibility and tests.
@@ -460,6 +472,17 @@ impl WeightInfo for () {
 		//  Estimated: `0`
 		// Minimum execution time: 39_299_000 picoseconds.
 		Weight::from_parts(40_176_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Vector::Updater` (r:1 w:1)
+	/// Proof: `Vector::Updater` (`max_values`: Some(1), `max_size`: Some(32), added: 527, mode: `MaxEncodedLen`)
+	fn set_updater() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `388`
+		//  Estimated: `1517`
+		// Minimum execution time: 14_000_000 picoseconds.
+		Weight::from_parts(15_000_000, 1517)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }
