@@ -765,7 +765,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(12)]
-		#[pallet::weight(T::WeightInfo::set_step_verification_key())]
+		#[pallet::weight(T::WeightInfo::set_updater())]
 		pub fn set_updater(origin: OriginFor<T>, updater: H256) -> DispatchResult {
 			ensure_root(origin)?;
 			let old = Updater::<T>::get();
