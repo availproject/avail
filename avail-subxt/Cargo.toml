@@ -65,7 +65,7 @@ rand = "0.8.5"
 
 # Substrate 
 sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-3" }
-binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch", default-features = false }
+binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-3", default-features = false }
 subxt-signer = "0.34"
 
 # Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
