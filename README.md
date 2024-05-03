@@ -59,10 +59,12 @@ This command compiles and runs the Avail Node connected to the Mainnet Network.
 2024-03-05 12:31:38 💤 Idle (0 peers), best: #0 (0x1074…234a), finalized #0 (0x1074…234a), ⬇ 0 ⬆ 0   
 ```
 
+### demo update
 ### Supported Chains
 #### Development
 A development chain is typically used for testing and development purposes.
 ```bash
+pravat
 cargo run --locked --release -- --dev
 ```
 
