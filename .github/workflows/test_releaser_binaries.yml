@@ -26,7 +26,7 @@ jobs:
           - command: ENGINE=podman DISTRO=debian-12 ZIP=1 ./scripts/binaries/build.sh
           - command: ENGINE=podman DISTRO=arch ZIP=1 ./scripts/binaries/build.sh
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -45,7 +45,7 @@ jobs:
   arm64_ubuntu_2004:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
