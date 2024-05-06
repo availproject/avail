@@ -64,10 +64,40 @@ func transfer(api *gsrpc.SubstrateAPI, senderSeed string, receiver string, amoun
 		return fmt.Errorf("cannot get latest storage:%w", err)
 	}
 
+	// nonce := uint32(accountInfo.Nonce)
+	// options := types.SignatureOptions{
+	// 	BlockHash:          genesisHash,
+	// 	Era:                types.ExtrinsicEra{IsMortalEra: false},
+	// 	GenesisHash:        genesisHash,
+	// 	Nonce:              types.NewUCompactFromUInt(uint64(nonce)),
+	// 	SpecVersion:        rv.SpecVersion,
+	// 	Tip:                types.NewUCompactFromUInt(0),
+	// 	AppID:              types.NewUCompactFromUInt(uint64(0)),
+	// 	TransactionVersion: rv.TransactionVersion,
+	// }
+	latestHash, err := api.RPC.Chain.GetBlockHashLatest()
+	if err != nil {
+		panic(fmt.Sprintf("cannot create storage key:%w", err))
+	}
+	latestBlock, err := api.RPC.Chain.GetBlockLatest()
+	if err != nil {
+		panic(fmt.Sprintf("cannot create storage key:%w", err))
+	}
+	var e types.ExtrinsicEra
+	e.IsMortalEra = true
+	number := latestBlock.Block.Header.Number
+	second := types.U64(number) % 128
+	fmt.Println(number)
+	// mortl := types.NewMortalEra(number, types.U64(256))
+
+	e.AsMortalEra = types.MortalEra{First: types.U64(128), Second: types.U64(second)}
+	// e.AsMortalEra = mortl
+
+	fmt.Println(e.AsMortalEra.First)
 	nonce := uint32(accountInfo.Nonce)
 	options := types.SignatureOptions{
-		BlockHash:          genesisHash,
-		Era:                types.ExtrinsicEra{IsMortalEra: false},
+		BlockHash:          latestHash,
+		Era:                e,
 		GenesisHash:        genesisHash,
 		Nonce:              types.NewUCompactFromUInt(uint64(nonce)),
 		SpecVersion:        rv.SpecVersion,
