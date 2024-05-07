@@ -1,37 +1,18 @@
-use avail_core::{currency::Balance, AppId};
-use avail_subxt::{api, avail::AVAIL, tx, AccountId, AvailClient, AvailConfig, Opts};
+use super::{concurrent_controller, free_balance_of, local_connection, ALICE_NONCE};
+
+use avail_core::AppId;
+use avail_subxt::{api, avail::AVAIL, tx, AccountId};
 
 use anyhow::Result;
-use structopt::StructOpt;
-use subxt::{tx::Signer, Error, OnlineClient};
+use std::sync::atomic::Ordering::Relaxed;
 use subxt_signer::sr25519::dev;
 
 const AMOUNT: u128 = 2 * AVAIL;
 
-async fn free_balance_of<S>(
-	client: &OnlineClient<AvailConfig>,
-	signer: &S,
-) -> Result<Balance, Error>
-where
-	S: Signer<AvailConfig>,
-{
-	let acc: AccountId = signer.account_id();
-	let query = api::storage().system().account(acc);
-	let acc_info = client
-		.storage()
-		.at_latest()
-		.await?
-		.fetch(&query)
-		.await?
-		.ok_or_else(|| Error::Other("Missing account info".to_string()))?;
-
-	Ok(acc_info.data.free)
-}
-
-#[async_std::main]
-async fn main() -> Result<()> {
-	let args = Opts::from_args();
-	let client = AvailClient::new(args.ws).await?;
+#[async_std::test]
+async fn account_from_mnemonics() -> Result<()> {
+	let _cg = concurrent_controller().allow_concurrency().await;
+	let client = local_connection().await?;
 
 	// Accounts
 	let alice = dev::alice();
@@ -47,9 +28,9 @@ async fn main() -> Result<()> {
 	let call = api::tx()
 		.balances()
 		.transfer_keep_alive(bob_id.into(), AMOUNT);
-	let tx_in_block = tx::send_then_finalized(&client, &call, &alice, AppId(0))
-		.await?
-		.block_hash();
+	let nonce = ALICE_NONCE.fetch_add(1, Relaxed);
+	let tx_progress = tx::send_with_nonce(&client, &call, &alice, AppId(0), nonce).await?;
+	let tx_in_block = tx::then_in_block(tx_progress).await?.block_hash();
 	println!("Transfer {AMOUNT} from Alice to Bob at {tx_in_block:?}");
 
 	// Check post balance

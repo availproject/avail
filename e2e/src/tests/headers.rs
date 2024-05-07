@@ -1,17 +1,16 @@
-use avail_subxt::{AvailClient, Opts};
+use super::local_connection;
+use avail_subxt::config::Header;
+use sp_core::H256;
 
 use anyhow::Result;
 use core::mem::swap;
-use structopt::StructOpt;
-use subxt::{config::Header as XtHeader, utils::H256};
 
 /// This example gets all the headers from testnet. It requests them in concurrently in batches of BATCH_NUM.
 /// Fetching headers one by one is too slow for a large number of blocks.
 
-#[async_std::main]
-async fn main() -> Result<()> {
-	let args = Opts::from_args();
-	let client = AvailClient::new(args.ws).await?;
+#[async_std::test]
+async fn headers() -> Result<()> {
+	let client = local_connection().await?;
 
 	let genesis_hash = client.genesis_hash();
 	let mut block = client.blocks().at_latest().await?;

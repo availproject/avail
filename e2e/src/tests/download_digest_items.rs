@@ -1,14 +1,12 @@
+use super::local_connection;
+
 use std::{fmt::Write, str::from_utf8};
 
 use anyhow::Result;
 use async_std::{fs::File, io::BufWriter, prelude::*};
-use avail_subxt::{
-	primitives::{babe, grandpa},
-	AvailClient, Opts,
-};
+use avail_subxt::primitives::{babe, grandpa};
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use serde_json::{json, Value};
-use structopt::StructOpt;
 use subxt::{
 	config::substrate::{ConsensusEngineId, DigestItem},
 	ext::codec::Decode,
@@ -79,14 +77,13 @@ fn pre_runtime_to_json(id: ConsensusEngineId, encoded: Vec<u8>) -> Value {
 
 const OUTPUT_PATH: &str = "/tmp/header.json";
 
-#[async_std::main]
-async fn main() -> Result<()> {
-	let args = Opts::from_args();
-	let client = AvailClient::new(args.ws).await?;
+#[async_std::test]
+async fn download_digest_items() -> Result<()> {
+	let _cg = concurrent_controller().allow_concurrency().await;
+	let client = local_connection().await?;
 
 	// Get best block
 	let best_block = client.blocks().at_latest().await?;
-
 	let best_block_num = best_block.number();
 
 	// Create the Progress Bar

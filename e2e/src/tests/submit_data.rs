@@ -1,10 +1,12 @@
+use super::local_connection;
+
 use avail_core::AppId;
 use avail_subxt::{
 	avail::{Cells, Rows, TxInBlock, TxProgress},
 	primitives::Cell,
 	rpc::KateRpcClient as _,
 	submit::submit_data_with_nonce,
-	tx, AvailClient, Opts,
+	tx,
 };
 
 use futures::stream::{FuturesOrdered, TryStreamExt as _};
@@ -13,7 +15,6 @@ use rand::{
 	thread_rng, Rng,
 };
 use std::collections::HashSet;
-use structopt::StructOpt;
 use subxt_signer::sr25519::dev;
 
 fn data(count: usize, len: usize) -> Vec<Vec<u8>> {
@@ -30,10 +31,10 @@ fn data(count: usize, len: usize) -> Vec<Vec<u8>> {
 
 /// This example submits an Avail data extrinsic, then retrieves the block containing the
 /// extrinsic and matches the data.
-#[async_std::main]
+#[async_std::test]
 async fn main() -> anyhow::Result<()> {
-	let args = Opts::from_args();
-	let client = AvailClient::new(args.ws).await?;
+	let client = local_connection().await?;
+
 	let alice = dev::alice();
 	let alice_id = alice.public_key().into();
 	let sub_datas = data(5, 1_024);

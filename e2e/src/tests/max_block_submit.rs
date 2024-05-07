@@ -1,8 +1,9 @@
+use super::local_connection;
+
 use avail_core::AppId;
-use avail_subxt::{api, tx, AvailClient, BoundedVec, Opts};
+use avail_subxt::{api, tx, BoundedVec};
 
 use futures::stream::{FuturesOrdered, TryStreamExt as _};
-use structopt::StructOpt;
 use subxt_signer::sr25519::dev;
 
 /// This example attempts to submit data to fill the entire block. Note that this doesn't guarantee
@@ -14,10 +15,9 @@ const BLOCK_SIZE: usize = 2 * 1024 * 1024;
 const TX_MAX_SIZE: usize = 512 * 1024;
 const NUM_CHUNKS: u64 = (BLOCK_SIZE / TX_MAX_SIZE) as u64;
 
-#[async_std::main]
-async fn main() -> anyhow::Result<()> {
-	let args = Opts::from_args();
-	let client = AvailClient::new(args.ws).await?;
+#[async_std::test]
+async fn max_block_submit() -> anyhow::Result<()> {
+	let client = local_connection().await?;
 
 	let alice = dev::alice();
 	let nonce = tx::nonce(&client, &alice).await?;
