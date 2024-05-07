@@ -1,22 +1,22 @@
+use super::local_connection;
+
 use avail_core::AppId;
 use avail_subxt::{
 	avail::{Cells, GDataProof},
 	submit::submit_data,
-	tx, AvailClient, Cell, Opts,
+	tx, Cell,
 };
 
-use structopt::StructOpt;
 use subxt::backend::rpc::RpcParams;
 use subxt_signer::sr25519::dev;
 
 const DATA: &[u8] = b"Hello World";
 
 // Submit data (i.e. "Hello World") and fetch query proof of cell {0,0}.
-#[async_std::main]
-async fn main() -> anyhow::Result<()> {
-	let args = Opts::from_args();
+#[async_std::test]
+async fn query_proof() -> anyhow::Result<()> {
+	let client = local_connection().await?;
 	let signer = dev::alice();
-	let client = AvailClient::new(args.ws).await?;
 
 	let block_hash =
 		tx::then_in_finalized_block(submit_data(&client, &signer, DATA, AppId(1)).await?)

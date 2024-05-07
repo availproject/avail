@@ -1,16 +1,17 @@
+use super::local_connection;
+
 use avail_core::{
 	data_proof::{tx_uid, AddressedMessage, BoundedData, Message, SubTrie},
 	AppId, Keccak256,
 };
 use avail_subxt::{
-	api, avail_client::RpcMethods, rpc::KateRpcClient as _, tx, AccountId, AvailClient, Opts,
+	api, avail_client::RpcMethods, rpc::KateRpcClient as _, tx, AccountId, AvailClient,
 };
 
 use binary_merkle_tree::verify_proof;
 use derive_more::Constructor;
 use futures::stream::{FuturesOrdered, TryStreamExt as _};
 use std::collections::HashSet;
-use structopt::StructOpt;
 use subxt::{backend::BlockRef, error::RpcError, utils::H256, Error};
 use subxt_signer::sr25519::dev;
 
@@ -149,10 +150,9 @@ async fn check_query_data_proof_rpc(
 	Ok(())
 }
 
-#[async_std::main]
-async fn main() -> anyhow::Result<()> {
-	let args = Opts::from_args();
-	let client = AvailClient::new(args.ws).await?;
+#[async_std::test]
+async fn vector_send_msg() -> anyhow::Result<()> {
+	let client = local_connection().await?;
 
 	// 0. Send messages and get the block.
 	let (block_hash, tx_indexes) = send_messages_in_same_block(&client).await?;

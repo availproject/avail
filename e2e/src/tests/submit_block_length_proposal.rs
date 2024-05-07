@@ -1,3 +1,5 @@
+use super::local_connection;
+
 use avail_core::AppId;
 use avail_subxt::{
 	api::{
@@ -10,16 +12,35 @@ use avail_subxt::{
 	},
 	avail::TxInBlock,
 	submit::submit_data_with_nonce,
-	tx, AvailClient, AvailConfig, Call, Opts,
+	tx, AvailClient, AvailConfig, Call,
 };
 
 use futures::stream::{FuturesOrdered, TryStreamExt as _};
-use structopt::StructOpt;
 use subxt::{tx::Signer as SignerT, utils::H256, Error};
 use subxt_signer::sr25519::dev;
 
 const BLOCK_ROWS: u32 = 32;
 const BLOCK_COLS: u32 = 64;
+
+#[async_std::test]
+async fn submit_block_length_proposal() -> anyhow::Result<()> {
+	let client = local_connection().await?;
+
+	let alice = dev::alice();
+	let alice_id = alice.public_key().into();
+	let nonce = client.tx().account_nonce(&alice_id).await?;
+	let nonce = reset(&client, &alice, nonce).await?;
+
+	// Success cases
+	let nonce = simple_tx(&client, &alice, nonce).await?;
+	let nonce = batch_tx(&client, &alice, nonce).await?;
+
+	// Fail cases
+	let nonce = fail_simple_tx(&client, &alice, nonce).await?;
+	let _ = fail_batch_tx(&client, &alice, nonce).await?;
+
+	Ok(())
+}
 
 fn length_proposal_call(rows: u32, cols: u32) -> Call {
 	DaCall::submit_block_length_proposal { rows, cols }.into()
@@ -38,27 +59,6 @@ async fn reset<S: SignerT<AvailConfig>>(
 	let _ = tx::then_in_block(progress).await?;
 
 	Ok(nonce + 1)
-}
-
-#[async_std::main]
-async fn main() -> Result<(), Error> {
-	let args = Opts::from_args();
-	let client = AvailClient::new(args.ws).await?;
-
-	let alice = dev::alice();
-	let alice_id = alice.public_key().into();
-	let nonce = client.tx().account_nonce(&alice_id).await?;
-	let nonce = reset(&client, &alice, nonce).await?;
-
-	// Success cases
-	let nonce = simple_tx(&client, &alice, nonce).await?;
-	let nonce = batch_tx(&client, &alice, nonce).await?;
-
-	// Fail cases
-	let nonce = fail_simple_tx(&client, &alice, nonce).await?;
-	let _ = fail_batch_tx(&client, &alice, nonce).await?;
-
-	Ok(())
 }
 
 /** Success cases **/

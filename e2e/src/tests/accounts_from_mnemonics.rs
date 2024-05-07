@@ -1,37 +1,16 @@
-use avail_core::{currency::Balance, AppId};
-use avail_subxt::{api, avail::AVAIL, tx, AccountId, AvailClient, AvailConfig, Opts};
+use super::{free_balance_of, local_connection};
+
+use avail_core::AppId;
+use avail_subxt::{api, avail::AVAIL, tx, AccountId};
 
 use anyhow::Result;
-use structopt::StructOpt;
-use subxt::{tx::Signer, Error, OnlineClient};
 use subxt_signer::sr25519::dev;
 
 const AMOUNT: u128 = 2 * AVAIL;
 
-async fn free_balance_of<S>(
-	client: &OnlineClient<AvailConfig>,
-	signer: &S,
-) -> Result<Balance, Error>
-where
-	S: Signer<AvailConfig>,
-{
-	let acc: AccountId = signer.account_id();
-	let query = api::storage().system().account(acc);
-	let acc_info = client
-		.storage()
-		.at_latest()
-		.await?
-		.fetch(&query)
-		.await?
-		.ok_or_else(|| Error::Other("Missing account info".to_string()))?;
-
-	Ok(acc_info.data.free)
-}
-
-#[async_std::main]
-async fn main() -> Result<()> {
-	let args = Opts::from_args();
-	let client = AvailClient::new(args.ws).await?;
+#[async_std::test]
+async fn account_from_mnemonics() -> Result<()> {
+	let client = local_connection().await?;
 
 	// Accounts
 	let alice = dev::alice();
