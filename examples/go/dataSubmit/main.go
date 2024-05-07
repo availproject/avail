@@ -91,13 +91,11 @@ func submitData(size int, ApiURL string, Seed string, AppID int) error {
 	e.IsMortalEra = true
 	number := latestBlock.Block.Header.Number
 	// second := types.U64(number) % 128
-	fmt.Println(number)
 	mortl := types.NewMortalEra(number, types.U64(256))
 
 	// e.AsMortalEra = types.MortalEra{First: types.U64(128), Second: types.U64(second)}
 	e.AsMortalEra = mortl
 
-	fmt.Println(e.AsMortalEra.First)
 	nonce := uint32(accountInfo.Nonce)
 	o := types.SignatureOptions{
 		BlockHash:          latestHash,

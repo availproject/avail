@@ -19,8 +19,6 @@ const main = async () => {
     if (!isValidAddress(config.recipient)) throw new Error("Invalid Recipient")
 
     const api = await initialize(config.endpoint)
-    const meta = api.runtimeMetadata;
-    console.log(meta.toHex())
     const keyring = getKeyringFromSeed(config.seed)
     const decimals = getDecimals(api)
     const amount = formatNumberToBalance(config.amount, decimals)
