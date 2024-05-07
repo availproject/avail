@@ -22,6 +22,9 @@ codec = { package = "parity-scale-codec", version = "3", default-features = fals
 
 # SubXt
 subxt = "0.34"
+
+# SubXt
+subxt = "0.34"
 subxt-signer = "0.34"
 
 # Other
