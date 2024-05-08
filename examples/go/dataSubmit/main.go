@@ -75,25 +75,10 @@ func submitData(size int, ApiURL string, Seed string, AppID int) error {
 	if err != nil {
 		panic(fmt.Sprintf("cannot create storage key:%w", err))
 	}
-
-	// nonce := uint32(accountInfo.Nonce)
-	// o := types.SignatureOptions{
-	// 	BlockHash:          genesisHash,
-	// 	Era:                types.ExtrinsicEra{IsMortalEra: true},
-	// 	GenesisHash:        genesisHash,
-	// 	Nonce:              types.NewUCompactFromUInt(uint64(nonce)),
-	// 	SpecVersion:        rv.SpecVersion,
-	// 	Tip:                types.NewUCompactFromUInt(0),
-	// 	AppID:              types.NewUCompactFromUInt(uint64(appID)),
-	// 	TransactionVersion: rv.TransactionVersion,
-	// }
 	var e types.ExtrinsicEra
 	e.IsMortalEra = true
 	number := latestBlock.Block.Header.Number
-	// second := types.U64(number) % 128
 	mortl := types.NewMortalEra(number, types.U64(256))
-
-	// e.AsMortalEra = types.MortalEra{First: types.U64(128), Second: types.U64(second)}
 	e.AsMortalEra = mortl
 
 	nonce := uint32(accountInfo.Nonce)

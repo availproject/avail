@@ -11,7 +11,7 @@
 import { getDecimals, initialize, formatNumberToBalance, getKeyringFromSeed, isValidAddress } from "avail-js-sdk"
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
 import { H256 } from "@polkadot/types/interfaces/runtime"
-
+import {  GenericExtrinsicEra as ExtrinsicEra, TypeRegistry  } from '@polkadot/types';
 import config from "../../config"
 
 const main = async () => {
@@ -20,9 +20,20 @@ const main = async () => {
 
     const api = await initialize(config.endpoint)
     const keyring = getKeyringFromSeed(config.seed)
-    const options = { app_id: 0, nonce: -1 }
     const decimals = getDecimals(api)
     const amount = formatNumberToBalance(config.amount, decimals)
+
+    const registry = new TypeRegistry();
+    const currentBlock = await api.rpc.chain.getHeader();
+  const currentBlockNumber = currentBlock.number.toNumber();
+    const duration = 200;  // Lifespan of the transaction in blocks
+    const era = api.createType('ExtrinsicEra', {
+      current: currentBlockNumber,
+      period: duration,
+    });
+    const blockHash = await api.rpc.chain.getBlockHash(currentBlockNumber);
+
+    const options = { app_id: 0, nonce: -1, era: era, blockHash }
 
     const oldBalance: any = await api.query.system.account(config.recipient)
     console.log(`Balance before the transfer call: ${oldBalance["data"]["free"].toHuman()}`)
