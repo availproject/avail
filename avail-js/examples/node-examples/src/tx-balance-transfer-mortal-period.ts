@@ -25,7 +25,7 @@ const main = async () => {
 
     const registry = new TypeRegistry();
     const currentBlock = await api.rpc.chain.getHeader();
-  const currentBlockNumber = currentBlock.number.toNumber();
+    const currentBlockNumber = currentBlock.number.toNumber();
     const duration = 200;  // Lifespan of the transaction in blocks
     const era = api.createType('ExtrinsicEra', {
       current: currentBlockNumber,
