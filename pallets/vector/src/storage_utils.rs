@@ -110,8 +110,8 @@ fn padded_value(rlp_value: &[u8]) -> Result<H256, StorageError> {
 	let value: [u8; 32] = slot_value
 		.try_into()
 		.map_err(|_| StorageError::StorageValueError)?;
-	let value = H256::from(value);
-	Ok(value)
+	let result_value = H256::from(value);
+	Ok(result_value)
 }
 
 #[cfg(test)]
@@ -119,7 +119,7 @@ mod test {
 	use super::*;
 	use ark_std::vec;
 	use avail_core::data_proof::{AddressedMessage, Message};
-	use frame_support::{assert_err, assert_ok};
+	use frame_support::assert_err;
 
 	use hex_literal::hex;
 	use primitive_types::{H160, H256};
@@ -223,17 +223,21 @@ mod test {
 
 	#[test]
 	fn test_storage_with_padded_value() {
-		let trimmed_value = hex!("eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99");
 		let expected_value = H256(hex!(
 			"00eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99"
 		));
 
+		let trimmed_value = hex!("eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99");
 		let padded_value_resutl = padded_value(trimmed_value.as_slice());
 		assert_eq!(expected_value, padded_value_resutl.unwrap());
 
 		let exact_value = hex!("00eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99");
 		let padded_exact_value = padded_value(exact_value.as_slice());
 		assert_eq!(expected_value, padded_exact_value.unwrap());
+
+		let empty: &[u8] = &[];
+		let empty_padded = padded_value(empty);
+		assert_eq!(H256::zero(), empty_padded.unwrap());
 
 		let invalid_value =
 			hex!("0000eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99");
