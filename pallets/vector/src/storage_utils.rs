@@ -14,7 +14,7 @@ pub enum MessageStatusEnum {
 	ExecutionSucceeded,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum StorageError {
 	StorageValueError,
 	AccountNotFound,
@@ -36,14 +36,17 @@ pub fn get_storage_value(
 		.get(&key)
 		.map_err(|_| StorageError::StorageValueError)?
 	{
-		let r = Rlp::new(result.as_slice())
+		let rlp_storage_value = Rlp::new(result.as_slice())
 			.data()
 			.map_err(|_| StorageError::CannotDecodeItems)?;
-		if r.is_empty() {
+		if rlp_storage_value.is_empty() {
 			return Err(StorageError::CannotDecodeItems);
 		}
 
-		Ok(H256::from_slice(r))
+		let storage_value =
+			padded_value(rlp_storage_value).map_err(|_| StorageError::StorageValueError)?;
+
+		Ok(storage_value)
 	} else {
 		Err(StorageError::StorageValueError)
 	}
@@ -81,7 +84,7 @@ pub fn get_storage_root(
 			.data()
 			.map_err(|_| StorageError::StorageValueError)?;
 
-		let storage_root = H256::from_slice(item);
+		let storage_root = padded_value(item).map_err(|_| StorageError::StorageValueError)?;
 
 		Ok(storage_root)
 	} else {
@@ -89,11 +92,34 @@ pub fn get_storage_root(
 	}
 }
 
+/// padded_value it converts rlp value to H256 which requires 32 bytes and
+/// appends leading zeros if value is less than 32 bytes, otherwise throws an error.
+fn padded_value(rlp_value: &[u8]) -> Result<H256, StorageError> {
+	let mut slot_value = [0u8; 32].to_vec();
+
+	if rlp_value.len() < 32 {
+		// value is less than 32 bytes then pad to 32
+		slot_value.resize(32 - rlp_value.len(), 0u8);
+		slot_value.extend(rlp_value);
+	} else if rlp_value.len() == 32 {
+		slot_value = rlp_value.to_vec();
+	} else {
+		return Err(StorageError::StorageValueError);
+	}
+
+	let value: [u8; 32] = slot_value
+		.try_into()
+		.map_err(|_| StorageError::StorageValueError)?;
+	let value = H256::from(value);
+	Ok(value)
+}
+
 #[cfg(test)]
 mod test {
 	use super::*;
 	use ark_std::vec;
 	use avail_core::data_proof::{AddressedMessage, Message};
+	use frame_support::{assert_err, assert_ok};
 
 	use hex_literal::hex;
 	use primitive_types::{H160, H256};
@@ -193,5 +219,26 @@ mod test {
 
 		let encoded = m.abi_encode();
 		assert_eq!(expected_encoded_message, encoded);
+	}
+
+	#[test]
+	fn test_storage_with_padded_value() {
+		let trimmed_value = hex!("eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99");
+		let expected_value = H256(hex!(
+			"00eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99"
+		));
+
+		let padded_value_resutl = padded_value(trimmed_value.as_slice());
+		assert_eq!(expected_value, padded_value_resutl.unwrap());
+
+		let exact_value = hex!("00eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99");
+		let padded_exact_value = padded_value(exact_value.as_slice());
+		assert_eq!(expected_value, padded_exact_value.unwrap());
+
+		let invalid_value =
+			hex!("0000eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99");
+		let error = padded_value(invalid_value.as_slice());
+
+		assert_err!(error, StorageError::StorageValueError);
 	}
 }
