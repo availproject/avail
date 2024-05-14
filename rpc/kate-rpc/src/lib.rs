@@ -265,7 +265,7 @@ where
 			.data_proof(at, number, extrinsics, tx_idx)
 			.map_err(|e| internal_err!("KateApi::data_proof failed: {e:?}"))?
 			.ok_or_else(|| {
-				internal_err!("Cannot to fetch tx data at tx index {tx_idx:?} at block {at:?}")
+				internal_err!("Cannot fetch tx data at tx index {tx_idx:?} at block {at:?}")
 			})?;
 
 		Ok(proof)
