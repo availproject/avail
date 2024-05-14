@@ -93,25 +93,19 @@ pub fn get_storage_root(
 }
 
 /// padded_value it converts rlp value to H256 which requires 32 bytes and
-/// appends leading zeros if value is less than 32 bytes, otherwise throws an error.
+/// prepends leading zeros if value is less than 32 bytes, otherwise throws an error.
 fn padded_value(rlp_value: &[u8]) -> Result<H256, StorageError> {
-	let mut slot_value = [0u8; 32].to_vec();
-
-	if rlp_value.len() < 32 {
-		// value is less than 32 bytes then pad to 32
-		slot_value.resize(32 - rlp_value.len(), 0u8);
-		slot_value.extend(rlp_value);
-	} else if rlp_value.len() == 32 {
-		slot_value = rlp_value.to_vec();
-	} else {
+	if rlp_value.len() > 32 {
 		return Err(StorageError::CannotDecodeItems);
 	}
 
-	let value: [u8; 32] = slot_value
-		.try_into()
-		.map_err(|_| StorageError::CannotDecodeItems)?;
-	let result_value = H256::from(value);
-	Ok(result_value)
+	let mut slot_value = [0u8; 32];
+	let offset = 32 - rlp_value.len();
+	for (i, v) in rlp_value.iter().enumerate() {
+		slot_value[i + offset] = *v;
+	}
+
+	Ok(H256::from(slot_value))
 }
 
 #[cfg(test)]
