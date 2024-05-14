@@ -2175,6 +2175,7 @@ dependencies = [
  "pallet-staking",
  "pallet-staking-reward-curve",
  "pallet-staking-reward-fn",
+ "pallet-staking-runtime-api",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -6336,6 +6337,16 @@ source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.
 dependencies = [
  "log",
  "sp-arithmetic",
+]
+
+[[package]]
+name = "pallet-staking-runtime-api"
+version = "14.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch-4#bd728ffeb2aff0923d9d76630fe27cb8bab2cbce"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
+ "sp-staking",
 ]
 
 [[package]]
