@@ -1,14 +1,6 @@
-use super::local_connection;
-
-use std::num::NonZeroU16;
+use super::{alice_nonce, local_connection, no_concurrency};
 
 use avail_core::{AppExtrinsic, AppId, Keccak256};
-use kate::{
-	com::Cell as KateCell,
-	gridgen::{AsBytes as _, EvaluationGrid},
-};
-use kate_recovery::{matrix::Dimensions, proof::verify};
-
 use avail_subxt::{
 	api::{
 		self,
@@ -18,17 +10,25 @@ use avail_subxt::{
 	},
 	avail::{Cells, GDataProof, GRawScalar, Rows},
 	rpc::{GProof, KateRpcClient as _},
-	submit::submit_data,
+	submit::submit_data_with_nonce as submit_data,
 	tx,
 	utils::H256,
 	AvailClient, Cell,
 };
+use kate::{
+	com::Cell as KateCell,
+	gridgen::{AsBytes as _, EvaluationGrid},
+};
+use kate_recovery::{matrix::Dimensions, proof::verify};
+use subxt_signer::sr25519::dev;
 
 use anyhow::{anyhow, Result};
 use binary_merkle_tree::merkle_proof;
 use codec::Encode;
 use sp_core::keccak_256;
-use subxt_signer::sr25519::dev;
+use std::{num::NonZeroU16, sync::atomic::Ordering::Relaxed};
+use test_log::test;
+use tracing::trace;
 
 pub const MIN_WIDTH: usize = 4;
 pub const DATA: &[u8] = b"ExampleData";
@@ -60,13 +60,15 @@ async fn eval_grid_from_block(client: &AvailClient, block_hash: H256) -> Result<
 		.map_err(|e| anyhow!("Eval grid failed {e:?}"))
 }
 
-#[async_std::test]
+#[test(tokio::test)]
 pub async fn rpc_query_proof_test() -> Result<()> {
+	let _cg = no_concurrency("rpc_queries::proof_test").await;
 	let client = local_connection().await?;
 	let alice = dev::alice();
 	let app_id = AppId(1);
 
-	let block_hash = tx::in_finalized(submit_data(&client, &alice, DATA, app_id).await?)
+	let nonce = alice_nonce().await.fetch_add(1, Relaxed);
+	let block_hash = tx::in_finalized(submit_data(&client, &alice, DATA, app_id, nonce).await?)
 		.await?
 		.block_hash();
 
@@ -102,7 +104,7 @@ pub async fn rpc_query_proof_test() -> Result<()> {
 				.proof(&multiproof_srs, &cell)
 				.unwrap()
 				.to_bytes()
-				.map(|b| GProof(b))
+				.map(GProof)
 				.unwrap();
 
 			(data, proof)
@@ -125,8 +127,9 @@ pub async fn rpc_query_proof_test() -> Result<()> {
 	Ok(())
 }
 
-#[async_std::test]
+#[test(tokio::test)]
 pub async fn rpc_query_proof_test_2() -> Result<()> {
+	let _cg = no_concurrency("rpc_queries::proof_test_2").await;
 	let client = local_connection().await?;
 	let alice = dev::alice();
 
@@ -134,9 +137,11 @@ pub async fn rpc_query_proof_test_2() -> Result<()> {
 	example_data[..7].copy_from_slice(b"example");
 	assert_eq!(example_data.len(), 12_500);
 
-	let block_hash = tx::in_finalized(submit_data(&client, &alice, &example_data, AppId(1)).await?)
-		.await?
-		.block_hash();
+	let nonce = alice_nonce().await.fetch_add(1, Relaxed);
+	let block_hash =
+		tx::in_finalized(submit_data(&client, &alice, &example_data, AppId(1), nonce).await?)
+			.await?
+			.block_hash();
 
 	let cell = Cell { row: 0, col: 0 };
 	let cells = Cells::try_from(vec![cell.clone()]).unwrap();
@@ -145,7 +150,7 @@ pub async fn rpc_query_proof_test_2() -> Result<()> {
 	let actual_proof: Vec<GDataProof> = client.rpc_methods().query_proof(cells, block_hash).await?;
 	let actual_proof: Vec<u8> = actual_proof
 		.iter()
-		.map(|(raw_scalar, g_proof)| {
+		.flat_map(|(raw_scalar, g_proof)| {
 			let mut scalar_bytes = [0u8; 32];
 			raw_scalar.to_big_endian(&mut scalar_bytes);
 			let proof_bytes: Vec<u8> = Vec::from(*g_proof);
@@ -155,7 +160,6 @@ pub async fn rpc_query_proof_test_2() -> Result<()> {
 				.flatten()
 				.collect::<Vec<u8>>()
 		})
-		.flatten()
 		.collect();
 	assert_eq!(actual_proof.len(), 80);
 
@@ -190,7 +194,7 @@ pub async fn rpc_query_proof_test_2() -> Result<()> {
 	let actual_proof: Vec<GDataProof> = client.rpc_methods().query_proof(cells, block_hash).await?;
 	let actual_proof: Vec<u8> = actual_proof
 		.iter()
-		.map(|(raw_scalar, g_proof)| {
+		.flat_map(|(raw_scalar, g_proof)| {
 			let mut scalar_bytes = [0u8; 32];
 			raw_scalar.to_big_endian(&mut scalar_bytes);
 			let proof_bytes: Vec<u8> = Vec::from(*g_proof);
@@ -200,7 +204,6 @@ pub async fn rpc_query_proof_test_2() -> Result<()> {
 				.flatten()
 				.collect::<Vec<u8>>()
 		})
-		.flatten()
 		.collect();
 	assert_eq!(actual_proof.len(), 80);
 
@@ -225,15 +228,17 @@ pub async fn rpc_query_proof_test_2() -> Result<()> {
 	Ok(())
 }
 
-#[async_std::test]
+#[test(tokio::test)]
 pub async fn empty_commitments_test() -> Result<()> {
+	let _cg = no_concurrency("rpc_queries::commitments_test").await;
 	let client = local_connection().await?;
 	let alice = dev::alice();
+
 	// other than DA tx
 	let call = api::tx().system().remark(b"Hi".to_vec());
-	let block_hash = tx::send_then_finalized(&client, &call, &alice, AppId(0))
-		.await?
-		.block_hash();
+	let nonce = alice_nonce().await.fetch_add(1, Relaxed);
+	let tx = tx::send_with_nonce(&client, &call, &alice, AppId(0), nonce).await?;
+	let block_hash = tx::in_finalized(tx).await?.block_hash();
 
 	// query_rows should fail for block with empty commitments
 	let row_indexes = Rows::truncate_from(vec![0]);
@@ -252,13 +257,15 @@ pub async fn empty_commitments_test() -> Result<()> {
 	Ok(())
 }
 
-#[async_std::test]
+#[test(tokio::test)]
 pub async fn rpc_query_block_length_test() -> Result<()> {
+	let _cg = no_concurrency("rpc_queries::block_lenght_test").await;
 	let client = local_connection().await?;
 	let alice = dev::alice();
 
-	println!("Data submitted...");
-	let block_hash = tx::in_finalized(submit_data(&client, &alice, DATA, AppId(1)).await?)
+	trace!("Data submitted...");
+	let nonce = alice_nonce().await.fetch_add(1, Relaxed);
+	let block_hash = tx::in_finalized(submit_data(&client, &alice, DATA, AppId(1), nonce).await?)
 		.await?
 		.block_hash();
 
@@ -270,14 +277,16 @@ pub async fn rpc_query_block_length_test() -> Result<()> {
 	Ok(())
 }
 
-#[async_std::test]
+#[test(tokio::test)]
 pub async fn rpc_query_data_proof_test() -> Result<()> {
+	let _cg = no_concurrency("rpc_queries::data_proof_test").await;
 	let client = local_connection().await?;
 	let alice = dev::alice();
 
 	// data hash: 729afe29f4e9fee2624d7ed311bcf57d24683fb78938bcb4e2a6a22c4968795e
-	println!("Data submitted...");
-	let block_hash = tx::in_finalized(submit_data(&client, &alice, DATA, AppId(1)).await?)
+	trace!("Data submitted...");
+	let nonce = alice_nonce().await.fetch_add(1, Relaxed);
+	let block_hash = tx::in_finalized(submit_data(&client, &alice, DATA, AppId(1), nonce).await?)
 		.await?
 		.block_hash();
 

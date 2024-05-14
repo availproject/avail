@@ -1,22 +1,38 @@
-use super::local_connection;
+use super::{allow_concurrency, local_connection};
 use avail_subxt::config::Header;
 use sp_core::H256;
 
 use anyhow::Result;
 use core::mem::swap;
+use test_log::test;
+use tokio::time::{sleep, Duration};
+use tracing::trace;
 
 /// This example gets all the headers from testnet. It requests them in concurrently in batches of BATCH_NUM.
 /// Fetching headers one by one is too slow for a large number of blocks.
 
-#[async_std::test]
+#[test(tokio::test)]
 async fn headers() -> Result<()> {
+	let _cg = allow_concurrency("headers").await;
 	let client = local_connection().await?;
 
 	let genesis_hash = client.genesis_hash();
-	let mut block = client.blocks().at_latest().await?;
 
+	// NOTE: Block cannot be the genesis block
+	let mut block = None;
+	for i in 0..6 {
+		let try_block = client.blocks().at_latest().await?;
+		if try_block.header().hash() != genesis_hash {
+			block = Some(try_block);
+			break;
+		}
+		trace!("Waiting first block, {i} of 6 ...");
+		sleep(Duration::from_secs(10)).await;
+	}
+
+	let mut block = block.expect("Only genesis block found");
 	let hash = block.header().hash();
-	println!("Current hash block: {hash:?} and genesis: {genesis_hash:?}");
+	trace!("Current hash block: {hash:?} and genesis: {genesis_hash:?}");
 
 	let mut headers = vec![hash];
 
@@ -29,8 +45,8 @@ async fn headers() -> Result<()> {
 		let mut parent_block = client.blocks().at(parent).await?;
 		swap(&mut block, &mut parent_block);
 	}
-	println!("Headers: {}", headers.len());
-	println!("Header hashes: {headers:?}");
+	trace!("Headers: {}", headers.len());
+	trace!("Header hashes: {headers:?}");
 
 	Ok(())
 }

@@ -1,4 +1,4 @@
-use super::local_connection;
+use super::{alice_nonce, allow_concurrency, local_connection};
 
 use avail_core::AppId;
 use avail_subxt::{
@@ -8,14 +8,16 @@ use avail_subxt::{
 	submit::submit_data_with_nonce,
 	tx,
 };
+use subxt_signer::sr25519::dev;
 
 use futures::stream::{FuturesOrdered, TryStreamExt as _};
 use rand::{
 	distributions::{Distribution, Standard},
 	thread_rng, Rng,
 };
-use std::collections::HashSet;
-use subxt_signer::sr25519::dev;
+use std::{collections::HashSet, sync::atomic::Ordering::Relaxed};
+use test_log::test;
+use tracing::trace;
 
 fn data(count: usize, len: usize) -> Vec<Vec<u8>> {
 	let mut rng = thread_rng();
@@ -31,18 +33,20 @@ fn data(count: usize, len: usize) -> Vec<Vec<u8>> {
 
 /// This example submits an Avail data extrinsic, then retrieves the block containing the
 /// extrinsic and matches the data.
-#[async_std::test]
+#[test(tokio::test)]
 async fn main() -> anyhow::Result<()> {
+	let _cg = allow_concurrency("submit_data").await;
 	let client = local_connection().await?;
 
 	let alice = dev::alice();
-	let alice_id = alice.public_key().into();
 	let sub_datas = data(5, 1_024);
 	let mut try_count = 0;
 
 	let block_hash = loop {
-		let nonce = client.tx().account_nonce(&alice_id).await?;
-		println!("Submitting data to network");
+		let nonce = alice_nonce()
+			.await
+			.fetch_add(sub_datas.len() as u64, Relaxed);
+		trace!("Submitting data to network");
 		let txs = sub_datas
 			.iter()
 			.enumerate()
@@ -59,7 +63,7 @@ async fn main() -> anyhow::Result<()> {
 			.try_collect::<Vec<TxProgress>>()
 			.await?;
 
-		println!("Waiting until data submitted is finalized");
+		trace!("Waiting until data submitted is finalized");
 		let in_blocks = txs
 			.into_iter()
 			.map(tx::in_finalized)
@@ -71,7 +75,7 @@ async fn main() -> anyhow::Result<()> {
 			.iter()
 			.map(|p| p.block_hash())
 			.collect::<HashSet<_>>();
-		println!("Submitted data in blocks: {hashes:?}");
+		trace!("Submitted data in blocks: {hashes:?}");
 		if hashes.len() == 1 {
 			break hashes.into_iter().next().unwrap();
 		}
@@ -94,12 +98,11 @@ async fn main() -> anyhow::Result<()> {
 		.rpc_methods()
 		.query_rows(Rows::truncate_from(row_indexes.to_vec()), block_hash)
 		.await?;
-	println!("Query rows RPC: {query_rows:?}");
+	trace!("Query rows RPC: {query_rows:?}");
 
 	// 3. Check proof.
 	let mut rng = thread_rng();
 	let cells = (0..7)
-		.into_iter()
 		.map(|_| {
 			let col = rng.gen_range(0..256);
 			Cell::new(0, col)
@@ -109,7 +112,7 @@ async fn main() -> anyhow::Result<()> {
 		.rpc_methods()
 		.query_proof(Cells::truncate_from(cells), block_hash)
 		.await?;
-	println!("Query proof RPC: {proof:?}");
+	trace!("Query proof RPC: {proof:?}");
 
 	Ok(())
 }

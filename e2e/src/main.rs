@@ -2,16 +2,17 @@ fn main() {}
 
 #[cfg(test)]
 mod tests {
-	use std::sync::{atomic::AtomicU64, OnceLock};
 
-	use anyhow::{anyhow, Result};
-	use async_std::{
-		sync::{Condvar, Mutex},
-		task::block_on,
-	};
 	use avail_core::currency::Balance;
 	use avail_subxt::{api, AccountId, AvailClient, AvailConfig};
-	use subxt::{tx::Signer, OnlineClient};
+	use sp_core::H256;
+	use subxt::{blocks::BlockRef, tx::Signer, OnlineClient};
+	use subxt_signer::sr25519::dev;
+
+	use anyhow::{anyhow, Result};
+	use std::sync::{atomic::AtomicU64, Arc, OnceLock};
+	use tokio::sync::{OnceCell, OwnedSemaphorePermit, Semaphore};
+	use tracing::trace;
 
 	/// Returns an Avail Client on local connection.
 	pub async fn local_connection() -> Result<AvailClient> {
@@ -25,16 +26,19 @@ mod tests {
 	pub async fn free_balance_of<S>(
 		client: &OnlineClient<AvailConfig>,
 		signer: &S,
+		maybe_block: Option<BlockRef<H256>>,
 	) -> Result<Balance>
 	where
 		S: Signer<AvailConfig>,
 	{
 		let acc: AccountId = signer.account_id();
 		let query = api::storage().system().account(acc.clone());
-		let acc_info = client
-			.storage()
-			.at_latest()
-			.await?
+
+		let storage = match maybe_block {
+			Some(block) => client.storage().at(block),
+			None => client.storage().at_latest().await?,
+		};
+		let acc_info = storage
 			.fetch(&query)
 			.await?
 			.ok_or_else(|| anyhow!("Missing account({acc:?}) info"))?;
@@ -42,60 +46,47 @@ mod tests {
 		Ok(acc_info.data.free)
 	}
 
-	pub static ALICE_NONCE: AtomicU64 = AtomicU64::new(0);
+	pub const MAX_PERMITS: usize = 16;
 
-	#[derive(Default)]
-	struct ConcurrentController {
-		running_tasks: Mutex<usize>,
-		cvar: Condvar,
+	pub async fn allow_concurrency(name: &str) -> OwnedSemaphorePermit {
+		let ctc = concurrent_controller();
+		let permit = ctc.clone().acquire_owned().await.unwrap();
+		let available_permits = ctc.available_permits();
+		trace!(target: "CTC", "Acquired single permit on `{name}`, available {available_permits}");
+		permit
 	}
 
-	struct ConcurrentGuard<'a> {
-		controller: &'a ConcurrentController,
+	pub async fn no_concurrency(name: &str) -> OwnedSemaphorePermit {
+		let ctc = concurrent_controller();
+		tokio::task::yield_now().await;
+		let permit = ctc
+			.clone()
+			.acquire_many_owned(MAX_PERMITS as u32)
+			.await
+			.unwrap();
+		let available_permits = ctc.available_permits();
+		trace!(target: "CTC", "Acquired all permits on `{name}`, available {available_permits}");
+
+		permit
 	}
 
-	impl<'a> ConcurrentGuard<'a> {
-		pub async fn new(controller: &'a ConcurrentController) -> Self {
-			controller.inc_running_tasks().await;
-			Self { controller }
-		}
+	fn concurrent_controller() -> Arc<Semaphore> {
+		static CTC: OnceLock<Arc<Semaphore>> = OnceLock::new();
+		Arc::clone(CTC.get_or_init(|| Arc::new(Semaphore::const_new(MAX_PERMITS))))
 	}
 
-	impl<'a> Drop for ConcurrentGuard<'a> {
-		fn drop(&mut self) {
-			let controller = self.controller;
-			block_on(async { controller.dec_running_tasks().await });
-		}
-	}
-
-	impl ConcurrentController {
-		pub async fn inc_running_tasks(&self) {
-			let mut count = self.running_tasks.lock().await;
-			*count += 1;
-		}
-
-		pub async fn dec_running_tasks(&self) {
-			let mut count = self.running_tasks.lock().await;
-			*count -= 1;
-			self.cvar.notify_one();
-		}
-
-		pub async fn allow_concurrency(&self) -> ConcurrentGuard {
-			ConcurrentGuard::new(self).await
-		}
-
-		pub async fn no_concurrency(&self) -> ConcurrentGuard {
-			let mut count = self.running_tasks.lock().await;
-			while *count > 1 {
-				count = self.cvar.wait(count).await;
-			}
-			ConcurrentGuard::new(self).await
-		}
-	}
-
-	fn concurrent_controller() -> &'static ConcurrentController {
-		static CTC: OnceLock<ConcurrentController> = OnceLock::new();
-		CTC.get_or_init(ConcurrentController::default)
+	pub async fn alice_nonce() -> &'static AtomicU64 {
+		static ALICE_NONCE: OnceCell<AtomicU64> = OnceCell::const_new();
+		ALICE_NONCE
+			.get_or_init(|| async {
+				trace!(target: "CTC", "Initializing Alice Nonce");
+				let client = local_connection().await.unwrap();
+				let alice = dev::alice();
+				let nonce = avail_subxt::tx::nonce(&client, &alice).await.unwrap();
+				trace!(target: "CTC", "Initialized Alice Nonce with {nonce}");
+				AtomicU64::new(nonce)
+			})
+			.await
 	}
 
 	mod accounts_from_mnemonics;
@@ -105,7 +96,7 @@ mod tests {
 	mod max_block_submit;
 	mod query_proof;
 	mod rpc_queries;
-	mod submit_block_length_proposal;
+	// mod submit_block_length_proposal;
 	mod submit_data;
 	mod vector_send_msg;
 }

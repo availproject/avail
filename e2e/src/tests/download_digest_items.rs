@@ -1,15 +1,19 @@
-use super::local_connection;
+use super::{allow_concurrency, local_connection};
 
 use std::{fmt::Write, str::from_utf8};
 
 use anyhow::Result;
-use async_std::{fs::File, io::BufWriter, prelude::*};
 use avail_subxt::primitives::{babe, grandpa};
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use serde_json::{json, Value};
 use subxt::{
 	config::substrate::{ConsensusEngineId, DigestItem},
 	ext::codec::Decode,
+};
+use test_log::test;
+use tokio::{
+	fs::File,
+	io::{AsyncWriteExt as _, BufWriter},
 };
 
 fn digests_to_json(digests: Vec<DigestItem>) -> Value {
@@ -77,9 +81,9 @@ fn pre_runtime_to_json(id: ConsensusEngineId, encoded: Vec<u8>) -> Value {
 
 const OUTPUT_PATH: &str = "/tmp/header.json";
 
-#[async_std::test]
+#[test(tokio::test)]
 async fn download_digest_items() -> Result<()> {
-	let _cg = concurrent_controller().allow_concurrency().await;
+	let _cg = allow_concurrency("download_digest_items").await;
 	let client = local_connection().await?;
 
 	// Get best block
@@ -102,7 +106,7 @@ async fn download_digest_items() -> Result<()> {
 	// Create the output file
 	pb.println(format!("Saving Digest logs into {OUTPUT_PATH}"));
 	let mut out = BufWriter::new(File::create(OUTPUT_PATH).await?);
-	out.write(b"[\n").await?;
+	out.write_all(b"[\n").await?;
 
 	// Load all headers and decode each digest item.
 	for block_num in 1..=best_block_num {
@@ -113,9 +117,7 @@ async fn download_digest_items() -> Result<()> {
 			.unwrap();
 
 		let block = client.blocks().at(block_hash).await?;
-
 		let header = block.header();
-
 		let digests = header.digest.logs.clone().into_iter().collect::<Vec<_>>();
 
 		let header_json_value = json!({
@@ -127,11 +129,11 @@ async fn download_digest_items() -> Result<()> {
 		pb.inc(1);
 		let header_json = serde_json::to_string_pretty(&header_json_value)?;
 		// println!("{header_json}");
-		out.write(header_json.as_bytes()).await?;
-		out.write(b",\n").await?;
+		out.write_all(header_json.as_bytes()).await?;
+		out.write_all(b",\n").await?;
 	}
 
-	out.write(b"\n]\n").await?;
+	out.write_all(b"\n]\n").await?;
 	out.flush().await?;
 	pb.finish_with_message("done");
 

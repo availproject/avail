@@ -36,6 +36,9 @@ derive_more = "0.99.17"
 serde_json = { version = "1.0", features = ["arbitrary_precision"] }
 indicatif = "0.17"
 hex = "0.4"
+test-log = { version = "0.2.16", features = ["trace"] }
+tokio = { version = "1.37.0", features = ["sync", "fs", "macros"] }
+tracing = "0.1.40"
 
 # Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
 [patch.crates-io]

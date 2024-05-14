@@ -1,4 +1,4 @@
-use super::local_connection;
+use super::{alice_nonce, allow_concurrency, local_connection};
 
 use avail_core::{
 	data_proof::{tx_uid, AddressedMessage, BoundedData, Message, SubTrie},
@@ -7,13 +7,15 @@ use avail_core::{
 use avail_subxt::{
 	api, avail_client::RpcMethods, rpc::KateRpcClient as _, tx, AccountId, AvailClient,
 };
+use subxt::{backend::BlockRef, error::RpcError, utils::H256, Error};
+use subxt_signer::sr25519::dev;
 
 use binary_merkle_tree::verify_proof;
 use derive_more::Constructor;
 use futures::stream::{FuturesOrdered, TryStreamExt as _};
-use std::collections::HashSet;
-use subxt::{backend::BlockRef, error::RpcError, utils::H256, Error};
-use subxt_signer::sr25519::dev;
+use std::{collections::HashSet, sync::atomic::Ordering::Relaxed};
+use test_log::test;
+use tracing::trace;
 
 const DATA: &[u8] = b"Test 42";
 const DOMAIN: u32 = 2;
@@ -35,23 +37,23 @@ async fn send_messages_in_same_block(client: &AvailClient) -> Result<(H256, Vec<
 	let to_bob = H256(AccountId::from(dev::bob().public_key()).0);
 
 	for _ in 0..5 {
-		let nonce = tx::nonce(&client, &alice).await?;
 		let calls = messages()
 			.into_iter()
 			.map(|m| api::tx().vector().send_message(m.into(), to_bob, DOMAIN))
 			.collect::<Vec<_>>();
+		let nonce = alice_nonce().await.fetch_add(calls.len() as u64, Relaxed);
 
 		// Send messages all messages.
 		let send_progress_list = calls
 			.iter()
 			.enumerate()
 			.map(|(idx, call)| {
-				tx::send_with_nonce(&client, call, &alice, AppId(0), nonce + idx as u64)
+				tx::send_with_nonce(client, call, &alice, AppId(0), nonce + idx as u64)
 			})
 			.collect::<FuturesOrdered<_>>()
 			.try_collect::<Vec<_>>()
 			.await?;
-		println!(
+		trace!(
 			"Messages sent (len={}) to the network",
 			send_progress_list.len()
 		);
@@ -67,7 +69,7 @@ async fn send_messages_in_same_block(client: &AvailClient) -> Result<(H256, Vec<
 			.iter()
 			.map(|p| p.block_hash())
 			.collect::<HashSet<_>>();
-		println!("Messages in blocks: {hashes:?}");
+		trace!("Messages in blocks: {hashes:?}");
 
 		// Ensure all messages are in the same block.
 		if hashes.len() == 1 {
@@ -143,20 +145,21 @@ async fn check_query_data_proof_rpc(
 			*leaf_idx,
 			leaf,
 		);
-		println!("Proof for leaf {leaf_idx:?} verified: {verified:?}");
+		trace!("Proof for leaf {leaf_idx:?} verified: {verified:?}");
 		assert!(verified);
 	}
 
 	Ok(())
 }
 
-#[async_std::test]
+#[test(tokio::test)]
 async fn vector_send_msg() -> anyhow::Result<()> {
+	let _cg = allow_concurrency("vector_send_msg").await;
 	let client = local_connection().await?;
 
 	// 0. Send messages and get the block.
 	let (block_hash, tx_indexes) = send_messages_in_same_block(&client).await?;
-	println!("Messages in block {block_hash:?} at index: {tx_indexes:?}");
+	trace!("Messages in block {block_hash:?} at index: {tx_indexes:?}");
 	let block = client.blocks().at(BlockRef::from_hash(block_hash)).await?;
 	let block_number = block.number();
 
@@ -164,13 +167,14 @@ async fn vector_send_msg() -> anyhow::Result<()> {
 	let indexed_leaves = messages_to_leaves(block_number, tx_indexes);
 
 	// 2. Use Kate to get the proof and double-check it.
-	check_query_data_proof_rpc(&client.rpc_methods(), block_hash, &indexed_leaves).await?;
+	check_query_data_proof_rpc(client.rpc_methods(), block_hash, &indexed_leaves).await?;
 
 	// 3. Test query_block len RPC.
 	let block_len = client.rpc_methods().query_block_length(block_hash).await?;
-	println!(
+	trace!(
 		"Test query_block_length RPC: cols={}, rows={}",
-		block_len.cols.0, block_len.rows.0
+		block_len.cols.0,
+		block_len.rows.0
 	);
 	assert_eq!(block_len.cols.0, 256);
 	assert_eq!(block_len.rows.0, 256);

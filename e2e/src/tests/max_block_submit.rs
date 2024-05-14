@@ -1,10 +1,13 @@
-use super::local_connection;
+use super::{alice_nonce, local_connection, no_concurrency};
 
 use avail_core::AppId;
 use avail_subxt::{api, tx, BoundedVec};
+use subxt_signer::sr25519::dev;
 
 use futures::stream::{FuturesOrdered, TryStreamExt as _};
-use subxt_signer::sr25519::dev;
+use std::sync::atomic::Ordering::Relaxed;
+use test_log::test;
+use tracing::trace;
 
 /// This example attempts to submit data to fill the entire block. Note that this doesn't guarantee
 /// that the block will be filled, but if you submit more than a full block, then it will spill over
@@ -15,12 +18,13 @@ const BLOCK_SIZE: usize = 2 * 1024 * 1024;
 const TX_MAX_SIZE: usize = 512 * 1024;
 const NUM_CHUNKS: u64 = (BLOCK_SIZE / TX_MAX_SIZE) as u64;
 
-#[async_std::test]
+#[test(tokio::test)]
 async fn max_block_submit() -> anyhow::Result<()> {
+	let _cg = no_concurrency("max_block_submit").await;
 	let client = local_connection().await?;
 
 	let alice = dev::alice();
-	let nonce = tx::nonce(&client, &alice).await?;
+	let nonce = alice_nonce().await.fetch_add(NUM_CHUNKS, Relaxed);
 
 	let start = std::time::Instant::now();
 	let calls = (0..NUM_CHUNKS)
@@ -38,20 +42,20 @@ async fn max_block_submit() -> anyhow::Result<()> {
 		.await?;
 
 	let submittions_end = start.elapsed();
-	println!("Submittions done in {submittions_end:?}");
+	trace!("Submittions done in {submittions_end:?}");
 
 	let in_block_txs = txs
 		.into_iter()
-		.map(tx::in_finalized)
+		.map(tx::then_in_block)
 		.collect::<FuturesOrdered<_>>()
 		.try_collect::<Vec<_>>()
 		.await?;
 	for (i, in_block) in in_block_txs.into_iter().enumerate() {
 		let hash = in_block.block_hash();
-		println!("Finalized {i} in block: {hash:?}");
+		trace!("Finalized {i} in block: {hash:?}");
 	}
 	let end = start.elapsed();
-	println!("Finalized in {end:?}");
+	trace!("Finalized in {end:?}");
 
 	Ok(())
 }
