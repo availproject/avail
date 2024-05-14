@@ -1,4 +1,17 @@
-
+/// Utility to run E2E.
+///
+/// It uses `tracing` to log messages, so you can select what you want to trace/debug.
+/// As example, if you want to log only `CTC` logs, you can use the following command:
+///
+/// ```shell
+/// RUST_LOG="CTC=trace" cargo test -- --nocapture
+/// ```
+///
+/// Or if you are interested in one of the tests, let say the `headers` test:
+///
+/// ```shell
+///  RUST_LOG="e2e::tests::headers,CTC=trace" cargo test -- --nocapture header
+/// ```
 fn main() {}
 
 #[cfg(test)]
@@ -23,7 +36,8 @@ mod tests {
 			.map_err(|e| anyhow!("Client cannot be connected: {e:?}"))
 	}
 
-	/// Returns the free balance of `signer`
+	/// Returns the free balance of `signer` at given block.
+	/// If `maybe_block == None` then the latest one will be used.
 	pub async fn free_balance_of<S>(
 		client: &OnlineClient<AvailConfig>,
 		signer: &S,
@@ -49,33 +63,50 @@ mod tests {
 
 	pub const MAX_PERMITS: usize = 16;
 
+	/// It allows the test to run tests concurrently.
+	///
+	/// It requires that user manages the alice's nonce manually (using `fn alice_nonce()` helper
+	/// for instance).
+	/// The CTC allows up to `MAX_PERMITS` concurrent tasks .
 	pub async fn allow_concurrency(name: &str) -> OwnedSemaphorePermit {
 		let ctc = concurrent_controller();
-		let permit = ctc.clone().acquire_owned().await.unwrap();
 		let available_permits = ctc.available_permits();
-		trace!(target: "CTC", "Acquired single permit on `{name}`, available {available_permits}");
+		let permit = ctc.clone().acquire_owned().await.unwrap();
+		trace!(target: "CTC", "Acquired single permit on `{name}`, it was {available_permits} availabled permits");
 		permit
 	}
 
+	/// It forces the test to run alone in the CTC.
+	///
+	/// It is used when you want to check your test in the block context, in the sense that no
+	/// other tests are going to send their transactions, producing side effect on the results.
+	/// An example of this use case are any `rpc_query` test, where you want to control the exact
+	/// data you submit during the block, in order to check the `data_proof` or `query_proof` in
+	/// that block.
 	pub async fn no_concurrency(name: &str) -> OwnedSemaphorePermit {
 		let ctc = concurrent_controller();
-		tokio::task::yield_now().await;
+		let available_permits = ctc.available_permits();
 		let permit = ctc
 			.clone()
 			.acquire_many_owned(MAX_PERMITS as u32)
 			.await
 			.unwrap();
-		let available_permits = ctc.available_permits();
-		trace!(target: "CTC", "Acquired all permits on `{name}`, available {available_permits}");
+		trace!(target: "CTC", "Acquired all permits on `{name}`, it was {available_permits} availabled permits");
 
 		permit
 	}
 
+	/// Global Concurency controller.
 	fn concurrent_controller() -> Arc<Semaphore> {
 		static CTC: OnceLock<Arc<Semaphore>> = OnceLock::new();
 		Arc::clone(CTC.get_or_init(|| Arc::new(Semaphore::const_new(MAX_PERMITS))))
 	}
 
+	/// It initializes the alice's nonce just once, making a request to local client.
+	/// From that point, the nonce should be increased locally to track parallel requests.
+	///
+	/// It facilitates the re-execution of test using the same local node (without restart) and
+	/// it also helps to track the nonce when several tests are running concurrently.
 	pub async fn alice_nonce() -> &'static AtomicU64 {
 		static ALICE_NONCE: OnceCell<AtomicU64> = OnceCell::const_new();
 		ALICE_NONCE
@@ -97,7 +128,7 @@ mod tests {
 	mod max_block_submit;
 	mod query_proof;
 	mod rpc_queries;
-	// mod submit_block_length_proposal;
+	mod submit_block_length_proposal;
 	mod submit_data;
 	mod vector_send_msg;
 }
