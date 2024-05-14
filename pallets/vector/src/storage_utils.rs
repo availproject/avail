@@ -14,7 +14,7 @@ pub enum MessageStatusEnum {
 	ExecutionSucceeded,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum StorageError {
 	StorageValueError,
 	AccountNotFound,
@@ -32,21 +32,21 @@ pub fn get_storage_value(
 	let trie =
 		TrieDBBuilder::<EIP1186Layout<keccak256::KeccakHasher>>::new(&db, &storage_root).build();
 
-	if let Some(result) = trie
-		.get(&key)
-		.map_err(|_| StorageError::StorageValueError)?
-	{
-		let r = Rlp::new(result.as_slice())
-			.data()
-			.map_err(|_| StorageError::CannotDecodeItems)?;
-		if r.is_empty() {
-			return Err(StorageError::CannotDecodeItems);
-		}
+	let Ok(Some(trie_value)) = trie.get(&key) else {
+		return Err(StorageError::StorageValueError);
+	};
 
-		Ok(H256::from_slice(r))
-	} else {
-		Err(StorageError::StorageValueError)
+	let Ok(rlp_storage_value) = Rlp::new(trie_value.as_slice()).data() else {
+		return Err(StorageError::CannotDecodeItems);
+	};
+
+	if rlp_storage_value.is_empty() {
+		return Err(StorageError::CannotDecodeItems);
 	}
+
+	let storage_value = rlp_to_h256(rlp_storage_value)?;
+
+	Ok(storage_value)
 }
 
 /// get_storage_root returns storage root based on the provided proof.
@@ -60,33 +60,44 @@ pub fn get_storage_root(
 	let trie =
 		TrieDBBuilder::<EIP1186Layout<keccak256::KeccakHasher>>::new(&db, &state_root).build();
 
-	if let Some(result) = trie
-		.get(key.as_slice())
-		.map_err(|_| StorageError::StorageValueError)?
-	{
-		let byte_slice = result.as_slice();
-		let r = Rlp::new(byte_slice);
+	let Ok(Some(trie_value)) = trie.get(key.as_slice()) else {
+		return Err(StorageError::StorageValueError);
+	};
 
-		let item_count = r
-			.item_count()
-			.map_err(|_| StorageError::StorageValueError)?;
+	let r = Rlp::new(trie_value.as_slice());
 
-		if item_count != 4 {
-			return Err(StorageError::AccountNotFound);
-		}
+	let Ok(item_count) = r.item_count() else {
+		return Err(StorageError::StorageValueError);
+	};
 
-		let item = r
-			.at(2)
-			.map_err(|_| StorageError::StorageValueError)?
-			.data()
-			.map_err(|_| StorageError::StorageValueError)?;
-
-		let storage_root = H256::from_slice(item);
-
-		Ok(storage_root)
-	} else {
-		Err(StorageError::StorageValueError)
+	if item_count != 4 {
+		return Err(StorageError::AccountNotFound);
 	}
+
+	let Ok(item) = r.at(2).and_then(|e| e.data()) else {
+		return Err(StorageError::StorageValueError);
+	};
+
+	let storage_root = rlp_to_h256(item)?;
+
+	Ok(storage_root)
+}
+
+fn rlp_to_h256(value: &[u8]) -> Result<H256, StorageError> {
+	const H256_LENGTH: usize = 32;
+
+	if value.len() > H256_LENGTH {
+		return Err(StorageError::CannotDecodeItems);
+	}
+
+	// 0s are prepended if value.len() is less than 32.
+	let mut slot_value = [0u8; H256_LENGTH];
+	let offset = H256_LENGTH - value.len();
+	for (i, v) in value.iter().enumerate() {
+		slot_value[i + offset] = *v;
+	}
+
+	Ok(H256::from(slot_value))
 }
 
 #[cfg(test)]
@@ -94,10 +105,38 @@ mod test {
 	use super::*;
 	use ark_std::vec;
 	use avail_core::data_proof::{AddressedMessage, Message};
+	use frame_support::assert_err;
 
 	use hex_literal::hex;
 	use primitive_types::{H160, H256};
 	use sp_io::hashing::keccak_256;
+
+	#[test]
+	fn rlp_to_h256_fails_with_len_over_32() {
+		let faulty = [0u8; 33];
+		assert_err!(rlp_to_h256(&faulty), StorageError::CannotDecodeItems);
+	}
+
+	#[test]
+	fn rlp_to_h256_works_with_len_32() {
+		let rlp = [1u8; 32];
+		let expected = H256::from(rlp.clone());
+
+		let actual = rlp_to_h256(&rlp).unwrap();
+		assert_eq!(actual, expected);
+	}
+
+	#[test]
+	fn rlp_to_h256_works_with_len_under_32() {
+		let rlp: [u8; 31] = [1u8; 31];
+
+		let mut expected = [1u8; 32];
+		expected[0] = 0;
+		let expected = H256::from(expected);
+
+		let actual = rlp_to_h256(&rlp).unwrap();
+		assert_eq!(actual, expected);
+	}
 
 	#[test]
 	fn test_account_proof() {
@@ -193,5 +232,30 @@ mod test {
 
 		let encoded = m.abi_encode();
 		assert_eq!(expected_encoded_message, encoded);
+	}
+
+	#[test]
+	fn test_storage_with_padded_value() {
+		let expected_value = H256(hex!(
+			"00eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99"
+		));
+
+		let trimmed_value = hex!("eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99");
+		let padded_value_resutl = rlp_to_h256(trimmed_value.as_slice());
+		assert_eq!(expected_value, padded_value_resutl.unwrap());
+
+		let exact_value = hex!("00eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99");
+		let padded_exact_value = rlp_to_h256(exact_value.as_slice());
+		assert_eq!(expected_value, padded_exact_value.unwrap());
+
+		let empty: &[u8] = &[];
+		let empty_padded = rlp_to_h256(empty);
+		assert_eq!(H256::zero(), empty_padded.unwrap());
+
+		let invalid_value =
+			hex!("0000eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99");
+		let error = rlp_to_h256(invalid_value.as_slice());
+
+		assert_err!(error, StorageError::CannotDecodeItems);
 	}
 }
