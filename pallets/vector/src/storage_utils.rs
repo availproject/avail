@@ -104,12 +104,12 @@ fn padded_value(rlp_value: &[u8]) -> Result<H256, StorageError> {
 	} else if rlp_value.len() == 32 {
 		slot_value = rlp_value.to_vec();
 	} else {
-		return Err(StorageError::StorageValueError);
+		return Err(StorageError::CannotDecodeItems);
 	}
 
 	let value: [u8; 32] = slot_value
 		.try_into()
-		.map_err(|_| StorageError::StorageValueError)?;
+		.map_err(|_| StorageError::CannotDecodeItems)?;
 	let result_value = H256::from(value);
 	Ok(result_value)
 }
@@ -243,6 +243,6 @@ mod test {
 			hex!("0000eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99");
 		let error = padded_value(invalid_value.as_slice());
 
-		assert_err!(error, StorageError::StorageValueError);
+		assert_err!(error, StorageError::CannotDecodeItems);
 	}
 }
