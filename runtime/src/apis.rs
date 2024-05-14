@@ -2,7 +2,7 @@ use super::kate::{Error as RTKateError, GDataProof, GRow};
 use crate::{
 	constants, mmr, version::VERSION, AccountId, AuthorityDiscovery, Babe, Block, BlockNumber,
 	EpochDuration, Executive, Grandpa, Historical, Index, InherentDataExt, Mmr, NominationPools,
-	OpaqueMetadata, Runtime, RuntimeCall, RuntimeGenesisConfig, SessionKeys, System,
+	OpaqueMetadata, Runtime, RuntimeCall, RuntimeGenesisConfig, SessionKeys, Staking, System,
 	TransactionPayment, LOG_TARGET,
 };
 use avail_base::{HeaderExtensionBuilderData, ProvidePostInherent};
@@ -465,6 +465,16 @@ impl_runtime_apis! {
 			encoded: Vec<u8>,
 		) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
 			SessionKeys::decode_into_raw_public_keys(&encoded)
+		}
+	}
+
+	impl pallet_staking_runtime_api::StakingApi<Block, Balance, AccountId> for Runtime {
+		fn nominations_quota(balance: Balance) -> u32 {
+			Staking::api_nominations_quota(balance)
+		}
+
+		fn eras_stakers_page_count(era: sp_staking::EraIndex, account: AccountId) -> sp_staking::Page {
+			Staking::api_eras_stakers_page_count(era, account)
 		}
 	}
 

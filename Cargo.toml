@@ -148,6 +148,7 @@ sp-runtime-interface = { git = "https://github.com/availproject/polkadot-sdk.git
 binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-4", default-features = false }
 sp-staking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-4", default-features = false }
 pallet-staking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-4", default-features = false }
+pallet-staking-runtime-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-4", default-features = false } 
 sp-consensus-grandpa = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-4", default-features = false }
 sp-authority-discovery = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-4", default-features = false }
 sp-consensus-babe = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-4", default-features = false }

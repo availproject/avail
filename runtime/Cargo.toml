@@ -70,6 +70,7 @@ pallet-timestamp = { workspace = true, default-features = false }
 pallet-transaction-payment = { workspace = true, default-features = false }
 pallet-staking = { workspace = true, default-features = false }
 pallet-staking-reward-curve = { workspace = true, default-features = false }
+pallet-staking-runtime-api = { workspace = true, default-features = false }
 pallet-utility = { workspace = true, default-features = false }
 pallet-scheduler = { workspace = true, default-features = false }
 pallet-babe = { workspace = true, default-features = false }
@@ -176,6 +177,7 @@ std = [
 	"pallet-scheduler/std",
 	"pallet-session/std",
 	"pallet-staking/std",
+	"pallet-staking-runtime-api/std",
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
