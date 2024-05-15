@@ -54,7 +54,7 @@ func submitData(size int, ApiURL string, Seed string, AppID int) error {
 
 	keyringPair, err := signature.KeyringPairFromSecret(Seed, 42)
 	if err != nil {
-		return fmt.Errorf("cannot create LeyPair:%w", err)
+		return fmt.Errorf("cannot create KeyPair:%w", err)
 	}
 
 	key, err := types.CreateStorageKey(meta, "System", "Account", keyringPair.PublicKey)
