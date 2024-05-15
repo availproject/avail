@@ -434,10 +434,13 @@ pub mod weight_helper {
 		let ref_time = data_scalar_ratio * max_weight_normal_ratio;
 		let scalar_based_weight = Weight::from_parts(ref_time, regular_weight.proof_size());
 
+		// TEMP: Reduce DA submission price / weights by 10
+		const TEMP_DIVIDER: u64 = 10;
+
 		// We return the biggest value between the regular weight and scalar based weight.
 		// I cannot think of a case where regular weight > matrix based weight.
 		(
-			scalar_based_weight.max(regular_weight),
+			scalar_based_weight.saturating_div(TEMP_DIVIDER).max(regular_weight),
 			DispatchClass::Normal,
 		)
 	}
