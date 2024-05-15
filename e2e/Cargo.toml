@@ -9,12 +9,16 @@ edition = "2021"
 avail-subxt = { path = "../avail-subxt" }
 kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v2210-rc1" }
 kate = { git = "https://github.com/availproject/avail-core", tag = "node-v2210-rc1" }
-avail-core = {  git = "https://github.com/availproject/avail-core", tag = "node-v2210-rc1" }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v2210-rc1" }
 
 # Parity
 sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-4" }
 sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-4" }
-codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive", "full", "bit-vec"] }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
+	"derive",
+	"full",
+	"bit-vec",
+] }
 binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-4" }
 
 # SubXt
@@ -23,7 +27,10 @@ subxt-signer = "0.34"
 
 # Other
 anyhow = "1.0.66"
-serde = { version = "1.0.195", default-features = false, features = [ "derive", "alloc" ] }
+serde = { version = "1.0.195", default-features = false, features = [
+	"derive",
+	"alloc",
+] }
 futures = "0.3.25"
 rand = "0.8.5"
 derive_more = "0.99.17"
