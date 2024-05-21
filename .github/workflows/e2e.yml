@@ -10,6 +10,9 @@ on:
       - develop
   workflow_dispatch:
 
+env:
+  RUST_LOG: "CTC=trace"
+
 jobs:
   e2e_tests:
     runs-on: ubuntu-latest
