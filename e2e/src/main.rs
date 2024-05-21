@@ -126,6 +126,7 @@ mod tests {
 	mod download_digest_items;
 	mod headers;
 	mod max_block_submit;
+	mod max_send_message;
 	mod query_proof;
 	mod rpc_queries;
 	mod submit_block_length_proposal;
