@@ -862,37 +862,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// # TODO
-		/// - Remove `dead_code` here.
-		#[allow(dead_code)]
-		fn decode_message_data(data: Vec<u8>) -> Result<(H256, U256), DispatchError> {
-			let decoded_data = ethabi::decode(
-				&[
-					ethabi::ParamType::FixedBytes(32),
-					ethabi::ParamType::Uint(256),
-				],
-				data.as_slice(),
-			)
-			.map_err(|_| Error::<T>::CannotDecodeData)?;
-			ensure!(decoded_data.len() == 2, Error::<T>::CannotDecodeData);
-
-			let asset_id_token = decoded_data.first().ok_or(Error::<T>::CannotDecodeData)?;
-			let asset_id = asset_id_token
-				.clone()
-				.into_fixed_bytes()
-				.ok_or(Error::<T>::CannotDecodeData)?;
-
-			let asset = H256::from_slice(asset_id.as_slice());
-
-			let amount_token = decoded_data.get(1).ok_or(Error::<T>::CannotDecodeData)?;
-			let amount = amount_token
-				.clone()
-				.into_uint()
-				.ok_or(Error::<T>::CannotDecodeData)?;
-
-			Ok((asset, amount))
-		}
-
 		/// The account ID of the bridge's pot.
 		pub fn account_id() -> T::AccountId {
 			T::PalletId::get().into_account_truncating()
