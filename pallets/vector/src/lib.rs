@@ -108,6 +108,8 @@ pub mod pallet {
 		InvalidFailedIndices,
 		/// Invalid updater
 		UpdaterMisMatch,
+		/// Cannot get current message id
+		CurrentMessageIdNotFound
 	}
 
 	#[pallet::event]
@@ -591,8 +593,13 @@ pub mod pallet {
 				let _ = MemoryTemporaryStorage::update::<Vec<Compact<u32>>, _>(
 					FAILED_SEND_MSG_ID.to_vec(),
 					|failed| {
-						let tx_idx =
-							<frame_system::Pallet<T>>::extrinsic_index().unwrap_or_default();
+						let tx_idx_result =
+							<frame_system::Pallet<T>>::extrinsic_index();
+						// this should never happen and we can just log warn
+						if tx_idx_result.is_none() {
+							log::warn!(target: LOG_TARGET, "Transaction index is none!");
+						}
+						let tx_idx = tx_idx_result.unwrap_or_default();
 						failed.push(tx_idx.into());
 						log::trace!(target: LOG_TARGET, "Send Message failed txs: {failed:?}");
 					},
@@ -813,7 +820,8 @@ pub mod pallet {
 				},
 			};
 
-			let message_id = Self::fetch_curr_message_id();
+			let message_id = Self::fetch_curr_message_id().map_err(|e| e)?;
+
 			Self::deposit_event(Event::MessageSubmitted {
 				from: who,
 				to,
@@ -825,11 +833,18 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		fn fetch_curr_message_id() -> u64 {
+		fn fetch_curr_message_id() -> Result<u64, DispatchError> {
 			let number = <frame_system::Pallet<T>>::block_number().saturated_into::<u32>();
-			let tx_index = <frame_system::Pallet<T>>::extrinsic_index().unwrap_or_default();
+			let tx_index_option = <frame_system::Pallet<T>>::extrinsic_index();
 
-			tx_uid(number, tx_index)
+			match tx_index_option {
+				Some(tx_index) => {
+					Ok(tx_uid(number, tx_index))
+				}
+				None => {
+					Err(Error::<T>::CurrentMessageIdNotFound.into())
+				}
+			}
 		}
 
 		fn check_preconditions(
