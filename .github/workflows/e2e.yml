@@ -10,14 +10,16 @@ on:
       - develop
   workflow_dispatch:
 
+env:
+  RUST_LOG: "CTC=trace"
+
 jobs:
   e2e_tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
-          - command: ENGINE=podman SCRIPT_LOC=./scripts/workflows/e2e_kate.sh ./scripts/workflows/run.sh
-          - command: ENGINE=podman SCRIPT_LOC=./scripts/workflows/subxt_examples.sh ./scripts/workflows/run.sh
+          - command: ENGINE=podman SCRIPT_LOC=./scripts/workflows/e2e.sh ./scripts/workflows/run.sh
     steps:
       - uses: actions/checkout@v2
 

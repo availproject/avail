@@ -10,4 +10,4 @@ cargo build --locked --release
 ./target/release/avail-node --dev &
 sleep 5
 cd e2e
-cargo test -- --test-threads 1
+cargo test -- --nocapture
