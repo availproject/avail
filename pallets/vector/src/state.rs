@@ -148,7 +148,8 @@ pub struct VerifiedStepOutput {
 
 /// parse_rotate_output converts the output of the successful rotate verification call
 pub fn parse_rotate_output(output: Vec<u8>) -> Result<U256, ParseError> {
-	if output.len() as u8 > ROTATE_POSEIDON_OUTPUT_LENGTH {
+	// output.len() is always less than `u32::MAX` because it is bounded by BoundedVec
+	if output.len() as u32 > ROTATE_POSEIDON_OUTPUT_LENGTH {
 		return Err(ParsingError);
 	}
 	Ok(U256::from_big_endian(output.as_slice()))
@@ -156,7 +157,8 @@ pub fn parse_rotate_output(output: Vec<u8>) -> Result<U256, ParseError> {
 
 /// parse_step_output parses the output of the successful step verification call
 pub fn parse_step_output(output: Vec<u8>) -> Result<VerifiedStepOutput, ParseError> {
-	if output.len() as u8 != STEP_OUTPUT_LENGTH {
+	// output.len() is always less than `u32::MAX` because it is bounded by BoundedVec
+	if output.len() as u32 != STEP_OUTPUT_LENGTH {
 		return Err(ParsingError);
 	}
 
