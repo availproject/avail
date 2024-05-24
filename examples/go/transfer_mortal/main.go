@@ -65,21 +65,19 @@ func transfer(api *gsrpc.SubstrateAPI, senderSeed string, receiver string, amoun
 	}
 	latestHash, err := api.RPC.Chain.GetBlockHashLatest()
 	if err != nil {
-		panic(fmt.Sprintf("cannot create storage key:%w", err))
+		panic(fmt.Sprintf("cannot get Latest Block Hash:%w", err))
 	}
 	latestBlock, err := api.RPC.Chain.GetBlockLatest()
 	if err != nil {
-		panic(fmt.Sprintf("cannot create storage key:%w", err))
+		panic(fmt.Sprintf("cannot get Latest Block:%w", err))
 	}
 	var e types.ExtrinsicEra
 	e.IsMortalEra = true
 	number := latestBlock.Block.Header.Number
 	second := types.U64(number) % 128
-
 	//Uncomment the following for autoassigning the phase value based on period and blockNumber
 	// mortl := types.NewMortalEra(number, types.U64(256))
 	// e.AsMortalEra = mortl
-	
 	e.AsMortalEra = types.MortalEra{First: types.U64(128), Second: types.U64(second)}
 
 	nonce := uint32(accountInfo.Nonce)

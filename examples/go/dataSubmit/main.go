@@ -54,7 +54,7 @@ func submitData(size int, ApiURL string, Seed string, AppID int) error {
 
 	keyringPair, err := signature.KeyringPairFromSecret(Seed, 42)
 	if err != nil {
-		return fmt.Errorf("cannot create LeyPair:%w", err)
+		return fmt.Errorf("cannot create KeyPair:%w", err)
 	}
 
 	key, err := types.CreateStorageKey(meta, "System", "Account", keyringPair.PublicKey)
@@ -69,11 +69,11 @@ func submitData(size int, ApiURL string, Seed string, AppID int) error {
 	}
 	latestHash, err := api.RPC.Chain.GetBlockHashLatest()
 	if err != nil {
-		panic(fmt.Sprintf("cannot create storage key:%w", err))
+		panic(fmt.Sprintf("cannot get Latest Block Hash:%w", err))
 	}
 	latestBlock, err := api.RPC.Chain.GetBlockLatest()
 	if err != nil {
-		panic(fmt.Sprintf("cannot create storage key:%w", err))
+		panic(fmt.Sprintf("cannot get Latest Block:%w", err))
 	}
 	var e types.ExtrinsicEra
 	e.IsMortalEra = true
