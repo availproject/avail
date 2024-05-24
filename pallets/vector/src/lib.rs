@@ -39,8 +39,8 @@ pub type ValidProof = BoundedVec<BoundedVec<u8, ConstU32<2048>>, ConstU32<32>>;
 pub const SUPPORTED_ASSET_ID: H256 = H256::zero();
 pub const FAILED_SEND_MSG_ID: &[u8] = b"vector:failed_send_msg_txs";
 pub const LOG_TARGET: &str = "runtime::vector";
-pub const ROTATE_POSEIDON_OUTPUT_LENGTH: u8 = 32;
-pub const STEP_OUTPUT_LENGTH: u8 = 74;
+pub const ROTATE_POSEIDON_OUTPUT_LENGTH: u32 = 32;
+pub const STEP_OUTPUT_LENGTH: u32 = 74;
 
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -619,8 +619,9 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 
+			// poseidon_hash.len() is always less than `u32::MAX` because it is bounded by BoundedVec
 			ensure!(
-				poseidon_hash.len() as u8 > ROTATE_POSEIDON_OUTPUT_LENGTH,
+				poseidon_hash.len() as u32 > ROTATE_POSEIDON_OUTPUT_LENGTH,
 				Error::<T>::CannotParseOutputData
 			);
 
