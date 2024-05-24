@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - command: ENGINE=podman SCRIPT_LOC=./scripts/workflows/e2e_kate.sh ./scripts/workflows/run.sh
+          - command: ENGINE=podman SCRIPT_LOC=./scripts/workflows/e2e.sh ./scripts/workflows/run.sh
     steps:
       - uses: actions/checkout@v2
 
