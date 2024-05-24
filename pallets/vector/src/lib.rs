@@ -39,6 +39,8 @@ pub type ValidProof = BoundedVec<BoundedVec<u8, ConstU32<2048>>, ConstU32<32>>;
 pub const SUPPORTED_ASSET_ID: H256 = H256::zero();
 pub const FAILED_SEND_MSG_ID: &[u8] = b"vector:failed_send_msg_txs";
 pub const LOG_TARGET: &str = "runtime::vector";
+pub const ROTATE_POSEIDON_OUTPUT_LENGTH: u32 = 32;
+pub const STEP_OUTPUT_LENGTH: u32 = 74;
 
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -108,6 +110,8 @@ pub mod pallet {
 		InvalidFailedIndices,
 		/// Invalid updater
 		UpdaterMisMatch,
+		/// Proof output parsing error
+		CannotParseOutputData,
 	}
 
 	#[pallet::event]
@@ -432,8 +436,10 @@ pub mod pallet {
 
 			// verification is success and, we can safely parse and validate output
 			if function_id == step_function_id {
-				let vs =
-					VerifiedStep::new(function_id, input_hash, parse_step_output(output.to_vec()));
+				let step_output = parse_step_output(output.to_vec())
+					.map_err(|_| Error::<T>::CannotParseOutputData)?;
+
+				let vs = VerifiedStep::new(function_id, input_hash, step_output);
 
 				if Self::step_into(slot, &config, &vs, step_function_id)? {
 					Self::deposit_event(Event::HeadUpdated {
@@ -443,11 +449,10 @@ pub mod pallet {
 					});
 				}
 			} else if function_id == rotate_function_id {
-				let vr = VerifiedRotate::new(
-					function_id,
-					input_hash,
-					parse_rotate_output(output.to_vec()),
-				);
+				let rotate_output = parse_rotate_output(output.to_vec())
+					.map_err(|_| Error::<T>::CannotParseOutputData)?;
+
+				let vr = VerifiedRotate::new(function_id, input_hash, rotate_output);
 
 				let period = Self::rotate_into(slot, &config, &vr, rotate_function_id)?;
 				Self::deposit_event(Event::SyncCommitteeUpdated {
@@ -613,6 +618,12 @@ pub mod pallet {
 			poseidon_hash: BoundedVec<u8, ConstU32<200>>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
+
+			// poseidon_hash.len() is always less than `u32::MAX` because it is bounded by BoundedVec
+			ensure!(
+				poseidon_hash.len() as u32 <= ROTATE_POSEIDON_OUTPUT_LENGTH,
+				Error::<T>::CannotParseOutputData
+			);
 
 			let hash = U256::from(poseidon_hash.to_vec().as_slice());
 
