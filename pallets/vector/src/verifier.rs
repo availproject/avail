@@ -231,14 +231,12 @@ pub fn decode_proof(
 				}
 			}
 
-			if let ethabi::Token::FixedArray(ar) = &t[1] {
-				if let ethabi::Token::FixedArray(arr) = &ar[1] {
-					if let ethabi::Token::Uint(u) = &arr[0] {
-						b10 = u.to_string();
-					}
-					if let ethabi::Token::Uint(u) = &arr[1] {
-						b11 = u.to_string();
-					}
+			if let ethabi::Token::FixedArray(arr) = &ar[1] {
+				if let ethabi::Token::Uint(u) = &arr[0] {
+					b10 = u.to_string();
+				}
+				if let ethabi::Token::Uint(u) = &arr[1] {
+					b11 = u.to_string();
 				}
 			}
 		}
