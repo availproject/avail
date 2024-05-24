@@ -48,7 +48,6 @@ export default {
 npm run connect
 npm run transfer
 npm run data-submission
-npm run data-submission-async
 npm run create-app-id
 npm run subscribe-blocks
 npm run query-app-data
