@@ -67,24 +67,10 @@ func submitData(size int, ApiURL string, Seed string, AppID int) error {
 	if err != nil || !ok {
 		return fmt.Errorf("cannot get latest storage:%w", err)
 	}
-	latestHash, err := api.RPC.Chain.GetBlockHashLatest()
-	if err != nil {
-		panic(fmt.Sprintf("cannot get Latest Block Hash:%w", err))
-	}
-	latestBlock, err := api.RPC.Chain.GetBlockLatest()
-	if err != nil {
-		panic(fmt.Sprintf("cannot get Latest Block:%w", err))
-	}
-	var e types.ExtrinsicEra
-	e.IsMortalEra = true
-	number := latestBlock.Block.Header.Number
-	mortl := types.NewMortalEra(number, types.U64(256))
-	e.AsMortalEra = mortl
-
 	nonce := uint32(accountInfo.Nonce)
 	o := types.SignatureOptions{
-		BlockHash:          latestHash,
-		Era:                e,
+		BlockHash:          genesisHash,
+		Era:                types.ExtrinsicEra{IsMortalEra: false},
 		GenesisHash:        genesisHash,
 		Nonce:              types.NewUCompactFromUInt(uint64(nonce)),
 		SpecVersion:        rv.SpecVersion,
