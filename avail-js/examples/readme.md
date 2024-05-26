@@ -52,7 +52,12 @@ npm run create-app-id
 npm run subscribe-blocks
 npm run query-proof
 npm run query-data-proof
+npm run query-block-length
+npm run query-rows
 npm run submit-proposal
+npm run staking-nominate
+npm run staking validate
+npm run estimate-transaction-fees
 ```
 
 ## Avail web example (next js / typescript)
