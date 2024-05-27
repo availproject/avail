@@ -54,7 +54,7 @@ func submitData(size int, ApiURL string, Seed string, AppID int) error {
 
 	keyringPair, err := signature.KeyringPairFromSecret(Seed, 42)
 	if err != nil {
-		return fmt.Errorf("cannot create LeyPair:%w", err)
+		return fmt.Errorf("cannot create KeyPair:%w", err)
 	}
 
 	key, err := types.CreateStorageKey(meta, "System", "Account", keyringPair.PublicKey)
@@ -67,7 +67,6 @@ func submitData(size int, ApiURL string, Seed string, AppID int) error {
 	if err != nil || !ok {
 		return fmt.Errorf("cannot get latest storage:%w", err)
 	}
-
 	nonce := uint32(accountInfo.Nonce)
 	o := types.SignatureOptions{
 		BlockHash:          genesisHash,
@@ -76,10 +75,9 @@ func submitData(size int, ApiURL string, Seed string, AppID int) error {
 		Nonce:              types.NewUCompactFromUInt(uint64(nonce)),
 		SpecVersion:        rv.SpecVersion,
 		Tip:                types.NewUCompactFromUInt(0),
-		AppID:              types.NewUCompactFromUInt(uint64(appID)),
+		AppID:              types.NewUCompactFromUInt(uint64(0)),
 		TransactionVersion: rv.TransactionVersion,
 	}
-
 	// Sign the transaction using Alice's default account
 	err = ext.Sign(keyringPair, o)
 	if err != nil {
