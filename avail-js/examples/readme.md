@@ -47,6 +47,7 @@ export default {
 ```
 npm run connect
 npm run transfer
+npm run transfer-mortal-period
 npm run data-submission
 npm run create-app-id
 npm run subscribe-blocks
