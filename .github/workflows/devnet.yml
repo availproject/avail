@@ -9,7 +9,7 @@ jobs:
     if: ${{ github.event.label.name == 'deploy-devnet' }}
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Copy scripts folder to remote server
       uses: appleboy/scp-action@v0.1.4

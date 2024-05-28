@@ -6,7 +6,7 @@ jobs:
     name: "Check"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
       - uses: "actions-rs/toolchain@v1"
         with:
           override: true
@@ -20,7 +20,7 @@ jobs:
     name: "Rustfmt"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
       - uses: "actions-rs/toolchain@v1"
         with:
           override: true
@@ -36,7 +36,7 @@ jobs:
     name: "Clippy"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
       - uses: "actions-rs/toolchain@v1"
         with:
           override: true
@@ -51,7 +51,7 @@ jobs:
   security_audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions-rs/audit-check@v1.2.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
