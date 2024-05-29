@@ -7,15 +7,15 @@ edition = "2021"
 
 [dev-dependencies]
 avail-subxt = { path = "../avail-subxt" }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v2220-rc1" }
-kate = { git = "https://github.com/availproject/avail-core", tag = "node-v2220-rc1" }
-avail-core = {  git = "https://github.com/availproject/avail-core", tag = "node-v2220-rc1" }
+kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "ghali/increase-block" }
+kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/increase-block" }
+avail-core = {  git = "https://github.com/availproject/avail-core", branch = "ghali/increase-block" }
 
 # Parity
-sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
+sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "ghali/increase-block" }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "ghali/increase-block" }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive", "full", "bit-vec"] }
-binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
+binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "ghali/increase-block" }
 
 # SubXt
 subxt = "0.34"
@@ -36,7 +36,7 @@ tracing = "0.1.40"
 
 # Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
 [patch.crates-io]
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "ghali/increase-block" }
+sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "ghali/increase-block" }
+sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "ghali/increase-block" }
+sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "ghali/increase-block" }

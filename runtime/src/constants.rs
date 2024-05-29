@@ -365,7 +365,7 @@ pub mod da {
 		pub const MaxBlockCols: BlockLengthColumns = kate::config::MAX_BLOCK_COLUMNS;
 	}
 	pub type MaxAppKeyLength = ConstU32<64>;
-	pub type MaxAppDataLength = ConstU32<524_288>; // 512 Kb
+	pub type MaxAppDataLength = ConstU32<8_340_608>; // 512 Kb
 }
 
 /// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value
