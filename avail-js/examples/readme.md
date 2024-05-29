@@ -47,15 +47,18 @@ export default {
 ```
 npm run connect
 npm run transfer
+npm run transfer-mortal-period
 npm run data-submission
-npm run data-submission-async
 npm run create-app-id
 npm run subscribe-blocks
-npm run query-app-data
 npm run query-proof
 npm run query-data-proof
+npm run query-block-length
+npm run query-rows
 npm run submit-proposal
-npm run dispatch-data-root
+npm run staking-nominate
+npm run staking validate
+npm run estimate-transaction-fees
 ```
 
 ## Avail web example (next js / typescript)

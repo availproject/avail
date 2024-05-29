@@ -20,9 +20,11 @@ Once node is updated, we can re-generate the `src/api_dev.rs` file using the fol
 
 # E2E Binary
 
-This binary executes each example on a Avail Node. It launches the node before running any example.
+This binary executes each example on an Avail Node. It launches the node before running any example.
 
 The following command uses the node located in `./target/release/avail-node` to run each example
+
+Examples are store in [e2e folder](../e2e/src/tests/).
 
 ```Bash
 $> cargo run -- --avail-path ../target/release/avail-node

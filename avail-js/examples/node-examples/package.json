@@ -7,6 +7,7 @@
     "build": "npm run clean && tsc",
     "connect": "npm run build && node build/node-examples/src/connect.js",
     "transfer": "npm run build && node build/node-examples/src/tx-balance-transfer.js",
+    "transfer-mortal-period": "npm run build && node build/node-examples/src/tx-balance-transfer-mortal-period.js",
     "data-submission": "npm run build && node build/node-examples/src/tx-data-availability-data-submission.js",
     "create-app-id": "npm run build && node build/node-examples/src/tx-data-availability-create-application-key.js",
     "staking-nominate": "npm run build && node build/node-examples/src/tx-staking-nominate-full-example.js",

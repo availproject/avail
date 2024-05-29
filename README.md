@@ -191,9 +191,9 @@ There you can learn how to:
 
 ## Interact with the chain
 You can find on this repository many example on how to interact with any avail chain.
-- In the avail-js folder, you will find our wrapper for polkadot js including multiple helpers.
-    - The example folder contains some examples using node-js and an example web app to setup the extension.
-- In the avail-subxt folder, you will find our fork of subxt with some example on usage.
-- In the examples folders you will find examples for:
+- In the [avail-js](./avail-js/) folder, you will find our wrapper for polkadot-js including multiple helpers.
+    - The [example](./avail-js/examples/) folder inside avail-js contains some examples using node-js and an example web app to setup the extension.
+- In the [avail-subxt](./avail-subxt/) folder, you will find our fork of subxt with some example that are moved to [e2e folder](./e2e/src/tests/).
+- In the [examples](./examples/) folders you will find examples for:
   - Deno examples
   - Go examples
