@@ -17,7 +17,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	// Per convention: if the runtime behavior changes, increment spec_version
 	// and set impl_version to 0. This paramenter is typically incremented when
 	// there's an update to the transaction_version.
-	spec_version: 31,
+	spec_version: 33,
 	// The version of the implementation of the specification. Nodes can ignore this. It is only
 	// used to indicate that the code is different. As long as the authoring_version and the
 	// spec_version are the same, the code itself might have changed, but the native and Wasm
