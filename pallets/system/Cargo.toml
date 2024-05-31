@@ -97,6 +97,8 @@ header_commitment_corruption = []
 # the block import process.
 secure_padding_fill = []
 
+testing-environment = []
+
 [[bench]]
 name = "bench"
 harness = false

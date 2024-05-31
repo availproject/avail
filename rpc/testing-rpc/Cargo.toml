@@ -1,0 +1,23 @@
+[package]
+name = "testing-rpc"
+version = "0.3.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+avail-base.workspace = true
+avail-core = { workspace = true, default-features = false }
+
+# 3rd party
+jsonrpsee.workspace = true
+log.workspace = true
+
+# Substrate
+sc-client-api = { workspace = true, default-features = false }
+
+[features]
+default = [ "std" ]
+std = [
+	"avail-base/std",
+]
