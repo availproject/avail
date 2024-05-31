@@ -335,9 +335,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				179u8, 17u8, 173u8, 169u8, 253u8, 146u8, 203u8, 153u8, 140u8, 131u8, 169u8, 157u8,
-				48u8, 241u8, 193u8, 169u8, 175u8, 177u8, 126u8, 102u8, 104u8, 27u8, 115u8, 207u8,
-				141u8, 0u8, 148u8, 165u8, 30u8, 106u8, 254u8, 237u8,
+				116u8, 204u8, 179u8, 181u8, 184u8, 189u8, 152u8, 108u8, 95u8, 184u8, 117u8, 212u8,
+				239u8, 129u8, 8u8, 153u8, 61u8, 155u8, 149u8, 173u8, 253u8, 49u8, 111u8, 32u8,
+				117u8, 205u8, 142u8, 232u8, 181u8, 107u8, 158u8, 118u8,
 			]
 	}
 	pub mod system {
@@ -32778,6 +32778,12 @@ pub mod api {
 					#[codec(index = 31)]
 					#[doc = "Invalid updater"]
 					UpdaterMisMatch,
+					#[codec(index = 32)]
+					#[doc = "Proof output parsing error"]
+					CannotParseOutputData,
+					#[codec(index = 33)]
+					#[doc = "Cannot get current message id"]
+					CurrentMessageIdNotFound,
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,

@@ -981,8 +981,18 @@ fn set_broadcaster_does_not_work_with_non_root() {
 fn set_poseidon_hash_works_with_root() {
 	new_test_ext().execute_with(|| {
 		let period = 2;
-		let poseidon_hash = BoundedVec::try_from([0, 1, 2, 3, 4].to_vec()).unwrap();
-		let root = U256::from(16909060u128);
+		let poseidon_hash = BoundedVec::try_from(
+			[
+				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+				23, 24, 25, 26, 27, 28, 29, 30, 31,
+			]
+			.to_vec(),
+		)
+		.unwrap();
+		let root = U256::from_dec_str(
+			"1780731860627700044960722568376592200742329637303199754547598369979440671",
+		)
+		.unwrap();
 		assert_ne!(SyncCommitteePoseidons::<Test>::get(period), root);
 
 		let ok = Bridge::set_poseidon_hash(RawOrigin::Root.into(), period, poseidon_hash);
@@ -991,6 +1001,25 @@ fn set_poseidon_hash_works_with_root() {
 
 		let expected_event = RuntimeEvent::Bridge(Event::SyncCommitteeUpdated { period, root });
 		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn set_poseidon_hash_wrong_hash_length() {
+	new_test_ext().execute_with(|| {
+		let period = 2;
+		let poseidon_hash = BoundedVec::try_from(
+			[
+				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+				23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+			]
+			.to_vec(),
+		)
+		.unwrap();
+
+		let error = Bridge::set_poseidon_hash(RawOrigin::Root.into(), period, poseidon_hash);
+		assert_err!(error, Error::<Test>::CannotParseOutputData);
+		assert_eq!(SyncCommitteePoseidons::<Test>::get(period), U256::zero());
 	});
 }
 

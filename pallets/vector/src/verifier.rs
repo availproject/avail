@@ -108,25 +108,30 @@ impl VerifyingKeyJson {
 			),
 		));
 
-		let gamma_abc_g1: Vec<G1Affine> = self
+		let gamma_abc_g1_result: Result<Vec<G1Affine>, VKeyDeserializationError> = self
 			.ic
 			.iter()
 			.map(|coords| {
-				G1Affine::from(G1Projective::new(
-					Fq::from_str(&coords[0]).unwrap_or_default(),
-					Fq::from_str(&coords[1]).unwrap_or_default(),
-					Fq::from_str(&coords[2]).unwrap_or_default(),
-				))
+				Ok(G1Affine::from(G1Projective::new(
+					Fq::from_str(&coords[0]).map_err(|_| VKeyDeserializationError::SerdeError)?,
+					Fq::from_str(&coords[1]).map_err(|_| VKeyDeserializationError::SerdeError)?,
+					Fq::from_str(&coords[2]).map_err(|_| VKeyDeserializationError::SerdeError)?,
+				)))
 			})
 			.collect();
 
-		Ok(VerifyingKey::<Bn254> {
-			alpha_g1,
-			beta_g2,
-			gamma_g2,
-			delta_g2,
-			gamma_abc_g1,
-		})
+		match gamma_abc_g1_result {
+			Ok(gamma_abc_g1) => Ok(VerifyingKey::<Bn254> {
+				alpha_g1,
+				beta_g2,
+				gamma_g2,
+				delta_g2,
+				gamma_abc_g1,
+			}),
+			Err(_) => {
+				return Err(VerificationError::InvalidVK);
+			},
+		}
 	}
 }
 
@@ -231,14 +236,12 @@ pub fn decode_proof(
 				}
 			}
 
-			if let ethabi::Token::FixedArray(ar) = &t[1] {
-				if let ethabi::Token::FixedArray(arr) = &ar[1] {
-					if let ethabi::Token::Uint(u) = &arr[0] {
-						b10 = u.to_string();
-					}
-					if let ethabi::Token::Uint(u) = &arr[1] {
-						b11 = u.to_string();
-					}
+			if let ethabi::Token::FixedArray(arr) = &ar[1] {
+				if let ethabi::Token::Uint(u) = &arr[0] {
+					b10 = u.to_string();
+				}
+				if let ethabi::Token::Uint(u) = &arr[1] {
+					b11 = u.to_string();
 				}
 			}
 		}

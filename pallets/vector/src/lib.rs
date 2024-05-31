@@ -39,6 +39,8 @@ pub type ValidProof = BoundedVec<BoundedVec<u8, ConstU32<2048>>, ConstU32<32>>;
 pub const SUPPORTED_ASSET_ID: H256 = H256::zero();
 pub const FAILED_SEND_MSG_ID: &[u8] = b"vector:failed_send_msg_txs";
 pub const LOG_TARGET: &str = "runtime::vector";
+pub const ROTATE_POSEIDON_OUTPUT_LENGTH: u32 = 32;
+pub const STEP_OUTPUT_LENGTH: u32 = 74;
 
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -108,6 +110,10 @@ pub mod pallet {
 		InvalidFailedIndices,
 		/// Invalid updater
 		UpdaterMisMatch,
+		/// Proof output parsing error
+		CannotParseOutputData,
+		/// Cannot get current message id
+		CurrentMessageIdNotFound,
 	}
 
 	#[pallet::event]
@@ -432,8 +438,10 @@ pub mod pallet {
 
 			// verification is success and, we can safely parse and validate output
 			if function_id == step_function_id {
-				let vs =
-					VerifiedStep::new(function_id, input_hash, parse_step_output(output.to_vec()));
+				let step_output = parse_step_output(output.to_vec())
+					.map_err(|_| Error::<T>::CannotParseOutputData)?;
+
+				let vs = VerifiedStep::new(function_id, input_hash, step_output);
 
 				if Self::step_into(slot, &config, &vs, step_function_id)? {
 					Self::deposit_event(Event::HeadUpdated {
@@ -443,11 +451,10 @@ pub mod pallet {
 					});
 				}
 			} else if function_id == rotate_function_id {
-				let vr = VerifiedRotate::new(
-					function_id,
-					input_hash,
-					parse_rotate_output(output.to_vec()),
-				);
+				let rotate_output = parse_rotate_output(output.to_vec())
+					.map_err(|_| Error::<T>::CannotParseOutputData)?;
+
+				let vr = VerifiedRotate::new(function_id, input_hash, rotate_output);
 
 				let period = Self::rotate_into(slot, &config, &vr, rotate_function_id)?;
 				Self::deposit_event(Event::SyncCommitteeUpdated {
@@ -591,8 +598,12 @@ pub mod pallet {
 				let _ = MemoryTemporaryStorage::update::<Vec<Compact<u32>>, _>(
 					FAILED_SEND_MSG_ID.to_vec(),
 					|failed| {
-						let tx_idx =
-							<frame_system::Pallet<T>>::extrinsic_index().unwrap_or_default();
+						let tx_idx_result = <frame_system::Pallet<T>>::extrinsic_index();
+						// this should never happen and we can just log warn
+						if tx_idx_result.is_none() {
+							log::warn!(target: LOG_TARGET, "Transaction index is none!");
+						}
+						let tx_idx = tx_idx_result.unwrap_or_default();
 						failed.push(tx_idx.into());
 						log::trace!(target: LOG_TARGET, "Send Message failed txs: {failed:?}");
 					},
@@ -613,6 +624,12 @@ pub mod pallet {
 			poseidon_hash: BoundedVec<u8, ConstU32<200>>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
+
+			// poseidon_hash.len() is always less than `u32::MAX` because it is bounded by BoundedVec
+			ensure!(
+				poseidon_hash.len() as u32 <= ROTATE_POSEIDON_OUTPUT_LENGTH,
+				Error::<T>::CannotParseOutputData
+			);
 
 			let hash = U256::from(poseidon_hash.to_vec().as_slice());
 
@@ -813,7 +830,8 @@ pub mod pallet {
 				},
 			};
 
-			let message_id = Self::fetch_curr_message_id();
+			let message_id = Self::fetch_curr_message_id().map_err(|e| e)?;
+
 			Self::deposit_event(Event::MessageSubmitted {
 				from: who,
 				to,
@@ -825,11 +843,14 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		fn fetch_curr_message_id() -> u64 {
+		fn fetch_curr_message_id() -> Result<u64, DispatchError> {
 			let number = <frame_system::Pallet<T>>::block_number().saturated_into::<u32>();
-			let tx_index = <frame_system::Pallet<T>>::extrinsic_index().unwrap_or_default();
+			let tx_index_option = <frame_system::Pallet<T>>::extrinsic_index();
 
-			tx_uid(number, tx_index)
+			match tx_index_option {
+				Some(tx_index) => Ok(tx_uid(number, tx_index)),
+				None => Err(Error::<T>::CurrentMessageIdNotFound.into()),
+			}
 		}
 
 		fn check_preconditions(
@@ -860,37 +881,6 @@ pub mod pallet {
 			);
 
 			Ok(())
-		}
-
-		/// # TODO
-		/// - Remove `dead_code` here.
-		#[allow(dead_code)]
-		fn decode_message_data(data: Vec<u8>) -> Result<(H256, U256), DispatchError> {
-			let decoded_data = ethabi::decode(
-				&[
-					ethabi::ParamType::FixedBytes(32),
-					ethabi::ParamType::Uint(256),
-				],
-				data.as_slice(),
-			)
-			.map_err(|_| Error::<T>::CannotDecodeData)?;
-			ensure!(decoded_data.len() == 2, Error::<T>::CannotDecodeData);
-
-			let asset_id_token = decoded_data.first().ok_or(Error::<T>::CannotDecodeData)?;
-			let asset_id = asset_id_token
-				.clone()
-				.into_fixed_bytes()
-				.ok_or(Error::<T>::CannotDecodeData)?;
-
-			let asset = H256::from_slice(asset_id.as_slice());
-
-			let amount_token = decoded_data.get(1).ok_or(Error::<T>::CannotDecodeData)?;
-			let amount = amount_token
-				.clone()
-				.into_uint()
-				.ok_or(Error::<T>::CannotDecodeData)?;
-
-			Ok((asset, amount))
 		}
 
 		/// The account ID of the bridge's pot.
