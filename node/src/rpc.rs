@@ -140,6 +140,9 @@ where
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 	use substrate_state_trie_migration_rpc::{StateMigration, StateMigrationApiServer};
 
+	#[cfg(feature = "testing-environment")]
+	use testing_rpc::{TestingApiServer, TestingEnv};
+
 	let mut io = RpcModule::new(());
 	let FullDeps {
 		client,
@@ -236,6 +239,9 @@ where
 			kate_max_cells_size,
 		)))?;
 	}
+
+	#[cfg(feature = "testing-environment")]
+	io.merge(TestingApiServer::into_rpc(TestingEnv))?;
 
 	Ok(io)
 }

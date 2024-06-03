@@ -24,6 +24,9 @@ use sp_core::H256;
 use sp_runtime::SaturatedConversion;
 use std::{sync::OnceLock, vec::Vec};
 
+#[cfg(feature = "testing-environment")]
+use avail_base::testing_env::*;
+
 static PMP: OnceLock<M1NoPrecomp> = OnceLock::new();
 
 fn build_grid(
@@ -32,6 +35,15 @@ fn build_grid(
 	seed: Seed,
 ) -> Result<EvaluationGrid, String> {
 	let _metric_observer = MetricObserver::new(ObserveKind::HEGrid);
+
+	#[cfg(feature = "testing-environment")]
+	{
+		unsafe {
+			if ENABLE_TEST_GRID_FAILURE {
+				return Err(String::from("ENABLE_TEST_GRID_FAILURE"));
+			}
+		}
+	}
 
 	let grid = EvaluationGrid::from_extrinsics(
 		submitted,
@@ -47,6 +59,15 @@ fn build_grid(
 
 fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, String> {
 	let _metric_observer = MetricObserver::new(ObserveKind::HECommitment);
+
+	#[cfg(feature = "testing-environment")]
+	{
+		unsafe {
+			if ENABLE_TEST_COMMITMENT_FAILURE {
+				return Err(String::from("ENABLE_TEST_COMMITMENT_FAILURE"));
+			}
+		}
+	}
 
 	// couscous has pp for degree upto 1024
 	let pmp = PMP.get_or_init(multiproof_params);
@@ -70,18 +91,33 @@ fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, String> {
 	Ok(commitment)
 }
 
+#[allow(unused_mut)]
 pub fn build_extension(
-	submitted: Vec<AppExtrinsic>,
+	mut submitted: Vec<AppExtrinsic>,
 	data_root: H256,
 	block_length: BlockLength,
 	_block_number: u32,
 	seed: Seed,
 	version: HeaderVersion,
 ) -> HeaderExtension {
+	#[cfg(feature = "testing-environment")]
+	{
+		unsafe {
+			if ENABLE_TEST_EXTENSION_FAILURE {
+				return HeaderExtension::get_faulty_header(data_root, version);
+			}
+
+			if let Some(new_extrinsics) = &TEST_POPULATE_GRID {
+				submitted = new_extrinsics.clone();
+			}
+		}
+	}
+
 	// Blocks with non-DA extrinsics will have empty commitments
 	if submitted.is_empty() {
 		return HeaderExtension::get_empty_header(data_root, version);
 	}
+
 	let _metric_observer = MetricObserver::new(ObserveKind::HETotalExecutionTime);
 
 	// Build the grid

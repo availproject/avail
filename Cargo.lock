@@ -975,6 +975,7 @@ dependencies = [
  "substrate-prometheus-endpoint",
  "substrate-state-trie-migration-rpc",
  "tempfile",
+ "testing-rpc",
  "try-runtime-cli",
 ]
 
@@ -10422,6 +10423,17 @@ dependencies = [
  "quote",
  "syn 1.0.109",
  "version_check",
+]
+
+[[package]]
+name = "testing-rpc"
+version = "0.3.0"
+dependencies = [
+ "avail-base",
+ "avail-core",
+ "jsonrpsee",
+ "log",
+ "sc-client-api",
 ]
 
 [[package]]

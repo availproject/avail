@@ -35,6 +35,7 @@ pallet-mandate = { path = "pallets/mandate", default-features = false }
 pallet-vector = { path = "pallets/vector", default-features = false }
 da-runtime = { path = "runtime", default-features = false }
 kate-rpc = { path = "rpc/kate-rpc" }
+testing-rpc = { path = "rpc/testing-rpc" }
 patricia-merkle-trie = { path = "patricia-merkle-trie", default-features = false }
 
 sc-basic-authorship = { path = "client/basic-authorship", default-features = false }

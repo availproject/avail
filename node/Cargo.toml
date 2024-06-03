@@ -25,6 +25,7 @@ kate.workspace = true
 da-runtime.workspace = true
 da-control.workspace = true
 kate-rpc.workspace = true
+testing-rpc.workspace = true
 pallet-vector.workspace = true
 frame-system-rpc-runtime-api.workspace = true
 frame-system = { workspace = true, default-features = false }
@@ -115,6 +116,7 @@ tempfile.workspace = true
 default = [ "cli" ]
 header_commitment_corruption = [ "da-runtime/header_commitment_corruption" ]
 fast-runtime = [ "da-runtime/fast-runtime" ]
+testing-environment = [ "da-runtime/testing-environment" ]
 cli = [ "clap", "clap-num", "clap_complete", "frame-benchmarking-cli" ]
 runtime-benchmarks = [
 	"da-control/runtime-benchmarks",
