@@ -56,6 +56,7 @@ pub trait WeightInfo {
 	fn set_application_key() -> Weight;
 	fn data_root(i: u32, ) -> Weight;
 	fn data_root_batch(i: u32, ) -> Weight;
+	fn set_submit_data_fee_modifier() -> Weight;
 }
 
 /// Weights for `da_control` using the Avail node and recommended hardware.
@@ -126,6 +127,16 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			// Standard Error: 2
 			.saturating_add(Weight::from_parts(5_269, 0).saturating_mul(i.into()))
 	}
+	/// Storage: `DataAvailability::SubmitDataFeeModifier` (r:0 w:1)
+	/// Proof: `DataAvailability::SubmitDataFeeModifier` (`max_values`: Some(1), `max_size`: Some(27), added: 522, mode: `MaxEncodedLen`)
+	fn set_submit_data_fee_modifier() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_537_000 picoseconds.
+		Weight::from_parts(3_921_000, 0)
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
 
 // For backwards compatibility and tests.
@@ -194,5 +205,15 @@ impl WeightInfo for () {
 		Weight::from_parts(8_193_988, 0)
 			// Standard Error: 2
 			.saturating_add(Weight::from_parts(5_269, 0).saturating_mul(i.into()))
+	}
+	/// Storage: `DataAvailability::SubmitDataFeeModifier` (r:0 w:1)
+	/// Proof: `DataAvailability::SubmitDataFeeModifier` (`max_values`: Some(1), `max_size`: Some(27), added: 522, mode: `MaxEncodedLen`)
+	fn set_submit_data_fee_modifier() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_537_000 picoseconds.
+		Weight::from_parts(3_921_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

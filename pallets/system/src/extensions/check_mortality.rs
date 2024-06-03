@@ -141,6 +141,7 @@ mod tests {
 				weight: Weight::from_parts(100, 0),
 				class: DispatchClass::Normal,
 				pays_fee: Pays::Yes,
+				..Default::default()
 			};
 			let len = 0_usize;
 			let ext = (

@@ -29,6 +29,7 @@ pub mod mock;
 mod tests;
 pub use extensions::check_app_id::CheckAppId;
 pub use extensions::check_batch_transactions::CheckBatchTransactions;
+use frame_support::dispatch::DispatchFeeModifier;
 pub mod weights;
 
 pub const LOG_TARGET: &str = "runtime::da_control";
@@ -142,6 +143,10 @@ pub mod pallet {
 	#[pallet::getter(fn application_key)]
 	pub type AppKeys<T: Config> = StorageMap<_, Blake2_128Concat, AppKeyFor<T>, AppKeyInfoFor<T>>;
 
+	/// Store data fee modifier for submit_data call.
+	#[pallet::storage]
+	pub type SubmitDataFeeModifier<T: Config> = StorageValue<_, DispatchFeeModifier, ValueQuery>;
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Creates an application key if `key` does not exist yet.
@@ -170,7 +175,11 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight(weight_helper::submit_data::<T>(data.len()))]
+		#[pallet::weight((
+			weight_helper::submit_data::<T>(data.len()),
+			DispatchClass::Normal,
+			SubmitDataFeeModifier::<T>::get()
+		))]
 		pub fn submit_data(
 			origin: OriginFor<T>,
 			data: AppDataFor<T>,
@@ -278,6 +287,21 @@ pub mod pallet {
 
 			Ok(().into())
 		}
+
+		#[pallet::call_index(4)]
+		#[pallet::weight(T::WeightInfo::set_submit_data_fee_modifier())]
+		pub fn set_submit_data_fee_modifier(
+			origin: OriginFor<T>,
+			modifier: DispatchFeeModifier,
+		) -> DispatchResultWithPostInfo {
+			ensure_root(origin)?;
+
+			SubmitDataFeeModifier::<T>::put(modifier);
+
+			Self::deposit_event(Event::SubmitDataFeeModifierSet { value: modifier });
+
+			Ok(().into())
+		}
 	}
 
 	/// Event for the pallet.
@@ -301,6 +325,9 @@ pub mod pallet {
 		ApplicationKeySet {
 			old_key: AppKeyFor<T>,
 			new_key: AppKeyFor<T>,
+		},
+		SubmitDataFeeModifierSet {
+			value: DispatchFeeModifier,
 		},
 	}
 
@@ -393,7 +420,7 @@ pub mod weight_helper {
 	use super::*;
 
 	/// Weight for `dataAvailability::submit_data`.
-	pub fn submit_data<T: Config>(data_len: usize) -> (Weight, DispatchClass) {
+	pub fn submit_data<T: Config>(data_len: usize) -> Weight {
 		/* Compute regular substrate weight. */
 		let data_len: u32 = data_len.saturated_into();
 		let data_prefix_len: u32 = match compact_len(&data_len) {
@@ -436,10 +463,7 @@ pub mod weight_helper {
 
 		// We return the biggest value between the regular weight and scalar based weight.
 		// I cannot think of a case where regular weight > matrix based weight.
-		(
-			scalar_based_weight.max(regular_weight),
-			DispatchClass::Normal,
-		)
+		scalar_based_weight.max(regular_weight)
 	}
 
 	fn compact_len(value: &u32) -> Option<u32> {

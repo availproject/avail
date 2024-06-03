@@ -538,6 +538,7 @@ mod tests {
 				weight: Weight::from_parts(100, 0),
 				class: DispatchClass::Operational,
 				pays_fee: Pays::Yes,
+				..Default::default()
 			};
 			let len = 0_usize;
 			let normal_limit = normal_weight_limit();
@@ -593,6 +594,7 @@ mod tests {
 				weight: Weight::zero(),
 				class: DispatchClass::Operational,
 				pays_fee: Pays::Yes,
+				..Default::default()
 			};
 			reset_check_weight(&op, normal_limit, false);
 			reset_check_weight(&op, normal_limit + 100, false);

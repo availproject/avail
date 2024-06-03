@@ -323,3 +323,49 @@ mod set_application_key {
 		})
 	}
 }
+
+mod set_submit_data_fee_modifier {
+	use super::*;
+	use crate::SubmitDataFeeModifier;
+	use frame_support::dispatch::DispatchFeeModifier;
+
+	#[test]
+	fn default_value() {
+		new_test_ext().execute_with(|| {
+			let value = SubmitDataFeeModifier::<Test>::get();
+			assert_eq!(value.weight_maximum_fee, None);
+			assert_eq!(value.weight_fee_divider, None);
+			assert_eq!(value.weight_fee_multiplier, None);
+		})
+	}
+
+	#[test]
+	fn only_sudo_can_call_this() {
+		new_test_ext().execute_with(|| {
+			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
+			let value = SubmitDataFeeModifier::<Test>::get();
+			assert!(DataAvailability::set_submit_data_fee_modifier(alice, value).is_err());
+		})
+	}
+
+	#[test]
+	fn set_submit_data_fee_modifier() {
+		new_test_ext().execute_with(|| {
+			let root: RuntimeOrigin = RawOrigin::Root.into();
+
+			let old_value = SubmitDataFeeModifier::<Test>::get();
+			let new_value = DispatchFeeModifier {
+				weight_maximum_fee: Some(100),
+				weight_fee_divider: Some(100),
+				weight_fee_multiplier: Some(100),
+			};
+
+			assert_ne!(old_value, new_value);
+
+			assert_ok!(DataAvailability::set_submit_data_fee_modifier(
+				root, new_value
+			));
+			assert_eq!(new_value, SubmitDataFeeModifier::<Test>::get());
+		})
+	}
+}
