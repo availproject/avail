@@ -194,9 +194,9 @@ pub fn flatten_and_pad_block<const CHUNK_SIZE: usize>(
 		assert_eq!(rem, 0);
 	}
 
-	// SAFETY: `chunk_size` is non-zero, checked above.
 	#[allow(clippy::let_unit_value)]
 	let () = UsizeNonZero::<CHUNK_SIZE>::OK;
+	// SAFETY: `chunk_size` is non-zero, checked above.
 	#[allow(clippy::arithmetic_side_effects)]
 	let last = block_dims_size.saturating_sub(padded_block.len()) / CHUNK_SIZE;
 
@@ -244,11 +244,14 @@ pub fn get_block_dimensions<const CHUNK_SIZE: usize>(
 		.unwrap_or(max_block_dimensions_size);
 	let nearest_power_2_size = max(nearest_power_2_size, MINIMUM_BLOCK_SIZE);
 
-	// # SAFETY:
-	// As `nearest_power_2_size` is a power of 2, and `CHUNK_SIZE` is even by above assertion, the division will always be exact.
+	// # SAFETY: `CHUNK_SIZE` is greater than 0.
+	// It removes the use of `f32::ceil`, like `(nearest_power_2_size as f32 / CHUNK_SIZE as f32).ceil() as u32`
 	#[allow(clippy::arithmetic_side_effects)]
-	let total_cells: u32 =
-		u32::try_from(nearest_power_2_size / CHUNK_SIZE).map_err(|_| Error::ConversionFailed)?;
+	let total_cells = nearest_power_2_size
+		.checked_add(CHUNK_SIZE - 1)
+		.ok_or(Error::BlockTooBig)?
+		/ CHUNK_SIZE;
+	let total_cells = u32::try_from(total_cells).map_err(|_| Error::ConversionFailed)?;
 
 	// we must minimize number of rows, to minimize header size
 	// (performance wise it doesn't matter)
