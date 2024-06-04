@@ -39,6 +39,7 @@ rand.workspace = true
 serde_json.workspace = true
 test-case.workspace = true
 avail-core = { path = ".", features = ["runtime"] }
+trybuild = "1.0.96"
 
 [features]
 default = [ "std" ]

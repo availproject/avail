@@ -53,6 +53,8 @@ pub use constants::*;
 pub mod header_version;
 pub use header_version::HeaderVersion;
 
+pub mod const_generic_asserts;
+
 #[cfg(feature = "runtime")]
 pub mod bench_randomness;
 

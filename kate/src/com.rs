@@ -9,8 +9,9 @@ use std::{
 };
 
 use avail_core::{
-	data_lookup::Error as DataLookupError, ensure, AppExtrinsic, AppId, BlockLengthColumns,
-	BlockLengthRows, DataLookup,
+	const_generic_asserts::{USizeGreaterOrEq, USizeSafeCastToU32, UsizeEven, UsizeNonZero},
+	data_lookup::Error as DataLookupError,
+	ensure, AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows, DataLookup,
 };
 use codec::Encode;
 use derive_more::Constructor;
@@ -139,8 +140,6 @@ pub fn flatten_and_pad_block<const CHUNK_SIZE: usize>(
 	extrinsics: &[AppExtrinsic],
 	rng_seed: Seed,
 ) -> Result<(XtsLayout, FlatData, BlockDimensions), Error> {
-	assert!(CHUNK_SIZE != 0);
-
 	// First, sort the extrinsics by their app_id
 	let mut extrinsics = extrinsics.to_vec();
 	extrinsics.sort_by(|a, b| a.app_id.cmp(&b.app_id));
@@ -185,15 +184,22 @@ pub fn flatten_and_pad_block<const CHUNK_SIZE: usize>(
 		let dims_sub_pad = block_dims_size
 			.checked_sub(padded_block.len())
 			.expect("`padded_block.len() <= block_dims.size() .qed");
-		let rem = dims_sub_pad
-			.checked_rem(CHUNK_SIZE)
-			.expect("`chunk_size != 0 .qed");
+
+		// Static Assert that `CHUNK_SIZE` is non-zero.
+		#[allow(clippy::let_unit_value)]
+		let () = UsizeNonZero::<CHUNK_SIZE>::OK;
+		#[allow(clippy::arithmetic_side_effects)]
+		let rem = dims_sub_pad % CHUNK_SIZE;
+
 		assert_eq!(rem, 0);
 	}
 
+	// SAFETY: `chunk_size` is non-zero, checked above.
+	#[allow(clippy::let_unit_value)]
+	let () = UsizeNonZero::<CHUNK_SIZE>::OK;
 	#[allow(clippy::arithmetic_side_effects)]
-	// SAFETY: `chunk_size` comes from `NonZeroU32::get(...)` so we can safetly use `/`.
 	let last = block_dims_size.saturating_sub(padded_block.len()) / CHUNK_SIZE;
+
 	for _ in 0..last {
 		let rnd_values: [u8; SCALAR_SIZE - 1] = rng.gen();
 		padded_block.append(&mut pad_with_zeroes(rnd_values.to_vec(), CHUNK_SIZE));
@@ -209,12 +215,15 @@ pub fn get_block_dimensions<const CHUNK_SIZE: usize>(
 ) -> Result<BlockDimensions, Error> {
 	// # SAFETY: `CHUNK_SIZE` is a constant, so it is always greater than 0 and even.
 	// This assertions are important to ensure safety assumptions below.
-	assert!(CHUNK_SIZE > 0);
-	assert!(CHUNK_SIZE % 2 == 0);
+	#[allow(clippy::let_unit_value)]
+	let () = UsizeNonZero::<CHUNK_SIZE>::OK;
+	#[allow(clippy::let_unit_value)]
+	let () = UsizeEven::<CHUNK_SIZE>::OK;
 	const_assert_eq!(MINIMUM_BLOCK_SIZE % 2, 0);
-	assert!((CHUNK_SIZE as u32) as usize == CHUNK_SIZE);
 
 	// # SAFETY: `CHUNK_SIZE` is a constant always greater than 0 and its cast to `u32` is valid.
+	#[allow(clippy::let_unit_value)]
+	let () = USizeSafeCastToU32::<CHUNK_SIZE>::OK;
 	let chunk_size_u32 = unsafe { NonZeroU32::new_unchecked(CHUNK_SIZE as u32) };
 
 	let max_block_dimensions =
@@ -261,7 +270,8 @@ fn pad_with_zeroes(mut chunk: Vec<u8>, len: usize) -> Vec<u8> {
 
 fn pad_to_chunk<const CHUNK_SIZE: usize>(chunk: DataChunk) -> Vec<u8> {
 	const_assert_eq!(DATA_CHUNK_SIZE, size_of::<DataChunk>());
-	assert!(CHUNK_SIZE >= DATA_CHUNK_SIZE);
+	#[allow(clippy::let_unit_value)]
+	let () = USizeGreaterOrEq::<CHUNK_SIZE, DATA_CHUNK_SIZE>::OK;
 
 	let mut padded = chunk.to_vec();
 	padded.resize(CHUNK_SIZE, 0);
