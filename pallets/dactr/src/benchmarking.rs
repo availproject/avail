@@ -282,6 +282,21 @@ mod benchmarks {
 		Ok(())
 	}
 
+	#[benchmark]
+	fn set_submit_data_fee_modifier() -> Result<(), BenchmarkError> {
+		let origin = RawOrigin::Root;
+		let value = DispatchFeeModifier {
+			weight_maximum_fee: Some(100),
+			weight_fee_divider: Some(99),
+			weight_fee_multiplier: Some(98),
+		};
+
+		#[extrinsic_call]
+		_(origin, value);
+
+		Ok(())
+	}
+
 	#[benchmark(extra)]
 	fn commitment_builder_64(
 		i: Linear<32, { T::MaxBlockRows::get().0 }>,

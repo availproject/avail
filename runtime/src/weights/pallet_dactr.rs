@@ -120,4 +120,15 @@ impl<T: frame_system::Config> da_control::WeightInfo for WeightInfo<T> {
 			// Standard Error: 2
 			.saturating_add(Weight::from_parts(5_259, 0).saturating_mul(i.into()))
 	}
+	/// Storage: `DataAvailability::SubmitDataFeeModifier` (r:0 w:1)
+	/// Proof: `DataAvailability::SubmitDataFeeModifier` (`max_values`: Some(1), `max_size`: Some(27), added: 522, mode: `MaxEncodedLen`)
+	fn set_submit_data_fee_modifier() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_453_000 picoseconds.
+		Weight::from_parts(3_723_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
 }

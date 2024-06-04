@@ -245,9 +245,9 @@ mod multiplier_tests {
 			let tx_len: usize = 512 * 1024; // 512 Kb data
 			let da_submission_weight = da_control::weight_helper::submit_data::<Runtime>(tx_len);
 			let dispatch_info = DispatchInfo {
-				weight: da_submission_weight.0,
-				class: da_submission_weight.1,
+				weight: da_submission_weight,
 				pays_fee: Pays::Yes,
+				..Default::default()
 			};
 			let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
 			println!(
