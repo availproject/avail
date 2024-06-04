@@ -1,5 +1,4 @@
 use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows, DataLookup};
-use core::num::NonZeroU32;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use dusk_plonk::prelude::BlsScalar;
 use kate::{
@@ -128,10 +127,9 @@ fn bench_reconstruct(c: &mut Criterion) {
 
 fn reconstruct(xts: &[AppExtrinsic]) {
 	let metrics = IgnoreMetrics {};
-	let (layout, commitments, dims, matrix) = par_build_commitments(
+	let (layout, commitments, dims, matrix) = par_build_commitments::<32, _>(
 		BlockLengthRows(64),
 		BlockLengthColumns(16),
-		unsafe { NonZeroU32::new_unchecked(32) },
 		xts,
 		Seed::default(),
 		&metrics,

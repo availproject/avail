@@ -1,5 +1,6 @@
 use core::num::NonZeroU32;
 use std::{
+	cmp::max,
 	convert::{TryFrom, TryInto},
 	mem::size_of,
 	num::TryFromIntError,
@@ -20,8 +21,6 @@ use dusk_plonk::{
 	fft::{EvaluationDomain, Evaluations},
 	prelude::{BlsScalar, CommitKey},
 };
-#[cfg(feature = "std")]
-use kate_recovery::matrix::Dimensions;
 use nalgebra::base::DMatrix;
 use rand::Rng;
 use rand_chacha::{
@@ -44,10 +43,9 @@ use crate::{
 	},
 	metrics::Metrics,
 	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed, TryFromBlockDimensionsError, LOG_TARGET,
-	U32_USIZE_ERR,
 };
 #[cfg(feature = "std")]
-use kate_recovery::testnet;
+use kate_recovery::{matrix::Dimensions, testnet};
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Constructor, Clone, Copy, PartialEq, Eq, Debug)]
@@ -135,13 +133,14 @@ fn app_extrinsics_group_by_app_id(extrinsics: &[AppExtrinsic]) -> Vec<(AppId, Ve
 	})
 }
 
-pub fn flatten_and_pad_block(
+pub fn flatten_and_pad_block<const CHUNK_SIZE: usize>(
 	max_rows: BlockLengthRows,
 	max_cols: BlockLengthColumns,
-	chunk_size: NonZeroU32,
 	extrinsics: &[AppExtrinsic],
 	rng_seed: Seed,
 ) -> Result<(XtsLayout, FlatData, BlockDimensions), Error> {
+	assert!(CHUNK_SIZE != 0);
+
 	// First, sort the extrinsics by their app_id
 	let mut extrinsics = extrinsics.to_vec();
 	extrinsics.sort_by(|a, b| a.app_id.cmp(&b.app_id));
@@ -164,7 +163,7 @@ pub fn flatten_and_pad_block(
 		.into_iter()
 		.flat_map(|e| {
 			e.into_iter()
-				.flat_map(|e| pad_to_chunk(e, chunk_size))
+				.flat_map(pad_to_chunk::<CHUNK_SIZE>)
 				.collect::<Vec<_>>()
 		})
 		.collect::<Vec<_>>();
@@ -174,8 +173,7 @@ pub fn flatten_and_pad_block(
 		.map_err(|_| Error::BlockTooBig)?;
 
 	// Determine the block size after padding
-	let block_dims = get_block_dimensions(padded_block_len, max_rows, max_cols, chunk_size)?;
-	let chunk_size = usize::try_from(NonZeroU32::get(block_dims.chunk_size)).expect(U32_USIZE_ERR);
+	let block_dims = get_block_dimensions::<CHUNK_SIZE>(padded_block_len, max_rows, max_cols)?;
 
 	let block_dims_size = block_dims.size();
 	ensure!(padded_block.len() <= block_dims_size, Error::BlockTooBig);
@@ -188,30 +186,39 @@ pub fn flatten_and_pad_block(
 			.checked_sub(padded_block.len())
 			.expect("`padded_block.len() <= block_dims.size() .qed");
 		let rem = dims_sub_pad
-			.checked_rem(chunk_size)
+			.checked_rem(CHUNK_SIZE)
 			.expect("`chunk_size != 0 .qed");
 		assert_eq!(rem, 0);
 	}
 
 	#[allow(clippy::arithmetic_side_effects)]
 	// SAFETY: `chunk_size` comes from `NonZeroU32::get(...)` so we can safetly use `/`.
-	let last = block_dims_size.saturating_sub(padded_block.len()) / chunk_size;
+	let last = block_dims_size.saturating_sub(padded_block.len()) / CHUNK_SIZE;
 	for _ in 0..last {
 		let rnd_values: [u8; SCALAR_SIZE - 1] = rng.gen();
-		padded_block.append(&mut pad_with_zeroes(rnd_values.to_vec(), chunk_size));
+		padded_block.append(&mut pad_with_zeroes(rnd_values.to_vec(), CHUNK_SIZE));
 	}
 
 	Ok((tx_layout, padded_block, block_dims))
 }
 
-pub fn get_block_dimensions(
+pub fn get_block_dimensions<const CHUNK_SIZE: usize>(
 	block_size: u32,
 	max_rows: BlockLengthRows,
 	max_cols: BlockLengthColumns,
-	chunk_size: NonZeroU32,
 ) -> Result<BlockDimensions, Error> {
+	// # SAFETY: `CHUNK_SIZE` is a constant, so it is always greater than 0 and even.
+	// This assertions are important to ensure safety assumptions below.
+	assert!(CHUNK_SIZE > 0);
+	assert!(CHUNK_SIZE % 2 == 0);
+	const_assert_eq!(MINIMUM_BLOCK_SIZE % 2, 0);
+	assert!((CHUNK_SIZE as u32) as usize == CHUNK_SIZE);
+
+	// # SAFETY: `CHUNK_SIZE` is a constant always greater than 0 and its cast to `u32` is valid.
+	let chunk_size_u32 = unsafe { NonZeroU32::new_unchecked(CHUNK_SIZE as u32) };
+
 	let max_block_dimensions =
-		BlockDimensions::new(max_rows, max_cols, chunk_size).ok_or(Error::BlockTooBig)?;
+		BlockDimensions::new(max_rows, max_cols, chunk_size_u32).ok_or(Error::BlockTooBig)?;
 	let max_block_dimensions_size = max_block_dimensions.size();
 
 	let block_size = usize::try_from(block_size)?;
@@ -223,24 +230,27 @@ pub fn get_block_dimensions(
 
 	// Both row number and column number have to be a power of 2, because of the Plonk FFT constraints
 	// Implicitly, if both of the assumptions above are correct, the total_cells number will also be a power of 2
-	let mut nearest_power_2_size = 2_usize.pow((block_size as f32).log2().ceil() as u32);
-	if nearest_power_2_size < MINIMUM_BLOCK_SIZE {
-		nearest_power_2_size = MINIMUM_BLOCK_SIZE;
-	}
+	let nearest_power_2_size = block_size
+		.checked_next_power_of_two()
+		.unwrap_or(max_block_dimensions_size);
+	let nearest_power_2_size = max(nearest_power_2_size, MINIMUM_BLOCK_SIZE);
 
-	let total_cells = (nearest_power_2_size as f32 / chunk_size.get() as f32).ceil() as u32;
+	// # SAFETY:
+	// As `nearest_power_2_size` is a power of 2, and `CHUNK_SIZE` is even by above assertion, the division will always be exact.
+	#[allow(clippy::arithmetic_side_effects)]
+	let total_cells: u32 =
+		u32::try_from(nearest_power_2_size / CHUNK_SIZE).map_err(|_| Error::ConversionFailed)?;
 
 	// we must minimize number of rows, to minimize header size
 	// (performance wise it doesn't matter)
 	let nz_max_cols = NonZeroU32::new(max_cols.0).ok_or(Error::ZeroDimension)?;
-	#[allow(clippy::arithmetic_side_effects)]
 	let (cols, rows) = if total_cells > max_cols.0 {
 		(max_cols, BlockLengthRows(total_cells / nz_max_cols))
 	} else {
 		(BlockLengthColumns(total_cells), BlockLengthRows(1))
 	};
 
-	BlockDimensions::new(rows, cols, chunk_size).ok_or(Error::BlockTooBig)
+	BlockDimensions::new(rows, cols, chunk_size_u32).ok_or(Error::BlockTooBig)
 }
 
 #[inline]
@@ -249,16 +259,12 @@ fn pad_with_zeroes(mut chunk: Vec<u8>, len: usize) -> Vec<u8> {
 	chunk
 }
 
-fn pad_to_chunk(chunk: DataChunk, chunk_size: NonZeroU32) -> Vec<u8> {
+fn pad_to_chunk<const CHUNK_SIZE: usize>(chunk: DataChunk) -> Vec<u8> {
 	const_assert_eq!(DATA_CHUNK_SIZE, size_of::<DataChunk>());
-	let chunk_size = usize::try_from(chunk_size.get()).expect(U32_USIZE_ERR);
-	debug_assert!(
-		chunk_size >= DATA_CHUNK_SIZE,
-		"`BlockLength.chunk_size` is valid by design .qed"
-	);
+	assert!(CHUNK_SIZE >= DATA_CHUNK_SIZE);
 
 	let mut padded = chunk.to_vec();
-	padded.resize(chunk_size, 0);
+	padded.resize(CHUNK_SIZE, 0);
 	padded
 }
 
@@ -464,10 +470,9 @@ pub fn build_proof<M: Metrics>(
 }
 
 #[cfg(feature = "std")]
-pub fn par_build_commitments<M: Metrics>(
+pub fn par_build_commitments<const CHUNK_SIZE: usize, M: Metrics>(
 	rows: BlockLengthRows,
 	cols: BlockLengthColumns,
-	chunk_size: NonZeroU32,
 	extrinsics_by_key: &[AppExtrinsic],
 	rng_seed: Seed,
 	metrics: &M,
@@ -476,7 +481,7 @@ pub fn par_build_commitments<M: Metrics>(
 
 	// generate data matrix first
 	let (tx_layout, block, block_dims) =
-		flatten_and_pad_block(rows, cols, chunk_size, extrinsics_by_key, rng_seed)?;
+		flatten_and_pad_block::<CHUNK_SIZE>(rows, cols, extrinsics_by_key, rng_seed)?;
 
 	metrics.block_dims_and_size(block_dims, block.len().saturated_into());
 
@@ -611,7 +616,6 @@ mod tests {
 	use kate_recovery::{
 		com::*,
 		commitments, config,
-		config::CHUNK_SIZE,
 		data::{self, DataCell},
 		matrix::{Dimensions, Position},
 		proof,
@@ -622,39 +626,39 @@ mod tests {
 	};
 	use rand::{prelude::IteratorRandom, Rng, SeedableRng};
 	use sp_arithmetic::Percent;
-	use static_assertions::const_assert;
 	use std::{convert::TryInto, iter::repeat};
 	use test_case::test_case;
 
 	use super::*;
 	use crate::{
-		com::{get_block_dimensions, pad_iec_9797_1, par_extend_data_matrix, BlockDimensions},
+		com::{pad_iec_9797_1, par_extend_data_matrix, BlockDimensions},
 		config::DATA_CHUNK_SIZE,
 		metrics::IgnoreMetrics,
 		padded_len,
 	};
 
-	const TCHUNK: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(32) };
+	const TCHUNK_SIZE: usize = 32;
+	const TCHUNK: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(TCHUNK_SIZE as u32) };
 	#[cfg(not(feature = "maximum-block-size"))]
-	#[test_case(0, 256, 256 => (1, 4, 32) ; "block size zero")]
-	#[test_case(11, 256, 256 => (1, 4, 32) ; "below minimum block size")]
-	#[test_case(300, 256, 256 => (1, 16, 32) ; "regular case")]
-	#[test_case(513, 256, 256 => (1, 32, 32) ; "minimum overhead after 512")]
-	#[test_case(8192, 256, 256 => (1, 256, 32) ; "maximum cols")]
-	#[test_case(8224, 256, 256 => (2, 256, 32) ; "two rows")]
-	#[test_case(2097152, 256, 256 => (256, 256, 32) ; "max block size")]
+	#[test_case(0, 256, 256 => (1, 4) ; "block size zero")]
+	#[test_case(11, 256, 256 => (1, 4) ; "below minimum block size")]
+	#[test_case(300, 256, 256 => (1, 16) ; "regular case")]
+	#[test_case(513, 256, 256 => (1, 32) ; "minimum overhead after 512")]
+	#[test_case(8192, 256, 256 => (1, 256) ; "maximum cols")]
+	#[test_case(8224, 256, 256 => (2, 256) ; "two rows")]
+	#[test_case(2097152, 256, 256 => (256, 256) ; "max block size")]
 	#[test_case(2097155, 256, 256 => panics "BlockTooBig" ; "too much data")]
 	// newapi done
-	fn test_get_block_dimensions(size: u32, rows: u32, cols: u32) -> (u32, u32, u32) {
-		let dims = get_block_dimensions(
+	fn test_get_block_dimensions(size: u32, rows: u32, cols: u32) -> (u32, u32) {
+		let dims = get_block_dimensions::<TCHUNK_SIZE>(
 			size,
 			BlockLengthRows(rows),
 			BlockLengthColumns(cols),
-			TCHUNK,
 		)
 		.unwrap();
 
-		(dims.rows.0, dims.cols.0, dims.chunk_size.get())
+		assert_eq!(dims.chunk_size.get(), TCHUNK_SIZE as u32);
+		(dims.rows.0, dims.cols.0)
 	}
 
 	// newapi done
@@ -720,6 +724,9 @@ mod tests {
 	#[test]
 	#[cfg(not(feature = "maximum-block-size"))]
 	fn test_flatten_block() {
+		use kate_recovery::config::CHUNK_SIZE;
+		use static_assertions::const_assert;
+
 		let extrinsics: Vec<AppExtrinsic> = vec![
 			AppExtrinsic::new(AppId(0), (1..=30).collect()),
 			AppExtrinsic::new(AppId(1), (1..=31).collect()),
@@ -729,10 +736,9 @@ mod tests {
 
 		let expected_dims =
 			BlockDimensions::new(BlockLengthRows(1), BlockLengthColumns(16), TCHUNK).unwrap();
-		let (layout, data, dims) = flatten_and_pad_block(
+		let (layout, data, dims) = flatten_and_pad_block::<TCHUNK_SIZE>(
 			BlockLengthRows(128),
 			BlockLengthColumns(256),
-			TCHUNK,
 			extrinsics.as_slice(),
 			Seed::default(),
 		)
@@ -853,8 +859,7 @@ mod tests {
 	// newapi done
 	fn test_build_and_reconstruct(ref xts in app_extrinsics_strategy())  {
 		let metrics = IgnoreMetrics {};
-		let (layout, commitments, dims, matrix) = par_build_commitments(
-			BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &metrics).unwrap();
+		let (layout, commitments, dims, matrix) = par_build_commitments::<TCHUNK_SIZE,_>( BlockLengthRows(64), BlockLengthColumns(16), xts, Seed::default(), &metrics).unwrap();
 
 		let columns = sample_cells_from_matrix(&matrix, None);
 		let extended_dims = dims.try_into().unwrap();
@@ -891,7 +896,7 @@ mod tests {
 	#[test]
 	// newapi done
 	fn test_commitments_verify(ref xts in app_extrinsics_strategy())  {
-		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
+		let (layout, commitments, dims, matrix) = par_build_commitments::<TCHUNK_SIZE,_>(BlockLengthRows(64), BlockLengthColumns(16), xts, Seed::default(), &IgnoreMetrics{}).unwrap();
 
 		let index = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
 		let dims_cols = usize::try_from(dims.cols.0).unwrap();
@@ -911,7 +916,7 @@ mod tests {
 	#[test]
 	// newapi done
 	fn verify_commitmnets_missing_row(ref xts in app_extrinsics_strategy())  {
-		let (layout, commitments, dims, matrix) = par_build_commitments(BlockLengthRows(64), BlockLengthColumns(16), TCHUNK, xts, Seed::default(), &IgnoreMetrics{}).unwrap();
+		let (layout, commitments, dims, matrix) = par_build_commitments::<TCHUNK_SIZE,_>(BlockLengthRows(64), BlockLengthColumns(16), xts, Seed::default(), &IgnoreMetrics{}).unwrap();
 
 		let index = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
 		let dims_cols = usize::try_from(dims.cols.0).unwrap();
@@ -936,10 +941,9 @@ mod tests {
 		let original_data = br#"test"#;
 		let hash: Seed = hex!("4c29ae91bb0c61204b6f95d1f3c3a50aa6ac2f29da18d4423e05bbbf81056903");
 
-		let (_, commitments, dimensions, _) = par_build_commitments(
+		let (_, commitments, dimensions, _) = par_build_commitments::<TCHUNK_SIZE, _>(
 			block_rows,
 			block_cols,
-			TCHUNK,
 			&[AppExtrinsic::from(original_data.to_vec())],
 			hash,
 			&IgnoreMetrics {},
@@ -969,10 +973,9 @@ get erasure coded to ensure redundancy."#;
 			AppExtrinsic::new(AppId(2), app_id_2_data.to_vec()),
 		];
 
-		let (layout, data, dims) = flatten_and_pad_block(
+		let (layout, data, dims) = flatten_and_pad_block::<TCHUNK_SIZE>(
 			BlockLengthRows(32),
 			BlockLengthColumns(4),
-			TCHUNK,
 			&xts,
 			hash,
 		)?;
@@ -1009,10 +1012,9 @@ get erasure coded to ensure redundancy."#;
 			.map(|(app_id, data)| AppExtrinsic::new(AppId(app_id), data))
 			.collect::<Vec<_>>();
 
-		let (layout, data, dims) = flatten_and_pad_block(
+		let (layout, data, dims) = flatten_and_pad_block::<TCHUNK_SIZE>(
 			BlockLengthRows(32),
 			BlockLengthColumns(4),
-			TCHUNK,
 			&xts,
 			hash,
 		)?;
@@ -1051,10 +1053,9 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 		// The hash is used for seed for padding the block to next power of two value
 		let hash = Seed::default();
-		let (layout, data, dims) = flatten_and_pad_block(
+		let (layout, data, dims) = flatten_and_pad_block::<TCHUNK_SIZE>(
 			BlockLengthRows(128),
 			BlockLengthColumns(2),
-			TCHUNK,
 			&[AppExtrinsic::from(orig_data.to_vec())],
 			hash,
 		)?;
@@ -1084,10 +1085,9 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		];
 		// The hash is used for seed for padding the block to next power of two value
 		let hash = Seed::default();
-		let (layout, data, dims) = flatten_and_pad_block(
+		let (layout, data, dims) = flatten_and_pad_block::<TCHUNK_SIZE>(
 			BlockLengthRows(128),
 			BlockLengthColumns(2),
-			TCHUNK,
 			&xts,
 			hash,
 		)?;
@@ -1141,17 +1141,16 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		lens.iter().map(|len| padded_len(*len, chunk_size)).sum()
 	}
 
-	#[test_case( build_extrinsics(&[5,30,31]), 32 => padded_len_group(&[5,30,31], 32) ; "Single chunk per ext")]
-	#[test_case( build_extrinsics(&[5,30,32]), 32 => padded_len_group(&[5,30,32], 32) ; "Extra chunk per ext")]
-	#[test_case( build_extrinsics(&[5,64,120]), 32 => padded_len_group(&[5,64,120], 32) ; "Extra chunk 2 per ext")]
-	#[test_case( build_extrinsics(&[]), 32 => padded_len_group(&[], 32) ; "Empty chunk list")]
-	#[test_case( build_extrinsics(&[4096]), 32 => padded_len_group(&[4096], 32) ; "4K chunk")]
-	fn test_padding_len(extrinsics: Vec<Vec<u8>>, chunk_size: u32) -> u32 {
-		let chunk_size = NonZeroU32::new(chunk_size).expect("Invalid chunk size .qed");
+	#[test_case( build_extrinsics(&[5,30,31]) => padded_len_group(&[5,30,31], 32) ; "Single chunk per ext")]
+	#[test_case( build_extrinsics(&[5,30,32]) => padded_len_group(&[5,30,32], 32) ; "Extra chunk per ext")]
+	#[test_case( build_extrinsics(&[5,64,120]) => padded_len_group(&[5,64,120], 32) ; "Extra chunk 2 per ext")]
+	#[test_case( build_extrinsics(&[]) => padded_len_group(&[], 32) ; "Empty chunk list")]
+	#[test_case( build_extrinsics(&[4096]) => padded_len_group(&[4096], 32) ; "4K chunk")]
+	fn test_padding_len(extrinsics: Vec<Vec<u8>>) -> u32 {
 		extrinsics
 			.into_iter()
-			.flat_map(|data| pad_iec_9797_1(data))
-			.map(|chunk| pad_to_chunk(chunk, chunk_size).len())
+			.flat_map(pad_iec_9797_1)
+			.map(|chunk| pad_to_chunk::<32>(chunk).len())
 			.sum::<usize>()
 			.saturated_into()
 	}
@@ -1167,10 +1166,9 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		let xts = (0..4)
 			.map(|app_id| AppExtrinsic::new(AppId(app_id), data.clone()))
 			.collect::<Vec<_>>();
-		par_build_commitments(
+		par_build_commitments::<TCHUNK_SIZE, _>(
 			BlockLengthRows(4),
 			BlockLengthColumns(4),
-			TCHUNK,
 			&xts,
 			hash,
 			&IgnoreMetrics {},
@@ -1185,10 +1183,9 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		// We will use second line to ensure constant row.
 		let hash = Seed::default();
 		let xts = vec![AppExtrinsic::from(vec![0u8; 31 * 8])];
-		par_build_commitments(
+		par_build_commitments::<TCHUNK_SIZE, _>(
 			BlockLengthRows(4),
 			BlockLengthColumns(4),
-			TCHUNK,
 			&xts,
 			hash,
 			&IgnoreMetrics {},
@@ -1219,9 +1216,11 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 		assert_eq!(row.len(), len);
 		println!("Row: {:?}", row);
-		let commitment = commit(&prover_key, row_eval_domain, row.clone())
-			.map(|com| <[u8; config::COMMITMENT_SIZE]>::try_from(com.to_bytes()).unwrap())
-			.unwrap();
+		let commitment: [u8; config::COMMITMENT_SIZE] =
+			commit(&prover_key, row_eval_domain, row.clone())
+				// .map(|com| <[u8; config::COMMITMENT_SIZE]>::try_from(com.to_bytes()).unwrap())
+				.map(|com| com.to_bytes())
+				.unwrap();
 		println!("Commitment: {commitment:?}");
 
 		// We artificially extend the matrix by doubling values, this is not proper erasure coding.
