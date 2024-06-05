@@ -1163,7 +1163,7 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		extrinsics
 			.into_iter()
 			.flat_map(pad_iec_9797_1)
-			.map(|chunk| pad_to_chunk::<32>(chunk).len())
+			.map(|chunk| pad_to_chunk::<TCHUNK_SIZE>(chunk).len())
 			.sum::<usize>()
 			.saturated_into()
 	}
@@ -1231,7 +1231,6 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 		println!("Row: {:?}", row);
 		let commitment: [u8; config::COMMITMENT_SIZE] =
 			commit(&prover_key, row_eval_domain, row.clone())
-				// .map(|com| <[u8; config::COMMITMENT_SIZE]>::try_from(com.to_bytes()).unwrap())
 				.map(|com| com.to_bytes())
 				.unwrap();
 		println!("Commitment: {commitment:?}");
