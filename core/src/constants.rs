@@ -26,7 +26,7 @@ pub mod currency {
 	/// 1 Cents = `10_000_000_000_000_000`
 	pub const CENTS: Balance = AVAIL / 100;
 
-	/// Millicent of AVAIL has 13 decimal positions( 100 mCents = 1 cent).
+	/// Millicent of AVAIL has 13 decimal positions( 1000 mCents = 1 cent).
 	pub const MILLICENTS: Balance = CENTS / 1_000;
 
 	/// `MILLI_AVAIL` has 15 decimal positions
