@@ -128,6 +128,8 @@ mod tests {
 	mod max_block_submit;
 	mod max_send_message;
 	mod query_proof;
+	mod retrieve_data_hash;
+	mod retrieve_data_subscription;
 	mod rpc_queries;
 	mod submit_block_length_proposal;
 	mod submit_data;
