@@ -1,0 +1,13 @@
+error[E0080]: evaluation of `avail_core::const_generic_asserts::UsizeNonZero::<0>::OK` failed
+ --> src/const_generic_asserts.rs
+  |
+  |     pub const OK: () = assert!(N != 0, "must be non-zero");
+  |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the evaluated program panicked at 'must be non-zero', $DIR/src/const_generic_asserts.rs:6:24
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn const_generic_non_zero::<0>`
+ --> tests/const_generics/usize_non_zero_fail.rs:8:2
+  |
+8 |     const_generic_non_zero::<0>();
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

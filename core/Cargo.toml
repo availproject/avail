@@ -1,6 +1,6 @@
 [package]
 name = "avail-core"
-version = "0.6.0"
+version = "0.6.1"
 authors = []
 edition = "2021"
 license = "Apache-2.0"
@@ -39,6 +39,7 @@ rand.workspace = true
 serde_json.workspace = true
 test-case.workspace = true
 avail-core = { path = ".", features = ["runtime"] }
+trybuild = "1.0.96"
 
 [features]
 default = [ "std" ]
