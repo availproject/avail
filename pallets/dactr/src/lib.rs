@@ -14,7 +14,7 @@ use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
 use serde::{Deserialize, Serialize};
 use sp_arithmetic::traits::{CheckedAdd, One, SaturatedConversion};
 use sp_core::H256;
-use sp_io::{hashing::blake2_256, transaction_index};
+use sp_io::hashing::blake2_256;
 use sp_runtime::Perbill;
 use sp_std::{mem::replace, vec, vec::Vec};
 
@@ -187,16 +187,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 			ensure!(!data.is_empty(), Error::<T>::DataCannotBeEmpty);
 
-			// SAFETY: `data.len()` is always less than `u32::MAX` because it is bounded by
-			// `BoundedVec`
-			let len = data.len() as u32;
-
-			// Index Tx in DB block.
 			let data_hash = blake2_256(&data);
-			let extrinsic_index =
-				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::BadContext)?;
-			transaction_index::index(extrinsic_index, len, data_hash);
-
 			Self::deposit_event(Event::DataSubmitted {
 				who,
 				data_hash: H256(data_hash),
