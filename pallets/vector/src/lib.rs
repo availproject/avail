@@ -12,7 +12,6 @@ use frame_support::{
 	PalletId,
 };
 use sp_core::H256;
-use sp_io::{hashing::blake2_256, transaction_index};
 use sp_runtime::SaturatedConversion;
 use sp_std::{vec, vec::Vec};
 
@@ -767,17 +766,6 @@ pub mod pallet {
 				local_failed_txs == failed_txs,
 				Error::<T>::InvalidFailedIndices
 			);
-
-			// SAFETY: `failed_txs.len()` is always less than `u32::MAX` because it is bounded by
-			// `BoundedVec`
-			let encoded = failed_txs.encode();
-			let len = encoded.len() as u32;
-
-			// Index Tx in DB block.
-			let failed_hash = blake2_256(&encoded);
-			let extrinsic_index =
-				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::BadContext)?;
-			transaction_index::index(extrinsic_index, len, failed_hash);
 
 			Ok(())
 		}
