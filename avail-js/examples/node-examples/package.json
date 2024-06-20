@@ -11,6 +11,7 @@
     "data-submission": "npm run build && node build/node-examples/src/tx-data-availability-data-submission.js",
     "create-app-id": "npm run build && node build/node-examples/src/tx-data-availability-create-application-key.js",
     "staking-nominate": "npm run build && node build/node-examples/src/tx-staking-nominate-full-example.js",
+    "staking-payout": "npm run build && node build/node-examples/src/tx-staking-payout-stakers.js",
     "staking-validate": "npm run build && node build/node-examples/src/tx-staking-validate-full-example.js",
     "estimate-transaction-fees": "npm run build && node build/node-examples/src/estimate-transaction-fees.js",
     "subscribe-blocks": "npm run build && node build/node-examples/src/subscribe-blocks.js",
