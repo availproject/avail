@@ -28,5 +28,8 @@
   },
   "devDependencies": {
     "rimraf": "^5.0.5"
+  },
+  "resolutions": {
+    "ws": ">=8.17.1"
   }
 }

@@ -45,5 +45,8 @@
   },
   "dependencies": {
     "@polkadot/api": "^10.11.3"
+  },
+  "resolutions": {
+    "ws": ">=8.17.1"
   }
 }
