@@ -2,7 +2,6 @@
 
 pub mod com;
 pub mod commitments;
-pub mod config;
 pub mod data;
 pub mod matrix;
 pub mod proof;

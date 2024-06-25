@@ -55,7 +55,7 @@ use sp_std::alloc::format;
 /// the decoding fails.
 pub const EXTRINSIC_FORMAT_VERSION: u8 = 4;
 
-/// The `SingaturePayload` of `UncheckedExtrinsic`.
+/// The `SignaturePayload` of `UncheckedExtrinsic`.
 type SignaturePayload<Address, Signature, Extra> = (Address, Signature, Extra);
 
 /// An extrinsic right from the external world. This is unchecked and so can contain a signature.
@@ -735,13 +735,12 @@ mod tests {
 		use core::mem::transmute;
 
 		let op = unsigned_to_opaque();
-		let new_op = unsafe {
+		unsafe {
 			// Using `transmute` because `OpaqueExtrinsic.0` is not public.
 			let mut raw = transmute::<OpaqueExtrinsic, Vec<u8>>(op);
 			raw.pop();
 			transmute::<Vec<u8>, OpaqueExtrinsic>(raw)
-		};
-		new_op
+		}
 	}
 
 	#[test_case( unsigned_to_opaque() => true ; "Unsigned Ex")]

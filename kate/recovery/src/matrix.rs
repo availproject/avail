@@ -1,4 +1,4 @@
-use crate::config::{self, CHUNK_SIZE};
+use avail_core::constants::kate::{CHUNK_SIZE, EXTENSION_FACTOR};
 use core::{
 	convert::TryInto,
 	fmt::{Display, Formatter, Result},
@@ -11,8 +11,6 @@ use sp_std::vec;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
-const EXTENSION_FACTOR_U32: u32 = config::EXTENSION_FACTOR as u32;
 
 /// Position of a cell in the the matrix.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -52,7 +50,7 @@ impl Display for Position {
 }
 
 impl Position {
-	/// Refrence in format `block_number:column_number:row_number`
+	/// Reference in format `block_number:column_number:row_number`
 	#[cfg(feature = "std")]
 	pub fn reference(&self, block_number: u32) -> String {
 		format!("{}:{}", block_number, self)
@@ -77,7 +75,7 @@ pub struct Partition {
 pub struct RowIndex(pub u32);
 
 impl RowIndex {
-	/// Refrence in format `block_number:row_number`
+	/// Reference in format `block_number:row_number`
 	#[cfg(feature = "std")]
 	pub fn reference(&self, block_number: u32) -> String {
 		format!("{}:{}", block_number, self.0)
@@ -144,7 +142,7 @@ impl Dimensions {
 	}
 
 	/// Creates a `Dimension` without checking whether parameters are non-zero. This results in
-	/// undefined behaviour if any parameter is zero.
+	/// undefined behavior if any parameter is zero.
 	///
 	/// # Safety
 	/// Parameters `rows` and `cols` must not be zero.
@@ -214,7 +212,7 @@ impl Dimensions {
 
 	/// Extended matrix rows count.
 	pub fn extended_rows(&self) -> u32 {
-		u32::from(self.rows.get()) * EXTENSION_FACTOR_U32
+		u32::from(self.rows.get()) * EXTENSION_FACTOR
 	}
 
 	/// List of data row indexes in the extended matrix.
@@ -228,7 +226,7 @@ impl Dimensions {
 		let last_row = self.extended_data_row(cells.end - 1);
 
 		let data = (first_row..=last_row)
-			.step_by(config::EXTENSION_FACTOR)
+			.step_by(EXTENSION_FACTOR as usize)
 			.collect::<Vec<u32>>();
 		Some(data)
 	}
@@ -270,7 +268,7 @@ impl Dimensions {
 
 	/// Extended matrix data row index of cell in the data matrix.
 	fn extended_data_row(&self, cell: u32) -> u32 {
-		(cell / u32::from(self.cols.get())) * EXTENSION_FACTOR_U32
+		(cell / u32::from(self.cols.get())) * EXTENSION_FACTOR
 	}
 
 	/// Extended matrix data position of a cell in the data matrix.
@@ -318,7 +316,7 @@ impl Dimensions {
 	pub fn iter_extended_data_positions(&self) -> impl Iterator<Item = (u32, u16)> {
 		let rows: u32 = self.rows.get().into();
 		let cols = self.cols.get();
-		(0..rows).flat_map(move |row| (0..cols).map(move |col| (row * EXTENSION_FACTOR_U32, col)))
+		(0..rows).flat_map(move |row| (0..cols).map(move |col| (row * EXTENSION_FACTOR, col)))
 	}
 
 	/// Generates cell positions for given block partition

@@ -10,6 +10,7 @@ use std::{
 
 use avail_core::{
 	const_generic_asserts::{USizeGreaterOrEq, USizeSafeCastToU32, UsizeEven, UsizeNonZero},
+	constants::kate::{DATA_CHUNK_SIZE, EXTENSION_FACTOR},
 	data_lookup::Error as DataLookupError,
 	ensure, AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows, DataLookup,
 };
@@ -39,8 +40,8 @@ use thiserror_no_std::Error;
 use crate::{
 	com::kzg10::commitment::Commitment,
 	config::{
-		COL_EXTENSION, DATA_CHUNK_SIZE, EXTENSION_FACTOR, MAXIMUM_BLOCK_SIZE, MINIMUM_BLOCK_SIZE,
-		PROOF_SIZE, ROW_EXTENSION, SCALAR_SIZE,
+		COL_EXTENSION, MAXIMUM_BLOCK_SIZE, MINIMUM_BLOCK_SIZE, PROOF_SIZE, ROW_EXTENSION,
+		SCALAR_SIZE,
 	},
 	metrics::Metrics,
 	padded_len_of_pad_iec_9797_1, BlockDimensions, Seed, TryFromBlockDimensionsError, LOG_TARGET,
@@ -90,7 +91,7 @@ pub enum Error {
 	/// The base grid width, before extension, does not fit cleanly into a domain for FFTs
 	BaseGridDomainSizeInvalid(usize),
 	/// The extended grid width does not fit cleanly into a domain for FFTs
-	ExtendedGridDomianSizeInvalid(usize),
+	ExtendedGridDomainSizeInvalid(usize),
 	IndexOutOfRange,
 	ConversionFailed,
 }
@@ -107,8 +108,8 @@ impl From<TryFromBlockDimensionsError> for Error {
 	}
 }
 
-/// We cannot derive `PartialEq` becasue `PlonkError` does not support it in the current version.
-/// and we only need to double check its discriminat for testing.
+/// We cannot derive `PartialEq` because `PlonkError` does not support it in the current version.
+/// and we only need to double check its discriminant for testing.
 /// Only needed on tests by now.
 #[cfg(test)]
 impl PartialEq for Error {
@@ -304,7 +305,6 @@ fn extend_column_with_zeros(column: &[BlsScalar], height: usize) -> Vec<BlsScala
 }
 
 pub fn to_bls_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
-	// TODO: Better error type for BlsScalar case?
 	let scalar_size_chunk =
 		<[u8; SCALAR_SIZE]>::try_from(chunk).map_err(|_| Error::InvalidChunkLength)?;
 	BlsScalar::from_bytes(&scalar_size_chunk).map_err(|_| Error::CellLengthExceeded)
@@ -376,8 +376,6 @@ pub fn par_extend_data_matrix<M: Metrics>(
 	Ok(ext_matrix)
 }
 
-//TODO cache extended data matrix
-//TODO explore faster Variable Base Multi Scalar Multiplication
 pub fn build_proof<M: Metrics>(
 	public_params: &kzg10::PublicParameters,
 	block_dims: BlockDimensions,
@@ -451,7 +449,12 @@ pub fn build_proof<M: Metrics>(
 			return;
 		};
 
-		// row has to be a power of 2, otherwise interpolate() function panics TODO: cache evaluations
+		// # SAFETY: "`interpolate` function panics if row length is not equal to
+		// `block_dims.cols.next_power_of_two()`, which is true if `COL_EXTENSION` is 1.
+		const_assert_eq!(COL_EXTENSION.get(), 1);
+		// # SAFETY: `interpolate` function panics if the following debug assertion is not met,
+		// so it would simplify the location of that error.
+		debug_assert_eq!(row.len(), cols.next_power_of_two());
 		let poly = Evaluations::from_vec_and_domain(row, row_eval_domain).interpolate();
 		let witness = prover_key.compute_single_witness(&poly, &row_dom_x_pts[c_index]);
 
@@ -622,13 +625,16 @@ pub fn scalars_to_rows(
 
 #[cfg(test)]
 mod tests {
-	use avail_core::DataLookup;
+	use avail_core::{
+		constants::kate::{CHUNK_SIZE, COMMITMENT_SIZE, DATA_CHUNK_SIZE},
+		DataLookup,
+	};
 	use dusk_bytes::Serializable;
 	use dusk_plonk::bls12_381::BlsScalar;
 	use hex_literal::hex;
 	use kate_recovery::{
 		com::*,
-		commitments, config,
+		commitments,
 		data::{self, DataCell},
 		matrix::{Dimensions, Position},
 		proof,
@@ -645,7 +651,6 @@ mod tests {
 	use super::*;
 	use crate::{
 		com::{pad_iec_9797_1, par_extend_data_matrix, BlockDimensions},
-		config::DATA_CHUNK_SIZE,
 		metrics::IgnoreMetrics,
 		padded_len,
 	};
@@ -737,7 +742,6 @@ mod tests {
 	#[test]
 	#[cfg(not(feature = "maximum-block-size"))]
 	fn test_flatten_block() {
-		use kate_recovery::config::CHUNK_SIZE;
 		use static_assertions::const_assert;
 
 		let extrinsics: Vec<AppExtrinsic> = vec![
@@ -928,7 +932,7 @@ mod tests {
 	#![proptest_config(ProptestConfig::with_cases(20))]
 	#[test]
 	// newapi done
-	fn verify_commitmnets_missing_row(ref xts in app_extrinsics_strategy())  {
+	fn verify_commitments_missing_row(ref xts in app_extrinsics_strategy())  {
 		let (layout, commitments, dims, matrix) = par_build_commitments::<TCHUNK_SIZE,_>(BlockLengthRows(64), BlockLengthColumns(16), xts, Seed::default(), &IgnoreMetrics{}).unwrap();
 
 		let index = DataLookup::from_id_and_len_iter(layout.into_iter()).unwrap();
@@ -1229,10 +1233,9 @@ Let's see how this gets encoded and then reconstructed by sampling only some dat
 
 		assert_eq!(row.len(), len);
 		println!("Row: {:?}", row);
-		let commitment: [u8; config::COMMITMENT_SIZE] =
-			commit(&prover_key, row_eval_domain, row.clone())
-				.map(|com| com.to_bytes())
-				.unwrap();
+		let commitment: [u8; COMMITMENT_SIZE] = commit(&prover_key, row_eval_domain, row.clone())
+			.map(|com| com.to_bytes())
+			.unwrap();
 		println!("Commitment: {commitment:?}");
 
 		// We artificially extend the matrix by doubling values, this is not proper erasure coding.

@@ -184,7 +184,7 @@ macro_rules! keccak256_concat_update {
 	}};
 }
 
-/// Calculates the Kecck 256 of arguments with NO extra allocations to join inputs.
+/// Calculates the Keccak 256 of arguments with NO extra allocations to join inputs.
 #[macro_export]
 macro_rules! keccak256_concat{
 	($($arg:tt)*) => {{

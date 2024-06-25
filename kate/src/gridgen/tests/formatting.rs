@@ -1,4 +1,4 @@
-use avail_core::{AppExtrinsic, AppId, DataLookup};
+use avail_core::{constants::kate::DATA_CHUNK_SIZE, AppExtrinsic, AppId, DataLookup};
 use hex_literal::hex;
 use kate_recovery::{
 	com::{app_specific_cells, decode_app_extrinsics, reconstruct_extrinsics},
@@ -9,7 +9,6 @@ use nalgebra::base::DMatrix;
 use poly_multiproof::traits::AsBytes;
 
 use crate::{
-	config::DATA_CHUNK_SIZE,
 	gridgen::{tests::sample_cells, ArkScalar, EvaluationGrid},
 	Seed,
 };

@@ -1,10 +1,10 @@
-use crate::config::COMMITMENT_SIZE;
+use avail_core::constants::kate::{CHUNK_SIZE, COMMITMENT_SIZE};
 use core::{array::TryFromSliceError, convert::TryInto, num::TryFromIntError};
 use sp_std::prelude::*;
 use thiserror_no_std::Error;
 
 #[cfg(feature = "std")]
-use crate::{com, config, matrix};
+use crate::{com, matrix};
 #[cfg(feature = "std")]
 use avail_core::{ensure, AppId, DataLookup};
 #[cfg(feature = "std")]
@@ -69,13 +69,13 @@ impl From<dusk_plonk::error::Error> for Error {
 
 #[cfg(feature = "std")]
 fn try_into_scalar(chunk: &[u8]) -> Result<BlsScalar, Error> {
-	let sized_chunk = <[u8; config::CHUNK_SIZE]>::try_from(chunk)?;
+	let sized_chunk = <[u8; CHUNK_SIZE]>::try_from(chunk)?;
 	BlsScalar::from_bytes(&sized_chunk).map_err(From::from)
 }
 
 #[cfg(feature = "std")]
 fn try_into_scalars(data: &[u8]) -> Result<Vec<BlsScalar>, Error> {
-	let chunks = data.chunks_exact(config::CHUNK_SIZE);
+	let chunks = data.chunks_exact(CHUNK_SIZE);
 	ensure!(chunks.remainder().is_empty(), Error::BadLen);
 	chunks
 		.map(try_into_scalar)
@@ -113,7 +113,6 @@ pub fn verify_equality(
 	}
 
 	let dim_cols = dimensions.width();
-	// @TODO Opening Key here???
 	let (prover_key, _) = public_params.trim(dim_cols)?;
 	let domain = EvaluationDomain::new(dim_cols)?;
 

@@ -9,7 +9,8 @@ use dusk_plonk::{
 };
 use thiserror_no_std::Error;
 
-use crate::{config::COMMITMENT_SIZE, data::Cell, matrix::Dimensions};
+use crate::{data::Cell, matrix::Dimensions};
+use avail_core::constants::kate::COMMITMENT_SIZE;
 
 #[derive(Error, Debug)]
 pub enum Error {
