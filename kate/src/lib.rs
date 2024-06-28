@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(clippy::arithmetic_side_effects)]
 
-use avail_core::{BlockLengthColumns, BlockLengthRows};
+use avail_core::{constants::kate::DATA_CHUNK_SIZE, BlockLengthColumns, BlockLengthRows};
 use core::{
 	convert::TryInto,
 	num::{NonZeroU32, TryFromIntError},
@@ -12,8 +12,6 @@ use kate_recovery::matrix::Dimensions;
 use sp_arithmetic::traits::SaturatedConversion;
 use static_assertions::const_assert_ne;
 use thiserror_no_std::Error;
-
-use crate::config::DATA_CHUNK_SIZE;
 
 pub const LOG_TARGET: &str = "kate";
 pub const U32_USIZE_ERR: &str = "`u32` cast to `usize` overflows, unsupported platform";
@@ -29,14 +27,9 @@ pub mod config {
 	use super::{BlockLengthColumns, BlockLengthRows};
 	use core::num::NonZeroU16;
 
-	// TODO: Delete this? not used anywhere
-	pub const SCALAR_SIZE_WIDE: usize = 64;
-
 	pub const SCALAR_SIZE: usize = 32;
-	pub const DATA_CHUNK_SIZE: usize = 31; // Actual chunk size is 32 after 0 padding is done
-	pub const EXTENSION_FACTOR: u32 = 2;
 	pub const ROW_EXTENSION: NonZeroU16 = unsafe { NonZeroU16::new_unchecked(2) };
-	pub const COL_EXTENSION: NonZeroU16 = unsafe { NonZeroU16::new_unchecked(1) };
+	pub const COL_EXTENSION: NonZeroU16 = NonZeroU16::MIN;
 	pub const PROVER_KEY_SIZE: u32 = 48;
 	pub const PROOF_SIZE: usize = 48;
 	// MINIMUM_BLOCK_SIZE, MAX_BLOCK_ROWS and MAX_BLOCK_COLUMNS have to be a power of 2 because of the FFT functions requirements

@@ -4,7 +4,9 @@ use crate::pmp::{
 	merlin::Transcript,
 	traits::Committer,
 };
-use avail_core::{app_extrinsic::AppExtrinsic, ensure, AppId, DataLookup};
+use avail_core::{
+	app_extrinsic::AppExtrinsic, constants::kate::DATA_CHUNK_SIZE, ensure, AppId, DataLookup,
+};
 use codec::Encode;
 use core::{
 	cmp::{max, min},
@@ -25,7 +27,6 @@ use thiserror_no_std::Error;
 
 use crate::{
 	com::{Cell, Error},
-	config::DATA_CHUNK_SIZE,
 	Seed,
 };
 
@@ -84,7 +85,7 @@ impl EvaluationGrid {
 			},
 		);
 
-		// Convert each grup of extrinsics into scalars
+		// Convert each group of extrinsics into scalars
 		let scalars_by_app = grouped
 			.into_iter()
 			.map(|(id, datas)| {
@@ -392,7 +393,7 @@ pub fn multiproof_block(
 	})
 }
 
-/// Dimensions of the multiproof grid. These are guarenteed to cleanly divide `grid_dims`.
+/// Dimensions of the multiproof grid. These are guaranteed to cleanly divide `grid_dims`.
 /// `target_dims` must cleanly divide `grid_dims`.
 #[allow(clippy::arithmetic_side_effects)]
 pub fn multiproof_dims(grid: Dimensions, target: Dimensions) -> Option<Dimensions> {

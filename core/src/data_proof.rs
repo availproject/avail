@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "runtime")]
 use sp_io::hashing::keccak_256;
 
-/// Max data supported on bidge (Ethereum calldata limits)
+/// Max data supported on bridge (Ethereum calldata limits)
 pub const BOUNDED_DATA_MAX_LENGTH: u32 = 102_400;
 
 /// Maximum size of data allowed in the bridge

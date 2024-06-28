@@ -1,6 +1,6 @@
 use core::num::NonZeroU32;
 use sp_arithmetic::Perbill;
-use static_assertions::const_assert;
+use static_assertions::{const_assert, const_assert_eq};
 
 /// We allow `Normal` extrinsics to fill up the block up to 85%, the rest can be used
 /// by  Operational  extrinsics.
@@ -14,7 +14,6 @@ const_assert!(BLOCK_CHUNK_SIZE.get() > 0);
 pub const BLOCK_CHUNK_SIZE: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(32) };
 
 /// Money matters.
-// TODO: evaluate whether we should consider moving this into avail
 pub mod currency {
 
 	pub type Balance = u128;
@@ -22,8 +21,7 @@ pub mod currency {
 	/// `AVAIL` has 18 decimal positions.
 	pub const AVAIL: Balance = 1_000_000_000_000_000_000;
 
-	/// Cents of AVAIL has 16 decimal positions (100 Cents = $1)
-	/// 1 Cents = `10_000_000_000_000_000`
+	/// Cents of AVAIL has 16 decimal positions (100 Cents = 1)
 	pub const CENTS: Balance = AVAIL / 100;
 
 	/// Millicent of AVAIL has 13 decimal positions( 1000 mCents = 1 cent).
@@ -40,4 +38,15 @@ pub mod currency {
 
 	/// `PICO_AVAIL` has 6 decimal positions
 	pub const PICO_AVAIL: Balance = NANO_AVAIL / 1_000;
+}
+
+pub mod kate {
+	use super::*;
+	pub const EXTENSION_FACTOR: u32 = 2;
+	pub const COMMITMENT_SIZE: usize = 48;
+	pub const DATA_CHUNK_SIZE: usize = 31;
+	pub const CHUNK_SIZE: usize = 32;
+
+	const_assert_eq!(DATA_CHUNK_SIZE, CHUNK_SIZE - 1);
+	const_assert_eq!(CHUNK_SIZE, BLOCK_CHUNK_SIZE.get() as usize);
 }

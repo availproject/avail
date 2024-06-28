@@ -1,17 +1,18 @@
 use crate::matrix;
+#[cfg(feature = "std")]
+use crate::{data, sparse_slice_read::SparseSliceRead};
 use core::{num::TryFromIntError, ops::Range};
 
+#[cfg(feature = "std")]
+use avail_core::{
+	constants::kate::{CHUNK_SIZE, DATA_CHUNK_SIZE},
+	ensure,
+};
 use avail_core::{data_lookup::Error as DataLookupError, AppId, DataLookup};
 
 use sp_std::prelude::*;
 use thiserror_no_std::Error;
 
-#[cfg(feature = "std")]
-use crate::data;
-#[cfg(feature = "std")]
-use crate::{config, sparse_slice_read::SparseSliceRead};
-#[cfg(feature = "std")]
-use avail_core::ensure;
 #[cfg(feature = "std")]
 use codec::{Decode, IoReader};
 #[cfg(feature = "std")]
@@ -177,9 +178,9 @@ pub fn reconstruct_app_extrinsics(
 	app_id: AppId,
 ) -> Result<AppData, ReconstructionError> {
 	let data = reconstruct_available(dimensions, cells)?;
-	const_assert!(config::CHUNK_SIZE as u64 <= u32::MAX as u64);
+	const_assert!(CHUNK_SIZE as u64 <= u32::MAX as u64);
 	let range = index
-		.projected_range_of(app_id, config::CHUNK_SIZE as u32)
+		.projected_range_of(app_id, CHUNK_SIZE as u32)
 		.ok_or(ReconstructionError::MissingId(app_id))?;
 
 	Ok(unflatten_padded_data(vec![(app_id, range)], data)?
@@ -203,8 +204,8 @@ pub fn reconstruct_extrinsics(
 ) -> Result<Vec<(AppId, AppData)>, ReconstructionError> {
 	let data = reconstruct_available(dimensions, cells)?;
 
-	const_assert!(config::CHUNK_SIZE as u64 <= u32::MAX as u64);
-	let ranges = lookup.projected_ranges(config::CHUNK_SIZE as u32)?;
+	const_assert!(CHUNK_SIZE as u64 <= u32::MAX as u64);
+	let ranges = lookup.projected_ranges(CHUNK_SIZE as u32)?;
 	unflatten_padded_data(ranges, data).map_err(ReconstructionError::DataDecodingError)
 }
 
@@ -218,7 +219,7 @@ pub fn reconstruct_extrinsics(
 pub fn reconstruct_columns(
 	dimensions: matrix::Dimensions,
 	cells: &[data::Cell],
-) -> Result<HashMap<u16, Vec<[u8; config::CHUNK_SIZE]>>, ReconstructionError> {
+) -> Result<HashMap<u16, Vec<[u8; CHUNK_SIZE]>>, ReconstructionError> {
 	let cells: Vec<data::DataCell> = cells.iter().cloned().map(Into::into).collect::<Vec<_>>();
 	let columns = map_cells(dimensions, cells)?;
 
@@ -235,7 +236,7 @@ pub fn reconstruct_columns(
 			let column = reconstruct_column(dimensions.extended_rows(), &cells)?
 				.iter()
 				.map(BlsScalar::to_bytes)
-				.collect::<Vec<[u8; config::CHUNK_SIZE]>>();
+				.collect::<Vec<[u8; CHUNK_SIZE]>>();
 
 			Ok((col, column))
 		})
@@ -266,7 +267,7 @@ fn reconstruct_available(
 		})
 		.collect::<Result<Vec<Vec<_>>, ReconstructionError>>()?;
 
-	let mut result: Vec<u8> = Vec::with_capacity(scalars.len() * config::CHUNK_SIZE);
+	let mut result: Vec<u8> = Vec::with_capacity(scalars.len() * CHUNK_SIZE);
 
 	for (row, col) in dimensions.iter_data() {
 		let bytes = scalars
@@ -275,7 +276,7 @@ fn reconstruct_available(
 			.map(Option::as_ref)
 			.unwrap_or(None)
 			.map(BlsScalar::to_bytes)
-			.unwrap_or_else(|| [0; config::CHUNK_SIZE]);
+			.unwrap_or_else(|| [0; CHUNK_SIZE]);
 		result.extend(bytes);
 	}
 	Ok(result)
@@ -318,14 +319,14 @@ pub fn decode_app_extrinsics(
 			.and_then(|column| column.get(&row_number))
 			.filter(|cell| !cell.data.is_empty())
 		{
-			None => app_data.extend(vec![0; config::CHUNK_SIZE]),
+			None => app_data.extend(vec![0; CHUNK_SIZE]),
 			Some(cell) => app_data.extend(cell.data),
 		}
 	}
 
-	const_assert!((config::CHUNK_SIZE as u64) <= (u32::MAX as u64));
+	const_assert!((CHUNK_SIZE as u64) <= (u32::MAX as u64));
 	let ranges = index
-		.projected_range_of(app_id, config::CHUNK_SIZE as u32)
+		.projected_range_of(app_id, CHUNK_SIZE as u32)
 		.map(|range| vec![(app_id, range)])
 		.unwrap_or_default();
 
@@ -363,20 +364,17 @@ pub fn unflatten_padded_data(
 	ranges: Vec<(AppId, AppDataRange)>,
 	data: Vec<u8>,
 ) -> Result<Vec<(AppId, AppData)>, UnflattenError> {
-	ensure!(
-		data.len() % config::CHUNK_SIZE == 0,
-		UnflattenError::InvalidLen
-	);
+	ensure!(data.len() % CHUNK_SIZE == 0, UnflattenError::InvalidLen);
 
 	fn extract_encoded_extrinsic(range_data: &[u8]) -> SparseSliceRead {
-		const_assert_ne!(config::CHUNK_SIZE, 0);
-		const_assert_ne!(config::DATA_CHUNK_SIZE, 0);
+		const_assert_ne!(CHUNK_SIZE, 0);
+		const_assert_ne!(DATA_CHUNK_SIZE, 0);
 
 		// INTERNAL: Chunk into 32 bytes (CHUNK_SIZE), then remove padding (0..30 bytes).
 		SparseSliceRead::from_iter(
 			range_data
-				.chunks_exact(config::CHUNK_SIZE)
-				.map(|chunk| &chunk[0..config::DATA_CHUNK_SIZE]),
+				.chunks_exact(CHUNK_SIZE)
+				.map(|chunk| &chunk[0..DATA_CHUNK_SIZE]),
 		)
 	}
 
@@ -577,7 +575,6 @@ pub fn reconstruct_column(
 	let mut subset: Vec<Option<BlsScalar>> = Vec::with_capacity(row_count_sz);
 
 	// fill up vector in ordered fashion
-	// @note the way it's done should be improved
 	for i in 0..row_count {
 		subset.push(find_row_by_index(i, cells));
 	}

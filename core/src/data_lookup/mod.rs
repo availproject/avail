@@ -159,7 +159,7 @@ impl TryFrom<CompactDataLookup> for DataLookup {
 
 		let last_range = offset..compacted.size;
 		if !last_range.is_empty() {
-			index.push((prev_id, offset..compacted.size));
+			index.push((prev_id, last_range));
 		}
 
 		let lookup = DataLookup { index };
@@ -204,7 +204,7 @@ mod test {
 	#[test_case( vec![(0, 15), (1, 20), (2, 150)] => Ok(vec![(0,0..15),(1, 15..35), (2, 35..185)]); "Valid case")]
 	#[test_case( vec![(0, usize::MAX)] => Err(Error::OffsetOverflows); "Offset overflows at zero")]
 	#[test_case( vec![(0, (u32::MAX -1) as usize), (1, 2)] => Err(Error::OffsetOverflows); "Offset overflows at non zero")]
-	#[test_case( vec![(1, 10), (0, 2)] => Err(Error::DataNotSorted); "Unsortend data")]
+	#[test_case( vec![(1, 10), (0, 2)] => Err(Error::DataNotSorted); "Unsorted data")]
 	#[test_case( vec![] => Ok(vec![]); "Empty data")]
 	fn from_id_and_len(
 		id_len_data: Vec<(u32, usize)>,
