@@ -1,18 +1,17 @@
 use crate::api_dev::api::data_availability::calls::types::create_application_key::Key;
 use crate::api_dev::api::data_availability::calls::types::submit_data::Data;
 use crate::api_dev::api::runtime_types::frame_support::dispatch::DispatchFeeModifier;
-use crate::api_dev::api::runtime_types::pallet_staking::{ValidatorPrefs};
+use crate::api_dev::api::runtime_types::pallet_staking::ValidatorPrefs;
 use crate::api_dev::api::runtime_types::sp_arithmetic::per_things::Perbill;
 use crate::api_dev::api::Call;
 use crate::config::{AccountId, AvailConfig};
 use crate::sdk::{Api, AvailBlocksClient, WaitFor};
-use crate::{avail, H256};
 use crate::RewardDestination;
+use crate::{avail, H256};
 
 use std::str::FromStr;
 use subxt::tx::{TxClient, TxInBlock, TxProgress, TxStatus};
 use subxt::utils::MultiAddress;
-//use subxt_signer::sr25519::dev;
 use subxt_signer::sr25519::Keypair;
 
 use avail::balances::events as BalancesEvents;
@@ -924,25 +923,6 @@ impl DataAvailability {
 	}
 }
 
-#[cfg(test)]
-mod tests {
-	use super::*;
-
-	#[tokio::test]
-	async fn testing_function() {
-		let sdk = crate::sdk::SDK::new("ws://127.0.0.1:9944").await.unwrap();
-		let account = dev::alice();
-		let res = sdk
-			.tx
-			.data_availability
-			.submit_block_length_proposal(0, 0, WaitFor::BlockInclusion, &account)
-			.await;
-		if let Err(e) = res {
-			dbg!(e);
-		}
-	}
-}
-
 async fn progress_transaction(
 	maybe_tx_progress: Result<TxProgress<AvailConfig, Api>, subxt::Error>,
 	wait_for: WaitFor,
@@ -977,4 +957,24 @@ async fn progress_transaction(
 	}
 
 	Err(String::from("Something went wrong."))
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use subxt_signer::sr25519::dev;
+
+	#[tokio::test]
+	async fn testing_function() {
+		let sdk = crate::sdk::SDK::new("ws://127.0.0.1:9944").await.unwrap();
+		let account = dev::alice();
+		let res = sdk
+			.tx
+			.data_availability
+			.submit_block_length_proposal(0, 0, WaitFor::BlockInclusion, &account)
+			.await;
+		if let Err(e) = res {
+			dbg!(e);
+		}
+	}
 }

@@ -1,11 +1,9 @@
+[workspace]
+
 [package]
 name = "avail-rust"
+edition = "2021"
 version = "0.1.0"
-authors.workspace = true
-edition.workspace = true
-repository.workspace = true
-license.workspace = true
-homepage.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -31,6 +29,3 @@ sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "pol
 sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-7" }
 sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-7" }
 sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-7" }
-
-[lints]
-workspace = true
