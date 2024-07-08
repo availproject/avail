@@ -1,8 +1,8 @@
 github.com/ChainSafe/go-schnorrkel v1.0.0 h1:3aDA67lAykLaG1y3AOjs88dMxC88PgUuHRrLeDnvGIM=
 github.com/ChainSafe/go-schnorrkel v1.0.0/go.mod h1:dpzHYVxLZcp8pjlV+O+UR8K0Hp/z7vcchBSbMBEhCw4=
 github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 h1:fLjPD/aNc3UIOA6tDi6QXUemppXK3P9BI7mr2hd6gx8=
-github.com/availproject/go-substrate-rpc-client/v4 v4.1.0-avail-2.0.0-temp-event-rc4 h1:VybFjXdJIv4rRnhliF1GdmZCNz0jWAUVujEid8gTIog=
-github.com/availproject/go-substrate-rpc-client/v4 v4.1.0-avail-2.0.0-temp-event-rc4/go.mod h1:MeGquF7RkixfmXKXqwFF0a1iPLQiJGVlHjSLnJD4SD4=
+github.com/availproject/go-substrate-rpc-client/v4 v4.1.0-avail-2.1.5-rc1 h1:mIYkc6eyi3iANW/dC+g7P49OfL54xnM61bq9B3a5pGw=
+github.com/availproject/go-substrate-rpc-client/v4 v4.1.0-avail-2.1.5-rc1/go.mod h1:MeGquF7RkixfmXKXqwFF0a1iPLQiJGVlHjSLnJD4SD4=
 github.com/btcsuite/btcd v0.22.0-beta h1:LTDpDKUM5EeOFBPM8IXpinEcmZ6FWfNZbE3lfrfdnWo=
 github.com/btcsuite/btcd/btcec/v2 v2.2.0 h1:fzn1qaOt32TuLjFlkzYSsBC35Q3KUjT1SwPxiMSCF5k=
 github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce h1:YtWJF7RHm2pYCvA5t0RPmAaLUhREsKuKd+SLhxFbFeQ=
