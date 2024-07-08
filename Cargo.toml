@@ -10,7 +10,7 @@ members = [
 	"client/basic-authorship",
 	"runtime",
 	"runtime/fuzz",
-	"node",
+	"node", "avail-rust",
 ]
 
 [workspace.package]

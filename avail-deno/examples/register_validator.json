@@ -1,0 +1,7 @@
+{
+	"session_keys": null,
+	"stash_account_seed_hex": "0x2ac5823a490004013e1c7dc7ad3dd5beed2132279dbbec66747b52b97f609e9a",
+	"bond_amount": 100,
+	"commission": 5,
+	"endpoint": "ws://127.0.0.1:9944"
+}
