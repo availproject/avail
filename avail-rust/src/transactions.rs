@@ -4,13 +4,14 @@ use crate::api_dev::api::runtime_types::frame_support::dispatch::DispatchFeeModi
 use crate::api_dev::api::runtime_types::pallet_staking::ValidatorPrefs;
 use crate::api_dev::api::runtime_types::sp_arithmetic::per_things::Perbill;
 use crate::api_dev::api::Call;
-use crate::config::{AccountId, AvailConfig};
-use crate::sdk::{Api, AvailBlocksClient, WaitFor};
-use crate::RewardDestination;
-use crate::{avail, H256};
+use crate::sdk::WaitFor;
+use crate::{
+	avail, transaction_data, AccountId, Api, AvailBlocksClient, AvailConfig, RewardDestination,
+	TransactionInBlock, TxApi, H256,
+};
 
 use std::str::FromStr;
-use subxt::tx::{TxClient, TxInBlock, TxProgress, TxStatus};
+use subxt::tx::{TxProgress, TxStatus};
 use subxt::utils::MultiAddress;
 use subxt_signer::sr25519::Keypair;
 
@@ -19,12 +20,6 @@ use avail::data_availability::events as DataAvailabilityEvents;
 use avail::staking::events as StakingEvents;
 use avail::sudo::events as SudoEvents;
 use avail::system::events as SystemEvents;
-
-use avail::data_availability::calls as DataAvailabilityCalls;
-use avail::staking::calls as StakingCalls;
-
-type TxApi = TxClient<AvailConfig, Api>;
-type TransactionInBlock = TxInBlock<AvailConfig, Api>;
 
 pub struct TransferAllTxSuccess {
 	pub event: BalancesEvents::Transfer,
@@ -117,112 +112,6 @@ pub struct SetSubmitDataFeeModifierTxSuccess {
 	pub event: DataAvailabilityEvents::SubmitDataFeeModifierSet,
 	pub tx_hash: H256,
 	pub block_hash: H256,
-}
-
-pub mod transaction_data {
-	use super::*;
-	pub mod data_availability {
-		use super::*;
-
-		#[derive(Debug, Clone, Eq, PartialEq)]
-		pub struct SubmitData {
-			pub data: Data,
-		}
-
-		impl SubmitData {
-			pub async fn new(
-				block_hash: H256,
-				tx_hash: H256,
-				blocks: &AvailBlocksClient,
-			) -> Result<Self, String> {
-				let block = blocks.at(block_hash).await;
-				let block = match block {
-					Ok(b) => b,
-					Err(error) => return Err(error.to_string()),
-				};
-
-				let extrinsics = block.extrinsics().await;
-				let extrinsics = match extrinsics {
-					Ok(e) => e,
-					Err(error) => return Err(error.to_string()),
-				};
-
-				let submit_data_ext = extrinsics.find::<DataAvailabilityCalls::types::SubmitData>();
-				for ext in submit_data_ext {
-					let ext = match ext {
-						Ok(e) => e,
-						Err(_) => continue,
-					};
-					let events = ext.details.events().await;
-					let events = match events {
-						Ok(e) => e,
-						Err(_) => continue,
-					};
-					if events.extrinsic_hash() == tx_hash {
-						return Ok(Self {
-							data: ext.value.data,
-						});
-					}
-				}
-
-				Err(String::from("Transaction data not found"))
-			}
-		}
-	}
-	pub mod staking {
-		use super::*;
-
-		pub struct Nominate {
-			pub targets: Vec<String>,
-		}
-
-		impl Nominate {
-			pub async fn new(
-				block_hash: H256,
-				tx_hash: H256,
-				blocks: &AvailBlocksClient,
-			) -> Result<Self, String> {
-				let block = blocks.at(block_hash).await;
-				let block = match block {
-					Ok(b) => b,
-					Err(error) => return Err(error.to_string()),
-				};
-
-				let extrinsics = block.extrinsics().await;
-				let extrinsics = match extrinsics {
-					Ok(e) => e,
-					Err(error) => return Err(error.to_string()),
-				};
-
-				let submit_data_ext = extrinsics.find::<StakingCalls::types::Nominate>();
-				for ext in submit_data_ext {
-					let ext = match ext {
-						Ok(e) => e,
-						Err(_) => continue,
-					};
-					let events = ext.details.events().await;
-					let events = match events {
-						Ok(e) => e,
-						Err(_) => continue,
-					};
-					if events.extrinsic_hash() == tx_hash {
-						let targets = ext.value.targets;
-						let targets: Vec<AccountId> = targets
-							.into_iter()
-							.map(|a| match a {
-								MultiAddress::Id(account) => account,
-								_ => panic!("Should never happen"),
-							})
-							.collect();
-						let targets = targets.into_iter().map(|a| std::format!("{}", a)).collect();
-						return Ok(Self { targets });
-					}
-				}
-
-				Err(String::from("Transaction data not found"))
-			}
-		}
-	}
 }
 
 pub struct Transactions {
