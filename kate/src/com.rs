@@ -94,6 +94,8 @@ pub enum Error {
 	ExtendedGridDomainSizeInvalid(usize),
 	IndexOutOfRange,
 	ConversionFailed,
+	InvalidMaxRows,
+	InvalidMaxCols,
 }
 
 impl From<TryFromIntError> for Error {
@@ -226,6 +228,12 @@ pub fn get_block_dimensions<const CHUNK_SIZE: usize>(
 	#[allow(clippy::let_unit_value)]
 	let () = USizeSafeCastToU32::<CHUNK_SIZE>::OK;
 	let chunk_size_u32 = unsafe { NonZeroU32::new_unchecked(CHUNK_SIZE as u32) };
+
+	// SAFETY: `max_rows` and `max_cols` must be a power of 2.
+	// Otherwise block dimensions will be one row short, as the
+	// row count equals `total_cells / max_cols1`.
+	ensure!(max_rows.0.is_power_of_two(), Error::InvalidMaxRows);
+	ensure!(max_cols.0.is_power_of_two(), Error::InvalidMaxCols);
 
 	let max_block_dimensions =
 		BlockDimensions::new(max_rows, max_cols, chunk_size_u32).ok_or(Error::BlockTooBig)?;
