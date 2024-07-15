@@ -1,0 +1,10 @@
+<label>Select Account</label><br>
+<select name="account" hx-get="/accounts" hx-trigger="load"></select>
+
+<form hx-post="/submitDataExecute" hx-target="#dataSubmitResult" style="border: 1px solid black;">
+    <label>Action: Submit Data</label><br>
+    <label>Data:</label><br>
+    <input type="text" name="Data" placeholder="Placeholder..."><br><br>
+    <input type="submit" value="Execute"><br>
+    <label id="dataSubmitResult">Result: </label>
+</form>

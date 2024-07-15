@@ -1,0 +1,9 @@
+[workspace]
+
+[package]
+name = "staking-chill"
+edition = "2021"
+
+[dependencies]
+avail-rust = { path = "../../../../." }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }

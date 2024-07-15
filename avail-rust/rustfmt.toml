@@ -1,0 +1,13 @@
+match_block_trailing_comma = true
+use_field_init_shorthand = true
+edition = "2021"
+hard_tabs = true
+
+# Disabled on Stable
+#
+# fn_single_line = true
+# match_arm_blocks = true
+# imports_granularity = "Crate"
+# overflow_delimited_expr = true
+# reorder_impl_items = true
+# group_imports = "StdExternalCrate"
