@@ -624,6 +624,7 @@ dependencies = [
 [[package]]
 name = "avail-rust"
 version = "0.1.0"
+source = "git+https://github.com/availproject/avail#e5067c75880f32b1c4a398dbcf18b4af26fd3d17"
 dependencies = [
  "avail-core",
  "base58",
@@ -651,14 +652,6 @@ dependencies = [
  "miniz_oxide",
  "object 0.36.1",
  "rustc-demangle",
-]
-
-[[package]]
-name = "balance-transfer-keep-alive"
-version = "0.0.0"
-dependencies = [
- "avail-rust",
- "tokio",
 ]
 
 [[package]]
@@ -1226,6 +1219,14 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.69",
+]
+
+[[package]]
+name = "da-submit-data"
+version = "0.0.0"
+dependencies = [
+ "avail-rust",
+ "tokio",
 ]
 
 [[package]]

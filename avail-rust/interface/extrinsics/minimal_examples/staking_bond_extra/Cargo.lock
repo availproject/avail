@@ -624,6 +624,7 @@ dependencies = [
 [[package]]
 name = "avail-rust"
 version = "0.1.0"
+source = "git+https://github.com/availproject/avail#e5067c75880f32b1c4a398dbcf18b4af26fd3d17"
 dependencies = [
  "avail-core",
  "base58",
@@ -651,14 +652,6 @@ dependencies = [
  "miniz_oxide",
  "object 0.36.1",
  "rustc-demangle",
-]
-
-[[package]]
-name = "balance-transfer-keep-alive"
-version = "0.0.0"
-dependencies = [
- "avail-rust",
- "tokio",
 ]
 
 [[package]]
@@ -4970,6 +4963,14 @@ name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
+
+[[package]]
+name = "staking-bond-extra"
+version = "0.0.0"
+dependencies = [
+ "avail-rust",
+ "tokio",
+]
 
 [[package]]
 name = "static_assertions"
