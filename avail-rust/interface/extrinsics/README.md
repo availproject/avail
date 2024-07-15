@@ -36,7 +36,7 @@ name = "da-create-application-key"
 edition = "2021"
 
 [dependencies]
-avail-rust = { path = "../../../../." }
+avail-rust = { git = "https://github.com/availproject/avail" }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 ```
 
@@ -107,7 +107,7 @@ name = "da-submit-data"
 edition = "2021"
 
 [dependencies]
-avail-rust = { path = "../../../../." }
+avail-rust = { git = "https://github.com/availproject/avail" }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 ```
 
@@ -180,7 +180,7 @@ name = "da-submit-block-length-proposal"
 edition = "2021"
 
 [dependencies]
-avail-rust = { path = "../../../../." }
+avail-rust = { git = "https://github.com/availproject/avail" }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 ```
 
@@ -250,7 +250,7 @@ name = "da-set-application-key"
 edition = "2021"
 
 [dependencies]
-avail-rust = { path = "../../../../." }
+avail-rust = { git = "https://github.com/availproject/avail" }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 ```
 
@@ -324,7 +324,7 @@ name = "da-set-submit-data-fee-proposal"
 edition = "2021"
 
 [dependencies]
-avail-rust = { path = "../../../../." }
+avail-rust = { git = "https://github.com/availproject/avail" }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 ```
 
@@ -408,7 +408,7 @@ name = "balance-transfer-keep-alive"
 edition = "2021"
 
 [dependencies]
-avail-rust = { path = "../../../../." }
+avail-rust = { git = "https://github.com/availproject/avail" }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 ```
 
@@ -481,7 +481,7 @@ name = "balance-transfer-allow-death"
 edition = "2021"
 
 [dependencies]
-avail-rust = { path = "../../../../." }
+avail-rust = { git = "https://github.com/availproject/avail" }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 ```
 
@@ -557,7 +557,7 @@ name = "balance-transfer-all"
 edition = "2021"
 
 [dependencies]
-avail-rust = { path = "../../../../." }
+avail-rust = { git = "https://github.com/availproject/avail" }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 ```
 
@@ -638,7 +638,7 @@ name = "staking-bond"
 edition = "2021"
 
 [dependencies]
-avail-rust = { path = "../../../../." }
+avail-rust = { git = "https://github.com/availproject/avail" }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 ```
 
@@ -709,7 +709,7 @@ name = "staking-bond-extra"
 edition = "2021"
 
 [dependencies]
-avail-rust = { path = "../../../../." }
+avail-rust = { git = "https://github.com/availproject/avail" }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 ```
 
@@ -778,7 +778,7 @@ name = "staking-chill"
 edition = "2021"
 
 [dependencies]
-avail-rust = { path = "../../../../." }
+avail-rust = { git = "https://github.com/availproject/avail" }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 ```
 
@@ -847,7 +847,7 @@ name = "staking-chill-other"
 edition = "2021"
 
 [dependencies]
-avail-rust = { path = "../../../../." }
+avail-rust = { git = "https://github.com/availproject/avail" }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 ```
 
@@ -914,7 +914,7 @@ name = "staking-nominate"
 edition = "2021"
 
 [dependencies]
-avail-rust = { path = "../../../../." }
+avail-rust = { git = "https://github.com/availproject/avail" }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 ```
 
@@ -985,7 +985,7 @@ name = "staking-unbond"
 edition = "2021"
 
 [dependencies]
-avail-rust = { path = "../../../../." }
+avail-rust = { git = "https://github.com/availproject/avail" }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 ```
 
@@ -1056,7 +1056,7 @@ name = "staking-validate"
 edition = "2021"
 
 [dependencies]
-avail-rust = { path = "../../../../." }
+avail-rust = { git = "https://github.com/availproject/avail" }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 ```
 

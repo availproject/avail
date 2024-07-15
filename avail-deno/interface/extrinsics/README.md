@@ -30,7 +30,7 @@ On failure, a reason of failure is returned. On Success, ApplicationKeyCreated e
 ### Minimal Example
 
 ```js
-import { Keyring, SDK, WaitFor } from "../../src/sdk.ts";
+import { Keyring, SDK, WaitFor } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 
 const providerEndpoint = "ws://127.0.0.1:9944";
 const sdk = await SDK.New(providerEndpoint);
@@ -77,7 +77,7 @@ On failure, a reason of failure is returned. On Success, DataSubmitted event, tr
 ### Minimal Example
 
 ```js
-import { Keyring, SDK, WaitFor } from "../../src/sdk.ts";
+import { Keyring, SDK, WaitFor } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 
 const providerEndpoint = "ws://127.0.0.1:9944";
 const sdk = await SDK.New(providerEndpoint);
@@ -126,7 +126,7 @@ On failure, a reason of failure is returned. On Success, BlockLengthProposalSubm
 ### Minimal Example
 
 ```js
-import { Keyring, SDK, WaitFor } from "../../src/sdk.ts";
+import { Keyring, SDK, WaitFor } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 
 const providerEndpoint = "ws://127.0.0.1:9944";
 const sdk = await SDK.New(providerEndpoint);
@@ -175,7 +175,7 @@ On failure, a reason of failure is returned. On Success, ApplicationKeySet event
 ### Minimal Example
 
 ```js
-import { Keyring, SDK, WaitFor } from "../../src/sdk.ts";
+import { Keyring, SDK, WaitFor } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 
 const providerEndpoint = "ws://127.0.0.1:9944";
 const sdk = await SDK.New(providerEndpoint);
@@ -223,7 +223,7 @@ On failure, a reason of failure is returned. On Success, SubmitDataFeeModifierSe
 ### Minimal Example
 
 ```js
-import { BN, DispatchFeeModifier, Keyring, SDK, WaitFor } from "../../src/sdk.ts";
+import { BN, DispatchFeeModifier, Keyring, SDK, WaitFor } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 
 const providerEndpoint = "ws://127.0.0.1:9944";
 const sdk = await SDK.New(providerEndpoint);
@@ -293,7 +293,7 @@ On failure, a reason of failure is returned. On Success, TransferEvent event, tr
 ### Minimal Example
 
 ```js
-import { BN, Keyring, SDK, WaitFor } from "../../src/sdk.ts";
+import { BN, Keyring, SDK, WaitFor } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 
 const providerEndpoint = "ws://127.0.0.1:9944";
 const sdk = await SDK.New(providerEndpoint);
@@ -343,7 +343,7 @@ hash is returned.
 ### Minimal Example
 
 ```js
-import { BN, Keyring, SDK, WaitFor } from "../../src/sdk.ts";
+import { BN, Keyring, SDK, WaitFor } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 
 const providerEndpoint = "ws://127.0.0.1:9944";
 const sdk = await SDK.New(providerEndpoint);
@@ -394,7 +394,7 @@ hash is returned.
 ### Minimal Example
 
 ```js
-import { Keyring, SDK, WaitFor } from "../../src/sdk.ts";
+import { Keyring, SDK, WaitFor } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 
 const providerEndpoint = "ws://127.0.0.1:9944";
 const sdk = await SDK.New(providerEndpoint);
@@ -450,7 +450,7 @@ On failure, a reason of failure is returned. On Success, Bonded event, transacti
 ### Minimal Example
 
 ```js
-import { BN, Keyring, SDK, WaitFor } from "../../src/sdk.ts";
+import { BN, Keyring, SDK, WaitFor } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 
 const providerEndpoint = "ws://127.0.0.1:9944";
 const sdk = await SDK.New(providerEndpoint);
@@ -498,7 +498,7 @@ On failure, a reason of failure is returned. On Success, Bonded event, transacti
 ### Minimal Example
 
 ```js
-import { BN, Keyring, SDK, WaitFor } from "../../src/sdk.ts";
+import { BN, Keyring, SDK, WaitFor } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 
 const providerEndpoint = "ws://127.0.0.1:9944";
 const sdk = await SDK.New(providerEndpoint);
@@ -544,7 +544,7 @@ On failure, a reason of failure is returned. On Success, Chilled event, transact
 ### Minimal Example
 
 ```js
-import { Keyring, SDK, WaitFor } from "../../src/sdk.ts";
+import { Keyring, SDK, WaitFor } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 
 const providerEndpoint = "ws://127.0.0.1:9944";
 const sdk = await SDK.New(providerEndpoint);
@@ -590,7 +590,7 @@ On failure, a reason of failure is returned. On Success, Chilled event, transact
 ### Minimal Example
 
 ```js
-import { Keyring, SDK, WaitFor } from "../../src/sdk.ts";
+import { Keyring, SDK, WaitFor } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 
 const providerEndpoint = "ws://127.0.0.1:9944";
 const sdk = await SDK.New(providerEndpoint);
@@ -637,7 +637,7 @@ On failure, a reason of failure is returned. On Success, Nominate transaction da
 ### Minimal Example
 
 ```js
-import { Keyring, SDK, WaitFor } from "../../src/sdk.ts";
+import { Keyring, SDK, WaitFor } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 
 const providerEndpoint = "ws://127.0.0.1:9944";
 const sdk = await SDK.New(providerEndpoint);
@@ -687,7 +687,7 @@ On failure, a reason of failure is returned. On Success, Unbonded event, transac
 ### Minimal Example
 
 ```js
-import { BN, Keyring, SDK, WaitFor } from "../../src/sdk.ts";
+import { BN, Keyring, SDK, WaitFor } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 
 const providerEndpoint = "ws://127.0.0.1:9944";
 const sdk = await SDK.New(providerEndpoint);
@@ -735,7 +735,7 @@ On failure, a reason of failure is returned. On Success, ValidatorPrefsSet event
 ### Minimal Example
 
 ```js
-import { Keyring, SDK, WaitFor } from "../../src/sdk.ts";
+import { Keyring, SDK, WaitFor } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 
 const providerEndpoint = "ws://127.0.0.1:9944";
 const sdk = await SDK.New(providerEndpoint);

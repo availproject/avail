@@ -1,4 +1,4 @@
-import { BN, DispatchFeeModifier, Keyring, SDK, WaitFor } from "../../../src/sdk.ts";
+import { BN, DispatchFeeModifier, Keyring, SDK, WaitFor } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 
 const providerEndpoint = "ws://127.0.0.1:9944";
 const sdk = await SDK.New(providerEndpoint);

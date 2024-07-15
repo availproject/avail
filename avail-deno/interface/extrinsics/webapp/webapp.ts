@@ -1,5 +1,5 @@
 import { Application, Router, Status } from "https://deno.land/x/oak/mod.ts";
-import { SDK } from "../../../src/sdk.ts";
+import { SDK } from "https://raw.githubusercontent.com/availproject/avail/main/avail-deno/src/sdk.ts";
 import { SubmitDataView } from "./submit_data.ts";
 import { SharedState } from "./shared_state.ts";
 
