@@ -11,6 +11,9 @@ import (
 	"avail-gsrpc-examples/internal/extrinsics"
 
 	gsrpc "github.com/centrifuge/go-substrate-rpc-client/v4"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry"
+	. "github.com/centrifuge/go-substrate-rpc-client/v4/registry/retriever"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/state"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 )
@@ -115,7 +118,7 @@ func main() {
 		panic(fmt.Sprintf("cannot submit extrinsic:%v", err))
 	}
 
-	fmt.Printf("Data submitted by Alice: %v against appID %v\n", subData, appID)
+	fmt.Printf("Data submitted using APPID: %v \n", appID)
 
 	defer sub.Unsubscribe()
 	timeout := time.After(100 * time.Second)
@@ -124,40 +127,99 @@ func main() {
 		case status := <-sub.Chan():
 			if status.IsInBlock {
 				fmt.Printf("Txn inside block %v\n", status.AsInBlock.Hex())
-				h := status.AsInBlock
-
-				key, err := types.CreateStorageKey(meta, "System", "Events", nil, nil)
-				if err != nil {
-					log.Fatalf("Failed to create storage key: %v", err)
-				}
-				rawEvents, err := api.RPC.State.GetStorageRaw(key, h)
-				if err != nil {
-					log.Fatalf("Failed to fetch events: %v", err)
-				}
-				events := types.EventRecords{}
-				err = types.EventRecordsRaw(*rawEvents).DecodeEventRecords(meta, &events)
-				if err != nil {
-					log.Fatalf("Failed to decode events: %v", err)
-				}
-				if rawEvents != nil && len(*rawEvents) > 0 {
-					err = types.EventRecordsRaw(*rawEvents).DecodeEventRecords(meta, &events)
-					if err != nil {
-						log.Fatalf("Failed to decode events: %v", err)
-					}
-					
-					for _, e := range events.DataAvailability_DataSubmitted {
-
-						fmt.Printf("Datahash from event: %v\n", e.DataHash.Hex())
-
-					}
-
-				} else {
-					fmt.Println("No events found in the block")
-				}
 			} else if status.IsFinalized {
+				retriever, err := NewDefaultEventRetriever(state.NewEventProvider(api.RPC.State), api.RPC.State)
+
+				if err != nil {
+					fmt.Printf("Couldn't create event retriever: %s", err)
+				}
+				h := status.AsFinalized
+				events, err := retriever.GetEvents(h)
+
+				if err != nil {
+					log.Printf("Couldn't retrieve events")
+				}
+				for _, event := range events {
+					if event.Name == "DataAvailability.DataSubmitted" {
+						from, _ := registry.ProcessDecodedFieldValue[*types.AccountID](
+							event.Fields,
+							func(fieldIndex int, field *registry.DecodedField) bool {
+
+								return field.Name == "sp_core.crypto.AccountId32.who"
+							},
+							func(value any) (*types.AccountID, error) {
+								fields, ok := value.(registry.DecodedFields)
+
+								if !ok {
+									return nil, fmt.Errorf("unexpected value: %v", value)
+								}
+
+								accByteSlice, err := registry.GetDecodedFieldAsSliceOfType[types.U8](fields, func(fieldIndex int, field *registry.DecodedField) bool {
+									return fieldIndex == 0
+								})
+
+								if err != nil {
+									return nil, err
+								}
+
+								var accBytes []byte
+
+								for _, accByte := range accByteSlice {
+									accBytes = append(accBytes, byte(accByte))
+								}
+
+								return types.NewAccountID(accBytes)
+							},
+						)
+						a := from.ToHexString()
+
+						// // add, _ := types.NewAddressFromHexAccountID(a)
+						// fmt.Println(from)
+						fmt.Printf("from address read from event: %s \n", a)
+
+						dataHash, err := registry.ProcessDecodedFieldValue[*types.Hash](
+							event.Fields,
+							func(fieldIndex int, field *registry.DecodedField) bool {
+								return fieldIndex == 1
+							},
+							func(value any) (*types.Hash, error) {
+								fields, ok := value.(registry.DecodedFields)
+								if !ok {
+									return nil, fmt.Errorf("unexpected value: %v", value)
+								}
+
+								hashByteSlice, err := registry.GetDecodedFieldAsSliceOfType[types.U8](fields, func(fieldIndex int, field *registry.DecodedField) bool {
+									return fieldIndex == 0
+								})
+
+								if err != nil {
+									return nil, err
+								}
+
+								var hashBytes []byte
+								for _, hashByte := range hashByteSlice {
+									hashBytes = append(hashBytes, byte(hashByte))
+								}
+
+								hash := types.NewHash(hashBytes)
+								return &hash, nil
+							},
+						)
+						if err != nil {
+							fmt.Printf("DataHash parsing err: %s\n", err.Error())
+						} else if dataHash == nil {
+							fmt.Println("DataHash is nil")
+						} else {
+							fmt.Printf("DataHash read from event: %s \n", dataHash.Hex())
+						}
+						fmt.Printf("DataHash read from event: %s \n", dataHash.Hex())
+
+					}
+
+				}
 				fmt.Printf("Txn inside finalized block\n")
 				hash := status.AsFinalized
-				err := getData(hash, api, subData)
+				err = getData(hash, api, subData)
 				if err != nil {
 					panic(fmt.Sprintf("cannot get data:%v", err))
 				}
@@ -183,8 +245,8 @@ func getData(hash types.Hash, api *gsrpc.SubstrateAPI, data string) error {
 			arg := ext.Method.Args
 			str := string(arg)
 			slice := str[2:]
-			fmt.Println("string value", slice)
-			fmt.Println("data", data)
+
+			fmt.Println("Data retrieved:", data)
 			if slice == data {
 				fmt.Println("Data found in block")
 			}
