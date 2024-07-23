@@ -50,9 +50,37 @@
         </div>
         <div class="tsd-signature">
           <span class="tsd-kind-variable">types</span><span class="tsd-signature-symbol">:</span>
-          <span class="tsd-signature-symbol">{ </span><br /><span>    </span><span class="tsd-kind-property">AppId</span
-          ><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span
-          ><span class="tsd-signature-symbol">; </span><br /><span>    </span
+          <span class="tsd-signature-symbol">{ </span><br /><span>    </span
+          ><span class="tsd-kind-property">AddressedMessage</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-symbol">{ </span><br /><span>        </span
+          ><span class="tsd-kind-property">data</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >        </span
+          ><span class="tsd-kind-property">destinationDomain</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >        </span
+          ><span class="tsd-kind-property">from</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >        </span
+          ><span class="tsd-kind-property">id</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >        </span
+          ><span class="tsd-kind-property">message</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >        </span
+          ><span class="tsd-kind-property">originDomain</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >        </span
+          ><span class="tsd-kind-property">to</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >    </span
+          ><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br /><span>    </span
+          ><span class="tsd-kind-property">AppId</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >    </span
+          ><span class="tsd-kind-property">ArbitraryMessage</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >    </span
           ><span class="tsd-kind-property">BlockLength</span><span class="tsd-signature-symbol">: </span
           ><span class="tsd-signature-symbol">{ </span><br /><span>        </span
           ><span class="tsd-kind-property">chunkSize</span><span class="tsd-signature-symbol">: </span
@@ -68,6 +96,15 @@
           ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
             >    </span
           ><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br /><span>    </span
+          ><span class="tsd-kind-property">BlockLengthColumns</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >    </span
+          ><span class="tsd-kind-property">BlockLengthRows</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >    </span
+          ><span class="tsd-kind-property">BoundedData</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >    </span
           ><span class="tsd-kind-property">Cell</span><span class="tsd-signature-symbol">: </span
           ><span class="tsd-signature-symbol">{ </span><br /><span>        </span
           ><span class="tsd-kind-property">col</span><span class="tsd-signature-symbol">: </span
@@ -95,6 +132,15 @@
           ><span class="tsd-kind-property">CheckAppIdTypes</span><span class="tsd-signature-symbol">: </span
           ><span class="tsd-signature-symbol">{}</span><span class="tsd-signature-symbol">; </span><br /><span
             >    </span
+          ><span class="tsd-kind-property">CompactDataLookup</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-symbol">{ </span><br /><span>        </span
+          ><span class="tsd-kind-property">index</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >        </span
+          ><span class="tsd-kind-property">size</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >    </span
+          ><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br /><span>    </span
           ><span class="tsd-kind-property">DaHeader</span><span class="tsd-signature-symbol">: </span
           ><span class="tsd-signature-symbol">{ </span><br /><span>        </span
           ><span class="tsd-kind-property">digest</span><span class="tsd-signature-symbol">: </span
@@ -116,16 +162,7 @@
           ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
             >    </span
           ><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br /><span>    </span
-          ><span class="tsd-kind-property">DataLookup</span><span class="tsd-signature-symbol">: </span
-          ><span class="tsd-signature-symbol">{ </span><br /><span>        </span
-          ><span class="tsd-kind-property">index</span><span class="tsd-signature-symbol">: </span
-          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
-            >        </span
-          ><span class="tsd-kind-property">size</span><span class="tsd-signature-symbol">: </span
-          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
-            >    </span
-          ><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br /><span>    </span
-          ><span class="tsd-kind-property">DataLookupIndexItem</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-kind-property">DataLookupItem</span><span class="tsd-signature-symbol">: </span
           ><span class="tsd-signature-symbol">{ </span><br /><span>        </span
           ><span class="tsd-kind-property">appId</span><span class="tsd-signature-symbol">: </span
           ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
@@ -139,7 +176,7 @@
           ><span class="tsd-kind-property">leaf</span><span class="tsd-signature-symbol">: </span
           ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
             >        </span
-          ><span class="tsd-kind-property">leaf_index</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-kind-property">leafIndex</span><span class="tsd-signature-symbol">: </span
           ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
             >        </span
           ><span class="tsd-kind-property">numberOfLeaves</span><span class="tsd-signature-symbol">: </span
@@ -148,7 +185,16 @@
           ><span class="tsd-kind-property">proof</span><span class="tsd-signature-symbol">: </span
           ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
             >        </span
-          ><span class="tsd-kind-property">root</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-kind-property">roots</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >    </span
+          ><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br /><span>    </span
+          ><span class="tsd-kind-property">FungibleToken</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-symbol">{ </span><br /><span>        </span
+          ><span class="tsd-kind-property">amount</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >        </span
+          ><span class="tsd-kind-property">assetId</span><span class="tsd-signature-symbol">: </span
           ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
             >    </span
           ><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br /><span>    </span
@@ -160,6 +206,12 @@
           ><span class="tsd-kind-property">_enum</span><span class="tsd-signature-symbol">: </span
           ><span class="tsd-signature-symbol">{ </span><br /><span>            </span
           ><span class="tsd-kind-property">V1</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">; </span><br /><span
+            >            </span
+          ><span class="tsd-kind-property">V2</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">; </span><br /><span
+            >            </span
+          ><span class="tsd-kind-property">V3</span><span class="tsd-signature-symbol">: </span
           ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
             >        </span
           ><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br /><span>    </span
@@ -179,6 +231,24 @@
           ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
             >    </span
           ><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br /><span>    </span
+          ><span class="tsd-kind-property">Message</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-symbol">{ </span><br /><span>        </span
+          ><span class="tsd-kind-property">_enum</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-symbol">{ </span><br /><span>            </span
+          ><span class="tsd-kind-property">ArbitraryMessage</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >            </span
+          ><span class="tsd-kind-property">FungibleToken</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >        </span
+          ><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br /><span>    </span
+          ><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br /><span>    </span
+          ><span class="tsd-kind-property">MessageType</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-symbol">{ </span><br /><span>        </span
+          ><span class="tsd-kind-property">_enum</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span
+          ><span class="tsd-signature-symbol">; </span><br /><span>    </span><span class="tsd-signature-symbol">}</span
+          ><span class="tsd-signature-symbol">; </span><br /><span>    </span
           ><span class="tsd-kind-property">PerDispatchClass</span><span class="tsd-signature-symbol">: </span
           ><span class="tsd-signature-symbol">{ </span><br /><span>        </span
           ><span class="tsd-kind-property">mandatory</span><span class="tsd-signature-symbol">: </span
@@ -191,7 +261,28 @@
           ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
             >    </span
           ><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br /><span>    </span
-          ><span class="tsd-kind-property">V1HeaderExtension</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-kind-property">ProofResponse</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-symbol">{ </span><br /><span>        </span
+          ><span class="tsd-kind-property">dataProof</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >        </span
+          ><span class="tsd-kind-property">message</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >    </span
+          ><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br /><span>    </span
+          ><span class="tsd-kind-property">TxDataRoots</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-symbol">{ </span><br /><span>        </span
+          ><span class="tsd-kind-property">blobRoot</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >        </span
+          ><span class="tsd-kind-property">bridgeRoot</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >        </span
+          ><span class="tsd-kind-property">dataRoot</span><span class="tsd-signature-symbol">: </span
+          ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+            >    </span
+          ><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br /><span>    </span
+          ><span class="tsd-kind-property">V3HeaderExtension</span><span class="tsd-signature-symbol">: </span
           ><span class="tsd-signature-symbol">{ </span><br /><span>        </span
           ><span class="tsd-kind-property">appLookup</span><span class="tsd-signature-symbol">: </span
           ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
@@ -209,8 +300,88 @@
           <ul class="tsd-parameters">
             <li class="tsd-parameter">
               <h5>
+                <span class="tsd-kind-property">Addressed<wbr />Message</span
+                ><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span><br /><span
+                  >    </span
+                ><span class="tsd-kind-property">data</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  >    </span
+                ><span class="tsd-kind-property">destinationDomain</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  >    </span
+                ><span class="tsd-kind-property">from</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  >    </span
+                ><span class="tsd-kind-property">id</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  >    </span
+                ><span class="tsd-kind-property">message</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  >    </span
+                ><span class="tsd-kind-property">originDomain</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  >    </span
+                ><span class="tsd-kind-property">to</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  class="tsd-signature-symbol"
+                  >}</span
+                >
+              </h5>
+              <ul class="tsd-parameters">
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">data</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">string</span>
+                  </h5>
+                </li>
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">destination<wbr />Domain</span
+                    ><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>
+                  </h5>
+                </li>
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">from</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">string</span>
+                  </h5>
+                </li>
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">id</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">string</span>
+                  </h5>
+                </li>
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">message</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">string</span>
+                  </h5>
+                </li>
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">origin<wbr />Domain</span
+                    ><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>
+                  </h5>
+                </li>
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">to</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">string</span>
+                  </h5>
+                </li>
+              </ul>
+            </li>
+            <li class="tsd-parameter">
+              <h5>
                 <span class="tsd-kind-property">App<wbr />Id</span><span class="tsd-signature-symbol">: </span
                 ><span class="tsd-signature-type">string</span>
+              </h5>
+            </li>
+            <li class="tsd-parameter">
+              <h5>
+                <span class="tsd-kind-property">Arbitrary<wbr />Message</span
+                ><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>
               </h5>
             </li>
             <li class="tsd-parameter">
@@ -258,6 +429,24 @@
                   </h5>
                 </li>
               </ul>
+            </li>
+            <li class="tsd-parameter">
+              <h5>
+                <span class="tsd-kind-property">Block<wbr />Length<wbr />Columns</span
+                ><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>
+              </h5>
+            </li>
+            <li class="tsd-parameter">
+              <h5>
+                <span class="tsd-kind-property">Block<wbr />Length<wbr />Rows</span
+                ><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>
+              </h5>
+            </li>
+            <li class="tsd-parameter">
+              <h5>
+                <span class="tsd-kind-property">Bounded<wbr />Data</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span>
+              </h5>
             </li>
             <li class="tsd-parameter">
               <h5>
@@ -345,6 +534,35 @@
             </li>
             <li class="tsd-parameter">
               <h5>
+                <span class="tsd-kind-property">Compact<wbr />Data<wbr />Lookup</span
+                ><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span><br /><span
+                  >    </span
+                ><span class="tsd-kind-property">index</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  >    </span
+                ><span class="tsd-kind-property">size</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  class="tsd-signature-symbol"
+                  >}</span
+                >
+              </h5>
+              <ul class="tsd-parameters">
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">index</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">string</span>
+                  </h5>
+                </li>
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">size</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">string</span>
+                  </h5>
+                </li>
+              </ul>
+            </li>
+            <li class="tsd-parameter">
+              <h5>
                 <span class="tsd-kind-property">Da<wbr />Header</span><span class="tsd-signature-symbol">: </span
                 ><span class="tsd-signature-symbol">{ </span><br /><span>    </span
                 ><span class="tsd-kind-property">digest</span><span class="tsd-signature-symbol">: </span
@@ -409,35 +627,7 @@
             </li>
             <li class="tsd-parameter">
               <h5>
-                <span class="tsd-kind-property">Data<wbr />Lookup</span><span class="tsd-signature-symbol">: </span
-                ><span class="tsd-signature-symbol">{ </span><br /><span>    </span
-                ><span class="tsd-kind-property">index</span><span class="tsd-signature-symbol">: </span
-                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
-                  >    </span
-                ><span class="tsd-kind-property">size</span><span class="tsd-signature-symbol">: </span
-                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
-                  class="tsd-signature-symbol"
-                  >}</span
-                >
-              </h5>
-              <ul class="tsd-parameters">
-                <li class="tsd-parameter">
-                  <h5>
-                    <span class="tsd-kind-property">index</span><span class="tsd-signature-symbol">: </span
-                    ><span class="tsd-signature-type">string</span>
-                  </h5>
-                </li>
-                <li class="tsd-parameter">
-                  <h5>
-                    <span class="tsd-kind-property">size</span><span class="tsd-signature-symbol">: </span
-                    ><span class="tsd-signature-type">string</span>
-                  </h5>
-                </li>
-              </ul>
-            </li>
-            <li class="tsd-parameter">
-              <h5>
-                <span class="tsd-kind-property">Data<wbr />Lookup<wbr />Index<wbr />Item</span
+                <span class="tsd-kind-property">Data<wbr />Lookup<wbr />Item</span
                 ><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span><br /><span
                   >    </span
                 ><span class="tsd-kind-property">appId</span><span class="tsd-signature-symbol">: </span
@@ -471,7 +661,7 @@
                 ><span class="tsd-kind-property">leaf</span><span class="tsd-signature-symbol">: </span
                 ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
                   >    </span
-                ><span class="tsd-kind-property">leaf_index</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-kind-property">leafIndex</span><span class="tsd-signature-symbol">: </span
                 ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
                   >    </span
                 ><span class="tsd-kind-property">numberOfLeaves</span><span class="tsd-signature-symbol">: </span
@@ -480,7 +670,7 @@
                 ><span class="tsd-kind-property">proof</span><span class="tsd-signature-symbol">: </span
                 ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
                   >    </span
-                ><span class="tsd-kind-property">root</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-kind-property">roots</span><span class="tsd-signature-symbol">: </span
                 ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
                   class="tsd-signature-symbol"
                   >}</span
@@ -495,7 +685,7 @@
                 </li>
                 <li class="tsd-parameter">
                   <h5>
-                    <span class="tsd-kind-property">leaf_<wbr />index</span><span class="tsd-signature-symbol">: </span
+                    <span class="tsd-kind-property">leaf<wbr />Index</span><span class="tsd-signature-symbol">: </span
                     ><span class="tsd-signature-type">string</span>
                   </h5>
                 </li>
@@ -513,7 +703,35 @@
                 </li>
                 <li class="tsd-parameter">
                   <h5>
-                    <span class="tsd-kind-property">root</span><span class="tsd-signature-symbol">: </span
+                    <span class="tsd-kind-property">roots</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">string</span>
+                  </h5>
+                </li>
+              </ul>
+            </li>
+            <li class="tsd-parameter">
+              <h5>
+                <span class="tsd-kind-property">Fungible<wbr />Token</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-symbol">{ </span><br /><span>    </span
+                ><span class="tsd-kind-property">amount</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  >    </span
+                ><span class="tsd-kind-property">assetId</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  class="tsd-signature-symbol"
+                  >}</span
+                >
+              </h5>
+              <ul class="tsd-parameters">
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">amount</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">string</span>
+                  </h5>
+                </li>
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">asset<wbr />Id</span><span class="tsd-signature-symbol">: </span
                     ><span class="tsd-signature-type">string</span>
                   </h5>
                 </li>
@@ -532,6 +750,12 @@
                 ><span class="tsd-kind-property">_enum</span><span class="tsd-signature-symbol">: </span
                 ><span class="tsd-signature-symbol">{ </span><br /><span>        </span
                 ><span class="tsd-kind-property">V1</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">; </span><br /><span
+                  >        </span
+                ><span class="tsd-kind-property">V2</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">; </span><br /><span
+                  >        </span
+                ><span class="tsd-kind-property">V3</span><span class="tsd-signature-symbol">: </span
                 ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
                   >    </span
                 ><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br /><span
@@ -545,6 +769,12 @@
                     <span class="tsd-kind-property">_enum</span><span class="tsd-signature-symbol">: </span
                     ><span class="tsd-signature-symbol">{ </span><br /><span>    </span
                     ><span class="tsd-kind-property">V1</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">; </span><br /><span
+                      >    </span
+                    ><span class="tsd-kind-property">V2</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">; </span><br /><span
+                      >    </span
+                    ><span class="tsd-kind-property">V3</span><span class="tsd-signature-symbol">: </span
                     ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span
                     ><br /><span class="tsd-signature-symbol">}</span>
                   </h5>
@@ -552,6 +782,18 @@
                     <li class="tsd-parameter">
                       <h5>
                         <span class="tsd-kind-property">V1</span><span class="tsd-signature-symbol">: </span
+                        ><span class="tsd-signature-type">null</span>
+                      </h5>
+                    </li>
+                    <li class="tsd-parameter">
+                      <h5>
+                        <span class="tsd-kind-property">V2</span><span class="tsd-signature-symbol">: </span
+                        ><span class="tsd-signature-type">null</span>
+                      </h5>
+                    </li>
+                    <li class="tsd-parameter">
+                      <h5>
+                        <span class="tsd-kind-property">V3</span><span class="tsd-signature-symbol">: </span
                         ><span class="tsd-signature-type">string</span>
                       </h5>
                     </li>
@@ -607,6 +849,68 @@
             </li>
             <li class="tsd-parameter">
               <h5>
+                <span class="tsd-kind-property">Message</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-symbol">{ </span><br /><span>    </span
+                ><span class="tsd-kind-property">_enum</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-symbol">{ </span><br /><span>        </span
+                ><span class="tsd-kind-property">ArbitraryMessage</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  >        </span
+                ><span class="tsd-kind-property">FungibleToken</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  >    </span
+                ><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br /><span
+                  class="tsd-signature-symbol"
+                  >}</span
+                >
+              </h5>
+              <ul class="tsd-parameters">
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">_enum</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-symbol">{ </span><br /><span>    </span
+                    ><span class="tsd-kind-property">ArbitraryMessage</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span
+                    ><br /><span>    </span><span class="tsd-kind-property">FungibleToken</span
+                    ><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span
+                    ><span class="tsd-signature-symbol">; </span><br /><span class="tsd-signature-symbol">}</span>
+                  </h5>
+                  <ul class="tsd-parameters">
+                    <li class="tsd-parameter">
+                      <h5>
+                        <span class="tsd-kind-property">Arbitrary<wbr />Message</span
+                        ><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>
+                      </h5>
+                    </li>
+                    <li class="tsd-parameter">
+                      <h5>
+                        <span class="tsd-kind-property">Fungible<wbr />Token</span
+                        ><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>
+                      </h5>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+            <li class="tsd-parameter">
+              <h5>
+                <span class="tsd-kind-property">Message<wbr />Type</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-symbol">{ </span><br /><span>    </span
+                ><span class="tsd-kind-property">_enum</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span
+                ><span class="tsd-signature-symbol">; </span><br /><span class="tsd-signature-symbol">}</span>
+              </h5>
+              <ul class="tsd-parameters">
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">_enum</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>
+                  </h5>
+                </li>
+              </ul>
+            </li>
+            <li class="tsd-parameter">
+              <h5>
                 <span class="tsd-kind-property">Per<wbr />Dispatch<wbr />Class</span
                 ><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span><br /><span
                   >    </span
@@ -645,7 +949,73 @@
             </li>
             <li class="tsd-parameter">
               <h5>
-                <span class="tsd-kind-property">V1<wbr />Header<wbr />Extension</span
+                <span class="tsd-kind-property">Proof<wbr />Response</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-symbol">{ </span><br /><span>    </span
+                ><span class="tsd-kind-property">dataProof</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  >    </span
+                ><span class="tsd-kind-property">message</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  class="tsd-signature-symbol"
+                  >}</span
+                >
+              </h5>
+              <ul class="tsd-parameters">
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">data<wbr />Proof</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">string</span>
+                  </h5>
+                </li>
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">message</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">string</span>
+                  </h5>
+                </li>
+              </ul>
+            </li>
+            <li class="tsd-parameter">
+              <h5>
+                <span class="tsd-kind-property">Tx<wbr />Data<wbr />Roots</span
+                ><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span><br /><span
+                  >    </span
+                ><span class="tsd-kind-property">blobRoot</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  >    </span
+                ><span class="tsd-kind-property">bridgeRoot</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  >    </span
+                ><span class="tsd-kind-property">dataRoot</span><span class="tsd-signature-symbol">: </span
+                ><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br /><span
+                  class="tsd-signature-symbol"
+                  >}</span
+                >
+              </h5>
+              <ul class="tsd-parameters">
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">blob<wbr />Root</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">string</span>
+                  </h5>
+                </li>
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">bridge<wbr />Root</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">string</span>
+                  </h5>
+                </li>
+                <li class="tsd-parameter">
+                  <h5>
+                    <span class="tsd-kind-property">data<wbr />Root</span><span class="tsd-signature-symbol">: </span
+                    ><span class="tsd-signature-type">string</span>
+                  </h5>
+                </li>
+              </ul>
+            </li>
+            <li class="tsd-parameter">
+              <h5>
+                <span class="tsd-kind-property">V3<wbr />Header<wbr />Extension</span
                 ><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span><br /><span
                   >    </span
                 ><span class="tsd-kind-property">appLookup</span><span class="tsd-signature-symbol">: </span
@@ -678,7 +1048,7 @@
           <ul>
             <li>
               Defined in
-              <a href="https://github.com/availproject/avail-js/blob/1d4eb16/src/spec/types.ts#L1"
+              <a href="https://github.com/availproject/avail/blob/09e968f2/avail-js/src/spec/types.ts#L1"
                 >src/spec/types.ts:1</a
               >
             </li>
@@ -835,15 +1205,51 @@
             >
             <ul class="tsd-small-nested-navigation" id="tsd-nav-container" data-base="..">
               <li>
-                <a href="../modules.html#COUSCOUS_ENDPOINT"
-                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg
-                  >COUSCOUS_ENDPOINT</a
+                <a href="../modules.html#ApiPromise" class="tsd-is-external"
+                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg>ApiPromise</a
                 >
               </li>
               <li>
-                <a href="../modules.html#GOLDBERG_ENDPOINT"
+                <a href="../modules.html#ApiRx" class="tsd-is-external"
+                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg>ApiRx</a
+                >
+              </li>
+              <li>
+                <a href="../modules.html#HttpProvider" class="tsd-is-external"
+                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg>HttpProvider</a
+                >
+              </li>
+              <li>
+                <a href="../modules.html#Keyring" class="tsd-is-external"
+                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg>Keyring</a
+                >
+              </li>
+              <li>
+                <a href="../modules.html#MAINNET_ENDPOINT"
                   ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg
-                  >GOLDBERG_ENDPOINT</a
+                  >MAINNET_ENDPOINT</a
+                >
+              </li>
+              <li>
+                <a href="../modules.html#ScProvider" class="tsd-is-external"
+                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg>ScProvider</a
+                >
+              </li>
+              <li>
+                <a href="../modules.html#SubmittableResult" class="tsd-is-external"
+                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg
+                  >SubmittableResult</a
+                >
+              </li>
+              <li>
+                <a href="../modules.html#TURING_ENDPOINT"
+                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg
+                  >TURING_ENDPOINT</a
+                >
+              </li>
+              <li>
+                <a href="../modules.html#WsProvider" class="tsd-is-external"
+                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg>WsProvider</a
                 >
               </li>
               <li>
@@ -874,6 +1280,11 @@
                 >
               </li>
               <li>
+                <a href="../modules.html#extractData"
+                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg>extractData</a
+                >
+              </li>
+              <li>
                 <a href="../modules.html#formatNumberToBalance"
                   ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg
                   >formatNumberToBalance</a
@@ -897,56 +1308,13 @@
                 >
               </li>
               <li>
-                <a href="../modules.html#initialize"
-                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg>initialize</a
+                <a href="../modules.html#goldbergRpc"
+                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg>goldbergRpc</a
                 >
               </li>
               <li>
-                <a href="../modules.html#isConnected"
-                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg>isConnected</a
-                >
-              </li>
-              <li>
-                <a href="../modules.html#isValidAddress"
-                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg
-                  >isValidAddress</a
-                >
-              </li>
-              <li>
-                <a href="../modules.html#rpc"
-                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg>rpc</a
-                >
-              </li>
-              <li>
-                <a href="../modules.html#signedExtensions"
-                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg
-                  >signedExtensions</a
-                >
-              </li>
-              <li>
-                <a href="../modules.html#splitStringIntoArray"
-                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg
-                  >splitStringIntoArray</a
-                >
-              </li>
-              <li>
-                <a href="../modules.html#types"
-                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg>types</a
-                >
-              </li>
-              <li>
-                <a href="../modules/chain.html"
-                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4"></use></svg>chain</a
-                >
-              </li>
-              <li>
-                <a href="../modules/helpers.html"
-                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4"></use></svg>helpers</a
-                >
-              </li>
-              <li>
-                <a href="../modules/spec.html"
-                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4"></use></svg>spec</a
+                <a href="../modules.html#goldbergTypes"
+                  ><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-4194304"></use></svg>goldbergTypes</a
                 >
               </li>
               <li>Loading...</li>
