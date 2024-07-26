@@ -31,7 +31,7 @@ publicly available functions.
 
 The System module defines the following extensions:
 
-  - [`CheckWeight`]: Checks the weight and length of the block and ensure that it does not exceed the limits.
+  - [`CheckWeight`]: Checks the weight and length of the block and ensures that it does not exceed the limits.
   - [`CheckNonce`]: Checks the nonce of the transaction. Contains a single payload of type `T::Nonce`.
   - [`CheckEra`]: Checks the era of the transaction. Contains a single payload of type `Era`.
   - [`CheckGenesis`]: Checks the provided genesis hash of the transaction. Must be a part of the signed payload of the

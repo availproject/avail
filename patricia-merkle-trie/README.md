@@ -62,4 +62,4 @@ fn main() {
 
 ### No Std 
 
-This library supports `no_std`, simply add `default-features = false` to the dependecncy entry in your `Cargo.toml`
+This library supports `no_std`, simply add `default-features = false` to the dependency entry in your `Cargo.toml`
