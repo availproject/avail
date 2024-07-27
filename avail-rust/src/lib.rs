@@ -4,6 +4,7 @@ mod primitives;
 mod sdk;
 mod transaction_data;
 mod transactions;
+mod utils;
 
 // Export types for internal and external consumption
 pub type RewardDestination =
@@ -24,3 +25,4 @@ pub use api_dev::api as avail;
 
 pub use avail_core;
 pub use subxt;
+pub use utils::utils_raw;
