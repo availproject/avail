@@ -25,10 +25,10 @@ async fn main() -> Result<(), String> {
 		.progress_transaction(maybe_tx_progress, WaitFor::BlockInclusion)
 		.await?;
 
-	let events = match tx_in_block.wait_for_success().await {
-		Ok(e) => e,
-		Err(error) => return Err(error.to_string()),
-	};
+	let events = tx_in_block
+		.wait_for_success()
+		.await
+		.map_err(|err| err.to_string())?;
 
 	let event = events
 		.find_first::<TransactionPaymentEvents::TransactionFeePaid>()
