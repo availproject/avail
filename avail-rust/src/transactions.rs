@@ -5,13 +5,12 @@ use crate::api_dev::api::runtime_types::pallet_staking::ValidatorPrefs;
 use crate::api_dev::api::runtime_types::sp_arithmetic::per_things::Perbill;
 use crate::api_dev::api::Call;
 use crate::sdk::WaitFor;
+use crate::utils_raw::progress_transaction;
 use crate::{
-	avail, transaction_data, AccountId, Api, AvailBlocksClient, AvailConfig, RewardDestination,
-	TransactionInBlock, TxApi, H256,
+	avail, transaction_data, AccountId, Api, AvailBlocksClient, RewardDestination, TxApi, H256,
 };
 
 use std::str::FromStr;
-use subxt::tx::{TxProgress, TxStatus};
 use subxt::utils::MultiAddress;
 use subxt_signer::sr25519::Keypair;
 
@@ -810,42 +809,6 @@ impl DataAvailability {
 			block_hash: tx_in_block.block_hash(),
 		})
 	}
-}
-
-async fn progress_transaction(
-	maybe_tx_progress: Result<TxProgress<AvailConfig, Api>, subxt::Error>,
-	wait_for: WaitFor,
-) -> Result<TransactionInBlock, String> {
-	if let Err(error) = maybe_tx_progress {
-		return Err(error.to_string());
-	}
-	let mut tx_progress = maybe_tx_progress.unwrap();
-
-	while let Some(tx_status) = tx_progress.next().await {
-		if let Err(error) = tx_status {
-			return Err(error.to_string());
-		}
-		let tx_status = tx_status.unwrap();
-
-		match tx_status {
-			TxStatus::InBestBlock(tx_in_block) => {
-				if wait_for == WaitFor::BlockInclusion {
-					return Ok(tx_in_block);
-				}
-			},
-			TxStatus::InFinalizedBlock(tx_in_block) => {
-				if wait_for == WaitFor::BlockFinalization {
-					return Ok(tx_in_block);
-				}
-			},
-			TxStatus::Error { message } => return Err(message),
-			TxStatus::Invalid { message } => return Err(message),
-			TxStatus::Dropped { message } => return Err(message),
-			_ => {},
-		};
-	}
-
-	Err(String::from("Something went wrong."))
 }
 
 #[cfg(test)]
