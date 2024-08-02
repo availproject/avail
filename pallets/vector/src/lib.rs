@@ -455,6 +455,98 @@ pub mod pallet {
 				execution_state_proof,
 			} = serde_cbor::from_slice(&inputs).unwrap();
 
+			let mut is_valid = true;
+			let prev_header: B256 = store
+				.finalized_header
+				.hash_tree_root()
+				.unwrap()
+				.as_ref()
+				.try_into()
+				.unwrap();
+			let prev_head = store.finalized_header.slot;
+
+
+
+			// 1. Apply sync committee updates, if any
+			for (index, update) in updates.iter().enumerate() {
+				println!("Processing update {} of {}", index + 1, updates.len());
+
+				is_valid = is_valid
+					&& verify_update(
+					update,
+					expected_current_slot,
+					&store,
+					genesis_root.clone(),
+					&forks,
+				)
+					.is_ok();
+
+
+				apply_update(&mut store, update);
+
+			}
+
+			// 2. Apply finality update
+
+			is_valid = is_valid
+				&& verify_finality_update(
+				&finality_update,
+				expected_current_slot,
+				&store,
+				genesis_root.clone(),
+				&forks,
+			)
+				.is_ok();
+			apply_finality_update(&mut store, &finality_update);
+
+
+			// 3. Verify execution state root proof
+
+			let execution_state_branch_nodes: Vec<Node> = execution_state_proof
+				.execution_state_branch
+				.iter()
+				.map(|b| Node::try_from(b.as_ref()).unwrap())
+				.collect();
+
+			is_valid = is_valid
+				&& is_valid_merkle_branch(
+				&Node::try_from(execution_state_proof.execution_state_root.as_ref()).unwrap(),
+				execution_state_branch_nodes.iter(),
+				MERKLE_BRANCH_DEPTH,
+				MERKLE_BRANCH_INDEX,
+				&Node::try_from(store.finalized_header.body_root.as_ref()).unwrap(),
+			);
+
+
+			assert!(is_valid);
+
+			let header: B256 = store
+				.finalized_header
+				.hash_tree_root()
+				.unwrap()
+				.as_ref()
+				.try_into()
+				.unwrap();
+			let sync_committee_hash: B256 = store
+				.current_sync_committee
+				.hash_tree_root()
+				.unwrap()
+				.as_ref()
+				.try_into()
+				.unwrap();
+			let next_sync_committee_hash: B256 = match &mut store.next_sync_committee {
+				Some(next_sync_committee) => next_sync_committee
+					.hash_tree_root()
+					.unwrap()
+					.as_ref()
+					.try_into()
+					.unwrap(),
+				None => B256::ZERO,
+			};
+			let head = store.finalized_header.slot;
+			// println!("Finalized head: {:?}", head);
+			// println!("befor ehead: {:?}", prev_head);
+
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let updater = Updater::<T>::get();
 			// ensure sender is preconfigured
