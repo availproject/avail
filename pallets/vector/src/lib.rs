@@ -518,8 +518,6 @@ pub mod pallet {
 			);
 
 
-			assert!(is_valid);
-
 			let header: B256 = store
 				.finalized_header
 				.hash_tree_root()
@@ -549,22 +547,21 @@ pub mod pallet {
 
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let updater = Updater::<T>::get();
+
 			// ensure sender is preconfigured
 			ensure!(H256(sender) == updater, Error::<T>::UpdaterMisMatch);
 
 			let config = ConfigurationStorage::<T>::get();
-			let input_hash = H256(sha2_256(input.as_slice()));
-			let output_hash = H256(sha2_256(output.as_slice()));
-			let (step_function_id, rotate_function_id) = Self::get_function_ids()?;
-			let verifier = Self::get_verifier(function_id, step_function_id, rotate_function_id)?;
 
-			let is_success = verifier
-				.verify(input_hash, output_hash, proof.to_vec())
-				.map_err(|_| Error::<T>::VerificationError)?;
 
 			// make sure that verification call is valid
-			ensure!(is_success, Error::<T>::VerificationFailed);
+			ensure!(is_valid, Error::<T>::VerificationFailed);
+			if prev_head != head {
+				// step
 
+			}
+
+			if
 			// verification is success and, we can safely parse and validate output
 			if function_id == step_function_id {
 				let step_output = parse_step_output(output.to_vec())
