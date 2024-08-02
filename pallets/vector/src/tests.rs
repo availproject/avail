@@ -1,15 +1,9 @@
-use crate::{
-	mock::{
-		new_test_ext, Balances, Bridge, RuntimeEvent, RuntimeOrigin, System, Test,
-		ROTATE_FUNCTION_ID, ROTATE_VK, STEP_FUNCTION_ID, STEP_VK,
-	},
-	state::Configuration,
-	storage_utils::MessageStatusEnum,
-	Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, FunctionIds,
-	FunctionInput, FunctionOutput, FunctionProof, Head, Headers, MessageStatus,
-	RotateVerificationKey, SourceChainFrozen, StepVerificationKey, SyncCommitteePoseidons, Updater,
-	ValidProof, WhitelistedDomains,
-};
+use crate::{mock::{
+	new_test_ext, Balances, Bridge, RuntimeEvent, RuntimeOrigin, System, Test,
+	ROTATE_FUNCTION_ID, ROTATE_VK, STEP_FUNCTION_ID, STEP_VK,
+}, state::Configuration, storage_utils::MessageStatusEnum, Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, FunctionIds, FunctionInput, FunctionOutput, FunctionProof, Head, Headers, MessageStatus, RotateVerificationKey, SourceChainFrozen, StepVerificationKey, SyncCommitteePoseidons, Updater, ValidProof, WhitelistedDomains, FunctionInputs};
+use std::fs::File;
+use std::fs;
 use avail_core::data_proof::Message::FungibleToken;
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message};
 
@@ -602,10 +596,11 @@ fn get_valid_amb_message() -> AddressedMessage {
 // }
 //
 #[test]
-fn test_fulfill_step_call() {
+fn test_fulfill_call() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+		let inputs: Vec<u8> = fs::read("./examples/call.cbor").unwrap();
 
 		SyncCommitteePoseidons::<Test>::insert(
 			931,
@@ -625,7 +620,7 @@ fn test_fulfill_step_call() {
 			get_valid_step_input(),
 			get_valid_step_output(),
 			get_valid_step_proof(),
-			vec![],
+			inputs,
 			slot,
 		);
 
