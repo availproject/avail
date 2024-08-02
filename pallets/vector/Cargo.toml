@@ -33,7 +33,10 @@ trie-db.workspace = true
 rlp.workspace = true
 primitive-types.workspace = true
 ethabi.workspace = true
-
+common.workspace = true
+consensus-core.workspace = true
+alloy-primitives.workspace = true
+ssz-rs.workspace = true
 
 [dev-dependencies]
 pallet-balances = { workspace = true, default-features = false, features = ["std"] }
