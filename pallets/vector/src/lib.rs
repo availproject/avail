@@ -4,6 +4,10 @@
 use crate::{storage_utils::MessageStatusEnum, verifier::Verifier};
 use avail_base::{MemoryTemporaryStorage, ProvidePostInherent};
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message, MessageType};
+use common::config::types::Forks;
+use consensus_core::{apply_finality_update, apply_update, verify_finality_update, verify_update, types::{Bytes32, ByteVector, LightClientStore, Update, FinalityUpdate}};
+use alloy_primitives::B256;
+use ssz_rs::prelude::*;
 
 use codec::Compact;
 use frame_support::{
@@ -395,29 +399,29 @@ pub mod pallet {
 			Weight::zero()
 		}
 	}
-	// // TODO: Rename to FunctionInput
-	// #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-	// pub struct FunctionInputs {
-	// 	pub updates: Vec<Update>,
-	// 	pub finality_update: FinalityUpdate,
-	// 	pub expected_current_slot: u64,
-	// 	pub store: LightClientStore,
-	// 	pub genesis_root: Bytes32,
-	// 	pub forks: Forks,
-	// 	pub execution_state_proof: ExecutionStateProof,
-	// }
-	//
-	// #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-	// pub struct ExecutionStateProof {
-	// 	#[serde(rename = "executionStateRoot")]
-	// 	pub execution_state_root: B256,
-	// 	#[serde(rename = "executionStateBranch")]
-	// 	pub execution_state_branch: Vec<B256>,
-	// 	pub gindex: String,
-	// }
-	// /// Merkle branch index & depth for the execution state root proof.
-	// pub const MERKLE_BRANCH_INDEX: usize = 802;
-	// pub const MERKLE_BRANCH_DEPTH: usize = 9;
+	// TODO: Rename to FunctionInput
+	#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+	pub struct FunctionInputs {
+		pub updates: Vec<Update>,
+		pub finality_update: FinalityUpdate,
+		pub expected_current_slot: u64,
+		pub store: LightClientStore,
+		pub genesis_root: Bytes32,
+		pub forks: Forks,
+		pub execution_state_proof: ExecutionStateProof,
+	}
+
+	#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+	pub struct ExecutionStateProof {
+		#[serde(rename = "executionStateRoot")]
+		pub execution_state_root: B256,
+		#[serde(rename = "executionStateBranch")]
+		pub execution_state_branch: Vec<B256>,
+		pub gindex: String,
+	}
+	/// Merkle branch index & depth for the execution state root proof.
+	pub const MERKLE_BRANCH_INDEX: usize = 802;
+	pub const MERKLE_BRANCH_DEPTH: usize = 9;
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
