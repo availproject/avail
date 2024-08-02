@@ -441,8 +441,20 @@ pub mod pallet {
 			input: FunctionInput,
 			output: FunctionOutput,
 			proof: FunctionProof,
+            inputs: Vec<u8>,
 			#[pallet::compact] slot: u64,
 		) -> DispatchResultWithPostInfo {
+
+			let FunctionInputs {
+				updates,
+				finality_update,
+				expected_current_slot,
+				mut store,
+				genesis_root,
+				forks,
+				execution_state_proof,
+			} = serde_cbor::from_slice(&inputs).unwrap();
+
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let updater = Updater::<T>::get();
 			// ensure sender is preconfigured

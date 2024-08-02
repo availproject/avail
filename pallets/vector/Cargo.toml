@@ -37,7 +37,7 @@ common.workspace = true
 consensus-core.workspace = true
 alloy-primitives.workspace = true
 ssz-rs.workspace = true
-
+serde_cbor.workspace = true
 [dev-dependencies]
 pallet-balances = { workspace = true, default-features = false, features = ["std"] }
 pallet-timestamp = { workspace = true, default-features = false }
