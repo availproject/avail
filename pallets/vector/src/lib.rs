@@ -561,7 +561,10 @@ pub mod pallet {
 
 			}
 
-			if
+
+
+
+
 			// verification is success and, we can safely parse and validate output
 			if function_id == step_function_id {
 				let step_output = parse_step_output(output.to_vec())
