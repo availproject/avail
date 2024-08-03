@@ -616,12 +616,7 @@ fn test_fulfill_call() {
 
 		let result = Bridge::fulfill_call(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			STEP_FUNCTION_ID,
-			get_valid_step_input(),
-			get_valid_step_output(),
-			get_valid_step_proof(),
 			inputs,
-			slot,
 		);
 
 		assert_ok!(result);
