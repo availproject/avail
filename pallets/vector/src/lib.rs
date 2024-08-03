@@ -438,14 +438,9 @@ pub mod pallet {
 		#[pallet::weight(weight_helper::fulfill_call::<T>(* function_id))]
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
-			function_id: H256,
-			input: FunctionInput,
-			output: FunctionOutput,
-			proof: FunctionProof,
-            inputs: Vec<u8>,
-			#[pallet::compact] slot: u64,
+            inputs: Vec<u8>, // TODO: Convert to fixed bytes
 		) -> DispatchResultWithPostInfo {
-
+			let config = ConfigurationStorage::<T>::get();
 			let FunctionInputs {
 				updates,
 				finality_update,
@@ -534,15 +529,7 @@ pub mod pallet {
 				.as_ref()
 				.try_into()
 				.unwrap();
-			let next_sync_committee_hash: B256 = match &mut store.next_sync_committee {
-				Some(next_sync_committee) => next_sync_committee
-					.hash_tree_root()
-					.unwrap()
-					.as_ref()
-					.try_into()
-					.unwrap(),
-				None => B256::ZERO,
-			};
+
 			let head = store.finalized_header.slot;
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let updater = Updater::<T>::get();
@@ -550,45 +537,54 @@ pub mod pallet {
 			// ensure sender is preconfigured
 			ensure!(H256(sender) == updater, Error::<T>::UpdaterMisMatch);
 			ensure!(is_valid, Error::<T>::VerificationFailed);
-			
-			let verified_output = VerifiedStepOutput {
-				finalized_header_root: H256::from(finalized_header_root),
-				execution_state_root: H256::from(execution_state_root),
-				finalized_slot: store.finalized_header.slot.as_u64(),
-				participation: store.current_max_active_participants.try_into().unwrap(),
-			};
+
+			let mut function_called = false;
+
+			// Step
 			if prev_head != head {
+				let verified_output = VerifiedStepOutput {
+					finalized_header_root: H256::from(finalized_header_root),
+					execution_state_root: H256::from(execution_state_root),
+					finalized_slot: store.finalized_header.slot.as_u64(),
+					participation: store.current_max_active_participants.try_into().unwrap(),
+				};
+
 				if Self::set_slot_roots(verified_output)? {
 					Self::deposit_event(Event::HeadUpdated {
 						slot: verified_output.finalized_slot,
 						finalization_root: verified_output.finalized_header_root,
 						execution_state_root: verified_output.execution_state_root,
 					});
+					function_called = true;
 				}
 			}
 
+			// Rotate
+			if let Some(mut next_sync_committee) = store.next_sync_committee {
+				let next_sync_committee_hash: [u8; 32] = next_sync_committee
+					.hash_tree_root()
+					.unwrap()
+					.as_ref()
+					.try_into()
+					.unwrap();
+				let next_sync_committee_hash = U256::from(next_sync_committee_hash);
+				
+				let period = head.as_u64()
+					.checked_div(config.slots_per_period)
+					.ok_or(Error::<T>::ConfigurationNotSet)?;
+				let next_period = period + 1;
+				Self::set_sync_committee_poseidon(next_period, next_sync_committee_hash)?;
 
+				Self::deposit_event(Event::SyncCommitteeUpdated {
+					period: next_period,
+					root: next_sync_committee_hash,
+				});
+				function_called=true;
+			}
 
-
-
-
-
-
-
-			// } else if function_id == rotate_function_id {
-			// 	let rotate_output = parse_rotate_output(output.to_vec())
-			// 		.map_err(|_| Error::<T>::CannotParseOutputData)?;
-			//
-			// 	let vr = VerifiedRotate::new(function_id, input_hash, rotate_output);
-			//
-			// 	let period = Self::rotate_into(slot, &config, &vr, rotate_function_id)?;
-			// 	Self::deposit_event(Event::SyncCommitteeUpdated {
-			// 		period,
-			// 		root: vr.sync_committee_poseidon,
-			// 	});
-			// } else {
-			// 	return Err(Error::<T>::FunctionIdNotKnown.into());
-			// }
+			if !function_called {
+				return Err(Error::<T>::FunctionIdNotKnown.into());
+			}
 
 			Ok(().into())
 		}
