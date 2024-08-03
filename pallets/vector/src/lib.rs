@@ -50,6 +50,7 @@ pub type BalanceOf<T> =
 
 #[frame_support::pallet]
 pub mod pallet {
+	use consensus_core::get_bits;
 	use ethabi::Token;
 	use ethabi::Token::Uint;
 	use frame_support::dispatch::GetDispatchInfo;
@@ -466,7 +467,6 @@ pub mod pallet {
 			let prev_head = store.finalized_header.slot;
 
 
-
 			// 1. Apply sync committee updates, if any
 			for (index, update) in updates.iter().enumerate() {
 				println!("Processing update {} of {}", index + 1, updates.len());
@@ -487,6 +487,9 @@ pub mod pallet {
 			}
 
 			// 2. Apply finality update
+
+
+
 
 			is_valid = is_valid
 				&& verify_finality_update(
@@ -518,13 +521,12 @@ pub mod pallet {
 			);
 
 
-			let header: B256 = store
+			let finalized_header_root: [u8; 32] = store
 				.finalized_header
 				.hash_tree_root()
-				.unwrap()
-				.as_ref()
-				.try_into()
-				.unwrap();
+				.unwrap().as_ref().try_into().unwrap();
+			let execution_state_root: [u8; 32]  = execution_state_proof.execution_state_root.as_slice().try_into().unwrap();
+
 			let sync_committee_hash: B256 = store
 				.current_sync_committee
 				.hash_tree_root()
@@ -542,57 +544,51 @@ pub mod pallet {
 				None => B256::ZERO,
 			};
 			let head = store.finalized_header.slot;
-			// println!("Finalized head: {:?}", head);
-			// println!("befor ehead: {:?}", prev_head);
-
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let updater = Updater::<T>::get();
 
 			// ensure sender is preconfigured
 			ensure!(H256(sender) == updater, Error::<T>::UpdaterMisMatch);
-
-			let config = ConfigurationStorage::<T>::get();
-
-
-			// make sure that verification call is valid
 			ensure!(is_valid, Error::<T>::VerificationFailed);
+			
+			let verified_output = VerifiedStepOutput {
+				finalized_header_root: H256::from(finalized_header_root),
+				execution_state_root: H256::from(execution_state_root),
+				finalized_slot: store.finalized_header.slot.as_u64(),
+				participation: store.current_max_active_participants.try_into().unwrap(),
+			};
 			if prev_head != head {
-				// step
-
-			}
-
-
-
-
-
-			// verification is success and, we can safely parse and validate output
-			if function_id == step_function_id {
-				let step_output = parse_step_output(output.to_vec())
-					.map_err(|_| Error::<T>::CannotParseOutputData)?;
-
-				let vs = VerifiedStep::new(function_id, input_hash, step_output);
-
-				if Self::step_into(slot, &config, &vs, step_function_id)? {
+				if Self::set_slot_roots(verified_output)? {
 					Self::deposit_event(Event::HeadUpdated {
-						slot: vs.verified_output.finalized_slot,
-						finalization_root: vs.verified_output.finalized_header_root,
-						execution_state_root: vs.verified_output.execution_state_root,
+						slot: verified_output.finalized_slot,
+						finalization_root: verified_output.finalized_header_root,
+						execution_state_root: verified_output.execution_state_root,
 					});
 				}
-			} else if function_id == rotate_function_id {
-				let rotate_output = parse_rotate_output(output.to_vec())
-					.map_err(|_| Error::<T>::CannotParseOutputData)?;
-
-				let vr = VerifiedRotate::new(function_id, input_hash, rotate_output);
-
-				let period = Self::rotate_into(slot, &config, &vr, rotate_function_id)?;
-				Self::deposit_event(Event::SyncCommitteeUpdated {
-					period,
-					root: vr.sync_committee_poseidon,
-				});
-			} else {
-				return Err(Error::<T>::FunctionIdNotKnown.into());
 			}
+
+
+
+
+
+
+
+
+
+			// } else if function_id == rotate_function_id {
+			// 	let rotate_output = parse_rotate_output(output.to_vec())
+			// 		.map_err(|_| Error::<T>::CannotParseOutputData)?;
+			//
+			// 	let vr = VerifiedRotate::new(function_id, input_hash, rotate_output);
+			//
+			// 	let period = Self::rotate_into(slot, &config, &vr, rotate_function_id)?;
+			// 	Self::deposit_event(Event::SyncCommitteeUpdated {
+			// 		period,
+			// 		root: vr.sync_committee_poseidon,
+			// 	});
+			// } else {
+			// 	return Err(Error::<T>::FunctionIdNotKnown.into());
+			// }
 
 			Ok(().into())
 		}
