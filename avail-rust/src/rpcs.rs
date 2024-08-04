@@ -4,7 +4,7 @@ use subxt::utils::H256;
 
 use crate::avail::runtime_types::frame_system::limits::BlockLength;
 use crate::subxt::backend::legacy::rpc_methods::Bytes;
-use crate::{subxt::backend::rpc::RpcClient, Api};
+use crate::subxt::backend::rpc::RpcClient;
 use crate::{Cell, GDataProof, GRow};
 
 pub struct Rpc {
@@ -13,7 +13,7 @@ pub struct Rpc {
 }
 
 impl Rpc {
-	pub async fn new(api: Api, endpoint: &str) -> Result<Self, Box<dyn std::error::Error>> {
+	pub async fn new(endpoint: &str) -> Result<Self, Box<dyn std::error::Error>> {
 		let client = RpcClient::from_insecure_url(endpoint).await?;
 		let kate = Kate::new(client.clone());
 		let author = Author::new(client.clone());

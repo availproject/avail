@@ -1,7 +1,7 @@
 mod api_dev;
 mod config;
 mod primitives;
-mod rpc;
+mod rpcs;
 mod sdk;
 mod transaction_data;
 mod transactions;
