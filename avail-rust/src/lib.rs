@@ -1,6 +1,7 @@
 mod api_dev;
 mod config;
 mod primitives;
+mod rpc;
 mod sdk;
 mod transaction_data;
 mod transactions;
@@ -25,4 +26,6 @@ pub use api_dev::api as avail;
 
 pub use avail_core;
 pub use subxt;
+pub use subxt::config::polkadot::U256;
 pub use utils::utils_raw;
+pub use utils::FetchTransactionError;
