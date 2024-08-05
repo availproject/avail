@@ -596,11 +596,11 @@ fn get_valid_amb_message() -> AddressedMessage {
 // }
 //
 #[test]
-fn test_fulfill_call() {
+fn test_fulfill_step_call() {
 	new_test_ext().execute_with(|| {
 		let slot = 7634942;
 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-		let inputs: Vec<u8> = fs::read("./examples/call.cbor").unwrap();
+		let inputs: Vec<u8> = fs::read("./examples/step_call.cbor").unwrap();
 
 		SyncCommitteePoseidons::<Test>::insert(
 			931,
@@ -620,42 +620,47 @@ fn test_fulfill_call() {
 			get_valid_step_input(),
 			get_valid_step_output(),
 			get_valid_step_proof(),
-			inputs,
+			inputs.clone(),
 			slot,
 		);
 
 		assert_ok!(result);
-		let finalized_slot = 7634848;
+
+		let parsed_inputs: FunctionInputs = serde_cbor::from_slice(&inputs).unwrap();
+
+		let finalized_slot = parsed_inputs.finality_update.finalized_header.slot.as_u64();
 		// ensure that event is fired
 		let expected_event = RuntimeEvent::Bridge(Event::HeadUpdated {
 			slot: finalized_slot,
 			finalization_root: H256(hex!(
-				"e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec"
+				"a6e3468985f31ca58e34fe0a40a72f4bbc08d4d00a0933d28b07ddb95d1faf95"
 			)),
 			execution_state_root: H256(hex!(
-				"51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b9"
+				"6518be340ee1bad6c6c6bef6ea3e99ecebc142e196b7edd56b3a5e513d0c6392"
 			)),
 		});
 
-		let finalized_slot = 7634848;
 
 		let header = Headers::<Test>::get(finalized_slot);
 		let head = Head::<Test>::get();
 		let ex_state_root = ExecutionStateRoots::<Test>::get(finalized_slot);
-
+		println!("Header: {:?}", header);
+		println!("FInalized slot: {:?}", finalized_slot);
+		println!("Ex state root: {:?}", parsed_inputs.execution_state_proof.execution_state_root);
 		assert_eq!(
 			header,
 			H256(hex!(
-				"e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec"
+						"a6e3468985f31ca58e34fe0a40a72f4bbc08d4d00a0933d28b07ddb95d1faf95"
 			))
 		);
 		assert_eq!(
 			ex_state_root,
 			H256(hex!(
-				"51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b9"
+			"6518be340ee1bad6c6c6bef6ea3e99ecebc142e196b7edd56b3a5e513d0c6392"
 			))
 		);
 		assert_eq!(head, finalized_slot);
+		println!("All ystem events: {:?}", System::events());
 		assert_eq!(expected_event, System::events()[0].event);
 	});
 }
@@ -725,52 +730,55 @@ fn test_fulfill_call() {
 // 	});
 // }
 //
-// #[test]
-// fn test_fulfill_rotate_call() {
-// 	new_test_ext().execute_with(|| {
-// 		let slot = 7634942;
-// 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-//
-// 		ConfigurationStorage::<Test>::set(Configuration {
-// 			slots_per_period: 8192,
-// 			finality_threshold: 342,
-// 		});
-//
-// 		Headers::<Test>::set(
-// 			slot,
-// 			H256(hex!(
-// 				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57856"
-// 			)),
-// 		);
-//
-// 		let result = Bridge::fulfill_call(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			ROTATE_FUNCTION_ID,
-// 			get_valid_rotate_input(),
-// 			get_valid_rotate_output(),
-// 			get_valid_rotate_proof(),
-// 			slot,
-// 		);
-//
-// 		assert_ok!(result);
-// 		// ensure that event is fired
-// 		let expected_poseidon = U256::from_dec_str(
-// 			"16399439943012933445970260519503780180385945954293268151243539801891563949197",
-// 		)
-// 		.unwrap();
-//
-// 		let current_period = 931;
-// 		let expected_event = RuntimeEvent::Bridge(Event::SyncCommitteeUpdated {
-// 			period: current_period + 1,
-// 			root: expected_poseidon,
-// 		});
-//
-// 		let poseidon = SyncCommitteePoseidons::<Test>::get(current_period + 1);
-//
-// 		assert_eq!(expected_event, System::events()[0].event);
-// 		assert_eq!(poseidon, expected_poseidon);
-// 	});
-// }
+#[test]
+fn test_fulfill_rotate_call() {
+	new_test_ext().execute_with(|| {
+		let slot = 7634942;
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+		let inputs: Vec<u8> = fs::read("./examples/rotate_call.cbor").unwrap();
+		let parsed_inputs: FunctionInputs = serde_cbor::from_slice(&inputs).unwrap();
+
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: 8192,
+			finality_threshold: 342,
+		});
+
+		Headers::<Test>::set(
+			slot,
+			H256(hex!(
+				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57856"
+			)),
+		);
+
+		let result = Bridge::fulfill_call(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			ROTATE_FUNCTION_ID,
+			get_valid_rotate_input(),
+			get_valid_rotate_output(),
+			get_valid_rotate_proof(),
+			inputs,
+			slot,
+		);
+
+		assert_ok!(result);
+		// ensure that event is fired
+		let expected_poseidon = U256::from_dec_str(
+			"78004113044439342907882478475913997887515213797155324584820998418219758944903",
+		)
+		.unwrap();
+
+		let current_period = 1178;
+		let expected_event = RuntimeEvent::Bridge(Event::SyncCommitteeUpdated {
+			period: current_period + 1,
+			root: expected_poseidon,
+		});
+
+		let poseidon = SyncCommitteePoseidons::<Test>::get(current_period + 1);
+
+		assert_eq!(expected_event, System::events()[0].event);
+		assert_eq!(poseidon, expected_poseidon);
+	});
+}
 //
 // #[test]
 // fn test_fulfill_rotate_call_wrong_header() {
