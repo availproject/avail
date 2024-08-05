@@ -435,7 +435,7 @@ pub mod pallet {
 		/// proof  Function proof.
 		/// slot  Function slot to update.
 		#[pallet::call_index(0)]
-		#[pallet::weight(weight_helper::fulfill_call::<T>(* function_id))]
+		#[pallet::weight(weight_helper::fulfill_call::<T>(* function_id))] // can't remove this
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
 			function_id: H256,
@@ -465,7 +465,7 @@ pub mod pallet {
 				.try_into()
 				.unwrap();
 			let prev_head = store.finalized_header.slot;
-
+			let prev_next_sync_committee = store.next_sync_committee.clone();
 
 			// 1. Apply sync committee updates, if any
 			for (index, update) in updates.iter().enumerate() {
@@ -546,7 +546,11 @@ pub mod pallet {
 			let mut function_called = false;
 
 			// Step
+			println!("Prev_head: {}", prev_head.as_u64());
+			println!("Head: {}", head.as_u64());
 			if prev_head != head {
+				println!("Step update!!! aaaa");
+				println!("New step: {}", head.as_u64());
 				let verified_output = VerifiedStepOutput {
 					finalized_header_root: H256::from(finalized_header_root),
 					execution_state_root: H256::from(execution_state_root),
@@ -565,7 +569,11 @@ pub mod pallet {
 			}
 
 			// Rotate
+
 			if let Some(mut next_sync_committee) = store.next_sync_committee {
+				println!("Sync committee update!!! bbbb");
+				println!("New sync aggpubkey: {:?}", next_sync_committee.aggregate_pubkey);
+				println!("Prev next sync committwe: {:?}", prev_next_sync_committee);
 				let next_sync_committee_hash: [u8; 32] = next_sync_committee
 					.hash_tree_root()
 					.unwrap()
