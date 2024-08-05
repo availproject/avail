@@ -438,7 +438,12 @@ pub mod pallet {
 		#[pallet::weight(weight_helper::fulfill_call::<T>(* function_id))]
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
-            inputs: Vec<u8>, // TODO: Convert to fixed bytes
+			function_id: H256,
+			input: FunctionInput,
+			output: FunctionOutput,
+			proof: FunctionProof,
+			inputs: Vec<u8>, // TODO: Convert to fixed bytes
+			#[pallet::compact] slot: u64,
 		) -> DispatchResultWithPostInfo {
 			let config = ConfigurationStorage::<T>::get();
 			let FunctionInputs {
