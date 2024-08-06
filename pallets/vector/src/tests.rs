@@ -639,9 +639,6 @@ fn test_fulfill_step_call() {
 		let header = Headers::<Test>::get(finalized_slot);
 		let head = Head::<Test>::get();
 		let ex_state_root = ExecutionStateRoots::<Test>::get(finalized_slot);
-		println!("Header: {:?}", header);
-		println!("FInalized slot: {:?}", finalized_slot);
-		println!("Ex state root: {:?}", parsed_inputs.execution_state_proof.execution_state_root);
 		assert_eq!(
 			header,
 			H256(hex!(
@@ -655,7 +652,6 @@ fn test_fulfill_step_call() {
 			))
 		);
 		assert_eq!(head, finalized_slot);
-		println!("All ystem events: {:?}", System::events());
 		assert_eq!(expected_event, System::events()[0].event);
 	});
 }
