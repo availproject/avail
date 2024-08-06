@@ -528,6 +528,9 @@ pub mod pallet {
                     participation: store.current_max_active_participants.try_into().unwrap(),
                 };
 
+                let head = Head::<T>::get();
+                ensure!(verified_output.finalized_slot > head, Error::<T>::SlotBehindHead);
+                
                 if Self::set_slot_roots(verified_output)? {
                     Self::deposit_event(Event::HeadUpdated {
                         slot: verified_output.finalized_slot,

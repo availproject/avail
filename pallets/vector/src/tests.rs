@@ -648,72 +648,62 @@ fn test_fulfill_step_call() {
         assert_eq!(expected_event, System::events()[0].event);
     });
 }
-//
+
 // #[test]
 // fn test_fulfill_step_call_wrong_poseidon() {
-// 	new_test_ext().execute_with(|| {
-// 		let slot = 7634942;
-// 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+//     new_test_ext().execute_with(|| {
+//         Updater::<Test>::set(H256(TEST_SENDER_VEC));
 //
-// 		// current poseidon is not the same as the one in the valid proof
-// 		SyncCommitteePoseidons::<Test>::insert(
-// 			931,
-// 			U256::from(hex!(
+//         // current poseidon is not the same as the one in the valid proof
+//         SyncCommitteePoseidons::<Test>::insert(
+//             931,
+//             U256::from(hex!(
 // 				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332da"
 // 			)),
-// 		);
+//         );
 //
-// 		ConfigurationStorage::<Test>::set(Configuration {
-// 			slots_per_period: 8192,
-// 			finality_threshold: 461,
-// 		});
+//         ConfigurationStorage::<Test>::set(Configuration {
+//             slots_per_period: 8192,
+//             finality_threshold: 461,
+//         });
 //
-// 		let result = Bridge::fulfill_call(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			STEP_FUNCTION_ID,
-// 			get_valid_step_input(),
-// 			get_valid_step_output(),
-// 			get_valid_step_proof(),
-// 			slot,
-// 		);
+//         let result = Bridge::fulfill_call(
+//             RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+//             STEP_FUNCTION_ID,
+//             get_valid_step_input(),
+//             get_valid_step_output(),
+//             get_valid_step_proof(),
+//             slot,
+//         );
 //
-// 		assert_err!(result, Error::<Test>::StepVerificationError);
-// 	});
+//         assert_err!(result, Error::<Test>::StepVerificationError);
+//     });
 // }
-//
-// #[test]
-// fn test_fulfill_step_call_slot_behind_head() {
-// 	new_test_ext().execute_with(|| {
-// 		let slot = 7634942;
-// 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-// 		SyncCommitteePoseidons::<Test>::insert(
-// 			931,
-// 			U256::from(hex!(
-// 				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
-// 			)),
-// 		);
-//
-// 		// move head forward
-// 		Head::<Test>::set(8634942);
-//
-// 		ConfigurationStorage::<Test>::set(Configuration {
-// 			slots_per_period: 8192,
-// 			finality_threshold: 461,
-// 		});
-//
-// 		let result = Bridge::fulfill_call(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			STEP_FUNCTION_ID,
-// 			get_valid_step_input(),
-// 			get_valid_step_output(),
-// 			get_valid_step_proof(),
-// 			slot,
-// 		);
-//
-// 		assert_err!(result, Error::<Test>::SlotBehindHead);
-// 	});
-// }
-//
+
+#[test]
+fn test_fulfill_step_call_slot_behind_head() {
+    new_test_ext().execute_with(|| {
+        Updater::<Test>::set(H256(TEST_SENDER_VEC));
+        let inputs: Vec<u8> = fs::read("./examples/step_call.cbor").unwrap();
+
+        // move head forward
+        Head::<Test>::set(9678877);
+
+        ConfigurationStorage::<Test>::set(Configuration {
+            slots_per_period: 8192,
+            finality_threshold: 461,
+        });
+
+        let result = Bridge::fulfill_call(
+            RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+            STEP_FUNCTION_ID,
+            inputs,
+        );
+
+        assert_err!(result, Error::<Test>::SlotBehindHead);
+    });
+}
+
 #[test]
 fn test_fulfill_rotate_call() {
     new_test_ext().execute_with(|| {
