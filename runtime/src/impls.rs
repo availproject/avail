@@ -704,6 +704,7 @@ pub enum ProxyType {
 	NonTransfer,
 	Governance,
 	Staking,
+	IdentityJudgement,
 }
 impl Default for ProxyType {
 	fn default() -> Self {
@@ -725,7 +726,15 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					| RuntimeCall::Treasury(..)
 					| RuntimeCall::TreasuryCommittee(..)
 			),
-			ProxyType::Staking => matches!(c, RuntimeCall::Session(..) | RuntimeCall::Staking(..)),
+			ProxyType::Staking => matches!(
+				c,
+				RuntimeCall::Session(..) | RuntimeCall::Staking(..) | RuntimeCall::Utility(..)
+			),
+			ProxyType::IdentityJudgement => matches!(
+				c,
+				RuntimeCall::Identity(pallet_identity::Call::provide_judgement { .. })
+					| RuntimeCall::Utility(..)
+			),
 		}
 	}
 	fn is_superset(&self, o: &Self) -> bool {
