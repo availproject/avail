@@ -537,27 +537,40 @@ pub mod pallet {
 			}
 
 			// Rotate
-			if let Some(mut next_sync_committee) = store.next_sync_committee {
 
-				let next_sync_committee_hash: [u8; 32] = next_sync_committee
-					.hash_tree_root()
-					.unwrap()
-					.as_ref()
-					.try_into()
-					.unwrap();
-				let next_sync_committee_hash = U256::from(next_sync_committee_hash);
-				
+			// If the sync committee for the new peroid is not set, set it.
+			// This can happen if the light client was very behind and had a lot of updates
+			// Note: Only the latest sync committee is stored, not the intermediate ones from every update.
+			// This may leave gaps in the sync committee history
+			if (syncCommittees[period] == bytes32(0)) {
+				syncCommittees[period] = po.syncCommitteeHash;
+				emit SyncCommitteeUpdate(period, po.syncCommitteeHash);
+			}
+
+			if let Some(mut next_sync_committee) = store.next_sync_committee {
 				let period = head.as_u64()
 					.checked_div(config.slots_per_period)
 					.ok_or(Error::<T>::ConfigurationNotSet)?;
 				let next_period = period + 1;
-				Self::set_sync_committee_poseidon(next_period, next_sync_committee_hash)?;
+				let stored_next_sync_committee_hash = SyncCommitteePoseidons::<T>::get(next_period);
+				let next_sync_committee_hash: [u8; 32] = next_sync_committee
+				.hash_tree_root()
+				.unwrap()
+				.as_ref()
+				.try_into()
+				.unwrap();
+				let next_sync_committee_hash = U256::from(next_sync_committee_hash);
 
-				Self::deposit_event(Event::SyncCommitteeUpdated {
-					period: next_period,
-					root: next_sync_committee_hash,
-				});
-				function_called=true;
+				// If the next sync committee is already correct, we don't need to update it.
+				if stored_next_sync_committee_hash != next_sync_committee_hash.into() {
+					Self::deposit_event(Event::SyncCommitteeUpdated {
+						period: next_period,
+						root: next_sync_committee_hash,
+					});
+					function_called = true;
+
+					Self::set_sync_committee_poseidon(next_period, next_sync_committee_hash)?;
+				}
 			}
 
 			if !function_called {
