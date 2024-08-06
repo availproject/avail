@@ -430,20 +430,13 @@ pub mod pallet {
 	{
 		/// The entrypoint for fulfilling a call.
 		/// function_id Function identifier.
-		/// input Function input.
-		/// output Function output.
-		/// proof  Function proof.
-		/// slot  Function slot to update.
+		/// inputs Function input.
 		#[pallet::call_index(0)]
 		#[pallet::weight(weight_helper::fulfill_call::<T>(* function_id))] // can't remove this
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
 			function_id: H256,
-			input: FunctionInput,
-			output: FunctionOutput,
-			proof: FunctionProof,
 			inputs: Vec<u8>, // TODO: Convert to fixed bytes
-			#[pallet::compact] slot: u64,
 		) -> DispatchResultWithPostInfo {
 			let config = ConfigurationStorage::<T>::get();
 			let FunctionInputs {
@@ -457,20 +450,11 @@ pub mod pallet {
 			} = serde_cbor::from_slice(&inputs).unwrap();
 
 			let mut is_valid = true;
-			let prev_header: B256 = store
-				.finalized_header
-				.hash_tree_root()
-				.unwrap()
-				.as_ref()
-				.try_into()
-				.unwrap();
 			let prev_head = store.finalized_header.slot;
-			let prev_next_sync_committee = store.next_sync_committee.clone();
 
 			// 1. Apply sync committee updates, if any
 			for (index, update) in updates.iter().enumerate() {
 				println!("Processing update {} of {}", index + 1, updates.len());
-
 				is_valid = is_valid
 					&& verify_update(
 					update,
@@ -481,16 +465,10 @@ pub mod pallet {
 				)
 					.is_ok();
 
-
 				apply_update(&mut store, update);
-
 			}
 
 			// 2. Apply finality update
-
-
-
-
 			is_valid = is_valid
 				&& verify_finality_update(
 				&finality_update,
@@ -502,9 +480,7 @@ pub mod pallet {
 				.is_ok();
 			apply_finality_update(&mut store, &finality_update);
 
-
 			// 3. Verify execution state root proof
-
 			let execution_state_branch_nodes: Vec<Node> = execution_state_proof
 				.execution_state_branch
 				.iter()
@@ -569,11 +545,7 @@ pub mod pallet {
 			}
 
 			// Rotate
-
 			if let Some(mut next_sync_committee) = store.next_sync_committee {
-				println!("Sync committee update!!! bbbb");
-				println!("New sync aggpubkey: {:?}", next_sync_committee.aggregate_pubkey);
-				println!("Prev next sync committwe: {:?}", prev_next_sync_committee);
 				let next_sync_committee_hash: [u8; 32] = next_sync_committee
 					.hash_tree_root()
 					.unwrap()
