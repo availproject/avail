@@ -617,11 +617,7 @@ fn test_fulfill_step_call() {
 		let result = Bridge::fulfill_call(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
 			STEP_FUNCTION_ID,
-			get_valid_step_input(),
-			get_valid_step_output(),
-			get_valid_step_proof(),
 			inputs.clone(),
-			slot,
 		);
 
 		assert_ok!(result);
@@ -639,7 +635,6 @@ fn test_fulfill_step_call() {
 				"6518be340ee1bad6c6c6bef6ea3e99ecebc142e196b7edd56b3a5e513d0c6392"
 			)),
 		});
-
 
 		let header = Headers::<Test>::get(finalized_slot);
 		let head = Head::<Test>::get();
@@ -733,7 +728,6 @@ fn test_fulfill_step_call() {
 #[test]
 fn test_fulfill_rotate_call() {
 	new_test_ext().execute_with(|| {
-		let slot = 7634942;
 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
 		let inputs: Vec<u8> = fs::read("./examples/rotate_call.cbor").unwrap();
 		let parsed_inputs: FunctionInputs = serde_cbor::from_slice(&inputs).unwrap();
@@ -743,21 +737,14 @@ fn test_fulfill_rotate_call() {
 			finality_threshold: 342,
 		});
 
-		Headers::<Test>::set(
-			slot,
-			H256(hex!(
-				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57856"
-			)),
-		);
-
 		let result = Bridge::fulfill_call(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
 			ROTATE_FUNCTION_ID,
-			get_valid_rotate_input(),
-			get_valid_rotate_output(),
-			get_valid_rotate_proof(),
+			// get_valid_rotate_input(),
+			// get_valid_rotate_output(),
+			// get_valid_rotate_proof(),
 			inputs,
-			slot,
+			// slot,
 		);
 
 		assert_ok!(result);
