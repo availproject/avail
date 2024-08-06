@@ -24017,6 +24017,11 @@ pub mod api {
 					pub type SyncCommitteePoseidons = runtime_types::primitive_types::U256;
 					pub type Param0 = ::core::primitive::u64;
 				}
+				pub mod sync_committee_hashes{
+					use super::runtime_types;
+					pub type SyncCommitteeHashes = runtime_types::primitive_types::U256;
+					pub type Param0 = ::core::primitive::u64;
+				}
 				pub mod configuration_storage {
 					use super::runtime_types;
 					pub type ConfigurationStorage =
