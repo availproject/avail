@@ -194,6 +194,11 @@ pub mod pallet {
 	#[pallet::getter(fn sync_committee_poseidons)]
 	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
 
+	/// Maps from a period to the Sha256 commitment for the sync committee.
+	#[pallet::storage]
+	#[pallet::getter(fn sync_committee_hashes)]
+	pub type SyncCommitteeHashes<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
+
 	/// Storage for a config of finality threshold and slots per period.
 	#[pallet::storage]
 	pub type ConfigurationStorage<T: Config> = StorageValue<_, Configuration, ValueQuery>;
@@ -496,20 +501,11 @@ pub mod pallet {
 				&Node::try_from(store.finalized_header.body_root.as_ref()).unwrap(),
 			);
 
-
 			let finalized_header_root: [u8; 32] = store
 				.finalized_header
 				.hash_tree_root()
 				.unwrap().as_ref().try_into().unwrap();
 			let execution_state_root: [u8; 32]  = execution_state_proof.execution_state_root.as_slice().try_into().unwrap();
-
-			let sync_committee_hash: B256 = store
-				.current_sync_committee
-				.hash_tree_root()
-				.unwrap()
-				.as_ref()
-				.try_into()
-				.unwrap();
 
 			let head = store.finalized_header.slot;
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
@@ -522,11 +518,7 @@ pub mod pallet {
 			let mut function_called = false;
 
 			// Step
-			println!("Prev_head: {}", prev_head.as_u64());
-			println!("Head: {}", head.as_u64());
 			if prev_head != head {
-				println!("Step update!!! aaaa");
-				println!("New step: {}", head.as_u64());
 				let verified_output = VerifiedStepOutput {
 					finalized_header_root: H256::from(finalized_header_root),
 					execution_state_root: H256::from(execution_state_root),
@@ -546,6 +538,7 @@ pub mod pallet {
 
 			// Rotate
 			if let Some(mut next_sync_committee) = store.next_sync_committee {
+
 				let next_sync_committee_hash: [u8; 32] = next_sync_committee
 					.hash_tree_root()
 					.unwrap()
