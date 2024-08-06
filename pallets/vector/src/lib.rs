@@ -550,7 +550,22 @@ pub mod pallet {
 				.ok_or(Error::<T>::ConfigurationNotSet)?;
 			let stored_current_sync_committee = SyncCommitteePoseidons::<T>::get(period);
 			println!("stored current sync committee {:?}", stored_current_sync_committee);
-			
+			if stored_current_sync_committee.is_zero() {
+				let current_sync_committee_hash: U256 = store
+					.current_sync_committee
+					.hash_tree_root()
+					.unwrap()
+					.as_ref()
+					.try_into()
+					.unwrap();
+				Self::deposit_event(Event::SyncCommitteeUpdated {
+					period,
+					root: current_sync_committee_hash,
+				});
+				function_called = true;
+
+				Self::set_sync_committee_poseidon(period, current_sync_committee_hash)?;
+			}
 			if let Some(mut next_sync_committee) = store.next_sync_committee {
 
 				let next_period = period + 1;
