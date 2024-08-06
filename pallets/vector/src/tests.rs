@@ -758,7 +758,7 @@ fn test_fulfill_rotate_call() {
 
 		let poseidon = SyncCommitteePoseidons::<Test>::get(current_period + 1);
 
-		assert_eq!(expected_event, System::events()[0].event);
+		assert_eq!(expected_event, System::events()[1].event);
 		assert_eq!(poseidon, expected_poseidon);
 	});
 }
