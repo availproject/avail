@@ -516,7 +516,7 @@ pub mod pallet {
 
 			let mut function_called = false;
 
-			// Step
+			// 4. Store step if needed
 			if prev_head != head {
 				let verified_output = VerifiedStepOutput {
 					finalized_header_root: H256::from(finalized_header_root),
@@ -535,16 +535,8 @@ pub mod pallet {
 				}
 			}
 
-			// Rotate
-
-			// If the sync committee for the new period is not set, set it.
-			// This can happen if the light client was very behind and had a lot of updates
-			// Note: Only the latest sync committee is stored, not the intermediate ones from every update.
-			// This may leave gaps in the sync committee history
-			// if (syncCommittees[period] == bytes32(0)) {
-			// 	syncCommittees[period] = po.syncCommitteeHash;
-			// 	emit SyncCommitteeUpdate(period, po.syncCommitteeHash);
-			// }
+			// 5. Store rotate if needed
+			// a) Store current sync committee if stored one is empty (i.e. first time or after a range of updates)
 			let period = head.as_u64()
 				.checked_div(config.slots_per_period)
 				.ok_or(Error::<T>::ConfigurationNotSet)?;
@@ -566,6 +558,8 @@ pub mod pallet {
 
 				Self::set_sync_committee_poseidon(period, current_sync_committee_hash)?;
 			}
+
+			// b) Store next sync committee if available
 			if let Some(mut next_sync_committee) = store.next_sync_committee {
 
 				let next_period = period + 1;
