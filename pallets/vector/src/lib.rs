@@ -459,7 +459,6 @@ pub mod pallet {
 
 			// 1. Apply sync committee updates, if any
 			for (index, update) in updates.iter().enumerate() {
-				println!("Processing update {} of {}", index + 1, updates.len());
 				is_valid = is_valid
 					&& verify_update(
 					update,
@@ -538,19 +537,22 @@ pub mod pallet {
 
 			// Rotate
 
-			// If the sync committee for the new peroid is not set, set it.
+			// If the sync committee for the new period is not set, set it.
 			// This can happen if the light client was very behind and had a lot of updates
 			// Note: Only the latest sync committee is stored, not the intermediate ones from every update.
 			// This may leave gaps in the sync committee history
-			if (syncCommittees[period] == bytes32(0)) {
-				syncCommittees[period] = po.syncCommitteeHash;
-				emit SyncCommitteeUpdate(period, po.syncCommitteeHash);
-			}
-
+			// if (syncCommittees[period] == bytes32(0)) {
+			// 	syncCommittees[period] = po.syncCommitteeHash;
+			// 	emit SyncCommitteeUpdate(period, po.syncCommitteeHash);
+			// }
+			let period = head.as_u64()
+				.checked_div(config.slots_per_period)
+				.ok_or(Error::<T>::ConfigurationNotSet)?;
+			let stored_current_sync_committee = SyncCommitteePoseidons::<T>::get(period);
+			println!("stored current sync committee {:?}", stored_current_sync_committee);
+			
 			if let Some(mut next_sync_committee) = store.next_sync_committee {
-				let period = head.as_u64()
-					.checked_div(config.slots_per_period)
-					.ok_or(Error::<T>::ConfigurationNotSet)?;
+
 				let next_period = period + 1;
 				let stored_next_sync_committee_hash = SyncCommitteePoseidons::<T>::get(next_period);
 				let next_sync_committee_hash: [u8; 32] = next_sync_committee
