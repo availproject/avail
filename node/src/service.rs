@@ -227,9 +227,10 @@ pub fn new_partial(
 	let telemetry_handle = telemetry.as_ref().map(|t| t.handle());
 	let custom_telemetry_worker = CustomTelemetryWorker {
 		handle: telemetry_handle,
-		sampling_interval_ms: 7_500u128,
-		max_interval_buffer_size: 20,
+		sampling_interval_ms: 5_000u128,
+		max_interval_buffer_size: 5,
 		max_block_request_buffer_size: 10,
+		is_authority: config.role.is_authority(),
 	};
 	task_manager.spawn_handle().spawn(
 		"custom_telemetry",

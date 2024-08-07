@@ -26,6 +26,7 @@
 //! which should be passed to `frame_system` configuration when runtime is being set up.
 use core::num::NonZeroU32;
 
+use avail_core::kate::DATA_CHUNK_SIZE;
 use avail_core::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE};
 use codec::{Compact, Decode, Encode, EncodeLike, Error, Input, MaxEncodedLen, Output};
 use frame_support::{
@@ -33,7 +34,7 @@ use frame_support::{
 	ensure,
 	weights::{constants, Weight},
 };
-use kate::config::{DATA_CHUNK_SIZE, MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
+use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 use scale_info::{build::Fields, Path, Type, TypeInfo};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
