@@ -813,20 +813,24 @@ impl DataAvailability {
 
 #[cfg(test)]
 mod tests {
+	use crate::Cell;
+
 	use super::*;
 	use subxt_signer::sr25519::dev;
 
 	#[tokio::test]
 	async fn testing_function() {
 		let sdk = crate::sdk::SDK::new("ws://127.0.0.1:9944").await.unwrap();
-		let account = dev::alice();
-		let res = sdk
-			.tx
-			.data_availability
-			.submit_block_length_proposal(0, 0, WaitFor::BlockInclusion, &account)
-			.await;
-		if let Err(e) = res {
-			dbg!(e);
-		}
+		let h =
+			H256::from_str("0x6c5ebed687ed008b76028072fe1ad0a06ecf3c00dd9067aa049ea14e180702f8")
+				.unwrap();
+		match sdk.rpc.kate.query_rows(vec![0], Some(h)).await {
+			Ok(a) => {
+				dbg!(a);
+			},
+			Err(a) => {
+				dbg!(a);
+			},
+		};
 	}
 }
