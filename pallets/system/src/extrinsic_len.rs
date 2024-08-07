@@ -1,5 +1,5 @@
+use avail_core::kate::DATA_CHUNK_SIZE;
 use avail_core::AppId;
-use kate::config::DATA_CHUNK_SIZE;
 
 use bounded_collections::{BoundedBTreeMap, BoundedVec};
 use codec::{Compact, CompactLen as _, Decode, Encode, MaxEncodedLen};
