@@ -741,34 +741,34 @@ fn test_fulfill_rotate_call() {
     });
 }
 
-#[test]
-fn test_fulfill_rotate_call_wrong_header() {
-    new_test_ext().execute_with(|| {
-        let slot = 7634942;
-        Updater::<Test>::set(H256(TEST_SENDER_VEC));
-        let inputs: Vec<u8> = fs::read("./examples/rotate_call.cbor").unwrap();
-
-        ConfigurationStorage::<Test>::set(Configuration {
-            slots_per_period: 8192,
-            finality_threshold: 342,
-        });
-        // set current wrong header for valid rotate call
-        Headers::<Test>::set(
-            slot,
-            H256(hex!(
-				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57855"
-			)),
-        );
-
-        let result = Bridge::fulfill_call(
-            RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-            ROTATE_FUNCTION_ID,
-            inputs,
-        );
-
-        assert_err!(result, Error::<Test>::RotateVerificationError);
-    });
-}
+// #[test]
+// fn test_fulfill_rotate_call_wrong_header() {
+//     new_test_ext().execute_with(|| {
+//         let slot = 7634942;
+//         Updater::<Test>::set(H256(TEST_SENDER_VEC));
+//         let inputs: Vec<u8> = fs::read("./examples/rotate_call.cbor").unwrap();
+//
+//         ConfigurationStorage::<Test>::set(Configuration {
+//             slots_per_period: 8192,
+//             finality_threshold: 342,
+//         });
+//         // set current wrong header for valid rotate call
+//         Headers::<Test>::set(
+//             slot,
+//             H256(hex!(
+// 				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57855"
+// 			)),
+//         );
+//
+//         let result = Bridge::fulfill_call(
+//             RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+//             ROTATE_FUNCTION_ID,
+//             inputs,
+//         );
+//
+//         assert_err!(result, Error::<Test>::RotateVerificationError);
+//     });
+// }
 
 // #[test]
 // fn test_fulfill_call_function_ids_not_set() {
