@@ -121,7 +121,6 @@ pub struct VerifiedRotate {
 	pub sync_committee_poseidon: U256,
 }
 
-
 impl VerifiedRotate {
 	pub(crate) const fn new(
 		verified_function_id: H256,
