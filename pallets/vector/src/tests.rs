@@ -599,6 +599,8 @@ fn get_valid_amb_message() -> AddressedMessage {
 fn test_fulfill_step_call() {
 	new_test_ext().execute_with(|| {
 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
+		// These inputs, encoded in CBOR format, would be passed in via the operator
 		let inputs: Vec<u8> = fs::read("./examples/step_call.cbor").unwrap();
 
 		ConfigurationStorage::<Test>::set(Configuration {
@@ -608,7 +610,7 @@ fn test_fulfill_step_call() {
 
 		let result = Bridge::fulfill_call(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			STEP_FUNCTION_ID,
+			STEP_FUNCTION_ID, // TODO: replace with working h256::zero
 			inputs.clone(),
 		);
 
@@ -708,6 +710,8 @@ fn test_fulfill_step_call_slot_behind_head() {
 fn test_fulfill_rotate_call() {
 	new_test_ext().execute_with(|| {
 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
+		// These inputs, encoded in CBOR format, would be passed in via the operator
 		let inputs: Vec<u8> = fs::read("./examples/rotate_call.cbor").unwrap();
 
 		ConfigurationStorage::<Test>::set(Configuration {
@@ -717,7 +721,7 @@ fn test_fulfill_rotate_call() {
 
 		let result = Bridge::fulfill_call(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			ROTATE_FUNCTION_ID,
+			ROTATE_FUNCTION_ID, // TODO: replace with working h256::zero
 			inputs,
 		);
 
