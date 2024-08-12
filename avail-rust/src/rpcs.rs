@@ -1,15 +1,21 @@
 use avail_core::data_proof::ProofResponse;
 
 use crate::avail::runtime_types::frame_system::limits::BlockLength;
+use crate::from_substrate::{FeeDetails, NodeRole, PeerInfo, RuntimeDispatchInfo, SyncState};
 use crate::{AvailBlockDetailsRPC, AvailHeader, BlockHash, BlockNumber, Cell, GDataProof, GRow};
-use subxt::backend::legacy::rpc_methods::Bytes;
+use subxt::backend::legacy::rpc_methods::{Bytes, SystemHealth};
 use subxt::backend::rpc::RpcClient;
 use subxt::rpc_params;
+
+/// Arbitrary properties defined in chain spec as a JSON object
+pub type Properties = serde_json::map::Map<String, serde_json::Value>;
 
 pub struct Rpc {
 	pub kate: Kate,
 	pub author: Author,
 	pub chain: Chain,
+	pub system: System,
+	pub payment: Payment,
 }
 
 impl Rpc {
@@ -17,13 +23,174 @@ impl Rpc {
 		let client = RpcClient::from_insecure_url(endpoint).await?;
 		let kate = Kate::new(client.clone());
 		let author = Author::new(client.clone());
-		let chain = Chain::new(client.clone());
+		let chain: Chain = Chain::new(client.clone());
+		let system = System::new(client.clone());
+		let payment = Payment::new(client.clone());
 
 		Ok(Self {
 			kate,
 			author,
 			chain,
+			system,
+			payment,
 		})
+	}
+}
+
+pub struct Payment {
+	client: RpcClient,
+}
+
+impl Payment {
+	pub fn new(client: RpcClient) -> Self {
+		Self { client }
+	}
+
+	pub async fn query_fee_details(
+		&self,
+		extrinsic: Bytes,
+		at: Option<BlockHash>,
+	) -> Result<FeeDetails, subxt::Error> {
+		let value: FeeDetails = self
+			.client
+			.request("payment_queryFeeDetails", rpc_params![extrinsic, at])
+			.await?;
+		Ok(value)
+	}
+
+	pub async fn query_info(
+		&self,
+		extrinsic: Bytes,
+		at: Option<BlockHash>,
+	) -> Result<RuntimeDispatchInfo, subxt::Error> {
+		let value: RuntimeDispatchInfo = self
+			.client
+			.request("payment_queryInfo", rpc_params![extrinsic, at])
+			.await?;
+		Ok(value)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use std::str::FromStr;
+
+	#[tokio::test]
+	async fn testing_function() {
+		let sdk = crate::sdk::SDK::new("ws://127.0.0.1:9944").await.unwrap();
+		let h = BlockHash::from_str(
+			"0x90c6d99b3fb9d608a5bee9eb59bb107d5fd11b0aa398f3b1132503c15db40551",
+		)
+		.unwrap();
+		let block = sdk.rpc.chain.get_block(Some(h)).await.unwrap();
+		//dbg!(&block.block.extrinsics);
+		let info = sdk
+			.rpc
+			.payment
+			.query_info(block.block.extrinsics[1].clone(), Some(h))
+			.await;
+
+		match info {
+			Ok(a) => {
+				dbg!(&a);
+			},
+			Err(a) => {
+				dbg!(a);
+				panic!();
+			},
+		};
+	}
+}
+
+pub struct System {
+	client: RpcClient,
+}
+
+impl System {
+	pub fn new(client: RpcClient) -> Self {
+		Self { client }
+	}
+
+	pub async fn chain(&self) -> Result<String, subxt::Error> {
+		let value: String = self.client.request("system_chain", rpc_params![]).await?;
+		Ok(value)
+	}
+
+	pub async fn chain_type(&self) -> Result<String, subxt::Error> {
+		let value: String = self
+			.client
+			.request("system_chainType", rpc_params![])
+			.await?;
+		Ok(value)
+	}
+
+	pub async fn health(&self) -> Result<SystemHealth, subxt::Error> {
+		let value: SystemHealth = self.client.request("system_health", rpc_params![]).await?;
+		Ok(value)
+	}
+
+	pub async fn local_listen_addresses(&self) -> Result<Vec<String>, subxt::Error> {
+		let value: Vec<String> = self
+			.client
+			.request("system_localListenAddresses", rpc_params![])
+			.await?;
+		Ok(value)
+	}
+
+	pub async fn local_peer_id(&self) -> Result<String, subxt::Error> {
+		let value: String = self
+			.client
+			.request("system_localPeerId", rpc_params![])
+			.await?;
+		Ok(value)
+	}
+
+	pub async fn name(&self) -> Result<String, subxt::Error> {
+		let value: String = self.client.request("system_name", rpc_params![]).await?;
+		Ok(value)
+	}
+
+	pub async fn node_roles(&self) -> Result<Vec<NodeRole>, subxt::Error> {
+		let value: Vec<NodeRole> = self
+			.client
+			.request("system_nodeRoles", rpc_params![])
+			.await?;
+		Ok(value)
+	}
+
+	pub async fn peers(&self) -> Result<Vec<PeerInfo>, subxt::Error> {
+		let value: Vec<PeerInfo> = self.client.request("system_peers", rpc_params![]).await?;
+		Ok(value)
+	}
+
+	pub async fn properties(&self) -> Result<Properties, subxt::Error> {
+		let value: Properties = self
+			.client
+			.request("system_properties", rpc_params![])
+			.await?;
+		Ok(value)
+	}
+
+	pub async fn sync_state(&self) -> Result<SyncState, subxt::Error> {
+		let value: SyncState = self
+			.client
+			.request("system_syncState", rpc_params![])
+			.await?;
+		Ok(value)
+	}
+
+	pub async fn version(&self) -> Result<String, subxt::Error> {
+		let value: String = self.client.request("system_version", rpc_params![]).await?;
+		Ok(value)
+	}
+
+	pub async fn account_next_index(&self, account: String) -> Result<u32, subxt::Error> {
+		let value: u32 = self
+			.client
+			.request("system_accountNextIndex", rpc_params![account])
+			.await?;
+		Ok(value)
 	}
 }
 
@@ -72,28 +239,6 @@ impl Chain {
 			.request("chain_getHeader", rpc_params![hash])
 			.await?;
 		Ok(value)
-	}
-}
-
-#[cfg(test)]
-mod tests {
-	use super::*;
-	use std::str::FromStr;
-
-	#[tokio::test]
-	async fn testing_function() {
-		let sdk = crate::sdk::SDK::new("ws://127.0.0.1:9944").await.unwrap();
-		let h = BlockHash::from_str(
-			"0x845f7c5ab3b6cc0639548feb1c9c8919eef3bae1c2f24bfc6d1dc894c5b23ee9",
-		);
-		match sdk.rpc.chain.get_block(h.ok()).await {
-			Ok(a) => {
-				dbg!(a);
-			},
-			Err(a) => {
-				dbg!(a);
-			},
-		};
 	}
 }
 

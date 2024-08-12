@@ -1,5 +1,6 @@
 mod api_dev;
 mod config;
+mod from_substrate;
 mod primitives;
 mod rpcs;
 mod sdk;
