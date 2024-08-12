@@ -1,9 +1,13 @@
 use subxt::{
+	backend::legacy::rpc_methods::Bytes,
 	blocks::{Extrinsics, FoundExtrinsic, StaticExtrinsic},
 	tx::{TxProgress, TxStatus},
 };
 
-use crate::{Api, AvailBlocksClient, AvailConfig, BlockHash, TransactionInBlock, WaitFor};
+use crate::{
+	Api, AppUncheckedExtrinsic, AvailBlocksClient, AvailConfig, BlockHash, TransactionInBlock,
+	WaitFor,
+};
 use utils_raw::*;
 
 #[derive(Debug, Clone, Copy)]
@@ -58,6 +62,13 @@ impl Util {
 		wait_for: WaitFor,
 	) -> Result<TransactionInBlock, String> {
 		progress_transaction(maybe_tx_progress, wait_for).await
+	}
+
+	pub fn decode_raw_block_rpc_extrinsics(
+		&self,
+		extrinsics: Vec<Bytes>,
+	) -> Result<Vec<AppUncheckedExtrinsic>, String> {
+		decode_raw_block_rpc_extrinsics(extrinsics)
 	}
 }
 
@@ -144,5 +155,16 @@ pub mod utils_raw {
 		}
 
 		Err(String::from("Something went wrong."))
+	}
+
+	pub fn decode_raw_block_rpc_extrinsics(
+		extrinsics: Vec<Bytes>,
+	) -> Result<Vec<AppUncheckedExtrinsic>, String> {
+		let extrinsics: Result<Vec<AppUncheckedExtrinsic>, String> = extrinsics
+			.into_iter()
+			.map(|e| AppUncheckedExtrinsic::try_from(e))
+			.collect();
+
+		extrinsics
 	}
 }

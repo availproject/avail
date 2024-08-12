@@ -6,8 +6,8 @@ use codec::{Compact, Encode};
 use scale_info::PortableRegistry;
 use subxt_core::client::ClientState;
 use subxt_core::config::{
-	signed_extensions, signed_extensions::CheckNonceParams, Config, ExtrinsicParams,
-	ExtrinsicParamsEncoder, Header, RefineParams, SignedExtension,
+	signed_extensions, Config, ExtrinsicParams, ExtrinsicParamsEncoder, Header, RefineParams,
+	SignedExtension,
 };
 use subxt_core::error::ExtrinsicParamsError;
 use subxt_core::utils::Era;
@@ -15,6 +15,7 @@ use subxt_core::utils::Era;
 #[derive(Debug, Clone, Copy, Default)]
 pub struct CheckAppId(pub crate::AppId);
 
+/// Ideally, we would use avail_core::AppId but we cannot define `RefineParams` for it so we need a wrapper. Crazy
 impl<T: Config> RefineParams<T> for crate::AppId {}
 impl<T: Config> RefineParams<T> for CheckAppId {}
 
@@ -151,7 +152,7 @@ impl<T: Config> DefaultExtrinsicParamsBuilder<T> {
 		let charge_transaction_params =
 			signed_extensions::ChargeTransactionPaymentParams::tip(self.tip);
 
-		let check_nonce_params = CheckNonceParams(self.nonce);
+		let check_nonce_params = signed_extensions::CheckNonceParams(self.nonce);
 
 		(
 			(),

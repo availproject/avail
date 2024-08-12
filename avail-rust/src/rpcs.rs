@@ -1,10 +1,10 @@
 use avail_core::data_proof::ProofResponse;
-use subxt::rpc_params;
 
 use crate::avail::runtime_types::frame_system::limits::BlockLength;
-use crate::subxt::backend::legacy::rpc_methods::Bytes;
-use crate::subxt::backend::rpc::RpcClient;
 use crate::{AvailBlockDetailsRPC, AvailHeader, BlockHash, BlockNumber, Cell, GDataProof, GRow};
+use subxt::backend::legacy::rpc_methods::Bytes;
+use subxt::backend::rpc::RpcClient;
+use subxt::rpc_params;
 
 pub struct Rpc {
 	pub kate: Kate,
@@ -44,7 +44,6 @@ impl Chain {
 			.client
 			.request("chain_getBlock", rpc_params![hash])
 			.await?;
-
 		Ok(value)
 	}
 
@@ -53,7 +52,6 @@ impl Chain {
 			.client
 			.request("chain_getFinalizedHead", rpc_params![])
 			.await?;
-
 		Ok(value)
 	}
 

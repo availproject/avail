@@ -1,9 +1,9 @@
 use super::extrinsics_params::OnlyCodecExtra;
 use crate::{avail::runtime_types::da_runtime::RuntimeCall, Address, Signature};
 
-use codec::{Compact, Decode, Encode, EncodeLike, Error, Input};
-use serde::{Deserialize, Serialize};
-use std::mem::size_of;
+use codec::{Compact, Decode, Error, Input};
+use serde::Deserialize;
+use subxt::backend::legacy::rpc_methods::Bytes;
 
 pub type SignaturePayload = (Address, Signature, OnlyCodecExtra);
 
@@ -25,18 +25,6 @@ pub struct AppUncheckedExtrinsic {
 }
 
 impl AppUncheckedExtrinsic {
-	fn encode_vec_compatible(inner: &[u8]) -> Vec<u8> {
-		let compact_len = codec::Compact::<u32>(inner.len() as u32);
-
-		// Allocate the output buffer with the correct length
-		let mut output = Vec::with_capacity(compact_len.size_hint() + inner.len());
-
-		compact_len.encode_to(&mut output);
-		output.extend(inner);
-
-		output
-	}
-
 	pub fn app_id(&self) -> crate::AppId {
 		self.signature
 			.as_ref()
@@ -83,38 +71,6 @@ impl Decode for AppUncheckedExtrinsic {
 	}
 }
 
-impl Encode for AppUncheckedExtrinsic {
-	fn encode(&self) -> Vec<u8> {
-		let mut tmp = Vec::with_capacity(size_of::<Self>());
-
-		// 1 byte version id.
-		match self.signature.as_ref() {
-			Some(s) => {
-				tmp.push(EXTRINSIC_FORMAT_VERSION | 0b1000_0000);
-				s.encode_to(&mut tmp);
-			},
-			None => {
-				tmp.push(EXTRINSIC_FORMAT_VERSION & 0b0111_1111);
-			},
-		}
-		self.function.encode_to(&mut tmp);
-
-		Self::encode_vec_compatible(&tmp)
-	}
-}
-
-impl EncodeLike for AppUncheckedExtrinsic {}
-
-impl Serialize for AppUncheckedExtrinsic {
-	fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
-	where
-		S: ::serde::Serializer,
-	{
-		let encoded = self.encode();
-		sp_core::bytes::serialize(&encoded, s)
-	}
-}
-
 impl<'a> Deserialize<'a> for AppUncheckedExtrinsic {
 	fn deserialize<D>(de: D) -> Result<Self, D::Error>
 	where
@@ -123,5 +79,16 @@ impl<'a> Deserialize<'a> for AppUncheckedExtrinsic {
 		let r = sp_core::bytes::deserialize(de)?;
 		Decode::decode(&mut &r[..])
 			.map_err(|e| serde::de::Error::custom(format!("Decode error: {}", e)))
+	}
+}
+
+impl TryFrom<Bytes> for AppUncheckedExtrinsic {
+	type Error = String;
+
+	fn try_from(value: Bytes) -> Result<Self, Self::Error> {
+		let value: Vec<u8> = value.to_vec();
+		let mut value_as_slice = value.as_slice();
+
+		AppUncheckedExtrinsic::decode(&mut value_as_slice).map_err(|s| s.to_string())
 	}
 }
