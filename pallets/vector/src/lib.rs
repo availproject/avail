@@ -1174,7 +1174,7 @@ pub mod pallet {
 			if verified_call.verified_function_id == function_id
 				&& verified_call.verified_input_hash == H256(input_hash)
 			{
-				Ok(verified_call.sync_committee_hash)
+				Ok(verified_call.sync_committee_poseidon)
 			} else {
 				Err(Error::<T>::RotateVerificationError.into())
 			}
