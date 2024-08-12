@@ -91,7 +91,6 @@ pub struct Configuration {
 	pub finality_threshold: u16,
 }
 
-
 /// VerifiedStep struct that holds verified params from a step call.
 #[derive(Default, Debug)]
 pub struct VerifiedStep {
@@ -119,7 +118,7 @@ impl VerifiedStep {
 pub struct VerifiedRotate {
 	pub verified_function_id: H256,
 	pub verified_input_hash: H256,
-	pub sync_committee_hash: U256,
+	pub sync_committee_poseidon: U256,
 }
 
 
@@ -127,12 +126,12 @@ impl VerifiedRotate {
 	pub(crate) const fn new(
 		verified_function_id: H256,
 		verified_input_hash: H256,
-		sync_committee_hash: U256,
+		sync_committee_poseidon: U256,
 	) -> VerifiedRotate {
 		VerifiedRotate {
 			verified_function_id,
 			verified_input_hash,
-			sync_committee_hash,
+			sync_committee_poseidon,
 		}
 	}
 }
