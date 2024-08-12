@@ -1,13 +1,11 @@
 use codec::{Decode, Encode};
 use core::marker::PhantomData;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use subxt::{
-	config::{
-		substrate::{BlakeTwo256, Digest, DigestItem},
-		Hasher, Header as SPHeader,
-	},
-	utils::H256,
+use subxt_core::config::{
+	substrate::{BlakeTwo256, Digest, DigestItem},
+	Hasher, Header,
 };
+use subxt_core::utils::H256;
 
 use crate::avail::runtime_types::{
 	avail_core::header::{extension::HeaderExtension, Header as ApiHeader},
@@ -16,7 +14,7 @@ use crate::avail::runtime_types::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode)]
 #[serde(rename_all = "camelCase")]
-pub struct Header {
+pub struct AvailHeader {
 	pub parent_hash: H256,
 	#[serde(serialize_with = "number_to_hex", deserialize_with = "number_from_hex")]
 	#[codec(compact)]
@@ -27,7 +25,7 @@ pub struct Header {
 	pub extension: HeaderExtension,
 }
 
-impl Header {
+impl AvailHeader {
 	pub fn data_root(&self) -> H256 {
 		match &self.extension {
 			HeaderExtension::V3(ext) => ext.commitment.data_root,
@@ -35,7 +33,7 @@ impl Header {
 	}
 }
 
-impl SPHeader for Header {
+impl Header for AvailHeader {
 	type Hasher = BlakeTwo256;
 	type Number = u32;
 
@@ -65,11 +63,11 @@ where
 	Ok(u32::from_str_radix(without_prefix, 16).unwrap())
 }
 
-impl<B, H> From<Header> for ApiHeader<B, H>
+impl<B, H> From<AvailHeader> for ApiHeader<B, H>
 where
 	B: From<u32>,
 {
-	fn from(h: Header) -> Self {
+	fn from(h: AvailHeader) -> Self {
 		Self {
 			parent_hash: h.parent_hash,
 			number: h.number.into(),

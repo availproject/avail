@@ -4,44 +4,32 @@
 
 use codec::{Compact, Encode};
 use scale_info::PortableRegistry;
-use subxt::client::ClientState;
-use subxt::config::signed_extensions::CheckNonceParams;
-use subxt::config::{
-	signed_extensions, Config, ExtrinsicParams, ExtrinsicParamsEncoder, Header, RefineParams,
-	SignedExtension,
+use subxt_core::client::ClientState;
+use subxt_core::config::{
+	signed_extensions, signed_extensions::CheckNonceParams, Config, ExtrinsicParams,
+	ExtrinsicParamsEncoder, Header, RefineParams, SignedExtension,
 };
-use subxt::error::ExtrinsicParamsError;
+use subxt_core::error::ExtrinsicParamsError;
+use subxt_core::utils::Era;
 
-use crate::AppId;
+#[derive(Debug, Clone, Copy, Default)]
+pub struct CheckAppId(pub crate::AppId);
 
-pub struct CheckAppId(pub AppId);
-
-impl<T: Config> SignedExtension<T> for CheckAppId {
-	type Decoded = Compact<u32>;
-
-	fn matches(identifier: &str, _type_id: u32, _types: &PortableRegistry) -> bool {
-		identifier == "CheckAppId"
-	}
-}
-
-impl<T: Config> RefineParams<T> for AppId {}
+impl<T: Config> RefineParams<T> for crate::AppId {}
 impl<T: Config> RefineParams<T> for CheckAppId {}
 
-impl<T: Config> subxt::config::ExtrinsicParams<T> for CheckAppId {
-	type Params = AppId;
-
-	fn new(_client: &ClientState<T>, id: Self::Params) -> Result<Self, ExtrinsicParamsError> {
-		Ok(CheckAppId(id))
-	}
-}
-
-impl ExtrinsicParamsEncoder for CheckAppId {
-	fn encode_extra_to(&self, v: &mut Vec<u8>) {
-		Compact::<u32>(self.0 .0 .0).encode_to(v);
-	}
-
-	fn encode_additional_to(&self, _: &mut Vec<u8>) {}
-}
+/// Type used only for decoding extrinsic from blocks.
+pub type OnlyCodecExtra = (
+	(),                // CheckNonZeroSender,
+	(),                // CheckSpecVersion<Runtime>,
+	(),                // CheckTxVersion<Runtime>,
+	(),                // CheckGenesis<Runtime>,
+	Era,               // CheckEra<Runtime>,
+	Compact<u32>,      // CheckNonce<Runtime>,
+	(),                // CheckWeight<Runtime>,
+	Compact<u128>,     // ChargeTransactionPayment<Runtime>,
+	avail_core::AppId, // CheckAppId<Runtime>,
+);
 
 /// The default [`super::ExtrinsicParams`] implementation understands common signed extensions
 /// and how to apply them to a given chain.
@@ -67,7 +55,7 @@ pub struct DefaultExtrinsicParamsBuilder<T: Config> {
 	/// `None` means the nonce will be automatically set.
 	nonce: Option<u64>,
 	tip: u128,
-	app_id: AppId,
+	app_id: crate::AppId,
 }
 
 struct Mortality<Hash> {
@@ -86,7 +74,7 @@ impl<T: Config> Default for DefaultExtrinsicParamsBuilder<T> {
 			mortality: None,
 			tip: 0,
 			nonce: None,
-			app_id: AppId(avail_core::AppId(0)),
+			app_id: crate::AppId(avail_core::AppId(0)),
 		}
 	}
 }
@@ -118,7 +106,7 @@ impl<T: Config> DefaultExtrinsicParamsBuilder<T> {
 
 	/// App Id
 	pub fn app_id(mut self, app_id: u32) -> Self {
-		self.app_id = AppId(avail_core::AppId(app_id));
+		self.app_id = crate::AppId(avail_core::AppId(app_id));
 		self
 	}
 
@@ -174,5 +162,29 @@ impl<T: Config> DefaultExtrinsicParamsBuilder<T> {
 			charge_transaction_params,
 			self.app_id,
 		)
+	}
+}
+
+impl ExtrinsicParamsEncoder for CheckAppId {
+	fn encode_extra_to(&self, v: &mut Vec<u8>) {
+		Compact::<u32>(self.0 .0 .0).encode_to(v);
+	}
+
+	fn encode_additional_to(&self, _: &mut Vec<u8>) {}
+}
+
+impl<T: Config> SignedExtension<T> for CheckAppId {
+	type Decoded = Compact<u32>;
+
+	fn matches(identifier: &str, _type_id: u32, _types: &PortableRegistry) -> bool {
+		identifier == "CheckAppId"
+	}
+}
+
+impl<T: Config> subxt::config::ExtrinsicParams<T> for CheckAppId {
+	type Params = crate::AppId;
+
+	fn new(_client: &ClientState<T>, id: Self::Params) -> Result<Self, ExtrinsicParamsError> {
+		Ok(CheckAppId(id))
 	}
 }

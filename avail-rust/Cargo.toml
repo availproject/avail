@@ -23,6 +23,7 @@ avail-core = {  git = "https://github.com/availproject/avail-core", tag = "core-
 hex = { version = "0.4" }
 base58 = { version = "0.2.0" }
 tokio = { version = "1.21.2" }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-8", default-features = false }
 
 [patch.crates-io]
 sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-8" }
