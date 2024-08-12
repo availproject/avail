@@ -8,7 +8,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 frame-system = { workspace = true, default-features = false }
-avail-core = { workspace = true, default-features = false, features = ["runtime"]}
+avail-core = { workspace = true, default-features = false, features = ["runtime"] }
 avail-base = { workspace = true, default-features = false }
 patricia-merkle-trie = { workspace = true, default-features = false }
 
@@ -33,8 +33,8 @@ trie-db.workspace = true
 rlp.workspace = true
 primitive-types.workspace = true
 ethabi.workspace = true
-common.workspace = true
-consensus-core.workspace = true
+helios-common.workspace = true
+helios-consensus-core.workspace = true
 alloy-primitives.workspace = true
 ssz-rs.workspace = true
 serde_cbor.workspace = true
@@ -43,29 +43,29 @@ pallet-balances = { workspace = true, default-features = false, features = ["std
 pallet-timestamp = { workspace = true, default-features = false }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
-	"avail-base/std",
-	"avail-core/std",
-	"codec/std",
-	"frame-benchmarking?/std",
-	"frame-support/std",
-	"frame-system/std",
-	"scale-info/std",
-	"sp-core/std",
-	"sp-io/std",
-	"sp-runtime/std",
-	"sp-std/std",
+    "avail-base/std",
+    "avail-core/std",
+    "codec/std",
+    "frame-benchmarking?/std",
+    "frame-support/std",
+    "frame-system/std",
+    "scale-info/std",
+    "sp-core/std",
+    "sp-io/std",
+    "sp-runtime/std",
+    "sp-std/std",
 ]
 runtime-benchmarks = [
-	"frame-benchmarking",
-	"frame-benchmarking/runtime-benchmarks",
-	"frame-support/runtime-benchmarks",
-	"frame-system/runtime-benchmarks",
-	"sp-runtime/runtime-benchmarks",
+    "frame-benchmarking",
+    "frame-benchmarking/runtime-benchmarks",
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+    "sp-runtime/runtime-benchmarks",
 ]
 try-runtime = [
-	"frame-support/try-runtime",
-	"frame-system/try-runtime",
-	"sp-runtime/try-runtime",
+    "frame-support/try-runtime",
+    "frame-system/try-runtime",
+    "sp-runtime/try-runtime",
 ]

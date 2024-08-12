@@ -1,16 +1,16 @@
 [workspace]
 resolver = "2"
 members = [
-	"base",
-	"pallets/dactr",
-	"pallets/mandate",
-	"pallets/system",
-	"pallets/vector",
-	"patricia-merkle-trie",
-	"client/basic-authorship",
-	"runtime",
-	"runtime/fuzz",
-	"node",
+    "base",
+    "pallets/dactr",
+    "pallets/mandate",
+    "pallets/system",
+    "pallets/vector",
+    "patricia-merkle-trie",
+    "client/basic-authorship",
+    "runtime",
+    "runtime/fuzz",
+    "node",
 ]
 
 [workspace.package]
@@ -22,13 +22,13 @@ homepage = "https://www.availproject.org/"
 
 
 [workspace.dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v2230-rc2", default-features = false, features = [ "runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "node-v2230-rc2", default-features = false, features = ["runtime"] }
 kate = { git = "https://github.com/availproject/avail-core", tag = "node-v2230-rc2", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v2230-rc2", default-features = false  }
+kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "node-v2230-rc2", default-features = false }
 ssz-rs = { package = "ssz_rs", version = "0.9.0" }
-alloy-primitives = { version= "0.7.7", features=[ "serde"] }
-common = {git = "https://github.com/a16z/helios.git"}
-consensus-core = {git = "https://github.com/a16z/helios.git"}
+alloy-primitives = { version = "0.7.7", features = ["serde"] }
+helios-common = { git = "https://github.com/a16z/helios.git", package = "common" }
+helios-consensus-core = { git = "https://github.com/a16z/helios.git", package = "consensus-core" }
 serde_cbor = "0.11.2"
 # avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
 # kate = { path = "../avail-core/kate/", default-features = false }
@@ -52,7 +52,7 @@ frame-system-benchmarking = { path = "pallets/system/benchmarking", default-feat
 # benchmarking
 criterion = { version = "0.4", default-features = false }
 iai = "0.1.1"
-iai-callgrind = "0.7.3" 
+iai-callgrind = "0.7.3"
 divan = "0.1.11"
 
 # codspeed-criterion-compat = "2.2.0"
@@ -78,7 +78,7 @@ static_assertions = "1.1.0"
 serde = { version = "1.0.197", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0", default-features = false }
 derive_more = { version = "0.99.17", default-features = false, features = ["from", "into", "display"] }
-scale-info = { version = "2.5.0", default-features = false, features = ["derive","serde"] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive", "serde"] }
 cfg-if = "1.0"
 impl-trait-for-tuples = "0.2.1"
 docify = "0.2.6"
@@ -154,7 +154,7 @@ sp-runtime-interface = { git = "https://github.com/availproject/polkadot-sdk.git
 binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-7", default-features = false }
 sp-staking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-7", default-features = false }
 pallet-staking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-7", default-features = false }
-pallet-staking-runtime-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-7", default-features = false } 
+pallet-staking-runtime-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-7", default-features = false }
 sp-consensus-grandpa = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-7", default-features = false }
 sp-authority-discovery = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-7", default-features = false }
 sp-consensus-babe = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-7", default-features = false }
