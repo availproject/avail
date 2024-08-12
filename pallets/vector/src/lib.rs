@@ -459,7 +459,7 @@ pub mod pallet {
 
 			let mut is_valid = true;
 			let prev_head = store.finalized_header.slot;
-			
+
 			// 1. Apply sync committee updates, if any
 			for (index, update) in updates.iter().enumerate() {
 				is_valid = is_valid
