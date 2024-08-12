@@ -6,7 +6,7 @@ Library to connect to Avail
 
 ## Introduction
 
-The simplest way to interact with the avail chain.
+The simplest ways to interact with the avail network.
 
 ## Installation
 
@@ -19,18 +19,31 @@ Install the latest stable version of the avail-js library by running this comman
 npm install avail-js-sdk
 ```
 
-## Examples
+## Structure
 
-- [Node usage](https://github.com/availproject/avail/tree/main/avail-js/examples/node-examples)
-- [Web usage](https://github.com/availproject/avail/tree/main/avail-js/examples/next-example)
+This SDK is split into two main parts:
 
-## Goals
+1. **Polkadot JS Wrapper**: This allows you to use all the Polkadot JS functions and types to interact with the chain. For more information and documentation, please refer to the [Polkadot JS Documentation](https://polkadot.js.org/docs/).
 
-- Provide an easy way to interact with avail
-- Facilitate account management
-- Add utility helpers
-- Still expose polkadot-js
-- Allows versioning of polkadot-js to ensure compatibility
+2. **Opinionated SDK**: A simpler, more streamlined way to interact with the chain. It offers less customization but provides an easier interface. This SDK will be continuously improved to include everything needed for seamless chain interaction.
+
+### Folder Structure
+
+- **[`src/chain/`](./src/chain/)**: Contains the basics to initialize an API with the chain, serving as the Polkadot JS wrapper.
+- **[`src/helpers/`](./src/helpers/)**: Includes basic helper functions that facilitate various tasks.
+- **[`src/spec/`](./src/spec/)**: All types, RPC, and signed extensions related to Avail. These are crucial for interacting with the chain, including decoding chain data, transactions, and initiating transactions.
+- **[`src/sdk/`](./src/sdk/)**: Contains all classes related to the SDK, representing the opinionated part of Avail-JS-SDK.
+
+### Additional Information
+
+- **[`./examples/README.md`](./examples/README.md)**: Refer to this for examples utilizing the Polkadot JS wrapper.
+- **[`./docs/README.md`](./docs/README.md)**: This contains documentation, interfaces, and examples using the opinionated SDK.
+
+## Documentation and examples
+
+- [Wrapper node usage](./examples/node-examples)
+- [Wrapper web usage](./examples/next-example)
+- [SDK node usage](./docs/)
 
 ## Error Reporting
 
