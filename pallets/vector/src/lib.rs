@@ -597,10 +597,10 @@ pub mod pallet {
 		/// Executes message if a valid proofs are provided for the supported message type, assets and domains.
 		#[pallet::call_index(1)]
 		#[pallet::weight({
-		match addr_message.message {
-		Message::ArbitraryMessage(ref data) => T::WeightInfo::execute_arbitrary_message(data.len() as u32),
-		Message::FungibleToken {..} => T::WeightInfo::execute_fungible_token(),
-		}
+			match addr_message.message {
+				Message::ArbitraryMessage(ref data) => T::WeightInfo::execute_arbitrary_message(data.len() as u32),
+				Message::FungibleToken {..} => T::WeightInfo::execute_fungible_token(),
+			}
 		})]
 		pub fn execute(
 			origin: OriginFor<T>,
@@ -706,10 +706,10 @@ pub mod pallet {
 		//	send_message_arbitrary_message_doesnt_accept_asset_id(), send_message_arbitrary_message_doesnt_accept_empty_data()
 		#[pallet::call_index(3)]
 		#[pallet::weight({
-		match message {
-		Message::ArbitraryMessage(ref data) => T::WeightInfo::send_message_arbitrary_message(data.len() as u32),
-		Message::FungibleToken{..} => T::WeightInfo::send_message_fungible_token(),
-		}
+			match message {
+				Message::ArbitraryMessage(ref data) => T::WeightInfo::send_message_arbitrary_message(data.len() as u32),
+				Message::FungibleToken{..} => T::WeightInfo::send_message_fungible_token(),
+			}
 		})]
 		pub fn send_message(
 			origin: OriginFor<T>,
@@ -878,8 +878,8 @@ pub mod pallet {
 
 		#[pallet::call_index(11)]
 		#[pallet::weight((
-		T::WeightInfo::failed_tx_index(0u32),
-		DispatchClass::Mandatory
+			T::WeightInfo::failed_tx_index(0u32),
+			DispatchClass::Mandatory
 		))]
 		pub fn failed_send_message_txs(
 			origin: OriginFor<T>,
@@ -939,10 +939,10 @@ pub mod pallet {
 						amount.saturated_into(),
 						ExistenceRequirement::KeepAlive,
 					)?;
-				}
+				},
 				Message::ArbitraryMessage(data) => {
 					ensure!(!data.is_empty(), Error::<T>::InvalidBridgeInputs)
-				}
+				},
 			};
 
 			let message_id = Self::fetch_curr_message_id().map_err(|e| e)?;
