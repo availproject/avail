@@ -1,3 +1,5 @@
+/// Tests for Vector that use CBOR encoded Ethereum light client inputs instead of ZKProofs.
+/// Adapted from corresponding tests in src/tests.rs.
 use std::fs;
 use frame_support::{assert_err, assert_ok};
 use hex_literal::hex;
