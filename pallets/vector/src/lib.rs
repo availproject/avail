@@ -35,7 +35,6 @@ mod tests_new;
 mod verifier;
 mod weights;
 
-
 pub use pallet::*;
 
 pub type FunctionInput = BoundedVec<u8, ConstU32<256>>;
