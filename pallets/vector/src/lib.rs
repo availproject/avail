@@ -51,7 +51,7 @@ pub const ROTATE_POSEIDON_OUTPUT_LENGTH: u32 = 32;
 pub const STEP_OUTPUT_LENGTH: u32 = 74;
 
 pub type BalanceOf<T> =
-<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -238,13 +238,13 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn step_verification_key)]
 	pub type StepVerificationKey<T: Config> =
-	StorageValue<_, Option<BoundedVec<u8, ConstU32<10_000>>>, ValueQuery>;
+		StorageValue<_, Option<BoundedVec<u8, ConstU32<10_000>>>, ValueQuery>;
 
 	/// Rotate verification key storage.
 	#[pallet::storage]
 	#[pallet::getter(fn rotate_verification_key)]
 	pub type RotateVerificationKey<T: Config> =
-	StorageValue<_, Option<BoundedVec<u8, ConstU32<10_000>>>, ValueQuery>;
+		StorageValue<_, Option<BoundedVec<u8, ConstU32<10_000>>>, ValueQuery>;
 
 	/// Genesis validator root, used to check initialization.
 	#[pallet::storage]
@@ -287,8 +287,7 @@ pub mod pallet {
 		/// based on this one.
 		pub struct TestDefaultConfig;
 
-		#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig, no_aggregated_types
-		)]
+		#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig, no_aggregated_types)]
 		impl frame_system::DefaultConfig for TestDefaultConfig {}
 
 		#[frame_support::register_default_impl(TestDefaultConfig)]
@@ -312,13 +311,13 @@ pub mod pallet {
 		/// Because this pallet has dispatchables, it depends on the runtime's definition of a call.
 		#[pallet::no_default_bounds]
 		type RuntimeCall: Parameter
-		+ UnfilteredDispatchable<RuntimeOrigin=Self::RuntimeOrigin>
-		+ GetDispatchInfo;
+			+ UnfilteredDispatchable<RuntimeOrigin=Self::RuntimeOrigin>
+			+ GetDispatchInfo;
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 		/// Currency type for this pallet.
 		#[pallet::no_default]
-		type Currency: LockableCurrency<Self::AccountId, Moment=BlockNumberFor<Self>>;
+		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
 		/// Dependency that can provide current time.
 		#[pallet::no_default]
 		type TimeProvider: UnixTime;
@@ -945,10 +944,10 @@ pub mod pallet {
 						amount.saturated_into(),
 						ExistenceRequirement::KeepAlive,
 					)?;
-				}
+				},
 				Message::ArbitraryMessage(data) => {
 					ensure!(!data.is_empty(), Error::<T>::InvalidBridgeInputs)
-				}
+				},
 			};
 
 			let message_id = Self::fetch_curr_message_id().map_err(|e| e)?;
