@@ -1,16 +1,16 @@
 [workspace]
 resolver = "2"
 members = [
-    "base",
-    "pallets/dactr",
-    "pallets/mandate",
-    "pallets/system",
-    "pallets/vector",
-    "patricia-merkle-trie",
-    "client/basic-authorship",
-    "runtime",
-    "runtime/fuzz",
-    "node",
+	"base",
+	"pallets/dactr",
+	"pallets/mandate",
+	"pallets/system",
+	"pallets/vector",
+	"patricia-merkle-trie",
+	"client/basic-authorship",
+	"runtime",
+	"runtime/fuzz",
+	"node",
 ]
 
 [workspace.package]
