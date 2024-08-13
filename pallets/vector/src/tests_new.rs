@@ -27,7 +27,7 @@ fn test_fulfill_step_call() {
 
 		let result = Bridge::fulfill_call(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			STEP_FUNCTION_ID, // TODO: replace with working h256::zero
+			H256::zero(), // Unused value
 			inputs.clone(),
 		);
 
@@ -84,7 +84,7 @@ fn test_fulfill_step_call_slot_behind_head() {
 
 		let result = Bridge::fulfill_call(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			STEP_FUNCTION_ID,
+			H256::zero(), // Unused value
 			inputs,
 		);
 
@@ -107,7 +107,7 @@ fn test_fulfill_rotate_call() {
 
 		let result = Bridge::fulfill_call(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			ROTATE_FUNCTION_ID, // TODO: replace with working h256::zero
+			H256::zero(), // Unused value
 			inputs,
 		);
 
