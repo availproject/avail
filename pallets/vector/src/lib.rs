@@ -311,7 +311,7 @@ pub mod pallet {
 		/// Because this pallet has dispatchables, it depends on the runtime's definition of a call.
 		#[pallet::no_default_bounds]
 		type RuntimeCall: Parameter
-			+ UnfilteredDispatchable<RuntimeOrigin=Self::RuntimeOrigin>
+			+ UnfilteredDispatchable<RuntimeOrigin = Self::RuntimeOrigin>
 			+ GetDispatchInfo;
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
@@ -443,7 +443,8 @@ pub mod pallet {
 		/// function_id Function identifier.
 		/// inputs Function input.
 		#[pallet::call_index(0)]
-		#[pallet::weight(weight_helper::fulfill_call::<T>(* function_id))] // can't remove this
+		// Unused parameter that's hard to remove, would mess up traits
+		#[pallet::weight(weight_helper::fulfill_call::<T>(* function_id))]
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
 			function_id: H256,
