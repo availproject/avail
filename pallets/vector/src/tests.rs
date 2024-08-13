@@ -1,9 +1,15 @@
-use crate::{mock::{
-	new_test_ext, Balances, Bridge, RuntimeEvent, RuntimeOrigin, System, Test,
-	ROTATE_FUNCTION_ID, ROTATE_VK, STEP_FUNCTION_ID, STEP_VK,
-}, state::Configuration, storage_utils::MessageStatusEnum, Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, FunctionIds, FunctionInput, FunctionOutput, FunctionProof, Head, Headers, MessageStatus, RotateVerificationKey, SourceChainFrozen, StepVerificationKey, SyncCommitteePoseidons, Updater, ValidProof, WhitelistedDomains, FunctionInputs, SyncCommitteeHashes};
-use std::fs::File;
-use std::fs;
+use crate::{
+	mock::{
+		new_test_ext, Balances, Bridge, RuntimeEvent, RuntimeOrigin, System, Test,
+		ROTATE_FUNCTION_ID, ROTATE_VK, STEP_FUNCTION_ID, STEP_VK,
+	},
+	state::Configuration,
+	storage_utils::MessageStatusEnum,
+	Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, FunctionIds,
+	FunctionInput, FunctionOutput, FunctionProof, Head, Headers, MessageStatus,
+	RotateVerificationKey, SourceChainFrozen, StepVerificationKey, SyncCommitteePoseidons, Updater,
+	ValidProof, WhitelistedDomains,
+};
 use avail_core::data_proof::Message::FungibleToken;
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message};
 
@@ -172,437 +178,12 @@ fn get_valid_amb_message() -> AddressedMessage {
 		id: 0,
 	}
 }
-//
-// #[test]
-// fn test_fulfill_step_call_proof_not_valid() {
-// 	new_test_ext().execute_with(|| {
-// 		let slot = 7634942;
-// 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-// 		ConfigurationStorage::<Test>::set(Configuration {
-// 			slots_per_period: 8192,
-// 			finality_threshold: 461,
-// 		});
-//
-// 		let result = Bridge::fulfill_call(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			STEP_FUNCTION_ID,
-// 			get_valid_step_input(),
-// 			get_valid_step_output(),
-// 			get_invalid_proof(),
-// 			slot,
-// 		);
-//
-// 		assert_err!(result, Error::<Test>::VerificationFailed);
-// 	});
-// }
-//
-// #[test]
-// fn test_fulfill_step_call_not_valid_function_id() {
-// 	new_test_ext().execute_with(|| {
-// 		let slot = 7634942;
-// 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-// 		ConfigurationStorage::<Test>::set(Configuration {
-// 			slots_per_period: 8192,
-// 			finality_threshold: 461,
-// 		});
-// 		let invalid_function_id: H256 = H256(hex!(
-// 			"bf44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
-// 		));
-// 		let result = Bridge::fulfill_call(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			invalid_function_id,
-// 			get_valid_step_input(),
-// 			get_valid_step_output(),
-// 			get_valid_step_proof(),
-// 			slot,
-// 		);
-//
-// 		assert_err!(result, Error::<Test>::FunctionIdNotKnown);
-// 	});
-// }
-//
-// #[test]
-// fn test_fulfill_step_call_finality_not_met() {
-// 	new_test_ext().execute_with(|| {
-// 		let slot = 7634942;
-// 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-// 		SyncCommitteePoseidons::<Test>::insert(
-// 			931,
-// 			U256::from(hex!(
-// 				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
-// 			)),
-// 		);
-//
-// 		ConfigurationStorage::<Test>::set(Configuration {
-// 			slots_per_period: 8192,
-// 			finality_threshold: 512, // max finality
-// 		});
-// 		let result = Bridge::fulfill_call(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			STEP_FUNCTION_ID,
-// 			get_valid_step_input(),
-// 			get_valid_step_output(),
-// 			get_valid_step_proof(),
-// 			slot,
-// 		);
-//
-// 		assert_err!(result, Error::<Test>::NotEnoughParticipants);
-// 	});
-// }
-//
-// #[test]
-// fn test_fulfill_step_call_wrong_updater_address() {
-// 	new_test_ext().execute_with(|| {
-// 		let slot = 7634942;
-// 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-// 		ConfigurationStorage::<Test>::set(Configuration {
-// 			slots_per_period: 8192,
-// 			finality_threshold: 461,
-// 		});
-// 		let invalid_function_id: H256 = H256(hex!(
-// 			"bf44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
-// 		));
-//
-// 		let wrong_updater: AccountId32 = AccountId32::new([1u8; 32]);
-//
-// 		let result = Bridge::fulfill_call(
-// 			RuntimeOrigin::signed(wrong_updater),
-// 			invalid_function_id,
-// 			get_valid_step_input(),
-// 			get_valid_step_output(),
-// 			get_valid_step_proof(),
-// 			slot,
-// 		);
-//
-// 		assert_err!(result, Error::<Test>::UpdaterMisMatch);
-// 	});
-// }
-//
-// #[test]
-// fn test_execute_fungible_token_via_storage() {
-// 	new_test_ext().execute_with(|| {
-// 		let balance_before = Balances::balance(&Bridge::account_id());
-// 		Broadcasters::<Test>::set(
-// 			2,
-// 			H256(hex!(
-// 				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
-// 			)),
-// 		);
-//
-// 		let slot = 8581263;
-// 		ExecutionStateRoots::<Test>::set(
-// 			slot,
-// 			H256(hex!(
-// 				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
-// 			)),
-// 		);
-//
-// 		let account_proof = get_valid_account_proof();
-// 		let storage_proof = get_valid_storage_proof();
-// 		let message = get_valid_message();
-// 		let message_encoded = message.clone().abi_encode();
-// 		let message_root = H256(keccak_256(message_encoded.as_slice()));
-//
-// 		// amount in message 1000000000000000000
-// 		let result = Bridge::execute(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			slot,
-// 			message,
-// 			account_proof,
-// 			storage_proof,
-// 		);
-//
-// 		let expected_message_root: H256 = H256(hex!(
-// 			"efac9989593dfa1e64bac26dd75fd613470d99766ad2c954af658253a09d1ad8"
-// 		));
-// 		let balance_left = Balances::balance(&Bridge::account_id());
-// 		assert_ok!(result);
-// 		assert_eq!(
-// 			balance_before.saturating_sub(1000000000000000000u128),
-// 			balance_left
-// 		);
-// 		assert_eq!(expected_message_root, message_root);
-// 		assert_eq!(
-// 			MessageStatus::<Test>::get(message_root),
-// 			MessageStatusEnum::ExecutionSucceeded
-// 		);
-// 	});
-// }
-//
-// #[test]
-// fn test_execute_fungible_token_via_storage_with_trimmed_storage_value() {
-// 	new_test_ext().execute_with(|| {
-// 		let balance_before = Balances::balance(&Bridge::account_id());
-// 		Broadcasters::<Test>::set(
-// 			2,
-// 			H256(hex!(
-// 				"1369a4c9391cf90d393b40faead521b0f7019dc5000000000000000000000000"
-// 			)),
-// 		);
-//
-// 		let slot = 4965568;
-// 		ExecutionStateRoots::<Test>::set(
-// 			slot,
-// 			H256(hex!(
-// 				"5e3fe0dd03c7ce3f89524cfa65545232bbf52645b52ac0a3939f766540a6ed69"
-// 			)),
-// 		);
-//
-// 		let account_proof = get_valid_trimmed_account_proof();
-// 		let storage_proof = get_valid_trimmed_storage_proof();
-//
-// 		let message = AddressedMessage {
-// 			message: FungibleToken {
-// 				asset_id: H256::zero(),
-// 				amount: 10_000_000_000_000_000,
-// 			},
-// 			from: H256(hex!(
-// 				"8d31529525f23b14767d4dde78567ca083d3d56f000000000000000000000000"
-// 			)),
-// 			to: H256(hex!(
-// 				"1a985fdff5f6eee4afce1dc0f367ab925cdca57e7e8585329830fc3ce6ef4e7a"
-// 			)),
-// 			origin_domain: 2,
-// 			destination_domain: 1,
-// 			id: 5469,
-// 		};
-//
-// 		let message_encoded = message.clone().abi_encode();
-// 		let message_root = H256(keccak_256(message_encoded.as_slice()));
-//
-// 		// amount in message 1000000000000000000
-// 		let result = Bridge::execute(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			slot,
-// 			message,
-// 			account_proof,
-// 			storage_proof,
-// 		);
-//
-// 		let expected_message_root: H256 = H256(hex!(
-// 			"00eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99"
-// 		));
-// 		let balance_left = Balances::balance(&Bridge::account_id());
-// 		assert_ok!(result);
-// 		assert_eq!(
-// 			balance_before.saturating_sub(10_000_000_000_000_000u128),
-// 			balance_left
-// 		);
-// 		assert_eq!(expected_message_root, message_root);
-// 		assert_eq!(
-// 			MessageStatus::<Test>::get(message_root),
-// 			MessageStatusEnum::ExecutionSucceeded
-// 		);
-// 	});
-// }
-//
-// #[test]
-// fn test_execute_message_with_frozen_chain() {
-// 	new_test_ext().execute_with(|| {
-// 		Broadcasters::<Test>::set(
-// 			2,
-// 			H256(hex!(
-// 				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
-// 			)),
-// 		);
-//
-// 		let slot = 8581263;
-// 		ExecutionStateRoots::<Test>::set(
-// 			slot,
-// 			H256(hex!(
-// 				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
-// 			)),
-// 		);
-//
-// 		let message = get_valid_message();
-// 		let account_proof = get_valid_account_proof();
-// 		let storage_proof = get_valid_storage_proof();
-//
-// 		// Goal: Prevent from executing message
-// 		SourceChainFrozen::<Test>::set(2, true);
-// 		let error = Bridge::execute(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			slot,
-// 			message,
-// 			account_proof,
-// 			storage_proof,
-// 		);
-//
-// 		assert_err!(error, Error::<Test>::SourceChainFrozen);
-// 	});
-// }
-//
-// #[test]
-// fn test_execute_message_with_faulty_account_proof() {
-// 	new_test_ext().execute_with(|| {
-// 		Broadcasters::<Test>::set(
-// 			2,
-// 			H256(hex!(
-// 				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
-// 			)),
-// 		);
-//
-// 		let slot = 8581263;
-// 		ExecutionStateRoots::<Test>::set(
-// 			slot,
-// 			H256(hex!(
-// 				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
-// 			)),
-// 		);
-//
-// 		let account_proof = get_invalid_account_proof();
-// 		let storage_proof = get_valid_storage_proof();
-// 		let message = get_valid_message();
-//
-// 		let fail = Bridge::execute(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			slot,
-// 			message,
-// 			account_proof,
-// 			storage_proof,
-// 		);
-//
-// 		// invalid proof should return error
-// 		assert_err!(fail, Error::<Test>::CannotGetStorageRoot);
-// 	});
-// }
-//
-// #[test]
-// fn test_execute_message_with_faulty_storage_proof() {
-// 	new_test_ext().execute_with(|| {
-// 		Broadcasters::<Test>::set(
-// 			2,
-// 			H256(hex!(
-// 				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
-// 			)),
-// 		);
-//
-// 		let slot = 8581263;
-// 		ExecutionStateRoots::<Test>::set(
-// 			slot,
-// 			H256(hex!(
-// 				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
-// 			)),
-// 		);
-// 		let account_proof = get_valid_account_proof();
-// 		let storage_proof = get_invalid_storage_proof();
-// 		let message = get_valid_message();
-//
-// 		let fail = Bridge::execute(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			slot,
-// 			message,
-// 			account_proof,
-// 			storage_proof,
-// 		);
-//
-// 		// invalid storage proof should return error
-// 		assert_err!(fail, Error::<Test>::CannotGetStorageValue);
-// 	});
-// }
-//
-// #[test]
-// fn test_execute_message_with_already_executed_message() {
-// 	new_test_ext().execute_with(|| {
-// 		let balance_before_transfer = Balances::balance(&Bridge::account_id());
-//
-// 		Broadcasters::<Test>::set(
-// 			2,
-// 			H256(hex!(
-// 				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
-// 			)),
-// 		);
-//
-// 		let slot = 8581263;
-// 		ExecutionStateRoots::<Test>::set(
-// 			slot,
-// 			H256(hex!(
-// 				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
-// 			)),
-// 		);
-//
-// 		let message = get_valid_message();
-// 		let account_proof = get_valid_account_proof();
-// 		let storage_proof = get_valid_storage_proof();
-// 		let account: AccountId32 = AccountId32::from_slice(message.to.as_bytes()).unwrap();
-// 		let account_balance_before = Balances::balance(&account);
-//
-// 		let ok = Bridge::execute(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			slot,
-// 			message.clone(),
-// 			account_proof.clone(),
-// 			storage_proof.clone(),
-// 		);
-//
-// 		assert_ok!(ok);
-// 		let balance_after_transfer = Balances::balance(&Bridge::account_id());
-// 		let expected_transfered_value = 1000000000000000000u128;
-// 		assert_eq!(
-// 			balance_before_transfer,
-// 			balance_after_transfer.saturating_add(expected_transfered_value)
-// 		);
-// 		let account_balance = Balances::balance(&account);
-// 		assert_eq!(account_balance_before, 0);
-// 		assert_eq!(account_balance, expected_transfered_value);
-//
-// 		let fail = Bridge::execute(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			slot,
-// 			message,
-// 			account_proof,
-// 			storage_proof,
-// 		);
-//
-// 		assert_err!(fail, Error::<Test>::MessageAlreadyExecuted);
-// 	});
-// }
-//
-// #[test]
-// fn test_execute_message_with_unsupported_domain() {
-// 	new_test_ext().execute_with(|| {
-// 		Broadcasters::<Test>::set(
-// 			2,
-// 			H256(hex!(
-// 				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
-// 			)),
-// 		);
-//
-// 		let slot = 8581263;
-// 		ExecutionStateRoots::<Test>::set(
-// 			slot,
-// 			H256(hex!(
-// 				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
-// 			)),
-// 		);
-//
-// 		let mut message = get_valid_message();
-// 		// alter message
-// 		message.origin_domain = 4;
-//
-// 		let account_proof = get_valid_account_proof();
-// 		let storage_proof = get_valid_storage_proof();
-//
-// 		let fail = Bridge::execute(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			slot,
-// 			message,
-// 			account_proof,
-// 			storage_proof,
-// 		);
-//
-// 		assert_err!(fail, Error::<Test>::UnsupportedOriginChain);
-// 	});
-// }
-//
+
 #[test]
-fn test_fulfill_step_call() {
+fn test_fulfill_step_call_proof_not_valid() {
 	new_test_ext().execute_with(|| {
+		let slot = 7634942;
 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-
-		// These inputs, encoded in CBOR format, would be passed in via the operator
-		let inputs: Vec<u8> = fs::read("./examples/step_call.cbor").unwrap();
-
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 461,
@@ -610,86 +191,428 @@ fn test_fulfill_step_call() {
 
 		let result = Bridge::fulfill_call(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			STEP_FUNCTION_ID, // TODO: replace with working h256::zero
-			inputs.clone(),
+			STEP_FUNCTION_ID,
+			get_valid_step_input(),
+			get_valid_step_output(),
+			get_invalid_proof(),
+			slot,
 		);
 
-		assert_ok!(result);
-
-		let parsed_inputs: FunctionInputs = serde_cbor::from_slice(&inputs).unwrap();
-
-		let finalized_slot = parsed_inputs.finality_update.finalized_header.slot.as_u64();
-		// ensure that event is fired
-		let expected_event = RuntimeEvent::Bridge(Event::HeadUpdated {
-			slot: finalized_slot,
-			finalization_root: H256(hex!(
-				"a6e3468985f31ca58e34fe0a40a72f4bbc08d4d00a0933d28b07ddb95d1faf95"
-			)),
-			execution_state_root: H256(hex!(
-				"6518be340ee1bad6c6c6bef6ea3e99ecebc142e196b7edd56b3a5e513d0c6392"
-			)),
-		});
-
-		let header = Headers::<Test>::get(finalized_slot);
-		let head = Head::<Test>::get();
-		let ex_state_root = ExecutionStateRoots::<Test>::get(finalized_slot);
-
-		assert_eq!(
-			header,
-			H256(hex!(
-				"a6e3468985f31ca58e34fe0a40a72f4bbc08d4d00a0933d28b07ddb95d1faf95"
-			))
-		);
-		assert_eq!(
-			ex_state_root,
-			H256(hex!(
-			"6518be340ee1bad6c6c6bef6ea3e99ecebc142e196b7edd56b3a5e513d0c6392"
-			))
-		);
-		assert_eq!(head, finalized_slot);
-		assert_eq!(expected_event, System::events()[0].event);
+		assert_err!(result, Error::<Test>::VerificationFailed);
 	});
 }
 
-// #[test]
-// fn test_fulfill_step_call_wrong_poseidon() {
-//     new_test_ext().execute_with(|| {
-//         Updater::<Test>::set(H256(TEST_SENDER_VEC));
-//
-//         // current poseidon is not the same as the one in the valid proof
-//         SyncCommitteePoseidons::<Test>::insert(
-//             931,
-//             U256::from(hex!(
-// 				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332da"
-// 			)),
-//         );
-//
-//         ConfigurationStorage::<Test>::set(Configuration {
-//             slots_per_period: 8192,
-//             finality_threshold: 461,
-//         });
-//
-//         let result = Bridge::fulfill_call(
-//             RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-//             STEP_FUNCTION_ID,
-//             get_valid_step_input(),
-//             get_valid_step_output(),
-//             get_valid_step_proof(),
-//             slot,
-//         );
-//
-//         assert_err!(result, Error::<Test>::StepVerificationError);
-//     });
-// }
+#[test]
+fn test_fulfill_step_call_not_valid_function_id() {
+	new_test_ext().execute_with(|| {
+		let slot = 7634942;
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: 8192,
+			finality_threshold: 461,
+		});
+		let invalid_function_id: H256 = H256(hex!(
+			"bf44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
+		));
+		let result = Bridge::fulfill_call(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			invalid_function_id,
+			get_valid_step_input(),
+			get_valid_step_output(),
+			get_valid_step_proof(),
+			slot,
+		);
+
+		assert_err!(result, Error::<Test>::FunctionIdNotKnown);
+	});
+}
 
 #[test]
-fn test_fulfill_step_call_slot_behind_head() {
+fn test_fulfill_step_call_finality_not_met() {
 	new_test_ext().execute_with(|| {
+		let slot = 7634942;
 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-		let inputs: Vec<u8> = fs::read("./examples/step_call.cbor").unwrap();
+		SyncCommitteePoseidons::<Test>::insert(
+			931,
+			U256::from(hex!(
+				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
+			)),
+		);
 
-		// move head forward
-		Head::<Test>::set(9678877);
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: 8192,
+			finality_threshold: 512, // max finality
+		});
+		let result = Bridge::fulfill_call(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			STEP_FUNCTION_ID,
+			get_valid_step_input(),
+			get_valid_step_output(),
+			get_valid_step_proof(),
+			slot,
+		);
+
+		assert_err!(result, Error::<Test>::NotEnoughParticipants);
+	});
+}
+
+#[test]
+fn test_fulfill_step_call_wrong_updater_address() {
+	new_test_ext().execute_with(|| {
+		let slot = 7634942;
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: 8192,
+			finality_threshold: 461,
+		});
+		let invalid_function_id: H256 = H256(hex!(
+			"bf44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
+		));
+
+		let wrong_updater: AccountId32 = AccountId32::new([1u8; 32]);
+
+		let result = Bridge::fulfill_call(
+			RuntimeOrigin::signed(wrong_updater),
+			invalid_function_id,
+			get_valid_step_input(),
+			get_valid_step_output(),
+			get_valid_step_proof(),
+			slot,
+		);
+
+		assert_err!(result, Error::<Test>::UpdaterMisMatch);
+	});
+}
+
+#[test]
+fn test_execute_fungible_token_via_storage() {
+	new_test_ext().execute_with(|| {
+		let balance_before = Balances::balance(&Bridge::account_id());
+		Broadcasters::<Test>::set(
+			2,
+			H256(hex!(
+				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
+			)),
+		);
+
+		let slot = 8581263;
+		ExecutionStateRoots::<Test>::set(
+			slot,
+			H256(hex!(
+				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
+			)),
+		);
+
+		let account_proof = get_valid_account_proof();
+		let storage_proof = get_valid_storage_proof();
+		let message = get_valid_message();
+		let message_encoded = message.clone().abi_encode();
+		let message_root = H256(keccak_256(message_encoded.as_slice()));
+
+		// amount in message 1000000000000000000
+		let result = Bridge::execute(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			slot,
+			message,
+			account_proof,
+			storage_proof,
+		);
+
+		let expected_message_root: H256 = H256(hex!(
+			"efac9989593dfa1e64bac26dd75fd613470d99766ad2c954af658253a09d1ad8"
+		));
+		let balance_left = Balances::balance(&Bridge::account_id());
+		assert_ok!(result);
+		assert_eq!(
+			balance_before.saturating_sub(1000000000000000000u128),
+			balance_left
+		);
+		assert_eq!(expected_message_root, message_root);
+		assert_eq!(
+			MessageStatus::<Test>::get(message_root),
+			MessageStatusEnum::ExecutionSucceeded
+		);
+	});
+}
+
+#[test]
+fn test_execute_fungible_token_via_storage_with_trimmed_storage_value() {
+	new_test_ext().execute_with(|| {
+		let balance_before = Balances::balance(&Bridge::account_id());
+		Broadcasters::<Test>::set(
+			2,
+			H256(hex!(
+				"1369a4c9391cf90d393b40faead521b0f7019dc5000000000000000000000000"
+			)),
+		);
+
+		let slot = 4965568;
+		ExecutionStateRoots::<Test>::set(
+			slot,
+			H256(hex!(
+				"5e3fe0dd03c7ce3f89524cfa65545232bbf52645b52ac0a3939f766540a6ed69"
+			)),
+		);
+
+		let account_proof = get_valid_trimmed_account_proof();
+		let storage_proof = get_valid_trimmed_storage_proof();
+
+		let message = AddressedMessage {
+			message: FungibleToken {
+				asset_id: H256::zero(),
+				amount: 10_000_000_000_000_000,
+			},
+			from: H256(hex!(
+				"8d31529525f23b14767d4dde78567ca083d3d56f000000000000000000000000"
+			)),
+			to: H256(hex!(
+				"1a985fdff5f6eee4afce1dc0f367ab925cdca57e7e8585329830fc3ce6ef4e7a"
+			)),
+			origin_domain: 2,
+			destination_domain: 1,
+			id: 5469,
+		};
+
+		let message_encoded = message.clone().abi_encode();
+		let message_root = H256(keccak_256(message_encoded.as_slice()));
+
+		// amount in message 1000000000000000000
+		let result = Bridge::execute(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			slot,
+			message,
+			account_proof,
+			storage_proof,
+		);
+
+		let expected_message_root: H256 = H256(hex!(
+			"00eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99"
+		));
+		let balance_left = Balances::balance(&Bridge::account_id());
+		assert_ok!(result);
+		assert_eq!(
+			balance_before.saturating_sub(10_000_000_000_000_000u128),
+			balance_left
+		);
+		assert_eq!(expected_message_root, message_root);
+		assert_eq!(
+			MessageStatus::<Test>::get(message_root),
+			MessageStatusEnum::ExecutionSucceeded
+		);
+	});
+}
+
+#[test]
+fn test_execute_message_with_frozen_chain() {
+	new_test_ext().execute_with(|| {
+		Broadcasters::<Test>::set(
+			2,
+			H256(hex!(
+				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
+			)),
+		);
+
+		let slot = 8581263;
+		ExecutionStateRoots::<Test>::set(
+			slot,
+			H256(hex!(
+				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
+			)),
+		);
+
+		let message = get_valid_message();
+		let account_proof = get_valid_account_proof();
+		let storage_proof = get_valid_storage_proof();
+
+		// Goal: Prevent from executing message
+		SourceChainFrozen::<Test>::set(2, true);
+		let error = Bridge::execute(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			slot,
+			message,
+			account_proof,
+			storage_proof,
+		);
+
+		assert_err!(error, Error::<Test>::SourceChainFrozen);
+	});
+}
+
+#[test]
+fn test_execute_message_with_faulty_account_proof() {
+	new_test_ext().execute_with(|| {
+		Broadcasters::<Test>::set(
+			2,
+			H256(hex!(
+				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
+			)),
+		);
+
+		let slot = 8581263;
+		ExecutionStateRoots::<Test>::set(
+			slot,
+			H256(hex!(
+				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
+			)),
+		);
+
+		let account_proof = get_invalid_account_proof();
+		let storage_proof = get_valid_storage_proof();
+		let message = get_valid_message();
+
+		let fail = Bridge::execute(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			slot,
+			message,
+			account_proof,
+			storage_proof,
+		);
+
+		// invalid proof should return error
+		assert_err!(fail, Error::<Test>::CannotGetStorageRoot);
+	});
+}
+
+#[test]
+fn test_execute_message_with_faulty_storage_proof() {
+	new_test_ext().execute_with(|| {
+		Broadcasters::<Test>::set(
+			2,
+			H256(hex!(
+				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
+			)),
+		);
+
+		let slot = 8581263;
+		ExecutionStateRoots::<Test>::set(
+			slot,
+			H256(hex!(
+				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
+			)),
+		);
+		let account_proof = get_valid_account_proof();
+		let storage_proof = get_invalid_storage_proof();
+		let message = get_valid_message();
+
+		let fail = Bridge::execute(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			slot,
+			message,
+			account_proof,
+			storage_proof,
+		);
+
+		// invalid storage proof should return error
+		assert_err!(fail, Error::<Test>::CannotGetStorageValue);
+	});
+}
+
+#[test]
+fn test_execute_message_with_already_executed_message() {
+	new_test_ext().execute_with(|| {
+		let balance_before_transfer = Balances::balance(&Bridge::account_id());
+
+		Broadcasters::<Test>::set(
+			2,
+			H256(hex!(
+				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
+			)),
+		);
+
+		let slot = 8581263;
+		ExecutionStateRoots::<Test>::set(
+			slot,
+			H256(hex!(
+				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
+			)),
+		);
+
+		let message = get_valid_message();
+		let account_proof = get_valid_account_proof();
+		let storage_proof = get_valid_storage_proof();
+		let account: AccountId32 = AccountId32::from_slice(message.to.as_bytes()).unwrap();
+		let account_balance_before = Balances::balance(&account);
+
+		let ok = Bridge::execute(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			slot,
+			message.clone(),
+			account_proof.clone(),
+			storage_proof.clone(),
+		);
+
+		assert_ok!(ok);
+		let balance_after_transfer = Balances::balance(&Bridge::account_id());
+		let expected_transfered_value = 1000000000000000000u128;
+		assert_eq!(
+			balance_before_transfer,
+			balance_after_transfer.saturating_add(expected_transfered_value)
+		);
+		let account_balance = Balances::balance(&account);
+		assert_eq!(account_balance_before, 0);
+		assert_eq!(account_balance, expected_transfered_value);
+
+		let fail = Bridge::execute(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			slot,
+			message,
+			account_proof,
+			storage_proof,
+		);
+
+		assert_err!(fail, Error::<Test>::MessageAlreadyExecuted);
+	});
+}
+
+#[test]
+fn test_execute_message_with_unsupported_domain() {
+	new_test_ext().execute_with(|| {
+		Broadcasters::<Test>::set(
+			2,
+			H256(hex!(
+				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
+			)),
+		);
+
+		let slot = 8581263;
+		ExecutionStateRoots::<Test>::set(
+			slot,
+			H256(hex!(
+				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
+			)),
+		);
+
+		let mut message = get_valid_message();
+		// alter message
+		message.origin_domain = 4;
+
+		let account_proof = get_valid_account_proof();
+		let storage_proof = get_valid_storage_proof();
+
+		let fail = Bridge::execute(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			slot,
+			message,
+			account_proof,
+			storage_proof,
+		);
+
+		assert_err!(fail, Error::<Test>::UnsupportedOriginChain);
+	});
+}
+
+#[test]
+fn test_fulfill_step_call() {
+	new_test_ext().execute_with(|| {
+		let slot = 7634942;
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
+		SyncCommitteePoseidons::<Test>::insert(
+			931,
+			U256::from(hex!(
+				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
+			)),
+		);
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
@@ -699,7 +622,107 @@ fn test_fulfill_step_call_slot_behind_head() {
 		let result = Bridge::fulfill_call(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
 			STEP_FUNCTION_ID,
-			inputs,
+			get_valid_step_input(),
+			get_valid_step_output(),
+			get_valid_step_proof(),
+			slot,
+		);
+
+		assert_ok!(result);
+		let finalized_slot = 7634848;
+		// ensure that event is fired
+		let expected_event = RuntimeEvent::Bridge(Event::HeadUpdated {
+			slot: finalized_slot,
+			finalization_root: H256(hex!(
+				"e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec"
+			)),
+			execution_state_root: H256(hex!(
+				"51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b9"
+			)),
+		});
+
+		let finalized_slot = 7634848;
+
+		let header = Headers::<Test>::get(finalized_slot);
+		let head = Head::<Test>::get();
+		let ex_state_root = ExecutionStateRoots::<Test>::get(finalized_slot);
+
+		assert_eq!(
+			header,
+			H256(hex!(
+				"e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec"
+			))
+		);
+		assert_eq!(
+			ex_state_root,
+			H256(hex!(
+				"51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b9"
+			))
+		);
+		assert_eq!(head, finalized_slot);
+		assert_eq!(expected_event, System::events()[0].event);
+	});
+}
+
+#[test]
+fn test_fulfill_step_call_wrong_poseidon() {
+	new_test_ext().execute_with(|| {
+		let slot = 7634942;
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
+		// current poseidon is not the same as the one in the valid proof
+		SyncCommitteePoseidons::<Test>::insert(
+			931,
+			U256::from(hex!(
+				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332da"
+			)),
+		);
+
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: 8192,
+			finality_threshold: 461,
+		});
+
+		let result = Bridge::fulfill_call(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			STEP_FUNCTION_ID,
+			get_valid_step_input(),
+			get_valid_step_output(),
+			get_valid_step_proof(),
+			slot,
+		);
+
+		assert_err!(result, Error::<Test>::StepVerificationError);
+	});
+}
+
+#[test]
+fn test_fulfill_step_call_slot_behind_head() {
+	new_test_ext().execute_with(|| {
+		let slot = 7634942;
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+		SyncCommitteePoseidons::<Test>::insert(
+			931,
+			U256::from(hex!(
+				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
+			)),
+		);
+
+		// move head forward
+		Head::<Test>::set(8634942);
+
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: 8192,
+			finality_threshold: 461,
+		});
+
+		let result = Bridge::fulfill_call(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			STEP_FUNCTION_ID,
+			get_valid_step_input(),
+			get_valid_step_output(),
+			get_valid_step_proof(),
+			slot,
 		);
 
 		assert_err!(result, Error::<Test>::SlotBehindHead);
@@ -709,633 +732,643 @@ fn test_fulfill_step_call_slot_behind_head() {
 #[test]
 fn test_fulfill_rotate_call() {
 	new_test_ext().execute_with(|| {
+		let slot = 7634942;
 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-
-		// These inputs, encoded in CBOR format, would be passed in via the operator
-		let inputs: Vec<u8> = fs::read("./examples/rotate_call.cbor").unwrap();
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period: 8192,
 			finality_threshold: 342,
 		});
 
+		Headers::<Test>::set(
+			slot,
+			H256(hex!(
+				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57856"
+			)),
+		);
+
 		let result = Bridge::fulfill_call(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			ROTATE_FUNCTION_ID, // TODO: replace with working h256::zero
-			inputs,
+			ROTATE_FUNCTION_ID,
+			get_valid_rotate_input(),
+			get_valid_rotate_output(),
+			get_valid_rotate_proof(),
+			slot,
 		);
 
 		assert_ok!(result);
 		// ensure that event is fired
-		let expected_hash = U256::from_dec_str(
-			"78004113044439342907882478475913997887515213797155324584820998418219758944903",
+		let expected_poseidon = U256::from_dec_str(
+			"16399439943012933445970260519503780180385945954293268151243539801891563949197",
 		)
 			.unwrap();
 
-		let current_period = 1178;
+		let current_period = 931;
 		let expected_event = RuntimeEvent::Bridge(Event::SyncCommitteeUpdated {
 			period: current_period + 1,
-			root: expected_hash,
+			root: expected_poseidon,
 		});
 
-		let poseidon = SyncCommitteeHashes::<Test>::get(current_period + 1);
+		let poseidon = SyncCommitteePoseidons::<Test>::get(current_period + 1);
 
-		assert_eq!(expected_event, System::events()[1].event);
-		assert_eq!(poseidon, expected_hash);
+		assert_eq!(expected_event, System::events()[0].event);
+		assert_eq!(poseidon, expected_poseidon);
 	});
 }
 
-// #[test]
-// fn test_fulfill_rotate_call_wrong_header() {
-//     new_test_ext().execute_with(|| {
-//         let slot = 7634942;
-//         Updater::<Test>::set(H256(TEST_SENDER_VEC));
-//         let inputs: Vec<u8> = fs::read("./examples/rotate_call.cbor").unwrap();
-//
-//         ConfigurationStorage::<Test>::set(Configuration {
-//             slots_per_period: 8192,
-//             finality_threshold: 342,
-//         });
-//         // set current wrong header for valid rotate call
-//         Headers::<Test>::set(
-//             slot,
-//             H256(hex!(
-// 				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57855"
-// 			)),
-//         );
-//
-//         let result = Bridge::fulfill_call(
-//             RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-//             ROTATE_FUNCTION_ID,
-//             inputs,
-//         );
-//
-//         assert_err!(result, Error::<Test>::RotateVerificationError);
-//     });
-// }
+#[test]
+fn test_fulfill_rotate_call_wrong_header() {
+	new_test_ext().execute_with(|| {
+		let slot = 7634942;
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
 
-// #[test]
-// fn test_fulfill_call_function_ids_not_set() {
-// 	new_test_ext().execute_with(|| {
-// 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-//
-// 		Bridge::set_function_ids(RawOrigin::Root.into(), None).unwrap();
-// 		let slot = 7634942;
-// 		let err = Bridge::fulfill_call(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			STEP_FUNCTION_ID,
-// 			get_valid_step_input(),
-// 			get_valid_step_output(),
-// 			get_valid_step_proof(),
-// 			slot,
-// 		);
-// 		assert_err!(err, Error::<Test>::FunctionIdsAreNotSet);
-// 	});
-// }
-//
-// #[test]
-// fn test_fulfill_step_call_verification_key_is_not_set() {
-// 	new_test_ext().execute_with(|| {
-// 		Bridge::set_step_verification_key(RawOrigin::Root.into(), None).unwrap();
-// 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-//
-// 		let slot = 7634942;
-//
-// 		SyncCommitteePoseidons::<Test>::insert(
-// 			931,
-// 			U256::from(hex!(
-// 				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
-// 			)),
-// 		);
-//
-// 		ConfigurationStorage::<Test>::set(Configuration {
-// 			slots_per_period: 8192,
-// 			finality_threshold: 461,
-// 		});
-//
-// 		let err = Bridge::fulfill_call(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			STEP_FUNCTION_ID,
-// 			get_valid_step_input(),
-// 			get_valid_step_output(),
-// 			get_valid_step_proof(),
-// 			slot,
-// 		);
-// 		assert_err!(err, Error::<Test>::VerificationKeyIsNotSet);
-// 	});
-// }
-//
-// #[test]
-// fn test_fulfill_rotate_call_verification_key_is_not_set() {
-// 	new_test_ext().execute_with(|| {
-// 		Bridge::set_rotate_verification_key(RawOrigin::Root.into(), None).unwrap();
-// 		let slot = 7634942;
-// 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-//
-// 		ConfigurationStorage::<Test>::set(Configuration {
-// 			slots_per_period: 8192,
-// 			finality_threshold: 342,
-// 		});
-//
-// 		Headers::<Test>::set(
-// 			slot,
-// 			H256(hex!(
-// 				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57856"
-// 			)),
-// 		);
-//
-// 		let err = Bridge::fulfill_call(
-// 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-// 			ROTATE_FUNCTION_ID,
-// 			get_valid_rotate_input(),
-// 			get_valid_rotate_output(),
-// 			get_valid_rotate_proof(),
-// 			slot,
-// 		);
-// 		assert_err!(err, Error::<Test>::VerificationKeyIsNotSet);
-// 	});
-// }
-//
-// #[test]
-// fn set_whitelisted_domains_works_with_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let domains = BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap();
-// 		assert_ne!(WhitelistedDomains::<Test>::get(), domains);
-//
-// 		let ok = Bridge::set_whitelisted_domains(RawOrigin::Root.into(), domains.clone());
-// 		assert_ok!(ok);
-// 		assert_eq!(WhitelistedDomains::<Test>::get(), domains);
-//
-// 		System::assert_last_event(RuntimeEvent::Bridge(Event::WhitelistedDomainsUpdated));
-// 	});
-// }
-//
-// #[test]
-// fn set_whitelisted_domains_does_not_work_with_non_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let domains = BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap();
-// 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-// 		let ok = Bridge::set_whitelisted_domains(origin, domains.clone());
-// 		assert_err!(ok, BadOrigin);
-// 	});
-// }
-//
-// #[test]
-// fn set_configuration_works_with_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let conf = Configuration {
-// 			slots_per_period: 1,
-// 			finality_threshold: 69,
-// 		};
-// 		assert_ne!(ConfigurationStorage::<Test>::get(), conf);
-//
-// 		let ok = Bridge::set_configuration(RawOrigin::Root.into(), conf);
-// 		assert_ok!(ok);
-// 		assert_eq!(ConfigurationStorage::<Test>::get(), conf);
-//
-// 		let expected_event = RuntimeEvent::Bridge(Event::ConfigurationUpdated {
-// 			slots_per_period: conf.slots_per_period,
-// 			finality_threshold: conf.finality_threshold,
-// 		});
-// 		System::assert_last_event(expected_event);
-// 	});
-// }
-//
-// #[test]
-// fn set_configuration_does_not_work_with_non_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let conf = Configuration {
-// 			slots_per_period: 1,
-// 			finality_threshold: 69,
-// 		};
-//
-// 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-// 		let ok = Bridge::set_configuration(origin, conf);
-// 		assert_err!(ok, BadOrigin);
-// 	});
-// }
-//
-// #[test]
-// fn set_broadcaster_works_with_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let domain = 2;
-// 		let old = Broadcasters::<Test>::get(domain);
-// 		assert_ne!(old, STEP_FUNCTION_ID);
-//
-// 		let ok = Bridge::set_broadcaster(RawOrigin::Root.into(), domain, STEP_FUNCTION_ID);
-// 		assert_ok!(ok);
-// 		assert_eq!(Broadcasters::<Test>::get(domain), STEP_FUNCTION_ID);
-//
-// 		let expected_event = RuntimeEvent::Bridge(Event::BroadcasterUpdated {
-// 			old,
-// 			new: STEP_FUNCTION_ID,
-// 			domain,
-// 		});
-// 		System::assert_last_event(expected_event);
-// 	});
-// }
-//
-// #[test]
-// fn set_broadcaster_does_not_work_with_non_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-// 		let ok = Bridge::set_broadcaster(origin, 2, STEP_FUNCTION_ID);
-// 		assert_err!(ok, BadOrigin);
-// 	});
-// }
-//
-// #[test]
-// fn set_poseidon_hash_works_with_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let period = 2;
-// 		let poseidon_hash = BoundedVec::try_from(
-// 			[
-// 				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-// 				23, 24, 25, 26, 27, 28, 29, 30, 31,
-// 			]
-// 			.to_vec(),
-// 		)
-// 		.unwrap();
-// 		let root = U256::from_dec_str(
-// 			"1780731860627700044960722568376592200742329637303199754547598369979440671",
-// 		)
-// 		.unwrap();
-// 		assert_ne!(SyncCommitteePoseidons::<Test>::get(period), root);
-//
-// 		let ok = Bridge::set_poseidon_hash(RawOrigin::Root.into(), period, poseidon_hash);
-// 		assert_ok!(ok);
-// 		assert_eq!(SyncCommitteePoseidons::<Test>::get(period), root);
-//
-// 		let expected_event = RuntimeEvent::Bridge(Event::SyncCommitteeUpdated { period, root });
-// 		System::assert_last_event(expected_event);
-// 	});
-// }
-//
-// #[test]
-// fn set_poseidon_hash_wrong_hash_length() {
-// 	new_test_ext().execute_with(|| {
-// 		let period = 2;
-// 		let poseidon_hash = BoundedVec::try_from(
-// 			[
-// 				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-// 				23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
-// 			]
-// 			.to_vec(),
-// 		)
-// 		.unwrap();
-//
-// 		let error = Bridge::set_poseidon_hash(RawOrigin::Root.into(), period, poseidon_hash);
-// 		assert_err!(error, Error::<Test>::CannotParseOutputData);
-// 		assert_eq!(SyncCommitteePoseidons::<Test>::get(period), U256::zero());
-// 	});
-// }
-//
-// #[test]
-// fn set_poseidon_hash_does_not_work_with_non_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-// 		let root = BoundedVec::try_from([0, 1, 2, 3, 4].to_vec()).unwrap();
-//
-// 		let ok = Bridge::set_poseidon_hash(origin, 2, root);
-// 		assert_err!(ok, BadOrigin);
-// 	});
-// }
-//
-// #[test]
-// fn source_chain_froze_works_with_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let source_chain_id = 2;
-// 		let frozen = true;
-// 		assert_ne!(SourceChainFrozen::<Test>::get(source_chain_id), frozen);
-//
-// 		let ok = Bridge::source_chain_froze(RawOrigin::Root.into(), source_chain_id, frozen);
-// 		assert_ok!(ok);
-// 		assert_eq!(SourceChainFrozen::<Test>::get(source_chain_id), frozen);
-//
-// 		let expected_event = RuntimeEvent::Bridge(Event::SourceChainFrozen {
-// 			source_chain_id,
-// 			frozen,
-// 		});
-// 		System::assert_last_event(expected_event);
-// 	});
-// }
-//
-// #[test]
-// fn source_chain_froze_does_not_work_with_non_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-//
-// 		let ok = Bridge::source_chain_froze(origin, 2, true);
-// 		assert_err!(ok, BadOrigin);
-// 	});
-// }
-//
-// #[test]
-// fn send_message_arbitrary_message_works() {
-// 	new_test_ext().execute_with(|| {
-// 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-// 		let message = Message::ArbitraryMessage(BoundedVec::truncate_from([0, 1, 2, 3].to_vec()));
-// 		let to = ROTATE_FUNCTION_ID;
-// 		let domain = 2;
-//
-// 		let event = Event::MessageSubmitted {
-// 			from: TEST_SENDER_VEC.into(),
-// 			to,
-// 			message_type: message.r#type(),
-// 			destination_domain: domain,
-// 			message_id: tx_uid(1, 0),
-// 		};
-// 		let ok = Bridge::send_message(origin, message, to, domain);
-// 		assert_ok!(ok);
-// 		System::assert_last_event(RuntimeEvent::Bridge(event));
-// 	});
-// }
-//
-// #[test]
-// fn send_message_arbitrary_message_doesnt_accept_empty_data() {
-// 	new_test_ext().execute_with(|| {
-// 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-// 		let message = Message::ArbitraryMessage(BoundedVec::truncate_from(vec![]));
-//
-// 		let ok = Bridge::send_message(origin, message, ROTATE_FUNCTION_ID, 2);
-// 		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);
-// 	});
-// }
-//
-// #[test]
-// fn send_message_fungible_token_works() {
-// 	new_test_ext().execute_with(|| {
-// 		use crate::BalanceOf;
-// 		use frame_support::traits::Currency;
-//
-// 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-// 		let message = Message::FungibleToken {
-// 			asset_id: H256::zero(),
-// 			amount: 100,
-// 		};
-// 		let to = ROTATE_FUNCTION_ID;
-// 		let domain = 2;
-//
-// 		Balances::make_free_balance_be(
-// 			&TEST_SENDER_VEC.into(),
-// 			BalanceOf::<Test>::max_value() / 2u128,
-// 		);
-//
-// 		let event = Event::MessageSubmitted {
-// 			from: TEST_SENDER_VEC.into(),
-// 			to,
-// 			message_type: message.r#type(),
-// 			destination_domain: domain,
-// 			message_id: tx_uid(1, 0),
-// 		};
-// 		let ok = Bridge::send_message(origin, message, to, domain);
-// 		assert_ok!(ok);
-// 		System::assert_last_event(RuntimeEvent::Bridge(event));
-// 	});
-// }
-//
-// #[test]
-// fn send_message_fungible_token_does_not_accept_zero_amount() {
-// 	new_test_ext().execute_with(|| {
-// 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-// 		let message = Message::FungibleToken {
-// 			asset_id: H256::zero(),
-// 			amount: 0,
-// 		};
-// 		let to = ROTATE_FUNCTION_ID;
-// 		let domain = 2;
-//
-// 		let err = Bridge::send_message(origin, message, to, domain);
-// 		assert_err!(err, Error::<Test>::InvalidBridgeInputs);
-// 	});
-// }
-//
-// #[test]
-// fn execute_arbitrary_message_works() {
-// 	new_test_ext().execute_with(|| {
-// 		use crate::BalanceOf;
-// 		use frame_support::traits::Currency;
-//
-// 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-// 		Balances::make_free_balance_be(
-// 			&TEST_SENDER_VEC.into(),
-// 			BalanceOf::<Test>::max_value() / 2u128,
-// 		);
-//
-// 		Broadcasters::<Test>::set(
-// 			2,
-// 			H256(hex!(
-// 				"Aa8c1bFC413e00884A7ac991851686D27b387997000000000000000000000000"
-// 			)),
-// 		);
-//
-// 		let slot = 5085118;
-// 		ExecutionStateRoots::<Test>::set(
-// 			slot,
-// 			H256(hex!(
-// 				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
-// 			)),
-// 		);
-//
-// 		let message = get_valid_amb_message();
-// 		let account_proof = get_valid_amb_account_proof();
-// 		let storage_proof = get_valid_amb_storage_proof();
-//
-// 		let ok = Bridge::execute(
-// 			origin,
-// 			slot,
-// 			message.clone(),
-// 			account_proof.clone(),
-// 			storage_proof.clone(),
-// 		);
-// 		assert_ok!(ok);
-// 		let encoded_data = message.clone().abi_encode();
-// 		let message_root = H256(keccak_256(encoded_data.as_slice()));
-//
-// 		let expected_event = RuntimeEvent::Bridge(Event::MessageExecuted {
-// 			from: message.from,
-// 			to: message.to,
-// 			message_id: message.id,
-// 			message_root,
-// 		});
-// 		System::assert_last_event(expected_event);
-// 		assert_eq!(
-// 			MessageStatus::<Test>::get(message_root),
-// 			MessageStatusEnum::ExecutionSucceeded
-// 		)
-// 	});
-// }
-//
-// #[test]
-// fn test_double_execute_arbitrary_message() {
-// 	new_test_ext().execute_with(|| {
-// 		use crate::BalanceOf;
-// 		use frame_support::traits::Currency;
-//
-// 		let origin1 = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-// 		let origin2 = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-// 		Balances::make_free_balance_be(
-// 			&TEST_SENDER_VEC.into(),
-// 			BalanceOf::<Test>::max_value() / 2u128,
-// 		);
-//
-// 		Broadcasters::<Test>::set(
-// 			2,
-// 			H256(hex!(
-// 				"Aa8c1bFC413e00884A7ac991851686D27b387997000000000000000000000000"
-// 			)),
-// 		);
-//
-// 		let slot = 5085118;
-// 		ExecutionStateRoots::<Test>::set(
-// 			slot,
-// 			H256(hex!(
-// 				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
-// 			)),
-// 		);
-//
-// 		let message = get_valid_amb_message();
-//
-// 		let account_proof = get_valid_amb_account_proof();
-// 		let storage_proof = get_valid_amb_storage_proof();
-//
-// 		let ok = Bridge::execute(
-// 			origin1,
-// 			slot,
-// 			message.clone(),
-// 			account_proof.clone(),
-// 			storage_proof.clone(),
-// 		);
-// 		assert_ok!(ok);
-//
-// 		let err = Bridge::execute(
-// 			origin2,
-// 			slot,
-// 			message.clone(),
-// 			account_proof.clone(),
-// 			storage_proof.clone(),
-// 		);
-// 		assert_err!(err, Error::<Test>::MessageAlreadyExecuted);
-//
-// 		let encoded_data = message.clone().abi_encode();
-// 		let message_root = H256(keccak_256(encoded_data.as_slice()));
-//
-// 		let expected_event = RuntimeEvent::Bridge(Event::MessageExecuted {
-// 			from: message.from,
-// 			to: message.to,
-// 			message_id: message.id,
-// 			message_root,
-// 		});
-// 		System::assert_last_event(expected_event);
-// 	});
-// }
-//
-// #[test]
-// fn set_function_ids_works_with_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let ok = Bridge::set_function_ids(RawOrigin::Root.into(), None);
-// 		assert_ok!(ok);
-// 		assert_eq!(FunctionIds::<Test>::get(), None);
-//
-// 		let value = Some((STEP_FUNCTION_ID, ROTATE_FUNCTION_ID));
-// 		let ok = Bridge::set_function_ids(RawOrigin::Root.into(), value);
-// 		assert_ok!(ok);
-// 		assert_eq!(FunctionIds::<Test>::get(), value);
-//
-// 		let expected_event = RuntimeEvent::Bridge(Event::FunctionIdsUpdated { value });
-// 		System::assert_last_event(expected_event);
-// 	});
-// }
-//
-// #[test]
-// fn set_function_ids_does_not_work_with_non_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-// 		let ok = Bridge::set_function_ids(origin, None);
-// 		assert_err!(ok, BadOrigin);
-// 	});
-// }
-//
-// #[test]
-// fn set_step_verification_key_works_with_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let ok = Bridge::set_step_verification_key(RawOrigin::Root.into(), None);
-// 		assert_ok!(ok);
-// 		assert_eq!(StepVerificationKey::<Test>::get(), None);
-//
-// 		let value = Some(BoundedVec::try_from(STEP_VK.as_bytes().to_vec()).unwrap());
-// 		let ok = Bridge::set_step_verification_key(RawOrigin::Root.into(), value.clone());
-// 		assert_ok!(ok);
-// 		assert_eq!(StepVerificationKey::<Test>::get(), value.clone());
-//
-// 		let expected_event = RuntimeEvent::Bridge(Event::StepVerificationKeyUpdated { value });
-// 		System::assert_last_event(expected_event);
-// 	});
-// }
-//
-// #[test]
-// fn set_step_verification_key_does_not_work_with_non_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-// 		let ok = Bridge::set_step_verification_key(origin, None);
-// 		assert_err!(ok, BadOrigin);
-// 	});
-// }
-//
-// #[test]
-// fn set_rotate_verification_key_works_with_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let ok = Bridge::set_rotate_verification_key(RawOrigin::Root.into(), None);
-// 		assert_ok!(ok);
-// 		assert_eq!(RotateVerificationKey::<Test>::get(), None);
-//
-// 		let value = Some(BoundedVec::try_from(ROTATE_VK.as_bytes().to_vec()).unwrap());
-// 		let ok = Bridge::set_rotate_verification_key(RawOrigin::Root.into(), value.clone());
-// 		assert_ok!(ok);
-// 		assert_eq!(RotateVerificationKey::<Test>::get(), value.clone());
-//
-// 		let expected_event = RuntimeEvent::Bridge(Event::RotateVerificationKeyUpdated { value });
-// 		System::assert_last_event(expected_event);
-// 	});
-// }
-//
-// #[test]
-// fn set_rotate_verification_key_does_not_work_with_non_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-// 		let ok = Bridge::set_rotate_verification_key(origin, None);
-// 		assert_err!(ok, BadOrigin);
-// 	});
-// }
-//
-// #[test]
-// fn update_updater() {
-// 	new_test_ext().execute_with(|| {
-// 		let old_updater = H256(TEST_SENDER_VEC);
-// 		Updater::<Test>::set(old_updater);
-//
-// 		let new_updater = H256([2u8; 32]);
-// 		let ok = Bridge::set_updater(RawOrigin::Root.into(), new_updater);
-// 		assert_ok!(ok);
-//
-// 		let expected_event = RuntimeEvent::Bridge(Event::NewUpdater {
-// 			old: old_updater,
-// 			new: new_updater,
-// 		});
-// 		System::assert_last_event(expected_event);
-// 	});
-// }
-//
-// #[test]
-// fn update_updater_non_root() {
-// 	new_test_ext().execute_with(|| {
-// 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-// 		let old_updater = H256(TEST_SENDER_VEC);
-// 		Updater::<Test>::set(old_updater);
-// 		let new_updater = H256([2u8; 32]);
-//
-// 		let err = Bridge::set_updater(origin, new_updater);
-// 		assert_err!(err, BadOrigin);
-// 		assert_eq!(old_updater, Updater::<Test>::get());
-// 	});
-// }
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: 8192,
+			finality_threshold: 342,
+		});
+		// set current wrong header for valid rotate call
+		Headers::<Test>::set(
+			slot,
+			H256(hex!(
+				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57855"
+			)),
+		);
+
+		let result = Bridge::fulfill_call(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			ROTATE_FUNCTION_ID,
+			get_valid_rotate_input(),
+			get_valid_rotate_output(),
+			get_valid_rotate_proof(),
+			slot,
+		);
+
+		assert_err!(result, Error::<Test>::RotateVerificationError);
+	});
+}
+
+#[test]
+fn test_fulfill_call_function_ids_not_set() {
+	new_test_ext().execute_with(|| {
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
+		Bridge::set_function_ids(RawOrigin::Root.into(), None).unwrap();
+		let slot = 7634942;
+		let err = Bridge::fulfill_call(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			STEP_FUNCTION_ID,
+			get_valid_step_input(),
+			get_valid_step_output(),
+			get_valid_step_proof(),
+			slot,
+		);
+		assert_err!(err, Error::<Test>::FunctionIdsAreNotSet);
+	});
+}
+
+#[test]
+fn test_fulfill_step_call_verification_key_is_not_set() {
+	new_test_ext().execute_with(|| {
+		Bridge::set_step_verification_key(RawOrigin::Root.into(), None).unwrap();
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
+		let slot = 7634942;
+
+		SyncCommitteePoseidons::<Test>::insert(
+			931,
+			U256::from(hex!(
+				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
+			)),
+		);
+
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: 8192,
+			finality_threshold: 461,
+		});
+
+		let err = Bridge::fulfill_call(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			STEP_FUNCTION_ID,
+			get_valid_step_input(),
+			get_valid_step_output(),
+			get_valid_step_proof(),
+			slot,
+		);
+		assert_err!(err, Error::<Test>::VerificationKeyIsNotSet);
+	});
+}
+
+#[test]
+fn test_fulfill_rotate_call_verification_key_is_not_set() {
+	new_test_ext().execute_with(|| {
+		Bridge::set_rotate_verification_key(RawOrigin::Root.into(), None).unwrap();
+		let slot = 7634942;
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: 8192,
+			finality_threshold: 342,
+		});
+
+		Headers::<Test>::set(
+			slot,
+			H256(hex!(
+				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57856"
+			)),
+		);
+
+		let err = Bridge::fulfill_call(
+			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
+			ROTATE_FUNCTION_ID,
+			get_valid_rotate_input(),
+			get_valid_rotate_output(),
+			get_valid_rotate_proof(),
+			slot,
+		);
+		assert_err!(err, Error::<Test>::VerificationKeyIsNotSet);
+	});
+}
+
+#[test]
+fn set_whitelisted_domains_works_with_root() {
+	new_test_ext().execute_with(|| {
+		let domains = BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap();
+		assert_ne!(WhitelistedDomains::<Test>::get(), domains);
+
+		let ok = Bridge::set_whitelisted_domains(RawOrigin::Root.into(), domains.clone());
+		assert_ok!(ok);
+		assert_eq!(WhitelistedDomains::<Test>::get(), domains);
+
+		System::assert_last_event(RuntimeEvent::Bridge(Event::WhitelistedDomainsUpdated));
+	});
+}
+
+#[test]
+fn set_whitelisted_domains_does_not_work_with_non_root() {
+	new_test_ext().execute_with(|| {
+		let domains = BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap();
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let ok = Bridge::set_whitelisted_domains(origin, domains.clone());
+		assert_err!(ok, BadOrigin);
+	});
+}
+
+#[test]
+fn set_configuration_works_with_root() {
+	new_test_ext().execute_with(|| {
+		let conf = Configuration {
+			slots_per_period: 1,
+			finality_threshold: 69,
+		};
+		assert_ne!(ConfigurationStorage::<Test>::get(), conf);
+
+		let ok = Bridge::set_configuration(RawOrigin::Root.into(), conf);
+		assert_ok!(ok);
+		assert_eq!(ConfigurationStorage::<Test>::get(), conf);
+
+		let expected_event = RuntimeEvent::Bridge(Event::ConfigurationUpdated {
+			slots_per_period: conf.slots_per_period,
+			finality_threshold: conf.finality_threshold,
+		});
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn set_configuration_does_not_work_with_non_root() {
+	new_test_ext().execute_with(|| {
+		let conf = Configuration {
+			slots_per_period: 1,
+			finality_threshold: 69,
+		};
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let ok = Bridge::set_configuration(origin, conf);
+		assert_err!(ok, BadOrigin);
+	});
+}
+
+#[test]
+fn set_broadcaster_works_with_root() {
+	new_test_ext().execute_with(|| {
+		let domain = 2;
+		let old = Broadcasters::<Test>::get(domain);
+		assert_ne!(old, STEP_FUNCTION_ID);
+
+		let ok = Bridge::set_broadcaster(RawOrigin::Root.into(), domain, STEP_FUNCTION_ID);
+		assert_ok!(ok);
+		assert_eq!(Broadcasters::<Test>::get(domain), STEP_FUNCTION_ID);
+
+		let expected_event = RuntimeEvent::Bridge(Event::BroadcasterUpdated {
+			old,
+			new: STEP_FUNCTION_ID,
+			domain,
+		});
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn set_broadcaster_does_not_work_with_non_root() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let ok = Bridge::set_broadcaster(origin, 2, STEP_FUNCTION_ID);
+		assert_err!(ok, BadOrigin);
+	});
+}
+
+#[test]
+fn set_poseidon_hash_works_with_root() {
+	new_test_ext().execute_with(|| {
+		let period = 2;
+		let poseidon_hash = BoundedVec::try_from(
+			[
+				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+				23, 24, 25, 26, 27, 28, 29, 30, 31,
+			]
+				.to_vec(),
+		)
+			.unwrap();
+		let root = U256::from_dec_str(
+			"1780731860627700044960722568376592200742329637303199754547598369979440671",
+		)
+			.unwrap();
+		assert_ne!(SyncCommitteePoseidons::<Test>::get(period), root);
+
+		let ok = Bridge::set_poseidon_hash(RawOrigin::Root.into(), period, poseidon_hash);
+		assert_ok!(ok);
+		assert_eq!(SyncCommitteePoseidons::<Test>::get(period), root);
+
+		let expected_event = RuntimeEvent::Bridge(Event::SyncCommitteeUpdated { period, root });
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn set_poseidon_hash_wrong_hash_length() {
+	new_test_ext().execute_with(|| {
+		let period = 2;
+		let poseidon_hash = BoundedVec::try_from(
+			[
+				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+				23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+			]
+				.to_vec(),
+		)
+			.unwrap();
+
+		let error = Bridge::set_poseidon_hash(RawOrigin::Root.into(), period, poseidon_hash);
+		assert_err!(error, Error::<Test>::CannotParseOutputData);
+		assert_eq!(SyncCommitteePoseidons::<Test>::get(period), U256::zero());
+	});
+}
+
+#[test]
+fn set_poseidon_hash_does_not_work_with_non_root() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let root = BoundedVec::try_from([0, 1, 2, 3, 4].to_vec()).unwrap();
+
+		let ok = Bridge::set_poseidon_hash(origin, 2, root);
+		assert_err!(ok, BadOrigin);
+	});
+}
+
+#[test]
+fn source_chain_froze_works_with_root() {
+	new_test_ext().execute_with(|| {
+		let source_chain_id = 2;
+		let frozen = true;
+		assert_ne!(SourceChainFrozen::<Test>::get(source_chain_id), frozen);
+
+		let ok = Bridge::source_chain_froze(RawOrigin::Root.into(), source_chain_id, frozen);
+		assert_ok!(ok);
+		assert_eq!(SourceChainFrozen::<Test>::get(source_chain_id), frozen);
+
+		let expected_event = RuntimeEvent::Bridge(Event::SourceChainFrozen {
+			source_chain_id,
+			frozen,
+		});
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn source_chain_froze_does_not_work_with_non_root() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+
+		let ok = Bridge::source_chain_froze(origin, 2, true);
+		assert_err!(ok, BadOrigin);
+	});
+}
+
+#[test]
+fn send_message_arbitrary_message_works() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let message = Message::ArbitraryMessage(BoundedVec::truncate_from([0, 1, 2, 3].to_vec()));
+		let to = ROTATE_FUNCTION_ID;
+		let domain = 2;
+
+		let event = Event::MessageSubmitted {
+			from: TEST_SENDER_VEC.into(),
+			to,
+			message_type: message.r#type(),
+			destination_domain: domain,
+			message_id: tx_uid(1, 0),
+		};
+		let ok = Bridge::send_message(origin, message, to, domain);
+		assert_ok!(ok);
+		System::assert_last_event(RuntimeEvent::Bridge(event));
+	});
+}
+
+#[test]
+fn send_message_arbitrary_message_doesnt_accept_empty_data() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let message = Message::ArbitraryMessage(BoundedVec::truncate_from(vec![]));
+
+		let ok = Bridge::send_message(origin, message, ROTATE_FUNCTION_ID, 2);
+		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);
+	});
+}
+
+#[test]
+fn send_message_fungible_token_works() {
+	new_test_ext().execute_with(|| {
+		use crate::BalanceOf;
+		use frame_support::traits::Currency;
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let message = Message::FungibleToken {
+			asset_id: H256::zero(),
+			amount: 100,
+		};
+		let to = ROTATE_FUNCTION_ID;
+		let domain = 2;
+
+		Balances::make_free_balance_be(
+			&TEST_SENDER_VEC.into(),
+			BalanceOf::<Test>::max_value() / 2u128,
+		);
+
+		let event = Event::MessageSubmitted {
+			from: TEST_SENDER_VEC.into(),
+			to,
+			message_type: message.r#type(),
+			destination_domain: domain,
+			message_id: tx_uid(1, 0),
+		};
+		let ok = Bridge::send_message(origin, message, to, domain);
+		assert_ok!(ok);
+		System::assert_last_event(RuntimeEvent::Bridge(event));
+	});
+}
+
+#[test]
+fn send_message_fungible_token_does_not_accept_zero_amount() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let message = Message::FungibleToken {
+			asset_id: H256::zero(),
+			amount: 0,
+		};
+		let to = ROTATE_FUNCTION_ID;
+		let domain = 2;
+
+		let err = Bridge::send_message(origin, message, to, domain);
+		assert_err!(err, Error::<Test>::InvalidBridgeInputs);
+	});
+}
+
+#[test]
+fn execute_arbitrary_message_works() {
+	new_test_ext().execute_with(|| {
+		use crate::BalanceOf;
+		use frame_support::traits::Currency;
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		Balances::make_free_balance_be(
+			&TEST_SENDER_VEC.into(),
+			BalanceOf::<Test>::max_value() / 2u128,
+		);
+
+		Broadcasters::<Test>::set(
+			2,
+			H256(hex!(
+				"Aa8c1bFC413e00884A7ac991851686D27b387997000000000000000000000000"
+			)),
+		);
+
+		let slot = 5085118;
+		ExecutionStateRoots::<Test>::set(
+			slot,
+			H256(hex!(
+				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
+			)),
+		);
+
+		let message = get_valid_amb_message();
+		let account_proof = get_valid_amb_account_proof();
+		let storage_proof = get_valid_amb_storage_proof();
+
+		let ok = Bridge::execute(
+			origin,
+			slot,
+			message.clone(),
+			account_proof.clone(),
+			storage_proof.clone(),
+		);
+		assert_ok!(ok);
+		let encoded_data = message.clone().abi_encode();
+		let message_root = H256(keccak_256(encoded_data.as_slice()));
+
+		let expected_event = RuntimeEvent::Bridge(Event::MessageExecuted {
+			from: message.from,
+			to: message.to,
+			message_id: message.id,
+			message_root,
+		});
+		System::assert_last_event(expected_event);
+		assert_eq!(
+			MessageStatus::<Test>::get(message_root),
+			MessageStatusEnum::ExecutionSucceeded
+		)
+	});
+}
+
+#[test]
+fn test_double_execute_arbitrary_message() {
+	new_test_ext().execute_with(|| {
+		use crate::BalanceOf;
+		use frame_support::traits::Currency;
+
+		let origin1 = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let origin2 = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		Balances::make_free_balance_be(
+			&TEST_SENDER_VEC.into(),
+			BalanceOf::<Test>::max_value() / 2u128,
+		);
+
+		Broadcasters::<Test>::set(
+			2,
+			H256(hex!(
+				"Aa8c1bFC413e00884A7ac991851686D27b387997000000000000000000000000"
+			)),
+		);
+
+		let slot = 5085118;
+		ExecutionStateRoots::<Test>::set(
+			slot,
+			H256(hex!(
+				"c42310d65b1e953e8864480367a03179d6bd78d4ca522a5a977d2801b9b2e1d9"
+			)),
+		);
+
+		let message = get_valid_amb_message();
+
+		let account_proof = get_valid_amb_account_proof();
+		let storage_proof = get_valid_amb_storage_proof();
+
+		let ok = Bridge::execute(
+			origin1,
+			slot,
+			message.clone(),
+			account_proof.clone(),
+			storage_proof.clone(),
+		);
+		assert_ok!(ok);
+
+		let err = Bridge::execute(
+			origin2,
+			slot,
+			message.clone(),
+			account_proof.clone(),
+			storage_proof.clone(),
+		);
+		assert_err!(err, Error::<Test>::MessageAlreadyExecuted);
+
+		let encoded_data = message.clone().abi_encode();
+		let message_root = H256(keccak_256(encoded_data.as_slice()));
+
+		let expected_event = RuntimeEvent::Bridge(Event::MessageExecuted {
+			from: message.from,
+			to: message.to,
+			message_id: message.id,
+			message_root,
+		});
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn set_function_ids_works_with_root() {
+	new_test_ext().execute_with(|| {
+		let ok = Bridge::set_function_ids(RawOrigin::Root.into(), None);
+		assert_ok!(ok);
+		assert_eq!(FunctionIds::<Test>::get(), None);
+
+		let value = Some((STEP_FUNCTION_ID, ROTATE_FUNCTION_ID));
+		let ok = Bridge::set_function_ids(RawOrigin::Root.into(), value);
+		assert_ok!(ok);
+		assert_eq!(FunctionIds::<Test>::get(), value);
+
+		let expected_event = RuntimeEvent::Bridge(Event::FunctionIdsUpdated { value });
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn set_function_ids_does_not_work_with_non_root() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let ok = Bridge::set_function_ids(origin, None);
+		assert_err!(ok, BadOrigin);
+	});
+}
+
+#[test]
+fn set_step_verification_key_works_with_root() {
+	new_test_ext().execute_with(|| {
+		let ok = Bridge::set_step_verification_key(RawOrigin::Root.into(), None);
+		assert_ok!(ok);
+		assert_eq!(StepVerificationKey::<Test>::get(), None);
+
+		let value = Some(BoundedVec::try_from(STEP_VK.as_bytes().to_vec()).unwrap());
+		let ok = Bridge::set_step_verification_key(RawOrigin::Root.into(), value.clone());
+		assert_ok!(ok);
+		assert_eq!(StepVerificationKey::<Test>::get(), value.clone());
+
+		let expected_event = RuntimeEvent::Bridge(Event::StepVerificationKeyUpdated { value });
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn set_step_verification_key_does_not_work_with_non_root() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let ok = Bridge::set_step_verification_key(origin, None);
+		assert_err!(ok, BadOrigin);
+	});
+}
+
+#[test]
+fn set_rotate_verification_key_works_with_root() {
+	new_test_ext().execute_with(|| {
+		let ok = Bridge::set_rotate_verification_key(RawOrigin::Root.into(), None);
+		assert_ok!(ok);
+		assert_eq!(RotateVerificationKey::<Test>::get(), None);
+
+		let value = Some(BoundedVec::try_from(ROTATE_VK.as_bytes().to_vec()).unwrap());
+		let ok = Bridge::set_rotate_verification_key(RawOrigin::Root.into(), value.clone());
+		assert_ok!(ok);
+		assert_eq!(RotateVerificationKey::<Test>::get(), value.clone());
+
+		let expected_event = RuntimeEvent::Bridge(Event::RotateVerificationKeyUpdated { value });
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn set_rotate_verification_key_does_not_work_with_non_root() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let ok = Bridge::set_rotate_verification_key(origin, None);
+		assert_err!(ok, BadOrigin);
+	});
+}
+
+#[test]
+fn update_updater() {
+	new_test_ext().execute_with(|| {
+		let old_updater = H256(TEST_SENDER_VEC);
+		Updater::<Test>::set(old_updater);
+
+		let new_updater = H256([2u8; 32]);
+		let ok = Bridge::set_updater(RawOrigin::Root.into(), new_updater);
+		assert_ok!(ok);
+
+		let expected_event = RuntimeEvent::Bridge(Event::NewUpdater {
+			old: old_updater,
+			new: new_updater,
+		});
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn update_updater_non_root() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let old_updater = H256(TEST_SENDER_VEC);
+		Updater::<Test>::set(old_updater);
+		let new_updater = H256([2u8; 32]);
+
+		let err = Bridge::set_updater(origin, new_updater);
+		assert_err!(err, BadOrigin);
+		assert_eq!(old_updater, Updater::<Test>::get());
+	});
+}
