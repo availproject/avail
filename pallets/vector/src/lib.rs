@@ -443,8 +443,7 @@ pub mod pallet {
 		/// function_id Function identifier.
 		/// inputs Function input.
 		#[pallet::call_index(0)]
-		#[pallet::weight(weight_helper::fulfill_call::< T > (* function_id)
-		)] // can't remove this
+		#[pallet::weight(weight_helper::fulfill_call::<T>(* function_id))] // can't remove this
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
 			function_id: H256,
