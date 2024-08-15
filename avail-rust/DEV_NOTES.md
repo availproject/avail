@@ -1,4 +1,5 @@
 How to build the API
+
 1. Run Node
 2. Run `./build_api.sh` script
 3. Manually do the following change:
@@ -11,9 +12,11 @@ How to build the API
 
 and
 
-Inisde `pub mod api { pub mod runtime_types { pub mod pallet_collective { pub mod pallet }}}` duplicate the whole `pub enum Call` enum  and call it `pub enum Call2`.
+Inisde `pub mod api { pub mod runtime_types { pub mod pallet_collective { pub mod pallet }}}` duplicate the whole `pub enum Call` enum and
+call it `pub enum Call2`.
 
 Should look like this
+
 ```diff
                 #[derive(
 					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,

@@ -61,9 +61,9 @@ async fn block_length(&self, at: Option<BlockHash>) -> Result<BlockLength, subxt
 
 #### Parameters
 
-| parameter | type         | optional | description      |
-| --------- | ------------ | -------- | ---------------- |
-| at        | Option<BlockHash> | true     | block hash |
+| parameter | type              | optional | description |
+| --------- | ----------------- | -------- | ----------- |
+| at        | Option<BlockHash> | true     | block hash  |
 
 #### Return value
 
@@ -116,10 +116,10 @@ async fn query_rows(&self, rows: Vec<u32>, at: Option<BlockHash>) -> Result<Vec<
 
 #### Parameters
 
-| parameter | type         | optional | description      |
-| --------- | ------------ | -------- | ---------------- |
-| rows      | Option<u32>  | false    | rows to query    |
-| at        | Option<BlockHash> | true     | block hash |
+| parameter | type              | optional | description   |
+| --------- | ----------------- | -------- | ------------- |
+| rows      | Option<u32>       | false    | rows to query |
+| at        | Option<BlockHash> | true     | block hash    |
 
 #### Return value
 
@@ -185,10 +185,10 @@ async fn query_proof(&self, cells: Vec<Cell>, at: Option<BlockHash>) -> Result<V
 
 #### Parameters
 
-| parameter | type         | optional | description      |
-| --------- | ------------ | -------- | ---------------- |
-| cells     | Vec<Cell>    | false    | cells to query   |
-| at        | Option<BlockHash> | true     | block hash |
+| parameter | type              | optional | description    |
+| --------- | ----------------- | -------- | -------------- |
+| cells     | Vec<Cell>         | false    | cells to query |
+| at        | Option<BlockHash> | true     | block hash     |
 
 #### Return value
 
@@ -254,10 +254,10 @@ async fn query_data_proof(&self, transaction_index: u32, at: Option<H256>) -> Re
 
 #### Parameters
 
-| parameter         | type         | optional | description       |
-| ----------------- | ------------ | -------- | ----------------- |
-| transaction_index | u32          | false    | transaction index |
-| at                | Option<BlockHash> | true     | block hash  |
+| parameter         | type              | optional | description       |
+| ----------------- | ----------------- | -------- | ----------------- |
+| transaction_index | u32               | false    | transaction index |
+| at                | Option<BlockHash> | true     | block hash        |
 
 #### Return value
 
@@ -325,9 +325,9 @@ async fn get_block(&self, at: Option<BlockHash>) -> Result<AvailBlockDetailsRPC,
 
 #### Parameters
 
-| parameter         | type         | optional | description       |
-| ----------------- | ------------ | -------- | ----------------- |
-| at                | Option<BlockHash> | true     | block hash  |
+| parameter | type              | optional | description |
+| --------- | ----------------- | -------- | ----------- |
+| at        | Option<BlockHash> | true     | block hash  |
 
 #### Return value
 
@@ -380,9 +380,9 @@ async fn get_block_hash(&self, block_number: Option<BlockNumber>) -> Result<Bloc
 
 #### Parameters
 
-| parameter         | type         | optional | description       |
-| ----------------- | ------------ | -------- | ----------------- |
-| block_number | Option<BlockNumber> | true     | block number  |
+| parameter    | type                | optional | description  |
+| ------------ | ------------------- | -------- | ------------ |
+| block_number | Option<BlockNumber> | true     | block number |
 
 #### Return value
 
@@ -484,9 +484,9 @@ async fn get_header(&self, at: Option<BlockHash>) -> Result<AvailHeader, subxt::
 
 #### Parameters
 
-| parameter         | type         | optional | description       |
-| ----------------- | ------------ | -------- | ----------------- |
-| at | Option<BlockHash> | true     | block hash  |
+| parameter | type              | optional | description |
+| --------- | ----------------- | -------- | ----------- |
+| at        | Option<BlockHash> | true     | block hash  |
 
 #### Return value
 
@@ -541,13 +541,13 @@ async fn account_next_index(&self, account: String) -> Result<u32, subxt::Error>
 
 #### Parameters
 
-| parameter         | type         | optional | description       |
-| ----------------- | ------------ | -------- | ----------------- |
-| account         | String | false     | account address  |
+| parameter | type   | optional | description     |
+| --------- | ------ | -------- | --------------- |
+| account   | String | false    | account address |
 
 #### Return value
 
-On failure, subxt::Error  is returned. On Success, account nonce is returned.
+On failure, subxt::Error is returned. On Success, account nonce is returned.
 
 ### Minimal Example
 
@@ -936,7 +936,7 @@ async fn peers(&self) -> Result<Vec<PeerInfo>, subxt::Error>;
 
 #### Return value
 
-On failure, subxt::Error is returned. On Success, list of currently connected peers are  returned.
+On failure, subxt::Error is returned. On Success, list of currently connected peers are returned.
 
 ### Minimal Example
 

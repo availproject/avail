@@ -1,3 +1,8 @@
+# Structure
+
+If you are looking for the API reference and examples on how to use the SDK check out the `/docs/` folder. This folder contains advanced
+examples that showcase how to do things that are not already available through the SDK interface.
+
 ## Examples
 
 Before running examples or benchmarks make sure that you have a running local node.
