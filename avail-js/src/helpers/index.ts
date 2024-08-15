@@ -138,3 +138,34 @@ export const extractData = async (api: ApiPromise, blockHash: string, extrinsicH
 
   return data
 }
+
+/**
+ * Converts a hexadecimal string to an ASCII string.
+ *
+ * @param {string} hex - The hexadecimal string to convert.
+ * @return {string} The converted ASCII string.
+ */
+export function fromHexToAscii(hex: string): string {
+  let str = ""
+  for (let n = 0; n < hex.length; n += 2) {
+    str += String.fromCharCode(parseInt(hex.substring(n, n + 2), 16))
+  }
+
+  return `${str}`
+}
+
+/**
+ * Decodes a runtime error from the Substrate chain.
+ *
+ * @param {ApiPromise} api - The API instance to interact with the chain.
+ * @param {any} error - The error object to decode.
+ * @return {string} The decoded error message in the format "section.method: description".
+ */
+export function decodeError(api: ApiPromise, error: any): string {
+  if (!error.isModule) {
+    return error.toString()
+  }
+
+  const { docs, method, section } = api.registry.findMetaError(error.asModule)
+  return `${section}.${method}: ${docs.join(" ")}`
+}

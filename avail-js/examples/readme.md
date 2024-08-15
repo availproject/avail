@@ -1,7 +1,7 @@
 # Avail typescript / javascript examples
 
 Sample examples written in typescript using avail-js sdk that demonstrate interaction with Avail network.
-The following scripts have been tested with `ts-node v10.9.1 node v20.11.1 (npm v10.2.4)`.
+The following scripts have been tested with `ts-node v10.9.2 node v20.11.1 (npm v10.2.4)`.
 Those examples are meant to show how to use the avail-js sdk. It's worth noting that when using this package, all polkadot-js features can be used as it's only a wrapper with additional types / rpc / helpers.
 
 ## Avail node examples

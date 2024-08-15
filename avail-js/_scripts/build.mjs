@@ -16,6 +16,7 @@ async function createPackageFile() {
       "*": {
         chain: ["./chain/index.d.ts"],
         spec: ["./spec/index.d.ts"],
+        sdk: ["./sdk/index.d.ts"],
       },
     },
   }
@@ -37,7 +38,6 @@ async function run() {
   try {
     await createPackageFile()
     await includeFileInBuild("./readme.md")
-    // await includeFileInBuild("./LICENSE")
   } catch (err) {
     console.error(err)
     process.exit(1)
