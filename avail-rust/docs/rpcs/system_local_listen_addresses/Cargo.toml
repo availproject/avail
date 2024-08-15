@@ -5,5 +5,5 @@ name = "system-local-listen-addresses"
 edition = "2021"
 
 [dependencies]
-avail-rust = { path = "../../../../." }
+avail-rust = { git = "https://github.com/availproject/avail" }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }

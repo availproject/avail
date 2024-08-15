@@ -112,6 +112,14 @@ impl System {
 		Self { client }
 	}
 
+	pub async fn account_next_index(&self, account: String) -> Result<u32, subxt::Error> {
+		let value: u32 = self
+			.client
+			.request("system_accountNextIndex", rpc_params![account])
+			.await?;
+		Ok(value)
+	}
+
 	pub async fn chain(&self) -> Result<String, subxt::Error> {
 		let value: String = self.client.request("system_chain", rpc_params![]).await?;
 		Ok(value)
@@ -184,14 +192,6 @@ impl System {
 		let value: String = self.client.request("system_version", rpc_params![]).await?;
 		Ok(value)
 	}
-
-	pub async fn account_next_index(&self, account: String) -> Result<u32, subxt::Error> {
-		let value: u32 = self
-			.client
-			.request("system_accountNextIndex", rpc_params![account])
-			.await?;
-		Ok(value)
-	}
 }
 
 pub struct Chain {
@@ -205,19 +205,11 @@ impl Chain {
 
 	pub async fn get_block(
 		&self,
-		hash: Option<BlockHash>,
+		at: Option<BlockHash>,
 	) -> Result<AvailBlockDetailsRPC, subxt::Error> {
 		let value: AvailBlockDetailsRPC = self
 			.client
-			.request("chain_getBlock", rpc_params![hash])
-			.await?;
-		Ok(value)
-	}
-
-	pub async fn get_finalized_head(&self) -> Result<BlockHash, subxt::Error> {
-		let value: BlockHash = self
-			.client
-			.request("chain_getFinalizedHead", rpc_params![])
+			.request("chain_getBlock", rpc_params![at])
 			.await?;
 		Ok(value)
 	}
@@ -233,10 +225,18 @@ impl Chain {
 		Ok(value)
 	}
 
-	pub async fn get_header(&self, hash: Option<BlockHash>) -> Result<AvailHeader, subxt::Error> {
+	pub async fn get_finalized_head(&self) -> Result<BlockHash, subxt::Error> {
+		let value: BlockHash = self
+			.client
+			.request("chain_getFinalizedHead", rpc_params![])
+			.await?;
+		Ok(value)
+	}
+
+	pub async fn get_header(&self, at: Option<BlockHash>) -> Result<AvailHeader, subxt::Error> {
 		let value: AvailHeader = self
 			.client
-			.request("chain_getHeader", rpc_params![hash])
+			.request("chain_getHeader", rpc_params![at])
 			.await?;
 		Ok(value)
 	}
