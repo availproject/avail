@@ -12,7 +12,7 @@ export { WaitFor } from "./transactions.ts";
 export class SDK {
 	api: ApiPromise;
 	tx: Transactions;
-/* 	storage: Storage; */
+	/* 	storage: Storage; */
 
 	static async New(endpoint: string): Promise<SDK> {
 		const api = await ApiPromise.create({
@@ -27,6 +27,6 @@ export class SDK {
 	private constructor(api: ApiPromise) {
 		this.api = api;
 		this.tx = new Transactions(api);
-/* 		this.storage = new Storage(api); */
+		/* 		this.storage = new Storage(api); */
 	}
 }

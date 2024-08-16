@@ -1,8 +1,9 @@
 use crate::api_dev::api::data_availability::calls::types::submit_data::Data;
 use crate::utils_raw::fetch_transaction;
-use crate::{avail, AccountId, AvailBlocksClient, H256};
+use crate::BlockHash;
+use crate::{avail, AccountId, AvailBlocksClient};
 
-use subxt::utils::MultiAddress;
+use subxt_core::utils::MultiAddress;
 
 use avail::data_availability::calls::types as DataAvailabilityCalls;
 use avail::staking::calls::types as StakingCalls;
@@ -17,8 +18,8 @@ pub mod data_availability {
 
 	impl SubmitData {
 		pub async fn new(
-			block_hash: H256,
-			tx_hash: H256,
+			block_hash: BlockHash,
+			tx_hash: BlockHash,
 			blocks: &AvailBlocksClient,
 		) -> Result<Self, String> {
 			let transaction =
@@ -41,8 +42,8 @@ pub mod staking {
 
 	impl Nominate {
 		pub async fn new(
-			block_hash: H256,
-			tx_hash: H256,
+			block_hash: BlockHash,
+			tx_hash: BlockHash,
 			blocks: &AvailBlocksClient,
 		) -> Result<Self, String> {
 			let transaction =

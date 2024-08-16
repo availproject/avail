@@ -1,10 +1,13 @@
 use subxt::{
+	backend::legacy::rpc_methods::Bytes,
 	blocks::{Extrinsics, FoundExtrinsic, StaticExtrinsic},
 	tx::{TxProgress, TxStatus},
-	utils::H256,
 };
 
-use crate::{Api, AvailBlocksClient, AvailConfig, TransactionInBlock, WaitFor};
+use crate::{
+	Api, AppUncheckedExtrinsic, AvailBlocksClient, AvailConfig, BlockHash, TransactionInBlock,
+	WaitFor,
+};
 use utils_raw::*;
 
 #[derive(Debug, Clone, Copy)]
@@ -40,15 +43,15 @@ impl Util {
 
 	pub async fn fetch_transactions(
 		&self,
-		block_hash: H256,
+		block_hash: BlockHash,
 	) -> Result<Extrinsics<AvailConfig, Api>, FetchTransactionError> {
 		fetch_transactions(block_hash, &self.blocks_api).await
 	}
 
 	pub async fn fetch_transaction<E: StaticExtrinsic>(
 		&self,
-		block_hash: H256,
-		tx_hash: H256,
+		block_hash: BlockHash,
+		tx_hash: BlockHash,
 	) -> Result<FoundExtrinsic<AvailConfig, Api, E>, FetchTransactionError> {
 		fetch_transaction(block_hash, tx_hash, &self.blocks_api).await
 	}
@@ -60,13 +63,20 @@ impl Util {
 	) -> Result<TransactionInBlock, String> {
 		progress_transaction(maybe_tx_progress, wait_for).await
 	}
+
+	pub fn decode_raw_block_rpc_extrinsics(
+		&self,
+		extrinsics: Vec<Bytes>,
+	) -> Result<Vec<AppUncheckedExtrinsic>, String> {
+		decode_raw_block_rpc_extrinsics(extrinsics)
+	}
 }
 
 pub mod utils_raw {
 	pub use super::*;
 
 	pub async fn fetch_transactions(
-		block_hash: H256,
+		block_hash: BlockHash,
 		blocks_api: &AvailBlocksClient,
 	) -> Result<Extrinsics<AvailConfig, Api>, FetchTransactionError> {
 		let block = blocks_api.at(block_hash).await;
@@ -85,8 +95,8 @@ pub mod utils_raw {
 	}
 
 	pub async fn fetch_transaction<E: StaticExtrinsic>(
-		block_hash: H256,
-		tx_hash: H256,
+		block_hash: BlockHash,
+		tx_hash: BlockHash,
 		blocks_api: &AvailBlocksClient,
 	) -> Result<FoundExtrinsic<AvailConfig, Api, E>, FetchTransactionError> {
 		let extrinsics = fetch_transactions(block_hash, blocks_api).await?;
@@ -145,5 +155,16 @@ pub mod utils_raw {
 		}
 
 		Err(String::from("Something went wrong."))
+	}
+
+	pub fn decode_raw_block_rpc_extrinsics(
+		extrinsics: Vec<Bytes>,
+	) -> Result<Vec<AppUncheckedExtrinsic>, String> {
+		let extrinsics: Result<Vec<AppUncheckedExtrinsic>, String> = extrinsics
+			.into_iter()
+			.map(|e| AppUncheckedExtrinsic::try_from(e))
+			.collect();
+
+		extrinsics
 	}
 }

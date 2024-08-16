@@ -7,11 +7,11 @@ use crate::api_dev::api::Call;
 use crate::sdk::WaitFor;
 use crate::utils_raw::progress_transaction;
 use crate::{
-	avail, transaction_data, AccountId, Api, AvailBlocksClient, RewardDestination, TxApi, H256,
+	avail, transaction_data, AccountId, Api, AvailBlocksClient, BlockHash, RewardDestination, TxApi,
 };
 
 use std::str::FromStr;
-use subxt::utils::MultiAddress;
+use subxt_core::utils::MultiAddress;
 use subxt_signer::sr25519::Keypair;
 
 use avail::balances::events as BalancesEvents;
@@ -23,94 +23,94 @@ use avail::system::events as SystemEvents;
 pub struct TransferAllTxSuccess {
 	pub event: BalancesEvents::Transfer,
 	pub event2: Option<SystemEvents::KilledAccount>,
-	pub tx_hash: H256,
-	pub block_hash: H256,
+	pub tx_hash: BlockHash,
+	pub block_hash: BlockHash,
 }
 
 pub struct TransferAllowDeathTxSuccess {
 	pub event: BalancesEvents::Transfer,
 	pub event2: Option<SystemEvents::KilledAccount>,
-	pub tx_hash: H256,
-	pub block_hash: H256,
+	pub tx_hash: BlockHash,
+	pub block_hash: BlockHash,
 }
 
 pub struct TransferKeepAliveTxSuccess {
 	pub event: BalancesEvents::Transfer,
-	pub tx_hash: H256,
-	pub block_hash: H256,
+	pub tx_hash: BlockHash,
+	pub block_hash: BlockHash,
 }
 
 pub struct BondTxSuccess {
 	pub event: StakingEvents::Bonded,
-	pub tx_hash: H256,
-	pub block_hash: H256,
+	pub tx_hash: BlockHash,
+	pub block_hash: BlockHash,
 }
 
 pub struct BondExtraTxSuccess {
 	pub event: StakingEvents::Bonded,
-	pub tx_hash: H256,
-	pub block_hash: H256,
+	pub tx_hash: BlockHash,
+	pub block_hash: BlockHash,
 }
 
 pub struct ChillTxSuccess {
 	pub event: Option<StakingEvents::Chilled>,
-	pub tx_hash: H256,
-	pub block_hash: H256,
+	pub tx_hash: BlockHash,
+	pub block_hash: BlockHash,
 }
 
 pub struct ChillOtherTxSuccess {
 	pub event: StakingEvents::Chilled,
-	pub tx_hash: H256,
-	pub block_hash: H256,
+	pub tx_hash: BlockHash,
+	pub block_hash: BlockHash,
 }
 
 pub struct NominateTxSuccess {
 	pub tx_data: transaction_data::staking::Nominate,
-	pub tx_hash: H256,
-	pub block_hash: H256,
+	pub tx_hash: BlockHash,
+	pub block_hash: BlockHash,
 }
 
 pub struct UnbondTxSuccess {
 	pub event: StakingEvents::Unbonded,
-	pub tx_hash: H256,
-	pub block_hash: H256,
+	pub tx_hash: BlockHash,
+	pub block_hash: BlockHash,
 }
 
 pub struct ValidateTxSuccess {
 	pub event: StakingEvents::ValidatorPrefsSet,
-	pub tx_hash: H256,
-	pub block_hash: H256,
+	pub tx_hash: BlockHash,
+	pub block_hash: BlockHash,
 }
 
 pub struct SubmitDataTxSuccess {
 	pub event: DataAvailabilityEvents::DataSubmitted,
 	pub tx_data: transaction_data::data_availability::SubmitData,
-	pub tx_hash: H256,
-	pub block_hash: H256,
+	pub tx_hash: BlockHash,
+	pub block_hash: BlockHash,
 }
 
 pub struct CreateApplicationKeyTxSuccess {
 	pub event: DataAvailabilityEvents::ApplicationKeyCreated,
-	pub tx_hash: H256,
-	pub block_hash: H256,
+	pub tx_hash: BlockHash,
+	pub block_hash: BlockHash,
 }
 
 pub struct SetApplicationKeyTxSuccess {
 	pub event: DataAvailabilityEvents::ApplicationKeySet,
-	pub tx_hash: H256,
-	pub block_hash: H256,
+	pub tx_hash: BlockHash,
+	pub block_hash: BlockHash,
 }
 
 pub struct SubmitBlockLengthProposalTxSuccess {
 	pub event: DataAvailabilityEvents::BlockLengthProposalSubmitted,
-	pub tx_hash: H256,
-	pub block_hash: H256,
+	pub tx_hash: BlockHash,
+	pub block_hash: BlockHash,
 }
 
 pub struct SetSubmitDataFeeModifierTxSuccess {
 	pub event: DataAvailabilityEvents::SubmitDataFeeModifierSet,
-	pub tx_hash: H256,
-	pub block_hash: H256,
+	pub tx_hash: BlockHash,
+	pub block_hash: BlockHash,
 }
 
 pub struct Transactions {
@@ -813,17 +813,15 @@ impl DataAvailability {
 
 #[cfg(test)]
 mod tests {
-	use crate::Cell;
-
 	use super::*;
-	use subxt_signer::sr25519::dev;
 
 	#[tokio::test]
 	async fn testing_function() {
 		let sdk = crate::sdk::SDK::new("ws://127.0.0.1:9944").await.unwrap();
-		let h =
-			H256::from_str("0x6c5ebed687ed008b76028072fe1ad0a06ecf3c00dd9067aa049ea14e180702f8")
-				.unwrap();
+		let h = BlockHash::from_str(
+			"0x6c5ebed687ed008b76028072fe1ad0a06ecf3c00dd9067aa049ea14e180702f8",
+		)
+		.unwrap();
 		match sdk.rpc.kate.query_rows(vec![0], Some(h)).await {
 			Ok(a) => {
 				dbg!(a);

@@ -9,6 +9,7 @@ version = "0.1.0"
 
 [dependencies]
 serde = { version = "1.0.195", features = ["derive", ] }
+serde_json = { version = "1.0.124" }
 derive_more = "0.99.17"
 subxt = { version = "0.37" }
 subxt-core = { version = "0.37" }
@@ -23,6 +24,7 @@ avail-core = {  git = "https://github.com/availproject/avail-core", tag = "core-
 hex = { version = "0.4" }
 base58 = { version = "0.2.0" }
 tokio = { version = "1.21.2" }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-8", default-features = false }
 
 [patch.crates-io]
 sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-8" }
