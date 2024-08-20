@@ -1,7 +1,6 @@
 #### Labels
 - L1 - Available throught SDK as a function
 - L2 - Can be done but requires extra work
-- L3 - Needs to be done manually by using the exposed underlying SDK
 
 ## Extrinsics
 
