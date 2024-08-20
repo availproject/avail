@@ -539,7 +539,7 @@ impl<T: Config> Pallet<T> {
 				remainder,
 			});
 
-			// FUSION CHANGE : 
+			// FUSION CHANGE :
 			T::FusionExt::insert_era_fusion_reward(active_era.index, fusion_payout);
 
 			// Set ending era reward.

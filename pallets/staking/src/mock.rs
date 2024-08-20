@@ -302,9 +302,9 @@ impl OnStakingUpdate<AccountId, Balance> for EventListenerMock {
 
 pub struct MockEraProvider;
 impl pallet_fusion::EraProvider for MockEraProvider {
-    fn current_era() -> EraIndex {
-        0
-    }
+	fn current_era() -> EraIndex {
+		0
+	}
 }
 
 parameter_types! {

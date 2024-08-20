@@ -138,9 +138,9 @@ impl pallet_authority_discovery::Config for Runtime {
 }
 
 impl pallet_fusion::EraProvider for Runtime {
-    fn current_era() -> EraIndex {
-        pallet_staking::Pallet::<Self>::current_era().unwrap_or_default()
-    }
+	fn current_era() -> EraIndex {
+		pallet_staking::Pallet::<Self>::current_era().unwrap_or_default()
+	}
 }
 
 parameter_types! {
