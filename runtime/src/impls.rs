@@ -1,10 +1,10 @@
 use crate::{
 	constants, prod_or_fast, voter_bags, weights, AccountId, AccountIndex, Babe, Balances, Block,
-	BlockNumber, ElectionProviderMultiPhase, Everything, Hash, Header, Historical, ImOnline,
-	ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo,
-	Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason,
-	RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, SessionKeys, Signature,
-	SignedPayload, Staking, System, Timestamp, TransactionPayment, Treasury, TxPause,
+	BlockNumber, ElectionProviderMultiPhase, Everything, Fusion, Hash, Header, Historical,
+	ImOnline, ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller,
+	PalletInfo, Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent,
+	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, SessionKeys,
+	Signature, SignedPayload, Staking, System, Timestamp, TransactionPayment, Treasury, TxPause,
 	UncheckedExtrinsic, VoterList, MINUTES, SLOT_DURATION, VERSION,
 };
 use avail_core::{
@@ -41,6 +41,7 @@ use sp_runtime::{
 	traits::{self, BlakeTwo256, Bounded, Convert, IdentityLookup, OpaqueKeys},
 	FixedPointNumber, FixedU128, Perbill, Permill, Perquintill,
 };
+use sp_staking::EraIndex;
 
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
 	<T as frame_system::Config>::AccountId,
@@ -134,6 +135,24 @@ impl pallet_offences::Config for Runtime {
 
 impl pallet_authority_discovery::Config for Runtime {
 	type MaxAuthorities = constants::MaxAuthorities;
+}
+
+impl pallet_fusion::EraProvider for Runtime {
+    fn current_era() -> EraIndex {
+        pallet_staking::Pallet::<Self>::current_era().unwrap_or_default()
+    }
+}
+
+parameter_types! {
+	pub const FusionPayoutPercentage: Perbill = Perbill::from_percent(10);
+}
+impl pallet_fusion::Config for Runtime {
+	type Currency = Balances;
+	type FusionPayoutPercentage = FusionPayoutPercentage;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type EraProvider = Self;
+	type WeightInfo = weights::pallet_fusion::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -522,6 +541,7 @@ impl pallet_staking::Config for Runtime {
 	type UnixTime = Timestamp;
 	type VoterList = VoterList;
 	type WeightInfo = weights::pallet_staking::WeightInfo<Runtime>;
+	type FusionExt = Fusion;
 }
 
 /// The numbers configured here could always be more than the maximum limits of staking pallet

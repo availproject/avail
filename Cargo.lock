@@ -2156,6 +2156,7 @@ dependencies = [
  "pallet-balances",
  "pallet-collective",
  "pallet-election-provider-multi-phase",
+ "pallet-fusion",
  "pallet-grandpa",
  "pallet-identity",
  "pallet-im-online",
@@ -6094,6 +6095,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-fusion"
+version = "1.0.0"
+dependencies = [
+ "avail-core",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-grandpa"
 version = "28.0.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch-8#fdbd3a9cb323c191bc90bacf79112800c64c6d8a"
@@ -6343,7 +6362,6 @@ dependencies = [
 [[package]]
 name = "pallet-staking"
 version = "28.0.0"
-source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch-8#fdbd3a9cb323c191bc90bacf79112800c64c6d8a"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -6351,33 +6369,41 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-authorship",
+ "pallet-bags-list",
+ "pallet-balances",
+ "pallet-fusion",
  "pallet-session",
+ "pallet-staking-reward-curve",
+ "pallet-timestamp",
  "parity-scale-codec",
  "rand_chacha 0.2.2",
  "scale-info",
  "serde",
  "sp-application-crypto",
+ "sp-core",
  "sp-io",
+ "sp-npos-elections",
  "sp-runtime",
  "sp-staking",
  "sp-std",
+ "sp-tracing",
+ "substrate-test-utils",
 ]
 
 [[package]]
 name = "pallet-staking-reward-curve"
 version = "11.0.0"
-source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch-8#fdbd3a9cb323c191bc90bacf79112800c64c6d8a"
 dependencies = [
  "proc-macro-crate 3.1.0",
  "proc-macro2",
  "quote",
+ "sp-runtime",
  "syn 2.0.53",
 ]
 
 [[package]]
 name = "pallet-staking-reward-fn"
 version = "19.0.0"
-source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch-8#fdbd3a9cb323c191bc90bacf79112800c64c6d8a"
 dependencies = [
  "log",
  "sp-arithmetic",
@@ -6386,7 +6412,6 @@ dependencies = [
 [[package]]
 name = "pallet-staking-runtime-api"
 version = "14.0.0"
-source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch-8#fdbd3a9cb323c191bc90bacf79112800c64c6d8a"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -10411,6 +10436,15 @@ dependencies = [
  "sp-state-machine",
  "sp-trie",
  "trie-db 0.28.0",
+]
+
+[[package]]
+name = "substrate-test-utils"
+version = "4.0.0-dev"
+source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch-8#fdbd3a9cb323c191bc90bacf79112800c64c6d8a"
+dependencies = [
+ "futures",
+ "tokio",
 ]
 
 [[package]]
