@@ -2,7 +2,9 @@
 
 use super::*;
 use crate::Pallet;
-use frame_benchmarking::{impl_benchmark_test_suite, v1::BenchmarkError, v2::*};
+use frame_benchmarking::{
+	impl_benchmark_test_suite, v1::BenchmarkError, v2::*, whitelisted_caller,
+};
 use frame_system::RawOrigin;
 
 #[benchmarks(
@@ -12,11 +14,12 @@ mod benchmarks {
 	use super::*;
 
 	#[benchmark]
-	fn mandate() -> Result<(), BenchmarkError> {
-		let call: <T as Config>::RuntimeCall = frame_system::Call::remark { remark: vec![] }.into();
+	fn claim_era_fusion_reward() -> Result<(), BenchmarkError> {
+		let caller = whitelisted_caller::<T::AccountId>();
+		let origin = RawOrigin::Signed(caller);
 
 		#[extrinsic_call]
-		_(RawOrigin::Root, Box::new(call));
+		_(origin, 0);
 
 		Ok(())
 	}
