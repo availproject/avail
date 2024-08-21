@@ -5,6 +5,7 @@ use crate::Pallet;
 use frame_benchmarking::{
 	impl_benchmark_test_suite, v1::BenchmarkError, v2::*, whitelisted_caller,
 };
+use frame_support::storage::bounded_vec::BoundedVec;
 use frame_system::RawOrigin;
 
 #[benchmarks(
@@ -14,12 +15,12 @@ mod benchmarks {
 	use super::*;
 
 	#[benchmark]
-	fn claim_era_fusion_reward() -> Result<(), BenchmarkError> {
+	fn set_fusion_pool() -> Result<(), BenchmarkError> {
 		let caller = whitelisted_caller::<T::AccountId>();
-		let origin = RawOrigin::Signed(caller);
+		let origin = RawOrigin::Signed(caller.clone());
 
 		#[extrinsic_call]
-		_(origin, 0);
+		_(origin, caller, BoundedVec::default(), BoundedVec::default());
 
 		Ok(())
 	}
