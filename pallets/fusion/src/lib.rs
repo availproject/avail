@@ -16,8 +16,8 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use scale_info::{build::Fields, Path, Type};
-use sp_core::{Pair, H160};
-use sp_runtime::{app_crypto::sr25519, Perbill, Saturating};
+use sp_core::H160;
+use sp_runtime::{AccountId32, Perbill, Saturating};
 use sp_staking::EraIndex;
 use sp_std::prelude::*;
 pub use weights::WeightInfo;
@@ -48,11 +48,12 @@ where
 	T::AccountId: TypeInfo,
 {
 	fn default() -> Self {
-		let alice_pair =
-			sr25519::Pair::from_string("//Alice", None).expect("static values are valid; qed");
-		let alice_public = alice_pair.public();
-		let alice_account_id = T::AccountId::decode(&mut &alice_public.encode()[..])
-			.expect("AccountId32 is a valid AccountId; qed");
+		let account: AccountId32 =
+			hex_literal::hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"]
+				.into();
+
+		let alice_account_id =
+			T::AccountId::decode(&mut &account.encode()[..]).expect("Valid AccountId; qed");
 
 		FusionPool {
 			owner: alice_account_id,

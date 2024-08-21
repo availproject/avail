@@ -6102,6 +6102,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "hex-literal",
  "pallet-balances",
  "parity-scale-codec",
  "scale-info",
