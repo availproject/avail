@@ -13,7 +13,7 @@ To run the examples provided in the `docs/extrinsics` directory, follow these st
 npm i -g ts-node
 ```
 
-2. From the avail-js folder, install all necessary dependencies:
+2. From the avail-js/docs folder, install all necessary dependencies:
 
 ```bash
 npm install
