@@ -1,0 +1,11 @@
+{
+  "name": "avail-js-docs",
+  "version": "0.0.1",
+  "description": "Shows a basic usage of the Avail-js SDK",
+  "dependencies": {
+    "avail-js-sdk": "^0.2.14"
+  },
+  "resolutions": {
+    "ws": ">=8.17.1"
+  }
+}

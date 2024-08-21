@@ -1,6 +1,6 @@
 import { Keyring } from "@polkadot/api"
-import { SDK } from "../../src/sdk/"
-import { WaitFor } from "../../src/sdk/transactions"
+import { SDK } from "avail-js-sdk"
+import { WaitFor } from "avail-js-sdk/sdk/transactions"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
