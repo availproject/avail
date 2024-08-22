@@ -42,7 +42,7 @@ where
 	pub owner: T::AccountId,
 	pub members: BoundedVec<EvmAddress, ConstU32<100>>,
 	// TODO: tie the bounds with max nominations
-	pub candidates: BoundedVec<T::AccountId, ConstU32<16>>,
+	pub targets: BoundedVec<T::AccountId, ConstU32<16>>,
 }
 impl<T: Config> Default for FusionPool<T>
 where
@@ -59,7 +59,7 @@ where
 		FusionPool {
 			owner: alice_account_id,
 			members: BoundedVec::default(),
-			candidates: BoundedVec::default(),
+			targets: BoundedVec::default(),
 		}
 	}
 }
@@ -87,7 +87,7 @@ where
 					})
 					.field(|f| {
 						f.ty::<BoundedVec<T::AccountId, ConstU32<100>>>()
-							.name("candidates")
+							.name("targets")
 							.type_name("BoundedVec<T::AccountId, ConstU32<100>>")
 					}),
 			)
@@ -166,7 +166,7 @@ pub mod pallet {
 		FusionPoolUpdated {
 			owner: T::AccountId,
 			members: BoundedVec<EvmAddress, ConstU32<100>>,
-			candidates: BoundedVec<T::AccountId, ConstU32<16>>,
+			targets: BoundedVec<T::AccountId, ConstU32<16>>,
 		},
 	}
 
@@ -212,12 +212,12 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			owner: T::AccountId,
 			members: BoundedVec<EvmAddress, ConstU32<100>>,
-			candidates: BoundedVec<T::AccountId, ConstU32<16>>,
+			targets: BoundedVec<T::AccountId, ConstU32<16>>,
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 
 			// Call the trait function to update the pool
-			Self::do_set_fusion_pool(owner, members, candidates)?;
+			Self::do_set_fusion_pool(owner, members, targets)?;
 
 			Ok(())
 		}
@@ -237,7 +237,7 @@ pub trait FusionExt<AccountId, Balance> {
 	fn do_set_fusion_pool(
 		owner: AccountId,
 		members: BoundedVec<EvmAddress, ConstU32<100>>,
-		candidates: BoundedVec<AccountId, ConstU32<16>>,
+		targets: BoundedVec<AccountId, ConstU32<16>>,
 	) -> DispatchResult;
 	fn get_pool_data() -> (AccountId, Balance, BoundedVec<AccountId, ConstU32<16>>);
 }
@@ -305,13 +305,13 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 	fn do_set_fusion_pool(
 		owner: T::AccountId,
 		members: BoundedVec<EvmAddress, ConstU32<100>>,
-		candidates: BoundedVec<T::AccountId, ConstU32<16>>,
+		targets: BoundedVec<T::AccountId, ConstU32<16>>,
 	) -> DispatchResult {
 		// Create a new FusionPool with the provided values
 		let new_pool = FusionPool {
 			owner: owner.clone(),
 			members: members.clone(),
-			candidates: candidates.clone(),
+			targets: targets.clone(),
 		};
 
 		// Update the storage with the new FusionPool
@@ -321,7 +321,7 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 		Self::deposit_event(Event::FusionPoolUpdated {
 			owner,
 			members,
-			candidates,
+			targets,
 		});
 
 		Ok(())
@@ -335,6 +335,6 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 		let fusion_pool = MainFusionPool::<T>::get();
 		let pool_bal = TotalInLedgers::<T>::get();
 		// ideally pool account should be a pot (keyless), for now we take owner
-		(fusion_pool.owner, pool_bal, fusion_pool.candidates)
+		(fusion_pool.owner, pool_bal, fusion_pool.targets)
 	}
 }
