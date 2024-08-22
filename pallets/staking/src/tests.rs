@@ -5810,7 +5810,8 @@ mod election_data_provider {
 				// remove staker with lower bond by limiting the number of voters and check
 				// `MinimumActiveStake` again after electing voters.
 				let bounds = ElectionBoundsBuilder::default()
-					.voters_count(5.into())
+					// -1 to filter out fusion pool, which has 0 stake by default
+					.voters_count(4.into())
 					.build();
 				assert_ok!(<Staking as ElectionDataProvider>::electing_voters(
 					bounds.voters
@@ -6004,7 +6005,8 @@ mod election_data_provider {
 					Staking::electing_voters(bounds_builder.voters_count(1.into()).build().voters)
 						.unwrap()
 						.len(),
-					1
+					// +1 for fusion pool
+					1 + 1
 				);
 
 				// if voter count limit is equal..
