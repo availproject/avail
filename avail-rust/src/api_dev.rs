@@ -7,7 +7,7 @@ pub mod api {
 	mod root_mod {
 		pub use super::*;
 	}
-	pub static PALLETS: [&str; 32usize] = [
+	pub static PALLETS: [&str; 33usize] = [
 		"System",
 		"Utility",
 		"Babe",
@@ -40,6 +40,7 @@ pub mod api {
 		"Proxy",
 		"TxPause",
 		"TreasuryCommittee",
+		"Fusion",
 	];
 	pub static RUNTIME_APIS: [&str; 0usize] = [];
 	#[doc = r" The error type returned when there is a runtime issue."]
@@ -147,6 +148,9 @@ pub mod api {
 		pub fn treasury_committee(&self) -> treasury_committee::constants::ConstantsApi {
 			treasury_committee::constants::ConstantsApi
 		}
+		pub fn fusion(&self) -> fusion::constants::ConstantsApi {
+			fusion::constants::ConstantsApi
+		}
 	}
 	pub struct StorageApi;
 	impl StorageApi {
@@ -242,6 +246,9 @@ pub mod api {
 		pub fn treasury_committee(&self) -> treasury_committee::storage::StorageApi {
 			treasury_committee::storage::StorageApi
 		}
+		pub fn fusion(&self) -> fusion::storage::StorageApi {
+			fusion::storage::StorageApi
+		}
 	}
 	pub struct TransactionApi;
 	impl TransactionApi {
@@ -325,6 +332,9 @@ pub mod api {
 		pub fn treasury_committee(&self) -> treasury_committee::calls::TransactionApi {
 			treasury_committee::calls::TransactionApi
 		}
+		pub fn fusion(&self) -> fusion::calls::TransactionApi {
+			fusion::calls::TransactionApi
+		}
 	}
 	#[doc = r" check whether the metadata provided is aligned with this statically generated code."]
 	pub fn is_codegen_valid_for(metadata: &::subxt::ext::subxt_core::Metadata) -> bool {
@@ -335,9 +345,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				148u8, 12u8, 243u8, 11u8, 255u8, 142u8, 213u8, 44u8, 184u8, 247u8, 227u8, 65u8,
-				234u8, 244u8, 145u8, 160u8, 253u8, 42u8, 34u8, 97u8, 147u8, 152u8, 2u8, 243u8,
-				19u8, 174u8, 223u8, 111u8, 223u8, 74u8, 62u8, 127u8,
+				81u8, 169u8, 164u8, 170u8, 243u8, 118u8, 30u8, 225u8, 255u8, 139u8, 83u8, 193u8,
+				97u8, 114u8, 16u8, 6u8, 37u8, 63u8, 246u8, 220u8, 143u8, 111u8, 186u8, 137u8, 53u8,
+				205u8, 164u8, 2u8, 31u8, 11u8, 194u8, 138u8,
 			]
 	}
 	pub mod system {
@@ -1451,9 +1461,9 @@ pub mod api {
 						"Events",
 						(),
 						[
-							239u8, 111u8, 63u8, 41u8, 191u8, 106u8, 191u8, 30u8, 155u8, 96u8, 22u8,
-							62u8, 123u8, 153u8, 12u8, 130u8, 56u8, 114u8, 1u8, 181u8, 40u8, 123u8,
-							133u8, 123u8, 172u8, 46u8, 125u8, 173u8, 37u8, 103u8, 179u8, 154u8,
+							189u8, 190u8, 111u8, 136u8, 213u8, 5u8, 99u8, 245u8, 112u8, 222u8,
+							190u8, 3u8, 175u8, 252u8, 1u8, 160u8, 224u8, 191u8, 51u8, 175u8, 67u8,
+							148u8, 134u8, 220u8, 80u8, 176u8, 77u8, 37u8, 48u8, 85u8, 252u8, 249u8,
 						],
 					)
 				}
@@ -2036,9 +2046,9 @@ pub mod api {
 						"batch",
 						types::Batch { calls },
 						[
-							59u8, 238u8, 126u8, 43u8, 117u8, 180u8, 36u8, 149u8, 242u8, 156u8,
-							175u8, 145u8, 59u8, 2u8, 76u8, 204u8, 203u8, 207u8, 62u8, 222u8, 96u8,
-							66u8, 144u8, 67u8, 240u8, 234u8, 251u8, 13u8, 105u8, 21u8, 212u8, 12u8,
+							186u8, 84u8, 89u8, 124u8, 11u8, 75u8, 208u8, 120u8, 47u8, 82u8, 220u8,
+							190u8, 214u8, 52u8, 1u8, 182u8, 105u8, 225u8, 174u8, 17u8, 44u8, 132u8,
+							109u8, 212u8, 233u8, 218u8, 56u8, 218u8, 189u8, 181u8, 203u8, 123u8,
 						],
 					)
 				}
@@ -2056,9 +2066,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							0u8, 248u8, 127u8, 188u8, 16u8, 192u8, 51u8, 171u8, 106u8, 232u8, 58u8,
-							153u8, 125u8, 176u8, 16u8, 63u8, 195u8, 40u8, 162u8, 249u8, 91u8, 9u8,
-							157u8, 221u8, 104u8, 114u8, 58u8, 200u8, 120u8, 2u8, 12u8, 76u8,
+							145u8, 116u8, 58u8, 146u8, 168u8, 23u8, 7u8, 169u8, 69u8, 218u8, 6u8,
+							34u8, 233u8, 26u8, 173u8, 166u8, 253u8, 195u8, 144u8, 66u8, 226u8,
+							132u8, 8u8, 215u8, 55u8, 211u8, 245u8, 81u8, 254u8, 245u8, 244u8, 57u8,
 						],
 					)
 				}
@@ -2072,9 +2082,9 @@ pub mod api {
 						"batch_all",
 						types::BatchAll { calls },
 						[
-							14u8, 72u8, 188u8, 6u8, 107u8, 160u8, 249u8, 103u8, 31u8, 18u8, 105u8,
-							136u8, 213u8, 197u8, 188u8, 140u8, 208u8, 47u8, 110u8, 207u8, 182u8,
-							210u8, 97u8, 113u8, 246u8, 212u8, 93u8, 102u8, 90u8, 9u8, 140u8, 85u8,
+							254u8, 213u8, 225u8, 226u8, 223u8, 124u8, 58u8, 243u8, 162u8, 212u8,
+							179u8, 122u8, 34u8, 218u8, 34u8, 143u8, 131u8, 161u8, 71u8, 0u8, 120u8,
+							202u8, 180u8, 46u8, 126u8, 110u8, 18u8, 175u8, 113u8, 7u8, 81u8, 102u8,
 						],
 					)
 				}
@@ -2092,9 +2102,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							95u8, 107u8, 172u8, 90u8, 201u8, 203u8, 62u8, 244u8, 73u8, 237u8, 29u8,
-							181u8, 2u8, 154u8, 212u8, 147u8, 128u8, 242u8, 73u8, 252u8, 228u8,
-							19u8, 109u8, 158u8, 247u8, 233u8, 8u8, 38u8, 192u8, 252u8, 46u8, 143u8,
+							80u8, 23u8, 180u8, 11u8, 149u8, 229u8, 135u8, 162u8, 111u8, 158u8,
+							143u8, 171u8, 50u8, 185u8, 52u8, 146u8, 144u8, 18u8, 92u8, 241u8, 17u8,
+							165u8, 92u8, 51u8, 224u8, 31u8, 108u8, 201u8, 188u8, 60u8, 56u8, 24u8,
 						],
 					)
 				}
@@ -2108,10 +2118,10 @@ pub mod api {
 						"force_batch",
 						types::ForceBatch { calls },
 						[
-							48u8, 158u8, 160u8, 136u8, 59u8, 230u8, 247u8, 137u8, 99u8, 8u8, 197u8,
-							78u8, 173u8, 171u8, 102u8, 106u8, 141u8, 194u8, 170u8, 39u8, 214u8,
-							240u8, 130u8, 227u8, 44u8, 34u8, 212u8, 144u8, 168u8, 59u8, 216u8,
-							30u8,
+							37u8, 217u8, 207u8, 173u8, 216u8, 28u8, 159u8, 191u8, 240u8, 1u8,
+							134u8, 176u8, 1u8, 124u8, 173u8, 181u8, 223u8, 242u8, 41u8, 98u8,
+							183u8, 140u8, 146u8, 228u8, 228u8, 29u8, 99u8, 134u8, 50u8, 130u8,
+							160u8, 200u8,
 						],
 					)
 				}
@@ -2129,9 +2139,10 @@ pub mod api {
 							weight,
 						},
 						[
-							75u8, 38u8, 97u8, 33u8, 2u8, 123u8, 164u8, 202u8, 217u8, 11u8, 57u8,
-							61u8, 194u8, 96u8, 55u8, 2u8, 60u8, 248u8, 209u8, 21u8, 81u8, 252u8,
-							102u8, 82u8, 11u8, 110u8, 16u8, 237u8, 212u8, 111u8, 105u8, 239u8,
+							61u8, 56u8, 97u8, 91u8, 118u8, 193u8, 135u8, 165u8, 205u8, 70u8, 204u8,
+							108u8, 70u8, 184u8, 145u8, 28u8, 102u8, 192u8, 237u8, 143u8, 49u8,
+							224u8, 10u8, 69u8, 168u8, 163u8, 108u8, 41u8, 119u8, 148u8, 107u8,
+							24u8,
 						],
 					)
 				}
@@ -11465,9 +11476,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							180u8, 118u8, 44u8, 210u8, 221u8, 93u8, 160u8, 13u8, 34u8, 75u8, 58u8,
-							189u8, 132u8, 4u8, 63u8, 125u8, 28u8, 153u8, 16u8, 88u8, 164u8, 246u8,
-							245u8, 106u8, 142u8, 139u8, 166u8, 48u8, 14u8, 231u8, 218u8, 91u8,
+							39u8, 151u8, 37u8, 76u8, 73u8, 58u8, 12u8, 155u8, 33u8, 28u8, 47u8,
+							122u8, 191u8, 244u8, 249u8, 39u8, 75u8, 11u8, 91u8, 53u8, 5u8, 109u8,
+							173u8, 58u8, 140u8, 120u8, 3u8, 153u8, 141u8, 202u8, 244u8, 49u8,
 						],
 					)
 				}
@@ -11487,9 +11498,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							166u8, 5u8, 13u8, 248u8, 31u8, 198u8, 16u8, 77u8, 5u8, 12u8, 13u8,
-							68u8, 37u8, 228u8, 5u8, 237u8, 19u8, 10u8, 134u8, 222u8, 133u8, 18u8,
-							73u8, 86u8, 219u8, 248u8, 167u8, 144u8, 138u8, 43u8, 118u8, 86u8,
+							8u8, 113u8, 18u8, 78u8, 107u8, 28u8, 73u8, 28u8, 60u8, 230u8, 13u8,
+							3u8, 16u8, 173u8, 73u8, 20u8, 184u8, 12u8, 60u8, 27u8, 227u8, 15u8,
+							76u8, 177u8, 100u8, 128u8, 46u8, 121u8, 214u8, 34u8, 232u8, 70u8,
 						],
 					)
 				}
@@ -11842,10 +11853,10 @@ pub mod api {
 						"ProposalOf",
 						(),
 						[
-							75u8, 49u8, 229u8, 175u8, 180u8, 93u8, 238u8, 239u8, 179u8, 169u8,
-							77u8, 201u8, 227u8, 174u8, 227u8, 39u8, 9u8, 73u8, 228u8, 53u8, 122u8,
-							194u8, 178u8, 200u8, 135u8, 1u8, 142u8, 170u8, 110u8, 110u8, 234u8,
-							176u8,
+							216u8, 62u8, 138u8, 109u8, 159u8, 229u8, 170u8, 254u8, 2u8, 244u8,
+							162u8, 46u8, 243u8, 193u8, 2u8, 188u8, 225u8, 165u8, 33u8, 137u8,
+							246u8, 101u8, 64u8, 22u8, 225u8, 65u8, 5u8, 242u8, 92u8, 15u8, 61u8,
+							202u8,
 						],
 					)
 				}
@@ -11869,10 +11880,10 @@ pub mod api {
 							_0.borrow(),
 						),
 						[
-							75u8, 49u8, 229u8, 175u8, 180u8, 93u8, 238u8, 239u8, 179u8, 169u8,
-							77u8, 201u8, 227u8, 174u8, 227u8, 39u8, 9u8, 73u8, 228u8, 53u8, 122u8,
-							194u8, 178u8, 200u8, 135u8, 1u8, 142u8, 170u8, 110u8, 110u8, 234u8,
-							176u8,
+							216u8, 62u8, 138u8, 109u8, 159u8, 229u8, 170u8, 254u8, 2u8, 244u8,
+							162u8, 46u8, 243u8, 193u8, 2u8, 188u8, 225u8, 165u8, 33u8, 137u8,
+							246u8, 101u8, 64u8, 22u8, 225u8, 65u8, 5u8, 242u8, 92u8, 15u8, 61u8,
+							202u8,
 						],
 					)
 				}
@@ -13972,10 +13983,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							166u8, 115u8, 141u8, 183u8, 204u8, 91u8, 152u8, 147u8, 135u8, 196u8,
-							118u8, 198u8, 193u8, 205u8, 123u8, 34u8, 143u8, 54u8, 139u8, 153u8,
-							193u8, 248u8, 25u8, 175u8, 138u8, 173u8, 243u8, 68u8, 193u8, 112u8,
-							23u8, 212u8,
+							182u8, 194u8, 188u8, 80u8, 131u8, 122u8, 112u8, 122u8, 86u8, 76u8,
+							234u8, 51u8, 172u8, 19u8, 26u8, 62u8, 123u8, 25u8, 111u8, 131u8, 35u8,
+							96u8, 5u8, 223u8, 114u8, 63u8, 177u8, 228u8, 220u8, 178u8, 144u8,
+							134u8,
 						],
 					)
 				}
@@ -13994,9 +14005,9 @@ pub mod api {
 							weight,
 						},
 						[
-							247u8, 74u8, 110u8, 189u8, 2u8, 185u8, 90u8, 37u8, 39u8, 137u8, 107u8,
-							239u8, 93u8, 177u8, 47u8, 204u8, 175u8, 14u8, 181u8, 89u8, 242u8, 80u8,
-							165u8, 84u8, 247u8, 118u8, 15u8, 207u8, 105u8, 166u8, 192u8, 94u8,
+							150u8, 217u8, 171u8, 45u8, 101u8, 155u8, 234u8, 167u8, 39u8, 251u8,
+							235u8, 212u8, 47u8, 251u8, 6u8, 9u8, 222u8, 155u8, 204u8, 177u8, 122u8,
+							6u8, 104u8, 118u8, 44u8, 176u8, 164u8, 21u8, 182u8, 206u8, 191u8, 98u8,
 						],
 					)
 				}
@@ -14031,10 +14042,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							236u8, 169u8, 173u8, 9u8, 212u8, 82u8, 75u8, 37u8, 61u8, 59u8, 18u8,
-							127u8, 255u8, 137u8, 200u8, 183u8, 59u8, 197u8, 101u8, 229u8, 231u8,
-							45u8, 188u8, 229u8, 106u8, 184u8, 0u8, 99u8, 160u8, 208u8, 202u8,
-							127u8,
+							131u8, 16u8, 221u8, 109u8, 222u8, 176u8, 92u8, 172u8, 230u8, 148u8,
+							166u8, 221u8, 38u8, 111u8, 72u8, 222u8, 60u8, 40u8, 221u8, 85u8, 2u8,
+							208u8, 15u8, 6u8, 113u8, 121u8, 246u8, 245u8, 151u8, 85u8, 240u8, 26u8,
 						],
 					)
 				}
@@ -15244,10 +15254,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							97u8, 95u8, 10u8, 213u8, 74u8, 74u8, 1u8, 115u8, 102u8, 46u8, 59u8,
-							137u8, 238u8, 218u8, 199u8, 123u8, 126u8, 199u8, 151u8, 53u8, 146u8,
-							213u8, 114u8, 110u8, 138u8, 20u8, 247u8, 45u8, 111u8, 172u8, 198u8,
-							210u8,
+							175u8, 10u8, 40u8, 242u8, 253u8, 137u8, 115u8, 240u8, 190u8, 180u8,
+							106u8, 119u8, 134u8, 140u8, 94u8, 210u8, 106u8, 216u8, 49u8, 200u8,
+							252u8, 124u8, 115u8, 129u8, 25u8, 150u8, 46u8, 186u8, 171u8, 92u8,
+							166u8, 39u8,
 						],
 					)
 				}
@@ -15289,10 +15299,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							3u8, 158u8, 23u8, 214u8, 22u8, 204u8, 58u8, 247u8, 253u8, 184u8, 83u8,
-							233u8, 193u8, 125u8, 242u8, 99u8, 190u8, 52u8, 196u8, 234u8, 212u8,
-							253u8, 65u8, 205u8, 223u8, 36u8, 138u8, 29u8, 103u8, 26u8, 242u8,
-							234u8,
+							32u8, 107u8, 223u8, 252u8, 158u8, 226u8, 17u8, 141u8, 43u8, 105u8,
+							136u8, 47u8, 47u8, 13u8, 38u8, 0u8, 15u8, 198u8, 15u8, 255u8, 247u8,
+							95u8, 243u8, 165u8, 155u8, 159u8, 113u8, 198u8, 97u8, 77u8, 84u8, 73u8,
 						],
 					)
 				}
@@ -15330,9 +15339,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							22u8, 71u8, 191u8, 79u8, 122u8, 6u8, 215u8, 181u8, 246u8, 110u8, 250u8,
-							109u8, 11u8, 195u8, 65u8, 244u8, 7u8, 84u8, 97u8, 22u8, 185u8, 202u8,
-							225u8, 218u8, 102u8, 132u8, 29u8, 236u8, 226u8, 178u8, 222u8, 223u8,
+							160u8, 8u8, 142u8, 22u8, 36u8, 28u8, 161u8, 2u8, 203u8, 128u8, 70u8,
+							220u8, 40u8, 174u8, 183u8, 224u8, 78u8, 19u8, 148u8, 149u8, 149u8,
+							84u8, 48u8, 134u8, 95u8, 229u8, 62u8, 77u8, 190u8, 21u8, 241u8, 77u8,
 						],
 					)
 				}
@@ -15357,9 +15366,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							144u8, 202u8, 10u8, 176u8, 1u8, 23u8, 90u8, 68u8, 233u8, 29u8, 149u8,
-							63u8, 98u8, 207u8, 27u8, 205u8, 209u8, 224u8, 174u8, 64u8, 62u8, 59u8,
-							113u8, 161u8, 69u8, 252u8, 182u8, 90u8, 238u8, 152u8, 34u8, 222u8,
+							185u8, 109u8, 93u8, 157u8, 10u8, 81u8, 112u8, 86u8, 83u8, 116u8, 153u8,
+							219u8, 0u8, 126u8, 149u8, 240u8, 221u8, 144u8, 132u8, 211u8, 219u8,
+							118u8, 136u8, 182u8, 248u8, 83u8, 173u8, 215u8, 167u8, 250u8, 35u8,
+							194u8,
 						],
 					)
 				}
@@ -17216,9 +17226,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							194u8, 166u8, 228u8, 119u8, 58u8, 235u8, 79u8, 33u8, 93u8, 186u8, 40u8,
-							69u8, 3u8, 203u8, 230u8, 106u8, 46u8, 100u8, 194u8, 248u8, 69u8, 201u8,
-							226u8, 234u8, 158u8, 131u8, 195u8, 228u8, 46u8, 117u8, 128u8, 195u8,
+							38u8, 215u8, 45u8, 152u8, 202u8, 197u8, 115u8, 153u8, 194u8, 140u8,
+							4u8, 215u8, 32u8, 117u8, 6u8, 159u8, 251u8, 17u8, 10u8, 239u8, 14u8,
+							70u8, 121u8, 67u8, 162u8, 170u8, 138u8, 142u8, 220u8, 38u8, 211u8,
+							234u8,
 						],
 					)
 				}
@@ -17242,10 +17253,10 @@ pub mod api {
 							max_weight,
 						},
 						[
-							5u8, 71u8, 242u8, 184u8, 92u8, 207u8, 163u8, 170u8, 183u8, 130u8,
-							209u8, 16u8, 56u8, 43u8, 229u8, 45u8, 229u8, 175u8, 112u8, 111u8, 49u8,
-							116u8, 71u8, 220u8, 205u8, 142u8, 80u8, 115u8, 228u8, 152u8, 192u8,
-							251u8,
+							101u8, 112u8, 146u8, 51u8, 205u8, 241u8, 31u8, 169u8, 214u8, 229u8,
+							154u8, 84u8, 179u8, 245u8, 117u8, 58u8, 180u8, 43u8, 108u8, 144u8,
+							58u8, 221u8, 32u8, 37u8, 216u8, 231u8, 135u8, 185u8, 228u8, 199u8,
+							172u8, 18u8,
 						],
 					)
 				}
@@ -22886,10 +22897,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							151u8, 63u8, 205u8, 239u8, 92u8, 11u8, 3u8, 127u8, 86u8, 205u8, 177u8,
-							127u8, 111u8, 241u8, 176u8, 204u8, 100u8, 200u8, 100u8, 104u8, 9u8,
-							211u8, 20u8, 231u8, 196u8, 94u8, 75u8, 187u8, 136u8, 137u8, 253u8,
-							219u8,
+							10u8, 7u8, 143u8, 197u8, 69u8, 189u8, 163u8, 190u8, 210u8, 229u8, 34u8,
+							34u8, 217u8, 168u8, 91u8, 199u8, 191u8, 56u8, 140u8, 127u8, 243u8,
+							250u8, 75u8, 185u8, 123u8, 133u8, 224u8, 108u8, 214u8, 54u8, 179u8,
+							243u8,
 						],
 					)
 				}
@@ -25104,10 +25115,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							102u8, 245u8, 126u8, 48u8, 106u8, 89u8, 246u8, 56u8, 161u8, 27u8,
-							161u8, 160u8, 231u8, 24u8, 0u8, 71u8, 72u8, 208u8, 202u8, 72u8, 11u8,
-							226u8, 152u8, 132u8, 67u8, 241u8, 130u8, 226u8, 228u8, 220u8, 224u8,
-							239u8,
+							93u8, 73u8, 37u8, 105u8, 123u8, 235u8, 112u8, 212u8, 101u8, 211u8,
+							236u8, 201u8, 158u8, 103u8, 56u8, 95u8, 23u8, 163u8, 159u8, 6u8, 235u8,
+							5u8, 212u8, 151u8, 192u8, 43u8, 245u8, 54u8, 28u8, 83u8, 161u8, 209u8,
 						],
 					)
 				}
@@ -25294,10 +25304,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							188u8, 86u8, 186u8, 50u8, 142u8, 183u8, 40u8, 130u8, 224u8, 57u8,
-							202u8, 159u8, 82u8, 67u8, 231u8, 251u8, 50u8, 7u8, 202u8, 94u8, 6u8,
-							248u8, 59u8, 187u8, 29u8, 227u8, 254u8, 118u8, 113u8, 239u8, 83u8,
-							27u8,
+							240u8, 235u8, 219u8, 12u8, 30u8, 242u8, 211u8, 200u8, 191u8, 17u8,
+							176u8, 60u8, 143u8, 94u8, 120u8, 176u8, 206u8, 39u8, 84u8, 178u8,
+							155u8, 59u8, 73u8, 21u8, 12u8, 232u8, 14u8, 249u8, 66u8, 215u8, 76u8,
+							28u8,
 						],
 					)
 				}
@@ -26287,9 +26297,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							180u8, 118u8, 44u8, 210u8, 221u8, 93u8, 160u8, 13u8, 34u8, 75u8, 58u8,
-							189u8, 132u8, 4u8, 63u8, 125u8, 28u8, 153u8, 16u8, 88u8, 164u8, 246u8,
-							245u8, 106u8, 142u8, 139u8, 166u8, 48u8, 14u8, 231u8, 218u8, 91u8,
+							39u8, 151u8, 37u8, 76u8, 73u8, 58u8, 12u8, 155u8, 33u8, 28u8, 47u8,
+							122u8, 191u8, 244u8, 249u8, 39u8, 75u8, 11u8, 91u8, 53u8, 5u8, 109u8,
+							173u8, 58u8, 140u8, 120u8, 3u8, 153u8, 141u8, 202u8, 244u8, 49u8,
 						],
 					)
 				}
@@ -26309,9 +26319,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							166u8, 5u8, 13u8, 248u8, 31u8, 198u8, 16u8, 77u8, 5u8, 12u8, 13u8,
-							68u8, 37u8, 228u8, 5u8, 237u8, 19u8, 10u8, 134u8, 222u8, 133u8, 18u8,
-							73u8, 86u8, 219u8, 248u8, 167u8, 144u8, 138u8, 43u8, 118u8, 86u8,
+							8u8, 113u8, 18u8, 78u8, 107u8, 28u8, 73u8, 28u8, 60u8, 230u8, 13u8,
+							3u8, 16u8, 173u8, 73u8, 20u8, 184u8, 12u8, 60u8, 27u8, 227u8, 15u8,
+							76u8, 177u8, 100u8, 128u8, 46u8, 121u8, 214u8, 34u8, 232u8, 70u8,
 						],
 					)
 				}
@@ -26664,10 +26674,10 @@ pub mod api {
 						"ProposalOf",
 						(),
 						[
-							75u8, 49u8, 229u8, 175u8, 180u8, 93u8, 238u8, 239u8, 179u8, 169u8,
-							77u8, 201u8, 227u8, 174u8, 227u8, 39u8, 9u8, 73u8, 228u8, 53u8, 122u8,
-							194u8, 178u8, 200u8, 135u8, 1u8, 142u8, 170u8, 110u8, 110u8, 234u8,
-							176u8,
+							216u8, 62u8, 138u8, 109u8, 159u8, 229u8, 170u8, 254u8, 2u8, 244u8,
+							162u8, 46u8, 243u8, 193u8, 2u8, 188u8, 225u8, 165u8, 33u8, 137u8,
+							246u8, 101u8, 64u8, 22u8, 225u8, 65u8, 5u8, 242u8, 92u8, 15u8, 61u8,
+							202u8,
 						],
 					)
 				}
@@ -26691,10 +26701,10 @@ pub mod api {
 							_0.borrow(),
 						),
 						[
-							75u8, 49u8, 229u8, 175u8, 180u8, 93u8, 238u8, 239u8, 179u8, 169u8,
-							77u8, 201u8, 227u8, 174u8, 227u8, 39u8, 9u8, 73u8, 228u8, 53u8, 122u8,
-							194u8, 178u8, 200u8, 135u8, 1u8, 142u8, 170u8, 110u8, 110u8, 234u8,
-							176u8,
+							216u8, 62u8, 138u8, 109u8, 159u8, 229u8, 170u8, 254u8, 2u8, 244u8,
+							162u8, 46u8, 243u8, 193u8, 2u8, 188u8, 225u8, 165u8, 33u8, 137u8,
+							246u8, 101u8, 64u8, 22u8, 225u8, 65u8, 5u8, 242u8, 92u8, 15u8, 61u8,
+							202u8,
 						],
 					)
 				}
@@ -26830,6 +26840,566 @@ pub mod api {
 							56u8, 202u8, 219u8, 86u8, 5u8, 65u8, 245u8, 148u8, 138u8, 243u8, 210u8,
 							128u8, 234u8, 216u8, 240u8, 219u8, 123u8, 235u8, 21u8, 158u8, 237u8,
 							112u8,
+						],
+					)
+				}
+			}
+		}
+	}
+	pub mod fusion {
+		use super::root_mod;
+		use super::runtime_types;
+		#[doc = "The `Error` enum of this pallet."]
+		pub type Error = runtime_types::pallet_fusion::pallet::Error;
+		#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
+		pub type Call = runtime_types::pallet_fusion::pallet::Call;
+		pub mod calls {
+			use super::root_mod;
+			use super::runtime_types;
+			type DispatchError = runtime_types::sp_runtime::DispatchError;
+			pub mod types {
+				use super::runtime_types;
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::add_fusion_ledger_entry`]."]
+				pub struct AddFusionLedgerEntry {
+					pub evm_address: add_fusion_ledger_entry::EvmAddress,
+					pub amount: add_fusion_ledger_entry::Amount,
+				}
+				pub mod add_fusion_ledger_entry {
+					use super::runtime_types;
+					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type Amount = ::core::primitive::u128;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for AddFusionLedgerEntry {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "add_fusion_ledger_entry";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::set_total_in_ledgers`]."]
+				pub struct SetTotalInLedgers {
+					pub total: set_total_in_ledgers::Total,
+				}
+				pub mod set_total_in_ledgers {
+					use super::runtime_types;
+					pub type Total = ::core::primitive::u128;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for SetTotalInLedgers {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "set_total_in_ledgers";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::claim_era_fusion_reward`]."]
+				pub struct ClaimEraFusionReward {
+					pub era: claim_era_fusion_reward::Era,
+				}
+				pub mod claim_era_fusion_reward {
+					use super::runtime_types;
+					pub type Era = ::core::primitive::u32;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for ClaimEraFusionReward {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "claim_era_fusion_reward";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::set_fusion_pool`]."]
+				pub struct SetFusionPool {
+					pub owner: set_fusion_pool::Owner,
+					pub members: set_fusion_pool::Members,
+					pub candidates: set_fusion_pool::Candidates,
+				}
+				pub mod set_fusion_pool {
+					use super::runtime_types;
+					pub type Owner = ::subxt::ext::subxt_core::utils::AccountId32;
+					pub type Members = runtime_types::bounded_collections::bounded_vec::BoundedVec<
+						::subxt::ext::subxt_core::utils::H160,
+					>;
+					pub type Candidates =
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::subxt::ext::subxt_core::utils::AccountId32,
+						>;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for SetFusionPool {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "set_fusion_pool";
+				}
+			}
+			pub struct TransactionApi;
+			impl TransactionApi {
+				#[doc = "See [`Pallet::add_fusion_ledger_entry`]."]
+				pub fn add_fusion_ledger_entry(
+					&self,
+					evm_address: types::add_fusion_ledger_entry::EvmAddress,
+					amount: types::add_fusion_ledger_entry::Amount,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::AddFusionLedgerEntry>
+				{
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"add_fusion_ledger_entry",
+						types::AddFusionLedgerEntry {
+							evm_address,
+							amount,
+						},
+						[
+							126u8, 157u8, 108u8, 185u8, 236u8, 103u8, 95u8, 184u8, 207u8, 139u8,
+							76u8, 1u8, 228u8, 213u8, 60u8, 107u8, 39u8, 62u8, 17u8, 136u8, 204u8,
+							122u8, 184u8, 253u8, 103u8, 114u8, 206u8, 52u8, 68u8, 58u8, 179u8,
+							118u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::set_total_in_ledgers`]."]
+				pub fn set_total_in_ledgers(
+					&self,
+					total: types::set_total_in_ledgers::Total,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::SetTotalInLedgers>
+				{
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"set_total_in_ledgers",
+						types::SetTotalInLedgers { total },
+						[
+							61u8, 66u8, 65u8, 169u8, 201u8, 123u8, 217u8, 58u8, 178u8, 81u8, 217u8,
+							133u8, 147u8, 183u8, 175u8, 99u8, 37u8, 52u8, 61u8, 156u8, 54u8, 166u8,
+							99u8, 215u8, 122u8, 145u8, 181u8, 36u8, 63u8, 233u8, 86u8, 230u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::claim_era_fusion_reward`]."]
+				pub fn claim_era_fusion_reward(
+					&self,
+					era: types::claim_era_fusion_reward::Era,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::ClaimEraFusionReward>
+				{
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"claim_era_fusion_reward",
+						types::ClaimEraFusionReward { era },
+						[
+							212u8, 132u8, 24u8, 43u8, 82u8, 215u8, 194u8, 176u8, 27u8, 94u8, 26u8,
+							96u8, 12u8, 189u8, 66u8, 249u8, 71u8, 97u8, 106u8, 31u8, 224u8, 180u8,
+							77u8, 168u8, 152u8, 254u8, 234u8, 48u8, 37u8, 223u8, 97u8, 222u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::set_fusion_pool`]."]
+				pub fn set_fusion_pool(
+					&self,
+					owner: types::set_fusion_pool::Owner,
+					members: types::set_fusion_pool::Members,
+					candidates: types::set_fusion_pool::Candidates,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::SetFusionPool> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"set_fusion_pool",
+						types::SetFusionPool {
+							owner,
+							members,
+							candidates,
+						},
+						[
+							151u8, 138u8, 105u8, 90u8, 175u8, 63u8, 78u8, 55u8, 207u8, 182u8, 85u8,
+							54u8, 220u8, 22u8, 131u8, 187u8, 90u8, 154u8, 230u8, 158u8, 21u8, 10u8,
+							192u8, 204u8, 164u8, 133u8, 93u8, 146u8, 191u8, 190u8, 186u8, 72u8,
+						],
+					)
+				}
+			}
+		}
+		#[doc = "The `Event` enum of this pallet"]
+		pub type Event = runtime_types::pallet_fusion::pallet::Event;
+		pub mod events {
+			use super::runtime_types;
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "A new entry was added in the FusionLedgers"]
+			pub struct FusionLedgerEntryAdded {
+				pub evm_address: fusion_ledger_entry_added::EvmAddress,
+				pub amount: fusion_ledger_entry_added::Amount,
+				pub start_era: fusion_ledger_entry_added::StartEra,
+			}
+			pub mod fusion_ledger_entry_added {
+				use super::runtime_types;
+				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type Amount = ::core::primitive::u128;
+				pub type StartEra = ::core::primitive::u32;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for FusionLedgerEntryAdded {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "FusionLedgerEntryAdded";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Total in ledgers has been updated"]
+			pub struct FusionLedgerTotalUpdated {
+				pub total: fusion_ledger_total_updated::Total,
+			}
+			pub mod fusion_ledger_total_updated {
+				use super::runtime_types;
+				pub type Total = ::core::primitive::u128;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for FusionLedgerTotalUpdated {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "FusionLedgerTotalUpdated";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "The Fusion part of payout was insterted in the Fusion storage"]
+			pub struct EraFusionRewardInserted {
+				pub era: era_fusion_reward_inserted::Era,
+				pub reward: era_fusion_reward_inserted::Reward,
+			}
+			pub mod era_fusion_reward_inserted {
+				use super::runtime_types;
+				pub type Era = ::core::primitive::u32;
+				pub type Reward = ::core::primitive::u128;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for EraFusionRewardInserted {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "EraFusionRewardInserted";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "A reward was claimed from the Era Fusion Reward storage"]
+			pub struct EraFusionRewardClaimed {
+				pub who: era_fusion_reward_claimed::Who,
+				pub owner_account: era_fusion_reward_claimed::OwnerAccount,
+				pub era: era_fusion_reward_claimed::Era,
+				pub reward: era_fusion_reward_claimed::Reward,
+			}
+			pub mod era_fusion_reward_claimed {
+				use super::runtime_types;
+				pub type Who = ::subxt::ext::subxt_core::utils::AccountId32;
+				pub type OwnerAccount = ::subxt::ext::subxt_core::utils::AccountId32;
+				pub type Era = ::core::primitive::u32;
+				pub type Reward = ::core::primitive::u128;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for EraFusionRewardClaimed {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "EraFusionRewardClaimed";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "The Fusion Pool has been updated"]
+			pub struct FusionPoolUpdated {
+				pub owner: fusion_pool_updated::Owner,
+				pub members: fusion_pool_updated::Members,
+				pub candidates: fusion_pool_updated::Candidates,
+			}
+			pub mod fusion_pool_updated {
+				use super::runtime_types;
+				pub type Owner = ::subxt::ext::subxt_core::utils::AccountId32;
+				pub type Members = runtime_types::bounded_collections::bounded_vec::BoundedVec<
+					::subxt::ext::subxt_core::utils::H160,
+				>;
+				pub type Candidates = runtime_types::bounded_collections::bounded_vec::BoundedVec<
+					::subxt::ext::subxt_core::utils::AccountId32,
+				>;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for FusionPoolUpdated {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "FusionPoolUpdated";
+			}
+		}
+		pub mod storage {
+			use super::runtime_types;
+			pub mod types {
+				use super::runtime_types;
+				pub mod fusion_ledgers {
+					use super::runtime_types;
+					pub type FusionLedgers =
+						runtime_types::pallet_fusion::FusionLedger<::core::primitive::u128>;
+					pub type Param0 = ::subxt::ext::subxt_core::utils::H160;
+				}
+				pub mod eras_fusion_reward {
+					use super::runtime_types;
+					pub type ErasFusionReward = ::core::primitive::u128;
+					pub type Param0 = ::core::primitive::u32;
+				}
+				pub mod total_in_ledgers {
+					use super::runtime_types;
+					pub type TotalInLedgers = ::core::primitive::u128;
+				}
+				pub mod main_fusion_pool {
+					use super::runtime_types;
+					pub type MainFusionPool = runtime_types::pallet_fusion::FusionPool;
+				}
+			}
+			pub struct StorageApi;
+			impl StorageApi {
+				pub fn fusion_ledgers_iter(
+					&self,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::fusion_ledgers::FusionLedgers,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionLedgers",
+						(),
+						[
+							195u8, 174u8, 69u8, 96u8, 118u8, 242u8, 132u8, 175u8, 184u8, 131u8,
+							183u8, 75u8, 103u8, 236u8, 142u8, 181u8, 239u8, 142u8, 24u8, 199u8,
+							89u8, 188u8, 167u8, 70u8, 169u8, 250u8, 77u8, 7u8, 115u8, 157u8, 24u8,
+							252u8,
+						],
+					)
+				}
+				pub fn fusion_ledgers(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::fusion_ledgers::Param0>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+						types::fusion_ledgers::Param0,
+					>,
+					types::fusion_ledgers::FusionLedgers,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
+					(),
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionLedgers",
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+							_0.borrow(),
+						),
+						[
+							195u8, 174u8, 69u8, 96u8, 118u8, 242u8, 132u8, 175u8, 184u8, 131u8,
+							183u8, 75u8, 103u8, 236u8, 142u8, 181u8, 239u8, 142u8, 24u8, 199u8,
+							89u8, 188u8, 167u8, 70u8, 169u8, 250u8, 77u8, 7u8, 115u8, 157u8, 24u8,
+							252u8,
+						],
+					)
+				}
+				pub fn eras_fusion_reward_iter(
+					&self,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::eras_fusion_reward::ErasFusionReward,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"ErasFusionReward",
+						(),
+						[
+							96u8, 141u8, 214u8, 170u8, 136u8, 100u8, 76u8, 6u8, 231u8, 196u8,
+							164u8, 156u8, 191u8, 184u8, 204u8, 167u8, 192u8, 151u8, 104u8, 169u8,
+							171u8, 92u8, 196u8, 78u8, 65u8, 152u8, 157u8, 103u8, 7u8, 52u8, 159u8,
+							145u8,
+						],
+					)
+				}
+				pub fn eras_fusion_reward(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::eras_fusion_reward::Param0>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+						types::eras_fusion_reward::Param0,
+					>,
+					types::eras_fusion_reward::ErasFusionReward,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
+					(),
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"ErasFusionReward",
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+							_0.borrow(),
+						),
+						[
+							96u8, 141u8, 214u8, 170u8, 136u8, 100u8, 76u8, 6u8, 231u8, 196u8,
+							164u8, 156u8, 191u8, 184u8, 204u8, 167u8, 192u8, 151u8, 104u8, 169u8,
+							171u8, 92u8, 196u8, 78u8, 65u8, 152u8, 157u8, 103u8, 7u8, 52u8, 159u8,
+							145u8,
+						],
+					)
+				}
+				pub fn total_in_ledgers(
+					&self,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::total_in_ledgers::TotalInLedgers,
+					::subxt::ext::subxt_core::utils::Yes,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"TotalInLedgers",
+						(),
+						[
+							189u8, 208u8, 193u8, 235u8, 206u8, 74u8, 48u8, 89u8, 61u8, 156u8,
+							136u8, 180u8, 14u8, 61u8, 123u8, 90u8, 254u8, 160u8, 216u8, 182u8,
+							154u8, 169u8, 155u8, 38u8, 47u8, 95u8, 107u8, 79u8, 161u8, 1u8, 164u8,
+							238u8,
+						],
+					)
+				}
+				pub fn main_fusion_pool(
+					&self,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::main_fusion_pool::MainFusionPool,
+					::subxt::ext::subxt_core::utils::Yes,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"MainFusionPool",
+						(),
+						[
+							180u8, 107u8, 106u8, 249u8, 78u8, 194u8, 117u8, 225u8, 65u8, 32u8,
+							167u8, 141u8, 24u8, 204u8, 226u8, 65u8, 143u8, 211u8, 18u8, 88u8,
+							116u8, 232u8, 58u8, 203u8, 24u8, 142u8, 159u8, 2u8, 11u8, 235u8, 121u8,
+							157u8,
+						],
+					)
+				}
+			}
+		}
+		pub mod constants {
+			use super::runtime_types;
+			pub struct ConstantsApi;
+			impl ConstantsApi {
+				#[doc = " The percentage of reward to get from total era payout."]
+				pub fn fusion_payout_percentage(
+					&self,
+				) -> ::subxt::ext::subxt_core::constants::address::StaticAddress<
+					runtime_types::sp_arithmetic::per_things::Perbill,
+				> {
+					::subxt::ext::subxt_core::constants::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionPayoutPercentage",
+						[
+							65u8, 93u8, 120u8, 165u8, 204u8, 81u8, 159u8, 163u8, 93u8, 135u8,
+							114u8, 121u8, 147u8, 35u8, 215u8, 213u8, 4u8, 223u8, 83u8, 37u8, 225u8,
+							200u8, 189u8, 156u8, 140u8, 36u8, 58u8, 46u8, 42u8, 232u8, 155u8, 0u8,
 						],
 					)
 				}
@@ -27851,6 +28421,8 @@ pub mod api {
 				TxPause(runtime_types::pallet_tx_pause::pallet::Call),
 				#[codec(index = 42)]
 				TreasuryCommittee(runtime_types::pallet_collective::pallet::Call2),
+				#[codec(index = 43)]
+				Fusion(runtime_types::pallet_fusion::pallet::Call),
 			}
 			#[derive(
 				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
@@ -27916,6 +28488,8 @@ pub mod api {
 				TxPause(runtime_types::pallet_tx_pause::pallet::Error),
 				#[codec(index = 42)]
 				TreasuryCommittee(runtime_types::pallet_collective::pallet::Error),
+				#[codec(index = 43)]
+				Fusion(runtime_types::pallet_fusion::pallet::Error),
 			}
 			#[derive(
 				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
@@ -27985,6 +28559,8 @@ pub mod api {
 				TxPause(runtime_types::pallet_tx_pause::pallet::Event),
 				#[codec(index = 42)]
 				TreasuryCommittee(runtime_types::pallet_collective::pallet::Event),
+				#[codec(index = 43)]
+				Fusion(runtime_types::pallet_fusion::pallet::Event),
 			}
 			#[derive(
 				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
@@ -30264,6 +30840,172 @@ pub mod api {
 				pub voters: ::core::primitive::u32,
 				#[codec(compact)]
 				pub targets: ::core::primitive::u32,
+			}
+		}
+		pub mod pallet_fusion {
+			use super::runtime_types;
+			pub mod pallet {
+				use super::runtime_types;
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
+				pub enum Call {
+					#[codec(index = 0)]
+					#[doc = "See [`Pallet::add_fusion_ledger_entry`]."]
+					add_fusion_ledger_entry {
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						amount: ::core::primitive::u128,
+					},
+					#[codec(index = 1)]
+					#[doc = "See [`Pallet::set_total_in_ledgers`]."]
+					set_total_in_ledgers { total: ::core::primitive::u128 },
+					#[codec(index = 2)]
+					#[doc = "See [`Pallet::claim_era_fusion_reward`]."]
+					claim_era_fusion_reward { era: ::core::primitive::u32 },
+					#[codec(index = 3)]
+					#[doc = "See [`Pallet::set_fusion_pool`]."]
+					set_fusion_pool {
+						owner: ::subxt::ext::subxt_core::utils::AccountId32,
+						members: runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::subxt::ext::subxt_core::utils::H160,
+						>,
+						candidates: runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::subxt::ext::subxt_core::utils::AccountId32,
+						>,
+					},
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "The `Error` enum of this pallet."]
+				pub enum Error {
+					#[codec(index = 0)]
+					#[doc = "No Era Fusion Reward exists for the given era."]
+					NoEraFusionReward,
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "The `Event` enum of this pallet"]
+				pub enum Event {
+					#[codec(index = 0)]
+					#[doc = "A new entry was added in the FusionLedgers"]
+					FusionLedgerEntryAdded {
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						amount: ::core::primitive::u128,
+						start_era: ::core::primitive::u32,
+					},
+					#[codec(index = 1)]
+					#[doc = "Total in ledgers has been updated"]
+					FusionLedgerTotalUpdated { total: ::core::primitive::u128 },
+					#[codec(index = 2)]
+					#[doc = "The Fusion part of payout was insterted in the Fusion storage"]
+					EraFusionRewardInserted {
+						era: ::core::primitive::u32,
+						reward: ::core::primitive::u128,
+					},
+					#[codec(index = 3)]
+					#[doc = "A reward was claimed from the Era Fusion Reward storage"]
+					EraFusionRewardClaimed {
+						who: ::subxt::ext::subxt_core::utils::AccountId32,
+						owner_account: ::subxt::ext::subxt_core::utils::AccountId32,
+						era: ::core::primitive::u32,
+						reward: ::core::primitive::u128,
+					},
+					#[codec(index = 4)]
+					#[doc = "The Fusion Pool has been updated"]
+					FusionPoolUpdated {
+						owner: ::subxt::ext::subxt_core::utils::AccountId32,
+						members: runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::subxt::ext::subxt_core::utils::H160,
+						>,
+						candidates: runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::subxt::ext::subxt_core::utils::AccountId32,
+						>,
+					},
+				}
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			pub struct FusionLedger<_0> {
+				pub balance: _0,
+				pub start_era: ::core::primitive::u32,
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			pub struct FusionPool {
+				pub owner: ::subxt::ext::subxt_core::utils::AccountId32,
+				pub members: runtime_types::bounded_collections::bounded_vec::BoundedVec<
+					::subxt::ext::subxt_core::utils::H160,
+				>,
+				pub candidates: runtime_types::bounded_collections::bounded_vec::BoundedVec<
+					::subxt::ext::subxt_core::utils::AccountId32,
+				>,
 			}
 		}
 		pub mod pallet_grandpa {
