@@ -41,7 +41,8 @@ where
 {
 	pub owner: T::AccountId,
 	pub members: BoundedVec<EvmAddress, ConstU32<100>>,
-	pub candidates: BoundedVec<T::AccountId, ConstU32<100>>,
+	// TODO: tie the bounds with max nominations
+	pub candidates: BoundedVec<T::AccountId, ConstU32<16>>,
 }
 impl<T: Config> Default for FusionPool<T>
 where
@@ -165,7 +166,7 @@ pub mod pallet {
 		FusionPoolUpdated {
 			owner: T::AccountId,
 			members: BoundedVec<EvmAddress, ConstU32<100>>,
-			candidates: BoundedVec<T::AccountId, ConstU32<100>>,
+			candidates: BoundedVec<T::AccountId, ConstU32<16>>,
 		},
 	}
 
@@ -211,7 +212,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			owner: T::AccountId,
 			members: BoundedVec<EvmAddress, ConstU32<100>>,
-			candidates: BoundedVec<T::AccountId, ConstU32<100>>,
+			candidates: BoundedVec<T::AccountId, ConstU32<16>>,
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 
@@ -236,8 +237,9 @@ pub trait FusionExt<AccountId, Balance> {
 	fn do_set_fusion_pool(
 		owner: AccountId,
 		members: BoundedVec<EvmAddress, ConstU32<100>>,
-		candidates: BoundedVec<AccountId, ConstU32<100>>,
+		candidates: BoundedVec<AccountId, ConstU32<16>>,
 	) -> DispatchResult;
+	fn get_pool_data() -> (AccountId, Balance, BoundedVec<AccountId, ConstU32<16>>);
 }
 
 impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
@@ -284,7 +286,7 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 
 		let owner = fusion_pool.owner;
 
-		let era_reward = ErasFusionReward::<T>::get(&era).ok_or(Error::<T>::NoEraFusionReward)?;
+		let era_reward = ErasFusionReward::<T>::get(era).ok_or(Error::<T>::NoEraFusionReward)?;
 
 		T::Currency::deposit_creating(&owner, era_reward);
 
@@ -303,7 +305,7 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 	fn do_set_fusion_pool(
 		owner: T::AccountId,
 		members: BoundedVec<EvmAddress, ConstU32<100>>,
-		candidates: BoundedVec<T::AccountId, ConstU32<100>>,
+		candidates: BoundedVec<T::AccountId, ConstU32<16>>,
 	) -> DispatchResult {
 		// Create a new FusionPool with the provided values
 		let new_pool = FusionPool {
@@ -323,5 +325,16 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 		});
 
 		Ok(())
+	}
+
+	fn get_pool_data() -> (
+		T::AccountId,
+		BalanceOf<T>,
+		BoundedVec<T::AccountId, ConstU32<16>>,
+	) {
+		let fusion_pool = MainFusionPool::<T>::get();
+		let pool_bal = TotalInLedgers::<T>::get();
+		// ideally pool account should be a pot (keyless), for now we take owner
+		(fusion_pool.owner, pool_bal, fusion_pool.candidates)
 	}
 }
