@@ -7,20 +7,29 @@ version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+subxt = { version = "0.37", default-features = false, features = ["web", "jsonrpsee"] }
+subxt-core = { version = "0.37", default-features = false }
+subxt-signer = { version = "0.37", default-features = false, features = ["web", "sr25519", "subxt"] }
+avail-core = {  git = "https://github.com/availproject/avail-core", branch = "marko/wasm", default-features = false, features = ["serde", "runtime"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+subxt = { version = "0.37" }
+subxt-core = { version = "0.37" }
+subxt-signer = { version = "0.37" }
+avail-core = {  git = "https://github.com/availproject/avail-core", branch = "marko/wasm", features = ["serde", "runtime"] }
+
 [dependencies]
 serde = { version = "1.0.195", features = ["derive", ] }
 serde_json = { version = "1.0.124" }
 derive_more = "0.99.17"
-subxt = { version = "0.37", default-features = false, features = ["web", "jsonrpsee"] }
-subxt-core = { version = "0.37", default-features = false }
-subxt-signer = { version = "0.37", default-features = false, features = ["web", "sr25519", "subxt"] }
+
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
 	"derive",
 	"full",
 	"bit-vec",
 ] }
 scale-info = { version = "2.5.0", features = ["bit-vec"] }
-avail-core = {  git = "https://github.com/availproject/avail-core", branch = "marko/wasm", default-features = false, features = ["serde", "runtime"] }
 hex = { version = "0.4" }
 base58 = { version = "0.2.0" }
 tokio = { version = "1.21.2" }
