@@ -7,7 +7,6 @@ mod sdk;
 mod transactions;
 mod utils;
 
-
 // Export types for internal and external consumption
 pub mod transaction_data;
 
@@ -27,6 +26,7 @@ pub use primitives::*;
 pub use sdk::{WaitFor, SDK};
 
 pub use avail_core;
+pub use kate_recovery;
 pub use subxt;
 pub use subxt::config::polkadot::U256;
 pub use utils::utils_raw;
