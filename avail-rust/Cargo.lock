@@ -633,6 +633,7 @@ version = "0.1.0"
 dependencies = [
  "avail-core",
  "base58",
+ "bounded-collections",
  "derive_more",
  "hex",
  "kate-recovery",
