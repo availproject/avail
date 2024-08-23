@@ -7,7 +7,6 @@ mod sdk;
 mod transactions;
 mod utils;
 
-
 // Export types for internal and external consumption
 pub mod transaction_data;
 
