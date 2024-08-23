@@ -1,4 +1,4 @@
-use crate::primitives;
+use crate::{DefaultExtrinsicParams, DefaultExtrinsicParamsBuilder, AvailHeader};
 use subxt::{
 	backend::legacy::rpc_methods::{Block as BlockRPC, BlockDetails as BlockDetailsRPC},
 	blocks::BlocksClient,
@@ -30,11 +30,11 @@ pub type AvailBlockRPC = BlockRPC<AvailConfig>;
 
 /// A struct representing the signed extra and additional parameters required
 /// to construct a transaction for a avail node.
-pub type AvailExtrinsicParams<T> = primitives::DefaultExtrinsicParams<T>;
+pub type AvailExtrinsicParams<T> = DefaultExtrinsicParams<T>;
 
 /// A builder which leads to [`PolkadotExtrinsicParams`] being constructed.
 /// This is what you provide to methods like `sign_and_submit()`.
-pub type AvailExtrinsicParamsBuilder<T> = primitives::DefaultExtrinsicParamsBuilder<T>;
+pub type AvailExtrinsicParamsBuilder<T> = DefaultExtrinsicParamsBuilder<T>;
 
 #[derive(Clone, Copy, Default, Debug)]
 pub struct AppId(pub avail_core::AppId);
@@ -54,7 +54,7 @@ impl Config for AvailConfig {
 	type ExtrinsicParams = AvailExtrinsicParams<Self>;
 	type Hash = BlockHash;
 	type Hasher = BlakeTwo256;
-	type Header = primitives::AvailHeader;
+	type Header = AvailHeader;
 	type Signature = Signature;
 	type AssetId = u32;
 }
