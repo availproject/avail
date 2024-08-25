@@ -2,6 +2,7 @@ use crate::U256;
 use codec::{Decode, Encode};
 use derive_more::Constructor;
 use serde::{Deserialize, Serialize};
+use sp_core::ConstU32;
 
 /// Compatible with `kate::com::Cell`
 #[derive(Clone, Constructor, Debug, Serialize, Deserialize, Encode, Decode)]
@@ -28,6 +29,11 @@ where
 pub type GRawScalar = U256;
 pub type GRow = Vec<GRawScalar>;
 pub type GDataProof = (GRawScalar, GProof);
+
+pub type MaxCells = ConstU32<64>;
+pub type Cells = bounded_collections::BoundedVec<Cell, MaxCells>;
+pub type MaxRows = ConstU32<64>;
+pub type Rows = bounded_collections::BoundedVec<u32, MaxRows>;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(try_from = "Vec<u8>", into = "Vec<u8>")]

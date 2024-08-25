@@ -319,7 +319,7 @@ export class Staking {
 	): Promise<UnbondTxSuccess | GenericFailure> {
 		const optionWrapper = options || {};
 		const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-			this.api.tx.staking.unvond(value).signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
+			this.api.tx.staking.unbond(value).signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
 				standardCallback(result, res, waitFor);
 			}).catch((reason) => {
 				res(err(reason));

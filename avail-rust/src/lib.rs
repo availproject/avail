@@ -1,15 +1,14 @@
 mod api_dev;
 mod config;
 mod from_substrate;
-mod primitives;
 mod rpcs;
 mod sdk;
 mod transactions;
 mod utils;
 
-
 // Export types for internal and external consumption
 pub mod transaction_data;
+pub mod primitives;
 
 pub type RewardDestination =
 	api_dev::api::runtime_types::pallet_staking::RewardDestination<AccountId>;
@@ -23,11 +22,13 @@ pub use subxt_signer::{sr25519::Keypair, SecretUri};
 
 pub use api_dev::api as avail;
 pub use config::*;
-pub use primitives::*;
 pub use sdk::{WaitFor, SDK};
 
 pub use avail_core;
+pub use kate_recovery;
 pub use subxt;
 pub use subxt::config::polkadot::U256;
 pub use utils::utils_raw;
 pub use utils::FetchTransactionError;
+pub use primitives::block::{AvailHeader, AppUncheckedExtrinsic, DefaultExtrinsicParams, DefaultExtrinsicParamsBuilder};
+pub use primitives::kate::{Cell, GDataProof, GRow};

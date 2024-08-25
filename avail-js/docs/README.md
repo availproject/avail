@@ -74,9 +74,9 @@ On failure, a reason of failure is returned. On Success, ApplicationKeyCreated e
 ### Minimal Example
 
 ```js
-import { SDK } from "../../src/sdk"
 import { Keyring } from "@polkadot/api"
-import { WaitFor } from "../../src/sdk/transactions"
+import { SDK } from "avail-js-sdk"
+import { WaitFor } from "avail-js-sdk/sdk/transactions"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -126,9 +126,9 @@ On failure, a reason of failure is returned. On Success, DataSubmitted event, tr
 ### Minimal Example
 
 ```js
-import { SDK } from "../../src/sdk"
 import { Keyring } from "@polkadot/api"
-import { WaitFor } from "../../src/sdk/transactions"
+import { SDK } from "avail-js-sdk"
+import { WaitFor } from "avail-js-sdk/sdk/transactions"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -180,9 +180,9 @@ On failure, a reason of failure is returned. On Success, BlockLengthProposalSubm
 ### Minimal Example
 
 ```js
-import { SDK } from "../../src/sdk"
 import { Keyring } from "@polkadot/api"
-import { WaitFor } from "../../src/sdk/transactions"
+import { SDK } from "avail-js-sdk"
+import { WaitFor } from "avail-js-sdk/sdk/transactions"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -234,9 +234,9 @@ On failure, a reason of failure is returned. On Success, ApplicationKeySet event
 ### Minimal Example
 
 ```js
-import { SDK } from "../../src/sdk"
 import { Keyring } from "@polkadot/api"
-import { WaitFor } from "../../src/sdk/transactions"
+import { SDK } from "avail-js-sdk"
+import { WaitFor } from "avail-js-sdk/sdk/transactions"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -287,10 +287,10 @@ On failure, a reason of failure is returned. On Success, SubmitDataFeeModifierSe
 ### Minimal Example
 
 ```js
-import { SDK } from "../../src/sdk";
-import { Keyring } from "@polkadot/api";
-import { DispatchFeeModifier, WaitFor } from "../../src/sdk/transactions";
+import { Keyring } from "@polkadot/api"
 import { BN } from "@polkadot/util"
+import { SDK } from "avail-js-sdk"
+import { WaitFor, DispatchFeeModifier } from "avail-js-sdk/sdk/transactions"
 
 const main = async () => {
 	const providerEndpoint = "ws://127.0.0.1:9944";
@@ -363,10 +363,10 @@ On failure, a reason of failure is returned. On Success, TransferEvent event, tr
 ### Minimal Example
 
 ```js
-import { SDK } from "../../src/sdk"
 import { Keyring } from "@polkadot/api"
-import { WaitFor } from "../../src/sdk/transactions"
 import { BN } from "@polkadot/util"
+import { SDK } from "avail-js-sdk"
+import { WaitFor } from "avail-js-sdk/sdk/transactions"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -420,9 +420,9 @@ hash is returned.
 
 ```js
 import { Keyring } from "@polkadot/api"
-import { SDK } from "../../src/sdk"
-import { WaitFor } from "../../src/sdk/transactions"
 import { BN } from "@polkadot/util"
+import { SDK } from "avail-js-sdk"
+import { WaitFor } from "avail-js-sdk/sdk/transactions"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -477,8 +477,8 @@ hash is returned.
 
 ```js
 import { Keyring } from "@polkadot/api"
-import { SDK } from "../../src/sdk/"
-import { WaitFor } from "../../src/sdk/transactions"
+import { SDK } from "avail-js-sdk"
+import { WaitFor } from "avail-js-sdk/sdk/transactions"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -537,10 +537,10 @@ On failure, a reason of failure is returned. On Success, Bonded event, transacti
 ### Minimal Example
 
 ```js
-import { SDK } from "../../src/sdk"
 import { Keyring } from "@polkadot/api"
-import { WaitFor } from "../../src/sdk/transactions"
 import { BN } from "@polkadot/util"
+import { SDK } from "avail-js-sdk"
+import { WaitFor } from "avail-js-sdk/sdk/transactions"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -591,10 +591,10 @@ On failure, a reason of failure is returned. On Success, Bonded event, transacti
 ### Minimal Example
 
 ```js
-import { SDK } from "../../src/sdk"
 import { Keyring } from "@polkadot/api"
-import { WaitFor } from "../../src/sdk/transactions"
 import { BN } from "@polkadot/util"
+import { SDK } from "avail-js-sdk"
+import { WaitFor } from "avail-js-sdk/sdk/transactions"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -643,9 +643,9 @@ On failure, a reason of failure is returned. On Success, Chilled event, transact
 ### Minimal Example
 
 ```js
-import { SDK } from "../../src/sdk"
 import { Keyring } from "@polkadot/api"
-import { WaitFor } from "../../src/sdk/transactions"
+import { SDK } from "avail-js-sdk"
+import { WaitFor } from "avail-js-sdk/sdk/transactions"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -694,9 +694,9 @@ On failure, a reason of failure is returned. On Success, Chilled event, transact
 ### Minimal Example
 
 ```js
-import { SDK } from "../../src/sdk"
 import { Keyring } from "@polkadot/api"
-import { WaitFor } from "../../src/sdk/transactions"
+import { SDK } from "avail-js-sdk"
+import { WaitFor } from "avail-js-sdk/sdk/transactions"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -746,9 +746,9 @@ On failure, a reason of failure is returned. On Success, Nominate transaction da
 ### Minimal Example
 
 ```js
-import { SDK } from "../../src/sdk"
 import { Keyring } from "@polkadot/api"
-import { WaitFor } from "../../src/sdk/transactions"
+import { SDK } from "avail-js-sdk"
+import { WaitFor } from "avail-js-sdk/sdk/transactions"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -801,10 +801,10 @@ On failure, a reason of failure is returned. On Success, Unbonded event, transac
 ### Minimal Example
 
 ```js
-import { SDK } from "../../src/sdk"
 import { Keyring } from "@polkadot/api"
-import { WaitFor } from "../../src/sdk/transactions"
 import { BN } from "@polkadot/util"
+import { SDK } from "avail-js-sdk"
+import { WaitFor } from "avail-js-sdk/sdk/transactions"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -855,9 +855,9 @@ On failure, a reason of failure is returned. On Success, ValidatorPrefsSet event
 ### Minimal Example
 
 ```js
-import { SDK } from "../../src/sdk"
 import { Keyring } from "@polkadot/api"
-import { WaitFor } from "../../src/sdk/transactions"
+import { SDK } from "avail-js-sdk"
+import { WaitFor } from "avail-js-sdk/sdk/transactions"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
