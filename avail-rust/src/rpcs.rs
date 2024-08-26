@@ -13,6 +13,7 @@ use subxt::rpc_params;
 /// Arbitrary properties defined in chain spec as a JSON object
 pub type Properties = serde_json::map::Map<String, serde_json::Value>;
 
+#[derive(Clone)]
 pub struct Rpc {
 	pub client: RpcClient,
 	pub legacy_methods: LegacyRpcMethods<AvailConfig>,
@@ -45,6 +46,7 @@ impl Rpc {
 	}
 }
 
+#[derive(Clone)]
 pub struct Payment {
 	client: RpcClient,
 }
@@ -111,6 +113,7 @@ mod tests {
 	}
 }
 
+#[derive(Clone)]
 pub struct System {
 	client: RpcClient,
 }
@@ -202,6 +205,7 @@ impl System {
 	}
 }
 
+#[derive(Clone)]
 pub struct Chain {
 	client: RpcClient,
 }
@@ -250,6 +254,7 @@ impl Chain {
 	}
 }
 
+#[derive(Clone)]
 pub struct Author {
 	client: RpcClient,
 }
@@ -268,6 +273,7 @@ impl Author {
 	}
 }
 
+#[derive(Clone)]
 pub struct Kate {
 	client: RpcClient,
 }

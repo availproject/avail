@@ -31,6 +31,7 @@ impl FetchTransactionError {
 	}
 }
 
+#[derive(Clone)]
 pub struct Util {
 	blocks_api: AvailBlocksClient,
 }

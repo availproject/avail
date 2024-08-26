@@ -1,5 +1,6 @@
 use crate::{rpcs::Rpc, transactions::Transactions, utils::Util, Api};
 
+#[derive(Clone)]
 pub struct SDK {
 	pub api: Api,
 	pub tx: Transactions,
