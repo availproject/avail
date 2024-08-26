@@ -705,6 +705,7 @@ pub enum ProxyType {
 	Governance,
 	Staking,
 	IdentityJudgement,
+	NominationPools,
 }
 impl Default for ProxyType {
 	fn default() -> Self {
@@ -728,12 +729,20 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			),
 			ProxyType::Staking => matches!(
 				c,
-				RuntimeCall::Session(..) | RuntimeCall::Staking(..) | RuntimeCall::Utility(..)
+				RuntimeCall::Session(..)
+					| RuntimeCall::Staking(..)
+					| RuntimeCall::Utility(..)
+					| RuntimeCall::VoterList(..)
+					| RuntimeCall::NominationPools(..)
 			),
 			ProxyType::IdentityJudgement => matches!(
 				c,
 				RuntimeCall::Identity(pallet_identity::Call::provide_judgement { .. })
 					| RuntimeCall::Utility(..)
+			),
+			ProxyType::NominationPools => matches!(
+				c,
+				RuntimeCall::NominationPools(..) | RuntimeCall::Utility(..)
 			),
 		}
 	}
