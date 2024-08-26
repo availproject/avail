@@ -13,7 +13,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.staking
-		.bond_extra(max_additional, WaitFor::BlockInclusion, &account)
+		.bond_extra(max_additional, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(

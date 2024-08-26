@@ -13,7 +13,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.staking
-		.unbond(value, WaitFor::BlockInclusion, &account)
+		.unbond(value, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(

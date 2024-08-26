@@ -14,7 +14,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.data_availability
-		.submit_data(data, WaitFor::BlockInclusion, &account)
+		.submit_data(data, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(

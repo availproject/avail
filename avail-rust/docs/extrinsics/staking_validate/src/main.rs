@@ -14,7 +14,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.staking
-		.validate(commission, blocked, WaitFor::BlockInclusion, &account)
+		.validate(commission, blocked, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(

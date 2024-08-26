@@ -15,7 +15,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.data_availability
-		.submit_block_length_proposal(rows, cols, WaitFor::BlockInclusion, &account)
+		.submit_block_length_proposal(rows, cols, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!("Rows={:?}, Cols={:?}", result.event.rows, result.event.cols);

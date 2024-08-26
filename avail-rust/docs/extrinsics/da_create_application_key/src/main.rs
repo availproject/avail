@@ -14,7 +14,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.data_availability
-		.create_application_key(key, WaitFor::BlockInclusion, &account)
+		.create_application_key(key, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(

@@ -1,7 +1,7 @@
 [workspace]
 
 [package]
-name = "fetch-events-raw"
+name = "fetch-transaction-and-events"
 edition = "2021"
 version = "0.1.0"
 

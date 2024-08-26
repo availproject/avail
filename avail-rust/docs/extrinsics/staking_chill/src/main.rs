@@ -12,7 +12,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.staking
-		.chill(WaitFor::BlockInclusion, &account)
+		.chill(WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	if let Some(event) = result.event {

@@ -1,8 +1,11 @@
 use avail_core::data_proof::ProofResponse;
+use subxt::backend::legacy::LegacyRpcMethods;
 
 use crate::avail::runtime_types::frame_system::limits::BlockLength;
 use crate::from_substrate::{FeeDetails, NodeRole, PeerInfo, RuntimeDispatchInfo, SyncState};
-use crate::{AvailBlockDetailsRPC, AvailHeader, BlockHash, BlockNumber, Cell, GDataProof, GRow};
+use crate::{
+	AvailBlockDetailsRPC, AvailConfig, AvailHeader, BlockHash, BlockNumber, Cell, GDataProof, GRow,
+};
 use subxt::backend::legacy::rpc_methods::{Bytes, SystemHealth};
 use subxt::backend::rpc::RpcClient;
 use subxt::rpc_params;
@@ -11,6 +14,8 @@ use subxt::rpc_params;
 pub type Properties = serde_json::map::Map<String, serde_json::Value>;
 
 pub struct Rpc {
+	pub client: RpcClient,
+	pub legacy_methods: LegacyRpcMethods<AvailConfig>,
 	pub kate: Kate,
 	pub author: Author,
 	pub chain: Chain,
@@ -21,6 +26,7 @@ pub struct Rpc {
 impl Rpc {
 	pub async fn new(endpoint: &str) -> Result<Self, Box<dyn std::error::Error>> {
 		let client = RpcClient::from_insecure_url(endpoint).await?;
+		let legacy_methods = LegacyRpcMethods::new(client.clone());
 		let kate = Kate::new(client.clone());
 		let author = Author::new(client.clone());
 		let chain: Chain = Chain::new(client.clone());
@@ -28,6 +34,8 @@ impl Rpc {
 		let payment = Payment::new(client.clone());
 
 		Ok(Self {
+			client,
+			legacy_methods,
 			kate,
 			author,
 			chain,
