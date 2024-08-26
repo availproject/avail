@@ -7,10 +7,12 @@ use crate::api_dev::api::Call;
 use crate::sdk::WaitFor;
 use crate::utils_raw::progress_transaction;
 use crate::{
-	avail, transaction_data, AccountId, Api, AvailBlocksClient, BlockHash, RewardDestination, TxApi,
+	avail, transaction_data, AccountId, Api, AvailBlocksClient, AvailConfig, BlockHash,
+	RewardDestination, TxApi,
 };
 
 use std::str::FromStr;
+use subxt::blocks::ExtrinsicEvents;
 use subxt_core::utils::MultiAddress;
 use subxt_signer::sr25519::Keypair;
 
@@ -20,9 +22,15 @@ use avail::staking::events as StakingEvents;
 use avail::sudo::events as SudoEvents;
 use avail::system::events as SystemEvents;
 
+pub type Params =
+	<<AvailConfig as subxt::Config>::ExtrinsicParams as subxt::config::ExtrinsicParams<
+		AvailConfig,
+	>>::Params;
+
 pub struct TransferAllTxSuccess {
 	pub event: BalancesEvents::Transfer,
 	pub event2: Option<SystemEvents::KilledAccount>,
+	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
 	pub block_hash: BlockHash,
 }
@@ -30,41 +38,48 @@ pub struct TransferAllTxSuccess {
 pub struct TransferAllowDeathTxSuccess {
 	pub event: BalancesEvents::Transfer,
 	pub event2: Option<SystemEvents::KilledAccount>,
+	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
 	pub block_hash: BlockHash,
 }
 
 pub struct TransferKeepAliveTxSuccess {
 	pub event: BalancesEvents::Transfer,
+	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
 	pub block_hash: BlockHash,
 }
 
 pub struct BondTxSuccess {
 	pub event: StakingEvents::Bonded,
+	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
 	pub block_hash: BlockHash,
 }
 
 pub struct BondExtraTxSuccess {
 	pub event: StakingEvents::Bonded,
+	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
 	pub block_hash: BlockHash,
 }
 
 pub struct ChillTxSuccess {
 	pub event: Option<StakingEvents::Chilled>,
+	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
 	pub block_hash: BlockHash,
 }
 
 pub struct ChillOtherTxSuccess {
 	pub event: StakingEvents::Chilled,
+	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
 	pub block_hash: BlockHash,
 }
 
 pub struct NominateTxSuccess {
+	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_data: transaction_data::staking::Nominate,
 	pub tx_hash: BlockHash,
 	pub block_hash: BlockHash,
@@ -72,18 +87,21 @@ pub struct NominateTxSuccess {
 
 pub struct UnbondTxSuccess {
 	pub event: StakingEvents::Unbonded,
+	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
 	pub block_hash: BlockHash,
 }
 
 pub struct ValidateTxSuccess {
 	pub event: StakingEvents::ValidatorPrefsSet,
+	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
 	pub block_hash: BlockHash,
 }
 
 pub struct SubmitDataTxSuccess {
 	pub event: DataAvailabilityEvents::DataSubmitted,
+	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_data: transaction_data::data_availability::SubmitData,
 	pub tx_hash: BlockHash,
 	pub block_hash: BlockHash,
@@ -91,24 +109,28 @@ pub struct SubmitDataTxSuccess {
 
 pub struct CreateApplicationKeyTxSuccess {
 	pub event: DataAvailabilityEvents::ApplicationKeyCreated,
+	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
 	pub block_hash: BlockHash,
 }
 
 pub struct SetApplicationKeyTxSuccess {
 	pub event: DataAvailabilityEvents::ApplicationKeySet,
+	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
 	pub block_hash: BlockHash,
 }
 
 pub struct SubmitBlockLengthProposalTxSuccess {
 	pub event: DataAvailabilityEvents::BlockLengthProposalSubmitted,
+	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
 	pub block_hash: BlockHash,
 }
 
 pub struct SetSubmitDataFeeModifierTxSuccess {
 	pub event: DataAvailabilityEvents::SubmitDataFeeModifierSet,
+	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
 	pub block_hash: BlockHash,
 }
@@ -147,17 +169,19 @@ impl Balances {
 		keep_alive: bool,
 		wait_for: WaitFor,
 		account: &Keypair,
+		options: Option<Params>,
 	) -> Result<TransferAllTxSuccess, String> {
 		let dest = match AccountId::from_str(dest) {
 			Ok(dest) => dest,
 			Err(error) => return Err(std::format!("{:?}", error)),
 		};
 
+		let params = options.unwrap_or_default();
 		let call = avail::tx().balances().transfer_all(dest.into(), keep_alive);
 
 		let maybe_tx_progress = self
 			.api
-			.sign_and_submit_then_watch_default(&call, account)
+			.sign_and_submit_then_watch(&call, account, params)
 			.await;
 
 		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
@@ -182,6 +206,7 @@ impl Balances {
 		Ok(TransferAllTxSuccess {
 			event,
 			event2,
+			events,
 			tx_hash: tx_in_block.extrinsic_hash(),
 			block_hash: tx_in_block.block_hash(),
 		})
@@ -193,19 +218,21 @@ impl Balances {
 		amount: u128,
 		wait_for: WaitFor,
 		account: &Keypair,
+		options: Option<Params>,
 	) -> Result<TransferAllowDeathTxSuccess, String> {
 		let dest = match AccountId::from_str(dest) {
 			Ok(dest) => dest,
 			Err(error) => return Err(std::format!("{:?}", error)),
 		};
 
+		let params = options.unwrap_or_default();
 		let call = avail::tx()
 			.balances()
 			.transfer_allow_death(dest.into(), amount);
 
 		let maybe_tx_progress = self
 			.api
-			.sign_and_submit_then_watch_default(&call, account)
+			.sign_and_submit_then_watch(&call, account, params)
 			.await;
 
 		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
@@ -230,6 +257,7 @@ impl Balances {
 		Ok(TransferAllowDeathTxSuccess {
 			event,
 			event2,
+			events,
 			tx_hash: tx_in_block.extrinsic_hash(),
 			block_hash: tx_in_block.block_hash(),
 		})
@@ -241,19 +269,21 @@ impl Balances {
 		value: u128,
 		wait_for: WaitFor,
 		account: &Keypair,
+		options: Option<Params>,
 	) -> Result<TransferKeepAliveTxSuccess, String> {
 		let dest = match AccountId::from_str(dest) {
 			Ok(dest) => dest,
 			Err(error) => return Err(std::format!("{:?}", error)),
 		};
 
+		let params = options.unwrap_or_default();
 		let call = avail::tx()
 			.balances()
 			.transfer_keep_alive(dest.into(), value);
 
 		let maybe_tx_progress = self
 			.api
-			.sign_and_submit_then_watch_default(&call, account)
+			.sign_and_submit_then_watch(&call, account, params)
 			.await;
 
 		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
@@ -274,6 +304,7 @@ impl Balances {
 
 		Ok(TransferKeepAliveTxSuccess {
 			event,
+			events,
 			tx_hash: tx_in_block.extrinsic_hash(),
 			block_hash: tx_in_block.block_hash(),
 		})
@@ -296,12 +327,14 @@ impl Staking {
 		payee: RewardDestination,
 		wait_for: WaitFor,
 		account: &Keypair,
+		options: Option<Params>,
 	) -> Result<BondTxSuccess, String> {
+		let params = options.unwrap_or_default();
 		let call = avail::tx().staking().bond(value, payee);
 
 		let maybe_tx_progress = self
 			.api
-			.sign_and_submit_then_watch_default(&call, account)
+			.sign_and_submit_then_watch(&call, account, params)
 			.await;
 
 		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
@@ -322,6 +355,7 @@ impl Staking {
 
 		Ok(BondTxSuccess {
 			event,
+			events,
 			tx_hash: tx_in_block.extrinsic_hash(),
 			block_hash: tx_in_block.block_hash(),
 		})
@@ -332,12 +366,14 @@ impl Staking {
 		max_additional: u128,
 		wait_for: WaitFor,
 		account: &Keypair,
+		options: Option<Params>,
 	) -> Result<BondExtraTxSuccess, String> {
+		let params = options.unwrap_or_default();
 		let call = avail::tx().staking().bond_extra(max_additional);
 
 		let maybe_tx_progress = self
 			.api
-			.sign_and_submit_then_watch_default(&call, account)
+			.sign_and_submit_then_watch(&call, account, params)
 			.await;
 
 		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
@@ -358,6 +394,7 @@ impl Staking {
 
 		Ok(BondExtraTxSuccess {
 			event,
+			events,
 			tx_hash: tx_in_block.extrinsic_hash(),
 			block_hash: tx_in_block.block_hash(),
 		})
@@ -367,12 +404,14 @@ impl Staking {
 		&self,
 		wait_for: WaitFor,
 		account: &Keypair,
+		options: Option<Params>,
 	) -> Result<ChillTxSuccess, String> {
+		let params = options.unwrap_or_default();
 		let call = avail::tx().staking().chill();
 
 		let maybe_tx_progress = self
 			.api
-			.sign_and_submit_then_watch_default(&call, account)
+			.sign_and_submit_then_watch(&call, account, params)
 			.await;
 
 		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
@@ -390,6 +429,7 @@ impl Staking {
 
 		Ok(ChillTxSuccess {
 			event,
+			events,
 			tx_hash: tx_in_block.extrinsic_hash(),
 			block_hash: tx_in_block.block_hash(),
 		})
@@ -400,17 +440,19 @@ impl Staking {
 		stash: &str,
 		wait_for: WaitFor,
 		account: &Keypair,
+		options: Option<Params>,
 	) -> Result<ChillOtherTxSuccess, String> {
 		let stash = match AccountId::from_str(stash) {
 			Ok(stash) => stash,
 			Err(error) => return Err(std::format!("{:?}", error)),
 		};
 
+		let params = options.unwrap_or_default();
 		let call = avail::tx().staking().chill_other(stash);
 
 		let maybe_tx_progress = self
 			.api
-			.sign_and_submit_then_watch_default(&call, account)
+			.sign_and_submit_then_watch(&call, account, params)
 			.await;
 
 		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
@@ -431,6 +473,7 @@ impl Staking {
 
 		Ok(ChillOtherTxSuccess {
 			event,
+			events,
 			tx_hash: tx_in_block.extrinsic_hash(),
 			block_hash: tx_in_block.block_hash(),
 		})
@@ -441,6 +484,7 @@ impl Staking {
 		targets: &[String],
 		wait_for: WaitFor,
 		account: &Keypair,
+		options: Option<Params>,
 	) -> Result<NominateTxSuccess, String> {
 		let targets: Result<Vec<AccountId>, _> = targets
 			.iter()
@@ -449,11 +493,12 @@ impl Staking {
 		let targets = targets.map_err(|e| std::format!("{:?}", e))?;
 		let targets = targets.into_iter().map(|a| MultiAddress::Id(a)).collect();
 
+		let params = options.unwrap_or_default();
 		let call = avail::tx().staking().nominate(targets);
 
 		let maybe_tx_progress = self
 			.api
-			.sign_and_submit_then_watch_default(&call, account)
+			.sign_and_submit_then_watch(&call, account, params)
 			.await;
 
 		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
@@ -462,7 +507,7 @@ impl Staking {
 			Err(message) => return Err(message),
 		};
 
-		let _events = match tx_in_block.wait_for_success().await {
+		let events = match tx_in_block.wait_for_success().await {
 			Ok(e) => e,
 			Err(error) => return Err(error.to_string()),
 		};
@@ -473,6 +518,7 @@ impl Staking {
 			transaction_data::staking::Nominate::new(block_hash, tx_hash, &self.blocks).await?;
 
 		Ok(NominateTxSuccess {
+			events,
 			tx_data,
 			tx_hash,
 			block_hash,
@@ -484,12 +530,14 @@ impl Staking {
 		value: u128,
 		wait_for: WaitFor,
 		account: &Keypair,
+		options: Option<Params>,
 	) -> Result<UnbondTxSuccess, String> {
 		let call = avail::tx().staking().unbond(value);
 
+		let params = options.unwrap_or_default();
 		let maybe_tx_progress = self
 			.api
-			.sign_and_submit_then_watch_default(&call, account)
+			.sign_and_submit_then_watch(&call, account, params)
 			.await;
 
 		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
@@ -510,6 +558,7 @@ impl Staking {
 
 		Ok(UnbondTxSuccess {
 			event,
+			events,
 			tx_hash: tx_in_block.extrinsic_hash(),
 			block_hash: tx_in_block.block_hash(),
 		})
@@ -521,6 +570,7 @@ impl Staking {
 		blocked: bool,
 		wait_for: WaitFor,
 		account: &Keypair,
+		options: Option<Params>,
 	) -> Result<ValidateTxSuccess, String> {
 		if commission > 100 {
 			return Err(String::from("Commission cannot be more than 100"));
@@ -532,11 +582,12 @@ impl Staking {
 			blocked,
 		};
 
+		let params = options.unwrap_or_default();
 		let call = avail::tx().staking().validate(perfs);
 
 		let maybe_tx_progress = self
 			.api
-			.sign_and_submit_then_watch_default(&call, account)
+			.sign_and_submit_then_watch(&call, account, params)
 			.await;
 
 		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
@@ -557,6 +608,7 @@ impl Staking {
 
 		Ok(ValidateTxSuccess {
 			event,
+			events,
 			tx_hash: tx_in_block.extrinsic_hash(),
 			block_hash: tx_in_block.block_hash(),
 		})
@@ -578,12 +630,14 @@ impl DataAvailability {
 		data: Data,
 		wait_for: WaitFor,
 		account: &Keypair,
+		options: Option<Params>,
 	) -> Result<SubmitDataTxSuccess, String> {
+		let params = options.unwrap_or_default();
 		let call = avail::tx().data_availability().submit_data(data);
 
 		let maybe_tx_progress = self
 			.api
-			.sign_and_submit_then_watch_default(&call, account)
+			.sign_and_submit_then_watch(&call, account, params)
 			.await;
 
 		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
@@ -610,6 +664,7 @@ impl DataAvailability {
 
 		Ok(SubmitDataTxSuccess {
 			event,
+			events,
 			tx_data,
 			tx_hash,
 			block_hash,
@@ -621,12 +676,14 @@ impl DataAvailability {
 		key: Key,
 		wait_for: WaitFor,
 		account: &Keypair,
+		options: Option<Params>,
 	) -> Result<CreateApplicationKeyTxSuccess, String> {
+		let params = options.unwrap_or_default();
 		let call = avail::tx().data_availability().create_application_key(key);
 
 		let maybe_tx_progress = self
 			.api
-			.sign_and_submit_then_watch_default(&call, account)
+			.sign_and_submit_then_watch(&call, account, params)
 			.await;
 
 		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
@@ -647,6 +704,7 @@ impl DataAvailability {
 
 		Ok(CreateApplicationKeyTxSuccess {
 			event,
+			events,
 			tx_hash: tx_in_block.extrinsic_hash(),
 			block_hash: tx_in_block.block_hash(),
 		})
@@ -658,7 +716,9 @@ impl DataAvailability {
 		new_key: Key,
 		wait_for: WaitFor,
 		account: &Keypair,
+		options: Option<Params>,
 	) -> Result<SetApplicationKeyTxSuccess, String> {
+		let params = options.unwrap_or_default();
 		let call = Call::DataAvailability(
 			avail::runtime_types::da_control::pallet::Call::set_application_key {
 				old_key,
@@ -669,7 +729,7 @@ impl DataAvailability {
 
 		let maybe_tx_progress = self
 			.api
-			.sign_and_submit_then_watch_default(&sudo, account)
+			.sign_and_submit_then_watch(&sudo, account, params)
 			.await;
 
 		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
@@ -699,6 +759,7 @@ impl DataAvailability {
 
 		Ok(SetApplicationKeyTxSuccess {
 			event,
+			events,
 			tx_hash: tx_in_block.extrinsic_hash(),
 			block_hash: tx_in_block.block_hash(),
 		})
@@ -710,7 +771,9 @@ impl DataAvailability {
 		cols: u32,
 		wait_for: WaitFor,
 		account: &Keypair,
+		options: Option<Params>,
 	) -> Result<SubmitBlockLengthProposalTxSuccess, String> {
+		let params = options.unwrap_or_default();
 		let call = Call::DataAvailability(
 			avail::runtime_types::da_control::pallet::Call::submit_block_length_proposal {
 				rows,
@@ -721,7 +784,7 @@ impl DataAvailability {
 
 		let maybe_tx_progress = self
 			.api
-			.sign_and_submit_then_watch_default(&sudo, account)
+			.sign_and_submit_then_watch(&sudo, account, params)
 			.await;
 
 		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
@@ -753,6 +816,7 @@ impl DataAvailability {
 
 		Ok(SubmitBlockLengthProposalTxSuccess {
 			event,
+			events,
 			tx_hash: tx_in_block.extrinsic_hash(),
 			block_hash: tx_in_block.block_hash(),
 		})
@@ -763,7 +827,9 @@ impl DataAvailability {
 		modifier: DispatchFeeModifier,
 		wait_for: WaitFor,
 		account: &Keypair,
+		options: Option<Params>,
 	) -> Result<SetSubmitDataFeeModifierTxSuccess, String> {
+		let params = options.unwrap_or_default();
 		let call = Call::DataAvailability(
 			avail::runtime_types::da_control::pallet::Call::set_submit_data_fee_modifier {
 				modifier,
@@ -773,7 +839,7 @@ impl DataAvailability {
 
 		let maybe_tx_progress = self
 			.api
-			.sign_and_submit_then_watch_default(&sudo, account)
+			.sign_and_submit_then_watch(&sudo, account, params)
 			.await;
 
 		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
@@ -805,6 +871,7 @@ impl DataAvailability {
 
 		Ok(SetSubmitDataFeeModifierTxSuccess {
 			event,
+			events,
 			tx_hash: tx_in_block.extrinsic_hash(),
 			block_hash: tx_in_block.block_hash(),
 		})

@@ -14,7 +14,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.staking
-		.bond(value, payee, WaitFor::BlockInclusion, &account)
+		.bond(value, payee, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(

@@ -14,7 +14,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.balances
-		.transfer_allow_death(dest, amount, WaitFor::BlockInclusion, &account)
+		.transfer_allow_death(dest, amount, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(

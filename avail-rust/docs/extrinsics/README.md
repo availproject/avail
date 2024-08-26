@@ -11,7 +11,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn create_application_key(&self, key: Key, wait_for: WaitFor, account: &Keypair) -> Result<CreateApplicationKeyTxSuccess, String>;
+async fn create_application_key(&self, key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<CreateApplicationKeyTxSuccess, String>;
 ```
 
 #### Parameters
@@ -21,6 +21,7 @@ async fn create_application_key(&self, key: Key, wait_for: WaitFor, account: &Ke
 | key       | Key         | false    | name of the application key                     |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Params      | true     | transaction params                              |
 
 #### Return value
 
@@ -59,7 +60,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.data_availability
-		.create_application_key(key, WaitFor::BlockInclusion, &account)
+		.create_application_key(key, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(
@@ -82,7 +83,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn submit_data(&self, data: Data, wait_for: WaitFor, account: &Keypair) -> Result<SubmitDataTxSuccess, String>;
+async fn submit_data(&self, data: Data, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<SubmitDataTxSuccess, String>;
 ```
 
 #### Parameters
@@ -92,6 +93,7 @@ async fn submit_data(&self, data: Data, wait_for: WaitFor, account: &Keypair) ->
 | data      | Data        | false    | data to be submitted                            |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Params      | true     | transaction params                              |
 
 #### Return value
 
@@ -130,7 +132,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.data_availability
-		.submit_data(data, WaitFor::BlockInclusion, &account)
+		.submit_data(data, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(
@@ -154,7 +156,7 @@ Origin Level: Root
 ### Interface
 
 ```rust
-async fn submit_block_length_proposal(&self, rows: u32, cols: u32, wait_for: WaitFor, account: &Keypair) -> Result<SubmitBlockLengthProposalTxSuccess, String>;
+async fn submit_block_length_proposal(&self, rows: u32, cols: u32, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<SubmitBlockLengthProposalTxSuccess, String>;
 ```
 
 #### Parameters
@@ -165,6 +167,7 @@ async fn submit_block_length_proposal(&self, rows: u32, cols: u32, wait_for: Wai
 | cols      | u32         | false    | number of cols in block                         |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Params      | true     | transaction params                              |
 
 #### Return value
 
@@ -204,7 +207,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.data_availability
-		.submit_block_length_proposal(rows, cols, WaitFor::BlockInclusion, &account)
+		.submit_block_length_proposal(rows, cols, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!("Rows={:?}, Cols={:?}", result.event.rows, result.event.cols);
@@ -224,7 +227,7 @@ Origin Level: Root
 ### Interface
 
 ```rust
-async fn set_application_key(&self, old_key: Key, new_key: Key, wait_for: WaitFor, account: &Keypair) -> Result<SetApplicationKeyTxSuccess, String>;
+async fn set_application_key(&self, old_key: Key, new_key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<SetApplicationKeyTxSuccess, String>;
 ```
 
 #### Parameters
@@ -235,6 +238,7 @@ async fn set_application_key(&self, old_key: Key, new_key: Key, wait_for: WaitFo
 | newKey    | Key         | false    | application key that will replace the old one   |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Params      | true     | transaction params                              |
 
 #### Return value
 
@@ -276,7 +280,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.data_availability
-		.set_application_key(old_key, new_key, WaitFor::BlockInclusion, &account)
+		.set_application_key(old_key, new_key, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(
@@ -299,7 +303,7 @@ Origin Level: Root
 ### Interface
 
 ```rust
-async fn set_submit_data_fee_modifier(&self, modifier: DispatchFeeModifier, wait_for: WaitFor, account: &Keypair) -> Result<SetSubmitDataFeeModifierTxSuccess, String>;
+async fn set_submit_data_fee_modifier(&self, modifier: DispatchFeeModifier, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<SetSubmitDataFeeModifierTxSuccess, String>;
 ```
 
 #### Parameters
@@ -309,6 +313,7 @@ async fn set_submit_data_fee_modifier(&self, modifier: DispatchFeeModifier, wait
 | modifier  | DispatchFeeModifier | false    | new fee modifier values                         |
 | waitFor   | WaitFor             | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair         | false    | account that will send and sign the transaction |
+| options   | Params              | true     | transaction params                              |
 
 #### Return value
 
@@ -351,7 +356,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.data_availability
-		.set_submit_data_fee_modifier(modifier, WaitFor::BlockInclusion, &account)
+		.set_submit_data_fee_modifier(modifier, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(
@@ -382,7 +387,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn transfer_keep_alive(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair) -> Result<TransferKeepAliveTxSuccess, String>;
+async fn transfer_keep_alive(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<TransferKeepAliveTxSuccess, String>;
 ```
 
 #### Parameters
@@ -393,6 +398,7 @@ async fn transfer_keep_alive(&self, dest: &str, value: u128, wait_for: WaitFor, 
 | value     | u128        | false    | amount that is send. 10^18 is equal to 1 AVL    |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Params      | true     | transaction params                              |
 
 #### Return value
 
@@ -431,7 +437,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.balances
-		.transfer_keep_alive(dest, amount, WaitFor::BlockInclusion, &account)
+		.transfer_keep_alive(dest, amount, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(
@@ -454,7 +460,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn transfer_allow_death(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair) -> Result<TransferAllowDeathTxSuccess, String>;
+async fn transfer_allow_death(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<TransferAllowDeathTxSuccess, String>;
 ```
 
 #### Parameters
@@ -465,6 +471,7 @@ async fn transfer_allow_death(&self, dest: &str, value: u128, wait_for: WaitFor,
 | value     | BN          | false    | amount that is send. 10^18 is equal to 1 AVL    |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Params      | true     | transaction params                              |
 
 #### Return value
 
@@ -504,7 +511,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.balances
-		.transfer_allow_death(dest, amount, WaitFor::BlockInclusion, &account)
+		.transfer_allow_death(dest, amount, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(
@@ -530,7 +537,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn transfer_all(&self, dest: &str, keep_alive: bool, wait_for: WaitFor, account: &Keypair) -> Result<TransferAllTxSuccess, String>;
+async fn transfer_all(&self, dest: &str, keep_alive: bool, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<TransferAllTxSuccess, String>;
 ```
 
 #### Parameters
@@ -541,6 +548,7 @@ async fn transfer_all(&self, dest: &str, keep_alive: bool, wait_for: WaitFor, ac
 | keepAlive | bool        | false    | if set to false it will reap the account as well |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization         |
 | account   | KeyringPair | false    | account that will send and sign the transaction  |
+| options   | Params      | true     | transaction params                               |
 
 #### Return value
 
@@ -580,7 +588,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.balances
-		.transfer_all(dest, keep_alive, WaitFor::BlockInclusion, &account)
+		.transfer_all(dest, keep_alive, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(
@@ -612,7 +620,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn bond(&self, value: u128, payee: RewardDestination, wait_for: WaitFor, account: &Keypair) -> Result<BondTxSuccess, String>;
+async fn bond(&self, value: u128, payee: RewardDestination, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<BondTxSuccess, String>;
 ```
 
 #### Parameters
@@ -623,6 +631,7 @@ async fn bond(&self, value: u128, payee: RewardDestination, wait_for: WaitFor, a
 | payee     | RewardDestination | false    | Can be: "Staked", "Stash", "None" or an account address |
 | waitFor   | WaitFor           | false    | wait for block inclusion or finalization                |
 | account   | KeyringPair       | false    | account that will send and sign the transaction         |
+| options   | Params            | true     | transaction params                                      |
 
 #### Return value
 
@@ -661,7 +670,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.staking
-		.bond(value, payee, WaitFor::BlockInclusion, &account)
+		.bond(value, payee, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(
@@ -684,7 +693,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn bond_extra(&self, max_additional: u128, wait_for: WaitFor, account: &Keypair) -> Result<BondExtraTxSuccess, String>;
+async fn bond_extra(&self, max_additional: u128, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<BondExtraTxSuccess, String>;
 ```
 
 #### Parameters
@@ -694,6 +703,7 @@ async fn bond_extra(&self, max_additional: u128, wait_for: WaitFor, account: &Ke
 | maxAdditional | u128        | false    | additional amount that is bond. 10^18 is equal to 1 Avail |
 | waitFor       | WaitFor     | false    | wait for block inclusion or finalization                  |
 | account       | KeyringPair | false    | account that will send and sign the transaction           |
+| options       | Params      | true     | transaction params                                        |
 
 #### Return value
 
@@ -731,7 +741,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.staking
-		.bond_extra(max_additional, WaitFor::BlockInclusion, &account)
+		.bond_extra(max_additional, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(
@@ -754,7 +764,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn chill(&self, wait_for: WaitFor, account: &Keypair) -> Result<ChillTxSuccess, String>;
+async fn chill(&self, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<ChillTxSuccess, String>;
 ```
 
 #### Parameters
@@ -763,6 +773,7 @@ async fn chill(&self, wait_for: WaitFor, account: &Keypair) -> Result<ChillTxSuc
 | --------- | ----------- | -------- | ----------------------------------------------- |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Params      | true     | transaction params                              |
 
 #### Return value
 
@@ -799,7 +810,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.staking
-		.chill(WaitFor::BlockInclusion, &account)
+		.chill(WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	if let Some(event) = result.event {
@@ -822,7 +833,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn chill_other(&self, stash: &str, wait_for: WaitFor, account: &Keypair) -> Result<ChillOtherTxSuccess, String>;
+async fn chill_other(&self, stash: &str, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<ChillOtherTxSuccess, String>;
 ```
 
 #### Parameters
@@ -832,6 +843,7 @@ async fn chill_other(&self, stash: &str, wait_for: WaitFor, account: &Keypair) -
 | stash     | &str        | false    | address of stash account to chill               |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Params      | true     | transaction params                              |
 
 #### Return value
 
@@ -869,7 +881,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.staking
-		.chill_other(stash, WaitFor::BlockInclusion, &account)
+		.chill_other(stash, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!("Stash={}", result.event.stash);
@@ -889,7 +901,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn nominate( &self, targets: &[String], wait_for: WaitFor, account: &Keypair) -> Result<NominateTxSuccess, String>;
+async fn nominate( &self, targets: &[String], wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<NominateTxSuccess, String>;
 ```
 
 #### Parameters
@@ -899,6 +911,7 @@ async fn nominate( &self, targets: &[String], wait_for: WaitFor, account: &Keypa
 | targets   | &[String]   | false    | list od addresses to nominate                   |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Params      | true     | transaction params                              |
 
 #### Return value
 
@@ -939,7 +952,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.staking
-		.nominate(&targets, WaitFor::BlockInclusion, &account)
+		.nominate(&targets, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!("TxDataTargets={:?}", result.tx_data.targets);
@@ -959,7 +972,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn unbond(&self, value: u128, wait_for: WaitFor, account: &Keypair) -> Result<UnbondTxSuccess, String>;
+async fn unbond(&self, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<UnbondTxSuccess, String>;
 ```
 
 #### Parameters
@@ -970,6 +983,7 @@ async fn unbond(&self, value: u128, wait_for: WaitFor, account: &Keypair) -> Res
 | waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair   | false    | account that will send and sign the transaction |
 | options   | SignerOptions | true     | used to overwrite existing signer options       |
+| options   | Params        | true     | transaction params                              |
 
 #### Return value
 
@@ -1007,7 +1021,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.staking
-		.unbond(value, WaitFor::BlockInclusion, &account)
+		.unbond(value, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(
@@ -1030,7 +1044,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn validate(&self, commission: u8, blocked: bool, wait_for: WaitFor, account: &Keypair) -> Result<ValidateTxSuccess, String>;
+async fn validate(&self, commission: u8, blocked: bool, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<ValidateTxSuccess, String>;
 ```
 
 #### Parameters
@@ -1041,6 +1055,7 @@ async fn validate(&self, commission: u8, blocked: bool, wait_for: WaitFor, accou
 | blocked    | bool        | false    | whether or not this validator accepts nominations     |
 | waitFor    | WaitFor     | false    | wait for block inclusion or finalization              |
 | account    | KeyringPair | false    | account that will send and sign the transaction       |
+| options    | Params      | true     | transaction params                                    |
 
 #### Return value
 
@@ -1079,7 +1094,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.staking
-		.validate(commission, blocked, WaitFor::BlockInclusion, &account)
+		.validate(commission, blocked, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(

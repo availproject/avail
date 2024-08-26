@@ -16,7 +16,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.staking
-		.nominate(&targets, WaitFor::BlockInclusion, &account)
+		.nominate(&targets, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!("TxDataTargets={:?}", result.tx_data.targets);

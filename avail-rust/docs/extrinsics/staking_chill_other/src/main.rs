@@ -13,7 +13,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.staking
-		.chill_other(stash, WaitFor::BlockInclusion, &account)
+		.chill_other(stash, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!("Stash={}", result.event.stash);

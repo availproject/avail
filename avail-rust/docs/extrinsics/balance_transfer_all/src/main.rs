@@ -14,7 +14,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.balances
-		.transfer_all(dest, keep_alive, WaitFor::BlockInclusion, &account)
+		.transfer_all(dest, keep_alive, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(

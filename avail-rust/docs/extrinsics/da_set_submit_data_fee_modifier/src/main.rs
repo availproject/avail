@@ -18,7 +18,7 @@ async fn main() -> Result<(), String> {
 	let result = sdk
 		.tx
 		.data_availability
-		.set_submit_data_fee_modifier(modifier, WaitFor::BlockInclusion, &account)
+		.set_submit_data_fee_modifier(modifier, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	println!(

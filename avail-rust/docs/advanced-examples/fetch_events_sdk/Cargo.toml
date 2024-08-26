@@ -6,5 +6,5 @@ edition = "2021"
 version = "0.1.0"
 
 [dependencies]
-avail-rust = { path = "../../." }
+avail-rust = { path = "../../../." }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
