@@ -25,8 +25,11 @@ pub struct Rpc {
 }
 
 impl Rpc {
-	pub async fn new(endpoint: &str) -> Result<Self, Box<dyn std::error::Error>> {
-		let client = RpcClient::from_insecure_url(endpoint).await?;
+	pub async fn new(endpoint: &str, secure: bool) -> Result<Self, Box<dyn std::error::Error>> {
+		let client: RpcClient = match secure {
+			true => RpcClient::from_url(endpoint).await?,
+			false => RpcClient::from_insecure_url(endpoint).await?,
+		};
 		let legacy_methods = LegacyRpcMethods::new(client.clone());
 		let kate = Kate::new(client.clone());
 		let author = Author::new(client.clone());
