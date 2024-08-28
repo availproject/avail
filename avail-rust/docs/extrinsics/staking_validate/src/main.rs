@@ -17,14 +17,7 @@ async fn main() -> Result<(), String> {
 		.validate(commission, blocked, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
-	println!(
-		"Stash={}, Commission={:?}, Blocked={:?}",
-		result.event.stash, result.event.prefs.commission, result.event.prefs.blocked
-	);
-	println!(
-		"TxHash={:?}, BlockHash={:?}",
-		result.tx_hash, result.block_hash
-	);
+	dbg!(result);
 
 	Ok(())
 }

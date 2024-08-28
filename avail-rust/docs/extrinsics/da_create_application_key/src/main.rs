@@ -17,14 +17,7 @@ async fn main() -> Result<(), String> {
 		.create_application_key(key, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
-	println!(
-		"Key={:?}, Owner={}, Id={:?}",
-		result.event.key, result.event.owner, result.event.id
-	);
-	println!(
-		"TxHash={:?}, BlockHash={:?}",
-		result.tx_hash, result.block_hash
-	);
+	dbg!(result);
 
 	Ok(())
 }

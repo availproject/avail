@@ -21,16 +21,7 @@ async fn main() -> Result<(), String> {
 		.set_submit_data_fee_modifier(modifier, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
-	println!(
-		"WeightMaximumFee={:?}, WeightFeeMultiplier={:?}, WeightFeeDivider={:?}",
-		result.event.value.weight_maximum_fee,
-		result.event.value.weight_fee_multiplier,
-		result.event.value.weight_fee_divider
-	);
-	println!(
-		"TxHash={:?}, BlockHash={:?}",
-		result.tx_hash, result.block_hash
-	);
+	dbg!(result);
 
 	Ok(())
 }

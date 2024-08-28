@@ -15,14 +15,7 @@ async fn main() -> Result<(), String> {
 		.chill(WaitFor::BlockInclusion, &account, None)
 		.await?;
 
-	if let Some(event) = result.event {
-		println!("Stash={}", event.stash);
-	}
-
-	println!(
-		"TxHash={:?}, BlockHash={:?}",
-		result.tx_hash, result.block_hash
-	);
+	dbg!(result);
 
 	Ok(())
 }

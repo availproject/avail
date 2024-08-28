@@ -1,9 +1,8 @@
 [workspace]
 
 [package]
-name = "fetch-transaction-and-events"
+name = "session-set-keys"
 edition = "2021"
-version = "0.1.0"
 
 [dependencies]
 avail-rust = { git = "https://github.com/availproject/avail" }
