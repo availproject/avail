@@ -17,14 +17,7 @@ async fn main() -> Result<(), String> {
 		.transfer_keep_alive(dest, amount, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
-	println!(
-		"From={}, To={}, Amount={}",
-		result.event.from, result.event.to, result.event.amount
-	);
-	println!(
-		"TxHash={:?}, BlockHash={:?}",
-		result.tx_hash, result.block_hash
-	);
+	dbg!(result);
 
 	Ok(())
 }

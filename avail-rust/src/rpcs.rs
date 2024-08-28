@@ -87,12 +87,27 @@ impl Payment {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate::Keypair;
+	use crate::SecretUri;
 	use std::str::FromStr;
 
 	#[tokio::test]
 	async fn testing_function() {
+		let secret_uri = SecretUri::from_str("//Alice").unwrap();
+		let account = Keypair::from_uri(&secret_uri).unwrap();
+
 		let sdk = crate::sdk::SDK::new("ws://127.0.0.1:9944").await.unwrap();
-		let h = BlockHash::from_str(
+		let keys = sdk.rpc.author.rotate_keys().await.unwrap();
+
+		let keys = sdk.util.deconstruct_session_keys(keys).unwrap();
+		let b = sdk
+			.tx
+			.session
+			.set_keys(keys, crate::WaitFor::BlockFinalization, &account, None)
+			.await
+			.unwrap();
+
+		/* 		let h = BlockHash::from_str(
 			"0x90c6d99b3fb9d608a5bee9eb59bb107d5fd11b0aa398f3b1132503c15db40551",
 		)
 		.unwrap();
@@ -112,7 +127,7 @@ mod tests {
 				dbg!(a);
 				panic!();
 			},
-		};
+		}; */
 	}
 }
 

@@ -19,11 +19,7 @@ async fn main() -> Result<(), String> {
 		.nominate(&targets, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
-	println!("TxDataTargets={:?}", result.tx_data.targets);
-	println!(
-		"TxHash={:?}, BlockHash={:?}",
-		result.tx_hash, result.block_hash
-	);
+	dbg!(result);
 
 	Ok(())
 }

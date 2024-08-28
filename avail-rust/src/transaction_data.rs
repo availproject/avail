@@ -6,6 +6,7 @@ use crate::{avail, AccountId, AvailBlocksClient};
 use subxt_core::utils::MultiAddress;
 
 use avail::data_availability::calls::types as DataAvailabilityCalls;
+use avail::session::calls::types as SessionCalls;
 use avail::staking::calls::types as StakingCalls;
 
 pub mod data_availability {
@@ -36,6 +37,7 @@ pub mod data_availability {
 pub mod staking {
 	use super::*;
 
+	#[derive(Debug, Clone, Eq, PartialEq)]
 	pub struct Nominate {
 		pub targets: Vec<String>,
 	}
@@ -61,6 +63,35 @@ pub mod staking {
 			let targets = targets.into_iter().map(|a| std::format!("{}", a)).collect();
 
 			Ok(Self { targets })
+		}
+	}
+}
+
+pub mod session {
+	use super::*;
+	use crate::avail::runtime_types::da_runtime::primitives::SessionKeys;
+
+	#[allow(dead_code)]
+	#[derive(Debug)]
+	pub struct SetKeys {
+		keys: SessionKeys,
+		proof: Vec<u8>,
+	}
+
+	impl SetKeys {
+		pub async fn new(
+			block_hash: BlockHash,
+			tx_hash: BlockHash,
+			blocks: &AvailBlocksClient,
+		) -> Result<Self, String> {
+			let transaction =
+				fetch_transaction::<SessionCalls::SetKeys>(block_hash, tx_hash, blocks).await;
+			let transaction = transaction.map_err(|err| err.to_string())?;
+
+			let keys = transaction.value.keys;
+			let proof = transaction.value.proof;
+
+			Ok(Self { keys, proof })
 		}
 	}
 }

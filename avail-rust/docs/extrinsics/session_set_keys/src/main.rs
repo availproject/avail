@@ -8,12 +8,13 @@ async fn main() -> Result<(), String> {
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
 	let account = Keypair::from_uri(&secret_uri).unwrap();
-	let stash = "5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY"; // Alice Stash
 
+	let keys = sdk.rpc.author.rotate_keys().await.unwrap();
+	let keys = sdk.util.deconstruct_session_keys(keys)?;
 	let result = sdk
 		.tx
-		.staking
-		.chill_other(stash, WaitFor::BlockInclusion, &account, None)
+		.session
+		.set_keys(keys, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
 	dbg!(result);
