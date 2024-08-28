@@ -43,8 +43,7 @@
   },
   "dependencies": {
     "@polkadot/api": "^10.11.3",
-    "neverthrow": "^7.0.0",
-    "ethers": "6.13.2"
+    "neverthrow": "^7.0.0"
   },
   "resolutions": {
     "ws": ">=8.17.1"
