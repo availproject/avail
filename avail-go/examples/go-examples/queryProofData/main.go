@@ -1,43 +1,26 @@
 package main
 
 import (
-	"avail-go-sdk-examples/internal/config"
-	"flag"
 	"fmt"
-	"log"
-	"os"
 
-	"avail-go-sdk/rpc"
-	"avail-go-sdk/sdk"
-
-	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	"avail-go-sdk/src/config"
+	"avail-go-sdk/src/rpc"
+	"avail-go-sdk/src/sdk"
 )
 
 func main() {
-	var configJSON string
-	var config config.Config
-
-	flag.StringVar(&configJSON, "config", "", "config json file")
-	flag.Parse()
-
-	if configJSON == "" {
-		log.Println("No config file provided. Exiting...")
-		os.Exit(0)
-	}
-
-	err := config.GetConfig(configJSON)
+	config, err := config.LoadConfig()
 	if err != nil {
-		panic(fmt.Sprintf("cannot get config:%v", err))
+		fmt.Printf("cannot load config:%v", err)
 	}
-
 	api, err := sdk.NewSDK(config.ApiURL)
 	if err != nil {
-		panic(fmt.Sprintf("cannot create api client:%v", err))
+		fmt.Printf("cannot create api:%v", err)
 	}
 
-	var finalizedBlockCh = make(chan types.Hash)
+	var finalizedBlockCh = sdk.CreateChannel()
 	go func() {
-		err = sdk.SubmitData(*api, "data", config.Seed, 1, finalizedBlockCh)
+		err = sdk.SubmitData(api, "data", config.Seed, 1, finalizedBlockCh)
 		if err != nil {
 			panic(fmt.Sprintf("cannot submit data:%v", err))
 		}
@@ -46,8 +29,8 @@ func main() {
 	// block hash to query proof
 	blockHash := <-finalizedBlockCh
 	fmt.Printf("Transaction included in finalized block: %v\n", blockHash.Hex())
-	h, _ := types.NewHashFromHexString(blockHash.Hex())
-	transactionIndex := types.NewU32(1)
+	h, _ := sdk.NewHashFromHexString(blockHash.Hex())
+	transactionIndex := sdk.NewU32(1)
 
 	// query proof
 	var response rpc.ProofResponse

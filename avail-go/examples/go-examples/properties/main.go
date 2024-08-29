@@ -1,44 +1,28 @@
 package main
 
 import (
-	"avail-go-sdk/extrinsic"
-	"avail-go-sdk/sdk"
-	"avail-go-sdk-examples/internal/config"
-	"flag"
+	"avail-go-sdk/src/config"
+	"avail-go-sdk/src/sdk"
+	"avail-go-sdk/src/sdk/types"
 	"fmt"
-	"log"
-	"os"
 )
 
 func main() {
-	var configJSON string
-	var config config.Config
 
-	flag.StringVar(&configJSON, "config", "", "config json file")
-	flag.Parse()
-
-	if configJSON == "" {
-		log.Println("No config file provided. Exiting...")
-		os.Exit(0)
-	}
-
-	err := config.GetConfig(configJSON)
+	config, err := config.LoadConfig()
 	if err != nil {
-		panic(fmt.Sprintf("cannot get config:%v", err))
+		fmt.Printf("cannot load config:%v", err)
 	}
 	api, err := sdk.NewSDK(config.ApiURL)
 	if err != nil {
-		panic(fmt.Sprintf("cannot create api client:%v", err))
-	}
-	if api == nil || api.Client == nil {
-		log.Fatal("API client is not properly initialized")
+		fmt.Printf("cannot create api:%v", err)
 	}
 
-	var properties extrinsic.ChainProperties
+	var properties types.ChainProperties
 	err = api.Client.Call(&properties, "system_properties", nil)
 
 	if err != nil {
-		panic(fmt.Sprintf("cannot get properties:%w", err))
+		panic(fmt.Sprintf("cannot get properties:%v", err))
 	}
 
 	fmt.Printf("Chain properties: \nIsEthereum:%#v\nTokenSymbol:%#v\nTokenDecimals:%d\nSS58Format:%d\n", properties.IsEthereum, properties.TokenSymbol, properties.TokenDecimals, properties.SS58Format)

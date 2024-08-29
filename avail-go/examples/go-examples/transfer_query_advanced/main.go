@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"avail-go-sdk/extrinsic"
-	"avail-go-sdk/rpc"
-	"avail-go-sdk/sdk"
+	"avail-go-sdk/src/extrinsic"
+	"avail-go-sdk/src/rpc"
+	"avail-go-sdk/src/sdk"
 
 	"github.com/centrifuge/go-substrate-rpc-client/v4/registry"
 	retriever "github.com/centrifuge/go-substrate-rpc-client/v4/registry/retriever"

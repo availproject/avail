@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	"avail-go-sdk/sdk"
+	"avail-go-sdk/src/sdk"
 )
 
 // The following example shows how to connect to a node and display some basic information.
