@@ -5,13 +5,6 @@ authors = []
 edition = "2021"
 license = "Apache-2.0"
 
-# Target Dependencies
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-sp-io = { workspace = true, features = ["disable_panic_handler"]  }
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-sp-io = { workspace = true  }
-
 [dependencies]
 # Others
 derive_more.workspace = true
@@ -37,6 +30,7 @@ sp-runtime = { workspace = true, optional = true }
 sp-runtime-interface = { workspace = true, optional = true }
 sp-std.workspace = true
 sp-trie.workspace = true
+sp-io.workspace = true
 
 [dev-dependencies]
 hex-literal.workspace = true
@@ -75,6 +69,7 @@ runtime = [
 	"sp-runtime",
 	"sp-runtime-interface",
 ]
+disable_panic_handler = [ "sp-io/disable_panic_handler" ]
 
 try-runtime = [ "runtime", "sp-runtime/try-runtime" ]
 serde = [ "dep:serde", "hex/serde", "log/serde" ]
