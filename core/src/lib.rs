@@ -1,8 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(clippy::arithmetic_side_effects)]
 
+use core::fmt::Debug;
+
 use codec::{Decode, Encode, MaxEncodedLen};
-use derive_more::{Add, Constructor, Deref, Display, Into, Mul};
+use derive_more::{Add, Constructor, Deref, Into, Mul};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -88,10 +90,15 @@ pub enum InvalidTransactionCustomId {
 	Into,
 	MaxEncodedLen,
 	RuntimeDebug,
-	Display,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AppId(#[codec(compact)] pub u32);
+
+impl core::fmt::Display for AppId {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+		write!(f, "{}", self.0)
+	}
+}
 
 impl Zero for AppId {
 	fn zero() -> Self {
@@ -119,7 +126,6 @@ impl Zero for AppId {
 	Into,
 	Constructor,
 	MaxEncodedLen,
-	Display,
 	Default,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, Debug))]
@@ -143,7 +149,6 @@ pub struct BlockLengthColumns(#[codec(compact)] pub u32);
 	Ord,
 	Into,
 	Constructor,
-	Display,
 	Default,
 )]
 #[mul(forward)]
