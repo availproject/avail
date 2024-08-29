@@ -5,6 +5,13 @@ authors = []
 edition = "2021"
 license = "Apache-2.0"
 
+# Target Dependencies
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+sp-io = { workspace = true, features = ["disable_panic_handler"]  }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+sp-io = { workspace = true  }
+
 [dependencies]
 # Others
 derive_more.workspace = true
@@ -23,11 +30,9 @@ bounded-collections.workspace = true
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info.workspace = true
 
-# Polkadot SDK
 frame-support = { workspace = true, optional = true }
 sp-arithmetic.workspace = true
 sp-core.workspace = true
-sp-io.workspace = true
 sp-runtime = { workspace = true, optional = true }
 sp-runtime-interface = { workspace = true, optional = true }
 sp-std.workspace = true
