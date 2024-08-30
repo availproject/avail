@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"math/big"
 
 	"avail-go-sdk/src/config"
 	"avail-go-sdk/src/sdk"
+	"avail-go-sdk/src/sdk/call"
+	"avail-go-sdk/src/sdk/tx"
 )
 
 func main() {
@@ -18,28 +19,26 @@ func main() {
 		fmt.Printf("cannot create api:%v", err)
 	}
 
-	var finalizedBlockCh = sdk.CreateChannel()
-	go func() {
-		err = sdk.SubmitData(api, "data", config.Seed, 1, finalizedBlockCh)
-		if err != nil {
-			panic(fmt.Sprintf("cannot submit data:%v", err))
-		}
-	}()
+	appID := 0
 
-	// block hash to query proof
-	blockHash := <-finalizedBlockCh
-	fmt.Printf("Transaction included in finalized block: %v\n", blockHash.Hex())
-	h, err := sdk.NewHashFromHexString(blockHash.Hex())
-	if err != nil {
-		panic(fmt.Sprintf("cannot create api client:%v", err))
+	// if app id is greater than 0 then it must be created before submitting data
+	if config.AppID != 0 {
+		appID = config.AppID
 	}
+	WaitFor := sdk.BlockFinalization
 
-	response := make([][]sdk.BigInt, 1)
-	response[0] = make([]sdk.BigInt, 1)
+	blockHash, txHash, err := tx.SubmitData(api, config.Seed, appID, "my happy data", WaitFor)
+	if err != nil {
+		fmt.Printf("cannot submit data:%v", err)
+	}
+	fmt.Printf("Data submitted successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
+
+	// response := make([][]sdk.BigInt, 1)
+	// response[0] = make([]sdk.BigInt, 1)
 
 	// Assuming types.U256 has a constructor like NewU256
-	zeroValue := sdk.NewU256(big.NewInt(0)) // Replace with the actual constructor or method
-	response[0][0] = sdk.BigInt{Int: zeroValue.Int}
+	// zeroValue := sdk.NewU256(big.NewInt(0)) // Replace with the actual constructor or method
+	// response[0][0] = sdk.BigInt{Int: zeroValue.Int}
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -48,7 +47,7 @@ func main() {
 	}()
 	myArr := make([]uint32, 1)
 	myArr[0] = 0
-	err = api.Client.Call(&response, "kate_queryRows", myArr, h)
+	response, err := call.Query_rows(api, myArr, blockHash)
 	if err != nil {
 		fmt.Println("Error calling api.Client.Call:", err)
 		return

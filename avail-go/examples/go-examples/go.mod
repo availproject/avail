@@ -7,7 +7,6 @@ require (
 	github.com/centrifuge/go-substrate-rpc-client/v4 v4.2.1
 	github.com/ethereum/go-ethereum v1.10.20
 	github.com/vedhavyas/go-subkey v1.0.4
-	github.com/vedhavyas/go-subkey/v2 v2.0.0
 	golang.org/x/crypto v0.22.0
 )
 
@@ -28,6 +27,7 @@ require (
 	github.com/rs/cors v1.8.2 // indirect
 	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/stretchr/testify v1.7.2 // indirect
+	github.com/vedhavyas/go-subkey/v2 v2.0.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

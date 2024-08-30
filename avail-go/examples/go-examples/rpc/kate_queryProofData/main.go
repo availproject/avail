@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"avail-go-sdk/src/config"
 	"avail-go-sdk/src/rpc"
 	"avail-go-sdk/src/sdk"
+	"avail-go-sdk/src/sdk/call"
+	"avail-go-sdk/src/sdk/tx"
 )
 
 func main() {
@@ -17,26 +20,30 @@ func main() {
 	if err != nil {
 		fmt.Printf("cannot create api:%v", err)
 	}
+	if api == nil || api.Client == nil {
+		log.Fatal("API client is not properly initialized")
+	}
 
-	var finalizedBlockCh = sdk.CreateChannel()
-	go func() {
-		err = sdk.SubmitData(api, "data", config.Seed, 1, finalizedBlockCh)
-		if err != nil {
-			panic(fmt.Sprintf("cannot submit data:%v", err))
-		}
-	}()
+	appID := 0
 
-	// block hash to query proof
-	blockHash := <-finalizedBlockCh
+	// if app id is greater than 0 then it must be created before submitting data
+	if config.AppID != 0 {
+		appID = config.AppID
+	}
+	WaitFor := sdk.BlockFinalization
+
+	blockHash, _, err := tx.SubmitData(api, config.Seed, appID, "my happy data", WaitFor)
+	if err != nil {
+		fmt.Printf("cannot submit data:%v", err)
+	}
 	fmt.Printf("Transaction included in finalized block: %v\n", blockHash.Hex())
-	h, _ := sdk.NewHashFromHexString(blockHash.Hex())
+
 	transactionIndex := sdk.NewU32(1)
 
 	// query proof
-	var response rpc.ProofResponse
-	err = api.Client.Call(&response, "kate_queryDataProof", transactionIndex, h)
+	response, err := call.Query_dataproof(api, transactionIndex, blockHash)
 	if err != nil {
-		panic(fmt.Sprintf("%v\n", err))
+		fmt.Printf("cannot query proof:%v", err)
 	}
 	fmt.Printf("DataRoot:%v\n", response.DataProof.Roots.DataRoot.Hex())
 	fmt.Printf("BlobRoot:%v\n", response.DataProof.Roots.BlobRoot.Hex())
