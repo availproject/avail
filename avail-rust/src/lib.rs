@@ -35,3 +35,4 @@ pub use subxt::config::polkadot::U256;
 pub use subxt_signer;
 pub use utils::utils_raw;
 pub use utils::FetchTransactionError;
+pub use sp_core;
