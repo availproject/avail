@@ -36,3 +36,56 @@ func getBlock(blockHash *types.Hash, client1 client.Client) (*SignedBlock, error
 	}
 	return &SignedBlock, err
 }
+
+func GetFinalizedHead(client client.Client) (types.Hash, error) {
+	var res string
+
+	err := client.Call(&res, "chain_getFinalizedHead")
+	if err != nil {
+		return types.Hash{}, err
+	}
+
+	return types.NewHashFromHexString(res)
+}
+
+func getBlockHash(client client.Client, blockNumber *uint64) (types.Hash, error) {
+	var res string
+	var err error
+
+	if blockNumber == nil {
+		err = client.Call(&res, "chain_getBlockHash")
+	} else {
+		err = client.Call(&res, "chain_getBlockHash", *blockNumber)
+	}
+
+	if err != nil {
+		return types.Hash{}, err
+	}
+
+	return types.NewHashFromHexString(res)
+}
+
+func GetBlockHash(client client.Client, blockNumber uint64) (types.Hash, error) {
+	return getBlockHash(client, &blockNumber)
+}
+
+func GetBlockHashLatest(client client.Client) (types.Hash, error) {
+	return getBlockHash(client, nil)
+}
+
+func getHeader(client1 client.Client, blockHash *types.Hash) (*header.Header, error) {
+	var Header header.Header
+	err := client.CallWithBlockHash(client1, &Header, "chain_getHeader", blockHash)
+	if err != nil {
+		return nil, err
+	}
+	return &Header, err
+}
+
+func GetHeaderLatest(client1 client.Client) (*header.Header, error) {
+	return getHeader(client1, nil)
+}
+
+func GetHeader(client1 client.Client, blockHash types.Hash) (*header.Header, error) {
+	return getHeader(client1, &blockHash)
+}
