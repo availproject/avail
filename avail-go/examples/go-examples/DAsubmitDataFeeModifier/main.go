@@ -1,13 +1,9 @@
 package main
 
 import (
-	// "avail-go-sdk-examples/internal/config"
-
 	"avail-go-sdk/src/config"
 	"avail-go-sdk/src/sdk"
 	"avail-go-sdk/src/sdk/tx"
-
-	// "avail-gsrpc-examples/internal/extrinsics"
 
 	"fmt"
 )

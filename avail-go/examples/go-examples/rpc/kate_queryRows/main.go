@@ -33,13 +33,6 @@ func main() {
 	}
 	fmt.Printf("Data submitted successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
 
-	// response := make([][]sdk.BigInt, 1)
-	// response[0] = make([]sdk.BigInt, 1)
-
-	// Assuming types.U256 has a constructor like NewU256
-	// zeroValue := sdk.NewU256(big.NewInt(0)) // Replace with the actual constructor or method
-	// response[0][0] = sdk.BigInt{Int: zeroValue.Int}
-
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Recovered in main", r)
