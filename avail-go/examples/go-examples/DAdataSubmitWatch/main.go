@@ -36,10 +36,5 @@ func main() {
 		fmt.Printf("cannot submit data:%v", err)
 	}
 	fmt.Printf("Data submitted successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
-	// hash, err := sdk.NewHashFromHexString(hashstr)
-	// if err != nil {
-	// 	fmt.Printf("cannot create hash from string:%v", err)
-	// }
-	sdk.EventParser(api, blockHash)
-	// err = sdk.GetData()
+	sdk.EventParser(api, blockHash, "DataSubmitted")
 }

@@ -1,36 +1,20 @@
 package main
 
 import (
-	"avail-go-sdk-examples/internal/config"
-	"flag"
-	"fmt"
-	"log"
-	"os"
-
+	"avail-go-sdk/src/config"
 	"avail-go-sdk/src/sdk"
+	"fmt"
 )
 
 // The following example shows how to connect to a node and display some basic information.
 func main() {
-	var configJSON string
-	var config config.Config
-
-	flag.StringVar(&configJSON, "config", "", "config json file")
-	flag.Parse()
-
-	if configJSON == "" {
-		log.Println("No config file provided. Exiting...")
-		os.Exit(0)
-	}
-
-	err := config.GetConfig(configJSON)
+	config, err := config.LoadConfig()
 	if err != nil {
-		panic(fmt.Sprintf("cannot get config:%v", err))
+		fmt.Printf("cannot load config:%v", err)
 	}
-
 	api, err := sdk.NewSDK(config.ApiURL)
 	if err != nil {
-		panic(fmt.Sprintf("cannot create api client:%v", err))
+		fmt.Printf("cannot create api:%v", err)
 	}
 	chain, err := api.RPC.System.Chain()
 	if err != nil {

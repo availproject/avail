@@ -133,7 +133,7 @@ func NewExtrinsicWatch(api *SubstrateAPI, ext_call string, keyring signature.Key
 		panic(fmt.Sprintf("cannot submit extrinsic:%v", err))
 	}
 
-	fmt.Printf("Data submitted using APPID: %v \n", AppID)
+	fmt.Printf("Transaction being submitted .... ⏳Waiting for block inclusion..")
 
 	defer sub.Unsubscribe()
 	timeout := time.After(200 * time.Second)

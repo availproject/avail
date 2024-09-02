@@ -29,5 +29,6 @@ func main() {
 	if err != nil {
 		fmt.Printf("cannot submit data:%v", err)
 	}
-	fmt.Printf("Data submitted successfully with block hash: %v\n and ext hash:%v", BlockHash.Hex(), txHash.Hex())
+	fmt.Printf("Transaction submitted successfully with block hash: %v\n and ext hash:%v", BlockHash.Hex(), txHash.Hex())
+	sdk.EventParser(api, BlockHash, "BalanceTransfer")
 }

@@ -3,17 +3,19 @@ package sdk
 import (
 	"encoding/hex"
 	"fmt"
+
 	"log"
 	"math/big"
 
 	"github.com/centrifuge/go-substrate-rpc-client/v4/registry"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
 	retriever "github.com/centrifuge/go-substrate-rpc-client/v4/registry/retriever"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/state"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/vedhavyas/go-subkey"
 )
 
-func EventParser(api *SubstrateAPI, h types.Hash) {
+func EventParser(api *SubstrateAPI, h types.Hash, eventParse string) {
 	retriever, err := retriever.NewDefaultEventRetriever(state.NewEventProvider(api.RPC.State), api.RPC.State)
 	if err != nil {
 		log.Printf("Couldn't create event retriever")
@@ -25,6 +27,20 @@ func EventParser(api *SubstrateAPI, h types.Hash) {
 		log.Printf("Couldn't retrieve events")
 	}
 
+	switch eventParse {
+	case "DataSubmitted":
+		ParseDataSubmitted(events)
+	case "ApplicationKeyCreated":
+		parseApplicationKeyCreated(events)
+	case "ApplicationKeySet":
+		parseApplicationKeySet(events)
+	case "BalanceTransfer":
+		parseBalanceTransfer(events)
+	case "Bond":
+		parseBond(events)
+	}
+}
+func ParseDataSubmitted(events []*parser.Event) {
 	for _, event := range events {
 		if event.Name == "DataAvailability.DataSubmitted" {
 			from, _ := registry.ProcessDecodedFieldValue[*types.AccountID](
@@ -101,7 +117,32 @@ func EventParser(api *SubstrateAPI, h types.Hash) {
 			}
 
 		}
+		parseTransactionFee(event)
+	}
+}
 
+func parseTransactionFee(event *parser.Event) {
+	if event.Name == "TransactionPayment.TransactionFeePaid" {
+
+		amount, err := registry.GetDecodedFieldAsType[types.U128](
+			event.Fields,
+			func(fieldIndex int, field *registry.DecodedField) bool {
+				return fieldIndex == 1
+			},
+		)
+		if err != nil {
+			fmt.Printf("Amount parsing err: %s\n", err.Error())
+		}
+		fmt.Printf("Actual Fee from TransactionPayment.TransactionFeePaid event: %s \n", convInt(amount.String()))
+		if err != nil {
+			fmt.Printf("Balances.Deposit.Who: %s\n", err.Error())
+		}
+	}
+
+}
+
+func parseApplicationKeyCreated(events []*parser.Event) {
+	for _, event := range events {
 		if event.Name == "DataAvailability.ApplicationKeyCreated" {
 			owner, _ := registry.ProcessDecodedFieldValue[*types.AccountID](
 				event.Fields,
@@ -213,6 +254,12 @@ func EventParser(api *SubstrateAPI, h types.Hash) {
 			}
 
 		}
+		parseTransactionFee(event)
+	}
+}
+
+func parseApplicationKeySet(events []*parser.Event) {
+	for _, event := range events {
 		if event.Name == "DataAvailability.ApplicationKeySet" {
 			owner, _ := registry.ProcessDecodedFieldValue[*types.AccountID](
 				event.Fields,
@@ -324,6 +371,12 @@ func EventParser(api *SubstrateAPI, h types.Hash) {
 			}
 
 		}
+		parseTransactionFee(event)
+	}
+}
+
+func parseBalanceTransfer(events []*parser.Event) {
+	for _, event := range events {
 		if event.Name == "Balances.Transfer" {
 			from, err := registry.ProcessDecodedFieldValue[*types.AccountID](
 				event.Fields,
@@ -410,7 +463,48 @@ func EventParser(api *SubstrateAPI, h types.Hash) {
 				fmt.Printf("Balances.Deposit.Who: %s\n", err.Error())
 			}
 		}
-		if event.Name == "TransactionPayment.TransactionFeePaid" {
+		parseTransactionFee(event)
+	}
+}
+
+func parseBond(events []*parser.Event) {
+	for _, event := range events {
+		if event.Name == "Staking.Bonded" {
+			from, err := registry.ProcessDecodedFieldValue[*types.AccountID](
+				event.Fields,
+				func(fieldIndex int, field *registry.DecodedField) bool {
+
+					return field.Name == "sp_core.crypto.AccountId32.stash"
+				},
+				func(value any) (*types.AccountID, error) {
+					fields, ok := value.(registry.DecodedFields)
+
+					if !ok {
+						return nil, fmt.Errorf("unexpected value: %v", value)
+					}
+
+					accByteSlice, err := registry.GetDecodedFieldAsSliceOfType[types.U8](fields, func(fieldIndex int, field *registry.DecodedField) bool {
+						return fieldIndex == 0
+					})
+
+					if err != nil {
+						return nil, err
+					}
+
+					var accBytes []byte
+
+					for _, accByte := range accByteSlice {
+						accBytes = append(accBytes, byte(accByte))
+					}
+
+					return types.NewAccountID(accBytes)
+				},
+			)
+			a := from.ToHexString()
+
+			// // add, _ := types.NewAddressFromHexAccountID(a)
+			// fmt.Println(from)
+			fmt.Printf("stash address read from event: %s \n", a)
 
 			amount, err := registry.GetDecodedFieldAsType[types.U128](
 				event.Fields,
@@ -421,11 +515,11 @@ func EventParser(api *SubstrateAPI, h types.Hash) {
 			if err != nil {
 				fmt.Printf("Amount parsing err: %s\n", err.Error())
 			}
-			fmt.Printf("Actual Fee from TransactionPayment.TransactionFeePaid event: %s \n", convInt(amount.String()))
+			fmt.Printf("Amount transferred : %s \n", convInt(amount.String()))
 			if err != nil {
 				fmt.Printf("Balances.Deposit.Who: %s\n", err.Error())
 			}
 		}
-
+		parseTransactionFee(event)
 	}
 }

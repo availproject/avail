@@ -406,7 +406,7 @@ func TransferKeepAlive(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.
 			close(txHashCh2)
 			return
 		}
-		fmt.Println("Data submitted successfully")
+		fmt.Println("Transaction submitted successfully")
 	}()
 	blockHash := <-BlockHashCh2
 	txHash := <-txHashCh2
@@ -435,7 +435,7 @@ func TransferAllowDeath(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk
 			close(txHashCh2)
 			return
 		}
-		fmt.Println("Data submitted successfully")
+		fmt.Println("Transaction submitted successfully")
 	}()
 	blockHash := <-BlockHashCh2
 	txHash := <-txHashCh2
@@ -464,7 +464,7 @@ func TransferAll(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.WaitFo
 			close(txHashCh2)
 			return
 		}
-		fmt.Println("Data submitted successfully")
+		fmt.Println("Transaction submitted successfully")
 	}()
 	blockHash := <-BlockHashCh2
 	txHash := <-txHashCh2
