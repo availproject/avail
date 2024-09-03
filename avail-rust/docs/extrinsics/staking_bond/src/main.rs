@@ -17,14 +17,7 @@ async fn main() -> Result<(), String> {
 		.bond(value, payee, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
-	println!(
-		"Stash={}, Amount={:?}",
-		result.event.stash, result.event.amount
-	);
-	println!(
-		"TxHash={:?}, BlockHash={:?}",
-		result.tx_hash, result.block_hash
-	);
+	dbg!(result);
 
 	Ok(())
 }

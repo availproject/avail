@@ -17,15 +17,7 @@ async fn main() -> Result<(), String> {
 		.submit_data(data, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
-	println!(
-		"Who={}, DataHash={:?}",
-		result.event.who, result.event.data_hash
-	);
-	println!("TxData={:?}", result.tx_data.data);
-	println!(
-		"TxHash={:?}, BlockHash={:?}",
-		result.tx_hash, result.block_hash
-	);
+	dbg!(result);
 
 	Ok(())
 }

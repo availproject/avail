@@ -32,5 +32,7 @@ pub use primitives::block::{
 pub use primitives::kate::{Cell, GDataProof, GRow};
 pub use subxt;
 pub use subxt::config::polkadot::U256;
+pub use subxt_signer;
 pub use utils::utils_raw;
 pub use utils::FetchTransactionError;
+pub use sp_core;

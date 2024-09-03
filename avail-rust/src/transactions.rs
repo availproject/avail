@@ -4,6 +4,7 @@ use crate::api_dev::api::runtime_types::frame_support::dispatch::DispatchFeeModi
 use crate::api_dev::api::runtime_types::pallet_staking::ValidatorPrefs;
 use crate::api_dev::api::runtime_types::sp_arithmetic::per_things::Perbill;
 use crate::api_dev::api::Call;
+use crate::avail::runtime_types::da_runtime::primitives::SessionKeys;
 use crate::sdk::WaitFor;
 use crate::utils_raw::progress_transaction;
 use crate::{
@@ -27,118 +28,175 @@ pub type Params =
 		AvailConfig,
 	>>::Params;
 
+#[derive(Debug)]
 pub struct TransferAllTxSuccess {
 	pub event: BalancesEvents::Transfer,
 	pub event2: Option<SystemEvents::KilledAccount>,
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
+	pub tx_index: u32,
 	pub block_hash: BlockHash,
+	pub block_number: u32,
 }
 
+#[derive(Debug)]
 pub struct TransferAllowDeathTxSuccess {
 	pub event: BalancesEvents::Transfer,
 	pub event2: Option<SystemEvents::KilledAccount>,
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
+	pub tx_index: u32,
 	pub block_hash: BlockHash,
+	pub block_number: u32,
 }
 
+#[derive(Debug)]
 pub struct TransferKeepAliveTxSuccess {
 	pub event: BalancesEvents::Transfer,
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
+	pub tx_index: u32,
 	pub block_hash: BlockHash,
+	pub block_number: u32,
 }
 
+#[derive(Debug)]
 pub struct BondTxSuccess {
 	pub event: StakingEvents::Bonded,
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
+	pub tx_index: u32,
 	pub block_hash: BlockHash,
+	pub block_number: u32,
 }
 
+#[derive(Debug)]
 pub struct BondExtraTxSuccess {
 	pub event: StakingEvents::Bonded,
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
+	pub tx_index: u32,
 	pub block_hash: BlockHash,
+	pub block_number: u32,
 }
 
+#[derive(Debug)]
 pub struct ChillTxSuccess {
 	pub event: Option<StakingEvents::Chilled>,
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
+	pub tx_index: u32,
 	pub block_hash: BlockHash,
+	pub block_number: u32,
 }
 
+#[derive(Debug)]
 pub struct ChillOtherTxSuccess {
 	pub event: StakingEvents::Chilled,
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
+	pub tx_index: u32,
 	pub block_hash: BlockHash,
+	pub block_number: u32,
 }
 
+#[derive(Debug)]
 pub struct NominateTxSuccess {
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_data: transaction_data::staking::Nominate,
 	pub tx_hash: BlockHash,
+	pub tx_index: u32,
 	pub block_hash: BlockHash,
+	pub block_number: u32,
 }
 
+#[derive(Debug)]
 pub struct UnbondTxSuccess {
 	pub event: StakingEvents::Unbonded,
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
+	pub tx_index: u32,
 	pub block_hash: BlockHash,
+	pub block_number: u32,
 }
 
+#[derive(Debug)]
 pub struct ValidateTxSuccess {
 	pub event: StakingEvents::ValidatorPrefsSet,
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
+	pub tx_index: u32,
 	pub block_hash: BlockHash,
+	pub block_number: u32,
 }
 
+#[derive(Debug)]
 pub struct SubmitDataTxSuccess {
 	pub event: DataAvailabilityEvents::DataSubmitted,
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_data: transaction_data::data_availability::SubmitData,
 	pub tx_hash: BlockHash,
+	pub tx_index: u32,
 	pub block_hash: BlockHash,
+	pub block_number: u32,
 }
 
+#[derive(Debug)]
 pub struct CreateApplicationKeyTxSuccess {
 	pub event: DataAvailabilityEvents::ApplicationKeyCreated,
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
+	pub tx_index: u32,
 	pub block_hash: BlockHash,
+	pub block_number: u32,
 }
 
+#[derive(Debug)]
 pub struct SetApplicationKeyTxSuccess {
 	pub event: DataAvailabilityEvents::ApplicationKeySet,
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
+	pub tx_index: u32,
 	pub block_hash: BlockHash,
+	pub block_number: u32,
 }
 
+#[derive(Debug)]
 pub struct SubmitBlockLengthProposalTxSuccess {
 	pub event: DataAvailabilityEvents::BlockLengthProposalSubmitted,
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
+	pub tx_index: u32,
 	pub block_hash: BlockHash,
+	pub block_number: u32,
 }
 
+#[derive(Debug)]
 pub struct SetSubmitDataFeeModifierTxSuccess {
 	pub event: DataAvailabilityEvents::SubmitDataFeeModifierSet,
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_hash: BlockHash,
+	pub tx_index: u32,
 	pub block_hash: BlockHash,
+	pub block_number: u32,
 }
 
+#[derive(Debug)]
+pub struct SetKeysTxSuccess {
+	pub events: ExtrinsicEvents<AvailConfig>,
+	pub tx_data: transaction_data::session::SetKeys,
+	pub tx_hash: BlockHash,
+	pub tx_index: u32,
+	pub block_hash: BlockHash,
+	pub block_number: u32,
+}
+
+#[derive(Clone)]
 pub struct Transactions {
 	pub balances: Balances,
 	pub staking: Staking,
 	pub data_availability: DataAvailability,
+	pub session: Session,
 }
 
 impl Transactions {
@@ -147,20 +205,92 @@ impl Transactions {
 		let blocks = api.blocks();
 
 		Self {
-			balances: Balances::new(tx.clone()),
+			balances: Balances::new(tx.clone(), blocks.clone()),
 			staking: Staking::new(tx.clone(), blocks.clone()),
-			data_availability: DataAvailability::new(tx.clone(), blocks),
+			data_availability: DataAvailability::new(tx.clone(), blocks.clone()),
+			session: Session::new(tx.clone(), blocks),
 		}
 	}
 }
 
+async fn get_block_number(
+	blocks: &AvailBlocksClient,
+	block_hash: BlockHash,
+) -> Result<u32, String> {
+	let block_number = blocks
+		.at(block_hash)
+		.await
+		.map_err(|e| e.to_string())?
+		.number();
+
+	Ok(block_number)
+}
+
+#[derive(Clone)]
+pub struct Session {
+	api: TxApi,
+	blocks: AvailBlocksClient,
+}
+
+impl Session {
+	pub fn new(api: TxApi, blocks: AvailBlocksClient) -> Self {
+		Self { api, blocks }
+	}
+
+	pub async fn set_keys(
+		&self,
+		keys: SessionKeys,
+		wait_for: WaitFor,
+		account: &Keypair,
+		options: Option<Params>,
+	) -> Result<SetKeysTxSuccess, String> {
+		let params = options.unwrap_or_default();
+		let call = avail::tx().session().set_keys(keys, vec![]);
+
+		let maybe_tx_progress = self
+			.api
+			.sign_and_submit_then_watch(&call, account, params)
+			.await;
+
+		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
+		let tx_in_block = match transaction {
+			Ok(tx_in_block) => tx_in_block,
+			Err(message) => return Err(message),
+		};
+
+		let events = match tx_in_block.wait_for_success().await {
+			Ok(e) => e,
+			Err(error) => return Err(error.to_string()),
+		};
+
+		let tx_hash = tx_in_block.extrinsic_hash();
+		let tx_index = events.extrinsic_index();
+		let block_hash = tx_in_block.block_hash();
+		let block_number = get_block_number(&self.blocks, block_hash).await?;
+
+		let tx_data =
+			transaction_data::session::SetKeys::new(block_hash, tx_hash, &self.blocks).await?;
+
+		Ok(SetKeysTxSuccess {
+			events,
+			tx_data,
+			tx_hash,
+			tx_index,
+			block_hash,
+			block_number,
+		})
+	}
+}
+
+#[derive(Clone)]
 pub struct Balances {
 	api: TxApi,
+	blocks: AvailBlocksClient,
 }
 
 impl Balances {
-	pub fn new(api: TxApi) -> Self {
-		Self { api }
+	pub fn new(api: TxApi, blocks: AvailBlocksClient) -> Self {
+		Self { api, blocks }
 	}
 
 	pub async fn transfer_all(
@@ -203,12 +333,19 @@ impl Balances {
 		let event2 = events.find_first::<SystemEvents::KilledAccount>();
 		let event2 = event2.ok().flatten();
 
+		let tx_hash = tx_in_block.extrinsic_hash();
+		let tx_index = events.extrinsic_index();
+		let block_hash = tx_in_block.block_hash();
+		let block_number = get_block_number(&self.blocks, block_hash).await?;
+
 		Ok(TransferAllTxSuccess {
 			event,
 			event2,
 			events,
-			tx_hash: tx_in_block.extrinsic_hash(),
-			block_hash: tx_in_block.block_hash(),
+			tx_hash,
+			tx_index,
+			block_hash,
+			block_number,
 		})
 	}
 
@@ -254,12 +391,19 @@ impl Balances {
 		let event2 = events.find_first::<SystemEvents::KilledAccount>();
 		let event2 = event2.ok().flatten();
 
+		let tx_hash = tx_in_block.extrinsic_hash();
+		let tx_index = events.extrinsic_index();
+		let block_hash = tx_in_block.block_hash();
+		let block_number = get_block_number(&self.blocks, block_hash).await?;
+
 		Ok(TransferAllowDeathTxSuccess {
 			event,
 			event2,
 			events,
-			tx_hash: tx_in_block.extrinsic_hash(),
-			block_hash: tx_in_block.block_hash(),
+			tx_hash,
+			tx_index,
+			block_hash,
+			block_number,
 		})
 	}
 
@@ -302,15 +446,23 @@ impl Balances {
 			return Err(String::from("Failed to find Transfer event"));
 		};
 
+		let tx_hash = tx_in_block.extrinsic_hash();
+		let tx_index = events.extrinsic_index();
+		let block_hash = tx_in_block.block_hash();
+		let block_number = get_block_number(&self.blocks, block_hash).await?;
+
 		Ok(TransferKeepAliveTxSuccess {
 			event,
 			events,
-			tx_hash: tx_in_block.extrinsic_hash(),
-			block_hash: tx_in_block.block_hash(),
+			tx_hash,
+			tx_index,
+			block_hash,
+			block_number,
 		})
 	}
 }
 
+#[derive(Clone)]
 pub struct Staking {
 	api: TxApi,
 	blocks: AvailBlocksClient,
@@ -353,11 +505,18 @@ impl Staking {
 			return Err(String::from("Failed to find Bonded event"));
 		};
 
+		let tx_hash = tx_in_block.extrinsic_hash();
+		let tx_index = events.extrinsic_index();
+		let block_hash = tx_in_block.block_hash();
+		let block_number = get_block_number(&self.blocks, block_hash).await?;
+
 		Ok(BondTxSuccess {
 			event,
 			events,
-			tx_hash: tx_in_block.extrinsic_hash(),
-			block_hash: tx_in_block.block_hash(),
+			tx_hash,
+			tx_index,
+			block_hash,
+			block_number,
 		})
 	}
 
@@ -392,11 +551,18 @@ impl Staking {
 			return Err(String::from("Failed to find Bonded event"));
 		};
 
+		let tx_hash = tx_in_block.extrinsic_hash();
+		let tx_index = events.extrinsic_index();
+		let block_hash = tx_in_block.block_hash();
+		let block_number = get_block_number(&self.blocks, block_hash).await?;
+
 		Ok(BondExtraTxSuccess {
 			event,
 			events,
-			tx_hash: tx_in_block.extrinsic_hash(),
-			block_hash: tx_in_block.block_hash(),
+			tx_hash,
+			tx_index,
+			block_hash,
+			block_number,
 		})
 	}
 
@@ -427,11 +593,18 @@ impl Staking {
 
 		let event = events.find_first::<StakingEvents::Chilled>().ok().flatten();
 
+		let tx_hash = tx_in_block.extrinsic_hash();
+		let tx_index = events.extrinsic_index();
+		let block_hash = tx_in_block.block_hash();
+		let block_number = get_block_number(&self.blocks, block_hash).await?;
+
 		Ok(ChillTxSuccess {
 			event,
 			events,
-			tx_hash: tx_in_block.extrinsic_hash(),
-			block_hash: tx_in_block.block_hash(),
+			tx_hash,
+			tx_index,
+			block_hash,
+			block_number,
 		})
 	}
 
@@ -471,11 +644,18 @@ impl Staking {
 			return Err(String::from("Failed to find Chilled event"));
 		};
 
+		let tx_hash = tx_in_block.extrinsic_hash();
+		let tx_index = events.extrinsic_index();
+		let block_hash = tx_in_block.block_hash();
+		let block_number = get_block_number(&self.blocks, block_hash).await?;
+
 		Ok(ChillOtherTxSuccess {
 			event,
 			events,
-			tx_hash: tx_in_block.extrinsic_hash(),
-			block_hash: tx_in_block.block_hash(),
+			tx_hash,
+			tx_index,
+			block_hash,
+			block_number,
 		})
 	}
 
@@ -517,11 +697,18 @@ impl Staking {
 		let tx_data =
 			transaction_data::staking::Nominate::new(block_hash, tx_hash, &self.blocks).await?;
 
+		let tx_hash = tx_in_block.extrinsic_hash();
+		let tx_index = events.extrinsic_index();
+		let block_hash = tx_in_block.block_hash();
+		let block_number = get_block_number(&self.blocks, block_hash).await?;
+
 		Ok(NominateTxSuccess {
 			events,
 			tx_data,
 			tx_hash,
+			tx_index,
 			block_hash,
+			block_number,
 		})
 	}
 
@@ -556,11 +743,18 @@ impl Staking {
 			return Err(String::from("Failed to find Unbonded event"));
 		};
 
+		let tx_hash = tx_in_block.extrinsic_hash();
+		let tx_index = events.extrinsic_index();
+		let block_hash = tx_in_block.block_hash();
+		let block_number = get_block_number(&self.blocks, block_hash).await?;
+
 		Ok(UnbondTxSuccess {
 			event,
 			events,
-			tx_hash: tx_in_block.extrinsic_hash(),
-			block_hash: tx_in_block.block_hash(),
+			tx_hash,
+			tx_index,
+			block_hash,
+			block_number,
 		})
 	}
 
@@ -606,15 +800,23 @@ impl Staking {
 			return Err(String::from("Failed to find ValidatorPrefsSet event"));
 		};
 
+		let tx_hash = tx_in_block.extrinsic_hash();
+		let tx_index = events.extrinsic_index();
+		let block_hash = tx_in_block.block_hash();
+		let block_number = get_block_number(&self.blocks, block_hash).await?;
+
 		Ok(ValidateTxSuccess {
 			event,
 			events,
-			tx_hash: tx_in_block.extrinsic_hash(),
-			block_hash: tx_in_block.block_hash(),
+			tx_hash,
+			tx_index,
+			block_hash,
+			block_number,
 		})
 	}
 }
 
+#[derive(Clone)]
 pub struct DataAvailability {
 	api: TxApi,
 	blocks: AvailBlocksClient,
@@ -662,12 +864,19 @@ impl DataAvailability {
 			transaction_data::data_availability::SubmitData::new(block_hash, tx_hash, &self.blocks)
 				.await?;
 
+		let tx_hash = tx_in_block.extrinsic_hash();
+		let tx_index = events.extrinsic_index();
+		let block_hash = tx_in_block.block_hash();
+		let block_number = get_block_number(&self.blocks, block_hash).await?;
+
 		Ok(SubmitDataTxSuccess {
 			event,
 			events,
 			tx_data,
 			tx_hash,
+			tx_index,
 			block_hash,
+			block_number,
 		})
 	}
 
@@ -702,11 +911,18 @@ impl DataAvailability {
 			return Err(String::from("Failed to find ApplicationKeyCreated event"));
 		};
 
+		let tx_hash = tx_in_block.extrinsic_hash();
+		let tx_index = events.extrinsic_index();
+		let block_hash = tx_in_block.block_hash();
+		let block_number = get_block_number(&self.blocks, block_hash).await?;
+
 		Ok(CreateApplicationKeyTxSuccess {
 			event,
 			events,
-			tx_hash: tx_in_block.extrinsic_hash(),
-			block_hash: tx_in_block.block_hash(),
+			tx_hash,
+			tx_index,
+			block_hash,
+			block_number,
 		})
 	}
 
@@ -757,11 +973,18 @@ impl DataAvailability {
 			return Err(String::from("Failed to find ApplicationKeySet event"));
 		};
 
+		let tx_hash = tx_in_block.extrinsic_hash();
+		let tx_index = events.extrinsic_index();
+		let block_hash = tx_in_block.block_hash();
+		let block_number = get_block_number(&self.blocks, block_hash).await?;
+
 		Ok(SetApplicationKeyTxSuccess {
 			event,
 			events,
-			tx_hash: tx_in_block.extrinsic_hash(),
-			block_hash: tx_in_block.block_hash(),
+			tx_hash,
+			tx_index,
+			block_hash,
+			block_number,
 		})
 	}
 
@@ -814,11 +1037,18 @@ impl DataAvailability {
 			));
 		};
 
+		let tx_hash = tx_in_block.extrinsic_hash();
+		let tx_index = events.extrinsic_index();
+		let block_hash = tx_in_block.block_hash();
+		let block_number = get_block_number(&self.blocks, block_hash).await?;
+
 		Ok(SubmitBlockLengthProposalTxSuccess {
 			event,
 			events,
-			tx_hash: tx_in_block.extrinsic_hash(),
-			block_hash: tx_in_block.block_hash(),
+			tx_hash,
+			tx_index,
+			block_hash,
+			block_number,
 		})
 	}
 
@@ -869,11 +1099,18 @@ impl DataAvailability {
 			));
 		};
 
+		let tx_hash = tx_in_block.extrinsic_hash();
+		let tx_index = events.extrinsic_index();
+		let block_hash = tx_in_block.block_hash();
+		let block_number = get_block_number(&self.blocks, block_hash).await?;
+
 		Ok(SetSubmitDataFeeModifierTxSuccess {
 			event,
 			events,
-			tx_hash: tx_in_block.extrinsic_hash(),
-			block_hash: tx_in_block.block_hash(),
+			tx_hash,
+			tx_index,
+			block_hash,
+			block_number,
 		})
 	}
 }

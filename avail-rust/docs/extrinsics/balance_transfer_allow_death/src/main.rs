@@ -17,17 +17,11 @@ async fn main() -> Result<(), String> {
 		.transfer_allow_death(dest, amount, WaitFor::BlockInclusion, &account, None)
 		.await?;
 
-	println!(
-		"From={}, To={}, Amount={}",
-		result.event.from, result.event.to, result.event.amount
-	);
-	if let Some(event) = result.event2 {
+	if let Some(event) = &result.event2 {
 		println!("Killed={}", event.account);
 	}
-	println!(
-		"TxHash={:?}, BlockHash={:?}",
-		result.tx_hash, result.block_hash
-	);
+
+	dbg!(result);
 
 	Ok(())
 }
