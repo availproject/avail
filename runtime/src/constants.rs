@@ -247,6 +247,8 @@ pub mod staking {
 	parameter_types! {
 		/// We take the top 22500 nominators as electing voters..
 		pub const MaxElectingVoters: u32 = 22_500;
+		/// For onchain solutions, which are used as fallback(s), we only consider top 5K nominators as electing voters
+		pub const MaxOnchainElectingVoters: u32 = 5000;
 		/// cannot have active validators higher than this count.
 		pub const MaxActiveValidators: u32 = 1200;
 
@@ -283,7 +285,7 @@ pub mod staking {
 		pub ElectionBoundsMultiPhase: ElectionBounds = ElectionBoundsBuilder::default()
 			.voters_count(MaxElectingVoters::get().into()).build();
 		pub ElectionBoundsOnChain: ElectionBounds = ElectionBoundsBuilder::default()
-			.voters_count(5_000.into()).build();
+			.voters_count(MaxOnchainElectingVoters::get().into()).build();
 	}
 
 	pub type MaxControllersInDeprecationBatch = ConstU32<5900>;
