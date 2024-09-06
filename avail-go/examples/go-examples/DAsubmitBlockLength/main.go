@@ -20,8 +20,9 @@ func main() {
 
 	fmt.Println("Submitting data ...")
 	WaitFor := sdk.BlockInclusion
-	// submit data
-	blockHash, txHash, err := tx.SubmitBlockLength(api, config.Seed, WaitFor)
+	rows := uint32(128)
+	cols := uint32(128)
+	blockHash, txHash, err := tx.SubmitBlockLength(api, config.Seed, WaitFor, rows, cols)
 	if err != nil {
 		fmt.Printf("cannot submit data:%v", err)
 	}

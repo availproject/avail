@@ -20,7 +20,6 @@ func main() {
 
 	fmt.Println("Submitting data ...")
 	WaitFor := sdk.BlockInclusion
-	// submit data
 	blockHash, txHash, err := tx.CreateApplicationKey(api, config.Seed, "my happyyy", WaitFor)
 	if err != nil {
 		fmt.Printf("cannot submit data:%v", err)

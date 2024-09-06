@@ -8,7 +8,6 @@ import (
 	"fmt"
 )
 
-// submitData creates a transaction and makes a Avail data submission
 func main() {
 	config, err := config.LoadConfig()
 	if err != nil {
@@ -23,7 +22,7 @@ func main() {
 	stash := []string{"5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY", "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"}
 	BlockHash, txHash, err := tx.Nominate(api, config.Seed, WaitFor, stash)
 	if err != nil {
-		fmt.Printf("cannot submit data:%v", err)
+		fmt.Printf("cannot submit Transaction:%v", err)
 	}
-	fmt.Printf("Data submitted successfully with block hash: %v\n and ext hash:%v", BlockHash.Hex(), txHash.Hex())
+	fmt.Printf("Transaction submitted successfully with block hash: %v\n and ext hash:%v", BlockHash.Hex(), txHash.Hex())
 }

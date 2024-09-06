@@ -10,7 +10,6 @@ import (
 	"fmt"
 )
 
-// submitData creates a transaction and makes a Avail data submission
 func main() {
 	config, err := config.LoadConfig()
 	if err != nil {
@@ -27,7 +26,7 @@ func main() {
 	bondAmountUCompact := types.NewUCompactFromUInt(amount)
 	BlockHash, txHash, err := tx.TransferAllowDeath(api, config.Seed, WaitFor, dest, bondAmountUCompact)
 	if err != nil {
-		fmt.Printf("cannot submit data:%v", err)
+		fmt.Printf("cannot submit Transaction:%v", err)
 	}
 	fmt.Printf("Transaction submitted successfully with block hash: %v\n and ext hash:%v", BlockHash.Hex(), txHash.Hex())
 	sdk.EventParser(api, BlockHash, "BalanceTransfer")

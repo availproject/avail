@@ -5,7 +5,6 @@ import (
 	"avail-go-sdk/src/sdk/types"
 	"errors"
 	"fmt"
-	"math/big"
 	"strconv"
 
 	"github.com/vedhavyas/go-subkey/v2"
@@ -73,7 +72,7 @@ func CreateApplicationKey(api *sdk.SubstrateAPI, seed string, data string, WaitF
 
 }
 
-func SetApplicationKey(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.WaitFor) (types.Hash, types.Hash, error) {
+func SetApplicationKey(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.WaitFor, oldKey string, newKey string) (types.Hash, types.Hash, error) {
 	keyringPair, err := sdk.KeyringFromSeed(seed)
 	if err != nil {
 		panic(fmt.Sprintf("cannot create KeyPair:%v", err))
@@ -81,7 +80,7 @@ func SetApplicationKey(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.
 	BlockHashCh2 := make(chan types.Hash)
 	txHashCh2 := make(chan types.Hash)
 	go func() {
-		call, err := sdk.NewCall(api, "DataAvailability.set_application_key", sdk.NewBytes([]byte("hahahah")), sdk.NewBytes([]byte("5555")))
+		call, err := sdk.NewCall(api, "DataAvailability.set_application_key", sdk.NewBytes([]byte(oldKey)), sdk.NewBytes([]byte(newKey)))
 		if err != nil {
 			fmt.Printf("cannot create extrinsic: %v", err)
 		}
@@ -92,7 +91,7 @@ func SetApplicationKey(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.
 			close(txHashCh2)
 			return
 		}
-		fmt.Println("Data submitted successfully")
+		fmt.Println("Transaction submitted successfully")
 	}()
 	blockHash := <-BlockHashCh2
 	txHash := <-txHashCh2
@@ -100,25 +99,13 @@ func SetApplicationKey(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.
 
 }
 
-func SetSubmitDataFeeModifier(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.WaitFor) (types.Hash, types.Hash, error) {
+func SetSubmitDataFeeModifier(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.WaitFor, modifier sdk.DispatchFeeModifier) (types.Hash, types.Hash, error) {
 	keyringPair, err := sdk.KeyringFromSeed(seed)
 	if err != nil {
 		panic(fmt.Sprintf("cannot create KeyPair:%v", err))
 	}
 	BlockHashCh2 := make(chan types.Hash)
 	txHashCh2 := make(chan types.Hash)
-	tenPow18 := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
-
-	weightMaximumFee := sdk.NewU128(tenPow18)
-	weightFeeDivider := sdk.NewU32(20)
-	weightFeeMultiplier := sdk.NewU32(1)
-
-	// Create the DispatchFeeModifier
-	modifier := sdk.DispatchFeeModifier{
-		WeightMaximumFee:    weightMaximumFee,
-		WeightFeeDivider:    weightFeeDivider,
-		WeightFeeMultiplier: weightFeeMultiplier,
-	}
 
 	go func() {
 		call, err := sdk.NewCall(api, "DataAvailability.set_submit_data_fee_modifier", modifier)
@@ -132,7 +119,7 @@ func SetSubmitDataFeeModifier(api *sdk.SubstrateAPI, seed string, WaitForInclusi
 			close(txHashCh2)
 			return
 		}
-		fmt.Println("Data submitted successfully")
+		fmt.Println("Transaction submitted successfully")
 	}()
 	blockHash := <-BlockHashCh2
 	txHash := <-txHashCh2
@@ -140,7 +127,7 @@ func SetSubmitDataFeeModifier(api *sdk.SubstrateAPI, seed string, WaitForInclusi
 
 }
 
-func SubmitBlockLength(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.WaitFor) (types.Hash, types.Hash, error) {
+func SubmitBlockLength(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.WaitFor, rows uint32, cols uint32) (types.Hash, types.Hash, error) {
 	keyringPair, err := sdk.KeyringFromSeed(seed)
 	if err != nil {
 		panic(fmt.Sprintf("cannot create KeyPair:%v", err))
@@ -149,7 +136,7 @@ func SubmitBlockLength(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.
 	txHashCh2 := make(chan types.Hash)
 
 	go func() {
-		call, err := sdk.NewCall(api, "DataAvailability.submit_block_length_proposal", sdk.NewU32(128), sdk.NewU32(128))
+		call, err := sdk.NewCall(api, "DataAvailability.submit_block_length_proposal", sdk.NewU32(rows), sdk.NewU32(cols))
 		if err != nil {
 			fmt.Printf("cannot create extrinsic: %v", err)
 		}
@@ -168,7 +155,7 @@ func SubmitBlockLength(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.
 
 }
 
-func Bond(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.WaitFor, amount types.UCompact) (types.Hash, types.Hash, error) {
+func Bond(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.WaitFor, amount types.UCompact, Payee sdk.Payee) (types.Hash, types.Hash, error) {
 	keyringPair, err := sdk.KeyringFromSeed(seed)
 	if err != nil {
 		panic(fmt.Sprintf("cannot create KeyPair:%v", err))
@@ -177,7 +164,7 @@ func Bond(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.WaitFor, amou
 	txHashCh2 := make(chan types.Hash)
 
 	go func() {
-		err = sdk.NewExtrinsicWatch(api, "Staking.bond", keyringPair, BlockHashCh2, txHashCh2, 0, WaitForInclusion, amount, sdk.NewU8(0))
+		err = sdk.NewExtrinsicWatch(api, "Staking.bond", keyringPair, BlockHashCh2, txHashCh2, 0, WaitForInclusion, amount, sdk.NewU8(Payee.EnumIndex()))
 		if err != nil {
 			fmt.Printf("cannot create extrinsic: %v", err)
 			close(BlockHashCh2)

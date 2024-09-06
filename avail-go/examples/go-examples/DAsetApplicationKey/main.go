@@ -19,11 +19,12 @@ func main() {
 	}
 	fmt.Println("Submitting data ...")
 	WaitFor := sdk.BlockInclusion
-	// submit data
-	blockHash, txHash, err := tx.SetApplicationKey(api, config.Seed, WaitFor)
+	newKey := "newKey"
+	oldKey := "oldKey"
+	blockHash, txHash, err := tx.SetApplicationKey(api, config.Seed, WaitFor, oldKey, newKey)
 	if err != nil {
 		fmt.Printf("cannot submit data:%v", err)
 	}
-	fmt.Printf("Data submitted successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
+	fmt.Printf("Transaction submitted successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
 	sdk.EventParser(api, blockHash, "ApplicationKeySet")
 }

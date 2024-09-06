@@ -10,7 +10,6 @@ import (
 	"fmt"
 )
 
-// submitData creates a transaction and makes a Avail data submission
 func main() {
 	config, err := config.LoadConfig()
 	if err != nil {
@@ -21,16 +20,16 @@ func main() {
 		fmt.Printf("cannot create api:%v", err)
 	}
 	WaitFor := sdk.BlockInclusion
-
+	Payee := sdk.Staked
 	bondAmount := new(big.Int)
 	bondAmount.SetString("1000000000000000000000", 10) // Set bondAmount to 1000000000000000000000
 
 	// Convert big.Int to types.UCompact
 	bondAmountUCompact := types.NewUCompact(bondAmount)
-	BlockHash, txHash, err := tx.Bond(api, config.Seed, WaitFor, bondAmountUCompact)
+	BlockHash, txHash, err := tx.Bond(api, config.Seed, WaitFor, bondAmountUCompact, sdk.Payee(Payee))
 	if err != nil {
-		fmt.Printf("cannot submit data:%v", err)
+		fmt.Printf("cannot submit Transaction:%v", err)
 	}
-	fmt.Printf("Data submitted successfully with block hash: %v\n and ext hash:%v", BlockHash.Hex(), txHash.Hex())
+	fmt.Printf("Transaction submitted successfully with block hash: %v\n and ext hash:%v", BlockHash.Hex(), txHash.Hex())
 	sdk.EventParser(api, BlockHash, "Bond")
 }

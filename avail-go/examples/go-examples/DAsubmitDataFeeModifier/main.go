@@ -4,6 +4,7 @@ import (
 	"avail-go-sdk/src/config"
 	"avail-go-sdk/src/sdk"
 	"avail-go-sdk/src/sdk/tx"
+	"math/big"
 
 	"fmt"
 )
@@ -17,11 +18,22 @@ func main() {
 	if err != nil {
 		fmt.Printf("cannot create api:%v", err)
 	}
+	tenPow18 := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
 
+	weightMaximumFee := sdk.NewU128(tenPow18)
+	weightFeeDivider := sdk.NewU32(20)
+	weightFeeMultiplier := sdk.NewU32(1)
+
+	// Create the DispatchFeeModifier
+	modifier := sdk.DispatchFeeModifier{
+		WeightMaximumFee:    weightMaximumFee,
+		WeightFeeDivider:    weightFeeDivider,
+		WeightFeeMultiplier: weightFeeMultiplier,
+	}
 	fmt.Println("Submitting data ...")
 	WaitFor := sdk.BlockInclusion
 	// submit data
-	blockHash, txHash, err := tx.SetSubmitDataFeeModifier(api, config.Seed, WaitFor)
+	blockHash, txHash, err := tx.SetSubmitDataFeeModifier(api, config.Seed, WaitFor, modifier)
 	if err != nil {
 		fmt.Printf("cannot submit data:%v", err)
 	}

@@ -218,6 +218,25 @@ func (w WaitFor) EnumIndex() int {
 	return int(w)
 }
 
+type Payee uint8
+
+const (
+	Staked WaitFor = iota
+	Stash
+	Controller
+	Account
+	None
+)
+
+func (w Payee) String() string {
+	return [...]string{"Staked", "Stash", "Controller", "Account", "None"}[w]
+}
+
+// EnumIndex - Creating common behavior - give the type a EnumIndex function
+func (w Payee) EnumIndex() uint8 {
+	return uint8(w)
+}
+
 func GetData(hash types.Hash, api *SubstrateAPI, txHash types.Hash) error {
 	block, err := rpc.GetAvailBlock(hash, api.Client)
 	if err != nil {
