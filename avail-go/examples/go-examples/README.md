@@ -1,8 +1,5 @@
 # Avail Go SDK documentation / examples
 
-This directory contains documentation and examples related to the opinionated SDK and additional functionalities provided by the `avail-js-sdk`.
-The following scripts have been tested with `ts-node v10.9.2 node v20.11.1 (npm v10.2.4)`.
-
 ## Running Examples in the Docs Directory
 
 To run the examples provided in the `docs/extrinsics` directory, follow these steps:
