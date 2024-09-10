@@ -172,6 +172,13 @@ pub mod pallet {
 		},
 		/// Emit new updater.
 		NewUpdater { old: H256, new: H256 },
+		/// Fusion asset bridge event as a mock
+		FusionMessageExecuted {
+			from: H256,
+			to: H256,
+			message_id: u64,
+			message_root: H256,
+		}
 	}
 
 	/// Storage for a head updates.
@@ -517,6 +524,7 @@ pub mod pallet {
 
 			let message_id = Uint(U256::from(addr_message.id));
 			let mm_idx = Uint(U256::from(T::MessageMappingStorageIndex::get()));
+
 			let slot_key = H256(keccak_256(ethabi::encode(&[message_id, mm_idx]).as_slice()));
 
 			let storage_proof_vec = storage_proof
@@ -549,7 +557,13 @@ pub mod pallet {
 						ExistenceRequirement::AllowDeath,
 					)?;
 				} else {
-					// todo if not avail token, it must be fusion supported token
+					// TODO handle this case
+					Self::deposit_event(Event::<T>::FusionMessageExecuted {
+						from: addr_message.from,
+						to: addr_message.to,
+						message_id: addr_message.id,
+						message_root,
+					});
 				}
 			}
 
