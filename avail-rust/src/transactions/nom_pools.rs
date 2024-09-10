@@ -1,6 +1,5 @@
 use crate::sdk::WaitFor;
-use crate::utils_raw::progress_transaction;
-use crate::{avail, AccountId, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
+use crate::{avail, transaction_data, AccountId, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
 
 use std::str::FromStr;
 use subxt::blocks::ExtrinsicEvents;
@@ -8,7 +7,7 @@ use subxt_signer::sr25519::Keypair;
 
 use avail::nomination_pools::events as NominationPoolsEvents;
 
-use super::{block_and_tx_hash, Params};
+use super::{progress_transaction_ex, Params};
 
 #[derive(Debug)]
 pub struct PoolCreateTxSuccess {
@@ -32,6 +31,26 @@ pub struct PoolCreateWithPoolIdTxSuccess {
 	pub block_number: u32,
 }
 
+#[derive(Debug)]
+pub struct PoolJoinTxSuccess {
+	pub event: NominationPoolsEvents::Bonded,
+	pub events: ExtrinsicEvents<AvailConfig>,
+	pub tx_hash: BlockHash,
+	pub tx_index: u32,
+	pub block_hash: BlockHash,
+	pub block_number: u32,
+}
+
+#[derive(Debug)]
+pub struct PoolNominateTxSuccess {
+	pub events: ExtrinsicEvents<AvailConfig>,
+	pub tx_data: transaction_data::nomination_pools::Nominate,
+	pub tx_hash: BlockHash,
+	pub tx_index: u32,
+	pub block_hash: BlockHash,
+	pub block_number: u32,
+}
+
 #[derive(Clone)]
 pub struct NominationPools {
 	api: TxApi,
@@ -41,6 +60,84 @@ pub struct NominationPools {
 impl NominationPools {
 	pub fn new(api: TxApi, blocks: AvailBlocksClient) -> Self {
 		Self { api, blocks }
+	}
+
+	pub async fn nominate(
+		&self,
+		pool_id: u32,
+		validators: Vec<String>,
+		wait_for: WaitFor,
+		account: &Keypair,
+		options: Option<Params>,
+	) -> Result<PoolNominateTxSuccess, String> {
+		let validators: Result<Vec<AccountId>, _> = validators
+			.into_iter()
+			.map(|v| AccountId::from_str(&v))
+			.collect();
+		let validators = validators.map_err(|e| e.to_string())?;
+
+		let params = options.unwrap_or_default();
+		let call = avail::tx().nomination_pools().nominate(pool_id, validators);
+
+		let maybe_tx_progress = self
+			.api
+			.sign_and_submit_then_watch(&call, account, params)
+			.await;
+
+		let (events, data) =
+			progress_transaction_ex(maybe_tx_progress, wait_for, &self.blocks).await?;
+		let (block_hash, block_number, tx_hash, tx_index) = data;
+
+		let tx_data = transaction_data::nomination_pools::Nominate::new(
+			block_hash.clone(),
+			tx_hash.clone(),
+			&self.blocks,
+		)
+		.await?;
+
+		Ok(PoolNominateTxSuccess {
+			events,
+			tx_data,
+			tx_hash,
+			tx_index,
+			block_hash,
+			block_number,
+		})
+	}
+
+	pub async fn join(
+		&self,
+		amount: u128,
+		pool_id: u32,
+		wait_for: WaitFor,
+		account: &Keypair,
+		options: Option<Params>,
+	) -> Result<PoolJoinTxSuccess, String> {
+		let params = options.unwrap_or_default();
+		let call = avail::tx().nomination_pools().join(amount, pool_id);
+
+		let maybe_tx_progress = self
+			.api
+			.sign_and_submit_then_watch(&call, account, params)
+			.await;
+
+		let (events, data) =
+			progress_transaction_ex(maybe_tx_progress, wait_for, &self.blocks).await?;
+		let (block_hash, block_number, tx_hash, tx_index) = data;
+
+		let event = events.find_first::<NominationPoolsEvents::Bonded>();
+		let Some(event) = event.ok().flatten() else {
+			return Err(String::from("Failed to find Created event"));
+		};
+
+		Ok(PoolJoinTxSuccess {
+			event,
+			events,
+			tx_hash,
+			tx_index,
+			block_hash,
+			block_number,
+		})
 	}
 
 	pub async fn create_with_pool_id(
@@ -72,16 +169,9 @@ impl NominationPools {
 			.sign_and_submit_then_watch(&call, account, params)
 			.await;
 
-		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
-		let tx_in_block = match transaction {
-			Ok(tx_in_block) => tx_in_block,
-			Err(message) => return Err(message),
-		};
-
-		let events = match tx_in_block.wait_for_success().await {
-			Ok(e) => e,
-			Err(error) => return Err(error.to_string()),
-		};
+		let (events, data) =
+			progress_transaction_ex(maybe_tx_progress, wait_for, &self.blocks).await?;
+		let (block_hash, block_number, tx_hash, tx_index) = data;
 
 		let event = events.find_first::<NominationPoolsEvents::Created>();
 		let Some(event) = event.ok().flatten() else {
@@ -92,9 +182,6 @@ impl NominationPools {
 		let Some(event2) = event2.ok().flatten() else {
 			return Err(String::from("Failed to find Bonded event"));
 		};
-
-		let (block_hash, block_number, tx_hash, tx_index) =
-			block_and_tx_hash(&tx_in_block, &events, &self.blocks).await?;
 
 		Ok(PoolCreateWithPoolIdTxSuccess {
 			event,
@@ -134,16 +221,9 @@ impl NominationPools {
 			.sign_and_submit_then_watch(&call, account, params)
 			.await;
 
-		let transaction = progress_transaction(maybe_tx_progress, wait_for).await;
-		let tx_in_block = match transaction {
-			Ok(tx_in_block) => tx_in_block,
-			Err(message) => return Err(message),
-		};
-
-		let events = match tx_in_block.wait_for_success().await {
-			Ok(e) => e,
-			Err(error) => return Err(error.to_string()),
-		};
+		let (events, data) =
+			progress_transaction_ex(maybe_tx_progress, wait_for, &self.blocks).await?;
+		let (block_hash, block_number, tx_hash, tx_index) = data;
 
 		let event = events.find_first::<NominationPoolsEvents::Created>();
 		let Some(event) = event.ok().flatten() else {
@@ -154,9 +234,6 @@ impl NominationPools {
 		let Some(event2) = event2.ok().flatten() else {
 			return Err(String::from("Failed to find Bonded event"));
 		};
-
-		let (block_hash, block_number, tx_hash, tx_index) =
-			block_and_tx_hash(&tx_in_block, &events, &self.blocks).await?;
 
 		Ok(PoolCreateTxSuccess {
 			event,

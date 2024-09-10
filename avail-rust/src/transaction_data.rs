@@ -6,6 +6,7 @@ use crate::{avail, AccountId, AvailBlocksClient};
 use subxt_core::utils::MultiAddress;
 
 use avail::data_availability::calls::types as DataAvailabilityCalls;
+use avail::nomination_pools::calls::types as NominationPoolsCalls;
 use avail::session::calls::types as SessionCalls;
 use avail::staking::calls::types as StakingCalls;
 
@@ -92,6 +93,43 @@ pub mod session {
 			let proof = transaction.value.proof;
 
 			Ok(Self { keys, proof })
+		}
+	}
+}
+
+pub mod nomination_pools {
+	use super::*;
+
+	#[allow(dead_code)]
+	#[derive(Debug)]
+	pub struct Nominate {
+		pool_id: u32,
+		validators: Vec<String>,
+	}
+
+	impl Nominate {
+		pub async fn new(
+			block_hash: BlockHash,
+			tx_hash: BlockHash,
+			blocks: &AvailBlocksClient,
+		) -> Result<Self, String> {
+			let transaction =
+				fetch_transaction::<NominationPoolsCalls::Nominate>(block_hash, tx_hash, blocks)
+					.await;
+			let transaction = transaction.map_err(|err| err.to_string())?;
+
+			let pool_id = transaction.value.pool_id;
+			let validators = transaction
+				.value
+				.validators
+				.into_iter()
+				.map(|a| a.to_string())
+				.collect();
+
+			Ok(Self {
+				pool_id,
+				validators,
+			})
 		}
 	}
 }
