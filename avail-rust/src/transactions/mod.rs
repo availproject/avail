@@ -4,17 +4,17 @@ mod nom_pools;
 mod session;
 mod staking;
 
+pub use balances::*;
+pub use da::*;
+pub use nom_pools::*;
+pub use session::*;
+pub use staking::*;
+
 use crate::{
 	utils_raw::progress_transaction, Api, AvailBlocksClient, AvailConfig, BlockHash,
 	TransactionInBlock, WaitFor,
 };
-
-use balances::Balances;
-use da::DataAvailability;
-use nom_pools::NominationPools;
-use session::Session;
 use sp_core::H256;
-use staking::Staking;
 use subxt::{blocks::ExtrinsicEvents, tx::TxProgress};
 
 pub type Params =

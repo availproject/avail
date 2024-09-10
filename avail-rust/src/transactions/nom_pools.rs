@@ -1,10 +1,12 @@
 use crate::sdk::WaitFor;
-use crate::{avail, transaction_data, AccountId, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
+use crate::utils_raw::fetch_transaction;
+use crate::{avail, AccountId, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
 
 use std::str::FromStr;
 use subxt::blocks::ExtrinsicEvents;
 use subxt_signer::sr25519::Keypair;
 
+use avail::nomination_pools::calls::types as NominationPoolsCalls;
 use avail::nomination_pools::events as NominationPoolsEvents;
 
 use super::{progress_transaction_ex, Params};
@@ -44,7 +46,7 @@ pub struct PoolJoinTxSuccess {
 #[derive(Debug)]
 pub struct PoolNominateTxSuccess {
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_data: transaction_data::nomination_pools::Nominate,
+	pub tx_data: NominationPoolsCalls::Nominate,
 	pub tx_hash: BlockHash,
 	pub tx_index: u32,
 	pub block_hash: BlockHash,
@@ -88,12 +90,7 @@ impl NominationPools {
 			progress_transaction_ex(maybe_tx_progress, wait_for, &self.blocks).await?;
 		let (block_hash, block_number, tx_hash, tx_index) = data;
 
-		let tx_data = transaction_data::nomination_pools::Nominate::new(
-			block_hash.clone(),
-			tx_hash.clone(),
-			&self.blocks,
-		)
-		.await?;
+		let tx_data = tx_data_pool_nominate(block_hash, tx_hash, &self.blocks).await?;
 
 		Ok(PoolNominateTxSuccess {
 			events,
@@ -245,4 +242,15 @@ impl NominationPools {
 			block_number,
 		})
 	}
+}
+
+pub async fn tx_data_pool_nominate(
+	block_hash: BlockHash,
+	tx_hash: BlockHash,
+	blocks: &AvailBlocksClient,
+) -> Result<NominationPoolsCalls::Nominate, String> {
+	let transaction =
+		fetch_transaction::<NominationPoolsCalls::Nominate>(block_hash, tx_hash, blocks).await;
+	let transaction = transaction.map_err(|err| err.to_string())?;
+	Ok(transaction.value)
 }

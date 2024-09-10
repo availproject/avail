@@ -8,7 +8,6 @@ mod utils;
 
 // Export types for internal and external consumption
 pub mod primitives;
-pub mod transaction_data;
 
 pub type RewardDestination =
 	api_dev::api::runtime_types::pallet_staking::RewardDestination<AccountId>;
@@ -30,9 +29,9 @@ pub use primitives::block::{
 	AppUncheckedExtrinsic, AvailHeader, DefaultExtrinsicParams, DefaultExtrinsicParamsBuilder,
 };
 pub use primitives::kate::{Cell, GDataProof, GRow};
+pub use sp_core;
 pub use subxt;
 pub use subxt::config::polkadot::U256;
 pub use subxt_signer;
 pub use utils::utils_raw;
 pub use utils::FetchTransactionError;
-pub use sp_core;

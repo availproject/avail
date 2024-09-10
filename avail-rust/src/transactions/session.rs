@@ -1,16 +1,19 @@
 use crate::avail::runtime_types::da_runtime::primitives::SessionKeys;
 use crate::sdk::WaitFor;
-use crate::{avail, transaction_data, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
+use crate::utils_raw::fetch_transaction;
+use crate::{avail, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
 
 use subxt::blocks::ExtrinsicEvents;
 use subxt_signer::sr25519::Keypair;
 
 use super::{progress_transaction_ex, Params};
 
+use avail::session::calls::types as SessionCalls;
+
 #[derive(Debug)]
 pub struct SetKeysTxSuccess {
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_data: transaction_data::session::SetKeys,
+	pub tx_data: SessionCalls::SetKeys,
 	pub tx_hash: BlockHash,
 	pub tx_index: u32,
 	pub block_hash: BlockHash,
@@ -47,8 +50,7 @@ impl Session {
 			progress_transaction_ex(maybe_tx_progress, wait_for, &self.blocks).await?;
 		let (block_hash, block_number, tx_hash, tx_index) = data;
 
-		let tx_data =
-			transaction_data::session::SetKeys::new(block_hash, tx_hash, &self.blocks).await?;
+		let tx_data = tx_data_session_set_keys(block_hash, tx_hash, &self.blocks).await?;
 
 		Ok(SetKeysTxSuccess {
 			events,
@@ -59,4 +61,14 @@ impl Session {
 			block_number,
 		})
 	}
+}
+
+pub async fn tx_data_session_set_keys(
+	block_hash: BlockHash,
+	tx_hash: BlockHash,
+	blocks: &AvailBlocksClient,
+) -> Result<SessionCalls::SetKeys, String> {
+	let transaction = fetch_transaction::<SessionCalls::SetKeys>(block_hash, tx_hash, blocks).await;
+	let transaction = transaction.map_err(|err| err.to_string())?;
+	Ok(transaction.value)
 }

@@ -1,9 +1,9 @@
 use crate::api_dev::api::runtime_types::pallet_staking::ValidatorPrefs;
 use crate::api_dev::api::runtime_types::sp_arithmetic::per_things::Perbill;
 use crate::sdk::WaitFor;
+use crate::utils_raw::fetch_transaction;
 use crate::{
-	avail, transaction_data, AccountId, AvailBlocksClient, AvailConfig, BlockHash,
-	RewardDestination, TxApi,
+	avail, AccountId, AvailBlocksClient, AvailConfig, BlockHash, RewardDestination, TxApi,
 };
 
 use std::str::FromStr;
@@ -11,6 +11,7 @@ use subxt::blocks::ExtrinsicEvents;
 use subxt_core::utils::MultiAddress;
 use subxt_signer::sr25519::Keypair;
 
+use avail::staking::calls::types as StakingCalls;
 use avail::staking::events as StakingEvents;
 
 use super::{progress_transaction_ex, Params};
@@ -58,7 +59,7 @@ pub struct ChillOtherTxSuccess {
 #[derive(Debug)]
 pub struct NominateTxSuccess {
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_data: transaction_data::staking::Nominate,
+	pub tx_data: StakingCalls::Nominate,
 	pub tx_hash: BlockHash,
 	pub tx_index: u32,
 	pub block_hash: BlockHash,
@@ -260,8 +261,7 @@ impl Staking {
 			progress_transaction_ex(maybe_tx_progress, wait_for, &self.blocks).await?;
 		let (block_hash, block_number, tx_hash, tx_index) = data;
 
-		let tx_data =
-			transaction_data::staking::Nominate::new(block_hash, tx_hash, &self.blocks).await?;
+		let tx_data = tx_data_staking_nominate(block_hash, tx_hash, &self.blocks).await?;
 
 		Ok(NominateTxSuccess {
 			events,
@@ -351,4 +351,15 @@ impl Staking {
 			block_number,
 		})
 	}
+}
+
+pub async fn tx_data_staking_nominate(
+	block_hash: BlockHash,
+	tx_hash: BlockHash,
+	blocks: &AvailBlocksClient,
+) -> Result<StakingCalls::Nominate, String> {
+	let transaction =
+		fetch_transaction::<StakingCalls::Nominate>(block_hash, tx_hash, blocks).await;
+	let transaction = transaction.map_err(|err| err.to_string())?;
+	Ok(transaction.value)
 }

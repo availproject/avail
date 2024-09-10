@@ -3,12 +3,13 @@ use crate::api_dev::api::data_availability::calls::types::submit_data::Data;
 use crate::api_dev::api::runtime_types::frame_support::dispatch::DispatchFeeModifier;
 use crate::api_dev::api::Call;
 use crate::sdk::WaitFor;
-use crate::utils_raw::progress_transaction;
-use crate::{avail, transaction_data, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
+use crate::utils_raw::{fetch_transaction, progress_transaction};
+use crate::{avail, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
 
 use subxt::blocks::ExtrinsicEvents;
 use subxt_signer::sr25519::Keypair;
 
+use avail::data_availability::calls::types as DataAvailabilityCalls;
 use avail::data_availability::events as DataAvailabilityEvents;
 use avail::sudo::events as SudoEvents;
 
@@ -18,7 +19,7 @@ use super::{block_and_tx_hash, progress_transaction_ex, Params};
 pub struct SubmitDataTxSuccess {
 	pub event: DataAvailabilityEvents::DataSubmitted,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_data: transaction_data::data_availability::SubmitData,
+	pub tx_data: DataAvailabilityCalls::SubmitData,
 	pub tx_hash: BlockHash,
 	pub tx_index: u32,
 	pub block_hash: BlockHash,
@@ -100,9 +101,7 @@ impl DataAvailability {
 			return Err(String::from("Failed to find DataSubmitted event"));
 		};
 
-		let tx_data =
-			transaction_data::data_availability::SubmitData::new(block_hash, tx_hash, &self.blocks)
-				.await?;
+		let tx_data = tx_data_da_submit_data(block_hash, tx_hash, &self.blocks).await?;
 
 		Ok(SubmitDataTxSuccess {
 			event,
@@ -330,4 +329,15 @@ impl DataAvailability {
 			block_number,
 		})
 	}
+}
+
+pub async fn tx_data_da_submit_data(
+	block_hash: BlockHash,
+	tx_hash: BlockHash,
+	blocks: &AvailBlocksClient,
+) -> Result<DataAvailabilityCalls::SubmitData, String> {
+	let transaction =
+		fetch_transaction::<DataAvailabilityCalls::SubmitData>(block_hash, tx_hash, blocks).await;
+	let transaction = transaction.map_err(|err| err.to_string())?;
+	Ok(transaction.value)
 }
