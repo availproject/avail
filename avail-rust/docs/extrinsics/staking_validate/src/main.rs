@@ -1,4 +1,4 @@
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -11,10 +11,12 @@ async fn main() -> Result<(), String> {
 	let commission = 100;
 	let blocked = false;
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.validate(commission, blocked, WaitFor::BlockInclusion, &account, None)
+		.validate(commission, blocked, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);

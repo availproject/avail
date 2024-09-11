@@ -3,12 +3,11 @@ mod config;
 mod from_substrate;
 mod rpcs;
 mod sdk;
-mod transactions;
 mod utils;
 
 // Export types for internal and external consumption
 pub mod primitives;
-pub mod transaction_data;
+pub mod transactions;
 
 pub type RewardDestination =
 	api_dev::api::runtime_types::pallet_staking::RewardDestination<AccountId>;
@@ -30,9 +29,10 @@ pub use primitives::block::{
 	AppUncheckedExtrinsic, AvailHeader, DefaultExtrinsicParams, DefaultExtrinsicParamsBuilder,
 };
 pub use primitives::kate::{Cell, GDataProof, GRow};
+pub use sp_core;
 pub use subxt;
 pub use subxt::config::polkadot::U256;
 pub use subxt_signer;
+pub use transactions::{Mortality, Nonce, Options};
 pub use utils::utils_raw;
 pub use utils::FetchTransactionError;
-pub use sp_core;
