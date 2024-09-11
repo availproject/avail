@@ -18,7 +18,6 @@ impl SDK {
 			tx: Transactions::new(api.clone(), rpc.clone()),
 			util: Util::new(api.clone()),
 			rpc,
-			rpc,
 			api,
 		})
 	}
@@ -30,7 +29,6 @@ impl SDK {
 		Ok(SDK {
 			tx: Transactions::new(api.clone(), rpc.clone()),
 			util: Util::new(api.clone()),
-			rpc,
 			rpc,
 			api,
 		})
