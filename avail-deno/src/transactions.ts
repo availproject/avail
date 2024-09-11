@@ -2,7 +2,7 @@ import { ApiPromise } from "https://deno.land/x/polkadot@0.2.45/api/mod.ts";
 import { KeyringPair } from "https://deno.land/x/polkadot@0.2.45/keyring/types.ts";
 import { ISubmittableResult } from "https://deno.land/x/polkadot@0.2.45/types/types/extrinsic.ts";
 import { SignerOptions } from "https://deno.land/x/polkadot@0.2.45/api/submittable/types.ts";
-import { H256 } from "https://deno.land/x/polkadot@0.2.45/types/interfaces/types.ts";
+import { EventRecord, H256 } from "https://deno.land/x/polkadot@0.2.45/types/interfaces/types.ts";
 import { BN } from "https://deno.land/x/polkadot@0.2.45/util/mod.ts";
 import { err, ok, Result } from "npm:neverthrow@6.2.2";
 
@@ -20,71 +20,208 @@ type ValidatorPerfs = { commission: string; blocked: boolean };
 
 type GenericFailure = { isErr: true; reason: string };
 
+// DA Struct
 type SubmitDataTxSuccess = {
 	isErr: false;
 	txData: TransactionData.DataAvailability.SubmitData;
 	event: Events.DataAvailability.DataSubmittedEvent;
+	events: EventRecord[];
 	txHash: H256;
+	txIndex: number;
 	blockHash: H256;
+	blockNumber: number;
 };
 type CreateApplicationKeyTxSuccess = {
 	isErr: false;
 	event: Events.DataAvailability.ApplicationKeyCreatedEvent;
+	events: EventRecord[];
 	txHash: H256;
+	txIndex: number;
 	blockHash: H256;
+	blockNumber: number;
 };
 type SetApplicationKeyTxSuccess = {
 	isErr: false;
 	event: Events.DataAvailability.ApplicationKeySetEvent;
+	events: EventRecord[];
 	txHash: H256;
+	txIndex: number;
 	blockHash: H256;
+	blockNumber: number;
 };
 type SubmitBlockLengthProposalTxSuccess = {
 	isErr: false;
 	event: Events.DataAvailability.BlockLengthProposalSubmittedEvent;
+	events: EventRecord[];
 	txHash: H256;
+	txIndex: number;
 	blockHash: H256;
+	blockNumber: number;
 };
 type SetSubmitDataFeeModifierTxSuccess = {
 	isErr: false;
 	event: Events.DataAvailability.SubmitDataFeeModifierSetEvent;
+	events: EventRecord[];
 	txHash: H256;
+	txIndex: number;
 	blockHash: H256;
+	blockNumber: number;
 };
-type TransferKeepAliveTxSuccess = { isErr: false; event: Events.Balances.TransferEvent; txHash: H256; blockHash: H256 };
+
+// Balances struct
+type TransferKeepAliveTxSuccess = {
+	isErr: false;
+	event: Events.Balances.TransferEvent;
+	events: EventRecord[];
+	txHash: H256;
+	txIndex: number;
+	blockHash: H256;
+	blockNumber: number;
+};
 type TransferAllowDeathTxSuccess = {
 	isErr: false;
 	event: Events.Balances.TransferEvent;
 	event2?: Events.System.KilledAccount;
+	events: EventRecord[];
 	txHash: H256;
+	txIndex: number;
 	blockHash: H256;
+	blockNumber: number;
 };
 type TransferAllTxSuccess = {
 	isErr: false;
 	event: Events.Balances.TransferEvent;
 	event2?: Events.System.KilledAccount;
+	events: EventRecord[];
 	txHash: H256;
+	txIndex: number;
 	blockHash: H256;
+	blockNumber: number;
 };
-type BondTxSuccess = { isErr: false; event: Events.Staking.Bonded; txHash: H256; blockHash: H256 };
-type BondExtraTxSuccess = { isErr: false; event: Events.Staking.Bonded; txHash: H256; blockHash: H256 };
-type ChillTxSuccess = { isErr: false; event: Events.Staking.Chilled; txHash: H256; blockHash: H256 };
-type ChillOtherTxSuccess = { isErr: false; event: Events.Staking.Chilled; txHash: H256; blockHash: H256 };
-type UnbondTxSuccess = { isErr: false; event: Events.Staking.Unbonded; txHash: H256; blockHash: H256 };
-type ValidatexSuccess = { isErr: false; event: Events.Staking.ValidatorPrefsSet; txHash: H256; blockHash: H256 };
-type NominateTxSuccess = { isErr: false; txData: TransactionData.Staking.Nominate; txHash: H256; blockHash: H256 };
+
+// Staking struct
+type BondTxSuccess = {
+	isErr: false;
+	event: Events.Staking.Bonded;
+	events: EventRecord[];
+	txHash: H256;
+	txIndex: number;
+	blockHash: H256;
+	blockNumber: number;
+};
+type BondExtraTxSuccess = {
+	isErr: false;
+	event: Events.Staking.Bonded;
+	events: EventRecord[];
+	txHash: H256;
+	txIndex: number;
+	blockHash: H256;
+	blockNumber: number;
+};
+type ChillTxSuccess = {
+	isErr: false;
+	event: Events.Staking.Chilled;
+	events: EventRecord[];
+	txHash: H256;
+	txIndex: number;
+	blockHash: H256;
+	blockNumber: number;
+};
+type ChillOtherTxSuccess = {
+	isErr: false;
+	event: Events.Staking.Chilled;
+	events: EventRecord[];
+	txHash: H256;
+	txIndex: number;
+	blockHash: H256;
+	blockNumber: number;
+};
+type UnbondTxSuccess = {
+	isErr: false;
+	event: Events.Staking.Unbonded;
+	events: EventRecord[];
+	txHash: H256;
+	txIndex: number;
+	blockHash: H256;
+	blockNumber: number;
+};
+type ValidateTxSuccess = {
+	isErr: false;
+	event: Events.Staking.ValidatorPrefsSet;
+	events: EventRecord[];
+	txHash: H256;
+	txIndex: number;
+	blockHash: H256;
+	blockNumber: number;
+};
+type NominateTxSuccess = {
+	isErr: false;
+	txData: TransactionData.Staking.Nominate;
+	events: EventRecord[];
+	txHash: H256;
+	txIndex: number;
+	blockHash: H256;
+	blockNumber: number;
+};
+
+// Session struct
+// todo
+
+// Nomination Pools struct
+type PoolCreateTxSuccess = {
+	isErr: false;
+	event: Events.NominationPools.Created;
+	event2: Events.NominationPools.Bonded;
+	events: EventRecord[];
+	txHash: H256;
+	txIndex: number;
+	blockHash: H256;
+	blockNumber: number;
+};
+
+type PoolCreateWithPoolIdTxSuccess = {
+	isErr: false;
+	event: Events.NominationPools.Created;
+	event2: Events.NominationPools.Bonded;
+	events: EventRecord[];
+	txHash: H256;
+	txIndex: number;
+	blockHash: H256;
+	blockNumber: number;
+};
+
+type PoolJoinTxSuccess = {
+	isErr: false;
+	event: Events.NominationPools.Bonded;
+	events: EventRecord[];
+	txHash: H256;
+	txIndex: number;
+	blockHash: H256;
+	blockNumber: number;
+};
+
+type PoolNominateTxSuccess = {
+	isErr: false;
+	events: EventRecord[];
+	txHash: H256;
+	txIndex: number;
+	blockHash: H256;
+	blockNumber: number;
+};
 
 export class Transactions {
 	private api: ApiPromise;
 	dataAvailability: DataAvailability;
 	balances: Balances;
 	staking: Staking;
+	nomination_pools: NominationPools;
 
 	constructor(api: ApiPromise) {
 		this.api = api;
 		this.dataAvailability = new DataAvailability(api);
 		this.balances = new Balances(api);
 		this.staking = new Staking(api);
+		this.nomination_pools = new NominationPools(api);
 	}
 }
 
@@ -106,11 +243,209 @@ function standardCallback(
 	}
 }
 
-function getBlockHashAndTxHash(result: ISubmittableResult, waitFor: WaitFor): [H256, H256] {
-	if (waitFor == WaitFor.BlockInclusion) {
-		return [result.txHash as H256, result.status.asInBlock as H256];
+async function getBlockHashAndTxHash(result: ISubmittableResult, waitFor: WaitFor, api: ApiPromise): Promise<[H256, number, H256, number]> {
+	const txHash = result.txHash as H256;
+	const txIndex: number = result.txIndex || 22;
+	let blockHash = txHash;
+	if (waitFor == WaitFor.BlockFinalization) {
+		blockHash = result.status.asFinalized as H256;
 	} else {
-		return [result.txHash as H256, result.status.asFinalized as H256];
+		blockHash = result.status.asInBlock as H256;
+	}
+
+	const header = await api.rpc.chain.getHeader(blockHash);
+	const blockNumber: number = header.number.toNumber();
+
+	return [txHash, txIndex, blockHash, blockNumber];
+}
+
+export class NominationPools {
+	private api: ApiPromise;
+
+	constructor(api: ApiPromise) {
+		this.api = api;
+	}
+
+	async create(
+		amount: BN,
+		root: string,
+		nominator: string,
+		bouncer: string,
+		waitFor: WaitFor,
+		account: KeyringPair,
+		options?: Partial<SignerOptions>,
+	): Promise<PoolCreateTxSuccess | GenericFailure> {
+		const optionWrapper = options || {};
+		const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
+			this.api.tx.nominationPools.create(amount, root, nominator, bouncer).signAndSend(
+				account,
+				optionWrapper,
+				(result: ISubmittableResult) => {
+					standardCallback(result, res, waitFor);
+				},
+			).catch((reason) => {
+				res(err(reason));
+			});
+		});
+
+		if (maybeTxResult.isErr()) {
+			return { isErr: true, reason: maybeTxResult.error } as GenericFailure;
+		}
+		const txResult = maybeTxResult.value;
+
+		if (txResult.isError) {
+			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
+		}
+
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		if (failed != undefined) {
+			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
+		}
+
+		const event = Events.NominationPools.Created.New(txResult.events);
+		if (event == undefined) {
+			return { isErr: true, reason: "Failed to find Created event." } as GenericFailure;
+		}
+
+		const event2 = Events.NominationPools.Bonded.New(txResult.events);
+		if (event2 == undefined) {
+			return { isErr: true, reason: "Failed to find Bonded event." } as GenericFailure;
+		}
+
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
+
+		return { isErr: false, event, event2, events, txHash, txIndex, blockHash, blockNumber } as PoolCreateTxSuccess;
+	}
+
+	async createWithPoolId(
+		amount: BN,
+		root: string,
+		nominator: string,
+		bouncer: string,
+		poolId: number,
+		waitFor: WaitFor,
+		account: KeyringPair,
+		options?: Partial<SignerOptions>,
+	): Promise<PoolCreateWithPoolIdTxSuccess | GenericFailure> {
+		const optionWrapper = options || {};
+		const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
+			this.api.tx.nominationPools.createWithPoolId(amount, root, nominator, bouncer, poolId).signAndSend(
+				account,
+				optionWrapper,
+				(result: ISubmittableResult) => {
+					standardCallback(result, res, waitFor);
+				},
+			).catch((reason) => {
+				res(err(reason));
+			});
+		});
+
+		if (maybeTxResult.isErr()) {
+			return { isErr: true, reason: maybeTxResult.error } as GenericFailure;
+		}
+		const txResult = maybeTxResult.value;
+
+		if (txResult.isError) {
+			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
+		}
+
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		if (failed != undefined) {
+			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
+		}
+
+		const event = Events.NominationPools.Created.New(txResult.events);
+		if (event == undefined) {
+			return { isErr: true, reason: "Failed to find Created event." } as GenericFailure;
+		}
+
+		const event2 = Events.NominationPools.Bonded.New(txResult.events);
+		if (event2 == undefined) {
+			return { isErr: true, reason: "Failed to find Bonded event." } as GenericFailure;
+		}
+
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
+
+		return { isErr: false, event, event2, events, txHash, txIndex, blockHash, blockNumber } as PoolCreateWithPoolIdTxSuccess;
+	}
+
+	async join(
+		amount: BN,
+		poolId: number,
+		waitFor: WaitFor,
+		account: KeyringPair,
+		options?: Partial<SignerOptions>,
+	): Promise<PoolJoinTxSuccess | GenericFailure> {
+		const optionWrapper = options || {};
+		const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
+			this.api.tx.nominationPools.join(amount, poolId).signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
+				standardCallback(result, res, waitFor);
+			}).catch((reason) => {
+				res(err(reason));
+			});
+		});
+
+		if (maybeTxResult.isErr()) {
+			return { isErr: true, reason: maybeTxResult.error } as GenericFailure;
+		}
+		const txResult = maybeTxResult.value;
+
+		if (txResult.isError) {
+			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
+		}
+
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		if (failed != undefined) {
+			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
+		}
+
+		const event = Events.NominationPools.Bonded.New(txResult.events);
+		if (event == undefined) {
+			return { isErr: true, reason: "Failed to find Bonded event." } as GenericFailure;
+		}
+
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
+
+		return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as PoolJoinTxSuccess;
+	}
+
+	async nominate(
+		poolId: number,
+		validators: string[],
+		waitFor: WaitFor,
+		account: KeyringPair,
+		options?: Partial<SignerOptions>,
+	): Promise<PoolNominateTxSuccess | GenericFailure> {
+		const optionWrapper = options || {};
+		const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
+			this.api.tx.nominationPools.nominate(poolId, validators).signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
+				standardCallback(result, res, waitFor);
+			}).catch((reason) => {
+				res(err(reason));
+			});
+		});
+
+		if (maybeTxResult.isErr()) {
+			return { isErr: true, reason: maybeTxResult.error } as GenericFailure;
+		}
+		const txResult = maybeTxResult.value;
+
+		if (txResult.isError) {
+			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
+		}
+
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		if (failed != undefined) {
+			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
+		}
+
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
+
+		return { isErr: false, events, txHash, txIndex, blockHash, blockNumber } as PoolNominateTxSuccess;
 	}
 }
 
@@ -146,7 +481,8 @@ export class Staking {
 			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
 		}
 
-		const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
 		if (failed != undefined) {
 			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
 		}
@@ -156,9 +492,9 @@ export class Staking {
 			return { isErr: true, reason: "Failed to find Bonded event." } as GenericFailure;
 		}
 
-		const [txHash, blockHash] = getBlockHashAndTxHash(txResult, waitFor);
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
 
-		return { isErr: false, event, txHash, blockHash } as BondTxSuccess;
+		return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as BondTxSuccess;
 	}
 
 	async bondExtra(
@@ -185,7 +521,8 @@ export class Staking {
 			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
 		}
 
-		const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
 		if (failed != undefined) {
 			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
 		}
@@ -195,9 +532,9 @@ export class Staking {
 			return { isErr: true, reason: "Failed to find Bonded event." } as GenericFailure;
 		}
 
-		const [txHash, blockHash] = getBlockHashAndTxHash(txResult, waitFor);
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
 
-		return { isErr: false, event, txHash, blockHash } as BondExtraTxSuccess;
+		return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as BondExtraTxSuccess;
 	}
 
 	async chill(waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<ChillTxSuccess | GenericFailure> {
@@ -219,7 +556,8 @@ export class Staking {
 			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
 		}
 
-		const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
 		if (failed != undefined) {
 			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
 		}
@@ -229,9 +567,9 @@ export class Staking {
 			return { isErr: true, reason: "Failed to find Chilled event." } as GenericFailure;
 		}
 
-		const [txHash, blockHash] = getBlockHashAndTxHash(txResult, waitFor);
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
 
-		return { isErr: false, event, txHash, blockHash } as ChillTxSuccess;
+		return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as ChillTxSuccess;
 	}
 
 	async chillOther(
@@ -258,7 +596,8 @@ export class Staking {
 			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
 		}
 
-		const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
 		if (failed != undefined) {
 			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
 		}
@@ -268,9 +607,9 @@ export class Staking {
 			return { isErr: true, reason: "Failed to find Chilled event." } as GenericFailure;
 		}
 
-		const [txHash, blockHash] = getBlockHashAndTxHash(txResult, waitFor);
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
 
-		return { isErr: false, event, txHash, blockHash } as ChillOtherTxSuccess;
+		return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as ChillOtherTxSuccess;
 	}
 
 	async nominate(
@@ -297,18 +636,19 @@ export class Staking {
 			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
 		}
 
-		const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
 		if (failed != undefined) {
 			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
 		}
 
-		const [txHash, blockHash] = getBlockHashAndTxHash(txResult, waitFor);
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
 		const maybeTxData = await TransactionData.Staking.Nominate.New(this.api, txHash, blockHash);
 		if (maybeTxData.isErr()) {
 			return { isErr: true, reason: maybeTxData.error } as GenericFailure;
 		}
 
-		return { isErr: false, txData: maybeTxData.value, txHash, blockHash } as NominateTxSuccess;
+		return { isErr: false, txData: maybeTxData.value, events, txHash, txIndex, blockHash, blockNumber } as NominateTxSuccess;
 	}
 
 	async unbond(
@@ -335,7 +675,8 @@ export class Staking {
 			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
 		}
 
-		const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
 		if (failed != undefined) {
 			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
 		}
@@ -345,9 +686,9 @@ export class Staking {
 			return { isErr: true, reason: "Failed to find Unbonded event." } as GenericFailure;
 		}
 
-		const [txHash, blockHash] = getBlockHashAndTxHash(txResult, waitFor);
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
 
-		return { isErr: false, event, txHash, blockHash } as UnbondTxSuccess;
+		return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as UnbondTxSuccess;
 	}
 
 	async validate(
@@ -356,7 +697,7 @@ export class Staking {
 		waitFor: WaitFor,
 		account: KeyringPair,
 		options?: Partial<SignerOptions>,
-	): Promise<ValidatexSuccess | GenericFailure> {
+	): Promise<ValidateTxSuccess | GenericFailure> {
 		const maybeCommission = commissionNumberToPerbill(commission);
 		if (maybeCommission.isErr()) {
 			return { isErr: true, reason: maybeCommission.error } as GenericFailure;
@@ -381,7 +722,8 @@ export class Staking {
 			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
 		}
 
-		const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
 		if (failed != undefined) {
 			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
 		}
@@ -391,9 +733,9 @@ export class Staking {
 			return { isErr: true, reason: "Failed to find ValidatorPrefsSet event." } as GenericFailure;
 		}
 
-		const [txHash, blockHash] = getBlockHashAndTxHash(txResult, waitFor);
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
 
-		return { isErr: false, event, txHash, blockHash } as ValidatexSuccess;
+		return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as ValidateTxSuccess;
 	}
 }
 
@@ -429,7 +771,8 @@ export class Balances {
 			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
 		}
 
-		const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
 		if (failed != undefined) {
 			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
 		}
@@ -440,9 +783,9 @@ export class Balances {
 		}
 		const event2 = Events.System.KilledAccount.New(txResult.events);
 
-		const [txHash, blockHash] = getBlockHashAndTxHash(txResult, waitFor);
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
 
-		return { isErr: false, event, event2, txHash, blockHash } as TransferAllTxSuccess;
+		return { isErr: false, event, event2, events, txHash, txIndex, blockHash, blockNumber } as TransferAllTxSuccess;
 	}
 
 	async transferAllowDeath(
@@ -470,7 +813,8 @@ export class Balances {
 			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
 		}
 
-		const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
 		if (failed != undefined) {
 			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
 		}
@@ -481,9 +825,9 @@ export class Balances {
 		}
 		const event2 = Events.System.KilledAccount.New(txResult.events);
 
-		const [txHash, blockHash] = getBlockHashAndTxHash(txResult, waitFor);
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
 
-		return { isErr: false, event, event2, txHash, blockHash } as TransferAllowDeathTxSuccess;
+		return { isErr: false, event, event2, events, txHash, txIndex, blockHash, blockNumber } as TransferAllowDeathTxSuccess;
 	}
 
 	async transferKeepAlive(
@@ -511,7 +855,8 @@ export class Balances {
 			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
 		}
 
-		const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
 		if (failed != undefined) {
 			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
 		}
@@ -521,9 +866,9 @@ export class Balances {
 			return { isErr: true, reason: "Failed to find Transfer event." } as GenericFailure;
 		}
 
-		const [txHash, blockHash] = getBlockHashAndTxHash(txResult, waitFor);
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
 
-		return { isErr: false, event, txHash, blockHash } as TransferKeepAliveTxSuccess;
+		return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as TransferKeepAliveTxSuccess;
 	}
 }
 
@@ -558,7 +903,8 @@ export class DataAvailability {
 			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
 		}
 
-		const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
 		if (failed != undefined) {
 			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
 		}
@@ -568,14 +914,14 @@ export class DataAvailability {
 			return { isErr: true, reason: "Failed to find DataSubmitted event." } as GenericFailure;
 		}
 
-		const [txHash, blockHash] = getBlockHashAndTxHash(txResult, waitFor);
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
 
 		const maybeTxData = await TransactionData.DataAvailability.SubmitData.New(this.api, txHash, blockHash);
 		if (maybeTxData.isErr()) {
 			return { isErr: true, reason: maybeTxData.error } as GenericFailure;
 		}
 
-		return { isErr: false, txData: maybeTxData.value, event, txHash, blockHash } as SubmitDataTxSuccess;
+		return { isErr: false, txData: maybeTxData.value, event, events, txHash, txIndex, blockHash, blockNumber } as SubmitDataTxSuccess;
 	}
 
 	async createApplicationKey(
@@ -602,7 +948,8 @@ export class DataAvailability {
 			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
 		}
 
-		const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
 		if (failed != undefined) {
 			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
 		}
@@ -612,9 +959,9 @@ export class DataAvailability {
 			return { isErr: true, reason: "Failed to find ApplicationKeyCreated event." } as GenericFailure;
 		}
 
-		const [txHash, blockHash] = getBlockHashAndTxHash(txResult, waitFor);
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
 
-		return { isErr: false, event, txHash, blockHash } as CreateApplicationKeyTxSuccess;
+		return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as CreateApplicationKeyTxSuccess;
 	}
 
 	async setApplicationKey(
@@ -643,7 +990,8 @@ export class DataAvailability {
 			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
 		}
 
-		const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
 		if (failed != undefined) {
 			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
 		}
@@ -663,9 +1011,9 @@ export class DataAvailability {
 			return { isErr: true, reason: "Failed to find ApplicationKeySet event." } as GenericFailure;
 		}
 
-		const [txHash, blockHash] = getBlockHashAndTxHash(txResult, waitFor);
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
 
-		return { isErr: false, event, txHash, blockHash } as SetApplicationKeyTxSuccess;
+		return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as SetApplicationKeyTxSuccess;
 	}
 
 	async submitBlockLengthProposal(
@@ -694,7 +1042,8 @@ export class DataAvailability {
 			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
 		}
 
-		const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
+		const events = txResult.events;
+		const failed = events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
 		if (failed != undefined) {
 			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
 		}
@@ -714,9 +1063,9 @@ export class DataAvailability {
 			return { isErr: true, reason: "Failed to find BlockLengthProposalSubmitted event." } as GenericFailure;
 		}
 
-		const [txHash, blockHash] = getBlockHashAndTxHash(txResult, waitFor);
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
 
-		return { isErr: false, event, txHash, blockHash } as SubmitBlockLengthProposalTxSuccess;
+		return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as SubmitBlockLengthProposalTxSuccess;
 	}
 
 	async setSubmitDataFeeModifier(
@@ -744,6 +1093,7 @@ export class DataAvailability {
 			return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure;
 		}
 
+		const events = txResult.events;
 		const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event));
 		if (failed != undefined) {
 			return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure;
@@ -764,8 +1114,8 @@ export class DataAvailability {
 			return { isErr: true, reason: "Failed to find SubmitDataFeeModifierSet event." } as GenericFailure;
 		}
 
-		const [txHash, blockHash] = getBlockHashAndTxHash(txResult, waitFor);
+		const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api);
 
-		return { isErr: false, event, txHash, blockHash } as SetSubmitDataFeeModifierTxSuccess;
+		return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as SetSubmitDataFeeModifierTxSuccess;
 	}
 }

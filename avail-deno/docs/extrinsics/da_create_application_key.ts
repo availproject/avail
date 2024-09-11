@@ -13,7 +13,6 @@ if (result.isErr) {
 	Deno.exit(1);
 }
 
-console.log("Key=" + result.event.key + ", Owner=" + result.event.owner + ", Id=" + result.event.id);
-console.log("TxHash=" + result.txHash + ", BlockHash=" + result.blockHash);
+console.log(JSON.stringify(result, null, 4));
 
 Deno.exit();
