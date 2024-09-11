@@ -1,3 +1,4 @@
+use crate::rpcs::Rpc;
 use crate::sdk::WaitFor;
 use crate::utils_raw::fetch_transaction;
 use crate::{avail, AccountId, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
@@ -9,7 +10,8 @@ use subxt_signer::sr25519::Keypair;
 use avail::nomination_pools::calls::types as NominationPoolsCalls;
 use avail::nomination_pools::events as NominationPoolsEvents;
 
-use super::{progress_transaction_ex, Params};
+use super::options::{from_options_to_params, Options};
+use super::progress_transaction_ex;
 
 #[derive(Debug)]
 pub struct PoolCreateTxSuccess {
@@ -56,12 +58,17 @@ pub struct PoolNominateTxSuccess {
 #[derive(Clone)]
 pub struct NominationPools {
 	api: TxApi,
+	rpc_client: Rpc,
 	blocks: AvailBlocksClient,
 }
 
 impl NominationPools {
-	pub fn new(api: TxApi, blocks: AvailBlocksClient) -> Self {
-		Self { api, blocks }
+	pub fn new(api: TxApi, rpc_client: Rpc, blocks: AvailBlocksClient) -> Self {
+		Self {
+			api,
+			rpc_client,
+			blocks,
+		}
 	}
 
 	pub async fn nominate(
@@ -70,7 +77,7 @@ impl NominationPools {
 		validators: Vec<String>,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<PoolNominateTxSuccess, String> {
 		let validators: Result<Vec<AccountId>, _> = validators
 			.into_iter()
@@ -78,7 +85,9 @@ impl NominationPools {
 			.collect();
 		let validators = validators.map_err(|e| e.to_string())?;
 
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = avail::tx().nomination_pools().nominate(pool_id, validators);
 
 		let maybe_tx_progress = self
@@ -108,9 +117,11 @@ impl NominationPools {
 		pool_id: u32,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<PoolJoinTxSuccess, String> {
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = avail::tx().nomination_pools().join(amount, pool_id);
 
 		let maybe_tx_progress = self
@@ -146,13 +157,15 @@ impl NominationPools {
 		pool_id: u32,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<PoolCreateWithPoolIdTxSuccess, String> {
 		let root = AccountId::from_str(root).map_err(|e| e.to_string())?;
 		let nominator = AccountId::from_str(nominator).map_err(|e| e.to_string())?;
 		let bouncer = AccountId::from_str(bouncer).map_err(|e| e.to_string())?;
 
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = avail::tx().nomination_pools().create_with_pool_id(
 			amount,
 			root.into(),
@@ -199,13 +212,15 @@ impl NominationPools {
 		bouncer: &str,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<PoolCreateTxSuccess, String> {
 		let root = AccountId::from_str(root).map_err(|e| e.to_string())?;
 		let nominator = AccountId::from_str(nominator).map_err(|e| e.to_string())?;
 		let bouncer = AccountId::from_str(bouncer).map_err(|e| e.to_string())?;
 
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = avail::tx().nomination_pools().create(
 			amount,
 			root.into(),

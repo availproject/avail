@@ -11,22 +11,24 @@ pub struct SDK {
 impl SDK {
 	pub async fn new(endpoint: &str) -> Result<Self, Box<dyn std::error::Error>> {
 		let api = Api::from_url(endpoint).await?;
+		let rpc = Rpc::new(endpoint, true).await?;
 
 		Ok(SDK {
-			tx: Transactions::new(api.clone()),
+			tx: Transactions::new(api.clone(), rpc.clone()),
 			util: Util::new(api.clone()),
-			rpc: Rpc::new(endpoint, true).await?,
+			rpc,
 			api,
 		})
 	}
 
 	pub async fn new_insecure(endpoint: &str) -> Result<Self, Box<dyn std::error::Error>> {
 		let api = Api::from_insecure_url(endpoint).await?;
+		let rpc = Rpc::new(endpoint, false).await?;
 
 		Ok(SDK {
-			tx: Transactions::new(api.clone()),
+			tx: Transactions::new(api.clone(), rpc.clone()),
 			util: Util::new(api.clone()),
-			rpc: Rpc::new(endpoint, false).await?,
+			rpc,
 			api,
 		})
 	}

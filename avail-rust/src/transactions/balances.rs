@@ -1,3 +1,4 @@
+use crate::rpcs::Rpc;
 use crate::sdk::WaitFor;
 use crate::{avail, AccountId, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
 
@@ -8,7 +9,8 @@ use subxt_signer::sr25519::Keypair;
 use avail::balances::events as BalancesEvents;
 use avail::system::events as SystemEvents;
 
-use super::{progress_transaction_ex, Params};
+use super::options::{from_options_to_params, Options};
+use super::progress_transaction_ex;
 
 #[derive(Debug)]
 pub struct TransferAllTxSuccess {
@@ -45,12 +47,17 @@ pub struct TransferKeepAliveTxSuccess {
 #[derive(Clone)]
 pub struct Balances {
 	api: TxApi,
+	rpc_client: Rpc,
 	blocks: AvailBlocksClient,
 }
 
 impl Balances {
-	pub fn new(api: TxApi, blocks: AvailBlocksClient) -> Self {
-		Self { api, blocks }
+	pub fn new(api: TxApi, rpc_client: Rpc, blocks: AvailBlocksClient) -> Self {
+		Self {
+			api,
+			rpc_client,
+			blocks,
+		}
 	}
 
 	pub async fn transfer_all(
@@ -59,14 +66,16 @@ impl Balances {
 		keep_alive: bool,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<TransferAllTxSuccess, String> {
 		let dest = match AccountId::from_str(dest) {
 			Ok(dest) => dest,
 			Err(error) => return Err(std::format!("{:?}", error)),
 		};
 
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = avail::tx().balances().transfer_all(dest.into(), keep_alive);
 
 		let maybe_tx_progress = self
@@ -103,14 +112,16 @@ impl Balances {
 		amount: u128,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<TransferAllowDeathTxSuccess, String> {
 		let dest = match AccountId::from_str(dest) {
 			Ok(dest) => dest,
 			Err(error) => return Err(std::format!("{:?}", error)),
 		};
 
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = avail::tx()
 			.balances()
 			.transfer_allow_death(dest.into(), amount);
@@ -149,14 +160,16 @@ impl Balances {
 		value: u128,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<TransferKeepAliveTxSuccess, String> {
 		let dest = match AccountId::from_str(dest) {
 			Ok(dest) => dest,
 			Err(error) => return Err(std::format!("{:?}", error)),
 		};
 
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = avail::tx()
 			.balances()
 			.transfer_keep_alive(dest.into(), value);

@@ -2,6 +2,7 @@ use crate::api_dev::api::data_availability::calls::types::create_application_key
 use crate::api_dev::api::data_availability::calls::types::submit_data::Data;
 use crate::api_dev::api::runtime_types::frame_support::dispatch::DispatchFeeModifier;
 use crate::api_dev::api::Call;
+use crate::rpcs::Rpc;
 use crate::sdk::WaitFor;
 use crate::utils_raw::{fetch_transaction, progress_transaction};
 use crate::{avail, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
@@ -13,7 +14,8 @@ use avail::data_availability::calls::types as DataAvailabilityCalls;
 use avail::data_availability::events as DataAvailabilityEvents;
 use avail::sudo::events as SudoEvents;
 
-use super::{block_and_tx_hash, progress_transaction_ex, Params};
+use super::options::{from_options_to_params, Options};
+use super::{block_and_tx_hash, progress_transaction_ex};
 
 #[derive(Debug)]
 pub struct SubmitDataTxSuccess {
@@ -69,12 +71,17 @@ pub struct SetSubmitDataFeeModifierTxSuccess {
 #[derive(Clone)]
 pub struct DataAvailability {
 	api: TxApi,
+	rpc_client: Rpc,
 	blocks: AvailBlocksClient,
 }
 
 impl DataAvailability {
-	pub fn new(api: TxApi, blocks: AvailBlocksClient) -> Self {
-		Self { api, blocks }
+	pub fn new(api: TxApi, rpc_client: Rpc, blocks: AvailBlocksClient) -> Self {
+		Self {
+			api,
+			rpc_client,
+			blocks,
+		}
 	}
 
 	pub async fn submit_data(
@@ -82,9 +89,11 @@ impl DataAvailability {
 		data: Data,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<SubmitDataTxSuccess, String> {
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = avail::tx().data_availability().submit_data(data);
 
 		let maybe_tx_progress = self
@@ -119,9 +128,11 @@ impl DataAvailability {
 		key: Key,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<CreateApplicationKeyTxSuccess, String> {
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = avail::tx().data_availability().create_application_key(key);
 
 		let maybe_tx_progress = self
@@ -154,9 +165,11 @@ impl DataAvailability {
 		new_key: Key,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<SetApplicationKeyTxSuccess, String> {
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = Call::DataAvailability(
 			avail::runtime_types::da_control::pallet::Call::set_application_key {
 				old_key,
@@ -214,9 +227,11 @@ impl DataAvailability {
 		cols: u32,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<SubmitBlockLengthProposalTxSuccess, String> {
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = Call::DataAvailability(
 			avail::runtime_types::da_control::pallet::Call::submit_block_length_proposal {
 				rows,
@@ -275,9 +290,11 @@ impl DataAvailability {
 		modifier: DispatchFeeModifier,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<SetSubmitDataFeeModifierTxSuccess, String> {
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = Call::DataAvailability(
 			avail::runtime_types::da_control::pallet::Call::set_submit_data_fee_modifier {
 				modifier,

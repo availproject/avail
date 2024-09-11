@@ -1,6 +1,7 @@
 mod balances;
 mod da;
 mod nom_pools;
+mod options;
 mod session;
 mod staking;
 
@@ -11,7 +12,7 @@ pub use session::*;
 pub use staking::*;
 
 use crate::{
-	utils_raw::progress_transaction, Api, AvailBlocksClient, AvailConfig, BlockHash,
+	rpcs::Rpc, utils_raw::progress_transaction, Api, AvailBlocksClient, AvailConfig, BlockHash,
 	TransactionInBlock, WaitFor,
 };
 use sp_core::H256;
@@ -32,16 +33,20 @@ pub struct Transactions {
 }
 
 impl Transactions {
-	pub fn new(api: Api) -> Self {
+	pub fn new(api: Api, rpc_client: Rpc) -> Self {
 		let tx = api.tx();
 		let blocks = api.blocks();
 
 		Self {
-			balances: Balances::new(tx.clone(), blocks.clone()),
-			staking: Staking::new(tx.clone(), blocks.clone()),
-			data_availability: DataAvailability::new(tx.clone(), blocks.clone()),
-			session: Session::new(tx.clone(), blocks.clone()),
-			nomination_pools: NominationPools::new(tx.clone(), blocks.clone()),
+			balances: Balances::new(tx.clone(), rpc_client.clone(), blocks.clone()),
+			staking: Staking::new(tx.clone(), rpc_client.clone(), blocks.clone()),
+			data_availability: DataAvailability::new(
+				tx.clone(),
+				rpc_client.clone(),
+				blocks.clone(),
+			),
+			session: Session::new(tx.clone(), rpc_client.clone(), blocks.clone()),
+			nomination_pools: NominationPools::new(tx.clone(), rpc_client.clone(), blocks.clone()),
 		}
 	}
 }

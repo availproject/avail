@@ -11,7 +11,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn create_application_key(&self, key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<CreateApplicationKeyTxSuccess, String>;
+async fn create_application_key(&self, key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<CreateApplicationKeyTxSuccess, String>;
 ```
 
 #### Parameters
@@ -109,7 +109,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn submit_data(&self, data: Data, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<SubmitDataTxSuccess, String>;
+async fn submit_data(&self, data: Data, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SubmitDataTxSuccess, String>;
 ```
 
 #### Parameters
@@ -205,7 +205,7 @@ Origin Level: Root
 ### Interface
 
 ```rust
-async fn submit_block_length_proposal(&self, rows: u32, cols: u32, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<SubmitBlockLengthProposalTxSuccess, String>;
+async fn submit_block_length_proposal(&self, rows: u32, cols: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SubmitBlockLengthProposalTxSuccess, String>;
 ```
 
 #### Parameters
@@ -268,7 +268,7 @@ Origin Level: Root
 ### Interface
 
 ```rust
-async fn set_application_key(&self, old_key: Key, new_key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<SetApplicationKeyTxSuccess, String>;
+async fn set_application_key(&self, old_key: Key, new_key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetApplicationKeyTxSuccess, String>;
 ```
 
 #### Parameters
@@ -333,7 +333,7 @@ Origin Level: Root
 ### Interface
 
 ```rust
-async fn set_submit_data_fee_modifier(&self, modifier: DispatchFeeModifier, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<SetSubmitDataFeeModifierTxSuccess, String>;
+async fn set_submit_data_fee_modifier(&self, modifier: DispatchFeeModifier, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetSubmitDataFeeModifierTxSuccess, String>;
 ```
 
 #### Parameters
@@ -441,7 +441,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn transfer_keep_alive(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<TransferKeepAliveTxSuccess, String>;
+async fn transfer_keep_alive(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferKeepAliveTxSuccess, String>;
 ```
 
 #### Parameters
@@ -536,7 +536,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn transfer_allow_death(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<TransferAllowDeathTxSuccess, String>;
+async fn transfer_allow_death(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferAllowDeathTxSuccess, String>;
 ```
 
 #### Parameters
@@ -636,7 +636,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn transfer_all(&self, dest: &str, keep_alive: bool, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<TransferAllTxSuccess, String>;
+async fn transfer_all(&self, dest: &str, keep_alive: bool, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferAllTxSuccess, String>;
 ```
 
 #### Parameters
@@ -746,7 +746,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn bond(&self, value: u128, payee: RewardDestination, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<BondTxSuccess, String>;
+async fn bond(&self, value: u128, payee: RewardDestination, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<BondTxSuccess, String>;
 ```
 
 #### Parameters
@@ -840,7 +840,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn bond_extra(&self, max_additional: u128, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<BondExtraTxSuccess, String>;
+async fn bond_extra(&self, max_additional: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<BondExtraTxSuccess, String>;
 ```
 
 #### Parameters
@@ -932,7 +932,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn chill(&self, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<ChillTxSuccess, String>;
+async fn chill(&self, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ChillTxSuccess, String>;
 ```
 
 #### Parameters
@@ -1023,7 +1023,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn chill_other(&self, stash: &str, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<ChillOtherTxSuccess, String>;
+async fn chill_other(&self, stash: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ChillOtherTxSuccess, String>;
 ```
 
 #### Parameters
@@ -1083,7 +1083,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn nominate( &self, targets: &[String], wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<NominateTxSuccess, String>;
+async fn nominate( &self, targets: &[String], wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<NominateTxSuccess, String>;
 ```
 
 #### Parameters
@@ -1184,7 +1184,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn unbond(&self, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<UnbondTxSuccess, String>;
+async fn unbond(&self, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<UnbondTxSuccess, String>;
 ```
 
 #### Parameters
@@ -1277,7 +1277,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn validate(&self, commission: u8, blocked: bool, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<ValidateTxSuccess, String>;
+async fn validate(&self, commission: u8, blocked: bool, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ValidateTxSuccess, String>;
 ```
 
 #### Parameters
@@ -1382,7 +1382,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn set_keys(&self, keys: SessionKeys, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<SetKeysTxSuccess, String>;
+async fn set_keys(&self, keys: SessionKeys, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetKeysTxSuccess, String>;
 ```
 
 #### Parameters

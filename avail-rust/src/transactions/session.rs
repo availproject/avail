@@ -1,4 +1,5 @@
 use crate::avail::runtime_types::da_runtime::primitives::SessionKeys;
+use crate::rpcs::Rpc;
 use crate::sdk::WaitFor;
 use crate::utils_raw::fetch_transaction;
 use crate::{avail, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
@@ -6,7 +7,8 @@ use crate::{avail, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
 use subxt::blocks::ExtrinsicEvents;
 use subxt_signer::sr25519::Keypair;
 
-use super::{progress_transaction_ex, Params};
+use super::options::from_options_to_params;
+use super::{options::Options, progress_transaction_ex};
 
 use avail::session::calls::types as SessionCalls;
 
@@ -23,12 +25,17 @@ pub struct SetKeysTxSuccess {
 #[derive(Clone)]
 pub struct Session {
 	api: TxApi,
+	rpc_client: Rpc,
 	blocks: AvailBlocksClient,
 }
 
 impl Session {
-	pub fn new(api: TxApi, blocks: AvailBlocksClient) -> Self {
-		Self { api, blocks }
+	pub fn new(api: TxApi, rpc_client: Rpc, blocks: AvailBlocksClient) -> Self {
+		Self {
+			api,
+			rpc_client,
+			blocks,
+		}
 	}
 
 	pub async fn set_keys(
@@ -36,9 +43,11 @@ impl Session {
 		keys: SessionKeys,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<SetKeysTxSuccess, String> {
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = avail::tx().session().set_keys(keys, vec![]);
 
 		let maybe_tx_progress = self

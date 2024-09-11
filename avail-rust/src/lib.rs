@@ -3,11 +3,11 @@ mod config;
 mod from_substrate;
 mod rpcs;
 mod sdk;
-mod transactions;
 mod utils;
 
 // Export types for internal and external consumption
 pub mod primitives;
+pub mod transactions;
 
 pub type RewardDestination =
 	api_dev::api::runtime_types::pallet_staking::RewardDestination<AccountId>;

@@ -1,5 +1,6 @@
 use crate::api_dev::api::runtime_types::pallet_staking::ValidatorPrefs;
 use crate::api_dev::api::runtime_types::sp_arithmetic::per_things::Perbill;
+use crate::rpcs::Rpc;
 use crate::sdk::WaitFor;
 use crate::utils_raw::fetch_transaction;
 use crate::{
@@ -14,7 +15,8 @@ use subxt_signer::sr25519::Keypair;
 use avail::staking::calls::types as StakingCalls;
 use avail::staking::events as StakingEvents;
 
-use super::{progress_transaction_ex, Params};
+use super::options::{from_options_to_params, Options};
+use super::progress_transaction_ex;
 
 #[derive(Debug)]
 pub struct BondTxSuccess {
@@ -89,12 +91,17 @@ pub struct ValidateTxSuccess {
 #[derive(Clone)]
 pub struct Staking {
 	api: TxApi,
+	rpc_client: Rpc,
 	blocks: AvailBlocksClient,
 }
 
 impl Staking {
-	pub fn new(api: TxApi, blocks: AvailBlocksClient) -> Self {
-		Self { api, blocks }
+	pub fn new(api: TxApi, rpc_client: Rpc, blocks: AvailBlocksClient) -> Self {
+		Self {
+			api,
+			rpc_client,
+			blocks,
+		}
 	}
 
 	pub async fn bond(
@@ -103,9 +110,11 @@ impl Staking {
 		payee: RewardDestination,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<BondTxSuccess, String> {
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = avail::tx().staking().bond(value, payee);
 
 		let maybe_tx_progress = self
@@ -137,9 +146,11 @@ impl Staking {
 		max_additional: u128,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<BondExtraTxSuccess, String> {
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = avail::tx().staking().bond_extra(max_additional);
 
 		let maybe_tx_progress = self
@@ -170,9 +181,11 @@ impl Staking {
 		&self,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<ChillTxSuccess, String> {
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = avail::tx().staking().chill();
 
 		let maybe_tx_progress = self
@@ -201,14 +214,16 @@ impl Staking {
 		stash: &str,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<ChillOtherTxSuccess, String> {
 		let stash = match AccountId::from_str(stash) {
 			Ok(stash) => stash,
 			Err(error) => return Err(std::format!("{:?}", error)),
 		};
 
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = avail::tx().staking().chill_other(stash);
 
 		let maybe_tx_progress = self
@@ -240,7 +255,7 @@ impl Staking {
 		targets: &[String],
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<NominateTxSuccess, String> {
 		let targets: Result<Vec<AccountId>, _> = targets
 			.iter()
@@ -249,7 +264,9 @@ impl Staking {
 		let targets = targets.map_err(|e| std::format!("{:?}", e))?;
 		let targets = targets.into_iter().map(|a| MultiAddress::Id(a)).collect();
 
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = avail::tx().staking().nominate(targets);
 
 		let maybe_tx_progress = self
@@ -278,11 +295,13 @@ impl Staking {
 		value: u128,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<UnbondTxSuccess, String> {
 		let call = avail::tx().staking().unbond(value);
 
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let maybe_tx_progress = self
 			.api
 			.sign_and_submit_then_watch(&call, account, params)
@@ -313,7 +332,7 @@ impl Staking {
 		blocked: bool,
 		wait_for: WaitFor,
 		account: &Keypair,
-		options: Option<Params>,
+		options: Option<Options>,
 	) -> Result<ValidateTxSuccess, String> {
 		if commission > 100 {
 			return Err(String::from("Commission cannot be more than 100"));
@@ -325,7 +344,9 @@ impl Staking {
 			blocked,
 		};
 
-		let params = options.unwrap_or_default();
+		let account_id = account.public_key().to_account_id();
+		let params =
+			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
 		let call = avail::tx().staking().validate(perfs);
 
 		let maybe_tx_progress = self
