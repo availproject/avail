@@ -62,6 +62,7 @@ pub struct Cli {
 	/// The interval, in blocks, at which Grandpa justifications are either imported or generated and stored in the backend.
 	///
 	/// The maximum allowed period is 10_000 blocks.
+	#[cfg(feature = "grandpa-justifications")]
 	#[arg(long, default_value_t =512, value_parser=grandpa_justification_period_bounds)]
 	pub grandpa_justification_period: u32,
 }
@@ -70,6 +71,7 @@ fn kate_max_cells_size_upper_bound(s: &str) -> Result<usize, String> {
 	clap_num::number_range(s, 0, 10_000)
 }
 
+#[cfg(feature = "grandpa-justifications")]
 fn grandpa_justification_period_bounds(s: &str) -> Result<u32, String> {
 	clap_num::number_range(s, 1, 10_000)
 }
@@ -150,6 +152,7 @@ impl Cli {
 			kate_rpc_enabled: self.kate_rpc_enabled,
 			kate_rpc_metrics_enabled: self.kate_rpc_metrics_enabled,
 			kate_max_cells_size: self.kate_max_cells_size,
+			#[cfg(feature = "grandpa-justifications")]
 			grandpa_justification_period: self.grandpa_justification_period,
 		}
 	}

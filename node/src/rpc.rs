@@ -129,6 +129,7 @@ where
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashingFor<Block>>,
 {
+	#[cfg(feature = "grandpa-justifications")]
 	use kate_rpc::justifications::{GrandpaJustifications, GrandpaServer};
 	use kate_rpc::metrics::KateApiMetricsServer;
 	use kate_rpc::{Kate, KateApiServer};
@@ -244,7 +245,7 @@ where
 	#[cfg(feature = "testing-environment")]
 	io.merge(TestingApiServer::into_rpc(TestingEnv))?;
 
-	// TODO: put it behind a feature flag
+	#[cfg(feature = "grandpa-justifications")]
 	io.merge(GrandpaServer::into_rpc(
 		GrandpaJustifications::<C, Block>::new(client),
 	))?;

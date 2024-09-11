@@ -245,9 +245,14 @@ pub fn new_partial(
 		client.clone(),
 	);
 
+	#[cfg(not(feature = "grandpa-justifications"))]
+	let grandpa_justification_period = GRANDPA_JUSTIFICATION_PERIOD;
+	#[cfg(feature = "grandpa-justifications")]
+	let grandpa_justification_period = cli.grandpa_justification_period;
+
 	let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
 		client.clone(),
-		cli.grandpa_justification_period,
+		grandpa_justification_period,
 		&(client.clone() as Arc<_>),
 		select_chain.clone(),
 		telemetry.as_ref().map(|x| x.handle()),
@@ -383,6 +388,9 @@ pub fn new_full_base(
 		None
 	};
 
+	#[cfg(not(feature = "grandpa-justifications"))]
+	let grandpa_justification_period = GRANDPA_JUSTIFICATION_PERIOD;
+	#[cfg(feature = "grandpa-justifications")]
 	let grandpa_justification_period = cli.grandpa_justification_period;
 
 	let sc_service::PartialComponents {
