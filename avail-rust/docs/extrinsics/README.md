@@ -40,7 +40,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Key, Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Key, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -53,10 +53,12 @@ async fn main() -> Result<(), String> {
 	let key = String::from("MyAwesomeKey").as_bytes().to_vec();
 	let key = Key { 0: key };
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.data_availability
-		.create_application_key(key, WaitFor::BlockInclusion, &account, None)
+		.create_application_key(key, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -138,7 +140,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Data, Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Data, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -151,10 +153,12 @@ async fn main() -> Result<(), String> {
 	let data = String::from("My Awesome Data").as_bytes().to_vec();
 	let data = Data { 0: data };
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.data_availability
-		.submit_data(data, WaitFor::BlockInclusion, &account, None)
+		.submit_data(data, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -235,7 +239,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -249,13 +253,19 @@ async fn main() -> Result<(), String> {
 	let rows = 128;
 	let cols = 128;
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.data_availability
-		.submit_block_length_proposal(rows, cols, WaitFor::BlockInclusion, &account, None)
+		.submit_block_length_proposal(rows, cols, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	println!("Rows={:?}, Cols={:?}", result.event.rows, result.event.cols);
+	println!(
+		"TxHash={:?}, BlockHash={:?}",
+		result.tx_hash, result.block_hash
+	);
 
 	Ok(())
 }
@@ -298,7 +308,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Key, Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Key, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -314,13 +324,22 @@ async fn main() -> Result<(), String> {
 	let new_key = String::from("MyAwesomeKey2").as_bytes().to_vec();
 	let new_key = Key { 0: new_key };
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.data_availability
-		.set_application_key(old_key, new_key, WaitFor::BlockInclusion, &account, None)
+		.set_application_key(old_key, new_key, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	println!(
+		"OldKey={:?}, NewKey={:?}",
+		result.event.old_key, result.event.new_key
+	);
+	println!(
+		"TxHash={:?}, BlockHash={:?}",
+		result.tx_hash, result.block_hash
+	);
 
 	Ok(())
 }
@@ -362,7 +381,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{DispatchFeeModifier, Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{DispatchFeeModifier, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -379,10 +398,12 @@ async fn main() -> Result<(), String> {
 		weight_fee_multiplier: None,
 	};
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.data_availability
-		.set_submit_data_fee_modifier(modifier, WaitFor::BlockInclusion, &account, None)
+		.set_submit_data_fee_modifier(modifier, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -471,7 +492,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -484,10 +505,12 @@ async fn main() -> Result<(), String> {
 	let dest: &str = "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw"; // Eve
 	let amount = 1_000_000_000_000_000_000u128; // 1 Avail
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.balances
-		.transfer_keep_alive(dest, amount, WaitFor::BlockInclusion, &account, None)
+		.transfer_keep_alive(dest, amount, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -566,7 +589,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -579,10 +602,12 @@ async fn main() -> Result<(), String> {
 	let dest = "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw"; // Eve
 	let amount = 1_000_000_000_000_000_00u128; // 1 Avail
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.balances
-		.transfer_allow_death(dest, amount, WaitFor::BlockInclusion, &account, None)
+		.transfer_allow_death(dest, amount, wait_for, &account, Some(options))
 		.await?;
 
 	if let Some(event) = &result.event2 {
@@ -666,7 +691,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -679,10 +704,12 @@ async fn main() -> Result<(), String> {
 	let dest = "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw"; // Eve
 	let keep_alive = false;
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.balances
-		.transfer_all(dest, keep_alive, WaitFor::BlockInclusion, &account, None)
+		.transfer_all(dest, keep_alive, wait_for, &account, Some(options))
 		.await?;
 
 	if let Some(event) = &result.event2 {
@@ -776,7 +803,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, RewardDestination, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, RewardDestination, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -789,10 +816,12 @@ async fn main() -> Result<(), String> {
 	let value = 1_000_000_000_000_000_000u128 * 100_000u128; // 100_000 Avail
 	let payee = RewardDestination::Staked;
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.bond(value, payee, WaitFor::BlockInclusion, &account, None)
+		.bond(value, payee, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -869,7 +898,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -881,10 +910,12 @@ async fn main() -> Result<(), String> {
 	let account = Keypair::from_uri(&secret_uri).unwrap();
 	let max_additional = 1_000_000_000_000_000_000u128; // 1 AVAIL
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.bond_extra(max_additional, WaitFor::BlockInclusion, &account, None)
+		.bond_extra(max_additional, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -960,7 +991,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -971,16 +1002,19 @@ async fn main() -> Result<(), String> {
 	let secret_uri = SecretUri::from_str("//Alice//stash").unwrap();
 	let account = Keypair::from_uri(&secret_uri).unwrap();
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.chill(WaitFor::BlockInclusion, &account, None)
+		.chill(wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
 
 	Ok(())
 }
+
 ```
 
 ### Example Output
@@ -1052,7 +1086,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -1064,16 +1098,19 @@ async fn main() -> Result<(), String> {
 	let account = Keypair::from_uri(&secret_uri).unwrap();
 	let stash = "5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY"; // Alice Stash
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.chill_other(stash, WaitFor::BlockInclusion, &account, None)
+		.chill_other(stash, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
 
 	Ok(())
 }
+
 ```
 
 ## Nominate
@@ -1112,7 +1149,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -1127,10 +1164,12 @@ async fn main() -> Result<(), String> {
 		String::from("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"), // Bob;
 	];
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.nominate(&targets, WaitFor::BlockInclusion, &account, None)
+		.nominate(&targets, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -1166,8 +1205,8 @@ NominateTxSuccess {
     },
     tx_data: Nominate {
         targets: [
-            "5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY",
-            "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+            Id(AccountId32(...)),
+            Id(AccountId32(...)),
         ],
     },
     tx_hash: 0x6e0ae6fde353974f8b46aace441c49ba7ab135fa3743e0e1331d35c4528dacfb,
@@ -1214,7 +1253,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -1226,10 +1265,12 @@ async fn main() -> Result<(), String> {
 	let account = Keypair::from_uri(&secret_uri).unwrap();
 	let value = 1_000_000_000_000_000_000u128; // 1 Avail
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.unbond(value, WaitFor::BlockInclusion, &account, None)
+		.unbond(value, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -1307,7 +1348,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -1320,10 +1361,12 @@ async fn main() -> Result<(), String> {
 	let commission = 100;
 	let blocked = false;
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.validate(commission, blocked, WaitFor::BlockInclusion, &account, None)
+		.validate(commission, blocked, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -1411,7 +1454,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -1421,13 +1464,15 @@ async fn main() -> Result<(), String> {
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
 	let account = Keypair::from_uri(&secret_uri).unwrap();
-
 	let keys = sdk.rpc.author.rotate_keys().await.unwrap();
 	let keys = sdk.util.deconstruct_session_keys(keys)?;
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.session
-		.set_keys(keys, WaitFor::BlockInclusion, &account, None)
+		.set_keys(keys, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);

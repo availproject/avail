@@ -8,6 +8,7 @@ mod staking;
 pub use balances::*;
 pub use da::*;
 pub use nom_pools::*;
+pub use options::{Mortality, Nonce, Options};
 pub use session::*;
 pub use staking::*;
 

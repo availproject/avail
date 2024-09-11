@@ -33,5 +33,6 @@ pub use sp_core;
 pub use subxt;
 pub use subxt::config::polkadot::U256;
 pub use subxt_signer;
+pub use transactions::{Mortality, Nonce, Options};
 pub use utils::utils_raw;
 pub use utils::FetchTransactionError;

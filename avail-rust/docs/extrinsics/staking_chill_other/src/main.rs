@@ -1,4 +1,4 @@
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -10,10 +10,12 @@ async fn main() -> Result<(), String> {
 	let account = Keypair::from_uri(&secret_uri).unwrap();
 	let stash = "5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY"; // Alice Stash
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.chill_other(stash, WaitFor::BlockInclusion, &account, None)
+		.chill_other(stash, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
