@@ -24,6 +24,7 @@ pub use config::*;
 pub use sdk::{WaitFor, SDK};
 
 pub use avail_core;
+pub use hex;
 pub use kate_recovery;
 pub use primitives::block::{
 	AppUncheckedExtrinsic, AvailHeader, DefaultExtrinsicParams, DefaultExtrinsicParamsBuilder,
