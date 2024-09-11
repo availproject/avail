@@ -46,6 +46,11 @@ pub struct Mortality {
 	pub period: u64,
 	pub block_hash: Option<BlockHash>,
 }
+impl Mortality {
+	pub fn new(period: u64, block_hash: Option<BlockHash>) -> Self {
+		Self { period, block_hash }
+	}
+}
 
 #[derive(Debug, Clone)]
 pub enum Nonce {
@@ -69,14 +74,13 @@ pub async fn from_options_to_params(
 	builder = builder.app_id(options.app_id.unwrap_or_default());
 	builder = builder.tip(options.tip.unwrap_or_default());
 
-	if let Some(mortality) = options.mortality {
-		let header = client
-			.chain
-			.get_header(mortality.block_hash)
-			.await
-			.map_err(|e| e.to_string())?;
-		builder = builder.mortal(&header, mortality.period);
-	}
+	let mortality = options.mortality.unwrap_or_else(|| Mortality {
+		period: 32,
+		block_hash: None,
+	});
+	let header = client.chain.get_header(mortality.block_hash);
+	let header = header.await.map_err(|e| e.to_string())?;
+	builder = builder.mortal(&header, mortality.period);
 
 	if let Some(nonce) = options.nonce {
 		builder = match nonce {
