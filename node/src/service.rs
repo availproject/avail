@@ -169,10 +169,7 @@ pub fn create_extrinsic(
 #[allow(clippy::type_complexity)]
 pub fn new_partial(
 	config: &Configuration,
-	cli: Cli, // unsafe_da_sync: bool,
-	          // kate_max_cells_size: usize,
-	          // kate_rpc_enabled: bool,
-	          // kate_rpc_metrics_enabled: bool,
+	cli: Cli,
 ) -> Result<
 	sc_service::PartialComponents<
 		FullClient,
@@ -376,10 +373,6 @@ pub fn new_full_base(
 	disable_hardware_benchmarks: bool,
 	with_startup_data: impl FnOnce(&BlockImport, &sc_consensus_babe::BabeLink<Block>),
 	cli: Cli,
-	// unsafe_da_sync: bool,
-	// kate_max_cells_size: usize,
-	// kate_rpc_enabled: bool,
-	// kate_rpc_metrics_enabled: bool,
 ) -> Result<NewFullBase, ServiceError> {
 	let hwbench = if !disable_hardware_benchmarks {
 		config.database.path().map(|database_path| {
@@ -401,14 +394,7 @@ pub fn new_full_base(
 		select_chain,
 		transaction_pool,
 		other: (rpc_builder, import_setup, rpc_setup, mut telemetry),
-	} = new_partial(
-		&config,
-		cli,
-		// unsafe_da_sync,
-		// kate_max_cells_size,
-		// kate_rpc_enabled,
-		// kate_rpc_metrics_enabled,
-	)?;
+	} = new_partial(&config, cli)?;
 
 	let shared_voter_state = rpc_setup;
 	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
