@@ -5,10 +5,10 @@ const sdk = await SDK.New(providerEndpoint);
 
 // Input
 const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice");
-const commission = 5; // 5%
-const blocked = false;
+const validators: string[] = ["5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY", "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"];
+const poolId = 1;
 
-const result = await sdk.tx.staking.validate(commission, blocked, WaitFor.BlockInclusion, account);
+const result = await sdk.tx.nomination_pools.nominate(poolId, validators, WaitFor.BlockInclusion, account);
 if (result.isErr) {
 	console.log(result.reason);
 	Deno.exit(1);

@@ -1544,7 +1544,7 @@ async fn create(&self, amount: u128, root: &str, nominator: &str, bouncer: &str,
 | parameter | type        | optional | description                                        |
 | --------- | ----------- | -------- | -------------------------------------------------- |
 | amount    | u128        | false    | The amount of funds to delegate to the pool        |
-| root      | WaitFor     | false    | The account to set as [`PoolRoles::root`]          |
+| root      | &str        | false    | The account to set as [`PoolRoles::root`]          |
 | nominator | &str        | false    | The account to set as the [`PoolRoles::nominator`] |
 | bouncer   | &str        | false    | The account to set as the [`PoolRoles::bouncer`]   |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization           |
@@ -1658,7 +1658,7 @@ async fn create_with_pool_id(&self, amount: u128, root: &str, nominator: &str, b
 | parameter | type        | optional | description                                        |
 | --------- | ----------- | -------- | -------------------------------------------------- |
 | amount    | u128        | false    | The amount of funds to delegate to the pool        |
-| root      | WaitFor     | false    | The account to set as [`PoolRoles::root`]          |
+| root      | &str        | false    | The account to set as [`PoolRoles::root`]          |
 | nominator | &str        | false    | The account to set as the [`PoolRoles::nominator`] |
 | bouncer   | &str        | false    | The account to set as the [`PoolRoles::bouncer`]   |
 | pool id   | u32         | false    | pool id                                            |
