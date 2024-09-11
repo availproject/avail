@@ -21,7 +21,7 @@ async fn create_application_key(&self, key: Key, wait_for: WaitFor, account: &Ke
 | key       | Key         | false    | name of the application key                     |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -121,7 +121,7 @@ async fn submit_data(&self, data: Data, wait_for: WaitFor, account: &Keypair, op
 | data      | Data        | false    | data to be submitted                            |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -220,7 +220,7 @@ async fn submit_block_length_proposal(&self, rows: u32, cols: u32, wait_for: Wai
 | cols      | u32         | false    | number of cols in block                         |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -289,7 +289,7 @@ async fn set_application_key(&self, old_key: Key, new_key: Key, wait_for: WaitFo
 | newKey    | Key         | false    | application key that will replace the old one   |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -362,7 +362,7 @@ async fn set_submit_data_fee_modifier(&self, modifier: DispatchFeeModifier, wait
 | modifier  | DispatchFeeModifier | false    | new fee modifier values                         |
 | waitFor   | WaitFor             | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair         | false    | account that will send and sign the transaction |
-| options   | Params              | true     | transaction params                              |
+| options   | Options             | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -473,7 +473,7 @@ async fn transfer_keep_alive(&self, dest: &str, value: u128, wait_for: WaitFor, 
 | value     | u128        | false    | amount that is send. 10^18 is equal to 1 AVL    |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -570,7 +570,7 @@ async fn transfer_allow_death(&self, dest: &str, value: u128, wait_for: WaitFor,
 | value     | BN          | false    | amount that is send. 10^18 is equal to 1 AVL    |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -672,7 +672,7 @@ async fn transfer_all(&self, dest: &str, keep_alive: bool, wait_for: WaitFor, ac
 | keepAlive | bool        | false    | if set to false it will reap the account as well |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization         |
 | account   | KeyringPair | false    | account that will send and sign the transaction  |
-| options   | Params      | true     | transaction params                               |
+| options   | Options     | true     | transaction parameters                           |
 
 ### Minimal Example
 
@@ -784,7 +784,7 @@ async fn bond(&self, value: u128, payee: RewardDestination, wait_for: WaitFor, a
 | payee     | RewardDestination | false    | Can be: "Staked", "Stash", "None" or an account address |
 | waitFor   | WaitFor           | false    | wait for block inclusion or finalization                |
 | account   | KeyringPair       | false    | account that will send and sign the transaction         |
-| options   | Params            | true     | transaction params                                      |
+| options   | Options           | true     | transaction parameters                                  |
 
 ### Minimal Example
 
@@ -879,7 +879,7 @@ async fn bond_extra(&self, max_additional: u128, wait_for: WaitFor, account: &Ke
 | maxAdditional | u128        | false    | additional amount that is bond. 10^18 is equal to 1 Avail |
 | waitFor       | WaitFor     | false    | wait for block inclusion or finalization                  |
 | account       | KeyringPair | false    | account that will send and sign the transaction           |
-| options       | Params      | true     | transaction params                                        |
+| options       | Options     | true     | transaction parameters                                    |
 
 ### Minimal Example
 
@@ -972,7 +972,7 @@ async fn chill(&self, wait_for: WaitFor, account: &Keypair, options: Option<Opti
 | --------- | ----------- | -------- | ----------------------------------------------- |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -1014,7 +1014,6 @@ async fn main() -> Result<(), String> {
 
 	Ok(())
 }
-
 ```
 
 ### Example Output
@@ -1067,7 +1066,7 @@ async fn chill_other(&self, stash: &str, wait_for: WaitFor, account: &Keypair, o
 | stash     | &str        | false    | address of stash account to chill               |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -1110,7 +1109,6 @@ async fn main() -> Result<(), String> {
 
 	Ok(())
 }
-
 ```
 
 ## Nominate
@@ -1130,7 +1128,7 @@ async fn nominate( &self, targets: &[String], wait_for: WaitFor, account: &Keypa
 | targets   | &[String]   | false    | list od addresses to nominate                   |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -1228,13 +1226,12 @@ async fn unbond(&self, value: u128, wait_for: WaitFor, account: &Keypair, option
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| value     | u128          | false    | amount of tokens to unbond                      |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
-| options   | Params        | true     | transaction params                              |
+| parameter | type        | optional | description                                     |
+| --------- | ----------- | -------- | ----------------------------------------------- |
+| value     | u128        | false    | amount of tokens to unbond                      |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
+| account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -1329,7 +1326,7 @@ async fn validate(&self, commission: u8, blocked: bool, wait_for: WaitFor, accou
 | blocked    | bool        | false    | whether or not this validator accepts nominations     |
 | waitFor    | WaitFor     | false    | wait for block inclusion or finalization              |
 | account    | KeyringPair | false    | account that will send and sign the transaction       |
-| options    | Params      | true     | transaction params                                    |
+| options    | Options     | true     | transaction parameters                                |
 
 ### Minimal Example
 
@@ -1435,7 +1432,7 @@ async fn set_keys(&self, keys: SessionKeys, wait_for: WaitFor, account: &Keypair
 | keys      | SessionKeys | false    | session keys                                    |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -1523,5 +1520,442 @@ SetKeysTxSuccess {
     tx_index: 1,
     block_hash: 0x6ac39cc7e7452179b34a92376321b66a912f48faa3e1619de1e3f255a808ae8f,
     block_number: 124,
+}
+```
+
+# Nomination Pools
+
+Runtime Component: Nomination Pools\
+Runtime Index: 36\
+Interface Module Name: nominationPools
+
+## Create
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn create(&self, amount: u128, root: &str, nominator: &str, bouncer: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolCreateWithPoolIdTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter | type        | optional | description                                        |
+| --------- | ----------- | -------- | -------------------------------------------------- |
+| amount    | u128        | false    | The amount of funds to delegate to the pool        |
+| root      | WaitFor     | false    | The account to set as [`PoolRoles::root`]          |
+| nominator | &str        | false    | The account to set as the [`PoolRoles::nominator`] |
+| bouncer   | &str        | false    | The account to set as the [`PoolRoles::bouncer`]   |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization           |
+| account   | KeyringPair | false    | account that will send and sign the transaction    |
+| options   | Options     | true     | transaction parameters                             |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-create"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let amount = 1_000_000_000_000_000_000_000_000u128; // 1_000_000 Avail tokens
+	let root = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"; // Alice
+	let nominator = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"; // Alice
+	let bouncer = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"; // Alice
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.create(
+			amount,
+			root,
+			nominator,
+			bouncer,
+			wait_for,
+			&account,
+			Some(options),
+		)
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolCreateTxSuccess`.
+
+```rust
+PoolCreateTxSuccess {
+    event: Created {
+        depositor: AccountId32(...),
+        pool_id: 1,
+    },
+    event2: Bonded {
+        member: AccountId32(...),
+        pool_id: 1,
+        bonded: 1000000000000000000000000,
+        joined: true,
+    },
+    events: ExtrinsicEvents {
+        ext_hash: 0xd68cd496c042b1de9484c03160dcaea0b66d939a7293d457b721e908542ce4dd,
+        idx: 1,
+        events: Events {
+            event_bytes: [...],
+            start_idx: 1,
+            num_events: 19,
+        },
+    },
+    tx_hash: 0xd68cd496c042b1de9484c03160dcaea0b66d939a7293d457b721e908542ce4dd,
+    tx_index: 1,
+    block_hash: 0x21119a080adf597abb22db237f8824a0dbd823feb6a809e2f2d9bb7872377e9d,
+    block_number: 1,
+}
+```
+
+## Create with Pool Id
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn create_with_pool_id(&self, amount: u128, root: &str, nominator: &str, bouncer: &str, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolCreateWithPoolIdTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter | type        | optional | description                                        |
+| --------- | ----------- | -------- | -------------------------------------------------- |
+| amount    | u128        | false    | The amount of funds to delegate to the pool        |
+| root      | WaitFor     | false    | The account to set as [`PoolRoles::root`]          |
+| nominator | &str        | false    | The account to set as the [`PoolRoles::nominator`] |
+| bouncer   | &str        | false    | The account to set as the [`PoolRoles::bouncer`]   |
+| pool id   | u32         | false    | pool id                                            |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization           |
+| account   | KeyringPair | false    | account that will send and sign the transaction    |
+| options   | Options     | true     | transaction parameters                             |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-create-with-pool-id"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let amount = 1_000_000_000_000_000_000_000_000u128; // 1_000_000 Avail tokens
+	let root = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"; // Alice
+	let nominator = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"; // Alice
+	let bouncer = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"; // Alice
+	let pool_id = 0;
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.create_with_pool_id(
+			amount,
+			root,
+			nominator,
+			bouncer,
+			pool_id,
+			wait_for,
+			&account,
+			Some(options),
+		)
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolCreateWithPoolIdTxSuccess`.
+
+```rust
+PoolCreateWithPoolIdTxSuccess {
+    event: Created {
+        depositor: AccountId32(...),
+        pool_id: 0,
+    },
+    event2: Bonded {
+        member: AccountId32(...),
+        pool_id: 0,
+        bonded: 1000000000000000000000000,
+        joined: true,
+    },
+    events: ExtrinsicEvents {
+        ext_hash: 0xaa16bad7378608bda89476353a61c1ae1ecc36166f0c5adda50cd563162889db,
+        idx: 1,
+        events: Events {
+            event_bytes: [],
+            start_idx: 1,
+            num_events: 19,
+        },
+    },
+    tx_hash: 0xaa16bad7378608bda89476353a61c1ae1ecc36166f0c5adda50cd563162889db,
+    tx_index: 1,
+    block_hash: 0xc04789228e6fa209119336ac33bcd6280b6b0c22e5ef9125c36b9f4a04e58adc,
+    block_number: 32,
+}
+```
+
+## Join
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn join(&self, amount: u128, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolJoinTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter | type        | optional | description                                     |
+| --------- | ----------- | -------- | ----------------------------------------------- |
+| amount    | u128        | false    | The amount of funds to delegate to the pool     |
+| pool id   | u32         | false    | pool id                                         |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
+| account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Options     | true     | transaction parameters                          |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-join"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Bob").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let amount = 1_000_000_000_000_000_000_000_000u128; // 1_000_000 Avail tokens
+	let pool_id = 1;
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.join(amount, pool_id, wait_for, &account, Some(options))
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolJoinTxSuccess`.
+
+```rust
+PoolJoinTxSuccess {
+    event: Bonded {
+        member: AccountId32(...),
+        pool_id: 1,
+        bonded: 1000000000000000000000000,
+        joined: true,
+    },
+    events: ExtrinsicEvents {
+        ext_hash: 0x1c3c2412859e9c1d29a17cdaad48ff835bfbc7bb1b2bda5686d152f7c5145a40,
+        idx: 1,
+        events: Events {
+            event_bytes: [...],
+            start_idx: 1,
+            num_events: 12,
+        },
+    },
+    tx_hash: 0x1c3c2412859e9c1d29a17cdaad48ff835bfbc7bb1b2bda5686d152f7c5145a40,
+    tx_index: 1,
+    block_hash: 0x67f28bfd6826522dc53ccfdec24dffbe9954ff4af8d96e81e983227af101786b,
+    block_number: 24,
+}
+```
+
+## Nominate
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn nominate(&self, pool_id: u32, validators: Vec<String>, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolNominateTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter  | type        | optional | description                                     |
+| ---------- | ----------- | -------- | ----------------------------------------------- |
+| pool id    | u32         | false    | pool id                                         |
+| validators | String      | false    | list of validators to nominate                  |
+| waitFor    | WaitFor     | false    | wait for block inclusion or finalization        |
+| account    | KeyringPair | false    | account that will send and sign the transaction |
+| options    | Options     | true     | transaction parameters                          |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-nominate"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let pool_id = 1;
+	let validators = vec![
+		String::from("5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY"), // Alice_Stash
+		String::from("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"), // Bob
+	];
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.nominate(pool_id, validators, wait_for, &account, Some(options))
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolNominateTxSuccess`.
+
+```rust
+PoolNominateTxSuccess {
+    events: ExtrinsicEvents {
+        ext_hash: 0xde74e9df59143b84ed216e4e52fd58ec8bd557fae4b54d992a9abb1adf750446,
+        idx: 1,
+        events: Events {
+            event_bytes: [...],
+            start_idx: 1,
+            num_events: 8,
+        },
+    },
+    tx_data: Nominate {
+        pool_id: 1,
+        validators: [
+            AccountId32(...),
+            AccountId32(...),
+        ],
+    },
+    tx_hash: 0xde74e9df59143b84ed216e4e52fd58ec8bd557fae4b54d992a9abb1adf750446,
+    tx_index: 1,
+    block_hash: 0x599dd28c28fe3d892ebbe7dfdc315bee03fa2a3d968a5c53f4cd031656a94a9a,
+    block_number: 86,
 }
 ```
