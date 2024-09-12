@@ -14,7 +14,6 @@ if (result.isErr) {
 	Deno.exit(1);
 }
 
-console.log("Stash=" + result.event.stash + ", Commission=" + result.event.commission + ", Blocked=" + result.event.blocked);
-console.log("TxHash=" + result.txHash + ", BlockHash=" + result.blockHash);
+console.log(JSON.stringify(result, null, 4));
 
 Deno.exit();

@@ -97,7 +97,7 @@ jobs:
         run: cargo build --release -p avail-node
 
       - name: Upload avail-node binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: avail-node
           path: target/release/avail-node

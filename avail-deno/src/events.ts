@@ -8,7 +8,7 @@ export namespace DataAvailability {
 	export class DataSubmittedEvent {
 		constructor(public who: string, public dataHash: string) {}
 		static New(events: EventRecord[]): DataSubmittedEvent | undefined {
-			const ed: any = events.find((e) => e.event.method == "DataSubmitted")?.event.data;
+			const ed: any = events.find((e) => e.event.method == "DataSubmitted" && e.event.section == "dataAvailability")?.event.data;
 			if (ed == undefined) {
 				return undefined;
 			}
@@ -20,7 +20,8 @@ export namespace DataAvailability {
 	export class ApplicationKeyCreatedEvent {
 		constructor(public key: string, public owner: string, public id: string) {}
 		static New(events: EventRecord[]): ApplicationKeyCreatedEvent | undefined {
-			const ed: any = events.find((e) => e.event.method == "ApplicationKeyCreated")?.event.data;
+			const ed: any = events.find((e) => e.event.method == "ApplicationKeyCreated" && e.event.section == "dataAvailability")?.event
+				.data;
 			if (ed == undefined) {
 				return undefined;
 			}
@@ -32,7 +33,7 @@ export namespace DataAvailability {
 	export class ApplicationKeySetEvent {
 		constructor(public oldKey: string, public newKey: string) {}
 		static New(events: EventRecord[]): ApplicationKeySetEvent | undefined {
-			const ed: any = events.find((e) => e.event.method == "ApplicationKeySet")?.event.data;
+			const ed: any = events.find((e) => e.event.method == "ApplicationKeySet" && e.event.section == "dataAvailability")?.event.data;
 			if (ed == undefined) {
 				return undefined;
 			}
@@ -44,7 +45,8 @@ export namespace DataAvailability {
 	export class BlockLengthProposalSubmittedEvent {
 		constructor(public rows: string, public cols: string) {}
 		static New(events: EventRecord[]): BlockLengthProposalSubmittedEvent | undefined {
-			const ed: any = events.find((e) => e.event.method == "BlockLengthProposalSubmitted")?.event.data;
+			const ed: any = events.find((e) => e.event.method == "BlockLengthProposalSubmitted" && e.event.section == "dataAvailability")
+				?.event.data;
 			if (ed == undefined) {
 				return undefined;
 			}
@@ -60,7 +62,8 @@ export namespace DataAvailability {
 			public weightFeeMultiplier: string | null,
 		) {}
 		static New(events: EventRecord[]): SubmitDataFeeModifierSetEvent | undefined {
-			const ed: any = events.find((e) => e.event.method == "SubmitDataFeeModifierSet")?.event.data;
+			const ed: any = events.find((e) => e.event.method == "SubmitDataFeeModifierSet" && e.event.section == "dataAvailability")?.event
+				.data;
 			if (ed == undefined) {
 				return undefined;
 			}
@@ -78,7 +81,7 @@ export namespace Balances {
 	export class TransferEvent {
 		constructor(public from: string, public to: string, public amount: string) {}
 		static New(events: EventRecord[]): TransferEvent | undefined {
-			const ed: any = events.find((e) => e.event.method == "Transfer")?.event.data;
+			const ed: any = events.find((e) => e.event.method == "Transfer" && e.event.section == "balances")?.event.data;
 			if (ed == undefined) {
 				return undefined;
 			}
@@ -92,7 +95,7 @@ export namespace System {
 	export class KilledAccount {
 		constructor(public account: string) {}
 		static New(events: EventRecord[]): KilledAccount | undefined {
-			const ed: any = events.find((e) => e.event.method == "KilledAccount")?.event.data;
+			const ed: any = events.find((e) => e.event.method == "KilledAccount" && e.event.section == "system")?.event.data;
 			if (ed == undefined) {
 				return undefined;
 			}
@@ -106,7 +109,7 @@ export namespace Staking {
 	export class Bonded {
 		constructor(public stash: string, public amount: string) {}
 		static New(events: EventRecord[]): Bonded | undefined {
-			const ed: any = events.find((e) => e.event.method == "Bonded")?.event.data;
+			const ed: any = events.find((e) => e.event.method == "Bonded" && e.event.section == "staking")?.event.data;
 			if (ed == undefined) {
 				return undefined;
 			}
@@ -121,7 +124,7 @@ export namespace Staking {
 	export class Chilled {
 		constructor(public stash: string) {}
 		static New(events: EventRecord[]): Chilled | undefined {
-			const ed: any = events.find((e) => e.event.method == "Chilled")?.event.data;
+			const ed: any = events.find((e) => e.event.method == "Chilled" && e.event.section == "staking")?.event.data;
 			if (ed == undefined) {
 				return undefined;
 			}
@@ -133,7 +136,7 @@ export namespace Staking {
 	export class Unbonded {
 		constructor(public stash: string, public amount: string) {}
 		static New(events: EventRecord[]): Unbonded | undefined {
-			const ed: any = events.find((e) => e.event.method == "Unbonded")?.event.data;
+			const ed: any = events.find((e) => e.event.method == "Unbonded" && e.event.section == "staking")?.event.data;
 			if (ed == undefined) {
 				return undefined;
 			}
@@ -145,7 +148,7 @@ export namespace Staking {
 	export class ValidatorPrefsSet {
 		constructor(public stash: string, public commission: string, public blocked: string) {}
 		static New(events: EventRecord[]): ValidatorPrefsSet | undefined {
-			const ed: any = events.find((e) => e.event.method == "ValidatorPrefsSet")?.event.data;
+			const ed: any = events.find((e) => e.event.method == "ValidatorPrefsSet" && e.event.section == "staking")?.event.data;
 			if (ed == undefined) {
 				return undefined;
 			}
@@ -155,6 +158,35 @@ export namespace Staking {
 				ed["prefs"]["commission"].toString(),
 				ed["prefs"]["blocked"].toString(),
 			);
+		}
+	}
+}
+
+export namespace NominationPools {
+	export class Created {
+		constructor(public depositor: string, public poolId: string) {}
+		static New(events: EventRecord[]): Created | undefined {
+			const ed: any = events.find((e) => e.event.method == "Created" && e.event.section == "nominationPools")?.event.data;
+			if (ed == undefined) {
+				return undefined;
+			}
+
+			return new Created(ed["depositor"].toString(), ed["poolId"].toString());
+		}
+	}
+
+	export class Bonded {
+		constructor(public member: string, public poolId: string, public bonded: string, public joined: string) {}
+		static New(events: EventRecord[]): Bonded | undefined {
+			const ed: any = events.find((e) => e.event.method == "Bonded" && e.event.section == "nominationPools")?.event.data;
+			if (ed == undefined) {
+				return undefined;
+			}
+
+			const bondedString = ed["bonded"].toString();
+			const bonded = new BN(bondedString).div(new BN(10).pow(new BN(18))).toString();
+
+			return new Bonded(ed["member"].toString(), ed["poolId"].toString(), bonded, ed["joined"].toString());
 		}
 	}
 }

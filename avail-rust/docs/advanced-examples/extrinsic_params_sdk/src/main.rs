@@ -1,4 +1,6 @@
-use avail_rust::{AvailExtrinsicParamsBuilder, Data, Key, Keypair, SecretUri, SDK};
+use avail_rust::{
+	AvailExtrinsicParamsBuilder, Data, Key, Keypair, Mortality, Nonce, Options, SecretUri, SDK,
+};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -21,12 +23,11 @@ async fn main() -> Result<(), String> {
 	let nonce = sdk.api.tx().account_nonce(&account_id).await.unwrap();
 	let app_id = result.event.id;
 
-	let options = AvailExtrinsicParamsBuilder::new()
-		.nonce(nonce)
+	let options = Options::new()
+		.nonce(Nonce::BestBlock)
 		.app_id(app_id.0)
 		.tip(1_000_000_000_000_000_000u128)
-		.mortal(block.header(), 400)
-		.build();
+		.mortality(Mortality::new(32, None));
 
 	let data = String::from("My Awesome Data").as_bytes().to_vec();
 	let data = Data { 0: data };
@@ -41,15 +42,7 @@ async fn main() -> Result<(), String> {
 		)
 		.await?;
 
-	println!(
-		"Who={}, DataHash={:?}",
-		result.event.who, result.event.data_hash
-	);
-	println!("TxData={:?}", result.tx_data.data);
-	println!(
-		"TxHash={:?}, BlockHash={:?}",
-		result.tx_hash, result.block_hash
-	);
+	dbg!(result);
 
 	Ok(())
 }

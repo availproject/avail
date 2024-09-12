@@ -60,7 +60,7 @@ jobs:
           $EXTRA $OUR_PALLETS ./scripts/run_benchmarks.sh
 
       - name: Upload output as artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: weights-result
           path: ./output/
