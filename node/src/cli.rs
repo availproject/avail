@@ -78,14 +78,6 @@ fn grandpa_justification_period_bounds(s: &str) -> Result<u32, String> {
 #[allow(clippy::large_enum_variant)]
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
-	/*
-	/// The custom inspect subcommand for decoding blocks and extrinsics.
-	#[command(
-		name = "inspect",
-		about = "Decode given block or extrinsic using current native runtime."
-	)]
-	Inspect(node_inspect::cli::InspectCmd),
-	*/
 	/// Sub-commands concerned with benchmarking.
 	/// The pallet benchmarking moved to the `pallet` sub-command.
 	#[command(subcommand)]
@@ -143,7 +135,7 @@ impl Cli {
 	pub fn partial_clone(&self) -> Cli {
 		Cli {
 			subcommand: None,
-			run: self.run.clone(), // If RunCmd cannot be cloned, reset or create new
+			run: self.run.clone(),
 			no_hardware_benchmarks: self.no_hardware_benchmarks,
 			unsafe_da_sync: self.unsafe_da_sync,
 			storage_monitor: self.storage_monitor.clone(),
