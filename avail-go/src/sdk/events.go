@@ -515,9 +515,9 @@ func parseBond(events []*parser.Event) {
 			if err != nil {
 				fmt.Printf("Amount parsing err: %s\n", err.Error())
 			}
-			fmt.Printf("Amount transferred : %s \n", convInt(amount.String()))
+			fmt.Printf("Amount staked : %s \n", convInt(amount.String()))
 			if err != nil {
-				fmt.Printf("Balances.Deposit.Who: %s\n", err.Error())
+				fmt.Printf("Amount staked: %s\n", err.Error())
 			}
 		}
 		parseTransactionFee(event)

@@ -5,6 +5,7 @@ import (
 	"avail-go-sdk/src/sdk/types"
 	"errors"
 	"fmt"
+	"math/big"
 	"strconv"
 
 	"github.com/vedhavyas/go-subkey/v2"
@@ -155,16 +156,21 @@ func SubmitBlockLength(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.
 
 }
 
-func Bond(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.WaitFor, amount types.UCompact, Payee sdk.Payee) (types.Hash, types.Hash, error) {
+func Bond(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.WaitFor, amount int64, Payee sdk.Payee) (types.Hash, types.Hash, error) {
 	keyringPair, err := sdk.KeyringFromSeed(seed)
 	if err != nil {
 		panic(fmt.Sprintf("cannot create KeyPair:%v", err))
 	}
+	bondAmount := sdk.ConvertToBondAmount(amount)
+
+	newBondAmount := new(big.Int)
+	newBondAmount.Set(bondAmount)
+
 	BlockHashCh2 := make(chan types.Hash)
 	txHashCh2 := make(chan types.Hash)
-
+	bondAmountUCompact := types.NewUCompact(newBondAmount)
 	go func() {
-		err = sdk.NewExtrinsicWatch(api, "Staking.bond", keyringPair, BlockHashCh2, txHashCh2, 0, WaitForInclusion, amount, sdk.NewU8(Payee.EnumIndex()))
+		err = sdk.NewExtrinsicWatch(api, "Staking.bond", keyringPair, BlockHashCh2, txHashCh2, 0, WaitForInclusion, bondAmountUCompact, sdk.NewU8(Payee.EnumIndex()))
 		if err != nil {
 			fmt.Printf("cannot create extrinsic: %v", err)
 			close(BlockHashCh2)
@@ -178,16 +184,21 @@ func Bond(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.WaitFor, amou
 	return blockHash, txHash, nil
 }
 
-func BondExtra(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.WaitFor, amount types.UCompact) (types.Hash, types.Hash, error) {
+func BondExtra(api *sdk.SubstrateAPI, seed string, WaitForInclusion sdk.WaitFor, amount int64) (types.Hash, types.Hash, error) {
 	keyringPair, err := sdk.KeyringFromSeed(seed)
 	if err != nil {
 		panic(fmt.Sprintf("cannot create KeyPair:%v", err))
 	}
 	BlockHashCh2 := make(chan types.Hash)
 	txHashCh2 := make(chan types.Hash)
+	bondAmount := sdk.ConvertToBondAmount(amount)
+
+	newBondAmount := new(big.Int)
+	newBondAmount.Set(bondAmount)
+	bondAmountUCompact := types.NewUCompact(newBondAmount)
 
 	go func() {
-		err = sdk.NewExtrinsicWatch(api, "Staking.bond_extra", keyringPair, BlockHashCh2, txHashCh2, 0, WaitForInclusion, amount)
+		err = sdk.NewExtrinsicWatch(api, "Staking.bond_extra", keyringPair, BlockHashCh2, txHashCh2, 0, WaitForInclusion, bondAmountUCompact)
 		if err != nil {
 			fmt.Printf("cannot create extrinsic: %v", err)
 			close(BlockHashCh2)

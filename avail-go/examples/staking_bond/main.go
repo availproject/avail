@@ -4,8 +4,6 @@ import (
 	"avail-go-sdk/src/config"
 	"avail-go-sdk/src/sdk"
 	"avail-go-sdk/src/sdk/tx"
-	"avail-go-sdk/src/sdk/types"
-	"math/big"
 
 	"fmt"
 )
@@ -21,12 +19,10 @@ func main() {
 	}
 	WaitFor := sdk.BlockInclusion
 	Payee := sdk.Staked
-	bondAmount := new(big.Int)
-	bondAmount.SetString("1000000000000000000000", 10) // Set bondAmount to 1000000000000000000000
 
-	// Convert big.Int to types.UCompact
-	bondAmountUCompact := types.NewUCompact(bondAmount)
-	BlockHash, txHash, err := tx.Bond(api, config.Seed, WaitFor, bondAmountUCompact, sdk.Payee(Payee))
+	bondAmount := int64(1000)
+
+	BlockHash, txHash, err := tx.Bond(api, config.Seed, WaitFor, bondAmount, sdk.Payee(Payee))
 	if err != nil {
 		fmt.Printf("cannot submit Transaction:%v", err)
 	}

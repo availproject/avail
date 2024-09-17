@@ -17,14 +17,13 @@ func main() {
 	if err != nil {
 		fmt.Printf("cannot create api:%v", err)
 	}
-
-	fmt.Println("Submitting data ...")
 	WaitFor := sdk.BlockInclusion
-	rows := uint32(128)
-	cols := uint32(128)
-	blockHash, txHash, err := tx.SubmitBlockLength(api, config.Seed, WaitFor, rows, cols)
+
+	bondAmount := int64(1000)
+
+	BlockHash, txHash, err := tx.BondExtra(api, config.Seed, WaitFor, bondAmount)
 	if err != nil {
-		fmt.Printf("cannot submit data:%v", err)
+		fmt.Printf("cannot submit Transaction:%v", err)
 	}
-	fmt.Printf("Data submitted successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
+	fmt.Printf("Transaction submitted successfully with block hash: %v\n and ext hash:%v", BlockHash.Hex(), txHash.Hex())
 }

@@ -23,8 +23,8 @@ func main() {
 	oldKey := "oldKey"
 	blockHash, txHash, err := tx.SetApplicationKey(api, config.Seed, WaitFor, oldKey, newKey)
 	if err != nil {
-		fmt.Printf("cannot submit data:%v", err)
+		fmt.Printf("cannot set key:%v", err)
 	}
-	fmt.Printf("Transaction submitted successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
+	fmt.Printf("Application Key updated successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
 	sdk.EventParser(api, blockHash, "ApplicationKeySet")
 }

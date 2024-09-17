@@ -20,9 +20,9 @@ func main() {
 	if api == nil || api.Client == nil {
 		log.Fatal("API client is not properly initialized")
 	}
-	resp, err := rpc.GetFinalizedHead(api.Client)
+	resp, err := rpc.GetBlockHashLatest(api.Client)
 	if err != nil {
-		fmt.Printf("cannot author rotate:%v", err)
+		fmt.Printf("cannot call latest block hash RPC:%v", err)
 	}
 	fmt.Println(resp.Hex())
 }

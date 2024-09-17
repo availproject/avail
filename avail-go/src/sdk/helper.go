@@ -36,6 +36,19 @@ type BigInt struct {
 	*big.Int
 }
 
+func ConvertToBondAmount(input int64) *big.Int {
+	// Create a new big.Int for the input
+	inputBig := big.NewInt(input)
+
+	// Create a big.Int for 10^18
+	multiplier := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
+
+	// Multiply input by 10^18
+	result := new(big.Int).Mul(inputBig, multiplier)
+
+	return result
+}
+
 // UnmarshalJSON defines custom unmarshalling for BigInt.
 func (bi *BigInt) UnmarshalJSON(data []byte) error {
 	// Unmarshal as raw JSON string

@@ -22,7 +22,7 @@ func main() {
 	}
 	resp, err := rpc.GetHeaderLatest(api.Client)
 	if err != nil {
-		fmt.Printf("cannot author rotate:%v", err)
+		fmt.Printf("cannot call latest header RPC:%v", err)
 	}
 	fmt.Println(resp)
 }

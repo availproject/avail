@@ -22,8 +22,8 @@ func main() {
 	WaitFor := sdk.BlockInclusion
 	blockHash, txHash, err := tx.CreateApplicationKey(api, config.Seed, "my happyyy", WaitFor)
 	if err != nil {
-		fmt.Printf("cannot submit data:%v", err)
+		fmt.Printf("cannot create application key:%v", err)
 	}
-	fmt.Printf("Data submitted successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
+	fmt.Printf("Application key created successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
 	sdk.EventParser(api, blockHash, "ApplicationKeyCreated")
 }

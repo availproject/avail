@@ -25,6 +25,6 @@ func main() {
 		panic(fmt.Sprintf("cannot get properties:%v", err))
 	}
 
-	fmt.Printf("Chain properties: \nIsEthereum:%#v\nTokenSymbol:%#v\nTokenDecimals:%d\nSS58Format:%d\n", properties.IsEthereum, properties.TokenSymbol, properties.TokenDecimals, properties.SS58Format)
+	fmt.Printf("\nChain properties:TokenSymbol:%#v\nTokenDecimals:%d\nSS58Format:%d\n", properties.TokenSymbol, properties.TokenDecimals, properties.SS58Format)
 
 }

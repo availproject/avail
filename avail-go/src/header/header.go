@@ -28,14 +28,6 @@ type V3HeaderExtension struct {
 	Commitment KateCommitment `json:"commitment"`
 }
 
-// type ExtensionType int
-
-// const (
-// 	ExtensionTypeNone ExtensionType = iota
-// 	ExtensionTypeV1
-// 	ExtensionTypeV2
-// )
-
 type HeaderExtensionEnum struct {
 	V3 V3HeaderExtension `json:"V3"`
 }
