@@ -1,6 +1,4 @@
-import { Keyring } from "@polkadot/api"
-import { SDK } from "avail-js-sdk"
-import { WaitFor } from "avail-js-sdk/sdk/transactions"
+import { SDK, WaitFor, Keyring } from "./../../src/index"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -16,10 +14,7 @@ const main = async () => {
     process.exit(1)
   }
 
-  console.log("Data=" + result.txData.data)
-  console.log("Who=" + result.event.who + ", DataHash=" + result.event.dataHash)
-  console.log("TxHash=" + result.txHash + ", BlockHash=" + result.blockHash)
-
+  console.log(JSON.stringify(result, null, 4))
   process.exit()
 }
 main()
