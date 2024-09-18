@@ -106,9 +106,9 @@ func main() {
 	WaitFor := sdk.BlockInclusion
 	blockHash, txHash, err := tx.CreateApplicationKey(api, config.Seed, "my happyyy", WaitFor)
 	if err != nil {
-		fmt.Printf("cannot submit data:%v", err)
+		fmt.Printf("cannot create application key:%v", err)
 	}
-	fmt.Printf("Data submitted successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
+	fmt.Printf("Application key created successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
 	sdk.EventParser(api, blockHash, "ApplicationKeyCreated")
 }
 ```
@@ -230,9 +230,9 @@ func main() {
 	cols := uint32(128)
 	blockHash, txHash, err := tx.SubmitBlockLength(api, config.Seed, WaitFor, rows, cols)
 	if err != nil {
-		fmt.Printf("cannot submit data:%v", err)
+		fmt.Printf("cannot submit block length:%v", err)
 	}
-	fmt.Printf("Data submitted successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
+	fmt.Printf("Block Length updated successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
 }
 ```
 
@@ -288,9 +288,9 @@ func main() {
 	oldKey := "oldKey"
 	blockHash, txHash, err := tx.SetApplicationKey(api, config.Seed, WaitFor, oldKey, newKey)
 	if err != nil {
-		fmt.Printf("cannot submit data:%v", err)
+		fmt.Printf("cannot set key:%v", err)
 	}
-	fmt.Printf("Transaction submitted successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
+	fmt.Printf("Application Key updated successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
 	sdk.EventParser(api, blockHash, "ApplicationKeySet")
 }
 ```
@@ -358,10 +358,9 @@ func main() {
 	// submit data
 	blockHash, txHash, err := tx.SetSubmitDataFeeModifier(api, config.Seed, WaitFor, modifier)
 	if err != nil {
-		fmt.Printf("cannot submit data:%v", err)
+		fmt.Printf("cannot update DA fee:%v", err)
 	}
-	fmt.Printf("Data submitted successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
-
+	fmt.Printf("Data Fee modified successfully with block hash: %v\n and ext hash:%v\n", blockHash.Hex(), txHash.Hex())
 }
 ```
 
@@ -624,8 +623,6 @@ import (
 	"avail-go-sdk/src/config"
 	"avail-go-sdk/src/sdk"
 	"avail-go-sdk/src/sdk/tx"
-	"avail-go-sdk/src/sdk/types"
-	"math/big"
 
 	"fmt"
 )
@@ -641,12 +638,10 @@ func main() {
 	}
 	WaitFor := sdk.BlockInclusion
 	Payee := sdk.Staked
-	bondAmount := new(big.Int)
-	bondAmount.SetString("1000000000000000000000", 10) // Set bondAmount to 1000000000000000000000
 
-	// Convert big.Int to types.UCompact
-	bondAmountUCompact := types.NewUCompact(bondAmount)
-	BlockHash, txHash, err := tx.Bond(api, config.Seed, WaitFor, bondAmountUCompact, sdk.Payee(Payee))
+	bondAmount := int64(1000)
+
+	BlockHash, txHash, err := tx.Bond(api, config.Seed, WaitFor, bondAmount, sdk.Payee(Payee))
 	if err != nil {
 		fmt.Printf("cannot submit Transaction:%v", err)
 	}
@@ -688,8 +683,6 @@ import (
 	"avail-go-sdk/src/config"
 	"avail-go-sdk/src/sdk"
 	"avail-go-sdk/src/sdk/tx"
-	"avail-go-sdk/src/sdk/types"
-	"math/big"
 
 	"fmt"
 )
@@ -705,12 +698,9 @@ func main() {
 	}
 	WaitFor := sdk.BlockInclusion
 
-	bondAmount := new(big.Int)
-	bondAmount.SetString("1000000000000000000000", 10) // Set bondAmount to 1000000000000000000000
+	bondAmount := int64(1000)
 
-	// Convert big.Int to types.UCompact
-	bondAmountUCompact := types.NewUCompact(bondAmount)
-	BlockHash, txHash, err := tx.BondExtra(api, config.Seed, WaitFor, bondAmountUCompact)
+	BlockHash, txHash, err := tx.BondExtra(api, config.Seed, WaitFor, bondAmount)
 	if err != nil {
 		fmt.Printf("cannot submit Transaction:%v", err)
 	}
