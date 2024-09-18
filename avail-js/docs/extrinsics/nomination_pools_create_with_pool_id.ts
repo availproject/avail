@@ -1,4 +1,4 @@
-import { SDK, WaitFor, Keyring, BN } from "./../../src/index"
+import { SDK, WaitFor, Keyring, BN } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -24,7 +24,7 @@ const main = async () => {
   )
   if (result.isErr) {
     console.log(result.reason)
-    Deno.exit(1)
+    process.exit(1)
   }
 
   console.log(JSON.stringify(result, null, 4))

@@ -1,4 +1,4 @@
-import { SDK, WaitFor, Keyring, BN } from "./../../src/index"
+import { SDK, WaitFor, Keyring, BN } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"

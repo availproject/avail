@@ -1,4 +1,4 @@
-import { SDK, WaitFor, Keyring } from "./../../src/index"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -15,7 +15,7 @@ const main = async () => {
   const result = await sdk.tx.nominationPools.nominate(poolId, validators, WaitFor.BlockInclusion, account)
   if (result.isErr) {
     console.log(result.reason)
-    Deno.exit(1)
+    process.exit(1)
   }
 
   console.log(JSON.stringify(result, null, 4))

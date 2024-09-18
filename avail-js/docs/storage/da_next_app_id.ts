@@ -1,4 +1,4 @@
-import { SDK } from "./../../src/index"
+import { SDK } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"

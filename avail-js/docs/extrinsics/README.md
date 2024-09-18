@@ -26,7 +26,7 @@ function createApplicationKey(key: string, waitFor: WaitFor, account: KeyringPai
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring } from "./../../src/index"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -97,7 +97,7 @@ function submitData(data: string, waitFor: WaitFor, account: KeyringPair, option
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring } from "./../../src/index"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -170,7 +170,7 @@ function submitBlockLengthProposal(rows: number, cols: number, waitFor: WaitFor,
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring } from "./../../src/index"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -231,7 +231,7 @@ function setApplicationKey(oldKey: string, newKey: string, waitFor: WaitFor, acc
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring } from "./../../src/index"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -291,7 +291,7 @@ function setSubmitDataFeeModifier(modifier: DispatchFeeModifier, waitFor: WaitFo
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, BN, sdkTransactions } from "./../../src/index"
+import { SDK, WaitFor, Keyring, BN, sdkTransactions } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -373,7 +373,7 @@ function transferKeepAlive(dest: string, value: BN,  waitFor: WaitFor, account: 
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, BN } from "./../../src/index"
+import { SDK, WaitFor, Keyring, BN } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -446,7 +446,7 @@ function transferAllowDeath(dest: string, value: BN, waitFor: WaitFor, account: 
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, BN } from "./../../src/index"
+import { SDK, WaitFor, Keyring, BN } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -519,7 +519,7 @@ function transferAll(dest: string, keepAlive: boolean, waitFor: WaitFor, account
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring } from "./../../src/index"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -598,7 +598,7 @@ function bond(value: BN, payee: StakingRewardDestination, waitFor: WaitFor, acco
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, BN } from "./../../src/index"
+import { SDK, WaitFor, Keyring, BN } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -669,7 +669,7 @@ function bondExtra(maxAdditional: BN, waitFor: WaitFor, account: KeyringPair, op
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, BN } from "./../../src/index"
+import { SDK, WaitFor, Keyring, BN } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -738,7 +738,7 @@ function chill(waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerO
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring } from "./../../src/index"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
   const sdk = await SDK.New(providerEndpoint)
@@ -805,7 +805,7 @@ function chillOther(stash: string, waitFor: WaitFor, account: KeyringPair, optio
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring } from "./../../src/index"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
   const sdk = await SDK.New(providerEndpoint)
@@ -863,7 +863,7 @@ function nominate(targets: string[], waitFor: WaitFor, account: KeyringPair, opt
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring } from "./../../src/index"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -938,7 +938,7 @@ function unbond(value: BN, waitFor: WaitFor, account: KeyringPair, options?: Par
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, BN } from "./../../src/index"
+import { SDK, WaitFor, Keyring, BN } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -1008,7 +1008,7 @@ function validate(commission: number, blocked: boolean, waitFor: WaitFor, accoun
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring } from "./../../src/index"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -1089,7 +1089,7 @@ function create(amount: BN, root: string, nominator: string, bouncer: string, wa
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, BN } from "./../../src/index"
+import { SDK, WaitFor, Keyring, BN } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -1177,7 +1177,7 @@ function createWithPoolId(amount: BN, root: string, nominator: string, bouncer: 
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, BN } from "./../../src/index"
+import { SDK, WaitFor, Keyring, BN } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -1203,7 +1203,7 @@ const main = async () => {
   )
   if (result.isErr) {
     console.log(result.reason)
-    Deno.exit(1)
+    process.exit(1)
   }
 
   console.log(JSON.stringify(result, null, 4))
@@ -1266,7 +1266,7 @@ function join(amount: BN, poolId: number, waitFor: WaitFor, account: KeyringPair
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, BN } from "./../../src/index"
+import { SDK, WaitFor, Keyring, BN } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -1339,7 +1339,7 @@ function nominate(poolId: number, validators: string[], waitFor: WaitFor, accoun
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring } from "./../../src/index"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -1356,7 +1356,7 @@ const main = async () => {
   const result = await sdk.tx.nominationPools.nominate(poolId, validators, WaitFor.BlockInclusion, account)
   if (result.isErr) {
     console.log(result.reason)
-    Deno.exit(1)
+    process.exit(1)
   }
 
   console.log(JSON.stringify(result, null, 4))
