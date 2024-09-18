@@ -2,7 +2,7 @@
 
 ## Running Examples in the Docs Directory
 
-To run the examples provided in the `docs/extrinsics` directory, follow these steps:
+To run the examples provided in the `/examples` directory, follow these steps:
 
 1. [Install](https://go.dev/doc/install) go globally if you haven't already:
 
