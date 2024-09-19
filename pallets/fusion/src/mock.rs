@@ -1,8 +1,12 @@
-use frame_support::{derive_impl, parameter_types};
-use sp_runtime::{BuildStorage, Perbill};
+use frame_support::{
+	derive_impl, parameter_types,
+	traits::{Imbalance, OnUnbalanced},
+	PalletId,
+};
+use sp_runtime::BuildStorage;
 use sp_staking::EraIndex;
 
-use crate::{self as pallet_fusion};
+use crate::{self as pallet_fusion, NegativeImbalanceOf};
 
 type Extrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockDaBlock<Test>;
@@ -46,14 +50,40 @@ impl pallet_fusion::EraProvider for MockEraProvider {
 }
 
 parameter_types! {
-	pub const FusionPayoutPercentage: Perbill = Perbill::from_percent(10);
+	pub static RewardRemainderUnbalanced: u64 = 0;
+}
+pub struct RewardRemainderMock;
+impl OnUnbalanced<NegativeImbalanceOf<Test>> for RewardRemainderMock {
+	fn on_nonzero_unbalanced(amount: NegativeImbalanceOf<Test>) {
+		RewardRemainderUnbalanced::mutate(|v| {
+			*v += amount.peek();
+		});
+		drop(amount);
+	}
+}
+
+parameter_types! {
+	pub const FusionPalletId: PalletId = PalletId(*b"avl/fusi");
+	pub const MaxCurrencyName: u32 = 32;
+	pub const MaxMembersPerPool: u32 = 100_000;
+	pub const MaxTargets: u32 = 16;
+	pub const MaxUnbonding: u32 = 8;
+	pub const BondingDuration: EraIndex = 28;
+	pub const HistoryDepth: u32 = 84;
 }
 impl pallet_fusion::Config for Test {
 	type Currency = Balances;
-	type FusionPayoutPercentage = FusionPayoutPercentage;
-	type EraProvider = MockEraProvider;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
+	type PalletId = FusionPalletId;
+	type MaxCurrencyName = MaxCurrencyName;
+	type MaxMembersPerPool = MaxMembersPerPool;
+	type MaxTargets = MaxTargets;
+	type MaxUnbonding = MaxUnbonding;
+	type BondingDuration = BondingDuration;
+	type RewardRemainder = RewardRemainderMock;
+	type HistoryDepth = HistoryDepth;
+	type EraProvider = MockEraProvider;
 	type WeightInfo = ();
 }
 

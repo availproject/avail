@@ -144,13 +144,28 @@ impl pallet_fusion::EraProvider for Runtime {
 }
 
 parameter_types! {
-	pub const FusionPayoutPercentage: Perbill = Perbill::from_percent(10);
+	pub const FusionPalletId: PalletId = PalletId(*b"avl/fusi");
+	pub const MaxCurrencyName: u32 = 32;
+	pub const MaxMembersPerPool: u32 = 100_000;
+	pub const MaxTargets: u32 = 16;
+	pub const MaxUnbonding: u32 = 8;
+	pub const BondingDuration: EraIndex = 28;
+	pub const HistoryDepth: u32 = 84;
+	pub const MinimumBalanceToOperate: Balance = 100 * AVAIL;
+
 }
 impl pallet_fusion::Config for Runtime {
 	type Currency = Balances;
-	type FusionPayoutPercentage = FusionPayoutPercentage;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
+	type PalletId = FusionPalletId;
+	type MaxCurrencyName = MaxCurrencyName;
+	type MaxMembersPerPool = MaxMembersPerPool;
+	type MaxTargets = MaxTargets;
+	type MaxUnbonding = MaxUnbonding;
+	type BondingDuration = BondingDuration;
+	type RewardRemainder = Treasury;
+	type HistoryDepth = HistoryDepth;
 	type EraProvider = Self;
 	type WeightInfo = weights::pallet_fusion::WeightInfo<Runtime>;
 }

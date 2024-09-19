@@ -15,12 +15,12 @@ mod benchmarks {
 	use super::*;
 
 	#[benchmark]
-	fn set_fusion_pool() -> Result<(), BenchmarkError> {
+	fn test() -> Result<(), BenchmarkError> {
 		let caller = whitelisted_caller::<T::AccountId>();
 		let origin = RawOrigin::Signed(caller.clone());
 
 		#[extrinsic_call]
-		_(origin, caller, BoundedVec::default(), BoundedVec::default());
+		_();
 
 		Ok(())
 	}

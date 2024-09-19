@@ -49,16 +49,7 @@ use core::marker::PhantomData;
 /// Weight functions for `pallet_fusion`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_fusion::WeightInfo for WeightInfo<T> {
-	fn add_fusion_ledger_entry() -> Weight {
-		Weight::from_parts(10_000, 0)
-	}
-	fn set_total_in_ledgers() -> Weight {
-		Weight::from_parts(10_000, 0)
-	}
-	fn claim_era_fusion_reward() -> Weight {
-		Weight::from_parts(10_000, 0)
-	}
-	fn set_fusion_pool() -> Weight {
+	fn create_fusion_currency() -> Weight {
 		Weight::from_parts(10_000, 0)
 	}
 }

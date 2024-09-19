@@ -54,6 +54,7 @@ use crate::{
 	RewardDestination, SessionInterface, StakingLedger, ValidatorPrefs,
 };
 
+// FUSION CHANGE
 use pallet_fusion::FusionExt;
 
 use super::pallet::*;
@@ -529,18 +530,14 @@ impl<T: Config> Pallet<T> {
 			let (validator_payout, remainder) =
 				T::EraPayout::era_payout(staked, issuance, era_duration);
 
-			// FUSION CHANGE : Compute Fusion payout and update validator payout
-			let fusion_payout = T::FusionExt::get_fusion_payout_percentage() * validator_payout;
-			let validator_payout = validator_payout.saturating_sub(fusion_payout);
-
 			Self::deposit_event(Event::<T>::EraPaid {
 				era_index: active_era.index,
 				validator_payout,
 				remainder,
 			});
 
-			// FUSION CHANGE :
-			T::FusionExt::insert_era_fusion_reward(active_era.index, fusion_payout);
+			// FUSION CHANGE
+			let _ = T::FusionExt::handle_era_change(era_duration);
 
 			// Set ending era reward.
 			<ErasValidatorReward<T>>::insert(&active_era.index, validator_payout);
@@ -860,7 +857,8 @@ impl<T: Config> Pallet<T> {
 				.min(all_voter_count.into())
 				.0
 		};
-		// +1 for fusion_pool, assumption for now is that, fusion pool will always have non zero funds to be staked
+
+		// FUSION CHANGE : +1 for fusion_pool, assumption for now is that, fusion pool will always have non zero funds to be staked
 		let final_predicted_len = final_predicted_len.saturating_add(1u32);
 
 		let mut all_voters = Vec::<_>::with_capacity(final_predicted_len as usize);
@@ -955,24 +953,26 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 
-		let fusion_voter = T::FusionExt::get_pool_data();
-		// check if pool balance is > 0 & it has set some targets
-		if !fusion_voter.1.is_zero() && !fusion_voter.2.is_empty() {
-			// vote_weight of pool
-			let pool_weight =
-				T::CurrencyToVote::to_vote(fusion_voter.1, T::Currency::total_issuance());
-			all_voters.push((
-				fusion_voter.0,
-				pool_weight,
-				fusion_voter.2.into_inner().try_into().expect("Trust Me!"),
-			));
-			nominators_taken.saturating_inc();
-			min_active_stake = if pool_weight < min_active_stake {
-				pool_weight
-			} else {
-				min_active_stake
-			};
-		}
+		// FUSION CHANGE
+		// let fusion_voter = T::FusionExt::get_pool_data();
+		// // check if pool balance is > 0 & it has set some targets
+		// if !fusion_voter.1.is_zero() && !fusion_voter.2.is_empty() {
+		// 	// vote_weight of pool
+		// 	let pool_weight =
+		// 		T::CurrencyToVote::to_vote(fusion_voter.1, T::Currency::total_issuance());
+		// 	all_voters.push((
+		// 		fusion_voter.0,
+		// 		pool_weight,
+		// 		fusion_voter.2.into_inner().try_into().expect("Trust Me!"),
+		// 	));
+		// 	nominators_taken.saturating_inc();
+		// 	min_active_stake = if pool_weight < min_active_stake {
+		// 		pool_weight
+		// 	} else {
+		// 		min_active_stake
+		// 	};
+		// }
+
 		// all_voters should have not re-allocated.
 		debug_assert!(all_voters.capacity() == final_predicted_len as usize);
 

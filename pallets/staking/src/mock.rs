@@ -29,6 +29,7 @@ use frame_support::{
 		OneSessionHandler,
 	},
 	weights::constants::RocksDbWeight,
+	PalletId,
 };
 use frame_system::{
 	mocking::MockUncheckedExtrinsic, native::hosted_header_builder::da::HeaderExtensionBuilder,
@@ -308,14 +309,25 @@ impl pallet_fusion::EraProvider for MockEraProvider {
 }
 
 parameter_types! {
-	pub const FusionPayoutPercentage: Perbill = Perbill::from_percent(0);
+	pub const FusionPalletId: PalletId = PalletId(*b"avl/fusi");
+	pub const MaxCurrencyName: u32 = 32;
+	pub const MaxMembersPerPool: u32 = 100_000;
+	pub const MaxTargets: u32 = 16;
+	pub const MaxUnbonding: u32 = 8;
 }
 impl pallet_fusion::Config for Test {
 	type Currency = Balances;
-	type FusionPayoutPercentage = FusionPayoutPercentage;
-	type EraProvider = MockEraProvider;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
+	type PalletId = FusionPalletId;
+	type MaxCurrencyName = MaxCurrencyName;
+	type MaxMembersPerPool = MaxMembersPerPool;
+	type MaxTargets = MaxTargets;
+	type MaxUnbonding = MaxUnbonding;
+	type BondingDuration = BondingDuration;
+	type RewardRemainder = ();
+	type HistoryDepth = HistoryDepth;
+	type EraProvider = MockEraProvider;
 	type WeightInfo = ();
 }
 

@@ -286,7 +286,7 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 
 		/// Fusion pallet trait
-		type FusionExt: FusionExt<Self::AccountId, BalanceOf<Self>>;
+		type FusionExt: FusionExt<Self::AccountId>;
 	}
 
 	/// The ideal number of active validators.
