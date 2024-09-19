@@ -2,7 +2,8 @@
 resolver = "2"
 members = [
     "core",
-    "client"
+    "client",
+    "example"
 ]
 
 [workspace.package]
@@ -34,3 +35,4 @@ serde = { version = "1.0.209", default-features = false, features = ["derive"] }
 
 # Local dependencies
 sdk-core = { package = "avail-rust-light-core", path = "./core" }
+sdk-client = { package = "avail-rust-light-client", path = "./client" }

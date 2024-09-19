@@ -1,3 +1,4 @@
+use super::error::CoreError;
 use parity_scale_codec::Encode;
 use serde::{Deserialize, Serialize};
 
@@ -28,24 +29,39 @@ impl H256 {
 		std::format!("0x{}", hex::encode(self.0))
 	}
 
-	pub fn from_hex_string(mut s: &str) -> Result<Self, ()> {
+	pub fn from_hex_string(mut s: &str) -> Result<Self, CoreError> {
 		if s.starts_with("0x") {
 			s = &s[2..];
 		}
 
 		if s.len() != 64 {
-			return Err(());
+			let msg = std::format!(
+				"Failed to convert string to H256. Expected 64 bytes got {}. Input string: {}",
+				s.len(),
+				s
+			);
+			return Err(CoreError::ConversionError(msg));
 		}
 
-		let block_hash = hex::decode(s).unwrap();
+		let block_hash = hex::decode(s).map_err(|e| CoreError::FromHexError(e))?;
 
 		if block_hash.len() != 32 {
-			return Err(());
+			let msg = std::format!(
+				"Failed to convert string to H256. Expected 32 bytes for decoded value got {}. Decoded string: {:?}",
+				block_hash.len(),
+				block_hash
+			);
+			return Err(CoreError::ConversionError(msg));
 		}
 
-		let block_hash = TryInto::<[u8; 32]>::try_into(block_hash).map_err(|_| ())?;
-
-		Ok(H256(block_hash))
+		let block_hash = TryInto::<[u8; 32]>::try_into(block_hash);
+		match block_hash {
+			Ok(v) => Ok(H256(v)),
+			Err(e) => {
+				let msg = std::format!("Failed to covert decoded string to H256. Input {:?}", e);
+				Err(CoreError::ConversionError(msg))
+			},
+		}
 	}
 }
 impl Encode for H256 {

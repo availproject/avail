@@ -1,0 +1,9 @@
+[package]
+name = "example"
+edition.workspace = true
+
+[dependencies]
+# Local dependencies
+sdk-core.workspace = true
+sdk-client.workspace = true
+tokio.workspace = true

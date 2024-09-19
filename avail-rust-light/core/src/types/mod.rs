@@ -5,6 +5,7 @@ mod payload_fields;
 mod transaction;
 
 pub mod avail;
+pub mod error;
 pub mod multi;
 
 pub use common::{AlreadyEncoded, H256};

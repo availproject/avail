@@ -50,9 +50,9 @@ impl Encode for Extra {
 
 	fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, dest: &mut T) {
 		self.mortality.encode_to(dest);
-		self.nonce.0.encode_to(dest);
-		self.tip.0.encode_to(dest);
-		self.app_id.0.encode_to(dest);
+		self.nonce.encode_to(dest);
+		self.tip.encode_to(dest);
+		self.app_id.encode_to(dest);
 	}
 }
 
