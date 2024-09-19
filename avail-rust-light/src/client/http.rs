@@ -1,9 +1,11 @@
-use crate::{
-	core::types::{
-		self, avail::BlockHeader, avail::RuntimeVersion, Additional, AlreadyEncoded, Era,
-		OpaqueTransaction, UnsignedEncodedPayload, H256,
+use crate::core::{
+	types::{
+		self,
+		avail::{BlockHeader, BlockNumber, RuntimeVersion},
+		Additional, AlreadyEncoded, Call, Era, OpaqueTransaction, UnsignedEncodedPayload,
+		UnsignedPayload, H256,
 	},
-	core::{AccountId, PublicKey, Signature, Ss58Codec},
+	AccountId, PublicKey, Signature, Ss58Codec,
 };
 use jsonrpsee_core::{client::ClientT, traits::ToRpcParams, JsonRawValue as RawValue};
 use jsonrpsee_http_client::HttpClient as JRPSHttpClient;
@@ -17,69 +19,27 @@ use super::params::{Extra, Mortality, Nonce};
 pub struct Client(Arc<JRPSHttpClient>);
 
 impl Client {
-	pub fn new(endpoint: &str) -> Self {
-		let client = JRPSHttpClient::builder().build(endpoint).unwrap();
-		Self(Arc::new(client))
+	pub fn new(endpoint: &str) -> Result<Self, ()> {
+		let client = JRPSHttpClient::builder().build(endpoint).map_err(|_| ())?;
+		Ok(Self(Arc::new(client)))
 	}
 
 	pub async fn build_payload(
 		&self,
-		call: types::Call,
+		call: Call,
 		account_id: AccountId,
 		extra: Extra,
-	) -> UnsignedEncodedPayload {
+	) -> Result<UnsignedEncodedPayload, ()> {
 		// We are not going to check if the call is properly setup. We will blindly trust it. :)
 		let call = call;
-
-		// Account ID cannot be in a invalid state so no checking needs to be done
-		let account_id = account_id;
 
 		// Extrinsic Extras deconstructed
 		let (nonce, mortality, tip, app_id) = extra.deconstruct();
 
-		// Checking Nonce
-		let nonce = match nonce {
-			Some(Nonce::BestBlockAndTxPool) | None => {
-				self.rpc_system_account_next_index(account_id.clone()).await
-			},
-			Some(Nonce::BestBlock) => {
-				let block_hash = self.get_best_block_hash().await;
-				self.account_nonce_api_account_nonce(account_id.clone(), block_hash)
-					.await
-			},
-			Some(Nonce::FinalizedBlock) => {
-				let block_hash = self.get_finalized_block_hash().await;
-				self.account_nonce_api_account_nonce(account_id.clone(), block_hash)
-					.await
-			},
-			Some(Nonce::Custom(n)) => n,
-		};
-		let nonce = Compact(nonce);
-
-		// We could do some checking for App ID but not now
 		let app_id = Compact(app_id.unwrap_or(0u32));
-
-		// No check for tip
 		let tip = Compact(tip.unwrap_or(0u128));
-
-		let genesis_hash = self.rpc_chainSpec_v1_genesis_hash().await;
-		let best_block_hash = self.get_best_block_hash().await;
-		let best_block_header = self.get_header(Some(best_block_hash)).await;
-		let best_block_number = best_block_header.number;
-
-		// Mortality Nonce
-		let (mortality, fork_hash) = match mortality {
-			Some(x) => match x {
-				Mortality::Period(period) => (
-					Era::mortal(period, best_block_number as u64),
-					best_block_hash,
-				),
-				Mortality::Custom((period, best_number, block_hash)) => {
-					(Era::mortal(period, best_number as u64), block_hash)
-				},
-			},
-			None => (Era::mortal(32, best_block_number as u64), best_block_hash),
-		};
+		let nonce = self.check_nonce(nonce, &account_id).await?;
+		let (mortality, fork_hash) = self.check_mortality(mortality).await?;
 
 		let extra = types::Extra {
 			mortality,
@@ -88,15 +48,67 @@ impl Client {
 			app_id,
 		};
 
-		let rtv = self.rpc_state_get_runtime_version().await;
-		let additional = Additional::new(
-			rtv.spec_version,
-			rtv.transaction_version,
-			genesis_hash,
-			fork_hash,
-		);
+		let RuntimeVersion {
+			spec_version,
+			transaction_version,
+			..
+		} = self.rpc_state_get_runtime_version().await?;
+		let genesis_hash = self.rpc_chain_spec_v1_genesis_hash().await?;
 
-		types::UnsignedPayload::new(call, extra, additional).encode()
+		let additional =
+			Additional::new(spec_version, transaction_version, genesis_hash, fork_hash);
+
+		Ok(UnsignedPayload::new(call, extra, additional).encode())
+	}
+
+	async fn check_nonce(
+		&self,
+		nonce: Option<Nonce>,
+		account_id: &AccountId,
+	) -> Result<Compact<u32>, ()> {
+		let nonce = match nonce {
+			Some(Nonce::BestBlockAndTxPool) | None => {
+				self.rpc_system_account_next_index(&account_id).await?
+			},
+			Some(Nonce::BestBlock) => {
+				let block_hash = self.get_best_block_hash().await?;
+				self.account_nonce_api_account_nonce(&account_id, block_hash)
+					.await?
+			},
+			Some(Nonce::FinalizedBlock) => {
+				let block_hash = self.get_finalized_block_hash().await?;
+				self.account_nonce_api_account_nonce(&account_id, block_hash)
+					.await?
+			},
+			Some(Nonce::Custom(n)) => n,
+		};
+
+		Ok(Compact(nonce))
+	}
+
+	async fn check_mortality(&self, mortality: Option<Mortality>) -> Result<(Era, H256), ()> {
+		// Mortality Nonce
+		let (era, fork_hash) = match mortality {
+			Some(x) => match x {
+				Mortality::Period(period) => {
+					let hash = self.get_best_block_hash().await?;
+					let header = self.get_header(Some(hash)).await?;
+					let number = header.number;
+					(Era::mortal(period, number as u64), hash)
+				},
+				Mortality::Custom((period, best_number, block_hash)) => {
+					(Era::mortal(period, best_number as u64), block_hash)
+				},
+			},
+			None => {
+				let hash = self.get_best_block_hash().await?;
+				let header = self.get_header(Some(hash)).await?;
+				let number = header.number;
+				(Era::mortal(32, number as u64), hash)
+			},
+		};
+
+		Ok((era, fork_hash))
 	}
 
 	pub fn sign(
@@ -108,11 +120,11 @@ impl Client {
 		OpaqueTransaction::new(&payload.extra, &payload.call, address, signature)
 	}
 
-	pub async fn get_header(&self, hash: Option<H256>) -> BlockHeader {
+	pub async fn get_header(&self, hash: Option<H256>) -> Result<BlockHeader, ()> {
 		let mut params: Params = Params(None);
 		if let Some(hash) = hash {
 			let mut p = RpcParams::new();
-			p.push(hash.to_hex_string()).unwrap();
+			p.push(hash.to_hex_string()).map_err(|_| ())?;
 			params = Params(p.build());
 		}
 
@@ -120,97 +132,101 @@ impl Client {
 			.0
 			.request::<BlockHeader, _>("chain_getHeader", params)
 			.await
-			.unwrap();
+			.map_err(|_| ())?;
 
-		header
+		Ok(header)
 	}
 
-	pub async fn get_best_block_hash(&self) -> H256 {
+	pub async fn get_best_block_hash(&self) -> Result<H256, ()> {
 		let block_hash: String = self
 			.0
 			.request::<String, _>("chain_getBlockHash", Params(None))
 			.await
-			.unwrap();
+			.map_err(|_| ())?;
 
-		H256::from_hex_string(&block_hash).unwrap()
+		Ok(H256::from_hex_string(&block_hash)?)
 	}
 
-	pub async fn get_finalized_block_hash(&self) -> H256 {
+	pub async fn get_finalized_block_hash(&self) -> Result<H256, ()> {
 		let block_hash: String = self
 			.0
 			.request::<String, _>("chain_getFinalizedHead", Params(None))
 			.await
-			.unwrap();
+			.map_err(|_| ())?;
 
-		H256::from_hex_string(&block_hash).unwrap()
+		Ok(H256::from_hex_string(&block_hash)?)
 	}
 
-	pub async fn rpc_author_submit_extrinsic(&self, extrinsic: AlreadyEncoded) -> H256 {
+	pub async fn rpc_author_submit_extrinsic(&self, extrinsic: AlreadyEncoded) -> Result<H256, ()> {
 		let mut params = RpcParams::new();
-		params.push(extrinsic.to_hex_string()).unwrap();
+		params.push(extrinsic.to_hex_string()).map_err(|_| ())?;
 
 		let block_hash: String = self
 			.0
 			.request::<String, _>("author_submitExtrinsic", Params(params.build()))
 			.await
-			.unwrap();
+			.map_err(|_| ())?;
 
-		H256::from_hex_string(&block_hash).unwrap()
+		Ok(H256::from_hex_string(&block_hash)?)
 	}
 
-	pub async fn rpc_system_account_next_index(&self, account_id: AccountId) -> u32 {
+	pub async fn rpc_system_account_next_index(&self, account_id: &AccountId) -> Result<u32, ()> {
 		let mut params = RpcParams::new();
-		params.push(account_id.to_ss58check()).unwrap();
+		params.push(account_id.to_ss58check()).map_err(|_| ())?;
 
 		let nonce: u32 = self
 			.0
 			.request::<u32, _>("system_accountNextIndex", Params(params.build()))
 			.await
-			.unwrap();
+			.map_err(|_| ())?;
 
-		nonce
+		Ok(nonce)
 	}
 
-	pub async fn rpc_chainSpec_v1_genesis_hash(&self) -> H256 {
+	pub async fn rpc_chain_spec_v1_genesis_hash(&self) -> Result<H256, ()> {
 		let genesis_hash: String = self
 			.0
 			.request::<String, _>("chainSpec_v1_genesisHash", Params(None))
 			.await
-			.unwrap();
+			.map_err(|_| ())?;
 
-		H256::from_hex_string(&genesis_hash).unwrap()
+		Ok(H256::from_hex_string(&genesis_hash)?)
 	}
 
-	pub async fn rpc_state_get_runtime_version(&self) -> RuntimeVersion {
+	pub async fn rpc_state_get_runtime_version(&self) -> Result<RuntimeVersion, ()> {
 		let runtime_version: RuntimeVersion = self
 			.0
 			.request::<RuntimeVersion, _>("state_getRuntimeVersion", Params(None))
 			.await
-			.unwrap();
+			.map_err(|_| ())?;
 
-		runtime_version
+		Ok(runtime_version)
 	}
 
 	async fn account_nonce_api_account_nonce(
 		&self,
-		account_id: AccountId,
+		account_id: &AccountId,
 		block_hash: H256,
-	) -> u32 {
+	) -> Result<u32, ()> {
 		use parity_scale_codec::Decode;
 
 		let mut params = RpcParams::new();
-		params.push("AccountNonceApi_account_nonce").unwrap();
-		params.push(account_id.to_hex_string()).unwrap();
-		params.push(Some(block_hash.to_hex_string())).unwrap();
+		params
+			.push("AccountNonceApi_account_nonce")
+			.map_err(|_| ())?;
+		params.push(account_id.to_hex_string()).map_err(|_| ())?;
+		params
+			.push(Some(block_hash.to_hex_string()))
+			.map_err(|_| ())?;
 
 		let encoded_nonce: String = self
 			.0
 			.request::<String, _>("state_call", Params(params.build()))
 			.await
-			.unwrap();
-		let encoded_nonce = hex::decode(&encoded_nonce[2..]).unwrap();
+			.map_err(|_| ())?;
+		let encoded_nonce = hex::decode(&encoded_nonce[2..]).map_err(|_| ())?;
 
-		u32::decode(&mut encoded_nonce.as_ref()).unwrap()
+		Ok(u32::decode(&mut encoded_nonce.as_ref()).map_err(|_| ())?)
 	}
 }
 

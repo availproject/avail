@@ -51,9 +51,9 @@ impl Extra {
 
 #[derive(Clone, Copy)]
 pub enum Nonce {
-	BestBlockAndTxPool,
 	BestBlock,
 	FinalizedBlock,
+	BestBlockAndTxPool,
 	Custom(u32),
 }
 
