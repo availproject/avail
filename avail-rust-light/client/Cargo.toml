@@ -1,0 +1,18 @@
+[package]
+name = "avail-rust-light-client"
+edition.workspace = true
+
+[dependencies]
+parity-scale-codec.workspace = true
+hex.workspace = true
+blake2b_simd.workspace = true
+jsonrpsee-http-client.workspace = true
+jsonrpsee-core.workspace = true
+
+# `jsonrpsee` already pulls `tokio`, `serde_json` and `serde`
+tokio.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+
+# Local dependencies
+sdk-core.workspace = true

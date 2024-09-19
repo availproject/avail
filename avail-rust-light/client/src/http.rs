@@ -1,5 +1,8 @@
 use super::params::{Extra, Mortality, Nonce};
-use crate::core::{
+use jsonrpsee_core::{client::ClientT, traits::ToRpcParams, JsonRawValue as RawValue};
+use jsonrpsee_http_client::HttpClient as JRPSHttpClient;
+use parity_scale_codec::Compact;
+use sdk_core::{
 	crypto::{AccountId, Signature, Ss58Codec},
 	types::{
 		self,
@@ -8,9 +11,6 @@ use crate::core::{
 		UnsignedPayload, H256,
 	},
 };
-use jsonrpsee_core::{client::ClientT, traits::ToRpcParams, JsonRawValue as RawValue};
-use jsonrpsee_http_client::HttpClient as JRPSHttpClient;
-use parity_scale_codec::Compact;
 use serde::Serialize;
 use std::sync::Arc;
 
@@ -151,17 +151,22 @@ impl Client {
 		Ok(H256::from_hex_string(&block_hash)?)
 	}
 
-	pub async fn rpc_author_submit_extrinsic(&self, extrinsic: AlreadyEncoded) -> Result<H256, ()> {
+	pub async fn rpc_author_submit_extrinsic(
+		&self,
+		extrinsic: AlreadyEncoded,
+	) -> Result<H256, String> {
 		let mut params = RpcParams::new();
-		params.push(extrinsic.to_hex_string()).map_err(|_| ())?;
+		params
+			.push(extrinsic.to_hex_string())
+			.map_err(|_| String::from("Failed to push to params"))?;
 
 		let block_hash: String = self
 			.0
 			.request::<String, _>("author_submitExtrinsic", Params(params.build()))
 			.await
-			.map_err(|_| ())?;
+			.map_err(|e| e.to_string())?;
 
-		Ok(H256::from_hex_string(&block_hash)?)
+		Ok(H256::from_hex_string(&block_hash).map_err(|_| String::from("a"))?)
 	}
 
 	pub async fn rpc_system_account_next_index(&self, account_id: &AccountId) -> Result<u32, ()> {

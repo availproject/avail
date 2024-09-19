@@ -1,11 +1,14 @@
 [workspace]
+resolver = "2"
+members = [
+    "core",
+    "client"
+]
 
-[package]
-name = "avail-rust"
+[workspace.package]
 edition = "2021"
-version = "0.1.0"
 
-[dependencies]
+[workspace.dependencies]
 parity-scale-codec = { version = "3.6.12", default-features = false }
 hex = { version = "0.4.3" }
 blake2b_simd = { version = "1.0.2", default-features = false }
@@ -28,3 +31,6 @@ blake2 = { version = "0.10.6", default-features = false }
 tokio = { version = "1.39.3", default-features = false }
 serde_json = { version = "1.0.127", default-features = false }
 serde = { version = "1.0.209", default-features = false, features = ["derive"] }
+
+# Local dependencies
+sdk-core = { package = "avail-rust-light-core", path = "./core" }

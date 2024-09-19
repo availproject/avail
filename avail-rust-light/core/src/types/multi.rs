@@ -1,4 +1,4 @@
-use crate::core::crypto::AccountId;
+use crate::crypto::AccountId;
 use parity_scale_codec::{Compact, Encode};
 
 #[repr(u8)]

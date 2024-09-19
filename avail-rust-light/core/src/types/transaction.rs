@@ -2,7 +2,7 @@ use super::{
 	multi::{MultiAddress, MultiSignature},
 	AlreadyEncoded, H256,
 };
-use crate::core::crypto::{blake2_256, AccountId, Signature};
+use crate::crypto::{blake2_256, AccountId, Signature};
 use parity_scale_codec::{Compact, Encode};
 
 #[derive(Debug, Clone)]

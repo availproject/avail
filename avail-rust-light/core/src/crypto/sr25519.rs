@@ -176,12 +176,8 @@ impl Keypair {
 		Self(result.into())
 	}
 
-	fn account_id(&self) -> PublicKey {
-		self.public_key().into()
-	}
-
-	fn address(&self) -> PublicKey {
-		self.public_key().into()
+	pub fn account_id(&self) -> AccountId {
+		self.public_key().to_account_id()
 	}
 
 	/// Obtain the [`PublicKey`] part of this key pair, which can be used in calls to [`verify()`].

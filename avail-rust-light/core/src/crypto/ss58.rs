@@ -11,10 +11,10 @@ pub fn default_ss58_version() -> Ss58AddressFormat {
 		.into()
 }
 
-/// Returns either the input address format or the default.
+/* /// Returns either the input address format or the default.
 pub fn unwrap_or_default_ss58_version(network: Option<Ss58AddressFormat>) -> Ss58AddressFormat {
 	network.unwrap_or_else(default_ss58_version)
-}
+} */
 
 const PREFIX: &[u8] = b"SS58PRE";
 

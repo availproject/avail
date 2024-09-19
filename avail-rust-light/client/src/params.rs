@@ -1,4 +1,4 @@
-use crate::core::types::{avail, H256};
+use sdk_core::types::{avail, H256};
 
 #[derive(Clone, Copy)]
 pub struct Extra {

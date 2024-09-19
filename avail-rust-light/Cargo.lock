@@ -69,8 +69,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c4b4d0bd25bd0b74681c0ad21497610ce1b7c91b1022cd21c80c6fbdd9476b0"
 
 [[package]]
-name = "avail-rust"
-version = "0.1.0"
+name = "avail-rust-light-client"
+version = "0.0.0"
+dependencies = [
+ "avail-rust-light-core",
+ "blake2b_simd",
+ "hex",
+ "jsonrpsee-core",
+ "jsonrpsee-http-client",
+ "parity-scale-codec",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "avail-rust-light-core"
+version = "0.0.0"
 dependencies = [
  "bip39",
  "blake2",
@@ -78,8 +93,6 @@ dependencies = [
  "bs58",
  "hex",
  "hmac",
- "jsonrpsee-core",
- "jsonrpsee-http-client",
  "parity-scale-codec",
  "pbkdf2",
  "regex-lite",

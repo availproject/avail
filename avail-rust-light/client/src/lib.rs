@@ -1,14 +1,13 @@
-mod client;
-mod core;
-mod test {
-	use super::*;
+pub mod http;
+pub mod params;
 
+mod test {
 	#[test]
 	pub fn something() {
-		use crate::core::crypto::{Keypair, SecretUri};
-		use crate::core::types::avail;
-		use client::http::Client;
-		use client::params::*;
+		use crate::http::Client;
+		use crate::params::*;
+		use sdk_core::crypto::{Keypair, SecretUri};
+		use sdk_core::types::avail;
 		use std::str::FromStr;
 
 		let rt = tokio::runtime::Builder::new_current_thread()
@@ -22,7 +21,7 @@ mod test {
 
 			let secret_uri = SecretUri::from_str("//Alice").unwrap();
 			let account = Keypair::from_uri(&secret_uri).unwrap();
-			let account_id = account.public_key().to_account_id();
+			let account_id = account.account_id();
 			let client = Client::new("http://127.0.0.1:9944").unwrap();
 
 			let a = Extra::new();
