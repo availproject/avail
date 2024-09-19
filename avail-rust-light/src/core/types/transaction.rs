@@ -2,7 +2,7 @@ use super::{
 	multi::{MultiAddress, MultiSignature},
 	AlreadyEncoded, H256,
 };
-use crate::core::{blake2_256, PublicKey, Signature};
+use crate::core::crypto::{blake2_256, AccountId, Signature};
 use parity_scale_codec::{Compact, Encode};
 
 #[derive(Debug, Clone)]
@@ -13,7 +13,7 @@ impl OpaqueTransaction {
 	pub fn new(
 		payload_extra: &AlreadyEncoded,
 		payload_call: &AlreadyEncoded,
-		address: PublicKey,
+		account_id: AccountId,
 		signature: Signature,
 	) -> Self {
 		let mut encoded_inner: Vec<u8> = Vec::new();
@@ -22,7 +22,7 @@ impl OpaqueTransaction {
 		(0b10000000 + 4u8).encode_to(&mut encoded_inner);
 
 		// Attach Address from Signer
-		MultiAddress::Id(address.to_account_id()).encode_to(&mut encoded_inner);
+		MultiAddress::Id(account_id).encode_to(&mut encoded_inner);
 
 		// Attach Signature
 		MultiSignature::Sr25519(signature.0).encode_to(&mut encoded_inner);

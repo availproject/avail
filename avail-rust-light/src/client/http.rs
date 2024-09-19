@@ -1,19 +1,18 @@
+use super::params::{Extra, Mortality, Nonce};
 use crate::core::{
+	crypto::{AccountId, Signature, Ss58Codec},
 	types::{
 		self,
-		avail::{BlockHeader, BlockNumber, RuntimeVersion},
+		avail::{BlockHeader, RuntimeVersion},
 		Additional, AlreadyEncoded, Call, Era, OpaqueTransaction, UnsignedEncodedPayload,
 		UnsignedPayload, H256,
 	},
-	AccountId, PublicKey, Signature, Ss58Codec,
 };
 use jsonrpsee_core::{client::ClientT, traits::ToRpcParams, JsonRawValue as RawValue};
 use jsonrpsee_http_client::HttpClient as JRPSHttpClient;
 use parity_scale_codec::Compact;
 use serde::Serialize;
 use std::sync::Arc;
-
-use super::params::{Extra, Mortality, Nonce};
 
 #[derive(Clone)]
 pub struct Client(Arc<JRPSHttpClient>);
@@ -30,10 +29,6 @@ impl Client {
 		account_id: AccountId,
 		extra: Extra,
 	) -> Result<UnsignedEncodedPayload, ()> {
-		// We are not going to check if the call is properly setup. We will blindly trust it. :)
-		let call = call;
-
-		// Extrinsic Extras deconstructed
 		let (nonce, mortality, tip, app_id) = extra.deconstruct();
 
 		let app_id = Compact(app_id.unwrap_or(0u32));
@@ -87,7 +82,6 @@ impl Client {
 	}
 
 	async fn check_mortality(&self, mortality: Option<Mortality>) -> Result<(Era, H256), ()> {
-		// Mortality Nonce
 		let (era, fork_hash) = match mortality {
 			Some(x) => match x {
 				Mortality::Period(period) => {
@@ -114,10 +108,10 @@ impl Client {
 	pub fn sign(
 		&self,
 		payload: &UnsignedEncodedPayload,
-		address: PublicKey,
+		account_id: AccountId,
 		signature: Signature,
 	) -> OpaqueTransaction {
-		OpaqueTransaction::new(&payload.extra, &payload.call, address, signature)
+		OpaqueTransaction::new(&payload.extra, &payload.call, account_id, signature)
 	}
 
 	pub async fn get_header(&self, hash: Option<H256>) -> Result<BlockHeader, ()> {
@@ -183,6 +177,7 @@ impl Client {
 		Ok(nonce)
 	}
 
+	// Needs caching
 	pub async fn rpc_chain_spec_v1_genesis_hash(&self) -> Result<H256, ()> {
 		let genesis_hash: String = self
 			.0
@@ -193,6 +188,7 @@ impl Client {
 		Ok(H256::from_hex_string(&genesis_hash)?)
 	}
 
+	// Needs caching
 	pub async fn rpc_state_get_runtime_version(&self) -> Result<RuntimeVersion, ()> {
 		let runtime_version: RuntimeVersion = self
 			.0

@@ -22,25 +22,11 @@ impl AsRef<[u8]> for AccountId {
 		&self.0[..]
 	}
 }
-
 impl AsMut<[u8]> for AccountId {
 	fn as_mut(&mut self) -> &mut [u8] {
 		&mut self.0[..]
 	}
 }
-
-impl AsRef<[u8; 32]> for AccountId {
-	fn as_ref(&self) -> &[u8; 32] {
-		&self.0
-	}
-}
-
-impl AsMut<[u8; 32]> for AccountId {
-	fn as_mut(&mut self) -> &mut [u8; 32] {
-		&mut self.0
-	}
-}
-
 impl From<[u8; 32]> for AccountId {
 	fn from(x: [u8; 32]) -> Self {
 		AccountId(x)
@@ -58,7 +44,6 @@ impl<'a> TryFrom<&'a [u8]> for AccountId {
 		}
 	}
 }
-
 impl ByteArray for AccountId {
 	const LEN: usize = 32;
 }

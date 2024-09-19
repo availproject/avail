@@ -5,7 +5,8 @@ mod test {
 
 	#[test]
 	pub fn something() {
-		use crate::core::{Keypair, SecretUri};
+		use crate::core::crypto::{Keypair, SecretUri};
+		use crate::core::types::avail;
 		use client::http::Client;
 		use client::params::*;
 		use std::str::FromStr;
@@ -17,9 +18,7 @@ mod test {
 
 		rt.block_on(async {
 			let a = String::from("aabbcc");
-			let call = core::types::avail::calls::data_availability::create_application_key(
-				a.as_bytes().to_vec(),
-			);
+			let call = avail::DataAvailabilityCalls::create_application_key(a.as_bytes().to_vec());
 
 			let secret_uri = SecretUri::from_str("//Alice").unwrap();
 			let account = Keypair::from_uri(&secret_uri).unwrap();
@@ -29,7 +28,7 @@ mod test {
 			let a = Extra::new();
 			let payload = client.build_payload(call, account_id, a).await.unwrap();
 			let signature = payload.sign(&account);
-			let tx = client.sign(&payload, account.public_key(), signature);
+			let tx = client.sign(&payload, account_id.clone(), signature);
 			dbg!(tx.get_hash().to_hex_string());
 			let a = client.rpc_author_submit_extrinsic(tx.data).await.unwrap();
 			dbg!(a.to_hex_string());

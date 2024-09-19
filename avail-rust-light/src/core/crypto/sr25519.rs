@@ -1,11 +1,6 @@
 use std::fmt::Display;
 
-use super::{
-	derive_junction::DeriveJunction,
-	secret_uri::SecretUri,
-	ss58::{ByteArray, Ss58Codec},
-	AccountId,
-};
+use super::{derive_junction::DeriveJunction, secret_uri::SecretUri, AccountId};
 use parity_scale_codec::Encode;
 use schnorrkel::{
 	derive::{ChainCode, Derivation},
