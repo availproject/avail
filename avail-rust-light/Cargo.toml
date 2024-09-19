@@ -1,0 +1,30 @@
+[workspace]
+
+[package]
+name = "avail-rust"
+edition = "2021"
+version = "0.1.0"
+
+[dependencies]
+parity-scale-codec = { version = "3.6.12", default-features = false }
+hex = { version = "0.4.3" }
+blake2b_simd = { version = "1.0.2", default-features = false }
+jsonrpsee-http-client = { version = "0.24.3", default-features = false }
+jsonrpsee-core = { version = "0.24.3", default-features = false }
+
+# Crypto
+schnorrkel = { version = "0.11.4", default-features = false, features = ["getrandom"] }
+secrecy = { version = "0.8.0", default-features = false, features = ["alloc"] }
+regex-lite = { version = "0.1.6", default-feautes = false }
+bip39 = { version = "2.0.0", default-features = false }
+pbkdf2 = { version = "0.12.0", default-features = false }
+hmac = { version = "0.12.1", default-feautes = false }
+sha2 = { version = "0.10.8", default-features = false }
+ss58-registry = { version = "1.50.0", default-features = false }
+bs58 = { version = "0.5.1", default-features = false, features = ["alloc"] }
+blake2 = { version = "0.10.6", default-features = false }
+
+# `jsonrpsee` already pulls `tokio`, `serde_json` and `serde`
+tokio = { version = "1.39.3", default-features = false }
+serde_json = { version = "1.0.127", default-features = false }
+serde = { version = "1.0.209", default-features = false, features = ["derive"] }
