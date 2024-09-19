@@ -664,13 +664,13 @@ impl NominationPools {
 
 	pub async fn unbond(
 		&self,
-		member_account: String,
+		member_account: &str,
 		unbonding_points: u128,
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
 	) -> Result<PoolUnbondTxSuccess, String> {
-		let member_account = AccountId::from_str(&member_account).map_err(|e| e.to_string())?;
+		let member_account = AccountId::from_str(member_account).map_err(|e| e.to_string())?;
 		let account_id = account.public_key().to_account_id();
 		let params =
 			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
@@ -735,13 +735,13 @@ impl NominationPools {
 
 	pub async fn withdraw_unbonded(
 		&self,
-		member_account: String,
+		member_account: &str,
 		num_slashing_spans: u32,
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
 	) -> Result<PoolWithdrawUnbondedTxSuccess, String> {
-		let member_account = AccountId::from_str(&member_account).map_err(|e| e.to_string())?;
+		let member_account = AccountId::from_str(member_account).map_err(|e| e.to_string())?;
 		let account_id = account.public_key().to_account_id();
 		let params =
 			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;

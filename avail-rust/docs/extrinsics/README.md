@@ -1972,12 +1972,12 @@ async fn bond_extra(&self, extra: BondExtra<u128>, wait_for: WaitFor, account: &
 
 #### Parameters
 
-| parameter  | type        | optional | description                                     |
-| ---------- | ----------- | -------- | ----------------------------------------------- |
-| extra   | BondExtra<u128>         | false    |Additional funds can come from either the free balance of the account, of from the accumulated rewards |
-| waitFor    | WaitFor     | false    | wait for block inclusion or finalization        |
-| account    | KeyringPair | false    | account that will send and sign the transaction |
-| options    | Options     | true     | transaction parameters                          |
+| parameter | type            | optional | description                                                                                            |
+| --------- | --------------- | -------- | ------------------------------------------------------------------------------------------------------ |
+| extra     | BondExtra<u128> | false    | Additional funds can come from either the free balance of the account, of from the accumulated rewards |
+| waitFor   | WaitFor         | false    | wait for block inclusion or finalization                                                               |
+| account   | KeyringPair     | false    | account that will send and sign the transaction                                                        |
+| options   | Options         | true     | transaction parameters                                                                                 |
 
 ### Minimal Example
 
@@ -2068,13 +2068,13 @@ async fn set_commission(&self, pool_id: u32, new_commission: Option<NewCommissio
 
 #### Parameters
 
-| parameter  | type        | optional | description                                     |
-| ---------- | ----------- | -------- | ----------------------------------------------- |
-| pool_id   | u32      | false    | pool id |
-| new_commission   | Option<NewCommission>      | false    | if empty it removes the existing commission otherwise it sets it |
-| waitFor    | WaitFor     | false    | wait for block inclusion or finalization        |
-| account    | KeyringPair | false    | account that will send and sign the transaction |
-| options    | Options     | true     | transaction parameters                          |
+| parameter      | type                  | optional | description                                                      |
+| -------------- | --------------------- | -------- | ---------------------------------------------------------------- |
+| pool_id        | u32                   | false    | pool id                                                          |
+| new_commission | Option<NewCommission> | false    | if empty it removes the existing commission otherwise it sets it |
+| waitFor        | WaitFor               | false    | wait for block inclusion or finalization                         |
+| account        | KeyringPair           | false    | account that will send and sign the transaction                  |
+| options        | Options               | true     | transaction parameters                                           |
 
 ### Minimal Example
 
@@ -2180,13 +2180,13 @@ async fn set_metadata(&self, pool_id: u32, metadata: Vec<u8>, wait_for: WaitFor,
 
 #### Parameters
 
-| parameter  | type        | optional | description                                     |
-| ---------- | ----------- | -------- | ----------------------------------------------- |
-| pool_id   | u32      | false    | pool id |
-| metadata   | Vec<u8>     | false    | metadata|
-| waitFor    | WaitFor     | false    | wait for block inclusion or finalization        |
-| account    | KeyringPair | false    | account that will send and sign the transaction |
-| options    | Options     | true     | transaction parameters                          |
+| parameter | type        | optional | description                                     |
+| --------- | ----------- | -------- | ----------------------------------------------- |
+| pool_id   | u32         | false    | pool id                                         |
+| metadata  | Vec<u8>     | false    | metadata                                        |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
+| account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -2274,7 +2274,7 @@ async fn set_claim_permission(&self, permission: Permission, wait_for: WaitFor, 
 
 | parameter  | type        | optional | description                                     |
 | ---------- | ----------- | -------- | ----------------------------------------------- |
-| permission   | Permission      | false    | permission |
+| permission | Permission  | false    | permission                                      |
 | waitFor    | WaitFor     | false    | wait for block inclusion or finalization        |
 | account    | KeyringPair | false    | account that will send and sign the transaction |
 | options    | Options     | true     | transaction parameters                          |
@@ -2364,13 +2364,13 @@ async fn set_state(&self, pool_id: u32, state: State, wait_for: WaitFor, account
 
 #### Parameters
 
-| parameter  | type        | optional | description                                     |
-| ---------- | ----------- | -------- | ----------------------------------------------- |
-| pool_id   | u32      | false    | pool id |
-| state    | State     | false    | state     |
-| waitFor    | WaitFor     | false    | wait for block inclusion or finalization        |
-| account    | KeyringPair | false    | account that will send and sign the transaction |
-| options    | Options     | true     | transaction parameters                          |
+| parameter | type        | optional | description                                     |
+| --------- | ----------- | -------- | ----------------------------------------------- |
+| pool_id   | u32         | false    | pool id                                         |
+| state     | State       | false    | state                                           |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
+| account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -2452,18 +2452,18 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn unbond(&self, member_account: String, unbonding_points: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolUnbondTxSuccess, String>;
+async fn unbond(&self, member_account: &str, unbonding_points: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolUnbondTxSuccess, String>;
 ```
 
 #### Parameters
 
-| parameter  | type        | optional | description                                     |
-| ---------- | ----------- | -------- | ----------------------------------------------- |
-| member_account   | String      | false    | member account |
-| unbonding_points    | u128     | false    | defines how many tokens will be unbond     |
-| waitFor    | WaitFor     | false    | wait for block inclusion or finalization        |
-| account    | KeyringPair | false    | account that will send and sign the transaction |
-| options    | Options     | true     | transaction parameters                          |
+| parameter        | type        | optional | description                                     |
+| ---------------- | ----------- | -------- | ----------------------------------------------- |
+| member_account   | &str        | false    | member account                                  |
+| unbonding_points | u128        | false    | defines how many tokens will be unbond          |
+| waitFor          | WaitFor     | false    | wait for block inclusion or finalization        |
+| account          | KeyringPair | false    | account that will send and sign the transaction |
+| options          | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -2559,18 +2559,18 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn withdraw_unbonded(&self, member_account: String, num_slashing_spans: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolWithdrawUnbondedTxSuccess, String>;
+async fn withdraw_unbonded(&self, member_account: &str, num_slashing_spans: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolWithdrawUnbondedTxSuccess, String>;
 ```
 
 #### Parameters
 
-| parameter  | type        | optional | description                                     |
-| ---------- | ----------- | -------- | ----------------------------------------------- |
-| member_account   | String      | false    | member account |
-| num_slashing_spans    | u32     | false    | number of slashing spans     |
-| waitFor    | WaitFor     | false    | wait for block inclusion or finalization        |
-| account    | KeyringPair | false    | account that will send and sign the transaction |
-| options    | Options     | true     | transaction parameters                          |
+| parameter          | type        | optional | description                                     |
+| ------------------ | ----------- | -------- | ----------------------------------------------- |
+| member_account     | &str        | false    | member account                                  |
+| num_slashing_spans | u32         | false    | number of slashing spans                        |
+| waitFor            | WaitFor     | false    | wait for block inclusion or finalization        |
+| account            | KeyringPair | false    | account that will send and sign the transaction |
+| options            | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -2670,12 +2670,12 @@ async fn chill(&self, pool_id: u32, wait_for: WaitFor, account: &Keypair, option
 
 #### Parameters
 
-| parameter  | type        | optional | description                                     |
-| ---------- | ----------- | -------- | ----------------------------------------------- |
-| pool_id   | u32      | false    | pool id |
-| waitFor    | WaitFor     | false    | wait for block inclusion or finalization        |
-| account    | KeyringPair | false    | account that will send and sign the transaction |
-| options    | Options     | true     | transaction parameters                          |
+| parameter | type        | optional | description                                     |
+| --------- | ----------- | -------- | ----------------------------------------------- |
+| pool_id   | u32         | false    | pool id                                         |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
+| account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -2760,11 +2760,11 @@ async fn claim_payout(&self, wait_for: WaitFor, account: &Keypair, options: Opti
 
 #### Parameters
 
-| parameter  | type        | optional | description                                     |
-| ---------- | ----------- | -------- | ----------------------------------------------- |
-| waitFor    | WaitFor     | false    | wait for block inclusion or finalization        |
-| account    | KeyringPair | false    | account that will send and sign the transaction |
-| options    | Options     | true     | transaction parameters                          |
+| parameter | type        | optional | description                                     |
+| --------- | ----------- | -------- | ----------------------------------------------- |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
+| account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -2855,12 +2855,12 @@ async fn claim_commission(&self, pool_id: u32, wait_for: WaitFor, account: &Keyp
 
 #### Parameters
 
-| parameter  | type        | optional | description                                     |
-| ---------- | ----------- | -------- | ----------------------------------------------- |
-| pool_id    | u32     | false    | pool id      |
-| waitFor    | WaitFor     | false    | wait for block inclusion or finalization        |
-| account    | KeyringPair | false    | account that will send and sign the transaction |
-| options    | Options     | true     | transaction parameters                          |
+| parameter | type        | optional | description                                     |
+| --------- | ----------- | -------- | ----------------------------------------------- |
+| pool_id   | u32         | false    | pool id                                         |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
+| account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -2949,12 +2949,12 @@ async fn claim_payout_other(&self, other: &str, wait_for: WaitFor, account: &Key
 
 #### Parameters
 
-| parameter  | type        | optional | description                                     |
-| ---------- | ----------- | -------- | ----------------------------------------------- |
-| other    | &str     | false    | other account to claim payout    |
-| waitFor    | WaitFor     | false    | wait for block inclusion or finalization        |
-| account    | KeyringPair | false    | account that will send and sign the transaction |
-| options    | Options     | true     | transaction parameters                          |
+| parameter | type        | optional | description                                     |
+| --------- | ----------- | -------- | ----------------------------------------------- |
+| other     | &str        | false    | other account to claim payout                   |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
+| account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
