@@ -1,20 +1,17 @@
-use crate::interface::BlockHash;
 use crate::{
-	crypto::{AccountId, PublicKey, Signature, Ss58Codec},
-	interface::{Header, OpaqueTransaction},
-	transaction::{
-		Additional, AlreadyEncoded, Call, CheckedAppId, CheckedMortality, CheckedNonce, CheckedTip,
-		Extra, ExtrinsicExtra, MultiAddress, MultiSignature, UnsignedEncodedPayload,
-		UnsignedPayload,
+	core::types::{
+		self, avail::BlockHeader, avail::RuntimeVersion, Additional, AlreadyEncoded, Era,
+		OpaqueTransaction, UnsignedEncodedPayload, H256,
 	},
-	Bytes, RuntimeVersion,
+	core::{AccountId, PublicKey, Signature, Ss58Codec},
 };
 use jsonrpsee_core::{client::ClientT, traits::ToRpcParams, JsonRawValue as RawValue};
 use jsonrpsee_http_client::HttpClient as JRPSHttpClient;
 use parity_scale_codec::Compact;
-use parity_scale_codec::Encode;
 use serde::Serialize;
 use std::sync::Arc;
+
+use super::params::{Extra, Mortality, Nonce};
 
 #[derive(Clone)]
 pub struct Client(Arc<JRPSHttpClient>);
@@ -27,12 +24,10 @@ impl Client {
 
 	pub async fn build_payload(
 		&self,
-		call: Call,
+		call: types::Call,
 		account_id: AccountId,
-		extrinsic_extra: ExtrinsicExtra,
+		extra: Extra,
 	) -> UnsignedEncodedPayload {
-		use crate::transaction;
-
 		// We are not going to check if the call is properly setup. We will blindly trust it. :)
 		let call = call;
 
@@ -40,32 +35,32 @@ impl Client {
 		let account_id = account_id;
 
 		// Extrinsic Extras deconstructed
-		let (nonce, mortality, tip, app_id) = extrinsic_extra.deconstruct();
+		let (nonce, mortality, tip, app_id) = extra.deconstruct();
 
 		// Checking Nonce
 		let nonce = match nonce {
-			Some(transaction::Nonce::BestBlockAndTxPool) | None => {
+			Some(Nonce::BestBlockAndTxPool) | None => {
 				self.rpc_system_account_next_index(account_id.clone()).await
 			},
-			Some(transaction::Nonce::BestBlock) => {
+			Some(Nonce::BestBlock) => {
 				let block_hash = self.get_best_block_hash().await;
 				self.account_nonce_api_account_nonce(account_id.clone(), block_hash)
 					.await
 			},
-			Some(transaction::Nonce::FinalizedBlock) => {
+			Some(Nonce::FinalizedBlock) => {
 				let block_hash = self.get_finalized_block_hash().await;
 				self.account_nonce_api_account_nonce(account_id.clone(), block_hash)
 					.await
 			},
-			Some(transaction::Nonce::Custom(n)) => n,
+			Some(Nonce::Custom(n)) => n,
 		};
-		let nonce = CheckedNonce(Compact(nonce));
+		let nonce = Compact(nonce);
 
 		// We could do some checking for App ID but not now
-		let app_id = CheckedAppId(Compact(app_id.unwrap_or_default()));
+		let app_id = Compact(app_id.unwrap_or(0u32));
 
 		// No check for tip
-		let tip = CheckedTip(Compact(tip.unwrap_or_default()));
+		let tip = Compact(tip.unwrap_or(0u128));
 
 		let genesis_hash = self.rpc_chainSpec_v1_genesis_hash().await;
 		let best_block_hash = self.get_best_block_hash().await;
@@ -75,21 +70,18 @@ impl Client {
 		// Mortality Nonce
 		let (mortality, fork_hash) = match mortality {
 			Some(x) => match x {
-				transaction::Mortality::Period(period) => (
-					CheckedMortality::mortal(period, best_block_number),
+				Mortality::Period(period) => (
+					Era::mortal(period, best_block_number as u64),
 					best_block_hash,
 				),
-				transaction::Mortality::Custom((period, best_number, block_hash)) => {
-					(CheckedMortality::mortal(period, best_number), block_hash)
+				Mortality::Custom((period, best_number, block_hash)) => {
+					(Era::mortal(period, best_number as u64), block_hash)
 				},
 			},
-			None => (
-				CheckedMortality::mortal(32, best_block_number),
-				best_block_hash,
-			),
+			None => (Era::mortal(32, best_block_number as u64), best_block_hash),
 		};
 
-		let extra = Extra {
+		let extra = types::Extra {
 			mortality,
 			nonce,
 			tip,
@@ -104,7 +96,7 @@ impl Client {
 			fork_hash,
 		);
 
-		UnsignedPayload::new(call, extra, additional).encode()
+		types::UnsignedPayload::new(call, extra, additional).encode()
 	}
 
 	pub fn sign(
@@ -113,35 +105,10 @@ impl Client {
 		address: PublicKey,
 		signature: Signature,
 	) -> OpaqueTransaction {
-		let mut encoded_inner: Vec<u8> = Vec::new();
-
-		// "is signed" + transaction protocol version (4)
-		(0b10000000 + 4u8).encode_to(&mut encoded_inner);
-
-		// Attach Address from Signer
-		MultiAddress::Id(address.to_account_id()).encode_to(&mut encoded_inner);
-
-		// Attach Signature
-		MultiSignature::Sr25519(signature.0).encode_to(&mut encoded_inner);
-
-		// Attach Extra
-		payload.extra.encode_to(&mut encoded_inner);
-
-		// Attach Data
-		payload.call.encode_to(&mut encoded_inner);
-
-		// now, prefix byte length:
-		let len = Compact(
-			u32::try_from(encoded_inner.len()).expect("extrinsic size expected to be <4GB"),
-		);
-		let mut encoded = Vec::new();
-		len.encode_to(&mut encoded);
-		encoded.extend(encoded_inner);
-
-		OpaqueTransaction::new(AlreadyEncoded(encoded))
+		OpaqueTransaction::new(&payload.extra, &payload.call, address, signature)
 	}
 
-	pub async fn get_header(&self, hash: Option<BlockHash>) -> Header {
+	pub async fn get_header(&self, hash: Option<H256>) -> BlockHeader {
 		let mut params: Params = Params(None);
 		if let Some(hash) = hash {
 			let mut p = RpcParams::new();
@@ -149,36 +116,36 @@ impl Client {
 			params = Params(p.build());
 		}
 
-		let header: Header = self
+		let header: BlockHeader = self
 			.0
-			.request::<Header, _>("chain_getHeader", params)
+			.request::<BlockHeader, _>("chain_getHeader", params)
 			.await
 			.unwrap();
 
 		header
 	}
 
-	pub async fn get_best_block_hash(&self) -> BlockHash {
+	pub async fn get_best_block_hash(&self) -> H256 {
 		let block_hash: String = self
 			.0
 			.request::<String, _>("chain_getBlockHash", Params(None))
 			.await
 			.unwrap();
 
-		BlockHash::from_hex_string(&block_hash).unwrap()
+		H256::from_hex_string(&block_hash).unwrap()
 	}
 
-	pub async fn get_finalized_block_hash(&self) -> BlockHash {
+	pub async fn get_finalized_block_hash(&self) -> H256 {
 		let block_hash: String = self
 			.0
 			.request::<String, _>("chain_getFinalizedHead", Params(None))
 			.await
 			.unwrap();
 
-		BlockHash::from_hex_string(&block_hash).unwrap()
+		H256::from_hex_string(&block_hash).unwrap()
 	}
 
-	pub async fn rpc_author_submit_extrinsic(&self, extrinsic: AlreadyEncoded) -> BlockHash {
+	pub async fn rpc_author_submit_extrinsic(&self, extrinsic: AlreadyEncoded) -> H256 {
 		let mut params = RpcParams::new();
 		params.push(extrinsic.to_hex_string()).unwrap();
 
@@ -188,7 +155,7 @@ impl Client {
 			.await
 			.unwrap();
 
-		BlockHash::from_hex_string(&block_hash).unwrap()
+		H256::from_hex_string(&block_hash).unwrap()
 	}
 
 	pub async fn rpc_system_account_next_index(&self, account_id: AccountId) -> u32 {
@@ -204,14 +171,14 @@ impl Client {
 		nonce
 	}
 
-	pub async fn rpc_chainSpec_v1_genesis_hash(&self) -> BlockHash {
+	pub async fn rpc_chainSpec_v1_genesis_hash(&self) -> H256 {
 		let genesis_hash: String = self
 			.0
 			.request::<String, _>("chainSpec_v1_genesisHash", Params(None))
 			.await
 			.unwrap();
 
-		BlockHash::from_hex_string(&genesis_hash).unwrap()
+		H256::from_hex_string(&genesis_hash).unwrap()
 	}
 
 	pub async fn rpc_state_get_runtime_version(&self) -> RuntimeVersion {
@@ -227,13 +194,13 @@ impl Client {
 	async fn account_nonce_api_account_nonce(
 		&self,
 		account_id: AccountId,
-		block_hash: BlockHash,
+		block_hash: H256,
 	) -> u32 {
 		use parity_scale_codec::Decode;
 
 		let mut params = RpcParams::new();
 		params.push("AccountNonceApi_account_nonce").unwrap();
-		params.push(to_hex(account_id.0)).unwrap();
+		params.push(account_id.to_hex_string()).unwrap();
 		params.push(Some(block_hash.to_hex_string())).unwrap();
 
 		let encoded_nonce: String = self
@@ -245,58 +212,6 @@ impl Client {
 
 		u32::decode(&mut encoded_nonce.as_ref()).unwrap()
 	}
-
-	/* 	async fn check_extrinsic_extra(
-		&self,
-		ee: ExtrinsicExtra,
-		account_id: AccountId,
-	) -> (Extra, BlockHash) {
-		// Nonce
-		let nonce = match ee.nonce {
-			Some(Nonce::BestBlock) => {
-				self.fetch_nonce(account_id, self.fetch_best_block_hash())
-					.await
-			},
-			Some(Nonce::FinalizedBlock) => {
-				self.fetch_nonce(account_id, self.fetch_finalized_block_hash())
-					.await
-			},
-			Some(Nonce::Custom(n)) => n,
-			None => {
-				self.fetch_nonce(account_id, self.fetch_best_block_hash())
-					.await
-			},
-		};
-		let nonce = CheckedNonce(Compact::from(nonce));
-
-		// Tip
-		let tip = CheckedTip(Compact::from(ee.tip.unwrap_or(0u128)));
-
-		// App Id
-		let app_id = CheckedAppId(Compact::from(ee.app_id.unwrap_or(0u32)));
-
-		let (mortality, fork_hash) = match ee.mortality {
-			Some(x) => (
-				CheckedMortality::mortal(x.period, x.block_number),
-				x.fork_hash.unwrap_or_else(|| self.fetch_genesis_hash()),
-			),
-			None => (CheckedMortality::mortal(32, 32), self.fetch_genesis_hash()),
-		};
-
-		let extra = Extra {
-			mortality,
-			nonce,
-			tip,
-			app_id,
-		};
-
-		(extra, fork_hash)
-	} */
-}
-
-/// A quick helper to encode some bytes to hex.
-fn to_hex(bytes: impl AsRef<[u8]>) -> String {
-	format!("0x{}", hex::encode(bytes.as_ref()))
 }
 
 #[derive(Debug, Clone, Default)]

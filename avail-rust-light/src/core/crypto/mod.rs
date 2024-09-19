@@ -1,10 +1,12 @@
+mod account;
 mod derive_junction;
 mod secret_uri;
 mod sr25519;
 mod ss58;
 
+pub use account::AccountId;
 pub use secret_uri::SecretUri;
-pub use sr25519::{AccountId, Keypair, PublicKey, Signature};
+pub use sr25519::{Keypair, PublicKey, Signature};
 pub use ss58::Ss58Codec;
 
 #[inline(always)]
