@@ -23,6 +23,7 @@ pub use api_dev::api as avail;
 pub use config::*;
 pub use sdk::{WaitFor, SDK};
 
+pub use crate::avail::runtime_types::sp_arithmetic::per_things::Perbill;
 pub use avail_core;
 pub use hex;
 pub use kate_recovery;
@@ -34,6 +35,11 @@ pub use sp_core;
 pub use subxt;
 pub use subxt::config::polkadot::U256;
 pub use subxt_signer;
-pub use transactions::{Mortality, Nonce, Options};
+pub use transactions::{Mortality, NewCommission, Nonce, Options};
 pub use utils::utils_raw;
 pub use utils::FetchTransactionError;
+
+pub mod nomination_pools_types {
+	pub use crate::avail::nomination_pools::calls::types::set_claim_permission::Permission;
+	pub use crate::avail::nomination_pools::calls::types::set_state::State;
+}
