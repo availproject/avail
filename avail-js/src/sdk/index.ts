@@ -6,6 +6,10 @@ export * as sdkEvents from "./events"
 export * as sdkTransactions from "./transactions"
 export * as sdkTransactionData from "./transaction_data"
 
+export { BN } from "@polkadot/util"
+export { Keyring } from "@polkadot/api"
+export { WaitFor } from "./transactions"
+
 export class SDK {
   api: ApiPromise
   tx: Transactions
