@@ -22,7 +22,7 @@ impl Encode for AlreadyEncoded {
 	}
 }
 
-#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct H256(pub [u8; 32]);
 impl H256 {
 	pub fn to_hex_string(&self) -> String {
@@ -71,5 +71,17 @@ impl Encode for H256 {
 
 	fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, dest: &mut T) {
 		self.0.encode_to(dest);
+	}
+}
+// When we receive block hash from RPC calls it's always in Hex like String format.
+// Example: "0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7"
+//
+impl<'de> Deserialize<'de> for H256 {
+	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+	where
+		D: serde::Deserializer<'de>,
+	{
+		let buf = String::deserialize(deserializer)?;
+		Ok(H256::from_hex_string(&buf).unwrap())
 	}
 }

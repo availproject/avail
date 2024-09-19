@@ -47,30 +47,69 @@ pub mod calls {
 	}
 }
 
+#[derive(Debug, Deserialize)]
+pub struct RuntimeVersion {
+	#[serde(rename = "specName")]
+	pub spec_name: String,
+	#[serde(rename = "implName")]
+	pub impl_name: String,
+	#[serde(rename = "authoringVersion")]
+	pub authoring_version: u32,
+	#[serde(rename = "specVersion")]
+	pub spec_version: u32,
+	#[serde(rename = "implVersion")]
+	pub impl_version: u32,
+	pub apis: Vec<(String, u32)>,
+	#[serde(rename = "transactionVersion")]
+	pub transaction_version: u32,
+	#[serde(rename = "stateVersion")]
+	pub state_version: u8,
+}
+
 pub mod block {
 	use super::*;
+
+	/// Consensus engine unique ID.
+	pub type ConsensusEngineId = [u8; 4];
+	/// The encoded justification specific to a consensus engine.
+	pub type EncodedJustification = Vec<u8>;
+	/// An abstraction over justification for a block's validity under a consensus algorithm.
+	/// Essentially a finality proof.
+	pub type Justification = (ConsensusEngineId, EncodedJustification);
+
+	#[derive(Debug, Clone, Deserialize)]
+	pub struct SignedBlock {
+		pub block: Block,
+		pub justifications: Option<Justifications>,
+	}
+
+	#[derive(Debug, Clone, Deserialize)]
+	pub struct Block {
+		pub header: Header,
+		#[serde(deserialize_with = "decode_extrinsics")]
+		pub extrinsics: Vec<String>,
+	}
+
+	fn decode_extrinsics<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+	where
+		D: Deserializer<'de>,
+	{
+		Vec::deserialize(deserializer)
+	}
+
+	#[derive(Debug, Clone, Deserialize)]
+	pub struct Justifications(pub Vec<Justification>);
 
 	#[derive(Debug, Clone, Deserialize)]
 	#[serde(rename_all = "camelCase")]
 	pub struct Header {
-		#[serde(deserialize_with = "block_hash_from_string")]
 		pub parent_hash: H256,
 		#[serde(deserialize_with = "number_from_hex")]
 		pub number: BlockNumber,
-		#[serde(deserialize_with = "block_hash_from_string")]
 		pub state_root: H256,
-		#[serde(deserialize_with = "block_hash_from_string")]
 		pub extrinsics_root: H256,
 		pub digest: Digest,
 		pub extension: HeaderExtension,
-	}
-
-	fn block_hash_from_string<'de, D>(deserializer: D) -> Result<H256, D::Error>
-	where
-		D: Deserializer<'de>,
-	{
-		let buf = String::deserialize(deserializer)?;
-		Ok(H256::from_hex_string(&buf).unwrap())
 	}
 
 	fn number_from_hex<'de, D>(deserializer: D) -> Result<u32, D::Error>
@@ -300,7 +339,6 @@ pub mod block {
 		/// Plonk commitment.
 		pub commitment: Vec<u8>,
 		/// The merkle root of the data submitted
-		#[serde(deserialize_with = "block_hash_from_string")]
 		pub data_root: H256,
 	}
 	impl KateCommitment {
@@ -310,21 +348,95 @@ pub mod block {
 	}
 }
 
-#[derive(Debug, Deserialize)]
-pub struct RuntimeVersion {
-	#[serde(rename = "specName")]
-	pub spec_name: String,
-	#[serde(rename = "implName")]
-	pub impl_name: String,
-	#[serde(rename = "authoringVersion")]
-	pub authoring_version: u32,
-	#[serde(rename = "specVersion")]
-	pub spec_version: u32,
-	#[serde(rename = "implVersion")]
-	pub impl_version: u32,
-	pub apis: Vec<(String, u32)>,
-	#[serde(rename = "transactionVersion")]
-	pub transaction_version: u32,
-	#[serde(rename = "stateVersion")]
-	pub state_version: u8,
+pub mod events {
+	use super::*;
+
+	#[derive(Debug, Clone)]
+	pub struct EventRecord {
+		pub phase: Phase,
+		//#[serde(deserialize_with = "event_record_custom_deserializing")]
+		pub event: RuntimeEvent,
+		//#[serde(skip)]
+		pub topics: Vec<u32>,
+	}
+
+	impl<'de> Deserialize<'de> for EventRecord {
+		fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+		where
+			D: Deserializer<'de>,
+		{
+			let buf = serde_json::Value::deserialize(deserializer)?;
+			dbg!(buf);
+			todo!()
+		}
+	}
+
+	fn event_record_custom_deserializing<'de, D>(deserializer: D) -> Result<RuntimeEvent, D::Error>
+	where
+		D: Deserializer<'de>,
+	{
+		let buf = serde_json::Value::deserialize(deserializer)?;
+		dbg!(buf);
+
+		todo!()
+	}
+
+	#[derive(Debug, Clone, Deserialize)]
+	pub enum Phase {
+		/// Applying an extrinsic.
+		ApplyExtrinsic(u32),
+		/// Finalizing the block.
+		Finalization,
+		/// Initializing the block.
+		Initialization,
+	}
+	impl Default for Phase {
+		fn default() -> Self {
+			Self::Initialization
+		}
+	}
+
+	impl Decode for Phase {
+		fn decode<I: parity_scale_codec::Input>(
+			input: &mut I,
+		) -> Result<Self, parity_scale_codec::Error> {
+			let index: u8 = u8::decode(input)?;
+
+			match index {
+				0 => {
+					let value: u32 = u32::decode(input)?;
+					Ok(Self::ApplyExtrinsic(value))
+				},
+				1 => Ok(Self::Finalization),
+				2 => Ok(Self::Initialization),
+				_ => Err(parity_scale_codec::Error::from("Unknown Phase Index")),
+			}
+		}
+	}
+
+	#[derive(Debug, Clone, Deserialize)]
+	pub enum RuntimeEvent {
+		System(FrameSystemEvent),
+		Other,
+	}
+
+	#[derive(Debug, Clone, Deserialize)]
+	#[repr(u8)]
+	pub enum FrameSystemEvent {
+		//#[codec(index = 0)]
+		#[doc = "An extrinsic completed successfully."]
+		ExtrinsicSuccess = 0,
+		//#[codec(index = 1)]
+		#[doc = "An extrinsic failed."]
+		ExtrinsicFailed = 1,
+	}
+
+	/// Storage change set
+	#[derive(Debug, Clone, Deserialize)]
+	pub struct StorageChangeSet {
+		/// Block hash
+		pub block: String,
+		/// A list of changes; tuples of storage key and optional storage data.
+		pub changes: Vec<Vec<String>>,
+	}
 }

@@ -1,3 +1,5 @@
+pub mod block_watcher;
+
 pub mod error;
 pub mod http;
 pub mod params;

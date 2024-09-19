@@ -1,6 +1,6 @@
 use super::{
 	multi::{MultiAddress, MultiSignature},
-	AlreadyEncoded, H256,
+	AlreadyEncoded, Call, Extra, H256,
 };
 use crate::crypto::{blake2_256, AccountId, Signature};
 use parity_scale_codec::{Compact, Encode};
@@ -56,3 +56,28 @@ impl OpaqueTransaction {
 		H256(blake2_256(&self.data.0))
 	}
 }
+
+/* #[derive(Debug, Clone)]
+pub enum BlockTransaction {
+	Signed(BlockSignedTransaction),
+	UnSigned(BlockUnsignedTransaction),
+}
+impl BlockTransaction {
+	pub fn new_raw(s: String) -> Result<BlockTransaction, ()> {
+		let str = &s[2..];
+		let input: Vec<u8> = hex::decode(str).unwrap();
+
+		todo!()
+	}
+}
+
+#[derive(Debug, Clone)]
+pub struct BlockSignedTransaction {
+	account_id: AccountId,
+	signature: Signature,
+	extra: Extra,
+	call: Call,
+}
+#[derive(Debug, Clone)]
+pub struct BlockUnsignedTransaction {}
+ */

@@ -4,7 +4,11 @@ use jsonrpsee_http_client::HttpClient as JRPSHttpClient;
 use sdk_core::{
 	crypto::{AccountId, Ss58Codec},
 	types::{
-		avail::{BlockHeader, RuntimeVersion},
+		avail::{
+			block::{Block, SignedBlock},
+			events::{EventRecord, StorageChangeSet},
+			BlockHeader, RuntimeVersion,
+		},
 		OpaqueTransaction, H256,
 	},
 };
@@ -137,6 +141,38 @@ pub async fn fetch_block_header(
 	value.map_err(|e| ClientError::Jsonrpsee(e))
 }
 
+pub async fn fetch_block(
+	client: &JRPSHttpClient,
+	hash: Option<H256>,
+) -> Result<SignedBlock, ClientError> {
+	let mut params: RpcParams = RpcParams::new();
+	if let Some(hash) = hash {
+		params.push(hash.to_hex_string())?;
+	}
+
+	let value: Result<SignedBlock, _> = client
+		.request::<SignedBlock, _>("chain_getBlock", params)
+		.await;
+
+	value.map_err(|e| ClientError::Jsonrpsee(e))
+}
+
+pub async fn fetch_block2(
+	client: &JRPSHttpClient,
+	hash: Option<H256>,
+) -> Result<jsonrpsee_core::JsonValue, ClientError> {
+	let mut params: RpcParams = RpcParams::new();
+	if let Some(hash) = hash {
+		params.push(hash.to_hex_string())?;
+	}
+
+	let value: Result<jsonrpsee_core::JsonValue, _> = client
+		.request::<jsonrpsee_core::JsonValue, _>("chain_getBlock", params)
+		.await;
+
+	value.map_err(|e| ClientError::Jsonrpsee(e))
+}
+
 pub async fn author_submit_extrinsic(
 	client: &JRPSHttpClient,
 	extrinsic: OpaqueTransaction,
@@ -150,4 +186,24 @@ pub async fn author_submit_extrinsic(
 	let value: String = value.map_err(|e| ClientError::Jsonrpsee(e))?;
 
 	H256::from_hex_string(&value).map_err(|e| ClientError::Core(e))
+}
+
+pub async fn state_query_storage_events(
+	client: &JRPSHttpClient,
+	hash: Option<H256>,
+) -> Result<Vec<StorageChangeSet>, ClientError> {
+	const ENCODED_STORAGE_KEY: &str =
+		"0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7";
+
+	let mut params: RpcParams = RpcParams::new();
+	params.push(vec![ENCODED_STORAGE_KEY])?;
+	if let Some(hash) = hash {
+		params.push(hash.to_hex_string())?;
+	}
+
+	let value: Result<Vec<StorageChangeSet>, _> = client
+		.request::<Vec<StorageChangeSet>, _>("state_queryStorageAt", params)
+		.await;
+
+	value.map_err(|e| ClientError::Jsonrpsee(e))
 }
