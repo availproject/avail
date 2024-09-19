@@ -13,7 +13,7 @@ use sdk_core::{
 use std::sync::Arc;
 
 #[derive(Clone)]
-pub struct Client(Arc<JRPSHttpClient>);
+pub struct Client(pub Arc<JRPSHttpClient>);
 
 impl Client {
 	pub fn new(endpoint: &str) -> Result<Self, ClientError> {

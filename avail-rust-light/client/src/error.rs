@@ -6,4 +6,5 @@ pub enum ClientError {
 	Core(CoreError),
 	CodecError(parity_scale_codec::Error),
 	SerdeJson(serde_json::Error),
+	FromHexError(hex::FromHexError),
 }

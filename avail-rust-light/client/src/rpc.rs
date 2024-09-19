@@ -27,11 +27,10 @@ impl RpcParams {
 	/// Push a parameter into our [`RpcParams`]. This serializes it to JSON
 	/// in the process, and so will return an error if this is not possible.
 	pub fn push<P: Serialize>(&mut self, param: P) -> Result<(), ClientError> {
-		if self.0.is_empty() {
-			self.0.push(b'[');
-		} else {
-			self.0.push(b',')
-		}
+		match self.0.len() {
+			0 => self.0.push(b'['),
+			_ => self.0.push(b','),
+		};
 		serde_json::to_writer(&mut self.0, &param).map_err(|e| ClientError::SerdeJson(e))?;
 
 		Ok(())
@@ -71,13 +70,14 @@ pub async fn account_nonce_api_account_nonce(
 	use parity_scale_codec::Decode;
 
 	let mut params = RpcParams::new();
-	params.push("AccountNonceApi_account_nonce").unwrap();
-	params.push(account_id.to_hex_string()).unwrap();
-	params.push(Some(block_hash.to_hex_string())).unwrap();
+	params.push("AccountNonceApi_account_nonce")?;
+	params.push(account_id.to_hex_string())?;
+	params.push(Some(block_hash.to_hex_string()))?;
 
 	let encoded_value: Result<String, _> = client.request::<String, _>("state_call", params).await;
 	let encoded_value: String = encoded_value.map_err(|e| ClientError::Jsonrpsee(e))?;
-	let encoded_value = hex::decode(&encoded_value[2..]).unwrap();
+	let encoded_value =
+		hex::decode(&encoded_value[2..]).map_err(|e| ClientError::FromHexError(e))?;
 
 	u32::decode(&mut encoded_value.as_ref()).map_err(|e| ClientError::CodecError(e))
 }
@@ -127,7 +127,7 @@ pub async fn fetch_block_header(
 ) -> Result<BlockHeader, ClientError> {
 	let mut params: RpcParams = RpcParams::new();
 	if let Some(hash) = hash {
-		params.push(hash.to_hex_string()).unwrap();
+		params.push(hash.to_hex_string())?;
 	}
 
 	let value: Result<BlockHeader, _> = client
@@ -142,7 +142,7 @@ pub async fn author_submit_extrinsic(
 	extrinsic: OpaqueTransaction,
 ) -> Result<H256, ClientError> {
 	let mut params = RpcParams::new();
-	params.push(extrinsic.data.to_hex_string()).unwrap();
+	params.push(extrinsic.data.to_hex_string())?;
 
 	let value: Result<String, _> = client
 		.request::<String, _>("author_submitExtrinsic", params)
