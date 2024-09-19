@@ -1,10 +1,10 @@
-use crate::api_dev::api::data_availability::calls::types::create_application_key::Key;
-use crate::api_dev::api::data_availability::calls::types::submit_data::Data;
-use crate::api_dev::api::runtime_types::frame_support::dispatch::DispatchFeeModifier;
-use crate::api_dev::api::Call;
-use crate::rpcs::Rpc;
-use crate::sdk::WaitFor;
+use super::super::rpcs::Rpc;
+use crate::avail::data_availability::calls::types::create_application_key::Key;
+use crate::avail::data_availability::calls::types::submit_data::Data;
+use crate::avail::runtime_types::frame_support::dispatch::DispatchFeeModifier;
+use crate::avail::Call;
 use crate::utils_raw::{fetch_transaction, progress_transaction};
+use crate::WaitFor;
 use crate::{avail, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
 
 use subxt::blocks::ExtrinsicEvents;

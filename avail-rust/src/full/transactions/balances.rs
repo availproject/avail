@@ -1,5 +1,5 @@
-use crate::rpcs::Rpc;
-use crate::sdk::WaitFor;
+use super::super::rpcs::Rpc;
+use super::super::sdk::WaitFor;
 use crate::{avail, AccountId, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
 
 use std::str::FromStr;

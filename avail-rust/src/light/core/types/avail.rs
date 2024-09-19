@@ -1,5 +1,5 @@
+use super::payload_fields::Call;
 use super::{AlreadyEncoded, H256};
-use crate::types::payload_fields::Call;
 use parity_scale_codec::{Decode, Encode};
 use serde::{Deserialize, Deserializer};
 

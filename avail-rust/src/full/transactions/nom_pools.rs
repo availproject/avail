@@ -1,11 +1,11 @@
+use super::super::rpcs::Rpc;
 use crate::avail::nomination_pools::calls::types::set_claim_permission::Permission;
 use crate::avail::nomination_pools::calls::types::set_commission::NewCommission as NewCommissionOriginal;
 use crate::avail::nomination_pools::calls::types::set_state::State;
 use crate::avail::runtime_types::pallet_nomination_pools::BondExtra;
 use crate::avail::runtime_types::sp_arithmetic::per_things::Perbill;
-use crate::rpcs::Rpc;
-use crate::sdk::WaitFor;
 use crate::utils_raw::fetch_transaction;
+use crate::WaitFor;
 use crate::{avail, AccountId, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
 
 use std::str::FromStr;

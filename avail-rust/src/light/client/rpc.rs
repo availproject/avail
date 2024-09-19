@@ -1,17 +1,13 @@
-use crate::error::ClientError;
-use jsonrpsee_core::{client::ClientT, traits::ToRpcParams, JsonRawValue as RawValue};
-use jsonrpsee_http_client::HttpClient as JRPSHttpClient;
-use sdk_core::{
+use super::error::ClientError;
+use crate::sdk_core::{
 	crypto::{AccountId, Ss58Codec},
 	types::{
-		avail::{
-			block::{Block, SignedBlock},
-			events::{EventRecord, StorageChangeSet},
-			BlockHeader, RuntimeVersion,
-		},
+		avail::{block::SignedBlock, events::StorageChangeSet, BlockHeader, RuntimeVersion},
 		OpaqueTransaction, H256,
 	},
 };
+use jsonrpsee_core::{client::ClientT, traits::ToRpcParams, JsonRawValue as RawValue};
+use jsonrpsee_http_client::HttpClient as JRPSHttpClient;
 use serde::Serialize;
 
 #[derive(Debug, Clone, Default)]

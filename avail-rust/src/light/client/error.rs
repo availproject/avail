@@ -1,4 +1,4 @@
-use sdk_core::types::error::CoreError;
+use crate::sdk_core::types::error::CoreError;
 
 #[derive(Debug)]
 pub enum ClientError {

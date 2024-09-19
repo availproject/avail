@@ -1,8 +1,8 @@
-use crate::api_dev::api::runtime_types::pallet_staking::ValidatorPrefs;
-use crate::api_dev::api::runtime_types::sp_arithmetic::per_things::Perbill;
-use crate::rpcs::Rpc;
-use crate::sdk::WaitFor;
+use super::super::rpcs::Rpc;
+use crate::avail::runtime_types::pallet_staking::ValidatorPrefs;
+use crate::avail::runtime_types::sp_arithmetic::per_things::Perbill;
 use crate::utils_raw::fetch_transaction;
+use crate::WaitFor;
 use crate::{
 	avail, AccountId, AvailBlocksClient, AvailConfig, BlockHash, RewardDestination, TxApi,
 };

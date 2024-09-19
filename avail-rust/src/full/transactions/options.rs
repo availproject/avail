@@ -1,4 +1,4 @@
-use crate::rpcs::Rpc;
+use super::super::rpcs::Rpc;
 use crate::{AccountId, AvailBlocksClient, AvailExtrinsicParamsBuilder, BlockHash};
 
 use super::Params;

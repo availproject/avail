@@ -1,7 +1,7 @@
+use super::super::rpcs::Rpc;
 use crate::avail::runtime_types::da_runtime::primitives::SessionKeys;
-use crate::rpcs::Rpc;
-use crate::sdk::WaitFor;
 use crate::utils_raw::fetch_transaction;
+use crate::WaitFor;
 use crate::{avail, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
 
 use subxt::blocks::ExtrinsicEvents;
