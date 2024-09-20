@@ -1,4 +1,4 @@
-import { SDK, WaitFor, Keyring, BN } from "avail-js-sdk"
+import { SDK, WaitFor, Keyring, ClaimPermission } from "../../src"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -6,10 +6,9 @@ const main = async () => {
 
   // Input
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Bob")
-  const amount = new BN(10).pow(new BN(18)).mul(new BN(10000)) // 10_000 Avail
-  const poolId = 1
+  const permission: ClaimPermission = "PermissionlessAll"
 
-  const result = await sdk.tx.nominationPools.join(amount, poolId, WaitFor.BlockInclusion, account)
+  const result = await sdk.tx.nominationPools.setClaimPermission(permission, WaitFor.BlockInclusion, account)
   if (result.isErr) {
     console.log(result.reason)
     process.exit(1)

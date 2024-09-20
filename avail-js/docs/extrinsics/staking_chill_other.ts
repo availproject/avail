@@ -13,7 +13,7 @@ const main = async () => {
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 4))
+  console.log(JSON.stringify(result, null, 2))
 
   process.exit()
 }
