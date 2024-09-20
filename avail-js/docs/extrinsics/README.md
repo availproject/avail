@@ -1403,7 +1403,7 @@ function bondExtra(extra: BondExtra, waitFor: WaitFor, account: KeyringPair, opt
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, BondExtra, BN } from "../../src"
+import { SDK, WaitFor, Keyring, BondExtra, BN } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -1476,7 +1476,7 @@ function setMetadata(poolId: number, metadata: string, waitFor: WaitFor, account
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring } from "../../src"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -1543,7 +1543,7 @@ function unbond(memberAccount: string, unbondingPoints: BN, waitFor: WaitFor, ac
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, BN } from "../../src"
+import { SDK, WaitFor, Keyring, BN } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -1616,7 +1616,7 @@ function chill(poolId: number, waitFor: WaitFor, account: KeyringPair, options?:
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring } from "../../src"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -1681,7 +1681,7 @@ function setClaimPermission(permission: ClaimPermission, waitFor: WaitFor, accou
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, ClaimPermission } from "../../src"
+import { SDK, WaitFor, Keyring, ClaimPermission } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -1746,7 +1746,7 @@ function claimCommission(poolId: number, waitFor: WaitFor, account: KeyringPair,
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, BN } from "../../src"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -1814,7 +1814,7 @@ function claimPayout(waitFor: WaitFor, account: KeyringPair, options?: Partial<S
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, BN } from "../../src"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -1883,7 +1883,7 @@ function claimPayoutOther(other: string, waitFor: WaitFor, account: KeyringPair,
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, BN } from "../../src"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -1954,7 +1954,7 @@ function setCommission(poolId: number, newCommission: NewCommission | null, wait
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, NewCommission } from "../../src"
+import { SDK, WaitFor, Keyring, NewCommission } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -2025,7 +2025,7 @@ function withdrawUnbonded(memberAccount: string, numSlashingSpans: number, waitF
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring } from "../../src"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -2103,7 +2103,7 @@ function setState(poolId: number, state: PoolState, waitFor: WaitFor, account: K
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, PoolState } from "../../src"
+import { SDK, WaitFor, Keyring, PoolState } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
