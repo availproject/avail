@@ -2,7 +2,6 @@ import { ApiPromise } from "@polkadot/api"
 import { initialize } from "../chain"
 import { Transactions } from "./transactions"
 
-export * as sdkEvents from "./events"
 export * as sdkTransactions from "./transactions"
 export * as sdkTransactionData from "./transaction_data"
 

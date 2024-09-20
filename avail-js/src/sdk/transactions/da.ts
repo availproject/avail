@@ -5,10 +5,9 @@ import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
 import { err, Result } from "neverthrow"
 
-import * as Events from "./../events"
 import * as TransactionData from "./../transaction_data"
 import { SignerOptions } from "@polkadot/api/types"
-import { decodeError } from "../../helpers"
+import { decodeError, fromHexToAscii } from "../../helpers"
 import { WaitFor, GenericFailure, standardCallback, getBlockHashAndTxHash } from "./common"
 
 export type DispatchFeeModifier = {
@@ -20,7 +19,7 @@ export type DispatchFeeModifier = {
 type SubmitDataTxSuccess = {
   isErr: false
   txData: TransactionData.DataAvailability.SubmitData
-  event: Events.DataAvailability.DataSubmittedEvent
+  event: Events.DataSubmittedEvent
   events: EventRecord[]
   txHash: H256
   txIndex: number
@@ -29,7 +28,7 @@ type SubmitDataTxSuccess = {
 }
 type CreateApplicationKeyTxSuccess = {
   isErr: false
-  event: Events.DataAvailability.ApplicationKeyCreatedEvent
+  event: Events.ApplicationKeyCreatedEvent
   events: EventRecord[]
   txHash: H256
   txIndex: number
@@ -38,7 +37,7 @@ type CreateApplicationKeyTxSuccess = {
 }
 type SetApplicationKeyTxSuccess = {
   isErr: false
-  event: Events.DataAvailability.ApplicationKeySetEvent
+  event: Events.ApplicationKeySetEvent
   events: EventRecord[]
   txHash: H256
   txIndex: number
@@ -47,7 +46,7 @@ type SetApplicationKeyTxSuccess = {
 }
 type SubmitBlockLengthProposalTxSuccess = {
   isErr: false
-  event: Events.DataAvailability.BlockLengthProposalSubmittedEvent
+  event: Events.BlockLengthProposalSubmittedEvent
   events: EventRecord[]
   txHash: H256
   txIndex: number
@@ -56,7 +55,7 @@ type SubmitBlockLengthProposalTxSuccess = {
 }
 type SetSubmitDataFeeModifierTxSuccess = {
   isErr: false
-  event: Events.DataAvailability.SubmitDataFeeModifierSetEvent
+  event: Events.SubmitDataFeeModifierSetEvent
   events: EventRecord[]
   txHash: H256
   txIndex: number
@@ -103,7 +102,7 @@ export class DataAvailability {
       return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure
     }
 
-    const event = Events.DataAvailability.DataSubmittedEvent.New(txResult.events)
+    const event = Events.DataSubmittedEvent.New(txResult.events)
     if (event == undefined) {
       return { isErr: true, reason: "Failed to find DataSubmitted event." } as GenericFailure
     }
@@ -160,7 +159,7 @@ export class DataAvailability {
       return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure
     }
 
-    const event = Events.DataAvailability.ApplicationKeyCreatedEvent.New(txResult.events)
+    const event = Events.ApplicationKeyCreatedEvent.New(txResult.events)
     if (event == undefined) {
       return { isErr: true, reason: "Failed to find ApplicationKeyCreated event." } as GenericFailure
     }
@@ -215,7 +214,7 @@ export class DataAvailability {
       return { isErr: true, isFailure: true, reason: decodeError(this.api, sudoResult.asErr) } as GenericFailure
     }
 
-    const event = Events.DataAvailability.ApplicationKeySetEvent.New(txResult.events)
+    const event = Events.ApplicationKeySetEvent.New(txResult.events)
     if (event == undefined) {
       return { isErr: true, reason: "Failed to find ApplicationKeySet event." } as GenericFailure
     }
@@ -270,7 +269,7 @@ export class DataAvailability {
       return { isErr: true, isFailure: true, reason: decodeError(this.api, sudoResult.asErr) } as GenericFailure
     }
 
-    const event = Events.DataAvailability.BlockLengthProposalSubmittedEvent.New(txResult.events)
+    const event = Events.BlockLengthProposalSubmittedEvent.New(txResult.events)
     if (event == undefined) {
       return { isErr: true, reason: "Failed to find BlockLengthProposalSubmitted event." } as GenericFailure
     }
@@ -332,7 +331,7 @@ export class DataAvailability {
       return { isErr: true, isFailure: true, reason: decodeError(this.api, sudoResult.asErr) } as GenericFailure
     }
 
-    const event = Events.DataAvailability.SubmitDataFeeModifierSetEvent.New(txResult.events)
+    const event = Events.SubmitDataFeeModifierSetEvent.New(txResult.events)
     if (event == undefined) {
       return { isErr: true, reason: "Failed to find SubmitDataFeeModifierSet event." } as GenericFailure
     }
@@ -341,5 +340,91 @@ export class DataAvailability {
     const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api)
 
     return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as SetSubmitDataFeeModifierTxSuccess
+  }
+}
+
+export namespace Events {
+  export class DataSubmittedEvent {
+    constructor(
+      public who: string,
+      public dataHash: string,
+    ) {}
+    static New(events: EventRecord[]): DataSubmittedEvent | undefined {
+      const ed: any = events.find((e) => e.event.method == "DataSubmitted")?.event.data
+      if (ed == undefined) {
+        return undefined
+      }
+
+      return new DataSubmittedEvent(ed["who"].toString(), ed["dataHash"].toString())
+    }
+  }
+
+  export class ApplicationKeyCreatedEvent {
+    constructor(
+      public key: string,
+      public owner: string,
+      public id: string,
+    ) {}
+    static New(events: EventRecord[]): ApplicationKeyCreatedEvent | undefined {
+      const ed: any = events.find((e) => e.event.method == "ApplicationKeyCreated")?.event.data
+      if (ed == undefined) {
+        return undefined
+      }
+
+      return new ApplicationKeyCreatedEvent(ed["key"].toString(), ed["owner"].toString(), ed["id"].toString())
+    }
+  }
+
+  export class ApplicationKeySetEvent {
+    constructor(
+      public oldKey: string,
+      public newKey: string,
+    ) {}
+    static New(events: EventRecord[]): ApplicationKeySetEvent | undefined {
+      const ed: any = events.find((e) => e.event.method == "ApplicationKeySet")?.event.data
+      if (ed == undefined) {
+        return undefined
+      }
+
+      return new ApplicationKeySetEvent(
+        fromHexToAscii(ed["oldKey"].toString()),
+        fromHexToAscii(ed["newKey"].toString()),
+      )
+    }
+  }
+
+  export class BlockLengthProposalSubmittedEvent {
+    constructor(
+      public rows: string,
+      public cols: string,
+    ) {}
+    static New(events: EventRecord[]): BlockLengthProposalSubmittedEvent | undefined {
+      const ed: any = events.find((e) => e.event.method == "BlockLengthProposalSubmitted")?.event.data
+      if (ed == undefined) {
+        return undefined
+      }
+
+      return new BlockLengthProposalSubmittedEvent(ed["rows"].toString(), ed["cols"].toString())
+    }
+  }
+
+  export class SubmitDataFeeModifierSetEvent {
+    constructor(
+      public weightMaximumFee: BN | null,
+      public weightFeeDivider: string | null,
+      public weightFeeMultiplier: string | null,
+    ) {}
+    static New(events: EventRecord[]): SubmitDataFeeModifierSetEvent | undefined {
+      const ed: any = events.find((e) => e.event.method == "SubmitDataFeeModifierSet")?.event.data
+      if (ed == undefined) {
+        return undefined
+      }
+
+      return new SubmitDataFeeModifierSetEvent(
+        ed["weightMaximumFee"]?.toString(),
+        ed["weightFeeDivider"]?.toString(),
+        ed["weightFeeMultiplier"]?.toString(),
+      )
+    }
   }
 }

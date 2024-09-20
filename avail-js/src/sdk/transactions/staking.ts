@@ -5,7 +5,6 @@ import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
 import { err, Result } from "neverthrow"
 
-import * as Events from "./../events"
 import * as TransactionData from "./../transaction_data"
 import { SignerOptions } from "@polkadot/api/types"
 import { decodeError } from "../../helpers"
@@ -17,7 +16,7 @@ export type StakingRewardDestination = "Staked" | "Stash" | "None" | { account: 
 
 type BondTxSuccess = {
   isErr: false
-  event: Events.Staking.Bonded
+  event: Events.Bonded
   events: EventRecord[]
   txHash: H256
   txIndex: number
@@ -26,7 +25,7 @@ type BondTxSuccess = {
 }
 type BondExtraTxSuccess = {
   isErr: false
-  event: Events.Staking.Bonded
+  event: Events.Bonded
   events: EventRecord[]
   txHash: H256
   txIndex: number
@@ -35,7 +34,7 @@ type BondExtraTxSuccess = {
 }
 type ChillTxSuccess = {
   isErr: false
-  event: Events.Staking.Chilled
+  event: Events.Chilled
   events: EventRecord[]
   txHash: H256
   txIndex: number
@@ -44,7 +43,7 @@ type ChillTxSuccess = {
 }
 type ChillOtherTxSuccess = {
   isErr: false
-  event: Events.Staking.Chilled
+  event: Events.Chilled
   events: EventRecord[]
   txHash: H256
   txIndex: number
@@ -53,7 +52,7 @@ type ChillOtherTxSuccess = {
 }
 type UnbondTxSuccess = {
   isErr: false
-  event: Events.Staking.Unbonded
+  event: Events.Unbonded
   events: EventRecord[]
   txHash: H256
   txIndex: number
@@ -62,7 +61,7 @@ type UnbondTxSuccess = {
 }
 type ValidatexSuccess = {
   isErr: false
-  event: Events.Staking.ValidatorPrefsSet
+  event: Events.ValidatorPrefsSet
   events: EventRecord[]
   txHash: H256
   txIndex: number
@@ -119,7 +118,7 @@ export class Staking {
       return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure
     }
 
-    const event = Events.Staking.Bonded.New(txResult.events)
+    const event = Events.Bonded.New(txResult.events)
     if (event == undefined) {
       return { isErr: true, reason: "Failed to find Bonded event." } as GenericFailure
     }
@@ -162,7 +161,7 @@ export class Staking {
       return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure
     }
 
-    const event = Events.Staking.Bonded.New(txResult.events)
+    const event = Events.Bonded.New(txResult.events)
     if (event == undefined) {
       return { isErr: true, reason: "Failed to find Bonded event." } as GenericFailure
     }
@@ -204,7 +203,7 @@ export class Staking {
       return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure
     }
 
-    const event = Events.Staking.Chilled.New(txResult.events)
+    const event = Events.Chilled.New(txResult.events)
     if (event == undefined) {
       return { isErr: true, reason: "Failed to find Chilled event." } as GenericFailure
     }
@@ -247,7 +246,7 @@ export class Staking {
       return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure
     }
 
-    const event = Events.Staking.Chilled.New(txResult.events)
+    const event = Events.Chilled.New(txResult.events)
     if (event == undefined) {
       return { isErr: true, reason: "Failed to find Chilled event." } as GenericFailure
     }
@@ -341,7 +340,7 @@ export class Staking {
       return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure
     }
 
-    const event = Events.Staking.Unbonded.New(txResult.events)
+    const event = Events.Unbonded.New(txResult.events)
     if (event == undefined) {
       return { isErr: true, reason: "Failed to find Unbonded event." } as GenericFailure
     }
@@ -391,7 +390,7 @@ export class Staking {
       return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure
     }
 
-    const event = Events.Staking.ValidatorPrefsSet.New(txResult.events)
+    const event = Events.ValidatorPrefsSet.New(txResult.events)
     if (event == undefined) {
       return { isErr: true, reason: "Failed to find ValidatorPrefsSet event." } as GenericFailure
     }
@@ -400,5 +399,72 @@ export class Staking {
     const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api)
 
     return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as ValidatexSuccess
+  }
+}
+
+export namespace Events {
+  export class Bonded {
+    constructor(
+      public stash: string,
+      public amount: string,
+    ) {}
+    static New(events: EventRecord[]): Bonded | undefined {
+      const ed: any = events.find((e) => e.event.method == "Bonded")?.event.data
+      if (ed == undefined) {
+        return undefined
+      }
+
+      const amountString = ed["amount"].toString()
+      const amount = new BN(amountString).div(new BN(10).pow(new BN(18))).toString()
+
+      return new Bonded(ed["stash"].toString(), amount)
+    }
+  }
+
+  export class Chilled {
+    constructor(public stash: string) {}
+    static New(events: EventRecord[]): Chilled | undefined {
+      const ed: any = events.find((e) => e.event.method == "Chilled")?.event.data
+      if (ed == undefined) {
+        return undefined
+      }
+
+      return new Chilled(ed["stash"].toString())
+    }
+  }
+
+  export class Unbonded {
+    constructor(
+      public stash: string,
+      public amount: string,
+    ) {}
+    static New(events: EventRecord[]): Unbonded | undefined {
+      const ed: any = events.find((e) => e.event.method == "Unbonded")?.event.data
+      if (ed == undefined) {
+        return undefined
+      }
+
+      return new Unbonded(ed["stash"].toString(), ed["amount"].toString())
+    }
+  }
+
+  export class ValidatorPrefsSet {
+    constructor(
+      public stash: string,
+      public commission: string,
+      public blocked: string,
+    ) {}
+    static New(events: EventRecord[]): ValidatorPrefsSet | undefined {
+      const ed: any = events.find((e) => e.event.method == "ValidatorPrefsSet")?.event.data
+      if (ed == undefined) {
+        return undefined
+      }
+
+      return new ValidatorPrefsSet(
+        ed["stash"].toString(),
+        ed["prefs"]["commission"].toString(),
+        ed["prefs"]["blocked"].toString(),
+      )
+    }
   }
 }
