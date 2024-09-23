@@ -1,13 +1,19 @@
 /// Tests for Vector that use CBOR encoded Ethereum light client inputs instead of ZKProofs.
 /// Adapted from corresponding tests in src/tests.rs.
-use std::fs;
+use crate::mock::{
+	new_test_ext, Bridge, RuntimeEvent, RuntimeOrigin, System, Test, ROTATE_FUNCTION_ID,
+	STEP_FUNCTION_ID,
+};
+use crate::state::Configuration;
+use crate::{
+	ConfigurationStorage, Error, Event, ExecutionStateRoots, FunctionInputs, Head, Headers,
+	SyncCommitteeHashes, Updater,
+};
 use frame_support::{assert_err, assert_ok};
 use hex_literal::hex;
 use primitive_types::{H256, U256};
 use sp_core::crypto::AccountId32;
-use crate::mock::{new_test_ext, Bridge,RuntimeEvent, RuntimeOrigin, System, Test, ROTATE_FUNCTION_ID, STEP_FUNCTION_ID};
-use crate::{ConfigurationStorage,Error, Event, ExecutionStateRoots, FunctionInputs, Head, Headers, SyncCommitteeHashes, Updater};
-use crate::state::Configuration;
+use std::fs;
 const TEST_SENDER_VEC: [u8; 32] =
 	hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
 const TEST_SENDER_ACCOUNT: AccountId32 = AccountId32::new(TEST_SENDER_VEC);
@@ -60,7 +66,7 @@ fn test_fulfill_step_call() {
 		assert_eq!(
 			ex_state_root,
 			H256(hex!(
-			"6518be340ee1bad6c6c6bef6ea3e99ecebc142e196b7edd56b3a5e513d0c6392"
+				"6518be340ee1bad6c6c6bef6ea3e99ecebc142e196b7edd56b3a5e513d0c6392"
 			))
 		);
 		assert_eq!(head, finalized_slot);
@@ -116,7 +122,7 @@ fn test_fulfill_rotate_call() {
 		let expected_hash = U256::from_dec_str(
 			"78004113044439342907882478475913997887515213797155324584820998418219758944903",
 		)
-			.unwrap();
+		.unwrap();
 
 		let current_period = 1178;
 		let expected_event = RuntimeEvent::Bridge(Event::SyncCommitteeUpdated {

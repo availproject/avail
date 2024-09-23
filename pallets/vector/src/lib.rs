@@ -2,12 +2,18 @@
 #![recursion_limit = "512"]
 
 use crate::{storage_utils::MessageStatusEnum, verifier::Verifier};
+use alloy_primitives::B256;
 use avail_base::{MemoryTemporaryStorage, ProvidePostInherent};
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message, MessageType};
-use helios_common::config::types::Forks;
-use helios_consensus_core::{apply_finality_update, apply_update, verify_finality_update, verify_update, types::{Bytes32, ByteVector, LightClientStore, Update, FinalityUpdate}};
-use alloy_primitives::B256;
+use helios_consensus_core::types::Forks;
+use helios_consensus_core::{
+	apply_finality_update, apply_update,
+	types::{FinalityUpdate, LightClientStore, Update},
+	verify_finality_update, verify_update,
+};
+use scale_info::prelude::string::String;
 use ssz_rs::prelude::*;
+use tree_hash::TreeHash;
 
 use codec::Compact;
 use frame_support::{
@@ -41,6 +47,7 @@ pub type FunctionInput = BoundedVec<u8, ConstU32<256>>;
 pub type FunctionOutput = BoundedVec<u8, ConstU32<512>>;
 pub type FunctionProof = BoundedVec<u8, ConstU32<1048>>;
 pub type ValidProof = BoundedVec<BoundedVec<u8, ConstU32<2048>>, ConstU32<32>>;
+pub type Bytes32 = [u8; 32];
 
 // Avail asset is supported for now
 pub const SUPPORTED_ASSET_ID: H256 = H256::zero();
@@ -54,7 +61,6 @@ pub type BalanceOf<T> =
 
 #[frame_support::pallet]
 pub mod pallet {
-	use helios_consensus_core::get_bits;
 	use ethabi::Token;
 	use ethabi::Token::Uint;
 	use frame_support::dispatch::GetDispatchInfo;
@@ -417,7 +423,7 @@ pub mod pallet {
 		pub finality_update: FinalityUpdate,
 		pub expected_current_slot: u64,
 		pub store: LightClientStore,
-		pub genesis_root: Bytes32,
+		pub genesis_root: B256,
 		pub forks: Forks,
 		pub execution_state_proof: ExecutionStateProof,
 	}
@@ -467,12 +473,12 @@ pub mod pallet {
 			for (index, update) in updates.iter().enumerate() {
 				is_valid = is_valid
 					&& verify_update(
-					update,
-					expected_current_slot,
-					&store,
-					genesis_root.clone(),
-					&forks,
-				)
+						update,
+						expected_current_slot,
+						&store,
+						genesis_root.clone(),
+						&forks,
+					)
 					.is_ok();
 
 				apply_update(&mut store, update);
@@ -481,12 +487,12 @@ pub mod pallet {
 			// 2. Apply finality update
 			is_valid = is_valid
 				&& verify_finality_update(
-				&finality_update,
-				expected_current_slot,
-				&store,
-				genesis_root.clone(),
-				&forks,
-			)
+					&finality_update,
+					expected_current_slot,
+					&store,
+					genesis_root.clone(),
+					&forks,
+				)
 				.is_ok();
 			apply_finality_update(&mut store, &finality_update);
 
@@ -499,18 +505,19 @@ pub mod pallet {
 
 			is_valid = is_valid
 				&& is_valid_merkle_branch(
-				&Node::try_from(execution_state_proof.execution_state_root.as_ref()).unwrap(),
-				execution_state_branch_nodes.iter(),
-				MERKLE_BRANCH_DEPTH,
-				MERKLE_BRANCH_INDEX,
-				&Node::try_from(store.finalized_header.body_root.as_ref()).unwrap(),
-			);
+					&Node::try_from(execution_state_proof.execution_state_root.as_ref()).unwrap(),
+					execution_state_branch_nodes.iter(),
+					MERKLE_BRANCH_DEPTH,
+					MERKLE_BRANCH_INDEX,
+					&Node::try_from(store.finalized_header.body_root.as_ref()).unwrap(),
+				);
 
-			let finalized_header_root: [u8; 32] = store
-				.finalized_header
-				.hash_tree_root()
-				.unwrap().as_ref().try_into().unwrap();
-			let execution_state_root: [u8; 32] = execution_state_proof.execution_state_root.as_slice().try_into().unwrap();
+			let finalized_header_root = store.finalized_header.tree_hash_root();
+			let execution_state_root: [u8; 32] = execution_state_proof
+				.execution_state_root
+				.as_slice()
+				.try_into()
+				.unwrap();
 
 			let head = store.finalized_header.slot;
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
@@ -523,16 +530,23 @@ pub mod pallet {
 			let mut function_called = false;
 
 			// 4. Store step if needed
+			let byte_array: [u8; 32] = finalized_header_root
+				.as_slice()
+				.try_into()
+				.expect("Slice has incorrect length");
 			if prev_head != head {
 				let verified_output = VerifiedStepOutput {
-					finalized_header_root: H256::from(finalized_header_root),
+					finalized_header_root: H256::from(byte_array),
 					execution_state_root: H256::from(execution_state_root),
-					finalized_slot: store.finalized_header.slot.as_u64(),
+					finalized_slot: store.finalized_header.slot,
 					participation: store.current_max_active_participants.try_into().unwrap(),
 				};
 
 				let head = Head::<T>::get();
-				ensure!(verified_output.finalized_slot > head, Error::<T>::SlotBehindHead);
+				ensure!(
+					verified_output.finalized_slot > head,
+					Error::<T>::SlotBehindHead
+				);
 
 				if Self::set_slot_roots(verified_output)? {
 					Self::deposit_event(Event::HeadUpdated {
@@ -546,18 +560,13 @@ pub mod pallet {
 
 			// 5. Store rotate if needed
 			// a) Store current sync committee if stored one is empty (i.e. first time or after a range of updates)
-			let period = head.as_u64()
+			let period = head
 				.checked_div(config.slots_per_period)
 				.ok_or(Error::<T>::ConfigurationNotSet)?;
 			let stored_current_sync_committee = SyncCommitteeHashes::<T>::get(period);
 			if stored_current_sync_committee.is_zero() {
-				let current_sync_committee_hash: U256 = store
-					.current_sync_committee
-					.hash_tree_root()
-					.unwrap()
-					.as_ref()
-					.try_into()
-					.unwrap();
+				let current_sync_committee_hash: U256 =
+					U256::from(store.current_sync_committee.tree_hash_root().as_slice());
 				Self::deposit_event(Event::SyncCommitteeUpdated {
 					period,
 					root: current_sync_committee_hash,
@@ -572,9 +581,8 @@ pub mod pallet {
 				let next_period = period + 1;
 				let stored_next_sync_committee_hash = SyncCommitteeHashes::<T>::get(next_period);
 				let next_sync_committee_hash: [u8; 32] = next_sync_committee
-					.hash_tree_root()
-					.unwrap()
-					.as_ref()
+					.tree_hash_root()
+					.as_slice()
 					.try_into()
 					.unwrap();
 				let next_sync_committee_hash = U256::from(next_sync_committee_hash);
