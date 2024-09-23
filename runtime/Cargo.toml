@@ -206,6 +206,13 @@ std = [
 	"sp-std/std",
 	"sp-transaction-pool/std",
 	"sp-version/std",
+	"binary-merkle-tree/std",
+	"pallet-staking-reward-fn/std",
+	"sp-storage/std",
+	"hex/std",
+	"serde?/std",
+	"serde_json/std",
+	"thiserror-no-std/std"
 ]
 
 runtime-benchmarks = [

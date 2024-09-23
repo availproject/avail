@@ -55,4 +55,10 @@ std = [
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
+	"frame-support/std",
+	"pallet-babe/std",
+	"avail-core/std",
+	"anyhow/std",
+	"codec/std",
+	"rand/std"
 ]

@@ -63,6 +63,12 @@ std = [
 	"sp-runtime-interface/std",
 	"sp-runtime/std",
 	"sp-std/std",
+	"frame-benchmarking?/std",
+	"pallet-balances/std",
+	"pallet-timestamp/std",
+	"avail-base/std",
+	"serde?/std",
+	"thiserror-no-std/std"
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

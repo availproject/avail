@@ -49,4 +49,7 @@ std = [
 	"sp-runtime/std",
 	"sp-std/std",
 	"substrate-prometheus-endpoint",
+	"sp-io/std",
+	"log/std",
+	"once_cell?/std"
 ]

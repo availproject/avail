@@ -58,6 +58,23 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
+	"pallet-balances/std",
+	"pallet-timestamp/std",
+	"rlp/std",
+	"patricia-merkle-trie/std",
+	"alloy-primitives/std",
+	"ark-bn254/std",
+	"ark-ff/std",
+	"ark-groth16/std",
+	"ark-std/std",
+	"ethabi/std",
+	"log/std",
+	"primitive-types/std",
+	"serde/std",
+	"serde_cbor/std",
+	"serde_json/std",
+	"ssz-rs/std",
+	"trie-db/std"
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

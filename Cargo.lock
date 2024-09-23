@@ -1029,6 +1029,7 @@ dependencies = [
  "ark-ff 0.3.0",
  "ark-std 0.3.0",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -3471,7 +3472,10 @@ checksum = "7413c5f74cc903ea37386a8965a936cbeb334bd270862fdece542c1b2dcbc898"
 dependencies = [
  "ethereum-types 0.14.1",
  "hex",
+ "serde",
  "sha3",
+ "thiserror",
+ "uint 0.9.5",
 ]
 
 [[package]]
@@ -7731,6 +7735,7 @@ dependencies = [
  "hashbrown 0.12.3",
  "impl-trait-for-tuples",
  "parity-util-mem-derive",
+ "parking_lot 0.12.3",
  "winapi",
 ]
 

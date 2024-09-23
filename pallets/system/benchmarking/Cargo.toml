@@ -42,6 +42,9 @@ std = [
 	"sp-externalities/std",
 	"sp-runtime/std",
 	"sp-std/std",
+	"sp-io/std",
+	"sp-version/std",
+	"scale-info/std"
 ]
 
 runtime-benchmarks = [

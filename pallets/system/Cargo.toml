@@ -73,6 +73,7 @@ std = [
 	"sp-std/std",
 	"sp-version/std",
 	"sp-weights/std",
+	"thiserror-no-std/std"
 ]
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
