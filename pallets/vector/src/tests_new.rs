@@ -41,7 +41,7 @@ fn test_fulfill_step_call() {
 
 		let parsed_inputs: FunctionInputs = serde_cbor::from_slice(&inputs).unwrap();
 
-		let finalized_slot = parsed_inputs.finality_update.finalized_header.slot.as_u64();
+		let finalized_slot = parsed_inputs.finality_update.finalized_header.slot;
 		// ensure that event is fired
 		let expected_event = RuntimeEvent::Bridge(Event::HeadUpdated {
 			slot: finalized_slot,
