@@ -42,6 +42,11 @@ std = [
 	"serde",
 	"sp-arithmetic/std",
 	"sp-std/std",
+	"hex/std",
+	"once_cell?/std",
+	"codec/std",
+	"serde?/std",
+	"thiserror-no-std/std"
 ]
 
 serde = [ "dep:serde" ]

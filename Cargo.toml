@@ -43,7 +43,8 @@ tiny-keccak = { version = "2.0.2", default-features = false, features = ["keccak
 rand = { version = "0.8.4", features = ["alloc", "small_rng"], default-features = false }
 rand_chacha = { version = "0.3", default-features = false }
 
-poly-multiproof = { git = "https://github.com/availproject/poly-multiproof", default-features = false, tag = "v0.0.1" }
+# TODO: create a tag after review 
+poly-multiproof = { git = "https://github.com/availproject/poly-multiproof", default-features = false, rev = "e17285c264d7acd6faea0da5950677e8beebe14e" }
 dusk-plonk = { git = "https://github.com/availproject/plonk.git", tag = "v0.12.0-polygon-2" }
 
 # Others

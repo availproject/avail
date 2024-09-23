@@ -704,8 +704,8 @@ dependencies = [
 
 [[package]]
 name = "blst"
-version = "0.3.10"
-source = "git+https://github.com/availproject/blst?tag=v0.3.10#556e037926d9c526c2eb6cb1522bea39690416ea"
+version = "0.3.11"
+source = "git+https://github.com/ToufeeqP/blst?rev=afdb0a4b7d98d4ff22c3a1d35faca223cde0ef3a#afdb0a4b7d98d4ff22c3a1d35faca223cde0ef3a"
 dependencies = [
  "cc",
  "glob",
@@ -2655,7 +2655,7 @@ checksum = "626dec3cac7cc0e1577a2ec3fc496277ec2baa084bebad95bb6fdbfae235f84c"
 [[package]]
 name = "poly-multiproof"
 version = "0.0.1"
-source = "git+https://github.com/availproject/poly-multiproof?tag=v0.0.1#cd8d31b7eb568dea2fddfc9237e2e31ea7ae7ed3"
+source = "git+https://github.com/availproject/poly-multiproof?rev=e17285c264d7acd6faea0da5950677e8beebe14e#e17285c264d7acd6faea0da5950677e8beebe14e"
 dependencies = [
  "ark-bls12-381",
  "ark-ec",
@@ -2665,6 +2665,7 @@ dependencies = [
  "ark-std",
  "blst",
  "merlin 3.0.0",
+ "thiserror",
 ]
 
 [[package]]

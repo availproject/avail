@@ -61,6 +61,11 @@ std = [
 	"sp-runtime?/std",
 	"sp-std/std",
 	"sp-trie/std",
+	"avail-core/std",
+	"hex?/std",
+	"rand/std",
+	"serde_json/std",
+	"thiserror-no-std/std"
 ]
 runtime = [
 	"binary-merkle-tree",
