@@ -1,11 +1,12 @@
 package main
 
 import (
-	"avail-go-sdk/src/config"
-	"avail-go-sdk/src/sdk"
-	"avail-go-sdk/src/sdk/tx"
-	"avail-go-sdk/src/sdk/types"
 	"math"
+
+	"github.com/availproject/avail-go-sdk/src/config"
+	"github.com/availproject/avail-go-sdk/src/sdk"
+	"github.com/availproject/avail-go-sdk/src/sdk/tx"
+	"github.com/availproject/avail-go-sdk/src/sdk/types"
 
 	"fmt"
 )

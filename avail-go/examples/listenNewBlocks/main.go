@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"avail-go-sdk/src/config"
-	"avail-go-sdk/src/sdk"
+	"github.com/availproject/avail-go-sdk/src/config"
+	"github.com/availproject/avail-go-sdk/src/sdk"
 )
 
 // The following example shows how to connect to a node and listen for a new blocks
