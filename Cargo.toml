@@ -22,12 +22,12 @@ homepage = "https://www.availproject.org/"
 
 
 [workspace.dependencies]
-# avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-node-2", default-features = false, features = [ "runtime"] }
-# kate = { git = "https://github.com/availproject/avail-core", tag = "core-node-2", default-features = false }
-# kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "core-node-2", default-features = false  }
-avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
-kate = { path = "../avail-core/kate/", default-features = false }
-kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
+avail-core = { git = "https://github.com/availproject/avail-core", rev = "3ccb3910b3b5f070de7350a038b1b16e1becc294", default-features = false, features = [ "runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", rev = "3ccb3910b3b5f070de7350a038b1b16e1becc294", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "3ccb3910b3b5f070de7350a038b1b16e1becc294", default-features = false  }
+# avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
+# kate = { path = "../avail-core/kate/", default-features = false }
+# kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
 
 avail-base = { path = "base", default-features = false }
 da-control = { path = "pallets/dactr", default-features = false }
@@ -48,6 +48,7 @@ ssz-rs = { package = "ssz_rs", version = "0.9.0", default-features = false }
 alloy-primitives = { version = "0.7.7", features = ["serde"], default-features = false }
 helios-common = { git = "https://github.com/a16z/helios.git", package = "common", rev = "a8c61f0cbb85e61329610463f11a09e2b835e2c5", default-features = false }
 helios-consensus-core = { git = "https://github.com/a16z/helios.git", package = "consensus-core", rev = "a8c61f0cbb85e61329610463f11a09e2b835e2c5", default-features = false }
+# TODO: replace with other alternative
 serde_cbor = { version = "0.11.2", default-features = false }
 tree_hash = { version = "0.7.0", default-features = false }
 

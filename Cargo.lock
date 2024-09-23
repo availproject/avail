@@ -1368,6 +1368,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
+source = "git+https://github.com/availproject/avail-core?rev=3ccb3910b3b5f070de7350a038b1b16e1becc294#3ccb3910b3b5f070de7350a038b1b16e1becc294"
 dependencies = [
  "binary-merkle-tree",
  "bounded-collections",
@@ -5489,6 +5490,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.9.2"
+source = "git+https://github.com/availproject/avail-core?rev=3ccb3910b3b5f070de7350a038b1b16e1becc294#3ccb3910b3b5f070de7350a038b1b16e1becc294"
 dependencies = [
  "avail-core",
  "derive_more",
@@ -5516,6 +5518,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.10.0"
+source = "git+https://github.com/availproject/avail-core?rev=3ccb3910b3b5f070de7350a038b1b16e1becc294#3ccb3910b3b5f070de7350a038b1b16e1becc294"
 dependencies = [
  "avail-core",
  "derive_more",
