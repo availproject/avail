@@ -270,7 +270,7 @@ pub mod staking {
 
 		pub SolutionImprovementThreshold: Perbill = Perbill::from_rational(1u32, 10_000);
 		// miner configs		/// We prioritize im-online heartbeats over election solution submission.
-		pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
+		pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::MAX / 2;
 		pub const MultiPhaseUnsignedPriority: TransactionPriority = StakingUnsignedPriority::get() - 1u64;
 		pub MinerMaxWeight: Weight = system::RuntimeBlockWeights::get()
 			.get(DispatchClass::Normal)
@@ -335,7 +335,7 @@ pub mod im {
 	use super::*;
 
 	parameter_types! {
-		pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+		pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::MAX;
 
 	}
 
