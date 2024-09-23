@@ -36,7 +36,7 @@ func SubmitData(api *sdk.SubstrateAPI, seed string, AppID int, data string, Wait
 	BlockHashCh2 := make(chan types.Hash)
 	txHashCh2 := make(chan types.Hash)
 	go func() {
-		err := sdk.NewExtrinsicWatch(api, "DataAvailability.submit_data", keyringPair, BlockHashCh2, txHashCh2, AppID, WaitForInclusion, sdk.NewBytes([]byte("test data")))
+		err := sdk.NewExtrinsicWatch(api, "DataAvailability.submit_data", keyringPair, BlockHashCh2, txHashCh2, AppID, WaitForInclusion, sdk.NewBytes([]byte(data)))
 		if err != nil {
 			fmt.Printf("cannot create extrinsic: %v", err)
 			close(BlockHashCh2)
