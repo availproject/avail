@@ -62,16 +62,6 @@ pub enum ReconstructionError {
 	BadZeroPoly,
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for ReconstructionError {
-	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-		match &self {
-			Self::DataDecodingError(unflatten) => Some(unflatten),
-			_ => None,
-		}
-	}
-}
-
 /// From given positions, constructs related columns positions, up to given factor.
 /// E.g. if factor is 0.66, 66% of matched columns will be returned.
 /// Positions in columns are random.
@@ -345,17 +335,6 @@ pub enum UnflattenError {
 	Codec(#[from] codec::Error),
 	#[error("Invalid data size, it needs to be a multiple of CHUNK_SIZE")]
 	InvalidLen,
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for UnflattenError {
-	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-		match &self {
-			Self::RangeConversion(try_int) => Some(try_int),
-			Self::Codec(codec) => Some(codec),
-			_ => None,
-		}
-	}
 }
 
 #[cfg(feature = "std")]

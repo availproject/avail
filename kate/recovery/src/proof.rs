@@ -25,9 +25,6 @@ pub enum Error {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {}
-
-#[cfg(feature = "std")]
 impl From<dusk_bytes::Error> for Error {
 	fn from(_: dusk_bytes::Error) -> Self {
 		Error::InvalidData

@@ -40,17 +40,6 @@ pub enum Error {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {
-	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-		match &self {
-			Self::SliceError(slice) => Some(slice),
-			Self::IntError(try_int) => Some(try_int),
-			_ => None,
-		}
-	}
-}
-
-#[cfg(feature = "std")]
 impl From<dusk_bytes::Error> for Error {
 	fn from(e: dusk_bytes::Error) -> Self {
 		match e {

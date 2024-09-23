@@ -75,26 +75,46 @@ impl Cell {
 
 #[derive(Error, Debug)]
 pub enum Error {
+	#[error("Plonk error")]
 	PlonkError(#[from] PlonkError),
-	DuskBytesError(#[from] dusk_bytes::Error),
+	// TODO: handle this
+	// #[error("DuskBytes error")]
+	// DuskBytesError(#[from] dusk_bytes::Error),
+	#[error("Multi proof error")]
 	MultiproofError(#[from] poly_multiproof::Error),
+	#[error("Cell length exceeded")]
 	CellLengthExceeded,
+	#[error("Bad header hash")]
 	BadHeaderHash,
+	#[error("Block is too big")]
 	BlockTooBig,
+	#[error("Invalid chunk length")]
 	InvalidChunkLength,
+	#[error("Dimesnions mismatch")]
 	DimensionsMismatch,
+	#[error("Zero dimension")]
 	ZeroDimension,
+	#[error("Invalid dimension extension")]
 	InvalidDimensionExtension,
+	#[error("Domain size invalid")]
 	DomainSizeInvalid,
+	#[error("Invalid data lookup")]
 	InvalidDataLookup(#[from] DataLookupError),
+	#[error("Chacha error")]
 	Rng(#[from] ChaChaError),
 	/// The base grid width, before extension, does not fit cleanly into a domain for FFTs
+	#[error("The base grid width, before extension, does not fit cleanly into a domain for FFTs")]
 	BaseGridDomainSizeInvalid(usize),
 	/// The extended grid width does not fit cleanly into a domain for FFTs
+	#[error("The extended grid width does not fit cleanly into a domain for FFTs")]
 	ExtendedGridDomainSizeInvalid(usize),
+	#[error("Index out of range")]
 	IndexOutOfRange,
+	#[error("Conversion failed")]
 	ConversionFailed,
+	#[error("Invalid max rows")]
 	InvalidMaxRows,
+	#[error("Invalid max columns")]
 	InvalidMaxCols,
 }
 

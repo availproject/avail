@@ -395,7 +395,9 @@ impl BlockDimensions {
 
 #[derive(Error, Copy, Clone, PartialEq, Eq, Debug)]
 pub enum TryFromBlockDimensionsError {
+	#[error("Invalid rows or column")]
 	InvalidRowsOrColumns(#[from] TryFromIntError),
+	#[error("Invalid dimensions")]
 	InvalidDimensions,
 }
 
