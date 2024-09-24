@@ -1,5 +1,7 @@
 # Avail Go SDK documentation / examples
 
+We are using [avail-go-sdk](https://github.com/availproject/avail-go-sdk) for running the examples
+
 ## Running Examples in the Docs Directory
 
 To run the examples provided in the `/examples` directory, follow these steps:

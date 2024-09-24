@@ -1,8 +1,8 @@
-module avail-go-sdk-examples
+module examples
 
 go 1.21.0
 
-require avail-go-sdk v0.0.0
+require github.com/availproject/avail-go-sdk v0.1.1
 
 require (
 	github.com/ChainSafe/go-schnorrkel v1.0.0 // indirect
@@ -30,5 +30,3 @@ require (
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace avail-go-sdk => ../../avail-go

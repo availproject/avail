@@ -1,9 +1,10 @@
 package main
 
 import (
-	"avail-go-sdk/src/config"
-	"avail-go-sdk/src/sdk"
 	"fmt"
+
+	"github.com/availproject/avail-go-sdk/src/config"
+	"github.com/availproject/avail-go-sdk/src/sdk"
 )
 
 func main() {
