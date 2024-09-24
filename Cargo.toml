@@ -22,7 +22,7 @@ homepage = "https://www.availproject.org/"
 
 
 [workspace.dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", rev = "3ccb3910b3b5f070de7350a038b1b16e1becc294", default-features = false, features = [ "runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core", rev = "3ccb3910b3b5f070de7350a038b1b16e1becc294", default-features = false, features = ["disable_panic_handler", "runtime"] }
 kate = { git = "https://github.com/availproject/avail-core", rev = "3ccb3910b3b5f070de7350a038b1b16e1becc294", default-features = false }
 kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "3ccb3910b3b5f070de7350a038b1b16e1becc294", default-features = false  }
 # avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
@@ -195,7 +195,7 @@ pallet-transaction-payment = { git = "https://github.com/availproject/polkadot-s
 pallet-transaction-payment-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9", default-features = false }
 pallet-staking-reward-fn = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9", default-features = false }
-substrate-wasm-builder = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9", default-features = false }
+substrate-wasm-builder = { version = "15.0", default-features = false }
 sc-cli = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9", default-features = false }
 sp-statement-store = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9", default-features = false }
 sc-executor = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9", default-features = false }

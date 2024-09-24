@@ -9554,7 +9554,7 @@ version = "0.29.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch-9#fc206faee055b033fc0bfa9ad4e7d94faa1452eb"
 dependencies = [
  "sc-allocator",
- "sp-maybe-compressed-blob",
+ "sp-maybe-compressed-blob 11.0.0",
  "sp-wasm-interface",
  "thiserror",
  "wasm-instrument",
@@ -11121,6 +11121,16 @@ dependencies = [
 
 [[package]]
 name = "sp-maybe-compressed-blob"
+version = "10.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0950218edb5c5fb4867e28814d7b13c13a3c80ea37f356dc410437105a07cff8"
+dependencies = [
+ "thiserror",
+ "zstd 0.12.4",
+]
+
+[[package]]
+name = "sp-maybe-compressed-blob"
 version = "11.0.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch-9#fc206faee055b033fc0bfa9ad4e7d94faa1452eb"
 dependencies = [
@@ -11777,18 +11787,19 @@ dependencies = [
 
 [[package]]
 name = "substrate-wasm-builder"
-version = "17.0.0"
-source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch-9#fc206faee055b033fc0bfa9ad4e7d94faa1452eb"
+version = "15.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7247806f229fa278821cdf23f69c3b4ac520b17ea87e8cf2935d438bf1793900"
 dependencies = [
+ "ansi_term",
  "build-helper",
  "cargo_metadata",
- "console",
  "filetime",
  "parity-wasm",
- "sp-maybe-compressed-blob",
+ "sp-maybe-compressed-blob 10.0.0",
  "strum 0.24.1",
  "tempfile",
- "toml 0.8.19",
+ "toml 0.7.8",
  "walkdir",
  "wasm-opt",
 ]
@@ -12234,6 +12245,18 @@ dependencies = [
 
 [[package]]
 name = "toml"
+version = "0.7.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd79e69d3b627db300ff956027cc6c3798cef26d22526befdfcd12feeb6d2257"
+dependencies = [
+ "serde",
+ "serde_spanned",
+ "toml_datetime",
+ "toml_edit 0.19.15",
+]
+
+[[package]]
+name = "toml"
 version = "0.8.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a1ed1f98e3fdc28d6d910e6737ae6ab1a93bf1985935a1193e68f93eeb68d24e"
@@ -12251,6 +12274,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0dd7358ecb8fc2f8d014bf86f6f638ce72ba252a2c3a2572f2a795f1d23efb41"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "toml_edit"
+version = "0.19.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b5bb770da30e5cbfde35a2d7b9b8a2c4b8ef89548a7a6aeab5c9a576e3e7421"
+dependencies = [
+ "indexmap 2.5.0",
+ "serde",
+ "serde_spanned",
+ "toml_datetime",
+ "winnow 0.5.40",
 ]
 
 [[package]]
