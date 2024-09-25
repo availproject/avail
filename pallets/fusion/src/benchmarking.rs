@@ -3,9 +3,8 @@
 use super::*;
 use crate::Pallet;
 use frame_benchmarking::{
-	impl_benchmark_test_suite, v1::BenchmarkError, v2::*, whitelisted_caller,
+	impl_benchmark_test_suite, v1::BenchmarkError, v2::*,
 };
-use frame_support::storage::bounded_vec::BoundedVec;
 use frame_system::RawOrigin;
 
 #[benchmarks(
@@ -15,12 +14,11 @@ mod benchmarks {
 	use super::*;
 
 	#[benchmark]
-	fn test() -> Result<(), BenchmarkError> {
-		let caller = whitelisted_caller::<T::AccountId>();
-		let origin = RawOrigin::Signed(caller.clone());
+	fn pause() -> Result<(), BenchmarkError> {
+		let origin = RawOrigin::Root;
 
 		#[extrinsic_call]
-		_();
+		_(origin);
 
 		Ok(())
 	}
