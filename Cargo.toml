@@ -74,6 +74,7 @@ async-trait = "0.1.74"
 rayon = "1.5.2"
 
 # Macros and code generation
+codec = { package = "parity-scale-codec", version = "3", default-features = false }
 hex-literal = "0.3.4"
 static_assertions = "1.1.0"
 serde = { version = "1.0.197", default-features = false, features = ["derive"] }

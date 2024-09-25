@@ -10,7 +10,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 frame-system = { workspace = true, default-features = false }
 
 # Substrate
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+codec = { workspace = true, features = ["derive"] }
 scale-info = { workspace = true, default-features = false }
 frame-support = { workspace = true, default-features = false }
 sp-io = { workspace = true, default-features = false }

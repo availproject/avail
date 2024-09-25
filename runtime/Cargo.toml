@@ -34,7 +34,7 @@ derive_more.workspace = true
 
 # Substrate
 scale-info = { workspace = true, default-features = false, features = [ "derive" ] }
-codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive", ] }
+codec = { workspace = true, default-features = false, features = [ "derive", ] }
 binary-merkle-tree = { workspace = true, default-features = false }
 
 ## primitives
