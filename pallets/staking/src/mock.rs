@@ -314,6 +314,7 @@ parameter_types! {
 	pub const MaxMembersPerPool: u32 = 100_000;
 	pub const MaxTargets: u32 = 16;
 	pub const MaxUnbonding: u32 = 8;
+	pub const MaxSlashes: u32 = 1000;
 }
 impl pallet_fusion::Config for Test {
 	type Currency = Balances;
@@ -324,7 +325,9 @@ impl pallet_fusion::Config for Test {
 	type MaxMembersPerPool = MaxMembersPerPool;
 	type MaxTargets = MaxTargets;
 	type MaxUnbonding = MaxUnbonding;
+	type MaxSlashes = MaxSlashes;
 	type BondingDuration = BondingDuration;
+	type SlashDeferDuration = SlashDeferDuration;
 	type RewardRemainder = ();
 	type HistoryDepth = HistoryDepth;
 	type EraProvider = MockEraProvider;

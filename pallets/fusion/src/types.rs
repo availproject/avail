@@ -23,7 +23,7 @@ pub type PoolId = u32;
 /// Prefix used for storing accounts
 pub const FUNDS_ACCOUNT_PREFIX: &str = "funds";
 pub const CLAIMABLE_ACCOUNT_PREFIX: &str = "claimable";
-pub const AVAIL_FUSION_CURRENCY_ACCOUNT_PREFIX: &str = "avail";
+pub const AVAIL_CURRENCY_ACCOUNT_PREFIX: &str = "avail";
 pub const POOL_ACCOUNT_PREFIX: &str = "pool_acc_";
 pub const POOL_REWARD_ACCOUNT_PREFIX: &str = "reward_acc_";
 
@@ -54,7 +54,7 @@ pub struct EraReward<T: Config> {
 pub struct PalletAccounts<T: Config> {
 	pub funds_reward_account: T::AccountId,
 	pub claimable_reward_account: T::AccountId,
-	pub avail_fusion_currency_account: T::AccountId,
+	pub avail_currency_account: T::AccountId,
 }
 impl<T: Config> Default for PalletAccounts<T> {
 	fn default() -> Self {
@@ -63,8 +63,8 @@ impl<T: Config> Default for PalletAccounts<T> {
 				.into_sub_account_truncating(FUNDS_ACCOUNT_PREFIX.as_bytes()),
 			claimable_reward_account: T::PalletId::get()
 				.into_sub_account_truncating(CLAIMABLE_ACCOUNT_PREFIX.as_bytes()),
-			avail_fusion_currency_account: T::PalletId::get()
-				.into_sub_account_truncating(AVAIL_FUSION_CURRENCY_ACCOUNT_PREFIX.as_bytes()),
+			avail_currency_account: T::PalletId::get()
+				.into_sub_account_truncating(AVAIL_CURRENCY_ACCOUNT_PREFIX.as_bytes()),
 		}
 	}
 }
@@ -165,6 +165,20 @@ pub struct FusionExposure<T: Config> {
 	pub user_points: BoundedVec<(EvmAddress, Points), T::MaxMembersPerPool>,
 	/// The nominations of the pool at the time of setting the exposure
 	pub targets: BoundedVec<T::AccountId, T::MaxTargets>,
+}
+
+#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub struct FusionSlash {
+	/// Id of the pool that got slashed
+	pub pool_id: PoolId,
+	/// Id of the currency that got slashed
+	pub currency_id: CurrencyId,
+	/// Era where the slash happen
+	pub slash_era: EraIndex,
+	/// Era where the slash need to get applied
+	pub slash_apply: EraIndex,
+	/// Slashed amoun
+	pub slash_amount: FusionCurrencyBalance,
 }
 
 impl<T: Config> FusionCurrency<T> {

@@ -51,6 +51,7 @@ impl pallet_fusion::EraProvider for MockEraProvider {
 
 parameter_types! {
 	pub static RewardRemainderUnbalanced: u64 = 0;
+	pub static SlashUnbalanced: u64 = 0;
 }
 pub struct RewardRemainderMock;
 impl OnUnbalanced<NegativeImbalanceOf<Test>> for RewardRemainderMock {
@@ -65,11 +66,13 @@ impl OnUnbalanced<NegativeImbalanceOf<Test>> for RewardRemainderMock {
 parameter_types! {
 	pub const FusionPalletId: PalletId = PalletId(*b"avl/fusi");
 	pub const MaxCurrencyName: u32 = 32;
-	pub const MaxMembersPerPool: u32 = 100_000;
+	pub const MaxMembersPerPool: u32 = 10;
 	pub const MaxTargets: u32 = 16;
 	pub const MaxUnbonding: u32 = 8;
-	pub const BondingDuration: EraIndex = 28;
-	pub const HistoryDepth: u32 = 84;
+	pub const BondingDuration: EraIndex = 3;
+	pub const SlashDeferDuration: EraIndex = BondingDuration::get() - 1;
+	pub const HistoryDepth: u32 = 20;
+	pub const MaxSlashes: u32 = 1000;
 }
 impl pallet_fusion::Config for Test {
 	type Currency = Balances;
@@ -80,8 +83,10 @@ impl pallet_fusion::Config for Test {
 	type MaxMembersPerPool = MaxMembersPerPool;
 	type MaxTargets = MaxTargets;
 	type MaxUnbonding = MaxUnbonding;
+	type MaxSlashes = MaxSlashes;
 	type BondingDuration = BondingDuration;
 	type RewardRemainder = RewardRemainderMock;
+	type SlashDeferDuration = SlashDeferDuration;
 	type HistoryDepth = HistoryDepth;
 	type EraProvider = MockEraProvider;
 	type WeightInfo = ();

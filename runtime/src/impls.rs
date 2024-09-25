@@ -152,7 +152,7 @@ parameter_types! {
 	pub const BondingDuration: EraIndex = 28;
 	pub const HistoryDepth: u32 = 84;
 	pub const MinimumBalanceToOperate: Balance = 100 * AVAIL;
-
+	pub const MaxSlashes: u32 = 1000;
 }
 impl pallet_fusion::Config for Runtime {
 	type Currency = Balances;
@@ -163,11 +163,13 @@ impl pallet_fusion::Config for Runtime {
 	type MaxMembersPerPool = MaxMembersPerPool;
 	type MaxTargets = MaxTargets;
 	type MaxUnbonding = MaxUnbonding;
+	type MaxSlashes = MaxSlashes;
 	type BondingDuration = BondingDuration;
 	type RewardRemainder = Treasury;
 	type HistoryDepth = HistoryDepth;
 	type EraProvider = Self;
 	type WeightInfo = weights::pallet_fusion::WeightInfo<Runtime>;
+	type SlashDeferDuration = constants::staking::SlashDeferDuration;
 }
 
 parameter_types! {
@@ -532,7 +534,7 @@ impl pallet_staking::Config for Runtime {
 	type CurrencyToVote = sp_staking::currency_to_vote::U128CurrencyToVote;
 	type ElectionProvider = ElectionProviderMultiPhase;
 	type EraPayout = pallet_staking::ConvertCurve<constants::staking::RewardCurve>;
-	type EventListeners = NominationPools;
+	type EventListeners = (NominationPools, Fusion);
 	type GenesisElectionProvider = onchain::OnChainExecution<OnChainSeqPhragmen>;
 	type HistoryDepth = constants::staking::HistoryDepth;
 	type MaxControllersInDeprecationBatch = constants::staking::MaxControllersInDeprecationBatch;
@@ -542,13 +544,13 @@ impl pallet_staking::Config for Runtime {
 	type NominationsQuota =
 		pallet_staking::FixedNominationsQuota<{ constants::staking::MaxNominations::get() }>;
 	type OffendingValidatorsThreshold = constants::staking::OffendingValidatorsThreshold;
-	// send the slashed funds to the treasury.
 	type Reward = ();
 	type RewardRemainder = Treasury;
 	type RuntimeEvent = RuntimeEvent;
 	type SessionInterface = Self;
 	// rewards are minted from the void
 	type SessionsPerEra = constants::staking::SessionsPerEra;
+	// send the slashed funds to the treasury.
 	type Slash = Treasury;
 	type SlashDeferDuration = constants::staking::SlashDeferDuration;
 	// This a placeholder, to be introduced in the next PR as an instance of bags-list

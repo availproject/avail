@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+extern crate alloc;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -11,6 +12,8 @@ mod types;
 mod weights;
 
 use crate::types::*;
+use alloc::collections::BTreeMap;
+use alloc::format;
 use frame_support::{
 	dispatch::GetDispatchInfo,
 	pallet_prelude::*,
@@ -27,7 +30,8 @@ use sp_runtime::{
 	traits::{AccountIdConversion, Bounded, Zero},
 	Perbill, Saturating,
 };
-use sp_staking::EraIndex;
+use sp_staking::{EraIndex, OnStakingUpdate};
+use sp_std::{vec, vec::Vec};
 pub use traits::{EraProvider, FusionExt};
 pub use weights::WeightInfo;
 
@@ -86,6 +90,10 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxUnbonding: Get<u32>;
 
+		/// Maximum number of parallel slashes
+		#[pallet::constant]
+		type MaxSlashes: Get<u32>;
+
 		/// Period for funds to be available after unbonding
 		#[pallet::constant]
 		type BondingDuration: Get<EraIndex>;
@@ -96,6 +104,13 @@ pub mod pallet {
 
 		/// A provider that gives the current era.
 		type EraProvider: EraProvider;
+
+		/// Number of eras that slashes are deferred by, after computation.
+		///
+		/// This should be less than the bonding duration. Set to 0 if slashes
+		/// should be applied immediately, without opportunity for intervention.
+		#[pallet::constant]
+		type SlashDeferDuration: Get<EraIndex>;
 	}
 
 	#[pallet::pallet]
@@ -212,7 +227,7 @@ pub mod pallet {
 		OptionQuery,
 	>;
 
-	/// Stores the fusion era exposure for HistoryDepth eras
+	/// Stores the fusion claimed rewards for HistoryDepth eras
 	#[pallet::storage]
 	#[pallet::getter(fn claimed_rewards)]
 	pub type ClaimedRewards<T: Config> = StorageNMap<
@@ -225,6 +240,19 @@ pub mod pallet {
 		BalanceOf<T>,
 		OptionQuery,
 	>;
+
+	/// Stores EVM Address of the slash destination
+	/// It can be controlled with technical committee
+	#[pallet::storage]
+	#[pallet::getter(fn slash_destination)]
+	pub type SlashDestination<T> = StorageValue<_, EvmAddress, OptionQuery>;
+
+	/// Storage for slashes that need to be applied.
+	/// This storage holds an ordered queue of `FusionSlash` and is bounded by `MaxSlashes`.
+	#[pallet::storage]
+	#[pallet::getter(fn pending_slashes)]
+	pub(super) type PendingSlashes<T: Config> =
+		StorageValue<_, BoundedVec<FusionSlash, T::MaxSlashes>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -259,24 +287,24 @@ pub mod pallet {
 		},
 		/// Event triggered when a currency is deposited into the system
 		CurrencyDeposited {
-			evm_address: EvmAddress,
 			currency_id: CurrencyId,
+			evm_address: EvmAddress,
 			amount: FusionCurrencyBalance,
 		},
 		/// Event triggered when a user unbonds currency from a pool
 		CurrencyUnbonded {
-			evm_address: EvmAddress,
 			pool_id: PoolId,
 			currency_id: CurrencyId,
+			evm_address: EvmAddress,
 			unbonded_amount: FusionCurrencyBalance,
 			points: Points,
 			era: EraIndex,
 		},
 		/// Event triggered when a user withdraws unbonded currency
 		CurrencyWithdrawn {
-			evm_address: EvmAddress,
 			pool_id: PoolId,
 			currency_id: CurrencyId,
+			evm_address: EvmAddress,
 			amount: FusionCurrencyBalance,
 		},
 		/// Event triggered when the controller address for a user is changed
@@ -284,10 +312,15 @@ pub mod pallet {
 			evm_address: EvmAddress,
 			new_controller_address: Option<T::AccountId>,
 		},
+		/// Event triggered when the Evm address and controller address are set for the Slash destination
+		SlashDestinationSet {
+			evm_address: EvmAddress,
+			controller_address: Option<T::AccountId>,
+		},
 		/// Event triggered when the compounding value is changed for a pool member
 		CompoundingSet {
-			evm_address: EvmAddress,
 			pool_id: PoolId,
+			evm_address: EvmAddress,
 			compound: bool,
 		},
 		/// Event triggered when a new Fusion pool is created
@@ -308,24 +341,24 @@ pub mod pallet {
 		},
 		/// Event triggered when a user joins a pool
 		PoolJoined {
-			evm_address: EvmAddress,
 			pool_id: PoolId,
+			evm_address: EvmAddress,
 			currency_id: CurrencyId,
 			amount: FusionCurrencyBalance,
 			points: Points,
 		},
 		/// Event triggered when a user bonds extra currency into a pool
 		PoolBondExtra {
-			evm_address: EvmAddress,
 			pool_id: PoolId,
+			evm_address: EvmAddress,
 			currency_id: CurrencyId,
 			amount: FusionCurrencyBalance,
 			points: Points,
 		},
 		/// Event triggered when a user's pool membership is removed
 		PoolMembershipRemoved {
-			evm_address: EvmAddress,
 			pool_id: PoolId,
+			evm_address: EvmAddress,
 		},
 		/// Event triggered when a pool is deleted
 		PoolDeleted { pool_id: PoolId },
@@ -347,8 +380,8 @@ pub mod pallet {
 		},
 		/// Event triggered when a user claims rewards for a pool and era
 		RewardClaimed {
-			evm_address: EvmAddress,
 			pool_id: PoolId,
+			evm_address: EvmAddress,
 			era: EraIndex,
 			reward: BalanceOf<T>,
 		},
@@ -440,13 +473,19 @@ pub mod pallet {
 		CannotSetCompoudingWithLessThanMinimum,
 		/// The state cannot be set to open if the pool is not nominating
 		PoolIsNotNominating,
-		/// We cannot set the pool to have no nomination if it's active
-		CannotSetNoNominationsWhenPoolActive,
 		/// The fusion currency rate was not found
 		FusionCurrencyRateNotFound,
 		/// The fusion pallet is paused so the operation is not allowed
 		FusionPalletPaused,
-		/// Temp
+		/// The controller of the slash destination can only be set with the correct extrinsic
+		CannotSetControllerForSlashDestination,
+		/// There are too many simultaneous slashes
+		TooManySlashes,
+		/// Invalid slash index
+		InvalidSlashIndex,
+		/// Invalid slash pool id
+		InvalidSlashPoolId,
+		/// TODO Temp
 		CannotDepositAvailCurrency,
 	}
 
@@ -454,7 +493,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// TODO - Dummy extrinsic to add currency without bridge, to be removed
 		#[pallet::call_index(99)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
+		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn deposit_currency_dummy(
 			origin: OriginFor<T>,
 			evm_address: EvmAddress,
@@ -466,9 +505,23 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// TODO - Dummy extrinsic to simulate an on_slash, to be removed
+		#[pallet::call_index(98)]
+		#[pallet::weight(T::WeightInfo::create_currency())]
+		pub fn dummy_slash(
+			origin: OriginFor<T>,
+			who: T::AccountId,
+			bonded_amount: BalanceOf<T>,
+			slashed_amount: BalanceOf<T>,
+		) -> DispatchResult {
+			ensure_signed(origin)?;
+			Self::do_dummy_slash(who, bonded_amount, slashed_amount)?;
+			Ok(())
+		}
+
 		/// Pauses the entire pallet, halts rewards creation. Claiming, unbonding and withdrawing is still possible
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
+		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn pause(origin: OriginFor<T>) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -479,7 +532,7 @@ pub mod pallet {
 
 		/// Fills the funds account with the specified amount of funds.
 		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
+		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn fill_funds_account(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -500,8 +553,8 @@ pub mod pallet {
 
 		/// Creates a new currency
 		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
-		pub fn create_fusion_currency(
+		#[pallet::weight(T::WeightInfo::create_currency())]
+		pub fn create_currency(
 			origin: OriginFor<T>,
 			currency_id: CurrencyId,
 			name: BoundedVec<u8, T::MaxCurrencyName>,
@@ -517,10 +570,9 @@ pub mod pallet {
 				Error::<T>::CurrencyAlreadyExists
 			);
 
-			ensure!(
-				currency_id != 0 || min_amount == 0,
-				Error::<T>::NoMinAmountForAvailCurrency
-			);
+			if currency_id == 0 {
+				ensure!(min_amount == 0, Error::<T>::NoMinAmountForAvailCurrency);
+			}
 
 			let new_currency = FusionCurrency::<T> {
 				currency_id,
@@ -557,8 +609,8 @@ pub mod pallet {
 
 		/// Updates an existing currency
 		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
-		pub fn set_fusion_currency(
+		#[pallet::weight(T::WeightInfo::create_currency())]
+		pub fn set_currency(
 			origin: OriginFor<T>,
 			currency_id: CurrencyId,
 			name: Option<BoundedVec<u8, T::MaxCurrencyName>>,
@@ -612,11 +664,8 @@ pub mod pallet {
 
 		/// Deletes a currency
 		#[pallet::call_index(4)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
-		pub fn delete_fusion_currency(
-			origin: OriginFor<T>,
-			currency_id: CurrencyId,
-		) -> DispatchResult {
+		#[pallet::weight(T::WeightInfo::create_currency())]
+		pub fn delete_currency(origin: OriginFor<T>, currency_id: CurrencyId) -> DispatchResult {
 			ensure_root(origin)?;
 
 			let pool_exists =
@@ -642,8 +691,8 @@ pub mod pallet {
 
 		/// Sets the conversion rate for a currency for the next era
 		#[pallet::call_index(5)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
-		pub fn set_fusion_currency_conversion_rate(
+		#[pallet::weight(T::WeightInfo::create_currency())]
+		pub fn set_currency_conversion_rate(
 			origin: OriginFor<T>,
 			currency_id: CurrencyId,
 			conversion_rate: BalanceOf<T>,
@@ -669,8 +718,8 @@ pub mod pallet {
 
 		/// Creates a new fusion pool
 		#[pallet::call_index(6)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
-		pub fn create_fusion_pool(
+		#[pallet::weight(T::WeightInfo::create_currency())]
+		pub fn create_pool(
 			origin: OriginFor<T>,
 			pool_id: PoolId,
 			currency_id: CurrencyId,
@@ -733,8 +782,8 @@ pub mod pallet {
 
 		/// Updates an existing fusion pool
 		#[pallet::call_index(7)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
-		pub fn set_fusion_pool(
+		#[pallet::weight(T::WeightInfo::create_currency())]
+		pub fn set_pool(
 			origin: OriginFor<T>,
 			pool_id: PoolId,
 			apy: Option<Perbill>,
@@ -751,9 +800,7 @@ pub mod pallet {
 					Error::<T>::PoolIsDestroying
 				);
 
-				if let Some(apy_value) = apy {
-					pool.apy = apy_value;
-				}
+				pool.apy = apy.unwrap_or_else(|| pool.apy);
 
 				if let Some(state) = state {
 					ensure!(
@@ -790,8 +837,8 @@ pub mod pallet {
 		/// Called once to set the pool to destroying
 		/// Called a second time when everything is cleaned to actually destroy it
 		#[pallet::call_index(8)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
-		pub fn delete_fusion_pool(origin: OriginFor<T>, pool_id: PoolId) -> DispatchResult {
+		#[pallet::weight(T::WeightInfo::create_currency())]
+		pub fn delete_pool(origin: OriginFor<T>, pool_id: PoolId) -> DispatchResult {
 			ensure_root(origin)?;
 
 			FusionPools::<T>::try_mutate(pool_id, |maybe_pool| -> DispatchResult {
@@ -810,7 +857,7 @@ pub mod pallet {
 
 		/// Nominates a list of validators for a given pool.
 		#[pallet::call_index(9)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
+		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn nominate(
 			origin: OriginFor<T>,
 			pool_id: PoolId,
@@ -842,14 +889,6 @@ pub mod pallet {
 					Error::<T>::PoolIsDestroying
 				);
 
-				// We cannot put 0 nominations if the pool is working
-				if targets.len() == 0 {
-					ensure!(
-						pool.is_paused() || pool.is_destroying(),
-						Error::<T>::CannotSetNoNominationsWhenPoolActive
-					)
-				}
-
 				// Update the targets of the pool
 				pool.targets = targets.clone();
 
@@ -863,7 +902,7 @@ pub mod pallet {
 		/// Admin extrinsic to kick a user from the system.
 		/// The user is immediately removed from all pools and given back all their assets and rewards.
 		#[pallet::call_index(10)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
+		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn kick_user(origin: OriginFor<T>, evm_address: EvmAddress) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -923,7 +962,7 @@ pub mod pallet {
 
 		/// Change the Substrate controller address.
 		#[pallet::call_index(11)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
+		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn set_controller_address(
 			origin: OriginFor<T>,
 			evm_address: EvmAddress,
@@ -937,12 +976,125 @@ pub mod pallet {
 				// Self::ensure_valid_fusion_origin(who, evm_address)?;
 			}
 
+			let slash_destination = SlashDestination::<T>::get();
+			if let Some(slash_address) = slash_destination {
+				ensure!(
+					evm_address != slash_address,
+					Error::<T>::CannotSetControllerForSlashDestination
+				);
+			}
+
 			Self::do_set_controller_address(evm_address, new_controller_address)?;
 			Ok(())
 		}
 
+		/// Change the Slash destination evm address.
 		#[pallet::call_index(12)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
+		#[pallet::weight(T::WeightInfo::create_currency())]
+		pub fn set_slash_destination(
+			origin: OriginFor<T>,
+			evm_address: EvmAddress,
+			controller_address: Option<T::AccountId>,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+
+			SlashDestination::<T>::put(evm_address);
+
+			Self::do_set_controller_address(evm_address, controller_address.clone())?;
+
+			Self::deposit_event(Event::SlashDestinationSet {
+				evm_address,
+				controller_address,
+			});
+
+			Ok(())
+		}
+
+		/// Cancel a slash given its index.
+		#[pallet::call_index(13)]
+		#[pallet::weight(T::WeightInfo::create_currency())]
+		pub fn cancel_slash(
+			origin: OriginFor<T>,
+			slash_index: u32,
+			pool_id: PoolId,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+
+			let slash_index = slash_index as usize;
+			PendingSlashes::<T>::try_mutate(|slashes| -> DispatchResult {
+				ensure!(slash_index < slashes.len(), Error::<T>::InvalidSlashIndex);
+
+				let slash = slashes
+					.get(slash_index)
+					.ok_or(Error::<T>::InvalidSlashIndex)?;
+
+				ensure!(slash.pool_id == pool_id, Error::<T>::InvalidSlashPoolId);
+
+				let removed_slash = slashes.remove(slash_index);
+
+				FusionPools::<T>::mutate(removed_slash.pool_id, |maybe_pool| -> DispatchResult {
+					let pool = maybe_pool.as_mut().ok_or(Error::<T>::PoolNotFound)?;
+					FusionCurrencies::<T>::mutate(
+						removed_slash.currency_id,
+						|maybe_currency| -> DispatchResult {
+							let currency = maybe_currency
+								.as_mut()
+								.ok_or(Error::<T>::CurrencyNotFound)?;
+
+							pool.total_staked_native = pool
+								.total_staked_native
+								.saturating_add(removed_slash.slash_amount);
+							pool.total_slashed_native = pool
+								.total_slashed_native
+								.saturating_sub(removed_slash.slash_amount);
+
+							currency.total_staked_native = currency
+								.total_staked_native
+								.saturating_add(removed_slash.slash_amount);
+							currency.total_slashed_native = currency
+								.total_slashed_native
+								.saturating_sub(removed_slash.slash_amount);
+
+							Ok(())
+						},
+					)?;
+					Ok(())
+				})?;
+
+				Ok(())
+			})
+		}
+
+		/// Direcly apply a slash given its index.
+		#[pallet::call_index(14)]
+		#[pallet::weight(T::WeightInfo::create_currency())]
+		pub fn apply_slash(
+			origin: OriginFor<T>,
+			slash_index: u32,
+			pool_id: PoolId,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+
+			let slash_index = slash_index as usize;
+			PendingSlashes::<T>::try_mutate(|slashes| -> DispatchResult {
+				ensure!(slash_index < slashes.len(), Error::<T>::InvalidSlashIndex);
+
+				let slash = slashes
+					.get(slash_index)
+					.ok_or(Error::<T>::InvalidSlashIndex)?;
+
+				ensure!(slash.pool_id == pool_id, Error::<T>::InvalidSlashPoolId);
+
+				let removed_slash = slashes.remove(slash_index);
+
+				Self::do_apply_slash(removed_slash)?;
+
+				Ok(())
+			})
+		}
+
+		#[pallet::call_index(15)]
+		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn set_compounding(
 			origin: OriginFor<T>,
 			evm_address: EvmAddress,
@@ -956,8 +1108,8 @@ pub mod pallet {
 		}
 
 		/// Stake currency into a pool, either by joining or bonding extra.
-		#[pallet::call_index(13)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
+		#[pallet::call_index(16)]
+		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn stake(
 			origin: OriginFor<T>,
 			evm_address: EvmAddress,
@@ -971,8 +1123,8 @@ pub mod pallet {
 		}
 
 		/// Claims the rewards for an evm address for a specific era and pool.
-		#[pallet::call_index(14)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
+		#[pallet::call_index(17)]
+		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn claim_rewards(
 			origin: OriginFor<T>,
 			era: EraIndex,
@@ -984,8 +1136,8 @@ pub mod pallet {
 		}
 
 		/// Unbonds an amount of currency from a pool
-		#[pallet::call_index(15)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
+		#[pallet::call_index(18)]
+		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn unbond_currency(
 			origin: OriginFor<T>,
 			evm_address: EvmAddress,
@@ -999,8 +1151,8 @@ pub mod pallet {
 		}
 
 		/// Withdraws unbonded currency after the bonding duration has passed.
-		#[pallet::call_index(16)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
+		#[pallet::call_index(19)]
+		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn withdraw_unbonded_currency(
 			origin: OriginFor<T>,
 			evm_address: EvmAddress,
@@ -1014,8 +1166,8 @@ pub mod pallet {
 
 		/// Unbonds an amount of currency from a pool on behalf on another user
 		/// Only works if the pool is destroying
-		#[pallet::call_index(17)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
+		#[pallet::call_index(20)]
+		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn unbond_currency_other(
 			origin: OriginFor<T>,
 			evm_address: EvmAddress,
@@ -1028,8 +1180,8 @@ pub mod pallet {
 		}
 
 		/// Withdraws unbonded currency after the bonding duration has passed.
-		#[pallet::call_index(18)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
+		#[pallet::call_index(21)]
+		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn withdraw_unbonded_currency_other(
 			origin: OriginFor<T>,
 			evm_address: EvmAddress,
@@ -1042,8 +1194,8 @@ pub mod pallet {
 
 		/// Withdraws unbonded Avail Fusion Currency to the controller account.
 		/// Only works for avail pool
-		#[pallet::call_index(19)]
-		#[pallet::weight(T::WeightInfo::create_fusion_currency())]
+		#[pallet::call_index(22)]
+		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn withdraw_avail_to_controller(
 			origin: OriginFor<T>,
 			evm_address: EvmAddress,
@@ -1272,118 +1424,182 @@ impl<T: Config> Pallet<T> {
 	/// Exposure was set at the end of the era N for era N
 	/// Reward computatation is done at the end of era N for era N-1
 	fn compute_era_rewards(era: EraIndex, era_duration: u64) -> DispatchResult {
-		if let Some(era_to_process) = era.checked_sub(1) {
-			let mut total_rewarded_internal_pools = BalanceOf::<T>::zero();
-			let mut total_rewarded_external_pools = BalanceOf::<T>::zero();
-			let mut pool_rewarded: Vec<PoolId> = vec![];
-			let pallet_accounts = Self::accounts();
-			let pallet_account = pallet_accounts.funds_reward_account;
-			let pallet_account_free_balance = T::Currency::free_balance(&pallet_account);
-			let existential_deposit = T::Currency::minimum_balance();
-			let destination_account = pallet_accounts.claimable_reward_account;
-			for (pool_id, fusion_exposure) in FusionExposures::<T>::iter_prefix(era_to_process) {
-				// TODO - check for valid nominations here
-				if let Some(mut pool) = FusionPools::<T>::get(pool_id) {
-					if fusion_exposure.total_avail > 0u32.into()
-						&& pool.members.len() > 0
-						&& !pool.is_paused() && !pool.is_destroying()
-						&& !Perbill::is_zero(&pool.apy)
-					{
-						// Era reward computation for a pool
-						let apy = pool.apy;
-						let fraction_of_year =
-							Perbill::from_rational(era_duration, MILLISECONDS_PER_YEAR);
-						let total_avail = fusion_exposure.total_avail;
-						let pool_era_reward = fraction_of_year * apy * total_avail;
+		let Some(era_to_process) = era.checked_sub(1) else {
+			return Ok(());
+		};
 
-						// In case of insufficient
-						// If it's an external pool, we pause the pool
-						// If it's an internal pool, we pause the pallet
-						// This means the reward won't get paid for this era.
-						// APY should be increased to take into account
-						if let Some(ref reward_account) = pool.reward_account {
-							// External pool
-							let account = reward_account;
-							let account_balance = T::Currency::free_balance(reward_account);
-							total_rewarded_external_pools =
-								total_rewarded_external_pools.saturating_add(pool_era_reward);
-							let total_required =
-								pool_era_reward.saturating_add(existential_deposit);
-							if account_balance > total_required {
-								T::Currency::transfer(
-									account,
-									&destination_account,
-									pool_era_reward,
-									ExistenceRequirement::KeepAlive,
-								)?;
-
-								FusionEraRewards::<T>::insert(
-									era_to_process,
-									pool_id,
-									EraReward {
-										rewards: pool_era_reward,
-										claimed_rewards: BalanceOf::<T>::default(),
-									},
-								);
-								pool_rewarded.push(pool_id)
-							} else {
-								pool.state = FusionPoolState::Paused;
-								FusionPools::<T>::insert(pool_id, &pool);
-								Self::deposit_event(Event::PoolSet {
-									pool_id,
-									state: Some(FusionPoolState::Paused),
-									apy: None,
-									nominator: None,
-								});
-							}
-						} else {
-							// Internal pool
-							let account_balance = pallet_account_free_balance;
-							total_rewarded_internal_pools =
-								total_rewarded_internal_pools.saturating_add(pool_era_reward);
-							let total_required =
-								total_rewarded_internal_pools.saturating_add(existential_deposit);
-							if account_balance > total_required {
-								FusionEraRewards::<T>::insert(
-									era_to_process,
-									pool_id,
-									EraReward {
-										rewards: pool_era_reward,
-										claimed_rewards: BalanceOf::<T>::default(),
-									},
-								);
-								pool_rewarded.push(pool_id)
-							} else {
-								Self::do_pause();
-								break;
-							}
-						}
-					}
-				} else {
+		let mut total_rewarded_internal_pools = BalanceOf::<T>::zero();
+		let mut total_rewarded_external_pools = BalanceOf::<T>::zero();
+		let mut pool_rewarded: Vec<PoolId> = vec![];
+		let pallet_accounts = Self::accounts();
+		let pallet_account = pallet_accounts.funds_reward_account;
+		let pallet_account_free_balance = T::Currency::free_balance(&pallet_account);
+		let existential_deposit = T::Currency::minimum_balance();
+		let destination_account = pallet_accounts.claimable_reward_account;
+		for (pool_id, fusion_exposure) in FusionExposures::<T>::iter_prefix(era_to_process) {
+			// TODO - check for valid nominations here
+			let mut pool = match FusionPools::<T>::get(pool_id) {
+				Some(p) => p,
+				None => {
 					log::error!(
-						"🚨 Pool with PoolId {:?} not found for Era {:?}. Reward could not have been set. 🚨",
+					  "🚨 Pool with PoolId {:?} not found for Era {:?}. Reward could not have been set. 🚨",
+					  pool_id,
+					  era_to_process
+				  );
+					continue;
+				},
+			};
+			if fusion_exposure.total_avail == 0u32.into()
+				|| pool.members.is_empty()
+				|| pool.is_paused()
+				|| pool.is_destroying()
+				|| Perbill::is_zero(&pool.apy)
+			{
+				continue;
+			}
+
+			// Era reward computation for a pool
+			let apy = pool.apy;
+			let fraction_of_year = Perbill::from_rational(era_duration, MILLISECONDS_PER_YEAR);
+			let total_avail = fusion_exposure.total_avail;
+			let pool_era_reward = fraction_of_year * apy * total_avail;
+
+			// In case of insufficient
+			// If it's an external pool, we pause the pool
+			// If it's an internal pool, we pause the pallet
+			// This means the reward won't get paid for this era.
+			// APY should be increased to take into account
+			if let Some(ref reward_account) = pool.reward_account {
+				// External pool
+				let account = reward_account;
+				let account_balance = T::Currency::free_balance(reward_account);
+				total_rewarded_external_pools =
+					total_rewarded_external_pools.saturating_add(pool_era_reward);
+				let total_required = pool_era_reward.saturating_add(existential_deposit);
+				if account_balance > total_required {
+					T::Currency::transfer(
+						account,
+						&destination_account,
+						pool_era_reward,
+						ExistenceRequirement::KeepAlive,
+					)?;
+
+					FusionEraRewards::<T>::insert(
+						era_to_process,
 						pool_id,
-						era_to_process
+						EraReward {
+							rewards: pool_era_reward,
+							claimed_rewards: BalanceOf::<T>::default(),
+						},
 					);
+					pool_rewarded.push(pool_id)
+				} else {
+					pool.state = FusionPoolState::Paused;
+					FusionPools::<T>::insert(pool_id, &pool);
+					Self::deposit_event(Event::PoolSet {
+						pool_id,
+						state: Some(FusionPoolState::Paused),
+						apy: None,
+						nominator: None,
+					});
+				}
+			} else {
+				// Internal pool
+				let account_balance = pallet_account_free_balance;
+				total_rewarded_internal_pools =
+					total_rewarded_internal_pools.saturating_add(pool_era_reward);
+				let total_required =
+					total_rewarded_internal_pools.saturating_add(existential_deposit);
+				if account_balance > total_required {
+					FusionEraRewards::<T>::insert(
+						era_to_process,
+						pool_id,
+						EraReward {
+							rewards: pool_era_reward,
+							claimed_rewards: BalanceOf::<T>::default(),
+						},
+					);
+					pool_rewarded.push(pool_id)
+				} else {
+					Self::do_pause();
+					break;
 				}
 			}
-			if total_rewarded_internal_pools > 0u32.into() {
-				T::Currency::transfer(
-					&pallet_account,
-					&destination_account,
-					total_rewarded_internal_pools,
-					ExistenceRequirement::KeepAlive,
-				)?;
+		}
+		if total_rewarded_internal_pools > 0u32.into() {
+			T::Currency::transfer(
+				&pallet_account,
+				&destination_account,
+				total_rewarded_internal_pools,
+				ExistenceRequirement::KeepAlive,
+			)?;
 
-				Self::deposit_event(Event::RewardSet {
-					era: era_to_process,
-					pools: pool_rewarded,
-					total_rewarded_internal: total_rewarded_internal_pools,
-					total_rewarded_external: total_rewarded_external_pools,
-				});
-			}
+			Self::deposit_event(Event::RewardSet {
+				era: era_to_process,
+				pools: pool_rewarded,
+				total_rewarded_internal: total_rewarded_internal_pools,
+				total_rewarded_external: total_rewarded_external_pools,
+			});
 		}
 
+		Ok(())
+	}
+
+	fn add_slash(slash: FusionSlash) -> DispatchResult {
+		PendingSlashes::<T>::try_mutate(|slashes| {
+			ensure!(
+				slashes.len() < T::MaxSlashes::get() as usize,
+				Error::<T>::TooManySlashes
+			);
+
+			let position = slashes
+				.binary_search_by_key(&slash.slash_apply, |s| s.slash_apply)
+				.unwrap_or_else(|pos| pos);
+
+			slashes
+				.try_insert(position, slash)
+				.map_err(|_| Error::<T>::TooManySlashes)?;
+
+			Ok(())
+		})
+	}
+
+	fn apply_expired_pending_slashes(era: EraIndex) -> DispatchResult {
+		PendingSlashes::<T>::try_mutate(|slashes| {
+			while let Some(first_slash) = slashes.first() {
+				if first_slash.slash_apply > era {
+					break;
+				}
+				let slash = slashes.remove(0);
+				Self::do_apply_slash(slash)?;
+			}
+
+			Ok(())
+		})
+	}
+
+	fn do_apply_slash(slash: FusionSlash) -> DispatchResult {
+		// If we don't have a slash destination setup, the funds will get burned
+		if let Some(slash_dest_evm) = SlashDestination::<T>::get() {
+			Self::add_to_currency_balance(slash_dest_evm, slash.currency_id, slash.slash_amount)?;
+		}
+
+		Ok(())
+	}
+
+	// #[cfg(test)] // TODO Uncomment this since it will be used only in test after
+	/// Simulate a slashing event for tests
+	fn do_dummy_slash(
+		who: T::AccountId,
+		bonded_amount: BalanceOf<T>,
+		slashed_amount: BalanceOf<T>,
+	) -> DispatchResult {
+		Self::on_slash(
+			&who,
+			bonded_amount - slashed_amount,
+			&Default::default(),
+			slashed_amount,
+		);
 		Ok(())
 	}
 }
@@ -1441,11 +1657,11 @@ impl<T: Config> FusionExt<T::AccountId> for Pallet<T> {
 			let pool = FusionPools::<T>::get(pool_id).ok_or(Error::<T>::PoolNotFound)?;
 			let currency =
 				FusionCurrencies::<T>::get(pool.currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
-			let active_fusion_currency_balance =
+			let active_currency_balance =
 				pool.points_to_currency(membership.active_points, Some(&currency))?;
 			if compound {
 				ensure!(
-					active_fusion_currency_balance >= currency.min_amount,
+					active_currency_balance >= currency.min_amount,
 					Error::<T>::CannotSetCompoudingWithLessThanMinimum
 				)
 			}
@@ -1625,7 +1841,7 @@ impl<T: Config> FusionExt<T::AccountId> for Pallet<T> {
 			let pallet_accounts = Self::accounts();
 			T::Currency::transfer(
 				&pallet_accounts.claimable_reward_account,
-				&pallet_accounts.avail_fusion_currency_account,
+				&pallet_accounts.avail_currency_account,
 				user_reward_balance,
 				ExistenceRequirement::AllowDeath,
 			)?;
@@ -1884,7 +2100,7 @@ impl<T: Config> FusionExt<T::AccountId> for Pallet<T> {
 		let balance_avail = currency.currency_to_avail(balance, None)?;
 
 		T::Currency::transfer(
-			&Self::accounts().avail_fusion_currency_account,
+			&Self::accounts().avail_currency_account,
 			&controller_account,
 			balance_avail,
 			ExistenceRequirement::KeepAlive,
@@ -1984,6 +2200,73 @@ impl<T: Config> FusionExt<T::AccountId> for Pallet<T> {
 			era,
 		);
 
+		let _ = log_if_error(
+			Pallet::<T>::apply_expired_pending_slashes(era),
+			"apply_expired_pending_slashes",
+			era,
+		);
+
 		Ok(())
+	}
+}
+
+impl<T: Config> OnStakingUpdate<T::AccountId, BalanceOf<T>> for Pallet<T> {
+	fn on_slash(
+		who: &T::AccountId,
+		slashed_active: BalanceOf<T>,
+		_slashed_unlocking: &BTreeMap<EraIndex, BalanceOf<T>>,
+		slashed_total: BalanceOf<T>,
+	) -> () {
+		let current_era = T::EraProvider::current_era();
+		for (pool_id, exposure) in FusionExposures::<T>::iter_prefix(current_era) {
+			if exposure.targets.contains(who) {
+				// TODO Change this to check for targets really nominated by the pool
+				FusionPools::<T>::mutate(pool_id, |maybe_pool| {
+					let pool = match maybe_pool {
+						Some(ref mut pool) => pool,
+						None => return,
+					};
+
+					FusionCurrencies::<T>::mutate(pool.currency_id, |maybe_currency| {
+						let currency = match maybe_currency {
+							Some(ref mut currency) => currency,
+							None => return,
+						};
+						let slash_portion = Perbill::from_rational(
+							slashed_total,
+							slashed_total.saturating_add(slashed_active),
+						);
+						let slash_fusion_amount = slash_portion * pool.total_staked_native;
+
+						currency.total_staked_native = currency
+							.total_staked_native
+							.saturating_sub(slash_fusion_amount);
+						currency.total_slashed_native = currency
+							.total_slashed_native
+							.saturating_add(slash_fusion_amount);
+
+						pool.total_staked_native =
+							pool.total_staked_native.saturating_sub(slash_fusion_amount);
+						pool.total_slashed_native = pool
+							.total_slashed_native
+							.saturating_add(slash_fusion_amount);
+
+						let new_slash = FusionSlash {
+							pool_id,
+							currency_id: pool.currency_id,
+							slash_era: current_era,
+							slash_apply: current_era + T::SlashDeferDuration::get(),
+							slash_amount: slash_fusion_amount,
+						};
+
+						if let Err(e) = Self::add_slash(new_slash) {
+							log::error!("Error while adding slash: {:?}", e);
+						}
+					});
+				});
+			}
+		}
+		// TODO : We need a hook that will check the defer duration in each block and put the slash in treasury account if it's passed
+		// TODO : We need extrinsics to apply a slash immediately and to cancel a slash
 	}
 }
