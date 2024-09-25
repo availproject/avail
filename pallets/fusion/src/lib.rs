@@ -314,7 +314,7 @@ pub mod pallet {
 		},
 		/// Event triggered when the Evm address and controller address are set for the Slash destination
 		SlashDestinationSet {
-			evm_address: EvmAddress,
+			evm_address: Option<EvmAddress>,
 			controller_address: Option<T::AccountId>,
 		},
 		/// Event triggered when the compounding value is changed for a pool member
@@ -397,6 +397,12 @@ pub mod pallet {
 		FusionPaused,
 		/// Event triggered when the Fusion pallet is unpaused.
 		FusionUnpaused,
+		/// A slash was created
+		SlashCreated { slash: FusionSlash },
+		/// A slash was applied
+		SlashApplied { slash: FusionSlash },
+		/// A slash was manually cancelled
+		SlashCanceled { slash: FusionSlash },
 	}
 
 	#[pallet::error]
@@ -993,14 +999,20 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn set_slash_destination(
 			origin: OriginFor<T>,
-			evm_address: EvmAddress,
+			evm_address: Option<EvmAddress>,
 			controller_address: Option<T::AccountId>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 
-			SlashDestination::<T>::put(evm_address);
-
-			Self::do_set_controller_address(evm_address, controller_address.clone())?;
+			if let Some(evm_address) = evm_address {
+				SlashDestination::<T>::put(evm_address);
+				Self::do_set_controller_address(evm_address, controller_address.clone())?;
+			} else {
+				if let Some(current_address) = SlashDestination::<T>::get() {
+					Self::do_set_controller_address(current_address, None)?;
+				}
+				SlashDestination::<T>::kill();
+			}
 
 			Self::deposit_event(Event::SlashDestinationSet {
 				evm_address,
@@ -1060,6 +1072,10 @@ pub mod pallet {
 					)?;
 					Ok(())
 				})?;
+
+				Self::deposit_event(Event::<T>::SlashCanceled {
+					slash: removed_slash,
+				});
 
 				Ok(())
 			})
@@ -1583,6 +1599,8 @@ impl<T: Config> Pallet<T> {
 		if let Some(slash_dest_evm) = SlashDestination::<T>::get() {
 			Self::add_to_currency_balance(slash_dest_evm, slash.currency_id, slash.slash_amount)?;
 		}
+
+		Self::deposit_event(Event::SlashApplied { slash });
 
 		Ok(())
 	}
@@ -2259,14 +2277,14 @@ impl<T: Config> OnStakingUpdate<T::AccountId, BalanceOf<T>> for Pallet<T> {
 							slash_amount: slash_fusion_amount,
 						};
 
-						if let Err(e) = Self::add_slash(new_slash) {
+						if let Err(e) = Self::add_slash(new_slash.clone()) {
 							log::error!("Error while adding slash: {:?}", e);
 						}
+
+						Self::deposit_event(Event::SlashCreated { slash: new_slash });
 					});
 				});
 			}
 		}
-		// TODO : We need a hook that will check the defer duration in each block and put the slash in treasury account if it's passed
-		// TODO : We need extrinsics to apply a slash immediately and to cancel a slash
 	}
 }
