@@ -2,9 +2,7 @@
 
 use super::*;
 use crate::Pallet;
-use frame_benchmarking::{
-	impl_benchmark_test_suite, v1::BenchmarkError, v2::*,
-};
+use frame_benchmarking::{impl_benchmark_test_suite, v1::BenchmarkError, v2::*};
 use frame_system::RawOrigin;
 
 #[benchmarks(
