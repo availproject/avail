@@ -1,4 +1,4 @@
-use avail_rust::{Key, Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Key, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -14,10 +14,12 @@ async fn main() -> Result<(), String> {
 	let new_key = String::from("MyAwesomeKey2").as_bytes().to_vec();
 	let new_key = Key { 0: new_key };
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.data_availability
-		.set_application_key(old_key, new_key, WaitFor::BlockInclusion, &account)
+		.set_application_key(old_key, new_key, wait_for, &account, Some(options))
 		.await?;
 
 	println!(

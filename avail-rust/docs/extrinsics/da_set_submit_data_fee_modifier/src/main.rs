@@ -1,4 +1,4 @@
-use avail_rust::{DispatchFeeModifier, Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{DispatchFeeModifier, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -15,22 +15,15 @@ async fn main() -> Result<(), String> {
 		weight_fee_multiplier: None,
 	};
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.data_availability
-		.set_submit_data_fee_modifier(modifier, WaitFor::BlockInclusion, &account)
+		.set_submit_data_fee_modifier(modifier, wait_for, &account, Some(options))
 		.await?;
 
-	println!(
-		"WeightMaximumFee={:?}, WeightFeeMultiplier={:?}, WeightFeeDivider={:?}",
-		result.event.value.weight_maximum_fee,
-		result.event.value.weight_fee_multiplier,
-		result.event.value.weight_fee_divider
-	);
-	println!(
-		"TxHash={:?}, BlockHash={:?}",
-		result.tx_hash, result.block_hash
-	);
+	dbg!(result);
 
 	Ok(())
 }

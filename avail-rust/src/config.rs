@@ -1,4 +1,4 @@
-use crate::{DefaultExtrinsicParams, DefaultExtrinsicParamsBuilder, AvailHeader};
+use crate::{AvailHeader, DefaultExtrinsicParams, DefaultExtrinsicParamsBuilder};
 use subxt::{
 	backend::legacy::rpc_methods::{Block as BlockRPC, BlockDetails as BlockDetailsRPC},
 	blocks::BlocksClient,
@@ -34,7 +34,7 @@ pub type AvailExtrinsicParams<T> = DefaultExtrinsicParams<T>;
 
 /// A builder which leads to [`PolkadotExtrinsicParams`] being constructed.
 /// This is what you provide to methods like `sign_and_submit()`.
-pub type AvailExtrinsicParamsBuilder<T> = DefaultExtrinsicParamsBuilder<T>;
+pub type AvailExtrinsicParamsBuilder = DefaultExtrinsicParamsBuilder<AvailConfig>;
 
 #[derive(Clone, Copy, Default, Debug)]
 pub struct AppId(pub avail_core::AppId);

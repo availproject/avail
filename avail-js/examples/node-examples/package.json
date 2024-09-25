@@ -21,10 +21,11 @@
     "query-block-length": "npm run build && node build/node-examples/src/rpc-kate-query-block-length.js",
     "query-rows": "npm run build && node build/node-examples/src/rpc-kate-query-rows.js",
     "submit-proposal": "npm run build && node build/node-examples/src/submit-proposal.js",
-    "dispatch-data-root": "npm run build && node build/node-examples/src/dispatch-data-root.js"
+    "validium": "npm run build && node build/node-examples/src/validium.js"
   },
   "dependencies": {
-    "avail-js-sdk": "^0.2.15"
+    "avail-js-sdk": "^0.2.16",
+    "ethers": "^6.13.2"
   },
   "devDependencies": {
     "rimraf": "^5.0.5"

@@ -800,7 +800,7 @@ pub mod pallet {
 					Error::<T>::PoolIsDestroying
 				);
 
-				pool.apy = apy.unwrap_or_else(|| pool.apy);
+				pool.apy = apy.unwrap_or(pool.apy);
 
 				if let Some(state) = state {
 					ensure!(
@@ -848,7 +848,7 @@ pub mod pallet {
 					pool.state = FusionPoolState::Destroying;
 					Self::deposit_event(Event::PoolDestroying { pool_id });
 				} else {
-					Self::check_and_cleanup_pool(&pool)?;
+					Self::check_and_cleanup_pool(pool)?;
 				}
 
 				Ok(())
@@ -954,7 +954,7 @@ pub mod pallet {
 				FusionCurrencies::<T>::insert(currency.currency_id, &currency);
 
 				// Remove user's membership from storage
-				FusionMemberships::<T>::remove(&evm_address, pool_id);
+				FusionMemberships::<T>::remove(evm_address, pool_id);
 			}
 
 			Ok(())
@@ -1250,7 +1250,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Flips the paused state of the pallet
-	fn do_pause() -> () {
+	fn do_pause() {
 		// Flip the current state of FusionPaused
 		let current_state = FusionPaused::<T>::get();
 		FusionPaused::<T>::put(!current_state);
@@ -1632,9 +1632,9 @@ impl<T: Config> FusionExt<T::AccountId> for Pallet<T> {
 		new_controller_address: Option<T::AccountId>,
 	) -> DispatchResult {
 		if let Some(ref new_controller_address) = new_controller_address {
-			FusionEVMToSubstrateAddress::<T>::insert(&evm_address, new_controller_address);
+			FusionEVMToSubstrateAddress::<T>::insert(evm_address, new_controller_address);
 		} else {
-			FusionEVMToSubstrateAddress::<T>::remove(&evm_address);
+			FusionEVMToSubstrateAddress::<T>::remove(evm_address);
 		}
 
 		Self::deposit_event(Event::ControllerAddressSet {
@@ -1650,7 +1650,7 @@ impl<T: Config> FusionExt<T::AccountId> for Pallet<T> {
 		pool_id: PoolId,
 		compound: bool,
 	) -> DispatchResult {
-		FusionMemberships::<T>::try_mutate(&evm_address, pool_id, |membership_opt| {
+		FusionMemberships::<T>::try_mutate(evm_address, pool_id, |membership_opt| {
 			let membership = membership_opt
 				.as_mut()
 				.ok_or(Error::<T>::UserNotMemberOfPool)?;
@@ -1690,7 +1690,7 @@ impl<T: Config> FusionExt<T::AccountId> for Pallet<T> {
 		let mut currency =
 			FusionCurrencies::<T>::get(pool.currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
 
-		let maybe_membership = FusionMemberships::<T>::get(&evm_address, pool_id);
+		let maybe_membership = FusionMemberships::<T>::get(evm_address, pool_id);
 
 		if !skip_checks {
 			// Ensure they are open or allowed to compound
@@ -1736,7 +1736,7 @@ impl<T: Config> FusionExt<T::AccountId> for Pallet<T> {
 				member.1 = member.1.saturating_add(points);
 			}
 
-			FusionMemberships::<T>::insert(&evm_address, pool_id, membership);
+			FusionMemberships::<T>::insert(evm_address, pool_id, membership);
 			FusionPools::<T>::insert(pool_id, &pool);
 
 			// Emit event for extra bond
@@ -1764,7 +1764,7 @@ impl<T: Config> FusionExt<T::AccountId> for Pallet<T> {
 				unbonding_chunks: BoundedVec::default(),
 				is_compounding: true,
 			};
-			FusionMemberships::<T>::insert(&evm_address, pool_id, new_membership);
+			FusionMemberships::<T>::insert(evm_address, pool_id, new_membership);
 
 			// Emit event for pool join
 			Self::deposit_event(Event::PoolJoined {
@@ -1896,7 +1896,7 @@ impl<T: Config> FusionExt<T::AccountId> for Pallet<T> {
 		other: bool,
 	) -> DispatchResult {
 		// Retrieve the user's membership in the pool
-		let mut membership = FusionMemberships::<T>::get(&evm_address, pool_id)
+		let mut membership = FusionMemberships::<T>::get(evm_address, pool_id)
 			.ok_or(Error::<T>::UserNotMemberOfPool)?;
 
 		// Ensure the user has active points to unbond
@@ -1978,7 +1978,7 @@ impl<T: Config> FusionExt<T::AccountId> for Pallet<T> {
 			.saturating_add(unbond_amount);
 
 		// Save the updated state back to storage
-		FusionMemberships::<T>::insert(&evm_address, pool_id, membership);
+		FusionMemberships::<T>::insert(evm_address, pool_id, membership);
 		FusionPools::<T>::insert(pool_id, &pool);
 		FusionCurrencies::<T>::insert(currency.currency_id, &currency);
 
@@ -2001,7 +2001,7 @@ impl<T: Config> FusionExt<T::AccountId> for Pallet<T> {
 		other: bool,
 	) -> DispatchResult {
 		// Ensure user is a member of the pool
-		let mut membership = FusionMemberships::<T>::get(&evm_address, pool_id)
+		let mut membership = FusionMemberships::<T>::get(evm_address, pool_id)
 			.ok_or(Error::<T>::UserNotMemberOfPool)?;
 
 		// Fetch pool and currency data
@@ -2056,7 +2056,7 @@ impl<T: Config> FusionExt<T::AccountId> for Pallet<T> {
 		// Check if the user should be removed from the pool membership
 		if membership.unbonding_chunks.is_empty() && membership.active_points == 0 {
 			// Remove the user's membership from the pool
-			FusionMemberships::<T>::remove(&evm_address, pool_id);
+			FusionMemberships::<T>::remove(evm_address, pool_id);
 
 			// Emit event for removing pool membership
 			Self::deposit_event(Event::PoolMembershipRemoved {
@@ -2065,7 +2065,7 @@ impl<T: Config> FusionExt<T::AccountId> for Pallet<T> {
 			});
 		} else {
 			// If there are remaining unbonding chunks or active points, update the membership
-			FusionMemberships::<T>::insert(&evm_address, pool_id, membership);
+			FusionMemberships::<T>::insert(evm_address, pool_id, membership);
 		}
 
 		// Emit event for successful withdrawal
@@ -2216,7 +2216,7 @@ impl<T: Config> OnStakingUpdate<T::AccountId, BalanceOf<T>> for Pallet<T> {
 		slashed_active: BalanceOf<T>,
 		_slashed_unlocking: &BTreeMap<EraIndex, BalanceOf<T>>,
 		slashed_total: BalanceOf<T>,
-	) -> () {
+	) {
 		let current_era = T::EraProvider::current_era();
 		for (pool_id, exposure) in FusionExposures::<T>::iter_prefix(current_era) {
 			if exposure.targets.contains(who) {

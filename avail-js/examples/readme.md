@@ -59,6 +59,7 @@ npm run submit-proposal
 npm run staking-nominate
 npm run staking validate
 npm run estimate-transaction-fees
+npm run validium
 ```
 
 ## Avail web example (next js / typescript)

@@ -231,13 +231,12 @@ substrate-build-script-utils = { git = "https://github.com/availproject/polkadot
 sp-trie = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9", default-features = false }
 sp-state-machine = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9", default-features = false }
 sp-application-crypto = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9", default-features = false }
-substrate-test-utils = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9", default-features = false }
 
 sc-block-builder = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9" }
 sc-proposer-metrics = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9" }
 substrate-prometheus-endpoint = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9" }
-# substrate-test-runtime-client = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9" }
-
+substrate-test-runtime-client = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9" }
+substrate-test-utils = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9", default-features = false }
 
 # Patch from forked pallets
 [patch."https://github.com/availproject/polkadot-sdk.git"]

@@ -1,4 +1,4 @@
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -10,20 +10,15 @@ async fn main() -> Result<(), String> {
 	let account = Keypair::from_uri(&secret_uri).unwrap();
 	let max_additional = 1_000_000_000_000_000_000u128; // 1 AVAIL
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.bond_extra(max_additional, WaitFor::BlockInclusion, &account)
+		.bond_extra(max_additional, wait_for, &account, Some(options))
 		.await?;
 
-	println!(
-		"Stash={}, Amount={:?}",
-		result.event.stash, result.event.amount
-	);
-	println!(
-		"TxHash={:?}, BlockHash={:?}",
-		result.tx_hash, result.block_hash
-	);
+	dbg!(result);
 
 	Ok(())
 }

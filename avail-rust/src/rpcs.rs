@@ -1,8 +1,11 @@
 use avail_core::data_proof::ProofResponse;
+use subxt::backend::legacy::LegacyRpcMethods;
 
 use crate::avail::runtime_types::frame_system::limits::BlockLength;
 use crate::from_substrate::{FeeDetails, NodeRole, PeerInfo, RuntimeDispatchInfo, SyncState};
-use crate::{AvailBlockDetailsRPC, AvailHeader, BlockHash, BlockNumber, Cell, GDataProof, GRow};
+use crate::{
+	AvailBlockDetailsRPC, AvailConfig, AvailHeader, BlockHash, BlockNumber, Cell, GDataProof, GRow,
+};
 use subxt::backend::legacy::rpc_methods::{Bytes, SystemHealth};
 use subxt::backend::rpc::RpcClient;
 use subxt::rpc_params;
@@ -10,7 +13,10 @@ use subxt::rpc_params;
 /// Arbitrary properties defined in chain spec as a JSON object
 pub type Properties = serde_json::map::Map<String, serde_json::Value>;
 
+#[derive(Clone)]
 pub struct Rpc {
+	pub client: RpcClient,
+	pub legacy_methods: LegacyRpcMethods<AvailConfig>,
 	pub kate: Kate,
 	pub author: Author,
 	pub chain: Chain,
@@ -19,8 +25,12 @@ pub struct Rpc {
 }
 
 impl Rpc {
-	pub async fn new(endpoint: &str) -> Result<Self, Box<dyn std::error::Error>> {
-		let client = RpcClient::from_insecure_url(endpoint).await?;
+	pub async fn new(endpoint: &str, secure: bool) -> Result<Self, Box<dyn std::error::Error>> {
+		let client: RpcClient = match secure {
+			true => RpcClient::from_url(endpoint).await?,
+			false => RpcClient::from_insecure_url(endpoint).await?,
+		};
+		let legacy_methods = LegacyRpcMethods::new(client.clone());
 		let kate = Kate::new(client.clone());
 		let author = Author::new(client.clone());
 		let chain: Chain = Chain::new(client.clone());
@@ -28,6 +38,8 @@ impl Rpc {
 		let payment = Payment::new(client.clone());
 
 		Ok(Self {
+			client,
+			legacy_methods,
 			kate,
 			author,
 			chain,
@@ -37,6 +49,7 @@ impl Rpc {
 	}
 }
 
+#[derive(Clone)]
 pub struct Payment {
 	client: RpcClient,
 }
@@ -74,12 +87,27 @@ impl Payment {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate::Keypair;
+	use crate::SecretUri;
 	use std::str::FromStr;
 
 	#[tokio::test]
 	async fn testing_function() {
+		let secret_uri = SecretUri::from_str("//Alice").unwrap();
+		let account = Keypair::from_uri(&secret_uri).unwrap();
+
 		let sdk = crate::sdk::SDK::new("ws://127.0.0.1:9944").await.unwrap();
-		let h = BlockHash::from_str(
+		let keys = sdk.rpc.author.rotate_keys().await.unwrap();
+
+		let keys = sdk.util.deconstruct_session_keys(keys).unwrap();
+		let b = sdk
+			.tx
+			.session
+			.set_keys(keys, crate::WaitFor::BlockFinalization, &account, None)
+			.await
+			.unwrap();
+
+		/* 		let h = BlockHash::from_str(
 			"0x90c6d99b3fb9d608a5bee9eb59bb107d5fd11b0aa398f3b1132503c15db40551",
 		)
 		.unwrap();
@@ -99,10 +127,11 @@ mod tests {
 				dbg!(a);
 				panic!();
 			},
-		};
+		}; */
 	}
 }
 
+#[derive(Clone)]
 pub struct System {
 	client: RpcClient,
 }
@@ -194,6 +223,7 @@ impl System {
 	}
 }
 
+#[derive(Clone)]
 pub struct Chain {
 	client: RpcClient,
 }
@@ -242,6 +272,7 @@ impl Chain {
 	}
 }
 
+#[derive(Clone)]
 pub struct Author {
 	client: RpcClient,
 }
@@ -260,6 +291,7 @@ impl Author {
 	}
 }
 
+#[derive(Clone)]
 pub struct Kate {
 	client: RpcClient,
 }

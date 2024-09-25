@@ -345,9 +345,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				154u8, 2u8, 111u8, 126u8, 238u8, 248u8, 133u8, 35u8, 213u8, 41u8, 183u8, 173u8,
-				198u8, 54u8, 120u8, 167u8, 58u8, 241u8, 83u8, 53u8, 210u8, 223u8, 141u8, 219u8,
-				109u8, 28u8, 3u8, 86u8, 3u8, 103u8, 92u8, 66u8,
+				6u8, 73u8, 24u8, 102u8, 119u8, 148u8, 117u8, 45u8, 17u8, 142u8, 202u8, 79u8, 248u8,
+				218u8, 60u8, 44u8, 108u8, 248u8, 136u8, 28u8, 99u8, 201u8, 163u8, 69u8, 5u8, 41u8,
+				107u8, 118u8, 240u8, 247u8, 171u8, 230u8,
 			]
 	}
 	pub mod system {
@@ -1461,9 +1461,9 @@ pub mod api {
 						"Events",
 						(),
 						[
-							47u8, 176u8, 7u8, 69u8, 160u8, 12u8, 18u8, 114u8, 217u8, 150u8, 251u8,
-							213u8, 80u8, 223u8, 10u8, 38u8, 132u8, 164u8, 115u8, 22u8, 245u8, 12u8,
-							245u8, 160u8, 112u8, 150u8, 116u8, 187u8, 28u8, 233u8, 4u8, 143u8,
+							18u8, 50u8, 183u8, 114u8, 75u8, 227u8, 92u8, 13u8, 109u8, 64u8, 91u8,
+							34u8, 129u8, 12u8, 95u8, 75u8, 102u8, 161u8, 176u8, 26u8, 210u8, 190u8,
+							12u8, 139u8, 53u8, 117u8, 235u8, 40u8, 249u8, 136u8, 38u8, 234u8,
 						],
 					)
 				}
@@ -2046,10 +2046,10 @@ pub mod api {
 						"batch",
 						types::Batch { calls },
 						[
-							140u8, 24u8, 166u8, 163u8, 49u8, 182u8, 226u8, 101u8, 181u8, 20u8,
-							165u8, 215u8, 251u8, 204u8, 216u8, 54u8, 130u8, 174u8, 180u8, 209u8,
-							188u8, 111u8, 119u8, 214u8, 207u8, 54u8, 225u8, 217u8, 156u8, 49u8,
-							204u8, 43u8,
+							32u8, 195u8, 226u8, 14u8, 0u8, 230u8, 75u8, 160u8, 245u8, 122u8, 96u8,
+							94u8, 129u8, 131u8, 141u8, 218u8, 34u8, 203u8, 252u8, 181u8, 156u8,
+							98u8, 131u8, 237u8, 226u8, 187u8, 65u8, 46u8, 254u8, 223u8, 215u8,
+							170u8,
 						],
 					)
 				}
@@ -2067,10 +2067,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							199u8, 19u8, 83u8, 150u8, 156u8, 141u8, 64u8, 12u8, 36u8, 24u8, 13u8,
-							30u8, 130u8, 240u8, 180u8, 203u8, 75u8, 193u8, 116u8, 34u8, 79u8,
-							217u8, 82u8, 215u8, 129u8, 119u8, 149u8, 246u8, 226u8, 65u8, 106u8,
-							147u8,
+							115u8, 123u8, 141u8, 8u8, 220u8, 108u8, 226u8, 90u8, 187u8, 202u8,
+							94u8, 175u8, 160u8, 206u8, 153u8, 5u8, 86u8, 235u8, 38u8, 83u8, 112u8,
+							138u8, 76u8, 255u8, 144u8, 66u8, 252u8, 7u8, 118u8, 234u8, 239u8,
+							132u8,
 						],
 					)
 				}
@@ -2084,9 +2084,10 @@ pub mod api {
 						"batch_all",
 						types::BatchAll { calls },
 						[
-							122u8, 157u8, 120u8, 246u8, 6u8, 100u8, 221u8, 204u8, 223u8, 110u8,
-							68u8, 18u8, 52u8, 22u8, 251u8, 63u8, 26u8, 144u8, 82u8, 175u8, 142u8,
-							227u8, 1u8, 134u8, 214u8, 109u8, 4u8, 100u8, 81u8, 207u8, 166u8, 89u8,
+							218u8, 140u8, 199u8, 144u8, 211u8, 114u8, 20u8, 241u8, 96u8, 216u8,
+							113u8, 250u8, 49u8, 26u8, 117u8, 148u8, 90u8, 248u8, 209u8, 147u8,
+							77u8, 169u8, 168u8, 139u8, 8u8, 184u8, 225u8, 80u8, 111u8, 250u8, 50u8,
+							5u8,
 						],
 					)
 				}
@@ -2104,9 +2105,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							48u8, 88u8, 219u8, 147u8, 11u8, 246u8, 104u8, 28u8, 32u8, 146u8, 228u8,
-							255u8, 255u8, 137u8, 6u8, 230u8, 7u8, 68u8, 103u8, 225u8, 44u8, 170u8,
-							206u8, 59u8, 100u8, 136u8, 173u8, 211u8, 31u8, 115u8, 18u8, 233u8,
+							113u8, 173u8, 117u8, 162u8, 202u8, 200u8, 121u8, 251u8, 1u8, 155u8,
+							238u8, 229u8, 88u8, 25u8, 153u8, 82u8, 63u8, 110u8, 164u8, 131u8,
+							108u8, 163u8, 36u8, 63u8, 98u8, 65u8, 5u8, 58u8, 104u8, 110u8, 67u8,
+							165u8,
 						],
 					)
 				}
@@ -2120,10 +2122,9 @@ pub mod api {
 						"force_batch",
 						types::ForceBatch { calls },
 						[
-							208u8, 12u8, 107u8, 46u8, 181u8, 67u8, 98u8, 93u8, 63u8, 6u8, 54u8,
-							130u8, 240u8, 51u8, 128u8, 241u8, 126u8, 192u8, 148u8, 176u8, 39u8,
-							59u8, 41u8, 162u8, 52u8, 177u8, 218u8, 169u8, 129u8, 222u8, 245u8,
-							51u8,
+							129u8, 64u8, 107u8, 126u8, 224u8, 54u8, 139u8, 19u8, 63u8, 7u8, 126u8,
+							9u8, 124u8, 87u8, 89u8, 179u8, 218u8, 64u8, 154u8, 106u8, 197u8, 166u8,
+							62u8, 18u8, 171u8, 113u8, 249u8, 174u8, 38u8, 53u8, 165u8, 121u8,
 						],
 					)
 				}
@@ -2141,10 +2142,10 @@ pub mod api {
 							weight,
 						},
 						[
-							160u8, 212u8, 48u8, 86u8, 110u8, 86u8, 228u8, 203u8, 10u8, 51u8, 238u8,
-							181u8, 230u8, 166u8, 204u8, 252u8, 191u8, 205u8, 60u8, 227u8, 11u8,
-							229u8, 202u8, 212u8, 160u8, 179u8, 143u8, 196u8, 208u8, 82u8, 66u8,
-							118u8,
+							249u8, 9u8, 249u8, 48u8, 138u8, 72u8, 31u8, 232u8, 23u8, 85u8, 140u8,
+							178u8, 136u8, 40u8, 25u8, 174u8, 233u8, 0u8, 116u8, 193u8, 169u8,
+							153u8, 100u8, 72u8, 160u8, 107u8, 239u8, 126u8, 233u8, 75u8, 180u8,
+							106u8,
 						],
 					)
 				}
@@ -11478,9 +11479,10 @@ pub mod api {
 							length_bound,
 						},
 						[
-							240u8, 75u8, 122u8, 234u8, 145u8, 21u8, 67u8, 204u8, 63u8, 33u8, 206u8,
-							199u8, 70u8, 208u8, 24u8, 201u8, 63u8, 202u8, 34u8, 28u8, 234u8, 216u8,
-							66u8, 39u8, 25u8, 234u8, 143u8, 94u8, 136u8, 0u8, 87u8, 43u8,
+							165u8, 37u8, 165u8, 204u8, 186u8, 213u8, 193u8, 156u8, 105u8, 197u8,
+							162u8, 202u8, 182u8, 241u8, 211u8, 81u8, 232u8, 56u8, 1u8, 172u8,
+							194u8, 207u8, 120u8, 166u8, 58u8, 186u8, 154u8, 97u8, 167u8, 16u8,
+							56u8, 62u8,
 						],
 					)
 				}
@@ -11500,10 +11502,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							20u8, 242u8, 114u8, 10u8, 82u8, 244u8, 165u8, 159u8, 203u8, 143u8,
-							118u8, 106u8, 239u8, 71u8, 231u8, 75u8, 191u8, 92u8, 207u8, 59u8, 2u8,
-							150u8, 210u8, 246u8, 140u8, 235u8, 31u8, 232u8, 249u8, 183u8, 252u8,
-							103u8,
+							16u8, 154u8, 133u8, 27u8, 147u8, 237u8, 138u8, 227u8, 78u8, 99u8,
+							255u8, 20u8, 245u8, 31u8, 167u8, 41u8, 78u8, 233u8, 59u8, 31u8, 113u8,
+							68u8, 77u8, 30u8, 35u8, 240u8, 140u8, 167u8, 77u8, 180u8, 34u8, 12u8,
 						],
 					)
 				}
@@ -11856,9 +11857,9 @@ pub mod api {
 						"ProposalOf",
 						(),
 						[
-							68u8, 87u8, 222u8, 98u8, 127u8, 192u8, 244u8, 97u8, 54u8, 23u8, 221u8,
-							65u8, 67u8, 95u8, 82u8, 180u8, 96u8, 197u8, 63u8, 220u8, 158u8, 136u8,
-							228u8, 71u8, 166u8, 235u8, 254u8, 86u8, 239u8, 225u8, 101u8, 184u8,
+							116u8, 244u8, 74u8, 199u8, 8u8, 52u8, 134u8, 95u8, 192u8, 5u8, 213u8,
+							106u8, 75u8, 170u8, 69u8, 87u8, 105u8, 121u8, 82u8, 61u8, 61u8, 48u8,
+							122u8, 214u8, 218u8, 4u8, 77u8, 7u8, 233u8, 171u8, 17u8, 59u8,
 						],
 					)
 				}
@@ -11882,9 +11883,9 @@ pub mod api {
 							_0.borrow(),
 						),
 						[
-							68u8, 87u8, 222u8, 98u8, 127u8, 192u8, 244u8, 97u8, 54u8, 23u8, 221u8,
-							65u8, 67u8, 95u8, 82u8, 180u8, 96u8, 197u8, 63u8, 220u8, 158u8, 136u8,
-							228u8, 71u8, 166u8, 235u8, 254u8, 86u8, 239u8, 225u8, 101u8, 184u8,
+							116u8, 244u8, 74u8, 199u8, 8u8, 52u8, 134u8, 95u8, 192u8, 5u8, 213u8,
+							106u8, 75u8, 170u8, 69u8, 87u8, 105u8, 121u8, 82u8, 61u8, 61u8, 48u8,
+							122u8, 214u8, 218u8, 4u8, 77u8, 7u8, 233u8, 171u8, 17u8, 59u8,
 						],
 					)
 				}
@@ -13984,9 +13985,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							233u8, 42u8, 55u8, 34u8, 162u8, 238u8, 222u8, 240u8, 60u8, 139u8, 47u8,
-							166u8, 143u8, 23u8, 12u8, 154u8, 223u8, 75u8, 177u8, 194u8, 182u8,
-							139u8, 179u8, 15u8, 62u8, 98u8, 253u8, 56u8, 78u8, 143u8, 211u8, 132u8,
+							177u8, 249u8, 206u8, 138u8, 164u8, 181u8, 232u8, 41u8, 99u8, 58u8,
+							164u8, 47u8, 237u8, 9u8, 170u8, 148u8, 214u8, 142u8, 165u8, 3u8, 17u8,
+							48u8, 121u8, 186u8, 129u8, 62u8, 32u8, 8u8, 133u8, 147u8, 155u8, 222u8,
 						],
 					)
 				}
@@ -14005,10 +14006,9 @@ pub mod api {
 							weight,
 						},
 						[
-							55u8, 92u8, 57u8, 170u8, 163u8, 241u8, 91u8, 43u8, 66u8, 146u8, 95u8,
-							206u8, 205u8, 92u8, 212u8, 106u8, 253u8, 139u8, 195u8, 164u8, 112u8,
-							162u8, 22u8, 133u8, 244u8, 138u8, 171u8, 183u8, 101u8, 169u8, 249u8,
-							226u8,
+							164u8, 231u8, 255u8, 61u8, 144u8, 86u8, 49u8, 63u8, 139u8, 203u8, 65u8,
+							64u8, 181u8, 201u8, 232u8, 14u8, 150u8, 174u8, 183u8, 112u8, 119u8,
+							78u8, 126u8, 11u8, 77u8, 61u8, 85u8, 113u8, 183u8, 209u8, 166u8, 152u8,
 						],
 					)
 				}
@@ -14043,10 +14043,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							238u8, 149u8, 86u8, 243u8, 239u8, 44u8, 154u8, 59u8, 159u8, 49u8,
-							105u8, 38u8, 253u8, 231u8, 152u8, 161u8, 97u8, 126u8, 136u8, 193u8,
-							185u8, 168u8, 1u8, 27u8, 30u8, 198u8, 119u8, 18u8, 249u8, 132u8, 236u8,
-							119u8,
+							247u8, 47u8, 86u8, 26u8, 173u8, 247u8, 52u8, 51u8, 196u8, 255u8, 139u8,
+							88u8, 39u8, 39u8, 155u8, 182u8, 32u8, 178u8, 223u8, 3u8, 106u8, 50u8,
+							81u8, 134u8, 204u8, 215u8, 182u8, 168u8, 39u8, 59u8, 222u8, 130u8,
 						],
 					)
 				}
@@ -15256,10 +15255,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							35u8, 21u8, 152u8, 172u8, 191u8, 234u8, 255u8, 127u8, 64u8, 147u8,
-							247u8, 3u8, 94u8, 222u8, 113u8, 88u8, 2u8, 100u8, 58u8, 249u8, 229u8,
-							190u8, 107u8, 78u8, 158u8, 191u8, 144u8, 202u8, 87u8, 162u8, 61u8,
-							26u8,
+							228u8, 234u8, 77u8, 21u8, 53u8, 135u8, 67u8, 96u8, 58u8, 159u8, 226u8,
+							108u8, 166u8, 243u8, 6u8, 127u8, 174u8, 208u8, 203u8, 75u8, 195u8,
+							51u8, 26u8, 36u8, 187u8, 124u8, 45u8, 16u8, 18u8, 99u8, 6u8, 181u8,
 						],
 					)
 				}
@@ -15301,9 +15299,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							138u8, 224u8, 40u8, 19u8, 70u8, 243u8, 48u8, 147u8, 103u8, 2u8, 163u8,
-							250u8, 14u8, 197u8, 194u8, 110u8, 226u8, 159u8, 246u8, 21u8, 216u8,
-							193u8, 51u8, 156u8, 40u8, 176u8, 4u8, 68u8, 207u8, 173u8, 223u8, 217u8,
+							49u8, 49u8, 45u8, 125u8, 109u8, 176u8, 249u8, 172u8, 235u8, 178u8,
+							187u8, 79u8, 34u8, 65u8, 140u8, 130u8, 110u8, 144u8, 226u8, 71u8,
+							253u8, 66u8, 151u8, 102u8, 179u8, 105u8, 149u8, 60u8, 30u8, 111u8,
+							112u8, 165u8,
 						],
 					)
 				}
@@ -15341,9 +15340,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							227u8, 73u8, 216u8, 74u8, 7u8, 39u8, 19u8, 46u8, 27u8, 128u8, 85u8,
-							249u8, 31u8, 119u8, 245u8, 120u8, 150u8, 130u8, 52u8, 165u8, 109u8,
-							203u8, 27u8, 141u8, 199u8, 17u8, 3u8, 213u8, 102u8, 163u8, 40u8, 156u8,
+							142u8, 64u8, 53u8, 233u8, 24u8, 48u8, 187u8, 53u8, 155u8, 221u8, 182u8,
+							86u8, 120u8, 100u8, 122u8, 96u8, 43u8, 14u8, 116u8, 19u8, 111u8, 11u8,
+							122u8, 212u8, 14u8, 98u8, 48u8, 60u8, 203u8, 112u8, 254u8, 1u8,
 						],
 					)
 				}
@@ -15368,10 +15367,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							44u8, 105u8, 190u8, 161u8, 241u8, 43u8, 47u8, 104u8, 207u8, 145u8,
-							246u8, 116u8, 155u8, 96u8, 98u8, 168u8, 137u8, 237u8, 247u8, 39u8,
-							62u8, 127u8, 95u8, 150u8, 127u8, 134u8, 72u8, 46u8, 123u8, 238u8, 79u8,
-							233u8,
+							10u8, 33u8, 214u8, 30u8, 114u8, 128u8, 216u8, 254u8, 70u8, 84u8, 132u8,
+							120u8, 150u8, 137u8, 173u8, 196u8, 23u8, 5u8, 68u8, 26u8, 71u8, 220u8,
+							208u8, 255u8, 30u8, 168u8, 6u8, 237u8, 109u8, 26u8, 248u8, 38u8,
 						],
 					)
 				}
@@ -17228,10 +17226,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							135u8, 169u8, 136u8, 146u8, 177u8, 61u8, 74u8, 165u8, 201u8, 60u8,
-							75u8, 202u8, 54u8, 96u8, 223u8, 24u8, 22u8, 19u8, 235u8, 14u8, 237u8,
-							215u8, 29u8, 73u8, 240u8, 182u8, 132u8, 217u8, 92u8, 184u8, 255u8,
-							63u8,
+							172u8, 112u8, 60u8, 94u8, 147u8, 137u8, 166u8, 218u8, 174u8, 109u8,
+							55u8, 4u8, 211u8, 51u8, 138u8, 157u8, 133u8, 141u8, 250u8, 92u8, 198u8,
+							98u8, 60u8, 68u8, 170u8, 155u8, 58u8, 133u8, 215u8, 223u8, 70u8, 78u8,
 						],
 					)
 				}
@@ -17255,10 +17252,10 @@ pub mod api {
 							max_weight,
 						},
 						[
-							241u8, 117u8, 151u8, 147u8, 222u8, 60u8, 70u8, 242u8, 133u8, 164u8,
-							247u8, 158u8, 5u8, 236u8, 147u8, 125u8, 137u8, 65u8, 154u8, 119u8,
-							26u8, 72u8, 70u8, 28u8, 129u8, 8u8, 144u8, 119u8, 240u8, 21u8, 116u8,
-							116u8,
+							60u8, 168u8, 20u8, 60u8, 128u8, 128u8, 27u8, 25u8, 84u8, 253u8, 187u8,
+							130u8, 150u8, 242u8, 179u8, 120u8, 150u8, 12u8, 89u8, 247u8, 25u8,
+							21u8, 149u8, 206u8, 223u8, 63u8, 153u8, 127u8, 96u8, 203u8, 124u8,
+							102u8,
 						],
 					)
 				}
@@ -22899,10 +22896,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							80u8, 167u8, 12u8, 16u8, 171u8, 163u8, 180u8, 59u8, 18u8, 223u8, 69u8,
-							116u8, 95u8, 99u8, 117u8, 120u8, 245u8, 168u8, 163u8, 60u8, 15u8,
-							134u8, 61u8, 176u8, 187u8, 53u8, 28u8, 114u8, 172u8, 241u8, 15u8,
-							152u8,
+							98u8, 227u8, 74u8, 224u8, 22u8, 48u8, 241u8, 153u8, 247u8, 47u8, 179u8,
+							58u8, 11u8, 83u8, 200u8, 121u8, 101u8, 139u8, 30u8, 5u8, 167u8, 30u8,
+							249u8, 177u8, 116u8, 23u8, 218u8, 22u8, 105u8, 114u8, 135u8, 125u8,
 						],
 					)
 				}
@@ -25117,9 +25113,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							157u8, 113u8, 240u8, 148u8, 10u8, 196u8, 86u8, 45u8, 61u8, 229u8,
-							214u8, 223u8, 115u8, 45u8, 127u8, 74u8, 27u8, 19u8, 242u8, 3u8, 8u8,
-							65u8, 184u8, 210u8, 37u8, 231u8, 80u8, 55u8, 25u8, 58u8, 85u8, 65u8,
+							184u8, 56u8, 66u8, 104u8, 131u8, 82u8, 253u8, 141u8, 37u8, 41u8, 137u8,
+							46u8, 56u8, 146u8, 32u8, 241u8, 236u8, 164u8, 248u8, 215u8, 9u8, 70u8,
+							202u8, 53u8, 139u8, 21u8, 51u8, 17u8, 56u8, 70u8, 48u8, 53u8,
 						],
 					)
 				}
@@ -25139,9 +25135,9 @@ pub mod api {
 							delay,
 						},
 						[
-							94u8, 132u8, 138u8, 226u8, 21u8, 73u8, 247u8, 7u8, 211u8, 198u8, 189u8,
-							189u8, 156u8, 72u8, 229u8, 100u8, 76u8, 202u8, 116u8, 236u8, 0u8,
-							218u8, 198u8, 14u8, 83u8, 171u8, 49u8, 197u8, 175u8, 91u8, 77u8, 147u8,
+							66u8, 4u8, 99u8, 166u8, 97u8, 94u8, 189u8, 127u8, 128u8, 189u8, 253u8,
+							192u8, 62u8, 241u8, 48u8, 78u8, 85u8, 140u8, 45u8, 34u8, 83u8, 231u8,
+							195u8, 119u8, 228u8, 67u8, 49u8, 7u8, 52u8, 243u8, 132u8, 21u8,
 						],
 					)
 				}
@@ -25161,9 +25157,10 @@ pub mod api {
 							delay,
 						},
 						[
-							149u8, 37u8, 231u8, 247u8, 137u8, 138u8, 69u8, 28u8, 9u8, 221u8, 169u8,
-							137u8, 144u8, 219u8, 77u8, 189u8, 241u8, 103u8, 161u8, 216u8, 147u8,
-							208u8, 72u8, 55u8, 51u8, 73u8, 187u8, 199u8, 138u8, 78u8, 189u8, 159u8,
+							39u8, 124u8, 192u8, 210u8, 120u8, 71u8, 207u8, 225u8, 200u8, 130u8,
+							212u8, 145u8, 12u8, 123u8, 211u8, 219u8, 62u8, 198u8, 100u8, 202u8,
+							84u8, 77u8, 128u8, 248u8, 244u8, 89u8, 237u8, 180u8, 122u8, 40u8,
+							112u8, 41u8,
 						],
 					)
 				}
@@ -25199,10 +25196,10 @@ pub mod api {
 							index,
 						},
 						[
-							68u8, 169u8, 229u8, 164u8, 59u8, 148u8, 220u8, 181u8, 124u8, 3u8,
-							224u8, 94u8, 196u8, 149u8, 184u8, 153u8, 16u8, 103u8, 226u8, 145u8,
-							174u8, 22u8, 33u8, 112u8, 29u8, 32u8, 172u8, 203u8, 158u8, 83u8, 134u8,
-							137u8,
+							199u8, 164u8, 23u8, 197u8, 185u8, 169u8, 107u8, 227u8, 105u8, 142u8,
+							230u8, 26u8, 178u8, 164u8, 166u8, 224u8, 43u8, 83u8, 95u8, 241u8, 44u8,
+							76u8, 172u8, 208u8, 81u8, 18u8, 37u8, 136u8, 233u8, 211u8, 246u8,
+							237u8,
 						],
 					)
 				}
@@ -25226,9 +25223,9 @@ pub mod api {
 							ext_index,
 						},
 						[
-							88u8, 114u8, 72u8, 46u8, 82u8, 122u8, 124u8, 156u8, 48u8, 8u8, 244u8,
-							116u8, 78u8, 86u8, 58u8, 58u8, 227u8, 47u8, 35u8, 185u8, 146u8, 103u8,
-							41u8, 63u8, 3u8, 139u8, 24u8, 9u8, 33u8, 102u8, 149u8, 59u8,
+							191u8, 141u8, 223u8, 20u8, 64u8, 241u8, 126u8, 71u8, 126u8, 142u8,
+							17u8, 225u8, 253u8, 137u8, 96u8, 126u8, 242u8, 247u8, 140u8, 0u8, 19u8,
+							40u8, 188u8, 9u8, 73u8, 115u8, 51u8, 195u8, 139u8, 82u8, 237u8, 246u8,
 						],
 					)
 				}
@@ -25306,9 +25303,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							1u8, 112u8, 58u8, 103u8, 40u8, 149u8, 182u8, 152u8, 86u8, 28u8, 29u8,
-							152u8, 211u8, 80u8, 77u8, 189u8, 195u8, 191u8, 51u8, 227u8, 176u8,
-							170u8, 188u8, 6u8, 101u8, 94u8, 120u8, 166u8, 160u8, 4u8, 229u8, 167u8,
+							43u8, 28u8, 217u8, 150u8, 60u8, 84u8, 116u8, 49u8, 42u8, 134u8, 34u8,
+							145u8, 138u8, 229u8, 79u8, 178u8, 215u8, 108u8, 154u8, 51u8, 151u8,
+							17u8, 40u8, 166u8, 199u8, 164u8, 122u8, 113u8, 169u8, 244u8, 92u8,
+							159u8,
 						],
 					)
 				}
@@ -25519,9 +25517,10 @@ pub mod api {
 						"Proxies",
 						(),
 						[
-							85u8, 114u8, 110u8, 82u8, 31u8, 140u8, 102u8, 8u8, 37u8, 192u8, 3u8,
-							141u8, 50u8, 101u8, 7u8, 186u8, 193u8, 235u8, 42u8, 91u8, 178u8, 204u8,
-							69u8, 8u8, 66u8, 107u8, 7u8, 50u8, 187u8, 138u8, 151u8, 0u8,
+							86u8, 93u8, 226u8, 177u8, 154u8, 142u8, 220u8, 251u8, 96u8, 27u8,
+							204u8, 150u8, 36u8, 147u8, 160u8, 140u8, 54u8, 151u8, 198u8, 194u8,
+							22u8, 167u8, 83u8, 244u8, 104u8, 70u8, 31u8, 132u8, 70u8, 242u8, 28u8,
+							199u8,
 						],
 					)
 				}
@@ -25546,9 +25545,10 @@ pub mod api {
 							_0.borrow(),
 						),
 						[
-							85u8, 114u8, 110u8, 82u8, 31u8, 140u8, 102u8, 8u8, 37u8, 192u8, 3u8,
-							141u8, 50u8, 101u8, 7u8, 186u8, 193u8, 235u8, 42u8, 91u8, 178u8, 204u8,
-							69u8, 8u8, 66u8, 107u8, 7u8, 50u8, 187u8, 138u8, 151u8, 0u8,
+							86u8, 93u8, 226u8, 177u8, 154u8, 142u8, 220u8, 251u8, 96u8, 27u8,
+							204u8, 150u8, 36u8, 147u8, 160u8, 140u8, 54u8, 151u8, 198u8, 194u8,
+							22u8, 167u8, 83u8, 244u8, 104u8, 70u8, 31u8, 132u8, 70u8, 242u8, 28u8,
+							199u8,
 						],
 					)
 				}
@@ -26298,9 +26298,10 @@ pub mod api {
 							length_bound,
 						},
 						[
-							240u8, 75u8, 122u8, 234u8, 145u8, 21u8, 67u8, 204u8, 63u8, 33u8, 206u8,
-							199u8, 70u8, 208u8, 24u8, 201u8, 63u8, 202u8, 34u8, 28u8, 234u8, 216u8,
-							66u8, 39u8, 25u8, 234u8, 143u8, 94u8, 136u8, 0u8, 87u8, 43u8,
+							165u8, 37u8, 165u8, 204u8, 186u8, 213u8, 193u8, 156u8, 105u8, 197u8,
+							162u8, 202u8, 182u8, 241u8, 211u8, 81u8, 232u8, 56u8, 1u8, 172u8,
+							194u8, 207u8, 120u8, 166u8, 58u8, 186u8, 154u8, 97u8, 167u8, 16u8,
+							56u8, 62u8,
 						],
 					)
 				}
@@ -26320,10 +26321,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							20u8, 242u8, 114u8, 10u8, 82u8, 244u8, 165u8, 159u8, 203u8, 143u8,
-							118u8, 106u8, 239u8, 71u8, 231u8, 75u8, 191u8, 92u8, 207u8, 59u8, 2u8,
-							150u8, 210u8, 246u8, 140u8, 235u8, 31u8, 232u8, 249u8, 183u8, 252u8,
-							103u8,
+							16u8, 154u8, 133u8, 27u8, 147u8, 237u8, 138u8, 227u8, 78u8, 99u8,
+							255u8, 20u8, 245u8, 31u8, 167u8, 41u8, 78u8, 233u8, 59u8, 31u8, 113u8,
+							68u8, 77u8, 30u8, 35u8, 240u8, 140u8, 167u8, 77u8, 180u8, 34u8, 12u8,
 						],
 					)
 				}
@@ -26676,9 +26676,9 @@ pub mod api {
 						"ProposalOf",
 						(),
 						[
-							68u8, 87u8, 222u8, 98u8, 127u8, 192u8, 244u8, 97u8, 54u8, 23u8, 221u8,
-							65u8, 67u8, 95u8, 82u8, 180u8, 96u8, 197u8, 63u8, 220u8, 158u8, 136u8,
-							228u8, 71u8, 166u8, 235u8, 254u8, 86u8, 239u8, 225u8, 101u8, 184u8,
+							116u8, 244u8, 74u8, 199u8, 8u8, 52u8, 134u8, 95u8, 192u8, 5u8, 213u8,
+							106u8, 75u8, 170u8, 69u8, 87u8, 105u8, 121u8, 82u8, 61u8, 61u8, 48u8,
+							122u8, 214u8, 218u8, 4u8, 77u8, 7u8, 233u8, 171u8, 17u8, 59u8,
 						],
 					)
 				}
@@ -26702,9 +26702,9 @@ pub mod api {
 							_0.borrow(),
 						),
 						[
-							68u8, 87u8, 222u8, 98u8, 127u8, 192u8, 244u8, 97u8, 54u8, 23u8, 221u8,
-							65u8, 67u8, 95u8, 82u8, 180u8, 96u8, 197u8, 63u8, 220u8, 158u8, 136u8,
-							228u8, 71u8, 166u8, 235u8, 254u8, 86u8, 239u8, 225u8, 101u8, 184u8,
+							116u8, 244u8, 74u8, 199u8, 8u8, 52u8, 134u8, 95u8, 192u8, 5u8, 213u8,
+							106u8, 75u8, 170u8, 69u8, 87u8, 105u8, 121u8, 82u8, 61u8, 61u8, 48u8,
+							122u8, 214u8, 218u8, 4u8, 77u8, 7u8, 233u8, 171u8, 17u8, 59u8,
 						],
 					)
 				}
@@ -26876,19 +26876,21 @@ pub mod api {
 				#[encode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
 				)]
-				#[doc = "See [`Pallet::add_fusion_ledger_entry`]."]
-				pub struct AddFusionLedgerEntry {
-					pub evm_address: add_fusion_ledger_entry::EvmAddress,
-					pub amount: add_fusion_ledger_entry::Amount,
+				#[doc = "See [`Pallet::deposit_currency_dummy`]."]
+				pub struct DepositCurrencyDummy {
+					pub evm_address: deposit_currency_dummy::EvmAddress,
+					pub currency_id: deposit_currency_dummy::CurrencyId,
+					pub amount: deposit_currency_dummy::Amount,
 				}
-				pub mod add_fusion_ledger_entry {
+				pub mod deposit_currency_dummy {
 					use super::runtime_types;
 					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type CurrencyId = ::core::primitive::u32;
 					pub type Amount = ::core::primitive::u128;
 				}
-				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for AddFusionLedgerEntry {
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for DepositCurrencyDummy {
 					const PALLET: &'static str = "Fusion";
-					const CALL: &'static str = "add_fusion_ledger_entry";
+					const CALL: &'static str = "deposit_currency_dummy";
 				}
 				#[derive(
 					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
@@ -26907,17 +26909,21 @@ pub mod api {
 				#[encode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
 				)]
-				#[doc = "See [`Pallet::set_total_in_ledgers`]."]
-				pub struct SetTotalInLedgers {
-					pub total: set_total_in_ledgers::Total,
+				#[doc = "See [`Pallet::dummy_slash`]."]
+				pub struct DummySlash {
+					pub who: dummy_slash::Who,
+					pub bonded_amount: dummy_slash::BondedAmount,
+					pub slashed_amount: dummy_slash::SlashedAmount,
 				}
-				pub mod set_total_in_ledgers {
+				pub mod dummy_slash {
 					use super::runtime_types;
-					pub type Total = ::core::primitive::u128;
+					pub type Who = ::subxt::ext::subxt_core::utils::AccountId32;
+					pub type BondedAmount = ::core::primitive::u128;
+					pub type SlashedAmount = ::core::primitive::u128;
 				}
-				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for SetTotalInLedgers {
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for DummySlash {
 					const PALLET: &'static str = "Fusion";
-					const CALL: &'static str = "set_total_in_ledgers";
+					const CALL: &'static str = "dummy_slash";
 				}
 				#[derive(
 					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
@@ -26936,17 +26942,11 @@ pub mod api {
 				#[encode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
 				)]
-				#[doc = "See [`Pallet::claim_era_fusion_reward`]."]
-				pub struct ClaimEraFusionReward {
-					pub era: claim_era_fusion_reward::Era,
-				}
-				pub mod claim_era_fusion_reward {
-					use super::runtime_types;
-					pub type Era = ::core::primitive::u32;
-				}
-				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for ClaimEraFusionReward {
+				#[doc = "See [`Pallet::pause`]."]
+				pub struct Pause;
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for Pause {
 					const PALLET: &'static str = "Fusion";
-					const CALL: &'static str = "claim_era_fusion_reward";
+					const CALL: &'static str = "pause";
 				}
 				#[derive(
 					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
@@ -26965,104 +26965,1239 @@ pub mod api {
 				#[encode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
 				)]
-				#[doc = "See [`Pallet::set_fusion_pool`]."]
-				pub struct SetFusionPool {
-					pub owner: set_fusion_pool::Owner,
-					pub members: set_fusion_pool::Members,
-					pub targets: set_fusion_pool::Targets,
+				#[doc = "See [`Pallet::fill_funds_account`]."]
+				pub struct FillFundsAccount {
+					pub amount: fill_funds_account::Amount,
 				}
-				pub mod set_fusion_pool {
+				pub mod fill_funds_account {
 					use super::runtime_types;
-					pub type Owner = ::subxt::ext::subxt_core::utils::AccountId32;
-					pub type Members = runtime_types::bounded_collections::bounded_vec::BoundedVec<
-						::subxt::ext::subxt_core::utils::H160,
+					pub type Amount = ::core::primitive::u128;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for FillFundsAccount {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "fill_funds_account";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::create_currency`]."]
+				pub struct CreateCurrency {
+					pub currency_id: create_currency::CurrencyId,
+					pub name: create_currency::Name,
+					pub nb_decimals: create_currency::NbDecimals,
+					pub max_amount: create_currency::MaxAmount,
+					pub min_amount: create_currency::MinAmount,
+					pub initial_conversion_rate: create_currency::InitialConversionRate,
+				}
+				pub mod create_currency {
+					use super::runtime_types;
+					pub type CurrencyId = ::core::primitive::u32;
+					pub type Name = runtime_types::bounded_collections::bounded_vec::BoundedVec<
+						::core::primitive::u8,
 					>;
+					pub type NbDecimals = ::core::primitive::u8;
+					pub type MaxAmount = ::core::primitive::u128;
+					pub type MinAmount = ::core::primitive::u128;
+					pub type InitialConversionRate = ::core::primitive::u128;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for CreateCurrency {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "create_currency";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::set_currency`]."]
+				pub struct SetCurrency {
+					pub currency_id: set_currency::CurrencyId,
+					pub name: set_currency::Name,
+					pub max_amount: set_currency::MaxAmount,
+					pub min_amount: set_currency::MinAmount,
+				}
+				pub mod set_currency {
+					use super::runtime_types;
+					pub type CurrencyId = ::core::primitive::u32;
+					pub type Name = ::core::option::Option<
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+					>;
+					pub type MaxAmount = ::core::option::Option<::core::primitive::u128>;
+					pub type MinAmount = ::core::option::Option<::core::primitive::u128>;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for SetCurrency {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "set_currency";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::delete_currency`]."]
+				pub struct DeleteCurrency {
+					pub currency_id: delete_currency::CurrencyId,
+				}
+				pub mod delete_currency {
+					use super::runtime_types;
+					pub type CurrencyId = ::core::primitive::u32;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for DeleteCurrency {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "delete_currency";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::set_currency_conversion_rate`]."]
+				pub struct SetCurrencyConversionRate {
+					pub currency_id: set_currency_conversion_rate::CurrencyId,
+					pub conversion_rate: set_currency_conversion_rate::ConversionRate,
+				}
+				pub mod set_currency_conversion_rate {
+					use super::runtime_types;
+					pub type CurrencyId = ::core::primitive::u32;
+					pub type ConversionRate = ::core::primitive::u128;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for SetCurrencyConversionRate {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "set_currency_conversion_rate";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::create_pool`]."]
+				pub struct CreatePool {
+					pub pool_id: create_pool::PoolId,
+					pub currency_id: create_pool::CurrencyId,
+					pub apy: create_pool::Apy,
+					pub nominator: create_pool::Nominator,
+					pub with_reward_account: create_pool::WithRewardAccount,
+				}
+				pub mod create_pool {
+					use super::runtime_types;
+					pub type PoolId = ::core::primitive::u32;
+					pub type CurrencyId = ::core::primitive::u32;
+					pub type Apy = runtime_types::sp_arithmetic::per_things::Perbill;
+					pub type Nominator =
+						::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>;
+					pub type WithRewardAccount = ::core::primitive::bool;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for CreatePool {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "create_pool";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::set_pool`]."]
+				pub struct SetPool {
+					pub pool_id: set_pool::PoolId,
+					pub apy: set_pool::Apy,
+					pub state: set_pool::State,
+					pub nominator: set_pool::Nominator,
+				}
+				pub mod set_pool {
+					use super::runtime_types;
+					pub type PoolId = ::core::primitive::u32;
+					pub type Apy =
+						::core::option::Option<runtime_types::sp_arithmetic::per_things::Perbill>;
+					pub type State = ::core::option::Option<
+						runtime_types::pallet_fusion::types::FusionPoolState,
+					>;
+					pub type Nominator = ::core::option::Option<
+						::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
+					>;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for SetPool {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "set_pool";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::delete_pool`]."]
+				pub struct DeletePool {
+					pub pool_id: delete_pool::PoolId,
+				}
+				pub mod delete_pool {
+					use super::runtime_types;
+					pub type PoolId = ::core::primitive::u32;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for DeletePool {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "delete_pool";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::nominate`]."]
+				pub struct Nominate {
+					pub pool_id: nominate::PoolId,
+					pub targets: nominate::Targets,
+				}
+				pub mod nominate {
+					use super::runtime_types;
+					pub type PoolId = ::core::primitive::u32;
 					pub type Targets = runtime_types::bounded_collections::bounded_vec::BoundedVec<
 						::subxt::ext::subxt_core::utils::AccountId32,
 					>;
 				}
-				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for SetFusionPool {
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for Nominate {
 					const PALLET: &'static str = "Fusion";
-					const CALL: &'static str = "set_fusion_pool";
+					const CALL: &'static str = "nominate";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::kick_user`]."]
+				pub struct KickUser {
+					pub evm_address: kick_user::EvmAddress,
+				}
+				pub mod kick_user {
+					use super::runtime_types;
+					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for KickUser {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "kick_user";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::set_controller_address`]."]
+				pub struct SetControllerAddress {
+					pub evm_address: set_controller_address::EvmAddress,
+					pub new_controller_address: set_controller_address::NewControllerAddress,
+				}
+				pub mod set_controller_address {
+					use super::runtime_types;
+					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type NewControllerAddress =
+						::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for SetControllerAddress {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "set_controller_address";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::set_slash_destination`]."]
+				pub struct SetSlashDestination {
+					pub evm_address: set_slash_destination::EvmAddress,
+					pub controller_address: set_slash_destination::ControllerAddress,
+				}
+				pub mod set_slash_destination {
+					use super::runtime_types;
+					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type ControllerAddress =
+						::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for SetSlashDestination {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "set_slash_destination";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::cancel_slash`]."]
+				pub struct CancelSlash {
+					pub slash_index: cancel_slash::SlashIndex,
+					pub pool_id: cancel_slash::PoolId,
+				}
+				pub mod cancel_slash {
+					use super::runtime_types;
+					pub type SlashIndex = ::core::primitive::u32;
+					pub type PoolId = ::core::primitive::u32;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for CancelSlash {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "cancel_slash";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::apply_slash`]."]
+				pub struct ApplySlash {
+					pub slash_index: apply_slash::SlashIndex,
+					pub pool_id: apply_slash::PoolId,
+				}
+				pub mod apply_slash {
+					use super::runtime_types;
+					pub type SlashIndex = ::core::primitive::u32;
+					pub type PoolId = ::core::primitive::u32;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for ApplySlash {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "apply_slash";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::set_compounding`]."]
+				pub struct SetCompounding {
+					pub evm_address: set_compounding::EvmAddress,
+					pub pool_id: set_compounding::PoolId,
+					pub compound: set_compounding::Compound,
+				}
+				pub mod set_compounding {
+					use super::runtime_types;
+					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type PoolId = ::core::primitive::u32;
+					pub type Compound = ::core::primitive::bool;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for SetCompounding {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "set_compounding";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::stake`]."]
+				pub struct Stake {
+					pub evm_address: stake::EvmAddress,
+					pub pool_id: stake::PoolId,
+					pub amount: stake::Amount,
+				}
+				pub mod stake {
+					use super::runtime_types;
+					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type PoolId = ::core::primitive::u32;
+					pub type Amount = ::core::primitive::u128;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for Stake {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "stake";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::claim_rewards`]."]
+				pub struct ClaimRewards {
+					pub era: claim_rewards::Era,
+					pub pool_id: claim_rewards::PoolId,
+					pub evm_address: claim_rewards::EvmAddress,
+				}
+				pub mod claim_rewards {
+					use super::runtime_types;
+					pub type Era = ::core::primitive::u32;
+					pub type PoolId = ::core::primitive::u32;
+					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for ClaimRewards {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "claim_rewards";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::unbond_currency`]."]
+				pub struct UnbondCurrency {
+					pub evm_address: unbond_currency::EvmAddress,
+					pub pool_id: unbond_currency::PoolId,
+					pub unbond_amount: unbond_currency::UnbondAmount,
+				}
+				pub mod unbond_currency {
+					use super::runtime_types;
+					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type PoolId = ::core::primitive::u32;
+					pub type UnbondAmount = ::core::primitive::u128;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for UnbondCurrency {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "unbond_currency";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::withdraw_unbonded_currency`]."]
+				pub struct WithdrawUnbondedCurrency {
+					pub evm_address: withdraw_unbonded_currency::EvmAddress,
+					pub pool_id: withdraw_unbonded_currency::PoolId,
+				}
+				pub mod withdraw_unbonded_currency {
+					use super::runtime_types;
+					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type PoolId = ::core::primitive::u32;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for WithdrawUnbondedCurrency {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "withdraw_unbonded_currency";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::unbond_currency_other`]."]
+				pub struct UnbondCurrencyOther {
+					pub evm_address: unbond_currency_other::EvmAddress,
+					pub pool_id: unbond_currency_other::PoolId,
+					pub unbond_amount: unbond_currency_other::UnbondAmount,
+				}
+				pub mod unbond_currency_other {
+					use super::runtime_types;
+					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type PoolId = ::core::primitive::u32;
+					pub type UnbondAmount = ::core::primitive::u128;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for UnbondCurrencyOther {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "unbond_currency_other";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::withdraw_unbonded_currency_other`]."]
+				pub struct WithdrawUnbondedCurrencyOther {
+					pub evm_address: withdraw_unbonded_currency_other::EvmAddress,
+					pub pool_id: withdraw_unbonded_currency_other::PoolId,
+				}
+				pub mod withdraw_unbonded_currency_other {
+					use super::runtime_types;
+					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type PoolId = ::core::primitive::u32;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for WithdrawUnbondedCurrencyOther {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "withdraw_unbonded_currency_other";
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				#[doc = "See [`Pallet::withdraw_avail_to_controller`]."]
+				pub struct WithdrawAvailToController {
+					pub evm_address: withdraw_avail_to_controller::EvmAddress,
+				}
+				pub mod withdraw_avail_to_controller {
+					use super::runtime_types;
+					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				}
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for WithdrawAvailToController {
+					const PALLET: &'static str = "Fusion";
+					const CALL: &'static str = "withdraw_avail_to_controller";
 				}
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::add_fusion_ledger_entry`]."]
-				pub fn add_fusion_ledger_entry(
+				#[doc = "See [`Pallet::deposit_currency_dummy`]."]
+				pub fn deposit_currency_dummy(
 					&self,
-					evm_address: types::add_fusion_ledger_entry::EvmAddress,
-					amount: types::add_fusion_ledger_entry::Amount,
-				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::AddFusionLedgerEntry>
+					evm_address: types::deposit_currency_dummy::EvmAddress,
+					currency_id: types::deposit_currency_dummy::CurrencyId,
+					amount: types::deposit_currency_dummy::Amount,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::DepositCurrencyDummy>
 				{
 					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
 						"Fusion",
-						"add_fusion_ledger_entry",
-						types::AddFusionLedgerEntry {
+						"deposit_currency_dummy",
+						types::DepositCurrencyDummy {
 							evm_address,
+							currency_id,
 							amount,
 						},
 						[
-							126u8, 157u8, 108u8, 185u8, 236u8, 103u8, 95u8, 184u8, 207u8, 139u8,
-							76u8, 1u8, 228u8, 213u8, 60u8, 107u8, 39u8, 62u8, 17u8, 136u8, 204u8,
-							122u8, 184u8, 253u8, 103u8, 114u8, 206u8, 52u8, 68u8, 58u8, 179u8,
-							118u8,
+							147u8, 49u8, 72u8, 214u8, 230u8, 55u8, 241u8, 186u8, 4u8, 195u8, 15u8,
+							158u8, 195u8, 62u8, 148u8, 17u8, 218u8, 51u8, 164u8, 151u8, 201u8,
+							222u8, 66u8, 203u8, 138u8, 148u8, 126u8, 107u8, 249u8, 148u8, 153u8,
+							208u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_total_in_ledgers`]."]
-				pub fn set_total_in_ledgers(
+				#[doc = "See [`Pallet::dummy_slash`]."]
+				pub fn dummy_slash(
 					&self,
-					total: types::set_total_in_ledgers::Total,
-				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::SetTotalInLedgers>
-				{
+					who: types::dummy_slash::Who,
+					bonded_amount: types::dummy_slash::BondedAmount,
+					slashed_amount: types::dummy_slash::SlashedAmount,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::DummySlash> {
 					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
 						"Fusion",
-						"set_total_in_ledgers",
-						types::SetTotalInLedgers { total },
-						[
-							61u8, 66u8, 65u8, 169u8, 201u8, 123u8, 217u8, 58u8, 178u8, 81u8, 217u8,
-							133u8, 147u8, 183u8, 175u8, 99u8, 37u8, 52u8, 61u8, 156u8, 54u8, 166u8,
-							99u8, 215u8, 122u8, 145u8, 181u8, 36u8, 63u8, 233u8, 86u8, 230u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::claim_era_fusion_reward`]."]
-				pub fn claim_era_fusion_reward(
-					&self,
-					era: types::claim_era_fusion_reward::Era,
-				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::ClaimEraFusionReward>
-				{
-					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
-						"Fusion",
-						"claim_era_fusion_reward",
-						types::ClaimEraFusionReward { era },
-						[
-							212u8, 132u8, 24u8, 43u8, 82u8, 215u8, 194u8, 176u8, 27u8, 94u8, 26u8,
-							96u8, 12u8, 189u8, 66u8, 249u8, 71u8, 97u8, 106u8, 31u8, 224u8, 180u8,
-							77u8, 168u8, 152u8, 254u8, 234u8, 48u8, 37u8, 223u8, 97u8, 222u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::set_fusion_pool`]."]
-				pub fn set_fusion_pool(
-					&self,
-					owner: types::set_fusion_pool::Owner,
-					members: types::set_fusion_pool::Members,
-					targets: types::set_fusion_pool::Targets,
-				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::SetFusionPool> {
-					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
-						"Fusion",
-						"set_fusion_pool",
-						types::SetFusionPool {
-							owner,
-							members,
-							targets,
+						"dummy_slash",
+						types::DummySlash {
+							who,
+							bonded_amount,
+							slashed_amount,
 						},
 						[
-							92u8, 12u8, 74u8, 14u8, 112u8, 121u8, 188u8, 244u8, 24u8, 231u8, 101u8,
-							70u8, 221u8, 61u8, 162u8, 179u8, 80u8, 6u8, 193u8, 12u8, 73u8, 42u8,
-							156u8, 103u8, 210u8, 194u8, 180u8, 212u8, 22u8, 83u8, 178u8, 114u8,
+							141u8, 5u8, 73u8, 134u8, 97u8, 60u8, 85u8, 60u8, 223u8, 68u8, 136u8,
+							250u8, 22u8, 195u8, 247u8, 127u8, 32u8, 161u8, 10u8, 150u8, 127u8,
+							143u8, 119u8, 182u8, 94u8, 96u8, 248u8, 55u8, 108u8, 214u8, 155u8,
+							200u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::pause`]."]
+				pub fn pause(
+					&self,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::Pause> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"pause",
+						types::Pause {},
+						[
+							255u8, 36u8, 87u8, 234u8, 18u8, 57u8, 199u8, 34u8, 254u8, 139u8, 119u8,
+							31u8, 150u8, 185u8, 168u8, 124u8, 23u8, 191u8, 122u8, 205u8, 18u8,
+							71u8, 153u8, 98u8, 182u8, 190u8, 89u8, 44u8, 10u8, 228u8, 185u8, 243u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::fill_funds_account`]."]
+				pub fn fill_funds_account(
+					&self,
+					amount: types::fill_funds_account::Amount,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::FillFundsAccount> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"fill_funds_account",
+						types::FillFundsAccount { amount },
+						[
+							1u8, 93u8, 186u8, 74u8, 77u8, 19u8, 89u8, 160u8, 25u8, 103u8, 169u8,
+							106u8, 228u8, 199u8, 89u8, 194u8, 248u8, 133u8, 70u8, 2u8, 137u8, 35u8,
+							170u8, 138u8, 112u8, 195u8, 96u8, 54u8, 151u8, 13u8, 58u8, 250u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::create_currency`]."]
+				pub fn create_currency(
+					&self,
+					currency_id: types::create_currency::CurrencyId,
+					name: types::create_currency::Name,
+					nb_decimals: types::create_currency::NbDecimals,
+					max_amount: types::create_currency::MaxAmount,
+					min_amount: types::create_currency::MinAmount,
+					initial_conversion_rate: types::create_currency::InitialConversionRate,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::CreateCurrency> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"create_currency",
+						types::CreateCurrency {
+							currency_id,
+							name,
+							nb_decimals,
+							max_amount,
+							min_amount,
+							initial_conversion_rate,
+						},
+						[
+							63u8, 91u8, 129u8, 34u8, 87u8, 214u8, 98u8, 237u8, 233u8, 171u8, 6u8,
+							211u8, 113u8, 36u8, 124u8, 79u8, 167u8, 38u8, 229u8, 84u8, 154u8, 37u8,
+							124u8, 17u8, 121u8, 194u8, 204u8, 110u8, 151u8, 71u8, 93u8, 210u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::set_currency`]."]
+				pub fn set_currency(
+					&self,
+					currency_id: types::set_currency::CurrencyId,
+					name: types::set_currency::Name,
+					max_amount: types::set_currency::MaxAmount,
+					min_amount: types::set_currency::MinAmount,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::SetCurrency> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"set_currency",
+						types::SetCurrency {
+							currency_id,
+							name,
+							max_amount,
+							min_amount,
+						},
+						[
+							33u8, 73u8, 22u8, 181u8, 124u8, 196u8, 195u8, 3u8, 122u8, 227u8, 28u8,
+							170u8, 228u8, 44u8, 24u8, 3u8, 190u8, 168u8, 193u8, 60u8, 155u8, 136u8,
+							0u8, 250u8, 189u8, 110u8, 201u8, 43u8, 33u8, 132u8, 189u8, 50u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::delete_currency`]."]
+				pub fn delete_currency(
+					&self,
+					currency_id: types::delete_currency::CurrencyId,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::DeleteCurrency> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"delete_currency",
+						types::DeleteCurrency { currency_id },
+						[
+							89u8, 105u8, 51u8, 145u8, 68u8, 8u8, 240u8, 95u8, 47u8, 169u8, 75u8,
+							95u8, 76u8, 52u8, 5u8, 157u8, 232u8, 157u8, 98u8, 247u8, 25u8, 87u8,
+							4u8, 41u8, 233u8, 69u8, 81u8, 98u8, 119u8, 24u8, 97u8, 244u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::set_currency_conversion_rate`]."]
+				pub fn set_currency_conversion_rate(
+					&self,
+					currency_id: types::set_currency_conversion_rate::CurrencyId,
+					conversion_rate: types::set_currency_conversion_rate::ConversionRate,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<
+					types::SetCurrencyConversionRate,
+				> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"set_currency_conversion_rate",
+						types::SetCurrencyConversionRate {
+							currency_id,
+							conversion_rate,
+						},
+						[
+							112u8, 148u8, 152u8, 86u8, 106u8, 22u8, 176u8, 196u8, 67u8, 171u8,
+							209u8, 162u8, 49u8, 134u8, 130u8, 3u8, 175u8, 58u8, 14u8, 249u8, 161u8,
+							75u8, 236u8, 14u8, 89u8, 23u8, 54u8, 41u8, 93u8, 130u8, 20u8, 245u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::create_pool`]."]
+				pub fn create_pool(
+					&self,
+					pool_id: types::create_pool::PoolId,
+					currency_id: types::create_pool::CurrencyId,
+					apy: types::create_pool::Apy,
+					nominator: types::create_pool::Nominator,
+					with_reward_account: types::create_pool::WithRewardAccount,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::CreatePool> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"create_pool",
+						types::CreatePool {
+							pool_id,
+							currency_id,
+							apy,
+							nominator,
+							with_reward_account,
+						},
+						[
+							99u8, 100u8, 194u8, 227u8, 90u8, 21u8, 73u8, 167u8, 136u8, 253u8,
+							202u8, 84u8, 250u8, 248u8, 36u8, 64u8, 41u8, 38u8, 65u8, 81u8, 154u8,
+							246u8, 41u8, 248u8, 28u8, 33u8, 235u8, 183u8, 49u8, 126u8, 85u8, 119u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::set_pool`]."]
+				pub fn set_pool(
+					&self,
+					pool_id: types::set_pool::PoolId,
+					apy: types::set_pool::Apy,
+					state: types::set_pool::State,
+					nominator: types::set_pool::Nominator,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::SetPool> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"set_pool",
+						types::SetPool {
+							pool_id,
+							apy,
+							state,
+							nominator,
+						},
+						[
+							11u8, 102u8, 90u8, 0u8, 219u8, 117u8, 121u8, 29u8, 180u8, 68u8, 123u8,
+							34u8, 126u8, 51u8, 143u8, 25u8, 7u8, 236u8, 158u8, 127u8, 227u8, 93u8,
+							112u8, 249u8, 84u8, 166u8, 192u8, 53u8, 252u8, 61u8, 244u8, 62u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::delete_pool`]."]
+				pub fn delete_pool(
+					&self,
+					pool_id: types::delete_pool::PoolId,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::DeletePool> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"delete_pool",
+						types::DeletePool { pool_id },
+						[
+							24u8, 138u8, 63u8, 218u8, 248u8, 137u8, 119u8, 100u8, 224u8, 80u8,
+							167u8, 94u8, 79u8, 236u8, 201u8, 216u8, 163u8, 0u8, 119u8, 170u8,
+							161u8, 101u8, 105u8, 234u8, 142u8, 156u8, 158u8, 75u8, 105u8, 89u8,
+							170u8, 238u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::nominate`]."]
+				pub fn nominate(
+					&self,
+					pool_id: types::nominate::PoolId,
+					targets: types::nominate::Targets,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::Nominate> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"nominate",
+						types::Nominate { pool_id, targets },
+						[
+							189u8, 213u8, 124u8, 190u8, 46u8, 229u8, 113u8, 188u8, 108u8, 135u8,
+							123u8, 23u8, 191u8, 250u8, 250u8, 10u8, 245u8, 205u8, 149u8, 54u8,
+							23u8, 70u8, 25u8, 18u8, 213u8, 163u8, 234u8, 115u8, 200u8, 228u8, 67u8,
+							255u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::kick_user`]."]
+				pub fn kick_user(
+					&self,
+					evm_address: types::kick_user::EvmAddress,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::KickUser> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"kick_user",
+						types::KickUser { evm_address },
+						[
+							77u8, 159u8, 178u8, 144u8, 185u8, 49u8, 132u8, 54u8, 143u8, 73u8, 91u8,
+							62u8, 163u8, 159u8, 160u8, 172u8, 148u8, 89u8, 138u8, 190u8, 251u8,
+							145u8, 56u8, 145u8, 4u8, 211u8, 181u8, 121u8, 107u8, 250u8, 74u8, 88u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::set_controller_address`]."]
+				pub fn set_controller_address(
+					&self,
+					evm_address: types::set_controller_address::EvmAddress,
+					new_controller_address: types::set_controller_address::NewControllerAddress,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::SetControllerAddress>
+				{
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"set_controller_address",
+						types::SetControllerAddress {
+							evm_address,
+							new_controller_address,
+						},
+						[
+							118u8, 137u8, 188u8, 112u8, 200u8, 41u8, 96u8, 83u8, 225u8, 90u8, 47u8,
+							205u8, 238u8, 134u8, 47u8, 97u8, 100u8, 10u8, 165u8, 255u8, 29u8, 72u8,
+							132u8, 235u8, 74u8, 229u8, 146u8, 25u8, 166u8, 124u8, 92u8, 228u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::set_slash_destination`]."]
+				pub fn set_slash_destination(
+					&self,
+					evm_address: types::set_slash_destination::EvmAddress,
+					controller_address: types::set_slash_destination::ControllerAddress,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::SetSlashDestination>
+				{
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"set_slash_destination",
+						types::SetSlashDestination {
+							evm_address,
+							controller_address,
+						},
+						[
+							170u8, 98u8, 216u8, 242u8, 125u8, 12u8, 214u8, 148u8, 179u8, 21u8,
+							65u8, 251u8, 246u8, 20u8, 43u8, 7u8, 143u8, 72u8, 29u8, 58u8, 204u8,
+							192u8, 89u8, 252u8, 58u8, 118u8, 245u8, 250u8, 88u8, 246u8, 23u8, 33u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::cancel_slash`]."]
+				pub fn cancel_slash(
+					&self,
+					slash_index: types::cancel_slash::SlashIndex,
+					pool_id: types::cancel_slash::PoolId,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::CancelSlash> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"cancel_slash",
+						types::CancelSlash {
+							slash_index,
+							pool_id,
+						},
+						[
+							133u8, 107u8, 15u8, 223u8, 210u8, 240u8, 200u8, 252u8, 239u8, 234u8,
+							243u8, 86u8, 171u8, 90u8, 48u8, 187u8, 154u8, 140u8, 248u8, 29u8, 50u8,
+							206u8, 212u8, 173u8, 157u8, 114u8, 41u8, 64u8, 219u8, 161u8, 119u8,
+							223u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::apply_slash`]."]
+				pub fn apply_slash(
+					&self,
+					slash_index: types::apply_slash::SlashIndex,
+					pool_id: types::apply_slash::PoolId,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::ApplySlash> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"apply_slash",
+						types::ApplySlash {
+							slash_index,
+							pool_id,
+						},
+						[
+							99u8, 253u8, 214u8, 0u8, 66u8, 84u8, 234u8, 142u8, 158u8, 143u8, 255u8,
+							214u8, 109u8, 42u8, 22u8, 220u8, 96u8, 80u8, 31u8, 31u8, 30u8, 165u8,
+							44u8, 188u8, 92u8, 249u8, 164u8, 33u8, 252u8, 2u8, 12u8, 241u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::set_compounding`]."]
+				pub fn set_compounding(
+					&self,
+					evm_address: types::set_compounding::EvmAddress,
+					pool_id: types::set_compounding::PoolId,
+					compound: types::set_compounding::Compound,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::SetCompounding> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"set_compounding",
+						types::SetCompounding {
+							evm_address,
+							pool_id,
+							compound,
+						},
+						[
+							180u8, 19u8, 248u8, 251u8, 174u8, 28u8, 86u8, 101u8, 108u8, 144u8,
+							170u8, 174u8, 72u8, 101u8, 237u8, 55u8, 228u8, 73u8, 226u8, 68u8, 81u8,
+							138u8, 119u8, 143u8, 239u8, 45u8, 141u8, 209u8, 58u8, 84u8, 45u8,
+							189u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::stake`]."]
+				pub fn stake(
+					&self,
+					evm_address: types::stake::EvmAddress,
+					pool_id: types::stake::PoolId,
+					amount: types::stake::Amount,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::Stake> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"stake",
+						types::Stake {
+							evm_address,
+							pool_id,
+							amount,
+						},
+						[
+							114u8, 7u8, 118u8, 36u8, 141u8, 119u8, 93u8, 32u8, 124u8, 161u8, 233u8,
+							89u8, 182u8, 120u8, 186u8, 117u8, 88u8, 190u8, 199u8, 231u8, 208u8,
+							107u8, 228u8, 237u8, 70u8, 4u8, 239u8, 115u8, 36u8, 224u8, 135u8,
+							167u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::claim_rewards`]."]
+				pub fn claim_rewards(
+					&self,
+					era: types::claim_rewards::Era,
+					pool_id: types::claim_rewards::PoolId,
+					evm_address: types::claim_rewards::EvmAddress,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::ClaimRewards> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"claim_rewards",
+						types::ClaimRewards {
+							era,
+							pool_id,
+							evm_address,
+						},
+						[
+							220u8, 176u8, 153u8, 66u8, 214u8, 190u8, 131u8, 51u8, 92u8, 95u8, 71u8,
+							76u8, 106u8, 222u8, 169u8, 244u8, 179u8, 152u8, 220u8, 12u8, 38u8,
+							216u8, 255u8, 129u8, 1u8, 26u8, 204u8, 163u8, 193u8, 133u8, 12u8, 19u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::unbond_currency`]."]
+				pub fn unbond_currency(
+					&self,
+					evm_address: types::unbond_currency::EvmAddress,
+					pool_id: types::unbond_currency::PoolId,
+					unbond_amount: types::unbond_currency::UnbondAmount,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::UnbondCurrency> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"unbond_currency",
+						types::UnbondCurrency {
+							evm_address,
+							pool_id,
+							unbond_amount,
+						},
+						[
+							158u8, 4u8, 250u8, 153u8, 113u8, 242u8, 247u8, 133u8, 96u8, 165u8,
+							112u8, 204u8, 118u8, 140u8, 108u8, 51u8, 220u8, 219u8, 126u8, 184u8,
+							139u8, 156u8, 16u8, 89u8, 150u8, 69u8, 33u8, 247u8, 93u8, 157u8, 19u8,
+							211u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::withdraw_unbonded_currency`]."]
+				pub fn withdraw_unbonded_currency(
+					&self,
+					evm_address: types::withdraw_unbonded_currency::EvmAddress,
+					pool_id: types::withdraw_unbonded_currency::PoolId,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<
+					types::WithdrawUnbondedCurrency,
+				> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"withdraw_unbonded_currency",
+						types::WithdrawUnbondedCurrency {
+							evm_address,
+							pool_id,
+						},
+						[
+							119u8, 85u8, 44u8, 156u8, 172u8, 128u8, 157u8, 171u8, 163u8, 151u8,
+							40u8, 187u8, 125u8, 19u8, 94u8, 150u8, 184u8, 171u8, 173u8, 197u8,
+							77u8, 36u8, 95u8, 8u8, 52u8, 86u8, 17u8, 146u8, 226u8, 97u8, 79u8,
+							90u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::unbond_currency_other`]."]
+				pub fn unbond_currency_other(
+					&self,
+					evm_address: types::unbond_currency_other::EvmAddress,
+					pool_id: types::unbond_currency_other::PoolId,
+					unbond_amount: types::unbond_currency_other::UnbondAmount,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::UnbondCurrencyOther>
+				{
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"unbond_currency_other",
+						types::UnbondCurrencyOther {
+							evm_address,
+							pool_id,
+							unbond_amount,
+						},
+						[
+							217u8, 134u8, 247u8, 200u8, 69u8, 252u8, 163u8, 222u8, 38u8, 235u8,
+							71u8, 199u8, 85u8, 176u8, 204u8, 111u8, 201u8, 123u8, 10u8, 70u8, 99u8,
+							0u8, 230u8, 83u8, 171u8, 100u8, 69u8, 75u8, 66u8, 57u8, 16u8, 32u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::withdraw_unbonded_currency_other`]."]
+				pub fn withdraw_unbonded_currency_other(
+					&self,
+					evm_address: types::withdraw_unbonded_currency_other::EvmAddress,
+					pool_id: types::withdraw_unbonded_currency_other::PoolId,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<
+					types::WithdrawUnbondedCurrencyOther,
+				> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"withdraw_unbonded_currency_other",
+						types::WithdrawUnbondedCurrencyOther {
+							evm_address,
+							pool_id,
+						},
+						[
+							124u8, 238u8, 86u8, 52u8, 22u8, 247u8, 225u8, 24u8, 200u8, 171u8,
+							113u8, 120u8, 63u8, 183u8, 168u8, 184u8, 129u8, 32u8, 86u8, 183u8,
+							23u8, 51u8, 208u8, 92u8, 186u8, 167u8, 249u8, 15u8, 157u8, 174u8, 53u8,
+							131u8,
+						],
+					)
+				}
+				#[doc = "See [`Pallet::withdraw_avail_to_controller`]."]
+				pub fn withdraw_avail_to_controller(
+					&self,
+					evm_address: types::withdraw_avail_to_controller::EvmAddress,
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<
+					types::WithdrawAvailToController,
+				> {
+					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
+						"Fusion",
+						"withdraw_avail_to_controller",
+						types::WithdrawAvailToController { evm_address },
+						[
+							83u8, 125u8, 134u8, 213u8, 97u8, 96u8, 89u8, 222u8, 27u8, 242u8, 12u8,
+							69u8, 83u8, 106u8, 68u8, 215u8, 30u8, 73u8, 46u8, 93u8, 51u8, 117u8,
+							216u8, 131u8, 13u8, 129u8, 40u8, 139u8, 88u8, 27u8, 128u8, 52u8,
 						],
 					)
 				}
@@ -27085,21 +28220,172 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
-			#[doc = "A new entry was added in the FusionLedgers"]
-			pub struct FusionLedgerEntryAdded {
-				pub evm_address: fusion_ledger_entry_added::EvmAddress,
-				pub amount: fusion_ledger_entry_added::Amount,
-				pub start_era: fusion_ledger_entry_added::StartEra,
+			#[doc = "Event triggered when the funding account is filled with new funds"]
+			pub struct FundsAccountFilled {
+				pub sender: funds_account_filled::Sender,
+				pub amount: funds_account_filled::Amount,
 			}
-			pub mod fusion_ledger_entry_added {
+			pub mod funds_account_filled {
 				use super::runtime_types;
+				pub type Sender = ::subxt::ext::subxt_core::utils::AccountId32;
+				pub type Amount = ::core::primitive::u128;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for FundsAccountFilled {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "FundsAccountFilled";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when a new currency is created"]
+			pub struct CurrencyCreated {
+				pub currency_id: currency_created::CurrencyId,
+				pub name: currency_created::Name,
+				pub nb_decimals: currency_created::NbDecimals,
+				pub max_amount: currency_created::MaxAmount,
+				pub min_amount: currency_created::MinAmount,
+				pub initial_conversion_rate: currency_created::InitialConversionRate,
+			}
+			pub mod currency_created {
+				use super::runtime_types;
+				pub type CurrencyId = ::core::primitive::u32;
+				pub type Name = runtime_types::bounded_collections::bounded_vec::BoundedVec<
+					::core::primitive::u8,
+				>;
+				pub type NbDecimals = ::core::primitive::u8;
+				pub type MaxAmount = ::core::primitive::u128;
+				pub type MinAmount = ::core::primitive::u128;
+				pub type InitialConversionRate = ::core::primitive::u128;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for CurrencyCreated {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "CurrencyCreated";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when a currency's properties are updated"]
+			pub struct CurrencySet {
+				pub currency_id: currency_set::CurrencyId,
+				pub name: currency_set::Name,
+				pub max_amount: currency_set::MaxAmount,
+				pub min_amount: currency_set::MinAmount,
+			}
+			pub mod currency_set {
+				use super::runtime_types;
+				pub type CurrencyId = ::core::primitive::u32;
+				pub type Name = ::core::option::Option<
+					runtime_types::bounded_collections::bounded_vec::BoundedVec<
+						::core::primitive::u8,
+					>,
+				>;
+				pub type MaxAmount = ::core::option::Option<::core::primitive::u128>;
+				pub type MinAmount = ::core::option::Option<::core::primitive::u128>;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for CurrencySet {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "CurrencySet";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when a currency is deleted"]
+			pub struct CurrencyDeleted {
+				pub currency_id: currency_deleted::CurrencyId,
+			}
+			pub mod currency_deleted {
+				use super::runtime_types;
+				pub type CurrencyId = ::core::primitive::u32;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for CurrencyDeleted {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "CurrencyDeleted";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when a conversion rate is set for a currency"]
+			pub struct CurrencyConversionRateSet {
+				pub currency_id: currency_conversion_rate_set::CurrencyId,
+				pub conversion_rate: currency_conversion_rate_set::ConversionRate,
+			}
+			pub mod currency_conversion_rate_set {
+				use super::runtime_types;
+				pub type CurrencyId = ::core::primitive::u32;
+				pub type ConversionRate = ::core::primitive::u128;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for CurrencyConversionRateSet {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "CurrencyConversionRateSet";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when a currency is deposited into the system"]
+			pub struct CurrencyDeposited {
+				pub currency_id: currency_deposited::CurrencyId,
+				pub evm_address: currency_deposited::EvmAddress,
+				pub amount: currency_deposited::Amount,
+			}
+			pub mod currency_deposited {
+				use super::runtime_types;
+				pub type CurrencyId = ::core::primitive::u32;
 				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
 				pub type Amount = ::core::primitive::u128;
-				pub type StartEra = ::core::primitive::u32;
 			}
-			impl ::subxt::ext::subxt_core::events::StaticEvent for FusionLedgerEntryAdded {
+			impl ::subxt::ext::subxt_core::events::StaticEvent for CurrencyDeposited {
 				const PALLET: &'static str = "Fusion";
-				const EVENT: &'static str = "FusionLedgerEntryAdded";
+				const EVENT: &'static str = "CurrencyDeposited";
 			}
 			#[derive(
 				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
@@ -27114,44 +28400,27 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
-			#[doc = "Total in ledgers has been updated"]
-			pub struct FusionLedgerTotalUpdated {
-				pub total: fusion_ledger_total_updated::Total,
+			#[doc = "Event triggered when a user unbonds currency from a pool"]
+			pub struct CurrencyUnbonded {
+				pub pool_id: currency_unbonded::PoolId,
+				pub currency_id: currency_unbonded::CurrencyId,
+				pub evm_address: currency_unbonded::EvmAddress,
+				pub unbonded_amount: currency_unbonded::UnbondedAmount,
+				pub points: currency_unbonded::Points,
+				pub era: currency_unbonded::Era,
 			}
-			pub mod fusion_ledger_total_updated {
+			pub mod currency_unbonded {
 				use super::runtime_types;
-				pub type Total = ::core::primitive::u128;
-			}
-			impl ::subxt::ext::subxt_core::events::StaticEvent for FusionLedgerTotalUpdated {
-				const PALLET: &'static str = "Fusion";
-				const EVENT: &'static str = "FusionLedgerTotalUpdated";
-			}
-			#[derive(
-				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
-				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
-				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
-			#[doc = "The Fusion part of payout was insterted in the Fusion storage"]
-			pub struct EraFusionRewardInserted {
-				pub era: era_fusion_reward_inserted::Era,
-				pub reward: era_fusion_reward_inserted::Reward,
-			}
-			pub mod era_fusion_reward_inserted {
-				use super::runtime_types;
+				pub type PoolId = ::core::primitive::u32;
+				pub type CurrencyId = ::core::primitive::u32;
+				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type UnbondedAmount = ::core::primitive::u128;
+				pub type Points = ::core::primitive::u128;
 				pub type Era = ::core::primitive::u32;
-				pub type Reward = ::core::primitive::u128;
 			}
-			impl ::subxt::ext::subxt_core::events::StaticEvent for EraFusionRewardInserted {
+			impl ::subxt::ext::subxt_core::events::StaticEvent for CurrencyUnbonded {
 				const PALLET: &'static str = "Fusion";
-				const EVENT: &'static str = "EraFusionRewardInserted";
+				const EVENT: &'static str = "CurrencyUnbonded";
 			}
 			#[derive(
 				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
@@ -27166,23 +28435,23 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
-			#[doc = "A reward was claimed from the Era Fusion Reward storage"]
-			pub struct EraFusionRewardClaimed {
-				pub who: era_fusion_reward_claimed::Who,
-				pub owner_account: era_fusion_reward_claimed::OwnerAccount,
-				pub era: era_fusion_reward_claimed::Era,
-				pub reward: era_fusion_reward_claimed::Reward,
+			#[doc = "Event triggered when a user withdraws unbonded currency"]
+			pub struct CurrencyWithdrawn {
+				pub pool_id: currency_withdrawn::PoolId,
+				pub currency_id: currency_withdrawn::CurrencyId,
+				pub evm_address: currency_withdrawn::EvmAddress,
+				pub amount: currency_withdrawn::Amount,
 			}
-			pub mod era_fusion_reward_claimed {
+			pub mod currency_withdrawn {
 				use super::runtime_types;
-				pub type Who = ::subxt::ext::subxt_core::utils::AccountId32;
-				pub type OwnerAccount = ::subxt::ext::subxt_core::utils::AccountId32;
-				pub type Era = ::core::primitive::u32;
-				pub type Reward = ::core::primitive::u128;
+				pub type PoolId = ::core::primitive::u32;
+				pub type CurrencyId = ::core::primitive::u32;
+				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type Amount = ::core::primitive::u128;
 			}
-			impl ::subxt::ext::subxt_core::events::StaticEvent for EraFusionRewardClaimed {
+			impl ::subxt::ext::subxt_core::events::StaticEvent for CurrencyWithdrawn {
 				const PALLET: &'static str = "Fusion";
-				const EVENT: &'static str = "EraFusionRewardClaimed";
+				const EVENT: &'static str = "CurrencyWithdrawn";
 			}
 			#[derive(
 				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
@@ -27197,186 +28466,1482 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
-			#[doc = "The Fusion Pool has been updated"]
-			pub struct FusionPoolUpdated {
-				pub owner: fusion_pool_updated::Owner,
-				pub members: fusion_pool_updated::Members,
-				pub targets: fusion_pool_updated::Targets,
+			#[doc = "Event triggered when the controller address for a user is changed"]
+			pub struct ControllerAddressSet {
+				pub evm_address: controller_address_set::EvmAddress,
+				pub new_controller_address: controller_address_set::NewControllerAddress,
 			}
-			pub mod fusion_pool_updated {
+			pub mod controller_address_set {
 				use super::runtime_types;
-				pub type Owner = ::subxt::ext::subxt_core::utils::AccountId32;
-				pub type Members = runtime_types::bounded_collections::bounded_vec::BoundedVec<
-					::subxt::ext::subxt_core::utils::H160,
+				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type NewControllerAddress =
+					::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for ControllerAddressSet {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "ControllerAddressSet";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when the Evm address and controller address are set for the Slash destination"]
+			pub struct SlashDestinationSet {
+				pub evm_address: slash_destination_set::EvmAddress,
+				pub controller_address: slash_destination_set::ControllerAddress,
+			}
+			pub mod slash_destination_set {
+				use super::runtime_types;
+				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type ControllerAddress =
+					::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for SlashDestinationSet {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "SlashDestinationSet";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when the compounding value is changed for a pool member"]
+			pub struct CompoundingSet {
+				pub pool_id: compounding_set::PoolId,
+				pub evm_address: compounding_set::EvmAddress,
+				pub compound: compounding_set::Compound,
+			}
+			pub mod compounding_set {
+				use super::runtime_types;
+				pub type PoolId = ::core::primitive::u32;
+				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type Compound = ::core::primitive::bool;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for CompoundingSet {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "CompoundingSet";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when a new Fusion pool is created"]
+			pub struct PoolCreated {
+				pub pool_id: pool_created::PoolId,
+				pub currency_id: pool_created::CurrencyId,
+				pub apy: pool_created::Apy,
+				pub state: pool_created::State,
+				pub nominator: pool_created::Nominator,
+				pub reward_account: pool_created::RewardAccount,
+			}
+			pub mod pool_created {
+				use super::runtime_types;
+				pub type PoolId = ::core::primitive::u32;
+				pub type CurrencyId = ::core::primitive::u32;
+				pub type Apy = runtime_types::sp_arithmetic::per_things::Perbill;
+				pub type State = runtime_types::pallet_fusion::types::FusionPoolState;
+				pub type Nominator =
+					::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>;
+				pub type RewardAccount =
+					::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for PoolCreated {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "PoolCreated";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when a Fusion pool's properties are updated"]
+			pub struct PoolSet {
+				pub pool_id: pool_set::PoolId,
+				pub apy: pool_set::Apy,
+				pub state: pool_set::State,
+				pub nominator: pool_set::Nominator,
+			}
+			pub mod pool_set {
+				use super::runtime_types;
+				pub type PoolId = ::core::primitive::u32;
+				pub type Apy =
+					::core::option::Option<runtime_types::sp_arithmetic::per_things::Perbill>;
+				pub type State =
+					::core::option::Option<runtime_types::pallet_fusion::types::FusionPoolState>;
+				pub type Nominator = ::core::option::Option<
+					::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
 				>;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for PoolSet {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "PoolSet";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when a user joins a pool"]
+			pub struct PoolJoined {
+				pub pool_id: pool_joined::PoolId,
+				pub evm_address: pool_joined::EvmAddress,
+				pub currency_id: pool_joined::CurrencyId,
+				pub amount: pool_joined::Amount,
+				pub points: pool_joined::Points,
+			}
+			pub mod pool_joined {
+				use super::runtime_types;
+				pub type PoolId = ::core::primitive::u32;
+				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type CurrencyId = ::core::primitive::u32;
+				pub type Amount = ::core::primitive::u128;
+				pub type Points = ::core::primitive::u128;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for PoolJoined {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "PoolJoined";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when a user bonds extra currency into a pool"]
+			pub struct PoolBondExtra {
+				pub pool_id: pool_bond_extra::PoolId,
+				pub evm_address: pool_bond_extra::EvmAddress,
+				pub currency_id: pool_bond_extra::CurrencyId,
+				pub amount: pool_bond_extra::Amount,
+				pub points: pool_bond_extra::Points,
+			}
+			pub mod pool_bond_extra {
+				use super::runtime_types;
+				pub type PoolId = ::core::primitive::u32;
+				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type CurrencyId = ::core::primitive::u32;
+				pub type Amount = ::core::primitive::u128;
+				pub type Points = ::core::primitive::u128;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for PoolBondExtra {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "PoolBondExtra";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when a user's pool membership is removed"]
+			pub struct PoolMembershipRemoved {
+				pub pool_id: pool_membership_removed::PoolId,
+				pub evm_address: pool_membership_removed::EvmAddress,
+			}
+			pub mod pool_membership_removed {
+				use super::runtime_types;
+				pub type PoolId = ::core::primitive::u32;
+				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for PoolMembershipRemoved {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "PoolMembershipRemoved";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when a pool is deleted"]
+			pub struct PoolDeleted {
+				pub pool_id: pool_deleted::PoolId,
+			}
+			pub mod pool_deleted {
+				use super::runtime_types;
+				pub type PoolId = ::core::primitive::u32;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for PoolDeleted {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "PoolDeleted";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when a pool state was changed to destroying"]
+			pub struct PoolDestroying {
+				pub pool_id: pool_destroying::PoolId,
+			}
+			pub mod pool_destroying {
+				use super::runtime_types;
+				pub type PoolId = ::core::primitive::u32;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for PoolDestroying {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "PoolDestroying";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when a pool nominates a list of targets (validators)"]
+			pub struct Nominated {
+				pub pool_id: nominated::PoolId,
+				pub targets: nominated::Targets,
+			}
+			pub mod nominated {
+				use super::runtime_types;
+				pub type PoolId = ::core::primitive::u32;
 				pub type Targets = runtime_types::bounded_collections::bounded_vec::BoundedVec<
 					::subxt::ext::subxt_core::utils::AccountId32,
 				>;
 			}
-			impl ::subxt::ext::subxt_core::events::StaticEvent for FusionPoolUpdated {
+			impl ::subxt::ext::subxt_core::events::StaticEvent for Nominated {
 				const PALLET: &'static str = "Fusion";
-				const EVENT: &'static str = "FusionPoolUpdated";
+				const EVENT: &'static str = "Nominated";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when unclaimed rewards are sent to the remainder"]
+			pub struct RewardRemainderSent {
+				pub amount: reward_remainder_sent::Amount,
+			}
+			pub mod reward_remainder_sent {
+				use super::runtime_types;
+				pub type Amount = ::core::primitive::u128;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for RewardRemainderSent {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "RewardRemainderSent";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when rewards are set for an era"]
+			pub struct RewardSet {
+				pub era: reward_set::Era,
+				pub pools: reward_set::Pools,
+				pub total_rewarded_internal: reward_set::TotalRewardedInternal,
+				pub total_rewarded_external: reward_set::TotalRewardedExternal,
+			}
+			pub mod reward_set {
+				use super::runtime_types;
+				pub type Era = ::core::primitive::u32;
+				pub type Pools = ::subxt::ext::subxt_core::alloc::vec::Vec<::core::primitive::u32>;
+				pub type TotalRewardedInternal = ::core::primitive::u128;
+				pub type TotalRewardedExternal = ::core::primitive::u128;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for RewardSet {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "RewardSet";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when a user claims rewards for a pool and era"]
+			pub struct RewardClaimed {
+				pub pool_id: reward_claimed::PoolId,
+				pub evm_address: reward_claimed::EvmAddress,
+				pub era: reward_claimed::Era,
+				pub reward: reward_claimed::Reward,
+			}
+			pub mod reward_claimed {
+				use super::runtime_types;
+				pub type PoolId = ::core::primitive::u32;
+				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type Era = ::core::primitive::u32;
+				pub type Reward = ::core::primitive::u128;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for RewardClaimed {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "RewardClaimed";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when exposures are set for an era"]
+			pub struct ExposuresSet {
+				pub era: exposures_set::Era,
+			}
+			pub mod exposures_set {
+				use super::runtime_types;
+				pub type Era = ::core::primitive::u32;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for ExposuresSet {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "ExposuresSet";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when AVAIL is withdrawn to the controller account"]
+			pub struct AvailWithdrawnToController {
+				pub evm_address: avail_withdrawn_to_controller::EvmAddress,
+				pub controller: avail_withdrawn_to_controller::Controller,
+				pub amount: avail_withdrawn_to_controller::Amount,
+			}
+			pub mod avail_withdrawn_to_controller {
+				use super::runtime_types;
+				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type Controller = ::subxt::ext::subxt_core::utils::AccountId32;
+				pub type Amount = ::core::primitive::u128;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for AvailWithdrawnToController {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "AvailWithdrawnToController";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when the Fusion pallet is paused."]
+			pub struct FusionPaused;
+			impl ::subxt::ext::subxt_core::events::StaticEvent for FusionPaused {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "FusionPaused";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Event triggered when the Fusion pallet is unpaused."]
+			pub struct FusionUnpaused;
+			impl ::subxt::ext::subxt_core::events::StaticEvent for FusionUnpaused {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "FusionUnpaused";
 			}
 		}
 		pub mod storage {
 			use super::runtime_types;
 			pub mod types {
 				use super::runtime_types;
-				pub mod fusion_ledgers {
+				pub mod fusion_paused {
 					use super::runtime_types;
-					pub type FusionLedgers =
-						runtime_types::pallet_fusion::FusionLedger<::core::primitive::u128>;
-					pub type Param0 = ::subxt::ext::subxt_core::utils::H160;
+					pub type FusionPaused = ::core::primitive::bool;
 				}
-				pub mod eras_fusion_reward {
+				pub mod fusion_accounts {
 					use super::runtime_types;
-					pub type ErasFusionReward = ::core::primitive::u128;
+					pub type FusionAccounts = runtime_types::pallet_fusion::types::PalletAccounts;
+				}
+				pub mod fusion_currencies {
+					use super::runtime_types;
+					pub type FusionCurrencies = runtime_types::pallet_fusion::types::FusionCurrency;
 					pub type Param0 = ::core::primitive::u32;
 				}
-				pub mod total_in_ledgers {
+				pub mod fusion_currency_count {
 					use super::runtime_types;
-					pub type TotalInLedgers = ::core::primitive::u128;
+					pub type FusionCurrencyCount = ::core::primitive::u32;
 				}
-				pub mod main_fusion_pool {
+				pub mod fusion_pools {
 					use super::runtime_types;
-					pub type MainFusionPool = runtime_types::pallet_fusion::FusionPool;
+					pub type FusionPools = runtime_types::pallet_fusion::types::FusionPool;
+					pub type Param0 = ::core::primitive::u32;
+				}
+				pub mod fusion_pool_count {
+					use super::runtime_types;
+					pub type FusionPoolCount = ::core::primitive::u32;
+				}
+				pub mod fusion_memberships {
+					use super::runtime_types;
+					pub type FusionMemberships =
+						runtime_types::pallet_fusion::types::FusionMembership;
+					pub type Param0 = ::subxt::ext::subxt_core::utils::H160;
+					pub type Param1 = ::core::primitive::u32;
+				}
+				pub mod fusion_member_currency_balances {
+					use super::runtime_types;
+					pub type FusionMemberCurrencyBalances =
+						runtime_types::pallet_fusion::types::FusionMemberCurrencyBalance;
+					pub type Param0 = ::subxt::ext::subxt_core::utils::H160;
+					pub type Param1 = ::core::primitive::u32;
+				}
+				pub mod fusion_era_rewards {
+					use super::runtime_types;
+					pub type FusionEraRewards = runtime_types::pallet_fusion::types::EraReward;
+					pub type Param0 = ::core::primitive::u32;
+					pub type Param1 = ::core::primitive::u32;
+				}
+				pub mod fusion_currency_rates {
+					use super::runtime_types;
+					pub type FusionCurrencyRates = ::core::primitive::u128;
+					pub type Param0 = ::core::primitive::u32;
+					pub type Param1 = ::core::primitive::u32;
+				}
+				pub mod fusion_currency_rate_changes {
+					use super::runtime_types;
+					pub type FusionCurrencyRateChanges = ::core::primitive::u128;
+					pub type Param0 = ::core::primitive::u32;
+				}
+				pub mod fusion_evm_to_substrate_address {
+					use super::runtime_types;
+					pub type FusionEvmToSubstrateAddress =
+						::subxt::ext::subxt_core::utils::AccountId32;
+					pub type Param0 = ::subxt::ext::subxt_core::utils::H160;
+				}
+				pub mod fusion_exposures {
+					use super::runtime_types;
+					pub type FusionExposures = runtime_types::pallet_fusion::types::FusionExposure;
+					pub type Param0 = ::core::primitive::u32;
+					pub type Param1 = ::core::primitive::u32;
+				}
+				pub mod claimed_rewards {
+					use super::runtime_types;
+					pub type ClaimedRewards = ::core::primitive::u128;
+					pub type Param0 = ::subxt::ext::subxt_core::utils::H160;
+					pub type Param1 = ::core::primitive::u32;
+					pub type Param2 = ::core::primitive::u32;
+				}
+				pub mod slash_destination {
+					use super::runtime_types;
+					pub type SlashDestination = ::subxt::ext::subxt_core::utils::H160;
+				}
+				pub mod pending_slashes {
+					use super::runtime_types;
+					pub type PendingSlashes =
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							runtime_types::pallet_fusion::types::FusionSlash,
+						>;
 				}
 			}
 			pub struct StorageApi;
 			impl StorageApi {
-				pub fn fusion_ledgers_iter(
+				#[doc = " A storage to track whether the Fusion pallet is paused."]
+				pub fn fusion_paused(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::fusion_ledgers::FusionLedgers,
-					(),
-					(),
+					types::fusion_paused::FusionPaused,
 					::subxt::ext::subxt_core::utils::Yes,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionLedgers",
+						"FusionPaused",
 						(),
 						[
-							195u8, 174u8, 69u8, 96u8, 118u8, 242u8, 132u8, 175u8, 184u8, 131u8,
-							183u8, 75u8, 103u8, 236u8, 142u8, 181u8, 239u8, 142u8, 24u8, 199u8,
-							89u8, 188u8, 167u8, 70u8, 169u8, 250u8, 77u8, 7u8, 115u8, 157u8, 24u8,
-							252u8,
+							186u8, 131u8, 34u8, 115u8, 112u8, 96u8, 211u8, 91u8, 213u8, 74u8,
+							192u8, 232u8, 20u8, 72u8, 75u8, 103u8, 106u8, 51u8, 88u8, 219u8, 85u8,
+							66u8, 149u8, 207u8, 54u8, 45u8, 213u8, 109u8, 109u8, 159u8, 184u8,
+							148u8,
 						],
 					)
 				}
-				pub fn fusion_ledgers(
+				#[doc = " Allow access to Fusion accounts on chain"]
+				#[doc = " Cannot be changed"]
+				pub fn fusion_accounts(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_ledgers::Param0>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::fusion_accounts::FusionAccounts,
+					::subxt::ext::subxt_core::utils::Yes,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionAccounts",
+						(),
+						[
+							209u8, 98u8, 68u8, 74u8, 10u8, 250u8, 16u8, 239u8, 250u8, 50u8, 181u8,
+							238u8, 93u8, 46u8, 7u8, 115u8, 73u8, 22u8, 182u8, 236u8, 148u8, 190u8,
+							30u8, 30u8, 53u8, 254u8, 200u8, 76u8, 106u8, 205u8, 92u8, 63u8,
+						],
+					)
+				}
+				#[doc = " Stores all the fusion currencies"]
+				pub fn fusion_currencies_iter(
+					&self,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::fusion_currencies::FusionCurrencies,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionCurrencies",
+						(),
+						[
+							236u8, 178u8, 133u8, 215u8, 165u8, 76u8, 184u8, 68u8, 13u8, 167u8,
+							178u8, 164u8, 30u8, 31u8, 81u8, 56u8, 52u8, 172u8, 45u8, 24u8, 122u8,
+							166u8, 138u8, 84u8, 1u8, 202u8, 244u8, 51u8, 64u8, 61u8, 212u8, 95u8,
+						],
+					)
+				}
+				#[doc = " Stores all the fusion currencies"]
+				pub fn fusion_currencies(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::fusion_currencies::Param0>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::fusion_ledgers::Param0,
+						types::fusion_currencies::Param0,
 					>,
-					types::fusion_ledgers::FusionLedgers,
+					types::fusion_currencies::FusionCurrencies,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionLedgers",
+						"FusionCurrencies",
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 							_0.borrow(),
 						),
 						[
-							195u8, 174u8, 69u8, 96u8, 118u8, 242u8, 132u8, 175u8, 184u8, 131u8,
-							183u8, 75u8, 103u8, 236u8, 142u8, 181u8, 239u8, 142u8, 24u8, 199u8,
-							89u8, 188u8, 167u8, 70u8, 169u8, 250u8, 77u8, 7u8, 115u8, 157u8, 24u8,
-							252u8,
+							236u8, 178u8, 133u8, 215u8, 165u8, 76u8, 184u8, 68u8, 13u8, 167u8,
+							178u8, 164u8, 30u8, 31u8, 81u8, 56u8, 52u8, 172u8, 45u8, 24u8, 122u8,
+							166u8, 138u8, 84u8, 1u8, 202u8, 244u8, 51u8, 64u8, 61u8, 212u8, 95u8,
 						],
 					)
 				}
-				pub fn eras_fusion_reward_iter(
+				#[doc = " Stores the number of currencies created"]
+				pub fn fusion_currency_count(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::eras_fusion_reward::ErasFusionReward,
-					(),
-					(),
+					types::fusion_currency_count::FusionCurrencyCount,
 					::subxt::ext::subxt_core::utils::Yes,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"ErasFusionReward",
+						"FusionCurrencyCount",
 						(),
 						[
-							96u8, 141u8, 214u8, 170u8, 136u8, 100u8, 76u8, 6u8, 231u8, 196u8,
-							164u8, 156u8, 191u8, 184u8, 204u8, 167u8, 192u8, 151u8, 104u8, 169u8,
-							171u8, 92u8, 196u8, 78u8, 65u8, 152u8, 157u8, 103u8, 7u8, 52u8, 159u8,
-							145u8,
+							128u8, 142u8, 2u8, 207u8, 62u8, 242u8, 228u8, 175u8, 153u8, 143u8,
+							57u8, 244u8, 96u8, 24u8, 49u8, 248u8, 114u8, 145u8, 238u8, 69u8, 166u8,
+							75u8, 74u8, 223u8, 129u8, 76u8, 151u8, 113u8, 4u8, 112u8, 207u8, 92u8,
 						],
 					)
 				}
-				pub fn eras_fusion_reward(
+				#[doc = " Stores all the fusion pools"]
+				pub fn fusion_pools_iter(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::eras_fusion_reward::Param0>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::fusion_pools::FusionPools,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionPools",
+						(),
+						[
+							135u8, 71u8, 0u8, 103u8, 51u8, 24u8, 134u8, 95u8, 67u8, 12u8, 186u8,
+							83u8, 7u8, 86u8, 150u8, 50u8, 239u8, 226u8, 7u8, 51u8, 38u8, 105u8,
+							85u8, 47u8, 66u8, 94u8, 244u8, 1u8, 252u8, 212u8, 6u8, 52u8,
+						],
+					)
+				}
+				#[doc = " Stores all the fusion pools"]
+				pub fn fusion_pools(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::fusion_pools::Param0>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::eras_fusion_reward::Param0,
+						types::fusion_pools::Param0,
 					>,
-					types::eras_fusion_reward::ErasFusionReward,
+					types::fusion_pools::FusionPools,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"ErasFusionReward",
+						"FusionPools",
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 							_0.borrow(),
 						),
 						[
-							96u8, 141u8, 214u8, 170u8, 136u8, 100u8, 76u8, 6u8, 231u8, 196u8,
-							164u8, 156u8, 191u8, 184u8, 204u8, 167u8, 192u8, 151u8, 104u8, 169u8,
-							171u8, 92u8, 196u8, 78u8, 65u8, 152u8, 157u8, 103u8, 7u8, 52u8, 159u8,
-							145u8,
+							135u8, 71u8, 0u8, 103u8, 51u8, 24u8, 134u8, 95u8, 67u8, 12u8, 186u8,
+							83u8, 7u8, 86u8, 150u8, 50u8, 239u8, 226u8, 7u8, 51u8, 38u8, 105u8,
+							85u8, 47u8, 66u8, 94u8, 244u8, 1u8, 252u8, 212u8, 6u8, 52u8,
 						],
 					)
 				}
-				pub fn total_in_ledgers(
+				#[doc = " Stores the number of pools created"]
+				pub fn fusion_pool_count(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::total_in_ledgers::TotalInLedgers,
+					types::fusion_pool_count::FusionPoolCount,
 					::subxt::ext::subxt_core::utils::Yes,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"TotalInLedgers",
+						"FusionPoolCount",
 						(),
 						[
-							189u8, 208u8, 193u8, 235u8, 206u8, 74u8, 48u8, 89u8, 61u8, 156u8,
-							136u8, 180u8, 14u8, 61u8, 123u8, 90u8, 254u8, 160u8, 216u8, 182u8,
-							154u8, 169u8, 155u8, 38u8, 47u8, 95u8, 107u8, 79u8, 161u8, 1u8, 164u8,
-							238u8,
+							38u8, 148u8, 229u8, 132u8, 73u8, 32u8, 212u8, 80u8, 28u8, 65u8, 100u8,
+							212u8, 227u8, 35u8, 129u8, 145u8, 112u8, 141u8, 38u8, 163u8, 48u8,
+							249u8, 35u8, 74u8, 163u8, 136u8, 9u8, 40u8, 115u8, 214u8, 137u8, 69u8,
 						],
 					)
 				}
-				pub fn main_fusion_pool(
+				#[doc = " Stores all the membership of users in pools"]
+				pub fn fusion_memberships_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::main_fusion_pool::MainFusionPool,
+					types::fusion_memberships::FusionMemberships,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionMemberships",
+						(),
+						[
+							140u8, 99u8, 88u8, 166u8, 142u8, 154u8, 55u8, 69u8, 100u8, 240u8,
+							128u8, 166u8, 5u8, 123u8, 183u8, 55u8, 67u8, 207u8, 10u8, 3u8, 210u8,
+							49u8, 34u8, 116u8, 145u8, 113u8, 105u8, 118u8, 44u8, 216u8, 236u8,
+							15u8,
+						],
+					)
+				}
+				#[doc = " Stores all the membership of users in pools"]
+				pub fn fusion_memberships_iter1(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::fusion_memberships::Param0>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+						types::fusion_memberships::Param0,
+					>,
+					types::fusion_memberships::FusionMemberships,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionMemberships",
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+							_0.borrow(),
+						),
+						[
+							140u8, 99u8, 88u8, 166u8, 142u8, 154u8, 55u8, 69u8, 100u8, 240u8,
+							128u8, 166u8, 5u8, 123u8, 183u8, 55u8, 67u8, 207u8, 10u8, 3u8, 210u8,
+							49u8, 34u8, 116u8, 145u8, 113u8, 105u8, 118u8, 44u8, 216u8, 236u8,
+							15u8,
+						],
+					)
+				}
+				#[doc = " Stores all the membership of users in pools"]
+				pub fn fusion_memberships(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::fusion_memberships::Param0>,
+					_1: impl ::core::borrow::Borrow<types::fusion_memberships::Param1>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+							types::fusion_memberships::Param0,
+						>,
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+							types::fusion_memberships::Param1,
+						>,
+					),
+					types::fusion_memberships::FusionMemberships,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
+					(),
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionMemberships",
+						(
+							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+								_0.borrow(),
+							),
+							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+								_1.borrow(),
+							),
+						),
+						[
+							140u8, 99u8, 88u8, 166u8, 142u8, 154u8, 55u8, 69u8, 100u8, 240u8,
+							128u8, 166u8, 5u8, 123u8, 183u8, 55u8, 67u8, 207u8, 10u8, 3u8, 210u8,
+							49u8, 34u8, 116u8, 145u8, 113u8, 105u8, 118u8, 44u8, 216u8, 236u8,
+							15u8,
+						],
+					)
+				}
+				#[doc = " Stores all the users idle balances"]
+				pub fn fusion_member_currency_balances_iter(
+					&self,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::fusion_member_currency_balances::FusionMemberCurrencyBalances,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionMemberCurrencyBalances",
+						(),
+						[
+							65u8, 151u8, 109u8, 66u8, 46u8, 64u8, 135u8, 165u8, 100u8, 91u8, 164u8,
+							122u8, 192u8, 180u8, 233u8, 66u8, 92u8, 191u8, 79u8, 2u8, 148u8, 170u8,
+							153u8, 41u8, 141u8, 101u8, 19u8, 196u8, 168u8, 103u8, 40u8, 162u8,
+						],
+					)
+				}
+				#[doc = " Stores all the users idle balances"]
+				pub fn fusion_member_currency_balances_iter1(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::fusion_member_currency_balances::Param0>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+						types::fusion_member_currency_balances::Param0,
+					>,
+					types::fusion_member_currency_balances::FusionMemberCurrencyBalances,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionMemberCurrencyBalances",
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+							_0.borrow(),
+						),
+						[
+							65u8, 151u8, 109u8, 66u8, 46u8, 64u8, 135u8, 165u8, 100u8, 91u8, 164u8,
+							122u8, 192u8, 180u8, 233u8, 66u8, 92u8, 191u8, 79u8, 2u8, 148u8, 170u8,
+							153u8, 41u8, 141u8, 101u8, 19u8, 196u8, 168u8, 103u8, 40u8, 162u8,
+						],
+					)
+				}
+				#[doc = " Stores all the users idle balances"]
+				pub fn fusion_member_currency_balances(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::fusion_member_currency_balances::Param0>,
+					_1: impl ::core::borrow::Borrow<types::fusion_member_currency_balances::Param1>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+							types::fusion_member_currency_balances::Param0,
+						>,
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+							types::fusion_member_currency_balances::Param1,
+						>,
+					),
+					types::fusion_member_currency_balances::FusionMemberCurrencyBalances,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
+					(),
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionMemberCurrencyBalances",
+						(
+							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+								_0.borrow(),
+							),
+							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+								_1.borrow(),
+							),
+						),
+						[
+							65u8, 151u8, 109u8, 66u8, 46u8, 64u8, 135u8, 165u8, 100u8, 91u8, 164u8,
+							122u8, 192u8, 180u8, 233u8, 66u8, 92u8, 191u8, 79u8, 2u8, 148u8, 170u8,
+							153u8, 41u8, 141u8, 101u8, 19u8, 196u8, 168u8, 103u8, 40u8, 162u8,
+						],
+					)
+				}
+				#[doc = " Stores era rewards for each pool"]
+				pub fn fusion_era_rewards_iter(
+					&self,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::fusion_era_rewards::FusionEraRewards,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionEraRewards",
+						(),
+						[
+							204u8, 155u8, 190u8, 0u8, 180u8, 180u8, 130u8, 88u8, 231u8, 236u8,
+							57u8, 209u8, 53u8, 92u8, 5u8, 132u8, 76u8, 7u8, 77u8, 253u8, 34u8,
+							253u8, 191u8, 85u8, 151u8, 71u8, 99u8, 188u8, 219u8, 153u8, 253u8,
+							253u8,
+						],
+					)
+				}
+				#[doc = " Stores era rewards for each pool"]
+				pub fn fusion_era_rewards_iter1(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::fusion_era_rewards::Param0>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+						types::fusion_era_rewards::Param0,
+					>,
+					types::fusion_era_rewards::FusionEraRewards,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionEraRewards",
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+							_0.borrow(),
+						),
+						[
+							204u8, 155u8, 190u8, 0u8, 180u8, 180u8, 130u8, 88u8, 231u8, 236u8,
+							57u8, 209u8, 53u8, 92u8, 5u8, 132u8, 76u8, 7u8, 77u8, 253u8, 34u8,
+							253u8, 191u8, 85u8, 151u8, 71u8, 99u8, 188u8, 219u8, 153u8, 253u8,
+							253u8,
+						],
+					)
+				}
+				#[doc = " Stores era rewards for each pool"]
+				pub fn fusion_era_rewards(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::fusion_era_rewards::Param0>,
+					_1: impl ::core::borrow::Borrow<types::fusion_era_rewards::Param1>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+							types::fusion_era_rewards::Param0,
+						>,
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+							types::fusion_era_rewards::Param1,
+						>,
+					),
+					types::fusion_era_rewards::FusionEraRewards,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
+					(),
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionEraRewards",
+						(
+							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+								_0.borrow(),
+							),
+							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+								_1.borrow(),
+							),
+						),
+						[
+							204u8, 155u8, 190u8, 0u8, 180u8, 180u8, 130u8, 88u8, 231u8, 236u8,
+							57u8, 209u8, 53u8, 92u8, 5u8, 132u8, 76u8, 7u8, 77u8, 253u8, 34u8,
+							253u8, 191u8, 85u8, 151u8, 71u8, 99u8, 188u8, 219u8, 153u8, 253u8,
+							253u8,
+						],
+					)
+				}
+				#[doc = " Stores the conversion rates for currencies"]
+				#[doc = " How much one unit of currency is equal in AVAIL"]
+				pub fn fusion_currency_rates_iter(
+					&self,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::fusion_currency_rates::FusionCurrencyRates,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionCurrencyRates",
+						(),
+						[
+							148u8, 44u8, 236u8, 44u8, 175u8, 248u8, 250u8, 224u8, 85u8, 26u8,
+							249u8, 254u8, 104u8, 252u8, 187u8, 55u8, 125u8, 43u8, 193u8, 175u8,
+							219u8, 229u8, 120u8, 151u8, 42u8, 73u8, 64u8, 213u8, 30u8, 152u8,
+							122u8, 87u8,
+						],
+					)
+				}
+				#[doc = " Stores the conversion rates for currencies"]
+				#[doc = " How much one unit of currency is equal in AVAIL"]
+				pub fn fusion_currency_rates_iter1(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::fusion_currency_rates::Param0>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+						types::fusion_currency_rates::Param0,
+					>,
+					types::fusion_currency_rates::FusionCurrencyRates,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionCurrencyRates",
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+							_0.borrow(),
+						),
+						[
+							148u8, 44u8, 236u8, 44u8, 175u8, 248u8, 250u8, 224u8, 85u8, 26u8,
+							249u8, 254u8, 104u8, 252u8, 187u8, 55u8, 125u8, 43u8, 193u8, 175u8,
+							219u8, 229u8, 120u8, 151u8, 42u8, 73u8, 64u8, 213u8, 30u8, 152u8,
+							122u8, 87u8,
+						],
+					)
+				}
+				#[doc = " Stores the conversion rates for currencies"]
+				#[doc = " How much one unit of currency is equal in AVAIL"]
+				pub fn fusion_currency_rates(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::fusion_currency_rates::Param0>,
+					_1: impl ::core::borrow::Borrow<types::fusion_currency_rates::Param1>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+							types::fusion_currency_rates::Param0,
+						>,
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+							types::fusion_currency_rates::Param1,
+						>,
+					),
+					types::fusion_currency_rates::FusionCurrencyRates,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
+					(),
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionCurrencyRates",
+						(
+							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+								_0.borrow(),
+							),
+							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+								_1.borrow(),
+							),
+						),
+						[
+							148u8, 44u8, 236u8, 44u8, 175u8, 248u8, 250u8, 224u8, 85u8, 26u8,
+							249u8, 254u8, 104u8, 252u8, 187u8, 55u8, 125u8, 43u8, 193u8, 175u8,
+							219u8, 229u8, 120u8, 151u8, 42u8, 73u8, 64u8, 213u8, 30u8, 152u8,
+							122u8, 87u8,
+						],
+					)
+				}
+				#[doc = " Stores the next currency changes to be applied next era"]
+				pub fn fusion_currency_rate_changes_iter(
+					&self,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::fusion_currency_rate_changes::FusionCurrencyRateChanges,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionCurrencyRateChanges",
+						(),
+						[
+							207u8, 17u8, 181u8, 0u8, 99u8, 211u8, 68u8, 65u8, 244u8, 216u8, 103u8,
+							0u8, 228u8, 62u8, 36u8, 237u8, 156u8, 50u8, 241u8, 115u8, 240u8, 94u8,
+							246u8, 231u8, 245u8, 109u8, 159u8, 106u8, 62u8, 139u8, 131u8, 241u8,
+						],
+					)
+				}
+				#[doc = " Stores the next currency changes to be applied next era"]
+				pub fn fusion_currency_rate_changes(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::fusion_currency_rate_changes::Param0>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+						types::fusion_currency_rate_changes::Param0,
+					>,
+					types::fusion_currency_rate_changes::FusionCurrencyRateChanges,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
+					(),
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionCurrencyRateChanges",
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+							_0.borrow(),
+						),
+						[
+							207u8, 17u8, 181u8, 0u8, 99u8, 211u8, 68u8, 65u8, 244u8, 216u8, 103u8,
+							0u8, 228u8, 62u8, 36u8, 237u8, 156u8, 50u8, 241u8, 115u8, 240u8, 94u8,
+							246u8, 231u8, 245u8, 109u8, 159u8, 106u8, 62u8, 139u8, 131u8, 241u8,
+						],
+					)
+				}
+				#[doc = " Mapping from EVM Address to Substrate address"]
+				pub fn fusion_evm_to_substrate_address_iter(
+					&self,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::fusion_evm_to_substrate_address::FusionEvmToSubstrateAddress,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionEVMToSubstrateAddress",
+						(),
+						[
+							110u8, 248u8, 247u8, 240u8, 0u8, 167u8, 28u8, 123u8, 228u8, 61u8,
+							139u8, 46u8, 177u8, 170u8, 48u8, 58u8, 248u8, 123u8, 136u8, 112u8,
+							109u8, 25u8, 28u8, 146u8, 127u8, 136u8, 79u8, 33u8, 240u8, 49u8, 116u8,
+							81u8,
+						],
+					)
+				}
+				#[doc = " Mapping from EVM Address to Substrate address"]
+				pub fn fusion_evm_to_substrate_address(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::fusion_evm_to_substrate_address::Param0>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+						types::fusion_evm_to_substrate_address::Param0,
+					>,
+					types::fusion_evm_to_substrate_address::FusionEvmToSubstrateAddress,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
+					(),
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionEVMToSubstrateAddress",
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+							_0.borrow(),
+						),
+						[
+							110u8, 248u8, 247u8, 240u8, 0u8, 167u8, 28u8, 123u8, 228u8, 61u8,
+							139u8, 46u8, 177u8, 170u8, 48u8, 58u8, 248u8, 123u8, 136u8, 112u8,
+							109u8, 25u8, 28u8, 146u8, 127u8, 136u8, 79u8, 33u8, 240u8, 49u8, 116u8,
+							81u8,
+						],
+					)
+				}
+				#[doc = " Stores the fusion era exposure for HistoryDepth eras"]
+				pub fn fusion_exposures_iter(
+					&self,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::fusion_exposures::FusionExposures,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionExposures",
+						(),
+						[
+							236u8, 72u8, 28u8, 91u8, 236u8, 58u8, 84u8, 9u8, 223u8, 229u8, 76u8,
+							127u8, 210u8, 252u8, 30u8, 178u8, 251u8, 61u8, 244u8, 50u8, 11u8,
+							241u8, 108u8, 62u8, 146u8, 101u8, 167u8, 224u8, 84u8, 76u8, 104u8,
+							173u8,
+						],
+					)
+				}
+				#[doc = " Stores the fusion era exposure for HistoryDepth eras"]
+				pub fn fusion_exposures_iter1(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::fusion_exposures::Param0>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+						types::fusion_exposures::Param0,
+					>,
+					types::fusion_exposures::FusionExposures,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionExposures",
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+							_0.borrow(),
+						),
+						[
+							236u8, 72u8, 28u8, 91u8, 236u8, 58u8, 84u8, 9u8, 223u8, 229u8, 76u8,
+							127u8, 210u8, 252u8, 30u8, 178u8, 251u8, 61u8, 244u8, 50u8, 11u8,
+							241u8, 108u8, 62u8, 146u8, 101u8, 167u8, 224u8, 84u8, 76u8, 104u8,
+							173u8,
+						],
+					)
+				}
+				#[doc = " Stores the fusion era exposure for HistoryDepth eras"]
+				pub fn fusion_exposures(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::fusion_exposures::Param0>,
+					_1: impl ::core::borrow::Borrow<types::fusion_exposures::Param1>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+							types::fusion_exposures::Param0,
+						>,
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+							types::fusion_exposures::Param1,
+						>,
+					),
+					types::fusion_exposures::FusionExposures,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
+					(),
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"FusionExposures",
+						(
+							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+								_0.borrow(),
+							),
+							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+								_1.borrow(),
+							),
+						),
+						[
+							236u8, 72u8, 28u8, 91u8, 236u8, 58u8, 84u8, 9u8, 223u8, 229u8, 76u8,
+							127u8, 210u8, 252u8, 30u8, 178u8, 251u8, 61u8, 244u8, 50u8, 11u8,
+							241u8, 108u8, 62u8, 146u8, 101u8, 167u8, 224u8, 84u8, 76u8, 104u8,
+							173u8,
+						],
+					)
+				}
+				#[doc = " Stores the fusion claimed rewards for HistoryDepth eras"]
+				pub fn claimed_rewards_iter(
+					&self,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::claimed_rewards::ClaimedRewards,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"ClaimedRewards",
+						(),
+						[
+							30u8, 93u8, 195u8, 200u8, 62u8, 177u8, 222u8, 161u8, 224u8, 155u8,
+							186u8, 187u8, 229u8, 17u8, 212u8, 177u8, 226u8, 68u8, 103u8, 141u8,
+							26u8, 184u8, 197u8, 44u8, 203u8, 94u8, 48u8, 204u8, 16u8, 204u8, 117u8,
+							49u8,
+						],
+					)
+				}
+				#[doc = " Stores the fusion claimed rewards for HistoryDepth eras"]
+				pub fn claimed_rewards_iter1(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::claimed_rewards::Param0>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+						types::claimed_rewards::Param0,
+					>,
+					types::claimed_rewards::ClaimedRewards,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"ClaimedRewards",
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+							_0.borrow(),
+						),
+						[
+							30u8, 93u8, 195u8, 200u8, 62u8, 177u8, 222u8, 161u8, 224u8, 155u8,
+							186u8, 187u8, 229u8, 17u8, 212u8, 177u8, 226u8, 68u8, 103u8, 141u8,
+							26u8, 184u8, 197u8, 44u8, 203u8, 94u8, 48u8, 204u8, 16u8, 204u8, 117u8,
+							49u8,
+						],
+					)
+				}
+				#[doc = " Stores the fusion claimed rewards for HistoryDepth eras"]
+				pub fn claimed_rewards_iter2(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::claimed_rewards::Param0>,
+					_1: impl ::core::borrow::Borrow<types::claimed_rewards::Param1>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+							types::claimed_rewards::Param0,
+						>,
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+							types::claimed_rewards::Param1,
+						>,
+					),
+					types::claimed_rewards::ClaimedRewards,
+					(),
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"ClaimedRewards",
+						(
+							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+								_0.borrow(),
+							),
+							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+								_1.borrow(),
+							),
+						),
+						[
+							30u8, 93u8, 195u8, 200u8, 62u8, 177u8, 222u8, 161u8, 224u8, 155u8,
+							186u8, 187u8, 229u8, 17u8, 212u8, 177u8, 226u8, 68u8, 103u8, 141u8,
+							26u8, 184u8, 197u8, 44u8, 203u8, 94u8, 48u8, 204u8, 16u8, 204u8, 117u8,
+							49u8,
+						],
+					)
+				}
+				#[doc = " Stores the fusion claimed rewards for HistoryDepth eras"]
+				pub fn claimed_rewards(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::claimed_rewards::Param0>,
+					_1: impl ::core::borrow::Borrow<types::claimed_rewards::Param1>,
+					_2: impl ::core::borrow::Borrow<types::claimed_rewards::Param2>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+							types::claimed_rewards::Param0,
+						>,
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+							types::claimed_rewards::Param1,
+						>,
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+							types::claimed_rewards::Param2,
+						>,
+					),
+					types::claimed_rewards::ClaimedRewards,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
+					(),
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"ClaimedRewards",
+						(
+							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+								_0.borrow(),
+							),
+							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+								_1.borrow(),
+							),
+							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+								_2.borrow(),
+							),
+						),
+						[
+							30u8, 93u8, 195u8, 200u8, 62u8, 177u8, 222u8, 161u8, 224u8, 155u8,
+							186u8, 187u8, 229u8, 17u8, 212u8, 177u8, 226u8, 68u8, 103u8, 141u8,
+							26u8, 184u8, 197u8, 44u8, 203u8, 94u8, 48u8, 204u8, 16u8, 204u8, 117u8,
+							49u8,
+						],
+					)
+				}
+				#[doc = " Stores EVM Address of the slash destination"]
+				#[doc = " It can be controlled with technical committee"]
+				pub fn slash_destination(
+					&self,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::slash_destination::SlashDestination,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
+					(),
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Fusion",
+						"SlashDestination",
+						(),
+						[
+							103u8, 57u8, 5u8, 222u8, 166u8, 45u8, 196u8, 241u8, 204u8, 97u8, 31u8,
+							154u8, 217u8, 80u8, 103u8, 57u8, 136u8, 235u8, 168u8, 91u8, 166u8,
+							107u8, 152u8, 159u8, 213u8, 199u8, 162u8, 179u8, 220u8, 153u8, 187u8,
+							125u8,
+						],
+					)
+				}
+				#[doc = " Storage for slashes that need to be applied."]
+				#[doc = " This storage holds an ordered queue of `FusionSlash` and is bounded by `MaxSlashes`."]
+				pub fn pending_slashes(
+					&self,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::pending_slashes::PendingSlashes,
 					::subxt::ext::subxt_core::utils::Yes,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"MainFusionPool",
+						"PendingSlashes",
 						(),
 						[
-							107u8, 132u8, 64u8, 170u8, 106u8, 107u8, 179u8, 44u8, 215u8, 68u8,
-							103u8, 174u8, 85u8, 184u8, 188u8, 158u8, 64u8, 92u8, 135u8, 179u8,
-							181u8, 140u8, 71u8, 18u8, 162u8, 116u8, 68u8, 236u8, 68u8, 71u8, 22u8,
-							225u8,
+							222u8, 120u8, 181u8, 237u8, 167u8, 174u8, 118u8, 178u8, 108u8, 28u8,
+							206u8, 89u8, 212u8, 216u8, 221u8, 121u8, 252u8, 133u8, 189u8, 5u8,
+							251u8, 244u8, 173u8, 9u8, 171u8, 169u8, 49u8, 32u8, 130u8, 21u8, 199u8,
+							154u8,
 						],
 					)
 				}
@@ -27386,19 +29951,158 @@ pub mod api {
 			use super::runtime_types;
 			pub struct ConstantsApi;
 			impl ConstantsApi {
-				#[doc = " The percentage of reward to get from total era payout."]
-				pub fn fusion_payout_percentage(
+				#[doc = " Pallet id used to derive accounts used by the pallet"]
+				pub fn pallet_id(
 					&self,
 				) -> ::subxt::ext::subxt_core::constants::address::StaticAddress<
-					runtime_types::sp_arithmetic::per_things::Perbill,
+					runtime_types::frame_support::PalletId,
 				> {
 					::subxt::ext::subxt_core::constants::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionPayoutPercentage",
+						"PalletId",
 						[
-							65u8, 93u8, 120u8, 165u8, 204u8, 81u8, 159u8, 163u8, 93u8, 135u8,
-							114u8, 121u8, 147u8, 35u8, 215u8, 213u8, 4u8, 223u8, 83u8, 37u8, 225u8,
-							200u8, 189u8, 156u8, 140u8, 36u8, 58u8, 46u8, 42u8, 232u8, 155u8, 0u8,
+							56u8, 243u8, 53u8, 83u8, 154u8, 179u8, 170u8, 80u8, 133u8, 173u8, 61u8,
+							161u8, 47u8, 225u8, 146u8, 21u8, 50u8, 229u8, 248u8, 27u8, 104u8, 58u8,
+							129u8, 197u8, 102u8, 160u8, 168u8, 205u8, 154u8, 42u8, 217u8, 53u8,
+						],
+					)
+				}
+				#[doc = " Maximum allowed for the currency name"]
+				pub fn max_currency_name(
+					&self,
+				) -> ::subxt::ext::subxt_core::constants::address::StaticAddress<
+					::core::primitive::u32,
+				> {
+					::subxt::ext::subxt_core::constants::address::StaticAddress::new_static(
+						"Fusion",
+						"MaxCurrencyName",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
+				}
+				#[doc = " Maximum number of members in a pool"]
+				pub fn max_members_per_pool(
+					&self,
+				) -> ::subxt::ext::subxt_core::constants::address::StaticAddress<
+					::core::primitive::u32,
+				> {
+					::subxt::ext::subxt_core::constants::address::StaticAddress::new_static(
+						"Fusion",
+						"MaxMembersPerPool",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
+				}
+				#[doc = " Maximum number of selectable targets for a pool"]
+				pub fn max_targets(
+					&self,
+				) -> ::subxt::ext::subxt_core::constants::address::StaticAddress<
+					::core::primitive::u32,
+				> {
+					::subxt::ext::subxt_core::constants::address::StaticAddress::new_static(
+						"Fusion",
+						"MaxTargets",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
+				}
+				#[doc = " Maximum number of parallel partial unbonds"]
+				pub fn max_unbonding(
+					&self,
+				) -> ::subxt::ext::subxt_core::constants::address::StaticAddress<
+					::core::primitive::u32,
+				> {
+					::subxt::ext::subxt_core::constants::address::StaticAddress::new_static(
+						"Fusion",
+						"MaxUnbonding",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
+				}
+				#[doc = " Maximum number of parallel slashes"]
+				pub fn max_slashes(
+					&self,
+				) -> ::subxt::ext::subxt_core::constants::address::StaticAddress<
+					::core::primitive::u32,
+				> {
+					::subxt::ext::subxt_core::constants::address::StaticAddress::new_static(
+						"Fusion",
+						"MaxSlashes",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
+				}
+				#[doc = " Period for funds to be available after unbonding"]
+				pub fn bonding_duration(
+					&self,
+				) -> ::subxt::ext::subxt_core::constants::address::StaticAddress<
+					::core::primitive::u32,
+				> {
+					::subxt::ext::subxt_core::constants::address::StaticAddress::new_static(
+						"Fusion",
+						"BondingDuration",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
+				}
+				#[doc = " Number of era for which to keep Fusion data"]
+				pub fn history_depth(
+					&self,
+				) -> ::subxt::ext::subxt_core::constants::address::StaticAddress<
+					::core::primitive::u32,
+				> {
+					::subxt::ext::subxt_core::constants::address::StaticAddress::new_static(
+						"Fusion",
+						"HistoryDepth",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
+				}
+				#[doc = " Number of eras that slashes are deferred by, after computation."]
+				#[doc = ""]
+				#[doc = " This should be less than the bonding duration. Set to 0 if slashes"]
+				#[doc = " should be applied immediately, without opportunity for intervention."]
+				pub fn slash_defer_duration(
+					&self,
+				) -> ::subxt::ext::subxt_core::constants::address::StaticAddress<
+					::core::primitive::u32,
+				> {
+					::subxt::ext::subxt_core::constants::address::StaticAddress::new_static(
+						"Fusion",
+						"SlashDeferDuration",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
 						],
 					)
 				}
@@ -28274,6 +30978,8 @@ pub mod api {
 					Staking,
 					#[codec(index = 4)]
 					IdentityJudgement,
+					#[codec(index = 5)]
+					NominationPools,
 				}
 			}
 			pub mod primitives {
@@ -30864,28 +33570,176 @@ pub mod api {
 				)]
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
-					#[codec(index = 0)]
-					#[doc = "See [`Pallet::add_fusion_ledger_entry`]."]
-					add_fusion_ledger_entry {
+					#[codec(index = 99)]
+					#[doc = "See [`Pallet::deposit_currency_dummy`]."]
+					deposit_currency_dummy {
 						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						currency_id: ::core::primitive::u32,
 						amount: ::core::primitive::u128,
 					},
+					#[codec(index = 98)]
+					#[doc = "See [`Pallet::dummy_slash`]."]
+					dummy_slash {
+						who: ::subxt::ext::subxt_core::utils::AccountId32,
+						bonded_amount: ::core::primitive::u128,
+						slashed_amount: ::core::primitive::u128,
+					},
+					#[codec(index = 0)]
+					#[doc = "See [`Pallet::pause`]."]
+					pause,
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::set_total_in_ledgers`]."]
-					set_total_in_ledgers { total: ::core::primitive::u128 },
+					#[doc = "See [`Pallet::fill_funds_account`]."]
+					fill_funds_account { amount: ::core::primitive::u128 },
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::claim_era_fusion_reward`]."]
-					claim_era_fusion_reward { era: ::core::primitive::u32 },
-					#[codec(index = 3)]
-					#[doc = "See [`Pallet::set_fusion_pool`]."]
-					set_fusion_pool {
-						owner: ::subxt::ext::subxt_core::utils::AccountId32,
-						members: runtime_types::bounded_collections::bounded_vec::BoundedVec<
-							::subxt::ext::subxt_core::utils::H160,
+					#[doc = "See [`Pallet::create_currency`]."]
+					create_currency {
+						currency_id: ::core::primitive::u32,
+						name: runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
 						>,
+						nb_decimals: ::core::primitive::u8,
+						max_amount: ::core::primitive::u128,
+						min_amount: ::core::primitive::u128,
+						initial_conversion_rate: ::core::primitive::u128,
+					},
+					#[codec(index = 3)]
+					#[doc = "See [`Pallet::set_currency`]."]
+					set_currency {
+						currency_id: ::core::primitive::u32,
+						name: ::core::option::Option<
+							runtime_types::bounded_collections::bounded_vec::BoundedVec<
+								::core::primitive::u8,
+							>,
+						>,
+						max_amount: ::core::option::Option<::core::primitive::u128>,
+						min_amount: ::core::option::Option<::core::primitive::u128>,
+					},
+					#[codec(index = 4)]
+					#[doc = "See [`Pallet::delete_currency`]."]
+					delete_currency { currency_id: ::core::primitive::u32 },
+					#[codec(index = 5)]
+					#[doc = "See [`Pallet::set_currency_conversion_rate`]."]
+					set_currency_conversion_rate {
+						currency_id: ::core::primitive::u32,
+						conversion_rate: ::core::primitive::u128,
+					},
+					#[codec(index = 6)]
+					#[doc = "See [`Pallet::create_pool`]."]
+					create_pool {
+						pool_id: ::core::primitive::u32,
+						currency_id: ::core::primitive::u32,
+						apy: runtime_types::sp_arithmetic::per_things::Perbill,
+						nominator:
+							::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
+						with_reward_account: ::core::primitive::bool,
+					},
+					#[codec(index = 7)]
+					#[doc = "See [`Pallet::set_pool`]."]
+					set_pool {
+						pool_id: ::core::primitive::u32,
+						apy: ::core::option::Option<
+							runtime_types::sp_arithmetic::per_things::Perbill,
+						>,
+						state: ::core::option::Option<
+							runtime_types::pallet_fusion::types::FusionPoolState,
+						>,
+						nominator: ::core::option::Option<
+							::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
+						>,
+					},
+					#[codec(index = 8)]
+					#[doc = "See [`Pallet::delete_pool`]."]
+					delete_pool { pool_id: ::core::primitive::u32 },
+					#[codec(index = 9)]
+					#[doc = "See [`Pallet::nominate`]."]
+					nominate {
+						pool_id: ::core::primitive::u32,
 						targets: runtime_types::bounded_collections::bounded_vec::BoundedVec<
 							::subxt::ext::subxt_core::utils::AccountId32,
 						>,
+					},
+					#[codec(index = 10)]
+					#[doc = "See [`Pallet::kick_user`]."]
+					kick_user {
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+					},
+					#[codec(index = 11)]
+					#[doc = "See [`Pallet::set_controller_address`]."]
+					set_controller_address {
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						new_controller_address:
+							::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
+					},
+					#[codec(index = 12)]
+					#[doc = "See [`Pallet::set_slash_destination`]."]
+					set_slash_destination {
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						controller_address:
+							::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
+					},
+					#[codec(index = 13)]
+					#[doc = "See [`Pallet::cancel_slash`]."]
+					cancel_slash {
+						slash_index: ::core::primitive::u32,
+						pool_id: ::core::primitive::u32,
+					},
+					#[codec(index = 14)]
+					#[doc = "See [`Pallet::apply_slash`]."]
+					apply_slash {
+						slash_index: ::core::primitive::u32,
+						pool_id: ::core::primitive::u32,
+					},
+					#[codec(index = 15)]
+					#[doc = "See [`Pallet::set_compounding`]."]
+					set_compounding {
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						pool_id: ::core::primitive::u32,
+						compound: ::core::primitive::bool,
+					},
+					#[codec(index = 16)]
+					#[doc = "See [`Pallet::stake`]."]
+					stake {
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						pool_id: ::core::primitive::u32,
+						amount: ::core::primitive::u128,
+					},
+					#[codec(index = 17)]
+					#[doc = "See [`Pallet::claim_rewards`]."]
+					claim_rewards {
+						era: ::core::primitive::u32,
+						pool_id: ::core::primitive::u32,
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+					},
+					#[codec(index = 18)]
+					#[doc = "See [`Pallet::unbond_currency`]."]
+					unbond_currency {
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						pool_id: ::core::primitive::u32,
+						unbond_amount: ::core::primitive::u128,
+					},
+					#[codec(index = 19)]
+					#[doc = "See [`Pallet::withdraw_unbonded_currency`]."]
+					withdraw_unbonded_currency {
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						pool_id: ::core::primitive::u32,
+					},
+					#[codec(index = 20)]
+					#[doc = "See [`Pallet::unbond_currency_other`]."]
+					unbond_currency_other {
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						pool_id: ::core::primitive::u32,
+						unbond_amount: ::core::primitive::u128,
+					},
+					#[codec(index = 21)]
+					#[doc = "See [`Pallet::withdraw_unbonded_currency_other`]."]
+					withdraw_unbonded_currency_other {
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						pool_id: ::core::primitive::u32,
+					},
+					#[codec(index = 22)]
+					#[doc = "See [`Pallet::withdraw_avail_to_controller`]."]
+					withdraw_avail_to_controller {
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
 					},
 				}
 				#[derive(
@@ -30908,8 +33762,134 @@ pub mod api {
 				#[doc = "The `Error` enum of this pallet."]
 				pub enum Error {
 					#[codec(index = 0)]
-					#[doc = "No Era Fusion Reward exists for the given era."]
-					NoEraFusionReward,
+					#[doc = "The id is already used."]
+					CurrencyAlreadyExists,
+					#[codec(index = 1)]
+					#[doc = "No currency with the specified id"]
+					CurrencyNotFound,
+					#[codec(index = 2)]
+					#[doc = "The currency is already destroyed"]
+					CurrencyDestroyed,
+					#[codec(index = 3)]
+					#[doc = "Currency is not deletable cause a pool exist with the currency id"]
+					PoolExistsForCurrency,
+					#[codec(index = 4)]
+					#[doc = "The maximum amount of the currency is lower than what's already in the system"]
+					InvalidMaxAmount,
+					#[codec(index = 5)]
+					#[doc = "The minimum amount stakeable for this currency is greater than the maximum amount allowed in the system"]
+					InvalidMinAmount,
+					#[codec(index = 6)]
+					#[doc = "Pool id is already taken"]
+					PoolAlreadyExists,
+					#[codec(index = 7)]
+					#[doc = "Cannot create a pool in state destroying"]
+					CannotSetPoolToDestroying,
+					#[codec(index = 8)]
+					#[doc = "Pool was not found in storage"]
+					PoolNotFound,
+					#[codec(index = 9)]
+					#[doc = "The currency rate was not found"]
+					CurrencyRateNotFound,
+					#[codec(index = 10)]
+					#[doc = "Arithmetic error when doing conversions"]
+					ArithmeticError,
+					#[codec(index = 11)]
+					#[doc = "Arithmetic error when doing points conversions"]
+					ArithmeticPointsError,
+					#[codec(index = 12)]
+					#[doc = "The substrate address does not correspond to the EVM address in the mapping"]
+					InvalidSubstrateAddress,
+					#[codec(index = 13)]
+					#[doc = "The pool is not open"]
+					PoolNotOpen,
+					#[codec(index = 14)]
+					#[doc = "The bond amount is lower than the currency minimum allowed to bond"]
+					BondAmoundTooLow,
+					#[codec(index = 15)]
+					#[doc = "The bond amount would make the currency go past the maximum allowed in the system"]
+					BondWouldExceedMaxForCurrency,
+					#[codec(index = 16)]
+					#[doc = "The pool is full of members"]
+					PoolMemberLimitReached,
+					#[codec(index = 17)]
+					#[doc = "User has not balance record for the currency"]
+					NoCurrencyBalanceForUser,
+					#[codec(index = 18)]
+					#[doc = "The user has not enough balance of the specified currency"]
+					NotEnoughCurrencyBalanceForUser,
+					#[codec(index = 19)]
+					#[doc = "User is not a member of the pool"]
+					UserNotMemberOfPool,
+					#[codec(index = 20)]
+					#[doc = "User has no more points to unbond"]
+					NoActivePointsToUnbond,
+					#[codec(index = 21)]
+					#[doc = "The amount to unbond is invalid"]
+					InvalidUnbondAmount,
+					#[codec(index = 22)]
+					#[doc = "Unbonding this amount will make the remaining below minimum"]
+					AmountWillGoBelowMinimum,
+					#[codec(index = 23)]
+					#[doc = "User has too much unbonding chunks"]
+					MaxUnbondingChunksExceeded,
+					#[codec(index = 24)]
+					#[doc = "No funds are available to withdraw"]
+					NoFundsToWithdraw,
+					#[codec(index = 25)]
+					#[doc = "Caller is not authorized for this operation"]
+					NotAuthorized,
+					#[codec(index = 26)]
+					#[doc = "No rewards were found for the era"]
+					NoRewardsForEra,
+					#[codec(index = 27)]
+					#[doc = "The exposure is not founds"]
+					ExposureNotFound,
+					#[codec(index = 28)]
+					#[doc = "The user was not found in the exposure"]
+					UserNotFoundInExposure,
+					#[codec(index = 29)]
+					#[doc = "Rewards were already claimed for this user / era"]
+					AlreadyClaimed,
+					#[codec(index = 30)]
+					#[doc = "A user tried to unbond another user but it's only allowed if the pool is destroying"]
+					PoolIsNotDestroying,
+					#[codec(index = 31)]
+					#[doc = "Action is not allowed as the pool is destroying"]
+					PoolIsDestroying,
+					#[codec(index = 32)]
+					#[doc = "To handle compounding and easy bouding and unbonding, avail currency has no minimum"]
+					NoMinAmountForAvailCurrency,
+					#[codec(index = 33)]
+					#[doc = "There is no controller address to withdraw to"]
+					NoControllerAddressForUser,
+					#[codec(index = 34)]
+					#[doc = "If you're active points are below minimum, you cannot set compound to true"]
+					CannotSetCompoudingWithLessThanMinimum,
+					#[codec(index = 35)]
+					#[doc = "The state cannot be set to open if the pool is not nominating"]
+					PoolIsNotNominating,
+					#[codec(index = 36)]
+					#[doc = "The fusion currency rate was not found"]
+					FusionCurrencyRateNotFound,
+					#[codec(index = 37)]
+					#[doc = "The fusion pallet is paused so the operation is not allowed"]
+					FusionPalletPaused,
+					#[codec(index = 38)]
+					#[doc = "The controller of the slash destination can only be set with the correct extrinsic"]
+					CannotSetControllerForSlashDestination,
+					#[codec(index = 39)]
+					#[doc = "There are too many simultaneous slashes"]
+					TooManySlashes,
+					#[codec(index = 40)]
+					#[doc = "Invalid slash index"]
+					InvalidSlashIndex,
+					#[codec(index = 41)]
+					#[doc = "Invalid slash pool id"]
+					InvalidSlashPoolId,
+					#[codec(index = 42)]
+					#[doc = "TODO Temp"]
+					CannotDepositAvailCurrency,
 				}
 				#[derive(
 					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
@@ -30931,80 +33911,437 @@ pub mod api {
 				#[doc = "The `Event` enum of this pallet"]
 				pub enum Event {
 					#[codec(index = 0)]
-					#[doc = "A new entry was added in the FusionLedgers"]
-					FusionLedgerEntryAdded {
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+					#[doc = "Event triggered when the funding account is filled with new funds"]
+					FundsAccountFilled {
+						sender: ::subxt::ext::subxt_core::utils::AccountId32,
 						amount: ::core::primitive::u128,
-						start_era: ::core::primitive::u32,
 					},
 					#[codec(index = 1)]
-					#[doc = "Total in ledgers has been updated"]
-					FusionLedgerTotalUpdated { total: ::core::primitive::u128 },
+					#[doc = "Event triggered when a new currency is created"]
+					CurrencyCreated {
+						currency_id: ::core::primitive::u32,
+						name: runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::core::primitive::u8,
+						>,
+						nb_decimals: ::core::primitive::u8,
+						max_amount: ::core::primitive::u128,
+						min_amount: ::core::primitive::u128,
+						initial_conversion_rate: ::core::primitive::u128,
+					},
 					#[codec(index = 2)]
-					#[doc = "The Fusion part of payout was insterted in the Fusion storage"]
-					EraFusionRewardInserted {
-						era: ::core::primitive::u32,
-						reward: ::core::primitive::u128,
+					#[doc = "Event triggered when a currency's properties are updated"]
+					CurrencySet {
+						currency_id: ::core::primitive::u32,
+						name: ::core::option::Option<
+							runtime_types::bounded_collections::bounded_vec::BoundedVec<
+								::core::primitive::u8,
+							>,
+						>,
+						max_amount: ::core::option::Option<::core::primitive::u128>,
+						min_amount: ::core::option::Option<::core::primitive::u128>,
 					},
 					#[codec(index = 3)]
-					#[doc = "A reward was claimed from the Era Fusion Reward storage"]
-					EraFusionRewardClaimed {
-						who: ::subxt::ext::subxt_core::utils::AccountId32,
-						owner_account: ::subxt::ext::subxt_core::utils::AccountId32,
-						era: ::core::primitive::u32,
-						reward: ::core::primitive::u128,
-					},
+					#[doc = "Event triggered when a currency is deleted"]
+					CurrencyDeleted { currency_id: ::core::primitive::u32 },
 					#[codec(index = 4)]
-					#[doc = "The Fusion Pool has been updated"]
-					FusionPoolUpdated {
-						owner: ::subxt::ext::subxt_core::utils::AccountId32,
-						members: runtime_types::bounded_collections::bounded_vec::BoundedVec<
-							::subxt::ext::subxt_core::utils::H160,
+					#[doc = "Event triggered when a conversion rate is set for a currency"]
+					CurrencyConversionRateSet {
+						currency_id: ::core::primitive::u32,
+						conversion_rate: ::core::primitive::u128,
+					},
+					#[codec(index = 5)]
+					#[doc = "Event triggered when a currency is deposited into the system"]
+					CurrencyDeposited {
+						currency_id: ::core::primitive::u32,
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						amount: ::core::primitive::u128,
+					},
+					#[codec(index = 6)]
+					#[doc = "Event triggered when a user unbonds currency from a pool"]
+					CurrencyUnbonded {
+						pool_id: ::core::primitive::u32,
+						currency_id: ::core::primitive::u32,
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						unbonded_amount: ::core::primitive::u128,
+						points: ::core::primitive::u128,
+						era: ::core::primitive::u32,
+					},
+					#[codec(index = 7)]
+					#[doc = "Event triggered when a user withdraws unbonded currency"]
+					CurrencyWithdrawn {
+						pool_id: ::core::primitive::u32,
+						currency_id: ::core::primitive::u32,
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						amount: ::core::primitive::u128,
+					},
+					#[codec(index = 8)]
+					#[doc = "Event triggered when the controller address for a user is changed"]
+					ControllerAddressSet {
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						new_controller_address:
+							::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
+					},
+					#[codec(index = 9)]
+					#[doc = "Event triggered when the Evm address and controller address are set for the Slash destination"]
+					SlashDestinationSet {
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						controller_address:
+							::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
+					},
+					#[codec(index = 10)]
+					#[doc = "Event triggered when the compounding value is changed for a pool member"]
+					CompoundingSet {
+						pool_id: ::core::primitive::u32,
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						compound: ::core::primitive::bool,
+					},
+					#[codec(index = 11)]
+					#[doc = "Event triggered when a new Fusion pool is created"]
+					PoolCreated {
+						pool_id: ::core::primitive::u32,
+						currency_id: ::core::primitive::u32,
+						apy: runtime_types::sp_arithmetic::per_things::Perbill,
+						state: runtime_types::pallet_fusion::types::FusionPoolState,
+						nominator:
+							::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
+						reward_account:
+							::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
+					},
+					#[codec(index = 12)]
+					#[doc = "Event triggered when a Fusion pool's properties are updated"]
+					PoolSet {
+						pool_id: ::core::primitive::u32,
+						apy: ::core::option::Option<
+							runtime_types::sp_arithmetic::per_things::Perbill,
 						>,
+						state: ::core::option::Option<
+							runtime_types::pallet_fusion::types::FusionPoolState,
+						>,
+						nominator: ::core::option::Option<
+							::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
+						>,
+					},
+					#[codec(index = 13)]
+					#[doc = "Event triggered when a user joins a pool"]
+					PoolJoined {
+						pool_id: ::core::primitive::u32,
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						currency_id: ::core::primitive::u32,
+						amount: ::core::primitive::u128,
+						points: ::core::primitive::u128,
+					},
+					#[codec(index = 14)]
+					#[doc = "Event triggered when a user bonds extra currency into a pool"]
+					PoolBondExtra {
+						pool_id: ::core::primitive::u32,
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						currency_id: ::core::primitive::u32,
+						amount: ::core::primitive::u128,
+						points: ::core::primitive::u128,
+					},
+					#[codec(index = 15)]
+					#[doc = "Event triggered when a user's pool membership is removed"]
+					PoolMembershipRemoved {
+						pool_id: ::core::primitive::u32,
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+					},
+					#[codec(index = 16)]
+					#[doc = "Event triggered when a pool is deleted"]
+					PoolDeleted { pool_id: ::core::primitive::u32 },
+					#[codec(index = 17)]
+					#[doc = "Event triggered when a pool state was changed to destroying"]
+					PoolDestroying { pool_id: ::core::primitive::u32 },
+					#[codec(index = 18)]
+					#[doc = "Event triggered when a pool nominates a list of targets (validators)"]
+					Nominated {
+						pool_id: ::core::primitive::u32,
 						targets: runtime_types::bounded_collections::bounded_vec::BoundedVec<
 							::subxt::ext::subxt_core::utils::AccountId32,
 						>,
 					},
+					#[codec(index = 19)]
+					#[doc = "Event triggered when unclaimed rewards are sent to the remainder"]
+					RewardRemainderSent { amount: ::core::primitive::u128 },
+					#[codec(index = 20)]
+					#[doc = "Event triggered when rewards are set for an era"]
+					RewardSet {
+						era: ::core::primitive::u32,
+						pools: ::subxt::ext::subxt_core::alloc::vec::Vec<::core::primitive::u32>,
+						total_rewarded_internal: ::core::primitive::u128,
+						total_rewarded_external: ::core::primitive::u128,
+					},
+					#[codec(index = 21)]
+					#[doc = "Event triggered when a user claims rewards for a pool and era"]
+					RewardClaimed {
+						pool_id: ::core::primitive::u32,
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						era: ::core::primitive::u32,
+						reward: ::core::primitive::u128,
+					},
+					#[codec(index = 22)]
+					#[doc = "Event triggered when exposures are set for an era"]
+					ExposuresSet { era: ::core::primitive::u32 },
+					#[codec(index = 23)]
+					#[doc = "Event triggered when AVAIL is withdrawn to the controller account"]
+					AvailWithdrawnToController {
+						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						controller: ::subxt::ext::subxt_core::utils::AccountId32,
+						amount: ::core::primitive::u128,
+					},
+					#[codec(index = 24)]
+					#[doc = "Event triggered when the Fusion pallet is paused."]
+					FusionPaused,
+					#[codec(index = 25)]
+					#[doc = "Event triggered when the Fusion pallet is unpaused."]
+					FusionUnpaused,
 				}
 			}
-			#[derive(
-				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
-				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
-				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
-			pub struct FusionLedger<_0> {
-				pub balance: _0,
-				pub start_era: ::core::primitive::u32,
-			}
-			#[derive(
-				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
-				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
-				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
-			pub struct FusionPool {
-				pub owner: ::subxt::ext::subxt_core::utils::AccountId32,
-				pub members: runtime_types::bounded_collections::bounded_vec::BoundedVec<
-					::subxt::ext::subxt_core::utils::H160,
-				>,
-				pub targets: runtime_types::bounded_collections::bounded_vec::BoundedVec<
-					::subxt::ext::subxt_core::utils::AccountId32,
-				>,
+			pub mod types {
+				use super::runtime_types;
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				pub struct EraReward {
+					pub rewards: ::core::primitive::u128,
+					pub claimed_rewards: ::core::primitive::u128,
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				pub struct FusionCurrency {
+					pub currency_id: ::core::primitive::u32,
+					pub name: runtime_types::bounded_collections::bounded_vec::BoundedVec<
+						::core::primitive::u8,
+					>,
+					pub nb_decimals: ::core::primitive::u8,
+					pub total_staked_native: ::core::primitive::u128,
+					pub total_slashed_native: ::core::primitive::u128,
+					pub total_unbonding_native: ::core::primitive::u128,
+					pub max_amount: ::core::primitive::u128,
+					pub min_amount: ::core::primitive::u128,
+					pub is_destroyed: ::core::primitive::bool,
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				pub struct FusionExposure {
+					pub pool_id: ::core::primitive::u32,
+					pub era: ::core::primitive::u32,
+					pub total_native: ::core::primitive::u128,
+					pub total_avail: ::core::primitive::u128,
+					pub total_points: ::core::primitive::u128,
+					pub user_points: runtime_types::bounded_collections::bounded_vec::BoundedVec<(
+						::subxt::ext::subxt_core::utils::H160,
+						::core::primitive::u128,
+					)>,
+					pub targets: runtime_types::bounded_collections::bounded_vec::BoundedVec<
+						::subxt::ext::subxt_core::utils::AccountId32,
+					>,
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				pub struct FusionMemberCurrencyBalance {
+					pub evm_address: ::subxt::ext::subxt_core::utils::H160,
+					pub currency_id: ::core::primitive::u32,
+					pub amount: ::core::primitive::u128,
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				pub struct FusionMembership {
+					pub evm_address: ::subxt::ext::subxt_core::utils::H160,
+					pub pool_id: ::core::primitive::u32,
+					pub active_points: ::core::primitive::u128,
+					pub unbonding_chunks:
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<(
+							::core::primitive::u32,
+							::core::primitive::u128,
+						)>,
+					pub is_compounding: ::core::primitive::bool,
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				pub struct FusionPool {
+					pub pool_id: ::core::primitive::u32,
+					pub currency_id: ::core::primitive::u32,
+					pub apy: runtime_types::sp_arithmetic::per_things::Perbill,
+					pub pool_account: ::subxt::ext::subxt_core::utils::AccountId32,
+					pub nominator:
+						::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
+					pub reward_account:
+						::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
+					pub members: runtime_types::bounded_collections::bounded_vec::BoundedVec<(
+						::subxt::ext::subxt_core::utils::H160,
+						::core::primitive::u128,
+					)>,
+					pub targets: runtime_types::bounded_collections::bounded_vec::BoundedVec<
+						::subxt::ext::subxt_core::utils::AccountId32,
+					>,
+					pub total_staked_native: ::core::primitive::u128,
+					pub total_staked_points: ::core::primitive::u128,
+					pub total_slashed_native: ::core::primitive::u128,
+					pub total_unbonding_native: ::core::primitive::u128,
+					pub state: runtime_types::pallet_fusion::types::FusionPoolState,
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				pub enum FusionPoolState {
+					#[codec(index = 0)]
+					Open,
+					#[codec(index = 1)]
+					Blocked,
+					#[codec(index = 2)]
+					Paused,
+					#[codec(index = 3)]
+					Destroying,
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				pub struct FusionSlash {
+					pub pool_id: ::core::primitive::u32,
+					pub currency_id: ::core::primitive::u32,
+					pub slash_era: ::core::primitive::u32,
+					pub slash_apply: ::core::primitive::u32,
+					pub slash_amount: ::core::primitive::u128,
+				}
+				#[derive(
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[decode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+				)]
+				#[encode_as_type(
+					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+				)]
+				pub struct PalletAccounts {
+					pub funds_reward_account: ::subxt::ext::subxt_core::utils::AccountId32,
+					pub claimable_reward_account: ::subxt::ext::subxt_core::utils::AccountId32,
+					pub avail_currency_account: ::subxt::ext::subxt_core::utils::AccountId32,
+				}
 			}
 		}
 		pub mod pallet_grandpa {

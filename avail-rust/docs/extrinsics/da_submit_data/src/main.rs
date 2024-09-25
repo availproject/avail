@@ -1,4 +1,4 @@
-use avail_rust::{Data, Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Data, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -11,21 +11,15 @@ async fn main() -> Result<(), String> {
 	let data = String::from("My Awesome Data").as_bytes().to_vec();
 	let data = Data { 0: data };
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.data_availability
-		.submit_data(data, WaitFor::BlockInclusion, &account)
+		.submit_data(data, wait_for, &account, Some(options))
 		.await?;
 
-	println!(
-		"Who={}, DataHash={:?}",
-		result.event.who, result.event.data_hash
-	);
-	println!("TxData={:?}", result.tx_data.data);
-	println!(
-		"TxHash={:?}, BlockHash={:?}",
-		result.tx_hash, result.block_hash
-	);
+	dbg!(result);
 
 	Ok(())
 }

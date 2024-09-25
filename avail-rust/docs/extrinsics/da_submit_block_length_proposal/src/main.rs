@@ -1,4 +1,4 @@
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -12,10 +12,12 @@ async fn main() -> Result<(), String> {
 	let rows = 128;
 	let cols = 128;
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.data_availability
-		.submit_block_length_proposal(rows, cols, WaitFor::BlockInclusion, &account)
+		.submit_block_length_proposal(rows, cols, wait_for, &account, Some(options))
 		.await?;
 
 	println!("Rows={:?}, Cols={:?}", result.event.rows, result.event.cols);

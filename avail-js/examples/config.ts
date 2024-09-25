@@ -1,6 +1,10 @@
 export default {
   seed: "bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice",
   endpoint: "ws://127.0.0.1:9944",
+  bridgeApi: "https://turing-bridge-api.fra.avail.so",
+  ethProviderUrl: "https://ethereum-sepolia-rpc.publicnode.com",
+  bridgeContractAddress: "0x967F7DdC4ec508462231849AE81eeaa68Ad01389",
+  data: "0",
   appId: 0,
   amount: 1,
   recipient: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
