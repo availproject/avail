@@ -671,7 +671,7 @@ pub mod pallet {
 		/// Deletes a currency
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::create_currency())]
-		pub fn delete_currency(origin: OriginFor<T>, currency_id: CurrencyId) -> DispatchResult {
+		pub fn destroy_currency(origin: OriginFor<T>, currency_id: CurrencyId) -> DispatchResult {
 			ensure_root(origin)?;
 
 			let pool_exists =
@@ -772,7 +772,7 @@ pub mod pallet {
 			};
 
 			FusionPools::<T>::insert(pool_id, new_pool);
-			FusionPoolCount::<T>::mutate(|count| *count += 1);
+			FusionPoolCount::<T>::mutate(|count| *count = count.saturating_add(1));
 
 			Self::deposit_event(Event::PoolCreated {
 				pool_id,
@@ -844,7 +844,7 @@ pub mod pallet {
 		/// Called a second time when everything is cleaned to actually destroy it
 		#[pallet::call_index(8)]
 		#[pallet::weight(T::WeightInfo::create_currency())]
-		pub fn delete_pool(origin: OriginFor<T>, pool_id: PoolId) -> DispatchResult {
+		pub fn destroy_pool(origin: OriginFor<T>, pool_id: PoolId) -> DispatchResult {
 			ensure_root(origin)?;
 
 			FusionPools::<T>::try_mutate(pool_id, |maybe_pool| -> DispatchResult {
@@ -1392,9 +1392,8 @@ impl<T: Config> Pallet<T> {
 		let history_depth = T::HistoryDepth::get();
 
 		if let Some(era_to_clear) = era.checked_sub(history_depth) {
-			// Clean fusion exposures
-			let pool_count = FusionPoolCount::<T>::get();
-			let _ = FusionExposures::<T>::clear_prefix(era_to_clear, pool_count, None);
+			// Clean fusion exposures - u32::MAX is safe knowing the maximum number of pools is low
+			let _ = FusionExposures::<T>::clear_prefix(era_to_clear, u32::MAX, None);
 
 			// Clean currency rates
 			FusionCurrencyRates::<T>::iter_keys().for_each(|(currency_id, era)| {
