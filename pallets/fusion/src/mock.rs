@@ -3,6 +3,7 @@ use frame_support::{
 	traits::{Imbalance, OnUnbalanced},
 	PalletId,
 };
+use frame_system::EnsureRoot;
 use sp_runtime::BuildStorage;
 use sp_staking::EraIndex;
 
@@ -11,6 +12,7 @@ use crate::{self as pallet_fusion, NegativeImbalanceOf};
 type Extrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockDaBlock<Test>;
 type Balance = u64;
+type AccountId = u64;
 
 frame_support::construct_runtime!(
 	pub struct Test {
@@ -78,6 +80,7 @@ impl pallet_fusion::Config for Test {
 	type Currency = Balances;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
+	type ApprovedOrigin = EnsureRoot<AccountId>;
 	type PalletId = FusionPalletId;
 	type MaxCurrencyName = MaxCurrencyName;
 	type MaxMembersPerPool = MaxMembersPerPool;

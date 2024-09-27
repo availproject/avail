@@ -320,6 +320,7 @@ impl pallet_fusion::Config for Test {
 	type Currency = Balances;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
+	type ApprovedOrigin = EnsureRoot<AccountId>;
 	type PalletId = FusionPalletId;
 	type MaxCurrencyName = MaxCurrencyName;
 	type MaxMembersPerPool = MaxMembersPerPool;

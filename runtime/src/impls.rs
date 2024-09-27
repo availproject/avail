@@ -158,6 +158,10 @@ impl pallet_fusion::Config for Runtime {
 	type Currency = Balances;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
+	type ApprovedOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 5, 7>,
+	>;
 	type PalletId = FusionPalletId;
 	type MaxCurrencyName = MaxCurrencyName;
 	type MaxMembersPerPool = MaxMembersPerPool;

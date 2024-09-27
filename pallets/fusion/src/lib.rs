@@ -13,7 +13,6 @@ mod weights;
 
 use crate::types::*;
 use alloc::collections::BTreeMap;
-use alloc::format;
 use frame_support::{
 	dispatch::GetDispatchInfo,
 	pallet_prelude::*,
@@ -63,6 +62,9 @@ pub mod pallet {
 
 		/// Type representing the weight of this pallet
 		type WeightInfo: WeightInfo;
+
+		/// Someone who can call the admin extrinsics.
+		type ApprovedOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// Currency type for this pallet.
 		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
@@ -131,7 +133,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn fusion_currencies)]
 	pub type FusionCurrencies<T: Config> =
-		StorageMap<_, Blake2_128Concat, CurrencyId, FusionCurrency<T>, OptionQuery>;
+		StorageMap<_, Twox64Concat, CurrencyId, FusionCurrency<T>, OptionQuery>;
 
 	/// Stores the number of currencies created
 	#[pallet::storage]
@@ -142,7 +144,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn fusion_pools)]
 	pub type FusionPools<T: Config> =
-		StorageMap<_, Blake2_128Concat, PoolId, FusionPool<T>, OptionQuery>;
+		StorageMap<_, Twox64Concat, PoolId, FusionPool<T>, OptionQuery>;
 
 	/// Stores the number of pools created
 	#[pallet::storage]
@@ -156,7 +158,7 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		EvmAddress,
-		Blake2_128Concat,
+		Twox64Concat,
 		PoolId,
 		FusionMembership<T>,
 		OptionQuery,
@@ -169,7 +171,7 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		EvmAddress,
-		Blake2_128Concat,
+		Twox64Concat,
 		CurrencyId,
 		FusionMemberCurrencyBalance,
 		OptionQuery,
@@ -180,9 +182,9 @@ pub mod pallet {
 	#[pallet::getter(fn fusion_era_rewards)]
 	pub type FusionEraRewards<T: Config> = StorageDoubleMap<
 		_,
-		Blake2_128Concat,
+		Twox64Concat,
 		EraIndex,
-		Blake2_128Concat,
+		Twox64Concat,
 		PoolId,
 		EraReward<T>,
 		OptionQuery,
@@ -194,9 +196,9 @@ pub mod pallet {
 	#[pallet::getter(fn fusion_currency_rates)]
 	pub type FusionCurrencyRates<T: Config> = StorageDoubleMap<
 		_,
-		Blake2_128Concat,
+		Twox64Concat,
 		CurrencyId,
-		Blake2_128Concat,
+		Twox64Concat,
 		EraIndex,
 		BalanceOf<T>,
 		OptionQuery,
@@ -206,7 +208,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn fusion_currency_rate_changes)]
 	pub type FusionCurrencyRateChanges<T: Config> =
-		StorageMap<_, Blake2_128Concat, CurrencyId, BalanceOf<T>, OptionQuery>;
+		StorageMap<_, Twox64Concat, CurrencyId, BalanceOf<T>, OptionQuery>;
 
 	/// Mapping from EVM Address to Substrate address
 	#[pallet::storage]
@@ -219,9 +221,9 @@ pub mod pallet {
 	#[pallet::getter(fn fusion_exposures)]
 	pub type FusionExposures<T: Config> = StorageDoubleMap<
 		_,
-		Blake2_128Concat,
+		Twox64Concat,
 		EraIndex,
-		Blake2_128Concat,
+		Twox64Concat,
 		PoolId,
 		FusionExposure<T>,
 		OptionQuery,
@@ -234,8 +236,8 @@ pub mod pallet {
 		_,
 		(
 			NMapKey<Blake2_128Concat, EvmAddress>,
-			NMapKey<Blake2_128Concat, PoolId>,
-			NMapKey<Blake2_128Concat, EraIndex>,
+			NMapKey<Twox64Concat, PoolId>,
+			NMapKey<Twox64Concat, EraIndex>,
 		),
 		BalanceOf<T>,
 		OptionQuery,
@@ -744,15 +746,15 @@ pub mod pallet {
 				FusionCurrencies::<T>::get(currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
 			ensure!(!currency.is_destroyed, Error::<T>::CurrencyDestroyed);
 
-			let account_id = format!("{}{}", POOL_ACCOUNT_PREFIX, pool_id);
-			let pool_account =
-				T::PalletId::get().into_sub_account_truncating(account_id.as_bytes());
+			let pool_account = T::PalletId::get()
+				.into_sub_account_truncating((FusionAccountType::PoolAccount, pool_id));
 
 			let mut reward_account: Option<T::AccountId> = None;
 			if with_reward_account {
-				let reward_acc_id = format!("{}{}", POOL_REWARD_ACCOUNT_PREFIX, pool_id);
-				reward_account =
-					Some(T::PalletId::get().into_sub_account_truncating(reward_acc_id.as_bytes()));
+				reward_account = Some(
+					T::PalletId::get()
+						.into_sub_account_truncating((FusionAccountType::RewardAccount, pool_id)),
+				);
 			}
 
 			let new_pool = FusionPool::<T> {
@@ -2137,8 +2139,7 @@ impl<T: Config> FusionExt<T::AccountId> for Pallet<T> {
 	}
 
 	fn get_pool_account(id: PoolId) -> T::AccountId {
-		let account_id = format!("{}{}", POOL_ACCOUNT_PREFIX, id);
-		T::PalletId::get().into_sub_account_truncating(account_id.as_bytes())
+		T::PalletId::get().into_sub_account_truncating((FusionAccountType::PoolAccount, id))
 	}
 
 	/// Set the exposure for each pool for reward computation

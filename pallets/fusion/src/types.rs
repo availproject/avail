@@ -20,12 +20,15 @@ pub type CurrencyId = u32;
 /// Type of the pool id
 pub type PoolId = u32;
 
-/// Prefix used for storing accounts
-pub const FUNDS_ACCOUNT_PREFIX: &str = "funds";
-pub const CLAIMABLE_ACCOUNT_PREFIX: &str = "claimable";
-pub const AVAIL_CURRENCY_ACCOUNT_PREFIX: &str = "avail";
-pub const POOL_ACCOUNT_PREFIX: &str = "pool_acc_";
-pub const POOL_REWARD_ACCOUNT_PREFIX: &str = "reward_acc_";
+/// The type of account being created.
+#[derive(Encode, Decode)]
+pub enum FusionAccountType {
+	Funds,
+	Claimable,
+	AvailCurrency,
+	PoolAccount,
+	RewardAccount,
+}
 
 /// State of the pool
 #[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -60,11 +63,11 @@ impl<T: Config> Default for PalletAccounts<T> {
 	fn default() -> Self {
 		PalletAccounts {
 			funds_reward_account: T::PalletId::get()
-				.into_sub_account_truncating(FUNDS_ACCOUNT_PREFIX.as_bytes()),
+				.into_sub_account_truncating(FusionAccountType::Funds),
 			claimable_reward_account: T::PalletId::get()
-				.into_sub_account_truncating(CLAIMABLE_ACCOUNT_PREFIX.as_bytes()),
+				.into_sub_account_truncating(FusionAccountType::Claimable),
 			avail_currency_account: T::PalletId::get()
-				.into_sub_account_truncating(AVAIL_CURRENCY_ACCOUNT_PREFIX.as_bytes()),
+				.into_sub_account_truncating(FusionAccountType::AvailCurrency),
 		}
 	}
 }
