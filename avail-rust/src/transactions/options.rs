@@ -3,7 +3,7 @@ use crate::{AccountId, AvailBlocksClient, AvailExtrinsicParamsBuilder, BlockHash
 
 use super::Params;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Options {
 	pub app_id: Option<u32>,
 	pub mortality: Option<Mortality>,
@@ -41,7 +41,7 @@ impl Options {
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Mortality {
 	pub period: u64,
 	pub block_hash: Option<BlockHash>,
@@ -52,7 +52,7 @@ impl Mortality {
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum Nonce {
 	BestBlock,
 	FinalizedBlock,

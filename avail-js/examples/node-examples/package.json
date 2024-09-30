@@ -24,8 +24,8 @@
     "validium": "npm run build && node build/node-examples/src/validium.js"
   },
   "dependencies": {
-    "avail-js-sdk": "^0.2.15",
-    "ethers": "5.4"
+    "avail-js-sdk": "^0.2.17",
+    "ethers": "^6.13.2"
   },
   "devDependencies": {
     "rimraf": "^5.0.5"
