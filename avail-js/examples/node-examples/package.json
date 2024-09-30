@@ -24,7 +24,7 @@
     "validium": "npm run build && node build/node-examples/src/validium.js"
   },
   "dependencies": {
-    "avail-js-sdk": "^0.2.17",
+    "avail-js-sdk": "^0.2.18",
     "ethers": "^6.13.2"
   },
   "devDependencies": {
