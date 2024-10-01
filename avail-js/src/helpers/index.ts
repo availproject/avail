@@ -3,6 +3,8 @@ import { decodeAddress, encodeAddress, Keyring } from "@polkadot/keyring"
 import { KeyringPair } from "@polkadot/keyring/types"
 import { hexToU8a, isHex, BN, u8aToHex } from "@polkadot/util"
 
+export * from "./types"
+
 /**
  *
  * This function checks if a given address is valid.

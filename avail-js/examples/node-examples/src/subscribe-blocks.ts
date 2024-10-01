@@ -1,5 +1,4 @@
-import { initialize } from "avail-js-sdk"
-import { Header } from "@polkadot/types/interfaces/runtime"
+import { DaHeader, initialize } from "avail-js-sdk"
 import config from "../../config"
 
 /**
@@ -11,8 +10,12 @@ const main = async () => {
     const waitForBlocks = 3
     let count = 0
 
-    const unsubscribe = await api.rpc.chain.subscribeNewHeads((header: Header) => {
+    const unsubscribe = await api.rpc.chain.subscribeNewHeads((header: DaHeader) => {
       console.log(`Chain is at block: #${header.number}`)
+      console.log("Header data", header.toJSON())
+      if (header.extension.isV3) {
+        console.log("Extension", header.extension.asV3.toJSON())
+      }
       count++
       if (waitForBlocks === count) {
         console.log(`Unsubscribing from a new headers subscription after ${count} blocks`)
