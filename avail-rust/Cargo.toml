@@ -7,38 +7,29 @@ version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-subxt = { version = "0.37", default-features = false, features = ["web", "jsonrpsee"] }
-subxt-core = { version = "0.37", default-features = false }
-subxt-signer = { version = "0.37", default-features = false, features = ["web", "sr25519", "subxt"] }
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-node-2", default-features = false, features = ["serde", "runtime", "disable_panic_handler"] }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "core-node-2", default-features = false, features = ["serde"] }
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-subxt = { version = "0.37" }
-subxt-core = { version = "0.37" }
-subxt-signer = { version = "0.37" }
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-node-2", features = ["serde", "runtime"] }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "core-node-2", features = ["serde"] }
-
 [dependencies]
 serde = { version = "1.0.195", features = ["derive", ] }
 serde_json = { version = "1.0.124" }
 derive_more = "0.99.17"
+subxt = { version = "0.37" }
+subxt-core = { version = "0.37" }
+subxt-signer = { version = "0.37" }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
 	"derive",
 	"full",
 	"bit-vec",
 ] }
 scale-info = { version = "2.5.0", features = ["bit-vec"] }
+avail-core = {  git = "https://github.com/availproject/avail-core", tag = "core-node-3", features = ["serde", "runtime"] }
 hex = { version = "0.4" }
 base58 = { version = "0.2.0" }
 tokio = { version = "1.21.2" }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9", default-features = false }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
+kate-recovery = {  git = "https://github.com/availproject/avail-core", tag = "core-node-3", features = ["serde"] }
 bounded-collections = { version = "0.2.0", features = ["serde"] }
 
 [patch.crates-io]
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9" }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9" }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9" }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-9" }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10" }
+sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10" }
+sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10" }
+sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10" }

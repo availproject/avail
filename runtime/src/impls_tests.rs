@@ -421,7 +421,7 @@ mod tests {
 		derive_impl, parameter_types,
 		traits::{
 			tokens::{PayFromAccount, UnityAssetBalanceConversion},
-			ConstU32, Currency, FindAuthor, OnUnbalanced,
+			ConstU32, FindAuthor, OnUnbalanced,
 		},
 		PalletId,
 	};
@@ -557,8 +557,15 @@ mod tests {
 	#[test]
 	fn test_fees_and_tip_split() {
 		new_test_ext().execute_with(|| {
-			let fee = Balances::issue(10);
-			let tip = Balances::issue(20);
+			let fee =
+				<pallet_balances::Pallet<Test> as frame_support::traits::fungible::Balanced<
+					AccountId,
+				>>::issue(10);
+
+			let tip =
+				<pallet_balances::Pallet<Test> as frame_support::traits::fungible::Balanced<
+					AccountId,
+				>>::issue(20);
 
 			assert_eq!(Balances::free_balance(Treasury::account_id()), 0);
 			assert_eq!(Balances::free_balance(TEST_ACCOUNT), 0);
