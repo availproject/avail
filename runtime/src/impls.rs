@@ -451,7 +451,7 @@ impl pallet_election_provider_multi_phase::Config for Runtime {
 	type Fallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
 	type ForceOrigin = EnsureRoot<AccountId>;
 	type GovernanceFallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
-	type MaxWinners = constants::MaxActiveValidators;
+	type MaxWinners = constants::staking::MaxActiveValidators;
 	type MinerConfig = Self;
 	type MinerTxPriority = constants::staking::MultiPhaseUnsignedPriority;
 	type OffchainRepeat = constants::staking::OffchainRepeat;

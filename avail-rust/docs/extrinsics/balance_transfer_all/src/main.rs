@@ -1,4 +1,4 @@
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -11,10 +11,12 @@ async fn main() -> Result<(), String> {
 	let dest = "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw"; // Eve
 	let keep_alive = false;
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.balances
-		.transfer_all(dest, keep_alive, WaitFor::BlockInclusion, &account, None)
+		.transfer_all(dest, keep_alive, wait_for, &account, Some(options))
 		.await?;
 
 	if let Some(event) = &result.event2 {

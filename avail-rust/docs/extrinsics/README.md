@@ -11,7 +11,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn create_application_key(&self, key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<CreateApplicationKeyTxSuccess, String>;
+async fn create_application_key(&self, key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<CreateApplicationKeyTxSuccess, String>;
 ```
 
 #### Parameters
@@ -21,7 +21,7 @@ async fn create_application_key(&self, key: Key, wait_for: WaitFor, account: &Ke
 | key       | Key         | false    | name of the application key                     |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -40,7 +40,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Key, Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Key, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -53,10 +53,12 @@ async fn main() -> Result<(), String> {
 	let key = String::from("MyAwesomeKey").as_bytes().to_vec();
 	let key = Key { 0: key };
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.data_availability
-		.create_application_key(key, WaitFor::BlockInclusion, &account, None)
+		.create_application_key(key, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -109,7 +111,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn submit_data(&self, data: Data, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<SubmitDataTxSuccess, String>;
+async fn submit_data(&self, data: Data, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SubmitDataTxSuccess, String>;
 ```
 
 #### Parameters
@@ -119,7 +121,7 @@ async fn submit_data(&self, data: Data, wait_for: WaitFor, account: &Keypair, op
 | data      | Data        | false    | data to be submitted                            |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -138,7 +140,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Data, Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Data, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -151,10 +153,12 @@ async fn main() -> Result<(), String> {
 	let data = String::from("My Awesome Data").as_bytes().to_vec();
 	let data = Data { 0: data };
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.data_availability
-		.submit_data(data, WaitFor::BlockInclusion, &account, None)
+		.submit_data(data, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -205,7 +209,7 @@ Origin Level: Root
 ### Interface
 
 ```rust
-async fn submit_block_length_proposal(&self, rows: u32, cols: u32, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<SubmitBlockLengthProposalTxSuccess, String>;
+async fn submit_block_length_proposal(&self, rows: u32, cols: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SubmitBlockLengthProposalTxSuccess, String>;
 ```
 
 #### Parameters
@@ -216,7 +220,7 @@ async fn submit_block_length_proposal(&self, rows: u32, cols: u32, wait_for: Wai
 | cols      | u32         | false    | number of cols in block                         |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -235,7 +239,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -249,13 +253,19 @@ async fn main() -> Result<(), String> {
 	let rows = 128;
 	let cols = 128;
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.data_availability
-		.submit_block_length_proposal(rows, cols, WaitFor::BlockInclusion, &account, None)
+		.submit_block_length_proposal(rows, cols, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	println!("Rows={:?}, Cols={:?}", result.event.rows, result.event.cols);
+	println!(
+		"TxHash={:?}, BlockHash={:?}",
+		result.tx_hash, result.block_hash
+	);
 
 	Ok(())
 }
@@ -268,7 +278,7 @@ Origin Level: Root
 ### Interface
 
 ```rust
-async fn set_application_key(&self, old_key: Key, new_key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<SetApplicationKeyTxSuccess, String>;
+async fn set_application_key(&self, old_key: Key, new_key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetApplicationKeyTxSuccess, String>;
 ```
 
 #### Parameters
@@ -279,7 +289,7 @@ async fn set_application_key(&self, old_key: Key, new_key: Key, wait_for: WaitFo
 | newKey    | Key         | false    | application key that will replace the old one   |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -298,7 +308,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Key, Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Key, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -314,13 +324,22 @@ async fn main() -> Result<(), String> {
 	let new_key = String::from("MyAwesomeKey2").as_bytes().to_vec();
 	let new_key = Key { 0: new_key };
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.data_availability
-		.set_application_key(old_key, new_key, WaitFor::BlockInclusion, &account, None)
+		.set_application_key(old_key, new_key, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	println!(
+		"OldKey={:?}, NewKey={:?}",
+		result.event.old_key, result.event.new_key
+	);
+	println!(
+		"TxHash={:?}, BlockHash={:?}",
+		result.tx_hash, result.block_hash
+	);
 
 	Ok(())
 }
@@ -333,7 +352,7 @@ Origin Level: Root
 ### Interface
 
 ```rust
-async fn set_submit_data_fee_modifier(&self, modifier: DispatchFeeModifier, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<SetSubmitDataFeeModifierTxSuccess, String>;
+async fn set_submit_data_fee_modifier(&self, modifier: DispatchFeeModifier, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetSubmitDataFeeModifierTxSuccess, String>;
 ```
 
 #### Parameters
@@ -343,7 +362,7 @@ async fn set_submit_data_fee_modifier(&self, modifier: DispatchFeeModifier, wait
 | modifier  | DispatchFeeModifier | false    | new fee modifier values                         |
 | waitFor   | WaitFor             | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair         | false    | account that will send and sign the transaction |
-| options   | Params              | true     | transaction params                              |
+| options   | Options             | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -362,7 +381,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{DispatchFeeModifier, Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{DispatchFeeModifier, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -379,10 +398,12 @@ async fn main() -> Result<(), String> {
 		weight_fee_multiplier: None,
 	};
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.data_availability
-		.set_submit_data_fee_modifier(modifier, WaitFor::BlockInclusion, &account, None)
+		.set_submit_data_fee_modifier(modifier, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -441,7 +462,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn transfer_keep_alive(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<TransferKeepAliveTxSuccess, String>;
+async fn transfer_keep_alive(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferKeepAliveTxSuccess, String>;
 ```
 
 #### Parameters
@@ -452,7 +473,7 @@ async fn transfer_keep_alive(&self, dest: &str, value: u128, wait_for: WaitFor, 
 | value     | u128        | false    | amount that is send. 10^18 is equal to 1 AVL    |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -471,7 +492,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -484,10 +505,12 @@ async fn main() -> Result<(), String> {
 	let dest: &str = "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw"; // Eve
 	let amount = 1_000_000_000_000_000_000u128; // 1 Avail
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.balances
-		.transfer_keep_alive(dest, amount, WaitFor::BlockInclusion, &account, None)
+		.transfer_keep_alive(dest, amount, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -536,7 +559,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn transfer_allow_death(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<TransferAllowDeathTxSuccess, String>;
+async fn transfer_allow_death(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferAllowDeathTxSuccess, String>;
 ```
 
 #### Parameters
@@ -547,7 +570,7 @@ async fn transfer_allow_death(&self, dest: &str, value: u128, wait_for: WaitFor,
 | value     | BN          | false    | amount that is send. 10^18 is equal to 1 AVL    |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -566,7 +589,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -579,10 +602,12 @@ async fn main() -> Result<(), String> {
 	let dest = "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw"; // Eve
 	let amount = 1_000_000_000_000_000_00u128; // 1 Avail
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.balances
-		.transfer_allow_death(dest, amount, WaitFor::BlockInclusion, &account, None)
+		.transfer_allow_death(dest, amount, wait_for, &account, Some(options))
 		.await?;
 
 	if let Some(event) = &result.event2 {
@@ -636,7 +661,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn transfer_all(&self, dest: &str, keep_alive: bool, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<TransferAllTxSuccess, String>;
+async fn transfer_all(&self, dest: &str, keep_alive: bool, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferAllTxSuccess, String>;
 ```
 
 #### Parameters
@@ -647,7 +672,7 @@ async fn transfer_all(&self, dest: &str, keep_alive: bool, wait_for: WaitFor, ac
 | keepAlive | bool        | false    | if set to false it will reap the account as well |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization         |
 | account   | KeyringPair | false    | account that will send and sign the transaction  |
-| options   | Params      | true     | transaction params                               |
+| options   | Options     | true     | transaction parameters                           |
 
 ### Minimal Example
 
@@ -666,7 +691,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -679,10 +704,12 @@ async fn main() -> Result<(), String> {
 	let dest = "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw"; // Eve
 	let keep_alive = false;
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.balances
-		.transfer_all(dest, keep_alive, WaitFor::BlockInclusion, &account, None)
+		.transfer_all(dest, keep_alive, wait_for, &account, Some(options))
 		.await?;
 
 	if let Some(event) = &result.event2 {
@@ -746,7 +773,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn bond(&self, value: u128, payee: RewardDestination, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<BondTxSuccess, String>;
+async fn bond(&self, value: u128, payee: RewardDestination, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<BondTxSuccess, String>;
 ```
 
 #### Parameters
@@ -757,7 +784,7 @@ async fn bond(&self, value: u128, payee: RewardDestination, wait_for: WaitFor, a
 | payee     | RewardDestination | false    | Can be: "Staked", "Stash", "None" or an account address |
 | waitFor   | WaitFor           | false    | wait for block inclusion or finalization                |
 | account   | KeyringPair       | false    | account that will send and sign the transaction         |
-| options   | Params            | true     | transaction params                                      |
+| options   | Options           | true     | transaction parameters                                  |
 
 ### Minimal Example
 
@@ -776,7 +803,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, RewardDestination, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, RewardDestination, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -789,10 +816,12 @@ async fn main() -> Result<(), String> {
 	let value = 1_000_000_000_000_000_000u128 * 100_000u128; // 100_000 Avail
 	let payee = RewardDestination::Staked;
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.bond(value, payee, WaitFor::BlockInclusion, &account, None)
+		.bond(value, payee, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -840,7 +869,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn bond_extra(&self, max_additional: u128, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<BondExtraTxSuccess, String>;
+async fn bond_extra(&self, max_additional: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<BondExtraTxSuccess, String>;
 ```
 
 #### Parameters
@@ -850,7 +879,7 @@ async fn bond_extra(&self, max_additional: u128, wait_for: WaitFor, account: &Ke
 | maxAdditional | u128        | false    | additional amount that is bond. 10^18 is equal to 1 Avail |
 | waitFor       | WaitFor     | false    | wait for block inclusion or finalization                  |
 | account       | KeyringPair | false    | account that will send and sign the transaction           |
-| options       | Params      | true     | transaction params                                        |
+| options       | Options     | true     | transaction parameters                                    |
 
 ### Minimal Example
 
@@ -869,7 +898,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -881,10 +910,12 @@ async fn main() -> Result<(), String> {
 	let account = Keypair::from_uri(&secret_uri).unwrap();
 	let max_additional = 1_000_000_000_000_000_000u128; // 1 AVAIL
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.bond_extra(max_additional, WaitFor::BlockInclusion, &account, None)
+		.bond_extra(max_additional, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -932,7 +963,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn chill(&self, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<ChillTxSuccess, String>;
+async fn chill(&self, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ChillTxSuccess, String>;
 ```
 
 #### Parameters
@@ -941,7 +972,7 @@ async fn chill(&self, wait_for: WaitFor, account: &Keypair, options: Option<Para
 | --------- | ----------- | -------- | ----------------------------------------------- |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -960,7 +991,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -971,10 +1002,12 @@ async fn main() -> Result<(), String> {
 	let secret_uri = SecretUri::from_str("//Alice//stash").unwrap();
 	let account = Keypair::from_uri(&secret_uri).unwrap();
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.chill(WaitFor::BlockInclusion, &account, None)
+		.chill(wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -1023,7 +1056,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn chill_other(&self, stash: &str, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<ChillOtherTxSuccess, String>;
+async fn chill_other(&self, stash: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ChillOtherTxSuccess, String>;
 ```
 
 #### Parameters
@@ -1033,7 +1066,7 @@ async fn chill_other(&self, stash: &str, wait_for: WaitFor, account: &Keypair, o
 | stash     | &str        | false    | address of stash account to chill               |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -1052,7 +1085,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -1064,10 +1097,12 @@ async fn main() -> Result<(), String> {
 	let account = Keypair::from_uri(&secret_uri).unwrap();
 	let stash = "5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY"; // Alice Stash
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.chill_other(stash, WaitFor::BlockInclusion, &account, None)
+		.chill_other(stash, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -1083,7 +1118,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn nominate( &self, targets: &[String], wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<NominateTxSuccess, String>;
+async fn nominate( &self, targets: &[String], wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<NominateTxSuccess, String>;
 ```
 
 #### Parameters
@@ -1093,7 +1128,7 @@ async fn nominate( &self, targets: &[String], wait_for: WaitFor, account: &Keypa
 | targets   | &[String]   | false    | list od addresses to nominate                   |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -1112,7 +1147,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -1127,10 +1162,12 @@ async fn main() -> Result<(), String> {
 		String::from("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"), // Bob;
 	];
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.nominate(&targets, WaitFor::BlockInclusion, &account, None)
+		.nominate(&targets, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -1166,8 +1203,8 @@ NominateTxSuccess {
     },
     tx_data: Nominate {
         targets: [
-            "5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY",
-            "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+            Id(AccountId32(...)),
+            Id(AccountId32(...)),
         ],
     },
     tx_hash: 0x6e0ae6fde353974f8b46aace441c49ba7ab135fa3743e0e1331d35c4528dacfb,
@@ -1184,18 +1221,17 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn unbond(&self, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<UnbondTxSuccess, String>;
+async fn unbond(&self, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<UnbondTxSuccess, String>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| value     | u128          | false    | amount of tokens to unbond                      |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
-| options   | Params        | true     | transaction params                              |
+| parameter | type        | optional | description                                     |
+| --------- | ----------- | -------- | ----------------------------------------------- |
+| value     | u128        | false    | amount of tokens to unbond                      |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
+| account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -1214,7 +1250,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -1226,10 +1262,12 @@ async fn main() -> Result<(), String> {
 	let account = Keypair::from_uri(&secret_uri).unwrap();
 	let value = 1_000_000_000_000_000_000u128; // 1 Avail
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.unbond(value, WaitFor::BlockInclusion, &account, None)
+		.unbond(value, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -1277,7 +1315,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn validate(&self, commission: u8, blocked: bool, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<ValidateTxSuccess, String>;
+async fn validate(&self, commission: u8, blocked: bool, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ValidateTxSuccess, String>;
 ```
 
 #### Parameters
@@ -1288,7 +1326,7 @@ async fn validate(&self, commission: u8, blocked: bool, wait_for: WaitFor, accou
 | blocked    | bool        | false    | whether or not this validator accepts nominations     |
 | waitFor    | WaitFor     | false    | wait for block inclusion or finalization              |
 | account    | KeyringPair | false    | account that will send and sign the transaction       |
-| options    | Params      | true     | transaction params                                    |
+| options    | Options     | true     | transaction parameters                                |
 
 ### Minimal Example
 
@@ -1307,7 +1345,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -1320,10 +1358,12 @@ async fn main() -> Result<(), String> {
 	let commission = 100;
 	let blocked = false;
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.validate(commission, blocked, WaitFor::BlockInclusion, &account, None)
+		.validate(commission, blocked, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -1382,7 +1422,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn set_keys(&self, keys: SessionKeys, wait_for: WaitFor, account: &Keypair, options: Option<Params>) -> Result<SetKeysTxSuccess, String>;
+async fn set_keys(&self, keys: SessionKeys, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetKeysTxSuccess, String>;
 ```
 
 #### Parameters
@@ -1392,7 +1432,7 @@ async fn set_keys(&self, keys: SessionKeys, wait_for: WaitFor, account: &Keypair
 | keys      | SessionKeys | false    | session keys                                    |
 | waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
 | account   | KeyringPair | false    | account that will send and sign the transaction |
-| options   | Params      | true     | transaction params                              |
+| options   | Options     | true     | transaction parameters                          |
 
 ### Minimal Example
 
@@ -1411,7 +1451,7 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
 #### main.rs
 
 ```rust
-use avail_rust::{Keypair, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -1421,13 +1461,15 @@ async fn main() -> Result<(), String> {
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
 	let account = Keypair::from_uri(&secret_uri).unwrap();
-
 	let keys = sdk.rpc.author.rotate_keys().await.unwrap();
 	let keys = sdk.util.deconstruct_session_keys(keys)?;
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.session
-		.set_keys(keys, WaitFor::BlockInclusion, &account, None)
+		.set_keys(keys, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);
@@ -1478,5 +1520,1516 @@ SetKeysTxSuccess {
     tx_index: 1,
     block_hash: 0x6ac39cc7e7452179b34a92376321b66a912f48faa3e1619de1e3f255a808ae8f,
     block_number: 124,
+}
+```
+
+# Nomination Pools
+
+Runtime Component: Nomination Pools\
+Runtime Index: 36\
+Interface Module Name: nominationPools
+
+## Create
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn create(&self, amount: u128, root: &str, nominator: &str, bouncer: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolCreateWithPoolIdTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter | type        | optional | description                                        |
+| --------- | ----------- | -------- | -------------------------------------------------- |
+| amount    | u128        | false    | The amount of funds to delegate to the pool        |
+| root      | &str        | false    | The account to set as [`PoolRoles::root`]          |
+| nominator | &str        | false    | The account to set as the [`PoolRoles::nominator`] |
+| bouncer   | &str        | false    | The account to set as the [`PoolRoles::bouncer`]   |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization           |
+| account   | KeyringPair | false    | account that will send and sign the transaction    |
+| options   | Options     | true     | transaction parameters                             |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-create"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let amount = 1_000_000_000_000_000_000_000_000u128; // 1_000_000 Avail tokens
+	let root = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"; // Alice
+	let nominator = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"; // Alice
+	let bouncer = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"; // Alice
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.create(
+			amount,
+			root,
+			nominator,
+			bouncer,
+			wait_for,
+			&account,
+			Some(options),
+		)
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolCreateTxSuccess`.
+
+```rust
+PoolCreateTxSuccess {
+    event: Created {
+        depositor: AccountId32(...),
+        pool_id: 1,
+    },
+    event2: Bonded {
+        member: AccountId32(...),
+        pool_id: 1,
+        bonded: 1000000000000000000000000,
+        joined: true,
+    },
+    events: ExtrinsicEvents {
+        ext_hash: 0xd68cd496c042b1de9484c03160dcaea0b66d939a7293d457b721e908542ce4dd,
+        idx: 1,
+        events: Events {
+            event_bytes: [...],
+            start_idx: 1,
+            num_events: 19,
+        },
+    },
+    tx_hash: 0xd68cd496c042b1de9484c03160dcaea0b66d939a7293d457b721e908542ce4dd,
+    tx_index: 1,
+    block_hash: 0x21119a080adf597abb22db237f8824a0dbd823feb6a809e2f2d9bb7872377e9d,
+    block_number: 1,
+}
+```
+
+## Create with Pool Id
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn create_with_pool_id(&self, amount: u128, root: &str, nominator: &str, bouncer: &str, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolCreateWithPoolIdTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter | type        | optional | description                                        |
+| --------- | ----------- | -------- | -------------------------------------------------- |
+| amount    | u128        | false    | The amount of funds to delegate to the pool        |
+| root      | &str        | false    | The account to set as [`PoolRoles::root`]          |
+| nominator | &str        | false    | The account to set as the [`PoolRoles::nominator`] |
+| bouncer   | &str        | false    | The account to set as the [`PoolRoles::bouncer`]   |
+| pool_id   | u32         | false    | pool id                                            |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization           |
+| account   | KeyringPair | false    | account that will send and sign the transaction    |
+| options   | Options     | true     | transaction parameters                             |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-create-with-pool-id"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let amount = 1_000_000_000_000_000_000_000_000u128; // 1_000_000 Avail tokens
+	let root = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"; // Alice
+	let nominator = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"; // Alice
+	let bouncer = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"; // Alice
+	let pool_id = 0;
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.create_with_pool_id(
+			amount,
+			root,
+			nominator,
+			bouncer,
+			pool_id,
+			wait_for,
+			&account,
+			Some(options),
+		)
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolCreateWithPoolIdTxSuccess`.
+
+```rust
+PoolCreateWithPoolIdTxSuccess {
+    event: Created {
+        depositor: AccountId32(...),
+        pool_id: 0,
+    },
+    event2: Bonded {
+        member: AccountId32(...),
+        pool_id: 0,
+        bonded: 1000000000000000000000000,
+        joined: true,
+    },
+    events: ExtrinsicEvents {
+        ext_hash: 0xaa16bad7378608bda89476353a61c1ae1ecc36166f0c5adda50cd563162889db,
+        idx: 1,
+        events: Events {
+            event_bytes: [],
+            start_idx: 1,
+            num_events: 19,
+        },
+    },
+    tx_hash: 0xaa16bad7378608bda89476353a61c1ae1ecc36166f0c5adda50cd563162889db,
+    tx_index: 1,
+    block_hash: 0xc04789228e6fa209119336ac33bcd6280b6b0c22e5ef9125c36b9f4a04e58adc,
+    block_number: 32,
+}
+```
+
+## Join
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn join(&self, amount: u128, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolJoinTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter | type        | optional | description                                     |
+| --------- | ----------- | -------- | ----------------------------------------------- |
+| amount    | u128        | false    | The amount of funds to delegate to the pool     |
+| pool_id   | u32         | false    | pool id                                         |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
+| account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Options     | true     | transaction parameters                          |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-join"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Bob").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let amount = 1_000_000_000_000_000_000_000_000u128; // 1_000_000 Avail tokens
+	let pool_id = 1;
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.join(amount, pool_id, wait_for, &account, Some(options))
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolJoinTxSuccess`.
+
+```rust
+PoolJoinTxSuccess {
+    event: Bonded {
+        member: AccountId32(...),
+        pool_id: 1,
+        bonded: 1000000000000000000000000,
+        joined: true,
+    },
+    events: ExtrinsicEvents {
+        ext_hash: 0x1c3c2412859e9c1d29a17cdaad48ff835bfbc7bb1b2bda5686d152f7c5145a40,
+        idx: 1,
+        events: Events {
+            event_bytes: [...],
+            start_idx: 1,
+            num_events: 12,
+        },
+    },
+    tx_hash: 0x1c3c2412859e9c1d29a17cdaad48ff835bfbc7bb1b2bda5686d152f7c5145a40,
+    tx_index: 1,
+    block_hash: 0x67f28bfd6826522dc53ccfdec24dffbe9954ff4af8d96e81e983227af101786b,
+    block_number: 24,
+}
+```
+
+## Nominate
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn nominate(&self, pool_id: u32, validators: Vec<String>, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolNominateTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter  | type        | optional | description                                     |
+| ---------- | ----------- | -------- | ----------------------------------------------- |
+| pool_id    | u32         | false    | pool id                                         |
+| validators | String      | false    | list of validators to nominate                  |
+| waitFor    | WaitFor     | false    | wait for block inclusion or finalization        |
+| account    | KeyringPair | false    | account that will send and sign the transaction |
+| options    | Options     | true     | transaction parameters                          |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-nominate"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let pool_id = 1;
+	let validators = vec![
+		String::from("5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY"), // Alice_Stash
+		String::from("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"), // Bob
+	];
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.nominate(pool_id, validators, wait_for, &account, Some(options))
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolNominateTxSuccess`.
+
+```rust
+PoolNominateTxSuccess {
+    events: ExtrinsicEvents {
+        ext_hash: 0xde74e9df59143b84ed216e4e52fd58ec8bd557fae4b54d992a9abb1adf750446,
+        idx: 1,
+        events: Events {
+            event_bytes: [...],
+            start_idx: 1,
+            num_events: 8,
+        },
+    },
+    tx_data: Nominate {
+        pool_id: 1,
+        validators: [
+            AccountId32(...),
+            AccountId32(...),
+        ],
+    },
+    tx_hash: 0xde74e9df59143b84ed216e4e52fd58ec8bd557fae4b54d992a9abb1adf750446,
+    tx_index: 1,
+    block_hash: 0x599dd28c28fe3d892ebbe7dfdc315bee03fa2a3d968a5c53f4cd031656a94a9a,
+    block_number: 86,
+}
+```
+
+## Bond Extra
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn bond_extra(&self, extra: BondExtra<u128>, wait_for: WaitFor, account: &Keypair, options: Option<Options>,) -> Result<PoolBondExtraTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter | type            | optional | description                                                                                            |
+| --------- | --------------- | -------- | ------------------------------------------------------------------------------------------------------ |
+| extra     | BondExtra<u128> | false    | Additional funds can come from either the free balance of the account, of from the accumulated rewards |
+| waitFor   | WaitFor         | false    | wait for block inclusion or finalization                                                               |
+| account   | KeyringPair     | false    | account that will send and sign the transaction                                                        |
+| options   | Options         | true     | transaction parameters                                                                                 |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-bond-extra"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{BondExtra, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let extra = BondExtra::FreeBalance(1_000_000_000_000_000_000u128);
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.bond_extra(extra, wait_for, &account, Some(options))
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolBondExtraTxSuccess`.
+
+```rust
+PoolBondExtraTxSuccess {
+    event: Bonded {
+        member: AccountId32(...),
+        pool_id: 1,
+        bonded: 1000000000000000000,
+        joined: false,
+    },
+    events: ExtrinsicEvents {
+        ext_hash: 0xcbf6ac8e1371a18ff7a888924abc51d486a48a366816282ef67f117dc4d9471d,
+        idx: 1,
+        events: Events {
+            event_bytes: [...],
+            start_idx: 1,
+            num_events: 12,
+        },
+    },
+    tx_hash: 0xcbf6ac8e1371a18ff7a888924abc51d486a48a366816282ef67f117dc4d9471d,
+    tx_index: 1,
+    block_hash: 0xa594a8b39d484e352ea129ea982c80c326f4842946d2e5d9168c94e776d02ec9,
+    block_number: 69,
+}
+```
+
+## Set Commission
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn set_commission(&self, pool_id: u32, new_commission: Option<NewCommission>, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolSetCommissionTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter      | type                  | optional | description                                                      |
+| -------------- | --------------------- | -------- | ---------------------------------------------------------------- |
+| pool_id        | u32                   | false    | pool id                                                          |
+| new_commission | Option<NewCommission> | false    | if empty it removes the existing commission otherwise it sets it |
+| waitFor        | WaitFor               | false    | wait for block inclusion or finalization                         |
+| account        | KeyringPair           | false    | account that will send and sign the transaction                  |
+| options        | Options               | true     | transaction parameters                                           |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-set-commission"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{Keypair, NewCommission, Nonce, Options, Perbill, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let pool_id = 1;
+	let new_commission = NewCommission {
+		payee: String::from("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"), // Alice
+		amount: Perbill(10_000_000u32),                                          // 1%
+	};
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.set_commission(
+			pool_id,
+			Some(new_commission),
+			wait_for,
+			&account,
+			Some(options),
+		)
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolSetCommissionTxSuccess`.
+
+```rust
+PoolSetCommissionTxSuccess {
+    event: PoolCommissionUpdated {
+        pool_id: 1,
+        current: Some(
+            (
+                Perbill(
+                    10000000,
+                ),
+                AccountId32(...),
+            ),
+        ),
+    },
+    events: ExtrinsicEvents {
+        ext_hash: 0x30f8f926e64a4aa7c55005026a261090a2d8a455efea9657a27d7b1aa668819e,
+        idx: 1,
+        events: Events {
+            event_bytes: [...],
+            start_idx: 1,
+            num_events: 9,
+        },
+    },
+    tx_hash: 0x30f8f926e64a4aa7c55005026a261090a2d8a455efea9657a27d7b1aa668819e,
+    tx_index: 1,
+    block_hash: 0xb019177c166724ec40500a92775af5cf2fab4b1203363b2b3a5aba2c6bd13f75,
+    block_number: 211,
+}
+```
+
+## Set Metadata
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn set_metadata(&self, pool_id: u32, metadata: Vec<u8>, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolSetMetadataTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter | type        | optional | description                                     |
+| --------- | ----------- | -------- | ----------------------------------------------- |
+| pool_id   | u32         | false    | pool id                                         |
+| metadata  | Vec<u8>     | false    | metadata                                        |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
+| account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Options     | true     | transaction parameters                          |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-set-metadata"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let pool_id = 1;
+	let metadata = String::from("This is metadata").as_bytes().to_vec();
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.set_metadata(pool_id, metadata, wait_for, &account, Some(options))
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolSetMetadataTxSuccess`.
+
+```rust
+PoolSetMetadataTxSuccess {
+    events: ExtrinsicEvents {
+        ext_hash: 0x0b4c5b4dbc573e88fa96729622c8f3a303ae35db2144365ed951b55c9a9a0f9e,
+        idx: 1,
+        events: Events {
+            event_bytes: [],
+            start_idx: 1,
+            num_events: 8,
+        },
+    },
+    tx_hash: 0x0b4c5b4dbc573e88fa96729622c8f3a303ae35db2144365ed951b55c9a9a0f9e,
+    tx_index: 1,
+    block_hash: 0xd64694931e040911287026590e74327f9c053ffe94f8854e9bcdc4727c81b497,
+    block_number: 876,
+}
+```
+
+## Set Claim Permission
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn set_claim_permission(&self, permission: Permission, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolSetClaimPermissionTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter  | type        | optional | description                                     |
+| ---------- | ----------- | -------- | ----------------------------------------------- |
+| permission | Permission  | false    | permission                                      |
+| waitFor    | WaitFor     | false    | wait for block inclusion or finalization        |
+| account    | KeyringPair | false    | account that will send and sign the transaction |
+| options    | Options     | true     | transaction parameters                          |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-set-claim-permission"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{
+	nomination_pools_types::Permission, Keypair, Nonce, Options, SecretUri, WaitFor, SDK,
+};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let permission = Permission::PermissionlessAll;
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.set_claim_permission(permission, wait_for, &account, Some(options))
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolSetClaimPermissionTxSuccess`.
+
+```rust
+PoolSetClaimPermissionTxSuccess {
+    events: ExtrinsicEvents {
+        ext_hash: 0xf69cea124fe7823532821f73d3cb4c93dac58951b3bc28b770c54fc323b94bc0,
+        idx: 1,
+        events: Events {
+            event_bytes: [],
+            start_idx: 1,
+            num_events: 8,
+        },
+    },
+    tx_hash: 0xf69cea124fe7823532821f73d3cb4c93dac58951b3bc28b770c54fc323b94bc0,
+    tx_index: 1,
+    block_hash: 0x5344a7243307b20e0fee2badb84beebaf96e5c38d4e5d12c0475d4976737c26a,
+    block_number: 945,
+}
+```
+
+## Set State
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn set_state(&self, pool_id: u32, state: State, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolSetStateTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter | type        | optional | description                                     |
+| --------- | ----------- | -------- | ----------------------------------------------- |
+| pool_id   | u32         | false    | pool id                                         |
+| state     | State       | false    | state                                           |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
+| account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Options     | true     | transaction parameters                          |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-set-state"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{nomination_pools_types::State, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let pool_id = 1;
+	let state = State::Open;
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.set_state(pool_id, state, wait_for, &account, Some(options))
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolSetStateTxSuccess`.
+
+```rust
+PoolSetStateTxSuccess {
+    event: None,
+    events: ExtrinsicEvents {
+        ext_hash: 0xa5745e02a0a257e79b193efc66c9ac85138cb2a454eb52235687013430e1b932,
+        idx: 1,
+        events: Events {
+            event_bytes: [...],
+            start_idx: 1,
+            num_events: 8,
+        },
+    },
+    tx_hash: 0xa5745e02a0a257e79b193efc66c9ac85138cb2a454eb52235687013430e1b932,
+    tx_index: 1,
+    block_hash: 0x7d9528f12db2980334c56181a94de9065b41b0482e31bd0d43fd57e32ab3f371,
+    block_number: 1065,
+}
+```
+
+## Unbond
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn unbond(&self, member_account: &str, unbonding_points: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolUnbondTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter        | type        | optional | description                                     |
+| ---------------- | ----------- | -------- | ----------------------------------------------- |
+| member_account   | &str        | false    | member account                                  |
+| unbonding_points | u128        | false    | defines how many tokens will be unbond          |
+| waitFor          | WaitFor     | false    | wait for block inclusion or finalization        |
+| account          | KeyringPair | false    | account that will send and sign the transaction |
+| options          | Options     | true     | transaction parameters                          |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-unbond"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let unbonding_points = 1_000_000_000_000_000_000u128; // 1 Avail token
+	let member_account = String::from("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"); // Alice
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.unbond(
+			member_account,
+			unbonding_points,
+			wait_for,
+			&account,
+			Some(options),
+		)
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolUnbondTxSuccess`.
+
+```rust
+PoolUnbondTxSuccess {
+    event: Some(
+        Unbonded {
+            member: AccountId32(...),
+            pool_id: 1,
+            balance: 1000000000000000000,
+            points: 1000000000000000000,
+            era: 3,
+        },
+    ),
+    events: ExtrinsicEvents {
+        ext_hash: 0x90c57843cd45ca0e5f45274543494a72a8948bb807c094b6b53a60d4381e194e,
+        idx: 1,
+        events: Events {
+            event_bytes: [...],
+            start_idx: 1,
+            num_events: 10,
+        },
+    },
+    tx_hash: 0x90c57843cd45ca0e5f45274543494a72a8948bb807c094b6b53a60d4381e194e,
+    tx_index: 1,
+    block_hash: 0xf8a033a20e5394827ae075c240003749d6f8b65e9414435eafe4ca00395a0b7e,
+    block_number: 50,
+}
+```
+
+## Withdraw Unbond
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn withdraw_unbonded(&self, member_account: &str, num_slashing_spans: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolWithdrawUnbondedTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter          | type        | optional | description                                     |
+| ------------------ | ----------- | -------- | ----------------------------------------------- |
+| member_account     | &str        | false    | member account                                  |
+| num_slashing_spans | u32         | false    | number of slashing spans                        |
+| waitFor            | WaitFor     | false    | wait for block inclusion or finalization        |
+| account            | KeyringPair | false    | account that will send and sign the transaction |
+| options            | Options     | true     | transaction parameters                          |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-withdraw-unbonded"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let member_account = String::from("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"); // Alice
+	let num_slashing_spans = 0;
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.withdraw_unbonded(
+			member_account,
+			num_slashing_spans,
+			wait_for,
+			&account,
+			Some(options),
+		)
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolWithdrawUnbondedTxSuccess`.
+
+```rust
+PoolWithdrawUnbondedTxSuccess {
+    event: Some(
+        Withdrawn {
+            member: AccountId32(...),
+            pool_id: 1,
+            balance: 1000000000000000000,
+            points: 1000000000000000000,
+        },
+    ),
+    events: ExtrinsicEvents {
+        ext_hash: 0x9a0dd9668568dc6e30dbf3513b9ba1efcbff029f2f996f8c166108f0ec9f2dbe,
+        idx: 1,
+        events: Events {
+            event_bytes: [...],
+            start_idx: 1,
+            num_events: 13,
+        },
+    },
+    tx_hash: 0x9a0dd9668568dc6e30dbf3513b9ba1efcbff029f2f996f8c166108f0ec9f2dbe,
+    tx_index: 1,
+    block_hash: 0xbec264f965245c0293653c6370abb2b32644a4acd51f6e4d076f9eb178f90a27,
+    block_number: 136,
+}
+```
+
+## Chill
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn chill(&self, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolChillTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter | type        | optional | description                                     |
+| --------- | ----------- | -------- | ----------------------------------------------- |
+| pool_id   | u32         | false    | pool id                                         |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
+| account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Options     | true     | transaction parameters                          |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-chill"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let pool_id = 1;
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.chill(pool_id, wait_for, &account, Some(options))
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolChillTxSuccess`.
+
+```rust
+PoolChillTxSuccess {
+    events: ExtrinsicEvents {
+        ext_hash: 0xef47e23b303005a010bfc854a73143596849fc6e2b3db4b01d4b1f53800cde94,
+        idx: 1,
+        events: Events {
+            event_bytes: [...],
+            start_idx: 1,
+            num_events: 8,
+        },
+    },
+    tx_hash: 0xef47e23b303005a010bfc854a73143596849fc6e2b3db4b01d4b1f53800cde94,
+    tx_index: 1,
+    block_hash: 0xf8220ea5fb98b27833aeaab9ef8a95dca39dfbb55ec7b0467fb9162e2eb082d5,
+    block_number: 183,
+}
+```
+
+## Claim Payout
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn claim_payout(&self, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolClaimPayoutTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter | type        | optional | description                                     |
+| --------- | ----------- | -------- | ----------------------------------------------- |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
+| account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Options     | true     | transaction parameters                          |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-claim-payout"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.claim_payout(wait_for, &account, Some(options))
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolClaimPayoutTxSuccess`.
+
+```rust
+PoolClaimPayoutTxSuccess {
+    event: Some(
+        PaidOut {
+            member: AccountId32(...),
+            pool_id: 1,
+            payout: 292545391972746000,
+        },
+    ),
+    events: ExtrinsicEvents {
+        ext_hash: 0x6068c14cbd3cdbac8a5cf40f2cb943f8c3f213d1c199181bf957af0de3df9411,
+        idx: 1,
+        events: Events {
+            event_bytes: [...],
+            start_idx: 1,
+            num_events: 10,
+        },
+    },
+    tx_hash: 0x6068c14cbd3cdbac8a5cf40f2cb943f8c3f213d1c199181bf957af0de3df9411,
+    tx_index: 1,
+    block_hash: 0xfdb4766c474980eeb2dc3c7c0f08ca0f7e38f66dcb8cf98ef0d55835062ee758,
+    block_number: 222,
+}
+```
+
+## Claim Commission
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn claim_commission(&self, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolClaimCommissionTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter | type        | optional | description                                     |
+| --------- | ----------- | -------- | ----------------------------------------------- |
+| pool_id   | u32         | false    | pool id                                         |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
+| account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Options     | true     | transaction parameters                          |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-claim-commission"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let pool_id = 1;
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.claim_commission(pool_id, wait_for, &account, Some(options))
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolClaimCommissionTxSuccess`.
+
+```rust
+PoolClaimCommissionTxSuccess {
+    event: PoolCommissionClaimed {
+        pool_id: 1,
+        commission: 2952048955361375559,
+    },
+    events: ExtrinsicEvents {
+        ext_hash: 0xd5c24d3b5c6fa81ab0d60b39ad77084f4dd704c7b31991636c8662b6d543403d,
+        idx: 1,
+        events: Events {
+            event_bytes: [...],
+            start_idx: 1,
+            num_events: 10,
+        },
+    },
+    tx_hash: 0xd5c24d3b5c6fa81ab0d60b39ad77084f4dd704c7b31991636c8662b6d543403d,
+    tx_index: 1,
+    block_hash: 0x14e2357f8c47ca7c2c8b236547c0ffbbdc2ee0daa613b794ac48e31c8def8191,
+    block_number: 253,
+}
+```
+
+## Claim Payout Other
+
+Origin Level: Signed
+
+### Interface
+
+```rust
+async fn claim_payout_other(&self, other: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolClaimPayoutOtherTxSuccess, String>;
+```
+
+#### Parameters
+
+| parameter | type        | optional | description                                     |
+| --------- | ----------- | -------- | ----------------------------------------------- |
+| other     | &str        | false    | other account to claim payout                   |
+| waitFor   | WaitFor     | false    | wait for block inclusion or finalization        |
+| account   | KeyringPair | false    | account that will send and sign the transaction |
+| options   | Options     | true     | transaction parameters                          |
+
+### Minimal Example
+
+#### Cargo.toml
+
+```rust
+[package]
+name = "nomination-pools-claim-payout-other"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+```
+
+#### main.rs
+
+```rust
+use avail_rust::{Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+use core::str::FromStr;
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+
+	// Input
+	let secret_uri = SecretUri::from_str("//Alice").unwrap();
+	let account = Keypair::from_uri(&secret_uri).unwrap();
+	let other = "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL";
+
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
+	let result = sdk
+		.tx
+		.nomination_pools
+		.claim_payout_other(other, wait_for, &account, Some(options))
+		.await?;
+
+	dbg!(result);
+
+	Ok(())
+}
+```
+
+### Example Output
+
+#### On Failure
+
+If the operation fails, the function will return an error message indicating the nature of the issue.
+
+#### On Success
+
+If the operation is successful, the function will return a object of type `PoolClaimPayoutOtherTxSuccess`.
+
+```rust
+PoolClaimPayoutOtherTxSuccess {
+    event: Some(
+        PaidOut {
+            member: AccountId32(...),
+            pool_id: 1,
+            payout: 2659503563388600000,
+        },
+    ),
+    events: ExtrinsicEvents {
+        ext_hash: 0x5d93a79b019521261d83ec79a8768234c78d84f5984bfdc230ab67f3357cd260,
+        idx: 1,
+        events: Events {
+            event_bytes: [...],
+            start_idx: 1,
+            num_events: 10,
+        },
+    },
+    tx_hash: 0x5d93a79b019521261d83ec79a8768234c78d84f5984bfdc230ab67f3357cd260,
+    tx_index: 1,
+    block_hash: 0x080c20e46e2c26e1a148ce8f862a7b7c709cd89d11a77907aa8807a921a7a778,
+    block_number: 285,
 }
 ```

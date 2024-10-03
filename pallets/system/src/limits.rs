@@ -375,7 +375,7 @@ pub struct WeightsPerClass {
 ///   #           \
 ///   #   `Ext8`   - `reserved`
 ///   #          _/
-/// | # | `Ext7                 | - - `Operational` limit
+/// | # | `Ext7`                | - - `Operational` limit
 /// |#  | `Ext6`                |   |
 /// |#  | `Ext5`                |-# - `Normal` limit
 /// |#  | `Ext4`                |## |

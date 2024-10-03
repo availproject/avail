@@ -1,0 +1,9 @@
+[workspace]
+
+[package]
+name = "nomination-pools-claim-payout-other"
+edition = "2021"
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail" }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }

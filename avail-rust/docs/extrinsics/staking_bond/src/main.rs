@@ -1,4 +1,4 @@
-use avail_rust::{Keypair, RewardDestination, SecretUri, WaitFor, SDK};
+use avail_rust::{Keypair, Nonce, Options, RewardDestination, SecretUri, WaitFor, SDK};
 use core::str::FromStr;
 
 #[tokio::main]
@@ -11,10 +11,12 @@ async fn main() -> Result<(), String> {
 	let value = 1_000_000_000_000_000_000u128 * 100_000u128; // 100_000 Avail
 	let payee = RewardDestination::Staked;
 
+	let wait_for = WaitFor::BlockInclusion;
+	let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
 	let result = sdk
 		.tx
 		.staking
-		.bond(value, payee, WaitFor::BlockInclusion, &account, None)
+		.bond(value, payee, wait_for, &account, Some(options))
 		.await?;
 
 	dbg!(result);

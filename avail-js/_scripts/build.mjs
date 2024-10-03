@@ -17,6 +17,7 @@ async function createPackageFile() {
         chain: ["./chain/index.d.ts"],
         spec: ["./spec/index.d.ts"],
         sdk: ["./sdk/index.d.ts"],
+        helpers: ["./helpers/index.d.ts"],
       },
     },
   }
