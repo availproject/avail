@@ -2,8 +2,18 @@
 #![recursion_limit = "512"]
 
 use crate::{storage_utils::MessageStatusEnum, verifier::Verifier};
+use alloy_primitives::B256;
 use avail_base::{MemoryTemporaryStorage, ProvidePostInherent};
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message, MessageType};
+use helios_consensus_core::types::Forks;
+use helios_consensus_core::{
+	apply_finality_update, apply_update,
+	types::{FinalityUpdate, LightClientStore, Update},
+	verify_finality_update, verify_update,
+};
+use scale_info::prelude::string::String;
+use ssz_rs::prelude::*;
+use tree_hash::TreeHash;
 
 use codec::Compact;
 use frame_support::{
@@ -22,8 +32,12 @@ pub mod constants;
 mod mock;
 mod state;
 mod storage_utils;
+
+// Use new tests made with light client inputs
+// #[cfg(test)]
+// mod tests;
 #[cfg(test)]
-mod tests;
+mod tests_new;
 mod verifier;
 mod weights;
 
@@ -33,6 +47,7 @@ pub type FunctionInput = BoundedVec<u8, ConstU32<256>>;
 pub type FunctionOutput = BoundedVec<u8, ConstU32<512>>;
 pub type FunctionProof = BoundedVec<u8, ConstU32<1048>>;
 pub type ValidProof = BoundedVec<BoundedVec<u8, ConstU32<2048>>, ConstU32<32>>;
+pub type Bytes32 = [u8; 32];
 
 // Avail asset is supported for now
 pub const SUPPORTED_ASSET_ID: H256 = H256::zero();
@@ -184,10 +199,16 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type ExecutionStateRoots<T> = StorageMap<_, Identity, u64, H256, ValueQuery>;
 
+	/// DEPRECATED: Use SyncCommitteeHashes instead.
 	/// Maps from a period to the poseidon commitment for the sync committee.
 	#[pallet::storage]
 	#[pallet::getter(fn sync_committee_poseidons)]
 	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
+
+	/// Maps from a period to the Sha256 commitment for the sync committee.
+	#[pallet::storage]
+	#[pallet::getter(fn sync_committee_hashes)]
+	pub type SyncCommitteeHashes<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
 
 	/// Storage for a config of finality threshold and slots per period.
 	#[pallet::storage]
@@ -323,7 +344,7 @@ pub mod pallet {
 		pub slots_per_period: u64,
 		pub finality_threshold: u16,
 		pub function_ids: (H256, H256),
-		pub sync_committee_poseidon: U256,
+		pub sync_committee_hash: U256,
 		pub period: u64,
 		pub broadcaster: H256,
 		pub broadcaster_domain: u32,
@@ -368,7 +389,7 @@ pub mod pallet {
 					.expect("Rotate verification key should be valid at genesis.");
 			RotateVerificationKey::<T>::set(Some(rotate_verification_key));
 
-			SyncCommitteePoseidons::<T>::insert(self.period, self.sync_committee_poseidon);
+			SyncCommitteeHashes::<T>::insert(self.period, self.sync_committee_hash);
 
 			GenesisValidatorRoot::<T>::set(self.genesis_validator_root);
 
@@ -395,7 +416,29 @@ pub mod pallet {
 			Weight::zero()
 		}
 	}
+	// TODO: Rename to FunctionInput
+	#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+	pub struct FunctionInputs {
+		pub updates: Vec<Update>,
+		pub finality_update: FinalityUpdate,
+		pub expected_current_slot: u64,
+		pub store: LightClientStore,
+		pub genesis_root: B256,
+		pub forks: Forks,
+		pub execution_state_proof: ExecutionStateProof,
+	}
 
+	#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+	pub struct ExecutionStateProof {
+		#[serde(rename = "executionStateRoot")]
+		pub execution_state_root: B256,
+		#[serde(rename = "executionStateBranch")]
+		pub execution_state_branch: Vec<B256>,
+		pub gindex: String,
+	}
+	/// Merkle branch index & depth for the execution state root proof.
+	pub const MERKLE_BRANCH_INDEX: usize = 802;
+	pub const MERKLE_BRANCH_DEPTH: usize = 9;
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
@@ -403,64 +446,160 @@ pub mod pallet {
 	{
 		/// The entrypoint for fulfilling a call.
 		/// function_id Function identifier.
-		/// input Function input.
-		/// output Function output.
-		/// proof  Function proof.
-		/// slot  Function slot to update.
+		/// inputs Function input.
 		#[pallet::call_index(0)]
+		// Unused parameter that's hard to remove, would mess up traits
 		#[pallet::weight(weight_helper::fulfill_call::<T>(* function_id))]
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
 			function_id: H256,
-			input: FunctionInput,
-			output: FunctionOutput,
-			proof: FunctionProof,
-			#[pallet::compact] slot: u64,
+			inputs: Vec<u8>, // TODO: Convert to fixed bytes
 		) -> DispatchResultWithPostInfo {
+			let config = ConfigurationStorage::<T>::get();
+			let FunctionInputs {
+				updates,
+				finality_update,
+				expected_current_slot,
+				mut store,
+				genesis_root,
+				forks,
+				execution_state_proof,
+			} = serde_cbor::from_slice(&inputs).unwrap();
+
+			let mut is_valid = true;
+			let prev_head = store.finalized_header.slot;
+
+			// 1. Apply sync committee updates, if any
+			for (index, update) in updates.iter().enumerate() {
+				is_valid = is_valid
+					&& verify_update(
+						update,
+						expected_current_slot,
+						&store,
+						genesis_root.clone(),
+						&forks,
+					)
+					.is_ok();
+
+				apply_update(&mut store, update);
+			}
+
+			// 2. Apply finality update
+			is_valid = is_valid
+				&& verify_finality_update(
+					&finality_update,
+					expected_current_slot,
+					&store,
+					genesis_root.clone(),
+					&forks,
+				)
+				.is_ok();
+			apply_finality_update(&mut store, &finality_update);
+
+			// 3. Verify execution state root proof
+			let execution_state_branch_nodes: Vec<Node> = execution_state_proof
+				.execution_state_branch
+				.iter()
+				.map(|b| Node::try_from(b.as_ref()).unwrap())
+				.collect();
+
+			is_valid = is_valid
+				&& is_valid_merkle_branch(
+					&Node::try_from(execution_state_proof.execution_state_root.as_ref()).unwrap(),
+					execution_state_branch_nodes.iter(),
+					MERKLE_BRANCH_DEPTH,
+					MERKLE_BRANCH_INDEX,
+					&Node::try_from(store.finalized_header.body_root.as_ref()).unwrap(),
+				);
+
+			let finalized_header_root = store.finalized_header.tree_hash_root();
+			let execution_state_root: [u8; 32] = execution_state_proof
+				.execution_state_root
+				.as_slice()
+				.try_into()
+				.unwrap();
+
+			let head = store.finalized_header.slot;
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let updater = Updater::<T>::get();
+
 			// ensure sender is preconfigured
 			ensure!(H256(sender) == updater, Error::<T>::UpdaterMisMatch);
+			ensure!(is_valid, Error::<T>::VerificationFailed);
 
-			let config = ConfigurationStorage::<T>::get();
-			let input_hash = H256(sha2_256(input.as_slice()));
-			let output_hash = H256(sha2_256(output.as_slice()));
-			let (step_function_id, rotate_function_id) = Self::get_function_ids()?;
-			let verifier = Self::get_verifier(function_id, step_function_id, rotate_function_id)?;
+			let mut function_called = false;
 
-			let is_success = verifier
-				.verify(input_hash, output_hash, proof.to_vec())
-				.map_err(|_| Error::<T>::VerificationError)?;
+			// 4. Store step if needed
+			let byte_array: [u8; 32] = finalized_header_root
+				.as_slice()
+				.try_into()
+				.expect("Slice has incorrect length");
+			if prev_head != head {
+				let verified_output = VerifiedStepOutput {
+					finalized_header_root: H256::from(byte_array),
+					execution_state_root: H256::from(execution_state_root),
+					finalized_slot: store.finalized_header.slot,
+					participation: store.current_max_active_participants.try_into().unwrap(),
+				};
 
-			// make sure that verification call is valid
-			ensure!(is_success, Error::<T>::VerificationFailed);
+				let head = Head::<T>::get();
+				ensure!(
+					verified_output.finalized_slot > head,
+					Error::<T>::SlotBehindHead
+				);
 
-			// verification is success and, we can safely parse and validate output
-			if function_id == step_function_id {
-				let step_output = parse_step_output(output.to_vec())
-					.map_err(|_| Error::<T>::CannotParseOutputData)?;
-
-				let vs = VerifiedStep::new(function_id, input_hash, step_output);
-
-				if Self::step_into(slot, &config, &vs, step_function_id)? {
+				if Self::set_slot_roots(verified_output)? {
 					Self::deposit_event(Event::HeadUpdated {
-						slot: vs.verified_output.finalized_slot,
-						finalization_root: vs.verified_output.finalized_header_root,
-						execution_state_root: vs.verified_output.execution_state_root,
+						slot: verified_output.finalized_slot,
+						finalization_root: verified_output.finalized_header_root,
+						execution_state_root: verified_output.execution_state_root,
 					});
+					function_called = true;
 				}
-			} else if function_id == rotate_function_id {
-				let rotate_output = parse_rotate_output(output.to_vec())
-					.map_err(|_| Error::<T>::CannotParseOutputData)?;
+			}
 
-				let vr = VerifiedRotate::new(function_id, input_hash, rotate_output);
-
-				let period = Self::rotate_into(slot, &config, &vr, rotate_function_id)?;
+			// 5. Store rotate if needed
+			// a) Store current sync committee if stored one is empty (i.e. first time or after a range of updates)
+			let period = head
+				.checked_div(config.slots_per_period)
+				.ok_or(Error::<T>::ConfigurationNotSet)?;
+			let stored_current_sync_committee = SyncCommitteeHashes::<T>::get(period);
+			if stored_current_sync_committee.is_zero() {
+				let current_sync_committee_hash: U256 =
+					U256::from(store.current_sync_committee.tree_hash_root().as_slice());
 				Self::deposit_event(Event::SyncCommitteeUpdated {
 					period,
-					root: vr.sync_committee_poseidon,
+					root: current_sync_committee_hash,
 				});
-			} else {
+				function_called = true;
+
+				Self::set_sync_committee_hash(period, current_sync_committee_hash)?;
+			}
+
+			// b) Store next sync committee if available
+			if let Some(mut next_sync_committee) = store.next_sync_committee {
+				let next_period = period + 1;
+				let stored_next_sync_committee_hash = SyncCommitteeHashes::<T>::get(next_period);
+				let next_sync_committee_hash: [u8; 32] = next_sync_committee
+					.tree_hash_root()
+					.as_slice()
+					.try_into()
+					.unwrap();
+				let next_sync_committee_hash = U256::from(next_sync_committee_hash);
+
+				// If the next sync committee is already correct, we don't need to update it.
+				if stored_next_sync_committee_hash != next_sync_committee_hash.into() {
+					Self::deposit_event(Event::SyncCommitteeUpdated {
+						period: next_period,
+						root: next_sync_committee_hash,
+					});
+					function_called = true;
+
+					Self::set_sync_committee_hash(next_period, next_sync_committee_hash)?;
+				}
+			}
+
+			if !function_called {
 				return Err(Error::<T>::FunctionIdNotKnown.into());
 			}
 
@@ -889,7 +1028,7 @@ pub mod pallet {
 			);
 
 			let input = ethabi::encode(&[Token::FixedBytes(finalized_header_root.0.to_vec())]);
-			let sync_committee_poseidon: U256 =
+			let sync_committee_hash: U256 =
 				Self::verified_rotate_call(rotate_function_id, input, verified_rotate_call)?;
 
 			let period = finalized_slot
@@ -897,7 +1036,7 @@ pub mod pallet {
 				.ok_or(Error::<T>::ConfigurationNotSet)?;
 			let next_period = period + 1;
 
-			Self::set_sync_committee_poseidon(next_period, sync_committee_poseidon)?;
+			Self::set_sync_committee_hash(next_period, sync_committee_hash)?;
 
 			Ok(next_period)
 		}
@@ -912,10 +1051,10 @@ pub mod pallet {
 				.checked_div(cfg.slots_per_period)
 				.ok_or(Error::<T>::ConfigurationNotSet)?;
 
-			let sc_poseidon = SyncCommitteePoseidons::<T>::get(period);
-			ensure!(sc_poseidon != U256::zero(), Error::<T>::SyncCommitteeNotSet);
+			let sc_hash = SyncCommitteeHashes::<T>::get(period);
+			ensure!(sc_hash != U256::zero(), Error::<T>::SyncCommitteeNotSet);
 
-			let input = encode_packed(sc_poseidon, attested_slot);
+			let input = encode_packed(sc_hash, attested_slot);
 			let result = Self::verified_step_call(step_function_id, input, verified_step_call)?;
 			ensure!(
 				result.participation >= cfg.finality_threshold,
@@ -967,6 +1106,19 @@ pub mod pallet {
 			);
 
 			SyncCommitteePoseidons::<T>::set(period, poseidon);
+
+			Ok(())
+		}
+
+		/// Sets the sync committee hash for a given period.
+		fn set_sync_committee_hash(period: u64, hash: U256) -> Result<(), DispatchError> {
+			let sync_committee_hashes = SyncCommitteeHashes::<T>::get(period);
+			ensure!(
+				sync_committee_hashes == U256::zero(),
+				Error::<T>::SyncCommitteeAlreadySet
+			);
+
+			SyncCommitteeHashes::<T>::set(period, hash);
 
 			Ok(())
 		}

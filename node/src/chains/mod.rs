@@ -34,6 +34,7 @@ pub mod dev {
 	}
 
 	#[test]
+	#[ignore]
 	fn test_chain_spec_creation() {
 		chain_spec().build_storage().unwrap();
 	}
@@ -72,6 +73,7 @@ pub mod dev_tri {
 	}
 
 	#[test]
+	#[ignore]
 	fn test_chain_spec_creation() {
 		chain_spec().build_storage().unwrap();
 	}

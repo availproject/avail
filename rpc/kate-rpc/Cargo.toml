@@ -34,6 +34,7 @@ std = [
 	"kate/std",
 	"sp-api/std",
 	"sp-runtime/std",
+	"log/std"
 ]
 
 # Enables secure seed generation using for padding fill during the matrix 

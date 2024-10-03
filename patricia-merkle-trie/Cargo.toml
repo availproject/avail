@@ -34,4 +34,7 @@ std = [
 	"sp-io/std",
 	"tiny-keccak",
 	"trie-db/std",
+	"hash256-std-hasher/std",
+	"hex/std",
+	"memory-db/std"
 ]

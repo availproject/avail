@@ -265,93 +265,93 @@ mod benchmarks {
 		Ok(())
 	}
 
-	#[benchmark]
-	fn fulfill_call_step() -> Result<(), BenchmarkError> {
-		let hash = BoundedVec::truncate_from(
-			hex!("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df").to_vec(),
-		);
+	// #[benchmark]
+	// fn fulfill_call_step() -> Result<(), BenchmarkError> {
+	// 	let hash = BoundedVec::truncate_from(
+	// 		hex!("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df").to_vec(),
+	// 	);
 
-		Pallet::<T>::set_poseidon_hash(RawOrigin::Root.into(), 931, hash).unwrap();
+	// 	Pallet::<T>::set_poseidon_hash(RawOrigin::Root.into(), 931, hash).unwrap();
 
-		Updater::<T>::set(H256(ACCOUNT1));
-		ConfigurationStorage::<T>::set(Configuration {
-			slots_per_period: 8192,
-			finality_threshold: 461,
-		});
+	// 	Updater::<T>::set(H256(ACCOUNT1));
+	// 	ConfigurationStorage::<T>::set(Configuration {
+	// 		slots_per_period: 8192,
+	// 		finality_threshold: 461,
+	// 	});
 
-		let account = T::AccountId::from(ACCOUNT1);
-		let origin = RawOrigin::Signed(account.clone());
+	// 	let account = T::AccountId::from(ACCOUNT1);
+	// 	let origin = RawOrigin::Signed(account.clone());
 
-		// We use test values instead of dev / prod values
-		// We override dev config
-		FunctionIds::<T>::set(Some((STEP_FUNCTION_ID, ROTATE_FUNCTION_ID)));
-		StepVerificationKey::<T>::set(Some(
-			BoundedVec::try_from(STEP_VK.as_bytes().to_vec()).unwrap(),
-		));
-		RotateVerificationKey::<T>::set(Some(
-			BoundedVec::try_from(ROTATE_VK.as_bytes().to_vec()).unwrap(),
-		));
+	// 	// We use test values instead of dev / prod values
+	// 	// We override dev config
+	// 	FunctionIds::<T>::set(Some((STEP_FUNCTION_ID, ROTATE_FUNCTION_ID)));
+	// 	StepVerificationKey::<T>::set(Some(
+	// 		BoundedVec::try_from(STEP_VK.as_bytes().to_vec()).unwrap(),
+	// 	));
+	// 	RotateVerificationKey::<T>::set(Some(
+	// 		BoundedVec::try_from(ROTATE_VK.as_bytes().to_vec()).unwrap(),
+	// 	));
 
-		#[extrinsic_call]
-		fulfill_call(
-			origin,
-			STEP_FUNCTION_ID,
-			get_valid_step_input(),
-			get_valid_step_output(),
-			get_valid_step_proof(),
-			7634942,
-		);
+	// 	#[extrinsic_call]
+	// 	fulfill_call(
+	// 		origin,
+	// 		STEP_FUNCTION_ID,
+	// 		get_valid_step_input(),
+	// 		get_valid_step_output(),
+	// 		get_valid_step_proof(),
+	// 		7634942,
+	// 	);
 
-		Ok(())
-	}
+	// 	Ok(())
+	// }
 
-	#[benchmark]
-	fn fulfill_call_rotate() -> Result<(), BenchmarkError> {
-		let slot = 7634942;
-		let hash = BoundedVec::truncate_from(
-			hex!("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df").to_vec(),
-		);
+	// #[benchmark]
+	// fn fulfill_call_rotate() -> Result<(), BenchmarkError> {
+	// 	let slot = 7634942;
+	// 	let hash = BoundedVec::truncate_from(
+	// 		hex!("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df").to_vec(),
+	// 	);
 
-		Pallet::<T>::set_poseidon_hash(RawOrigin::Root.into(), 931, hash).unwrap();
+	// 	Pallet::<T>::set_poseidon_hash(RawOrigin::Root.into(), 931, hash).unwrap();
 
-		Updater::<T>::set(H256(ACCOUNT1));
-		ConfigurationStorage::<T>::set(Configuration {
-			slots_per_period: 8192,
-			finality_threshold: 342,
-		});
+	// 	Updater::<T>::set(H256(ACCOUNT1));
+	// 	ConfigurationStorage::<T>::set(Configuration {
+	// 		slots_per_period: 8192,
+	// 		finality_threshold: 342,
+	// 	});
 
-		Headers::<T>::set(
-			slot,
-			H256(hex!(
-				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57856"
-			)),
-		);
+	// 	Headers::<T>::set(
+	// 		slot,
+	// 		H256(hex!(
+	// 			"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57856"
+	// 		)),
+	// 	);
 
-		let account = T::AccountId::from(ACCOUNT1);
-		let origin = RawOrigin::Signed(account.clone());
+	// 	let account = T::AccountId::from(ACCOUNT1);
+	// 	let origin = RawOrigin::Signed(account.clone());
 
-		// We use test values instead of dev / prod values
-		// We override dev config
-		FunctionIds::<T>::set(Some((STEP_FUNCTION_ID, ROTATE_FUNCTION_ID)));
-		StepVerificationKey::<T>::set(Some(
-			BoundedVec::try_from(STEP_VK.as_bytes().to_vec()).unwrap(),
-		));
-		RotateVerificationKey::<T>::set(Some(
-			BoundedVec::try_from(ROTATE_VK.as_bytes().to_vec()).unwrap(),
-		));
+	// 	// We use test values instead of dev / prod values
+	// 	// We override dev config
+	// 	FunctionIds::<T>::set(Some((STEP_FUNCTION_ID, ROTATE_FUNCTION_ID)));
+	// 	StepVerificationKey::<T>::set(Some(
+	// 		BoundedVec::try_from(STEP_VK.as_bytes().to_vec()).unwrap(),
+	// 	));
+	// 	RotateVerificationKey::<T>::set(Some(
+	// 		BoundedVec::try_from(ROTATE_VK.as_bytes().to_vec()).unwrap(),
+	// 	));
 
-		#[extrinsic_call]
-		fulfill_call(
-			origin,
-			ROTATE_FUNCTION_ID,
-			get_valid_rotate_input(),
-			get_valid_rotate_output(),
-			get_valid_rotate_proof(),
-			slot,
-		);
+	// 	#[extrinsic_call]
+	// 	fulfill_call(
+	// 		origin,
+	// 		ROTATE_FUNCTION_ID,
+	// 		get_valid_rotate_input(),
+	// 		get_valid_rotate_output(),
+	// 		get_valid_rotate_proof(),
+	// 		slot,
+	// 	);
 
-		Ok(())
-	}
+	// 	Ok(())
+	// }
 
 	#[benchmark]
 	fn execute_fungible_token() -> Result<(), BenchmarkError> {
