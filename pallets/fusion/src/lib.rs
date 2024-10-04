@@ -2165,7 +2165,6 @@ impl<T: Config> FusionExt<T::AccountId> for Pallet<T> {
 					pool_id,
 					era,
 					total_avail,
-					total_native: pool.total_staked_native,
 					total_points: pool.total_staked_points,
 					user_points: pool.members.clone(),
 					targets: pool.targets.clone(),

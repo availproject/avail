@@ -158,8 +158,6 @@ pub struct FusionExposure<T: Config> {
 	pub pool_id: PoolId,
 	/// Era of the exposure to compute rewards
 	pub era: EraIndex,
-	/// The total in native currency
-	pub total_native: FusionCurrencyBalance,
 	/// The total in avail
 	pub total_avail: BalanceOf<T>,
 	/// The total points in the pool
