@@ -916,21 +916,16 @@ pub mod pallet {
 			targets: BoundedVec<T::AccountId, T::MaxTargets>,
 		) -> DispatchResult {
 			// Check if the origin is root, if not, check if it's a signed origin.
-			let is_root = ensure_root(origin.clone()).is_ok();
-			let who = if is_root {
-				None
-			} else {
-				Some(ensure_signed(origin)?)
-			};
+			let who = ensure_signed_or_root(origin)?;
 
 			// Fetch the pool and ensure it exists
 			FusionPools::<T>::try_mutate(pool_id, |pool_opt| -> DispatchResult {
 				let pool = pool_opt.as_mut().ok_or(Error::<T>::PoolNotFound)?;
 
 				// If the caller is not root, ensure it's the nominator of the pool
-				if let Some(caller) = who {
+				if let Some(who) = who {
 					ensure!(
-						Some(&caller) == pool.nominator.as_ref(),
+						Some(&who) == pool.nominator.as_ref(),
 						Error::<T>::NotAuthorized
 					);
 				}
@@ -1032,12 +1027,9 @@ pub mod pallet {
 			evm_address: EvmAddress,
 			new_controller_address: Option<T::AccountId>,
 		) -> DispatchResult {
-			let is_root = ensure_root(origin.clone()).is_ok();
-			if !is_root {
-				ensure_signed(origin)?;
-				// TODO - commented for tests only
-				// let who = ensure_signed(origin)?;
-				// Self::ensure_valid_fusion_origin(who, evm_address)?;
+			// TODO - commented for tests only
+			if let Some(who) = ensure_signed_or_root(origin)? {
+				Self::ensure_valid_fusion_origin(who, evm_address)?;
 			}
 
 			let slash_destination = SlashDestination::<T>::get();
