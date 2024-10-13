@@ -2,11 +2,10 @@ use super::{alice_nonce, allow_concurrency, local_connection};
 
 use avail_core::AppId;
 use avail_subxt::{
-	avail::{Cells, Rows, TxInBlock, TxProgress},
+	avail::{GDataProof, GRow, Rows, TxInBlock, TxProgress},
 	primitives::Cell,
-	rpc::KateRpcClient as _,
 	submit::submit_data_with_nonce,
-	tx,
+	tx, RpcParams,
 };
 use subxt_signer::sr25519::dev;
 
@@ -94,10 +93,10 @@ async fn submit_data() -> anyhow::Result<()> {
 	// Note: Ideal way to get the rows for specific appData, we should use the app_specific_rows from kate recovery, which is out scope for this example
 	// 1. Check query rows.
 	let row_indexes = Rows::truncate_from(vec![0]);
-	let query_rows = client
-		.rpc_methods()
-		.query_rows(Rows::truncate_from(row_indexes.to_vec()), block_hash)
-		.await?;
+	let mut params = RpcParams::new();
+	params.push(row_indexes)?;
+	params.push(block_hash)?;
+	let query_rows: Vec<GRow> = client.rpc().request("kate_queryRows", params).await?;
 	trace!("Query rows RPC: {query_rows:?}");
 
 	// 3. Check proof.
@@ -108,10 +107,10 @@ async fn submit_data() -> anyhow::Result<()> {
 			Cell::new(0, col)
 		})
 		.collect::<Vec<_>>();
-	let proof = client
-		.rpc_methods()
-		.query_proof(Cells::truncate_from(cells), block_hash)
-		.await?;
+	let mut params = RpcParams::new();
+	params.push(cells)?;
+	params.push(block_hash)?;
+	let proof: Vec<GDataProof> = client.rpc().request("kate_queryProof", params).await?;
 	trace!("Query proof RPC: {proof:?}");
 
 	Ok(())

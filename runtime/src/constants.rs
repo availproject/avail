@@ -34,16 +34,6 @@ use crate::RuntimeHoldReason;
 
 /// cannot have validators higher than this count.
 pub type MaxAuthorities = ConstU32<100_000>;
-/// cannot have active validators higher than this count.
-pub type MaxActiveValidators = ConstU32<1200>;
-
-parameter_types! {
-	/// We take the top 12500 nominators as electing voters..
-	pub const MaxElectingVoters: u32 = 22_500;
-	/// ... and all of the validators as electable targets. Whilst this is the case, we cannot and
-	/// shall not increase the size of the validator intentions.
-	pub const MaxElectableTargets: u16 = u16::MAX;
-}
 
 /// Money matters.
 pub mod currency {
@@ -255,6 +245,13 @@ pub mod staking {
 	}
 
 	parameter_types! {
+		/// We take the top 22500 nominators as electing voters..
+		pub const MaxElectingVoters: u32 = 22_500;
+		/// For onchain solutions, which are used as fallback(s), we only consider top 5K nominators as electing voters
+		pub const MaxOnchainElectingVoters: u32 = 5000;
+		/// cannot have active validators higher than this count.
+		pub const MaxActiveValidators: u32 = 1200;
+
 		pub const MaxNominations: u32 = <NposSolution16 as frame_election_provider_support::NposSolution>::LIMIT as u32;
 		pub const OffendingValidatorsThreshold: Perbill = Perbill::from_percent(17);
 		pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
@@ -286,9 +283,9 @@ pub mod staking {
 		// Note: the EPM in this runtime runs the election on-chain. The election bounds must be
 		// carefully set so that an election round fits in one block.
 		pub ElectionBoundsMultiPhase: ElectionBounds = ElectionBoundsBuilder::default()
-			.voters_count(10_000.into()).targets_count(1_500.into()).build();
+			.voters_count(MaxElectingVoters::get().into()).build();
 		pub ElectionBoundsOnChain: ElectionBounds = ElectionBoundsBuilder::default()
-			.voters_count(5_000.into()).targets_count(1_250.into()).build();
+			.voters_count(MaxOnchainElectingVoters::get().into()).build();
 	}
 
 	pub type MaxControllersInDeprecationBatch = ConstU32<5900>;
@@ -300,13 +297,6 @@ pub mod staking {
 	pub type MaxExposurePageSize = ConstU32<256>;
 	pub type MaxUnlockingChunks = ConstU32<32>;
 	pub type HistoryDepth = ConstU32<84>;
-
-	// OnChain values are lower.
-	pub type MaxOnChainElectingVoters = ConstU32<1_024>;
-	pub type MaxOnChainElectableTargets = ConstU16<512>;
-	// The maximum winners that can be elected by the Election pallet which is equivalent to the
-	// maximum active validators the staking pallet can have.
-	pub type MaxActiveValidators = MaxAuthorities;
 
 	// signed config
 	pub type SignedMaxSubmissions = ConstU32<16>;
