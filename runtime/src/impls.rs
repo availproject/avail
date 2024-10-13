@@ -12,6 +12,7 @@ use avail_core::{
 	AppId, NORMAL_DISPATCH_RATIO,
 };
 
+use crate::Vec;
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::time::DAYS;
 use frame_election_provider_support::{
@@ -45,7 +46,6 @@ use sp_runtime::{
 	FixedPointNumber, FixedU128, Perbill, Permill, Perquintill,
 };
 use sp_staking::EraIndex;
-use crate::Vec;
 
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
 	<T as frame_system::Config>::AccountId,
