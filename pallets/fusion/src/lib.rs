@@ -378,7 +378,10 @@ pub mod pallet {
 			evm_address: EvmAddress,
 		},
 		/// Event triggered when a pool is deleted
-		PoolDeleted { pool_id: PoolId },
+		PoolDeleted {
+			pool_id: PoolId,
+			leftover: BalanceOf<T>,
+		},
 		/// Event triggered when a pool state was changed to destroying
 		PoolDestroying { pool_id: PoolId },
 		/// Event triggered when a pool nominates a list of targets (validators)
@@ -514,6 +517,8 @@ pub mod pallet {
 		NoValidValidators,
 		/// Era duration was not recorded properly so we cannot retry
 		EraDurationNotFound,
+		/// Pool has leftover funds, but we did not specify where it should go.
+		NoLeftoverDestinationProvided,
 		/// TODO Temp, we'll see when bridge com is done
 		CannotDepositAvailCurrency,
 	}
@@ -850,7 +855,11 @@ pub mod pallet {
 		/// Called a second time when everything is cleaned to actually destroy it
 		#[pallet::call_index(6)]
 		#[pallet::weight(T::WeightInfo::create_currency())]
-		pub fn destroy_pool(origin: OriginFor<T>, pool_id: PoolId) -> DispatchResult {
+		pub fn destroy_pool(
+			origin: OriginFor<T>,
+			pool_id: PoolId,
+			leftover_destination: Option<T::AccountId>,
+		) -> DispatchResult {
 			ensure_root(origin)?;
 
 			FusionPools::<T>::try_mutate(pool_id, |maybe_pool| -> DispatchResult {
@@ -860,7 +869,7 @@ pub mod pallet {
 					pool.state = FusionPoolState::Destroying;
 					Self::deposit_event(Event::PoolDestroying { pool_id });
 				} else {
-					Self::check_and_cleanup_pool(pool)?;
+					Self::check_and_cleanup_pool(pool, leftover_destination)?;
 				}
 
 				Ok(())
@@ -1383,17 +1392,55 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Function to check if a pool should be removed and perform cleanup if necessary
-	fn check_and_cleanup_pool(pool: &FusionPool<T>) -> DispatchResult {
+	fn check_and_cleanup_pool(
+		pool: &FusionPool<T>,
+		leftover_destination: Option<T::AccountId>,
+	) -> DispatchResult {
 		let pool_id = pool.pool_id;
 		let has_no_members = pool.members.is_empty();
 		let has_no_points = pool.total_staked_points == 0;
 		let has_no_staked_native = pool.total_staked_native == 0;
 		let has_no_unbonding_native = pool.total_unbonding_native == 0;
 
+		// Ensure the pool is ready for cleanup
 		ensure!(
 			has_no_members && has_no_points && has_no_staked_native && has_no_unbonding_native,
 			Error::<T>::PoolCannotBeCleaned
 		);
+
+		// Retrieve balances of funds and claimable accounts
+		let funds_balance = T::Currency::free_balance(&pool.funds_account);
+		let claimable_balance = T::Currency::free_balance(&pool.claimable_account);
+
+		// Compute the total leftover amount
+		let leftover = funds_balance + claimable_balance;
+
+		// If there is leftover balance, we must have a destination account
+		let zero = BalanceOf::<T>::zero();
+		if leftover > zero {
+			let destination =
+				leftover_destination.ok_or(Error::<T>::NoLeftoverDestinationProvided)?;
+
+			// Transfer funds from funds_account to leftover_destination
+			if funds_balance > zero {
+				T::Currency::transfer(
+					&pool.funds_account,
+					&destination,
+					funds_balance,
+					ExistenceRequirement::AllowDeath,
+				)?;
+			}
+
+			// Transfer funds from claimable_account to leftover_destination
+			if claimable_balance > zero {
+				T::Currency::transfer(
+					&pool.claimable_account,
+					&destination,
+					claimable_balance,
+					ExistenceRequirement::AllowDeath,
+				)?;
+			}
+		}
 
 		for key in FusionEraRewards::<T>::iter_keys() {
 			if &key.1 == &pool_id {
@@ -1405,9 +1452,11 @@ impl<T: Config> Pallet<T> {
 				FusionExposures::<T>::remove(key.0, key.1);
 			}
 		}
+
 		FusionPoolsAccountToId::<T>::remove(&pool.funds_account);
 		FusionPools::<T>::remove(pool_id);
-		Self::deposit_event(Event::PoolDeleted { pool_id });
+
+		Self::deposit_event(Event::PoolDeleted { pool_id, leftover });
 
 		Ok(())
 	}

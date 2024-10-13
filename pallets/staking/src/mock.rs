@@ -29,7 +29,6 @@ use frame_support::{
 		OneSessionHandler,
 	},
 	weights::constants::RocksDbWeight,
-	PalletId,
 };
 use frame_system::{
 	mocking::MockUncheckedExtrinsic, native::hosted_header_builder::da::HeaderExtensionBuilder,
