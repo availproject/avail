@@ -44,13 +44,6 @@ impl pallet_balances::Config for Test {
 	type AccountStore = System;
 }
 
-pub struct MockEraProvider;
-impl pallet_fusion::EraProvider for MockEraProvider {
-	fn current_era() -> EraIndex {
-		0
-	}
-}
-
 parameter_types! {
 	pub static RewardRemainderUnbalanced: u64 = 0;
 	pub static SlashUnbalanced: u64 = 0;
@@ -75,9 +68,11 @@ parameter_types! {
 	pub const SlashDeferDuration: EraIndex = BondingDuration::get() - 1;
 	pub const HistoryDepth: u32 = 20;
 	pub const MaxSlashes: u32 = 1000;
+	pub const MaxPoolsPerValidator: u32 = 10;
 }
 impl pallet_fusion::Config for Test {
 	type Currency = Balances;
+	type CurrencyToVote = ();
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type ApprovedOrigin = EnsureRoot<AccountId>;
@@ -87,11 +82,12 @@ impl pallet_fusion::Config for Test {
 	type MaxTargets = MaxTargets;
 	type MaxUnbonding = MaxUnbonding;
 	type MaxSlashes = MaxSlashes;
+	type MaxPoolsPerValidator = MaxPoolsPerValidator;
 	type BondingDuration = BondingDuration;
 	type RewardRemainder = RewardRemainderMock;
 	type SlashDeferDuration = SlashDeferDuration;
 	type HistoryDepth = HistoryDepth;
-	type EraProvider = MockEraProvider;
+	type StakingFusionDataProvider = ();
 	type WeightInfo = ();
 }
 

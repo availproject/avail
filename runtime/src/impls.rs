@@ -137,25 +137,20 @@ impl pallet_authority_discovery::Config for Runtime {
 	type MaxAuthorities = constants::MaxAuthorities;
 }
 
-impl pallet_fusion::EraProvider for Runtime {
-	fn current_era() -> EraIndex {
-		pallet_staking::Pallet::<Self>::current_era().unwrap_or_default()
-	}
-}
-
 parameter_types! {
 	pub const FusionPalletId: PalletId = PalletId(*b"avl/fusi");
 	pub const MaxCurrencyName: u32 = 32;
 	pub const MaxMembersPerPool: u32 = 100_000;
 	pub const MaxTargets: u32 = 16;
 	pub const MaxUnbonding: u32 = 8;
-	pub const BondingDuration: EraIndex = 28;
 	pub const HistoryDepth: u32 = 84;
 	pub const MinimumBalanceToOperate: Balance = 100 * AVAIL;
 	pub const MaxSlashes: u32 = 1000;
+	pub const MaxPoolsPerValidator: u32 = 10;
 }
 impl pallet_fusion::Config for Runtime {
 	type Currency = Balances;
+	type CurrencyToVote = sp_staking::currency_to_vote::U128CurrencyToVote;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type ApprovedOrigin = EitherOfDiverse<
@@ -168,12 +163,29 @@ impl pallet_fusion::Config for Runtime {
 	type MaxTargets = MaxTargets;
 	type MaxUnbonding = MaxUnbonding;
 	type MaxSlashes = MaxSlashes;
-	type BondingDuration = BondingDuration;
+	type MaxPoolsPerValidator = MaxPoolsPerValidator;
+	type BondingDuration = constants::staking::BondingDuration;
 	type RewardRemainder = Treasury;
 	type HistoryDepth = HistoryDepth;
-	type EraProvider = Self;
+	type StakingFusionDataProvider = Self;
 	type WeightInfo = weights::pallet_fusion::WeightInfo<Runtime>;
 	type SlashDeferDuration = constants::staking::SlashDeferDuration;
+}
+
+impl pallet_fusion::StakingFusionDataProvider<AccountId> for Runtime {
+	fn current_era() -> EraIndex {
+		pallet_staking::Pallet::<Self>::current_era().unwrap_or_default()
+	}
+	fn is_valid_validator(account: &AccountId) -> bool {
+		pallet_staking::Validators::<Self>::contains_key(account)
+			&& !pallet_staking::Validators::<Self>::get(account).blocked
+	}
+	fn has_earned_era_points(era: EraIndex, accounts: &Vec<AccountId>) -> bool {
+		let era_points = pallet_staking::ErasRewardPoints::<Self>::get(era).individual;
+		accounts
+			.iter()
+			.any(|account| era_points.contains_key(account))
+	}
 }
 
 parameter_types! {

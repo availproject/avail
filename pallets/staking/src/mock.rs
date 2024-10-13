@@ -109,7 +109,6 @@ frame_support::construct_runtime!(
 		Session: pallet_session,
 		Historical: pallet_session::historical,
 		VoterBagsList: pallet_bags_list::<Instance1>,
-		Fusion: pallet_fusion,
 	}
 );
 
@@ -301,40 +300,6 @@ impl OnStakingUpdate<AccountId, Balance> for EventListenerMock {
 	}
 }
 
-pub struct MockEraProvider;
-impl pallet_fusion::EraProvider for MockEraProvider {
-	fn current_era() -> EraIndex {
-		0
-	}
-}
-
-parameter_types! {
-	pub const FusionPalletId: PalletId = PalletId(*b"avl/fusi");
-	pub const MaxCurrencyName: u32 = 32;
-	pub const MaxMembersPerPool: u32 = 100_000;
-	pub const MaxTargets: u32 = 16;
-	pub const MaxUnbonding: u32 = 8;
-	pub const MaxSlashes: u32 = 1000;
-}
-impl pallet_fusion::Config for Test {
-	type Currency = Balances;
-	type RuntimeCall = RuntimeCall;
-	type RuntimeEvent = RuntimeEvent;
-	type ApprovedOrigin = EnsureRoot<AccountId>;
-	type PalletId = FusionPalletId;
-	type MaxCurrencyName = MaxCurrencyName;
-	type MaxMembersPerPool = MaxMembersPerPool;
-	type MaxTargets = MaxTargets;
-	type MaxUnbonding = MaxUnbonding;
-	type MaxSlashes = MaxSlashes;
-	type BondingDuration = BondingDuration;
-	type SlashDeferDuration = SlashDeferDuration;
-	type RewardRemainder = ();
-	type HistoryDepth = HistoryDepth;
-	type EraProvider = MockEraProvider;
-	type WeightInfo = ();
-}
-
 impl crate::pallet::pallet::Config for Test {
 	type Currency = Balances;
 	type CurrencyBalance = <Self as pallet_balances::Config>::Balance;
@@ -365,7 +330,7 @@ impl crate::pallet::pallet::Config for Test {
 	type EventListeners = EventListenerMock;
 	type BenchmarkingConfig = TestBenchmarkingConfig;
 	type WeightInfo = ();
-	type FusionExt = Fusion;
+	type FusionExt = ();
 }
 
 pub struct WeightedNominationsQuota<const MAX: u32>;

@@ -357,7 +357,15 @@ impl<T: Config> Pallet<T> {
 		if amount.is_zero() {
 			return None;
 		}
-		let dest = Self::payee(StakingAccount::Stash(stash.clone()))?;
+
+		// FUSION CHANGE
+		let dest = Self::payee(StakingAccount::Stash(stash.clone())).or_else(|| {
+			if T::FusionExt::get_pool_id_from_funds_account(stash).is_some() {
+				Some(RewardDestination::Account(stash.clone()))
+			} else {
+				None
+			}
+		})?;
 
 		let maybe_imbalance = match dest {
 			RewardDestination::Stash => T::Currency::deposit_into_existing(stash, amount).ok(),
@@ -384,7 +392,7 @@ impl<T: Config> Pallet<T> {
 						// This should never happen once payees with a `Controller` variant have been migrated.
 						// But if it does, just pay the controller account.
 						T::Currency::deposit_creating(&controller, amount)
-		}),
+			}),
 		};
 		maybe_imbalance.map(|imbalance| (imbalance, dest))
 	}
@@ -515,6 +523,9 @@ impl<T: Config> Pallet<T> {
 		});
 
 		Self::apply_unapplied_slashes(active_era);
+
+		// FUSION CHANGE
+		T::FusionExt::set_fusion_exposures();
 	}
 
 	/// Compute payout for era.
@@ -525,8 +536,12 @@ impl<T: Config> Pallet<T> {
 
 			let era_duration = (now_as_millis_u64.defensive_saturating_sub(active_era_start))
 				.saturated_into::<u64>();
-			let staked = Self::eras_total_stake(&active_era.index);
+			let mut staked = Self::eras_total_stake(&active_era.index);
 			let issuance = T::Currency::total_issuance();
+			// FUSION CHANGE
+			if staked > issuance {
+				staked = issuance;
+			}
 			let (validator_payout, remainder) =
 				T::EraPayout::era_payout(staked, issuance, era_duration);
 
@@ -536,12 +551,12 @@ impl<T: Config> Pallet<T> {
 				remainder,
 			});
 
-			// FUSION CHANGE
-			let _ = T::FusionExt::handle_era_change(era_duration);
-
 			// Set ending era reward.
 			<ErasValidatorReward<T>>::insert(&active_era.index, validator_payout);
 			T::RewardRemainder::on_unbalanced(T::Currency::issue(remainder));
+
+			// FUSION CHANGE
+			T::FusionExt::handle_end_era(era_duration);
 
 			// Clear offending validators.
 			<OffendingValidators<T>>::kill();
@@ -712,6 +727,11 @@ impl<T: Config> Pallet<T> {
 						if nominator == validator {
 							own = own.saturating_add(stake);
 						} else {
+							// FUSION CHANGE
+							// This will update the fusion exposure in case the nominator is a fusion pool.
+							let _ =
+								T::FusionExt::update_pool_exposure(&nominator, &validator, stake);
+
 							others.push(IndividualExposure {
 								who: nominator,
 								value: stake,
@@ -858,10 +878,17 @@ impl<T: Config> Pallet<T> {
 				.0
 		};
 
-		// FUSION CHANGE : +1 for fusion_pool, assumption for now is that, fusion pool will always have non zero funds to be staked
-		let final_predicted_len = final_predicted_len.saturating_add(1u32);
+		// FUSION CHANGE
+		// We account for the fusion voters count in the final_predicted_len.
+		// We do not update final_predicted_len as the next 'while' loop would have been unecessary longer.
+		let fusion_voters_count = T::FusionExt::get_active_pool_count()
+			.try_into()
+			.unwrap_or(u32::MIN);
+		let mut snapshot_voters_size_exceeded = false;
 
-		let mut all_voters = Vec::<_>::with_capacity(final_predicted_len as usize);
+		let mut all_voters = Vec::<_>::with_capacity(
+			final_predicted_len.saturating_add(fusion_voters_count) as usize,
+		);
 
 		// cache a few things.
 		let weight_of = Self::weight_of_fn();
@@ -905,6 +932,7 @@ impl<T: Config> Pallet<T> {
 						Self::deposit_event(Event::<T>::SnapshotVotersSizeExceeded {
 							size: voters_size_tracker.size as u32,
 						});
+						snapshot_voters_size_exceeded = true;
 						break;
 					}
 
@@ -936,6 +964,7 @@ impl<T: Config> Pallet<T> {
 					Self::deposit_event(Event::<T>::SnapshotVotersSizeExceeded {
 						size: voters_size_tracker.size as u32,
 					});
+					snapshot_voters_size_exceeded = true;
 					break;
 				}
 				all_voters.push(self_vote);
@@ -954,27 +983,40 @@ impl<T: Config> Pallet<T> {
 		}
 
 		// FUSION CHANGE
-		// let fusion_voter = T::FusionExt::get_pool_data();
-		// // check if pool balance is > 0 & it has set some targets
-		// if !fusion_voter.1.is_zero() && !fusion_voter.2.is_empty() {
-		// 	// vote_weight of pool
-		// 	let pool_weight =
-		// 		T::CurrencyToVote::to_vote(fusion_voter.1, T::Currency::total_issuance());
-		// 	all_voters.push((
-		// 		fusion_voter.0,
-		// 		pool_weight,
-		// 		fusion_voter.2.into_inner().try_into().expect("Trust Me!"),
-		// 	));
-		// 	nominators_taken.saturating_inc();
-		// 	min_active_stake = if pool_weight < min_active_stake {
-		// 		pool_weight
-		// 	} else {
-		// 		min_active_stake
-		// 	};
-		// }
+		if !snapshot_voters_size_exceeded && fusion_voters_count > 0 {
+			let fusion_voters = T::FusionExt::get_fusion_voters();
+			for (account, value, targets) in fusion_voters.into_iter() {
+				match BoundedVec::try_from(targets) {
+					Err(_) => {
+						log::error!("Failed to convert targets for account: {:?}", account);
+					},
+					Ok(bounded_targets) => {
+						let fusion_vote = (account, value, bounded_targets);
+						if voters_size_tracker
+							.try_register_voter(&fusion_vote, &bounds)
+							.is_err()
+						{
+							// No more space left for the election snapshot, stop iterating.
+							Self::deposit_event(Event::<T>::SnapshotVotersSizeExceeded {
+								size: voters_size_tracker.size as u32,
+							});
+							break;
+						}
+						all_voters.push(fusion_vote);
+						nominators_taken.saturating_inc();
+						if value < min_active_stake {
+							min_active_stake = value;
+						}
+					},
+				}
+			}
+		}
 
 		// all_voters should have not re-allocated.
-		debug_assert!(all_voters.capacity() == final_predicted_len as usize);
+		debug_assert!(
+			all_voters.capacity()
+				== final_predicted_len.saturating_add(fusion_voters_count) as usize
+		);
 
 		Self::register_weight(T::WeightInfo::get_npos_voters(
 			validators_taken,
@@ -1201,11 +1243,10 @@ impl<T: Config> ElectionDataProvider for Pallet<T> {
 		// This can never fail -- if `maybe_max_len` is `Some(_)` we handle it.
 		let voters = Self::get_npos_voters(bounds);
 
-		//  TODO: This should be handled
-		// debug_assert!(!bounds.exhausted(
-		// 	SizeBound(voters.encoded_size() as u32).into(),
-		// 	CountBound(voters.len() as u32).into()
-		// ));
+		debug_assert!(!bounds.exhausted(
+			SizeBound(voters.encoded_size() as u32).into(),
+			CountBound(voters.len() as u32).into()
+		));
 
 		Ok(voters)
 	}

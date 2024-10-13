@@ -23,11 +23,9 @@ pub type PoolId = u32;
 /// The type of account being created.
 #[derive(Encode, Decode)]
 pub enum FusionAccountType {
-	Funds,
-	Claimable,
 	AvailCurrency,
-	PoolAccount,
-	RewardAccount,
+	PoolFundsAccount,
+	PoolClaimableAccount,
 }
 
 /// State of the pool
@@ -37,7 +35,7 @@ pub enum FusionPoolState {
 	Open,
 	/// Nobody can join, the pool is earning rewards
 	Blocked,
-	/// The pool is paused, nobody can join, the pool is not earning rewards
+	/// Nobody can join, the pool is not earning rewards
 	Paused,
 	/// Pool is getting deleted, nobody can join, the pool is not earning rewards
 	Destroying,
@@ -50,26 +48,6 @@ pub struct EraReward<T: Config> {
 	pub rewards: BalanceOf<T>,
 	/// The actual amount of reward claimed
 	pub claimed_rewards: BalanceOf<T>,
-}
-
-#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[scale_info(skip_type_params(T))]
-pub struct PalletAccounts<T: Config> {
-	pub funds_reward_account: T::AccountId,
-	pub claimable_reward_account: T::AccountId,
-	pub avail_currency_account: T::AccountId,
-}
-impl<T: Config> Default for PalletAccounts<T> {
-	fn default() -> Self {
-		PalletAccounts {
-			funds_reward_account: T::PalletId::get()
-				.into_sub_account_truncating(FusionAccountType::Funds),
-			claimable_reward_account: T::PalletId::get()
-				.into_sub_account_truncating(FusionAccountType::Claimable),
-			avail_currency_account: T::PalletId::get()
-				.into_sub_account_truncating(FusionAccountType::AvailCurrency),
-		}
-	}
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -87,7 +65,7 @@ pub struct FusionCurrency<T: Config> {
 	pub total_slashed_native: FusionCurrencyBalance,
 	/// The amount unbonding in native form
 	pub total_unbonding_native: FusionCurrencyBalance,
-	/// Maximum allowable stake for this currency
+	/// Maximum allowable stake for this currency (overall)
 	pub max_amount: FusionCurrencyBalance,
 	/// Minimum amount to join a pool of this currency
 	pub min_amount: FusionCurrencyBalance,
@@ -104,12 +82,12 @@ pub struct FusionPool<T: Config> {
 	pub currency_id: CurrencyId,
 	/// Percentage representing annual yield for this pool
 	pub apy: Perbill,
-	/// The account used during snapshot and for Phragmen
-	pub pool_account: T::AccountId,
+	/// The account used during snapshot and for Phragmen, this account will receive rewards, this account can be topped up
+	pub funds_account: T::AccountId,
+	/// The account used to store claimable avail
+	pub claimable_account: T::AccountId,
 	/// Optional nominator of the pool, mandate can always manage
 	pub nominator: Option<T::AccountId>,
-	/// Optional, if not managed by avail, a pool should have a keyless reward account
-	pub reward_account: Option<T::AccountId>,
 	/// The evm addresses of members of the pool
 	pub members: BoundedVec<(EvmAddress, Points), T::MaxMembersPerPool>,
 	/// The target validators to be nominated by this pool
@@ -158,6 +136,8 @@ pub struct FusionExposure<T: Config> {
 	pub pool_id: PoolId,
 	/// Era of the exposure to compute rewards
 	pub era: EraIndex,
+	/// The APY when the exposure was taken
+	pub apy: Perbill,
 	/// The total in avail
 	pub total_avail: BalanceOf<T>,
 	/// The total points in the pool
@@ -166,6 +146,9 @@ pub struct FusionExposure<T: Config> {
 	pub user_points: BoundedVec<(EvmAddress, Points), T::MaxMembersPerPool>,
 	/// The nominations of the pool at the time of setting the exposure
 	pub targets: BoundedVec<T::AccountId, T::MaxTargets>,
+	/// Used to store the validator(s) actually backed alongside the amount
+	/// This is populated when exposure are collected
+	pub native_exposure_data: Option<BoundedVec<(T::AccountId, BalanceOf<T>), T::MaxTargets>>,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -188,10 +171,15 @@ impl<T: Config> FusionCurrency<T> {
 		&self,
 		amount: FusionCurrencyBalance,
 		era: Option<EraIndex>,
+		rate: Option<BalanceOf<T>>,
 	) -> Result<BalanceOf<T>, Error<T>> {
-		let era = era.unwrap_or_else(T::EraProvider::current_era);
-		let rate = FusionCurrencyRates::<T>::get(self.currency_id, era)
-			.ok_or(Error::<T>::CurrencyRateNotFound)?;
+		let rate = rate.unwrap_or(
+			FusionCurrencyRates::<T>::get(
+				self.currency_id,
+				era.unwrap_or_else(T::StakingFusionDataProvider::current_era),
+			)
+			.ok_or(Error::<T>::CurrencyRateNotFound)?,
+		);
 
 		let rate = Pallet::<T>::u256(rate.try_into().map_err(|_| Error::<T>::ArithmeticError)?);
 		let amount = Pallet::<T>::u256(amount);
@@ -211,7 +199,7 @@ impl<T: Config> FusionCurrency<T> {
 		avail_amount: BalanceOf<T>,
 		era: Option<EraIndex>,
 	) -> Result<FusionCurrencyBalance, Error<T>> {
-		let era = era.unwrap_or_else(T::EraProvider::current_era);
+		let era = era.unwrap_or_else(T::StakingFusionDataProvider::current_era);
 
 		let rate = FusionCurrencyRates::<T>::get(self.currency_id, era)
 			.ok_or(Error::<T>::CurrencyRateNotFound)?;
@@ -234,19 +222,30 @@ impl<T: Config> FusionCurrency<T> {
 }
 
 impl<T: Config> FusionPool<T> {
-	/// Checks if the pool is paused
-	/// If it uses a custom account, we only check the pool status
-	/// If it uses the global account, we check for the pool status and the global status
+	/// Helper to check if the pool is in Open state
+	pub fn is_open(&self) -> bool {
+		self.state == FusionPoolState::Open
+	}
+	/// Helper to check if the pool is in Blocked state
+	pub fn is_blocked(&self) -> bool {
+		self.state == FusionPoolState::Blocked
+	}
+	/// Helper to check if the pool is in Open state
 	pub fn is_paused(&self) -> bool {
 		self.state == FusionPoolState::Paused
-			|| (self.reward_account.is_none() && Pallet::<T>::ensure_pallet_not_paused().is_err())
 	}
-
-	/// Checks if the pool is destroying
+	/// Helper to check if the pool is in Open state
 	pub fn is_destroying(&self) -> bool {
 		self.state == FusionPoolState::Destroying
 	}
-
+	/// Helper to check if the pool is in Open state
+	pub fn is_active(&self) -> bool {
+		self.state == FusionPoolState::Open || self.state == FusionPoolState::Blocked
+	}
+	/// Helper to check if the pool is in Open state
+	pub fn is_inactive(&self) -> bool {
+		self.state == FusionPoolState::Paused || self.state == FusionPoolState::Destroying
+	}
 	/// Converts a given amount of points to its equivalent in external currency.
 	pub fn points_to_currency(
 		&self,
@@ -288,7 +287,6 @@ impl<T: Config> FusionPool<T> {
 			Ok(Pallet::<T>::fusion_currency(currency_value))
 		}
 	}
-
 	/// Converts a given amount of external currency to its equivalent in points.
 	pub fn currency_to_points(
 		&self,
@@ -327,7 +325,6 @@ impl<T: Config> FusionPool<T> {
 			Ok(Pallet::<T>::points(points))
 		}
 	}
-
 	/// Converts a given amount of points to its equivalent in AVAIL.
 	pub fn points_to_avail(
 		&self,
@@ -338,16 +335,15 @@ impl<T: Config> FusionPool<T> {
 		let currency_value = self.points_to_currency(points, currency)?;
 
 		let avail_value = if let Some(currency) = currency {
-			currency.currency_to_avail(currency_value, era)?
+			currency.currency_to_avail(currency_value, era, None)?
 		} else {
 			let currency =
 				FusionCurrencies::<T>::get(self.currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
-			currency.currency_to_avail(currency_value, era)?
+			currency.currency_to_avail(currency_value, era, None)?
 		};
 
 		Ok(avail_value)
 	}
-
 	/// Converts a given amount of AVAIL to its equivalent in points.
 	pub fn avail_to_points(
 		&self,
@@ -365,5 +361,41 @@ impl<T: Config> FusionPool<T> {
 
 		let points = self.currency_to_points(currency_value, currency)?;
 		Ok(points)
+	}
+}
+
+#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[scale_info(skip_type_params(T))]
+pub struct TVLData<T: Config> {
+	/// The total value locked in Fusion from users (in avail)
+	pub total_value_locked: BalanceOf<T>,
+	/// The max total allowed values locked in Fusion (when changing conversion rates or staking new currency, this will be checked)
+	pub max_total_value_locked: BalanceOf<T>,
+}
+impl<T: Config> Default for TVLData<T> {
+	fn default() -> Self {
+		Self {
+			total_value_locked: BalanceOf::<T>::default(),
+			max_total_value_locked: BalanceOf::<T>::default(),
+		}
+	}
+}
+impl<T: Config> TVLData<T> {
+	/// Checks if adding `amount` to `total_value_locked` is within `max_total_value_locked`.
+	pub fn can_add(&self, amount: BalanceOf<T>) -> bool {
+		self.total_value_locked.saturating_add(amount) <= self.max_total_value_locked
+	}
+
+	/// Adds `amount` to `total_value_locked` if it doesn't exceed `max_total_value_locked`.
+	/// Returns `Ok(())` if successful, or an error if the addition exceeds the max value.
+	pub fn add(&mut self, amount: BalanceOf<T>) -> Result<(), Error<T>> {
+		ensure!(self.can_add(amount), Error::<T>::MaxTVLReached);
+		self.total_value_locked = self.total_value_locked.saturating_add(amount);
+		Ok(())
+	}
+
+	/// Substract `amount` to `total_value_locked`.
+	pub fn sub(&mut self, amount: BalanceOf<T>) {
+		self.total_value_locked = self.total_value_locked.saturating_sub(amount);
 	}
 }
