@@ -45,7 +45,7 @@ use sp_runtime::{
 	FixedPointNumber, FixedU128, Perbill, Permill, Perquintill,
 };
 use sp_staking::EraIndex;
-use sp_std::vec::Vec;
+use crate::Vec;
 
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
 	<T as frame_system::Config>::AccountId,
