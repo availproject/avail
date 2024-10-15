@@ -884,11 +884,9 @@ impl<T: Config> Pallet<T> {
 		let fusion_voters_count = T::FusionExt::get_active_pool_count()
 			.try_into()
 			.unwrap_or(u32::MIN);
-		let mut snapshot_voters_size_exceeded = false;
+		let final_predicted_len = final_predicted_len.saturating_add(fusion_voters_count);
 
-		let mut all_voters = Vec::<_>::with_capacity(
-			final_predicted_len.saturating_add(fusion_voters_count) as usize,
-		);
+		let mut all_voters = Vec::<_>::with_capacity(final_predicted_len as usize);
 
 		// cache a few things.
 		let weight_of = Self::weight_of_fn();
@@ -898,125 +896,120 @@ impl<T: Config> Pallet<T> {
 		let mut nominators_taken = 0u32;
 		let mut min_active_stake = u64::MAX;
 
-		let mut sorted_voters = T::VoterList::iter();
-		while all_voters.len() < final_predicted_len as usize
-			&& voters_seen < (NPOS_MAX_ITERATIONS_COEFFICIENT * final_predicted_len as u32)
-		{
-			let voter = match sorted_voters.next() {
-				Some(voter) => {
-					voters_seen.saturating_inc();
-					voter
-				},
-				None => break,
-			};
-
-			let voter_weight = weight_of(&voter);
-			// if voter weight is zero, do not consider this voter for the snapshot.
-			if voter_weight.is_zero() {
-				log!(debug, "voter's active balance is 0. skip this voter.");
-				continue;
-			}
-
-			if let Some(Nominations { targets, .. }) = <Nominators<T>>::get(&voter) {
-				if !targets.is_empty() {
-					// Note on lazy nomination quota: we do not check the nomination quota of the
-					// voter at this point and accept all the current nominations. The nomination
-					// quota is only enforced at `nominate` time.
-
-					let voter = (voter, voter_weight, targets);
-					if voters_size_tracker
-						.try_register_voter(&voter, &bounds)
-						.is_err()
-					{
-						// no more space left for the election result, stop iterating.
-						Self::deposit_event(Event::<T>::SnapshotVotersSizeExceeded {
-							size: voters_size_tracker.size as u32,
-						});
-						snapshot_voters_size_exceeded = true;
-						break;
-					}
-
-					all_voters.push(voter);
-					nominators_taken.saturating_inc();
-				} else {
-					// technically should never happen, but not much we can do about it.
-				}
-				min_active_stake = if voter_weight < min_active_stake {
-					voter_weight
-				} else {
-					min_active_stake
+		// FUSION CHANGE
+		let mut snapshot_voters_size_exceeded = false;
+		if fusion_voters_count > 0 {
+			let fusion_voters = T::FusionExt::get_fusion_voters();
+			for (account, value, targets) in fusion_voters.into_iter() {
+				let Ok(bounded_targets) = BoundedVec::try_from(targets) else {
+					log::error!("Failed to convert targets for account: {:?}", account);
+					continue;
 				};
-			} else if Validators::<T>::contains_key(&voter) {
-				// if this voter is a validator:
-				let self_vote = (
-					voter.clone(),
-					voter_weight,
-					vec![voter.clone()]
-						.try_into()
-						.expect("`MaxVotesPerVoter` must be greater than or equal to 1"),
-				);
-
+				let fusion_vote = (account, value, bounded_targets);
 				if voters_size_tracker
-					.try_register_voter(&self_vote, &bounds)
+					.try_register_voter(&fusion_vote, &bounds)
 					.is_err()
 				{
-					// no more space left for the election snapshot, stop iterating.
+					// No more space left for the election snapshot, stop iterating.
 					Self::deposit_event(Event::<T>::SnapshotVotersSizeExceeded {
 						size: voters_size_tracker.size as u32,
 					});
 					snapshot_voters_size_exceeded = true;
 					break;
 				}
-				all_voters.push(self_vote);
-				validators_taken.saturating_inc();
-			} else {
-				// this can only happen if: 1. there a bug in the bags-list (or whatever is the
-				// sorted list) logic and the state of the two pallets is no longer compatible, or
-				// because the nominators is not decodable since they have more nomination than
-				// `T::NominationsQuota::get_quota`. The latter can rarely happen, and is not
-				// really an emergency or bug if it does.
-				defensive!(
-				    "DEFENSIVE: invalid item in `VoterList`: {:?}, this nominator probably has too many nominations now",
-                    voter,
-                );
+				all_voters.push(fusion_vote);
+				nominators_taken.saturating_inc();
+				if value < min_active_stake {
+					min_active_stake = value;
+				}
 			}
 		}
 
-		// FUSION CHANGE
-		if !snapshot_voters_size_exceeded && fusion_voters_count > 0 {
-			let fusion_voters = T::FusionExt::get_fusion_voters();
-			for (account, value, targets) in fusion_voters.into_iter() {
-				match BoundedVec::try_from(targets) {
-					Err(_) => {
-						log::error!("Failed to convert targets for account: {:?}", account);
+		let mut sorted_voters = T::VoterList::iter();
+		if !snapshot_voters_size_exceeded {
+			while all_voters.len() < final_predicted_len as usize
+				&& voters_seen < (NPOS_MAX_ITERATIONS_COEFFICIENT * final_predicted_len as u32)
+			{
+				let voter = match sorted_voters.next() {
+					Some(voter) => {
+						voters_seen.saturating_inc();
+						voter
 					},
-					Ok(bounded_targets) => {
-						let fusion_vote = (account, value, bounded_targets);
+					None => break,
+				};
+
+				let voter_weight = weight_of(&voter);
+				// if voter weight is zero, do not consider this voter for the snapshot.
+				if voter_weight.is_zero() {
+					log!(debug, "voter's active balance is 0. skip this voter.");
+					continue;
+				}
+
+				if let Some(Nominations { targets, .. }) = <Nominators<T>>::get(&voter) {
+					if !targets.is_empty() {
+						// Note on lazy nomination quota: we do not check the nomination quota of the
+						// voter at this point and accept all the current nominations. The nomination
+						// quota is only enforced at `nominate` time.
+
+						let voter = (voter, voter_weight, targets);
 						if voters_size_tracker
-							.try_register_voter(&fusion_vote, &bounds)
+							.try_register_voter(&voter, &bounds)
 							.is_err()
 						{
-							// No more space left for the election snapshot, stop iterating.
+							// no more space left for the election result, stop iterating.
 							Self::deposit_event(Event::<T>::SnapshotVotersSizeExceeded {
 								size: voters_size_tracker.size as u32,
 							});
 							break;
 						}
-						all_voters.push(fusion_vote);
+
+						all_voters.push(voter);
 						nominators_taken.saturating_inc();
-						if value < min_active_stake {
-							min_active_stake = value;
-						}
-					},
+					} else {
+						// technically should never happen, but not much we can do about it.
+					}
+					min_active_stake = if voter_weight < min_active_stake {
+						voter_weight
+					} else {
+						min_active_stake
+					};
+				} else if Validators::<T>::contains_key(&voter) {
+					// if this voter is a validator:
+					let self_vote = (
+						voter.clone(),
+						voter_weight,
+						vec![voter.clone()]
+							.try_into()
+							.expect("`MaxVotesPerVoter` must be greater than or equal to 1"),
+					);
+
+					if voters_size_tracker
+						.try_register_voter(&self_vote, &bounds)
+						.is_err()
+					{
+						// no more space left for the election snapshot, stop iterating.
+						Self::deposit_event(Event::<T>::SnapshotVotersSizeExceeded {
+							size: voters_size_tracker.size as u32,
+						});
+						break;
+					}
+					all_voters.push(self_vote);
+					validators_taken.saturating_inc();
+				} else {
+					// this can only happen if: 1. there a bug in the bags-list (or whatever is the
+					// sorted list) logic and the state of the two pallets is no longer compatible, or
+					// because the nominators is not decodable since they have more nomination than
+					// `T::NominationsQuota::get_quota`. The latter can rarely happen, and is not
+					// really an emergency or bug if it does.
+					defensive!(
+				    "DEFENSIVE: invalid item in `VoterList`: {:?}, this nominator probably has too many nominations now",
+                    voter,
+                );
 				}
 			}
 		}
-
 		// all_voters should have not re-allocated.
-		debug_assert!(
-			all_voters.capacity()
-				== final_predicted_len.saturating_add(fusion_voters_count) as usize
-		);
+		debug_assert!(all_voters.capacity() == final_predicted_len as usize);
 
 		Self::register_weight(T::WeightInfo::get_npos_voters(
 			validators_taken,
