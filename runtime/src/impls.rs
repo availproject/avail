@@ -1,10 +1,10 @@
 use crate::{
 	constants, prod_or_fast, voter_bags, weights, AccountId, AccountIndex, Babe, Balances, Block,
-	BlockNumber, ElectionProviderMultiPhase, Everything, Hash, Header, Historical, ImOnline,
-	ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo,
-	Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason,
-	RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, SessionKeys, Signature,
-	SignedPayload, Staking, System, Timestamp, TransactionPayment, Treasury, TxPause,
+	BlockNumber, ElectionProviderMultiPhase, Everything, Fusion, Hash, Header, Historical,
+	ImOnline, ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller,
+	PalletInfo, Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent,
+	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, SessionKeys,
+	Signature, SignedPayload, Staking, System, Timestamp, TransactionPayment, Treasury, TxPause,
 	UncheckedExtrinsic, VoterList, MINUTES, SLOT_DURATION, VERSION,
 };
 use avail_core::{
@@ -12,6 +12,7 @@ use avail_core::{
 	AppId, NORMAL_DISPATCH_RATIO,
 };
 
+use crate::Vec;
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::time::DAYS;
 use frame_election_provider_support::{
@@ -44,6 +45,7 @@ use sp_runtime::{
 	traits::{self, BlakeTwo256, Bounded, Convert, IdentityLookup, OpaqueKeys},
 	FixedPointNumber, FixedU128, Perbill, Permill, Perquintill,
 };
+use sp_staking::EraIndex;
 
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
 	<T as frame_system::Config>::AccountId,
@@ -137,6 +139,57 @@ impl pallet_offences::Config for Runtime {
 
 impl pallet_authority_discovery::Config for Runtime {
 	type MaxAuthorities = constants::MaxAuthorities;
+}
+
+parameter_types! {
+	pub const FusionPalletId: PalletId = PalletId(*b"avl/fusi");
+	pub const MaxCurrencyName: u32 = 32;
+	pub const MaxMembersPerPool: u32 = 100_000;
+	pub const MaxTargets: u32 = 16;
+	pub const MaxUnbonding: u32 = 8;
+	pub const HistoryDepth: u32 = 84;
+	pub const MinimumBalanceToOperate: Balance = 100 * AVAIL;
+	pub const MaxSlashes: u32 = 1000;
+	pub const MaxPoolsPerValidator: u32 = 10;
+}
+impl pallet_fusion::Config for Runtime {
+	type Currency = Balances;
+	type CurrencyToVote = sp_staking::currency_to_vote::U128CurrencyToVote;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type ApprovedOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 5, 7>,
+	>;
+	type PalletId = FusionPalletId;
+	type MaxCurrencyName = MaxCurrencyName;
+	type MaxMembersPerPool = MaxMembersPerPool;
+	type MaxTargets = MaxTargets;
+	type MaxUnbonding = MaxUnbonding;
+	type MaxSlashes = MaxSlashes;
+	type MaxPoolsPerValidator = MaxPoolsPerValidator;
+	type BondingDuration = constants::staking::BondingDuration;
+	type RewardRemainder = Treasury;
+	type HistoryDepth = HistoryDepth;
+	type StakingFusionDataProvider = Self;
+	type WeightInfo = weights::pallet_fusion::WeightInfo<Runtime>;
+	type SlashDeferDuration = constants::staking::SlashDeferDuration;
+}
+
+impl pallet_fusion::StakingFusionDataProvider<AccountId> for Runtime {
+	fn current_era() -> EraIndex {
+		pallet_staking::Pallet::<Self>::current_era().unwrap_or_default()
+	}
+	fn is_valid_validator(account: &AccountId) -> bool {
+		pallet_staking::Validators::<Self>::contains_key(account)
+			&& !pallet_staking::Validators::<Self>::get(account).blocked
+	}
+	fn has_earned_era_points(era: EraIndex, accounts: &Vec<AccountId>) -> bool {
+		let era_points = pallet_staking::ErasRewardPoints::<Self>::get(era).individual;
+		accounts
+			.iter()
+			.any(|account| era_points.contains_key(account))
+	}
 }
 
 parameter_types! {
@@ -494,7 +547,7 @@ impl pallet_staking::Config for Runtime {
 	type CurrencyToVote = sp_staking::currency_to_vote::U128CurrencyToVote;
 	type ElectionProvider = ElectionProviderMultiPhase;
 	type EraPayout = pallet_staking::ConvertCurve<constants::staking::RewardCurve>;
-	type EventListeners = NominationPools;
+	type EventListeners = (NominationPools, Fusion);
 	type GenesisElectionProvider = onchain::OnChainExecution<OnChainSeqPhragmen>;
 	type HistoryDepth = constants::staking::HistoryDepth;
 	type MaxControllersInDeprecationBatch = constants::staking::MaxControllersInDeprecationBatch;
@@ -504,13 +557,13 @@ impl pallet_staking::Config for Runtime {
 	type NominationsQuota =
 		pallet_staking::FixedNominationsQuota<{ constants::staking::MaxNominations::get() }>;
 	type OffendingValidatorsThreshold = constants::staking::OffendingValidatorsThreshold;
-	// send the slashed funds to the treasury.
 	type Reward = ();
 	type RewardRemainder = Treasury;
 	type RuntimeEvent = RuntimeEvent;
 	type SessionInterface = Self;
 	// rewards are minted from the void
 	type SessionsPerEra = constants::staking::SessionsPerEra;
+	// send the slashed funds to the treasury.
 	type Slash = Treasury;
 	type SlashDeferDuration = constants::staking::SlashDeferDuration;
 	// This a placeholder, to be introduced in the next PR as an instance of bags-list
@@ -518,6 +571,7 @@ impl pallet_staking::Config for Runtime {
 	type UnixTime = Timestamp;
 	type VoterList = VoterList;
 	type WeightInfo = weights::pallet_staking::WeightInfo<Runtime>;
+	type FusionExt = Fusion;
 }
 
 /// The numbers configured here could always be more than the maximum limits of staking pallet
