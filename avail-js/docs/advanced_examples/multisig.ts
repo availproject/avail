@@ -1,4 +1,4 @@
-import { SDK, WaitFor, Keyring, BN, KeyringPair, Weight, ParsedTxResult, MultisigTimepoint } from "./../../src/index"
+import { SDK, WaitFor, Keyring, BN, KeyringPair, Weight, TxResultDetails, MultisigTimepoint } from "./../../src/index"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -73,7 +73,7 @@ async function firstApproval(
   threshold: number,
   otherSignatures: string[],
   maxWeight: Weight,
-): Promise<ParsedTxResult> {
+): Promise<TxResultDetails> {
   console.log("Alice is creating a Multisig Transaction...")
 
   const maybeTxResult = await sdk.util.firstMultisigApproval(
@@ -98,7 +98,7 @@ async function nextApproval(
   threshold: number,
   otherSignatures: string[],
   timepoint: MultisigTimepoint,
-): Promise<ParsedTxResult> {
+): Promise<TxResultDetails> {
   console.log("Bob is approving the existing Multisig Transaction...")
 
   const maybeTxResult = await sdk.util.nextMultisigApproval(
@@ -124,7 +124,7 @@ async function lastApproval(
   timepoint: MultisigTimepoint,
   callData: string,
   maxWeight: Weight,
-): Promise<ParsedTxResult> {
+): Promise<TxResultDetails> {
   console.log("Charlie is approving and executing the existing Multisig Transaction...")
 
   const maybeTxResult = await sdk.util.lastMultisigApproval(

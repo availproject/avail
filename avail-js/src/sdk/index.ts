@@ -11,7 +11,7 @@ export { Keyring } from "@polkadot/api"
 export { KeyringPair } from "@polkadot/keyring/types"
 export { Bytes } from "@polkadot/types-codec"
 export { H256, Weight } from "@polkadot/types/interfaces"
-export { ParsedTxResult, MultisigTimepoint } from "./utils"
+export { TxResultDetails, MultisigTimepoint } from "./utils"
 
 export {
   WaitFor,

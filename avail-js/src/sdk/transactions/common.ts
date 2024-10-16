@@ -2,6 +2,7 @@ import { ApiPromise } from "@polkadot/api"
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
 import { H256 } from "@polkadot/types/interfaces/types"
 import { ok, Result } from "neverthrow"
+import { TxResultDetails } from "../utils"
 
 export enum WaitFor {
   BlockInclusion,
@@ -46,4 +47,9 @@ export async function getBlockHashAndTxHash(
   return [txHash, txIndex, blockHash, blockNumber]
 }
 
-export type GenericFailure = { isErr: true; reason: string }
+export class TransactionFailed {
+  constructor(
+    public reason: string,
+    public details: TxResultDetails | null,
+  ) {}
+}

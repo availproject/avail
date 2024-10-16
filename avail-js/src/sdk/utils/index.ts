@@ -8,7 +8,7 @@ import { createKeyMulti, encodeAddress, sortAddresses } from "@polkadot/util-cry
 import { KeyringPair } from "@polkadot/keyring/types"
 import { SignerOptions } from "@polkadot/api/types"
 
-export class ParsedTxResult {
+export class TxResultDetails {
   constructor(
     public txResult: ISubmittableResult,
     public events: EventRecord[],
@@ -16,6 +16,13 @@ export class ParsedTxResult {
     public txIndex: number,
     public blockHash: H256,
     public blockNumber: number,
+  ) {}
+}
+
+export class FailedTxResult {
+  constructor(
+    public reason: string,
+    public details: TxResultDetails | null,
   ) {}
 }
 
@@ -31,12 +38,12 @@ export class Utils {
     this.api = api
   }
 
-  /// Parses a transaction result. Helper function to get transaction details on 
+  /// Parses a transaction result. Helper function to get transaction details on
   /// transaction success or an error if the transaction failed
   async parseTransactionResult(
     txResult: ISubmittableResult,
     waitFor: WaitFor,
-  ): Promise<Result<ParsedTxResult, string>> {
+  ): Promise<Result<TxResultDetails, FailedTxResult>> {
     return await parseTransactionResult(this.api, txResult, waitFor)
   }
 
@@ -65,7 +72,7 @@ export class Utils {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: Partial<SignerOptions>,
-  ): Promise<Result<ParsedTxResult, string>> {
+  ): Promise<Result<TxResultDetails, string>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
       this.api.tx.multisig
@@ -84,7 +91,7 @@ export class Utils {
     const txResult = maybeTxResult.value
     const maybeParsed = await this.parseTransactionResult(txResult, waitFor)
     if (maybeParsed.isErr()) {
-      return err(maybeParsed.error)
+      return err(maybeParsed.error.reason)
     }
     const parsed = maybeParsed.value
 
@@ -100,7 +107,7 @@ export class Utils {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: Partial<SignerOptions>,
-  ): Promise<Result<ParsedTxResult, string>> {
+  ): Promise<Result<TxResultDetails, string>> {
     const maxWeight = { refTime: 0, proofSize: 0 }
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -120,7 +127,7 @@ export class Utils {
     const txResult = maybeTxResult.value
     const maybeParsed = await this.parseTransactionResult(txResult, waitFor)
     if (maybeParsed.isErr()) {
-      return err(maybeParsed.error)
+      return err(maybeParsed.error.reason)
     }
     const parsed = maybeParsed.value
 
@@ -137,7 +144,7 @@ export class Utils {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: Partial<SignerOptions>,
-  ): Promise<Result<ParsedTxResult, string>> {
+  ): Promise<Result<TxResultDetails, string>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
       this.api.tx.multisig
@@ -156,7 +163,7 @@ export class Utils {
     const txResult = maybeTxResult.value
     const maybeParsed = await this.parseTransactionResult(txResult, waitFor)
     if (maybeParsed.isErr()) {
-      return err(maybeParsed.error)
+      return err(maybeParsed.error.reason)
     }
     const parsed = maybeParsed.value
 
@@ -173,20 +180,21 @@ export async function parseTransactionResult(
   api: ApiPromise,
   txResult: ISubmittableResult,
   waitFor: WaitFor,
-): Promise<Result<ParsedTxResult, string>> {
+): Promise<Result<TxResultDetails, FailedTxResult>> {
   if (txResult.isError) {
-    return err("The transaction was dropped or something.")
-  }
-
-  const failed = txResult.events.find((e) => api.events.system.ExtrinsicFailed.is(e.event))
-  if (failed != undefined) {
-    return err(decodeError(api, failed.event.data[0]))
+    return err({ reason: "The transaction was dropped or something.", details: null })
   }
 
   const events = txResult.events
   const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, api)
+  const details = new TxResultDetails(txResult, events, txHash, txIndex, blockHash, blockNumber)
 
-  return ok(new ParsedTxResult(txResult, events, txHash, txIndex, blockHash, blockNumber))
+  const failed = txResult.events.find((e) => api.events.system.ExtrinsicFailed.is(e.event))
+  if (failed != undefined) {
+    return err({ reason: decodeError(api, failed.event.data[0]), details })
+  }
+
+  return ok(details)
 }
 
 export function commissionNumberToPerbill(value: number): Result<string, string> {

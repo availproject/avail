@@ -1,14 +1,15 @@
 import { ApiPromise } from "@polkadot/api"
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
-import { H256, EventRecord } from "@polkadot/types/interfaces/types"
+import { EventRecord } from "@polkadot/types/interfaces/types"
 import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
-import { err, Result } from "neverthrow"
+import { err, Result, ok } from "neverthrow"
 
 import * as TransactionData from "./../transaction_data"
 import { SignerOptions } from "@polkadot/api/types"
 import { decodeError, fromHexToAscii } from "../../helpers"
-import { WaitFor, GenericFailure, standardCallback, getBlockHashAndTxHash } from "./common"
+import { WaitFor, standardCallback, TransactionFailed } from "./common"
+import { parseTransactionResult, TxResultDetails } from "../utils"
 
 export type DispatchFeeModifier = {
   weightMaximumFee: BN | null
@@ -16,51 +17,40 @@ export type DispatchFeeModifier = {
   weightFeeMultiplier: number | null
 }
 
-type SubmitDataTxSuccess = {
-  isErr: false
-  txData: TransactionData.DataAvailability.SubmitData
-  event: Events.DataSubmittedEvent
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class SubmitDataTx {
+  constructor(
+    public txData: TransactionData.DataAvailability.SubmitData,
+    public event: Events.DataSubmittedEvent,
+    public details: TxResultDetails,
+  ) {}
 }
-type CreateApplicationKeyTxSuccess = {
-  isErr: false
-  event: Events.ApplicationKeyCreatedEvent
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+
+export class CreateApplicationKeyTx {
+  constructor(
+    public event: Events.ApplicationKeyCreatedEvent,
+    public details: TxResultDetails,
+  ) {}
 }
-type SetApplicationKeyTxSuccess = {
-  isErr: false
-  event: Events.ApplicationKeySetEvent
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+
+export class SetApplicationKeyTx {
+  constructor(
+    public event: Events.ApplicationKeySetEvent,
+    public details: TxResultDetails,
+  ) {}
 }
-type SubmitBlockLengthProposalTxSuccess = {
-  isErr: false
-  event: Events.BlockLengthProposalSubmittedEvent
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+
+export class SubmitBlockLengthProposalTx {
+  constructor(
+    public event: Events.BlockLengthProposalSubmittedEvent,
+    public details: TxResultDetails,
+  ) {}
 }
-type SetSubmitDataFeeModifierTxSuccess = {
-  isErr: false
-  event: Events.SubmitDataFeeModifierSetEvent
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+
+export class SetSubmitDataFeeModifierTx {
+  constructor(
+    public event: Events.SubmitDataFeeModifierSetEvent,
+    public details: TxResultDetails,
+  ) {}
 }
 
 export class DataAvailability {
@@ -75,7 +65,7 @@ export class DataAvailability {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: Partial<SignerOptions>,
-  ): Promise<SubmitDataTxSuccess | GenericFailure> {
+  ): Promise<Result<SubmitDataTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
       this.api.tx.dataAvailability
@@ -89,42 +79,30 @@ export class DataAvailability {
     })
 
     if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error } as GenericFailure
+      return err(new TransactionFailed(maybeTxResult.error, null))
     }
     const txResult = maybeTxResult.value
-
-    if (txResult.isError) {
-      return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure
+    const maybeParsed = await parseTransactionResult(this.api, txResult, waitFor)
+    if (maybeParsed.isErr()) {
+      return err(maybeParsed.error)
     }
-
-    const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event))
-    if (failed != undefined) {
-      return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure
-    }
+    const details = maybeParsed.value
 
     const event = Events.DataSubmittedEvent.New(txResult.events)
     if (event == undefined) {
-      return { isErr: true, reason: "Failed to find DataSubmitted event." } as GenericFailure
+      return err(new TransactionFailed("Failed to find DataSubmitted Event", details))
     }
 
-    const events = txResult.events
-    const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api)
-
-    const maybeTxData = await TransactionData.DataAvailability.SubmitData.New(this.api, txHash, blockHash)
+    const maybeTxData = await TransactionData.DataAvailability.SubmitData.New(
+      this.api,
+      details.txHash,
+      details.blockHash,
+    )
     if (maybeTxData.isErr()) {
-      return { isErr: true, reason: maybeTxData.error } as GenericFailure
+      return err(new TransactionFailed(maybeTxData.error, details))
     }
 
-    return {
-      isErr: false,
-      txData: maybeTxData.value,
-      event,
-      events,
-      txHash,
-      txIndex,
-      blockHash,
-      blockNumber,
-    } as SubmitDataTxSuccess
+    return ok(new SubmitDataTx(maybeTxData.value, event, details))
   }
 
   async createApplicationKey(
@@ -132,7 +110,7 @@ export class DataAvailability {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: Partial<SignerOptions>,
-  ): Promise<CreateApplicationKeyTxSuccess | GenericFailure> {
+  ): Promise<Result<CreateApplicationKeyTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
       this.api.tx.dataAvailability
@@ -146,28 +124,21 @@ export class DataAvailability {
     })
 
     if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error } as GenericFailure
+      return err(new TransactionFailed(maybeTxResult.error, null))
     }
     const txResult = maybeTxResult.value
-
-    if (txResult.isError) {
-      return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure
+    const maybeParsed = await parseTransactionResult(this.api, txResult, waitFor)
+    if (maybeParsed.isErr()) {
+      return err(maybeParsed.error)
     }
-
-    const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event))
-    if (failed != undefined) {
-      return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure
-    }
+    const details = maybeParsed.value
 
     const event = Events.ApplicationKeyCreatedEvent.New(txResult.events)
     if (event == undefined) {
-      return { isErr: true, reason: "Failed to find ApplicationKeyCreated event." } as GenericFailure
+      return err(new TransactionFailed("Failed to find ApplicationKeyCreated Event", details))
     }
 
-    const events = txResult.events
-    const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api)
-
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as CreateApplicationKeyTxSuccess
+    return ok(new CreateApplicationKeyTx(event, details))
   }
 
   async setApplicationKey(
@@ -176,7 +147,7 @@ export class DataAvailability {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: Partial<SignerOptions>,
-  ): Promise<SetApplicationKeyTxSuccess | GenericFailure> {
+  ): Promise<Result<SetApplicationKeyTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
       const call = this.api.tx.dataAvailability.setApplicationKey(oldKey, newKey)
@@ -191,38 +162,31 @@ export class DataAvailability {
     })
 
     if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error } as GenericFailure
+      return err(new TransactionFailed(maybeTxResult.error, null))
     }
     const txResult = maybeTxResult.value
-
-    if (txResult.isError) {
-      return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure
+    const maybeParsed = await parseTransactionResult(this.api, txResult, waitFor)
+    if (maybeParsed.isErr()) {
+      return err(maybeParsed.error)
     }
-
-    const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event))
-    if (failed != undefined) {
-      return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure
-    }
+    const details = maybeParsed.value
 
     const sudoEvent = txResult.events.find((e) => e.event.method == "Sudid")
     if (sudoEvent == undefined) {
-      return { isErr: true, reason: "Failed to find Sudid event." } as GenericFailure
+      return err(new TransactionFailed("Failed to find Sudid Event", details))
     }
 
     const sudoResult: any = (sudoEvent.event.data as any).sudoResult
     if (sudoResult.isErr) {
-      return { isErr: true, isFailure: true, reason: decodeError(this.api, sudoResult.asErr) } as GenericFailure
+      return err(new TransactionFailed(decodeError(this.api, sudoResult.asErr), details))
     }
 
     const event = Events.ApplicationKeySetEvent.New(txResult.events)
     if (event == undefined) {
-      return { isErr: true, reason: "Failed to find ApplicationKeySet event." } as GenericFailure
+      return err(new TransactionFailed("Failed to find ApplicationKeySet Event", details))
     }
 
-    const events = txResult.events
-    const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api)
-
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as SetApplicationKeyTxSuccess
+    return ok(new SetApplicationKeyTx(event, details))
   }
 
   async submitBlockLengthProposal(
@@ -231,7 +195,7 @@ export class DataAvailability {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: Partial<SignerOptions>,
-  ): Promise<SubmitBlockLengthProposalTxSuccess | GenericFailure> {
+  ): Promise<Result<SubmitBlockLengthProposalTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
       const call = this.api.tx.dataAvailability.submitBlockLengthProposal(rows, cols)
@@ -246,46 +210,31 @@ export class DataAvailability {
     })
 
     if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error } as GenericFailure
+      return err(new TransactionFailed(maybeTxResult.error, null))
     }
     const txResult = maybeTxResult.value
-
-    if (txResult.isError) {
-      return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure
+    const maybeParsed = await parseTransactionResult(this.api, txResult, waitFor)
+    if (maybeParsed.isErr()) {
+      return err(maybeParsed.error)
     }
-
-    const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event))
-    if (failed != undefined) {
-      return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure
-    }
+    const details = maybeParsed.value
 
     const sudoEvent = txResult.events.find((e) => e.event.method == "Sudid")
     if (sudoEvent == undefined) {
-      return { isErr: true, reason: "Failed to find Sudid event." } as GenericFailure
+      return err(new TransactionFailed("Failed to find Sudid Event", details))
     }
 
     const sudoResult: any = (sudoEvent.event.data as any).sudoResult
     if (sudoResult.isErr) {
-      return { isErr: true, isFailure: true, reason: decodeError(this.api, sudoResult.asErr) } as GenericFailure
+      return err(new TransactionFailed(decodeError(this.api, sudoResult.asErr), details))
     }
 
     const event = Events.BlockLengthProposalSubmittedEvent.New(txResult.events)
     if (event == undefined) {
-      return { isErr: true, reason: "Failed to find BlockLengthProposalSubmitted event." } as GenericFailure
+      return err(new TransactionFailed("Failed to find BlockLengthProposalSubmitted Event", details))
     }
 
-    const events = txResult.events
-    const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api)
-
-    return {
-      isErr: false,
-      event,
-      events,
-      txHash,
-      txIndex,
-      blockHash,
-      blockNumber,
-    } as SubmitBlockLengthProposalTxSuccess
+    return ok(new SubmitBlockLengthProposalTx(event, details))
   }
 
   async setSubmitDataFeeModifier(
@@ -293,7 +242,7 @@ export class DataAvailability {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: Partial<SignerOptions>,
-  ): Promise<SetSubmitDataFeeModifierTxSuccess | GenericFailure> {
+  ): Promise<Result<SetSubmitDataFeeModifierTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
       const call = this.api.tx.dataAvailability.setSubmitDataFeeModifier(modifier)
@@ -308,38 +257,31 @@ export class DataAvailability {
     })
 
     if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error } as GenericFailure
+      return err(new TransactionFailed(maybeTxResult.error, null))
     }
     const txResult = maybeTxResult.value
-
-    if (txResult.isError) {
-      return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure
+    const maybeParsed = await parseTransactionResult(this.api, txResult, waitFor)
+    if (maybeParsed.isErr()) {
+      return err(maybeParsed.error)
     }
-
-    const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event))
-    if (failed != undefined) {
-      return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure
-    }
+    const details = maybeParsed.value
 
     const sudoEvent = txResult.events.find((e) => e.event.method == "Sudid")
     if (sudoEvent == undefined) {
-      return { isErr: true, reason: "Failed to find Sudid event." } as GenericFailure
+      return err(new TransactionFailed("Failed to find Sudid Event", details))
     }
 
     const sudoResult: any = (sudoEvent.event.data as any).sudoResult
     if (sudoResult.isErr) {
-      return { isErr: true, isFailure: true, reason: decodeError(this.api, sudoResult.asErr) } as GenericFailure
+      return err(new TransactionFailed(decodeError(this.api, sudoResult.asErr), details))
     }
 
     const event = Events.SubmitDataFeeModifierSetEvent.New(txResult.events)
     if (event == undefined) {
-      return { isErr: true, reason: "Failed to find SubmitDataFeeModifierSet event." } as GenericFailure
+      return err(new TransactionFailed("Failed to find SubmitDataFeeModifierSet Event", details))
     }
 
-    const events = txResult.events
-    const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api)
-
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as SetSubmitDataFeeModifierTxSuccess
+    return ok(new SetSubmitDataFeeModifierTx(event, details))
   }
 }
 
