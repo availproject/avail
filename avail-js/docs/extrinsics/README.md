@@ -37,12 +37,12 @@ const main = async () => {
   const key = "MyAwesomeKey"
 
   const result = await sdk.tx.dataAvailability.createApplicationKey(key, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
 
   process.exit()
 }
@@ -108,12 +108,12 @@ const main = async () => {
   const data = "My Awesome Data"
 
   const result = await sdk.tx.dataAvailability.submitData(data, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()
@@ -182,12 +182,12 @@ const main = async () => {
   const cols = 128
 
   const result = await sdk.tx.dataAvailability.submitBlockLengthProposal(rows, cols, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
 
   process.exit()
 }
@@ -243,12 +243,12 @@ const main = async () => {
   const newKey = "MyNewKeyAwesome2"
 
   const result = await sdk.tx.dataAvailability.setApplicationKey(oldKey, newKey, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
 
   process.exit()
 }
@@ -305,12 +305,12 @@ const main = async () => {
   } as sdkTransactions.DispatchFeeModifier
 
   const result = await sdk.tx.dataAvailability.setSubmitDataFeeModifier(modifier, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
 
   process.exit()
 }
@@ -385,12 +385,12 @@ const main = async () => {
   const amount = new BN(10).pow(new BN(18)) // one Avail
 
   const result = await sdk.tx.balances.transferKeepAlive(dest, amount, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
 
   process.exit()
 }
@@ -458,12 +458,12 @@ const main = async () => {
   const amount = new BN(10).pow(new BN(18)) // one Avail
 
   const result = await sdk.tx.balances.transferAllowDeath(dest, amount, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
 
   process.exit()
 }
@@ -531,12 +531,12 @@ const main = async () => {
   const keepAlive = true
 
   const result = await sdk.tx.balances.transferAll(dest, keepAlive, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
 
   process.exit()
 }
@@ -610,12 +610,12 @@ const main = async () => {
   const payee = "Staked"
 
   const result = await sdk.tx.staking.bond(value, payee, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
 
   process.exit()
 }
@@ -680,12 +680,12 @@ const main = async () => {
   const maxAdditional = new BN(10).pow(new BN(18)) // one Avail
 
   const result = await sdk.tx.staking.bondExtra(maxAdditional, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
 
   process.exit()
 }
@@ -747,12 +747,12 @@ const main = async () => {
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice//stash")
 
   const result = await sdk.tx.staking.chill(WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
 
   process.exit()
 }
@@ -815,12 +815,12 @@ const main = async () => {
   const stash = "5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY" // Alice Stash
 
   const result = await sdk.tx.staking.chillOther(stash, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
 
   process.exit()
 }
@@ -877,12 +877,12 @@ const main = async () => {
   ]
 
   const result = await sdk.tx.staking.nominate(targets, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
 
   process.exit()
 }
@@ -949,12 +949,12 @@ const main = async () => {
   const value = new BN(10).pow(new BN(18)) // one Avail
 
   const result = await sdk.tx.staking.unbond(value, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()
@@ -1020,12 +1020,12 @@ const main = async () => {
   const blocked = false
 
   const result = await sdk.tx.staking.validate(commission, blocked, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
 
   process.exit()
 }
@@ -1104,12 +1104,12 @@ const main = async () => {
   const bouncer: string = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY" // Alice
 
   const result = await sdk.tx.nominationPools.create(amount, root, nominator, bouncer, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()
@@ -1196,12 +1196,12 @@ const main = async () => {
     WaitFor.BlockInclusion,
     account,
   )
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()
@@ -1273,12 +1273,12 @@ const main = async () => {
   const poolId = 1
 
   const result = await sdk.tx.nominationPools.join(amount, poolId, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()
@@ -1349,12 +1349,12 @@ const main = async () => {
   const poolId = 1
 
   const result = await sdk.tx.nominationPools.nominate(poolId, validators, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()
@@ -1415,12 +1415,12 @@ const main = async () => {
   const bondExtra = { FreeBalance: amount } as BondExtra
 
   const result = await sdk.tx.nominationPools.bondExtra(bondExtra, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()
@@ -1488,12 +1488,12 @@ const main = async () => {
   const metadata = "My Metadata"
 
   const result = await sdk.tx.nominationPools.setMetadata(poolId, metadata, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()
@@ -1555,12 +1555,12 @@ const main = async () => {
   const unbondingPoints = new BN(10).pow(new BN(18)).mul(new BN(100)) // 100 Avail
 
   const result = await sdk.tx.nominationPools.unbond(memberAccount, unbondingPoints, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()
@@ -1627,12 +1627,12 @@ const main = async () => {
   const poolId = 1
 
   const result = await sdk.tx.nominationPools.chill(poolId, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()
@@ -1692,12 +1692,12 @@ const main = async () => {
   const permission: ClaimPermission = "PermissionlessAll"
 
   const result = await sdk.tx.nominationPools.setClaimPermission(permission, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()
@@ -1757,12 +1757,12 @@ const main = async () => {
   const poolId = 1
 
   const result = await sdk.tx.nominationPools.claimCommission(poolId, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()
@@ -1824,12 +1824,12 @@ const main = async () => {
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
 
   const result = await sdk.tx.nominationPools.claimPayout(WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()
@@ -1894,12 +1894,12 @@ const main = async () => {
   const other = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty" // Bob
 
   const result = await sdk.tx.nominationPools.claimPayoutOther(other, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()
@@ -1966,12 +1966,12 @@ const main = async () => {
   const newCommission: NewCommission = { amount: 25, payee: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY" }
 
   const result = await sdk.tx.nominationPools.setCommission(poolId, newCommission, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()
@@ -2042,12 +2042,12 @@ const main = async () => {
     WaitFor.BlockInclusion,
     account,
   )
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()
@@ -2115,12 +2115,12 @@ const main = async () => {
   const state: PoolState = "Blocked"
 
   const result = await sdk.tx.nominationPools.setState(poolId, state, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()

@@ -1,4 +1,4 @@
-import { SDK, WaitFor, Keyring } from "../../src/index"
+import { SDK, Keyring } from "../../src/index"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -9,13 +9,9 @@ const main = async () => {
   const dest = "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw" // Eve
   const amount = SDK.oneAvail()
 
-  const result = await sdk.tx.balances.transferAllowDeath(dest, amount, WaitFor.BlockInclusion, account)
-  if (result.isErr()) {
-    console.log(result.error.reason)
-    process.exit(1)
-  }
+  const txHash = await sdk.tx.balances.transferAllowDeathNoWait(dest, amount, account)
 
-  console.log(JSON.stringify(result.value, null, 2))
+  console.log(txHash)
   process.exit()
 }
 main()

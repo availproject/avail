@@ -15,7 +15,7 @@ export interface AccountBalance {
 }
 
 export class Account {
-  waitFor: WaitFor.BlockInclusion = WaitFor.BlockInclusion
+  waitFor: WaitFor = WaitFor.BlockInclusion
   nonce: number | null = null
   appId: number | null = null
 
@@ -24,18 +24,23 @@ export class Account {
     public keyring: KeyringPair,
   ) {}
 
-  setNonce(nonce: number | null) {
-    this.nonce = nonce
+  setNonce(value: number | null) {
+    this.nonce = value
   }
 
-  setAppId(appId: number | null) {
-    this.appId = appId
+  setAppId(value: number | null) {
+    this.appId = value
+  }
+
+  setWaitFor(value: WaitFor) {
+    this.waitFor = value
   }
 
   async balanceTransfer(dest: string, value: BN): Promise<Result<TransferKeepAliveTx, TransactionFailed>> {
     const options = this.buildOptions()
     return await this.sdk.tx.balances.transferKeepAlive(dest, value, this.waitFor, this.keyring, options)
   }
+
   async balanceTransferNoWait(dest: string, value: BN): Promise<H256> {
     const options = this.buildOptions()
     return await this.sdk.tx.balances.transferKeepAliveNoWait(dest, value, this.keyring, options)
@@ -89,6 +94,10 @@ export class Account {
     })
 
     return appKeys.sort((a, b) => a - b)
+  }
+
+  oneAvail(): BN {
+    return SDK.oneAvail()
   }
 
   private buildOptions(): any {

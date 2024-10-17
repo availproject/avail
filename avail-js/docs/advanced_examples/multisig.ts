@@ -15,7 +15,7 @@ const main = async () => {
   await fundMultisigAccount(sdk, alice, multisigAddress)
 
   // Define what action will be taken by the multisig account
-  const amount = new BN(10).pow(new BN(18)) // one Avail
+  const amount = SDK.oneAvail()
   const call = sdk.api.tx.balances.transferKeepAlive(multisigAddress, amount)
   // Data needed for multisig approval and execution
   const callHash = call.method.hash.toString()

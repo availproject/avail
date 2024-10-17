@@ -2,6 +2,7 @@ import { ApiPromise } from "@polkadot/api"
 import { initialize } from "../chain"
 import { Transactions } from "./transactions"
 import { Utils } from "./utils"
+import { BN } from "@polkadot/util"
 
 export * as sdkTransactions from "./transactions"
 export * as sdkTransactionData from "./transaction_data"
@@ -22,6 +23,7 @@ export {
   ClaimPermission,
   NewCommission,
   PoolState,
+  TransactionOptions,
 } from "./transactions"
 
 export class SDK {
@@ -38,5 +40,9 @@ export class SDK {
     this.api = api
     this.tx = new Transactions(api)
     this.util = new Utils(api)
+  }
+
+  static oneAvail(): BN {
+    return new BN(10).pow(new BN(18))
   }
 }
