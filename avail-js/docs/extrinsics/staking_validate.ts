@@ -1,4 +1,4 @@
-import { SDK, WaitFor, Keyring } from "avail-js-sdk"
+import { SDK, WaitFor, Keyring } from "../../src/index"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -10,13 +10,12 @@ const main = async () => {
   const blocked = false
 
   const result = await sdk.tx.staking.validate(commission, blocked, WaitFor.BlockInclusion, account)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 
-  console.log(JSON.stringify(result, null, 2))
-
+  console.log(JSON.stringify(result.value, null, 2))
   process.exit()
 }
 main()

@@ -1,42 +1,33 @@
 import { ApiPromise } from "@polkadot/api"
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
-import { H256, EventRecord } from "@polkadot/types/interfaces/types"
+import { EventRecord, H256 } from "@polkadot/types/interfaces/types"
 import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
-import { err, Result } from "neverthrow"
+import { err, Result, ok } from "neverthrow"
+import { WaitFor, standardCallback, TransactionFailed, TransactionOptions } from "./common"
+import { parseTransactionResult, TxResultDetails } from "../utils"
 
-import { SignerOptions } from "@polkadot/api/types"
-import { decodeError } from "../../helpers"
-import { WaitFor, GenericFailure, standardCallback, getBlockHashAndTxHash } from "./common"
+export class TransferKeepAliveTx {
+  constructor(
+    public event: Events.TransferEvent,
+    public details: TxResultDetails,
+  ) {}
+}
 
-type TransferKeepAliveTxSuccess = {
-  isErr: false
-  event: Events.TransferEvent
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class TransferAllowDeathTx {
+  constructor(
+    public event: Events.TransferEvent,
+    public event2: Events.KilledAccount | undefined,
+    public details: TxResultDetails,
+  ) {}
 }
-type TransferAllowDeathTxSuccess = {
-  isErr: false
-  event: Events.TransferEvent
-  event2?: Events.KilledAccount
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
-}
-type TransferAllTxSuccess = {
-  isErr: false
-  event: Events.TransferEvent
-  event2?: Events.KilledAccount
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+
+export class TransferAllTx {
+  constructor(
+    public event: Events.TransferEvent,
+    public event2: Events.KilledAccount | undefined,
+    public details: TxResultDetails,
+  ) {}
 }
 
 export class Balances {
@@ -51,8 +42,8 @@ export class Balances {
     keepAlive: boolean,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
-  ): Promise<TransferAllTxSuccess | GenericFailure> {
+    options?: TransactionOptions,
+  ): Promise<Result<TransferAllTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
       this.api.tx.balances
@@ -66,29 +57,32 @@ export class Balances {
     })
 
     if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error } as GenericFailure
+      return err(new TransactionFailed(maybeTxResult.error, null))
     }
     const txResult = maybeTxResult.value
-
-    if (txResult.isError) {
-      return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure
+    const maybeParsed = await parseTransactionResult(this.api, txResult, waitFor)
+    if (maybeParsed.isErr()) {
+      return err(maybeParsed.error)
     }
+    const details = maybeParsed.value
 
-    const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event))
-    if (failed != undefined) {
-      return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure
-    }
-
-    const event = Events.TransferEvent.New(txResult.events)
+    const event = Events.TransferEvent.New(details.events)
     if (event == undefined) {
-      return { isErr: true, reason: "Failed to find Transfer event." } as GenericFailure
+      return err(new TransactionFailed("Failed to find Transfer event", details))
     }
     const event2 = Events.KilledAccount.New(txResult.events)
 
-    const events = txResult.events
-    const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api)
+    return ok(new TransferAllTx(event, event2, details))
+  }
 
-    return { isErr: false, event, event2, events, txHash, txIndex, blockHash, blockNumber } as TransferAllTxSuccess
+  async transferAllNoWait(
+    dest: string,
+    keepAlive: boolean,
+    account: KeyringPair,
+    options?: TransactionOptions,
+  ): Promise<H256> {
+    const optionWrapper = options || {}
+    return this.api.tx.balances.transferAll(dest, keepAlive).signAndSend(account, optionWrapper)
   }
 
   async transferAllowDeath(
@@ -96,8 +90,8 @@ export class Balances {
     value: BN,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
-  ): Promise<TransferAllowDeathTxSuccess | GenericFailure> {
+    options?: TransactionOptions,
+  ): Promise<Result<TransferAllowDeathTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
       this.api.tx.balances
@@ -111,38 +105,32 @@ export class Balances {
     })
 
     if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error } as GenericFailure
+      return err(new TransactionFailed(maybeTxResult.error, null))
     }
     const txResult = maybeTxResult.value
-
-    if (txResult.isError) {
-      return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure
+    const maybeParsed = await parseTransactionResult(this.api, txResult, waitFor)
+    if (maybeParsed.isErr()) {
+      return err(maybeParsed.error)
     }
+    const details = maybeParsed.value
 
-    const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event))
-    if (failed != undefined) {
-      return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure
-    }
-
-    const event = Events.TransferEvent.New(txResult.events)
+    const event = Events.TransferEvent.New(details.events)
     if (event == undefined) {
-      return { isErr: true, reason: "Failed to find Transfer event." } as GenericFailure
+      return err(new TransactionFailed("Failed to find Transfer event", details))
     }
     const event2 = Events.KilledAccount.New(txResult.events)
 
-    const events = txResult.events
-    const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api)
+    return ok(new TransferAllowDeathTx(event, event2, details))
+  }
 
-    return {
-      isErr: false,
-      event,
-      event2,
-      events,
-      txHash,
-      txIndex,
-      blockHash,
-      blockNumber,
-    } as TransferAllowDeathTxSuccess
+  async transferAllowDeathNoWait(
+    dest: string,
+    value: BN,
+    account: KeyringPair,
+    options?: TransactionOptions,
+  ): Promise<H256> {
+    const optionWrapper = options || {}
+    return this.api.tx.balances.transferAllowDeath(dest, value).signAndSend(account, optionWrapper)
   }
 
   async transferKeepAlive(
@@ -150,8 +138,8 @@ export class Balances {
     value: BN,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
-  ): Promise<TransferKeepAliveTxSuccess | GenericFailure> {
+    options?: TransactionOptions,
+  ): Promise<Result<TransferKeepAliveTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
       this.api.tx.balances
@@ -165,28 +153,31 @@ export class Balances {
     })
 
     if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error } as GenericFailure
+      return err(new TransactionFailed(maybeTxResult.error, null))
     }
     const txResult = maybeTxResult.value
-
-    if (txResult.isError) {
-      return { isErr: true, reason: "The transaction was dropped or something." } as GenericFailure
+    const maybeParsed = await parseTransactionResult(this.api, txResult, waitFor)
+    if (maybeParsed.isErr()) {
+      return err(maybeParsed.error)
     }
+    const details = maybeParsed.value
 
-    const failed = txResult.events.find((e) => this.api.events.system.ExtrinsicFailed.is(e.event))
-    if (failed != undefined) {
-      return { isErr: true, reason: decodeError(this.api, failed.event.data[0]) } as GenericFailure
-    }
-
-    const event = Events.TransferEvent.New(txResult.events)
+    const event = Events.TransferEvent.New(details.events)
     if (event == undefined) {
-      return { isErr: true, reason: "Failed to find Transfer event." } as GenericFailure
+      return err(new TransactionFailed("Failed to find Transfer event", details))
     }
 
-    const events = txResult.events
-    const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, this.api)
+    return ok(new TransferKeepAliveTx(event, details))
+  }
 
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as TransferKeepAliveTxSuccess
+  async transferKeepAliveNoWait(
+    dest: string,
+    value: BN,
+    account: KeyringPair,
+    options?: TransactionOptions,
+  ): Promise<H256> {
+    const optionWrapper = options || {}
+    return this.api.tx.balances.transferKeepAlive(dest, value).signAndSend(account, optionWrapper)
   }
 }
 
