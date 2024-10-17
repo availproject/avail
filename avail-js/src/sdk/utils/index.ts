@@ -1,9 +1,9 @@
 import { ApiPromise } from "@polkadot/api"
 import { err, ok, Result } from "neverthrow"
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
-import { EventRecord, H256, Weight } from "@polkadot/types/interfaces"
+import { EventRecord, H256 } from "@polkadot/types/interfaces"
 import { decodeError } from "../../helpers"
-import { getBlockHashAndTxHash, standardCallback, WaitFor } from "../transactions/common"
+import { getBlockHashAndTxHash, WaitFor } from "../transactions/common"
 import { createKeyMulti, encodeAddress, sortAddresses } from "@polkadot/util-crypto"
 
 export class TxResultDetails {

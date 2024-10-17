@@ -3,7 +3,6 @@ import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
 import { EventRecord, Weight } from "@polkadot/types/interfaces/types"
 import { KeyringPair } from "@polkadot/keyring/types"
 import { err, Result, ok } from "neverthrow"
-import { SignerOptions } from "@polkadot/api/types"
 import { WaitFor, standardCallback, TransactionFailed, TransactionOptions } from "./common"
 import { MultisigTimepoint, parseTransactionResult, TxResultDetails } from "../utils"
 

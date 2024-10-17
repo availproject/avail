@@ -6,7 +6,6 @@ import { KeyringPair } from "@polkadot/keyring/types"
 import { err, Result, ok } from "neverthrow"
 
 import * as TransactionData from "./../transaction_data"
-import { SignerOptions } from "@polkadot/api/types"
 import { WaitFor, standardCallback, TransactionFailed, TransactionOptions } from "./common"
 import { commissionNumberToPerbill, parseTransactionResult, TxResultDetails } from "../utils"
 
