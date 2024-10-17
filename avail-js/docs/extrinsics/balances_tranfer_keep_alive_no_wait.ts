@@ -11,7 +11,7 @@ const main = async () => {
 
   const txHash = await sdk.tx.balances.transferKeepAliveNoWait(dest, amount, account)
 
-  console.log(txHash)
+  console.log(JSON.stringify(txHash, null, 2))
   process.exit()
 }
 main()

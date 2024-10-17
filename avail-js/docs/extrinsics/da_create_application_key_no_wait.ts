@@ -10,7 +10,7 @@ const main = async () => {
 
   const txHash = await sdk.tx.dataAvailability.createApplicationKeyNoWait(key, account)
 
-  console.log(txHash)
+  console.log(JSON.stringify(txHash, null, 2))
   process.exit()
 }
 main()

@@ -11,7 +11,7 @@ const main = async () => {
   const options: TransactionOptions = { app_id: 1 }
   const txHash = await sdk.tx.dataAvailability.submitDataNoWait(data, account, options)
 
-  console.log(txHash)
+  console.log(JSON.stringify(txHash, null, 2))
   process.exit()
 }
 main()
