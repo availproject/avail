@@ -4,7 +4,7 @@ import { EventRecord, Weight } from "@polkadot/types/interfaces/types"
 import { KeyringPair } from "@polkadot/keyring/types"
 import { err, Result, ok } from "neverthrow"
 import { SignerOptions } from "@polkadot/api/types"
-import { WaitFor, standardCallback, TransactionFailed } from "./common"
+import { WaitFor, standardCallback, TransactionFailed, TransactionOptions } from "./common"
 import { MultisigTimepoint, parseTransactionResult, TxResultDetails } from "../utils"
 
 export class AsMultiTx {
@@ -38,7 +38,7 @@ export class Multisig {
     maxWeight: Weight,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<AsMultiTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -76,7 +76,7 @@ export class Multisig {
     maxWeight: Weight,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<ApproveAsMultiTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {

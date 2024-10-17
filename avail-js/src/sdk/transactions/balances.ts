@@ -1,12 +1,12 @@
 import { ApiPromise } from "@polkadot/api"
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
-import { EventRecord } from "@polkadot/types/interfaces/types"
+import { EventRecord, H256 } from "@polkadot/types/interfaces/types"
 import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
 import { err, Result, ok } from "neverthrow"
 
 import { SignerOptions } from "@polkadot/api/types"
-import { WaitFor, standardCallback, TransactionFailed } from "./common"
+import { WaitFor, standardCallback, TransactionFailed, TransactionOptions } from "./common"
 import { parseTransactionResult, TxResultDetails } from "../utils"
 
 export class TransferKeepAliveTx {
@@ -44,7 +44,7 @@ export class Balances {
     keepAlive: boolean,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<TransferAllTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -77,12 +77,22 @@ export class Balances {
     return ok(new TransferAllTx(event, event2, details))
   }
 
+  async transferAllNoWait(
+    dest: string,
+    keepAlive: boolean,
+    account: KeyringPair,
+    options?: TransactionOptions,
+  ): Promise<H256> {
+    const optionWrapper = options || {}
+    return this.api.tx.balances.transferAll(dest, keepAlive).signAndSend(account, optionWrapper)
+  }
+
   async transferAllowDeath(
     dest: string,
     value: BN,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<TransferAllowDeathTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -115,12 +125,22 @@ export class Balances {
     return ok(new TransferAllowDeathTx(event, event2, details))
   }
 
+  async transferAllowDeathNoWait(
+    dest: string,
+    value: BN,
+    account: KeyringPair,
+    options?: TransactionOptions,
+  ): Promise<H256> {
+    const optionWrapper = options || {}
+    return this.api.tx.balances.transferAllowDeath(dest, value).signAndSend(account, optionWrapper)
+  }
+
   async transferKeepAlive(
     dest: string,
     value: BN,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<TransferKeepAliveTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -150,6 +170,16 @@ export class Balances {
     }
 
     return ok(new TransferKeepAliveTx(event, details))
+  }
+
+  async transferKeepAliveNoWait(
+    dest: string,
+    value: BN,
+    account: KeyringPair,
+    options?: TransactionOptions,
+  ): Promise<H256> {
+    const optionWrapper = options || {}
+    return this.api.tx.balances.transferKeepAlive(dest, value).signAndSend(account, optionWrapper)
   }
 }
 

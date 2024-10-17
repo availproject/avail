@@ -1,15 +1,14 @@
 import { ApiPromise } from "@polkadot/api"
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
-import { EventRecord } from "@polkadot/types/interfaces/types"
+import { EventRecord, H256 } from "@polkadot/types/interfaces/types"
 import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
 import { err, Result, ok } from "neverthrow"
-
 import * as TransactionData from "./../transaction_data"
-import { SignerOptions } from "@polkadot/api/types"
 import { decodeError, fromHexToAscii } from "../../helpers"
-import { WaitFor, standardCallback, TransactionFailed } from "./common"
+import { WaitFor, standardCallback, TransactionFailed, TransactionOptions } from "./common"
 import { parseTransactionResult, TxResultDetails } from "../utils"
+import { Bytes } from "@polkadot/types-codec"
 
 export type DispatchFeeModifier = {
   weightMaximumFee: BN | null
@@ -61,10 +60,10 @@ export class DataAvailability {
   }
 
   async submitData(
-    data: string,
+    data: string | Bytes,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<SubmitDataTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -105,11 +104,16 @@ export class DataAvailability {
     return ok(new SubmitDataTx(maybeTxData.value, event, details))
   }
 
+  async submitDataNoWait(data: string | Bytes, account: KeyringPair, options?: TransactionOptions): Promise<H256> {
+    const optionWrapper = options || {}
+    return this.api.tx.dataAvailability.submitData(data).signAndSend(account, optionWrapper)
+  }
+
   async createApplicationKey(
     key: string,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<CreateApplicationKeyTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -141,12 +145,17 @@ export class DataAvailability {
     return ok(new CreateApplicationKeyTx(event, details))
   }
 
+  async createApplicationKeyNoWait(key: string, account: KeyringPair, options?: TransactionOptions): Promise<H256> {
+    const optionWrapper = options || {}
+    return this.api.tx.dataAvailability.createApplicationKey(key).signAndSend(account, optionWrapper)
+  }
+
   async setApplicationKey(
     oldKey: string,
     newKey: string,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<SetApplicationKeyTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -194,7 +203,7 @@ export class DataAvailability {
     cols: number,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<SubmitBlockLengthProposalTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -241,7 +250,7 @@ export class DataAvailability {
     modifier: DispatchFeeModifier,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<SetSubmitDataFeeModifierTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {

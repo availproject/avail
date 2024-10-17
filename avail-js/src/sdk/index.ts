@@ -12,6 +12,7 @@ export { KeyringPair } from "@polkadot/keyring/types"
 export { Bytes } from "@polkadot/types-codec"
 export { H256, Weight } from "@polkadot/types/interfaces"
 export { TxResultDetails, MultisigTimepoint } from "./utils"
+export { Account } from "./account"
 
 export {
   WaitFor,

@@ -145,7 +145,7 @@ async function lastApproval(
     console.log(maybeTxResult.error)
     process.exit(1)
   }
-  
+
   return maybeTxResult.value.details
 }
 

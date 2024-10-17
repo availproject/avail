@@ -53,3 +53,10 @@ export class TransactionFailed {
     public details: TxResultDetails | null,
   ) {}
 }
+
+export interface TransactionOptions {
+  app_id?: number
+  nonce?: number
+  era?: number
+  blockHash?: H256
+}

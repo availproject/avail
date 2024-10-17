@@ -7,7 +7,7 @@ import { err, Result, ok } from "neverthrow"
 
 import * as TransactionData from "./../transaction_data"
 import { SignerOptions } from "@polkadot/api/types"
-import { WaitFor, standardCallback, TransactionFailed } from "./common"
+import { WaitFor, standardCallback, TransactionFailed, TransactionOptions } from "./common"
 import { commissionNumberToPerbill, parseTransactionResult, TxResultDetails } from "../utils"
 
 type ValidatorPerfs = { commission: string; blocked: boolean }
@@ -74,7 +74,7 @@ export class Staking {
     payee: StakingRewardDestination,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<BondTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -110,7 +110,7 @@ export class Staking {
     maxAdditional: BN,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<BondExtraTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -145,7 +145,7 @@ export class Staking {
   async chill(
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<ChillTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -181,7 +181,7 @@ export class Staking {
     stash: string,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<ChillOtherTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -217,7 +217,7 @@ export class Staking {
     targets: string[],
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<NominateTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -253,7 +253,7 @@ export class Staking {
     value: BN,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<UnbondTx, TransactionFailed>> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -290,7 +290,7 @@ export class Staking {
     blocked: boolean,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<Result<ValidateTx, TransactionFailed>> {
     const maybeCommission = commissionNumberToPerbill(commission)
     if (maybeCommission.isErr()) {
