@@ -6,6 +6,7 @@ import { TransferKeepAliveTx } from "./transactions/balances"
 import { TransactionFailed } from "./transactions/common"
 import { CreateApplicationKeyTx, SubmitDataTx } from "./transactions/da"
 import { Bytes } from "@polkadot/types-codec"
+import { getNonceState, getNonceNode } from "./utils"
 
 export interface AccountBalance {
   free: BN
@@ -72,21 +73,19 @@ export class Account {
   }
 
   async getNonceState(): Promise<number> {
-    const r: any = await this.sdk.api.query.system.account(this.keyring.address)
-    return parseInt(r.nonce.toString())
+    return await getNonceState(this.sdk.api, this.keyring.address)
   }
 
   async getNonceNode(): Promise<number> {
-    const r: any = await this.sdk.api.rpc.system.accountNextIndex(this.keyring.address)
-    return parseInt(r.toString())
+    return await getNonceNode(this.sdk.api, this.keyring.address)
   }
 
-  async appKeys(): Promise<number[]> {
+  async getAppKeys(): Promise<number[]> {
     const appKeys: number[] = []
     const entries = await this.sdk.api.query.dataAvailability.appKeys.entries()
     entries.forEach((entry: any) => {
       if (entry[1].isSome) {
-        let { owner, id } = entry[1].unwrap()
+        const { owner, id } = entry[1].unwrap()
         if (owner.toString() == this.keyring.address) {
           appKeys.push(parseInt(id.toString()))
         }
@@ -101,7 +100,7 @@ export class Account {
   }
 
   private buildOptions(): any {
-    let options: any = {}
+    const options: any = {}
     if (this.nonce != null) {
       options.nonce = this.nonce
     }

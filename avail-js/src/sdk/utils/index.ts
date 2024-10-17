@@ -5,8 +5,6 @@ import { EventRecord, H256, Weight } from "@polkadot/types/interfaces"
 import { decodeError } from "../../helpers"
 import { getBlockHashAndTxHash, standardCallback, WaitFor } from "../transactions/common"
 import { createKeyMulti, encodeAddress, sortAddresses } from "@polkadot/util-crypto"
-import { KeyringPair } from "@polkadot/keyring/types"
-import { SignerOptions } from "@polkadot/api/types"
 
 export class TxResultDetails {
   constructor(
@@ -67,6 +65,14 @@ export class Utils {
   sortMultisigAddresses(addresses: string[]): string[] {
     return sortMultisigAddresses(addresses)
   }
+
+  async getNonceState(address: string): Promise<number> {
+    return await getNonceState(this.api, address)
+  }
+
+  async getNonceNode(address: string): Promise<number> {
+    return await getNonceNode(this.api, address)
+  }
 }
 
 export async function parseTransactionResult(
@@ -121,4 +127,14 @@ export function sortMultisigAddresses(addresses: string[]): string[] {
   const SS58Prefix = 42
 
   return sortAddresses(addresses, SS58Prefix)
+}
+
+export async function getNonceState(api: ApiPromise, address: string): Promise<number> {
+  const r: any = await api.query.system.account(address)
+  return parseInt(r.nonce.toString())
+}
+
+export async function getNonceNode(api: ApiPromise, address: string): Promise<number> {
+  const r: any = await api.rpc.system.accountNextIndex(address)
+  return parseInt(r.toString())
 }

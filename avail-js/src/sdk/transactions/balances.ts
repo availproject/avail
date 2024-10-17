@@ -4,8 +4,6 @@ import { EventRecord, H256 } from "@polkadot/types/interfaces/types"
 import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
 import { err, Result, ok } from "neverthrow"
-
-import { SignerOptions } from "@polkadot/api/types"
 import { WaitFor, standardCallback, TransactionFailed, TransactionOptions } from "./common"
 import { parseTransactionResult, TxResultDetails } from "../utils"
 
