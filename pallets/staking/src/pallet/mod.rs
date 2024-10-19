@@ -1610,9 +1610,16 @@ pub mod pallet {
 				Error::<T>::InvalidSlashIndex
 			);
 
+			// FUSION CHANGE
+			let mut removed_slash_validators = Vec::new();
 			for (removed, index) in slash_indices.into_iter().enumerate() {
 				let index = (index as usize) - removed;
-				unapplied.remove(index);
+				let removed_element = unapplied.remove(index);
+				removed_slash_validators.push(removed_element.validator);
+			}
+
+			if !removed_slash_validators.is_empty() {
+				T::FusionExt::cancel_fusion_slash(era, &removed_slash_validators);
 			}
 
 			UnappliedSlashes::<T>::insert(&era, &unapplied);

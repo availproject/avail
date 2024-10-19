@@ -150,7 +150,7 @@ parameter_types! {
 	pub const HistoryDepth: u32 = 84;
 	pub const MinimumBalanceToOperate: Balance = 100 * AVAIL;
 	pub const MaxSlashes: u32 = 1000;
-	pub const MaxPoolsPerValidator: u32 = 10;
+	pub const MaxSlashesPerPool: u32 = 100; // If we have 100 slashes during 27 eras, we have bigger problems
 }
 impl pallet_fusion::Config for Runtime {
 	type Currency = Balances;
@@ -166,14 +166,12 @@ impl pallet_fusion::Config for Runtime {
 	type MaxMembersPerPool = MaxMembersPerPool;
 	type MaxTargets = MaxTargets;
 	type MaxUnbonding = MaxUnbonding;
-	type MaxSlashes = MaxSlashes;
-	type MaxPoolsPerValidator = MaxPoolsPerValidator;
+	type MaxSlashesPerPool = MaxSlashesPerPool;
 	type BondingDuration = constants::staking::BondingDuration;
 	type RewardRemainder = Treasury;
 	type HistoryDepth = HistoryDepth;
 	type StakingFusionDataProvider = Self;
 	type WeightInfo = weights::pallet_fusion::WeightInfo<Runtime>;
-	type SlashDeferDuration = constants::staking::SlashDeferDuration;
 }
 
 impl pallet_fusion::StakingFusionDataProvider<AccountId> for Runtime {
@@ -547,7 +545,7 @@ impl pallet_staking::Config for Runtime {
 	type CurrencyToVote = sp_staking::currency_to_vote::U128CurrencyToVote;
 	type ElectionProvider = ElectionProviderMultiPhase;
 	type EraPayout = pallet_staking::ConvertCurve<constants::staking::RewardCurve>;
-	type EventListeners = (NominationPools, Fusion);
+	type EventListeners = NominationPools;
 	type GenesisElectionProvider = onchain::OnChainExecution<OnChainSeqPhragmen>;
 	type HistoryDepth = constants::staking::HistoryDepth;
 	type MaxControllersInDeprecationBatch = constants::staking::MaxControllersInDeprecationBatch;

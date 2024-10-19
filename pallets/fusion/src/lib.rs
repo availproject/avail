@@ -11,8 +11,9 @@ mod traits;
 mod types;
 mod weights;
 
+use std::collections::HashMap;
+
 use crate::types::*;
-use alloc::collections::BTreeMap;
 use frame_support::{
 	dispatch::GetDispatchInfo,
 	pallet_prelude::*,
@@ -29,7 +30,7 @@ use sp_runtime::{
 	traits::{AccountIdConversion, Bounded, Zero},
 	Perbill, Saturating,
 };
-use sp_staking::{currency_to_vote::CurrencyToVote, EraIndex, OnStakingUpdate};
+use sp_staking::{currency_to_vote::CurrencyToVote, EraIndex};
 use sp_std::{vec, vec::Vec};
 pub use traits::{FusionExt, StakingFusionDataProvider};
 pub use weights::WeightInfo;
@@ -95,13 +96,9 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxUnbonding: Get<u32>;
 
-		/// Maximum number of parallel slashes
+		/// Maximum of number of concurrent pending slashes for a pool
 		#[pallet::constant]
-		type MaxSlashes: Get<u32>;
-
-		/// Maximum of number of pools behind one validator, mainly used for slashing
-		#[pallet::constant]
-		type MaxPoolsPerValidator: Get<u32>;
+		type MaxSlashesPerPool: Get<u32>;
 
 		/// Period for funds to be available after unbonding
 		#[pallet::constant]
@@ -113,13 +110,6 @@ pub mod pallet {
 
 		/// A provider that gives the current era.
 		type StakingFusionDataProvider: StakingFusionDataProvider<Self::AccountId>;
-
-		/// Number of eras that slashes are deferred by, after computation.
-		///
-		/// This should be less than the bonding duration. Set to 0 if slashes
-		/// should be applied immediately, without opportunity for intervention.
-		#[pallet::constant]
-		type SlashDeferDuration: Get<EraIndex>;
 	}
 
 	#[pallet::pallet]
@@ -194,9 +184,9 @@ pub mod pallet {
 	pub type FusionCurrencyRates<T: Config> = StorageDoubleMap<
 		_,
 		Twox64Concat,
-		CurrencyId,
-		Twox64Concat,
 		EraIndex,
+		Twox64Concat,
+		CurrencyId,
 		BalanceOf<T>,
 		OptionQuery,
 	>;
@@ -239,22 +229,21 @@ pub mod pallet {
 		EraIndex,
 		Twox64Concat,
 		T::AccountId,
-		BoundedVec<PoolId, T::MaxPoolsPerValidator>,
+		BoundedVec<PoolId, T::MaxTargets>,
 		ValueQuery,
 	>;
 
 	/// Stores the fusion claimed rewards for HistoryDepth eras
 	#[pallet::storage]
 	#[pallet::getter(fn claimed_rewards)]
-	pub type ClaimedRewards<T: Config> = StorageNMap<
+	pub type ClaimedRewards<T: Config> = StorageDoubleMap<
 		_,
-		(
-			NMapKey<Blake2_128Concat, EvmAddress>,
-			NMapKey<Twox64Concat, PoolId>,
-			NMapKey<Twox64Concat, EraIndex>,
-		),
+		Twox64Concat,
+		EraIndex,
+		Twox64Concat,
+		(PoolId, EvmAddress),
 		BalanceOf<T>,
-		OptionQuery,
+		ValueQuery,
 	>;
 
 	/// Stores EVM Address of the slash destination
@@ -263,12 +252,34 @@ pub mod pallet {
 	#[pallet::getter(fn slash_destination)]
 	pub type SlashDestination<T> = StorageValue<_, EvmAddress, OptionQuery>;
 
-	/// Storage for slashes that need to be applied.
-	/// This storage holds an ordered queue of `FusionSlash` and is bounded by `MaxSlashes`.
+	/// Stores true if for a given era, a validator and a pool funds account, a slash is pending
+	/// (era, (validator, funds_account)) => has_pending_slash
+	/// Used mainly to quickly determine if a slashed nominator is from Fusion pallet
 	#[pallet::storage]
-	#[pallet::getter(fn pending_slashes)]
-	pub(super) type PendingSlashes<T: Config> =
-		StorageValue<_, BoundedVec<FusionSlash, T::MaxSlashes>, ValueQuery>;
+	#[pallet::getter(fn has_pending_slash)]
+	pub type HasPendingSlash<T: Config> = StorageDoubleMap<
+		_,
+		Twox64Concat,
+		EraIndex,
+		Twox64Concat,
+		(T::AccountId, T::AccountId),
+		bool,
+		ValueQuery,
+	>;
+
+	/// Stores the unbonding chunks of all the pallet
+	/// For a given pool and era, will return a vector of chunks
+	#[pallet::storage]
+	#[pallet::getter(fn unbonding_chunks)]
+	pub type UnbondingChunks<T: Config> = StorageDoubleMap<
+		_,
+		Twox64Concat,
+		PoolId,
+		Twox64Concat,
+		EraIndex,
+		BoundedVec<(EvmAddress, FusionCurrencyBalance), T::MaxMembersPerPool>,
+		ValueQuery,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -415,14 +426,28 @@ pub mod pallet {
 			controller: T::AccountId,
 			amount: BalanceOf<T>,
 		},
-		/// A slash was created
-		SlashCreated { slash: FusionSlash },
-		/// A slash was applied
-		SlashApplied { slash: FusionSlash },
-		/// A slash was manually cancelled
-		SlashCanceled { slash: FusionSlash },
 		/// Event triggered when the maximum total value locked authorized is updated.
 		MaxTVLUpdated(BalanceOf<T>),
+		/// Event triggered when a slash was reported and it concern a fusion pool
+		FusionSlashReported {
+			pool_id: PoolId,
+			slash_era: EraIndex,
+			slash_ratio: Perbill,
+			validator: T::AccountId,
+		},
+		/// Event triggered when one or multiple slashes are cancelled
+		FusionSlashCancelled {
+			pool_id: PoolId,
+			slash_era: EraIndex,
+			validators: Vec<T::AccountId>,
+		},
+		/// Event triggered when a pool get slashed
+		FusionPoolSlashed {
+			currency_id: CurrencyId,
+			pool_id: PoolId,
+			slash_era: EraIndex,
+			amount: FusionCurrencyBalance,
+		},
 	}
 
 	#[pallet::error]
@@ -469,6 +494,18 @@ pub mod pallet {
 		UserNotMemberOfPool,
 		/// User has no more points to unbond
 		NoActivePointsToUnbond,
+		/// The currency name is invalid
+		InvalidName,
+		/// The currency's number of decimals is invalid
+		InvalidNumberOfDecimals,
+		/// The max number for a currency cannot be 0
+		InvalidMaxNumber,
+		/// The conversion rate for the currency is not valid
+		InvalidConversionRate,
+		/// The APY for a pool cannot be 0
+		InvalidAPY,
+		/// The provided amount is not valid (canno't be 0)
+		InvalidAmount,
 		/// The amount to unbond is invalid
 		InvalidUnbondAmount,
 		/// Unbonding this amount will make the remaining below minimum
@@ -503,12 +540,6 @@ pub mod pallet {
 		PoolIsNotNominating,
 		/// The controller of the slash destination can only be set with the correct extrinsic
 		CannotSetControllerForSlashDestination,
-		/// There are too many simultaneous slashes
-		TooManySlashes,
-		/// Invalid slash index
-		InvalidSlashIndex,
-		/// Invalid slash pool id
-		InvalidSlashPoolId,
 		/// A user tried to claim but the account is empty, can try again later
 		NotEnoughClaimableBalanceInPool,
 		/// The maximum TVL was reached
@@ -517,8 +548,12 @@ pub mod pallet {
 		NoValidValidators,
 		/// Era duration was not recorded properly so we cannot retry
 		EraDurationNotFound,
-		/// Pool has leftover funds, but we did not specify where it should go.
+		/// Pool has leftover funds, but we did not specify where it should go
 		NoLeftoverDestinationProvided,
+		/// The limit in the pool pending slashes have been reached
+		PendingSlashLimitReached,
+		/// Slash not found in pool
+		SlashNotFound,
 		/// TODO Temp, we'll see when bridge com is done
 		CannotDepositAvailCurrency,
 	}
@@ -536,20 +571,6 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 			Self::do_deposit_currency(evm_address, currency_id, amount)?;
-			Ok(())
-		}
-
-		/// TODO - Dummy extrinsic to simulate an on_slash, to be removed
-		#[pallet::call_index(98)]
-		#[pallet::weight(T::WeightInfo::create_currency())]
-		pub fn dummy_slash(
-			origin: OriginFor<T>,
-			who: T::AccountId,
-			bonded_amount: BalanceOf<T>,
-			slashed_amount: BalanceOf<T>,
-		) -> DispatchResult {
-			ensure_signed(origin)?;
-			Self::do_dummy_slash(who, bonded_amount, slashed_amount)?;
 			Ok(())
 		}
 
@@ -572,6 +593,14 @@ pub mod pallet {
 				Error::<T>::CurrencyAlreadyExists
 			);
 
+			ensure!(name.len() > 0, Error::<T>::InvalidName);
+			ensure!(nb_decimals > 0, Error::<T>::InvalidNumberOfDecimals);
+			ensure!(max_amount > 0, Error::<T>::InvalidMaxNumber);
+			ensure!(
+				initial_conversion_rate > BalanceOf::<T>::zero(),
+				Error::<T>::InvalidConversionRate
+			);
+
 			if currency_id == 0 {
 				ensure!(min_amount == 0, Error::<T>::NoMinAmountForAvailCurrency);
 			}
@@ -590,8 +619,8 @@ pub mod pallet {
 
 			FusionCurrencies::<T>::insert(currency_id, new_currency);
 			FusionCurrencyRates::<T>::insert(
-				currency_id,
 				T::StakingFusionDataProvider::current_era(),
+				currency_id,
 				initial_conversion_rate,
 			);
 			FusionCurrencyRateChanges::<T>::insert(currency_id, initial_conversion_rate);
@@ -626,10 +655,12 @@ pub mod pallet {
 				ensure!(!currency.is_destroyed, Error::<T>::CurrencyDestroyed);
 
 				if let Some(name) = name.clone() {
+					ensure!(name.len() > 0, Error::<T>::InvalidName);
 					currency.name = name;
 				}
 
 				if let Some(max_amount) = max_amount {
+					ensure!(max_amount > 0, Error::<T>::InvalidMaxNumber);
 					let total_staked_and_unbonding = currency
 						.total_staked_native
 						.saturating_add(currency.total_unbonding_native);
@@ -675,17 +706,10 @@ pub mod pallet {
 
 			FusionCurrencies::<T>::try_mutate(currency_id, |currency_opt| {
 				let currency = currency_opt.as_mut().ok_or(Error::<T>::CurrencyNotFound)?;
-
 				ensure!(!currency.is_destroyed, Error::<T>::CurrencyDestroyed);
-
 				currency.is_destroyed = true;
-
-				let depth = T::HistoryDepth::get();
-				let _ = FusionCurrencyRates::<T>::clear_prefix(currency_id, depth, None);
-				FusionCurrencyRateChanges::<T>::remove(currency_id);
-
+				FusionCurrencyRateChanges::<T>::remove(currency_id); // FusionCurrencyRates will clean itself using history depth
 				Self::deposit_event(Event::CurrencyDeleted { currency_id });
-
 				Ok(())
 			})
 		}
@@ -699,6 +723,11 @@ pub mod pallet {
 			conversion_rate: BalanceOf<T>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
+
+			ensure!(
+				conversion_rate > BalanceOf::<T>::zero(),
+				Error::<T>::InvalidConversionRate
+			);
 
 			FusionCurrencies::<T>::try_get(currency_id)
 				.map_err(|_| Error::<T>::CurrencyNotFound)
@@ -734,6 +763,8 @@ pub mod pallet {
 				Error::<T>::PoolAlreadyExists
 			);
 
+			ensure!(apy > Perbill::zero(), Error::<T>::InvalidAPY);
+
 			let currency =
 				FusionCurrencies::<T>::get(currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
 			ensure!(!currency.is_destroyed, Error::<T>::CurrencyDestroyed);
@@ -755,6 +786,7 @@ pub mod pallet {
 				total_staked_points: 0,
 				total_slashed_native: 0,
 				total_unbonding_native: 0,
+				pending_slashes: BoundedVec::default(),
 			};
 
 			FusionPoolsAccountToId::<T>::insert(&new_pool.funds_account, pool_id);
@@ -798,7 +830,10 @@ pub mod pallet {
 					Error::<T>::PoolIsDestroying
 				);
 
-				pool.apy = apy.unwrap_or(pool.apy);
+				if let Some(apy) = apy {
+					ensure!(apy > Perbill::zero(), Error::<T>::InvalidAPY);
+					pool.apy = apy;
+				}
 
 				if let Some(state) = state {
 					ensure!(
@@ -869,7 +904,7 @@ pub mod pallet {
 					pool.state = FusionPoolState::Destroying;
 					Self::deposit_event(Event::PoolDestroying { pool_id });
 				} else {
-					Self::check_and_cleanup_pool(pool, leftover_destination)?;
+					Self::check_and_cleanup_pool(pool_id, pool, leftover_destination)?;
 				}
 
 				Ok(())
@@ -885,6 +920,8 @@ pub mod pallet {
 			amount: BalanceOf<T>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+
+			ensure!(amount > BalanceOf::<T>::zero(), Error::<T>::InvalidAmount);
 
 			let pool = FusionPools::<T>::get(pool_id).ok_or(Error::<T>::PoolNotFound)?;
 
@@ -936,7 +973,7 @@ pub mod pallet {
 					Error::<T>::PoolIsDestroying
 				);
 
-				// Check that targets contains at least one validator
+				// Check that targets contains only validators
 				ensure!(
 					targets
 						.iter()
@@ -954,73 +991,8 @@ pub mod pallet {
 			})
 		}
 
-		/// Admin extrinsic to kick a user from the system.
-		/// The user is immediately removed from all pools and given back all their assets and rewards.
-		#[pallet::call_index(9)]
-		#[pallet::weight(T::WeightInfo::create_currency())]
-		pub fn kick_user(origin: OriginFor<T>, evm_address: EvmAddress) -> DispatchResult {
-			ensure_root(origin)?;
-
-			// Retrieve all memberships of the user
-			let memberships: Vec<(PoolId, FusionMembership<T>)> =
-				FusionMemberships::<T>::iter_prefix(evm_address).collect();
-
-			// Iterate through each membership and process them
-			for (pool_id, membership) in memberships {
-				// Fetch pool and currency details
-				let mut pool = FusionPools::<T>::get(pool_id).ok_or(Error::<T>::PoolNotFound)?;
-				let mut currency = FusionCurrencies::<T>::get(pool.currency_id)
-					.ok_or(Error::<T>::CurrencyNotFound)?;
-
-				// Convert user's active points to currency and add to idle balance
-				let currency_value =
-					pool.points_to_currency(membership.active_points, Some(&currency))?;
-
-				// Instantly return all unbonding chunks
-				let total_unbonding = membership
-					.unbonding_chunks
-					.iter()
-					.fold(0 as FusionCurrencyBalance, |acc, (_, amount)| {
-						acc.saturating_add(*amount)
-					});
-
-				Self::add_to_currency_balance(
-					evm_address,
-					currency.currency_id,
-					currency_value.saturating_add(total_unbonding),
-				)?;
-
-				// Update pool and currency totals
-				pool.members.retain(|(address, _)| *address != evm_address);
-				pool.total_staked_points = pool
-					.total_staked_points
-					.saturating_sub(membership.active_points);
-				pool.total_staked_native = pool.total_staked_native.saturating_sub(currency_value);
-				pool.total_unbonding_native =
-					pool.total_unbonding_native.saturating_sub(total_unbonding);
-
-				currency.total_staked_native =
-					currency.total_staked_native.saturating_sub(currency_value);
-				currency.total_unbonding_native = currency
-					.total_unbonding_native
-					.saturating_sub(total_unbonding);
-
-				// Update TVL
-				Self::sub_from_tvl(&currency, currency_value)?;
-
-				// Save the updated pool and currency data back to storage
-				FusionPools::<T>::insert(pool_id, &pool);
-				FusionCurrencies::<T>::insert(currency.currency_id, &currency);
-
-				// Remove user's membership from storage
-				FusionMemberships::<T>::remove(evm_address, pool_id);
-			}
-
-			Ok(())
-		}
-
 		/// Change the Substrate controller address.
-		#[pallet::call_index(10)]
+		#[pallet::call_index(9)]
 		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn set_controller_address(
 			origin: OriginFor<T>,
@@ -1045,7 +1017,7 @@ pub mod pallet {
 		}
 
 		/// Change the Slash destination evm address.
-		#[pallet::call_index(11)]
+		#[pallet::call_index(10)]
 		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn set_slash_destination(
 			origin: OriginFor<T>,
@@ -1072,98 +1044,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Cancel a slash given its index.
-		#[pallet::call_index(12)]
-		#[pallet::weight(T::WeightInfo::create_currency())]
-		pub fn cancel_slash(
-			origin: OriginFor<T>,
-			slash_index: u32,
-			pool_id: PoolId,
-		) -> DispatchResult {
-			ensure_root(origin)?;
-
-			let slash_index = slash_index as usize;
-			PendingSlashes::<T>::try_mutate(|slashes| -> DispatchResult {
-				ensure!(slash_index < slashes.len(), Error::<T>::InvalidSlashIndex);
-
-				let slash = slashes
-					.get(slash_index)
-					.ok_or(Error::<T>::InvalidSlashIndex)?;
-
-				ensure!(slash.pool_id == pool_id, Error::<T>::InvalidSlashPoolId);
-
-				let removed_slash = slashes.remove(slash_index);
-
-				FusionPools::<T>::mutate(removed_slash.pool_id, |maybe_pool| -> DispatchResult {
-					let pool = maybe_pool.as_mut().ok_or(Error::<T>::PoolNotFound)?;
-					FusionCurrencies::<T>::mutate(
-						removed_slash.currency_id,
-						|maybe_currency| -> DispatchResult {
-							let currency = maybe_currency
-								.as_mut()
-								.ok_or(Error::<T>::CurrencyNotFound)?;
-
-							pool.total_staked_native = pool
-								.total_staked_native
-								.saturating_add(removed_slash.slash_amount);
-							pool.total_slashed_native = pool
-								.total_slashed_native
-								.saturating_sub(removed_slash.slash_amount);
-
-							currency.total_staked_native = currency
-								.total_staked_native
-								.saturating_add(removed_slash.slash_amount);
-							currency.total_slashed_native = currency
-								.total_slashed_native
-								.saturating_sub(removed_slash.slash_amount);
-
-							// Update TVL
-							Self::add_to_tvl(&currency, removed_slash.slash_amount)?;
-
-							Ok(())
-						},
-					)?;
-					Ok(())
-				})?;
-
-				Self::deposit_event(Event::<T>::SlashCanceled {
-					slash: removed_slash,
-				});
-
-				Ok(())
-			})
-		}
-
-		/// Direcly apply a slash given its index.
-		#[pallet::call_index(13)]
-		#[pallet::weight(T::WeightInfo::create_currency())]
-		pub fn apply_slash(
-			origin: OriginFor<T>,
-			slash_index: u32,
-			pool_id: PoolId,
-		) -> DispatchResult {
-			ensure_root(origin)?;
-
-			let slash_index = slash_index as usize;
-			PendingSlashes::<T>::try_mutate(|slashes| -> DispatchResult {
-				ensure!(slash_index < slashes.len(), Error::<T>::InvalidSlashIndex);
-
-				let slash = slashes
-					.get(slash_index)
-					.ok_or(Error::<T>::InvalidSlashIndex)?;
-
-				ensure!(slash.pool_id == pool_id, Error::<T>::InvalidSlashPoolId);
-
-				let removed_slash = slashes.remove(slash_index);
-
-				Self::do_apply_slash(removed_slash)?;
-
-				Ok(())
-			})
-		}
-
 		/// Updates the maximum TVL authorized in the Fusion pallet.
-		#[pallet::call_index(14)]
+		#[pallet::call_index(11)]
 		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn update_max_tvl(origin: OriginFor<T>, new_max_tvl: BalanceOf<T>) -> DispatchResult {
 			ensure_root(origin)?;
@@ -1179,7 +1061,7 @@ pub mod pallet {
 		}
 
 		/// Set the destination of the reward for the user.
-		#[pallet::call_index(15)]
+		#[pallet::call_index(12)]
 		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn set_compounding(
 			origin: OriginFor<T>,
@@ -1194,7 +1076,7 @@ pub mod pallet {
 		}
 
 		/// Stake currency into a pool, either by joining or bonding extra.
-		#[pallet::call_index(16)]
+		#[pallet::call_index(13)]
 		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn stake(
 			origin: OriginFor<T>,
@@ -1209,7 +1091,7 @@ pub mod pallet {
 		}
 
 		/// Claims the rewards for an evm address for a specific era and pool.
-		#[pallet::call_index(17)]
+		#[pallet::call_index(14)]
 		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn claim_rewards(
 			origin: OriginFor<T>,
@@ -1222,7 +1104,7 @@ pub mod pallet {
 		}
 
 		/// Unbonds an amount of currency from a pool
-		#[pallet::call_index(18)]
+		#[pallet::call_index(15)]
 		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn unbond_currency(
 			origin: OriginFor<T>,
@@ -1237,7 +1119,7 @@ pub mod pallet {
 		}
 
 		/// Withdraws unbonded currency after the bonding duration has passed.
-		#[pallet::call_index(19)]
+		#[pallet::call_index(16)]
 		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn withdraw_unbonded_currency(
 			origin: OriginFor<T>,
@@ -1252,7 +1134,7 @@ pub mod pallet {
 
 		/// Unbonds an amount of currency from a pool on behalf on another user
 		/// Only works if the pool is destroying
-		#[pallet::call_index(20)]
+		#[pallet::call_index(17)]
 		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn unbond_currency_other(
 			origin: OriginFor<T>,
@@ -1266,7 +1148,7 @@ pub mod pallet {
 		}
 
 		/// Withdraws unbonded currency after the bonding duration has passed.
-		#[pallet::call_index(21)]
+		#[pallet::call_index(18)]
 		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn withdraw_unbonded_currency_other(
 			origin: OriginFor<T>,
@@ -1280,7 +1162,7 @@ pub mod pallet {
 
 		/// Withdraws unbonded Avail Fusion Currency to the controller account.
 		/// Only works for avail pool
-		#[pallet::call_index(22)]
+		#[pallet::call_index(19)]
 		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn withdraw_avail_to_controller(
 			origin: OriginFor<T>,
@@ -1337,8 +1219,11 @@ impl<T: Config> Pallet<T> {
 		evm_address: EvmAddress,
 		currency_id: CurrencyId,
 		amount: FusionCurrencyBalance,
+		skip_check: bool,
 	) -> DispatchResult {
-		let _ = FusionCurrencies::<T>::get(currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
+		if !skip_check {
+			let _ = FusionCurrencies::<T>::get(currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
+		}
 		FusionMemberCurrencyBalances::<T>::mutate(evm_address, currency_id, |balance_opt| {
 			if let Some(balance) = balance_opt {
 				balance.amount = balance.amount.saturating_add(amount);
@@ -1385,10 +1270,10 @@ impl<T: Config> Pallet<T> {
 
 	/// Function to check if a pool should be removed and perform cleanup if necessary
 	fn check_and_cleanup_pool(
+		pool_id: PoolId,
 		pool: &FusionPool<T>,
 		leftover_destination: Option<T::AccountId>,
 	) -> DispatchResult {
-		let pool_id = pool.pool_id;
 		let has_no_members = pool.members.is_empty();
 		let has_no_points = pool.total_staked_points == 0;
 		let has_no_staked_native = pool.total_staked_native == 0;
@@ -1464,14 +1349,14 @@ impl<T: Config> Pallet<T> {
 			// Try to get the new rate from the rate changes storage
 			let new_rate = FusionCurrencyRateChanges::<T>::get(currency_id).or_else(|| {
 				// Fallback to the current era's rate
-				FusionCurrencyRates::<T>::get(currency_id, era)
+				FusionCurrencyRates::<T>::get(era, currency_id)
 			});
 
 			// If neither a new rate nor a current rate is found, trigger an error
 			let rate = new_rate.ok_or(Error::<T>::CurrencyRateNotFound)?;
 
 			// Insert the rate for the next era
-			FusionCurrencyRates::<T>::insert(currency_id, era + 1, rate);
+			FusionCurrencyRates::<T>::insert(era.saturating_add(1), currency_id, rate);
 		}
 		Ok(())
 	}
@@ -1484,26 +1369,34 @@ impl<T: Config> Pallet<T> {
 			return Ok(());
 		};
 
-		// Clean fusion exposures and FusionPoolsFromValidator - u32::MAX is safe knowing the maximum number of pools is low
+		// Clean FusionExposures - u32::MAX is safe knowing the maximum number of pools is low
 		let _ = FusionExposures::<T>::clear_prefix(era_to_clear, u32::MAX, None);
+
+		// Clean FusionPoolsFromValidator - u32::MAX is safe knowing the maximum number of pools is low
 		let _ = FusionPoolsFromValidator::<T>::clear_prefix(era_to_clear, u32::MAX, None);
 
 		// Clean old era durations
 		EraDurations::<T>::remove(era);
 
 		// Clean currency rates
-		FusionCurrencyRates::<T>::iter_keys().for_each(|(currency_id, era)| {
-			if era == era_to_clear {
-				FusionCurrencyRates::<T>::remove(currency_id, era);
-			}
-		});
+		let _ = FusionCurrencyRates::<T>::clear_prefix(era_to_clear, u32::MAX, None);
 
 		// Clean claimed rewards
-		ClaimedRewards::<T>::iter_keys().for_each(|(evm_address, pool_id, era)| {
-			if era == era_to_clear {
-				ClaimedRewards::<T>::remove((evm_address, pool_id, era));
-			}
-		});
+		let _ = ClaimedRewards::<T>::clear_prefix(era_to_clear, u32::MAX, None);
+
+		// Clean slashes that did not get applied, this means a bug happened and should be fixed.
+		for ((validator, funds_account), _) in HasPendingSlash::<T>::iter_prefix(era) {
+			let Some(pool_id) = Self::get_pool_id_from_funds_account(&funds_account) else {
+				continue;
+			};
+			let _ = FusionPools::<T>::try_mutate(pool_id, |pool_opt| -> DispatchResult {
+				let pool = pool_opt.as_mut().ok_or(Error::<T>::PoolNotFound)?;
+				pool.pending_slashes
+					.retain(|slash| !(slash.slash_era == era && slash.validator == validator));
+				Ok(())
+			});
+		}
+		let _ = HasPendingSlash::<T>::clear_prefix(era_to_clear, u32::MAX, None);
 
 		// Clean fusion era rewards and compute remaining rewards
 		let existential_deposit = T::Currency::minimum_balance();
@@ -1680,50 +1573,6 @@ impl<T: Config> Pallet<T> {
 		paused_pools_missed_rewards.push(pool_era_reward);
 	}
 
-	fn add_slash(slash: FusionSlash) -> DispatchResult {
-		PendingSlashes::<T>::try_mutate(|slashes| {
-			ensure!(
-				slashes.len() < T::MaxSlashes::get() as usize,
-				Error::<T>::TooManySlashes
-			);
-
-			let position = slashes
-				.binary_search_by_key(&slash.slash_apply, |s| s.slash_apply)
-				.unwrap_or_else(|pos| pos);
-
-			slashes
-				.try_insert(position, slash)
-				.map_err(|_| Error::<T>::TooManySlashes)?;
-
-			Ok(())
-		})
-	}
-
-	fn apply_expired_pending_slashes(era: EraIndex) -> DispatchResult {
-		PendingSlashes::<T>::try_mutate(|slashes| {
-			while let Some(first_slash) = slashes.first() {
-				if first_slash.slash_apply > era {
-					break;
-				}
-				let slash = slashes.remove(0);
-				Self::do_apply_slash(slash)?;
-			}
-
-			Ok(())
-		})
-	}
-
-	fn do_apply_slash(slash: FusionSlash) -> DispatchResult {
-		// If we don't have a slash destination setup, the funds will get burned
-		if let Some(slash_dest_evm) = SlashDestination::<T>::get() {
-			Self::add_to_currency_balance(slash_dest_evm, slash.currency_id, slash.slash_amount)?;
-		}
-
-		Self::deposit_event(Event::SlashApplied { slash });
-
-		Ok(())
-	}
-
 	/// Increase total value locked in avail
 	fn add_to_tvl(currency: &FusionCurrency<T>, value: FusionCurrencyBalance) -> DispatchResult {
 		let mut tvl_data = TotalValueLockedData::<T>::get();
@@ -1742,22 +1591,6 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	// #[cfg(test)] // TODO Remove
-	/// Simulate a slashing event for tests
-	fn do_dummy_slash(
-		who: T::AccountId,
-		bonded_amount: BalanceOf<T>,
-		slashed_amount: BalanceOf<T>,
-	) -> DispatchResult {
-		Self::on_slash(
-			&who,
-			bonded_amount - slashed_amount,
-			&Default::default(),
-			slashed_amount,
-		);
-		Ok(())
-	}
-
 	/// Deposits a specified amount of currency for a given EVM address and currency ID.
 	fn do_deposit_currency(
 		evm_address: EvmAddress,
@@ -1770,7 +1603,7 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::CannotDepositAvailCurrency
 		);
 
-		Self::add_to_currency_balance(evm_address, currency_id, amount)?;
+		Self::add_to_currency_balance(evm_address, currency_id, amount, false)?;
 
 		Self::deposit_event(Event::CurrencyDeposited {
 			evm_address,
@@ -1851,6 +1684,8 @@ impl<T: Config> Pallet<T> {
 		let maybe_membership = FusionMemberships::<T>::get(evm_address, pool_id);
 
 		if !skip_checks {
+			// Ensure amount is greater than 0
+			ensure!(amount > 0, Error::<T>::InvalidAmount);
 			// Ensure they are open or allowed to compound
 			ensure!(
 				pool.state == FusionPoolState::Open
@@ -1867,7 +1702,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		// Fetch and ensure user has enough currency balance
-		Self::withdraw_from_currency_balance(evm_address, currency.currency_id, amount)?;
+		Self::withdraw_from_currency_balance(evm_address, pool.currency_id, amount)?;
 
 		// Convert currency amount to points
 		let points = pool.currency_to_points(amount, Some(&currency))?;
@@ -1877,9 +1712,6 @@ impl<T: Config> Pallet<T> {
 		pool.total_staked_native = pool.total_staked_native.saturating_add(amount);
 		pool.total_staked_points = pool.total_staked_points.saturating_add(points);
 
-		// Save updated currency data
-		FusionCurrencies::<T>::insert(pool.currency_id, &currency);
-
 		// Update TVL
 		Self::add_to_tvl(&currency, amount)?;
 
@@ -1887,6 +1719,16 @@ impl<T: Config> Pallet<T> {
 		if let Some(mut membership) = maybe_membership {
 			// Update user's active points and save membership
 			membership.active_points = membership.active_points.saturating_add(points);
+
+			// Ensure user will have more than minimum balance
+			// Useful if the user was slashed and his balance went below minimum required
+			// He can only bond to top up to the minimum or withdraw all
+			let current_amount =
+				pool.points_to_currency(membership.active_points, Some(&currency))?;
+			ensure!(
+				current_amount.saturating_add(amount) > currency.min_amount,
+				Error::<T>::BondAmoundTooLow
+			);
 
 			// Update the pool's member points
 			if let Some(member) = pool
@@ -1899,6 +1741,7 @@ impl<T: Config> Pallet<T> {
 
 			FusionMemberships::<T>::insert(evm_address, pool_id, membership);
 			FusionPools::<T>::insert(pool_id, &pool);
+			FusionCurrencies::<T>::insert(pool.currency_id, &currency);
 
 			// Emit event for extra bond
 			Self::deposit_event(Event::PoolBondExtra {
@@ -1920,12 +1763,13 @@ impl<T: Config> Pallet<T> {
 			// Insert new membership for user
 			let new_membership = FusionMembership::<T> {
 				evm_address,
-				pool_id,
 				active_points: points,
-				unbonding_chunks: BoundedVec::default(),
+				unbonding_eras: BoundedVec::default(),
 				is_compounding: true,
 			};
 			FusionMemberships::<T>::insert(evm_address, pool_id, new_membership);
+			FusionPools::<T>::insert(pool_id, &pool);
+			FusionCurrencies::<T>::insert(pool.currency_id, &currency);
 
 			// Emit event for pool join
 			Self::deposit_event(Event::PoolJoined {
@@ -1936,9 +1780,6 @@ impl<T: Config> Pallet<T> {
 				points,
 			});
 		}
-
-		// Save updated pool data
-		FusionPools::<T>::insert(pool_id, &pool);
 
 		Ok(())
 	}
@@ -1963,7 +1804,7 @@ impl<T: Config> Pallet<T> {
 
 			// Ensure the user has not already claimed the reward for this era and pool
 			ensure!(
-				!ClaimedRewards::<T>::contains_key((evm_address, pool_id, era)),
+				!ClaimedRewards::<T>::contains_key(era, (pool_id, evm_address)),
 				Error::<T>::AlreadyClaimed
 			);
 
@@ -1989,7 +1830,7 @@ impl<T: Config> Pallet<T> {
 				.saturating_add(user_reward_balance);
 
 			// Mark rewards as claimed
-			ClaimedRewards::<T>::insert((evm_address, pool_id, era), user_reward_balance);
+			ClaimedRewards::<T>::insert(era, (pool_id, evm_address), user_reward_balance);
 
 			// Fetch avail currency
 			let avail_currency = FusionCurrencies::<T>::get(AVAIL_CURRENCY_ID)
@@ -2019,7 +1860,7 @@ impl<T: Config> Pallet<T> {
 			)?;
 
 			// We can now add the equivalent in fusion currency
-			Self::add_to_currency_balance(evm_address, AVAIL_CURRENCY_ID, avail_in_currency)?;
+			Self::add_to_currency_balance(evm_address, AVAIL_CURRENCY_ID, avail_in_currency, true)?;
 
 			Self::deposit_event(Event::RewardClaimed {
 				evm_address,
@@ -2049,6 +1890,7 @@ impl<T: Config> Pallet<T> {
 							.total_staked_native
 							.saturating_add(avail_in_currency)
 							<= avail_currency.max_amount
+						&& avail_in_currency > 0
 					{
 						// At this point this should never fail except in case of arithmetic errors which is ok
 						Self::do_stake(evm_address, AVAIL_POOL_ID, avail_in_currency, true)?;
@@ -2070,6 +1912,7 @@ impl<T: Config> Pallet<T> {
 		unbond_amount: FusionCurrencyBalance,
 		other: bool,
 	) -> DispatchResult {
+		ensure!(unbond_amount > 0, Error::<T>::InvalidAmount);
 		// Retrieve the user's membership in the pool
 		let mut membership = FusionMemberships::<T>::get(evm_address, pool_id)
 			.ok_or(Error::<T>::UserNotMemberOfPool)?;
@@ -2112,12 +1955,28 @@ impl<T: Config> Pallet<T> {
 		// Get current era
 		let current_era = T::StakingFusionDataProvider::current_era();
 
-		// Update membership with unbonding chunk
+		// Add the unbonding chunk to the related storage
+		let mut era_pool_unbonding_chunk = UnbondingChunks::<T>::get(pool_id, current_era);
+		let existing_index = era_pool_unbonding_chunk
+			.iter()
+			.position(|(addr, _)| *addr == evm_address);
+		if let Some(index) = existing_index {
+			era_pool_unbonding_chunk[index].1 += unbond_amount;
+		} else {
+			era_pool_unbonding_chunk
+				.try_push((evm_address, unbond_amount))
+				.map_err(|_| Error::<T>::PoolMemberLimitReached)?;
+
+			// If the unbonding chunk is new, we add its info in the membership
+			membership
+				.unbonding_eras
+				.try_push(current_era)
+				.map_err(|_| Error::<T>::MaxUnbondingChunksExceeded)?;
+		}
+		UnbondingChunks::<T>::insert(pool_id, current_era, era_pool_unbonding_chunk);
+
+		// Update membership points
 		membership.active_points = membership.active_points.saturating_sub(requested_points);
-		membership
-			.unbonding_chunks
-			.try_push((current_era, unbond_amount))
-			.map_err(|_| Error::<T>::MaxUnbondingChunksExceeded)?;
 
 		// If it is a full unbond, we set compounding to false as user probably want to leave the pool and he'll receive some rewards after
 		if is_full_unbond {
@@ -2158,13 +2017,13 @@ impl<T: Config> Pallet<T> {
 		// Save the updated state back to storage
 		FusionMemberships::<T>::insert(evm_address, pool_id, membership);
 		FusionPools::<T>::insert(pool_id, &pool);
-		FusionCurrencies::<T>::insert(currency.currency_id, &currency);
+		FusionCurrencies::<T>::insert(pool.currency_id, &currency);
 
 		// Emit event
 		Self::deposit_event(Event::CurrencyUnbonded {
 			evm_address,
 			pool_id,
-			currency_id: currency.currency_id,
+			currency_id: pool.currency_id,
 			unbonded_amount: unbond_amount,
 			points: requested_points,
 			era: current_era,
@@ -2195,22 +2054,38 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::PoolIsNotDestroying
 		);
 
+		ensure!(
+			!membership.unbonding_eras.is_empty(),
+			Error::<T>::NoFundsToWithdraw
+		);
+
 		// Get current era
 		let current_era = T::StakingFusionDataProvider::current_era();
 
 		// Check if there are any unbonded chunks that are now withdrawable
 		let mut total_withdrawable: FusionCurrencyBalance = 0;
-		let mut remaining_unbonding_chunks = BoundedVec::default();
+		let mut remaining_unbonding_eras = BoundedVec::default();
 
-		for &(era, amount) in membership.unbonding_chunks.iter() {
+		for era in membership.unbonding_eras.iter() {
 			if era + T::BondingDuration::get() <= current_era {
 				// This chunk is now withdrawable
-				total_withdrawable = total_withdrawable.saturating_add(amount);
+				let mut pool_era_unbonding_chunks = UnbondingChunks::<T>::get(pool_id, era);
+				let maybe_unbonding_chunk_index = pool_era_unbonding_chunks
+					.iter()
+					.position(|(addr, _)| *addr == evm_address);
+
+				if let Some(unbonding_chunk_index) = maybe_unbonding_chunk_index {
+					let unbonding_chunk = pool_era_unbonding_chunks.remove(unbonding_chunk_index);
+					total_withdrawable = total_withdrawable.saturating_add(unbonding_chunk.1);
+					UnbondingChunks::<T>::insert(pool_id, era, pool_era_unbonding_chunks);
+				} else {
+					log::error!("An unbonding chunk was not found for user: {evm_address:?}, era: {era:?} and pool id {pool_id:?}. Storage was cleaned but it should get fixed");
+				}
 			} else {
 				// Keep this chunk as it's not withdrawable yet
-				remaining_unbonding_chunks
-					.try_push((era, amount))
-					.map_err(|_| Error::<T>::MaxUnbondingChunksExceeded)?; // This error will never get triggered
+				remaining_unbonding_eras
+					.try_push(*era)
+					.map_err(|_| Error::<T>::MaxUnbondingChunksExceeded)?;
 			}
 		}
 
@@ -2218,7 +2093,7 @@ impl<T: Config> Pallet<T> {
 		ensure!(total_withdrawable > 0, Error::<T>::NoFundsToWithdraw);
 
 		// Update the user's membership by removing processed unbonding chunks
-		membership.unbonding_chunks = remaining_unbonding_chunks;
+		membership.unbonding_eras = remaining_unbonding_eras;
 
 		// Update pool and currency data
 		pool.total_unbonding_native = pool
@@ -2231,10 +2106,10 @@ impl<T: Config> Pallet<T> {
 		FusionCurrencies::<T>::insert(pool.currency_id, &currency);
 
 		// Update the user's currency balance
-		Self::add_to_currency_balance(evm_address, pool.currency_id, total_withdrawable)?;
+		Self::add_to_currency_balance(evm_address, pool.currency_id, total_withdrawable, true)?;
 
 		// Check if the user should be removed from the pool membership
-		if membership.unbonding_chunks.is_empty() && membership.active_points == 0 {
+		if membership.unbonding_eras.is_empty() && membership.active_points == 0 {
 			// Remove the user's membership from the pool
 			FusionMemberships::<T>::remove(evm_address, pool_id);
 
@@ -2341,7 +2216,6 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 				// We set the exposure for era + 1
 				// The data must be available for the snapshot and next elections
 				let fusion_exposure = FusionExposure::<T> {
-					pool_id,
 					era,
 					total_avail,
 					total_points: pool.total_staked_points,
@@ -2375,11 +2249,6 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 		Self::compute_era_rewards(era, era_duration, None);
 
 		let _ = log_if_error(Self::setup_currency_rates(era), "setup_currency_rates", era);
-		let _ = log_if_error(
-			Self::apply_expired_pending_slashes(era),
-			"apply_expired_pending_slashes",
-			era,
-		);
 		let _ = log_if_error(
 			Self::clean_history_depth_storages(era),
 			"clean_history_depth_storages",
@@ -2427,8 +2296,10 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 		};
 
 		let era = T::StakingFusionDataProvider::current_era();
-		let _ =
-			FusionExposures::<T>::try_mutate(era, pool_id, |maybe_exposure| -> DispatchResult {
+		let _ = FusionExposures::<T>::try_mutate(
+			era,
+			pool_id,
+			|maybe_exposure| -> DispatchResult {
 				// Ensure rewards are available for the given era and pool
 				let Some(ref mut exposure) = maybe_exposure else {
 					return Ok(());
@@ -2452,8 +2323,7 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 					|pool_ids| -> DispatchResult {
 						if let Err(_) = pool_ids.try_push(pool_id) {
 							log::error!(
-							"Could not fusion pools from validator for pool {:?} and validator {:?}",
-							pool_id, validator
+							"Could not set fusion pools from validator for pool {pool_id:?} and validator {validator:?} and era {era:?}",
 						);
 						}
 						Ok(())
@@ -2463,79 +2333,283 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 				exposure.native_exposure_data = Some(native_exposure_data);
 
 				Ok(())
-			});
+			},
+		);
 	}
-}
 
-impl<T: Config> OnStakingUpdate<T::AccountId, BalanceOf<T>> for Pallet<T> {
-	fn on_slash(
-		who: &T::AccountId,
-		slashed_active: BalanceOf<T>,
-		slashed_unlocking: &BTreeMap<EraIndex, BalanceOf<T>>,
-		slashed_total: BalanceOf<T>,
-	) {
-		log::info!("ON SLASH TRIGGERED IN FUSION PALLET");
-		log::info!("WHO {who:?} -  slashed_active {slashed_active:?} -  slashed_unlocking {slashed_unlocking:?} -  slashed_total {slashed_total:?}");
-		// TODO Change the logic here
-		let current_era = T::StakingFusionDataProvider::current_era();
-		for (pool_id, exposure) in FusionExposures::<T>::iter_prefix(current_era) {
-			if exposure.targets.contains(who) {
-				// TODO Change this to check for targets really nominated by the pool
-				FusionPools::<T>::mutate(pool_id, |maybe_pool| {
-					let pool = match maybe_pool {
-						Some(ref mut pool) => pool,
-						None => return,
+	fn add_fusion_slash(
+		era: EraIndex,
+		validator: &T::AccountId,
+		nominators: &Vec<(T::AccountId, BalanceOf<T>)>,
+	) -> Weight {
+		let mut consummed_weight = Weight::from_parts(0, 0);
+
+		let pool_ids = FusionPoolsFromValidator::<T>::get(era, validator);
+		consummed_weight = consummed_weight.saturating_add(T::DbWeight::get().reads(1));
+		if pool_ids.is_empty() {
+			return consummed_weight;
+		}
+
+		let mut pool_funds_accounts: Vec<(PoolId, T::AccountId)> = pool_ids
+			.iter()
+			.map(|id| (*id, Self::get_pool_funds_account(*id)))
+			.collect();
+
+		let filtered_nominators: Vec<(PoolId, BalanceOf<T>)> = nominators
+			.iter()
+			.filter_map(|(nominator_account, balance)| {
+				if let Some((pool_id, _)) = pool_funds_accounts
+					.iter()
+					.position(|(_, pool_account)| pool_account == nominator_account)
+					.map(|index| pool_funds_accounts.remove(index))
+				{
+					Some((pool_id, *balance))
+				} else {
+					None
+				}
+			})
+			.collect();
+
+		for (pool_id, slashed_amount) in filtered_nominators.iter() {
+			let result = FusionPools::<T>::try_mutate(pool_id, |maybe_pool| -> DispatchResult {
+				let pool = maybe_pool.as_mut().ok_or(Error::<T>::PoolNotFound)?;
+				let exposure =
+					FusionExposures::<T>::get(era, pool_id).ok_or(Error::<T>::ExposureNotFound)?;
+
+				ensure!(
+					pool.state != FusionPoolState::Destroying,
+					Error::<T>::PoolIsDestroying
+				);
+
+				let exposure_total_avail = exposure.total_avail;
+				let slash_total_avail = slashed_amount.min(&exposure_total_avail);
+				let slash_ratio = Perbill::from_rational(*slash_total_avail, exposure_total_avail);
+
+				let mut found_existing_slash = false;
+				for slash in pool.pending_slashes.iter_mut().rev() {
+					if slash.slash_era < era {
+						break;
+					}
+					if slash.slash_era == era && &slash.validator == validator {
+						if slash_ratio > slash.slash_ratio {
+							slash.slash_ratio = slash_ratio;
+
+							Self::deposit_event(Event::<T>::FusionSlashReported {
+								pool_id: *pool_id,
+								slash_era: era,
+								slash_ratio,
+								validator: validator.clone(),
+							});
+						}
+						found_existing_slash = true;
+						break;
+					}
+				}
+
+				if !found_existing_slash {
+					let new_pending_slash = FusionPendingSlash {
+						slash_era: era,
+						slash_ratio,
+						validator: validator.clone(),
 					};
 
-					FusionCurrencies::<T>::mutate(pool.currency_id, |maybe_currency| {
-						let currency = match maybe_currency {
-							Some(ref mut currency) => currency,
-							None => return,
-						};
-						let slash_portion = Perbill::from_rational(
-							slashed_total,
-							slashed_total.saturating_add(slashed_active),
-						);
-						let slash_fusion_amount = slash_portion * pool.total_staked_native;
+					pool.pending_slashes
+						.try_push(new_pending_slash)
+						.map_err(|_| Error::<T>::PendingSlashLimitReached)?;
 
-						currency.total_staked_native = currency
-							.total_staked_native
-							.saturating_sub(slash_fusion_amount);
-						currency.total_slashed_native = currency
-							.total_slashed_native
-							.saturating_add(slash_fusion_amount);
+					HasPendingSlash::<T>::insert(
+						era,
+						(validator, pool.funds_account.clone()),
+						true,
+					);
 
-						// Update TVL
-						if let Err(e) = Self::sub_from_tvl(&currency, slash_fusion_amount) {
-							log::error!(
-								"Error while substracting slash from TVL: {:?} - Amount: {:?}",
-								e,
-								slash_fusion_amount
-							);
-						}
-
-						pool.total_staked_native =
-							pool.total_staked_native.saturating_sub(slash_fusion_amount);
-						pool.total_slashed_native = pool
-							.total_slashed_native
-							.saturating_add(slash_fusion_amount);
-
-						let new_slash = FusionSlash {
-							pool_id,
-							currency_id: pool.currency_id,
-							slash_era: current_era,
-							slash_apply: current_era + T::SlashDeferDuration::get(),
-							slash_amount: slash_fusion_amount,
-						};
-
-						if let Err(e) = Self::add_slash(new_slash.clone()) {
-							log::error!("Error while adding slash: {:?}", e);
-						} else {
-							Self::deposit_event(Event::SlashCreated { slash: new_slash });
-						}
+					Self::deposit_event(Event::<T>::FusionSlashReported {
+						pool_id: *pool_id,
+						slash_era: era,
+						slash_ratio,
+						validator: validator.clone(),
 					});
-				});
+				}
+
+				Ok(())
+			});
+
+			if let Err(e) = result {
+				log::error!("An error occured while trying to add a slash for pool {pool_id:?}, era {era:?} and validator {validator:?}");
+				log::error!("Error detail: {e:?}");
 			}
 		}
+
+		// TODO Real weight
+		consummed_weight
+	}
+
+	fn cancel_fusion_slash(era: EraIndex, slash_validators: &Vec<T::AccountId>) {
+		let mut slashes_to_cancel: HashMap<PoolId, Vec<T::AccountId>> = HashMap::new();
+		for slash_validator in slash_validators {
+			let concerned_pools_ids = FusionPoolsFromValidator::<T>::get(era, slash_validator);
+			for pool_id in concerned_pools_ids {
+				slashes_to_cancel
+					.entry(pool_id)
+					.or_insert_with(Vec::new)
+					.push(slash_validator.clone());
+			}
+		}
+
+		for (pool_id, validators) in slashes_to_cancel.iter() {
+			let result = FusionPools::<T>::try_mutate(pool_id, |maybe_pool| -> DispatchResult {
+				let pool = maybe_pool.as_mut().ok_or(Error::<T>::PoolNotFound)?;
+				pool.pending_slashes.retain(|slash| {
+					if slash.slash_era == era && validators.contains(&slash.validator) {
+						HasPendingSlash::<T>::remove(
+							era,
+							(slash.validator.clone(), pool.funds_account.clone()),
+						);
+						false
+					} else {
+						true
+					}
+				});
+
+				Self::deposit_event(Event::<T>::FusionSlashCancelled {
+					pool_id: *pool_id,
+					slash_era: era,
+					validators: validators.to_vec(),
+				});
+
+				Ok(())
+			});
+
+			if let Err(e) = result {
+				log::error!("An error occured while trying to remove a slash for pool {pool_id:?}, era {era:?}, Slash won't get applied and it will be cleaned after few eras");
+				log::error!("Error detail: {e:?}");
+			}
+		}
+	}
+
+	fn apply_fusion_slash(
+		slash_era: EraIndex,
+		validator: &T::AccountId,
+		funds_account: &T::AccountId,
+	) -> bool {
+		if !(HasPendingSlash::<T>::get(slash_era, (validator, funds_account))) {
+			return false;
+		}
+		let Some(pool_id) = Self::get_pool_id_from_funds_account(funds_account) else {
+			log::error!("Pool Id not found while trying to apply a fusion slash for account {funds_account:?}, era {slash_era:?}, Slash won't get applied and it will be cleaned after few eras");
+			return true;
+		};
+		let result = FusionPools::<T>::try_mutate(pool_id, |maybe_pool| -> DispatchResult {
+			let pool = maybe_pool.as_mut().ok_or(Error::<T>::PoolNotFound)?;
+
+			let mut currency =
+				FusionCurrencies::<T>::get(pool.currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
+
+			let maybe_removed_slash = pool
+				.pending_slashes
+				.iter()
+				.position(|slash| slash.slash_era == slash_era && slash.validator == *validator)
+				.map(|index| pool.pending_slashes.remove(index));
+
+			if let Some(removed_slash) = maybe_removed_slash {
+				let mut total_slashed: FusionCurrencyBalance = 0;
+				let slash_ratio = removed_slash.slash_ratio;
+
+				// Slash the pool
+				let slashed_amount_from_pool = slash_ratio * pool.total_staked_native;
+				pool.total_staked_native = pool
+					.total_staked_native
+					.saturating_sub(slashed_amount_from_pool);
+				currency.total_staked_native = currency
+					.total_staked_native
+					.saturating_sub(slashed_amount_from_pool);
+
+				total_slashed = total_slashed.saturating_add(slashed_amount_from_pool);
+
+				let current_era = T::StakingFusionDataProvider::current_era();
+
+				// Slash the slashable unbonding chunks of the pool
+				let mut slashed_amount_from_chunks: FusionCurrencyBalance = 0;
+
+				// Iterate over all unbonding chunks for the specified pool
+				for (unbond_era, chunks) in UnbondingChunks::<T>::iter_prefix(pool_id) {
+					let mut updated_chunks = BoundedVec::default();
+					if unbond_era >= slash_era && slash_era <= current_era {
+						// Iterate over the chunks in the BoundedVec
+						for (evm_address, balance) in chunks {
+							// Calculate the slashed amount for this chunk
+							let slashed_amount = slash_ratio * balance;
+
+							// Add to the slashed_amount_from_chunks
+							slashed_amount_from_chunks =
+								slashed_amount_from_chunks.saturating_add(slashed_amount);
+
+							// Update the remaining balance in the bounded vec
+							let new_balance = balance.saturating_sub(slashed_amount);
+							if new_balance > FusionCurrencyBalance::zero() {
+								updated_chunks
+									.try_push((evm_address, new_balance))
+									.map_err(|_| Error::<T>::PoolMemberLimitReached)?;
+							}
+						}
+
+						if !updated_chunks.is_empty() {
+							UnbondingChunks::<T>::insert(pool_id, unbond_era, updated_chunks);
+						} else {
+							UnbondingChunks::<T>::remove(pool_id, unbond_era);
+						}
+					}
+				}
+
+				total_slashed = total_slashed.saturating_add(slashed_amount_from_chunks);
+
+				pool.total_unbonding_native = pool
+					.total_unbonding_native
+					.saturating_sub(slashed_amount_from_chunks);
+				currency.total_unbonding_native = currency
+					.total_unbonding_native
+					.saturating_sub(slashed_amount_from_chunks);
+
+				pool.total_slashed_native = pool.total_slashed_native.saturating_add(total_slashed);
+				currency.total_slashed_native =
+					currency.total_slashed_native.saturating_add(total_slashed);
+
+				// Update TVL
+				// slashed_amount_from_chunks was already deduced from tvl when unbonded
+				Self::sub_from_tvl(&currency, slashed_amount_from_pool)?;
+
+				if let Some(slash_destination) = SlashDestination::<T>::get() {
+					Self::add_to_currency_balance(
+						slash_destination,
+						pool.currency_id,
+						total_slashed,
+						true,
+					)?;
+				} else {
+					// TODO The funds are kinda burned but probably stuck somewhere, something should be done
+				}
+
+				FusionCurrencies::<T>::insert(pool.currency_id, currency);
+				HasPendingSlash::<T>::remove(slash_era, (removed_slash.validator, funds_account));
+
+				Self::deposit_event(Event::<T>::FusionPoolSlashed {
+					currency_id: pool.currency_id,
+					pool_id,
+					slash_era,
+					amount: total_slashed,
+				});
+
+				Ok(())
+			} else {
+				Err(Error::<T>::SlashNotFound.into())
+			}
+		});
+
+		if let Err(e) = result {
+			log::error!("An error occured while trying to apply a slash for pool {pool_id:?}, era {slash_era:?}, Slash won't get applied and it will be cleaned after few eras");
+			log::error!("Error detail: {e:?}");
+		}
+
+		true
 	}
 }

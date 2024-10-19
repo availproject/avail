@@ -46,6 +46,27 @@ pub trait FusionExt<AccountId, Balance> {
 		validator: &AccountId,
 		value: Balance,
 	) -> ();
+
+	/// In the staking pallet, if a pool was slashed
+	/// we lock the funds meaning they cannot be unbond until the slash decision is made
+	fn add_fusion_slash(
+		era: EraIndex,
+		validator: &AccountId,
+		nominators: &Vec<(AccountId, Balance)>,
+	) -> Weight;
+
+	/// If a slash was cancelled and it concerned a Fusion pool, we need to cancel it there too
+	fn cancel_fusion_slash(era: EraIndex, slash_validators: &Vec<AccountId>) -> ();
+
+	/// If a slash is applied, we need to take the previously locked funds and mint reportes rewards
+	/// Returns true if the nominator is a fusion pool (and was slashed)
+	/// In this function we will give 100% of the slash amount to the treasury,
+	/// the rewards for validator are going to get minted in the staking pallet like before
+	fn apply_fusion_slash(
+		_slash_era: EraIndex,
+		_validator: &AccountId,
+		_funds_account: &AccountId,
+	) -> bool;
 }
 impl<AccountId, Balance> FusionExt<AccountId, Balance> for () {
 	fn handle_end_era(_era_duration: u64) {
@@ -74,5 +95,25 @@ impl<AccountId, Balance> FusionExt<AccountId, Balance> for () {
 		_value: Balance,
 	) {
 		()
+	}
+
+	fn add_fusion_slash(
+		_era: EraIndex,
+		_validator: &AccountId,
+		_nominators: &Vec<(AccountId, Balance)>,
+	) -> Weight {
+		Weight::from_parts(0, 0)
+	}
+
+	fn cancel_fusion_slash(_era: EraIndex, _slash_validators: &Vec<AccountId>) -> () {
+		()
+	}
+
+	fn apply_fusion_slash(
+		_slash_era: EraIndex,
+		_validator: &AccountId,
+		_funds_account: &AccountId,
+	) -> bool {
+		false
 	}
 }

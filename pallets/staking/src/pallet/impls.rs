@@ -1501,6 +1501,8 @@ where
 		let mut add_db_reads_writes = |reads, writes| {
 			consumed_weight += T::DbWeight::get().reads_writes(reads, writes);
 		};
+		// FUSION CHANGE
+		let mut fusion_weight = Weight::from_parts(0, 0);
 
 		let active_era = {
 			let active_era = Self::active_era();
@@ -1580,6 +1582,13 @@ where
 					add_db_reads_writes(rw, rw);
 				}
 				unapplied.reporters = details.reporters.clone();
+
+				// FUSION CHANGE
+				// We need to notify slashing in Fusion and lock the funds, if needed.
+				// We need to do this so if the slash is applied manually, we find it
+				fusion_weight =
+					T::FusionExt::add_fusion_slash(slash_era, &stash, &unapplied.others);
+
 				if slash_defer_duration == 0 {
 					// Apply right away.
 					slashing::apply_slash::<T>(unapplied, slash_era);
@@ -1614,7 +1623,7 @@ where
 			}
 		}
 
-		consumed_weight
+		consumed_weight.saturating_add(fusion_weight)
 	}
 }
 

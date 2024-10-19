@@ -102,6 +102,8 @@ pub struct FusionPool<T: Config> {
 	pub total_unbonding_native: FusionCurrencyBalance,
 	/// State of the pool
 	pub state: FusionPoolState,
+	/// Vector of pending slashes
+	pub pending_slashes: BoundedVec<FusionPendingSlash<T>, T::MaxSlashesPerPool>,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -109,12 +111,10 @@ pub struct FusionPool<T: Config> {
 pub struct FusionMembership<T: Config> {
 	/// Evm address of the user
 	pub evm_address: EvmAddress,
-	/// Id of the pool the user selected, users can join multiple pools
-	pub pool_id: PoolId,
 	/// The stake of the user represented by points
 	pub active_points: Points,
-	/// Amounts and eras where the user unbonded, handles partial unbonds
-	pub unbonding_chunks: BoundedVec<(EraIndex, FusionCurrencyBalance), T::MaxUnbonding>,
+	/// Unbonding eras of the user
+	pub unbonding_eras: BoundedVec<EraIndex, T::MaxUnbonding>,
 	/// If true, rewards will go to the AVAIL pool
 	pub is_compounding: bool,
 }
@@ -132,8 +132,6 @@ pub struct FusionMemberCurrencyBalance {
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 pub struct FusionExposure<T: Config> {
-	/// Id of the pool the user selected, users can join multiple pools
-	pub pool_id: PoolId,
 	/// Era of the exposure to compute rewards
 	pub era: EraIndex,
 	/// The APY when the exposure was taken
@@ -152,17 +150,23 @@ pub struct FusionExposure<T: Config> {
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub struct FusionSlash {
-	/// Id of the pool that got slashed
-	pub pool_id: PoolId,
-	/// Id of the currency that got slashed
-	pub currency_id: CurrencyId,
-	/// Era where the slash happen
+#[scale_info(skip_type_params(T))]
+pub struct FusionPendingSlash<T: Config> {
+	/// Era when the slash happened
 	pub slash_era: EraIndex,
-	/// Era where the slash need to get applied
-	pub slash_apply: EraIndex,
-	/// Slashed amoun
-	pub slash_amount: FusionCurrencyBalance,
+	/// Percentage of the pool funds that got slashed
+	pub slash_ratio: Perbill,
+	/// The validator that got slashed
+	pub validator: T::AccountId,
+}
+
+#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[scale_info(skip_type_params(T))]
+pub struct TVLData<T: Config> {
+	/// The total value locked in Fusion from users (in avail)
+	pub total_value_locked: BalanceOf<T>,
+	/// The max total allowed values locked in Fusion (when changing conversion rates or staking new currency, this will be checked)
+	pub max_total_value_locked: BalanceOf<T>,
 }
 
 impl<T: Config> FusionCurrency<T> {
@@ -364,14 +368,6 @@ impl<T: Config> FusionPool<T> {
 	}
 }
 
-#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[scale_info(skip_type_params(T))]
-pub struct TVLData<T: Config> {
-	/// The total value locked in Fusion from users (in avail)
-	pub total_value_locked: BalanceOf<T>,
-	/// The max total allowed values locked in Fusion (when changing conversion rates or staking new currency, this will be checked)
-	pub max_total_value_locked: BalanceOf<T>,
-}
 impl<T: Config> Default for TVLData<T> {
 	fn default() -> Self {
 		Self {
@@ -380,6 +376,7 @@ impl<T: Config> Default for TVLData<T> {
 		}
 	}
 }
+
 impl<T: Config> TVLData<T> {
 	/// Checks if adding `amount` to `total_value_locked` is within `max_total_value_locked`.
 	pub fn can_add(&self, amount: BalanceOf<T>) -> bool {

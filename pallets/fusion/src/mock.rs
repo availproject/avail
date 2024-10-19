@@ -1,13 +1,9 @@
-use frame_support::{
-	derive_impl, parameter_types,
-	traits::{Imbalance, OnUnbalanced},
-	PalletId,
-};
+use frame_support::{derive_impl, parameter_types, PalletId};
 use frame_system::EnsureRoot;
 use sp_runtime::BuildStorage;
 use sp_staking::EraIndex;
 
-use crate::{self as pallet_fusion, NegativeImbalanceOf};
+use crate::{self as pallet_fusion};
 
 type Extrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockDaBlock<Test>;
@@ -45,30 +41,14 @@ impl pallet_balances::Config for Test {
 }
 
 parameter_types! {
-	pub static RewardRemainderUnbalanced: u64 = 0;
-	pub static SlashUnbalanced: u64 = 0;
-}
-pub struct RewardRemainderMock;
-impl OnUnbalanced<NegativeImbalanceOf<Test>> for RewardRemainderMock {
-	fn on_nonzero_unbalanced(amount: NegativeImbalanceOf<Test>) {
-		RewardRemainderUnbalanced::mutate(|v| {
-			*v += amount.peek();
-		});
-		drop(amount);
-	}
-}
-
-parameter_types! {
 	pub const FusionPalletId: PalletId = PalletId(*b"avl/fusi");
 	pub const MaxCurrencyName: u32 = 32;
 	pub const MaxMembersPerPool: u32 = 10;
 	pub const MaxTargets: u32 = 16;
 	pub const MaxUnbonding: u32 = 8;
 	pub const BondingDuration: EraIndex = 3;
-	pub const SlashDeferDuration: EraIndex = BondingDuration::get() - 1;
 	pub const HistoryDepth: u32 = 20;
-	pub const MaxSlashes: u32 = 1000;
-	pub const MaxPoolsPerValidator: u32 = 10;
+	pub const MaxSlashesPerPool: u32 = 100;
 }
 impl pallet_fusion::Config for Test {
 	type Currency = Balances;
@@ -81,11 +61,9 @@ impl pallet_fusion::Config for Test {
 	type MaxMembersPerPool = MaxMembersPerPool;
 	type MaxTargets = MaxTargets;
 	type MaxUnbonding = MaxUnbonding;
-	type MaxSlashes = MaxSlashes;
-	type MaxPoolsPerValidator = MaxPoolsPerValidator;
+	type MaxSlashesPerPool = MaxSlashesPerPool;
 	type BondingDuration = BondingDuration;
-	type RewardRemainder = RewardRemainderMock;
-	type SlashDeferDuration = SlashDeferDuration;
+	type RewardRemainder = ();
 	type HistoryDepth = HistoryDepth;
 	type StakingFusionDataProvider = ();
 	type WeightInfo = ();

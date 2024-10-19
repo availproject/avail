@@ -12,11 +12,11 @@ mod benchmarks {
 	use super::*;
 
 	#[benchmark]
-	fn kick_user() -> Result<(), BenchmarkError> {
+	fn set_slash_destination() -> Result<(), BenchmarkError> {
 		let origin = RawOrigin::Root;
 
 		#[extrinsic_call]
-		_(origin, EvmAddress::zero());
+		_(origin, Some(EvmAddress::zero()), None);
 
 		Ok(())
 	}
