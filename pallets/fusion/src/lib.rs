@@ -2350,19 +2350,15 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 			return consummed_weight;
 		}
 
-		let mut pool_funds_accounts: Vec<(PoolId, T::AccountId)> = pool_ids
+		let mut pool_funds_accounts: BTreeMap<T::AccountId, PoolId> = pool_ids
 			.iter()
-			.map(|id| (*id, Self::get_pool_funds_account(*id)))
+			.map(|id| (Self::get_pool_funds_account(*id), *id))
 			.collect();
 
 		let filtered_nominators: Vec<(PoolId, BalanceOf<T>)> = nominators
 			.iter()
 			.filter_map(|(nominator_account, balance)| {
-				if let Some((pool_id, _)) = pool_funds_accounts
-					.iter()
-					.position(|(_, pool_account)| pool_account == nominator_account)
-					.map(|index| pool_funds_accounts.remove(index))
-				{
+				if let Some(pool_id) = pool_funds_accounts.remove(nominator_account) {
 					Some((pool_id, *balance))
 				} else {
 					None
