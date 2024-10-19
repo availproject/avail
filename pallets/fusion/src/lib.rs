@@ -11,7 +11,7 @@ mod traits;
 mod types;
 mod weights;
 
-use std::collections::HashMap;
+use sp_std::collections::btree_map::BTreeMap;
 
 use crate::types::*;
 use frame_support::{
@@ -2445,7 +2445,7 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 	}
 
 	fn cancel_fusion_slash(era: EraIndex, slash_validators: &Vec<T::AccountId>) {
-		let mut slashes_to_cancel: HashMap<PoolId, Vec<T::AccountId>> = HashMap::new();
+		let mut slashes_to_cancel: BTreeMap<PoolId, Vec<T::AccountId>> = BTreeMap::new();
 		for slash_validator in slash_validators {
 			let concerned_pools_ids = FusionPoolsFromValidator::<T>::get(era, slash_validator);
 			for pool_id in concerned_pools_ids {
