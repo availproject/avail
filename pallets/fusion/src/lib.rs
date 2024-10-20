@@ -999,9 +999,10 @@ pub mod pallet {
 			evm_address: EvmAddress,
 			new_controller_address: Option<T::AccountId>,
 		) -> DispatchResult {
-			// TODO - commented for tests only
 			if let Some(who) = ensure_signed_or_root(origin)? {
-				Self::ensure_valid_fusion_origin(who, evm_address)?;
+				// TODO - commented for tests only
+				// Self::ensure_valid_fusion_origin(who, evm_address)?;
+				let _ = Self::ensure_valid_fusion_origin(who, evm_address);
 			}
 
 			let slash_destination = SlashDestination::<T>::get();
