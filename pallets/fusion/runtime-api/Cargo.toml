@@ -1,0 +1,21 @@
+[package]
+name = "pallet-fusion-runtime-api"
+version = "1.0.0"
+edition = "2021"
+description = "Runtime API for pallet fusion"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { features = ["derive"], workspace = true }
+sp-api = { workspace = true }
+pallet-fusion = { workspace = true }
+sp-staking = { workspace = true, default-features = false, features = [
+    "serde",
+] }
+
+
+[features]
+default = ["std"]
+std = ["codec/std", "pallet-fusion/std", "sp-api/std"]

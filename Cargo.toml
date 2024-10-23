@@ -3,6 +3,8 @@ resolver = "2"
 members = [
 	"base",
 	"pallets/dactr",
+	"pallets/fusion",
+	"pallets/fusion/runtime-api",
 	"pallets/mandate",
 	"pallets/system",
 	"pallets/vector",
@@ -22,15 +24,19 @@ homepage = "https://www.availproject.org/"
 
 
 [workspace.dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-node-3", default-features = false, features = [ "runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-node-3", default-features = false, features = [
+	"runtime",
+] }
 kate = { git = "https://github.com/availproject/avail-core", tag = "core-node-3", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "core-node-3", default-features = false  }
+kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "core-node-3", default-features = false }
 # avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
 # kate = { path = "../avail-core/kate/", default-features = false }
 # kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
 
 avail-base = { path = "base", default-features = false }
 da-control = { path = "pallets/dactr", default-features = false }
+pallet-fusion = { path = "pallets/fusion", default-features = false }
+pallet-fusion-runtime-api = { path = "pallets/fusion/runtime-api", default-features = false }
 pallet-mandate = { path = "pallets/mandate", default-features = false }
 pallet-vector = { path = "pallets/vector", default-features = false }
 da-runtime = { path = "runtime", default-features = false }
@@ -43,11 +49,15 @@ frame-system = { path = "pallets/system", default-features = false }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api", default-features = false }
 frame-system-benchmarking = { path = "pallets/system/benchmarking", default-features = false }
 
+pallet-staking = { path = "pallets/staking", default-features = false }
+pallet-staking-runtime-api = { path = "pallets/staking/runtime-api", default-features = false }
+pallet-staking-reward-curve = { path = "pallets/staking/reward-curve", default-features = false }
+pallet-staking-reward-fn = { path = "pallets/staking/reward-fn", default-features = false }
 
 # benchmarking
 criterion = { version = "0.4", default-features = false }
 iai = "0.1.1"
-iai-callgrind = "0.7.3" 
+iai-callgrind = "0.7.3"
 divan = "0.1.11"
 
 # codspeed-criterion-compat = "2.2.0"
@@ -68,12 +78,20 @@ async-trait = "0.1.74"
 rayon = "1.5.2"
 
 # Macros and code generation
+codec = { package = "parity-scale-codec", version = "3", default-features = false }
 hex-literal = "0.3.4"
 static_assertions = "1.1.0"
 serde = { version = "1.0.197", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0", default-features = false }
-derive_more = { version = "0.99.17", default-features = false, features = ["from", "into", "display"] }
-scale-info = { version = "2.5.0", default-features = false, features = ["derive","serde"] }
+derive_more = { version = "0.99.17", default-features = false, features = [
+	"from",
+	"into",
+	"display",
+] }
+scale-info = { version = "2.5.0", default-features = false, features = [
+	"derive",
+	"serde",
+] }
 cfg-if = "1.0"
 impl-trait-for-tuples = "0.2.1"
 docify = "0.2.6"
@@ -81,17 +99,23 @@ docify = "0.2.6"
 # Encryptions and hashing
 sha2 = { version = "0.10.8", default-features = false }
 hash256-std-hasher = { version = "0.15.2", default-features = false }
-ark-bn254 = { version = "0.3.0", default-features = false, features = ["curve"] }
+ark-bn254 = { version = "0.3.0", default-features = false, features = [
+	"curve",
+] }
 ark-groth16 = { version = "0.3.0", default-features = false }
 ark-ec = "0.4.2"
 ark-std = { version = "0.4.0", default-features = false }
-ark-serialize = { version = "0.4.0", features = ["derive"], default-features = false }
+ark-serialize = { version = "0.4.0", features = [
+	"derive",
+], default-features = false }
 ark-ff = { version = "0.3.0", default-features = false }
 ark-snark = "0.4.0"
 rand = "0.8"
 
 # Misc
-parity-util-mem = { version = "0.12.0", features = ["primitive-types"], default-features = false }
+parity-util-mem = { version = "0.12.0", features = [
+	"primitive-types",
+], default-features = false }
 array-bytes = "6.1"
 trie-db = { version = "0.24.0", default-features = false }
 hash-db = { version = "0.15.2", default-features = false }
@@ -108,7 +132,9 @@ rlp = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5
 rlp-derive = "0.1.0"
 primitive-types = { version = "0.12.0", default-features = false }
 ethabi = { version = "18.0.0", default-features = false }
-tiny-keccak = { version = "2.0.2", features = ["keccak"], default-features = false }
+tiny-keccak = { version = "2.0.2", features = [
+	"keccak",
+], default-features = false }
 
 # Cli
 clap = { version = "4.4.17", features = ["derive"] }
@@ -148,8 +174,6 @@ sp-externalities = { git = "https://github.com/availproject/polkadot-sdk.git", t
 sp-runtime-interface = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 sp-staking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
-pallet-staking = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
-pallet-staking-runtime-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false } 
 sp-consensus-grandpa = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 sp-authority-discovery = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 sp-consensus-babe = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
@@ -162,7 +186,6 @@ sp-npos-elections = { git = "https://github.com/availproject/polkadot-sdk.git", 
 pallet-session = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 pallet-im-online = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 pallet-grandpa = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
-pallet-staking-reward-curve = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 pallet-scheduler = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 pallet-indices = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 pallet-offences = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
@@ -186,7 +209,6 @@ pallet-tx-pause = { git = "https://github.com/availproject/polkadot-sdk.git", ta
 pallet-transaction-payment = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 pallet-transaction-payment-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
-pallet-staking-reward-fn = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 substrate-wasm-builder = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 sc-cli = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 sp-statement-store = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
@@ -227,13 +249,13 @@ try-runtime-cli = { git = "https://github.com/availproject/polkadot-sdk.git", ta
 substrate-build-script-utils = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 sp-trie = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 sp-state-machine = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
-
+sp-application-crypto = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 
 sc-block-builder = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10" }
 sc-proposer-metrics = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10" }
 substrate-prometheus-endpoint = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10" }
-# substrate-test-runtime-client = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10" }
-
+substrate-test-runtime-client = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10" }
+substrate-test-utils = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 
 # Patch from forked pallets
 [patch."https://github.com/availproject/polkadot-sdk.git"]
