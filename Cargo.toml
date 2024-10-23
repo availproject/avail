@@ -4,6 +4,7 @@ members = [
 	"base",
 	"pallets/dactr",
 	"pallets/fusion",
+	"pallets/fusion/runtime-api",
 	"pallets/mandate",
 	"pallets/system",
 	"pallets/vector",
@@ -23,9 +24,11 @@ homepage = "https://www.availproject.org/"
 
 
 [workspace.dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-node-3", default-features = false, features = [ "runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-node-3", default-features = false, features = [
+	"runtime",
+] }
 kate = { git = "https://github.com/availproject/avail-core", tag = "core-node-3", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "core-node-3", default-features = false  }
+kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "core-node-3", default-features = false }
 # avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
 # kate = { path = "../avail-core/kate/", default-features = false }
 # kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
@@ -33,6 +36,7 @@ kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "cor
 avail-base = { path = "base", default-features = false }
 da-control = { path = "pallets/dactr", default-features = false }
 pallet-fusion = { path = "pallets/fusion", default-features = false }
+pallet-fusion-runtime-api = { path = "pallets/fusion/runtime-api", default-features = false }
 pallet-mandate = { path = "pallets/mandate", default-features = false }
 pallet-vector = { path = "pallets/vector", default-features = false }
 da-runtime = { path = "runtime", default-features = false }
@@ -46,14 +50,14 @@ frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api", defaul
 frame-system-benchmarking = { path = "pallets/system/benchmarking", default-features = false }
 
 pallet-staking = { path = "pallets/staking", default-features = false }
-pallet-staking-runtime-api = { path = "pallets/staking/runtime-api", default-features = false } 
+pallet-staking-runtime-api = { path = "pallets/staking/runtime-api", default-features = false }
 pallet-staking-reward-curve = { path = "pallets/staking/reward-curve", default-features = false }
 pallet-staking-reward-fn = { path = "pallets/staking/reward-fn", default-features = false }
 
 # benchmarking
 criterion = { version = "0.4", default-features = false }
 iai = "0.1.1"
-iai-callgrind = "0.7.3" 
+iai-callgrind = "0.7.3"
 divan = "0.1.11"
 
 # codspeed-criterion-compat = "2.2.0"
@@ -79,8 +83,15 @@ hex-literal = "0.3.4"
 static_assertions = "1.1.0"
 serde = { version = "1.0.197", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0", default-features = false }
-derive_more = { version = "0.99.17", default-features = false, features = ["from", "into", "display"] }
-scale-info = { version = "2.5.0", default-features = false, features = ["derive","serde"] }
+derive_more = { version = "0.99.17", default-features = false, features = [
+	"from",
+	"into",
+	"display",
+] }
+scale-info = { version = "2.5.0", default-features = false, features = [
+	"derive",
+	"serde",
+] }
 cfg-if = "1.0"
 impl-trait-for-tuples = "0.2.1"
 docify = "0.2.6"
@@ -88,17 +99,23 @@ docify = "0.2.6"
 # Encryptions and hashing
 sha2 = { version = "0.10.8", default-features = false }
 hash256-std-hasher = { version = "0.15.2", default-features = false }
-ark-bn254 = { version = "0.3.0", default-features = false, features = ["curve"] }
+ark-bn254 = { version = "0.3.0", default-features = false, features = [
+	"curve",
+] }
 ark-groth16 = { version = "0.3.0", default-features = false }
 ark-ec = "0.4.2"
 ark-std = { version = "0.4.0", default-features = false }
-ark-serialize = { version = "0.4.0", features = ["derive"], default-features = false }
+ark-serialize = { version = "0.4.0", features = [
+	"derive",
+], default-features = false }
 ark-ff = { version = "0.3.0", default-features = false }
 ark-snark = "0.4.0"
 rand = "0.8"
 
 # Misc
-parity-util-mem = { version = "0.12.0", features = ["primitive-types"], default-features = false }
+parity-util-mem = { version = "0.12.0", features = [
+	"primitive-types",
+], default-features = false }
 array-bytes = "6.1"
 trie-db = { version = "0.24.0", default-features = false }
 hash-db = { version = "0.15.2", default-features = false }
@@ -115,7 +132,9 @@ rlp = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5
 rlp-derive = "0.1.0"
 primitive-types = { version = "0.12.0", default-features = false }
 ethabi = { version = "18.0.0", default-features = false }
-tiny-keccak = { version = "2.0.2", features = ["keccak"], default-features = false }
+tiny-keccak = { version = "2.0.2", features = [
+	"keccak",
+], default-features = false }
 
 # Cli
 clap = { version = "4.4.17", features = ["derive"] }

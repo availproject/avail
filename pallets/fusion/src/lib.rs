@@ -8,7 +8,7 @@ mod mock;
 #[cfg(test)]
 mod tests;
 mod traits;
-mod types;
+pub mod types;
 mod weights;
 
 use sp_std::collections::btree_map::BTreeMap;
@@ -154,13 +154,13 @@ pub mod pallet {
 	/// Stores all the users idle balances
 	#[pallet::storage]
 	#[pallet::getter(fn fusion_member_currency_balances)]
-	pub type FusionMemberCurrencyBalances<T: Config> = StorageDoubleMap<
+	pub type FusionUserCurrencyBalances<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
 		EvmAddress,
 		Twox64Concat,
 		CurrencyId,
-		FusionMemberCurrencyBalance,
+		FusionUserCurrencyBalance,
 		OptionQuery,
 	>;
 
@@ -280,6 +280,18 @@ pub mod pallet {
 		BoundedVec<(EvmAddress, FusionCurrencyBalance), T::MaxMembersPerPool>,
 		ValueQuery,
 	>;
+
+	/// Stores the pool ids of pool having an extra APY alongside the minimum to get the extra apy
+	#[pallet::storage]
+	#[pallet::getter(fn fusion_pools_with_extra_apy)]
+	pub type FusionPoolsWithExtraApy<T: Config> =
+		StorageMap<_, Twox64Concat, PoolId, FusionCurrencyBalance, OptionQuery>;
+
+	/// Stores true if the user has extra apy in the pool
+	#[pallet::storage]
+	#[pallet::getter(fn has_extra_apy)]
+	pub type HasExtraApy<T: Config> =
+		StorageDoubleMap<_, Twox64Concat, PoolId, Twox64Concat, EvmAddress, bool, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -491,7 +503,7 @@ pub mod pallet {
 		/// The user has not enough balance of the specified currency
 		NotEnoughCurrencyBalanceForUser,
 		/// User is not a member of the pool
-		UserNotMemberOfPool,
+		MembershipNotFound,
 		/// User has no more points to unbond
 		NoActivePointsToUnbond,
 		/// The currency name is invalid
@@ -518,6 +530,8 @@ pub mod pallet {
 		NotAuthorized,
 		/// No rewards were found for the era
 		NoRewardsForEra,
+		/// The user has no funds, so no rewards can be claimed
+		NoRewardsToClaim,
 		/// The exposure is not founds
 		ExposureNotFound,
 		/// The user was not found in the exposure
@@ -601,7 +615,7 @@ pub mod pallet {
 				Error::<T>::InvalidConversionRate
 			);
 
-			if currency_id == 0 {
+			if currency_id == AVAIL_CURRENCY_ID {
 				ensure!(min_amount == 0, Error::<T>::NoMinAmountForAvailCurrency);
 			}
 
@@ -677,7 +691,7 @@ pub mod pallet {
 						Error::<T>::InvalidMinAmount
 					);
 					ensure!(
-						currency_id != 0 || min_amount == 0,
+						currency_id != AVAIL_CURRENCY_ID || min_amount == 0,
 						Error::<T>::NoMinAmountForAvailCurrency
 					);
 					currency.min_amount = min_amount;
@@ -787,6 +801,7 @@ pub mod pallet {
 				total_slashed_native: 0,
 				total_unbonding_native: 0,
 				pending_slashes: BoundedVec::default(),
+				extra_apy_data: None,
 			};
 
 			FusionPoolsAccountToId::<T>::insert(&new_pool.funds_account, pool_id);
@@ -816,6 +831,7 @@ pub mod pallet {
 			apy: Option<Perbill>,
 			state: Option<FusionPoolState>,
 			nominator: Option<Option<T::AccountId>>,
+			extra_apy_data: Option<Option<(Perbill, FusionCurrencyBalance)>>, // Additional apy, min to earn
 			retry_rewards_for_eras: Option<BoundedVec<EraIndex, T::HistoryDepth>>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
@@ -852,6 +868,10 @@ pub mod pallet {
 
 				if let Some(nominator) = nominator.clone() {
 					pool.nominator = nominator;
+				}
+
+				if let Some(extra_apy_data) = extra_apy_data {
+					pool.set_extra_apy(pool_id, extra_apy_data)?;
 				}
 
 				if pool.is_active() {
@@ -1115,7 +1135,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			Self::ensure_valid_fusion_origin(who, evm_address)?;
-			Self::do_unbond(evm_address, pool_id, unbond_amount, false)?;
+			Self::do_unbond(evm_address, pool_id, Some(unbond_amount), false)?;
 			Ok(())
 		}
 
@@ -1141,10 +1161,9 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			evm_address: EvmAddress,
 			pool_id: PoolId,
-			unbond_amount: FusionCurrencyBalance,
 		) -> DispatchResult {
 			ensure_signed(origin)?;
-			Self::do_unbond(evm_address, pool_id, unbond_amount, true)?;
+			Self::do_unbond(evm_address, pool_id, None, true)?;
 			Ok(())
 		}
 
@@ -1225,11 +1244,11 @@ impl<T: Config> Pallet<T> {
 		if !skip_check {
 			let _ = FusionCurrencies::<T>::get(currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
 		}
-		FusionMemberCurrencyBalances::<T>::mutate(evm_address, currency_id, |balance_opt| {
+		FusionUserCurrencyBalances::<T>::mutate(evm_address, currency_id, |balance_opt| {
 			if let Some(balance) = balance_opt {
 				balance.amount = balance.amount.saturating_add(amount);
 			} else {
-				*balance_opt = Some(FusionMemberCurrencyBalance {
+				*balance_opt = Some(FusionUserCurrencyBalance {
 					evm_address,
 					currency_id,
 					amount,
@@ -1246,7 +1265,7 @@ impl<T: Config> Pallet<T> {
 		currency_id: CurrencyId,
 		amount: FusionCurrencyBalance,
 	) -> DispatchResult {
-		FusionMemberCurrencyBalances::<T>::try_mutate(
+		FusionUserCurrencyBalances::<T>::try_mutate(
 			evm_address,
 			currency_id,
 			|balance_opt| -> DispatchResult {
@@ -1333,6 +1352,7 @@ impl<T: Config> Pallet<T> {
 
 		FusionPoolsAccountToId::<T>::remove(&pool.funds_account);
 		FusionPools::<T>::remove(pool_id);
+		FusionPoolsWithExtraApy::<T>::remove(pool_id);
 
 		Self::deposit_event(Event::PoolDeleted { pool_id, leftover });
 
@@ -1472,6 +1492,18 @@ impl<T: Config> Pallet<T> {
 			let total_avail = fusion_exposure.total_avail;
 			let pool_era_reward = fraction_of_year * apy * total_avail;
 
+			// Extra era reward computation for a pool
+			let mut extra_apy_era_reward = BalanceOf::<T>::default();
+			if fusion_exposure.extra_apy_members.len() > 0
+				&& fusion_exposure.extra_apy_total_points > 0
+				&& fusion_exposure.extra_apy_value > Perbill::zero()
+				&& fusion_exposure.extra_apy_total_avail > BalanceOf::<T>::zero()
+			{
+				let extra_apy = fusion_exposure.extra_apy_value;
+				let extra_total_avail = fusion_exposure.extra_apy_total_avail;
+				extra_apy_era_reward = fraction_of_year * extra_apy * extra_total_avail;
+			}
+
 			// Check that the pool actually backed a validator and that this validator has earned points during the era
 			let mut should_earn_rewards = false;
 			if let Some(native_exposure_data) = fusion_exposure.native_exposure_data {
@@ -1497,17 +1529,18 @@ impl<T: Config> Pallet<T> {
 
 			// Get the pool funds balances
 			let pool_funds_balance = T::Currency::free_balance(&pool.funds_account);
+			let era_rewards_with_extra = pool_era_reward.saturating_add(extra_apy_era_reward);
 
 			// In case of insufficient balance in pool account, we pause the pool
 			// This means the reward won't get paid for this era.
-			if pool_era_reward > pool_funds_balance.saturating_sub(existential_deposit) {
+			if era_rewards_with_extra > pool_funds_balance.saturating_sub(existential_deposit) {
 				Self::pause_pool(
 					pool_id,
 					&mut pool,
 					&"Insufficient funds in fusion pool account.",
 					&mut paused_pools,
 					&mut paused_pools_missed_rewards,
-					pool_era_reward,
+					era_rewards_with_extra,
 				);
 				continue;
 			}
@@ -1515,7 +1548,7 @@ impl<T: Config> Pallet<T> {
 			if let Err(e) = T::Currency::transfer(
 				&pool.funds_account,
 				&pool.claimable_account,
-				pool_era_reward,
+				era_rewards_with_extra,
 				ExistenceRequirement::KeepAlive,
 			) {
 				Self::pause_pool(
@@ -1524,13 +1557,13 @@ impl<T: Config> Pallet<T> {
 					&"An error has occured during transfer",
 					&mut paused_pools,
 					&mut paused_pools_missed_rewards,
-					pool_era_reward,
+					era_rewards_with_extra,
 				);
 				log::error!("Error detail: {e:?}");
 				continue;
 			}
 
-			total_rewarded = total_rewarded.saturating_add(pool_era_reward);
+			total_rewarded = total_rewarded.saturating_add(era_rewards_with_extra);
 
 			FusionEraRewards::<T>::insert(
 				era,
@@ -1538,6 +1571,8 @@ impl<T: Config> Pallet<T> {
 				EraReward {
 					rewards: pool_era_reward,
 					claimed_rewards: BalanceOf::<T>::default(),
+					additional_rewards: extra_apy_era_reward,
+					additional_claimed_rewards: BalanceOf::<T>::default(),
 				},
 			);
 
@@ -1643,7 +1678,7 @@ impl<T: Config> Pallet<T> {
 		FusionMemberships::<T>::try_mutate(evm_address, pool_id, |membership_opt| {
 			let membership = membership_opt
 				.as_mut()
-				.ok_or(Error::<T>::UserNotMemberOfPool)?;
+				.ok_or(Error::<T>::MembershipNotFound)?;
 			let pool = FusionPools::<T>::get(pool_id).ok_or(Error::<T>::PoolNotFound)?;
 			let currency =
 				FusionCurrencies::<T>::get(pool.currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
@@ -1740,6 +1775,15 @@ impl<T: Config> Pallet<T> {
 				member.1 = member.1.saturating_add(points);
 			}
 
+			// Check if the user has extra apy in the pool
+			if let Some(ref mut extra_apy_data) = pool.extra_apy_data {
+				if HasExtraApy::<T>::get(pool_id, evm_address) {
+					// We add the additional points to the elligible points
+					extra_apy_data.elligible_total_points =
+						extra_apy_data.elligible_total_points.saturating_add(points);
+				}
+			}
+
 			FusionMemberships::<T>::insert(evm_address, pool_id, membership);
 			FusionPools::<T>::insert(pool_id, &pool);
 			FusionCurrencies::<T>::insert(pool.currency_id, &currency);
@@ -1795,43 +1839,32 @@ impl<T: Config> Pallet<T> {
 			// Ensure rewards are available for the given era and pool
 			let era_rewards = maybe_reward.as_mut().ok_or(Error::<T>::NoRewardsForEra)?;
 
-			// Find the user's points in this era for the pool
-			let user_points = exposure
-				.user_points
-				.iter()
-				.find(|(user, _)| *user == evm_address)
-				.map(|(_, points)| points)
-				.ok_or(Error::<T>::UserNotFoundInExposure)?;
-
 			// Ensure the user has not already claimed the reward for this era and pool
 			ensure!(
 				!ClaimedRewards::<T>::contains_key(era, (pool_id, evm_address)),
 				Error::<T>::AlreadyClaimed
 			);
 
-			// Calculate the reward ratio
-			let user_share = Self::u256(*user_points);
-			let total_points = Self::u256(exposure.total_points);
-			let rewards_u128: u128 = era_rewards
-				.rewards
-				.try_into()
-				.map_err(|_| Error::<T>::ArithmeticError)?;
-			let rewards = Self::u256(rewards_u128);
+			let (user_reward_balance, user_points) =
+				Self::compute_basic_rewards(evm_address, &exposure, &era_rewards)?;
 
-			let user_reward = rewards
-				.saturating_mul(user_share)
-				.checked_div(total_points)
-				.ok_or(Error::<T>::ArithmeticError)?;
+			let extra_rewards =
+				Self::compute_extra_rewards(evm_address, &exposure, &era_rewards, user_points)?;
 
-			let user_reward_balance = Self::balance(user_reward);
+			let total_user_rewards = user_reward_balance.saturating_add(extra_rewards);
+
+			ensure!(
+				total_user_rewards > BalanceOf::<T>::zero(),
+				Error::<T>::NoRewardsToClaim
+			);
 
 			// Update the claimed rewards field by adding the user's reward
 			era_rewards.claimed_rewards = era_rewards
 				.claimed_rewards
-				.saturating_add(user_reward_balance);
+				.saturating_add(total_user_rewards);
 
 			// Mark rewards as claimed
-			ClaimedRewards::<T>::insert(era, (pool_id, evm_address), user_reward_balance);
+			ClaimedRewards::<T>::insert(era, (pool_id, evm_address), total_user_rewards);
 
 			// Fetch avail currency
 			let avail_currency = FusionCurrencies::<T>::get(AVAIL_CURRENCY_ID)
@@ -1839,7 +1872,7 @@ impl<T: Config> Pallet<T> {
 
 			// Convert the avail reward to avail currency
 			let avail_in_currency =
-				avail_currency.avail_to_currency(user_reward_balance, Some(era))?;
+				avail_currency.avail_to_currency(total_user_rewards, Some(era))?;
 
 			// Transfer claimable avail to avail fusion currency account for holding
 			let pool_claimable_account = Self::get_pool_funds_account(pool_id);
@@ -1848,7 +1881,7 @@ impl<T: Config> Pallet<T> {
 			let pool_claimable_balance = T::Currency::free_balance(&pool_claimable_account);
 			let existential_deposit = T::Currency::minimum_balance();
 			ensure!(
-				user_reward_balance <= pool_claimable_balance.saturating_sub(existential_deposit),
+				total_user_rewards <= pool_claimable_balance.saturating_sub(existential_deposit),
 				Error::<T>::NotEnoughClaimableBalanceInPool
 			);
 
@@ -1856,49 +1889,44 @@ impl<T: Config> Pallet<T> {
 			T::Currency::transfer(
 				&pool_claimable_account,
 				&Self::avail_account(),
-				user_reward_balance,
+				total_user_rewards,
 				ExistenceRequirement::AllowDeath,
 			)?;
 
 			// We can now add the equivalent in fusion currency
 			Self::add_to_currency_balance(evm_address, AVAIL_CURRENCY_ID, avail_in_currency, true)?;
 
+			// Handle compounding or adding to the user's idle balance
+			let Some(membership) = FusionMemberships::<T>::get(evm_address, pool_id) else {
+				return Ok(());
+			};
+
+			// Fetch avail pool
+			let avail_pool =
+				FusionPools::<T>::get(AVAIL_POOL_ID).ok_or(Error::<T>::PoolNotFound)?;
+
+			if membership.is_compounding
+				&& (avail_pool.state == FusionPoolState::Open
+					|| (avail_pool.state == FusionPoolState::Blocked
+						&& FusionMemberships::<T>::get(evm_address, AVAIL_POOL_ID).is_some()))
+				&& !avail_currency.is_destroyed
+				&& avail_currency
+					.total_staked_native
+					.saturating_add(avail_in_currency)
+					<= avail_currency.max_amount
+				&& avail_in_currency > 0
+			{
+				// At this point this should never fail except in case of arithmetic errors which is ok
+				Self::do_stake(evm_address, AVAIL_POOL_ID, avail_in_currency, true)?;
+			}
+
 			Self::deposit_event(Event::RewardClaimed {
 				evm_address,
 				pool_id,
 				era,
-				reward: user_reward_balance,
+				reward: total_user_rewards,
 			});
 
-			// Handle compounding or adding to the user's idle balance
-			FusionMemberships::<T>::try_mutate(
-				evm_address,
-				pool_id,
-				|membership_opt| -> DispatchResult {
-					let Some(membership) = membership_opt.as_mut() else {
-						return Ok(());
-					};
-					// Fetch avail pool
-					let avail_pool =
-						FusionPools::<T>::get(AVAIL_POOL_ID).ok_or(Error::<T>::PoolNotFound)?;
-
-					if membership.is_compounding
-						&& (avail_pool.state == FusionPoolState::Open
-							|| (avail_pool.state == FusionPoolState::Blocked
-								&& FusionMemberships::<T>::get(evm_address, AVAIL_POOL_ID)
-									.is_some())) && !avail_currency.is_destroyed
-						&& avail_currency
-							.total_staked_native
-							.saturating_add(avail_in_currency)
-							<= avail_currency.max_amount
-						&& avail_in_currency > 0
-					{
-						// At this point this should never fail except in case of arithmetic errors which is ok
-						Self::do_stake(evm_address, AVAIL_POOL_ID, avail_in_currency, true)?;
-					}
-					Ok(())
-				},
-			)?;
 			Ok(())
 		})?;
 
@@ -1910,13 +1938,12 @@ impl<T: Config> Pallet<T> {
 	fn do_unbond(
 		evm_address: EvmAddress,
 		pool_id: PoolId,
-		unbond_amount: FusionCurrencyBalance,
+		unbond_amount: Option<FusionCurrencyBalance>,
 		other: bool,
 	) -> DispatchResult {
-		ensure!(unbond_amount > 0, Error::<T>::InvalidAmount);
 		// Retrieve the user's membership in the pool
 		let mut membership = FusionMemberships::<T>::get(evm_address, pool_id)
-			.ok_or(Error::<T>::UserNotMemberOfPool)?;
+			.ok_or(Error::<T>::MembershipNotFound)?;
 
 		// Ensure the user has active points to unbond
 		ensure!(
@@ -1938,6 +1965,10 @@ impl<T: Config> Pallet<T> {
 		// Convert points to currency to determine how much to unbond
 		let currency_value = pool.points_to_currency(membership.active_points, Some(&currency))?;
 
+		let unbond_amount = unbond_amount.unwrap_or(currency_value);
+
+		ensure!(unbond_amount > 0, Error::<T>::InvalidAmount);
+
 		// Ensure user has enough points to unbond the requested amount
 		let requested_points = pool.currency_to_points(unbond_amount, Some(&currency))?;
 		ensure!(
@@ -1947,9 +1978,11 @@ impl<T: Config> Pallet<T> {
 
 		let is_full_unbond = requested_points == membership.active_points;
 
+		let new_avail_balance = currency_value.saturating_sub(unbond_amount);
+
 		// Ensure it's full unbond or valid partial unbond
 		ensure!(
-			is_full_unbond || currency_value.saturating_sub(unbond_amount) >= currency.min_amount,
+			is_full_unbond || new_avail_balance >= currency.min_amount,
 			Error::<T>::AmountWillGoBelowMinimum
 		);
 
@@ -1962,7 +1995,9 @@ impl<T: Config> Pallet<T> {
 			.iter()
 			.position(|(addr, _)| *addr == evm_address);
 		if let Some(index) = existing_index {
-			era_pool_unbonding_chunk[index].1 += unbond_amount;
+			era_pool_unbonding_chunk[index].1 = era_pool_unbonding_chunk[index]
+				.1
+				.saturating_add(unbond_amount);
 		} else {
 			era_pool_unbonding_chunk
 				.try_push((evm_address, unbond_amount))
@@ -1992,12 +2027,17 @@ impl<T: Config> Pallet<T> {
 		{
 			// Subtract the user's points from the member entry
 			if let Some((_, member_points)) = pool.members.get_mut(member_index) {
-				*member_points = member_points.saturating_sub(membership.active_points);
+				*member_points = membership.active_points;
+			}
+		}
 
-				// If the user's points are now zero, remove the user from the members array
-				if *member_points == 0 {
-					pool.members.remove(member_index);
-				}
+		// Check if the user has extra apy in the pool
+		if let Some(ref mut extra_apy_data) = pool.extra_apy_data {
+			if HasExtraApy::<T>::get(pool_id, evm_address) {
+				// We substract the additional points to the elligible points
+				extra_apy_data.elligible_total_points = extra_apy_data
+					.elligible_total_points
+					.saturating_sub(requested_points);
 			}
 		}
 
@@ -2019,6 +2059,11 @@ impl<T: Config> Pallet<T> {
 		FusionMemberships::<T>::insert(evm_address, pool_id, membership);
 		FusionPools::<T>::insert(pool_id, &pool);
 		FusionCurrencies::<T>::insert(pool.currency_id, &currency);
+
+		// If the user has unbonded from Avail pool, we need to check if we need to remove him from some extras apy pools
+		if pool_id == AVAIL_POOL_ID {
+			Self::check_pool_allocation_removal(evm_address, new_avail_balance)?;
+		}
 
 		// Emit event
 		Self::deposit_event(Event::CurrencyUnbonded {
@@ -2042,7 +2087,7 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		// Ensure user is a member of the pool
 		let mut membership = FusionMemberships::<T>::get(evm_address, pool_id)
-			.ok_or(Error::<T>::UserNotMemberOfPool)?;
+			.ok_or(Error::<T>::MembershipNotFound)?;
 
 		// Fetch pool and currency data
 		let mut pool = FusionPools::<T>::get(pool_id).ok_or(Error::<T>::PoolNotFound)?;
@@ -2103,16 +2148,28 @@ impl<T: Config> Pallet<T> {
 		currency.total_unbonding_native = currency
 			.total_unbonding_native
 			.saturating_sub(total_withdrawable);
-		FusionPools::<T>::insert(pool_id, &pool);
-		FusionCurrencies::<T>::insert(pool.currency_id, &currency);
 
 		// Update the user's currency balance
 		Self::add_to_currency_balance(evm_address, pool.currency_id, total_withdrawable, true)?;
 
 		// Check if the user should be removed from the pool membership
 		if membership.unbonding_eras.is_empty() && membership.active_points == 0 {
+			// Remove the user from members in pool
+			pool.members.retain(|(address, _)| *address != evm_address);
+
 			// Remove the user's membership from the pool
 			FusionMemberships::<T>::remove(evm_address, pool_id);
+
+			// If we remove the membership and the user had extra in pool, we need to clean it
+			if HasExtraApy::<T>::get(pool_id, evm_address) {
+				HasExtraApy::<T>::remove(pool_id, evm_address);
+
+				if let Some(ref mut extra_apy_data) = pool.extra_apy_data {
+					extra_apy_data
+						.elligible_members
+						.retain(|address| *address != evm_address);
+				}
+			}
 
 			// Emit event for removing pool membership
 			Self::deposit_event(Event::PoolMembershipRemoved {
@@ -2123,6 +2180,9 @@ impl<T: Config> Pallet<T> {
 			// If there are remaining unbonding chunks or active points, update the membership
 			FusionMemberships::<T>::insert(evm_address, pool_id, membership);
 		}
+
+		FusionPools::<T>::insert(pool_id, &pool);
+		FusionCurrencies::<T>::insert(pool.currency_id, &currency);
 
 		// Emit event for successful withdrawal
 		Self::deposit_event(Event::CurrencyWithdrawn {
@@ -2146,7 +2206,7 @@ impl<T: Config> Pallet<T> {
 			.ok_or(Error::<T>::NoControllerAddressForUser)?;
 
 		// Retrieve the user's balance of AVAIL currency
-		let balance = FusionMemberCurrencyBalances::<T>::get(evm_address, AVAIL_CURRENCY_ID)
+		let balance = FusionUserCurrencyBalances::<T>::get(evm_address, AVAIL_CURRENCY_ID)
 			.ok_or(Error::<T>::NoCurrencyBalanceForUser)?
 			.amount;
 
@@ -2164,7 +2224,7 @@ impl<T: Config> Pallet<T> {
 		)?;
 
 		// Remove the user's AVAIL currency balance after minting
-		FusionMemberCurrencyBalances::<T>::remove(evm_address, AVAIL_CURRENCY_ID);
+		FusionUserCurrencyBalances::<T>::remove(evm_address, AVAIL_CURRENCY_ID);
 
 		// Emit an event indicating successful withdrawal
 		Self::deposit_event(Event::AvailWithdrawnToController {
@@ -2186,6 +2246,227 @@ impl<T: Config> Pallet<T> {
 		T::PalletId::get()
 			.into_sub_account_truncating((FusionAccountType::PoolClaimableAccount, id))
 	}
+
+	/// Checks if the user extra allocation need to be removed
+	fn check_pool_allocation_removal(
+		evm_address: EvmAddress,
+		new_avail_balance: FusionCurrencyBalance,
+	) -> DispatchResult {
+		let mut total_avail_required: FusionCurrencyBalance = 0;
+		let mut user_pool_ids: Vec<(PoolId, FusionCurrencyBalance)> = Vec::new();
+
+		for (pool_id, min_avail_to_earn) in FusionPoolsWithExtraApy::<T>::iter() {
+			if HasExtraApy::<T>::get(pool_id, evm_address) {
+				user_pool_ids.push((pool_id, min_avail_to_earn));
+				total_avail_required = total_avail_required.saturating_add(min_avail_to_earn);
+			}
+		}
+
+		if new_avail_balance >= total_avail_required {
+			return Ok(());
+		}
+
+		// If we're here, we need to remove the user extra apy from some pool
+		// Sort pools by min_avail_to_earn in descending order
+		user_pool_ids.sort_by(|a, b| b.1.cmp(&a.1));
+
+		// Remove pools until the total required Avail is within the new balance
+		for (pool_id, min_avail_to_earn) in user_pool_ids {
+			// Remove the user's extra APY status from the pool
+			HasExtraApy::<T>::remove(pool_id, evm_address);
+
+			FusionPools::<T>::try_mutate(pool_id, |pool_opt| -> DispatchResult {
+				let pool = pool_opt.as_mut().ok_or(Error::<T>::PoolNotFound)?;
+				if let Some(ref mut extra_apy_data) = pool.extra_apy_data {
+					let membership = FusionMemberships::<T>::get(evm_address, pool_id)
+						.ok_or(Error::<T>::MembershipNotFound)?;
+					extra_apy_data.elligible_total_points = extra_apy_data
+						.elligible_total_points
+						.saturating_sub(membership.active_points);
+					extra_apy_data
+						.elligible_members
+						.retain(|address| *address != evm_address);
+				}
+				Ok(())
+			})?;
+
+			total_avail_required = total_avail_required.saturating_sub(min_avail_to_earn);
+
+			if new_avail_balance >= total_avail_required {
+				break;
+			}
+		}
+
+		Ok(())
+	}
+
+	fn shutdown_pools_extra_apy() -> () {
+		for (pool_id, _) in FusionPoolsWithExtraApy::<T>::iter() {
+			let _ = HasExtraApy::<T>::clear_prefix(pool_id, u32::MAX, None);
+			let _ = FusionPools::<T>::try_mutate(pool_id, |pool_opt| -> DispatchResult {
+				if let Some(pool) = pool_opt.as_mut() {
+					if let Some(ref mut extra_apy_data) = pool.extra_apy_data {
+						extra_apy_data.elligible_total_points = 0;
+						extra_apy_data.elligible_members = BoundedVec::default();
+					}
+				};
+				Ok(())
+			});
+		}
+	}
+
+	fn compute_basic_rewards(
+		evm_address: EvmAddress,
+		exposure: &FusionExposure<T>,
+		era_rewards: &EraReward<T>,
+	) -> Result<(BalanceOf<T>, U256), DispatchError> {
+		// Find the user's points in this era for the pool
+		let user_points = exposure
+			.user_points
+			.iter()
+			.find(|(user, _)| *user == evm_address)
+			.map(|(_, points)| points)
+			.ok_or(Error::<T>::UserNotFoundInExposure)?;
+
+		// Calculate the rewards
+		let user_points = Self::u256(*user_points);
+		let total_points = Self::u256(exposure.total_points);
+		let rewards_u128: u128 = era_rewards
+			.rewards
+			.try_into()
+			.map_err(|_| Error::<T>::ArithmeticError)?;
+		let rewards = Self::u256(rewards_u128);
+
+		let user_reward = rewards
+			.saturating_mul(user_points)
+			.checked_div(total_points)
+			.ok_or(Error::<T>::ArithmeticError)?;
+		let user_reward_balance = Self::balance(user_reward);
+
+		Ok((user_reward_balance, user_points))
+	}
+
+	fn compute_extra_rewards(
+		evm_address: EvmAddress,
+		exposure: &FusionExposure<T>,
+		era_rewards: &EraReward<T>,
+		user_points: U256,
+	) -> Result<BalanceOf<T>, DispatchError> {
+		// Calculate the extra apy rewards
+		let mut user_extra_rewards_balance = BalanceOf::<T>::zero();
+		if exposure.extra_apy_members.contains(&evm_address) {
+			let total_extra_points = Self::u256(exposure.extra_apy_total_points);
+
+			let extra_rewards_u128: u128 = era_rewards
+				.additional_rewards
+				.try_into()
+				.map_err(|_| Error::<T>::ArithmeticError)?;
+			let extra_rewards = Self::u256(extra_rewards_u128);
+
+			let user_extra_reward = extra_rewards
+				.saturating_mul(user_points)
+				.checked_div(total_extra_points)
+				.ok_or(Error::<T>::ArithmeticError)?;
+
+			user_extra_rewards_balance = Self::balance(user_extra_reward);
+		}
+		Ok(user_extra_rewards_balance)
+	}
+
+	// FusionApi implementation
+	pub fn api_pending_rewards(
+		evm_address: EvmAddress,
+		pool_id: PoolId,
+		era: EraIndex,
+	) -> Result<BalanceOf<T>, DispatchError> {
+		ensure!(
+			!ClaimedRewards::<T>::contains_key(era, (pool_id, evm_address)),
+			Error::<T>::AlreadyClaimed
+		);
+
+		let Some(era_rewards) = FusionEraRewards::<T>::get(era, pool_id) else {
+			return Ok(BalanceOf::<T>::zero());
+		};
+
+		let Some(exposure) = FusionExposures::<T>::get(era, pool_id) else {
+			return Ok(BalanceOf::<T>::zero());
+		};
+
+		let (user_reward_balance, user_points) =
+			Self::compute_basic_rewards(evm_address, &exposure, &era_rewards)?;
+
+		let extra_rewards =
+			Self::compute_extra_rewards(evm_address, &exposure, &era_rewards, user_points)?;
+
+		// Using pools Ids,
+		Ok(user_reward_balance.saturating_add(extra_rewards))
+	}
+
+	pub fn api_avail_to_currency(
+		currency_id: CurrencyId,
+		avail_amount: BalanceOf<T>,
+		era: Option<EraIndex>,
+	) -> Result<FusionCurrencyBalance, DispatchError> {
+		let currency =
+			FusionCurrencies::<T>::get(currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
+		let currency_value = currency.avail_to_currency(avail_amount, era)?;
+
+		Ok(currency_value)
+	}
+
+	pub fn api_currency_to_avail(
+		currency_id: CurrencyId,
+		currency_amount: FusionCurrencyBalance,
+		era: Option<EraIndex>,
+	) -> Result<BalanceOf<T>, DispatchError> {
+		let currency =
+			FusionCurrencies::<T>::get(currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
+		let avail_value = currency.currency_to_avail(currency_amount, era, None)?;
+
+		Ok(avail_value)
+	}
+
+	pub fn api_points_to_currency(
+		pool_id: PoolId,
+		points: Points,
+	) -> Result<FusionCurrencyBalance, DispatchError> {
+		let pool = FusionPools::<T>::get(pool_id).ok_or(Error::<T>::PoolNotFound)?;
+		let currency_value = pool.points_to_currency(points, None)?;
+
+		Ok(currency_value)
+	}
+
+	pub fn api_currency_to_points(
+		pool_id: PoolId,
+		currency_amount: FusionCurrencyBalance,
+	) -> Result<Points, DispatchError> {
+		let pool = FusionPools::<T>::get(pool_id).ok_or(Error::<T>::PoolNotFound)?;
+		let points_value = pool.currency_to_points(currency_amount, None)?;
+
+		Ok(points_value)
+	}
+
+	pub fn api_points_to_avail(
+		pool_id: PoolId,
+		points: Points,
+		era: Option<EraIndex>,
+	) -> Result<BalanceOf<T>, DispatchError> {
+		let pool = FusionPools::<T>::get(pool_id).ok_or(Error::<T>::PoolNotFound)?;
+		let avail_value = pool.points_to_avail(points, None, era)?;
+
+		Ok(avail_value)
+	}
+
+	pub fn api_avail_to_points(
+		pool_id: PoolId,
+		avail_amount: BalanceOf<T>,
+		era: Option<EraIndex>,
+	) -> Result<Points, DispatchError> {
+		let pool = FusionPools::<T>::get(pool_id).ok_or(Error::<T>::PoolNotFound)?;
+		let points_value = pool.avail_to_points(avail_amount, None, era)?;
+
+		Ok(points_value)
+	}
 }
 
 impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
@@ -2200,9 +2481,19 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 				&& !pool.targets.is_empty()
 				&& pool.total_staked_points > 0
 			{
+				// Get currency
+				let Some(currency) = FusionCurrencies::<T>::get(pool.currency_id) else {
+					log::error!(
+						"Error while setting exposure for era {:?} and pool {:?} - Could not get related currency.",
+						era,
+						pool_id,
+					);
+					continue;
+				};
+
 				// Get total amount in avail
 				let total_avail_result =
-					pool.points_to_avail(pool.total_staked_points, None, Some(era));
+					pool.points_to_avail(pool.total_staked_points, Some(&currency), Some(era));
 
 				let Ok(total_avail) = total_avail_result else {
 					log::error!(
@@ -2214,6 +2505,33 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 					continue;
 				};
 
+				// Set extra apy data in the exposure
+				let (
+					extra_apy_value,
+					extra_apy_total_points,
+					extra_apy_total_avail,
+					extra_apy_members,
+				) = pool.extra_apy_data.as_ref().map_or(
+					(
+						Perbill::zero(),
+						Points::default(),
+						BalanceOf::<T>::default(),
+						BoundedVec::default(),
+					),
+					|data| {
+						let extra_points = data.elligible_total_points;
+						let extra_avail = pool
+							.points_to_avail(extra_points, Some(&currency), Some(era))
+							.unwrap_or(BalanceOf::<T>::default());
+						(
+							data.additional_apy,
+							extra_points,
+							extra_avail,
+							data.elligible_members.clone(),
+						)
+					},
+				);
+
 				// We set the exposure for era + 1
 				// The data must be available for the snapshot and next elections
 				let fusion_exposure = FusionExposure::<T> {
@@ -2224,6 +2542,10 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 					targets: pool.targets.clone(),
 					apy: pool.apy,
 					native_exposure_data: None,
+					extra_apy_members,
+					extra_apy_total_points,
+					extra_apy_total_avail,
+					extra_apy_value,
 				};
 				FusionExposures::<T>::insert(era, pool_id, fusion_exposure);
 				at_least_one = true;
@@ -2259,9 +2581,7 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 
 	fn get_fusion_voters() -> Vec<(T::AccountId, u64, Vec<T::AccountId>)> {
 		let era = T::StakingFusionDataProvider::current_era();
-		let exposure_iterator = FusionExposures::<T>::iter_prefix(era);
-		let mut fusion_voters =
-			Vec::<(T::AccountId, u64, Vec<T::AccountId>)>::with_capacity(exposure_iterator.count());
+		let mut fusion_voters: Vec<(T::AccountId, u64, Vec<T::AccountId>)> = Vec::new();
 
 		let total_issuance = T::Currency::total_issuance();
 
@@ -2588,6 +2908,12 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 
 				FusionCurrencies::<T>::insert(pool.currency_id, currency);
 				HasPendingSlash::<T>::remove(slash_era, (removed_slash.validator, funds_account));
+
+				// If the avail pool is slashed, we remove all extras cause we cannot compute the correct values anymore
+				// We can call the permissionless extrinsic to re-optimize the pools extra apy allocations
+				if pool_id == AVAIL_POOL_ID {
+					Self::shutdown_pools_extra_apy();
+				}
 
 				Self::deposit_event(Event::<T>::FusionPoolSlashed {
 					currency_id: pool.currency_id,

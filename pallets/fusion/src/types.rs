@@ -48,6 +48,10 @@ pub struct EraReward<T: Config> {
 	pub rewards: BalanceOf<T>,
 	/// The actual amount of reward claimed
 	pub claimed_rewards: BalanceOf<T>,
+	/// The total rewards from extra apy
+	pub additional_rewards: BalanceOf<T>,
+	/// The actual amount of reward claimed form extra apy
+	pub additional_claimed_rewards: BalanceOf<T>,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -104,6 +108,21 @@ pub struct FusionPool<T: Config> {
 	pub state: FusionPoolState,
 	/// Vector of pending slashes
 	pub pending_slashes: BoundedVec<FusionPendingSlash<T>, T::MaxSlashesPerPool>,
+	/// Data about extra apy
+	pub extra_apy_data: Option<ExtraApyData<T>>,
+}
+
+#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[scale_info(skip_type_params(T))]
+pub struct ExtraApyData<T: Config> {
+	/// The additional apy on the pool
+	pub additional_apy: Perbill,
+	/// The minimum avail that needs to be allocated to this pool to earn extra
+	pub min_avail_to_earn: FusionCurrencyBalance,
+	/// The points in the pool getting extra
+	pub elligible_total_points: Points,
+	/// Vector with elligible members
+	pub elligible_members: BoundedVec<EvmAddress, T::MaxMembersPerPool>,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -120,7 +139,7 @@ pub struct FusionMembership<T: Config> {
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub struct FusionMemberCurrencyBalance {
+pub struct FusionUserCurrencyBalance {
 	/// Evm address of the user
 	pub evm_address: EvmAddress,
 	/// Id of the idle currency this pool uses
@@ -147,6 +166,14 @@ pub struct FusionExposure<T: Config> {
 	/// Used to store the validator(s) actually backed alongside the amount
 	/// This is populated when exposure are collected
 	pub native_exposure_data: Option<BoundedVec<(T::AccountId, BalanceOf<T>), T::MaxTargets>>,
+	/// The additional apy
+	pub extra_apy_value: Perbill,
+	/// The members having extra apy
+	pub extra_apy_members: BoundedVec<EvmAddress, T::MaxMembersPerPool>,
+	/// The total points elligible to extra apy
+	pub extra_apy_total_points: Points,
+	/// The avail equivalent of extra_apy_total_points
+	pub extra_apy_total_avail: BalanceOf<T>,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -365,6 +392,59 @@ impl<T: Config> FusionPool<T> {
 
 		let points = self.currency_to_points(currency_value, currency)?;
 		Ok(points)
+	}
+
+	pub fn set_extra_apy(
+		&mut self,
+		pool_id: PoolId,
+		extra_apy_data: Option<(Perbill, FusionCurrencyBalance)>,
+	) -> DispatchResult {
+		match (&self.extra_apy_data, extra_apy_data) {
+			(None, None) => {
+				// There is no current apy data, nothing to do
+			},
+			(Some(_old_apy_data), None) => {
+				// There is some extra apy data, we remove it
+				// We remove the pool id from the storage of pools with extra
+				FusionPoolsWithExtraApy::<T>::remove(pool_id);
+
+				// We remove all the users for this pool in HasExtraApy
+				let _ = HasExtraApy::<T>::clear_prefix(pool_id, u32::MAX, None);
+
+				// We update the pool
+				self.extra_apy_data = None
+			},
+			(None, Some((apy, min_to_earn))) => {
+				// There is no current extra_apy, we add it
+				// We add the pool the to vec with pools habing extra
+				FusionPoolsWithExtraApy::<T>::insert(pool_id, min_to_earn);
+
+				// We update the pool
+				self.extra_apy_data = Some(ExtraApyData {
+					additional_apy: apy,
+					min_avail_to_earn: min_to_earn,
+					elligible_total_points: 0,
+					elligible_members: BoundedVec::default(),
+				});
+			},
+			(Some(old_apy_data), Some((apy, min_to_earn))) => {
+				// There is already an apy data, we update it
+				FusionPoolsWithExtraApy::<T>::insert(pool_id, min_to_earn);
+
+				// For each users having extra, if minimum to earn has
+				// we need to check if they still belong.
+				// But it's too expensive to do onchain so we leave them in.
+				// If we need to clean it, we can remove the extra apy
+				// and call the permissionless extrinsic to optimize
+				self.extra_apy_data = Some(ExtraApyData {
+					additional_apy: apy,
+					min_avail_to_earn: min_to_earn,
+					elligible_total_points: old_apy_data.elligible_total_points,
+					elligible_members: old_apy_data.elligible_members.clone(),
+				});
+			},
+		};
+		Ok(())
 	}
 }
 

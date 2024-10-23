@@ -2168,6 +2168,7 @@ dependencies = [
  "pallet-collective",
  "pallet-election-provider-multi-phase",
  "pallet-fusion",
+ "pallet-fusion-runtime-api",
  "pallet-grandpa",
  "pallet-identity",
  "pallet-im-online",
@@ -6144,6 +6145,16 @@ dependencies = [
  "sp-runtime",
  "sp-staking",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-fusion-runtime-api"
+version = "1.0.0"
+dependencies = [
+ "pallet-fusion",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-staking",
 ]
 
 [[package]]
